@@ -29,6 +29,28 @@ enum class StreamRateControlMode {
 	crf,
 };
 
+/* There are two launch contexts for starting the wizard
+	- PreStream: the wizard is triggered between pressing Start Streaming and a
+	stream. So the user wizard should indicate when the encoder is ready to stream
+	but also allow the user to abort. 
+
+	- Settings: User start config workflow from the settings page or toolbar. 
+		In this case, the wizard should not end with the stream starting but may end
+		wutg saving the settings if given signal 
+*/
+enum class LaunchContext {
+	PreStream,
+	Settings,
+};
+
+/* 
+	To make the wizard expandable we can have multiple destinations. 
+	In the case Facebook, it will use Facebook's no-auth encoder API.
+*/
+enum class Destination {
+	Facebook,
+};
+
 // Data to send to encoder config API
 struct EncoderSettingsRequest {
 	//// Stream

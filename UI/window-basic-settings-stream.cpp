@@ -293,7 +293,8 @@ void OBSBasicSettings::preStreamWizardLaunch()
 			main->Config(), settings);
 
 	StreamWizard::PreStreamWizard wiz = StreamWizard::PreStreamWizard(
-		StreamWizard::Destination::Facebook, currentSettings, this);
+		StreamWizard::Destination::Facebook,
+		StreamWizard::LaunchContext::Settings, currentSettings, this);
 	wiz.exec();
 
 	obs_data_release(settings);

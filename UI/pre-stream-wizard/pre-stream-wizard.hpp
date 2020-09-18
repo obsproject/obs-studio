@@ -8,43 +8,21 @@
 
 namespace StreamWizard {
 
-/* 
-	To make the wizard expandable we can have multiple destinations. 
-	In the case Facebook, it will use Facebook's no-auth encoder setup API.
-	Other platforms can use APIs, static JSON files hosted, etc. 
-*/
-enum class Destination {
-	Facebook,
-};
-
-/* There are two contexts for starting a stream 
-	- PreStream: the wizard is triggered between pressing Start Streaming and a
-	stream. So the user wizard should indicate when the encoder is ready to stream
-	but also allow the user to abort. 
-
-	- Settings: User start config workflow from the settings page or toolbar. 
-		In this case, the wizard should not end with the stream starting but may end
-		wutg saving the settings if given signal 
-*/
-enum class Context {
-	PreStream,
-	Settings,
-};
-
 class PreStreamWizard : public QWizard {
 	Q_OBJECT
 
 public:
-	PreStreamWizard(Destination dest,
+	PreStreamWizard(Destination dest, LaunchContext launchContext,
 			QSharedPointer<EncoderSettingsRequest> currentSettings,
 			QWidget *parent = nullptr);
 	~PreStreamWizard();
 
 private:
-	QWizardPage *makeDebugPage();
-
+	// External State
 	Destination destination_;
+	LaunchContext launchContext_;
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
+	QSize userSelectedNewRes_;
 
 signals:
 	// User left the wizard with intention to continue streaming
@@ -61,6 +39,10 @@ signals:
 
 	// Apply settings, don't start stream. e.g., is configuring from settings
 	void applySettings(QSharedPointer<EncoderSettingsResponse> newSettings);
+
+private slots:
+	void onPageChanged(int id);
+	void onUserSelectResolution(QSize newSize);
 };
 
 } //namespace StreamWizard

@@ -191,6 +191,8 @@ set(obs_SOURCES
 	${obs_libffutil_SOURCES}
 	../deps/json11/json11.cpp
 	pre-stream-wizard/pre-stream-wizard.cpp
+	pre-stream-wizard/page-input-display.cpp
+	pre-stream-wizard/page-start-prompt.cpp
 	obs-app.cpp
 	window-dock.cpp
 	api-interface.cpp
@@ -265,6 +267,8 @@ set(obs_HEADERS
 	../deps/json11/json11.hpp
 	pre-stream-wizard/pre-stream-current-settings.hpp 
 	pre-stream-wizard/pre-stream-wizard.hpp
+	pre-stream-wizard/page-input-display.hpp
+	pre-stream-wizard/page-start-prompt.hpp
 	obs-app.hpp
 	platform.hpp
 	window-dock.hpp
