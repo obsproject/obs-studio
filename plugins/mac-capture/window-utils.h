@@ -18,6 +18,8 @@ typedef struct cocoa_window *cocoa_window_t;
 
 NSArray *enumerate_cocoa_windows(void);
 
+NSArray *filter_nonzero_kcgwindowlayer_sources(NSArray *windows_arr);
+
 bool find_window(cocoa_window_t cw, obs_data_t *settings, bool force);
 
 void init_window(cocoa_window_t cw, obs_data_t *settings);

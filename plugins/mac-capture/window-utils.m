@@ -23,14 +23,25 @@ static NSComparator win_info_cmp = ^(NSDictionary *o1, NSDictionary *o2) {
 	return [o1[WINDOW_NUMBER] compare:o2[WINDOW_NUMBER]];
 };
 
+NSArray *filter_nonzero_kcgwindowlayer_sources(NSArray *windows_arr)
+{
+	NSPredicate *pred =
+		[NSPredicate predicateWithFormat:@"(kCGWindowLayer == 0)"];
+	NSArray *new_windows_arr =
+		[windows_arr filteredArrayUsingPredicate:pred];
+
+	return new_windows_arr;
+}
+
 NSArray *enumerate_windows(void)
 {
 	NSArray *arr = (NSArray *)CGWindowListCopyWindowInfo(
 		kCGWindowListOptionOnScreenOnly, kCGNullWindowID);
+	NSArray *filtered_arr = filter_nonzero_kcgwindowlayer_sources(arr);
 
 	[arr autorelease];
 
-	return [arr sortedArrayUsingComparator:win_info_cmp];
+	return [filtered_arr sortedArrayUsingComparator:win_info_cmp];
 }
 
 #define WAIT_TIME_MS 500
