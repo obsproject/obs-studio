@@ -1772,6 +1772,24 @@
                 "max audio bitrate": 160,
                 "x264opts": "tune=zerolatency"
             }
+	},
+        {
+            "name": "Mux",
+            "servers": [
+                {
+                    "name": "Global (RTMPS)",
+                    "url": "rtmps://global-live.mux.com:443/app"
+                },
+                {
+                    "name": "Global (RTMP)",
+                    "url": "rtmp://global-live.mux.com:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
