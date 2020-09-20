@@ -27,7 +27,7 @@ Display *disp()
 	return xdisplay;
 }
 
-void cleanupDisplay()
+void CleanupSceneSwitcher()
 {
 	if (!xdisplay)
 		return;
