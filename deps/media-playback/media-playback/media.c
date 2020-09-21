@@ -907,8 +907,7 @@ void mp_media_stop(mp_media_t *m)
 
 int64_t mp_get_current_time(mp_media_t *m)
 {
-	int speed = (int)((float)m->speed / 100.0f);
-	return (mp_media_get_base_pts(m) / 1000000) * speed;
+	return mp_media_get_base_pts(m) * (int64_t)m->speed / 100000000LL;
 }
 
 void mp_media_seek_to(mp_media_t *m, int64_t pos)
