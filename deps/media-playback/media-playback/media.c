@@ -820,10 +820,10 @@ static inline bool mp_media_thread(mp_media_t *m)
 					return false;
 			}
 			else {
-				if (!m->has_video) {
+				if (!m->has_video && m->audio.refresh_rate_ns > 0) {
 					os_sleep_ms(m->audio.refresh_rate_ns / 1000000);
 				}
-				else if (!m->has_audio) {
+				else if (!m->has_audio && m->video.refresh_rate_ns > 0) {
 					os_sleep_ms(m->video.refresh_rate_ns / 1000000);
 				}
 				else {
@@ -841,7 +841,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 					int64_t delta_audio = m->audio.refresh_rate_ns - elapsed_time_audio;
 
 					if (delta_audio >= delta_video - 1000000 && delta_audio <= delta_video + 1000000) {
-						os_sleep_ms(delta_audio/1000000);
+						if (delta_audio > 0)
+							os_sleep_ms(delta_audio/1000000);
 						m->video.last_processed_ns = os_gettime_ns();
 						m->audio.last_processed_ns = os_gettime_ns();
 					}
