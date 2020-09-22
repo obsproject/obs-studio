@@ -1,3 +1,19 @@
+;
+; NSIS Installer Script for OBS Studio, https://obsproject.com/
+;
+; This installer script is designed only for the release process
+; of OBS Studio. It requires a lot of files to be in exactly the
+; right places. If you're making a fork, it's strongly suggested
+; that you make your own installer.
+;
+; If you choose to use this script anyway, be absolutely sure you
+; have replaced every OBS specific check, whether process names,
+; application names, files, registry entries, etc.
+;
+; This script also requires OBSInstallerUtils for additional
+; functions. You can find it at
+; https://github.com/notr1ch/OBSInstallerUtils
+
 Unicode true
 ManifestDPIAware true
 
@@ -82,40 +98,9 @@ Function PreReqCheck
 	; Abort on XP or lower
 !endif
 
-	${If} ${AtMostWinXP}
-		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows Vista SP2 or higher and cannot be installed on this version of Windows."
+	${If} ${AtMostWinVista}
+		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows 7 or higher and cannot be installed on this version of Windows."
 		Quit
-	${EndIf}
-
-	; Vista specific checks
-	${If} ${IsWinVista}
-		; Check Vista SP2
-		${If} ${AtMostServicePack} 1
-			MessageBox MB_YESNO|MB_ICONEXCLAMATION "${APPNAME} requires Service Pack 2 when running on Vista. Would you like to download it?" IDYES sptrue IDNO spfalse
-			sptrue:
-				ExecShell "open" "http://windows.microsoft.com/en-US/windows-vista/Learn-how-to-install-Windows-Vista-Service-Pack-2-SP2"
-			spfalse:
-			Quit
-		${EndIf}
-
-		; Check Vista Platform Update
-		nsexec::exectostack "$SYSDIR\wbem\wmic.exe qfe where HotFixID='KB971512' get HotFixID /Format:list"
-		pop $0
-		pop $0
-		strcpy $1 $0 17 6
-		strcmps $1 "HotFixID=KB971512" gotPatch
-			MessageBox MB_YESNO|MB_ICONEXCLAMATION "${APPNAME} requires the Windows Vista Platform Update. Would you like to download it?" IDYES putrue IDNO pufalse
-			putrue:
-				${If} ${RunningX64}
-					; 64 bit
-					ExecShell "open" "http://www.microsoft.com/en-us/download/details.aspx?id=4390"
-				${Else}
-					; 32 bit
-					ExecShell "open" "http://www.microsoft.com/en-us/download/details.aspx?id=3274"
-				${EndIf}
-			pufalse:
-			Quit
-		gotPatch:
 	${EndIf}
 
 !ifdef INSTALL64
@@ -128,7 +113,7 @@ Function PreReqCheck
 	RMDir "$TEMP\OBS"
 	IntCmp $R0 126 vs2017Missing_64 vs2017OK_64
 	vs2017Missing_64:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires.  Would you like to download them?" IDYES vs2017true_64 IDNO vs2017false_64
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2017true_64 IDNO vs2017false_64
 		vs2017true_64:
 			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-64-bit"
 		vs2017false_64:
@@ -142,7 +127,7 @@ Function PreReqCheck
 	GetDLLVersion "msvcp140.DLL" $R0 $R1
 	IfErrors vs2017Missing_32 vs2017OK_32
 	vs2017Missing_32:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires.  Would you like to download them?" IDYES vs2017true_32 IDNO vs2017false_32
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2017true_32 IDNO vs2017false_32
 		vs2017true_32:
 			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-32-bit"
 		vs2017false_32:
@@ -213,23 +198,27 @@ Function PreReqCheck
 	ClearErrors
 
 	; Check previous instance
-
+	check32BitRunning:
 	OBSInstallerUtils::IsProcessRunning "obs32.exe"
 	IntCmp $R0 1 0 notRunning1
-		MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
+		MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDCANCEL IDRETRY check32BitRunning
 		Quit
 	notRunning1:
 
 	${if} ${RunningX64}
+		check64BitRunning:
 		OBSInstallerUtils::IsProcessRunning "obs64.exe"
 		IntCmp $R0 1 0 notRunning2
-			MessageBox MB_OK|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDOK
+			MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDCANCEL IDRETRY check64BitRunning
 			Quit
 		notRunning2:
 	${endif}
+FunctionEnd
 
-	SetShellVarContext all
+Var dllFilesInUse
 
+Function checkDLLs
+	OBSInstallerUtils::ResetInUseFileChecks
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"
@@ -237,14 +226,17 @@ Function PreReqCheck
 	OBSInstallerUtils::AddInUseFileCheck "$APPDATA\obs-studio-hook\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$APPDATA\obs-studio-hook\graphics-hook64.dll"
 	OBSInstallerUtils::GetAppNameForInUseFiles
-	StrCmp $R0 "" gameCaptureNotRunning
-		MessageBox MB_OK|MB_ICONEXCLAMATION "Game Capture files are being used by the following applications:$\r$\n$\r$\n$R0$\r$\nPlease close these applications before installing a new version of OBS." /SD IDOK
-		Quit
-	gameCaptureNotRunning:
+	StrCpy $dllFilesInUse "$R0"
 FunctionEnd
 
-Function filesInUse
-	MessageBox MB_OK|MB_ICONEXCLAMATION "Some files were not able to be installed. If this is the first time you are installing OBS, please disable any anti-virus or other security software and try again. If you are re-installing or updating OBS, close any applications that may be have been hooked, or reboot and try again."  /SD IDOK
+Function checkFilesInUse
+	retryFileChecks:
+	Call checkDLLs
+	StrCmp $dllFilesInUse "" dllsNotInUse
+	MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "OBS files are being used by the following applications:$\r$\n$\r$\n$dllFilesInUse$\r$\nPlease close these applications to continue setup." /SD IDCANCEL IDRETRY retryFileChecks
+	Quit
+
+	dllsNotInUse:
 FunctionEnd
 
 Function LaunchOBS
@@ -255,9 +247,9 @@ Function LaunchOBS
 !endif
 FunctionEnd
 
-Var outputErrors
-
 Section "OBS Studio" SecCore
+
+	Call checkFilesInUse
 
 	; Set Section properties
 	SectionIn RO
@@ -315,11 +307,6 @@ Section "OBS Studio" SecCore
 	File "new\core\data\obs-plugins\win-capture\obs-vulkan64.json"
 	OBSInstallerUtils::AddAllApplicationPackages "$APPDATA\obs-studio-hook"
 
-	ClearErrors
-
-	IfErrors 0 +2
-		StrCpy $outputErrors "yes"
-
 	WriteUninstaller "$INSTDIR\uninstall.exe"
 
 !ifdef INSTALL64
@@ -342,9 +329,6 @@ Section "OBS Studio" SecCore
 !endif
 
 	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
-
-	StrCmp $outputErrors "yes" 0 +2
-		Call filesInUse
 SectionEnd
 
 Section -FinishSection
@@ -473,7 +457,7 @@ SectionEnd
 
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_BEGIN
 	!insertmacro MUI_DESCRIPTION_TEXT ${UninstallSection1} "Remove the OBS program files."
-	!insertmacro MUI_DESCRIPTION_TEXT ${UninstallSection2} "Removes all settings, plugins, scenes and sources, profiles, log files and other application data."
+	!insertmacro MUI_DESCRIPTION_TEXT ${UninstallSection2} "Removes all settings, scenes and sources, profiles, log files and other application data."
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_END
 
 ; Version information
