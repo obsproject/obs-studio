@@ -807,6 +807,13 @@ void obs_output_set_video_encoder(obs_output_t *output, obs_encoder_t *encoder)
 				  "encoder passed is not a video encoder");
 		return;
 	}
+	if (active(output)) {
+		blog(LOG_WARNING,
+		     "%s: tried to set video encoder on output \"%s\" "
+		     "while the output is still active!",
+		     __FUNCTION__, output->context.name);
+		return;
+	}
 
 	if (output->video_encoder == encoder)
 		return;
@@ -830,6 +837,13 @@ void obs_output_set_audio_encoder(obs_output_t *output, obs_encoder_t *encoder,
 	if (encoder && encoder->info.type != OBS_ENCODER_AUDIO) {
 		blog(LOG_WARNING, "obs_output_set_audio_encoder: "
 				  "encoder passed is not an audio encoder");
+		return;
+	}
+	if (active(output)) {
+		blog(LOG_WARNING,
+		     "%s: tried to set audio encoder %d on output \"%s\" "
+		     "while the output is still active!",
+		     __FUNCTION__, (int)idx, output->context.name);
 		return;
 	}
 
