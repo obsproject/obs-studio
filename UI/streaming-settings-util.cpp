@@ -41,7 +41,7 @@ StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(
 	/* Stream info */
 	currentSettings->videoType = StreamWizard::VideoType::live;
 	// only live and rmpts is supported for now
-	currentSettings->protocol = StreamWizard::StreamProtocol::rmpts;
+	currentSettings->protocol = StreamWizard::StreamProtocol::rtmps;
 
 	currentSettings->serverUrl =
 		bstrdup(obs_data_get_string(settings, "server"));

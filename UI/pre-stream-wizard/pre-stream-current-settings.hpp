@@ -3,15 +3,19 @@
 #include <string>
 #include <math.h>
 #include <QString>
+#include <QPair>
+#include <QVariant>
+#include <QMap>
 
 namespace StreamWizard {
+
 enum class VideoType {
 	live, // Streaming
 	vod,  // Video On Demand, recording uploads
 };
 
 enum class StreamProtocol {
-	rmpts,
+	rtmps,
 };
 
 enum class VideoCodec {
@@ -20,13 +24,6 @@ enum class VideoCodec {
 
 enum class AudioCodec {
 	aac,
-};
-
-enum class StreamRateControlMode {
-	cbr,
-	abr,
-	vbr,
-	crf,
 };
 
 /* There are two launch contexts for starting the wizard
@@ -71,42 +68,51 @@ struct EncoderSettingsRequest {
 	int audioSamplerate; // in Hz, e.g., 48000Hz
 	int audioBitrate;    // in kbps e.g., 128kbps
 	AudioCodec audioCodec;
+
+	// If the user picked a resolution in the wizard
+	// Holds QSize or null
+	QVariant userSelectedResolution;
 };
 
-// To be recieved from encoder config API to suggest new ideal
-struct EncoderSettingsResponse {
-	// For response
-	int videoWidth;
-	int videoHeight;
-	double framerate; // in FPS
-	int videoBitrate; // in kbps
-	int audioChannels;
-	int audioSamplerate; // in Hz, e.g., 48000Hz
-	int audioBitrate;    // in kbps e.g., 128kbps
-	StreamProtocol protocol;
-	VideoCodec videoCodec;
-	AudioCodec audioCodec;
-
-	/* Video Codec Settings */
-	QString h264Profile; // "high"
-	float h264Level;     // 1 ... 6
-
-	/* Group of Pictures (gop) settings  */
-	int gopSizeInFrames;
-	int gopSizeInSeconds(void)
-	{
-		// Uses ceil to account for drop-frame: we round up 23.96 -> 24
-		return (int)(gopSizeInFrames / ceil(framerate));
-	};
-	// Open-GOP is an encoding technique which increases efficiency but often is
-	// not compatible with streaming
-	bool gopClosed;
-	int gopBFrames; // per group-of-pictures
-	int gopRefFrames; // Controls the size of the DPB (Decoded Picture Buffer).
-
-	bool videoProgressiveScan;
-	StreamRateControlMode streamRateControlMode;
-	int streamBufferSize; // in Kb
+// Map for the repsonse passed to UI and settings is:
+using SettingsMap = QMap<const char *, QPair<QVariant, bool>>;
+// where String = map key from kSettingsResponseKeys, and
+// where QVariant is the Settings value, and
+// where bool is if the user wants to apply the settings
+// Keys for new settings QMap
+static const struct {
+	const char *videoWidth;            //int
+	const char *videoHeight;           //int
+	const char *framerate;             // double (FPS)
+	const char *videoBitrate;          //int
+	const char *audioBitrate;          // int
+	const char *protocol;              // string
+	const char *videoCodec;            // string
+	const char *h264Profile;           // string ("High")
+	const char *h264Level;             // string ("4.1")
+	const char *gopSizeInFrames;       // int
+	const char *gopType;               // string ("fixed")
+	const char *gopClosed;             // bool
+	const char *gopBFrames;            // int
+	const char *gopRefFrames;          // int
+	const char *streamRateControlMode; // string "CBR"
+	const char *streamBufferSize;      // int (5000 kb)
+} SettingsResponseKeys = {
+	.videoWidth = "videoWidth",
+	.videoHeight = "videoHeight",
+	.framerate = "framerate",
+	.videoBitrate = "videoBitrate",
+	.audioBitrate = "audioBitrate",
+	.protocol = "protocol",
+	.videoCodec = "videoCodec",
+	.h264Profile = "h264Profile",
+	.h264Level = "h264Level",
+	.gopSizeInFrames = "gopSizeInFrames",
+	.gopType = "gopType",
+	.gopClosed = "gopClosed",
+	.gopBFrames = "gopBFrames",
+	.gopRefFrames = "gopRefFrames",
+	.streamRateControlMode = "streamRateControlMode",
+	.streamBufferSize = "streamBufferSize",
 };
-
 }

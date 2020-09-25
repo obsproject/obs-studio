@@ -50,6 +50,7 @@ set(CMAKE_AUTOMOC TRUE)
 find_package(Qt5Widgets ${FIND_MODE})
 find_package(Qt5Svg ${FIND_MODE})
 find_package(Qt5Xml ${FIND_MODE})
+find_package(Qt5Network ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
@@ -193,6 +194,7 @@ set(obs_SOURCES
 	pre-stream-wizard/pre-stream-wizard.cpp
 	pre-stream-wizard/page-input-display.cpp
 	pre-stream-wizard/page-start-prompt.cpp
+	pre-stream-wizard/encoder-settings-provider-facebook.cpp
 	obs-app.cpp
 	window-dock.cpp
 	api-interface.cpp
@@ -269,6 +271,7 @@ set(obs_HEADERS
 	pre-stream-wizard/pre-stream-wizard.hpp
 	pre-stream-wizard/page-input-display.hpp
 	pre-stream-wizard/page-start-prompt.hpp
+	pre-stream-wizard/encoder-settings-provider-facebook.hpp
 	obs-app.hpp
 	platform.hpp
 	window-dock.hpp
@@ -409,6 +412,7 @@ target_link_libraries(obs
 	Qt5::Widgets
 	Qt5::Svg
 	Qt5::Xml
+	Qt5::Network
 	obs-frontend-api
 	${FFMPEG_LIBRARIES}
 	${LIBCURL_LIBRARIES}

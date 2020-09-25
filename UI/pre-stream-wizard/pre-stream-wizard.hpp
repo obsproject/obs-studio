@@ -8,6 +8,13 @@
 
 namespace StreamWizard {
 
+/*
+	** The pre-stream wizard is a workflow focused on delivering encoder settings
+	** specfic for the streaming destination before going Live. 
+	** There is a launch context to know if launched from settings, otherwise 
+	** we'll later add a wizard page and button for going live after new settings.
+	*/
+
 class PreStreamWizard : public QWizard {
 	Q_OBJECT
 
@@ -15,14 +22,15 @@ public:
 	PreStreamWizard(Destination dest, LaunchContext launchContext,
 			QSharedPointer<EncoderSettingsRequest> currentSettings,
 			QWidget *parent = nullptr);
-	~PreStreamWizard();
 
 private:
 	// External State
 	Destination destination_;
 	LaunchContext launchContext_;
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
-	QSize userSelectedNewRes_;
+	QSharedPointer<SettingsMap> newSettingsMap_;
+
+	void requestSettings();
 
 signals:
 	// User left the wizard with intention to continue streaming
@@ -34,11 +42,20 @@ signals:
 	// User ready to start stream
 	// If newSettings is not null, they should be applied before stream
 	// If newSettings is null, user or wizard did not opt to apply changes.
-	void startStreamWithSettings(
-		QSharedPointer<EncoderSettingsResponse> newSettingsOrNull);
+	void
+	startStreamWithSettings(QSharedPointer<SettingsMap> newSettingsOrNull);
 
 	// Apply settings, don't start stream. e.g., is configuring from settings
-	void applySettings(QSharedPointer<EncoderSettingsResponse> newSettings);
+	void applySettings(QSharedPointer<SettingsMap> newSettings);
+
+	// All configuration providers must call one of these exclusively when done to
+	// continue the wizard. This is the contract any servicer's
+	// configuration provider must fulfill
+public slots:
+	// On success, returns a EncoderSettingsResponse object
+	void providerEncoderSettings(QSharedPointer<SettingsMap> response);
+	// Title and description to show the user.
+	void providerError(QString title, QString description);
 
 private slots:
 	void onPageChanged(int id);
