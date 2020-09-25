@@ -137,11 +137,8 @@ struct mp_media_info {
 	enum video_range_type force_range;
 	bool hardware_decoding;
 	bool is_local_file;
-<<<<<<< HEAD
 	bool enable_caching;
-=======
 	bool reconnecting;
->>>>>>> 588576e71e89b898577f551ff987c80c60eff0a7
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);

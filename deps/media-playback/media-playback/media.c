@@ -447,7 +447,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 			current_frame->data[0] -= current_frame->linesize[0] * (f->height - 1);
 
 		new_format = convert_pixel_format(m->scale_format);
-		new_space = convert_color_space(f->colorspace);
+		new_space = convert_color_space(f->colorspace, f->color_trc);
 		new_range = m->force_range == VIDEO_RANGE_DEFAULT
 			? convert_color_range(f->color_range)
 			: m->force_range;
@@ -476,18 +476,6 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 				return;
 			}
 		}
-
-<<<<<<< HEAD
-		if (current_frame->format == VIDEO_FORMAT_NONE)
-			return;
-=======
-	new_format = convert_pixel_format(m->scale_format);
-	new_space = convert_color_space(f->colorspace, f->color_trc);
-	new_range = m->force_range == VIDEO_RANGE_DEFAULT
-			    ? convert_color_range(f->color_range)
-			    : m->force_range;
->>>>>>> 588576e71e89b898577f551ff987c80c60eff0a7
-
 		current_frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
 			m->play_sys_ts - base_sys_ts;
 		current_frame->width = f->width;
@@ -532,12 +520,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 		frame = m->video.data.array[m->video.index];
 	}
-<<<<<<< HEAD
 	m->video.index++;
-	if (preload)
-		m->v_preload_cb(m->opaque, frame);
-	else
-=======
+
 
 	if (preload) {
 		if (m->seek_next_ts && m->v_seek_cb) {
@@ -546,7 +530,6 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 			m->v_preload_cb(m->opaque, frame);
 		}
 	} else {
->>>>>>> 588576e71e89b898577f551ff987c80c60eff0a7
 		m->v_cb(m->opaque, frame);
 	}
 }
@@ -1078,15 +1061,12 @@ void mp_media_play(mp_media_t *m, bool loop, bool reconnecting)
 
 	m->looping = loop;
 	m->active = true;
-<<<<<<< HEAD
 	m->audio.index = 0;
 	m->video.index = 0;
 	m->video.last_processed_ns = 0;
 	m->audio.last_processed_ns = 0;
-=======
 	m->reconnecting = reconnecting;
 
->>>>>>> 588576e71e89b898577f551ff987c80c60eff0a7
 	pthread_mutex_unlock(&m->mutex);
 
 	os_sem_post(m->sem);

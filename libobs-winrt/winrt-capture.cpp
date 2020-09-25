@@ -344,8 +344,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		frame_pool.CreateCaptureSession(item);
 
 	/* disable cursor capture if possible since ours performs better */
-	if (winrt_capture_cursor_toggle_supported())
-		session.IsCursorCaptureEnabled(false);
+	//if (winrt_capture_cursor_toggle_supported())
+		//session.IsCursorCaptureEnabled(false);
 
 	capture->item = item;
 	capture->device = device;
@@ -425,11 +425,10 @@ try {
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
 		winrt_capture_cursor_toggle_supported();
-	if (cursor_toggle_supported)
-		session.IsCursorCaptureEnabled(false);
+	//if (cursor_toggle_supported)
+	//	session.IsCursorCaptureEnabled(false);
 
 	struct winrt_capture *capture = new winrt_capture{};
-	capture->capture_closed = false;
 	capture->window = window;
 	capture->client_area = client_area;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
@@ -444,9 +443,6 @@ try {
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
-	capture->item_closed = capture->item.Closed(
-		winrt::auto_revoke,
-		{capture, &winrt_capture::on_item_closed});
 	capture->next = capture_list;
 	capture_list = capture;
 

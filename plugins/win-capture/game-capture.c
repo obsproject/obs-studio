@@ -984,16 +984,7 @@ static inline bool init_hook_info(struct game_capture *gc)
 							     : offsets32;
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
-	gc->global_hook_info->use_scale = gc->config.force_scaling;
-	if (gc->config.force_scaling) {
-		if (gc->config.scale_cx)
-			gc->global_hook_info->cx = gc->config.scale_cx;
-		if (gc->config.scale_cy)
-			gc->global_hook_info->cy = gc->config.scale_cy;
-	} else {
-		gc->global_hook_info->cx = gc->global_hook_info->base_cx;
-		gc->global_hook_info->cy = gc->global_hook_info->base_cy;
-	}
+	gc->global_hook_info->UNUSED_use_scale = false;
 	reset_frame_interval(gc);
 
 	obs_enter_graphics();
@@ -2259,12 +2250,6 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, SETTING_LIMIT_FRAMERATE);
 	obs_property_set_visible(p, !capture_window_auto);
 	
-	p = obs_properties_get(ppts, SETTING_FORCE_SCALING);
-	obs_property_set_visible(p, !capture_window_auto);
-	
-	p = obs_properties_get(ppts, SETTING_SCALE_RES);
-	obs_property_set_visible(p, !capture_window_auto);
-
 	p = obs_properties_get(ppts, SETTING_AUTO_LIST_FILE);
 	obs_property_set_visible(p, false);
 

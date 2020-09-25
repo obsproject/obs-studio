@@ -479,7 +479,10 @@ int get_rule_match_power(struct game_capture_matching_rule* rule)
 	return rule_power;
 } 
 
-static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_capture_matching_rule) * matching_rules, int *found_index, int already_matched_power)
+static int find_matching_rule_for_window(
+	HWND window,
+	const DARRAY(struct game_capture_matching_rule) * matching_rules,
+	int *found_index, int already_matched_power)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
@@ -494,34 +497,42 @@ static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_c
 	}
 	get_window_class(&cur_class, window);
 	if (dstr_is_empty(&cur_class)) {
-		const char *non_class= "failed_class";
+		const char *non_class = "failed_class";
 		dstr_copy(&cur_class, non_class);
 	}
-	
+
 	int found_match_power = 0;
 	int i = 0;
-	while ( i < matching_rules->num ) {
-		if (found_match_power > matching_rules->array[i].power   
-		|| already_matched_power > matching_rules->array[i].power) {
+	while (i < matching_rules->num) {
+		if (found_match_power > matching_rules->array[i].power ||
+		    already_matched_power > matching_rules->array[i].power) {
 			i++;
 			continue;
 		}
 
 		bool rule_matched = true;
 		if (matching_rules->array[i].mask & WINDOW_MATCH_EXE) {
-			if (dstr_cmpi(&cur_exe, matching_rules->array[i].executable.array) != 0)
+			if (dstr_cmpi(&cur_exe, matching_rules->array[i]
+							.executable.array) != 0)
 				rule_matched = false;
 		}
-		if (rule_matched && (matching_rules->array[i].mask & WINDOW_MATCH_TITLE)) {
-			if (dstr_find(&cur_title, matching_rules->array[i].title.array) == NULL)
+		if (rule_matched &&
+		    (matching_rules->array[i].mask & WINDOW_MATCH_TITLE)) {
+			if (dstr_find(&cur_title,
+				      matching_rules->array[i].title.array) ==
+			    NULL)
 				rule_matched = false;
 		}
-		if (rule_matched && (matching_rules->array[i].mask & WINDOW_MATCH_CLASS)) {
-			if (dstr_find(&cur_class, matching_rules->array[i].class.array) == NULL)
+		if (rule_matched &&
+		    (matching_rules->array[i].mask & WINDOW_MATCH_CLASS)) {
+			if (dstr_find(&cur_class,
+				      matching_rules->array[i].class.array) ==
+			    NULL)
 				rule_matched = false;
 		}
-		
-		if (rule_matched && matching_rules->array[i].power > found_match_power) {
+
+		if (rule_matched &&
+		    matching_rules->array[i].power > found_match_power) {
 			found_match_power = matching_rules->array[i].power;
 			*found_index = i;
 		}
@@ -534,6 +545,8 @@ static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_c
 	dstr_free(&cur_exe);
 
 	return found_match_power;
+}
+
 static const char *generic_class_substrings[] = {
 	"Chrome",
 	NULL,

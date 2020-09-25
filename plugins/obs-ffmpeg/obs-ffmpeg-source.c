@@ -328,7 +328,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.force_range = s->range,
 			.hardware_decoding = s->is_hw_decoding,
 			.is_local_file = s->is_local_file || s->seekable,
-			.enable_caching = s->enable_caching
+			.enable_caching = s->enable_caching,
 			.reconnecting = s->reconnecting,
 		};
 
