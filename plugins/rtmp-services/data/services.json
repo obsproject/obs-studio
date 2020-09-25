@@ -342,12 +342,12 @@
             "name": "Vaughn Live / iNSTAGIB",
             "servers": [
                 {
-                    "name": "US: Primary",
-                    "url": "rtmp://live.vaughnsoft.net/live"
-                },
-                {
                     "name": "US: Chicago, IL",
                     "url": "rtmp://live-ord.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA",
+                    "url": "rtmp://live-iad.vaughnsoft.net/live"
                 },
                 {
                     "name": "US: Denver, CO",
@@ -356,28 +356,40 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
+                },		    
+                {
+                    "name": "US: Miami, FL",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: London, UK",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
+                "max video bitrate": 15000,
+                "max audio bitrate": 320
             }
         },
         {
             "name": "Breakers.TV",
             "servers": [
                 {
-                    "name": "US: Primary",
-                    "url": "rtmp://live.vaughnsoft.net/live"
-                },
-                {
                     "name": "US: Chicago, IL",
                     "url": "rtmp://live-ord.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Vint Hill, VA",
+                    "url": "rtmp://live-iad.vaughnsoft.net/live"
                 },
                 {
                     "name": "US: Denver, CO",
@@ -386,16 +398,28 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
+                },		    
+                {
+                    "name": "US: Miami, FL",
+                    "url": "rtmp://live-mia.vaughnsoft.net/live"
+                },
+                {
+                    "name": "US: Seattle, WA",
+                    "url": "rtmp://live-sea.vaughnsoft.net/live"
                 },
                 {
                     "name": "EU: Amsterdam, NL",
                     "url": "rtmp://live-ams.vaughnsoft.net/live"
+                },
+                {
+                    "name": "EU: London, UK",
+                    "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
             ],
             "recommended": {
                 "keyint": 2,
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
+                "max video bitrate": 15000,
+                "max audio bitrate": 320
             }
         },
         {
