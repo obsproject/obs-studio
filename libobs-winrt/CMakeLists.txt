@@ -7,12 +7,10 @@ add_definitions(-DLIBOBS_EXPORTS)
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(libobs-winrt_SOURCES
-	winrt-capture.cpp
-	winrt-dispatch.cpp)
+	winrt-capture.cpp)
 
 set(libobs-winrt_HEADERS
-	winrt-capture.h
-	winrt-dispatch.h)
+	winrt-capture.h)
 
 add_library(libobs-winrt MODULE
 	${libobs-winrt_SOURCES}
@@ -26,12 +24,10 @@ target_precompile_headers(libobs-winrt
 		[["../libobs/util/windows/ComPtr.hpp"]]
 		<obs-module.h>
 		<d3d11.h>
-		<DispatcherQueue.h>
 		<dwmapi.h>
 		<Windows.Graphics.Capture.Interop.h>
 		<winrt/Windows.Foundation.Metadata.h>
-		<winrt/Windows.Graphics.Capture.h>
-		<winrt/Windows.System.h>)
+		<winrt/Windows.Graphics.Capture.h>)
 target_link_libraries(libobs-winrt
 	libobs
 	Dwmapi
