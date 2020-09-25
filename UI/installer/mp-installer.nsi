@@ -248,6 +248,7 @@ Function LaunchOBS
 FunctionEnd
 
 Section "OBS Studio" SecCore
+	SetShellVarContext all
 
 	Call checkFilesInUse
 
@@ -255,8 +256,6 @@ Section "OBS Studio" SecCore
 	SectionIn RO
 	SetOverwrite on
 	AllowSkipFiles off
-
-	SetShellVarContext all
 
 	; Set Section Files and Shortcuts
 	SetOutPath "$INSTDIR"
