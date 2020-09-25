@@ -1671,9 +1671,6 @@ string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 	BPtr<char> filename =
 		os_generate_formatted_filename(extension, !noSpace, format);
 
-	remuxFilename = string(filename);
-	remuxAfterRecord = autoRemux;
-
 	return string(filename);
 }
 

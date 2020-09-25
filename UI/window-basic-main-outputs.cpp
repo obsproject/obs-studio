@@ -955,6 +955,11 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				    strPath.c_str());
 	}
 
+	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
+	remuxFilename = string(GenerateSpecifiedFilename(
+		ffmpegOutput ? "avi" : format, noSpace, f.c_str()));
+	remuxAfterRecord = autoRemux;
+
 	obs_data_set_string(settings, "muxer_settings", mux);
 
 	if (updateReplayBuffer)
