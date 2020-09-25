@@ -46,7 +46,23 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props,
 
 	struct v4l2_control control;
 	control.id = POINTER_TO_UINT(data);
-	control.value = obs_data_get_int(settings, obs_property_name(prop));
+
+	switch (obs_property_get_type(prop)) {
+	case OBS_PROPERTY_BOOL:
+		control.value =
+			obs_data_get_bool(settings, obs_property_name(prop));
+		break;
+	case OBS_PROPERTY_INT:
+	case OBS_PROPERTY_LIST:
+		control.value =
+			obs_data_get_int(settings, obs_property_name(prop));
+		break;
+	default:
+		blog(LOG_ERROR, "unknown property type for %s",
+		     obs_property_name(prop));
+		v4l2_close(dev);
+		return ret;
+	}
 
 	if (0 != v4l2_ioctl(dev, VIDIOC_S_CTRL, &control)) {
 		ret = true;
@@ -79,7 +95,7 @@ static int_fast32_t v4l2_update_controls_menu(int_fast32_t dev,
 	     qmenu.index += qctrl->step) {
 		if (0 == v4l2_ioctl(dev, VIDIOC_QUERYMENU, &qmenu)) {
 			obs_property_list_add_int(prop, (char *)qmenu.name,
-						  qmenu.value);
+						  qmenu.index);
 		}
 	}
 

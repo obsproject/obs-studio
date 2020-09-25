@@ -115,6 +115,10 @@ static void free_files(struct darray *array)
 	da_free(files);
 }
 
+#define MAKEFORMAT(ch0, ch1, ch2, ch3)                                \
+	((uint32_t)(uint8_t)(ch0) | ((uint32_t)(uint8_t)(ch1) << 8) | \
+	 ((uint32_t)(uint8_t)(ch2) << 16) | ((uint32_t)(uint8_t)(ch3) << 24))
+
 static inline bool chroma_is(const char *chroma, const char *val)
 {
 	return *(uint32_t *)chroma == *(uint32_t *)val;
@@ -127,12 +131,12 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 #define CHROMA_TEST(val, ret)       \
 	if (chroma_is(chroma, val)) \
 	return ret
-#define CHROMA_CONV(val, new_val, ret)                              \
-	do {                                                        \
-		if (chroma_is(chroma, val)) {                       \
-			*(uint32_t *)chroma = *(uint32_t *)new_val; \
-			return ret;                                 \
-		}                                                   \
+#define CHROMA_CONV(val, new_val, ret)                           \
+	do {                                                     \
+		if (chroma_is(chroma, val)) {                    \
+			*(uint32_t *)chroma = (uint32_t)new_val; \
+			return ret;                              \
+		}                                                \
 	} while (false)
 #define CHROMA_CONV_FULL(val, new_val, ret)     \
 	do {                                    \
@@ -147,13 +151,14 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 	CHROMA_TEST("NV12", VIDEO_FORMAT_NV12);
 	CHROMA_TEST("I420", VIDEO_FORMAT_I420);
 	CHROMA_TEST("IYUV", VIDEO_FORMAT_I420);
-	CHROMA_CONV("NV21", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("I422", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("Y42B", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("YV12", "NV12", VIDEO_FORMAT_NV12);
-	CHROMA_CONV("yv12", "NV12", VIDEO_FORMAT_NV12);
+	CHROMA_CONV("NV21", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("I422", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("Y42B", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("YV12", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
+	CHROMA_CONV("yv12", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_NV12);
 
-	CHROMA_CONV_FULL("J420", "J420", VIDEO_FORMAT_I420);
+	CHROMA_CONV_FULL("J420", MAKEFORMAT('J', '4', '2', '0'),
+			 VIDEO_FORMAT_I420);
 
 	/* 4:2:2 formats */
 	CHROMA_TEST("UYVY", VIDEO_FORMAT_UYVY);
@@ -174,33 +179,34 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 
 	CHROMA_TEST("YVYU", VIDEO_FORMAT_YVYU);
 
-	CHROMA_CONV("v210", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("cyuv", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("CYUV", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("VYUY", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("NV16", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("NV61", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I410", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I422", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("Y42B", "UYVY", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("J422", "UYVY", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("v210", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("cyuv", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("CYUV", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("VYUY", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("NV16", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("NV61", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I410", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I422", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("Y42B", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("J422", MAKEFORMAT('U', 'Y', 'V', 'Y'), VIDEO_FORMAT_UYVY);
 
 	/* 4:4:4 formats */
 	CHROMA_TEST("I444", VIDEO_FORMAT_I444);
-	CHROMA_CONV_FULL("J444", "RGBA", VIDEO_FORMAT_RGBA);
-	CHROMA_CONV("YUVA", "RGBA", VIDEO_FORMAT_RGBA);
+	CHROMA_CONV_FULL("J444", MAKEFORMAT('R', 'G', 'B', 'A'),
+			 VIDEO_FORMAT_RGBA);
+	CHROMA_CONV("YUVA", MAKEFORMAT('R', 'G', 'B', 'A'), VIDEO_FORMAT_RGBA);
 
 	/* 4:4:0 formats */
-	CHROMA_CONV("I440", "I444", VIDEO_FORMAT_I444);
-	CHROMA_CONV("J440", "I444", VIDEO_FORMAT_I444);
+	CHROMA_CONV("I440", MAKEFORMAT('I', '4', '4', '4'), VIDEO_FORMAT_I444);
+	CHROMA_CONV("J440", MAKEFORMAT('I', '4', '4', '4'), VIDEO_FORMAT_I444);
 
 	/* 4:1:0 formats */
-	CHROMA_CONV("YVU9", "NV12", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("I410", "NV12", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("YVU9", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I410", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
 
 	/* 4:1:1 formats */
-	CHROMA_CONV("I411", "NV12", VIDEO_FORMAT_UYVY);
-	CHROMA_CONV("Y41B", "NV12", VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("I411", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
+	CHROMA_CONV("Y41B", MAKEFORMAT('N', 'V', '1', '2'), VIDEO_FORMAT_UYVY);
 
 	/* greyscale formats */
 	CHROMA_TEST("GREY", VIDEO_FORMAT_Y800);
@@ -210,7 +216,7 @@ static enum video_format convert_vlc_video_format(char *chroma, bool *full)
 #undef CHROMA_CONV
 #undef CHROMA_TEST
 
-	*(uint32_t *)chroma = *(uint32_t *)"BGRA";
+	*(uint32_t *)chroma = (uint32_t)MAKEFORMAT('B', 'G', 'R', 'A');
 	return VIDEO_FORMAT_BGRA;
 }
 
@@ -243,35 +249,90 @@ static enum audio_format convert_vlc_audio_format(char *format)
 #define AUDIO_TEST(val, ret)        \
 	if (chroma_is(format, val)) \
 	return ret
-#define AUDIO_CONV(val, new_val, ret)                               \
-	do {                                                        \
-		if (chroma_is(format, val)) {                       \
-			*(uint32_t *)format = *(uint32_t *)new_val; \
-			return ret;                                 \
-		}                                                   \
+#define AUDIO_CONV(val, new_val, ret)                            \
+	do {                                                     \
+		if (chroma_is(format, val)) {                    \
+			*(uint32_t *)format = (uint32_t)new_val; \
+			return ret;                              \
+		}                                                \
 	} while (false)
 
 	AUDIO_TEST("S16N", AUDIO_FORMAT_16BIT);
 	AUDIO_TEST("S32N", AUDIO_FORMAT_32BIT);
 	AUDIO_TEST("FL32", AUDIO_FORMAT_FLOAT);
 
-	AUDIO_CONV("U16N", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("U32N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("S24N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U24N", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("FL64", "FL32", AUDIO_FORMAT_FLOAT);
+	AUDIO_CONV("U16N", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("U32N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S24N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U24N", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("FL64", MAKEFORMAT('F', 'L', '3', '2'), AUDIO_FORMAT_FLOAT);
 
-	AUDIO_CONV("S16I", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("U16I", "S16N", AUDIO_FORMAT_16BIT);
-	AUDIO_CONV("S24I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U24I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("S32I", "S32N", AUDIO_FORMAT_32BIT);
-	AUDIO_CONV("U32I", "S32N", AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S16I", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("U16I", MAKEFORMAT('S', '1', '6', 'N'), AUDIO_FORMAT_16BIT);
+	AUDIO_CONV("S24I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U24I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("S32I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
+	AUDIO_CONV("U32I", MAKEFORMAT('S', '3', '2', 'N'), AUDIO_FORMAT_32BIT);
 #undef AUDIO_CONV
 #undef AUDIO_TEST
 
-	*(uint32_t *)format = *(uint32_t *)"FL32";
+	*(uint32_t *)format = (uint32_t)MAKEFORMAT('F', 'L', '3', '2');
 	return AUDIO_FORMAT_FLOAT;
+}
+
+/* ------------------------------------------------------------------------- */
+
+static void vlcs_get_metadata(void *data, calldata_t *cd)
+{
+	struct vlc_source *vlcs = data;
+	const char *data_id = calldata_string(cd, "tag_id");
+
+	if (!vlcs || !data_id)
+		return;
+	libvlc_media_t *media =
+		libvlc_media_player_get_media_(vlcs->media_player);
+
+	if (!media)
+		return;
+
+#define VLC_META(media, cd, did, tid, tag)                               \
+	else if (strcmp(did, tid) == 0)                                  \
+	{                                                                \
+		calldata_set_string(cd, "tag_data",                      \
+				    libvlc_media_get_meta_(media, tag)); \
+	}
+
+	if (strcmp(data_id, "title") == 0)
+		calldata_set_string(cd, "tag_data",
+				    libvlc_media_get_meta_(media,
+							   libvlc_meta_Title));
+
+	VLC_META(media, cd, data_id, "artist", libvlc_meta_Artist)
+	VLC_META(media, cd, data_id, "genre", libvlc_meta_Genre)
+	VLC_META(media, cd, data_id, "copyright", libvlc_meta_Copyright)
+	VLC_META(media, cd, data_id, "album", libvlc_meta_Album)
+	VLC_META(media, cd, data_id, "track_number", libvlc_meta_TrackNumber)
+	VLC_META(media, cd, data_id, "description", libvlc_meta_Description)
+	VLC_META(media, cd, data_id, "rating", libvlc_meta_Rating)
+	VLC_META(media, cd, data_id, "date", libvlc_meta_Date)
+	VLC_META(media, cd, data_id, "setting", libvlc_meta_Setting)
+	VLC_META(media, cd, data_id, "url", libvlc_meta_URL)
+	VLC_META(media, cd, data_id, "language", libvlc_meta_Language)
+	VLC_META(media, cd, data_id, "now_playing", libvlc_meta_NowPlaying)
+	VLC_META(media, cd, data_id, "publisher", libvlc_meta_Publisher)
+	VLC_META(media, cd, data_id, "encoded_by", libvlc_meta_EncodedBy)
+	VLC_META(media, cd, data_id, "artwork_url", libvlc_meta_ArtworkURL)
+	VLC_META(media, cd, data_id, "track_id", libvlc_meta_TrackID)
+	VLC_META(media, cd, data_id, "track_total", libvlc_meta_TrackTotal)
+	VLC_META(media, cd, data_id, "director", libvlc_meta_Director)
+	VLC_META(media, cd, data_id, "season", libvlc_meta_Season)
+	VLC_META(media, cd, data_id, "episode", libvlc_meta_Episode)
+	VLC_META(media, cd, data_id, "show_name", libvlc_meta_ShowName)
+	VLC_META(media, cd, data_id, "actors", libvlc_meta_Actors)
+	VLC_META(media, cd, data_id, "album_artist", libvlc_meta_AlbumArtist)
+	VLC_META(media, cd, data_id, "disc_number", libvlc_meta_DiscNumber)
+	VLC_META(media, cd, data_id, "disc_total", libvlc_meta_DiscTotal)
+#undef VLC_META
 }
 
 /* ------------------------------------------------------------------------- */
@@ -779,7 +840,7 @@ static void vlcs_play_pause_hotkey(void *data, obs_hotkey_id id,
 
 	enum obs_media_state state = obs_source_media_get_state(c->source);
 
-	if (pressed && obs_source_active(c->source)) {
+	if (pressed && obs_source_showing(c->source)) {
 		if (state == OBS_MEDIA_STATE_PLAYING)
 			obs_source_media_play_pause(c->source, true);
 		else if (state == OBS_MEDIA_STATE_PAUSED)
@@ -795,7 +856,7 @@ static void vlcs_restart_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_restart(c->source);
 }
 
@@ -807,7 +868,7 @@ static void vlcs_stop_hotkey(void *data, obs_hotkey_id id, obs_hotkey_t *hotkey,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_stop(c->source);
 }
 
@@ -819,7 +880,7 @@ static void vlcs_playlist_next_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_next(c->source);
 }
 
@@ -831,7 +892,7 @@ static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
 
 	struct vlc_source *c = data;
 
-	if (pressed && obs_source_active(c->source))
+	if (pressed && obs_source_showing(c->source))
 		obs_source_media_previous(c->source);
 }
 
@@ -894,6 +955,11 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 			     vlcs_stopped, c);
 	libvlc_event_attach_(event_manager, libvlc_MediaPlayerOpening,
 			     vlcs_started, c);
+
+	proc_handler_t *ph = obs_source_get_proc_handler(source);
+	proc_handler_add(
+		ph, "void get_metadata(in string tag_id out string tag_data)",
+		vlcs_get_metadata, c);
 
 	obs_source_update(source, NULL);
 

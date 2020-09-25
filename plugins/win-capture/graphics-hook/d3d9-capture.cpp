@@ -38,7 +38,6 @@ struct d3d9_data {
 	D3DFORMAT d3d9_format;
 	DXGI_FORMAT dxgi_format;
 	bool using_shtex;
-	bool using_scale;
 
 	/* shared texture */
 	IDirect3DSurface9 *d3d9_copytex;
@@ -51,7 +50,6 @@ struct d3d9_data {
 
 	/* shared memory */
 	IDirect3DSurface9 *copy_surfaces[NUM_BUFFERS];
-	IDirect3DSurface9 *render_targets[NUM_BUFFERS];
 	IDirect3DQuery9 *queries[NUM_BUFFERS];
 	struct shmem_data *shmem_info;
 	bool texture_mapped[NUM_BUFFERS];
@@ -83,8 +81,6 @@ static void d3d9_free()
 					data.copy_surfaces[i]->UnlockRect();
 				data.copy_surfaces[i]->Release();
 			}
-			if (data.render_targets[i])
-				data.render_targets[i]->Release();
 			if (data.queries[i])
 				data.queries[i]->Release();
 		}
@@ -289,7 +285,7 @@ static inline bool d3d9_shtex_init_copytex()
 	return true;
 }
 
-static bool d3d9_shtex_init(uint32_t cx, uint32_t cy, HWND window)
+static bool d3d9_shtex_init(HWND window)
 {
 	data.using_shtex = true;
 
@@ -302,8 +298,8 @@ static bool d3d9_shtex_init(uint32_t cx, uint32_t cy, HWND window)
 	if (!d3d9_shtex_init_copytex()) {
 		return false;
 	}
-	if (!capture_init_shtex(&data.shtex_info, window, cx, cy, data.cx,
-				data.cy, data.dxgi_format, false,
+	if (!capture_init_shtex(&data.shtex_info, window, data.cx, data.cy,
+				data.dxgi_format, false,
 				(uintptr_t)data.handle)) {
 		return false;
 	}
@@ -340,17 +336,6 @@ static bool d3d9_shmem_init_buffers(size_t buffer)
 		data.copy_surfaces[buffer]->UnlockRect();
 	}
 
-	hr = data.device->CreateRenderTarget(data.cx, data.cy, data.d3d9_format,
-					     D3DMULTISAMPLE_NONE, 0, false,
-					     &data.render_targets[buffer],
-					     nullptr);
-	if (FAILED(hr)) {
-		hlog_hr("d3d9_shmem_init_buffers: Failed to create render "
-			"target",
-			hr);
-		return false;
-	}
-
 	hr = data.device->CreateQuery(D3DQUERYTYPE_EVENT,
 				      &data.queries[buffer]);
 	if (FAILED(hr)) {
@@ -361,7 +346,7 @@ static bool d3d9_shmem_init_buffers(size_t buffer)
 	return true;
 }
 
-static bool d3d9_shmem_init(uint32_t cx, uint32_t cy, HWND window)
+static bool d3d9_shmem_init(HWND window)
 {
 	data.using_shtex = false;
 
@@ -370,8 +355,8 @@ static bool d3d9_shmem_init(uint32_t cx, uint32_t cy, HWND window)
 			return false;
 		}
 	}
-	if (!capture_init_shmem(&data.shmem_info, window, cx, cy, data.cx,
-				data.cy, data.pitch, data.dxgi_format, false)) {
+	if (!capture_init_shmem(&data.shmem_info, window, data.cx, data.cy,
+				data.pitch, data.dxgi_format, false)) {
 		return false;
 	}
 
@@ -403,8 +388,7 @@ static bool d3d9_get_swap_desc(D3DPRESENT_PARAMETERS &pp)
 	return true;
 }
 
-static bool d3d9_init_format_backbuffer(uint32_t &cx, uint32_t &cy,
-					HWND &window)
+static bool d3d9_init_format_backbuffer(HWND &window)
 {
 	IDirect3DSurface9 *back_buffer = nullptr;
 	D3DPRESENT_PARAMETERS pp;
@@ -432,23 +416,15 @@ static bool d3d9_init_format_backbuffer(uint32_t &cx, uint32_t &cy,
 
 	data.d3d9_format = desc.Format;
 	data.dxgi_format = d3d9_to_dxgi_format(desc.Format);
-	data.using_scale = global_hook_info->use_scale;
 	window = pp.hDeviceWindow;
-	cx = desc.Width;
-	cy = desc.Height;
 
-	if (data.using_scale) {
-		data.cx = global_hook_info->cx;
-		data.cy = global_hook_info->cy;
-	} else {
-		data.cx = desc.Width;
-		data.cy = desc.Height;
-	}
+	data.cx = desc.Width;
+	data.cy = desc.Height;
 
 	return true;
 }
 
-static bool d3d9_init_format_swapchain(uint32_t &cx, uint32_t &cy, HWND &window)
+static bool d3d9_init_format_swapchain(HWND &window)
 {
 	D3DPRESENT_PARAMETERS pp;
 
@@ -458,18 +434,10 @@ static bool d3d9_init_format_swapchain(uint32_t &cx, uint32_t &cy, HWND &window)
 
 	data.dxgi_format = d3d9_to_dxgi_format(pp.BackBufferFormat);
 	data.d3d9_format = pp.BackBufferFormat;
-	data.using_scale = global_hook_info->use_scale;
 	window = pp.hDeviceWindow;
-	cx = pp.BackBufferWidth;
-	cy = pp.BackBufferHeight;
 
-	if (data.using_scale) {
-		data.cx = global_hook_info->cx;
-		data.cy = global_hook_info->cy;
-	} else {
-		data.cx = pp.BackBufferWidth;
-		data.cy = pp.BackBufferHeight;
-	}
+	data.cx = pp.BackBufferWidth;
+	data.cy = pp.BackBufferHeight;
 
 	return true;
 }
@@ -481,8 +449,6 @@ static void d3d9_init(IDirect3DDevice9 *device)
 		global_hook_info->offsets.d3d9.d3d9_clsoff &&
 		global_hook_info->offsets.d3d9.is_d3d9ex_clsoff;
 	bool success;
-	uint32_t cx = 0;
-	uint32_t cy = 0;
 	HWND window = nullptr;
 	HRESULT hr;
 
@@ -500,17 +466,17 @@ static void d3d9_init(IDirect3DDevice9 *device)
 		data.patch = -1;
 	}
 
-	if (!d3d9_init_format_backbuffer(cx, cy, window)) {
-		if (!d3d9_init_format_swapchain(cx, cy, window)) {
+	if (!d3d9_init_format_backbuffer(window)) {
+		if (!d3d9_init_format_swapchain(window)) {
 			return;
 		}
 	}
 
 	if (global_hook_info->force_shmem ||
 	    (!d3d9ex && data.patch == -1 && !has_d3d9ex_bool_offset)) {
-		success = d3d9_shmem_init(cx, cy, window);
+		success = d3d9_shmem_init(window);
 	} else {
-		success = d3d9_shtex_init(cx, cy, window);
+		success = d3d9_shtex_init(window);
 	}
 
 	if (!success)
@@ -539,73 +505,54 @@ static inline HRESULT get_backbuffer(IDirect3DDevice9 *device,
 
 static inline void d3d9_shtex_capture(IDirect3DSurface9 *backbuffer)
 {
-	D3DTEXTUREFILTERTYPE filter;
 	HRESULT hr;
 
-	filter = data.using_scale ? D3DTEXF_LINEAR : D3DTEXF_NONE;
-
 	hr = data.device->StretchRect(backbuffer, nullptr, data.d3d9_copytex,
-				      nullptr, filter);
+				      nullptr, D3DTEXF_NONE);
 	if (FAILED(hr))
 		hlog_hr("d3d9_shtex_capture: StretchRect failed", hr);
 }
 
-static inline void d3d9_shmem_capture_queue_copy()
+static void d3d9_shmem_capture_copy(int i)
 {
-	for (int i = 0; i < NUM_BUFFERS; i++) {
-		IDirect3DSurface9 *target = data.copy_surfaces[i];
-		D3DLOCKED_RECT rect;
-		HRESULT hr;
+	IDirect3DSurface9 *target = data.copy_surfaces[i];
+	D3DLOCKED_RECT rect;
+	HRESULT hr;
 
-		if (!data.issued_queries[i]) {
-			continue;
-		}
-		if (data.queries[i]->GetData(0, 0, 0) != S_OK) {
-			continue;
-		}
+	if (!data.issued_queries[i]) {
+		return;
+	}
+	if (data.queries[i]->GetData(0, 0, 0) != S_OK) {
+		return;
+	}
 
-		data.issued_queries[i] = false;
+	data.issued_queries[i] = false;
 
-		hr = target->LockRect(&rect, nullptr, D3DLOCK_READONLY);
-		if (SUCCEEDED(hr)) {
-			data.texture_mapped[i] = true;
-			shmem_copy_data(i, rect.pBits);
-		}
-		break;
+	hr = target->LockRect(&rect, nullptr, D3DLOCK_READONLY);
+	if (SUCCEEDED(hr)) {
+		data.texture_mapped[i] = true;
+		shmem_copy_data(i, rect.pBits);
 	}
 }
 
 static inline void d3d9_shmem_capture(IDirect3DSurface9 *backbuffer)
 {
-	D3DTEXTUREFILTERTYPE filter;
-	IDirect3DSurface9 *copy;
 	int next_tex;
 	HRESULT hr;
 
-	d3d9_shmem_capture_queue_copy();
-
-	next_tex = (data.cur_tex == NUM_BUFFERS - 1) ? 0 : data.cur_tex + 1;
-	filter = data.using_scale ? D3DTEXF_LINEAR : D3DTEXF_NONE;
-	copy = data.render_targets[data.cur_tex];
-
-	hr = data.device->StretchRect(backbuffer, nullptr, copy, nullptr,
-				      filter);
-
-	if (FAILED(hr)) {
-		hlog_hr("d3d9_shmem_capture: StretchRect failed", hr);
-		return;
-	}
+	next_tex = (data.cur_tex + 1) % NUM_BUFFERS;
+	d3d9_shmem_capture_copy(next_tex);
 
 	if (data.copy_wait < NUM_BUFFERS - 1) {
 		data.copy_wait++;
 	} else {
-		IDirect3DSurface9 *src = data.render_targets[next_tex];
-		IDirect3DSurface9 *dst = data.copy_surfaces[next_tex];
+		IDirect3DSurface9 *src = backbuffer;
+		IDirect3DSurface9 *dst = data.copy_surfaces[data.cur_tex];
 
-		if (shmem_texture_data_lock(next_tex)) {
+		if (shmem_texture_data_lock(data.cur_tex)) {
 			dst->UnlockRect();
-			data.texture_mapped[next_tex] = false;
-			shmem_texture_data_unlock(next_tex);
+			data.texture_mapped[data.cur_tex] = false;
+			shmem_texture_data_unlock(data.cur_tex);
 		}
 
 		hr = data.device->GetRenderTargetData(src, dst);
@@ -615,8 +562,8 @@ static inline void d3d9_shmem_capture(IDirect3DSurface9 *backbuffer)
 				hr);
 		}
 
-		data.queries[next_tex]->Issue(D3DISSUE_END);
-		data.issued_queries[next_tex] = true;
+		data.queries[data.cur_tex]->Issue(D3DISSUE_END);
+		data.issued_queries[data.cur_tex] = true;
 	}
 
 	data.cur_tex = next_tex;

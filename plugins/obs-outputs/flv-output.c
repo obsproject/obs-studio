@@ -106,7 +106,7 @@ static void write_meta_data(struct flv_output *stream)
 	uint8_t *meta_data;
 	size_t meta_data_size;
 
-	flv_meta_data(stream->output, &meta_data, &meta_data_size, true, 0);
+	flv_meta_data(stream->output, &meta_data, &meta_data_size, true);
 	fwrite(meta_data, 1, meta_data_size, stream->file);
 	bfree(meta_data);
 }

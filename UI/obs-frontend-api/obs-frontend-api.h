@@ -100,6 +100,8 @@ EXPORT obs_source_t *obs_frontend_get_current_transition(void);
 EXPORT void obs_frontend_set_current_transition(obs_source_t *transition);
 EXPORT int obs_frontend_get_transition_duration(void);
 EXPORT void obs_frontend_set_transition_duration(int duration);
+EXPORT void obs_frontend_release_tbar(void);
+EXPORT void obs_frontend_set_tbar_position(int position);
 
 EXPORT char **obs_frontend_get_scene_collections(void);
 EXPORT char *obs_frontend_get_current_scene_collection(void);
@@ -191,6 +193,9 @@ EXPORT bool obs_frontend_preview_enabled(void);
 
 EXPORT obs_source_t *obs_frontend_get_current_preview_scene(void);
 EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
+
+EXPORT void obs_frontend_take_screenshot(void);
+EXPORT void obs_frontend_take_source_screenshot(obs_source_t *source);
 
 /* ------------------------------------------------------------------------- */
 

@@ -84,11 +84,13 @@ endif()
 if(WIN32 OR APPLE)
 set_target_properties(libobs-opengl
 	PROPERTIES
+		FOLDER "core"
 		OUTPUT_NAME libobs-opengl
 		PREFIX "")
 else()
 set_target_properties(libobs-opengl
 	PROPERTIES
+		FOLDER "core"
 		OUTPUT_NAME obs-opengl
 		VERSION 0.0
 		SOVERSION 0

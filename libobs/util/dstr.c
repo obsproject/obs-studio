@@ -197,7 +197,7 @@ wchar_t *wstrstri(const wchar_t *str, const wchar_t *find)
 	return NULL;
 }
 
-static inline bool is_padding(char ch)
+static inline bool is_padding(int ch)
 {
 	return ch == ' ' || ch == '\t' || ch == '\n' || ch == '\r';
 }
@@ -218,7 +218,7 @@ char *strdepad(char *str)
 	while (is_padding(*temp))
 		++temp;
 
-	len = strlen(str);
+	len = strlen(temp);
 	if (temp != str)
 		memmove(str, temp, len + 1);
 
@@ -244,16 +244,16 @@ wchar_t *wcsdepad(wchar_t *str)
 	temp = str;
 
 	/* remove preceding spaces/tabs */
-	while (*temp == ' ' || *temp == '\t')
+	while (is_padding(*temp))
 		++temp;
 
-	len = wcslen(str);
+	len = wcslen(temp);
 	if (temp != str)
 		memmove(str, temp, (len + 1) * sizeof(wchar_t));
 
 	if (len) {
 		temp = str + (len - 1);
-		while (*temp == ' ' || *temp == '\t')
+		while (is_padding(*temp))
 			*(temp--) = 0;
 	}
 

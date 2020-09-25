@@ -55,6 +55,7 @@ struct mp_media {
 	AVFormatContext *fmt;
 
 	mp_video_cb v_preload_cb;
+	mp_video_cb v_seek_cb;
 	mp_stop_cb stop_cb;
 	mp_video_cb v_cb;
 	mp_audio_cb a_cb;
@@ -73,6 +74,7 @@ struct mp_media {
 	struct mp_decode v;
 	struct mp_decode a;
 	bool is_local_file;
+	bool reconnecting;
 	bool has_video;
 	bool has_audio;
 	bool is_file;
@@ -113,6 +115,7 @@ struct mp_media {
 	bool pause;
 	bool reset_ts;
 	bool seek;
+	bool seek_next_ts;
 	int64_t seek_pos;
 };
 
@@ -123,6 +126,7 @@ struct mp_media_info {
 
 	mp_video_cb v_cb;
 	mp_video_cb v_preload_cb;
+	mp_video_cb v_seek_cb;
 	mp_audio_cb a_cb;
 	mp_stop_cb stop_cb;
 
@@ -133,13 +137,17 @@ struct mp_media_info {
 	enum video_range_type force_range;
 	bool hardware_decoding;
 	bool is_local_file;
+<<<<<<< HEAD
 	bool enable_caching;
+=======
+	bool reconnecting;
+>>>>>>> 588576e71e89b898577f551ff987c80c60eff0a7
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
 extern void mp_media_free(mp_media_t *media);
 
-extern void mp_media_play(mp_media_t *media, bool loop);
+extern void mp_media_play(mp_media_t *media, bool loop, bool reconnecting);
 extern void mp_media_stop(mp_media_t *media);
 extern void mp_media_play_pause(mp_media_t *media, bool pause);
 extern int64_t mp_get_current_time(mp_media_t *m);

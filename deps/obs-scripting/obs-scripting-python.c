@@ -147,8 +147,13 @@ void add_functions_to_py_module(PyObject *module, PyMethodDef *method_list)
 
 static PyObject *py_get_current_script_path(PyObject *self, PyObject *args)
 {
+	PyObject *dir;
+
 	UNUSED_PARAMETER(args);
-	return PyDict_GetItemString(PyModule_GetDict(self), "__script_dir__");
+
+	dir = PyDict_GetItemString(PyModule_GetDict(self), "__script_dir__");
+	Py_XINCREF(dir);
+	return dir;
 }
 
 static void get_defaults(struct obs_python_script *data, PyObject *get_defs)
@@ -595,7 +600,7 @@ static PyObject *obs_python_signal_handler_disconnect(PyObject *self,
 		const char *cb_signal =
 			calldata_string(&cb->base.extra, "signal");
 
-		if (cb_signal && strcmp(signal, cb_signal) != 0 &&
+		if (cb_signal && strcmp(signal, cb_signal) == 0 &&
 		    handler == cb_handler)
 			break;
 

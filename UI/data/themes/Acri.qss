@@ -155,8 +155,8 @@ QListWidget QLineEdit {
 
 /* Dock stuff */
 QDockWidget {
-	titlebar-close-icon: url('./Dark/Close.svg');
-	titlebar-normal-icon: url('./Dark/Popout.svg');
+	titlebar-close-icon: url('./Dark/close.svg');
+	titlebar-normal-icon: url('./Dark/popout.svg');
 }
 
 QDockWidget {
@@ -311,6 +311,24 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
 	color: none;
 }
 
+/* Source Context */
+#contextContainer {
+    min-height: 40px;
+    max-height: 40px;
+}
+
+#contextContainer QPushButton[themeID2=contextBarButton] {
+    padding: 0px;
+}
+
+QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(./Dark/settings/general.svg);
+}
+
+QPushButton#sourceFiltersButton {
+    qproperty-icon: url(./Dark/filter.svg);
+}
+
 /* Scenes and Sources toolbar */
 
 QToolBar {
@@ -343,6 +361,10 @@ QToolButton:pressed {
 
 * [themeID="configIconSmall"] {
 	qproperty-icon: url(./Dark/settings/general.svg);
+}
+
+* [themeID="refreshIconSmall"] {
+    qproperty-icon: url(./Dark/refresh.svg);
 }
 
 * [themeID="upArrowIconSmall"] {
@@ -1103,4 +1125,30 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 	width: 14px;
 	height: 28px;
 	margin: -28px 0px;
+}
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(./Dark/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(./Dark/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(./Dark/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(./Dark/media/media_next.svg);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(./Dark/media/media_previous.svg);
 }

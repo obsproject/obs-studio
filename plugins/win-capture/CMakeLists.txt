@@ -1,6 +1,10 @@
 project(win-capture)
 
 include_directories(${OBS_JANSSON_INCLUDE_DIRS})
+if(MSVC)
+	set(win-capture_PLATFORM_DEPS
+		w32-pthreads)
+endif()
 
 set(win-capture_HEADERS
 	nt-stuff.h
@@ -33,10 +37,13 @@ add_library(win-capture MODULE
 	${win-capture_SOURCES}
 	${win-capture_HEADERS})
 target_link_libraries(win-capture
+	${win-capture_PLATFORM_DEPS}
 	libobs
+	Dwmapi
 	ipc-util
 	${OBS_JANSSON_IMPORT}
 	psapi)
+set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 
 install_obs_plugin_with_data(win-capture data)
 

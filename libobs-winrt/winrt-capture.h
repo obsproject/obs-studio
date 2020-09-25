@@ -15,6 +15,7 @@ EXPORT struct winrt_capture *winrt_capture_init(BOOL cursor, HWND window,
 						BOOL client_area);
 EXPORT void winrt_capture_free(struct winrt_capture *capture);
 
+EXPORT BOOL winrt_capture_supported(const struct winrt_capture *capture);
 EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 				      BOOL visible);
 EXPORT void winrt_capture_render(struct winrt_capture *capture,
@@ -22,6 +23,9 @@ EXPORT void winrt_capture_render(struct winrt_capture *capture,
 EXPORT uint32_t winrt_capture_width(const struct winrt_capture *capture);
 EXPORT uint32_t winrt_capture_height(const struct winrt_capture *capture);
 EXPORT bool winrt_capture_is_closed(const struct winrt_capture *capture);
+
+EXPORT void winrt_capture_thread_start();
+EXPORT void winrt_capture_thread_stop();
 
 EXPORT void winrt_capture_thread_start();
 EXPORT void winrt_capture_thread_stop();

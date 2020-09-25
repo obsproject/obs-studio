@@ -1143,33 +1143,38 @@ void gs_texture_set_image(gs_texture_t *tex, const uint8_t *data,
 {
 	uint8_t *ptr;
 	uint32_t linesize_out;
-	uint32_t row_copy;
-	int32_t height;
-	int32_t y;
+	size_t row_copy;
+	size_t height;
 
 	if (!gs_valid_p2("gs_texture_set_image", tex, data))
 		return;
-
-	height = (int32_t)gs_texture_get_height(tex);
 
 	if (!gs_texture_map(tex, &ptr, &linesize_out))
 		return;
 
 	row_copy = (linesize < linesize_out) ? linesize : linesize_out;
 
+	height = gs_texture_get_height(tex);
+
 	if (flip) {
-		for (y = height - 1; y >= 0; y--)
-			memcpy(ptr + (uint32_t)y * linesize_out,
-			       data + (uint32_t)(height - y - 1) * linesize,
-			       row_copy);
+		uint8_t *const end = ptr + height * linesize_out;
+		data += (height - 1) * linesize;
+		while (ptr < end) {
+			memcpy(ptr, data, row_copy);
+			ptr += linesize_out;
+			data -= linesize;
+		}
 
 	} else if (linesize == linesize_out) {
 		memcpy(ptr, data, row_copy * height);
 
 	} else {
-		for (y = 0; y < height; y++)
-			memcpy(ptr + (uint32_t)y * linesize_out,
-			       data + (uint32_t)y * linesize, row_copy);
+		uint8_t *const end = ptr + height * linesize_out;
+		while (ptr < end) {
+			memcpy(ptr, data, row_copy);
+			ptr += linesize_out;
+			data += linesize;
+		}
 	}
 
 	gs_texture_unmap(tex);

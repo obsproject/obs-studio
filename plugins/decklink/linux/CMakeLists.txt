@@ -63,5 +63,6 @@ add_library(linux-decklink MODULE
 target_link_libraries(linux-decklink
 	libobs
 	)
+set_target_properties(linux-decklink PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-decklink ../data)

@@ -1,18 +1,15 @@
-; Script generated with the Venis Install Wizard
-
 Unicode true
+ManifestDPIAware true
 
 ; Define your application name
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "17.0.2"
-!define SHORTVERSION "17.0.2"
+!define APPVERSION "25.0.8"
+!define SHORTVERSION "25.0.8"
 !endif
 
 !define APPNAMEANDVERSION "OBS Studio ${SHORTVERSION}"
-; !define FULL
-!define REALSENSE_PLUGIN
 
 ; Additional script dependencies
 !include WinVer.nsh
@@ -20,12 +17,17 @@ Unicode true
 
 ; Main Install settings
 Name "${APPNAMEANDVERSION}"
-InstallDir "$PROGRAMFILES32\obs-studio"
-InstallDirRegKey HKLM "Software\${APPNAME}" ""
-!ifdef FULL
-OutFile "OBS-Studio-${SHORTVERSION}-Full-Installer.exe"
+!ifdef INSTALL64
+InstallDir "$PROGRAMFILES64\obs-studio"
 !else
-OutFile "OBS-Studio-${SHORTVERSION}-Small-Installer.exe"
+InstallDir "$PROGRAMFILES32\obs-studio"
+!endif
+InstallDirRegKey HKLM "Software\${APPNAME}" ""
+
+!ifdef INSTALL64
+ OutFile "OBS-Studio-${SHORTVERSION}-Full-Installer-x64.exe"
+!else
+ OutFile "OBS-Studio-${SHORTVERSION}-Full-Installer-x86.exe"
 !endif
 
 ; Use compression
@@ -37,23 +39,29 @@ RequestExecutionLevel admin
 ; Modern interface settings
 !include "MUI.nsh"
 
+!define MUI_ICON "obs.ico"
+!define MUI_HEADERIMAGE_BITMAP "OBSHeader.bmp"
+!define MUI_WELCOMEFINISHPAGE_BITMAP "OBSBanner.bmp"
+
 !define MUI_ABORTWARNING
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_TEXT "Launch OBS Studio ${SHORTVERSION}"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchOBS"
 
-; GPL is not an EULA, no need to agree to it.
-!define MUI_LICENSEPAGE_BUTTON $(^NextBtn)
-!define MUI_LICENSEPAGE_TEXT_BOTTOM "You are now aware of your rights. Click Next to continue."
+!define MUI_WELCOMEPAGE_TEXT "This setup will guide you through installing OBS Studio.\n\nIt is recommended that you close all other applications before starting, including OBS Studio. This will make it possible to update relevant files without having to reboot your computer.\n\nClick Next to continue."
 
 !define MUI_PAGE_CUSTOMFUNCTION_LEAVE PreReqCheck
+
+!define MUI_HEADERIMAGE
+!define MUI_PAGE_HEADER_TEXT "License Information"
+!define MUI_PAGE_HEADER_SUBTEXT "Please review the license terms before installing OBS Studio."
+!define MUI_LICENSEPAGE_TEXT_TOP "Press Page Down or scroll to see the rest of the license."
+!define MUI_LICENSEPAGE_TEXT_BOTTOM " "
+!define MUI_LICENSEPAGE_BUTTON "&Next >"
 
 !insertmacro MUI_PAGE_WELCOME
 !insertmacro MUI_PAGE_LICENSE "new\core\data\obs-studio\license\gplv2.txt"
 !insertmacro MUI_PAGE_DIRECTORY
-!ifdef FULL
-	!insertmacro MUI_PAGE_COMPONENTS
-!endif
 !insertmacro MUI_PAGE_INSTFILES
 !insertmacro MUI_PAGE_FINISH
 
@@ -66,7 +74,14 @@ RequestExecutionLevel admin
 !insertmacro MUI_RESERVEFILE_LANGDLL
 
 Function PreReqCheck
+!ifdef INSTALL64
+	${if} ${RunningX64}
+	${Else}
+		MessageBox MB_OK|MB_ICONSTOP "This version of OBS Studio is not compatible with your system.  Please use the 32bit (x86) installer."
+	${EndIf}
 	; Abort on XP or lower
+!endif
+
 	${If} ${AtMostWinXP}
 		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows Vista SP2 or higher and cannot be installed on this version of Windows."
 		Quit
@@ -103,31 +118,38 @@ Function PreReqCheck
 		gotPatch:
 	${EndIf}
 
-	; 32 bit Visual Studio 2013 runtime check
+!ifdef INSTALL64
+	; 64 bit Visual Studio 2017 runtime check
 	ClearErrors
-	GetDLLVersion "MSVCR120.DLL" $R0 $R1
-	GetDLLVersion "MSVCP120.DLL" $R0 $R1
-	IfErrors vs2013Missing vs2013OK1
-	vs2013Missing:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Please make sure to install both vcredist_x64 and vcredist_x86. Would you like to download them?" IDYES vs2013true IDNO vs2013false
-		vs2013true:
-			ExecShell "open" "https://obsproject.com/visual-studio-2013-runtimes"
-		vs2013false:
+	SetOutPath "$TEMP\OBS"
+	File check_for_64bit_visual_studio_2017_runtimes.exe
+	ExecWait "$TEMP\OBS\check_for_64bit_visual_studio_2017_runtimes.exe" $R0
+	Delete "$TEMP\OBS\check_for_64bit_visual_studio_2017_runtimes.exe"
+	RMDir "$TEMP\OBS"
+	IntCmp $R0 126 vs2017Missing_64 vs2017OK_64
+	vs2017Missing_64:
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires.  Would you like to download them?" IDYES vs2017true_64 IDNO vs2017false_64
+		vs2017true_64:
+			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-64-bit"
+		vs2017false_64:
 		Quit
-	vs2013OK1:
+	vs2017OK_64:
 	ClearErrors
-
-	; 64 bit Visual Studio 2013 runtime check
-	${if} ${RunningX64}
-		SetOutPath "$TEMP\OBS"
-		File check_for_64bit_visual_studio_2013_runtimes.exe
-		ExecWait "$TEMP\OBS\check_for_64bit_visual_studio_2013_runtimes.exe" $R0
-		Delete "$TEMP\OBS\check_for_64bit_visual_studio_2013_runtimes.exe"
-		RMDir "$TEMP\OBS"
-		IntCmp $R0 126 vs2013Missing vs2013OK2
-		vs2013OK2:
-		ClearErrors
-	${endif}
+!else
+	; 32 bit Visual Studio 2017 runtime check
+	ClearErrors
+	GetDLLVersion "vcruntime140.DLL" $R0 $R1
+	GetDLLVersion "msvcp140.DLL" $R0 $R1
+	IfErrors vs2017Missing_32 vs2017OK_32
+	vs2017Missing_32:
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires.  Would you like to download them?" IDYES vs2017true_32 IDNO vs2017false_32
+		vs2017true_32:
+			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-32-bit"
+		vs2017false_32:
+		Quit
+	vs2017OK_32:
+	ClearErrors
+!endif
 
 	; DirectX Version Check
 	ClearErrors
@@ -178,6 +200,10 @@ Function PreReqCheck
 	GetDLLVersion "D3DCompiler_47.dll" $R0 $R1
 	IfErrors dxMissing47 dxOK
 	dxMissing47:
+	ClearErrors
+	GetDLLVersion "D3DCompiler_49.dll" $R0 $R1
+	IfErrors dxMissing49 dxOK
+	dxMissing49:
 	MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing DirectX components that ${APPNAME} requires. Would you like to download them?" IDYES dxtrue IDNO dxfalse
 	dxtrue:
 		ExecShell "open" "https://obsproject.com/go/dxwebsetup"
@@ -202,11 +228,15 @@ Function PreReqCheck
 		notRunning2:
 	${endif}
 
+	SetShellVarContext all
+
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook32.dll"
 	OBSInstallerUtils::AddInUseFileCheck "$INSTDIR\data\obs-plugins\win-capture\graphics-hook64.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$APPDATA\obs-studio-hook\graphics-hook32.dll"
+	OBSInstallerUtils::AddInUseFileCheck "$APPDATA\obs-studio-hook\graphics-hook64.dll"
 	OBSInstallerUtils::GetAppNameForInUseFiles
 	StrCmp $R0 "" gameCaptureNotRunning
-		MessageBox MB_OK|MB_ICONEXCLAMATION "Game Capture is still in use by the following applications:$\r$\n$\r$\n$R0$\r$\nPlease close these applications before installing a new version of OBS." /SD IDOK
+		MessageBox MB_OK|MB_ICONEXCLAMATION "Game Capture files are being used by the following applications:$\r$\n$\r$\n$R0$\r$\nPlease close these applications before installing a new version of OBS." /SD IDOK
 		Quit
 	gameCaptureNotRunning:
 FunctionEnd
@@ -216,11 +246,11 @@ Function filesInUse
 FunctionEnd
 
 Function LaunchOBS
-	${if} ${RunningX64}
-		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
-	${else}
-		Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"'
-	${endif}
+!ifdef INSTALL64
+	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"'
+!else
+	Exec '"$WINDIR\explorer.exe" "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"'
+!endif
 FunctionEnd
 
 Var outputErrors
@@ -238,18 +268,50 @@ Section "OBS Studio" SecCore
 	SetOutPath "$INSTDIR"
 	OBSInstallerUtils::KillProcess "obs-plugins\32bit\cef-bootstrap.exe"
 	OBSInstallerUtils::KillProcess "obs-plugins\64bit\cef-bootstrap.exe"
+
 	File /r "new\core\data"
+
+!ifdef INSTALL64
+	SetOutPath "$INSTDIR\bin"
+	File /r "new\core\bin\64bit"
+	SetOutPath "$INSTDIR\obs-plugins"
+	File /r "new\core\obs-plugins\64bit"
+!else
 	SetOutPath "$INSTDIR\bin"
 	File /r "new\core\bin\32bit"
 	SetOutPath "$INSTDIR\obs-plugins"
 	File /r "new\core\obs-plugins\32bit"
+!endif
 
+	# ----------------------------
+
+	SetShellVarContext all
+
+	SetOutPath "$INSTDIR"
+	File /r "new\obs-browser\data"
+	SetOutPath "$INSTDIR\obs-plugins"
+	OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
+	OBSInstallerUtils::KillProcess "32bit\obs-browser-page.exe"
 	${if} ${RunningX64}
-		SetOutPath "$INSTDIR\bin"
-		File /r "new\core\bin\64bit"
-		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "new\core\obs-plugins\64bit"
+		OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
+		OBSInstallerUtils::KillProcess "64bit\obs-browser-page.exe"
 	${endif}
+!ifdef INSTALL64
+	File /r "new\obs-browser\obs-plugins\64bit"
+	SetOutPath "$INSTDIR\bin\64bit"
+!else
+	File /r "new\obs-browser\obs-plugins\32bit"
+	SetOutPath "$INSTDIR\bin\32bit"
+!endif
+
+	# ----------------------------
+	# Copy game capture files to ProgramData
+	SetOutPath "$APPDATA\obs-studio-hook"
+	File "new\core\data\obs-plugins\win-capture\graphics-hook32.dll"
+	File "new\core\data\obs-plugins\win-capture\graphics-hook64.dll"
+	File "new\core\data\obs-plugins\win-capture\obs-vulkan32.json"
+	File "new\core\data\obs-plugins\win-capture\obs-vulkan64.json"
+	OBSInstallerUtils::AddAllApplicationPackages "$APPDATA\obs-studio-hook"
 
 	ClearErrors
 
@@ -258,102 +320,81 @@ Section "OBS Studio" SecCore
 
 	WriteUninstaller "$INSTDIR\uninstall.exe"
 
-	; Delete Old "Multiplatform" Shortcuts
-	Delete "$DESKTOP\OBS Multiplatform.lnk"
-	Delete "$SMPROGRAMS\OBS Multiplatform\OBS Multiplatform (32bit).lnk"
-	Delete "$SMPROGRAMS\OBS Multiplatform\Uninstall.lnk"
-	${if} ${RunningX64}
-		Delete "$SMPROGRAMS\OBS Multiplatform\OBS Multiplatform (64bit).lnk"
-	${endif}
+!ifdef INSTALL64
+	SetOutPath "$INSTDIR\bin\64bit"
+	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
+!else
+	SetOutPath "$INSTDIR\bin\32bit"
+	CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\32bit\obs32.exe"
+!endif
 
-	${if} ${RunningX64}
-		SetOutPath "$INSTDIR\bin\64bit"
-		CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\64bit\obs64.exe"
-	${else}
-		SetOutPath "$INSTDIR\bin\32bit"
-		CreateShortCut "$DESKTOP\OBS Studio.lnk" "$INSTDIR\bin\32bit\obs32.exe"
-	${endif}
+	CreateDirectory "$SMPROGRAMS\OBS Studio"
+
+!ifdef INSTALL64
+	SetOutPath "$INSTDIR\bin\64bit"
+	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk" "$INSTDIR\bin\64bit\obs64.exe"
+!else
 	SetOutPath "$INSTDIR\bin\32bit"
 	CreateDirectory "$SMPROGRAMS\OBS Studio"
 	CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk" "$INSTDIR\bin\32bit\obs32.exe"
+!endif
+
 	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
-
-	${if} ${RunningX64}
-		SetOutPath "$INSTDIR\bin\64bit"
-		CreateShortCut "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk" "$INSTDIR\bin\64bit\obs64.exe"
-	${endif}
-
-	SetOutPath "$INSTDIR\bin\32bit"
 
 	StrCmp $outputErrors "yes" 0 +2
 		Call filesInUse
 SectionEnd
 
-!ifdef FULL
-SectionGroup /e "Plugins" SecPlugins
-	Section "Browser Source" SecPlugins_Browser
-		; Set Section properties
-		SetOverwrite on
-		AllowSkipFiles off
-		SetShellVarContext all
-
-		SetOutPath "$INSTDIR\obs-plugins"
-		OBSInstallerUtils::KillProcess "32bit\cef-bootstrap.exe"
-		File /r "new\obs-browser\obs-plugins\32bit"
-
-		${if} ${RunningX64}
-			OBSInstallerUtils::KillProcess "64bit\cef-bootstrap.exe"
-			File /r "new\obs-browser\obs-plugins\64bit"
-		${endif}
-
-		SetOutPath "$INSTDIR\bin\32bit"
-	SectionEnd
-
-	!ifdef REALSENSE_PLUGIN
-	Section /o "Realsense Source" SecPlugins_Realsense
-		SetOverwrite on
-		AllowSkipFiles off
-		SetShellVarContext all
-
-		SetOutPath "$INSTDIR\obs-plugins"
-		File /r "new\realsense\obs-plugins\32bit"
-
-		${if} ${RunningX64}
-			File /r "new\realsense\obs-plugins\64bit"
-		${endif}
-
-		SetOutPath "$INSTDIR\data\obs-plugins"
-		File /r "new\realsense\data\obs-plugins\win-ivcam"
-
-		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /UnregServer'
-		ExecWait '"$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" /RegServer'
-
-		ReadRegStr $0 HKLM "Software\Intel\RSSDK\Dispatch" "Core"
-		${if} ${Errors}
-			ReadRegStr $0 HKLM "Software\Intel\RSSDK\v10\Dispatch" "Core"
-		${endif}
-
-		${if} ${Errors}
-			InitPluginsDir
-			SetOutPath "$PLUGINSDIR\realsense"
-
-			File "intel_rs_sdk_runtime_websetup_10.0.26.0396.exe"
-			ExecWait '"$PLUGINSDIR\realsense\intel_rs_sdk_runtime_websetup_10.0.26.0396.exe" --finstall=personify --fnone=all'
-		${endif}
-
-		SetOutPath "$INSTDIR\bin\32bit"
-	SectionEnd
-	!endif
-SectionGroupEnd
-!endif
-
 Section -FinishSection
+
+	SetShellVarContext all
+
+	# ---------------------------------------
+	# 64bit vulkan hook registry stuff
+
+	${if} ${RunningX64}
+		SetRegView 64
+		WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
+
+		ClearErrors
+		DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+		ClearErrors
+		WriteRegDWORD HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json" 0
+	${endif}
+
+	# ---------------------------------------
+	# 32bit vulkan hook registry stuff
+
+	SetRegView 32
+	WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
+
+	ClearErrors
+	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
+	ClearErrors
+	WriteRegDWORD HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json" 0
+
+	# ---------------------------------------
+	# Register virtual camera dlls
+
+	Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
+	${if} ${RunningX64}
+		Exec '"$SYSDIR\regsvr32.exe" /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+	${endif}
+
+	# ---------------------------------------
+
+	ClearErrors
+	SetRegView default
 
 	WriteRegStr HKLM "Software\${APPNAME}" "" "$INSTDIR"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayName" "${APPNAME}"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "UninstallString" "$INSTDIR\uninstall.exe"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "ProductID" "d16d2409-3151-4331-a9b1-dfd8cf3f0d9c"
+!ifdef INSTALL64
+	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\bin\64bit\obs64.exe"
+!else
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayIcon" "$INSTDIR\bin\32bit\obs32.exe"
+!endif
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "Publisher" "OBS Project"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "HelpLink" "https://obsproject.com"
 	WriteRegStr HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}" "DisplayVersion" "${APPVERSION}"
@@ -363,13 +404,6 @@ SectionEnd
 ; Modern install component descriptions
 !insertmacro MUI_FUNCTION_DESCRIPTION_BEGIN
 	!insertmacro MUI_DESCRIPTION_TEXT ${SecCore} "Core OBS Studio files"
-	!ifdef FULL
-		!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins} "Optional Plugins"
-		!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins_Browser} "Browser plugin (a source you can add to your scenes that displays web pages)"
-		!ifdef REALSENSE_PLUGIN
-			!insertmacro MUI_DESCRIPTION_TEXT ${SecPlugins_Realsense} "Plugin for Realsense cameras"
-		!endif
-	!endif
 !insertmacro MUI_FUNCTION_DESCRIPTION_END
 
 ;Uninstall section
@@ -377,7 +411,30 @@ Section "un.obs-studio Program Files" UninstallSection1
 
 	SectionIn RO
 
-	;Remove from registry...
+	; Remove hook files and vulkan registry
+	SetShellVarContext all
+
+	RMDir /r "$APPDATA\obs-studio-hook"
+
+	SetRegView 32
+	DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
+	DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan32.json"
+	${if} ${RunningX64}
+		SetRegView 64
+		DeleteRegValue HKCU "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+		DeleteRegValue HKLM "Software\Khronos\Vulkan\ImplicitLayers" "$APPDATA\obs-studio-hook\obs-vulkan64.json"
+	${endif}
+	SetRegView default
+	SetShellVarContext current
+	ClearErrors
+
+	; Unregister virtual camera dlls
+	Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module32.dll"'
+	${if} ${RunningX64}
+		Exec '"$SYSDIR\regsvr32.exe" /u /s "$INSTDIR\data\obs-plugins\win-dshow\obs-virtualcam-module64.dll"'
+	${endif}
+
+	; Remove from registry...
 	DeleteRegKey HKLM "Software\Microsoft\Windows\CurrentVersion\Uninstall\${APPNAME}"
 	DeleteRegKey HKLM "SOFTWARE\${APPNAME}"
 
@@ -409,7 +466,7 @@ Section "un.obs-studio Program Files" UninstallSection1
 SectionEnd
 
 Section /o "un.User Settings" UninstallSection2
-	RMDir /R "$APPDATA\obs-studio"
+	RMDir /r "$APPDATA\obs-studio"
 SectionEnd
 
 !insertmacro MUI_UNFUNCTION_DESCRIPTION_BEGIN
@@ -421,7 +478,7 @@ SectionEnd
 VIProductVersion "${APPVERSION}.0"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "ProductName" "OBS Studio"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "CompanyName" "obsproject.com"
-VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(c) 2012-2016"
+VIAddVersionKey /LANG=${LANG_ENGLISH} "LegalCopyright" "(c) 2012-2020"
 ; FileDescription is what shows in the UAC elevation prompt when signed
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileDescription" "OBS Studio"
 VIAddVersionKey /LANG=${LANG_ENGLISH} "FileVersion" "1.0"

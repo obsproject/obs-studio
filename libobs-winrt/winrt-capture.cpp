@@ -30,14 +30,10 @@ try {
 
 extern "C" EXPORT BOOL winrt_capture_cursor_toggle_supported()
 try {
-#ifdef NTDDI_WIN10_VB
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
 		IsPropertyPresent(
 			L"Windows.Graphics.Capture.GraphicsCaptureSession",
 			L"IsCursorCaptureEnabled");
-#else
-	return false;
-#endif
 } catch (const winrt::hresult_error &err) {
 	blog(LOG_ERROR, "winrt_capture_cursor_toggle_supported (0x%08X): %ls",
 	     err.to_abi(), err.message().c_str());
@@ -62,11 +58,14 @@ static winrt::com_ptr<T> GetDXGIInterfaceFromObject(
 static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 			   D3D11_BOX *client_box)
 {
-	RECT client_rect, window_rect{};
+	RECT client_rect{}, window_rect{};
 	POINT upper_left{};
 
-	const bool client_box_available =
-		GetClientRect(window, &client_rect) &&
+	/* check iconic (minimized) twice, ABA is very unlikely */
+	bool client_box_available =
+		!IsIconic(window) && GetClientRect(window, &client_rect) &&
+		!IsIconic(window) && (client_rect.right > 0) &&
+		(client_rect.bottom > 0) &&
 		(DwmGetWindowAttribute(window, DWMWA_EXTENDED_FRAME_BOUNDS,
 				       &window_rect,
 				       sizeof(window_rect)) == S_OK) &&
@@ -100,6 +99,9 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 
 		client_box->front = 0;
 		client_box->back = 1;
+
+		client_box_available = (client_box->right <= width) &&
+				       (client_box->bottom <= height);
 	}
 
 	return client_box_available;
@@ -123,6 +125,8 @@ struct winrt_capture {
 	winrt::Windows::Graphics::Capture::GraphicsCaptureSession session{
 		nullptr};
 	winrt::Windows::Graphics::SizeInt32 last_size;
+	winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker
+		closed;
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::
 		FrameArrived_revoker frame_arrived;
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker item_closed;
@@ -130,11 +134,8 @@ struct winrt_capture {
 	uint32_t texture_width;
 	uint32_t texture_height;
 	D3D11_BOX client_box;
-	bool client_box_available;
-	bool capture_closed;
 
-	bool thread_changed;
-	bool active;
+	BOOL active;
 	struct winrt_capture *next;
 
 	void draw_cursor()
@@ -188,11 +189,14 @@ struct winrt_capture {
 
 		DestroyIcon(icon);
 	}
-	void on_item_closed(winrt::Windows::Graphics::Capture::GraphicsCaptureItem const& sender,
-				winrt::Windows::Foundation::IInspectable const&)
+
+	void on_closed(
+		winrt::Windows::Graphics::Capture::GraphicsCaptureItem const &,
+		winrt::Windows::Foundation::IInspectable const &)
 	{
-		capture_closed = true;
+		active = FALSE;
 	}
+
 	void on_frame_arrived(winrt::Windows::Graphics::Capture::
 				      Direct3D11CaptureFramePool const &sender,
 			      winrt::Windows::Foundation::IInspectable const &)
@@ -212,50 +216,53 @@ struct winrt_capture {
 		D3D11_TEXTURE2D_DESC desc;
 		frame_surface->GetDesc(&desc);
 
-		client_box_available = false;
-		if (client_area) {
-			client_box_available = get_client_box(
-				window, desc.Width, desc.Height, &client_box);
-		}
-
-		if (client_box_available) {
-			texture_width = client_box.right - client_box.left;
-			texture_height = client_box.bottom - client_box.top;
-		} else {
-			texture_width = desc.Width;
-			texture_height = desc.Height;
-		}
-
-		if (texture) {
-			if (texture_width != gs_texture_get_width(texture) ||
-			    texture_height != gs_texture_get_height(texture)) {
-				gs_texture_destroy(texture);
-				texture = nullptr;
+		if (!client_area || get_client_box(window, desc.Width,
+						   desc.Height, &client_box)) {
+			if (client_area) {
+				texture_width =
+					client_box.right - client_box.left;
+				texture_height =
+					client_box.bottom - client_box.top;
+			} else {
+				texture_width = desc.Width;
+				texture_height = desc.Height;
 			}
-		}
 
-		if (!texture) {
-			texture = gs_texture_create_gdi(texture_width,
-							texture_height);
-		}
+			if (texture) {
+				if (texture_width !=
+					    gs_texture_get_width(texture) ||
+				    texture_height !=
+					    gs_texture_get_height(texture)) {
+					gs_texture_destroy(texture);
+					texture = nullptr;
+				}
+			}
 
-		if (client_box_available) {
-			context->CopySubresourceRegion(
-				(ID3D11Texture2D *)gs_texture_get_obj(texture),
-				0, 0, 0, 0, frame_surface.get(), 0,
-				&client_box);
-		} else {
-			/* if they gave an SRV, we could avoid this copy */
-			context->CopyResource(
-				(ID3D11Texture2D *)gs_texture_get_obj(texture),
-				frame_surface.get());
-		}
+			if (!texture) {
+				texture = gs_texture_create_gdi(texture_width,
+								texture_height);
+			}
 
-		if (capture_cursor && cursor_visible) {
-			draw_cursor();
-		}
+			if (client_area) {
+				context->CopySubresourceRegion(
+					(ID3D11Texture2D *)gs_texture_get_obj(
+						texture),
+					0, 0, 0, 0, frame_surface.get(), 0,
+					&client_box);
+			} else {
+				/* if they gave an SRV, we could avoid this copy */
+				context->CopyResource(
+					(ID3D11Texture2D *)gs_texture_get_obj(
+						texture),
+					frame_surface.get());
+			}
 
-		texture_written = true;
+			if (capture_cursor && cursor_visible) {
+				draw_cursor();
+			}
+
+			texture_written = true;
+		}
 
 		if (frame_content_size.Width != last_size.Width ||
 		    frame_content_size.Height != last_size.Height) {
@@ -277,7 +284,8 @@ static struct winrt_capture *capture_list;
 static void winrt_capture_device_loss_release(void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
-	capture->item_closed.revoke();
+	capture->active = FALSE;
+
 	capture->frame_arrived.revoke();
 	capture->frame_pool.Close();
 	capture->session.Close();
@@ -336,10 +344,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		frame_pool.CreateCaptureSession(item);
 
 	/* disable cursor capture if possible since ours performs better */
-#ifdef NTDDI_WIN10_VB
 	if (winrt_capture_cursor_toggle_supported())
 		session.IsCursorCaptureEnabled(false);
-#endif
 
 	capture->item = item;
 	capture->device = device;
@@ -349,8 +355,16 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
-	capture->item_closed = capture->item.Closed(winrt::auto_revoke, {capture, &winrt_capture::on_item_closed});
-	session.StartCapture();
+
+	try {
+		session.StartCapture();
+		capture->active = TRUE;
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR, "StartCapture (0x%08X): %ls", err.to_abi(),
+		     err.message().c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "StartCapture (0x%08X)", winrt::to_hresult());
+	}
 }
 
 extern "C" EXPORT struct winrt_capture *
@@ -411,10 +425,8 @@ try {
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
 		winrt_capture_cursor_toggle_supported();
-#ifdef NTDDI_WIN10_VB
 	if (cursor_toggle_supported)
 		session.IsCursorCaptureEnabled(false);
-#endif
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->capture_closed = false;
@@ -427,6 +439,8 @@ try {
 	capture->frame_pool = frame_pool;
 	capture->session = session;
 	capture->last_size = size;
+	capture->closed = item.Closed(winrt::auto_revoke,
+				      {capture, &winrt_capture::on_closed});
 	capture->frame_arrived = frame_pool.FrameArrived(
 		winrt::auto_revoke,
 		{capture, &winrt_capture::on_frame_arrived});
@@ -437,6 +451,7 @@ try {
 	capture_list = capture;
 
 	session.StartCapture();
+	capture->active = TRUE;
 
 	gs_device_loss callbacks;
 	callbacks.device_loss_release = winrt_capture_device_loss_release;
@@ -478,6 +493,7 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 
 		capture->item_closed.revoke();
 		capture->frame_arrived.revoke();
+		capture->closed.revoke();
 		capture->frame_pool.Close();
 		capture->session.Close();
 
@@ -505,6 +521,11 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 	gs_technique_end(tech);
 }
 
+extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)
+{
+	return capture->active;
+}
+
 extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 						 BOOL visible)
 {
@@ -514,7 +535,7 @@ extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
 					    gs_effect_t *effect)
 {
-	if (capture && capture->texture_written)
+	if (capture->texture_written)
 		draw_texture(capture, effect);
 }
 
@@ -528,12 +549,6 @@ extern "C" EXPORT uint32_t
 winrt_capture_height(const struct winrt_capture *capture)
 {
 	return capture ? capture->texture_height : 0;
-}
-
-extern "C" EXPORT bool
-winrt_capture_is_closed(const struct winrt_capture *capture)
-{
-	return capture->capture_closed;
 }
 
 extern "C" EXPORT void winrt_capture_thread_start()

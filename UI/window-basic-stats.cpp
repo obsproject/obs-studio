@@ -182,6 +182,9 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	}
 
 	obs_frontend_add_event_callback(OBSFrontendEvent, this);
+
+	if (obs_frontend_recording_active())
+		StartRecTimeLeft();
 }
 
 void OBSBasicStats::closeEvent(QCloseEvent *event)
@@ -412,15 +415,20 @@ void OBSBasicStats::Update()
 
 void OBSBasicStats::StartRecTimeLeft()
 {
+	if (recTimeLeft.isActive())
+		ResetRecTimeLeft();
+
 	recordTimeLeft->setText(QTStr("Calculating"));
 	recTimeLeft.start();
 }
 
 void OBSBasicStats::ResetRecTimeLeft()
 {
-	bitrates.clear();
-	recTimeLeft.stop();
-	recordTimeLeft->setText(QTStr(""));
+	if (recTimeLeft.isActive()) {
+		bitrates.clear();
+		recTimeLeft.stop();
+		recordTimeLeft->setText(QTStr(""));
+	}
 }
 
 void OBSBasicStats::RecordingTimeLeft()

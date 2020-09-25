@@ -18,11 +18,15 @@
 #include "../util/bmem.h"
 #include "video-scaler.h"
 
+#include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
 
 struct video_scaler {
 	struct SwsContext *swscale;
 	int src_height;
+	int dst_heights[4];
+	uint8_t *dst_pointers[4];
+	int dst_linesizes[4];
 };
 
 static inline enum AVPixelFormat
@@ -87,16 +91,9 @@ static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 
 static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 {
-	switch (cs) {
-	case VIDEO_CS_DEFAULT:
-		return sws_getCoefficients(SWS_CS_ITU601);
-	case VIDEO_CS_601:
-		return sws_getCoefficients(SWS_CS_ITU601);
-	case VIDEO_CS_709:
-		return sws_getCoefficients(SWS_CS_ITU709);
-	default:
-		return sws_getCoefficients(SWS_CS_ITU601);
-	}
+	const int colorspace = (cs == VIDEO_CS_601) ? SWS_CS_ITU601
+						    : SWS_CS_ITU709;
+	return sws_getCoefficients(colorspace);
 }
 
 static inline int get_ffmpeg_range_type(enum video_range_type type)
@@ -139,6 +136,28 @@ int video_scaler_create(video_scaler_t **scaler_out,
 	scaler = bzalloc(sizeof(struct video_scaler));
 	scaler->src_height = src->height;
 
+	const AVPixFmtDescriptor *desc = av_pix_fmt_desc_get(format_dst);
+	bool has_plane[4] = {0};
+	for (size_t i = 0; i < 4; i++)
+		has_plane[desc->comp[i].plane] = 1;
+
+	scaler->dst_heights[0] = dst->height;
+	for (size_t i = 1; i < 4; ++i) {
+		if (has_plane[i]) {
+			const int s = (i == 1 || i == 2) ? desc->log2_chroma_h
+							 : 0;
+			scaler->dst_heights[i] = dst->height >> s;
+		}
+	}
+
+	ret = av_image_alloc(scaler->dst_pointers, scaler->dst_linesizes,
+			     dst->width, dst->height, format_dst, 32);
+	if (ret < 0) {
+		blog(LOG_WARNING,
+		     "video_scaler_create: av_image_alloc failed: %d", ret);
+		goto fail;
+	}
+
 	scaler->swscale = sws_getCachedContext(NULL, src->width, src->height,
 					       format_src, dst->width,
 					       dst->height, format_dst,
@@ -169,6 +188,10 @@ void video_scaler_destroy(video_scaler_t *scaler)
 {
 	if (scaler) {
 		sws_freeContext(scaler->swscale);
+
+		if (scaler->dst_pointers[0])
+			av_freep(scaler->dst_pointers);
+
 		bfree(scaler);
 	}
 }
@@ -182,12 +205,36 @@ bool video_scaler_scale(video_scaler_t *scaler, uint8_t *output[],
 		return false;
 
 	int ret = sws_scale(scaler->swscale, input, (const int *)in_linesize, 0,
-			    scaler->src_height, output,
-			    (const int *)out_linesize);
+			    scaler->src_height, scaler->dst_pointers,
+			    scaler->dst_linesizes);
 	if (ret <= 0) {
 		blog(LOG_ERROR, "video_scaler_scale: sws_scale failed: %d",
 		     ret);
 		return false;
+	}
+
+	for (size_t plane = 0; plane < 4; ++plane) {
+		if (!scaler->dst_pointers[plane])
+			continue;
+
+		const size_t scaled_linesize = scaler->dst_linesizes[plane];
+		const size_t plane_linesize = out_linesize[plane];
+		uint8_t *dst = output[plane];
+		const uint8_t *src = scaler->dst_pointers[plane];
+		const size_t height = scaler->dst_heights[plane];
+		if (scaled_linesize == plane_linesize) {
+			memcpy(dst, src, scaled_linesize * height);
+		} else {
+			size_t linesize = scaled_linesize;
+			if (linesize > plane_linesize)
+				linesize = plane_linesize;
+
+			for (size_t y = 0; y < height; y++) {
+				memcpy(dst, src, linesize);
+				dst += plane_linesize;
+				src += scaled_linesize;
+			}
+		}
 	}
 
 	return true;

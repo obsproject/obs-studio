@@ -84,7 +84,7 @@ static inline void darray_reserve(const size_t element_size, struct darray *dst,
 				  const size_t capacity)
 {
 	void *ptr;
-	if (capacity == 0 || capacity <= dst->num)
+	if (capacity == 0 || capacity <= dst->capacity)
 		return;
 
 	ptr = bmalloc(element_size * capacity);

@@ -110,7 +110,7 @@ static int utf8_forbidden(unsigned char octet)
  *
  *	It takes the following arguments:
  *	in	- input UTF-8 string. It can be null-terminated.
- *	insize	- size of input string in bytes.  If insize is 0, 
+ *	insize	- size of input string in bytes.  If insize is 0,
  *	        function continues until a null terminator is reached.
  *	out	- result buffer for UCS-4 string. If out is NULL,
  *		function returns size of result buffer.
@@ -143,7 +143,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	total = 0;
 	p = (unsigned char *)in;
 	lim = (insize != 0) ? (p + insize) : (unsigned char *)-1;
-	wlim = out + outsize;
+	wlim = out == NULL ? NULL : out + outsize;
 
 	for (; p < lim; p += n) {
 		if (!*p)
@@ -272,7 +272,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 	w = (wchar_t *)in;
 	wlim = (insize != 0) ? (w + insize) : (wchar_t *)-1;
 	p = (unsigned char *)out;
-	lim = p + outsize;
+	lim = out == NULL ? NULL : p + outsize;
 	total = 0;
 
 	for (; w < wlim; w++) {

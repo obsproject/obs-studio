@@ -60,7 +60,12 @@
 
 #else
 
+#if defined(__aarch64__) || defined(__arm__)
+#include <arm_neon.h>
+#include "sse2neon.h"
+#else
 #include <xmmintrin.h>
 #include <emmintrin.h>
+#endif
 
 #endif

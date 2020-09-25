@@ -137,7 +137,7 @@ MODULE_EXTERN const char *obs_module_text(const char *lookup_string);
 
 /** Helper function for looking up locale if default locale handler was used,
  * returns true if text found, otherwise false */
-MODULE_EXTERN bool obs_module_get_string(const char *lookup_string,
+MODULE_EXPORT bool obs_module_get_string(const char *lookup_string,
 					 const char **translated_string);
 
 /** Helper function that returns the current module */

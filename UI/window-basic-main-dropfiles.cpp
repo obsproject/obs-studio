@@ -51,8 +51,11 @@ static string GenerateSourceName(const char *base)
 		}
 
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
+
 		if (!source)
 			return name;
+		else
+			obs_source_release(source);
 	}
 }
 

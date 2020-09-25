@@ -211,6 +211,17 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
 	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
+	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+	if ((qsv_platform >= QSV_CPU_PLATFORM_ICL) &&
+	    (pParams->nbFrames == 0) &&
+	    (m_ver.Major == 1 && m_ver.Minor >= 31)) {
+		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA_HRD ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA)
+			pParams->nRateControl = MFX_RATECONTROL_VBR;
+	}
+
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
 	switch (pParams->nRateControl) {
@@ -268,10 +279,23 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 			m_co2.MBBRC = MFX_CODINGOPTION_ON;
 		if (pParams->nbFrames > 1)
 			m_co2.BRefType = MFX_B_REF_PYRAMID;
+		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+			m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
+			if (pParams->nRateControl == MFX_RATECONTROL_CBR ||
+			    pParams->nRateControl == MFX_RATECONTROL_VBR) {
+				m_co2.LookAheadDepth = pParams->nLADEPTH;
+			}
+		}
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
 	}
 
-	if (pParams->bCQM) {
+	if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+		memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
+		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+		m_co3.Header.BufferSz = sizeof(m_co3);
+		m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
+		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co3;
+	} else if (pParams->bCQM) {
 		if (m_ver.Major == 1 && m_ver.Minor >= 16) {
 			memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
 			m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
@@ -296,6 +320,11 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+
+	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
+		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
+	}
 
 	return true;
 }

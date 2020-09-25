@@ -274,14 +274,14 @@ static bool VerifyDigitalSignature(uint8_t *buf, size_t len, uint8_t *sig,
 
 	if (!CryptDecodeObjectEx(X509_ASN_ENCODING, X509_PUBLIC_KEY_INFO,
 				 binaryKey, binaryKeyLen,
-				 CRYPT_ENCODE_ALLOC_FLAG, nullptr, &publicPBLOB,
+				 CRYPT_DECODE_ALLOC_FLAG, nullptr, &publicPBLOB,
 				 &iPBLOBSize))
 		return false;
 
 	if (!CryptDecodeObjectEx(X509_ASN_ENCODING, RSA_CSP_PUBLICKEYBLOB,
 				 publicPBLOB->PublicKey.pbData,
 				 publicPBLOB->PublicKey.cbData,
-				 CRYPT_ENCODE_ALLOC_FLAG, nullptr,
+				 CRYPT_DECODE_ALLOC_FLAG, nullptr,
 				 &rsaPublicBLOB, &rsaPublicBLOBSize))
 		return false;
 

@@ -22,5 +22,6 @@ add_library(image-source MODULE
 target_link_libraries(image-source
 	libobs
 	${image-source_PLATFORM_DEPS})
+set_target_properties(image-source PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(image-source data)

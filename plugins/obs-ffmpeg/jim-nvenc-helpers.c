@@ -29,6 +29,11 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 			encoder, obs_module_text("NVENC.UnsupportedDevice"));
 		break;
 
+	case NV_ENC_ERR_INVALID_VERSION:
+		obs_encoder_set_last_error(
+			encoder, obs_module_text("NVENC.OutdatedDriver"));
+		break;
+
 	default:
 		dstr_printf(&error_message,
 			    "NVENC Error: %s: %s failed: %d (%s)", func, call,

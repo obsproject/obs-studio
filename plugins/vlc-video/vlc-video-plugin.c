@@ -24,6 +24,7 @@ LIBVLC_MEDIA_NEW_LOCATION libvlc_media_new_location_;
 LIBVLC_MEDIA_ADD_OPTION libvlc_media_add_option_;
 LIBVLC_MEDIA_RELEASE libvlc_media_release_;
 LIBVLC_MEDIA_RELEASE libvlc_media_retain_;
+LIBVLC_MEDIA_GET_META libvlc_media_get_meta_;
 
 /* libvlc media player */
 LIBVLC_MEDIA_PLAYER_NEW libvlc_media_player_new_;
@@ -41,6 +42,7 @@ LIBVLC_VIDEO_GET_SIZE libvlc_video_get_size_;
 LIBVLC_MEDIA_PLAYER_EVENT_MANAGER libvlc_media_player_event_manager_;
 LIBVLC_MEDIA_PLAYER_GET_STATE libvlc_media_player_get_state_;
 LIBVLC_MEDIA_PLAYER_GET_LENGTH libvlc_media_player_get_length_;
+LIBVLC_MEDIA_PLAYER_GET_MEDIA libvlc_media_player_get_media_;
 
 /* libvlc media list */
 LIBVLC_MEDIA_LIST_NEW libvlc_media_list_new_;
@@ -99,6 +101,7 @@ static bool load_vlc_funcs(void)
 	LOAD_VLC_FUNC(libvlc_media_add_option);
 	LOAD_VLC_FUNC(libvlc_media_release);
 	LOAD_VLC_FUNC(libvlc_media_retain);
+	LOAD_VLC_FUNC(libvlc_media_get_meta);
 
 	/* libvlc media player */
 	LOAD_VLC_FUNC(libvlc_media_player_new);
@@ -116,6 +119,7 @@ static bool load_vlc_funcs(void)
 	LOAD_VLC_FUNC(libvlc_media_player_event_manager);
 	LOAD_VLC_FUNC(libvlc_media_player_get_state);
 	LOAD_VLC_FUNC(libvlc_media_player_get_length);
+	LOAD_VLC_FUNC(libvlc_media_player_get_media);
 
 	/* libvlc media list */
 	LOAD_VLC_FUNC(libvlc_media_list_new);

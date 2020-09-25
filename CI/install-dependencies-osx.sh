@@ -28,7 +28,14 @@ sudo installer -pkg ./Packages.pkg -target /
 brew update
 
 #Base OBS Deps and ccache
-brew install jack speexdsp ccache mbedtls freetype fdk-aac
+for DEPENDENCY in jack speexdsp ccache mbedtls freetype fdk-aac cmocka; do
+    if [ ! -d "$(brew --cellar)/${DEPENDENCY}" ]; then
+        brew install $DEPENDENCY
+    else
+        brew upgrade $DEPENDENCY
+    fi
+done
+
 brew install https://gist.githubusercontent.com/DDRBoxman/9c7a2b08933166f4b61ed9a44b242609/raw/ef4de6c587c6bd7f50210eccd5bd51ff08e6de13/qt.rb
 if [ -d "$(brew --cellar)/swig" ]; then
     brew unlink swig

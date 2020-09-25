@@ -287,7 +287,10 @@ char *os_get_executable_path_ptr(const char *name)
 	}
 	count = pathlen;
 #else
-	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX);
+	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX - 1);
+	if (count >= 0) {
+		exe[count] = '\0';
+	}
 #endif
 	const char *path_out = NULL;
 	struct dstr path;

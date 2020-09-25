@@ -205,6 +205,7 @@ OBSBasicProperties::~OBSBasicProperties()
 	}
 	obs_source_dec_showing(source);
 	main->SaveProject();
+	main->UpdateContextBar();
 }
 
 void OBSBasicProperties::AddPreviewButton()

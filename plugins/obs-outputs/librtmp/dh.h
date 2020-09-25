@@ -370,6 +370,7 @@ DHComputeSharedSecretKey(MDH *dh, uint8_t *pubkey, size_t nPubkeyLen,
 
     MP_gethex(q1, Q1024, len);
     assert(len);
+    UNUSED_PARAMETER(len); // Make GCC happy len is used in release.
 
     if (isValidPublicKey(pubkeyBn, dh->p, q1))
         res = MDH_compute_key(secret, nPubkeyLen, pubkeyBn, dh);
