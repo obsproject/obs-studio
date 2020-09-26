@@ -85,9 +85,6 @@ string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
-bool remuxAfterRecord = false;
-string remuxFilename;
-
 bool restart = false;
 
 QPointer<OBSLogViewer> obsLogViewer;
@@ -1662,18 +1659,8 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				 const char *format)
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-
-	if ((strcmp(extension, "mp4") == 0) && autoRemux)
-		extension = "mkv";
-
 	BPtr<char> filename =
 		os_generate_formatted_filename(extension, !noSpace, format);
-
-	remuxFilename = string(filename);
-	remuxAfterRecord = autoRemux;
-
 	return string(filename);
 }
 

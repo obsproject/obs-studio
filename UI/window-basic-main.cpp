@@ -5846,30 +5846,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 void OBSBasic::AutoRemux()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	bool advanced = astrcmpi(mode, "Advanced") == 0;
+	QString input = outputHandler->lastRecordingPath.c_str();
+	if (input.isEmpty())
+		return;
 
-	const char *path = !advanced ? config_get_string(basicConfig,
-							 "SimpleOutput",
-							 "FilePath")
-				     : config_get_string(basicConfig, "AdvOut",
-							 "RecFilePath");
-
-	/* do not save if using FFmpeg output in advanced output mode */
-	if (advanced) {
-		const char *type =
-			config_get_string(basicConfig, "AdvOut", "RecType");
-		if (astrcmpi(type, "FFmpeg") == 0) {
-			return;
-		}
-	}
-
-	QString input;
-	input += path;
-	input += "/";
-	input += remuxFilename.c_str();
-
-	QFileInfo fi(remuxFilename.c_str());
+	QFileInfo fi(input);
 	QString suffix = fi.suffix();
 
 	/* do not remux if lossless */
@@ -5877,11 +5858,13 @@ void OBSBasic::AutoRemux()
 		return;
 	}
 
+	QString path = fi.path();
+
 	QString output = input;
 	output.resize(output.size() - suffix.size());
 	output += "mp4";
 
-	OBSRemux *remux = new OBSRemux(path, this, true);
+	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
 	remux->show();
 	remux->AutoRemux(input, output);
 }
@@ -6019,8 +6002,7 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (diskFullTimer->isActive())
 		diskFullTimer->stop();
 
-	if (remuxAfterRecord)
-		AutoRemux();
+	AutoRemux();
 
 	OnDeactivate();
 	UpdatePause(false);

@@ -948,9 +948,10 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 				 usingRecordingPreset ? rbSize : 0);
 	} else {
 		f = GetFormatString(filenameFormat, nullptr, nullptr);
-		strPath = GetOutputFilename(path, ffmpegOutput ? "avi" : format,
-					    noSpace, overwriteIfExists,
-					    f.c_str());
+		strPath = GetRecordingFilename(path,
+					       ffmpegOutput ? "avi" : format,
+					       noSpace, overwriteIfExists,
+					       f.c_str(), ffmpegOutput);
 		obs_data_set_string(settings, ffmpegOutput ? "url" : "path",
 				    strPath.c_str());
 	}
@@ -1701,9 +1702,10 @@ bool AdvancedOutput::StartRecording()
 						  ? "FFFileNameWithoutSpace"
 						  : "RecFileNameWithoutSpace");
 
-		string strPath = GetOutputFilename(path, recFormat, noSpace,
-						   overwriteIfExists,
-						   filenameFormat);
+		string strPath = GetRecordingFilename(path, recFormat, noSpace,
+						      overwriteIfExists,
+						      filenameFormat,
+						      ffmpegRecording);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path",
@@ -1845,6 +1847,25 @@ bool AdvancedOutput::ReplayBufferActive() const
 }
 
 /* ------------------------------------------------------------------------ */
+
+bool BasicOutputHandler::SetupAutoRemux(const char *&ext)
+{
+	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
+	if (autoRemux && strcmp(ext, "mp4") == 0)
+		ext = "mkv";
+	return autoRemux;
+}
+
+std::string
+BasicOutputHandler::GetRecordingFilename(const char *path, const char *ext,
+					 bool noSpace, bool overwrite,
+					 const char *format, bool ffmpeg)
+{
+	bool remux = !ffmpeg && SetupAutoRemux(ext);
+	string dst = GetOutputFilename(path, ext, noSpace, overwrite, format);
+	lastRecordingPath = remux ? dst : "";
+	return dst;
+}
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main)
 {
