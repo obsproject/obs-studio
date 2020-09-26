@@ -123,7 +123,7 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	switch (data->pixfmt) {
 	case V4L2_PIX_FMT_NV12:
 		frame->linesize[0] = data->linesize;
-		frame->linesize[1] = data->linesize / 2;
+		frame->linesize[1] = data->linesize;
 		plane_offsets[1] = data->linesize * data->height;
 		break;
 	case V4L2_PIX_FMT_YVU420:
