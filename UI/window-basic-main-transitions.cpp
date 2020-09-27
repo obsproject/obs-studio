@@ -73,8 +73,11 @@ void OBSBasic::InitDefaultTransitions()
 
 			obs_source_release(tr);
 		} else {
+			QString addString = QTStr("Add") +
+					    QStringLiteral(": ") +
+					    QT_UTF8(name);
 			ui->transitions->addItem(
-				QTStr("Add ") + QT_UTF8(name),
+				addString,
 				QVariant::fromValue(QString(QT_UTF8(id))));
 		}
 	}
