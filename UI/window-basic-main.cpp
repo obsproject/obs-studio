@@ -1940,7 +1940,7 @@ void OBSBasic::OnFirstLoad()
 	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
 		connect(wnit, &WhatsNewInfoThread::Result, this,
-				&OBSBasic::ReceivedIntroJson);
+			&OBSBasic::ReceivedIntroJson);
 
 		introCheckThread.reset(wnit);
 		introCheckThread->start();
@@ -2060,7 +2060,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		new WhatsNewBrowserInitThread(QT_UTF8(info_url.c_str()));
 
 	connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
-			&OBSBasic::ShowWhatsNew);
+		&OBSBasic::ShowWhatsNew);
 
 	whatsNewInitThread.reset(wnbit);
 	whatsNewInitThread->start();
