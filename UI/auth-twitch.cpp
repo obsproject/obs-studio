@@ -441,7 +441,6 @@ std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
 		return nullptr;
 	}
 
-	std::string error;
 	if (auth->GetChannelInfo()) {
 		return auth;
 	}

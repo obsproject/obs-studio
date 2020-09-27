@@ -233,7 +233,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 		}
 
 		name = attr.namedItem("cname").nodeValue().toStdString();
-		if (name == "" || name[0] == '\0')
+		if (name.empty() || name[0] == '\0')
 			name = attr.namedItem("name").nodeValue().toStdString();
 
 		temp_name = name;
@@ -264,7 +264,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 		} else if (type == 2) {
 			QString audio = attr.namedItem("itemaudio").nodeValue();
 
-			if (audio == "") {
+			if (audio.isEmpty()) {
 				source["id"] = "dshow_input";
 			} else {
 				source["id"] = "wasapi_input_capture";
@@ -294,7 +294,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 			QString display =
 				o_attr.namedItem("desktop").nodeValue();
 
-			if (display != "") {
+			if (!display.isEmpty()) {
 				source["id"] = "monitor_capture";
 				int cursor = attr.namedItem("ScrCapShowMouse")
 						     .nodeValue()
@@ -312,7 +312,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 
 				int pos = exec.lastIndexOf('\\');
 
-				if (_class == "") {
+				if (_class.isEmpty()) {
 					_class = "class";
 				}
 
@@ -421,7 +421,7 @@ static Json::object parse_scenes(QDomElement &scenes)
 			QString name = attr.namedItem("name").nodeValue();
 			QString id = attr.namedItem("id").nodeValue();
 
-			if (first == "")
+			if (first.isEmpty())
 				first = name;
 
 			Json out = Json::object{
@@ -492,7 +492,7 @@ bool XSplitImporter::Check(const string &path)
 	string pos = file_data.Get();
 
 	string line = ReadLine(pos);
-	while (line != "") {
+	while (!line.empty()) {
 		if (line.substr(0, 5) == "<?xml") {
 			line = ReadLine(pos);
 		} else {

@@ -1939,14 +1939,11 @@ void OBSBasic::OnFirstLoad()
 	/* Attempt to load init screen if available */
 	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
-		if (wnit) {
-			connect(wnit, &WhatsNewInfoThread::Result, this,
+		connect(wnit, &WhatsNewInfoThread::Result, this,
 				&OBSBasic::ReceivedIntroJson);
-		}
-		if (wnit) {
-			introCheckThread.reset(wnit);
-			introCheckThread->start();
-		}
+
+		introCheckThread.reset(wnit);
+		introCheckThread->start();
 	}
 #endif
 
@@ -2061,14 +2058,13 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 	WhatsNewBrowserInitThread *wnbit =
 		new WhatsNewBrowserInitThread(QT_UTF8(info_url.c_str()));
-	if (wnbit) {
-		connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
+
+	connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
 			&OBSBasic::ShowWhatsNew);
-	}
-	if (wnbit) {
-		whatsNewInitThread.reset(wnbit);
-		whatsNewInitThread->start();
-	}
+
+	whatsNewInitThread.reset(wnbit);
+	whatsNewInitThread->start();
+
 #else
 	UNUSED_PARAMETER(text);
 #endif
@@ -7051,8 +7047,7 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 	OBSProjector *projector =
 		new OBSProjector(nullptr, source, monitor, type);
 
-	if (projector)
-		projectors.emplace_back(projector);
+	projectors.emplace_back(projector);
 
 	return projector;
 }

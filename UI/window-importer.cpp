@@ -283,7 +283,7 @@ void ImporterModel::checkInputPath(int row)
 		std::string program = DetectProgram(entry.path.toStdString());
 		entry.program = QTStr(program.c_str());
 
-		if (program == "") {
+		if (program.empty()) {
 			entry.selected = false;
 		} else {
 			std::string name =

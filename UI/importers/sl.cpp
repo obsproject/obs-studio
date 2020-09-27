@@ -318,7 +318,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		while (source_name_exists(out_sources, out_name))
 			out_name = name + "(" + to_string(copy++) + ")";
 
-		if (scene_name == "")
+		if (scene_name.empty())
 			scene_name = out_name;
 
 		string sl_id = scene["id"].string_value();
@@ -399,7 +399,7 @@ string SLImporter::Name(const string &path)
 				string c_name = c["name"].string_value();
 
 				if (c_id == manifest_file) {
-					name = c_name;
+					name = std::move(c_name);
 					name_set = true;
 					break;
 				}
