@@ -129,7 +129,6 @@ struct winrt_capture {
 		closed;
 	winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool::
 		FrameArrived_revoker frame_arrived;
-	winrt::Windows::Graphics::Capture::GraphicsCaptureItem::Closed_revoker item_closed;
 
 	uint32_t texture_width;
 	uint32_t texture_height;
@@ -344,8 +343,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		frame_pool.CreateCaptureSession(item);
 
 	/* disable cursor capture if possible since ours performs better */
-	//if (winrt_capture_cursor_toggle_supported())
-		//session.IsCursorCaptureEnabled(false);
+	if (winrt_capture_cursor_toggle_supported())
+		session.IsCursorCaptureEnabled(false);
 
 	capture->item = item;
 	capture->device = device;
@@ -425,8 +424,8 @@ try {
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
 		winrt_capture_cursor_toggle_supported();
-	//if (cursor_toggle_supported)
-	//	session.IsCursorCaptureEnabled(false);
+	if (cursor_toggle_supported)
+		session.IsCursorCaptureEnabled(false);
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
@@ -487,7 +486,6 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		gs_texture_destroy(capture->texture);
 		obs_leave_graphics();
 
-		capture->item_closed.revoke();
 		capture->frame_arrived.revoke();
 		capture->closed.revoke();
 		capture->frame_pool.Close();
