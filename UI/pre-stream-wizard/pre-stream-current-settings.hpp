@@ -85,7 +85,6 @@ static const struct {
 	const char *videoHeight;           //int
 	const char *framerate;             // double (FPS)
 	const char *videoBitrate;          //int
-	const char *audioBitrate;          // int
 	const char *protocol;              // string
 	const char *videoCodec;            // string
 	const char *h264Profile;           // string ("High")
@@ -102,7 +101,6 @@ static const struct {
 	.videoHeight = "videoHeight",
 	.framerate = "framerate",
 	.videoBitrate = "videoBitrate",
-	.audioBitrate = "audioBitrate",
 	.protocol = "protocol",
 	.videoCodec = "videoCodec",
 	.h264Profile = "h264Profile",

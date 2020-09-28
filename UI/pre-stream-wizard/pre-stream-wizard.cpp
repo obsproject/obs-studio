@@ -10,6 +10,7 @@
 
 #include "page-input-display.hpp"
 #include "page-start-prompt.hpp"
+#include "page-select-settings.hpp"
 
 namespace StreamWizard {
 
@@ -32,17 +33,18 @@ PreStreamWizard::PreStreamWizard(
 	// First Page: Explain to the user and confirm sending to API
 	QSize currentRes(currentSettings_->videoWidth,
 			 currentSettings_->videoHeight);
-	StartPage *startPage =
+	startPage_ =
 		new StartPage(destination_, launchContext_, currentRes, this);
-	setPage(Page_StartPrompt, startPage);
-	connect(startPage, &StartPage::userSelectedResolution, this,
+	setPage(Page_StartPrompt, startPage_);
+	connect(startPage_, &StartPage::userSelectedResolution, this,
 		&PreStreamWizard::onUserSelectResolution);
 
 	// Loading page: Shown when loading new settings
 	setPage(Page_Loading, new QWizardPage());
 
-	// Suggestion Selection Pahe
-	setPage(Page_Selections, new QWizardPage());
+	// Suggestion Selection Page
+	selectionPage_ = new SelectionPage();
+	setPage(Page_Selections, selectionPage_);
 }
 
 void PreStreamWizard::requestSettings()
@@ -93,6 +95,10 @@ void PreStreamWizard::onPageChanged(int id)
 
 	if (id == Page_Loading) {
 		requestSettings();
+	}
+
+	if (id == Page_Selections) {
+		selectionPage_->setSettingsMap(newSettingsMap_);
 	}
 }
 

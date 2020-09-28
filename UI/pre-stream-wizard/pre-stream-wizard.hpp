@@ -8,6 +8,9 @@
 
 namespace StreamWizard {
 
+class StartPage;
+class SelectionPage;
+
 /*
 	** The pre-stream wizard is a workflow focused on delivering encoder settings
 	** specfic for the streaming destination before going Live. 
@@ -24,6 +27,10 @@ public:
 			QWidget *parent = nullptr);
 
 private:
+	// Pages
+	StartPage *startPage_;
+	SelectionPage *selectionPage_;
+
 	// External State
 	Destination destination_;
 	LaunchContext launchContext_;

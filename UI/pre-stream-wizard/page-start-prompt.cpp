@@ -8,7 +8,6 @@
 #include <QPushButton>
 #include <QDesktopServices>
 #include <QUrl>
-#include <QSignalMapper>
 
 #include "obs-app.hpp"
 

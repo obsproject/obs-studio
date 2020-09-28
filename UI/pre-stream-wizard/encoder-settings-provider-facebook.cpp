@@ -129,12 +129,17 @@ void addInt(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 	}
 }
 
-void addDouble(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
-	       const char *mapKey)
+void addStringDouble(const QJsonObject &json, const char *jsonKey,
+		     SettingsMap *map, const char *mapKey)
 {
-	if (json[jsonKey].isDouble()) {
-		map->insert(mapKey,
-			    QPair(QVariant(json[jsonKey].toDouble()), true));
+	if (!json[jsonKey].isString()) {
+		return;
+	}
+	bool converted = false;
+	QString valueString = json[jsonKey].toString();
+	double numberValue = valueString.toDouble(&converted);
+	if (converted) {
+		map->insert(mapKey, QPair(QVariant(numberValue), true));
 	}
 }
 
@@ -152,7 +157,7 @@ void addBool(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 {
 	if (json[jsonKey].isBool()) {
 		map->insert(mapKey,
-			    QPair(QVariant(json[jsonKey].isBool()), true));
+			    QPair(QVariant(json[jsonKey].toBool()), true));
 	}
 }
 
@@ -202,8 +207,8 @@ void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 	       SettingsResponseKeys.videoWidth);
 	addInt(videoSettingsJsob, "video_height", settingsMap,
 	       SettingsResponseKeys.videoHeight);
-	addDouble(videoSettingsJsob, "video_framerate", settingsMap,
-		  SettingsResponseKeys.framerate);
+	addStringDouble(videoSettingsJsob, "video_framerate", settingsMap,
+			SettingsResponseKeys.framerate);
 	addQString(videoSettingsJsob, "video_h264_profile", settingsMap,
 		   SettingsResponseKeys.h264Profile);
 	addQString(videoSettingsJsob, "video_h264_level", settingsMap,
