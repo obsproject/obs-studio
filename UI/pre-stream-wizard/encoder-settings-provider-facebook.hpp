@@ -37,7 +37,6 @@ signals:
 private:
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
 	QNetworkAccessManager *restclient_;
-	QNetworkReply *settingsReply_;
 
 	void makeRequest(QUrl &url);
 	QUrlQuery inputVideoQueryFromCurrentSettings();

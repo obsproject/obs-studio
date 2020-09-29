@@ -39,6 +39,7 @@ StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(
 		new StreamWizard::EncoderSettingsRequest());
 
 	/* Stream info */
+
 	currentSettings->videoType = StreamWizard::VideoType::live;
 	// only live and rmpts is supported for now
 	currentSettings->protocol = StreamWizard::StreamProtocol::rtmps;
@@ -56,7 +57,6 @@ StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(
 	currentSettings->videoHeight = resolutionXY[1];
 	currentSettings->framerate = CommonSettings::GetConfigFPSDouble(config);
 
-	// This ONLY works for simple output right now. If they're in advanced: no
 	currentSettings->videoBitrate =
 		CommonSettings::GetVideoBitrateInUse(config);
 	currentSettings->videoCodec = StreamWizard::VideoCodec::h264;

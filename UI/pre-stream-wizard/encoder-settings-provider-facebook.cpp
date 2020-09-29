@@ -12,7 +12,6 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMap>
-#include <QDebug>
 
 #include "obs-app.hpp"
 #include "obs-config.h"
@@ -57,7 +56,7 @@ void FacebookEncoderSettingsProvider::makeRequest(QUrl &url)
 			  "application/json");
 
 	// GET is made async
-	settingsReply_ = restclient_->get(request);
+	restclient_->get(request);
 	// This is the callback when data is ready
 	connect(restclient_, &QNetworkAccessManager::finished, this,
 		&FacebookEncoderSettingsProvider::handleResponse);
@@ -66,7 +65,7 @@ void FacebookEncoderSettingsProvider::makeRequest(QUrl &url)
 QUrlQuery FacebookEncoderSettingsProvider::inputVideoQueryFromCurrentSettings()
 {
 	// Get input settings, shorten name
-	EncoderSettingsRequest *input = currentSettings_.get();
+	EncoderSettingsRequest *input = currentSettings_.data();
 
 	QUrlQuery inputVideoSettingsQuery;
 	inputVideoSettingsQuery.addQueryItem("video_type", "live");
@@ -126,6 +125,10 @@ void addInt(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 	if (json[jsonKey].isDouble()) {
 		map->insert(mapKey,
 			    QPair(QVariant(json[jsonKey].toInt()), true));
+	} else {
+		blog(LOG_WARNING,
+		     "FacebookEncoderSettingsProvider could not parse %s to Int",
+		     jsonKey);
 	}
 }
 
@@ -140,6 +143,10 @@ void addStringDouble(const QJsonObject &json, const char *jsonKey,
 	double numberValue = valueString.toDouble(&converted);
 	if (converted) {
 		map->insert(mapKey, QPair(QVariant(numberValue), true));
+	} else {
+		blog(LOG_WARNING,
+		     "FacebookEncoderSettingsProvider couldn't parse %s to Double from String",
+		     jsonKey);
 	}
 }
 
@@ -149,6 +156,10 @@ void addQString(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 	if (json[jsonKey].isString()) {
 		map->insert(mapKey,
 			    QPair(QVariant(json[jsonKey].toString()), true));
+	} else {
+		blog(LOG_WARNING,
+		     "FacebookEncoderSettingsProvider could not parse %s to Strng",
+		     jsonKey);
 	}
 }
 
@@ -158,6 +169,10 @@ void addBool(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 	if (json[jsonKey].isBool()) {
 		map->insert(mapKey,
 			    QPair(QVariant(json[jsonKey].toBool()), true));
+	} else {
+		blog(LOG_WARNING,
+		     "FacebookEncoderSettingsProvider could not parse %s to Bool",
+		     jsonKey);
 	}
 }
 

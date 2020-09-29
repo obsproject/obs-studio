@@ -11,10 +11,16 @@
 #include "page-input-display.hpp"
 #include "page-start-prompt.hpp"
 #include "page-select-settings.hpp"
+#include "page-completed.hpp"
 
 namespace StreamWizard {
 
-enum PSW_Page { Page_StartPrompt, Page_Loading, Page_Selections };
+enum PSW_Page {
+	Page_StartPrompt,
+	Page_Loading,
+	Page_Selections,
+	Page_Complete,
+};
 
 PreStreamWizard::PreStreamWizard(
 	Destination dest, LaunchContext launchContext,
@@ -45,6 +51,11 @@ PreStreamWizard::PreStreamWizard(
 	// Suggestion Selection Page
 	selectionPage_ = new SelectionPage();
 	setPage(Page_Selections, selectionPage_);
+
+	// Ending + Confirmation Page
+	CompletedPage *completedPage =
+		new CompletedPage(destination_, launchContext_, this);
+	setPage(Page_Complete, completedPage);
 }
 
 void PreStreamWizard::requestSettings()
@@ -106,7 +117,7 @@ void PreStreamWizard::onUserSelectResolution(QSize newSize)
 {
 	blog(LOG_INFO, "Selected res %d x %d", newSize.width(),
 	     newSize.height());
-	EncoderSettingsRequest *req = currentSettings_.get();
+	EncoderSettingsRequest *req = currentSettings_.data();
 	req->userSelectedResolution = QVariant(newSize);
 }
 

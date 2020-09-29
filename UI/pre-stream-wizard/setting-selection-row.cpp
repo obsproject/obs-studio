@@ -8,10 +8,6 @@ SelectionRow::SelectionRow(QWidget *parent) : QWidget(parent)
 {
 	createLayout();
 }
-SelectionRow::~SelectionRow()
-{
-	// nop
-}
 
 void SelectionRow::createLayout()
 {

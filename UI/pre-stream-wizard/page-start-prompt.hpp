@@ -16,7 +16,6 @@ class StartPage : public QWizardPage {
 public:
 	StartPage(Destination dest, LaunchContext launchContext,
 		  QSize videoSize, QWidget *parent = nullptr);
-	~StartPage();
 
 signals:
 	// emitted selected resolution from start page radio buttons

@@ -195,6 +195,7 @@ set(obs_SOURCES
 	pre-stream-wizard/page-input-display.cpp
 	pre-stream-wizard/page-start-prompt.cpp
 	pre-stream-wizard/page-select-settings.cpp
+	pre-stream-wizard/page-completed.cpp
 	pre-stream-wizard/setting-selection-row.cpp
 	pre-stream-wizard/encoder-settings-provider-facebook.cpp
 	obs-app.cpp
@@ -274,6 +275,7 @@ set(obs_HEADERS
 	pre-stream-wizard/page-input-display.hpp
 	pre-stream-wizard/page-start-prompt.hpp
 	pre-stream-wizard/page-select-settings.hpp
+	pre-stream-wizard/page-completed.hpp
 	pre-stream-wizard/setting-selection-row.hpp
 	pre-stream-wizard/encoder-settings-provider-facebook.hpp
 	obs-app.hpp

@@ -97,20 +97,13 @@ static const struct {
 	const char *streamRateControlMode; // string "CBR"
 	const char *streamBufferSize;      // int (5000 kb)
 } SettingsResponseKeys = {
-	.videoWidth = "videoWidth",
-	.videoHeight = "videoHeight",
-	.framerate = "framerate",
-	.videoBitrate = "videoBitrate",
-	.protocol = "protocol",
-	.videoCodec = "videoCodec",
-	.h264Profile = "h264Profile",
-	.h264Level = "h264Level",
-	.gopSizeInFrames = "gopSizeInFrames",
-	.gopType = "gopType",
-	.gopClosed = "gopClosed",
-	.gopBFrames = "gopBFrames",
-	.gopRefFrames = "gopRefFrames",
-	.streamRateControlMode = "streamRateControlMode",
-	.streamBufferSize = "streamBufferSize",
+	"videoWidth",       "videoHeight",
+	"framerate",        "videoBitrate",
+	"protocol",         "videoCodec",
+	"h264Profile",      "h264Level",
+	"gopSizeInFrames",  "gopType",
+	"gopClosed",        "gopBFrames",
+	"gopRefFrames",     "streamRateControlMode",
+	"streamBufferSize",
 };
 }

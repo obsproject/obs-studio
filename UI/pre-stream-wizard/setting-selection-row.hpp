@@ -21,7 +21,6 @@ class SelectionRow : public QWidget {
 
 public:
 	SelectionRow(QWidget *parent = nullptr);
-	~SelectionRow();
 
 	// User facing name to be shown to the user. ("Resolution")
 	void setName(QString newName);

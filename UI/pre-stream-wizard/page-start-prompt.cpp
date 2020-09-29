@@ -39,12 +39,6 @@ StartPage::StartPage(Destination dest, LaunchContext launchContext,
 		resCurrentButton_->setChecked(true);
 	}
 }
-
-StartPage::~StartPage()
-{
-	// nop
-}
-
 void StartPage::createLayout()
 {
 	QVBoxLayout *mainlayout = new QVBoxLayout(this);

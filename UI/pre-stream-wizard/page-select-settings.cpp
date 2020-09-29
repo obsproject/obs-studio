@@ -16,11 +16,12 @@ SelectionPage::SelectionPage(QWidget *parent) : QWizardPage(parent)
 {
 	this->setTitle(QTStr("PreLiveWizard.Selection.Title"));
 	setupLayout();
-}
 
-SelectionPage::~SelectionPage()
-{
-	// nop
+	setButtonText(QWizard::WizardButton::NextButton,
+		      QTStr("Basic.AutoConfig.ApplySettings"));
+	setButtonText(QWizard::WizardButton::CommitButton,
+		      QTStr("Basic.AutoConfig.ApplySettings"));
+	setCommitPage(true);
 }
 
 void SelectionPage::setupLayout()
@@ -58,7 +59,7 @@ void SelectionPage::setSettingsMap(QSharedPointer<SettingsMap> settingsMap)
 		return;
 	}
 	settingsMap_ = settingsMap;
-	SettingsMap *mapInfo = settingsMap_.get();
+	SettingsMap *mapInfo = settingsMap_.data();
 
 	if (mapInfo->contains(SettingsResponseKeys.videoBitrate)) {
 		QVariant data =
@@ -190,7 +191,7 @@ void SelectionPage::checkboxRowChanged(const char *propertyKey, bool selected)
 		return;
 	}
 
-	SettingsMap *mapInfo = settingsMap_.get();
+	SettingsMap *mapInfo = settingsMap_.data();
 
 	if (mapInfo == nullptr || !mapInfo->contains(propertyKey)) {
 		return;

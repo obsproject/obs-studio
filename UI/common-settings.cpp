@@ -2,7 +2,7 @@
 
 #include "audio-encoders.hpp"
 
-bool IsAdvancedMode(config_t *config)
+static bool IsAdvancedMode(config_t *config)
 {
 	const char *outputMode = config_get_string(config, "Output", "Mode");
 	return (strcmp(outputMode, "Advanced") == 0);
@@ -16,7 +16,7 @@ OBSData CommonSettings::GetDataFromJsonFile(const char *jsonFile)
 	int ret = GetProfilePath(fullPath, sizeof(fullPath), jsonFile);
 	if (ret > 0) {
 		BPtr<char> jsonData = os_quick_read_utf8_file(fullPath);
-		if (!!jsonData) {
+		if (jsonData) {
 			data = obs_data_create_from_json(jsonData);
 		}
 	}
@@ -145,7 +145,7 @@ int CommonSettings::GetStreamingAudioBitrate(config_t *config)
 
 int CommonSettings::GetSimpleAudioBitrate(config_t *config)
 {
-	int bitrate = (int)config_get_uint(config, "SimpleOutput", "ABitrate");
+	int bitrate = config_get_uint(config, "SimpleOutput", "ABitrate");
 	return FindClosestAvailableAACBitrate(bitrate);
 }
 
@@ -163,9 +163,11 @@ int CommonSettings::GetAdvancedAudioBitrateForTrack(config_t *config,
 		"Track4Bitrate", "Track5Bitrate", "Track6Bitrate",
 	};
 
-	// Sanity check for out of bounds
+	// Sanity check for out of bounds, clamp to bounds
 	if (trackIndex > 5)
 		trackIndex = 5;
+	if (trackIndex < 0)
+		trackIndex = 0;
 
 	int bitrate = (int)config_get_uint(config, "AdvOut", names[trackIndex]);
 	return FindClosestAvailableAACBitrate(bitrate);

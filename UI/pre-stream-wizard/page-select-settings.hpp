@@ -22,7 +22,6 @@ class SelectionPage : public QWizardPage {
 
 public:
 	SelectionPage(QWidget *parent = nullptr);
-	~SelectionPage();
 
 	// Sets data to layout scrollbox
 	void setSettingsMap(QSharedPointer<SettingsMap> settingsMap);
