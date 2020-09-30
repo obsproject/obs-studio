@@ -60,6 +60,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <util/platform.h>
 #include <obs-module.h>
 #include <obs-avc.h>
+#include <d3d11.h>
+#include <dxgi1_2.h>
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -593,21 +595,15 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 {
 	struct obs_qsv *obsqsv = data;
 	bool success = update_settings(obsqsv, settings);
-	int ret = 0;
+	int ret;
 
 	if (success) {
 		EnterCriticalSection(&g_QsvCs);
 
-		if (obsqsv->context) {
+		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
+		if (ret != 0)
+			warn("Failed to reconfigure: %d", ret);
 
-			ret = qsv_encoder_reconfig(obsqsv->context,
-						   &obsqsv->params);
-
-			if (ret != 0)
-				warn("Failed to reconfigure: %d", ret);
-		} else {
-			warn("Cannot update encoder. QSV ecoder context is epmpty.");
-		}
 		LeaveCriticalSection(&g_QsvCs);
 
 		return ret == 0;
@@ -976,8 +972,51 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	return true;
 }
 
+static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
+			       uint64_t lock_key, uint64_t *next_key,
+			       struct encoder_packet *packet,
+			       bool *received_packet)
+{
+	struct obs_qsv *obsqsv = data;
+
+	if (handle == GS_INVALID_HANDLE) {
+		warn("Encode failed: bad texture handle");
+		*next_key = lock_key;
+		return false;
+	}
+
+	if (!packet || !received_packet)
+		return false;
+
+	EnterCriticalSection(&g_QsvCs);
+
+	video_t *video = obs_encoder_video(obsqsv->encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+
+	mfxBitstream *pBS = NULL;
+
+	int ret;
+
+	mfxU64 qsvPTS = pts * 90000 / voi->fps_num;
+
+	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, handle, lock_key,
+				     next_key, &pBS);
+
+	if (ret < 0) {
+		warn("encode failed");
+		LeaveCriticalSection(&g_QsvCs);
+		return false;
+	}
+
+	parse_packet(obsqsv, packet, pBS, voi->fps_num, received_packet);
+
+	LeaveCriticalSection(&g_QsvCs);
+
+	return true;
+}
+
 struct obs_encoder_info obs_qsv_encoder = {
-	.id = "obs_qsv11",
+	.id = "obs_qsv11_soft",
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
 	.get_name = obs_qsv_getname,
@@ -990,5 +1029,22 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
-	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+};
+
+struct obs_encoder_info obs_qsv_encoder_tex = {
+	.id = "obs_qsv11",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "h264",
+	.get_name = obs_qsv_getname,
+	.create = obs_qsv_create_tex,
+	.destroy = obs_qsv_destroy,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE,
+	.encode_texture = obs_qsv_encode_tex,
+	.update = obs_qsv_update,
+	.get_properties = obs_qsv_props,
+	.get_defaults = obs_qsv_defaults,
+	.get_extra_data = obs_qsv_extra_data,
+	.get_sei_data = obs_qsv_sei,
+	.get_video_info = obs_qsv_video_info,
 };
