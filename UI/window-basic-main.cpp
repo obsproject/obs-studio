@@ -1558,6 +1558,8 @@ void OBSBasic::AddVCamButton()
 
 	vcamButton->setProperty("themeID", "vcamButton");
 	ui->buttonsVLayout->insertWidget(2, vcamButton);
+	setTabOrder(ui->recordButton, vcamButton);
+	setTabOrder(vcamButton, ui->modeSwitch);
 }
 
 void OBSBasic::ResetOutputs()
@@ -1592,6 +1594,9 @@ void OBSBasic::ResetOutputs()
 			replayBufferButton->setProperty("themeID",
 							"replayBufferButton");
 			ui->buttonsVLayout->insertLayout(2, replayLayout);
+			setTabOrder(ui->recordButton, replayBufferButton);
+			setTabOrder(replayBufferButton,
+				    ui->buttonsVLayout->itemAt(3)->widget());
 		}
 
 		if (sysTrayReplayBuffer)
@@ -8219,6 +8224,10 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	connect(replay.data(), &QAbstractButton::clicked, this,
 		&OBSBasic::ReplayBufferSave);
 	replayLayout->addWidget(replay.data());
+	setTabOrder(replayLayout->itemAt(0)->widget(),
+		    replayLayout->itemAt(1)->widget());
+	setTabOrder(replayLayout->itemAt(1)->widget(),
+		    ui->buttonsVLayout->itemAt(3)->widget());
 }
 
 #define MBYTE (1024ULL * 1024ULL)
