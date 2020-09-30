@@ -515,8 +515,10 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 	}
 
 	item = json_object_get(recommended, "bframes");
-	if (json_is_integer(item))
-		obs_data_set_int(settings, "bf", 0);
+	if (json_is_integer(item)) {
+		int bframes = json_integer_value(item);
+		obs_data_set_int(settings, "bf", bframes);
+	}
 
 	item = json_object_get(recommended, "x264opts");
 	if (json_is_string(item)) {
