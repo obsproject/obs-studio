@@ -326,6 +326,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	renameSource->setShortcut({Qt::Key_F2});
 #endif
 
+#ifdef __linux__
+	ui->actionE_xit->setShortcut(Qt::CTRL + Qt::Key_Q);
+#endif
+
 	auto addNudge = [this](const QKeySequence &seq, const char *s) {
 		QAction *nudge = new QAction(ui->preview);
 		nudge->setShortcut(seq);
