@@ -12,6 +12,7 @@
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMap>
+#include <QTimer>
 
 #include "obs-app.hpp"
 #include "obs-config.h"
@@ -56,10 +57,15 @@ void FacebookEncoderSettingsProvider::makeRequest(QUrl &url)
 			  "application/json");
 
 	// GET is made async
-	restclient_->get(request);
+	networkReply_ = restclient_->get(request);
+	pendingResponse_ = true;
 	// This is the callback when data is ready
 	connect(restclient_, &QNetworkAccessManager::finished, this,
 		&FacebookEncoderSettingsProvider::handleResponse);
+
+	// This is a fast API, timeout at 3 seconds and show error
+	QTimer::singleShot(3000, this,
+			   &FacebookEncoderSettingsProvider::handleTimeout);
 }
 
 QUrlQuery FacebookEncoderSettingsProvider::inputVideoQueryFromCurrentSettings()
@@ -178,6 +184,17 @@ void addBool(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 
 void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 {
+	// In timeout and errors this method may still be called
+	if (!pendingResponse_) {
+		return;
+	}
+	pendingResponse_ = false;
+
+	if (reply->error()) {
+		emit returnErrorDescription(
+			QTStr("PreLiveWizard.Configure.Error.JsonParse"),
+			reply->errorString());
+	}
 	// Converts byte array into JSON doc as a copy
 	QByteArray replyAll = reply->readAll();
 	QJsonDocument jsonDoc = QJsonDocument::fromJson(replyAll);
@@ -247,6 +264,18 @@ void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 	QSharedPointer<SettingsMap> settingsMapShrdPtr =
 		QSharedPointer<SettingsMap>(settingsMap);
 	emit newSettings(settingsMapShrdPtr);
+}
+
+void FacebookEncoderSettingsProvider::handleTimeout()
+{
+	if (!pendingResponse_)
+		return;
+
+	pendingResponse_ = false;
+
+	QString errorTitle = QTStr("PreLiveWizard.Configure.Error.JsonParse");
+	QString errorDescription = QTStr("PreLiveWizard.Error.NetworkTimeout");
+	emit returnErrorDescription(errorTitle, errorDescription);
 }
 
 void FacebookEncoderSettingsProvider::jsonParseError()

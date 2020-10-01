@@ -19,6 +19,7 @@ CompletedPage::CompletedPage(Destination destination,
 	launchContext_ = launchContext;
 
 	setTitle(QTStr("PreLiveWizard.Completed.Title"));
+	setFinalPage(true);
 
 	QVBoxLayout *mainlayout = new QVBoxLayout(this);
 	setLayout(mainlayout);

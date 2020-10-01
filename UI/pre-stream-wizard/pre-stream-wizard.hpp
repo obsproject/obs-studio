@@ -10,6 +10,7 @@ namespace StreamWizard {
 
 class StartPage;
 class SelectionPage;
+class ErrorPage;
 
 /*
 	** The pre-stream wizard is a workflow focused on delivering encoder settings
@@ -26,16 +27,20 @@ public:
 			QSharedPointer<EncoderSettingsRequest> currentSettings,
 			QWidget *parent = nullptr);
 
+	int nextId() const override;
+
 private:
 	// Pages
 	StartPage *startPage_;
 	SelectionPage *selectionPage_;
+	ErrorPage *errorPage_;
 
 	// External State
 	Destination destination_;
 	LaunchContext launchContext_;
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
 	QSharedPointer<SettingsMap> newSettingsMap_;
+	bool sendToErrorPage_ = false;
 
 	void requestSettings();
 

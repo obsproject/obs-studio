@@ -12,6 +12,7 @@
 #include "page-start-prompt.hpp"
 #include "page-select-settings.hpp"
 #include "page-completed.hpp"
+#include "page-error.hpp"
 
 namespace StreamWizard {
 
@@ -20,6 +21,7 @@ enum PSW_Page {
 	Page_Loading,
 	Page_Selections,
 	Page_Complete,
+	Page_Error,
 };
 
 PreStreamWizard::PreStreamWizard(
@@ -46,16 +48,21 @@ PreStreamWizard::PreStreamWizard(
 		&PreStreamWizard::onUserSelectResolution);
 
 	// Loading page: Shown when loading new settings
-	setPage(Page_Loading, new QWizardPage());
+	QWizardPage *loadingPage = new QWizardPage(this);
+	loadingPage->setCommitPage(true);
+	setPage(Page_Loading, loadingPage);
 
 	// Suggestion Selection Page
-	selectionPage_ = new SelectionPage();
+	selectionPage_ = new SelectionPage(this);
 	setPage(Page_Selections, selectionPage_);
 
 	// Ending + Confirmation Page
 	CompletedPage *completedPage =
 		new CompletedPage(destination_, launchContext_, this);
 	setPage(Page_Complete, completedPage);
+
+	errorPage_ = new ErrorPage(this);
+	setPage(Page_Error, errorPage_);
 }
 
 void PreStreamWizard::requestSettings()
@@ -88,29 +95,62 @@ void PreStreamWizard::providerEncoderSettings(
 {
 	blog(LOG_INFO, "PreStreamWizard got new settings response");
 	newSettingsMap_ = response;
-	if (this->currentId() == Page_Loading) {
-		this->next();
+	if (currentId() == Page_Loading) {
+		next();
 	}
 }
 
 void PreStreamWizard::providerError(QString title, QString description)
 {
-	// TODO: Add Wizard Page with finish that shows this
+	sendToErrorPage_ = true;
+	errorPage_->setText(title, description);
+	if (currentId() == Page_Loading)
+		next();
 }
 
 void PreStreamWizard::onPageChanged(int id)
 {
-	if (id == Page_StartPrompt) {
+	switch (id) {
+	case Page_StartPrompt:
 		setOption(QWizard::NoCancelButton, false);
-	}
+		break;
 
-	if (id == Page_Loading) {
+	case Page_Loading:
 		requestSettings();
+		break;
+
+	case Page_Selections:
+		selectionPage_->setSettingsMap(newSettingsMap_);
+		break;
+
+	case Page_Complete:
+		break;
+
+	case Page_Error:
+		sendToErrorPage_ = false;
+		break;
+	}
+}
+
+int PreStreamWizard::nextId() const
+{
+	switch (currentId()) {
+	case Page_StartPrompt:
+		return Page_Loading;
+	case Page_Loading:
+		return sendToErrorPage_ ? Page_Error : Page_Selections;
+	case Page_Selections:
+		return Page_Complete;
+		break;
+	case Page_Complete:
+		return -1;
+	case Page_Error:
+		return -1;
 	}
 
-	if (id == Page_Selections) {
-		selectionPage_->setSettingsMap(newSettingsMap_);
+	if (currentId() == Page_Loading) {
 	}
+	return QWizard::nextId();
 }
 
 void PreStreamWizard::onUserSelectResolution(QSize newSize)

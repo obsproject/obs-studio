@@ -37,6 +37,8 @@ signals:
 private:
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
 	QNetworkAccessManager *restclient_;
+	QNetworkReply *networkReply_;
+	bool pendingResponse_ = false;
 
 	void makeRequest(QUrl &url);
 	QUrlQuery inputVideoQueryFromCurrentSettings();
@@ -45,6 +47,7 @@ private:
 
 private slots:
 	void handleResponse(QNetworkReply *reply);
+	void handleTimeout();
 };
 
 } // namespace StreamWizard
