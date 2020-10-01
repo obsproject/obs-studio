@@ -10,6 +10,7 @@ namespace StreamWizard {
 
 class StartPage;
 class SelectionPage;
+class LoadingPage;
 class ErrorPage;
 
 /*
@@ -32,6 +33,7 @@ public:
 private:
 	// Pages
 	StartPage *startPage_;
+	LoadingPage *loadingPage_;
 	SelectionPage *selectionPage_;
 	ErrorPage *errorPage_;
 

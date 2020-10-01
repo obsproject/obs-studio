@@ -10,6 +10,7 @@
 
 #include "page-input-display.hpp"
 #include "page-start-prompt.hpp"
+#include "page-loading.hpp"
 #include "page-select-settings.hpp"
 #include "page-completed.hpp"
 #include "page-error.hpp"
@@ -48,9 +49,8 @@ PreStreamWizard::PreStreamWizard(
 		&PreStreamWizard::onUserSelectResolution);
 
 	// Loading page: Shown when loading new settings
-	QWizardPage *loadingPage = new QWizardPage(this);
-	loadingPage->setCommitPage(true);
-	setPage(Page_Loading, loadingPage);
+	loadingPage_ = new LoadingPage(this);
+	setPage(Page_Loading, loadingPage_);
 
 	// Suggestion Selection Page
 	selectionPage_ = new SelectionPage(this);
