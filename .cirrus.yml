@@ -9,7 +9,7 @@ env:
 task:
   install_script:
   - pkg install -y
-    v4l_compat swig30 ffmpeg curl dbus fdk-aac fontconfig
+    v4l_compat swig ffmpeg curl dbus fdk-aac fontconfig
     freetype2 jackit jansson luajit mbedtls pulseaudio speexdsp
     libsysinfo libudev-devd libv4l libx264 cmake ninja
     mesa-libs lua52 pkgconf
