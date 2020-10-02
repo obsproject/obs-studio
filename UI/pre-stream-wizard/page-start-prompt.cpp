@@ -23,12 +23,6 @@ StartPage::StartPage(Destination dest, LaunchContext launchContext,
 
 	setTitle(QTStr("PreLiveWizard.Prompt.Title"));
 
-	if (destination_ == Destination::Facebook) {
-		setSubTitle(QTStr("PreLiveWizard.Prompt.Subtitle.FB"));
-	} else {
-		setSubTitle(QTStr("PreLiveWizard.Prompt.Subtitle.Default"));
-	}
-
 	createLayout();
 	connectRadioButtons();
 

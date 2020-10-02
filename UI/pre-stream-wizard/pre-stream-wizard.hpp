@@ -46,6 +46,15 @@ private:
 
 	void requestSettings();
 
+	// Wizard uses custom button layouts to manage user flow & aborts.
+	enum ButtonLayout {
+		NextStep,
+		CancelOnly,
+		FinishOnly,
+		CommitStep,
+	};
+	void setButtons(ButtonLayout layout);
+
 signals:
 	// User left the wizard with intention to continue streaming
 	void userSkippedWizard(void);

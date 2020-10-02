@@ -3,6 +3,7 @@
 #include <QSpacerItem>
 #include <QVBoxLayout>
 #include <QTimer>
+#include <QList>
 
 #include "obs-app.hpp"
 
@@ -12,6 +13,10 @@ LoadingPage::LoadingPage(QWidget *parent) : QWizardPage(parent)
 {
 	setTitle(QTStr("PreLiveWizard.Loading.Title"));
 	setCommitPage(true);
+
+	timer_ = new QTimer(this);
+	connect(timer_, &QTimer::timeout, this, &LoadingPage::tick);
+	timer_->setSingleShot(false);
 
 	labels_.append(QTStr("Loading"));
 	labels_.append(QTStr("Loading") + ".");
@@ -27,12 +32,7 @@ LoadingPage::LoadingPage(QWidget *parent) : QWizardPage(parent)
 
 void LoadingPage::initializePage()
 {
-	if (timer_ == nullptr) {
-		timer_ = new QTimer(this);
-		connect(timer_, &QTimer::timeout, this, &LoadingPage::tick);
-	}
-	timer_->setSingleShot(false);
-	timer_->start(500);
+	timer_->start(300);
 }
 void LoadingPage::cleanupPage()
 {

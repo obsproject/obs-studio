@@ -4,6 +4,7 @@
 #include <QFormLayout>
 #include <QLabel>
 #include <QSize>
+#include <QList>
 
 #include "obs-app.hpp"
 #include "encoder-settings-provider-facebook.hpp"
@@ -38,6 +39,8 @@ PreStreamWizard::PreStreamWizard(
 
 	setWizardStyle(QWizard::ModernStyle);
 	setWindowTitle(QTStr("PreLiveWizard.Title"));
+	setOption(QWizard::NoBackButtonOnStartPage, true);
+	setOption(QWizard::NoBackButtonOnLastPage, true);
 
 	// First Page: Explain to the user and confirm sending to API
 	QSize currentRes(currentSettings_->videoWidth,
@@ -61,6 +64,7 @@ PreStreamWizard::PreStreamWizard(
 		new CompletedPage(destination_, launchContext_, this);
 	setPage(Page_Complete, completedPage);
 
+	// Add error page shown instead of completion in failure cases
 	errorPage_ = new ErrorPage(this);
 	setPage(Page_Error, errorPage_);
 }
@@ -113,21 +117,26 @@ void PreStreamWizard::onPageChanged(int id)
 	switch (id) {
 	case Page_StartPrompt:
 		setOption(QWizard::NoCancelButton, false);
+		setButtons(NextStep);
 		break;
 
 	case Page_Loading:
 		requestSettings();
+		setButtons(CancelOnly);
 		break;
 
 	case Page_Selections:
 		selectionPage_->setSettingsMap(newSettingsMap_);
+		setButtons(CommitStep);
 		break;
 
 	case Page_Complete:
+		setButtons(FinishOnly);
 		break;
 
 	case Page_Error:
 		sendToErrorPage_ = false;
+		setButtons(FinishOnly);
 		break;
 	}
 }
@@ -137,20 +146,47 @@ int PreStreamWizard::nextId() const
 	switch (currentId()) {
 	case Page_StartPrompt:
 		return Page_Loading;
-	case Page_Loading:
-		return sendToErrorPage_ ? Page_Error : Page_Selections;
+	case Page_Loading: {
+		if (sendToErrorPage_)
+			return Page_Error;
+		if (newSettingsMap_ == nullptr || newSettingsMap_.isNull()) {
+			errorPage_->setText(
+				QTStr("PreLiveWizard.Configure.Error.NoData"),
+				QTStr("PreLiveWizard.Configure.Error.JsonParse.Description"));
+			return Page_Error;
+		}
+		return Page_Selections;
+	}
 	case Page_Selections:
 		return Page_Complete;
-		break;
 	case Page_Complete:
 		return -1;
 	case Page_Error:
 		return -1;
 	}
 
-	if (currentId() == Page_Loading) {
-	}
 	return QWizard::nextId();
+}
+
+void PreStreamWizard::setButtons(ButtonLayout layout)
+{
+	QList<QWizard::WizardButton> layoutList;
+	layoutList << QWizard::Stretch;
+	switch (layout) {
+	case NextStep:
+		layoutList << QWizard::NextButton << QWizard::CancelButton;
+		break;
+	case CommitStep:
+		layoutList << QWizard::CommitButton << QWizard::CancelButton;
+		break;
+	case CancelOnly:
+		layoutList << QWizard::CancelButton;
+		break;
+	case FinishOnly:
+		layoutList << QWizard::FinishButton;
+		break;
+	}
+	setButtonLayout(layoutList);
 }
 
 void PreStreamWizard::onUserSelectResolution(QSize newSize)
