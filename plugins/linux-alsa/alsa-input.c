@@ -440,9 +440,27 @@ bool _alsa_configure(struct alsa_data *data)
 		return false;
 	}
 
-	data->format = SND_PCM_FORMAT_S16;
-	err = snd_pcm_hw_params_set_format(data->handle, hwparams,
-					   data->format);
+#define FORMAT_SIZE 4
+	snd_pcm_format_t formats[FORMAT_SIZE] = {SND_PCM_FORMAT_S16_LE,
+						 SND_PCM_FORMAT_S32_LE,
+						 SND_PCM_FORMAT_FLOAT_LE,
+						 SND_PCM_FORMAT_U8};
+	bool format_found = false;
+	for (int i = 0; i < FORMAT_SIZE; ++i) {
+		data->format = formats[i];
+		err = snd_pcm_hw_params_test_format(data->handle, hwparams,
+						    data->format);
+		if (err == 0) {
+			format_found = true;
+			break;
+		}
+	}
+#undef FORMAT_SIZE
+	if (!format_found) {
+		blog(LOG_ERROR, "device doesnt support any OBS formats");
+		return false;
+	}
+	snd_pcm_hw_params_set_format(data->handle, hwparams, data->format);
 	if (err < 0) {
 		blog(LOG_ERROR, "snd_pcm_hw_params_set_format failed: %s",
 		     snd_strerror(err));
