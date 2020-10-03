@@ -1742,21 +1742,21 @@ static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
 	destroy_surface(inst, surf, ac);
 }
 
-#define GETPROCADDR(func)              \
-	if (!strcmp(name, "vk" #func)) \
+#define GETPROCADDR(func)               \
+	if (!strcmp(pName, "vk" #func)) \
 		return (PFN_vkVoidFunction)&OBS_##func;
 
-#define GETPROCADDR_IF_SUPPORTED(func) \
-	if (!strcmp(name, "vk" #func)) \
+#define GETPROCADDR_IF_SUPPORTED(func)  \
+	if (!strcmp(pName, "vk" #func)) \
 		return funcs->func ? (PFN_vkVoidFunction)&OBS_##func : NULL;
 
-static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice dev,
-							   const char *name)
+static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice device,
+							   const char *pName)
 {
-	struct vk_data *data = get_device_data(dev);
+	struct vk_data *data = get_device_data(device);
 	struct vk_device_funcs *funcs = &data->funcs;
 
-	debug_procaddr("vkGetDeviceProcAddr(%p, \"%s\")", dev, name);
+	debug_procaddr("vkGetDeviceProcAddr(%p, \"%s\")", device, pName);
 
 	GETPROCADDR(GetDeviceProcAddr);
 	GETPROCADDR(DestroyDevice);
@@ -1766,24 +1766,43 @@ static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice dev,
 
 	if (funcs->GetDeviceProcAddr == NULL)
 		return NULL;
-	return funcs->GetDeviceProcAddr(dev, name);
+	return funcs->GetDeviceProcAddr(device, pName);
 }
 
-static PFN_vkVoidFunction VKAPI_CALL OBS_GetInstanceProcAddr(VkInstance inst,
-							     const char *name)
+/* bad layers require spec violation */
+#define RETURN_FP_FOR_NULL_INSTANCE 1
+
+static PFN_vkVoidFunction VKAPI_CALL
+OBS_GetInstanceProcAddr(VkInstance instance, const char *pName)
 {
-	debug_procaddr("vkGetInstanceProcAddr(%p, \"%s\")", inst, name);
+	debug_procaddr("vkGetInstanceProcAddr(%p, \"%s\")", instance, pName);
 
 	/* instance chain functions we intercept */
 	GETPROCADDR(GetInstanceProcAddr);
 	GETPROCADDR(CreateInstance);
 
-	if (inst == NULL)
+#if RETURN_FP_FOR_NULL_INSTANCE
+	/* other instance chain functions we intercept */
+	GETPROCADDR(DestroyInstance);
+	GETPROCADDR(CreateWin32SurfaceKHR);
+	GETPROCADDR(DestroySurfaceKHR);
+
+	/* device chain functions we intercept */
+	GETPROCADDR(GetDeviceProcAddr);
+	GETPROCADDR(CreateDevice);
+	GETPROCADDR(DestroyDevice);
+
+	if (instance == NULL)
 		return NULL;
 
-	struct vk_inst_funcs *funcs = get_inst_funcs(inst);
+	struct vk_inst_funcs *const funcs = get_inst_funcs(instance);
+#else
+	if (instance == NULL)
+		return NULL;
 
-	/* instance chain functions we intercept */
+	struct vk_inst_funcs *const funcs = get_inst_funcs(instance);
+
+	/* other instance chain functions we intercept */
 	GETPROCADDR(DestroyInstance);
 	GETPROCADDR_IF_SUPPORTED(CreateWin32SurfaceKHR);
 	GETPROCADDR_IF_SUPPORTED(DestroySurfaceKHR);
@@ -1792,9 +1811,10 @@ static PFN_vkVoidFunction VKAPI_CALL OBS_GetInstanceProcAddr(VkInstance inst,
 	GETPROCADDR(GetDeviceProcAddr);
 	GETPROCADDR(CreateDevice);
 	GETPROCADDR(DestroyDevice);
-	if (funcs->GetInstanceProcAddr == NULL)
-		return NULL;
-	return funcs->GetInstanceProcAddr(inst, name);
+#endif
+
+	const PFN_vkGetInstanceProcAddr gipa = funcs->GetInstanceProcAddr;
+	return gipa ? gipa(instance, pName) : NULL;
 }
 
 #undef GETPROCADDR
