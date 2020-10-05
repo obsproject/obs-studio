@@ -7048,15 +7048,6 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
 		return nullptr;
 
-	if (monitor > -1) {
-		for (size_t i = 0; i < projectors.size(); i++) {
-			if (projectors[i]->GetMonitor() == monitor) {
-				DeleteProjector(projectors[i]);
-				break;
-			}
-		}
-	}
-
 	OBSProjector *projector =
 		new OBSProjector(nullptr, source, monitor, type);
 
