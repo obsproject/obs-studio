@@ -760,6 +760,10 @@
                     "url": "rtmp://rtmp-wsu.afreecatv.com/app"
                 },
                 {
+                    "name": "Europe : UK",
+                    "url": "rtmp://rtmp-uk.afreecatv.com/app"
+                },
+                {
                     "name": "Asia : Singapore",
                     "url": "rtmp://rtmp-sgp.afreecatv.com/app"
                 }
