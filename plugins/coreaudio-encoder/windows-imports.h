@@ -404,6 +404,7 @@ static bool load_lib(void)
 	path_list_t path_list[] = {
 		{FOLDERID_ProgramFilesCommon,
 		 L"Apple\\Apple Application Support"},
+		{FOLDERID_ProgramFiles, L"iTunes"},
 	};
 
 	for (auto &val : path_list) {
