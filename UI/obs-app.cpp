@@ -1929,13 +1929,17 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		OBSTranslator translator;
 		program.installTranslator(&translator);
 
-#ifdef _WIN32
 		/* --------------------------------------- */
 		/* check and warn if already running       */
 
 		bool cancel_launch = false;
 		bool already_running = false;
+
+#if defined(_WIN32)
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
+#elif defined(__APPLE__)
+		CheckAppWithSameBundleID(already_running);
+#endif
 
 		if (!already_running) {
 			goto run;
@@ -1979,7 +1983,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 		/* --------------------------------------- */
 	run:
-#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && !defined(__FreeBSD__)
 		// Mounted by termina during chromeOS linux container startup
