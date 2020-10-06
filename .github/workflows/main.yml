@@ -36,18 +36,18 @@ jobs:
       - name: 'Fetch Git Tags'
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
-          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
         run: |
           LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
           LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
           if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
-            echo ::set-env name=SEEKING_TESTERS::1
+            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
           else
-            echo ::set-env name=SEEKING_TESTERS::0
+            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
@@ -167,7 +167,7 @@ jobs:
       - name: 'Set Signing Identity'
         if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
         run: |
-          echo "::set-env name=SIGN_IDENTITY::${{ secrets.MACOS_SIGNING_IDENTITY }}"
+          echo "SIGN_IDENTITY=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
       - name: 'Create macOS application bundle'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         working-directory: ${{ github.workspace }}/build
@@ -268,7 +268,7 @@ jobs:
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
-          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
 
           cp ../CI/scripts/macos/package/settings.json.template ./settings.json
           sed -i '' 's#\$\$VERSION\$\$#${{ env.OBS_GIT_TAG }}#g' ./settings.json
@@ -294,7 +294,7 @@ jobs:
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-macOS.dmg
           RELEASE_FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-rel-macOS.dmg
-          echo "::set-env name=RELEASE_FILE_NAME::${RELEASE_FILE_NAME}"
+          echo "RELEASE_FILE_NAME=${RELEASE_FILE_NAME}" >> $GITHUB_ENV
 
           xcrun altool --store-password-in-keychain-item "AC_PASSWORD" -u "${{ secrets.MACOS_NOTARIZATION_USERNAME }}" -p "${{ secrets.MACOS_NOTARIZATION_PASSWORD }}"
 
@@ -325,18 +325,18 @@ jobs:
       - name: 'Fetch Git Tags'
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
-          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
         run: |
           LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
           LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
           if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
-            echo ::set-env name=SEEKING_TESTERS::1
+            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
           else
-            echo ::set-env name=SEEKING_TESTERS::0
+            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
       - name: Install prerequisites (Apt)
         shell: bash
@@ -419,7 +419,7 @@ jobs:
         run: |
           FILE_DATE=$(date +%Y-%m-%d)
           FILE_NAME=$FILE_DATE-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-linux64.tar.gz
-          echo "::set-env name=FILE_NAME::${FILE_NAME}"
+          echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
           cd ./build
           sudo checkinstall --default --install=no --pkgname=obs-studio --fstrans=yes --backup=no --pkgversion="$(date +%Y%m%d)-git" --deldoc=yes
           mkdir ../nightly
@@ -456,9 +456,9 @@ jobs:
         shell: bash
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
-          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
         shell: bash
@@ -466,9 +466,9 @@ jobs:
           LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
           LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
           if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
-            echo ::set-env name=SEEKING_TESTERS::1
+            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
           else
-            echo ::set-env name=SEEKING_TESTERS::0
+            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
@@ -535,7 +535,7 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
-          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          echo "FILE_NAME=${env:FILE_NAME}" >> $GITHUB_ENV
           robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
@@ -568,9 +568,9 @@ jobs:
         shell: bash
         run: |
           git fetch --prune --unshallow
-          echo ::set-env name=OBS_GIT_BRANCH::$(git rev-parse --abbrev-ref HEAD)
-          echo ::set-env name=OBS_GIT_HASH::$(git rev-parse --short HEAD)
-          echo ::set-env name=OBS_GIT_TAG::$(git describe --tags --abbrev=0)
+          echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
         shell: bash
@@ -578,9 +578,9 @@ jobs:
           LABELS_URL="$(echo ${{ github.event.pull_request.url }} | sed s'/pulls/issues/')"
           LABEL_FOUND="$(curl -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" "${LABELS_URL}/labels" | sed -n 's/.*"name": "\(.*\)",/\1/p' | grep 'Seeking Testers' || true)"
           if [ "${LABEL_FOUND}" = "Seeking Testers" ]; then
-            echo ::set-env name=SEEKING_TESTERS::1
+            echo "SEEKING_TESTERS=1" >> $GITHUB_ENV
           else
-            echo ::set-env name=SEEKING_TESTERS::0
+            echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
@@ -647,7 +647,7 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
-          echo "::set-env name=FILE_NAME::${env:FILE_NAME}"
+          echo "FILE_NAME=${env:FILE_NAME}" >> $GITHUB_ENV
           robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
