@@ -304,7 +304,7 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 
 	*codec = avcodec_find_encoder(desc->id);
 	if (!*codec) {
-		fprintf(stderr, "Couldn't create encoder");
+		fprintf(stderr, "Couldn't create encoder\n");
 		return false;
 	}
 
@@ -520,7 +520,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 		ret = avio_open(&ffm->output->pb, ffm->params.file,
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
-			fprintf(stderr, "Couldn't open '%s', %s",
+			fprintf(stderr, "Couldn't open '%s', %s\n",
 				ffm->params.file, av_err2str(ret));
 			return FFM_ERROR;
 		}
@@ -529,7 +529,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings, "=",
 					" ", 0))) {
-		fprintf(stderr, "Failed to parse muxer settings: %s\n%s",
+		fprintf(stderr, "Failed to parse muxer settings: %s\n%s\n",
 			av_err2str(ret), ffm->params.muxer_settings);
 
 		av_dict_free(&dict);
@@ -548,7 +548,7 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
-		fprintf(stderr, "Error opening '%s': %s", ffm->params.file,
+		fprintf(stderr, "Error opening '%s': %s\n", ffm->params.file,
 			av_err2str(ret));
 
 		av_dict_free(&dict);
@@ -723,7 +723,14 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	if (info->keyframe)
 		packet.flags = AV_PKT_FLAG_KEY;
 
-	return av_interleaved_write_frame(ffm->output, &packet) >= 0;
+	int ret = av_interleaved_write_frame(ffm->output, &packet);
+
+	if (ret < 0) {
+		fprintf(stderr, "av_interleaved_write_frame failed: %s\n",
+			av_err2str(ret));
+	}
+
+	return ret >= 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -772,7 +779,7 @@ int main(int argc, char *argv[])
 		resize_buf_resize(&rb, info.size);
 
 		if (safe_read(rb.buf, info.size) == info.size) {
-			ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			fail = !ffmpeg_mux_packet(&ffm, rb.buf, &info);
 		} else {
 			fail = true;
 		}

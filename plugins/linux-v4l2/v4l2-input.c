@@ -53,11 +53,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define timeval2ns(tv) \
 	(((uint64_t)tv.tv_sec * 1000000000) + ((uint64_t)tv.tv_usec * 1000))
 
-#define V4L2_FOURCC_STR(code)                                                 \
-	(char[5])                                                             \
-	{                                                                     \
-		(code >> 24) & 0xFF, (code >> 16) & 0xFF, (code >> 8) & 0xFF, \
-			code & 0xFF, 0                                        \
+#define V4L2_FOURCC_STR(code)                                         \
+	(char[5])                                                     \
+	{                                                             \
+		code & 0xFF, (code >> 8) & 0xFF, (code >> 16) & 0xFF, \
+			(code >> 24) & 0xFF, 0                        \
 	}
 
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
@@ -123,7 +123,7 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	switch (data->pixfmt) {
 	case V4L2_PIX_FMT_NV12:
 		frame->linesize[0] = data->linesize;
-		frame->linesize[1] = data->linesize / 2;
+		frame->linesize[1] = data->linesize;
 		plane_offsets[1] = data->linesize * data->height;
 		break;
 	case V4L2_PIX_FMT_YVU420:

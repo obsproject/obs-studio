@@ -1427,6 +1427,23 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Install virtual camera                */
 
+	auto runcommand = [](wchar_t *cmd) {
+		STARTUPINFO si = {};
+		si.cb = sizeof(si);
+		si.dwFlags = STARTF_USESHOWWINDOW;
+		si.wShowWindow = SW_HIDE;
+
+		PROCESS_INFORMATION pi;
+		bool success = !!CreateProcessW(nullptr, cmd, nullptr, nullptr,
+						false, CREATE_NEW_CONSOLE,
+						nullptr, nullptr, &si, &pi);
+		if (success) {
+			WaitForSingleObject(pi.hProcess, INFINITE);
+			CloseHandle(pi.hThread);
+			CloseHandle(pi.hProcess);
+		}
+	};
+
 	if (!bIsPortable) {
 		wchar_t regsvr[MAX_PATH];
 		wchar_t src[MAX_PATH];
@@ -1441,20 +1458,20 @@ static bool Update(wchar_t *cmdLine)
 		StringCbCat(src, sizeof(src),
 			    L"\\data\\obs-plugins\\win-dshow\\");
 
-		StringCbCopy(tmp, sizeof(tmp), L"\"\"");
+		StringCbCopy(tmp, sizeof(tmp), L"\"");
 		StringCbCat(tmp, sizeof(tmp), regsvr);
 		StringCbCat(tmp, sizeof(tmp), L"\" /s \"");
 		StringCbCat(tmp, sizeof(tmp), src);
 		StringCbCat(tmp, sizeof(tmp), L"obs-virtualcam-module");
 
 		StringCbCopy(tmp2, sizeof(tmp2), tmp);
-		StringCbCat(tmp2, sizeof(tmp2), L"32.dll\"\"");
-		_wsystem(tmp2);
+		StringCbCat(tmp2, sizeof(tmp2), L"32.dll\"");
+		runcommand(tmp2);
 
 		if (is_64bit_windows()) {
 			StringCbCopy(tmp2, sizeof(tmp2), tmp);
-			StringCbCat(tmp2, sizeof(tmp2), L"64.dll\"\"");
-			_wsystem(tmp2);
+			StringCbCat(tmp2, sizeof(tmp2), L"64.dll\"");
+			runcommand(tmp2);
 		}
 	}
 

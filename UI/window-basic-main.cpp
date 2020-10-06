@@ -326,6 +326,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	renameSource->setShortcut({Qt::Key_F2});
 #endif
 
+#ifdef __linux__
+	ui->actionE_xit->setShortcut(Qt::CTRL + Qt::Key_Q);
+#endif
+
 	auto addNudge = [this](const QKeySequence &seq, const char *s) {
 		QAction *nudge = new QAction(ui->preview);
 		nudge->setShortcut(seq);
@@ -1554,6 +1558,8 @@ void OBSBasic::AddVCamButton()
 
 	vcamButton->setProperty("themeID", "vcamButton");
 	ui->buttonsVLayout->insertWidget(2, vcamButton);
+	setTabOrder(ui->recordButton, vcamButton);
+	setTabOrder(vcamButton, ui->modeSwitch);
 }
 
 void OBSBasic::ResetOutputs()
@@ -1588,6 +1594,9 @@ void OBSBasic::ResetOutputs()
 			replayBufferButton->setProperty("themeID",
 							"replayBufferButton");
 			ui->buttonsVLayout->insertLayout(2, replayLayout);
+			setTabOrder(ui->recordButton, replayBufferButton);
+			setTabOrder(replayBufferButton,
+				    ui->buttonsVLayout->itemAt(3)->widget());
 		}
 
 		if (sysTrayReplayBuffer)
@@ -1867,6 +1876,10 @@ void OBSBasic::OBSInit()
 	SystemTray(true);
 #endif
 
+#ifdef __APPLE__
+	disableColorSpaceConversion(this);
+#endif
+
 	bool has_last_version = config_has_user_value(App()->GlobalConfig(),
 						      "General", "LastVersion");
 	bool first_run =
@@ -1939,14 +1952,11 @@ void OBSBasic::OnFirstLoad()
 	/* Attempt to load init screen if available */
 	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
-		if (wnit) {
-			connect(wnit, &WhatsNewInfoThread::Result, this,
-				&OBSBasic::ReceivedIntroJson);
-		}
-		if (wnit) {
-			introCheckThread.reset(wnit);
-			introCheckThread->start();
-		}
+		connect(wnit, &WhatsNewInfoThread::Result, this,
+			&OBSBasic::ReceivedIntroJson);
+
+		introCheckThread.reset(wnit);
+		introCheckThread->start();
 	}
 #endif
 
@@ -2061,14 +2071,13 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 	WhatsNewBrowserInitThread *wnbit =
 		new WhatsNewBrowserInitThread(QT_UTF8(info_url.c_str()));
-	if (wnbit) {
-		connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
-			&OBSBasic::ShowWhatsNew);
-	}
-	if (wnbit) {
-		whatsNewInitThread.reset(wnbit);
-		whatsNewInitThread->start();
-	}
+
+	connect(wnbit, &WhatsNewBrowserInitThread::Result, this,
+		&OBSBasic::ShowWhatsNew);
+
+	whatsNewInitThread.reset(wnbit);
+	whatsNewInitThread->start();
+
 #else
 	UNUSED_PARAMETER(text);
 #endif
@@ -5846,30 +5855,11 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 void OBSBasic::AutoRemux()
 {
-	const char *mode = config_get_string(basicConfig, "Output", "Mode");
-	bool advanced = astrcmpi(mode, "Advanced") == 0;
+	QString input = outputHandler->lastRecordingPath.c_str();
+	if (input.isEmpty())
+		return;
 
-	const char *path = !advanced ? config_get_string(basicConfig,
-							 "SimpleOutput",
-							 "FilePath")
-				     : config_get_string(basicConfig, "AdvOut",
-							 "RecFilePath");
-
-	/* do not save if using FFmpeg output in advanced output mode */
-	if (advanced) {
-		const char *type =
-			config_get_string(basicConfig, "AdvOut", "RecType");
-		if (astrcmpi(type, "FFmpeg") == 0) {
-			return;
-		}
-	}
-
-	QString input;
-	input += path;
-	input += "/";
-	input += remuxFilename.c_str();
-
-	QFileInfo fi(remuxFilename.c_str());
+	QFileInfo fi(input);
 	QString suffix = fi.suffix();
 
 	/* do not remux if lossless */
@@ -5877,11 +5867,13 @@ void OBSBasic::AutoRemux()
 		return;
 	}
 
+	QString path = fi.path();
+
 	QString output = input;
 	output.resize(output.size() - suffix.size());
 	output += "mp4";
 
-	OBSRemux *remux = new OBSRemux(path, this, true);
+	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
 	remux->show();
 	remux->AutoRemux(input, output);
 }
@@ -6019,8 +6011,7 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (diskFullTimer->isActive())
 		diskFullTimer->stop();
 
-	if (remuxAfterRecord)
-		AutoRemux();
+	AutoRemux();
 
 	OnDeactivate();
 	UpdatePause(false);
@@ -7057,20 +7048,10 @@ OBSProjector *OBSBasic::OpenProjector(obs_source_t *source, int monitor,
 	if (monitor > 9 || monitor > QGuiApplication::screens().size() - 1)
 		return nullptr;
 
-	if (monitor > -1) {
-		for (size_t i = 0; i < projectors.size(); i++) {
-			if (projectors[i]->GetMonitor() == monitor) {
-				DeleteProjector(projectors[i]);
-				break;
-			}
-		}
-	}
-
 	OBSProjector *projector =
 		new OBSProjector(nullptr, source, monitor, type);
 
-	if (projector)
-		projectors.emplace_back(projector);
+	projectors.emplace_back(projector);
 
 	return projector;
 }
@@ -7615,12 +7596,11 @@ void OBSBasic::SystemTray(bool firstStarted)
 	if (firstStarted)
 		SystemTrayInit();
 
-	if (!sysTrayWhenStarted && !sysTrayEnabled) {
+	if (!sysTrayEnabled) {
 		trayIcon->hide();
-	} else if ((sysTrayWhenStarted && sysTrayEnabled) ||
-		   opt_minimize_tray) {
+	} else {
 		trayIcon->show();
-		if (firstStarted) {
+		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
 			QTimer::singleShot(50, this, SLOT(hide()));
 			EnablePreviewDisplay(false);
 			setVisible(false);
@@ -7629,12 +7609,6 @@ void OBSBasic::SystemTray(bool firstStarted)
 #endif
 			opt_minimize_tray = false;
 		}
-	} else if (sysTrayEnabled) {
-		trayIcon->show();
-	} else if (!sysTrayEnabled) {
-		trayIcon->hide();
-	} else if (!sysTrayWhenStarted && sysTrayEnabled) {
-		trayIcon->hide();
 	}
 
 	if (isVisible())
@@ -8241,6 +8215,10 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	connect(replay.data(), &QAbstractButton::clicked, this,
 		&OBSBasic::ReplayBufferSave);
 	replayLayout->addWidget(replay.data());
+	setTabOrder(replayLayout->itemAt(0)->widget(),
+		    replayLayout->itemAt(1)->widget());
+	setTabOrder(replayLayout->itemAt(1)->widget(),
+		    ui->buttonsVLayout->itemAt(3)->widget());
 }
 
 #define MBYTE (1024ULL * 1024ULL)

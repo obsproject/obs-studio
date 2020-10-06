@@ -19,6 +19,8 @@ struct BasicOutputHandler {
 	std::string outputType;
 	std::string lastError;
 
+	std::string lastRecordingPath;
+
 	OBSSignal startRecording;
 	OBSSignal stopRecording;
 	OBSSignal startReplayBuffer;
@@ -58,6 +60,12 @@ struct BasicOutputHandler {
 		return streamingActive || recordingActive || delayActive ||
 		       replayBufferActive || virtualCamActive;
 	}
+
+protected:
+	bool SetupAutoRemux(const char *&ext);
+	std::string GetRecordingFilename(const char *path, const char *ext,
+					 bool noSpace, bool overwrite,
+					 const char *format, bool ffmpeg);
 };
 
 BasicOutputHandler *CreateSimpleOutputHandler(OBSBasic *main);

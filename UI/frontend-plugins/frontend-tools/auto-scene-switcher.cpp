@@ -521,6 +521,8 @@ void SwitcherData::Stop()
 
 extern "C" void FreeSceneSwitcher()
 {
+	CleanupSceneSwitcher();
+
 	delete switcher;
 	switcher = nullptr;
 }

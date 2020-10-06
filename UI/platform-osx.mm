@@ -144,6 +144,13 @@ bool IsAlwaysOnTop(QWidget *window)
 	return (window->windowFlags() & Qt::WindowStaysOnTopHint) != 0;
 }
 
+void disableColorSpaceConversion(QWidget *window)
+{
+	NSView *view =
+		(__bridge NSView *)reinterpret_cast<void *>(window->winId());
+	view.window.colorSpace = NSColorSpace.sRGBColorSpace;
+}
+
 void SetAlwaysOnTop(QWidget *window, bool enable)
 {
 	Qt::WindowFlags flags = window->windowFlags();

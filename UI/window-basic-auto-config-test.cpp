@@ -458,8 +458,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 		}
 	}
 
-	wiz->server = bestServer;
-	wiz->serverName = bestServerName;
+	wiz->server = std::move(bestServer);
+	wiz->serverName = std::move(bestServerName);
 	wiz->idealBitrate = bestBitrate;
 
 	QMetaObject::invokeMethod(this, "NextStage");

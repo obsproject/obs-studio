@@ -50,8 +50,14 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 
 void OBSBasic::InitDefaultTransitions()
 {
+	struct AddTransitionVal {
+		QString id;
+		QString name;
+	};
+
 	ui->transitions->blockSignals(true);
 	std::vector<OBSSource> transitions;
+	std::vector<AddTransitionVal> addables;
 	size_t idx = 0;
 	const char *id;
 
@@ -73,20 +79,55 @@ void OBSBasic::InitDefaultTransitions()
 
 			obs_source_release(tr);
 		} else {
-			ui->transitions->addItem(
-				QTStr("Add ") + QT_UTF8(name),
-				QVariant::fromValue(QString(QT_UTF8(id))));
+			AddTransitionVal val;
+			val.name = QTStr("Add") + QStringLiteral(": ") +
+				   QT_UTF8(name);
+			val.id = QT_UTF8(id);
+			addables.push_back(val);
 		}
 	}
-
-	if (ui->transitions->count())
-		ui->transitions->insertSeparator(ui->transitions->count());
 
 	for (OBSSource &tr : transitions) {
 		ui->transitions->addItem(QT_UTF8(obs_source_get_name(tr)),
 					 QVariant::fromValue(OBSSource(tr)));
 	}
+
+	if (addables.size())
+		ui->transitions->insertSeparator(ui->transitions->count());
+
+	for (AddTransitionVal &val : addables) {
+		ui->transitions->addItem(val.name, QVariant::fromValue(val.id));
+	}
+
 	ui->transitions->blockSignals(false);
+}
+
+int OBSBasic::TransitionCount()
+{
+	int idx = 0;
+	for (int i = 0; i < ui->transitions->count(); i++) {
+		QVariant v = ui->transitions->itemData(i);
+		if (!v.toString().isEmpty()) {
+			idx = i;
+			break;
+		}
+	}
+
+	/* should always have at least fade and cut due to them being
+	 * defaults */
+	assert(idx != 0);
+	return idx - 1; /* remove separator from equation */
+}
+
+int OBSBasic::AddTransitionBeforeSeparator(const QString &name,
+					   obs_source_t *source)
+{
+	int idx = TransitionCount();
+	ui->transitions->blockSignals(true);
+	ui->transitions->insertItem(idx, name,
+				    QVariant::fromValue(OBSSource(source)));
+	ui->transitions->blockSignals(false);
+	return idx;
 }
 
 void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
@@ -503,10 +544,9 @@ void OBSBasic::AddTransition(QString id)
 		source = obs_source_create_private(QT_TO_UTF8(id), name.c_str(),
 						   NULL);
 		InitTransition(source);
-		ui->transitions->addItem(
-			QT_UTF8(name.c_str()),
-			QVariant::fromValue(OBSSource(source)));
-		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
+		int idx = AddTransitionBeforeSeparator(QT_UTF8(name.c_str()),
+						       source);
+		ui->transitions->setCurrentIndex(idx);
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
 
@@ -545,7 +585,15 @@ void OBSBasic::on_transitionRemove_clicked()
 		}
 	}
 
+	ui->transitions->blockSignals(true);
 	ui->transitions->removeItem(idx);
+	ui->transitions->setCurrentIndex(-1);
+	ui->transitions->blockSignals(false);
+
+	int bottomIdx = TransitionCount() - 1;
+	if (idx > bottomIdx)
+		idx = bottomIdx;
+	ui->transitions->setCurrentIndex(idx);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
@@ -1537,9 +1585,7 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 			obs_source_create_private(id, name, settings);
 		if (!obs_obj_invalid(source)) {
 			InitTransition(source);
-			ui->transitions->addItem(
-				QT_UTF8(name),
-				QVariant::fromValue(OBSSource(source)));
+			AddTransitionBeforeSeparator(QT_UTF8(name), source);
 		}
 
 		obs_data_release(settings);
