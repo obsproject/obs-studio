@@ -222,7 +222,7 @@ struct winrt_capture {
 	}
 };
 
-static struct winrt_capture *capture_list;
+struct winrt_capture *capture_list;
 
 static void winrt_capture_device_loss_release(void *data)
 {
@@ -237,31 +237,11 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->frame_pool = nullptr;
 	capture->context = nullptr;
 	capture->device = nullptr;
-	capture->item = nullptr;
 }
 
 static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
-
-	auto activation_factory = winrt::get_activation_factory<
-		winrt::Windows::Graphics::Capture::GraphicsCaptureItem>();
-	auto interop_factory =
-		activation_factory.as<IGraphicsCaptureItemInterop>();
-	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item = {nullptr};
-	try {
-		interop_factory->CreateForWindow(
-			capture->window,
-			winrt::guid_of<ABI::Windows::Graphics::Capture::
-					       IGraphicsCaptureItem>(),
-			reinterpret_cast<void **>(winrt::put_abi(item)));
-	} catch (winrt::hresult_error &err) {
-		blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls", err.to_abi(),
-		     err.message().c_str());
-	} catch (...) {
-		blog(LOG_ERROR, "CreateForWindow (0x%08X)",
-		     winrt::to_hresult());
-	}
 
 	ID3D11Device *const d3d_device = (ID3D11Device *)device_void;
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -284,13 +264,12 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 					DirectXPixelFormat::B8G8R8A8UIntNormalized,
 				2, capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
-		frame_pool.CreateCaptureSession(item);
+		frame_pool.CreateCaptureSession(capture->item);
 
 	if (winrt_capture_cursor_toggle_supported())
 		session.IsCursorCaptureEnabled(capture->capture_cursor &&
 					       capture->cursor_visible);
 
-	capture->item = item;
 	capture->device = device;
 	d3d_device->GetImmediateContext(&capture->context);
 	capture->frame_pool = frame_pool;
@@ -309,6 +288,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		blog(LOG_ERROR, "StartCapture (0x%08X)", winrt::to_hresult());
 	}
 }
+
+thread_local bool initialized_tls;
 
 extern "C" EXPORT struct winrt_capture *
 winrt_capture_init(BOOL cursor, HWND window, BOOL client_area)
@@ -370,6 +351,9 @@ try {
 		winrt_capture_cursor_toggle_supported();
 	if (cursor_toggle_supported)
 		session.IsCursorCaptureEnabled(cursor);
+
+	if (capture_list == nullptr)
+		initialized_tls = true;
 
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
@@ -434,9 +418,9 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		capture->frame_arrived.revoke();
 		capture->closed.revoke();
 		capture->frame_pool.Close();
-		capture->session.Close();
+		//capture->session.Close();
 
-		delete capture;
+		//delete capture;
 	}
 }
 
