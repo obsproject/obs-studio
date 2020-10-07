@@ -8,7 +8,6 @@
 #include "qt-wrappers.hpp"
 #include "url-push-button.hpp"
 #include "pre-stream-wizard.hpp"
-#include "streaming-settings-util.hpp"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -285,19 +284,44 @@ void OBSBasicSettings::UpdateKeyLink()
 
 void OBSBasicSettings::preStreamWizardLaunch()
 {
-	obs_service_t *service_obj = main->GetService();
-	obs_data_t *settings = obs_service_get_settings(service_obj);
+	StreamWizard::Destination dest;
+	// Use UI to detect service.
+	QString serviceName = ui->service->currentText();
+	QString customServer = ui->customServer->text();
+	if (serviceName == "Facebook Live" ||
+	    (IsCustomService() && customServer.contains("fbcdn.net"))) {
+		dest = StreamWizard::Destination::Facebook;
+	} else {
+		blog(LOG_WARNING,
+		     "Showed wizard button for service not supported");
+		return;
+	}
 
 	QSharedPointer<StreamWizard::EncoderSettingsRequest> currentSettings =
 		StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(
-			main->Config(), settings);
+			main->Config());
 
-	StreamWizard::PreStreamWizard wiz = StreamWizard::PreStreamWizard(
-		StreamWizard::Destination::Facebook,
-		StreamWizard::LaunchContext::Settings, currentSettings, this);
-	wiz.exec();
+	StreamWizard::PreStreamWizard *wiz = new StreamWizard::PreStreamWizard(
+		dest, StreamWizard::LaunchContext::Settings, currentSettings,
+		this);
 
-	obs_data_release(settings);
+	connect(wiz, &StreamWizard::PreStreamWizard::applySettings, this,
+		&OBSBasicSettings::preStreamWizardApplySettings);
+
+	// Show wizard over settings
+	wiz->exec();
+}
+
+void OBSBasicSettings::preStreamWizardApplySettings(
+	QSharedPointer<StreamWizard::SettingsMap> newSettings)
+{
+	blog(LOG_INFO, "OBSBasicSettings::preStreamWizardApplySettings");
+
+	// Apply and reload
+	StreamingSettingsUtility::applyWizardSettings(newSettings,
+						      main->Config());
+
+	LoadSettings(false);
 }
 
 void OBSBasicSettings::LoadServices(bool showAll)

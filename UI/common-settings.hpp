@@ -31,6 +31,7 @@ public:
 
 	/* Stream Encoder ——————————————————————————————————*/
 	static int GetVideoBitrateInUse(config_t *config);
+	static void SetAllVideoBitrates(config_t *config, int newBitrate);
 
 private:
 	// Reused Strings

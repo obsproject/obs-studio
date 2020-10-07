@@ -33,6 +33,16 @@ StartPage::StartPage(Destination dest, LaunchContext launchContext,
 		resCurrentButton_->setChecked(true);
 	}
 }
+
+void StartPage::initializePage()
+{
+	// emit defaul resolution check
+	if (destination_ == Destination::Facebook &&
+	    res720Button_->isChecked()) {
+		emit userSelectedResolution(QSize(1280, 720));
+	}
+}
+
 void StartPage::createLayout()
 {
 	QVBoxLayout *mainlayout = new QVBoxLayout(this);
@@ -104,17 +114,17 @@ void StartPage::createLayout()
 void StartPage::connectRadioButtons()
 {
 	connect(res720Button_, &QRadioButton::clicked, [=]() {
-		selectedVideoSize_ = QSize(1280, 720);
-		emit userSelectedResolution(selectedVideoSize_);
+		QSize selectedVideoSize = QSize(1280, 720);
+		emit userSelectedResolution(selectedVideoSize);
 	});
 	connect(res1080Button_, &QRadioButton::clicked, [=]() {
-		selectedVideoSize_ = QSize(1920, 1080);
-		emit userSelectedResolution(selectedVideoSize_);
+		QSize selectedVideoSize = QSize(1920, 1080);
+		emit userSelectedResolution(selectedVideoSize);
 	});
 	connect(resCurrentButton_, &QRadioButton::clicked, [=]() {
-		selectedVideoSize_ = QSize(startVideoSize_.width(),
-					   startVideoSize_.height());
-		emit userSelectedResolution(selectedVideoSize_);
+		QSize selectedVideoSize = QSize(startVideoSize_.width(),
+						startVideoSize_.height());
+		emit userSelectedResolution(selectedVideoSize);
 	});
 }
 

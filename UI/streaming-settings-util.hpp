@@ -14,6 +14,9 @@ class StreamingSettingsUtility : public QObject {
 public:
 	// Uses current settings in OBS
 	static QSharedPointer<StreamWizard::EncoderSettingsRequest>
-	makeEncoderSettingsFromCurrentState(config_t *config,
-					    obs_data_t *settings);
+	makeEncoderSettingsFromCurrentState(config_t *config);
+
+	static void applyWizardSettings(
+		QSharedPointer<StreamWizard::SettingsMap> newSettings,
+		config_t *config);
 };

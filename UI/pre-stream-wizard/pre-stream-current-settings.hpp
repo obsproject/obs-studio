@@ -53,8 +53,6 @@ struct EncoderSettingsRequest {
 	//// Stream
 	StreamProtocol protocol; // Expandable but only supports RTMPS for now
 	VideoType videoType;     // LIVE or VOD (but always live for OBS)
-	char *serverUrl;
-	char *serviceName;
 
 	///// Video Settings
 	int videoWidth;

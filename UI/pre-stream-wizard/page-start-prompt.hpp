@@ -17,6 +17,8 @@ public:
 	StartPage(Destination dest, LaunchContext launchContext,
 		  QSize videoSize, QWidget *parent = nullptr);
 
+	void initializePage() override;
+
 signals:
 	// emitted selected resolution from start page radio buttons
 	void userSelectedResolution(QSize newVideoSize);
@@ -28,7 +30,6 @@ private:
 	QSize startVideoSize_;
 
 	// Selected settings
-	QSize selectedVideoSize_;
 	QRadioButton *res720Button_;
 	QRadioButton *res1080Button_;
 	QRadioButton *resCurrentButton_;

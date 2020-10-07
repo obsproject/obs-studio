@@ -56,18 +56,6 @@ private:
 	void setButtons(ButtonLayout layout);
 
 signals:
-	// User left the wizard with intention to continue streaming
-	void userSkippedWizard(void);
-
-	// User canceled, also canceling intent to stream.
-	void userAbortedStream(void);
-
-	// User ready to start stream
-	// If newSettings is not null, they should be applied before stream
-	// If newSettings is null, user or wizard did not opt to apply changes.
-	void
-	startStreamWithSettings(QSharedPointer<SettingsMap> newSettingsOrNull);
-
 	// Apply settings, don't start stream. e.g., is configuring from settings
 	void applySettings(QSharedPointer<SettingsMap> newSettings);
 

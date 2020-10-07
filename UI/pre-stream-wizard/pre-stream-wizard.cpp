@@ -81,6 +81,7 @@ void PreStreamWizard::requestSettings()
 		connect(fbProvider,
 			&FacebookEncoderSettingsProvider::returnErrorDescription,
 			this, &PreStreamWizard::providerError);
+
 		fbProvider->setEncoderRequest(currentSettings_);
 		fbProvider->run();
 
@@ -132,6 +133,11 @@ void PreStreamWizard::onPageChanged(int id)
 
 	case Page_Complete:
 		setButtons(FinishOnly);
+		if (newSettingsMap_ != nullptr && !newSettingsMap_.isNull()) {
+			// ToDo: messaging in edge case this could be empty
+			// and still make it here?
+			emit applySettings(newSettingsMap_);
+		};
 		break;
 
 	case Page_Error:

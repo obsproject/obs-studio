@@ -29,6 +29,7 @@
 #include <obs.hpp>
 
 #include "auth-base.hpp"
+#include "common-settings.hpp"
 
 class OBSBasic;
 class QAbstractButton;
@@ -39,6 +40,7 @@ class OBSPropertiesView;
 class OBSHotkeyWidget;
 
 #include "ui_OBSBasicSettings.h"
+#include "streaming-settings-util.hpp"
 
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
@@ -241,6 +243,8 @@ private slots:
 	void UpdateKeyLink();
 	void UpdateMoreInfoLink();
 	void preStreamWizardLaunch();
+	void preStreamWizardApplySettings(
+		QSharedPointer<StreamWizard::SettingsMap> newSettings);
 	void on_show_clicked();
 	void on_authPwShow_clicked();
 	void on_connectAccount_clicked();

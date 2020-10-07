@@ -23,10 +23,6 @@ QWizardPage *SettingsInputPage(StreamWizard::EncoderSettingsRequest *settings)
 	QWidget *formContainer = new QWidget();
 	QFormLayout *form = new QFormLayout(formContainer);
 
-	form->addRow("Server Url",
-		     new QLabel(QString::fromUtf8(settings->serverUrl)));
-	form->addRow("Service",
-		     new QLabel(QString::fromUtf8(settings->serviceName)));
 	form->addRow("Video Width",
 		     new QLabel(QString::number(settings->videoWidth)));
 	form->addRow("Video Height",
