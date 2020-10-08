@@ -361,6 +361,14 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 			      obs_data_t *settings)
 {
 	struct window_capture *wc = obs_properties_get_param(props);
+
+	const char *window = obs_data_get_string(settings, "window");
+	if (window == NULL || strlen(window) == 0) {
+		const char *first_window = obs_property_list_item_string(p, 0);
+		if (first_window)
+			obs_data_set_default_string(settings, "window", first_window);
+	}
+
 	update_settings(wc, settings);
 
 	update_settings_visibility(props, wc);
