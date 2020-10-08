@@ -2262,10 +2262,10 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USE);
 	obs_property_set_visible(p, capture_window_auto);
 
+	p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USR);
 	if (capture_window_auto) {
 		bool  use_custom_placeholder = obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
 
-		p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USR);
 		obs_property_set_visible(p, use_custom_placeholder);
 	} else {
 		obs_property_set_visible(p, false);
