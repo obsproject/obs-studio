@@ -16,10 +16,13 @@
 ******************************************************************************/
 
 #include <stdio.h>
+#include <string.h>
+#include <util/bmem.h>
 #include <util/dstr.h>
 #include <util/darray.h>
 #include <util/platform.h>
 #include <obs-module.h>
+#include "obs-x264-options.h"
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -255,72 +258,63 @@ static const char *validate(struct obs_x264 *obsx264, const char *val,
 	return NULL;
 }
 
-static void override_base_param(struct obs_x264 *obsx264, const char *param,
-				char **preset, char **profile, char **tune)
+static void override_base_param(struct obs_x264 *obsx264,
+				struct obs_x264_option option, char **preset,
+				char **profile, char **tune)
 {
-	char *name;
-	const char *val;
-
-	if (getparam(param, &name, &val)) {
-		if (astrcmpi(name, "preset") == 0) {
-			const char *valid_name = validate(
-				obsx264, val, "preset", x264_preset_names);
-			if (valid_name) {
-				bfree(*preset);
-				*preset = bstrdup(val);
-			}
-
-		} else if (astrcmpi(name, "profile") == 0) {
-			const char *valid_name = validate(
-				obsx264, val, "profile", x264_profile_names);
-			if (valid_name) {
-				bfree(*profile);
-				*profile = bstrdup(val);
-			}
-
-		} else if (astrcmpi(name, "tune") == 0) {
-			const char *valid_name =
-				validate(obsx264, val, "tune", x264_tune_names);
-			if (valid_name) {
-				bfree(*tune);
-				*tune = bstrdup(val);
-			}
+	const char *name = option.name;
+	const char *val = option.value;
+	if (astrcmpi(name, "preset") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "preset", x264_preset_names);
+		if (valid_name) {
+			bfree(*preset);
+			*preset = bstrdup(val);
 		}
 
-		bfree(name);
+	} else if (astrcmpi(name, "profile") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "profile", x264_profile_names);
+		if (valid_name) {
+			bfree(*profile);
+			*profile = bstrdup(val);
+		}
+
+	} else if (astrcmpi(name, "tune") == 0) {
+		const char *valid_name =
+			validate(obsx264, val, "tune", x264_tune_names);
+		if (valid_name) {
+			bfree(*tune);
+			*tune = bstrdup(val);
+		}
 	}
 }
 
-static inline void override_base_params(struct obs_x264 *obsx264, char **params,
+static inline void override_base_params(struct obs_x264 *obsx264,
+					const struct obs_x264_options *options,
 					char **preset, char **profile,
 					char **tune)
 {
-	while (*params)
-		override_base_param(obsx264, *(params++), preset, profile,
-				    tune);
+	for (size_t i = 0; i < options->count; ++i)
+		override_base_param(obsx264, options->options[i], preset,
+				    profile, tune);
 }
 
 #define OPENCL_ALIAS "opencl_is_experimental_and_potentially_unstable"
 
-static inline void set_param(struct obs_x264 *obsx264, const char *param)
+static inline void set_param(struct obs_x264 *obsx264,
+			     struct obs_x264_option option)
 {
-	char *name;
-	const char *val;
-
-	if (getparam(param, &name, &val)) {
-		if (strcmp(name, "preset") != 0 &&
-		    strcmp(name, "profile") != 0 && strcmp(name, "tune") != 0 &&
-		    strcmp(name, "fps") != 0 &&
-		    strcmp(name, "force-cfr") != 0 &&
-		    strcmp(name, "width") != 0 && strcmp(name, "height") != 0 &&
-		    strcmp(name, "opencl") != 0) {
-			if (strcmp(name, OPENCL_ALIAS) == 0)
-				strcpy(name, "opencl");
-			if (x264_param_parse(&obsx264->params, name, val) != 0)
-				warn("x264 param: %s failed", param);
-		}
-
-		bfree(name);
+	const char *name = option.name;
+	const char *val = option.value;
+	if (strcmp(name, "preset") != 0 && strcmp(name, "profile") != 0 &&
+	    strcmp(name, "tune") != 0 && strcmp(name, "fps") != 0 &&
+	    strcmp(name, "force-cfr") != 0 && strcmp(name, "width") != 0 &&
+	    strcmp(name, "height") != 0 && strcmp(name, "opencl") != 0) {
+		if (strcmp(option.name, OPENCL_ALIAS) == 0)
+			name = "opencl";
+		if (x264_param_parse(&obsx264->params, name, val) != 0)
+			warn("x264 param: %s=%s failed", name, val);
 	}
 }
 
@@ -362,23 +356,9 @@ static void log_x264(void *param, int level, const char *format, va_list args)
 	UNUSED_PARAMETER(level);
 }
 
-static inline const char *get_x264_colorspace_name(enum video_colorspace cs)
-{
-	switch (cs) {
-	case VIDEO_CS_DEFAULT:
-	case VIDEO_CS_601:
-	case VIDEO_CS_SRGB:
-		return "undef";
-	case VIDEO_CS_709:;
-	}
-
-	return "bt709";
-}
-
-static inline int get_x264_cs_val(enum video_colorspace cs,
+static inline int get_x264_cs_val(const char *const name,
 				  const char *const names[])
 {
-	const char *name = get_x264_colorspace_name(cs);
 	int idx = 0;
 	do {
 		if (strcmp(names[idx], name) == 0)
@@ -398,7 +378,7 @@ enum rate_control {
 };
 
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
-			  char **params, bool update)
+			  const struct obs_x264_options *options, bool update)
 {
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -481,13 +461,38 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	if (obs_data_has_user_value(settings, "bf"))
 		obsx264->params.i_bframe = bf;
 
-	obsx264->params.vui.i_transfer =
-		get_x264_cs_val(info.colorspace, x264_transfer_names);
-	obsx264->params.vui.i_colmatrix =
-		get_x264_cs_val(info.colorspace, x264_colmatrix_names);
-	obsx264->params.vui.i_colorprim =
-		get_x264_cs_val(info.colorspace, x264_colorprim_names);
+	static const char *const smpte170m = "smpte170m";
+	static const char *const bt709 = "bt709";
+	static const char *const iec61966_2_1 = "iec61966-2-1";
+	const char *colorprim = NULL;
+	const char *transfer = NULL;
+	const char *colmatrix = NULL;
+	switch (info.colorspace) {
+	case VIDEO_CS_601:
+		colorprim = smpte170m;
+		transfer = smpte170m;
+		colmatrix = smpte170m;
+		break;
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_709:
+		colorprim = bt709;
+		transfer = bt709;
+		colmatrix = bt709;
+		break;
+	case VIDEO_CS_SRGB:
+		colorprim = bt709;
+		transfer = iec61966_2_1;
+		colmatrix = bt709;
+		break;
+	}
+
 	obsx264->params.vui.b_fullrange = info.range == VIDEO_RANGE_FULL;
+	obsx264->params.vui.i_colorprim =
+		get_x264_cs_val(colorprim, x264_colorprim_names);
+	obsx264->params.vui.i_transfer =
+		get_x264_cs_val(transfer, x264_transfer_names);
+	obsx264->params.vui.i_colmatrix =
+		get_x264_cs_val(colmatrix, x264_colmatrix_names);
 
 	/* use the new filler method for CBR to allow real-time adjusting of
 	 * the bitrate */
@@ -516,8 +521,11 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	else
 		obsx264->params.i_csp = X264_CSP_NV12;
 
-	while (*params)
-		set_param(obsx264, *(params++));
+	for (size_t i = 0; i < options->ignored_word_count; ++i)
+		warn("ignoring invalid x264 option: %s",
+		     options->ignored_words[i]);
+	for (size_t i = 0; i < options->count; ++i)
+		set_param(obsx264, options->options[i]);
 
 	if (!update) {
 		info("settings:\n"
@@ -537,24 +545,52 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	}
 }
 
+static void log_custom_options(struct obs_x264 *obsx264,
+			       const struct obs_x264_options *options)
+{
+	if (options->count == 0) {
+		return;
+	}
+	size_t settings_string_length = 0;
+	for (size_t i = 0; i < options->count; ++i)
+		settings_string_length += strlen(options->options[i].name) +
+					  strlen(options->options[i].value) + 5;
+	size_t buffer_size = settings_string_length + 1;
+	char *settings_string = bmalloc(settings_string_length + 1);
+	char *p = settings_string;
+	size_t remaining_buffer_size = buffer_size;
+	for (size_t i = 0; i < options->count; ++i) {
+		int chars_written = snprintf(p, remaining_buffer_size,
+					     "\n\t%s = %s",
+					     options->options[i].name,
+					     options->options[i].value);
+		assert(chars_written >= 0);
+		assert((size_t)chars_written <= remaining_buffer_size);
+		p += chars_written;
+		remaining_buffer_size -= chars_written;
+	}
+	assert(remaining_buffer_size == 1);
+	assert(*p == '\0');
+	info("custom settings: %s", settings_string);
+	bfree(settings_string);
+}
+
 static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 			    bool update)
 {
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
-	const char *opts = obs_data_get_string(settings, "x264opts");
+	struct obs_x264_options options = obs_x264_parse_options(
+		obs_data_get_string(settings, "x264opts"));
 
-	char **paramlist;
 	bool success = true;
-
-	paramlist = strlist_split(opts, ' ', false);
 
 	if (!update)
 		blog(LOG_INFO, "---------------------------------");
 
 	if (!obsx264->context) {
-		override_base_params(obsx264, paramlist, &preset, &profile,
+		override_base_params(obsx264, &options, &preset, &profile,
 				     &tune);
 
 		if (preset && *preset)
@@ -568,9 +604,10 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 	}
 
 	if (success) {
-		update_params(obsx264, settings, paramlist, update);
-		if (opts && *opts && !update)
-			info("custom settings: %s", opts);
+		update_params(obsx264, settings, &options, update);
+		if (!update) {
+			log_custom_options(obsx264, &options);
+		}
 
 		if (!obsx264->context)
 			apply_x264_profile(obsx264, profile);
@@ -578,7 +615,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	obsx264->params.b_repeat_headers = false;
 
-	strlist_free(paramlist);
+	obs_x264_free_options(options);
 	bfree(preset);
 	bfree(profile);
 	bfree(tune);

@@ -289,6 +289,8 @@ private:
 
 	void RecalcOutputResPixels(const char *resText);
 
+	bool AskIfCanCloseSettings();
+
 	QIcon generalIcon;
 	QIcon streamIcon;
 	QIcon outputIcon;
@@ -375,7 +377,8 @@ private slots:
 	void SetAdvancedIcon(const QIcon &icon);
 
 protected:
-	virtual void closeEvent(QCloseEvent *event);
+	virtual void closeEvent(QCloseEvent *event) override;
+	void reject() override;
 
 public:
 	OBSBasicSettings(QWidget *parent);

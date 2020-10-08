@@ -6,6 +6,8 @@
  *   details, see the Creative Commons Zero 1.0 Universal license at
  *   <https://creativecommons.org/publicdomain/zero/1.0/>
  *
+ * SPDX-License-Identifier: CC0-1.0
+ *
  * Different compilers define different preprocessor macros for the
  * same architecture.  This is an attempt to provide a single
  * interface which is usable on any compiler.
@@ -53,6 +55,11 @@
 #define SIMDE_ARCH_ALPHA 1
 #endif
 #endif
+#if defined(SIMDE_ARCH_ALPHA)
+#define SIMDE_ARCH_ALPHA_CHECK(version) ((version) <= SIMDE_ARCH_ALPHA)
+#else
+#define SIMDE_ARCH_ALPHA_CHECK(version) (0)
+#endif
 
 /* Atmel AVR
    <https://en.wikipedia.org/wiki/Atmel_AVR> */
@@ -64,7 +71,7 @@
    <https://en.wikipedia.org/wiki/X86-64> */
 #if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || \
 	defined(__x86_64) || defined(_M_X66) || defined(_M_AMD64)
-#define SIMDE_ARCH_AMD64 1
+#define SIMDE_ARCH_AMD64 1000
 #endif
 
 /* ARM
@@ -93,11 +100,30 @@
 	defined(_ARM) || defined(_M_ARM) || defined(_M_ARM)
 #define SIMDE_ARCH_ARM 1
 #endif
+#if defined(SIMDE_ARCH_ARM)
+#define SIMDE_ARCH_ARM_CHECK(version) ((version) <= SIMDE_ARCH_ARM)
+#else
+#define SIMDE_ARCH_ARM_CHECK(version) (0)
+#endif
 
 /* AArch64
    <https://en.wikipedia.org/wiki/ARM_architecture> */
 #if defined(__aarch64__) || defined(_M_ARM64)
-#define SIMDE_ARCH_AARCH64 10
+#define SIMDE_ARCH_AARCH64 1000
+#endif
+#if defined(SIMDE_ARCH_AARCH64)
+#define SIMDE_ARCH_AARCH64_CHECK(version) ((version) <= SIMDE_ARCH_AARCH64)
+#else
+#define SIMDE_ARCH_AARCH64_CHECK(version) (0)
+#endif
+
+/* ARM SIMD ISA extensions */
+#if defined(__ARM_NEON)
+#if defined(SIMDE_ARCH_AARCH64)
+#define SIMDE_ARCH_ARM_NEON SIMDE_ARCH_AARCH64
+#elif defined(SIMDE_ARCH_ARM)
+#define SIMDE_ARCH_ARM_NEON SIMDE_ARCH_ARM
+#endif
 #endif
 
 /* Blackfin
@@ -127,6 +153,11 @@
 #define SIMDE_ARCH_CONVEX 2
 #elif defined(__convex__)
 #define SIMDE_ARCH_CONVEX 1
+#endif
+#if defined(SIMDE_ARCH_CONVEX)
+#define SIMDE_ARCH_CONVEX_CHECK(version) ((version) <= SIMDE_ARCH_CONVEX)
+#else
+#define SIMDE_ARCH_CONVEX_CHECK(version) (0)
 #endif
 
 /* Adapteva Epiphany
@@ -159,6 +190,11 @@
 #elif defined(__hppa__) || defined(__HPPA__) || defined(__hppa)
 #define SIMDE_ARCH_HPPA 1
 #endif
+#if defined(SIMDE_ARCH_HPPA)
+#define SIMDE_ARCH_HPPA_CHECK(version) ((version) <= SIMDE_ARCH_HPPA)
+#else
+#define SIMDE_ARCH_HPPA_CHECK(version) (0)
+#endif
 
 /* x86
    <https://en.wikipedia.org/wiki/X86> */
@@ -176,6 +212,88 @@
 #define SIMDE_ARCH_X86 3
 #elif defined(_X86_) || defined(__X86__) || defined(__THW_INTEL__)
 #define SIMDE_ARCH_X86 3
+#endif
+#if defined(SIMDE_ARCH_X86)
+#define SIMDE_ARCH_X86_CHECK(version) ((version) <= SIMDE_ARCH_X86)
+#else
+#define SIMDE_ARCH_X86_CHECK(version) (0)
+#endif
+
+/* SIMD ISA extensions for x86/x86_64 */
+#if defined(SIMDE_ARCH_X86) || defined(SIMDE_ARCH_AMD64)
+#if defined(_M_IX86_FP)
+#define SIMDE_ARCH_X86_MMX
+#if (_M_IX86_FP >= 1)
+#define SIMDE_ARCH_X86_SSE 1
+#endif
+#if (_M_IX86_FP >= 2)
+#define SIMDE_ARCH_X86_SSE2 1
+#endif
+#elif defined(_M_X64)
+#define SIMDE_ARCH_X86_SSE 1
+#define SIMDE_ARCH_X86_SSE2 1
+#else
+#if defined(__MMX__)
+#define SIMDE_ARCH_X86_MMX 1
+#endif
+#if defined(__SSE__)
+#define SIMDE_ARCH_X86_SSE 1
+#endif
+#if defined(__SSE2__)
+#define SIMDE_ARCH_X86_SSE2 1
+#endif
+#endif
+#if defined(__SSE3__)
+#define SIMDE_ARCH_X86_SSE3 1
+#endif
+#if defined(__SSSE3__)
+#define SIMDE_ARCH_X86_SSSE3 1
+#endif
+#if defined(__SSE4_1__)
+#define SIMDE_ARCH_X86_SSE4_1 1
+#endif
+#if defined(__SSE4_2__)
+#define SIMDE_ARCH_X86_SSE4_2 1
+#endif
+#if defined(__AVX__)
+#define SIMDE_ARCH_X86_AVX 1
+#if !defined(SIMDE_ARCH_X86_SSE3)
+#define SIMDE_ARCH_X86_SSE3 1
+#endif
+#if !defined(SIMDE_ARCH_X86_SSE4_1)
+#define SIMDE_ARCH_X86_SSE4_1 1
+#endif
+#if !defined(SIMDE_ARCH_X86_SSE4_1)
+#define SIMDE_ARCH_X86_SSE4_2 1
+#endif
+#endif
+#if defined(__AVX2__)
+#define SIMDE_ARCH_X86_AVX2 1
+#endif
+#if defined(__FMA__)
+#define SIMDE_ARCH_X86_FMA 1
+#if !defined(SIMDE_ARCH_X86_AVX)
+#define SIMDE_ARCH_X86_AVX 1
+#endif
+#endif
+#if defined(__AVX512BW__)
+#define SIMDE_ARCH_X86_AVX512BW 1
+#endif
+#if defined(__AVX512CD__)
+#define SIMDE_ARCH_X86_AVX512CD 1
+#endif
+#if defined(__AVX512DQ__)
+#define SIMDE_ARCH_X86_AVX512DQ 1
+#endif
+#if defined(__AVX512F__)
+#define SIMDE_ARCH_X86_AVX512F 1
+#endif
+#if defined(__AVX512VL__)
+#define SIMDE_ARCH_X86_AVX512VL 1
+#endif
+#if defined(__GFNI__)
+#define SIMDE_ARCH_X86_GFNI 1
+#endif
 #endif
 
 /* Itanium
@@ -206,6 +324,11 @@
 #elif defined(__mc68000__) || defined(__MC68000__)
 #define SIMDE_ARCH_M68K 68000
 #endif
+#if defined(SIMDE_ARCH_M68K)
+#define SIMDE_ARCH_M68K_CHECK(version) ((version) <= SIMDE_ARCH_M68K)
+#else
+#define SIMDE_ARCH_M68K_CHECK(version) (0)
+#endif
 
 /* Xilinx MicroBlaze
    <https://en.wikipedia.org/wiki/MicroBlaze> */
@@ -234,6 +357,11 @@
 #elif defined(_MIPS_ISA_MIPS) || defined(__mips) || defined(__MIPS__)
 #define SIMDE_ARCH_MIPS 1
 #endif
+#if defined(SIMDE_ARCH_MIPS)
+#define SIMDE_ARCH_MIPS_CHECK(version) ((version) <= SIMDE_ARCH_MIPS)
+#else
+#define SIMDE_ARCH_MIPS_CHECK(version) (0)
+#endif
 
 /* Matsushita MN10300
    <https://en.wikipedia.org/wiki/MN103> */
@@ -245,6 +373,8 @@
    <https://en.wikipedia.org/wiki/IBM_POWER_Instruction_Set_Architecture> */
 #if defined(_M_PPC)
 #define SIMDE_ARCH_POWER _M_PPC
+#elif defined(_ARCH_PWR9)
+#define SIMDE_ARCH_POWER 900
 #elif defined(_ARCH_PWR8)
 #define SIMDE_ARCH_POWER 800
 #elif defined(_ARCH_PWR7)
@@ -274,6 +404,20 @@
 	defined(__ppc)
 #define SIMDE_ARCH_POWER 1
 #endif
+#if defined(SIMDE_ARCH_POWER)
+#define SIMDE_ARCH_POWER_CHECK(version) ((version) <= SIMDE_ARCH_POWER)
+#else
+#define SIMDE_ARCH_POWER_CHECK(version) (0)
+#endif
+
+#if defined(__ALTIVEC__)
+#define SIMDE_ARCH_POWER_ALTIVEC SIMDE_ARCH_POWER
+#endif
+#if defined(SIMDE_ARCH_POWER)
+#define SIMDE_ARCH_POWER_ALTIVEC_CHECK(version) ((version) <= SIMDE_ARCH_POWER)
+#else
+#define SIMDE_ARCH_POWER_ALTIVEC_CHECK(version) (0)
+#endif
 
 /* SPARC
    <https://en.wikipedia.org/wiki/SPARC> */
@@ -297,6 +441,11 @@
 #define SIMDE_ARCH_SPARC 1
 #elif defined(__sparc__) || defined(__sparc)
 #define SIMDE_ARCH_SPARC 1
+#endif
+#if defined(SIMDE_ARCH_SPARC)
+#define SIMDE_ARCH_SPARC_CHECK(version) ((version) <= SIMDE_ARCH_SPARC)
+#else
+#define SIMDE_ARCH_SPARC_CHECK(version) (0)
 #endif
 
 /* SuperH
@@ -344,6 +493,20 @@
 #define SIMDE_ARCH_TMS320 540
 #elif defined(_TMS320C28X) || defined(__TMS320C28X__)
 #define SIMDE_ARCH_TMS320 280
+#endif
+#if defined(SIMDE_ARCH_TMS320)
+#define SIMDE_ARCH_TMS320_CHECK(version) ((version) <= SIMDE_ARCH_TMS320)
+#else
+#define SIMDE_ARCH_TMS320_CHECK(version) (0)
+#endif
+
+/* WebAssembly */
+#if defined(__wasm__)
+#define SIMDE_ARCH_WASM 1
+#endif
+
+#if defined(SIMDE_ARCH_WASM) && defined(__wasm_simd128__)
+#define SIMDE_ARCH_WASM_SIMD128
 #endif
 
 /* Xtensa

@@ -7,5 +7,5 @@ Name: libobs
 Description: OBS Studio Library
 Version: @OBS_VERSION@
 Requires: x11
-Cflags: -I${includedir}
+Cflags: -I${includedir} @PPC64_CFLAGS@
 Libs: -L${libdir} @PRIVATE_LIBS@

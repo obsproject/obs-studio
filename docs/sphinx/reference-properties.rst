@@ -230,6 +230,13 @@ Property Object Functions
    :param    description: Localized name shown to user
    :return:               The property
 
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   typedef bool (*obs_property_clicked_t)(obs_properties_t *props,
+                   obs_property_t *property, void *data);
+
 ---------------------
 
 .. function:: obs_property_t *obs_properties_add_font(obs_properties_t *props, const char *name, const char *description)
@@ -514,16 +521,20 @@ Property Modification Functions
 -------------------------------
 
 .. function:: void obs_property_set_modified_callback(obs_property_t *p, obs_property_modified_t modified)
+              void obs_property_set_modified_callback2(obs_property_t *p, obs_property_modified2_t modified2, void *priv)
 
    Allows the ability to change the properties depending on what
    settings are used by the user.
 
-   Relevant data types used with this function:
+   Relevant data types used with these functions:
 
 .. code:: cpp
 
-   typedef bool (*obs_property_clicked_t)(obs_properties_t *props,
-                   obs_property_t *property, void *data);
+   typedef bool (*obs_property_modified_t)(obs_properties_t *props,
+                   obs_property_t *property, obs_data_t *settings);
+   typedef bool (*obs_property_modified2_t)(void *priv,
+                   obs_properties_t *props, obs_property_t *property,
+                   obs_data_t *settings);
 
 ---------------------
 

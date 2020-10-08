@@ -3,7 +3,6 @@
 #include <dxgi1_2.h>
 #include <d3dcompiler.h>
 
-#include "d3d1x_shaders.hpp"
 #include "graphics-hook.h"
 #include "../funchook.h"
 
@@ -218,41 +217,9 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 	return hr;
 }
 
-static pD3DCompile get_compiler(void)
-{
-	pD3DCompile compile = nullptr;
-	char d3dcompiler[40] = {};
-	int ver = 49;
-
-	while (ver > 30) {
-		sprintf_s(d3dcompiler, 40, "D3DCompiler_%02d.dll", ver);
-
-		HMODULE module = LoadLibraryA(d3dcompiler);
-		if (module) {
-			compile = (pD3DCompile)GetProcAddress(module,
-							      "D3DCompile");
-			if (compile) {
-				break;
-			}
-		}
-
-		ver--;
-	}
-
-	return compile;
-}
-
-static uint8_t vertex_shader_data[1024];
-static uint8_t pixel_shader_data[1024];
-static size_t vertex_shader_size = 0;
-static size_t pixel_shader_size = 0;
-
 bool hook_dxgi(void)
 {
-	pD3DCompile compile;
-	ID3D10Blob *blob;
 	HMODULE dxgi_module = get_system_module("dxgi.dll");
-	HRESULT hr;
 	void *present_addr;
 	void *resize_addr;
 	void *present1_addr = nullptr;
@@ -260,42 +227,6 @@ bool hook_dxgi(void)
 	if (!dxgi_module) {
 		return false;
 	}
-
-	compile = get_compiler();
-	if (!compile) {
-		hlog("hook_dxgi: failed to find d3d compiler library");
-		return true;
-	}
-
-	/* ---------------------- */
-
-	hr = compile(vertex_shader_string, sizeof(vertex_shader_string),
-		     "vertex_shader_string", nullptr, nullptr, "main", "vs_4_0",
-		     D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, &blob, nullptr);
-	if (FAILED(hr)) {
-		hlog_hr("hook_dxgi: failed to compile vertex shader", hr);
-		return true;
-	}
-
-	vertex_shader_size = (size_t)blob->GetBufferSize();
-	memcpy(vertex_shader_data, blob->GetBufferPointer(),
-	       blob->GetBufferSize());
-	blob->Release();
-
-	/* ---------------------- */
-
-	hr = compile(pixel_shader_string, sizeof(pixel_shader_string),
-		     "pixel_shader_string", nullptr, nullptr, "main", "ps_4_0",
-		     D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, &blob, nullptr);
-	if (FAILED(hr)) {
-		hlog_hr("hook_dxgi: failed to compile pixel shader", hr);
-		return true;
-	}
-
-	pixel_shader_size = (size_t)blob->GetBufferSize();
-	memcpy(pixel_shader_data, blob->GetBufferPointer(),
-	       blob->GetBufferSize());
-	blob->Release();
 
 	/* ---------------------- */
 
@@ -322,16 +253,4 @@ bool hook_dxgi(void)
 
 	hlog("Hooked DXGI");
 	return true;
-}
-
-uint8_t *get_d3d1x_vertex_shader(size_t *size)
-{
-	*size = vertex_shader_size;
-	return vertex_shader_data;
-}
-
-uint8_t *get_d3d1x_pixel_shader(size_t *size)
-{
-	*size = pixel_shader_size;
-	return pixel_shader_data;
 }

@@ -160,12 +160,12 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 	if (filter->height < 1)
 		filter->height = 1;
 
-	if (width && filter->width) {
+	if (width) {
 		mul_val->x = (float)filter->width / (float)width;
 		add_val->x = (float)filter->left / (float)width;
 	}
 
-	if (height && filter->height) {
+	if (height) {
 		mul_val->y = (float)filter->height / (float)height;
 		add_val->y = (float)filter->top / (float)height;
 	}

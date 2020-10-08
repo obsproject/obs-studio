@@ -72,6 +72,7 @@ string GetDefaultVideoSavePath()
 vector<string> GetPreferredLocales()
 {
 	setlocale(LC_ALL, "");
+	vector<string> matched;
 	string messages = setlocale(LC_MESSAGES, NULL);
 	if (!messages.size() || messages == "C" || messages == "POSIX")
 		return {};
@@ -85,10 +86,10 @@ vector<string> GetPreferredLocales()
 			return {locale};
 
 		if (locale.substr(0, 2) == messages.substr(0, 2))
-			return {locale};
+			matched.push_back(locale);
 	}
 
-	return {};
+	return matched;
 }
 
 bool IsAlwaysOnTop(QWidget *window)

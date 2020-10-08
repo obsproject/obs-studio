@@ -26,6 +26,28 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	QWidget *widget;
 	QLabel *label;
 
+	QLabel *volLabel = new QLabel(QTStr("Basic.AdvAudio.Volume"));
+	volLabel->setStyleSheet("font-weight: bold;");
+	volLabel->setContentsMargins(0, 0, 6, 0);
+
+	usePercent = new QCheckBox();
+	usePercent->setStyleSheet("font-weight: bold;");
+	usePercent->setText("%");
+	connect(usePercent, SIGNAL(toggled(bool)), this,
+		SLOT(SetVolumeType(bool)));
+
+	VolumeType volType = (VolumeType)config_get_int(
+		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
+
+	if (volType == VolumeType::Percent)
+		usePercent->setChecked(true);
+
+	QHBoxLayout *volLayout = new QHBoxLayout();
+	volLayout->setContentsMargins(0, 0, 0, 0);
+	volLayout->addWidget(volLabel);
+	volLayout->addWidget(usePercent);
+	volLayout->addStretch();
+
 	int idx = 0;
 	mainLayout = new QGridLayout;
 	mainLayout->setContentsMargins(0, 0, 0, 0);
@@ -37,9 +59,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	label = new QLabel(QTStr("Basic.Stats.Status"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
-	label = new QLabel(QTStr("Basic.AdvAudio.Volume"));
-	label->setStyleSheet("font-weight: bold;");
-	mainLayout->addWidget(label, 0, idx++);
+	mainLayout->addLayout(volLayout, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Mono"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
@@ -193,48 +213,20 @@ void OBSBasicAdvAudio::SourceRemoved(OBSSource source)
 	}
 }
 
-void OBSBasicAdvAudio::SetVolumeType()
+void OBSBasicAdvAudio::SetVolumeType(bool percent)
 {
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	VolumeType type = (VolumeType)action->property("volumeType").toInt();
+	VolumeType type;
+
+	if (percent)
+		type = VolumeType::Percent;
+	else
+		type = VolumeType::dB;
 
 	for (size_t i = 0; i < controls.size(); i++)
 		controls[i]->SetVolumeWidget(type);
 
 	config_set_int(GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType",
 		       (int)type);
-}
-
-void OBSBasicAdvAudio::ShowContextMenu(const QPoint &pos)
-{
-	VolumeType type = (VolumeType)config_get_int(
-		GetGlobalConfig(), "BasicWindow", "AdvAudioVolumeType");
-
-	QMenu *contextMenu = new QMenu(this);
-
-	QAction *percent = new QAction(QTStr("Percent"), this);
-	QAction *dB = new QAction(QTStr("dB"), this);
-
-	percent->setProperty("volumeType", (int)VolumeType::Percent);
-	dB->setProperty("volumeType", (int)VolumeType::dB);
-
-	connect(percent, SIGNAL(triggered()), this, SLOT(SetVolumeType()),
-		Qt::DirectConnection);
-	connect(dB, SIGNAL(triggered()), this, SLOT(SetVolumeType()),
-		Qt::DirectConnection);
-
-	percent->setCheckable(true);
-	dB->setCheckable(true);
-
-	if (type == VolumeType::Percent)
-		percent->setChecked(true);
-	else if (type == VolumeType::dB)
-		dB->setChecked(true);
-
-	contextMenu->addAction(dB);
-	contextMenu->addAction(percent);
-
-	contextMenu->exec(mapToGlobal(pos));
 }
 
 void OBSBasicAdvAudio::ActiveOnlyChanged(bool checked)

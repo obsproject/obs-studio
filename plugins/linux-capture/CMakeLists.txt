@@ -47,5 +47,6 @@ target_link_libraries(linux-capture
 	${X11_Xcomposite_LIB}
 	${XCB_LIBRARIES}
 )
+set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-capture data)

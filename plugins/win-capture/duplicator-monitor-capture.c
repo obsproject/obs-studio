@@ -51,6 +51,15 @@ static inline void update_settings(struct duplicator_capture *capture,
 
 	obs_enter_graphics();
 
+	struct gs_monitor_info info;
+	if (gs_get_duplicator_monitor_info(capture->monitor, &info)) {
+		info("update settings:\n"
+		     "\tdisplay: %d (%ldx%ld)\n"
+		     "\tcursor: %s",
+		     capture->monitor + 1, info.cx, info.cy,
+		     capture->capture_cursor ? "true" : "false");
+	}
+
 	gs_duplicator_destroy(capture->duplicator);
 	capture->duplicator = NULL;
 	capture->width = 0;
@@ -205,7 +214,7 @@ static uint32_t duplicator_capture_height(void *data)
 
 static void draw_cursor(struct duplicator_capture *capture)
 {
-	cursor_draw(&capture->cursor_data, -capture->x, -capture->y, 1.0f, 1.0f,
+	cursor_draw(&capture->cursor_data, -capture->x, -capture->y,
 		    capture->rot % 180 == 0 ? capture->width : capture->height,
 		    capture->rot % 180 == 0 ? capture->height : capture->width);
 }

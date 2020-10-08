@@ -207,6 +207,8 @@ target_link_libraries(obs-scripting
 	${obs-scripting_PLATFORM_DEPS}
 	)
 
+set_target_properties(obs-scripting PROPERTIES FOLDER "scripting")
+
 if(PYTHONLIBS_FOUND)
 	add_subdirectory(obspython)
 endif()

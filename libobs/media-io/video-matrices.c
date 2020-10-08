@@ -171,8 +171,8 @@ bool video_format_get_parameters(enum video_colorspace color_space,
 		matrices_initialized = true;
 	}
 #endif
-	if (color_space == VIDEO_CS_DEFAULT)
-		color_space = VIDEO_CS_601;
+	if ((color_space == VIDEO_CS_DEFAULT) || (color_space == VIDEO_CS_SRGB))
+		color_space = VIDEO_CS_709;
 
 	for (size_t i = 0; i < NUM_FORMATS; i++) {
 		if (format_info[i].color_space != color_space)

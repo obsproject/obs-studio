@@ -211,6 +211,17 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 	m_mfxEncParams.mfx.FrameInfo.CropH = pParams->nHeight;
 	m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
 
+	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+	if ((qsv_platform >= QSV_CPU_PLATFORM_ICL) &&
+	    (pParams->nbFrames == 0) &&
+	    (m_ver.Major == 1 && m_ver.Minor >= 31)) {
+		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_ON;
+		if (pParams->nRateControl == MFX_RATECONTROL_LA_ICQ ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA_HRD ||
+		    pParams->nRateControl == MFX_RATECONTROL_LA)
+			pParams->nRateControl = MFX_RATECONTROL_VBR;
+	}
+
 	m_mfxEncParams.mfx.RateControlMethod = pParams->nRateControl;
 
 	switch (pParams->nRateControl) {
@@ -268,10 +279,23 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 			m_co2.MBBRC = MFX_CODINGOPTION_ON;
 		if (pParams->nbFrames > 1)
 			m_co2.BRefType = MFX_B_REF_PYRAMID;
+		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+			m_co2.RepeatPPS = MFX_CODINGOPTION_OFF;
+			if (pParams->nRateControl == MFX_RATECONTROL_CBR ||
+			    pParams->nRateControl == MFX_RATECONTROL_VBR) {
+				m_co2.LookAheadDepth = pParams->nLADEPTH;
+			}
+		}
 		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
 	}
 
-	if (pParams->bCQM) {
+	if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+		memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
+		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
+		m_co3.Header.BufferSz = sizeof(m_co3);
+		m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
+		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co3;
+	} else if (pParams->bCQM) {
 		if (m_ver.Major == 1 && m_ver.Minor >= 16) {
 			memset(&m_co3, 0, sizeof(mfxExtCodingOption3));
 			m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
@@ -296,6 +320,11 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+
+	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
+		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
+	}
 
 	return true;
 }
@@ -542,6 +571,70 @@ mfxStatus QSV_Encoder_Internal::Encode(uint64_t ts, uint8_t *pDataY,
 		sts = m_mfxAllocator.Unlock(m_mfxAllocator.pthis,
 					    pSurface->Data.MemId,
 					    &(pSurface->Data));
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+	}
+
+	for (;;) {
+		// Encode a frame asynchronously (returns immediately)
+		sts = m_pmfxENC->EncodeFrameAsync(NULL, pSurface,
+						  &m_pTaskPool[nTaskIdx].mfxBS,
+						  &m_pTaskPool[nTaskIdx].syncp);
+
+		if (MFX_ERR_NONE < sts && !m_pTaskPool[nTaskIdx].syncp) {
+			// Repeat the call if warning and no output
+			if (MFX_WRN_DEVICE_BUSY == sts)
+				MSDK_SLEEP(
+					1); // Wait if device is busy, then repeat the same call
+		} else if (MFX_ERR_NONE < sts && m_pTaskPool[nTaskIdx].syncp) {
+			sts = MFX_ERR_NONE; // Ignore warnings if output is available
+			break;
+		} else if (MFX_ERR_NOT_ENOUGH_BUFFER == sts) {
+			// Allocate more bitstream buffer memory here if needed...
+			break;
+		} else
+			break;
+	}
+
+	return sts;
+}
+
+mfxStatus QSV_Encoder_Internal::Encode_tex(uint64_t ts, uint32_t tex_handle,
+					   uint64_t lock_key,
+					   uint64_t *next_key,
+					   mfxBitstream **pBS)
+{
+	mfxStatus sts = MFX_ERR_NONE;
+	*pBS = NULL;
+	int nTaskIdx = GetFreeTaskIndex(m_pTaskPool, m_nTaskPool);
+	int nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+
+	while (MFX_ERR_NOT_FOUND == nTaskIdx || MFX_ERR_NOT_FOUND == nSurfIdx) {
+		// No more free tasks or surfaces, need to sync
+		sts = m_session.SyncOperation(
+			m_pTaskPool[m_nFirstSyncTask].syncp, 60000);
+		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
+
+		mfxU8 *pTemp = m_outBitstream.Data;
+		memcpy(&m_outBitstream, &m_pTaskPool[m_nFirstSyncTask].mfxBS,
+		       sizeof(mfxBitstream));
+
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.Data = pTemp;
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataLength = 0;
+		m_pTaskPool[m_nFirstSyncTask].mfxBS.DataOffset = 0;
+		m_pTaskPool[m_nFirstSyncTask].syncp = NULL;
+		nTaskIdx = m_nFirstSyncTask;
+		m_nFirstSyncTask = (m_nFirstSyncTask + 1) % m_nTaskPool;
+		*pBS = &m_outBitstream;
+
+		nSurfIdx = GetFreeSurfaceIndex(m_pmfxSurfaces, m_nSurfNum);
+	}
+
+	mfxFrameSurface1 *pSurface = m_pmfxSurfaces[nSurfIdx];
+	//copy to default surface directly
+	pSurface->Data.TimeStamp = ts;
+	if (m_bUseD3D11 || m_bD3D9HACK) {
+		sts = simple_copytex(m_mfxAllocator.pthis, pSurface->Data.MemId,
+				     tex_handle, lock_key, next_key);
 		MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 	}
 

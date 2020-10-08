@@ -529,3 +529,17 @@ Functions
    active scene if not in studio mode.
 
    :param scene: The scene to set as the current preview.
+
+---------------------------------------
+
+.. function:: void *obs_frontend_take_screenshot(void)
+
+   Takes a screenshot of the main OBS output.
+
+---------------------------------------
+
+.. function:: void *obs_frontend_take_source_screenshot(obs_source_t *source)
+
+   Takes a screenshot of the specified source.
+
+   :param source: The source to take screenshot of.

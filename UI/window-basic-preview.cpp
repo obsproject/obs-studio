@@ -495,13 +495,15 @@ void OBSBasicPreview::keyReleaseEvent(QKeyEvent *event)
 
 void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 {
-	if (scrollMode && IsFixedScaling() &&
-	    event->orientation() == Qt::Vertical) {
-		if (event->delta() > 0)
-			SetScalingLevel(scalingLevel + 1);
-		else if (event->delta() < 0)
-			SetScalingLevel(scalingLevel - 1);
-		emit DisplayResized();
+	if (scrollMode && IsFixedScaling()) {
+		const int delta = event->angleDelta().y();
+		if (delta != 0) {
+			if (delta > 0)
+				SetScalingLevel(scalingLevel + 1);
+			else
+				SetScalingLevel(scalingLevel - 1);
+			emit DisplayResized();
+		}
 	}
 
 	OBSQTDisplay::wheelEvent(event);
@@ -579,6 +581,25 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_zero(&lastMoveOffset);
 
 	mousePos = startPos;
+}
+
+void OBSBasicPreview::UpdateCursor(uint32_t &flags)
+{
+	if (!flags && cursor().shape() != Qt::OpenHandCursor)
+		unsetCursor();
+	if (cursor().shape() != Qt::ArrowCursor)
+		return;
+
+	if ((flags & ITEM_LEFT && flags & ITEM_TOP) ||
+	    (flags & ITEM_RIGHT && flags & ITEM_BOTTOM))
+		setCursor(Qt::SizeFDiagCursor);
+	else if ((flags & ITEM_LEFT && flags & ITEM_BOTTOM) ||
+		 (flags & ITEM_RIGHT && flags & ITEM_TOP))
+		setCursor(Qt::SizeBDiagCursor);
+	else if (flags & ITEM_LEFT || flags & ITEM_RIGHT)
+		setCursor(Qt::SizeHorCursor);
+	else if (flags & ITEM_TOP || flags & ITEM_BOTTOM)
+		setCursor(Qt::SizeVerCursor);
 }
 
 static bool select_one(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
@@ -683,6 +704,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		mouseMoved = false;
 		cropping = false;
 		selectionBox = false;
+		unsetCursor();
 
 		OBSSceneItem item = GetItemAtPos(pos, true);
 
@@ -1088,6 +1110,9 @@ void OBSBasicPreview::BoxItems(const vec2 &startPos, const vec2 &pos)
 	if (!scene)
 		return;
 
+	if (cursor().shape() != Qt::CrossCursor)
+		setCursor(Qt::CrossCursor);
+
 	SceneFindBoxData data(startPos, pos);
 	obs_scene_enum_items(scene, FindItemsInBox, &data);
 
@@ -1421,6 +1446,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	if (locked)
 		return;
 
+	bool updateCursor = false;
+
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
 
@@ -1456,6 +1483,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 				StretchItem(pos);
 
 		} else if (mouseOverItems) {
+			if (cursor().shape() != Qt::SizeAllCursor)
+				setCursor(Qt::SizeAllCursor);
 			selectionBox = false;
 			MoveItems(pos);
 		} else {
@@ -1474,6 +1503,27 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		std::lock_guard<std::mutex> lock(selectMutex);
 		hoveredPreviewItems.clear();
 		hoveredPreviewItems.push_back(item);
+
+		if (!mouseMoved && hoveredPreviewItems.size() > 0) {
+			mousePos = pos;
+			OBSBasic *main = reinterpret_cast<OBSBasic *>(
+				App()->GetMainWindow());
+#ifdef SUPPORTS_FRACTIONAL_SCALING
+			float scale = main->devicePixelRatioF();
+#else
+			float scale = main->devicePixelRatio();
+#endif
+			float x = float(event->x()) - main->previewX / scale;
+			float y = float(event->y()) - main->previewY / scale;
+			vec2_set(&startPos, x, y);
+			updateCursor = true;
+		}
+	}
+
+	if (updateCursor) {
+		GetStretchHandleData(startPos);
+		uint32_t stretchFlags = (uint32_t)stretchHandle;
+		UpdateCursor(stretchFlags);
 	}
 }
 

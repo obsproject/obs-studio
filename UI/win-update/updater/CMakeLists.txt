@@ -14,8 +14,6 @@ include_directories(${LIBLZMA_INCLUDE_DIRS})
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(${BLAKE2_INCLUDE_DIR})
 
-find_package(ZLIB REQUIRED)
-
 set(updater_HEADERS
 	../win-update-helpers.hpp
 	resource.h
@@ -51,3 +49,4 @@ target_link_libraries(updater
 	shell32
 	winhttp
 	)
+set_target_properties(updater PROPERTIES FOLDER "frontend")

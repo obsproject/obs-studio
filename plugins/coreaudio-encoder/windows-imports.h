@@ -61,6 +61,24 @@ struct AudioStreamPacketDescription {
 };
 typedef struct AudioStreamPacketDescription AudioStreamPacketDescription;
 
+typedef UInt32 AudioChannelLabel;
+typedef UInt32 AudioChannelLayoutTag;
+
+struct AudioChannelDescription {
+	AudioChannelLabel mChannelLabel;
+	UInt32 mChannelFlags;
+	float mCoordinates[3];
+};
+typedef struct AudioChannelDescription AudioChannelDescription;
+
+struct AudioChannelLayout {
+	AudioChannelLayoutTag mChannelLayoutTag;
+	UInt32 mChannelBitmap;
+	UInt32 mNumberChannelDescriptions;
+	AudioChannelDescription mChannelDescriptions[kVariableLengthArray];
+};
+typedef struct AudioChannelLayout AudioChannelLayout;
+
 typedef OSStatus (*AudioConverterComplexInputDataProc)(
 	AudioConverterRef inAudioConverter, UInt32 *ioNumberDataPackets,
 	AudioBufferList *ioData,
@@ -343,49 +361,60 @@ static HMODULE audio_toolbox = NULL;
 
 static void release_lib(void)
 {
-#define RELEASE_LIB(x)          \
-	if (x) {                \
-		FreeLibrary(x); \
-		x = NULL;       \
+	if (audio_toolbox) {
+		FreeLibrary(audio_toolbox);
+		audio_toolbox = NULL;
+	}
+}
+
+static bool load_from_shell_path(REFKNOWNFOLDERID rfid, const wchar_t *subpath)
+{
+	wchar_t *sh_path;
+	if (SHGetKnownFolderPath(rfid, 0, NULL, &sh_path) != S_OK) {
+		CA_LOG(LOG_WARNING, "Could not retrieve shell path");
+		return false;
 	}
 
-	RELEASE_LIB(audio_toolbox);
-#undef RELEASE_LIB
+	wchar_t path[MAX_PATH];
+	_snwprintf(path, MAX_PATH, L"%s\\%s", sh_path, subpath);
+	CoTaskMemFree(sh_path);
+
+	SetDllDirectory(path);
+	audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
+	SetDllDirectory(nullptr);
+
+	return !!audio_toolbox;
 }
 
 static bool load_lib(void)
 {
-	PWSTR common_path;
-	if (SHGetKnownFolderPath(FOLDERID_ProgramFilesCommon, 0, NULL,
-				 &common_path) != S_OK) {
-		CA_LOG(LOG_WARNING, "Could not retrieve common files path");
-		return false;
-	}
+	/* -------------------------------------------- */
+	/* attempt to load from path                    */
 
-	struct dstr path = {0};
-	dstr_printf(&path, "%S\\Apple\\Apple Application Support", common_path);
-	CoTaskMemFree(common_path);
-
-	wchar_t *w_path = dstr_to_wcs(&path);
-	dstr_free(&path);
-
-	SetDllDirectory(w_path);
-	bfree(w_path);
-
-#define LOAD_LIB(x, n)            \
-	x = LoadLibrary(TEXT(n)); \
-	if (!x)                   \
-		CA_LOG(LOG_DEBUG, "Failed loading library '" n "'");
-
-	LOAD_LIB(audio_toolbox, "CoreAudioToolbox.dll");
-#undef LOAD_LIB
-
-	SetDllDirectory(NULL);
-
-	if (audio_toolbox)
+	audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
+	if (!!audio_toolbox)
 		return true;
 
-	release_lib();
+	/* -------------------------------------------- */
+	/* attempt to load from known install locations */
+
+	struct path_list_t {
+		REFKNOWNFOLDERID rfid;
+		const wchar_t *subpath;
+	};
+
+	path_list_t path_list[] = {
+		{FOLDERID_ProgramFilesCommon,
+		 L"Apple\\Apple Application Support"},
+		{FOLDERID_ProgramFiles, L"iTunes"},
+	};
+
+	for (auto &val : path_list) {
+		if (load_from_shell_path(val.rfid, val.subpath)) {
+			return true;
+		}
+	}
+
 	return false;
 }
 

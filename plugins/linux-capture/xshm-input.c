@@ -49,6 +49,16 @@ struct xshm_data {
 
 	gs_texture_t *texture;
 
+	int_fast32_t cut_top;
+	int_fast32_t cut_left;
+	int_fast32_t cut_right;
+	int_fast32_t cut_bot;
+
+	int_fast32_t adj_x_org;
+	int_fast32_t adj_y_org;
+	int_fast32_t adj_width;
+	int_fast32_t adj_height;
+
 	bool show_cursor;
 	bool use_xinerama;
 	bool use_randr;
@@ -66,8 +76,8 @@ static inline void xshm_resize_texture(struct xshm_data *data)
 {
 	if (data->texture)
 		gs_texture_destroy(data->texture);
-	data->texture = gs_texture_create(data->width, data->height, GS_BGRA, 1,
-					  NULL, GS_DYNAMIC);
+	data->texture = gs_texture_create(data->adj_width, data->adj_height,
+					  GS_BGRA, 1, NULL, GS_DYNAMIC);
 }
 
 /**
@@ -98,8 +108,8 @@ static bool xshm_check_extensions(xcb_connection_t *xcb)
  */
 static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 {
-	int_fast32_t old_width = data->width;
-	int_fast32_t old_height = data->height;
+	int_fast32_t prev_width = data->adj_width;
+	int_fast32_t prev_height = data->adj_height;
 
 	if (data->use_randr) {
 		if (randr_screen_geo(data->xcb, data->screen_id, &data->x_org,
@@ -129,12 +139,36 @@ static int_fast32_t xshm_update_geometry(struct xshm_data *data)
 		return -1;
 	}
 
+	data->adj_y_org = data->y_org;
+	data->adj_x_org = data->x_org;
+	data->adj_height = data->height;
+	data->adj_width = data->width;
+
+	if (data->cut_top != 0) {
+		if (data->y_org > 0)
+			data->adj_y_org = data->y_org + data->cut_top;
+		else
+			data->adj_y_org = data->cut_top;
+		data->adj_height = data->adj_height - data->cut_top;
+	}
+	if (data->cut_left != 0) {
+		if (data->x_org > 0)
+			data->adj_x_org = data->x_org + data->cut_left;
+		else
+			data->adj_x_org = data->cut_left;
+		data->adj_width = data->adj_width - data->cut_left;
+	}
+	if (data->cut_right != 0)
+		data->adj_width = data->adj_width - data->cut_right;
+	if (data->cut_bot != 0)
+		data->adj_height = data->adj_height - data->cut_bot;
+
 	blog(LOG_INFO,
 	     "Geometry %" PRIdFAST32 "x%" PRIdFAST32 " @ %" PRIdFAST32
 	     ",%" PRIdFAST32,
 	     data->width, data->height, data->x_org, data->y_org);
 
-	if (old_width == data->width && old_height == data->height)
+	if (prev_width == data->adj_width && prev_height == data->adj_height)
 		return 0;
 
 	return 1;
@@ -208,14 +242,15 @@ static void xshm_capture_start(struct xshm_data *data)
 		goto fail;
 	}
 
-	data->xshm = xshm_xcb_attach(data->xcb, data->width, data->height);
+	data->xshm =
+		xshm_xcb_attach(data->xcb, data->adj_width, data->adj_height);
 	if (!data->xshm) {
 		blog(LOG_ERROR, "failed to attach shm !");
 		goto fail;
 	}
 
 	data->cursor = xcb_xcursor_init(data->xcb);
-	xcb_xcursor_offset(data->cursor, data->x_org, data->y_org);
+	xcb_xcursor_offset(data->cursor, data->adj_x_org, data->adj_y_org);
 
 	obs_enter_graphics();
 
@@ -242,6 +277,11 @@ static void xshm_update(void *vptr, obs_data_t *settings)
 	data->advanced = obs_data_get_bool(settings, "advanced");
 	data->server = bstrdup(obs_data_get_string(settings, "server"));
 
+	data->cut_top = obs_data_get_int(settings, "cut_top");
+	data->cut_left = obs_data_get_int(settings, "cut_left");
+	data->cut_right = obs_data_get_int(settings, "cut_right");
+	data->cut_bot = obs_data_get_int(settings, "cut_bot");
+
 	xshm_capture_start(data);
 }
 
@@ -253,6 +293,10 @@ static void xshm_defaults(obs_data_t *defaults)
 	obs_data_set_default_int(defaults, "screen", 0);
 	obs_data_set_default_bool(defaults, "show_cursor", true);
 	obs_data_set_default_bool(defaults, "advanced", false);
+	obs_data_set_default_int(defaults, "cut_top", 0);
+	obs_data_set_default_int(defaults, "cut_left", 0);
+	obs_data_set_default_int(defaults, "cut_right", 0);
+	obs_data_set_default_int(defaults, "cut_bot", 0);
 }
 
 /**
@@ -371,6 +415,16 @@ static obs_properties_t *xshm_properties(void *vptr)
 				obs_module_text("CaptureCursor"));
 	obs_property_t *advanced = obs_properties_add_bool(
 		props, "advanced", obs_module_text("AdvancedSettings"));
+
+	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"),
+			       -4096, 4096, 1);
+	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
+			       -4096, 4096, 1);
+	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
+			       0, 4096, 1);
+	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
+			       0, 4096, 1);
+
 	obs_property_t *server = obs_properties_add_text(
 		props, "server", obs_module_text("XServer"), OBS_TEXT_DEFAULT);
 
@@ -432,9 +486,9 @@ static void xshm_video_tick(void *vptr, float seconds)
 	xcb_xfixes_get_cursor_image_reply_t *cur_r;
 
 	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
-					    data->x_org, data->y_org,
-					    data->width, data->height, ~0,
-					    XCB_IMAGE_FORMAT_Z_PIXMAP,
+					    data->adj_x_org, data->adj_y_org,
+					    data->adj_width, data->adj_height,
+					    ~0, XCB_IMAGE_FORMAT_Z_PIXMAP,
 					    data->xshm->seg, 0);
 	cur_c = xcb_xfixes_get_cursor_image_unchecked(data->xcb);
 
@@ -447,7 +501,7 @@ static void xshm_video_tick(void *vptr, float seconds)
 	obs_enter_graphics();
 
 	gs_texture_set_image(data->texture, (void *)data->xshm->data,
-			     data->width * 4, false);
+			     data->adj_width * 4, false);
 	xcb_xcursor_update(data->cursor, cur_r);
 
 	obs_leave_graphics();
@@ -491,7 +545,7 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 static uint32_t xshm_getwidth(void *vptr)
 {
 	XSHM_DATA(vptr);
-	return data->width;
+	return data->adj_width;
 }
 
 /**
@@ -500,7 +554,7 @@ static uint32_t xshm_getwidth(void *vptr)
 static uint32_t xshm_getheight(void *vptr)
 {
 	XSHM_DATA(vptr);
-	return data->height;
+	return data->adj_height;
 }
 
 struct obs_source_info xshm_input = {

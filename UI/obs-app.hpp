@@ -40,6 +40,10 @@ std::string GenerateTimeDateFilename(const char *extension,
 				     bool noSpace = false);
 std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				      const char *format);
+std::string GetFormatString(const char *format, const char *prefix,
+			    const char *suffix);
+std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
+			      bool overwrite, const char *format);
 QObject *CreateShortcutFilter();
 
 struct BaseLexer {
@@ -72,9 +76,10 @@ private:
 	std::string theme;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
-	OBSContext obsContext;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
+
+	bool libobs_initialized = false;
 
 	os_inhibit_t *sleepInhibitor = nullptr;
 	int sleepInhibitRefs = 0;
@@ -144,6 +149,7 @@ public:
 
 	std::string GetVersionString() const;
 	bool IsPortableMode();
+	bool IsUpdaterDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;
@@ -219,12 +225,10 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 
 extern bool portable_mode;
 
-extern bool remuxAfterRecord;
-extern std::string remuxFilename;
-
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
 extern bool opt_start_replaybuffer;
+extern bool opt_start_virtualcam;
 extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
 extern bool opt_allow_opengl;

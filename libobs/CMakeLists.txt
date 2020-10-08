@@ -13,6 +13,7 @@ endif()
 
 if(UNIX)
 	if (NOT APPLE)
+		find_package(X11 REQUIRED)
 		find_package(X11_XCB REQUIRED)
 		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
 		if (XCB_XINPUT_FOUND)
@@ -74,7 +75,7 @@ endif()
 
 find_package(ZLIB REQUIRED)
 
-include_directories(SYSTEM ${ZLIB_INCLUDE_DIR})
+include_directories(SYSTEM ${ZLIB_INCLUDE_DIRS})
 
 add_definitions(-DLIBOBS_EXPORTS)
 
@@ -221,11 +222,13 @@ elseif(UNIX)
 	endif()
 
 	include_directories(
+		${X11_X11_INCLUDE_PATH}
 		${X11_XCB_INCLUDE_DIRS})
 	add_definitions(
 		${X11_XCB_DEFINITIONS})
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
+		${X11_X11_LIB}
 		${X11_XCB_LIBRARIES})
 
 	if(USE_XINPUT)
@@ -362,6 +365,7 @@ set(libobs_util_SOURCES
 set(libobs_util_HEADERS
 	util/curl/curl-helper.h
 	util/sse-intrin.h
+	util/sse2neon.h
 	util/array-serializer.h
 	util/file-serializer.h
 	util/utf8.h
@@ -370,6 +374,7 @@ set(libobs_util_HEADERS
 	util/text-lookup.h
 	util/bmem.h
 	util/c99defs.h
+	util/util_uint64.h
 	util/util_uint128.h
 	util/cf-parser.h
 	util/threading.h
@@ -475,11 +480,15 @@ if(UNIX AND NOT APPLE)
 	foreach(LIB "obs" "rt")
 		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
 	endforeach()
+	if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
+		set(PPC64_CFLAGS "-DNO_WARN_X86_INTRINSICS -mvsx")
+	endif()
 	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
 	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endif()
 
 set_target_properties(libobs PROPERTIES
+	FOLDER "core"
 	OUTPUT_NAME obs
 	VERSION "0"
 	SOVERSION "0")

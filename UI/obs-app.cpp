@@ -38,6 +38,7 @@
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "log-viewer.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
@@ -49,6 +50,7 @@
 
 #ifdef _WIN32
 #include <windows.h>
+#include <filesystem>
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -74,17 +76,18 @@ bool opt_start_streaming = false;
 bool opt_start_recording = false;
 bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
+bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_disable_updater = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
 
-bool remuxAfterRecord = false;
-string remuxFilename;
-
 bool restart = false;
+
+QPointer<OBSLogViewer> obsLogViewer;
 
 // GPU hint exports for AMD/NVIDIA laptops
 #ifdef _MSC_VER
@@ -188,6 +191,9 @@ QObject *CreateShortcutFilter()
 					event->nativeVirtualKey());
 			}
 
+			if (event->isAutoRepeat())
+				return true;
+
 			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
 				event->modifiers());
 
@@ -247,12 +253,22 @@ string CurrentDateTimeString()
 }
 
 static inline void LogString(fstream &logFile, const char *timeString,
-			     char *str)
+			     char *str, int log_level)
 {
-	logFile << timeString << str << endl;
+	string msg;
+	msg += timeString;
+	msg += str;
+
+	logFile << msg << endl;
+
+	if (!!obsLogViewer)
+		QMetaObject::invokeMethod(obsLogViewer.data(), "AddLine",
+					  Qt::QueuedConnection,
+					  Q_ARG(int, log_level),
+					  Q_ARG(QString, QString(msg.c_str())));
 }
 
-static inline void LogStringChunk(fstream &logFile, char *str)
+static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
 {
 	char *nextLine = str;
 	string timeString = CurrentTimeString();
@@ -269,12 +285,12 @@ static inline void LogStringChunk(fstream &logFile, char *str)
 			nextLine[0] = 0;
 		}
 
-		LogString(logFile, timeString.c_str(), str);
+		LogString(logFile, timeString.c_str(), str, log_level);
 		nextLine++;
 		str = nextLine;
 	}
 
-	LogString(logFile, timeString.c_str(), str);
+	LogString(logFile, timeString.c_str(), str, log_level);
 }
 
 #define MAX_REPEATED_LINES 30
@@ -365,7 +381,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (log_level <= LOG_INFO || log_verbose) {
 		if (too_many_repeated_entries(logFile, msg, str))
 			return;
-		LogStringChunk(logFile, str);
+		LogStringChunk(logFile, str, log_level);
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
@@ -467,6 +483,10 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
 				true);
 #endif
+
+	config_set_default_bool(globalConfig, "BasicWindow",
+				"MediaControlsCountdownTimer", true);
+
 	return true;
 }
 
@@ -1128,6 +1148,9 @@ OBSApp::~OBSApp()
 
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
 	os_inhibit_sleep_destroy(sleepInhibitor);
+
+	if (libobs_initialized)
+		obs_shutdown();
 }
 
 static void move_basic_to_profiles(void)
@@ -1349,6 +1372,8 @@ bool OBSApp::OBSInit()
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
 
+	libobs_initialized = true;
+
 	obs_set_ui_task_handler(ui_task_handler);
 
 #ifdef _WIN32
@@ -1420,6 +1445,11 @@ string OBSApp::GetVersionString() const
 bool OBSApp::IsPortableMode()
 {
 	return portable_mode;
+}
+
+bool OBSApp::IsUpdaterDisabled()
+{
+	return opt_disable_updater;
 }
 
 #ifdef __APPLE__
@@ -1629,19 +1659,122 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				 const char *format)
 {
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
-
-	if ((strcmp(extension, "mp4") == 0) && autoRemux)
-		extension = "mkv";
-
 	BPtr<char> filename =
 		os_generate_formatted_filename(extension, !noSpace, format);
-
-	remuxFilename = string(filename);
-	remuxAfterRecord = autoRemux;
-
 	return string(filename);
+}
+
+static void FindBestFilename(string &strPath, bool noSpace)
+{
+	int num = 2;
+
+	if (!os_file_exists(strPath.c_str()))
+		return;
+
+	const char *ext = strrchr(strPath.c_str(), '.');
+	if (!ext)
+		return;
+
+	int extStart = int(ext - strPath.c_str());
+	for (;;) {
+		string testPath = strPath;
+		string numStr;
+
+		numStr = noSpace ? "_" : " (";
+		numStr += to_string(num++);
+		if (!noSpace)
+			numStr += ")";
+
+		testPath.insert(extStart, numStr);
+
+		if (!os_file_exists(testPath.c_str())) {
+			strPath = testPath;
+			break;
+		}
+	}
+}
+
+static void ensure_directory_exists(string &path)
+{
+	replace(path.begin(), path.end(), '\\', '/');
+
+	size_t last = path.rfind('/');
+	if (last == string::npos)
+		return;
+
+	string directory = path.substr(0, last);
+	os_mkdirs(directory.c_str());
+}
+
+static void remove_reserved_file_characters(string &s)
+{
+	replace(s.begin(), s.end(), '\\', '/');
+	replace(s.begin(), s.end(), '*', '_');
+	replace(s.begin(), s.end(), '?', '_');
+	replace(s.begin(), s.end(), '"', '_');
+	replace(s.begin(), s.end(), '|', '_');
+	replace(s.begin(), s.end(), ':', '_');
+	replace(s.begin(), s.end(), '>', '_');
+	replace(s.begin(), s.end(), '<', '_');
+}
+
+string GetFormatString(const char *format, const char *prefix,
+		       const char *suffix)
+{
+	string f;
+
+	if (prefix && *prefix) {
+		f += prefix;
+		if (f.back() != ' ')
+			f += " ";
+	}
+
+	f += format;
+
+	if (suffix && *suffix) {
+		if (*suffix != ' ')
+			f += " ";
+		f += suffix;
+	}
+
+	remove_reserved_file_characters(f);
+
+	return f;
+}
+
+string GetOutputFilename(const char *path, const char *ext, bool noSpace,
+			 bool overwrite, const char *format)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	os_dir_t *dir = path && path[0] ? os_opendir(path) : nullptr;
+
+	if (!dir) {
+		if (main->isVisible())
+			OBSMessageBox::warning(main,
+					       QTStr("Output.BadPath.Title"),
+					       QTStr("Output.BadPath.Text"));
+		else
+			main->SysTrayNotify(QTStr("Output.BadPath.Text"),
+					    QSystemTrayIcon::Warning);
+		return "";
+	}
+
+	os_closedir(dir);
+
+	string strPath;
+	strPath += path;
+
+	char lastChar = strPath.back();
+	if (lastChar != '/' && lastChar != '\\')
+		strPath += "/";
+
+	strPath += GenerateSpecifiedFilename(ext, noSpace, format);
+	ensure_directory_exists(strPath);
+	if (!overwrite)
+		FindBestFilename(strPath, noSpace);
+
+	return strPath;
 }
 
 vector<pair<string, string>> GetLocaleNames()
@@ -1848,6 +1981,22 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	run:
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__) && !defined(__FreeBSD__)
+		// Mounted by termina during chromeOS linux container startup
+		// https://chromium.googlesource.com/chromiumos/overlays/board-overlays/+/master/project-termina/chromeos-base/termina-lxd-scripts/files/lxd_setup.sh
+		os_dir_t *crosDir = os_opendir("/opt/google/cros-containers");
+		if (crosDir) {
+			QMessageBox::StandardButtons buttons(QMessageBox::Ok);
+			QMessageBox mb(QMessageBox::Critical,
+				       QTStr("ChromeOS.Title"),
+				       QTStr("ChromeOS.Text"), buttons,
+				       nullptr);
+
+			mb.exec();
+			return 0;
+		}
+#endif
+
 		if (!created_log) {
 			create_log_file(logFile);
 			created_log = true;
@@ -1888,8 +2037,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #define CRASH_MESSAGE                                                      \
 	"Woops, OBS has crashed!\n\nWould you like to copy the crash log " \
-	"to the clipboard?  (Crash logs will still be saved to the "       \
-	"%appdata%\\obs-studio\\crashes directory)"
+	"to the clipboard? The crash log will still be saved to:\n\n%s"
 
 static void main_crash_handler(const char *format, va_list args, void *param)
 {
@@ -1898,10 +2046,12 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	delete_oldest_file(true, "obs-studio/crashes");
+	string crashFilePath = "obs-studio/crashes";
 
-	string name = "obs-studio/crashes/Crash ";
-	name += GenerateTimeDateFilename("txt");
+	delete_oldest_file(true, crashFilePath.c_str());
+
+	string name = crashFilePath + "/";
+	name += "Crash " + GenerateTimeDateFilename("txt");
 
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
@@ -1919,7 +2069,26 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	file << text;
 	file.close();
 
-	int ret = MessageBoxA(NULL, CRASH_MESSAGE, "OBS has crashed!",
+	string pathString(path.Get());
+
+#ifdef _WIN32
+	std::replace(pathString.begin(), pathString.end(), '/', '\\');
+#endif
+
+	string absolutePath =
+		canonical(filesystem::path(pathString)).u8string();
+
+	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
+
+	unique_ptr<char[]> message_buffer(new char[size + 1]);
+
+	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE,
+		 absolutePath.c_str());
+
+	string finalMessage =
+		string(message_buffer.get(), message_buffer.get() + size);
+
+	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
 			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
 
 	if (ret == IDYES) {
@@ -2404,6 +2573,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--startreplaybuffer", nullptr)) {
 			opt_start_replaybuffer = true;
 
+		} else if (arg_is(argv[i], "--startvirtualcam", nullptr)) {
+			opt_start_virtualcam = true;
+
 		} else if (arg_is(argv[i], "--collection", nullptr)) {
 			if (++i < argc)
 				opt_starting_collection = argv[i];
@@ -2425,26 +2597,36 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
 			opt_allow_opengl = true;
 
-		} else if (arg_is(argv[i], "--help", "-h")) {
-			std::cout
-				<< "--help, -h: Get list of available commands.\n\n"
-				<< "--startstreaming: Automatically start streaming.\n"
-				<< "--startrecording: Automatically start recording.\n"
-				<< "--startreplaybuffer: Start replay buffer.\n\n"
-				<< "--collection <string>: Use specific scene collection."
-				<< "\n"
-				<< "--profile <string>: Use specific profile.\n"
-				<< "--scene <string>: Start with specific scene.\n\n"
-				<< "--studio-mode: Enable studio mode.\n"
-				<< "--minimize-to-tray: Minimize to system tray.\n"
-				<< "--portable, -p: Use portable mode.\n"
-				<< "--multi, -m: Don't warn when launching multiple instances.\n\n"
-				<< "--verbose: Make log more verbose.\n"
-				<< "--always-on-top: Start in 'always on top' mode.\n\n"
-				<< "--unfiltered_log: Make log unfiltered.\n\n"
-				<< "--allow-opengl: Allow OpenGL on Windows.\n\n"
-				<< "--version, -V: Get current version.\n";
+		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
+			opt_disable_updater = true;
 
+		} else if (arg_is(argv[i], "--help", "-h")) {
+			std::string help =
+				"--help, -h: Get list of available commands.\n\n"
+				"--startstreaming: Automatically start streaming.\n"
+				"--startrecording: Automatically start recording.\n"
+				"--startreplaybuffer: Start replay buffer.\n"
+				"--startvirtualcam: Start virtual camera (if available).\n\n"
+				"--collection <string>: Use specific scene collection."
+				"\n"
+				"--profile <string>: Use specific profile.\n"
+				"--scene <string>: Start with specific scene.\n\n"
+				"--studio-mode: Enable studio mode.\n"
+				"--minimize-to-tray: Minimize to system tray.\n"
+				"--portable, -p: Use portable mode.\n"
+				"--multi, -m: Don't warn when launching multiple instances.\n\n"
+				"--verbose: Make log more verbose.\n"
+				"--always-on-top: Start in 'always on top' mode.\n\n"
+				"--unfiltered_log: Make log unfiltered.\n\n"
+				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n";
+
+#ifdef _WIN32
+			MessageBoxA(NULL, help.c_str(), "Help",
+				    MB_OK | MB_ICONASTERISK);
+#else
+			std::cout << help
+				  << "--version, -V: Get current version.\n";
+#endif
 			exit(0);
 
 		} else if (arg_is(argv[i], "--version", "-V")) {
@@ -2461,6 +2643,12 @@ int main(int argc, char *argv[])
 			os_file_exists(BASE_PATH "/obs_portable_mode") ||
 			os_file_exists(BASE_PATH "/portable_mode.txt") ||
 			os_file_exists(BASE_PATH "/obs_portable_mode.txt");
+	}
+
+	if (!opt_disable_updater) {
+		opt_disable_updater =
+			os_file_exists(BASE_PATH "/disable_updater") ||
+			os_file_exists(BASE_PATH "/disable_updater.txt");
 	}
 #endif
 

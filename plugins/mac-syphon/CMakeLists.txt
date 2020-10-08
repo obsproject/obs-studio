@@ -85,5 +85,6 @@ target_link_libraries(mac-syphon
 
 set_property (TARGET mac-syphon APPEND_STRING PROPERTY
 	COMPILE_FLAGS "-fobjc-arc")
+set_target_properties(mac-syphon PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(mac-syphon data)

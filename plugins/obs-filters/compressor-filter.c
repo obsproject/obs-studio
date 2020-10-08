@@ -410,8 +410,7 @@ static void compressor_tick(void *data, float seconds)
 
 	if (new_name) {
 		obs_source_t *sidechain =
-			new_name && *new_name ? obs_get_source_by_name(new_name)
-					      : NULL;
+			*new_name ? obs_get_source_by_name(new_name) : NULL;
 		obs_weak_source_t *weak_sidechain =
 			sidechain ? obs_source_get_weak_source(sidechain)
 				  : NULL;

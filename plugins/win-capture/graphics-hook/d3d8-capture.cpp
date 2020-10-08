@@ -24,6 +24,7 @@ struct d3d8_data {
 	HWND window;
 	uint32_t pitch;
 	IDirect3DSurface8 *copy_surfaces[NUM_BUFFERS];
+	bool texture_ready[NUM_BUFFERS];
 	bool surface_locked[NUM_BUFFERS];
 	int cur_surface;
 	int copy_wait;
@@ -145,8 +146,7 @@ static bool d3d8_shmem_init(IDirect3DDevice8 *device)
 		}
 	}
 	if (!capture_init_shmem(&data.shmem_info, data.window, data.cx, data.cy,
-				data.cx, data.cy, data.pitch, data.dxgi_format,
-				false)) {
+				data.pitch, data.dxgi_format, false)) {
 		return false;
 	}
 
@@ -184,45 +184,50 @@ static void d3d8_init(IDirect3DDevice8 *device)
 
 static void d3d8_shmem_capture_copy(int idx)
 {
-	IDirect3DSurface8 *target = data.copy_surfaces[idx];
 	D3DLOCKED_RECT rect;
 	HRESULT hr;
 
-	if (data.surface_locked[idx])
-		return;
+	if (data.texture_ready[idx]) {
+		data.texture_ready[idx] = false;
 
-	hr = target->LockRect(&rect, nullptr, D3DLOCK_READONLY);
-	if (SUCCEEDED(hr)) {
-		shmem_copy_data(idx, rect.pBits);
+		IDirect3DSurface8 *target = data.copy_surfaces[idx];
+		hr = target->LockRect(&rect, nullptr, D3DLOCK_READONLY);
+		if (SUCCEEDED(hr)) {
+			data.surface_locked[idx] = true;
+			shmem_copy_data(idx, rect.pBits);
+		}
 	}
 }
 
 static void d3d8_shmem_capture(IDirect3DDevice8 *device,
 			       IDirect3DSurface8 *backbuffer)
 {
-	int cur_surface;
 	int next_surface;
 	HRESULT hr;
 
-	cur_surface = data.cur_surface;
-	next_surface = (cur_surface == NUM_BUFFERS - 1) ? 0 : cur_surface + 1;
+	next_surface = (data.cur_surface + 1) % NUM_BUFFERS;
+	d3d8_shmem_capture_copy(next_surface);
 
 	if (data.copy_wait < NUM_BUFFERS - 1) {
 		data.copy_wait++;
 	} else {
 		IDirect3DSurface8 *src = backbuffer;
-		IDirect3DSurface8 *dst = data.copy_surfaces[cur_surface];
+		IDirect3DSurface8 *dst = data.copy_surfaces[data.cur_surface];
 
-		if (shmem_texture_data_lock(next_surface)) {
+		if (shmem_texture_data_lock(data.cur_surface)) {
 			dst->UnlockRect();
-			data.surface_locked[next_surface] = false;
-			shmem_texture_data_unlock(next_surface);
+			data.surface_locked[data.cur_surface] = false;
+			shmem_texture_data_unlock(data.cur_surface);
 		}
 
 		hr = device->CopyRects(src, nullptr, 0, dst, nullptr);
-		if (SUCCEEDED(hr)) {
-			d3d8_shmem_capture_copy(cur_surface);
+		if (FAILED(hr)) {
+			hlog_hr("d3d8_shmem_capture: CopyRects "
+				"failed",
+				hr);
 		}
+
+		data.texture_ready[data.cur_surface] = true;
 	}
 
 	data.cur_surface = next_surface;

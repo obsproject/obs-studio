@@ -402,6 +402,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 			continue;
 		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
 			continue;
+		if ((caps & OBS_SOURCE_CAP_OBSOLETE) != 0)
+			continue;
 
 		auto it = types.begin();
 		for (; it != types.end(); ++it) {

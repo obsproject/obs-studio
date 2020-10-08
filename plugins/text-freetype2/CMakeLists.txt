@@ -77,6 +77,7 @@ target_link_libraries(text-freetype2
 	libobs
 	${text-freetype2_PLATFORM_DEPS}
 	${FREETYPE_LIBRARIES})
+set_target_properties(text-freetype2 PROPERTIES FOLDER "plugins")
 
 if(NOT WIN32)
 	if(FONTCONFIG_FOUND)

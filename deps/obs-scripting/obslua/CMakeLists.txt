@@ -35,6 +35,8 @@ else()
 endif()
 SWIG_LINK_LIBRARIES(obslua obs-scripting libobs ${LUA_LIBRARIES} ${EXTRA_LIBS})
 
+set_target_properties(obslua PROPERTIES FOLDER "scripting")
+
 function(install_plugin_bin_swig target additional_target)
 	if(APPLE)
 		set(_bit_suffix "")

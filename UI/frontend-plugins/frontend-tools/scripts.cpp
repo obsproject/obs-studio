@@ -1,6 +1,8 @@
+#include "obs-module.h"
 #include "scripts.hpp"
 #include "frontend-tools-config.h"
 #include "../../properties-view.hpp"
+#include "../../qt-wrappers.hpp"
 
 #include <QFileDialog>
 #include <QPlainTextEdit>
@@ -13,6 +15,10 @@
 #include <QDialogButtonBox>
 #include <QResizeEvent>
 #include <QAction>
+#include <QMessageBox>
+#include <QMenu>
+#include <QUrl>
+#include <QDesktopServices>
 
 #include <obs.hpp>
 #include <obs-module.h>
@@ -192,6 +198,7 @@ ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
 #else
 	delete ui->pythonSettingsTab;
 	ui->pythonSettingsTab = nullptr;
+	ui->tabWidget->setStyleSheet("QTabWidget::pane {border: 0;}");
 #endif
 
 	delete propertiesView;
@@ -199,10 +206,19 @@ ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
 	propertiesView->setSizePolicy(QSizePolicy::Expanding,
 				      QSizePolicy::Expanding);
 	ui->propertiesLayout->addWidget(propertiesView);
+
+	config_t *global_config = obs_frontend_get_global_config();
+	int row =
+		config_get_int(global_config, "scripts-tool", "prevScriptRow");
+	ui->scripts->setCurrentRow(row);
 }
 
 ScriptsTool::~ScriptsTool()
 {
+	config_t *global_config = obs_frontend_get_global_config();
+	config_set_int(global_config, "scripts-tool", "prevScriptRow",
+		       ui->scripts->currentRow());
+
 	delete ui;
 }
 
@@ -254,6 +270,22 @@ void ScriptsTool::RefreshLists()
 	}
 }
 
+void ScriptsTool::SetScriptDefaults(const char *path)
+{
+	for (OBSScript &script : scriptData->scripts) {
+		const char *script_path = obs_script_get_path(script);
+		if (strcmp(script_path, path) == 0) {
+			obs_data_t *settings = obs_script_get_settings(script);
+			obs_data_clear(settings);
+			obs_data_release(settings);
+
+			obs_script_update(script, nullptr);
+			on_reloadScripts_clicked();
+			break;
+		}
+	}
+}
+
 void ScriptsTool::on_close_clicked()
 {
 	close();
@@ -293,19 +325,16 @@ void ScriptsTool::on_addScripts_clicked()
 		lastBrowsedDir = baseScriptPath;
 	}
 
-	QFileDialog dlg(this, obs_module_text("AddScripts"));
-	dlg.setFileMode(QFileDialog::ExistingFiles);
-	dlg.setDirectory(QDir(lastBrowsedDir.c_str()));
-	dlg.setNameFilter(filter);
-	dlg.exec();
-
-	QStringList files = dlg.selectedFiles();
+	QStringList files = OpenFiles(this,
+				      QT_UTF8(obs_module_text("AddScripts")),
+				      QT_UTF8(lastBrowsedDir.c_str()), filter);
 	if (!files.count())
 		return;
 
-	lastBrowsedDir = dlg.directory().path().toUtf8().constData();
-
 	for (const QString &file : files) {
+		lastBrowsedDir =
+			QFileInfo(file).absolutePath().toUtf8().constData();
+
 		QByteArray pathBytes = file.toUtf8();
 		const char *path = pathBytes.constData();
 
@@ -331,6 +360,8 @@ void ScriptsTool::on_addScripts_clicked()
 				obs_script_get_properties(script);
 			obs_properties_apply_settings(prop, settings);
 			obs_properties_destroy(prop);
+
+			ui->scripts->setCurrentItem(item);
 		}
 	}
 }
@@ -359,6 +390,43 @@ void ScriptsTool::on_reloadScripts_clicked()
 	on_scripts_currentRowChanged(ui->scripts->currentRow());
 }
 
+void ScriptsTool::OpenScriptParentDirectory()
+{
+	QList<QListWidgetItem *> items = ui->scripts->selectedItems();
+	for (QListWidgetItem *item : items) {
+		QDir dir(item->data(Qt::UserRole).toString());
+		dir.cdUp();
+		QDesktopServices::openUrl(
+			QUrl::fromLocalFile(dir.absolutePath()));
+	}
+}
+
+void ScriptsTool::on_scripts_customContextMenuRequested(const QPoint &pos)
+{
+
+	QListWidgetItem *item = ui->scripts->itemAt(pos);
+
+	QMenu popup(this);
+
+	obs_frontend_push_ui_translation(obs_module_get_string);
+
+	popup.addAction(tr("Add"), this, SLOT(on_addScripts_clicked()));
+
+	if (item) {
+		popup.addSeparator();
+		popup.addAction(obs_module_text("Reload"), this,
+				SLOT(on_reloadScripts_clicked()));
+		popup.addAction(obs_module_text("OpenFileLocation"), this,
+				SLOT(OpenScriptParentDirectory()));
+		popup.addSeparator();
+		popup.addAction(tr("Remove"), this,
+				SLOT(on_removeScripts_clicked()));
+	}
+	obs_frontend_pop_ui_translation();
+
+	popup.exec(QCursor::pos());
+}
+
 void ScriptsTool::on_scriptLog_clicked()
 {
 	scriptLogWindow->show();
@@ -368,8 +436,8 @@ void ScriptsTool::on_scriptLog_clicked()
 void ScriptsTool::on_pythonPathBrowse_clicked()
 {
 	QString curPath = ui->pythonPath->text();
-	QString newPath = QFileDialog::getExistingDirectory(
-		this, ui->pythonPathLabel->text(), curPath);
+	QString newPath =
+		SelectDirectory(this, ui->pythonPathLabel->text(), curPath);
 
 	if (newPath.isEmpty())
 		return;
@@ -430,6 +498,50 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 		(PropertiesUpdateCallback)obs_script_update);
 	ui->propertiesLayout->addWidget(propertiesView);
 	ui->description->setText(obs_script_get_description(script));
+}
+
+void ScriptsTool::on_defaults_clicked()
+{
+	QListWidgetItem *item = ui->scripts->currentItem();
+	if (!item)
+		return;
+
+	SetScriptDefaults(
+		item->data(Qt::UserRole).toString().toUtf8().constData());
+}
+
+void ScriptsTool::on_description_linkActivated(const QString &link)
+{
+	QUrl url(link, QUrl::StrictMode);
+	if (url.isValid() && (url.scheme().compare("http") == 0 ||
+			      url.scheme().compare("https") == 0)) {
+		QString msg(obs_module_text("ScriptDescriptionLink.Text"));
+		msg += "\n\n";
+		msg += QString(obs_module_text(
+				       "ScriptDescriptionLink.Text.Url"))
+			       .arg(link);
+
+		const char *open =
+			obs_module_text("ScriptDescriptionLink.OpenURL");
+
+		QMessageBox messageBox(this);
+		messageBox.setWindowTitle(open);
+		messageBox.setText(msg);
+
+		obs_frontend_push_ui_translation(obs_module_get_string);
+		QPushButton *yesButton =
+			messageBox.addButton(open, QMessageBox::YesRole);
+		QPushButton *noButton =
+			messageBox.addButton(tr("Cancel"), QMessageBox::NoRole);
+		obs_frontend_pop_ui_translation();
+		messageBox.setDefaultButton(yesButton);
+		messageBox.setEscapeButton(noButton);
+		messageBox.setIcon(QMessageBox::Question);
+		messageBox.exec();
+
+		if (messageBox.clickedButton() == yesButton)
+			QDesktopServices::openUrl(url);
+	}
 }
 
 /* ----------------------------------------------------------------- */

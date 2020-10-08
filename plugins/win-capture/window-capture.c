@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <util/dstr.h>
+#include <util/threading.h>
 #include "dc-capture.h"
 #include "window-helpers.h"
 #include "../../libobs/util/platform.h"
@@ -31,6 +32,7 @@ struct winrt_exports {
 	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
 						    BOOL client_area);
 	void (*winrt_capture_free)(struct winrt_capture *capture);
+	BOOL *(*winrt_capture_active)(const struct winrt_capture *capture);
 	void (*winrt_capture_show_cursor)(struct winrt_capture *capture,
 					  BOOL visible);
 	void (*winrt_capture_render)(struct winrt_capture *capture,
@@ -48,6 +50,8 @@ enum window_capture_method {
 
 struct window_capture {
 	obs_source_t *source;
+
+	pthread_mutex_t update_mutex;
 
 	char *title;
 	char *class;
@@ -122,8 +126,44 @@ choose_method(enum window_capture_method method, bool wgc_supported,
 	return METHOD_BITBLT;
 }
 
+static const char *get_method_name(int method)
+{
+	const char *method_name = "";
+	switch (method) {
+	case METHOD_AUTO:
+		method_name = "Automatic";
+		break;
+	case METHOD_BITBLT:
+		method_name = "BitBlt";
+		break;
+	case METHOD_WGC:
+		method_name = "WGC";
+		break;
+	}
+
+	return method_name;
+}
+
+static void log_settings(struct window_capture *wc, obs_data_t *s)
+{
+	int method = (int)obs_data_get_int(s, "method");
+
+	if (wc->title != NULL) {
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\texecutable: %s\n"
+		     "\tmethod selected: %s\n"
+		     "\tmethod chosen: %s\n",
+		     obs_source_get_name(wc->source), wc->executable,
+		     get_method_name(method), get_method_name(wc->method));
+		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
+	}
+}
+
 static void update_settings(struct window_capture *wc, obs_data_t *s)
 {
+	pthread_mutex_lock(&wc->update_mutex);
+
 	int method = (int)obs_data_get_int(s, "method");
 	const char *window = obs_data_get_string(s, "window");
 	int priority = (int)obs_data_get_int(s, "priority");
@@ -134,20 +174,14 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 
 	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
 
-	if (wc->title != NULL) {
-		blog(LOG_INFO,
-		     "[window-capture: '%s'] update settings:\n"
-		     "\texecutable: %s",
-		     obs_source_get_name(wc->source), wc->executable);
-		blog(LOG_DEBUG, "\tclass:      %s", wc->class);
-	}
-
 	wc->method = choose_method(method, wc->wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
+
+	pthread_mutex_unlock(&wc->update_mutex);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -179,11 +213,11 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_cursor_toggle_supported);
 	WINRT_IMPORT(winrt_capture_init);
 	WINRT_IMPORT(winrt_capture_free);
+	WINRT_IMPORT(winrt_capture_active);
 	WINRT_IMPORT(winrt_capture_show_cursor);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
-	WINRT_IMPORT(winrt_capture_is_closed);
 
 	return success;
 }
@@ -192,6 +226,8 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
 	wc->source = source;
+
+	pthread_mutex_init(&wc->update_mutex, NULL);
 
 	obs_enter_graphics();
 	const bool uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
@@ -210,6 +246,7 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 	}
 
 	update_settings(wc, settings);
+	log_settings(wc, settings);
 	return wc;
 }
 
@@ -232,6 +269,8 @@ static void wc_actual_destroy(void *data)
 	if (wc->winrt_module)
 		os_dlclose(wc->winrt_module);
 
+	pthread_mutex_destroy(&wc->update_mutex);
+
 	bfree(wc);
 }
 
@@ -244,6 +283,7 @@ static void wc_update(void *data, obs_data_t *settings)
 {
 	struct window_capture *wc = data;
 	update_settings(wc, settings);
+	log_settings(wc, settings);
 
 	/* forces a reset */
 	wc->window = NULL;
@@ -279,6 +319,8 @@ static void wc_defaults(obs_data_t *defaults)
 static void update_settings_visibility(obs_properties_t *props,
 				       struct window_capture *wc)
 {
+	pthread_mutex_lock(&wc->update_mutex);
+
 	const enum window_capture_method method = wc->method;
 	const bool bitblt_options = method == METHOD_BITBLT;
 	const bool wgc_options = method == METHOD_WGC;
@@ -295,6 +337,8 @@ static void update_settings_visibility(obs_properties_t *props,
 
 	p = obs_properties_get(props, "client_area");
 	obs_property_set_visible(p, wgc_options);
+
+	pthread_mutex_unlock(&wc->update_mutex);
 }
 
 static bool wc_capture_method_changed(obs_properties_t *props,
@@ -383,16 +427,11 @@ static void wc_tick(void *data, float seconds)
 	struct window_capture *wc = data;
 	RECT rect;
 	bool reset_capture = false;
-	bool winrt_capture_failed = false;
 
 	if (!obs_source_showing(wc->source))
 		return;
 
-	if (wc->capture_winrt && wc->exports.winrt_capture_is_closed(wc->capture_winrt)) {
-		winrt_capture_failed = true;
-	}
-
-	if (!wc->window || !IsWindow(wc->window) || winrt_capture_failed) {
+	if (!wc->window || !IsWindow(wc->window)) {
 		if (!wc->title && !wc->class)
 			return;
 
@@ -426,6 +465,7 @@ static void wc_tick(void *data, float seconds)
 			return;
 		}
 
+		wc->previously_failed = false;
 		reset_capture = true;
 
 	} else if (IsIconic(wc->window)) {
@@ -508,10 +548,21 @@ static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
 	gs_effect_t *const opaque = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-	if (wc->method == METHOD_WGC)
-		wc->exports.winrt_capture_render(wc->capture_winrt, opaque);
-	else
+	if (wc->method == METHOD_WGC) {
+		if (wc->capture_winrt) {
+			if (wc->exports.winrt_capture_active(
+				    wc->capture_winrt)) {
+				wc->exports.winrt_capture_render(
+					wc->capture_winrt, opaque);
+			} else {
+				wc->exports.winrt_capture_free(
+					wc->capture_winrt);
+				wc->capture_winrt = NULL;
+			}
+		}
+	} else {
 		dc_capture_render(&wc->capture, opaque);
+	}
 
 	UNUSED_PARAMETER(effect);
 }

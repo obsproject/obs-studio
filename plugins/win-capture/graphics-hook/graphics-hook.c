@@ -69,7 +69,7 @@ bool init_pipe(void)
 	sprintf(new_name, "%s%lu", PIPE_NAME, GetCurrentProcessId());
 
 	if (!ipc_pipe_client_open(&pipe, new_name)) {
-		DbgOut("Failed to open pipe\n");
+		DbgOut("[OBS] Failed to open pipe\n");
 		return false;
 	}
 
@@ -158,7 +158,10 @@ static inline void log_current_process(void)
 				       MAX_PATH);
 	if (len > 0) {
 		process_name[len] = 0;
-		hlog("Hooked to process: %s", process_name);
+		hlog("graphics-hook.dll loaded against process: %s",
+		     process_name);
+	} else {
+		hlog("graphics-hook.dll loaded");
 	}
 
 	hlog("(half life scientist) everything..  seems to be in order");
@@ -328,7 +331,7 @@ static inline bool attempt_hook(void)
 
 	if (!d3d9_hooked) {
 		if (!d3d9_hookable()) {
-			DbgOut("no D3D9 hook address found!\n");
+			DbgOut("[OBS] no D3D9 hook address found!\n");
 			d3d9_hooked = true;
 		} else {
 			d3d9_hooked = hook_d3d9();
@@ -340,7 +343,7 @@ static inline bool attempt_hook(void)
 
 	if (!dxgi_hooked) {
 		if (!dxgi_hookable()) {
-			DbgOut("no DXGI hook address found!\n");
+			DbgOut("[OBS] no DXGI hook address found!\n");
 			dxgi_hooked = true;
 		} else {
 			dxgi_hooked = hook_dxgi();
@@ -403,7 +406,7 @@ static inline void capture_loop(void)
 static DWORD WINAPI main_capture_thread(HANDLE thread_handle)
 {
 	if (!init_hook(thread_handle)) {
-		DbgOut("Failed to init hook\n");
+		DbgOut("[OBS] Failed to init hook\n");
 		free_hook();
 		return 0;
 	}
@@ -416,10 +419,11 @@ static inline void hlogv(const char *format, va_list args)
 {
 	char message[1024] = "";
 	int num = _vsprintf_p(message, 1024, format, args);
-	if (num) {
+	if (num > 0) {
 		if (!ipc_pipe_client_write(&pipe, message, (size_t)num + 1)) {
 			ipc_pipe_client_free(&pipe);
 		}
+		DbgOut("[OBS] ");
 		DbgOut(message);
 		DbgOut("\n");
 	}
@@ -531,9 +535,9 @@ static inline bool init_shared_info(size_t size, HWND window)
 	return true;
 }
 
-bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t base_cx,
-			uint32_t base_cy, uint32_t cx, uint32_t cy,
-			uint32_t format, bool flip, uintptr_t handle)
+bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t cx,
+			uint32_t cy, uint32_t format, bool flip,
+			uintptr_t handle)
 {
 	if (!init_shared_info(sizeof(struct shtex_data), window)) {
 		hlog("capture_init_shtex: Failed to initialize memory");
@@ -553,8 +557,8 @@ bool capture_init_shtex(struct shtex_data **data, HWND window, uint32_t base_cx,
 	global_hook_info->map_size = sizeof(struct shtex_data);
 	global_hook_info->cx = cx;
 	global_hook_info->cy = cy;
-	global_hook_info->base_cx = base_cx;
-	global_hook_info->base_cy = base_cy;
+	global_hook_info->UNUSED_base_cx = cx;
+	global_hook_info->UNUSED_base_cy = cy;
 
 	if (!SetEvent(signal_ready)) {
 		hlog("capture_init_shtex: Failed to signal ready: %d",
@@ -708,9 +712,8 @@ static inline bool init_shmem_thread(uint32_t pitch, uint32_t cy)
 #define ALIGN(bytes, align) (((bytes) + ((align)-1)) & ~((align)-1))
 #endif
 
-bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t base_cx,
-			uint32_t base_cy, uint32_t cx, uint32_t cy,
-			uint32_t pitch, uint32_t format, bool flip)
+bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t cx,
+			uint32_t cy, uint32_t pitch, uint32_t format, bool flip)
 {
 	uint32_t tex_size = cy * pitch;
 	uint32_t aligned_header = ALIGN(sizeof(struct shmem_data), 32);
@@ -749,8 +752,8 @@ bool capture_init_shmem(struct shmem_data **data, HWND window, uint32_t base_cx,
 	global_hook_info->pitch = pitch;
 	global_hook_info->cx = cx;
 	global_hook_info->cy = cy;
-	global_hook_info->base_cx = base_cx;
-	global_hook_info->base_cy = base_cy;
+	global_hook_info->UNUSED_base_cx = cx;
+	global_hook_info->UNUSED_base_cy = cy;
 
 	if (!init_shmem_thread(pitch, cy)) {
 		return false;
@@ -837,7 +840,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 		dll_inst = hinst;
 
 		if (!init_dll()) {
-			DbgOut("Duplicate hook library");
+			DbgOut("[OBS] Duplicate hook library");
 			return false;
 		}
 
@@ -848,7 +851,7 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID unused1)
 					       SYNCHRONIZE, false, 0);
 
 		if (!success)
-			DbgOut("Failed to get current thread handle");
+			DbgOut("[OBS] Failed to get current thread handle");
 
 		if (!init_signals()) {
 			return false;

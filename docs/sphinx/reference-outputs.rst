@@ -686,6 +686,7 @@ Functions used by outputs
            VIDEO_CS_DEFAULT,
            VIDEO_CS_601,
            VIDEO_CS_709,
+           VIDEO_CS_SRGB,
    };
    
    enum video_range_type {

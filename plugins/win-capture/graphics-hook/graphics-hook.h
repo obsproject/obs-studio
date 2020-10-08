@@ -59,19 +59,14 @@ extern void d3d12_capture(void *swap, void *backbuffer, bool capture_overlay);
 extern void d3d12_free(void);
 #endif
 
-extern uint8_t *get_d3d1x_vertex_shader(size_t *size);
-extern uint8_t *get_d3d1x_pixel_shader(size_t *size);
-
 extern bool rehook_gl(void);
 
 extern bool capture_init_shtex(struct shtex_data **data, HWND window,
-			       uint32_t base_cx, uint32_t base_cy, uint32_t cx,
-			       uint32_t cy, uint32_t format, bool flip,
-			       uintptr_t handle);
+			       uint32_t cx, uint32_t cy, uint32_t format,
+			       bool flip, uintptr_t handle);
 extern bool capture_init_shmem(struct shmem_data **data, HWND window,
-			       uint32_t base_cx, uint32_t base_cy, uint32_t cx,
-			       uint32_t cy, uint32_t pitch, uint32_t format,
-			       bool flip);
+			       uint32_t cx, uint32_t cy, uint32_t pitch,
+			       uint32_t format, bool flip);
 extern void capture_free(void);
 
 extern struct hook_info *global_hook_info;

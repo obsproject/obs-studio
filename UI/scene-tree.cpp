@@ -6,6 +6,7 @@
 #include <QScrollBar>
 #include <QDropEvent>
 #include <QPushButton>
+#include <QTimer>
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
@@ -67,8 +68,6 @@ bool SceneTree::eventFilter(QObject *obj, QEvent *event)
 
 void SceneTree::resizeEvent(QResizeEvent *event)
 {
-	QListWidget::resizeEvent(event);
-
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
 		int h = visualItemRect(item(count() - 1)).bottom();
@@ -96,6 +95,8 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 			item(i)->setData(Qt::SizeHintRole, QVariant());
 		}
 	}
+
+	QListWidget::resizeEvent(event);
 }
 
 void SceneTree::startDrag(Qt::DropActions supportedActions)
@@ -105,8 +106,12 @@ void SceneTree::startDrag(Qt::DropActions supportedActions)
 
 void SceneTree::dropEvent(QDropEvent *event)
 {
-	QListWidget::dropEvent(event);
-	if (event->source() == this && gridMode) {
+	if (event->source() != this) {
+		QListWidget::dropEvent(event);
+		return;
+	}
+
+	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
 		int h = visualItemRect(item(count() - 1)).bottom();
 
@@ -131,6 +136,10 @@ void SceneTree::dropEvent(QDropEvent *event)
 		setCurrentItem(item);
 		resize(size());
 	}
+
+	QListWidget::dropEvent(event);
+
+	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
 }
 
 void SceneTree::dragMoveEvent(QDragMoveEvent *event)
@@ -175,15 +184,15 @@ void SceneTree::dragMoveEvent(QDragMoveEvent *event)
 			QPoint position(xPos * g.width(), yPos * g.height());
 			setPositionForIndex(position, index);
 		}
-	} else {
-		QListWidget::dragMoveEvent(event);
 	}
+
+	QListWidget::dragMoveEvent(event);
 }
 
 void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 {
-	QListWidget::rowsInserted(parent, start, end);
-
 	QResizeEvent event(size(), size());
 	SceneTree::resizeEvent(&event);
+
+	QListWidget::rowsInserted(parent, start, end);
 }

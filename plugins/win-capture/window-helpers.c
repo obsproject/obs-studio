@@ -2,8 +2,9 @@
 #include <obs.h>
 #include <util/dstr.h>
 
-#include <windows.h>
+#include <dwmapi.h>
 #include <psapi.h>
+#include <windows.h>
 #include "window-helpers.h"
 #include "obfuscate.h"
 
@@ -159,24 +160,29 @@ void get_window_class(struct dstr *class, HWND hwnd)
 		dstr_from_wcs(class, temp);
 }
 
-/* not capturable or internal windows */
-static const char *internal_microsoft_exes[] = {
-	"startmenuexperiencehost",
-	"applicationframehost",
-	"peopleexperiencehost",
-	"shellexperiencehost",
-	"microsoft.notes",
+/* not capturable or internal windows, exact executable names */
+static const char *internal_microsoft_exes_exact[] = {
+	"startmenuexperiencehost.exe",
+	"applicationframehost.exe",
+	"peopleexperiencehost.exe",
+	"shellexperiencehost.exe",
+	"microsoft.notes.exe",
+	"systemsettings.exe",
+	"textinputhost.exe",
+	"searchapp.exe",
+	"video.ui.exe",
+	"searchui.exe",
+	"lockapp.exe",
+	"cortana.exe",
+	"gamebar.exe",
+	"tabtip.exe",
+	"time.exe",
+	NULL,
+};
+
+/* partial matches start from the beginning of the executable name */
+static const char *internal_microsoft_exes_partial[] = {
 	"windowsinternal",
-	"systemsettings",
-	"textinputhost",
-	"searchapp",
-	"video.ui",
-	"searchui",
-	"lockapp",
-	"cortana",
-	"gamebar",
-	"tabtip",
-	"time",
 	NULL,
 };
 
@@ -185,7 +191,13 @@ static bool is_microsoft_internal_window_exe(const char *exe)
 	if (!exe)
 		return false;
 
-	for (const char **vals = internal_microsoft_exes; *vals; vals++) {
+	for (const char **vals = internal_microsoft_exes_exact; *vals; vals++) {
+		if (astrcmpi(exe, *vals) == 0)
+			return true;
+	}
+
+	for (const char **vals = internal_microsoft_exes_partial; *vals;
+	     vals++) {
 		if (astrcmpi_n(exe, *vals, strlen(*vals)) == 0)
 			return true;
 	}
@@ -412,7 +424,7 @@ void fill_window_list(obs_property_t *p, enum window_search_mode mode,
 
 static int window_rating(HWND window, enum window_priority priority,
 			 const char *class, const char *title, const char *exe,
-			 bool uwp_window)
+			 bool generic_class)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
@@ -428,8 +440,8 @@ static int window_rating(HWND window, enum window_priority priority,
 	bool exe_matches = dstr_cmpi(&cur_exe, exe) == 0;
 	int title_val = abs(dstr_cmpi(&cur_title, title));
 
-	/* always match by name with UWP windows */
-	if (uwp_window) {
+	/* always match by name if class is generic */
+	if (generic_class) {
 		if (priority == WINDOW_PRIORITY_EXE && !exe_matches)
 			val = 0x7FFFFFFF;
 		else
@@ -467,7 +479,10 @@ int get_rule_match_power(struct game_capture_matching_rule* rule)
 	return rule_power;
 } 
 
-static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_capture_matching_rule) * matching_rules, int *found_index, int already_matched_power)
+static int find_matching_rule_for_window(
+	HWND window,
+	const DARRAY(struct game_capture_matching_rule) * matching_rules,
+	int *found_index, int already_matched_power)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
@@ -482,34 +497,42 @@ static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_c
 	}
 	get_window_class(&cur_class, window);
 	if (dstr_is_empty(&cur_class)) {
-		const char *non_class= "failed_class";
+		const char *non_class = "failed_class";
 		dstr_copy(&cur_class, non_class);
 	}
-	
+
 	int found_match_power = 0;
 	int i = 0;
-	while ( i < matching_rules->num ) {
-		if (found_match_power > matching_rules->array[i].power   
-		|| already_matched_power > matching_rules->array[i].power) {
+	while (i < matching_rules->num) {
+		if (found_match_power > matching_rules->array[i].power ||
+		    already_matched_power > matching_rules->array[i].power) {
 			i++;
 			continue;
 		}
 
 		bool rule_matched = true;
 		if (matching_rules->array[i].mask & WINDOW_MATCH_EXE) {
-			if (dstr_cmpi(&cur_exe, matching_rules->array[i].executable.array) != 0)
+			if (dstr_cmpi(&cur_exe, matching_rules->array[i]
+							.executable.array) != 0)
 				rule_matched = false;
 		}
-		if (rule_matched && (matching_rules->array[i].mask & WINDOW_MATCH_TITLE)) {
-			if (dstr_find(&cur_title, matching_rules->array[i].title.array) == NULL)
+		if (rule_matched &&
+		    (matching_rules->array[i].mask & WINDOW_MATCH_TITLE)) {
+			if (dstr_find(&cur_title,
+				      matching_rules->array[i].title.array) ==
+			    NULL)
 				rule_matched = false;
 		}
-		if (rule_matched && (matching_rules->array[i].mask & WINDOW_MATCH_CLASS)) {
-			if (dstr_find(&cur_class, matching_rules->array[i].class.array) == NULL)
+		if (rule_matched &&
+		    (matching_rules->array[i].mask & WINDOW_MATCH_CLASS)) {
+			if (dstr_find(&cur_class,
+				      matching_rules->array[i].class.array) ==
+			    NULL)
 				rule_matched = false;
 		}
-		
-		if (rule_matched && matching_rules->array[i].power > found_match_power) {
+
+		if (rule_matched &&
+		    matching_rules->array[i].power > found_match_power) {
 			found_match_power = matching_rules->array[i].power;
 			*found_index = i;
 		}
@@ -522,6 +545,37 @@ static int find_matching_rule_for_window(HWND window, const DARRAY(struct game_c
 	dstr_free(&cur_exe);
 
 	return found_match_power;
+}
+
+static const char *generic_class_substrings[] = {
+	"Chrome",
+	NULL,
+};
+
+static const char *generic_classes[] = {
+	"Windows.UI.Core.CoreWindow",
+	NULL,
+};
+
+static bool is_generic_class(const char *current_class)
+{
+	const char **class = generic_class_substrings;
+	while (*class) {
+		if (astrstri(current_class, *class) != NULL) {
+			return true;
+		}
+		class ++;
+	}
+
+	class = generic_classes;
+	while (*class) {
+		if (astrcmpi(current_class, *class) == 0) {
+			return true;
+		}
+		class ++;
+	}
+
+	return false;
 }
 
 HWND find_window(enum window_search_mode mode, enum window_priority priority,
@@ -537,11 +591,11 @@ HWND find_window(enum window_search_mode mode, enum window_priority priority,
 	if (!class)
 		return NULL;
 
-	bool uwp_window = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
+	bool generic_class = is_generic_class(class);
 
 	while (window) {
 		int rating = window_rating(window, priority, class, title, exe,
-					   uwp_window);
+					   generic_class);
 		if (rating < best_rating) {
 			best_rating = rating;
 			best_window = window;
@@ -603,13 +657,14 @@ HWND find_matching_window(enum window_search_mode mode, DARRAY(struct game_captu
 
 	return best_window;
 }
+
 struct top_level_enum_data {
 	enum window_search_mode mode;
 	enum window_priority priority;
 	const char *class;
 	const char *title;
 	const char *exe;
-	bool uwp_window;
+	bool generic_class;
 	HWND best_window;
 	int best_rating;
 };
@@ -621,9 +676,15 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 	if (!check_window_valid(window, data->mode))
 		return TRUE;
 
+	int cloaked;
+	if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
+					    sizeof(cloaked))) &&
+	    cloaked)
+		return TRUE;
+
 	const int rating = window_rating(window, data->priority, data->class,
 					 data->title, data->exe,
-					 data->uwp_window);
+					 data->generic_class);
 	if (rating < data->best_rating) {
 		data->best_rating = rating;
 		data->best_window = window;
@@ -645,7 +706,7 @@ HWND find_window_top_level(enum window_search_mode mode,
 	data.class = class;
 	data.title = title;
 	data.exe = exe;
-	data.uwp_window = strcmp(class, "Windows.UI.Core.CoreWindow") == 0;
+	data.generic_class = is_generic_class(class);
 	data.best_window = NULL;
 	data.best_rating = 0x7FFFFFFF;
 	EnumWindows(enum_windows_proc, (LPARAM)&data);

@@ -34,4 +34,7 @@ protected:
 	virtual void dragMoveEvent(QDragMoveEvent *event) override;
 	virtual void rowsInserted(const QModelIndex &parent, int start,
 				  int end) override;
+
+signals:
+	void scenesReordered();
 };
