@@ -31,6 +31,7 @@ static void *gpu_encode_thread(void *unused)
 
 	while (os_sem_wait(video->gpu_encode_semaphore) == 0) {
 		struct obs_tex_frame tf;
+		bool have_frame = false;
 		uint64_t timestamp;
 		uint64_t lock_key;
 		uint64_t next_key;
@@ -55,6 +56,7 @@ static void *gpu_encode_thread(void *unused)
 				&video->gpu_queues[OBS_MAIN_VIDEO_RENDERING]
 					 .gpu_encoder_queue,
 				&tf, sizeof(tf));
+				have_frame = true;
 		}
 
 		video_output_inc_texture_frames(video->video);
@@ -110,70 +112,82 @@ static void *gpu_encode_thread(void *unused)
 						stream_encoded = true;
 					}
 				}
-				circlebuf_pop_front(&video->gpu_queues[mode]
-							     .gpu_encoder_queue,
-						    &tf, sizeof(tf));
-			}
-
-			timestamp = tf.timestamp;
-			lock_key = tf.lock_key;
-			next_key = tf.lock_key;
-
-			pthread_mutex_unlock(&video->gpu_encoder_mutex);
-
-			pkt.timebase_num = encoder->timebase_num;
-			pkt.timebase_den = encoder->timebase_den;
-			pkt.encoder = encoder;
-
-			if (!encoder->first_received && pair) {
-				if (!pair->first_received ||
-				    pair->first_raw_ts > timestamp) {
-					continue;
+				if (video->gpu_queues[mode].gpu_encoder_queue.size != 0) {
+					circlebuf_pop_front(&video->gpu_queues[mode]
+									.gpu_encoder_queue,
+								&tf, sizeof(tf));
+					have_frame = true;
+				} else {
+					have_frame = false;
 				}
 			}
+			
+			if (have_frame) {
+				bool skip_processing = false;
+				timestamp = tf.timestamp;
+				lock_key = tf.lock_key;
+				next_key = tf.lock_key;
 
-			if (video_pause_check(&encoder->pause, timestamp))
-				continue;
+				pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
-			if (!encoder->start_ts)
-				encoder->start_ts = timestamp;
+				pkt.timebase_num = encoder->timebase_num;
+				pkt.timebase_den = encoder->timebase_den;
+				pkt.encoder = encoder;
 
-			if (++lock_count == encoders.num)
-				next_key = 0;
-			else
-				next_key++;
+				if (!encoder->first_received && pair) {
+					if (!pair->first_received ||
+					pair->first_raw_ts > timestamp) {
+						skip_processing = true;
+					}
+				}
+				if (!skip_processing) {
+					if (video_pause_check(&encoder->pause, timestamp)) {
+						skip_processing = true;
+					}
+				}
+				if (!skip_processing) {
+					if (!encoder->start_ts)
+						encoder->start_ts = timestamp;
 
-			success = encoder->info.encode_texture(
-				encoder->context.data, tf.handle,
-				encoder->cur_pts, lock_key, &next_key, &pkt,
-				&received);
-			send_off_encoder_packet(encoder, success, received,
-						&pkt);
+					if (++lock_count == encoders.num)
+						next_key = 0;
+					else
+						next_key++;
 
-			lock_key = next_key;
+					success = encoder->info.encode_texture(
+						encoder->context.data, tf.handle,
+						encoder->cur_pts, lock_key, &next_key, &pkt,
+						&received);
+					send_off_encoder_packet(encoder, success, received,
+								&pkt);
 
-			encoder->cur_pts += encoder->timebase_num;
+					lock_key = next_key;
 
-			/* -------------- */
+					encoder->cur_pts += encoder->timebase_num;
 
-			pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-			tf.lock_key = next_key;
+				}
+				/* -------------- */
 
-			if (obs_get_multiple_rendering()) {
-				if (--tf.count) {
-					tf.timestamp += interval;
-					circlebuf_push_front(
-						&video->gpu_queues[mode]
-							 .gpu_encoder_queue,
-						&tf, sizeof(tf));
-					video_output_inc_texture_skipped_frames(
-						video->video);
-				} else {
-					circlebuf_push_back(
-						&video->gpu_queues[mode]
-							 .gpu_encoder_avail_queue,
-						&tf, sizeof(tf));
+				pthread_mutex_lock(&video->gpu_encoder_mutex);
+
+				tf.lock_key = next_key;
+
+				if (obs_get_multiple_rendering()) {
+					if (--tf.count) {
+						tf.timestamp += interval;
+						circlebuf_push_front(
+							&video->gpu_queues[mode]
+								.gpu_encoder_queue,
+							&tf, sizeof(tf));
+						video_output_inc_texture_skipped_frames(
+							video->video);
+					} else {
+						circlebuf_push_back(
+							&video->gpu_queues[mode]
+								.gpu_encoder_avail_queue,
+							&tf, sizeof(tf));
+					}
 				}
 			}
 
@@ -226,7 +240,7 @@ static void *gpu_encode_thread(void *unused)
 							 .gpu_encoder_avail_queue,
 						&new_frame, sizeof(new_frame));
 			}
-		} else {
+		} else if (have_frame) {
 			if (--tf.count) {
 				tf.timestamp += interval;
 				circlebuf_push_front(
