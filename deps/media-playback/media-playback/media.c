@@ -273,6 +273,30 @@ static bool mp_media_prepare_frames(mp_media_t *m)
 	return true;
 }
 
+static bool mp_media_has_audio_frame_cached(mp_media_t *m)
+{
+	if (m->audio.data.num <= 0)
+		return false;
+
+	if (m->audio.index_eof > 0 &&
+		m->audio.index >= m->audio.index_eof)
+		return false;
+
+	return true;
+}
+
+static bool mp_media_has_video_frame_cached(mp_media_t *m)
+{
+	if (m->video.data.num <= 0)
+		return false;
+
+	if (m->video.index_eof > 0 &&
+		m->video.index >= m->video.index_eof)
+		return false;
+
+	return true;
+}
+
 static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 {
 	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
@@ -284,6 +308,21 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 	if (m->has_audio && m->a.frame_ready) {
 		if (m->a.frame_pts < min_next_ns)
 			min_next_ns = m->a.frame_pts;
+	}
+
+	if( m->enable_caching ) {
+		if (m->has_video && m->video.index_eof >= 0) {
+			if (mp_media_has_video_frame_cached(m)) {
+				struct obs_source_frame *frame = m->video.data.array[m->video.index];
+				min_next_ns = frame->timestamp + frame->duration;
+			}
+		}
+		if (m->has_audio && m->audio.index_eof >= 0) {
+			if (mp_media_has_audio_frame_cached(m)) {
+				struct obs_source_audio *audio = m->audio.data.array[m->audio.index];
+				min_next_ns = audio->dec_frame_pts;
+			}
+		}
 	}
 
 	return min_next_ns;
@@ -363,11 +402,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		}
 	}
 	if (m->enable_caching) {
-		if (m->audio.data.num <= 0)
-			return;
-
-		if (m->audio.index_eof > 0 &&
-		    m->audio.index >= m->audio.index_eof)
+		if (mp_media_has_audio_frame_cached(m))
 			return;
 
 		audio = m->audio.data.array[m->audio.index];
@@ -478,6 +513,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		}
 		current_frame->timestamp = m->base_ts + d->frame_pts - m->start_ts +
 			m->play_sys_ts - base_sys_ts;
+		current_frame->duration = d->last_duration;
+
 		current_frame->width = f->width;
 		current_frame->height = f->height;
 		current_frame->flip = flip;
@@ -511,11 +548,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		}
 	}
 	else if (m->enable_caching) {
-		if (m->video.data.num <= 0)
-			return;
-
-		if (m->video.index_eof > 0 &&
-		    m->video.index >= m->video.index_eof)
+		if (mp_media_has_audio_frame_cached(m))
 			return;
 
 		frame = m->video.data.array[m->video.index];

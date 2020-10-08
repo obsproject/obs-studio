@@ -2643,6 +2643,7 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 static void copy_frame_data(struct obs_source_frame *dst,
 			    const struct obs_source_frame *src)
 {
+	dst->duration = src->duration;
 	dst->flip = src->flip;
 	dst->full_range = src->full_range;
 	dst->timestamp = src->timestamp;
