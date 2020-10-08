@@ -10,6 +10,7 @@
 class CommonSettings {
 
 public:
+	static bool IsAdvancedMode(config_t *config);
 	/* Shared Utility Functions --------------------------*/
 	static OBSData GetDataFromJsonFile(const char *jsonFile);
 

@@ -14,12 +14,11 @@ class LoadingPage;
 class ErrorPage;
 
 /*
-	** The pre-stream wizard is a workflow focused on delivering encoder settings
-	** specfic for the streaming destination before going Live. 
-	** There is a launch context to know if launched from settings, otherwise 
-	** we'll later add a wizard page and button for going live after new settings.
-	*/
-
+* The pre-stream wizard is a workflow focused on delivering encoder settings
+* specfic for the streaming destination before going Live. 
+* There is a launch context to know if launched from settings, otherwise 
+* we'll later add a wizard page and button for going live after new settings.
+*/
 class PreStreamWizard : public QWizard {
 	Q_OBJECT
 

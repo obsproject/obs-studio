@@ -9,14 +9,13 @@
 
 #include "pre-stream-current-settings.hpp"
 
-/*
-Shows user encoder configuration options and allows them to select and apply 
-each. For exmaple can apply a resolution limit but opt-out of using b-frames 
-even if recommended. 
-*/
-
 namespace StreamWizard {
 
+/*
+* Shows user encoder configuration options and allows them to select and apply 
+* each. For exmaple can apply a resolution limit but opt-out of using b-frames 
+* even if recommended. 
+*/
 class SelectionPage : public QWizardPage {
 	Q_OBJECT
 

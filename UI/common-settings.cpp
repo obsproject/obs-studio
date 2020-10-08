@@ -2,7 +2,7 @@
 
 #include "audio-encoders.hpp"
 
-static bool IsAdvancedMode(config_t *config)
+bool CommonSettings::IsAdvancedMode(config_t *config)
 {
 	const char *outputMode = config_get_string(config, "Output", "Mode");
 	return (strcmp(outputMode, "Advanced") == 0);

@@ -9,6 +9,7 @@ class QSignalMapper;
 class QSize;
 
 namespace StreamWizard {
+
 // Prompt if the user wants to verify their settings or close.
 class StartPage : public QWizardPage {
 	Q_OBJECT

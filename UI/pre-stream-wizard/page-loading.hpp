@@ -11,7 +11,6 @@
 namespace StreamWizard {
 
 // Page shown while a provider computes best settings.
-
 class LoadingPage : public QWizardPage {
 	Q_OBJECT
 

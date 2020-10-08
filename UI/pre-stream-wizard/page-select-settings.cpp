@@ -3,7 +3,6 @@
 #include <QSpacerItem>
 #include <QPushButton>
 #include <QDesktopServices>
-#include <QDebug>
 #include <QVariant>
 #include <QPair>
 
@@ -167,8 +166,7 @@ void SelectionPage::setSettingsMap(QSharedPointer<SettingsMap> settingsMap)
 		QVariant data =
 			mapInfo->value(SettingsResponseKeys.streamBufferSize)
 				.first;
-		QString bufferSizeString =
-			QString::number(data.toInt()) + " Kb";
+		QString bufferSizeString = QString::number(data.toInt()) + "Kb";
 		addRow(QTStr("Basic.Settings.Output.Mode.StreamBuffer"),
 		       bufferSizeString, SettingsResponseKeys.streamBufferSize);
 	}
@@ -192,12 +190,11 @@ void SelectionPage::checkboxRowChanged(const char *propertyKey, bool selected)
 	}
 
 	SettingsMap *mapInfo = settingsMap_.data();
-
 	if (mapInfo == nullptr || !mapInfo->contains(propertyKey)) {
 		return;
 	}
 
-	QPair dataPair = mapInfo->value(propertyKey);
+	QPair<QVariant, bool> &dataPair = (*mapInfo)[propertyKey];
 	dataPair.second = selected;
 }
 
