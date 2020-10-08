@@ -4458,9 +4458,13 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 	switch (ui->outputMode->currentIndex()) {
 	case 0:
 		state = ui->simpleReplayBuf->isChecked();
+		ui->simpleReplayBuf->setEnabled(
+			!obs_frontend_replay_buffer_active());
 		break;
 	case 1:
 		state = ui->advReplayBuf->isChecked();
+		ui->advReplayBuf->setEnabled(
+			!obs_frontend_replay_buffer_active());
 		break;
 	}
 	ui->replayWhileStreaming->setEnabled(state);
