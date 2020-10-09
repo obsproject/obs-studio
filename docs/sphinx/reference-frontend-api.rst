@@ -105,6 +105,10 @@ Structures/Enumerations
 
      Triggered when the replay buffer has fully stopped.
 
+   - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED**
+
+     Triggered when the replay buffer has been saved.
+
    - **OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED**
 
      Triggered when the user has turned on studio mode.
