@@ -1792,6 +1792,20 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Lucra.live",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://e3f9a550df0f.global-contribute.live-video.net"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
