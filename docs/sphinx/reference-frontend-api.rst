@@ -124,7 +124,7 @@ Structures/Enumerations
      the program is either about to load a new scene collection, or the
      program is about to exit.
 
-   - **OBS_FRONTEND_FINISHED_LOADING**
+   - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
 
      Triggered when the program has finished loading.
 
