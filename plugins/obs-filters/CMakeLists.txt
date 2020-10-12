@@ -28,9 +28,26 @@ if(NOT LIBRNNOISE_FOUND)
 	set(LIBRNNOISE_FOUND TRUE)
 endif()
 
-if(LIBSPEEXDSP_FOUND OR LIBRNNOISE_FOUND)
+if (WIN32)
+	if(DISABLE_NVAFX)
+		message(STATUS "NVidia Audio FX support disabled")
+		set(LIBNVAFX_FOUND FALSE)
+	else()
+		message(STATUS "NVidia Audio FX support enabled; requires redist to be installed by end-user")
+		add_definitions(-DLIBNVAFX_ENABLED)
+		set(LIBNVAFX_FOUND TRUE)
+	endif()
+endif()
+
+if(LIBSPEEXDSP_FOUND OR LIBRNNOISE_FOUND OR LIBNVAFX_FOUND)
 	set(obs-filters_NOISEREDUCTION_SOURCES
 		noise-suppress-filter.c)
+	if(LIBNVAFX_FOUND)
+		set(obs-filters_NOISEREDUCTION_HEADERS
+			nvafx-load.h)
+	else()
+		set(obs-filters_NOISEREDUCTION_HEADERS)
+	endif()
 	set(obs-filters_NOISEREDUCTION_LIBRARIES
 		${LIBSPEEXDSP_LIBRARIES} ${LIBRNNOISE_LIBRARIES})
 	set(NOISEREDUCTION_ENABLED TRUE)
@@ -83,7 +100,8 @@ add_library(obs-filters MODULE
 	${rnnoise_SOURCES}
 	${obs-filters_SOURCES}
 	${obs-filters_config_HEADERS}
-	${obs-filters_NOISEREDUCTION_SOURCES})
+	${obs-filters_NOISEREDUCTION_SOURCES}
+	${obs-filters_NOISEREDUCTION_HEADERS})
 target_link_libraries(obs-filters
 	libobs
 	${obs-filters_PLATFORM_DEPS}
