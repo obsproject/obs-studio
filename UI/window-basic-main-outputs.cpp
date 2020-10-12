@@ -140,6 +140,13 @@ static void OBSReplayBufferStopping(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static void OBSReplayBufferSaved(void *data, calldata_t *)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+	QMetaObject::invokeMethod(output->main, "ReplayBufferSaved",
+				  Qt::QueuedConnection);
+}
+
 static void OBSStartVirtualCam(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
@@ -437,6 +444,8 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			replayBufferStopping.Connect(signal, "stopping",
 						     OBSReplayBufferStopping,
 						     this);
+			replayBufferSaved.Connect(signal, "saved",
+						  OBSReplayBufferSaved, this);
 		}
 
 		fileOutput = obs_output_create(

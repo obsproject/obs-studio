@@ -33,6 +33,7 @@ struct BasicOutputHandler {
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
 	OBSSignal replayBufferStopping;
+	OBSSignal replayBufferSaved;
 
 	inline BasicOutputHandler(OBSBasic *main_);
 

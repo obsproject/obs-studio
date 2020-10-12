@@ -6141,6 +6141,10 @@ void OBSBasic::ReplayBufferSave()
 		obs_output_get_proc_handler(outputHandler->replayBuffer);
 	proc_handler_call(ph, "save", &cd);
 	calldata_free(&cd);
+}
+
+void OBSBasic::ReplayBufferSaved()
+{
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
 }
