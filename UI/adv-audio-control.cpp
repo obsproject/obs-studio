@@ -100,7 +100,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 		setThemeID(active, "error");
 	activeContainer->layout()->addWidget(active);
 	activeContainer->layout()->setAlignment(active, Qt::AlignVCenter);
-	activeContainer->setFixedWidth(50);
+	activeContainer->setFixedWidth(120);
 
 	volume->setMinimum(MIN_DB - 0.1);
 	volume->setMaximum(MAX_DB);
