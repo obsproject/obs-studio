@@ -28,6 +28,10 @@
 
 #include <libavformat/avformat.h>
 
+#define ANSI_COLOR_RED "\x1b[0;91m"
+#define ANSI_COLOR_MAGENTA "\x1b[0;95m"
+#define ANSI_COLOR_RESET "\x1b[0m"
+
 #if LIBAVCODEC_VERSION_MAJOR >= 58
 #define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
 #else
@@ -217,6 +221,33 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 	return true;
 }
 
+static void ffmpeg_log_callback(void *param, int level, const char *format,
+				va_list args)
+{
+	char out_buffer[4096];
+	vsnprintf(out_buffer, sizeof(out_buffer), format, args);
+
+	switch (level) {
+	case AV_LOG_INFO:
+		fprintf(stdout, "info: [ffmpeg_muxer] %s", out_buffer);
+		fflush(stdout);
+		break;
+
+	case AV_LOG_WARNING:
+		fprintf(stdout, "%swarning: [ffmpeg_muxer] %s%s",
+			ANSI_COLOR_MAGENTA, out_buffer, ANSI_COLOR_RESET);
+		fflush(stdout);
+		break;
+
+	case AV_LOG_ERROR:
+		fprintf(stderr, "%serror: [ffmpeg_muxer] %s%s", ANSI_COLOR_RED,
+			out_buffer, ANSI_COLOR_RESET);
+		fflush(stderr);
+	}
+
+	UNUSED_PARAMETER(param);
+}
+
 static bool init_params(int *argc, char ***argv, struct main_params *params,
 			struct audio_params **p_audio)
 {
@@ -285,6 +316,10 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	}
 
 	*p_audio = audio;
+
+#ifdef DEBUG_FFMPEG
+	av_log_set_callback(ffmpeg_log_callback);
+#endif
 
 	get_opt_str(argc, argv, &params->muxer_settings, "muxer settings");
 
