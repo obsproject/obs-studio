@@ -15,6 +15,7 @@ add_executable(obs-ffmpeg-mux
 	${obs-ffmpeg-mux_HEADERS})
 
 target_link_libraries(obs-ffmpeg-mux
+	libobs
 	${FFMPEG_LIBRARIES})
 
 set_target_properties(obs-ffmpeg-mux PROPERTIES FOLDER "plugins/obs-ffmpeg")

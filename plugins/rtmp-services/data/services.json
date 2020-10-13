@@ -1,5 +1,5 @@
 {
-    "format_version": 2,
+    "format_version": 3,
     "services": [
         {
             "name": "Twitch",
@@ -198,8 +198,32 @@
             }
         },
         {
-            "name": "YouTube / YouTube Gaming",
+            "name": "YouTube - HLS",
+            "common": false,
+            "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
+            "servers": [
+                {
+                    "name": "Primary YouTube ingest server",
+                    "url": "https://a.upload.youtube.com/http_upload_hls?cid={stream_key}&copy=0&file=out.m3u8"
+                },
+                {
+                    "name": "Backup YouTube ingest server",
+                    "url": "https://b.upload.youtube.com/http_upload_hls?cid={stream_key}&copy=1&file=out.m3u8"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "output": "ffmpeg_hls_muxer",
+                "max video bitrate": 51000,
+                "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "YouTube - RTMP",
             "common": true,
+            "alt_names": [
+                "YouTube / YouTube Gaming"
+            ],
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",

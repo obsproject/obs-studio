@@ -14,17 +14,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
-#include <obs-module.h>
-#include <obs-hotkey.h>
-#include <obs-avc.h>
-#include <util/dstr.h>
-#include <util/pipe.h>
-#include <util/darray.h>
-#include <util/platform.h>
-#include <util/circlebuf.h>
-#include <util/threading.h>
 #include "ffmpeg-mux/ffmpeg-mux.h"
+#include "obs-ffmpeg-mux.h"
 
 #ifdef _WIN32
 #include "util/windows/win-version.h"
@@ -38,35 +29,6 @@
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
-
-struct ffmpeg_muxer {
-	obs_output_t *output;
-	os_process_pipe_t *pipe;
-	int64_t stop_ts;
-	uint64_t total_bytes;
-	struct dstr path;
-	bool sent_headers;
-	volatile bool active;
-	volatile bool stopping;
-	volatile bool capturing;
-
-	/* replay buffer */
-	struct circlebuf packets;
-	int64_t cur_size;
-	int64_t cur_time;
-	int64_t max_size;
-	int64_t max_time;
-	int64_t save_ts;
-	int keyframes;
-	obs_hotkey_id hotkey;
-
-	DARRAY(struct encoder_packet) mux_packets;
-	pthread_t mux_thread;
-	bool mux_thread_joinable;
-	volatile bool muxing;
-
-	bool is_network;
-};
 
 static const char *ffmpeg_mux_getname(void *type)
 {
@@ -105,9 +67,13 @@ static void ffmpeg_mux_destroy(void *data)
 	if (stream->mux_thread_joinable)
 		pthread_join(stream->mux_thread, NULL);
 	da_free(stream->mux_packets);
+	circlebuf_free(&stream->packets);
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
+	dstr_free(&stream->printable_path);
+	dstr_free(&stream->stream_key);
+	dstr_free(&stream->muxer_settings);
 	bfree(stream);
 }
 
@@ -134,12 +100,12 @@ static inline bool capturing(struct ffmpeg_muxer *stream)
 	return os_atomic_load_bool(&stream->capturing);
 }
 
-static inline bool stopping(struct ffmpeg_muxer *stream)
+bool stopping(struct ffmpeg_muxer *stream)
 {
 	return os_atomic_load_bool(&stream->stopping);
 }
 
-static inline bool active(struct ffmpeg_muxer *stream)
+bool active(struct ffmpeg_muxer *stream)
 {
 	return os_atomic_load_bool(&stream->active);
 }
@@ -236,17 +202,30 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 	av_dict_free(&dict);
 }
 
+static void add_stream_key(struct dstr *cmd, struct ffmpeg_muxer *stream)
+{
+	dstr_catf(cmd, "\"%s\" ",
+		  dstr_is_empty(&stream->stream_key)
+			  ? ""
+			  : stream->stream_key.array);
+}
+
 static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 {
-	obs_data_t *settings = obs_output_get_settings(stream->output);
 	struct dstr mux = {0};
 
-	dstr_copy(&mux, obs_data_get_string(settings, "muxer_settings"));
+	if (dstr_is_empty(&stream->muxer_settings)) {
+		obs_data_t *settings = obs_output_get_settings(stream->output);
+		dstr_copy(&mux,
+			  obs_data_get_string(settings, "muxer_settings"));
+		obs_data_release(settings);
+	} else {
+		dstr_copy(&mux, stream->muxer_settings.array);
+	}
 
 	log_muxer_params(stream, mux.array);
 
 	dstr_replace(&mux, "\"", "\\\"");
-	obs_data_release(settings);
 
 	dstr_catf(cmd, "\"%s\" ", mux.array ? mux.array : "");
 
@@ -291,10 +270,11 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		}
 	}
 
+	add_stream_key(cmd, stream);
 	add_muxer_params(cmd, stream);
 }
 
-static inline void start_pipe(struct ffmpeg_muxer *stream, const char *path)
+void start_pipe(struct ffmpeg_muxer *stream, const char *path)
 {
 	struct dstr cmd;
 	build_command_line(stream, &cmd, path);
@@ -381,9 +361,18 @@ static bool ffmpeg_mux_start(void *data)
 	return true;
 }
 
-static int deactivate(struct ffmpeg_muxer *stream, int code)
+int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
+
+	if (stream->is_hls) {
+		if (stream->mux_thread_joinable) {
+			os_event_signal(stream->stop_event);
+			os_sem_post(stream->write_sem);
+			pthread_join(stream->mux_thread, NULL);
+			stream->mux_thread_joinable = false;
+		}
+	}
 
 	if (active(stream)) {
 		ret = os_process_pipe_destroy(stream->pipe);
@@ -392,7 +381,10 @@ static int deactivate(struct ffmpeg_muxer *stream, int code)
 		os_atomic_set_bool(&stream->active, false);
 		os_atomic_set_bool(&stream->sent_headers, false);
 
-		info("Output of file '%s' stopped", stream->path.array);
+		info("Output of file '%s' stopped",
+		     dstr_is_empty(&stream->printable_path)
+			     ? stream->path.array
+			     : stream->printable_path.array);
 	}
 
 	if (code) {
@@ -401,11 +393,24 @@ static int deactivate(struct ffmpeg_muxer *stream, int code)
 		obs_output_end_data_capture(stream->output);
 	}
 
+	if (stream->is_hls) {
+		pthread_mutex_lock(&stream->write_mutex);
+
+		while (stream->packets.size) {
+			struct encoder_packet packet;
+			circlebuf_pop_front(&stream->packets, &packet,
+					    sizeof(packet));
+			obs_encoder_packet_release(&packet);
+		}
+
+		pthread_mutex_unlock(&stream->write_mutex);
+	}
+
 	os_atomic_set_bool(&stream->stopping, false);
 	return ret;
 }
 
-static void ffmpeg_mux_stop(void *data, uint64_t ts)
+void ffmpeg_mux_stop(void *data, uint64_t ts)
 {
 	struct ffmpeg_muxer *stream = data;
 
@@ -451,8 +456,7 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 	os_atomic_set_bool(&stream->capturing, false);
 }
 
-static bool write_packet(struct ffmpeg_muxer *stream,
-			 struct encoder_packet *packet)
+bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
 	size_t ret;
@@ -505,7 +509,7 @@ static bool send_video_headers(struct ffmpeg_muxer *stream)
 	return write_packet(stream, &packet);
 }
 
-static bool send_headers(struct ffmpeg_muxer *stream)
+bool send_headers(struct ffmpeg_muxer *stream)
 {
 	obs_encoder_t *aencoder;
 	size_t idx = 0;
@@ -567,7 +571,7 @@ static obs_properties_t *ffmpeg_mux_properties(void *unused)
 	return props;
 }
 
-static uint64_t ffmpeg_mux_total_bytes(void *data)
+uint64_t ffmpeg_mux_total_bytes(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 	return stream->total_bytes;

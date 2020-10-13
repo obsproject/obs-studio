@@ -22,12 +22,16 @@
 
 #endif
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ffmpeg-mux.h"
 
+#include <util/dstr.h>
 #include <libavformat/avformat.h>
+
+#define ANSI_COLOR_RED "\x1b[0;91m"
+#define ANSI_COLOR_MAGENTA "\x1b[0;95m"
+#define ANSI_COLOR_RESET "\x1b[0m"
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
 #define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
@@ -36,6 +40,8 @@
 #endif
 
 /* ------------------------------------------------------------------------- */
+
+static char *global_stream_key = "";
 
 struct resize_buf {
 	uint8_t *buf;
@@ -70,6 +76,8 @@ static inline void resize_buf_free(struct resize_buf *rb)
 
 struct main_params {
 	char *file;
+	/* printable_file is file with any stream key information removed */
+	struct dstr printable_file;
 	int has_video;
 	int tracks;
 	char *vcodec;
@@ -172,6 +180,8 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 		free(ffm->audio);
 	}
 
+	dstr_free(&ffm->params.printable_file);
+
 	memset(ffm, 0, sizeof(*ffm));
 }
 
@@ -216,6 +226,38 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 	if (!get_opt_int(argc, argv, &audio->channels, "audio channels"))
 		return false;
 	return true;
+}
+
+static void ffmpeg_log_callback(void *param, int level, const char *format,
+				va_list args)
+{
+	char out_buffer[4096];
+	struct dstr out = {0};
+
+	vsnprintf(out_buffer, sizeof(out_buffer), format, args);
+	dstr_copy(&out, out_buffer);
+	dstr_replace(&out, global_stream_key, "{stream_key}");
+
+	switch (level) {
+	case AV_LOG_INFO:
+		fprintf(stdout, "info: [ffmpeg_muxer] %s", out.array);
+		fflush(stdout);
+		break;
+
+	case AV_LOG_WARNING:
+		fprintf(stdout, "%swarning: [ffmpeg_muxer] %s%s",
+			ANSI_COLOR_MAGENTA, out.array, ANSI_COLOR_RESET);
+		fflush(stdout);
+		break;
+
+	case AV_LOG_ERROR:
+		fprintf(stderr, "%serror: [ffmpeg_muxer] %s%s", ANSI_COLOR_RED,
+			out.array, ANSI_COLOR_RESET);
+		fflush(stderr);
+	}
+
+	dstr_free(&out);
+	UNUSED_PARAMETER(param);
 }
 
 static bool init_params(int *argc, char ***argv, struct main_params *params,
@@ -287,6 +329,18 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 
 	*p_audio = audio;
 
+	dstr_copy(&params->printable_file, params->file);
+
+	get_opt_str(argc, argv, &global_stream_key, "stream key");
+	if (strcmp(global_stream_key, "") != 0) {
+		dstr_replace(&params->printable_file, global_stream_key,
+			     "{stream_key}");
+	}
+
+#ifdef DEBUG_FFMPEG
+	av_log_set_callback(ffmpeg_log_callback);
+#endif
+
 	get_opt_str(argc, argv, &params->muxer_settings, "muxer settings");
 
 	return true;
@@ -353,6 +407,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		(AVRational){ffm->params.fps_den, ffm->params.fps_num};
 
 	ffm->video_stream->time_base = context->time_base;
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
+	ffm->video_stream->codec->time_base = context->time_base;
+#endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
@@ -521,7 +579,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			fprintf(stderr, "Couldn't open '%s', %s\n",
-				ffm->params.file, av_err2str(ret));
+				ffm->params.printable_file.array,
+				av_err2str(ret));
 			return FFM_ERROR;
 		}
 	}
@@ -548,8 +607,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
-		fprintf(stderr, "Error opening '%s': %s\n", ffm->params.file,
-			av_err2str(ret));
+		fprintf(stderr, "Error opening '%s': %s",
+			ffm->params.printable_file.array, av_err2str(ret));
 
 		av_dict_free(&dict);
 
@@ -564,29 +623,38 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define SRT_PROTO "srt"
 #define UDP_PROTO "udp"
 #define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *output_format;
 	int ret;
-	bool isNetwork = false;
+	bool is_network = false;
+	bool is_http = false;
+	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
+			   sizeof(HTTP_PROTO) - 1) == 0);
+
 	if (strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) == 0 ||
 	    strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0)
-		isNetwork = true;
-
-	if (isNetwork) {
+	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0 ||
+	    is_http) {
+		is_network = true;
 		avformat_network_init();
-		output_format = av_guess_format("mpegts", NULL, "video/M2PT");
-	} else {
-		output_format = av_guess_format(NULL, ffm->params.file, NULL);
 	}
+
+	if (is_network && !is_http)
+		output_format = av_guess_format("mpegts", NULL, "video/M2PT");
+	else
+		output_format = av_guess_format(NULL, ffm->params.file, NULL);
 
 	if (output_format == NULL) {
 		fprintf(stderr, "Couldn't find an appropriate muxer for '%s'\n",
-			ffm->params.file);
+			ffm->params.printable_file.array);
 		return FFM_ERROR;
 	}
+	printf("info: Output format name and long_name: %s, %s\n",
+	       output_format->name ? output_format->name : "unknown",
+	       output_format->long_name ? output_format->long_name : "unknown");
 
 	ret = avformat_alloc_output_context2(&ffm->output, output_format, NULL,
 					     ffm->params.file);
