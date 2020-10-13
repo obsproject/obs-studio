@@ -41,6 +41,8 @@
 
 /* ------------------------------------------------------------------------- */
 
+static char *global_stream_key = "";
+
 struct resize_buf {
 	uint8_t *buf;
 	size_t size;
@@ -230,26 +232,31 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 				va_list args)
 {
 	char out_buffer[4096];
+	struct dstr out = {0};
+
 	vsnprintf(out_buffer, sizeof(out_buffer), format, args);
+	dstr_copy(&out, out_buffer);
+	dstr_replace(&out, global_stream_key, "{stream_key}");
 
 	switch (level) {
 	case AV_LOG_INFO:
-		fprintf(stdout, "info: [ffmpeg_muxer] %s", out_buffer);
+		fprintf(stdout, "info: [ffmpeg_muxer] %s", out.array);
 		fflush(stdout);
 		break;
 
 	case AV_LOG_WARNING:
 		fprintf(stdout, "%swarning: [ffmpeg_muxer] %s%s",
-			ANSI_COLOR_MAGENTA, out_buffer, ANSI_COLOR_RESET);
+			ANSI_COLOR_MAGENTA, out.array, ANSI_COLOR_RESET);
 		fflush(stdout);
 		break;
 
 	case AV_LOG_ERROR:
 		fprintf(stderr, "%serror: [ffmpeg_muxer] %s%s", ANSI_COLOR_RED,
-			out_buffer, ANSI_COLOR_RESET);
+			out.array, ANSI_COLOR_RESET);
 		fflush(stderr);
 	}
 
+	dstr_free(&out);
 	UNUSED_PARAMETER(param);
 }
 
@@ -323,6 +330,12 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	*p_audio = audio;
 
 	dstr_copy(&params->printable_file, params->file);
+
+	get_opt_str(argc, argv, &global_stream_key, "stream key");
+	if (strcmp(global_stream_key, "") != 0) {
+		dstr_replace(&params->printable_file, global_stream_key,
+			     "{stream_key}");
+	}
 
 #ifdef DEBUG_FFMPEG
 	av_log_set_callback(ffmpeg_log_callback);

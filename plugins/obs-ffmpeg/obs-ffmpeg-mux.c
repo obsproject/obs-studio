@@ -71,6 +71,7 @@ static void ffmpeg_mux_destroy(void *data)
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
 	dstr_free(&stream->printable_path);
+	dstr_free(&stream->stream_key);
 	dstr_free(&stream->muxer_settings);
 	bfree(stream);
 }
@@ -200,6 +201,14 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 	av_dict_free(&dict);
 }
 
+static void add_stream_key(struct dstr *cmd, struct ffmpeg_muxer *stream)
+{
+	dstr_catf(cmd, "\"%s\" ",
+		  dstr_is_empty(&stream->stream_key)
+			  ? ""
+			  : stream->stream_key.array);
+}
+
 static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 {
 	struct dstr mux = {0};
@@ -260,6 +269,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		}
 	}
 
+	add_stream_key(cmd, stream);
 	add_muxer_params(cmd, stream);
 }
 
