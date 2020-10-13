@@ -824,10 +824,41 @@
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QComboBox" name="service">
-              <property name="maxVisibleItems">
-               <number>20</number>
-              </property>
+             <widget class="QWidget" name="serviceWidget" native="true">
+              <layout class="QHBoxLayout" name="serviceWidgetLayout" stretch="0,0">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="service">
+                 <property name="maxVisibleItems">
+                  <number>20</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="UrlPushButton" name="moreInfoButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.MoreInfo</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item row="1" column="0">
