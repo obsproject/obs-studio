@@ -70,6 +70,7 @@ static void ffmpeg_mux_destroy(void *data)
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
+	dstr_free(&stream->printable_path);
 	bfree(stream);
 }
 
@@ -354,7 +355,10 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 		os_atomic_set_bool(&stream->active, false);
 		os_atomic_set_bool(&stream->sent_headers, false);
 
-		info("Output of file '%s' stopped", stream->path.array);
+		info("Output of file '%s' stopped",
+		     dstr_is_empty(&stream->printable_path)
+			     ? stream->path.array
+			     : stream->printable_path.array);
 	}
 
 	if (code) {

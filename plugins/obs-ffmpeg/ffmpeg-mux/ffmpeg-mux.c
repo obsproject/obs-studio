@@ -26,6 +26,7 @@
 #include <stdlib.h>
 #include "ffmpeg-mux.h"
 
+#include <util/dstr.h>
 #include <libavformat/avformat.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
@@ -73,6 +74,8 @@ static inline void resize_buf_free(struct resize_buf *rb)
 
 struct main_params {
 	char *file;
+	/* printable_file is file with any stream key information removed */
+	struct dstr printable_file;
 	int has_video;
 	int tracks;
 	char *vcodec;
@@ -174,6 +177,8 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 	if (ffm->audio) {
 		free(ffm->audio);
 	}
+
+	dstr_free(&ffm->params.printable_file);
 
 	memset(ffm, 0, sizeof(*ffm));
 }
@@ -316,6 +321,8 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	}
 
 	*p_audio = audio;
+
+	dstr_copy(&params->printable_file, params->file);
 
 #ifdef DEBUG_FFMPEG
 	av_log_set_callback(ffmpeg_log_callback);
@@ -559,7 +566,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 				AVIO_FLAG_WRITE);
 		if (ret < 0) {
 			fprintf(stderr, "Couldn't open '%s', %s\n",
-				ffm->params.file, av_err2str(ret));
+				ffm->params.printable_file.array,
+				av_err2str(ret));
 			return FFM_ERROR;
 		}
 	}
@@ -586,8 +594,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 
 	ret = avformat_write_header(ffm->output, &dict);
 	if (ret < 0) {
-		fprintf(stderr, "Error opening '%s': %s\n", ffm->params.file,
-			av_err2str(ret));
+		fprintf(stderr, "Error opening '%s': %s",
+			ffm->params.printable_file.array, av_err2str(ret));
 
 		av_dict_free(&dict);
 
@@ -622,7 +630,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 
 	if (output_format == NULL) {
 		fprintf(stderr, "Couldn't find an appropriate muxer for '%s'\n",
-			ffm->params.file);
+			ffm->params.printable_file.array);
 		return FFM_ERROR;
 	}
 
