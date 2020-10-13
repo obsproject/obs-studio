@@ -623,29 +623,38 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define SRT_PROTO "srt"
 #define UDP_PROTO "udp"
 #define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *output_format;
 	int ret;
 	bool is_network = false;
+	bool is_http = false;
+	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
+			   sizeof(HTTP_PROTO) - 1) == 0);
+
 	if (strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) == 0 ||
 	    strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0)
+	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0 ||
+	    is_http) {
 		is_network = true;
-
-	if (is_network) {
 		avformat_network_init();
-		output_format = av_guess_format("mpegts", NULL, "video/M2PT");
-	} else {
-		output_format = av_guess_format(NULL, ffm->params.file, NULL);
 	}
+
+	if (is_network && !is_http)
+		output_format = av_guess_format("mpegts", NULL, "video/M2PT");
+	else
+		output_format = av_guess_format(NULL, ffm->params.file, NULL);
 
 	if (output_format == NULL) {
 		fprintf(stderr, "Couldn't find an appropriate muxer for '%s'\n",
 			ffm->params.printable_file.array);
 		return FFM_ERROR;
 	}
+	printf("info: Output format name and long_name: %s, %s\n",
+	       output_format->name ? output_format->name : "unknown",
+	       output_format->long_name ? output_format->long_name : "unknown");
 
 	ret = avformat_alloc_output_context2(&ffm->output, output_format, NULL,
 					     ffm->params.file);

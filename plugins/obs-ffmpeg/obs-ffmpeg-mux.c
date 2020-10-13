@@ -67,6 +67,7 @@ static void ffmpeg_mux_destroy(void *data)
 	if (stream->mux_thread_joinable)
 		pthread_join(stream->mux_thread, NULL);
 	da_free(stream->mux_packets);
+	circlebuf_free(&stream->packets);
 
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
@@ -364,6 +365,15 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
 
+	if (stream->is_hls) {
+		if (stream->mux_thread_joinable) {
+			os_event_signal(stream->stop_event);
+			os_sem_post(stream->write_sem);
+			pthread_join(stream->mux_thread, NULL);
+			stream->mux_thread_joinable = false;
+		}
+	}
+
 	if (active(stream)) {
 		ret = os_process_pipe_destroy(stream->pipe);
 		stream->pipe = NULL;
@@ -381,6 +391,19 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 		obs_output_signal_stop(stream->output, code);
 	} else if (stopping(stream)) {
 		obs_output_end_data_capture(stream->output);
+	}
+
+	if (stream->is_hls) {
+		pthread_mutex_lock(&stream->write_mutex);
+
+		while (stream->packets.size) {
+			struct encoder_packet packet;
+			circlebuf_pop_front(&stream->packets, &packet,
+					    sizeof(packet));
+			obs_encoder_packet_release(&packet);
+		}
+
+		pthread_mutex_unlock(&stream->write_mutex);
 	}
 
 	os_atomic_set_bool(&stream->stopping, false);

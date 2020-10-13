@@ -33,11 +33,22 @@ struct ffmpeg_muxer {
 	int keyframes;
 	obs_hotkey_id hotkey;
 	volatile bool muxing;
-
 	DARRAY(struct encoder_packet) mux_packets;
+
+	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
 	struct circlebuf packets;
+
+	/* HLS only */
+	int keyint_sec;
+	pthread_mutex_t write_mutex;
+	os_sem_t *write_sem;
+	os_event_t *stop_event;
+	bool is_hls;
+	int dropped_frames;
+	int min_priority;
+	int64_t last_dts_usec;
 
 	bool is_network;
 };

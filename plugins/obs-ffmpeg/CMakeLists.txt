@@ -30,6 +30,7 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-nvenc.c
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
+	obs-ffmpeg-hls-mux.c
 	obs-ffmpeg-source.c)
 
 if(UNIX AND NOT APPLE)
