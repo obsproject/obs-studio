@@ -22,7 +22,6 @@
 
 #endif
 
-#include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include "ffmpeg-mux.h"

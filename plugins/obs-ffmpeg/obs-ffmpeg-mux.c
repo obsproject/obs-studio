@@ -14,17 +14,8 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
-
-#include <obs-module.h>
-#include <obs-hotkey.h>
-#include <obs-avc.h>
-#include <util/dstr.h>
-#include <util/pipe.h>
-#include <util/darray.h>
-#include <util/platform.h>
-#include <util/circlebuf.h>
-#include <util/threading.h>
 #include "ffmpeg-mux/ffmpeg-mux.h"
+#include "obs-ffmpeg-mux.h"
 
 #ifdef _WIN32
 #include "util/windows/win-version.h"
@@ -38,35 +29,6 @@
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
-
-struct ffmpeg_muxer {
-	obs_output_t *output;
-	os_process_pipe_t *pipe;
-	int64_t stop_ts;
-	uint64_t total_bytes;
-	struct dstr path;
-	bool sent_headers;
-	volatile bool active;
-	volatile bool stopping;
-	volatile bool capturing;
-
-	/* replay buffer */
-	struct circlebuf packets;
-	int64_t cur_size;
-	int64_t cur_time;
-	int64_t max_size;
-	int64_t max_time;
-	int64_t save_ts;
-	int keyframes;
-	obs_hotkey_id hotkey;
-
-	DARRAY(struct encoder_packet) mux_packets;
-	pthread_t mux_thread;
-	bool mux_thread_joinable;
-	volatile bool muxing;
-
-	bool is_network;
-};
 
 static const char *ffmpeg_mux_getname(void *type)
 {
@@ -134,12 +96,12 @@ static inline bool capturing(struct ffmpeg_muxer *stream)
 	return os_atomic_load_bool(&stream->capturing);
 }
 
-static inline bool stopping(struct ffmpeg_muxer *stream)
+bool stopping(struct ffmpeg_muxer *stream)
 {
 	return os_atomic_load_bool(&stream->stopping);
 }
 
-static inline bool active(struct ffmpeg_muxer *stream)
+bool active(struct ffmpeg_muxer *stream)
 {
 	return os_atomic_load_bool(&stream->active);
 }
@@ -294,7 +256,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 	add_muxer_params(cmd, stream);
 }
 
-static inline void start_pipe(struct ffmpeg_muxer *stream, const char *path)
+void start_pipe(struct ffmpeg_muxer *stream, const char *path)
 {
 	struct dstr cmd;
 	build_command_line(stream, &cmd, path);
@@ -381,7 +343,7 @@ static bool ffmpeg_mux_start(void *data)
 	return true;
 }
 
-static int deactivate(struct ffmpeg_muxer *stream, int code)
+int deactivate(struct ffmpeg_muxer *stream, int code)
 {
 	int ret = -1;
 
@@ -405,7 +367,7 @@ static int deactivate(struct ffmpeg_muxer *stream, int code)
 	return ret;
 }
 
-static void ffmpeg_mux_stop(void *data, uint64_t ts)
+void ffmpeg_mux_stop(void *data, uint64_t ts)
 {
 	struct ffmpeg_muxer *stream = data;
 
@@ -451,8 +413,7 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 	os_atomic_set_bool(&stream->capturing, false);
 }
 
-static bool write_packet(struct ffmpeg_muxer *stream,
-			 struct encoder_packet *packet)
+bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
 	size_t ret;
@@ -505,7 +466,7 @@ static bool send_video_headers(struct ffmpeg_muxer *stream)
 	return write_packet(stream, &packet);
 }
 
-static bool send_headers(struct ffmpeg_muxer *stream)
+bool send_headers(struct ffmpeg_muxer *stream)
 {
 	obs_encoder_t *aencoder;
 	size_t idx = 0;
@@ -567,7 +528,7 @@ static obs_properties_t *ffmpeg_mux_properties(void *unused)
 	return props;
 }
 
-static uint64_t ffmpeg_mux_total_bytes(void *data)
+uint64_t ffmpeg_mux_total_bytes(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
 	return stream->total_bytes;
