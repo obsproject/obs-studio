@@ -71,6 +71,7 @@ static void ffmpeg_mux_destroy(void *data)
 	os_process_pipe_destroy(stream->pipe);
 	dstr_free(&stream->path);
 	dstr_free(&stream->printable_path);
+	dstr_free(&stream->muxer_settings);
 	bfree(stream);
 }
 
@@ -201,15 +202,20 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 
 static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 {
-	obs_data_t *settings = obs_output_get_settings(stream->output);
 	struct dstr mux = {0};
 
-	dstr_copy(&mux, obs_data_get_string(settings, "muxer_settings"));
+	if (dstr_is_empty(&stream->muxer_settings)) {
+		obs_data_t *settings = obs_output_get_settings(stream->output);
+		dstr_copy(&mux,
+			  obs_data_get_string(settings, "muxer_settings"));
+		obs_data_release(settings);
+	} else {
+		dstr_copy(&mux, stream->muxer_settings.array);
+	}
 
 	log_muxer_params(stream, mux.array);
 
 	dstr_replace(&mux, "\"", "\\\"");
-	obs_data_release(settings);
 
 	dstr_catf(cmd, "\"%s\" ", mux.array ? mux.array : "");
 

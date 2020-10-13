@@ -21,6 +21,7 @@ struct ffmpeg_muxer {
 	volatile bool stopping;
 	struct dstr path;
 	struct dstr printable_path;
+	struct dstr muxer_settings;
 
 	/* replay buffer */
 	int64_t cur_size;
