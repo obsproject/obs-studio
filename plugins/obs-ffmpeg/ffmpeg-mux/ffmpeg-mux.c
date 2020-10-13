@@ -387,6 +387,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		(AVRational){ffm->params.fps_den, ffm->params.fps_num};
 
 	ffm->video_stream->time_base = context->time_base;
+#if LIBAVFORMAT_VERSION_MAJOR < 59
+	// codec->time_base may still be used if LIBAVFORMAT_VERSION_MAJOR < 59
+	ffm->video_stream->codec->time_base = context->time_base;
+#endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
