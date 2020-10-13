@@ -568,13 +568,13 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *output_format;
 	int ret;
-	bool isNetwork = false;
+	bool is_network = false;
 	if (strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) == 0 ||
 	    strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) == 0 ||
 	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0)
-		isNetwork = true;
+		is_network = true;
 
-	if (isNetwork) {
+	if (is_network) {
 		avformat_network_init();
 		output_format = av_guess_format("mpegts", NULL, "video/M2PT");
 	} else {
