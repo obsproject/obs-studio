@@ -101,6 +101,11 @@ enum obs_group_type {
 	OBS_GROUP_CHECKABLE,
 };
 
+enum obs_button_type {
+	OBS_BUTTON_DEFAULT,
+	OBS_BUTTON_URL,
+};
+
 #define OBS_FONT_BOLD (1 << 0)
 #define OBS_FONT_ITALIC (1 << 1)
 #define OBS_FONT_UNDERLINE (1 << 2)
@@ -334,6 +339,10 @@ EXPORT void obs_property_float_set_suffix(obs_property_t *p,
 					  const char *suffix);
 EXPORT void obs_property_text_set_monospace(obs_property_t *p, bool monospace);
 
+EXPORT void obs_property_button_set_type(obs_property_t *p,
+					 enum obs_button_type type);
+EXPORT void obs_property_button_set_url(obs_property_t *p, char *url);
+
 EXPORT void obs_property_list_clear(obs_property_t *p);
 
 EXPORT size_t obs_property_list_add_string(obs_property_t *p, const char *name,
@@ -400,6 +409,9 @@ obs_property_frame_rate_fps_range_max(obs_property_t *p, size_t idx);
 
 EXPORT enum obs_group_type obs_property_group_type(obs_property_t *p);
 EXPORT obs_properties_t *obs_property_group_content(obs_property_t *p);
+
+EXPORT enum obs_button_type obs_property_button_type(obs_property_t *p);
+EXPORT const char *obs_property_button_url(obs_property_t *p);
 
 #ifndef SWIG
 OBS_DEPRECATED

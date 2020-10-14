@@ -240,6 +240,11 @@ Property Object Functions
    :param    description: Localized name shown to user
    :return:               The property
 
+   Important Related Functions:
+
+      - :c:func:`obs_property_button_set_type`
+      - :c:func:`obs_property_button_set_url`
+
    Relevant data types used with this function:
 
 .. code:: cpp
@@ -512,6 +517,19 @@ Property Enumeration Functions
 
 ---------------------
 
+.. function:: enum obs_button_type obs_property_button_type(obs_property_t *p)
+
+   :return: One of the following values:
+
+             - OBS_BUTTON_DEFAULT
+             - OBS_BUTTON_URL
+
+---------------------
+
+.. function:: const char *obs_property_button_url(obs_property_t *p)
+
+---------------------
+
 .. function:: enum obs_group_type obs_property_group_type(obs_property_t *p)
 
   :return: One of the following values:
@@ -658,3 +676,17 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_frame_rate_fps_range_insert(obs_property_t *p, size_t idx, struct media_frames_per_second min, struct media_frames_per_second max)
+
+---------------------
+
+.. function:: void obs_property_button_set_type(obs_property_t *p, enum obs_button_type type)
+
+   :param   type: Can be one of the following values:
+
+                  - **OBS_BUTTON_DEFAULT** - Standard button
+                  - **OBS_BUTTON_URL** - Button that opens a URL
+   :return:       The property
+
+---------------------
+
+.. function:: void obs_property_button_set_url(obs_property_t *p, char *url)
