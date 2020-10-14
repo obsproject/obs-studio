@@ -521,9 +521,8 @@ void OBSBasicStatusBar::RecordingStopped()
 
 void OBSBasicStatusBar::RecordingPaused()
 {
-	QString text = QStringLiteral("REC: PAUSED");
+	QString text = recordTime->text() + QStringLiteral(" (PAUSED)");
 	recordTime->setText(text);
-	recordTime->setMinimumWidth(recordTime->width());
 
 	if (recordOutput) {
 		recordIcon->setPixmap(recordingPausePixmap);
