@@ -231,6 +231,7 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 static void ffmpeg_log_callback(void *param, int level, const char *format,
 				va_list args)
 {
+#ifdef DEBUG_FFMPEG
 	char out_buffer[4096];
 	struct dstr out = {0};
 
@@ -257,6 +258,11 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 	}
 
 	dstr_free(&out);
+#else
+	UNUSED_PARAMETER(level);
+	UNUSED_PARAMETER(format);
+	UNUSED_PARAMETER(args);
+#endif
 	UNUSED_PARAMETER(param);
 }
 
@@ -337,9 +343,7 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 			     "{stream_key}");
 	}
 
-#ifdef DEBUG_FFMPEG
 	av_log_set_callback(ffmpeg_log_callback);
-#endif
 
 	get_opt_str(argc, argv, &params->muxer_settings, "muxer settings");
 
