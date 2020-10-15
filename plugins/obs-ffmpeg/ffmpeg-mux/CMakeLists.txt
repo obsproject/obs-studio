@@ -1,5 +1,9 @@
 project(obs-ffmpeg-mux)
 
+if(DEBUG_FFMPEG_MUX)
+	add_definitions(-DDEBUG_FFMPEG)
+endif()
+
 find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avutil avformat)
 include_directories(${FFMPEG_INCLUDE_DIRS})

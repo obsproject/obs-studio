@@ -8,6 +8,7 @@ endif()
 project(obs-studio)
 
 option(BUILD_CAPTIONS "Build captions" FALSE)
+option(DEBUG_FFMPEG_MUX "Debug FFmpeg muxer subprocess" FALSE)
 
 set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 
