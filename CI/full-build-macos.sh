@@ -45,6 +45,7 @@ CI_DEPS_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+MACOS_DEPS_VERSION: '([0-9
 CI_VLC_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+VLC_VERSION: '([0-9\.]+)'/\1/p")
 CI_SPARKLE_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+SPARKLE_VERSION: '([0-9\.]+)'/\1/p")
 CI_QT_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+QT_VERSION: '([0-9\.]+)'/\1/p" | head -1)
+CI_MIN_MACOS_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+MIN_MACOS_VERSION: '([0-9\.]+)'/\1/p")
 
 BUILD_DEPS=(
     "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
@@ -113,6 +114,16 @@ caught_error() {
 }
 
 ## CHECK AND INSTALL DEPENDENCIES ##
+check_macos_version() {
+    MIN_VERSION=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}
+    MIN_MAJOR=$(echo ${MIN_VERSION} | cut -d '.' -f 1)
+    MIN_MINOR=$(echo ${MIN_VERSION} | cut -d '.' -f 2)
+
+    if [ "${MACOS_MAJOR}" -lt "11" ] && [ "${MACOS_MINOR}" -lt "${MIN_MINOR}" ]; then
+        error "WARNING: Minimum required macOS version is ${MIN_VERSION}, but running on ${MACOS_VERSION}"
+    fi
+}
+
 install_homebrew_deps() {
     if ! exists brew; then
         error "Homebrew not found - please install homebrew (https://brew.sh)"
@@ -195,16 +206,14 @@ install_cef() {
     tar -xf ./cef_binary_${1}_macosx64.tar.bz2
     cd ./cef_binary_${1}_macosx64
     step "Fix tests..."
-    # remove a broken test
     sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-    # target 10.11
-    sed -i '.orig' s/\"10.9\"/\"10.11\"/ ./cmake/cef_variables.cmake
+    sed -i '.orig' s/\"10.9\"/\"${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}\"/ ./cmake/cef_variables.cmake
     ensure_dir ./build
     step "Run CMAKE..."
     cmake \
-        -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++"\
+        -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++ -Wno-deprecated-declarations"\
         -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++"\
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}} \
         ..
     step "Build..."
     make -j4
@@ -251,7 +260,7 @@ configure_obs_build() {
 
     hr "Run CMAKE for OBS..."
     cmake -DENABLE_SPARKLE_UPDATER=ON \
-        -DCMAKE_OSX_DEPLOYMENT_TARGET=10.13 \
+        -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}} \
         -DDISABLE_PYTHON=ON  \
         -DQTDIR="/tmp/obsdeps" \
         -DSWIGDIR="/tmp/obsdeps" \
@@ -334,8 +343,8 @@ install_frameworks() {
 
     hr "Adding Chromium Embedded Framework"
     step "Copy Framework..."
-    sudo cp -R "${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
-    sudo chown -R $(whoami) ./OBS.app/Contents/Frameworks/
+    cp -R "${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+    chown -R $(whoami) ./OBS.app/Contents/Frameworks/
 }
 
 prepare_macos_bundle() {
@@ -603,6 +612,7 @@ print_usage() {
 
 obs-build-main() {
     ensure_dir ${CHECKOUT_DIR}
+    check_macos_version
     step "Fetching OBS tags..."
     git fetch origin --tags
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)

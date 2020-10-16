@@ -15,7 +15,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.8.5</string>
+	<string>10.13.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>LSAppNapIsDisabled</key>
