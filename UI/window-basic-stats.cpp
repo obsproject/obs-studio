@@ -32,6 +32,22 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 	}
 }
 
+static QString MakeTimeLeftText(int hours, int minutes)
+{
+	return QString::asprintf("%d %s, %d %s", hours,
+				 QT_TO_UTF8(QTStr("Hours")), minutes,
+				 QT_TO_UTF8(QTStr("Minutes")));
+}
+
+static QString MakeMissedFramesText(uint32_t total_lagged,
+				    uint32_t total_rendered, long double num)
+{
+	return QString("%1 / %2 (%3%)")
+		.arg(QString::number(total_lagged),
+		     QString::number(total_rendered),
+		     QString::number(num, 'f', 1));
+}
+
 OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	: QWidget(parent),
 	  cpu_info(os_cpu_usage_info_start()),
@@ -65,6 +81,10 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	recordTimeLeft = new QLabel(this);
 	memUsage = new QLabel(this);
 
+	QString str = MakeTimeLeftText(99999, 59);
+	int textWidth = recordTimeLeft->fontMetrics().boundingRect(str).width();
+	recordTimeLeft->setMinimumWidth(textWidth);
+
 	newStat("CPUUsage", cpuUsage, 0);
 	newStat("HDDSpaceAvailable", hddSpace, 0);
 	newStat("DiskFullIn", recordTimeLeft, 0);
@@ -74,6 +94,11 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	renderTime = new QLabel(this);
 	skippedFrames = new QLabel(this);
 	missedFrames = new QLabel(this);
+
+	str = MakeMissedFramesText(999999, 999999, 99.99);
+	textWidth = missedFrames->fontMetrics().boundingRect(str).width();
+	missedFrames->setMinimumWidth(textWidth);
+
 	row = 0;
 
 	newStatBare("FPS", fps, 2);
@@ -388,10 +413,7 @@ void OBSBasicStats::Update()
 		      : 0.0l;
 	num *= 100.0l;
 
-	str = QString("%1 / %2 (%3%)")
-		      .arg(QString::number(total_lagged),
-			   QString::number(total_rendered),
-			   QString::number(num, 'f', 1));
+	str = MakeMissedFramesText(total_lagged, total_rendered, num);
 	missedFrames->setText(str);
 
 	if (num > 5.0l)
@@ -445,9 +467,7 @@ void OBSBasicStats::RecordingTimeLeft()
 	int minutes = totalMinutes % 60;
 	int hours = totalMinutes / 60;
 
-	QString text = QString::asprintf("%d %s, %d %s", hours,
-					 QT_TO_UTF8(QTStr("Hours")), minutes,
-					 QT_TO_UTF8(QTStr("Minutes")));
+	QString text = MakeTimeLeftText(hours, minutes);
 	recordTimeLeft->setText(text);
 	recordTimeLeft->setMinimumWidth(recordTimeLeft->width());
 }
