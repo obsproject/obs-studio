@@ -23,6 +23,7 @@ jobs:
     name: 'macOS 64-bit'
     runs-on: [macos-latest]
     env:
+      MIN_MACOS_VERSION: '10.13'
       MACOS_DEPS_VERSION: '2020-08-30'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
@@ -30,7 +31,7 @@ jobs:
       SIGN_IDENTITY: ''
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.3
         with:
           submodules: 'recursive'
       - name: 'Fetch Git Tags'
@@ -56,7 +57,7 @@ jobs:
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -64,7 +65,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
       - name: 'Restore pre-built dependencies from cache'
         id: deps-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'deps-cache'
         with:
@@ -72,7 +73,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
       - name: 'Restore pre-built Qt dependency from cache'
         id: deps-qt-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'deps-qt-cache'
         with:
@@ -80,7 +81,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -88,7 +89,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION }}
       - name: 'Restore Sparkle dependency from cache'
         id: sparkle-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'sparkle-cache'
         with:
@@ -132,10 +133,9 @@ jobs:
           tar -xf ./cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64.tar.bz2 -C ${{ github.workspace }}/cmbuild/
           cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
           sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-          # target 10.11
-          sed -i '.orig' s/\"10.9\"/\"10.11\"/ ./cmake/cef_variables.cmake
+          sed -i '.orig' s/\"10.9\"/\"${{ env.MIN_MACOS_VERSION }}\"/ ./cmake/cef_variables.cmake
           mkdir build && cd build
-          cmake  -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11  ..
+          cmake  -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++ -Wno-deprecated-declarations" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }}  ..
           make -j4
           mkdir libcef_dll
           cd ../../
@@ -144,7 +144,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -231,8 +231,8 @@ jobs:
           install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
           install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 
-          sudo cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
-          sudo chown -R $(whoami) ./OBS.app/Contents/Frameworks/
+          cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+          chown -R $(whoami) ./OBS.app/Contents/Frameworks/
 
           cp ../CI/scripts/macos/app/OBSPublicDSAKey.pem ./OBS.app/Contents/Resources
 
@@ -282,7 +282,7 @@ jobs:
           sudo cp ./${FILE_NAME} ../nightly/${FILE_NAME}
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
           path: ./nightly/*.dmg
@@ -310,7 +310,7 @@ jobs:
           sudo mv ./$FILE_NAME ../release/$RELEASE_FILE_NAME
       - name: 'Publish Release'
         if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request'
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.RELEASE_FILE_NAME }}'
           path: ./release/*.dmg
@@ -319,7 +319,7 @@ jobs:
     runs-on: [ubuntu-latest]
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.3
         with:
           submodules: 'recursive'
       - name: 'Fetch Git Tags'
@@ -386,7 +386,7 @@ jobs:
            libcmocka-dev
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -428,7 +428,7 @@ jobs:
           cd -
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
           path: './nightly/*.tar.gz'
@@ -448,9 +448,9 @@ jobs:
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
       - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v1.0.2
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.3
         with:
           submodules: 'recursive'
       - name: 'Fetch Git Tags'
@@ -473,7 +473,7 @@ jobs:
           fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'windows-qt-cache'
         with:
@@ -481,7 +481,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.QT_VERSION }}
       - name: 'Restore pre-built dependencies from cache'
         id: deps-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'windows-deps-cache'
         with:
@@ -489,7 +489,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'windows-vlc-cache'
         with:
@@ -497,7 +497,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION }}
       - name: 'Restore CEF dependency from cache (64 bit)'
         id: cef-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
@@ -536,16 +536,15 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
-          echo "FILE_NAME=${env:FILE_NAME}" >> $GITHUB_ENV
+          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win64.zip'
-
   win32:
     name: 'Windows 32-bit'
     runs-on: [windows-latest]
@@ -561,9 +560,9 @@ jobs:
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
       - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v1.0.0
+        uses: microsoft/setup-msbuild@v1.0.2
       - name: 'Checkout'
-        uses: actions/checkout@v2
+        uses: actions/checkout@v2.3.3
         with:
           submodules: 'recursive'
       - name: 'Fetch Git Tags'
@@ -586,7 +585,7 @@ jobs:
           fi
       - name: 'Restore QT dependency from cache'
         id: qt-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'qt-cache'
         with:
@@ -594,7 +593,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.QT_VERSION }}
       - name: 'Restore pre-built dependencies from cache'
         id: deps-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'deps-cache'
         with:
@@ -602,7 +601,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -610,7 +609,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_VLC_VERSION }}
       - name: 'Restore CEF dependency from cache (32 bit)'
         id: cef-cache
-        uses: actions/cache@v1
+        uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'cef-32-cache'
         with:
@@ -649,12 +648,12 @@ jobs:
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
           $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
-          echo "FILE_NAME=${env:FILE_NAME}" >> $GITHUB_ENV
+          echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
           7z a ${env:FILE_NAME} .\build\*
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
-        uses: actions/upload-artifact@v2-preview
+        uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
           path: '*-win32.zip'
