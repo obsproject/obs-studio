@@ -250,8 +250,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString customServer = ui->customServer->text();
 	QString streamKeyLink;
 	if (serviceName == "Twitch") {
-		streamKeyLink =
-			"https://www.twitch.tv/broadcast/dashboard/streamkey";
+		streamKeyLink = "https://dashboard.twitch.tv/settings/stream";
 	} else if (serviceName.startsWith("YouTube")) {
 		streamKeyLink = "https://www.youtube.com/live_dashboard";
 	} else if (serviceName.startsWith("Restream.io")) {
