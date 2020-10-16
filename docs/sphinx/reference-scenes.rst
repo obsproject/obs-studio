@@ -101,8 +101,8 @@ Scene Item Crop Structure (obs_sceneitem_crop)
    Bottom crop value.
 
 
-Scene Item Order Info Structure (*obs_sceneitem_order_info)
-----------------------------------------------
+Scene Item Order Info Structure (\*obs_sceneitem_order_info)
+------------------------------------------------------------
 
 .. type:: struct obs_sceneitem_order_info
 
