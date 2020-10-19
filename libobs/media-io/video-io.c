@@ -22,6 +22,7 @@
 #include "../util/profiler.h"
 #include "../util/threading.h"
 #include "../util/darray.h"
+#include "../util/util_uint64.h"
 
 #include "format-conversion.h"
 #include "video-io.h"
@@ -234,8 +235,8 @@ int video_output_open(video_t **video, struct video_output_info *info)
 		goto fail;
 
 	memcpy(&out->info, info, sizeof(struct video_output_info));
-	out->frame_time = (uint64_t)(1000000000.0 * (double)info->fps_den /
-				     (double)info->fps_num);
+	out->frame_time =
+		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
 	out->initialized = false;
 
 	if (pthread_mutexattr_init(&attr) != 0)

@@ -27,7 +27,7 @@ Display *disp()
 	return xdisplay;
 }
 
-void cleanupDisplay()
+void CleanupSceneSwitcher()
 {
 	if (!xdisplay)
 		return;
@@ -174,6 +174,14 @@ void GetCurrentWindowTitle(string &title)
 	if (status >= Success && name != nullptr) {
 		std::string str(name);
 		title = str;
+	} else {
+		XTextProperty xtp_new_name;
+		if (XGetWMName(disp(), data[0], &xtp_new_name) != 0 &&
+		    xtp_new_name.value != nullptr) {
+			std::string str((const char *)xtp_new_name.value);
+			title = str;
+			XFree(xtp_new_name.value);
+		}
 	}
 
 	XFree(name);

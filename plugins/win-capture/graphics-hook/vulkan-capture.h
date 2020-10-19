@@ -7,8 +7,10 @@ struct vk_inst_funcs {
 	DEF_FUNC(DestroyInstance);
 	DEF_FUNC(CreateWin32SurfaceKHR);
 	DEF_FUNC(DestroySurfaceKHR);
+	DEF_FUNC(GetPhysicalDeviceQueueFamilyProperties);
 	DEF_FUNC(GetPhysicalDeviceMemoryProperties);
 	DEF_FUNC(GetPhysicalDeviceImageFormatProperties2);
+	DEF_FUNC(EnumerateDeviceExtensionProperties);
 };
 
 struct vk_device_funcs {
@@ -26,6 +28,7 @@ struct vk_device_funcs {
 	DEF_FUNC(DestroyImage);
 	DEF_FUNC(GetImageMemoryRequirements);
 	DEF_FUNC(GetImageMemoryRequirements2);
+	DEF_FUNC(ResetCommandPool);
 	DEF_FUNC(BeginCommandBuffer);
 	DEF_FUNC(EndCommandBuffer);
 	DEF_FUNC(CmdCopyImage);
@@ -318,9 +321,6 @@ const char *result_to_str(VkResult result)
 		VAL(VK_ERROR_FULL_SCREEN_EXCLUSIVE_MODE_LOST_EXT);
 		//VAL(VK_ERROR_OUT_OF_POOL_MEMORY_KHR);
 		//VAL(VK_ERROR_INVALID_EXTERNAL_HANDLE_KHR);
-		//VAL(VK_RESULT_BEGIN_RANGE);
-		//VAL(VK_RESULT_END_RANGE);
-		VAL(VK_RESULT_RANGE_SIZE);
 		VAL(VK_RESULT_MAX_ENUM);
 #undef VAL
 
@@ -473,7 +473,6 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 	case VK_FORMAT_A8B8G8R8_SRGB_PACK32:
 		break;
 	case VK_FORMAT_A2R10G10B10_UNORM_PACK32:
-		dxgi_format = DXGI_FORMAT_R10G10B10A2_UNORM;
 		break;
 	case VK_FORMAT_A2R10G10B10_SNORM_PACK32:
 		break;
@@ -840,11 +839,6 @@ DXGI_FORMAT vk_format_to_dxgi(VkFormat format)
 		break;
 	case VK_FORMAT_PVRTC2_4BPP_SRGB_BLOCK_IMG:
 		break;
-	}
-	if (dxgi_format == DXGI_FORMAT_UNKNOWN) {
-		flog("unknown swapchain format, "
-		     "defaulting to B8G8R8A8_UNORM");
-		dxgi_format = DXGI_FORMAT_B8G8R8A8_UNORM;
 	}
 	return dxgi_format;
 }

@@ -92,7 +92,6 @@ static bool SceneCollectionExists(const char *findName)
 static bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
 {
 	char path[512];
-	size_t len;
 	int ret;
 
 	if (!GetFileSafeName(name.c_str(), file)) {
@@ -107,7 +106,6 @@ static bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
 		return false;
 	}
 
-	len = file.size();
 	file.insert(0, path);
 
 	if (!GetClosestUnusedFileName(file, "json")) {
@@ -117,7 +115,7 @@ static bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
 	}
 
 	file.erase(file.size() - 5, 5);
-	file.erase(0, file.size() - len);
+	file.erase(0, strlen(path));
 	return true;
 }
 
@@ -414,9 +412,9 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 		return;
 	}
 
-	QString exportFile = QFileDialog::getSaveFileName(
-		this, QTStr("Basic.MainMenu.SceneCollection.Export"),
-		home + "/" + currentFile, "JSON Files (*.json)");
+	QString exportFile =
+		SaveFile(this, QTStr("Basic.MainMenu.SceneCollection.Export"),
+			 home + "/" + currentFile, "JSON Files (*.json)");
 
 	string file = QT_TO_UTF8(exportFile);
 

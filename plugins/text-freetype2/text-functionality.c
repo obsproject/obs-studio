@@ -162,7 +162,13 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 
 	uint32_t dx = 0, dy = srcdata->max_h, max_y = dy;
 	uint32_t cur_glyph = 0;
+	uint32_t offset = 0;
 	size_t len = wcslen(srcdata->text);
+
+	if (srcdata->outline_text) {
+		offset = 2;
+		dx = offset;
+	}
 
 	if (srcdata->colorbuf != NULL) {
 		bfree(srcdata->colorbuf);
@@ -178,7 +184,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 	add_linebreak:;
 		if (srcdata->text[i] != L'\n')
 			goto draw_glyph;
-		dx = 0;
+		dx = offset;
 		i++;
 		dy += srcdata->max_h + 4;
 		if (i == wcslen(srcdata->text))
@@ -199,7 +205,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 			goto skip_custom_width;
 
 		if (dx + src_glyph->xadv > srcdata->custom_width) {
-			dx = 0;
+			dx = offset;
 			dy += srcdata->max_h + 4;
 		}
 
@@ -240,39 +246,110 @@ void cache_standard_glyphs(struct ft2_source *srcdata)
 			      L"!@#$%^&*()-_=+,<.>/?\\|[]{}`~ \'\"\0");
 }
 
-#define glyph_pos x + (y * slot->bitmap.pitch)
-#define buf_pos (dx + x) + ((dy + y) * texbuf_w)
+FT_Render_Mode get_render_mode(struct ft2_source *srcdata)
+{
+	return srcdata->antialiasing ? FT_RENDER_MODE_NORMAL
+				     : FT_RENDER_MODE_MONO;
+}
+
+void load_glyph(struct ft2_source *srcdata, const FT_UInt glyph_index,
+		const FT_Render_Mode render_mode)
+{
+	const FT_Int32 load_mode = render_mode == FT_RENDER_MODE_MONO
+					   ? FT_LOAD_TARGET_MONO
+					   : FT_LOAD_DEFAULT;
+	FT_Load_Glyph(srcdata->font_face, glyph_index, load_mode);
+}
+
+struct glyph_info *init_glyph(FT_GlyphSlot slot, const uint32_t dx,
+			      const uint32_t dy, const uint32_t g_w,
+			      const uint32_t g_h)
+{
+	struct glyph_info *glyph = bzalloc(sizeof(struct glyph_info));
+	glyph->u = (float)dx / (float)texbuf_w;
+	glyph->u2 = (float)(dx + g_w) / (float)texbuf_w;
+	glyph->v = (float)dy / (float)texbuf_h;
+	glyph->v2 = (float)(dy + g_h) / (float)texbuf_h;
+	glyph->w = g_w;
+	glyph->h = g_h;
+	glyph->yoff = slot->bitmap_top;
+	glyph->xoff = slot->bitmap_left;
+	glyph->xadv = slot->advance.x >> 6;
+
+	return glyph;
+}
+
+uint8_t get_pixel_value(const unsigned char *buf_row,
+			FT_Render_Mode render_mode, const uint32_t x)
+{
+	if (render_mode == FT_RENDER_MODE_NORMAL) {
+		return buf_row[x];
+	}
+
+	const uint32_t byte_index = x / 8;
+	const uint8_t bit_index = x % 8;
+	const bool pixel_set = (buf_row[byte_index] >> (7 - bit_index)) & 1;
+	return pixel_set ? 255 : 0;
+}
+
+void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
+	       const FT_Render_Mode render_mode, const uint32_t dx,
+	       const uint32_t dy)
+{
+	/**
+	 * The pitch's absolute value is the number of bytes taken by one bitmap
+	 * row, including padding.
+	 *
+	 * Source: https://www.freetype.org/freetype2/docs/reference/ft2-basic_types.html
+	 */
+	const int pitch = abs(slot->bitmap.pitch);
+
+	for (uint32_t y = 0; y < slot->bitmap.rows; y++) {
+		const uint32_t row_start = y * pitch;
+		const uint32_t row = (dy + y) * texbuf_w;
+
+		for (uint32_t x = 0; x < slot->bitmap.width; x++) {
+			const uint32_t row_pixel_position = dx + x;
+			const uint8_t pixel_value =
+				get_pixel_value(&slot->bitmap.buffer[row_start],
+						render_mode, x);
+			srcdata->texbuf[row_pixel_position + row] = pixel_value;
+		}
+	}
+}
 
 void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 {
-	FT_GlyphSlot slot;
-	FT_UInt glyph_index = 0;
-
 	if (!srcdata->font_face || !cache_glyphs)
 		return;
 
-	slot = srcdata->font_face->glyph;
+	FT_GlyphSlot slot = srcdata->font_face->glyph;
 
-	uint32_t dx = srcdata->texbuf_x, dy = srcdata->texbuf_y;
+	uint32_t dx = srcdata->texbuf_x;
+	uint32_t dy = srcdata->texbuf_y;
 
 	int32_t cached_glyphs = 0;
-	size_t len = wcslen(cache_glyphs);
+	const size_t len = wcslen(cache_glyphs);
+
+	const FT_Render_Mode render_mode = get_render_mode(srcdata);
 
 	for (size_t i = 0; i < len; i++) {
-		glyph_index =
+		const FT_UInt glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, cache_glyphs[i]);
 
-		if (src_glyph != NULL)
-			goto skip_glyph;
+		if (src_glyph != NULL) {
+			continue;
+		}
 
-		FT_Load_Glyph(srcdata->font_face, glyph_index, FT_LOAD_DEFAULT);
-		FT_Render_Glyph(slot, FT_RENDER_MODE_NORMAL);
+		load_glyph(srcdata, glyph_index, render_mode);
+		FT_Render_Glyph(slot, render_mode);
 
-		uint32_t g_w = slot->bitmap.width;
-		uint32_t g_h = slot->bitmap.rows;
+		const uint32_t g_w = slot->bitmap.width;
+		const uint32_t g_h = slot->bitmap.rows;
 
-		if (srcdata->max_h < g_h)
+		if (srcdata->max_h < g_h) {
 			srcdata->max_h = g_h;
+		}
 
 		if (dx + g_w >= texbuf_w) {
 			dx = 0;
@@ -285,22 +362,8 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 			break;
 		}
 
-		src_glyph = bzalloc(sizeof(struct glyph_info));
-		src_glyph->u = (float)dx / (float)texbuf_w;
-		src_glyph->u2 = (float)(dx + g_w) / (float)texbuf_w;
-		src_glyph->v = (float)dy / (float)texbuf_h;
-		src_glyph->v2 = (float)(dy + g_h) / (float)texbuf_h;
-		src_glyph->w = g_w;
-		src_glyph->h = g_h;
-		src_glyph->yoff = slot->bitmap_top;
-		src_glyph->xoff = slot->bitmap_left;
-		src_glyph->xadv = slot->advance.x >> 6;
-
-		for (uint32_t y = 0; y < g_h; y++) {
-			for (uint32_t x = 0; x < g_w; x++)
-				srcdata->texbuf[buf_pos] =
-					slot->bitmap.buffer[glyph_pos];
-		}
+		src_glyph = init_glyph(slot, dx, dy, g_w, g_h);
+		rasterize(srcdata, slot, render_mode, dx, dy);
 
 		dx += (g_w + 1);
 		if (dx >= texbuf_w) {
@@ -309,7 +372,6 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		}
 
 		cached_glyphs++;
-	skip_glyph:;
 	}
 
 	srcdata->texbuf_x = dx;
@@ -320,8 +382,7 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 		obs_enter_graphics();
 
 		if (srcdata->tex != NULL) {
-			gs_texture_t *tmp_texture = NULL;
-			tmp_texture = srcdata->tex;
+			gs_texture_t *tmp_texture = srcdata->tex;
 			srcdata->tex = NULL;
 			gs_texture_destroy(tmp_texture);
 		}
@@ -497,18 +558,18 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 
 uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 {
-	FT_GlyphSlot slot = srcdata->font_face->glyph;
-	FT_UInt glyph_index = 0;
-	uint32_t w = 0, max_w = 0;
-	size_t len;
-
-	if (!text)
+	if (!text) {
 		return 0;
+	}
 
-	len = wcslen(text);
+	FT_GlyphSlot slot = srcdata->font_face->glyph;
+	uint32_t w = 0, max_w = 0;
+	const size_t len = wcslen(text);
 	for (size_t i = 0; i < len; i++) {
-		glyph_index = FT_Get_Char_Index(srcdata->font_face, text[i]);
-		FT_Load_Glyph(srcdata->font_face, glyph_index, FT_LOAD_DEFAULT);
+		const FT_UInt glyph_index =
+			FT_Get_Char_Index(srcdata->font_face, text[i]);
+
+		load_glyph(srcdata, glyph_index, get_render_mode(srcdata));
 
 		if (text[i] == L'\n')
 			w = 0;

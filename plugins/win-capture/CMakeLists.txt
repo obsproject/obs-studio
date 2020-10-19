@@ -1,5 +1,10 @@
 project(win-capture)
 
+if(MSVC)
+	set(win-capture_PLATFORM_DEPS
+		w32-pthreads)
+endif()
+
 set(win-capture_HEADERS
 	nt-stuff.h
 	obfuscate.h
@@ -31,9 +36,12 @@ add_library(win-capture MODULE
 	${win-capture_SOURCES}
 	${win-capture_HEADERS})
 target_link_libraries(win-capture
+	${win-capture_PLATFORM_DEPS}
 	libobs
+	Dwmapi
 	ipc-util
 	psapi)
+set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 
 install_obs_plugin_with_data(win-capture data)
 

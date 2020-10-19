@@ -23,16 +23,24 @@ struct ffmpeg_cfg {
 	int audio_tracks;
 	enum AVPixelFormat format;
 	enum AVColorRange color_range;
-	enum AVColorSpace color_space;
+	enum AVColorPrimaries color_primaries;
+	enum AVColorTransferCharacteristic color_trc;
+	enum AVColorSpace colorspace;
 	int scale_width;
 	int scale_height;
 	int width;
 	int height;
 };
 
+struct ffmpeg_audio_info {
+	AVStream *stream;
+	AVCodecContext *ctx;
+};
+
 struct ffmpeg_data {
 	AVStream *video;
-	AVStream **audio_streams;
+	AVCodecContext *video_ctx;
+	struct ffmpeg_audio_info *audio_infos;
 	AVCodec *acodec;
 	AVCodec *vcodec;
 	AVFormatContext *output;

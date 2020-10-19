@@ -53,11 +53,11 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #define timeval2ns(tv) \
 	(((uint64_t)tv.tv_sec * 1000000000) + ((uint64_t)tv.tv_usec * 1000))
 
-#define V4L2_FOURCC_STR(code)                                                 \
-	(char[5])                                                             \
-	{                                                                     \
-		(code >> 24) & 0xFF, (code >> 16) & 0xFF, (code >> 8) & 0xFF, \
-			code & 0xFF, 0                                        \
+#define V4L2_FOURCC_STR(code)                                         \
+	(char[5])                                                     \
+	{                                                             \
+		code & 0xFF, (code >> 8) & 0xFF, (code >> 16) & 0xFF, \
+			(code >> 24) & 0xFF, 0                        \
 	}
 
 #define blog(level, msg, ...) blog(level, "v4l2-input: " msg, ##__VA_ARGS__)
@@ -81,6 +81,8 @@ struct v4l2_data {
 	pthread_t thread;
 	os_event_t *event;
 
+	bool framerate_unchanged;
+	bool resolution_unchanged;
 	int_fast32_t dev;
 	int width;
 	int height;
@@ -91,6 +93,7 @@ struct v4l2_data {
 /* forward declarations */
 static void v4l2_init(struct v4l2_data *data);
 static void v4l2_terminate(struct v4l2_data *data);
+static void v4l2_update(void *vptr, obs_data_t *settings);
 
 /**
  * Prepare the output frame structure for obs and compute plane offsets
@@ -120,7 +123,7 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	switch (data->pixfmt) {
 	case V4L2_PIX_FMT_NV12:
 		frame->linesize[0] = data->linesize;
-		frame->linesize[1] = data->linesize / 2;
+		frame->linesize[1] = data->linesize;
 		plane_offsets[1] = data->linesize * data->height;
 		break;
 	case V4L2_PIX_FMT_YVU420:
@@ -579,9 +582,17 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p,
 		return false;
 
 	obs_property_t *prop = obs_properties_get(props, "input");
+	obs_properties_t *ctrl_props_new = obs_properties_create();
+
+	obs_properties_remove_by_name(props, "controls");
+
 	v4l2_input_list(dev, prop);
-	v4l2_update_controls(dev, props, settings);
+	v4l2_update_controls(dev, ctrl_props_new, settings);
 	v4l2_close(dev);
+
+	obs_properties_add_group(props, "controls",
+				 obs_module_text("CameraCtrls"),
+				 OBS_GROUP_NORMAL, ctrl_props_new);
 
 	obs_property_modified(prop, settings);
 
@@ -785,6 +796,12 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("UseBuffering"));
 
+	// a group to contain the camera control
+	obs_properties_t *ctrl_props = obs_properties_create();
+	obs_properties_add_group(props, "controls",
+				 obs_module_text("CameraCtrls"),
+				 OBS_GROUP_NORMAL, ctrl_props);
+
 	obs_data_t *settings = obs_source_get_settings(data->source);
 	v4l2_device_list(device_list, settings);
 	obs_data_release(settings);
@@ -940,18 +957,77 @@ static void v4l2_update_source_flags(struct v4l2_data *data,
 }
 
 /**
+ * Checking if any of the settings have changed so that we can restart the
+ * stream
+ */
+static bool v4l2_settings_changed(struct v4l2_data *data, obs_data_t *settings)
+{
+	bool res = false;
+
+	if (obs_data_get_string(settings, "device_id") != NULL &&
+	    data->device_id != NULL) {
+		res |= strcmp(data->device_id,
+			      obs_data_get_string(settings, "device_id")) != 0;
+		res |= data->input != obs_data_get_int(settings, "input");
+		res |= data->pixfmt !=
+		       obs_data_get_int(settings, "pixelformat");
+		res |= data->standard != obs_data_get_int(settings, "standard");
+		res |= data->dv_timing !=
+		       obs_data_get_int(settings, "dv_timing");
+
+		if (obs_data_get_int(settings, "resolution") == -1 &&
+		    !data->resolution_unchanged) {
+			data->resolution_unchanged = true;
+			res |= true;
+		} else if (obs_data_get_int(settings, "resolution") == -1 &&
+			   data->resolution_unchanged) {
+			res |= false;
+		} else {
+			data->resolution_unchanged = false;
+			res |= (data->resolution !=
+				obs_data_get_int(settings, "resolution")) &&
+			       (obs_data_get_int(settings, "resolution") != -1);
+		}
+
+		if (obs_data_get_int(settings, "framerate") == -1 &&
+		    !data->framerate_unchanged) {
+			data->framerate_unchanged = true;
+			res |= true;
+		} else if (obs_data_get_int(settings, "framerate") == -1 &&
+			   data->framerate_unchanged) {
+			res |= false;
+		} else {
+			data->framerate_unchanged = false;
+			res |= (data->framerate !=
+				obs_data_get_int(settings, "framerate")) &&
+			       (obs_data_get_int(settings, "framerate") != -1);
+		}
+
+		res |= data->color_range !=
+		       obs_data_get_int(settings, "color_range");
+	} else {
+		res = true;
+	}
+
+	return res;
+}
+
+/**
  * Update the settings for the v4l2 source
  *
- * Since there are very few settings that can be changed without restarting the
- * stream we don't bother to even try. Whenever this is called the currently
- * active stream (if exists) is stopped, the settings are updated and finally
- * the new stream is started.
+ * There are a few settings that can be changed without restarting the stream
+ * Whenever this is called the currently active stream (if exists) is stopped,
+ * the settings are updated and finally the new stream is started.
  */
 static void v4l2_update(void *vptr, obs_data_t *settings)
 {
+
 	V4L2_DATA(vptr);
 
-	v4l2_terminate(data);
+	bool needs_restart = v4l2_settings_changed(data, settings);
+
+	if (needs_restart)
+		v4l2_terminate(data);
 
 	if (data->device_id)
 		bfree(data->device_id);
@@ -967,7 +1043,8 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 
 	v4l2_update_source_flags(data, settings);
 
-	v4l2_init(data);
+	if (needs_restart)
+		v4l2_init(data);
 }
 
 static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
@@ -975,6 +1052,8 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 	struct v4l2_data *data = bzalloc(sizeof(struct v4l2_data));
 	data->dev = -1;
 	data->source = source;
+	data->resolution_unchanged = false;
+	data->framerate_unchanged = false;
 
 	/* Bitch about build problems ... */
 #ifndef V4L2_CAP_DEVICE_CAPS

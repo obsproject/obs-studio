@@ -9,6 +9,8 @@ include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 set(rtmp-services_SOURCES
 	twitch.c
 	younow.c
+	nimotv.c
+	showroom.c
 	rtmp-common.c
 	rtmp-custom.c
 	rtmp-services-main.c)
@@ -23,6 +25,8 @@ endif()
 set(rtmp-services_HEADERS
 	twitch.h
 	younow.h
+	nimotv.h
+	showroom.h
 	rtmp-format-ver.h)
 
 set(RTMP_SERVICES_URL
@@ -47,6 +51,8 @@ target_link_libraries(rtmp-services
 	file-updater
 	${OBS_JANSSON_IMPORT}
 	${LIBCURL_LIBRARIES})
+
+set_target_properties(rtmp-services PROPERTIES FOLDER "plugins")
 
 target_include_directories(rtmp-services
 	PUBLIC

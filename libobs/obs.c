@@ -429,8 +429,13 @@ static int obs_init_video(struct obs_video_info *ovi)
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 
+#ifdef __APPLE__
+	errorcode = pthread_create(&video->video_thread, NULL,
+				   obs_graphics_thread_autorelease, obs);
+#else
 	errorcode = pthread_create(&video->video_thread, NULL,
 				   obs_graphics_thread, obs);
+#endif
 	if (errorcode != 0)
 		return OBS_VIDEO_FAIL;
 
@@ -907,7 +912,6 @@ void obs_add_data_path(const char *path)
 {
 	struct dstr *new_path = da_push_back_new(core_module_paths);
 	dstr_init_copy(new_path, path);
-	da_push_back(core_module_paths, new_path);
 }
 
 bool obs_remove_data_path(const char *path)
@@ -989,10 +993,6 @@ struct obs_cmdline_args obs_get_cmdline_args(void)
 void obs_shutdown(void)
 {
 	struct obs_module *module;
-	struct obs_core *core;
-
-	if (!obs)
-		return;
 
 	for (size_t i = 0; i < obs->source_types.num; i++) {
 		struct obs_source_info *item = &obs->source_types.array[i];
@@ -1028,6 +1028,14 @@ void obs_shutdown(void)
 	stop_video();
 	stop_hotkeys();
 
+	module = obs->first_module;
+	while (module) {
+		struct obs_module *next = module->next;
+		free_module(module);
+		module = next;
+	}
+	obs->first_module = NULL;
+
 	obs_free_audio();
 	obs_free_data();
 	obs_free_video();
@@ -1038,27 +1046,17 @@ void obs_shutdown(void)
 	obs->procs = NULL;
 	obs->signals = NULL;
 
-	core = obs;
+	for (size_t i = 0; i < obs->module_paths.num; i++)
+		free_module_path(obs->module_paths.array + i);
+	da_free(obs->module_paths);
+
+	if (obs->name_store_owned)
+		profiler_name_store_free(obs->name_store);
+
+	bfree(obs->module_config_path);
+	bfree(obs->locale);
+	bfree(obs);
 	obs = NULL;
-
-	module = core->first_module;
-	while (module) {
-		struct obs_module *next = module->next;
-		free_module(module);
-		module = next;
-	}
-	core->first_module = NULL;
-
-	for (size_t i = 0; i < core->module_paths.num; i++)
-		free_module_path(core->module_paths.array + i);
-	da_free(core->module_paths);
-
-	if (core->name_store_owned)
-		profiler_name_store_free(core->name_store);
-
-	bfree(core->module_config_path);
-	bfree(core->locale);
-	bfree(core);
 	bfree(cmdline_args.argv);
 
 #ifdef _WIN32
@@ -1085,8 +1083,6 @@ const char *obs_get_version_string(void)
 void obs_set_locale(const char *locale)
 {
 	struct obs_module *module;
-	if (!obs)
-		return;
 
 	if (obs->locale)
 		bfree(obs->locale);
@@ -1103,7 +1099,7 @@ void obs_set_locale(const char *locale)
 
 const char *obs_get_locale(void)
 {
-	return obs ? obs->locale : NULL;
+	return obs->locale;
 }
 
 #define OBS_SIZE_MIN 2
@@ -1193,9 +1189,6 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 {
 	struct audio_output_info ai;
 
-	if (!obs)
-		return false;
-
 	/* don't allow changing of audio settings if active. */
 	if (obs->audio.audio && audio_output_active(obs->audio.audio))
 		return false;
@@ -1224,7 +1217,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 
-	if (!obs || !video->graphics)
+	if (!video->graphics)
 		return false;
 
 	*ovi = video->ovi;
@@ -1236,7 +1229,7 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 	struct obs_core_audio *audio = &obs->audio;
 	const struct audio_output_info *info;
 
-	if (!obs || !oai || !audio->audio)
+	if (!oai || !audio->audio)
 		return false;
 
 	info = audio_output_get_info(audio->audio);
@@ -1248,9 +1241,6 @@ bool obs_get_audio_info(struct obs_audio_info *oai)
 
 bool obs_enum_source_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->source_types.num)
 		return false;
 	*id = obs->source_types.array[idx].id;
@@ -1259,9 +1249,6 @@ bool obs_enum_source_types(size_t idx, const char **id)
 
 bool obs_enum_input_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->input_types.num)
 		return false;
 	*id = obs->input_types.array[idx].id;
@@ -1271,9 +1258,6 @@ bool obs_enum_input_types(size_t idx, const char **id)
 bool obs_enum_input_types2(size_t idx, const char **id,
 			   const char **unversioned_id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->input_types.num)
 		return false;
 	if (id)
@@ -1288,8 +1272,6 @@ const char *obs_get_latest_input_type_id(const char *unversioned_id)
 	struct obs_source_info *latest = NULL;
 	int version = -1;
 
-	if (!obs)
-		return NULL;
 	if (!unversioned_id)
 		return NULL;
 
@@ -1311,9 +1293,6 @@ const char *obs_get_latest_input_type_id(const char *unversioned_id)
 
 bool obs_enum_filter_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->filter_types.num)
 		return false;
 	*id = obs->filter_types.array[idx].id;
@@ -1322,9 +1301,6 @@ bool obs_enum_filter_types(size_t idx, const char **id)
 
 bool obs_enum_transition_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->transition_types.num)
 		return false;
 	*id = obs->transition_types.array[idx].id;
@@ -1333,9 +1309,6 @@ bool obs_enum_transition_types(size_t idx, const char **id)
 
 bool obs_enum_output_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->output_types.num)
 		return false;
 	*id = obs->output_types.array[idx].id;
@@ -1344,9 +1317,6 @@ bool obs_enum_output_types(size_t idx, const char **id)
 
 bool obs_enum_encoder_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->encoder_types.num)
 		return false;
 	*id = obs->encoder_types.array[idx].id;
@@ -1355,9 +1325,6 @@ bool obs_enum_encoder_types(size_t idx, const char **id)
 
 bool obs_enum_service_types(size_t idx, const char **id)
 {
-	if (!obs)
-		return false;
-
 	if (idx >= obs->service_types.num)
 		return false;
 	*id = obs->service_types.array[idx].id;
@@ -1366,24 +1333,24 @@ bool obs_enum_service_types(size_t idx, const char **id)
 
 void obs_enter_graphics(void)
 {
-	if (obs && obs->video.graphics)
+	if (obs->video.graphics)
 		gs_enter_context(obs->video.graphics);
 }
 
 void obs_leave_graphics(void)
 {
-	if (obs && obs->video.graphics)
+	if (obs->video.graphics)
 		gs_leave_context();
 }
 
 audio_t *obs_get_audio(void)
 {
-	return (obs != NULL) ? obs->audio.audio : NULL;
+	return obs->audio.audio;
 }
 
 video_t *obs_get_video(void)
 {
-	return (obs != NULL) ? obs->video.video : NULL;
+	return obs->video.video;
 }
 
 /* TODO: optimize this later so it's not just O(N) string lookups */
@@ -1442,17 +1409,12 @@ void *obs_create_ui(const char *name, const char *task, const char *target,
 {
 	struct obs_modeless_ui *callback;
 
-	if (!obs)
-		return NULL;
-
 	callback = get_modeless_ui_callback(name, task, target);
 	return callback ? callback->create(data, ui_data) : NULL;
 }
 
 obs_source_t *obs_get_output_source(uint32_t channel)
 {
-	if (!obs)
-		return NULL;
 	return obs_view_get_source(&obs->data.main_view, channel);
 }
 
@@ -1460,8 +1422,6 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 {
 	assert(channel < MAX_CHANNELS);
 
-	if (!obs)
-		return;
 	if (channel >= MAX_CHANNELS)
 		return;
 
@@ -1499,9 +1459,6 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 {
 	obs_source_t *source;
 
-	if (!obs)
-		return;
-
 	pthread_mutex_lock(&obs->data.sources_mutex);
 	source = obs->data.first_source;
 
@@ -1527,9 +1484,6 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 {
 	obs_source_t *source;
-
-	if (!obs)
-		return;
 
 	pthread_mutex_lock(&obs->data.sources_mutex);
 	source = obs->data.first_source;
@@ -1574,24 +1528,18 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
 {
-	if (!obs)
-		return;
 	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex, enum_proc,
 		 param);
 }
 
 void obs_enum_encoders(bool (*enum_proc)(void *, obs_encoder_t *), void *param)
 {
-	if (!obs)
-		return;
 	obs_enum(&obs->data.first_encoder, &obs->data.encoders_mutex, enum_proc,
 		 param);
 }
 
 void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *), void *param)
 {
-	if (!obs)
-		return;
 	obs_enum(&obs->data.first_service, &obs->data.services_mutex, enum_proc,
 		 param);
 }
@@ -1645,8 +1593,6 @@ static inline void *obs_id_(void *data)
 
 obs_source_t *obs_get_source_by_name(const char *name)
 {
-	if (!obs)
-		return NULL;
 	return get_context_by_name(&obs->data.first_source, name,
 				   &obs->data.sources_mutex,
 				   obs_source_addref_safe_);
@@ -1654,8 +1600,6 @@ obs_source_t *obs_get_source_by_name(const char *name)
 
 obs_output_t *obs_get_output_by_name(const char *name)
 {
-	if (!obs)
-		return NULL;
 	return get_context_by_name(&obs->data.first_output, name,
 				   &obs->data.outputs_mutex,
 				   obs_output_addref_safe_);
@@ -1663,8 +1607,6 @@ obs_output_t *obs_get_output_by_name(const char *name)
 
 obs_encoder_t *obs_get_encoder_by_name(const char *name)
 {
-	if (!obs)
-		return NULL;
 	return get_context_by_name(&obs->data.first_encoder, name,
 				   &obs->data.encoders_mutex,
 				   obs_encoder_addref_safe_);
@@ -1672,8 +1614,6 @@ obs_encoder_t *obs_get_encoder_by_name(const char *name)
 
 obs_service_t *obs_get_service_by_name(const char *name)
 {
-	if (!obs)
-		return NULL;
 	return get_context_by_name(&obs->data.first_service, name,
 				   &obs->data.services_mutex,
 				   obs_service_addref_safe_);
@@ -1681,9 +1621,6 @@ obs_service_t *obs_get_service_by_name(const char *name)
 
 gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 {
-	if (!obs)
-		return NULL;
-
 	switch (effect) {
 	case OBS_EFFECT_DEFAULT:
 		return obs->video.default_effect;
@@ -1713,30 +1650,22 @@ gs_effect_t *obs_get_base_effect(enum obs_base_effect effect)
 /* OBS_DEPRECATED */
 gs_effect_t *obs_get_default_rect_effect(void)
 {
-	if (!obs)
-		return NULL;
 	return obs->video.default_rect_effect;
 }
 
 signal_handler_t *obs_get_signal_handler(void)
 {
-	if (!obs)
-		return NULL;
 	return obs->signals;
 }
 
 proc_handler_t *obs_get_proc_handler(void)
 {
-	if (!obs)
-		return NULL;
 	return obs->procs;
 }
 
 /* OBS_DEPRECATED */
 void obs_render_main_view(void)
 {
-	if (!obs)
-		return;
 	obs_view_render(&obs->data.main_view);
 }
 
@@ -1749,9 +1678,6 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 	gs_texture_t *tex;
 	gs_effect_t *effect;
 	gs_eparam_t *param;
-
-	if (!obs)
-		return;
 
 	video = &obs->video;
 	if (!video->texture_rendered)
@@ -1787,9 +1713,6 @@ gs_texture_t *obs_get_main_texture(void)
 {
 	struct obs_core_video *video;
 
-	if (!obs)
-		return NULL;
-
 	video = &obs->video;
 	if (!video->texture_rendered)
 		return NULL;
@@ -1801,9 +1724,6 @@ void obs_set_master_volume(float volume)
 {
 	struct calldata data = {0};
 
-	if (!obs)
-		return;
-
 	calldata_set_float(&data, "volume", volume);
 	signal_handler_signal(obs->signals, "master_volume", &data);
 	volume = (float)calldata_float(&data, "volume");
@@ -1814,7 +1734,7 @@ void obs_set_master_volume(float volume)
 
 float obs_get_master_volume(void)
 {
-	return obs ? obs->audio.user_volume : 0.0f;
+	return obs->audio.user_volume;
 }
 
 static obs_source_t *obs_load_source_type(obs_data_t *source_data)
@@ -1956,9 +1876,6 @@ obs_source_t *obs_load_source(obs_data_t *source_data)
 void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 		      void *private_data)
 {
-	if (!obs)
-		return;
-
 	struct obs_core_data *data = &obs->data;
 	DARRAY(obs_source_t *) sources;
 	size_t count;
@@ -2093,9 +2010,6 @@ obs_data_t *obs_save_source(obs_source_t *source)
 obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 					    void *data_)
 {
-	if (!obs)
-		return NULL;
-
 	struct obs_core_data *data = &obs->data;
 	obs_data_array_t *array;
 	obs_source_t *source;
@@ -2262,30 +2176,27 @@ void obs_context_data_setname(struct obs_context_data *context,
 
 profiler_name_store_t *obs_get_profiler_name_store(void)
 {
-	if (!obs)
-		return NULL;
-
 	return obs->name_store;
 }
 
 uint64_t obs_get_video_frame_time(void)
 {
-	return obs ? obs->video.video_time : 0;
+	return obs->video.video_time;
 }
 
 double obs_get_active_fps(void)
 {
-	return obs ? obs->video.video_fps : 0.0;
+	return obs->video.video_fps;
 }
 
 uint64_t obs_get_average_frame_time_ns(void)
 {
-	return obs ? obs->video.video_avg_frame_time_ns : 0;
+	return obs->video.video_avg_frame_time_ns;
 }
 
 uint64_t obs_get_frame_interval_ns(void)
 {
-	return obs ? obs->video.video_frame_interval_ns : 0;
+	return obs->video.video_frame_interval_ns;
 }
 
 enum obs_obj_type obs_obj_get_type(void *obj)
@@ -2335,7 +2246,7 @@ void *obs_obj_get_data(void *obj)
 
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
-	if (!obs || !name || !id || !*name || !*id)
+	if (!name || !id || !*name || !*id)
 		return false;
 
 #if defined(_WIN32) || HAVE_PULSEAUDIO || defined(__APPLE__)
@@ -2368,9 +2279,6 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 
 void obs_get_audio_monitoring_device(const char **name, const char **id)
 {
-	if (!obs)
-		return;
-
 	if (name)
 		*name = obs->audio.monitoring_device_name;
 	if (id)
@@ -2380,9 +2288,6 @@ void obs_get_audio_monitoring_device(const char **name, const char **id)
 void obs_add_tick_callback(void (*tick)(void *param, float seconds),
 			   void *param)
 {
-	if (!obs)
-		return;
-
 	struct tick_callback data = {tick, param};
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
@@ -2393,9 +2298,6 @@ void obs_add_tick_callback(void (*tick)(void *param, float seconds),
 void obs_remove_tick_callback(void (*tick)(void *param, float seconds),
 			      void *param)
 {
-	if (!obs)
-		return;
-
 	struct tick_callback data = {tick, param};
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
@@ -2407,9 +2309,6 @@ void obs_add_main_render_callback(void (*draw)(void *param, uint32_t cx,
 					       uint32_t cy),
 				  void *param)
 {
-	if (!obs)
-		return;
-
 	struct draw_callback data = {draw, param};
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
@@ -2421,9 +2320,6 @@ void obs_remove_main_render_callback(void (*draw)(void *param, uint32_t cx,
 						  uint32_t cy),
 				     void *param)
 {
-	if (!obs)
-		return;
-
 	struct draw_callback data = {draw, param};
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
@@ -2433,12 +2329,12 @@ void obs_remove_main_render_callback(void (*draw)(void *param, uint32_t cx,
 
 uint32_t obs_get_total_frames(void)
 {
-	return obs ? obs->video.total_frames : 0;
+	return obs->video.total_frames;
 }
 
 uint32_t obs_get_lagged_frames(void)
 {
-	return obs ? obs->video.lagged_frames : 0;
+	return obs->video.lagged_frames;
 }
 
 void start_raw_video(video_t *v, const struct video_scale_info *conversion,
@@ -2465,8 +2361,6 @@ void obs_add_raw_video_callback(const struct video_scale_info *conversion,
 				void *param)
 {
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return;
 	start_raw_video(video->video, conversion, callback, param);
 }
 
@@ -2475,14 +2369,12 @@ void obs_remove_raw_video_callback(void (*callback)(void *param,
 				   void *param)
 {
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return;
 	stop_raw_video(video->video, callback, param);
 }
 
 void obs_apply_private_data(obs_data_t *settings)
 {
-	if (!obs || !settings)
+	if (!settings)
 		return;
 
 	obs_data_apply(obs->data.private_data, settings);
@@ -2490,9 +2382,6 @@ void obs_apply_private_data(obs_data_t *settings)
 
 void obs_set_private_data(obs_data_t *settings)
 {
-	if (!obs)
-		return;
-
 	obs_data_clear(obs->data.private_data);
 	if (settings)
 		obs_data_apply(obs->data.private_data, settings);
@@ -2500,9 +2389,6 @@ void obs_set_private_data(obs_data_t *settings)
 
 obs_data_t *obs_get_private_data(void)
 {
-	if (!obs)
-		return NULL;
-
 	obs_data_t *private_data = obs->data.private_data;
 	obs_data_addref(private_data);
 	return private_data;
@@ -2568,8 +2454,6 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 bool obs_video_active(void)
 {
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return false;
 
 	return os_atomic_load_long(&video->raw_active) > 0 ||
 	       os_atomic_load_long(&video->gpu_encoder_active) > 0;
@@ -2578,9 +2462,6 @@ bool obs_video_active(void)
 bool obs_nv12_tex_active(void)
 {
 	struct obs_core_video *video = &obs->video;
-	if (!obs)
-		return false;
-
 	return video->using_nv12_tex;
 }
 
@@ -2616,9 +2497,6 @@ static bool in_task_thread(enum obs_task_type type)
 void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 		    bool wait)
 {
-	if (!obs)
-		return;
-
 	if (type == OBS_TASK_UI) {
 		if (obs->ui_task_handler) {
 			obs->ui_task_handler(task, param, wait);
@@ -2652,7 +2530,5 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 
 void obs_set_ui_task_handler(obs_task_handler_t handler)
 {
-	if (!obs)
-		return;
 	obs->ui_task_handler = handler;
 }

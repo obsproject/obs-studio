@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>806</width>
+              <height>1254</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -824,10 +824,41 @@
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QComboBox" name="service">
-              <property name="maxVisibleItems">
-               <number>20</number>
-              </property>
+             <widget class="QWidget" name="serviceWidget" native="true">
+              <layout class="QHBoxLayout" name="serviceWidgetLayout" stretch="0,0">
+               <property name="leftMargin">
+                <number>0</number>
+               </property>
+               <property name="topMargin">
+                <number>0</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
+               <property name="bottomMargin">
+                <number>0</number>
+               </property>
+               <item>
+                <widget class="QComboBox" name="service">
+                 <property name="maxVisibleItems">
+                  <number>20</number>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <widget class="UrlPushButton" name="moreInfoButton">
+                 <property name="sizePolicy">
+                  <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+                   <horstretch>0</horstretch>
+                   <verstretch>0</verstretch>
+                  </sizepolicy>
+                 </property>
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.MoreInfo</string>
+                 </property>
+                </widget>
+               </item>
+              </layout>
              </widget>
             </item>
             <item row="1" column="0">
@@ -1146,7 +1177,7 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1156,10 +1187,10 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="1">
+             <item row="8" column="1">
               <widget class="QLineEdit" name="authUsername"/>
              </item>
-             <item row="10" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1169,7 +1200,7 @@
                </property>
               </widget>
              </item>
-             <item row="10" column="1">
+             <item row="9" column="1">
               <widget class="QWidget" name="authPwWidget" native="true">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
@@ -1214,19 +1245,6 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
-              <widget class="QLabel" name="mixerAddonLabel">
-               <property name="text">
-                <string>Basic.Settings.Stream.MixerAddon</string>
-               </property>
-               <property name="buddy">
-                <cstring>mixerAddonDropdown</cstring>
-               </property>
-              </widget>
-             </item>
-             <item row="8" column="1">
-              <widget class="QComboBox" name="mixerAddonDropdown"/>
-             </item>
             </layout>
            </widget>
           </widget>
@@ -1263,8 +1281,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>603</width>
-              <height>631</height>
+              <width>813</width>
+              <height>761</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3758,8 +3776,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>767</width>
+              <height>582</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4614,8 +4632,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>596</width>
-              <height>781</height>
+              <width>791</width>
+              <height>970</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -4822,6 +4840,11 @@
                      </property>
                      <item>
                       <widget class="QComboBox" name="colorSpace">
+                       <item>
+                        <property name="text">
+                         <string notr="true">sRGB</string>
+                        </property>
+                       </item>
                        <item>
                         <property name="text">
                          <string notr="true">709</string>
@@ -5454,8 +5477,10 @@
   <tabstop>overflowHide</tabstop>
   <tabstop>overflowAlwaysVisible</tabstop>
   <tabstop>overflowSelectionHide</tabstop>
+  <tabstop>automaticSearch</tabstop>
   <tabstop>doubleClickSwitch</tabstop>
   <tabstop>studioPortraitLayout</tabstop>
+  <tabstop>prevProgLabelToggle</tabstop>
   <tabstop>multiviewMouseSwitch</tabstop>
   <tabstop>multiviewDrawNames</tabstop>
   <tabstop>multiviewDrawAreas</tabstop>
@@ -5467,9 +5492,12 @@
   <tabstop>customServer</tabstop>
   <tabstop>key</tabstop>
   <tabstop>show</tabstop>
+  <tabstop>getStreamKeyButton</tabstop>
   <tabstop>connectAccount2</tabstop>
   <tabstop>disconnectAccount</tabstop>
+  <tabstop>bandwidthTestEnable</tabstop>
   <tabstop>useAuth</tabstop>
+  <tabstop>twitchAddonDropdown</tabstop>
   <tabstop>authUsername</tabstop>
   <tabstop>authPw</tabstop>
   <tabstop>authPwShow</tabstop>
@@ -5508,6 +5536,12 @@
   <tabstop>advOutRecPathBrowse</tabstop>
   <tabstop>advOutNoSpace</tabstop>
   <tabstop>advOutRecFormat</tabstop>
+  <tabstop>flvTrack1</tabstop>
+  <tabstop>flvTrack2</tabstop>
+  <tabstop>flvTrack3</tabstop>
+  <tabstop>flvTrack4</tabstop>
+  <tabstop>flvTrack5</tabstop>
+  <tabstop>flvTrack6</tabstop>
   <tabstop>advOutRecTrack1</tabstop>
   <tabstop>advOutRecTrack2</tabstop>
   <tabstop>advOutRecTrack3</tabstop>
@@ -5556,6 +5590,7 @@
   <tabstop>advReplayBuf</tabstop>
   <tabstop>advRBSecMax</tabstop>
   <tabstop>advRBMegsMax</tabstop>
+  <tabstop>scrollArea_50</tabstop>
   <tabstop>sampleRate</tabstop>
   <tabstop>channelSetup</tabstop>
   <tabstop>desktopAudioDevice1</tabstop>
@@ -5568,6 +5603,8 @@
   <tabstop>peakMeterType</tabstop>
   <tabstop>monitoringDevice</tabstop>
   <tabstop>disableAudioDucking</tabstop>
+  <tabstop>baseResolution</tabstop>
+  <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
   <tabstop>fpsType</tabstop>
   <tabstop>fpsCommon</tabstop>
@@ -5595,9 +5632,11 @@
   <tabstop>reconnectRetryDelay</tabstop>
   <tabstop>reconnectMaxRetries</tabstop>
   <tabstop>bindToIP</tabstop>
+  <tabstop>dynBitrate</tabstop>
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
+  <tabstop>hotkeyFocusType</tabstop>
  </tabstops>
  <resources>
   <include location="obs.qrc"/>

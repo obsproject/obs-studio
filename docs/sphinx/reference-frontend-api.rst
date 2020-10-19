@@ -105,6 +105,10 @@ Structures/Enumerations
 
      Triggered when the replay buffer has fully stopped.
 
+   - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED**
+
+     Triggered when the replay buffer has been saved.
+
    - **OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED**
 
      Triggered when the user has turned on studio mode.
@@ -124,7 +128,7 @@ Structures/Enumerations
      the program is either about to load a new scene collection, or the
      program is about to exit.
 
-   - **OBS_FRONTEND_FINISHED_LOADING**
+   - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
 
      Triggered when the program has finished loading.
 
@@ -529,3 +533,17 @@ Functions
    active scene if not in studio mode.
 
    :param scene: The scene to set as the current preview.
+
+---------------------------------------
+
+.. function:: void *obs_frontend_take_screenshot(void)
+
+   Takes a screenshot of the main OBS output.
+
+---------------------------------------
+
+.. function:: void *obs_frontend_take_source_screenshot(obs_source_t *source)
+
+   Takes a screenshot of the specified source.
+
+   :param source: The source to take screenshot of.

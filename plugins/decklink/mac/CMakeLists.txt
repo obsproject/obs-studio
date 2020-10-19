@@ -74,5 +74,6 @@ add_library(mac-decklink MODULE
 target_link_libraries(mac-decklink
 	libobs
 	${COREFOUNDATION})
+set_target_properties(mac-decklink PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(mac-decklink ../data)

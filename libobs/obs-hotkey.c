@@ -332,7 +332,7 @@ static void obs_hotkey_pair_second_func(void *data, obs_hotkey_id id,
 
 	if (pair->pressed1 && !pressed)
 		pair->pressed1 = false;
-	else if (pair->func[1](pair->data[0], pair->pair_id, hotkey, pressed))
+	else if (pair->func[1](pair->data[1], pair->pair_id, hotkey, pressed))
 		pair->pressed1 = pressed;
 }
 

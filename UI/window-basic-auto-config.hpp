@@ -33,6 +33,7 @@ class AutoConfig : public QWizard {
 		Invalid,
 		Streaming,
 		Recording,
+		VirtualCam,
 	};
 
 	enum class Service {
@@ -139,6 +140,7 @@ public:
 public slots:
 	void on_prioritizeStreaming_clicked();
 	void on_prioritizeRecording_clicked();
+	void PrioritizeVCam();
 };
 
 class AutoConfigVideoPage : public QWizardPage {
@@ -193,6 +195,7 @@ public slots:
 	void on_useStreamKey_clicked();
 	void ServiceChanged();
 	void UpdateKeyLink();
+	void UpdateMoreInfoLink();
 	void UpdateServerList();
 	void UpdateCompleted();
 };

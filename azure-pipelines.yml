@@ -6,8 +6,6 @@ variables:
   CEF_VERSION: 75.1.16+g16a67c4+chromium-75.0.3770.100
   TWITCH-CLIENTID: $(twitch_clientid)
   TWITCH-HASH: $(twitch_hash)
-  MIXER-CLIENTID: $(mixer_clientid)
-  MIXER-HASH: $(mixer_hash)
   RESTREAM-CLIENTID: $(restream_clientid)
   RESTREAM-HASH: $(restream_hash)
 
@@ -34,23 +32,15 @@ jobs:
   steps:
   - script: git submodule update --init --recursive
     displayName: 'Checkout Submodules'
-  - script: ./CI/install-dependencies-osx.sh
-    displayName: 'Install Dependencies'
-
-  - script: ./CI/before-script-osx.sh
-    displayName: 'Cmake'
-
-  - bash: |
-      set -e
-      cd ./build
-      make -j4
-      cd -
-    displayName: 'Build'
-
-  - script: ./CI/before-deploy-osx.sh
+  - script: TERM="" ./CI/full-build-macos.sh
+    displayName: 'Install dependencies and build'
+  - script: TERM="" ./CI/full-build-macos.sh -s -d -b -p
     condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
     displayName: 'Before Deploy'
-
+  - bash: |
+      mkdir -p ./nightly
+      find ./build -name \*.dmg -exec cp -PR \{\} ./nightly/ \;
+    displayName: 'Copy disk image'
   - task: PublishBuildArtifacts@1
     condition: or(ne(variables['Build.Reason'], 'PullRequest'), eq(variables['prHasCILabel'], true))
     inputs:
@@ -72,7 +62,7 @@ jobs:
     displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 32-bit'
-    inputs: 
+    inputs:
       msbuildArguments: '/m /p:Configuration=RelWithDebInfo'
       solution: .\build32\obs-studio.sln
   - script: ./CI/before-deploy-win.cmd
@@ -99,7 +89,7 @@ jobs:
     displayName: 'Download / Setup Deps / Run CMake'
   - task: MSBuild@1
     displayName: 'Build 64-bit'
-    inputs: 
+    inputs:
       msbuildArguments: '/m /p:Configuration=RelWithDebInfo'
       solution: .\build64\obs-studio.sln
   - script: ./CI/before-deploy-win.cmd

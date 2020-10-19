@@ -113,6 +113,13 @@ static void color_source_defaults_v2(obs_data_t *settings)
 	obs_data_set_default_int(settings, "height", 1080);
 }
 
+static void color_source_defaults_v3(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, "color", 0xFFD1D1D1);
+	obs_data_set_default_int(settings, "width", 1920);
+	obs_data_set_default_int(settings, "height", 1080);
+}
+
 struct obs_source_info color_source_info_v1 = {
 	.id = "color_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -134,12 +141,30 @@ struct obs_source_info color_source_info_v2 = {
 	.id = "color_source",
 	.version = 2,
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_CAP_OBSOLETE,
 	.create = color_source_create,
 	.destroy = color_source_destroy,
 	.update = color_source_update,
 	.get_name = color_source_get_name,
 	.get_defaults = color_source_defaults_v2,
+	.get_width = color_source_getwidth,
+	.get_height = color_source_getheight,
+	.video_render = color_source_render,
+	.get_properties = color_source_properties,
+	.icon_type = OBS_ICON_TYPE_COLOR,
+};
+
+struct obs_source_info color_source_info_v3 = {
+	.id = "color_source",
+	.version = 3,
+	.type = OBS_SOURCE_TYPE_INPUT,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.create = color_source_create,
+	.destroy = color_source_destroy,
+	.update = color_source_update,
+	.get_name = color_source_get_name,
+	.get_defaults = color_source_defaults_v3,
 	.get_width = color_source_getwidth,
 	.get_height = color_source_getheight,
 	.video_render = color_source_render,

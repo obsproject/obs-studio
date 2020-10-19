@@ -37,6 +37,7 @@ struct ft2_source {
 
 	bool file_load_failed;
 	bool from_file;
+	bool antialiasing;
 	char *text_file;
 	wchar_t *text;
 	time_t m_timestamp;
@@ -44,6 +45,7 @@ struct ft2_source {
 	uint64_t last_checked;
 
 	uint32_t cx, cy, max_h, custom_width;
+	uint32_t outline_width;
 	uint32_t texbuf_x, texbuf_y;
 	uint32_t color[2];
 	uint32_t *colorbuf;

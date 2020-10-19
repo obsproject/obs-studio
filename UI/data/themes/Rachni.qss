@@ -189,8 +189,8 @@ QListWidget::item:hover:!active {
 /***********************/
 
 QDockWidget {
-	titlebar-close-icon: url('./Dark/Close.svg');
-	titlebar-normal-icon: url('./Dark/Popout.svg');
+	titlebar-close-icon: url('./Dark/close.svg');
+	titlebar-normal-icon: url('./Dark/popout.svg');
 }
 
 QDockWidget {
@@ -962,7 +962,8 @@ QPushButton:checked[themeID="replayBufferButton"],
 QPushButton:checked#modeSwitch,
 QPushButton:checked#settingsButton,
 QPushButton:checked#exitButton,
-QPushButton:checked[themeID="pauseIconSmall"] {
+QPushButton:checked[themeID="pauseIconSmall"],
+QPushButton:checked[themeID="vcamButton"] {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
@@ -981,6 +982,12 @@ QPushButton[themeID="removeIconSmall"],
 QPushButton[themeID="configIconSmall"],
 QPushButton[themeID="trashIcon"],
 QPushButton[themeID="revertIcon"],
+QPushButton[themeID="playIcon"],
+QPushButton[themeID="pauseIcon"],
+QPushButton[themeID="restartIcon"],
+QPushButton[themeID="stopIcon"],
+QPushButton[themeID="nextIcon"],
+QPushButton[themeID="previousIcon"],
 QPushButton#transitionRemove,
 QPushButton#moveAsyncFilterUp,
 QPushButton#moveAsyncFilterDown,
@@ -996,6 +1003,12 @@ QPushButton:hover[themeID="removeIconSmall"],
 QPushButton:hover[themeID="configIconSmall"],
 QPushButton:hover[themeID="trashIcon"],
 QPushButton:hover[themeID="revertIcon"],
+QPushButton:hover[themeID="playIcon"],
+QPushButton:hover[themeID="pauseIcon"],
+QPushButton:hover[themeID="restartIcon"],
+QPushButton:hover[themeID="stopIcon"],
+QPushButton:hover[themeID="nextIcon"],
+QPushButton:hover[themeID="previousIcon"],
 QPushButton:hover#transitionRemove,
 QPushButton:hover#moveAsyncFilterUp,
 QPushButton:hover#moveAsyncFilterDown,
@@ -1408,4 +1421,41 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 	width: 12px;
 	height: 24px;
 	margin: -24px 0px;
+}
+
+/* Source Context */
+#contextContainer QPushButton[themeID2=contextBarButton] {
+    padding: 0px;
+    background: transparent;
+    border: none;
+}
+
+QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(./Dark/settings/general.svg);
+}
+
+QPushButton#sourceFiltersButton {
+    qproperty-icon: url(./Dark/filter.svg);
+}
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(./Dark/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(./Dark/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(./Dark/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(./Dark/media/media_next.svg);
 }

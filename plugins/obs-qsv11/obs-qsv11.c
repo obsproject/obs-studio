@@ -148,7 +148,6 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
 	obs_data_set_default_string(settings, "profile", "high");
-	obs_data_set_default_int(settings, "async_depth", 4);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
 	obs_data_set_default_int(settings, "accuracy", 1000);
@@ -157,11 +156,11 @@ static void obs_qsv_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "qpp", 23);
 	obs_data_set_default_int(settings, "qpb", 23);
 	obs_data_set_default_int(settings, "icq_quality", 23);
-	obs_data_set_default_int(settings, "la_depth", 15);
 
 	obs_data_set_default_int(settings, "keyint_sec", 3);
+	obs_data_set_default_string(settings, "latency", "normal");
 	obs_data_set_default_int(settings, "bframes", 3);
-	obs_data_set_default_bool(settings, "mbbrc", true);
+	obs_data_set_default_bool(settings, "enhancements", false);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -176,21 +175,91 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 #define TEXT_TARGET_BITRATE obs_module_text("Bitrate")
 #define TEXT_MAX_BITRATE obs_module_text("MaxBitrate")
 #define TEXT_PROFILE obs_module_text("Profile")
-#define TEXT_ASYNC_DEPTH obs_module_text("AsyncDepth")
+#define TEXT_LATENCY obs_module_text("Latency")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
 #define TEXT_ACCURACY obs_module_text("Accuracy")
 #define TEXT_CONVERGENCE obs_module_text("Convergence")
 #define TEXT_ICQ_QUALITY obs_module_text("ICQQuality")
-#define TEXT_LA_DEPTH obs_module_text("LookAheadDepth")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_BFRAMES obs_module_text("B Frames")
-#define TEXT_MBBRC obs_module_text("Content Adaptive Quantization")
+#define TEXT_PERCEPTUAL_ENHANCEMENTS \
+	obs_module_text("SubjectiveVideoEnhancements")
 
 static inline bool is_skl_or_greater_platform()
 {
 	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
 	return (plat >= QSV_CPU_PLATFORM_SKL);
 }
+
+static bool update_latency(obs_data_t *settings)
+{
+	bool update = false;
+	int async_depth = 4;
+	if (obs_data_item_byname(settings, "async_depth") != NULL) {
+		async_depth = (int)obs_data_get_int(settings, "async_depth");
+		obs_data_erase(settings, "async_depth");
+		update = true;
+	}
+
+	int la_depth = 15;
+	if (obs_data_item_byname(settings, "la_depth") != NULL) {
+		la_depth = (int)obs_data_get_int(settings, "la_depth");
+		obs_data_erase(settings, "la_depth");
+		update = true;
+	}
+
+	if (update) {
+		const char *rate_control =
+			obs_data_get_string(settings, "rate_control");
+
+		bool lookahead = astrcmpi(rate_control, "LA_CBR") == 0 ||
+				 astrcmpi(rate_control, "LA_VBR") == 0 ||
+				 astrcmpi(rate_control, "LA_ICQ") == 0;
+
+		if (lookahead) {
+			if (la_depth == 0 || la_depth >= 15)
+				obs_data_set_string(settings, "latency",
+						    "normal");
+			else
+				obs_data_set_string(settings, "latency", "low");
+		} else {
+			if (async_depth != 1)
+				obs_data_set_string(settings, "latency",
+						    "normal");
+			else
+				obs_data_set_string(settings, "latency",
+						    "ultra-low");
+		}
+	}
+
+	return true;
+}
+
+static bool update_enhancements(obs_data_t *settings)
+{
+	bool update = false;
+	bool mbbrc = true;
+	if (obs_data_item_byname(settings, "mbbrc") != NULL) {
+		mbbrc = (bool)obs_data_get_bool(settings, "mbbrc");
+		obs_data_erase(settings, "mbbrc");
+		update = true;
+	}
+
+	bool cqm = false;
+	if (obs_data_item_byname(settings, "CQM") != NULL) {
+		cqm = (bool)obs_data_get_bool(settings, "CQM");
+		obs_data_erase(settings, "CQM");
+		update = true;
+	}
+
+	if (update) {
+		bool enabled = (mbbrc && cqm);
+		obs_data_set_bool(settings, "enhancements", enabled);
+	}
+
+	return true;
+}
+
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 				  obs_data_t *settings)
 {
@@ -227,17 +296,13 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, "icq_quality");
 	obs_property_set_visible(p, bVisible);
 
-	bVisible = astrcmpi(rate_control, "LA_ICQ") == 0 ||
-		   astrcmpi(rate_control, "LA_CBR") == 0 ||
-		   astrcmpi(rate_control, "LA_VBR") == 0;
-	p = obs_properties_get(ppts, "la_depth");
+	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
+		   astrcmpi(rate_control, "VBR") == 0;
+	p = obs_properties_get(ppts, "enhancements");
 	obs_property_set_visible(p, bVisible);
 
-	bVisible = astrcmpi(rate_control, "CBR") == 0 ||
-		   astrcmpi(rate_control, "VBR") == 0 ||
-		   astrcmpi(rate_control, "AVBR") == 0;
-	p = obs_properties_get(ppts, "mbbrc");
-	obs_property_set_visible(p, bVisible);
+	update_latency(settings);
+	update_enhancements(settings);
 
 	return true;
 }
@@ -285,7 +350,6 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_property_set_modified_callback(list, profile_modified);
 
 	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
-	obs_properties_add_int(props, "async_depth", TEXT_ASYNC_DEPTH, 1, 7, 1);
 
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
@@ -310,13 +374,18 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
 	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51,
 			       1);
-	obs_properties_add_int(props, "la_depth", TEXT_LA_DEPTH, 10, 100, 1);
+	list = obs_properties_add_list(props, "latency", TEXT_LATENCY,
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_STRING);
+	add_strings(list, qsv_latency_names);
+	obs_property_set_long_description(list,
+					  obs_module_text("Latency.ToolTip"));
+
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
 	if (is_skl_or_greater_platform())
-		obs_properties_add_bool(props, "mbbrc", TEXT_MBBRC);
-
-	obs_properties_add_bool(props, "CQM", "Customized quantization matrix");
+		obs_properties_add_bool(props, "enhancements",
+					TEXT_PERCEPTUAL_ENHANCEMENTS);
 
 	return props;
 }
@@ -325,13 +394,15 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 {
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
+	update_latency(settings);
+	update_enhancements(settings);
 
 	const char *target_usage =
 		obs_data_get_string(settings, "target_usage");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rate_control =
 		obs_data_get_string(settings, "rate_control");
-	int async_depth = (int)obs_data_get_int(settings, "async_depth");
+	const char *latency = obs_data_get_string(settings, "latency");
 	int target_bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
 	int accuracy = (int)obs_data_get_int(settings, "accuracy");
@@ -340,11 +411,10 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	int qpp = (int)obs_data_get_int(settings, "qpp");
 	int qpb = (int)obs_data_get_int(settings, "qpb");
 	int icq_quality = (int)obs_data_get_int(settings, "icq_quality");
-	int la_depth = (int)obs_data_get_int(settings, "la_depth");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bFrames = (int)obs_data_get_int(settings, "bframes");
-	bool mbbrc = obs_data_get_bool(settings, "mbbrc");
+	bool enhancements = obs_data_get_bool(settings, "enhancements");
 
 	if (obs_data_has_user_value(settings, "bf"))
 		bFrames = (int)obs_data_get_int(settings, "bf");
@@ -413,13 +483,30 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	else if (astrcmpi(rate_control, "LA_CBR") == 0)
 		obsqsv->params.nRateControl = MFX_RATECONTROL_LA_HRD;
 
-	obsqsv->params.nAsyncDepth = (mfxU16)async_depth;
+	if (astrcmpi(latency, "ultra-low") == 0) {
+		obsqsv->params.nAsyncDepth = 1;
+		obsqsv->params.nLADEPTH = (mfxU16)0;
+	} else if (astrcmpi(latency, "low") == 0) {
+		obsqsv->params.nAsyncDepth = 4;
+		obsqsv->params.nLADEPTH =
+			(mfxU16)(voi->fps_num / voi->fps_den / 2);
+	} else if (astrcmpi(latency, "normal") == 0) {
+		obsqsv->params.nAsyncDepth = 4;
+		obsqsv->params.nLADEPTH = (mfxU16)(voi->fps_num / voi->fps_den);
+	}
+
+	if (obsqsv->params.nLADEPTH > 0) {
+		if (obsqsv->params.nLADEPTH > 100)
+			obsqsv->params.nLADEPTH = 100;
+		else if (obsqsv->params.nLADEPTH < 10)
+			obsqsv->params.nLADEPTH = 10;
+	}
+
 	obsqsv->params.nAccuracy = (mfxU16)accuracy;
 	obsqsv->params.nConvergence = (mfxU16)convergence;
 	obsqsv->params.nQPI = (mfxU16)qpi;
 	obsqsv->params.nQPP = (mfxU16)qpp;
 	obsqsv->params.nQPB = (mfxU16)qpb;
-	obsqsv->params.nLADEPTH = (mfxU16)la_depth;
 	obsqsv->params.nTargetBitRate = (mfxU16)target_bitrate;
 	obsqsv->params.nMaxBitRate = (mfxU16)max_bitrate;
 	obsqsv->params.nWidth = (mfxU16)width;
@@ -429,7 +516,8 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.nbFrames = (mfxU16)bFrames;
 	obsqsv->params.nKeyIntSec = (mfxU16)keyint_sec;
 	obsqsv->params.nICQQuality = (mfxU16)icq_quality;
-	obsqsv->params.bMBBRC = mbbrc;
+	obsqsv->params.bMBBRC = enhancements;
+	obsqsv->params.bCQM = enhancements;
 
 	info("settings:\n\trate_control:   %s", rate_control);
 
@@ -468,8 +556,6 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	     "\twidth:          %d\n"
 	     "\theight:         %d",
 	     voi->fps_num, voi->fps_den, width, height);
-
-	obsqsv->params.bCQM = (bool)obs_data_get_bool(settings, "CQM");
 
 	info("debug info:");
 }
@@ -663,6 +749,12 @@ static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
 	if (obs_encoder_scaling_enabled(encoder)) {
 		blog(LOG_INFO,
 		     ">>> encoder scaling active, fall back to old qsv encoder");
+		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+	}
+
+	if (prefer_igpu_enc(NULL)) {
+		blog(LOG_INFO,
+		     ">>> prefer iGPU encoding, fall back to old qsv encoder");
 		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
 	}
 

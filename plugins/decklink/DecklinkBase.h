@@ -27,7 +27,10 @@ protected:
 
 public:
 	virtual bool Activate(DeckLinkDevice *device, long long modeId);
-	virtual void Deactivate();
+	virtual bool Activate(DeckLinkDevice *device, long long modeId,
+			      BMDVideoConnection bmdVideoConnection,
+			      BMDAudioConnection bmdAudioConnection);
+	virtual void Deactivate() = 0;
 
 	DeckLinkDevice *GetDevice() const;
 };

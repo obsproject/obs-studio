@@ -1072,11 +1072,11 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 
 	if (astrcmpi(space, "709") == 0)
 		return VIDEO_CS_709;
-	else if (astrcmpi(space, "601") == 0)
+
+	if (astrcmpi(space, "601") == 0)
 		return VIDEO_CS_601;
-	else
-		return (videoConfig.format == VideoFormat::HDYC) ? VIDEO_CS_709
-								 : VIDEO_CS_601;
+
+	return VIDEO_CS_DEFAULT;
 }
 
 inline enum video_range_type
@@ -1145,12 +1145,22 @@ static const char *GetDShowInputName(void *)
 	return TEXT_INPUT_NAME;
 }
 
+static void proc_activate(void *data, calldata_t *cd)
+{
+	bool activate = calldata_bool(cd, "active");
+	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	input->SetActive(activate);
+}
+
 static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 {
 	DShowInput *dshow = nullptr;
 
 	try {
 		dshow = new DShowInput(source, settings);
+		proc_handler_t *ph = obs_source_get_proc_handler(source);
+		proc_handler_add(ph, "void activate(bool active)",
+				 proc_activate, dshow);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "Could not create device '%s': %s",
 		     obs_source_get_name(source), error);

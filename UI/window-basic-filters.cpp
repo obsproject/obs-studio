@@ -402,6 +402,8 @@ QMenu *OBSBasicFilters::CreateAddFilterPopupMenu(bool async)
 			continue;
 		if ((caps & OBS_SOURCE_CAP_DISABLED) != 0)
 			continue;
+		if ((caps & OBS_SOURCE_CAP_OBSOLETE) != 0)
+			continue;
 
 		auto it = types.begin();
 		for (; it != types.end(); ++it) {
@@ -730,6 +732,10 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		popup.addMenu(addMenu);
 
 	if (item) {
+		const char *dulpicateSlot =
+			async ? SLOT(DuplicateAsyncFilter())
+			      : SLOT(DuplicateEffectFilter());
+
 		const char *renameSlot = async ? SLOT(RenameAsyncFilter())
 					       : SLOT(RenameEffectFilter());
 		const char *removeSlot =
@@ -737,9 +743,28 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 			      : SLOT(on_removeEffectFilter_clicked());
 
 		popup.addSeparator();
+		popup.addAction(QTStr("Duplicate"), this, dulpicateSlot);
+		popup.addSeparator();
 		popup.addAction(QTStr("Rename"), this, renameSlot);
 		popup.addAction(QTStr("Remove"), this, removeSlot);
+		popup.addSeparator();
+
+		QAction *copyAction = new QAction(QTStr("Copy"));
+		connect(copyAction, SIGNAL(triggered()), this,
+			SLOT(CopyFilter()));
+		copyAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
+		ui->effectWidget->addAction(copyAction);
+		ui->asyncWidget->addAction(copyAction);
+		popup.addAction(copyAction);
 	}
+
+	QAction *pasteAction = new QAction(QTStr("Paste"));
+	pasteAction->setEnabled(main->copyFilter);
+	connect(pasteAction, SIGNAL(triggered()), this, SLOT(PasteFilter()));
+	pasteAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
+	ui->effectWidget->addAction(pasteAction);
+	ui->asyncWidget->addAction(pasteAction);
+	popup.addAction(pasteAction);
 
 	popup.exec(QCursor::pos());
 }
@@ -762,6 +787,58 @@ void OBSBasicFilters::EditItem(QListWidgetItem *item, bool async)
 	editActive = true;
 }
 
+void OBSBasicFilters::DuplicateItem(QListWidgetItem *item)
+{
+	OBSSource filter = item->data(Qt::UserRole).value<OBSSource>();
+	string name = obs_source_get_name(filter);
+	obs_source_t *existing_filter;
+
+	QString placeholder = QString::fromStdString(name);
+	QString text{placeholder};
+	int i = 2;
+	while ((existing_filter = obs_source_get_filter_by_name(
+			source, QT_TO_UTF8(text)))) {
+		obs_source_release(existing_filter);
+		text = QString("%1 %2").arg(placeholder).arg(i++);
+	}
+
+	bool success = NameDialog::AskForName(
+		this, QTStr("Basic.Filters.AddFilter.Title"),
+		QTStr("Basic.Filters.AddFilter.Text"), name, text);
+	if (!success)
+		return;
+
+	if (name.empty()) {
+		OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"),
+				       QTStr("NoNameEntered.Text"));
+		DuplicateItem(item);
+		return;
+	}
+
+	existing_filter = obs_source_get_filter_by_name(source, name.c_str());
+	if (existing_filter) {
+		OBSMessageBox::warning(this, QTStr("NameExists.Title"),
+				       QTStr("NameExists.Text"));
+		obs_source_release(existing_filter);
+		DuplicateItem(item);
+		return;
+	}
+	bool enabled = obs_source_enabled(filter);
+	obs_source_t *new_filter =
+		obs_source_duplicate(filter, name.c_str(), false);
+	if (new_filter) {
+		const char *sourceName = obs_source_get_name(source);
+		const char *id = obs_source_get_id(new_filter);
+		blog(LOG_INFO,
+		     "User duplicated filter '%s' (%s) from '%s' "
+		     "to source '%s'",
+		     name.c_str(), id, name.c_str(), sourceName);
+		obs_source_set_enabled(new_filter, enabled);
+		obs_source_filter_add(source, new_filter);
+		obs_source_release(new_filter);
+	}
+}
+
 void OBSBasicFilters::on_asyncFilters_customContextMenuRequested(
 	const QPoint &pos)
 {
@@ -782,6 +859,16 @@ void OBSBasicFilters::RenameAsyncFilter()
 void OBSBasicFilters::RenameEffectFilter()
 {
 	EditItem(ui->effectFilters->currentItem(), false);
+}
+
+void OBSBasicFilters::DuplicateAsyncFilter()
+{
+	DuplicateItem(ui->asyncFilters->currentItem());
+}
+
+void OBSBasicFilters::DuplicateEffectFilter()
+{
+	DuplicateItem(ui->effectFilters->currentItem());
 }
 
 void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
@@ -861,4 +948,25 @@ void OBSBasicFilters::ResetFilters()
 		obs_source_update(filter, nullptr);
 
 	view->RefreshProperties();
+}
+
+void OBSBasicFilters::CopyFilter()
+{
+	OBSSource filter = nullptr;
+
+	if (isAsync)
+		filter = GetFilter(ui->asyncFilters->currentRow(), true);
+	else
+		filter = GetFilter(ui->effectFilters->currentRow(), false);
+
+	main->copyFilter = OBSGetWeakRef(filter);
+}
+
+void OBSBasicFilters::PasteFilter()
+{
+	OBSSource filter = OBSGetStrongRef(main->copyFilter);
+	if (!filter)
+		return;
+
+	obs_source_copy_single_filter(source, filter);
 }

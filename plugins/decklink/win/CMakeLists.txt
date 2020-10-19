@@ -67,5 +67,6 @@ add_library(win-decklink MODULE
 
 target_link_libraries(win-decklink
 	libobs)
+set_target_properties(win-decklink PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(win-decklink ../data)

@@ -2,10 +2,13 @@
 #include <util/dstr.h>
 #include <obs-module.h>
 #include <jansson.h>
+#include <obs-config.h>
 
 #include "rtmp-format-ver.h"
 #include "twitch.h"
 #include "younow.h"
+#include "nimotv.h"
+#include "showroom.h"
 
 struct rtmp_common {
 	char *service;
@@ -13,6 +16,8 @@ struct rtmp_common {
 	char *key;
 
 	char *output;
+
+	bool supports_additional_audio_track;
 };
 
 static const char *rtmp_common_getname(void *unused)
@@ -24,6 +29,7 @@ static const char *rtmp_common_getname(void *unused)
 static json_t *open_services_file(void);
 static inline json_t *find_service(json_t *root, const char *name,
 				   const char **p_new_name);
+static inline bool get_bool_val(json_t *service, const char *key);
 static inline const char *get_string_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
@@ -73,6 +79,7 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	service->service = bstrdup(obs_data_get_string(settings, "service"));
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
+	service->supports_additional_audio_track = false;
 	service->output = NULL;
 
 	json_t *root = open_services_file();
@@ -93,6 +100,8 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 					service->output = bstrdup(out);
 			}
 
+			service->supports_additional_audio_track = get_bool_val(
+				serv, "supports_additional_audio_track");
 			ensure_valid_url(service, serv, settings);
 		}
 	}
@@ -340,13 +349,14 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		return;
 	}
 
-	if (strcmp(name, "Mixer.com - FTL") == 0) {
-		obs_property_list_add_string(
-			servers_prop, obs_module_text("Server.Auto"), "auto");
-	}
 	if (strcmp(name, "Twitch") == 0) {
 		if (fill_twitch_servers(servers_prop))
 			return;
+	}
+
+	if (strcmp(name, "Nimo TV") == 0) {
+		obs_property_list_add_string(
+			servers_prop, obs_module_text("Server.Auto"), "auto");
 	}
 
 	json_array_foreach (servers, index, server) {
@@ -358,6 +368,15 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 
 		obs_property_list_add_string(servers_prop, server_name, url);
 	}
+}
+
+static void fill_more_info_link(json_t *service, obs_data_t *settings)
+{
+	const char *more_info_link;
+
+	more_info_link = get_string_val(service, "more_info_link");
+	if (more_info_link)
+		obs_data_set_string(settings, "more_info_link", more_info_link);
 }
 
 static inline json_t *find_service(json_t *root, const char *name,
@@ -422,7 +441,7 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 	}
 
 	fill_servers(obs_properties_get(props, "server"), service, name);
-
+	fill_more_info_link(service, settings);
 	return true;
 }
 
@@ -493,6 +512,8 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 		obs_data_set_string(settings, "profile", profile);
 	}
 
+	obs_data_item_release(&enc_item);
+
 	item = json_object_get(recommended, "max video bitrate");
 	if (json_is_integer(item)) {
 		int max_bitrate = (int)json_integer_value(item);
@@ -503,8 +524,10 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 	}
 
 	item = json_object_get(recommended, "bframes");
-	if (json_is_integer(item))
-		obs_data_set_int(settings, "bf", 0);
+	if (json_is_integer(item)) {
+		int bframes = json_integer_value(item);
+		obs_data_set_int(settings, "bf", bframes);
+	}
 
 	item = json_object_get(recommended, "x264opts");
 	if (json_is_string(item)) {
@@ -603,13 +626,41 @@ static const char *rtmp_common_url(void *data)
 		}
 	}
 
+	if (service->service && strcmp(service->service, "Nimo TV") == 0) {
+		if (service->server && strcmp(service->server, "auto") == 0) {
+			return nimotv_get_ingest(service->key);
+		}
+	}
+
+	if (service->service && strcmp(service->service, "SHOWROOM") == 0) {
+		if (service->server && service->key) {
+			struct showroom_ingest *ingest;
+			ingest = showroom_get_ingest(service->server,
+						     service->key);
+			return ingest->url;
+		}
+	}
 	return service->server;
 }
 
 static const char *rtmp_common_key(void *data)
 {
 	struct rtmp_common *service = data;
+	if (service->service && strcmp(service->service, "SHOWROOM") == 0) {
+		if (service->server && service->key) {
+			struct showroom_ingest *ingest;
+			ingest = showroom_get_ingest(service->server,
+						     service->key);
+			return ingest->key;
+		}
+	}
 	return service->key;
+}
+
+static bool supports_multitrack(void *data)
+{
+	struct rtmp_common *service = data;
+	return service->supports_additional_audio_track;
 }
 
 struct obs_service_info rtmp_common_service = {

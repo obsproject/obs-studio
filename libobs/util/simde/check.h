@@ -6,6 +6,8 @@
  *   copyright and related or neighboring rights to this code.  For
  *   details, see the Creative Commons Zero 1.0 Universal license at
  *   https://creativecommons.org/publicdomain/zero/1.0/
+ *
+ * SPDX-License-Identifier: CC0-1.0
  */
 
 #if !defined(SIMDE_CHECK_H)
@@ -15,6 +17,7 @@
 #define SIMDE_NDEBUG 1
 #endif
 
+#include "hedley.h"
 #include <stdint.h>
 
 #if !defined(_WIN32)
@@ -32,24 +35,47 @@
 #endif
 
 #if defined(_MSC_VER) && (_MSC_VER >= 1500)
-#define SIMDE__PUSH_DISABLE_MSVC_C4127 \
+#define SIMDE_PUSH_DISABLE_MSVC_C4127_ \
 	__pragma(warning(push)) __pragma(warning(disable : 4127))
-#define SIMDE__POP_DISABLE_MSVC_C4127 __pragma(warning(pop))
+#define SIMDE_POP_DISABLE_MSVC_C4127_ __pragma(warning(pop))
 #else
-#define SIMDE__PUSH_DISABLE_MSVC_C4127
-#define SIMDE__POP_DISABLE_MSVC_C4127
+#define SIMDE_PUSH_DISABLE_MSVC_C4127_
+#define SIMDE_POP_DISABLE_MSVC_C4127_
 #endif
 
 #if !defined(simde_errorf)
+#if defined(__has_include)
+#if __has_include(<stdio.h>)
 #include <stdio.h>
-#include <stdlib.h>
+#endif
+#elif defined(SIMDE_STDC_HOSTED)
+#if SIMDE_STDC_HOSTED == 1
+#include <stdio.h>
+#endif
+#elif defined(__STDC_HOSTED__)
+#if __STDC_HOSTETD__ == 1
+#include <stdio.h>
+#endif
+#endif
+
+#include "debug-trap.h"
+
+HEDLEY_DIAGNOSTIC_PUSH
+SIMDE_DIAGNOSTIC_DISABLE_VARIADIC_MACROS_
+#if defined(EOF)
 #define simde_errorf(format, ...) \
 	(fprintf(stderr, format, __VA_ARGS__), abort())
+#else
+#define simde_errorf(format, ...) (simde_trap())
+#endif
+HEDLEY_DIAGNOSTIC_POP
 #endif
 
 #define simde_error(msg) simde_errorf("%s", msg)
 
-#if defined(SIMDE_NDEBUG)
+#if defined(SIMDE_NDEBUG) ||                                 \
+	(defined(__cplusplus) && (__cplusplus < 201103L)) || \
+	(defined(__STDC__) && (__STDC__ < 199901L))
 #if defined(SIMDE_CHECK_FAIL_DEFINED)
 #define simde_assert(expr)
 #else
@@ -78,8 +104,8 @@
 		if (!HEDLEY_LIKELY(expr)) {                           \
 			simde_error("assertion failed: " #expr "\n"); \
 		}                                                     \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                        \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                        \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_true(expr)                                \
 	do {                                                   \
@@ -87,8 +113,8 @@
 			simde_error("assertion failed: " #expr \
 				    " is not true\n");         \
 		}                                              \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                 \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                 \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_false(expr)                               \
 	do {                                                   \
@@ -96,8 +122,8 @@
 			simde_error("assertion failed: " #expr \
 				    " is not false\n");        \
 		}                                              \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                 \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                 \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_type_full(prefix, suffix, T, fmt, a, op, b)           \
 	do {                                                               \
@@ -110,8 +136,8 @@
 				     #a, #op, #b, simde_tmp_a_, #op,       \
 				     simde_tmp_b_);                        \
 		}                                                          \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                             \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                             \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_double_equal(a, b, precision)                           \
 	do {                                                                 \
@@ -127,8 +153,8 @@
 				"g == %0." #precision "g)\n",                \
 				#a, #b, simde_tmp_a_, simde_tmp_b_);         \
 		}                                                            \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                               \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                               \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #include <string.h>
 #define simde_assert_string_equal(a, b)                                                   \
@@ -141,8 +167,8 @@
 				"assertion failed: string %s == %s (\"%s\" == \"%s\")\n", \
 				#a, #b, simde_tmp_a_, simde_tmp_b_);                      \
 		}                                                                         \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                                            \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                                            \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_string_not_equal(a, b)                                               \
 	do {                                                                              \
@@ -154,8 +180,8 @@
 				"assertion failed: string %s != %s (\"%s\" == \"%s\")\n", \
 				#a, #b, simde_tmp_a_, simde_tmp_b_);                      \
 		}                                                                         \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                                            \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                                            \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_memory_equal(size, a, b)                                                                        \
 	do {                                                                                                         \
@@ -180,8 +206,8 @@
 				}                                                                                    \
 			}                                                                                            \
 		}                                                                                                    \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                                                                       \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                                                                       \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 
 #define simde_assert_memory_not_equal(size, a, b)                                          \
 	do {                                                                               \
@@ -197,8 +223,8 @@
 				"u bytes)\n",                                              \
 				#a, #b, simde_tmp_size_);                                  \
 		}                                                                          \
-		SIMDE__PUSH_DISABLE_MSVC_C4127                                             \
-	} while (0) SIMDE__POP_DISABLE_MSVC_C4127
+		SIMDE_PUSH_DISABLE_MSVC_C4127_                                             \
+	} while (0) SIMDE_POP_DISABLE_MSVC_C4127_
 #endif
 
 #define simde_assert_type(T, fmt, a, op, b) \

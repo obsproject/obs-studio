@@ -531,6 +531,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 			 bool vertical)
 	: QWidget(parent), obs_volmeter(obs_volmeter), vertical(vertical)
 {
+	setAttribute(Qt::WA_OpaquePaintEvent, true);
+
 	// Use a font that can be rendered small.
 	tickFont = QFont("Arial");
 	tickFont.setPixelSize(7);
@@ -562,7 +564,8 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
 		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
-		updateTimerRef->start(34);
+		updateTimerRef->setTimerType(Qt::PreciseTimer);
+		updateTimerRef->start(16);
 		updateTimer = updateTimerRef;
 	}
 
@@ -875,7 +878,7 @@ void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width,
 		painter.fillRect(peakPosition, y,
 				 maximumPosition - peakPosition, height,
 				 backgroundErrorColor);
-	} else {
+	} else if (int(magnitude) != 0) {
 		if (!clipping) {
 			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this,
 					   SLOT(ClipEnding()));
@@ -1040,6 +1043,11 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	// Actual painting of the widget starts here.
 	QPainter painter(this);
+
+	// Paint window background color (as widget is opaque)
+	QColor background = palette().color(QPalette::ColorRole::Window);
+	painter.fillRect(rect, background);
+
 	if (vertical) {
 		// Invert the Y axis to ease the math
 		painter.translate(0, height);

@@ -17,6 +17,7 @@
 
 #include "obs.h"
 #include "obs-internal.h"
+#include "util/util_uint64.h"
 
 #define encoder_active(encoder) os_atomic_load_bool(&encoder->active)
 #define set_encoder_active(encoder, val) \
@@ -1076,8 +1077,7 @@ static inline size_t calc_offset_size(struct obs_encoder *encoder,
 				      uint64_t v_start_ts, uint64_t a_start_ts)
 {
 	uint64_t offset = v_start_ts - a_start_ts;
-	offset = (uint64_t)offset * (uint64_t)encoder->samplerate /
-		 1000000000ULL;
+	offset = util_mul_div64(offset, encoder->samplerate, 1000000000ULL);
 	return (size_t)offset * encoder->blocksize;
 }
 
@@ -1124,8 +1124,8 @@ static bool buffer_audio(struct obs_encoder *encoder, struct audio_data *data)
 
 		/* audio starting point still not synced with video starting
 		 * point, so don't start audio */
-		end_ts += (uint64_t)data->frames * 1000000000ULL /
-			  (uint64_t)encoder->samplerate;
+		end_ts += util_mul_div64(data->frames, 1000000000ULL,
+					 encoder->samplerate);
 		if (end_ts <= v_start_ts) {
 			success = false;
 			goto fail;

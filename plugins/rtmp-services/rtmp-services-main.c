@@ -7,6 +7,7 @@
 
 #include "rtmp-format-ver.h"
 #include "lookup-config.h"
+#include "showroom.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
@@ -107,5 +108,6 @@ void obs_module_unload(void)
 {
 	update_info_destroy(update_info);
 	unload_twitch_data();
+	free_showroom_data();
 	dstr_free(&module_name);
 }

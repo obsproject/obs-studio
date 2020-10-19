@@ -57,11 +57,15 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 	si.hStdOutput = stdout_handle;
 	si.hStdError = stderr_handle;
 
+	DWORD flags = 0;
+#ifndef SHOW_SUBPROCESSES
+	flags = CREATE_NO_WINDOW;
+#endif
+
 	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
 	if (cmd_line_w) {
 		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true,
-					   CREATE_NO_WINDOW, NULL, NULL, &si,
-					   &pi);
+					   flags, NULL, NULL, &si, &pi);
 
 		if (success) {
 			*process = pi.hProcess;

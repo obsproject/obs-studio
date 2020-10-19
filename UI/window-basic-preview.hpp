@@ -92,6 +92,8 @@ private:
 
 	void GetStretchHandleData(const vec2 &pos);
 
+	void UpdateCursor(uint32_t &flags);
+
 	void SnapStretchingToScreen(vec3 &tl, vec3 &br);
 	void ClampAspect(vec3 &tl, vec3 &br, vec2 &size, const vec2 &baseSize);
 	vec3 CalculateStretchPos(const vec3 &tl, const vec3 &br);
@@ -105,7 +107,8 @@ private:
 	void ProcessClick(const vec2 &pos);
 
 public:
-	OBSBasicPreview(QWidget *parent, Qt::WindowFlags flags = 0);
+	OBSBasicPreview(QWidget *parent,
+			Qt::WindowFlags flags = Qt::WindowFlags());
 	~OBSBasicPreview();
 
 	static OBSBasicPreview *Get();

@@ -20,9 +20,9 @@ set(obs-ffmpeg_config_HEADERS
 	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
 
 set(obs-ffmpeg_HEADERS
-	obs-ffmpeg-formats.h
 	obs-ffmpeg-compat.h
-	ffmpeg-encoded-output.h)
+	obs-ffmpeg-formats.h
+	obs-ffmpeg-mux.h)
 
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
@@ -30,7 +30,7 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-nvenc.c
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
-	ffmpeg-encoded-output.c
+	obs-ffmpeg-hls-mux.c
 	obs-ffmpeg-source.c)
 
 if(UNIX AND NOT APPLE)
@@ -65,6 +65,7 @@ target_link_libraries(obs-ffmpeg
 	media-playback
 	${obs-ffmpeg_PLATFORM_DEPS}
 	${FFMPEG_LIBRARIES})
+set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg")
 
 install_obs_plugin_with_data(obs-ffmpeg data)
 

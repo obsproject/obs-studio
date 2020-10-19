@@ -54,6 +54,8 @@ ELSE()
 	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs ${PYTHON_LIBRARIES})
 ENDIF()
 
+set_target_properties(_obspython PROPERTIES FOLDER "scripting")
+
 function(install_plugin_bin_swig target additional_target)
 	if(APPLE)
 		set(_bit_suffix "")

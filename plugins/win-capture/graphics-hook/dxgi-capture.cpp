@@ -3,7 +3,6 @@
 #include <dxgi1_2.h>
 #include <d3dcompiler.h>
 
-#include "d3d1x_shaders.hpp"
 #include "graphics-hook.h"
 #include "../funchook.h"
 
@@ -11,6 +10,7 @@
 #include <d3d12.h>
 #endif
 
+typedef ULONG(STDMETHODCALLTYPE *release_t)(IUnknown *);
 typedef HRESULT(STDMETHODCALLTYPE *resize_buffers_t)(IDXGISwapChain *, UINT,
 						     UINT, UINT, DXGI_FORMAT,
 						     UINT);
@@ -18,6 +18,7 @@ typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDXGISwapChain *, UINT, UINT);
 typedef HRESULT(STDMETHODCALLTYPE *present1_t)(IDXGISwapChain1 *, UINT, UINT,
 					       const DXGI_PRESENT_PARAMETERS *);
 
+static struct func_hook release;
 static struct func_hook resize_buffers;
 static struct func_hook present;
 static struct func_hook present1;
@@ -79,6 +80,23 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 #endif
 
 	return false;
+}
+
+static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
+{
+	unhook(&release);
+	release_t call = (release_t)release.call_addr;
+	ULONG refs = call(unknown);
+	rehook(&release);
+
+	if (unknown == data.swap && refs == 0) {
+		data.free();
+		data.swap = nullptr;
+		data.free = nullptr;
+		data.capture = nullptr;
+	}
+
+	return refs;
 }
 
 static bool resize_buffers_called = false;
@@ -218,84 +236,17 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 	return hr;
 }
 
-static pD3DCompile get_compiler(void)
-{
-	pD3DCompile compile = nullptr;
-	char d3dcompiler[40] = {};
-	int ver = 49;
-
-	while (ver > 30) {
-		sprintf_s(d3dcompiler, 40, "D3DCompiler_%02d.dll", ver);
-
-		HMODULE module = LoadLibraryA(d3dcompiler);
-		if (module) {
-			compile = (pD3DCompile)GetProcAddress(module,
-							      "D3DCompile");
-			if (compile) {
-				break;
-			}
-		}
-
-		ver--;
-	}
-
-	return compile;
-}
-
-static uint8_t vertex_shader_data[1024];
-static uint8_t pixel_shader_data[1024];
-static size_t vertex_shader_size = 0;
-static size_t pixel_shader_size = 0;
-
 bool hook_dxgi(void)
 {
-	pD3DCompile compile;
-	ID3D10Blob *blob;
 	HMODULE dxgi_module = get_system_module("dxgi.dll");
-	HRESULT hr;
 	void *present_addr;
 	void *resize_addr;
 	void *present1_addr = nullptr;
+	void *release_addr = nullptr;
 
 	if (!dxgi_module) {
 		return false;
 	}
-
-	compile = get_compiler();
-	if (!compile) {
-		hlog("hook_dxgi: failed to find d3d compiler library");
-		return true;
-	}
-
-	/* ---------------------- */
-
-	hr = compile(vertex_shader_string, sizeof(vertex_shader_string),
-		     "vertex_shader_string", nullptr, nullptr, "main", "vs_4_0",
-		     D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, &blob, nullptr);
-	if (FAILED(hr)) {
-		hlog_hr("hook_dxgi: failed to compile vertex shader", hr);
-		return true;
-	}
-
-	vertex_shader_size = (size_t)blob->GetBufferSize();
-	memcpy(vertex_shader_data, blob->GetBufferPointer(),
-	       blob->GetBufferSize());
-	blob->Release();
-
-	/* ---------------------- */
-
-	hr = compile(pixel_shader_string, sizeof(pixel_shader_string),
-		     "pixel_shader_string", nullptr, nullptr, "main", "ps_4_0",
-		     D3D10_SHADER_OPTIMIZATION_LEVEL1, 0, &blob, nullptr);
-	if (FAILED(hr)) {
-		hlog_hr("hook_dxgi: failed to compile pixel shader", hr);
-		return true;
-	}
-
-	pixel_shader_size = (size_t)blob->GetBufferSize();
-	memcpy(pixel_shader_data, blob->GetBufferPointer(),
-	       blob->GetBufferSize());
-	blob->Release();
 
 	/* ---------------------- */
 
@@ -306,6 +257,9 @@ bool hook_dxgi(void)
 	if (global_hook_info->offsets.dxgi.present1)
 		present1_addr = get_offset_addr(
 			dxgi_module, global_hook_info->offsets.dxgi.present1);
+	if (global_hook_info->offsets.dxgi2.release)
+		release_addr = get_offset_addr(
+			dxgi_module, global_hook_info->offsets.dxgi2.release);
 
 	hook_init(&present, present_addr, (void *)hook_present,
 		  "IDXGISwapChain::Present");
@@ -314,24 +268,17 @@ bool hook_dxgi(void)
 	if (present1_addr)
 		hook_init(&present1, present1_addr, (void *)hook_present1,
 			  "IDXGISwapChain1::Present1");
+	if (release_addr)
+		hook_init(&release, release_addr, (void *)hook_release,
+			  "IDXGISwapChain::Release");
 
 	rehook(&resize_buffers);
 	rehook(&present);
 	if (present1_addr)
 		rehook(&present1);
+	if (release_addr)
+		rehook(&release);
 
 	hlog("Hooked DXGI");
 	return true;
-}
-
-uint8_t *get_d3d1x_vertex_shader(size_t *size)
-{
-	*size = vertex_shader_size;
-	return vertex_shader_data;
-}
-
-uint8_t *get_d3d1x_pixel_shader(size_t *size)
-{
-	*size = pixel_shader_size;
-	return pixel_shader_data;
 }

@@ -2,6 +2,7 @@
 #include "../../util/circlebuf.h"
 #include "../../util/platform.h"
 #include "../../util/darray.h"
+#include "../../util/util_uint64.h"
 #include "../../obs-internal.h"
 
 #include "wasapi-output.h"
@@ -78,8 +79,8 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 		monitor->prev_video_ts = last_frame_ts;
 
 	} else if (monitor->prev_video_ts == last_frame_ts) {
-		monitor->time_since_prev += (uint64_t)*frames * 1000000000ULL /
-					    (uint64_t)monitor->sample_rate;
+		monitor->time_since_prev += util_mul_div64(
+			*frames, 1000000000ULL, monitor->sample_rate);
 	} else {
 		monitor->time_since_prev = 0;
 	}
@@ -90,8 +91,8 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 
 		circlebuf_peek_front(&monitor->delay_buffer, &cur_ts,
 				     sizeof(ts));
-		front_ts = cur_ts - ((uint64_t)pad * 1000000000ULL /
-				     (uint64_t)monitor->sample_rate);
+		front_ts = cur_ts - util_mul_div64(pad, 1000000000ULL,
+						   monitor->sample_rate);
 		diff = (int64_t)front_ts - (int64_t)last_frame_ts;
 		bad_diff = !last_frame_ts || llabs(diff) > 5000000000 ||
 			   monitor->time_since_prev > 100000000ULL;

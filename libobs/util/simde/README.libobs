@@ -1,0 +1,5 @@
+This is a slightly modified version of https://github.com/nemequ/simde/commit/cafec4b952fa5a31a51a10326f97c2e7c9067771
+sse{,2}.h and mmx.h was moved down from the original "x86" subdirectory,
+subsequently the '#include "../simde-common.h"' line in mmx.h was changed to '#include "simde-common.h"'
+
+Then the code was reformatted using the "formatcode.sh" script in the root of this repository.

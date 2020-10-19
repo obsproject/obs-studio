@@ -13,8 +13,8 @@ OBSBasicStatusBar::OBSBasicStatusBar(QWidget *parent)
 	  droppedFrames(new QLabel),
 	  streamIcon(new QLabel),
 	  streamTime(new QLabel),
-	  recordIcon(new QLabel),
 	  recordTime(new QLabel),
+	  recordIcon(new QLabel),
 	  cpuUsage(new QLabel),
 	  transparentPixmap(20, 20),
 	  greenPixmap(20, 20),
@@ -521,9 +521,8 @@ void OBSBasicStatusBar::RecordingStopped()
 
 void OBSBasicStatusBar::RecordingPaused()
 {
-	QString text = QStringLiteral("REC: PAUSED");
+	QString text = recordTime->text() + QStringLiteral(" (PAUSED)");
 	recordTime->setText(text);
-	recordTime->setMinimumWidth(recordTime->width());
 
 	if (recordOutput) {
 		recordIcon->setPixmap(recordingPausePixmap);

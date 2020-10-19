@@ -85,6 +85,7 @@ public:
 	}
 
 	inline operator T() const { return val; }
+	inline T Get() const { return val; }
 
 	inline bool operator==(T p) const { return val == p; }
 	inline bool operator!=(T p) const { return val != p; }
@@ -265,17 +266,4 @@ public:
 
 		return *this;
 	}
-};
-
-class OBSContext {
-public:
-	inline OBSContext() {}
-	inline OBSContext(const char *locale,
-			  const char *module_config_path = nullptr,
-			  profiler_name_store *store = nullptr)
-	{
-		obs_startup(locale, module_config_path, store);
-	}
-
-	inline ~OBSContext() { obs_shutdown(); }
 };

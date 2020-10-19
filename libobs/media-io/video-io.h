@@ -174,11 +174,12 @@ static inline const char *get_video_format_name(enum video_format format)
 static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 {
 	switch (cs) {
+	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		return "709";
-	case VIDEO_CS_601:
-	case VIDEO_CS_DEFAULT:
-	case VIDEO_CS_SRGB:;
+	case VIDEO_CS_SRGB:
+		return "sRGB";
+	case VIDEO_CS_601:;
 	}
 
 	return "601";

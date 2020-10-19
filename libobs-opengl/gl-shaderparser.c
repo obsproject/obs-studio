@@ -427,7 +427,9 @@ static bool gl_write_texture_code(struct gl_shader_parser *glsp,
 	else if (cf_token_is(cfp, "Load")) {
 		written = gl_write_texture_call(glsp, var, "texelFetch", false);
 		dstr_cat(&glsp->gl_string, "(");
-		function_end = ").xy, 0)";
+		function_end = (strcmp(var->type, "texture3d") == 0)
+				       ? ").xyz, 0)"
+				       : ").xy, 0)";
 	}
 
 	if (!written)

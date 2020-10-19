@@ -53,7 +53,9 @@ target_include_directories(graphics-hook PUBLIC
 	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config")
 
 target_link_libraries(graphics-hook
-	ipc-util psapi)
+	dxguid
+	ipc-util
+	psapi)
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(_output_suffix "64")
@@ -63,6 +65,7 @@ endif()
 
 set_target_properties(graphics-hook
 	PROPERTIES
+		FOLDER "plugins/win-capture"
 		OUTPUT_NAME "graphics-hook${_output_suffix}")
 
 if (VULKAN_FOUND)

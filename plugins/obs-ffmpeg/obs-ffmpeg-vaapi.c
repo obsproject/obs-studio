@@ -244,12 +244,28 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
 	enc->context->pix_fmt = obs_to_ffmpeg_video_format(info.format);
-	enc->context->colorspace = info.colorspace == VIDEO_CS_709
-					   ? AVCOL_SPC_BT709
-					   : AVCOL_SPC_BT470BG;
 	enc->context->color_range = info.range == VIDEO_RANGE_FULL
 					    ? AVCOL_RANGE_JPEG
 					    : AVCOL_RANGE_MPEG;
+
+	switch (info.colorspace) {
+	case VIDEO_CS_601:
+		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
+		enc->context->color_primaries = AVCOL_PRI_SMPTE170M;
+		enc->context->colorspace = AVCOL_SPC_SMPTE170M;
+		break;
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_709:
+		enc->context->color_trc = AVCOL_TRC_BT709;
+		enc->context->color_primaries = AVCOL_PRI_BT709;
+		enc->context->colorspace = AVCOL_SPC_BT709;
+		break;
+	case VIDEO_CS_SRGB:
+		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
+		enc->context->color_primaries = AVCOL_PRI_BT709;
+		enc->context->colorspace = AVCOL_SPC_BT709;
+		break;
+	}
 
 	if (keyint_sec > 0) {
 		enc->context->gop_size =
@@ -550,15 +566,27 @@ static obs_properties_t *vaapi_properties(void *unused)
 
 	obs_property_list_add_int(list, "H.264 (default)", AV_CODEC_ID_H264);
 
+	list = obs_properties_add_list(props, "profile", "Profile",
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(list, "Constrained Baseline (default)",
+				  FF_PROFILE_H264_CONSTRAINED_BASELINE);
+	obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
+	obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
+
 	list = obs_properties_add_list(props, "level", "Level",
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, "480p30 (3.0)", 30);
-	obs_property_list_add_int(list, "720p30/480p60  (3.1)", 31);
-	obs_property_list_add_int(list, "Compatibility mode  (4.0 default)",
+	obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
+	obs_property_list_add_int(list, "3.0", 30);
+	obs_property_list_add_int(list, "3.1", 31);
+	obs_property_list_add_int(list, "4.0 (default) (Compatibility mode)",
 				  40);
-	obs_property_list_add_int(list, "720p60/1080p30 (4.1)", 41);
-	obs_property_list_add_int(list, "1080p60 (4.2)", 42);
+	obs_property_list_add_int(list, "4.1", 41);
+	obs_property_list_add_int(list, "4.2", 42);
+	obs_property_list_add_int(list, "5.0", 50);
+	obs_property_list_add_int(list, "5.1", 51);
+	obs_property_list_add_int(list, "5.2", 52);
 
 	list = obs_properties_add_list(props, "rate_control",
 				       obs_module_text("RateControl"),

@@ -195,9 +195,7 @@ static void scale_filter_tick(void *data, float seconds)
 		} else {
 			if (new_aspect > old_aspect) {
 				filter->cx_out = (int)(cy_f * new_aspect);
-				filter->cy_out = cy;
 			} else {
-				filter->cx_out = cx;
 				filter->cy_out = (int)(cx_f / new_aspect);
 			}
 		}

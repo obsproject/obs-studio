@@ -20,6 +20,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <util/bmem.h>
 #include <util/platform.h>
 #include <util/threading.h>
+#include <util/util_uint64.h>
 #include <obs-module.h>
 
 #include <alsa/asoundlib.h>
@@ -439,9 +440,27 @@ bool _alsa_configure(struct alsa_data *data)
 		return false;
 	}
 
-	data->format = SND_PCM_FORMAT_S16;
-	err = snd_pcm_hw_params_set_format(data->handle, hwparams,
-					   data->format);
+#define FORMAT_SIZE 4
+	snd_pcm_format_t formats[FORMAT_SIZE] = {SND_PCM_FORMAT_S16_LE,
+						 SND_PCM_FORMAT_S32_LE,
+						 SND_PCM_FORMAT_FLOAT_LE,
+						 SND_PCM_FORMAT_U8};
+	bool format_found = false;
+	for (int i = 0; i < FORMAT_SIZE; ++i) {
+		data->format = formats[i];
+		err = snd_pcm_hw_params_test_format(data->handle, hwparams,
+						    data->format);
+		if (err == 0) {
+			format_found = true;
+			break;
+		}
+	}
+#undef FORMAT_SIZE
+	if (!format_found) {
+		blog(LOG_ERROR, "device doesnt support any OBS formats");
+		return false;
+	}
+	snd_pcm_hw_params_set_format(data->handle, hwparams, data->format);
 	if (err < 0) {
 		blog(LOG_ERROR, "snd_pcm_hw_params_set_format failed: %s",
 		     snd_strerror(err));
@@ -562,8 +581,9 @@ void *_alsa_listen(void *attr)
 		}
 
 		out.frames = frames;
-		out.timestamp = os_gettime_ns() -
-				((frames * NSEC_PER_SEC) / data->rate);
+		out.timestamp =
+			os_gettime_ns() -
+			util_mul_div64(frames, NSEC_PER_SEC, data->rate);
 
 		if (!data->first_ts)
 			data->first_ts = out.timestamp + STARTUP_TIMEOUT_NS;

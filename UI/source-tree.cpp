@@ -151,6 +151,7 @@ void SourceTreeItem::DisconnectSignals()
 {
 	sceneRemoveSignal.Disconnect();
 	itemRemoveSignal.Disconnect();
+	selectSignal.Disconnect();
 	deselectSignal.Disconnect();
 	visibleSignal.Disconnect();
 	lockedSignal.Disconnect();
@@ -212,6 +213,16 @@ void SourceTreeItem::ReconnectSignals()
 						  Q_ARG(bool, locked));
 	};
 
+	auto itemSelect = [](void *data, calldata_t *cd) {
+		SourceTreeItem *this_ =
+			reinterpret_cast<SourceTreeItem *>(data);
+		obs_sceneitem_t *curItem =
+			(obs_sceneitem_t *)calldata_ptr(cd, "item");
+
+		if (curItem == this_->sceneitem)
+			QMetaObject::invokeMethod(this_, "Select");
+	};
+
 	auto itemDeselect = [](void *data, calldata_t *cd) {
 		SourceTreeItem *this_ =
 			reinterpret_cast<SourceTreeItem *>(data);
@@ -236,6 +247,8 @@ void SourceTreeItem::ReconnectSignals()
 	itemRemoveSignal.Connect(signal, "item_remove", removeItem, this);
 	visibleSignal.Connect(signal, "item_visible", itemVisible, this);
 	lockedSignal.Connect(signal, "item_locked", itemLocked, this);
+	selectSignal.Connect(signal, "item_select", itemSelect, this);
+	deselectSignal.Connect(signal, "item_deselect", itemDeselect, this);
 
 	if (obs_sceneitem_is_group(sceneitem)) {
 		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
@@ -244,10 +257,6 @@ void SourceTreeItem::ReconnectSignals()
 		groupReorderSignal.Connect(signal, "reorder", reorderGroup,
 					   this);
 	}
-
-	if (scene != GetCurrentScene())
-		deselectSignal.Connect(signal, "item_deselect", itemDeselect,
-				       this);
 
 	/* --------------------------------------------------------- */
 
@@ -345,6 +354,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 	editor = nullptr;
 	setFocusPolicy(Qt::NoFocus);
 	boxLayout->insertWidget(index, label);
+	label->setFocus();
 
 	/* ----------------------------------------- */
 	/* check for empty string                    */
@@ -516,9 +526,16 @@ void SourceTreeItem::ExpandClicked(bool checked)
 		tree->GetStm()->CollapseGroup(sceneitem);
 }
 
+void SourceTreeItem::Select()
+{
+	tree->SelectItem(sceneitem, true);
+	OBSBasic::Get()->UpdateContextBar();
+}
+
 void SourceTreeItem::Deselect()
 {
 	tree->SelectItem(sceneitem, false);
+	OBSBasic::Get()->UpdateContextBar();
 }
 
 /* ========================================================================= */

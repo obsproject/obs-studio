@@ -65,7 +65,7 @@ static inline bool init_input(media_remux_job_t job, const char *in_filename)
 		return false;
 	}
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	av_dump_format(job->ifmt_ctx, 0, in_filename, false);
 #endif
 	return true;
@@ -84,8 +84,12 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 
 	for (unsigned i = 0; i < job->ifmt_ctx->nb_streams; i++) {
 		AVStream *in_stream = job->ifmt_ctx->streams[i];
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		AVStream *out_stream = avformat_new_stream(job->ofmt_ctx, NULL);
+#else
 		AVStream *out_stream = avformat_new_stream(
 			job->ofmt_ctx, in_stream->codec->codec);
+#endif
 		if (!out_stream) {
 			blog(LOG_ERROR, "media_remux: Failed to allocate output"
 					" stream");
@@ -93,30 +97,31 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 		}
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-		AVCodecParameters *par = avcodec_parameters_alloc();
-		ret = avcodec_parameters_from_context(par, in_stream->codec);
-		if (ret == 0)
-			ret = avcodec_parameters_to_context(out_stream->codec,
-							    par);
-		avcodec_parameters_free(&par);
+		ret = avcodec_parameters_copy(out_stream->codecpar,
+					      in_stream->codecpar);
 #else
 		ret = avcodec_copy_context(out_stream->codec, in_stream->codec);
 #endif
 
 		if (ret < 0) {
-			blog(LOG_ERROR, "media_remux: Failed to copy context");
+			blog(LOG_ERROR,
+			     "media_remux: Failed to copy parameters");
 			return false;
 		}
-		out_stream->time_base = out_stream->codec->time_base;
 
 		av_dict_copy(&out_stream->metadata, in_stream->metadata, 0);
 
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		out_stream->codecpar->codec_tag = 0;
+#else
 		out_stream->codec->codec_tag = 0;
+		out_stream->time_base = out_stream->codec->time_base;
 		if (job->ofmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
 			out_stream->codec->flags |= CODEC_FLAG_GLOBAL_H;
+#endif
 	}
 
-#ifndef _NDEBUG
+#ifndef NDEBUG
 	av_dump_format(job->ofmt_ctx, 0, out_filename, true);
 #endif
 

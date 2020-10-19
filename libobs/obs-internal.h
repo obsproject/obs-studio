@@ -92,6 +92,8 @@ struct obs_module {
 	void (*unload)(void);
 	void (*post_load)(void);
 	void (*set_locale)(const char *locale);
+	bool (*get_string)(const char *lookup_string,
+			   const char **translated_string);
 	void (*free_locale)(void);
 	uint32_t (*ver)(void);
 	void (*set_pointer)(obs_module_t *module);
@@ -434,7 +436,27 @@ struct obs_core {
 
 extern struct obs_core *obs;
 
+struct obs_graphics_context {
+	uint64_t last_time;
+	uint64_t interval;
+	uint64_t frame_time_total_ns;
+	uint64_t fps_total_ns;
+	uint32_t fps_total_frames;
+#ifdef _WIN32
+	bool gpu_was_active;
+#endif
+	bool raw_was_active;
+	bool was_active;
+	const char *video_thread_name;
+};
+
 extern void *obs_graphics_thread(void *param);
+extern bool obs_graphics_thread_loop(struct obs_graphics_context *context);
+#ifdef __APPLE__
+extern void *obs_graphics_thread_autorelease(void *param);
+extern bool
+obs_graphics_thread_loop_autorelease(struct obs_graphics_context *context);
+#endif
 
 extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 
@@ -579,7 +601,7 @@ struct obs_source {
 	bool owns_info_id;
 
 	/* signals to call the source update in the video thread */
-	bool defer_update;
+	long defer_update_count;
 
 	/* ensures show/hide are only called once */
 	volatile long show_refs;

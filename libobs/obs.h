@@ -420,6 +420,17 @@ EXPORT int obs_open_module(obs_module_t **module, const char *path,
  */
 EXPORT bool obs_init_module(obs_module_t *module);
 
+/** Returns a module based upon its name, or NULL if not found */
+EXPORT obs_module_t *obs_get_module(const char *name);
+
+/** Returns locale text from a specific module */
+EXPORT bool obs_module_get_locale_string(const obs_module_t *mod,
+					 const char *lookup_string,
+					 const char **translated_string);
+
+EXPORT const char *obs_module_get_locale_text(const obs_module_t *mod,
+					      const char *text);
+
 /** Logs loaded modules */
 EXPORT void obs_log_loaded_modules(void);
 
@@ -1074,6 +1085,8 @@ EXPORT obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 						   const char *name);
 
 EXPORT void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src);
+EXPORT void obs_source_copy_single_filter(obs_source_t *dst,
+					  obs_source_t *filter);
 
 EXPORT bool obs_source_enabled(const obs_source_t *source);
 EXPORT void obs_source_set_enabled(obs_source_t *source, bool enabled);
@@ -1209,6 +1222,18 @@ EXPORT void obs_source_preload_video2(obs_source_t *source,
 
 /** Shows any preloaded video data */
 EXPORT void obs_source_show_preloaded_video(obs_source_t *source);
+
+/**
+ * Sets current async video frame immediately
+ *
+ * NOTE: Non-YUV formats will always be treated as full range with this
+ * function!  Use obs_source_preload_video2 instead if partial range support is
+ * desired for non-YUV video formats.
+ */
+EXPORT void obs_source_set_video_frame(obs_source_t *source,
+				       const struct obs_source_frame *frame);
+EXPORT void obs_source_set_video_frame2(obs_source_t *source,
+					const struct obs_source_frame2 *frame);
 
 /** Outputs audio data (always asynchronous) */
 EXPORT void obs_source_output_audio(obs_source_t *source,

@@ -31,6 +31,7 @@
 #define OPT_BIND_IP "bind_ip"
 #define OPT_NEWSOCKETLOOP_ENABLED "new_socket_loop_enabled"
 #define OPT_LOWLATENCY_ENABLED "low_latency_mode_enabled"
+#define OPT_METADATA_MULTITRACK "metadata_multitrack"
 
 //#define TEST_FRAMEDROPS
 //#define TEST_FRAMEDROPS_WITH_BITRATE_SHORTCUTS

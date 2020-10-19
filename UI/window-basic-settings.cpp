@@ -27,7 +27,6 @@
 #include <QLineEdit>
 #include <QMessageBox>
 #include <QCloseEvent>
-#include <QFileDialog>
 #include <QDirIterator>
 #include <QVariant>
 #include <QTreeView>
@@ -59,6 +58,35 @@
 #endif
 
 using namespace std;
+
+class SettingsEventFilter : public QObject {
+	QScopedPointer<OBSEventFilter> shortcutFilter;
+
+public:
+	inline SettingsEventFilter()
+		: shortcutFilter((OBSEventFilter *)CreateShortcutFilter())
+	{
+	}
+
+protected:
+	bool eventFilter(QObject *obj, QEvent *event) override
+	{
+		int key;
+
+		switch (event->type()) {
+		case QEvent::KeyPress:
+		case QEvent::KeyRelease:
+			key = static_cast<QKeyEvent *>(event)->key();
+			if (key == Qt::Key_Escape) {
+				return false;
+			}
+		default:
+			break;
+		}
+
+		return shortcutFilter->filter(obj, event);
+	}
+};
 
 // Used for QVariant in codec comboboxes
 namespace {
@@ -108,6 +136,11 @@ static inline bool ResTooHigh(uint32_t cx, uint32_t cy)
 	return cx > 16384 || cy > 16384;
 }
 
+static inline bool ResTooLow(uint32_t cx, uint32_t cy)
+{
+	return cx < 8 || cy < 8;
+}
+
 /* parses "[width]x[height]", string, i.e. 1024x768 */
 static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 {
@@ -142,7 +175,7 @@ static bool ConvertResText(const char *res, uint32_t &cx, uint32_t &cy)
 	if (lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
 		return false;
 
-	if (ResTooHigh(cx, cy)) {
+	if (ResTooHigh(cx, cy) || ResTooLow(cx, cy)) {
 		cx = cy = 0;
 		return false;
 	}
@@ -284,6 +317,24 @@ static std::tuple<int, int> aspect_ratio(int cx, int cy)
 	return std::make_tuple(newCX, newCY);
 }
 
+static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget,
+					  QString objectName)
+{
+	QFormLayout *layout = qobject_cast<QFormLayout *>(gb->layout());
+
+	if (!layout)
+		return;
+
+	QLabel *label = qobject_cast<QLabel *>(layout->labelForField(widget));
+
+	if (label) {
+		label->setObjectName(objectName);
+
+		label->style()->unpolish(label);
+		label->style()->polish(label);
+	}
+}
+
 void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
 
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
@@ -376,7 +427,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->key,                  EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->bandwidthTestEnable,  CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->twitchAddonDropdown,  COMBO_CHANGED,  STREAM1_CHANGED);
-	HookWidget(ui->mixerAddonDropdown,   COMBO_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->useAuth,              CHECK_CHANGED,  STREAM1_CHANGED);
 	HookWidget(ui->authUsername,         EDIT_CHANGED,   STREAM1_CHANGED);
 	HookWidget(ui->authPw,               EDIT_CHANGED,   STREAM1_CHANGED);
@@ -642,7 +692,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	// Initialize libff library
 	ff_init();
 
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(new SettingsEventFilter());
 
 	LoadEncoderTypes();
 	LoadColorRanges();
@@ -2116,6 +2166,8 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 						 "UnknownAudioDevice"),
 					   var);
 			widget->setCurrentIndex(0);
+			HighlightGroupBoxLabel(ui->audioDevicesGroupBox, widget,
+					       "errorLabel");
 		}
 	}
 
@@ -2703,7 +2755,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 		if (obs_scene_from_source(source))
 			scenes.emplace_back(source, label, hw);
-		else
+		else if (obs_source_get_name(source) != NULL)
 			sources.emplace_back(source, label, hw);
 
 		return false;
@@ -2915,11 +2967,24 @@ void OBSBasicSettings::SaveGeneralSettings()
 			"WarnBeforeStoppingRecord",
 			ui->warnBeforeRecordStop->isChecked());
 
-	config_set_bool(GetGlobalConfig(), "BasicWindow", "HideProjectorCursor",
-			ui->hideProjectorCursor->isChecked());
-	config_set_bool(GetGlobalConfig(), "BasicWindow",
-			"ProjectorAlwaysOnTop",
+	if (WidgetChanged(ui->hideProjectorCursor)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"HideProjectorCursor",
+				ui->hideProjectorCursor->isChecked());
+		main->UpdateProjectorHideCursor();
+	}
+
+	if (WidgetChanged(ui->projectorAlwaysOnTop)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"ProjectorAlwaysOnTop",
+				ui->projectorAlwaysOnTop->isChecked());
+#if defined(_WIN32) || defined(__APPLE__)
+		main->UpdateProjectorAlwaysOnTop(
 			ui->projectorAlwaysOnTop->isChecked());
+#else
+		main->ResetProjectors();
+#endif
+	}
 
 	if (WidgetChanged(ui->recordWhenStreaming))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
@@ -3582,6 +3647,9 @@ bool OBSBasicSettings::QueryChanges()
 	} else if (button == QMessageBox::Yes) {
 		SaveSettings();
 	} else {
+		if (savedTheme != App()->GetTheme())
+			App()->SetTheme(savedTheme);
+
 		LoadSettings(true);
 #ifdef _WIN32
 		if (toggleAero)
@@ -3596,14 +3664,14 @@ bool OBSBasicSettings::QueryChanges()
 
 void OBSBasicSettings::closeEvent(QCloseEvent *event)
 {
-	if (Changed() && !QueryChanges())
+	if (!AskIfCanCloseSettings())
 		event->ignore();
+}
 
-	if (forceAuthReload) {
-		main->auth->Save();
-		main->auth->Load();
-		forceAuthReload = false;
-	}
+void OBSBasicSettings::reject()
+{
+	if (AskIfCanCloseSettings())
+		close();
 }
 
 void OBSBasicSettings::on_theme_activated(int idx)
@@ -3658,10 +3726,9 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 
 void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 {
-	QString dir = QFileDialog::getExistingDirectory(
+	QString dir = SelectDirectory(
 		this, QTStr("Basic.Settings.Output.SelectDirectory"),
-		ui->simpleOutputPath->text(),
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+		ui->simpleOutputPath->text());
 	if (dir.isEmpty())
 		return;
 
@@ -3670,10 +3737,9 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 {
-	QString dir = QFileDialog::getExistingDirectory(
+	QString dir = SelectDirectory(
 		this, QTStr("Basic.Settings.Output.SelectDirectory"),
-		ui->advOutRecPath->text(),
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+		ui->advOutRecPath->text());
 	if (dir.isEmpty())
 		return;
 
@@ -3682,10 +3748,9 @@ void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
 
 void OBSBasicSettings::on_advOutFFPathBrowse_clicked()
 {
-	QString dir = QFileDialog::getExistingDirectory(
+	QString dir = SelectDirectory(
 		this, QTStr("Basic.Settings.Output.SelectDirectory"),
-		ui->advOutRecPath->text(),
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
+		ui->advOutRecPath->text());
 	if (dir.isEmpty())
 		return;
 
@@ -3855,6 +3920,22 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 				.arg(QString::number(std::get<0>(aspect)),
 				     QString::number(std::get<1>(aspect))));
 	}
+}
+
+bool OBSBasicSettings::AskIfCanCloseSettings()
+{
+	bool canCloseSettings = false;
+
+	if (!Changed() || QueryChanges())
+		canCloseSettings = true;
+
+	if (forceAuthReload) {
+		main->auth->Save();
+		main->auth->Load();
+		forceAuthReload = false;
+	}
+
+	return canCloseSettings;
 }
 
 void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
@@ -4399,9 +4480,13 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 	switch (ui->outputMode->currentIndex()) {
 	case 0:
 		state = ui->simpleReplayBuf->isChecked();
+		ui->simpleReplayBuf->setEnabled(
+			!obs_frontend_replay_buffer_active());
 		break;
 	case 1:
 		state = ui->advReplayBuf->isChecked();
+		ui->advReplayBuf->setEnabled(
+			!obs_frontend_replay_buffer_active());
 		break;
 	}
 	ui->replayWhileStreaming->setEnabled(state);

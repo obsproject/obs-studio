@@ -22,7 +22,6 @@
 #include <QPushButton>
 #include <QLineEdit>
 #include <QToolButton>
-#include <QFileDialog>
 #include <QMimeData>
 #include <QStyledItemDelegate>
 #include <QDirIterator>
@@ -169,7 +168,7 @@ void ImporterEntryPathItemDelegate::handleBrowse(QWidget *container)
 	QString currentPath = text->text();
 
 	bool isSet = false;
-	QStringList paths = QFileDialog::getOpenFileNames(
+	QStringList paths = OpenFiles(
 		container, QTStr("Importer.SelectCollection"), currentPath,
 		QTStr("Importer.Collection") + QString(" ") + Pattern);
 
@@ -284,7 +283,7 @@ void ImporterModel::checkInputPath(int row)
 		std::string program = DetectProgram(entry.path.toStdString());
 		entry.program = QTStr(program.c_str());
 
-		if (program == "") {
+		if (program.empty()) {
 			entry.selected = false;
 		} else {
 			std::string name =
@@ -535,7 +534,7 @@ void OBSImporter::browseImport()
 {
 	QString Pattern = "(*.json *.bpres *.xml *.xconfig)";
 
-	QStringList paths = QFileDialog::getOpenFileNames(
+	QStringList paths = OpenFiles(
 		this, QTStr("Importer.SelectCollection"), "",
 		QTStr("Importer.Collection") + QString(" ") + Pattern);
 

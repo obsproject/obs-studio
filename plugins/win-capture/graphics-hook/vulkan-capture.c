@@ -7,13 +7,6 @@
 #include <vulkan/vulkan.h>
 #include <vulkan/vk_layer.h>
 
-#undef VK_LAYER_EXPORT
-#if defined(WIN32)
-#define VK_LAYER_EXPORT __declspec(dllexport)
-#else
-#define VK_LAYER_EXPORT
-#endif
-
 #include <vulkan/vulkan_win32.h>
 
 #define COBJMACROS
@@ -23,40 +16,36 @@
 #include "vulkan-capture.h"
 
 /* ======================================================================== */
-/* defs/statics                                                                  */
-
-/* shorten stuff because dear GOD is vulkan unclean. */
-#define VKAPI VKAPI_CALL
-#define VkFunc PFN_vkVoidFunction
-#define EXPORT VK_LAYER_EXPORT
-
-#define OBJ_MAX 16
+/* defs/statics                                                             */
 
 /* use the loader's dispatch table pointer as a key for internal data maps */
 #define GET_LDT(x) (*(void **)x)
 
-/* clang-format off */
-static const GUID dxgi_factory1_guid =
-{0x770aae78, 0xf26f, 0x4dba, {0xa8, 0x29, 0x25, 0x3c, 0x83, 0xd1, 0xb3, 0x87}};
-static const GUID dxgi_resource_guid =
-{0x035f3ab4, 0x482e, 0x4e50, {0xb4, 0x1f, 0x8a, 0x7f, 0x8b, 0xd8, 0x96, 0x0b}};
-/* clang-format on */
-
 static bool vulkan_seen = false;
-static SRWLOCK mutex = SRWLOCK_INIT; // Faster CRITICAL_SECTION
 
 /* ======================================================================== */
 /* hook data                                                                */
 
+struct vk_obj_node {
+	uint64_t obj;
+	struct vk_obj_node *next;
+};
+
+struct vk_obj_list {
+	struct vk_obj_node *root;
+	SRWLOCK mutex;
+};
+
 struct vk_swap_data {
-	VkSwapchainKHR sc;
+	struct vk_obj_node node;
+
 	VkExtent2D image_extent;
 	VkFormat format;
 	HWND hwnd;
 	VkImage export_image;
 	bool layout_initialized;
 	VkDeviceMemory export_mem;
-	VkImage swap_images[OBJ_MAX];
+	VkImage *swap_images;
 	uint32_t image_count;
 
 	HANDLE handle;
@@ -66,148 +55,349 @@ struct vk_swap_data {
 };
 
 struct vk_queue_data {
-	VkQueue queue;
+	struct vk_obj_node node;
+
 	uint32_t fam_idx;
+	bool supports_transfer;
+	struct vk_frame_data *frames;
+	uint32_t frame_index;
+	uint32_t frame_count;
 };
 
-struct vk_cmd_pool_data {
+struct vk_frame_data {
 	VkCommandPool cmd_pool;
-	VkCommandBuffer cmd_buffers[OBJ_MAX];
-	VkFence fences[OBJ_MAX];
-	bool cmd_buffer_busy[OBJ_MAX];
-	uint32_t image_count;
+	VkCommandBuffer cmd_buffer;
+	VkFence fence;
+	bool cmd_buffer_busy;
+};
+
+struct vk_surf_data {
+	struct vk_obj_node node;
+
+	HWND hwnd;
+};
+
+struct vk_inst_data {
+	struct vk_obj_node node;
+
+	bool valid;
+
+	struct vk_inst_funcs funcs;
+	struct vk_obj_list surfaces;
 };
 
 struct vk_data {
+	struct vk_obj_node node;
+
+	VkDevice device;
+
 	bool valid;
 
 	struct vk_device_funcs funcs;
 	VkPhysicalDevice phy_device;
-	VkDevice device;
-	struct vk_swap_data swaps[OBJ_MAX];
+	struct vk_obj_list swaps;
 	struct vk_swap_data *cur_swap;
-	uint32_t swap_idx;
 
-	struct vk_queue_data queues[OBJ_MAX];
-	uint32_t queue_count;
+	struct vk_obj_list queues;
 
-	struct vk_cmd_pool_data cmd_pools[OBJ_MAX];
 	VkExternalMemoryProperties external_mem_props;
 
 	struct vk_inst_data *inst_data;
+
+	VkAllocationCallbacks ac_storage;
+	const VkAllocationCallbacks *ac;
 
 	ID3D11Device *d3d11_device;
 	ID3D11DeviceContext *d3d11_context;
 };
 
+/* ------------------------------------------------------------------------- */
+
+static void *vk_alloc(const VkAllocationCallbacks *ac, size_t size,
+		      size_t alignment, enum VkSystemAllocationScope scope)
+{
+	return ac ? ac->pfnAllocation(ac->pUserData, size, alignment, scope)
+		  : _aligned_malloc(size, alignment);
+}
+
+static void vk_free(const VkAllocationCallbacks *ac, void *memory)
+{
+	if (ac)
+		ac->pfnFree(ac->pUserData, memory);
+	else
+		_aligned_free(memory);
+}
+
+static void add_obj_data(struct vk_obj_list *list, uint64_t obj, void *data)
+{
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *const node = data;
+	node->obj = obj;
+	node->next = list->root;
+	list->root = node;
+
+	ReleaseSRWLockExclusive(&list->mutex);
+}
+
+static struct vk_obj_node *get_obj_data(struct vk_obj_list *list, uint64_t obj)
+{
+	struct vk_obj_node *data = NULL;
+
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *node = list->root;
+	while (node) {
+		if (node->obj == obj) {
+			data = node;
+			break;
+		}
+
+		node = node->next;
+	}
+
+	ReleaseSRWLockExclusive(&list->mutex);
+
+	return data;
+}
+
+static struct vk_obj_node *remove_obj_data(struct vk_obj_list *list,
+					   uint64_t obj)
+{
+	struct vk_obj_node *data = NULL;
+
+	AcquireSRWLockExclusive(&list->mutex);
+
+	struct vk_obj_node *prev = NULL;
+	struct vk_obj_node *node = list->root;
+	while (node) {
+		if (node->obj == obj) {
+			data = node;
+			if (prev)
+				prev->next = node->next;
+			else
+				list->root = node->next;
+			break;
+		}
+
+		prev = node;
+		node = node->next;
+	}
+
+	ReleaseSRWLockExclusive(&list->mutex);
+
+	return data;
+}
+
+static void init_obj_list(struct vk_obj_list *list)
+{
+	list->root = NULL;
+	InitializeSRWLock(&list->mutex);
+}
+
+static struct vk_obj_node *obj_walk_begin(struct vk_obj_list *list)
+{
+	AcquireSRWLockExclusive(&list->mutex);
+	return list->root;
+}
+
+static struct vk_obj_node *obj_walk_next(struct vk_obj_node *node)
+{
+	return node->next;
+}
+
+static void obj_walk_end(struct vk_obj_list *list)
+{
+	ReleaseSRWLockExclusive(&list->mutex);
+}
+
+/* ------------------------------------------------------------------------- */
+
+static struct vk_obj_list devices;
+
+static struct vk_data *alloc_device_data(const VkAllocationCallbacks *ac)
+{
+	struct vk_data *data = vk_alloc(ac, sizeof(struct vk_data),
+					_Alignof(struct vk_data),
+					VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+	return data;
+}
+
+static void init_device_data(struct vk_data *data, VkDevice device)
+{
+	add_obj_data(&devices, (uint64_t)GET_LDT(device), data);
+	data->device = device;
+}
+
+static struct vk_data *get_device_data(VkDevice device)
+{
+	return (struct vk_data *)get_obj_data(&devices,
+					      (uint64_t)GET_LDT(device));
+}
+
+static struct vk_data *get_device_data_by_queue(VkQueue queue)
+{
+	return (struct vk_data *)get_obj_data(&devices,
+					      (uint64_t)GET_LDT(queue));
+}
+
+static struct vk_data *remove_device_data(VkDevice device)
+{
+	return (struct vk_data *)remove_obj_data(&devices,
+						 (uint64_t)GET_LDT(device));
+}
+
+static void free_device_data(struct vk_data *data,
+			     const VkAllocationCallbacks *ac)
+{
+	vk_free(ac, data);
+}
+
+/* ------------------------------------------------------------------------- */
+
+static struct vk_queue_data *add_queue_data(struct vk_data *data, VkQueue queue,
+					    uint32_t fam_idx,
+					    bool supports_transfer,
+					    const VkAllocationCallbacks *ac)
+{
+	struct vk_queue_data *const queue_data =
+		vk_alloc(ac, sizeof(struct vk_queue_data),
+			 _Alignof(struct vk_queue_data),
+			 VK_SYSTEM_ALLOCATION_SCOPE_DEVICE);
+	add_obj_data(&data->queues, (uint64_t)queue, queue_data);
+	queue_data->fam_idx = fam_idx;
+	queue_data->supports_transfer = supports_transfer;
+	queue_data->frames = NULL;
+	queue_data->frame_index = 0;
+	queue_data->frame_count = 0;
+	return queue_data;
+}
+
+static struct vk_queue_data *get_queue_data(struct vk_data *data, VkQueue queue)
+{
+	return (struct vk_queue_data *)get_obj_data(&data->queues,
+						    (uint64_t)queue);
+}
+
+static VkQueue get_queue_key(const struct vk_queue_data *queue_data)
+{
+	return (VkQueue)(uintptr_t)queue_data->node.obj;
+}
+
+static void remove_free_queue_all(struct vk_data *data,
+				  const VkAllocationCallbacks *ac)
+{
+	struct vk_queue_data *queue_data =
+		(struct vk_queue_data *)data->queues.root;
+	while (data->queues.root) {
+		remove_obj_data(&data->queues, queue_data->node.obj);
+		vk_free(ac, queue_data);
+
+		queue_data = (struct vk_queue_data *)data->queues.root;
+	}
+}
+
+static struct vk_queue_data *queue_walk_begin(struct vk_data *data)
+{
+	return (struct vk_queue_data *)obj_walk_begin(&data->queues);
+}
+
+static struct vk_queue_data *queue_walk_next(struct vk_queue_data *queue_data)
+{
+	return (struct vk_queue_data *)obj_walk_next(
+		(struct vk_obj_node *)queue_data);
+}
+
+static void queue_walk_end(struct vk_data *data)
+{
+	obj_walk_end(&data->queues);
+}
+
+/* ------------------------------------------------------------------------- */
+
+static struct vk_swap_data *alloc_swap_data(const VkAllocationCallbacks *ac)
+{
+	struct vk_swap_data *const swap_data = vk_alloc(
+		ac, sizeof(struct vk_swap_data), _Alignof(struct vk_swap_data),
+		VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+	return swap_data;
+}
+
+static void init_swap_data(struct vk_swap_data *swap_data, struct vk_data *data,
+			   VkSwapchainKHR sc)
+{
+	add_obj_data(&data->swaps, (uint64_t)sc, swap_data);
+}
+
 static struct vk_swap_data *get_swap_data(struct vk_data *data,
 					  VkSwapchainKHR sc)
 {
-	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].sc == sc) {
-			return &data->swaps[i];
-		}
-	}
-
-	debug("get_swap_data failed, swapchain not found");
-	return NULL;
+	return (struct vk_swap_data *)get_obj_data(&data->swaps, (uint64_t)sc);
 }
 
-static struct vk_swap_data *get_new_swap_data(struct vk_data *data)
+static void remove_free_swap_data(struct vk_data *data, VkSwapchainKHR sc,
+				  const VkAllocationCallbacks *ac)
 {
-	for (int i = 0; i < OBJ_MAX; i++) {
-		if (data->swaps[i].sc == VK_NULL_HANDLE) {
-			return &data->swaps[i];
-		}
-	}
-
-	debug("get_new_swap_data failed, no more free slot");
-	return NULL;
+	struct vk_swap_data *const swap_data =
+		(struct vk_swap_data *)remove_obj_data(&data->swaps,
+						       (uint64_t)sc);
+	vk_free(ac, swap_data);
 }
 
-/* ------------------------------------------------------------------------- */
-
-static inline size_t find_obj_idx(void *objs[], void *obj)
+static struct vk_swap_data *swap_walk_begin(struct vk_data *data)
 {
-	size_t idx = SIZE_MAX;
-
-	AcquireSRWLockExclusive(&mutex);
-	for (size_t i = 0; i < OBJ_MAX; i++) {
-		if (objs[i] == obj) {
-			idx = i;
-			break;
-		}
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	return idx;
+	return (struct vk_swap_data *)obj_walk_begin(&data->swaps);
 }
 
-static size_t get_obj_idx(void *objs[], void *obj)
+static struct vk_swap_data *swap_walk_next(struct vk_swap_data *swap_data)
 {
-	size_t idx = SIZE_MAX;
+	return (struct vk_swap_data *)obj_walk_next(
+		(struct vk_obj_node *)swap_data);
+}
 
-	AcquireSRWLockExclusive(&mutex);
-	for (size_t i = 0; i < OBJ_MAX; i++) {
-		if (objs[i] == obj) {
-			idx = i;
-			break;
-		}
-		if (!objs[i] && idx == SIZE_MAX) {
-			idx = i;
-		}
-	}
-	ReleaseSRWLockExclusive(&mutex);
-	return idx;
+static void swap_walk_end(struct vk_data *data)
+{
+	obj_walk_end(&data->swaps);
 }
 
 /* ------------------------------------------------------------------------- */
 
-static struct vk_data device_data[OBJ_MAX] = {0};
-static void *devices[OBJ_MAX] = {0};
-
-static inline struct vk_data *get_device_data(void *dev)
+static void vk_shtex_clear_fence(const struct vk_data *data,
+				 struct vk_frame_data *frame_data)
 {
-	size_t idx = get_obj_idx(devices, GET_LDT(dev));
-	if (idx == SIZE_MAX) {
-		debug("out of device slots");
-		return NULL;
-	}
-
-	return &device_data[idx];
-}
-
-static void vk_shtex_clear_fence(struct vk_data *data,
-				 struct vk_cmd_pool_data *pool_data,
-				 uint32_t image_idx)
-{
-	VkFence fence = pool_data->fences[image_idx];
-	if (pool_data->cmd_buffer_busy[image_idx]) {
+	const VkFence fence = frame_data->fence;
+	if (frame_data->cmd_buffer_busy) {
 		VkDevice device = data->device;
-		struct vk_device_funcs *funcs = &data->funcs;
+		const struct vk_device_funcs *funcs = &data->funcs;
 		funcs->WaitForFences(device, 1, &fence, VK_TRUE, ~0ull);
 		funcs->ResetFences(device, 1, &fence);
-		pool_data->cmd_buffer_busy[image_idx] = false;
+		frame_data->cmd_buffer_busy = false;
 	}
 }
 
 static void vk_shtex_wait_until_pool_idle(struct vk_data *data,
-					  struct vk_cmd_pool_data *pool_data)
+					  struct vk_queue_data *queue_data)
 {
-	for (uint32_t image_idx = 0; image_idx < pool_data->image_count;
-	     image_idx++) {
-		vk_shtex_clear_fence(data, pool_data, image_idx);
+	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count;
+	     frame_idx++) {
+		struct vk_frame_data *frame_data =
+			&queue_data->frames[frame_idx];
+		if (frame_data->cmd_pool != VK_NULL_HANDLE)
+			vk_shtex_clear_fence(data, frame_data);
 	}
 }
 
 static void vk_shtex_wait_until_idle(struct vk_data *data)
 {
-	for (uint32_t fam_idx = 0; fam_idx < _countof(data->cmd_pools);
-	     fam_idx++) {
-		struct vk_cmd_pool_data *pool_data = &data->cmd_pools[fam_idx];
-		if (pool_data->cmd_pool != VK_NULL_HANDLE)
-			vk_shtex_wait_until_pool_idle(data, pool_data);
+	struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+	while (queue_data) {
+		vk_shtex_wait_until_pool_idle(data, queue_data);
+
+		queue_data = queue_walk_next(queue_data);
 	}
+
+	queue_walk_end(data);
 }
 
 static void vk_shtex_free(struct vk_data *data)
@@ -216,19 +406,19 @@ static void vk_shtex_free(struct vk_data *data)
 
 	vk_shtex_wait_until_idle(data);
 
-	for (int swap_idx = 0; swap_idx < OBJ_MAX; swap_idx++) {
-		struct vk_swap_data *swap = &data->swaps[swap_idx];
+	struct vk_swap_data *swap = swap_walk_begin(data);
 
+	while (swap) {
+		VkDevice device = data->device;
 		if (swap->export_image)
-			data->funcs.DestroyImage(data->device,
-						 swap->export_image, NULL);
+			data->funcs.DestroyImage(device, swap->export_image,
+						 data->ac);
 
 		if (swap->export_mem)
-			data->funcs.FreeMemory(data->device, swap->export_mem,
-					       NULL);
+			data->funcs.FreeMemory(device, swap->export_mem, NULL);
 
 		if (swap->d3d11_tex) {
-			ID3D11Resource_Release(swap->d3d11_tex);
+			ID3D11Texture2D_Release(swap->d3d11_tex);
 		}
 
 		swap->handle = INVALID_HANDLE_VALUE;
@@ -237,7 +427,11 @@ static void vk_shtex_free(struct vk_data *data)
 		swap->export_image = VK_NULL_HANDLE;
 
 		swap->captured = false;
+
+		swap = swap_walk_next(swap);
 	}
+
+	swap_walk_end(data);
 
 	if (data->d3d11_context) {
 		ID3D11DeviceContext_Release(data->d3d11_context);
@@ -253,128 +447,87 @@ static void vk_shtex_free(struct vk_data *data)
 	hlog("------------------ vulkan capture freed ------------------");
 }
 
-static void vk_remove_device(void *dev)
-{
-	size_t idx = find_obj_idx(devices, GET_LDT(dev));
-	if (idx == SIZE_MAX) {
-		return;
-	}
-
-	struct vk_data *data = &device_data[idx];
-
-	memset(data, 0, sizeof(*data));
-
-	AcquireSRWLockExclusive(&mutex);
-	devices[idx] = NULL;
-	ReleaseSRWLockExclusive(&mutex);
-}
-
 /* ------------------------------------------------------------------------- */
 
-struct vk_surf_data {
-	VkSurfaceKHR surf;
-	HWND hwnd;
-	struct vk_surf_data *next;
-};
-
-struct vk_inst_data {
-	bool valid;
-
-	struct vk_inst_funcs funcs;
-	struct vk_surf_data *surfaces;
-};
-
-static void insert_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf,
-			     HWND hwnd)
+static void add_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf,
+			  HWND hwnd, const VkAllocationCallbacks *ac)
 {
-	struct vk_surf_data *surf_data = malloc(sizeof(struct vk_surf_data));
+	struct vk_surf_data *surf_data = vk_alloc(
+		ac, sizeof(struct vk_surf_data), _Alignof(struct vk_surf_data),
+		VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
 	if (surf_data) {
-		surf_data->surf = surf;
 		surf_data->hwnd = hwnd;
 
-		AcquireSRWLockExclusive(&mutex);
-		struct vk_surf_data *next = data->surfaces;
-		surf_data->next = next;
-		data->surfaces = surf_data;
-		ReleaseSRWLockExclusive(&mutex);
+		add_obj_data(&idata->surfaces, (uint64_t)surf, surf_data);
 	}
 }
 
-static HWND find_surf_hwnd(struct vk_inst_data *data, VkSurfaceKHR surf)
+static HWND find_surf_hwnd(struct vk_inst_data *idata, VkSurfaceKHR surf)
 {
-	HWND hwnd = NULL;
-
-	AcquireSRWLockExclusive(&mutex);
-	struct vk_surf_data *surf_data = data->surfaces;
-	while (surf_data) {
-		if (surf_data->surf == surf) {
-			hwnd = surf_data->hwnd;
-			break;
-		}
-		surf_data = surf_data->next;
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	return hwnd;
+	struct vk_surf_data *surf_data = (struct vk_surf_data *)get_obj_data(
+		&idata->surfaces, (uint64_t)surf);
+	return surf_data->hwnd;
 }
 
-static void erase_surf_data(struct vk_inst_data *data, VkSurfaceKHR surf)
+static void remove_free_surf_data(struct vk_inst_data *idata, VkSurfaceKHR surf,
+				  const VkAllocationCallbacks *ac)
 {
-	AcquireSRWLockExclusive(&mutex);
-	struct vk_surf_data *current = data->surfaces;
-	if (current->surf == surf) {
-		data->surfaces = current->next;
-	} else {
-		struct vk_surf_data *previous;
-		do {
-			previous = current;
-			current = current->next;
-		} while (current && current->surf != surf);
-
-		if (current)
-			previous->next = current->next;
-	}
-	ReleaseSRWLockExclusive(&mutex);
-
-	free(current);
+	struct vk_surf_data *surf_data = (struct vk_surf_data *)remove_obj_data(
+		&idata->surfaces, (uint64_t)surf);
+	vk_free(ac, surf_data);
 }
 
 /* ------------------------------------------------------------------------- */
 
-static struct vk_inst_data inst_data[OBJ_MAX] = {0};
-static void *instances[OBJ_MAX] = {0};
+static struct vk_obj_list instances;
 
-static struct vk_inst_data *get_inst_data(void *inst)
+static struct vk_inst_data *alloc_inst_data(const VkAllocationCallbacks *ac)
 {
-	size_t idx = get_obj_idx(instances, GET_LDT(inst));
-	if (idx == SIZE_MAX) {
-		debug("out of instance slots");
-		return NULL;
-	}
-
-	vulkan_seen = true;
-	return &inst_data[idx];
+	struct vk_inst_data *idata = vk_alloc(
+		ac, sizeof(struct vk_inst_data), _Alignof(struct vk_inst_data),
+		VK_SYSTEM_ALLOCATION_SCOPE_INSTANCE);
+	return idata;
 }
 
-static inline struct vk_inst_funcs *get_inst_funcs(void *inst)
+static void init_inst_data(struct vk_inst_data *data, VkInstance inst)
 {
-	struct vk_inst_data *data = get_inst_data(inst);
-	return &data->funcs;
+	add_obj_data(&instances, (uint64_t)GET_LDT(inst), data);
 }
 
-static void remove_instance(void *inst)
+static struct vk_inst_data *get_inst_data(VkInstance inst)
 {
-	size_t idx = find_obj_idx(instances, inst);
-	if (idx == SIZE_MAX) {
-		return;
-	}
+	return (struct vk_inst_data *)get_obj_data(&instances,
+						   (uint64_t)GET_LDT(inst));
+}
 
-	struct vk_inst_data *data = &inst_data[idx];
-	memset(data, 0, sizeof(*data));
+static struct vk_inst_funcs *get_inst_funcs(VkInstance inst)
+{
+	struct vk_inst_data *idata = (struct vk_inst_data *)get_inst_data(inst);
+	return &idata->funcs;
+}
 
-	AcquireSRWLockExclusive(&mutex);
-	instances[idx] = NULL;
-	ReleaseSRWLockExclusive(&mutex);
+static struct vk_inst_data *
+get_inst_data_by_physical_device(VkPhysicalDevice physicalDevice)
+{
+	return (struct vk_inst_data *)get_obj_data(
+		&instances, (uint64_t)GET_LDT(physicalDevice));
+}
+
+static struct vk_inst_funcs *
+get_inst_funcs_by_physical_device(VkPhysicalDevice physicalDevice)
+{
+	struct vk_inst_data *idata =
+		(struct vk_inst_data *)get_inst_data_by_physical_device(
+			physicalDevice);
+	return &idata->funcs;
+}
+
+static void remove_free_inst_data(VkInstance inst,
+				  const VkAllocationCallbacks *ac)
+{
+	struct vk_inst_data *idata = (struct vk_inst_data *)remove_obj_data(
+		&instances, (uint64_t)GET_LDT(inst));
+	vk_free(ac, idata);
 }
 
 /* ======================================================================== */
@@ -384,7 +537,7 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 {
 	D3D_FEATURE_LEVEL level_used;
 	IDXGIFactory1 *factory;
-	IDXGIAdapter *adapter;
+	IDXGIAdapter1 *adapter;
 	HRESULT hr;
 
 	HMODULE d3d11 = load_system_library("d3d11.dll");
@@ -415,14 +568,13 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		return false;
 	}
 
-	hr = create_factory(&dxgi_factory1_guid, (void **)&factory);
+	hr = create_factory(&IID_IDXGIFactory1, &factory);
 	if (FAILED(hr)) {
 		flog_hr("failed to create factory", hr);
 		return false;
 	}
 
-	hr = IDXGIFactory1_EnumAdapters1(factory, 0,
-					 (IDXGIAdapter1 **)&adapter);
+	hr = IDXGIFactory1_EnumAdapters1(factory, 0, &adapter);
 	IDXGIFactory1_Release(factory);
 
 	if (FAILED(hr)) {
@@ -437,11 +589,12 @@ static inline bool vk_shtex_init_d3d11(struct vk_data *data)
 		D3D_FEATURE_LEVEL_9_3,
 	};
 
-	hr = create(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, feature_levels,
+	hr = create((IDXGIAdapter *)adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0,
+		    feature_levels,
 		    sizeof(feature_levels) / sizeof(D3D_FEATURE_LEVEL),
 		    D3D11_SDK_VERSION, &data->d3d11_device, &level_used,
 		    &data->d3d11_context);
-	IDXGIAdapter_Release(adapter);
+	IDXGIAdapter1_Release(adapter);
 
 	if (FAILED(hr)) {
 		flog_hr("failed to create device", hr);
@@ -457,16 +610,24 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 	IDXGIResource *dxgi_res;
 	HRESULT hr;
 
+	const UINT width = swap->image_extent.width;
+	const UINT height = swap->image_extent.height;
+
+	flog("OBS requesting %s texture format. capture dimensions: %ux%u",
+	     vk_format_to_str(swap->format), width, height);
+
+	const DXGI_FORMAT format = vk_format_to_dxgi(swap->format);
+	if (format == DXGI_FORMAT_UNKNOWN) {
+		flog("cannot convert to DXGI format");
+		return false;
+	}
+
 	D3D11_TEXTURE2D_DESC desc = {0};
-	desc.Width = swap->image_extent.width;
-	desc.Height = swap->image_extent.height;
+	desc.Width = width;
+	desc.Height = height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-
-	flog("OBS requesting %s texture format.  capture dimensions: %dx%d",
-	     vk_format_to_str(swap->format), (int)desc.Width, (int)desc.Height);
-
-	desc.Format = vk_format_to_dxgi(swap->format);
+	desc.Format = format;
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
@@ -480,8 +641,8 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 		return false;
 	}
 
-	hr = ID3D11Device_QueryInterface(swap->d3d11_tex, &dxgi_resource_guid,
-					 (void **)&dxgi_res);
+	hr = ID3D11Texture2D_QueryInterface(swap->d3d11_tex, &IID_IDXGIResource,
+					    &dxgi_res);
 	if (FAILED(hr)) {
 		flog_hr("failed to get IDXGIResource", hr);
 		return false;
@@ -534,8 +695,10 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	ici.pQueueFamilyIndices = 0;
 	ici.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
 
+	VkDevice device = data->device;
+
 	VkResult res;
-	res = funcs->CreateImage(data->device, &ici, NULL, &swap->export_image);
+	res = funcs->CreateImage(device, &ici, data->ac, &swap->export_image);
 	if (VK_SUCCESS != res) {
 		flog("failed to CreateImage: %s", result_to_str(res));
 		swap->export_image = VK_NULL_HANDLE;
@@ -565,17 +728,18 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		imri2.pNext = NULL;
 		imri2.image = swap->export_image;
 
-		funcs->GetImageMemoryRequirements2(data->device, &imri2, &mr2);
+		funcs->GetImageMemoryRequirements2(device, &imri2, &mr2);
 		mr = mr2.memoryRequirements;
 	} else {
-		funcs->GetImageMemoryRequirements(data->device,
-						  swap->export_image, &mr);
+		funcs->GetImageMemoryRequirements(device, swap->export_image,
+						  &mr);
 	}
 
 	/* -------------------------------------------------------- */
 	/* get memory type index                                    */
 
-	struct vk_inst_funcs *ifuncs = get_inst_funcs(data->phy_device);
+	struct vk_inst_funcs *ifuncs =
+		get_inst_funcs_by_physical_device(data->phy_device);
 
 	VkPhysicalDeviceMemoryProperties pdmp;
 	ifuncs->GetPhysicalDeviceMemoryProperties(data->phy_device, &pdmp);
@@ -593,7 +757,7 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 
 	if (mem_type_idx == pdmp.memoryTypeCount) {
 		flog("failed to get memory type index");
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -626,11 +790,10 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		imw32hi.pNext = &mdai;
 	}
 
-	res = funcs->AllocateMemory(data->device, &mai, NULL,
-				    &swap->export_mem);
+	res = funcs->AllocateMemory(device, &mai, NULL, &swap->export_mem);
 	if (VK_SUCCESS != res) {
 		flog("failed to AllocateMemory: %s", result_to_str(res));
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -646,16 +809,16 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		bimi.image = swap->export_image;
 		bimi.memory = swap->export_mem;
 		bimi.memoryOffset = 0;
-		res = funcs->BindImageMemory2(data->device, 1, &bimi);
+		res = funcs->BindImageMemory2(device, 1, &bimi);
 	} else {
-		res = funcs->BindImageMemory(data->device, swap->export_image,
+		res = funcs->BindImageMemory(device, swap->export_image,
 					     swap->export_mem, 0);
 	}
 	if (VK_SUCCESS != res) {
 		flog("%s failed: %s",
 		     use_bi2 ? "BindImageMemory2" : "BindImageMemory",
 		     result_to_str(res));
-		funcs->DestroyImage(data->device, swap->export_image, NULL);
+		funcs->DestroyImage(device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
 	}
@@ -677,68 +840,73 @@ static bool vk_shtex_init(struct vk_data *data, HWND window,
 
 	data->cur_swap = swap;
 
-	swap->captured = capture_init_shtex(
-		&swap->shtex_info, window, swap->image_extent.width,
-		swap->image_extent.height, swap->image_extent.width,
-		swap->image_extent.height, (uint32_t)swap->format, false,
-		(uintptr_t)swap->handle);
+	swap->captured = capture_init_shtex(&swap->shtex_info, window,
+					    swap->image_extent.width,
+					    swap->image_extent.height,
+					    (uint32_t)swap->format, false,
+					    (uintptr_t)swap->handle);
 
-	if (swap->captured) {
-		if (global_hook_info->force_shmem) {
-			flog("shared memory capture currently "
-			     "unsupported; ignoring");
-		}
+	if (!swap->captured)
+		return false;
 
-		hlog("vulkan shared texture capture successful");
-		return true;
+	if (global_hook_info->force_shmem) {
+		flog("shared memory capture currently "
+		     "unsupported; ignoring");
 	}
 
-	return false;
+	hlog("vulkan shared texture capture successful");
+	return true;
 }
 
-static void vk_shtex_create_cmd_pool_objects(struct vk_data *data,
-					     uint32_t fam_idx,
-					     uint32_t image_count)
+static void vk_shtex_create_frame_objects(struct vk_data *data,
+					  struct vk_queue_data *queue_data,
+					  uint32_t image_count)
 {
-	struct vk_cmd_pool_data *pool_data = &data->cmd_pools[fam_idx];
+	queue_data->frames =
+		vk_alloc(data->ac, image_count * sizeof(struct vk_frame_data),
+			 _Alignof(struct vk_frame_data),
+			 VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+	memset(queue_data->frames, 0,
+	       image_count * sizeof(struct vk_frame_data));
+	queue_data->frame_index = 0;
+	queue_data->frame_count = image_count;
 
-	VkCommandPoolCreateInfo cpci;
-	cpci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-	cpci.pNext = NULL;
-	cpci.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
-	cpci.queueFamilyIndex = fam_idx;
-
-	VkResult res = data->funcs.CreateCommandPool(data->device, &cpci, NULL,
-						     &pool_data->cmd_pool);
-	debug_res("CreateCommandPool", res);
-
-	VkCommandBufferAllocateInfo cbai;
-	cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-	cbai.pNext = NULL;
-	cbai.commandPool = pool_data->cmd_pool;
-	cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-	cbai.commandBufferCount = image_count;
-
-	res = data->funcs.AllocateCommandBuffers(data->device, &cbai,
-						 pool_data->cmd_buffers);
-	debug_res("AllocateCommandBuffers", res);
+	VkDevice device = data->device;
 	for (uint32_t image_index = 0; image_index < image_count;
 	     image_index++) {
-		/* Dispatch table something or other. Well-designed API. */
-		VkCommandBuffer cmd_buffer =
-			pool_data->cmd_buffers[image_index];
-		*(void **)cmd_buffer = *(void **)(data->device);
+		struct vk_frame_data *frame_data =
+			&queue_data->frames[image_index];
 
-		VkFence *fence = &pool_data->fences[image_index];
+		VkCommandPoolCreateInfo cpci;
+		cpci.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
+		cpci.pNext = NULL;
+		cpci.flags = 0;
+		cpci.queueFamilyIndex = queue_data->fam_idx;
+
+		VkResult res = data->funcs.CreateCommandPool(
+			device, &cpci, data->ac, &frame_data->cmd_pool);
+		debug_res("CreateCommandPool", res);
+
+		VkCommandBufferAllocateInfo cbai;
+		cbai.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
+		cbai.pNext = NULL;
+		cbai.commandPool = frame_data->cmd_pool;
+		cbai.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
+		cbai.commandBufferCount = 1;
+
+		res = data->funcs.AllocateCommandBuffers(
+			device, &cbai, &frame_data->cmd_buffer);
+		debug_res("AllocateCommandBuffers", res);
+		GET_LDT(frame_data->cmd_buffer) = GET_LDT(device);
+
 		VkFenceCreateInfo fci = {0};
 		fci.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 		fci.pNext = NULL;
 		fci.flags = 0;
-		res = data->funcs.CreateFence(data->device, &fci, NULL, fence);
+		res = data->funcs.CreateFence(device, &fci, data->ac,
+					      &frame_data->fence);
 		debug_res("CreateFence", res);
 	}
-
-	pool_data->image_count = image_count;
 }
 
 static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
@@ -751,24 +919,31 @@ static void vk_shtex_destroy_fence(struct vk_data *data, bool *cmd_buffer_busy,
 		*cmd_buffer_busy = false;
 	}
 
-	data->funcs.DestroyFence(device, *fence, NULL);
+	data->funcs.DestroyFence(device, *fence, data->ac);
 	*fence = VK_NULL_HANDLE;
 }
 
-static void
-vk_shtex_destroy_cmd_pool_objects(struct vk_data *data,
-				  struct vk_cmd_pool_data *pool_data)
+static void vk_shtex_destroy_frame_objects(struct vk_data *data,
+					   struct vk_queue_data *queue_data)
 {
-	for (uint32_t image_idx = 0; image_idx < pool_data->image_count;
-	     image_idx++) {
-		bool *cmd_buffer_busy = &pool_data->cmd_buffer_busy[image_idx];
-		VkFence *fence = &pool_data->fences[image_idx];
+	VkDevice device = data->device;
+
+	for (uint32_t frame_idx = 0; frame_idx < queue_data->frame_count;
+	     frame_idx++) {
+		struct vk_frame_data *frame_data =
+			&queue_data->frames[frame_idx];
+		bool *cmd_buffer_busy = &frame_data->cmd_buffer_busy;
+		VkFence *fence = &frame_data->fence;
 		vk_shtex_destroy_fence(data, cmd_buffer_busy, fence);
+
+		data->funcs.DestroyCommandPool(device, frame_data->cmd_pool,
+					       data->ac);
+		frame_data->cmd_pool = VK_NULL_HANDLE;
 	}
 
-	data->funcs.DestroyCommandPool(data->device, pool_data->cmd_pool, NULL);
-	pool_data->cmd_pool = VK_NULL_HANDLE;
-	pool_data->image_count = 0;
+	vk_free(data->ac, queue_data->frames);
+	queue_data->frames = NULL;
+	queue_data->frame_count = 0;
 }
 
 static void vk_shtex_capture(struct vk_data *data,
@@ -794,27 +969,30 @@ static void vk_shtex_capture(struct vk_data *data,
 	const uint32_t image_index = info->pImageIndices[idx];
 	VkImage cur_backbuffer = swap->swap_images[image_index];
 
-	uint32_t fam_idx = 0;
-	for (uint32_t i = 0; i < data->queue_count; i++) {
-		if (data->queues[i].queue == queue)
-			fam_idx = data->queues[i].fam_idx;
-	}
+	struct vk_queue_data *queue_data = get_queue_data(data, queue);
+	uint32_t fam_idx = queue_data->fam_idx;
 
-	if (fam_idx >= _countof(data->cmd_pools))
-		return;
-
-	struct vk_cmd_pool_data *pool_data = &data->cmd_pools[fam_idx];
-	VkCommandPool *pool = &pool_data->cmd_pool;
 	const uint32_t image_count = swap->image_count;
-	if (pool_data->image_count < image_count) {
-		if (*pool != VK_NULL_HANDLE)
-			vk_shtex_destroy_cmd_pool_objects(data, pool_data);
-		vk_shtex_create_cmd_pool_objects(data, fam_idx, image_count);
+	if (queue_data->frame_count < image_count) {
+		if (queue_data->frame_count > 0)
+			vk_shtex_destroy_frame_objects(data, queue_data);
+		vk_shtex_create_frame_objects(data, queue_data, image_count);
 	}
 
-	vk_shtex_clear_fence(data, pool_data, image_index);
+	const uint32_t frame_index = queue_data->frame_index;
+	struct vk_frame_data *frame_data = &queue_data->frames[frame_index];
+	queue_data->frame_index = (frame_index + 1) % queue_data->frame_count;
+	vk_shtex_clear_fence(data, frame_data);
 
-	VkCommandBuffer cmd_buffer = pool_data->cmd_buffers[image_index];
+	VkDevice device = data->device;
+
+	res = funcs->ResetCommandPool(device, frame_data->cmd_pool, 0);
+
+#ifdef MORE_DEBUGGING
+	debug_res("ResetCommandPool", res);
+#endif
+
+	const VkCommandBuffer cmd_buffer = frame_data->cmd_buffer;
 	res = funcs->BeginCommandBuffer(cmd_buffer, &begin_info);
 
 #ifdef MORE_DEBUGGING
@@ -829,9 +1007,9 @@ static void vk_shtex_capture(struct vk_data *data,
 		imb.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 		imb.pNext = NULL;
 		imb.srcAccessMask = 0;
-		imb.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		imb.dstAccessMask = 0;
 		imb.oldLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		imb.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		imb.newLayout = VK_IMAGE_LAYOUT_GENERAL;
 		imb.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imb.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 		imb.image = swap->export_image;
@@ -843,8 +1021,8 @@ static void vk_shtex_capture(struct vk_data *data,
 
 		funcs->CmdPipelineBarrier(cmd_buffer,
 					  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT,
-					  VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0,
-					  NULL, 0, NULL, 1, &imb);
+					  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT, 0,
+					  0, NULL, 0, NULL, 1, &imb);
 
 		swap->layout_initialized = true;
 	}
@@ -872,9 +1050,9 @@ static void vk_shtex_capture(struct vk_data *data,
 
 	dst_mb->sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
 	dst_mb->pNext = NULL;
-	dst_mb->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dst_mb->srcAccessMask = 0;
 	dst_mb->dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
-	dst_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dst_mb->oldLayout = VK_IMAGE_LAYOUT_GENERAL;
 	dst_mb->newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
 	dst_mb->srcQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
 	dst_mb->dstQueueFamilyIndex = fam_idx;
@@ -886,8 +1064,7 @@ static void vk_shtex_capture(struct vk_data *data,
 	dst_mb->subresourceRange.layerCount = 1;
 
 	funcs->CmdPipelineBarrier(cmd_buffer,
-				  VK_PIPELINE_STAGE_TRANSFER_BIT |
-					  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
+				  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 				  VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0,
 				  NULL, 2, mb);
 
@@ -928,11 +1105,15 @@ static void vk_shtex_capture(struct vk_data *data,
 	src_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_SRC_OPTIMAL;
 	src_mb->newLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR;
 
+	dst_mb->srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+	dst_mb->dstAccessMask = 0;
+	dst_mb->oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+	dst_mb->newLayout = VK_IMAGE_LAYOUT_GENERAL;
 	dst_mb->srcQueueFamilyIndex = fam_idx;
 	dst_mb->dstQueueFamilyIndex = VK_QUEUE_FAMILY_EXTERNAL;
 
 	funcs->CmdPipelineBarrier(cmd_buffer, VK_PIPELINE_STAGE_TRANSFER_BIT,
-				  VK_PIPELINE_STAGE_TRANSFER_BIT |
+				  VK_PIPELINE_STAGE_TOP_OF_PIPE_BIT |
 					  VK_PIPELINE_STAGE_BOTTOM_OF_PIPE_BIT,
 				  0, 0, NULL, 0, NULL, 2, mb);
 
@@ -951,7 +1132,7 @@ static void vk_shtex_capture(struct vk_data *data,
 	submit_info.signalSemaphoreCount = 0;
 	submit_info.pSignalSemaphores = NULL;
 
-	VkFence fence = pool_data->fences[image_index];
+	const VkFence fence = frame_data->fence;
 	res = funcs->QueueSubmit(queue, 1, &submit_info, fence);
 
 #ifdef MORE_DEBUGGING
@@ -959,7 +1140,7 @@ static void vk_shtex_capture(struct vk_data *data,
 #endif
 
 	if (res == VK_SUCCESS)
-		pool_data->cmd_buffer_busy[image_index] = true;
+		frame_data->cmd_buffer_busy = true;
 }
 
 static inline bool valid_rect(struct vk_swap_data *swap)
@@ -984,10 +1165,12 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 	for (; idx < info->swapchainCount; idx++) {
 		struct vk_swap_data *cur_swap =
 			get_swap_data(data, info->pSwapchains[idx]);
-		window = cur_swap->hwnd;
-		if (!!window) {
-			swap = cur_swap;
-			break;
+		if (cur_swap) {
+			window = cur_swap->hwnd;
+			if (window != NULL) {
+				swap = cur_swap;
+				break;
+			}
 		}
 	}
 
@@ -1015,15 +1198,17 @@ static void vk_capture(struct vk_data *data, VkQueue queue,
 	}
 }
 
-static VkResult VKAPI OBS_QueuePresentKHR(VkQueue queue,
-					  const VkPresentInfoKHR *info)
+static VkResult VKAPI_CALL OBS_QueuePresentKHR(VkQueue queue,
+					       const VkPresentInfoKHR *info)
 {
-	struct vk_data *data = get_device_data(queue);
-	struct vk_device_funcs *funcs = &data->funcs;
+	struct vk_data *const data = get_device_data_by_queue(queue);
+	struct vk_queue_data *const queue_data = get_queue_data(data, queue);
+	struct vk_device_funcs *const funcs = &data->funcs;
 
-	if (data->valid) {
+	if (data->valid && queue_data->supports_transfer) {
 		vk_capture(data, queue, info);
 	}
+
 	return funcs->QueuePresentKHR(queue, info);
 }
 
@@ -1036,12 +1221,11 @@ static inline bool is_inst_link_info(VkLayerInstanceCreateInfo *lici)
 	       lici->function == VK_LAYER_LINK_INFO;
 }
 
-static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
-					 const VkAllocationCallbacks *ac,
-					 VkInstance *p_inst)
+static VkResult VKAPI_CALL OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
+					      const VkAllocationCallbacks *ac,
+					      VkInstance *p_inst)
 {
 	VkInstanceCreateInfo info = *cinfo;
-	bool funcs_not_found = false;
 
 	/* -------------------------------------------------------- */
 	/* step through chain until we get to the link info         */
@@ -1085,49 +1269,75 @@ static VkResult VKAPI OBS_CreateInstance(const VkInstanceCreateInfo *cinfo,
 	info.pApplicationInfo = &ai;
 
 	/* -------------------------------------------------------- */
+	/* allocate data node                                       */
+
+	struct vk_inst_data *idata = alloc_inst_data(ac);
+	if (!idata)
+		return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+	/* -------------------------------------------------------- */
 	/* create instance                                          */
 
 	PFN_vkCreateInstance create = (void *)gpa(NULL, "vkCreateInstance");
 
 	VkResult res = create(&info, ac, p_inst);
+	bool valid = res == VK_SUCCESS;
+	if (!valid) {
+		/* try again with original arguments */
+		res = create(cinfo, ac, p_inst);
+		if (res != VK_SUCCESS) {
+			vk_free(ac, idata);
+			return res;
+		}
+	}
+
 	VkInstance inst = *p_inst;
+	init_inst_data(idata, inst);
 
 	/* -------------------------------------------------------- */
 	/* fetch the functions we need                              */
 
-	struct vk_inst_data *data = get_inst_data(inst);
-	struct vk_inst_funcs *funcs = &data->funcs;
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
 
-#define GETADDR(x)                                     \
-	do {                                           \
-		funcs->x = (void *)gpa(inst, "vk" #x); \
-		if (!funcs->x) {                       \
-			flog("could not get instance " \
-			     "address for %s",         \
-			     #x);                      \
-			funcs_not_found = true;        \
-		}                                      \
+#define GETADDR(x)                                      \
+	do {                                            \
+		ifuncs->x = (void *)gpa(inst, "vk" #x); \
+		if (!ifuncs->x) {                       \
+			flog("could not get instance "  \
+			     "address for vk" #x);      \
+			funcs_found = false;            \
+		}                                       \
 	} while (false)
 
+	bool funcs_found = true;
 	GETADDR(GetInstanceProcAddr);
 	GETADDR(DestroyInstance);
 	GETADDR(CreateWin32SurfaceKHR);
 	GETADDR(DestroySurfaceKHR);
+	GETADDR(GetPhysicalDeviceQueueFamilyProperties);
 	GETADDR(GetPhysicalDeviceMemoryProperties);
 	GETADDR(GetPhysicalDeviceImageFormatProperties2);
+	GETADDR(EnumerateDeviceExtensionProperties);
 #undef GETADDR
 
-	data->valid = !funcs_not_found;
+	valid = valid && funcs_found;
+	idata->valid = valid;
+
+	if (valid)
+		init_obj_list(&idata->surfaces);
+
 	return res;
 }
 
-static VkResult VKAPI OBS_DestroyInstance(VkInstance instance,
-					  const VkAllocationCallbacks *ac)
+static void VKAPI_CALL OBS_DestroyInstance(VkInstance instance,
+					   const VkAllocationCallbacks *ac)
 {
-	struct vk_inst_funcs *funcs = get_inst_funcs(instance);
-	funcs->DestroyInstance(instance, ac);
-	remove_instance(instance);
-	return VK_SUCCESS;
+	struct vk_inst_funcs *ifuncs = get_inst_funcs(instance);
+	PFN_vkDestroyInstance destroy_instance = ifuncs->DestroyInstance;
+
+	remove_free_inst_data(instance, ac);
+
+	destroy_instance(instance, ac);
 }
 
 static bool
@@ -1180,12 +1390,13 @@ static inline bool is_device_link_info(VkLayerDeviceCreateInfo *lici)
 	       lici->function == VK_LAYER_LINK_INFO;
 }
 
-static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
-				       const VkDeviceCreateInfo *info,
-				       const VkAllocationCallbacks *ac,
-				       VkDevice *p_device)
+static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
+					    const VkDeviceCreateInfo *info,
+					    const VkAllocationCallbacks *ac,
+					    VkDevice *p_device)
 {
-	struct vk_inst_data *idata = get_inst_data(phy_device);
+	struct vk_inst_data *idata =
+		get_inst_data_by_physical_device(phy_device);
 	struct vk_inst_funcs *ifuncs = &idata->funcs;
 	struct vk_data *data = NULL;
 
@@ -1216,6 +1427,15 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	ldci->u.pLayerInfo = ldci->u.pLayerInfo->pNext;
 
 	/* -------------------------------------------------------- */
+	/* allocate data node                                       */
+
+	data = alloc_device_data(ac);
+	if (!data)
+		return VK_ERROR_OUT_OF_HOST_MEMORY;
+
+	init_obj_list(&data->queues);
+
+	/* -------------------------------------------------------- */
 	/* create device and initialize hook data                   */
 
 	PFN_vkCreateDevice createFunc =
@@ -1223,37 +1443,30 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 
 	ret = createFunc(phy_device, info, ac, p_device);
 	if (ret != VK_SUCCESS) {
-		goto fail;
+		vk_free(ac, data);
+		return ret;
 	}
 
 	VkDevice device = *p_device;
-
-	data = get_device_data(*p_device);
-	struct vk_device_funcs *dfuncs = &data->funcs;
+	init_device_data(data, device);
 
 	data->valid = false; /* set true below if it doesn't go to fail */
 	data->phy_device = phy_device;
-	data->device = device;
 
 	/* -------------------------------------------------------- */
 	/* fetch the functions we need                              */
 
-	bool funcs_not_found = false;
+	struct vk_device_funcs *dfuncs = &data->funcs;
+	bool funcs_found = true;
 
 #define GETADDR(x)                                         \
 	do {                                               \
 		dfuncs->x = (void *)gdpa(device, "vk" #x); \
 		if (!dfuncs->x) {                          \
 			flog("could not get device "       \
-			     "address for %s",             \
-			     #x);                          \
-			funcs_not_found = true;            \
+			     "address for vk" #x);         \
+			funcs_found = false;               \
 		}                                          \
-	} while (false)
-
-#define GETADDR_OPTIONAL(x)                                \
-	do {                                               \
-		dfuncs->x = (void *)gdpa(device, "vk" #x); \
 	} while (false)
 
 	GETADDR(GetDeviceProcAddr);
@@ -1270,6 +1483,7 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	GETADDR(DestroyImage);
 	GETADDR(GetImageMemoryRequirements);
 	GETADDR(GetImageMemoryRequirements2);
+	GETADDR(ResetCommandPool);
 	GETADDR(BeginCommandBuffer);
 	GETADDR(EndCommandBuffer);
 	GETADDR(CmdCopyImage);
@@ -1283,10 +1497,9 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	GETADDR(DestroyFence);
 	GETADDR(WaitForFences);
 	GETADDR(ResetFences);
-#undef GETADDR_OPTIONAL
 #undef GETADDR
 
-	if (funcs_not_found) {
+	if (!funcs_found) {
 		goto fail;
 	}
 
@@ -1294,6 +1507,50 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 		flog("instance not valid");
 		goto fail;
 	}
+
+	const char *required_device_extensions[] = {
+		VK_KHR_EXTERNAL_MEMORY_WIN32_EXTENSION_NAME};
+
+	uint32_t device_extension_count = 0;
+	ret = ifuncs->EnumerateDeviceExtensionProperties(
+		phy_device, NULL, &device_extension_count, NULL);
+	if (ret != VK_SUCCESS)
+		goto fail;
+
+	VkExtensionProperties *device_extensions = _malloca(
+		sizeof(VkExtensionProperties) * device_extension_count);
+	ret = ifuncs->EnumerateDeviceExtensionProperties(
+		phy_device, NULL, &device_extension_count, device_extensions);
+	if (ret != VK_SUCCESS) {
+		_freea(device_extensions);
+		goto fail;
+	}
+
+	bool extensions_found = true;
+	for (uint32_t i = 0; i < _countof(required_device_extensions); i++) {
+		const char *const required_extension =
+			required_device_extensions[i];
+
+		bool found = false;
+		for (uint32_t j = 0; j < device_extension_count; j++) {
+			if (!strcmp(required_extension,
+				    device_extensions[j].extensionName)) {
+				found = true;
+				break;
+			}
+		}
+
+		if (!found) {
+			flog("missing device extension: %s",
+			     required_extension);
+			extensions_found = false;
+		}
+	}
+
+	_freea(device_extensions);
+
+	if (!extensions_found)
+		goto fail;
 
 	VkFormat format = VK_FORMAT_R8G8B8A8_UNORM;
 	VkImageUsageFlags usage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT |
@@ -1306,173 +1563,226 @@ static VkResult VKAPI OBS_CreateDevice(VkPhysicalDevice phy_device,
 	}
 
 	data->inst_data = idata;
+
+	data->ac = NULL;
+	if (ac) {
+		data->ac_storage = *ac;
+		data->ac = &data->ac_storage;
+	}
+
+	uint32_t queue_family_property_count = 0;
+	ifuncs->GetPhysicalDeviceQueueFamilyProperties(
+		phy_device, &queue_family_property_count, NULL);
+	VkQueueFamilyProperties *queue_family_properties = _malloca(
+		sizeof(VkQueueFamilyProperties) * queue_family_property_count);
+	ifuncs->GetPhysicalDeviceQueueFamilyProperties(
+		phy_device, &queue_family_property_count,
+		queue_family_properties);
+
+	for (uint32_t info_index = 0, info_count = info->queueCreateInfoCount;
+	     info_index < info_count; ++info_index) {
+		const VkDeviceQueueCreateInfo *queue_info =
+			&info->pQueueCreateInfos[info_index];
+		for (uint32_t queue_index = 0,
+			      queue_count = queue_info->queueCount;
+		     queue_index < queue_count; ++queue_index) {
+			const uint32_t family_index =
+				queue_info->queueFamilyIndex;
+			VkQueue queue;
+			data->funcs.GetDeviceQueue(device, family_index,
+						   queue_index, &queue);
+			const bool supports_transfer =
+				(queue_family_properties[family_index]
+					 .queueFlags &
+				 (VK_QUEUE_GRAPHICS_BIT | VK_QUEUE_COMPUTE_BIT |
+				  VK_QUEUE_TRANSFER_BIT)) != 0;
+			add_queue_data(data, queue, family_index,
+				       supports_transfer, ac);
+		}
+	}
+
+	_freea(queue_family_properties);
+
+	init_obj_list(&data->swaps);
+	data->cur_swap = NULL;
+	data->d3d11_device = NULL;
+	data->d3d11_context = NULL;
+
 	data->valid = true;
 
 fail:
 	return ret;
 }
 
-static void VKAPI OBS_DestroyDevice(VkDevice device,
-				    const VkAllocationCallbacks *ac)
+static void VKAPI_CALL OBS_DestroyDevice(VkDevice device,
+					 const VkAllocationCallbacks *ac)
 {
-	struct vk_data *data = get_device_data(device);
-	if (!data)
-		return;
+	struct vk_data *data = remove_device_data(device);
 
 	if (data->valid) {
-		for (uint32_t fam_idx = 0; fam_idx < _countof(data->cmd_pools);
-		     fam_idx++) {
-			struct vk_cmd_pool_data *pool_data =
-				&data->cmd_pools[fam_idx];
-			if (pool_data->cmd_pool != VK_NULL_HANDLE) {
-				vk_shtex_destroy_cmd_pool_objects(data,
-								  pool_data);
-			}
+		struct vk_queue_data *queue_data = queue_walk_begin(data);
+
+		while (queue_data) {
+			vk_shtex_destroy_frame_objects(data, queue_data);
+
+			queue_data = queue_walk_next(queue_data);
 		}
+
+		queue_walk_end(data);
+
+		remove_free_queue_all(data, ac);
 	}
 
-	data->queue_count = 0;
+	PFN_vkDestroyDevice destroy_device = data->funcs.DestroyDevice;
 
-	vk_remove_device(device);
-	data->funcs.DestroyDevice(device, ac);
+	vk_free(ac, data);
+
+	destroy_device(device, ac);
 }
 
-static VkResult VKAPI
+static VkResult VKAPI_CALL
 OBS_CreateSwapchainKHR(VkDevice device, const VkSwapchainCreateInfoKHR *cinfo,
 		       const VkAllocationCallbacks *ac, VkSwapchainKHR *p_sc)
 {
 	struct vk_data *data = get_device_data(device);
+	struct vk_device_funcs *funcs = &data->funcs;
+	if (!data->valid)
+		return funcs->CreateSwapchainKHR(device, cinfo, ac, p_sc);
 
 	VkSwapchainCreateInfoKHR info = *cinfo;
-	if (data->valid)
-		info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
-
-	struct vk_device_funcs *funcs = &data->funcs;
+	info.imageUsage |= VK_IMAGE_USAGE_TRANSFER_SRC_BIT;
 	VkResult res = funcs->CreateSwapchainKHR(device, &info, ac, p_sc);
 	debug_res("CreateSwapchainKHR", res);
-	if ((res != VK_SUCCESS) || !data->valid)
-		return res;
-
-	VkSwapchainKHR sc = *p_sc;
-
-	uint32_t count = 0;
-	res = funcs->GetSwapchainImagesKHR(data->device, sc, &count, NULL);
-	debug_res("GetSwapchainImagesKHR", res);
-
-	struct vk_swap_data *swap = get_new_swap_data(data);
-	if (count > 0) {
-		if (count > OBJ_MAX)
-			count = OBJ_MAX;
-
-		res = funcs->GetSwapchainImagesKHR(data->device, sc, &count,
-						   swap->swap_images);
-		debug_res("GetSwapchainImagesKHR", res);
+	if (res != VK_SUCCESS) {
+		/* try again with original imageUsage flags */
+		return funcs->CreateSwapchainKHR(device, cinfo, ac, p_sc);
 	}
 
-	swap->sc = sc;
-	swap->image_extent = cinfo->imageExtent;
-	swap->format = cinfo->imageFormat;
-	swap->hwnd = find_surf_hwnd(data->inst_data, cinfo->surface);
-	swap->image_count = count;
+	VkSwapchainKHR sc = *p_sc;
+	uint32_t count = 0;
+	res = funcs->GetSwapchainImagesKHR(device, sc, &count, NULL);
+	debug_res("GetSwapchainImagesKHR", res);
+	if ((res == VK_SUCCESS) && (count > 0)) {
+		struct vk_swap_data *swap_data = alloc_swap_data(ac);
+		if (swap_data) {
+			init_swap_data(swap_data, data, sc);
+			swap_data->swap_images = vk_alloc(
+				ac, count * sizeof(VkImage), _Alignof(VkImage),
+				VK_SYSTEM_ALLOCATION_SCOPE_OBJECT);
+			res = funcs->GetSwapchainImagesKHR(
+				device, sc, &count, swap_data->swap_images);
+			debug_res("GetSwapchainImagesKHR", res);
+
+			swap_data->image_extent = cinfo->imageExtent;
+			swap_data->format = cinfo->imageFormat;
+			swap_data->hwnd =
+				find_surf_hwnd(data->inst_data, cinfo->surface);
+			swap_data->export_image = VK_NULL_HANDLE;
+			swap_data->layout_initialized = false;
+			swap_data->export_mem = VK_NULL_HANDLE;
+			swap_data->image_count = count;
+			swap_data->handle = INVALID_HANDLE_VALUE;
+			swap_data->shtex_info = NULL;
+			swap_data->d3d11_tex = NULL;
+			swap_data->captured = false;
+		}
+	}
 
 	return VK_SUCCESS;
 }
 
-static void VKAPI OBS_DestroySwapchainKHR(VkDevice device, VkSwapchainKHR sc,
-					  const VkAllocationCallbacks *ac)
+static void VKAPI_CALL OBS_DestroySwapchainKHR(VkDevice device,
+					       VkSwapchainKHR sc,
+					       const VkAllocationCallbacks *ac)
 {
 	struct vk_data *data = get_device_data(device);
 	struct vk_device_funcs *funcs = &data->funcs;
+	PFN_vkDestroySwapchainKHR destroy_swapchain =
+		funcs->DestroySwapchainKHR;
 
-	if (data->valid) {
+	if ((sc != VK_NULL_HANDLE) && data->valid) {
 		struct vk_swap_data *swap = get_swap_data(data, sc);
 		if (swap) {
 			if (data->cur_swap == swap) {
 				vk_shtex_free(data);
 			}
 
-			swap->sc = VK_NULL_HANDLE;
-			swap->hwnd = NULL;
+			vk_free(ac, swap->swap_images);
+
+			remove_free_swap_data(data, sc, ac);
 		}
 	}
 
-	funcs->DestroySwapchainKHR(device, sc, ac);
+	destroy_swapchain(device, sc, ac);
 }
 
-static void VKAPI OBS_GetDeviceQueue(VkDevice device, uint32_t queueFamilyIndex,
-				     uint32_t queueIndex, VkQueue *pQueue)
+static VkResult VKAPI_CALL OBS_CreateWin32SurfaceKHR(
+	VkInstance inst, const VkWin32SurfaceCreateInfoKHR *info,
+	const VkAllocationCallbacks *ac, VkSurfaceKHR *surf)
+{
+	struct vk_inst_data *idata = get_inst_data(inst);
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
+
+	VkResult res = ifuncs->CreateWin32SurfaceKHR(inst, info, ac, surf);
+	if ((res == VK_SUCCESS) && idata->valid)
+		add_surf_data(idata, *surf, info->hwnd, ac);
+	return res;
+}
+
+static void VKAPI_CALL OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
+					     const VkAllocationCallbacks *ac)
+{
+	struct vk_inst_data *idata = get_inst_data(inst);
+	struct vk_inst_funcs *ifuncs = &idata->funcs;
+	PFN_vkDestroySurfaceKHR destroy_surface = ifuncs->DestroySurfaceKHR;
+
+	if ((surf != VK_NULL_HANDLE) && idata->valid)
+		remove_free_surf_data(idata, surf, ac);
+
+	destroy_surface(inst, surf, ac);
+}
+
+#define GETPROCADDR(func)               \
+	if (!strcmp(pName, "vk" #func)) \
+		return (PFN_vkVoidFunction)&OBS_##func;
+
+#define GETPROCADDR_IF_SUPPORTED(func)  \
+	if (!strcmp(pName, "vk" #func)) \
+		return funcs->func ? (PFN_vkVoidFunction)&OBS_##func : NULL;
+
+static PFN_vkVoidFunction VKAPI_CALL OBS_GetDeviceProcAddr(VkDevice device,
+							   const char *pName)
 {
 	struct vk_data *data = get_device_data(device);
 	struct vk_device_funcs *funcs = &data->funcs;
 
-	funcs->GetDeviceQueue(device, queueFamilyIndex, queueIndex, pQueue);
-
-	for (uint32_t i = 0; i < data->queue_count; ++i) {
-		if (data->queues[i].queue == *pQueue)
-			return;
-	}
-
-	if (data->queue_count < _countof(data->queues)) {
-		data->queues[data->queue_count].queue = *pQueue;
-		data->queues[data->queue_count].fam_idx = queueFamilyIndex;
-		++data->queue_count;
-	}
-}
-
-static VkResult VKAPI OBS_CreateWin32SurfaceKHR(
-	VkInstance inst, const VkWin32SurfaceCreateInfoKHR *info,
-	const VkAllocationCallbacks *ac, VkSurfaceKHR *surf)
-{
-	struct vk_inst_data *data = get_inst_data(inst);
-	struct vk_inst_funcs *funcs = &data->funcs;
-
-	VkResult res = funcs->CreateWin32SurfaceKHR(inst, info, ac, surf);
-	if (res == VK_SUCCESS)
-		insert_surf_data(data, *surf, info->hwnd);
-	return res;
-}
-
-static void VKAPI OBS_DestroySurfaceKHR(VkInstance inst, VkSurfaceKHR surf,
-					const VkAllocationCallbacks *ac)
-{
-	struct vk_inst_data *data = get_inst_data(inst);
-	struct vk_inst_funcs *funcs = &data->funcs;
-
-	erase_surf_data(data, surf);
-	funcs->DestroySurfaceKHR(inst, surf, ac);
-}
-
-#define GETPROCADDR(func)              \
-	if (!strcmp(name, "vk" #func)) \
-		return (VkFunc)&OBS_##func;
-
-static VkFunc VKAPI OBS_GetDeviceProcAddr(VkDevice dev, const char *name)
-{
-	struct vk_data *data = get_device_data(dev);
-	struct vk_device_funcs *funcs = &data->funcs;
-
-	debug_procaddr("vkGetDeviceProcAddr(%p, \"%s\")", dev, name);
+	debug_procaddr("vkGetDeviceProcAddr(%p, \"%s\")", device, pName);
 
 	GETPROCADDR(GetDeviceProcAddr);
-	GETPROCADDR(CreateDevice);
 	GETPROCADDR(DestroyDevice);
-	GETPROCADDR(CreateSwapchainKHR);
-	GETPROCADDR(DestroySwapchainKHR);
-	GETPROCADDR(QueuePresentKHR);
-	GETPROCADDR(GetDeviceQueue);
+	GETPROCADDR_IF_SUPPORTED(CreateSwapchainKHR);
+	GETPROCADDR_IF_SUPPORTED(DestroySwapchainKHR);
+	GETPROCADDR_IF_SUPPORTED(QueuePresentKHR);
 
 	if (funcs->GetDeviceProcAddr == NULL)
 		return NULL;
-	return funcs->GetDeviceProcAddr(dev, name);
+	return funcs->GetDeviceProcAddr(device, pName);
 }
 
-static VkFunc VKAPI OBS_GetInstanceProcAddr(VkInstance inst, const char *name)
+/* bad layers require spec violation */
+#define RETURN_FP_FOR_NULL_INSTANCE 1
+
+static PFN_vkVoidFunction VKAPI_CALL
+OBS_GetInstanceProcAddr(VkInstance instance, const char *pName)
 {
-	debug_procaddr("vkGetInstanceProcAddr(%p, \"%s\")", inst, name);
+	debug_procaddr("vkGetInstanceProcAddr(%p, \"%s\")", instance, pName);
 
 	/* instance chain functions we intercept */
 	GETPROCADDR(GetInstanceProcAddr);
 	GETPROCADDR(CreateInstance);
+
+#if RETURN_FP_FOR_NULL_INSTANCE
+	/* other instance chain functions we intercept */
 	GETPROCADDR(DestroyInstance);
 	GETPROCADDR(CreateWin32SurfaceKHR);
 	GETPROCADDR(DestroySurfaceKHR);
@@ -1482,15 +1792,39 @@ static VkFunc VKAPI OBS_GetInstanceProcAddr(VkInstance inst, const char *name)
 	GETPROCADDR(CreateDevice);
 	GETPROCADDR(DestroyDevice);
 
-	struct vk_inst_funcs *funcs = get_inst_funcs(inst);
-	if (funcs->GetInstanceProcAddr == NULL)
+	if (instance == NULL)
 		return NULL;
-	return funcs->GetInstanceProcAddr(inst, name);
+
+	struct vk_inst_funcs *const funcs = get_inst_funcs(instance);
+#else
+	if (instance == NULL)
+		return NULL;
+
+	struct vk_inst_funcs *const funcs = get_inst_funcs(instance);
+
+	/* other instance chain functions we intercept */
+	GETPROCADDR(DestroyInstance);
+	GETPROCADDR_IF_SUPPORTED(CreateWin32SurfaceKHR);
+	GETPROCADDR_IF_SUPPORTED(DestroySurfaceKHR);
+
+	/* device chain functions we intercept */
+	GETPROCADDR(GetDeviceProcAddr);
+	GETPROCADDR(CreateDevice);
+	GETPROCADDR(DestroyDevice);
+#endif
+
+	const PFN_vkGetInstanceProcAddr gipa = funcs->GetInstanceProcAddr;
+	return gipa ? gipa(instance, pName) : NULL;
 }
 
 #undef GETPROCADDR
 
-EXPORT VkResult VKAPI OBS_Negotiate(VkNegotiateLayerInterface *nli)
+#ifndef _WIN64
+#pragma comment(linker, "/EXPORT:OBS_Negotiate=_OBS_Negotiate@4")
+#endif
+
+__declspec(dllexport) VkResult VKAPI_CALL
+	OBS_Negotiate(VkNegotiateLayerInterface *nli)
 {
 	if (nli->loaderLayerInterfaceVersion >= 2) {
 		nli->sType = LAYER_NEGOTIATE_INTERFACE_STRUCT;
@@ -1504,6 +1838,13 @@ EXPORT VkResult VKAPI OBS_Negotiate(VkNegotiateLayerInterface *nli)
 
 	if (nli->loaderLayerInterfaceVersion > cur_ver) {
 		nli->loaderLayerInterfaceVersion = cur_ver;
+	}
+
+	if (!vulkan_seen) {
+		init_obj_list(&instances);
+		init_obj_list(&devices);
+
+		vulkan_seen = true;
 	}
 
 	return VK_SUCCESS;

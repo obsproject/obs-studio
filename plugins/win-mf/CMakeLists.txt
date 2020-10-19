@@ -55,6 +55,8 @@ target_include_directories(win-mf
 	PUBLIC
 	"$<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}>")
 
+set_target_properties(win-mf PROPERTIES FOLDER "plugins")
+
 if(ENABLE_WINMF)
 	install_obs_plugin_with_data(win-mf data)
 else()

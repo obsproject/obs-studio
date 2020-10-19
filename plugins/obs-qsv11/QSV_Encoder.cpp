@@ -63,6 +63,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <string>
 #include <atomic>
 #include <intrin.h>
+#include <d3d11.h>
+#include <dxgi1_2.h>
 
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
@@ -70,6 +72,74 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
 mfxVersion ver = {{0, 1}}; // for backward compatibility
 std::atomic<bool> is_active{false};
+
+bool prefer_igpu_enc(int *iGPUIndex)
+{
+	IDXGIAdapter *pAdapter;
+	int adapterIndex = 0;
+	bool hasIGPU = false;
+	bool hasDGPU = false;
+	bool isDG1Primary = false;
+
+	HMODULE hDXGI = LoadLibrary(L"dxgi.dll");
+	if (hDXGI == NULL) {
+		return false;
+	}
+
+	typedef HRESULT(WINAPI * LPCREATEDXGIFACTORY)(REFIID riid,
+						      void **ppFactory);
+
+	LPCREATEDXGIFACTORY pCreateDXGIFactory =
+		(LPCREATEDXGIFACTORY)GetProcAddress(hDXGI,
+						    "CreateDXGIFactory1");
+	if (pCreateDXGIFactory == NULL) {
+		pCreateDXGIFactory = (LPCREATEDXGIFACTORY)GetProcAddress(
+			hDXGI, "CreateDXGIFactory");
+
+		if (pCreateDXGIFactory == NULL) {
+			FreeLibrary(hDXGI);
+			return false;
+		}
+	}
+
+	IDXGIFactory *pFactory = NULL;
+	if (FAILED((*pCreateDXGIFactory)(__uuidof(IDXGIFactory),
+					 (void **)(&pFactory)))) {
+		FreeLibrary(hDXGI);
+		return false;
+	}
+
+	while (SUCCEEDED(pFactory->EnumAdapters(adapterIndex, &pAdapter))) {
+		DXGI_ADAPTER_DESC AdapterDesc = {};
+		if (SUCCEEDED(pAdapter->GetDesc(&AdapterDesc))) {
+			if (AdapterDesc.VendorId == 0x8086) {
+				if (AdapterDesc.DedicatedVideoMemory <=
+				    512 * 1024 * 1024) {
+					hasIGPU = true;
+					if (iGPUIndex != NULL) {
+						*iGPUIndex = adapterIndex;
+					}
+				} else {
+					hasDGPU = true;
+				}
+				if ((AdapterDesc.DeviceId == 0x4905) ||
+				    (AdapterDesc.DeviceId == 0x4906) ||
+				    (AdapterDesc.DeviceId == 0x4907)) {
+					if (adapterIndex == 0) {
+						isDG1Primary = true;
+					}
+				}
+			}
+		}
+		adapterIndex++;
+		pAdapter->Release();
+	}
+
+	pFactory->Release();
+	FreeLibrary(hDXGI);
+
+	return hasIGPU && hasDGPU && isDG1Primary;
+}
 
 void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 {
@@ -79,6 +149,13 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 
 qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 {
+	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
+				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
+	int igpu_index = -1;
+	if (prefer_igpu_enc(&igpu_index)) {
+		impl = impl_list[igpu_index];
+	}
+
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
 	if (sts != MFX_ERR_NONE) {
@@ -320,6 +397,8 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x8e:
 	case 0x9e:
 		return QSV_CPU_PLATFORM_KBL;
+	case 0x66:
+		return QSV_CPU_PLATFORM_CNL;
 	case 0x7d:
 	case 0x7e:
 		return QSV_CPU_PLATFORM_ICL;
