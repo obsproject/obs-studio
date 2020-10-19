@@ -380,7 +380,7 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },		    
+                },
                 {
                     "name": "US: Miami, FL",
                     "url": "rtmp://live-mia.vaughnsoft.net/live"
@@ -422,7 +422,7 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },		    
+                },
                 {
                     "name": "US: Miami, FL",
                     "url": "rtmp://live-mia.vaughnsoft.net/live"
@@ -1815,6 +1815,23 @@
                 "keyint": 2,
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "LiveXP",
+            "servers": [
+                {
+                    "name": "Auto",
+                    "url": "rtmp://b-wcs.lxpcdn.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "bframes": 0,
+                "max video bitrate": 5000,
+                "max audio bitrate": 128,
+                "x264opts": "tune=zerolatency"
             }
         }
     ]
