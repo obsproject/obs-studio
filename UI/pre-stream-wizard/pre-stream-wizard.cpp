@@ -123,7 +123,6 @@ void PreStreamWizard::onPageChanged(int id)
 
 	case Page_Loading:
 		requestSettings();
-		setButtons(CancelOnly);
 		break;
 
 	case Page_Selections:
@@ -134,8 +133,7 @@ void PreStreamWizard::onPageChanged(int id)
 	case Page_Complete:
 		setButtons(FinishOnly);
 		if (newSettingsMap_ != nullptr && !newSettingsMap_.isNull()) {
-			// ToDo: messaging in edge case this could be empty
-			// and still make it here?
+			// ToDo: messaging in edge case this could be empty?
 			emit applySettings(newSettingsMap_);
 		};
 		break;

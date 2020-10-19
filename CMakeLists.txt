@@ -257,7 +257,6 @@ if(NOT INSTALLER_RUN)
 		endif()
 
 		find_package(Qt5Widgets ${FIND_MODE})
-		find_package(Qt5Network ${FIND_MODE})
 	endif()
 
 	add_subdirectory(deps)

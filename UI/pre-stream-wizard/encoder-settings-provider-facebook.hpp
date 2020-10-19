@@ -6,8 +6,6 @@
 #include <QUrlQuery>
 #include <QUrl>
 #include <QSize>
-#include <QNetworkAccessManager>
-#include <QNetworkReply>
 
 #include "pre-stream-current-settings.hpp"
 
@@ -36,18 +34,15 @@ signals:
 
 private:
 	QSharedPointer<EncoderSettingsRequest> currentSettings_;
-	QNetworkAccessManager *restclient_;
-	QNetworkReply *networkReply_;
 	bool pendingResponse_ = false;
 
 	void makeRequest(QUrl &url);
 	QUrlQuery inputVideoQueryFromCurrentSettings();
 	QString getOBSVersionString();
-	void jsonParseError();
-
-private slots:
-	void handleResponse(QNetworkReply *reply);
+	void handleResponse(QByteArray reply);
 	void handleTimeout();
+	void handleEmpty();
+	void jsonParseError();
 };
 
 } // namespace StreamWizard

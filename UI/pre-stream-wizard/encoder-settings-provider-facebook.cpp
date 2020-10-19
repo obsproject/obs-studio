@@ -5,17 +5,17 @@
 #include <QUrlQuery>
 #include <QList>
 #include <QPair>
-#include <QNetworkRequest>
-#include <QNetworkAccessManager>
 #include <QByteArray>
 #include <QJsonDocument>
 #include <QJsonObject>
 #include <QJsonArray>
 #include <QMap>
-#include <QTimer>
 
 #include "obs-app.hpp"
 #include "obs-config.h"
+
+#include "remote-text.hpp"
+#include <qt-wrappers.hpp>
 
 namespace StreamWizard {
 
@@ -23,7 +23,6 @@ FacebookEncoderSettingsProvider::FacebookEncoderSettingsProvider(QObject *parent
 	: QObject(parent)
 {
 	currentSettings_ = nullptr;
-	restclient_ = new QNetworkAccessManager(this);
 }
 
 void FacebookEncoderSettingsProvider::setEncoderRequest(
@@ -36,10 +35,11 @@ void FacebookEncoderSettingsProvider::run()
 {
 	// Base URL for request
 	QUrl requestUrl(
-		"https://graph.facebook.com/v6.0/video_encoder_settings");
+		"https://graph.facebook.com/v8.0/video_encoder_settings");
 	QUrlQuery inputVideoSettingsQuery =
 		inputVideoQueryFromCurrentSettings();
 	requestUrl.setQuery(inputVideoSettingsQuery);
+
 	if (requestUrl.isValid()) {
 		makeRequest(requestUrl);
 	} else {
@@ -51,21 +51,41 @@ void FacebookEncoderSettingsProvider::run()
 
 void FacebookEncoderSettingsProvider::makeRequest(QUrl &url)
 {
-	blog(LOG_INFO, "FacebookEncoderSettingsProvider creating request");
-	QNetworkRequest request(url);
-	request.setHeader(QNetworkRequest::ContentTypeHeader,
-			  "application/json");
+	blog(LOG_INFO, "FacebookEncoderSettingsProvider sending request");
 
-	// GET is made async
-	networkReply_ = restclient_->get(request);
-	pendingResponse_ = true;
-	// This is the callback when data is ready
-	connect(restclient_, &QNetworkAccessManager::finished, this,
-		&FacebookEncoderSettingsProvider::handleResponse);
+	bool requestSuccess = false;
 
-	// This is a fast API, timeout at 3 seconds and show error
-	QTimer::singleShot(3000, this,
-			   &FacebookEncoderSettingsProvider::handleTimeout);
+	std::string urlString = url.toString().toStdString();
+	std::string reply;
+	std::string error;
+	long responseCode = 0;
+	const char *contentType = "application/json";
+	const char *postData = nullptr;
+	std::vector<std::string> extraHeaders = std::vector<std::string>();
+	int timeout = 3; // seconds
+
+	auto apiRequestBlock = [&]() {
+		requestSuccess = GetRemoteFile(urlString.c_str(), reply, error,
+					       &responseCode, contentType,
+					       postData, extraHeaders, nullptr,
+					       timeout);
+	};
+
+	ExecuteFuncSafeBlock(apiRequestBlock);
+
+	if (!requestSuccess || responseCode >= 400) {
+		handleTimeout();
+		blog(LOG_WARNING, "Server response with error: %s",
+		     error.c_str());
+	}
+
+	if (reply.empty()) {
+		handleEmpty();
+		blog(LOG_WARNING, "Server response was empty");
+	}
+
+	QByteArray jsonBytes = QByteArray::fromStdString(reply);
+	handleResponse(jsonBytes);
 }
 
 QUrlQuery FacebookEncoderSettingsProvider::inputVideoQueryFromCurrentSettings()
@@ -182,23 +202,9 @@ void addBool(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 	}
 }
 
-void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
+void FacebookEncoderSettingsProvider::handleResponse(QByteArray reply)
 {
-	// In timeout and errors this method may still be called
-	if (!pendingResponse_) {
-		return;
-	}
-	pendingResponse_ = false;
-
-	if (reply->error()) {
-		emit returnErrorDescription(
-			QTStr("PreLiveWizard.Configure.Error.JsonParse"),
-			reply->errorString());
-	}
-	// Converts byte array into JSON doc as a copy
-	QByteArray replyAll = reply->readAll();
-	QJsonDocument jsonDoc = QJsonDocument::fromJson(replyAll);
-	reply->deleteLater();
+	QJsonDocument jsonDoc = QJsonDocument::fromJson(reply);
 
 	// Parse bytes to json object
 	if (!jsonDoc.isObject()) {
@@ -230,6 +236,10 @@ void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 	QJsonObject videoSettingsJsob =
 		rmtpSettings["video_codec_settings"].toObject();
 
+	if (videoSettingsJsob.isEmpty()) {
+		handleEmpty();
+	}
+
 	// Create map to send to wizard
 	SettingsMap *settingsMap = new SettingsMap();
 
@@ -260,6 +270,11 @@ void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 	addInt(videoSettingsJsob, "buffer_size", settingsMap,
 	       SettingsResponseKeys.streamBufferSize);
 
+	// If Empty emit to empty / error state
+	if (settingsMap->isEmpty()) {
+		handleEmpty();
+	}
+
 	// Wrap into shared pointer and emit
 	QSharedPointer<SettingsMap> settingsMapShrdPtr =
 		QSharedPointer<SettingsMap>(settingsMap);
@@ -268,14 +283,16 @@ void FacebookEncoderSettingsProvider::handleResponse(QNetworkReply *reply)
 
 void FacebookEncoderSettingsProvider::handleTimeout()
 {
-	if (!pendingResponse_)
-		return;
-
-	pendingResponse_ = false;
-
 	QString errorTitle = QTStr("PreLiveWizard.Configure.Error.JsonParse");
 	QString errorDescription = QTStr("PreLiveWizard.Error.NetworkTimeout");
 	emit returnErrorDescription(errorTitle, errorDescription);
+}
+
+void FacebookEncoderSettingsProvider::handleEmpty()
+{
+	emit returnErrorDescription(
+		QTStr("PreLiveWizard.Configure.Error.NoData"),
+		QTStr("PreLiveWizard.Configure.Error.NoData.Description"));
 }
 
 void FacebookEncoderSettingsProvider::jsonParseError()
