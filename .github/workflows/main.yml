@@ -215,6 +215,7 @@ jobs:
             -x ./OBS.app/Contents/PlugIns/mac-decklink.so \
             -x ./OBS.app/Contents/PlugIns/mac-syphon.so \
             -x ./OBS.app/Contents/PlugIns/mac-vth264.so \
+            -x ./OBS.app/Contents/PlugIns/mac-virtualcam.so \
             -x ./OBS.app/Contents/PlugIns/obs-browser.so \
             -x ./OBS.app/Contents/PlugIns/obs-browser-page \
             -x ./OBS.app/Contents/PlugIns/obs-ffmpeg.so \
@@ -265,6 +266,8 @@ jobs:
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
+
+          codesign --force --options runtime --deep --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Resources/data/obs-mac-virtualcam.plugin"
 
           codesign --force --options runtime --entitlements "../CI/scripts/macos/app/entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app
 
