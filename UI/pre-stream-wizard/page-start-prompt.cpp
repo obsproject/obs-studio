@@ -76,14 +76,13 @@ void StartPage::createLayout()
 	if (destination_ == Destination::Facebook) {
 		// If FB, specfic help section
 		helpLabel = new QLabel(
-			QTStr("PreLiveWizard.Prompt.FBResolutionHelp.FB"),
-			this);
+			QTStr("PreLiveWizard.Prompt.ResolutionHelp.FB"), this);
 		helpLabel->setWordWrap(true);
 		helpButton = new QPushButton(
-			QTStr("PreLiveWizard.Prompt.FBResolutionHelpButton.FB"),
+			QTStr("PreLiveWizard.Prompt.ResolutionHelpButton.FB"),
 			this);
 		helpButton->setToolTip(QTStr(
-			"PreLiveWizard.Prompt.FBResolutionHelpButton.FB.ToolTip"));
+			"PreLiveWizard.Prompt.ResolutionHelpButton.FB.ToolTip"));
 		connect(helpButton, &QPushButton::clicked, this,
 			&StartPage::didPushOpenWebsiteHelp);
 	}

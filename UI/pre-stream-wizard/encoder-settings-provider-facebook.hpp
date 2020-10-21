@@ -38,7 +38,6 @@ private:
 
 	void makeRequest(QUrl &url);
 	QUrlQuery inputVideoQueryFromCurrentSettings();
-	QString getOBSVersionString();
 	void handleResponse(QByteArray reply);
 	void handleTimeout();
 	void handleEmpty();

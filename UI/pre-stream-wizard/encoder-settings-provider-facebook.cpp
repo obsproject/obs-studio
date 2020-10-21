@@ -130,23 +130,9 @@ QUrlQuery FacebookEncoderSettingsProvider::inputVideoQueryFromCurrentSettings()
 	return inputVideoSettingsQuery;
 }
 
-QString FacebookEncoderSettingsProvider::getOBSVersionString()
-{
-	QString versionString;
-
-#ifdef HAVE_OBSCONFIG_H
-	versionString += OBS_VERSION;
-#else
-	versionString += LIBOBS_API_MAJOR_VER + "." + LIBOBS_API_MINOR_VER +
-			 "." + LIBOBS_API_PATCH_VER;
-#endif
-
-	return versionString;
-}
-
 // Helper methods for FacebookEncoderSettingsProvider::handleResponse
 void addInt(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
-	    const char *mapKey)
+	    QString mapKey)
 {
 	if (json[jsonKey].isDouble()) {
 		map->insert(mapKey,
@@ -159,7 +145,7 @@ void addInt(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 }
 
 void addStringDouble(const QJsonObject &json, const char *jsonKey,
-		     SettingsMap *map, const char *mapKey)
+		     SettingsMap *map, QString mapKey)
 {
 	if (!json[jsonKey].isString()) {
 		return;
@@ -177,7 +163,7 @@ void addStringDouble(const QJsonObject &json, const char *jsonKey,
 }
 
 void addQString(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
-		const char *mapKey)
+		QString mapKey)
 {
 	if (json[jsonKey].isString()) {
 		map->insert(mapKey,
@@ -190,7 +176,7 @@ void addQString(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
 }
 
 void addBool(const QJsonObject &json, const char *jsonKey, SettingsMap *map,
-	     const char *mapKey)
+	     QString mapKey)
 {
 	if (json[jsonKey].isBool()) {
 		map->insert(mapKey,
@@ -224,51 +210,49 @@ void FacebookEncoderSettingsProvider::handleResponse(QByteArray reply)
 		jsonParseError();
 		return;
 	}
-	QJsonObject rmtpSettings = responseObject["rtmps_settings"].toObject();
+	QJsonObject rtmpSettings = responseObject["rtmps_settings"].toObject();
 
 	// Get the video codec object
-	if (!rmtpSettings["video_codec_settings"].isObject()) {
+	if (!rtmpSettings["video_codec_settings"].isObject()) {
 		blog(LOG_INFO,
 		     "FacebookEncoderSettingsProvider video_codec_settings not an object");
 		jsonParseError();
 		return;
 	}
-	QJsonObject videoSettingsJsob =
-		rmtpSettings["video_codec_settings"].toObject();
+	QJsonObject videoSettingsJson =
+		rtmpSettings["video_codec_settings"].toObject();
 
-	if (videoSettingsJsob.isEmpty()) {
+	if (videoSettingsJson.isEmpty()) {
 		handleEmpty();
 	}
 
 	// Create map to send to wizard
 	SettingsMap *settingsMap = new SettingsMap();
 
-	addInt(videoSettingsJsob, "video_bitrate", settingsMap,
-	       SettingsResponseKeys.videoBitrate);
-	addInt(videoSettingsJsob, "video_width", settingsMap,
-	       SettingsResponseKeys.videoWidth);
-	addInt(videoSettingsJsob, "video_height", settingsMap,
-	       SettingsResponseKeys.videoHeight);
-	addStringDouble(videoSettingsJsob, "video_framerate", settingsMap,
-			SettingsResponseKeys.framerate);
-	addQString(videoSettingsJsob, "video_h264_profile", settingsMap,
-		   SettingsResponseKeys.h264Profile);
-	addQString(videoSettingsJsob, "video_h264_level", settingsMap,
-		   SettingsResponseKeys.h264Level);
-	addInt(videoSettingsJsob, "video_gop_size", settingsMap,
-	       SettingsResponseKeys.gopSizeInFrames);
-	addQString(videoSettingsJsob, "video_gop_type", settingsMap,
-		   SettingsResponseKeys.gopType);
-	addBool(videoSettingsJsob, "video_gop_closed", settingsMap,
-		SettingsResponseKeys.gopClosed);
-	addInt(videoSettingsJsob, "video_gop_num_b_frames", settingsMap,
-	       SettingsResponseKeys.gopBFrames);
-	addInt(videoSettingsJsob, "video_gop_num_ref_frames", settingsMap,
-	       SettingsResponseKeys.gopRefFrames);
-	addQString(videoSettingsJsob, "rate_control_mode", settingsMap,
-		   SettingsResponseKeys.streamRateControlMode);
-	addInt(videoSettingsJsob, "buffer_size", settingsMap,
-	       SettingsResponseKeys.streamBufferSize);
+	addInt(videoSettingsJson, "video_bitrate", settingsMap,
+	       kSettingsResponseKeys.videoBitrate);
+	addInt(videoSettingsJson, "video_width", settingsMap,
+	       kSettingsResponseKeys.videoWidth);
+	addInt(videoSettingsJson, "video_height", settingsMap,
+	       kSettingsResponseKeys.videoHeight);
+	addStringDouble(videoSettingsJson, "video_framerate", settingsMap,
+			kSettingsResponseKeys.framerate);
+	addQString(videoSettingsJson, "video_h264_profile", settingsMap,
+		   kSettingsResponseKeys.h264Profile);
+	addQString(videoSettingsJson, "video_h264_level", settingsMap,
+		   kSettingsResponseKeys.h264Level);
+	addInt(videoSettingsJson, "video_gop_size", settingsMap,
+	       kSettingsResponseKeys.gopSizeInFrames);
+	addBool(videoSettingsJson, "video_gop_closed", settingsMap,
+		kSettingsResponseKeys.gopClosed);
+	addInt(videoSettingsJson, "video_gop_num_b_frames", settingsMap,
+	       kSettingsResponseKeys.gopBFrames);
+	addInt(videoSettingsJson, "video_gop_num_ref_frames", settingsMap,
+	       kSettingsResponseKeys.gopRefFrames);
+	addQString(videoSettingsJson, "rate_control_mode", settingsMap,
+		   kSettingsResponseKeys.streamRateControlMode);
+	addInt(videoSettingsJson, "buffer_size", settingsMap,
+	       kSettingsResponseKeys.streamBufferSize);
 
 	// If Empty emit to empty / error state
 	if (settingsMap->isEmpty()) {

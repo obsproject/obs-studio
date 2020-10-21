@@ -31,7 +31,7 @@ private:
 
 	void mapContainsVariant();
 	// Adds a row only if map contains values for it
-	void addRow(QString title, QString value, const char *mapKey);
+	void addRow(QString title, QString value, QString mapKey);
 
 	// Data
 	QSharedPointer<SettingsMap> settingsMap_;
@@ -43,7 +43,7 @@ private:
 	QVBoxLayout *scrollVBoxLayout_;
 
 private slots:
-	void checkboxRowChanged(const char *propertyKey, bool selected);
+	void checkboxRowChanged(QString propertyKey, bool selected);
 
 }; // class SelectionPage
 

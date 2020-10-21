@@ -23,6 +23,7 @@ OBSData CommonSettings::GetDataFromJsonFile(const char *jsonFile)
 
 	if (!data)
 		data = obs_data_create();
+
 	OBSData dataRet(data);
 	obs_data_release(data);
 	return dataRet;
@@ -135,9 +136,7 @@ int CommonSettings::GetAudioChannelCount(config_t *config)
 
 int CommonSettings::GetStreamingAudioBitrate(config_t *config)
 {
-	bool isAdvancedMode = IsAdvancedMode(config);
-
-	if (isAdvancedMode) {
+	if (IsAdvancedMode(config)) {
 		return GetAdvancedAudioBitrate(config);
 	}
 	return GetSimpleAudioBitrate(config);
@@ -164,10 +163,11 @@ int CommonSettings::GetAdvancedAudioBitrateForTrack(config_t *config,
 	};
 
 	// Sanity check for out of bounds, clamp to bounds
-	if (trackIndex > 5)
+	if (trackIndex > 5) {
 		trackIndex = 5;
-	if (trackIndex < 0)
+	} else if (trackIndex < 0) {
 		trackIndex = 0;
+	}
 
 	int bitrate = (int)config_get_uint(config, "AdvOut", names[trackIndex]);
 	return FindClosestAvailableAACBitrate(bitrate);
@@ -180,6 +180,5 @@ int CommonSettings::GetVideoBitrateInUse(config_t *config)
 	}
 
 	OBSData streamEncSettings = GetDataFromJsonFile("streamEncoder.json");
-	int bitrate = obs_data_get_int(streamEncSettings, "bitrate");
-	return bitrate;
+	return obs_data_get_int(streamEncSettings, "bitrate");
 }

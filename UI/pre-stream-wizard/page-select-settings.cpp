@@ -60,119 +60,112 @@ void SelectionPage::setSettingsMap(QSharedPointer<SettingsMap> settingsMap)
 	settingsMap_ = settingsMap;
 	SettingsMap *mapInfo = settingsMap_.data();
 
-	if (mapInfo->contains(SettingsResponseKeys.videoBitrate)) {
+	if (mapInfo->contains(kSettingsResponseKeys.videoBitrate)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.videoBitrate).first;
+			mapInfo->value(kSettingsResponseKeys.videoBitrate).first;
 		QString bitrateString = QString::number(data.toInt()) + "kbps";
 		addRow(QTStr("Basic.Settings.Output.VideoBitrate"),
-		       bitrateString, SettingsResponseKeys.videoBitrate);
+		       bitrateString, kSettingsResponseKeys.videoBitrate);
 	}
 
-	// Uses SettingsResponseKeys.videoHeight to signal change
-	if (mapInfo->contains(SettingsResponseKeys.videoWidth) &&
-	    mapInfo->contains(SettingsResponseKeys.videoHeight)) {
-		int vidW = mapInfo->value(SettingsResponseKeys.videoWidth)
+	// Uses kSettingsResponseKeys.videoHeight to signal change
+	if (mapInfo->contains(kSettingsResponseKeys.videoWidth) &&
+	    mapInfo->contains(kSettingsResponseKeys.videoHeight)) {
+		int vidW = mapInfo->value(kSettingsResponseKeys.videoWidth)
 				   .first.toInt();
 		QString videoWidthString = QString::number(vidW);
-		int vidH = mapInfo->value(SettingsResponseKeys.videoHeight)
+		int vidH = mapInfo->value(kSettingsResponseKeys.videoHeight)
 				   .first.toInt();
 		QString videoHeightString = QString::number(vidH);
 		QString valueString =
 			videoWidthString + "x" + videoHeightString;
 
 		addRow(QTStr("Basic.Settings.Video.ScaledResolution"),
-		       valueString, SettingsResponseKeys.videoHeight);
+		       valueString, kSettingsResponseKeys.videoHeight);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.framerate)) {
+	if (mapInfo->contains(kSettingsResponseKeys.framerate)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.framerate).first;
+			mapInfo->value(kSettingsResponseKeys.framerate).first;
 		double framerate = data.toDouble();
-		QString fpsString = QString().sprintf("%.3f", framerate);
+		QString fpsString = QString().asprintf("%.3f", framerate);
 		addRow(QTStr("Basic.Settings.Video.FPS"), fpsString,
-		       SettingsResponseKeys.framerate);
+		       kSettingsResponseKeys.framerate);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.h264Profile)) {
+	if (mapInfo->contains(kSettingsResponseKeys.h264Profile)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.h264Profile).first;
+			mapInfo->value(kSettingsResponseKeys.h264Profile).first;
 		QString profileString = data.toString();
-		addRow(QTStr("Basic.Settings.Output.Mode.CodecProfile"),
-		       profileString, SettingsResponseKeys.h264Profile);
+		addRow(QTStr("PreLiveWizard.Output.Mode.CodecProfile"),
+		       profileString, kSettingsResponseKeys.h264Profile);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.h264Level)) {
+	if (mapInfo->contains(kSettingsResponseKeys.h264Level)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.h264Level).first;
+			mapInfo->value(kSettingsResponseKeys.h264Level).first;
 		QString level = data.toString();
-		addRow(QTStr("Basic.Settings.Output.Mode.CodecLevel"), level,
-		       SettingsResponseKeys.h264Level);
+		addRow(QTStr("PreLiveWizard.Output.Mode.CodecLevel"), level,
+		       kSettingsResponseKeys.h264Level);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.gopSizeInFrames)) {
+	if (mapInfo->contains(kSettingsResponseKeys.gopSizeInFrames)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.gopSizeInFrames)
+			mapInfo->value(kSettingsResponseKeys.gopSizeInFrames)
 				.first;
 		QString gopFramesString = QString::number(data.toInt());
 		addRow(QTStr("Basic.Settings.Output.Adv.FFmpeg.GOPSize"),
-		       gopFramesString, SettingsResponseKeys.gopSizeInFrames);
+		       gopFramesString, kSettingsResponseKeys.gopSizeInFrames);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.gopType)) {
+	if (mapInfo->contains(kSettingsResponseKeys.gopClosed)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.gopType).first;
-		QString gopTypeString = data.toString();
-		addRow(QTStr("Basic.Settings.Output.Adv.FFmpeg.GOPType"),
-		       gopTypeString, SettingsResponseKeys.gopType);
-	}
-
-	if (mapInfo->contains(SettingsResponseKeys.gopClosed)) {
-		QVariant data =
-			mapInfo->value(SettingsResponseKeys.gopClosed).first;
+			mapInfo->value(kSettingsResponseKeys.gopClosed).first;
 		QString gopClosedString = data.toBool() ? QTStr("Yes")
 							: QTStr("No");
 		addRow(QTStr("Basic.Settings.Output.Adv.FFmpeg.GOPClosed"),
-		       gopClosedString, SettingsResponseKeys.gopClosed);
+		       gopClosedString, kSettingsResponseKeys.gopClosed);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.gopBFrames)) {
+	if (mapInfo->contains(kSettingsResponseKeys.gopBFrames)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.gopBFrames).first;
+			mapInfo->value(kSettingsResponseKeys.gopBFrames).first;
 		QString bFramesString = QString::number(data.toInt());
 		addRow(QTStr("Basic.Settings.Output.Adv.FFmpeg.BFrames"),
-		       bFramesString, SettingsResponseKeys.gopBFrames);
+		       bFramesString, kSettingsResponseKeys.gopBFrames);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.gopRefFrames)) {
+	if (mapInfo->contains(kSettingsResponseKeys.gopRefFrames)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.gopRefFrames).first;
+			mapInfo->value(kSettingsResponseKeys.gopRefFrames).first;
 		QString gopRefFramesCountString = QString::number(data.toInt());
 		addRow(QTStr("Basic.Settings.Output.Adv.FFmpeg.ReferenceFrames"),
 		       gopRefFramesCountString,
-		       SettingsResponseKeys.gopRefFrames);
+		       kSettingsResponseKeys.gopRefFrames);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.streamRateControlMode)) {
-		QVariant data = mapInfo->value(SettingsResponseKeys
+	if (mapInfo->contains(kSettingsResponseKeys.streamRateControlMode)) {
+		QVariant data = mapInfo->value(kSettingsResponseKeys
 						       .streamRateControlMode)
 					.first;
 		QString rateControlString = data.toString().toUpper();
-		addRow(QTStr("Basic.Settings.Output.Mode.RateControl"),
+		addRow(QTStr("PreLiveWizard.Output.Mode.RateControl"),
 		       rateControlString,
-		       SettingsResponseKeys.streamRateControlMode);
+		       kSettingsResponseKeys.streamRateControlMode);
 	}
 
-	if (mapInfo->contains(SettingsResponseKeys.streamBufferSize)) {
+	if (mapInfo->contains(kSettingsResponseKeys.streamBufferSize)) {
 		QVariant data =
-			mapInfo->value(SettingsResponseKeys.streamBufferSize)
+			mapInfo->value(kSettingsResponseKeys.streamBufferSize)
 				.first;
 		QString bufferSizeString = QString::number(data.toInt()) + "Kb";
-		addRow(QTStr("Basic.Settings.Output.Mode.StreamBuffer"),
-		       bufferSizeString, SettingsResponseKeys.streamBufferSize);
+		addRow(QTStr("PreLiveWizard.Output.Mode.StreamBuffer"),
+		       bufferSizeString,
+		       kSettingsResponseKeys.streamBufferSize);
 	}
 }
 
-void SelectionPage::addRow(QString title, QString value, const char *mapKey)
+void SelectionPage::addRow(QString title, QString value, QString mapKey)
 {
 	SelectionRow *row = new SelectionRow();
 	row->setName(title);
@@ -183,7 +176,7 @@ void SelectionPage::addRow(QString title, QString value, const char *mapKey)
 		&SelectionPage::checkboxRowChanged);
 }
 
-void SelectionPage::checkboxRowChanged(const char *propertyKey, bool selected)
+void SelectionPage::checkboxRowChanged(QString propertyKey, bool selected)
 {
 	if (settingsMap_ == nullptr) {
 		return;

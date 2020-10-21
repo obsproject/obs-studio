@@ -60,12 +60,12 @@ QString SelectionRow::getValueLabel()
 	return valueLabel_;
 }
 
-void SelectionRow::setPropertyKey(const char *newKey)
+void SelectionRow::setPropertyKey(QString newKey)
 {
 	propertyKey_ = newKey;
 }
 
-const char *SelectionRow::getPropertyKey()
+QString SelectionRow::getPropertyKey()
 {
 	return propertyKey_;
 }

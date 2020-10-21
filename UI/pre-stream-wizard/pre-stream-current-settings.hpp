@@ -73,35 +73,29 @@ struct EncoderSettingsRequest {
 };
 
 // Map for the repsonse passed to UI and settings is:
-using SettingsMap = QMap<const char *, QPair<QVariant, bool>>;
+using SettingsMap = QMap<QString, QPair<QVariant, bool>>;
 // where String = map key from kSettingsResponseKeys, and
 // where QVariant is the Settings value, and
 // where bool is if the user wants to apply the settings
 // Keys for new settings QMap
-static const struct {
-	const char *videoWidth;            //int
-	const char *videoHeight;           //int
-	const char *framerate;             // double (FPS)
-	const char *videoBitrate;          //int
-	const char *protocol;              // string
-	const char *videoCodec;            // string
-	const char *h264Profile;           // string ("High")
-	const char *h264Level;             // string ("4.1")
-	const char *gopSizeInFrames;       // int
-	const char *gopType;               // string ("fixed")
-	const char *gopClosed;             // bool
-	const char *gopBFrames;            // int
-	const char *gopRefFrames;          // int
-	const char *streamRateControlMode; // string "CBR"
-	const char *streamBufferSize;      // int (5000 kb)
-} SettingsResponseKeys = {
-	"videoWidth",       "videoHeight",
-	"framerate",        "videoBitrate",
-	"protocol",         "videoCodec",
-	"h264Profile",      "h264Level",
-	"gopSizeInFrames",  "gopType",
-	"gopClosed",        "gopBFrames",
-	"gopRefFrames",     "streamRateControlMode",
-	"streamBufferSize",
+struct SettingsResponseKeys {
+	QString videoWidth;            //int
+	QString videoHeight;           //int
+	QString framerate;             // double (FPS)
+	QString videoBitrate;          //int
+	QString protocol;              // string
+	QString videoCodec;            // string
+	QString h264Profile;           // string ("High")
+	QString h264Level;             // string ("4.1")
+	QString gopSizeInFrames;       // int
+	QString gopClosed;             // bool
+	QString gopBFrames;            // int
+	QString gopRefFrames;          // int
+	QString streamRateControlMode; // string "CBR"
+	QString streamBufferSize;      // int (5000 kb)
 };
-}
+
+// Defined in pre-stream-current-settings.cpp
+extern SettingsResponseKeys kSettingsResponseKeys;
+
+} // namespace StreamWizard

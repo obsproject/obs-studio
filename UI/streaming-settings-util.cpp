@@ -43,7 +43,7 @@ StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(config_t *config)
 /*
 * StreamWizard::SettingsMap is sparse in that it wont have all keys 
 * as well, the user can opt out of settings being applied. 
-* The map looks like [ SettingsResponseKeys : QPair<QVariant, bool>  ]
+* The map looks like [ kSettingsResponseKeys : QPair<QVariant, bool>  ]
 * AKA [KEY : SetttingPair<Setting_Value_Variant, User_Wants_Setting_Bool> ]
 * if the key is available, it means the wizard provider added a value for it
 * but the bool in the QPair is false if the user selected in the wizard not to 
@@ -52,7 +52,7 @@ StreamingSettingsUtility::makeEncoderSettingsFromCurrentState(config_t *config)
 
 * Returns TRUE is map contrains something for the key and it is marked true
 */
-bool CheckInMapAndSelected(StreamWizard::SettingsMap *map, const char *key)
+bool CheckInMapAndSelected(StreamWizard::SettingsMap *map, QString key)
 {
 	if (!map->contains(key)) {
 		return false;
@@ -62,28 +62,28 @@ bool CheckInMapAndSelected(StreamWizard::SettingsMap *map, const char *key)
 }
 
 // Helper Functions for ::applyWizardSettings
-int intFromMap(StreamWizard::SettingsMap *map, const char *key)
+int intFromMap(StreamWizard::SettingsMap *map, QString key)
 {
 	QPair<QVariant, bool> settingPair = map->value(key);
 	QVariant data = settingPair.first;
 	return data.toInt();
 }
 
-QString stringFromMap(StreamWizard::SettingsMap *map, const char *key)
+QString stringFromMap(StreamWizard::SettingsMap *map, QString key)
 {
 	QPair<QVariant, bool> settingPair = map->value(key);
 	QVariant data = settingPair.first;
 	return data.toString();
 }
 
-double doubleFromMap(StreamWizard::SettingsMap *map, const char *key)
+double doubleFromMap(StreamWizard::SettingsMap *map, QString key)
 {
 	QPair<QVariant, bool> settingPair = map->value(key);
 	QVariant data = settingPair.first;
 	return data.toDouble();
 }
 
-bool boolFromMap(StreamWizard::SettingsMap *map, const char *key)
+bool boolFromMap(StreamWizard::SettingsMap *map, QString key)
 {
 	QPair<QVariant, bool> settingPair = map->value(key);
 	QVariant data = settingPair.first;
@@ -91,7 +91,7 @@ bool boolFromMap(StreamWizard::SettingsMap *map, const char *key)
 }
 
 /*
-* Given a settings map [ SettingsResponseKeys : QPair<QVariant, bool> ] apply
+* Given a settings map [ kSettingsResponseKeys : QPair<QVariant, bool> ] apply
 * settings that are in the sparse map as well selected by the user (which is 
 * marked by the bool in the pair).
 * Apply to Basic encoder settings.
@@ -113,20 +113,21 @@ void StreamingSettingsUtility::applyWizardSettings(
 	config_set_bool(config, "SimpleOutput", "UseAdvanced", true);
 
 	// Resolution must have both
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.videoHeight) &&
-	    CheckInMapAndSelected(map, SettingsResponseKeys.videoWidth)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.videoHeight) &&
+	    CheckInMapAndSelected(map, kSettingsResponseKeys.videoWidth)) {
 
-		int canvasX = intFromMap(map, SettingsResponseKeys.videoWidth);
-		int canvasY = intFromMap(map, SettingsResponseKeys.videoHeight);
+		int canvasX = intFromMap(map, kSettingsResponseKeys.videoWidth);
+		int canvasY =
+			intFromMap(map, kSettingsResponseKeys.videoHeight);
 		config_set_uint(config, "Video", "OutputCX", canvasX);
 		config_set_uint(config, "Video", "OutputCY", canvasY);
 	}
 
 	//TODO: FPS is hacky but covers all integer and standard drop frame cases
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.framerate)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.framerate)) {
 		double currentFPS = CommonSettings::GetConfigFPSDouble(config);
 		double newFPS =
-			doubleFromMap(map, SettingsResponseKeys.framerate);
+			doubleFromMap(map, kSettingsResponseKeys.framerate);
 		if (abs(currentFPS - newFPS) >
 		    0.001) { // Only change if different
 			if (abs(floor(newFPS) - newFPS) >
@@ -146,40 +147,34 @@ void StreamingSettingsUtility::applyWizardSettings(
 		}
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.videoBitrate)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.videoBitrate)) {
 		int newBitrate =
-			intFromMap(map, SettingsResponseKeys.videoBitrate);
+			intFromMap(map, kSettingsResponseKeys.videoBitrate);
 		config_set_int(config, "SimpleOutput", "VBitrate", newBitrate);
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.h264Profile)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.h264Profile)) {
 		QString profile =
-			stringFromMap(map, SettingsResponseKeys.h264Profile);
+			stringFromMap(map, kSettingsResponseKeys.h264Profile);
 		profile = profile.toLower();
 		x264SettingList.append("profile=" + profile);
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.h264Level)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.h264Level)) {
 		QString levelString =
-			stringFromMap(map, SettingsResponseKeys.h264Level);
+			stringFromMap(map, kSettingsResponseKeys.h264Level);
 		x264SettingList.append("level=" + levelString);
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.gopSizeInFrames)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.gopSizeInFrames)) {
 		int gopSize =
-			intFromMap(map, SettingsResponseKeys.gopSizeInFrames);
+			intFromMap(map, kSettingsResponseKeys.gopSizeInFrames);
 		x264SettingList.append("keyint=" + QString::number(gopSize));
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.gopType)) {
-		QString gopType =
-			stringFromMap(map, SettingsResponseKeys.gopType);
-		x264SettingList.append("slice_mode=" + gopType);
-	}
-
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.gopClosed)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.gopClosed)) {
 		bool gopClose =
-			boolFromMap(map, SettingsResponseKeys.gopClosed);
+			boolFromMap(map, kSettingsResponseKeys.gopClosed);
 		if (gopClose) {
 			x264SettingList.append("open_gop=0");
 		} else {
@@ -187,29 +182,31 @@ void StreamingSettingsUtility::applyWizardSettings(
 		}
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.gopBFrames)) {
-		int bFrames = intFromMap(map, SettingsResponseKeys.gopBFrames);
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.gopBFrames)) {
+		int bFrames = intFromMap(map, kSettingsResponseKeys.gopBFrames);
 		x264SettingList.append("bframes=" + QString::number(bFrames));
 	}
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.gopRefFrames)) {
+	if (CheckInMapAndSelected(map, kSettingsResponseKeys.gopRefFrames)) {
 		int refFrames =
-			intFromMap(map, SettingsResponseKeys.gopRefFrames);
+			intFromMap(map, kSettingsResponseKeys.gopRefFrames);
 		x264SettingList.append("ref=" + QString::number(refFrames));
 	}
 
-	// SettingsResponseKeys.streamRateControlMode defaults to CBR in Simple
+	// kSettingsResponseKeys.streamRateControlMode defaults to CBR in Simple
 	// encoder mode. Can add later for advanced panel.
 
-	if (CheckInMapAndSelected(map, SettingsResponseKeys.streamBufferSize)) {
+	if (CheckInMapAndSelected(map,
+				  kSettingsResponseKeys.streamBufferSize)) {
 		int bufferSize =
-			intFromMap(map, SettingsResponseKeys.streamBufferSize);
-		x264SettingList.append("bufsize=" +
+			intFromMap(map, kSettingsResponseKeys.streamBufferSize);
+		x264SettingList.append("vbv-bufsize=" +
 				       QString::number(bufferSize));
 	}
 
-	QString x264String = x264SettingList.join(" ");
-	const char *x264_c_String = x264String.toStdString().c_str();
+	std::string x264String =
+		x264SettingList.join(" ").toUtf8().toStdString();
+	const char *x264_c_String = x264String.c_str();
 	config_set_string(config, "SimpleOutput", "x264Settings",
 			  x264_c_String);
 };

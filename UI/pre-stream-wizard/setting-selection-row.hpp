@@ -31,12 +31,12 @@ public:
 	QString getValueLabel();
 
 	// Key to mapping property to Settings Map
-	void setPropertyKey(const char *newKey);
-	const char *getPropertyKey();
+	void setPropertyKey(QString newKey);
+	QString getPropertyKey();
 
 signals:
 	// User changed if they want to apply an option
-	void didChangeSelectedStatus(const char *propertyKey, bool selected);
+	void didChangeSelectedStatus(QString propertyKey, bool selected);
 
 private:
 	void createLayout();
@@ -46,7 +46,7 @@ private:
 	// Visual from upper class
 	QString name_;
 	QString valueLabel_;
-	const char *propertyKey_;
+	QString propertyKey_;
 
 	// Layout and subwidgets
 	QString separator_ = ": ";

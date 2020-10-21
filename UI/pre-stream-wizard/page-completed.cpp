@@ -37,10 +37,10 @@ CompletedPage::CompletedPage(Destination destination,
 			QTStr("PreLiveWizard.Completed.FacebookOnly"), this);
 		facebookGoLiveLabel->setWordWrap(true);
 		QPushButton *launchButton = new QPushButton(
-			QTStr("PreLiveWizard.Prompt.FBResolutionHelpButton.FB"),
+			QTStr("PreLiveWizard.Prompt.ResolutionHelpButton.FB"),
 			this);
 		launchButton->setToolTip(QTStr(
-			"PreLiveWizard.Prompt.FBResolutionHelpButton.FB.ToolTip"));
+			"PreLiveWizard.Prompt.ResolutionHelpButton.FB.ToolTip"));
 		connect(launchButton, &QPushButton::clicked, this,
 			&CompletedPage::didPushOpenWebsite);
 

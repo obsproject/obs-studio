@@ -190,6 +190,7 @@ set(obs_SOURCES
 	${obs_PLATFORM_SOURCES}
 	${obs_libffutil_SOURCES}
 	../deps/json11/json11.cpp
+	pre-stream-wizard/pre-stream-current-settings.cpp
 	pre-stream-wizard/pre-stream-wizard.cpp
 	pre-stream-wizard/page-input-display.cpp
 	pre-stream-wizard/page-start-prompt.cpp
