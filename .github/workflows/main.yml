@@ -53,7 +53,15 @@ jobs:
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
-          brew update --preinstall
+          if [ -d /usr/local/opt/openssl@1.0.2t ]; then
+              brew uninstall openssl@1.0.2t
+              brew untap local/openssl
+          fi
+
+          if [ -d /usr/local/opt/python@2.7.17 ]; then
+              brew uninstall python@2.7.17
+              brew untap local/python2
+          fi
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache

@@ -38,6 +38,7 @@ PRODUCT_NAME="OBS-Studio"
 CHECKOUT_DIR="$(git rev-parse --show-toplevel)"
 DEPS_BUILD_DIR="${CHECKOUT_DIR}/../obs-build-dependencies"
 BUILD_DIR="${BUILD_DIR:-build}"
+BUILD_CONFIG=${BUILD_CONFIG:-RelWithDebInfo}
 CI_SCRIPTS="${CHECKOUT_DIR}/CI/scripts/macos"
 CI_WORKFLOW="${CHECKOUT_DIR}/.github/workflows/main.yml"
 CI_CEF_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+CEF_BUILD_VERSION: '([0-9]+)'/\1/p")
@@ -130,7 +131,16 @@ install_homebrew_deps() {
         exit 1
     fi
 
-    brew update
+    if [ -d /usr/local/opt/openssl@1.0.2t ]; then
+        brew uninstall openssl@1.0.2t
+        brew untap local/openssl
+    fi
+
+    if [ -d /usr/local/opt/python@2.7.17 ]; then
+        brew uninstall python@2.7.17
+        brew untap local/python2
+    fi
+
     brew bundle --file ${CI_SCRIPTS}/Brewfile
 
     check_curl
@@ -271,6 +281,7 @@ configure_obs_build() {
         -DBUILD_CAPTIONS=ON \
         -DWITH_RTMPS=ON \
         -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64" \
+        -DCMAKE_BUILD_TYPE="${BUILD_CONFIG}" \
         ..
 
 }
@@ -296,7 +307,7 @@ bundle_dylibs() {
     ${CI_SCRIPTS}/app/dylibbundler -cd -of -a ./OBS.app -q -f \
         -s ./OBS.app/Contents/MacOS \
         -s "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" \
-        -s ./rundir/RelWithDebInfo/bin/ \
+        -s ./rundir/${BUILD_CONFIG}/bin/ \
         -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
         -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
         -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
@@ -321,7 +332,12 @@ bundle_dylibs() {
         -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
         -x ./OBS.app/Contents/PlugIns/obs-outputs.so
     step "Move libobs-opengl to final destination"
-    cp ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
+
+    if [ -f "./libobs-opengl/libobs-opengl.so" ]; then
+        cp ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
+    else
+        cp ./libobs-opengl/${BUILD_CONFIG}/libobs-opengl.so ./OBS.app/Contents/Frameworks
+    fi
 
     step "Copy QtNetwork for plugin support"
     cp -R /tmp/obsdeps/lib/QtNetwork.framework ./OBS.app/Contents/Frameworks
@@ -350,7 +366,7 @@ install_frameworks() {
 prepare_macos_bundle() {
     ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
-    if [ ! -d ./rundir/RelWithDebInfo/bin ]; then
+    if [ ! -d ./rundir/${BUILD_CONFIG}/bin ]; then
         error "No OBS build found"
         return
     fi
@@ -363,12 +379,12 @@ prepare_macos_bundle() {
     mkdir OBS.app/Contents/PlugIns
     mkdir OBS.app/Contents/Resources
 
-    cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
-    cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
-    cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
-    cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
+    cp rundir/${BUILD_CONFIG}/bin/obs ./OBS.app/Contents/MacOS
+    cp rundir/${BUILD_CONFIG}/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
+    cp rundir/${BUILD_CONFIG}/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
+    cp -R rundir/${BUILD_CONFIG}/data ./OBS.app/Contents/Resources
     cp ${CI_SCRIPTS}/app/obs.icns ./OBS.app/Contents/Resources
-    cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
+    cp -R rundir/${BUILD_CONFIG}/obs-plugins/ ./OBS.app/Contents/PlugIns
     cp ${CI_SCRIPTS}/app/Info.plist ./OBS.app/Contents
     # Scripting plugins are required to be placed in same directory as binary
     if [ -d ./OBS.app/Contents/Resources/data/obs-scripting ]; then
