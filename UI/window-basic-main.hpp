@@ -949,6 +949,7 @@ private slots:
 	void on_toggleContextBar_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);
+	void on_toggleStudioModeControls_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
 	void on_transitionRemove_clicked();

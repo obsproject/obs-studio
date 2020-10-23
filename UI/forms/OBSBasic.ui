@@ -628,6 +628,7 @@
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
     <addaction name="toggleStatusBar"/>
+    <addaction name="toggleStudioModeControls"/>
     <addaction name="separator"/>
     <addaction name="stats"/>
    </widget>
@@ -2003,6 +2004,17 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.View.ContextBar</string>
+   </property>
+  </action>
+  <action name="toggleStudioModeControls">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.View.StudioModeControls</string>
    </property>
   </action>
  </widget>

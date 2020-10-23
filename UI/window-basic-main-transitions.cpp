@@ -1444,6 +1444,11 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 		ui->previewLayout->setAlignment(programOptions,
 						Qt::AlignCenter);
 
+		bool visible = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow",
+					       "ShowStudioModeControls");
+		programOptions->setVisible(visible);
+
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_STUDIO_MODE_ENABLED);
 

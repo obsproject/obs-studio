@@ -1748,6 +1748,10 @@ void OBSBasic::OBSInit()
 		GetGlobalConfig(), "BasicWindow", "ShowSourceIcons");
 	ui->toggleSourceIcons->setChecked(sourceIconsVisible);
 
+	bool studioModeControlsVisible = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "ShowStudioModeControls");
+	ui->toggleStudioModeControls->setChecked(studioModeControlsVisible);
+
 	if (config_has_user_value(App()->GlobalConfig(), "BasicWindow",
 				  "ShowContextToolbars")) {
 		bool visible = config_get_bool(App()->GlobalConfig(),
@@ -7380,6 +7384,15 @@ void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
 			visible);
+}
+
+void OBSBasic::on_toggleStudioModeControls_toggled(bool visible)
+{
+	if (programOptions)
+		programOptions->setVisible(visible);
+
+	config_set_bool(App()->GlobalConfig(), "BasicWindow",
+			"ShowStudioModeControls", visible);
 }
 
 void OBSBasic::on_actionLockPreview_triggered()
