@@ -494,7 +494,8 @@ private:
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
-	void LoadExtraBrowserDocks();
+	void LoadExtraBrowserDocks(const char *);
+	std::string ExtraBrowserSaveString();
 	void SaveExtraBrowserDocks();
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
@@ -597,6 +598,13 @@ public slots:
 
 	bool AddSceneCollection(bool create_new,
 				const QString &name = QString());
+
+	void RefreshUICollections();
+	void ChangeUICollection();
+	void SaveUI();
+	void CreateDefaultUI(bool);
+	void LoadUI(const char *);
+	bool AddUICollection(bool, const QString &);
 
 	void UpdatePatronJson(const QString &text, const QString &error);
 
@@ -932,6 +940,13 @@ private slots:
 	void on_actionRemoveSceneCollection_triggered();
 	void on_actionImportSceneCollection_triggered();
 	void on_actionExportSceneCollection_triggered();
+
+	void on_actionNewUICollection_triggered();
+	void on_actionDupUICollection_triggered();
+	void on_actionRenameUICollection_triggered();
+	void on_actionRemoveUICollection_triggered();
+	void on_actionImportUICollection_triggered();
+	void on_actionExportUICollection_triggered();
 
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();

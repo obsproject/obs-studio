@@ -6,7 +6,7 @@ if (UNIX AND POLICY CMP0072)
 endif()
 
 project(obs-studio)
-
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 option(BUILD_CAPTIONS "Build captions" FALSE)
 option(DEBUG_FFMPEG_MUX "Debug FFmpeg muxer subprocess" FALSE)
 

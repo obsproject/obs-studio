@@ -638,12 +638,25 @@
     <addaction name="autoConfigure"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="uiCollectionMenu">
+    <property name="title">
+     <string>Basic.MainMenu.UICollection</string>
+    </property>
+    <addaction name="actionNewUICollection"/>
+    <addaction name="actionDupUICollection"/>
+    <addaction name="actionRenameUICollection"/>
+    <addaction name="actionRemoveUICollection"/>
+    <addaction name="actionImportUICollection"/>
+    <addaction name="actionExportUICollection"/>
+    <addaction name="separator"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
    <addaction name="viewMenu"/>
    <addaction name="profileMenu"/>
    <addaction name="sceneCollectionMenu"/>
    <addaction name="menuTools"/>
+   <addaction name="uiCollectionMenu"/>
    <addaction name="menuBasic_MainMenu_Help"/>
   </widget>
   <widget class="OBSBasicStatusBar" name="statusbar"/>
@@ -783,6 +796,9 @@
    </widget>
   </widget>
   <widget class="OBSDock" name="sourcesDock">
+   <property name="floating">
+    <bool>false</bool>
+   </property>
    <property name="features">
     <set>QDockWidget::DockWidgetClosable|QDockWidget::DockWidgetMovable|QDockWidget::DockWidgetFloatable</set>
    </property>
@@ -1987,23 +2003,61 @@
    </property>
   </action>
   <action name="toggleContextToolbars">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.MainMenu.View.Toolbars.Context</string>
-   </property>
+    <property name="checkable">
+      <bool>true</bool>
+    </property>
+    <property name="text">
+      <string>Basic.MainMenu.View.Toolbars.Context</string>
+    </property>
   </action>
   <action name="toggleContextBar">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.MainMenu.View.ContextBar</string>
-   </property>
+    <property name="checkable">
+      <bool>true</bool>
+    </property>
+    <property name="checked">
+      <bool>true</bool>
+    </property>
+    <property name="text">
+      <string>Basic.MainMenu.View.ContextBar</string>
+    </property>
+  </action>
+  <action name="actionNewUICollection">
+    <property name="checkable">
+      <bool>false</bool>
+    </property>
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.New</string>
+    </property>
+  </action>
+  <action name="actionDupUICollection">
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.Duplicate</string>
+    </property>
+  </action>
+  <action name="actionRenameUICollection">
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.Rename</string>
+    </property>
+  </action>
+  <action name="actionRemoveUICollection">
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.Remove</string>
+    </property>
+  </action>
+  <action name="actionRename_2">
+    <property name="text">
+      <string>Rename</string>
+    </property>
+  </action>
+  <action name="actionImportUICollection">
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.Import</string>
+    </property>
+  </action>
+  <action name="actionExportUICollection">
+    <property name="text">
+      <string>Basic.MainMenu.UICollection.Export</string>
+    </property>
   </action>
  </widget>
  <customwidgets>

@@ -84,6 +84,7 @@ bool opt_disable_updater = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_starting_ui;
 
 bool restart = false;
 
@@ -553,6 +554,11 @@ static bool MakeUserProfileDirs()
 	if (!do_mkdir(path))
 		return false;
 
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/ui") <= 0)
+		return false;
+	if (!do_mkdir(path))
+		return false;
+
 	return true;
 }
 
@@ -593,6 +599,51 @@ static string GetProfileDirFromName(const char *name)
 	os_globfree(glob);
 
 	if (!outputPath.empty()) {
+		replace(outputPath.begin(), outputPath.end(), '\\', '/');
+		const char *start = strrchr(outputPath.c_str(), '/');
+		if (start)
+			outputPath.erase(0, start - outputPath.c_str() + 1);
+	}
+
+	return outputPath;
+}
+
+static string GetUICollectionFileFromName(const char *name)
+{
+	string outputPath;
+	os_glob_t *glob;
+	char path[512];
+
+	if (GetConfigPath(path, sizeof(path), "obs-studio/basic/ui") <= 0)
+		return outputPath;
+
+	strcat(path, "/*.json");
+
+	if (os_glob(path, 0, &glob) != 0)
+		return outputPath;
+
+	for (size_t i = 0; i < glob->gl_pathc; i++) {
+		struct os_globent ent = glob->gl_pathv[i];
+		if (ent.directory)
+			continue;
+
+		obs_data_t *data =
+			obs_data_create_from_json_file_safe(ent.path, "bak");
+		const char *curName = obs_data_get_string(data, "name");
+
+		if (astrcmpi(name, curName) == 0) {
+			outputPath = ent.path;
+			obs_data_release(data);
+			break;
+		}
+
+		obs_data_release(data);
+	}
+
+	os_globfree(glob);
+
+	if (!outputPath.empty()) {
+		outputPath.resize(outputPath.size() - 5);
 		replace(outputPath.begin(), outputPath.end(), '\\', '/');
 		const char *start = strrchr(outputPath.c_str(), '/');
 		if (start)
@@ -724,6 +775,18 @@ bool OBSApp::InitGlobalConfig()
 					  opt_starting_profile.c_str());
 			config_set_string(globalConfig, "Basic", "ProfileDir",
 					  path.c_str());
+			changed = true;
+		}
+	}
+
+	if (!opt_starting_ui.empty()) {
+		string path =
+			GetUICollectionFileFromName(opt_starting_ui.c_str());
+		if (!path.empty()) {
+			config_set_string(globalConfig, "Basic", "UICollection",
+					  opt_starting_ui.c_str());
+			config_set_string(globalConfig, "Basic",
+					  "UICollectionFile", path.c_str());
 			changed = true;
 		}
 	}
@@ -1257,6 +1320,10 @@ void OBSApp::AppInit()
 				  Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 				  Str("Untitled"));
+	config_set_default_string(globalConfig, "Basic", "UICollection",
+				  Str("Untitled"));
+	config_set_default_string(globalConfig, "Basic", "UICollectionFile",
+				  Str("Untitled"));
 
 	if (!config_has_user_value(globalConfig, "Basic", "Profile")) {
 		config_set_string(globalConfig, "Basic", "Profile",
@@ -1269,6 +1336,12 @@ void OBSApp::AppInit()
 		config_set_string(globalConfig, "Basic", "SceneCollection",
 				  Str("Untitled"));
 		config_set_string(globalConfig, "Basic", "SceneCollectionFile",
+				  Str("Untitled"));
+	}
+	if (!config_has_user_value(globalConfig, "Basic", "UICollection")) {
+		config_set_string(globalConfig, "Basic", "UICollection",
+				  Str("Untitled"));
+		config_set_string(globalConfig, "Basic", "UICollectionFile",
 				  Str("Untitled"));
 	}
 

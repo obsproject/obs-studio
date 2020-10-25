@@ -360,9 +360,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	QPoint curPos;
 
-	UpdateContextBar();
-
-	//restore parent window geometry
 	const char *geometry = config_get_string(App()->GlobalConfig(),
 						 "BasicWindow", "geometry");
 	if (geometry != NULL) {
@@ -768,6 +765,68 @@ void OBSBasic::CreateDefaultScene(bool firstStart)
 	obs_scene_release(scene);
 
 	disableSaving--;
+}
+
+void OBSBasic::CreateDefaultUI(bool warnUser)
+{
+	/* prune deleted extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+		}
+	}
+
+	if (extraDocks.size() && warnUser) {
+		QMessageBox::StandardButton button = QMessageBox::question(
+			this, QTStr("ResetUIWarning.Title"),
+			QTStr("ResetUIWarning.Text"));
+
+		if (button == QMessageBox::No)
+			return;
+	}
+
+	/* undock/hide/center extra docks */
+	for (int i = extraDocks.size() - 1; i >= 0; i--) {
+		if (extraDocks[i]) {
+			extraDocks[i]->setVisible(true);
+			extraDocks[i]->setFloating(true);
+			extraDocks[i]->move(frameGeometry().topLeft() +
+					    rect().center() -
+					    extraDocks[i]->rect().center());
+			extraDocks[i]->setVisible(false);
+		}
+	}
+
+	restoreState(startingDockLayout);
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
+	int cx = width();
+	int cy = height();
+
+	int cx22_5 = cx * 225 / 1000;
+	int cx5 = cx * 5 / 100;
+
+	cy = cy * 225 / 1000;
+
+	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
+
+	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
+				   ui->mixerDock, ui->transitionsDock,
+				   ui->controlsDock};
+
+	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
+
+	ui->scenesDock->setVisible(true);
+	ui->sourcesDock->setVisible(true);
+	ui->mixerDock->setVisible(true);
+	ui->transitionsDock->setVisible(true);
+	ui->controlsDock->setVisible(true);
+	statsDock->setVisible(false);
+	statsDock->setFloating(true);
+
+	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
+	resizeDocks(docks, sizes, Qt::Horizontal);
+#endif
 }
 
 static void ReorderItemByName(QListWidget *lw, const char *name, int newIndex)
@@ -1789,6 +1848,7 @@ void OBSBasic::OBSInit()
 
 	RefreshSceneCollections();
 	RefreshProfiles();
+	RefreshUICollections();
 	disableSaving--;
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
@@ -1840,17 +1900,84 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
-	const char *dockStateStr = config_get_string(
+	char nfileName[512];
+	char nsavePath[512];
+	const char *uiCollection = config_get_string(
+		App()->GlobalConfig(), "Basic", "UICollectionFile");
+
+	ret = snprintf(nfileName, 512, "obs-studio/basic/ui/%s.json",
+		       uiCollection);
+	if (ret <= 0)
+		return;
+
+	ret = GetConfigPath(nsavePath, sizeof(nsavePath), nfileName);
+	if (ret <= 0)
+		return;
+
+	obs_data_t *data =
+		obs_data_create_from_json_file_safe(nsavePath, "bak");
+
+	/* ----------------------------- */
+	/* add custom browser docks      */
+
+#ifdef BROWSER_AVAILABLE
+	if (cef) {
+		QAction *action = new QAction(QTStr("Basic.MainMenu."
+						    "View.Docks."
+						    "CustomBrowserDocks"));
+		ui->viewMenuDocks->insertAction(ui->toggleScenes, action);
+		connect(action, &QAction::triggered, this,
+			&OBSBasic::ManageExtraBrowserDocks);
+		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
+
+		const char *configDockBrowsers =
+			config_get_string(App()->GlobalConfig(), "BasicWindow",
+					  "ExtraBrowserDocks");
+		bool EBDUsed = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow", "UsedDefaultEBD");
+
+		if (configDockBrowsers && !EBDUsed) {
+			LoadExtraBrowserDocks(configDockBrowsers);
+			config_set_bool(App()->GlobalConfig(), "BasicWindow",
+					"UsedDefaultEBD", true);
+		} else {
+			LoadExtraBrowserDocks(
+				obs_data_get_string(data, "ExtraBrowserDocks"));
+		}
+	}
+#endif
+
+	if (!data) {
+		blog(LOG_INFO, "No ui file found, creating default scene");
+		CreateDefaultUI(false);
+		SaveUI();
+		RefreshUICollections();
+		return;
+	}
+
+	const char *configDockState = config_get_string(
 		App()->GlobalConfig(), "BasicWindow", "DockState");
 
-	if (!dockStateStr) {
-		on_resetUI_triggered();
-	} else {
-		QByteArray dockState =
-			QByteArray::fromBase64(QByteArray(dockStateStr));
-		if (!restoreState(dockState))
-			on_resetUI_triggered();
+	std::string dockStateStr = obs_data_get_string(data, "DockState");
+	bool DSUsed = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+				      "UsedDefaultDockState");
+
+	if (configDockState && !DSUsed) {
+		dockStateStr = std::string(configDockState);
+		config_set_bool(App()->GlobalConfig(), "BasicWindow",
+				"UsedDefaultDockState", true);
 	}
+
+	if (dockStateStr.empty()) {
+		CreateDefaultUI(false);
+	} else {
+		QByteArray dockState = QByteArray::fromBase64(
+			QByteArray(dockStateStr.c_str()));
+		if (!restoreState(dockState))
+			CreateDefaultUI(false);
+	}
+
+	obs_data_release(data);
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
 					     "Pre23Defaults");
@@ -4233,12 +4360,13 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	Auth::Save();
 	SaveProjectNow();
+	SaveUI();
 	auth.reset();
 
 	delete extraBrowsers;
 
-	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
-			  saveState().toBase64().constData());
+	//config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
+	//		  saveState().toBase64().constData());
 
 #ifdef BROWSER_AVAILABLE
 	SaveExtraBrowserDocks();
@@ -7249,66 +7377,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 
 void OBSBasic::on_resetUI_triggered()
 {
-	/* prune deleted extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
-		}
-	}
-
-	if (extraDocks.size()) {
-		QMessageBox::StandardButton button = QMessageBox::question(
-			this, QTStr("ResetUIWarning.Title"),
-			QTStr("ResetUIWarning.Text"));
-
-		if (button == QMessageBox::No)
-			return;
-	}
-
-	/* undock/hide/center extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (extraDocks[i]) {
-			extraDocks[i]->setVisible(true);
-			extraDocks[i]->setFloating(true);
-			extraDocks[i]->move(frameGeometry().topLeft() +
-					    rect().center() -
-					    extraDocks[i]->rect().center());
-			extraDocks[i]->setVisible(false);
-		}
-	}
-
-	restoreState(startingDockLayout);
-
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
-	int cx = width();
-	int cy = height();
-
-	int cx22_5 = cx * 225 / 1000;
-	int cx5 = cx * 5 / 100;
-
-	cy = cy * 225 / 1000;
-
-	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
-
-	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
-				   ui->mixerDock, ui->transitionsDock,
-				   ui->controlsDock};
-
-	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
-
-	ui->scenesDock->setVisible(true);
-	ui->sourcesDock->setVisible(true);
-	ui->mixerDock->setVisible(true);
-	ui->transitionsDock->setVisible(true);
-	ui->controlsDock->setVisible(true);
-	statsDock->setVisible(false);
-	statsDock->setFloating(true);
-
-	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
-	resizeDocks(docks, sizes, Qt::Horizontal);
-#endif
-
-	activateWindow();
+	CreateDefaultUI(true);
 }
 
 void OBSBasic::on_lockUI_toggled(bool lock)
