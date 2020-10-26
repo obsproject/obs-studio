@@ -617,37 +617,35 @@ void OBSBasic::RenameTransition()
 					       QTStr("TransitionNameDlg.Text"),
 					       name, placeHolderText);
 
-	if (accepted) {
-		if (name.empty()) {
-			OBSMessageBox::warning(this,
-					       QTStr("NoNameEntered.Title"),
-					       QTStr("NoNameEntered.Text"));
-			RenameTransition();
-			return;
-		}
+	if (!accepted)
+		return;
+	if (name.empty()) {
+		OBSMessageBox::warning(this, QTStr("NoNameEntered.Title"),
+				       QTStr("NoNameEntered.Text"));
+		RenameTransition();
+		return;
+	}
 
-		source = FindTransition(name.c_str());
-		if (source) {
-			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
-					       QTStr("NameExists.Text"));
+	source = FindTransition(name.c_str());
+	if (source) {
+		OBSMessageBox::warning(this, QTStr("NameExists.Title"),
+				       QTStr("NameExists.Text"));
 
-			RenameTransition();
-			return;
-		}
+		RenameTransition();
+		return;
+	}
 
-		obs_source_set_name(transition, name.c_str());
-		int idx = ui->transitions->findData(variant);
-		if (idx != -1) {
-			ui->transitions->setItemText(idx,
-						     QT_UTF8(name.c_str()));
+	obs_source_set_name(transition, name.c_str());
+	int idx = ui->transitions->findData(variant);
+	if (idx != -1) {
+		ui->transitions->setItemText(idx, QT_UTF8(name.c_str()));
 
-			if (api)
-				api->on_event(
-					OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
+		if (api)
+			api->on_event(
+				OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
 
-			ClearQuickTransitionWidgets();
-			RefreshQuickTransitions();
-		}
+		ClearQuickTransitionWidgets();
+		RefreshQuickTransitions();
 	}
 }
 
