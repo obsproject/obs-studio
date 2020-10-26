@@ -77,6 +77,7 @@ private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
 	void ResizeToContent();
+	void ResizeToScale(double scale);
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
