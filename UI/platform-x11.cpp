@@ -27,7 +27,33 @@
 #include <locale.h>
 
 #include "platform.hpp"
+
+#ifdef __linux__
+#include <sys/socket.h>
+#include <string.h>
+#endif
+
 using namespace std;
+
+
+#ifdef __linux__
+void RunningInstanceCheck(bool &already_running)
+{
+	int uniq = socket(AF_LOCAL, SOCK_DGRAM, 0);
+
+	if (uniq == -1) {
+		blog(LOG_ERROR, "socket: %i", errno);
+	}
+
+	struct sockaddr bindInfo = {0};
+    bindInfo.sa_family = AF_LOCAL;
+    memmove(bindInfo.sa_data+1, "obs", strlen("obs"));
+
+	int bindErr = bind(uniq, &bindInfo, sizeof(struct sockaddr));
+
+	already_running = bindErr == 0 ? 0 : 1;
+}
+#endif
 
 static inline bool check_path(const char *data, const char *path,
 			      string &output)
