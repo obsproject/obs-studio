@@ -312,6 +312,14 @@ static void log_distribution_info(void)
 	dstr_free(&distro);
 	free(line);
 }
+
+static void log_desktop_session_info(void)
+{
+	char *session_ptr = getenv("XDG_SESSION_TYPE");
+	if (session_ptr) {
+		blog(LOG_INFO, "Session Type: %s", session_ptr);
+	}
+}
 #endif
 
 void log_system_info(void)
@@ -324,6 +332,7 @@ void log_system_info(void)
 	log_kernel_version();
 #if defined(__linux__)
 	log_distribution_info();
+	log_desktop_session_info();
 #endif
 	log_x_info();
 }
