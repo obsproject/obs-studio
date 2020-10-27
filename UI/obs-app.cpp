@@ -1941,6 +1941,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
 #elif defined(__APPLE__)
 		CheckAppWithSameBundleID(already_running);
+#elif defined(__linux__)
+		RunningInstanceCheck(already_running);
 #endif
 
 		if (!already_running) {
