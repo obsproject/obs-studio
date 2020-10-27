@@ -16,6 +16,7 @@ uniform float2 pixel_size;
 uniform float similarity;
 uniform float smoothness;
 uniform float spill;
+uniform float min_alpha;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -79,7 +80,16 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 	float desat = (rgba.r * 0.2126 + rgba.g * 0.7152 + rgba.b * 0.0722);
 	rgba.rgb = saturate(float3(desat, desat, desat)) * (1.0 - spillVal) + rgba.rgb * spillVal;
 
-	return CalcColor(rgba);
+	rgba = CalcColor(rgba);
+
+	if (rgba.a < min_alpha)
+	{
+		return float4(0.0, 0.0, 0.0, 0.0);
+	}
+	else
+	{
+		return rgba;
+	}
 }
 
 float4 PSChromaKeyRGBA(VertData v_in) : TARGET

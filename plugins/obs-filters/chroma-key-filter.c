@@ -14,6 +14,7 @@
 #define SETTING_SIMILARITY             "similarity"
 #define SETTING_SMOOTHNESS             "smoothness"
 #define SETTING_SPILL                  "spill"
+#define SETTING_REMOVE_PIXEL           "min_alpha"
 
 #define TEXT_OPACITY                   obs_module_text("Opacity")
 #define TEXT_CONTRAST                  obs_module_text("Contrast")
@@ -24,6 +25,7 @@
 #define TEXT_SIMILARITY                obs_module_text("Similarity")
 #define TEXT_SMOOTHNESS                obs_module_text("Smoothness")
 #define TEXT_SPILL                     obs_module_text("ColorSpillReduction")
+#define TEXT_REMOVE_PIXEL              obs_module_text("RemovePartialPixel")
 
 /* clang-format on */
 
@@ -42,11 +44,13 @@ struct chroma_key_filter_data {
 	gs_eparam_t *similarity_param;
 	gs_eparam_t *smoothness_param;
 	gs_eparam_t *spill_param;
+	gs_eparam_t *min_alpha_param;
 
 	struct vec4 color;
 	float contrast;
 	float brightness;
 	float gamma;
+	float min_alpha;
 
 	struct vec2 chroma;
 	float similarity;
@@ -99,14 +103,19 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 		(uint32_t)obs_data_get_int(settings, SETTING_KEY_COLOR);
 	const char *key_type =
 		obs_data_get_string(settings, SETTING_COLOR_TYPE);
+	int64_t min_alpha = obs_data_get_int(settings, SETTING_REMOVE_PIXEL);
 	struct vec4 key_rgb;
 	struct vec4 key_color_v4;
 	struct matrix4 yuv_mat_m4;
 
 	if (strcmp(key_type, "green") == 0)
 		key_color = 0x00FF00;
+	else if (strcmp(key_type, "Ultimatte(tm) Green") == 0)
+		key_color = 0x5CD64A;
 	else if (strcmp(key_type, "blue") == 0)
 		key_color = 0xFF9900;
+	else if (strcmp(key_type, "Ultimatte(tm) Super Blue") == 0)
+		key_color = 0xB82E12;
 	else if (strcmp(key_type, "magenta") == 0)
 		key_color = 0xFF00FF;
 
@@ -119,6 +128,7 @@ static inline void chroma_settings_update(struct chroma_key_filter_data *filter,
 	filter->similarity = (float)similarity / 1000.0f;
 	filter->smoothness = (float)smoothness / 1000.0f;
 	filter->spill = (float)spill / 1000.0f;
+	filter->min_alpha = (float)min_alpha / 100.0f;
 }
 
 static void chroma_key_update(void *data, obs_data_t *settings)
@@ -172,6 +182,8 @@ static void *chroma_key_create(obs_data_t *settings, obs_source_t *context)
 			filter->effect, "smoothness");
 		filter->spill_param =
 			gs_effect_get_param_by_name(filter->effect, "spill");
+		filter->min_alpha_param =
+			gs_effect_get_param_by_name(filter->effect, "min_alpha");
 	}
 
 	obs_leave_graphics();
@@ -210,6 +222,7 @@ static void chroma_key_render(void *data, gs_effect_t *effect)
 	gs_effect_set_float(filter->similarity_param, filter->similarity);
 	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
 	gs_effect_set_float(filter->spill_param, filter->spill);
+	gs_effect_set_float(filter->min_alpha_param, filter->min_alpha);
 
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
@@ -238,7 +251,9 @@ static obs_properties_t *chroma_key_properties(void *data)
 						    OBS_COMBO_TYPE_LIST,
 						    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, obs_module_text("Green"), "green");
+	obs_property_list_add_string(p, obs_module_text("UltimatteGreen"), "Ultimatte(tm) Green");
 	obs_property_list_add_string(p, obs_module_text("Blue"), "blue");
+	obs_property_list_add_string(p, obs_module_text("UltimatteBlue"), "Ultimatte(tm) Super Blue");
 	obs_property_list_add_string(p, obs_module_text("Magenta"), "magenta");
 	obs_property_list_add_string(p, obs_module_text("Custom"), "custom");
 
@@ -251,7 +266,8 @@ static obs_properties_t *chroma_key_properties(void *data)
 				      TEXT_SMOOTHNESS, 1, 1000, 1);
 	obs_properties_add_int_slider(props, SETTING_SPILL, TEXT_SPILL, 1, 1000,
 				      1);
-
+	obs_properties_add_int_slider(props, SETTING_REMOVE_PIXEL, TEXT_REMOVE_PIXEL,
+					-1, 101, 1);
 	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
 				      100, 1);
 	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
@@ -271,6 +287,7 @@ static void chroma_key_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
+	obs_data_set_default_int(settings, SETTING_REMOVE_PIXEL, 50);
 	obs_data_set_default_int(settings, SETTING_KEY_COLOR, 0x00FF00);
 	obs_data_set_default_string(settings, SETTING_COLOR_TYPE, "green");
 	obs_data_set_default_int(settings, SETTING_SIMILARITY, 400);
