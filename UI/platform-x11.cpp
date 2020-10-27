@@ -46,8 +46,8 @@ void RunningInstanceCheck(bool &already_running)
 	}
 
 	struct sockaddr bindInfo = {0};
-    bindInfo.sa_family = AF_LOCAL;
-    memmove(bindInfo.sa_data+1, "obs", strlen("obs"));
+	bindInfo.sa_family = AF_LOCAL;
+	memmove(bindInfo.sa_data+1, "obs", strlen("obs"));
 
 	int bindErr = bind(uniq, &bindInfo, sizeof(struct sockaddr));
 
