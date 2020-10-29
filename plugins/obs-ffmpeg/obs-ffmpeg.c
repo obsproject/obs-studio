@@ -82,6 +82,7 @@ static const int blacklisted_adapters[] = {
 	0x1d11, // GP108M [GeForce MX230]
 	0x1d13, // GP108M [GeForce MX250]
 	0x1d52, // GP108BM [GeForce MX250]
+	0x1c94, // GP107 [GeForce MX350]
 	0x137b, // GM108GLM [Quadro M520 Mobile]
 	0x1d33, // GP108GLM [Quadro P500 Mobile]
 	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
