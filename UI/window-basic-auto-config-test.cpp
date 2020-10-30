@@ -1013,6 +1013,22 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_service_apply_encoder_settings(service, vencoder_settings,
 						   nullptr);
 
+		int maxCX, maxCY, maxFPS;
+		obs_service_get_max_res_fps(service, &maxCX, &maxCY, &maxFPS);
+
+		if (maxCX && wiz->idealResolutionCX > maxCX)
+			wiz->idealResolutionCX = maxCX;
+		if (maxCY && wiz->idealResolutionCY > maxCY)
+			wiz->idealResolutionCY = maxCY;
+		if (maxFPS) {
+			double idealFPS = (double)wiz->idealFPSNum /
+					  (double)wiz->idealFPSDen;
+			if (idealFPS > (double)maxFPS) {
+				wiz->idealFPSNum = maxFPS;
+				wiz->idealFPSDen = 1;
+			}
+		}
+
 		wiz->idealBitrate =
 			(int)obs_data_get_int(vencoder_settings, "bitrate");
 
