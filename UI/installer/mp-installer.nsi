@@ -106,11 +106,10 @@ Function PreReqCheck
 !ifdef INSTALL64
 	; 64 bit Visual Studio 2017 runtime check
 	ClearErrors
-	SetOutPath "$TEMP\OBS"
+	SetOutPath "$PLUGINSDIR"
 	File check_for_64bit_visual_studio_2017_runtimes.exe
-	ExecWait "$TEMP\OBS\check_for_64bit_visual_studio_2017_runtimes.exe" $R0
-	Delete "$TEMP\OBS\check_for_64bit_visual_studio_2017_runtimes.exe"
-	RMDir "$TEMP\OBS"
+	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2017_runtimes.exe" $R0
+	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2017_runtimes.exe"
 	IntCmp $R0 126 vs2017Missing_64 vs2017OK_64
 	vs2017Missing_64:
 		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2017true_64 IDNO vs2017false_64
