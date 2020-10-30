@@ -16,6 +16,9 @@ struct rtmp_common {
 	char *key;
 
 	char *output;
+	int max_cx;
+	int max_cy;
+	int max_fps;
 
 	bool supports_additional_audio_track;
 };
@@ -31,6 +34,7 @@ static inline json_t *find_service(json_t *root, const char *name,
 				   const char **p_new_name);
 static inline bool get_bool_val(json_t *service, const char *key);
 static inline const char *get_string_val(json_t *service, const char *key);
+static inline int get_int_val(json_t *service, const char *key);
 
 extern void twitch_ingests_refresh(int seconds);
 
@@ -67,6 +71,17 @@ static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 	}
 }
 
+static void update_recommendations(struct rtmp_common *service, json_t *rec)
+{
+	const char *out = get_string_val(rec, "output");
+	if (out)
+		service->output = bstrdup(out);
+
+	service->max_cx = get_int_val(rec, "max width");
+	service->max_cy = get_int_val(rec, "max height");
+	service->max_fps = get_int_val(rec, "max fps");
+}
+
 static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
@@ -81,6 +96,9 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
 	service->supports_additional_audio_track = false;
 	service->output = NULL;
+	service->max_cx = 0;
+	service->max_cy = 0;
+	service->max_fps = 0;
 
 	json_t *root = open_services_file();
 	if (root) {
@@ -95,9 +113,7 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 		if (serv) {
 			json_t *rec = json_object_get(serv, "recommended");
 			if (json_is_object(rec)) {
-				const char *out = get_string_val(rec, "output");
-				if (out)
-					service->output = bstrdup(out);
+				update_recommendations(service, rec);
 			}
 
 			service->supports_additional_audio_track = get_bool_val(
@@ -663,6 +679,17 @@ static bool supports_multitrack(void *data)
 	return service->supports_additional_audio_track;
 }
 
+static void rtmp_common_get_max_res_fps(void *data, int *cx, int *cy, int *fps)
+{
+	struct rtmp_common *service = data;
+	if (cx)
+		*cx = service->max_cx;
+	if (cy)
+		*cy = service->max_cy;
+	if (fps)
+		*fps = service->max_fps;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -674,4 +701,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_key = rtmp_common_key,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
+	.get_max_res_fps = rtmp_common_get_max_res_fps,
 };
