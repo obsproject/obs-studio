@@ -74,7 +74,7 @@ struct obs_service_info {
 
 	const char *(*get_output_type)(void *data);
 
-	/* TODO: more stuff later */
+	void (*get_max_res_fps)(void *data, int *cx, int *cy, int *fps);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

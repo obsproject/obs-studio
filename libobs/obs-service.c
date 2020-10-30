@@ -418,3 +418,21 @@ const char *obs_service_get_output_type(const obs_service_t *service)
 		return service->info.get_output_type(service->context.data);
 	return NULL;
 }
+
+void obs_service_get_max_res_fps(const obs_service_t *service, int *cx, int *cy,
+				 int *fps)
+{
+	if (cx)
+		*cx = 0;
+	if (cy)
+		*cy = 0;
+	if (fps)
+		*fps = 0;
+
+	if (!obs_service_valid(service, "obs_service_get_max_res_fps"))
+		return;
+
+	if (service->info.get_max_res_fps)
+		service->info.get_max_res_fps(service->context.data, cx, cy,
+					      fps);
+}
