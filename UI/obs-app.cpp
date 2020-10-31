@@ -1950,6 +1950,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		CheckAppWithSameBundleID(already_running);
 #elif defined(__linux__)
 		RunningInstanceCheck(already_running);
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+		PIDFileCheck(already_running);
 #endif
 
 		if (!already_running) {
