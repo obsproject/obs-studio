@@ -132,6 +132,11 @@ elseif(UNIX)
 
         set(obs_PLATFORM_LIBRARIES
                 Qt5::X11Extras)
+
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
+		list(APPEND obs_PLATFORM_LIBRARIES
+			procstat)
+	endif()
 endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
