@@ -108,7 +108,7 @@ static bool check_dal_plugin()
 static const char *virtualcam_output_get_name(void *type_data)
 {
 	(void)type_data;
-	return obs_module_text("macOS Virtual Webcam");
+	return obs_module_text("Plugin_Name");
 }
 
 // This is a dummy pointer so we have something to return from virtualcam_output_create
