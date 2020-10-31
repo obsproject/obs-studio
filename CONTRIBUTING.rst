@@ -5,10 +5,10 @@ Quick Links for Contributing
 ----------------------------
 
  - Compiling and building OBS Studio:
-   https://github.com/jp9000/obs-studio/wiki/Install-Instructions
+   https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
- - Our bug tracker (linked to forum accounts):
-   https://obsproject.com/mantis/
+ - Our bug tracker:
+   https://github.com/obsproject/obs-studio/issues
 
  - Discord Server: https://obsproject.com/discord
 
