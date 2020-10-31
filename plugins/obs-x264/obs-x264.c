@@ -110,6 +110,7 @@ static void obs_x264_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "profile", "");
 	obs_data_set_default_string(settings, "tune", "");
 	obs_data_set_default_string(settings, "x264opts", "");
+	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -172,6 +173,7 @@ static obs_properties_t *obs_x264_props(void *unused)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list;
 	obs_property_t *p;
+	obs_property_t *headers;
 
 	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
@@ -221,6 +223,10 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_properties_add_text(props, "x264opts", TEXT_X264_OPTS,
 				OBS_TEXT_DEFAULT);
+
+	headers = obs_properties_add_bool(props, "repeat_headers",
+					  "repeat_headers");
+	obs_property_set_visible(headers, false);
 
 	return props;
 }
@@ -583,6 +589,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
 	struct obs_x264_options options = obs_x264_parse_options(
 		obs_data_get_string(settings, "x264opts"));
+	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 
 	bool success = true;
 
@@ -603,6 +610,12 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 		success = reset_x264_params(obsx264, preset, tune);
 	}
 
+	if (repeat_headers) {
+		obsx264->params.b_repeat_headers = 1;
+		obsx264->params.b_annexb = 1;
+		obsx264->params.b_aud = 1;
+	}
+
 	if (success) {
 		update_params(obsx264, settings, &options, update);
 		if (!update) {
@@ -612,8 +625,6 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 		if (!obsx264->context)
 			apply_x264_profile(obsx264, profile);
 	}
-
-	obsx264->params.b_repeat_headers = false;
 
 	obs_x264_free_options(options);
 	bfree(preset);

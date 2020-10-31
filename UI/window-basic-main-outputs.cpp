@@ -1298,6 +1298,15 @@ inline void AdvancedOutput::SetupStreaming()
 	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
 	obs_encoder_set_scaled_size(h264Streaming, cx, cy);
 	obs_encoder_set_video(h264Streaming, obs_get_video());
+
+	const char *id = obs_service_get_id(main->GetService());
+	if (strcmp(id, "rtmp_custom") == 0) {
+		obs_data_t *settings = obs_data_create();
+		obs_service_apply_encoder_settings(main->GetService(), settings,
+						   nullptr);
+		obs_encoder_update(h264Streaming, settings);
+		obs_data_release(settings);
+	}
 }
 
 inline void AdvancedOutput::SetupRecording()
