@@ -2064,6 +2064,8 @@ void OBSBasicSettings::LoadOutputSettings()
 	if (obs_video_active()) {
 		ui->outputMode->setEnabled(false);
 		ui->outputModeLabel->setEnabled(false);
+		ui->simpleOutStrEncoderLabel->setEnabled(false);
+		ui->simpleOutStrEncoder->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
 		ui->replayBufferGroupBox->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
