@@ -97,15 +97,12 @@ static bool try_connect(void *data, int device)
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
+	memset(&parm, 0, sizeof(parm));
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	parm.parm.output.capability = V4L2_CAP_TIMEPERFRAME;
 	parm.parm.output.timeperframe.numerator = ovi.fps_den;
 	parm.parm.output.timeperframe.denominator = ovi.fps_num;
-	parm.parm.output.outputmode = 0;
-	parm.parm.output.writebuffers = 0;
-	parm.parm.output.extendedmode = 0;
-	parm.parm.output.reserved[4] = 0;
 
 	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0)
 		return false;
