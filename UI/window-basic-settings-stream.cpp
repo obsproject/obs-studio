@@ -71,6 +71,8 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateServerList()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateKeyLink()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateVodTrackSetting()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateKeyLink()));
 	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
@@ -141,6 +143,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
+	UpdateVodTrackSetting();
 
 	bool streamActive = obs_frontend_streaming_active();
 	ui->streamPage->setEnabled(!streamActive);
@@ -593,4 +596,57 @@ void OBSBasicSettings::on_useAuth_toggled()
 	ui->authUsername->setVisible(use_auth);
 	ui->authPwLabel->setVisible(use_auth);
 	ui->authPwWidget->setVisible(use_auth);
+}
+
+void OBSBasicSettings::UpdateVodTrackSetting()
+{
+	bool enableVodTrack = ui->service->currentText() == "Twitch";
+	bool wasEnabled = !!vodTrackCheckbox;
+
+	if (enableVodTrack == wasEnabled)
+		return;
+
+	if (!enableVodTrack) {
+		delete vodTrackCheckbox;
+		delete vodTrackContainer;
+		return;
+	}
+
+	vodTrackCheckbox = new QCheckBox(
+		QTStr("Basic.Settings.Output.Adv.TwitchVodTrack"));
+	vodTrackCheckbox->setLayoutDirection(Qt::RightToLeft);
+
+	vodTrackContainer = new QWidget();
+	QHBoxLayout *vodTrackLayout = new QHBoxLayout();
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		vodTrack[i] = new QRadioButton(QString::number(i + 1));
+		vodTrackLayout->addWidget(vodTrack[i]);
+
+		HookWidget(vodTrack[i], SIGNAL(clicked(bool)),
+			   SLOT(OutputsChanged()));
+	}
+
+	HookWidget(vodTrackCheckbox, SIGNAL(clicked(bool)),
+		   SLOT(OutputsChanged()));
+
+	vodTrackLayout->addStretch();
+	vodTrackLayout->setContentsMargins(0, 0, 0, 0);
+
+	vodTrackContainer->setLayout(vodTrackLayout);
+
+	ui->advOutTopLayout->insertRow(2, vodTrackCheckbox, vodTrackContainer);
+
+	bool vodTrackEnabled =
+		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
+	vodTrackCheckbox->setChecked(vodTrackEnabled);
+	vodTrackContainer->setEnabled(vodTrackEnabled);
+
+	connect(vodTrackCheckbox, SIGNAL(clicked(bool)), vodTrackContainer,
+		SLOT(setEnabled(bool)));
+
+	int trackIndex =
+		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
+	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
+		vodTrack[i]->setChecked((i + 1) == trackIndex);
+	}
 }

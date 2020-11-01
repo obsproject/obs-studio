@@ -1054,6 +1054,7 @@ bool SimpleOutput::ReplayBufferActive() const
 
 struct AdvancedOutput : BasicOutputHandler {
 	OBSEncoder streamAudioEnc;
+	OBSEncoder streamArchiveEnc;
 	OBSEncoder aacTrack[MAX_AUDIO_MIXES];
 	OBSEncoder h264Streaming;
 	OBSEncoder h264Recording;
@@ -1229,6 +1230,14 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		throw "Failed to create streaming audio encoder "
 		      "(advanced output)";
 
+	id = "";
+	int vodTrack =
+		config_get_int(main->Config(), "AdvOut", "VodTrackIndex") - 1;
+	if (!CreateAACEncoder(streamArchiveEnc, id, GetAudioBitrate(vodTrack),
+			      "avc_aac_archive", vodTrack))
+		throw "Failed to create archive audio encoder "
+		      "(advanced output)";
+
 	startRecording.Connect(obs_output_get_signal_handler(fileOutput),
 			       "start", OBSStartRecording, this);
 	stopRecording.Connect(obs_output_get_signal_handler(fileOutput), "stop",
@@ -1278,6 +1287,18 @@ void AdvancedOutput::Update()
 	if (!useStreamEncoder && !ffmpegOutput)
 		UpdateRecordingSettings();
 	UpdateAudioSettings();
+}
+
+static inline bool ServiceSupportsVodTrack(const char *service)
+{
+	static const char *vodTrackServices[] = {"Twitch"};
+
+	for (const char *vodTrackService : vodTrackServices) {
+		if (astrcmpi(vodTrackService, service) == 0)
+			return true;
+	}
+
+	return false;
 }
 
 inline void AdvancedOutput::SetupStreaming()
@@ -1461,6 +1482,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 						    "ApplyServiceSettings");
 	int streamTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	int vodTrackIndex =
+		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
 	obs_data_t *settings[MAX_AUDIO_MIXES];
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
@@ -1481,17 +1504,22 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	}
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+		int track = (int)(i + 1);
+
 		obs_encoder_update(aacTrack[i], settings[i]);
 
-		if ((int)(i + 1) == streamTrackIndex) {
+		if (track == streamTrackIndex || track == vodTrackIndex) {
 			if (applyServiceSettings) {
 				obs_service_apply_encoder_settings(
 					main->GetService(), nullptr,
 					settings[i]);
 			}
-
-			obs_encoder_update(streamAudioEnc, settings[i]);
 		}
+
+		if (track == streamTrackIndex)
+			obs_encoder_update(streamAudioEnc, settings[i]);
+		if (track == vodTrackIndex)
+			obs_encoder_update(streamArchiveEnc, settings[i]);
 
 		obs_data_release(settings[i]);
 	}
@@ -1505,6 +1533,7 @@ void AdvancedOutput::SetupOutputs()
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
 		obs_encoder_set_audio(aacTrack[i], obs_get_audio());
 	obs_encoder_set_audio(streamAudioEnc, obs_get_audio());
+	obs_encoder_set_audio(streamArchiveEnc, obs_get_audio());
 
 	SetupStreaming();
 
@@ -1527,7 +1556,11 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 {
 	int streamTrack =
-		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
+		config_get_int(main->Config(), "AdvOut", "TrackIndex");
+	bool vodTrackEnabled =
+		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
+	int vodTrackIndex =
+		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
 
 	if (!useStreamEncoder ||
 	    (!ffmpegOutput && !obs_output_active(fileOutput))) {
@@ -1609,7 +1642,7 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 				streamAudioEnc = obs_audio_encoder_create(
 					id, "alt_audio_enc", nullptr,
-					streamTrack, nullptr);
+					streamTrack - 1, nullptr);
 
 				if (!streamAudioEnc)
 					return false;
@@ -1626,6 +1659,23 @@ bool AdvancedOutput::SetupStreaming(obs_service_t *service)
 
 	obs_output_set_video_encoder(streamOutput, h264Streaming);
 	obs_output_set_audio_encoder(streamOutput, streamAudioEnc, 0);
+
+	const char *id = obs_service_get_id(service);
+	if (strcmp(id, "rtmp_custom") == 0) {
+		vodTrackEnabled = false;
+	} else {
+		obs_data_t *settings = obs_service_get_settings(service);
+		const char *service = obs_data_get_string(settings, "service");
+		if (!ServiceSupportsVodTrack(service))
+			vodTrackEnabled = false;
+		obs_data_release(settings);
+	}
+
+	if (vodTrackEnabled && streamTrack != vodTrackIndex)
+		obs_output_set_audio_encoder(streamOutput, streamArchiveEnc, 1);
+	else
+		obs_output_set_audio_encoder(streamOutput, nullptr, 1);
+
 	return true;
 }
 

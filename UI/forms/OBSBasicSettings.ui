@@ -1907,7 +1907,7 @@
                             <verstretch>0</verstretch>
                            </sizepolicy>
                           </property>
-                          <layout class="QFormLayout" name="formLayout_7">
+                          <layout class="QFormLayout" name="advOutTopLayout">
                            <property name="fieldGrowthPolicy">
                             <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                            </property>
