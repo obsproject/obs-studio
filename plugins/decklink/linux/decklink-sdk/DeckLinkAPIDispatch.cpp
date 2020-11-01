@@ -66,7 +66,7 @@ static void	InitDeckLinkAPI (void)
 	
 	gLoadedDeckLinkAPI = true;
 	
-	gCreateIteratorFunc = (CreateIteratorFunc)dlsym(libraryHandle, "CreateDeckLinkIteratorInstance_0003");
+	gCreateIteratorFunc = (CreateIteratorFunc)dlsym(libraryHandle, "CreateDeckLinkIteratorInstance_0004");
 	if (!gCreateIteratorFunc)
 		fprintf(stderr, "%s\n", dlerror());
 	gCreateAPIInformationFunc = (CreateAPIInformationFunc)dlsym(libraryHandle, "CreateDeckLinkAPIInformationInstance_0001");
@@ -75,7 +75,7 @@ static void	InitDeckLinkAPI (void)
 	gCreateVideoConversionFunc = (CreateVideoConversionInstanceFunc)dlsym(libraryHandle, "CreateVideoConversionInstance_0001");
 	if (!gCreateVideoConversionFunc)
 		fprintf(stderr, "%s\n", dlerror());
-	gCreateDeckLinkDiscoveryFunc = (CreateDeckLinkDiscoveryInstanceFunc)dlsym(libraryHandle, "CreateDeckLinkDiscoveryInstance_0002");
+	gCreateDeckLinkDiscoveryFunc = (CreateDeckLinkDiscoveryInstanceFunc)dlsym(libraryHandle, "CreateDeckLinkDiscoveryInstance_0003");
 	if (!gCreateDeckLinkDiscoveryFunc)
 		fprintf(stderr, "%s\n", dlerror());
 	gCreateVideoFrameAncillaryPacketsFunc = (CreateVideoFrameAncillaryPacketsInstanceFunc)dlsym(libraryHandle, "CreateVideoFrameAncillaryPacketsInstance_0001");
