@@ -554,7 +554,7 @@ static bool valid_extension(const char *ext)
 		else
 			dstr_copy(&test, b);
 
-		if (dstr_cmp(&test, ext) == 0) {
+		if (dstr_cmpi(&test, ext) == 0) {
 			valid = true;
 			break;
 		}
