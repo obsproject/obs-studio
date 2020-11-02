@@ -618,13 +618,6 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 	BMDVideoInputFormatChangedEvents events, IDeckLinkDisplayMode *newMode,
 	BMDDetectedVideoInputFormatFlags detectedSignalFlags)
 {
-	input->PauseStreams();
-
-	mode->SetMode(newMode);
-
-	if (events & bmdVideoInputDisplayModeChanged) {
-		displayMode = mode->GetDisplayMode();
-	}
 
 	if (events & bmdVideoInputColorspaceChanged) {
 		switch (detectedSignalFlags) {
@@ -639,20 +632,25 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 		}
 	}
 
-	const HRESULT videoResult = input->EnableVideoInput(
-		displayMode, pixelFormat, bmdVideoInputEnableFormatDetection);
-	if (videoResult != S_OK) {
-		LOG(LOG_ERROR, "Failed to enable video input");
-		input->StopStreams();
-		FinalizeStream();
+	if (events & bmdVideoInputDisplayModeChanged) {
+		input->PauseStreams();
+		mode->SetMode(newMode);
+		displayMode = mode->GetDisplayMode();
 
-		return E_FAIL;
+		const HRESULT videoResult = input->EnableVideoInput(
+			displayMode, pixelFormat,
+			bmdVideoInputEnableFormatDetection);
+		if (videoResult != S_OK) {
+			LOG(LOG_ERROR, "Failed to enable video input");
+			input->StopStreams();
+			FinalizeStream();
+
+			return E_FAIL;
+		}
+		SetupVideoFormat(mode);
+		input->FlushStreams();
+		input->StartStreams();
 	}
-
-	SetupVideoFormat(mode);
-
-	input->FlushStreams();
-	input->StartStreams();
 
 	return S_OK;
 }
