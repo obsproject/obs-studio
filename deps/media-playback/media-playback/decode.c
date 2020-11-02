@@ -246,7 +246,7 @@ void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 static inline int64_t get_estimated_duration(struct mp_decode *d,
 					     int64_t last_pts)
 {
-	if (last_pts)
+	if (last_pts && (d->frame_pts >= last_pts))
 		return d->frame_pts - last_pts;
 
 	if (d->audio) {
