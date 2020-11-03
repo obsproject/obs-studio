@@ -2531,7 +2531,7 @@ void obs_output_caption(obs_output_t *output,
 			const struct obs_source_cea_708 *captions)
 {
 	pthread_mutex_lock(&output->caption_mutex);
-	for (uint32_t i = 0; i < captions->packets; i++) {
+	for (size_t i = 0; i < captions->packets; i++) {
 		circlebuf_push_back(&output->caption_data,
 				    captions->data + (i * 3),
 				    3 * sizeof(uint8_t));
