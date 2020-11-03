@@ -157,7 +157,7 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 			auto sdid = packet->GetSDID();
 
 			// Caption data
-			if (did == 0x61 & sdid == 0x01) {
+			if (did == 0x61 && sdid == 0x01) {
 				this->HandleCaptionPacket(packet, timestamp);
 			}
 
@@ -193,8 +193,6 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 void DeckLinkDeviceInstance::HandleCaptionPacket(
 	IDeckLinkAncillaryPacket *packet, const uint64_t timestamp)
 {
-	auto line = packet->GetLineNumber();
-
 	const void *data;
 	uint32_t size;
 	packet->GetBytes(bmdAncillaryPacketFormatUInt8, &data, &size);
@@ -203,29 +201,41 @@ void DeckLinkDeviceInstance::HandleCaptionPacket(
 	struct bitstream_reader reader;
 	bitstream_reader_init(&reader, anc, size);
 
-	auto header1 = bitstream_reader_r8(&reader);
-	auto header2 = bitstream_reader_r8(&reader);
+	// header1
+	bitstream_reader_r8(&reader);
+	// header2
+	bitstream_reader_r8(&reader);
 
-	uint8_t length = bitstream_reader_r8(&reader);
-	uint8_t frameRate = bitstream_reader_read_bits(&reader, 4);
+	// length
+	bitstream_reader_r8(&reader);
+	// frameRate
+	bitstream_reader_read_bits(&reader, 4);
 	//reserved
 	bitstream_reader_read_bits(&reader, 4);
 
 	auto cdp_timecode_added = bitstream_reader_read_bits(&reader, 1);
-	auto cdp_data_block_added = bitstream_reader_read_bits(&reader, 1);
-	auto cdp_service_info_added = bitstream_reader_read_bits(&reader, 1);
-	auto cdp_service_info_start = bitstream_reader_read_bits(&reader, 1);
-	auto cdp_service_info_changed = bitstream_reader_read_bits(&reader, 1);
-	auto cdp_service_info_end = bitstream_reader_read_bits(&reader, 1);
+	// cdp_data_block_added
+	bitstream_reader_read_bits(&reader, 1);
+	// cdp_service_info_added
+	bitstream_reader_read_bits(&reader, 1);
+	// cdp_service_info_start
+	bitstream_reader_read_bits(&reader, 1);
+	// cdp_service_info_changed
+	bitstream_reader_read_bits(&reader, 1);
+	// cdp_service_info_end
+	bitstream_reader_read_bits(&reader, 1);
 	auto cdp_contains_captions = bitstream_reader_read_bits(&reader, 1);
 	//reserved
 	bitstream_reader_read_bits(&reader, 1);
 
-	auto cdp_counter = bitstream_reader_r8(&reader);
-	auto cdp_counter2 = bitstream_reader_r8(&reader);
+	// cdp_counter
+	bitstream_reader_r8(&reader);
+	// cdp_counter2
+	bitstream_reader_r8(&reader);
 
 	if (cdp_timecode_added) {
-		auto timecodeSectionID = bitstream_reader_r8(&reader);
+		// timecodeSectionID
+		bitstream_reader_r8(&reader);
 		//reserved
 		bitstream_reader_read_bits(&reader, 2);
 		bitstream_reader_read_bits(&reader, 2);
@@ -244,14 +254,15 @@ void DeckLinkDeviceInstance::HandleCaptionPacket(
 	}
 
 	if (cdp_contains_captions) {
-		auto cdp_data_section = bitstream_reader_r8(&reader);
+		// cdp_data_section
+		bitstream_reader_r8(&reader);
 
-		auto process_em_data_flag =
-			bitstream_reader_read_bits(&reader, 1);
-		auto process_cc_data_flag =
-			bitstream_reader_read_bits(&reader, 1);
-		auto additional_data_flag =
-			bitstream_reader_read_bits(&reader, 1);
+		//process_em_data_flag
+		bitstream_reader_read_bits(&reader, 1);
+		// process_cc_data_flag
+		bitstream_reader_read_bits(&reader, 1);
+		//additional_data_flag
+		bitstream_reader_read_bits(&reader, 1);
 
 		auto cc_count = bitstream_reader_read_bits(&reader, 5);
 

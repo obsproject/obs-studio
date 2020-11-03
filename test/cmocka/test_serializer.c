@@ -7,6 +7,7 @@
 
 static void serialize_test(void **state)
 {
+	UNUSED_PARAMETER(state);
 	struct array_output_data output;
 	struct serializer s;
 

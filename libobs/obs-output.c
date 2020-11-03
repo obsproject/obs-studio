@@ -1277,7 +1277,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 
 		sei_from_caption_frame(&sei, &cf);
 
-		struct obs_caption_frame *next = output->caption_head->next;
+		struct caption_text *next = output->caption_head->next;
 		bfree(output->caption_head);
 		output->caption_head = next;
 	}
@@ -2531,7 +2531,7 @@ void obs_output_caption(obs_output_t *output,
 			const struct obs_source_cea_708 *captions)
 {
 	pthread_mutex_lock(&output->caption_mutex);
-	for (int i = 0; i < captions->packets; i++) {
+	for (uint32_t i = 0; i < captions->packets; i++) {
 		circlebuf_push_back(&output->caption_data,
 				    captions->data + (i * 3),
 				    3 * sizeof(uint8_t));

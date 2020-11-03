@@ -17,6 +17,8 @@ HRESULT OBSVideoFrame::SetFlags(BMDFrameFlags newFlags)
 HRESULT OBSVideoFrame::SetTimecode(BMDTimecodeFormat format,
 				   IDeckLinkTimecode *timecode)
 {
+	UNUSED_PARAMETER(format);
+	UNUSED_PARAMETER(timecode);
 	return 0;
 }
 
@@ -26,17 +28,26 @@ OBSVideoFrame::SetTimecodeFromComponents(BMDTimecodeFormat format,
 					 uint8_t seconds, uint8_t frames,
 					 BMDTimecodeFlags flags)
 {
+	UNUSED_PARAMETER(format);
+	UNUSED_PARAMETER(hours);
+	UNUSED_PARAMETER(minutes);
+	UNUSED_PARAMETER(seconds);
+	UNUSED_PARAMETER(frames);
+	UNUSED_PARAMETER(flags);
 	return 0;
 }
 
 HRESULT OBSVideoFrame::SetAncillaryData(IDeckLinkVideoFrameAncillary *ancillary)
 {
+	UNUSED_PARAMETER(ancillary);
 	return 0;
 }
 
 HRESULT OBSVideoFrame::SetTimecodeUserBits(BMDTimecodeFormat format,
 					   BMDTimecodeUserBits userBits)
 {
+	UNUSED_PARAMETER(format);
+	UNUSED_PARAMETER(userBits);
 	return 0;
 }
 

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "platform.hpp"
+#include "obs.hpp"
 
 class OBSVideoFrame : public IDeckLinkMutableVideoFrame {
 private:
@@ -49,22 +50,27 @@ public:
 	//Dummy implementations of remaining virtual methods
 	virtual HRESULT STDMETHODCALLTYPE
 	GetTimecode(/* in */ BMDTimecodeFormat format,
-		    /* out */ IDeckLinkTimecode **timecode)
+		    /* out */ IDeckLinkTimecode **timecode) override
 	{
+		UNUSED_PARAMETER(format);
+		UNUSED_PARAMETER(timecode);
 		return E_NOINTERFACE;
 	};
-	virtual HRESULT STDMETHODCALLTYPE
-	GetAncillaryData(/* out */ IDeckLinkVideoFrameAncillary **ancillary)
+	virtual HRESULT STDMETHODCALLTYPE GetAncillaryData(
+		/* out */ IDeckLinkVideoFrameAncillary **ancillary) override
 	{
+		UNUSED_PARAMETER(ancillary);
 		return E_NOINTERFACE;
 	};
 
 	// IUnknown interface (dummy implementation)
 	virtual HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid,
-							 LPVOID *ppv)
+							 LPVOID *ppv) override
 	{
+		UNUSED_PARAMETER(iid);
+		UNUSED_PARAMETER(ppv);
 		return E_NOINTERFACE;
 	}
-	virtual ULONG STDMETHODCALLTYPE AddRef() { return 1; }
-	virtual ULONG STDMETHODCALLTYPE Release() { return 1; }
+	virtual ULONG STDMETHODCALLTYPE AddRef() override { return 1; }
+	virtual ULONG STDMETHODCALLTYPE Release() override { return 1; }
 };
