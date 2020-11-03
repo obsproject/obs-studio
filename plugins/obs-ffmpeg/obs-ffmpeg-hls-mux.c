@@ -134,7 +134,7 @@ bool ffmpeg_hls_mux_start(void *data)
 
 	vencoder = obs_output_get_video_encoder(stream->output);
 	settings = obs_encoder_get_settings(vencoder);
-	keyint_sec = obs_data_get_int(settings, "keyint_sec");
+	keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	if (keyint_sec) {
 		dstr_catf(&stream->muxer_settings, " hls_time=%d", keyint_sec);
 		stream->keyint_sec = keyint_sec;
