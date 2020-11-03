@@ -172,12 +172,12 @@ static void check_init() {
   if (common.init) return;
   common.kfft = opus_fft_alloc_twiddles(2*FRAME_SIZE, NULL, NULL, NULL, 0);
   for (i=0;i<FRAME_SIZE;i++)
-    common.half_window[i] = sin(.5*M_PI*sin(.5*M_PI*(i+.5)/FRAME_SIZE) * sin(.5*M_PI*(i+.5)/FRAME_SIZE));
+    common.half_window[i] = (float)sin(.5*M_PI*sin(.5*M_PI*(i+.5)/FRAME_SIZE) * sin(.5*M_PI*(i+.5)/FRAME_SIZE));
   for (i=0;i<NB_BANDS;i++) {
     int j;
     for (j=0;j<NB_BANDS;j++) {
-      common.dct_table[i*NB_BANDS + j] = cos((i+.5)*j*M_PI/NB_BANDS);
-      if (j==0) common.dct_table[i*NB_BANDS + j] *= sqrt(.5);
+      common.dct_table[i*NB_BANDS + j] = (float)cos((i+.5)*j*M_PI/NB_BANDS);
+      if (j==0) common.dct_table[i*NB_BANDS + j] *= (float)sqrt(.5);
     }
   }
   common.init = 1;
@@ -192,7 +192,7 @@ static void dct(float *out, const float *in) {
     for (j=0;j<NB_BANDS;j++) {
       sum += in[j] * common.dct_table[j*NB_BANDS + i];
     }
-    out[i] = sum*sqrt(2./22);
+    out[i] = (float)(sum*sqrt(2./22));
   }
 }
 
@@ -206,7 +206,7 @@ static void idct(float *out, const float *in) {
     for (j=0;j<NB_BANDS;j++) {
       sum += in[j] * common.dct_table[i*NB_BANDS + j];
     }
-    out[i] = sum*sqrt(2./22);
+    out[i] = (float)(sum*sqrt(2./22));
   }
 }
 #endif
@@ -338,19 +338,19 @@ static int compute_frame_features(DenoiseState *st, kiss_fft_cpx *X, kiss_fft_cp
   forward_transform(P, p);
   compute_band_energy(Ep, P);
   compute_band_corr(Exp, X, P);
-  for (i=0;i<NB_BANDS;i++) Exp[i] = Exp[i]/sqrt(.001+Ex[i]*Ep[i]);
+  for (i=0;i<NB_BANDS;i++) Exp[i] = (float)(Exp[i]/sqrt(.001+Ex[i]*Ep[i]));
   dct(tmp, Exp);
   for (i=0;i<NB_DELTA_CEPS;i++) features[NB_BANDS+2*NB_DELTA_CEPS+i] = tmp[i];
-  features[NB_BANDS+2*NB_DELTA_CEPS] -= 1.3;
-  features[NB_BANDS+2*NB_DELTA_CEPS+1] -= 0.9;
-  features[NB_BANDS+3*NB_DELTA_CEPS] = .01*(pitch_index-300);
+  features[NB_BANDS+2*NB_DELTA_CEPS] -= 1.3f;
+  features[NB_BANDS+2*NB_DELTA_CEPS+1] -= 0.9f;
+  features[NB_BANDS+3*NB_DELTA_CEPS] = (float)(.01*(pitch_index-300));
   logMax = -2;
   follow = -2;
   for (i=0;i<NB_BANDS;i++) {
-    Ly[i] = log10(1e-2+Ex[i]);
-    Ly[i] = MAX16(logMax-7, MAX16(follow-1.5, Ly[i]));
+    Ly[i] = (float)log10(1e-2+Ex[i]);
+    Ly[i] = (float)MAX16(logMax-7, MAX16(follow-1.5, Ly[i]));
     logMax = MAX16(logMax, Ly[i]);
-    follow = MAX16(follow-1.5, Ly[i]);
+    follow = (float)MAX16(follow-1.5, Ly[i]);
     E += Ex[i];
   }
   if (!TRAINING && E < 0.04) {
@@ -392,7 +392,7 @@ static int compute_frame_features(DenoiseState *st, kiss_fft_cpx *X, kiss_fft_cp
     }
     spec_variability += mindist;
   }
-  features[NB_BANDS+3*NB_DELTA_CEPS+1] = spec_variability/CEPS_MEM-2.1;
+  features[NB_BANDS+3*NB_DELTA_CEPS+1] = (float)(spec_variability/CEPS_MEM-2.1);
   return TRAINING && E < 0.1;
 }
 
@@ -411,8 +411,8 @@ static void biquad(float *y, float mem[2], const float *x, const float *b, const
     float xi, yi;
     xi = x[i];
     yi = x[i] + mem[0];
-    mem[0] = mem[1] + (b[0]*(double)xi - a[0]*(double)yi);
-    mem[1] = (b[1]*(double)xi - a[1]*(double)yi);
+    mem[0] = (float)(mem[1] + (b[0]*(double)xi - a[0]*(double)yi));
+    mem[1] = (float)((b[1]*(double)xi - a[1]*(double)yi));
     y[i] = yi;
   }
 }
@@ -429,10 +429,10 @@ void pitch_filter(kiss_fft_cpx *X, const kiss_fft_cpx *P, const float *Ex, const
     r[i] = MIN16(1, MAX16(0, r[i]));
 #else
     if (Exp[i]>g[i]) r[i] = 1;
-    else r[i] = SQUARE(Exp[i])*(1-SQUARE(g[i]))/(.001 + SQUARE(g[i])*(1-SQUARE(Exp[i])));
-    r[i] = sqrt(MIN16(1, MAX16(0, r[i])));
+    else r[i] = (float)(SQUARE(Exp[i])*(1-SQUARE(g[i]))/(.001 + SQUARE(g[i])*(1-SQUARE(Exp[i]))));
+    r[i] = (float)sqrt(MIN16(1, MAX16(0, r[i])));
 #endif
-    r[i] *= sqrt(Ex[i]/(1e-8+Ep[i]));
+    r[i] *= (float)sqrt(Ex[i]/(1e-8+Ep[i]));
   }
   interp_band_gain(rf, r);
   for (i=0;i<FREQ_SIZE;i++) {
@@ -444,7 +444,7 @@ void pitch_filter(kiss_fft_cpx *X, const kiss_fft_cpx *P, const float *Ex, const
   float norm[NB_BANDS];
   float normf[FREQ_SIZE]={0};
   for (i=0;i<NB_BANDS;i++) {
-    norm[i] = sqrt(Ex[i]/(1e-8+newE[i]));
+    norm[i] = (float)(sqrt(Ex[i]/(1e-8+newE[i])));
   }
   interp_band_gain(normf, norm);
   for (i=0;i<FREQ_SIZE;i++) {
@@ -465,7 +465,7 @@ float rnnoise_process_frame(DenoiseState *st, float *out, const float *in) {
   float gf[FREQ_SIZE]={1};
   float vad_prob = 0;
   int silence;
-  static const float a_hp[2] = {-1.99599, 0.99600};
+  static const float a_hp[2] = {-1.99599f, 0.99600f};
   static const float b_hp[2] = {-2, 1};
   biquad(x, st->mem_hp_x, in, b_hp, a_hp, FRAME_SIZE);
   silence = compute_frame_features(st, X, P, Ex, Ep, Exp, features, x);
