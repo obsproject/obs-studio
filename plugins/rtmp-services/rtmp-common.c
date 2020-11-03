@@ -541,7 +541,7 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 
 	item = json_object_get(recommended, "bframes");
 	if (json_is_integer(item)) {
-		int bframes = json_integer_value(item);
+		int bframes = (int)json_integer_value(item);
 		obs_data_set_int(settings, "bf", bframes);
 	}
 
