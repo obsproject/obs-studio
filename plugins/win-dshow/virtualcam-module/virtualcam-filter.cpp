@@ -20,6 +20,8 @@ VCamFilter::VCamFilter()
 
 	AddVideoFormat(VideoFormat::I420, DEFAULT_CX, DEFAULT_CY,
 		       DEFAULT_INTERVAL);
+	AddVideoFormat(VideoFormat::YUY2, DEFAULT_CX, DEFAULT_CY,
+		       DEFAULT_INTERVAL);
 
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
@@ -90,13 +92,14 @@ VCamFilter::VCamFilter()
 	if (new_cx != cx || new_cy != cy || new_interval != interval) {
 		AddVideoFormat(VideoFormat::NV12, new_cx, new_cy, new_interval);
 		AddVideoFormat(VideoFormat::I420, new_cx, new_cy, new_interval);
+		AddVideoFormat(VideoFormat::YUY2, new_cx, new_cy, new_interval);
 		SetVideoFormat(VideoFormat::NV12, new_cx, new_cy, new_interval);
 		cx = new_cx;
 		cy = new_cy;
 		interval = new_interval;
 	}
 
-	nv12_scale_init(&scaler, false, cx, cy, cx, cy);
+	nv12_scale_init(&scaler, TARGET_FORMAT_NV12, cx, cy, cx, cy);
 
 	/* ---------------------------------------- */
 
@@ -157,7 +160,7 @@ void VCamFilter::Thread()
 	cy = GetCY();
 	interval = GetInterval();
 
-	nv12_scale_init(&scaler, false, GetCX(), GetCY(), cx, cy);
+	nv12_scale_init(&scaler, TARGET_FORMAT_NV12, GetCX(), GetCY(), cx, cy);
 
 	while (!stopped()) {
 		Frame(filter_time);
@@ -201,15 +204,20 @@ void VCamFilter::Frame(uint64_t ts)
 				       new_interval);
 		}
 
-		nv12_scale_init(&scaler, false, GetCX(), GetCY(), new_cx,
-				new_cy);
+		nv12_scale_init(&scaler, TARGET_FORMAT_NV12, GetCX(), GetCY(),
+				new_cx, new_cy);
 
 		cx = new_cx;
 		cy = new_cy;
 		interval = new_interval;
 	}
 
-	scaler.convert_to_i420 = GetVideoFormat() == VideoFormat::I420;
+	if (GetVideoFormat() == VideoFormat::I420)
+		scaler.format = TARGET_FORMAT_I420;
+	else if (GetVideoFormat() == VideoFormat::YUY2)
+		scaler.format = TARGET_FORMAT_YUY2;
+	else
+		scaler.format = TARGET_FORMAT_NV12;
 
 	uint8_t *ptr;
 	if (LockSampleData(&ptr)) {
