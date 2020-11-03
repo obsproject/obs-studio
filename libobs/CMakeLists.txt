@@ -473,12 +473,10 @@ source_group("util\\Header Files" FILES ${libobs_util_HEADERS})
 source_group("audio-monitoring\\Source Files" FILES ${libobs_audio_monitoring_SOURCES})
 source_group("audio-monitoring\\Header Files" FILES ${libobs_audio_monitoring_HEADERS})
 
-if(BUILD_CAPTIONS)
-	include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
-	set(libobs_PLATFORM_DEPS
-		${libobs_PLATFORM_DEPS}
-		caption)
-endif()
+include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
+set(libobs_PLATFORM_DEPS
+	${libobs_PLATFORM_DEPS}
+	caption)
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
 if(UNIX AND NOT APPLE)

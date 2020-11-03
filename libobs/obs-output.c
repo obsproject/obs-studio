@@ -21,10 +21,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-#if BUILD_CAPTIONS
 #include <caption/caption.h>
 #include <caption/mpeg.h>
-#endif
 
 static inline bool active(const struct obs_output *output)
 {
@@ -1206,7 +1204,6 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 		return output->highest_video_ts > packet->dts_usec;
 }
 
-#if BUILD_CAPTIONS
 static const uint8_t nal_start[4] = {0, 0, 0, 1};
 
 static bool add_caption(struct obs_output *output, struct encoder_packet *out)
@@ -1302,7 +1299,6 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 
 	return true;
 }
-#endif
 
 double last_caption_timestamp = 0;
 
@@ -1321,7 +1317,6 @@ static inline void send_interleaved(struct obs_output *output)
 	if (out.type == OBS_ENCODER_VIDEO) {
 		output->total_frames++;
 
-#if BUILD_CAPTIONS
 		pthread_mutex_lock(&output->caption_mutex);
 
 		double frame_timestamp =
@@ -1349,7 +1344,6 @@ static inline void send_interleaved(struct obs_output *output)
 		}
 
 		pthread_mutex_unlock(&output->caption_mutex);
-#endif
 	}
 
 	output->info.encoded_packet(output->context.data, &out);
@@ -2545,7 +2539,6 @@ void obs_output_caption(obs_output_t *output,
 	pthread_mutex_unlock(&output->caption_mutex);
 }
 
-#if BUILD_CAPTIONS
 static struct caption_text *caption_text_new(const char *text, size_t bytes,
 					     struct caption_text *tail,
 					     struct caption_text **head,
@@ -2592,7 +2585,6 @@ void obs_output_output_caption_text2(obs_output_t *output, const char *text,
 
 	pthread_mutex_unlock(&output->caption_mutex);
 }
-#endif
 
 float obs_output_get_congestion(obs_output_t *output)
 {
