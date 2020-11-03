@@ -112,7 +112,7 @@ struct winrt_capture {
 	bool client_area;
 
 	bool capture_cursor;
-	bool cursor_visible;
+	BOOL cursor_visible;
 
 	gs_texture_t *texture;
 	bool texture_written;
