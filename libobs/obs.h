@@ -1906,14 +1906,11 @@ EXPORT const char *obs_output_get_id(const obs_output_t *output);
 EXPORT void obs_output_caption(obs_output_t *output,
 			       const struct obs_source_cea_708 *captions);
 
-#if BUILD_CAPTIONS
 EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 					    const char *text);
 EXPORT void obs_output_output_caption_text2(obs_output_t *output,
 					    const char *text,
 					    double display_duration);
-
-#endif
 
 EXPORT float obs_output_get_congestion(obs_output_t *output);
 EXPORT int obs_output_get_connect_time_ms(obs_output_t *output);
