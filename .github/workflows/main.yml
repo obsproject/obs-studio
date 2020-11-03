@@ -71,22 +71,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
-      - name: 'Restore pre-built dependencies from cache'
-        id: deps-cache
-        uses: actions/cache@v2.1.2
-        env:
-          CACHE_NAME: 'deps-cache'
-        with:
-          path: /tmp/obsdeps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
-      - name: 'Restore pre-built Qt dependency from cache'
-        id: deps-qt-cache
-        uses: actions/cache@v2.1.2
-        env:
-          CACHE_NAME: 'deps-qt-cache'
-        with:
-          path: /tmp/obsdeps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
         uses: actions/cache@v2.1.2
