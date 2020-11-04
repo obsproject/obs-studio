@@ -128,7 +128,7 @@ int_fast32_t jack_init(struct jack_data *data)
 
 		data->jack_ports[i] = jack_port_register(
 			data->jack_client, port_name, JACK_DEFAULT_AUDIO_TYPE,
-			JackPortIsInput, 0);
+			JackPortIsInput | JackPortIsTerminal, 0);
 		if (data->jack_ports[i] == NULL) {
 			blog(LOG_ERROR,
 			     "jack_port_register Error:"
