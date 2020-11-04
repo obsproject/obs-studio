@@ -249,7 +249,16 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 		num_tracks++;
 	}
 
-	dstr_init_move_array(cmd, os_get_executable_path_ptr(FFMPEG_MUX));
+	obs_data_t *settings = obs_output_get_settings(stream->output);
+	const char *exec_path = obs_data_get_string(settings, "exec_path");
+
+	if (exec_path && strlen(exec_path) != 0) {
+		dstr_init_copy(cmd, exec_path);
+	} else {
+		dstr_init_move_array(cmd,
+				     os_get_executable_path_ptr(FFMPEG_MUX));
+	}
+
 	dstr_insert_ch(cmd, 0, '\"');
 	dstr_cat(cmd, "\" \"");
 
@@ -272,6 +281,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 
 	add_stream_key(cmd, stream);
 	add_muxer_params(cmd, stream);
+	obs_data_release(settings);
 }
 
 void start_pipe(struct ffmpeg_muxer *stream, const char *path)
