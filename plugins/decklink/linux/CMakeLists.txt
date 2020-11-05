@@ -54,7 +54,7 @@ set(linux-decklink_SOURCES
 	../audio-repack.c
 	platform.cpp
 	../util.cpp
-	../OBSVideoFrame.h
+	../OBSVideoFrame.cpp
 	)
 
 add_library(linux-decklink MODULE
