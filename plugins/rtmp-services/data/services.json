@@ -1186,6 +1186,9 @@
             ],
             "recommended": {
                 "keyint": 2,
+                "max width": 1280,
+                "max height": 720,
+                "max fps": 30,
                 "max video bitrate": 6000,
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
