@@ -132,13 +132,22 @@ cd $WORK_DIR
 export LDFLAGS="-L/tmp/obsdeps/lib"
 export CFLAGS="-I/tmp/obsdeps/include"
 
+curl -L -O https://kent.dl.sourceforge.net/project/lame/lame/3.99/lame-3.99.5.tar.gz
+tar -xf ./lame-3.99.5.tar.gz
+cd ./lame*
+./configure --disable-shared --prefix="/tmp/obsdeps" --libdir="/tmp/obsdeps/lib"
+make -j4
+find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
+rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
+rsync -avh --include="*/" --include="*.h" --exclude="*" ./* $DEPS_DEST/include/
+
 # FFMPEG
 curl -L -O https://github.com/FFmpeg/FFmpeg/archive/n4.0.2.zip
 unzip ./n4.0.2.zip
 cd ./FFmpeg-n4.0.2
 mkdir build
 cd ./build
-../configure --pkg-config-flags="--static" --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --disable-outdev=sdl
+../configure --pkg-config-flags="--static" --extra-ldflags="-mmacosx-version-min=10.11" --enable-shared --disable-static --shlibdir="/tmp/obsdeps/bin" --enable-gpl --disable-doc --enable-libx264 --enable-libopus --enable-libvorbis --enable-libvpx --enable-libmp3lame --disable-outdev=sdl
 make -j 12
 find . -name \*.dylib -exec cp \{\} $DEPS_DEST/bin/ \;
 rsync -avh --include="*/" --include="*.h" --exclude="*" ../* $DEPS_DEST/include/
