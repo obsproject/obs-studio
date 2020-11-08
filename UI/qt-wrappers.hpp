@@ -31,6 +31,7 @@
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 
 class QDataStream;
+class QComboBox;
 class QWidget;
 class QLayout;
 class QString;
@@ -105,6 +106,8 @@ static inline Qt::ConnectionType WaitConnection()
 
 bool LineEditCanceled(QEvent *event);
 bool LineEditChanged(QEvent *event);
+
+void SetComboItemEnabled(QComboBox *c, int idx, bool enabled);
 
 void setThemeID(QWidget *widget, const QString &themeID);
 
