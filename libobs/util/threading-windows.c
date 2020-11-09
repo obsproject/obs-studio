@@ -20,6 +20,8 @@
 
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
+#include <KnownFolders.h>
+#include <ShlObj_core.h>
 
 #ifdef __MINGW32__
 #include <excpt.h>
@@ -197,7 +199,14 @@ void os_set_thread_name(const char *name)
 	typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE thread,
 							   PCWSTR desc);
 
+	wchar_t *path;
+	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
+		return false;
+
+	SetDllDirectory(path);
 	HMODULE k32 = LoadLibraryW(L"Kernel32.dll");
+	CoTaskMemFree(path);
+	SetDllDirectory(NULL);
 	set_thread_description_t std = NULL;
 	std = (set_thread_description_t)GetProcAddress(k32,
 						       "SetThreadDescription");

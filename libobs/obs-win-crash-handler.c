@@ -21,6 +21,8 @@
 #include <shellapi.h>
 #include <tlhelp32.h>
 #include <inttypes.h>
+#include <KnownFolders.h>
+#include <ShlObj_core.h>
 
 #include "obs-config.h"
 #include "util/dstr.h"
@@ -127,7 +129,14 @@ static inline void *get_proc(HMODULE module, const char *func)
 
 static inline bool get_dbghelp_imports(struct exception_handler_data *data)
 {
+	wchar_t *path;
+	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
+		return false;
+
+	SetDllDirectory(path);
 	data->dbghelp = LoadLibraryW(L"DbgHelp");
+	CoTaskMemFree(path);
+	SetDllDirectory(NULL);
 	if (!data->dbghelp)
 		return false;
 

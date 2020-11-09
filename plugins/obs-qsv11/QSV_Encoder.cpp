@@ -81,7 +81,12 @@ bool prefer_igpu_enc(int *iGPUIndex)
 	bool hasDGPU = false;
 	bool isDG1Primary = false;
 
+	WCHAR system[MAX_PATH];
+	GetSystemDirectory(system, sizeof(system));
+
+	SetDllDirectory(system);
 	HMODULE hDXGI = LoadLibrary(L"dxgi.dll");
+	SetDllDirectory(NULL);
 	if (hDXGI == NULL) {
 		return false;
 	}

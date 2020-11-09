@@ -7,6 +7,8 @@
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#include <KnownFolders.h>
+#include <ShlObj_core.h>
 
 /* ========================================================================= */
 
@@ -257,8 +259,16 @@ typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 {
+	wchar_t *path;
+	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK) {
+		error("Could not retrieve system path");
+	}
+
+	SetDllDirectory(path);
 	HMODULE dxgi = get_lib(enc, "DXGI.dll");
 	HMODULE d3d11 = get_lib(enc, "D3D11.dll");
+	CoTaskMemFree(path);
+	SetDllDirectory(NULL);
 	CREATEDXGIFACTORY1PROC create_dxgi;
 	PFN_D3D11_CREATE_DEVICE create_device;
 	IDXGIFactory1 *factory;

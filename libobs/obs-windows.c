@@ -25,6 +25,8 @@
 #include <windows.h>
 #include <wscapi.h>
 #include <iwscapi.h>
+#include <KnownFolders.h>
+#include <ShlObj_core.h>
 
 static uint32_t win_ver = 0;
 
@@ -174,7 +176,14 @@ static void log_aero(void)
 			? " (Aero is always on for windows 8 and above)"
 			: "";
 
+	wchar_t *path;
+	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
+		return false;
+
+	SetDllDirectory(path);
 	HMODULE dwm = LoadLibraryW(L"dwmapi");
+	CoTaskMemFree(path);
+	SetDllDirectory(NULL);
 	BOOL bComposition = true;
 
 	if (!dwm) {
@@ -347,7 +356,14 @@ static void log_security_products(void)
 	/* We load the DLL rather than import wcsapi.lib because the clsid /
 	 * iid only exists on Windows 8 or higher. */
 
+	wchar_t *path;
+	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
+		return false;
+
+	SetDllDirectory(path);
 	h_wsc = LoadLibraryW(L"wscapi.dll");
+	CoTaskMemFree(path);
+	SetDllDirectory(NULL);
 	if (!h_wsc)
 		return;
 
@@ -1176,7 +1192,14 @@ void reset_win32_symbol_paths(void)
 		HMODULE mod;
 		funcs_initialized = true;
 
+		wchar_t *path;
+		if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
+			return false;
+
+		SetDllDirectory(path);
 		mod = LoadLibraryW(L"DbgHelp");
+		CoTaskMemFree(path);
+		SetDllDirectory(NULL);
 		if (!mod)
 			return;
 

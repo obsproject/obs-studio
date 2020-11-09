@@ -390,10 +390,11 @@ static bool load_lib(void)
 {
 	/* -------------------------------------------- */
 	/* attempt to load from path                    */
+	// EDIT: Do not attempt to load from path for security reasons
 
-	audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
-	if (!!audio_toolbox)
-		return true;
+	// audio_toolbox = LoadLibraryW(L"CoreAudioToolbox.dll");
+	// if (!!audio_toolbox)
+	// 	return true;
 
 	/* -------------------------------------------- */
 	/* attempt to load from known install locations */

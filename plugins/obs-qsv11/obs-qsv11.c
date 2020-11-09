@@ -686,7 +686,12 @@ typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
 static bool is_intel_gpu_primary()
 {
+	WCHAR system[MAX_PATH];
+	GetSystemDirectory(system, sizeof(system));
+
+	SetDllDirectory(system);
 	HMODULE dxgi = get_lib("DXGI.dll");
+	SetDllDirectory(NULL);
 	CREATEDXGIFACTORY1PROC create_dxgi;
 	IDXGIFactory1 *factory;
 	IDXGIAdapter *adapter;

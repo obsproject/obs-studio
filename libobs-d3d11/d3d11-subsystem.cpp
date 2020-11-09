@@ -26,6 +26,8 @@
 #include "d3d11-subsystem.hpp"
 #include "d3d11-config.h"
 #include "intel-nv12-support.hpp"
+#include <KnownFolders.h>
+#include <ShlObj_core.h>
 
 struct UnsupportedHWError : HRError {
 	inline UnsupportedHWError(const char *str, HRESULT hr)
@@ -186,6 +188,13 @@ void gs_device::InitCompiler()
 	char d3dcompiler[40] = {};
 	int ver = 49;
 
+	wchar_t *path;
+	if (SHGetKnownFolderPath(FOLDERID_SystemX86, 0, NULL, &path) != S_OK) {
+		throw "Could not retrieve system path";
+	}
+
+	SetDllDirectory(path);
+
 	while (ver > 30) {
 		sprintf(d3dcompiler, "D3DCompiler_%02d.dll", ver);
 
@@ -199,6 +208,8 @@ void gs_device::InitCompiler()
 				module, "D3DDisassemble");
 #endif
 			if (d3dCompile) {
+				CoTaskMemFree(path);
+				SetDllDirectory(nullptr);
 				return;
 			}
 
@@ -208,6 +219,8 @@ void gs_device::InitCompiler()
 		ver--;
 	}
 
+	CoTaskMemFree(path);
+	SetDllDirectory(nullptr);
 	throw "Could not find any D3DCompiler libraries. Make sure you've "
 	      "installed the <a href=\"https://obsproject.com/go/dxwebsetup\">"
 	      "DirectX components</a> that OBS Studio requires.";

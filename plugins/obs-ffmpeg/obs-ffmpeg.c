@@ -10,6 +10,7 @@
 #include <dxgi.h>
 #include <util/dstr.h>
 #include <util/windows/win-version.h>
+#include <sysinfoapi.h>
 #endif
 
 OBS_DECLARE_MODULE()
@@ -116,7 +117,16 @@ static bool nvenc_device_available(void)
 	if (!dxgi) {
 		dxgi = GetModuleHandleW(L"dxgi");
 		if (!dxgi) {
+#ifdef _WIN32
+			WCHAR system[MAX_PATH];
+			GetSystemDirectory(system, sizeof(system));
+
+			SetDllDirectory(system);
 			dxgi = LoadLibraryW(L"dxgi");
+			SetDllDirectory(NULL);
+#else
+			dxgi = LoadLibraryW(L"dxgi");
+#endif
 			if (!dxgi) {
 				return true;
 			}
