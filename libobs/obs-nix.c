@@ -232,7 +232,8 @@ static void log_memory_info(void)
 	len = sizeof(mem);
 
 	if (sysctl(mib, 2, &mem, &len, NULL, 0) >= 0)
-		blog(LOG_INFO, "Physical Memory: %"PRIi64"MB Total", mem / 1024 / 1024);
+		blog(LOG_INFO, "Physical Memory: %" PRIi64 "MB Total",
+		     mem / 1024 / 1024);
 #else
 	struct sysinfo info;
 	if (sysinfo(&info) < 0)

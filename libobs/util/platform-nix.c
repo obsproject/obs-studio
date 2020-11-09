@@ -41,9 +41,9 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <unistd.h>
-# if defined(__FreeBSD__)
-# include <libprocstat.h>
-# endif
+#if defined(__FreeBSD__)
+#include <libprocstat.h>
+#endif
 #else
 #include <sys/resource.h>
 #endif
@@ -278,11 +278,11 @@ char *os_get_program_data_path_ptr(const char *name)
 // a bit modified version of https://stackoverflow.com/a/31495527
 ssize_t os_openbsd_get_executable_path(char *epath)
 {
-	int 		mib[4];
-	char          **argv;
-	size_t 		len;
-	const char     *comm;
-	int 		ok = 0;
+	int mib[4];
+	char **argv;
+	size_t len;
+	const char *comm;
+	int ok = 0;
 
 	mib[0] = CTL_KERN;
 	mib[1] = KERN_PROC_ARGS;
@@ -304,10 +304,10 @@ ssize_t os_openbsd_get_executable_path(char *epath)
 		if (realpath(comm, epath))
 			ok = 1;
 	} else {
-		char           *sp;
-		char           *xpath = strdup(getenv("PATH"));
-		char           *path = strtok_r(xpath, ":", &sp);
-		struct stat 	st;
+		char *sp;
+		char *xpath = strdup(getenv("PATH"));
+		char *path = strtok_r(xpath, ":", &sp);
+		struct stat st;
 
 		if (!xpath)
 			abort();
