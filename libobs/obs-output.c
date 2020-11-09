@@ -2344,8 +2344,11 @@ static void *reconnect_thread(void *param)
 
 	output->reconnect_thread_active = true;
 
-	if (os_event_timedwait(output->reconnect_stop_event, ms) == ETIMEDOUT)
-		obs_output_actual_start(output);
+	if (os_event_timedwait(output->reconnect_stop_event, ms) == ETIMEDOUT) {
+		if (obs_output_actual_start(output)) {
+			do_output_signal(output, "starting");
+		}
+	}
 
 	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
 		pthread_detach(output->reconnect_thread);
