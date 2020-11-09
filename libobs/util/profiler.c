@@ -1058,7 +1058,7 @@ bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
 
 	profiler_snapshot_dump(snap, dump_csv_gzwrite, gz);
 
-	gzclose_w(gz);
+	gzclose(gz);
 	return true;
 }
 
