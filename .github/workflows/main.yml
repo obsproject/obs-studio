@@ -358,6 +358,7 @@ jobs:
            libluajit-5.1-dev \
            libpulse-dev \
            libqt5x11extras5-dev \
+           libsndio-dev \
            libspeexdsp-dev \
            libswresample-dev \
            libswscale-dev \
