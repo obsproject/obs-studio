@@ -302,11 +302,11 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
 
 	if (m->has_video && m->v.frame_ready) {
-		if (m->v.frame_pts < min_next_ns)
+		if (m->v.frame_pts < min_next_ns && m->v.frame_pts > 0)
 			min_next_ns = m->v.frame_pts;
 	}
 	if (m->has_audio && m->a.frame_ready) {
-		if (m->a.frame_pts < min_next_ns)
+		if (m->a.frame_pts < min_next_ns && m->a.frame_pts > 0)
 			min_next_ns = m->a.frame_pts;
 	}
 
@@ -317,7 +317,7 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 				int64_t frame_pts =
 					frame->timestamp + frame->duration;
 				if (frame_pts < min_next_ns)
-					min_next_ns = frame->timestamp + frame->duration;
+					min_next_ns = frame_pts;
 			}
 		}
 		if (m->has_audio && m->audio.index_eof >= 0) {
@@ -583,8 +583,9 @@ static void mp_media_calc_next_ns(mp_media_t *m)
 #endif
 		if (delta < 0)
 			delta = 0;
-		if (delta > 3000000000)
-			delta = 0;
+		const int64_t max_delta = 30000000000;
+		if (delta > max_delta)
+			delta = max_delta;
 	}
 
 	m->next_ns += delta;
