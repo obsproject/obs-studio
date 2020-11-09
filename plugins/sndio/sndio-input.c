@@ -123,7 +123,7 @@ static void *sndio_thread(void *attr)
 		pfd[0].events = POLLIN;
 		sio_pollfd(thrdata->hdl, pfd + 1, POLLIN);
 
-		if (poll(pfd, 1 + nsiofds, INFTIM) == -1) {
+		if (poll(pfd, 1 + nsiofds, /*INFTIM*/ -1) == -1) {
 			if (errno == EINTR)
 				continue;
 			berr(LOG_ERROR, "exiting due to poll error");
