@@ -26,7 +26,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <sys/ioctl.h>
 #include <sys/select.h>
 
-#include <libv4l1-videodev2.h>
+#include <linux/videodev2.h>
 #include <libv4l2.h>
 
 #include <util/threading.h>
