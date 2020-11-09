@@ -404,10 +404,10 @@ int config_save(config_t *config)
 	}
 
 #ifdef _WIN32
-	if (fwrite("\xEF\xBB\xBF", 3, 1, f) != 1)
+	if (fwrite("\xEF\xBB\xBF", 1, 3, f) != 3)
 		goto cleanup;
 #endif
-	if (fwrite(str.array, str.len, 1, f) != 1)
+	if (fwrite(str.array, 1, str.len, f) != str.len)
 		goto cleanup;
 
 	ret = CONFIG_SUCCESS;
