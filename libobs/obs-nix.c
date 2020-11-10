@@ -23,10 +23,12 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <unistd.h>
-#if defined(__FreeBSD__)
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/sysctl.h>
 #endif
+#if !defined(__OpenBSD__)
 #include <sys/sysinfo.h>
+#endif
 #include <sys/utsname.h>
 #include <xcb/xcb.h>
 #if USE_XINPUT
@@ -155,9 +157,10 @@ static void log_processor_info(void)
 	dstr_free(&proc_speed);
 	free(line);
 }
-#elif defined(__FreeBSD__)
+#elif defined(__FreeBSD__) || defined(__OpenBSD__)
 static void log_processor_speed(void)
 {
+#ifndef __OpenBSD__
 	char *line = NULL;
 	size_t linecap = 0;
 	FILE *fp;
@@ -187,6 +190,7 @@ static void log_processor_speed(void)
 	fclose(fp);
 	dstr_free(&proc_speed);
 	free(line);
+#endif
 }
 
 static void log_processor_name(void)
@@ -218,6 +222,19 @@ static void log_processor_info(void)
 
 static void log_memory_info(void)
 {
+#if defined(__OpenBSD__)
+	int mib[2];
+	size_t len;
+	int64_t mem;
+
+	mib[0] = CTL_HW;
+	mib[1] = HW_PHYSMEM64;
+	len = sizeof(mem);
+
+	if (sysctl(mib, 2, &mem, &len, NULL, 0) >= 0)
+		blog(LOG_INFO, "Physical Memory: %" PRIi64 "MB Total",
+		     mem / 1024 / 1024);
+#else
 	struct sysinfo info;
 	if (sysinfo(&info) < 0)
 		return;
@@ -227,6 +244,7 @@ static void log_memory_info(void)
 	     (uint64_t)info.totalram * info.mem_unit / 1024 / 1024,
 	     ((uint64_t)info.freeram + (uint64_t)info.bufferram) *
 		     info.mem_unit / 1024 / 1024);
+#endif
 }
 
 static void log_kernel_version(void)

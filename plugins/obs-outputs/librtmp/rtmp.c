@@ -348,6 +348,12 @@ RTMP_TLS_LoadCerts(RTMP *r) {
             "/etc/ssl/certs");
         goto error;
     }
+#elif defined(__OpenBSD__)
+    if (mbedtls_x509_crt_parse_file(chain, "/etc/ssl/cert.pem") < 0) {
+        RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_file: Couldn't parse "
+            "/etc/ssl/cert.pem");
+        goto error;
+    }
 #endif
 
     mbedtls_ssl_conf_ca_chain(&r->RTMP_TLS_ctx->conf, chain, NULL);
@@ -814,8 +820,10 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
         *socket_error = WSANO_DATA;
 #elif __FreeBSD__
         *socket_error = ENOATTR;
-#else
+#elif defined(ENODATA)
         *socket_error = ENODATA;
+#else
+        *socket_error = EAFNOSUPPORT;
 #endif
 
         RTMP_Log(RTMP_LOGERROR, "Could not resolve server '%s': no valid address found", hostname);
