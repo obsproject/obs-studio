@@ -665,7 +665,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 
 OBSService OBSBasicSettings::GetStream1Service()
 {
-	return stream1Changed ? SpawnTempService() : main->GetService();
+	return stream1Changed ? SpawnTempService()
+			      : OBSService(main->GetService());
 }
 
 void OBSBasicSettings::UpdateServiceRecommendations()
