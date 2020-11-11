@@ -4604,13 +4604,7 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	QString warning;
 	bool advanced = ui->simpleOutAdvanced->isChecked();
 	bool enforceBitrate = ui->simpleOutEnforce->isChecked() || !advanced;
-	OBSService service;
-
-	if (stream1Changed) {
-		service = SpawnTempService();
-	} else {
-		service = main->GetService();
-	}
+	OBSService service = GetStream1Service();
 
 	delete simpleOutRecWarning;
 

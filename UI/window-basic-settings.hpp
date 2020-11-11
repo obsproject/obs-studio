@@ -316,6 +316,8 @@ private:
 
 	int CurrentFLVTrack();
 
+	OBSService GetStream1Service();
+
 private slots:
 	void on_theme_activated(int idx);
 

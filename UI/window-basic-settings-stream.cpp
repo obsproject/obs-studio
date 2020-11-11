@@ -650,3 +650,8 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 		vodTrack[i]->setChecked((i + 1) == trackIndex);
 	}
 }
+
+OBSService OBSBasicSettings::GetStream1Service()
+{
+	return stream1Changed ? SpawnTempService() : main->GetService();
+}
