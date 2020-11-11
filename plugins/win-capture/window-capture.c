@@ -234,7 +234,6 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 
 	if (uses_d3d11) {
 		static const char *const module = "libobs-winrt";
-		bool use_winrt_capture = false;
 		wc->winrt_module = os_dlopen(module);
 		if (wc->winrt_module &&
 		    load_winrt_imports(&wc->exports, wc->winrt_module,
@@ -343,6 +342,8 @@ static void update_settings_visibility(obs_properties_t *props,
 static bool wc_capture_method_changed(obs_properties_t *props,
 				      obs_property_t *p, obs_data_t *settings)
 {
+	UNUSED_PARAMETER(p);
+
 	struct window_capture *wc = obs_properties_get_param(props);
 	update_settings(wc, settings);
 
