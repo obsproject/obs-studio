@@ -245,7 +245,9 @@ private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
+	void UpdateServiceRecommendations();
 	void UpdateMoreInfoLink();
+	void DisplayEnforceWarning(bool checked);
 	void on_show_clicked();
 	void on_authPwShow_clicked();
 	void on_connectAccount_clicked();

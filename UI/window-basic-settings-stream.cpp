@@ -73,8 +73,12 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateVodTrackSetting()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateServiceRecommendations()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateKeyLink()));
+	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
+		SLOT(DisplayEnforceWarning(bool)));
 	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
 		this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
@@ -83,6 +87,9 @@ void OBSBasicSettings::InitStreamPage()
 
 void OBSBasicSettings::LoadStream1Settings()
 {
+	bool ignoreRecommended =
+		config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
+
 	obs_service_t *service_obj = main->GetService();
 	const char *type = obs_service_get_type(service_obj);
 
@@ -144,9 +151,12 @@ void OBSBasicSettings::LoadStream1Settings()
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
 	UpdateVodTrackSetting();
+	UpdateServiceRecommendations();
 
 	bool streamActive = obs_frontend_streaming_active();
 	ui->streamPage->setEnabled(!streamActive);
+
+	ui->ignoreRecommended->setChecked(ignoreRecommended);
 
 	loading = false;
 }
@@ -216,6 +226,8 @@ void OBSBasicSettings::SaveStream1Settings()
 	main->auth = auth;
 	if (!!main->auth)
 		main->auth->LoadUI();
+
+	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
 
 void OBSBasicSettings::UpdateMoreInfoLink()
@@ -654,4 +666,61 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 OBSService OBSBasicSettings::GetStream1Service()
 {
 	return stream1Changed ? SpawnTempService() : main->GetService();
+}
+
+void OBSBasicSettings::UpdateServiceRecommendations()
+{
+	bool customServer = IsCustomService();
+	ui->ignoreRecommended->setVisible(!customServer);
+	ui->enforceSettingsLabel->setVisible(!customServer);
+
+	OBSService service = GetStream1Service();
+
+	int vbitrate, abitrate;
+	obs_service_get_max_bitrate(service, &vbitrate, &abitrate);
+
+	QString text;
+
+#define ENFORCE_TEXT(x) QTStr("Basic.Settings.Stream.Recommended." x)
+	if (vbitrate)
+		text += ENFORCE_TEXT("MaxVideoBitrate")
+				.arg(QString::number(vbitrate));
+	if (abitrate) {
+		if (!text.isEmpty())
+			text += "\n";
+		text += ENFORCE_TEXT("MaxAudioBitrate")
+				.arg(QString::number(abitrate));
+	}
+#undef ENFORCE_TEXT
+
+	ui->enforceSettingsLabel->setText(text);
+}
+
+void OBSBasicSettings::DisplayEnforceWarning(bool checked)
+{
+	if (IsCustomService())
+		return;
+
+	if (!checked) {
+		SimpleRecordingEncoderChanged();
+		return;
+	}
+
+	QMessageBox::StandardButton button;
+
+#define ENFORCE_WARNING(x) \
+	QTStr("Basic.Settings.Stream.IgnoreRecommended.Warn." x)
+
+	button = OBSMessageBox::question(this, ENFORCE_WARNING("Title"),
+					 ENFORCE_WARNING("Text"));
+#undef ENFORCE_WARNING
+
+	if (button == QMessageBox::No) {
+		QMetaObject::invokeMethod(ui->ignoreRecommended, "setChecked",
+					  Qt::QueuedConnection,
+					  Q_ARG(bool, false));
+		return;
+	}
+
+	SimpleRecordingEncoderChanged();
 }

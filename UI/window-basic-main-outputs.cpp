@@ -482,8 +482,8 @@ void SimpleOutput::Update()
 	int audioBitrate = GetAudioBitrate();
 	bool advanced =
 		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
-	bool enforceBitrate = config_get_bool(main->Config(), "SimpleOutput",
-					      "EnforceBitrate");
+	bool enforceBitrate = !config_get_bool(main->Config(), "Stream1",
+					       "IgnoreRecommended");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 					       "x264Settings");
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
@@ -521,7 +521,7 @@ void SimpleOutput::Update()
 	obs_service_apply_encoder_settings(main->GetService(), h264Settings,
 					   aacSettings);
 
-	if (advanced && !enforceBitrate) {
+	if (!enforceBitrate) {
 		obs_data_set_int(h264Settings, "bitrate", videoBitrate);
 		obs_data_set_int(aacSettings, "bitrate", audioBitrate);
 	}
@@ -1250,6 +1250,8 @@ void AdvancedOutput::UpdateStreamSettings()
 {
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 						    "ApplyServiceSettings");
+	bool enforceBitrate = !config_get_bool(main->Config(), "Stream1",
+					       "IgnoreRecommended");
 	bool dynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 	const char *streamEncoder =
@@ -1258,9 +1260,13 @@ void AdvancedOutput::UpdateStreamSettings()
 	OBSData settings = GetDataFromJsonFile("streamEncoder.json");
 	ApplyEncoderDefaults(settings, h264Streaming);
 
-	if (applyServiceSettings)
+	if (applyServiceSettings) {
+		int bitrate = (int)obs_data_get_int(settings, "bitrate");
 		obs_service_apply_encoder_settings(main->GetService(), settings,
 						   nullptr);
+		if (!enforceBitrate)
+			obs_data_set_int(settings, "bitrate", bitrate);
+	}
 
 	if (dynBitrate && astrcmpi(streamEncoder, "jim_nvenc") == 0)
 		obs_data_set_bool(settings, "lookahead", false);
@@ -1480,6 +1486,8 @@ inline void AdvancedOutput::UpdateAudioSettings()
 {
 	bool applyServiceSettings = config_get_bool(main->Config(), "AdvOut",
 						    "ApplyServiceSettings");
+	bool enforceBitrate = !config_get_bool(main->Config(), "Stream1",
+					       "IgnoreRecommended");
 	int streamTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "TrackIndex");
 	int vodTrackIndex =
@@ -1510,9 +1518,15 @@ inline void AdvancedOutput::UpdateAudioSettings()
 
 		if (track == streamTrackIndex || track == vodTrackIndex) {
 			if (applyServiceSettings) {
+				int bitrate = (int)obs_data_get_int(settings[i],
+								    "bitrate");
 				obs_service_apply_encoder_settings(
 					main->GetService(), nullptr,
 					settings[i]);
+
+				if (!enforceBitrate)
+					obs_data_set_int(settings[i], "bitrate",
+							 bitrate);
 			}
 		}
 
