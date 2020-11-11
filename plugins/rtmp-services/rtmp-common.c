@@ -690,6 +690,42 @@ static void rtmp_common_get_max_res_fps(void *data, int *cx, int *cy, int *fps)
 		*fps = service->max_fps;
 }
 
+static void rtmp_common_get_max_bitrate(void *data, int *video_bitrate,
+					int *audio_bitrate)
+{
+	struct rtmp_common *service = data;
+	json_t *root = open_services_file();
+	json_t *item;
+
+	if (!root)
+		return;
+
+	json_t *json_service = find_service(root, service->service, NULL);
+	if (!json_service) {
+		goto fail;
+	}
+
+	json_t *recommended = json_object_get(json_service, "recommended");
+	if (!recommended) {
+		goto fail;
+	}
+
+	if (audio_bitrate) {
+		item = json_object_get(recommended, "max audio bitrate");
+		if (json_is_integer(item))
+			*audio_bitrate = (int)json_integer_value(item);
+	}
+
+	if (video_bitrate) {
+		item = json_object_get(recommended, "max video bitrate");
+		if (json_is_integer(item))
+			*video_bitrate = (int)json_integer_value(item);
+	}
+
+fail:
+	json_decref(root);
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -702,4 +738,5 @@ struct obs_service_info rtmp_common_service = {
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 	.get_max_res_fps = rtmp_common_get_max_res_fps,
+	.get_max_bitrate = rtmp_common_get_max_bitrate,
 };

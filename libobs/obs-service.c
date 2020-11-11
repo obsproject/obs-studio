@@ -436,3 +436,19 @@ void obs_service_get_max_res_fps(const obs_service_t *service, int *cx, int *cy,
 		service->info.get_max_res_fps(service->context.data, cx, cy,
 					      fps);
 }
+
+void obs_service_get_max_bitrate(const obs_service_t *service,
+				 int *video_bitrate, int *audio_bitrate)
+{
+	if (video_bitrate)
+		*video_bitrate = 0;
+	if (audio_bitrate)
+		*audio_bitrate = 0;
+
+	if (!obs_service_valid(service, "obs_service_get_max_bitrate"))
+		return;
+
+	if (service->info.get_max_bitrate)
+		service->info.get_max_bitrate(service->context.data,
+					      video_bitrate, audio_bitrate);
+}
