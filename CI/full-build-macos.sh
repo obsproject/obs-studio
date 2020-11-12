@@ -383,7 +383,7 @@ prepare_macos_bundle() {
     cp rundir/${BUILD_CONFIG}/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
     cp rundir/${BUILD_CONFIG}/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
     cp -R rundir/${BUILD_CONFIG}/data ./OBS.app/Contents/Resources
-    cp ${CI_SCRIPTS}/app/obs.icns ./OBS.app/Contents/Resources
+    cp ${CI_SCRIPTS}/app/AppIcon.icns ./OBS.app/Contents/Resources
     cp -R rundir/${BUILD_CONFIG}/obs-plugins/ ./OBS.app/Contents/PlugIns
     cp ${CI_SCRIPTS}/app/Info.plist ./OBS.app/Contents
     # Scripting plugins are required to be placed in same directory as binary

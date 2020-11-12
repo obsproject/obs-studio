@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleIconFile</key>
-	<string>obs.icns</string>
+	<string>AppIcon.icns</string>
 	<key>CFBundleName</key>
 	<string>OBS</string>
 	<key>CFBundleGetInfoString</key>
