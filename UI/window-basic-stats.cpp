@@ -170,7 +170,12 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	resize(800, 280);
 
 	setWindowTitle(QTStr("Basic.Stats"));
+#ifdef __APPLE__
+	setWindowIcon(
+		QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
+#else
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
+#endif
 
 	setWindowModality(Qt::NonModal);
 	setAttribute(Qt::WA_DeleteOnClose, true);

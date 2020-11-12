@@ -31,8 +31,12 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		setWindowFlags(Qt::WindowStaysOnTopHint);
 
 	type = type_;
-
+#ifdef __APPLE__
+	setWindowIcon(
+		QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
+#else
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
+#endif
 
 	if (monitor == -1)
 		resize(480, 270);
