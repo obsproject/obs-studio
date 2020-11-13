@@ -419,22 +419,36 @@ const char *obs_service_get_output_type(const obs_service_t *service)
 	return NULL;
 }
 
-void obs_service_get_max_res_fps(const obs_service_t *service, int *cx, int *cy,
-				 int *fps)
+void obs_service_get_supported_resolutions(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count)
 {
-	if (cx)
-		*cx = 0;
-	if (cy)
-		*cy = 0;
-	if (fps)
-		*fps = 0;
-
-	if (!obs_service_valid(service, "obs_service_get_max_res_fps"))
+	if (!obs_service_valid(service, "obs_service_supported_resolutions"))
+		return;
+	if (!obs_ptr_valid(resolutions, "obs_service_supported_resolutions"))
+		return;
+	if (!obs_ptr_valid(count, "obs_service_supported_resolutions"))
 		return;
 
-	if (service->info.get_max_res_fps)
-		service->info.get_max_res_fps(service->context.data, cx, cy,
-					      fps);
+	*resolutions = NULL;
+	*count = 0;
+
+	if (service->info.get_supported_resolutions)
+		service->info.get_supported_resolutions(service->context.data,
+							resolutions, count);
+}
+
+void obs_service_get_max_fps(const obs_service_t *service, int *fps)
+{
+	if (!obs_service_valid(service, "obs_service_get_max_fps"))
+		return;
+	if (!obs_ptr_valid(fps, "obs_service_get_max_fps"))
+		return;
+
+	*fps = 0;
+
+	if (service->info.get_max_fps)
+		service->info.get_max_fps(service->context.data, fps);
 }
 
 void obs_service_get_max_bitrate(const obs_service_t *service,

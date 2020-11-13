@@ -477,8 +477,11 @@
             "recommended": {
                 "keyint": 2,
                 "profile": "main",
-                "max width": 1280,
-                "max height": 720,
+                "supported resolutions": [
+                    "1280x720",
+                    "852x480",
+                    "480x360"
+                ],
                 "max fps": 30,
                 "max video bitrate": 6000,
                 "max audio bitrate": 128

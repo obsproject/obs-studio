@@ -963,6 +963,27 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 #define QUALITY_SAME "Basic.Settings.Output.Simple.RecordingQuality.Stream"
 #define QUALITY_HIGH "Basic.Settings.Output.Simple.RecordingQuality.Small"
 
+void set_closest_res(int &cx, int &cy, struct obs_service_resolution *res_list,
+		     size_t count)
+{
+	int best_pixel_diff = 0x7FFFFFFF;
+	int start_cx = cx;
+	int start_cy = cy;
+
+	for (size_t i = 0; i < count; i++) {
+		struct obs_service_resolution &res = res_list[i];
+		int pixel_cx_diff = abs(start_cx - res.cx);
+		int pixel_cy_diff = abs(start_cy - res.cy);
+		int pixel_diff = pixel_cx_diff + pixel_cy_diff;
+
+		if (pixel_diff < best_pixel_diff) {
+			best_pixel_diff = pixel_diff;
+			cx = res.cx;
+			cy = res.cy;
+		}
+	}
+}
+
 void AutoConfigTestPage::FinalizeResults()
 {
 	ui->stackedWidget->setCurrentIndex(1);
@@ -1013,13 +1034,18 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_service_apply_encoder_settings(service, vencoder_settings,
 						   nullptr);
 
-		int maxCX, maxCY, maxFPS;
-		obs_service_get_max_res_fps(service, &maxCX, &maxCY, &maxFPS);
+		struct obs_service_resolution *res_list;
+		size_t res_count;
+		int maxFPS;
+		obs_service_get_supported_resolutions(service, &res_list,
+						      &res_count);
+		obs_service_get_max_fps(service, &maxFPS);
 
-		if (maxCX && wiz->idealResolutionCX > maxCX)
-			wiz->idealResolutionCX = maxCX;
-		if (maxCY && wiz->idealResolutionCY > maxCY)
-			wiz->idealResolutionCY = maxCY;
+		if (res_list) {
+			set_closest_res(wiz->idealResolutionCX,
+					wiz->idealResolutionCY, res_list,
+					res_count);
+		}
 		if (maxFPS) {
 			double idealFPS = (double)wiz->idealFPSNum /
 					  (double)wiz->idealFPSDen;

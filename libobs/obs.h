@@ -2231,8 +2231,10 @@ EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
 
-EXPORT void obs_service_get_max_res_fps(const obs_service_t *service, int *cx,
-					int *cy, int *fps);
+EXPORT void obs_service_get_supported_resolutions(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count);
+EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
 
 EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 					int *video_bitrate, int *audio_bitrate);
