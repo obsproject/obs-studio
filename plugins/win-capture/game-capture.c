@@ -273,9 +273,10 @@ static inline HMODULE kernel32(void)
 static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 				  DWORD process_id)
 {
-	static HANDLE(WINAPI * open_process_proc)(DWORD, BOOL, DWORD) = NULL;
+	typedef HANDLE(WINAPI * PFN_OpenProcess)(DWORD, BOOL, DWORD);
+	PFN_OpenProcess open_process_proc = NULL;
 	if (!open_process_proc)
-		open_process_proc = get_obfuscated_func(
+		open_process_proc = (PFN_OpenProcess)get_obfuscated_func(
 			kernel32(), "NuagUykjcxr", 0x1B694B59451ULL);
 
 	return open_process_proc(desired_access, inherit_handle, process_id);
@@ -457,6 +458,9 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 static bool hotkey_start(void *data, obs_hotkey_pair_id id,
 			 obs_hotkey_t *hotkey, bool pressed)
 {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
 	struct game_capture *gc = data;
 
 	if (pressed && gc->config.mode == CAPTURE_MODE_HOTKEY) {
@@ -473,6 +477,9 @@ static bool hotkey_start(void *data, obs_hotkey_pair_id id,
 static bool hotkey_stop(void *data, obs_hotkey_pair_id id, obs_hotkey_t *hotkey,
 			bool pressed)
 {
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(hotkey);
+
 	struct game_capture *gc = data;
 
 	if (pressed && gc->config.mode == CAPTURE_MODE_HOTKEY) {
