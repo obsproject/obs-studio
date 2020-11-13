@@ -174,7 +174,7 @@ jobs:
           cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
           cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
           cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
-          cp ../CI/scripts/macos/app/obs.icns ./OBS.app/Contents/Resources
+          cp ../CI/scripts/macos/app/AppIcon.icns ./OBS.app/Contents/Resources
           cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
           cp ../CI/scripts/macos/app/Info.plist ./OBS.app/Contents
 

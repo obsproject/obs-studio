@@ -1,7 +1,7 @@
 {
     "title": "OBS-Studio $$VERSION$$",
     "background": "$$CI_PATH$$/package/background.tiff",
-    "icon": "$$CI_PATH$$/app/obs.icns",
+    "icon": "$$CI_PATH$$/app/AppIcon.icns",
     "format": "ULFO",
     "icon-size": 96,
     "window": {
