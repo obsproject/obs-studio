@@ -26,19 +26,33 @@
 
 #define WC_CHECK_TIMER 1.0f
 
+typedef BOOL (*PFN_winrt_capture_supported)();
+typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
+typedef struct winrt_capture *(*PFN_winrt_capture_init)(BOOL cursor,
+							HWND window,
+							BOOL client_area);
+typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
+
+typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
+typedef void (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
+					      BOOL visible);
+typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
+					 gs_effect_t *effect);
+typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
+typedef uint32_t (*PFN_winrt_capture_height)(
+	const struct winrt_capture *capture);
+
 struct winrt_exports {
-	BOOL *(*winrt_capture_supported)();
-	BOOL *(*winrt_capture_cursor_toggle_supported)();
-	struct winrt_capture *(*winrt_capture_init)(BOOL cursor, HWND window,
-						    BOOL client_area);
-	void (*winrt_capture_free)(struct winrt_capture *capture);
-	BOOL *(*winrt_capture_active)(const struct winrt_capture *capture);
-	void (*winrt_capture_show_cursor)(struct winrt_capture *capture,
-					  BOOL visible);
-	void (*winrt_capture_render)(struct winrt_capture *capture,
-				     gs_effect_t *effect);
-	uint32_t (*winrt_capture_width)(const struct winrt_capture *capture);
-	uint32_t (*winrt_capture_height)(const struct winrt_capture *capture);
+	PFN_winrt_capture_supported winrt_capture_supported;
+	PFN_winrt_capture_cursor_toggle_supported
+		winrt_capture_cursor_toggle_supported;
+	PFN_winrt_capture_init winrt_capture_init;
+	PFN_winrt_capture_free winrt_capture_free;
+	PFN_winrt_capture_active winrt_capture_active;
+	PFN_winrt_capture_show_cursor winrt_capture_show_cursor;
+	PFN_winrt_capture_render winrt_capture_render;
+	PFN_winrt_capture_width winrt_capture_width;
+	PFN_winrt_capture_height winrt_capture_height;
 };
 
 enum window_capture_method {
@@ -191,16 +205,16 @@ static const char *wc_getname(void *unused)
 	return TEXT_WINDOW_CAPTURE;
 }
 
-#define WINRT_IMPORT(func)                                        \
-	do {                                                      \
-		exports->func = os_dlsym(module, #func);          \
-		if (!exports->func) {                             \
-			success = false;                          \
-			blog(LOG_ERROR,                           \
-			     "Could not load function '%s' from " \
-			     "module '%s'",                       \
-			     #func, module_name);                 \
-		}                                                 \
+#define WINRT_IMPORT(func)                                           \
+	do {                                                         \
+		exports->func = (PFN_##func)os_dlsym(module, #func); \
+		if (!exports->func) {                                \
+			success = false;                             \
+			blog(LOG_ERROR,                              \
+			     "Could not load function '%s' from "    \
+			     "module '%s'",                          \
+			     #func, module_name);                    \
+		}                                                    \
 	} while (false)
 
 static bool load_winrt_imports(struct winrt_exports *exports, void *module,
