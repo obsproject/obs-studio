@@ -75,10 +75,14 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateVodTrackSetting()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateServiceRecommendations()));
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateResFPSLimits()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateKeyLink()));
 	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
 		SLOT(DisplayEnforceWarning(bool)));
+	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
+		SLOT(UpdateResFPSLimits()));
 	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
 		this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
@@ -159,6 +163,9 @@ void OBSBasicSettings::LoadStream1Settings()
 	ui->ignoreRecommended->setChecked(ignoreRecommended);
 
 	loading = false;
+
+	QMetaObject::invokeMethod(this, "UpdateResFPSLimits",
+				  Qt::QueuedConnection);
 }
 
 void OBSBasicSettings::SaveStream1Settings()
@@ -724,4 +731,264 @@ void OBSBasicSettings::DisplayEnforceWarning(bool checked)
 	}
 
 	SimpleRecordingEncoderChanged();
+}
+
+bool OBSBasicSettings::ResFPSValid(obs_service_resolution *res_list,
+				   size_t res_count, int max_fps)
+{
+	if (!res_count && !max_fps)
+		return true;
+
+	if (res_count) {
+		QString res = ui->outputResolution->currentText();
+		bool found_res = false;
+
+		int cx, cy;
+		if (sscanf(QT_TO_UTF8(res), "%dx%d", &cx, &cy) != 2)
+			return false;
+
+		for (size_t i = 0; i < res_count; i++) {
+			if (res_list[i].cx == cx && res_list[i].cy == cy) {
+				found_res = true;
+				break;
+			}
+		}
+
+		if (!found_res)
+			return false;
+	}
+
+	if (max_fps) {
+		int fpsType = ui->fpsType->currentIndex();
+		if (fpsType != 0)
+			return false;
+
+		std::string fps_str = QT_TO_UTF8(ui->fpsCommon->currentText());
+		float fps;
+		sscanf(fps_str.c_str(), "%f", &fps);
+		if (fps > (float)max_fps)
+			return false;
+	}
+
+	return true;
+}
+
+extern void set_closest_res(int &cx, int &cy,
+			    struct obs_service_resolution *res_list,
+			    size_t count);
+
+/* Checks for and updates the resolution and FPS limits of a service, if any.
+ *
+ * If the service has a resolution and/or FPS limit, this will enforce those
+ * limitations in the UI itself, preventing the user from selecting a
+ * resolution or FPS that's not supported.
+ *
+ * This is an unpleasant thing to have to do to users, but there is no other
+ * way to ensure that a service's restricted resolution/framerate values are
+ * properly enforced, otherwise users will just be confused when things aren't
+ * working correctly. The user can turn it off if they're partner (or if they
+ * want to risk getting in trouble with their service) by selecting the "Ignore
+ * recommended settings" option in the stream section of settings.
+ *
+ * This only affects services that have a resolution and/or framerate limit, of
+ * which as of this writing, and hopefully for the foreseeable future, there is
+ * only one.
+ */
+void OBSBasicSettings::UpdateResFPSLimits()
+{
+	if (loading)
+		return;
+
+	int idx = ui->service->currentIndex();
+	if (idx == -1)
+		return;
+
+	bool ignoreRecommended = ui->ignoreRecommended->isChecked();
+	BPtr<obs_service_resolution> res_list;
+	size_t res_count = 0;
+	int max_fps = 0;
+
+	if (!IsCustomService() && !ignoreRecommended) {
+		OBSService service = GetStream1Service();
+		obs_service_get_supported_resolutions(service, &res_list,
+						      &res_count);
+		obs_service_get_max_fps(service, &max_fps);
+	}
+
+	/* ------------------------------------ */
+	/* Check for enforced res/FPS           */
+
+	QString res = ui->outputResolution->currentText();
+	QString fps_str;
+	int cx = 0, cy = 0;
+	double max_fpsd = (double)max_fps;
+	int closest_fps_index = -1;
+	double fpsd;
+
+	sscanf(QT_TO_UTF8(res), "%dx%d", &cx, &cy);
+
+	if (res_count)
+		set_closest_res(cx, cy, res_list, res_count);
+
+	if (max_fps) {
+		int fpsType = ui->fpsType->currentIndex();
+
+		if (fpsType == 1) { //Integer
+			fpsd = (double)ui->fpsInteger->value();
+		} else if (fpsType == 2) { //Fractional
+			fpsd = (double)ui->fpsNumerator->value() /
+			       (double)ui->fpsDenominator->value();
+		} else { //Common
+			sscanf(QT_TO_UTF8(ui->fpsCommon->currentText()), "%lf",
+			       &fpsd);
+		}
+
+		double closest_diff = 1000000000000.0;
+
+		for (int i = 0; i < ui->fpsCommon->count(); i++) {
+			double com_fpsd;
+			sscanf(QT_TO_UTF8(ui->fpsCommon->itemText(i)), "%lf",
+			       &com_fpsd);
+
+			if (com_fpsd > max_fpsd) {
+				continue;
+			}
+
+			double diff = fabs(com_fpsd - fpsd);
+			if (diff < closest_diff) {
+				closest_diff = diff;
+				closest_fps_index = i;
+				fps_str = ui->fpsCommon->itemText(i);
+			}
+		}
+	}
+
+	QString res_str =
+		QString("%1x%2").arg(QString::number(cx), QString::number(cy));
+
+	/* ------------------------------------ */
+	/* Display message box if res/FPS bad   */
+
+	bool valid = ResFPSValid(res_list, res_count, max_fps);
+
+	if (!valid) {
+		/* if the user was already on facebook with an incompatible
+		 * resolution, assume it's an upgrade */
+		if (lastServiceIdx == -1 && lastIgnoreRecommended == -1) {
+			ui->ignoreRecommended->setChecked(true);
+			ui->ignoreRecommended->setProperty("changed", true);
+			stream1Changed = true;
+			EnableApplyButton(true);
+			UpdateResFPSLimits();
+			return;
+		}
+
+		QMessageBox::StandardButton button;
+
+#define WARNING_VAL(x) \
+	QTStr("Basic.Settings.Output.Warn.EnforceResolutionFPS." x)
+
+		QString str;
+		if (res_count)
+			str += WARNING_VAL("Resolution").arg(res_str);
+		if (max_fps) {
+			if (!str.isEmpty())
+				str += "\n";
+			str += WARNING_VAL("FPS").arg(fps_str);
+		}
+
+		button = OBSMessageBox::question(this, WARNING_VAL("Title"),
+						 WARNING_VAL("Msg").arg(str));
+#undef WARNING_VAL
+
+		if (button == QMessageBox::No) {
+			if (idx != lastServiceIdx)
+				QMetaObject::invokeMethod(
+					ui->service, "setCurrentIndex",
+					Qt::QueuedConnection,
+					Q_ARG(int, lastServiceIdx));
+			else
+				QMetaObject::invokeMethod(ui->ignoreRecommended,
+							  "setChecked",
+							  Qt::QueuedConnection,
+							  Q_ARG(bool, true));
+			return;
+		}
+	}
+
+	/* ------------------------------------ */
+	/* Update widgets/values if switching   */
+	/* to/from enforced resolution/FPS      */
+
+	ui->outputResolution->blockSignals(true);
+	if (res_count) {
+		ui->outputResolution->clear();
+		ui->outputResolution->setEditable(false);
+
+		int new_res_index = -1;
+
+		for (size_t i = 0; i < res_count; i++) {
+			obs_service_resolution val = res_list[i];
+			QString str =
+				QString("%1x%2").arg(QString::number(val.cx),
+						     QString::number(val.cy));
+			ui->outputResolution->addItem(str);
+
+			if (val.cx == cx && val.cy == cy)
+				new_res_index = (int)i;
+		}
+
+		ui->outputResolution->setCurrentIndex(new_res_index);
+		if (!valid) {
+			ui->outputResolution->setProperty("changed", true);
+			videoChanged = true;
+			EnableApplyButton(true);
+		}
+	} else {
+		QString baseRes = ui->baseResolution->currentText();
+		int baseCX, baseCY;
+		sscanf(QT_TO_UTF8(baseRes), "%dx%d", &baseCX, &baseCY);
+
+		if (!ui->outputResolution->isEditable()) {
+			RecreateOutputResolutionWidget();
+			ui->outputResolution->blockSignals(true);
+			ResetDownscales((uint32_t)baseCX, (uint32_t)baseCY,
+					true);
+			ui->outputResolution->setCurrentText(res);
+		}
+	}
+	ui->outputResolution->blockSignals(false);
+
+	if (max_fps) {
+		for (int i = 0; i < ui->fpsCommon->count(); i++) {
+			double com_fpsd;
+			sscanf(QT_TO_UTF8(ui->fpsCommon->itemText(i)), "%lf",
+			       &com_fpsd);
+
+			if (com_fpsd > max_fpsd) {
+				SetComboItemEnabled(ui->fpsCommon, i, false);
+				continue;
+			}
+		}
+
+		ui->fpsType->setCurrentIndex(0);
+		ui->fpsCommon->setCurrentIndex(closest_fps_index);
+		if (!valid) {
+			ui->fpsType->setProperty("changed", true);
+			ui->fpsCommon->setProperty("changed", true);
+			videoChanged = true;
+			EnableApplyButton(true);
+		}
+	} else {
+		for (int i = 0; i < ui->fpsCommon->count(); i++)
+			SetComboItemEnabled(ui->fpsCommon, i, true);
+	}
+
+	SetComboItemEnabled(ui->fpsType, 1, !max_fps);
+	SetComboItemEnabled(ui->fpsType, 2, !max_fps);
+
+	/* ------------------------------------ */
+
+	lastIgnoreRecommended = (int)ignoreRecommended;
+	lastServiceIdx = idx;
 }

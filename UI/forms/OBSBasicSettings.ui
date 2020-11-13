@@ -4304,7 +4304,7 @@
           </layout>
          </item>
          <item row="3" column="0">
-          <widget class="QLabel" name="label_10">
+          <widget class="QLabel" name="outputResLabel">
            <property name="text">
             <string>Basic.Settings.Video.ScaledResolution</string>
            </property>
@@ -4552,7 +4552,7 @@
           </widget>
          </item>
          <item row="3" column="1">
-          <layout class="QHBoxLayout" name="horizontalLayout_28">
+          <layout class="QHBoxLayout" name="outputResLayout">
            <property name="spacing">
             <number>6</number>
            </property>
@@ -4592,8 +4592,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>98</width>
-           <height>28</height>
+           <width>818</width>
+           <height>675</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
@@ -4639,7 +4639,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>599</width>
+              <width>803</width>
               <height>781</height>
              </rect>
             </property>
