@@ -156,11 +156,12 @@ failed:
 	return !ver_mismatch;
 }
 
-bool load_graphics_offsets(bool is32bit, const char *config_path)
+bool load_graphics_offsets(bool is32bit, bool use_hook_address_cache,
+			   const char *config_path)
 {
 	char *offset_exe_path = NULL;
-	struct dstr offset_exe = {0};
 	struct dstr config_ini = {0};
+	struct dstr offset_exe = {0};
 	struct dstr str = {0};
 	os_process_pipe_t *pp;
 	bool success = false;
@@ -200,15 +201,14 @@ bool load_graphics_offsets(bool is32bit, const char *config_path)
 		goto error;
 	}
 
-	// uncomment this if you enable USE_HOOK_ADDRESS_CACHE
-	/*
-	dstr_copy(&config_ini, config_path);
-	dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
+	if (use_hook_address_cache) {
+		dstr_copy(&config_ini, config_path);
+		dstr_cat(&config_ini, is32bit ? "32.ini" : "64.ini");
 
-	os_quick_write_utf8_file_safe(config_ini.array, str.array, str.len, false,
-			"tmp", NULL);
-	dstr_free(&config_ini);
-*/
+		os_quick_write_utf8_file_safe(config_ini.array, str.array,
+					      str.len, false, "tmp", NULL);
+		dstr_free(&config_ini);
+	}
 
 	success = load_offsets_from_string(is32bit ? &offsets32 : &offsets64,
 					   str.array);
@@ -235,7 +235,7 @@ bool load_cached_graphics_offsets(bool is32bit, const char *config_path)
 	success = load_offsets_from_file(is32bit ? &offsets32 : &offsets64,
 					 config_ini.array);
 	if (!success)
-		success = load_graphics_offsets(is32bit, config_path);
+		success = load_graphics_offsets(is32bit, true, config_path);
 
 	dstr_free(&config_ini);
 	return success;
