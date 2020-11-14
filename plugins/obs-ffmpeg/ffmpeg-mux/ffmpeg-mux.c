@@ -851,7 +851,7 @@ int main(int argc, char *argv[])
 		resize_buf_resize(&rb, info.size);
 
 		if (safe_read(rb.buf, info.size) == info.size) {
-			fail = !ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			ffmpeg_mux_packet(&ffm, rb.buf, &info);
 		} else {
 			fail = true;
 		}
