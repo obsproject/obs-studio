@@ -1349,7 +1349,8 @@ static const double vals[] = {1.0, 1.25, (1.0 / 0.75), 1.5,  (1.0 / 0.6), 1.75,
 
 static const size_t numVals = sizeof(vals) / sizeof(double);
 
-void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
+void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
+				       bool ignoreAllSignals)
 {
 	QString advRescale;
 	QString advRecRescale;
@@ -1366,6 +1367,11 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 
 	ui->outputResolution->blockSignals(true);
 
+	if (ignoreAllSignals) {
+		ui->advOutRescale->blockSignals(true);
+		ui->advOutRecRescale->blockSignals(true);
+		ui->advOutFFRescale->blockSignals(true);
+	}
 	ui->outputResolution->clear();
 	ui->advOutRescale->clear();
 	ui->advOutRecRescale->clear();
@@ -1441,6 +1447,12 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy)
 	ui->advOutRescale->lineEdit()->setText(advRescale);
 	ui->advOutRecRescale->lineEdit()->setText(advRecRescale);
 	ui->advOutFFRescale->lineEdit()->setText(advFFRescale);
+
+	if (ignoreAllSignals) {
+		ui->advOutRescale->blockSignals(false);
+		ui->advOutRecRescale->blockSignals(false);
+		ui->advOutFFRescale->blockSignals(false);
+	}
 }
 
 void OBSBasicSettings::LoadDownscaleFilters()
