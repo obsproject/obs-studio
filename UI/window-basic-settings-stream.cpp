@@ -685,7 +685,13 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 	OBSService service = GetStream1Service();
 
 	int vbitrate, abitrate;
+	BPtr<obs_service_resolution> res_list;
+	size_t res_count;
+	int fps;
+
 	obs_service_get_max_bitrate(service, &vbitrate, &abitrate);
+	obs_service_get_supported_resolutions(service, &res_list, &res_count);
+	obs_service_get_max_fps(service, &fps);
 
 	QString text;
 
@@ -698,6 +704,33 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 			text += "\n";
 		text += ENFORCE_TEXT("MaxAudioBitrate")
 				.arg(QString::number(abitrate));
+	}
+	if (res_count) {
+		if (!text.isEmpty())
+			text += "\n";
+
+		obs_service_resolution best_res = {};
+		int best_res_pixels = 0;
+
+		for (size_t i = 0; i < res_count; i++) {
+			obs_service_resolution res = res_list[i];
+			int res_pixels = res.cx + res.cy;
+			if (res_pixels > best_res_pixels) {
+				best_res = res;
+				best_res_pixels = res_pixels;
+			}
+		}
+
+		QString res_str =
+			QString("%1x%2").arg(QString::number(best_res.cx),
+					     QString::number(best_res.cy));
+		text += ENFORCE_TEXT("MaxResolution").arg(res_str);
+	}
+	if (fps) {
+		if (!text.isEmpty())
+			text += "\n";
+
+		text += ENFORCE_TEXT("MaxFPS").arg(QString::number(fps));
 	}
 #undef ENFORCE_TEXT
 
