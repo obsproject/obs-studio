@@ -58,9 +58,10 @@ static HMODULE kernel32(void)
 static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 				  DWORD process_id)
 {
-	static HANDLE(WINAPI * open_process_proc)(DWORD, BOOL, DWORD) = NULL;
+	typedef HANDLE(WINAPI * PFN_OpenProcess)(DWORD, BOOL, DWORD);
+	static PFN_OpenProcess open_process_proc = NULL;
 	if (!open_process_proc)
-		open_process_proc = get_obfuscated_func(
+		open_process_proc = (PFN_OpenProcess)get_obfuscated_func(
 			kernel32(), "B}caZyah`~q", 0x2D5BEBAF6DDULL);
 
 	return open_process_proc(desired_access, inherit_handle, process_id);
