@@ -629,20 +629,25 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define TCP_PROTO "tcp"
 #define HTTP_PROTO "http"
 
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1);
+}
+
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *output_format;
 	int ret;
-	bool is_network = false;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
 			   sizeof(HTTP_PROTO) - 1) == 0);
 
-	if (strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0 ||
-	    is_http) {
-		is_network = true;
+	bool is_network = ffmpeg_mux_is_network(ffm);
+
+	if (is_network) {
 		avformat_network_init();
 	}
 
@@ -847,11 +852,15 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
+	bool is_network = ffmpeg_mux_is_network(&ffm);
+
 	while (!fail && safe_read(&info, sizeof(info)) == sizeof(info)) {
 		resize_buf_resize(&rb, info.size);
 
 		if (safe_read(rb.buf, info.size) == info.size) {
-			ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			bool packet_fail =
+				ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			fail = is_network && packet_fail;
 		} else {
 			fail = true;
 		}
