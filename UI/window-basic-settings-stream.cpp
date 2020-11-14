@@ -628,14 +628,42 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	if (!enableVodTrack) {
 		delete vodTrackCheckbox;
 		delete vodTrackContainer;
+		delete simpleVodTrack;
 		return;
 	}
 
-	vodTrackCheckbox = new QCheckBox(
+	/* -------------------------------------- */
+	/* simple output mode vod track widgets   */
+
+	bool simpleAdv = ui->simpleOutAdvanced->isChecked();
+	bool vodTrackEnabled = config_get_bool(main->Config(), "SimpleOutput",
+					       "VodTrackEnabled");
+
+	simpleVodTrack = new QCheckBox(this);
+	simpleVodTrack->setText(
+		QTStr("Basic.Settings.Output.Simple.TwitchVodTrack"));
+	simpleVodTrack->setVisible(simpleAdv);
+	simpleVodTrack->setChecked(vodTrackEnabled);
+
+	int pos;
+	ui->simpleStreamingLayout->getWidgetPosition(ui->simpleOutAdvanced,
+						     &pos, nullptr);
+	ui->simpleStreamingLayout->insertRow(pos + 1, nullptr, simpleVodTrack);
+
+	HookWidget(simpleVodTrack, SIGNAL(clicked(bool)),
+		   SLOT(OutputsChanged()));
+	connect(ui->simpleOutAdvanced, SIGNAL(toggled(bool)),
+		simpleVodTrack.data(), SLOT(setVisible(bool)));
+
+	/* -------------------------------------- */
+	/* advanced output mode vod track widgets */
+
+	vodTrackCheckbox = new QCheckBox(this);
+	vodTrackCheckbox->setText(
 		QTStr("Basic.Settings.Output.Adv.TwitchVodTrack"));
 	vodTrackCheckbox->setLayoutDirection(Qt::RightToLeft);
 
-	vodTrackContainer = new QWidget();
+	vodTrackContainer = new QWidget(this);
 	QHBoxLayout *vodTrackLayout = new QHBoxLayout();
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 		vodTrack[i] = new QRadioButton(QString::number(i + 1));
@@ -655,7 +683,7 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 
 	ui->advOutTopLayout->insertRow(2, vodTrackCheckbox, vodTrackContainer);
 
-	bool vodTrackEnabled =
+	vodTrackEnabled =
 		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	vodTrackCheckbox->setChecked(vodTrackEnabled);
 	vodTrackContainer->setEnabled(vodTrackEnabled);

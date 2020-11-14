@@ -249,10 +249,12 @@ struct SimpleOutput : BasicOutputHandler {
 	OBSEncoder aacStreaming;
 	OBSEncoder h264Streaming;
 	OBSEncoder aacRecording;
+	OBSEncoder aacArchive;
 	OBSEncoder h264Recording;
 
 	string aacRecEncID;
 	string aacStreamEncID;
+	string aacArchiveEncID;
 
 	string videoEncoder;
 	string videoQuality;
@@ -285,6 +287,8 @@ struct SimpleOutput : BasicOutputHandler {
 
 	void UpdateRecording();
 	bool ConfigureRecording(bool useReplayBuffer);
+
+	void SetupVodTrack(obs_service_t *service);
 
 	virtual bool SetupStreaming(obs_service_t *service) override;
 	virtual bool StartStreaming(obs_service_t *service) override;
@@ -409,6 +413,9 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
 			      "simple_aac", 0))
 		throw "Failed to create aac streaming encoder (simple output)";
+	if (!CreateAACEncoder(aacArchive, aacArchiveEncID, GetAudioBitrate(),
+			      "archive_aac", 1))
+		throw "Failed to create aac arhive encoder (simple output)";
 
 	LoadRecordingPreset();
 
@@ -535,6 +542,7 @@ void SimpleOutput::Update()
 
 	obs_encoder_update(h264Streaming, h264Settings);
 	obs_encoder_update(aacStreaming, aacSettings);
+	obs_encoder_update(aacArchive, aacSettings);
 
 	obs_data_release(h264Settings);
 	obs_data_release(aacSettings);
@@ -709,6 +717,7 @@ inline void SimpleOutput::SetupOutputs()
 	SimpleOutput::Update();
 	obs_encoder_set_video(h264Streaming, obs_get_video());
 	obs_encoder_set_audio(aacStreaming, obs_get_audio());
+	obs_encoder_set_audio(aacArchive, obs_get_audio());
 
 	if (usingRecordingPreset) {
 		if (ffmpegOutput) {
@@ -833,6 +842,27 @@ bool SimpleOutput::SetupStreaming(obs_service_t *service)
 	return true;
 }
 
+static inline bool ServiceSupportsVodTrack(const char *service);
+
+void SimpleOutput::SetupVodTrack(obs_service_t *service)
+{
+	bool advanced =
+		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
+	bool enable = config_get_bool(main->Config(), "SimpleOutput",
+				      "VodTrackEnabled");
+
+	obs_data_t *settings = obs_service_get_settings(service);
+	const char *name = obs_data_get_string(settings, "service");
+
+	if (advanced && enable && ServiceSupportsVodTrack(name)) {
+		obs_output_set_audio_encoder(streamOutput, aacArchive, 1);
+	} else {
+		obs_output_set_audio_encoder(streamOutput, nullptr, 1);
+	}
+
+	obs_data_release(settings);
+}
+
 bool SimpleOutput::StartStreaming(obs_service_t *service)
 {
 	bool reconnect = config_get_bool(main->Config(), "Output", "Reconnect");
@@ -871,6 +901,8 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 			     preserveDelay ? OBS_OUTPUT_DELAY_PRESERVE : 0);
 
 	obs_output_set_reconnect_settings(streamOutput, maxRetries, retryDelay);
+
+	SetupVodTrack(service);
 
 	if (obs_output_start(streamOutput)) {
 		return true;

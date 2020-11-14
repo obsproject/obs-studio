@@ -3403,6 +3403,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->advOutTrack6Name, "AdvOut", "Track6Name");
 
 	if (vodTrackCheckbox) {
+		SaveCheckBox(simpleVodTrack, "SimpleOutput", "VodTrackEnabled");
 		SaveCheckBox(vodTrackCheckbox, "AdvOut", "VodTrackEnabled");
 		SaveTrackIndex(main->Config(), "AdvOut", "VodTrackIndex",
 			       vodTrack[0], vodTrack[1], vodTrack[2],

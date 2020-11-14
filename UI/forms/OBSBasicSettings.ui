@@ -1295,8 +1295,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>601</width>
-              <height>602</height>
+              <width>820</width>
+              <height>677</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1402,7 +1402,7 @@
                    <property name="title">
                     <string>Basic.Settings.Output.Adv.Streaming</string>
                    </property>
-                   <layout class="QFormLayout" name="formLayout_20">
+                   <layout class="QFormLayout" name="simpleStreamingLayout">
                     <property name="fieldGrowthPolicy">
                      <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                     </property>
@@ -4592,8 +4592,8 @@
           <rect>
            <x>0</x>
            <y>0</y>
-           <width>818</width>
-           <height>675</height>
+           <width>98</width>
+           <height>28</height>
           </rect>
          </property>
          <layout class="QFormLayout" name="hotkeyLayout">
