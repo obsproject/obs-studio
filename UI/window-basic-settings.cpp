@@ -4886,12 +4886,15 @@ int OBSBasicSettings::CurrentFLVTrack()
 void OBSBasicSettings::RecreateOutputResolutionWidget()
 {
 	QSizePolicy sizePolicy = ui->outputResolution->sizePolicy();
+	bool changed = WidgetChanged(ui->outputResolution);
+
 	delete ui->outputResolution;
 	ui->outputResolution = new QComboBox(ui->videoPage);
 	ui->outputResolution->setObjectName(
 		QString::fromUtf8("outputResolution"));
 	ui->outputResolution->setSizePolicy(sizePolicy);
 	ui->outputResolution->setEditable(true);
+	ui->outputResolution->setProperty("changed", changed);
 	ui->outputResLabel->setBuddy(ui->outputResolution);
 
 	ui->outputResLayout->insertWidget(0, ui->outputResolution);
