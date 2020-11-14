@@ -80,6 +80,6 @@ target_link_libraries(mac-decklink
 	obs-frontend-api
 	${COREFOUNDATION}
 	caption)
-set_target_properties(mac-decklink PROPERTIES FOLDER "plugins")
+set_target_properties(mac-decklink PROPERTIES FOLDER "plugins/decklink")
 
 install_obs_plugin_with_data(mac-decklink ../data)

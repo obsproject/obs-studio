@@ -74,6 +74,6 @@ target_link_libraries(win-decklink
 	libobs
 	obs-frontend-api
 	caption)
-set_target_properties(win-decklink PROPERTIES FOLDER "plugins")
+set_target_properties(win-decklink PROPERTIES FOLDER "plugins/decklink")
 
 install_obs_plugin_with_data(win-decklink ../data)

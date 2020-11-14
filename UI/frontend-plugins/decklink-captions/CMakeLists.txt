@@ -39,5 +39,6 @@ target_link_libraries(decklink-captions
         obs-frontend-api
         Qt5::Widgets
         libobs)
+set_target_properties(decklink-captions PROPERTIES FOLDER "plugins/decklink")
 
 install_obs_plugin_with_data(decklink-captions data)
