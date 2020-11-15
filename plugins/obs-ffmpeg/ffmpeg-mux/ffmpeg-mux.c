@@ -807,8 +807,8 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 			ret, av_err2str(ret));
 	}
 
-	/* Treat "Invalid data found when processing input" as non-fatal */
-	if (ret == AVERROR_INVALIDDATA) {
+	/* Treat "Invalid data found when processing input" and "Invalid argument" as non-fatal */
+	if (ret == AVERROR_INVALIDDATA || ret == EINVAL) {
 		return true;
 	}
 
