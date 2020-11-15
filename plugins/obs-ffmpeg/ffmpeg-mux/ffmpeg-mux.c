@@ -803,8 +803,13 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	int ret = av_interleaved_write_frame(ffm->output, &packet);
 
 	if (ret < 0) {
-		fprintf(stderr, "av_interleaved_write_frame failed: %s\n",
-			av_err2str(ret));
+		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
+			ret, av_err2str(ret));
+	}
+
+	/* Treat "Invalid data found when processing input" as non-fatal */
+	if (ret == AVERROR_INVALIDDATA) {
+		return true;
 	}
 
 	return ret >= 0;
