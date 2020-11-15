@@ -41,6 +41,7 @@
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <libprocstat.h>
+#include <pthread_np.h>
 
 #include <condition_variable>
 #include <mutex>
@@ -114,7 +115,7 @@ struct RunOnce {
 	void thr_proc()
 	{
 		std::unique_lock<std::mutex> lk(mtx);
-		pthread_setname_np(pthread_self(), thr_name);
+		pthread_set_name_np(pthread_self(), thr_name);
 		name_changed = true;
 		wait_cv.notify_all();
 		cv.wait(lk, [this]() { return exiting; });
