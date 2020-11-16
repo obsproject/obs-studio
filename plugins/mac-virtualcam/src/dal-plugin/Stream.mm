@@ -25,7 +25,6 @@
 
 #import "Logging.h"
 #import "CMSampleBufferUtils.h"
-#import "TestCard.h"
 #import "PlugIn.h"
 
 @interface Stream () {
