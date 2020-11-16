@@ -32,7 +32,6 @@ set(mac-dal-plugin_HEADERS
 	Stream.h
 	CMSampleBufferUtils.h
 	MachClient.h
-	TestCard.h
 	../common/MachProtocol.h)
 
 set(mac-dal-plugin_SOURCES
@@ -43,8 +42,7 @@ set(mac-dal-plugin_SOURCES
 	Device.mm
 	Stream.mm
 	CMSampleBufferUtils.mm
-	MachClient.mm
-	TestCard.mm)
+	MachClient.mm)
 
 add_library(mac-dal-plugin MODULE
 	${mac-dal-plugin_SOURCES}
