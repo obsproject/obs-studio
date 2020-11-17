@@ -63,6 +63,17 @@ else()
   set(YOUTUBE_ENABLED ON)
 endif()
 
+if(NOT DEFINED TROVO_CLIENTID
+   OR "${TROVO_CLIENTID}" STREQUAL ""
+   OR NOT DEFINED TROVO_HASH
+   OR "${TROVO_HASH}" STREQUAL ""
+   OR NOT TARGET OBS::browser-panels)
+  set(TROVO_ENABLED FALSE)
+  set(TROVO_CLIENTID "")
+  set(TROVO_HASH "0")
+else()
+  set(TROVO_ENABLED TRUE)
+endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in
                ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
@@ -308,6 +319,10 @@ if(TARGET OBS::browser-panels)
 
   if(RESTREAM_ENABLED)
     target_sources(obs PRIVATE auth-restream.cpp auth-restream.hpp)
+  endif()
+
+  if(TROVO_ENABLED)
+    target_sources(obs PRIVATE auth-trovo.cpp auth-trovo.hpp)
   endif()
 endif()
 

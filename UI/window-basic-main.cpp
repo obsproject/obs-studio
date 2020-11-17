@@ -226,7 +226,9 @@ extern void RegisterRestreamAuth();
 #if YOUTUBE_ENABLED
 extern void RegisterYoutubeAuth();
 #endif
-
+#if TROVO_ENABLED
+extern void RegisterTrovoAuth();
+#endif
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
 {
@@ -245,6 +247,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 #if YOUTUBE_ENABLED
 	RegisterYoutubeAuth();
+#endif
+#if TROVO_ENABLED
+	RegisterTrovoAuth();
 #endif
 
 	setAcceptDrops(true);
