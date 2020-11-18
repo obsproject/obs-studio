@@ -857,11 +857,15 @@ int main(int argc, char *argv[])
 		return ret;
 	}
 
+	bool is_network = ffmpeg_mux_is_network(&ffm);
+
 	while (!fail && safe_read(&info, sizeof(info)) == sizeof(info)) {
 		resize_buf_resize(&rb, info.size);
 
 		if (safe_read(rb.buf, info.size) == info.size) {
-			fail = ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			bool packet_fail =
+				ffmpeg_mux_packet(&ffm, rb.buf, &info);
+			fail = is_network && packet_fail;
 		} else {
 			fail = true;
 		}
