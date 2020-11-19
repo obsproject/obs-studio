@@ -300,35 +300,39 @@ static bool mp_media_has_video_frame_cached(mp_media_t *m)
 static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 {
 	int64_t min_next_ns = 0x7FFFFFFFFFFFFFFFLL;
-
-	if (m->has_video && m->v.frame_ready) {
-		if (m->v.frame_pts < min_next_ns && m->v.frame_pts > 0)
-			min_next_ns = m->v.frame_pts;
-	}
-	if (m->has_audio && m->a.frame_ready) {
-		if (m->a.frame_pts < min_next_ns && m->a.frame_pts > 0)
-			min_next_ns = m->a.frame_pts;
-	}
-
+	bool use_cached = false;
 	if( m->enable_caching ) {
 		if (m->has_video && m->video.index_eof >= 0) {
 			if (mp_media_has_video_frame_cached(m)) {
 				struct obs_source_frame *frame = m->video.data.array[m->video.index];
 				int64_t frame_pts =
 					frame->timestamp + frame->duration;
-				if (frame_pts < min_next_ns)
+				if (frame_pts < min_next_ns) {
+				 	use_cached = true;
 					min_next_ns = frame_pts;
+				}
 			}
 		}
 		if (m->has_audio && m->audio.index_eof >= 0) {
 			if (mp_media_has_audio_frame_cached(m)) {
 				struct obs_source_audio *audio = m->audio.data.array[m->audio.index];
-				if (audio->dec_frame_pts < min_next_ns)
-					min_next_ns = audio->dec_frame_pts;
+				if (audio->timestamp < min_next_ns) {
+					use_cached = true;
+					min_next_ns = audio->timestamp;
+				}
 			}
 		}
 	}
-
+	if (!use_cached) {
+		if (m->has_video && m->v.frame_ready) {
+			if (m->v.frame_pts < min_next_ns ) 
+				min_next_ns = m->v.frame_pts;
+		}
+		if (m->has_audio && m->a.frame_ready) {
+			if (m->a.frame_pts < min_next_ns ) 
+				min_next_ns = m->a.frame_pts;
+		}
+	}
 	return min_next_ns;
 }
 
