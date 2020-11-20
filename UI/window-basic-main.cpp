@@ -4531,7 +4531,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 				  "geometry",
 				  saveGeometry().toBase64().constData());
 
-	if (outputHandler && outputHandler->Active()) {
+	bool confirmOnExit =
+		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+
+	if (confirmOnExit && outputHandler && outputHandler->Active()) {
 		SetShowing(true);
 
 		QMessageBox::StandardButton button = OBSMessageBox::question(

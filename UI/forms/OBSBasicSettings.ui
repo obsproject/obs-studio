@@ -4800,6 +4800,13 @@
                      </property>
                     </spacer>
                    </item>
+                   <item row="2" column="1">
+                     <widget class="QCheckBox" name="confirmOnExit">
+                       <property name="text">
+                         <string>Basic.Settings.Advanced.General.ConfirmOnExit</string>
+                       </property>
+                     </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -5722,6 +5729,7 @@
   <tabstop>fpsDenominator</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>processPriority</tabstop>
+  <tabstop>confirmOnExit</tabstop>
   <tabstop>renderer</tabstop>
   <tabstop>adapter</tabstop>
   <tabstop>colorFormat</tabstop>
