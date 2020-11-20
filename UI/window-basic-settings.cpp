@@ -554,6 +554,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->reconnectRetryDelay,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->reconnectMaxRetries,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->processPriority,      COMBO_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->confirmOnExit,        CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->bindToIP,             COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableNewSocketLoop,  CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
@@ -627,7 +628,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->adapter;
 	delete ui->processPriorityLabel;
 	delete ui->processPriority;
-	delete ui->advancedGeneralGroupBox;
 	delete ui->enableNewSocketLoop;
 	delete ui->enableLowLatencyMode;
 #ifdef __linux__
@@ -643,7 +643,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->adapter = nullptr;
 	ui->processPriorityLabel = nullptr;
 	ui->processPriority = nullptr;
-	ui->advancedGeneralGroupBox = nullptr;
 	ui->enableNewSocketLoop = nullptr;
 	ui->enableLowLatencyMode = nullptr;
 #ifdef __linux__
@@ -2512,6 +2511,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool dynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
+	bool confirmOnExit =
+		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
+	ui->confirmOnExit->setChecked(confirmOnExit);
+
 	loading = true;
 
 	LoadRendererList();
@@ -3256,6 +3259,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 		DisableAudioDucking(disable);
 	}
 #endif
+
+	if (WidgetChanged(ui->confirmOnExit))
+		config_set_bool(GetGlobalConfig(), "General", "ConfirmOnExit",
+				ui->confirmOnExit->isChecked());
 
 	SaveEdit(ui->filenameFormatting, "Output", "FilenameFormatting");
 	SaveEdit(ui->simpleRBPrefix, "SimpleOutput", "RecRBPrefix");
