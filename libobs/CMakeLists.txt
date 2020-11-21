@@ -143,7 +143,6 @@ elseif(APPLE)
 
 	set_source_files_properties(${libobs_PLATFORM_SOURCES}
 		PROPERTIES
-			LANGUAGE C
 			COMPILE_FLAGS "-fobjc-arc")
 
 	find_library(COCOA Cocoa)
