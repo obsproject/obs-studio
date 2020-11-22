@@ -1697,6 +1697,12 @@ void OBSBasic::OBSInit()
 	InitOBSCallbacks();
 	InitHotkeys();
 
+	/* hack to prevent elgato from loading its own Qt5Network that it tries
+	 * to ship with */
+#if defined(_WIN32) && !defined(_DEBUG)
+	LoadLibraryW(L"Qt5Network");
+#endif
+
 	AddExtraModulePaths();
 	blog(LOG_INFO, "---------------------------------");
 	obs_load_all_modules();
