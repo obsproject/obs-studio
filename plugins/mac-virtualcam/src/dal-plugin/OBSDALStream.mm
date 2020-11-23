@@ -17,7 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import "Stream.h"
+#import "OBSDALStream.h"
 
 #import <AppKit/AppKit.h>
 #import <mach/mach_time.h>
@@ -25,9 +25,9 @@
 
 #import "Logging.h"
 #import "CMSampleBufferUtils.h"
-#import "PlugIn.h"
+#import "OBSDALPlugin.h"
 
-@interface Stream () {
+@interface OBSDALStream () {
 	CMSimpleQueueRef _queue;
 	CFTypeRef _clock;
 	NSImage *_testCardImage;
@@ -47,7 +47,7 @@
 
 @end
 
-@implementation Stream
+@implementation OBSDALStream
 
 #define DEFAULT_FPS 30.0
 #define DEFAULT_WIDTH 1280
@@ -165,8 +165,8 @@
 - (NSImage *)testCardImage
 {
 	if (_testCardImage == nil) {
-		NSString *bundlePath =
-			[[NSBundle bundleForClass:[Stream class]] bundlePath];
+		NSString *bundlePath = [[NSBundle
+			bundleForClass:[OBSDALStream class]] bundlePath];
 		NSString *placeHolderPath = [bundlePath
 			stringByAppendingString:
 				@"/Contents/Resources/placeholder.png"];
@@ -434,7 +434,7 @@
 		return sizeof(CFTypeRef);
 	default:
 		DLog(@"Stream unhandled getPropertyDataSizeWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return 0;
 	};
@@ -510,7 +510,7 @@
 		break;
 	default:
 		DLog(@"Stream unhandled getPropertyDataWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		*dataUsed = 0;
 	};
@@ -539,12 +539,12 @@
 	case kCMIOStreamPropertyInitialPresentationTimeStampForLinkedAndSyncedAudio:
 	case kCMIOStreamPropertyOutputBuffersNeededForThrottledPlayback:
 		DLog(@"TODO: %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	default:
 		DLog(@"Stream unhandled hasPropertyWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
@@ -553,7 +553,7 @@
 - (BOOL)isPropertySettableWithAddress:(CMIOObjectPropertyAddress)address
 {
 	DLog(@"Stream unhandled isPropertySettableWithAddress for %@",
-	     [ObjectStore StringFromPropertySelector:address.mSelector]);
+	     [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
 	return false;
 }
 
@@ -564,7 +564,7 @@
 			      data:(nonnull const void *)data
 {
 	DLog(@"Stream unhandled setPropertyDataWithAddress for %@",
-	     [ObjectStore StringFromPropertySelector:address.mSelector]);
+	     [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
 }
 
 @end

@@ -1,5 +1,5 @@
 //
-//  PlugInInterface.h
+//  PlugIn.h
 //  obs-mac-virtualcam
 //
 //  Created by John Boiles  on 4/9/20.
@@ -17,7 +17,35 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
+#import <Foundation/Foundation.h>
 #import <CoreMediaIO/CMIOHardwarePlugIn.h>
 
-// The static singleton of the plugin interface
-CMIOHardwarePlugInRef PlugInRef();
+#import "OBSDALObjectStore.h"
+#import "OBSDALMachClient.h"
+#import "OBSDALStream.h"
+
+#define kTestCardWidthKey @"obs-mac-virtualcam-test-card-width"
+#define kTestCardHeightKey @"obs-mac-virtualcam-test-card-height"
+#define kTestCardFPSKey @"obs-mac-virtualcam-test-card-fps"
+
+NS_ASSUME_NONNULL_BEGIN
+
+@interface OBSDALPlugin : NSObject <CMIOObject>
+
+@property CMIOObjectID objectId;
+@property (readonly) OBSDALMachClient *machClient;
+@property OBSDALStream *stream;
+
++ (OBSDALPlugin *)SharedPlugIn;
+
+- (void)initialize;
+
+- (void)teardown;
+
+- (void)startStream;
+
+- (void)stopStream;
+
+@end
+
+NS_ASSUME_NONNULL_END

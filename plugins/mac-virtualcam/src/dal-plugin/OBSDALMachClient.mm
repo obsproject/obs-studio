@@ -5,16 +5,16 @@
 //  Created by John Boiles  on 5/5/20.
 //
 
-#import "MachClient.h"
+#import "OBSDALMachClient.h"
 #import "MachProtocol.h"
 #import "Logging.h"
 
-@interface MachClient () <NSPortDelegate> {
+@interface OBSDALMachClient () <NSPortDelegate> {
 	NSPort *_receivePort;
 }
 @end
 
-@implementation MachClient
+@implementation OBSDALMachClient
 
 - (void)dealloc
 {

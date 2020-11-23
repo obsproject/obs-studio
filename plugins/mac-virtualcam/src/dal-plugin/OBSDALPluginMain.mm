@@ -1,8 +1,8 @@
 //
-//  Device.h
+//  PlugInMain.mm
 //  obs-mac-virtualcam
 //
-//  Created by John Boiles  on 4/10/20.
+//  Created by John Boiles  on 4/9/20.
 //
 //  obs-mac-virtualcam is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,18 +17,21 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import <Foundation/Foundation.h>
+#import <CoreMediaIO/CMIOHardwarePlugin.h>
 
-#import "ObjectStore.h"
+#import "OBSDALPlugInInterface.h"
+#import "Logging.h"
+#import "Defines.h"
 
-NS_ASSUME_NONNULL_BEGIN
+//! PlugInMain is the entrypoint for the plugin
+extern "C" {
+void *PlugInMain(CFAllocatorRef allocator, CFUUIDRef requestedTypeUUID)
+{
+	DLogFunc(@"version=%@", PLUGIN_VERSION);
+	if (!CFEqual(requestedTypeUUID, kCMIOHardwarePlugInTypeID)) {
+		return 0;
+	}
 
-@interface Device : NSObject <CMIOObject>
-
-@property CMIOObjectID objectId;
-@property CMIOObjectID pluginId;
-@property CMIOObjectID streamId;
-
-@end
-
-NS_ASSUME_NONNULL_END
+	return OBSDALPlugInRef();
+}
+}

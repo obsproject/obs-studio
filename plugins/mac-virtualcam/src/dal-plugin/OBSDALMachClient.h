@@ -20,7 +20,7 @@ NS_ASSUME_NONNULL_BEGIN
 
 @end
 
-@interface MachClient : NSObject
+@interface OBSDALMachClient : NSObject
 
 @property (nullable, weak) id<MachClientDelegate> delegate;
 
