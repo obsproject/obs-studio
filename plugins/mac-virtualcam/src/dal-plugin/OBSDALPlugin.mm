@@ -17,7 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import "PlugIn.h"
+#import "OBSDALPlugin.h"
 
 #import <CoreMediaIO/CMIOHardwarePlugin.h>
 
@@ -27,9 +27,9 @@ typedef enum {
 	PlugInStateNotStarted = 0,
 	PlugInStateWaitingForServer,
 	PlugInStateReceivingFrames,
-} PlugInState;
+} OBSDALPlugInState;
 
-@interface PlugIn () <MachClientDelegate> {
+@interface OBSDALPlugin () <MachClientDelegate> {
 	//! Serial queue for all state changes that need to be concerned with thread safety
 	dispatch_queue_t _stateQueue;
 
@@ -39,16 +39,16 @@ typedef enum {
 	//! Timeout timer when we haven't received frames for 5s
 	dispatch_source_t _timeoutTimer;
 }
-@property PlugInState state;
-@property MachClient *machClient;
+@property OBSDALPlugInState state;
+@property OBSDALMachClient *machClient;
 
 @end
 
-@implementation PlugIn
+@implementation OBSDALPlugin
 
-+ (PlugIn *)SharedPlugIn
++ (OBSDALPlugin *)SharedPlugIn
 {
-	static PlugIn *sPlugIn = nil;
+	static OBSDALPlugin *sPlugIn = nil;
 	static dispatch_once_t sOnceToken;
 	dispatch_once(&sOnceToken, ^{
 		sPlugIn = [[self alloc] init];
@@ -74,7 +74,7 @@ typedef enum {
 			}
 		});
 
-		_machClient = [[MachClient alloc] init];
+		_machClient = [[OBSDALMachClient alloc] init];
 		_machClient.delegate = self;
 
 		_machConnectTimer = dispatch_source_create(
@@ -140,7 +140,7 @@ typedef enum {
 		return true;
 	default:
 		DLog(@"PlugIn unhandled hasPropertyWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
@@ -153,7 +153,7 @@ typedef enum {
 		return false;
 	default:
 		DLog(@"PlugIn unhandled isPropertySettableWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
@@ -168,7 +168,7 @@ typedef enum {
 		return sizeof(CFStringRef);
 	default:
 		DLog(@"PlugIn unhandled getPropertyDataSizeWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return 0;
 	};
@@ -189,7 +189,7 @@ typedef enum {
 		return;
 	default:
 		DLog(@"PlugIn unhandled getPropertyDataWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return;
 	};
@@ -202,7 +202,7 @@ typedef enum {
 			      data:(nonnull const void *)data
 {
 	DLog(@"PlugIn unhandled setPropertyDataWithAddress for %@",
-	     [ObjectStore StringFromPropertySelector:address.mSelector]);
+	     [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
 }
 
 #pragma mark - MachClientDelegate

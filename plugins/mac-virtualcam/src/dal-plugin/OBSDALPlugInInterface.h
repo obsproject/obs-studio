@@ -1,8 +1,8 @@
 //
-//  Stream.h
+//  PlugInInterface.h
 //  obs-mac-virtualcam
 //
-//  Created by John Boiles  on 4/10/20.
+//  Created by John Boiles  on 4/9/20.
 //
 //  obs-mac-virtualcam is free software: you can redistribute it and/or modify
 //  it under the terms of the GNU General Public License as published by
@@ -17,32 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import <Foundation/Foundation.h>
+#import <CoreMediaIO/CMIOHardwarePlugIn.h>
 
-#import "ObjectStore.h"
-
-NS_ASSUME_NONNULL_BEGIN
-
-@interface Stream : NSObject <CMIOObject>
-
-@property CMIOStreamID objectId;
-
-- (instancetype _Nonnull)init;
-
-- (CMSimpleQueueRef)copyBufferQueueWithAlteredProc:
-			    (CMIODeviceStreamQueueAlteredProc)alteredProc
-				     alteredRefCon:(void *)alteredRefCon;
-
-- (void)startServingDefaultFrames;
-
-- (void)stopServingDefaultFrames;
-
-- (void)queueFrameWithSize:(NSSize)size
-		 timestamp:(uint64_t)timestamp
-	      fpsNumerator:(uint32_t)fpsNumerator
-	    fpsDenominator:(uint32_t)fpsDenominator
-		 frameData:(NSData *)frameData;
-
-@end
-
-NS_ASSUME_NONNULL_END
+// The static singleton of the plugin interface
+CMIOHardwarePlugInRef OBSDALPlugInRef();

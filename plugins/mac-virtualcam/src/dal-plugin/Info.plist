@@ -20,14 +20,14 @@
 	</array>
 	<key>CFPlugInFactories</key>
 	<dict>
-		<key>35FDFF29-BFCF-4644-AB77-B759DE932ABE</key>
+		<key>7E950B8C-5E49-4B9E-B7D0-B3608A08E8F6</key>
 		<string>PlugInMain</string>
 	</dict>
 	<key>CFPlugInTypes</key>
 	<dict>
 		<key>30010C1C-93BF-11D8-8B5B-000A95AF9C6A</key>
 		<array>
-			<string>35FDFF29-BFCF-4644-AB77-B759DE932ABE</string>
+			<string>7E950B8C-5E49-4B9E-B7D0-B3608A08E8F6</string>
 		</array>
 	</dict>
 	<key>LSMinimumSystemVersion</key>

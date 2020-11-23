@@ -17,20 +17,20 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import "Device.h"
+#import "OBSDALDevice.h"
 
 #import <CoreFoundation/CoreFoundation.h>
 #include <IOKit/audio/IOAudioTypes.h>
 
-#import "PlugIn.h"
+#import "OBSDALPlugin.h"
 #import "Logging.h"
 
-@interface Device ()
+@interface OBSDALDevice ()
 @property BOOL excludeNonDALAccess;
 @property pid_t masterPid;
 @end
 
-@implementation Device
+@implementation OBSDALDevice
 
 // Note that the DAL's API calls HasProperty before calling GetPropertyDataSize. This means that it can be assumed that address is valid for the property involved.
 - (UInt32)getPropertyDataSizeWithAddress:(CMIOObjectPropertyAddress)address
@@ -87,7 +87,7 @@
 		return sizeof(pid_t);
 	default:
 		DLog(@"Device unhandled getPropertyDataSizeWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 	};
 
@@ -192,7 +192,7 @@
 		break;
 	default:
 		DLog(@"Device unhandled getPropertyDataWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		*dataUsed = 0;
 		break;
@@ -228,7 +228,7 @@
 		return false;
 	default:
 		DLog(@"Device unhandled hasPropertyWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
@@ -263,7 +263,7 @@
 		return true;
 	default:
 		DLog(@"Device unhandled isPropertySettableWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
@@ -286,7 +286,7 @@
 		break;
 	default:
 		DLog(@"Device unhandled setPropertyDataWithAddress for %@",
-		     [ObjectStore
+		     [OBSDALObjectStore
 			     StringFromPropertySelector:address.mSelector]);
 		break;
 	};
