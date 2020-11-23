@@ -70,6 +70,10 @@ file(GLOB FFMPEG_BIN_FILES
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedcrypto*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedx509*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/opus*.dll"
