@@ -311,3 +311,30 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 	if (FAILED(hr))
 		throw HRError("Failed to create shader resource view", hr);
 }
+
+gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *obj)
+	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D)
+{
+	texture = obj;
+
+	texture->GetDesc(&td);
+
+	this->type = GS_TEXTURE_2D;
+	this->format = ConvertDXGITextureFormat(td.Format);
+	this->levels = 1;
+	this->device = device;
+
+	this->width = td.Width;
+	this->height = td.Height;
+	this->dxgiFormat = td.Format;
+
+	memset(&resourceDesc, 0, sizeof(resourceDesc));
+	resourceDesc.Format = td.Format;
+	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
+	resourceDesc.Texture2D.MipLevels = 1;
+
+	HRESULT hr = device->device->CreateShaderResourceView(
+		texture, &resourceDesc, shaderRes.Assign());
+	if (FAILED(hr))
+		throw HRError("Failed to create shader resource view", hr);
+}

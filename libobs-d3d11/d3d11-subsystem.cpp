@@ -2670,6 +2670,23 @@ extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 	return tex2d->isShared ? tex2d->sharedHandle : GS_INVALID_HANDLE;
 }
 
+extern "C" EXPORT gs_texture_t *device_texture_wrap_obj(gs_device_t *device,
+							void *obj)
+{
+	gs_texture *texture = nullptr;
+	try {
+		texture = new gs_texture_2d(device, (ID3D11Texture2D *)obj);
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "gs_texture_wrap_obj (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_wrap_obj (D3D11): %s", error);
+	}
+
+	return texture;
+}
+
 int device_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);
