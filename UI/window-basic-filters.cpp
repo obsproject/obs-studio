@@ -225,7 +225,7 @@ void OBSBasicFilters::UpdateProperties(void *data, calldata_t *)
 				  "ReloadProperties");
 }
 
-void OBSBasicFilters::AddFilter(OBSSource filter)
+void OBSBasicFilters::AddFilter(OBSSource filter, bool focus)
 {
 	uint32_t flags = obs_source_get_output_flags(filter);
 	bool async = (flags & OBS_SOURCE_ASYNC) != 0;
@@ -238,7 +238,8 @@ void OBSBasicFilters::AddFilter(OBSSource filter)
 	item->setData(Qt::UserRole, QVariant::fromValue(filter));
 
 	list->addItem(item);
-	list->setCurrentItem(item);
+	if (focus)
+		list->setCurrentItem(item);
 	SetupVisibilityItem(list, item, filter);
 }
 
@@ -352,9 +353,15 @@ void OBSBasicFilters::UpdateFilters()
 			OBSBasicFilters *window =
 				reinterpret_cast<OBSBasicFilters *>(p);
 
-			window->AddFilter(filter);
+			window->AddFilter(filter, false);
 		},
 		this);
+
+	if (ui->asyncFilters->count() > 0) {
+		ui->asyncFilters->setCurrentItem(ui->asyncFilters->item(0));
+	} else if (ui->effectFilters->count() > 0) {
+		ui->effectFilters->setCurrentItem(ui->effectFilters->item(0));
+	}
 
 	main->SaveProject();
 }
