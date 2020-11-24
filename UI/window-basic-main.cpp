@@ -8286,7 +8286,6 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	replay.reset(new QPushButton());
 	replay->setAccessibleName(QTStr("Basic.Main.SaveReplay"));
 	replay->setToolTip(QTStr("Basic.Main.SaveReplay"));
-	replay->setCheckable(true);
 	replay->setChecked(false);
 	replay->setProperty("themeID",
 			    QVariant(QStringLiteral("replayIconSmall")));
