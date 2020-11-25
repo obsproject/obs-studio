@@ -11,6 +11,7 @@ set(rtmp-services_SOURCES
 	service-specific/younow.c
 	service-specific/nimotv.c
 	service-specific/showroom.c
+	service-specific/dacast.c
 	rtmp-common.c
 	rtmp-custom.c
 	rtmp-services-main.c)
@@ -27,6 +28,7 @@ set(rtmp-services_HEADERS
 	service-specific/younow.h
 	service-specific/nimotv.h
 	service-specific/showroom.h
+	service-specific/dacast.h
 	rtmp-format-ver.h)
 
 set(RTMP_SERVICES_URL
