@@ -2078,6 +2078,21 @@
                 "max audio bitrate": 192,
                 "x264opts": "tune=zerolatency b-pyramid=0 scenecut=0"
             }
+        },
+        {
+            "name": "Dacast",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "https://developer.dacast.com/v3/encoder-setup/"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "max video bitrate": 7000,
+                "max audio bitrate": 128
+            }
         }
     ]
 }

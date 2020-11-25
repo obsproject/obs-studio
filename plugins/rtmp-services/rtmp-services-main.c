@@ -9,6 +9,7 @@
 #include "lookup-config.h"
 
 #include "service-specific/showroom.h"
+#include "service-specific/dacast.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
@@ -73,6 +74,7 @@ static void refresh_callback(void *unused, calldata_t *cd)
 bool obs_module_load(void)
 {
 	init_twitch_data();
+	init_dacast_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -110,5 +112,6 @@ void obs_module_unload(void)
 	update_info_destroy(update_info);
 	unload_twitch_data();
 	free_showroom_data();
+	unload_dacast_data();
 	dstr_free(&module_name);
 }
