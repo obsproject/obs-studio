@@ -220,7 +220,8 @@ void SourceTreeItem::ReconnectSignals()
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "Select");
+			QMetaObject::invokeMethod(this_, "Select",
+						  Qt::QueuedConnection);
 	};
 
 	auto itemDeselect = [](void *data, calldata_t *cd) {
@@ -230,7 +231,8 @@ void SourceTreeItem::ReconnectSignals()
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "Deselect");
+			QMetaObject::invokeMethod(this_, "Deselect",
+						  Qt::QueuedConnection);
 	};
 
 	auto reorderGroup = [](void *data, calldata_t *) {
