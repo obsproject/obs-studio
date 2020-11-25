@@ -577,11 +577,12 @@ void OBSImporter::importCollections()
 			json11::Json::object out = res.object_items();
 			QString file = res["name"].string_value().c_str();
 
+			file.replace(" ", "_");
 			bool safe = !CheckConfigExists(dst, file);
 			int x = 1;
 			while (!safe) {
 				file = name;
-				file += " (";
+				file += "_(";
 				file += QString::number(x);
 				file += ")";
 
@@ -593,7 +594,7 @@ void OBSImporter::importCollections()
 
 			std::string save = dst;
 			save += "/";
-			save += file.replace(" ", "_").toStdString();
+			save += file.toStdString();
 			save += ".json";
 
 			std::string out_str = json11::Json(out).dump();
