@@ -600,8 +600,15 @@ void OBSImporter::importCollections()
 
 			std::string out_str = json11::Json(out).dump();
 
-			os_quick_write_utf8_file(save.c_str(), out_str.c_str(),
-						 out_str.size(), false);
+			bool success = os_quick_write_utf8_file(save.c_str(),
+								out_str.c_str(),
+								out_str.size(),
+								false);
+
+			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s",
+			     name.toStdString().c_str(),
+			     file.toStdString().c_str(),
+			     success ? "SUCCESS" : "FAILURE");
 		}
 	}
 
