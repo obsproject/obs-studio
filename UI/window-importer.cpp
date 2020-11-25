@@ -578,6 +578,7 @@ void OBSImporter::importCollections()
 			QString file = res["name"].string_value().c_str();
 
 			file.replace(" ", "_");
+			file.replace("/", "_");
 			bool safe = !CheckConfigExists(dst, file);
 			int x = 1;
 			while (!safe) {
