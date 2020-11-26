@@ -577,11 +577,13 @@ void OBSImporter::importCollections()
 			json11::Json::object out = res.object_items();
 			QString file = res["name"].string_value().c_str();
 
+			file.replace(" ", "_");
+			file.replace("/", "_");
 			bool safe = !CheckConfigExists(dst, file);
 			int x = 1;
 			while (!safe) {
 				file = name;
-				file += " (";
+				file += "_(";
 				file += QString::number(x);
 				file += ")";
 
@@ -593,13 +595,20 @@ void OBSImporter::importCollections()
 
 			std::string save = dst;
 			save += "/";
-			save += file.replace(" ", "_").toStdString();
+			save += file.toStdString();
 			save += ".json";
 
 			std::string out_str = json11::Json(out).dump();
 
-			os_quick_write_utf8_file(save.c_str(), out_str.c_str(),
-						 out_str.size(), false);
+			bool success = os_quick_write_utf8_file(save.c_str(),
+								out_str.c_str(),
+								out_str.size(),
+								false);
+
+			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s",
+			     name.toStdString().c_str(),
+			     file.toStdString().c_str(),
+			     success ? "SUCCESS" : "FAILURE");
 		}
 	}
 
