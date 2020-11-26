@@ -104,7 +104,7 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>Add</string>
                </property>
               </widget>
@@ -133,7 +133,7 @@
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>Remove</string>
                </property>
               </widget>
@@ -162,7 +162,7 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>MoveUp</string>
                </property>
               </widget>
@@ -191,7 +191,7 @@
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>MoveDown</string>
                </property>
               </widget>
@@ -292,7 +292,7 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>Add</string>
                </property>
               </widget>
@@ -321,7 +321,7 @@
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
                </property>
-               <property name="text">
+               <property name="accessibleName">
                 <string>Remove</string>
                </property>
               </widget>
@@ -350,6 +350,9 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
+               <property name="accessibleName">
+                <string>MoveUp</string>
+               </property>
               </widget>
              </item>
              <item>
@@ -375,6 +378,9 @@
                </property>
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
+               </property>
+               <property name="accessibleName">
+                <string>MoveDown</string>
                </property>
               </widget>
              </item>
