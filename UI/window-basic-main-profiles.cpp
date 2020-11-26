@@ -197,6 +197,29 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 	return true;
 }
 
+bool CheckProfileAudioSettingNeedRestart(config_t *newConfig)
+{
+	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
+
+	const char *oldSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint oldSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
+	const char *newSpeakers =
+		config_get_string(newConfig, "Audio", "ChannelSetup");
+	uint newSampleRate = config_get_uint(newConfig, "Audio", "SampleRate");
+
+	bool result = false;
+	// need restart if audio sample rate or channel is modified
+	if (oldSpeakers != NULL && newSpeakers != NULL)
+		result = strcmp(oldSpeakers, newSpeakers) != 0;
+	if (oldSampleRate != 0 && newSampleRate != 0)
+		result |= oldSampleRate != newSampleRate;
+
+	return result;
+}
+
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			  const char *init_text, bool rename)
 {
@@ -487,12 +510,7 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
 
-	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
-
-	const char *oldSpeakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
-	uint oldSampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
+	bool needRestart = CheckProfileAudioSettingNeedRestart(config);
 
 	Auth::Save();
 	auth.reset();
@@ -520,14 +538,7 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 	}
 
-	const char *newSpeakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
-	uint newSampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
-
-	// need restart if audio sample rate or channel is modified
-	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
-	    oldSampleRate != newSampleRate) {
+	if (needRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("Restart"),
 			QTStr("LoadProfileNeedsRestart"));
@@ -668,15 +679,10 @@ void OBSBasic::ChangeProfile()
 	const char *newName = config_get_string(config, "General", "Name");
 	const char *newDir = strrchr(path.c_str(), '/') + 1;
 
+	bool needRestart = CheckProfileAudioSettingNeedRestart(config);
+
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
-
-	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
-
-	const char *oldSpeakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
-	uint oldSampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
 
 	Auth::Save();
 	auth.reset();
@@ -685,6 +691,7 @@ void OBSBasic::ChangeProfile()
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	InitBasicConfigDefaults2();
+
 	ResetProfileData();
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
@@ -700,14 +707,7 @@ void OBSBasic::ChangeProfile()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 
-	const char *newSpeakers =
-		config_get_string(main->Config(), "Audio", "ChannelSetup");
-	uint newSampleRate =
-		config_get_uint(main->Config(), "Audio", "SampleRate");
-
-	// need restart if audio sample rate or channel is modified
-	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
-	    oldSampleRate != newSampleRate) {
+	if (needRestart) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("Restart"),
 			QTStr("LoadProfileNeedsRestart"));
