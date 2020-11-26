@@ -529,7 +529,8 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
 	    oldSampleRate != newSampleRate) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
-			this, QTStr("Restart"), QTStr("LoadProfileNeedsRestart"));
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart"));
 
 		if (button == QMessageBox::Yes) {
 			restart = true;
@@ -708,7 +709,8 @@ void OBSBasic::ChangeProfile()
 	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
 	    oldSampleRate != newSampleRate) {
 		QMessageBox::StandardButton button = OBSMessageBox::question(
-			this, QTStr("Restart"), QTStr("LoadProfileNeedsRestart"));
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart"));
 
 		if (button == QMessageBox::Yes) {
 			restart = true;
