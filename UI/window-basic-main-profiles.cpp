@@ -487,6 +487,13 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
 
+	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
+
+	const char *oldSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint oldSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
 	Auth::Save();
 	auth.reset();
 	DeleteCookies();
@@ -511,6 +518,23 @@ void OBSBasic::on_actionRemoveProfile_triggered()
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
+
+	const char *newSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint newSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
+	// need restart if audio sample rate or channel is modified
+	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
+	    oldSampleRate != newSampleRate) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"), QTStr("NeedsRestart"));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
 	}
 }
 
@@ -646,6 +670,13 @@ void OBSBasic::ChangeProfile()
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
 
+	auto main = reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
+
+	const char *oldSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint oldSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
 	Auth::Save();
 	auth.reset();
 	DestroyPanelCookieManager();
@@ -667,6 +698,23 @@ void OBSBasic::ChangeProfile()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+
+	const char *newSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint newSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
+	// need restart if audio sample rate or channel is modified
+	if (strcmp(oldSpeakers, newSpeakers) != 0 ||
+	    oldSampleRate != newSampleRate) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"), QTStr("NeedsRestart"));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
+	}
 }
 
 void OBSBasic::CheckForSimpleModeX264Fallback()
