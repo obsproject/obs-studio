@@ -309,6 +309,7 @@ bundle_dylibs() {
         -s ./rundir/${BUILD_CONFIG}/bin/ \
         -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
         -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
+        -x ./OBS.app/Contents/PlugIns/decklink-captions.so \
         -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
         -x ./OBS.app/Contents/PlugIns/image-source.so \
         -x ./OBS.app/Contents/PlugIns/linux-jack.so \
