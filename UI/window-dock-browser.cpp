@@ -17,4 +17,6 @@ void BrowserDock::closeEvent(QCloseEvent *event)
 	if (panel_version >= 2 && !!cefWidget) {
 		cefWidget->closeBrowser();
 	}
+	setVisible(false);
+	event->ignore();
 }
