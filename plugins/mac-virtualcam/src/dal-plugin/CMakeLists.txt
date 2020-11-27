@@ -1,3 +1,6 @@
+# Universal build for Apple Silicon
+set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
+
 project(mac-dal-plugin)
 
 find_library(AVFOUNDATION AVFoundation)
