@@ -9,7 +9,7 @@
 
 NS_ASSUME_NONNULL_BEGIN
 
-@interface MachServer : NSObject
+@interface OBSDALMachServer : NSObject
 
 - (void)run;
 

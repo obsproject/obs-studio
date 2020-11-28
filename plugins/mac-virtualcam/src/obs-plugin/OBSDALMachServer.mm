@@ -5,19 +5,19 @@
 //  Created by John Boiles  on 5/5/20.
 //
 
-#import "MachServer.h"
+#import "OBSDALMachServer.h"
 #import <Foundation/Foundation.h>
 #include <obs-module.h>
 #include "MachProtocol.h"
 #include "Defines.h"
 
-@interface MachServer () <NSPortDelegate>
+@interface OBSDALMachServer () <NSPortDelegate>
 @property NSPort *port;
 @property NSMutableSet *clientPorts;
 @property NSRunLoop *runLoop;
 @end
 
-@implementation MachServer
+@implementation OBSDALMachServer
 
 - (id)init
 {
