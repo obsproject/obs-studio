@@ -7,7 +7,7 @@
 #include <obs.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <AppKit/AppKit.h>
-#include "MachServer.h"
+#include "OBSDALMachServer.h"
 #include "Defines.h"
 
 OBS_DECLARE_MODULE()
@@ -19,7 +19,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 obs_output_t *outputRef;
 obs_video_info videoInfo;
-static MachServer *sMachServer;
+static OBSDALMachServer *sMachServer;
 
 static bool check_dal_plugin()
 {
@@ -120,7 +120,7 @@ static void *virtualcam_output_create(obs_data_t *settings,
 	outputRef = output;
 
 	blog(LOG_DEBUG, "output_create");
-	sMachServer = [[MachServer alloc] init];
+	sMachServer = [[OBSDALMachServer alloc] init];
 	return data;
 }
 

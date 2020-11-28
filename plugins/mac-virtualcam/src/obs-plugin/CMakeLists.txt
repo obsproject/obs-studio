@@ -25,12 +25,12 @@ include_directories(${AVFOUNDATION}
 
 set(mac-virtualcam_HEADERS
 	Defines.h
-	MachServer.h
+	OBSDALMachServer.h
 	../common/MachProtocol.h)
 
 set(mac-virtualcam_SOURCES
 	plugin-main.mm
-	MachServer.mm)
+	OBSDALMachServer.mm)
 
 add_library(mac-virtualcam MODULE
 	${mac-virtualcam_SOURCES}
