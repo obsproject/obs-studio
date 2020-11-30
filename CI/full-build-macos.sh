@@ -197,8 +197,7 @@ install_cef() {
     step "Fix tests..."
     # remove a broken test
     sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-    # target 10.11
-    sed -i '.orig' s/\"10.9\"/\"10.11\"/ ./cmake/cef_variables.cmake
+    sed -i '.orig' 's/"'$(test "${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
     ensure_dir ./build
     step "Run CMAKE..."
     cmake \

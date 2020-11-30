@@ -271,9 +271,12 @@ struct gs_exports {
 	/* OSX/Cocoa specific functions */
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
 							      void *iosurf);
+	gs_texture_t *(*device_texture_open_shared)(gs_device_t *dev,
+						    uint32_t *handle);
 	bool (*gs_texture_rebind_iosurface)(gs_texture_t *texture,
 					    void *iosurf);
 	uint32_t (*create_iosurface)(gs_device_t *dev, uint32_t width, uint32_t height);
+	bool (*device_shared_texture_available)(void);
 
 #elif _WIN32
 	bool (*device_gdi_texture_available)(void);

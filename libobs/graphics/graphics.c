@@ -2768,6 +2768,26 @@ uint32_t gs_create_iosurface(uint32_t width, uint32_t height)
 	return graphics->exports.create_iosurface(graphics->device, width, height);
 }
 
+bool gs_shared_texture_available(void)
+{
+	if (!gs_valid("gs_shared_texture_available"))
+		return false;
+
+	return thread_graphics->exports.device_shared_texture_available();
+}
+
+gs_texture_t *gs_texture_open_shared(uint32_t handle)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_open_shared"))
+		return NULL;
+
+	if (graphics->exports.device_texture_open_shared)
+		return graphics->exports.device_texture_open_shared(
+			graphics->device, handle);
+	return NULL;
+}
+
 #elif _WIN32
 
 bool gs_gdi_texture_available(void)
