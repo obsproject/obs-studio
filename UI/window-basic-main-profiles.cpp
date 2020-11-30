@@ -691,7 +691,6 @@ void OBSBasic::ChangeProfile()
 	config.Swap(basicConfig);
 	InitBasicConfigDefaults();
 	InitBasicConfigDefaults2();
-
 	ResetProfileData();
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
