@@ -269,17 +269,9 @@ void SourceTreeItem::ReconnectSignals()
 					  Q_ARG(QString, QT_UTF8(name)));
 	};
 
-	auto removeSource = [](void *data, calldata_t *) {
-		SourceTreeItem *this_ =
-			reinterpret_cast<SourceTreeItem *>(data);
-		this_->DisconnectSignals();
-		this_->sceneitem = nullptr;
-	};
-
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	signal = obs_source_get_signal_handler(source);
 	renameSignal.Connect(signal, "rename", renamed, this);
-	removeSignal.Connect(signal, "remove", removeSource, this);
 }
 
 void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
