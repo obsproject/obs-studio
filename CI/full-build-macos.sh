@@ -212,13 +212,13 @@ install_cef() {
     hr "Building dependency CEF v${1}"
     ensure_dir ${DEPS_BUILD_DIR}
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${1}_macosx64.tar.bz2
+    ${CURLCMD} --progress-bar -L -C - -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macosx64.tar.bz2
     step "Unpack..."
     tar -xf ./cef_binary_${1}_macosx64.tar.bz2
     cd ./cef_binary_${1}_macosx64
     step "Fix tests..."
     sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-    sed -i '.orig' s/\"10.9\"/\"${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}\"/ ./cmake/cef_variables.cmake
+    sed -i '.orig' 's/"'$(test "${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
     ensure_dir ./build
     step "Run CMAKE..."
     cmake \
