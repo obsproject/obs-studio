@@ -101,7 +101,7 @@ void OBSHotkeyEdit::mousePressEvent(QMouseEvent *event)
 	case Qt::MouseButtonMask:
 		return;
 
-	case Qt::MidButton:
+	case Qt::MiddleButton:
 		new_key.key = OBS_KEY_MOUSE3;
 		break;
 

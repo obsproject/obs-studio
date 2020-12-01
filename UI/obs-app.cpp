@@ -116,7 +116,7 @@ QObject *CreateShortcutFilter()
 			case Qt::MouseButtonMask:
 				return false;
 
-			case Qt::MidButton:
+			case Qt::MiddleButton:
 				hotkey.key = OBS_KEY_MOUSE3;
 				break;
 
