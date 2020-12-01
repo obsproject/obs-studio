@@ -273,6 +273,10 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 {
 	obs_module_t *module;
 
+	if (!os_is_obs_plugin(info->bin_path))
+		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
+		     info->bin_path);
+
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	if (code != MODULE_SUCCESS) {
 		blog(LOG_DEBUG, "Failed to load module file '%s': %d",

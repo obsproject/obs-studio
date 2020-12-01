@@ -94,6 +94,12 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
+bool os_is_obs_plugin(const char *path)
+{
+	/* not necessary on this platform */
+	return true;
+}
+
 #if !defined(__APPLE__)
 
 struct os_cpu_usage_info {
