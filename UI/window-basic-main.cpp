@@ -24,7 +24,6 @@
 #include <QShowEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
-#include <QDesktopWidget>
 #include <QScreen>
 #include <QColorDialog>
 #include <QSizePolicy>
@@ -370,7 +369,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 		QRect windowGeometry = normalGeometry();
 		if (!WindowPositionValid(windowGeometry)) {
-			QRect rect = App()->desktop()->geometry();
+			QRect rect = App()->primaryScreen()->geometry();
 			setGeometry(QStyle::alignedRect(Qt::LeftToRight,
 							Qt::AlignCenter, size(),
 							rect));
@@ -7231,7 +7230,7 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 			projector->restoreGeometry(byteArray);
 
 			if (!WindowPositionValid(projector->normalGeometry())) {
-				QRect rect = App()->desktop()->geometry();
+				QRect rect = App()->primaryScreen()->geometry();
 				projector->setGeometry(QStyle::alignedRect(
 					Qt::LeftToRight, Qt::AlignCenter,
 					size(), rect));

@@ -6,7 +6,7 @@
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
 
-#include <QDesktopWidget>
+#include <QScreen>
 #include <QPushButton>
 #include <QScrollArea>
 #include <QVBoxLayout>
@@ -204,7 +204,7 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 		QRect windowGeometry = normalGeometry();
 		if (!WindowPositionValid(windowGeometry)) {
-			QRect rect = App()->desktop()->geometry();
+			QRect rect = App()->primaryScreen()->geometry();
 			setGeometry(QStyle::alignedRect(Qt::LeftToRight,
 							Qt::AlignCenter, size(),
 							rect));
