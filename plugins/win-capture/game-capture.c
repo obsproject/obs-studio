@@ -673,7 +673,7 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
 {
 	gc->texture_mutexes[0] = open_mutex_gc(gc, MUTEX_TEXTURE1);
 	gc->texture_mutexes[1] = open_mutex_gc(gc, MUTEX_TEXTURE2);
-	gc->shtex_mutex        = open_mutex_gc(gc, MUTEX_SHTEX);
+	gc->shtex_mutex = open_mutex_gc(gc, MUTEX_SHTEX);
 
 	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1] || !gc->shtex_mutex) {
 		DWORD error = GetLastError();
@@ -1623,8 +1623,10 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 	obs_enter_graphics();
 	gs_texture_destroy(gc->texture);
 	enum gs_color_format format = gc->convert_16bit ? GS_BGRA : convert_format(gc->global_hook_info->format);
+
+	// vulkan use BGRA
 	if (format == GS_UNKNOWN)
-		format = GS_BGRA;	// vulkan use BGRA
+		format = GS_BGRA;
 	gc->texture = gs_texture_create(gc->cx, gc->cy, format, 1, NULL, GS_RENDER_TARGET);
 	obs_leave_graphics();
 
