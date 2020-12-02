@@ -1556,7 +1556,7 @@ static void copy_shmem_tex(struct game_capture *gc)
 static inline void lock_shtex(struct game_capture *gc)
 {
 	while (true) {
-		if(WaitForSingleObject(gc->shtex_mutex, INFINITE) == WAIT_OBJECT_0)
+		if (WaitForSingleObject(gc->shtex_mutex, INFINITE) == WAIT_OBJECT_0)
 			break;
 	}
 }
