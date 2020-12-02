@@ -1937,55 +1937,6 @@
                              </property>
                             </widget>
                            </item>
-                           <item row="2" column="0">
-                            <widget class="QLabel" name="advOutEncLabel">
-                             <property name="text">
-                              <string>Basic.Settings.Output.Encoder</string>
-                             </property>
-                             <property name="buddy">
-                              <cstring>advOutEncoder</cstring>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="2" column="1">
-                            <widget class="QComboBox" name="advOutEncoder"/>
-                           </item>
-                           <item row="3" column="1">
-                            <widget class="QCheckBox" name="advOutApplyService">
-                             <property name="text">
-                              <string>Basic.Settings.Output.Adv.ApplyServiceSettings</string>
-                             </property>
-                             <property name="checked">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="4" column="0">
-                            <widget class="QCheckBox" name="advOutUseRescale">
-                             <property name="sizePolicy">
-                              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
-                               <horstretch>0</horstretch>
-                               <verstretch>0</verstretch>
-                              </sizepolicy>
-                             </property>
-                             <property name="layoutDirection">
-                              <enum>Qt::RightToLeft</enum>
-                             </property>
-                             <property name="text">
-                              <string>Basic.Settings.Output.Adv.Rescale</string>
-                             </property>
-                            </widget>
-                           </item>
-                           <item row="4" column="1">
-                            <widget class="QComboBox" name="advOutRescale">
-                             <property name="enabled">
-                              <bool>false</bool>
-                             </property>
-                             <property name="editable">
-                              <bool>true</bool>
-                             </property>
-                            </widget>
-                           </item>
                            <item row="1" column="1">
                             <widget class="QWidget" name="widget_8" native="true">
                              <property name="sizePolicy">
@@ -2053,6 +2004,45 @@
                                </widget>
                               </item>
                              </layout>
+                            </widget>
+                           </item>
+                           <item row="2" column="0">
+                            <widget class="QLabel" name="advOutEncLabel">
+                             <property name="text">
+                              <string>Basic.Settings.Output.Encoder</string>
+                             </property>
+                             <property name="buddy">
+                              <cstring>advOutEncoder</cstring>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="2" column="1">
+                            <widget class="QComboBox" name="advOutEncoder"/>
+                           </item>
+                           <item row="3" column="0">
+                            <widget class="QCheckBox" name="advOutUseRescale">
+                             <property name="sizePolicy">
+                              <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                               <horstretch>0</horstretch>
+                               <verstretch>0</verstretch>
+                              </sizepolicy>
+                             </property>
+                             <property name="layoutDirection">
+                              <enum>Qt::RightToLeft</enum>
+                             </property>
+                             <property name="text">
+                              <string>Basic.Settings.Output.Adv.Rescale</string>
+                             </property>
+                            </widget>
+                           </item>
+                           <item row="3" column="1">
+                            <widget class="QComboBox" name="advOutRescale">
+                             <property name="enabled">
+                              <bool>false</bool>
+                             </property>
+                             <property name="editable">
+                              <bool>true</bool>
+                             </property>
                             </widget>
                            </item>
                           </layout>
@@ -4639,7 +4629,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
+              <width>602</width>
               <height>781</height>
              </rect>
             </property>
@@ -5534,7 +5524,6 @@
   <tabstop>advOutTrack5</tabstop>
   <tabstop>advOutTrack6</tabstop>
   <tabstop>advOutEncoder</tabstop>
-  <tabstop>advOutApplyService</tabstop>
   <tabstop>advOutUseRescale</tabstop>
   <tabstop>advOutRescale</tabstop>
   <tabstop>advOutRecType</tabstop>
