@@ -149,6 +149,7 @@ struct game_capture {
 
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
+	gs_texture_t *m_texture_Original;
 	struct hook_info *global_hook_info;
 	HANDLE keepalive_mutex;
 	HANDLE hook_init;
@@ -160,6 +161,7 @@ struct game_capture {
 	HANDLE global_hook_info_map;
 	HANDLE target_process;
 	HANDLE texture_mutexes[2];
+	HANDLE m_SHTex_mutex;
 	wchar_t *app_sid;
 	int retrying;
 	float cursor_check_time;
@@ -330,12 +332,20 @@ static void stop_capture(struct game_capture *gc)
 	close_handle(&gc->target_process);
 	close_handle(&gc->texture_mutexes[0]);
 	close_handle(&gc->texture_mutexes[1]);
+	close_handle(&gc->m_SHTex_mutex);
 
 	if (gc->texture) {
 		obs_enter_graphics();
 		gs_texture_destroy(gc->texture);
 		obs_leave_graphics();
 		gc->texture = NULL;
+	}
+
+	if (gc->m_texture_Original) {
+		obs_enter_graphics();
+		gs_texture_destroy(gc->m_texture_Original);
+		obs_leave_graphics();
+		gc->m_texture_Original = NULL;
 	}
 
 	if (gc->active)
@@ -663,8 +673,9 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
 {
 	gc->texture_mutexes[0] = open_mutex_gc(gc, MUTEX_TEXTURE1);
 	gc->texture_mutexes[1] = open_mutex_gc(gc, MUTEX_TEXTURE2);
+	gc->m_SHTex_mutex      = open_mutex_gc(gc, MUTEX_SHTEX);
 
-	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1]) {
+	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1] || !gc->m_SHTex_mutex) {
 		DWORD error = GetLastError();
 		if (error == 2) {
 			if (!gc->retrying) {
@@ -1542,6 +1553,27 @@ static void copy_shmem_tex(struct game_capture *gc)
 	ReleaseMutex(mutex);
 }
 
+static inline void lock_shtex(struct game_capture *gc)
+{
+	while(true)
+	{
+		if(WaitForSingleObject(gc->m_SHTex_mutex, INFINITE) == WAIT_OBJECT_0)
+			break;
+	}
+}
+
+static inline void unlock_shtex(struct game_capture *gc)
+{
+	ReleaseMutex(gc->m_SHTex_mutex);
+}
+
+static void copy_shtex_tex(struct game_capture *gc)
+{
+	lock_shtex(gc);
+	gs_copy_texture(gc->texture, gc->m_texture_Original);
+	unlock_shtex(gc);
+}
+
 static inline bool is_16bit_format(uint32_t format)
 {
 	return format == DXGI_FORMAT_B5G5R5A1_UNORM ||
@@ -1580,15 +1612,29 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
 	obs_enter_graphics();
-	gs_texture_destroy(gc->texture);
-	gc->texture = gs_texture_open_shared(gc->shtex_data->tex_handle);
+	gs_texture_destroy(gc->m_texture_Original);
+	gc->m_texture_Original = gs_texture_open_shared(gc->shtex_data->tex_handle);
 	obs_leave_graphics();
 
-	if (!gc->texture) {
+	if (!gc->m_texture_Original) {
 		warn("init_shtex_capture: failed to open shared handle");
 		return false;
 	}
 
+	obs_enter_graphics();
+	gs_texture_destroy(gc->texture);
+	enum gs_color_format format = gc->convert_16bit ? GS_BGRA : convert_format(gc->global_hook_info->format);
+	if(format == GS_UNKNOWN)
+		format = GS_BGRA;	// vulkan use BGRA
+	gc->texture = gs_texture_create(gc->cx, gc->cy, format, 1, NULL, GS_RENDER_TARGET);
+	obs_leave_graphics();
+
+	if (!gc->texture) {
+		warn("init_shtex_capture: failed to create render target");
+		return false;
+	}
+
+	gc->copy_texture = copy_shtex_tex;
 	return true;
 }
 
