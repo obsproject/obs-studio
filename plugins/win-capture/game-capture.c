@@ -1555,8 +1555,7 @@ static void copy_shmem_tex(struct game_capture *gc)
 
 static inline void lock_shtex(struct game_capture *gc)
 {
-	while(true)
-	{
+	while (true) {
 		if(WaitForSingleObject(gc->shtex_mutex, INFINITE) == WAIT_OBJECT_0)
 			break;
 	}
@@ -1624,7 +1623,7 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 	obs_enter_graphics();
 	gs_texture_destroy(gc->texture);
 	enum gs_color_format format = gc->convert_16bit ? GS_BGRA : convert_format(gc->global_hook_info->format);
-	if(format == GS_UNKNOWN)
+	if (format == GS_UNKNOWN)
 		format = GS_BGRA;	// vulkan use BGRA
 	gc->texture = gs_texture_create(gc->cx, gc->cy, format, 1, NULL, GS_RENDER_TARGET);
 	obs_leave_graphics();
