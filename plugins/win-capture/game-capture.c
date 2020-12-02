@@ -161,7 +161,7 @@ struct game_capture {
 	HANDLE global_hook_info_map;
 	HANDLE target_process;
 	HANDLE texture_mutexes[2];
-	HANDLE m_SHTex_mutex;
+	HANDLE shtex_mutex;
 	wchar_t *app_sid;
 	int retrying;
 	float cursor_check_time;
@@ -332,7 +332,7 @@ static void stop_capture(struct game_capture *gc)
 	close_handle(&gc->target_process);
 	close_handle(&gc->texture_mutexes[0]);
 	close_handle(&gc->texture_mutexes[1]);
-	close_handle(&gc->m_SHTex_mutex);
+	close_handle(&gc->shtex_mutex);
 
 	if (gc->texture) {
 		obs_enter_graphics();
@@ -673,9 +673,9 @@ static inline bool init_texture_mutexes(struct game_capture *gc)
 {
 	gc->texture_mutexes[0] = open_mutex_gc(gc, MUTEX_TEXTURE1);
 	gc->texture_mutexes[1] = open_mutex_gc(gc, MUTEX_TEXTURE2);
-	gc->m_SHTex_mutex      = open_mutex_gc(gc, MUTEX_SHTEX);
+	gc->shtex_mutex        = open_mutex_gc(gc, MUTEX_SHTEX);
 
-	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1] || !gc->m_SHTex_mutex) {
+	if (!gc->texture_mutexes[0] || !gc->texture_mutexes[1] || !gc->shtex_mutex) {
 		DWORD error = GetLastError();
 		if (error == 2) {
 			if (!gc->retrying) {
@@ -1557,14 +1557,14 @@ static inline void lock_shtex(struct game_capture *gc)
 {
 	while(true)
 	{
-		if(WaitForSingleObject(gc->m_SHTex_mutex, INFINITE) == WAIT_OBJECT_0)
+		if(WaitForSingleObject(gc->shtex_mutex, INFINITE) == WAIT_OBJECT_0)
 			break;
 	}
 }
 
 static inline void unlock_shtex(struct game_capture *gc)
 {
-	ReleaseMutex(gc->m_SHTex_mutex);
+	ReleaseMutex(gc->shtex_mutex);
 }
 
 static void copy_shtex_tex(struct game_capture *gc)
