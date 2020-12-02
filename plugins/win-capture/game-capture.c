@@ -149,7 +149,7 @@ struct game_capture {
 
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
-	gs_texture_t *m_texture_Original;
+	gs_texture_t *texture_original;
 	struct hook_info *global_hook_info;
 	HANDLE keepalive_mutex;
 	HANDLE hook_init;
@@ -341,11 +341,11 @@ static void stop_capture(struct game_capture *gc)
 		gc->texture = NULL;
 	}
 
-	if (gc->m_texture_Original) {
+	if (gc->texture_original) {
 		obs_enter_graphics();
-		gs_texture_destroy(gc->m_texture_Original);
+		gs_texture_destroy(gc->texture_original);
 		obs_leave_graphics();
-		gc->m_texture_Original = NULL;
+		gc->texture_original = NULL;
 	}
 
 	if (gc->active)
@@ -1570,7 +1570,7 @@ static inline void unlock_shtex(struct game_capture *gc)
 static void copy_shtex_tex(struct game_capture *gc)
 {
 	lock_shtex(gc);
-	gs_copy_texture(gc->texture, gc->m_texture_Original);
+	gs_copy_texture(gc->texture, gc->texture_original);
 	unlock_shtex(gc);
 }
 
@@ -1612,11 +1612,11 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
 	obs_enter_graphics();
-	gs_texture_destroy(gc->m_texture_Original);
-	gc->m_texture_Original = gs_texture_open_shared(gc->shtex_data->tex_handle);
+	gs_texture_destroy(gc->texture_original);
+	gc->texture_original = gs_texture_open_shared(gc->shtex_data->tex_handle);
 	obs_leave_graphics();
 
-	if (!gc->m_texture_Original) {
+	if (!gc->texture_original) {
 		warn("init_shtex_capture: failed to open shared handle");
 		return false;
 	}
