@@ -1469,7 +1469,7 @@ bool OBSBasic::InitBasicConfig()
 
 	ret = GetProfilePath(configPath, sizeof(configPath), "basic.ini");
 	if (ret <= 0) {
-		OBSErrorBox(nullptr, "Failed to get base.ini path");
+		OBSErrorBox(nullptr, "Failed to get basic.ini path");
 		return false;
 	}
 
