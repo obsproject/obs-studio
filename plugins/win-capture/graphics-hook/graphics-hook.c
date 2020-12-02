@@ -516,9 +516,8 @@ static inline void unlock_shmem_tex(int id)
 
 void lock_shtex()
 {
-	while(true)
-	{
-		if(WaitForSingleObject(shtex_mutex, INFINITE) == WAIT_OBJECT_0)
+	while (true) {
+		if (WaitForSingleObject(shtex_mutex, INFINITE) == WAIT_OBJECT_0)
 			break;
 
 		Sleep(0);
