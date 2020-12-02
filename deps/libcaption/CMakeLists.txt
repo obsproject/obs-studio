@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 2.8.12)
 project(libcaption)
 add_definitions(-D__STDC_CONSTANT_MACROS)
 if (WIN32)
