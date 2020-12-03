@@ -869,13 +869,15 @@ void SimpleOutput::SetupVodTrack(obs_service_t *service)
 		config_get_bool(main->Config(), "SimpleOutput", "UseAdvanced");
 	bool enable = config_get_bool(main->Config(), "SimpleOutput",
 				      "VodTrackEnabled");
+	bool enableForCustomServer = config_get_bool(
+		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 
 	obs_data_t *settings = obs_service_get_settings(service);
 	const char *name = obs_data_get_string(settings, "service");
 
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0)
-		enable = false;
+		enable = enableForCustomServer ? enable : false;
 	else
 		enable = advanced && enable && ServiceSupportsVodTrack(name);
 
@@ -1635,10 +1637,13 @@ inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
 		config_get_bool(main->Config(), "AdvOut", "VodTrackEnabled");
 	int vodTrackIndex =
 		config_get_int(main->Config(), "AdvOut", "VodTrackIndex");
+	bool enableForCustomServer = config_get_bool(
+		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 
 	const char *id = obs_service_get_id(service);
 	if (strcmp(id, "rtmp_custom") == 0) {
-		vodTrackEnabled = false;
+		vodTrackEnabled = enableForCustomServer ? vodTrackEnabled
+							: false;
 	} else {
 		obs_data_t *settings = obs_service_get_settings(service);
 		const char *service = obs_data_get_string(settings, "service");
