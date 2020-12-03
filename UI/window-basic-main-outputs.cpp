@@ -1258,7 +1258,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	int streamTrack =
 		config_get_int(main->Config(), "AdvOut", "TrackIndex") - 1;
 	if (!CreateAACEncoder(streamAudioEnc, id, GetAudioBitrate(streamTrack),
-			      "avc_aac_stream", streamTrack))
+			      "adv_stream_aac", streamTrack))
 		throw "Failed to create streaming audio encoder "
 		      "(advanced output)";
 
