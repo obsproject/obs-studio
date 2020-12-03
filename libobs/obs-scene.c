@@ -1246,7 +1246,8 @@ static inline obs_source_t *dup_child(struct darray *array, size_t idx,
 		}
 	}
 
-	return obs_source_duplicate(source, NULL, private);
+	return obs_source_duplicate(
+		source, private ? obs_source_get_name(source) : NULL, private);
 }
 
 static inline obs_source_t *new_ref(obs_source_t *source)
