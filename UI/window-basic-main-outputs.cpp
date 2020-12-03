@@ -873,7 +873,13 @@ void SimpleOutput::SetupVodTrack(obs_service_t *service)
 	obs_data_t *settings = obs_service_get_settings(service);
 	const char *name = obs_data_get_string(settings, "service");
 
-	if (advanced && enable && ServiceSupportsVodTrack(name))
+	const char *id = obs_service_get_id(service);
+	if (strcmp(id, "rtmp_custom") == 0)
+		enable = false;
+	else
+		enable = advanced && enable && ServiceSupportsVodTrack(name);
+
+	if (enable)
 		obs_output_set_audio_encoder(streamOutput, aacArchive, 1);
 	else
 		clear_archive_encoder(streamOutput, SIMPLE_ARCHIVE_NAME);
