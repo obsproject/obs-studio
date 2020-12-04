@@ -31,7 +31,7 @@ static bool v4l2loopback_installed()
 {
 	bool loaded = false;
 
-	int ret = system("modinfo v4l2loopback &>/dev/null");
+	int ret = system("modinfo v4l2loopback >/dev/null 2>&1");
 
 	if (ret == 0)
 		loaded = true;
