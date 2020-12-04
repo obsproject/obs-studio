@@ -913,6 +913,8 @@ public:
 					     obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
 
+	void UpdateEditMenu();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -935,6 +937,8 @@ private slots:
 
 	void on_actionShowCrashLogs_triggered();
 	void on_actionUploadLastCrashLog_triggered();
+
+	void on_menuBasic_MainMenu_Edit_aboutToShow();
 
 	void on_actionEditTransform_triggered();
 	void on_actionCopyTransform_triggered();

@@ -5277,6 +5277,8 @@ ColorSelect::ColorSelect(QWidget *parent)
 
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
+	UpdateEditMenu();
+
 	QMenu popup(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
@@ -5321,9 +5323,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	if (addSourceMenu)
 		popup.addMenu(addSourceMenu);
 
-	ui->actionCopyFilters->setEnabled(false);
-	ui->actionCopySource->setEnabled(false);
-
 	if (ui->sources->MultipleBaseSelected()) {
 		popup.addSeparator();
 		popup.addAction(QTStr("Basic.Main.GroupItems"), ui->sources,
@@ -5351,7 +5350,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 
 		OBSSceneItem sceneItem = ui->sources->Get(idx);
-		bool lock = obs_sceneitem_locked(sceneItem);
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
@@ -5370,19 +5368,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 				SLOT(on_actionRemoveSource_triggered()));
 		popup.addSeparator();
 		popup.addMenu(ui->orderMenu);
-		popup.addMenu(ui->transformMenu);
 
-		ui->actionResetTransform->setEnabled(!lock);
-		ui->actionRotate90CW->setEnabled(!lock);
-		ui->actionRotate90CCW->setEnabled(!lock);
-		ui->actionRotate180->setEnabled(!lock);
-		ui->actionFlipHorizontal->setEnabled(!lock);
-		ui->actionFlipVertical->setEnabled(!lock);
-		ui->actionFitToScreen->setEnabled(!lock);
-		ui->actionStretchToScreen->setEnabled(!lock);
-		ui->actionCenterToScreen->setEnabled(!lock);
-		ui->actionVerticalCenter->setEnabled(!lock);
-		ui->actionHorizontalCenter->setEnabled(!lock);
+		popup.addMenu(ui->transformMenu);
 
 		sourceProjector = new QMenu(QTStr("SourceProjector"));
 		AddProjectorMenuMonitors(sourceProjector, this,
@@ -5446,12 +5433,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(QTStr("Filters"), this, SLOT(OpenFilters()));
 		popup.addAction(QTStr("Properties"), this,
 				SLOT(on_actionSourceProperties_triggered()));
-
-		ui->actionCopyFilters->setEnabled(
-			obs_source_filter_count(source) > 0);
-		ui->actionCopySource->setEnabled(true);
 	}
-	ui->actionPasteFilters->setEnabled(copyFiltersString && idx != -1);
 
 	popup.exec(QCursor::pos());
 }
@@ -7610,6 +7592,52 @@ void OBSBasic::GetConfigFPS(uint32_t &num, uint32_t &den) const
 config_t *OBSBasic::Config() const
 {
 	return basicConfig;
+}
+
+void OBSBasic::UpdateEditMenu()
+{
+	int idx = GetTopSelectedSourceItem();
+	size_t filter_count = 0;
+	OBSSceneItem sceneItem;
+	OBSSource source;
+
+	if (idx != -1) {
+		sceneItem = ui->sources->Get(idx);
+		source = obs_sceneitem_get_source(sceneItem);
+		filter_count = obs_source_filter_count(source);
+	}
+
+	ui->actionCopySource->setEnabled(idx != -1);
+	ui->actionEditTransform->setEnabled(idx != -1);
+	ui->actionCopyTransform->setEnabled(idx != -1);
+	ui->actionCopyFilters->setEnabled(filter_count > 0);
+	ui->actionPasteFilters->setEnabled(copyFiltersString && idx != -1);
+
+	ui->actionMoveUp->setEnabled(idx != -1);
+	ui->actionMoveDown->setEnabled(idx != -1);
+	ui->actionMoveToTop->setEnabled(idx != -1);
+	ui->actionMoveToBottom->setEnabled(idx != -1);
+
+	bool canTransform = false;
+	if (sceneItem)
+		canTransform = !obs_sceneitem_locked(sceneItem);
+
+	ui->actionResetTransform->setEnabled(canTransform);
+	ui->actionRotate90CW->setEnabled(canTransform);
+	ui->actionRotate90CCW->setEnabled(canTransform);
+	ui->actionRotate180->setEnabled(canTransform);
+	ui->actionFlipHorizontal->setEnabled(canTransform);
+	ui->actionFlipVertical->setEnabled(canTransform);
+	ui->actionFitToScreen->setEnabled(canTransform);
+	ui->actionStretchToScreen->setEnabled(canTransform);
+	ui->actionCenterToScreen->setEnabled(canTransform);
+	ui->actionVerticalCenter->setEnabled(canTransform);
+	ui->actionHorizontalCenter->setEnabled(canTransform);
+}
+
+void OBSBasic::on_menuBasic_MainMenu_Edit_aboutToShow()
+{
+	UpdateEditMenu();
 }
 
 void OBSBasic::on_actionEditTransform_triggered()
