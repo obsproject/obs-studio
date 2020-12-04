@@ -1937,16 +1937,20 @@ void OBSBasic::OBSInit()
 
 	ui->sources->UpdateIcons();
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
 	delete ui->menuCrashLogs;
-	delete ui->actionCheckForUpdates;
 	ui->actionShowCrashLogs = nullptr;
 	ui->actionUploadLastCrashLog = nullptr;
 	ui->menuCrashLogs = nullptr;
+#if !defined(__APPLE__)
+	delete ui->actionCheckForUpdates;
 	ui->actionCheckForUpdates = nullptr;
-#elif _WIN32 || __APPLE__
+#endif
+#endif
+
+#if defined(_WIN32) || defined(__APPLE__)
 	if (App()->IsUpdaterDisabled())
 		ui->actionCheckForUpdates->setEnabled(false);
 #endif
@@ -5314,7 +5318,7 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 		return;
 
 	ui->menuLogFiles->setEnabled(false);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(false);
 #endif
 
@@ -5401,7 +5405,7 @@ void OBSBasic::on_actionCheckForUpdates_triggered()
 void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 {
 	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(true);
 #endif
 
@@ -5417,7 +5421,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 void OBSBasic::crashUploadFinished(const QString &text, const QString &error)
 {
 	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(true);
 #endif
 
