@@ -328,6 +328,7 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		obs_source_show_preloaded_video(s->source);
 	else
 		obs_source_output_video(s->source, NULL);
+	obs_source_set_monitoring_type(s->source, OBS_MONITORING_TYPE_MONITOR_AND_OUTPUT);
 	set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 	obs_source_media_started(s->source);
 }
