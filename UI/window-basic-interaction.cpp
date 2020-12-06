@@ -218,6 +218,14 @@ static int TranslateQtMouseEventModifiers(QMouseEvent *event)
 bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 					      int &relY)
 {
+#ifdef SUPPORTS_FRACTIONAL_SCALING
+	float pixelRatio = devicePixelRatioF();
+#else
+	float pixelRatio = devicePixelRatio();
+#endif
+	int mouseXscaled = (int)roundf(mouseX * pixelRatio);
+	int mouseYscaled = (int)roundf(mouseY * pixelRatio);
+
 	QSize size = GetPixelSize(ui->preview);
 
 	uint32_t sourceCX = max(obs_source_get_width(source), 1u);
@@ -230,11 +238,11 @@ bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 			     y, scale);
 
 	if (x > 0) {
-		relX = int(float(mouseX - x) / scale);
-		relY = int(float(mouseY / scale));
+		relX = int(float(mouseXscaled - x) / scale);
+		relY = int(float(mouseYscaled / scale));
 	} else {
-		relX = int(float(mouseX / scale));
-		relY = int(float(mouseY - y) / scale);
+		relX = int(float(mouseXscaled / scale));
+		relY = int(float(mouseYscaled - y) / scale);
 	}
 
 	// Confirm mouse is inside the source
