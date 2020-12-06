@@ -20,7 +20,7 @@ What is OBS Studio?
   recording, and streaming video content, efficiently.
 
   It's distributed under the GNU General Public License v2 (or any later
-  version) - see the accompanying COPYING file for more details.
+  version) - see the accompanying COPYING file for more details. p
 
 Quick Links
 -----------
