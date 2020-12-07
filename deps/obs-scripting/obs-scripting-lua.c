@@ -456,7 +456,7 @@ static int obs_lua_signal_handler_disconnect(lua_State *script)
 		const char *cb_signal =
 			calldata_string(&cb->base.extra, "signal");
 
-		if (cb_signal && strcmp(signal, cb_signal) != 0 &&
+		if (cb_signal && strcmp(signal, cb_signal) == 0 &&
 		    handler == cb_handler)
 			break;
 
