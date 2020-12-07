@@ -23,6 +23,7 @@ extern volatile bool streaming_active;
 extern volatile bool recording_active;
 extern volatile bool recording_paused;
 extern volatile bool replaybuf_active;
+extern volatile bool virtualcam_active;
 
 /* ------------------------------------------------------------------------- */
 
@@ -546,6 +547,28 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		QMetaObject::invokeMethod(main, "Screenshot",
 					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	obs_output_t *obs_frontend_get_virtualcam_output(void) override
+	{
+		OBSOutput output = main->outputHandler->virtualCam;
+		obs_output_addref(output);
+		return output;
+	}
+
+	void obs_frontend_start_virtualcam(void) override
+	{
+		QMetaObject::invokeMethod(main, "StartVirtualCam");
+	}
+
+	void obs_frontend_stop_virtualcam(void) override
+	{
+		QMetaObject::invokeMethod(main, "StopVirtualCam");
+	}
+
+	bool obs_frontend_virtualcam_active(void) override
+	{
+		return os_atomic_load_bool(&virtualcam_active);
 	}
 
 	void on_load(obs_data_t *settings) override

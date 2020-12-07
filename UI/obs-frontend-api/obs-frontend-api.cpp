@@ -475,3 +475,27 @@ void obs_frontend_take_source_screenshot(obs_source_t *source)
 	if (callbacks_valid())
 		c->obs_frontend_take_source_screenshot(source);
 }
+
+obs_output_t *obs_frontend_get_virtualcam_output(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_virtualcam_output()
+				   : nullptr;
+}
+
+void obs_frontend_start_virtualcam(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_start_virtualcam();
+}
+
+void obs_frontend_stop_virtualcam(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_stop_virtualcam();
+}
+
+bool obs_frontend_virtualcam_active(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_virtualcam_active()
+				   : false;
+}

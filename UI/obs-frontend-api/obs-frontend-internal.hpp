@@ -122,6 +122,11 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_take_screenshot() = 0;
 	virtual void
 	obs_frontend_take_source_screenshot(obs_source_t *source) = 0;
+
+	virtual obs_output_t *obs_frontend_get_virtualcam_output(void) = 0;
+	virtual void obs_frontend_start_virtualcam(void) = 0;
+	virtual void obs_frontend_stop_virtualcam(void) = 0;
+	virtual bool obs_frontend_virtualcam_active(void) = 0;
 };
 
 EXPORT void
