@@ -6300,6 +6300,9 @@ void OBSBasic::OnVirtualCamStart()
 	vcamButton->setText(QTStr("Basic.Main.StopVirtualCam"));
 	vcamButton->setChecked(true);
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED);
+
 	OnActivate();
 
 	blog(LOG_INFO, VIRTUAL_CAM_START);
@@ -6312,6 +6315,9 @@ void OBSBasic::OnVirtualCamStop(int)
 
 	vcamButton->setText(QTStr("Basic.Main.StartVirtualCam"));
 	vcamButton->setChecked(false);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED);
 
 	blog(LOG_INFO, VIRTUAL_CAM_STOP);
 

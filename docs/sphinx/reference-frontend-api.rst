@@ -140,6 +140,15 @@ Structures/Enumerations
 
      Triggered when the recording has been unpaused.
 
+   - **OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED**
+
+     Triggered when the virtual camera is started.
+
+   - **OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED**
+
+     Triggered when the virtual camera is stopped.
+
+
 .. type:: struct obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
@@ -556,3 +565,27 @@ Functions
    Takes a screenshot of the specified source.
 
    :param source: The source to take screenshot of.
+
+---------------------------------------
+
+.. function:: obs_output_t *obs_frontend_get_virtualcam_output(void)
+
+   :return: A new reference to the current virtual camera output.
+
+---------------------------------------
+
+.. function:: void obs_frontend_start_virtualcam(void)
+
+   Starts the virtual camera.
+
+---------------------------------------
+
+.. function:: void obs_frontend_stop_virtualcam(void)
+
+   Stops the virtual camera.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_virtualcam_active(void)
+
+   :return: *true* if virtual camera is active, *false* otherwise.
