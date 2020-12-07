@@ -50,6 +50,9 @@ enum obs_frontend_event {
 
 	OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED,
 	OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED,
+
+	OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED,
+	OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -197,6 +200,11 @@ EXPORT void obs_frontend_set_current_preview_scene(obs_source_t *scene);
 
 EXPORT void obs_frontend_take_screenshot(void);
 EXPORT void obs_frontend_take_source_screenshot(obs_source_t *source);
+
+EXPORT obs_output_t *obs_frontend_get_virtualcam_output(void);
+EXPORT void obs_frontend_start_virtualcam(void);
+EXPORT void obs_frontend_stop_virtualcam(void);
+EXPORT bool obs_frontend_virtualcam_active(void);
 
 /* ------------------------------------------------------------------------- */
 
