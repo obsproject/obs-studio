@@ -117,14 +117,16 @@ fail:
 
 static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 					AVFrame *frame, uint8_t *out,
-					int linesize)
+					int linesize, int new_cx, int new_cy)
 {
 	struct SwsContext *sws_ctx = NULL;
 	int ret = 0;
+	bool rescale = new_cx != info->cx || new_cy != info->cy;
 
-	if (info->format == AV_PIX_FMT_RGBA ||
+	if (!rescale && 
+	   (info->format == AV_PIX_FMT_RGBA ||
 	    info->format == AV_PIX_FMT_BGRA ||
-	    info->format == AV_PIX_FMT_BGR0) {
+	    info->format == AV_PIX_FMT_BGR0)) {
 
 		if (linesize != frame->linesize[0]) {
 			int min_line = linesize < frame->linesize[0]
@@ -143,7 +145,8 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
 		sws_ctx = sws_getContext(info->cx, info->cy, info->format,
-					 info->cx, info->cy, format, SWS_POINT,
+					 new_cx, new_cy, format, 
+					 rescale? SWS_BICUBIC : SWS_POINT,
 					 NULL, NULL, NULL);
 		if (!sws_ctx) {
 			blog(LOG_WARNING,
@@ -155,7 +158,7 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 		uint8_t *pointers[4];
 		int linesizes[4];
-		ret = av_image_alloc(pointers, linesizes, info->cx, info->cy,
+		ret = av_image_alloc(pointers, linesizes, new_cx, new_cy,
 				     format, 32);
 		if (ret < 0) {
 			blog(LOG_WARNING, "av_image_alloc failed for '%s': %s",
@@ -176,7 +179,7 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 			return false;
 		}
 
-		for (size_t y = 0; y < (size_t)info->cy; y++)
+		for (size_t y = 0; y < (size_t)new_cy; y++)
 			memcpy(out + y * linesize,
 			       pointers[0] + y * linesizes[0], linesize);
 
@@ -189,7 +192,7 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 }
 
 static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
-				int linesize)
+				int linesize, int new_cx, int new_cy)
 {
 	AVPacket packet = {0};
 	bool success = false;
@@ -231,7 +234,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 		}
 	}
 
-	success = ffmpeg_image_reformat_frame(info, frame, out, linesize);
+	success = ffmpeg_image_reformat_frame(info, frame, out, linesize, new_cy, new_cy);
 
 fail:
 	av_packet_unref(&packet);
@@ -270,12 +273,21 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	uint8_t *data = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
-		data = bmalloc(image.cx * image.cy * 4);
+		*cx_out = (uint32_t)image.cx;
+		*cy_out = (uint32_t)image.cy;
+		const int image_resolution_limit = 10000*10000;
+		if ((image.cx * image.cy > image_resolution_limit)) {
+			blog(LOG_WARNING, "Image resolution over 100MP limit and get downscaled");
+			float devider = (image.cx * image.cy) / image_resolution_limit;
+			*cx_out = (uint32_t)(image.cx/devider);
+			*cy_out = (uint32_t)(image.cy/devider);
+		}
 
-		if (ffmpeg_image_decode(&image, data, image.cx * 4)) {
+		data = bmalloc((*cx_out) * (*cy_out) * 4);
+
+		if (ffmpeg_image_decode(&image, data, (*cx_out) * 4,
+		                        *cx_out, *cy_out)) {
 			*format = convert_format(image.format);
-			*cx_out = (uint32_t)image.cx;
-			*cy_out = (uint32_t)image.cy;
 		} else {
 			bfree(data);
 			data = NULL;
