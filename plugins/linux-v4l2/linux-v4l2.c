@@ -16,6 +16,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 #include <obs-module.h>
 #include <util/platform.h>
+#include <sys/stat.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("linux-v4l2", "en-US")
@@ -29,11 +30,12 @@ extern struct obs_output_info virtualcam_info;
 
 static bool v4l2loopback_installed()
 {
+	struct stat buffer;
 	bool loaded = false;
 
-	int ret = system("modinfo v4l2loopback >/dev/null 2>&1");
+	int ret = stat("/sys/module/v4l2loopback", &buffer);
 
-	if (ret == 0)
+	if (ret == 0 && S_ISDIR(buffer.st_mode))
 		loaded = true;
 
 	return loaded;
