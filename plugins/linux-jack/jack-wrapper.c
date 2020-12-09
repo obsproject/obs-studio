@@ -70,8 +70,6 @@ int jack_process_callback(jack_nframes_t nframes, void *arg)
 	if (data == 0)
 		return 0;
 
-	pthread_mutex_lock(&data->jack_mutex);
-
 	struct obs_source_audio out;
 	out.speakers = jack_channels_to_obs_speakers(data->channels);
 	out.samples_per_sec = jack_get_sample_rate(data->jack_client);
@@ -96,8 +94,9 @@ int jack_process_callback(jack_nframes_t nframes, void *arg)
 		     "jack_get_cycle_times error: guessing timestamp");
 	}
 
+	/* FIXME: this function is not realtime-safe, we should do something
+	 * about this */
 	obs_source_output_audio(data->source, &out);
-	pthread_mutex_unlock(&data->jack_mutex);
 	return 0;
 }
 
@@ -164,17 +163,11 @@ void deactivate_jack(struct jack_data *data)
 	pthread_mutex_lock(&data->jack_mutex);
 
 	if (data->jack_client) {
+		jack_client_close(data->jack_client);
 		if (data->jack_ports != NULL) {
-			for (int i = 0; i < data->channels; ++i) {
-				if (data->jack_ports[i] != NULL)
-					jack_port_unregister(
-						data->jack_client,
-						data->jack_ports[i]);
-			}
 			bfree(data->jack_ports);
 			data->jack_ports = NULL;
 		}
-		jack_client_close(data->jack_client);
 		data->jack_client = NULL;
 	}
 	pthread_mutex_unlock(&data->jack_mutex);
