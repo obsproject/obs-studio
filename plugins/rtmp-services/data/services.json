@@ -1458,52 +1458,8 @@
             "common": false,
             "servers": [
                 {
-                    "name": "Chicago, US",
-                    "url": "rtmp://ingest-any-ord1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Seattle, US",
-                    "url": "rtmp://ingest-any-sea1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Los Angeles, US",
-                    "url": "rtmp://ingest-any-lax1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Washington DC, US",
-                    "url": "rtmp://ingest-any-iad1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Frankfurt, DE",
-                    "url": "rtmp://ingest-any-fra1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "London, UK",
-                    "url": "rtmp://ingest-any-lhr1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Stockholm, SE",
-                    "url": "rtmp://ingest-any-sto1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Tokyo, JP",
-                    "url": "rtmp://ingest-any-tyo1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Hong Kong, HK",
-                    "url": "rtmp://ingest-any-hkg1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Singapore, SG",
-                    "url": "rtmp://ingest-any-sgp1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "Sydney, AU",
-                    "url": "rtmp://ingest-any-syd1.broadcast.steamcontent.com/app"
-                },
-                {
-                    "name": "São Paulo, BR",
-                    "url": "rtmp://ingest-any-gru1.broadcast.steamcontent.com/app"
+                    "name": "Default",
+                    "url": "rtmp://ingest-rtmp.broadcast.steamcontent.com/app"
                 }
             ],
             "recommended": {
