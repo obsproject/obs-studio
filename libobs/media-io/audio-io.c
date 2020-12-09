@@ -116,7 +116,7 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 
 	pthread_mutex_lock(&audio->input_mutex);
 
-	size_t inputs = obs_get_multiple_rendering() ? streaming_mix->inputs.num
+	size_t inputs = get_cached_multiple_rendering() ? streaming_mix->inputs.num
 						     : main_mix->inputs.num;
 
 	for (size_t i = inputs; i > 0; i--) {
@@ -142,7 +142,7 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 		recording_data.frames = frames;
 		recording_data.timestamp = timestamp;
 
-		if (obs_get_multiple_rendering()) {
+		if (get_cached_multiple_rendering()) {
 			if (resample_audio_output(streaming_input,
 						  &streaming_data) &&
 			    resample_audio_output(recording_input,
@@ -168,15 +168,15 @@ static inline void do_audio_output(struct audio_output *audio, size_t mix_idx,
 static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 {
 	size_t float_size = bytes / sizeof(float);
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode start =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode end =
+		get_cached_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
 		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
@@ -208,18 +208,16 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	uint32_t active_mixes = 0;
 	uint64_t new_ts = 0;
 	bool success;
-	enum obs_audio_rendering_mode mode =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
-					     : OBS_MAIN_AUDIO_RENDERING;
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+
+	enum obs_audio_rendering_mode start =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode end =
+		get_cached_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++)
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++)
 		memset(data[mode], 0, sizeof(data[mode]));
 
 #ifdef DEBUG_AUDIO
@@ -229,14 +227,17 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 
 	/* get mixers */
 	pthread_mutex_lock(&audio->input_mutex);
+	enum obs_audio_rendering_mode current_mode =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+				       : OBS_MAIN_AUDIO_RENDERING;
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
-		if (audio->mixes[mode][i].inputs.num)
+		if (audio->mixes[current_mode][i].inputs.num)
 			active_mixes |= (1 << i);
 	}
 	pthread_mutex_unlock(&audio->input_mutex);
 
 	/* clear mix buffers */
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
 		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 			memset(mix->buffer, 0, sizeof(mix->buffer));
@@ -288,6 +289,7 @@ static void *audio_thread(void *param)
 
 		profile_start(audio_thread_name);
 
+		cache_multiple_rendering();
 		cur_time = os_gettime_ns();
 		while (audio_time <= cur_time) {
 			samples += AUDIO_OUTPUT_FRAMES;
@@ -366,16 +368,16 @@ bool audio_output_connect(audio_t *audio, size_t mi,
 
 	pthread_mutex_lock(&audio->input_mutex);
 
-	enum obs_video_rendering_mode start =
+	enum obs_audio_rendering_mode start =
 		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
+	enum obs_audio_rendering_mode end =
 		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	if (audio_get_input_idx(audio, mi, callback, param) == DARRAY_INVALID) {
-		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		for (enum obs_audio_rendering_mode mode = start; mode <= end;
 		     mode++) {
 			struct audio_mix *mix = &audio->mixes[mode][mi];
 			struct audio_input input;
@@ -422,16 +424,16 @@ void audio_output_disconnect(audio_t *audio, size_t mix_idx,
 
 	size_t idx = audio_get_input_idx(audio, mix_idx, callback, param);
 	if (idx != DARRAY_INVALID) {
-		enum obs_video_rendering_mode start =
+		enum obs_audio_rendering_mode start =
 			obs_get_multiple_rendering()
 				? OBS_STREAMING_AUDIO_RENDERING
 				: OBS_MAIN_AUDIO_RENDERING;
 
-		enum obs_video_rendering_mode end =
+		enum obs_audio_rendering_mode end =
 			obs_get_multiple_rendering()
 				? OBS_RECORDING_AUDIO_RENDERING
 				: OBS_MAIN_AUDIO_RENDERING;
-		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		for (enum obs_audio_rendering_mode mode = start; mode <= end;
 		     mode++) {
 			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 			audio_input_free(mix->inputs.array + idx);
@@ -492,11 +494,11 @@ fail:
 void audio_output_close(audio_t *audio)
 {
 	void *thread_ret;
-	enum obs_video_rendering_mode start =
+	enum obs_audio_rendering_mode start =
 		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
+	enum obs_audio_rendering_mode end =
 		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
@@ -508,7 +510,7 @@ void audio_output_close(audio_t *audio)
 		pthread_join(audio->thread, &thread_ret);
 	}
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
 		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 			struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
@@ -532,12 +534,12 @@ bool audio_output_active(const audio_t *audio)
 {
 	if (!audio)
 		return false;
+	enum obs_audio_rendering_mode mode =
+		obs_get_multiple_rendering()
+			? OBS_STREAMING_AUDIO_RENDERING
+			: OBS_MAIN_AUDIO_RENDERING;
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
-		enum obs_audio_rendering_mode mode =
-			obs_get_multiple_rendering()
-				? OBS_STREAMING_AUDIO_RENDERING
-				: OBS_MAIN_AUDIO_RENDERING;
 		const struct audio_mix *mix = &audio->mixes[mode][mix_idx];
 
 		if (mix->inputs.num != 0)

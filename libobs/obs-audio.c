@@ -27,6 +27,17 @@ struct ts_info {
 #define DEBUG_AUDIO 0
 #define MAX_BUFFERING_TICKS 45
 
+// Cached state of multiple rendering so each run of in audio-io thread work with same state
+static bool audio_multiple_rendering = false;
+
+void cache_multiple_rendering(void) {
+	audio_multiple_rendering = obs_get_multiple_rendering();
+}
+
+bool get_cached_multiple_rendering(void) {
+	return audio_multiple_rendering;
+}
+
 static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 {
 	struct obs_core_audio *audio = p;
@@ -53,12 +64,12 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t start_point = 0;
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode start =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode end =
+		get_cached_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	if (source->audio_ts < ts->start || ts->end <= source->audio_ts)
@@ -73,7 +84,7 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 		total_floats -= start_point;
 	}
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
 		for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 			for (size_t ch = 0; ch < channels; ch++) {
 				register float *mix = NULL;
@@ -112,15 +123,15 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 static void ignore_audio(obs_source_t *source, size_t channels,
 			 size_t sample_rate)
 {
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode start =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode end =
+		get_cached_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	for (enum obs_video_rendering_mode mode = start; mode <= end; mode++) {
+	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
 		size_t num_floats =
 			source->audio_input_buf[mode][0].size / sizeof(float);
 
@@ -132,8 +143,8 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 
 			source->last_audio_input_buf_size[mode] = 0;
 
-			if ((!obs_get_multiple_rendering() && mode == OBS_MAIN_AUDIO_RENDERING) ||
-			    (obs_get_multiple_rendering() && mode == OBS_STREAMING_AUDIO_RENDERING))
+			if ((!get_cached_multiple_rendering() && mode == OBS_MAIN_AUDIO_RENDERING) ||
+			    (get_cached_multiple_rendering() && mode == OBS_STREAMING_AUDIO_RENDERING))
 				source->audio_ts += util_mul_div64(num_floats, 1000000000ULL, sample_rate);
 		}
 	}
@@ -143,17 +154,18 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 {
 	size_t last_size;
 	size_t size;
-	enum obs_audio_rendering_mode mode =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode current_mode =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
-	last_size = source->last_audio_input_buf_size[mode];
-	size = source->audio_input_buf[mode][0].size;
-	enum obs_video_rendering_mode start =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+	last_size = source->last_audio_input_buf_size[current_mode];
+	size = source->audio_input_buf[current_mode][0].size;
+
+	enum obs_audio_rendering_mode start =
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
-	enum obs_video_rendering_mode end =
-		obs_get_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
+	enum obs_audio_rendering_mode end =
+		get_cached_multiple_rendering() ? OBS_RECORDING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	if (!size)
@@ -171,7 +183,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 			return true;
 		}
 
-		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		for (enum obs_audio_rendering_mode mode = start; mode <= end;
 		     mode++) {
 			for (size_t ch = 0; ch < channels; ch++)
 				circlebuf_pop_front(
@@ -182,7 +194,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 		source->pending_stop = false;
 		source->audio_ts = 0;
 
-		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		for (enum obs_audio_rendering_mode mode = start; mode <= end;
 		     mode++)
 			source->last_audio_input_buf_size[mode] = 0;
 #if DEBUG_AUDIO == 1
@@ -191,7 +203,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 #endif
 		return true;
 	} else {
-		for (enum obs_video_rendering_mode mode = start; mode <= end;
+		for (enum obs_audio_rendering_mode mode = start; mode <= end;
 		     mode++)
 			source->last_audio_input_buf_size[mode] = size;
 		return false;
@@ -207,7 +219,7 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t size;
 	enum obs_audio_rendering_mode mode =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 #if DEBUG_AUDIO == 1
@@ -379,7 +391,7 @@ static bool audio_buffer_insuffient(struct obs_source *source,
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t size;
 	enum obs_audio_rendering_mode mode =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	if (source->info.audio_render || source->audio_pending ||
@@ -468,7 +480,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	size_t audio_size;
 	uint64_t min_ts;
 	enum obs_audio_rendering_mode mode =
-		obs_get_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
+		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	da_resize(audio->render_order, 0);
