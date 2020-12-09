@@ -183,8 +183,10 @@ static void do_stream_write(void *param)
 		if (bytesToFill > data->bytesRemaining)
 			bytesToFill = data->bytesRemaining;
 
+		pulseaudio_lock();
 		pa_stream_begin_write(data->stream, (void **)&buffer,
 				      &bytesToFill);
+		pulseaudio_unlock();
 
 		circlebuf_pop_front(&data->new_data, buffer, bytesToFill);
 
@@ -331,8 +333,20 @@ skip:
 static void pulseaudio_stop_playback(struct audio_monitor *monitor)
 {
 	if (monitor->stream) {
+		/* Stop the stream */
+		pulseaudio_lock();
 		pa_stream_disconnect(monitor->stream);
+		pulseaudio_unlock();
+
+		/* Remove the callbacks, to ensure we no longer try to do anything
+		 * with this stream object */
+		pulseaudio_write_callback(monitor->stream, NULL, NULL);
+		pulseaudio_set_underflow_callback(monitor->stream, NULL, NULL);
+
+		/* Unreference the stream and drop it. PA will free it when it can. */
+		pulseaudio_lock();
 		pa_stream_unref(monitor->stream);
+		pulseaudio_unlock();
 		monitor->stream = NULL;
 	}
 
