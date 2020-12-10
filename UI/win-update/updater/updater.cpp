@@ -83,9 +83,9 @@ static inline bool HasVS2019Redist2()
 		}                                                   \
 	} while (false)
 
-	check_dll_installed(L"msvcp140.dll");
-	check_dll_installed(L"vcruntime140.dll");
-	check_dll_installed(L"vcruntime140_1.dll");
+	check_dll_installed(L"msvcp140");
+	check_dll_installed(L"vcruntime140");
+	check_dll_installed(L"vcruntime140_1");
 
 #undef check_dll_installed
 
