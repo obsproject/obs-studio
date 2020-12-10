@@ -259,7 +259,7 @@
                 "max audio bitrate": 160
             }
         },
-		{
+	{
             "name": "Loola.tv",
             "common": false,
             "servers": [             
@@ -267,15 +267,15 @@
                     "name": "US East: Virginia",
                     "url": "rtmp://rtmp.loola.tv/push"
                 },
-				{
+		{
                     "name": "EU Central: Germany",
                     "url": "rtmp://rtmp-eu.loola.tv/push"
                 },
-				{
+		{
                     "name": "South America: Brazil",
                     "url": "rtmp://rtmp-sa.loola.tv/push"
                 },
-				{
+		{
                     "name": "Asia/Pacific: Singapore",
                     "url": "rtmp://rtmp-sg.loola.tv/push"
                 },               
