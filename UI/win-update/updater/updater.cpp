@@ -59,7 +59,7 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 static inline bool is_64bit_windows(void);
 
-static inline bool HasVS2017Redist2()
+static inline bool HasVS2019Redist2()
 {
 	wchar_t base[MAX_PATH];
 	wchar_t path[MAX_PATH];
@@ -70,32 +70,32 @@ static inline bool HasVS2017Redist2()
 
 	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, base);
 
-	StringCbCopyW(path, sizeof(path), base);
-	StringCbCatW(path, sizeof(path), L"\\msvcp140.dll");
-	handle = FindFirstFileW(path, &wfd);
-	if (handle == INVALID_HANDLE_VALUE) {
-		return false;
-	} else {
-		FindClose(handle);
-	}
+#define check_dll_installed(dll)                                    \
+	do {                                                        \
+		StringCbCopyW(path, sizeof(path), base);            \
+		StringCbCatW(path, sizeof(path), L"\\" dll ".dll"); \
+		handle = FindFirstFileW(path, &wfd);                \
+		if (handle == INVALID_HANDLE_VALUE) {               \
+			return false;                               \
+		} else {                                            \
+			FindClose(handle);                          \
+		}                                                   \
+	} while (false)
 
-	StringCbCopyW(path, sizeof(path), base);
-	StringCbCatW(path, sizeof(path), L"\\vcruntime140.dll");
-	handle = FindFirstFileW(path, &wfd);
-	if (handle == INVALID_HANDLE_VALUE) {
-		return false;
-	} else {
-		FindClose(handle);
-	}
+	check_dll_installed(L"msvcp140.dll");
+	check_dll_installed(L"vcruntime140.dll");
+	check_dll_installed(L"vcruntime140_1.dll");
+
+#undef check_dll_installed
 
 	return true;
 }
 
-static bool HasVS2017Redist()
+static bool HasVS2019Redist()
 {
 	PVOID old = nullptr;
 	bool redirect = !!Wow64DisableWow64FsRedirection(&old);
-	bool success = HasVS2017Redist2();
+	bool success = HasVS2019Redist2();
 	if (redirect)
 		Wow64RevertWow64FsRedirection(old);
 	return success;
@@ -928,7 +928,7 @@ static wchar_t tempPath[MAX_PATH] = {};
 	L"https://obsproject.com/update_studio/getpatchmanifest"
 #define HASH_NULL L"0000000000000000000000000000000000000000"
 
-static bool UpdateVS2017Redists(json_t *root)
+static bool UpdateVS2019Redists(json_t *root)
 {
 	/* ------------------------------------------ *
 	 * Initialize session                         */
@@ -965,10 +965,10 @@ static bool UpdateVS2017Redists(json_t *root)
 	/* ------------------------------------------ *
 	 * Download redist                            */
 
-	Status(L"Downloading %s", L"Visual C++ 2017 Redistributable");
+	Status(L"Downloading %s", L"Visual C++ 2019 Redistributable");
 
-	const wchar_t *file = (is32bit) ? L"vc2017redist_x86.exe"
-					: L"vc2017redist_x64.exe";
+	const wchar_t *file = (is32bit) ? L"VC_redist.x86.exe"
+					: L"VC_redist.x64.exe";
 
 	wstring sourceURL;
 	sourceURL += L"https://cdn-fastly.obsproject.com/downloads/";
@@ -985,7 +985,7 @@ static bool UpdateVS2017Redists(json_t *root)
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not download "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2017 Redistributable", responseCode);
+		       L"Visual C++ 2019 Redistributable", responseCode);
 		return false;
 	}
 
@@ -993,9 +993,9 @@ static bool UpdateVS2017Redists(json_t *root)
 	 * Get expected hash                          */
 
 	json_t *redistJson = json_object_get(
-		root, is32bit ? "vc2017_redist_x86" : "vc2017_redist_x64");
+		root, is32bit ? "vc2019_redist_x86" : "vc2019_redist_x64");
 	if (!redistJson) {
-		Status(L"Update failed: Could not parse VC2017 redist json");
+		Status(L"Update failed: Could not parse VC2019 redist json");
 		return false;
 	}
 
@@ -1020,7 +1020,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	if (!CalculateFileHash(destPath.c_str(), downloadHash)) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2017 Redistributable");
+		       L"Visual C++ 2019 Redistributable");
 		return false;
 	}
 
@@ -1031,7 +1031,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	if (wcscmp(expectedHashWide, downloadHashWide) != 0) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2017 Redistributable");
+		       L"Visual C++ 2019 Redistributable");
 		return false;
 	}
 
@@ -1050,7 +1050,7 @@ static bool UpdateVS2017Redists(json_t *root)
 					nullptr, false, CREATE_NO_WINDOW,
 					nullptr, nullptr, &si, &pi);
 	if (success) {
-		Status(L"Installing %s...", L"Visual C++ 2017 Redistributable");
+		Status(L"Installing %s...", L"Visual C++ 2019 Redistributable");
 
 		CloseHandle(pi.hThread);
 		WaitForSingleObject(pi.hProcess, INFINITE);
@@ -1058,7 +1058,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	} else {
 		Status(L"Update failed: Could not execute "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2017 Redistributable", (int)GetLastError());
+		       L"Visual C++ 2019 Redistributable", (int)GetLastError());
 	}
 
 	DeleteFile(destPath.c_str());
@@ -1260,10 +1260,10 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* ------------------------------------- *
-	 * Check for VS2017 redistributables     */
+	 * Check for VS2019 redistributables     */
 
-	if (!HasVS2017Redist()) {
-		if (!UpdateVS2017Redists(root)) {
+	if (!HasVS2019Redist()) {
+		if (!UpdateVS2019Redists(root)) {
 			return false;
 		}
 	}
