@@ -15,8 +15,8 @@ on:
       - master
 
 env:
-  CEF_BUILD_VERSION: '3770'
-  CEF_VERSION: '75.1.16+g16a67c4+chromium-75.0.3770.100'
+  CEF_BUILD_VERSION: '4183'
+  CEF_VERSION: '85.0.0-HEAD.2272+gd5ec257+chromium-85.0.4183.121'
 
 jobs:
   macos64:
@@ -136,7 +136,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -169,9 +169,14 @@ jobs:
           mkdir -p OBS.app/Contents/MacOS
           mkdir OBS.app/Contents/PlugIns
           mkdir OBS.app/Contents/Resources
+          mkdir OBS.app/Contents/Frameworks
 
           cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
           cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
+          cp -R "rundir/RelWithDebInfo/bin/OBS Helper.app" "./OBS.app/Contents/Frameworks/OBS Helper.app"
+          cp -R "rundir/RelWithDebInfo/bin/OBS Helper (GPU).app" "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+          cp -R "rundir/RelWithDebInfo/bin/OBS Helper (Plugin).app" "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+          cp -R "rundir/RelWithDebInfo/bin/OBS Helper (Renderer).app" "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
           cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
           cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
           cp ../CI/scripts/macos/app/AppIcon.icns ./OBS.app/Contents/Resources
@@ -202,7 +207,6 @@ jobs:
             -x ./OBS.app/Contents/PlugIns/mac-vth264.so \
             -x ./OBS.app/Contents/PlugIns/mac-virtualcam.so \
             -x ./OBS.app/Contents/PlugIns/obs-browser.so \
-            -x ./OBS.app/Contents/PlugIns/obs-browser-page \
             -x ./OBS.app/Contents/PlugIns/obs-ffmpeg.so \
             -x ./OBS.app/Contents/PlugIns/obs-filters.so \
             -x ./OBS.app/Contents/PlugIns/obs-transitions.so \
@@ -250,11 +254,16 @@ jobs:
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
+          codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libvk_swiftshader.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
 
           codesign --force --options runtime --deep --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Resources/data/obs-mac-virtualcam.plugin"
 
           codesign --force --options runtime --entitlements "../CI/scripts/macos/app/entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app
+
+          codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-gpu-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+          codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-plugin-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+          codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-renderer-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
 
           codesign -dvv ./OBS.app
       - name: 'Package'

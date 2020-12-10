@@ -277,7 +277,6 @@ configure_obs_build() {
         -DDepsPath="/tmp/obsdeps" \
         -DVLCPath="${DEPS_BUILD_DIR}/vlc-${VLC_VERSION:-${CI_VLC_VERSION}}" \
         -DBUILD_BROWSER=ON \
-        -DBROWSER_DEPLOY=ON \
         -DWITH_RTMPS=ON \
         -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}_macosx64" \
         -DCMAKE_BUILD_TYPE="${BUILD_CONFIG}" \
@@ -320,7 +319,6 @@ bundle_dylibs() {
         -x ./OBS.app/Contents/PlugIns/mac-vth264.so \
         -x ./OBS.app/Contents/PlugIns/mac-virtualcam.so \
         -x ./OBS.app/Contents/PlugIns/obs-browser.so \
-        -x ./OBS.app/Contents/PlugIns/obs-browser-page \
         -x ./OBS.app/Contents/PlugIns/obs-ffmpeg.so \
         -x ./OBS.app/Contents/PlugIns/obs-filters.so \
         -x ./OBS.app/Contents/PlugIns/obs-transitions.so \
@@ -379,10 +377,15 @@ prepare_macos_bundle() {
     mkdir -p OBS.app/Contents/MacOS
     mkdir OBS.app/Contents/PlugIns
     mkdir OBS.app/Contents/Resources
+    mkdir OBS.app/Contents/Frameworks
 
     cp rundir/${BUILD_CONFIG}/bin/obs ./OBS.app/Contents/MacOS
     cp rundir/${BUILD_CONFIG}/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
     cp rundir/${BUILD_CONFIG}/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
+    cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper.app" "./OBS.app/Contents/Frameworks/OBS Helper.app"
+    cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper (GPU).app" "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+    cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper (Plugin).app" "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+    cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper (Renderer).app" "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
     cp -R rundir/${BUILD_CONFIG}/data ./OBS.app/Contents/Resources
     cp ${CI_SCRIPTS}/app/AppIcon.icns ./OBS.app/Contents/Resources
     cp -R rundir/${BUILD_CONFIG}/obs-plugins/ ./OBS.app/Contents/PlugIns
@@ -506,7 +509,9 @@ codesign_bundle() {
     codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
     codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
     codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
-    codesign --force --options runtime --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
+    codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libvk_swiftshader.dylib"
+    codesign --force --options runtime --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/OBS Helper.app"
+
     echo -n "${COLOR_RESET}"
 
     step "Code-sign DAL Plugin..."
@@ -518,6 +523,14 @@ codesign_bundle() {
     echo -n "${COLOR_ORANGE}"
     codesign --force --options runtime --entitlements "${CI_SCRIPTS}/app/entitlements.plist" --sign "${CODESIGN_IDENT}" --deep ./OBS.app
     echo -n "${COLOR_RESET}"
+
+    step "Code-sign CEF helper apps..."
+    echo -n "${COLOR_ORANGE}"
+    codesign --force --options runtime --entitlements "${CI_SCRIPTS}/helpers/helper-gpu-entitlements.plist" --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+    codesign --force --options runtime --entitlements "${CI_SCRIPTS}/helpers/helper-plugin-entitlements.plist" --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+    codesign --force --options runtime --entitlements "${CI_SCRIPTS}/helpers/helper-renderer-entitlements.plist" --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
+    echo -n "${COLOR_RESET}"
+
     step "Check code-sign result..."
     codesign -dvv ./OBS.app
 }
