@@ -81,7 +81,6 @@ include_directories(${LIBCURL_INCLUDE_DIRS})
 add_definitions(${LIBCURL_DEFINITIONS})
 
 if(WIN32)
-	include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 	include_directories(${BLAKE2_INCLUDE_DIR})
 
 	set(obs_PLATFORM_SOURCES
@@ -96,8 +95,7 @@ if(WIN32)
 		win-update/win-update-helpers.hpp)
 	set(obs_PLATFORM_LIBRARIES
 		crypt32
-		blake2
-		${OBS_JANSSON_IMPORT})
+		blake2)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
