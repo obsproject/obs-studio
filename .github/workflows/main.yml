@@ -24,10 +24,10 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2020-08-30'
+      MACOS_DEPS_VERSION: '2020-12-11'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
-      QT_VERSION: '5.14.1'
+      QT_VERSION: '5.15.2'
       SIGN_IDENTITY: ''
     steps:
       - name: 'Checkout'
