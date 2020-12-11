@@ -234,7 +234,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 		}
 	}
 
-	success = ffmpeg_image_reformat_frame(info, frame, out, linesize, new_cy, new_cy);
+	success = ffmpeg_image_reformat_frame(info, frame, out, linesize, new_cx, new_cy);
 
 fail:
 	av_packet_unref(&packet);
@@ -278,9 +278,9 @@ uint8_t *gs_create_texture_file_data(const char *file,
 		const int image_resolution_limit = 10000*10000;
 		if ((image.cx * image.cy > image_resolution_limit)) {
 			blog(LOG_WARNING, "Image resolution over 100MP limit and get downscaled");
-			float devider = (image.cx * image.cy) / image_resolution_limit;
-			*cx_out = (uint32_t)(image.cx/devider);
-			*cy_out = (uint32_t)(image.cy/devider);
+			float down_scale = (image.cx * image.cy) / (float)image_resolution_limit;
+			*cx_out = (uint32_t)(image.cx/down_scale);
+			*cy_out = (uint32_t)(image.cy/down_scale);
 		}
 
 		data = bmalloc((*cx_out) * (*cy_out) * 4);
