@@ -286,11 +286,11 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
+                "profile": "high",
                 "max video bitrate": 2500,
                 "max audio bitrate": 160,
                 "bframes": 2,
-                "x264opts": "scenecut=0 tune=zerolatency"
+                "x264opts": "scenecut=0"
             }
         },
         {
