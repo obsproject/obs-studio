@@ -483,6 +483,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 #endif
 
 #ifdef __APPLE__
+	config_set_default_bool(globalConfig, "General", "BrowserHWAccel",
+				true);
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
 				true);
@@ -1387,7 +1389,7 @@ bool OBSApp::OBSInit()
 
 	obs_set_ui_task_handler(ui_task_handler);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 	bool browserHWAccel =
 		config_get_bool(globalConfig, "General", "BrowserHWAccel");
 
