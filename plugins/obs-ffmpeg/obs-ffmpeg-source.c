@@ -284,7 +284,7 @@ static void media_stopped(void *opaque)
 		obs_source_output_video(s->source, NULL);
 	}
 
-	if (s->close_when_inactive && s->media_valid)
+	if ((s->close_when_inactive || !s->is_local_file) && s->media_valid)
 		s->destroy_media = true;
 
 	set_media_state(s, OBS_MEDIA_STATE_ENDED);
