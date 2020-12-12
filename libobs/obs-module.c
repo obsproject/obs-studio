@@ -223,6 +223,11 @@ obs_module_t *obs_get_module(const char *name)
 	return NULL;
 }
 
+void *obs_get_module_lib(obs_module_t *module)
+{
+	return module ? module->module : NULL;
+}
+
 char *obs_find_module_file(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
