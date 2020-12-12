@@ -61,6 +61,12 @@ static enum speaker_layout jack_channels_to_obs_speakers(uint_fast32_t channels)
 int jack_process_callback(jack_nframes_t nframes, void *arg)
 {
 	struct jack_data *data = (struct jack_data *)arg;
+	jack_nframes_t current_frames;
+	jack_time_t current_usecs, next_usecs;
+	float period_usecs;
+
+	uint64_t now = os_gettime_ns();
+
 	if (data == 0)
 		return 0;
 
@@ -80,8 +86,15 @@ int jack_process_callback(jack_nframes_t nframes, void *arg)
 	}
 
 	out.frames = nframes;
-	out.timestamp = os_gettime_ns() -
-			jack_frames_to_time(data->jack_client, nframes);
+	if (!jack_get_cycle_times(data->jack_client, &current_frames,
+				  &current_usecs, &next_usecs, &period_usecs)) {
+		out.timestamp = now - (int64_t)(period_usecs * 1000);
+	} else {
+		out.timestamp = now - util_mul_div64(nframes, 1000000000ULL,
+						     data->samples_per_sec);
+		blog(LOG_WARNING,
+		     "jack_get_cycle_times error: guessing timestamp");
+	}
 
 	obs_source_output_audio(data->source, &out);
 	pthread_mutex_unlock(&data->jack_mutex);
