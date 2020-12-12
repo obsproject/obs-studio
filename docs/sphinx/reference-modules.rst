@@ -308,3 +308,12 @@ plugin modules.
    :param  module: The module associated with the path
    :param  file:   The file to get a path to
    :return:        Path string, or NULL if not found.  Use bfree to free string
+
+---------------------
+
+.. function:: void *obs_get_module_lib(obs_module_t *module)
+
+   Returns library file of specified module.
+
+   :param  module: The module where to find library file.
+   :return:        Pointer to module library.
