@@ -12,7 +12,6 @@ SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
 	installEventFilter(this);
 	setDragDropMode(InternalMove);
-	setMovement(QListView::Snap);
 }
 
 void SceneTree::SetGridMode(bool grid)
@@ -28,6 +27,7 @@ void SceneTree::SetGridMode(bool grid)
 		setStyleSheet("*{padding: 0; margin: 0;}");
 	} else {
 		setViewMode(QListView::ListMode);
+		setDragDropMode(InternalMove);
 		setResizeMode(QListView::Fixed);
 		setStyleSheet("");
 	}
