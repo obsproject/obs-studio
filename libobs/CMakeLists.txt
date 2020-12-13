@@ -499,6 +499,10 @@ target_compile_definitions(libobs
 	PUBLIC
 		HAVE_OBSCONFIG_H)
 
+target_compile_definitions(libobs
+	PUBLIC
+	${ARCH_SIMD_DEFINES})
+
 target_compile_options(libobs
 	PUBLIC
 	${ARCH_SIMD_FLAGS})
