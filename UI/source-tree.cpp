@@ -227,8 +227,7 @@ void SourceTreeItem::ReconnectSignals()
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "Select",
-						  Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this_, "Select");
 	};
 
 	auto itemDeselect = [](void *data, calldata_t *cd) {
@@ -238,8 +237,7 @@ void SourceTreeItem::ReconnectSignals()
 			(obs_sceneitem_t *)calldata_ptr(cd, "item");
 
 		if (curItem == this_->sceneitem)
-			QMetaObject::invokeMethod(this_, "Deselect",
-						  Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this_, "Deselect");
 	};
 
 	auto reorderGroup = [](void *data, calldata_t *) {
@@ -538,13 +536,13 @@ void SourceTreeItem::ExpandClicked(bool checked)
 void SourceTreeItem::Select()
 {
 	tree->SelectItem(sceneitem, true);
-	OBSBasic::Get()->UpdateContextBar();
+	OBSBasic::Get()->UpdateContextBarDeferred();
 }
 
 void SourceTreeItem::Deselect()
 {
 	tree->SelectItem(sceneitem, false);
-	OBSBasic::Get()->UpdateContextBar();
+	OBSBasic::Get()->UpdateContextBarDeferred();
 }
 
 /* ========================================================================= */
