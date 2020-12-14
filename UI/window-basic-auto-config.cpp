@@ -373,8 +373,6 @@ bool AutoConfigStreamPage::validatePage()
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
 			wiz->service = AutoConfig::Service::Twitch;
-		else if (wiz->serviceName == "Smashcast")
-			wiz->service = AutoConfig::Service::Smashcast;
 		else
 			wiz->service = AutoConfig::Service::Other;
 	} else {
@@ -504,7 +502,7 @@ void AutoConfigStreamPage::ServiceChanged()
 		return;
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	bool regionBased = service == "Twitch" || service == "Smashcast";
+	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
 
@@ -924,21 +922,6 @@ bool AutoConfig::CanTestServer(const char *server)
 		} else if (astrcmp_n(server, "EU:", 3) == 0) {
 			return regionEU;
 		} else if (astrcmp_n(server, "Asia:", 5) == 0) {
-			return regionAsia;
-		} else if (regionOther) {
-			return true;
-		}
-	} else if (service == Service::Smashcast) {
-		if (strcmp(server, "Default") == 0) {
-			return true;
-		} else if (astrcmp_n(server, "US-West:", 8) == 0 ||
-			   astrcmp_n(server, "US-East:", 8) == 0) {
-			return regionUS;
-		} else if (astrcmp_n(server, "EU-", 3) == 0) {
-			return regionEU;
-		} else if (astrcmp_n(server, "South Korea:", 12) == 0 ||
-			   astrcmp_n(server, "Asia:", 5) == 0 ||
-			   astrcmp_n(server, "China:", 6) == 0) {
 			return regionAsia;
 		} else if (regionOther) {
 			return true;
