@@ -596,6 +596,7 @@ struct gs_device {
 	enum copy_type copy_type;
 
 	GLuint empty_vao;
+	gs_samplerstate_t *raw_load_sampler;
 
 	gs_texture_t *cur_render_target;
 	gs_zstencil_t *cur_zstencil_buffer;

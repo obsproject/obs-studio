@@ -245,6 +245,16 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	gl_enable(GL_CULL_FACE);
 	gl_gen_vertex_arrays(1, &device->empty_vao);
 
+	struct gs_sampler_info raw_load_info;
+	raw_load_info.filter = GS_FILTER_POINT;
+	raw_load_info.address_u = GS_ADDRESS_BORDER;
+	raw_load_info.address_v = GS_ADDRESS_BORDER;
+	raw_load_info.address_w = GS_ADDRESS_BORDER;
+	raw_load_info.max_anisotropy = 1;
+	raw_load_info.border_color = 0;
+	device->raw_load_sampler =
+		device_samplerstate_create(device, &raw_load_info);
+
 	gl_clear_context(device);
 	device->cur_swap = NULL;
 
@@ -273,6 +283,7 @@ void device_destroy(gs_device_t *device)
 		while (device->first_program)
 			gs_program_destroy(device->first_program);
 
+		samplerstate_release(device->raw_load_sampler);
 		gl_delete_vertex_arrays(1, &device->empty_vao);
 
 		da_free(device->proj_stack);
@@ -512,11 +523,10 @@ void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
 	if (!tex)
 		return;
 
-	// texelFetch doesn't need a sampler
 	if (param->sampler_id != (size_t)-1)
 		sampler = device->cur_samplers[param->sampler_id];
 	else
-		sampler = NULL;
+		sampler = device->raw_load_sampler;
 
 	if (!gl_bind_texture(tex->gl_target, tex->texture))
 		goto fail;
