@@ -298,6 +298,8 @@ struct update_t {
 			} else {
 				DeleteFile(outputPath.c_str());
 			}
+			if (state == STATE_INSTALL_FAILED)
+				DeleteFile(tempPath.c_str());
 		} else if (state == STATE_DOWNLOADED) {
 			DeleteFile(tempPath.c_str());
 		}
