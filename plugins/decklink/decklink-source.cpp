@@ -80,6 +80,7 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->SetChannelFormat(channelFormat);
 	decklink->hash = std::string(hash);
 	decklink->swap = obs_data_get_bool(settings, SWAP);
+	decklink->allow10Bit = obs_data_get_bool(settings, ALLOW_10_BIT);
 	decklink->Activate(device, id, videoConnection, audioConnection);
 }
 
@@ -247,6 +248,9 @@ static bool mode_id_changed(obs_properties_t *props, obs_property_t *list,
 	list = obs_properties_get(props, PIXEL_FORMAT);
 	obs_property_set_visible(list, id != MODE_ID_AUTO);
 
+	auto allow10BitProp = obs_properties_get(props, ALLOW_10_BIT);
+	obs_property_set_visible(allow10BitProp, id == MODE_ID_AUTO);
+
 	return true;
 }
 
@@ -277,6 +281,7 @@ static obs_properties_t *decklink_get_properties(void *data)
 				       OBS_COMBO_FORMAT_INT);
 
 	obs_property_list_add_int(list, "8-bit YUV", bmdFormat8BitYUV);
+	obs_property_list_add_int(list, "10-bit YUV", bmdFormat10BitYUV);
 	obs_property_list_add_int(list, "8-bit BGRA", bmdFormat8BitBGRA);
 
 	list = obs_properties_add_list(props, COLOR_SPACE, TEXT_COLOR_SPACE,
@@ -321,6 +326,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_properties_add_bool(props, BUFFERING, TEXT_BUFFERING);
 
 	obs_properties_add_bool(props, DEACTIVATE_WNS, TEXT_DWNS);
+
+	obs_properties_add_bool(props, ALLOW_10_BIT, TEXT_ALLOW_10_BIT);
 
 	UNUSED_PARAMETER(data);
 	return props;
