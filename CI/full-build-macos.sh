@@ -47,6 +47,7 @@ CI_VLC_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+VLC_VERSION: '([0-9\.]+)'/\
 CI_SPARKLE_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+SPARKLE_VERSION: '([0-9\.]+)'/\1/p")
 CI_QT_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+QT_VERSION: '([0-9\.]+)'/\1/p" | head -1)
 CI_MIN_MACOS_VERSION=$(cat ${CI_WORKFLOW} | sed -En "s/[ ]+MIN_MACOS_VERSION: '([0-9\.]+)'/\1/p")
+NPROC="${NPROC:-$(sysctl -n hw.ncpu)}"
 
 BUILD_DEPS=(
     "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
@@ -226,7 +227,7 @@ install_cef() {
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}} \
         ..
     step "Build..."
-    make -j4
+    make -j${NPROC}
     if [ ! -d libcef_dll ]; then mkdir libcef_dll; fi
 }
 
@@ -288,7 +289,7 @@ configure_obs_build() {
 run_obs_build() {
     ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
     hr "Build OBS..."
-    make -j4
+    make -j${NPROC}
 }
 
 ## OBS BUNDLE AS MACOS APPLICATION ##
