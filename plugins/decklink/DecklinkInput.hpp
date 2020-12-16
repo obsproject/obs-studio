@@ -50,6 +50,7 @@ public:
 	std::string hash;
 	long long id;
 	bool swap = false;
+	bool allow10Bit = false;
 	BMDVideoConnection videoConnection;
 	BMDAudioConnection audioConnection;
 };

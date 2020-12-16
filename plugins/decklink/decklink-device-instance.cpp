@@ -24,10 +24,10 @@ static inline enum video_format ConvertPixelFormat(BMDPixelFormat format)
 		return VIDEO_FORMAT_BGRX;
 
 	default:
-	case bmdFormat8BitYUV:;
+	case bmdFormat8BitYUV:
+	case bmdFormat10BitYUV:;
+		return VIDEO_FORMAT_UYVY;
 	}
-
-	return VIDEO_FORMAT_UYVY;
 }
 
 static inline int ConvertChannelFormat(speaker_layout format)
@@ -168,21 +168,28 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 		packets->Release();
 	}
 
-	IDeckLinkVideoConversion *frameConverter =
-		CreateVideoConversionInstance();
+	IDeckLinkVideoFrame *frame;
+	if (videoFrame->GetPixelFormat() != convertFrame->GetPixelFormat()) {
+		IDeckLinkVideoConversion *frameConverter =
+			CreateVideoConversionInstance();
 
-	frameConverter->ConvertFrame(videoFrame, convertFrame);
+		frameConverter->ConvertFrame(videoFrame, convertFrame);
+
+		frame = convertFrame;
+	} else {
+		frame = videoFrame;
+	}
 
 	void *bytes;
-	if (convertFrame->GetBytes(&bytes) != S_OK) {
+	if (frame->GetBytes(&bytes) != S_OK) {
 		LOG(LOG_WARNING, "Failed to get video frame data");
 		return;
 	}
 
 	currentFrame.data[0] = (uint8_t *)bytes;
-	currentFrame.linesize[0] = (uint32_t)convertFrame->GetRowBytes();
-	currentFrame.width = (uint32_t)convertFrame->GetWidth();
-	currentFrame.height = (uint32_t)convertFrame->GetHeight();
+	currentFrame.linesize[0] = (uint32_t)frame->GetRowBytes();
+	currentFrame.width = (uint32_t)frame->GetWidth();
+	currentFrame.height = (uint32_t)frame->GetHeight();
 	currentFrame.timestamp = timestamp;
 
 	obs_source_output_video2(
@@ -326,10 +333,22 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 				    currentFrame.color_range_min,
 				    currentFrame.color_range_max);
 
-	if (convertFrame) {
-		delete convertFrame;
+	delete convertFrame;
+
+	BMDPixelFormat convertFormat;
+	switch (pixelFormat) {
+	case bmdFormat8BitBGRA:
+		convertFormat = bmdFormat8BitBGRA;
+		break;
+	default:
+	case bmdFormat10BitYUV:
+	case bmdFormat8BitYUV:;
+		convertFormat = bmdFormat8BitYUV;
+		break;
 	}
-	convertFrame = new OBSVideoFrame(mode_->GetWidth(), mode_->GetHeight());
+
+	convertFrame = new OBSVideoFrame(mode_->GetWidth(), mode_->GetHeight(),
+					 convertFormat);
 
 #ifdef LOG_SETUP_VIDEO_FORMAT
 	LOG(LOG_INFO, "Setup video format: %s, %s, %s",
@@ -340,6 +359,7 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 }
 
 bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
+					  bool allow10Bit_,
 					  BMDVideoConnection bmdVideoConnection,
 					  BMDAudioConnection bmdAudioConnection)
 {
@@ -392,7 +412,11 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 	bool isauto = mode_->GetName() == "Auto";
 	if (isauto) {
 		displayMode = bmdModeNTSC;
-		pixelFormat = bmdFormat10BitYUV;
+		if (allow10Bit) {
+			pixelFormat = bmdFormat10BitYUV;
+		} else {
+			pixelFormat = bmdFormat8BitYUV;
+		}
 		flags = bmdVideoInputEnableFormatDetection;
 	} else {
 		displayMode = mode_->GetDisplayMode();
@@ -400,6 +424,8 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 			static_cast<DeckLinkInput *>(decklink)->GetPixelFormat();
 		flags = bmdVideoInputFlagDefault;
 	}
+
+	allow10Bit = allow10Bit_;
 
 	const HRESULT videoResult =
 		input->EnableVideoInput(displayMode, pixelFormat, flags);
@@ -631,15 +657,22 @@ HRESULT STDMETHODCALLTYPE DeckLinkDeviceInstance::VideoInputFormatChanged(
 {
 
 	if (events & bmdVideoInputColorspaceChanged) {
-		switch (detectedSignalFlags) {
-		case bmdDetectedVideoInputRGB444:
+		if (detectedSignalFlags & bmdDetectedVideoInputRGB444) {
 			pixelFormat = bmdFormat8BitBGRA;
-			break;
-
-		default:
-		case bmdDetectedVideoInputYCbCr422:
-			pixelFormat = bmdFormat10BitYUV;
-			break;
+		}
+		if (detectedSignalFlags & bmdDetectedVideoInputYCbCr422) {
+			if (detectedSignalFlags &
+			    bmdDetectedVideoInput10BitDepth) {
+				if (allow10Bit) {
+					pixelFormat = bmdFormat10BitYUV;
+				} else {
+					pixelFormat = bmdFormat8BitYUV;
+				}
+			}
+			if (detectedSignalFlags &
+			    bmdDetectedVideoInput8BitDepth) {
+				pixelFormat = bmdFormat8BitYUV;
+			}
 		}
 	}
 
