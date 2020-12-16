@@ -348,6 +348,7 @@ set(libobs_mediaio_HEADERS
 	media-io/frame-rate.h)
 
 set(libobs_util_SOURCES
+	util/check-os.cpp
 	util/array-serializer.c
 	util/file-serializer.c
 	util/base.c
@@ -363,6 +364,7 @@ set(libobs_util_SOURCES
 	util/cf-parser.c
 	util/profiler.c)
 set(libobs_util_HEADERS
+	util/check-os.h
 	util/curl/curl-helper.h
 	util/sse-intrin.h
 	util/sse2neon.h
