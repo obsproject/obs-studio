@@ -95,7 +95,8 @@ static bool create_d3d12_tex(bb_info &bb)
 	desc11.Height = data.cy;
 	desc11.MipLevels = 1;
 	desc11.ArraySize = 1;
-	desc11.Format = data.format;
+	desc11.Format = apply_dxgi_format_typeless(
+		data.format, global_hook_info->allow_srgb_alias);
 	desc11.SampleDesc.Count = 1;
 	desc11.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	desc11.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
@@ -216,7 +217,7 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		return false;
 	}
 
-	data.format = fix_dxgi_format(desc.BufferDesc.Format);
+	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
 	data.cx = desc.BufferDesc.Width;

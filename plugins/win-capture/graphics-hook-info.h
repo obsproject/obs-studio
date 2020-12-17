@@ -108,6 +108,7 @@ struct hook_info {
 	bool UNUSED_use_scale;
 	bool force_shmem;
 	bool capture_overlay;
+	bool allow_srgb_alias;
 
 	/* hook addresses */
 	struct graphics_offsets offsets;

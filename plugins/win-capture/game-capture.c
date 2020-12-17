@@ -743,6 +743,7 @@ static inline bool init_hook_info(struct game_capture *gc)
 	gc->global_hook_info->capture_overlay = gc->config.capture_overlays;
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
 	gc->global_hook_info->UNUSED_use_scale = false;
+	gc->global_hook_info->allow_srgb_alias = true;
 	reset_frame_interval(gc);
 
 	obs_enter_graphics();
