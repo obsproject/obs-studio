@@ -517,19 +517,6 @@ void OBSImporter::dragEnterEvent(QDragEnterEvent *ev)
 		ev->accept();
 }
 
-static bool CheckConfigExists(const char *dir, QString name)
-{
-
-	QString dst = dir;
-	dst += "/";
-	dst += name;
-	dst += ".json";
-
-	dst.replace(" ", "_");
-
-	return os_file_exists(dst.toStdString().c_str());
-}
-
 void OBSImporter::browseImport()
 {
 	QString Pattern = "(*.json *.bpres *.xml *.xconfig)";
@@ -560,42 +547,30 @@ void OBSImporter::importCollections()
 		if (selected == Qt::Unchecked)
 			continue;
 
-		QString path = optionsModel->index(i, ImporterColumn::Path)
-				       .data(Qt::DisplayRole)
-				       .value<QString>();
-		QString name = optionsModel->index(i, ImporterColumn::Name)
-				       .data(Qt::DisplayRole)
-				       .value<QString>();
-
-		std::string pathStr = path.toStdString();
-		std::string nameStr = name.toStdString();
+		std::string pathStr =
+			optionsModel->index(i, ImporterColumn::Path)
+				.data(Qt::DisplayRole)
+				.value<QString>()
+				.toStdString();
+		std::string nameStr =
+			optionsModel->index(i, ImporterColumn::Name)
+				.data(Qt::DisplayRole)
+				.value<QString>()
+				.toStdString();
 
 		json11::Json res;
 		ImportSC(pathStr, nameStr, res);
 
 		if (res != json11::Json()) {
 			json11::Json::object out = res.object_items();
-			QString file = res["name"].string_value().c_str();
+			std::string name = res["name"].string_value();
+			std::string file;
 
-			file.replace(" ", "_");
-			file.replace("/", "_");
-			bool safe = !CheckConfigExists(dst, file);
-			int x = 1;
-			while (!safe) {
-				file = name;
-				file += "_(";
-				file += QString::number(x);
-				file += ")";
-
-				safe = !CheckConfigExists(dst, file);
-				x++;
-			}
-
-			out["name"] = file.toStdString();
+			GetUnusedSceneCollectionFile(name, file);
 
 			std::string save = dst;
 			save += "/";
-			save += file.toStdString();
+			save += file;
 			save += ".json";
 
 			std::string out_str = json11::Json(out).dump();
@@ -606,8 +581,7 @@ void OBSImporter::importCollections()
 								false);
 
 			blog(LOG_INFO, "Import Scene Collection: %s (%s) - %s",
-			     name.toStdString().c_str(),
-			     file.toStdString().c_str(),
+			     name.c_str(), file.c_str(),
 			     success ? "SUCCESS" : "FAILURE");
 		}
 	}
