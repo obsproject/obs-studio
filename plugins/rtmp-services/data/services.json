@@ -1287,7 +1287,10 @@
                 }
             ],
             "recommended": {
-                "max video bitrate": 5000
+                "keyint": 4,
+                "max video bitrate": 2500,
+                "max audio bitrate": 256,    
+                "x264opts": "tune=zerolatency"
             }
         },
         {
