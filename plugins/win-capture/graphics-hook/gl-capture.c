@@ -285,7 +285,7 @@ static inline bool gl_shtex_init_d3d11(void)
 
 	DXGI_SWAP_CHAIN_DESC desc = {0};
 	desc.BufferCount = 2;
-	desc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.BufferDesc.Format = data.format;
 	desc.BufferDesc.Width = 2;
 	desc.BufferDesc.Height = 2;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -350,11 +350,11 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 	desc.Height = data.cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.Format = data.format;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	hr = ID3D11Device_CreateTexture2D(data.d3d11_device, &desc, NULL,
 					  &data.d3d11_tex);
