@@ -302,7 +302,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
 	this->dxgiFormat = td.Format;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
-	resourceDesc.Format = td.Format;
+	resourceDesc.Format = ConvertGSTextureFormat(this->format);
 	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	resourceDesc.Texture2D.MipLevels = 1;
 
@@ -329,7 +329,7 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *obj)
 	this->dxgiFormat = td.Format;
 
 	memset(&resourceDesc, 0, sizeof(resourceDesc));
-	resourceDesc.Format = td.Format;
+	resourceDesc.Format = ConvertGSTextureFormat(this->format);
 	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE2D;
 	resourceDesc.Texture2D.MipLevels = 1;
 
