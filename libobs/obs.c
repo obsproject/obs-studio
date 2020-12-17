@@ -21,7 +21,6 @@
 #include "callback/calldata.h"
 
 #include "obs.h"
-#include "util/check-os.h"
 #include "obs-internal.h"
 
 struct obs_core *obs = NULL;
@@ -1994,10 +1993,8 @@ static obs_source_t *obs_load_source_type(obs_data_t *source_data)
 			obs_source_set_audio_mixers(source, 0x3F);
 		}
 	}
-
-    obs_source_set_monitoring_type(
-            source, is_BigSur_OS() ? OBS_MONITORING_TYPE_NONE 
-                : (enum obs_monitoring_type)monitoring_type);
+	obs_source_set_monitoring_type(
+		source, (enum obs_monitoring_type)monitoring_type);
 
 	obs_data_release(source->private_settings);
 	source->private_settings =
