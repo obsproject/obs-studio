@@ -123,7 +123,6 @@ Function PreReqCheck
 	; 32 bit Visual Studio 2019 runtime check
 	ClearErrors
 	GetDLLVersion "vcruntime140.DLL" $R0 $R1
-	GetDLLVersion "vcruntime140_1.DLL" $R0 $R1
 	GetDLLVersion "msvcp140.DLL" $R0 $R1
 	IfErrors vs2019Missing_32 vs2019OK_32
 	vs2019Missing_32:

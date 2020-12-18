@@ -2948,6 +2948,12 @@ static bool is_network_media_source(obs_source_t *source, const char *id)
 	return !is_local_file;
 }
 
+void OBSBasic::UpdateContextBarDeferred(bool force)
+{
+	QMetaObject::invokeMethod(this, "UpdateContextBar",
+				  Qt::QueuedConnection, Q_ARG(bool, force));
+}
+
 void OBSBasic::UpdateContextBar(bool force)
 {
 	if (!ui->contextContainer->isVisible() && !force)

@@ -85,7 +85,9 @@ static inline bool HasVS2019Redist2()
 
 	check_dll_installed(L"msvcp140");
 	check_dll_installed(L"vcruntime140");
-	check_dll_installed(L"vcruntime140_1");
+	if (!is32bit) {
+		check_dll_installed(L"vcruntime140_1");
+	}
 
 #undef check_dll_installed
 
@@ -296,6 +298,8 @@ struct update_t {
 			} else {
 				DeleteFile(outputPath.c_str());
 			}
+			if (state == STATE_INSTALL_FAILED)
+				DeleteFile(tempPath.c_str());
 		} else if (state == STATE_DOWNLOADED) {
 			DeleteFile(tempPath.c_str());
 		}
@@ -782,6 +786,41 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 	}
 }
 
+static bool MoveInUseFileAway(update_t &file)
+{
+	_TCHAR deleteMeName[MAX_PATH];
+	_TCHAR randomStr[MAX_PATH];
+
+	BYTE junk[40];
+	BYTE hash[BLAKE2_HASH_LENGTH];
+
+	CryptGenRandom(hProvider, sizeof(junk), junk);
+	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, randomStr);
+	randomStr[8] = 0;
+
+	StringCbCopy(deleteMeName, sizeof(deleteMeName),
+		     file.outputPath.c_str());
+
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
+	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".deleteme");
+
+	if (MoveFile(file.outputPath.c_str(), deleteMeName)) {
+
+		if (MyCopyFile(deleteMeName, file.outputPath.c_str())) {
+			MoveFileEx(deleteMeName, NULL,
+				   MOVEFILE_DELAY_UNTIL_REBOOT);
+
+			return true;
+		} else {
+			MoveFile(deleteMeName, file.outputPath.c_str());
+		}
+	}
+
+	return false;
+}
+
 static bool UpdateFile(update_t &file)
 {
 	wchar_t oldFileRenamedPath[MAX_PATH];
@@ -834,6 +873,9 @@ static bool UpdateFile(update_t &file)
 
 		int error_code;
 		bool installed_ok;
+		bool already_tried_to_move = false;
+
+	retryAfterMovingFile:
 
 		if (file.patchable) {
 			error_code = ApplyPatch(file.tempPath.c_str(),
@@ -873,15 +915,23 @@ static bool UpdateFile(update_t &file)
 			int is_sharing_violation =
 				(error_code == ERROR_SHARING_VIOLATION);
 
-			if (is_sharing_violation)
+			if (is_sharing_violation) {
+				if (!already_tried_to_move) {
+					already_tried_to_move = true;
+
+					if (MoveInUseFileAway(file))
+						goto retryAfterMovingFile;
+				}
+
 				Status(L"Update failed: %s is still in use.  "
 				       L"Close all "
 				       L"programs and try again.",
 				       curFileName);
-			else
+			} else {
 				Status(L"Update failed: Couldn't update %s "
 				       L"(error %d)",
 				       curFileName, GetLastError());
+			}
 
 			file.state = STATE_INSTALL_FAILED;
 			return false;
