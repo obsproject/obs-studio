@@ -20,6 +20,9 @@ if(UNIX)
 		find_package(X11 REQUIRED)
 		find_package(X11_XCB REQUIRED)
 		find_package(XCB OPTIONAL_COMPONENTS XINPUT)
+		find_package(XCB)
+		find_library(M_LIBRARY NAMES m)
+		find_library(DL_LIBRARY NAMES dl)
 		if (XCB_XINPUT_FOUND)
 			set(USE_XINPUT "1")
 		else()
@@ -219,7 +222,10 @@ elseif(UNIX)
 		${X11_XCB_DEFINITIONS})
 	set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
+		${DL_LIBRARY}
+		${M_LIBRARY}
 		${X11_X11_LIB}
+		${XCB_LIBRARIES}
 		${X11_XCB_LIBRARIES})
 
 	if(USE_XINPUT)
