@@ -661,6 +661,8 @@ static bool mp_media_reset(mp_media_t *m)
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
+	m->audio.index = 0;
+	m->video.index = 0;
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
@@ -834,6 +836,8 @@ static inline bool mp_media_thread(mp_media_t *m)
 	if (!mp_media_reset(m)) {
 		return false;
 	}
+	if (m->ready_cb)
+		m->ready_cb(m->opaque);
 
 	for (;;) {
 		bool reset, kill, is_active, seek, pause, reset_time;
@@ -954,6 +958,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 					m->video.index = 0;
 					m->video.last_processed_ns = 0;
 					m->audio.last_processed_ns = 0;
+					reset_ts(m);
 					continue;
 				}
 				m->a.frame_ready = true;
@@ -1026,6 +1031,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
+	media->ready_cb = info->ready_cb;
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;

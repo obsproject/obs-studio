@@ -1310,6 +1310,9 @@ EXPORT struct obs_source_frame *obs_source_get_frame(obs_source_t *source);
 EXPORT void obs_source_release_frame(obs_source_t *source,
 				     struct obs_source_frame *frame);
 
+/** Reset varables for video played before */
+EXPORT void obs_source_reset_video(obs_source_t *source);
+
 /**
  * Default RGB filter handler for generic effect filters.  Processes the
  * filter chain and renders them to texture if needed, then the filter is
