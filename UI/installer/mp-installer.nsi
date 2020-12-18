@@ -124,6 +124,7 @@ Function PreReqCheck
 	ClearErrors
 	GetDLLVersion "vcruntime140.DLL" $R0 $R1
 	GetDLLVersion "msvcp140.DLL" $R0 $R1
+	GetDLLVersion "msvcp140_1.DLL" $R0 $R1
 	IfErrors vs2019Missing_32 vs2019OK_32
 	vs2019Missing_32:
 		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2019true_32 IDNO vs2019false_32
