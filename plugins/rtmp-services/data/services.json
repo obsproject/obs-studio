@@ -260,6 +260,40 @@
             }
         },
         {
+            "name": "Loola.tv",
+            "common": false,
+            "servers": [
+                {
+                    "name": "US East: Virginia",
+                    "url": "rtmp://rtmp.loola.tv/push"
+                },
+                {
+                    "name": "EU Central: Germany",
+                    "url": "rtmp://rtmp-eu.loola.tv/push"
+                },
+                {
+                    "name": "South America: Brazil",
+                    "url": "rtmp://rtmp-sa.loola.tv/push"
+                },
+                {
+                    "name": "Asia/Pacific: Singapore",
+                    "url": "rtmp://rtmp-sg.loola.tv/push"
+                },
+                {
+                    "name": "Middle East: Bahrain",
+                    "url": "rtmp://rtmp-me.loola.tv/push"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "max video bitrate": 2500,
+                "max audio bitrate": 160,
+                "bframes": 2,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
             "name": "VIMM",
             "servers": [
                 {
