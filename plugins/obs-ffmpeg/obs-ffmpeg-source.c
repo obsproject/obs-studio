@@ -311,6 +311,15 @@ static void media_stopped(void *opaque)
 	obs_source_media_ended(s->source);
 }
 
+static void media_ready(void *opaque)
+{
+	struct ffmpeg_source *s = opaque;
+	blog(LOG_DEBUG, "[MP4MP3]: media_ready %d %d", s->media.has_video?1:0, s->media.has_audio?1:0);
+	if (!s->media.has_video) {
+		obs_source_reset_video(s->source);
+	}
+}
+
 static void ffmpeg_source_open(struct ffmpeg_source *s)
 {
 	if (s->input && *s->input) {
@@ -321,6 +330,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.v_seek_cb = seek_frame,
 			.a_cb = get_audio,
 			.stop_cb = media_stopped,
+			.ready_cb = media_ready,
 			.path = s->input,
 			.format = s->input_format,
 			.buffering = s->buffering_mb * 1024 * 1024,

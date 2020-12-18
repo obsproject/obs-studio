@@ -2888,6 +2888,16 @@ void obs_source_output_video2(obs_source_t *source,
 	obs_source_output_video_internal(source, &new_frame);
 }
 
+void obs_source_reset_video(obs_source_t *source)
+{
+	obs_source_output_video(source, NULL);
+	pthread_mutex_lock(&source->async_mutex);
+	free_async_cache(source);
+	clean_cache(source);
+	source->last_frame_ts = 0;
+	pthread_mutex_unlock(&source->async_mutex);
+}
+
 void obs_source_set_async_rotation(obs_source_t *source, long rotation)
 {
 	if (source)
