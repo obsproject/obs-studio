@@ -29,6 +29,28 @@ else()
 	endif()
 endif()
 
+find_program(MODPROBE_BINARY NAMES modprobe PATHS /usr/sbin/ /sbin/ /usr/local/sbin)
+find_program(MODINFO_BINARY  NAMES modinfo  PATHS /usr/sbin/ /sbin/ /usr/local/sbin)
+find_program(PKEXEC_BINARY   NAMES pkexec)
+
+if (NOT MODPROBE_BINARY)
+  message(STATUS "Falling back to 'modprobe' without a path")
+  set(MODPROBE_BINARY modprobe)
+endif (NOT MODPROBE_BINARY)
+
+if (NOT MODINFO_BINARY)
+  message(STATUS "Falling back to 'modinfo' without a path")
+  set(MODINFO_BINARY modinfo)
+endif (NOT MODINFO_BINARY)
+
+if (NOT PKEXEC_BINARY)
+  message(STATUS "Falling back to 'pkexec' without a path")
+  set(PKEXEC_BINARY pkexec)
+endif (NOT PKEXEC_BINARY)
+
+# TODO: most of the other cmake files seem to stick to add_definitions instead of add_compile_definitions so lets stick to that
+add_definitions(-DMODPROBE_BINARY="${MODPROBE_BINARY}" -DMODINFO_BINARY="${MODINFO_BINARY}" -DPKEXEC_BINARY="${PKEXEC_BINARY}")
+
 include_directories(
 	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
 	${LIBV4L2_INCLUDE_DIRS}

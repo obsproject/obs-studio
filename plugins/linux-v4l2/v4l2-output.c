@@ -53,7 +53,9 @@ static bool loopback_module_loaded()
 static int loopback_module_load()
 {
 	return system(
-		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+		PKEXEC_BINARY
+		" " MODPROBE_BINARY
+		" v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
