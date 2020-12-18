@@ -51,7 +51,7 @@ jobs:
           else
             echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
-      - name: 'Install prerequisites (Homebrew)'
+      - name: 'Setup build environment (Homebrew + ENV)'
         shell: bash
         run: |
           if [ -d /usr/local/opt/openssl@1.0.2t ]; then
@@ -69,6 +69,7 @@ jobs:
           fi
           brew uninstall curl php
           brew bundle --file ./CI/scripts/macos/Brewfile
+          echo "NPROC=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
         uses: actions/cache@v2.1.2
@@ -134,7 +135,7 @@ jobs:
           /usr/bin/sed -i '.orig' s/\"10.9\"/\"${{ env.MIN_MACOS_VERSION }}\"/ ./cmake/cef_variables.cmake
           mkdir build && cd build
           cmake  -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++ -Wno-deprecated-declarations" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }}  ..
-          make -j4
+          make -j${NPROC:-4}
           mkdir libcef_dll
           cd ../../
       - name: 'Configure'
@@ -147,7 +148,7 @@ jobs:
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        run: make -j4
+        run: make -j${NPROC:-4}
       - name: 'Test'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -371,6 +372,7 @@ jobs:
       - name: Install prerequisites (Apt)
         shell: bash
         run: |
+          echo "NPROC=$(($(nproc)+1))" >> $GITHUB_ENV
           sudo dpkg --add-architecture amd64
           sudo apt-get -qq update
           sudo apt-get install -y \
@@ -441,7 +443,7 @@ jobs:
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        run: make -j4
+        run: make -j${NPROC:-4}
       - name: 'Test'
         shell: bash
         working-directory: ${{ github.workspace }}/build
