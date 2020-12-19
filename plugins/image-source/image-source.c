@@ -218,6 +218,7 @@ static const char *image_filter =
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif);;"
 	"PSD Files (*.psd);;"
+	"WebP Files (*.webp);;"
 	"All Files (*.*)";
 
 static obs_properties_t *image_source_properties(void *data)

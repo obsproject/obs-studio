@@ -848,7 +848,7 @@ static void ss_defaults(obs_data_t *settings)
 }
 
 static const char *file_filter =
-	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif)";
+	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.webp)";
 
 static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
