@@ -1444,7 +1444,7 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Download Updates                      */
 
-	if (!RunDownloadWorkers(2))
+	if (!RunDownloadWorkers(4))
 		return false;
 
 	if ((size_t)completedUpdates != updates.size()) {
