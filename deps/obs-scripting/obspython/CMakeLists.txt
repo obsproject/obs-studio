@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 project(obspython)
 
 if(POLICY CMP0078)
@@ -39,14 +39,10 @@ if(WIN32)
 	string(REGEX REPLACE "_d" "" PYTHON_LIBRARIES "${PYTHON_LIBRARIES}")
 endif()
 
-if(CMAKE_VERSION VERSION_GREATER 3.7.2)
-	SWIG_ADD_LIBRARY(obspython
-		LANGUAGE python
-		TYPE MODULE
-		SOURCES  obspython.i ../cstrcache.cpp ../cstrcache.h)
-else()
-	SWIG_ADD_MODULE(obspython python obspython.i ../cstrcache.cpp ../cstrcache.h)
-endif()
+SWIG_ADD_LIBRARY(obspython
+	LANGUAGE python
+	TYPE MODULE
+	SOURCES  obspython.i ../cstrcache.cpp ../cstrcache.h)
 
 IF(APPLE)
 	SWIG_LINK_LIBRARIES(obspython obs-scripting libobs)

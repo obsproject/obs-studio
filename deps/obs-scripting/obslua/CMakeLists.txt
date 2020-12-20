@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 2.8)
+cmake_minimum_required(VERSION 3.10)
 project(obslua)
 
 if(POLICY CMP0078)
@@ -25,14 +25,11 @@ endif()
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/libobs")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 
-if(CMAKE_VERSION VERSION_GREATER 3.7.2)
-	SWIG_ADD_LIBRARY(obslua
-		LANGUAGE lua
-		TYPE MODULE
-		SOURCES obslua.i ../cstrcache.cpp ../cstrcache.h)
-else()
-	SWIG_ADD_MODULE(obslua lua obslua.i ../cstrcache.cpp ../cstrcache.h)
-endif()
+SWIG_ADD_LIBRARY(obslua
+	LANGUAGE lua
+	TYPE MODULE
+	SOURCES obslua.i ../cstrcache.cpp ../cstrcache.h)
+
 SWIG_LINK_LIBRARIES(obslua obs-scripting libobs ${LUA_LIBRARIES} ${EXTRA_LIBS})
 
 set_target_properties(obslua PROPERTIES FOLDER "scripting")
