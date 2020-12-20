@@ -24,7 +24,7 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2020-12-19'
+      MACOS_DEPS_VERSION: '2020-12-22'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.15.2'
@@ -54,13 +54,17 @@ jobs:
         shell: bash
         run: |
           if [ -d /usr/local/opt/openssl@1.0.2t ]; then
-              brew uninstall openssl@1.0.2t
-              brew untap local/openssl
+            brew uninstall openssl@1.0.2t
+            brew untap local/openssl
           fi
 
           if [ -d /usr/local/opt/python@2.7.17 ]; then
-              brew uninstall python@2.7.17
-              brew untap local/python2
+            brew uninstall python@2.7.17
+            brew untap local/python2
+          fi
+
+          if [ -d /usr/local/opt/speexdsp ]; then
+            brew unlink speexdsp
           fi
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
@@ -199,7 +203,6 @@ jobs:
             ./OBS.app/Contents/PlugIns/decklink-captions.so
             ./OBS.app/Contents/PlugIns/frontend-tools.so
             ./OBS.app/Contents/PlugIns/image-source.so
-            ./OBS.app/Contents/PlugIns/linux-jack.so
             ./OBS.app/Contents/PlugIns/mac-avcapture.so
             ./OBS.app/Contents/PlugIns/mac-capture.so
             ./OBS.app/Contents/PlugIns/mac-decklink.so
@@ -216,7 +219,6 @@ jobs:
             ./OBS.app/Contents/MacOS/obslua.so
             ./OBS.app/Contents/PlugIns/obs-x264.so
             ./OBS.app/Contents/PlugIns/text-freetype2.so
-            ./OBS.app/Contents/PlugIns/obs-libfdk.so
             ./OBS.app/Contents/PlugIns/obs-outputs.so
           )
 

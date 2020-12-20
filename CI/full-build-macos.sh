@@ -311,7 +311,6 @@ bundle_dylibs() {
         ./OBS.app/Contents/PlugIns/decklink-captions.so
         ./OBS.app/Contents/PlugIns/frontend-tools.so
         ./OBS.app/Contents/PlugIns/image-source.so
-        ./OBS.app/Contents/PlugIns/linux-jack.so
         ./OBS.app/Contents/PlugIns/mac-avcapture.so
         ./OBS.app/Contents/PlugIns/mac-capture.so
         ./OBS.app/Contents/PlugIns/mac-decklink.so
@@ -328,7 +327,6 @@ bundle_dylibs() {
         ./OBS.app/Contents/MacOS/obslua.so
         ./OBS.app/Contents/PlugIns/obs-x264.so
         ./OBS.app/Contents/PlugIns/text-freetype2.so
-        ./OBS.app/Contents/PlugIns/obs-libfdk.so
         ./OBS.app/Contents/PlugIns/obs-outputs.so
         )
     if ! [ "${CEF_BUILD_VERSION:-${CI_CEF_VERSION}}" -le 3770 ]; then
