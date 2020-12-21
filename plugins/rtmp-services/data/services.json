@@ -279,61 +279,6 @@
             }
         },
         {
-            "name": "Smashcast",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-North: Amsterdam, Netherlands",
-                    "url": "rtmp://live.ams.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-West: Paris, France",
-                    "url": "rtmp://live.cdg.hitbox.tv/push"
-                },
-                {
-                    "name": "EU-South: Milan, Italia",
-                    "url": "rtmp://live.mxp.hitbox.tv/push"
-                },
-                {
-                    "name": "Russia: Moscow",
-                    "url": "rtmp://live.dme.hitbox.tv/push"
-                },
-                {
-                    "name": "US-East: New York",
-                    "url": "rtmp://live.jfk.hitbox.tv/push"
-                },
-                {
-                    "name": "US-West: San Francisco",
-                    "url": "rtmp://live.sfo.hitbox.tv/push"
-                },
-                {
-                    "name": "US-West: Los Angeles",
-                    "url": "rtmp://live.lax.hitbox.tv/push"
-                },
-                {
-                    "name": "South America: Sao Paulo, Brazil",
-                    "url": "rtmp://live.gru.hitbox.tv/push"
-                },
-                {
-                    "name": "Asia: Singapore",
-                    "url": "rtmp://live.sin.hitbox.tv/push"
-                },
-                {
-                    "name": "Oceania: Sydney, Australia",
-                    "url": "rtmp://live.syd.hitbox.tv/push"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "high",
-                "max video bitrate": 3500,
-                "max audio bitrate": 320
-            }
-        },
-        {
             "name": "Mobcrush",
             "servers": [
                 {
