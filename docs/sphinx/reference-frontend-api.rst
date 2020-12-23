@@ -454,6 +454,15 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_open_projector(const char *type, int monitor, const char *geometry, const char *name)
+
+   :param type:     "Preview", "Source", "Scene", "StudioProgram", or "Multiview" (case insensitive).
+   :param monitor:  Monitor to open the projector on. If -1, opens a window.
+   :param geometry: If *monitor* is -1, size and position of the projector window. Encoded in Base64 using Qt's geometry encoding.
+   :param name:     If *type* is "Source" or "Scene", name of the source or scene to be displayed.
+
+---------------------------------------
+
 .. function:: void obs_frontend_save(void)
 
    Saves the current scene collection.
