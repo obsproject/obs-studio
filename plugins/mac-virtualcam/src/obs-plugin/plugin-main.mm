@@ -117,6 +117,8 @@ static void *data = &data;
 static void *virtualcam_output_create(obs_data_t *settings,
 				      obs_output_t *output)
 {
+	UNUSED_PARAMETER(settings);
+
 	outputRef = output;
 
 	blog(LOG_DEBUG, "output_create");
@@ -126,12 +128,15 @@ static void *virtualcam_output_create(obs_data_t *settings,
 
 static void virtualcam_output_destroy(void *data)
 {
+	UNUSED_PARAMETER(data);
 	blog(LOG_DEBUG, "output_destroy");
 	sMachServer = nil;
 }
 
 static bool virtualcam_output_start(void *data)
 {
+	UNUSED_PARAMETER(data);
+
 	bool hasDalPlugin = check_dal_plugin();
 
 	if (!hasDalPlugin) {
@@ -158,6 +163,9 @@ static bool virtualcam_output_start(void *data)
 
 static void virtualcam_output_stop(void *data, uint64_t ts)
 {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(ts);
+
 	blog(LOG_DEBUG, "output_stop");
 	obs_output_end_data_capture(outputRef);
 	[sMachServer stop];
@@ -165,6 +173,8 @@ static void virtualcam_output_stop(void *data, uint64_t ts)
 
 static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 {
+	UNUSED_PARAMETER(data);
+
 	uint8_t *outData = frame->data[0];
 	if (frame->linesize[0] != (videoInfo.output_width * 2)) {
 		blog(LOG_ERROR,

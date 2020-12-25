@@ -34,6 +34,8 @@ static UInt32 sRefCount = 0;
 
 ULONG HardwarePlugIn_AddRef(CMIOHardwarePlugInRef self)
 {
+	UNUSED_PARAMETER(self);
+
 	sRefCount += 1;
 	DLogFunc(@"sRefCount now = %d", sRefCount);
 	return sRefCount;
@@ -41,6 +43,8 @@ ULONG HardwarePlugIn_AddRef(CMIOHardwarePlugInRef self)
 
 ULONG HardwarePlugIn_Release(CMIOHardwarePlugInRef self)
 {
+	UNUSED_PARAMETER(self);
+
 	sRefCount -= 1;
 	DLogFunc(@"sRefCount now = %d", sRefCount);
 	return sRefCount;
@@ -49,6 +53,7 @@ ULONG HardwarePlugIn_Release(CMIOHardwarePlugInRef self)
 HRESULT HardwarePlugIn_QueryInterface(CMIOHardwarePlugInRef self, REFIID uuid,
 				      LPVOID *interface)
 {
+	UNUSED_PARAMETER(self);
 	DLogFunc(@"");
 
 	if (!interface) {
@@ -161,6 +166,7 @@ OSStatus HardwarePlugIn_Teardown(CMIOHardwarePlugInRef self)
 void HardwarePlugIn_ObjectShow(CMIOHardwarePlugInRef self,
 			       CMIOObjectID objectID)
 {
+	UNUSED_PARAMETER(objectID);
 	DLogFunc(@"self=%p", self);
 }
 
@@ -169,6 +175,7 @@ HardwarePlugIn_ObjectHasProperty(CMIOHardwarePlugInRef self,
 				 CMIOObjectID objectID,
 				 const CMIOObjectPropertyAddress *address)
 {
+	UNUSED_PARAMETER(self);
 
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
@@ -215,6 +222,7 @@ OSStatus HardwarePlugIn_ObjectGetPropertyDataSize(
 	const CMIOObjectPropertyAddress *address, UInt32 qualifierDataSize,
 	const void *qualifierData, UInt32 *dataSize)
 {
+	UNUSED_PARAMETER(self);
 
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
@@ -240,6 +248,7 @@ OSStatus HardwarePlugIn_ObjectGetPropertyData(
 	const void *qualifierData, UInt32 dataSize, UInt32 *dataUsed,
 	void *data)
 {
+	UNUSED_PARAMETER(self);
 
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
@@ -345,6 +354,8 @@ OSStatus HardwarePlugIn_DeviceStartStream(CMIOHardwarePlugInRef self,
 OSStatus HardwarePlugIn_DeviceSuspend(CMIOHardwarePlugInRef self,
 				      CMIODeviceID deviceID)
 {
+	UNUSED_PARAMETER(deviceID);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
@@ -352,6 +363,8 @@ OSStatus HardwarePlugIn_DeviceSuspend(CMIOHardwarePlugInRef self,
 OSStatus HardwarePlugIn_DeviceResume(CMIOHardwarePlugInRef self,
 				     CMIODeviceID deviceID)
 {
+	UNUSED_PARAMETER(deviceID);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
@@ -380,6 +393,9 @@ HardwarePlugIn_DeviceProcessAVCCommand(CMIOHardwarePlugInRef self,
 				       CMIODeviceID deviceID,
 				       CMIODeviceAVCCommand *ioAVCCommand)
 {
+	UNUSED_PARAMETER(deviceID);
+	UNUSED_PARAMETER(ioAVCCommand);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
@@ -389,6 +405,9 @@ HardwarePlugIn_DeviceProcessRS422Command(CMIOHardwarePlugInRef self,
 					 CMIODeviceID deviceID,
 					 CMIODeviceRS422Command *ioRS422Command)
 {
+	UNUSED_PARAMETER(deviceID);
+	UNUSED_PARAMETER(ioRS422Command);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
@@ -396,6 +415,8 @@ HardwarePlugIn_DeviceProcessRS422Command(CMIOHardwarePlugInRef self,
 OSStatus HardwarePlugIn_StreamDeckPlay(CMIOHardwarePlugInRef self,
 				       CMIOStreamID streamID)
 {
+	UNUSED_PARAMETER(streamID);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
@@ -403,6 +424,8 @@ OSStatus HardwarePlugIn_StreamDeckPlay(CMIOHardwarePlugInRef self,
 OSStatus HardwarePlugIn_StreamDeckStop(CMIOHardwarePlugInRef self,
 				       CMIOStreamID streamID)
 {
+	UNUSED_PARAMETER(streamID);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
@@ -410,6 +433,9 @@ OSStatus HardwarePlugIn_StreamDeckStop(CMIOHardwarePlugInRef self,
 OSStatus HardwarePlugIn_StreamDeckJog(CMIOHardwarePlugInRef self,
 				      CMIOStreamID streamID, SInt32 speed)
 {
+	UNUSED_PARAMETER(streamID);
+	UNUSED_PARAMETER(speed);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
@@ -419,6 +445,10 @@ OSStatus HardwarePlugIn_StreamDeckCueTo(CMIOHardwarePlugInRef self,
 					Float64 requestedTimecode,
 					Boolean playOnCue)
 {
+	UNUSED_PARAMETER(streamID);
+	UNUSED_PARAMETER(requestedTimecode);
+	UNUSED_PARAMETER(playOnCue);
+
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
