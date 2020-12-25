@@ -86,9 +86,7 @@
 	case kCMIODevicePropertyDeviceMaster:
 		return sizeof(pid_t);
 	default:
-		DLog(@"Device unhandled getPropertyDataSizeWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
+		break;
 	};
 
 	return 0;
@@ -191,10 +189,6 @@
 		*dataUsed = sizeof(pid_t);
 		break;
 	default:
-		DLog(@"Device unhandled getPropertyDataWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
-		*dataUsed = 0;
 		break;
 	};
 }
@@ -227,9 +221,6 @@
 	case kCMIODevicePropertyLinkedCoreAudioDeviceUID:
 		return false;
 	default:
-		DLog(@"Device unhandled hasPropertyWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
 }
@@ -262,9 +253,6 @@
 	case kCMIODevicePropertyDeviceMaster:
 		return true;
 	default:
-		DLog(@"Device unhandled isPropertySettableWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
 }
@@ -285,9 +273,6 @@
 		self.masterPid = *static_cast<const pid_t *>(data);
 		break;
 	default:
-		DLog(@"Device unhandled setPropertyDataWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		break;
 	};
 }
