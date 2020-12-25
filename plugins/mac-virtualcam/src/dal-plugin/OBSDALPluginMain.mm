@@ -27,6 +27,8 @@
 extern "C" {
 void *PlugInMain(CFAllocatorRef allocator, CFUUIDRef requestedTypeUUID)
 {
+	UNUSED_PARAMETER(allocator);
+
 	DLogFunc(@"version=%@", PLUGIN_VERSION);
 	if (!CFEqual(requestedTypeUUID, kCMIOHardwarePlugInTypeID)) {
 		return 0;

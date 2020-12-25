@@ -29,4 +29,6 @@
 #define VLogFunc(fmt, ...)
 #define ELog(fmt, ...) DLog(fmt, ##__VA_ARGS__)
 
+#define UNUSED_PARAMETER(param) (void)param
+
 #endif /* Logging_h */
