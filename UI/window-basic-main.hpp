@@ -738,6 +738,8 @@ private:
 
 	OBSSource prevFTBSource = nullptr;
 
+	void ResizeSceneItems();
+
 public:
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
@@ -842,6 +844,9 @@ public:
 	QIcon GetSceneIcon() const;
 
 	OBSWeakSource copyFilter = nullptr;
+
+	float currentCX = 0.0f;
+	float currentCY = 0.0f;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
