@@ -1437,7 +1437,13 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programWidget->setLayout(programLayout);
 
-		ui->previewLayout->addWidget(programOptions);
+		programOptions->layout()->setContentsMargins(0, 10, 0, 0);
+		QVBoxLayout *trLayout = qobject_cast<QVBoxLayout *>(
+			ui->transitionsContainer->layout());
+
+		if (trLayout)
+			trLayout->insertWidget(2, programOptions);
+
 		ui->previewLayout->addWidget(programWidget);
 		ui->previewLayout->setAlignment(programOptions,
 						Qt::AlignCenter);
