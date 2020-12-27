@@ -211,7 +211,7 @@ static void image_source_tick(void *data, float seconds)
 }
 
 static const char *image_filter =
-	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
+	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd *.webp);;"
 	"BMP Files (*.bmp);;"
 	"Targa Files (*.tga);;"
 	"PNG Files (*.png);;"
