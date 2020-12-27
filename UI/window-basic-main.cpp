@@ -6884,11 +6884,14 @@ static bool CenterAlignSelectedItems(obs_scene_t *scene, obs_sceneitem_t *item,
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
+	obs_transform_info oldItemInfo;
+	obs_sceneitem_get_info(item, &oldItemInfo);
+
 	obs_transform_info itemInfo;
 	vec2_set(&itemInfo.pos, 0.0f, 0.0f);
 	vec2_set(&itemInfo.scale, 1.0f, 1.0f);
 	itemInfo.alignment = OBS_ALIGN_LEFT | OBS_ALIGN_TOP;
-	itemInfo.rot = 0.0f;
+	itemInfo.rot = oldItemInfo.rot;
 
 	vec2_set(&itemInfo.bounds, float(ovi.base_width),
 		 float(ovi.base_height));
