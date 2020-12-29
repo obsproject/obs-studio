@@ -1218,13 +1218,19 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = primaryScreen->size().width();
 	uint32_t cy = primaryScreen->size().height();
 
+	bool oldScaleBehavior = config_get_bool(App()->GlobalConfig(),
+						"General", "Pre26.2Defaults");
+
+	/* after version 26.2, apply scaling to cx/cy */
+	if (!oldScaleBehavior) {
 #ifdef SUPPORTS_FRACTIONAL_SCALING
-	cx *= devicePixelRatioF();
-	cy *= devicePixelRatioF();
+		cx *= devicePixelRatioF();
+		cy *= devicePixelRatioF();
 #elif
-	cx *= devicePixelRatio();
-	cy *= devicePixelRatio();
+		cx *= devicePixelRatio();
+		cy *= devicePixelRatio();
 #endif
+	}
 
 	bool oldResolutionDefaults = config_get_bool(
 		App()->GlobalConfig(), "General", "Pre19Defaults");
