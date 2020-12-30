@@ -163,18 +163,18 @@ static void *v4l2_thread(void *vptr)
 	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
 
-	blog(LOG_DEBUG, "new capture thread for %s", data->device_id);
+	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
 
-	blog(LOG_DEBUG, "new capture started for %s", data->device_id);
+	blog(LOG_DEBUG, "%s: new capture started", data->device_id);
 
 	frames = 0;
 	first_ts = 0;
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
-	blog(LOG_DEBUG, "obs frame prepared for %s", data->device_id);
+	blog(LOG_DEBUG, "%s: obs frame prepared", data->device_id);
 
 	while (os_event_try(data->event) == EAGAIN) {
 		FD_ZERO(&fds);
@@ -186,14 +186,19 @@ static void *v4l2_thread(void *vptr)
 		if (r < 0) {
 			if (errno == EINTR)
 				continue;
-			blog(LOG_ERROR, "select failed for %s", data->device_id);
+			blog(LOG_ERROR, "%s: select failed", data->device_id);
 			break;
 		} else if (r == 0) {
-			blog(LOG_ERROR, "select timed out for %s", data->device_id);
+			blog(LOG_ERROR, "%s: select timed out", data->device_id);
+
+			if (v4l2_ioctl(data->dev, VIDIOC_LOG_STATUS) < 0) {
+				blog(LOG_ERROR, "%s: failed to log status", data->device_id);
+			}
+
 			if (v4l2_reset_capture(data->dev, &data->buffers) == 0)
-				blog(LOG_INFO, "stream reset successful for %s", data->device_id);
+				blog(LOG_INFO, "%s: stream reset successful", data->device_id);
 			else
-				blog(LOG_ERROR, "failed to reset %s", data->device_id);
+				blog(LOG_ERROR, "%s: failed to reset", data->device_id);
 			continue;
 		}
 
@@ -202,16 +207,16 @@ static void *v4l2_thread(void *vptr)
 
 		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN) {
-				blog(LOG_DEBUG, "ioctl dqbuf eagain for %s", data->device_id);
+				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain", data->device_id);
 				continue;
 			}
-			blog(LOG_ERROR, "failed to dequeue buffer for %s", data->device_id);
+			blog(LOG_ERROR, "%s: failed to dequeue buffer", data->device_id);
 			break;
 		}
 
-		blog(LOG_DEBUG, "ts: %06ld dev %s buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
-			buf.timestamp.tv_usec,
+		blog(LOG_DEBUG, "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
 			data->device_id,
+			buf.timestamp.tv_usec,
 			buf.index,
 			buf.flags,
 			buf.sequence,
@@ -229,14 +234,14 @@ static void *v4l2_thread(void *vptr)
 		obs_source_output_video(data->source, &out);
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "failed to enqueue buffer for %s", data->device_id);
+			blog(LOG_ERROR, "%s: failed to enqueue buffer", data->device_id);
 			break;
 		}
 
 		frames++;
 	}
 
-	blog(LOG_INFO, "Stopped capture after %" PRIu64 " frames", frames);
+	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames", data->device_id, frames);
 
 exit:
 	v4l2_stop_capture(data->dev);
