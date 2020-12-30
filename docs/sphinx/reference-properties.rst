@@ -212,7 +212,17 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_color(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a color property.
+   Adds a color property without alpha.
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+   :return:               The property
+
+---------------------
+
+.. function:: obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props, const char *name, const char *description)
+
+   Adds a color property with alpha.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
