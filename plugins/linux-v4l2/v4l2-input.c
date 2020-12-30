@@ -209,6 +209,15 @@ static void *v4l2_thread(void *vptr)
 			break;
 		}
 
+		blog(LOG_DEBUG, "ts: %06ld dev %s buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
+			buf.timestamp.tv_usec,
+			data->device_id,
+			buf.index,
+			buf.flags,
+			buf.sequence,
+			buf.length,
+			buf.bytesused);
+
 		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
 			first_ts = out.timestamp;
