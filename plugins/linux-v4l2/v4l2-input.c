@@ -162,8 +162,24 @@ static void *v4l2_thread(void *vptr)
 	struct v4l2_buffer buf;
 	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
+	int fps_num, fps_denom;
+	float ffps;
+	uint64_t timeout_usec;
 
 	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
+
+	/* Get framerate and calculate appropriate select timeout value.
+	 * Note: Yes this will result in a lot of resets if your device
+	 *       can't keep up with the framerate you selected.
+	 * TODO: Add a config variable to override the timeout
+	 *       or disable automatic reset.
+	 */
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
+	ffps = (float)fps_denom / fps_num;
+	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
+	/* Timeout set to 5 frame periods. */
+	timeout_usec = 5000000 / ffps;
+	blog(LOG_INFO, "%s: select timeout set to %ldus (5x frame periods)", data->device_id, timeout_usec);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
@@ -179,8 +195,10 @@ static void *v4l2_thread(void *vptr)
 	while (os_event_try(data->event) == EAGAIN) {
 		FD_ZERO(&fds);
 		FD_SET(data->dev, &fds);
+
+		/* Set timeout timevalue. */
 		tv.tv_sec = 0;
-		tv.tv_usec = 200000; /* 0.2 seconds */
+		tv.tv_usec = timeout_usec;
 
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
