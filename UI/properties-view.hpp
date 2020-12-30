@@ -30,7 +30,9 @@ private:
 	void TextChanged(const char *setting);
 	bool PathChanged(const char *setting);
 	void ListChanged(const char *setting);
+	bool ColorChangedInternal(const char *setting, bool supportAlpha);
 	bool ColorChanged(const char *setting);
+	bool ColorAlphaChanged(const char *setting);
 	bool FontChanged(const char *setting);
 	void GroupChanged(const char *setting);
 	void EditableListChanged();
@@ -101,8 +103,12 @@ private:
 	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
 			     QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
+	void AddColorInternal(obs_property_t *prop, QFormLayout *layout,
+			      QLabel *&label, bool supportAlpha);
 	void AddColor(obs_property_t *prop, QFormLayout *layout,
 		      QLabel *&label);
+	void AddColorAlpha(obs_property_t *prop, QFormLayout *layout,
+			   QLabel *&label);
 	void AddFont(obs_property_t *prop, QFormLayout *layout, QLabel *&label);
 	void AddFrameRate(obs_property_t *prop, bool &warning,
 			  QFormLayout *layout, QLabel *&label);
