@@ -699,9 +699,9 @@ static void ss_video_tick(void *data, float seconds)
 	if (!ss->transition || !ss->slide_time)
 		return;
 
-	if (ss->restart_on_activate && !ss->randomize && ss->use_cut) {
+	if (ss->restart_on_activate && ss->use_cut) {
 		ss->elapsed = 0.0f;
-		ss->cur_item = 0;
+		ss->cur_item = ss->randomize ? random_file(ss) : 0;
 		do_transition(ss, false);
 		ss->restart_on_activate = false;
 		ss->use_cut = false;
