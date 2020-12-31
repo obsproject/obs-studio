@@ -188,20 +188,8 @@ elseif(UNIX)
 		util/pipe-posix.c
 		util/platform-nix.c)
 
-	if(NEEDS_SIMDE)
-		set(libobs_PLATFORM_HEADERS
-			util/simde/check.h
-			util/simde/hedley.h
-			util/simde/mmx.h
-			util/simde/simde-arch.h
-			util/simde/simde-common.h
-			util/simde/sse.h
-			util/simde/sse2.h
-			util/threading-posix.h)
-	else()
-		set(libobs_PLATFORM_HEADERS
-			util/threading-posix.h)
-	endif()
+	set(libobs_PLATFORM_HEADERS
+		util/threading-posix.h)
 
 	if(HAVE_PULSEAUDIO)
 		set(libobs_audio_monitoring_HEADERS
@@ -369,7 +357,6 @@ set(libobs_util_SOURCES
 set(libobs_util_HEADERS
 	util/curl/curl-helper.h
 	util/sse-intrin.h
-	util/sse2neon.h
 	util/array-serializer.h
 	util/file-serializer.h
 	util/utf8.h
@@ -419,6 +406,20 @@ set(libobs_libobs_SOURCES
 	obs-video-gpu-encode.c
 	obs-video.c)
 set(libobs_libobs_HEADERS
+	util/simde/check.h
+	util/simde/debug-trap.h
+	util/simde/hedley.h
+	util/simde/simde-align.h
+	util/simde/simde-arch.h
+	util/simde/simde-common.h
+	util/simde/simde-constify.h
+	util/simde/simde-detect-clang.h
+	util/simde/simde-diagnostic.h
+	util/simde/simde-features.h
+	util/simde/simde-math.h
+	util/simde/x86/mmx.h
+	util/simde/x86/sse2.h
+	util/simde/x86/sse.h
 	${libobs_PLATFORM_HEADERS}
 	obs-audio-controls.h
 	obs-defs.h
