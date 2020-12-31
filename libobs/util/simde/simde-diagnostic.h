@@ -45,8 +45,10 @@
  */
 
 #if !defined(SIMDE_DIAGNOSTIC_H)
+#define SIMDE_DIAGNOSTIC_H
 
 #include "hedley.h"
+#include "simde-detect-clang.h"
 
 /* This is only to help us implement functions like _mm_undefined_ps. */
 #if defined(SIMDE_DIAGNOSTIC_DISABLE_UNINITIALIZED_)
@@ -119,6 +121,9 @@
 #define SIMDE_DIAGNOSTIC_DISABLE_SIMD_PRAGMA_DEPRECATED_
 #endif
 
+/* MSVC emits a diagnostic when we call a function (like
+ * simde_mm_set_epi32) while initializing a struct.  We currently do
+ * this a *lot* in the tests. */
 #if defined(HEDLEY_MSVC_VERSION)
 #define SIMDE_DIAGNOSTIC_DISABLE_NON_CONSTANT_AGGREGATE_INITIALIZER_ \
 	__pragma(warning(disable : 4204))
@@ -183,6 +188,32 @@
 #define SIMDE_DIAGNOSTIC_DISABLE_VARIADIC_MACROS_
 #endif
 
+/* emscripten requires us to use a __wasm_unimplemented_simd128__ macro
+ * before we can access certain SIMD intrinsics, but this diagnostic
+ * warns about it being a reserved name.  It is a reserved name, but
+ * it's reserved for the compiler and we are using it to convey
+ * information to the compiler.
+ *
+ * This is also used when enabling native aliases since we don't get to
+ * choose the macro names. */
+#if HEDLEY_HAS_WARNING("-Wdouble-promotion")
+#define SIMDE_DIAGNOSTIC_DISABLE_RESERVED_ID_MACRO_ \
+	_Pragma("clang diagnostic ignored \"-Wreserved-id-macro\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_RESERVED_ID_MACRO_
+#endif
+
+/* clang 3.8 warns about the packed attribute being unnecessary when
+ * used in the _mm_loadu_* functions.  That *may* be true for version
+ * 3.8, but for later versions it is crucial in order to make unaligned
+ * access safe. */
+#if HEDLEY_HAS_WARNING("-Wpacked")
+#define SIMDE_DIAGNOSTIC_DISABLE_PACKED_ \
+	_Pragma("clang diagnostic ignored \"-Wpacked\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_PACKED_
+#endif
+
 /* Triggered when assigning a float to a double implicitly.  We use
  * explicit casts in SIMDe, this is only used in the test suite. */
 #if HEDLEY_HAS_WARNING("-Wdouble-promotion")
@@ -194,7 +225,7 @@
 
 /* Several compilers treat conformant array parameters as VLAs.  We
  * test to make sure we're in C mode (C++ doesn't support CAPs), and
- * that the version of the standard supports CAPs.  We also blacklist
+ * that the version of the standard supports CAPs.  We also reject
  * some buggy compilers like MSVC (the logic is in Hedley if you want
  * to take a look), but with certain warnings enabled some compilers
  * still like to emit a diagnostic. */
@@ -221,6 +252,9 @@
 #elif HEDLEY_GCC_VERSION_CHECK(3, 4, 0)
 #define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_ \
 	_Pragma("GCC diagnostic ignored \"-Wunused-function\"")
+#elif HEDLEY_MSVC_VERSION_CHECK(19, 0, 0) /* Likely goes back further */
+#define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_ \
+	__pragma(warning(disable : 4505))
 #else
 #define SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_
 #endif
@@ -232,13 +266,63 @@
 #define SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_
 #endif
 
-/* https://github.com/nemequ/simde/issues/277 */
+#if HEDLEY_HAS_WARNING("-Wpadded")
+#define SIMDE_DIAGNOSTIC_DISABLE_PADDED_ \
+	_Pragma("clang diagnostic ignored \"-Wpadded\"")
+#elif HEDLEY_MSVC_VERSION_CHECK(19, 0, 0) /* Likely goes back further */
+#define SIMDE_DIAGNOSTIC_DISABLE_PADDED_ __pragma(warning(disable : 4324))
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_PADDED_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wzero-as-null-pointer-constant")
+#define SIMDE_DIAGNOSTIC_DISABLE_ZERO_AS_NULL_POINTER_CONSTANT_ \
+	_Pragma("clang diagnostic ignored \"-Wzero-as-null-pointer-constant\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_ZERO_AS_NULL_POINTER_CONSTANT_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wold-style-cast")
+#define SIMDE_DIAGNOSTIC_DISABLE_OLD_STYLE_CAST_ \
+	_Pragma("clang diagnostic ignored \"-Wold-style-cast\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_OLD_STYLE_CAST_
+#endif
+
+#if HEDLEY_HAS_WARNING("-Wcast-function-type") || \
+	HEDLEY_GCC_VERSION_CHECK(8, 0, 0)
+#define SIMDE_DIAGNOSTIC_DISABLE_CAST_FUNCTION_TYPE_ \
+	_Pragma("GCC diagnostic ignored \"-Wcast-function-type\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_CAST_FUNCTION_TYPE_
+#endif
+
+/* clang will emit this warning when we use C99 extensions whan not in
+ * C99 mode, even though it does support this.  In such cases we check
+ * the compiler and version first, so we know it's not a problem. */
+#if HEDLEY_HAS_WARNING("-Wc99-extensions")
+#define SIMDE_DIAGNOSTIC_DISABLE_C99_EXTENSIONS_ \
+	_Pragma("clang diagnostic ignored \"-Wc99-extensions\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_C99_EXTENSIONS_
+#endif
+
+/* https://github.com/simd-everywhere/simde/issues/277 */
 #if defined(HEDLEY_GCC_VERSION) && HEDLEY_GCC_VERSION_CHECK(4, 6, 0) && \
-	!HEDLEY_GCC_VERSION_CHECK(6, 0, 0) && defined(__cplusplus)
-#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE \
+	!HEDLEY_GCC_VERSION_CHECK(6, 4, 0) && defined(__cplusplus)
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_ \
 	_Pragma("GCC diagnostic ignored \"-Wunused-but-set-variable\"")
 #else
-#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_
+#endif
+
+/* This is the warning that you normally define _CRT_SECURE_NO_WARNINGS
+ * to silence, but you have to do that before including anything and
+ * that would require reordering includes. */
+#if defined(_MSC_VER)
+#define SIMDE_DIAGNOSTIC_DISABLE_ANNEX_K_ __pragma(warning(disable : 4996))
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_ANNEX_K_
 #endif
 
 /* Some compilers, such as clang, may use `long long` for 64-bit
@@ -246,13 +330,104 @@
  * -Wc++98-compat-pedantic which says 'long long' is incompatible with
  * C++98. */
 #if HEDLEY_HAS_WARNING("-Wc++98-compat-pedantic")
-#define SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC \
+#define SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_ \
 	_Pragma("clang diagnostic ignored \"-Wc++98-compat-pedantic\"")
 #else
-#define SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC
+#define SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_
+#endif
+
+/* Some problem as above */
+#if HEDLEY_HAS_WARNING("-Wc++11-long-long")
+#define SIMDE_DIAGNOSTIC_DISABLE_CPP11_LONG_LONG_ \
+	_Pragma("clang diagnostic ignored \"-Wc++11-long-long\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_CPP11_LONG_LONG_
+#endif
+
+/* emscripten emits this whenever stdin/stdout/stderr is used in a
+ * macro. */
+#if HEDLEY_HAS_WARNING("-Wdisabled-macro-expansion")
+#define SIMDE_DIAGNOSTIC_DISABLE_DISABLED_MACRO_EXPANSION_ \
+	_Pragma("clang diagnostic ignored \"-Wdisabled-macro-expansion\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_DISABLED_MACRO_EXPANSION_
+#endif
+
+/* Clang uses C11 generic selections to implement some AltiVec
+ * functions, which triggers this diagnostic when not compiling
+ * in C11 mode */
+#if HEDLEY_HAS_WARNING("-Wc11-extensions")
+#define SIMDE_DIAGNOSTIC_DISABLE_C11_EXTENSIONS_ \
+	_Pragma("clang diagnostic ignored \"-Wc11-extensions\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_C11_EXTENSIONS_
+#endif
+
+/* Clang sometimes triggers this warning in macros in the AltiVec and
+ * NEON headers, or due to missing functions. */
+#if HEDLEY_HAS_WARNING("-Wvector-conversion")
+#define SIMDE_DIAGNOSTIC_DISABLE_VECTOR_CONVERSION_ \
+	_Pragma("clang diagnostic ignored \"-Wvector-conversion\"")
+/* For NEON, the situation with -Wvector-conversion in clang < 10 is
+   * bad enough that we just disable the warning altogether. */
+#if defined(SIMDE_ARCH_ARM) && SIMDE_DETECT_CLANG_VERSION_NOT(10, 0, 0)
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_VECTOR_CONVERSION_ \
+	SIMDE_DIAGNOSTIC_DISABLE_VECTOR_CONVERSION_
+#endif
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_VECTOR_CONVERSION_
+#endif
+#if !defined(SIMDE_DIAGNOSTIC_DISABLE_BUGGY_VECTOR_CONVERSION_)
+#define SIMDE_DIAGNOSTIC_DISABLE_BUGGY_VECTOR_CONVERSION_
+#endif
+
+/* SLEEF triggers this a *lot* in their headers */
+#if HEDLEY_HAS_WARNING("-Wignored-qualifiers")
+#define SIMDE_DIAGNOSTIC_DISABLE_IGNORED_QUALIFIERS_ \
+	_Pragma("clang diagnostic ignored \"-Wignored-qualifiers\"")
+#elif HEDLEY_GCC_VERSION_CHECK(4, 3, 0)
+#define SIMDE_DIAGNOSTIC_DISABLE_IGNORED_QUALIFIERS_ \
+	_Pragma("GCC diagnostic ignored \"-Wignored-qualifiers\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_IGNORED_QUALIFIERS_
+#endif
+
+/* GCC emits this under some circumstances when using __int128 */
+#if HEDLEY_GCC_VERSION_CHECK(4, 8, 0)
+#define SIMDE_DIAGNOSTIC_DISABLE_PEDANTIC_ \
+	_Pragma("GCC diagnostic ignored \"-Wpedantic\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_PEDANTIC_
+#endif
+
+/* MSVC doesn't like (__assume(0), code) and will warn about code being
+ * unreachable, but we want it there because not all compilers
+ * understand the unreachable macro and will complain if it is missing.
+ * I'm planning on adding a new macro to Hedley to handle this a bit
+ * more elegantly, but until then... */
+#if defined(HEDLEY_MSVC_VERSION)
+#define SIMDE_DIAGNOSTIC_DISABLE_UNREACHABLE_ __pragma(warning(disable : 4702))
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_UNREACHABLE_
+#endif
+
+/* This is a false positive from GCC in a few places. */
+#if HEDLEY_GCC_VERSION_CHECK(4, 7, 0)
+#define SIMDE_DIAGNOSTIC_DISABLE_MAYBE_UNINITIAZILED_ \
+	_Pragma("GCC diagnostic ignored \"-Wmaybe-uninitialized\"")
+#else
+#define SIMDE_DIAGNOSTIC_DISABLE_MAYBE_UNINITIAZILED_
+#endif
+
+#if defined(SIMDE_ENABLE_NATIVE_ALIASES)
+#define SIMDE_DISABLE_UNWANTED_DIAGNOSTICS_NATIVE_ALIASES_ \
+	SIMDE_DIAGNOSTIC_DISABLE_RESERVED_ID_MACRO_
+#else
+#define SIMDE_DISABLE_UNWANTED_DIAGNOSTICS_NATIVE_ALIASES_
 #endif
 
 #define SIMDE_DISABLE_UNWANTED_DIAGNOSTICS                           \
+	SIMDE_DISABLE_UNWANTED_DIAGNOSTICS_NATIVE_ALIASES_           \
 	SIMDE_DIAGNOSTIC_DISABLE_PSABI_                              \
 	SIMDE_DIAGNOSTIC_DISABLE_NO_EMMS_INSTRUCTION_                \
 	SIMDE_DIAGNOSTIC_DISABLE_SIMD_PRAGMA_DEPRECATED_             \
@@ -264,7 +439,9 @@
 	SIMDE_DIAGNOSTIC_DISABLE_USED_BUT_MARKED_UNUSED_             \
 	SIMDE_DIAGNOSTIC_DISABLE_UNUSED_FUNCTION_                    \
 	SIMDE_DIAGNOSTIC_DISABLE_PASS_FAILED_                        \
-	SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC               \
-	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE
+	SIMDE_DIAGNOSTIC_DISABLE_CPP98_COMPAT_PEDANTIC_              \
+	SIMDE_DIAGNOSTIC_DISABLE_CPP11_LONG_LONG_                    \
+	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_UNUSED_BUT_SET_VARIBALE_      \
+	SIMDE_DIAGNOSTIC_DISABLE_BUGGY_VECTOR_CONVERSION_
 
-#endif
+#endif /* !defined(SIMDE_DIAGNOSTIC_H) */

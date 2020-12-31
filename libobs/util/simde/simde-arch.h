@@ -27,14 +27,14 @@
  * an undefined macro being used (e.g., GCC with -Wundef).
  *
  * This was originally created for SIMDe
- * <https://github.com/nemequ/simde> (hence the prefix), but this
+ * <https://github.com/simd-everywhere/simde> (hence the prefix), but this
  * header has no dependencies and may be used anywhere.  It is
  * originally based on information from
  * <https://sourceforge.net/p/predef/wiki/Architectures/>, though it
  * has been enhanced with additional information.
  *
  * If you improve this file, or find a bug, please file the issue at
- * <https://github.com/nemequ/simde/issues>.  If you copy this into
+ * <https://github.com/simd-everywhere/simde/issues>.  If you copy this into
  * your project, even if you change the prefix, please keep the links
  * to SIMDe intact so others know where to report issues, submit
  * enhancements, and find the latest version. */
@@ -70,7 +70,7 @@
 /* AMD64 / x86_64
    <https://en.wikipedia.org/wiki/X86-64> */
 #if defined(__amd64__) || defined(__amd64) || defined(__x86_64__) || \
-	defined(__x86_64) || defined(_M_X66) || defined(_M_AMD64)
+	defined(__x86_64) || defined(_M_X64) || defined(_M_AMD64)
 #define SIMDE_ARCH_AMD64 1000
 #endif
 
@@ -124,6 +124,9 @@
 #elif defined(SIMDE_ARCH_ARM)
 #define SIMDE_ARCH_ARM_NEON SIMDE_ARCH_ARM
 #endif
+#endif
+#if defined(__ARM_FEATURE_SVE)
+#define SIMDE_ARCH_ARM_SVE
 #endif
 
 /* Blackfin
@@ -276,6 +279,12 @@
 #define SIMDE_ARCH_X86_AVX 1
 #endif
 #endif
+#if defined(__AVX512VP2INTERSECT__)
+#define SIMDE_ARCH_X86_AVX512VP2INTERSECT 1
+#endif
+#if defined(__AVX512VBMI__)
+#define SIMDE_ARCH_X86_AVX512VBMI 1
+#endif
 #if defined(__AVX512BW__)
 #define SIMDE_ARCH_X86_AVX512BW 1
 #endif
@@ -293,6 +302,12 @@
 #endif
 #if defined(__GFNI__)
 #define SIMDE_ARCH_X86_GFNI 1
+#endif
+#if defined(__PCLMUL__)
+#define SIMDE_ARCH_X86_PCLMUL 1
+#endif
+#if defined(__VPCLMULQDQ__)
+#define SIMDE_ARCH_X86_VPCLMULQDQ 1
 #endif
 #endif
 
@@ -361,6 +376,10 @@
 #define SIMDE_ARCH_MIPS_CHECK(version) ((version) <= SIMDE_ARCH_MIPS)
 #else
 #define SIMDE_ARCH_MIPS_CHECK(version) (0)
+#endif
+
+#if defined(__mips_loongson_mmi)
+#define SIMDE_ARCH_MIPS_LOONGSON_MMI 1
 #endif
 
 /* Matsushita MN10300
