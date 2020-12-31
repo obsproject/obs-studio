@@ -1300,6 +1300,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	}
 
 	obs_sceneitem_set_crop(dst, &src->crop);
+	obs_sceneitem_set_locked(dst, src->locked);
 
 	if (defer_texture_update) {
 		os_atomic_set_bool(&dst->update_transform, true);
