@@ -2603,15 +2603,19 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;
+			multi = true;
 
 		} else if (arg_is(argv[i], "--startrecording", nullptr)) {
 			opt_start_recording = true;
+			multi = true;
 
 		} else if (arg_is(argv[i], "--startreplaybuffer", nullptr)) {
 			opt_start_replaybuffer = true;
+			multi = true;
 
 		} else if (arg_is(argv[i], "--startvirtualcam", nullptr)) {
 			opt_start_virtualcam = true;
+			multi = true;
 
 		} else if (arg_is(argv[i], "--collection", nullptr)) {
 			if (++i < argc)
