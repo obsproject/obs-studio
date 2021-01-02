@@ -89,6 +89,9 @@ struct v4l2_data {
 	int height;
 	int linesize;
 	struct v4l2_buffer_data buffers;
+
+	bool auto_reset;
+	int timeout_frames;
 };
 
 /* forward declarations */
@@ -178,7 +181,7 @@ static void *v4l2_thread(void *vptr)
 	ffps = (float)fps_denom / fps_num;
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
 	/* Timeout set to 5 frame periods. */
-	timeout_usec = 5000000 / ffps;
+	timeout_usec = (1000000 * data->timeout_frames) / ffps;
 	blog(LOG_INFO, "%s: select timeout set to %ldus (5x frame periods)", data->device_id, timeout_usec);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
@@ -217,10 +220,13 @@ static void *v4l2_thread(void *vptr)
 				blog(LOG_ERROR, "%s: failed to log status", data->device_id);
 			}
 
-			if (v4l2_reset_capture(data->dev, &data->buffers) == 0)
-				blog(LOG_INFO, "%s: stream reset successful", data->device_id);
-			else
-				blog(LOG_ERROR, "%s: failed to reset", data->device_id);
+			if (data->auto_reset) {
+				if (v4l2_reset_capture(data->dev, &data->buffers) == 0)
+					blog(LOG_INFO, "%s: stream reset successful", data->device_id);
+				else
+					blog(LOG_ERROR, "%s: failed to reset", data->device_id);
+			}
+
 			continue;
 		}
 
@@ -286,6 +292,8 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "framerate", -1);
 	obs_data_set_default_int(settings, "color_range", VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_bool(settings, "buffering", true);
+	obs_data_set_default_bool(settings, "auto_reset", false);
+	obs_data_set_default_int(settings, "timeout_frames", 5);
 }
 
 /**
@@ -845,6 +853,13 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("UseBuffering"));
 
+	obs_properties_add_bool(props, "auto_reset",
+				obs_module_text("AutoresetOnTimeout"));
+
+	obs_properties_add_int(props, "timeout_frames",
+				obs_module_text("FramesUntilTimeout"),
+				2, 120, 1);
+
 	// a group to contain the camera control
 	obs_properties_t *ctrl_props = obs_properties_create();
 	obs_properties_add_group(props, "controls",
@@ -1089,6 +1104,8 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate = obs_data_get_int(settings, "framerate");
 	data->color_range = obs_data_get_int(settings, "color_range");
+	data->auto_reset = obs_data_get_bool(settings, "auto_reset");
+	data->timeout_frames = obs_data_get_int(settings, "timeout_frames");
 
 	v4l2_update_source_flags(data, settings);
 
