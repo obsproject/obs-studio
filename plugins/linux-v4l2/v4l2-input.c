@@ -182,7 +182,8 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
 	/* Timeout set to 5 frame periods. */
 	timeout_usec = (1000000 * data->timeout_frames) / ffps;
-	blog(LOG_INFO, "%s: select timeout set to %ldus (5x frame periods)", data->device_id, timeout_usec);
+	blog(LOG_INFO, "%s: select timeout set to %ldus (5x frame periods)",
+	     data->device_id, timeout_usec);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
@@ -210,21 +211,27 @@ static void *v4l2_thread(void *vptr)
 			blog(LOG_ERROR, "%s: select failed", data->device_id);
 			break;
 		} else if (r == 0) {
-			blog(LOG_ERROR, "%s: select timed out", data->device_id);
+			blog(LOG_ERROR, "%s: select timed out",
+			     data->device_id);
 
 #ifdef _DEBUG
 			v4l2_query_all_buffers(data->dev, &data->buffers);
 #endif
 
 			if (v4l2_ioctl(data->dev, VIDIOC_LOG_STATUS) < 0) {
-				blog(LOG_ERROR, "%s: failed to log status", data->device_id);
+				blog(LOG_ERROR, "%s: failed to log status",
+				     data->device_id);
 			}
 
 			if (data->auto_reset) {
-				if (v4l2_reset_capture(data->dev, &data->buffers) == 0)
-					blog(LOG_INFO, "%s: stream reset successful", data->device_id);
+				if (v4l2_reset_capture(data->dev,
+						       &data->buffers) == 0)
+					blog(LOG_INFO,
+					     "%s: stream reset successful",
+					     data->device_id);
 				else
-					blog(LOG_ERROR, "%s: failed to reset", data->device_id);
+					blog(LOG_ERROR, "%s: failed to reset",
+					     data->device_id);
 			}
 
 			continue;
@@ -235,21 +242,19 @@ static void *v4l2_thread(void *vptr)
 
 		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
 			if (errno == EAGAIN) {
-				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain", data->device_id);
+				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain",
+				     data->device_id);
 				continue;
 			}
-			blog(LOG_ERROR, "%s: failed to dequeue buffer", data->device_id);
+			blog(LOG_ERROR, "%s: failed to dequeue buffer",
+			     data->device_id);
 			break;
 		}
 
-		blog(LOG_DEBUG, "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
-			data->device_id,
-			buf.timestamp.tv_usec,
-			buf.index,
-			buf.flags,
-			buf.sequence,
-			buf.length,
-			buf.bytesused);
+		blog(LOG_DEBUG,
+		     "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
+		     data->device_id, buf.timestamp.tv_usec, buf.index,
+		     buf.flags, buf.sequence, buf.length, buf.bytesused);
 
 		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
@@ -262,14 +267,16 @@ static void *v4l2_thread(void *vptr)
 		obs_source_output_video(data->source, &out);
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_ERROR, "%s: failed to enqueue buffer", data->device_id);
+			blog(LOG_ERROR, "%s: failed to enqueue buffer",
+			     data->device_id);
 			break;
 		}
 
 		frames++;
 	}
 
-	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames", data->device_id, frames);
+	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames",
+	     data->device_id, frames);
 
 exit:
 	v4l2_stop_capture(data->dev);
@@ -857,8 +864,8 @@ static obs_properties_t *v4l2_properties(void *vptr)
 				obs_module_text("AutoresetOnTimeout"));
 
 	obs_properties_add_int(props, "timeout_frames",
-				obs_module_text("FramesUntilTimeout"),
-				2, 120, 1);
+			       obs_module_text("FramesUntilTimeout"), 2, 120,
+			       1);
 
 	// a group to contain the camera control
 	obs_properties_t *ctrl_props = obs_properties_create();

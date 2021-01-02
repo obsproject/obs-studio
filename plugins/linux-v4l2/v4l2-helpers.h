@@ -208,7 +208,8 @@ int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf);
  *
  * @return negative on failure
  */
-int_fast32_t v4l2_query_all_buffers(int_fast32_t dev, struct v4l2_buffer_data *buf_data);
+int_fast32_t v4l2_query_all_buffers(int_fast32_t dev,
+				    struct v4l2_buffer_data *buf_data);
 #endif
 
 /**
