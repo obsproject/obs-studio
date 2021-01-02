@@ -198,6 +198,19 @@ int_fast32_t v4l2_stop_capture(int_fast32_t dev);
  */
 int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf);
 
+#ifdef _DEBUG
+/**
+ * Query the status of all buffers.
+ * Only used for debug purposes.
+ *
+ * @param dev handle for the v4l2 device
+ * @param buf_data buffer data
+ *
+ * @return negative on failure
+ */
+int_fast32_t v4l2_query_all_buffers(int_fast32_t dev, struct v4l2_buffer_data *buf_data);
+#endif
+
 /**
  * Create memory mapping for buffers
  *

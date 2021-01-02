@@ -209,6 +209,10 @@ static void *v4l2_thread(void *vptr)
 		} else if (r == 0) {
 			blog(LOG_ERROR, "%s: select timed out", data->device_id);
 
+#ifdef _DEBUG
+			v4l2_query_all_buffers(data->dev, &data->buffers);
+#endif
+
 			if (v4l2_ioctl(data->dev, VIDIOC_LOG_STATUS) < 0) {
 				blog(LOG_ERROR, "%s: failed to log status", data->device_id);
 			}
