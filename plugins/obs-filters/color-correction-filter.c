@@ -380,7 +380,7 @@ static obs_properties_t *color_correction_filter_properties(void *data)
 	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
 				      100, 1);
 
-	obs_properties_add_color(props, SETTING_COLOR, TEXT_COLOR);
+	obs_properties_add_color_alpha(props, SETTING_COLOR, TEXT_COLOR);
 
 	UNUSED_PARAMETER(data);
 	return props;
@@ -401,7 +401,7 @@ static void color_correction_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_SATURATION, 0.0);
 	obs_data_set_default_double(settings, SETTING_HUESHIFT, 0.0);
 	obs_data_set_default_double(settings, SETTING_OPACITY, 100.0);
-	obs_data_set_default_int(settings, SETTING_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, SETTING_COLOR, 0x00FFFFFF);
 }
 
 /*
