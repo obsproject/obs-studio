@@ -344,7 +344,7 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },		    
+                },
                 {
                     "name": "US: Miami, FL",
                     "url": "rtmp://live-mia.vaughnsoft.net/live"
@@ -386,7 +386,7 @@
                 {
                     "name": "US: New York, NY",
                     "url": "rtmp://live-nyc.vaughnsoft.net/live"
-                },		    
+                },
                 {
                     "name": "US: Miami, FL",
                     "url": "rtmp://live-mia.vaughnsoft.net/live"
@@ -1724,7 +1724,7 @@
                 "max audio bitrate": 160,
                 "x264opts": "tune=zerolatency"
             }
-	},
+        },
         {
             "name": "Mux",
             "servers": [
