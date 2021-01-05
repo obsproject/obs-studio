@@ -290,6 +290,9 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
 	} else if (serviceName == "Glimesh") {
 		streamKeyLink = "https://glimesh.tv/users/settings/stream";
+	} else if (serviceName.startsWith("OPENREC.tv")) {
+		streamKeyLink =
+			"https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
