@@ -1983,6 +1983,20 @@
                 "bframes": 0,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "OPENREC.tv - Premium member (プレミアム会員)",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://a.station.openrec.tv:1935/live1"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
