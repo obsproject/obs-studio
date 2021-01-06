@@ -890,6 +890,43 @@
             }
         },
         {
+            "name": "CamSoda",
+            "servers": [
+                {
+                    "name": "North America",
+                    "url": "rtmp://obs-ingest-na.camsoda.com/cam_obs"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://obs-ingest-sa.camsoda.com/cam_obs"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://obs-ingest-as.camsoda.com/cam_obs"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://obs-ingest-eu.camsoda.com/cam_obs"
+                },
+                {
+                    "name": "Oceania",
+                    "url": "rtmp://obs-ingest-oc.camsoda.com/cam_obs"
+                }
+            ],
+            "recommended": {
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480",
+                    "480x360"
+                ],
+                "max fps": 30,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160,
+                "x264opts": "tune=zerolatency"
+            }
+        },
+        {
             "name": "Chaturbate",
             "servers": [
                 {
