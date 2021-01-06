@@ -35,10 +35,12 @@
 #include <QProxyStyle>
 #include <QScreen>
 #include <QProcess>
+#include <QAccessible>
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "log-viewer.hpp"
+#include "slider-ignorewheel.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-settings.hpp"
 #include "crash-report.hpp"
@@ -114,7 +116,7 @@ QObject *CreateShortcutFilter()
 			case Qt::MouseButtonMask:
 				return false;
 
-			case Qt::MidButton:
+			case Qt::MiddleButton:
 				hotkey.key = OBS_KEY_MOUSE3;
 				break;
 
@@ -446,6 +448,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 				true);
 	config_set_default_bool(globalConfig, "BasicWindow", "ShowSourceIcons",
 				true);
+	config_set_default_bool(globalConfig, "BasicWindow",
+				"ShowContextToolbars", true);
 	config_set_default_bool(globalConfig, "BasicWindow", "StudioModeLabels",
 				true);
 
@@ -1125,7 +1129,12 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 {
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
+#ifdef __APPLE__
+	setWindowIcon(
+		QIcon::fromTheme("obs", QIcon(":/res/images/obs_256x256.png")));
+#else
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
+#endif
 }
 
 OBSApp::~OBSApp()
@@ -1257,6 +1266,8 @@ void OBSApp::AppInit()
 				  Str("Untitled"));
 	config_set_default_string(globalConfig, "Basic", "SceneCollectionFile",
 				  Str("Untitled"));
+	config_set_default_bool(globalConfig, "Basic", "ConfigOnNewProfile",
+				true);
 
 	if (!config_has_user_value(globalConfig, "Basic", "Profile")) {
 		config_set_string(globalConfig, "Basic", "Profile",
@@ -1441,6 +1452,8 @@ string OBSApp::GetVersionString() const
 	ver << "windows)";
 #elif __APPLE__
 	ver << "mac)";
+#elif __OpenBSD__
+	ver << "openbsd)";
 #elif __FreeBSD__
 	ver << "freebsd)";
 #else /* assume linux for the time being */
@@ -1898,6 +1911,17 @@ static auto ProfilerFree = [](void *) {
 	profiler_free();
 };
 
+QAccessibleInterface *accessibleFactory(const QString &classname,
+					QObject *object)
+{
+	if (classname == QLatin1String("VolumeSlider") && object &&
+	    object->isWidgetType())
+		return new VolumeAccessibleInterface(
+			static_cast<QWidget *>(object));
+
+	return nullptr;
+}
+
 static const char *run_program_init = "run_program_init";
 static int run_program(fstream &logFile, int argc, char *argv[])
 {
@@ -1916,6 +1940,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
 	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
+		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
+#endif
 
 #if !defined(_WIN32) && !defined(__APPLE__) && BROWSER_AVAILABLE
 	setenv("QT_NO_GLIB", "1", true);
@@ -1929,6 +1957,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
+		QAccessible::installFactory(accessibleFactory);
+
 		bool created_log = false;
 
 		program.AppInit();
@@ -1947,6 +1977,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		RunOnceMutex rom = GetRunOnceMutex(already_running);
 #elif defined(__APPLE__)
 		CheckAppWithSameBundleID(already_running);
+#elif defined(__linux__)
+		RunningInstanceCheck(already_running);
+#elif defined(__FreeBSD__) || defined(__DragonFly__)
+		PIDFileCheck(already_running);
 #endif
 
 		if (!already_running) {

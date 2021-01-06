@@ -332,6 +332,8 @@ static void vlcs_get_metadata(void *data, calldata_t *cd)
 	VLC_META(media, cd, data_id, "album_artist", libvlc_meta_AlbumArtist)
 	VLC_META(media, cd, data_id, "disc_number", libvlc_meta_DiscNumber)
 	VLC_META(media, cd, data_id, "disc_total", libvlc_meta_DiscTotal)
+
+	libvlc_media_release_(media);
 #undef VLC_META
 }
 
@@ -554,7 +556,7 @@ static bool valid_extension(const char *ext)
 		else
 			dstr_copy(&test, b);
 
-		if (dstr_cmp(&test, ext) == 0) {
+		if (dstr_cmpi(&test, ext) == 0) {
 			valid = true;
 			break;
 		}

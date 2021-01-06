@@ -21,10 +21,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-#if BUILD_CAPTIONS
 #include <caption/caption.h>
 #include <caption/mpeg.h>
-#endif
 
 static inline bool active(const struct obs_output *output)
 {
@@ -227,6 +225,7 @@ void obs_output_destroy(obs_output_t *output)
 		os_event_destroy(output->reconnect_stop_event);
 		obs_context_data_free(&output->context);
 		circlebuf_free(&output->delay_data);
+		circlebuf_free(&output->caption_data);
 		if (output->owns_info_id)
 			bfree((void *)output->info.id);
 		if (output->last_error_message)
@@ -267,6 +266,10 @@ bool obs_output_actual_start(obs_output_t *output)
 		os_atomic_dec_long(&output->delay_restart_refs);
 
 	output->caption_timestamp = 0;
+
+	circlebuf_free(&output->caption_data);
+	circlebuf_init(&output->caption_data);
+
 	return success;
 }
 
@@ -1201,13 +1204,11 @@ static inline bool has_higher_opposing_ts(struct obs_output *output,
 		return output->highest_video_ts > packet->dts_usec;
 }
 
-#if BUILD_CAPTIONS
 static const uint8_t nal_start[4] = {0, 0, 0, 1};
 
 static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 {
 	struct encoder_packet backup = *out;
-	caption_frame_t cf;
 	sei_t sei;
 	uint8_t *data;
 	size_t size;
@@ -1224,10 +1225,62 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	da_push_back_array(out_data, &ref, sizeof(ref));
 	da_push_back_array(out_data, out->data, out->size);
 
-	caption_frame_init(&cf);
-	caption_frame_from_text(&cf, &output->caption_head->text[0]);
+	if (output->caption_data.size > 0) {
 
-	sei_from_caption_frame(&sei, &cf);
+		cea708_t cea708;
+		cea708_init(&cea708, 0); // set up a new popon frame
+		void *caption_buf = bzalloc(3 * sizeof(uint8_t));
+
+		while (output->caption_data.size > 0) {
+			circlebuf_pop_front(&output->caption_data, caption_buf,
+					    3 * sizeof(uint8_t));
+
+			if ((((uint8_t *)caption_buf)[0] & 0x3) != 0) {
+				// only send cea 608
+				continue;
+			}
+
+			uint16_t captionData = ((uint8_t *)caption_buf)[1];
+			captionData = captionData << 8;
+			captionData += ((uint8_t *)caption_buf)[2];
+
+			// padding
+			if (captionData == 0x8080) {
+				continue;
+			}
+
+			if (captionData == 0) {
+				continue;
+			}
+
+			if (!eia608_parity_varify(captionData)) {
+				continue;
+			}
+
+			cea708_add_cc_data(&cea708, 1,
+					   ((uint8_t *)caption_buf)[0] & 0x3,
+					   captionData);
+		}
+
+		bfree(caption_buf);
+
+		sei_message_t *msg =
+			sei_message_new(sei_type_user_data_registered_itu_t_t35,
+					0, CEA608_MAX_SIZE);
+		msg->size = cea708_render(&cea708, sei_message_data(msg),
+					  sei_message_size(msg));
+		sei_message_append(&sei, msg);
+	} else if (output->caption_head) {
+		caption_frame_t cf;
+		caption_frame_init(&cf);
+		caption_frame_from_text(&cf, &output->caption_head->text[0]);
+
+		sei_from_caption_frame(&sei, &cf);
+
+		struct caption_text *next = output->caption_head->next;
+		bfree(output->caption_head);
+		output->caption_head = next;
+	}
 
 	data = malloc(sei_render_size(&sei));
 	size = sei_render(&sei, data);
@@ -1244,12 +1297,10 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 
 	sei_free(&sei);
 
-	struct caption_text *next = output->caption_head->next;
-	bfree(output->caption_head);
-	output->caption_head = next;
 	return true;
 }
-#endif
+
+double last_caption_timestamp = 0;
 
 static inline void send_interleaved(struct obs_output *output)
 {
@@ -1266,7 +1317,6 @@ static inline void send_interleaved(struct obs_output *output)
 	if (out.type == OBS_ENCODER_VIDEO) {
 		output->total_frames++;
 
-#if BUILD_CAPTIONS
 		pthread_mutex_lock(&output->caption_mutex);
 
 		double frame_timestamp =
@@ -1286,8 +1336,14 @@ static inline void send_interleaved(struct obs_output *output)
 			}
 		}
 
+		if (output->caption_data.size > 0) {
+			if (last_caption_timestamp < frame_timestamp) {
+				last_caption_timestamp = frame_timestamp;
+				add_caption(output, &out);
+			}
+		}
+
 		pthread_mutex_unlock(&output->caption_mutex);
-#endif
 	}
 
 	output->info.encoded_packet(output->context.data, &out);
@@ -2471,7 +2527,18 @@ const char *obs_output_get_id(const obs_output_t *output)
 							     : NULL;
 }
 
-#if BUILD_CAPTIONS
+void obs_output_caption(obs_output_t *output,
+			const struct obs_source_cea_708 *captions)
+{
+	pthread_mutex_lock(&output->caption_mutex);
+	for (size_t i = 0; i < captions->packets; i++) {
+		circlebuf_push_back(&output->caption_data,
+				    captions->data + (i * 3),
+				    3 * sizeof(uint8_t));
+	}
+	pthread_mutex_unlock(&output->caption_mutex);
+}
+
 static struct caption_text *caption_text_new(const char *text, size_t bytes,
 					     struct caption_text *tail,
 					     struct caption_text **head,
@@ -2518,7 +2585,6 @@ void obs_output_output_caption_text2(obs_output_t *output, const char *text,
 
 	pthread_mutex_unlock(&output->caption_mutex);
 }
-#endif
 
 float obs_output_get_congestion(obs_output_t *output)
 {

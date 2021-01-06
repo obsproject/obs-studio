@@ -22,10 +22,12 @@
 #include <util/threading.h>
 #include <QWidget>
 #include <QLayout>
+#include <QComboBox>
 #include <QMessageBox>
 #include <QDataStream>
 #include <QKeyEvent>
 #include <QFileDialog>
+#include <QStandardItemModel>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <QX11Info>
@@ -324,6 +326,15 @@ bool LineEditChanged(QEvent *event)
 	}
 
 	return false;
+}
+
+void SetComboItemEnabled(QComboBox *c, int idx, bool enabled)
+{
+	QStandardItemModel *model =
+		dynamic_cast<QStandardItemModel *>(c->model());
+	QStandardItem *item = model->item(idx);
+	item->setFlags(enabled ? Qt::ItemIsSelectable | Qt::ItemIsEnabled
+			       : Qt::NoItemFlags);
 }
 
 void setThemeID(QWidget *widget, const QString &themeID)

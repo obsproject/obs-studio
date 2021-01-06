@@ -89,7 +89,7 @@ void VolControl::updateText()
 					  : "VolControl.SliderUnmuted";
 
 	QString sourceName = obs_source_get_name(source);
-	QString accText = QTStr(accTextLookup).arg(sourceName, db);
+	QString accText = QTStr(accTextLookup).arg(sourceName);
 
 	slider->setAccessibleName(accText);
 }
@@ -161,7 +161,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *meterLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
-		slider = new SliderIgnoreScroll(Qt::Vertical);
+		slider = new VolumeSlider(obs_fader, Qt::Vertical);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
@@ -205,7 +205,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *botLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, false);
-		slider = new SliderIgnoreScroll(Qt::Horizontal);
+		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);

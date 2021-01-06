@@ -16,10 +16,6 @@ elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
 
-	set_source_files_properties(${libobs-opengl_PLATFORM_SOURCES}
-		PROPERTIES
-			LANGUAGE C)
-
 	find_library(COCOA Cocoa)
 	include_directories(${COCOA})
 	mark_as_advanced(COCOA)

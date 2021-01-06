@@ -629,20 +629,25 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define TCP_PROTO "tcp"
 #define HTTP_PROTO "http"
 
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1);
+}
+
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
 	AVOutputFormat *output_format;
 	int ret;
-	bool is_network = false;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
 			   sizeof(HTTP_PROTO) - 1) == 0);
 
-	if (strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) == 0 ||
-	    strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) == 0 ||
-	    is_http) {
-		is_network = true;
+	bool is_network = ffmpeg_mux_is_network(ffm);
+
+	if (is_network) {
 		avformat_network_init();
 	}
 
@@ -798,8 +803,13 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	int ret = av_interleaved_write_frame(ffm->output, &packet);
 
 	if (ret < 0) {
-		fprintf(stderr, "av_interleaved_write_frame failed: %s\n",
-			av_err2str(ret));
+		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
+			ret, av_err2str(ret));
+	}
+
+	/* Treat "Invalid data found when processing input" and "Invalid argument" as non-fatal */
+	if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
+		return true;
 	}
 
 	return ret >= 0;

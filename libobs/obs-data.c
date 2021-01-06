@@ -1762,12 +1762,12 @@ bool obs_data_item_get_default_bool(obs_data_item_t *item)
 
 obs_data_t *obs_data_item_get_default_obj(obs_data_item_t *item)
 {
-	return data_item_get_obj(item, get_item_obj);
+	return data_item_get_obj(item, get_item_default_obj);
 }
 
 obs_data_array_t *obs_data_item_get_default_array(obs_data_item_t *item)
 {
-	return data_item_get_array(item, get_item_array);
+	return data_item_get_array(item, get_item_default_array);
 }
 
 const char *obs_data_item_get_autoselect_string(obs_data_item_t *item)

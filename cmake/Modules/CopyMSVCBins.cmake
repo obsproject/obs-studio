@@ -70,6 +70,10 @@ file(GLOB FFMPEG_BIN_FILES
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedcrypto*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedcrypto*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedtls*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libmbedx509*.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libmbedx509*.dll"
 
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libopus*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/opus*.dll"
@@ -159,6 +163,7 @@ file(GLOB QT_DEBUG_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Svgd.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Xmld.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Networkd.dll"
 	"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
 	"${Qt5Core_DIR}/../../../bin/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES
@@ -177,6 +182,7 @@ file(GLOB QT_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Svg.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Xml.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5Network.dll"
 	"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
 	"${Qt5Core_DIR}/../../../bin/libEGL.dll")
 file(GLOB QT_PLAT_BIN_FILES

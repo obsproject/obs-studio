@@ -100,7 +100,7 @@ bool DeckLinkInput::Activate(DeckLinkDevice *device, long long modeId,
 		return false;
 	}
 
-	if (!instance->StartCapture(mode, bmdVideoConnection,
+	if (!instance->StartCapture(mode, allow10Bit, bmdVideoConnection,
 				    bmdAudioConnection)) {
 		instance = nullptr;
 		return false;

@@ -24,10 +24,10 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2020-08-30'
+      MACOS_DEPS_VERSION: '2020-12-22'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
-      QT_VERSION: '5.14.1'
+      QT_VERSION: '5.15.2'
       SIGN_IDENTITY: ''
     steps:
       - name: 'Checkout'
@@ -53,7 +53,19 @@ jobs:
       - name: 'Install prerequisites (Homebrew)'
         shell: bash
         run: |
-          brew update --preinstall
+          if [ -d /usr/local/opt/openssl@1.0.2t ]; then
+            brew uninstall openssl@1.0.2t
+            brew untap local/openssl
+          fi
+
+          if [ -d /usr/local/opt/python@2.7.17 ]; then
+            brew uninstall python@2.7.17
+            brew untap local/python2
+          fi
+
+          if [ -d /usr/local/opt/speexdsp ]; then
+            brew unlink speexdsp
+          fi
           brew bundle --file ./CI/scripts/macos/Brewfile
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
@@ -63,22 +75,6 @@ jobs:
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
-      - name: 'Restore pre-built dependencies from cache'
-        id: deps-cache
-        uses: actions/cache@v2.1.2
-        env:
-          CACHE_NAME: 'deps-cache'
-        with:
-          path: /tmp/obsdeps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
-      - name: 'Restore pre-built Qt dependency from cache'
-        id: deps-qt-cache
-        uses: actions/cache@v2.1.2
-        env:
-          CACHE_NAME: 'deps-qt-cache'
-        with:
-          path: /tmp/obsdeps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_DEPS_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
         uses: actions/cache@v2.1.2
@@ -144,7 +140,8 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_DEPLOY=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          LEGACY_BROWSER="$(test "${{ env.CEF_BUILD_VERSION }}" -le 3770 && echo "ON" || echo "OFF")"
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_LEGACY=$LEGACY_BROWSER -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -177,12 +174,19 @@ jobs:
           mkdir -p OBS.app/Contents/MacOS
           mkdir OBS.app/Contents/PlugIns
           mkdir OBS.app/Contents/Resources
+          mkdir OBS.app/Contents/Frameworks
 
           cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
           cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
+          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+            cp -R "rundir/RelWithDebInfo/bin/OBS Helper.app" "./OBS.app/Contents/Frameworks/OBS Helper.app"
+            cp -R "rundir/RelWithDebInfo/bin/OBS Helper (GPU).app" "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+            cp -R "rundir/RelWithDebInfo/bin/OBS Helper (Plugin).app" "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+            cp -R "rundir/RelWithDebInfo/bin/OBS Helper (Renderer).app" "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
+          fi
           cp rundir/RelWithDebInfo/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
           cp -R rundir/RelWithDebInfo/data ./OBS.app/Contents/Resources
-          cp ../CI/scripts/macos/app/obs.icns ./OBS.app/Contents/Resources
+          cp ../CI/scripts/macos/app/AppIcon.icns ./OBS.app/Contents/Resources
           cp -R rundir/RelWithDebInfo/obs-plugins/ ./OBS.app/Contents/PlugIns
           cp ../CI/scripts/macos/app/Info.plist ./OBS.app/Contents
 
@@ -193,33 +197,45 @@ jobs:
             rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
           fi
 
+          BUNDLE_PLUGINS=(
+            ./OBS.app/Contents/PlugIns/coreaudio-encoder.so
+            ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so
+            ./OBS.app/Contents/PlugIns/decklink-captions.so
+            ./OBS.app/Contents/PlugIns/frontend-tools.so
+            ./OBS.app/Contents/PlugIns/image-source.so
+            ./OBS.app/Contents/PlugIns/mac-avcapture.so
+            ./OBS.app/Contents/PlugIns/mac-capture.so
+            ./OBS.app/Contents/PlugIns/mac-decklink.so
+            ./OBS.app/Contents/PlugIns/mac-syphon.so
+            ./OBS.app/Contents/PlugIns/mac-vth264.so
+            ./OBS.app/Contents/PlugIns/mac-virtualcam.so
+            ./OBS.app/Contents/PlugIns/obs-browser.so
+            ./OBS.app/Contents/PlugIns/obs-ffmpeg.so
+            ./OBS.app/Contents/PlugIns/obs-filters.so
+            ./OBS.app/Contents/PlugIns/obs-transitions.so
+            ./OBS.app/Contents/PlugIns/obs-vst.so
+            ./OBS.app/Contents/PlugIns/rtmp-services.so
+            ./OBS.app/Contents/MacOS/obs-ffmpeg-mux
+            ./OBS.app/Contents/MacOS/obslua.so
+            ./OBS.app/Contents/PlugIns/obs-x264.so
+            ./OBS.app/Contents/PlugIns/text-freetype2.so
+            ./OBS.app/Contents/PlugIns/obs-outputs.so
+          )
+
+          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
           ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
             -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
             -s ./rundir/RelWithDebInfo/bin \
-            -x ./OBS.app/Contents/PlugIns/coreaudio-encoder.so \
-            -x ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so \
-            -x ./OBS.app/Contents/PlugIns/frontend-tools.so \
-            -x ./OBS.app/Contents/PlugIns/image-source.so \
-            -x ./OBS.app/Contents/PlugIns/linux-jack.so \
-            -x ./OBS.app/Contents/PlugIns/mac-avcapture.so \
-            -x ./OBS.app/Contents/PlugIns/mac-capture.so \
-            -x ./OBS.app/Contents/PlugIns/mac-decklink.so \
-            -x ./OBS.app/Contents/PlugIns/mac-syphon.so \
-            -x ./OBS.app/Contents/PlugIns/mac-vth264.so \
-            -x ./OBS.app/Contents/PlugIns/obs-browser.so \
-            -x ./OBS.app/Contents/PlugIns/obs-browser-page \
-            -x ./OBS.app/Contents/PlugIns/obs-ffmpeg.so \
-            -x ./OBS.app/Contents/PlugIns/obs-filters.so \
-            -x ./OBS.app/Contents/PlugIns/obs-transitions.so \
-            -x ./OBS.app/Contents/PlugIns/obs-vst.so \
-            -x ./OBS.app/Contents/PlugIns/rtmp-services.so \
-            -x ./OBS.app/Contents/MacOS/obs-ffmpeg-mux \
-            -x ./OBS.app/Contents/MacOS/obslua.so \
-            -x ./OBS.app/Contents/PlugIns/obs-x264.so \
-            -x ./OBS.app/Contents/PlugIns/text-freetype2.so \
-            -x ./OBS.app/Contents/PlugIns/obs-libfdk.so \
-            -x ./OBS.app/Contents/PlugIns/obs-outputs.so
+            $(echo "${BUNDLE_PLUGINS[@]/#/-x }")
+          else
+          ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
+            -s ./OBS.app/Contents/MacOS \
+            -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
+            -s ./rundir/RelWithDebInfo/bin \
+            $(echo "${BUNDLE_PLUGINS[@]/#/-x }") \
+            -x ./OBS.app/Contents/PlugIns/obs-browser-page
+          fi
 
           mv ./libobs-opengl/libobs-opengl.so ./OBS.app/Contents/Frameworks
 
@@ -256,9 +272,21 @@ jobs:
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
+          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+            codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libvk_swiftshader.dylib"
+          fi
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
 
+          codesign --force --options runtime --deep --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Resources/data/obs-mac-virtualcam.plugin"
+
           codesign --force --options runtime --entitlements "../CI/scripts/macos/app/entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app
+
+          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+            codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper.app"
+            codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-gpu-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
+            codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-plugin-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
+            codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-renderer-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Renderer).app"
+          fi
 
           codesign -dvv ./OBS.app
       - name: 'Package'
@@ -363,6 +391,7 @@ jobs:
            libluajit-5.1-dev \
            libpulse-dev \
            libqt5x11extras5-dev \
+           libsndio-dev \
            libspeexdsp-dev \
            libswresample-dev \
            libswscale-dev \
@@ -383,7 +412,9 @@ jobs:
            qtbase5-dev \
            libqt5svg5-dev \
            swig \
-           libcmocka-dev
+           libcmocka-dev \
+           linux-generic \
+           v4l2loopback-dkms
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
         uses: actions/cache@v2.1.2
@@ -404,7 +435,7 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DENABLE_UNIT_TESTS=ON -DENABLE_VLC=ON -DBUILD_CAPTIONS=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
+          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DENABLE_UNIT_TESTS=ON -DENABLE_VLC=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -528,7 +559,7 @@ jobs:
           mkdir ./build
           mkdir ./build64
           cd ./build64
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
       - name: 'Package'
@@ -640,7 +671,7 @@ jobs:
           mkdir ./build
           mkdir ./build32
           cd ./build32
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DBUILD_CAPTIONS=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
       - name: 'Package'

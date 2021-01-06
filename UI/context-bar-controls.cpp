@@ -96,14 +96,6 @@ static int FillPropertyCombo(QComboBox *c, obs_property_t *p,
 	return cur_idx;
 }
 
-static void SetComboItemDisabled(QComboBox *c, int idx)
-{
-	QStandardItemModel *model =
-		dynamic_cast<QStandardItemModel *>(c->model());
-	QStandardItem *item = model->item(idx);
-	item->setFlags(Qt::NoItemFlags);
-}
-
 void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
 					obs_properties_t *props,
 					const char *prop_name, bool is_int)
@@ -131,7 +123,7 @@ void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
 			cur_idx = 0;
 		}
 
-		SetComboItemDisabled(combo, cur_idx);
+		SetComboItemEnabled(combo, cur_idx, false);
 	}
 
 	combo->setCurrentIndex(cur_idx);
@@ -345,7 +337,7 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	ui->window->blockSignals(false);
 
 	if (cur_idx != -1 && obs_property_list_item_disabled(p, cur_idx)) {
-		SetComboItemDisabled(ui->window, cur_idx);
+		SetComboItemEnabled(ui->window, cur_idx, false);
 	}
 
 	UpdateWindowVisibility();

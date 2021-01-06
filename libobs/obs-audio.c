@@ -116,7 +116,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 			blog(LOG_DEBUG, "doing pending stop trick: '%s'",
 			     source->context.name);
 #endif
-			return true;
+			return false;
 		}
 
 		for (size_t ch = 0; ch < channels; ch++)

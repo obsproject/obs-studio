@@ -80,6 +80,8 @@ struct vk_surf_data {
 struct vk_inst_data {
 	struct vk_obj_node node;
 
+	VkInstance instance;
+
 	bool valid;
 
 	struct vk_inst_funcs funcs;
@@ -489,20 +491,22 @@ static struct vk_inst_data *alloc_inst_data(const VkAllocationCallbacks *ac)
 	return idata;
 }
 
-static void init_inst_data(struct vk_inst_data *data, VkInstance inst)
+static void init_inst_data(struct vk_inst_data *idata, VkInstance instance)
 {
-	add_obj_data(&instances, (uint64_t)GET_LDT(inst), data);
+	add_obj_data(&instances, (uint64_t)GET_LDT(instance), idata);
+	idata->instance = instance;
 }
 
-static struct vk_inst_data *get_inst_data(VkInstance inst)
+static struct vk_inst_data *get_inst_data(VkInstance instance)
 {
 	return (struct vk_inst_data *)get_obj_data(&instances,
-						   (uint64_t)GET_LDT(inst));
+						   (uint64_t)GET_LDT(instance));
 }
 
-static struct vk_inst_funcs *get_inst_funcs(VkInstance inst)
+static struct vk_inst_funcs *get_inst_funcs(VkInstance instance)
 {
-	struct vk_inst_data *idata = (struct vk_inst_data *)get_inst_data(inst);
+	struct vk_inst_data *idata =
+		(struct vk_inst_data *)get_inst_data(instance);
 	return &idata->funcs;
 }
 
@@ -1439,7 +1443,7 @@ static VkResult VKAPI_CALL OBS_CreateDevice(VkPhysicalDevice phy_device,
 	/* create device and initialize hook data                   */
 
 	PFN_vkCreateDevice createFunc =
-		(PFN_vkCreateDevice)gipa(VK_NULL_HANDLE, "vkCreateDevice");
+		(PFN_vkCreateDevice)gipa(idata->instance, "vkCreateDevice");
 
 	ret = createFunc(phy_device, info, ac, p_device);
 	if (ret != VK_SUCCESS) {

@@ -42,9 +42,11 @@ static void stinger_update(void *data, obs_data_t *settings)
 {
 	struct stinger_info *s = data;
 	const char *path = obs_data_get_string(settings, "path");
+	bool hw_decode = obs_data_get_bool(settings, "hw_decode");
 
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
+	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -103,6 +105,11 @@ static void stinger_destroy(void *data)
 	struct stinger_info *s = data;
 	obs_source_release(s->media_source);
 	bfree(s);
+}
+
+static void stinger_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_bool(settings, "hw_decode", true);
 }
 
 static void stinger_video_render(void *data, gs_effect_t *effect)
@@ -322,6 +329,10 @@ static obs_properties_t *stinger_properties(void *data)
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+#ifndef __APPLE__
+	obs_properties_add_bool(ppts, "hw_decode",
+				obs_module_text("HardwareDecode"));
+#endif
 	obs_property_list_add_int(p, obs_module_text("TransitionPointTypeTime"),
 				  TIMING_TIME);
 	obs_property_list_add_int(
@@ -368,6 +379,7 @@ struct obs_source_info stinger_transition = {
 	.create = stinger_create,
 	.destroy = stinger_destroy,
 	.update = stinger_update,
+	.get_defaults = stinger_defaults,
 	.video_render = stinger_video_render,
 	.audio_render = stinger_audio_render,
 	.get_properties = stinger_properties,

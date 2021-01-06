@@ -22,7 +22,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 {
 	QHBoxLayout *hlayout;
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
-	const char *sourceName = obs_source_get_name(source);
+	QString sourceName = QT_UTF8(obs_source_get_name(source));
 	float vol = obs_source_get_volume(source);
 	uint32_t flags = obs_source_get_flags(source);
 	uint32_t mixers = obs_source_get_audio_mixers(source);
@@ -90,7 +90,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	iconLabel->setFixedSize(16, 16);
 	iconLabel->setStyleSheet("background: none");
 
-	nameLabel->setText(QT_UTF8(sourceName));
+	nameLabel->setText(sourceName);
 	nameLabel->setAlignment(Qt::AlignVCenter);
 
 	bool isActive = obs_source_active(source);
@@ -109,15 +109,21 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	volume->setSuffix(" dB");
 	volume->setValue(obs_mul_to_db(vol));
 	volume->setFixedWidth(100);
+	volume->setAccessibleName(
+		QTStr("Basic.AdvAudio.VolumeSource").arg(sourceName));
 
-	if (volume->value() < MIN_DB)
+	if (volume->value() < MIN_DB) {
 		volume->setSpecialValueText("-inf dB");
+		volume->setAccessibleDescription("-inf dB");
+	}
 
 	percent->setMinimum(0);
 	percent->setMaximum(2000);
 	percent->setSuffix("%");
 	percent->setValue((int)(obs_source_get_volume(source) * 100.0f));
 	percent->setFixedWidth(100);
+	percent->setAccessibleName(
+		QTStr("Basic.AdvAudio.VolumeSource").arg(sourceName));
 
 	stackedWidget->addWidget(volume);
 	stackedWidget->addWidget(percent);
@@ -128,6 +134,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	SetVolumeWidget(volType);
 
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
+	forceMono->setAccessibleName(
+		QTStr("Basic.AdvAudio.MonoSource").arg(sourceName));
 
 	forceMonoContainer->layout()->addWidget(forceMono);
 	forceMonoContainer->layout()->setAlignment(forceMono, Qt::AlignVCenter);
@@ -138,6 +146,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balance->setMaximum(100);
 	balance->setTickPosition(QSlider::TicksAbove);
 	balance->setTickInterval(50);
+	balance->setAccessibleName(
+		QTStr("Basic.AdvAudio.BalanceSource").arg(sourceName));
 
 	const char *speakers =
 		config_get_string(main->Config(), "Audio", "ChannelSetup");
@@ -156,6 +166,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	syncOffset->setSuffix(" ms");
 	syncOffset->setValue(int(cur_sync / NSEC_PER_MSEC));
 	syncOffset->setFixedWidth(100);
+	syncOffset->setAccessibleName(
+		QTStr("Basic.AdvAudio.SyncOffsetSource").arg(sourceName));
 
 	int idx;
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
@@ -168,20 +180,34 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	int mt = (int)obs_source_get_monitoring_type(source);
 	idx = monitoringType->findData(mt);
 	monitoringType->setCurrentIndex(idx);
+	monitoringType->setAccessibleName(
+		QTStr("Basic.AdvAudio.MonitoringSource").arg(sourceName));
 #endif
 
 	mixer1->setText("1");
 	mixer1->setChecked(mixers & (1 << 0));
+	mixer1->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track1"));
 	mixer2->setText("2");
 	mixer2->setChecked(mixers & (1 << 1));
+	mixer2->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track2"));
 	mixer3->setText("3");
 	mixer3->setChecked(mixers & (1 << 2));
+	mixer3->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track3"));
 	mixer4->setText("4");
 	mixer4->setChecked(mixers & (1 << 3));
+	mixer4->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track4"));
 	mixer5->setText("5");
 	mixer5->setChecked(mixers & (1 << 4));
+	mixer5->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track5"));
 	mixer6->setText("6");
 	mixer6->setChecked(mixers & (1 << 5));
+	mixer6->setAccessibleName(
+		QTStr("Basic.Settings.Output.Adv.Audio.Track6"));
 
 	speaker_layout sl = obs_source_get_speaker_layout(source);
 

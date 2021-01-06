@@ -101,7 +101,7 @@ void OBSHotkeyEdit::mousePressEvent(QMouseEvent *event)
 	case Qt::MouseButtonMask:
 		return;
 
-	case Qt::MidButton:
+	case Qt::MiddleButton:
 		new_key.key = OBS_KEY_MOUSE3;
 		break;
 
@@ -293,11 +293,13 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 
 	auto add = new QPushButton;
 	add->setProperty("themeID", "addIconSmall");
+	add->setToolTip(QTStr("Add"));
 	add->setFixedSize(24, 24);
 	add->setFlat(true);
 
 	auto remove = new QPushButton;
 	remove->setProperty("themeID", "removeIconSmall");
+	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
 	remove->setFixedSize(24, 24);
 	remove->setFlat(true);

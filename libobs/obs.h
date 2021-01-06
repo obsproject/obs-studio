@@ -212,6 +212,12 @@ struct obs_source_audio {
 	uint64_t timestamp;
 };
 
+struct obs_source_cea_708 {
+	const uint8_t *data;
+	uint32_t packets;
+	uint64_t timestamp;
+};
+
 /**
  * Source asynchronous video output structure.  Used with
  * obs_source_output_video to output asynchronous video.  Video is buffered as
@@ -1117,6 +1123,16 @@ EXPORT void obs_source_add_audio_capture_callback(
 EXPORT void obs_source_remove_audio_capture_callback(
 	obs_source_t *source, obs_source_audio_capture_t callback, void *param);
 
+typedef void (*obs_source_caption_t)(void *param, obs_source_t *source,
+				     const struct obs_source_cea_708 *captions);
+
+EXPORT void obs_source_add_caption_callback(obs_source_t *source,
+					    obs_source_caption_t callback,
+					    void *param);
+EXPORT void obs_source_remove_caption_callback(obs_source_t *source,
+					       obs_source_caption_t callback,
+					       void *param);
+
 enum obs_deinterlace_mode {
 	OBS_DEINTERLACE_MODE_DISABLE,
 	OBS_DEINTERLACE_MODE_DISCARD,
@@ -1207,6 +1223,9 @@ EXPORT void obs_source_output_video2(obs_source_t *source,
 				     const struct obs_source_frame2 *frame);
 
 EXPORT void obs_source_set_async_rotation(obs_source_t *source, long rotation);
+
+EXPORT void obs_source_output_cea708(obs_source_t *source,
+				     const struct obs_source_cea_708 *captions);
 
 /**
  * Preloads asynchronous video data to allow instantaneous playback
@@ -1884,13 +1903,14 @@ EXPORT uint32_t obs_output_get_height(const obs_output_t *output);
 
 EXPORT const char *obs_output_get_id(const obs_output_t *output);
 
-#if BUILD_CAPTIONS
+EXPORT void obs_output_caption(obs_output_t *output,
+			       const struct obs_source_cea_708 *captions);
+
 EXPORT void obs_output_output_caption_text1(obs_output_t *output,
 					    const char *text);
 EXPORT void obs_output_output_caption_text2(obs_output_t *output,
 					    const char *text,
 					    double display_duration);
-#endif
 
 EXPORT float obs_output_get_congestion(obs_output_t *output);
 EXPORT int obs_output_get_connect_time_ms(obs_output_t *output);
@@ -2210,6 +2230,14 @@ obs_service_apply_encoder_settings(obs_service_t *service,
 EXPORT void *obs_service_get_type_data(obs_service_t *service);
 
 EXPORT const char *obs_service_get_id(const obs_service_t *service);
+
+EXPORT void obs_service_get_supported_resolutions(
+	const obs_service_t *service,
+	struct obs_service_resolution **resolutions, size_t *count);
+EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
+
+EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
+					int *video_bitrate, int *audio_bitrate);
 
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
