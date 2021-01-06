@@ -1790,6 +1790,57 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "MyFreeCams",
+            "servers": [
+                {
+                    "name": "Automatic",
+                    "url": "rtmp://publish.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Australia",
+                    "url": "rtmp://publish-syd.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "East Asia",
+                    "url": "rtmp://publish-tyo.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Europe (East)",
+                    "url": "rtmp://publish-buh.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "Europe (West)",
+                    "url": "rtmp://publish-ams.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "North America (East Coast)",
+                    "url": "rtmp://publish-ord.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "North America (West Coast)",
+                    "url": "rtmp://publish-tuk.myfreecams.com/NxServer"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://publish-sao.myfreecams.com/NxServer"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "960x540",
+                    "640x360"
+                ],
+                "max fps": 60,
+                "max video bitrate": 6000,
+                "max audio bitrate": 192,
+                "x264opts": "tune=zerolatency scenecut=0"
+            }
         }
     ]
 }
