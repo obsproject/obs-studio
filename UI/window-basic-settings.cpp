@@ -526,8 +526,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->fpsInteger,           SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsNumerator,         SCROLL_CHANGED, VIDEO_CHANGED);
 	HookWidget(ui->fpsDenominator,       SCROLL_CHANGED, VIDEO_CHANGED);
-	HookWidget(ui->renderer,             COMBO_CHANGED,  ADV_RESTART);
-	HookWidget(ui->adapter,              COMBO_CHANGED,  ADV_RESTART);
 	HookWidget(ui->colorFormat,          COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorSpace,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
@@ -620,10 +618,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		ui->processPriority->addItem(QTStr(pri.name), pri.val);
 
 #else
-	delete ui->rendererLabel;
-	delete ui->renderer;
-	delete ui->adapterLabel;
-	delete ui->adapter;
 	delete ui->processPriorityLabel;
 	delete ui->processPriority;
 	delete ui->advancedGeneralGroupBox;
@@ -636,10 +630,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if defined(__APPLE__) || HAVE_PULSEAUDIO
 	delete ui->disableAudioDucking;
 #endif
-	ui->rendererLabel = nullptr;
-	ui->renderer = nullptr;
-	ui->adapterLabel = nullptr;
-	ui->adapter = nullptr;
 	ui->processPriorityLabel = nullptr;
 	ui->processPriority = nullptr;
 	ui->advancedGeneralGroupBox = nullptr;
@@ -1363,32 +1353,6 @@ void OBSBasicSettings::LoadGeneralSettings()
 		ui->language->setEnabled(false);
 
 	loading = false;
-}
-
-void OBSBasicSettings::LoadRendererList()
-{
-#ifdef _WIN32
-	const char *renderer =
-		config_get_string(GetGlobalConfig(), "Video", "Renderer");
-
-	ui->renderer->addItem(QT_UTF8("Direct3D 11"));
-	if (opt_allow_opengl || strcmp(renderer, "OpenGL") == 0)
-		ui->renderer->addItem(QT_UTF8("OpenGL"));
-
-	int idx = ui->renderer->findText(QT_UTF8(renderer));
-	if (idx == -1)
-		idx = 0;
-
-	// the video adapter selection is not currently implemented, hide for now
-	// to avoid user confusion. was previously protected by
-	// if (strcmp(renderer, "OpenGL") == 0)
-	delete ui->adapter;
-	delete ui->adapterLabel;
-	ui->adapter = nullptr;
-	ui->adapterLabel = nullptr;
-
-	ui->renderer->setCurrentIndex(idx);
-#endif
 }
 
 static string ResString(uint32_t cx, uint32_t cy)
@@ -2494,8 +2458,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	loading = true;
 
-	LoadRendererList();
-
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
 	if (!SetComboByValue(ui->monitoringDevice, monDevId))
 		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
@@ -3169,10 +3131,6 @@ void OBSBasicSettings::SaveAdvancedSettings()
 		main->Config(), "Audio", "MonitoringDeviceId");
 
 #ifdef _WIN32
-	if (WidgetChanged(ui->renderer))
-		config_set_string(App()->GlobalConfig(), "Video", "Renderer",
-				  QT_TO_UTF8(ui->renderer->currentText()));
-
 	std::string priority =
 		QT_TO_UTF8(ui->processPriority->currentData().toString());
 	config_set_string(App()->GlobalConfig(), "General", "ProcessPriority",

@@ -405,13 +405,6 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
 				true);
 
-#if _WIN32
-	config_set_default_string(globalConfig, "Video", "Renderer",
-				  "Direct3D 11");
-#else
-	config_set_default_string(globalConfig, "Video", "Renderer", "OpenGL");
-#endif
-
 	config_set_default_bool(globalConfig, "BasicWindow", "PreviewEnabled",
 				true);
 	config_set_default_bool(globalConfig, "BasicWindow",
@@ -1308,10 +1301,14 @@ void OBSApp::AppInit()
 
 const char *OBSApp::GetRenderModule() const
 {
-	const char *renderer =
-		config_get_string(globalConfig, "Video", "Renderer");
+#ifdef _WIN32
+	if (opt_allow_opengl)
+		return DL_OPENGL;
 
-	return (astrcmpi(renderer, "Direct3D 11") == 0) ? DL_D3D11 : DL_OPENGL;
+	return DL_D3D11;
+#else
+	return DL_OPENGL;
+#endif
 }
 
 static bool StartupOBS(const char *locale, profiler_name_store_t *store)
@@ -2663,7 +2660,7 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;
 
-		} else if (arg_is(argv[i], "--allow-opengl", nullptr)) {
+		} else if (arg_is(argv[i], "--enable-opengl", nullptr)) {
 			opt_allow_opengl = true;
 
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {

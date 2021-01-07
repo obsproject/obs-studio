@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1026</height>
+              <width>806</width>
+              <height>1320</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1295,8 +1295,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>677</height>
+              <width>813</width>
+              <height>739</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3804,8 +3804,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>555</width>
-              <height>469</height>
+              <width>767</width>
+              <height>582</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4660,8 +4660,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>602</width>
-              <height>781</height>
+              <width>806</width>
+              <height>908</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -4740,46 +4740,6 @@
                     <number>2</number>
                    </property>
                    <item row="0" column="0">
-                    <widget class="QLabel" name="rendererLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Video.Renderer</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>renderer</cstring>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="0" column="1">
-                    <widget class="QComboBox" name="renderer">
-                     <property name="currentText">
-                      <string notr="true"/>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="0">
-                    <widget class="QLabel" name="adapterLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Video.Adapter</string>
-                     </property>
-                     <property name="alignment">
-                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-                     </property>
-                     <property name="buddy">
-                      <cstring>adapter</cstring>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="1" column="1">
-                    <widget class="QComboBox" name="adapter">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="currentText">
-                      <string notr="true"/>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
                     <widget class="QLabel" name="label_30">
                      <property name="minimumSize">
                       <size>
@@ -4798,7 +4758,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="0" column="1">
                     <widget class="QComboBox" name="colorFormat">
                      <item>
                       <property name="text">
@@ -4822,37 +4782,17 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="4" column="1">
-                    <layout class="QHBoxLayout" name="horizontalLayout_18">
-                     <property name="leftMargin">
-                      <number>0</number>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="label_33">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
                      </property>
-                     <property name="topMargin">
-                      <number>0</number>
+                     <property name="buddy">
+                      <cstring>colorSpace</cstring>
                      </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QCheckBox" name="disableOSXVSync">
-                       <property name="text">
-                        <string>DisableOSXVSync</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="resetOSXVSync">
-                       <property name="text">
-                        <string>ResetOSXVSyncOnExit</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
+                    </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="1" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_20">
                      <property name="leftMargin">
                       <number>0</number>
@@ -4906,17 +4846,7 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="label_33">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>colorSpace</cstring>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="0">
+                   <item row="2" column="0">
                     <spacer name="horizontalSpacer_12">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -4928,6 +4858,36 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="2" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_18">
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <widget class="QCheckBox" name="disableOSXVSync">
+                       <property name="text">
+                        <string>DisableOSXVSync</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="resetOSXVSync">
+                       <property name="text">
+                        <string>ResetOSXVSyncOnExit</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
                    </item>
                   </layout>
                  </widget>
@@ -5639,8 +5599,6 @@
   <tabstop>fpsDenominator</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>processPriority</tabstop>
-  <tabstop>renderer</tabstop>
-  <tabstop>adapter</tabstop>
   <tabstop>colorFormat</tabstop>
   <tabstop>colorSpace</tabstop>
   <tabstop>colorRange</tabstop>
