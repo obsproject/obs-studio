@@ -2833,7 +2833,7 @@ bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
 {
 	if (!gs_valid_p("gs_duplicator_update_frame", duplicator))
 		return false;
-	if (!thread_graphics->exports.gs_duplicator_get_texture)
+	if (!thread_graphics->exports.gs_duplicator_update_frame)
 		return false;
 
 	return thread_graphics->exports.gs_duplicator_update_frame(duplicator);
