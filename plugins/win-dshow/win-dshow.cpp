@@ -81,6 +81,7 @@ using namespace DShow;
 #define TEXT_DWNS           obs_module_text("DeactivateWhenNotShowing")
 
 /* clang-format on */
+const int DShowDeviceShutdowTimeout = 5 * 1000;
 
 enum ResType {
 	ResType_Preferred,
@@ -194,6 +195,7 @@ struct DShowInput {
 	long lastRotation = 0;
 
 	WinHandle semaphore;
+	WinHandle shutdown_started;
 	WinHandle activated_event;
 	WinHandle thread;
 	CriticalSection mutex;
@@ -229,6 +231,10 @@ struct DShowInput {
 		semaphore = CreateSemaphore(nullptr, 0, 0x7FFFFFFF, nullptr);
 		if (!semaphore)
 			throw "Failed to create semaphore";
+
+		shutdown_started = CreateEvent(nullptr, true, false, nullptr); 
+		if (!shutdown_started)
+			throw "Failed to create shutdown_started";
 
 		activated_event = CreateEvent(nullptr, false, false, nullptr);
 		if (!activated_event)
@@ -330,6 +336,8 @@ void DShowInput::DShowLoop()
 				actions.erase(actions.begin());
 			}
 		}
+		if (action != Action::None)
+			blog(LOG_INFO, "DShowLoop process action %d for %08X", action, this);
 
 		switch (action) {
 		case Action::Activate:
@@ -352,6 +360,7 @@ void DShowInput::DShowLoop()
 			break;
 
 		case Action::Shutdown:
+			SetEvent(shutdown_started);
 			device.CloseDialog();
 			device.ShutdownGraph();
 			return;
@@ -1195,11 +1204,16 @@ static DWORD CALLBACK DShowDeleteThread(LPVOID data)
 
 static void DestroyDShowInput(void *data)
 {
+	DShowInput * object = reinterpret_cast<DShowInput *>(data);
+	WinHandle shutdown_started = object->shutdown_started;
+
 	WinHandle delete_thread = CreateThread(nullptr, 0, DShowDeleteThread, data, 0, nullptr);
-	if (delete_thread)
-		WaitForSingleObject(delete_thread, 5*1000);
-	else 
+	if (delete_thread) {
+		WaitForSingleObject(shutdown_started, INFINITY);
+		WaitForSingleObject(delete_thread, DShowDeviceShutdowTimeout);
+	} else {
 		DShowDeleteThread(data);
+	}
 }
 
 static void UpdateDShowInput(void *data, obs_data_t *settings)
