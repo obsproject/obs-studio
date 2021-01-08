@@ -1209,7 +1209,7 @@ static void DestroyDShowInput(void *data)
 
 	WinHandle delete_thread = CreateThread(nullptr, 0, DShowDeleteThread, data, 0, nullptr);
 	if (delete_thread) {
-		WaitForSingleObject(shutdown_started, INFINITY);
+		WaitForSingleObject(shutdown_started, INFINITE);
 		WaitForSingleObject(delete_thread, DShowDeviceShutdowTimeout);
 	} else {
 		DShowDeleteThread(data);
