@@ -9,8 +9,8 @@ if exist cef_binary_%CEF_VERSION%_windows64_minimal.zip (curl -kLO https://cdn-f
 set DepsPath32=%CD%\dependencies2017\win32
 set DepsPath64=%CD%\dependencies2017\win64
 set VLCPath=%CD%\vlc
-set QTDIR32=C:\QtDep\5.10.1\msvc2017
-set QTDIR64=C:\QtDep\5.10.1\msvc2017_64
+set QTDIR32=C:\QtDep\5.15.2\msvc2019
+set QTDIR64=C:\QtDep\5.15.2\msvc2019_64
 set CEF_32=%CD%\CEF_32\cef_binary_%CEF_VERSION%_windows32_minimal
 set CEF_64=%CD%\CEF_64\cef_binary_%CEF_VERSION%_windows64_minimal
 set build_config=RelWithDebInfo
