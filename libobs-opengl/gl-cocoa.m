@@ -339,7 +339,7 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
 	tex->base.gl_format = convert_gs_format(color_format);
 	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
 	tex->base.gl_type = GL_UNSIGNED_INT_8_8_8_8_REV;
-	tex->base.gl_target = GL_TEXTURE_RECTANGLE;
+	tex->base.gl_target = GL_TEXTURE_RECTANGLE_ARB;
 	tex->base.is_dynamic = false;
 	tex->base.is_render_target = false;
 	tex->base.gen_mipmaps = false;
@@ -379,6 +379,20 @@ fail:
 	gs_texture_destroy((gs_texture_t *)tex);
 	blog(LOG_ERROR, "device_texture_create_from_iosurface (GL) failed");
 	return NULL;
+}
+
+gs_texture_t *device_texture_open_shared(gs_device_t *device, uint32_t handle)
+{
+	gs_texture_t *texture = NULL;
+	IOSurfaceRef ref = IOSurfaceLookupFromMachPort((mach_port_t)handle);
+	texture = device_texture_create_from_iosurface(device, ref);
+	CFRelease(ref);
+	return texture;
+}
+
+bool device_shared_texture_available(void)
+{
+	return true;
 }
 
 bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)

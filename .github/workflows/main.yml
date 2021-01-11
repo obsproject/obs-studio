@@ -15,7 +15,8 @@ on:
       - master
 
 env:
-  CEF_BUILD_VERSION: '3770'
+  MACOS_CEF_BUILD_VERSION: '4183'
+  LINUX_CEF_BUILD_VERSION: '3770'
   CEF_VERSION: '75.1.16+g16a67c4+chromium-75.0.3770.100'
 
 jobs:
@@ -50,7 +51,7 @@ jobs:
           else
             echo "SEEKING_TESTERS=0" >> $GITHUB_ENV
           fi
-      - name: 'Install prerequisites (Homebrew)'
+      - name: 'Setup build environment (Homebrew + ENV)'
         shell: bash
         run: |
           if [ -d /usr/local/opt/openssl@1.0.2t ]; then
@@ -66,15 +67,17 @@ jobs:
           if [ -d /usr/local/opt/speexdsp ]; then
             brew unlink speexdsp
           fi
+          brew uninstall curl php
           brew bundle --file ./CI/scripts/macos/Brewfile
+          echo "NPROC=$(sysctl -n hw.ncpu)" >> $GITHUB_ENV
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
         uses: actions/cache@v2.1.2
         env:
           CACHE_NAME: 'cef-cache'
         with:
-          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_CEF_BUILD_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
         uses: actions/cache@v2.1.2
@@ -125,14 +128,14 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://obs-nightly.s3-us-west-2.amazonaws.com/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64.tar.bz2
-          tar -xf ./cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64.tar.bz2 -C ${{ github.workspace }}/cmbuild/
-          cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64
-          sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-          sed -i '.orig' s/\"10.9\"/\"${{ env.MIN_MACOS_VERSION }}\"/ ./cmake/cef_variables.cmake
+          curl -L -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64.tar.bz2
+          tar -xf ./cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64.tar.bz2 -C ${{ github.workspace }}/cmbuild/
+          cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64
+          /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
+          /usr/bin/sed -i '.orig' s/\"10.9\"/\"${{ env.MIN_MACOS_VERSION }}\"/ ./cmake/cef_variables.cmake
           mkdir build && cd build
           cmake  -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++ -Wno-deprecated-declarations" -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++" -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }}  ..
-          make -j4
+          make -j${NPROC:-4}
           mkdir libcef_dll
           cd ../../
       - name: 'Configure'
@@ -140,12 +143,12 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          LEGACY_BROWSER="$(test "${{ env.CEF_BUILD_VERSION }}" -le 3770 && echo "ON" || echo "OFF")"
-          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_LEGACY=$LEGACY_BROWSER -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64" ..
+          LEGACY_BROWSER="$(test "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 && echo "ON" || echo "OFF")"
+          cmake -DENABLE_UNIT_TESTS=YES -DENABLE_SPARKLE_UPDATER=ON -DDISABLE_PYTHON=ON -DCMAKE_OSX_DEPLOYMENT_TARGET=${{ env.MIN_MACOS_VERSION }} -DQTDIR="/tmp/obsdeps" -DSWIGDIR="/tmp/obsdeps" -DDepsPath="/tmp/obsdeps" -DVLCPath="${{ github.workspace }}/cmbuild/vlc-${{ env.VLC_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=ON -DBROWSER_LEGACY=$LEGACY_BROWSER -DWITH_RTMPS=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        run: make -j4
+        run: make -j${NPROC:-4}
       - name: 'Test'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -178,7 +181,7 @@ jobs:
 
           cp rundir/RelWithDebInfo/bin/obs ./OBS.app/Contents/MacOS
           cp rundir/RelWithDebInfo/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
-          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+          if ! [ "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 ]; then
             cp -R "rundir/RelWithDebInfo/bin/OBS Helper.app" "./OBS.app/Contents/Frameworks/OBS Helper.app"
             cp -R "rundir/RelWithDebInfo/bin/OBS Helper (GPU).app" "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
             cp -R "rundir/RelWithDebInfo/bin/OBS Helper (Plugin).app" "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
@@ -222,7 +225,7 @@ jobs:
             ./OBS.app/Contents/PlugIns/obs-outputs.so
           )
 
-          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+          if ! [ "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 ]; then
           ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
             -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
@@ -247,7 +250,7 @@ jobs:
           install_name_tool -id @executable_path/../Frameworks/QtNetwork.framework/Versions/5/QtNetwork ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
           install_name_tool -change /tmp/obsdeps/lib/QtCore.framework/Versions/5/QtCore @executable_path/../Frameworks/QtCore.framework/Versions/5/QtCore ./OBS.app/Contents/Frameworks/QtNetwork.framework/Versions/5/QtNetwork
 
-          cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+          cp -R "${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
           chown -R $(whoami) ./OBS.app/Contents/Frameworks/
 
           cp ../CI/scripts/macos/app/OBSPublicDSAKey.pem ./OBS.app/Contents/Resources
@@ -272,7 +275,7 @@ jobs:
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
-          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+          if ! [ "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 ]; then
             codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libvk_swiftshader.dylib"
           fi
           codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
@@ -281,7 +284,7 @@ jobs:
 
           codesign --force --options runtime --entitlements "../CI/scripts/macos/app/entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep ./OBS.app
 
-          if ! [ "${{ env.CEF_BUILD_VERSION }}" -le 3770 ]; then
+          if ! [ "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 ]; then
             codesign --force --options runtime --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper.app"
             codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-gpu-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
             codesign --force --options runtime --entitlements "../CI/scripts/macos/helpers/helper-plugin-entitlements.plist" --sign "${SIGN_IDENTITY:--}" --deep "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
@@ -299,9 +302,9 @@ jobs:
           echo "FILE_NAME=${FILE_NAME}" >> $GITHUB_ENV
 
           cp ../CI/scripts/macos/package/settings.json.template ./settings.json
-          sed -i '' 's#\$\$VERSION\$\$#${{ env.OBS_GIT_TAG }}#g' ./settings.json
-          sed -i '' 's#\$\$CI_PATH\$\$#../CI/scripts/macos#g' ./settings.json
-          sed -i '' 's#\$\$BUNDLE_PATH\$\$#${{ github.workspace }}/build#g' ./settings.json
+          /usr/bin/sed -i '' 's#\$\$VERSION\$\$#${{ env.OBS_GIT_TAG }}#g' ./settings.json
+          /usr/bin/sed -i '' 's#\$\$CI_PATH\$\$#../CI/scripts/macos#g' ./settings.json
+          /usr/bin/sed -i '' 's#\$\$BUNDLE_PATH\$\$#${{ github.workspace }}/build#g' ./settings.json
 
           dmgbuild "OBS-Studio ${{ env.OBS_GIT_TAG }}" "${FILE_NAME}" -s ./settings.json
           mkdir ../nightly
@@ -369,6 +372,7 @@ jobs:
       - name: Install prerequisites (Apt)
         shell: bash
         run: |
+          echo "NPROC=$(($(nproc)+1))" >> $GITHUB_ENV
           sudo dpkg --add-architecture amd64
           sudo apt-get -qq update
           sudo apt-get install -y \
@@ -421,13 +425,13 @@ jobs:
         env:
           CACHE_NAME: 'cef-cache'
         with:
-          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.LINUX_CEF_BUILD_VERSION }}_linux64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.LINUX_CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: Chromium Embedded Framework'
         if: steps.cef-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64.tar.bz2 -f --retry 5 -o cef.tar.bz2
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.LINUX_CEF_BUILD_VERSION }}_linux64.tar.bz2 -f --retry 5 -o cef.tar.bz2
           if [ ! -d "${{ github.workspace }}/cmbuild" ]; then mkdir "${{ github.workspace }}/cmbuild"; fi
           tar -C"${{ github.workspace }}/cmbuild" -xjf cef.tar.bz2
       - name: 'Configure'
@@ -435,11 +439,11 @@ jobs:
         run: |
           mkdir ./build
           cd ./build
-          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DENABLE_UNIT_TESTS=ON -DENABLE_VLC=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_BUILD_VERSION }}_linux64" ..
+          cmake -DUNIX_STRUCTURE=0 -DCMAKE_INSTALL_PREFIX="${{ github.workspace }}/obs-studio-portable" -DENABLE_UNIT_TESTS=ON -DENABLE_VLC=ON -DWITH_RTMPS=ON -DBUILD_BROWSER=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.LINUX_CEF_BUILD_VERSION }}_linux64" ..
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        run: make -j4
+        run: make -j${NPROC:-4}
       - name: 'Test'
         shell: bash
         working-directory: ${{ github.workspace }}/build
@@ -467,10 +471,10 @@ jobs:
     name: 'Windows 64-bit'
     runs-on: [windows-latest]
     env:
-      QT_VERSION: '5.10.1'
+      QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-      WINDOWS_DEPS_VERSION: '2017'
+      WINDOWS_DEPS_VERSION: '2019'
       VLC_VERSION: '3.0.0-git'
       TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
       TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
@@ -533,7 +537,7 @@ jobs:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -559,7 +563,7 @@ jobs:
           mkdir ./build
           mkdir ./build64
           cd ./build64
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
       - name: 'Package'
@@ -580,10 +584,10 @@ jobs:
     name: 'Windows 32-bit'
     runs-on: [windows-latest]
     env:
-      QT_VERSION: '5.10.1'
+      QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-      WINDOWS_DEPS_VERSION: '2017'
+      WINDOWS_DEPS_VERSION: '2019'
       TWITCH-CLIENTID: ${{ secrets.TWITCH_CLIENTID }}
       TWITCH-HASH: ${{ secrets.TWITCH_HASH }}
       RESTREAM-CLIENTID: ${{ secrets.RESTREAM-CLIENTID }}
@@ -645,7 +649,7 @@ jobs:
           CACHE_NAME: 'cef-32-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -671,7 +675,7 @@ jobs:
           mkdir ./build
           mkdir ./build32
           cd ./build32
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2017" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
       - name: 'Package'
