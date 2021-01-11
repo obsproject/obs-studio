@@ -1022,10 +1022,10 @@ static bool FindItemsInBox(obs_scene_t *scene, obs_sceneitem_t *item,
 	vec3 pos3;
 	vec3 pos3_;
 
-	float x1 = std::min(data->startPos.x, data->pos.x);
-	float x2 = std::max(data->startPos.x, data->pos.x);
-	float y1 = std::min(data->startPos.y, data->pos.y);
-	float y2 = std::max(data->startPos.y, data->pos.y);
+	float x1 = min(data->startPos.x, data->pos.x);
+	float x2 = max(data->startPos.x, data->pos.x);
+	float y1 = min(data->startPos.y, data->pos.y);
+	float y2 = max(data->startPos.y, data->pos.y);
 
 	if (!SceneItemHasVideo(item))
 		return true;
