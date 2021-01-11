@@ -27,17 +27,18 @@
 
 /* clang-format off */
 
-#define SETTING_MODE             "capture_mode"
-#define SETTING_CAPTURE_WINDOW   "window"
-#define SETTING_ACTIVE_WINDOW    "active_window"
-#define SETTING_WINDOW_PRIORITY  "priority"
-#define SETTING_COMPATIBILITY    "sli_compatibility"
-#define SETTING_CURSOR           "capture_cursor"
-#define SETTING_TRANSPARENCY     "allow_transparency"
-#define SETTING_LIMIT_FRAMERATE  "limit_framerate"
-#define SETTING_CAPTURE_OVERLAYS "capture_overlays"
-#define SETTING_ANTI_CHEAT_HOOK  "anti_cheat_hook"
-#define SETTING_HOOK_RATE        "hook_rate"
+#define SETTING_MODE                 "capture_mode"
+#define SETTING_CAPTURE_WINDOW       "window"
+#define SETTING_ACTIVE_WINDOW        "active_window"
+#define SETTING_WINDOW_PRIORITY      "priority"
+#define SETTING_COMPATIBILITY        "sli_compatibility"
+#define SETTING_CURSOR               "capture_cursor"
+#define SETTING_TRANSPARENCY         "allow_transparency"
+#define SETTING_LIMIT_FRAMERATE      "limit_framerate"
+#define SETTING_CAPTURE_OVERLAYS     "capture_overlays"
+#define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
+#define SETTING_D3D12_USE_SWAP_QUEUE "d3d12_use_swap_queue"
+#define SETTING_HOOK_RATE            "hook_rate"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -68,6 +69,8 @@
 #define TEXT_HOOK_RATE_NORMAL    obs_module_text("GameCapture.HookRate.Normal")
 #define TEXT_HOOK_RATE_FAST      obs_module_text("GameCapture.HookRate.Fast")
 #define TEXT_HOOK_RATE_FASTEST   obs_module_text("GameCapture.HookRate.Fastest")
+#define TEXT_D3D12_SWAP_QUEUE    obs_module_text("GameCapture.D3D12UseSwapQueue")
+#define TEXT_D3D12_SWAP_QUEUE_LONG obs_module_text("GameCapture.D3D12UseSwapQueue.Long")
 
 #define TEXT_MODE_ANY            TEXT_ANY_FULLSCREEN
 #define TEXT_MODE_WINDOW         obs_module_text("GameCapture.CaptureWindow")
@@ -106,6 +109,7 @@ struct game_capture_config {
 	bool limit_framerate;
 	bool capture_overlays;
 	bool anticheat_hook;
+	bool d3d12_use_swap_queue;
 	enum hook_rate hook_rate;
 };
 
@@ -418,6 +422,8 @@ static inline void get_config(struct game_capture_config *cfg,
 		obs_data_get_bool(settings, SETTING_CAPTURE_OVERLAYS);
 	cfg->anticheat_hook =
 		obs_data_get_bool(settings, SETTING_ANTI_CHEAT_HOOK);
+	cfg->d3d12_use_swap_queue =
+		obs_data_get_bool(settings, SETTING_D3D12_USE_SWAP_QUEUE);
 	cfg->hook_rate =
 		(enum hook_rate)obs_data_get_int(settings, SETTING_HOOK_RATE);
 }
@@ -450,6 +456,9 @@ static inline bool capture_needs_reset(struct game_capture_config *cfg1,
 		return true;
 
 	} else if (cfg1->capture_overlays != cfg2->capture_overlays) {
+		return true;
+
+	} else if (cfg1->d3d12_use_swap_queue != cfg2->d3d12_use_swap_queue) {
 		return true;
 	}
 
@@ -745,6 +754,8 @@ static inline bool init_hook_info(struct game_capture *gc)
 	gc->global_hook_info->force_shmem = gc->config.force_shmem;
 	gc->global_hook_info->UNUSED_use_scale = false;
 	gc->global_hook_info->allow_srgb_alias = true;
+	gc->global_hook_info->d3d12_use_swap_queue =
+		gc->config.d3d12_use_swap_queue;
 	reset_frame_interval(gc);
 
 	obs_enter_graphics();
@@ -1866,6 +1877,7 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_LIMIT_FRAMERATE, false);
 	obs_data_set_default_bool(settings, SETTING_CAPTURE_OVERLAYS, false);
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
+	obs_data_set_default_bool(settings, SETTING_D3D12_USE_SWAP_QUEUE, true);
 	obs_data_set_default_int(settings, SETTING_HOOK_RATE,
 				 (int)HOOK_RATE_NORMAL);
 }
@@ -2049,6 +2061,10 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_bool(ppts, SETTING_CAPTURE_OVERLAYS,
 				TEXT_CAPTURE_OVERLAYS);
+
+	p = obs_properties_add_bool(ppts, SETTING_D3D12_USE_SWAP_QUEUE,
+				    TEXT_D3D12_SWAP_QUEUE);
+	obs_property_set_long_description(p, TEXT_D3D12_SWAP_QUEUE_LONG);
 
 	p = obs_properties_add_list(ppts, SETTING_HOOK_RATE, TEXT_HOOK_RATE,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

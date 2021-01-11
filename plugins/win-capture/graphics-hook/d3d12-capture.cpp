@@ -12,6 +12,11 @@
 
 #define MAX_BACKBUFFERS 8
 
+typedef HRESULT(STDMETHODCALLTYPE *execute_command_lists_t)(
+	ID3D12CommandQueue *, UINT, ID3D12CommandList *const *);
+
+static struct func_hook execute_command_lists;
+
 struct d3d12_data {
 	ID3D12Device *device; /* do not release */
 	uint32_t cx;
@@ -38,6 +43,10 @@ struct d3d12_data {
 };
 
 static struct d3d12_data data = {};
+
+extern thread_local bool dxgi_presenting;
+extern ID3D12CommandQueue *dxgi_possible_swap_queue;
+extern bool dxgi_present_attempted;
 
 void d3d12_free(void)
 {
@@ -170,8 +179,21 @@ static bool d3d12_init_11on12(void)
 		return false;
 	}
 
-	hr = create_11_on_12(data.device, 0, nullptr, 0, nullptr, 0, 0,
+	IUnknown *queue = nullptr;
+	IUnknown *const *queues = nullptr;
+	UINT num_queues = 0;
+	if (global_hook_info->d3d12_use_swap_queue) {
+		hlog("d3d12_init_11on12: creating 11 device with swap queue");
+		queue = dxgi_possible_swap_queue;
+		queues = &queue;
+		num_queues = 1;
+	} else {
+		hlog("d3d12_init_11on12: creating 11 device without swap queue");
+	}
+
+	hr = create_11_on_12(data.device, 0, nullptr, 0, queues, num_queues, 0,
 			     &data.device11, &data.context11, nullptr);
+
 	if (FAILED(hr)) {
 		hlog_hr("d3d12_init_11on12: failed to create 11 device", hr);
 		return false;
@@ -340,6 +362,98 @@ void d3d12_capture(void *swap_ptr, void *, bool capture_overlay)
 	if (capture_ready()) {
 		d3d12_shtex_capture(swap, capture_overlay);
 	}
+}
+
+static HRESULT STDMETHODCALLTYPE
+hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
+			   ID3D12CommandList *const *ppCommandLists)
+{
+	HRESULT hr;
+
+	if (!dxgi_possible_swap_queue) {
+		if (dxgi_presenting) {
+			hlog("D3D12 queue from present");
+			dxgi_possible_swap_queue = queue;
+		} else if (dxgi_present_attempted &&
+			   (queue->GetDesc().Type ==
+			    D3D12_COMMAND_LIST_TYPE_DIRECT)) {
+			hlog("D3D12 queue from first direct after present");
+			dxgi_possible_swap_queue = queue;
+		}
+	}
+
+	unhook(&execute_command_lists);
+	execute_command_lists_t call =
+		(execute_command_lists_t)execute_command_lists.call_addr;
+	hr = call(queue, NumCommandLists, ppCommandLists);
+	rehook(&execute_command_lists);
+
+	return hr;
+}
+
+static bool manually_get_d3d12_addrs(HMODULE d3d12_module,
+				     void **execute_command_lists_addr)
+{
+	PFN_D3D12_CREATE_DEVICE create =
+		(PFN_D3D12_CREATE_DEVICE)GetProcAddress(d3d12_module,
+							"D3D12CreateDevice");
+	if (!create) {
+		hlog("Failed to load D3D12CreateDevice");
+		return false;
+	}
+
+	bool success = false;
+	ID3D12Device *device;
+	if (SUCCEEDED(create(NULL, D3D_FEATURE_LEVEL_11_0,
+			     IID_PPV_ARGS(&device)))) {
+		D3D12_COMMAND_QUEUE_DESC desc{};
+		ID3D12CommandQueue *queue;
+		HRESULT hr =
+			device->CreateCommandQueue(&desc, IID_PPV_ARGS(&queue));
+		success = SUCCEEDED(hr);
+		if (success) {
+			void **queue_vtable = *(void ***)queue;
+			*execute_command_lists_addr = queue_vtable[10];
+
+			queue->Release();
+		} else {
+			hlog("Failed to create D3D12 command queue");
+		}
+
+		device->Release();
+	} else {
+		hlog("Failed to create D3D12 device");
+	}
+
+	return success;
+}
+
+bool hook_d3d12(void)
+{
+	HMODULE d3d12_module = get_system_module("d3d12.dll");
+	if (!d3d12_module) {
+		return false;
+	}
+
+	void *execute_command_lists_addr = nullptr;
+	if (!manually_get_d3d12_addrs(d3d12_module,
+				      &execute_command_lists_addr)) {
+		hlog("Failed to get D3D12 values");
+		return true;
+	}
+
+	if (!execute_command_lists_addr) {
+		hlog("Invalid D3D12 values");
+		return true;
+	}
+
+	hook_init(&execute_command_lists, execute_command_lists_addr,
+		  (void *)hook_execute_command_lists,
+		  "ID3D12CommandQueue::ExecuteCommandLists");
+	rehook(&execute_command_lists);
+
+	hlog("Hooked D3D12");
+	return true;
 }
 
 #endif
