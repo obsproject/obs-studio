@@ -1191,7 +1191,7 @@ void gs_cubetexture_set_image(gs_texture_t *cubetex, uint32_t side,
 	UNUSED_PARAMETER(invert);
 }
 
-void gs_perspective(float angle, float aspect, float near, float far)
+void gs_perspective(float angle, float aspect, float pnear, float pfar)
 {
 	graphics_t *graphics = thread_graphics;
 	float xmin, xmax, ymin, ymax;
@@ -1199,14 +1199,14 @@ void gs_perspective(float angle, float aspect, float near, float far)
 	if (!gs_valid("gs_perspective"))
 		return;
 
-	ymax = near * tanf(RAD(angle) * 0.5f);
+	ymax = pnear * tanf(RAD(angle) * 0.5f);
 	ymin = -ymax;
 
 	xmin = ymin * aspect;
 	xmax = ymax * aspect;
 
 	graphics->exports.device_frustum(graphics->device, xmin, xmax, ymin,
-					 ymax, near, far);
+					 ymax, pnear, pfar);
 }
 
 void gs_blend_state_push(void)
