@@ -394,9 +394,13 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 	case 0x4e:
 	case 0x5e:
 		return QSV_CPU_PLATFORM_SKL;
+	case 0x5c:
+		return QSV_CPU_PLATFORM_APL;
 	case 0x8e:
 	case 0x9e:
 		return QSV_CPU_PLATFORM_KBL;
+	case 0x7a:
+		return QSV_CPU_PLATFORM_GLK;
 	case 0x66:
 		return QSV_CPU_PLATFORM_CNL;
 	case 0x7d:
