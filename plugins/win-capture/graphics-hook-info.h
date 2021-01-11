@@ -40,6 +40,10 @@ struct d3d9_offsets {
 	uint32_t is_d3d9ex_clsoff;
 };
 
+struct d3d12_offsets {
+	uint32_t execute_command_lists;
+};
+
 struct dxgi_offsets {
 	uint32_t present;
 	uint32_t resize;
@@ -83,6 +87,7 @@ struct graphics_offsets {
 	struct dxgi_offsets dxgi;
 	struct ddraw_offsets ddraw;
 	struct dxgi_offsets2 dxgi2;
+	struct d3d12_offsets d3d12;
 };
 
 struct hook_info {
@@ -104,6 +109,7 @@ struct hook_info {
 	bool flip;
 
 	/* additional options */
+	bool d3d12_use_swap_queue;
 	uint64_t frame_interval;
 	bool UNUSED_use_scale;
 	bool force_shmem;
@@ -113,7 +119,7 @@ struct hook_info {
 	/* hook addresses */
 	struct graphics_offsets offsets;
 
-	uint32_t reserved[127];
+	uint32_t reserved[126];
 };
 static_assert(sizeof(struct hook_info) == 648, "ABI compatibility");
 
