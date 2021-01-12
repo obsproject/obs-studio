@@ -288,6 +288,8 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink = "https://app.youstreamer.com/stream/";
 	} else if (serviceName == "Trovo") {
 		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
+	} else if (serviceName == "Glimesh") {
+		streamKeyLink = "https://glimesh.tv/users/settings/stream";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
