@@ -234,6 +234,10 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+#contextContainer QPushButton#sourceInteractButton {
+    qproperty-icon: url(./Dark/interact.svg);
+}
+
 /* Scenes and Sources toolbar */
 
 QToolBar {
