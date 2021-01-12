@@ -195,7 +195,7 @@ struct DShowInput {
 	long lastRotation = 0;
 
 	WinHandle semaphore;
-	WinHandle shutdown_started;
+	HANDLE shutdown_started;
 	WinHandle activated_event;
 	WinHandle thread;
 	CriticalSection mutex;
@@ -1205,7 +1205,7 @@ static DWORD CALLBACK DShowDeleteThread(LPVOID data)
 static void DestroyDShowInput(void *data)
 {
 	DShowInput * object = reinterpret_cast<DShowInput *>(data);
-	WinHandle shutdown_started = object->shutdown_started;
+	HANDLE shutdown_started = object->shutdown_started;
 
 	WinHandle delete_thread = CreateThread(nullptr, 0, DShowDeleteThread, data, 0, nullptr);
 	if (delete_thread) {
@@ -1214,6 +1214,7 @@ static void DestroyDShowInput(void *data)
 	} else {
 		DShowDeleteThread(data);
 	}
+	CloseHandle(shutdown_started);
 }
 
 static void UpdateDShowInput(void *data, obs_data_t *settings)
