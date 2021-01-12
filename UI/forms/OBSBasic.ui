@@ -367,6 +367,35 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="sourceInteractButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Interact</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/interact.svg</normaloff>:/res/images/interact.svg</iconset>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <property name="themeID2" stdset="0">
+             <string notr="true">contextBarButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
