@@ -2976,6 +2976,9 @@ void OBSBasic::UpdateContextBar(bool force)
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
 
+		ui->sourceInteractButton->setVisible(flags &
+						     OBS_SOURCE_INTERACTION);
+
 		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
 			if (!is_network_media_source(source, id)) {
 				MediaControls *mediaControls =
@@ -3056,6 +3059,7 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
+		ui->sourceInteractButton->setVisible(false);
 	}
 }
 
@@ -8457,4 +8461,9 @@ void OBSBasic::on_sourcePropertiesButton_clicked()
 void OBSBasic::on_sourceFiltersButton_clicked()
 {
 	OpenFilters();
+}
+
+void OBSBasic::on_sourceInteractButton_clicked()
+{
+	on_actionInteract_triggered();
 }
