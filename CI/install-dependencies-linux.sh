@@ -48,5 +48,5 @@ sudo apt-get install -y \
         v4l2loopback-dkms
 
 # build cef
-wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2
-tar -xjf ./cef_binary_${CEF_BUILD_VERSION}_linux64.tar.bz2
+wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/cef_binary_${LINUX_CEF_BUILD_VERSION}_linux64.tar.bz2
+tar -xjf ./cef_binary_${LINUX_CEF_BUILD_VERSION}_linux64.tar.bz2
