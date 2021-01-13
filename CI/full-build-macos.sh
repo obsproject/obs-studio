@@ -21,11 +21,11 @@
 #   -h: Print usage help
 #
 # Environment Variables (optional):
-#   MACOS_DEPS_VERSION  : Pre-compiled macOS dependencies version
-#   CEF_BUILD_VERSION   : Chromium Embedded Framework version
-#   VLC_VERISON         : VLC version
-#   SPARKLE_VERSION     : Sparke Framework version
-#   BUILD_DIR           : Alternative directory to build OBS in
+#   MACOS_DEPS_VERSION        : Pre-compiled macOS dependencies version
+#   MACOS_CEF_BUILD_VERSION   : Chromium Embedded Framework version
+#   VLC_VERISON               : VLC version
+#   SPARKLE_VERSION           : Sparke Framework version
+#   BUILD_DIR                 : Alternative directory to build OBS in
 #
 ##############################################################################
 
@@ -52,7 +52,7 @@ NPROC="${NPROC:-$(sysctl -n hw.ncpu)}"
 BUILD_DEPS=(
     "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
     "qt-deps ${QT_VERSION:-${CI_QT_VERSION}} ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
-    "cef ${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}"
+    "cef ${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}"
     "vlc ${VLC_VERSION:-${CI_VLC_VERSION}}"
     "sparkle ${SPARKLE_VERSION:-${CI_SPARKLE_VERSION}}"
 )
@@ -218,7 +218,7 @@ install_cef() {
     cd ./cef_binary_${1}_macosx64
     step "Fix tests..."
     /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-    /usr/bin/sed -i '.orig' 's/"'$(test "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
+    /usr/bin/sed -i '.orig' 's/"'$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
     ensure_dir ./build
     step "Run CMAKE..."
     cmake \
@@ -278,9 +278,9 @@ configure_obs_build() {
         -DDepsPath="/tmp/obsdeps" \
         -DVLCPath="${DEPS_BUILD_DIR}/vlc-${VLC_VERSION:-${CI_VLC_VERSION}}" \
         -DBUILD_BROWSER=ON \
-        -DBROWSER_LEGACY="$(test "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "ON" || echo "OFF")" \
+        -DBROWSER_LEGACY="$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "ON" || echo "OFF")" \
         -DWITH_RTMPS=ON \
-        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64" \
+        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64" \
         -DCMAKE_BUILD_TYPE="${BUILD_CONFIG}" \
         ..
 
@@ -329,7 +329,7 @@ bundle_dylibs() {
         ./OBS.app/Contents/PlugIns/text-freetype2.so
         ./OBS.app/Contents/PlugIns/obs-outputs.so
         )
-    if ! [ "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
+    if ! [ "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
         ${CI_SCRIPTS}/app/dylibbundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
             -s "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" \
@@ -371,7 +371,7 @@ install_frameworks() {
 
     hr "Adding Chromium Embedded Framework"
     step "Copy Framework..."
-    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
 }
 
 prepare_macos_bundle() {
@@ -394,7 +394,7 @@ prepare_macos_bundle() {
     /bin/cp rundir/${BUILD_CONFIG}/bin/obs ./OBS.app/Contents/MacOS
     /bin/cp rundir/${BUILD_CONFIG}/bin/obs-ffmpeg-mux ./OBS.app/Contents/MacOS
     /bin/cp rundir/${BUILD_CONFIG}/bin/libobsglad.0.dylib ./OBS.app/Contents/MacOS
-    if ! [ "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
+    if ! [ "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
         /bin/cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper.app" "./OBS.app/Contents/Frameworks/OBS Helper.app"
         /bin/cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper (GPU).app" "./OBS.app/Contents/Frameworks/OBS Helper (GPU).app"
         /bin/cp -R "rundir/${BUILD_CONFIG}/bin/OBS Helper (Plugin).app" "./OBS.app/Contents/Frameworks/OBS Helper (Plugin).app"
@@ -523,7 +523,7 @@ codesign_bundle() {
     /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libEGL.dylib"
     /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libGLESv2.dylib"
     /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libswiftshader_libGLESv2.dylib"
-    if ! [ "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
+    if ! [ "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
         /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework/Libraries/libvk_swiftshader.dylib"
     fi
     /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/Chromium Embedded Framework.framework"
@@ -540,7 +540,7 @@ codesign_bundle() {
     /usr/bin/codesign --force --options runtime --entitlements "${CI_SCRIPTS}/app/entitlements.plist" --sign "${CODESIGN_IDENT}" --deep ./OBS.app
     /bin/echo -n "${COLOR_RESET}"
 
-    if ! [ "${CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
+    if ! [ "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
         step "Code-sign CEF helper apps..."
         /bin/echo -n "${COLOR_ORANGE}"
         /usr/bin/codesign --force --options runtime --sign "${CODESIGN_IDENT}" --deep "./OBS.app/Contents/Frameworks/OBS Helper.app"
