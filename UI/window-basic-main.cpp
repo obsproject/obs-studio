@@ -136,6 +136,16 @@ template<typename T> static void SetOBSRef(QListWidgetItem *item, T &&val)
 
 static void AddExtraModulePaths()
 {
+	char *plugins_path = getenv("OBS_PLUGINS_PATH");
+	char *plugins_data_path = getenv("OBS_PLUGINS_DATA_PATH");
+	if (plugins_path && plugins_data_path) {
+		string data_path_with_module_suffix;
+		data_path_with_module_suffix += plugins_data_path;
+		data_path_with_module_suffix += "/%module%";
+		obs_add_module_path(plugins_path,
+				    data_path_with_module_suffix.c_str());
+	}
+
 	char base_module_dir[512];
 #if defined(_WIN32) || defined(__APPLE__)
 	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
