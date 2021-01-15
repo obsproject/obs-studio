@@ -336,11 +336,15 @@ try {
 		activation_factory.as<IGraphicsCaptureItemInterop>();
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item = {nullptr};
 	try {
-		interop_factory->CreateForWindow(
+		hr = interop_factory->CreateForWindow(
 			window,
 			winrt::guid_of<ABI::Windows::Graphics::Capture::
 					       IGraphicsCaptureItem>(),
 			reinterpret_cast<void **>(winrt::put_abi(item)));
+		if (FAILED(hr)) {
+			blog(LOG_ERROR, "CreateForWindow (0x%08X)", hr);
+			return nullptr;
+		}
 	} catch (winrt::hresult_error &err) {
 		blog(LOG_ERROR, "CreateForWindow (0x%08X): %ls", err.to_abi(),
 		     err.message().c_str());
