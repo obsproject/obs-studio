@@ -240,6 +240,24 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->item = nullptr;
 }
 
+#ifdef NTDDI_WIN10_FE
+static bool winrt_capture_border_toggle_supported()
+try {
+	return winrt::Windows::Foundation::Metadata::ApiInformation::
+		IsPropertyPresent(
+			L"Windows.Graphics.Capture.GraphicsCaptureSession",
+			L"IsBorderRequired");
+} catch (const winrt::hresult_error &err) {
+	blog(LOG_ERROR, "winrt_capture_border_toggle_supported (0x%08X): %ls",
+	     err.to_abi(), err.message().c_str());
+	return false;
+} catch (...) {
+	blog(LOG_ERROR, "winrt_capture_border_toggle_supported (0x%08X)",
+	     winrt::to_hresult());
+	return false;
+}
+#endif
+
 static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
@@ -285,6 +303,17 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 				2, capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
+
+#ifdef NTDDI_WIN10_FE
+	if (winrt_capture_border_toggle_supported()) {
+		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
+			RequestAccessAsync(
+				winrt::Windows::Graphics::Capture::
+					GraphicsCaptureAccessKind::Borderless)
+				.get();
+		session.IsBorderRequired(false);
+	}
+#endif
 
 	if (winrt_capture_cursor_toggle_supported())
 		session.IsCursorCaptureEnabled(capture->capture_cursor &&
@@ -368,6 +397,17 @@ try {
 				2, size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
+
+#ifdef NTDDI_WIN10_FE
+	if (winrt_capture_border_toggle_supported()) {
+		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
+			RequestAccessAsync(
+				winrt::Windows::Graphics::Capture::
+					GraphicsCaptureAccessKind::Borderless)
+				.get();
+		session.IsBorderRequired(false);
+	}
+#endif
 
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
