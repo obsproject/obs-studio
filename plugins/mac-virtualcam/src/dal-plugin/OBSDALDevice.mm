@@ -22,7 +22,7 @@
 #import <CoreFoundation/CoreFoundation.h>
 #include <IOKit/audio/IOAudioTypes.h>
 
-#import "OBSDALPlugin.h"
+#import "OBSDALPlugIn.h"
 #import "Logging.h"
 
 @interface OBSDALDevice ()

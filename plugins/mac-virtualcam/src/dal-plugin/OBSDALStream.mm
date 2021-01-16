@@ -25,7 +25,7 @@
 
 #import "Logging.h"
 #import "CMSampleBufferUtils.h"
-#import "OBSDALPlugin.h"
+#import "OBSDALPlugIn.h"
 
 @interface OBSDALStream () {
 	CMSimpleQueueRef _queue;
