@@ -23,7 +23,7 @@
 
 #import <CoreFoundation/CFUUID.h>
 
-#import "OBSDALPlugin.h"
+#import "OBSDALPlugIn.h"
 #import "OBSDALDevice.h"
 #import "OBSDALStream.h"
 #import "Logging.h"
