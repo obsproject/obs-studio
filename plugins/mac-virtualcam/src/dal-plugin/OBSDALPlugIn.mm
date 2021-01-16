@@ -17,7 +17,7 @@
 //  You should have received a copy of the GNU General Public License
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
-#import "OBSDALPlugin.h"
+#import "OBSDALPlugIn.h"
 
 #import <CoreMediaIO/CMIOHardwarePlugin.h>
 
