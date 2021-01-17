@@ -33,6 +33,7 @@ extern struct obs_source_info compressor_filter;
 extern struct obs_source_info limiter_filter;
 extern struct obs_source_info expander_filter;
 extern struct obs_source_info luma_key_filter;
+extern struct obs_source_info luma_key_filter_v2;
 
 bool obs_module_load(void)
 {
@@ -61,5 +62,6 @@ bool obs_module_load(void)
 	obs_register_source(&limiter_filter);
 	obs_register_source(&expander_filter);
 	obs_register_source(&luma_key_filter);
+	obs_register_source(&luma_key_filter_v2);
 	return true;
 }

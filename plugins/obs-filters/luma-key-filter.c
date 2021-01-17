@@ -66,11 +66,13 @@ static void luma_key_destroy(void *data)
 	bfree(data);
 }
 
-static void *luma_key_create(obs_data_t *settings, obs_source_t *context)
+static void *luma_key_create_internal(obs_data_t *settings,
+				      obs_source_t *context,
+				      const char *effect_name)
 {
 	struct luma_key_filter_data *filter =
 		bzalloc(sizeof(struct luma_key_filter_data));
-	char *effect_path = obs_module_file("luma_key_filter.effect");
+	char *effect_path = obs_module_file(effect_name);
 
 	filter->context = context;
 
@@ -177,7 +179,7 @@ struct obs_source_info luma_key_filter_v2 = {
 	.type = OBS_SOURCE_TYPE_FILTER,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = luma_key_name,
-	.create = luma_key_create,
+	.create = luma_key_create_v2,
 	.destroy = luma_key_destroy,
 	.video_render = luma_key_render,
 	.update = luma_key_update,
