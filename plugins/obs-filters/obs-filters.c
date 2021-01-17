@@ -19,6 +19,7 @@ extern struct obs_source_info color_key_filter;
 extern struct obs_source_info color_grade_filter;
 extern struct obs_source_info sharpness_filter;
 extern struct obs_source_info chroma_key_filter;
+extern struct obs_source_info chroma_key_filter_v2;
 extern struct obs_source_info async_delay_filter;
 #if NOISEREDUCTION_ENABLED
 extern struct obs_source_info noise_suppress_filter;
@@ -44,6 +45,7 @@ bool obs_module_load(void)
 	obs_register_source(&color_grade_filter);
 	obs_register_source(&sharpness_filter);
 	obs_register_source(&chroma_key_filter);
+	obs_register_source(&chroma_key_filter_v2);
 	obs_register_source(&async_delay_filter);
 #if NOISEREDUCTION_ENABLED
 	obs_register_source(&noise_suppress_filter);
