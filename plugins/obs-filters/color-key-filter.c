@@ -49,14 +49,39 @@ struct color_key_filter_data {
 	float smoothness;
 };
 
+struct color_key_filter_data_v2 {
+	obs_source_t *context;
+
+	gs_effect_t *effect;
+
+	gs_eparam_t *opacity_param;
+	gs_eparam_t *contrast_param;
+	gs_eparam_t *brightness_param;
+	gs_eparam_t *gamma_param;
+
+	gs_eparam_t *key_color_param;
+	gs_eparam_t *similarity_param;
+	gs_eparam_t *smoothness_param;
+
+	float opacity;
+	float contrast;
+	float brightness;
+	float gamma;
+
+	struct vec4 key_color;
+	float similarity;
+	float smoothness;
+};
+
 static const char *color_key_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("ColorKeyFilter");
 }
 
-static inline void color_settings_update(struct color_key_filter_data *filter,
-					 obs_data_t *settings)
+static inline void
+color_settings_update_v1(struct color_key_filter_data *filter,
+			 obs_data_t *settings)
 {
 	uint32_t opacity =
 		(uint32_t)obs_data_get_int(settings, SETTING_OPACITY);
@@ -149,15 +174,23 @@ key_settings_update_v2(struct color_key_filter_data_v2 *filter,
 	filter->smoothness = (float)smoothness / 1000.0f;
 }
 
-static void color_key_update(void *data, obs_data_t *settings)
+static void color_key_update_v1(void *data, obs_data_t *settings)
 {
 	struct color_key_filter_data *filter = data;
 
-	color_settings_update(filter, settings);
-	key_settings_update(filter, settings);
+	color_settings_update_v1(filter, settings);
+	key_settings_update_v1(filter, settings);
 }
 
-static void color_key_destroy(void *data)
+static void color_key_update_v2(void *data, obs_data_t *settings)
+{
+	struct color_key_filter_data_v2 *filter = data;
+
+	color_settings_update_v2(filter, settings);
+	key_settings_update_v2(filter, settings);
+}
+
+static void color_key_destroy_v1(void *data)
 {
 	struct color_key_filter_data *filter = data;
 
@@ -170,7 +203,20 @@ static void color_key_destroy(void *data)
 	bfree(data);
 }
 
-static void *color_key_create(obs_data_t *settings, obs_source_t *context)
+static void color_key_destroy_v2(void *data)
+{
+	struct color_key_filter_data_v2 *filter = data;
+
+	if (filter->effect) {
+		obs_enter_graphics();
+		gs_effect_destroy(filter->effect);
+		obs_leave_graphics();
+	}
+
+	bfree(data);
+}
+
+static void *color_key_create_v1(obs_data_t *settings, obs_source_t *context)
 {
 	struct color_key_filter_data *filter =
 		bzalloc(sizeof(struct color_key_filter_data));
@@ -203,15 +249,56 @@ static void *color_key_create(obs_data_t *settings, obs_source_t *context)
 	bfree(effect_path);
 
 	if (!filter->effect) {
-		color_key_destroy(filter);
+		color_key_destroy_v1(filter);
 		return NULL;
 	}
 
-	color_key_update(filter, settings);
+	color_key_update_v1(filter, settings);
 	return filter;
 }
 
-static void color_key_render(void *data, gs_effect_t *effect)
+static void *color_key_create_v2(obs_data_t *settings, obs_source_t *context)
+{
+	struct color_key_filter_data_v2 *filter =
+		bzalloc(sizeof(struct color_key_filter_data_v2));
+	char *effect_path = obs_module_file("color_key_filter_v2.effect");
+
+	filter->context = context;
+
+	obs_enter_graphics();
+
+	filter->effect = gs_effect_create_from_file(effect_path, NULL);
+	if (filter->effect) {
+		filter->opacity_param =
+			gs_effect_get_param_by_name(filter->effect, "opacity");
+		filter->contrast_param =
+			gs_effect_get_param_by_name(filter->effect, "contrast");
+		filter->brightness_param = gs_effect_get_param_by_name(
+			filter->effect, "brightness");
+		filter->gamma_param =
+			gs_effect_get_param_by_name(filter->effect, "gamma");
+		filter->key_color_param = gs_effect_get_param_by_name(
+			filter->effect, "key_color");
+		filter->similarity_param = gs_effect_get_param_by_name(
+			filter->effect, "similarity");
+		filter->smoothness_param = gs_effect_get_param_by_name(
+			filter->effect, "smoothness");
+	}
+
+	obs_leave_graphics();
+
+	bfree(effect_path);
+
+	if (!filter->effect) {
+		color_key_destroy_v2(filter);
+		return NULL;
+	}
+
+	color_key_update_v2(filter, settings);
+	return filter;
+}
+
+static void color_key_render_v1(void *data, gs_effect_t *effect)
 {
 	struct color_key_filter_data *filter = data;
 
@@ -273,7 +360,7 @@ static bool key_type_changed(obs_properties_t *props, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *color_key_properties(void *data)
+static obs_properties_t *color_key_properties_v1(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
