@@ -1997,6 +1997,75 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "nanoStream Cloud / bintu",
+            "servers": [
+                {
+                    "name": "bintu-stream global ingest (rtmp)",
+                    "url": "rtmp://bintu-stream.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream global ingest (rtmps)",
+                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmp)",
+                    "url": "rtmp://bintu-stream.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmps)",
+                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
+                },
+                {
+                    "name": "bintu-stream Europe (EU)",
+                    "url": "rtmp://bintu-stream-eu.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream USA West (USW)",
+                    "url": "rtmp://bintu-stream-usw.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream US East (USE)",
+                    "url": "rtmp://bintu-stream-use.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream Asia South (ASS)",
+                    "url": "rtmp://bintu-stream-ass.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-stream Australia (AU)",
+                    "url": "rtmp://bintu-stream-au.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Europe (EU)",
+                    "url": "rtmp://bintu-vtrans-eu.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans USA West (USW)",
+                    "url": "rtmp://bintu-vtrans-usw.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans US East (USE)",
+                    "url": "rtmp://bintu-vtrans-use.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Asia South (ASS)",
+                    "url": "rtmp://bintu-vtrans-ass.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans Australia (AU)",
+                    "url": "rtmp://bintu-vtrans-au.nanocosmos.de/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "baseline",
+                "bframes": 0,
+                "max video bitrate": 5000,
+                "max audio bitrate": 192,
+                "x264opts": "tune=zerolatency b-pyramid=0 scenecut=0"
+            }
         }
     ]
 }
