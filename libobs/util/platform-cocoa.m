@@ -38,44 +38,9 @@
 
 #include "apple/cfstring-utils.h"
 
-/* clock function selection taken from libc++ */
-static uint64_t ns_time_simple()
-{
-	return mach_absolute_time();
-}
-
-static double ns_time_compute_factor()
-{
-	mach_timebase_info_data_t info = {1, 1};
-	mach_timebase_info(&info);
-	return ((double)info.numer) / info.denom;
-}
-
-static uint64_t ns_time_full()
-{
-	static double factor = 0.;
-	if (factor == 0.)
-		factor = ns_time_compute_factor();
-	return (uint64_t)(mach_absolute_time() * factor);
-}
-
-typedef uint64_t (*time_func)();
-
-static time_func ns_time_select_func()
-{
-	mach_timebase_info_data_t info = {1, 1};
-	mach_timebase_info(&info);
-	if (info.denom == info.numer)
-		return ns_time_simple;
-	return ns_time_full;
-}
-
 uint64_t os_gettime_ns(void)
 {
-	static time_func f = NULL;
-	if (!f)
-		f = ns_time_select_func();
-	return f();
+	return clock_gettime_nsec_np(CLOCK_UPTIME_RAW);
 }
 
 /* gets the location [domain mask]/Library/Application Support/[name] */
