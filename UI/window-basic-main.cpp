@@ -4677,8 +4677,12 @@ void OBSBasic::on_actionRemoveScene_triggered()
 	OBSScene scene = GetCurrentScene();
 	obs_source_t *source = obs_scene_get_source(scene);
 
-	if (source && QueryRemoveSource(source))
-		obs_source_remove(source);
+	if (source && QueryRemoveSource(source)) {
+		if (obs_source_get_name(source) == copyFiltersString) {
+			copyFiltersString = nullptr;
+		}
+		obs_source_remove(source);		
+	}
 }
 
 void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
@@ -5251,16 +5255,54 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		return Yes == remove_items.clickedButton();
 	};
 
+	bool sourcesRemoved = false;
+
 	if (items.size() == 1) {
 		OBSSceneItem &item = items[0];
 		obs_source_t *source = obs_sceneitem_get_source(item);
-
-		if (source && QueryRemoveSource(source))
+		
+		if (source && QueryRemoveSource(source)) {
 			obs_sceneitem_remove(item);
+			sourcesRemoved = true;
+		}			
 	} else {
 		if (removeMultiple(items.size())) {
 			for (auto &item : items)
 				obs_sceneitem_remove(item);
+			sourcesRemoved = true;
+		}
+	}
+
+	if (sourcesRemoved) {
+		bool filtersCopyRemoved = false;
+
+		for (auto &c = copyStrings.begin(); c != copyStrings.end();) {
+			for (auto &item : items) {
+				obs_source_t *source =
+					obs_sceneitem_get_source(item);
+				if (obs_source_get_name(source)==*c){
+					c = copyStrings.erase(c);
+					continue;
+				}
+				c++;
+			}
+		}
+
+		if (copyStrings.size()==0) {
+			ui->actionPasteRef->setEnabled(false);
+			ui->actionPasteDup->setEnabled(false);
+		}
+
+		if (copyFiltersString) {
+			for (auto &item : items) {
+				obs_source_t *source =
+					obs_sceneitem_get_source(item);
+				if (obs_source_get_name(source) ==
+				    copyFiltersString) {
+					copyFiltersString = nullptr;
+					break;
+				}
+			}
 		}
 	}
 }
