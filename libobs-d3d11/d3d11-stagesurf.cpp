@@ -23,7 +23,7 @@ gs_stage_surface::gs_stage_surface(gs_device_t *device, uint32_t width,
 	  width(width),
 	  height(height),
 	  format(colorFormat),
-	  dxgiFormat(ConvertGSTextureFormat(colorFormat))
+	  dxgiFormat(ConvertGSTextureFormatView(colorFormat))
 {
 	HRESULT hr;
 

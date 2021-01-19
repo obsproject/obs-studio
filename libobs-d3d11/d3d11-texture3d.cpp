@@ -95,7 +95,7 @@ void gs_texture_3d::InitTexture(const uint8_t *const *data)
 	td.Height = height;
 	td.Depth = depth;
 	td.MipLevels = genMipmaps ? 0 : levels;
-	td.Format = dxgiFormat;
+	td.Format = dxgiFormatResource;
 	td.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 	td.CPUAccessFlags = isDynamic ? D3D11_CPU_ACCESS_WRITE : 0;
 	td.Usage = isDynamic ? D3D11_USAGE_DYNAMIC : D3D11_USAGE_DEFAULT;
@@ -155,17 +155,29 @@ void gs_texture_3d::InitResourceView()
 {
 	HRESULT hr;
 
-	memset(&resourceDesc, 0, sizeof(resourceDesc));
-	resourceDesc.Format = dxgiFormat;
+	memset(&viewDesc, 0, sizeof(viewDesc));
+	viewDesc.Format = dxgiFormatView;
 
-	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	resourceDesc.Texture3D.MostDetailedMip = 0;
-	resourceDesc.Texture3D.MipLevels = genMipmaps || !levels ? -1 : levels;
+	viewDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
+	viewDesc.Texture3D.MostDetailedMip = 0;
+	viewDesc.Texture3D.MipLevels = genMipmaps || !levels ? -1 : levels;
 
-	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
+	hr = device->device->CreateShaderResourceView(texture, &viewDesc,
 						      shaderRes.Assign());
 	if (FAILED(hr))
-		throw HRError("Failed to create resource view", hr);
+		throw HRError("Failed to create 3D SRV", hr);
+
+	viewDescLinear = viewDesc;
+	viewDescLinear.Format = dxgiFormatViewLinear;
+
+	if (dxgiFormatView == dxgiFormatViewLinear) {
+		shaderResLinear = shaderRes;
+	} else {
+		hr = device->device->CreateShaderResourceView(
+			texture, &viewDescLinear, shaderResLinear.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create linear 3D SRV", hr);
+	}
 }
 
 #define SHARED_FLAGS (GS_SHARED_TEX | GS_SHARED_KM_TEX)
@@ -180,7 +192,9 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t width,
 	  height(height),
 	  depth(depth),
 	  flags(flags_),
-	  dxgiFormat(ConvertGSTextureFormat(format)),
+	  dxgiFormatResource(ConvertGSTextureFormatResource(format)),
+	  dxgiFormatView(ConvertGSTextureFormatView(format)),
+	  dxgiFormatViewLinear(ConvertGSTextureFormatViewLinear(format)),
 	  isDynamic((flags_ & GS_DYNAMIC) != 0),
 	  isShared((flags_ & SHARED_FLAGS) != 0),
 	  genMipmaps((flags_ & GS_BUILD_MIPMAPS) != 0),
@@ -203,24 +217,19 @@ gs_texture_3d::gs_texture_3d(gs_device_t *device, uint32_t handle)
 
 	texture->GetDesc(&td);
 
+	const gs_color_format format = ConvertDXGITextureFormat(td.Format);
+
 	this->type = GS_TEXTURE_3D;
-	this->format = ConvertDXGITextureFormat(td.Format);
+	this->format = format;
 	this->levels = 1;
 	this->device = device;
 
 	this->width = td.Width;
 	this->height = td.Height;
 	this->depth = td.Depth;
-	this->dxgiFormat = td.Format;
+	this->dxgiFormatResource = ConvertGSTextureFormatResource(format);
+	this->dxgiFormatView = ConvertGSTextureFormatView(format);
+	this->dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 
-	memset(&resourceDesc, 0, sizeof(resourceDesc));
-	resourceDesc.Format = td.Format;
-	resourceDesc.ViewDimension = D3D11_SRV_DIMENSION_TEXTURE3D;
-	resourceDesc.Texture3D.MostDetailedMip = 0;
-	resourceDesc.Texture3D.MipLevels = 1;
-
-	hr = device->device->CreateShaderResourceView(texture, &resourceDesc,
-						      shaderRes.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to create shader resource view", hr);
+	InitResourceView();
 }
