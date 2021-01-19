@@ -106,6 +106,9 @@ struct gs_exports {
 	void (*device_set_cube_render_target)(gs_device_t *device,
 					      gs_texture_t *cubetex, int side,
 					      gs_zstencil_t *zstencil);
+	void (*device_enable_framebuffer_srgb)(gs_device_t *device,
+					       bool enable);
+	bool (*device_framebuffer_srgb_enabled)(gs_device_t *device);
 	void (*device_copy_texture)(gs_device_t *device, gs_texture_t *dst,
 				    gs_texture_t *src);
 	void (*device_copy_texture_region)(gs_device_t *device,
@@ -362,4 +365,6 @@ struct graphics_subsystem {
 
 	struct blend_state cur_blend_state;
 	DARRAY(struct blend_state) blend_state_stack;
+
+	bool linear_srgb;
 };

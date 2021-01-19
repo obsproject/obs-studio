@@ -2012,9 +2012,21 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 		tex = gs_texrender_get_texture(source->async_texrender);
 
 	param = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(param, tex);
+
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb) {
+		gs_effect_set_texture_srgb(param, tex);
+	} else {
+		gs_effect_set_texture(param, tex);
+	}
 
 	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void obs_source_draw_async_texture(struct obs_source *source)
@@ -3588,7 +3600,15 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	size_t passes, i;
 
-	gs_effect_set_texture(image, tex);
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, tex);
+	else
+		gs_effect_set_texture(image, tex);
 
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
@@ -3597,6 +3617,8 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
@@ -4164,21 +4186,27 @@ void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix,
 void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 		     uint32_t cy, bool flip)
 {
-	gs_effect_t *effect = gs_get_effect();
-	bool change_pos = (x != 0 || y != 0);
-	gs_eparam_t *image;
+	if (!obs_ptr_valid(texture, "obs_source_draw"))
+		return;
 
+	gs_effect_t *effect = gs_get_effect();
 	if (!effect) {
 		blog(LOG_WARNING, "obs_source_draw: no active effect!");
 		return;
 	}
 
-	if (!obs_ptr_valid(texture, "obs_source_draw"))
-		return;
+	const bool linear_srgb = gs_get_linear_srgb();
 
-	image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, texture);
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
 
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, texture);
+	else
+		gs_effect_set_texture(image, texture);
+
+	const bool change_pos = (x != 0 || y != 0);
 	if (change_pos) {
 		gs_matrix_push();
 		gs_matrix_translate3f((float)x, (float)y, 0.0f);
@@ -4188,6 +4216,8 @@ void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 
 	if (change_pos)
 		gs_matrix_pop();
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void obs_source_inc_showing(obs_source_t *source)

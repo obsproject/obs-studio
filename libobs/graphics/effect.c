@@ -486,7 +486,18 @@ void gs_effect_set_color(gs_eparam_t *param, uint32_t argb)
 
 void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val)
 {
-	effect_setval_inline(param, &val, sizeof(gs_texture_t *));
+	struct gs_shader_texture shader_tex;
+	shader_tex.tex = val;
+	shader_tex.srgb = false;
+	effect_setval_inline(param, &shader_tex, sizeof(shader_tex));
+}
+
+void gs_effect_set_texture_srgb(gs_eparam_t *param, gs_texture_t *val)
+{
+	struct gs_shader_texture shader_tex;
+	shader_tex.tex = val;
+	shader_tex.srgb = true;
+	effect_setval_inline(param, &shader_tex, sizeof(shader_tex));
 }
 
 void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size)
