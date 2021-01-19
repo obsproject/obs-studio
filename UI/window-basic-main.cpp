@@ -5274,9 +5274,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	}
 
 	if (sourcesRemoved) {
-		bool filtersCopyRemoved = false;
-
-		for (auto &c = copyStrings.begin(); c != copyStrings.end();) {
+		for (auto c = copyStrings.begin(); c != copyStrings.end();) {
 			for (auto &item : items) {
 				obs_source_t *source =
 					obs_sceneitem_get_source(item);
