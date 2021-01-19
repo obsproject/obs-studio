@@ -4,8 +4,6 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform texture2d target;
-
 uniform float sharpness;
 uniform float texture_width;
 uniform float texture_height;
