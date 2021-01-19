@@ -1,3 +1,4 @@
+#import <AvailabilityMacros.h>
 #import <AVFoundation/AVFoundation.h>
 #import <CoreFoundation/CoreFoundation.h>
 #import <CoreMedia/CoreMedia.h>
@@ -1230,8 +1231,13 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 static NSArray *presets(void)
 {
 	return @[
-		//AVCaptureSessionPresetiFrame1280x720,
-		//AVCaptureSessionPresetiFrame960x540,
+	//AVCaptureSessionPresetiFrame1280x720,
+	//AVCaptureSessionPresetiFrame960x540,
+#if defined(MAC_OS_X_VERSION_10_15) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15
+		AVCaptureSessionPreset3840x2160,
+		AVCaptureSessionPreset1920x1080,
+#endif
 		AVCaptureSessionPreset1280x720, AVCaptureSessionPreset960x540,
 		AVCaptureSessionPreset640x480, AVCaptureSessionPreset352x288,
 		AVCaptureSessionPreset320x240, AVCaptureSessionPresetHigh,
@@ -1252,6 +1258,11 @@ static NSString *preset_names(NSString *preset)
 		AVCaptureSessionPreset640x480: @"640x480",
 		AVCaptureSessionPreset960x540: @"960x540",
 		AVCaptureSessionPreset1280x720: @"1280x720",
+#if defined(MAC_OS_X_VERSION_10_15) && \
+	MAC_OS_X_VERSION_MIN_REQUIRED >= MAC_OS_X_VERSION_10_15
+		AVCaptureSessionPreset1920x1080: @"1920x1080",
+		AVCaptureSessionPreset3840x2160: @"3840x2160",
+#endif
 		AVCaptureSessionPresetHigh: @"High",
 	};
 	NSString *name = preset_names[preset];
