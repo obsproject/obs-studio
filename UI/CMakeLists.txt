@@ -419,7 +419,6 @@ target_link_libraries(obs
 if (APPLE)
 	target_link_libraries(obs
 			Qt5::MacExtras)
-	set_target_properties(obs PROPERTIES LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
 endif()
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
