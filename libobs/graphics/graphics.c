@@ -1708,6 +1708,50 @@ void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 		graphics->device, cubetex, side, zstencil);
 }
 
+void gs_enable_framebuffer_srgb(bool enable)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_enable_framebuffer_srgb"))
+		return;
+
+	graphics->exports.device_enable_framebuffer_srgb(graphics->device,
+							 enable);
+}
+
+bool gs_framebuffer_srgb_enabled(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_framebuffer_srgb_enabled"))
+		return false;
+
+	return graphics->exports.device_framebuffer_srgb_enabled(
+		graphics->device);
+}
+
+bool gs_get_linear_srgb(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_linear_srgb"))
+		return false;
+
+	return graphics->linear_srgb;
+}
+
+bool gs_set_linear_srgb(bool linear_srgb)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_linear_srgb"))
+		return false;
+
+	const bool previous = graphics->linear_srgb;
+	graphics->linear_srgb = linear_srgb;
+	return previous;
+}
+
 void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src)
 {
 	graphics_t *graphics = thread_graphics;
