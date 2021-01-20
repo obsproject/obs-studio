@@ -149,6 +149,7 @@ struct game_capture {
 
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
+	bool supports_srgb;
 	struct hook_info *global_hook_info;
 	HANDLE keepalive_mutex;
 	HANDLE hook_init;
@@ -1574,6 +1575,7 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 		return false;
 	}
 
+	gc->supports_srgb = true;
 	gc->copy_texture = copy_shmem_tex;
 	return true;
 }
@@ -1583,6 +1585,8 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 	obs_enter_graphics();
 	gs_texture_destroy(gc->texture);
 	gc->texture = gs_texture_open_shared(gc->shtex_data->tex_handle);
+	enum gs_color_format format = gs_texture_get_color_format(gc->texture);
+	gc->supports_srgb = gs_is_srgb_format(format);
 	obs_leave_graphics();
 
 	if (!gc->texture) {
@@ -1808,6 +1812,9 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 					     ? OBS_EFFECT_DEFAULT
 					     : OBS_EFFECT_OPAQUE);
 
+	const bool linear_srgb = gs_get_linear_srgb() && gc->supports_srgb;
+	const bool previous = gs_set_linear_srgb(linear_srgb);
+
 	while (gs_effect_loop(effect, "Draw")) {
 		obs_source_draw(gc->texture, 0, 0, 0, 0,
 				gc->global_hook_info->flip);
@@ -1817,6 +1824,8 @@ static void game_capture_render(void *data, gs_effect_t *effect)
 			game_capture_render_cursor(gc);
 		}
 	}
+
+	gs_set_linear_srgb(previous);
 
 	if (!gc->config.allow_transparency && gc->config.cursor &&
 	    !gc->cursor_hidden) {
