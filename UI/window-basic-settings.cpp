@@ -2583,8 +2583,9 @@ LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 	auto *label = new OBSHotkeyLabel;
 	QString text = QT_UTF8(obs_hotkey_get_description(key));
 
+	label->setProperty("fullName", text);
+
 	if (text.length() > TRUNCATE_TEXT_LENGTH) {
-		label->setProperty("fullName", text);
 		text = text.left(TRUNCATE_TEXT_LENGTH);
 		text += "...'";
 	}
@@ -2722,7 +2723,10 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 					qobject_cast<OBSHotkeyLabel *>(
 						label->widget());
 				if (item) {
-					if (item->text().toLower().contains(
+					QString fullname =
+						item->property("fullName")
+							.value<QString>();
+					if (fullname.toLower().contains(
 						    text.toLower()))
 						setRowVisible(i, true, label);
 					else
