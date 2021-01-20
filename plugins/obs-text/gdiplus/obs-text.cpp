@@ -871,15 +871,20 @@ inline void TextSource::Render()
 	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			      tex);
+	gs_effect_set_texture_srgb(gs_effect_get_param_by_name(effect, "image"),
+				   tex);
 	gs_draw_sprite(tex, 0, cx, cy);
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 /* ------------------------------------------------------------------------- */
