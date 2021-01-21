@@ -24,8 +24,7 @@ VertData VSDefault(VertData v_in)
 
 float4 PSFadeToColor(VertData v_in) : TARGET
 {
-	float4 premultiplied = float4(color.rgb * color.a, color.a);
-	return lerp(tex.Sample(textureSampler, v_in.uv), premultiplied, swp);
+	return lerp(tex.Sample(textureSampler, v_in.uv), color, swp);
 }
 
 technique FadeToColor
