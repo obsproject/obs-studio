@@ -73,8 +73,9 @@ void *os_dlopen(const char *path)
 	dstr_replace(&dll_name, "\\", "/");
 	if (!dstr_find(&dll_name, ".dll"))
 		dstr_cat(&dll_name, ".dll");
-
 	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
+
+	dstr_free(&dll_name);
 
 	/* to make module dependency issues easier to deal with, allow
 	 * dynamically loaded libraries on windows to search for dependent
@@ -87,8 +88,8 @@ void *os_dlopen(const char *path)
 	}
 
 	h_library = LoadLibraryW(wpath);
+
 	bfree(wpath);
-	dstr_free(&dll_name);
 
 	if (wpath_slash)
 		SetDllDirectoryW(NULL);
@@ -156,8 +157,9 @@ bool os_is_obs_plugin(const char *path)
 	dstr_replace(&dll_name, "\\", "/");
 	if (!dstr_find(&dll_name, ".dll"))
 		dstr_cat(&dll_name, ".dll");
-
 	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
+
+	dstr_free(&dll_name);
 
 	hFile = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
 			    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
