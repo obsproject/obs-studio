@@ -16,6 +16,7 @@ uniform float2 pixel_size;
 uniform float similarity;
 uniform float smoothness;
 uniform float spill;
+uniform bool invert;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -57,12 +58,14 @@ float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
 	float2 h_pixel_size = pixel_size / 2.0;
 	float2 point_0 = float2(pixel_size.x, h_pixel_size.y);
 	float2 point_1 = float2(h_pixel_size.x, -pixel_size.y);
+
 	float distVal = GetChromaDist(SampleTexture(texCoord-point_0).rgb);
 	distVal += GetChromaDist(SampleTexture(texCoord+point_0).rgb);
 	distVal += GetChromaDist(SampleTexture(texCoord-point_1).rgb);
 	distVal += GetChromaDist(SampleTexture(texCoord+point_1).rgb);
 	distVal *= 2.0;
 	distVal += GetChromaDist(rgb);
+
 	return distVal / 9.0;
 }
 
@@ -70,8 +73,15 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 {
 	float chromaDist = GetBoxFilteredChromaDist(rgba.rgb, v_in.uv);
 	float baseMask = chromaDist - similarity;
+
 	float fullMask = pow(saturate(baseMask / smoothness), 1.5);
 	float spillVal = pow(saturate(baseMask / spill), 1.5);
+
+	if(invert)
+	{
+		fullMask = 1 - fullMask;
+		spillVal = 1 - spillVal;
+	}
 
 	rgba.rgba *= color;
 	rgba.a *= fullMask;
