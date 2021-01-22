@@ -87,12 +87,14 @@ bool obs_module_load(void)
 #if !defined(_WIN32) || CHECK_FOR_SERVICE_UPDATES
 	char *local_dir = obs_module_file("");
 	char *cache_dir = obs_module_config_path("");
+	char update_url[128];
+	snprintf(update_url, sizeof(update_url), "%s/v%d", RTMP_SERVICES_URL,
+		 RTMP_SERVICES_FORMAT_VERSION);
 
 	if (cache_dir) {
 		update_info = update_info_create(RTMP_SERVICES_LOG_STR,
-						 module_name.array,
-						 RTMP_SERVICES_URL, local_dir,
-						 cache_dir,
+						 module_name.array, update_url,
+						 local_dir, cache_dir,
 						 confirm_service_file, NULL);
 	}
 
