@@ -6,55 +6,15 @@
 #import <CoreGraphics/CGDisplayStream.h>
 #import <Cocoa/Cocoa.h>
 
-#include "window-utils.h"
+#include "screen-utils.h"
 
-enum crop_mode {
-	CROP_NONE,
-	CROP_MANUAL,
-	CROP_TO_WINDOW,
-	CROP_TO_WINDOW_AND_MANUAL,
-	CROP_INVALID
-};
-
-static inline bool requires_window(enum crop_mode mode)
-{
-	return mode == CROP_TO_WINDOW || mode == CROP_TO_WINDOW_AND_MANUAL;
-}
-
-struct display_capture {
-	obs_source_t *source;
-
-	gs_samplerstate_t *sampler;
-	gs_effect_t *effect;
-	gs_texture_t *tex;
-	gs_vertbuffer_t *vertbuf;
-
-	NSScreen *screen;
-	unsigned display;
-	NSRect frame;
-	bool hide_cursor;
-
-	enum crop_mode crop;
-	CGRect crop_rect;
-
-	struct cocoa_window window;
-	CGRect window_rect;
-	bool on_screen;
-	bool hide_when_minimized;
-
-	os_event_t *disp_finished;
-	CGDisplayStreamRef disp;
-	IOSurfaceRef current, prev;
-
-	pthread_mutex_t mutex;
-};
 
 static inline bool crop_mode_valid(enum crop_mode mode)
 {
 	return CROP_NONE <= mode && mode < CROP_INVALID;
 }
 
-static void destroy_display_stream(struct display_capture *dc)
+static void destroy_display_stream(struct screen_capture *dc)
 {
 	if (dc->disp) {
 		CGDisplayStreamStop(dc->disp);
@@ -93,7 +53,7 @@ static void destroy_display_stream(struct display_capture *dc)
 
 static void display_capture_destroy(void *data)
 {
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	if (!dc)
 		return;
@@ -115,116 +75,7 @@ static void display_capture_destroy(void *data)
 	bfree(dc);
 }
 
-static inline void update_window_params(struct display_capture *dc)
-{
-	if (!requires_window(dc->crop))
-		return;
-
-	NSArray *arr = (NSArray *)CGWindowListCopyWindowInfo(
-		kCGWindowListOptionIncludingWindow, dc->window.window_id);
-
-	if (arr.count) {
-		NSDictionary *dict = arr[0];
-		NSDictionary *ref = dict[(NSString *)kCGWindowBounds];
-		CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)ref,
-						       &dc->window_rect);
-		dc->on_screen = dict[(NSString *)kCGWindowIsOnscreen] != nil;
-		dc->window_rect =
-			[dc->screen convertRectToBacking:dc->window_rect];
-
-	} else {
-		if (find_window(&dc->window, NULL, false))
-			update_window_params(dc);
-		else
-			dc->on_screen = false;
-	}
-
-	[arr release];
-}
-
-static inline void display_stream_update(struct display_capture *dc,
-					 CGDisplayStreamFrameStatus status,
-					 uint64_t display_time,
-					 IOSurfaceRef frame_surface,
-					 CGDisplayStreamUpdateRef update_ref)
-{
-	UNUSED_PARAMETER(display_time);
-	UNUSED_PARAMETER(update_ref);
-
-	if (status == kCGDisplayStreamFrameStatusStopped) {
-		os_event_signal(dc->disp_finished);
-		return;
-	}
-
-	IOSurfaceRef prev_current = NULL;
-
-	if (frame_surface && !pthread_mutex_lock(&dc->mutex)) {
-		prev_current = dc->current;
-		dc->current = frame_surface;
-		CFRetain(dc->current);
-		IOSurfaceIncrementUseCount(dc->current);
-
-		update_window_params(dc);
-
-		pthread_mutex_unlock(&dc->mutex);
-	}
-
-	if (prev_current) {
-		IOSurfaceDecrementUseCount(prev_current);
-		CFRelease(prev_current);
-	}
-
-	size_t dropped_frames = CGDisplayStreamUpdateGetDropCount(update_ref);
-	if (dropped_frames > 0)
-		blog(LOG_INFO, "%s: Dropped %zu frames",
-		     obs_source_get_name(dc->source), dropped_frames);
-}
-
-static bool init_display_stream(struct display_capture *dc)
-{
-	if (dc->display >= [NSScreen screens].count)
-		return false;
-
-	dc->screen = [[NSScreen screens][dc->display] retain];
-
-	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
-
-	NSNumber *screen_num = dc->screen.deviceDescription[@"NSScreenNumber"];
-	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
-
-	NSDictionary *rect_dict =
-		CFBridgingRelease(CGRectCreateDictionaryRepresentation(
-			CGRectMake(0, 0, dc->screen.frame.size.width,
-				   dc->screen.frame.size.height)));
-
-	CFBooleanRef show_cursor_cf = dc->hide_cursor ? kCFBooleanFalse
-						      : kCFBooleanTrue;
-
-	NSDictionary *dict = @{
-		(__bridge NSString *)kCGDisplayStreamSourceRect: rect_dict,
-		(__bridge NSString *)kCGDisplayStreamQueueDepth: @5,
-		(__bridge NSString *)
-		kCGDisplayStreamShowCursor: (id)show_cursor_cf,
-	};
-
-	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
-
-	const CGSize *size = &dc->frame.size;
-	dc->disp = CGDisplayStreamCreateWithDispatchQueue(
-		disp_id, size->width, size->height, 'BGRA',
-		(__bridge CFDictionaryRef)dict,
-		dispatch_queue_create(NULL, NULL),
-		^(CGDisplayStreamFrameStatus status, uint64_t displayTime,
-		  IOSurfaceRef frameSurface,
-		  CGDisplayStreamUpdateRef updateRef) {
-			display_stream_update(dc, status, displayTime,
-					      frameSurface, updateRef);
-		});
-
-	return !CGDisplayStreamStart(dc->disp);
-}
-
-bool init_vertbuf(struct display_capture *dc)
+bool init_vertbuf(struct screen_capture *dc)
 {
 	struct gs_vb_data *vb_data = gs_vbdata_create();
 	vb_data->num = 4;
@@ -246,14 +97,14 @@ bool init_vertbuf(struct display_capture *dc)
 	return dc->vertbuf != NULL;
 }
 
-void load_crop(struct display_capture *dc, obs_data_t *settings);
+void load_crop(struct screen_capture *dc, obs_data_t *settings);
 
 static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 {
 	UNUSED_PARAMETER(source);
 	UNUSED_PARAMETER(settings);
 
-	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
+	struct screen_capture *dc = bzalloc(sizeof(struct screen_capture));
 
 	dc->source = source;
 	dc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
@@ -286,7 +137,7 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 	dc->display = obs_data_get_int(settings, "display");
 	pthread_mutex_init(&dc->mutex, NULL);
 
-	if (!init_display_stream(dc))
+	if (!init_screen_stream(dc))
 		goto fail;
 
 	return dc;
@@ -322,7 +173,7 @@ static void display_capture_video_tick(void *data, float seconds)
 {
 	UNUSED_PARAMETER(seconds);
 
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	if (!dc->current)
 		return;
@@ -394,7 +245,7 @@ static void display_capture_video_render(void *data, gs_effect_t *effect)
 {
 	UNUSED_PARAMETER(effect);
 
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	if (!dc->tex || (requires_window(dc->crop) && !dc->on_screen))
 		return;
@@ -427,7 +278,7 @@ static const char *display_capture_getname(void *unused)
 
 static uint32_t display_capture_getwidth(void *data)
 {
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	float crop = dc->crop_rect.origin.x + dc->crop_rect.size.width;
 	switch (dc->crop) {
@@ -451,7 +302,7 @@ static uint32_t display_capture_getwidth(void *data)
 
 static uint32_t display_capture_getheight(void *data)
 {
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	float crop = dc->crop_rect.origin.y + dc->crop_rect.size.height;
 	switch (dc->crop) {
@@ -489,7 +340,7 @@ void load_crop_mode(enum crop_mode *mode, obs_data_t *settings)
 		*mode = CROP_NONE;
 }
 
-void load_crop(struct display_capture *dc, obs_data_t *settings)
+void load_crop(struct screen_capture *dc, obs_data_t *settings)
 {
 	load_crop_mode(&dc->crop, settings);
 
@@ -522,7 +373,7 @@ void load_crop(struct display_capture *dc, obs_data_t *settings)
 
 static void display_capture_update(void *data, obs_data_t *settings)
 {
-	struct display_capture *dc = data;
+	struct screen_capture *dc = data;
 
 	load_crop(dc, settings);
 
@@ -539,7 +390,7 @@ static void display_capture_update(void *data, obs_data_t *settings)
 	destroy_display_stream(dc);
 	dc->display = display;
 	dc->hide_cursor = !show_cursor;
-	init_display_stream(dc);
+	init_screen_stream(dc);
 
 	obs_leave_graphics();
 }

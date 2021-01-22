@@ -37,6 +37,11 @@ NSArray *enumerate_windows(void)
 #define WAIT_TIME_US WAIT_TIME_MS * 1000
 #define WAIT_TIME_NS WAIT_TIME_US * 1000
 
+bool requires_window(enum crop_mode mode)
+{
+	return mode == CROP_TO_WINDOW || mode == CROP_TO_WINDOW_AND_MANUAL;
+}
+
 bool find_window(cocoa_window_t cw, obs_data_t *settings, bool force)
 {
 	if (!force && cw->next_search_time > os_gettime_ns())

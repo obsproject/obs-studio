@@ -3,10 +3,7 @@
 #include <util/threading.h>
 #include <util/platform.h>
 
-#import <CoreGraphics/CGWindow.h>
-#import <Cocoa/Cocoa.h>
-
-#include "window-utils.h"
+#include "screen-utils.h"
 
 struct window_capture {
 	obs_source_t *source;
@@ -101,6 +98,22 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 	wc->color_space = CGColorSpaceCreateDeviceRGB();
 
 	da_init(wc->buffer);
+
+	blog(LOG_INFO, "[window-capture] - Init Display Capture for permissions dialog");
+	
+	struct screen_capture *dc = bzalloc(sizeof(struct screen_capture));
+	if (!dc) {
+		blog(LOG_INFO, "[window-capture] - Display Capture Alloc Fail"); 
+		return NULL;
+	}
+	dc->display = obs_data_get_int(settings, "display");
+
+	if (!init_screen_stream(dc)) {
+		blog(LOG_INFO, "[window-capture] - Display Capture Init Fail");
+		bfree(dc);
+		return NULL;
+	}
+	bfree(dc);
 
 	init_window(&wc->window, settings);
 
