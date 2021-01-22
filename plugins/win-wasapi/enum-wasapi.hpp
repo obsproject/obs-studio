@@ -6,6 +6,8 @@
 #include <mmdeviceapi.h>
 #include <audioclient.h>
 #include <propsys.h>
+#include <util/platform.h>
+#include <util/windows/ComPtr.hpp>
 
 #ifdef __MINGW32__
 
@@ -35,7 +37,10 @@ DEFINE_PROPERTYKEY(PKEY_Device_FriendlyName, \
 struct AudioDeviceInfo {
 	std::string name;
 	std::string id;
+	ComPtr<IMMDevice> device;
 };
 
 std::string GetDeviceName(IMMDevice *device);
-void GetWASAPIAudioDevices(std::vector<AudioDeviceInfo> &devices, bool input);
+
+void GetWASAPIAudioDevices(std::vector<AudioDeviceInfo> &devices, bool input,
+			   const std::string &searchByName = "");
