@@ -233,6 +233,8 @@ obs_properties_add_button2(obs_properties_t *props, const char *name,
 			   const char *text, obs_property_clicked_t callback,
 			   void *priv);
 
+EXPORT int obs_property_is_visible(struct obs_property *property);
+
 /**
  * Adds a font selection property.
  *

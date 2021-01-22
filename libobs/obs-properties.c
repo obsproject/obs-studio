@@ -239,6 +239,11 @@ obs_properties_t *obs_properties_create_param(void *param,
 	return props;
 }
 
+int obs_property_is_visible(struct obs_property* property)
+{
+	return  property && property->visible;
+}
+
 static void obs_property_destroy(struct obs_property *property)
 {
 	if (property->type == OBS_PROPERTY_LIST)
