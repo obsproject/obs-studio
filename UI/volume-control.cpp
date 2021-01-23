@@ -125,7 +125,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	  levelCount(0.0f),
 	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
 	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG)),
-	  vertical(vertical)
+	  vertical(vertical),
+	  contextMenu(nullptr)
 {
 	nameLabel = new QLabel();
 	volLabel = new QLabel();
@@ -291,6 +292,8 @@ VolControl::~VolControl()
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
+	if (contextMenu)
+		contextMenu->close();
 }
 
 QColor VolumeMeter::getBackgroundNominalColor() const

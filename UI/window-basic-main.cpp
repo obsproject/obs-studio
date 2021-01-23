@@ -3301,6 +3301,7 @@ void OBSBasic::VolControlContextMenu()
 		pasteFiltersAction.setEnabled(true);
 
 	QMenu popup;
+	vol->SetContextMenu(&popup);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
@@ -3316,6 +3317,7 @@ void OBSBasic::VolControlContextMenu()
 	popup.addAction(&propertiesAction);
 	popup.addAction(&advPropAction);
 	popup.exec(QCursor::pos());
+	vol->SetContextMenu(nullptr);
 }
 
 void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
