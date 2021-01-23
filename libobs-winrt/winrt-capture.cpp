@@ -186,8 +186,10 @@ struct winrt_capture {
 			}
 
 			if (!texture) {
-				texture = gs_texture_create_gdi(texture_width,
-								texture_height);
+				texture = gs_texture_create(texture_width,
+							    texture_height,
+							    GS_BGRA, 1, NULL,
+							    0);
 			}
 
 			if (client_area) {
@@ -491,7 +493,15 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	size_t passes;
 
-	gs_effect_set_texture(image, texture);
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, texture);
+	else
+		gs_effect_set_texture(image, texture);
 
 	passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
@@ -502,6 +512,8 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 		}
 	}
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)

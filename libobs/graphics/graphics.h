@@ -73,6 +73,9 @@ enum gs_color_format {
 	GS_DXT3,
 	GS_DXT5,
 	GS_R8G8,
+	GS_RGBA_UNORM,
+	GS_BGRX_UNORM,
+	GS_BGRA_UNORM,
 };
 
 enum gs_zstencil_format {
@@ -302,6 +305,11 @@ enum gs_shader_param_type {
 	GS_SHADER_PARAM_TEXTURE,
 };
 
+struct gs_shader_texture {
+	gs_texture_t *tex;
+	bool srgb;
+};
+
 #ifndef SWIG
 struct gs_shader_param_info {
 	enum gs_shader_param_type type;
@@ -423,6 +431,7 @@ EXPORT void gs_effect_set_vec2(gs_eparam_t *param, const struct vec2 *val);
 EXPORT void gs_effect_set_vec3(gs_eparam_t *param, const struct vec3 *val);
 EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
+EXPORT void gs_effect_set_texture_srgb(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
 EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
@@ -666,6 +675,12 @@ EXPORT gs_zstencil_t *gs_get_zstencil_target(void);
 EXPORT void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil);
 EXPORT void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 				      gs_zstencil_t *zstencil);
+
+EXPORT void gs_enable_framebuffer_srgb(bool enable);
+EXPORT bool gs_framebuffer_srgb_enabled(void);
+
+EXPORT bool gs_get_linear_srgb(void);
+EXPORT bool gs_set_linear_srgb(bool linear_srgb);
 
 EXPORT void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src);
 EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x,
@@ -939,6 +954,12 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 		return 8;
 	case GS_R8G8:
 		return 16;
+	case GS_RGBA_UNORM:
+		return 32;
+	case GS_BGRX_UNORM:
+		return 32;
+	case GS_BGRA_UNORM:
+		return 32;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -949,6 +970,18 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 static inline bool gs_is_compressed_format(enum gs_color_format format)
 {
 	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
+}
+
+static inline bool gs_is_srgb_format(enum gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA:
+	case GS_BGRX:
+	case GS_BGRA:
+		return true;
+	default:
+		return false;
+	}
 }
 
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,

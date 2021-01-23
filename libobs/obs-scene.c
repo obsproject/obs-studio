@@ -570,6 +570,7 @@ static inline void render_item(struct obs_scene_item *item)
 		}
 	}
 
+	const bool previous = gs_set_linear_srgb(true);
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
@@ -578,6 +579,7 @@ static inline void render_item(struct obs_scene_item *item)
 		obs_source_video_render(item->source);
 	}
 	gs_matrix_pop();
+	gs_set_linear_srgb(previous);
 
 cleanup:
 	GS_DEBUG_MARKER_END();

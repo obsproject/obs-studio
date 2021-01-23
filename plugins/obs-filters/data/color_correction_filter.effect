@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform float3 gamma;
+uniform float gamma;
 
 /* Pre-Compute variables. */
 uniform float4x4 color_matrix;

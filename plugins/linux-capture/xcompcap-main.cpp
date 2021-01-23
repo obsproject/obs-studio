@@ -313,11 +313,11 @@ static gs_color_format gs_format_from_tex()
 	// GS_RGBX format
 	switch (iformat) {
 	case GL_RGB:
-		return GS_BGRX;
+		return GS_BGRX_UNORM;
 	case GL_RGBA:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	default:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	}
 }
 
@@ -513,7 +513,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	XFree(configs);
 
 	// Build an OBS texture to bind the pixmap to.
-	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA, 1, 0,
+	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA_UNORM, 1, 0,
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);

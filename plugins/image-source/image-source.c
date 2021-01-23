@@ -147,10 +147,21 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	if (!context->if2.image.texture)
 		return;
 
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			      context->if2.image.texture);
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	gs_eparam_t *const param = gs_effect_get_param_by_name(effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(param, context->if2.image.texture);
+	else
+		gs_effect_set_texture(param, context->if2.image.texture);
+
 	gs_draw_sprite(context->if2.image.texture, 0, context->if2.image.cx,
 		       context->if2.image.cy);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void image_source_tick(void *data, float seconds)

@@ -523,12 +523,22 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 	if (!data->texture)
 		return;
 
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, data->texture);
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, data->texture);
+	else
+		gs_effect_set_texture(image, data->texture);
 
 	while (gs_effect_loop(effect, "Draw")) {
 		gs_draw_sprite(data->texture, 0, 0, 0);
 	}
+
+	gs_enable_framebuffer_srgb(previous);
 
 	if (data->show_cursor) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
