@@ -1887,16 +1887,10 @@
                 }
             ],
             "recommended": {
-                "keyint": 2,
+                "keyint": 1,
                 "profile": "high",
-                "supported resolutions": [
-                    "1920x1080",
-                    "1280x720",
-                    "960x540",
-                    "640x360"
-                ],
                 "max fps": 60,
-                "max video bitrate": 6000,
+                "max video bitrate": 10000,
                 "max audio bitrate": 192,
                 "x264opts": "tune=zerolatency scenecut=0"
             }
