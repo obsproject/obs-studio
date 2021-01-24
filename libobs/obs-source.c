@@ -2865,8 +2865,7 @@ obs_source_output_video_internal(obs_source_t *source,
 		return;
 	}
 
-	struct obs_source_frame *output = !!frame ? cache_video(source, frame)
-						  : NULL;
+	struct obs_source_frame *output = cache_video(source, frame);
 
 	/* ------------------------------------------- */
 	pthread_mutex_lock(&source->async_mutex);

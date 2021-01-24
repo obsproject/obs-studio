@@ -392,7 +392,7 @@ size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 	if (!str)
 		return 0;
 
-	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, len);
+	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, 0);
 
 	if (dst) {
 		if (!dst_size)

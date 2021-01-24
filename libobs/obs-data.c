@@ -791,7 +791,7 @@ static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 {
 	obs_data_item_t *new_item = NULL;
 
-	if ((!item || (item && !*item)) && data) {
+	if ((!item || !*item) && data) {
 		new_item = obs_data_item_create(name, ptr, size, type,
 						default_data, autoselect_data);
 
@@ -860,7 +860,7 @@ static inline void set_item_def(struct obs_data *data, obs_data_item_t **item,
 		item = &actual_item;
 	}
 
-	if (item && *item && (*item)->type != type)
+	if (*item && (*item)->type != type)
 		return;
 
 	set_item_data(data, item, name, ptr, size, type, true, false);
