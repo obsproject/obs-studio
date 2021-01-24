@@ -135,8 +135,7 @@ static inline void circlebuf_place(struct circlebuf *cb, size_t position,
 		size_t back_size = data_end_pos - cb->capacity;
 		size_t loop_size = size - back_size;
 
-		if (back_size)
-			memcpy((uint8_t *)cb->data + position, data, loop_size);
+		memcpy((uint8_t *)cb->data + position, data, loop_size);
 		memcpy(cb->data, (uint8_t *)data + loop_size, back_size);
 	} else {
 		memcpy((uint8_t *)cb->data + position, data, size);
