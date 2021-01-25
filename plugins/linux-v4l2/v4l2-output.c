@@ -50,10 +50,24 @@ static bool loopback_module_loaded()
 	return loaded;
 }
 
+bool loopback_module_available()
+{
+	if (loopback_module_loaded()) {
+		return true;
+	}
+
+	if (system("PATH=\"$PATH:/sbin\" modinfo v4l2loopback >/dev/null 2>&1") ==
+	    0) {
+		return true;
+	}
+
+	return false;
+}
+
 static int loopback_module_load()
 {
 	return system(
-		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+		"PATH=\"$PATH:/sbin\" pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
