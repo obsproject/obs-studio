@@ -1,7 +1,7 @@
 Contributing
 ============
 
-Quick Links for Contributing
+Quick Links for Contributing Code.
 ----------------------------
 
  - Compiling and building OBS Studio:
@@ -12,7 +12,7 @@ Quick Links for Contributing
 
  - Discord Server: https://obsproject.com/discord
 
- - Development chat: #development on the Discord server (see above)
+ - Development chat: #development on the Discord server. (see above)
  
  - Development forum:
    https://obsproject.com/forum/list/general-development.21/
@@ -62,7 +62,7 @@ Commit Guidelines
 
    Or for libobs::
 
-     libobs: Fix source not displaying
+     libobs: Fix source not displaying.
 
    Note: When modifying cmake modules, just prefix with "cmake".
 
