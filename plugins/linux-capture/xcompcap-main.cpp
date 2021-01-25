@@ -346,8 +346,9 @@ struct gs_texture {
 
 void XCompcapMain::updateSettings(obs_data_t *settings)
 {
-	PLock lock(&p->lock);
 	ObsGsContextHolder obsctx;
+
+	PLock lock(&p->lock);
 
 	blog(LOG_DEBUG, "Settings updating");
 
@@ -568,6 +569,9 @@ void XCompcapMain::tick(float seconds)
 	if (!obs_source_showing(p->source))
 		return;
 
+	// Must be taken before xlock to prevent deadlock on shutdown
+	ObsGsContextHolder obsctx;
+
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked())
@@ -604,8 +608,6 @@ void XCompcapMain::tick(float seconds)
 	if (!p->tex || !p->gltex)
 		return;
 
-	obs_enter_graphics();
-
 	if (p->lockX) {
 		// XDisplayLock is still live so we should already be locked.
 		XLockDisplay(xdisp);
@@ -634,8 +636,6 @@ void XCompcapMain::tick(float seconds)
 
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
-
-	obs_leave_graphics();
 }
 
 void XCompcapMain::render(gs_effect_t *effect)
