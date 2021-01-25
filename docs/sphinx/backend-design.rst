@@ -1,6 +1,6 @@
 OBS Studio Backend Design
 =========================
-The OBS Studio backend is powered by the library libobs.  Libobs
+The OBS Studio backend is powered by the library libobs. Libobs
 provides the main pipeline, the video/audio subsystems, and the general
 framework for all plugins.
 
@@ -8,26 +8,26 @@ framework for all plugins.
 Libobs Plugin Objects
 ---------------------
 Libobs is designed to be modular, where adding modules will add custom
-functionality.  There are four libobs objects that you can make plugins
+functionality. There are four libobs objects that you can make plugins
 for:
 
 - :ref:`plugins_sources` -- Sources are used to render video and/or
   audio on stream.  Things such as capturing displays/games/audio,
-  playing a video, showing an image, or playing audio.  Sources can also
+  playing a video, showing an image, or playing audio. Sources can also
   be used to implement audio and video filters.
 
 - :ref:`plugins_outputs` -- Outputs allow the ability to output the
-  currently rendering audio/video.  Streaming and recording are two
+  currently rendering audio/video. Streaming and recording are two
   common examples of outputs, but not the only types of outputs.
   Outputs can receive the raw data or receive encoded data.
 
 - :ref:`plugins_encoders` -- Encoders are OBS-specific implementations
   of video/audio encoders, which are used with outputs that use
-  encoders.  x264, NVENC, Quicksync are examples of encoder
+  encoders. x264, NVENC, Quicksync are examples of encoder
   implementations.
 
 - :ref:`plugins_services` -- Services are custom implementations of
-  streaming services, which are used with outputs that stream.  For
+  streaming services, which are used with outputs that stream. For
   example, you could have a custom implementation for streaming to
   Twitch, and another for YouTube to allow the ability to log in and use
   their APIs to do things such as get the RTMP servers or control the
@@ -58,16 +58,16 @@ with video_thread)*
 
 Output Channels
 ---------------
-Rendering video or audio starts from output channels.  You assign a
+Rendering video or audio starts from output channels. You assign a
 source to an output channel via the :c:func:`obs_set_output_source()`
-function.  The *channel* parameter can be any number from
-0..(MAX_CHANNELS_-1).  You may initially think that this is how you
+function. The *channel* parameter can be any number from
+0..(MAX_CHANNELS_-1). You may initially think that this is how you
 display multiple sources at once; however, sources are hierarchical.
 Sources such as scenes or transitions can have multiple sub-sources, and
 those sub-sources in turn can have sub-sources and so on (see
-:ref:`displaying_sources` for more information).  Typically, you would
+:ref:`displaying_sources` for more information). Typically, you would
 use scenes to draw multiple sources as a group with specific transforms
-for each source, as a scene is just another type of source.  The
+for each source, as a scene is just another type of source. The
 "channel" design allows for highly complex video presentation setups.
 The OBS Studio front-end has yet to even fully utilize this back-end
 design for its rendering, and currently only uses one output channel to
@@ -92,21 +92,21 @@ Sources assigned to output channels will be drawn from channels
 0..(MAX_CHANNELS_-1).  They are drawn on to the final texture which will
 be used for output `[1]`_.  Once all sources are drawn, the final
 texture is converted to whatever format that libobs is set to (typically
-a YUV format).  After being converted to the back-end video format, it's
+a YUV format). After being converted to the back-end video format, it's
 then sent along with its timestamp to the current video handler,
 `obs_core_video::video`_.
 
 It then puts that raw frame in a queue of MAX_CACHE_SIZE_ in the `video
 output handler`_.  A semaphore is posted, then the video-io thread will
-process frames as it's able.  If the video frame queue is full, it will
+process frames as it's able. If the video frame queue is full, it will
 duplicate the last frame in the queue in an attempt to reduce video
-encoding complexity (and thus CPU usage) `[2]`_.  This is why you may
-see frame skipping when the encoder can't keep up.  Frames are sent to
+encoding complexity (and thus CPU usage) `[2]`_. This is why you may
+see frame skipping when the encoder can't keep up. Frames are sent to
 any raw outputs or video encoders that are currently active `[3]`_.
 
 If it's sent to a video encoder object (`libobs/obs-encoder.c`_), it
 encodes the frame and sends the encoded packet off to the outputs that
-encoder is connected to (which can be multiple).  If the output takes
+encoder is connected to (which can be multiple). If the output takes
 both encoded video/audio, it puts the packets in an interleave queue to
 ensure encoded packets are sent in monotonic timestamp order `[4]`_.
 
@@ -133,7 +133,7 @@ filters attached to the source `[6]`_.
 
 Each audio tick, the audio thread takes a reference snapshot of the
 audio source tree (stores references of all sources that output/process
-audio) `[7]`_.  On each audio leaf (audio source), it takes the closest
+audio) `[7]`_. On each audio leaf (audio source), it takes the closest
 audio (relative to the current audio thread timestamp) stored in the
 circular buffer `obs_source::audio_input_buf`_, and puts it in
 `obs_source::audio_output_buf`_.
@@ -152,12 +152,12 @@ reaches the root nodes of the tree.
 
 Finally, when the audio has reached the base of the snapshot tree, the
 audio of all the sources in each output channel are mixed together for a
-final mix `[9]`_.  That final mix is then sent to any raw outputs or
+final mix `[9]`_. That final mix is then sent to any raw outputs or
 audio encoders that are currently active `[10]`_.
 
 If it's sent to an audio encoder object (`libobs/obs-encoder.c`_), it
 encodes the audio data and sends the encoded packet off to the outputs
-that encoder is connected to (which can be multiple).  If the output
+that encoder is connected to (which can be multiple). If the output
 takes both encoded video/audio, it puts the packets in an interleave
 queue to ensure encoded packets are sent in monotonic timestamp order
 `[4]`_.
