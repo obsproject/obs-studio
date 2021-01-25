@@ -1373,6 +1373,8 @@ void *obs_hotkey_thread(void *arg)
 {
 	UNUSED_PARAMETER(arg);
 
+	os_set_thread_name("libobs: hotkey thread");
+
 	const char *hotkey_thread_name =
 		profile_store_name(obs_get_profiler_name_store(),
 				   "obs_hotkey_thread(%g" NBSP "ms)", 25.);

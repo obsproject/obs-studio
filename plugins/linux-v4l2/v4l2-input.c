@@ -169,6 +169,7 @@ static void *v4l2_thread(void *vptr)
 	uint64_t timeout_usec;
 
 	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
+	os_set_thread_name("v4l2: capture");
 
 	/* Get framerate and calculate appropriate select timeout value. */
 	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
