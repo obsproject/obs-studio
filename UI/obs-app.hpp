@@ -234,5 +234,6 @@ extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
 extern bool opt_allow_opengl;
 extern bool opt_always_on_top;
+extern bool opt_disable_high_dpi_scaling;
 extern std::string opt_starting_scene;
 extern bool restart;
