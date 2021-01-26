@@ -1896,6 +1896,46 @@
             }
         },
         {
+            "name": "PolyStreamer.com",
+            "servers": [
+                {
+                    "name": "Auto-select closest server",
+                    "url": "rtmp://live.polystreamer.com/live"
+                },
+                {
+                    "name": "United States - West",
+                    "url": "rtmp://us-west.live.polystreamer.com/live"
+                },
+                {
+                    "name": "United States - East",
+                    "url": "rtmp://us-east.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Australia",
+                    "url": "rtmp://aus.live.polystreamer.com/live"
+                },
+                {
+                    "name": "India",
+                    "url": "rtmp://ind.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Germany",
+                    "url": "rtmp://deu.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Japan",
+                    "url": "rtmp://jpn.live.polystreamer.com/live"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://sgp.live.polystreamer.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
             "name": "Glimesh",
             "servers": [
                 {
