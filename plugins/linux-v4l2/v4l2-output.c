@@ -93,7 +93,9 @@ static bool try_connect(void *data, int device)
 	vcam->frame_size = width * height * 2;
 
 	char new_device[16];
-	sprintf(new_device, "/dev/video%d", device);
+	if (device < 0 || device >= MAX_DEVICES)
+		return false;
+	snprintf(new_device, 16, "/dev/video%d", device);
 
 	vcam->device = open(new_device, O_RDWR);
 
