@@ -506,6 +506,7 @@ extern "C"
     int RTMP_ClientPacket(RTMP *r, RTMPPacket *packet);
 
     void RTMP_Init(RTMP *r);
+    void RTMP_Reset(RTMP *r);
     void RTMP_Close(RTMP *r);
     RTMP *RTMP_Alloc(void);
     void RTMP_TLS_Free(RTMP *r);

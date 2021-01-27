@@ -969,8 +969,9 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	// this should have been called already by rtmp_stream_create
-	//RTMP_Init(&stream->rtmp);
+	// on reconnect we need to reset the internal variables of librtmp
+	// otherwise the data sent/received will not parse correctly on the other end
+	RTMP_Reset(&stream->rtmp);
 
 	// since we don't call RTMP_Init above, there's no other good place
 	// to reset this as doing it in RTMP_Close breaks the ugly RTMP
