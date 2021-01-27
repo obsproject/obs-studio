@@ -39,6 +39,14 @@
 #include <Python.h>
 #endif
 
+#if defined(HAVE_ATTRIBUTE_UNUSED) || defined(__MINGW32__)
+#if !defined(UNUSED)
+#define UNUSED __attribute__((unused))
+#endif
+#else
+#define UNUSED
+#endif
+
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
@@ -135,11 +143,23 @@ PY_EXTERN PyObject *(*Import_PyLong_FromUnsignedLongLong)(unsigned long long);
 PY_EXTERN int (*Import_PyArg_VaParse)(PyObject *, const char *, va_list);
 PY_EXTERN PyObject(*Import__Py_NoneStruct);
 PY_EXTERN PyObject *(*Import_PyTuple_New)(Py_ssize_t size);
+#if PY_VERSION_HEX >= 0x030900b0
+PY_EXTERN int (*Import_PyType_GetFlags)(PyTypeObject *o);
+#endif
+#if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
+PY_EXTERN void (*Import__Py_Dealloc)(PyObject *obj);
+#endif
 
 extern bool import_python(const char *python_path);
 
 #ifndef NO_REDEFS
 #define PyType_Ready Import_PyType_Ready
+#if PY_VERSION_HEX >= 0x030900b0
+#define PyType_GetFlags Import_PyType_GetFlags
+#endif
+#if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
+#define _Py_Dealloc Import__Py_Dealloc
+#endif
 #define PyObject_GenericGetAttr Import_PyObject_GenericGetAttr
 #define PyObject_IsTrue Import_PyObject_IsTrue
 #define Py_DecRef Import_Py_DecRef
@@ -210,6 +230,44 @@ extern bool import_python(const char *python_path);
 #define PyArg_VaParse Import_PyArg_VaParse
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
 #define PyTuple_New Import_PyTuple_New
+#if PY_VERSION_HEX >= 0x030800f0
+static inline void Import__Py_DECREF(const char *filename UNUSED,
+				     int lineno UNUSED, PyObject *op)
+{
+	if (--op->ob_refcnt != 0) {
+#ifdef Py_REF_DEBUG
+		if (op->ob_refcnt < 0) {
+			_Py_NegativeRefcount(filename, lineno, op);
+		}
+#endif
+	} else {
+		_Py_Dealloc(op);
+	}
+}
+
+#undef Py_DECREF
+#define Py_DECREF(op) Import__Py_DECREF(__FILE__, __LINE__, _PyObject_CAST(op))
+
+static inline void Import__Py_XDECREF(PyObject *op)
+{
+	if (op != NULL) {
+		Py_DECREF(op);
+	}
+}
+
+#undef Py_XDECREF
+#define Py_XDECREF(op) Import__Py_XDECREF(_PyObject_CAST(op))
+#endif
+
+#if PY_VERSION_HEX >= 0x030900b0
+static inline int Import_PyType_HasFeature(PyTypeObject *type,
+					   unsigned long feature)
+{
+	return ((PyType_GetFlags(type) & feature) != 0);
+}
+#define PyType_HasFeature(t, f) Import_PyType_HasFeature(t, f)
+#endif
+
 #endif
 
 #endif
