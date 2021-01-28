@@ -24,6 +24,8 @@ bool XCompcapMain::init()
 		return false;
 	}
 
+	XInitThreads();
+
 	int eventBase, errorBase;
 	if (!XCompositeQueryExtension(xdisp, &eventBase, &errorBase)) {
 		blog(LOG_ERROR, "Xcomposite extension not supported");
