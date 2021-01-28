@@ -351,16 +351,9 @@ void setThemeID(QWidget *widget, const QString &themeID)
 
 QString SelectDirectory(QWidget *parent, QString title, QString path)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString dir = QFileDialog::getExistingDirectory(
-		parent, title, path,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks |
-			QFileDialog::DontUseNativeDialog);
-#else
 	QString dir = QFileDialog::getExistingDirectory(
 		parent, title, path,
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-#endif
 
 	return dir;
 }
@@ -368,14 +361,8 @@ QString SelectDirectory(QWidget *parent, QString title, QString path)
 QString SaveFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString file = QFileDialog::getSaveFileName(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QString file =
 		QFileDialog::getSaveFileName(parent, title, path, extensions);
-#endif
 
 	return file;
 }
@@ -383,14 +370,8 @@ QString SaveFile(QWidget *parent, QString title, QString path,
 QString OpenFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString file = QFileDialog::getOpenFileName(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QString file =
 		QFileDialog::getOpenFileName(parent, title, path, extensions);
-#endif
 
 	return file;
 }
@@ -398,14 +379,8 @@ QString OpenFile(QWidget *parent, QString title, QString path,
 QStringList OpenFiles(QWidget *parent, QString title, QString path,
 		      QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QStringList files = QFileDialog::getOpenFileNames(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QStringList files =
 		QFileDialog::getOpenFileNames(parent, title, path, extensions);
-#endif
 
 	return files;
 }
