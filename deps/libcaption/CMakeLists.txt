@@ -36,7 +36,6 @@ set(CAPTION_HEADERS
 )
 
 add_library(caption STATIC ${CAPTION_SOURCES})
-install_obs_headers("caption/caption.h")
 set_target_properties(caption PROPERTIES
 	FOLDER "deps"
 	POSITION_INDEPENDENT_CODE ON)
