@@ -358,6 +358,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
+#define PLACEHOLDER_CHANGED SLOT(PlaceHolderChanged())
 /* clang-format on */
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
@@ -559,6 +560,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->placeHolderPath,      EDIT_CHANGED,   PLACEHOLDER_CHANGED);
 	/* clang-format on */
 
 #define ADD_HOTKEY_FOCUS_TYPE(s)      \
@@ -1669,6 +1671,15 @@ static inline bool IsSurround(const char *speakers)
 	}
 
 	return false;
+}
+
+void OBSBasicSettings::LoadPlaceHolderSettings()
+{
+	const char *placeholder =
+		config_get_string(main->Config(), "PlaceHolder", "FilePath");
+	ui->placeHolderPath->setText(placeholder);
+
+	PlaceHolderChanged();
 }
 
 void OBSBasicSettings::LoadSimpleOutputSettings()
@@ -2927,6 +2938,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadStream1Settings();
 	if (!changedOnly || outputsChanged)
 		LoadOutputSettings();
+	if (!changedOnly || placeholderChanged)
+		LoadPlaceHolderSettings();
 	if (!changedOnly || audioChanged)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
@@ -3355,6 +3368,11 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section,
 		config_set_string(main->Config(), section, value, nullptr);
 }
 
+void OBSBasicSettings::SavePlaceholderSettings()
+{
+	SaveEdit(ui->placeHolderPath, "PlaceHolder", "FilePath");
+}
+
 void OBSBasicSettings::SaveOutputSettings()
 {
 	config_set_string(main->Config(), "Output", "Mode",
@@ -3644,6 +3662,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveStream1Settings();
 	if (outputsChanged)
 		SaveOutputSettings();
+	if (placeholderChanged)
+		SavePlaceholderSettings();
 	if (audioChanged)
 		SaveAudioSettings();
 	if (videoChanged)
@@ -3668,6 +3688,8 @@ void OBSBasicSettings::SaveSettings()
 			AddChangedVal(changed, "stream 1");
 		if (outputsChanged)
 			AddChangedVal(changed, "outputs");
+		if (placeholderChanged)
+			AddChangedVal(changed, "placeholder");
 		if (audioChanged)
 			AddChangedVal(changed, "audio");
 		if (videoChanged)
@@ -3794,6 +3816,15 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 		return;
 
 	ui->simpleOutputPath->setText(dir);
+}
+
+void OBSBasicSettings::on_placeHolderBrowse_clicked()
+{
+	QString file = OpenFile(
+		this, QTStr("Basic.Settings.General.VirtualCam.PlaceHolder"),
+		ui->placeHolderPath->text(), tr("Images (*.png)"));
+
+	ui->placeHolderPath->setText(file);
 }
 
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
@@ -4068,6 +4099,17 @@ void OBSBasicSettings::OutputsChanged()
 	if (!loading) {
 		outputsChanged = true;
 		sender()->setProperty("changed", QVariant(true));
+		EnableApplyButton(true);
+	}
+}
+
+void OBSBasicSettings::PlaceHolderChanged()
+{
+	if (!loading) {
+		placeholderChanged = true;
+        if (sender()) {
+			sender()->setProperty("changed", QVariant(true));
+        }
 		EnableApplyButton(true);
 	}
 }
