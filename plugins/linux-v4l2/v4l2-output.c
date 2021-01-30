@@ -177,7 +177,14 @@ static void virtualcam_stop(void *data, uint64_t ts)
 static void virtual_video(void *param, struct video_data *frame)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)param;
-	write(vcam->device, frame->data[0], vcam->frame_size);
+	uint32_t frame_size = vcam->frame_size;
+	while (frame_size > 0) {
+		ssize_t written =
+			write(vcam->device, frame->data[0], vcam->frame_size);
+		if (written == -1)
+			break;
+		frame_size -= written;
+	}
 }
 
 struct obs_output_info virtualcam_info = {
