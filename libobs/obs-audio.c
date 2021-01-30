@@ -42,7 +42,7 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 
 static inline size_t convert_time_to_frames(size_t sample_rate, uint64_t t)
 {
-	return util_mul_div64(t, sample_rate, 1000000000ULL);
+	return (size_t)util_mul_div64(t, sample_rate, 1000000000ULL);
 }
 
 static inline void mix_audio(struct audio_output_data *mixes,
