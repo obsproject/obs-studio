@@ -137,11 +137,15 @@ static void luma_key_render_internal(void *data, bool srgb)
 
 static void luma_key_render_v1(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	luma_key_render_internal(data, false);
 }
 
 static void luma_key_render_v2(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	luma_key_render_internal(data, true);
 }
 
