@@ -5,12 +5,20 @@
             "name": "nanoStream Cloud / bintu",
             "servers": [
                 {
-                    "name": "bintu-stream global ingest",
+                    "name": "bintu-stream global ingest (rtmp)",
                     "url": "rtmp://bintu-stream.nanocosmos.de/live"
                 },
                 {
-                    "name": "bintu-vtrans global ingest with transcoding/ABR",
+                    "name": "bintu-stream global ingest (rtmps)",
+                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmp)",
                     "url": "rtmp://bintu-stream.nanocosmos.de/live"
+                },
+                {
+                    "name": "bintu-vtrans global ingest with transcoding/ABR (rtmps)",
+                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
                 },
                 {
                     "name": "bintu-stream Europe (EU)",
