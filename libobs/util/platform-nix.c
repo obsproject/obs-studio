@@ -96,6 +96,8 @@ void os_dlclose(void *module)
 
 bool os_is_obs_plugin(const char *path)
 {
+	UNUSED_PARAMETER(path);
+
 	/* not necessary on this platform */
 	return true;
 }
