@@ -1955,16 +1955,20 @@ void OBSBasic::OBSInit()
 
 	ui->sources->UpdateIcons();
 
-#if !defined(_WIN32) && !defined(__APPLE__)
+#if !defined(_WIN32)
 	delete ui->actionShowCrashLogs;
 	delete ui->actionUploadLastCrashLog;
 	delete ui->menuCrashLogs;
-	delete ui->actionCheckForUpdates;
 	ui->actionShowCrashLogs = nullptr;
 	ui->actionUploadLastCrashLog = nullptr;
 	ui->menuCrashLogs = nullptr;
+#if !defined(__APPLE__)
+	delete ui->actionCheckForUpdates;
 	ui->actionCheckForUpdates = nullptr;
-#elif _WIN32 || __APPLE__
+#endif
+#endif
+
+#if defined(_WIN32) || defined(__APPLE__)
 	if (App()->IsUpdaterDisabled())
 		ui->actionCheckForUpdates->setEnabled(false);
 #endif
@@ -2986,6 +2990,9 @@ void OBSBasic::UpdateContextBar(bool force)
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
 
+		ui->sourceInteractButton->setVisible(flags &
+						     OBS_SOURCE_INTERACTION);
+
 		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
 			if (!is_network_media_source(source, id)) {
 				MediaControls *mediaControls =
@@ -3066,6 +3073,7 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
+		ui->sourceInteractButton->setVisible(false);
 	}
 }
 
@@ -3293,6 +3301,7 @@ void OBSBasic::VolControlContextMenu()
 		pasteFiltersAction.setEnabled(true);
 
 	QMenu popup;
+	vol->SetContextMenu(&popup);
 	popup.addAction(&lockAction);
 	popup.addSeparator();
 	popup.addAction(&unhideAllAction);
@@ -3308,6 +3317,7 @@ void OBSBasic::VolControlContextMenu()
 	popup.addAction(&propertiesAction);
 	popup.addAction(&advPropAction);
 	popup.exec(QCursor::pos());
+	vol->SetContextMenu(nullptr);
 }
 
 void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
@@ -5339,7 +5349,7 @@ void OBSBasic::UploadLog(const char *subdir, const char *file, const bool crash)
 		return;
 
 	ui->menuLogFiles->setEnabled(false);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(false);
 #endif
 
@@ -5426,7 +5436,7 @@ void OBSBasic::on_actionCheckForUpdates_triggered()
 void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 {
 	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(true);
 #endif
 
@@ -5442,7 +5452,7 @@ void OBSBasic::logUploadFinished(const QString &text, const QString &error)
 void OBSBasic::crashUploadFinished(const QString &text, const QString &error)
 {
 	ui->menuLogFiles->setEnabled(true);
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	ui->menuCrashLogs->setEnabled(true);
 #endif
 
@@ -6308,7 +6318,8 @@ void OBSBasic::OnVirtualCamStart()
 		return;
 
 	vcamButton->setText(QTStr("Basic.Main.StopVirtualCam"));
-	sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
+	if (sysTrayVirtualCam)
+		sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
 	vcamButton->setChecked(true);
 
 	if (api)
@@ -6325,7 +6336,8 @@ void OBSBasic::OnVirtualCamStop(int)
 		return;
 
 	vcamButton->setText(QTStr("Basic.Main.StartVirtualCam"));
-	sysTrayVirtualCam->setText(QTStr("Basic.Main.StartVirtualCam"));
+	if (sysTrayVirtualCam)
+		sysTrayVirtualCam->setText(QTStr("Basic.Main.StartVirtualCam"));
 	vcamButton->setChecked(false);
 
 	if (api)
@@ -8482,4 +8494,9 @@ void OBSBasic::on_sourcePropertiesButton_clicked()
 void OBSBasic::on_sourceFiltersButton_clicked()
 {
 	OpenFilters();
+}
+
+void OBSBasic::on_sourceInteractButton_clicked()
+{
+	on_actionInteract_triggered();
 }

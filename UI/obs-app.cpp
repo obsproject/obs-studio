@@ -1379,6 +1379,7 @@ bool OBSApp::OBSInit()
 	ProfileScope("OBSApp::OBSInit");
 
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
+	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
 	qRegisterMetaType<VoidFunc>();
 
@@ -1937,10 +1938,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)) && defined(_WIN32)
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
 		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__) && BROWSER_AVAILABLE
-	setenv("QT_NO_GLIB", "1", true);
 #endif
 
 	QCoreApplication::addLibraryPath(".");

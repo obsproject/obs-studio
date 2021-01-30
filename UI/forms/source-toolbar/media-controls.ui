@@ -391,7 +391,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="emptySpaceAgain" native="true">
+    <widget class="QWidget" name="emptySpaceAgain">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
        <horstretch>0</horstretch>

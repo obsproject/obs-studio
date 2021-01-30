@@ -149,7 +149,7 @@
     </layout>
    </item>
    <item>
-    <widget class="QWidget" name="widget" native="true">
+    <widget class="QWidget" name="widget">
      <property name="minimumSize">
       <size>
        <width>0</width>

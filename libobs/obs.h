@@ -429,6 +429,9 @@ EXPORT bool obs_init_module(obs_module_t *module);
 /** Returns a module based upon its name, or NULL if not found */
 EXPORT obs_module_t *obs_get_module(const char *name);
 
+/** Gets library of module */
+EXPORT void *obs_get_module_lib(obs_module_t *module);
+
 /** Returns locale text from a specific module */
 EXPORT bool obs_module_get_locale_string(const obs_module_t *mod,
 					 const char *lookup_string,

@@ -82,6 +82,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
+	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
+	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);
 	GRAPHICS_IMPORT(device_copy_texture_region);
 	GRAPHICS_IMPORT(device_copy_texture);
 	GRAPHICS_IMPORT(device_stage_texture);

@@ -346,6 +346,25 @@ static inline gs_effect_t *get_effect(enum obs_deinterlace_mode mode)
 	return NULL;
 }
 
+static bool deinterlace_linear_required(enum obs_deinterlace_mode mode)
+{
+	switch (mode) {
+	case OBS_DEINTERLACE_MODE_DISABLE:
+	case OBS_DEINTERLACE_MODE_DISCARD:
+	case OBS_DEINTERLACE_MODE_RETRO:
+		return false;
+	case OBS_DEINTERLACE_MODE_BLEND:
+	case OBS_DEINTERLACE_MODE_BLEND_2X:
+	case OBS_DEINTERLACE_MODE_LINEAR:
+	case OBS_DEINTERLACE_MODE_LINEAR_2X:
+	case OBS_DEINTERLACE_MODE_YADIF:
+	case OBS_DEINTERLACE_MODE_YADIF_2X:
+		return true;
+	}
+
+	return false;
+}
+
 void deinterlace_render(obs_source_t *s)
 {
 	gs_effect_t *effect = s->deinterlace_effect;
@@ -372,8 +391,21 @@ void deinterlace_render(obs_source_t *s)
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
 
-	gs_effect_set_texture(image, cur_tex);
-	gs_effect_set_texture(prev, prev_tex);
+	const bool linear_srgb =
+		gs_get_linear_srgb() ||
+		deinterlace_linear_required(s->deinterlace_mode);
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb) {
+		gs_effect_set_texture_srgb(image, cur_tex);
+		gs_effect_set_texture_srgb(prev, prev_tex);
+	} else {
+		gs_effect_set_texture(image, cur_tex);
+		gs_effect_set_texture(prev, prev_tex);
+	}
+
 	gs_effect_set_int(field, s->deinterlace_top_first);
 	gs_effect_set_vec2(dimensions, &size);
 
@@ -385,6 +417,8 @@ void deinterlace_render(obs_source_t *s)
 	while (gs_effect_loop(effect, "Draw"))
 		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
 			       s->async_width, s->async_height);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void enable_deinterlacing(obs_source_t *source,

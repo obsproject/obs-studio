@@ -24,6 +24,8 @@ bool XCompcapMain::init()
 		return false;
 	}
 
+	XInitThreads();
+
 	int eventBase, errorBase;
 	if (!XCompositeQueryExtension(xdisp, &eventBase, &errorBase)) {
 		blog(LOG_ERROR, "Xcomposite extension not supported");
@@ -313,11 +315,11 @@ static gs_color_format gs_format_from_tex()
 	// GS_RGBX format
 	switch (iformat) {
 	case GL_RGB:
-		return GS_BGRX;
+		return GS_BGRX_UNORM;
 	case GL_RGBA:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	default:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	}
 }
 
@@ -346,8 +348,9 @@ struct gs_texture {
 
 void XCompcapMain::updateSettings(obs_data_t *settings)
 {
-	PLock lock(&p->lock);
 	ObsGsContextHolder obsctx;
+
+	PLock lock(&p->lock);
 
 	blog(LOG_DEBUG, "Settings updating");
 
@@ -513,7 +516,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	XFree(configs);
 
 	// Build an OBS texture to bind the pixmap to.
-	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA, 1, 0,
+	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA_UNORM, 1, 0,
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
@@ -568,6 +571,9 @@ void XCompcapMain::tick(float seconds)
 	if (!obs_source_showing(p->source))
 		return;
 
+	// Must be taken before xlock to prevent deadlock on shutdown
+	ObsGsContextHolder obsctx;
+
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked())
@@ -604,8 +610,6 @@ void XCompcapMain::tick(float seconds)
 	if (!p->tex || !p->gltex)
 		return;
 
-	obs_enter_graphics();
-
 	if (p->lockX) {
 		// XDisplayLock is still live so we should already be locked.
 		XLockDisplay(xdisp);
@@ -634,8 +638,6 @@ void XCompcapMain::tick(float seconds)
 
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
-
-	obs_leave_graphics();
 }
 
 void XCompcapMain::render(gs_effect_t *effect)

@@ -61,6 +61,17 @@ int_fast32_t v4l2_stop_capture(int_fast32_t dev)
 	return 0;
 }
 
+int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf)
+{
+	blog(LOG_DEBUG, "attempting to reset capture");
+	if (v4l2_stop_capture(dev) < 0)
+		return -1;
+	if (v4l2_start_capture(dev, buf) < 0)
+		return -1;
+
+	return 0;
+}
+
 #ifdef _DEBUG
 int_fast32_t v4l2_query_all_buffers(int_fast32_t dev,
 				    struct v4l2_buffer_data *buf_data)

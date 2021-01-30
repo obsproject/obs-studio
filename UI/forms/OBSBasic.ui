@@ -61,7 +61,7 @@
          <number>2</number>
         </property>
         <item>
-         <widget class="QWidget" name="previewDisabledWidget" native="true">
+         <widget class="QWidget" name="previewDisabledWidget">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -167,7 +167,7 @@
            </widget>
           </item>
           <item>
-           <widget class="OBSBasicPreview" name="preview" native="true">
+           <widget class="OBSBasicPreview" name="preview">
             <property name="sizePolicy">
              <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
               <horstretch>0</horstretch>
@@ -196,7 +196,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QWidget" name="contextContainer" native="true">
+     <widget class="QWidget" name="contextContainer">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
@@ -235,7 +235,7 @@
         <number>4</number>
        </property>
        <item>
-        <widget class="QWidget" name="contextSubContainer" native="true">
+        <widget class="QWidget" name="contextSubContainer">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -367,6 +367,35 @@
            </widget>
           </item>
           <item>
+           <widget class="QPushButton" name="sourceInteractButton">
+            <property name="minimumSize">
+             <size>
+              <width>0</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="maximumSize">
+             <size>
+              <width>16777215</width>
+              <height>22</height>
+             </size>
+            </property>
+            <property name="text">
+             <string>Interact</string>
+            </property>
+            <property name="icon">
+             <iconset resource="obs.qrc">
+              <normaloff>:/res/images/interact.svg</normaloff>:/res/images/interact.svg</iconset>
+            </property>
+            <property name="flat">
+             <bool>true</bool>
+            </property>
+            <property name="themeID2" stdset="0">
+             <string notr="true">contextBarButton</string>
+            </property>
+           </widget>
+          </item>
+          <item>
            <widget class="Line" name="line">
             <property name="orientation">
              <enum>Qt::Vertical</enum>
@@ -377,7 +406,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="emptySpace" native="true">
+        <widget class="QWidget" name="emptySpace">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -1083,7 +1112,7 @@
       <number>4</number>
      </property>
      <item>
-      <widget class="QWidget" name="transitionsContainer" native="true">
+      <widget class="QWidget" name="transitionsContainer">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <property name="spacing">
          <number>2</number>
