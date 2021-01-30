@@ -65,12 +65,9 @@ void RunningInstanceCheck(bool &already_running)
 	struct sockaddr_un bindInfo;
 	memset(&bindInfo, 0, sizeof(sockaddr_un));
 	bindInfo.sun_family = AF_LOCAL;
-	char *abstactSockName = NULL;
-	asprintf(&abstactSockName, "%s %d %s", "/com/obsproject", getpid(),
+	snprintf(bindInfo.sun_path + 1, sizeof(bindInfo.sun_path) - 1,
+		 "%s %d %s", "/com/obsproject", getpid(),
 		 App()->GetVersionString().c_str());
-	memmove(bindInfo.sun_path + 1, abstactSockName,
-		strlen(abstactSockName));
-	free(abstactSockName);
 
 	int bindErr = bind(uniq, (struct sockaddr *)&bindInfo,
 			   sizeof(struct sockaddr_un));
