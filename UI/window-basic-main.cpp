@@ -7681,7 +7681,9 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 
-#ifndef __APPLE__
+#ifdef __APPLE__
+	UNUSED_PARAMETER(reason);
+#else
 	if (reason == QSystemTrayIcon::Trigger) {
 		EnablePreviewDisplay(previewEnabled && !isVisible());
 		ToggleShowHide();
