@@ -115,6 +115,8 @@ static const char *rtmp_custom_password(void *data)
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 				       obs_data_t *audio_settings)
 {
+	UNUSED_PARAMETER(audio_settings);
+
 	struct rtmp_custom *service = data;
 	if (service->server != NULL && video_settings != NULL &&
 	    strncmp(service->server, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) !=
