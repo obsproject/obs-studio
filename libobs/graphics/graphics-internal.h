@@ -287,6 +287,8 @@ struct gs_exports {
 	bool (*device_get_duplicator_monitor_info)(
 		gs_device_t *device, int monitor_idx,
 		struct gs_monitor_info *monitor_info);
+	int (*device_duplicator_get_monitor_index)(gs_device_t *device,
+						   void *monitor);
 
 	gs_duplicator_t *(*device_duplicator_create)(gs_device_t *device,
 						     int monitor_idx);
