@@ -571,6 +571,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return os_atomic_load_bool(&virtualcam_active);
 	}
 
+	void obs_frontend_reset_video(void) override { main->ResetVideo(); }
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

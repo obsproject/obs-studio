@@ -206,6 +206,8 @@ EXPORT void obs_frontend_start_virtualcam(void);
 EXPORT void obs_frontend_stop_virtualcam(void);
 EXPORT bool obs_frontend_virtualcam_active(void);
 
+EXPORT void obs_frontend_reset_video(void);
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef __cplusplus

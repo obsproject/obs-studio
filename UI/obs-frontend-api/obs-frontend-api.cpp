@@ -499,3 +499,9 @@ bool obs_frontend_virtualcam_active(void)
 	return !!callbacks_valid() ? c->obs_frontend_virtualcam_active()
 				   : false;
 }
+
+void obs_frontend_reset_video(void)
+{
+	if (callbacks_valid())
+		c->obs_frontend_reset_video();
+}
