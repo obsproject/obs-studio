@@ -589,3 +589,9 @@ Functions
 .. function:: bool obs_frontend_virtualcam_active(void)
 
    :return: *true* if virtual camera is active, *false* otherwise.
+
+---------------------------------------
+
+.. function:: void obs_frontend_reset_video(void)
+
+   Reloads the UI canvas and resets libobs video with latest data from profile.
