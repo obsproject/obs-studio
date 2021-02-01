@@ -26,7 +26,7 @@ class WASAPISource : public IMMNotificationClient {
 	ComPtr<IAudioCaptureClient> capture;
 	ComPtr<IAudioRenderClient> render;
 
-	static const int MAX_RETRY_INIT_DEVICE_COUNTER = 10;
+	static const int MAX_RETRY_INIT_DEVICE_COUNTER = 3;
 
 	obs_source_t *source;
 	string device_id;
@@ -433,7 +433,7 @@ void WASAPISource::Initialize()
 	if (FAILED(res))
 		throw HRError("Failed to create enumerator", res);
 
-	res = InitDeviceLoop(enumerator, MAX_RETRY_INIT_DEVICE_COUNTER, 500);
+	res = InitDeviceLoop(enumerator, MAX_RETRY_INIT_DEVICE_COUNTER, 20);
 
 	if (FAILED(res)) {
 		// fail early
