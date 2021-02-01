@@ -37,6 +37,11 @@ extern struct obs_source_info limiter_filter;
 extern struct obs_source_info expander_filter;
 extern struct obs_source_info luma_key_filter;
 extern struct obs_source_info luma_key_filter_v2;
+#ifdef LIBNVVFX_ENABLED
+extern struct obs_source_info nvidia_greenscreen_filter_info;
+extern bool load_nvvfx(void);
+extern void unload_nvvfx(void);
+#endif
 
 bool obs_module_load(void)
 {
@@ -72,12 +77,19 @@ bool obs_module_load(void)
 	obs_register_source(&expander_filter);
 	obs_register_source(&luma_key_filter);
 	obs_register_source(&luma_key_filter_v2);
+#ifdef LIBNVVFX_ENABLED
+	if (load_nvvfx())
+		obs_register_source(&nvidia_greenscreen_filter_info);
+#endif
 	return true;
 }
 
-#ifdef LIBNVAFX_ENABLED
 void obs_module_unload(void)
 {
+#ifdef LIBNVAFX_ENABLED
 	unload_nvafx();
-}
 #endif
+#ifdef LIBNVVFX_ENABLED
+	unload_nvvfx();
+#endif
+}
