@@ -543,12 +543,12 @@ static inline bool obs_weak_ref_release(struct obs_weak_ref *ref)
 
 static inline bool obs_weak_ref_get_ref(struct obs_weak_ref *ref)
 {
-	long owners = ref->refs;
+	long owners = os_atomic_load_long(&ref->refs);
 	while (owners > -1) {
-		if (os_atomic_compare_swap_long(&ref->refs, owners, owners + 1))
+		if (os_atomic_compare_exchange_long(&ref->refs, &owners,
+						    owners + 1)) {
 			return true;
-
-		owners = ref->refs;
+		}
 	}
 
 	return false;
