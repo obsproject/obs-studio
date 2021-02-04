@@ -857,6 +857,8 @@ public:
 
 	OBSWeakSource copyFilter = nullptr;
 
+	void ShowStatusBarMessage(const QString &message);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
