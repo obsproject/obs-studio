@@ -650,12 +650,6 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 			return;
 		}
 
-		calldata_t cd = {0};
-
-		signal_handler_t *sh =
-			obs_output_get_signal_handler(stream->output);
-		signal_handler_signal(sh, "saved", &cd);
-
 		stream->save_ts = os_gettime_ns() / 1000LL;
 	}
 }
@@ -820,17 +814,20 @@ static void insert_packet(struct darray *array, struct encoder_packet *packet,
 static void *replay_buffer_mux_thread(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
+	bool error = false;
 
 	start_pipe(stream, stream->path.array);
 
 	if (!stream->pipe) {
 		warn("Failed to create process pipe");
+		error = true;
 		goto error;
 	}
 
 	if (!send_headers(stream)) {
 		warn("Could not write headers for file '%s'",
 		     stream->path.array);
+		error = true;
 		goto error;
 	}
 
@@ -847,6 +844,14 @@ error:
 	stream->pipe = NULL;
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
+
+	if (!error) {
+		calldata_t cd = {0};
+		signal_handler_t *sh =
+			obs_output_get_signal_handler(stream->output);
+		signal_handler_signal(sh, "saved", &cd);
+	}
+
 	return NULL;
 }
 
