@@ -6348,10 +6348,22 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 void OBSBasic::AutoRemux()
 {
-	if (outputHandler->lastRecordingPath.empty())
+	bool autoRemux = config_get_bool(Config(), "Video", "AutoRemux");
+
+	if (!autoRemux)
+		return;
+
+	const char *recType = config_get_string(Config(), "AdvOut", "RecType");
+
+	bool ffmpegOutput = astrcmpi(recType, "FFmpeg") == 0;
+
+	if (ffmpegOutput)
 		return;
 
 	QString input = outputHandler->lastRecordingPath.c_str();
+	if (input.isEmpty())
+		return;
+
 	QFileInfo fi(input);
 	QString suffix = fi.suffix();
 
@@ -6496,6 +6508,12 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	} else if (code != OBS_OUTPUT_SUCCESS && !isVisible()) {
 		SysTrayNotify(QTStr("Output.RecordError.Msg"),
 			      QSystemTrayIcon::Warning);
+	} else if (code == OBS_OUTPUT_SUCCESS) {
+		if (outputHandler) {
+			std::string path = outputHandler->lastRecordingPath;
+			QString str = QTStr("Basic.StatusBar.RecordingSavedTo");
+			ShowStatusBarMessage(str.arg(QT_UTF8(path.c_str())));
+		}
 	}
 
 	if (api)
@@ -6638,6 +6656,20 @@ void OBSBasic::ReplayBufferSave()
 
 void OBSBasic::ReplayBufferSaved()
 {
+	if (!outputHandler || !outputHandler->replayBuffer)
+		return;
+	if (!outputHandler->ReplayBufferActive())
+		return;
+
+	calldata_t cd = {0};
+	proc_handler_t *ph =
+		obs_output_get_proc_handler(outputHandler->replayBuffer);
+	proc_handler_call(ph, "get_last_replay", &cd);
+	QString path = QT_UTF8(calldata_string(&cd, "path"));
+	QString msg = QTStr("Basic.StatusBar.ReplayBufferSavedTo").arg(path);
+	ShowStatusBarMessage(msg);
+	calldata_free(&cd);
+
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
 }
@@ -9141,4 +9173,10 @@ void OBSBasic::on_sourceFiltersButton_clicked()
 void OBSBasic::on_sourceInteractButton_clicked()
 {
 	on_actionInteract_triggered();
+}
+
+void OBSBasic::ShowStatusBarMessage(const QString &message)
+{
+	ui->statusbar->clearMessage();
+	ui->statusbar->showMessage(message, 10000);
 }

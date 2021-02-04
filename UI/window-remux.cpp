@@ -33,6 +33,7 @@
 #include <QTimer>
 
 #include "qt-wrappers.hpp"
+#include "window-basic-main.hpp"
 
 #include <memory>
 #include <cmath>
@@ -927,6 +928,11 @@ void OBSRemux::remuxFinished(bool success)
 
 	if (autoRemux && autoRemuxFile != "") {
 		QTimer::singleShot(3000, this, SLOT(close()));
+
+		OBSBasic *main = OBSBasic::Get();
+		main->ShowStatusBarMessage(
+			QTStr("Basic.StatusBar.AutoRemuxedTo")
+				.arg(autoRemuxFile));
 	}
 
 	remuxNextEntry();

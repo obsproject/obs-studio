@@ -2018,12 +2018,11 @@ bool AdvancedOutput::ReplayBufferActive() const
 
 /* ------------------------------------------------------------------------ */
 
-bool BasicOutputHandler::SetupAutoRemux(const char *&ext)
+void BasicOutputHandler::SetupAutoRemux(const char *&ext)
 {
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	if (autoRemux && strcmp(ext, "mp4") == 0)
 		ext = "mkv";
-	return autoRemux;
 }
 
 std::string
@@ -2031,9 +2030,11 @@ BasicOutputHandler::GetRecordingFilename(const char *path, const char *ext,
 					 bool noSpace, bool overwrite,
 					 const char *format, bool ffmpeg)
 {
-	bool remux = !ffmpeg && SetupAutoRemux(ext);
+	if (!ffmpeg)
+		SetupAutoRemux(ext);
+
 	string dst = GetOutputFilename(path, ext, noSpace, overwrite, format);
-	lastRecordingPath = remux ? dst : "";
+	lastRecordingPath = dst;
 	return dst;
 }
 
