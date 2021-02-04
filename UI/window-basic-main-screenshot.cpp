@@ -37,8 +37,17 @@ ScreenshotObj::~ScreenshotObj()
 	obs_leave_graphics();
 
 	obs_remove_tick_callback(ScreenshotTick, this);
-	if (th.joinable())
+
+	if (th.joinable()) {
 		th.join();
+
+		if (cx && cy) {
+			OBSBasic *main = OBSBasic::Get();
+			main->ShowStatusBarMessage(
+				QTStr("Basic.StatusBar.ScreenshotSavedTo")
+					.arg(QT_UTF8(path.c_str())));
+		}
+	}
 }
 
 void ScreenshotObj::Screenshot()
