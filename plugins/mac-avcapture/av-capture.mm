@@ -1019,7 +1019,7 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	find_formats(fps, dev, &dims, [&](AVCaptureDeviceFormat *format_) {
 		auto desc = format_.formatDescription;
 		auto fourcc = CMFormatDescriptionGetMediaSubType(desc);
-		if (input_format != INPUT_FORMAT_AUTO && fourcc != input_format)
+		if ((int)input_format != (int)INPUT_FORMAT_AUTO && (int)fourcc != (int)input_format)
 			return false;
 
 		actual_format = fourcc;
