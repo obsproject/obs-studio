@@ -687,6 +687,8 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 				break;
 			}
 			}
+			if (item->item_render)
+				gs_texrender_reset(item->item_render);
 		} else {
 			if (item->user_visible)
 				render_item(item);
@@ -1407,6 +1409,8 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->bounds_type = src->bounds_type;
 	dst->bounds_align = src->bounds_align;
 	dst->bounds = src->bounds;
+	dst->stream_visible = src->stream_visible;
+	dst->recording_visible = src->recording_visible;
 
 	if (duplicate_hotkeys && !dst_scene->source->context.private) {
 		obs_data_array_t *data0 = NULL;
