@@ -27,6 +27,7 @@ class WASAPISource {
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
 	ComPtr<IAudioRenderClient> render;
+	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IMMNotificationClient> notify;
 
 	obs_source_t *source;
@@ -62,7 +63,7 @@ class WASAPISource {
 	inline void Stop();
 	void Reconnect();
 
-	bool InitDevice(IMMDeviceEnumerator *enumerator);
+	bool InitDevice();
 	void InitName();
 	void InitClient();
 	void InitRender();
@@ -180,6 +181,7 @@ inline void WASAPISource::Stop()
 
 inline WASAPISource::~WASAPISource()
 {
+	enumerator->UnregisterEndpointNotificationCallback(notify);
 	Stop();
 }
 
@@ -204,7 +206,7 @@ void WASAPISource::Update(obs_data_t *settings)
 		Start();
 }
 
-bool WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator)
+bool WASAPISource::InitDevice()
 {
 	HRESULT res;
 
@@ -362,7 +364,6 @@ void WASAPISource::InitCapture()
 
 void WASAPISource::Initialize()
 {
-	ComPtr<IMMDeviceEnumerator> enumerator;
 	HRESULT res;
 
 	res = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
@@ -371,7 +372,7 @@ void WASAPISource::Initialize()
 	if (FAILED(res))
 		throw HRError("Failed to create enumerator", res);
 
-	if (!InitDevice(enumerator))
+	if (!InitDevice())
 		return;
 
 	device_name = GetDeviceName(device);
