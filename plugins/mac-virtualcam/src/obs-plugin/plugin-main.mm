@@ -318,7 +318,7 @@ static BOOL replace_placeholder(const char *cur_ph, const char *new_ph,
 		![fileManager contentsEqualAtPath:curpng andPath:newpng];
 
 	blog(LOG_INFO, "replace PNG needed ('%d')", replaceNeeded);
-    if (!replaceNeeded)
+	if (!replaceNeeded)
 		return NO;
 
 	if (backup == NULL) {
@@ -332,7 +332,7 @@ static BOOL replace_placeholder(const char *cur_ph, const char *new_ph,
 				backupStr = [backupStr stringByAppendingString:@"/"];
 			backupOK = backup_placeholder(fileManager, curpng, backupStr);
 		}
-    }
+	}
 	
 	if (backupOK)
 		return replace_placeholderpng(curpng, newpng);
@@ -348,7 +348,7 @@ static BOOL check_placeholder(NSString *src)
 	const char *cur_ph = [src UTF8String];
 	config_t *gconf;
 	config_t *bconf;
-    BOOL replaced = NO;
+	BOOL replaced = NO;
 	os_get_config_path(global,sizeof(global),
 		"obs-studio/global.ini");
 	int rc = config_open(&gconf, global, CONFIG_OPEN_EXISTING);
