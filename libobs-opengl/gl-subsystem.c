@@ -886,6 +886,8 @@ fail:
 
 void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
 {
+	UNUSED_PARAMETER(device);
+
 	if (enable)
 		gl_enable(GL_FRAMEBUFFER_SRGB);
 	else
@@ -894,6 +896,8 @@ void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
 
 bool device_framebuffer_srgb_enabled(gs_device_t *device)
 {
+	UNUSED_PARAMETER(device);
+
 	const GLboolean enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
 	gl_success("glIsEnabled");
 	return enabled == GL_TRUE;

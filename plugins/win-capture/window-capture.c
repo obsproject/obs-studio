@@ -28,9 +28,8 @@
 
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
-typedef struct winrt_capture *(*PFN_winrt_capture_init)(BOOL cursor,
-							HWND window,
-							BOOL client_area);
+typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(
+	BOOL cursor, HWND window, BOOL client_area);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
@@ -46,7 +45,7 @@ struct winrt_exports {
 	PFN_winrt_capture_supported winrt_capture_supported;
 	PFN_winrt_capture_cursor_toggle_supported
 		winrt_capture_cursor_toggle_supported;
-	PFN_winrt_capture_init winrt_capture_init;
+	PFN_winrt_capture_init_window winrt_capture_init_window;
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
 	PFN_winrt_capture_show_cursor winrt_capture_show_cursor;
@@ -224,7 +223,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 
 	WINRT_IMPORT(winrt_capture_supported);
 	WINRT_IMPORT(winrt_capture_cursor_toggle_supported);
-	WINRT_IMPORT(winrt_capture_init);
+	WINRT_IMPORT(winrt_capture_init_window);
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
 	WINRT_IMPORT(winrt_capture_show_cursor);
@@ -544,7 +543,7 @@ static void wc_tick(void *data, float seconds)
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			if (!wc->previously_failed) {
 				wc->capture_winrt =
-					wc->exports.winrt_capture_init(
+					wc->exports.winrt_capture_init_window(
 						wc->cursor, wc->window,
 						wc->client_area);
 

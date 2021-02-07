@@ -82,6 +82,7 @@ bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
 string opt_starting_collection;
 string opt_starting_profile;
@@ -1933,15 +1934,13 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	ScopeProfiler prof{run_program_init};
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QGuiApplication::setAttribute(opt_disable_high_dpi_scaling
+					      ? Qt::AA_DisableHighDpiScaling
+					      : Qt::AA_EnableHighDpiScaling);
 #endif
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)) && defined(_WIN32)
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
 		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__) && BROWSER_AVAILABLE
-	setenv("QT_NO_GLIB", "1", true);
 #endif
 
 	QCoreApplication::addLibraryPath(".");
@@ -2670,6 +2669,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
+		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
+				  nullptr)) {
+			opt_disable_high_dpi_scaling = true;
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -2688,7 +2691,8 @@ int main(int argc, char *argv[])
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
-				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n";
+				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
+				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
 
 #ifdef _WIN32
 			MessageBoxA(NULL, help.c_str(), "Help",

@@ -2850,6 +2850,17 @@ bool gs_get_duplicator_monitor_info(int monitor_idx,
 		thread_graphics->device, monitor_idx, monitor_info);
 }
 
+int gs_duplicator_get_monitor_index(void *monitor)
+{
+	if (!gs_valid("gs_duplicator_get_monitor_index"))
+		return false;
+	if (!thread_graphics->exports.device_duplicator_get_monitor_index)
+		return false;
+
+	return thread_graphics->exports.device_duplicator_get_monitor_index(
+		thread_graphics->device, monitor);
+}
+
 gs_duplicator_t *gs_duplicator_create(int monitor_idx)
 {
 	if (!gs_valid("gs_duplicator_create"))

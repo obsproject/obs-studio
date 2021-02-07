@@ -865,6 +865,8 @@ EXPORT bool
 gs_get_duplicator_monitor_info(int monitor_idx,
 			       struct gs_monitor_info *monitor_info);
 
+EXPORT int gs_duplicator_get_monitor_index(void *monitor);
+
 /** creates a windows 8+ output duplicator (monitor capture) */
 EXPORT gs_duplicator_t *gs_duplicator_create(int monitor_idx);
 EXPORT void gs_duplicator_destroy(gs_duplicator_t *duplicator);

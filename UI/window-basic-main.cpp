@@ -51,6 +51,7 @@
 #include "window-log-reply.hpp"
 #include "window-projector.hpp"
 #include "window-remux.hpp"
+#include "window-missing-files.hpp"
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
@@ -980,7 +981,19 @@ void OBSBasic::Load(const char *file)
 		obs_data_array_push_back_array(sources, groups);
 	}
 
-	obs_load_sources(sources, nullptr, nullptr);
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	auto cb = [](void *private_data, obs_source_t *source) {
+		obs_missing_files_t *f = (obs_missing_files_t *)private_data;
+		obs_missing_files_t *sf = obs_source_get_missing_files(source);
+
+		obs_missing_files_append(f, sf);
+		obs_missing_files_destroy(sf);
+
+		UNUSED_PARAMETER(source);
+	};
+
+	obs_load_sources(sources, cb, files);
 
 	if (transitions)
 		LoadTransitions(transitions);
@@ -1123,6 +1136,14 @@ retryScene:
 	copyFilter = nullptr;
 
 	LogScenes();
+
+	if (obs_missing_files_count(files) > 0) {
+		OBSMissingFiles *miss = new OBSMissingFiles(files, this);
+		miss->show();
+		miss->raise();
+	} else {
+		obs_missing_files_destroy(files);
+	}
 
 	disableSaving--;
 
@@ -7681,7 +7702,9 @@ void OBSBasic::IconActivated(QSystemTrayIcon::ActivationReason reason)
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 
-#ifndef __APPLE__
+#ifdef __APPLE__
+	UNUSED_PARAMETER(reason);
+#else
 	if (reason == QSystemTrayIcon::Trigger) {
 		EnablePreviewDisplay(previewEnabled && !isVisible());
 		ToggleShowHide();
