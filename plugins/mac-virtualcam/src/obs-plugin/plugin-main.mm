@@ -334,7 +334,11 @@ static BOOL replace_placeholder(const char *cur_ph, const char *new_ph,
 						      backupStr);
 		}
 	}
+<<<<<<< HEAD
 
+=======
+	
+>>>>>>> origin/master
 	if (backupOK)
 		return replace_placeholderpng(curpng, newpng);
 	else
@@ -350,7 +354,12 @@ static BOOL check_placeholder(NSString *src)
 	config_t *gconf;
 	config_t *bconf;
 	BOOL replaced = NO;
+<<<<<<< HEAD
 	os_get_config_path(global, sizeof(global), "obs-studio/global.ini");
+=======
+	os_get_config_path(global,sizeof(global),
+		"obs-studio/global.ini");
+>>>>>>> origin/master
 	int rc = config_open(&gconf, global, CONFIG_OPEN_EXISTING);
 	if (rc == CONFIG_SUCCESS) {
 		const char *profiles_path =
