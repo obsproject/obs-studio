@@ -22,3 +22,7 @@
 
 #define blog(level, msg, ...) \
 	blog(level, "[" PLUGIN_NAME "] " msg, ##__VA_ARGS__)
+
+#define MAX_PATH_LEN 512
+#define BUFFER_LEN 4096
+
