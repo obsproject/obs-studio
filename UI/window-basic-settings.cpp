@@ -1678,8 +1678,8 @@ void OBSBasicSettings::LoadPlaceHolderPNGSettings()
 {
 	const char *placeholderpng =
 		config_get_string(main->Config(), "PlaceHolderPNG", "PNGFile");
-	const char *placeholderpngbackup =
-		config_get_string(main->Config(), "PlaceHolderPNG", "BackupPath");
+	const char *placeholderpngbackup = config_get_string(
+		main->Config(), "PlaceHolderPNG", "BackupPath");
 	ui->placeHolderPNGFile->setText(placeholderpng);
 	ui->placeHolderPNGBackup->setText(placeholderpngbackup);
 
@@ -4121,9 +4121,9 @@ void OBSBasicSettings::PlaceHolderPNGChanged()
 {
 	if (!loading) {
 		placeholderPNGChanged = true;
-        if (sender()) {
+		if (sender()) {
 			sender()->setProperty("changed", QVariant(true));
-        }
+		}
 		EnableApplyButton(true);
 	}
 }
