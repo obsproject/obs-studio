@@ -358,7 +358,7 @@ void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 #define VIDEO_CHANGED   SLOT(VideoChanged())
 #define ADV_CHANGED     SLOT(AdvancedChanged())
 #define ADV_RESTART     SLOT(AdvancedChangedRestart())
-#define PLACEHOLDER_CHANGED SLOT(PlaceHolderChanged())
+#define PLACEHOLDERPNG_CHANGED SLOT(PlaceHolderPNGChanged())
 /* clang-format on */
 
 OBSBasicSettings::OBSBasicSettings(QWidget *parent)
@@ -560,7 +560,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
-	HookWidget(ui->placeHolderPath,      EDIT_CHANGED,   PLACEHOLDER_CHANGED);
+	HookWidget(ui->placeHolderPNGFile,   EDIT_CHANGED,   PLACEHOLDERPNG_CHANGED);
+	HookWidget(ui->placeHolderPNGBackup, EDIT_CHANGED,   PLACEHOLDERPNG_CHANGED);
 	/* clang-format on */
 
 #define ADD_HOTKEY_FOCUS_TYPE(s)      \
@@ -1673,13 +1674,16 @@ static inline bool IsSurround(const char *speakers)
 	return false;
 }
 
-void OBSBasicSettings::LoadPlaceHolderSettings()
+void OBSBasicSettings::LoadPlaceHolderPNGSettings()
 {
-	const char *placeholder =
-		config_get_string(main->Config(), "PlaceHolder", "FilePath");
-	ui->placeHolderPath->setText(placeholder);
+	const char *placeholderpng =
+		config_get_string(main->Config(), "PlaceHolderPNG", "PNGFile");
+	const char *placeholderpngbackup =
+		config_get_string(main->Config(), "PlaceHolderPNG", "BackupPath");
+	ui->placeHolderPNGFile->setText(placeholderpng);
+	ui->placeHolderPNGBackup->setText(placeholderpngbackup);
 
-	PlaceHolderChanged();
+	PlaceHolderPNGChanged();
 }
 
 void OBSBasicSettings::LoadSimpleOutputSettings()
@@ -2938,8 +2942,8 @@ void OBSBasicSettings::LoadSettings(bool changedOnly)
 		LoadStream1Settings();
 	if (!changedOnly || outputsChanged)
 		LoadOutputSettings();
-	if (!changedOnly || placeholderChanged)
-		LoadPlaceHolderSettings();
+	if (!changedOnly || placeholderPNGChanged)
+		LoadPlaceHolderPNGSettings();
 	if (!changedOnly || audioChanged)
 		LoadAudioSettings();
 	if (!changedOnly || videoChanged)
@@ -3368,9 +3372,10 @@ void OBSBasicSettings::SaveEncoder(QComboBox *combo, const char *section,
 		config_set_string(main->Config(), section, value, nullptr);
 }
 
-void OBSBasicSettings::SavePlaceholderSettings()
+void OBSBasicSettings::SavePlaceholderPNGSettings()
 {
-	SaveEdit(ui->placeHolderPath, "PlaceHolder", "FilePath");
+	SaveEdit(ui->placeHolderPNGFile, "PlaceHolderPNG", "PNGFile");
+	SaveEdit(ui->placeHolderPNGBackup, "PlaceHolderPNG", "BackupPath");
 }
 
 void OBSBasicSettings::SaveOutputSettings()
@@ -3662,8 +3667,8 @@ void OBSBasicSettings::SaveSettings()
 		SaveStream1Settings();
 	if (outputsChanged)
 		SaveOutputSettings();
-	if (placeholderChanged)
-		SavePlaceholderSettings();
+	if (placeholderPNGChanged)
+		SavePlaceholderPNGSettings();
 	if (audioChanged)
 		SaveAudioSettings();
 	if (videoChanged)
@@ -3688,8 +3693,8 @@ void OBSBasicSettings::SaveSettings()
 			AddChangedVal(changed, "stream 1");
 		if (outputsChanged)
 			AddChangedVal(changed, "outputs");
-		if (placeholderChanged)
-			AddChangedVal(changed, "placeholder");
+		if (placeholderPNGChanged)
+			AddChangedVal(changed, "placeholderpng");
 		if (audioChanged)
 			AddChangedVal(changed, "audio");
 		if (videoChanged)
@@ -3818,13 +3823,22 @@ void OBSBasicSettings::on_simpleOutputBrowse_clicked()
 	ui->simpleOutputPath->setText(dir);
 }
 
-void OBSBasicSettings::on_placeHolderBrowse_clicked()
+void OBSBasicSettings::on_placeHolderPNGBrowse_clicked()
 {
 	QString file = OpenFile(
-		this, QTStr("Basic.Settings.General.VirtualCam.PlaceHolder"),
-		ui->placeHolderPath->text(), tr("Images (*.png)"));
+		this, QTStr("Basic.Settings.Advanced.VirtualCam.SelectPNGFile"),
+		ui->placeHolderPNGFile->text(), tr("Images (*.png)"));
 
-	ui->placeHolderPath->setText(file);
+	ui->placeHolderPNGFile->setText(file);
+}
+
+void OBSBasicSettings::on_placeHolderPNGBackupBrowse_clicked()
+{
+	QString dir = SelectDirectory(
+		this, QTStr("Basic.Settings.Advanced.VirtualCam.SelectPNGPath"),
+		ui->placeHolderPNGBackup->text());
+
+	ui->placeHolderPNGBackup->setText(dir);
 }
 
 void OBSBasicSettings::on_advOutRecPathBrowse_clicked()
@@ -4103,10 +4117,10 @@ void OBSBasicSettings::OutputsChanged()
 	}
 }
 
-void OBSBasicSettings::PlaceHolderChanged()
+void OBSBasicSettings::PlaceHolderPNGChanged()
 {
 	if (!loading) {
-		placeholderChanged = true;
+		placeholderPNGChanged = true;
         if (sender()) {
 			sender()->setProperty("changed", QVariant(true));
         }

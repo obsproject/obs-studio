@@ -5424,6 +5424,7 @@
                     <property name="labelAlignment">
                      <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                     </property>
+
                     <item row="0" column="0">
                      <widget class="QLabel" name="label_181">
                       <property name="minimumSize">
@@ -5433,27 +5434,27 @@
                        </size>
                       </property>
                       <property name="text">
-                       <string>Basic.Settings.Advanced.VirtualCam.PlaceHolderPath</string>
+                       <string>Basic.Settings.Advanced.VirtualCam.PlaceHolderPNGFile</string>
                       </property>
                       <property name="alignment">
                        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                       </property>
                       <property name="buddy">
-                       <cstring>placeHolderPath</cstring>
+                       <cstring>placeHolderPNGFile</cstring>
                       </property>
                      </widget>
                     </item>
                     <item row="0" column="1">
                      <layout class="QHBoxLayout" name="horizontalLayout_51">
                       <item>
-                       <widget class="QLineEdit" name="placeHolderPath">
+                       <widget class="QLineEdit" name="placeHolderPNGFile">
                         <property name="enabled">
                          <bool>true</bool>
                         </property>
                        </widget>
                       </item>
                       <item>
-                       <widget class="QPushButton" name="placeHolderBrowse">
+                       <widget class="QPushButton" name="placeHolderPNGBrowse">
                         <property name="enabled">
                          <bool>true</bool>
                         </property>
@@ -5464,6 +5465,48 @@
                       </item>
                      </layout>
                     </item>
+
+                    <item row="1" column="0">
+                     <widget class="QLabel" name="label_281">
+                      <property name="minimumSize">
+                       <size>
+                        <width>170</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.Settings.Advanced.VirtualCam.PlaceHolderPNGBackup</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                      </property>
+                      <property name="buddy">
+                       <cstring>placeHolderPNGBackup</cstring>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="1" column="1">
+                     <layout class="QHBoxLayout" name="horizontalLayout_151">
+                      <item>
+                       <widget class="QLineEdit" name="placeHolderPNGBackup">
+                        <property name="enabled">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="placeHolderPNGBackupBrowse">
+                        <property name="enabled">
+                         <bool>true</bool>
+                        </property>
+                        <property name="text">
+                         <string>Browse</string>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
+                    </item>
+
                   </layout>
                  </widget>
                 </item>

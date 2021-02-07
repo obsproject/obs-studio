@@ -110,7 +110,7 @@ private:
 	bool generalChanged = false;
 	bool stream1Changed = false;
 	bool outputsChanged = false;
-	bool placeholderChanged = false;
+	bool placeholderPNGChanged = false;
 	bool audioChanged = false;
 	bool videoChanged = false;
 	bool hotkeysChanged = false;
@@ -189,7 +189,7 @@ private:
 	{
 		return generalChanged || outputsChanged || stream1Changed ||
 		       audioChanged || videoChanged || advancedChanged ||
-		       hotkeysChanged || placeholderChanged;
+		       hotkeysChanged || placeholderPNGChanged;
 	}
 
 	inline void EnableApplyButton(bool en)
@@ -202,7 +202,7 @@ private:
 		generalChanged = false;
 		stream1Changed = false;
 		outputsChanged = false;
-		placeholderChanged = false;
+		placeholderPNGChanged = false;
 		audioChanged = false;
 		videoChanged = false;
 		hotkeysChanged = false;
@@ -280,7 +280,7 @@ private:
 	void SetAdvOutputFFmpegEnablement(ff_codec_type encoderType,
 					  bool enabled,
 					  bool enableEncode = false);
-	void LoadPlaceHolderSettings();
+	void LoadPlaceHolderPNGSettings();
 
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop, int index);
@@ -298,7 +298,7 @@ private:
 	void SaveGeneralSettings();
 	void SaveStream1Settings();
 	void SaveOutputSettings();
-	void SavePlaceholderSettings();
+	void SavePlaceholderPNGSettings();
 	void SaveAudioSettings();
 	void SaveVideoSettings();
 	void SaveHotkeySettings();
@@ -344,7 +344,8 @@ private slots:
 
 	void on_service_currentIndexChanged(int idx);
 	void on_simpleOutputBrowse_clicked();
-	void on_placeHolderBrowse_clicked();
+	void on_placeHolderPNGBrowse_clicked();
+	void on_placeHolderPNGBackupBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
 	void on_advOutEncoder_currentIndexChanged(int idx);
@@ -394,7 +395,7 @@ private slots:
 
 	void SimpleStreamingEncoderChanged();
 
-	void PlaceHolderChanged();
+	void PlaceHolderPNGChanged();
 
 	OBSService SpawnTempService();
 
