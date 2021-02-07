@@ -46,6 +46,7 @@ using namespace DShow;
 #define COLOR_SPACE       "color_space"
 #define COLOR_RANGE       "color_range"
 #define DEACTIVATE_WNS    "deactivate_when_not_showing"
+#define AUTOROTATION      "autorotation"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -64,6 +65,7 @@ using namespace DShow;
 #define TEXT_BUFFERING_ON   obs_module_text("Buffering.Enable")
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
+#define TEXT_AUTOROTATION   obs_module_text("Autorotation")
 #define TEXT_AUDIO_MODE     obs_module_text("AudioOutputMode")
 #define TEXT_MODE_CAPTURE   obs_module_text("AudioOutputMode.Capture")
 #define TEXT_MODE_DSOUND    obs_module_text("AudioOutputMode.DirectSound")
@@ -181,6 +183,7 @@ struct DShowInput {
 	bool deviceHasSeparateAudioFilter = false;
 	bool flip = false;
 	bool active = false;
+	bool autorotation = true;
 
 	Decoder audio_decoder;
 	Decoder video_decoder;
@@ -522,7 +525,7 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 			     size_t size, long long startTime,
 			     long long endTime, long rotation)
 {
-	if (rotation != lastRotation) {
+	if (autorotation && rotation != lastRotation) {
 		lastRotation = rotation;
 		obs_source_set_async_rotation(source, rotation);
 	}
@@ -868,6 +871,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
 	deactivateWhenNotShowing = obs_data_get_bool(settings, DEACTIVATE_WNS);
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
+	autorotation = obs_data_get_bool(settings, AUTOROTATION);
 
 	DeviceId id;
 	if (!DecodeDeviceId(id, video_device_id.c_str())) {
@@ -1191,6 +1195,7 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, COLOR_RANGE, "default");
 	obs_data_set_default_int(settings, AUDIO_OUTPUT_MODE,
 				 (int)AudioMode::Capture);
+	obs_data_set_default_bool(settings, AUTOROTATION, true);
 }
 
 struct Resolution {
@@ -1939,6 +1944,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 					  obs_module_text("Buffering.ToolTip"));
 
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
+
+	obs_properties_add_bool(ppts, AUTOROTATION, TEXT_AUTOROTATION);
 
 	/* ------------------------------------- */
 	/* audio settings */
