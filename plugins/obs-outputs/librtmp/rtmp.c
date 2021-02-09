@@ -658,6 +658,9 @@ int RTMP_SetupURL(RTMP *r, char *url)
 {
     int ret, len;
     unsigned int port = 0;
+    if (!url) {
+        return FALSE;
+    }
 
     len = (int)strlen(url);
     ret = RTMP_ParseURL(url, &r->Link.protocol, &r->Link.hostname,

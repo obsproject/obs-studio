@@ -39,6 +39,10 @@ int RTMP_ParseURL(const char *url, int *protocol, AVal *host, unsigned int *port
     /* Old School Parsing */
 
     /* look for usual :// pattern */
+    if (!url) {
+        RTMP_Log(RTMP_LOGERROR, "RTMP URL: Url is null!");
+        return FALSE;
+    }
     p = strstr(url, "://");
     if(!p)
     {
