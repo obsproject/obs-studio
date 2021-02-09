@@ -223,35 +223,11 @@
       ]
     },
     {
-      "name": "cef",
-      "buildsystem": "cmake-ninja",
-      "no-make-install": true,
-      "make-args": [
-        "libcef_dll_wrapper"
-      ],
-      "build-commands": [
-        "mkdir -p /app/cef/libcef_dll_wrapper",
-        "cp -R ./include /app/cef",
-        "cp -R ./Release /app/cef",
-        "cp -R ./Resources /app/cef",
-        "cp -R ./libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
-      ],
-      "sources": [
-        {
-          "type": "archive",
-          "url": "https://cef-builds.spotifycdn.com/cef_binary_76.1.13+gf19c584+chromium-76.0.3809.132_linux64_minimal.tar.bz2",
-          "sha256": "6b0dfa8ddafcec822fcd20018cf081959ffa6d0565be3793da1f596ac0733c38"
-        }
-      ]
-    },
-    {
       "name": "obs",
       "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DBUILD_BROWSER=ON",
-        "-DCEF_ROOT_DIR=/app/cef",
         "-DUNIX_STRUCTURE=ON",
         "-DUSE_XDG=ON",
         "-DDISABLE_ALSA=ON",
