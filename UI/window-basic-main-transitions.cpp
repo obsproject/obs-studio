@@ -1551,6 +1551,14 @@ void OBSBasic::ResizeProgram(uint32_t cx, uint32_t cy)
 	programY += float(PREVIEW_EDGE_SIZE);
 }
 
+static void SaveFilter(obs_source_t *, obs_source_t *filter, void *data)
+{
+	obs_data_array_t *filters = reinterpret_cast<obs_data_array_t *>(data);
+	obs_data_t *filter_data = obs_save_source(filter);
+	obs_data_array_push_back(filters, filter_data);
+	obs_data_release(filter_data);
+}
+
 obs_data_array_t *OBSBasic::SaveTransitions()
 {
 	obs_data_array_t *transitions = obs_data_array_create();
@@ -1568,10 +1576,15 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 		obs_data_set_string(sourceData, "id", obs_obj_get_id(tr));
 		obs_data_set_obj(sourceData, "settings", settings);
 
+		obs_data_array_t *filters = obs_data_array_create();
+		obs_source_enum_filters(tr, SaveFilter, (void *)filters);
+		obs_data_set_array(sourceData, "filters", filters);
+
 		obs_data_array_push_back(transitions, sourceData);
 
 		obs_data_release(settings);
 		obs_data_release(sourceData);
+		obs_data_array_release(filters);
 	}
 
 	return transitions;
@@ -1583,6 +1596,7 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 
 	for (size_t i = 0; i < count; i++) {
 		obs_data_t *item = obs_data_array_item(transitions, i);
+		obs_data_array_t *filters = obs_data_get_array(item, "filters");
 		const char *name = obs_data_get_string(item, "name");
 		const char *id = obs_data_get_string(item, "id");
 		obs_data_t *settings = obs_data_get_obj(item, "settings");
@@ -1592,6 +1606,27 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 		if (!obs_obj_invalid(source)) {
 			InitTransition(source);
 			AddTransitionBeforeSeparator(QT_UTF8(name), source);
+		}
+
+		if (filters) {
+			size_t filtersCount = obs_data_array_count(filters);
+
+			for (size_t i = 0; i < filtersCount; i++) {
+				obs_data_t *filterData =
+					obs_data_array_item(filters, i);
+
+				obs_source_t *filter =
+					obs_load_source(filterData);
+
+				if (filter) {
+					obs_source_filter_add(source, filter);
+					obs_source_release(filter);
+				}
+
+				obs_data_release(filterData);
+			}
+
+			obs_data_array_release(filters);
 		}
 
 		obs_data_release(settings);
