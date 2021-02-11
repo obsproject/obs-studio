@@ -468,6 +468,9 @@ private slots:
 	void SetHotkeysIcon(const QIcon &icon);
 	void SetAccessibilityIcon(const QIcon &icon);
 	void SetAdvancedIcon(const QIcon &icon);
+#ifdef __linux__
+	void UpdateAddrList();
+#endif
 
 	void UseStreamKeyAdvClicked();
 
