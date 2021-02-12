@@ -657,7 +657,6 @@ void OBSBasic::on_transitionProps_clicked()
 		return;
 
 	auto properties = [&]() { CreatePropertiesWindow(source); };
-	auto filters = [&]() { CreateFiltersWindow(source); };
 
 	QMenu menu(this);
 
@@ -674,13 +673,6 @@ void OBSBasic::on_transitionProps_clicked()
 	action = new QAction(QTStr("Properties"), &menu);
 	connect(action, &QAction::triggered, properties);
 	menu.addAction(action);
-
-	if (strcmp(obs_source_get_unversioned_id(source),
-		   "obs_stinger_transition") == 0) {
-		action = new QAction(QTStr("Filters"), &menu);
-		connect(action, &QAction::triggered, filters);
-		menu.addAction(action);
-	}
 
 	menu.exec(QCursor::pos());
 }
