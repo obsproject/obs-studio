@@ -36,7 +36,7 @@
 
 #include <stdio.h>
 
-#include "gl-subsystem.h"
+#include "gl-nix.h"
 
 #include <glad/glad_glx.h>
 
@@ -221,14 +221,14 @@ static void gl_context_destroy(struct gl_platform *plat)
 	bfree(plat);
 }
 
-extern struct gl_windowinfo *
-gl_windowinfo_create(const struct gs_init_data *info)
+static struct gl_windowinfo *
+gl_x11_glx_windowinfo_create(const struct gs_init_data *info)
 {
 	UNUSED_PARAMETER(info);
 	return bmalloc(sizeof(struct gl_windowinfo));
 }
 
-extern void gl_windowinfo_destroy(struct gl_windowinfo *info)
+static void gl_x11_glx_windowinfo_destroy(struct gl_windowinfo *info)
 {
 	bfree(info);
 }
@@ -294,8 +294,8 @@ static int x_error_handler(Display *display, XErrorEvent *error)
 	return 0;
 }
 
-extern struct gl_platform *gl_platform_create(gs_device_t *device,
-					      uint32_t adapter)
+static struct gl_platform *gl_x11_glx_platform_create(gs_device_t *device,
+						      uint32_t adapter)
 {
 	/* There's some trickery here... we're mixing libX11, xcb, and GLX
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/
@@ -346,7 +346,7 @@ success:
 	return plat;
 }
 
-extern void gl_platform_destroy(struct gl_platform *plat)
+static void gl_x11_glx_platform_destroy(struct gl_platform *plat)
 {
 	if (!plat) /* In what case would platform be invalid here? */
 		return;
@@ -354,7 +354,7 @@ extern void gl_platform_destroy(struct gl_platform *plat)
 	gl_context_destroy(plat);
 }
 
-extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
+static bool gl_x11_glx_platform_init_swapchain(struct gs_swap_chain *swap)
 {
 	Display *display = swap->device->plat->display;
 	xcb_connection_t *xcb_conn = XGetXCBConnection(display);
@@ -429,13 +429,13 @@ success:
 	return status;
 }
 
-extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
+static void gl_x11_glx_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 {
 	UNUSED_PARAMETER(swap);
 	/* Really nothing to clean up? */
 }
 
-extern void device_enter_context(gs_device_t *device)
+static void gl_x11_glx_device_enter_context(gs_device_t *device)
 {
 	GLXContext context = device->plat->context;
 	Display *display = device->plat->display;
@@ -453,7 +453,7 @@ extern void device_enter_context(gs_device_t *device)
 	}
 }
 
-extern void device_leave_context(gs_device_t *device)
+static void gl_x11_glx_device_leave_context(gs_device_t *device)
 {
 	Display *display = device->plat->display;
 
@@ -462,13 +462,13 @@ extern void device_leave_context(gs_device_t *device)
 	}
 }
 
-void *device_get_device_obj(gs_device_t *device)
+static void *gl_x11_glx_device_get_device_obj(gs_device_t *device)
 {
 	return device->plat->context;
 }
 
-extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
-			     uint32_t *height)
+static void gl_x11_glx_getclientsize(const struct gs_swap_chain *swap,
+				     uint32_t *width, uint32_t *height)
 {
 	xcb_connection_t *xcb_conn =
 		XGetXCBConnection(swap->device->plat->display);
@@ -484,7 +484,7 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 	free(geometry);
 }
 
-extern void gl_clear_context(gs_device_t *device)
+static void gl_x11_glx_clear_context(gs_device_t *device)
 {
 	Display *display = device->plat->display;
 
@@ -493,7 +493,7 @@ extern void gl_clear_context(gs_device_t *device)
 	}
 }
 
-extern void gl_update(gs_device_t *device)
+static void gl_x11_glx_update(gs_device_t *device)
 {
 	Display *display = device->plat->display;
 	xcb_window_t window = device->cur_swap->wi->window;
@@ -506,7 +506,8 @@ extern void gl_update(gs_device_t *device)
 			     values);
 }
 
-extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
+static void gl_x11_glx_device_load_swapchain(gs_device_t *device,
+					     gs_swapchain_t *swap)
 {
 	if (device->cur_swap == swap)
 		return;
@@ -536,7 +537,7 @@ enum swap_type {
 	SWAP_TYPE_SGI,
 };
 
-extern void device_present(gs_device_t *device)
+static void gl_x11_glx_device_present(gs_device_t *device)
 {
 	static bool initialized = false;
 	static enum swap_type swap_type = SWAP_TYPE_NORMAL;
@@ -576,4 +577,26 @@ extern void device_present(gs_device_t *device)
 	}
 
 	glXSwapBuffers(display, window);
+}
+
+static const struct gl_winsys_vtable glx_winsys_vtable = {
+	.windowinfo_create = gl_x11_glx_windowinfo_create,
+	.windowinfo_destroy = gl_x11_glx_windowinfo_destroy,
+	.platform_create = gl_x11_glx_platform_create,
+	.platform_destroy = gl_x11_glx_platform_destroy,
+	.platform_init_swapchain = gl_x11_glx_platform_init_swapchain,
+	.platform_cleanup_swapchain = gl_x11_glx_platform_cleanup_swapchain,
+	.device_enter_context = gl_x11_glx_device_enter_context,
+	.device_leave_context = gl_x11_glx_device_leave_context,
+	.device_get_device_obj = gl_x11_glx_device_get_device_obj,
+	.getclientsize = gl_x11_glx_getclientsize,
+	.clear_context = gl_x11_glx_clear_context,
+	.update = gl_x11_glx_update,
+	.device_load_swapchain = gl_x11_glx_device_load_swapchain,
+	.device_present = gl_x11_glx_device_present,
+};
+
+const struct gl_winsys_vtable *gl_x11_glx_get_winsys_vtable(void)
+{
+	return &glx_winsys_vtable;
 }

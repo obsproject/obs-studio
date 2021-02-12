@@ -187,12 +187,30 @@ elseif(APPLE)
 elseif(UNIX)
 	set(libobs_PLATFORM_SOURCES
 		obs-nix.c
+		obs-nix-platform.c
+		obs-nix-x11.c
 		util/threading-posix.c
 		util/pipe-posix.c
 		util/platform-nix.c)
 
 	set(libobs_PLATFORM_HEADERS
-		util/threading-posix.h)
+		util/threading-posix.h
+		obs-nix-platform.h)
+
+	if(ENABLE_WAYLAND)
+		find_package(Wayland COMPONENTS Client REQUIRED)
+
+		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
+			obs-nix-wayland.c)
+
+		include_directories(
+			${WAYLAND_CLIENT_INCLUDE_DIR})
+		add_definitions(
+			${WAYLAND_DEFINITIONS})
+		set(libobs_PLATFORM_DEPS
+			${libobs_PLATFORM_DEPS}
+			${WAYLAND_CLIENT_LIBRARIES})
+	endif()
 
 	if(HAVE_PULSEAUDIO)
 		set(libobs_audio_monitoring_HEADERS

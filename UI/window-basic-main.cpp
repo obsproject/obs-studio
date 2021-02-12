@@ -79,6 +79,10 @@
 
 #include <json11.hpp>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 using namespace json11;
 using namespace std;
 
@@ -1865,9 +1869,22 @@ void OBSBasic::OBSInit()
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					   "AlwaysOnTop");
-	if (alwaysOnTop || opt_always_on_top) {
+
+#ifdef ENABLE_WAYLAND
+	bool isWayland = obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND;
+#else
+	bool isWayland = false;
+#endif
+
+	if (!isWayland && (alwaysOnTop || opt_always_on_top)) {
 		SetAlwaysOnTop(this, true);
 		ui->actionAlwaysOnTop->setChecked(true);
+	} else if (isWayland) {
+		if (opt_always_on_top)
+			blog(LOG_INFO,
+			     "Always On Top not available on Wayland, ignoring…");
+		ui->actionAlwaysOnTop->setEnabled(false);
+		ui->actionAlwaysOnTop->setVisible(false);
 	}
 
 #ifndef _WIN32
