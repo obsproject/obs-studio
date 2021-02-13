@@ -173,7 +173,8 @@
 		NSFileManager *fileManager = [NSFileManager defaultManager];
 		NSURL *homeUrl = [fileManager homeDirectoryForCurrentUser];
 		NSURL *customUrl =
-			[homeUrl URLByAppendingPathComponent:@"obs-studio/placeholder.png"];
+			[homeUrl URLByAppendingPathComponent:
+					@"obs-studio/placeholder.png"];
 		NSString *customPlaceHolder = customUrl.path;
 		if ([fileManager isReadableFileAtPath:customPlaceHolder])
 			placeHolderPath = customPlaceHolder;
