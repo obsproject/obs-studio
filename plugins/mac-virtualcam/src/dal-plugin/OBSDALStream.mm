@@ -170,6 +170,14 @@
 		NSString *placeHolderPath = [bundlePath
 			stringByAppendingString:
 				@"/Contents/Resources/placeholder.png"];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
+		NSURL *homeUrl = [fileManager homeDirectoryForCurrentUser];
+		NSURL *customUrl =
+			[homeUrl URLByAppendingPathComponent:@"obs-studio/placeholder.png"];
+		NSString *customPlaceHolder = customUrl.path;
+		if ([fileManager isReadableFileAtPath:customPlaceHolder])
+			placeHolderPath = customPlaceHolder;
+		DLog(@"PlaceHolder:%@", placeHolderPath);
 		NSImage *placeholderImage = [[NSImage alloc]
 			initWithContentsOfFile:placeHolderPath];
 
