@@ -5,6 +5,7 @@
   "sdk": "org.kde.Sdk",
   "command": "obs",
   "finish-args": [
+    "--socket=wayland",
     "--socket=x11",
     "--socket=pulseaudio",
     "--device=all",
@@ -228,6 +229,7 @@
       "builddir": true,
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_WAYLAND=ON",
         "-DUNIX_STRUCTURE=ON",
         "-DUSE_XDG=ON",
         "-DDISABLE_ALSA=ON",
