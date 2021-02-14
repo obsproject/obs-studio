@@ -276,7 +276,7 @@ struct obs_cmdline_args {
 
 /**
  * Find a core libobs data file
- * @param path name of the base file
+ * @param file name of the base file
  * @return A string containing the full path to the file.
  *          Use bfree after use.
  */
