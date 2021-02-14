@@ -325,6 +325,12 @@ struct gs_exports {
 		gs_device_t *device, const struct gs_device_loss *callbacks);
 	void (*device_unregister_loss_callbacks)(gs_device_t *device,
 						 void *data);
+#elif __linux__
+	struct gs_texture *(*device_texture_create_from_dmabuf)(
+		gs_device_t *device, unsigned int width, unsigned int height,
+		enum gs_color_format color_format, uint32_t n_planes,
+		const int *fds, const uint32_t *strides,
+		const uint32_t *offsets, const uint64_t *modifiers);
 #endif
 };
 

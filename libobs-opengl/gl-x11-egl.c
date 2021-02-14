@@ -29,6 +29,7 @@
 
 #include <stdio.h>
 
+#include "gl-egl-common.h"
 #include "gl-x11-egl.h"
 
 #include <glad/glad_egl.h>
@@ -634,6 +635,19 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 		     get_egl_error_string());
 }
 
+static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
+	gs_device_t *device, unsigned int width, unsigned int height,
+	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
+	const uint32_t *strides, const uint32_t *offsets,
+	const uint64_t *modifiers)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_dmabuf_image(plat->edisplay, width, height,
+					  color_format, n_planes, fds, strides,
+					  offsets, modifiers);
+}
+
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.windowinfo_create = gl_x11_egl_windowinfo_create,
 	.windowinfo_destroy = gl_x11_egl_windowinfo_destroy,
@@ -649,6 +663,8 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.update = gl_x11_egl_update,
 	.device_load_swapchain = gl_x11_egl_device_load_swapchain,
 	.device_present = gl_x11_egl_device_present,
+	.device_texture_create_from_dmabuf =
+		gl_x11_egl_device_texture_create_from_dmabuf,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)
