@@ -221,7 +221,7 @@ struct obs_encoder_info {
 	 * Returns desired audio format and sample information
 	 *
 	 * @param          data  Data associated with this encoder context
-	 * @param[in/out]  info  Audio format information
+	 * @param[in,out]  info  Audio format information
 	 */
 	void (*get_audio_info)(void *data, struct audio_convert_info *info);
 
@@ -229,7 +229,7 @@ struct obs_encoder_info {
 	 * Returns desired video format information
 	 *
 	 * @param          data  Data associated with this encoder context
-	 * @param[in/out]  info  Video format information
+	 * @param[in,out]  info  Video format information
 	 */
 	void (*get_video_info)(void *data, struct video_scale_info *info);
 
