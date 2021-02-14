@@ -126,7 +126,7 @@ EXPORT void obs_register_modeless_ui(const struct obs_modeless_ui *info);
 /**
  * Requests modal UI to be displayed.  Returns when user is complete.
  *
- * @param    name  Name of the input/output/etc type that UI was requested for
+ * @param      id  Name of the input/output/etc type that UI was requested for
  * @param    task  Task of the user interface (usually "config")
  * @param  target  Desired target (i.e. "qt", "wx", "gtk3", "win32", etc)
  * @param    data  Pointer to the obs input/output/etc
@@ -142,7 +142,7 @@ EXPORT int obs_exec_ui(const char *id, const char *task, const char *target,
 /**
  * Requests modeless UI to be created.  Returns immediately.
  *
- * @param    name  Name of the input/output/etc type that UI was requested for
+ * @param      id  Name of the input/output/etc type that UI was requested for
  * @param    task  Task of the user interface
  * @param  target  Desired target (i.e. "qt", "wx", "gtk3", "win32", etc)
  * @param    data  Pointer to the obs input/output/etc
