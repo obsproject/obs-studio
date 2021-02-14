@@ -262,7 +262,7 @@ struct obs_source_info {
 	 * Gets the default settings for this source
 	 *
 	 * @param[out]  settings  Data to assign default settings to
-	 * @deprecated            Use get_defaults2 if type_data is needed
+	 * @deprecated Use get_defaults2 if type_data is needed
 	 */
 	void (*get_defaults)(obs_data_t *settings);
 
@@ -270,7 +270,7 @@ struct obs_source_info {
 	 * Gets the property information of this source
 	 *
 	 * @return         The properties data
-	 * @deprecated     Use get_properties2 if type_data is needed
+	 * @deprecated Use get_properties2 if type_data is needed
 	 */
 	obs_properties_t *(*get_properties)(void *data);
 
