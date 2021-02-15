@@ -24,7 +24,7 @@ static struct func_hook present;
 static struct func_hook present1;
 
 thread_local bool dxgi_presenting = false;
-ID3D12CommandQueue *dxgi_possible_swap_queue = nullptr;
+struct ID3D12CommandQueue *dxgi_possible_swap_queue = nullptr;
 bool dxgi_present_attempted = false;
 
 struct dxgi_swap_data {
