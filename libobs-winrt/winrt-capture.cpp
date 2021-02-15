@@ -233,8 +233,27 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->active = FALSE;
 
 	capture->frame_arrived.revoke();
-	capture->frame_pool.Close();
-	capture->session.Close();
+
+	try {
+		capture->frame_pool.Close();
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR,
+		     "Direct3D11CaptureFramePool::Close (0x%08X): %ls",
+		     err.to_abi(), err.message().c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "Direct3D11CaptureFramePool::Close (0x%08X)",
+		     winrt::to_hresult());
+	}
+
+	try {
+		capture->session.Close();
+	} catch (winrt::hresult_error &err) {
+		blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X): %ls",
+		     err.to_abi(), err.message().c_str());
+	} catch (...) {
+		blog(LOG_ERROR, "GraphicsCaptureSession::Close (0x%08X)",
+		     winrt::to_hresult());
+	}
 
 	capture->session = nullptr;
 	capture->frame_pool = nullptr;
@@ -516,8 +535,30 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 
 		capture->frame_arrived.revoke();
 		capture->closed.revoke();
-		capture->frame_pool.Close();
-		capture->session.Close();
+
+		try {
+			capture->frame_pool.Close();
+		} catch (winrt::hresult_error &err) {
+			blog(LOG_ERROR,
+			     "Direct3D11CaptureFramePool::Close (0x%08X): %ls",
+			     err.to_abi(), err.message().c_str());
+		} catch (...) {
+			blog(LOG_ERROR,
+			     "Direct3D11CaptureFramePool::Close (0x%08X)",
+			     winrt::to_hresult());
+		}
+
+		try {
+			capture->session.Close();
+		} catch (winrt::hresult_error &err) {
+			blog(LOG_ERROR,
+			     "GraphicsCaptureSession::Close (0x%08X): %ls",
+			     err.to_abi(), err.message().c_str());
+		} catch (...) {
+			blog(LOG_ERROR,
+			     "GraphicsCaptureSession::Close (0x%08X)",
+			     winrt::to_hresult());
+		}
 
 		delete capture;
 	}
