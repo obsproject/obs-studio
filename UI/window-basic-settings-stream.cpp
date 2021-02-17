@@ -995,6 +995,9 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	if (res_count) {
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
+		HookWidget(ui->outputResolution,
+			   SIGNAL(currentIndexChanged(int)),
+			   SLOT(VideoChangedResolution()));
 
 		int new_res_index = -1;
 
