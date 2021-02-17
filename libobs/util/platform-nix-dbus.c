@@ -68,7 +68,7 @@ struct dbus_sleep_info {
 	const struct service_info *service;
 	DBusPendingCall *pending;
 	DBusConnection *c;
-	dbus_uint32_t id;
+	dbus_uint32_t cookie;
 	enum service_type type;
 };
 
@@ -137,15 +137,15 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		if (reply) {
 			success = dbus_message_get_args(reply, NULL,
 							DBUS_TYPE_UINT32,
-							&info->id,
+							&info->cookie,
 							DBUS_TYPE_INVALID);
 			if (!success)
-				info->id = 0;
+				info->cookie = 0;
 			dbus_message_unref(reply);
 		}
 	}
 
-	if (active == !!info->id)
+	if (active == !!info->cookie)
 		return;
 
 	method = active ? "Inhibit" : info->service->uninhibit;
@@ -163,7 +163,7 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		dbus_uint32_t flags = 0xC;
 		dbus_uint32_t xid = 0;
 
-		assert(info->id == 0);
+		assert(info->cookie == 0);
 
 		switch (info->type) {
 		case MATE_SM:
@@ -187,13 +187,13 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 				info->pending = NULL;
 		}
 	} else {
-		assert(info->id != 0);
+		assert(info->cookie != 0);
 		success = dbus_message_append_args(
-			reply, DBUS_TYPE_UINT32, &info->id, DBUS_TYPE_INVALID);
+			reply, DBUS_TYPE_UINT32, &info->cookie, DBUS_TYPE_INVALID);
 		if (success)
 			success = dbus_connection_send(info->c, reply, NULL);
 		if (!success)
-			info->id = 0;
+			info->cookie = 0;
 	}
 
 	dbus_connection_flush(info->c);
