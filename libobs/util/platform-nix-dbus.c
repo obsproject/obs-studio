@@ -31,6 +31,7 @@ enum service_type {
 struct service_info {
 	const char *name;
 	const char *path;
+	const char *interface;
 	const char *uninhibit;
 };
 
@@ -39,24 +40,28 @@ static const struct service_info services[] = {
 		{
 			.name = "org.freedesktop.ScreenSaver",
 			.path = "/ScreenSaver",
+			.interface = "org.freedesktop.ScreenSaver",
 			.uninhibit = "UnInhibit",
 		},
 	[FREEDESKTOP_PM] =
 		{
 			.name = "org.freedesktop.PowerManagement.Inhibit",
 			.path = "/org/freedesktop/PowerManagement",
+			.interface = "org.freedesktop.PowerManagement.Inhibit",
 			.uninhibit = "UnInhibit",
 		},
 	[MATE_SM] =
 		{
 			.name = "org.mate.SessionManager",
 			.path = "/org/mate/SessionManager",
+			.interface = "org.mate.SessionManager",
 			.uninhibit = "Uninhibit",
 		},
 	[GNOME_SM] =
 		{
 			.name = "org.gnome.SessionManager",
 			.path = "/org/gnome/SessionManager",
+			.interface = "org.gnome.SessionManager",
 			.uninhibit = "Uninhibit",
 		},
 };
@@ -153,11 +158,10 @@ void dbus_inhibit_sleep(struct dbus_sleep_info *info, const char *reason,
 		params = g_variant_new("(u)", info->cookie);
 	}
 
-	reply = g_dbus_connection_call_sync(info->c, info->service->name,
-					    info->service->path,
-					    info->service->name, method, params,
-					    NULL, G_DBUS_CALL_FLAGS_NONE, -1,
-					    NULL, &error);
+	reply = g_dbus_connection_call_sync(
+		info->c, info->service->name, info->service->path,
+		info->service->interface, method, params, NULL,
+		G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
 
 	if (error != NULL) {
 		blog(LOG_ERROR, "Failed to call %s: %s", method,
