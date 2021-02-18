@@ -352,7 +352,7 @@ jobs:
           path: ./release/*.dmg
   ubuntu64:
     name: 'Linux/Ubuntu 64-bit'
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-18.04]
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v2.3.3
