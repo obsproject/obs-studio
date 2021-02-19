@@ -688,7 +688,7 @@ struct PropertiesData {
 	vector<VideoDevice> devices;
 	vector<AudioDevice> audioDevices;
 
-	bool GetDevice(VideoDevice &device, const char *encoded_id) const
+	bool GetDevice(VideoDevice &device, const char *encoded_id)
 	{
 		DeviceId deviceId;
 		if (!DecodeDeviceId(deviceId, encoded_id)) {
