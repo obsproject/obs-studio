@@ -819,6 +819,21 @@
             }
         },
         {
+            "name": "ePlay",
+            "servers": [
+                {
+                    "name": "ePlay Primary",
+                    "url": "rtmp://live.eplay.link/origin"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 7500,
+                "max audio bitrate": 192
+            }
+        },
+        {
             "name": "Picarto",
             "servers": [
                 {
