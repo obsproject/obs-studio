@@ -665,10 +665,14 @@ static void ffmpeg_source_play_pause(void *data, bool pause)
 
 	mp_media_play_pause(&s->media, pause);
 
-	if (pause)
+	if (pause) {
+
 		set_media_state(s, OBS_MEDIA_STATE_PAUSED);
-	else
+	} else {
+
 		set_media_state(s, OBS_MEDIA_STATE_PLAYING);
+		obs_source_media_started(s->source);
+	}
 }
 
 static void ffmpeg_source_stop(void *data)
