@@ -77,8 +77,8 @@ static bool check_dal_plugin()
 		if ([fileManager fileExistsAtPath:dalPluginSourcePath]) {
 			NSString *copyCmd = [NSString
 				stringWithFormat:
-					@"do shell script \"cp -R '%@' '%@'\" with administrator privileges",
-					dalPluginSourcePath,
+					@"do shell script \"rm -rf '%@' && cp -R '%@' '%@'\" with administrator privileges",
+					dalPluginFileName, dalPluginSourcePath,
 					dalPluginDestinationPath];
 
 			NSDictionary *errorDict;
