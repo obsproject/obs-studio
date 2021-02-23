@@ -59,9 +59,8 @@ class WASAPISource : public IMMNotificationClient {
 	inline void Stop();
 	void Reconnect();
 
-	HRESULT InitDevice(IMMDeviceEnumerator *enumerator, bool defaultDevice);
-	HRESULT InitDeviceLoop(IMMDeviceEnumerator *enumerator, int maxRetry,
-			       int sleepMs);
+	HRESULT _InitDevice(IMMDeviceEnumerator *enumerator, bool defaultDevice);
+	HRESULT InitDevice(IMMDeviceEnumerator *enumerator);
 	void InitName();
 	void InitClient();
 	void InitRender();
@@ -211,7 +210,7 @@ void WASAPISource::Update(obs_data_t *settings)
 		Start();
 }
 
-HRESULT WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator, bool defaultDevice)
+HRESULT WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool defaultDevice)
 {
 	HRESULT res;
 
@@ -232,62 +231,27 @@ HRESULT WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator, bool defaultDe
 	return res;
 }
 
-HRESULT WASAPISource::InitDeviceLoop(IMMDeviceEnumerator *enumerator,
-				     int maxRetry, int sleepMs)
+HRESULT WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator)
 {
 	HRESULT res = -1;
-	int retryInitDeviceCounter = 0;
 	std::vector<AudioDeviceInfo> devices;
+	res = _InitDevice(enumerator, isDefaultDevice);
 
-	while (retryInitDeviceCounter < maxRetry) {
-		//if for first time, use the isDefaultDevice flag, otherwise,
-		// use the current device_id which could have been changed for the same device name
-		res = InitDevice(enumerator, !retryInitDeviceCounter
-						     ? isDefaultDevice
-						     : false);
-		
-		if (device_name.empty())
-			device_name = GetDeviceName(device);
-		
-		/*
-		`SUCCEEDED(res)` needs to be after getting the device name (if it's empty). 
-		Then , if res has not succeeded and  the device name is not empty
-		i.e. it took the device name successfully at least once,
-		search in the audio device list for that device name.
-		If res has succeeded, exit early. */
+	if (device_name.empty())
+		device_name = GetDeviceName(device);
 
+	if (SUCCEEDED(res))
+		return res;
 
-		if (SUCCEEDED(res)) {
-			break;
+	if (!device_name.empty()) {
+		devices.clear();
+		GetWASAPIAudioDevices(devices, isInputDevice,device_name);
+		if (devices.size()) {
+			this->device = devices[0].device;
+			this->device_id = devices[0].id;
+			res = 0;
+			return res;
 		}
-		if (!device_name.empty()) {
-			blog(LOG_INFO,
-			     "[WASAPISource::InitDeviceLoop][count %d]: Init Device Failed. Searching for new device ID for <%s>",
-			     retryInitDeviceCounter, device_name.c_str());
-
-			devices.clear();
-			GetWASAPIAudioDevices(devices, isInputDevice,
-					      device_name);
-
-			if (!devices.size()) {
-				blog(LOG_INFO,
-				     "[WASAPISource::InitDeviceLoop][count %d]: Could not get Device list",
-				     retryInitDeviceCounter);
-			} else {
-				this->device = devices[0].device;
-				this->device_id = devices[0].id;
-				blog(LOG_INFO,
-				     "[WASAPISource::InitDeviceLoop][count %d]: Found new device ID [%s] for <%s>",
-				     retryInitDeviceCounter, device_id.c_str(),
-				     device_name.c_str());
-
-				res = 0;
-				break;
-			}
-
-		}
-		retryInitDeviceCounter++;
-		Sleep(sleepMs);
 	}
 	return res;
 }
@@ -433,7 +397,7 @@ void WASAPISource::Initialize()
 	if (FAILED(res))
 		throw HRError("Failed to create enumerator", res);
 
-	res = InitDeviceLoop(enumerator, MAX_RETRY_INIT_DEVICE_COUNTER, 20);
+	res = InitDevice(enumerator);
 
 	if (FAILED(res)) {
 		// fail early
