@@ -31,6 +31,7 @@ struct ipc_pipe_server;
 struct ipc_pipe_client;
 typedef struct ipc_pipe_server ipc_pipe_server_t;
 typedef struct ipc_pipe_client ipc_pipe_client_t;
+typedef unsigned long DWORD;
 
 typedef void (*ipc_pipe_read_t)(void *param, uint8_t *data, size_t size);
 
