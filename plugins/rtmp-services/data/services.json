@@ -1806,6 +1806,20 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "StageIt",
+            "common": true,
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://0118b1056076.global-contribute.live-video.net:443/app/"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
