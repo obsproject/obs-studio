@@ -44,6 +44,41 @@ set(linux-capture_LIBRARIES
 	${XCB_LIBRARIES}
 )
 
+option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
+if(ENABLE_PIPEWIRE)
+	find_package(PipeWire REQUIRED)
+	find_package(Gio REQUIRED)
+
+	add_definitions(-DENABLE_PIPEWIRE)
+
+	set(linux-capture_INCLUDES
+		${linux-capture_INCLUDES}
+		${GIO_INCLUDE_DIRS}
+		${PIPEWIRE_INCLUDE_DIRS}
+	)
+
+	add_definitions(
+		${GIO_DEFINITIONS}
+		${PIPEWIRE_DEFINITIONS}
+	)
+
+	set(linux-capture_SOURCES
+		${linux-capture_SOURCES}
+		pipewire.c
+		pipewire-capture.c
+	)
+	set(linux-capture_HEADERS
+		${linux-capture_HEADERS}
+		pipewire.h
+		pipewire-capture.h
+	)
+	set(linux-capture_LIBRARIES
+		${linux-capture_LIBRARIES}
+		${GIO_LIBRARIES}
+		${PIPEWIRE_LIBRARIES}
+	)
+endif()
+
 include_directories(SYSTEM
 	${linux-capture_INCLUDES}
 )
