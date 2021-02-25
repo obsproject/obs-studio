@@ -27,32 +27,30 @@ static bool check_dal_plugin()
 
 	NSString *dalPluginDestinationPath =
 		@"/Library/CoreMediaIO/Plug-Ins/DAL/";
-	NSString *dalPluginFileName = [dalPluginDestinationPath
-		stringByAppendingString:@"obs-mac-virtualcam.plugin"];
+	NSString *dalPluginFileName =
+		@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin";
 
+	BOOL dalPluginDirExists =
+		[fileManager fileExistsAtPath:dalPluginDestinationPath];
 	BOOL dalPluginInstalled =
 		[fileManager fileExistsAtPath:dalPluginFileName];
 	BOOL dalPluginUpdateNeeded = NO;
 
 	if (dalPluginInstalled) {
-		NSString *dalPluginPlistPath = [dalPluginFileName
-			stringByAppendingString:@"/Contents/Info.plist"];
 		NSDictionary *dalPluginInfoPlist = [NSDictionary
 			dictionaryWithContentsOfURL:
-				[NSURL fileURLWithPath:dalPluginPlistPath]
-					      error:nil];
+				[NSURL fileURLWithPath:
+						@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin/Contents/Info.plist"]];
 		NSString *dalPluginVersion = [dalPluginInfoPlist
 			valueForKey:@"CFBundleShortVersionString"];
 		const char *obsVersion = obs_get_version_string();
 
-		if (![dalPluginVersion isEqualToString:@(obsVersion)]) {
-			dalPluginUpdateNeeded = YES;
-		}
-	} else {
-		dalPluginUpdateNeeded = YES;
+		dalPluginUpdateNeeded =
+			![dalPluginVersion isEqualToString:@(obsVersion)];
 	}
 
-	if (dalPluginUpdateNeeded) {
+	if (!dalPluginInstalled || dalPluginUpdateNeeded) {
+		// TODO: Remove this distinction once OBS is built into an app bundle by cmake by default
 		NSString *dalPluginSourcePath;
 		NSRunningApplication *app =
 			[NSRunningApplication currentApplication];
@@ -74,12 +72,27 @@ static bool check_dal_plugin()
 							  withString:@""];
 		}
 
+		NSString *createPluginDirCmd =
+			(!dalPluginDirExists)
+				? [NSString stringWithFormat:
+						    @"mkdir -p '%@' && ",
+						    dalPluginDestinationPath]
+				: @"";
+		NSString *deleteOldPluginCmd =
+			(dalPluginUpdateNeeded)
+				? [NSString stringWithFormat:@"rm -rf '%@' && ",
+							     dalPluginFileName]
+				: @"";
+		NSString *copyPluginCmd =
+			[NSString stringWithFormat:@"cp -R '%@' '%@'",
+						   dalPluginSourcePath,
+						   dalPluginDestinationPath];
 		if ([fileManager fileExistsAtPath:dalPluginSourcePath]) {
 			NSString *copyCmd = [NSString
 				stringWithFormat:
-					@"do shell script \"rm -rf '%@' && cp -R '%@' '%@'\" with administrator privileges",
-					dalPluginFileName, dalPluginSourcePath,
-					dalPluginDestinationPath];
+					@"do shell script \"%@%@%@\" with administrator privileges",
+					createPluginDirCmd, deleteOldPluginCmd,
+					copyPluginCmd];
 
 			NSDictionary *errorDict;
 			NSAppleEventDescriptor *returnDescriptor = NULL;
