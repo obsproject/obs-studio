@@ -9,7 +9,7 @@ endif()
 find_package(XCB COMPONENTS XCB RANDR SHM XFIXES XINERAMA REQUIRED)
 find_package(X11_XCB REQUIRED)
 
-include_directories(SYSTEM
+set(linux-capture_INCLUDES
 	"${CMAKE_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
@@ -34,11 +34,7 @@ set(linux-capture_HEADERS
 	xcompcap-helper.hpp
 )
 
-add_library(linux-capture MODULE
-	${linux-capture_SOURCES}
-	${linux-capture_HEADERS}
-)
-target_link_libraries(linux-capture
+set(linux-capture_LIBRARIES
 	libobs
 	glad
 	${X11_LIBRARIES}
@@ -47,6 +43,18 @@ target_link_libraries(linux-capture
 	${X11_Xcomposite_LIB}
 	${XCB_LIBRARIES}
 )
+
+include_directories(SYSTEM
+	${linux-capture_INCLUDES}
+)
+add_library(linux-capture MODULE
+	${linux-capture_SOURCES}
+	${linux-capture_HEADERS}
+)
+target_link_libraries(linux-capture
+	${linux-capture_LIBRARIES}
+)
+
 set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-capture data)
