@@ -154,6 +154,11 @@ void obs_frontend_set_tbar_position(int position)
 		c->obs_frontend_set_tbar_position(position);
 }
 
+int obs_frontend_get_tbar_position(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_tbar_position() : 0;
+}
+
 char **obs_frontend_get_scene_collections(void)
 {
 	if (!callbacks_valid())

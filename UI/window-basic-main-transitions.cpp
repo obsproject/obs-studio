@@ -840,6 +840,8 @@ void OBSBasic::CreateProgramOptions()
 	tBar->setProperty("themeID", "tBarSlider");
 
 	connect(tBar, SIGNAL(sliderMoved(int)), this, SLOT(TBarChanged(int)));
+	connect(tBar, SIGNAL(valueChanged(int)), this,
+		SLOT(on_tbar_position_valueChanged(int)));
 	connect(tBar, SIGNAL(sliderReleased()), this, SLOT(TBarReleased()));
 
 	layout->addStretch(0);
@@ -993,6 +995,19 @@ void OBSBasic::TBarChanged(int value)
 				       (float)value / T_BAR_PRECISION_F);
 }
 
+int OBSBasic::GetTbarPosition()
+{
+	return tBar->value();
+}
+
+void OBSBasic::on_tbar_position_valueChanged(int value)
+{
+	if (api) {
+		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
+	}
+
+	UNUSED_PARAMETER(value);
+}
 void OBSBasic::on_modeSwitch_clicked()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());

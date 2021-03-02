@@ -166,6 +166,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(int, position));
 	}
 
+	int obs_frontend_get_tbar_position(void) override
+	{
+		return main->tBar->value();
+	}
+
 	void obs_frontend_get_scene_collections(
 		std::vector<std::string> &strings) override
 	{
