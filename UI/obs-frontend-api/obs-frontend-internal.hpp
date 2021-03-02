@@ -25,6 +25,7 @@ struct obs_frontend_callbacks {
 	virtual void obs_frontend_set_transition_duration(int duration) = 0;
 	virtual void obs_frontend_release_tbar(void) = 0;
 	virtual void obs_frontend_set_tbar_position(int position) = 0;
+	virtual int obs_frontend_get_tbar_position(void) = 0;
 
 	virtual void obs_frontend_get_scene_collections(
 		std::vector<std::string> &strings) = 0;
