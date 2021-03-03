@@ -140,6 +140,15 @@ Structures/Enumerations
 
      Triggered when the recording has been unpaused.
 
+   - **OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED**
+
+     Triggered when the virtual camera is started.
+
+   - **OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED**
+
+     Triggered when the virtual camera is stopped.
+
+
 .. type:: struct obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
@@ -454,6 +463,15 @@ Functions
 
 ---------------------------------------
 
+.. function:: void obs_frontend_open_projector(const char *type, int monitor, const char *geometry, const char *name)
+
+   :param type:     "Preview", "Source", "Scene", "StudioProgram", or "Multiview" (case insensitive).
+   :param monitor:  Monitor to open the projector on. If -1, opens a window.
+   :param geometry: If *monitor* is -1, size and position of the projector window. Encoded in Base64 using Qt's geometry encoding.
+   :param name:     If *type* is "Source" or "Scene", name of the source or scene to be displayed.
+
+---------------------------------------
+
 .. function:: void obs_frontend_save(void)
 
    Saves the current scene collection.
@@ -547,3 +565,33 @@ Functions
    Takes a screenshot of the specified source.
 
    :param source: The source to take screenshot of.
+
+---------------------------------------
+
+.. function:: obs_output_t *obs_frontend_get_virtualcam_output(void)
+
+   :return: A new reference to the current virtual camera output.
+
+---------------------------------------
+
+.. function:: void obs_frontend_start_virtualcam(void)
+
+   Starts the virtual camera.
+
+---------------------------------------
+
+.. function:: void obs_frontend_stop_virtualcam(void)
+
+   Stops the virtual camera.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_virtualcam_active(void)
+
+   :return: *true* if virtual camera is active, *false* otherwise.
+
+---------------------------------------
+
+.. function:: void obs_frontend_reset_video(void)
+
+   Reloads the UI canvas and resets libobs video with latest data from profile.

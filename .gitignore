@@ -62,7 +62,6 @@ __pycache__
 #random useless file stuff
 *.dmg
 *.app
-.DS_Store
 .directory
 .hg
 .depend

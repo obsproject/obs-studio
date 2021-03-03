@@ -89,36 +89,6 @@ static bool SceneCollectionExists(const char *findName)
 	return found;
 }
 
-static bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
-{
-	char path[512];
-	int ret;
-
-	if (!GetFileSafeName(name.c_str(), file)) {
-		blog(LOG_WARNING, "Failed to create safe file name for '%s'",
-		     name.c_str());
-		return false;
-	}
-
-	ret = GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes/");
-	if (ret <= 0) {
-		blog(LOG_WARNING, "Failed to get scene collection config path");
-		return false;
-	}
-
-	file.insert(0, path);
-
-	if (!GetClosestUnusedFileName(file, "json")) {
-		blog(LOG_WARNING, "Failed to get closest file name for %s",
-		     file.c_str());
-		return false;
-	}
-
-	file.erase(file.size() - 5, 5);
-	file.erase(0, strlen(path));
-	return true;
-}
-
 static bool GetSceneCollectionName(QWidget *parent, std::string &name,
 				   std::string &file,
 				   const char *oldName = nullptr)

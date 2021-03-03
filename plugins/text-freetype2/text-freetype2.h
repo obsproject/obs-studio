@@ -88,6 +88,8 @@ static obs_properties_t *ft2_source_properties(void *unused);
 
 static const char *ft2_source_get_name(void *unused);
 
+static obs_missing_files_t *ft2_missing_files(void *data);
+
 uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata);
 
 time_t get_modified_timestamp(char *filename);

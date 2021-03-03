@@ -68,6 +68,7 @@ typedef struct obs_weak_output obs_weak_output_t;
 typedef struct obs_weak_encoder obs_weak_encoder_t;
 typedef struct obs_weak_service obs_weak_service_t;
 
+#include "obs-missing-files.h"
 #include "obs-source.h"
 #include "obs-encoder.h"
 #include "obs-output.h"
@@ -428,6 +429,9 @@ EXPORT bool obs_init_module(obs_module_t *module);
 
 /** Returns a module based upon its name, or NULL if not found */
 EXPORT obs_module_t *obs_get_module(const char *name);
+
+/** Gets library of module */
+EXPORT void *obs_get_module_lib(obs_module_t *module);
 
 /** Returns locale text from a specific module */
 EXPORT bool obs_module_get_locale_string(const obs_module_t *mod,
@@ -905,6 +909,13 @@ EXPORT obs_data_t *obs_get_source_defaults(const char *id);
 
 /** Returns the property list, if any.  Free with obs_properties_destroy */
 EXPORT obs_properties_t *obs_get_source_properties(const char *id);
+
+EXPORT obs_missing_files_t *
+obs_source_get_missing_files(const obs_source_t *source);
+
+EXPORT void obs_source_replace_missing_file(obs_missing_file_cb cb,
+					    obs_source_t *source,
+					    const char *new_path, void *data);
 
 /** Returns whether the source has custom properties or not */
 EXPORT bool obs_is_source_configurable(const char *id);

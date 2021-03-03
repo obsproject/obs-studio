@@ -1,11 +1,14 @@
 #include "OBSVideoFrame.h"
 
-OBSVideoFrame::OBSVideoFrame(long width, long height)
+OBSVideoFrame::OBSVideoFrame(long width, long height,
+			     BMDPixelFormat pixelFormat)
 {
+	int bpp = 2;
 	this->width = width;
 	this->height = height;
-	this->rowBytes = width * 2;
-	this->data = new unsigned char[width * height * 2 + 1];
+	this->rowBytes = width * bpp;
+	this->data = new unsigned char[width * height * bpp + 1];
+	this->pixelFormat = pixelFormat;
 }
 
 HRESULT OBSVideoFrame::SetFlags(BMDFrameFlags newFlags)

@@ -70,6 +70,7 @@ static struct obs_source_info freetype2_source_info_v2 = {
 	.video_render = ft2_source_render,
 	.video_tick = ft2_video_tick,
 	.get_properties = ft2_source_properties,
+	.missing_files = ft2_missing_files,
 	.icon_type = OBS_ICON_TYPE_TEXT,
 };
 
@@ -247,6 +248,8 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata->text == NULL || *srcdata->text == 0)
 		return;
 
+	const bool previous = gs_set_linear_srgb(true);
+
 	gs_reset_blend_state();
 	if (srcdata->outline_text)
 		draw_outlines(srcdata);
@@ -255,6 +258,8 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
 			(uint32_t)wcslen(srcdata->text) * 6);
+
+	gs_set_linear_srgb(previous);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -550,4 +555,43 @@ static void *ft2_source_create_v1(obs_data_t *settings, obs_source_t *source)
 static void *ft2_source_create_v2(obs_data_t *settings, obs_source_t *source)
 {
 	return ft2_source_create(settings, source, 2);
+}
+
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct ft2_source *s = src;
+
+	obs_source_t *source = s->src;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "text_file", new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *ft2_missing_files(void *data)
+{
+	struct ft2_source *s = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	obs_source_t *source = s->src;
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	bool read = obs_data_get_bool(settings, "from_file");
+	const char *path = obs_data_get_string(settings, "text_file");
+
+	if (read && strcmp(path, "") != 0) {
+		if (!os_file_exists(path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->src, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	obs_data_release(settings);
+
+	return files;
 }

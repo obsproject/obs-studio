@@ -288,6 +288,11 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink = "https://app.youstreamer.com/stream/";
 	} else if (serviceName == "Trovo") {
 		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
+	} else if (serviceName == "Glimesh") {
+		streamKeyLink = "https://glimesh.tv/users/settings/stream";
+	} else if (serviceName.startsWith("OPENREC.tv")) {
+		streamKeyLink =
+			"https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs";
 	}
 
 	if (QString(streamKeyLink).isNull()) {
@@ -619,8 +624,13 @@ void OBSBasicSettings::on_useAuth_toggled()
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
+	bool enableForCustomServer = config_get_bool(
+		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
+
+	if (enableForCustomServer && IsCustomService())
+		enableVodTrack = true;
 
 	if (enableVodTrack == wasEnabled)
 		return;
@@ -985,6 +995,9 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	if (res_count) {
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
+		HookWidget(ui->outputResolution,
+			   SIGNAL(currentIndexChanged(int)),
+			   SLOT(VideoChangedResolution()));
 
 		int new_res_index = -1;
 

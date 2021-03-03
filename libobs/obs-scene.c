@@ -20,6 +20,7 @@
 #include "util/util_uint64.h"
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
+#include "obs-internal.h"
 
 const struct obs_source_info group_info;
 
@@ -570,6 +571,7 @@ static inline void render_item(struct obs_scene_item *item)
 		}
 	}
 
+	const bool previous = gs_set_linear_srgb(true);
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
@@ -578,6 +580,7 @@ static inline void render_item(struct obs_scene_item *item)
 		obs_source_video_render(item->source);
 	}
 	gs_matrix_pop();
+	gs_set_linear_srgb(previous);
 
 cleanup:
 	GS_DEBUG_MARKER_END();
@@ -951,19 +954,12 @@ static uint32_t scene_getheight(void *data)
 }
 
 static void apply_scene_item_audio_actions(struct obs_scene_item *item,
-					   float **p_buf, uint64_t ts,
+					   float *buf, uint64_t ts,
 					   size_t sample_rate)
 {
 	bool cur_visible = item->visible;
 	uint64_t frame_num = 0;
 	size_t deref_count = 0;
-	float *buf = NULL;
-
-	if (p_buf) {
-		if (!*p_buf)
-			*p_buf = malloc(AUDIO_OUTPUT_FRAMES * sizeof(float));
-		buf = *p_buf;
-	}
 
 	pthread_mutex_lock(&item->actions_mutex);
 
@@ -1010,7 +1006,7 @@ static void apply_scene_item_audio_actions(struct obs_scene_item *item,
 	}
 }
 
-static bool apply_scene_item_volume(struct obs_scene_item *item, float **buf,
+static bool apply_scene_item_volume(struct obs_scene_item *item, float *buf,
 				    uint64_t ts, size_t sample_rate)
 {
 	bool actions_pending;
@@ -1074,7 +1070,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			       size_t sample_rate)
 {
 	uint64_t timestamp = 0;
-	float *buf = NULL;
+	float buf[AUDIO_OUTPUT_FRAMES];
 	struct obs_source_audio_mix child_audio;
 	struct obs_scene *scene = data;
 	struct obs_scene_item *item;
@@ -1113,7 +1109,7 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 		size_t pos, count;
 		bool apply_buf;
 
-		apply_buf = apply_scene_item_volume(item, &buf, timestamp,
+		apply_buf = apply_scene_item_volume(item, buf, timestamp,
 						    sample_rate);
 
 		if (obs_source_audio_pending(item->source)) {
@@ -1159,7 +1155,6 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	*ts_out = timestamp;
 	audio_unlock(scene);
 
-	free(buf);
 	return true;
 }
 
@@ -1252,7 +1247,8 @@ static inline obs_source_t *dup_child(struct darray *array, size_t idx,
 		}
 	}
 
-	return obs_source_duplicate(source, NULL, private);
+	return obs_source_duplicate(
+		source, private ? obs_source_get_name(source) : NULL, private);
 }
 
 static inline obs_source_t *new_ref(obs_source_t *source)
@@ -1300,6 +1296,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	}
 
 	obs_sceneitem_set_crop(dst, &src->crop);
+	obs_sceneitem_set_locked(dst, src->locked);
 
 	if (defer_texture_update) {
 		os_atomic_set_bool(&dst->update_transform, true);
@@ -1535,12 +1532,12 @@ void obs_scene_enum_items(obs_scene_t *scene,
 
 static obs_sceneitem_t *sceneitem_get_ref(obs_sceneitem_t *si)
 {
-	long owners = si->ref;
+	long owners = os_atomic_load_long(&si->ref);
 	while (owners > 0) {
-		if (os_atomic_compare_swap_long(&si->ref, owners, owners + 1))
+		if (os_atomic_compare_exchange_long(&si->ref, &owners,
+						    owners + 1)) {
 			return si;
-
-		owners = si->ref;
+		}
 	}
 	return NULL;
 }

@@ -82,6 +82,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
+	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
+	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);
 	GRAPHICS_IMPORT(device_copy_texture_region);
 	GRAPHICS_IMPORT(device_copy_texture);
 	GRAPHICS_IMPORT(device_stage_texture);
@@ -193,6 +195,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
+	GRAPHICS_IMPORT(device_shared_texture_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_rebind_iosurface);
 
@@ -201,6 +205,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
+	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_get_monitor_index);
 	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_update_frame);
@@ -217,6 +222,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
 	GRAPHICS_IMPORT_OPTIONAL(device_register_loss_callbacks);
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
+#elif __linux__
+	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
 #endif
 
 	return success;

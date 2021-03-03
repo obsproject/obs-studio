@@ -169,7 +169,7 @@ void twitch_ingests_refresh(int seconds)
 
 		twitch_update_info = update_info_create_single(
 			"[twitch ingest update] ", get_module_name(),
-			"https://ingest.twitch.tv/api/v2/ingests",
+			"https://ingest.twitch.tv/ingests",
 			twitch_ingest_update, NULL);
 	}
 

@@ -1,8 +1,5 @@
 tap "akeru-inc/tap"
-brew "jack"
-brew "speexdsp"
 brew "cmake"
 brew "freetype"
-brew "fdk-aac"
 brew "cmocka"
 brew "akeru-inc/tap/xcnotary"

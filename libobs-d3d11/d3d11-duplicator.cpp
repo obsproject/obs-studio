@@ -122,6 +122,47 @@ EXPORT bool device_get_duplicator_monitor_info(gs_device_t *device,
 	return true;
 }
 
+EXPORT int device_duplicator_get_monitor_index(gs_device_t *device,
+					       void *monitor)
+{
+	const HMONITOR handle = (HMONITOR)monitor;
+
+	int index = -1;
+
+	UINT output = 0;
+	while (index == -1) {
+		IDXGIOutput *pOutput;
+		const HRESULT hr =
+			device->adapter->EnumOutputs(output, &pOutput);
+		if (hr == DXGI_ERROR_NOT_FOUND)
+			break;
+
+		if (SUCCEEDED(hr)) {
+			DXGI_OUTPUT_DESC desc;
+			if (SUCCEEDED(pOutput->GetDesc(&desc))) {
+				if (desc.Monitor == handle)
+					index = output;
+			} else {
+				blog(LOG_ERROR,
+				     "device_duplicator_get_monitor_index: "
+				     "Failed to get desc (%08lX)",
+				     hr);
+			}
+
+			pOutput->Release();
+		} else if (hr == DXGI_ERROR_NOT_FOUND) {
+			blog(LOG_ERROR,
+			     "device_duplicator_get_monitor_index: "
+			     "Failed to get output (%08lX)",
+			     hr);
+		}
+
+		++output;
+	}
+
+	return index;
+}
+
 static std::unordered_map<int, gs_duplicator *> instances;
 
 void reset_duplicators(void)

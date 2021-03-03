@@ -127,13 +127,15 @@ void ScreenshotObj::Save()
 			? config_get_string(config, "SimpleOutput", "FilePath")
 			: adv_path;
 
+	bool noSpace =
+		config_get_bool(config, "SimpleOutput", "FileNameWithoutSpace");
 	const char *filenameFormat =
 		config_get_string(config, "Output", "FilenameFormatting");
 	bool overwriteIfExists =
 		config_get_bool(config, "Output", "OverwriteIfExists");
 
 	path = GetOutputFilename(
-		rec_path, "png", false, overwriteIfExists,
+		rec_path, "png", noSpace, overwriteIfExists,
 		GetFormatString(filenameFormat, "Screenshot", nullptr).c_str());
 
 	th = std::thread([this] { MuxAndFinish(); });

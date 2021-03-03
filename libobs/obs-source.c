@@ -844,6 +844,28 @@ obs_properties_t *obs_get_source_properties(const char *id)
 	return NULL;
 }
 
+obs_missing_files_t *obs_source_get_missing_files(const obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_missing_files"))
+		return obs_missing_files_create();
+
+	if (source->info.missing_files) {
+		return source->info.missing_files(source->context.data);
+	}
+
+	return obs_missing_files_create();
+}
+
+void obs_source_replace_missing_file(obs_missing_file_cb cb,
+				     obs_source_t *source, const char *new_path,
+				     void *data)
+{
+	if (!obs_source_valid(source, "obs_source_replace_missing_file"))
+		return;
+
+	cb(source->context.data, new_path, data);
+}
+
 bool obs_is_source_configurable(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);
@@ -2012,9 +2034,21 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 		tex = gs_texrender_get_texture(source->async_texrender);
 
 	param = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(param, tex);
+
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb) {
+		gs_effect_set_texture_srgb(param, tex);
+	} else {
+		gs_effect_set_texture(param, tex);
+	}
 
 	gs_draw_sprite(tex, source->async_flip ? GS_FLIP_V : 0, 0, 0);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void obs_source_draw_async_texture(struct obs_source *source)
@@ -3588,7 +3622,15 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	size_t passes, i;
 
-	gs_effect_set_texture(image, tex);
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, tex);
+	else
+		gs_effect_set_texture(image, tex);
 
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
@@ -3597,6 +3639,8 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 		gs_technique_end_pass(tech);
 	}
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
@@ -4164,21 +4208,27 @@ void obs_source_draw_set_color_matrix(const struct matrix4 *color_matrix,
 void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 		     uint32_t cy, bool flip)
 {
-	gs_effect_t *effect = gs_get_effect();
-	bool change_pos = (x != 0 || y != 0);
-	gs_eparam_t *image;
+	if (!obs_ptr_valid(texture, "obs_source_draw"))
+		return;
 
+	gs_effect_t *effect = gs_get_effect();
 	if (!effect) {
 		blog(LOG_WARNING, "obs_source_draw: no active effect!");
 		return;
 	}
 
-	if (!obs_ptr_valid(texture, "obs_source_draw"))
-		return;
+	const bool linear_srgb = gs_get_linear_srgb();
 
-	image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, texture);
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
 
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, texture);
+	else
+		gs_effect_set_texture(image, texture);
+
+	const bool change_pos = (x != 0 || y != 0);
 	if (change_pos) {
 		gs_matrix_push();
 		gs_matrix_translate3f((float)x, (float)y, 0.0f);
@@ -4188,6 +4238,8 @@ void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 
 	if (change_pos)
 		gs_matrix_pop();
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void obs_source_inc_showing(obs_source_t *source)
@@ -4532,7 +4584,7 @@ static inline void apply_audio_action(obs_source_t *source,
 static void apply_audio_actions(obs_source_t *source, size_t channels,
 				size_t sample_rate)
 {
-	float *vol_data = malloc(sizeof(float) * AUDIO_OUTPUT_FRAMES);
+	float vol_data[AUDIO_OUTPUT_FRAMES];
 	float cur_vol = get_source_volume(source, source->audio_ts);
 	size_t frame_num = 0;
 
@@ -4573,8 +4625,6 @@ static void apply_audio_actions(obs_source_t *source, size_t channels,
 		if ((source->audio_mixers & (1 << mix)) != 0)
 			multiply_vol_data(source, mix, channels, vol_data);
 	}
-
-	free(vol_data);
 }
 
 static void apply_audio_volume(obs_source_t *source, uint32_t mixers,

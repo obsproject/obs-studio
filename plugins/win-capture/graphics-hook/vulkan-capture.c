@@ -13,6 +13,8 @@
 #include <dxgi.h>
 #include <d3d11.h>
 
+#include "dxgi-helpers.hpp"
+
 #include "vulkan-capture.h"
 
 /* ======================================================================== */
@@ -631,12 +633,13 @@ static inline bool vk_shtex_init_d3d11_tex(struct vk_data *data,
 	desc.Height = height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = format;
+	desc.Format = apply_dxgi_format_typeless(
+		format, global_hook_info->allow_srgb_alias);
 	desc.SampleDesc.Count = 1;
 	desc.SampleDesc.Quality = 0;
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	hr = ID3D11Device_CreateTexture2D(data->d3d11_device, &desc, NULL,
 					  &swap->d3d11_tex);

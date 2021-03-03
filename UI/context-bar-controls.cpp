@@ -179,6 +179,10 @@ void AudioCaptureToolbar::Init()
 
 	obs_module_t *mod =
 		get_os_module("win-wasapi", "mac-capture", "linux-pulseaudio");
+	if (!mod) {
+		return;
+	}
+
 	const char *device_str =
 		get_os_text(mod, "Device", "CoreAudio.Device", "Device");
 	ui->deviceLabel->setText(device_str);

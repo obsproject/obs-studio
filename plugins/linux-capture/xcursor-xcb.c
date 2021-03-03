@@ -93,9 +93,17 @@ void xcb_xcursor_render(xcb_xcursor_t *data)
 	if (!data->tex)
 		return;
 
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_effect_t *effect = gs_get_effect();
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, data->tex);
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, data->tex);
+	else
+		gs_effect_set_texture(image, data->tex);
 
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
@@ -108,6 +116,8 @@ void xcb_xcursor_render(xcb_xcursor_t *data)
 
 	gs_enable_color(true, true, true, true);
 	gs_blend_state_pop();
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void xcb_xcursor_offset(xcb_xcursor_t *data, const int x_org, const int y_org)

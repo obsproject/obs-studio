@@ -73,6 +73,9 @@ enum gs_color_format {
 	GS_DXT3,
 	GS_DXT5,
 	GS_R8G8,
+	GS_RGBA_UNORM,
+	GS_BGRX_UNORM,
+	GS_BGRA_UNORM,
 };
 
 enum gs_zstencil_format {
@@ -302,6 +305,11 @@ enum gs_shader_param_type {
 	GS_SHADER_PARAM_TEXTURE,
 };
 
+struct gs_shader_texture {
+	gs_texture_t *tex;
+	bool srgb;
+};
+
 #ifndef SWIG
 struct gs_shader_param_info {
 	enum gs_shader_param_type type;
@@ -423,6 +431,7 @@ EXPORT void gs_effect_set_vec2(gs_eparam_t *param, const struct vec2 *val);
 EXPORT void gs_effect_set_vec3(gs_eparam_t *param, const struct vec3 *val);
 EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
+EXPORT void gs_effect_set_texture_srgb(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
 EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
@@ -667,6 +676,12 @@ EXPORT void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil);
 EXPORT void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 				      gs_zstencil_t *zstencil);
 
+EXPORT void gs_enable_framebuffer_srgb(bool enable);
+EXPORT bool gs_framebuffer_srgb_enabled(void);
+
+EXPORT bool gs_get_linear_srgb(void);
+EXPORT bool gs_set_linear_srgb(bool linear_srgb);
+
 EXPORT void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src);
 EXPORT void gs_copy_texture_region(gs_texture_t *dst, uint32_t dst_x,
 				   uint32_t dst_y, gs_texture_t *src,
@@ -831,6 +846,8 @@ EXPORT void gs_debug_marker_end(void);
  * from shared surface resources */
 EXPORT gs_texture_t *gs_texture_create_from_iosurface(void *iosurf);
 EXPORT bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf);
+EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
+EXPORT bool gs_shared_texture_available(void);
 
 #elif _WIN32
 
@@ -847,6 +864,8 @@ typedef struct gs_duplicator gs_duplicator_t;
 EXPORT bool
 gs_get_duplicator_monitor_info(int monitor_idx,
 			       struct gs_monitor_info *monitor_info);
+
+EXPORT int gs_duplicator_get_monitor_index(void *monitor);
 
 /** creates a windows 8+ output duplicator (monitor capture) */
 EXPORT gs_duplicator_t *gs_duplicator_create(int monitor_idx);
@@ -894,6 +913,15 @@ EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);
 EXPORT void gs_unregister_loss_callbacks(void *data);
 
+#elif __linux__
+
+EXPORT gs_texture_t *
+gs_texture_create_from_dmabuf(unsigned int width, unsigned int height,
+			      enum gs_color_format color_format,
+			      uint32_t n_planes, const int *fds,
+			      const uint32_t *strides, const uint32_t *offsets,
+			      const uint64_t *modifiers);
+
 #endif
 
 /* inline functions used by modules */
@@ -937,6 +965,12 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 		return 8;
 	case GS_R8G8:
 		return 16;
+	case GS_RGBA_UNORM:
+		return 32;
+	case GS_BGRX_UNORM:
+		return 32;
+	case GS_BGRA_UNORM:
+		return 32;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -947,6 +981,18 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 static inline bool gs_is_compressed_format(enum gs_color_format format)
 {
 	return (format == GS_DXT1 || format == GS_DXT3 || format == GS_DXT5);
+}
+
+static inline bool gs_is_srgb_format(enum gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA:
+	case GS_BGRX:
+	case GS_BGRA:
+		return true;
+	default:
+		return false;
+	}
 }
 
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,

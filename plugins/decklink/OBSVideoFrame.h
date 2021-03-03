@@ -15,7 +15,7 @@ private:
 	unsigned char *data;
 
 public:
-	OBSVideoFrame(long width, long height);
+	OBSVideoFrame(long width, long height, BMDPixelFormat pixelFormat);
 
 	HRESULT STDMETHODCALLTYPE SetFlags(BMDFrameFlags newFlags) override;
 

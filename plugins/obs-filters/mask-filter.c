@@ -75,12 +75,13 @@ static void mask_filter_image_load(struct mask_filter_data *filter)
 		obs_enter_graphics();
 		gs_image_file_init_texture(&filter->image);
 		obs_leave_graphics();
-
-		filter->target = filter->image.texture;
 	}
+
+	filter->target = filter->image.texture;
 }
 
-static void mask_filter_update(void *data, obs_data_t *settings)
+static void mask_filter_update_internal(void *data, obs_data_t *settings,
+					bool srgb)
 {
 	struct mask_filter_data *filter = data;
 
@@ -97,7 +98,10 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	color &= 0xFFFFFF;
 	color |= (uint32_t)(((double)opacity) * 2.55) << 24;
 
-	vec4_from_rgba(&filter->color, color);
+	if (srgb)
+		vec4_from_rgba_srgb(&filter->color, color);
+	else
+		vec4_from_rgba(&filter->color, color);
 	mask_filter_image_load(filter);
 	filter->lock_aspect = !obs_data_get_bool(settings, SETTING_STRETCH);
 
@@ -109,6 +113,16 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	bfree(effect_path);
 
 	obs_leave_graphics();
+}
+
+static void mask_filter_update_v1(void *data, obs_data_t *settings)
+{
+	mask_filter_update_internal(data, settings, false);
+}
+
+static void mask_filter_update_v2(void *data, obs_data_t *settings)
+{
+	mask_filter_update_internal(data, settings, true);
 }
 
 static void mask_filter_defaults(obs_data_t *settings)
@@ -220,7 +234,7 @@ static void mask_filter_tick(void *data, float seconds)
 	}
 }
 
-static void mask_filter_render(void *data, gs_effect_t *effect)
+static void mask_filter_render_internal(void *data, bool srgb)
 {
 	struct mask_filter_data *filter = data;
 	obs_source_t *target = obs_filter_get_target(filter->context);
@@ -279,7 +293,21 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "add_val");
 	gs_effect_set_vec2(param, &add_val);
 
+	const bool previous = gs_set_linear_srgb(srgb);
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+	gs_set_linear_srgb(previous);
+}
+
+static void mask_filter_render_v1(void *data, gs_effect_t *effect)
+{
+	mask_filter_render_internal(data, false);
+
+	UNUSED_PARAMETER(effect);
+}
+
+static void mask_filter_render_v2(void *data, gs_effect_t *effect)
+{
+	mask_filter_render_internal(data, true);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -287,13 +315,28 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 struct obs_source_info mask_filter = {
 	.id = "mask_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+	.get_name = mask_filter_get_name,
+	.create = mask_filter_create,
+	.destroy = mask_filter_destroy,
+	.update = mask_filter_update_v1,
+	.get_defaults = mask_filter_defaults,
+	.get_properties = mask_filter_properties,
+	.video_tick = mask_filter_tick,
+	.video_render = mask_filter_render_v1,
+};
+
+struct obs_source_info mask_filter_v2 = {
+	.id = "mask_filter",
+	.version = 2,
+	.type = OBS_SOURCE_TYPE_FILTER,
 	.output_flags = OBS_SOURCE_VIDEO,
 	.get_name = mask_filter_get_name,
 	.create = mask_filter_create,
 	.destroy = mask_filter_destroy,
-	.update = mask_filter_update,
+	.update = mask_filter_update_v2,
 	.get_defaults = mask_filter_defaults,
 	.get_properties = mask_filter_properties,
 	.video_tick = mask_filter_tick,
-	.video_render = mask_filter_render,
+	.video_render = mask_filter_render_v2,
 };

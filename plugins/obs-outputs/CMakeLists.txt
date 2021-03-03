@@ -3,6 +3,8 @@ project(obs-outputs)
 set(WITH_RTMPS AUTO CACHE STRING "Enable RTMPS support with mbedTLS")
 set_property(CACHE WITH_RTMPS PROPERTY STRINGS AUTO ON OFF)
 
+find_package(PkgConfig)
+
 option(STATIC_MBEDTLS "Statically link mbedTLS into binary" OFF)
 
 if (WITH_RTMPS STREQUAL "AUTO")
@@ -23,7 +25,21 @@ else()
 	add_definitions(-DNO_CRYPTO)
 endif()
 
-if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
+set(COMPILE_FTL FALSE)
+
+if (PKG_CONFIG_FOUND)
+	pkg_check_modules(FTL libftl)
+endif()
+
+if (FTL_FOUND)
+	find_package(Libcurl REQUIRED)
+	message(STATUS "Found ftl-sdk (system): ftl outputs enabled")
+
+	set(ftl_SOURCES ftl-stream.c)
+
+	include_directories(${LIBCURL_INCLUDE_DIRS} ${FTL_INCLUDE_DIRS})
+	set(COMPILE_FTL TRUE)
+elseif (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	find_package(Libcurl REQUIRED)
 	message(STATUS "Found ftl-sdk: ftl outputs enabled")
 
@@ -74,8 +90,6 @@ if (EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
 	include_directories(ftl-sdk/libftl)
 
 	set(COMPILE_FTL TRUE)
-else()
-	set(COMPILE_FTL FALSE)
 endif()
 
 configure_file(
@@ -169,6 +183,12 @@ add_library(obs-outputs MODULE
 	${obs-outputs_HEADERS}
 	${obs-outputs_librtmp_SOURCES}
 	${obs-outputs_librtmp_HEADERS})
+
+if(FTL_FOUND)
+	target_link_libraries(obs-outputs ${FTL_LIBRARIES})
+	target_include_directories(obs-outputs PUBLIC ${FTL_INCLUDE_DIRS})
+endif()
+
 target_link_libraries(obs-outputs
 	libobs
 	${MBEDTLS_LIBRARIES}

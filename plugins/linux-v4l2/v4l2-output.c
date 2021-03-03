@@ -50,10 +50,24 @@ static bool loopback_module_loaded()
 	return loaded;
 }
 
+bool loopback_module_available()
+{
+	if (loopback_module_loaded()) {
+		return true;
+	}
+
+	if (system("PATH=\"$PATH:/sbin\" modinfo v4l2loopback >/dev/null 2>&1") ==
+	    0) {
+		return true;
+	}
+
+	return false;
+}
+
 static int loopback_module_load()
 {
 	return system(
-		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+		"PATH=\"$PATH:/sbin\" pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
@@ -79,7 +93,9 @@ static bool try_connect(void *data, int device)
 	vcam->frame_size = width * height * 2;
 
 	char new_device[16];
-	sprintf(new_device, "/dev/video%d", device);
+	if (device < 0 || device >= MAX_DEVICES)
+		return false;
+	snprintf(new_device, 16, "/dev/video%d", device);
 
 	vcam->device = open(new_device, O_RDWR);
 
@@ -161,7 +177,14 @@ static void virtualcam_stop(void *data, uint64_t ts)
 static void virtual_video(void *param, struct video_data *frame)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)param;
-	write(vcam->device, frame->data[0], vcam->frame_size);
+	uint32_t frame_size = vcam->frame_size;
+	while (frame_size > 0) {
+		ssize_t written =
+			write(vcam->device, frame->data[0], vcam->frame_size);
+		if (written == -1)
+			break;
+		frame_size -= written;
+	}
 }
 
 struct obs_output_info virtualcam_info = {

@@ -68,7 +68,6 @@ void output_start()
 					   settings, NULL);
 
 		bool started = obs_output_start(output);
-		obs_data_release(settings);
 
 		main_output_running = started;
 

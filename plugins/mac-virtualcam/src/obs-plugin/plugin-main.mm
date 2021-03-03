@@ -7,7 +7,7 @@
 #include <obs.h>
 #include <CoreFoundation/CoreFoundation.h>
 #include <AppKit/AppKit.h>
-#include "MachServer.h"
+#include "OBSDALMachServer.h"
 #include "Defines.h"
 
 OBS_DECLARE_MODULE()
@@ -19,7 +19,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 obs_output_t *outputRef;
 obs_video_info videoInfo;
-static MachServer *sMachServer;
+static OBSDALMachServer *sMachServer;
 
 static bool check_dal_plugin()
 {
@@ -27,32 +27,30 @@ static bool check_dal_plugin()
 
 	NSString *dalPluginDestinationPath =
 		@"/Library/CoreMediaIO/Plug-Ins/DAL/";
-	NSString *dalPluginFileName = [dalPluginDestinationPath
-		stringByAppendingString:@"obs-mac-virtualcam.plugin"];
+	NSString *dalPluginFileName =
+		@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin";
 
+	BOOL dalPluginDirExists =
+		[fileManager fileExistsAtPath:dalPluginDestinationPath];
 	BOOL dalPluginInstalled =
 		[fileManager fileExistsAtPath:dalPluginFileName];
 	BOOL dalPluginUpdateNeeded = NO;
 
 	if (dalPluginInstalled) {
-		NSString *dalPluginPlistPath = [dalPluginFileName
-			stringByAppendingString:@"/Contents/Info.plist"];
 		NSDictionary *dalPluginInfoPlist = [NSDictionary
 			dictionaryWithContentsOfURL:
-				[NSURL fileURLWithPath:dalPluginPlistPath]
-					      error:nil];
+				[NSURL fileURLWithPath:
+						@"/Library/CoreMediaIO/Plug-Ins/DAL/obs-mac-virtualcam.plugin/Contents/Info.plist"]];
 		NSString *dalPluginVersion = [dalPluginInfoPlist
 			valueForKey:@"CFBundleShortVersionString"];
 		const char *obsVersion = obs_get_version_string();
 
-		if (![dalPluginVersion isEqualToString:@(obsVersion)]) {
-			dalPluginUpdateNeeded = YES;
-		}
-	} else {
-		dalPluginUpdateNeeded = YES;
+		dalPluginUpdateNeeded =
+			![dalPluginVersion isEqualToString:@(obsVersion)];
 	}
 
-	if (dalPluginUpdateNeeded) {
+	if (!dalPluginInstalled || dalPluginUpdateNeeded) {
+		// TODO: Remove this distinction once OBS is built into an app bundle by cmake by default
 		NSString *dalPluginSourcePath;
 		NSRunningApplication *app =
 			[NSRunningApplication currentApplication];
@@ -74,12 +72,27 @@ static bool check_dal_plugin()
 							  withString:@""];
 		}
 
+		NSString *createPluginDirCmd =
+			(!dalPluginDirExists)
+				? [NSString stringWithFormat:
+						    @"mkdir -p '%@' && ",
+						    dalPluginDestinationPath]
+				: @"";
+		NSString *deleteOldPluginCmd =
+			(dalPluginUpdateNeeded)
+				? [NSString stringWithFormat:@"rm -rf '%@' && ",
+							     dalPluginFileName]
+				: @"";
+		NSString *copyPluginCmd =
+			[NSString stringWithFormat:@"cp -R '%@' '%@'",
+						   dalPluginSourcePath,
+						   dalPluginDestinationPath];
 		if ([fileManager fileExistsAtPath:dalPluginSourcePath]) {
 			NSString *copyCmd = [NSString
 				stringWithFormat:
-					@"do shell script \"cp -R '%@' '%@'\" with administrator privileges",
-					dalPluginSourcePath,
-					dalPluginDestinationPath];
+					@"do shell script \"%@%@%@\" with administrator privileges",
+					createPluginDirCmd, deleteOldPluginCmd,
+					copyPluginCmd];
 
 			NSDictionary *errorDict;
 			NSAppleEventDescriptor *returnDescriptor = NULL;
@@ -117,21 +130,26 @@ static void *data = &data;
 static void *virtualcam_output_create(obs_data_t *settings,
 				      obs_output_t *output)
 {
+	UNUSED_PARAMETER(settings);
+
 	outputRef = output;
 
 	blog(LOG_DEBUG, "output_create");
-	sMachServer = [[MachServer alloc] init];
+	sMachServer = [[OBSDALMachServer alloc] init];
 	return data;
 }
 
 static void virtualcam_output_destroy(void *data)
 {
+	UNUSED_PARAMETER(data);
 	blog(LOG_DEBUG, "output_destroy");
 	sMachServer = nil;
 }
 
 static bool virtualcam_output_start(void *data)
 {
+	UNUSED_PARAMETER(data);
+
 	bool hasDalPlugin = check_dal_plugin();
 
 	if (!hasDalPlugin) {
@@ -158,6 +176,9 @@ static bool virtualcam_output_start(void *data)
 
 static void virtualcam_output_stop(void *data, uint64_t ts)
 {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(ts);
+
 	blog(LOG_DEBUG, "output_stop");
 	obs_output_end_data_capture(outputRef);
 	[sMachServer stop];
@@ -165,6 +186,8 @@ static void virtualcam_output_stop(void *data, uint64_t ts)
 
 static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 {
+	UNUSED_PARAMETER(data);
+
 	uint8_t *outData = frame->data[0];
 	if (frame->linesize[0] != (videoInfo.output_width * 2)) {
 		blog(LOG_ERROR,

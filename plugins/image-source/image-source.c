@@ -147,10 +147,21 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	if (!context->if2.image.texture)
 		return;
 
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			      context->if2.image.texture);
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	gs_eparam_t *const param = gs_effect_get_param_by_name(effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(param, context->if2.image.texture);
+	else
+		gs_effect_set_texture(param, context->if2.image.texture);
+
 	gs_draw_sprite(context->if2.image.texture, 0, context->if2.image.cx,
 		       context->if2.image.cy);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void image_source_tick(void *data, float seconds)
@@ -211,13 +222,14 @@ static void image_source_tick(void *data, float seconds)
 }
 
 static const char *image_filter =
-	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd);;"
+	"All formats (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.psd *.webp);;"
 	"BMP Files (*.bmp);;"
 	"Targa Files (*.tga);;"
 	"PNG Files (*.png);;"
 	"JPEG Files (*.jpeg *.jpg);;"
 	"GIF Files (*.gif);;"
 	"PSD Files (*.psd);;"
+	"WebP Files (*.webp);;"
 	"All Files (*.*)";
 
 static obs_properties_t *image_source_properties(void *data)
@@ -252,6 +264,37 @@ uint64_t image_source_get_memory_usage(void *data)
 	return s->if2.mem_usage;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct image_source *s = src;
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "file", new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *image_source_missingfiles(void *data)
+{
+	struct image_source *s = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	if (strcmp(s->file, "") != 0) {
+		if (!os_file_exists(s->file)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				s->file, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	return files;
+}
+
 static struct obs_source_info image_source_info = {
 	.id = "image_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -267,6 +310,7 @@ static struct obs_source_info image_source_info = {
 	.get_height = image_source_getheight,
 	.video_render = image_source_render,
 	.video_tick = image_source_tick,
+	.missing_files = image_source_missingfiles,
 	.get_properties = image_source_properties,
 	.icon_type = OBS_ICON_TYPE_IMAGE,
 };

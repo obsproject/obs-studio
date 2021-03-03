@@ -74,7 +74,7 @@
 #endif
 
 #include <util/windows/WinHandle.hpp>
-#include <jansson.h>
+#include <json11.hpp>
 #include "resource.h"
 
 bool HTTPGetFile(HINTERNET hConnect, const wchar_t *url,
