@@ -60,7 +60,6 @@ add_idl_files(win-decklink-sdk_GENERATED_FILES
 
 include_directories(
 	${CMAKE_CURRENT_BINARY_DIR}
-	"${CMAKE_SOURCE_DIR}/UI/obs-frontend-api"
 )
 
 add_library(win-decklink MODULE
@@ -72,7 +71,6 @@ add_library(win-decklink MODULE
 
 target_link_libraries(win-decklink
 	libobs
-	obs-frontend-api
 	caption)
 set_target_properties(win-decklink PROPERTIES FOLDER "plugins/decklink")
 
