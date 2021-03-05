@@ -28,7 +28,12 @@
 #include <memory>
 #include <vector>
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+#define QT_UTF8(str) QString::fromUtf8(str, -1)
+#else
 #define QT_UTF8(str) QString::fromUtf8(str)
+#endif
+
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 
 class QDataStream;

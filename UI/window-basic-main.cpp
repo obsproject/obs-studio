@@ -24,7 +24,6 @@
 #include <QShowEvent>
 #include <QDesktopServices>
 #include <QFileDialog>
-#include <QDesktopWidget>
 #include <QScreen>
 #include <QColorDialog>
 #include <QSizePolicy>
@@ -73,7 +72,6 @@
 #include <fstream>
 #include <sstream>
 
-#include <QScreen>
 #include <QWindow>
 
 #include <json11.hpp>
@@ -207,8 +205,10 @@ extern void RegisterRestreamAuth();
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), ui(new Ui::OBSBasic)
 {
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<SignalContainer<OBSScene>>(
 		"SignalContainer<OBSScene>");
+#endif
 
 	setAttribute(Qt::WA_NativeWindow);
 
@@ -263,10 +263,12 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaType<obs_hotkey_id>("obs_hotkey_id");
 	qRegisterMetaType<SavedProjectorInfo *>("SavedProjectorInfo *");
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
 		"std::vector<std::shared_ptr<OBSSignal>>");
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
 	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
+#endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
 	ui->sources->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -384,7 +386,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 		QRect windowGeometry = normalGeometry();
 		if (!WindowPositionValid(windowGeometry)) {
-			QRect rect = App()->desktop()->geometry();
+			QRect rect =
+				QGuiApplication::primaryScreen()->geometry();
 			setGeometry(QStyle::alignedRect(Qt::LeftToRight,
 							Qt::AlignCenter, size(),
 							rect));
@@ -7286,7 +7289,8 @@ void OBSBasic::OpenSavedProjector(SavedProjectorInfo *info)
 			projector->restoreGeometry(byteArray);
 
 			if (!WindowPositionValid(projector->normalGeometry())) {
-				QRect rect = App()->desktop()->geometry();
+				QRect rect = QGuiApplication::primaryScreen()
+						     ->geometry();
 				projector->setGeometry(QStyle::alignedRect(
 					Qt::LeftToRight, Qt::AlignCenter,
 					size(), rect));
