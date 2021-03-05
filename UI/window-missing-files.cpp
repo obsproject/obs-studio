@@ -501,11 +501,11 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 
 	fileStore = files;
 
-	connect(ui->doneButton, &QPushButton::pressed, this,
+	connect(ui->doneButton, &QPushButton::clicked, this,
 		&OBSMissingFiles::saveFiles);
-	connect(ui->browseButton, &QPushButton::pressed, this,
+	connect(ui->browseButton, &QPushButton::clicked, this,
 		&OBSMissingFiles::browseFolders);
-	connect(ui->cancelButton, &QPushButton::pressed, this,
+	connect(ui->cancelButton, &QPushButton::clicked, this,
 		&OBSMissingFiles::close);
 	connect(filesModel, SIGNAL(dataChanged(QModelIndex, QModelIndex)), this,
 		SLOT(dataChanged()));
