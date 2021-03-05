@@ -904,8 +904,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	channelIndex = ui->channelSetup->currentIndex();
 	sampleRateIndex = ui->sampleRate->currentIndex();
 
-	QRegExp rx("\\d{1,5}x\\d{1,5}");
-	QValidator *validator = new QRegExpValidator(rx, this);
+	QRegularExpression rx("\\d{1,5}x\\d{1,5}");
+	QValidator *validator = new QRegularExpressionValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
 }
