@@ -31,7 +31,6 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
-#include <QX11Info>
 #endif
 
 #ifdef ENABLE_WAYLAND

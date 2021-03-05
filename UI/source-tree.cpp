@@ -147,7 +147,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 void SourceTreeItem::paintEvent(QPaintEvent *event)
 {
 	QStyleOption opt;
-	opt.init(this);
+	opt.initFrom(this);
 	QPainter p(this);
 	style()->drawPrimitive(QStyle::PE_Widget, &opt, &p, this);
 
@@ -305,7 +305,11 @@ void SourceTreeItem::mouseDoubleClickEvent(QMouseEvent *event)
 	}
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+void SourceTreeItem::enterEvent(QEnterEvent *event)
+#else
 void SourceTreeItem::enterEvent(QEvent *event)
+#endif
 {
 	QWidget::enterEvent(event);
 
