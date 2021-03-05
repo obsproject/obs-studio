@@ -147,6 +147,10 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED**
 
      Triggered when the virtual camera is stopped.
+   
+   - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
+
+     Triggered when the transition bar is moved. 
 
 
 .. type:: struct obs_frontend_source_list
@@ -595,3 +599,27 @@ Functions
 .. function:: void obs_frontend_reset_video(void)
 
    Reloads the UI canvas and resets libobs video with latest data from profile.
+
+---------------------------------------
+
+.. function:: void obs_frontend_release_tbar(void);
+
+   Emulate a mouse button release on the transition bar and determine transition status.
+   
+---------------------------------------
+
+.. function:: void obs_frontend_set_tbar_position(int position)
+
+   Set the value of the transition bar.
+
+   :param position: The position to set the T-bar to, with a value in 0-1023.
+   :type position: int
+
+---------------------------------------
+
+.. function:: int obs_frontend_get_tbar_position(void)
+
+   Get the value of the transition bar.
+
+   :return: The value of the position of the T-bar to, with a value in 0-1023.
+   :rtype: int
