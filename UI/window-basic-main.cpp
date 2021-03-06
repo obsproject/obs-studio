@@ -51,7 +51,6 @@
 #include "window-log-reply.hpp"
 #include "window-projector.hpp"
 #include "window-remux.hpp"
-#include "window-missing-files.hpp"
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
@@ -1142,9 +1141,13 @@ retryScene:
 	LogScenes();
 
 	if (obs_missing_files_count(files) > 0) {
-		OBSMissingFiles *miss = new OBSMissingFiles(files, this);
-		miss->show();
-		miss->raise();
+		missDialog = new OBSMissingFiles(files, this);
+		missDialog->show();
+		missDialog->raise();
+
+		auto close = [=]() { delete missDialog; };
+
+		connect(missDialog, &OBSMissingFiles::finished, close);
 	} else {
 		obs_missing_files_destroy(files);
 	}
