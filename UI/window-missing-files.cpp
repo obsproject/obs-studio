@@ -557,7 +557,6 @@ void OBSMissingFiles::saveFiles()
 	}
 
 	QDialog::accept();
-	destroy();
 }
 
 void OBSMissingFiles::browseFolders()

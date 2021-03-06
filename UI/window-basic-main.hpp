@@ -31,6 +31,7 @@
 #include "window-basic-transform.hpp"
 #include "window-basic-adv-audio.hpp"
 #include "window-basic-filters.hpp"
+#include "window-missing-files.hpp"
 #include "window-projector.hpp"
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
@@ -478,6 +479,8 @@ private:
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
+
+	OBSMissingFiles *missDialog;
 
 	QList<QPoint> visDlgPositions;
 
