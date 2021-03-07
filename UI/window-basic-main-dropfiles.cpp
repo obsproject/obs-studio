@@ -247,7 +247,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 #define CHECK_SUFFIX(extensions, type)                         \
 	cmp = extensions;                                      \
 	while (*cmp) {                                         \
-		if (strcmp(*cmp, suffix) == 0) {               \
+		if (astrcmpi(*cmp, suffix) == 0) {             \
 			AddDropSource(QT_TO_UTF8(file), type); \
 			found = true;                          \
 			break;                                 \
