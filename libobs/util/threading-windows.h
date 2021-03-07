@@ -37,7 +37,9 @@ static inline long os_atomic_dec_long(volatile long *val)
 static inline void os_atomic_store_long(volatile long *ptr, long val)
 {
 #if defined(_M_ARM64)
+	_ReadWriteBarrier();
 	__stlr32((volatile unsigned *)ptr, val);
+	_ReadWriteBarrier();
 #elif defined(_M_ARM)
 	__dmb(_ARM_BARRIER_ISH);
 	__iso_volatile_store32((volatile __int32 *)ptr, val);
@@ -60,16 +62,18 @@ static inline long os_atomic_exchange_long(volatile long *ptr, long val)
 static inline long os_atomic_load_long(const volatile long *ptr)
 {
 #if defined(_M_ARM64)
-	return __ldar32((volatile unsigned *)ptr);
+	const long val = __ldar32((volatile unsigned *)ptr);
 #else
 	const long val = __iso_volatile_load32((const volatile __int32 *)ptr);
+#endif
+
 #if defined(_M_ARM)
 	__dmb(_ARM_BARRIER_ISH);
 #else
 	_ReadWriteBarrier();
 #endif
+
 	return val;
-#endif
 }
 
 static inline bool os_atomic_compare_swap_long(volatile long *val, long old_val,
@@ -91,7 +95,9 @@ static inline bool os_atomic_compare_exchange_long(volatile long *val,
 static inline void os_atomic_store_bool(volatile bool *ptr, bool val)
 {
 #if defined(_M_ARM64)
+	_ReadWriteBarrier();
 	__stlr8((volatile unsigned char *)ptr, val);
+	_ReadWriteBarrier();
 #elif defined(_M_ARM)
 	__dmb(_ARM_BARRIER_ISH);
 	__iso_volatile_store8((volatile char *)ptr, val);
@@ -125,11 +131,12 @@ static inline bool os_atomic_load_bool(const volatile bool *ptr)
 	const unsigned char c = __ldar8((volatile unsigned char *)ptr);
 #else
 	const char c = __iso_volatile_load8((const volatile char *)ptr);
+#endif
+
 #if defined(_M_ARM)
 	__dmb(_ARM_BARRIER_ISH);
 #else
 	_ReadWriteBarrier();
-#endif
 #endif
 
 	/* Avoid unnecesary char to bool conversion. Value known 0 or 1. */
