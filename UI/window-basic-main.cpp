@@ -2930,32 +2930,6 @@ void OBSBasic::AddSceneItem(OBSSceneItem item)
 	}
 }
 
-void OBSBasic::UpdateSceneSelection(OBSSource source)
-{
-	if (source) {
-		obs_scene_t *scene = obs_scene_from_source(source);
-		const char *name = obs_source_get_name(source);
-
-		if (!scene)
-			return;
-
-		QList<QListWidgetItem *> items =
-			ui->scenes->findItems(QT_UTF8(name), Qt::MatchExactly);
-
-		if (items.count()) {
-			sceneChanging = true;
-			ui->scenes->setCurrentItem(items.first());
-			sceneChanging = false;
-
-			OBSScene curScene =
-				GetOBSRef<OBSScene>(ui->scenes->currentItem());
-			if (api && scene != curScene)
-				api->on_event(
-					OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
-		}
-	}
-}
-
 static void RenameListValues(QListWidget *listWidget, const QString &newName,
 			     const QString &prevName)
 {
@@ -4488,9 +4462,6 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 {
 	obs_source_t *source = NULL;
 
-	if (sceneChanging)
-		return;
-
 	if (current) {
 		obs_scene_t *scene;
 
@@ -4730,18 +4701,16 @@ void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 	if (idx == -1 || idx == invalidIdx)
 		return;
 
-	sceneChanging = true;
-
 	QListWidgetItem *item = ui->scenes->takeItem(idx);
 
 	if (!relative)
 		idx = 0;
 
+	ui->scenes->blockSignals(true);
 	ui->scenes->insertItem(idx + offset, item);
 	ui->scenes->setCurrentRow(idx + offset);
 	item->setSelected(true);
-
-	sceneChanging = false;
+	ui->scenes->blockSignals(false);
 
 	OBSProjector::UpdateMultiviewProjectors();
 }

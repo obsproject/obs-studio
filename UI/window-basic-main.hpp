@@ -235,8 +235,6 @@ private:
 	gs_vertbuffer_t *boxBottom = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
 
-	bool sceneChanging = false;
-
 	int previewX = 0, previewY = 0;
 	int previewCX = 0, previewCY = 0;
 	float previewScale = 0.0f;
