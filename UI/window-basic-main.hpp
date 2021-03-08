@@ -855,8 +855,8 @@ private slots:
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
 	void on_actionAdvAudioProperties_triggered();
-	void on_advAudioProps_clicked();
-	void on_advAudioProps_destroyed();
+	void AdvAudioPropsClicked();
+	void AdvAudioPropsDestroyed();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -885,7 +885,7 @@ private slots:
 	void on_scenes_currentItemChanged(QListWidgetItem *current,
 					  QListWidgetItem *prev);
 	void on_scenes_customContextMenuRequested(const QPoint &pos);
-	void on_actionGridMode_triggered();
+	void GridActionClicked();
 	void on_actionAddScene_triggered();
 	void on_actionRemoveScene_triggered();
 	void on_actionSceneUp_triggered();
@@ -925,7 +925,7 @@ private slots:
 	void on_actionDiscord_triggered();
 
 	void on_preview_customContextMenuRequested(const QPoint &pos);
-	void on_program_customContextMenuRequested(const QPoint &pos);
+	void ProgramViewContextMenuRequested(const QPoint &pos);
 	void PreviewDisabledMenu(const QPoint &pos);
 
 	void on_actionNewSceneCollection_triggered();
@@ -953,7 +953,7 @@ private slots:
 	void on_toggleSourceIcons_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
-	void on_transitionRemove_clicked();
+	void RemoveTransitionClicked();
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged(int value);
 
