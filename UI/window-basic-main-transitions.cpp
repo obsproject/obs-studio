@@ -564,7 +564,7 @@ void OBSBasic::AddTransition(QString id)
 	}
 }
 
-void OBSBasic::on_transitionRemove_clicked()
+void OBSBasic::RemoveTransitionClicked()
 {
 	OBSSource tr = GetCurrentTransition();
 
@@ -668,7 +668,7 @@ void OBSBasic::on_transitionProps_clicked()
 
 	action = new QAction(QTStr("Remove"), &menu);
 	connect(action, SIGNAL(triggered()), this,
-		SLOT(on_transitionRemove_clicked()));
+		SLOT(RemoveTransitionClicked()));
 	menu.addAction(action);
 
 	action = new QAction(QTStr("Properties"), &menu);
@@ -767,7 +767,7 @@ void OBSBasic::CreateProgramDisplay()
 
 	program->setContextMenuPolicy(Qt::CustomContextMenu);
 	connect(program.data(), &QWidget::customContextMenuRequested, this,
-		&OBSBasic::on_program_customContextMenuRequested);
+		&OBSBasic::ProgramViewContextMenuRequested);
 
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;

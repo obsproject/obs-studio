@@ -4444,15 +4444,15 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->SetIconsVisible(iconsVisible);
 
 	connect(advAudioWindow, SIGNAL(destroyed()), this,
-		SLOT(on_advAudioProps_destroyed()));
+		SLOT(AdvAudioPropsDestroyed()));
 }
 
-void OBSBasic::on_advAudioProps_clicked()
+void OBSBasic::AdvAudioPropsClicked()
 {
 	on_actionAdvAudioProperties_triggered();
 }
 
-void OBSBasic::on_advAudioProps_destroyed()
+void OBSBasic::AdvAudioPropsDestroyed()
 {
 	advAudioWindow = nullptr;
 }
@@ -4631,13 +4631,13 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 					       : QTStr("Basic.Main.GridMode"),
 					  this);
 	connect(gridAction, SIGNAL(triggered()), this,
-		SLOT(on_actionGridMode_triggered()));
+		SLOT(GridActionClicked()));
 	popup.addAction(gridAction);
 
 	popup.exec(QCursor::pos());
 }
 
-void OBSBasic::on_actionGridMode_triggered()
+void OBSBasic::GridActionClicked()
 {
 	bool gridMode = !ui->scenes->GetGridMode();
 	ui->scenes->SetGridMode(gridMode);
@@ -6545,7 +6545,7 @@ void OBSBasic::on_preview_customContextMenuRequested(const QPoint &pos)
 	UNUSED_PARAMETER(pos);
 }
 
-void OBSBasic::on_program_customContextMenuRequested(const QPoint &)
+void OBSBasic::ProgramViewContextMenuRequested(const QPoint &)
 {
 	QMenu popup(this);
 	QPointer<QMenu> studioProgramProjector;
