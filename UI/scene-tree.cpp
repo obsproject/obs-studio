@@ -7,7 +7,6 @@
 #include <QDropEvent>
 #include <QPushButton>
 #include <QTimer>
-#include <QDrag>
 
 SceneTree::SceneTree(QWidget *parent_) : QListWidget(parent_)
 {
@@ -102,10 +101,6 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 
 void SceneTree::startDrag(Qt::DropActions supportedActions)
 {
-	QModelIndexList indexes = selectedIndexes();
-
-	setPositionForIndex(QPoint(-99999, -99999), indexes[0]);
-
 	QListWidget::startDrag(supportedActions);
 }
 
