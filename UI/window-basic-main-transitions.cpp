@@ -24,6 +24,7 @@
 #include "display-helpers.hpp"
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
+#include "slider-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
 
 #include "obs-hotkey.h"
@@ -832,7 +833,7 @@ void OBSBasic::CreateProgramOptions()
 	mainButtonLayout->addWidget(transitionButton);
 	mainButtonLayout->addWidget(configTransitions);
 
-	tBar = new QSlider(Qt::Horizontal);
+	tBar = new SliderIgnoreScroll(Qt::Horizontal);
 	tBar->setMinimum(0);
 	tBar->setMaximum(T_BAR_PRECISION - 1);
 
@@ -941,6 +942,8 @@ void OBSBasic::TBarReleased()
 		tBarActive = false;
 		EnableTransitionWidgets(true);
 	}
+
+	tBar->clearFocus();
 }
 
 static bool ValidTBarTransition(OBSSource transition)
