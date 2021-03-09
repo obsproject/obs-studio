@@ -283,6 +283,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_)
 	ui->sourceName->setText(text);
 	ui->sourceName->setFocus(); //Fixes deselect of text.
 	ui->sourceName->selectAll();
+	connect(ui->sourceName, SIGNAL(returnPressed()), ui->buttonBox,
+		SIGNAL(accepted()));
 
 	installEventFilter(CreateShortcutFilter());
 
