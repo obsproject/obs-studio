@@ -1390,7 +1390,9 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
 	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
 	qRegisterMetaType<VoidFunc>();
