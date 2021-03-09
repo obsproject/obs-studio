@@ -31,6 +31,7 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QFile>
 #include <QGuiApplication>
 #include <QProxyStyle>
 #include <QScreen>
