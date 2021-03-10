@@ -817,7 +817,6 @@ public:
 	void CreateSourcePopupMenu(int idx, bool preview);
 
 	void UpdateTitleBar();
-	void UpdateSceneSelection(OBSSource source);
 
 	void SystemTrayInit();
 	void SystemTray(bool firstStarted);
