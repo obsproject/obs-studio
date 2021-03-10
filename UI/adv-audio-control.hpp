@@ -25,6 +25,7 @@ private:
 	OBSSource source;
 
 	QPointer<QWidget> activeContainer;
+	QPointer<QWidget> muteContainer;
 	QPointer<QWidget> forceMonoContainer;
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
@@ -32,6 +33,7 @@ private:
 	QPointer<QLabel> iconLabel;
 	QPointer<QLabel> nameLabel;
 	QPointer<QLabel> active;
+	QPointer<QCheckBox> mute;
 	QPointer<QStackedWidget> stackedWidget;
 	QPointer<QSpinBox> percent;
 	QPointer<QDoubleSpinBox> volume;
@@ -54,9 +56,11 @@ private:
 	OBSSignal mixersSignal;
 	OBSSignal activateSignal;
 	OBSSignal deactivateSignal;
+	OBSSignal muteChangedSignal;
 
 	static void OBSSourceActivated(void *param, calldata_t *calldata);
 	static void OBSSourceDeactivated(void *param, calldata_t *calldata);
+	static void OBSSourceMuteChanged(void *param, calldata_t *calldata);
 	static void OBSSourceFlagsChanged(void *param, calldata_t *calldata);
 	static void OBSSourceVolumeChanged(void *param, calldata_t *calldata);
 	static void OBSSourceSyncChanged(void *param, calldata_t *calldata);
@@ -74,11 +78,13 @@ public:
 
 public slots:
 	void SourceActiveChanged(bool active);
+	void SourceMuteChanged(bool muted);
 	void SourceFlagsChanged(uint32_t flags);
 	void SourceVolumeChanged(float volume);
 	void SourceSyncChanged(int64_t offset);
 	void SourceMixersChanged(uint32_t mixers);
 
+	void muteChanged(bool mute);
 	void volumeChanged(double db);
 	void percentChanged(int percent);
 	void downmixMonoChanged(bool checked);

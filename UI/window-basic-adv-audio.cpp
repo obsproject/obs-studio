@@ -59,6 +59,9 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	label = new QLabel(QTStr("Basic.Stats.Status"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
+	label = new QLabel(QTStr("Mute"));
+	label->setStyleSheet("font-weight: bold;");
+	mainLayout->addWidget(label, 0, idx++);
 	mainLayout->addLayout(volLayout, 0, idx++);
 	label = new QLabel(QTStr("Basic.AdvAudio.Mono"));
 	label->setStyleSheet("font-weight: bold;");
