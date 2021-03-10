@@ -68,13 +68,19 @@ static void mask_filter_image_load(struct mask_filter_data *filter)
 	char *path = filter->image_file;
 
 	if (path && *path) {
-		filter->image_file_timestamp = get_modified_timestamp(path);
-		gs_image_file_init(&filter->image, path);
-		filter->update_time_elapsed = 0;
+		#ifdef WIN32
+		if (strchr(path, "\\")) {
+		#elif  __APPLE__
+		if (strchr(path, "/")) {
+		#endif
+			filter->image_file_timestamp = get_modified_timestamp(path);
+			gs_image_file_init(&filter->image, path);
+			filter->update_time_elapsed = 0;
 
-		obs_enter_graphics();
-		gs_image_file_init_texture(&filter->image);
-		obs_leave_graphics();
+			obs_enter_graphics();
+			gs_image_file_init_texture(&filter->image);
+			obs_leave_graphics();
+		}
 
 		filter->target = filter->image.texture;
 	}
