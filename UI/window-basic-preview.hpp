@@ -90,7 +90,7 @@ private:
 
 	static vec3 GetSnapOffset(const vec3 &tl, const vec3 &br);
 
-	void GetStretchHandleData(const vec2 &pos);
+	void GetStretchHandleData(const vec2 &pos, bool ignoreGroup);
 
 	void UpdateCursor(uint32_t &flags);
 

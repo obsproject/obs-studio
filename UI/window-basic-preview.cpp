@@ -395,7 +395,7 @@ static vec2 GetItemSize(obs_sceneitem_t *item)
 	return size;
 }
 
-void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
+void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
@@ -450,7 +450,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos)
 				   startCrop.top - startCrop.bottom);
 
 		stretchGroup = obs_sceneitem_get_group(scene, stretchItem);
-		if (stretchGroup) {
+		if (stretchGroup && !ignoreGroup) {
 			obs_sceneitem_get_draw_transform(stretchGroup,
 							 &invGroupTransform);
 			matrix4_inv(&invGroupTransform, &invGroupTransform);
@@ -571,7 +571,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	}
 
 	vec2_set(&startPos, x, y);
-	GetStretchHandleData(startPos);
+	GetStretchHandleData(startPos, false);
 
 	vec2_divf(&startPos, &startPos, main->previewScale / pixelRatio);
 	startPos.x = std::round(startPos.x);
@@ -1521,7 +1521,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	}
 
 	if (updateCursor) {
-		GetStretchHandleData(startPos);
+		GetStretchHandleData(startPos, true);
 		uint32_t stretchFlags = (uint32_t)stretchHandle;
 		UpdateCursor(stretchFlags);
 	}
