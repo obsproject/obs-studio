@@ -1,4 +1,4 @@
-OBS Studio <https://obsproject.com>
+`OBS Studio <https://obsproject.com>`_
 ===================================
 
 .. image:: https://dev.azure.com/obsjim/obsjim/_apis/build/status/obsproject.obs-studio?branchName=master
