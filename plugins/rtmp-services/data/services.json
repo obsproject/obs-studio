@@ -219,30 +219,13 @@
             }
         },
         {
-            "name": "YouTube - RTMP",
+            "name": "YouTube - RTMPS",
             "common": true,
             "alt_names": [
-                "YouTube / YouTube Gaming"
+                "YouTube / YouTube Gaming",
+                "YouTube - RTMP",
+                "YouTube - RTMPS (Beta)"
             ],
-            "servers": [
-                {
-                    "name": "Primary YouTube ingest server",
-                    "url": "rtmp://a.rtmp.youtube.com/live2"
-                },
-                {
-                    "name": "Backup YouTube ingest server",
-                    "url": "rtmp://b.rtmp.youtube.com/live2?backup=1"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 51000,
-                "max audio bitrate": 160
-            }
-        },
-        {
-            "name": "YouTube - RTMPS (Beta)",
-            "common": true,
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -250,7 +233,15 @@
                 },
                 {
                     "name": "Backup YouTube ingest server",
-                    "url": "rtmps://b.rtmps.youtube.com:443/live2"
+                    "url": "rtmps://b.rtmps.youtube.com:443/live2?backup=1"
+                },
+                {
+                    "name": "Primary YouTube ingest server (legacy RTMP)",
+                    "url": "rtmp://a.rtmp.youtube.com/live2"
+                },
+                {
+                    "name": "Backup YouTube ingest server (legacy RTMP)",
+                    "url": "rtmp://b.rtmp.youtube.com/live2?backup=1"
                 }
             ],
             "recommended": {
