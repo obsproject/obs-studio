@@ -2913,6 +2913,16 @@ bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
 	return thread_graphics->exports.gs_duplicator_update_frame(duplicator);
 }
 
+uint32_t gs_get_adapter_count(void)
+{
+	if (!gs_valid("gs_get_adapter_count"))
+		return 0;
+	if (!thread_graphics->exports.gs_get_adapter_count)
+		return 0;
+
+	return thread_graphics->exports.gs_get_adapter_count();
+}
+
 gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
 {
 	if (!gs_valid_p("gs_duplicator_get_texture", duplicator))
