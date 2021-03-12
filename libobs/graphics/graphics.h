@@ -874,6 +874,8 @@ EXPORT void gs_duplicator_destroy(gs_duplicator_t *duplicator);
 EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *duplicator);
 EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator);
 
+EXPORT uint32_t gs_get_adapter_count(void);
+
 /** creates a windows GDI-lockable texture */
 EXPORT gs_texture_t *gs_texture_create_gdi(uint32_t width, uint32_t height);
 
