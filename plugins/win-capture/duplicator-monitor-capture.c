@@ -159,8 +159,22 @@ choose_method(enum display_capture_method method, bool wgc_supported,
 		obs_leave_graphics();
 	}
 
-	if (method == METHOD_AUTO)
-		method = (*dxgi_index == -1) ? METHOD_WGC : METHOD_DXGI;
+	if (method == METHOD_AUTO) {
+		method = METHOD_DXGI;
+		if (*dxgi_index == -1) {
+			method = METHOD_WGC;
+		} else {
+			SYSTEM_POWER_STATUS status;
+			if (GetSystemPowerStatus(&status) &&
+			    status.BatteryFlag < 128) {
+				obs_enter_graphics();
+				const uint32_t count = gs_get_adapter_count();
+				obs_leave_graphics();
+				if (count >= 2)
+					method = METHOD_WGC;
+			}
+		}
+	}
 
 	return method;
 }
