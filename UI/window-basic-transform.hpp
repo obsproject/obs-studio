@@ -6,6 +6,7 @@
 #include "ui_OBSBasicTransform.h"
 
 class OBSBasic;
+class QListWidgetItem;
 
 class OBSBasicTransform : public QDialog {
 	Q_OBJECT
@@ -49,4 +50,7 @@ private slots:
 public:
 	OBSBasicTransform(OBSBasic *parent);
 	~OBSBasicTransform();
+
+public slots:
+	void OnSceneChanged(QListWidgetItem *current, QListWidgetItem *prev);
 };

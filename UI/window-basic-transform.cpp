@@ -2,6 +2,7 @@
 #include "window-basic-transform.hpp"
 #include "window-basic-main.hpp"
 
+Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSceneItem);
 
 static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
@@ -350,4 +351,19 @@ void OBSBasicTransform::OnCropChanged()
 void OBSBasicTransform::on_resetButton_clicked()
 {
 	main->on_actionResetTransform_triggered();
+}
+
+template<typename T> static T GetOBSRef(QListWidgetItem *item)
+{
+	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
+}
+
+void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current,
+				       QListWidgetItem *)
+{
+	if (!current)
+		return;
+
+	obs_scene_t *scene = GetOBSRef<OBSScene>(current);
+	this->SetScene(scene);
 }
