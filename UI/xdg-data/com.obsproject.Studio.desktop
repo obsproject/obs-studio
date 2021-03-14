@@ -6,6 +6,7 @@ GenericName[fr]=Logiciel d'enregistrement/diffusion
 Comment=Free and Open Source Streaming/Recording Software
 Comment[fr]=Logiciel libre d'enregistrement et de diffusion sur Internet
 Comment[ru]=Бесплатная программа с открытым кодом для записи/трансляции видео
+Comment[cn]=免费且开源的用于直播串流以及视频录制的软件
 Exec=obs
 Icon=com.obsproject.Studio
 Terminal=false
