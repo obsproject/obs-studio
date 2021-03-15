@@ -129,7 +129,7 @@ static bool nvafx_get_sdk_path(char buffer[MAX_PATH])
 	char value[MAX_PATH];
 	PVOID pvData = value;
 	DWORD BufferSize = 8192;
-	LPDWORD pcbData;
+
 	LSTATUS status = RegGetValue(
 		HKEY_LOCAL_MACHINE,
 		TEXT("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"),

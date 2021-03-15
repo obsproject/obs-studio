@@ -108,8 +108,7 @@ struct noise_suppress_data {
 	uint32_t sample_rate;
 	float intensity_ratio;
 	unsigned int num_samples_per_frame, num_channels;
-	const char *sdk_path;
-	const char *model;
+	char *model;
 
 	/* Resampler */
 	audio_resampler_t *nvafx_resampler;
@@ -487,13 +486,12 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		size_t size = strlen(sdk_path) + strlen(file) + 1;
 		char *buffer = (char *)bmalloc(size);
 
-		ng->sdk_path = sdk_path;
 		strcpy(buffer, sdk_path);
 		strcat(buffer, file);
 		ng->model = buffer;
 		ng->nvafx_enabled = true;
 
-		info("NVAFX SDK redist path was found here %s", ng->sdk_path);
+		info("NVAFX SDK redist path was found here %s", sdk_path);
 	}
 #endif
 	noise_suppress_update(ng, settings);
