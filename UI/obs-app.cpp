@@ -1393,7 +1393,6 @@ bool OBSApp::OBSInit()
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
-	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
 	qRegisterMetaType<VoidFunc>();
 
@@ -1414,6 +1413,8 @@ bool OBSApp::OBSInit()
 			QGuiApplication::platformNativeInterface();
 		obs_set_nix_platform_display(
 			native->nativeResourceForIntegration("display"));
+
+		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
 
 		blog(LOG_INFO, "Platform: Wayland");
 	}
