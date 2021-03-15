@@ -41,7 +41,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/videolan/x264.git",
-          "commit": "cde9a93319bea766a92e306d69059c76de970190"
+          "commit": "b86ae3c66f51ac9eab5ab7ad09a9d62e67961b8a"
         }
       ]
     },
@@ -79,8 +79,8 @@
         {
           "type": "git",
           "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
-          "commit": "a99740a84b49fd609e04b03279e66c5a8b767440",
-          "tag": "n10.0.26.1"
+          "commit": "7a81595786463d1c7efcb03aa85def69fc2cad41",
+          "tag": "n11.0.10.0"
         }
       ]
     },
@@ -129,12 +129,8 @@
       "sources": [
         {
           "type": "archive",
-          "url": "https://www.ffmpeg.org/releases/ffmpeg-4.3.1.tar.xz",
-          "sha256": "ad009240d46e307b4e03a213a0f49c11b650e445b1f8be0dda2a9212b34d2ffb"
-        },
-        {
-          "type": "patch",
-          "path": "ffmpeg-libsrt.patch"
+          "url": "https://www.ffmpeg.org/releases/ffmpeg-4.3.2.tar.xz",
+          "sha256": "46e4e64f1dd0233cbc0934b9f1c0da676008cad34725113fb7f802cfa84ccddb"
         }
       ]
     },
@@ -147,9 +143,11 @@
       ],
       "sources": [
         {
-          "type": "archive",
-          "url": "http://luajit.org/download/LuaJIT-2.1.0-beta3.tar.gz",
-          "sha256": "1ad2e34b111c802f9d0cdf019e986909123237a28c746b21295b63c9e785d9c3"
+          "type": "git",
+          "url": "https://luajit.org/git/luajit-2.0.git",
+          "branch": "v2.1",
+          "commit": "787736990ac3b7d5ceaba2697c7d0f58f77bb782",
+          "disable-shallow-clone": true
         },
         {
           "type": "shell",
@@ -165,7 +163,7 @@
         "--without-boost",
         "--without-pcre",
         "--without-alllang",
-        "--with-lua=/app/bin/luajit-2.1.0-beta2",
+        "--with-lua=/app/bin/luajit-2.1.0-beta3",
         "--with-luaincl=/app/include/luajit-2.1",
         "--with-python3"
       ],
@@ -199,8 +197,8 @@
         {
           "type": "git",
           "url": "https://github.com/ARMmbed/mbedtls.git",
-          "commit": "848a4e06b375e067552f1a21d4bc69322c673217",
-          "tag": "mbedtls-2.16.8"
+          "commit": "1c54b5410fd48d6bcada97e30cac417c5c7eea67",
+          "tag": "v2.25.0"
         }
       ]
     },
