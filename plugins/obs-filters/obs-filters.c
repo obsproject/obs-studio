@@ -61,11 +61,7 @@ bool obs_module_load(void)
 #if NOISEREDUCTION_ENABLED
 #ifdef LIBNVAFX_ENABLED
 	/* load nvidia audio fx dll */
-	if (!load_nvafx()) {
-		printf("[noise suppress: Unable to load NVAudioEffects.dll.]");
-	} else {
-		printf("[noise suppress: NVAudioEffects.dll loaded.]");
-	}
+	load_nvafx();
 #endif
 	obs_register_source(&noise_suppress_filter);
 	obs_register_source(&noise_suppress_filter_v2);
