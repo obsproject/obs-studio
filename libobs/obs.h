@@ -1101,6 +1101,9 @@ EXPORT void obs_source_enum_filters(obs_source_t *source,
 EXPORT obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 						   const char *name);
 
+/** Gets the number of filters the source has. */
+EXPORT size_t obs_source_filter_count(const obs_source_t *source);
+
 EXPORT void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src);
 EXPORT void obs_source_copy_single_filter(obs_source_t *dst,
 					  obs_source_t *filter);

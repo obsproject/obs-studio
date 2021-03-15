@@ -1013,6 +1013,12 @@ General Source Functions
 
 ---------------------
 
+.. function:: size_t obs_source_filter_count(const obs_source_t *source)
+
+   Returns the number of filters the source has.
+
+---------------------
+
 .. function:: bool obs_source_enabled(const obs_source_t *source)
               void obs_source_set_enabled(obs_source_t *source, bool enabled)
 
