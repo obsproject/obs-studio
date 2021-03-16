@@ -1105,6 +1105,8 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 			goto fail;
 	}
 
+	program_get_results(program);
+
 	return;
 
 fail:

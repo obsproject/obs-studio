@@ -90,9 +90,35 @@ EXPORT void effect_param_parse_property(gs_eparam_t *param,
 
 /* ------------------------------------------------------------------------- */
 
+struct gs_effect_result {
+	char *name;
+	enum gs_shader_param_type type;
+	DARRAY(uint8_t) cur_val;
+	gs_effect_t *effect;
+};
+
+static inline void effect_result_init(struct gs_effect_result *result)
+{
+	memset(result, 0, sizeof(struct gs_effect_result));
+	da_init(result->cur_val);
+}
+
+static inline void effect_result_free(struct gs_effect_result *result)
+{
+	bfree(result->name);
+	da_free(result->cur_val);
+}
+
+/* ------------------------------------------------------------------------- */
+
 struct pass_shaderparam {
 	struct gs_effect_param *eparam;
 	gs_sparam_t *sparam;
+};
+
+struct pass_shaderresult {
+	struct gs_effect_result *eresult;
+	gs_sresult_t *sresult;
 };
 
 struct gs_effect_pass {
@@ -103,6 +129,7 @@ struct gs_effect_pass {
 	gs_shader_t *pixelshader;
 	DARRAY(struct pass_shaderparam) vertshader_params;
 	DARRAY(struct pass_shaderparam) pixelshader_params;
+	DARRAY(struct pass_shaderresult) program_results;
 };
 
 static inline void effect_pass_init(struct gs_effect_pass *pass)
@@ -115,6 +142,7 @@ static inline void effect_pass_free(struct gs_effect_pass *pass)
 	bfree(pass->name);
 	da_free(pass->vertshader_params);
 	da_free(pass->pixelshader_params);
+	da_free(pass->program_results);
 
 	gs_shader_destroy(pass->vertshader);
 	gs_shader_destroy(pass->pixelshader);
@@ -153,6 +181,7 @@ struct gs_effect {
 	char *effect_path, *effect_dir;
 
 	DARRAY(struct gs_effect_param) params;
+	DARRAY(struct gs_effect_result) results;
 	DARRAY(struct gs_effect_technique) techniques;
 
 	struct gs_effect_technique *cur_technique;
@@ -177,6 +206,8 @@ static inline void effect_free(gs_effect_t *effect)
 	size_t i;
 	for (i = 0; i < effect->params.num; i++)
 		effect_param_free(effect->params.array + i);
+	for (i = 0; i < effect->results.num; i++)
+		effect_result_free(effect->results.array + i);
 	for (i = 0; i < effect->techniques.num; i++)
 		effect_technique_free(effect->techniques.array + i);
 

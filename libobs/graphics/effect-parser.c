@@ -48,6 +48,8 @@ static enum gs_shader_param_type get_effect_param_type(const char *type)
 		return GS_SHADER_PARAM_BOOL;
 	else if (strcmp(type, "int") == 0)
 		return GS_SHADER_PARAM_INT;
+	else if (strcmp(type, "atomic_uint") == 0)
+		return GS_SHADER_PARAM_ATOMIC_UINT;
 	else if (strcmp(type, "string") == 0)
 		return GS_SHADER_PARAM_STRING;
 
@@ -407,7 +409,7 @@ static int ep_parse_annotations(struct effect_parser *ep,
 		struct ep_param var;
 
 		ep_param_init(&var, bstrdup(""), bstrdup(""), false, false,
-			      false);
+			      false, false);
 
 		switch (ep_parse_param_annotation_var(ep, &var)) {
 		case PARSE_UNEXPECTED_CONTINUE:
@@ -1139,10 +1141,12 @@ static inline bool ep_parse_param_assign(struct effect_parser *ep,
 } */
 
 static void ep_parse_param(struct effect_parser *ep, char *type, char *name,
-			   bool is_property, bool is_const, bool is_uniform)
+			   bool is_property, bool is_const, bool is_uniform,
+			   bool is_result)
 {
 	struct ep_param param;
-	ep_param_init(&param, type, name, is_property, is_const, is_uniform);
+	ep_param_init(&param, type, name, is_property, is_const, is_uniform,
+		      is_result);
 
 	if (cf_token_is(&ep->cfp, ";"))
 		goto complete;
@@ -1208,14 +1212,17 @@ static inline void report_invalid_func_keyword(struct effect_parser *ep,
 
 static void ep_parse_other(struct effect_parser *ep)
 {
-	bool is_property = false, is_const = false, is_uniform = false;
+	bool is_property = false, is_const = false;
+	bool is_uniform = false, is_result = false;
 	char *type = NULL, *name = NULL;
 
 	if (!ep_get_var_specifiers(ep, &is_property, &is_const, &is_uniform))
 		goto error;
-
 	if (cf_get_name(&ep->cfp, &type, "type", ";") != PARSE_SUCCESS)
 		goto error;
+	if (cf_token_is(&ep->cfp, "atomic_uint")) {
+		is_result = true;
+	}
 	if (cf_next_name(&ep->cfp, &name, "name", ";") != PARSE_SUCCESS)
 		goto error;
 	if (!cf_next_valid_token(&ep->cfp))
@@ -1230,7 +1237,7 @@ static void ep_parse_other(struct effect_parser *ep)
 		return;
 	} else {
 		ep_parse_param(ep, type, name, is_property, is_const,
-			       is_uniform);
+			       is_uniform, is_result);
 		return;
 	}
 
@@ -1510,7 +1517,8 @@ bool ep_parse(struct effect_parser *ep, gs_effect_t *effect,
 /* ------------------------------------------------------------------------- */
 
 static inline void ep_write_param(struct dstr *shader, struct ep_param *param,
-				  struct darray *used_params)
+				  struct darray *used_params,
+				  struct darray *used_results)
 {
 	if (param->written)
 		return;
@@ -1523,6 +1531,13 @@ static inline void ep_write_param(struct dstr *shader, struct ep_param *param,
 		darray_push_back(sizeof(struct dstr), used_params, &new);
 
 		dstr_cat(shader, "uniform ");
+
+		if (param->is_result) {
+			struct dstr newResStr;
+			dstr_init_copy(&newResStr, param->name);
+			darray_push_back(sizeof(struct dstr), used_results,
+					 &newResStr);
+		}
 	}
 
 	dstr_cat(shader, param->type);
@@ -1540,13 +1555,14 @@ static inline void ep_write_param(struct dstr *shader, struct ep_param *param,
 static inline void ep_write_func_param_deps(struct effect_parser *ep,
 					    struct dstr *shader,
 					    struct ep_func *func,
-					    struct darray *used_params)
+					    struct darray *used_params,
+					    struct darray *used_results)
 {
 	size_t i;
 	for (i = 0; i < func->param_deps.num; i++) {
 		const char *name = func->param_deps.array[i];
 		struct ep_param *param = ep_getparam(ep, name);
-		ep_write_param(shader, param, used_params);
+		ep_write_param(shader, param, used_params, used_results);
 	}
 
 	if (func->param_deps.num)
@@ -1650,12 +1666,14 @@ static inline void ep_write_func_struct_deps(struct effect_parser *ep,
 }
 
 static void ep_write_func(struct effect_parser *ep, struct dstr *shader,
-			  struct ep_func *func, struct darray *used_params);
+			  struct ep_func *func, struct darray *used_params,
+			  struct darray *used_results);
 
 static inline void ep_write_func_func_deps(struct effect_parser *ep,
 					   struct dstr *shader,
 					   struct ep_func *func,
-					   struct darray *used_params)
+					   struct darray *used_params,
+					   struct darray *used_results)
 {
 	size_t i;
 	for (i = 0; i < func->func_deps.num; i++) {
@@ -1663,23 +1681,25 @@ static inline void ep_write_func_func_deps(struct effect_parser *ep,
 		struct ep_func *func_dep = ep_getfunc(ep, name);
 
 		if (!func_dep->written) {
-			ep_write_func(ep, shader, func_dep, used_params);
+			ep_write_func(ep, shader, func_dep, used_params,
+				      used_results);
 			dstr_cat(shader, "\n\n");
 		}
 	}
 }
 
 static void ep_write_func(struct effect_parser *ep, struct dstr *shader,
-			  struct ep_func *func, struct darray *used_params)
+			  struct ep_func *func, struct darray *used_params,
+			  struct darray *used_results)
 {
 	size_t i;
 
 	func->written = true;
 
-	ep_write_func_param_deps(ep, shader, func, used_params);
+	ep_write_func_param_deps(ep, shader, func, used_params, used_results);
 	ep_write_func_sampler_deps(ep, shader, func);
 	ep_write_func_struct_deps(ep, shader, func);
-	ep_write_func_func_deps(ep, shader, func, used_params);
+	ep_write_func_func_deps(ep, shader, func, used_params, used_results);
 
 	/* ------------------------------------ */
 
@@ -1783,7 +1803,8 @@ static inline void ep_reset_written(struct effect_parser *ep)
 
 static void ep_makeshaderstring(struct effect_parser *ep, struct dstr *shader,
 				struct darray *shader_call,
-				struct darray *used_params)
+				struct darray *used_params,
+				struct darray *used_results)
 {
 	struct cf_token *token = shader_call->array;
 	struct cf_token *func_name;
@@ -1806,7 +1827,8 @@ static void ep_makeshaderstring(struct effect_parser *ep, struct dstr *shader,
 	while (token->type != CFTOKEN_NONE) {
 		struct ep_param *param = ep_getparam_strref(ep, &token->str);
 		if (param)
-			ep_write_param(shader, param, used_params);
+			ep_write_param(shader, param, used_params,
+				       used_results);
 
 		dstr_cat_strref(&call_str, &token->str);
 		token++;
@@ -1816,7 +1838,7 @@ static void ep_makeshaderstring(struct effect_parser *ep, struct dstr *shader,
 	if (!func)
 		return;
 
-	ep_write_func(ep, shader, func, used_params);
+	ep_write_func(ep, shader, func, used_params, used_results);
 	ep_write_main(ep, shader, func, &call_str);
 
 	dstr_free(&call_str);
@@ -1923,6 +1945,73 @@ static bool ep_compile_pass_shaderparams(struct effect_parser *ep,
 	return true;
 }
 
+bool ep_compile_result(struct gs_effect_result *result, const char *result_name,
+		       struct effect_parser *ep)
+{
+	struct ep_param *param_in = NULL, *param_temp;
+	size_t i;
+
+	for (i = 0; i < ep->params.num; ++i) {
+		param_temp = ep->params.array + i;
+		if (!strcmp(result_name, param_temp->name)) {
+			param_in = param_temp;
+			break;
+		}
+	}
+	if (!param_in) {
+		blog(LOG_ERROR, "parameter not found for a result");
+		return false;
+	}
+
+	effect_result_init(result);
+	result->name = bstrdup(param_in->name);
+	result->type = get_effect_param_type(param_in->type);
+
+	return true;
+}
+
+static bool ep_compilepass_shaderresults(struct effect_parser *ep,
+					 struct darray *pass_results,
+					 struct darray *used_results,
+					 gs_shader_t *shader)
+{
+	size_t i;
+	darray_resize(sizeof(struct pass_shaderresult), pass_results,
+		      used_results->num);
+	da_init(ep->effect->results);
+	da_resize(ep->effect->results, used_results->num);
+
+	for (i = 0; i < used_results->num; i++) {
+		struct dstr *result_dstr;
+		const char *result_name;
+		struct pass_shaderresult *mapping;
+		struct gs_effect_result *eresult;
+		gs_sresult_t *sresult;
+
+		result_dstr = darray_item(sizeof(struct dstr), used_results, i);
+		result_name = result_dstr->array;
+
+		sresult = gs_shader_get_result_by_name(shader, result_name);
+		if (!sresult) {
+			blog(LOG_ERROR, "Effect shader result not found");
+			return false;
+		}
+
+		eresult = ep->effect->results.array + i;
+		if (!ep_compile_result(eresult, result_name, ep)) {
+			blog(LOG_ERROR, "Failed to compile effect result");
+			return false;
+		}
+
+		mapping = darray_item(sizeof(struct pass_shaderresult),
+				      pass_results, i);
+		mapping->sresult = sresult;
+		mapping->eresult = eresult;
+	}
+
+	return true;
+}
+
 static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 					  struct gs_effect_technique *tech,
 					  struct gs_effect_pass *pass,
@@ -1932,13 +2021,16 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 {
 	struct dstr shader_str;
 	struct dstr location;
-	struct darray used_params;         /* struct dstr */
-	struct darray *pass_params = NULL; /* struct pass_shaderparam */
+	struct darray used_params;          /* struct dstr */
+	struct darray *pass_params = NULL;  /* struct pass_shaderparam */
+	struct darray used_results;         /* struct dstr */
+	struct darray *pass_results = NULL; /* struct pass_shaderresult */
 	gs_shader_t *shader = NULL;
 	bool success = true;
 
 	dstr_init(&shader_str);
 	darray_init(&used_params);
+	darray_init(&used_results);
 	dstr_init(&location);
 
 	dstr_copy(&location, ep->cfp.lex.file);
@@ -1955,23 +2047,26 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 
 	if (type == GS_SHADER_VERTEX) {
 		ep_makeshaderstring(ep, &shader_str,
-				    &pass_in->vertex_program.da, &used_params);
+				    &pass_in->vertex_program.da, &used_params,
+				    &used_results);
 
 		pass->vertshader = gs_vertexshader_create(shader_str.array,
 							  location.array, NULL);
 
 		shader = pass->vertshader;
 		pass_params = &pass->vertshader_params.da;
+		pass_results = &pass->program_results.da;
 	} else if (type == GS_SHADER_PIXEL) {
 		ep_makeshaderstring(ep, &shader_str,
-				    &pass_in->fragment_program.da,
-				    &used_params);
+				    &pass_in->fragment_program.da, &used_params,
+				    &used_results);
 
 		pass->pixelshader = gs_pixelshader_create(shader_str.array,
 							  location.array, NULL);
 
 		shader = pass->pixelshader;
 		pass_params = &pass->pixelshader_params.da;
+		pass_results = &pass->program_results.da;
 	}
 
 #if defined(_DEBUG) && defined(_DEBUG_SHADERS)
@@ -1982,15 +2077,16 @@ static inline bool ep_compile_pass_shader(struct effect_parser *ep,
 	blog(LOG_DEBUG, "\t\t\tParameters:");
 #endif
 
-	if (shader)
-		success = ep_compile_pass_shaderparams(ep, pass_params,
-						       &used_params, shader);
-	else
-		success = false;
+	success = ep_compile_pass_shaderparams(ep, pass_params, &used_params,
+					       shader) &&
+		  ep_compilepass_shaderresults(ep, pass_results, &used_results,
+					       shader);
 
 	dstr_free(&location);
 	dstr_array_free(used_params.array, used_params.num);
 	darray_free(&used_params);
+	dstr_array_free(used_results.array, used_results.num);
+	darray_free(&used_results);
 	dstr_free(&shader_str);
 
 	return success;
@@ -2070,6 +2166,7 @@ static bool ep_compile(struct effect_parser *ep)
 
 #if defined(_DEBUG) && defined(_DEBUG_SHADERS)
 	blog(LOG_DEBUG, "Shader has %lld parameters:", ep->params.num);
+	blog(LOG_DEBUG, "Shader has %lld results:", ep->results.num);
 #endif
 
 	for (i = 0; i < ep->params.num; i++)

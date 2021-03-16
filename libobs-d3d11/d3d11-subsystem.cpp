@@ -1874,6 +1874,16 @@ void device_draw(gs_device_t *device, enum gs_draw_mode draw_mode,
 			num_verts = (uint32_t)device->curVertexBuffer->numVerts;
 		device->context->Draw(num_verts, start_vert);
 	}
+
+	try {
+		device->curVertexShader->DownloadResults();
+		device->curPixelShader->DownloadResults();
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "device_draw (D3D11): %s (%08lX)", error.str,
+		     error.hr);
+		LogD3D11ErrorDetails(error, device);
+		return;
+	}
 }
 
 void device_end_scene(gs_device_t *device)

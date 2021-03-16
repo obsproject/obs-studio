@@ -156,6 +156,8 @@ gs_shader_param::gs_shader_param(shader_var &var, uint32_t &texCounter)
 	: name(var.name),
 	  type(get_shader_param_type(var.type)),
 	  textureID(texCounter),
+	  atomicCounterIndex(var.atomic_counter_index),
+	  isResult(var.is_result),
 	  arrayCount(var.array_count),
 	  changed(false)
 {
@@ -168,6 +170,11 @@ gs_shader_param::gs_shader_param(shader_var &var, uint32_t &texCounter)
 		textureID = 0;
 }
 
+gs_shader_result::gs_shader_result(shader_var &var)
+	: name(var.name), param(nullptr)
+{
+}
+
 static inline void AddParam(shader_var &var, vector<gs_shader_param> &params,
 			    uint32_t &texCounter)
 {
@@ -178,12 +185,23 @@ static inline void AddParam(shader_var &var, vector<gs_shader_param> &params,
 	params.push_back(gs_shader_param(var, texCounter));
 }
 
-void ShaderProcessor::BuildParams(vector<gs_shader_param> &params)
+static inline void AddResult(shader_var var, vector<gs_shader_result> &results)
+{
+	results.push_back(gs_shader_result(var));
+}
+
+void ShaderProcessor::BuildParams(vector<gs_shader_param> &params,
+				  vector<gs_shader_result> &results)
 {
 	uint32_t texCounter = 0;
 
-	for (size_t i = 0; i < parser.params.num; i++)
-		AddParam(parser.params.array[i], params, texCounter);
+	for (size_t i = 0; i < parser.params.num; i++) {
+		shader_var &var = parser.params.array[i];
+		AddParam(var, params, texCounter);
+		if (var.is_result) {
+			AddResult(var, results);
+		}
+	}
 }
 
 static inline void AddSampler(gs_device_t *device, shader_sampler &sampler,
@@ -202,35 +220,104 @@ void ShaderProcessor::BuildSamplers(vector<unique_ptr<ShaderSampler>> &samplers)
 
 void ShaderProcessor::BuildString(string &outputString)
 {
-	stringstream output;
-	output << "static const bool obs_glsl_compile = false;\n\n";
+	stringstream tempOutput, finalOutput;
 
 	cf_token *token = cf_preprocessor_get_tokens(&parser.cfp.pp);
 	while (token->type != CFTOKEN_NONE) {
 		/* cheaply just replace specific tokens */
 		if (strref_cmp(&token->str, "POSITION") == 0)
-			output << "SV_Position";
+			tempOutput << "SV_Position";
 		else if (strref_cmp(&token->str, "TARGET") == 0)
-			output << "SV_Target";
+			tempOutput << "SV_Target";
 		else if (strref_cmp(&token->str, "texture2d") == 0)
-			output << "Texture2D";
+			tempOutput << "Texture2D";
 		else if (strref_cmp(&token->str, "texture3d") == 0)
-			output << "Texture3D";
+			tempOutput << "Texture3D";
 		else if (strref_cmp(&token->str, "texture_cube") == 0)
-			output << "TextureCube";
+			tempOutput << "TextureCube";
 		else if (strref_cmp(&token->str, "texture_rect") == 0)
 			throw "texture_rect is not supported in D3D";
 		else if (strref_cmp(&token->str, "sampler_state") == 0)
-			output << "SamplerState";
+			tempOutput << "SamplerState";
 		else if (strref_cmp(&token->str, "VERTEXID") == 0)
-			output << "SV_VertexID";
-		else
-			output.write(token->str.array, token->str.len);
-
+			tempOutput << "SV_VertexID";
+		else if (strref_cmp(&token->str, "atomicCounterIncrement") == 0)
+			ReplaceAtomicIncrement(token, tempOutput);
+		else if (!PeekAndSkipAtomicUint(token))
+			tempOutput.write(token->str.array, token->str.len);
 		token++;
 	}
 
-	outputString = move(output.str());
+	finalOutput << "static const bool obs_glsl_compile = false;\n\n";
+	if (parser.atomic_counter_next_index > 0)
+		finalOutput
+			<< "RWStructuredBuffer<uint> __uavBuffer : register(u1);\n\n";
+	finalOutput << tempOutput.str();
+
+	outputString = finalOutput.str();
+}
+
+static bool SeekUntil(cf_token *&token, const char *str)
+{
+	while (token->type != CFTOKEN_NONE) {
+		if (strref_cmp(&token->str, str) == 0)
+			return true;
+		token++;
+	}
+	return false;
+}
+
+static bool SeekWhile(cf_token *&token, const char *str)
+{
+	while (token->type != CFTOKEN_NONE) {
+		if (strref_cmp(&token->str, str) != 0)
+			return true;
+		token++;
+	}
+	return false;
+}
+
+void ShaderProcessor::ReplaceAtomicIncrement(cf_token *&token,
+					     stringstream &out)
+{
+	SeekUntil(token, "(");
+	token++;
+	SeekWhile(token, " ");
+
+	std::string name;
+	name.resize(token->str.len);
+	memcpy(name.data(), token->str.array, token->str.len);
+
+	int atomicCounterIndex = -1;
+	for (size_t i = 0; i < parser.params.num; i++) {
+		const shader_var &var = parser.params.array[i];
+		if (name == var.name && !strcmp(var.type, "atomic_uint")) {
+			atomicCounterIndex = var.atomic_counter_index;
+			break;
+		}
+	}
+	if (atomicCounterIndex == -1) {
+		blog(LOG_WARNING, "There is no atomic counter var called %s",
+		     name.data());
+		return;
+	}
+
+	out << "InterlockedAdd(__uavBuffer[" << atomicCounterIndex << "], 1";
+}
+
+bool ShaderProcessor::PeekAndSkipAtomicUint(cf_token *&token)
+{
+	if (strref_cmp(&token->str, "uniform") != 0)
+		return false;
+
+	cf_token *next = token + 1;
+	SeekWhile(next, " ");
+	if (strref_cmp(&next->str, "atomic_uint") == 0) {
+		SeekUntil(next, ";");
+		token = next;
+		return true;
+	}
+	return false;
 }
 
 void ShaderProcessor::Process(const char *shader_string, const char *file)

@@ -28,6 +28,7 @@
 static inline void shader_param_init(struct gs_shader_param *param)
 {
 	memset(param, 0, sizeof(struct gs_shader_param));
+	param->buffer_id = GL_INVALID_VALUE;
 }
 
 static inline void shader_param_free(struct gs_shader_param *param)
@@ -35,6 +36,18 @@ static inline void shader_param_free(struct gs_shader_param *param)
 	bfree(param->name);
 	da_free(param->cur_value);
 	da_free(param->def_value);
+}
+
+static inline void shader_result_init(struct gs_shader_result *result)
+{
+	memset(result, 0, sizeof(struct gs_shader_result));
+	da_init(result->cur_value);
+}
+
+static inline void shader_result_free(struct gs_shader_result *result)
+{
+	bfree(result->name);
+	da_free(result->cur_value);
 }
 
 static inline void shader_attrib_free(struct shader_attrib *attrib)
@@ -65,15 +78,32 @@ static void gl_get_shader_info(GLuint shader, const char *file,
 		bfree(errors);
 }
 
+static bool gl_add_result(struct gs_shader *shader,
+			  struct gs_shader_param *param)
+{
+	struct gs_shader_result result;
+	shader_result_init(&result);
+	result.name = bstrdup(param->name);
+	da_push_back(shader->results, &result);
+	return true;
+}
+
 static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 			 GLint *texture_id)
 {
-	struct gs_shader_param param = {0};
+	struct gs_shader_param param;
+	shader_param_init(&param);
 
 	param.array_count = var->array_count;
 	param.name = bstrdup(var->name);
 	param.shader = shader;
 	param.type = get_shader_param_type(var->type);
+
+	param.is_result = var->is_result;
+	if (param.type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		param.layout_binding = var->atomic_counter_index;
+		param.layout_offset = 0;
+	}
 
 	if (param.type == GS_SHADER_PARAM_TEXTURE) {
 		param.sampler_id = var->gl_sampler_id;
@@ -86,6 +116,10 @@ static bool gl_add_param(struct gs_shader *shader, struct shader_var *var,
 	da_copy(param.cur_value, param.def_value);
 
 	da_push_back(shader->params, &param);
+
+	if (param.is_result)
+		gl_add_result(shader, &param);
+
 	return true;
 }
 
@@ -340,6 +374,8 @@ void gs_shader_destroy(gs_shader_t *shader)
 
 	for (i = 0; i < shader->params.num; i++)
 		shader_param_free(shader->params.array + i);
+	for (i = 0; i < shader->results.num; i++)
+		shader_result_free(shader->results.array + i);
 
 	if (shader->obj) {
 		glDeleteShader(shader->obj);
@@ -361,6 +397,20 @@ gs_sparam_t *gs_shader_get_param_by_idx(gs_shader_t *shader, uint32_t param)
 {
 	assert(param < shader->params.num);
 	return shader->params.array + param;
+}
+
+gs_sresult_t *gs_shader_get_result_by_name(gs_shader_t *shader,
+					   const char *name)
+{
+	size_t i;
+	for (i = 0; i < shader->results.num; i++) {
+		struct gs_shader_result *result = shader->results.array + i;
+
+		if (strcmp(result->name, name) == 0)
+			return result;
+	}
+
+	return NULL;
 }
 
 gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
@@ -442,6 +492,11 @@ void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val)
 	param->texture = val;
 }
 
+void gs_shader_set_atomic_uint(gs_sparam_t *param, unsigned int val)
+{
+	da_copy_array(param->cur_value, &val, sizeof(val));
+}
+
 static inline bool validate_param(struct program_param *pp,
 				  size_t expected_size)
 {
@@ -455,6 +510,34 @@ static inline bool validate_param(struct program_param *pp,
 	}
 
 	return true;
+}
+
+static bool init_atomic_buffer(unsigned int *buffer_id, size_t sz,
+			       unsigned int binding, unsigned int offset)
+{
+	glGenBuffers(1, buffer_id);
+	if (!gl_success("glGenBuffers") || *buffer_id == GL_INVALID_VALUE)
+		return false;
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, *buffer_id);
+	if (!gl_success("glBindBuffer"))
+		return false;
+
+	glBufferData(GL_ATOMIC_COUNTER_BUFFER, (GLsizeiptr)sz, NULL,
+		     GL_DYNAMIC_COPY);
+	if (!gl_success("glBufferData"))
+		return false;
+
+	glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	if (!gl_success("glBindBuffer"))
+		return false;
+
+	glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER, binding, *buffer_id);
+	if (!gl_success("glBindBufferBase"))
+		return false;
+
+	return true;
+	UNUSED_PARAMETER(offset);
 }
 
 static void program_set_param_data(struct gs_program *program,
@@ -532,6 +615,34 @@ static void program_set_param_data(struct gs_program *program,
 		else
 			device_load_texture(program->device, pp->param->texture,
 					    pp->param->texture_id);
+	} else if (pp->param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		if (validate_param(pp, sizeof(unsigned int))) {
+			if (pp->param->buffer_id == GL_INVALID_VALUE)
+				if (!init_atomic_buffer(
+					    &pp->param->buffer_id,
+					    sizeof(GLuint),
+					    pp->param->layout_binding,
+					    pp->param->layout_offset))
+					return;
+
+			glBindBuffer(GL_ATOMIC_COUNTER_BUFFER,
+				     pp->param->buffer_id);
+			if (!gl_success("glBindBuffer"))
+				goto unbind;
+
+			glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,
+					 pp->param->layout_binding,
+					 pp->param->buffer_id);
+			if (!gl_success("glBindBufferBase"))
+				goto unbind;
+
+			glBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0,
+					sizeof(GLuint), array);
+			gl_success("glBufferSubData");
+
+		unbind:
+			glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+		}
 	}
 }
 
@@ -540,6 +651,57 @@ void program_update_params(struct gs_program *program)
 	for (size_t i = 0; i < program->params.num; i++) {
 		struct program_param *pp = program->params.array + i;
 		program_set_param_data(program, pp);
+	}
+}
+
+static void program_get_result_data(struct gs_program *program,
+				    struct gs_shader_result *result)
+{
+	struct gs_shader_param *param = result->param;
+	void *array;
+	unsigned int test = 0;
+
+	if (param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		if (param->cur_value.num != sizeof(GLuint))
+			da_resize(param->cur_value, sizeof(GLuint));
+
+		if (param->buffer_id == GL_INVALID_VALUE)
+			if (!init_atomic_buffer(&param->buffer_id,
+						sizeof(GLuint),
+						param->layout_binding,
+						param->layout_offset))
+				return;
+		if (result->cur_value.num != sizeof(GLuint))
+			da_resize(result->cur_value, sizeof(GLuint));
+		array = result->cur_value.array;
+
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, param->buffer_id);
+		if (!gl_success("glBindBuffer"))
+			goto unbind;
+
+		glBindBufferBase(GL_ATOMIC_COUNTER_BUFFER,
+				 param->layout_binding, param->buffer_id);
+		if (!gl_success("glBindBufferBase"))
+			goto unbind;
+
+		glGetBufferSubData(GL_ATOMIC_COUNTER_BUFFER, 0, sizeof(GLuint),
+				   array);
+		if (!gl_success("glGetBufferSubData"))
+			goto unbind;
+
+	unbind:
+		glBindBuffer(GL_ATOMIC_COUNTER_BUFFER, 0);
+	}
+
+	UNUSED_PARAMETER(program);
+	UNUSED_PARAMETER(test);
+}
+
+void program_get_results(struct gs_program *program)
+{
+	for (size_t i = 0; i < program->results.num; i++) {
+		struct program_result *pr = program->results.array + i;
+		program_get_result_data(program, pr->result);
 	}
 }
 
@@ -599,12 +761,16 @@ static bool assign_program_param(struct gs_program *program,
 {
 	struct program_param info;
 
-	info.obj = glGetUniformLocation(program->obj, param->name);
-	if (!gl_success("glGetUniformLocation"))
-		return false;
+	if (param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		// uses buffer API instead
+	} else {
+		info.obj = glGetUniformLocation(program->obj, param->name);
+		if (!gl_success("glGetUniformLocation"))
+			return false;
 
-	if (info.obj == -1) {
-		return true;
+		if (info.obj == -1) {
+			return true;
+		}
 	}
 
 	info.param = param;
@@ -634,9 +800,42 @@ static inline bool assign_program_params(struct gs_program *program)
 	return true;
 }
 
+static bool assign_program_shader_results(struct gs_program *program,
+					  struct gs_shader *shader)
+{
+	struct gs_shader_result *result;
+	struct gs_shader_param *param;
+	struct program_result info;
+
+	size_t i;
+	for (i = 0; i < shader->results.num; i++) {
+		result = shader->results.array + i;
+
+		param = gs_shader_get_param_by_name(shader, result->name);
+		result->param = param;
+
+		info.result = result;
+
+		da_push_back(program->results, &info);
+	}
+
+	return true;
+}
+
+static inline bool assign_program_results(struct gs_program *program)
+{
+	if (!assign_program_shader_results(program, program->vertex_shader))
+		return false;
+	if (!assign_program_shader_results(program, program->pixel_shader))
+		return false;
+
+	return true;
+}
+
 struct gs_program *gs_program_create(struct gs_device *device)
 {
 	struct gs_program *program = bzalloc(sizeof(*program));
+
 	int linked = false;
 
 	program->device = device;
@@ -671,6 +870,8 @@ struct gs_program *gs_program_create(struct gs_device *device)
 	if (!assign_program_attribs(program))
 		goto error;
 	if (!assign_program_params(program))
+		goto error;
+	if (!assign_program_results(program))
 		goto error;
 
 	glDetachShader(program->obj, program->vertex_shader->obj);
@@ -713,6 +914,7 @@ void gs_program_destroy(struct gs_program *program)
 
 	da_free(program->attribs);
 	da_free(program->params);
+	da_free(program->results);
 
 	if (program->next)
 		program->next->prev_next = program->prev_next;
@@ -738,6 +940,7 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 		break;
 	case GS_SHADER_PARAM_BOOL:
 	case GS_SHADER_PARAM_INT:
+	case GS_SHADER_PARAM_ATOMIC_UINT:
 		expected_size = sizeof(int);
 		break;
 	case GS_SHADER_PARAM_INT2:
@@ -786,6 +989,19 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 	} else {
 		da_copy_array(param->cur_value, val, size);
 	}
+}
+
+void gs_shader_get_result(gs_sresult_t *result, struct darray *dst)
+{
+	size_t expected_size = 0;
+	if (result->param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		expected_size = 1;
+	} else {
+		blog(LOG_ERROR, "gs_shader_get_result (GL): "
+				"unsupported result type");
+		return;
+	}
+	darray_copy(expected_size, dst, &result->cur_value.da);
 }
 
 void gs_shader_set_default(gs_sparam_t *param)

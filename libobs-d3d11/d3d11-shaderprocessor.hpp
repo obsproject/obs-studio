@@ -25,14 +25,20 @@ struct ShaderParser : shader_parser {
 };
 
 struct ShaderProcessor {
+public:
 	gs_device_t *device;
 	ShaderParser parser;
 
 	void BuildInputLayout(vector<D3D11_INPUT_ELEMENT_DESC> &inputs);
-	void BuildParams(vector<gs_shader_param> &params);
+	void BuildParams(vector<gs_shader_param> &params,
+			 vector<gs_shader_result> &results);
 	void BuildSamplers(vector<unique_ptr<ShaderSampler>> &samplers);
 	void BuildString(string &outputString);
 	void Process(const char *shader_string, const char *file);
 
 	inline ShaderProcessor(gs_device_t *device) : device(device) {}
+
+protected:
+	void ReplaceAtomicIncrement(cf_token *&token, std::stringstream &out);
+	bool PeekAndSkipAtomicUint(cf_token *&token);
 };

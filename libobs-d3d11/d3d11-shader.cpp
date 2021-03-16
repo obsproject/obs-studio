@@ -53,12 +53,13 @@ gs_vertex_shader::gs_vertex_shader(gs_device_t *device, const char *file,
 
 	processor.Process(shaderString, file);
 	processor.BuildString(outputString);
-	processor.BuildParams(params);
+	processor.BuildParams(params, results);
 	processor.BuildInputLayout(layoutData);
 	GetBuffersExpected(layoutData);
 	BuildConstantBuffer();
+	BuildUavBuffer();
 
-	Compile(outputString.c_str(), file, "vs_4_0", shaderBlob.Assign());
+	Compile(outputString.c_str(), file, "vs_5_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
@@ -93,11 +94,12 @@ gs_pixel_shader::gs_pixel_shader(gs_device_t *device, const char *file,
 
 	processor.Process(shaderString, file);
 	processor.BuildString(outputString);
-	processor.BuildParams(params);
+	processor.BuildParams(params, results);
 	processor.BuildSamplers(samplers);
 	BuildConstantBuffer();
+	BuildUavBuffer();
 
-	Compile(outputString.c_str(), file, "ps_4_0", shaderBlob.Assign());
+	Compile(outputString.c_str(), file, "ps_5_0", shaderBlob.Assign());
 
 	data.resize(shaderBlob->GetBufferSize());
 	memcpy(&data[0], shaderBlob->GetBufferPointer(), data.size());
@@ -160,6 +162,7 @@ void gs_shader::BuildConstantBuffer()
 			break;
 		case GS_SHADER_PARAM_TEXTURE:
 		case GS_SHADER_PARAM_STRING:
+		case GS_SHADER_PARAM_ATOMIC_UINT:
 		case GS_SHADER_PARAM_UNKNOWN:
 			continue;
 		}
@@ -198,6 +201,66 @@ void gs_shader::BuildConstantBuffer()
 
 	for (size_t i = 0; i < params.size(); i++)
 		gs_shader_set_default(&params[i]);
+}
+
+void gs_shader::BuildUavBuffer()
+{
+	size_t uintSz = sizeof(unsigned int);
+	for (size_t i = 0; i < params.size(); i++) {
+		gs_shader_param &param = params[i];
+		if (param.type == GS_SHADER_PARAM_ATOMIC_UINT) {
+			param.pos = param.atomicCounterIndex * uintSz;
+			uavSize = max(uavSize, param.pos + uintSz);
+
+			gs_shader_result *result = gs_shader_get_result_by_name(
+				this, param.name.data());
+			result->param = &param;
+		}
+	}
+
+	if (uavSize) {
+		// UAV buffer
+		memset(&uavBd, 0, sizeof(uavBd));
+		uavBd.Usage = D3D11_USAGE_DEFAULT;
+		uavBd.BindFlags = D3D11_BIND_UNORDERED_ACCESS |
+				  D3D11_BIND_SHADER_RESOURCE;
+		uavBd.ByteWidth = (UINT)uavSize;
+		uavBd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		uavBd.StructureByteStride = (UINT)uintSz;
+		uavBd.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE |
+				       D3D11_CPU_ACCESS_READ;
+		HRESULT hr = device->device->CreateBuffer(&uavBd, NULL,
+							  uavBuffer.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create UAV buffer", hr);
+
+		// UAV view description
+		memset(&uavViewDesc, 0, sizeof(uavViewDesc));
+		uavViewDesc.ViewDimension = D3D11_UAV_DIMENSION_BUFFER;
+		uavViewDesc.Format = DXGI_FORMAT_UNKNOWN;
+		uavViewDesc.Buffer.FirstElement = 0;
+		uavViewDesc.Buffer.Flags = D3D11_BUFFER_UAV_FLAG_COUNTER;
+		uavViewDesc.Buffer.NumElements = (UINT)(uavSize / uintSz);
+		hr = device->device->CreateUnorderedAccessView(
+			uavBuffer, &uavViewDesc, uavView.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create UAV view", hr);
+
+		// transfer buffer
+		memset(&uavTxfrBd, 0, sizeof(uavTxfrBd));
+		uavTxfrBd.Usage = D3D11_USAGE_STAGING;
+		uavTxfrBd.BindFlags = 0;
+		uavTxfrBd.ByteWidth = (UINT)uavSize;
+		uavTxfrBd.MiscFlags = D3D11_RESOURCE_MISC_BUFFER_STRUCTURED;
+		uavTxfrBd.StructureByteStride = (UINT)uintSz;
+		uavTxfrBd.CPUAccessFlags = D3D11_CPU_ACCESS_READ |
+					   D3D11_CPU_ACCESS_WRITE;
+		hr = device->device->CreateBuffer(&uavTxfrBd, NULL,
+						  uavTxfrBuffer.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to create UAV transfer buffer",
+				      hr);
+	}
 }
 
 void gs_shader::Compile(const char *shaderString, const char *file,
@@ -239,9 +302,25 @@ void gs_shader::Compile(const char *shaderString, const char *file,
 }
 
 inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
-				   gs_shader_param &param, bool &upload)
+				   vector<uint8_t> &uavData,
+				   gs_shader_param &param, bool &uploadConst,
+				   bool &uploadUav)
 {
-	if (param.type != GS_SHADER_PARAM_TEXTURE) {
+	if (param.type == GS_SHADER_PARAM_ATOMIC_UINT) {
+		if (!param.curValue.size())
+			throw "Not all shader parameters were set";
+		/* padding in case the UAV var needs to start at a new
+		 * register */
+		if (param.pos > uavData.size()) {
+			uint8_t zero = 0;
+			uavData.insert(uavData.end(),
+				       param.pos - uavData.size(), zero);
+		}
+
+		uavData.insert(uavData.end(), param.curValue.begin(),
+			       param.curValue.end());
+		uploadUav = true;
+	} else if (param.type != GS_SHADER_PARAM_TEXTURE) {
 		if (!param.curValue.size())
 			throw "Not all shader parameters were set";
 
@@ -258,7 +337,7 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 				 param.curValue.end());
 
 		if (param.changed) {
-			upload = true;
+			uploadConst = true;
 			param.changed = false;
 		}
 
@@ -284,17 +363,22 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 void gs_shader::UploadParams()
 {
 	vector<uint8_t> constData;
-	bool upload = false;
+	vector<uint8_t> uavData;
+	bool uploadConst = false, uploadUav = false;
 
 	constData.reserve(constantSize);
+	uavData.reserve(uavSize);
 
 	for (size_t i = 0; i < params.size(); i++)
-		UpdateParam(constData, params[i], upload);
+		UpdateParam(constData, uavData, params[i], uploadConst,
+			    uploadUav);
 
 	if (constData.size() != constantSize)
 		throw "Invalid constant data size given to shader";
+	if (uavData.size() != uavSize)
+		throw "Invalid UAV data size given to shader";
 
-	if (upload) {
+	if (uploadConst) {
 		D3D11_MAPPED_SUBRESOURCE map;
 		HRESULT hr;
 
@@ -305,6 +389,57 @@ void gs_shader::UploadParams()
 
 		memcpy(map.pData, constData.data(), constData.size());
 		device->context->Unmap(constants, 0);
+	}
+	if (uploadUav) {
+		ID3D11UnorderedAccessView *uavs[] = {uavView.Get()};
+		UINT initCounts[] = {0};
+
+		int i = device->curRenderSide;
+		ID3D11RenderTargetView *rtv =
+			device->curRenderTarget->renderTarget[i];
+		ID3D11DepthStencilView *dsv = nullptr;
+		if (device->curZStencilBuffer)
+			dsv = device->curZStencilBuffer->view;
+
+		device->context->OMSetRenderTargetsAndUnorderedAccessViews(
+			1, &rtv, dsv, 1, 1, uavs, initCounts);
+
+		D3D11_MAPPED_SUBRESOURCE map;
+		HRESULT hr;
+		hr = device->context->Map(uavTxfrBuffer, 0, D3D11_MAP_WRITE, 0,
+					  &map);
+		if (FAILED(hr))
+			throw HRError("Could not lock UAV transfer buffer", hr);
+		memcpy(map.pData, uavData.data(), uavSize);
+		device->context->Unmap(uavTxfrBuffer, 0);
+		device->context->CopyResource(uavBuffer, uavTxfrBuffer);
+	}
+}
+
+void gs_shader::DownloadResults()
+{
+	if (uavSize == 0 || results.empty())
+		return;
+
+	vector<uint8_t> resultsData;
+	resultsData.resize(uavSize);
+	device->context->CopyResource(uavTxfrBuffer, uavBuffer);
+	D3D11_MAPPED_SUBRESOURCE map;
+	HRESULT hr;
+	hr = device->context->Map(uavTxfrBuffer, 0, D3D11_MAP_READ, 0, &map);
+	if (FAILED(hr))
+		throw HRError("Could not lock UAV transfer buffer", hr);
+	memcpy(resultsData.data(), map.pData, uavSize);
+	device->context->Unmap(uavTxfrBuffer, 0);
+
+	for (size_t i = 0; i < results.size(); ++i) {
+		gs_shader_result &result = results[i];
+		if (result.param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+			size_t uintSz = sizeof(unsigned int);
+			result.curValue.resize(uintSz);
+			memcpy(result.curValue.data(),
+			       resultsData.data() + result.param->pos, uintSz);
+		}
 	}
 }
 
@@ -323,6 +458,18 @@ int gs_shader_get_num_params(const gs_shader_t *shader)
 gs_sparam_t *gs_shader_get_param_by_idx(gs_shader_t *shader, uint32_t param)
 {
 	return &shader->params[param];
+}
+
+gs_sresult_t *gs_shader_get_result_by_name(gs_shader_t *shader,
+					   const char *name)
+{
+	for (size_t i = 0; i < shader->results.size(); ++i) {
+		gs_shader_result &result = shader->results[i];
+		if (strcmp(result.name.c_str(), name) == 0)
+			return &result;
+	}
+
+	return NULL;
 }
 
 gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
@@ -427,9 +574,33 @@ void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val)
 	shader_setval_inline(param, &val, sizeof(gs_texture_t *));
 }
 
+void gs_shader_set_atomic_uint(gs_sparam_t *param, unsigned int val)
+{
+	shader_setval_inline(param, &val, sizeof(unsigned int));
+}
+
 void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 {
 	shader_setval_inline(param, val, size);
+}
+
+void gs_shader_get_result(gs_sresult_t *result, struct darray *dst)
+{
+	const auto &val = result->curValue;
+	if (val.empty()) {
+		darray_free(dst);
+	} else {
+		size_t expected_size = 0;
+		if (result->param->type == GS_SHADER_PARAM_ATOMIC_UINT) {
+			expected_size = 1;
+		} else {
+			blog(LOG_ERROR, "gs_shader_get_result (GL): "
+					"unsupported result type");
+			return;
+		}
+		darray_resize(expected_size, dst, val.size());
+		memcpy(dst->array, val.data(), val.size());
+	}
 }
 
 void gs_shader_set_default(gs_sparam_t *param)

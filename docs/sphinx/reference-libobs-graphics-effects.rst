@@ -21,6 +21,9 @@ HLSL format.
 
    Effect parameter object.
 
+.. type:: typedef struct gs_effect_result    gs_eresult_t
+
+   Effect result object.
 
 ---------------------
 
@@ -133,6 +136,15 @@ HLSL format.
 
 ---------------------
 
+.. function:: size_t gs_effect_get_num_results(const gs_effect_t *effect)
+
+   Gets the number of results associated with the effect.
+
+   :param effect: Effect object
+   :return:       Number of results the effect has
+
+---------------------
+
 .. function:: gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect, size_t param)
 
    Gets a parameter of an effect by its index.
@@ -144,6 +156,17 @@ HLSL format.
 
 ---------------------
 
+.. function:: gs_eresult_t *gs_effect_get_result_by_idx(const gs_effect_t *effect, size_t result)
+
+   Gets a result of an effect by its index.
+
+   :param effect: Effect object
+   :param result: Result index
+   :return:       The effect result object, or *NULL* if index
+                  invalid
+
+---------------------
+
 .. function:: gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect, const char *name)
 
    Gets parameter of an effect by its name.
@@ -151,6 +174,16 @@ HLSL format.
    :param effect: Effect object
    :param name:   Name of the parameter
    :return:       The effect parameter object, or *NULL* if not found
+
+---------------------
+
+.. function:: gs_eresult_t *gs_effect_get_result_by_name(const gs_effect_t *effect, const char *name)
+
+   Gets result of an effect by its name.
+
+   :param effect: Effect object
+   :param name:   Name of the result
+   :return:       The effect result object, or *NULL* if not found
 
 ---------------------
 
@@ -246,6 +279,7 @@ HLSL format.
            GS_SHADER_PARAM_INT4,
            GS_SHADER_PARAM_MATRIX4X4,
            GS_SHADER_PARAM_TEXTURE,
+           GS_SHADER_PARAM_ATOMIC_UINT
    };
 
    struct gs_effect_param_info {
@@ -346,6 +380,15 @@ HLSL format.
 
 ---------------------
 
+.. function:: void gs_effect_set_atomic_uint(gs_eparam_t *param, unsigned int val)
+
+   Sets an atomic unsigned integer parameter.
+
+   :param param: Effect parameter
+   :param val:   Unsigned integer value
+
+---------------------
+
 .. function:: void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size)
 
    Sets a parameter with data manually.
@@ -407,3 +450,12 @@ HLSL format.
 
    :param param:   Effect parameter
    :return:        The size in bytes of the param's default value.
+
+---------------------
+
+.. function:: unsigned int gs_effect_get_atomic_uint_result(gs_eresult_t *result)
+
+   Returns the value of an atomic unsigned integer result.
+
+   :param result: Effect result
+   :return:       Unsigned integer value of the result.

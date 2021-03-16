@@ -655,6 +655,9 @@ struct gs_shader_param {
 	uint32_t textureID;
 	struct gs_sampler_state *nextSampler = nullptr;
 
+	int atomicCounterIndex;
+	bool isResult;
+
 	int arrayCount;
 
 	size_t pos;
@@ -664,6 +667,14 @@ struct gs_shader_param {
 	bool changed;
 
 	gs_shader_param(shader_var &var, uint32_t &texCounter);
+};
+
+struct gs_shader_result {
+	string name;
+	struct gs_shader_param *param;
+	vector<uint8_t> curValue;
+
+	gs_shader_result(shader_var &var);
 };
 
 struct ShaderError {
@@ -679,23 +690,39 @@ struct ShaderError {
 struct gs_shader : gs_obj {
 	gs_shader_type type;
 	vector<gs_shader_param> params;
+	vector<gs_shader_result> results;
 	ComPtr<ID3D11Buffer> constants;
+	ComPtr<ID3D11Buffer> uavBuffer;
+	ComPtr<ID3D11Buffer> uavTxfrBuffer;
+	ComPtr<ID3D11UnorderedAccessView> uavView;
 	size_t constantSize;
+	size_t uavSize;
 
 	D3D11_BUFFER_DESC bd = {};
+	D3D11_BUFFER_DESC uavBd = {};
+	D3D11_BUFFER_DESC uavTxfrBd = {};
+	D3D11_UNORDERED_ACCESS_VIEW_DESC uavViewDesc = {};
+
 	vector<uint8_t> data;
 
 	inline void UpdateParam(vector<uint8_t> &constData,
-				gs_shader_param &param, bool &upload);
+				vector<uint8_t> &uavData,
+				gs_shader_param &param, bool &uploadConst,
+				bool &uploadUav);
 	void UploadParams();
+	void DownloadResults();
 
 	void BuildConstantBuffer();
+	void BuildUavBuffer();
 	void Compile(const char *shaderStr, const char *file,
 		     const char *target, ID3D10Blob **shader);
 
 	inline gs_shader(gs_device_t *device, gs_type obj_type,
 			 gs_shader_type type)
-		: gs_obj(device, obj_type), type(type), constantSize(0)
+		: gs_obj(device, obj_type),
+		  type(type),
+		  constantSize(0),
+		  uavSize(0)
 	{
 	}
 
@@ -779,6 +806,8 @@ struct gs_pixel_shader : gs_shader {
 	{
 		shader.Release();
 		constants.Release();
+		uavBuffer.Release();
+		uavTxfrBuffer.Release();
 	}
 
 	inline void GetSamplerStates(ID3D11SamplerState **states)

@@ -881,7 +881,7 @@ Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic
@@ -1049,7 +1049,7 @@ Cube Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic
@@ -1461,5 +1461,6 @@ Graphics Types
 .. type:: typedef struct gs_texture_render   gs_texrender_t
 .. type:: typedef struct gs_shader           gs_shader_t
 .. type:: typedef struct gs_shader_param     gs_sparam_t
+.. type:: typedef struct gs_shader_result    gs_sresult_t
 .. type:: typedef struct gs_device           gs_device_t
 .. type:: typedef struct graphics_subsystem  graphics_t

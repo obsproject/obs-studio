@@ -259,6 +259,7 @@ struct gs_swap_chain;
 struct gs_timer;
 struct gs_texrender;
 struct gs_shader_param;
+struct gs_shader_result;
 struct gs_effect;
 struct gs_effect_technique;
 struct gs_effect_pass;
@@ -278,10 +279,12 @@ typedef struct gs_timer_range gs_timer_range_t;
 typedef struct gs_texture_render gs_texrender_t;
 typedef struct gs_shader gs_shader_t;
 typedef struct gs_shader_param gs_sparam_t;
+typedef struct gs_shader_result gs_sresult_t;
 typedef struct gs_effect gs_effect_t;
 typedef struct gs_effect_technique gs_technique_t;
 typedef struct gs_effect_pass gs_epass_t;
 typedef struct gs_effect_param gs_eparam_t;
+typedef struct gs_effect_result gs_eresult_t;
 typedef struct gs_device gs_device_t;
 typedef struct graphics_subsystem graphics_t;
 
@@ -303,6 +306,7 @@ enum gs_shader_param_type {
 	GS_SHADER_PARAM_INT4,
 	GS_SHADER_PARAM_MATRIX4X4,
 	GS_SHADER_PARAM_TEXTURE,
+	GS_SHADER_PARAM_ATOMIC_UINT,
 };
 
 struct gs_shader_texture {
@@ -334,6 +338,10 @@ EXPORT gs_sparam_t *gs_shader_get_world_matrix(const gs_shader_t *shader);
 
 EXPORT void gs_shader_get_param_info(const gs_sparam_t *param,
 				     struct gs_shader_param_info *info);
+
+EXPORT gs_sresult_t *gs_shader_get_result_by_name(gs_shader_t *shader,
+						  const char *name);
+
 EXPORT void gs_shader_set_bool(gs_sparam_t *param, bool val);
 EXPORT void gs_shader_set_float(gs_sparam_t *param, float val);
 EXPORT void gs_shader_set_int(gs_sparam_t *param, int val);
@@ -345,10 +353,12 @@ EXPORT void gs_shader_set_vec2(gs_sparam_t *param, const struct vec2 *val);
 EXPORT void gs_shader_set_vec3(gs_sparam_t *param, const struct vec3 *val);
 EXPORT void gs_shader_set_vec4(gs_sparam_t *param, const struct vec4 *val);
 EXPORT void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val);
-EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
+EXPORT void gs_shader_set_atomic_uint(gs_sparam_t *param, unsigned int val);
 EXPORT void gs_shader_set_default(gs_sparam_t *param);
 EXPORT void gs_shader_set_next_sampler(gs_sparam_t *param,
 				       gs_samplerstate_t *sampler);
+EXPORT void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size);
+EXPORT void gs_shader_get_result(gs_sresult_t *result, struct darray *dst);
 #endif
 
 /* ---------------------------------------------------
@@ -396,10 +406,15 @@ gs_technique_get_pass_by_name(const gs_technique_t *technique,
 			      const char *name);
 
 EXPORT size_t gs_effect_get_num_params(const gs_effect_t *effect);
+EXPORT size_t gs_effect_get_num_results(const gs_effect_t *effect);
 EXPORT gs_eparam_t *gs_effect_get_param_by_idx(const gs_effect_t *effect,
 					       size_t param);
 EXPORT gs_eparam_t *gs_effect_get_param_by_name(const gs_effect_t *effect,
 						const char *name);
+EXPORT gs_eresult_t *gs_effect_get_result_by_idx(const gs_effect_t *effect,
+						 size_t result);
+EXPORT gs_eresult_t *gs_effect_get_result_by_name(const gs_effect_t *effect,
+						  const char *name);
 EXPORT size_t gs_param_get_num_annotations(const gs_eparam_t *param);
 EXPORT gs_eparam_t *gs_param_get_annotation_by_idx(const gs_eparam_t *param,
 						   size_t annotation);
@@ -431,6 +446,7 @@ EXPORT void gs_effect_set_vec2(gs_eparam_t *param, const struct vec2 *val);
 EXPORT void gs_effect_set_vec3(gs_eparam_t *param, const struct vec3 *val);
 EXPORT void gs_effect_set_vec4(gs_eparam_t *param, const struct vec4 *val);
 EXPORT void gs_effect_set_texture(gs_eparam_t *param, gs_texture_t *val);
+EXPORT void gs_effect_set_atomic_uint(gs_eparam_t *param, unsigned int val);
 EXPORT void gs_effect_set_texture_srgb(gs_eparam_t *param, gs_texture_t *val);
 EXPORT void gs_effect_set_val(gs_eparam_t *param, const void *val, size_t size);
 EXPORT void gs_effect_set_default(gs_eparam_t *param);
@@ -438,6 +454,9 @@ EXPORT size_t gs_effect_get_val_size(gs_eparam_t *param);
 EXPORT void *gs_effect_get_val(gs_eparam_t *param);
 EXPORT size_t gs_effect_get_default_val_size(gs_eparam_t *param);
 EXPORT void *gs_effect_get_default_val(gs_eparam_t *param);
+
+EXPORT unsigned int gs_effect_get_atomic_uint_result(gs_eresult_t *result);
+
 EXPORT void gs_effect_set_next_sampler(gs_eparam_t *param,
 				       gs_samplerstate_t *sampler);
 

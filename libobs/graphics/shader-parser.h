@@ -52,7 +52,8 @@ struct shader_var {
 	enum shader_var_type var_type;
 	int array_count;
 	size_t gl_sampler_id; /* optional: used/parsed by GL */
-
+	bool is_result;
+	int atomic_counter_index;
 	DARRAY(uint8_t) default_val;
 };
 
@@ -63,7 +64,8 @@ static inline void shader_var_init(struct shader_var *sv)
 
 static inline void shader_var_init_param(struct shader_var *sv, char *type,
 					 char *name, bool is_uniform,
-					 bool is_const)
+					 bool is_const, bool is_result,
+					 int *atomic_counter_next_index)
 {
 	if (is_uniform)
 		sv->var_type = SHADER_VAR_UNIFORM;
@@ -77,6 +79,11 @@ static inline void shader_var_init_param(struct shader_var *sv, char *type,
 	sv->mapping = NULL;
 	sv->array_count = 0;
 	sv->gl_sampler_id = (size_t)-1;
+	sv->is_result = is_result;
+
+	if (strcmp(sv->type, "atomic_uint") == 0)
+		sv->atomic_counter_index = (*atomic_counter_next_index)++;
+
 	da_init(sv->default_val);
 }
 
@@ -180,6 +187,7 @@ static inline void shader_func_free(struct shader_func *sf)
 
 struct shader_parser {
 	struct cf_parser cfp;
+	int atomic_counter_next_index;
 
 	DARRAY(struct shader_var) params;
 	DARRAY(struct shader_struct) structs;
@@ -190,6 +198,7 @@ struct shader_parser {
 static inline void shader_parser_init(struct shader_parser *sp)
 {
 	cf_parser_init(&sp->cfp);
+	sp->atomic_counter_next_index = 0;
 
 	da_init(sp->params);
 	da_init(sp->structs);

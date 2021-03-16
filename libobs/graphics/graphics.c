@@ -2154,6 +2154,17 @@ gs_sparam_t *gs_shader_get_param_by_name(gs_shader_t *shader, const char *name)
 	return graphics->exports.gs_shader_get_param_by_name(shader, name);
 }
 
+gs_sresult_t *gs_shader_get_result_by_name(gs_shader_t *shader,
+					   const char *name)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid_p2("gs_shader_get_result_by_name", shader, name))
+		return NULL;
+
+	return graphics->exports.gs_shader_get_result_by_name(shader, name);
+}
+
 gs_sparam_t *gs_shader_get_viewproj_matrix(const gs_shader_t *shader)
 {
 	graphics_t *graphics = thread_graphics;
@@ -2275,6 +2286,16 @@ void gs_shader_set_texture(gs_sparam_t *param, gs_texture_t *val)
 	graphics->exports.gs_shader_set_texture(param, val);
 }
 
+void gs_shader_set_atomic_uint(gs_sparam_t *param, unsigned int val)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid_p("gs_shader_set_atomic_uint", param))
+		return;
+
+	graphics->exports.gs_shader_set_atomic_uint(param, val);
+}
+
 void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 {
 	graphics_t *graphics = thread_graphics;
@@ -2283,6 +2304,16 @@ void gs_shader_set_val(gs_sparam_t *param, const void *val, size_t size)
 		return;
 
 	graphics->exports.gs_shader_set_val(param, val, size);
+}
+
+void gs_shader_get_result(gs_sresult_t *result, struct darray *dst)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid_p("gs_shader_get_result", dst))
+		return;
+
+	graphics->exports.gs_shader_get_result(result, dst);
 }
 
 void gs_shader_set_default(gs_sparam_t *param)
