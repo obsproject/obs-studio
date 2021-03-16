@@ -61,12 +61,7 @@
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
-#include <QX11Info>
-
-#ifdef ENABLE_WAYLAND
 #include <qpa/qplatformnativeinterface.h>
-#endif
-
 #endif
 
 #include <iostream>
@@ -1398,27 +1393,23 @@ bool OBSApp::OBSInit()
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 	obs_set_nix_platform(OBS_NIX_PLATFORM_X11_GLX);
-	if (QApplication::platformName() == "xcb") {
-		if (getenv("OBS_USE_EGL")) {
-			blog(LOG_INFO, "Using EGL/X11");
-			obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
-		}
-		obs_set_nix_platform_display(QX11Info::display());
+	if (QApplication::platformName() == "xcb" && getenv("OBS_USE_EGL")) {
+		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
+		blog(LOG_INFO, "Using EGL/X11");
 	}
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
 		obs_set_nix_platform(OBS_NIX_PLATFORM_WAYLAND);
-		QPlatformNativeInterface *native =
-			QGuiApplication::platformNativeInterface();
-		obs_set_nix_platform_display(
-			native->nativeResourceForIntegration("display"));
-
 		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
-
 		blog(LOG_INFO, "Platform: Wayland");
 	}
 #endif
+
+	QPlatformNativeInterface *native =
+		QGuiApplication::platformNativeInterface();
+	obs_set_nix_platform_display(
+		native->nativeResourceForIntegration("display"));
 #endif
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))

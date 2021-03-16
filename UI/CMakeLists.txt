@@ -123,13 +123,17 @@ elseif(APPLE)
 	endif()
 
 elseif(UNIX)
-        find_package(Qt5X11Extras REQUIRED)
+	find_package(Qt5Gui REQUIRED)
+
+	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
 	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
 
-        set(obs_PLATFORM_LIBRARIES
-                Qt5::X11Extras)
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		Qt5::Gui
+		Qt5::GuiPrivate)
 
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 		list(APPEND obs_PLATFORM_LIBRARIES
@@ -394,16 +398,6 @@ if(WIN32)
 	set_target_properties(obs
 		PROPERTIES
 			OUTPUT_NAME "obs${_output_suffix}")
-endif()
-
-if (ENABLE_WAYLAND)
-	find_package(Qt5Gui REQUIRED)
-	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
-
-	set(obs_PLATFORM_LIBRARIES
-		${obs_PLATFORM_LIBRARIES}
-		Qt5::Gui
-		Qt5::GuiPrivate)
 endif()
 
 target_link_libraries(obs
