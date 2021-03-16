@@ -124,39 +124,26 @@ void release_lib(void)
 	}
 }
 
-static bool nvafx_get_sdk_path(char buffer[MAX_PATH])
+static bool nvafx_get_sdk_path(char *buffer, const size_t len)
 {
-	char value[MAX_PATH];
-	PVOID pvData = value;
-	DWORD BufferSize = 8192;
+	DWORD ret =
+		GetEnvironmentVariableA("NVAFX_SDK_DIR", buffer, (DWORD)len);
 
-	LSTATUS status = RegGetValue(
-		HKEY_LOCAL_MACHINE,
-		TEXT("SYSTEM\\CurrentControlSet\\Control\\Session Manager\\Environment"),
-		TEXT("NVAFX_SDK_DIR"), RRF_RT_REG_SZ, NULL, pvData,
-		&BufferSize);
+	if (!ret || ret >= len - 1)
+		return false;
 
-	if (status != ERROR_SUCCESS)
-		return false;
-	else if (!os_wcs_to_utf8((wchar_t *)pvData, 0, buffer, MAX_PATH))
-		return false;
 	return true;
 }
 
 static bool load_lib(void)
 {
-	char buffer[MAX_PATH];
-	if (!nvafx_get_sdk_path(buffer))
+	char path[MAX_PATH];
+	if (!nvafx_get_sdk_path(path, sizeof(path)))
 		return false;
 
-	size_t length = strlen(buffer);
-	wchar_t path[MAX_PATH];
-
-	if (!os_utf8_to_wcs(buffer, 0, path, length + 1))
-		return false;
-	SetDllDirectory(path);
+	SetDllDirectoryA(path);
 	nv_audiofx = LoadLibrary(L"NVAudioEffects.dll");
-	SetDllDirectory(NULL);
+	SetDllDirectoryA(NULL);
 
 	return !!nv_audiofx;
 }
