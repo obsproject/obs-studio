@@ -478,7 +478,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 #ifdef LIBNVAFX_ENABLED
 	char sdk_path[MAX_PATH];
 
-	if (!nvafx_get_sdk_path(sdk_path)) {
+	if (!nvafx_get_sdk_path(sdk_path, sizeof(sdk_path))) {
 		ng->nvafx_enabled = false;
 		do_log(LOG_ERROR, "NVAFX redist is not installed.");
 	} else {
