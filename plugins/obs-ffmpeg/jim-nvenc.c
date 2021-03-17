@@ -509,6 +509,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	h264_config->outputPictureTimingSEI = 1;
 	config->rcParams.averageBitRate = bitrate * 1000;
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
+	config->rcParams.vbvBufferSize = bitrate * 1000;
 
 	/* -------------------------- */
 	/* profile                    */
