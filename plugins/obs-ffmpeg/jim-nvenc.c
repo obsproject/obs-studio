@@ -42,9 +42,10 @@ struct nvenc_data {
 	void *session;
 	NV_ENC_INITIALIZE_PARAMS params;
 	NV_ENC_CONFIG config;
-	size_t buf_count;
-	size_t output_delay;
-	size_t buffers_queued;
+	int rc_lookahead;
+	int buf_count;
+	int output_delay;
+	int buffers_queued;
 	size_t next_bitstream;
 	size_t cur_bitstream;
 	bool encode_started;
@@ -464,9 +465,28 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* lookahead */
 	lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
 		    (lookahead || config->rcParams.enableLookahead);
+	if (lookahead)
+		enc->rc_lookahead = 8;
+
+	int buf_count = max(4, config->frameIntervalP * 2 * 2);
 	if (lookahead) {
-		config->rcParams.lookaheadDepth = 8;
+		buf_count = max(buf_count, config->frameIntervalP +
+						   enc->rc_lookahead +
+						   EXTRA_BUFFERS);
+	}
+
+	buf_count = min(64, buf_count);
+	enc->buf_count = buf_count;
+
+	const int output_delay = buf_count - 1;
+	enc->output_delay = output_delay;
+
+	if (lookahead) {
+		int lkd_bound = output_delay - config->frameIntervalP - 4;
+
 		config->rcParams.enableLookahead = 1;
+		config->rcParams.lookaheadDepth =
+			max(enc->rc_lookahead, lkd_bound);
 	}
 
 	/* psycho aq */
@@ -528,10 +548,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
 		return false;
 	}
-
-	enc->buf_count = config->frameIntervalP +
-			 config->rcParams.lookaheadDepth + EXTRA_BUFFERS;
-	enc->output_delay = enc->buf_count - 1;
 
 	info("settings:\n"
 	     "\trate_control: %s\n"
