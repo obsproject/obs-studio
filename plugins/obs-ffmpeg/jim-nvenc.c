@@ -472,6 +472,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* psycho aq */
 	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ)) {
 		config->rcParams.enableAQ = psycho_aq;
+		config->rcParams.aqStrength = 8;
 		config->rcParams.enableTemporalAQ = psycho_aq;
 	}
 
