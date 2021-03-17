@@ -50,7 +50,7 @@ struct nvenc_data {
 	bool encode_started;
 	bool first_packet;
 	bool can_change_bitrate;
-	bool bframes;
+	int32_t bframes;
 
 	DARRAY(struct nv_bitstream) bitstreams;
 	DARRAY(struct nv_texture) textures;
@@ -461,7 +461,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		break;
 	}
 
-	enc->bframes = bf > 0;
+	enc->bframes = bf;
 
 	/* lookahead */
 	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
@@ -908,8 +908,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 		circlebuf_pop_front(&enc->dts_list, &dts, sizeof(dts));
 
 		/* subtract bframe delay from dts */
-		if (enc->bframes)
-			dts -= packet->timebase_num;
+		dts -= (int64_t)enc->bframes * packet->timebase_num;
 
 		*received_packet = true;
 		packet->data = enc->packet_data.array;
