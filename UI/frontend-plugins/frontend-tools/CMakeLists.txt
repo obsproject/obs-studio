@@ -9,8 +9,6 @@ if(UNIX AND NOT APPLE)
 	find_package(X11 REQUIRED)
 	link_libraries(${X11_LIBRARIES})
 	include_directories(${X11_INCLUDE_DIR})
-
-	find_package(Qt5X11Extras REQUIRED)
 endif()
 
 include_directories(SYSTEM "${CMAKE_SOURCE_DIR}/deps/obs-scripting")
@@ -124,11 +122,6 @@ target_link_libraries(frontend-tools
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)
-
-if(UNIX AND NOT APPLE)
-	target_link_libraries(frontend-tools
-		Qt5::X11Extras)
-endif()
 
 set_target_properties(frontend-tools PROPERTIES FOLDER "frontend")
 
