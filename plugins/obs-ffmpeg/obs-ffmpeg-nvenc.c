@@ -173,6 +173,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -228,6 +229,9 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set(enc->context->priv_data, "level", "auto", 0);
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
+
+	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
 
 	enc->context->bit_rate = bitrate * 1000;
 	enc->context->rc_buffer_size = bitrate * 1000;
