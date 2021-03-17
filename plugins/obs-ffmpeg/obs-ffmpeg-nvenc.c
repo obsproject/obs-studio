@@ -173,6 +173,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -220,8 +221,9 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
-		enc->context->rc_max_rate = bitrate * 1000;
-		enc->context->rc_min_rate = bitrate * 1000;
+		const int64_t rate = (int64_t)bitrate * 1000;
+		enc->context->rc_max_rate = rate;
+		enc->context->rc_min_rate = rate;
 		cqp = 0;
 	}
 
@@ -229,8 +231,12 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
 
-	enc->context->bit_rate = bitrate * 1000;
-	enc->context->rc_buffer_size = bitrate * 1000;
+	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
+
+	const int rate = bitrate * 1000;
+	enc->context->bit_rate = rate;
+	enc->context->rc_buffer_size = rate;
 	enc->context->width = obs_encoder_get_width(enc->encoder);
 	enc->context->height = obs_encoder_get_height(enc->encoder);
 	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
@@ -291,13 +297,14 @@ static bool nvenc_reconfigure(void *data, obs_data_t *settings)
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(58, 19, 101)
 	struct nvenc_encoder *enc = data;
 
-	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	const int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cbr = astrcmpi(rc, "CBR") == 0;
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	if (cbr || vbr) {
-		enc->context->bit_rate = bitrate * 1000;
-		enc->context->rc_max_rate = bitrate * 1000;
+		const int64_t rate = bitrate * 1000;
+		enc->context->bit_rate = rate;
+		enc->context->rc_max_rate = rate;
 	}
 #endif
 	return true;

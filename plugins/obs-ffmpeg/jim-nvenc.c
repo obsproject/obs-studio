@@ -3,6 +3,7 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-avc.h>
+#include <libavutil/rational.h>
 #define INITGUID
 #include <dxgi.h>
 #include <d3d11.h>
@@ -41,15 +42,16 @@ struct nvenc_data {
 	void *session;
 	NV_ENC_INITIALIZE_PARAMS params;
 	NV_ENC_CONFIG config;
-	size_t buf_count;
-	size_t output_delay;
-	size_t buffers_queued;
+	int rc_lookahead;
+	int buf_count;
+	int output_delay;
+	int buffers_queued;
 	size_t next_bitstream;
 	size_t cur_bitstream;
 	bool encode_started;
 	bool first_packet;
 	bool can_change_bitrate;
-	bool bframes;
+	int32_t bframes;
 
 	DARRAY(struct nv_bitstream) bitstreams;
 	DARRAY(struct nv_texture) textures;
@@ -408,21 +410,22 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
 		&h264_config->h264VUIParameters;
 
+	int darWidth, darHeight;
+	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
+
 	memset(params, 0, sizeof(*params));
 	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
 	params->encodeGUID = NV_ENC_CODEC_H264_GUID;
 	params->presetGUID = nv_preset;
 	params->encodeWidth = voi->width;
 	params->encodeHeight = voi->height;
-	params->darWidth = voi->width;
-	params->darHeight = voi->height;
+	params->darWidth = darWidth;
+	params->darHeight = darHeight;
 	params->frameRateNum = voi->fps_num;
 	params->frameRateDen = voi->fps_den;
 	params->enableEncodeAsync = 1;
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
-	params->maxEncodeWidth = voi->width;
-	params->maxEncodeHeight = voi->height;
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
@@ -433,6 +436,11 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		h264_config->disableSPSPPS = 0;
 		h264_config->outputAUD = 1;
 	}
+
+	h264_config->sliceMode = 3;
+	h264_config->sliceModeData = 1;
+
+	h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
 
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
@@ -457,19 +465,45 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		break;
 	}
 
-	enc->bframes = bf > 0;
+	enc->bframes = bf;
 
 	/* lookahead */
-	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
-		config->rcParams.lookaheadDepth = 8;
+	const bool use_profile_lookahead = config->rcParams.enableLookahead;
+	lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
+		    (lookahead || use_profile_lookahead);
+	if (lookahead) {
+		enc->rc_lookahead = use_profile_lookahead
+					    ? config->rcParams.lookaheadDepth
+					    : 8;
+	}
+
+	int buf_count = max(4, config->frameIntervalP * 2 * 2);
+	if (lookahead) {
+		buf_count = max(buf_count, config->frameIntervalP +
+						   enc->rc_lookahead +
+						   EXTRA_BUFFERS);
+	}
+
+	buf_count = min(64, buf_count);
+	enc->buf_count = buf_count;
+
+	const int output_delay = buf_count - 1;
+	enc->output_delay = output_delay;
+
+	if (lookahead) {
+		int lkd_bound = output_delay - config->frameIntervalP - 4;
+
 		config->rcParams.enableLookahead = 1;
-	} else {
-		lookahead = false;
+		config->rcParams.lookaheadDepth =
+			max(enc->rc_lookahead, lkd_bound);
+		config->rcParams.disableIadapt = 0;
+		config->rcParams.disableBadapt = 0;
 	}
 
 	/* psycho aq */
 	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ)) {
 		config->rcParams.enableAQ = psycho_aq;
+		config->rcParams.aqStrength = 8;
 		config->rcParams.enableTemporalAQ = psycho_aq;
 	}
 
@@ -506,6 +540,7 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	h264_config->outputPictureTimingSEI = 1;
 	config->rcParams.averageBitRate = bitrate * 1000;
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
+	config->rcParams.vbvBufferSize = bitrate * 1000;
 
 	/* -------------------------- */
 	/* profile                    */
@@ -524,10 +559,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
 		return false;
 	}
-
-	enc->buf_count = config->frameIntervalP +
-			 config->rcParams.lookaheadDepth + EXTRA_BUFFERS;
-	enc->output_delay = enc->buf_count - 1;
 
 	info("settings:\n"
 	     "\trate_control: %s\n"
@@ -904,8 +935,7 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 		circlebuf_pop_front(&enc->dts_list, &dts, sizeof(dts));
 
 		/* subtract bframe delay from dts */
-		if (enc->bframes)
-			dts -= packet->timebase_num;
+		dts -= (int64_t)enc->bframes * packet->timebase_num;
 
 		*received_packet = true;
 		packet->data = enc->packet_data.array;
