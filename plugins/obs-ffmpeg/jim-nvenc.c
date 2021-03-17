@@ -3,6 +3,7 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-avc.h>
+#include <libavutil/rational.h>
 #define INITGUID
 #include <dxgi.h>
 #include <d3d11.h>
@@ -408,14 +409,17 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
 		&h264_config->h264VUIParameters;
 
+	int darWidth, darHeight;
+	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
+
 	memset(params, 0, sizeof(*params));
 	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
 	params->encodeGUID = NV_ENC_CODEC_H264_GUID;
 	params->presetGUID = nv_preset;
 	params->encodeWidth = voi->width;
 	params->encodeHeight = voi->height;
-	params->darWidth = voi->width;
-	params->darHeight = voi->height;
+	params->darWidth = darWidth;
+	params->darHeight = darHeight;
 	params->frameRateNum = voi->fps_num;
 	params->frameRateDen = voi->fps_den;
 	params->enableEncodeAsync = 1;
