@@ -425,8 +425,6 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	params->enableEncodeAsync = 1;
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
-	params->maxEncodeWidth = voi->width;
-	params->maxEncodeHeight = voi->height;
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
