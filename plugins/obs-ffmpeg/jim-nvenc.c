@@ -468,10 +468,14 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->bframes = bf;
 
 	/* lookahead */
+	const bool use_profile_lookahead = config->rcParams.enableLookahead;
 	lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
-		    (lookahead || config->rcParams.enableLookahead);
-	if (lookahead)
-		enc->rc_lookahead = 8;
+		    (lookahead || use_profile_lookahead);
+	if (lookahead) {
+		enc->rc_lookahead = use_profile_lookahead
+					    ? config->rcParams.lookaheadDepth
+					    : 8;
+	}
 
 	int buf_count = max(4, config->frameIntervalP * 2 * 2);
 	if (lookahead) {
