@@ -437,6 +437,11 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		h264_config->outputAUD = 1;
 	}
 
+	h264_config->sliceMode = 3;
+	h264_config->sliceModeData = 1;
+
+	h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
 	vui_params->colourDescriptionPresentFlag = 1;
@@ -487,6 +492,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.enableLookahead = 1;
 		config->rcParams.lookaheadDepth =
 			max(enc->rc_lookahead, lkd_bound);
+		config->rcParams.disableIadapt = 0;
+		config->rcParams.disableBadapt = 0;
 	}
 
 	/* psycho aq */
