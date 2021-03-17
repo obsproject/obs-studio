@@ -19,6 +19,7 @@
 
 #include <QPointer>
 #include <QStyledItemDelegate>
+#include <QCloseEvent>
 #include "obs-app.hpp"
 #include "ui_OBSMissingFiles.h"
 
@@ -44,6 +45,7 @@ public:
 
 	QIcon GetWarningIcon();
 	void SetWarningIcon(const QIcon &icon);
+	void closeEvent(QCloseEvent *event) override { event->accept(); }
 
 private:
 	void saveFiles();
