@@ -462,11 +462,11 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->bframes = bf;
 
 	/* lookahead */
-	if (lookahead && nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD)) {
+	lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
+		    (lookahead || config->rcParams.enableLookahead);
+	if (lookahead) {
 		config->rcParams.lookaheadDepth = 8;
 		config->rcParams.enableLookahead = 1;
-	} else {
-		lookahead = false;
 	}
 
 	/* psycho aq */
