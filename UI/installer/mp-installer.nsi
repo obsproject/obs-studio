@@ -21,15 +21,16 @@ ManifestDPIAware true
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "27.0.8"
-!define SHORTVERSION "25.0.8"
+!define APPVERSION "27.0.0"
+!define SHORTVERSION "27.0.0"
 !endif
 
 !define APPNAMEANDVERSION "OBS Studio ${SHORTVERSION}"
 
 ; Python Install settings
 !ifndef PYTHON
-!define PYVERSION "3.8.8"
+!define PYVERSION "3.6.8"
+!define PYVERSIONSHORT "3.6"
 !endif
 
 !ifdef INSTALL64
@@ -354,7 +355,7 @@ Function GetPythonInstPath
   Push $1
   Push $2
   ReadRegStr $0 HKLM \
-     "Software\Microsoft\Windows\Python\PythonCore\3.8\InstallPath" \ 
+     "Software\Microsoft\Windows\Python\PythonCore\${PYVERSIONSHORT}\InstallPath" \ 
      "ExecutablePath"
   StrCmp $0 "" fin
 
