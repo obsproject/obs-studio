@@ -21,11 +21,22 @@ ManifestDPIAware true
 !define APPNAME "OBS Studio"
 
 !ifndef APPVERSION
-!define APPVERSION "25.0.8"
+!define APPVERSION "27.0.8"
 !define SHORTVERSION "25.0.8"
 !endif
 
 !define APPNAMEANDVERSION "OBS Studio ${SHORTVERSION}"
+
+; Python Install settings
+!ifndef PYTHON
+!define PYVERSION "3.8.8"
+!endif
+
+!ifdef INSTALL64
+!define PYDOWNLOADURL "https://www.python.org/ftp/python/${PYVERSION}/python-${PYVERSION}-amd64.exe"
+!else
+!define PYDOWNLOADURL "https://www.python.org/ftp/python/${PYVERSION}/python-${PYVERSION}.exe"
+!endif
 
 ; Additional script dependencies
 !include WinVer.nsh
@@ -337,6 +348,83 @@ Section "OBS Studio" SecCore
 	CreateShortCut "$SMPROGRAMS\OBS Studio\Uninstall.lnk" "$INSTDIR\uninstall.exe"
 SectionEnd
 
+Function GetPythonInstPath
+
+  Push $0
+  Push $1
+  Push $2
+  ReadRegStr $0 HKLM \
+     "Software\Microsoft\Windows\Python\PythonCore\3.8\InstallPath" \ 
+     "ExecutablePath"
+  StrCmp $0 "" fin
+
+    StrCpy $1 $0 1 0 ; get firstchar
+    StrCmp $1 '"' "" getparent 
+      ; if first char is ", let's remove "'s first.
+      StrCpy $0 $0 "" 1
+      StrCpy $1 0
+      rqloop:
+        StrCpy $2 $0 1 $1
+        StrCmp $2 '"' rqdone
+        StrCmp $2 "" rqdone
+        IntOp $1 $1 + 1
+        Goto rqloop
+      rqdone:
+      StrCpy $0 $0 $1
+    getparent:
+    ; the uninstall string goes to an EXE, let's get the directory.
+    StrCpy $1 -1
+    gploop:
+      StrCpy $2 $0 1 $1
+      StrCmp $2 "" gpexit
+      StrCmp $2 "\" gpexit
+      IntOp $1 $1 - 1
+      Goto gploop
+    gpexit:
+    StrCpy $0 $0 $1
+
+    StrCmp $0 "" fin
+    IfFileExists $0\python.exe fin
+      StrCpy $0 ""
+  fin:
+  Pop $2
+  Pop $1
+  Exch $0
+  
+FunctionEnd
+Function MakeSureIGotPython
+
+  Call GetPythonInstPath
+  
+  Pop $0
+  StrCmp $0 "" getpython
+    Return
+    
+  getpython:
+    
+  StrCpy $2 "$TEMP\Python Installer.exe"
+  NSISdl::download ${PYDOWNLOADURL} $2
+  Pop $0
+  StrCmp $0 success success
+    SetDetailsView show
+    DetailPrint "download failed: $0"
+    Abort
+  success:
+    ExecWait '"$2" /S'
+    Delete $2
+    Call GetPythonInstPath
+    Pop $0
+    StrCmp $0 "" skip
+    StrCpy $INSTDIR $0
+  skip:
+  
+FunctionEnd
+; Optional section (can be disabled by the user)
+Section /o "Install Python for Scripting"
+
+Call MakeSureIGotPython
+
+SectionEnd
 Section -FinishSection
 
 	SetShellVarContext all
