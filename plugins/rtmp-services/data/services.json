@@ -1205,6 +1205,23 @@
             }
         },
         {
+            "name": "Bitwave",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://stream.bitwave.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "high",
+                "max video bitrate": 3000,
+                "max audio bitrate": 320,
+                "max fps": 60,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
             "name": "Trovo",
             "alt_names": ["Madcat"],
             "servers": [
