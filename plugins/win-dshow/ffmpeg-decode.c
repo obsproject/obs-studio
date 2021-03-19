@@ -107,7 +107,7 @@ int ffmpeg_decode_init(struct ffmpeg_decode *decode, enum AVCodecID id,
 void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 {
 	if (decode->hw_frame)
-		av_free(decode->hw_frame);
+		av_frame_free(&decode->hw_frame);
 
 	if (decode->decoder) {
 		avcodec_close(decode->decoder);
@@ -115,7 +115,7 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 	}
 
 	if (decode->frame)
-		av_free(decode->frame);
+		av_frame_free(&decode->frame);
 
 	if (decode->packet_buffer)
 		bfree(decode->packet_buffer);
