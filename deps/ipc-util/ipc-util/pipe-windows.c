@@ -15,6 +15,7 @@
  */
 
 #include "pipe.h"
+#include<stdio.h>
 
 #define IPC_PIPE_BUF_SIZE 1024
 
