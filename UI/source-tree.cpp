@@ -1162,7 +1162,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 	}
 
 	if (indicator == QAbstractItemView::BelowItem ||
-	    indicator == QAbstractItemView::OnItem)
+	    indicator == QAbstractItemView::OnItem ||
+	    indicator == QAbstractItemView::OnViewport)
 		row++;
 
 	if (row < 0 || row > stm->items.count()) {
