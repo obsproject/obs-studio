@@ -105,7 +105,6 @@ int obs_open_module(obs_module_t **module, const char *path,
 	"libGLES",   
 	"obs-browser-page",
 	"chrome_elf",
-	"facemask",
 	"libcef"
 	};
 	for (size_t idx=0; idx < sizeof(excluded_patterns) / sizeof(char*); idx++) {
