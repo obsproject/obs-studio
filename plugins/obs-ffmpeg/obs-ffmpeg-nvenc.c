@@ -221,7 +221,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->context->priv_data, "cbr", true, 0);
-		const int64_t rate = (int64_t)bitrate * 1000;
+		const int64_t rate = bitrate * INT64_C(1000);
 		enc->context->rc_max_rate = rate;
 		enc->context->rc_min_rate = rate;
 		cqp = 0;
