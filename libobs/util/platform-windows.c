@@ -384,16 +384,14 @@ static int os_get_path_internal(char *dst, size_t size, const char *name,
 
 	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, path_utf16);
 
-	if (os_wcs_to_utf8(path_utf16, 0, dst, size) != 0) {
+	char path_utf8[MAX_PATH];
+	if (os_wcs_to_utf8(path_utf16, 0, path_utf8, sizeof(path_utf8)) != 0) {
 		if (!name || !*name) {
-			return (int)strlen(dst);
+			snprintf(dst, size, "%s", path_utf8);
+		} else {
+			snprintf(dst, size, "%s\\%s", path_utf8, name);
 		}
-
-		if (strcat_s(dst, size, "\\") == 0) {
-			if (strcat_s(dst, size, name) == 0) {
-				return (int)strlen(dst);
-			}
-		}
+		return (int)strlen(dst);
 	}
 
 	return -1;

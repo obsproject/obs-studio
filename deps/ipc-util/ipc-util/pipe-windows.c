@@ -171,8 +171,7 @@ static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
 	DWORD mode = PIPE_READMODE_MESSAGE;
 	char new_name[512];
 
-	strcpy_s(new_name, sizeof(new_name), "\\\\.\\pipe\\");
-	strcat_s(new_name, sizeof(new_name), name);
+	snprintf(new_name, sizeof(new_name), "\\\\.\\pipe\\%s", name);
 
 	pipe->handle = CreateFileA(new_name, GENERIC_READ | GENERIC_WRITE, 0,
 				   NULL, OPEN_EXISTING, 0, NULL);
