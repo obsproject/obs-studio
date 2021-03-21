@@ -5,10 +5,10 @@
 #include <obs-config.h>
 
 #include "rtmp-format-ver.h"
-#include "twitch.h"
-#include "younow.h"
-#include "nimotv.h"
-#include "showroom.h"
+#include "service-specific/twitch.h"
+#include "service-specific/younow.h"
+#include "service-specific/nimotv.h"
+#include "service-specific/showroom.h"
 
 struct rtmp_common {
 	char *service;

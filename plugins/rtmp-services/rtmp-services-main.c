@@ -7,7 +7,8 @@
 
 #include "rtmp-format-ver.h"
 #include "lookup-config.h"
-#include "showroom.h"
+
+#include "service-specific/showroom.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
