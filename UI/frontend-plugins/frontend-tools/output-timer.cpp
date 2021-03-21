@@ -8,8 +8,6 @@
 #include <QObject>
 #include "output-timer.hpp"
 
-using namespace std;
-
 OutputTimer *ot;
 
 OutputTimer::OutputTimer(QWidget *parent)

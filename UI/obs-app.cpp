@@ -68,13 +68,11 @@
 
 #include "ui-config.h"
 
-using namespace std;
-
 static log_handler_t def_log_handler;
 
-static string currentLogFile;
-static string lastLogFile;
-static string lastCrashLogFile;
+static std::string currentLogFile;
+static std::string lastLogFile;
+static std::string lastCrashLogFile;
 
 bool portable_mode = false;
 static bool multi = false;
@@ -90,9 +88,9 @@ bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
-string opt_starting_collection;
-string opt_starting_profile;
-string opt_starting_scene;
+std::string opt_starting_collection;
+std::string opt_starting_profile;
+std::string opt_starting_scene;
 
 bool restart = false;
 
@@ -227,22 +225,25 @@ QObject *CreateShortcutFilter()
 	});
 }
 
-string CurrentTimeString()
+std::string CurrentTimeString()
 {
-	using namespace std::chrono;
-
 	struct tm tstruct;
 	char buf[80];
 
-	auto tp = system_clock::now();
-	auto now = system_clock::to_time_t(tp);
+	auto tp = std::chrono::system_clock::now();
+	auto now = std::chrono::system_clock::to_time_t(tp);
 	tstruct = *localtime(&now);
 
 	size_t written = strftime(buf, sizeof(buf), "%X", &tstruct);
-	if (ratio_less<system_clock::period, seconds::period>::value &&
+	if (std::ratio_less<std::chrono::system_clock::period,
+			    std::chrono::seconds::period>::value &&
 	    written && (sizeof(buf) - written) > 5) {
-		auto tp_secs = time_point_cast<seconds>(tp);
-		auto millis = duration_cast<milliseconds>(tp - tp_secs).count();
+		auto tp_secs =
+			std::chrono::time_point_cast<std::chrono::seconds>(tp);
+		auto millis =
+			std::chrono::duration_cast<std::chrono::milliseconds>(
+				tp - tp_secs)
+				.count();
 
 		snprintf(buf + written, sizeof(buf) - written, ".%03u",
 			 static_cast<unsigned>(millis));
@@ -251,7 +252,7 @@ string CurrentTimeString()
 	return buf;
 }
 
-string CurrentDateTimeString()
+std::string CurrentDateTimeString()
 {
 	time_t now = time(0);
 	struct tm tstruct;
@@ -261,10 +262,10 @@ string CurrentDateTimeString()
 	return buf;
 }
 
-static inline void LogString(fstream &logFile, const char *timeString,
+static inline void LogString(std::fstream &logFile, const char *timeString,
 			     char *str, int log_level)
 {
-	string msg;
+	std::string msg;
 	msg += timeString;
 	msg += str;
 
@@ -277,10 +278,11 @@ static inline void LogString(fstream &logFile, const char *timeString,
 					  Q_ARG(QString, QString(msg.c_str())));
 }
 
-static inline void LogStringChunk(fstream &logFile, char *str, int log_level)
+static inline void LogStringChunk(std::fstream &logFile, char *str,
+				  int log_level)
 {
 	char *nextLine = str;
-	string timeString = CurrentTimeString();
+	std::string timeString = CurrentTimeString();
 	timeString += ": ";
 
 	while (*nextLine) {
@@ -314,10 +316,11 @@ static inline int sum_chars(const char *str)
 	return val;
 }
 
-static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
+static inline bool too_many_repeated_entries(std::fstream &logFile,
+					     const char *msg,
 					     const char *output_str)
 {
-	static mutex log_mutex;
+	static std::mutex log_mutex;
 	static const char *last_msg_ptr = nullptr;
 	static int last_char_sum = 0;
 	static char cmp_str[4096];
@@ -325,7 +328,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 
 	int new_sum = sum_chars(output_str);
 
-	lock_guard<mutex> guard(log_mutex);
+	std::lock_guard<std::mutex> guard(log_mutex);
 
 	if (unfiltered_log) {
 		return false;
@@ -341,7 +344,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 	if (rep_count > MAX_REPEATED_LINES) {
 		logFile << CurrentTimeString()
 			<< ": Last log entry repeated for "
-			<< to_string(rep_count - MAX_REPEATED_LINES)
+			<< std::to_string(rep_count - MAX_REPEATED_LINES)
 			<< " more lines" << endl;
 	}
 
@@ -355,7 +358,7 @@ static inline bool too_many_repeated_entries(fstream &logFile, const char *msg,
 
 static void do_log(int log_level, const char *msg, va_list args, void *param)
 {
-	fstream &logFile = *static_cast<fstream *>(param);
+	std::fstream &logFile = *static_cast<std::fstream *>(param);
 	char str[4096];
 
 #ifndef _WIN32
@@ -369,10 +372,10 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	if (IsDebuggerPresent()) {
 		int wNum = MultiByteToWideChar(CP_UTF8, 0, str, -1, NULL, 0);
 		if (wNum > 1) {
-			static wstring wide_buf;
-			static mutex wide_mutex;
+			static std::wstring wide_buf;
+			static std::mutex wide_mutex;
 
-			lock_guard<mutex> lock(wide_mutex);
+			std::lock_guard<std::mutex> lock(wide_mutex);
 			wide_buf.reserve(wNum + 1);
 			wide_buf.resize(wNum - 1);
 			MultiByteToWideChar(CP_UTF8, 0, str, -1, &wide_buf[0],
@@ -569,9 +572,9 @@ static bool MakeUserProfileDirs()
 	return true;
 }
 
-static string GetProfileDirFromName(const char *name)
+static std::string GetProfileDirFromName(const char *name)
 {
-	string outputPath;
+	std::string outputPath;
 	os_glob_t *glob;
 	char path[512];
 
@@ -615,9 +618,9 @@ static string GetProfileDirFromName(const char *name)
 	return outputPath;
 }
 
-static string GetSceneCollectionFileFromName(const char *name)
+static std::string GetSceneCollectionFileFromName(const char *name)
 {
-	string outputPath;
+	std::string outputPath;
 	os_glob_t *glob;
 	char path[512];
 
@@ -717,7 +720,7 @@ bool OBSApp::InitGlobalConfig()
 	}
 
 	if (!opt_starting_collection.empty()) {
-		string path = GetSceneCollectionFileFromName(
+		std::string path = GetSceneCollectionFileFromName(
 			opt_starting_collection.c_str());
 		if (!path.empty()) {
 			config_set_string(globalConfig, "Basic",
@@ -730,7 +733,7 @@ bool OBSApp::InitGlobalConfig()
 	}
 
 	if (!opt_starting_profile.empty()) {
-		string path =
+		std::string path =
 			GetProfileDirFromName(opt_starting_profile.c_str());
 		if (!path.empty()) {
 			config_set_string(globalConfig, "Basic", "Profile",
@@ -817,7 +820,7 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
-	string englishPath;
+	std::string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
 		return false;
@@ -842,10 +845,10 @@ bool OBSApp::InitLocale()
 			if (locale_ == lang)
 				return true;
 
-			stringstream file;
+			std::stringstream file;
 			file << "locale/" << locale_ << ".ini";
 
-			string path;
+			std::string path;
 			if (!GetDataFilePath(file.str().c_str(), path))
 				continue;
 
@@ -861,10 +864,10 @@ bool OBSApp::InitLocale()
 		return true;
 	}
 
-	stringstream file;
+	std::stringstream file;
 	file << "locale/" << lang << ".ini";
 
-	string path;
+	std::string path;
 	if (GetDataFilePath(file.str().c_str(), path)) {
 		if (!text_lookup_add(textLookup, path.c_str()))
 			blog(LOG_ERROR, "Failed to add locale file '%s'",
@@ -1085,11 +1088,11 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	if (path == "") {
 		char userDir[512];
 		name = "themes/" + name + ".qss";
-		string temp = "obs-studio/" + name;
+		std::string temp = "obs-studio/" + name;
 		int ret = GetConfigPath(userDir, sizeof(userDir), temp.c_str());
 
 		if (ret > 0 && QFile::exists(userDir)) {
-			path = string(userDir);
+			path = std::string(userDir);
 		} else if (!GetDataFilePath(name.c_str(), path)) {
 			OBSErrorBox(NULL, "Failed to find %s.", name.c_str());
 			return false;
@@ -1454,9 +1457,9 @@ bool OBSApp::OBSInit()
 	return true;
 }
 
-string OBSApp::GetVersionString() const
+std::string OBSApp::GetVersionString() const
 {
-	stringstream ver;
+	std::stringstream ver;
 
 #ifdef HAVE_OBSCONFIG_H
 	ver << OBS_VERSION;
@@ -1556,7 +1559,7 @@ QString OBSTranslator::translate(const char *context, const char *sourceText,
 	return QT_UTF8(out);
 }
 
-static bool get_token(lexer *lex, string &str, base_token_type type)
+static bool get_token(lexer *lex, std::string &str, base_token_type type)
 {
 	base_token token;
 	if (!lexer_getbasetoken(lex, &token, IGNORE_WHITESPACE))
@@ -1582,12 +1585,12 @@ static bool expect_token(lexer *lex, const char *str, base_token_type type)
 static uint64_t convert_log_name(bool has_prefix, const char *name)
 {
 	BaseLexer lex;
-	string year, month, day, hour, minute, second;
+	std::string year, month, day, hour, minute, second;
 
 	lexer_start(lex, name);
 
 	if (has_prefix) {
-		string temp;
+		std::string temp;
 		if (!get_token(lex, temp, BASETOKEN_ALPHA))
 			return 0;
 	}
@@ -1613,7 +1616,7 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 	if (!get_token(lex, second, BASETOKEN_DIGIT))
 		return 0;
 
-	stringstream timestring;
+	std::stringstream timestring;
 	timestring << year << month << day << hour << minute << second;
 	return std::stoull(timestring.str());
 }
@@ -1621,7 +1624,7 @@ static uint64_t convert_log_name(bool has_prefix, const char *name)
 static void delete_oldest_file(bool has_prefix, const char *location)
 {
 	BPtr<char> logDir(GetConfigPathPtr(location));
-	string oldestLog;
+	std::string oldestLog;
 	uint64_t oldest_ts = (uint64_t)-1;
 	struct os_dirent *entry;
 
@@ -1652,7 +1655,7 @@ static void delete_oldest_file(bool has_prefix, const char *location)
 		os_closedir(dir);
 
 		if (count > maxLogs) {
-			stringstream delPath;
+			std::stringstream delPath;
 
 			delPath << logDir << "/" << oldestLog;
 			os_unlink(delPath.str().c_str());
@@ -1686,7 +1689,7 @@ static void get_last_log(bool has_prefix, const char *subdir_to_use,
 	}
 }
 
-string GenerateTimeDateFilename(const char *extension, bool noSpace)
+std::string GenerateTimeDateFilename(const char *extension, bool noSpace)
 {
 	time_t now = time(0);
 	char file[256] = {};
@@ -1698,18 +1701,18 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 		 cur_time->tm_mday, noSpace ? '_' : ' ', cur_time->tm_hour,
 		 cur_time->tm_min, cur_time->tm_sec, extension);
 
-	return string(file);
+	return std::string(file);
 }
 
-string GenerateSpecifiedFilename(const char *extension, bool noSpace,
-				 const char *format)
+std::string GenerateSpecifiedFilename(const char *extension, bool noSpace,
+				      const char *format)
 {
 	BPtr<char> filename =
 		os_generate_formatted_filename(extension, !noSpace, format);
-	return string(filename);
+	return std::string(filename);
 }
 
-static void FindBestFilename(string &strPath, bool noSpace)
+static void FindBestFilename(std::string &strPath, bool noSpace)
 {
 	int num = 2;
 
@@ -1722,11 +1725,11 @@ static void FindBestFilename(string &strPath, bool noSpace)
 
 	int extStart = int(ext - strPath.c_str());
 	for (;;) {
-		string testPath = strPath;
-		string numStr;
+		std::string testPath = strPath;
+		std::string numStr;
 
 		numStr = noSpace ? "_" : " (";
-		numStr += to_string(num++);
+		numStr += std::to_string(num++);
 		if (!noSpace)
 			numStr += ")";
 
@@ -1739,19 +1742,19 @@ static void FindBestFilename(string &strPath, bool noSpace)
 	}
 }
 
-static void ensure_directory_exists(string &path)
+static void ensure_directory_exists(std::string &path)
 {
 	replace(path.begin(), path.end(), '\\', '/');
 
 	size_t last = path.rfind('/');
-	if (last == string::npos)
+	if (last == std::string::npos)
 		return;
 
-	string directory = path.substr(0, last);
+	std::string directory = path.substr(0, last);
 	os_mkdirs(directory.c_str());
 }
 
-static void remove_reserved_file_characters(string &s)
+static void remove_reserved_file_characters(std::string &s)
 {
 	replace(s.begin(), s.end(), '\\', '/');
 	replace(s.begin(), s.end(), '*', '_');
@@ -1763,10 +1766,10 @@ static void remove_reserved_file_characters(string &s)
 	replace(s.begin(), s.end(), '<', '_');
 }
 
-string GetFormatString(const char *format, const char *prefix,
-		       const char *suffix)
+std::string GetFormatString(const char *format, const char *prefix,
+			    const char *suffix)
 {
-	string f;
+	std::string f;
 
 	if (prefix && *prefix) {
 		f += prefix;
@@ -1787,8 +1790,8 @@ string GetFormatString(const char *format, const char *prefix,
 	return f;
 }
 
-string GetOutputFilename(const char *path, const char *ext, bool noSpace,
-			 bool overwrite, const char *format)
+std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
+			      bool overwrite, const char *format)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
@@ -1807,7 +1810,7 @@ string GetOutputFilename(const char *path, const char *ext, bool noSpace,
 
 	os_closedir(dir);
 
-	string strPath;
+	std::string strPath;
 	strPath += path;
 
 	char lastChar = strPath.back();
@@ -1822,9 +1825,9 @@ string GetOutputFilename(const char *path, const char *ext, bool noSpace,
 	return strPath;
 }
 
-vector<pair<string, string>> GetLocaleNames()
+std::vector<std::pair<std::string, std::string>> GetLocaleNames()
 {
-	string path;
+	std::string path;
 	if (!GetDataFilePath("locale.ini", path))
 		throw "Could not find locale.ini path";
 
@@ -1834,7 +1837,7 @@ vector<pair<string, string>> GetLocaleNames()
 
 	size_t sections = config_num_sections(ini);
 
-	vector<pair<string, string>> names;
+	std::vector<std::pair<std::string, std::string>> names;
 	names.reserve(sections);
 	for (size_t i = 0; i < sections; i++) {
 		const char *tag = config_get_section(ini, i);
@@ -1845,9 +1848,9 @@ vector<pair<string, string>> GetLocaleNames()
 	return names;
 }
 
-static void create_log_file(fstream &logFile)
+static void create_log_file(std::fstream &logFile)
 {
-	stringstream dst;
+	std::stringstream dst;
 
 	get_last_log(false, "obs-studio/logs", lastLogFile);
 #ifdef _WIN32
@@ -1862,9 +1865,11 @@ static void create_log_file(fstream &logFile)
 #ifdef _WIN32
 	BPtr<wchar_t> wpath;
 	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	logFile.open(wpath, ios_base::in | ios_base::out | ios_base::trunc);
+	logFile.open(wpath, std::ios_base::in | std::ios_base::out |
+				    std::ios_base::trunc);
 #else
-	logFile.open(path, ios_base::in | ios_base::out | ios_base::trunc);
+	logFile.open(path, std::ios_base::in | std::ios_base::out |
+				   std::ios_base::trunc);
 #endif
 
 	if (logFile.is_open()) {
@@ -1910,7 +1915,7 @@ static void SaveProfilerData(const ProfilerSnapshot &snap)
 		return;
 
 #define LITERAL_SIZE(x) x, (sizeof(x) - 1)
-	ostringstream dst;
+	std::ostringstream dst;
 	dst.write(LITERAL_SIZE("obs-studio/profiler_data/"));
 	dst.write(currentLogFile.c_str(), pos);
 	dst.write(LITERAL_SIZE(".csv.gz"));
@@ -1947,7 +1952,7 @@ QAccessibleInterface *accessibleFactory(const QString &classname,
 }
 
 static const char *run_program_init = "run_program_init";
-static int run_program(fstream &logFile, int argc, char *argv[])
+static int run_program(std::fstream &logFile, int argc, char *argv[])
 {
 	int ret = -1;
 
@@ -2070,7 +2075,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 		if (argc > 1) {
-			stringstream stor;
+			std::stringstream stor;
 			stor << argv[1];
 			for (int i = 2; i < argc; ++i) {
 				stor << " " << argv[i];
@@ -2113,47 +2118,47 @@ static void main_crash_handler(const char *format, va_list args, void *param)
 	vsnprintf(text, MAX_CRASH_REPORT_SIZE, format, args);
 	text[MAX_CRASH_REPORT_SIZE - 1] = 0;
 
-	string crashFilePath = "obs-studio/crashes";
+	std::string crashFilePath = "obs-studio/crashes";
 
 	delete_oldest_file(true, crashFilePath.c_str());
 
-	string name = crashFilePath + "/";
+	std::string name = crashFilePath + "/";
 	name += "Crash " + GenerateTimeDateFilename("txt");
 
 	BPtr<char> path(GetConfigPathPtr(name.c_str()));
 
-	fstream file;
+	std::fstream file;
 
 #ifdef _WIN32
 	BPtr<wchar_t> wpath;
 	os_utf8_to_wcs_ptr(path, 0, &wpath);
-	file.open(wpath, ios_base::in | ios_base::out | ios_base::trunc |
-				 ios_base::binary);
+	file.open(wpath, std::ios_base::in | std::ios_base::out |
+				 std::ios_base::trunc | std::ios_base::binary);
 #else
-	file.open(path, ios_base::in | ios_base::out | ios_base::trunc |
-				ios_base::binary);
+	file.open(path, std::ios_base::in | std::ios_base::out |
+				std::ios_base::trunc | std::ios_base::binary);
 #endif
 	file << text;
 	file.close();
 
-	string pathString(path.Get());
+	std::string pathString(path.Get());
 
 #ifdef _WIN32
 	std::replace(pathString.begin(), pathString.end(), '/', '\\');
 #endif
 
-	string absolutePath =
-		canonical(filesystem::path(pathString)).u8string();
+	std::string absolutePath =
+		canonical(std::filesystem::path(pathString)).u8string();
 
 	size_t size = snprintf(nullptr, 0, CRASH_MESSAGE, absolutePath.c_str());
 
-	unique_ptr<char[]> message_buffer(new char[size + 1]);
+	std::unique_ptr<char[]> message_buffer(new char[size + 1]);
 
 	snprintf(message_buffer.get(), size + 1, CRASH_MESSAGE,
 		 absolutePath.c_str());
 
-	string finalMessage =
-		string(message_buffer.get(), message_buffer.get() + size);
+	std::string finalMessage =
+		std::string(message_buffer.get(), message_buffer.get() + size);
 
 	int ret = MessageBoxA(NULL, finalMessage.c_str(), "OBS has crashed!",
 			      MB_YESNO | MB_ICONERROR | MB_TASKMODAL);
@@ -2413,8 +2418,8 @@ static bool update_ffmpeg_output(ConfigFile &config)
 	if (isActualURL)
 		return false;
 
-	string urlStr = url;
-	string extension;
+	std::string urlStr = url;
+	std::string extension;
 
 	for (size_t i = urlStr.length(); i > 0; i--) {
 		size_t idx = i - 1;
@@ -2756,7 +2761,7 @@ int main(int argc, char *argv[])
 
 	upgrade_settings();
 
-	fstream logFile;
+	std::fstream logFile;
 
 	curl_global_init(CURL_GLOBAL_ALL);
 	int ret = run_program(logFile, argc, argv);

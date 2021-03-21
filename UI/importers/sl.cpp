@@ -17,10 +17,9 @@
 
 #include "importers.hpp"
 
-using namespace std;
-using namespace json11;
+using json11::Json;
 
-static string translate_key(const string &sl_key)
+static std::string translate_key(const std::string &sl_key)
 {
 	if (sl_key.substr(0, 6) == "Numpad" && sl_key.size() == 7) {
 		return "OBS_KEY_NUM" + sl_key.substr(6);
@@ -77,9 +76,10 @@ static string translate_key(const string &sl_key)
 	return "";
 }
 
-static string translate_hotkey(const Json &hotkey, const string &source)
+static std::string translate_hotkey(const Json &hotkey,
+				    const std::string &source)
 {
-	string name = hotkey["actionName"].string_value();
+	std::string name = hotkey["actionName"].string_value();
 
 #define add_translation(in, str, out, source) \
 	if (in == str) {                      \
@@ -91,7 +91,7 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 	add_translation(name, "TOGGLE_SOURCE_VISIBILITY_HIDE",
 			"libobs.hide_scene_item.", source);
 
-	string empty = "";
+	std::string empty = "";
 
 	add_translation(name, "SWITCH_TO_SCENE", "OBSBasic.SelectScene", empty);
 
@@ -107,11 +107,12 @@ static string translate_hotkey(const Json &hotkey, const string &source)
 #undef add_translation
 }
 
-static bool source_name_exists(const Json::array &sources, const string &name)
+static bool source_name_exists(const Json::array &sources,
+			       const std::string &name)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		Json item = sources[i];
-		string source_name = item["name"].string_value();
+		std::string source_name = item["name"].string_value();
 
 		if (source_name == name)
 			return true;
@@ -120,13 +121,13 @@ static bool source_name_exists(const Json::array &sources, const string &name)
 	return false;
 }
 
-static string get_source_name_from_id(const Json &root,
-				      const Json::array &sources,
-				      const string &id)
+static std::string get_source_name_from_id(const Json &root,
+					   const Json::array &sources,
+					   const std::string &id)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		Json item = sources[i];
-		string source_id = item["sl_id"].string_value();
+		std::string source_id = item["sl_id"].string_value();
 
 		if (source_id == id)
 			return item["name"].string_value();
@@ -136,16 +137,17 @@ static string get_source_name_from_id(const Json &root,
 
 	for (size_t i = 0; i < scene_arr.size(); i++) {
 		Json item = scene_arr[i];
-		string source_id = item["id"].string_value();
+		std::string source_id = item["id"].string_value();
 
 		if (source_id == id) {
-			string name = item["name"].string_value();
+			std::string name = item["name"].string_value();
 
 			int copy = 1;
-			string out_name = name;
+			std::string out_name = name;
 
 			while (source_name_exists(sources, out_name))
-				out_name = name + "(" + to_string(copy++) + ")";
+				out_name = name + "(" + std::to_string(copy++) +
+					   ")";
 
 			return out_name;
 		}
@@ -155,7 +157,7 @@ static string get_source_name_from_id(const Json &root,
 }
 
 static void get_hotkey_bindings(Json::object &out_hotkeys,
-				const Json &in_hotkeys, const string &name)
+				const Json &in_hotkeys, const std::string &name)
 {
 	Json::array hot_arr = in_hotkeys.array_items();
 	for (size_t i = 0; i < hot_arr.size(); i++) {
@@ -163,13 +165,13 @@ static void get_hotkey_bindings(Json::object &out_hotkeys,
 		Json::array bindings = hotkey["bindings"].array_items();
 		Json::array out_hotkey = Json::array{};
 
-		string hotkey_name = translate_hotkey(hotkey, name);
+		std::string hotkey_name = translate_hotkey(hotkey, name);
 
 		for (size_t x = 0; x < bindings.size(); x++) {
 			Json binding = bindings[x];
 			Json modifiers = binding["modifiers"];
 
-			string key =
+			std::string key =
 				translate_key(binding["key"].string_value());
 
 			out_hotkey.push_back(
@@ -196,8 +198,9 @@ static void get_scene_items(const Json &root, const Json::array &out_sources,
 		Json item = in[i];
 
 		Json in_crop = item["crop"];
-		string id = item["sourceId"].string_value();
-		string name = get_source_name_from_id(root, out_sources, id);
+		std::string id = item["sourceId"].string_value();
+		std::string name =
+			get_source_name_from_id(root, out_sources, id);
 
 		Json::array hotkey_items =
 			item["hotkeys"]["items"].array_items();
@@ -224,13 +227,14 @@ static void get_scene_items(const Json &root, const Json::array &out_sources,
 		Json::object{{"items", out_items}, {"id_counter", length}};
 }
 
-static int attempt_import(const Json &root, const string &name, Json &res)
+static int attempt_import(const Json &root, const std::string &name, Json &res)
 {
 	Json::array source_arr = root["sources"]["items"].array_items();
 	Json::array scenes_arr = root["scenes"]["items"].array_items();
 	Json::array t_arr = root["transitions"]["transitions"].array_items();
 
-	string t_id = root["transitions"]["defaultTransitionId"].string_value();
+	std::string t_id =
+		root["transitions"]["defaultTransitionId"].string_value();
 
 	Json::array out_sources = Json::array{};
 	Json::array out_transitions = Json::array{};
@@ -252,7 +256,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		double vol = source["volume"].number_value();
 		bool muted = source["muted"].bool_value();
-		string name = source["name"].string_value();
+		std::string name = source["name"].string_value();
 		int monitoring = (int)source["monitoringType"].int_value();
 
 		Json::object out_hotkeys = Json::object{};
@@ -261,18 +265,18 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json::array out_filters = Json::array{};
 		for (size_t x = 0; x < filter_items.size(); x++) {
 			Json::object filter = filter_items[x].object_items();
-			string type = filter["type"].string_value();
+			std::string type = filter["type"].string_value();
 			filter["id"] = type;
 
 			out_filters.push_back(filter);
 		}
 
 		int copy = 1;
-		string out_name = name;
+		std::string out_name = name;
 		while (source_name_exists(out_sources, out_name))
-			out_name = name + "(" + to_string(copy++) + ")";
+			out_name = name + "(" + std::to_string(copy++) + ")";
 
-		string sl_id = source["id"].string_value();
+		std::string sl_id = source["id"].string_value();
 
 		out_sources.push_back(
 			Json::object{{"filters", out_filters},
@@ -287,7 +291,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 				     {"monitoring_type", monitoring}});
 	}
 
-	string scene_name = "";
+	std::string scene_name = "";
 
 	for (size_t i = 0; i < scenes_arr.size(); i++) {
 		Json scene = scenes_arr[i];
@@ -299,7 +303,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		Json in_settings = scene["settings"];
 
-		string name = scene["name"].string_value();
+		std::string name = scene["name"].string_value();
 
 		Json::object out_hotkeys = Json::object{};
 		get_hotkey_bindings(out_hotkeys, hotkey_items, "");
@@ -307,21 +311,21 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json::array out_filters = Json::array{};
 		for (size_t x = 0; x < filter_items.size(); x++) {
 			Json::object filter = filter_items[x].object_items();
-			string type = filter["type"].string_value();
+			std::string type = filter["type"].string_value();
 			filter["id"] = type;
 
 			out_filters.push_back(filter);
 		}
 
 		int copy = 1;
-		string out_name = name;
+		std::string out_name = name;
 		while (source_name_exists(out_sources, out_name))
-			out_name = name + "(" + to_string(copy++) + ")";
+			out_name = name + "(" + std::to_string(copy++) + ")";
 
 		if (scene_name.empty())
 			scene_name = out_name;
 
-		string sl_id = scene["id"].string_value();
+		std::string sl_id = scene["id"].string_value();
 
 		Json::object out =
 			Json::object{{"filters", out_filters},
@@ -341,7 +345,7 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		out_sources.push_back(out);
 	}
 
-	string transition_name = "";
+	std::string transition_name = "";
 
 	for (size_t i = 0; i < t_arr.size(); i++) {
 		Json transition = t_arr[i];
@@ -349,8 +353,8 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 		Json in_settings = transition["settings"];
 
 		int duration = transition["duration"].int_value();
-		string name = transition["name"].string_value();
-		string id = transition["id"].string_value();
+		std::string name = transition["name"].string_value();
+		std::string id = transition["id"].string_value();
 
 		if (id == t_id)
 			transition_name = name;
@@ -372,19 +376,19 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 	return IMPORTER_SUCCESS;
 }
 
-string SLImporter::Name(const string &path)
+std::string SLImporter::Name(const std::string &path)
 {
-	string name;
+	std::string name;
 
-	string folder = GetFolderFromPath(path);
-	string manifest_file = GetFilenameFromPath(path);
-	string manifest_path = folder + "manifest.json";
+	std::string folder = GetFolderFromPath(path);
+	std::string manifest_file = GetFilenameFromPath(path);
+	std::string manifest_path = folder + "manifest.json";
 
 	if (os_file_exists(manifest_path.c_str())) {
 		BPtr<char> file_data =
 			os_quick_read_utf8_file(manifest_path.c_str());
 
-		string err;
+		std::string err;
 		Json data = Json::parse(file_data, err);
 
 		if (err == "") {
@@ -395,8 +399,8 @@ string SLImporter::Name(const string &path)
 
 			for (size_t i = 0, l = collections.size(); i < l; i++) {
 				Json c = collections[i];
-				string c_id = c["id"].string_value();
-				string c_name = c["name"].string_value();
+				std::string c_id = c["id"].string_value();
+				std::string c_name = c["name"].string_value();
 
 				if (c_id == manifest_file) {
 					name = std::move(c_name);
@@ -416,7 +420,8 @@ string SLImporter::Name(const string &path)
 	return name;
 }
 
-int SLImporter::ImportScenes(const string &path, string &name, Json &res)
+int SLImporter::ImportScenes(const std::string &path, std::string &name,
+			     Json &res)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
@@ -426,13 +431,13 @@ int SLImporter::ImportScenes(const string &path, string &name, Json &res)
 	if (err != "")
 		return IMPORTER_ERROR_DURING_CONVERSION;
 
-	string node_type = data["nodeType"].string_value();
+	std::string node_type = data["nodeType"].string_value();
 
 	int result = IMPORTER_ERROR_DURING_CONVERSION;
 
 	if (node_type == "RootNode") {
 		if (name == "") {
-			string auto_name = Name(path);
+			std::string auto_name = Name(path);
 			result = attempt_import(data, auto_name, res);
 		} else {
 			result = attempt_import(data, name, res);
@@ -444,18 +449,18 @@ int SLImporter::ImportScenes(const string &path, string &name, Json &res)
 	return result;
 }
 
-bool SLImporter::Check(const string &path)
+bool SLImporter::Check(const std::string &path)
 {
 	bool check = false;
 
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
 	if (file_data) {
-		string err;
+		std::string err;
 		Json root = Json::parse(file_data, err);
 
 		if (!root.is_null()) {
-			string node_type = root["nodeType"].string_value();
+			std::string node_type = root["nodeType"].string_value();
 
 			if (node_type == "RootNode")
 				check = true;
@@ -479,7 +484,7 @@ OBSImporterFiles SLImporter::FindFiles()
 	os_dir_t *dir = os_opendir(dst);
 	struct os_dirent *ent;
 	while ((ent = os_readdir(dir)) != NULL) {
-		string name = ent->d_name;
+		std::string name = ent->d_name;
 
 		if (ent->directory || name[0] == '.' || name == "manifest.json")
 			continue;
@@ -487,7 +492,7 @@ OBSImporterFiles SLImporter::FindFiles()
 		size_t pos = name.find_last_of(".json");
 		size_t end_pos = name.size() - 1;
 		if (pos != -1 && pos == end_pos) {
-			string str = dst + name;
+			std::string str = dst + name;
 			res.push_back(str);
 		}
 	}

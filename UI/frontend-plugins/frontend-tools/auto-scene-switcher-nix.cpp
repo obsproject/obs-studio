@@ -15,8 +15,6 @@
 #include <util/platform.h>
 #include "auto-scene-switcher.hpp"
 
-using namespace std;
-
 static Display *xdisplay = 0;
 
 Display *disp()
@@ -140,7 +138,7 @@ static std::string GetWindowTitle(size_t i)
 	return windowTitle;
 }
 
-void GetWindowList(vector<string> &windows)
+void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
 
@@ -150,7 +148,7 @@ void GetWindowList(vector<string> &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	if (!ewmhIsSupported()) {
 		return;

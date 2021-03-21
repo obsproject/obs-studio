@@ -19,10 +19,10 @@
 
 #include <QByteArray>
 
-using namespace std;
-using namespace json11;
+using json11::Json;
 
-static bool source_name_exists(const Json::array &sources, const string &name)
+static bool source_name_exists(const Json::array &sources,
+			       const std::string &name)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		Json source = sources[i];
@@ -76,12 +76,12 @@ static int red_blue_swap(int color)
 	return color - (r * 65536) - b + (b * 65536) + r;
 }
 
-static void create_string_obj(const string &data, Json::array &arr);
+static void create_string_obj(const std::string &data, Json::array &arr);
 
 static Json::object translate_source(const Json &in, const Json &sources)
 {
-	string id = in["class"].string_value();
-	string name = in["name"].string_value();
+	std::string id = in["class"].string_value();
+	std::string name = in["name"].string_value();
 
 	Json::array source_arr = sources.array_items();
 
@@ -102,9 +102,9 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	Json::object out = Json::object{};
 
 	int i = 0;
-	string new_name = name;
+	std::string new_name = name;
 	while (source_name_exists(source_arr, new_name)) {
-		new_name = name + to_string(++i);
+		new_name = name + std::to_string(++i);
 	}
 	out["name"] = new_name;
 
@@ -143,13 +143,13 @@ static Json::object translate_source(const Json &in, const Json &sources)
 		translate_bool("mode", in_settings, "read_from_file", settings);
 		translate_bool("wrap", in_settings, "extents_wrap", settings);
 
-		string str = in_settings["file"].string_value();
+		std::string str = in_settings["file"].string_value();
 		settings["file"] = StringReplace(str, "\\\\", "/");
 
 		int in_align = in_settings["align"].int_value();
-		string align = in_align == 0
-				       ? "left"
-				       : (in_align == 1 ? "center" : "right");
+		std::string align =
+			in_align == 0 ? "left"
+				      : (in_align == 1 ? "center" : "right");
 
 		settings["align"] = align;
 
@@ -188,7 +188,7 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	} else if (id == "BitmapImageSource") {
 		out["id"] = "image_source";
 
-		string str = in_settings["path"].string_value();
+		std::string str = in_settings["path"].string_value();
 		settings["file"] = StringReplace(str, "\\\\", "/");
 	} else if (id == "BitmapTransitionSource") {
 		out["id"] = "slideshow";
@@ -203,8 +203,9 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	} else if (id == "WindowCaptureSource") {
 		out["id"] = "window_capture";
 
-		string win = in_settings["window"].string_value();
-		string winClass = in_settings["windowClass"].string_value();
+		std::string win = in_settings["window"].string_value();
+		std::string winClass =
+			in_settings["windowClass"].string_value();
 
 		win = StringReplace(win, "/", "\\\\");
 		win = StringReplace(win, ":", "#3A");
@@ -215,13 +216,13 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	} else if (id == "CLRBrowserSource") {
 		out["id"] = "browser_source";
 
-		string browser_dec =
+		std::string browser_dec =
 			QByteArray::fromBase64(in_settings["sourceSettings"]
 						       .string_value()
 						       .c_str())
 				.toStdString();
 
-		string err;
+		std::string err;
 
 		Json browser = Json::parse(browser_dec, err);
 
@@ -237,15 +238,17 @@ static Json::object translate_source(const Json &in, const Json &sources)
 	} else if (id == "DeviceCapture") {
 		out["id"] = "dshow_input";
 
-		string device_id = in_settings["deviceID"].string_value();
-		string device_name = in_settings["deviceName"].string_value();
+		std::string device_id = in_settings["deviceID"].string_value();
+		std::string device_name =
+			in_settings["deviceName"].string_value();
 
 		settings["video_device_id"] = device_name + ":" + device_id;
 
 		int w = in_settings["resolutionWidth"].int_value();
 		int h = in_settings["resolutionHeight"].int_value();
 
-		settings["resolution"] = to_string(w) + "x" + to_string(h);
+		settings["resolution"] =
+			std::to_string(w) + "x" + std::to_string(h);
 	} else if (id == "GraphicsCapture") {
 		bool hotkey = in_settings["useHotkey"].int_value() == 1;
 
@@ -255,8 +258,9 @@ static Json::object translate_source(const Json &in, const Json &sources)
 			settings["capture_mode"] = "window";
 		}
 
-		string winClass = in_settings["windowClass"].string_value();
-		string exec = in_settings["executable"].string_value();
+		std::string winClass =
+			in_settings["windowClass"].string_value();
+		std::string exec = in_settings["executable"].string_value();
 
 		settings["window"] = ":" + winClass + ":" + exec;
 
@@ -291,7 +295,7 @@ static void translate_sc(const Json &in, Json &out)
 	}
 
 	Json::array scenes = in["scenes"].array_items();
-	string first_name = "";
+	std::string first_name = "";
 
 	for (size_t i = 0; i < scenes.size(); i++) {
 		Json in_scene = scenes[i];
@@ -335,49 +339,49 @@ static void translate_sc(const Json &in, Json &out)
 	out = res;
 }
 
-static void create_string(const string &name, Json::object &out,
-			  const string &data)
+static void create_string(const std::string &name, Json::object &out,
+			  const std::string &data)
 {
-	string str = StringReplace(data, "\\\\", "/");
+	std::string str = StringReplace(data, "\\\\", "/");
 	out[name] = str;
 }
 
-static void create_string_obj(const string &data, Json::array &arr)
+static void create_string_obj(const std::string &data, Json::array &arr)
 {
 	Json::object obj = Json::object{};
 	create_string("value", obj, data);
 	arr.push_back(obj);
 }
 
-static void create_double(const string &name, Json::object &out,
-			  const string &data)
+static void create_double(const std::string &name, Json::object &out,
+			  const std::string &data)
 {
 	double d = atof(data.c_str());
 	out[name] = d;
 }
 
-static void create_int(const string &name, Json::object &out,
-		       const string &data)
+static void create_int(const std::string &name, Json::object &out,
+		       const std::string &data)
 {
 	int i = atoi(data.c_str());
 	out[name] = i;
 }
 
-static void create_data_item(Json::object &out, const string &line)
+static void create_data_item(Json::object &out, const std::string &line)
 {
 	size_t end_pos = line.find(':') - 1;
 
-	if (end_pos == string::npos)
+	if (end_pos == std::string::npos)
 		return;
 
 	size_t start_pos = 0;
 	while (line[start_pos] == ' ')
 		start_pos++;
 
-	string name = line.substr(start_pos, end_pos - start_pos);
+	std::string name = line.substr(start_pos, end_pos - start_pos);
 	const char *c_name = name.c_str();
 
-	string first = line.substr(end_pos + 3);
+	std::string first = line.substr(end_pos + 3);
 
 	if ((first[0] >= 'A' && first[0] <= 'Z') ||
 	    (first[0] >= 'a' && first[0] <= 'z') || first[0] == '\\' ||
@@ -386,7 +390,7 @@ static void create_data_item(Json::object &out, const string &line)
 			Json::array arr = out[c_name].array_items();
 			if (out[c_name].is_string()) {
 				Json::array new_arr = Json::array{};
-				string str = out[c_name].string_value();
+				std::string str = out[c_name].string_value();
 				create_string_obj(str, new_arr);
 				arr = std::move(new_arr);
 			}
@@ -397,13 +401,13 @@ static void create_data_item(Json::object &out, const string &line)
 			create_string(c_name, out, first);
 		}
 	} else if (first[0] == '"') {
-		string str = first.substr(1, first.size() - 2);
+		std::string str = first.substr(1, first.size() - 2);
 
 		if (out.find(c_name) != out.end()) {
 			Json::array arr = out[c_name].array_items();
 			if (out[c_name].is_string()) {
 				Json::array new_arr = Json::array{};
-				string str1 = out[c_name].string_value();
+				std::string str1 = out[c_name].string_value();
 				create_string_obj(str1, new_arr);
 				arr = std::move(new_arr);
 			}
@@ -413,16 +417,18 @@ static void create_data_item(Json::object &out, const string &line)
 		} else {
 			create_string(c_name, out, str);
 		}
-	} else if (first.find('.') != string::npos) {
+	} else if (first.find('.') != std::string::npos) {
 		create_double(c_name, out, first);
 	} else {
 		create_int(c_name, out, first);
 	}
 }
 
-static Json::object create_object(Json::object &out, string &line, string &src);
+static Json::object create_object(Json::object &out, std::string &line,
+				  std::string &src);
 
-static Json::array create_sources(Json::object &out, string &line, string &src)
+static Json::array create_sources(Json::object &out, std::string &line,
+				  std::string &src)
 {
 	Json::array res = Json::array{};
 
@@ -431,14 +437,15 @@ static Json::array create_sources(Json::object &out, string &line, string &src)
 	while (!line.empty() && line[l_len - 1] != '}') {
 		size_t end_pos = line.find(':');
 
-		if (end_pos == string::npos)
+		if (end_pos == std::string::npos)
 			return Json::array{};
 
 		size_t start_pos = 0;
 		while (line[start_pos] == ' ')
 			start_pos++;
 
-		string name = line.substr(start_pos, end_pos - start_pos - 1);
+		std::string name =
+			line.substr(start_pos, end_pos - start_pos - 1);
 
 		Json::object nul = Json::object();
 
@@ -456,18 +463,19 @@ static Json::array create_sources(Json::object &out, string &line, string &src)
 	return res;
 }
 
-static Json::object create_object(Json::object &out, string &line, string &src)
+static Json::object create_object(Json::object &out, std::string &line,
+				  std::string &src)
 {
 	size_t end_pos = line.find(':');
 
-	if (end_pos == string::npos)
+	if (end_pos == std::string::npos)
 		return Json::object{};
 
 	size_t start_pos = 0;
 	while (line[start_pos] == ' ')
 		start_pos++;
 
-	string name = line.substr(start_pos, end_pos - start_pos - 1);
+	std::string name = line.substr(start_pos, end_pos - start_pos - 1);
 
 	Json::object res = Json::object{};
 
@@ -497,12 +505,13 @@ static Json::object create_object(Json::object &out, string &line, string &src)
 	return res;
 }
 
-string ClassicImporter::Name(const string &path)
+std::string ClassicImporter::Name(const std::string &path)
 {
 	return GetFilenameFromPath(path);
 }
 
-int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
+int ClassicImporter::ImportScenes(const std::string &path, std::string &name,
+				  Json &res)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 	if (!file_data)
@@ -514,12 +523,12 @@ int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
 	Json::object data = Json::object{};
 	data["name"] = name;
 
-	string file = file_data.Get();
-	string line = ReadLine(file);
+	std::string file = file_data.Get();
+	std::string line = ReadLine(file);
 
 	while (!line.empty() && line[0] != '\0') {
-		string key = line != "global sources : {" ? "scenes"
-							  : "globals";
+		std::string key = line != "global sources : {" ? "scenes"
+							       : "globals";
 
 		Json::array arr = create_sources(data, line, file);
 		data[key] = arr;
@@ -533,7 +542,7 @@ int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
 	return IMPORTER_SUCCESS;
 }
 
-bool ClassicImporter::Check(const string &path)
+bool ClassicImporter::Check(const std::string &path)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
 
@@ -564,10 +573,10 @@ OBSImporterFiles ClassicImporter::FindFiles()
 		if (ent->directory || *ent->d_name == '.')
 			continue;
 
-		string name = ent->d_name;
+		std::string name = ent->d_name;
 		size_t pos = name.find(".xconfig");
 		if (pos != -1 && pos == name.length() - 8) {
-			string path = dst + name;
+			std::string path = dst + name;
 			res.push_back(path);
 		}
 	}

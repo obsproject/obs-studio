@@ -14,7 +14,7 @@
 
 #include <json11.hpp>
 
-using namespace json11;
+using json11::Json;
 
 #include <browser-panel.hpp>
 extern QCef *cef;

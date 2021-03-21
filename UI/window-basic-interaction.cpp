@@ -26,8 +26,6 @@
 #include <QScreen>
 #include <QWindow>
 
-using namespace std;
-
 OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
 	  main(qobject_cast<OBSBasic *>(parent)),
@@ -134,8 +132,8 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	if (!window->source)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+	uint32_t sourceCX = std::max(obs_source_get_width(window->source), 1u);
+	uint32_t sourceCY = std::max(obs_source_get_height(window->source), 1u);
 
 	int x, y;
 	int newCX, newCY;
@@ -231,8 +229,8 @@ bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 
 	QSize size = GetPixelSize(ui->preview);
 
-	uint32_t sourceCX = max(obs_source_get_width(source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(source), 1u);
+	uint32_t sourceCX = std::max(obs_source_get_width(source), 1u);
+	uint32_t sourceCY = std::max(obs_source_get_height(source), 1u);
 
 	int x, y;
 	float scale;

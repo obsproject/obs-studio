@@ -10,8 +10,6 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 
-using namespace std;
-
 static const char *textExtensions[] = {"txt", "log", nullptr};
 
 static const char *imageExtensions[] = {"bmp",  "tga", "png",  "jpg",
@@ -36,9 +34,9 @@ static const char *mediaExtensions[] = {
 	"rec",   "rm",    "rmvb",  "rpl",  "thp",  "tod",  "ts",   "tts",
 	"txd",   "vob",   "vro",   "webm", "wm",   "wmv",  "wtv",  nullptr};
 
-static string GenerateSourceName(const char *base)
+static std::string GenerateSourceName(const char *base)
 {
-	string name;
+	std::string name;
 	int inc = 0;
 
 	for (;; inc++) {
@@ -46,7 +44,7 @@ static string GenerateSourceName(const char *base)
 
 		if (inc) {
 			name += " (";
-			name += to_string(inc + 1);
+			name += std::to_string(inc + 1);
 			name += ")";
 		}
 

@@ -2,12 +2,10 @@
 #include <util/platform.h>
 #include "auto-scene-switcher.hpp"
 
-using namespace std;
-
-static bool GetWindowTitle(HWND window, string &title)
+static bool GetWindowTitle(HWND window, std::string &title)
 {
 	size_t len = (size_t)GetWindowTextLengthW(window);
-	wstring wtitle;
+	std::wstring wtitle;
 
 	wtitle.resize(len);
 	if (!GetWindowTextW(window, &wtitle[0], (int)len + 1))
@@ -43,19 +41,19 @@ static bool WindowValid(HWND window)
 	return true;
 }
 
-void GetWindowList(vector<string> &windows)
+void GetWindowList(std::vector<std::string> &windows)
 {
 	HWND window = GetWindow(GetDesktopWindow(), GW_CHILD);
 
 	while (window) {
-		string title;
+		std::string title;
 		if (WindowValid(window) && GetWindowTitle(window, title))
 			windows.emplace_back(title);
 		window = GetNextWindow(window, GW_HWNDNEXT);
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	HWND window = GetForegroundWindow();
 	DWORD id;

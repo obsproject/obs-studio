@@ -1,9 +1,7 @@
 #include "obs-frontend-internal.hpp"
 #include <memory>
 
-using namespace std;
-
-static unique_ptr<obs_frontend_callbacks> c;
+static std::unique_ptr<obs_frontend_callbacks> c;
 
 void obs_frontend_set_callbacks_internal(obs_frontend_callbacks *callbacks)
 {
@@ -23,7 +21,7 @@ static inline bool callbacks_valid_(const char *func_name)
 
 #define callbacks_valid() callbacks_valid_(__FUNCTION__)
 
-static char **convert_string_list(vector<string> &strings)
+static char **convert_string_list(std::vector<std::string> &strings)
 {
 	size_t size = 0;
 	size_t string_data_offset = (strings.size() + 1) * sizeof(char *);
@@ -81,7 +79,7 @@ char **obs_frontend_get_scene_names(void)
 		return NULL;
 
 	struct obs_frontend_source_list sources = {};
-	vector<string> names;
+	std::vector<std::string> names;
 	c->obs_frontend_get_scenes(&sources);
 
 	for (size_t i = 0; i < sources.sources.num; i++) {
@@ -164,7 +162,7 @@ char **obs_frontend_get_scene_collections(void)
 	if (!callbacks_valid())
 		return nullptr;
 
-	vector<string> strings;
+	std::vector<std::string> strings;
 	c->obs_frontend_get_scene_collections(strings);
 	return convert_string_list(strings);
 }
@@ -193,7 +191,7 @@ char **obs_frontend_get_profiles(void)
 	if (!callbacks_valid())
 		return nullptr;
 
-	vector<string> strings;
+	std::vector<std::string> strings;
 	c->obs_frontend_get_profiles(strings);
 	return convert_string_list(strings);
 }

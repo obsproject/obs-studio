@@ -18,8 +18,6 @@
 
 #define wiz reinterpret_cast<AutoConfig *>(wizard())
 
-using namespace std;
-
 /* ------------------------------------------------------------------------- */
 
 class TestMode {
@@ -144,7 +142,7 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 	obs_properties_destroy(ppts);
 }
 
-static inline void string_depad_key(string &key)
+static inline void string_depad_key(std::string &key)
 {
 	while (!key.empty()) {
 		char ch = key.back();
@@ -309,14 +307,14 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* connect signals                    */
 
 	auto on_started = [&]() {
-		unique_lock<mutex> lock(m);
+		std::unique_lock<std::mutex> lock(m);
 		connected = true;
 		stopped = false;
 		cv.notify_one();
 	};
 
 	auto on_stopped = [&]() {
-		unique_lock<mutex> lock(m);
+		std::unique_lock<std::mutex> lock(m);
 		connected = false;
 		stopped = true;
 		cv.notify_one();
@@ -366,7 +364,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 		if (!obs_output_start(output))
 			continue;
 
-		unique_lock<mutex> ul(m);
+		std::unique_lock<std::mutex> ul(m);
 		if (cancel) {
 			ul.unlock();
 			obs_output_force_stop(output);
@@ -389,7 +387,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 		/* ignore first 2.5 seconds due to possible buffering skewing
 		 * the result */
-		cv.wait_for(ul, chrono::milliseconds(2500));
+		cv.wait_for(ul, std::chrono::milliseconds(2500));
 		if (stopped)
 			continue;
 		if (cancel) {
@@ -402,7 +400,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 		int start_bytes = (int)obs_output_get_total_bytes(output);
 		uint64_t t_start = os_gettime_ns();
 
-		cv.wait_for(ul, chrono::seconds(10));
+		cv.wait_for(ul, std::chrono::seconds(10));
 		if (stopped)
 			continue;
 		if (cancel) {
@@ -443,8 +441,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	int bestBitrate = 0;
 	int bestMS = 0x7FFFFFFF;
-	string bestServer;
-	string bestServerName;
+	std::string bestServer;
+	std::string bestServerName;
 
 	for (auto &server : servers) {
 		bool close = abs(server.bitrate - bestBitrate) < 400;
@@ -576,7 +574,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* connect signals                    */
 
 	auto on_stopped = [&]() {
-		unique_lock<mutex> lock(m);
+		std::unique_lock<std::mutex> lock(m);
 		cv.notify_one();
 	};
 
@@ -624,7 +622,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* -----------------------------------*/
 	/* perform tests                      */
 
-	vector<Result> results;
+	std::vector<Result> results;
 	int i = 0;
 	int count = 1;
 
@@ -678,7 +676,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 			Q_ARG(QString,
 			      QTStr(TEST_RES_VAL).arg(cxStr, cyStr, fpsStr)));
 
-		unique_lock<mutex> ul(m);
+		std::unique_lock<std::mutex> ul(m);
 		if (cancel)
 			return false;
 
@@ -689,7 +687,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 			return false;
 		}
 
-		cv.wait_for(ul, chrono::seconds(5));
+		cv.wait_for(ul, std::chrono::seconds(5));
 
 		obs_output_stop(output);
 		cv.wait(ul);
@@ -795,7 +793,7 @@ void AutoConfigTestPage::FindIdealHardwareResolution()
 	int baseCY = wiz->baseResolutionCY;
 	CalcBaseRes(baseCX, baseCY);
 
-	vector<Result> results;
+	std::vector<Result> results;
 
 	int pcores = os_get_physical_cores();
 	int maxDataRate;
@@ -1193,7 +1191,7 @@ AutoConfigTestPage::~AutoConfigTestPage()
 
 	if (testThread.joinable()) {
 		{
-			unique_lock<mutex> ul(m);
+			std::unique_lock<std::mutex> ul(m);
 			cancel = true;
 			cv.notify_one();
 		}
@@ -1231,7 +1229,7 @@ void AutoConfigTestPage::cleanupPage()
 {
 	if (testThread.joinable()) {
 		{
-			unique_lock<mutex> ul(m);
+			std::unique_lock<std::mutex> ul(m);
 			cancel = true;
 			cv.notify_one();
 		}

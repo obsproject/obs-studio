@@ -31,8 +31,6 @@
 #include <qpointer.h>
 #include <util/c99defs.h>
 
-using namespace std;
-
 static void CreateTransitionScene(OBSSource scene, const char *text,
 				  uint32_t color);
 
@@ -277,7 +275,7 @@ static obs_source_t *CreateLabel(const char *name, size_t h)
 	obs_data_set_string(font, "face", "Monospace");
 #endif
 	obs_data_set_int(font, "flags", 1); // Bold text
-	obs_data_set_int(font, "size", min(int(h), 300));
+	obs_data_set_int(font, "size", std::min(int(h), 300));
 
 	obs_data_set_obj(settings, "font", font);
 	obs_data_set_string(settings, "text", text.c_str());
@@ -440,8 +438,8 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 	if (!window->source)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+	uint32_t sourceCX = std::max(obs_source_get_width(window->source), 1u);
+	uint32_t sourceCY = std::max(obs_source_get_height(window->source), 1u);
 
 	int x, y;
 	int newCX, newCY;
@@ -473,8 +471,10 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
 	if (!window->sourceClone)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
+	uint32_t sourceCX =
+		std::max(obs_source_get_width(window->sourceClone), 1u);
+	uint32_t sourceCY =
+		std::max(obs_source_get_height(window->sourceClone), 1u);
 
 	int x, y;
 	int newCX, newCY;

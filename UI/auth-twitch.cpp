@@ -16,7 +16,7 @@
 #include "ui-config.h"
 #include "obf.h"
 
-using namespace json11;
+using json11::Json;
 
 /* ------------------------------------------------------------------------- */
 

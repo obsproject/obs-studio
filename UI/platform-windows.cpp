@@ -37,12 +37,10 @@
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
 
-using namespace std;
-
 static inline bool check_path(const char *data, const char *path,
-			      string &output)
+			      std::string &output)
 {
-	ostringstream str;
+	std::ostringstream str;
 	str << path << data;
 	output = str.str();
 
@@ -51,7 +49,7 @@ static inline bool check_path(const char *data, const char *path,
 	return os_file_exists(output.c_str());
 }
 
-bool GetDataFilePath(const char *data, string &output)
+bool GetDataFilePath(const char *data, std::string &output)
 {
 	if (check_path(data, "data/obs-studio/", output))
 		return true;
@@ -64,7 +62,7 @@ bool InitApplicationBundle()
 	return true;
 }
 
-string GetDefaultVideoSavePath()
+std::string GetDefaultVideoSavePath()
 {
 	wchar_t path_utf16[MAX_PATH];
 	char path_utf8[MAX_PATH] = {};
@@ -73,19 +71,19 @@ string GetDefaultVideoSavePath()
 			 path_utf16);
 
 	os_wcs_to_utf8(path_utf16, wcslen(path_utf16), path_utf8, MAX_PATH);
-	return string(path_utf8);
+	return std::string(path_utf8);
 }
 
-static vector<string> GetUserPreferredLocales()
+static std::vector<std::string> GetUserPreferredLocales()
 {
-	vector<string> result;
+	std::vector<std::string> result;
 
 	ULONG num, length = 0;
 	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num, nullptr,
 					 &length))
 		return result;
 
-	vector<wchar_t> buffer(length);
+	std::vector<wchar_t> buffer(length);
 	if (!GetUserPreferredUILanguages(MUI_LANGUAGE_NAME, &num,
 					 &buffer.front(), &length))
 		return result;
@@ -109,12 +107,12 @@ static vector<string> GetUserPreferredLocales()
 	return result;
 }
 
-vector<string> GetPreferredLocales()
+std::vector<std::string> GetPreferredLocales()
 {
-	vector<string> windows_locales = GetUserPreferredLocales();
+	std::vector<std::string> windows_locales = GetUserPreferredLocales();
 	auto obs_locales = GetLocaleNames();
-	auto windows_to_obs = [&obs_locales](string windows) {
-		string lang_match;
+	auto windows_to_obs = [&obs_locales](std::string windows) {
+		std::string lang_match;
 
 		for (auto &locale_pair : obs_locales) {
 			auto &locale = locale_pair.first;
@@ -131,11 +129,11 @@ vector<string> GetPreferredLocales()
 		return lang_match;
 	};
 
-	vector<string> result;
+	std::vector<std::string> result;
 	result.reserve(obs_locales.size());
 
-	for (const string &locale : windows_locales) {
-		string match = windows_to_obs(locale);
+	for (const std::string &locale : windows_locales) {
+		std::string match = windows_to_obs(locale);
 		if (!match.size())
 			continue;
 
@@ -295,7 +293,7 @@ RunOnceMutex &RunOnceMutex::operator=(RunOnceMutex &&rom)
 
 RunOnceMutex GetRunOnceMutex(bool &already_running)
 {
-	string name;
+	std::string name;
 
 	if (!portable_mode) {
 		name = "OBSStudioCore";

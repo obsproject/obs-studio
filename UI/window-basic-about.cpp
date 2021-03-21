@@ -7,7 +7,7 @@
 #include <platform.hpp>
 #include <json11.hpp>
 
-using namespace json11;
+using json11::Json;
 
 OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 {

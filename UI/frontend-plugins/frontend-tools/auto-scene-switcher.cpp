@@ -16,14 +16,12 @@
 #include <regex>
 #include <mutex>
 
-using namespace std;
-
 #define DEFAULT_INTERVAL 300
 
 struct SceneSwitch {
 	OBSWeakSource scene;
-	string window;
-	regex re;
+	std::string window;
+	std::regex re;
 
 	inline SceneSwitch(OBSWeakSource scene_, const char *window_)
 		: scene(scene_), window(window_), re(window_)
@@ -40,12 +38,12 @@ static inline bool WeakSourceValid(obs_weak_source_t *ws)
 }
 
 struct SwitcherData {
-	thread th;
-	condition_variable cv;
-	mutex m;
+	std::thread th;
+	std::condition_variable cv;
+	std::mutex m;
 	bool stop = false;
 
-	vector<SceneSwitch> switches;
+	std::vector<SceneSwitch> switches;
 	OBSWeakSource nonMatchingScene;
 	int interval = DEFAULT_INTERVAL;
 	bool switchIfNotMatching = false;
@@ -87,7 +85,7 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 
 	switcher->Prune();
 
@@ -109,14 +107,14 @@ SceneSwitcher::SceneSwitcher(QWidget *parent)
 		GetWeakSourceName(switcher->nonMatchingScene).c_str());
 	ui->checkInterval->setValue(switcher->interval);
 
-	vector<string> windows;
+	std::vector<std::string> windows;
 	GetWindowList(windows);
 
-	for (string &window : windows)
+	for (std::string &window : windows)
 		ui->windows->addItem(window.c_str());
 
 	for (auto &s : switcher->switches) {
-		string sceneName = GetWeakSourceName(s.scene);
+		std::string sceneName = GetWeakSourceName(s.scene);
 		QString text =
 			MakeSwitchName(sceneName.c_str(), s.window.c_str());
 
@@ -166,10 +164,10 @@ void SceneSwitcher::on_switches_currentRowChanged(int idx)
 
 	QString window = item->data(Qt::UserRole).toString();
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	for (auto &s : switcher->switches) {
 		if (window.compare(s.window.c_str()) == 0) {
-			string name = GetWeakSourceName(s.scene);
+			std::string name = GetWeakSourceName(s.scene);
 			ui->scenes->setCurrentText(name.c_str());
 			ui->windows->setCurrentText(window);
 			break;
@@ -199,14 +197,14 @@ void SceneSwitcher::on_add_clicked()
 
 	if (idx == -1) {
 		try {
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			switcher->switches.emplace_back(
 				source, windowName.toUtf8().constData());
 
 			QListWidgetItem *item =
 				new QListWidgetItem(text, ui->switches);
 			item->setData(Qt::UserRole, v);
-		} catch (const regex_error &) {
+		} catch (const std::regex_error &) {
 			QMessageBox::warning(
 				this, obs_module_text("InvalidRegex.Title"),
 				obs_module_text("InvalidRegex.Text"));
@@ -215,10 +213,10 @@ void SceneSwitcher::on_add_clicked()
 		QListWidgetItem *item = ui->switches->item(idx);
 		item->setText(text);
 
-		string window = windowName.toUtf8().constData();
+		std::string window = windowName.toUtf8().constData();
 
 		{
-			lock_guard<mutex> lock(switcher->m);
+			std::lock_guard<std::mutex> lock(switcher->m);
 			for (auto &s : switcher->switches) {
 				if (s.window == window) {
 					s.scene = source;
@@ -237,11 +235,11 @@ void SceneSwitcher::on_remove_clicked()
 	if (!item)
 		return;
 
-	string window =
+	std::string window =
 		item->data(Qt::UserRole).toString().toUtf8().constData();
 
 	{
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		auto &switches = switcher->switches;
 
 		for (auto it = switches.begin(); it != switches.end(); ++it) {
@@ -262,7 +260,7 @@ void SceneSwitcher::on_startAtLaunch_toggled(bool value)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->startAtLaunch = value;
 }
 
@@ -282,7 +280,7 @@ void SceneSwitcher::on_noMatchDontSwitch_clicked()
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = false;
 }
 
@@ -291,7 +289,7 @@ void SceneSwitcher::on_noMatchSwitch_clicked()
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->switchIfNotMatching = true;
 	UpdateNonMatchingScene(ui->noMatchSwitchScene->currentText());
 }
@@ -301,7 +299,7 @@ void SceneSwitcher::on_noMatchSwitchScene_currentTextChanged(const QString &text
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	UpdateNonMatchingScene(text);
 }
 
@@ -310,7 +308,7 @@ void SceneSwitcher::on_checkInterval_valueChanged(int value)
 	if (loading)
 		return;
 
-	lock_guard<mutex> lock(switcher->m);
+	std::lock_guard<std::mutex> lock(switcher->m);
 	switcher->interval = value;
 }
 
@@ -340,7 +338,7 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
-		lock_guard<mutex> lock(switcher->m);
+		std::lock_guard<std::mutex> lock(switcher->m);
 		obs_data_t *obj = obs_data_create();
 		obs_data_array_t *array = obs_data_array_create();
 
@@ -363,7 +361,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 			obs_data_release(array_obj);
 		}
 
-		string nonMatchingSceneName =
+		std::string nonMatchingSceneName =
 			GetWeakSourceName(switcher->nonMatchingScene);
 
 		obs_data_set_int(obj, "interval", switcher->interval);
@@ -394,7 +392,7 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 		switcher->interval = obs_data_get_int(obj, "interval");
 		switcher->switchIfNotMatching =
 			obs_data_get_bool(obj, "switch_if_not_matching");
-		string nonMatchingScene =
+		std::string nonMatchingScene =
 			obs_data_get_string(obj, "non_matching_scene");
 		bool active = obs_data_get_bool(obj, "active");
 
@@ -431,13 +429,13 @@ static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 
 void SwitcherData::Thread()
 {
-	chrono::duration<long long, milli> duration =
-		chrono::milliseconds(interval);
-	string lastTitle;
-	string title;
+	std::chrono::duration<long long, std::milli> duration =
+		std::chrono::milliseconds(interval);
+	std::string lastTitle;
+	std::string title;
 
 	for (;;) {
-		unique_lock<mutex> lock(m);
+		std::unique_lock<std::mutex> lock(m);
 		OBSWeakSource scene;
 		bool match = false;
 
@@ -447,7 +445,7 @@ void SwitcherData::Thread()
 			break;
 		}
 
-		duration = chrono::milliseconds(interval);
+		duration = std::chrono::milliseconds(interval);
 
 		GetCurrentWindowTitle(title);
 
@@ -473,7 +471,7 @@ void SwitcherData::Thread()
 							scene = s.scene;
 							break;
 						}
-					} catch (const regex_error &) {
+					} catch (const std::regex_error &) {
 					}
 				}
 			}
@@ -504,14 +502,14 @@ void SwitcherData::Thread()
 void SwitcherData::Start()
 {
 	if (!switcher->th.joinable())
-		switcher->th = thread([]() { switcher->Thread(); });
+		switcher->th = std::thread([]() { switcher->Thread(); });
 }
 
 void SwitcherData::Stop()
 {
 	if (th.joinable()) {
 		{
-			lock_guard<mutex> lock(m);
+			std::lock_guard<std::mutex> lock(m);
 			stop = true;
 		}
 		cv.notify_one();

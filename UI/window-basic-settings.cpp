@@ -52,8 +52,6 @@
 #define ENCODER_HIDE_FLAGS \
 	(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL)
 
-using namespace std;
-
 class SettingsEventFilter : public QObject {
 	QScopedPointer<OBSEventFilter> shortcutFilter;
 
@@ -268,13 +266,13 @@ void OBSBasicSettings::ToggleDisableAero(bool checked)
 }
 #endif
 
-static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
+static void PopulateAACBitrates(std::initializer_list<QComboBox *> boxes)
 {
 	auto &bitrateMap = GetAACEncoderBitrateMap();
 	if (bitrateMap.empty())
 		return;
 
-	vector<pair<QString, QString>> pairs;
+	std::vector<std::pair<QString, QString>> pairs;
 	for (auto &entry : bitrateMap)
 		pairs.emplace_back(QString::number(entry.first),
 				   obs_encoder_get_display_name(entry.second));
@@ -330,7 +328,8 @@ static inline void HighlightGroupBoxLabel(QGroupBox *gb, QWidget *widget,
 	}
 }
 
-void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate);
+void RestrictResetBitrates(std::initializer_list<QComboBox *> boxes,
+			   int maxbitrate);
 
 void OBSBasicSettings::HookWidget(QWidget *widget, const char *signal,
 				  const char *slot)
@@ -365,7 +364,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	  main(qobject_cast<OBSBasic *>(parent)),
 	  ui(new Ui::OBSBasicSettings)
 {
-	string path;
+	std::string path;
 
 	EnableThreadedMessageBoxes(true);
 
@@ -1157,11 +1156,11 @@ void OBSBasicSettings::LoadLanguageList()
 void OBSBasicSettings::LoadThemeList()
 {
 	/* Save theme if user presses Cancel */
-	savedTheme = string(App()->GetTheme());
+	savedTheme = std::string(App()->GetTheme());
 
 	ui->theme->clear();
 	QSet<QString> uniqueSet;
-	string themeDir;
+	std::string themeDir;
 	char userThemeDir[512];
 	int ret = GetConfigPath(userThemeDir, sizeof(userThemeDir),
 				"obs-studio/themes/");
@@ -1391,9 +1390,9 @@ void OBSBasicSettings::LoadRendererList()
 #endif
 }
 
-static string ResString(uint32_t cx, uint32_t cy)
+static std::string ResString(uint32_t cx, uint32_t cy)
 {
-	stringstream res;
+	std::stringstream res;
 	res << cx << "x" << cy;
 	return res.str();
 }
@@ -1411,7 +1410,7 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 	QString advRecRescale;
 	QString advFFRescale;
 	QString oldOutputRes;
-	string bestScale;
+	std::string bestScale;
 	int bestPixelDiff = 0x7FFFFFFF;
 	uint32_t out_cx = outputCX;
 	uint32_t out_cy = outputCY;
@@ -1455,8 +1454,8 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 		outDownscaleCX &= 0xFFFFFFFE;
 		outDownscaleCY &= 0xFFFFFFFE;
 
-		string res = ResString(downscaleCX, downscaleCY);
-		string outRes = ResString(outDownscaleCX, outDownscaleCY);
+		std::string res = ResString(downscaleCX, downscaleCY);
+		std::string outRes = ResString(outDownscaleCX, outDownscaleCY);
 		if (!lockedOutputRes)
 			ui->outputResolution->addItem(res.c_str());
 		ui->advOutRescale->addItem(outRes.c_str());
@@ -1475,7 +1474,7 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 		}
 	}
 
-	string res = ResString(cx, cy);
+	std::string res = ResString(cx, cy);
 
 	if (!lockedOutputRes) {
 		float baseAspect = float(cx) / float(cy);
@@ -1577,7 +1576,7 @@ void OBSBasicSettings::LoadResolutionLists()
 	addRes(1920, 1080);
 	addRes(1280, 720);
 
-	string outputResString = ResString(out_cx, out_cy);
+	std::string outputResString = ResString(out_cx, out_cy);
 
 	ui->baseResolution->lineEdit()->setText(ResString(cx, cy).c_str());
 
@@ -2584,9 +2583,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 #define TRUNCATE_TEXT_LENGTH 80
 
 template<typename Func>
-static inline void
-LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
-	     const map<obs_hotkey_id, vector<obs_key_combination_t>> &keys)
+static inline void LayoutHotkey(
+	obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
+	const std::map<obs_hotkey_id, std::vector<obs_key_combination_t>> &keys)
 {
 	auto *label = new OBSHotkeyLabel;
 	QString text = QT_UTF8(obs_hotkey_get_description(key));
@@ -2654,15 +2653,15 @@ static inline void AddHotkeys(
 
 	stable_sort(begin(hotkeys), end(hotkeys),
 		    [&](const tuple_type &a, const tuple_type &b) {
-			    const auto &o_a = get<0>(a);
-			    const auto &o_b = get<0>(b);
+			    const auto &o_a = std::get<0>(a);
+			    const auto &o_b = std::get<0>(b);
 			    return o_a != o_b &&
-				   string(getName(o_a)) < getName(o_b);
+				   std::string(getName(o_a)) < getName(o_b);
 		    });
 
-	string prevName;
+	std::string prevName;
 	for (const auto &hotkey : hotkeys) {
-		const auto &o = get<0>(hotkey);
+		const auto &o = std::get<0>(hotkey);
 		const char *name = getName(o);
 		if (prevName != name) {
 			prevName = name;
@@ -2672,8 +2671,8 @@ static inline void AddHotkeys(
 			layout.addRow(makeLabel(o, getName));
 		}
 
-		auto hlabel = get<1>(hotkey);
-		auto widget = get<2>(hotkey);
+		auto hlabel = std::get<1>(hotkey);
+		auto widget = std::get<2>(hotkey);
 		layout.addRow(hlabel, widget);
 	}
 }
@@ -2683,7 +2682,8 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	hotkeys.clear();
 	ui->hotkeyPage->takeWidget()->deleteLater();
 
-	using keys_t = map<obs_hotkey_id, vector<obs_key_combination_t>>;
+	using keys_t =
+		std::map<obs_hotkey_id, std::vector<obs_key_combination_t>>;
 	keys_t keys;
 	obs_enum_hotkey_bindings(
 		[](void *data, size_t, obs_hotkey_binding_t *binding) {
@@ -2751,23 +2751,23 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 	layout->addRow(filterWidget);
 
-	using namespace std;
 	using encoders_elem_t =
-		tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
+		std::tuple<OBSEncoder, QPointer<QLabel>, QPointer<QWidget>>;
 	using outputs_elem_t =
-		tuple<OBSOutput, QPointer<QLabel>, QPointer<QWidget>>;
+		std::tuple<OBSOutput, QPointer<QLabel>, QPointer<QWidget>>;
 	using services_elem_t =
-		tuple<OBSService, QPointer<QLabel>, QPointer<QWidget>>;
+		std::tuple<OBSService, QPointer<QLabel>, QPointer<QWidget>>;
 	using sources_elem_t =
-		tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
-	vector<encoders_elem_t> encoders;
-	vector<outputs_elem_t> outputs;
-	vector<services_elem_t> services;
-	vector<sources_elem_t> scenes;
-	vector<sources_elem_t> sources;
+		std::tuple<OBSSource, QPointer<QLabel>, QPointer<QWidget>>;
+	std::vector<encoders_elem_t> encoders;
+	std::vector<outputs_elem_t> outputs;
+	std::vector<services_elem_t> services;
+	std::vector<sources_elem_t> scenes;
+	std::vector<sources_elem_t> sources;
 
-	vector<obs_hotkey_id> pairIds;
-	map<obs_hotkey_id, pair<obs_hotkey_id, OBSHotkeyLabel *>> pairLabels;
+	std::vector<obs_hotkey_id> pairIds;
+	std::map<obs_hotkey_id, std::pair<obs_hotkey_id, OBSHotkeyLabel *>>
+		pairLabels;
 
 	using std::move;
 
@@ -2833,7 +2833,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		obs_hotkey_id partner = obs_hotkey_get_pair_partner_id(key);
 		if (partner != OBS_INVALID_HOTKEY_ID) {
 			pairLabels.emplace(obs_hotkey_get_id(key),
-					   make_pair(partner, label));
+					   std::make_pair(partner, label));
 			pairIds.push_back(obs_hotkey_get_id(key));
 		}
 
@@ -2876,8 +2876,9 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 	obs_enum_hotkeys(
 		[](void *data, obs_hotkey_id id, obs_hotkey_t *key) {
 			data_t &d = *static_cast<data_t *>(data);
-			if (id != get<2>(d))
-				LayoutHotkey(id, key, get<0>(d), get<1>(d));
+			if (id != std::get<2>(d))
+				LayoutHotkey(id, key, std::get<0>(d),
+					     std::get<1>(d));
 			return true;
 		},
 		&data);
@@ -2949,7 +2950,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 {
 	int languageIndex = ui->language->currentIndex();
 	QVariant langData = ui->language->itemData(languageIndex);
-	string language = langData.toString().toStdString();
+	std::string language = langData.toString().toStdString();
 
 	if (WidgetChanged(ui->language))
 		config_set_string(GetGlobalConfig(), "General", "Language",
@@ -3330,7 +3331,7 @@ void OBSBasicSettings::SaveFormat(QComboBox *combo)
 				  desc.mimeType);
 
 		const char *ext = ff_format_desc_extensions(desc.desc);
-		string extStr = ext ? ext : "";
+		std::string extStr = ext ? ext : "";
 
 		char *comma = strchr(&extStr[0], ',');
 		if (comma)
@@ -3561,14 +3562,14 @@ void OBSBasicSettings::SaveAudioSettings()
 	}
 
 	for (auto &audioSource : audioSources) {
-		auto source = OBSGetStrongRef(get<0>(audioSource));
+		auto source = OBSGetStrongRef(std::get<0>(audioSource));
 		if (!source)
 			continue;
 
-		auto &ptmCB = get<1>(audioSource);
-		auto &ptmSB = get<2>(audioSource);
-		auto &pttCB = get<3>(audioSource);
-		auto &pttSB = get<4>(audioSource);
+		auto &ptmCB = std::get<1>(audioSource);
+		auto &ptmSB = std::get<2>(audioSource);
+		auto &pttCB = std::get<3>(audioSource);
+		auto &pttSB = std::get<4>(audioSource);
 
 		obs_source_enable_push_to_mute(source, ptmCB->isChecked());
 		obs_source_set_push_to_mute_delay(source, ptmSB->value());
@@ -3599,8 +3600,6 @@ void OBSBasicSettings::SaveAudioSettings()
 void OBSBasicSettings::SaveHotkeySettings()
 {
 	const auto &config = main->Config();
-
-	using namespace std;
 
 	std::vector<obs_key_combination> combinations;
 	for (auto &hotkey : hotkeys) {
@@ -4020,11 +4019,11 @@ void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 #elif _WIN32
 	size_t invalidLocation = text.toStdString().find_first_of("<>:\"|?*");
 #else
-	size_t invalidLocation = string::npos;
+	size_t invalidLocation = std::string::npos;
 	UNUSED_PARAMETER(text);
 #endif
 
-	if (invalidLocation != string::npos)
+	if (invalidLocation != std::string::npos)
 		ui->filenameFormatting->backspace();
 }
 
@@ -4165,7 +4164,8 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
  * displayed when multichannel OFF
  */
 
-void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
+void RestrictResetBitrates(std::initializer_list<QComboBox *> boxes,
+			   int maxbitrate)
 {
 	for (auto box : boxes) {
 		int idx = box->currentIndex();
@@ -4232,16 +4232,15 @@ void OBSBasicSettings::VideoChanged()
 
 void OBSBasicSettings::HotkeysChanged()
 {
-	using namespace std;
 	if (loading)
 		return;
 
-	hotkeysChanged =
-		any_of(begin(hotkeys), end(hotkeys),
-		       [](const pair<bool, QPointer<OBSHotkeyWidget>> &hotkey) {
-			       const auto &hw = *hotkey.second;
-			       return hw.Changed();
-		       });
+	hotkeysChanged = any_of(
+		begin(hotkeys), end(hotkeys),
+		[](const std::pair<bool, QPointer<OBSHotkeyWidget>> &hotkey) {
+			const auto &hw = *hotkey.second;
+			return hw.Changed();
+		});
 
 	if (hotkeysChanged)
 		EnableApplyButton(true);

@@ -20,10 +20,9 @@
 
 #include <QDomDocument>
 
-using namespace std;
-using namespace json11;
+using json11::Json;
 
-static int hex_string_to_int(string str)
+static int hex_string_to_int(std::string str)
 {
 	int res = 0;
 
@@ -50,13 +49,13 @@ static Json::object parse_text(QString &config)
 	config = config.mid(start + 1);
 	config.replace("\\", "/");
 
-	string err;
+	std::string err;
 	Json data = Json::parse(config.toStdString(), err);
 
 	if (err != "")
 		return Json::object{};
 
-	string outline = data["outline"].string_value();
+	std::string outline = data["outline"].string_value();
 	int out = 0;
 
 	if (outline == "thick")
@@ -68,7 +67,7 @@ static Json::object parse_text(QString &config)
 	else if (outline == "thin")
 		out = 10;
 
-	string valign = data["vertAlign"].string_value();
+	std::string valign = data["vertAlign"].string_value();
 	if (valign == "middle")
 		valign = "center";
 
@@ -163,8 +162,8 @@ static Json::object parse_slideshow(QString &config)
 	if (end == -1)
 		return Json::object{};
 
-	string arr = config.left(end + 1).toStdString();
-	string err;
+	std::string arr = config.left(end + 1).toStdString();
+	std::string err;
 	Json::array files = Json::parse(arr, err).array_items();
 
 	if (err != "")
@@ -173,7 +172,7 @@ static Json::object parse_slideshow(QString &config)
 	Json::array files_out = Json::array{};
 
 	for (size_t i = 0; i < files.size(); i++) {
-		string file = files[i].string_value();
+		std::string file = files[i].string_value();
 		files_out.push_back(Json::object{{"value", file}});
 	}
 
@@ -191,7 +190,8 @@ static Json::object parse_slideshow(QString &config)
 			    {"files", files_out}};
 }
 
-static bool source_name_exists(const string &name, const Json::array &sources)
+static bool source_name_exists(const std::string &name,
+			       const Json::array &sources)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		if (sources.at(i)["name"].string_value() == name)
@@ -201,7 +201,8 @@ static bool source_name_exists(const string &name, const Json::array &sources)
 	return false;
 }
 
-static Json get_source_with_id(const string &src_id, const Json::array &sources)
+static Json get_source_with_id(const std::string &src_id,
+			       const Json::array &sources)
 {
 	for (size_t i = 0; i < sources.size(); i++) {
 		if (sources.at(i)["src_id"].string_value() == src_id)
@@ -220,10 +221,10 @@ static void parse_items(QDomNode &item, Json::array &items,
 		double vol = attr.namedItem("volume").nodeValue().toDouble();
 		int type = attr.namedItem("type").nodeValue().toInt();
 
-		string name;
+		std::string name;
 		Json::object settings;
 		Json::object source;
-		string temp_name;
+		std::string temp_name;
 		int x = 0;
 
 		Json exists = get_source_with_id(srcid.toStdString(), sources);
@@ -238,7 +239,7 @@ static void parse_items(QDomNode &item, Json::array &items,
 
 		temp_name = name;
 		while (source_name_exists(temp_name, sources)) {
-			string new_name = name + " " + to_string(x++);
+			std::string new_name = name + " " + std::to_string(x++);
 			temp_name = new_name;
 		}
 
@@ -456,7 +457,7 @@ static Json::object parse_scenes(QDomElement &scenes)
 			    {"current_program_scene", first.toStdString()}};
 }
 
-int XSplitImporter::ImportScenes(const string &path, string &name,
+int XSplitImporter::ImportScenes(const std::string &path, std::string &name,
 				 json11::Json &res)
 {
 	if (name == "")
@@ -480,7 +481,7 @@ int XSplitImporter::ImportScenes(const string &path, string &name,
 	return IMPORTER_SUCCESS;
 }
 
-bool XSplitImporter::Check(const string &path)
+bool XSplitImporter::Check(const std::string &path)
 {
 	bool check = false;
 
@@ -489,9 +490,9 @@ bool XSplitImporter::Check(const string &path)
 	if (!file_data)
 		return false;
 
-	string pos = file_data.Get();
+	std::string pos = file_data.Get();
 
-	string line = ReadLine(pos);
+	std::string line = ReadLine(pos);
 	while (!line.empty()) {
 		if (line.substr(0, 5) == "<?xml") {
 			line = ReadLine(pos);
@@ -521,13 +522,13 @@ OBSImporterFiles XSplitImporter::FindFiles()
 	struct os_dirent *ent;
 
 	while ((ent = os_readdir(dir)) != NULL) {
-		string name = ent->d_name;
+		std::string name = ent->d_name;
 
 		if (ent->directory || name[0] == '.')
 			continue;
 
 		if (name == "Placements.bpres") {
-			string str = dst + name;
+			std::string str = dst + name;
 			res.push_back(str);
 
 			break;

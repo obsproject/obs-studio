@@ -27,8 +27,6 @@
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
-using namespace std;
-
 void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
 {
 	char path[512];
@@ -508,7 +506,7 @@ void OBSBasic::on_actionExportSceneCollection_triggered()
 		SaveFile(this, QTStr("Basic.MainMenu.SceneCollection.Export"),
 			 home + "/" + currentFile, "JSON Files (*.json)");
 
-	string file = QT_TO_UTF8(exportFile);
+	std::string file = QT_TO_UTF8(exportFile);
 
 	if (!exportFile.isEmpty() && !exportFile.isNull()) {
 		if (QFile::exists(exportFile))

@@ -10,7 +10,7 @@
 
 #include "ui_OBSExtraBrowsers.h"
 
-using namespace json11;
+using json11::Json;
 
 #define OBJ_NAME_SUFFIX "_extraBrowser"
 

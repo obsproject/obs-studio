@@ -20,12 +20,11 @@
 #include "qt-wrappers.hpp"
 #include "remote-text.hpp"
 
-using namespace std;
-
 static auto curl_deleter = [](CURL *curl) { curl_easy_cleanup(curl); };
-using Curl = unique_ptr<CURL, decltype(curl_deleter)>;
+using Curl = std::unique_ptr<CURL, decltype(curl_deleter)>;
 
-static size_t string_write(char *ptr, size_t size, size_t nmemb, string &str)
+static size_t string_write(char *ptr, size_t size, size_t nmemb,
+			   std::string &str)
 {
 	size_t total = size * nmemb;
 	if (total)
@@ -39,10 +38,10 @@ void RemoteTextThread::run()
 	char error[CURL_ERROR_SIZE];
 	CURLcode code;
 
-	string versionString("User-Agent: obs-basic ");
+	std::string versionString("User-Agent: obs-basic ");
 	versionString += App()->GetVersionString();
 
-	string contentTypeString;
+	std::string contentTypeString;
 	if (!contentType.empty()) {
 		contentTypeString += "Content-Type: ";
 		contentTypeString += contentType;
@@ -51,7 +50,7 @@ void RemoteTextThread::run()
 	Curl curl{curl_easy_init(), curl_deleter};
 	if (curl) {
 		struct curl_slist *header = nullptr;
-		string str;
+		std::string str;
 
 		header = curl_slist_append(header, versionString.c_str());
 
@@ -98,9 +97,9 @@ void RemoteTextThread::run()
 }
 
 static size_t header_write(char *ptr, size_t size, size_t nmemb,
-			   vector<string> &list)
+			   std::vector<std::string> &list)
 {
-	string str;
+	std::string str;
 
 	size_t total = size * nmemb;
 	if (total)
@@ -120,16 +119,16 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		   const char *postData, std::vector<std::string> extraHeaders,
 		   std::string *signature, int timeoutSec)
 {
-	vector<string> header_in_list;
+	std::vector<std::string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
 	CURLcode code = CURLE_FAILED_INIT;
 
 	error_in[0] = 0;
 
-	string versionString("User-Agent: obs-basic ");
+	std::string versionString("User-Agent: obs-basic ");
 	versionString += App()->GetVersionString();
 
-	string contentTypeString;
+	std::string contentTypeString;
 	if (contentType) {
 		contentTypeString += "Content-Type: ";
 		contentTypeString += contentType;
@@ -187,8 +186,8 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		if (code != CURLE_OK) {
 			error = error_in;
 		} else if (signature) {
-			for (string &h : header_in_list) {
-				string name = h.substr(0, 13);
+			for (std::string &h : header_in_list) {
+				std::string name = h.substr(0, 13);
 				if (name == "X-Signature: ") {
 					*signature = h.substr(13);
 					break;

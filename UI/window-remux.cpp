@@ -38,8 +38,6 @@
 #include <memory>
 #include <cmath>
 
-using namespace std;
-
 enum RemuxEntryColumn {
 	State,
 	InputPath,

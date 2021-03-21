@@ -48,8 +48,6 @@
 #include <thread>
 #endif
 
-using namespace std;
-
 #ifdef __linux__
 void RunningInstanceCheck(bool &already_running)
 {
@@ -134,7 +132,7 @@ const char *RunOnce::thr_name = "OBS runonce";
 void PIDFileCheck(bool &already_running)
 {
 	std::string tmpfile_name =
-		"/tmp/obs-studio.lock." + to_string(geteuid());
+		"/tmp/obs-studio.lock." + std::to_string(geteuid());
 	int fd = open(tmpfile_name.c_str(), O_RDWR | O_CREAT | O_EXLOCK, 0600);
 	if (fd == -1) {
 		already_running = true;
@@ -170,9 +168,9 @@ void PIDFileCheck(bool &already_running)
 #endif
 
 static inline bool check_path(const char *data, const char *path,
-			      string &output)
+			      std::string &output)
 {
-	ostringstream str;
+	std::ostringstream str;
 	str << path << data;
 	output = str.str();
 
@@ -183,7 +181,7 @@ static inline bool check_path(const char *data, const char *path,
 
 #define INSTALL_DATA_PATH OBS_INSTALL_PREFIX OBS_DATA_PATH "/obs-studio/"
 
-bool GetDataFilePath(const char *data, string &output)
+bool GetDataFilePath(const char *data, std::string &output)
 {
 	char *data_path = getenv("OBS_DATA_PATH");
 	if (data_path != NULL) {
@@ -204,16 +202,16 @@ bool InitApplicationBundle()
 	return true;
 }
 
-string GetDefaultVideoSavePath()
+std::string GetDefaultVideoSavePath()
 {
-	return string(getenv("HOME"));
+	return std::string(getenv("HOME"));
 }
 
-vector<string> GetPreferredLocales()
+std::vector<std::string> GetPreferredLocales()
 {
 	setlocale(LC_ALL, "");
-	vector<string> matched;
-	string messages = setlocale(LC_MESSAGES, NULL);
+	std::vector<std::string> matched;
+	std::string messages = setlocale(LC_MESSAGES, NULL);
 	if (!messages.size() || messages == "C" || messages == "POSIX")
 		return {};
 

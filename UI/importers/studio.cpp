@@ -17,8 +17,7 @@
 
 #include "importers.hpp"
 
-using namespace std;
-using namespace json11;
+using json11::Json;
 
 void TranslateOSStudio(Json &res)
 {
@@ -29,7 +28,7 @@ void TranslateOSStudio(Json &res)
 		Json::object source = sources[i].object_items();
 		Json::object settings = source["settings"].object_items();
 
-		string id = source["id"].string_value();
+		std::string id = source["id"].string_value();
 
 #define DirectTranslation(before, after) \
 	if (id == before) {              \
@@ -146,10 +145,10 @@ void TranslateOSStudio(Json &res)
 	res = out;
 }
 
-bool StudioImporter::Check(const string &path)
+bool StudioImporter::Check(const std::string &path)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
-	string err;
+	std::string err;
 	Json collection = Json::parse(file_data, err);
 
 	if (err != "")
@@ -170,19 +169,20 @@ bool StudioImporter::Check(const string &path)
 	return true;
 }
 
-string StudioImporter::Name(const string &path)
+std::string StudioImporter::Name(const std::string &path)
 {
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
-	string err;
+	std::string err;
 
 	Json d = Json::parse(file_data, err);
 
-	string name = d["name"].string_value();
+	std::string name = d["name"].string_value();
 
 	return name;
 }
 
-int StudioImporter::ImportScenes(const string &path, string &name, Json &res)
+int StudioImporter::ImportScenes(const std::string &path, std::string &name,
+				 Json &res)
 {
 	if (!os_file_exists(path.c_str()))
 		return IMPORTER_FILE_NOT_FOUND;
@@ -191,7 +191,7 @@ int StudioImporter::ImportScenes(const string &path, string &name, Json &res)
 		return IMPORTER_FILE_NOT_RECOGNISED;
 
 	BPtr<char> file_data = os_quick_read_utf8_file(path.c_str());
-	string err;
+	std::string err;
 	Json d = Json::parse(file_data, err);
 
 	if (err != "")

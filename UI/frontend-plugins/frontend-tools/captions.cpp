@@ -23,12 +23,6 @@
 #pragma warning(pop)
 #endif
 
-#include <unordered_map>
-#include <vector>
-#include <string>
-#include <thread>
-#include <mutex>
-
 #include "captions-mssapi.hpp"
 
 #define do_log(type, format, ...) \
@@ -37,15 +31,13 @@
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
-using namespace std;
-
 #define DEFAULT_HANDLER "mssapi"
 
 struct obs_captions {
-	string handler_id = DEFAULT_HANDLER;
-	string source_name;
+	std::string handler_id = DEFAULT_HANDLER;
+	std::string source_name;
 	OBSWeakSource source;
-	unique_ptr<captions_handler> handler;
+	std::unique_ptr<captions_handler> handler;
 	LANGID lang_id = GetUserDefaultUILanguage();
 
 	std::unordered_map<std::string, captions_handler_info &> handler_types;
@@ -79,7 +71,7 @@ struct locale_info {
 	}
 };
 
-static void get_valid_locale_names(vector<locale_info> &names);
+static void get_valid_locale_names(std::vector<locale_info> &names);
 static bool valid_lang(LANGID id);
 
 /* ------------------------------------------------------------------------- */
@@ -131,7 +123,7 @@ CaptionsDialog::CaptionsDialog(QWidget *parent)
 	ui->enable->setChecked(!!captions->handler);
 	ui->enable->blockSignals(false);
 
-	vector<locale_info> locales;
+	std::vector<locale_info> locales;
 	get_valid_locale_names(locales);
 
 	bool set_language = false;
@@ -258,7 +250,7 @@ void obs_captions::start()
 
 		size_t len = (size_t)wcslen(wname);
 
-		string lang_name;
+		std::string lang_name;
 		lang_name.resize(len);
 
 		for (size_t i = 0; i < len; i++)
@@ -326,7 +318,7 @@ static bool valid_lang(LANGID id)
 	return SUCCEEDED(hr);
 }
 
-static void get_valid_locale_names(vector<locale_info> &locales)
+static void get_valid_locale_names(std::vector<locale_info> &locales)
 {
 	locale_info cur;
 	char locale_name[256];

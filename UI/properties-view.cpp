@@ -37,8 +37,6 @@
 #include <qtimer.h>
 #include <string>
 
-using namespace std;
-
 static inline QColor color_from_int(long long val)
 {
 	return QColor(val & 0xff, (val >> 8) & 0xff, (val >> 16) & 0xff,
@@ -471,14 +469,14 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 template<long long get_int(obs_data_t *, const char *),
 	 double get_double(obs_data_t *, const char *),
 	 const char *get_string(obs_data_t *, const char *)>
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static std::string from_obs_data(obs_data_t *data, const char *name,
+				 obs_combo_format format)
 {
 	switch (format) {
 	case OBS_COMBO_FORMAT_INT:
-		return to_string(get_int(data, name));
+		return std::to_string(get_int(data, name));
 	case OBS_COMBO_FORMAT_FLOAT:
-		return to_string(get_double(data, name));
+		return std::to_string(get_double(data, name));
 	case OBS_COMBO_FORMAT_STRING:
 		return get_string(data, name);
 	default:
@@ -486,15 +484,15 @@ static string from_obs_data(obs_data_t *data, const char *name,
 	}
 }
 
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static std::string from_obs_data(obs_data_t *data, const char *name,
+				 obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
 			     obs_data_get_string>(data, name, format);
 }
 
-static string from_obs_data_autoselect(obs_data_t *data, const char *name,
-				       obs_combo_format format)
+static std::string from_obs_data_autoselect(obs_data_t *data, const char *name,
+					    obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_autoselect_int,
 			     obs_data_get_autoselect_double,
@@ -520,7 +518,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	combo->setMaxVisibleItems(40);
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	string value = from_obs_data(settings, name, format);
+	std::string value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
 	    type == OBS_COMBO_TYPE_EDITABLE) {
@@ -537,7 +535,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		combo->setCurrentIndex(idx);
 
 	if (obs_data_has_autoselect_value(settings, name)) {
-		string autoselect =
+		std::string autoselect =
 			from_obs_data_autoselect(settings, name, format);
 		int id = combo->findData(QT_UTF8(autoselect.c_str()));
 
@@ -834,7 +832,7 @@ static bool matches_ranges(media_frames_per_second &best_match,
 	auto epsilon = make_epsilon(val);
 
 	bool match = false;
-	auto best_dist = numeric_limits<double>::max();
+	auto best_dist = std::numeric_limits<double>::max();
 	for (auto &pair : fps_ranges) {
 		auto max_ = convert_fn(pair.first);
 		auto min_ = convert_fn(pair.second);
@@ -909,7 +907,7 @@ static void UpdateSimpleFPSSelection(OBSFrameRatePropertyWidget *fpsProps,
 	combo->setCurrentIndex(0);
 }
 
-static void AddFPSRanges(vector<common_frame_rate> &items,
+static void AddFPSRanges(std::vector<common_frame_rate> &items,
 			 const frame_rate_ranges_t &ranges)
 {
 	auto InsertFPS = [&](media_frames_per_second fps) {
@@ -947,7 +945,7 @@ CreateSimpleFPSValues(OBSFrameRatePropertyWidget *fpsProps, bool &selected,
 	auto layout = new QVBoxLayout{};
 	layout->setContentsMargins(0, 0, 0, 0);
 
-	auto items = vector<common_frame_rate>{};
+	auto items = std::vector<common_frame_rate>{};
 	items.reserve(sizeof(common_fps) / sizeof(common_frame_rate));
 
 	auto combo = fpsProps->simpleFPS = new ComboBoxIgnoreScroll{};
@@ -1101,7 +1099,7 @@ CreateFrameRateWidget(obs_property_t *prop, bool &warning, const char *option,
 		auto desc = obs_property_frame_rate_option_description(prop, i);
 		combo->addItem(desc, QVariant::fromValue(frame_rate_tag{name}));
 
-		if (!name || !option || string(name) != option)
+		if (!name || !option || std::string(name) != option)
 			continue;
 
 		option_found = true;
@@ -1218,7 +1216,7 @@ static void UpdateFPSLabels(OBSFrameRatePropertyWidget *w)
 {
 	UpdateMinMaxLabels(w);
 
-	unique_ptr<obs_data_item_t> obj{
+	std::unique_ptr<obs_data_item_t> obj{
 		obs_data_item_byname(w->settings, w->name)};
 
 	media_frames_per_second fps{};
@@ -1266,7 +1264,8 @@ void OBSPropertiesView::AddFrameRate(obs_property_t *prop, bool &warning,
 {
 	const char *name = obs_property_name(prop);
 	bool enabled = obs_property_enabled(prop);
-	unique_ptr<obs_data_item_t> obj{obs_data_item_byname(settings, name)};
+	std::unique_ptr<obs_data_item_t> obj{
+		obs_data_item_byname(settings, name)};
 
 	const char *option = nullptr;
 	obs_data_item_get_frames_per_second(obj.get(), nullptr, &option);
@@ -1587,14 +1586,15 @@ static bool FrameRateChanged(QWidget *widget, const char *name,
 		return false;
 
 	auto StopUpdating = [&](void *) { w->updating = false; };
-	unique_ptr<void, decltype(StopUpdating)> signalGuard(
+	std::unique_ptr<void, decltype(StopUpdating)> signalGuard(
 		static_cast<void *>(w), StopUpdating);
 	w->updating = true;
 
 	if (!obs_data_has_user_value(settings, name))
 		obs_data_set_obj(settings, name, nullptr);
 
-	unique_ptr<obs_data_item_t> obj{obs_data_item_byname(settings, name)};
+	std::unique_ptr<obs_data_item_t> obj{
+		obs_data_item_byname(settings, name)};
 	auto obj_ptr = obj.get();
 	auto CheckObj = [&]() {
 		if (!obj_ptr)

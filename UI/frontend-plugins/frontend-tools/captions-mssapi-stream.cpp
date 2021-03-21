@@ -5,8 +5,6 @@
 #include <util/threading.h>
 #include <util/base.h>
 
-using namespace std;
-
 #if 0
 #define debugfunc(format, ...)                                     \
 	blog(LOG_DEBUG, "[Captions] %s(" format ")", __FUNCTION__, \
@@ -36,7 +34,7 @@ CaptionStream::CaptionStream(DWORD samplerate_, mssapi_captions *handler_)
 void CaptionStream::Stop()
 {
 	{
-		lock_guard<mutex> lock(m);
+		std::lock_guard<std::mutex> lock(m);
 		circlebuf_free(buf);
 	}
 
@@ -47,7 +45,7 @@ void CaptionStream::PushAudio(const void *data, size_t frames)
 {
 	bool ready = false;
 
-	lock_guard<mutex> lock(m);
+	std::lock_guard<std::mutex> lock(m);
 	circlebuf_push_back(buf, data, frames * sizeof(int16_t));
 	write_pos += frames * sizeof(int16_t);
 
@@ -111,12 +109,12 @@ STDMETHODIMP CaptionStream::Read(void *data, ULONG bytes, ULONG *read_bytes)
 		return STG_E_INVALIDPOINTER;
 
 	{
-		lock_guard<mutex> lock1(m);
+		std::lock_guard<std::mutex> lock1(m);
 		wait_size = bytes;
 		cur_size = buf->size;
 	}
 
-	unique_lock<mutex> lock(m);
+	std::unique_lock<std::mutex> lock(m);
 
 	if (bytes > cur_size)
 		cv.wait(lock);
@@ -184,7 +182,7 @@ STDMETHODIMP CaptionStream::CopyTo(IStream *stream, ULARGE_INTEGER bytes,
 	if (bytes.QuadPart > (ULONGLONG)buf->size)
 		bytes.QuadPart = (ULONGLONG)buf->size;
 
-	lock_guard<mutex> lock(m);
+	std::lock_guard<std::mutex> lock(m);
 	temp_buf.resize((size_t)bytes.QuadPart);
 	circlebuf_peek_front(buf, &temp_buf[0], (size_t)bytes.QuadPart);
 
@@ -243,7 +241,7 @@ STDMETHODIMP CaptionStream::Stat(STATSTG *stg, DWORD flag)
 	if (!stg)
 		return E_POINTER;
 
-	lock_guard<mutex> lock(m);
+	std::lock_guard<std::mutex> lock(m);
 	*stg = {};
 	stg->type = STGTY_STREAM;
 	stg->cbSize.QuadPart = (ULONGLONG)buf->size;
@@ -303,7 +301,7 @@ STDMETHODIMP CaptionStream::SetFormat(REFGUID guid_ref,
 		return E_INVALIDARG;
 
 	if (guid_ref == SPDFID_WaveFormatEx) {
-		lock_guard<mutex> lock(m);
+		std::lock_guard<std::mutex> lock(m);
 		memcpy(&format, wfex, sizeof(format));
 		if (!handler->reset_resampler(AUDIO_FORMAT_16BIT,
 					      wfex->nSamplesPerSec))
@@ -325,7 +323,7 @@ STDMETHODIMP CaptionStream::GetStatus(SPAUDIOSTATUS *status)
 		return E_POINTER;
 
 	/* TODO? */
-	lock_guard<mutex> lock(m);
+	std::lock_guard<std::mutex> lock(m);
 	*status = {};
 	status->cbNonBlockingIO = (ULONG)buf->size;
 	status->State = state;

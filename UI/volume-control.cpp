@@ -12,8 +12,6 @@
 #include <QPainter>
 #include <QStyleFactory>
 
-using namespace std;
-
 #define CLAMP(x, min, max) ((x) < (min) ? (min) : ((x) > (max) ? (max) : (x)))
 #define FADER_PRECISION 4096.0
 

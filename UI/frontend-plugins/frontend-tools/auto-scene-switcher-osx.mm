@@ -2,9 +2,7 @@
 #include <util/platform.h>
 #include "auto-scene-switcher.hpp"
 
-using namespace std;
-
-void GetWindowList(vector<string> &windows)
+void GetWindowList(std::vector<std::string> &windows)
 {
 	windows.resize(0);
 
@@ -23,7 +21,7 @@ void GetWindowList(vector<string> &windows)
 	}
 }
 
-void GetCurrentWindowTitle(string &title)
+void GetCurrentWindowTitle(std::string &title)
 {
 	title.resize(0);
 

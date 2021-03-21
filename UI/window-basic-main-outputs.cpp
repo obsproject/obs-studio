@@ -6,8 +6,6 @@
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
 
-using namespace std;
-
 extern bool EncoderAvailable(const char *encoder);
 
 volatile bool streaming_active = false;
@@ -174,7 +172,7 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 
 /* ------------------------------------------------------------------------ */
 
-static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
+static bool CreateAACEncoder(OBSEncoder &res, std::string &id, int bitrate,
 			     const char *name, size_t idx)
 {
 	const char *id_ = GetAACEncoderForBitrate(bitrate);
@@ -253,12 +251,12 @@ struct SimpleOutput : BasicOutputHandler {
 	OBSEncoder aacArchive;
 	OBSEncoder h264Recording;
 
-	string aacRecEncID;
-	string aacStreamEncID;
-	string aacArchiveEncID;
+	std::string aacRecEncID;
+	std::string aacStreamEncID;
+	std::string aacArchiveEncID;
 
-	string videoEncoder;
-	string videoQuality;
+	std::string videoEncoder;
+	std::string videoQuality;
 	bool usingRecordingPreset = false;
 	bool recordingConfigured = false;
 	bool ffmpegOutput = false;
@@ -943,7 +941,7 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	if (hasLastError)
 		lastError = error;
 	else
-		lastError = string();
+		lastError = std::string();
 
 	const char *type = obs_service_get_output_type(service);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
@@ -1001,8 +999,8 @@ bool SimpleOutput::ConfigureRecording(bool updateReplayBuffer)
 	int rbSize =
 		config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 
-	string f;
-	string strPath;
+	std::string f;
+	std::string strPath;
 
 	obs_data_t *settings = obs_data_create();
 	if (updateReplayBuffer) {
@@ -1126,7 +1124,7 @@ struct AdvancedOutput : BasicOutputHandler {
 	bool useStreamEncoder;
 	bool usesBitrate = false;
 
-	string aacEncoderID[MAX_AUDIO_MIXES];
+	std::string aacEncoderID[MAX_AUDIO_MIXES];
 
 	AdvancedOutput(OBSBasic *main_);
 
@@ -1566,14 +1564,14 @@ inline void AdvancedOutput::UpdateAudioSettings()
 	}
 
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
-		string cfg_name = "Track";
-		cfg_name += to_string((int)i + 1);
+		std::string cfg_name = "Track";
+		cfg_name += std::to_string((int)i + 1);
 		cfg_name += "Name";
 		const char *name = config_get_string(main->Config(), "AdvOut",
 						     cfg_name.c_str());
 
-		string def_name = "Track";
-		def_name += to_string((int)i + 1);
+		std::string def_name = "Track";
+		def_name += std::to_string((int)i + 1);
 		SetEncoderName(aacTrack[i], name, def_name.c_str());
 	}
 
@@ -1821,7 +1819,7 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	if (hasLastError)
 		lastError = error;
 	else
-		lastError = string();
+		lastError = std::string();
 
 	const char *type = obs_service_get_output_type(service);
 	blog(LOG_WARNING, "Stream output type '%s' failed to start!%s%s", type,
@@ -1866,10 +1864,9 @@ bool AdvancedOutput::StartRecording()
 						  ? "FFFileNameWithoutSpace"
 						  : "RecFileNameWithoutSpace");
 
-		string strPath = GetRecordingFilename(path, recFormat, noSpace,
-						      overwriteIfExists,
-						      filenameFormat,
-						      ffmpegRecording);
+		std::string strPath = GetRecordingFilename(
+			path, recFormat, noSpace, overwriteIfExists,
+			filenameFormat, ffmpegRecording);
 
 		obs_data_t *settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path",
@@ -1942,8 +1939,9 @@ bool AdvancedOutput::StartReplayBuffer()
 		rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 		rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 
-		string f = GetFormatString(filenameFormat, rbPrefix, rbSuffix);
-		string strPath = GetOutputFilename(
+		std::string f =
+			GetFormatString(filenameFormat, rbPrefix, rbSuffix);
+		std::string strPath = GetOutputFilename(
 			path, recFormat, noSpace, overwriteIfExists, f.c_str());
 
 		obs_data_t *settings = obs_data_create();
@@ -2033,7 +2031,8 @@ BasicOutputHandler::GetRecordingFilename(const char *path, const char *ext,
 	if (!ffmpeg)
 		SetupAutoRemux(ext);
 
-	string dst = GetOutputFilename(path, ext, noSpace, overwrite, format);
+	std::string dst =
+		GetOutputFilename(path, ext, noSpace, overwrite, format);
 	lastRecordingPath = dst;
 	return dst;
 }

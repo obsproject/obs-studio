@@ -16,24 +16,20 @@
 ******************************************************************************/
 
 #include "importers.hpp"
-#include <memory>
 
-using namespace std;
-using namespace json11;
-
-vector<unique_ptr<Importer>> importers;
+std::vector<std::unique_ptr<Importer>> importers;
 
 void ImportersInit()
 {
 	importers.clear();
-	importers.push_back(make_unique<StudioImporter>());
-	importers.push_back(make_unique<ClassicImporter>());
-	importers.push_back(make_unique<SLImporter>());
-	importers.push_back(make_unique<XSplitImporter>());
+	importers.push_back(std::make_unique<StudioImporter>());
+	importers.push_back(std::make_unique<ClassicImporter>());
+	importers.push_back(std::make_unique<SLImporter>());
+	importers.push_back(std::make_unique<XSplitImporter>());
 }
 
-int ImportSCFromProg(const string &path, string &name, const string &program,
-		     Json &res)
+int ImportSCFromProg(const std::string &path, std::string &name,
+		     const std::string &program, json11::Json &res)
 {
 	if (!os_file_exists(path.c_str())) {
 		return IMPORTER_FILE_NOT_FOUND;
@@ -48,13 +44,13 @@ int ImportSCFromProg(const string &path, string &name, const string &program,
 	return IMPORTER_UNKNOWN_ERROR;
 }
 
-int ImportSC(const string &path, std::string &name, Json &res)
+int ImportSC(const std::string &path, std::string &name, json11::Json &res)
 {
 	if (!os_file_exists(path.c_str())) {
 		return IMPORTER_FILE_NOT_FOUND;
 	}
 
-	string prog = DetectProgram(path);
+	std::string prog = DetectProgram(path);
 
 	if (prog == "Null") {
 		return IMPORTER_FILE_NOT_RECOGNISED;
@@ -63,7 +59,7 @@ int ImportSC(const string &path, std::string &name, Json &res)
 	return ImportSCFromProg(path, name, prog, res);
 }
 
-string DetectProgram(const string &path)
+std::string DetectProgram(const std::string &path)
 {
 	if (!os_file_exists(path.c_str())) {
 		return "Null";
@@ -78,7 +74,7 @@ string DetectProgram(const string &path)
 	return "Null";
 }
 
-string GetSCName(const string &path, const string &prog)
+std::string GetSCName(const std::string &path, const std::string &prog)
 {
 	for (size_t i = 0; i < importers.size(); i++) {
 		if (importers[i]->Prog() == prog) {

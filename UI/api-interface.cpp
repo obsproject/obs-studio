@@ -6,8 +6,6 @@
 
 #include <functional>
 
-using namespace std;
-
 Q_DECLARE_METATYPE(OBSScene);
 Q_DECLARE_METATYPE(OBSSource);
 
@@ -16,8 +14,8 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void EnumProfiles(function<bool(const char *, const char *)> &&cb);
-void EnumSceneCollections(function<bool(const char *, const char *)> &&cb);
+void EnumProfiles(std::function<bool(const char *, const char *)> &&cb);
+void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb);
 
 extern volatile bool streaming_active;
 extern volatile bool recording_active;
@@ -37,7 +35,7 @@ template<typename T> struct OBSStudioCallback {
 };
 
 template<typename T>
-inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks,
+inline size_t GetCallbackIdx(std::vector<OBSStudioCallback<T>> &callbacks,
 			     T callback, void *private_data)
 {
 	for (size_t i = 0; i < callbacks.size(); i++) {
@@ -52,9 +50,9 @@ inline size_t GetCallbackIdx(vector<OBSStudioCallback<T>> &callbacks,
 
 struct OBSStudioAPI : obs_frontend_callbacks {
 	OBSBasic *main;
-	vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
-	vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
-	vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
+	std::vector<OBSStudioCallback<obs_frontend_event_cb>> callbacks;
+	std::vector<OBSStudioCallback<obs_frontend_save_cb>> saveCallbacks;
+	std::vector<OBSStudioCallback<obs_frontend_save_cb>> preloadCallbacks;
 
 	inline OBSStudioAPI(OBSBasic *main_) : main(main_) {}
 
