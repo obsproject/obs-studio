@@ -314,6 +314,7 @@ private:
 	void UploadLog(const char *subdir, const char *file, const bool crash);
 
 	void Save(const char *file);
+	void LoadData(obs_data_t *data, const char *file);
 	void Load(const char *file);
 
 	void InitHotkeys();

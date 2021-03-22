@@ -934,6 +934,13 @@ void OBSBasic::Load(const char *file)
 		return;
 	}
 
+	LoadData(data, file);
+}
+
+void OBSBasic::LoadData(obs_data_t *data, const char *file)
+{
+	disableSaving++;
+
 	ClearSceneData();
 	InitDefaultTransitions();
 	ClearContextBar();
@@ -4567,6 +4574,47 @@ void OBSBasic::on_action_Settings_triggered()
 	}
 }
 
+void save_audio_source(int channel, obs_data_t *save)
+{
+	obs_source_t *source = obs_get_output_source(channel);
+	if (!source)
+		return;
+
+	obs_data_t *obj = obs_data_create();
+
+	obs_data_set_double(obj, "vol", obs_source_get_volume(source));
+	obs_data_set_double(obj, "balance",
+			    obs_source_get_balance_value(source));
+	obs_data_set_double(obj, "mixers", obs_source_get_audio_mixers(source));
+	obs_data_set_double(obj, "sync", obs_source_get_sync_offset(source));
+	obs_data_set_double(obj, "flags", obs_source_get_flags(source));
+
+	obs_data_set_obj(save, std::to_string(channel).c_str(), obj);
+	obs_data_release(obj);
+	obs_source_release(source);
+}
+
+void load_audio_source(int channel, obs_data_t *data)
+{
+	obs_source_t *source = obs_get_output_source(channel);
+	if (!source)
+		return;
+
+	obs_data_t *save =
+		obs_data_get_obj(data, std::to_string(channel).c_str());
+
+	obs_source_set_volume(source, obs_data_get_double(save, "vol"));
+	obs_source_set_balance_value(source,
+				     obs_data_get_double(save, "balance"));
+	obs_source_set_audio_mixers(source,
+				    obs_data_get_double(save, "mixers"));
+	obs_source_set_sync_offset(source, obs_data_get_double(save, "sync"));
+	obs_source_set_flags(source, obs_data_get_double(save, "flags"));
+
+	obs_data_release(save);
+	obs_source_release(source);
+}
+
 void OBSBasic::on_actionAdvAudioProperties_triggered()
 {
 	if (advAudioWindow != nullptr) {
@@ -4584,6 +4632,53 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 
 	connect(advAudioWindow, SIGNAL(destroyed()), this,
 		SLOT(AdvAudioPropsDestroyed()));
+
+	obs_data_t *wrapper = obs_data_create();
+
+	save_audio_source(1, wrapper);
+	save_audio_source(2, wrapper);
+	save_audio_source(3, wrapper);
+	save_audio_source(4, wrapper);
+	save_audio_source(5, wrapper);
+	save_audio_source(6, wrapper);
+
+	std::string undo_data(obs_data_get_json(wrapper));
+
+	connect(advAudioWindow, &QDialog::finished, [this, undo_data]() {
+		auto undo_redo = [](const std::string &data) {
+			obs_data_t *audio_data =
+				obs_data_create_from_json(data.c_str());
+
+			load_audio_source(1, audio_data);
+			load_audio_source(2, audio_data);
+			load_audio_source(3, audio_data);
+			load_audio_source(4, audio_data);
+			load_audio_source(5, audio_data);
+			load_audio_source(6, audio_data);
+
+			obs_data_release(audio_data);
+		};
+
+		obs_data_t *wrapper = obs_data_create();
+
+		save_audio_source(1, wrapper);
+		save_audio_source(2, wrapper);
+		save_audio_source(3, wrapper);
+		save_audio_source(4, wrapper);
+		save_audio_source(5, wrapper);
+		save_audio_source(6, wrapper);
+
+		std::string redo_data(obs_data_get_json(wrapper));
+
+		if (undo_data.compare(redo_data) != 0)
+			undo_s.add_action(QTStr("Undo.Audio"), undo_redo,
+					  undo_redo, undo_data, redo_data,
+					  NULL);
+
+		obs_data_release(wrapper);
+	});
+
+	obs_data_release(wrapper);
 }
 
 void OBSBasic::AdvAudioPropsClicked()
