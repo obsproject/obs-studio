@@ -753,6 +753,19 @@ General Source Functions
 
 ---------------------
 
+.. function:: void obs_source_set_hidden(obs_source_t *source, bool hidden)
+
+   Sets the hidden flag that determines whether it should be hidden from the user.
+   Used when the source is still alive but should not be referenced.
+
+---------------------
+
+.. function:: bool obs_source_is_hidden(obs_source_t *source)
+
+  :return: *true* if source's 'hidden' is set true
+
+---------------------
+
 .. function:: uint32_t obs_source_get_output_flags(const obs_source_t *source)
               uint32_t obs_get_source_output_flags(const char *id)
 
