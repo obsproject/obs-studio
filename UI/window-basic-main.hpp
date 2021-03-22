@@ -36,6 +36,7 @@
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
+#include "undo-stack-obs.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -166,6 +167,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
+	friend class OBSBasicSourceSelect;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
@@ -608,6 +610,10 @@ public slots:
 	void UnpauseRecording();
 
 private slots:
+
+	void on_actionMainUndo_triggered();
+	void on_actionMainRedo_triggered();
+
 	void AddSceneItem(OBSSceneItem item);
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
@@ -740,6 +746,7 @@ private:
 	OBSSource prevFTBSource = nullptr;
 
 public:
+	undo_stack undo_s;
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
 

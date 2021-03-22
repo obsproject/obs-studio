@@ -1477,6 +1477,33 @@ obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene,
 	return item;
 }
 
+struct sceneitem_check {
+	obs_source_t *source_in;
+	obs_sceneitem_t *item_out;
+};
+
+bool check_sceneitem_exists(obs_scene_t *scene, obs_sceneitem_t *item,
+			    void *vp_check)
+{
+	UNUSED_PARAMETER(scene);
+	struct sceneitem_check *check = (struct sceneitem_check *)vp_check;
+	if (obs_sceneitem_get_source(item) == check->source_in) {
+		check->item_out = item;
+		obs_sceneitem_addref(item);
+		return false;
+	}
+
+	return true;
+}
+
+obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene,
+						 obs_source_t *source)
+{
+	struct sceneitem_check check = {source, NULL};
+	obs_scene_enum_items(scene, check_sceneitem_exists, (void *)&check);
+	return check.item_out;
+}
+
 obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene, int64_t id)
 {
 	struct obs_scene_item *item;
@@ -1830,6 +1857,22 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 	obs_sceneitem_release(item);
 }
 
+void obs_sceneitem_save(obs_sceneitem_t *item, obs_data_array_t *arr)
+{
+	scene_save_item(arr, item, NULL);
+}
+
+void sceneitem_restore(obs_data_t *data, void *vp)
+{
+	obs_scene_t *scene = (obs_scene_t *)vp;
+	scene_load_item(scene, data);
+}
+
+void obs_sceneitems_add(obs_scene_t *scene, obs_data_array_t *data)
+{
+	obs_data_array_enum(data, sceneitem_restore, scene);
+}
+
 obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item)
 {
 	return item ? item->parent : NULL;
@@ -1975,6 +2018,24 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 
 	signal_reorder(item);
 	obs_scene_release(scene);
+}
+
+int obs_sceneitem_get_order_position(obs_sceneitem_t *item)
+{
+	struct obs_scene *scene = item->parent;
+	struct obs_scene_item *next = scene->first_item;
+
+	full_lock(scene);
+
+	int index = 0;
+	while (next && next != item) {
+		next = next->next;
+		++index;
+	}
+
+	full_unlock(scene);
+
+	return index;
 }
 
 void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
@@ -2383,6 +2444,11 @@ int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
 		return 0;
 
 	return item->id;
+}
+
+void obs_sceneitem_set_id(obs_sceneitem_t *item, int64_t id)
+{
+	item->id = id;
 }
 
 obs_data_t *obs_sceneitem_get_private_settings(obs_sceneitem_t *item)

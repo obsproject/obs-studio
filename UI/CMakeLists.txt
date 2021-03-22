@@ -256,7 +256,8 @@ set(obs_SOURCES
 	obs-proxy-style.cpp
 	locked-checkbox.cpp
 	visibility-checkbox.cpp
-	media-slider.cpp)
+	media-slider.cpp
+	undo-stack-obs.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -327,7 +328,8 @@ set(obs_HEADERS
 	log-viewer.hpp
 	obs-proxy-style.hpp
 	obs-proxy-style.hpp
-	media-slider.hpp)
+	media-slider.hpp
+	undo-stack-obs.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)
