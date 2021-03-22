@@ -157,6 +157,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
+	friend class OBSBasicTransform;
 	friend class OBSBasicSettings;
 	friend class Auth;
 	friend class AutoConfig;
@@ -221,6 +222,9 @@ private:
 
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;
+
+	QPointer<QTimer> nudge_timer;
+	bool recent_nudge = false;
 
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
