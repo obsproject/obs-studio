@@ -36,6 +36,9 @@ OBSBasicPreview::~OBSBasicPreview()
 		gs_vertexbuffer_destroy(rectFill);
 
 	obs_leave_graphics();
+
+	if (wrapper)
+		obs_data_release(wrapper);
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -581,6 +584,11 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_zero(&lastMoveOffset);
 
 	mousePos = startPos;
+	if (wrapper)
+		obs_data_release(wrapper);
+	wrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), true);
+	changed = false;
 }
 
 void OBSBasicPreview::UpdateCursor(uint32_t &flags)
@@ -713,6 +721,41 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		hoveredPreviewItems.push_back(item);
 		selectedItems.clear();
 	}
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	obs_data_t *rwrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), false);
+
+	auto undo_redo = [](const std::string &data) {
+		obs_data_t *dat = obs_data_create_from_json(data.c_str());
+		obs_source_t *source = obs_get_source_by_name(
+			obs_data_get_string(dat, "scene_name"));
+		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+			->SetCurrentScene(source);
+		obs_source_release(source);
+		obs_data_release(dat);
+
+		obs_scene_load_transform_states(data.c_str());
+	};
+
+	if (wrapper && rwrapper) {
+		std::string undo_data(obs_data_get_json(wrapper));
+		std::string redo_data(obs_data_get_json(rwrapper));
+		if (changed && undo_data.compare(redo_data) != 0)
+			main->undo_s.add_action(
+				QTStr("Undo.Transform")
+					.arg(obs_source_get_name(
+						main->GetCurrentSceneSource())),
+				undo_redo, undo_redo, undo_data, redo_data,
+				NULL);
+	}
+
+	if (wrapper)
+		obs_data_release(wrapper);
+
+	if (rwrapper)
+		obs_data_release(rwrapper);
+
+	wrapper = NULL;
 }
 
 struct SelectedItemBounds {
@@ -1434,6 +1477,8 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 
 void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 {
+	changed = true;
+
 	if (scrollMode && event->buttons() == Qt::LeftButton) {
 		scrollingOffset.x += event->x() - scrollingFrom.x;
 		scrollingOffset.y += event->y() - scrollingFrom.y;

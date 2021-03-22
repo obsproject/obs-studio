@@ -21,6 +21,8 @@ private:
 	OBSSignal selectSignal;
 	OBSSignal deselectSignal;
 
+	std::string undo_data;
+
 	bool ignoreTransformSignal = false;
 	bool ignoreItemChange = false;
 
@@ -46,4 +48,5 @@ private slots:
 
 public:
 	OBSBasicTransform(OBSBasic *parent);
+	~OBSBasicTransform();
 };
