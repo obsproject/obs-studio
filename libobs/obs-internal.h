@@ -621,6 +621,9 @@ struct obs_source {
 	 * to handle things but it's the best option) */
 	bool removed;
 
+	/*  used to indicate if the source should show up when queried for user ui */
+	bool temp_removed;
+
 	bool active;
 	bool showing;
 
