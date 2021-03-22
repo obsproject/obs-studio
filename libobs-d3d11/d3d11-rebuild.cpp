@@ -478,7 +478,8 @@ try {
 
 	/* ----------------------------------------------------------------- */
 
-	InitFactory(adpIdx);
+	InitFactory();
+	InitAdapter(adpIdx);
 
 	uint32_t createFlags = D3D11_CREATE_DEVICE_BGRA_SUPPORT;
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr,

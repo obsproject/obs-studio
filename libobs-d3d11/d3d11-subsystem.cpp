@@ -232,7 +232,7 @@ void gs_device::InitCompiler()
 	      "DirectX components</a> that OBS Studio requires.";
 }
 
-void gs_device::InitFactory(uint32_t adapterIdx)
+void gs_device::InitFactory()
 {
 	HRESULT hr;
 	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
@@ -241,8 +241,11 @@ void gs_device::InitFactory(uint32_t adapterIdx)
 	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
+}
 
-	hr = factory->EnumAdapters1(adapterIdx, &adapter);
+void gs_device::InitAdapter(uint32_t adapterIdx)
+{
+	HRESULT hr = factory->EnumAdapters1(adapterIdx, &adapter);
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to enumerate DXGIAdapter", hr);
 }
@@ -787,7 +790,8 @@ gs_device::gs_device(uint32_t adapterIdx)
 	}
 
 	InitCompiler();
-	InitFactory(adapterIdx);
+	InitFactory();
+	InitAdapter(adapterIdx);
 	InitDevice(adapterIdx);
 	device_set_render_target(this, NULL, NULL);
 }
