@@ -925,6 +925,8 @@ void OBSBasic::LogScenes()
 
 void OBSBasic::Load(const char *file)
 {
+	disableSaving++;
+
 	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
@@ -939,8 +941,6 @@ void OBSBasic::Load(const char *file)
 
 void OBSBasic::LoadData(obs_data_t *data, const char *file)
 {
-	disableSaving++;
-
 	ClearSceneData();
 	InitDefaultTransitions();
 	ClearContextBar();
