@@ -1004,7 +1004,8 @@ struct gs_device {
 	gs_obj *first_obj = nullptr;
 
 	void InitCompiler();
-	void InitFactory(uint32_t adapterIdx);
+	void InitFactory();
+	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
 	ID3D11DepthStencilState *AddZStencilState();
