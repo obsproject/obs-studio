@@ -1624,6 +1624,9 @@ enum obs_data_number_type obs_data_item_numtype(obs_data_item_t *item)
 		return OBS_DATA_NUM_INVALID;
 
 	num = get_item_data(item);
+	if (!num)
+		return OBS_DATA_NUM_INVALID;
+
 	return num->type;
 }
 
