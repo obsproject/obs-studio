@@ -75,20 +75,34 @@ class WASAPISource : public IMMNotificationClient {
 
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
-	inline ~WASAPISource();
+	virtual ~WASAPISource();
 
 	void Update(obs_data_t *settings);
 
 //callbacks for IMMNotificationClient	
 	HRESULT STDMETHODCALLTYPE OnDefaultDeviceChanged(EDataFlow flow, ERole role, LPCWSTR pwstrDefaultDeviceId);
 
-	HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR /*pwstrDeviceId*/, DWORD /*dwNewState*/) { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR /*pwstrDeviceId*/) { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR /*pwstrDeviceId*/) { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR /*pwstrDeviceId*/, const PROPERTYKEY /*key*/) { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemove() { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemoveFailed() { return S_OK; }
-	HRESULT STDMETHODCALLTYPE OnDeviceRemovePending() { return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceStateChanged(LPCWSTR /*pwstrDeviceId*/, DWORD /*dwNewState*/) {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceStateChanged] called.");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceAdded(LPCWSTR /*pwstrDeviceId*/) {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceAdded] called");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceRemoved(LPCWSTR /*pwstrDeviceId*/) {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceRemoved] called");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnPropertyValueChanged(LPCWSTR /*pwstrDeviceId*/, const PROPERTYKEY /*key*/) {
+		blog(LOG_INFO, "[WASAPISource::OnPropertyValueChanged] called");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemove() {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceQueryRemove] called");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceQueryRemoveFailed() {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceQueryRemoveFailed] called");
+		return S_OK; }
+	HRESULT STDMETHODCALLTYPE OnDeviceRemovePending() {
+		blog(LOG_INFO, "[WASAPISource::OnDeviceRemovePending] called");
+		return S_OK; }
 
 	HRESULT STDMETHODCALLTYPE QueryInterface(const IID& iid, void** ppUnk);
 	IFACEMETHODIMP_(ULONG) AddRef(); 
@@ -120,7 +134,7 @@ inline void WASAPISource::Start()
 {
 	if (!TryInitialize()) {
 		blog(LOG_INFO,
-		     "[WASAPISource::WASAPISource] "
+		     "[WASAPISource::Start] "
 		     "Device '%s' not found.  Waiting for device",
 		     device_id.c_str());
 		Reconnect();
@@ -132,7 +146,7 @@ inline void WASAPISource::Stop()
 	SetEvent(stopSignal);
 
 	if (active) {
-		blog(LOG_INFO, "WASAPI: Device '%s' Terminated",
+		blog(LOG_INFO, "[WASAPISource::Stop]: Device '%s' Terminated",
 		     device_name.c_str());
 		WaitForSingleObject(captureThread, INFINITE);
 	}
@@ -143,8 +157,10 @@ inline void WASAPISource::Stop()
 	ResetEvent(stopSignal);
 }
 
-inline WASAPISource::~WASAPISource()
+WASAPISource::~WASAPISource()
 {
+	blog(LOG_INFO, "[WASAPISource::~WASAPISource]: Device '%s' source destructor",
+		     device_name.c_str());
 	UnRegisterNotificationCallback();
 	Stop();
 }
@@ -152,7 +168,7 @@ inline WASAPISource::~WASAPISource()
 void WASAPISource::RegisterNotificationCallback()
 {
 	if(isDefaultDevice && !isInputDevice) {
-		blog(LOG_INFO, "WASAPI: will register for notification callbacks on default audio device change");
+		blog(LOG_INFO, "[WASAPISource::RegisterNotificationCallback]: will register for notification callbacks on default audio device change");
 
 		ComPtr<IMMDeviceEnumerator> enumerator;
 		HRESULT res;
@@ -162,11 +178,11 @@ void WASAPISource::RegisterNotificationCallback()
 				__uuidof(IMMDeviceEnumerator),
 				(void**)enumerator.Assign());
 		if(FAILED(res) ) {
-			blog(LOG_INFO, "WASAPI: failed to get enumerator to set callbacks");
+			blog(LOG_INFO, "[WASAPISource::RegisterNotificationCallback]: failed to get enumerator to set callbacks");
 		} else {
 			res = enumerator->RegisterEndpointNotificationCallback(this);
 			if(FAILED(res) ) {
-				blog(LOG_INFO, "WASAPI: failed to set callbacks");
+				blog(LOG_INFO, "[WASAPISource::RegisterNotificationCallback]: failed to set callbacks");
 			}
 		}
 	}
@@ -227,7 +243,8 @@ HRESULT WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool defaultD
 
 		bfree(w_id);
 	}
-
+	blog(LOG_INFO, "[WASAPISource::_InitDevice]: Returning device = %08x",
+		device.Get());
 	return res;
 }
 
@@ -244,9 +261,14 @@ HRESULT WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator)
 		return res;
 
 	if (!device_name.empty()) {
+		blog(LOG_INFO, "[WASAPISource::InitDevice]: Failed to init device and device name not empty",
+		     device_name.c_str());
 		devices.clear();
-		GetWASAPIAudioDevices(devices, isInputDevice,device_name);
+		GetWASAPIAudioDevices(devices, isInputDevice, device_name);
 		if (devices.size()) {
+			blog(LOG_INFO, "[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices",
+			     device_name.c_str());
+
 			this->device = devices[0].device;
 			this->device_id = devices[0].id;
 			res = 0;
@@ -273,7 +295,7 @@ void WASAPISource::InitClient()
 
 	res = client->GetMixFormat(&wfex);
 	if (FAILED(res))
-		throw HRError("Failed to get mix format", res);
+		throw HRError("[WASAPISource::InitClient] Failed to get mix format", res);
 
 	InitFormat(wfex);
 
@@ -283,7 +305,7 @@ void WASAPISource::InitClient()
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags,
 				 BUFFER_TIME_100NS, 0, wfex, nullptr);
 	if (FAILED(res))
-		throw HRError("Failed to get initialize audio client", res);
+		throw HRError("[WASAPISource::InitClient] Failed to get initialize audio client", res);
 }
 
 void WASAPISource::InitRender()
@@ -301,12 +323,12 @@ void WASAPISource::InitRender()
 
 	res = client->GetMixFormat(&wfex);
 	if (FAILED(res))
-		throw HRError("Failed to get mix format", res);
+		throw HRError("[WASAPISource::InitRender] Failed to get mix format", res);
 
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, BUFFER_TIME_100NS,
 				 0, wfex, nullptr);
 	if (FAILED(res))
-		throw HRError("Failed to get initialize audio client", res);
+		throw HRError("[WASAPISource::InitRender] Failed to get initialize audio client", res);
 
 	/* Silent loopback fix. Prevents audio stream from stopping and */
 	/* messing up timestamps and other weird glitches during silence */
@@ -314,16 +336,16 @@ void WASAPISource::InitRender()
 
 	res = client->GetBufferSize(&frames);
 	if (FAILED(res))
-		throw HRError("Failed to get buffer size", res);
+		throw HRError("[WASAPISource::InitRender] Failed to get buffer size", res);
 
 	res = client->GetService(__uuidof(IAudioRenderClient),
 				 (void **)render.Assign());
 	if (FAILED(res))
-		throw HRError("Failed to get render client", res);
+		throw HRError("[WASAPISource::InitRender] Failed to get render client", res);
 
 	res = render->GetBuffer(frames, &buffer);
 	if (FAILED(res))
-		throw HRError("Failed to get buffer", res);
+		throw HRError("[WASAPISource::InitRender] Failed to get buffer", res);
 
 	memset(buffer, 0, frames * wfex->nBlockAlign);
 
@@ -368,26 +390,27 @@ void WASAPISource::InitCapture()
 	HRESULT res = client->GetService(__uuidof(IAudioCaptureClient),
 					 (void **)capture.Assign());
 	if (FAILED(res))
-		throw HRError("Failed to create capture context", res);
+		throw HRError("[WASAPISource::InitCapture] Failed to create capture context", res);
 
 	res = client->SetEventHandle(receiveSignal);
 	if (FAILED(res))
-		throw HRError("Failed to set event handle", res);
+		throw HRError("[WASAPISource::InitCapture] Failed to set event handle", res);
 
 	captureThread = CreateThread(nullptr, 0, WASAPISource::CaptureThread,
 				     this, 0, nullptr);
 	if (!captureThread.Valid())
-		throw "Failed to create capture thread";
+		throw "[WASAPISource::InitCapture] Failed to create capture thread";
 
 	client->Start();
 	active = true;
 
-	blog(LOG_INFO, "WASAPI: Device '%s' [%s Hz] initialized",
+	blog(LOG_INFO, "[WASAPISource::InitCapture] Device '%s' [%s Hz] initialized",
 	     device_name.c_str(), device_sample.c_str());
 }
 
 void WASAPISource::Initialize()
 {
+	blog(LOG_INFO, "[WASAPISource::Initialize] Device initialize called");
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	HRESULT res;
 
@@ -395,19 +418,23 @@ void WASAPISource::Initialize()
 			       CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
 			       (void **)enumerator.Assign());
 	if (FAILED(res))
-		throw HRError("Failed to create enumerator", res);
+		throw HRError("[WASAPISource::Initialize] Failed to create enumerator", res);
 
 	res = InitDevice(enumerator);
 
 	if (FAILED(res)) {
 		// fail early
-		throw HRError("Failed to init device", res);
+		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
 	}
 
 	HRESULT resSample;
 	IPropertyStore *store = nullptr;
 	PWAVEFORMATEX deviceFormatProperties;
 	PROPVARIANT prop;
+
+	blog(LOG_INFO, "[WASAPISource::Initialize] Device '%s':'%08x' Initialization ready to call OpenPropertyStore",
+	     device_name.c_str(), device.Get());
+
 	resSample = device->OpenPropertyStore(STGM_READ, &store);
 	if (!FAILED(resSample)) {
 		resSample =
@@ -424,6 +451,9 @@ void WASAPISource::Initialize()
 		store->Release();
 	}
 
+	blog(LOG_INFO, "[WASAPISource::Initialize] Device '%s' Initialization ready to init Client",
+	     device_name.c_str(), device.Get());
+
 	InitClient();
 	if (!isInputDevice)
 		InitRender();
@@ -438,9 +468,9 @@ bool WASAPISource::TryInitialize()
 	} catch (HRError &error) {
 		if (previouslyFailed) {
 			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d",
+			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d, %s: %lX",
 			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active);
+			     device_id.c_str(), active, error.str, error.hr);
 			return active;
 		}
 
@@ -451,9 +481,9 @@ bool WASAPISource::TryInitialize()
 	} catch (const char *error) {
 		if (previouslyFailed) {
 			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d",
+			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d,  %s",
 			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active);
+			     device_id.c_str(), active, error);
 			return active;
 		}
 
@@ -461,6 +491,10 @@ bool WASAPISource::TryInitialize()
 		     device_name.empty() ? device_id.c_str()
 					 : device_name.c_str(),
 		     error);
+	} catch (...) {
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] failed",
+		     device_name.empty() ? device_id.c_str()
+					 : device_name.c_str());
 	}
 
 	previouslyFailed = !active;
@@ -594,6 +628,8 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 {
 	WASAPISource *source = (WASAPISource *)param;
 	bool reconnect = false;
+	blog(LOG_INFO, "[WASAPISource::CaptureThread] Device '%s' capture thread started",
+	     source->device_name.c_str());
 
 	/* Output devices don't signal, so just make it check every 10 ms */
 	DWORD dur = source->isInputDevice ? RECONNECT_INTERVAL : 10;
@@ -617,7 +653,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	source->active = false;
 
 	if (reconnect) {
-		blog(LOG_INFO, "Device '%s' invalidated.  Retrying",
+		blog(LOG_INFO, "[WASAPISource::CaptureThread] Device '%s' invalidated. Retrying",
 		     source->device_name.c_str());
 		source->Reconnect();
 	}
@@ -629,7 +665,7 @@ HRESULT STDMETHODCALLTYPE WASAPISource::OnDefaultDeviceChanged(EDataFlow Flow, E
 {
 	if (Flow == eRender && Role == eConsole) {
 		if (isDefaultDevice ) {
-			blog(LOG_INFO, "Got notification about Default audio output device switch");
+			blog(LOG_INFO, "[WASAPISource::OnDefaultDeviceChanged] Got notification about Default audio output device switch");
 			hadDefaultChangeEvent = true;
 			SetEvent(receiveSignal);
 		}
@@ -640,25 +676,27 @@ HRESULT STDMETHODCALLTYPE WASAPISource::OnDefaultDeviceChanged(EDataFlow Flow, E
 
 HRESULT WASAPISource::QueryInterface(const IID& iid, void** ppUnk)
 {
-    if ((iid == __uuidof(IUnknown)) ||
-        (iid == __uuidof(IMMNotificationClient))) {
-        *ppUnk = static_cast<IMMNotificationClient*>(this);
-    } else {
-        *ppUnk = NULL;
-        return E_NOINTERFACE;
-    }
-
-    AddRef();
-    return S_OK;
+	blog(LOG_INFO, "[WASAPISource::QueryInterface] called");
+	if ((iid == __uuidof(IUnknown)) ||
+	    (iid == __uuidof(IMMNotificationClient))) {
+		AddRef();
+		*ppUnk = static_cast<IMMNotificationClient*>(this);
+	} else {
+		*ppUnk = NULL;
+		return E_NOINTERFACE;
+	}
+	return S_OK;
 }
 
 ULONG WASAPISource::AddRef()
 {
+    blog(LOG_INFO, "[WASAPISource::AddRef]");
     return InterlockedIncrement(&m_cRef);
 }
 
 ULONG WASAPISource::Release()
 {
+    blog(LOG_INFO, "[WASAPISource::Release]");
     long lRef = InterlockedDecrement(&m_cRef);
     if (lRef == 0) {
         delete this;
@@ -738,9 +776,9 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 			device_prop, obs_module_text("Default"), "default");
 
 	for (size_t i = 0; i < devices.size(); i++) {
-		AudioDeviceInfo &device = devices[i];
-		obs_property_list_add_string(device_prop, device.name.c_str(),
-					     device.id.c_str());
+		AudioDeviceInfo &device_i = devices[i];
+		obs_property_list_add_string(device_prop, device_i.name.c_str(),
+					     device_i.id.c_str());
 	}
 
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
