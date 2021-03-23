@@ -74,18 +74,20 @@ VCamFilter::VCamFilter()
 			char res[128];
 			DWORD len = 0;
 
-			ReadFile(file, res, sizeof(res), &len, nullptr);
-			CloseHandle(file);
-
-			res[len] = 0;
-			int vals = sscanf(res,
-					  "%" PRIu32 "x%" PRIu32 "x%" PRIu64,
-					  &new_cx, &new_cy, &new_interval);
-			if (vals != 3) {
-				new_cx = cx;
-				new_cy = cy;
-				new_interval = interval;
+			if (ReadFile(file, res, sizeof(res) - 1, &len,
+				     nullptr)) {
+				res[len] = 0;
+				int vals = sscanf(
+					res, "%" PRIu32 "x%" PRIu32 "x%" PRIu64,
+					&new_cx, &new_cy, &new_interval);
+				if (vals != 3) {
+					new_cx = cx;
+					new_cy = cy;
+					new_interval = interval;
+				}
 			}
+
+			CloseHandle(file);
 		}
 	}
 
