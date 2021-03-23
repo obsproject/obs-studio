@@ -422,8 +422,9 @@ void WASAPISource::Initialize()
 
 	res = InitDevice(enumerator);
 
-	if (FAILED(res)) {
+	if (FAILED(res) || device.Get() == nullptr) {
 		// fail early
+		blog(LOG_ERROR, "[WASAPISource::Initialize] Device pointer is %p res is %d", device.Get(), res);
 		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
 	}
 
