@@ -287,7 +287,6 @@ void logcallback(DShow::LogType, const wchar_t *msg, void *)
 BOOL WINAPI DllMain(HINSTANCE inst, DWORD reason, LPVOID)
 {
 	if (reason == DLL_PROCESS_ATTACH) {
-		DisableThreadLibraryCalls(inst);
 #ifdef ENABLE_LOGGING
 		DShow::SetLogCallback(logcallback, nullptr);
 #endif
