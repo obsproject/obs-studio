@@ -138,7 +138,7 @@ fail:
 	if (key) {
 		RegCloseKey(key);
 	}
-	if (key) {
+	if (subkey) {
 		RegCloseKey(subkey);
 	}
 
