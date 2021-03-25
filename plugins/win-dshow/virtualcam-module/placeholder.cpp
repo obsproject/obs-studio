@@ -87,7 +87,7 @@ static bool load_placeholder_external()
 	PWSTR pszPath = NULL;
 
 	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-		KF_FLAG_DEFAULT, NULL, &pszPath);
+					  KF_FLAG_DEFAULT, NULL, &pszPath);
 	if (hr != S_OK) {
 		CoTaskMemFree(pszPath);
 		return false;
@@ -163,7 +163,8 @@ static bool load_placeholder()
 	GdiplusStartup(&token, &si, nullptr);
 
 	bool success = load_placeholder_external();
-	if (!success) success = load_placeholder_internal();
+	if (!success)
+		success = load_placeholder_internal();
 
 	GdiplusShutdown(token);
 	return success;
