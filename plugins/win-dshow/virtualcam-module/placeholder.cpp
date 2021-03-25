@@ -90,7 +90,7 @@ static bool load_placeholder_external()
 	PWSTR pszPath = NULL;
 
 	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-		KF_FLAG_DEFAULT, NULL, &pszPath);
+					  KF_FLAG_DEFAULT, NULL, &pszPath);
 	if (hr != S_OK) {
 		CoTaskMemFree(pszPath);
 		return false;
