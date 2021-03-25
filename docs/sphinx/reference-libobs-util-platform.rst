@@ -209,6 +209,12 @@ Sleep/Time Functions
 Other Path/File Functions
 -------------------------
 
+.. function:: char *os_get_placeholder_ptr()
+
+   Gets the user-specific path for a custom placeoholder.png file..
+
+---------------------
+
 .. function:: int os_get_config_path(char *dst, size_t size, const char *name)
               char *os_get_config_path_ptr(const char *name)
 
