@@ -507,6 +507,18 @@ char *os_get_abs_path_ptr(const char *path)
 	return ptr;
 }
 
+char *os_get_placeholder_ptr()
+{
+	char *phpath = os_get_path_ptr_internal(
+		"obs-studio\\plugin_config\\win-dshow", CSIDL_APPDATA);
+	if (!os_file_exists(phpath))
+		os_mkdirs(phpath);
+	bfree(phpath);
+	return os_get_path_ptr_internal(
+		"obs-studio\\plugin_config\\win-dshow\\placeholder.png",
+		CSIDL_APPDATA);
+}
+
 struct os_dir {
 	HANDLE handle;
 	WIN32_FIND_DATA wfd;

@@ -122,6 +122,8 @@ EXPORT char *os_get_abs_path_ptr(const char *path);
 
 EXPORT const char *os_get_path_extension(const char *path);
 
+EXPORT char *os_get_placeholder_ptr();
+
 struct os_dir;
 typedef struct os_dir os_dir_t;
 

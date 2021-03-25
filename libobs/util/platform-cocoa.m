@@ -89,6 +89,18 @@ static char *os_get_path_ptr_internal(const char *name,
 	return path.array;
 }
 
+char *os_get_placeholder_ptr()
+{
+	char *phpath = os_get_path_ptr_internal(
+		"obs-studio/plugin_config/mac-virtualcam", NSUserDomainMask);
+	if (!os_file_exists(phpath))
+		os_mkdirs(phpath);
+	bfree(phpath);
+	return os_get_path_ptr_internal(
+		"obs-studio/plugin_config/mac-virtualcam/placeholder.png",
+		NSUserDomainMask);
+}
+
 int os_get_config_path(char *dst, size_t size, const char *name)
 {
 	return os_get_path_internal(dst, size, name, NSUserDomainMask);
