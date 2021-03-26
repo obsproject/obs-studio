@@ -126,11 +126,11 @@ extern void device_present(gs_device_t *device)
 
 extern struct gs_texture *device_texture_create_from_dmabuf(
 	gs_device_t *device, unsigned int width, unsigned int height,
-	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
-	const uint32_t *strides, const uint32_t *offsets,
-	const uint64_t *modifiers)
+	uint32_t drm_format, enum gs_color_format color_format,
+	uint32_t n_planes, const int *fds, const uint32_t *strides,
+	const uint32_t *offsets, const uint64_t *modifiers)
 {
 	return gl_vtable->device_texture_create_from_dmabuf(
-		device, width, height, color_format, n_planes, fds, strides,
-		offsets, modifiers);
+		device, width, height, drm_format, color_format, n_planes, fds,
+		strides, offsets, modifiers);
 }

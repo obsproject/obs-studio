@@ -50,33 +50,6 @@ typedef void(APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(
 	GLenum target, GLeglImageOES image);
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
 
-/* copied from drm_fourcc.h */
-
-#define fourcc_code(a, b, c, d)                                \
-	((__u32)(a) | ((__u32)(b) << 8) | ((__u32)(c) << 16) | \
-	 ((__u32)(d) << 24))
-#define DRM_FORMAT_INVALID 0
-#define DRM_FORMAT_R8 fourcc_code('R', '8', ' ', ' ') /* [7:0] R */
-#define DRM_FORMAT_R16 \
-	fourcc_code('R', '1', '6', ' ') /* [15:0] R little endian */
-#define DRM_FORMAT_RG88 \
-	fourcc_code('R', 'G', '8', '8') /* [15:0] R:G 8:8 little endian */
-#define DRM_FORMAT_ABGR8888        \
-	fourcc_code('A', 'B', '2', \
-		    '4') /* [31:0] A:B:G:R 8:8:8:8 little endian */
-#define DRM_FORMAT_ABGR2101010     \
-	fourcc_code('A', 'B', '3', \
-		    '0') /* [31:0] A:B:G:R 2:10:10:10 little endian */
-#define DRM_FORMAT_ABGR16161616F   \
-	fourcc_code('A', 'B', '4', \
-		    'H') /* [63:0] A:B:G:R 16:16:16:16 little endian */
-#define DRM_FORMAT_ARGB8888        \
-	fourcc_code('A', 'R', '2', \
-		    '4') /* [31:0] A:R:G:B 8:8:8:8 little endian */
-#define DRM_FORMAT_XRGB8888        \
-	fourcc_code('X', 'R', '2', \
-		    '4') /* [31:0] x:R:G:B 8:8:8:8 little endian */
-
 static bool find_gl_extension(const char *extension)
 {
 	GLint n, i;
@@ -111,42 +84,6 @@ static bool init_egl_image_target_texture_2d_ext(void)
 		return false;
 
 	return true;
-}
-
-static inline enum gs_color_format gs_format_to_drm_format(uint32_t drm_format)
-{
-	switch (drm_format) {
-	case GS_R8:
-		return DRM_FORMAT_R8;
-	case GS_RGBA:
-		return DRM_FORMAT_ABGR8888;
-	case GS_BGRX:
-		return DRM_FORMAT_XRGB8888;
-	case GS_BGRA:
-		return DRM_FORMAT_ARGB8888;
-	case GS_R10G10B10A2:
-		return DRM_FORMAT_ABGR2101010;
-	case GS_R16:
-		return DRM_FORMAT_R16;
-	case GS_RGBA16F:
-		return DRM_FORMAT_ABGR16161616F;
-	case GS_R8G8:
-		return DRM_FORMAT_RG88;
-	case GS_A8:
-	case GS_R16F:
-	case GS_RGBA16:
-	case GS_RG16F:
-	case GS_R32F:
-	case GS_RG32F:
-	case GS_RGBA32F:
-	case GS_DXT1:
-	case GS_DXT3:
-	case GS_DXT5:
-	case GS_UNKNOWN:
-		return DRM_FORMAT_INVALID;
-	}
-
-	return DRM_FORMAT_INVALID;
 }
 
 static EGLImageKHR
@@ -242,23 +179,16 @@ create_dmabuf_egl_image(EGLDisplay egl_display, unsigned int width,
 
 struct gs_texture *
 gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
-			   unsigned int height,
+			   unsigned int height, uint32_t drm_format,
 			   enum gs_color_format color_format, uint32_t n_planes,
 			   const int *fds, const uint32_t *strides,
 			   const uint32_t *offsets, const uint64_t *modifiers)
 {
 	struct gs_texture *texture = NULL;
 	EGLImage egl_image;
-	uint32_t drm_format;
 
 	if (!init_egl_image_target_texture_2d_ext())
 		return NULL;
-
-	drm_format = gs_format_to_drm_format(color_format);
-	if (drm_format == DRM_FORMAT_INVALID) {
-		blog(LOG_ERROR, "Invalid or unsupported image format");
-		return NULL;
-	}
 
 	egl_image = create_dmabuf_egl_image(egl_display, width, height,
 					    drm_format, n_planes, fds, strides,
