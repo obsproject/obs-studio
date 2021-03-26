@@ -79,7 +79,7 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 	}
 }
 
-static bool load_placeholder_external()
+static bool load_placeholder_internal()
 {
 	Status s;
 
@@ -88,53 +88,26 @@ static bool load_placeholder_external()
 
 	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
 					  KF_FLAG_DEFAULT, NULL, &pszPath);
-	if (hr != S_OK) {
+	if (hr == S_OK) {
+		StringCbCat(file, sizeof(file), pszPath);
 		CoTaskMemFree(pszPath);
-		return false;
+		StringCbCat(file, sizeof(file),
+			L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
+    }  else {
+		CoTaskMemFree(pszPath);
+		if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
+			return false;
+		}
+
+		wchar_t *slash = wcsrchr(file, '\\');
+		if (!slash) {
+			return false;
+		}
+
+		slash[1] = 0;
+	
+		StringCbCat(file, sizeof(file), L"placeholder.png");
 	}
-
-	StringCbCat(file, sizeof(file), pszPath);
-	StringCbCat(file, sizeof(file),
-		    L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
-	CoTaskMemFree(pszPath);
-
-	Bitmap bmp(file);
-	if (bmp.GetLastStatus() != Status::Ok) {
-		return false;
-	}
-
-	BitmapData bmd = {};
-	Rect r(0, 0, bmp.GetWidth(), bmp.GetHeight());
-
-	s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB, &bmd);
-	if (s != Status::Ok) {
-		return false;
-	}
-
-	convert_placeholder((const uint8_t *)bmd.Scan0, bmp.GetWidth(),
-			    bmp.GetHeight());
-
-	bmp.UnlockBits(&bmd);
-	return true;
-}
-
-static bool load_placeholder_internal()
-{
-	Status s;
-
-	wchar_t file[MAX_PATH];
-	if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
-		return false;
-	}
-
-	wchar_t *slash = wcsrchr(file, '\\');
-	if (!slash) {
-		return false;
-	}
-
-	slash[1] = 0;
-
-	StringCbCat(file, sizeof(file), L"placeholder.png");
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {
@@ -162,9 +135,7 @@ static bool load_placeholder()
 	ULONG_PTR token;
 	GdiplusStartup(&token, &si, nullptr);
 
-	bool success = load_placeholder_external();
-	if (!success)
-		success = load_placeholder_internal();
+	bool success = load_placeholder_internal();
 
 	GdiplusShutdown(token);
 	return success;
