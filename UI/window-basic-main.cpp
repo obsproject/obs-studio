@@ -4514,7 +4514,7 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		fullname << ")";
 #elif defined(__APPLE__)
 		name = screen->name();
-#elif QT_VERSION >= QT_VERSION_CHECK(5, 9, 0)
+#else
 		name = screen->model().simplified();
 
 		if (name.length() > 1 && name.endsWith("-"))
@@ -7399,7 +7399,6 @@ void OBSBasic::on_resetUI_triggered()
 
 	restoreState(startingDockLayout);
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
 	int cx = width();
 	int cy = height();
 
@@ -7426,7 +7425,6 @@ void OBSBasic::on_resetUI_triggered()
 
 	resizeDocks(docks, {cy, cy, cy, cy, cy}, Qt::Vertical);
 	resizeDocks(docks, sizes, Qt::Horizontal);
-#endif
 
 	activateWindow();
 }
