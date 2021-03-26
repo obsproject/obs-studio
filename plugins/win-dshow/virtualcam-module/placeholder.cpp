@@ -1,4 +1,5 @@
 #include <windows.h>
+#include <shlobj_core.h>
 #include <strsafe.h>
 #include <gdiplus.h>
 #include <stdint.h>
@@ -82,19 +83,32 @@ static bool load_placeholder_internal()
 {
 	Status s;
 
-	wchar_t file[MAX_PATH];
-	if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
-		return false;
+	wchar_t file[MAX_PATH] = {'\0'};
+	PWSTR pszPath = NULL;
+
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
+					  KF_FLAG_DEFAULT, NULL, &pszPath);
+	if (hr == S_OK) {
+		StringCbCat(file, sizeof(file), pszPath);
+		CoTaskMemFree(pszPath);
+		StringCbCat(
+			file, sizeof(file),
+			L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
+	} else {
+		CoTaskMemFree(pszPath);
+		if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
+			return false;
+		}
+
+		wchar_t *slash = wcsrchr(file, '\\');
+		if (!slash) {
+			return false;
+		}
+
+		slash[1] = 0;
+
+		StringCbCat(file, sizeof(file), L"placeholder.png");
 	}
-
-	wchar_t *slash = wcsrchr(file, '\\');
-	if (!slash) {
-		return false;
-	}
-
-	slash[1] = 0;
-
-	StringCbCat(file, sizeof(file), L"placeholder.png");
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {
