@@ -91,9 +91,10 @@ static bool load_placeholder_internal()
 	if (hr == S_OK) {
 		StringCbCat(file, sizeof(file), pszPath);
 		CoTaskMemFree(pszPath);
-		StringCbCat(file, sizeof(file),
+		StringCbCat(
+			file, sizeof(file),
 			L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
-    }  else {
+	} else {
 		CoTaskMemFree(pszPath);
 		if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
 			return false;
@@ -105,7 +106,7 @@ static bool load_placeholder_internal()
 		}
 
 		slash[1] = 0;
-	
+
 		StringCbCat(file, sizeof(file), L"placeholder.png");
 	}
 
