@@ -460,6 +460,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.i_height = height;
 	obsx264->params.i_fps_num = voi->fps_num;
 	obsx264->params.i_fps_den = voi->fps_den;
+	obsx264->params.i_timebase_num = voi->fps_den;
+	obsx264->params.i_timebase_den = voi->fps_num;
 	obsx264->params.pf_log = log_x264;
 	obsx264->params.p_log_private = obsx264;
 	obsx264->params.i_log_level = X264_LOG_WARNING;
