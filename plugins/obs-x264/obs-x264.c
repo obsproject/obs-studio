@@ -494,6 +494,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		break;
 	}
 
+	obsx264->params.vui.i_sar_height = 1;
+	obsx264->params.vui.i_sar_width = 1;
 	obsx264->params.vui.b_fullrange = info.range == VIDEO_RANGE_FULL;
 	obsx264->params.vui.i_colorprim =
 		get_x264_cs_val(colorprim, x264_colorprim_names);
