@@ -518,9 +518,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		}
 	} else {
 		obsx264->params.rc.i_rc_method = X264_RC_CRF;
+		obsx264->params.rc.f_rf_constant = (float)crf;
 	}
-
-	obsx264->params.rc.f_rf_constant = (float)crf;
 
 	if (info.format == VIDEO_FORMAT_NV12)
 		obsx264->params.i_csp = X264_CSP_NV12;
