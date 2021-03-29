@@ -12,6 +12,13 @@
 #define DEFAULT_CY 1080
 #define DEFAULT_INTERVAL 333333ULL
 
+typedef struct {
+	int cx;
+	int cy;
+	nv12_scale_t scaler;
+	const uint8_t *data;
+} placeholder_t;
+
 class VCamFilter : public DShow::OutputFilter {
 	std::thread th;
 
@@ -19,7 +26,7 @@ class VCamFilter : public DShow::OutputFilter {
 	int queue_mode = 0;
 	bool in_obs = false;
 	enum queue_state prev_state = SHARED_QUEUE_STATE_INVALID;
-	const uint8_t *placeholder;
+	placeholder_t placeholder;
 	uint32_t cx = DEFAULT_CX;
 	uint32_t cy = DEFAULT_CY;
 	uint64_t interval = DEFAULT_INTERVAL;
