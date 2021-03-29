@@ -82,24 +82,9 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 	}
 }
 
-static bool load_placeholder_external()
+static bool load_placeholder_common(wchar_t *file)
 {
 	Status s;
-
-	wchar_t file[MAX_PATH] = {'\0'};
-	PWSTR pszPath = NULL;
-
-	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
-					  KF_FLAG_DEFAULT, NULL, &pszPath);
-	if (hr != S_OK) {
-		CoTaskMemFree(pszPath);
-		return false;
-	}
-
-	StringCbCat(file, sizeof(file), pszPath);
-	StringCbCat(file, sizeof(file),
-		    L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
-	CoTaskMemFree(pszPath);
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {
@@ -121,6 +106,28 @@ static bool load_placeholder_external()
 	return true;
 }
 
+static bool load_placeholder_external()
+{
+	Status s;
+
+	wchar_t file[MAX_PATH] = {'\0'};
+	PWSTR pszPath = NULL;
+
+	HRESULT hr = SHGetKnownFolderPath(FOLDERID_RoamingAppData,
+					  KF_FLAG_DEFAULT, NULL, &pszPath);
+	if (hr != S_OK) {
+		CoTaskMemFree(pszPath);
+		return false;
+	}
+
+	StringCbCat(file, sizeof(file), pszPath);
+	StringCbCat(file, sizeof(file),
+		    L"\\obs-studio\\plugin_config\\win-dshow\\placeholder.png");
+	CoTaskMemFree(pszPath);
+
+	return load_placeholder_common(file);
+}
+
 static bool load_placeholder_internal()
 {
 	Status s;
@@ -139,26 +146,7 @@ static bool load_placeholder_internal()
 
 	StringCbCat(file, sizeof(file), L"placeholder.png");
 
-	Bitmap bmp(file);
-	if (bmp.GetLastStatus() != Status::Ok) {
-		return false;
-	}
-
-	cx = bmp.GetWidth();
-	cy = bmp.GetHeight();
-
-	BitmapData bmd = {};
-	Rect r(0, 0, cx, cy);
-
-	s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB, &bmd);
-	if (s != Status::Ok) {
-		return false;
-	}
-
-	convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
-
-	bmp.UnlockBits(&bmd);
-	return true;
+	return load_placeholder_common(file);
 }
 
 bool initialize_placeholder()
