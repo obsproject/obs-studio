@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "properties-view.hpp"
 #include "window-namedialog.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-filters.hpp"
@@ -23,9 +24,13 @@
 #include "visibility-item-widget.hpp"
 #include "item-widget-helpers.hpp"
 #include "obs-app.hpp"
+#include "undo-stack-obs.hpp"
 
 #include <QMessageBox>
 #include <QCloseEvent>
+#include <obs-data.h>
+#include <obs.h>
+#include <util/base.h>
 #include <vector>
 #include <string>
 #include <QMenu>
@@ -202,10 +207,82 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 	obs_data_t *settings = obs_source_get_settings(filter);
 
+	auto filter_change = [](void *vp, obs_data_t *nd_old_settings,
+				obs_data_t *new_settings) {
+		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+		obs_source_t *parent = obs_filter_get_parent(source);
+		const char *source_name = obs_source_get_name(source);
+		OBSBasic *main = OBSBasic::Get();
+
+		obs_data_t *redo_wrapper = obs_data_create();
+		obs_data_set_string(redo_wrapper, "name", source_name);
+		obs_data_set_string(redo_wrapper, "settings",
+				    obs_data_get_json(new_settings));
+		obs_data_set_string(redo_wrapper, "parent",
+				    obs_source_get_name(parent));
+
+		obs_data_t *filter_settings = obs_source_get_settings(source);
+		obs_data_t *old_settings =
+			obs_data_get_defaults(filter_settings);
+		obs_data_apply(old_settings, nd_old_settings);
+
+		obs_data_t *undo_wrapper = obs_data_create();
+		obs_data_set_string(undo_wrapper, "name", source_name);
+		obs_data_set_string(undo_wrapper, "settings",
+				    obs_data_get_json(old_settings));
+		obs_data_set_string(undo_wrapper, "parent",
+				    obs_source_get_name(parent));
+
+		auto undo_redo = [](const std::string &data) {
+			obs_data_t *dat =
+				obs_data_create_from_json(data.c_str());
+			obs_source_t *parent_source = obs_get_source_by_name(
+				obs_data_get_string(dat, "parent"));
+			const char *filter_name =
+				obs_data_get_string(dat, "name");
+			obs_source_t *filter = obs_source_get_filter_by_name(
+				parent_source, filter_name);
+			obs_data_t *settings = obs_data_create_from_json(
+				obs_data_get_string(dat, "settings"));
+
+			obs_source_update(filter, settings);
+			obs_source_update_properties(filter);
+
+			obs_data_release(dat);
+			obs_data_release(settings);
+			obs_source_release(filter);
+			obs_source_release(parent_source);
+		};
+		std::string name = std::string(obs_source_get_name(source));
+		std::string undo_data = obs_data_get_json(undo_wrapper);
+		std::string redo_data = obs_data_get_json(redo_wrapper);
+		main->undo_s.add_action(QTStr("Undo.Filters").arg(name.c_str()),
+					undo_redo, undo_redo, undo_data,
+					redo_data, NULL);
+
+		obs_data_release(redo_wrapper);
+		obs_data_release(undo_wrapper);
+		obs_data_release(old_settings);
+		obs_data_release(filter_settings);
+
+		obs_source_update(source, new_settings);
+
+		main->undo_s.enable_undo_redo();
+	};
+
+	auto disabled_undo = [](void *vp, obs_data_t *settings) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		main->undo_s.disable_undo_redo();
+		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+		obs_source_update(source, settings);
+	};
+
 	view = new OBSPropertiesView(
 		settings, filter,
 		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)obs_source_update);
+		(PropertiesUpdateCallback)filter_change,
+		(PropertiesVisualUpdateCb)disabled_undo);
 
 	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
 				       "update_properties",
@@ -240,6 +317,7 @@ void OBSBasicFilters::AddFilter(OBSSource filter, bool focus)
 	list->addItem(item);
 	if (focus)
 		list->setCurrentItem(item);
+
 	SetupVisibilityItem(list, item, filter);
 }
 
@@ -486,6 +564,68 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			return;
 		}
 
+		obs_data_t *wrapper = obs_data_create();
+		obs_data_set_string(wrapper, "sname",
+				    obs_source_get_name(source));
+		obs_data_set_string(wrapper, "fname", name.c_str());
+		std::string scene_name = obs_source_get_name(
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->GetCurrentSceneSource());
+		auto undo = [scene_name](const std::string &data) {
+			obs_source_t *ssource =
+				obs_get_source_by_name(scene_name.c_str());
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->SetCurrentScene(ssource);
+			obs_source_release(ssource);
+
+			obs_data_t *dat =
+				obs_data_create_from_json(data.c_str());
+			obs_source_t *source = obs_get_source_by_name(
+				obs_data_get_string(dat, "sname"));
+			obs_source_t *filter = obs_source_get_filter_by_name(
+				source, obs_data_get_string(dat, "fname"));
+			obs_source_filter_remove(source, filter);
+
+			obs_data_release(dat);
+			obs_source_release(source);
+			obs_source_release(filter);
+		};
+
+		obs_data_t *rwrapper = obs_data_create();
+		obs_data_set_string(rwrapper, "sname",
+				    obs_source_get_name(source));
+		auto redo = [scene_name, id = std::string(id),
+			     name](const std::string &data) {
+			obs_source_t *ssource =
+				obs_get_source_by_name(scene_name.c_str());
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->SetCurrentScene(ssource);
+			obs_source_release(ssource);
+
+			obs_data_t *dat =
+				obs_data_create_from_json(data.c_str());
+			obs_source_t *source = obs_get_source_by_name(
+				obs_data_get_string(dat, "sname"));
+
+			obs_source_t *filter = obs_source_create(
+				id.c_str(), name.c_str(), nullptr, nullptr);
+			if (filter) {
+				obs_source_filter_add(source, filter);
+				obs_source_release(filter);
+			}
+
+			obs_data_release(dat);
+			obs_source_release(source);
+		};
+
+		std::string undo_data(obs_data_get_json(wrapper));
+		std::string redo_data(obs_data_get_json(rwrapper));
+		main->undo_s.add_action(QTStr("Undo.Add").arg(name.c_str()),
+					undo, redo, undo_data, redo_data, NULL);
+
+		obs_data_release(wrapper);
+		obs_data_release(rwrapper);
+
 		obs_source_t *filter =
 			obs_source_create(id, name.c_str(), nullptr, nullptr);
 		if (filter) {
@@ -674,8 +814,75 @@ void OBSBasicFilters::on_removeEffectFilter_clicked()
 {
 	OBSSource filter = GetFilter(ui->effectFilters->currentRow(), false);
 	if (filter) {
-		if (QueryRemove(this, filter))
+		if (QueryRemove(this, filter)) {
+			obs_data_t *wrapper = obs_save_source(filter);
+			std::string parent_name(obs_source_get_name(source));
+			obs_data_set_string(wrapper, "undo_name",
+					    parent_name.c_str());
+
+			std::string scene_name = obs_source_get_name(
+				reinterpret_cast<OBSBasic *>(
+					App()->GetMainWindow())
+					->GetCurrentSceneSource());
+			auto undo = [scene_name](const std::string &data) {
+				obs_source_t *ssource = obs_get_source_by_name(
+					scene_name.c_str());
+				reinterpret_cast<OBSBasic *>(
+					App()->GetMainWindow())
+					->SetCurrentScene(ssource);
+				obs_source_release(ssource);
+
+				obs_data_t *dat =
+					obs_data_create_from_json(data.c_str());
+				obs_source_t *source = obs_get_source_by_name(
+					obs_data_get_string(dat, "undo_name"));
+				obs_source_t *filter = obs_load_source(dat);
+				obs_source_filter_add(source, filter);
+
+				obs_data_release(dat);
+				obs_source_release(source);
+				obs_source_release(filter);
+			};
+
+			obs_data_t *rwrapper = obs_data_create();
+			obs_data_set_string(rwrapper, "fname",
+					    obs_source_get_name(filter));
+			obs_data_set_string(rwrapper, "sname",
+					    parent_name.c_str());
+			auto redo = [scene_name](const std::string &data) {
+				obs_source_t *ssource = obs_get_source_by_name(
+					scene_name.c_str());
+				reinterpret_cast<OBSBasic *>(
+					App()->GetMainWindow())
+					->SetCurrentScene(ssource);
+				obs_source_release(ssource);
+
+				obs_data_t *dat =
+					obs_data_create_from_json(data.c_str());
+				obs_source_t *source = obs_get_source_by_name(
+					obs_data_get_string(dat, "sname"));
+				obs_source_t *filter =
+					obs_source_get_filter_by_name(
+						source, obs_data_get_string(
+								dat, "fname"));
+				obs_source_filter_remove(source, filter);
+
+				obs_data_release(dat);
+				obs_source_release(filter);
+				obs_source_release(source);
+			};
+
+			std::string undo_data(obs_data_get_json(wrapper));
+			std::string redo_data(obs_data_get_json(rwrapper));
+			main->undo_s.add_action(
+				QTStr("Undo.Delete")
+					.arg(obs_source_get_name(filter)),
+				undo, redo, undo_data, redo_data, NULL);
 			obs_source_filter_remove(source, filter);
+
+			obs_data_release(wrapper);
+			obs_data_release(rwrapper);
+		}
 	}
 }
 
@@ -918,6 +1125,48 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 
 		listItem->setText(QT_UTF8(name.c_str()));
 		obs_source_set_name(filter, name.c_str());
+
+		std::string scene_name = obs_source_get_name(
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->GetCurrentSceneSource());
+		auto undo = [scene_name, prev = std::string(prevName),
+			     name](const std::string &data) {
+			obs_source_t *ssource =
+				obs_get_source_by_name(scene_name.c_str());
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->SetCurrentScene(ssource);
+			obs_source_release(ssource);
+
+			obs_source_t *source =
+				obs_get_source_by_name(data.c_str());
+			obs_source_t *filter = obs_source_get_filter_by_name(
+				source, name.c_str());
+			obs_source_set_name(filter, prev.c_str());
+			obs_source_release(source);
+			obs_source_release(filter);
+		};
+
+		auto redo = [scene_name, prev = std::string(prevName),
+			     name](const std::string &data) {
+			obs_source_t *ssource =
+				obs_get_source_by_name(scene_name.c_str());
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+				->SetCurrentScene(ssource);
+			obs_source_release(ssource);
+
+			obs_source_t *source =
+				obs_get_source_by_name(data.c_str());
+			obs_source_t *filter = obs_source_get_filter_by_name(
+				source, prev.c_str());
+			obs_source_set_name(filter, name.c_str());
+			obs_source_release(source);
+			obs_source_release(filter);
+		};
+
+		std::string undo_data(sourceName);
+		std::string redo_data(sourceName);
+		main->undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()),
+					undo, redo, undo_data, redo_data, NULL);
 	}
 
 	listItem->setText(QString());

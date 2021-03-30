@@ -929,8 +929,9 @@ void obs_source_update(obs_source_t *source, obs_data_t *settings)
 	if (!obs_source_valid(source, "obs_source_update"))
 		return;
 
-	if (settings)
+	if (settings) {
 		obs_data_apply(source->context.settings, settings);
+	}
 
 	if (source->info.output_flags & OBS_SOURCE_VIDEO) {
 		os_atomic_inc_long(&source->defer_update_count);
@@ -4281,6 +4282,16 @@ void obs_source_enum_filters(obs_source_t *source,
 	}
 
 	pthread_mutex_unlock(&source->filter_mutex);
+}
+
+void obs_source_set_hidden(obs_source_t *source, bool hidden)
+{
+	source->temp_removed = hidden;
+}
+
+bool obs_source_is_hidden(obs_source_t *source)
+{
+	return source->temp_removed;
 }
 
 obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
