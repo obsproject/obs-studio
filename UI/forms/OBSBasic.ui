@@ -2043,7 +2043,7 @@
     <bool>false</bool>
    </property>
     <property name="text">
-      <string>Undo</string>
+      <string>Undo.Undo</string>
     </property>
   </action>
   <action name="actionMainRedo">
@@ -2051,7 +2051,7 @@
     <bool>false</bool>
     </property>
     <property name="text">
-      <string>Redo</string>
+      <string>Undo.Redo</string>
     </property>
     </action>
   </widget>
