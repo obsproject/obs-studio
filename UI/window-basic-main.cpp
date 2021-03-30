@@ -7606,7 +7606,7 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 
 	std::string undo_data(obs_data_get_json(wrapper));
 	std::string redo_data(obs_data_get_json(rwrapper));
-	undo_s.add_action(QTStr("Undo.Transform.VCenter")
+	undo_s.add_action(QTStr("Undo.Transform.HCenter")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
 			  undo_redo, undo_redo, undo_data, redo_data, NULL);
