@@ -17,10 +17,6 @@
 
 #pragma once
 
-#if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
-#define SUPPORTS_FRACTIONAL_SCALING
-#endif
-
 static inline void GetScaleAndCenterPos(int baseCX, int baseCY, int windowCX,
 					int windowCY, int &x, int &y,
 					float &scale)
@@ -55,9 +51,5 @@ static inline void GetCenterPosFromFixedScale(int baseCX, int baseCY,
 
 static inline QSize GetPixelSize(QWidget *widget)
 {
-#ifdef SUPPORTS_FRACTIONAL_SCALING
 	return widget->size() * widget->devicePixelRatioF();
-#else
-	return widget->size() * widget->devicePixelRatio();
-#endif
 }

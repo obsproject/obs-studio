@@ -221,11 +221,7 @@ static int TranslateQtMouseEventModifiers(QMouseEvent *event)
 bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 					      int &relY)
 {
-#ifdef SUPPORTS_FRACTIONAL_SCALING
 	float pixelRatio = devicePixelRatioF();
-#else
-	float pixelRatio = devicePixelRatio();
-#endif
 	int mouseXscaled = (int)roundf(mouseX * pixelRatio);
 	int mouseYscaled = (int)roundf(mouseY * pixelRatio);
 
