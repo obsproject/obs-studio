@@ -108,8 +108,6 @@ static bool load_placeholder_common(wchar_t *file)
 
 static bool load_placeholder_external()
 {
-	Status s;
-
 	wchar_t file[MAX_PATH] = {'\0'};
 	PWSTR pszPath = NULL;
 
@@ -130,8 +128,6 @@ static bool load_placeholder_external()
 
 static bool load_placeholder_internal()
 {
-	Status s;
-
 	wchar_t file[MAX_PATH];
 	if (!GetModuleFileNameW(dll_inst, file, MAX_PATH)) {
 		return false;
