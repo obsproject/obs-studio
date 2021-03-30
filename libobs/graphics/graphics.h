@@ -917,12 +917,11 @@ EXPORT void gs_unregister_loss_callbacks(void *data);
 
 #elif __linux__
 
-EXPORT gs_texture_t *
-gs_texture_create_from_dmabuf(unsigned int width, unsigned int height,
-			      enum gs_color_format color_format,
-			      uint32_t n_planes, const int *fds,
-			      const uint32_t *strides, const uint32_t *offsets,
-			      const uint64_t *modifiers);
+EXPORT gs_texture_t *gs_texture_create_from_dmabuf(
+	unsigned int width, unsigned int height, uint32_t drm_format,
+	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
+	const uint32_t *strides, const uint32_t *offsets,
+	const uint64_t *modifiers);
 
 #endif
 

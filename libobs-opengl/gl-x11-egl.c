@@ -637,15 +637,15 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 
 static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
 	gs_device_t *device, unsigned int width, unsigned int height,
-	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
-	const uint32_t *strides, const uint32_t *offsets,
-	const uint64_t *modifiers)
+	uint32_t drm_format, enum gs_color_format color_format,
+	uint32_t n_planes, const int *fds, const uint32_t *strides,
+	const uint32_t *offsets, const uint64_t *modifiers)
 {
 	struct gl_platform *plat = device->plat;
 
 	return gl_egl_create_dmabuf_image(plat->edisplay, width, height,
-					  color_format, n_planes, fds, strides,
-					  offsets, modifiers);
+					  drm_format, color_format, n_planes,
+					  fds, strides, offsets, modifiers);
 }
 
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
