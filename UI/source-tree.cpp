@@ -608,6 +608,11 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	QVector<OBSSceneItem> &items =
 		*reinterpret_cast<QVector<OBSSceneItem> *>(ptr);
 
+	obs_source_t *src = obs_sceneitem_get_source(item);
+	if (obs_source_removed(src)) {
+		return true;
+	}
+
 	if (obs_sceneitem_is_group(item)) {
 		obs_data_t *data = obs_sceneitem_get_private_settings(item);
 
