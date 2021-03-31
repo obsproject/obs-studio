@@ -1911,7 +1911,7 @@ void OBSBasic::OBSInit()
 	} else if (isWayland) {
 		if (opt_always_on_top)
 			blog(LOG_INFO,
-			     "Always On Top not available on Wayland, ignoring…");
+			     "Always On Top not available on Wayland, ignoring.");
 		ui->actionAlwaysOnTop->setEnabled(false);
 		ui->actionAlwaysOnTop->setVisible(false);
 	}
