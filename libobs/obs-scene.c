@@ -865,7 +865,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 			obs_data_release(s);
 		}
 		item->show_transition_duration =
-			obs_data_get_int(show_data, "duration");
+			(uint32_t)obs_data_get_int(show_data, "duration");
 		obs_data_release(show_data);
 	}
 
@@ -882,7 +882,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 			obs_data_release(s);
 		}
 		item->hide_transition_duration =
-			obs_data_get_int(hide_data, "duration");
+			(uint32_t)obs_data_get_int(hide_data, "duration");
 		obs_data_release(hide_data);
 	}
 
@@ -2090,7 +2090,7 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_set_int(temp, "id", obs_sceneitem_get_id(item));
 		obs_data_set_vec2(temp, "pos", &pos);
 		obs_data_set_vec2(temp, "scale", &scale);
-		obs_data_set_int(temp, "rot", rot);
+		obs_data_set_double(temp, "rot", rot);
 		obs_data_set_int(temp, "alignment", alignment);
 		obs_data_set_int(temp, "bounds_type", bounds_type);
 		obs_data_set_vec2(temp, "bounds", &bounds);
@@ -2135,16 +2135,17 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	struct obs_sceneitem_crop crop;
 	obs_data_get_vec2(temp, "pos", &info.pos);
 	obs_data_get_vec2(temp, "scale", &info.scale);
-	info.rot = obs_data_get_int(temp, "rot");
-	info.alignment = obs_data_get_int(temp, "alignment");
+	info.rot = (float)obs_data_get_double(temp, "rot");
+	info.alignment = (uint32_t)obs_data_get_int(temp, "alignment");
 	info.bounds_type =
 		(enum obs_bounds_type)obs_data_get_int(temp, "bounds_type");
-	info.bounds_alignment = obs_data_get_int(temp, "bounds_alignment");
+	info.bounds_alignment =
+		(uint32_t)obs_data_get_int(temp, "bounds_alignment");
 	obs_data_get_vec2(temp, "bounds", &info.bounds);
-	crop.top = obs_data_get_int(temp, "top");
-	crop.bottom = obs_data_get_int(temp, "bottom");
-	crop.left = obs_data_get_int(temp, "left");
-	crop.right = obs_data_get_int(temp, "right");
+	crop.top = (int)obs_data_get_int(temp, "top");
+	crop.bottom = (int)obs_data_get_int(temp, "bottom");
+	crop.left = (int)obs_data_get_int(temp, "left");
+	crop.right = (int)obs_data_get_int(temp, "right");
 
 	obs_sceneitem_defer_update_begin(item);
 
