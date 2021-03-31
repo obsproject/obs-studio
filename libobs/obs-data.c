@@ -809,7 +809,8 @@ obs_data_t *obs_data_get_defaults(obs_data_t *data)
 			}
 
 			case OBS_DATA_NUM_INT: {
-				int val = obs_data_get_default_int(data, name);
+				long long val =
+					obs_data_get_default_int(data, name);
 				obs_data_set_int(defaults, name, val);
 				break;
 			}
