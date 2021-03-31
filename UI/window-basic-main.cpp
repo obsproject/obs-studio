@@ -6348,10 +6348,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 void OBSBasic::AutoRemux()
 {
-	QString input = outputHandler->lastRecordingPath.c_str();
-	if (input.isEmpty())
+	if (outputHandler->lastRecordingPath.empty())
 		return;
 
+	QString input = outputHandler->lastRecordingPath.c_str();
 	QFileInfo fi(input);
 	QString suffix = fi.suffix();
 
