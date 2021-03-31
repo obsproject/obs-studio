@@ -129,9 +129,10 @@ void *brealloc(void *ptr, size_t size)
 
 void bfree(void *ptr)
 {
-	if (ptr)
+	if (ptr) {
 		os_atomic_dec_long(&num_allocs);
-	alloc.free(ptr);
+		alloc.free(ptr);
+	}
 }
 
 long bnum_allocs(void)
