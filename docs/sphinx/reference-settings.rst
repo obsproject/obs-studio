@@ -182,6 +182,12 @@ Default Value Functions
 Default values are used to determine what value will be given if a value
 is not set.
 
+.. function:: obs_data_t *obs_data_get_defaults(obs_data_t *data);
+
+   :return: obs_data_t * with all default values (recursively for all objects as well).
+
+-----------------------
+
 .. function:: void obs_data_set_default_string(obs_data_t *data, const char *name, const char *val)
               const char *obs_data_get_default_string(obs_data_t *data, const char *name)
 
@@ -207,7 +213,10 @@ is not set.
 
    :return: An incremented reference to a data object.
 
----------------------
+----------------------
+
+.. function:: void obs_data_set_default_array(obs_data_t *data, const char *name, obs_data_array_t *arr)
+              obs_data_array_t *obs_data_get_default_array(obs_data_t *data, const char *name)
 
 
 Autoselect Functions

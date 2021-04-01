@@ -752,7 +752,8 @@ static bool check_property_group_recursion(obs_properties_t *parent,
 				 * lets verify anyway. */
 				return true;
 			}
-			check_property_group_recursion(cprops, group);
+			if (check_property_group_recursion(parent, cprops))
+				return true;
 		}
 
 		current_property = current_property->next;

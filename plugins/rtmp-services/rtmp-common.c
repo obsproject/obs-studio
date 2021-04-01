@@ -5,10 +5,11 @@
 #include <obs-config.h>
 
 #include "rtmp-format-ver.h"
-#include "twitch.h"
-#include "younow.h"
-#include "nimotv.h"
-#include "showroom.h"
+#include "service-specific/twitch.h"
+#include "service-specific/younow.h"
+#include "service-specific/nimotv.h"
+#include "service-specific/showroom.h"
+#include "service-specific/dacast.h"
 
 struct rtmp_common {
 	char *service;
@@ -684,6 +685,16 @@ static const char *rtmp_common_url(void *data)
 			return ingest->url;
 		}
 	}
+
+	if (service->service && strcmp(service->service, "Dacast") == 0) {
+		if (service->server && service->key) {
+			dacast_ingests_load_data(service->server, service->key);
+
+			struct dacast_ingest *ingest;
+			ingest = dacast_ingest(service->key);
+			return ingest->url;
+		}
+	}
 	return service->server;
 }
 
@@ -696,6 +707,14 @@ static const char *rtmp_common_key(void *data)
 			ingest = showroom_get_ingest(service->server,
 						     service->key);
 			return ingest->key;
+		}
+	}
+
+	if (service->service && strcmp(service->service, "Dacast") == 0) {
+		if (service->key) {
+			struct dacast_ingest *ingest;
+			ingest = dacast_ingest(service->key);
+			return ingest->streamkey;
 		}
 	}
 	return service->key;
@@ -758,6 +777,32 @@ fail:
 	json_decref(root);
 }
 
+static const char *rtmp_common_username(void *data)
+{
+	struct rtmp_common *service = data;
+	if (service->service && strcmp(service->service, "Dacast") == 0) {
+		if (service->key) {
+			struct dacast_ingest *ingest;
+			ingest = dacast_ingest(service->key);
+			return ingest->username;
+		}
+	}
+	return NULL;
+}
+
+static const char *rtmp_common_password(void *data)
+{
+	struct rtmp_common *service = data;
+	if (service->service && strcmp(service->service, "Dacast") == 0) {
+		if (service->key) {
+			struct dacast_ingest *ingest;
+			ingest = dacast_ingest(service->key);
+			return ingest->password;
+		}
+	}
+	return NULL;
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -767,6 +812,8 @@ struct obs_service_info rtmp_common_service = {
 	.get_properties = rtmp_common_properties,
 	.get_url = rtmp_common_url,
 	.get_key = rtmp_common_key,
+	.get_username = rtmp_common_username,
+	.get_password = rtmp_common_password,
 	.apply_encoder_settings = rtmp_common_apply_settings,
 	.get_output_type = rtmp_common_get_output_type,
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,

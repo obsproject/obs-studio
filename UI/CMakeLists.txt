@@ -52,10 +52,6 @@ find_package(Qt5Xml ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
-if(APPLE)
-	find_package(Qt5MacExtras REQUIRED)
-endif(APPLE)
-
 if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
 		message(FATAL_ERROR "Failed to find Qt5")
@@ -260,7 +256,8 @@ set(obs_SOURCES
 	obs-proxy-style.cpp
 	locked-checkbox.cpp
 	visibility-checkbox.cpp
-	media-slider.cpp)
+	media-slider.cpp
+	undo-stack-obs.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -331,7 +328,8 @@ set(obs_HEADERS
 	log-viewer.hpp
 	obs-proxy-style.hpp
 	obs-proxy-style.hpp
-	media-slider.hpp)
+	media-slider.hpp
+	undo-stack-obs.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)
@@ -410,10 +408,6 @@ target_link_libraries(obs
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
-if (APPLE)
-	target_link_libraries(obs
-			Qt5::MacExtras)
-endif()
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
 define_graphic_modules(obs)

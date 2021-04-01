@@ -403,6 +403,34 @@ void SourceTreeItem::ExitEditMode(bool save)
 	/* rename                                    */
 
 	SignalBlocker sourcesSignalBlocker(this);
+	std::string prevName(obs_source_get_name(source));
+	std::string scene_name =
+		obs_source_get_name(main->GetCurrentSceneSource());
+	auto undo = [scene_name, prevName, main](const std::string &data) {
+		obs_source_t *source = obs_get_source_by_name(data.c_str());
+		obs_source_set_name(source, prevName.c_str());
+		obs_source_release(source);
+
+		obs_source_t *scene_source =
+			obs_get_source_by_name(scene_name.c_str());
+		main->SetCurrentScene(scene_source);
+		obs_source_release(scene_source);
+	};
+
+	auto redo = [scene_name, main, newName](const std::string &data) {
+		obs_source_t *source = obs_get_source_by_name(data.c_str());
+		obs_source_set_name(source, newName.c_str());
+		obs_source_release(source);
+
+		obs_source_t *scene_source =
+			obs_get_source_by_name(scene_name.c_str());
+		main->SetCurrentScene(scene_source);
+		obs_source_release(scene_source);
+	};
+
+	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,
+				redo, newName, prevName, NULL);
+
 	obs_source_set_name(source, newName.c_str());
 	label->setText(QT_UTF8(newName.c_str()));
 }
@@ -579,6 +607,11 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 {
 	QVector<OBSSceneItem> &items =
 		*reinterpret_cast<QVector<OBSSceneItem> *>(ptr);
+
+	obs_source_t *src = obs_sceneitem_get_source(item);
+	if (obs_source_removed(src)) {
+		return true;
+	}
 
 	if (obs_sceneitem_is_group(item)) {
 		obs_data_t *data = obs_sceneitem_get_private_settings(item);
@@ -1134,7 +1167,8 @@ void SourceTree::dropEvent(QDropEvent *event)
 	}
 
 	if (indicator == QAbstractItemView::BelowItem ||
-	    indicator == QAbstractItemView::OnItem)
+	    indicator == QAbstractItemView::OnItem ||
+	    indicator == QAbstractItemView::OnViewport)
 		row++;
 
 	if (row < 0 || row > stm->items.count()) {

@@ -7,7 +7,9 @@
 
 using namespace DShow;
 
-extern const uint8_t *get_placeholder();
+extern bool initialize_placeholder();
+extern const uint8_t *get_placeholder_ptr();
+extern const bool get_placeholder_size(int *out_cx, int *out_cy);
 
 /* ========================================================================= */
 
@@ -26,7 +28,12 @@ VCamFilter::VCamFilter()
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
 
-	placeholder = get_placeholder();
+	if (initialize_placeholder()) {
+		placeholder.data = get_placeholder_ptr();
+		get_placeholder_size(&placeholder.cx, &placeholder.cy);
+	} else {
+		placeholder.data = nullptr;
+	}
 
 	/* ---------------------------------------- */
 	/* detect if this filter is within obs      */
@@ -74,18 +81,20 @@ VCamFilter::VCamFilter()
 			char res[128];
 			DWORD len = 0;
 
-			ReadFile(file, res, sizeof(res), &len, nullptr);
-			CloseHandle(file);
-
-			res[len] = 0;
-			int vals = sscanf(res,
-					  "%" PRIu32 "x%" PRIu32 "x%" PRIu64,
-					  &new_cx, &new_cy, &new_interval);
-			if (vals != 3) {
-				new_cx = cx;
-				new_cy = cy;
-				new_interval = interval;
+			if (ReadFile(file, res, sizeof(res) - 1, &len,
+				     nullptr)) {
+				res[len] = 0;
+				int vals = sscanf(
+					res, "%" PRIu32 "x%" PRIu32 "x%" PRIu64,
+					&new_cx, &new_cy, &new_interval);
+				if (vals != 3) {
+					new_cx = cx;
+					new_cy = cy;
+					new_interval = interval;
+				}
 			}
+
+			CloseHandle(file);
 		}
 	}
 
@@ -100,6 +109,10 @@ VCamFilter::VCamFilter()
 	}
 
 	nv12_scale_init(&scaler, TARGET_FORMAT_NV12, cx, cy, cx, cy);
+	if (placeholder.data)
+		nv12_scale_init(&placeholder.scaler, TARGET_FORMAT_NV12,
+				GetCX(), GetCY(), placeholder.cx,
+				placeholder.cy);
 
 	/* ---------------------------------------- */
 
@@ -162,6 +175,11 @@ void VCamFilter::Thread()
 
 	nv12_scale_init(&scaler, TARGET_FORMAT_NV12, GetCX(), GetCY(), cx, cy);
 
+	if (placeholder.data)
+		nv12_scale_init(&placeholder.scaler, TARGET_FORMAT_NV12,
+				GetCX(), GetCY(), placeholder.cx,
+				placeholder.cy);
+
 	while (!stopped()) {
 		Frame(filter_time);
 		sleepto_100ns(cur_time += interval);
@@ -193,9 +211,9 @@ void VCamFilter::Frame(uint64_t ts)
 	}
 
 	if (state != SHARED_QUEUE_STATE_READY) {
-		new_cx = DEFAULT_CX;
-		new_cy = DEFAULT_CY;
-		new_interval = DEFAULT_INTERVAL;
+		new_cx = GetCX();
+		new_cy = GetCY();
+		new_interval = GetInterval();
 	}
 
 	if (new_cx != cx || new_cy != cy || new_interval != interval) {
@@ -207,17 +225,22 @@ void VCamFilter::Frame(uint64_t ts)
 		nv12_scale_init(&scaler, TARGET_FORMAT_NV12, GetCX(), GetCY(),
 				new_cx, new_cy);
 
+		if (placeholder.data)
+			nv12_scale_init(&placeholder.scaler, TARGET_FORMAT_NV12,
+					GetCX(), GetCY(), placeholder.cx,
+					placeholder.cy);
+
 		cx = new_cx;
 		cy = new_cy;
 		interval = new_interval;
 	}
 
 	if (GetVideoFormat() == VideoFormat::I420)
-		scaler.format = TARGET_FORMAT_I420;
+		scaler.format = placeholder.scaler.format = TARGET_FORMAT_I420;
 	else if (GetVideoFormat() == VideoFormat::YUY2)
-		scaler.format = TARGET_FORMAT_YUY2;
+		scaler.format = placeholder.scaler.format = TARGET_FORMAT_YUY2;
 	else
-		scaler.format = TARGET_FORMAT_NV12;
+		scaler.format = placeholder.scaler.format = TARGET_FORMAT_NV12;
 
 	uint8_t *ptr;
 	if (LockSampleData(&ptr)) {
@@ -241,8 +264,8 @@ void VCamFilter::ShowOBSFrame(uint8_t *ptr)
 
 void VCamFilter::ShowDefaultFrame(uint8_t *ptr)
 {
-	if (placeholder) {
-		nv12_do_scale(&scaler, ptr, placeholder);
+	if (placeholder.data) {
+		nv12_do_scale(&placeholder.scaler, ptr, placeholder.data);
 	} else {
 		memset(ptr, 127, GetCX() * GetCY() * 3 / 2);
 	}

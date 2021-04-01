@@ -898,6 +898,14 @@ EXPORT void obs_source_remove(obs_source_t *source);
 /** Returns true if the source should be released */
 EXPORT bool obs_source_removed(const obs_source_t *source);
 
+/** The 'hidden' flag is not the same as a sceneitem's visibility. It is a
+  * property the determines if it can be found through searches. **/
+/** Simply sets a 'hidden' flag when the source is still alive but shouldn't be found */
+EXPORT void obs_source_set_hidden(obs_source_t *source, bool hidden);
+
+/** Returns the current 'hidden' state on the source */
+EXPORT bool obs_source_is_hidden(obs_source_t *source);
+
 /** Returns capability flags of a source */
 EXPORT uint32_t obs_source_get_output_flags(const obs_source_t *source);
 
@@ -1580,6 +1588,29 @@ EXPORT void obs_sceneitem_release(obs_sceneitem_t *item);
 
 /** Removes a scene item. */
 EXPORT void obs_sceneitem_remove(obs_sceneitem_t *item);
+
+/** Adds a scene item. */
+EXPORT void obs_sceneitems_add(obs_scene_t *scene, obs_data_array_t *data);
+
+/** Saves Sceneitem into an array, arr **/
+EXPORT void obs_sceneitem_save(obs_sceneitem_t *item, obs_data_array_t *arr);
+
+/** Set the ID of a sceneitem */
+EXPORT void obs_sceneitem_set_id(obs_sceneitem_t *sceneitem, int64_t id);
+
+/** Tries to find the sceneitem of the source in a given scene. Returns NULL if not found */
+EXPORT obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene,
+							obs_source_t *source);
+
+/** Save all the transform states for a current scene's sceneitems */
+EXPORT obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene,
+						   bool all_items);
+
+/** Load all the transform states of sceneitems in that scene */
+EXPORT void obs_scene_load_transform_states(const char *state);
+
+/**  Gets a sceneitem's order in its scene */
+EXPORT int obs_sceneitem_get_order_position(obs_sceneitem_t *item);
 
 /** Gets the scene parent associated with the scene item. */
 EXPORT obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item);

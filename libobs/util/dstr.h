@@ -229,8 +229,7 @@ static inline void dstr_ensure_capacity(struct dstr *dst, const size_t new_size)
 
 static inline void dstr_copy_dstr(struct dstr *dst, const struct dstr *src)
 {
-	if (dst->array)
-		dstr_free(dst);
+	dstr_free(dst);
 
 	if (src->len) {
 		dstr_ensure_capacity(dst, src->len + 1);
