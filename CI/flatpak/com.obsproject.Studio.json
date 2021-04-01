@@ -235,8 +235,8 @@
       ],
       "sources": [
         {
-          "type": "git",
-          "url": "https://github.com/obsproject/obs-studio.git"
+          "type": "dir",
+          "path": "../../"
         }
       ]
     }
