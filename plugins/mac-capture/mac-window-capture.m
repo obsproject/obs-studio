@@ -7,8 +7,10 @@
 
 struct window_capture {
 	obs_source_t *source;
+	struct screen_capture* dc;
 
 	struct cocoa_window window;
+
 
 	//CGRect              bounds;
 	//CGWindowListOption  window_option;
@@ -101,19 +103,19 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 
 	blog(LOG_INFO, "[window-capture] - Init Display Capture for permissions dialog");
 	
-	struct screen_capture *dc = bzalloc(sizeof(struct screen_capture));
-	if (!dc) {
+	wc->dc = bzalloc(sizeof(struct screen_capture));
+	if (!wc->dc) {
 		blog(LOG_INFO, "[window-capture] - Display Capture Alloc Fail"); 
 		return NULL;
 	}
-	dc->display = obs_data_get_int(settings, "display");
+	wc->dc->display = obs_data_get_int(settings, "display");
+	pthread_mutex_init(&wc->dc->mutex, NULL); //?
 
-	if (!init_screen_stream(dc)) {
+	if (!init_screen_stream(wc->dc)) {
 		blog(LOG_INFO, "[window-capture] - Display Capture Init Fail");
-		bfree(dc);
+		bfree(wc->dc);
 		return NULL;
 	}
-	bfree(dc);
 
 	init_window(&wc->window, settings);
 
@@ -153,7 +155,9 @@ static void window_capture_destroy(void *data)
 	os_event_destroy(cap->stop_event);
 
 	destroy_window(&cap->window);
-
+	pthread_mutex_destroy(&cap->dc->mutex);
+	bfree(cap->dc);
+    
 	bfree(cap);
 }
 
