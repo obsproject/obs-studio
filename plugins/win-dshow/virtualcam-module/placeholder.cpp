@@ -81,7 +81,7 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 	}
 }
 
-static bool load_placeholder_internal()
+static bool load_placeholder_internal(wchar_t *png)
 {
 	Status s;
 
@@ -97,7 +97,7 @@ static bool load_placeholder_internal()
 
 	slash[1] = 0;
 
-	StringCbCat(file, sizeof(file), L"placeholder.png");
+	StringCbCat(file, sizeof(file), png);
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {
@@ -127,7 +127,9 @@ bool initialize_placeholder()
 	ULONG_PTR token;
 	GdiplusStartup(&token, &si, nullptr);
 
-	initialized = load_placeholder_internal();
+	initialized = load_placeholder_internal(L"custom_placeholder.png");
+	if (!initialized)
+		initialized = load_placeholder_internal(L"placeholder.png");
 
 	GdiplusShutdown(token);
 	return initialized;
