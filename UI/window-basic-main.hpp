@@ -36,7 +36,6 @@
 #include "window-basic-about.hpp"
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
-#include "undo-stack-obs.hpp"
 
 #include <obs-frontend-internal.hpp>
 
@@ -157,7 +156,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSBasicPreview;
 	friend class OBSBasicStatusBar;
 	friend class OBSBasicSourceSelect;
-	friend class OBSBasicTransform;
 	friend class OBSBasicSettings;
 	friend class Auth;
 	friend class AutoConfig;
@@ -168,7 +166,6 @@ class OBSBasic : public OBSMainWindow {
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
-	friend class OBSBasicSourceSelect;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
@@ -222,9 +219,6 @@ private:
 
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;
-
-	QPointer<QTimer> nudge_timer;
-	bool recent_nudge = false;
 
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
@@ -314,7 +308,6 @@ private:
 	void UploadLog(const char *subdir, const char *file, const bool crash);
 
 	void Save(const char *file);
-	void LoadData(obs_data_t *data, const char *file);
 	void Load(const char *file);
 
 	void InitHotkeys();
@@ -616,10 +609,6 @@ public slots:
 	void UnpauseRecording();
 
 private slots:
-
-	void on_actionMainUndo_triggered();
-	void on_actionMainRedo_triggered();
-
 	void AddSceneItem(OBSSceneItem item);
 	void AddScene(OBSSource source);
 	void RemoveScene(OBSSource source);
@@ -752,7 +741,6 @@ private:
 	OBSSource prevFTBSource = nullptr;
 
 public:
-	undo_stack undo_s;
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
 

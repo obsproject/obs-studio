@@ -9,7 +9,7 @@ endif()
 find_package(XCB COMPONENTS XCB RANDR SHM XFIXES XINERAMA REQUIRED)
 find_package(X11_XCB REQUIRED)
 
-set(linux-capture_INCLUDES
+include_directories(SYSTEM
 	"${CMAKE_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
@@ -34,7 +34,11 @@ set(linux-capture_HEADERS
 	xcompcap-helper.hpp
 )
 
-set(linux-capture_LIBRARIES
+add_library(linux-capture MODULE
+	${linux-capture_SOURCES}
+	${linux-capture_HEADERS}
+)
+target_link_libraries(linux-capture
 	libobs
 	glad
 	${X11_LIBRARIES}
@@ -43,53 +47,6 @@ set(linux-capture_LIBRARIES
 	${X11_Xcomposite_LIB}
 	${XCB_LIBRARIES}
 )
-
-option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
-if(ENABLE_PIPEWIRE)
-	find_package(PipeWire REQUIRED)
-	find_package(Gio REQUIRED)
-
-	add_definitions(-DENABLE_PIPEWIRE)
-
-	set(linux-capture_INCLUDES
-		${linux-capture_INCLUDES}
-		${GIO_INCLUDE_DIRS}
-		${PIPEWIRE_INCLUDE_DIRS}
-	)
-
-	add_definitions(
-		${GIO_DEFINITIONS}
-		${PIPEWIRE_DEFINITIONS}
-	)
-
-	set(linux-capture_SOURCES
-		${linux-capture_SOURCES}
-		pipewire.c
-		pipewire-capture.c
-	)
-	set(linux-capture_HEADERS
-		${linux-capture_HEADERS}
-		pipewire.h
-		pipewire-capture.h
-	)
-	set(linux-capture_LIBRARIES
-		${linux-capture_LIBRARIES}
-		${GIO_LIBRARIES}
-		${PIPEWIRE_LIBRARIES}
-	)
-endif()
-
-include_directories(SYSTEM
-	${linux-capture_INCLUDES}
-)
-add_library(linux-capture MODULE
-	${linux-capture_SOURCES}
-	${linux-capture_HEADERS}
-)
-target_link_libraries(linux-capture
-	${linux-capture_LIBRARIES}
-)
-
 set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-capture data)

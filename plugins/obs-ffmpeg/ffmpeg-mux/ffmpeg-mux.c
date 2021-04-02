@@ -237,9 +237,7 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 
 	vsnprintf(out_buffer, sizeof(out_buffer), format, args);
 	dstr_copy(&out, out_buffer);
-	if (global_stream_key && *global_stream_key) {
-		dstr_replace(&out, global_stream_key, "{stream_key}");
-	}
+	dstr_replace(&out, global_stream_key, "{stream_key}");
 
 	switch (level) {
 	case AV_LOG_INFO:

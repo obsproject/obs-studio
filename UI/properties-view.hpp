@@ -1,10 +1,7 @@
 #pragma once
 
 #include "vertical-scroll-area.hpp"
-#include <obs-data.h>
 #include <obs.hpp>
-#include <qtimer.h>
-#include <QPointer>
 #include <vector>
 #include <memory>
 
@@ -13,9 +10,7 @@ class OBSPropertiesView;
 class QLabel;
 
 typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
-typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *old_settings,
-					 obs_data_t *new_settings);
-typedef void (*PropertiesVisualUpdateCb)(void *obj, obs_data_t *settings);
+typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *settings);
 
 /* ------------------------------------------------------------------------- */
 
@@ -28,9 +23,6 @@ private:
 	OBSPropertiesView *view;
 	obs_property_t *property;
 	QWidget *widget;
-	QPointer<QTimer> update_timer;
-	bool recently_updated = false;
-	OBSData old_settings_cache;
 
 	void BoolChanged(const char *setting);
 	void IntChanged(const char *setting);
@@ -53,15 +45,6 @@ public:
 			  QWidget *widget_)
 		: view(view_), property(prop), widget(widget_)
 	{
-	}
-
-	~WidgetInfo()
-	{
-		if (update_timer) {
-			update_timer->stop();
-			update_timer->deleteLater();
-			obs_data_release(old_settings_cache);
-		}
 	}
 
 public slots:
@@ -100,7 +83,6 @@ private:
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
-	PropertiesVisualUpdateCb cb = nullptr;
 	int minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string lastFocused;
@@ -153,15 +135,13 @@ signals:
 public:
 	OBSPropertiesView(OBSData settings, void *obj,
 			  PropertiesReloadCallback reloadCallback,
-			  PropertiesUpdateCallback callback,
-			  PropertiesVisualUpdateCb cb = nullptr,
-			  int minSize = 0);
+			  PropertiesUpdateCallback callback, int minSize = 0);
 	OBSPropertiesView(OBSData settings, const char *type,
 			  PropertiesReloadCallback reloadCallback,
 			  int minSize = 0);
 
 	inline obs_data_t *GetSettings() const { return settings; }
 
-	inline void UpdateSettings() { callback(obj, nullptr, settings); }
+	inline void UpdateSettings() { callback(obj, settings); }
 	inline bool DeferUpdate() const { return deferUpdate; }
 };

@@ -491,16 +491,13 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	enc->output_delay = output_delay;
 
 	if (lookahead) {
-		const int lkd_bound = output_delay - config->frameIntervalP - 4;
-		if (lkd_bound >= 0) {
-			config->rcParams.enableLookahead = 1;
-			config->rcParams.lookaheadDepth =
-				max(enc->rc_lookahead, lkd_bound);
-			config->rcParams.disableIadapt = 0;
-			config->rcParams.disableBadapt = 0;
-		} else {
-			lookahead = false;
-		}
+		int lkd_bound = output_delay - config->frameIntervalP - 4;
+
+		config->rcParams.enableLookahead = 1;
+		config->rcParams.lookaheadDepth =
+			max(enc->rc_lookahead, lkd_bound);
+		config->rcParams.disableIadapt = 0;
+		config->rcParams.disableBadapt = 0;
 	}
 
 	/* psycho aq */

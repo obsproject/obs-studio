@@ -445,11 +445,8 @@ static void wc_tick(void *data, float seconds)
 		return;
 
 	if (!wc->window || !IsWindow(wc->window)) {
-		if (!wc->title && !wc->class) {
-			if (wc->capture.valid)
-				dc_capture_free(&wc->capture);
+		if (!wc->title && !wc->class)
 			return;
-		}
 
 		wc->check_window_timer += seconds;
 

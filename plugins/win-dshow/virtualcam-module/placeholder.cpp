@@ -7,10 +7,7 @@
 using namespace Gdiplus;
 
 extern HINSTANCE dll_inst;
-
 static std::vector<uint8_t> placeholder;
-static bool initialized = false;
-int cx, cy;
 
 /* XXX: optimize this later.  or don't, it's only called once. */
 
@@ -104,50 +101,46 @@ static bool load_placeholder_internal()
 		return false;
 	}
 
-	cx = bmp.GetWidth();
-	cy = bmp.GetHeight();
-
 	BitmapData bmd = {};
-	Rect r(0, 0, cx, cy);
+	Rect r(0, 0, bmp.GetWidth(), bmp.GetHeight());
 
 	s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB, &bmd);
 	if (s != Status::Ok) {
 		return false;
 	}
 
-	convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
+	convert_placeholder((const uint8_t *)bmd.Scan0, bmp.GetWidth(),
+			    bmp.GetHeight());
 
 	bmp.UnlockBits(&bmd);
 	return true;
 }
 
-bool initialize_placeholder()
+static bool load_placeholder()
 {
 	GdiplusStartupInput si;
 	ULONG_PTR token;
 	GdiplusStartup(&token, &si, nullptr);
 
-	initialized = load_placeholder_internal();
+	bool success = load_placeholder_internal();
 
 	GdiplusShutdown(token);
-	return initialized;
+	return success;
 }
 
-const uint8_t *get_placeholder_ptr()
+const uint8_t *get_placeholder()
 {
-	if (initialized)
-		return placeholder.data();
+	static bool failed = false;
+	static bool initialized = false;
 
-	return nullptr;
-}
-
-const bool get_placeholder_size(int *out_cx, int *out_cy)
-{
 	if (initialized) {
-		*out_cx = cx;
-		*out_cy = cy;
-		return true;
+		return placeholder.data();
+	} else if (failed) {
+		return nullptr;
 	}
 
-	return false;
+	initialized = load_placeholder();
+	failed = !initialized;
+
+	return initialized ? placeholder.data() : nullptr;
 }
