@@ -9,6 +9,11 @@
 #include "url-push-button.hpp"
 
 #ifdef BROWSER_AVAILABLE
+
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 #include <browser-panel.hpp>
 #include "auth-oauth.hpp"
 #endif
@@ -375,7 +380,14 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->twitchAddonLabel->setVisible(false);
 
 #ifdef BROWSER_AVAILABLE
-	if (cef) {
+
+#ifdef ENABLE_WAYLAND
+	bool isWayland = obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND;
+#else
+	bool isWayland = false;
+#endif
+
+	if (cef && !isWayland) {
 		if (lastService != service.c_str()) {
 			QString key = ui->key->text();
 			bool can_auth = is_auth_service(service);

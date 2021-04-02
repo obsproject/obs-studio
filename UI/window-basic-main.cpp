@@ -1928,7 +1928,7 @@ void OBSBasic::OBSInit()
 	/* add custom browser docks      */
 
 #ifdef BROWSER_AVAILABLE
-	if (cef) {
+	if (cef && !isWayland) {
 		QAction *action = new QAction(QTStr("Basic.MainMenu."
 						    "View.Docks."
 						    "CustomBrowserDocks"),
