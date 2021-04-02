@@ -2,6 +2,8 @@
 
 #include <util/util.hpp>
 
+#define MAX_STACK_SIZE 5000
+
 undo_stack::undo_stack(ui_ptr ui) : ui(ui) {}
 
 void undo_stack::release()
@@ -19,6 +21,13 @@ void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 			    undo_redo_cb redo, std::string undo_data,
 			    std::string redo_data, func d)
 {
+	while (undo_items.size() >= MAX_STACK_SIZE) {
+		undo_redo_t item = undo_items.back();
+		if (item.d)
+			item.d(true);
+		undo_items.pop_back();
+	}
+
 	undo_redo_t n = {name, undo_data, redo_data, undo, redo, d};
 
 	undo_items.push_front(n);
