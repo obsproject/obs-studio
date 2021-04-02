@@ -4050,12 +4050,6 @@ bool OBSBasic::Active() const
 	return outputHandler->Active();
 }
 
-#ifdef _WIN32
-#define IS_WIN32 1
-#else
-#define IS_WIN32 0
-#endif
-
 static inline int AttemptToResetVideo(struct obs_video_info *ovi)
 {
 	return obs_reset_video(ovi);
@@ -4174,7 +4168,7 @@ int OBSBasic::ResetVideo()
 	}
 
 	ret = AttemptToResetVideo(&ovi);
-	if (IS_WIN32 && ret != OBS_VIDEO_SUCCESS) {
+	if (_WIN32 && ret != OBS_VIDEO_SUCCESS) {
 		if (ret == OBS_VIDEO_CURRENTLY_ACTIVE) {
 			blog(LOG_WARNING, "Tried to reset when "
 					  "already active");
