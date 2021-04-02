@@ -2257,10 +2257,8 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 		return true;
 	}
 
-	if (obs->audio.monitoring_device_name)
-		bfree(obs->audio.monitoring_device_name);
-	if (obs->audio.monitoring_device_id)
-		bfree(obs->audio.monitoring_device_id);
+	bfree(obs->audio.monitoring_device_name);
+	bfree(obs->audio.monitoring_device_id);
 
 	obs->audio.monitoring_device_name = bstrdup(name);
 	obs->audio.monitoring_device_id = bstrdup(id);
