@@ -45,10 +45,18 @@ set(linux-capture_LIBRARIES
 )
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
-if(ENABLE_PIPEWIRE)
-	find_package(PipeWire REQUIRED)
-	find_package(Gio REQUIRED)
 
+if(ENABLE_PIPEWIRE)
+	find_package(PipeWire QUIET)
+	find_package(Gio QUIET)
+
+	if(NOT PIPEWIRE_FOUND OR NOT GIO_FOUND)
+		message(STATUS "PipeWire library not found, PipeWire capture plugin disabled")
+		set(ENABLE_PIPEWIRE OFF CACHE BOOL "Enable PipeWire support" FORCE)
+	endif()
+endif()
+
+if(ENABLE_PIPEWIRE)
 	add_definitions(-DENABLE_PIPEWIRE)
 
 	set(linux-capture_INCLUDES
