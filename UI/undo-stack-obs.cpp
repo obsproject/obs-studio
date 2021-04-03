@@ -17,6 +17,20 @@ void undo_stack::release()
 			f.d(false);
 }
 
+void undo_stack::clear()
+{
+	release();
+
+	undo_items.clear();
+	redo_items.clear();
+
+	ui->actionMainUndo->setText(QTStr("Undo.Undo"));
+	ui->actionMainRedo->setText(QTStr("Undo.Redo"));
+
+	ui->actionMainUndo->setDisabled(true);
+	ui->actionMainRedo->setDisabled(true);
+}
+
 void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 			    undo_redo_cb redo, std::string undo_data,
 			    std::string redo_data, func d)
