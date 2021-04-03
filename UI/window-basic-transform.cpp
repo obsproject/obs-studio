@@ -73,7 +73,8 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	SetScene(scene);
 	SetItem(item);
 
-	obs_data_t *wrapper = obs_scene_save_transform_states(scene, false);
+	obs_data_t *wrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), false);
 	undo_data = std::string(obs_data_get_json(wrapper));
 
 	obs_data_release(wrapper);
