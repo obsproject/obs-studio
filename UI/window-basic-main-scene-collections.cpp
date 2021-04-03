@@ -532,8 +532,6 @@ void OBSBasic::ChangeSceneCollection()
 
 	const char *oldName = config_get_string(App()->GlobalConfig(), "Basic",
 						"SceneCollection");
-	std::string oldFile = std::string(config_get_string(
-		App()->GlobalConfig(), "Basic", "SceneCollectionFile"));
 
 	if (action->text().compare(QT_UTF8(oldName)) == 0) {
 		action->setChecked(true);
@@ -556,28 +554,7 @@ void OBSBasic::ChangeSceneCollection()
 
 	UpdateTitleBar();
 
-	auto undo = [this, fn = std::string(oldFile)](const std::string &) {
-		string fileName = fn;
-		char path[512];
-		int ret = GetConfigPath(path, 512, "obs-studio/basic/scenes/");
-		if (ret <= 0) {
-			blog(LOG_WARNING,
-			     "Failed to get scene collection config path");
-			return;
-		}
-		fileName.insert(0, path);
-		fileName += ".json";
-		Load(fileName.c_str());
-		RefreshSceneCollections();
-	};
-
-	auto redo = [this, fileName](const std::string &) {
-		Load(fileName.c_str());
-		RefreshSceneCollections();
-	};
-
-	undo_s.add_action(QTStr("Undo.SceneCollection.Switch").arg(newName),
-			  undo, redo, "", "", NULL);
+	undo_s.clear();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
