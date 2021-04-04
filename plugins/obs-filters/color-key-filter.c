@@ -336,9 +336,8 @@ static void color_key_render_v2(void *data, gs_effect_t *effect)
 	gs_effect_set_float(filter->similarity_param, filter->similarity);
 	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
 
-	const bool previous = gs_set_linear_srgb(true);
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-	gs_set_linear_srgb(previous);
+	obs_source_process_filter_end_srgb(filter->context, filter->effect, 0,
+					   0);
 
 	UNUSED_PARAMETER(effect);
 }
