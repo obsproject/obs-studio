@@ -191,7 +191,7 @@ chroma_settings_update_v2(struct chroma_key_filter_data_v2 *filter,
 	else if (strcmp(key_type, "magenta") == 0)
 		key_color = 0xFF00FF;
 
-	vec4_from_rgba_srgb(&key_rgb, key_color | 0xFF000000);
+	vec4_from_rgba(&key_rgb, key_color | 0xFF000000);
 
 	memcpy(&cb_v4, cb_vec, sizeof(cb_v4));
 	memcpy(&cr_v4, cr_vec, sizeof(cr_v4));

@@ -46,9 +46,20 @@ float GetChromaDist(float3 rgb)
 	return distance(chroma_key, float2(cr, cb));
 }
 
-float4 SampleTexture(float2 uv)
+float GetNonlinearChannel(float u)
 {
-	return image.Sample(textureSampler, uv);
+	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
+}
+
+float3 GetNonlinearColor(float3 rgb)
+{
+	return float3(GetNonlinearChannel(rgb.r), GetNonlinearChannel(rgb.g), GetNonlinearChannel(rgb.b));
+}
+
+float3 SampleTexture(float2 uv)
+{
+	float3 rgb = image.Sample(textureSampler, uv).rgb;
+	return GetNonlinearColor(rgb);
 }
 
 float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
@@ -56,12 +67,12 @@ float GetBoxFilteredChromaDist(float3 rgb, float2 texCoord)
 	float2 h_pixel_size = pixel_size / 2.0;
 	float2 point_0 = float2(pixel_size.x, h_pixel_size.y);
 	float2 point_1 = float2(h_pixel_size.x, -pixel_size.y);
-	float distVal = GetChromaDist(SampleTexture(texCoord-point_0).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+point_0).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord-point_1).rgb);
-	distVal += GetChromaDist(SampleTexture(texCoord+point_1).rgb);
+	float distVal = GetChromaDist(SampleTexture(texCoord-point_0));
+	distVal += GetChromaDist(SampleTexture(texCoord+point_0));
+	distVal += GetChromaDist(SampleTexture(texCoord-point_1));
+	distVal += GetChromaDist(SampleTexture(texCoord+point_1));
 	distVal *= 2.0;
-	distVal += GetChromaDist(rgb);
+	distVal += GetChromaDist(GetNonlinearColor(rgb));
 	return distVal / 9.0;
 }
 
