@@ -297,11 +297,9 @@ static void scale_filter_render(void *data, gs_effect_t *effect)
 		gs_effect_set_next_sampler(filter->image_param,
 					   filter->point_sampler);
 
-	const bool previous = gs_set_linear_srgb(true);
-	obs_source_process_filter_tech_end(filter->context, filter->effect,
-					   filter->cx_out, filter->cy_out,
-					   technique);
-	gs_set_linear_srgb(previous);
+	obs_source_process_filter_tech_end_srgb(filter->context, filter->effect,
+						filter->cx_out, filter->cy_out,
+						technique);
 
 	UNUSED_PARAMETER(effect);
 }

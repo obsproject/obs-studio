@@ -452,10 +452,8 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "cube_width_i");
 	gs_effect_set_float(param, 1.0f / filter->cube_width);
 
-	const bool previous = gs_set_linear_srgb(true);
-	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
-					   0, tech_name);
-	gs_set_linear_srgb(previous);
+	obs_source_process_filter_tech_end_srgb(filter->context, filter->effect,
+						0, 0, tech_name);
 
 	UNUSED_PARAMETER(effect);
 }
