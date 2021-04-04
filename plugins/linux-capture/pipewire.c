@@ -758,6 +758,7 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 	obs_pipewire_data *obs_pw = call->obs_pw;
 	GVariantIter iter;
 	uint32_t response;
+	size_t n_streams;
 
 	g_clear_pointer(&call, dbus_call_data_free);
 
@@ -773,7 +774,27 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 		g_variant_lookup_value(result, "streams", G_VARIANT_TYPE_ARRAY);
 
 	g_variant_iter_init(&iter, streams);
-	g_assert(g_variant_iter_n_children(&iter) == 1);
+
+	n_streams = g_variant_iter_n_children(&iter);
+	if (n_streams != 1) {
+		blog(LOG_WARNING,
+		     "[pipewire] Received more than one stream when only one was expected. "
+		     "This is probably a bug in the desktop portal implementation you are "
+		     "using.");
+
+		// The KDE Desktop portal implementation sometimes sends an invalid
+		// response where more than one stream is attached, and only the
+		// last one is the one we're looking for. This is the only known
+		// buggy implementation, so let's at least try to make it work here.
+		for (size_t i = 0; i < n_streams - 1; i++) {
+			g_autoptr(GVariant) throwaway_properties = NULL;
+			uint32_t throwaway_pipewire_node;
+
+			g_variant_iter_loop(&iter, "(u@a{sv})",
+					    &throwaway_pipewire_node,
+					    &throwaway_properties);
+		}
+	}
 
 	g_variant_iter_loop(&iter, "(u@a{sv})", &obs_pw->pipewire_node,
 			    &stream_properties);
