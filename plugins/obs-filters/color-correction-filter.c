@@ -571,9 +571,8 @@ static void color_correction_filter_render_v2(void *data, gs_effect_t *effect)
 	gs_effect_set_matrix4(filter->final_matrix_param,
 			      &filter->final_matrix);
 
-	const bool previous = gs_set_linear_srgb(true);
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-	gs_set_linear_srgb(previous);
+	obs_source_process_filter_end_srgb(filter->context, filter->effect, 0,
+					   0);
 
 	UNUSED_PARAMETER(effect);
 }
