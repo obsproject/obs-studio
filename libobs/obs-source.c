@@ -3725,9 +3725,9 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 	return true;
 }
 
-void obs_source_process_filter_tech_end(obs_source_t *filter,
-					gs_effect_t *effect, uint32_t width,
-					uint32_t height, const char *tech_name)
+static void obs_source_process_filter_tech_end_internal(
+	obs_source_t *filter, gs_effect_t *effect, uint32_t width,
+	uint32_t height, const char *tech_name, bool linear_srgb)
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
@@ -3742,6 +3742,8 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 	if (!target || !parent)
 		return;
 
+	const bool previous = gs_set_linear_srgb(linear_srgb);
+
 	parent_flags = parent->info.output_flags;
 
 	const char *tech = tech_name ? tech_name : "Draw";
@@ -3754,6 +3756,25 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 			render_filter_tex(texture, effect, width, height, tech);
 		}
 	}
+
+	gs_set_linear_srgb(previous);
+}
+
+void obs_source_process_filter_tech_end(obs_source_t *filter,
+					gs_effect_t *effect, uint32_t width,
+					uint32_t height, const char *tech_name)
+{
+	obs_source_process_filter_tech_end_internal(filter, effect, width,
+						    height, tech_name, false);
+}
+
+void obs_source_process_filter_tech_end_srgb(obs_source_t *filter,
+					     gs_effect_t *effect,
+					     uint32_t width, uint32_t height,
+					     const char *tech_name)
+{
+	obs_source_process_filter_tech_end_internal(filter, effect, width,
+						    height, tech_name, true);
 }
 
 void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
@@ -3764,6 +3785,17 @@ void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,
 
 	obs_source_process_filter_tech_end(filter, effect, width, height,
 					   "Draw");
+}
+
+void obs_source_process_filter_end_srgb(obs_source_t *filter,
+					gs_effect_t *effect, uint32_t width,
+					uint32_t height)
+{
+	if (!obs_ptr_valid(filter, "obs_source_process_filter_end_srgb"))
+		return;
+
+	obs_source_process_filter_tech_end_srgb(filter, effect, width, height,
+						"Draw");
 }
 
 void obs_source_skip_video_filter(obs_source_t *filter)
