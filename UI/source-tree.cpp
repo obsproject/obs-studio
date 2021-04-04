@@ -413,7 +413,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 
 		obs_source_t *scene_source =
 			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source);
+		main->SetCurrentScene(scene_source, true);
 		obs_source_release(scene_source);
 	};
 
@@ -424,7 +424,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 
 		obs_source_t *scene_source =
 			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source);
+		main->SetCurrentScene(scene_source, true);
 		obs_source_release(scene_source);
 	};
 
