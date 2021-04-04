@@ -1316,6 +1316,9 @@ obs_source_process_filter_begin(obs_source_t *filter,
 EXPORT void obs_source_process_filter_end(obs_source_t *filter,
 					  gs_effect_t *effect, uint32_t width,
 					  uint32_t height);
+EXPORT void obs_source_process_filter_end_srgb(obs_source_t *filter,
+					       gs_effect_t *effect,
+					       uint32_t width, uint32_t height);
 
 /**
  * Draws the filter with a specific technique.
@@ -1328,6 +1331,11 @@ EXPORT void obs_source_process_filter_tech_end(obs_source_t *filter,
 					       gs_effect_t *effect,
 					       uint32_t width, uint32_t height,
 					       const char *tech_name);
+EXPORT void obs_source_process_filter_tech_end_srgb(obs_source_t *filter,
+						    gs_effect_t *effect,
+						    uint32_t width,
+						    uint32_t height,
+						    const char *tech_name);
 
 /** Skips the filter if the filter is invalid and cannot be rendered */
 EXPORT void obs_source_skip_video_filter(obs_source_t *filter);
