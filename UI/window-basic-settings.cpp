@@ -1351,6 +1351,9 @@ void OBSBasicSettings::LoadGeneralSettings()
 		QTStr("Basic.Settings.General.MultiviewLayout.Vertical.Right"),
 		static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.18Scene.Top"),
+		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_18_SCENES));
+	ui->multiviewLayout->addItem(
 		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
 		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
