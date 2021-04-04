@@ -252,7 +252,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name.c_str());
-			main->SetCurrentScene(scene_source);
+			main->SetCurrentScene(scene_source, true);
 			obs_source_release(scene_source);
 
 			main->RefreshSources(main->GetCurrentScene());
@@ -282,7 +282,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name.c_str());
-			main->SetCurrentScene(scene_source);
+			main->SetCurrentScene(scene_source, true);
 			obs_source_release(scene_source);
 
 			main->RefreshSources(main->GetCurrentScene());

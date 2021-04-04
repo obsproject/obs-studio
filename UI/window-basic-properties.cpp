@@ -375,7 +375,7 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_t *scene_source =
 				obs_get_source_by_name(scene_name.c_str());
 
-			OBSBasic::Get()->SetCurrentScene(source);
+			OBSBasic::Get()->SetCurrentScene(source, true);
 
 			obs_source_release(scene_source);
 
