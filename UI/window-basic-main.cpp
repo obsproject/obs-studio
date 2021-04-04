@@ -1723,15 +1723,15 @@ void OBSBasic::OBSInit()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		throw "Failed to get scene collection name";
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		throw "Failed to create scene collection file name";
 
@@ -2717,15 +2717,16 @@ void OBSBasic::SaveProjectDeferred()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		return;
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		return;
 
