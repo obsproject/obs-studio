@@ -109,6 +109,7 @@ struct noise_suppress_data {
 	float intensity_ratio;
 	unsigned int num_samples_per_frame, num_channels;
 	char *model;
+	bool nvafx_initialized;
 
 	/* Resampler */
 	audio_resampler_t *nvafx_resampler;
@@ -197,20 +198,14 @@ static void noise_suppress_destroy(void *data)
 	bfree(ng);
 }
 
-static inline void alloc_channel(struct noise_suppress_data *ng,
-				 uint32_t sample_rate, size_t channel,
-				 size_t frames)
+static inline bool nvafx_initialize(void *data)
 {
-#ifdef LIBSPEEXDSP_ENABLED
-	ng->spx_states[channel] =
-		speex_preprocess_state_init((int)frames, sample_rate);
-#endif
-#ifdef LIBRNNOISE_ENABLED
-	ng->rnn_states[channel] = rnnoise_create(NULL);
-#endif
 #ifdef LIBNVAFX_ENABLED
+	struct noise_suppress_data *ng = data;
 	int err;
-	if (!ng->handle[0] && ng->use_nvafx && nvafx_loaded) {
+	if (!ng->use_nvafx || !nvafx_loaded)
+		return false;
+	if (!ng->handle[0]) {
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 
 		for (int i = 0; i < MAX_PREPROC_CHANNELS; i++) {
@@ -221,15 +216,29 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 				       "NvAFX_CreateEffect() failed, error %i",
 				       err);
 				ng->use_nvafx = false;
+				return false;
 			}
 			err = NvAFX_SetU32(ng->handle[i],
 					   NVAFX_PARAM_DENOISER_SAMPLE_RATE,
 					   ng->sample_rate);
 			if (err != NVAFX_STATUS_SUCCESS) {
 				do_log(LOG_ERROR,
-				       "NvAFX_SetU32(Sample Rate: %d) failed, error %i",
+				       "NvAFX_SetU32(Sample Rate: %f) failed, error %i",
 				       ng->sample_rate, err);
 				ng->use_nvafx = false;
+				return false;
+			}
+			// initial setting of intensity to 1.0f
+			err = NvAFX_SetFloat(
+				ng->handle[i],
+				NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
+				ng->intensity_ratio);
+			if (err != NVAFX_STATUS_SUCCESS) {
+				do_log(LOG_ERROR,
+				       "NvAFX_SetFloat(Intensity Ratio: %f) failed, error %i",
+				       1.0f, err);
+				ng->use_nvafx = false;
+				return false;
 			}
 			err = NvAFX_SetString(ng->handle[i],
 					      NVAFX_PARAM_DENOISER_MODEL_PATH,
@@ -239,6 +248,7 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 				       "NvAFX_SetString() failed, error %i",
 				       err);
 				ng->use_nvafx = false;
+				return false;
 			}
 			err = NvAFX_Load(ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -246,6 +256,7 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 				       "NvAFX_Load() failed with error %i",
 				       err);
 				ng->use_nvafx = false;
+				return false;
 			}
 		}
 		if (ng->use_nvafx) {
@@ -257,11 +268,13 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 				       "NvAFX_GetU32() failed to get the number of channels, error %i",
 				       err);
 				ng->use_nvafx = false;
+				return false;
 			}
 			if (ng->num_channels != 1) {
 				do_log(LOG_ERROR,
 				       "The number of channels is not 1 in the sdk any more ==> update code");
 				ng->use_nvafx = false;
+				return false;
 			}
 			NvAFX_Status err = NvAFX_GetU32(
 				ng->handle[0],
@@ -272,15 +285,33 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 				       "NvAFX_GetU32() failed to get the number of samples per frame, error %i",
 				       err);
 				ng->use_nvafx = false;
+				return false;
 			}
 			if (ng->num_samples_per_frame != NVAFX_FRAME_SIZE) {
 				do_log(LOG_ERROR,
 				       "The number of samples per frame has changed from 480 (= 10 ms) ==> update code");
 				ng->use_nvafx = false;
+				return false;
 			}
 		}
 	}
+	return true;
+#else
+	UNUSED_PARAMETER(data);
+	return false;
+#endif
+}
 
+static inline void alloc_channel(struct noise_suppress_data *ng,
+				 uint32_t sample_rate, size_t channel,
+				 size_t frames)
+{
+#ifdef LIBSPEEXDSP_ENABLED
+	ng->spx_states[channel] =
+		speex_preprocess_state_init((int)frames, sample_rate);
+#endif
+#ifdef LIBRNNOISE_ENABLED
+	ng->rnn_states[channel] = rnnoise_create(NULL);
 #endif
 	circlebuf_reserve(&ng->input_buffers[channel], frames * sizeof(float));
 	circlebuf_reserve(&ng->output_buffers[channel], frames * sizeof(float));
@@ -325,22 +356,38 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 
 	ng->use_nvafx = ng->nvafx_enabled &&
 			strcmp(method, S_METHOD_NVAFX) == 0;
-#ifdef LIBNVAFX_ENABLED
-	ng->intensity_ratio = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
-#endif
+
 	/* Process 10 millisecond segments to keep latency low */
 	/* Also RNNoise only supports buffers of this exact size. */
 	/* At 48kHz, NVAFX processes 480 samples which corresponds to 10 ms.*/
 	ng->frames = frames;
 	ng->channels = channels;
 
+#ifdef LIBNVAFX_ENABLED
+	ng->intensity_ratio = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
+	if (ng->nvafx_initialized && ng->use_nvafx) {
+		int err;
+		for (int i = 0; i < MAX_PREPROC_CHANNELS; i++) {
+			err = NvAFX_SetFloat(
+				ng->handle[i],
+				NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
+				ng->intensity_ratio);
+			if (err != NVAFX_STATUS_SUCCESS) {
+				do_log(LOG_ERROR,
+				       "NvAFX_SetFloat(Intensity Ratio: %f) failed, error %i",
+				       ng->intensity_ratio, err);
+				ng->use_nvafx = false;
+			}
+		}
+	}
+#endif
 	/* Ignore if already allocated */
 #if defined(LIBSPEEXDSP_ENABLED)
 	if (!ng->use_rnnoise && !ng->use_nvafx && ng->spx_states[0])
 		return;
 #endif
 #ifdef LIBNVAFX_ENABLED
-	if (ng->use_nvafx && ng->handle[0])
+	if (ng->use_nvafx && ng->nvafx_initialized)
 		return;
 #endif
 #ifdef LIBRNNOISE_ENABLED
@@ -377,6 +424,10 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 #endif
 	}
 
+#ifdef LIBNVAFX_ENABLED
+	if (!ng->nvafx_initialized && ng->use_nvafx)
+		ng->nvafx_initialized = nvafx_initialize(data);
+#endif
 	for (size_t i = 0; i < channels; i++)
 		alloc_channel(ng, sample_rate, i, frames);
 
@@ -489,6 +540,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		strcat(buffer, file);
 		ng->model = buffer;
 		ng->nvafx_enabled = true;
+		ng->nvafx_initialized = false;
 
 		info("NVAFX SDK redist path was found here %s", sdk_path);
 	}
@@ -611,19 +663,8 @@ static inline void process_rnnoise(struct noise_suppress_data *ng)
 
 static inline void process_nvafx(struct noise_suppress_data *ng)
 {
-	if (nvafx_loaded) {
 #ifdef LIBNVAFX_ENABLED
-		for (int i = 0; i < MAX_PREPROC_CHANNELS; i++) {
-			if (NvAFX_SetFloat(ng->handle[i],
-					   NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
-					   ng->intensity_ratio) !=
-			    NVAFX_STATUS_SUCCESS) {
-				do_log(LOG_ERROR,
-				       "NvAFX_SetFloat(Intensity Ratio: %d) failed",
-				       ng->intensity_ratio);
-				ng->use_nvafx = false;
-			}
-		}
+	if (nvafx_loaded && ng->use_nvafx && ng->nvafx_initialized) {
 		/* Resample if necessary */
 		if (ng->nvafx_resampler) {
 			float *output[MAX_PREPROC_CHANNELS];
@@ -664,7 +705,8 @@ static inline void process_nvafx(struct noise_suppress_data *ng)
 				&ng->nvafx_segment_buffers[i],
 				ng->num_samples_per_frame, ng->num_channels);
 			if (err != NVAFX_STATUS_SUCCESS)
-				do_log(LOG_ERROR, "NvAFX_Run() failed");
+				do_log(LOG_ERROR,
+				       "NvAFX_Run() failed, error %i", err);
 		}
 
 		/* Revert signal level adjustment, resample back if necessary */
@@ -698,10 +740,10 @@ static inline void process_nvafx(struct noise_suppress_data *ng)
 				}
 			}
 		}
-#else
-		UNUSED_PARAMETER(ng);
-#endif
 	}
+#else
+	UNUSED_PARAMETER(ng);
+#endif
 }
 
 static inline void process(struct noise_suppress_data *ng)
@@ -851,6 +893,9 @@ static void noise_suppress_defaults_v1(obs_data_t *s)
 #else
 	obs_data_set_default_string(s, S_METHOD, S_METHOD_SPEEX);
 #endif
+#if defined(LIBNVAFX_ENABLED)
+	obs_data_set_default_double(s, S_NVAFX_INTENSITY, 1.0);
+#endif
 }
 
 static void noise_suppress_defaults_v2(obs_data_t *s)
@@ -860,6 +905,9 @@ static void noise_suppress_defaults_v2(obs_data_t *s)
 	obs_data_set_default_string(s, S_METHOD, S_METHOD_RNN);
 #else
 	obs_data_set_default_string(s, S_METHOD, S_METHOD_SPEEX);
+#endif
+#if defined(LIBNVAFX_ENABLED)
+	obs_data_set_default_double(s, S_NVAFX_INTENSITY, 1.0);
 #endif
 }
 
@@ -895,6 +943,7 @@ static obs_properties_t *noise_suppress_properties(void *data)
 	obs_property_t *nvafx_slider = obs_properties_add_float_slider(
 		ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
 		0.01f);
+
 	if (!nvafx_loaded) {
 		obs_property_list_item_disable(method, 2, true);
 	}
