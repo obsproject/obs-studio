@@ -3739,7 +3739,7 @@ void OBSBasic::RemoveSelectedScene()
 
 		obs_source_t *scene_source = sources.back();
 		OBSScene scene = obs_scene_from_source(scene_source);
-		SetCurrentScene(scene);
+		SetCurrentScene(scene, true);
 
 		/* set original index in list box */
 		ui->scenes->blockSignals(true);
@@ -4927,7 +4927,7 @@ void OBSBasic::on_actionAddScene_triggered()
 		auto redo_fn = [this](const std::string &data) {
 			obs_scene_t *scene = obs_scene_create(data.c_str());
 			obs_source_t *source = obs_scene_get_source(scene);
-			SetCurrentScene(source);
+			SetCurrentScene(source, true);
 			obs_scene_release(scene);
 		};
 		undo_s.add_action(QTStr("Undo.Add").arg(QString(name.c_str())),
@@ -7155,7 +7155,7 @@ void undo_redo(const std::string &data)
 	obs_source_t *source =
 		obs_get_source_by_name(obs_data_get_string(dat, "scene_name"));
 	reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-		->SetCurrentScene(source);
+		->SetCurrentScene(source, true);
 	obs_source_release(source);
 	obs_data_release(dat);
 
