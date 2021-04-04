@@ -336,18 +336,17 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 
 	/* Ignore if already allocated */
 #if defined(LIBSPEEXDSP_ENABLED)
-	if (ng->spx_states[0])
-		return;
-#endif
-#ifdef LIBRNNOISE_ENABLED
-	if (ng->rnn_states[0])
+	if (!ng->use_rnnoise && !ng->use_nvafx && ng->spx_states[0])
 		return;
 #endif
 #ifdef LIBNVAFX_ENABLED
-	if (ng->handle[0])
+	if (ng->use_nvafx && ng->handle[0])
 		return;
 #endif
-
+#ifdef LIBRNNOISE_ENABLED
+	if (ng->use_rnnoise && ng->rnn_states[0])
+		return;
+#endif
 	/* One speex/rnnoise state for each channel (limit 2) */
 	ng->copy_buffers[0] = bmalloc(frames * channels * sizeof(float));
 #ifdef LIBSPEEXDSP_ENABLED
