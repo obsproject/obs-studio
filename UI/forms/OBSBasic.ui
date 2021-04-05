@@ -1218,10 +1218,10 @@
              <string> ms</string>
             </property>
             <property name="minimum">
-             <number>2</number>
+             <number>50</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>20000</number>
             </property>
             <property name="singleStep">
              <number>50</number>
