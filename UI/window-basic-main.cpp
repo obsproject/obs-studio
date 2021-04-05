@@ -5461,6 +5461,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 				obs_data_array_push_back(arr, save);
 
 				obs_data_release(save);
+				obs_data_release(transform);
 
 				return true;
 			};
@@ -5481,7 +5482,10 @@ void OBSBasic::on_actionRemoveSource_triggered()
 			obs_data_array_push_back(sources, saved_source);
 
 			obs_data_release(saved_source);
+			obs_data_release(save_group);
+			obs_data_release(group_transform);
 			obs_data_array_release(saved_sources);
+
 
 			continue;
 		}
@@ -5529,12 +5533,22 @@ void OBSBasic::on_actionRemoveSource_triggered()
 					obs_scene_t *group = static_cast<obs_scene_t *>(vp);
 					obs_source_t *source = obs_load_source(data);
 					obs_sceneitem_t *item = obs_scene_add(group, source);
-					obs_data_t *transform = obs_data_get_obj(data, "undo_transform");
-					obs_sceneitem_load_transform(group, item, transform);
-					obs_sceneitem_set_id(item, obs_data_get_int(transform, "id"));
+					obs_data_t *transforms = obs_data_get_obj(data, "undo_transform");
+					obs_sceneitem_load_transform(group, item, transforms);
+					obs_sceneitem_set_id(item, obs_data_get_int(transforms, "id"));
+
+					obs_source_release(source);
+					obs_data_release(transforms);
 				};
 
 				obs_data_array_enum(arr, groups, (void *) obs_group_from_source(group_source));
+
+				obs_data_array_release(arr);
+				obs_data_release(group_data);
+				obs_data_release(group_transform);
+				obs_source_release(group_source);
+
+				obs_source_release(scene_source);
 
 				return;
 			}
@@ -5548,6 +5562,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 			obs_source_release(scene_source);
 			obs_source_release(source);
+			obs_sceneitem_release(si);
 			obs_data_release(transforms);
 		};
 
