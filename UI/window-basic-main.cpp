@@ -19,6 +19,7 @@
 
 #include <cstddef>
 #include <ctime>
+#include <functional>
 #include <obs-data.h>
 #include <obs.h>
 #include <obs.hpp>
@@ -5447,14 +5448,54 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	obs_data_array_t *sources = obs_data_array_create();
 	for (auto &item : items) {
 		obs_source_t *si_source = obs_sceneitem_get_source(item);
+		std::string scene_name = obs_source_get_name(obs_scene_get_source(obs_sceneitem_get_scene(item)));
+
+		if (obs_source_is_group(si_source)) {
+
+			auto saver = [](obs_scene_t *, obs_sceneitem_t *item, void *vp) {
+				obs_data_array_t *arr = (obs_data_array_t *) vp;
+				obs_data_t *save = obs_save_source(obs_sceneitem_get_source(item));
+				obs_data_t *transform = obs_sceneitem_save_transform(item);
+				obs_data_set_obj(save, "undo_transform", transform);
+
+				obs_data_array_push_back(arr, save);
+
+				obs_data_release(save);
+
+				return true;
+			};
+
+			obs_data_t *saved_source = obs_data_create();
+			obs_data_array_t *saved_sources = obs_data_array_create();
+			obs_scene_enum_items(obs_group_from_source(si_source), saver, (void *) saved_sources);
+			obs_data_t *save_group = obs_save_source(si_source);
+			obs_data_t *group_transform = obs_sceneitem_save_transform(item);
+			obs_data_set_obj(save_group, "undo_transform", group_transform);
+
+			obs_data_array_insert(saved_sources, 0, save_group);
+
+			obs_data_set_bool(saved_source, "undo_is_group", true);
+			obs_data_set_array(saved_source, "undo_sources", saved_sources);
+			obs_data_set_string(saved_source, "undo_scene", scene_name.c_str());
+
+			obs_data_array_push_back(sources, saved_source);
+
+			obs_data_release(saved_source);
+			obs_data_array_release(saved_sources);
+
+			continue;
+		}
+
+
 		obs_data_t *save_data = obs_save_source(si_source);
 
-		source_save temp = {obs_source_get_name(si_source), obs_source_get_name(obs_scene_get_source(obs_sceneitem_get_scene(item)))};
+		source_save temp = {obs_source_get_name(si_source), scene_name};
 		item_save.push_back(temp);
 
 		obs_data_t *transform = obs_sceneitem_save_transform(item);
 		obs_data_set_obj(save_data, "undo_transform", transform);
 		obs_data_set_string(save_data, "undo_scene", temp.scene_name.c_str());
+		obs_data_set_bool(save_data, "is_group", false);
 
 		obs_data_array_push_back(sources, save_data);
 
@@ -5463,15 +5504,40 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	}
 
 
-	auto undo = [](const std::string &dat) {
+	auto undo = [&](const std::string &dat) {
 		obs_data_t *data = obs_data_create_from_json(dat.c_str());
 		obs_data_array_t *arr = obs_data_get_array(data, "data");
 
 		auto enumerator = [](obs_data_t *source_data, void *) {
 			obs_source_t *scene_source = obs_get_source_by_name(obs_data_get_string(source_data, "undo_scene"));
 			obs_scene_t *scene = obs_scene_from_source(scene_source);
+
 			if (!scene)
 				scene = obs_group_from_source(scene_source);
+
+			if (obs_data_get_bool(source_data, "undo_is_group")) {
+				obs_data_array_t *arr = obs_data_get_array(source_data, "undo_sources");
+				obs_data_t *group_data = obs_data_array_item(arr, 0);
+				obs_data_t *group_transform = obs_data_get_obj(group_data, "undo_transform");
+				obs_data_array_erase(arr, 0);
+				obs_source_t *group_source = obs_load_source(group_data);
+				obs_sceneitem_t *group_si = obs_scene_add(scene, group_source);
+				obs_sceneitem_load_transform(scene, group_si, group_transform);
+				obs_sceneitem_set_id(group_si, obs_data_get_int(group_transform, "id"));
+
+				auto groups = [](obs_data_t *data, void *vp) {
+					obs_scene_t *group = static_cast<obs_scene_t *>(vp);
+					obs_source_t *source = obs_load_source(data);
+					obs_sceneitem_t *item = obs_scene_add(group, source);
+					obs_data_t *transform = obs_data_get_obj(data, "undo_transform");
+					obs_sceneitem_load_transform(group, item, transform);
+					obs_sceneitem_set_id(item, obs_data_get_int(transform, "id"));
+				};
+
+				obs_data_array_enum(arr, groups, (void *) obs_group_from_source(group_source));
+
+				return;
+			}
 
 			obs_source_t *source = obs_load_source(source_data);
 
@@ -5486,6 +5552,8 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		};
 
 		obs_data_array_enum(arr, enumerator, nullptr);
+
+		RefreshSources(GetCurrentScene());
 
 		obs_data_release(data);
 		obs_data_array_release(arr);

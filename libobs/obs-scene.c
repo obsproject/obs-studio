@@ -2069,35 +2069,35 @@ struct passthrough {
 
 obs_data_t *obs_sceneitem_save_transform(obs_sceneitem_t *item)
 {
-		obs_data_t *temp = obs_data_create();
+	obs_data_t *temp = obs_data_create();
 
-		struct obs_transform_info info;
-		struct obs_sceneitem_crop crop;
-		obs_sceneitem_get_info(item, &info);
-		obs_sceneitem_get_crop(item, &crop);
+	struct obs_transform_info info;
+	struct obs_sceneitem_crop crop;
+	obs_sceneitem_get_info(item, &info);
+	obs_sceneitem_get_crop(item, &crop);
 
-		struct vec2 pos = info.pos;
-		struct vec2 scale = info.scale;
-		float rot = info.rot;
-		uint32_t alignment = info.alignment;
-		uint32_t bounds_type = info.bounds_type;
-		uint32_t bounds_alignment = info.bounds_alignment;
-		struct vec2 bounds = info.bounds;
+	struct vec2 pos = info.pos;
+	struct vec2 scale = info.scale;
+	float rot = info.rot;
+	uint32_t alignment = info.alignment;
+	uint32_t bounds_type = info.bounds_type;
+	uint32_t bounds_alignment = info.bounds_alignment;
+	struct vec2 bounds = info.bounds;
 
-		obs_data_set_int(temp, "id", obs_sceneitem_get_id(item));
-		obs_data_set_vec2(temp, "pos", &pos);
-		obs_data_set_vec2(temp, "scale", &scale);
-		obs_data_set_double(temp, "rot", rot);
-		obs_data_set_int(temp, "alignment", alignment);
-		obs_data_set_int(temp, "bounds_type", bounds_type);
-		obs_data_set_vec2(temp, "bounds", &bounds);
-		obs_data_set_int(temp, "bounds_alignment", bounds_alignment);
-		obs_data_set_int(temp, "top", crop.top);
-		obs_data_set_int(temp, "bottom", crop.bottom);
-		obs_data_set_int(temp, "left", crop.left);
-		obs_data_set_int(temp, "right", crop.right);
+	obs_data_set_int(temp, "id", obs_sceneitem_get_id(item));
+	obs_data_set_vec2(temp, "pos", &pos);
+	obs_data_set_vec2(temp, "scale", &scale);
+	obs_data_set_double(temp, "rot", rot);
+	obs_data_set_int(temp, "align", alignment);
+	obs_data_set_int(temp, "bounds_type", bounds_type);
+	obs_data_set_vec2(temp, "bounds", &bounds);
+	obs_data_set_int(temp, "bounds_align", bounds_alignment);
+	obs_data_set_int(temp, "crop_top", crop.top);
+	obs_data_set_int(temp, "crop_bottom", crop.bottom);
+	obs_data_set_int(temp, "crop_left", crop.left);
+	obs_data_set_int(temp, "crop_right", crop.right);
 
-		return temp;
+	return temp;
 }
 
 bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
@@ -2134,23 +2134,24 @@ obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 	return wrapper;
 }
 
-void obs_sceneitem_load_transform(obs_scene_t *scene, obs_sceneitem_t *item, obs_data_t *temp)
+void obs_sceneitem_load_transform(obs_scene_t *scene, obs_sceneitem_t *item,
+				  obs_data_t *temp)
 {
 	struct obs_transform_info info;
 	struct obs_sceneitem_crop crop;
 	obs_data_get_vec2(temp, "pos", &info.pos);
 	obs_data_get_vec2(temp, "scale", &info.scale);
 	info.rot = (float)obs_data_get_double(temp, "rot");
-	info.alignment = (uint32_t)obs_data_get_int(temp, "alignment");
+	info.alignment = (uint32_t)obs_data_get_int(temp, "align");
 	info.bounds_type =
 		(enum obs_bounds_type)obs_data_get_int(temp, "bounds_type");
 	info.bounds_alignment =
-		(uint32_t)obs_data_get_int(temp, "bounds_alignment");
+		(uint32_t)obs_data_get_int(temp, "bounds_align");
 	obs_data_get_vec2(temp, "bounds", &info.bounds);
-	crop.top = (int)obs_data_get_int(temp, "top");
-	crop.bottom = (int)obs_data_get_int(temp, "bottom");
-	crop.left = (int)obs_data_get_int(temp, "left");
-	crop.right = (int)obs_data_get_int(temp, "right");
+	crop.top = (int)obs_data_get_int(temp, "crop_top");
+	crop.bottom = (int)obs_data_get_int(temp, "crop_bottom");
+	crop.left = (int)obs_data_get_int(temp, "crop_left");
+	crop.right = (int)obs_data_get_int(temp, "crop_right");
 
 	obs_sceneitem_defer_update_begin(item);
 

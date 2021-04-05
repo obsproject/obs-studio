@@ -1564,7 +1564,9 @@ EXPORT obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene,
 						       int64_t id);
 
 EXPORT obs_data_t *obs_sceneitem_save_transform(obs_sceneitem_t *scene_item);
-EXPORT void obs_sceneitem_load_transform(obs_scene_t *scene, obs_sceneitem_t *scene_item, obs_data_t *data);
+EXPORT void obs_sceneitem_load_transform(obs_scene_t *scene,
+					 obs_sceneitem_t *scene_item,
+					 obs_data_t *data);
 
 /** Enumerates sources within a scene */
 EXPORT void obs_scene_enum_items(obs_scene_t *scene,
