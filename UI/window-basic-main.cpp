@@ -5450,6 +5450,9 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		obs_source_t *si_source = obs_sceneitem_get_source(item);
 		std::string scene_name = obs_source_get_name(obs_scene_get_source(obs_sceneitem_get_scene(item)));
 
+		source_save temp = {obs_source_get_name(si_source), scene_name};
+		item_save.push_back(temp);
+
 		if (obs_source_is_group(si_source)) {
 
 			auto saver = [](obs_scene_t *, obs_sceneitem_t *item, void *vp) {
@@ -5492,13 +5495,9 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 
 		obs_data_t *save_data = obs_save_source(si_source);
-
-		source_save temp = {obs_source_get_name(si_source), scene_name};
-		item_save.push_back(temp);
-
 		obs_data_t *transform = obs_sceneitem_save_transform(item);
 		obs_data_set_obj(save_data, "undo_transform", transform);
-		obs_data_set_string(save_data, "undo_scene", temp.scene_name.c_str());
+		obs_data_set_string(save_data, "undo_scene", scene_name.c_str());
 		obs_data_set_bool(save_data, "is_group", false);
 
 		obs_data_array_push_back(sources, save_data);
@@ -5562,7 +5561,6 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 			obs_source_release(scene_source);
 			obs_source_release(source);
-			obs_sceneitem_release(si);
 			obs_data_release(transforms);
 		};
 
