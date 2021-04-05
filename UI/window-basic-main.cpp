@@ -5436,15 +5436,15 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	if (!confirmed)
 		return;
 
+	// For each item, save its name and the name of the scene that encapsulates it.
 	struct source_save {
 		std::string name;
 		std::string scene_name;
-		// int pos;
-		// bool in_group = false;
-		// int64_t group_id;
 	};
 	vector<source_save> item_save;
 
+	// For each source, serialize it into a data obj, and then nest its transformation
+	// data inside. This way it can all be reinflated on undo.
 	obs_data_array_t *sources = obs_data_array_create();
 	for (auto &item : items) {
 		obs_source_t *si_source = obs_sceneitem_get_source(item);
@@ -5453,8 +5453,13 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		source_save temp = {obs_source_get_name(si_source), scene_name};
 		item_save.push_back(temp);
 
+		// If the source is a group, create a custom object to encapsulate
+		// all sub-sources and its transformations.
 		if (obs_source_is_group(si_source)) {
 
+
+			// Save source and transform data for each object in the group,
+			// then add it to the group's subsources save array
 			auto saver = [](obs_scene_t *, obs_sceneitem_t *item, void *vp) {
 				obs_data_array_t *arr = (obs_data_array_t *) vp;
 				obs_data_t *save = obs_save_source(obs_sceneitem_get_source(item));
@@ -5469,6 +5474,10 @@ void OBSBasic::on_actionRemoveSource_triggered()
 				return true;
 			};
 
+			// Create the custom object and array to hold subsources save data.
+			// It then enumerates and saves all the subsources before saving the group itself.
+			// Insert the group itself first, so it will be the first to be reinflated so
+			// sources can be added to it as they are reinflated.
 			obs_data_t *saved_source = obs_data_create();
 			obs_data_array_t *saved_sources = obs_data_array_create();
 			obs_scene_enum_items(obs_group_from_source(si_source), saver, (void *) saved_sources);
@@ -5494,6 +5503,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		}
 
 
+		// Otherwise save the source and transform data as normal.
 		obs_data_t *save_data = obs_save_source(si_source);
 		obs_data_t *transform = obs_sceneitem_save_transform(item);
 		obs_data_set_obj(save_data, "undo_transform", transform);
@@ -5515,10 +5525,14 @@ void OBSBasic::on_actionRemoveSource_triggered()
 			obs_source_t *scene_source = obs_get_source_by_name(obs_data_get_string(source_data, "undo_scene"));
 			obs_scene_t *scene = obs_scene_from_source(scene_source);
 
+			// If scene is null, then it _must_ be the case that the source was in a group.
 			if (!scene)
 				scene = obs_group_from_source(scene_source);
 
+			// Reinflate if it is a group save object
 			if (obs_data_get_bool(source_data, "undo_is_group")) {
+				// Reinflate the array of saved data for sources, and then reinflate the group source.
+				// Afterwards, iterate through the array and reinflate the sources. Add those sources to the group.
 				obs_data_array_t *arr = obs_data_get_array(source_data, "undo_sources");
 				obs_data_t *group_data = obs_data_array_item(arr, 0);
 				obs_data_t *group_transform = obs_data_get_obj(group_data, "undo_transform");
@@ -5554,6 +5568,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 			obs_source_t *source = obs_load_source(source_data);
 
+			// Make sure to apply the transforms to the group itself.
 			obs_sceneitem_t *si = obs_scene_add(scene, source);
 			obs_data_t *transforms = obs_data_get_obj(source_data, "undo_transform");
 			obs_sceneitem_load_transform(scene, si, transforms);
@@ -5566,13 +5581,14 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 		obs_data_array_enum(arr, enumerator, nullptr);
 
-		RefreshSources(GetCurrentScene());
+		RefreshSources(GetCurrentScene()); // Necessary because otherwise reinflated sources in groups might not show
 
 		obs_data_release(data);
 		obs_data_array_release(arr);
 	};
 
 
+	// Iterate through all the saved scene item descriptions and destroy the items.
 	auto redo = [item_save](const std::string &) {
 		for (const auto &save : item_save) {
 			obs_source_t *source = obs_get_source_by_name(save.name.c_str());
