@@ -3682,99 +3682,8 @@ void OBSBasic::RemoveSelectedScene()
 	OBSSource curProgramScene = OBSGetStrongRef(programScene);
 
 	if (source && QueryRemoveSource(source)) {
-		vector<std::string> item_ids;
-		obs_data_t *wrapper = obs_save_source(source);
-		obs_data_array_t *arr = obs_data_array_create();
-		struct wrap {
-			obs_data_array_t *arr;
-			vector<std::string> &items;
-		};
-
-		wrap passthrough = {arr, item_ids};
-		obs_scene_enum_items(
-			scene,
-			[](obs_scene_t *, obs_sceneitem_t *item,
-			   void *vp_wrap) {
-				wrap *passthrough = (wrap *)vp_wrap;
-				passthrough->items.push_back(obs_source_get_name(
-					obs_sceneitem_get_source(item)));
-				obs_data_array_t *arr = passthrough->arr;
-				obs_sceneitem_save(item, arr);
-				obs_source_addref(
-					obs_sceneitem_get_source(item));
-				return true;
-			},
-			(void *)&passthrough);
-		obs_data_array_t *list_order = SaveSceneListOrder();
-		obs_data_set_array(wrapper, "arr", arr);
-		obs_data_set_array(wrapper, "list_order", list_order);
-		obs_data_set_string(wrapper, "name",
-				    obs_source_get_name(source));
-
-		auto d = [item_ids](bool remove_ref) {
-			for (auto &item : item_ids) {
-				obs_source_t *source =
-					obs_get_source_by_name(item.c_str());
-				blog(LOG_INFO, "%s", item.c_str());
-				if (remove_ref) {
-					obs_source_release(source);
-					obs_source_release(source);
-				}
-			}
-		};
-
-		auto undo = [this, d](const std::string &data) {
-			obs_data_t *dat =
-				obs_data_create_from_json(data.c_str());
-			obs_source_release(obs_load_source(dat));
-			obs_data_array_t *arr = obs_data_get_array(dat, "arr");
-			obs_data_array_t *list_order =
-				obs_data_get_array(dat, "list_order");
-			const char *sname = obs_data_get_string(dat, "name");
-			obs_source_t *source = obs_get_source_by_name(sname);
-			obs_scene_t *scene = obs_scene_from_source(source);
-
-			obs_sceneitems_add(scene, arr);
-			LoadSceneListOrder(list_order);
-			SetCurrentScene(source);
-
-			obs_data_release(dat);
-			obs_data_array_release(arr);
-			obs_data_array_release(list_order);
-			obs_source_release(source);
-
-			d(true);
-		};
-		obs_data_t *rwrapper = obs_data_create();
-		obs_data_set_string(rwrapper, "name",
-				    obs_source_get_name(source));
-		auto redo = [d](const std::string &data) {
-			obs_data_t *dat =
-				obs_data_create_from_json(data.c_str());
-			obs_source_t *source = obs_get_source_by_name(
-				obs_data_get_string(dat, "name"));
-			obs_source_remove(source);
-			obs_source_release(source);
-			obs_data_release(dat);
-
-			d(false);
-		};
-
-		std::string undo_data = obs_data_get_json(wrapper);
-		std::string redo_data = obs_data_get_json(wrapper);
-		undo_s.add_action(
-			QTStr("Undo.Delete").arg(obs_source_get_name(source)),
-			undo, redo, undo_data, redo_data, [d](bool undo) {
-				if (undo) {
-					d(true);
-				}
-			});
 
 		obs_source_remove(source);
-		obs_data_release(wrapper);
-		obs_data_release(rwrapper);
-		obs_data_array_release(arr);
-		obs_data_array_release(list_order);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
@@ -5529,77 +5438,49 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	struct source_save {
 		std::string name;
 		std::string scene_name;
-		int pos;
-		bool in_group = false;
-		int64_t group_id;
+		// int pos;
+		// bool in_group = false;
+		// int64_t group_id;
 	};
 	vector<source_save> item_save;
 
-	obs_data_t *wrapper = obs_data_create();
-	obs_data_array_t *data = obs_data_array_create();
-	for (const auto &item : items) {
-		obs_sceneitem_save(item, data);
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		obs_source_addref(source);
-		obs_source_set_hidden(source, true);
+	obs_data_array_t *sources = obs_data_array_create();
+	for (auto &item : items) {
+		obs_source_t *si_source = obs_sceneitem_get_source(item);
+		obs_data_t *save_data = obs_save_source(si_source);
 
-		obs_sceneitem_t *grp =
-			obs_sceneitem_get_group(GetCurrentScene(), item);
-		obs_scene_t *scene = obs_sceneitem_get_scene(item);
-		source_save save = {
-			obs_source_get_name(source),
-			obs_source_get_name(obs_scene_get_source(scene)),
-			obs_sceneitem_get_order_position(item),
-			grp ? true : false, obs_sceneitem_get_id(grp)};
+		source_save temp = {obs_source_get_name(si_source), obs_source_get_name(obs_scene_get_source(obs_sceneitem_get_scene(item)))};
+		item_save.push_back(temp);
 
-		item_save.push_back(save);
+		obs_data_set_obj(save_data, "undo_transform", obs_sceneitem_save_transform(item));
+		obs_data_set_string(save_data, "undo_scene", temp.scene_name.c_str());
+
+		obs_data_array_push_back(sources, save_data);
 	}
 
-	obs_scene_t *scene = GetCurrentScene();
-	const char *name = obs_source_get_name(obs_scene_get_source(scene));
-	obs_data_set_array(wrapper, "data_array", data);
-	obs_data_set_string(wrapper, "name", name);
-	std::string undo_data(obs_data_get_json(wrapper));
+	auto undo = [](const std::string &dat) {
+		obs_data_t *data = obs_data_create_from_json(dat.c_str());
+		obs_data_array_t *arr = obs_data_get_array(data, "data");
 
-	auto undo_fn = [this, item_save](const std::string &data) {
-		obs_data_t *dat = obs_data_create_from_json(data.c_str());
-		obs_data_array_t *sources_data =
-			obs_data_get_array(dat, "data_array");
-		const char *name = obs_data_get_string(dat, "name");
-		obs_source_t *src = obs_get_source_by_name(name);
-		obs_scene_t *scene = obs_scene_from_source(src);
+		auto enumerator = [](obs_data_t *source_data, void *) {
+			obs_source_t *scene_source = obs_get_source_by_name(obs_data_get_string(source_data, "undo_scene"));
+			obs_scene_t *scene = obs_scene_from_source(scene_source);
+			if (!scene)
+				scene = obs_group_from_source(scene_source);
 
-		obs_sceneitems_add(scene, sources_data);
-		SetCurrentScene(scene);
+			obs_source_t *source = obs_load_source(source_data);
 
-		for (const auto &save : item_save) {
-			obs_source_t *source =
-				obs_get_source_by_name(save.name.c_str());
-			obs_source_set_hidden(source, false);
-			if (save.in_group) {
-				obs_sceneitem_t *grp =
-					obs_scene_find_sceneitem_by_id(
-						scene, save.group_id);
-				obs_sceneitem_t *item =
-					obs_scene_sceneitem_from_source(scene,
-									source);
-				obs_sceneitem_group_add_item(grp, item);
-				obs_sceneitem_set_order_position(item,
-								 save.pos);
+			obs_sceneitem_t *si = obs_scene_add(scene, source);
+			obs_data_t *transforms = obs_data_get_obj(source_data, "undo_transform");
+			obs_sceneitem_load_transform(scene, si, transforms);
+			obs_sceneitem_set_id(si, obs_data_get_int(transforms, "id"));
+		};
 
-				obs_sceneitem_release(item);
-			}
-
-			obs_source_release(source);
-			obs_source_release(source);
-		}
-
-		obs_source_release(src);
-		obs_data_array_release(sources_data);
-		obs_data_release(dat);
+		obs_data_array_enum(arr, enumerator, nullptr);
 	};
 
-	auto redo_fn = [item_save](const std::string &) {
+
+	auto redo = [item_save](const std::string &) {
 		for (const auto &save : item_save) {
 			obs_source_t *source =
 				obs_get_source_by_name(save.name.c_str());
@@ -5617,21 +5498,13 @@ void OBSBasic::on_actionRemoveSource_triggered()
 
 			obs_sceneitem_release(item);
 			obs_source_release(scene_source);
-			/*  usually want to release source, but redo needs to add a reference to keep alive */
 		}
 	};
 
-	auto d = [item_save](bool is_undo) {
-		if (!is_undo)
-			return;
-
-		for (const auto &item : item_save) {
-			obs_source_t *source =
-				obs_get_source_by_name(item.name.c_str());
-			obs_source_release(source);
-			obs_source_release(source);
-		}
-	};
+	obs_data_t *wrapper = obs_data_create();
+	obs_data_set_array(wrapper, "data", sources);
+	std::string undo_data(obs_data_get_json(wrapper));
+	std::string redo_data;
 
 	QString action_name;
 	if (items.size() > 1)
@@ -5642,10 +5515,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 			QTStr("Undo.Delete")
 				.arg(QString(obs_source_get_name(
 					obs_sceneitem_get_source(items[0]))));
-	undo_s.add_action(action_name, undo_fn, redo_fn, undo_data, "", d);
-
-	obs_data_array_release(data);
-	obs_data_release(wrapper);
+	undo_s.add_action(action_name, undo, redo, undo_data, "", nullptr);
 
 	for (auto &item : items)
 		obs_sceneitem_remove(item);

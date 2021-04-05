@@ -16,6 +16,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include "obs.h"
 #include "util/threading.h"
 #include "util/util_uint64.h"
 #include "graphics/math-defs.h"
@@ -2066,13 +2067,9 @@ struct passthrough {
 	bool all_items;
 };
 
-bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
-			   void *vp_pass)
+obs_data_t *obs_sceneitem_save_transform(obs_sceneitem_t *item)
 {
-	struct passthrough *pass = (struct passthrough *)vp_pass;
-	if (obs_sceneitem_selected(item) || pass->all_items) {
 		obs_data_t *temp = obs_data_create();
-		obs_data_array_t *item_ids = (obs_data_array_t *)pass->ids;
 
 		struct obs_transform_info info;
 		struct obs_sceneitem_crop crop;
@@ -2100,6 +2097,18 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_set_int(temp, "left", crop.left);
 		obs_data_set_int(temp, "right", crop.right);
 
+		return temp;
+}
+
+bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
+			   void *vp_pass)
+{
+	struct passthrough *pass = (struct passthrough *)vp_pass;
+	if (obs_sceneitem_selected(item) || pass->all_items) {
+		obs_data_array_t *item_ids = (obs_data_array_t *)pass->ids;
+
+		obs_data_t *temp = obs_sceneitem_save_transform(item);
+
 		obs_data_array_push_back(item_ids, temp);
 
 		obs_data_release(temp);
@@ -2125,12 +2134,8 @@ obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 	return wrapper;
 }
 
-void load_transform_states(obs_data_t *temp, void *vp_scene)
+void obs_sceneitem_load_transform(obs_scene_t *scene, obs_sceneitem_t *item, obs_data_t *temp)
 {
-	obs_scene_t *scene = (obs_scene_t *)vp_scene;
-	int64_t id = obs_data_get_int(temp, "id");
-	obs_sceneitem_t *item = obs_scene_find_sceneitem_by_id(scene, id);
-
 	struct obs_transform_info info;
 	struct obs_sceneitem_crop crop;
 	obs_data_get_vec2(temp, "pos", &info.pos);
@@ -2153,6 +2158,16 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	obs_sceneitem_set_crop(item, &crop);
 
 	obs_sceneitem_defer_update_end(item);
+}
+
+void load_transform_states(obs_data_t *temp, void *vp_scene)
+{
+	obs_scene_t *scene = (obs_scene_t *)vp_scene;
+
+	int64_t id = obs_data_get_int(temp, "id");
+	obs_sceneitem_t *item = obs_scene_find_sceneitem_by_id(scene, id);
+
+	obs_sceneitem_load_transform(scene, item, temp);
 }
 
 void obs_scene_load_transform_states(const char *data)
