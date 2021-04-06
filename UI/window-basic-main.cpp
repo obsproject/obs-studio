@@ -3684,7 +3684,52 @@ void OBSBasic::RemoveSelectedScene()
 
 	if (source && QueryRemoveSource(source)) {
 
+		auto filter = [](void *vp, obs_source_t *source) {
+			obs_scene_t *scene = (obs_scene_t *) vp;
+			if (obs_scene_sceneitem_from_source(scene, source) || source == obs_scene_get_source(scene))
+				return true;
+
+			return false;
+		};
+
+		obs_data_array_t *save_data = obs_save_sources_filtered(filter, (void *) scene);
+
+		obs_data_t *wrapper = obs_data_create();
+		obs_data_set_array(wrapper, "undo_save", save_data);
+
+		std::string name(obs_source_get_name(source));
+
+		auto undo = [&, name](const std::string &dat) {
+			obs_data_t *data = obs_data_create_from_json(dat.c_str());
+			obs_data_array_t *save_data = obs_data_get_array(data, "undo_save");
+
+			obs_load_sources(save_data, NULL, NULL);
+
+			obs_source_t *source = obs_get_source_by_name(name.c_str());
+
+			SetCurrentScene(source);
+
+			obs_source_release(source);
+			obs_data_release(data);
+			obs_data_array_release(save_data);
+		};
+
+		auto redo = [name](const std::string &) {
+			obs_source_t *source = obs_get_source_by_name(name.c_str());
+
+			obs_source_remove(source);
+
+			obs_source_release(source);
+		};
+
 		obs_source_remove(source);
+
+		std::string undo_data(obs_data_get_json(wrapper));
+
+		undo_s.add_action("Delete Scene", undo, redo, undo_data, "", NULL);
+
+		obs_data_release(wrapper);
+		obs_data_array_release(save_data);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
