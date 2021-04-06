@@ -727,6 +727,7 @@ EXPORT enum obs_obj_type obs_obj_get_type(void *obj);
 EXPORT const char *obs_obj_get_id(void *obj);
 EXPORT bool obs_obj_invalid(void *obj);
 EXPORT void *obs_obj_get_data(void *obj);
+EXPORT bool obs_obj_is_private(void *obj);
 
 typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 					 const char *id);

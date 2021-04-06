@@ -2239,6 +2239,15 @@ void *obs_obj_get_data(void *obj)
 	return context->data;
 }
 
+bool obs_obj_is_private(void *obj)
+{
+	struct obs_context_data *context = obj;
+	if (!context)
+		return false;
+
+	return context->private;
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
