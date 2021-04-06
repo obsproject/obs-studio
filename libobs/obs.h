@@ -1031,6 +1031,10 @@ EXPORT void obs_source_enum_active_tree(obs_source_t *source,
 					obs_source_enum_proc_t enum_callback,
 					void *param);
 
+EXPORT void obs_source_enum_full_tree(obs_source_t *source,
+				      obs_source_enum_proc_t enum_callback,
+				      void *param);
+
 /** Returns true if active, false if not */
 EXPORT bool obs_source_active(const obs_source_t *source);
 

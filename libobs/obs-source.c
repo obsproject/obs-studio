@@ -4003,14 +4003,14 @@ static void enum_source_full_tree_callback(obs_source_t *parent,
 	data->enum_callback(parent, child, data->param);
 }
 
-static void obs_source_enum_full_tree(obs_source_t *source,
-				      obs_source_enum_proc_t enum_callback,
-				      void *param)
+void obs_source_enum_full_tree(obs_source_t *source,
+			       obs_source_enum_proc_t enum_callback,
+			       void *param)
 {
 	struct source_enum_data data = {enum_callback, param};
 	bool is_transition;
 
-	if (!data_valid(source, "obs_source_enum_active_tree"))
+	if (!data_valid(source, "obs_source_enum_full_tree"))
 		return;
 
 	is_transition = source->info.type == OBS_SOURCE_TYPE_TRANSITION;
