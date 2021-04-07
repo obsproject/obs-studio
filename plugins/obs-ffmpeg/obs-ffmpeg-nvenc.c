@@ -284,10 +284,12 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     "\theight:       %d\n"
 	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
+	     "\tpsycho-aq:    %d\n"
 	     "\tGPU:          %d\n",
 	     rc, bitrate, cqp, enc->context->gop_size, preset, profile,
 	     enc->context->width, enc->context->height,
-	     twopass ? "true" : "false", enc->context->max_b_frames, gpu);
+	     twopass ? "true" : "false", enc->context->max_b_frames, psycho_aq,
+	     gpu);
 
 	return nvenc_init_codec(enc);
 }
@@ -578,16 +580,15 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 					    obs_module_text("NVENC.LookAhead"));
 		obs_property_set_long_description(
 			p, obs_module_text("NVENC.LookAhead.ToolTip"));
-
-		p = obs_properties_add_bool(
-			props, "psycho_aq",
-			obs_module_text("NVENC.PsychoVisualTuning"));
-		obs_property_set_long_description(
-			p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
 		p = obs_properties_add_bool(props, "repeat_headers",
 					    "repeat_headers");
 		obs_property_set_visible(p, false);
 	}
+	p = obs_properties_add_bool(
+		props, "psycho_aq",
+		obs_module_text("NVENC.PsychoVisualTuning"));
+	obs_property_set_long_description(
+		p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 
