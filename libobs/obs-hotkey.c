@@ -55,7 +55,7 @@ const char *obs_hotkey_get_description(const obs_hotkey_t *key)
 obs_hotkey_registerer_t obs_hotkey_get_registerer_type(const obs_hotkey_t *key)
 {
     if (!key)
-        return NULL;
+        return OBS_HOTKEY_REGISTERER_NONE;
 	return key->registerer_type;
 }
 

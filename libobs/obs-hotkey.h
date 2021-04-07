@@ -57,6 +57,7 @@ enum obs_hotkey_registerer_type {
 	OBS_HOTKEY_REGISTERER_OUTPUT,
 	OBS_HOTKEY_REGISTERER_ENCODER,
 	OBS_HOTKEY_REGISTERER_SERVICE,
+	OBS_HOTKEY_REGISTERER_NONE
 };
 typedef enum obs_hotkey_registerer_type obs_hotkey_registerer_t;
 
