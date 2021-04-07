@@ -1232,6 +1232,12 @@
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 320,
+                "supported resolutions": [
+                    "1280x720",
+                    "852x480",
+                    "480x360"
+                ],
+                "max fps": 30,
                 "x264opts": "scenecut=0"
             }
         },
