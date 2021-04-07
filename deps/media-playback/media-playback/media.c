@@ -762,7 +762,18 @@ static int interrupt_callback(void *data)
 static bool init_avformat(mp_media_t *m)
 {
 	AVInputFormat *format = NULL;
-
+	if (m->is_local_file) {
+		FILE * check_file = os_fopen(m->path, "r");
+		if (check_file != NULL) {
+			fclose(check_file);
+		} else {
+			blog(LOG_INFO,
+			     "MP: Failed to open a path as a local file "
+			     "'%s'",
+			     m->path);
+			return false;
+		}
+	}
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
 		if (!format)
