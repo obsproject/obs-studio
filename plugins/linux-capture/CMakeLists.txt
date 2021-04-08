@@ -46,8 +46,14 @@ set(linux-capture_LIBRARIES
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(ENABLE_PIPEWIRE)
-	find_package(PipeWire REQUIRED)
-	find_package(Gio REQUIRED)
+	find_package(PipeWire QUIET)
+	find_package(Gio QUIET)
+
+	if(NOT PIPEWIRE_FOUND)
+		message(FATAL_ERROR "PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF")
+	elseif(NOT GIO_FOUND)
+		message(FATAL_ERROR "Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF")
+	endif()
 
 	add_definitions(-DENABLE_PIPEWIRE)
 
