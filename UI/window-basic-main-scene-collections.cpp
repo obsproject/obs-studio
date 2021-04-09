@@ -554,8 +554,6 @@ void OBSBasic::ChangeSceneCollection()
 
 	UpdateTitleBar();
 
-	undo_s.clear();
-
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED);
 }
