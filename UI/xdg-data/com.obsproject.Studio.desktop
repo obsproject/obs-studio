@@ -13,3 +13,12 @@ Type=Application
 Categories=AudioVideo;Recorder;
 StartupNotify=true
 StartupWMClass=obs
+Actions=new-window;new-wayland-window;
+
+[Desktop Action new-window]
+Name=New Instance
+Exec=obs
+
+[Desktop Action new-wayland-window]
+Name=New Wayland Instance
+Exec=env QT_QPA_PLATFORM=wayland obs
