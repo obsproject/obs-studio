@@ -1591,6 +1591,8 @@ obs_scene_reorder_items2(obs_scene_t *scene,
 			 struct obs_sceneitem_order_info *item_order,
 			 size_t item_order_size);
 
+EXPORT bool obs_source_is_scene(const obs_source_t *source);
+
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
 
