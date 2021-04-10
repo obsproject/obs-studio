@@ -4952,12 +4952,12 @@ void OBSBasic::ChangeSceneIndex(bool relative, int offset, int invalidIdx)
 	if (idx == -1 || idx == invalidIdx)
 		return;
 
+	ui->scenes->blockSignals(true);
 	QListWidgetItem *item = ui->scenes->takeItem(idx);
 
 	if (!relative)
 		idx = 0;
 
-	ui->scenes->blockSignals(true);
 	ui->scenes->insertItem(idx + offset, item);
 	ui->scenes->setCurrentRow(idx + offset);
 	item->setSelected(true);
