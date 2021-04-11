@@ -562,6 +562,10 @@ function(install_obs_datatarget target datadest)
 				"$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
 	endif()
+
+	if(MSVC)
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}")
+	endif()
 endfunction()
 
 function(install_obs_plugin_with_data target datadir)
