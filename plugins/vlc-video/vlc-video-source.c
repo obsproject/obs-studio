@@ -78,17 +78,6 @@ struct vlc_source {
 	obs_hotkey_id playlist_prev_hotkey;
 };
 
-static int dump_to_file(const char *buffer, size_t size, char *path)
-{
-	FILE *fp = fopen(path, "wb");
-	if (!fp)
-		return 1;
-	if (fwrite(buffer, 1, size, fp) != size)
-		return 2;
-	fclose(fp);
-	return 0;
-}
-
 static void write_meta_to_files(struct vlc_source *c)
 {
 	if (!c)
@@ -107,7 +96,8 @@ static void write_meta_to_files(struct vlc_source *c)
 		if (data && strlen(data) > 0 &&                                 \
 		    status == libvlc_media_parsed_status_done)			\
 		{								\
-			dump_to_file(data, strlen(data), buffer);		\
+			os_quick_write_utf8_file(buffer, data,			\
+				strlen(data), false);				\
 		}								\
 		else								\
 			remove(buffer);						\
