@@ -1,9 +1,9 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
-.. image:: https://dev.azure.com/obsjim/obsjim/_apis/build/status/obsproject.obs-studio?branchName=master
-   :alt: OBS Studio Build Status - Azure Pipelines
-   :target: https://dev.azure.com/obsjim/obsjim/_build/latest?definitionId=1&branchName=master
+.. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
+   :alt: OBS Studio Build Status - GitHub Actions
+   :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
 
 .. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
