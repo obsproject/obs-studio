@@ -519,8 +519,6 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 	if (*channels > 2)
 		*channels = 2;
 
-	write_meta_to_files(c);
-
 	/* don't free audio data if the data is the same format */
 	if (c->audio.format == new_audio_format &&
 	    c->audio.samples_per_sec == *rate &&
@@ -807,6 +805,14 @@ static void vlcs_stopped(const struct libvlc_event_t *event, void *data)
 	UNUSED_PARAMETER(event);
 }
 
+static void vlcs_media_changed(const struct lbvlc_event_t *event, void *data)
+{
+	struct vlc_source *c = data;
+	write_meta_to_files(c);
+
+	UNUSED_PARAMETER(event);
+}
+
 static enum obs_media_state vlcs_get_state(void *data)
 {
 	struct vlc_source *c = data;
@@ -1021,6 +1027,8 @@ static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 			     vlcs_stopped, c);
 	libvlc_event_attach_(event_manager, libvlc_MediaPlayerOpening,
 			     vlcs_started, c);
+	libvlc_event_attach_(event_manager, libvlc_MediaPlayerMediaChanged,
+			     vlcs_media_changed, c);
 
 	proc_handler_t *ph = obs_source_get_proc_handler(source);
 	proc_handler_add(
