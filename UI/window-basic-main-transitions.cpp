@@ -1110,6 +1110,49 @@ void OBSBasic::on_actionHideTransitionProperties_triggered()
 		CreatePropertiesWindow(source);
 }
 
+void OBSBasic::PasteShowHideTransition(obs_sceneitem_t *item, bool show,
+				       obs_source_t *tr)
+{
+	int64_t sceneItemId = obs_sceneitem_get_id(item);
+	std::string sceneName = obs_source_get_name(
+		obs_scene_get_source(obs_sceneitem_get_scene(item)));
+
+	auto undo_redo = [sceneName, sceneItemId,
+			  show](const std::string &data) {
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(sceneName.c_str());
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_sceneitem_t *i =
+			obs_scene_find_sceneitem_by_id(scene, sceneItemId);
+		if (i) {
+			OBSDataAutoRelease dat =
+				obs_data_create_from_json(data.c_str());
+			obs_sceneitem_transition_load(i, dat, show);
+		}
+	};
+
+	OBSDataAutoRelease oldTransitionData =
+		obs_sceneitem_transition_save(item, show);
+
+	OBSSourceAutoRelease dup =
+		obs_source_duplicate(tr, obs_source_get_name(tr), true);
+	obs_sceneitem_set_transition(item, show, dup);
+
+	OBSDataAutoRelease transitionData =
+		obs_sceneitem_transition_save(item, show);
+
+	std::string undo_data(obs_data_get_json(oldTransitionData));
+	std::string redo_data(obs_data_get_json(transitionData));
+	if (undo_data.compare(redo_data) == 0)
+		return;
+
+	QString text = show ? QTStr("Undo.ShowTransition")
+			    : QTStr("Undo.HideTransition");
+	const char *name = obs_source_get_name(obs_sceneitem_get_source(item));
+	undo_s.add_action(text.arg(name), undo_redo, undo_redo, undo_data,
+			  redo_data);
+}
+
 QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 {
 	OBSSceneItem si = GetCurrentSceneItem();
@@ -1248,6 +1291,41 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			visible ? SLOT(on_actionShowTransitionProperties_triggered())
 				: SLOT(on_actionHideTransitionProperties_triggered()));
 	}
+
+	auto copyTransition = [this](QAction *action, bool visible) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSSceneItem item = main->GetCurrentSceneItem();
+		obs_source_t *tr = obs_sceneitem_get_transition(item, visible);
+		main->copySourceTransition = obs_source_get_weak_source(tr);
+	};
+	menu->addSeparator();
+	action = menu->addAction(QT_UTF8(Str("Copy")));
+	action->setEnabled(curId != nullptr);
+	connect(action, &QAction::triggered,
+		std::bind(copyTransition, action, visible));
+
+	auto pasteTransition = [this](QAction *action, bool show) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		OBSSource tr = OBSGetStrongRef(main->copySourceTransition);
+		if (!tr)
+			return;
+
+		for (auto &selectedSource : GetAllSelectedSourceItems()) {
+			OBSSceneItem item =
+				main->ui->sources->Get(selectedSource.row());
+			if (!item)
+				continue;
+
+			PasteShowHideTransition(item, show, tr);
+		}
+	};
+
+	action = menu->addAction(QT_UTF8(Str("Paste")));
+	action->setEnabled(!!OBSGetStrongRef(copySourceTransition));
+	connect(action, &QAction::triggered,
+		std::bind(pasteTransition, action, visible));
 	return menu;
 }
 

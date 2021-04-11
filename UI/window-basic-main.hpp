@@ -225,6 +225,7 @@ private:
 	obs_transform_info copiedTransformInfo;
 	obs_sceneitem_crop copiedCropInfo;
 	bool hasCopiedTransform = false;
+	OBSWeakSourceAutoRelease copySourceTransition;
 
 	bool closing = false;
 	QScopedPointer<QThread> devicePropertiesThread;
@@ -460,6 +461,8 @@ private:
 	void EnableTransitionWidgets(bool enable);
 	void CreateDefaultQuickTransitions();
 
+	void PasteShowHideTransition(obs_sceneitem_t *item, bool show,
+				     obs_source_t *tr);
 	QMenu *CreatePerSceneTransitionMenu();
 	QMenu *CreateVisibilityTransitionMenu(bool visible);
 
