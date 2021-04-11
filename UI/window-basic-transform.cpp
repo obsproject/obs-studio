@@ -73,7 +73,8 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	SetScene(scene);
 	SetItem(item);
 
-	obs_data_t *wrapper = obs_scene_save_transform_states(scene, false);
+	obs_data_t *wrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), false);
 	undo_data = std::string(obs_data_get_json(wrapper));
 
 	obs_data_release(wrapper);
@@ -92,7 +93,7 @@ OBSBasicTransform::~OBSBasicTransform()
 		obs_source_t *source = obs_get_source_by_name(
 			obs_data_get_string(dat, "scene_name"));
 		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-			->SetCurrentScene(source);
+			->SetCurrentScene(source, true);
 		obs_source_release(source);
 		obs_data_release(dat);
 		obs_scene_load_transform_states(data.c_str());

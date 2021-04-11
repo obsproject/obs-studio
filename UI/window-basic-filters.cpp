@@ -575,7 +575,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			obs_source_t *ssource =
 				obs_get_source_by_name(scene_name.c_str());
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource);
+				->SetCurrentScene(ssource, true);
 			obs_source_release(ssource);
 
 			obs_data_t *dat =
@@ -599,7 +599,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			obs_source_t *ssource =
 				obs_get_source_by_name(scene_name.c_str());
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource);
+				->SetCurrentScene(ssource, true);
 			obs_source_release(ssource);
 
 			obs_data_t *dat =
@@ -829,7 +829,7 @@ void OBSBasicFilters::on_removeEffectFilter_clicked()
 					scene_name.c_str());
 				reinterpret_cast<OBSBasic *>(
 					App()->GetMainWindow())
-					->SetCurrentScene(ssource);
+					->SetCurrentScene(ssource, true);
 				obs_source_release(ssource);
 
 				obs_data_t *dat =
@@ -854,7 +854,7 @@ void OBSBasicFilters::on_removeEffectFilter_clicked()
 					scene_name.c_str());
 				reinterpret_cast<OBSBasic *>(
 					App()->GetMainWindow())
-					->SetCurrentScene(ssource);
+					->SetCurrentScene(ssource, true);
 				obs_source_release(ssource);
 
 				obs_data_t *dat =
@@ -1134,7 +1134,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 			obs_source_t *ssource =
 				obs_get_source_by_name(scene_name.c_str());
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource);
+				->SetCurrentScene(ssource, true);
 			obs_source_release(ssource);
 
 			obs_source_t *source =
@@ -1151,7 +1151,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 			obs_source_t *ssource =
 				obs_get_source_by_name(scene_name.c_str());
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource);
+				->SetCurrentScene(ssource, true);
 			obs_source_release(ssource);
 
 			obs_source_t *source =
