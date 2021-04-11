@@ -83,24 +83,26 @@ static void write_meta_to_files(struct vlc_source *c)
 	if (!c)
 		return;
 
-	libvlc_media_t *media = libvlc_media_player_get_media_(c->media_player);
+	libvlc_media_t *media =
+		libvlc_media_player_get_media_(c->media_player);
 
 	if (!media)
 		return;
 
-#define DUMP_META(status, tag)							\
-	{									\
-		char *data = libvlc_media_get_meta_(media, libvlc_meta_##tag);	\
-		char buffer[260] = {0};						\
-		sprintf(buffer, "%s/%s.txt", c->meta_path, #tag);		\
-		if (data && strlen(data) > 0 &&                                 \
-		    status == libvlc_media_parsed_status_done)			\
-		{								\
-			os_quick_write_utf8_file(buffer, data,			\
-				strlen(data), false);				\
-		}								\
-		else								\
-			remove(buffer);						\
+#define DUMP_META(status, tag)						\
+	{								\
+		char *data = libvlc_media_get_meta_(media,		\
+			libvlc_meta_##tag);				\
+		char buffer[260] = {0};					\
+		sprintf(buffer, "%s/%s.txt", c->meta_path, #tag);	\
+		if (data && strlen(data) > 0 &&                         \
+		    status == libvlc_media_parsed_status_done)		\
+		{							\
+			os_quick_write_utf8_file(buffer, data,		\
+				strlen(data), false);			\
+		}							\
+		else							\
+			remove(buffer);					\
 	}
 
 	libvlc_media_parsed_status_t status =
