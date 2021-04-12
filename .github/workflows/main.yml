@@ -29,12 +29,16 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2021-02-28'
+      MACOS_DEPS_VERSION: '2021-03-25'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.15.2'
       SIGN_IDENTITY: ''
     steps:
+      - name: Get Current Arch
+        shell: bash
+        id: get_arch
+        run: echo "CURRENT_ARCH=$(uname -m)" >> $GITHUB_ENV
       - name: 'Checkout'
         uses: actions/checkout@v2.3.3
         with:
@@ -102,14 +106,14 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
       - name: 'Install prerequisite: Pre-built dependency Qt'
         if: steps.deps-qt-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
+          tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'
