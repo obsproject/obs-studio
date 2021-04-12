@@ -723,7 +723,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 	}
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	obs_data_t *rwrapper =
-		obs_scene_save_transform_states(main->GetCurrentScene(), false);
+		obs_scene_save_transform_states(main->GetCurrentScene(), true);
 
 	auto undo_redo = [](const std::string &data) {
 		obs_data_t *dat = obs_data_create_from_json(data.c_str());
