@@ -69,16 +69,20 @@ HRESULT HardwarePlugIn_QueryInterface(CMIOHardwarePlugInRef self, REFIID uuid,
 	CFStringRef uuidString = CFUUIDCreateString(NULL, cfUuid);
 	CFStringRef hardwarePluginUuid =
 		CFUUIDCreateString(NULL, kCMIOHardwarePlugInInterfaceID);
+	CFRelease(cfUuid);
 
 	if (CFEqual(uuidString, hardwarePluginUuid)) {
 		// Return the interface;
 		sRefCount += 1;
 		*interface = OBSDALPlugInRef();
+		CFRelease(hardwarePluginUuid);
+		CFRelease(uuidString);
 		return kCMIOHardwareNoError;
 	} else {
 		DLogFunc(@"ERR Queried for some weird UUID %@", uuidString);
 	}
-
+	CFRelease(hardwarePluginUuid);
+	CFRelease(uuidString);
 	return E_NOINTERFACE;
 }
 
