@@ -652,7 +652,7 @@ static obs_properties_t *color_correction_filter_properties_v2(void *data)
 	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
 					-4.0, 4.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
-					TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
+					TEXT_BRIGHTNESS, -1.0, 1.0, 0.0001);
 	obs_properties_add_float_slider(props, SETTING_SATURATION,
 					TEXT_SATURATION, -1.0, 5.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_HUESHIFT, TEXT_HUESHIFT,

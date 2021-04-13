@@ -419,7 +419,7 @@ static obs_properties_t *color_key_properties_v2(void *data)
 	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
 					-4.0, 4.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
-					TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
+					TEXT_BRIGHTNESS, -1.0, 1.0, 0.0001);
 	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -1.0,
 					1.0, 0.01);
 
