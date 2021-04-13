@@ -238,6 +238,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return bstrdup(name);
 	}
 
+	char *obs_frontend_get_current_profile_path(void) override
+	{
+		char profilePath[512];
+		int ret = GetProfilePath(profilePath, sizeof(profilePath), "");
+		if (ret <= 0)
+			return nullptr;
+
+		return bstrdup(profilePath);
+	}
+
 	void obs_frontend_set_current_profile(const char *profile) override
 	{
 		QList<QAction *> menuActions = main->ui->profileMenu->actions();

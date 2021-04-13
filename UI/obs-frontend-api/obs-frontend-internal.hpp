@@ -37,6 +37,7 @@ struct obs_frontend_callbacks {
 	virtual void
 	obs_frontend_get_profiles(std::vector<std::string> &strings) = 0;
 	virtual char *obs_frontend_get_current_profile(void) = 0;
+	virtual char *obs_frontend_get_current_profile_path(void) = 0;
 	virtual void obs_frontend_set_current_profile(const char *profile) = 0;
 
 	virtual void obs_frontend_streaming_start(void) = 0;
