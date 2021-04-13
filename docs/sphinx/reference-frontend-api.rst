@@ -314,6 +314,13 @@ Functions
 
 ---------------------------------------
 
+.. function:: char *obs_frontend_get_current_profile_path(void)
+
+   :return: A new pointer to the current profile's path on the filesystem. Free
+            with :c:func:`bfree()`.
+
+---------------------------------------
+
 .. function:: void obs_frontend_set_current_profile(const char *profile)
 
    :param profile: Name of the profile to activate.

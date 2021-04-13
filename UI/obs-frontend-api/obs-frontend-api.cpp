@@ -204,6 +204,12 @@ char *obs_frontend_get_current_profile(void)
 				   : nullptr;
 }
 
+char *obs_frontend_get_current_profile_path(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_current_profile_path()
+				   : nullptr;
+}
+
 void obs_frontend_set_current_profile(const char *profile)
 {
 	if (callbacks_valid())
