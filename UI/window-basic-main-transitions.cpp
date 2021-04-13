@@ -1039,7 +1039,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 
 	QSpinBox *duration = new QSpinBox(menu);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(curDuration);
@@ -1145,7 +1145,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 
 	QSpinBox *duration = new QSpinBox(menu);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(curDuration);
@@ -1323,7 +1323,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 	if (qt)
 		duration->setProperty("id", qt->id);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(qt ? qt->duration : 300);
