@@ -327,6 +327,24 @@ Functions
 
 ---------------------------------------
 
+.. function:: bool obs_frontend_create_profile(const char *name)
+
+   :param name: Name of the new profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: bool obs_frontend_duplicate_profile(const char *name)
+
+   :param name: Name of the duplicate profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_profile(const char *profile)
+
+   :param profile: Name of the profile to delete.
+
+---------------------------------------
+
 .. function:: void obs_frontend_add_event_callback(obs_frontend_event_cb callback, void *private_data)
 
    Adds a callback that will be called when a frontend event occurs.

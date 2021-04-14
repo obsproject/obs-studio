@@ -380,6 +380,8 @@ private:
 	void ResetProfileData();
 	bool AddProfile(bool create_new, const char *title, const char *text,
 			const char *init_text = nullptr, bool rename = false);
+	bool CreateProfile(const std::string &newName, bool create_new,
+			   bool showWizardChecked, bool rename = false);
 	void DeleteProfile(const char *profile_name, const char *profile_dir);
 	void RefreshProfiles();
 	void ChangeProfile();
@@ -608,6 +610,10 @@ public slots:
 
 	bool AddSceneCollection(bool create_new,
 				const QString &name = QString());
+
+	bool NewProfile(const QString &name);
+	bool DuplicateProfile(const QString &name);
+	void DeleteProfile(const QString &profileName);
 
 	void UpdatePatronJson(const QString &text, const QString &error);
 
@@ -973,7 +979,7 @@ private slots:
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();
 	void on_actionRenameProfile_triggered();
-	void on_actionRemoveProfile_triggered();
+	void on_actionRemoveProfile_triggered(bool skipConfirmation = false);
 	void on_actionImportProfile_triggered();
 	void on_actionExportProfile_triggered();
 

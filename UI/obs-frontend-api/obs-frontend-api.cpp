@@ -216,6 +216,24 @@ void obs_frontend_set_current_profile(const char *profile)
 		c->obs_frontend_set_current_profile(profile);
 }
 
+void obs_frontend_create_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_create_profile(name);
+}
+
+void obs_frontend_duplicate_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_duplicate_profile(name);
+}
+
+void obs_frontend_delete_profile(const char *profile)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_profile(profile);
+}
+
 void obs_frontend_streaming_start(void)
 {
 	if (callbacks_valid())

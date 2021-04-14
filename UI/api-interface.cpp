@@ -266,6 +266,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		}
 	}
 
+	void obs_frontend_create_profile(const char *name) override
+	{
+		QMetaObject::invokeMethod(main, "NewProfile",
+					  Q_ARG(QString, name));
+	}
+
+	void obs_frontend_duplicate_profile(const char *name) override
+	{
+		QMetaObject::invokeMethod(main, "DuplicateProfile",
+					  Q_ARG(QString, name));
+	}
+
+	void obs_frontend_delete_profile(const char *profile) override
+	{
+		QMetaObject::invokeMethod(main, "DeleteProfile",
+					  Q_ARG(QString, profile));
+	}
+
 	void obs_frontend_streaming_start(void) override
 	{
 		QMetaObject::invokeMethod(main, "StartStreaming");
