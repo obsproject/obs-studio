@@ -5101,6 +5101,8 @@ uint32_t obs_source_get_last_obs_version(const obs_source_t *source)
 
 enum obs_icon_type obs_source_get_icon_type(const char *id)
 {
+	if (!id)
+		return OBS_ICON_TYPE_UNKNOWN;
 	const struct obs_source_info *info = get_source_info(id);
 	return (info) ? info->icon_type : OBS_ICON_TYPE_UNKNOWN;
 }
