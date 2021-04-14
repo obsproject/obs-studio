@@ -377,7 +377,6 @@ private:
 	void ChangeSceneCollection();
 	void LogScenes();
 
-	void LoadProfile();
 	void ResetProfileData();
 	bool AddProfile(bool create_new, const char *title, const char *text,
 			const char *init_text = nullptr, bool rename = false);
