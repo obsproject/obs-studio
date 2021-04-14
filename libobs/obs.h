@@ -1780,6 +1780,10 @@ EXPORT obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item);
 EXPORT uint32_t
 obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_do_transition(obs_sceneitem_t *item, bool visible);
+EXPORT void obs_sceneitem_transition_load(struct obs_scene_item *item,
+					  obs_data_t *data, bool show);
+EXPORT obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
+						 bool show);
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */

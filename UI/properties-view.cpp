@@ -400,6 +400,14 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 	spin->setSuffix(QT_UTF8(suffix));
 
+	if (stepVal < 1.0) {
+		int decimals = (int)(log10(1.0 / stepVal) + 0.99);
+		constexpr int sane_limit = 8;
+		decimals = std::min(decimals, sane_limit);
+		if (decimals > spin->decimals())
+			spin->setDecimals(decimals);
+	}
+
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);
 
