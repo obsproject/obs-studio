@@ -302,6 +302,14 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink = "https://brimelive.com/obs-stream-key-link";
 	}
 
+	if (serviceName == "Dacast") {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+	} else {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
+	}
+
 	if (QString(streamKeyLink).isNull()) {
 		ui->getStreamKeyButton->hide();
 	} else {
