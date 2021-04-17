@@ -217,6 +217,7 @@ private:
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
 	QPointer<OBSAbout> about;
+	QPointer<OBSMissingFiles> missDialog;
 
 	OBSLogViewer *logView = nullptr;
 
@@ -485,8 +486,6 @@ private:
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
-
-	OBSMissingFiles *missDialog;
 
 	QList<QPoint> visDlgPositions;
 

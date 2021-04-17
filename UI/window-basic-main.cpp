@@ -1165,12 +1165,9 @@ retryScene:
 
 	if (obs_missing_files_count(files) > 0) {
 		missDialog = new OBSMissingFiles(files, this);
+		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
 		missDialog->show();
 		missDialog->raise();
-
-		auto close = [=]() { delete missDialog; };
-
-		connect(missDialog, &OBSMissingFiles::finished, close);
 	} else {
 		obs_missing_files_destroy(files);
 	}
