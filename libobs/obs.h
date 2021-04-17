@@ -1571,6 +1571,18 @@ EXPORT obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene,
 EXPORT obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene,
 						       int64_t id);
 
+/** Gets scene by name, increments the reference */
+static inline obs_scene_t *obs_get_scene_by_name(const char *name)
+{
+	obs_source_t *source = obs_get_source_by_name(name);
+	obs_scene_t *scene = obs_scene_from_source(source);
+	if (!scene) {
+		obs_source_release(source);
+		return NULL;
+	}
+	return scene;
+}
+
 /** Enumerates sources within a scene */
 EXPORT void obs_scene_enum_items(obs_scene_t *scene,
 				 bool (*callback)(obs_scene_t *,
