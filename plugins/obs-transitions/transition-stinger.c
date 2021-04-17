@@ -221,12 +221,8 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 	// Track matte media render
 	gs_texrender_reset(s->matte_tex);
 	if (matte_cx > 0 && matte_cy > 0) {
-		float scale_x = (float)cx / matte_cx;
-		float scale_y = (float)cy / matte_cy;
-
 		if (gs_texrender_begin(s->matte_tex, cx, cy)) {
 			gs_matrix_push();
-			gs_matrix_scale3f(scale_x, scale_y, 1.0f);
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
 			gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
