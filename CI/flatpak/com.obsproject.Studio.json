@@ -14,6 +14,7 @@
     "--filesystem=xdg-run/pipewire-0",
     "--filesystem=host",
     "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.Flatpak",
     "--talk-name=org.freedesktop.ScreenSaver",
     "--talk-name=org.freedesktop.PowerManagement.Inhibit",
     "--talk-name=org.freedesktop.Notifications",
