@@ -5524,7 +5524,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
 		remove_items.exec();
 
-		confirmed = remove_items.clickedButton();
+		confirmed = Yes == remove_items.clickedButton();
 	} else {
 		OBSSceneItem &item = items[0];
 		obs_source_t *source = obs_sceneitem_get_source(item);
