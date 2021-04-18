@@ -131,6 +131,31 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	/* --------------------------------------------------------- */
 
 	auto setItemVisible = [this](bool checked) {
+		obs_scene_t *scene = obs_sceneitem_get_scene(sceneitem);
+		obs_source_t *scenesource = obs_scene_get_source(scene);
+		int64_t id = obs_sceneitem_get_id(sceneitem);
+		std::string name = obs_source_get_name(scenesource);
+		obs_source_t *source = obs_sceneitem_get_source(sceneitem);
+
+		auto undo_redo = [id, name](const std::string &val) {
+			bool vis = val[0] == '1';
+			obs_scene_t *s = obs_get_scene_by_name(name.c_str());
+			obs_sceneitem_t *si =
+				obs_scene_find_sceneitem_by_id(s, id);
+			if (si)
+				obs_sceneitem_set_visible(si, vis);
+			obs_scene_release(s);
+		};
+
+		QString str = QTStr(checked ? "Undo.ShowSceneItem"
+					    : "Undo.HideSceneItem");
+		str = str.arg(obs_source_get_name(source), name.c_str());
+
+		OBSBasic *main = OBSBasic::Get();
+		main->undo_s.add_action(str, undo_redo, undo_redo,
+					checked ? "0" : "1",
+					checked ? "1" : "0", nullptr);
+
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, checked);
 	};
