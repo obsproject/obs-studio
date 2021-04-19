@@ -285,6 +285,26 @@
             }
         },
         {
+            "name": "Luzento.com - RTMP",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://ingest.luzento.com/live"
+                },
+                {
+                    "name": "Primary (Test)",
+                    "url": "rtmp://ingest.luzento.com/test"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 256,
+                "bframes": 2,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
             "name": "VIMM",
             "servers": [
                 {

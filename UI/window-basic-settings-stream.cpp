@@ -278,6 +278,9 @@ void OBSBasicSettings::UpdateKeyLink()
 	} else if (serviceName.startsWith("Restream.io")) {
 		streamKeyLink =
 			"https://restream.io/settings/streaming-setup?from=OBS";
+	} else if (serviceName == "Luzento.com - RTMP") {
+		streamKeyLink =
+			"https://cms.luzento.com/dashboard/stream-key?from=OBS";
 	} else if (serviceName == "Facebook Live" ||
 		   (customServer.contains("fbcdn.net") && IsCustomService())) {
 		streamKeyLink =
