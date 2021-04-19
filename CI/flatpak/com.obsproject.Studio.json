@@ -259,8 +259,7 @@
         "-DUSE_XDG=ON",
         "-DDISABLE_ALSA=ON",
         "-DENABLE_PULSEAUDIO=ON",
-        "-DWITH_RTMPS=ON",
-        "-DBUILD_BROWSER=OFF"
+        "-DWITH_RTMPS=ON"
       ],
       "sources": [
         {
