@@ -276,8 +276,6 @@ if(NOT INSTALLER_RUN)
 	if (BUILD_TESTS OR ENABLE_UNIT_TESTS)
 		add_subdirectory(test)
 	endif()
-
-	add_subdirectory(cmake/helper_subdir)
 else()
 	obs_generate_multiarch_installer()
 endif()
