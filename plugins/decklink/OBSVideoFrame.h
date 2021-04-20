@@ -5,7 +5,7 @@
 
 class OBSVideoFrame : public IDeckLinkMutableVideoFrame {
 private:
-	BMDFrameFlags flags;
+	BMDFrameFlags flags = bmdFrameFlagDefault;
 	BMDPixelFormat pixelFormat = bmdFormat8BitYUV;
 
 	long width;
@@ -16,6 +16,7 @@ private:
 
 public:
 	OBSVideoFrame(long width, long height, BMDPixelFormat pixelFormat);
+	~OBSVideoFrame();
 
 	HRESULT STDMETHODCALLTYPE SetFlags(BMDFrameFlags newFlags) override;
 
