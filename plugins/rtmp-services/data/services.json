@@ -1027,8 +1027,11 @@
             }
         },
         {
-            "name": "Twitter / Periscope",
+            "name": "Twitter",
             "common": true,
+            "alt_names": [
+                "Twitter / Periscope"
+            ],
             "servers": [
                 {
                     "name": "US West: California",
@@ -1047,6 +1050,10 @@
                     "url": "rtmp://br.pscp.tv:80/x"
                 },
                 {
+                    "name": "EU West: France",
+                    "url": "rtmp://fr.pscp.tv:80/x"
+                },
+                {
                     "name": "EU West: Ireland",
                     "url": "rtmp://ie.pscp.tv:80/x"
                 },
@@ -1059,8 +1066,16 @@
                     "url": "rtmp://au.pscp.tv:80/x"
                 },
                 {
+                    "name": "Asia/Pacific: India",
+                    "url": "rtmp://in.pscp.tv:80/x"
+                },
+                {
                     "name": "Asia/Pacific: Japan",
                     "url": "rtmp://jp.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Korea",
+                    "url": "rtmp://kr.pscp.tv:80/x"
                 },
                 {
                     "name": "Asia/Pacific: Singapore",
@@ -1069,8 +1084,9 @@
             ],
             "recommended": {
                 "keyint": 3,
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
+                "max video bitrate": 12000,
+                "max audio bitrate": 128,
+                "max fps": 60
             }
         },
         {

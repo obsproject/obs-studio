@@ -286,7 +286,7 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
 	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = "https://www.pscp.tv/account/producer";
+		streamKeyLink = "https://studio.twitter.com/producer/sources";
 	} else if (serviceName.startsWith("YouStreamer")) {
 		streamKeyLink = "https://app.youstreamer.com/stream/";
 	} else if (serviceName == "Trovo") {
