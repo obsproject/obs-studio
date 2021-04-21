@@ -1136,6 +1136,17 @@ void SourceTree::mouseDoubleClickEvent(QMouseEvent *event)
 		QListView::mouseDoubleClickEvent(event);
 }
 
+static void hold_source(obs_source_t *, obs_source_t *source, void *p)
+{
+	if (obs_obj_is_private(source) && !obs_source_removed(source))
+		return;
+
+	using source_list_t = std::vector<obs_source_t *>;
+	source_list_t &sources = *reinterpret_cast<source_list_t *>(p);
+	sources.push_back(source);
+	obs_source_addref(source);
+}
+
 void SourceTree::dropEvent(QDropEvent *event)
 {
 	if (event->source() != this) {
@@ -1144,6 +1155,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	}
 
 	OBSScene scene = GetCurrentScene();
+	obs_source_t *scenesource = obs_scene_get_source(scene);
 	SourceTreeModel *stm = GetStm();
 	auto &items = stm->items;
 	QModelIndexList indices = selectedIndexes();
@@ -1240,6 +1252,17 @@ void SourceTree::dropEvent(QDropEvent *event)
 		QListView::dropEvent(event);
 		return;
 	}
+
+	/* --------------------------------------- */
+	/* save undo data                          */
+
+	OBSData undo_settings = obs_data_create();
+	obs_data_release(undo_settings);
+
+	/* 'apply' is equivalent to a full copy */
+	obs_data_t *settings = obs_source_get_settings(scenesource);
+	obs_data_apply(undo_settings, settings);
+	obs_data_release(settings);
 
 	/* --------------------------------------- */
 	/* if selection includes base group items, */
@@ -1403,6 +1426,59 @@ void SourceTree::dropEvent(QDropEvent *event)
 	ignoreReorder = true;
 	obs_scene_atomic_update(scene, preUpdateScene, &updateScene);
 	ignoreReorder = false;
+
+	/* --------------------------------------- */
+	/* save redo data                          */
+
+	obs_source_save(scenesource);
+	OBSData redo_settings = obs_source_get_settings(scenesource);
+	obs_data_release(redo_settings);
+
+	/* --------------------------------------- */
+	/* add undo/redo action                    */
+
+	auto undo_redo = [this](const std::string &json) {
+		obs_data_t *base = obs_data_create_from_json(json.c_str());
+		const char *scene_name = obs_data_get_string(base, "name");
+		obs_data_t *settings = obs_data_get_obj(base, "settings");
+		obs_source_t *scenesource = obs_get_source_by_name(scene_name);
+		std::vector<obs_source_t *> sources;
+
+		/* save sources, add refs to them */
+		obs_source_enum_full_tree(scenesource, hold_source, &sources);
+
+		/* update scene to old order */
+		obs_source_update(scenesource, settings);
+		obs_source_load(scenesource);
+
+		/* release sources */
+		for (obs_source_t *source : sources)
+			obs_source_release(source);
+
+		QMetaObject::invokeMethod(this, "ReorderItems",
+					  Qt::QueuedConnection);
+
+		obs_source_release(scenesource);
+		obs_data_release(settings);
+		obs_data_release(base);
+	};
+
+	OBSData undo_data = obs_data_create();
+	OBSData redo_data = obs_data_create();
+	obs_data_release(undo_data);
+	obs_data_release(redo_data);
+
+	const char *scene_name = obs_source_get_name(scenesource);
+	obs_data_set_string(undo_data, "name", scene_name);
+	obs_data_set_string(redo_data, "name", scene_name);
+	obs_data_set_obj(undo_data, "settings", undo_settings);
+	obs_data_set_obj(redo_data, "settings", redo_settings);
+
+	QString action_name = QTStr("Undo.ReorderSources").arg(scene_name);
+	OBSBasic::Get()->undo_s.add_action(action_name, undo_redo, undo_redo,
+					   obs_data_get_json(undo_data),
+					   obs_data_get_json(redo_data),
+					   nullptr);
 
 	/* --------------------------------------- */
 	/* remove items if dropped in to collapsed */
