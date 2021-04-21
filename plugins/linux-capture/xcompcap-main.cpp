@@ -245,6 +245,8 @@ static Window getWindowFromString(std::string wstr)
 		}
 	}
 
+	Window nextWin = -1;
+
 	// then try to find a match by name & class
 	for (Window cwin : XCompcap::getTopLevelWindows()) {
 		std::string cwinname = XCompcap::getWindowName(cwin);
@@ -253,7 +255,18 @@ static Window getWindowFromString(std::string wstr)
 		// match by name and class
 		if (wname == cwinname && wcls == ccls) {
 			return cwin;
+		} else if (wcls == ccls &&
+			   (cwinname.find(wname) != std::string::npos)) {
+			// keep track of first window of same class and partial title match
+			if (nextWin == -1) {
+				nextWin = cwin;
+			}
 		}
+	}
+
+	if (nextWin != -1) {
+		// choose first window of same class and partial title match
+		return nextWin;
 	}
 
 	// no match
