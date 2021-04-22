@@ -846,7 +846,7 @@ obs_properties_t *obs_get_source_properties(const char *id)
 
 obs_missing_files_t *obs_source_get_missing_files(const obs_source_t *source)
 {
-	if (!obs_source_valid(source, "obs_source_get_missing_files"))
+	if (!data_valid(source, "obs_source_get_missing_files"))
 		return obs_missing_files_create();
 
 	if (source->info.missing_files) {
@@ -860,7 +860,7 @@ void obs_source_replace_missing_file(obs_missing_file_cb cb,
 				     obs_source_t *source, const char *new_path,
 				     void *data)
 {
-	if (!obs_source_valid(source, "obs_source_replace_missing_file"))
+	if (!data_valid(source, "obs_source_replace_missing_file"))
 		return;
 
 	cb(source->context.data, new_path, data);
