@@ -1558,6 +1558,14 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 {
 	ui->transitions->setEnabled(enable);
 
+	if (!enable) {
+		ui->transitionProps->setEnabled(false);
+	} else {
+		bool configurable =
+			obs_source_configurable(GetCurrentTransition());
+		ui->transitionProps->setEnabled(configurable);
+	}
+
 	if (!IsPreviewProgramMode())
 		return;
 
