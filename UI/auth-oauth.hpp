@@ -27,7 +27,48 @@ protected:
 
 	virtual bool RetryLogin() = 0;
 
-	virtual bool TokenExpired();
+	bool TokenExpired();
+};
+
+/* ------------------------------------------------------------------------- */
+
+class Ui_BasicOAuthLogin;
+
+class BasicOAuthLogin : public QDialog {
+	Q_OBJECT
+
+	Ui_BasicOAuthLogin *ui;
+
+	QString username;
+	QString password;
+
+	bool fail = false;
+
+public:
+	BasicOAuthLogin(QWidget *parent, QString name = nullptr,
+			bool isRetry = false);
+	~BasicOAuthLogin();
+
+	inline QString GetUsername() const { return username; };
+	inline QString GetPassword() const { return password; };
+
+public slots:
+	void loginOAuth();
+};
+
+class BasicOAuth : public OAuth {
+	Q_OBJECT
+
+public:
+	inline BasicOAuth(const Def &d) : OAuth(d) {}
+
+	typedef std::function<std::shared_ptr<Auth>(QWidget *)> login_cb;
+
+	static std::shared_ptr<Auth> Login(QWidget *parent,
+					   const std::string &service);
+
+	static void RegisterOAuth(const Def &d, create_cb create,
+				  login_cb login);
 };
 
 /* ------------------------------------------------------------------------- */

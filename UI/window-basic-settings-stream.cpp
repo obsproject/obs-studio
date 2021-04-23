@@ -557,6 +557,11 @@ void OBSBasicSettings::on_connectAccount_clicked()
 	BrowserOAuth::DeleteCookies(service);
 
 	auth = BrowserOAuthStreamKey::Login(this, service);
+	if (!auth) {
+		auth = BasicOAuth::Login(this, service);
+	}
+#else
+	auth = BasicOAuth::Login(this, service);
 #endif
 
 	if (!!auth)

@@ -16,6 +16,8 @@
 
 using namespace json11;
 
+#include "ui_BasicOAuthLogin.h"
+
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 extern QCef *cef;
@@ -59,6 +61,72 @@ bool OAuth::LoadInternal()
 	currentScopeVer =
 		(int)config_get_int(main->Config(), service(), "ScopeVer");
 	return implicit ? !token.empty() : !refresh_token.empty();
+}
+
+/* ------------------------------------------------------------------------- */
+
+BasicOAuthLogin::BasicOAuthLogin(QWidget *parent, QString name, bool isRetry)
+	: QDialog(parent), ui(new Ui_BasicOAuthLogin)
+{
+	ui->setupUi(this);
+
+	ui->retry->setVisible(isRetry);
+
+	if (!name.isEmpty()) {
+		setWindowTitle(name);
+	}
+
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
+	connect(ui->loginBtn, &QAbstractButton::clicked, this,
+		&BasicOAuthLogin::loginOAuth);
+	connect(ui->cancelBtn, &QAbstractButton::clicked, this,
+		&QDialog::reject);
+}
+
+BasicOAuthLogin::~BasicOAuthLogin()
+{
+	delete ui;
+}
+
+void BasicOAuthLogin::loginOAuth()
+{
+	if (ui->username->text().isEmpty() || ui->password->text().isEmpty()) {
+		return;
+	}
+
+	username = ui->username->text();
+	password = ui->password->text();
+
+	accept();
+}
+
+/* ------------------------------------------------------------------------- */
+
+struct BasicOAuthInfo {
+	Auth::Def def;
+	BasicOAuth::login_cb login;
+};
+
+static std::vector<BasicOAuthInfo> basicLoginCBs;
+
+void BasicOAuth::RegisterOAuth(const Def &d, create_cb create, login_cb login)
+{
+	BasicOAuthInfo info = {d, login};
+	basicLoginCBs.push_back(info);
+	RegisterAuth(d, create);
+}
+
+std::shared_ptr<Auth> BasicOAuth::Login(QWidget *parent,
+					const std::string &service)
+{
+	for (auto &a : basicLoginCBs) {
+		if (service.find(a.def.service) != std::string::npos) {
+			return a.login(parent);
+		}
+	}
+
+	return nullptr;
 }
 
 /* ------------------------------------------------------------------------- */
