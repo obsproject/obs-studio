@@ -168,6 +168,10 @@ if(BROWSER_AVAILABLE_INTERNAL)
 	endif()
 endif()
 
+if(PEERTUBE_ENABLED)
+	add_definitions(-DPEERTUBE_ENABLED)
+endif()
+
 set(obs_libffutil_SOURCES
 	../deps/libff/libff/ff-util.c
 	)
