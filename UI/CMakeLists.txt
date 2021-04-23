@@ -369,7 +369,8 @@ set(obs_UI
 	forms/OBSRemux.ui
 	forms/OBSImporter.ui
 	forms/OBSMissingFiles.ui
-	forms/OBSAbout.ui)
+	forms/OBSAbout.ui
+	forms/BasicOAuthLogin.ui)
 
 set(obs_QRC
 	forms/obs.qrc)
