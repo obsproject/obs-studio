@@ -26,6 +26,15 @@ extern QCefCookieManager *panel_cookies;
 
 /* ------------------------------------------------------------------------- */
 
+bool OAuth::RefreshTokenExpired()
+{
+	if (refresh_token.empty())
+		return true;
+	if ((uint64_t)time(nullptr) > refresh_expire_time - 5)
+		return true;
+	return false;
+}
+
 bool OAuth::TokenExpired()
 {
 	if (token.empty())
@@ -41,6 +50,8 @@ void OAuth::SaveInternal()
 	config_set_string(main->Config(), service(), "RefreshToken",
 			  refresh_token.c_str());
 	config_set_string(main->Config(), service(), "Token", token.c_str());
+	config_set_uint(main->Config(), service(), "RefreshExpireTime",
+			refresh_expire_time);
 	config_set_uint(main->Config(), service(), "ExpireTime", expire_time);
 	config_set_int(main->Config(), service(), "ScopeVer", currentScopeVer);
 }
@@ -57,6 +68,8 @@ bool OAuth::LoadInternal()
 	OBSBasic *main = OBSBasic::Get();
 	refresh_token = get_config_str(main, service(), "RefreshToken");
 	token = get_config_str(main, service(), "Token");
+	refresh_expire_time =
+		config_get_uint(main->Config(), service(), "RefreshExpireTime");
 	expire_time = config_get_uint(main->Config(), service(), "ExpireTime");
 	currentScopeVer =
 		(int)config_get_int(main->Config(), service(), "ScopeVer");

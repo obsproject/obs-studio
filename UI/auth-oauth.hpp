@@ -19,6 +19,7 @@ protected:
 	std::string refresh_token;
 	std::string token;
 	bool implicit = false;
+	uint64_t refresh_expire_time = 0;
 	uint64_t expire_time = 0;
 	int currentScopeVer = 0;
 
@@ -27,6 +28,7 @@ protected:
 
 	virtual bool RetryLogin() = 0;
 
+	bool RefreshTokenExpired();
 	bool TokenExpired();
 };
 
