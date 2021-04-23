@@ -4694,21 +4694,10 @@ void OBSBasic::AdvAudioPropsDestroyed()
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 					    QListWidgetItem *prev)
 {
-	obs_source_t *source = NULL;
-
 	if (current) {
-		obs_scene_t *scene;
-
-		scene = GetOBSRef<OBSScene>(current);
-		source = obs_scene_get_source(scene);
+		OBSScene scene = GetOBSRef<OBSScene>(current);
+		SetCurrentScene(scene);
 	}
-
-	SetCurrentScene(source);
-
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
-
-	UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
