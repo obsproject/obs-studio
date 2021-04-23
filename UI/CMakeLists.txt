@@ -140,13 +140,11 @@ endif()
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
 		obf.c
-		auth-oauth.cpp
 		window-dock-browser.cpp
 		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
 		obf.h
-		auth-oauth.hpp
 		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
@@ -225,6 +223,7 @@ set(obs_SOURCES
 	window-remux.cpp
 	window-missing-files.cpp
 	auth-base.cpp
+	auth-oauth.cpp
 	source-tree.cpp
 	scene-tree.cpp
 	properties-view.cpp
@@ -289,6 +288,7 @@ set(obs_HEADERS
 	window-remux.hpp
 	window-missing-files.hpp
 	auth-base.hpp
+	auth-oauth.hpp
 	source-tree.hpp
 	scene-tree.hpp
 	properties-view.hpp
