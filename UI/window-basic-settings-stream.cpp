@@ -22,6 +22,9 @@ extern QCefCookieManager *panel_cookies;
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
+#ifdef PEERTUBE_ENABLED
+	PeerTube,
+#endif
 };
 
 enum class Section : int {
@@ -33,6 +36,13 @@ inline bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
 }
+
+#ifdef PEERTUBE_ENABLED
+inline bool OBSBasicSettings::IsPeerTubeService() const
+{
+	return ui->service->currentData().toInt() == (int)ListOpt::PeerTube;
+}
+#endif
 
 void OBSBasicSettings::InitStreamPage()
 {
@@ -117,6 +127,16 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
+#ifdef PEERTUBE_ENABLED
+	} else if (strcmp(type, "peertube") == 0) {
+		int idx = ui->service->findText(
+			QTStr("Basic.AutoConfig.StreamPage.Service.PeerTube"));
+		ui->service->setCurrentIndex(idx);
+
+		const char *instance =
+			obs_data_get_string(settings, "instance");
+		ui->customServer->setText(instance);
+#endif
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -171,7 +191,14 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
+#ifdef PEERTUBE_ENABLED
+	bool peertubeServer = IsPeerTubeService();
+	const char *service_id = customServer ? "rtmp_custom"
+					      : peertubeServer ? "peertube"
+							       : "rtmp_common";
+#else
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+#endif
 
 	obs_service_t *oldService = main->GetService();
 	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
@@ -180,12 +207,21 @@ void OBSBasicSettings::SaveStream1Settings()
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
 
+#ifdef PEERTUBE_ENABLED
+	if (!(customServer ^ peertubeServer)) {
+#else
 	if (!customServer) {
+#endif
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
+#ifdef PEERTUBE_ENABLED
+	} else if (peertubeServer) {
+		obs_data_set_string(settings, "instance",
+				    QT_TO_UTF8(ui->customServer->text()));
+#endif
 	} else {
 		obs_data_set_string(settings, "server",
 				    QT_TO_UTF8(ui->customServer->text()));
@@ -342,6 +378,12 @@ void OBSBasicSettings::LoadServices(bool showAll)
 			QVariant((int)ListOpt::ShowAll));
 	}
 
+#ifdef PEERTUBE_ENABLED
+	ui->service->insertItem(
+		0, QTStr("Basic.AutoConfig.StreamPage.Service.PeerTube"),
+		QVariant((int)ListOpt::PeerTube));
+#endif
+
 	ui->service->insertItem(
 		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
 		QVariant((int)ListOpt::Custom));
@@ -371,6 +413,9 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
+#ifdef PEERTUBE_ENABLED
+	bool peertube = IsPeerTubeService();
+#endif
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
@@ -396,7 +441,11 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
+#ifdef PEERTUBE_ENABLED
+	if (custom ^ peertube) {
+#else
 	if (custom) {
+#endif
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
 
@@ -407,6 +456,15 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
+
+#ifdef PEERTUBE_ENABLED
+	if (peertube)
+		ui->serverLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.Instance"));
+	else
+		ui->serverLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.Server"));
+#endif
 
 	auth.reset();
 
@@ -479,17 +537,32 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
+#ifdef PEERTUBE_ENABLED
+	bool peertube = IsPeerTubeService();
+	const char *service_id = custom ? "rtmp_custom"
+					: peertube ? "peertube" : "rtmp_common";
+#else
 	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
+#endif
 
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
 
+#ifdef PEERTUBE_ENABLED
+	if (!(custom ^ peertube)) {
+#else
 	if (!custom) {
+#endif
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
 		obs_data_set_string(
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
+#ifdef PEERTUBE_ENABLED
+	} else if (peertube) {
+		obs_data_set_string(settings, "instance",
+				    QT_TO_UTF8(ui->customServer->text()));
+#endif
 	} else {
 		obs_data_set_string(settings, "server",
 				    QT_TO_UTF8(ui->customServer->text()));
@@ -716,7 +789,11 @@ OBSService OBSBasicSettings::GetStream1Service()
 
 void OBSBasicSettings::UpdateServiceRecommendations()
 {
+#ifdef PEERTUBE_ENABLED
+	bool customServer = IsCustomService() || IsPeerTubeService();
+#else
 	bool customServer = IsCustomService();
+#endif
 	ui->ignoreRecommended->setVisible(!customServer);
 	ui->enforceSettingsLabel->setVisible(!customServer);
 
