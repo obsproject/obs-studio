@@ -857,6 +857,10 @@ public:
 
 	void ShowStatusBarMessage(const QString &message);
 
+	static OBSData BackupScene(obs_source_t *scene_source);
+	void CreateSceneUndoRedoAction(const QString &action_name,
+				       OBSData undo_data, OBSData redo_data);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
