@@ -231,7 +231,7 @@ static void *nvafx_initialize(void *data)
 	if (!ng->handle[0]) {
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 
-		for (int i = 0; i < MAX_PREPROC_CHANNELS; i++) {
+		for (int i = 0; i < ng->channels; i++) {
 			err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER,
 						 &ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -393,7 +393,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		pthread_mutex_lock(&ng->nvafx_mutex);
 		if (ng->nvafx_initialized) {
 			int err;
-			for (int i = 0; i < MAX_PREPROC_CHANNELS; i++) {
+			for (int i = 0; i < ng->channels; i++) {
 				err = NvAFX_SetFloat(
 					ng->handle[i],
 					NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
