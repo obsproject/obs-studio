@@ -5491,49 +5491,8 @@ static bool remove_items(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	return true;
 };
 
-void OBSBasic::on_actionRemoveSource_triggered()
+OBSData OBSBasic::BackupScene(obs_source_t *scene_source)
 {
-	vector<OBSSceneItem> items;
-	OBSScene scene = GetCurrentScene();
-	obs_source_t *scene_source = obs_scene_get_source(scene);
-
-	obs_scene_enum_items(scene, remove_items, &items);
-
-	if (!items.size())
-		return;
-
-	/* ------------------------------------- */
-	/* confirm action with user              */
-
-	bool confirmed = false;
-
-	if (items.size() > 1) {
-		QString text = QTStr("ConfirmRemove.TextMultiple")
-				       .arg(QString::number(items.size()));
-
-		QMessageBox remove_items(this);
-		remove_items.setText(text);
-		QPushButton *Yes = remove_items.addButton(QTStr("Yes"),
-							  QMessageBox::YesRole);
-		remove_items.setDefaultButton(Yes);
-		remove_items.addButton(QTStr("No"), QMessageBox::NoRole);
-		remove_items.setIcon(QMessageBox::Question);
-		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
-		remove_items.exec();
-
-		confirmed = Yes == remove_items.clickedButton();
-	} else {
-		OBSSceneItem &item = items[0];
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (source && QueryRemoveSource(source))
-			confirmed = true;
-	}
-	if (!confirmed)
-		return;
-
-	/* ----------------------------------------------- */
-	/* save undo data                                  */
-
 	obs_data_array_t *undo_array = obs_data_array_create();
 
 	obs_source_enum_full_tree(scene_source, save_undo_source_enum,
@@ -5543,41 +5502,18 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	obs_data_array_push_back(undo_array, scene_data);
 	obs_data_release(scene_data);
 
-	obs_data_t *undo_data = obs_data_create();
-	obs_data_set_array(undo_data, "array", undo_array);
+	OBSData data = obs_data_create();
+	obs_data_release(data);
+
+	obs_data_set_array(data, "array", undo_array);
+	obs_data_get_json(data);
 	obs_data_array_release(undo_array);
+	return data;
+}
 
-	/* because undo_array and redo_array will share settings data,
-	 * generate json here */
-	const char *undo_json = obs_data_get_json(undo_data);
-
-	/* ----------------------------------------------- */
-	/* remove items                                    */
-
-	for (auto &item : items)
-		obs_sceneitem_remove(item);
-
-	/* ----------------------------------------------- */
-	/* save redo data                                  */
-
-	obs_data_array_t *redo_array = obs_data_array_create();
-
-	obs_source_enum_full_tree(scene_source, save_undo_source_enum,
-				  redo_array);
-
-	scene_data = obs_save_source(scene_source);
-	obs_data_array_push_back(redo_array, scene_data);
-	obs_data_release(scene_data);
-
-	obs_data_t *redo_data = obs_data_create();
-	obs_data_set_array(redo_data, "array", redo_array);
-	obs_data_array_release(redo_array);
-
-	const char *redo_json = obs_data_get_json(redo_data);
-
-	/* ----------------------------------------------- */
-	/* undo/redo callback                              */
-
+void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name,
+					 OBSData undo_data, OBSData redo_data)
+{
 	auto undo_redo = [this](const std::string &json) {
 		obs_data_t *base = obs_data_create_from_json(json.c_str());
 		obs_data_array_t *array = obs_data_get_array(base, "array");
@@ -5623,8 +5559,71 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		ui->sources->RefreshItems();
 	};
 
+	const char *undo_json = obs_data_get_last_json(undo_data);
+	const char *redo_json = obs_data_get_last_json(redo_data);
+
+	undo_s.add_action(action_name, undo_redo, undo_redo, undo_json,
+			  redo_json, nullptr);
+}
+
+void OBSBasic::on_actionRemoveSource_triggered()
+{
+	vector<OBSSceneItem> items;
+	OBSScene scene = GetCurrentScene();
+	obs_source_t *scene_source = obs_scene_get_source(scene);
+
+	obs_scene_enum_items(scene, remove_items, &items);
+
+	if (!items.size())
+		return;
+
+	/* ------------------------------------- */
+	/* confirm action with user              */
+
+	bool confirmed = false;
+
+	if (items.size() > 1) {
+		QString text = QTStr("ConfirmRemove.TextMultiple")
+				       .arg(QString::number(items.size()));
+
+		QMessageBox remove_items(this);
+		remove_items.setText(text);
+		QPushButton *Yes = remove_items.addButton(QTStr("Yes"),
+							  QMessageBox::YesRole);
+		remove_items.setDefaultButton(Yes);
+		remove_items.addButton(QTStr("No"), QMessageBox::NoRole);
+		remove_items.setIcon(QMessageBox::Question);
+		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
+		remove_items.exec();
+
+		confirmed = Yes == remove_items.clickedButton();
+	} else {
+		OBSSceneItem &item = items[0];
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		if (source && QueryRemoveSource(source))
+			confirmed = true;
+	}
+	if (!confirmed)
+		return;
+
 	/* ----------------------------------------------- */
-	/* undo/redo                                       */
+	/* save undo data                                  */
+
+	OBSData undo_data = BackupScene(scene_source);
+
+	/* ----------------------------------------------- */
+	/* remove items                                    */
+
+	for (auto &item : items)
+		obs_sceneitem_remove(item);
+
+	/* ----------------------------------------------- */
+	/* save redo data                                  */
+
+	OBSData redo_data = BackupScene(scene_source);
+
+	/* ----------------------------------------------- */
+	/* add undo/redo action                            */
 
 	QString action_name;
 	if (items.size() > 1) {
@@ -5636,11 +5635,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 			obs_sceneitem_get_source(items[0])));
 	}
 
-	undo_s.add_action(action_name, undo_redo, undo_redo, undo_json,
-			  redo_json, nullptr);
-
-	obs_data_release(undo_data);
-	obs_data_release(redo_data);
+	CreateSceneUndoRedoAction(action_name, undo_data, redo_data);
 }
 
 void OBSBasic::on_actionInteract_triggered()
