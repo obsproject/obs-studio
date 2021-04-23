@@ -377,26 +377,18 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			QString key = ui->key->text();
-			bool can_auth = is_auth_service(service);
-			int page = can_auth && (!loading || key.isEmpty())
-					   ? (int)Section::Connect
-					   : (int)Section::StreamKey;
+	if (lastService != service.c_str()) {
+		QString key = ui->key->text();
+		bool can_auth = is_auth_service(service);
+		int page = can_auth && (!loading || key.isEmpty())
+				   ? (int)Section::Connect
+				   : (int)Section::StreamKey;
 
-			ui->streamStackWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
+		ui->streamStackWidget->setCurrentIndex(page);
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->connectAccount2->setVisible(can_auth);
 	}
-#else
-	ui->connectAccount2->setVisible(false);
-#endif
 
 	ui->useAuth->setVisible(custom);
 	ui->authUsernameLabel->setVisible(custom);
@@ -416,7 +408,6 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
-#ifdef BROWSER_AVAILABLE
 	auth.reset();
 
 	if (!!main->auth &&
@@ -424,7 +415,6 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		auth = main->auth;
 		OnAuthConnected();
 	}
-#endif
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -516,7 +506,8 @@ OBSService OBSBasicSettings::SpawnTempService()
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
 #ifdef BROWSER_AVAILABLE
-	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	BrowserOAuthStreamKey *a =
+		reinterpret_cast<BrowserOAuthStreamKey *>(auth.get());
 
 	if (a) {
 		bool validKey = !a->key().empty();
@@ -559,15 +550,17 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
+
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
-	OAuth::DeleteCookies(service);
+#ifdef BROWSER_AVAILABLE
+	BrowserOAuth::DeleteCookies(service);
 
-	auth = OAuthStreamKey::Login(this, service);
+	auth = BrowserOAuthStreamKey::Login(this, service);
+#endif
+
 	if (!!auth)
 		OnAuthConnected();
-#endif
 }
 
 #define DISCONNECT_COMFIRM_TITLE \
@@ -589,10 +582,9 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 	main->auth.reset();
 	auth.reset();
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
-
 #ifdef BROWSER_AVAILABLE
-	OAuth::DeleteCookies(service);
+	std::string service = QT_TO_UTF8(ui->service->currentText());
+	BrowserOAuth::DeleteCookies(service);
 #endif
 
 	ui->bandwidthTestEnable->setChecked(false);
