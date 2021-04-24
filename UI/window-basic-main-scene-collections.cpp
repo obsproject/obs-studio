@@ -73,7 +73,7 @@ void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
 	os_globfree(glob);
 }
 
-static bool SceneCollectionExists(const char *findName)
+bool SceneCollectionExists(const char *findName)
 {
 	bool found = false;
 	auto func = [&](const char *name, const char *) {

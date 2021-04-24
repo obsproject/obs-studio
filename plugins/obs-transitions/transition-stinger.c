@@ -40,7 +40,8 @@ struct stinger_info {
 	gs_eparam_t *ep_matte_tex;
 	gs_eparam_t *ep_invert_matte;
 
-	gs_texrender_t *matte_tex;
+	gs_texrender_t *matte_texrender;
+	gs_texrender_t *stinger_texrender;
 
 	float (*mix_a)(void *data, float t);
 	float (*mix_b)(void *data, float t);
@@ -169,7 +170,8 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	s->ep_invert_matte =
 		gs_effect_get_param_by_name(s->matte_effect, "invert_matte");
 
-	s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	s->matte_texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+	s->stinger_texrender = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
@@ -182,7 +184,8 @@ static void stinger_destroy(void *data)
 	obs_source_release(s->media_source);
 	obs_source_release(s->matte_source);
 
-	gs_texrender_destroy(s->matte_tex);
+	gs_texrender_destroy(s->stinger_texrender);
+	gs_texrender_destroy(s->matte_texrender);
 
 	gs_effect_destroy(s->matte_effect);
 
@@ -219,28 +222,24 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? (-matte_cy) : 0.0f);
 
 	// Track matte media render
-	gs_texrender_reset(s->matte_tex);
+	gs_texrender_reset(s->matte_texrender);
 	if (matte_cx > 0 && matte_cy > 0) {
-		float scale_x = (float)cx / matte_cx;
-		float scale_y = (float)cy / matte_cy;
-
-		if (gs_texrender_begin(s->matte_tex, cx, cy)) {
+		if (gs_texrender_begin(s->matte_texrender, cx, cy)) {
 			gs_matrix_push();
-			gs_matrix_scale3f(scale_x, scale_y, 1.0f);
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
 			gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
 			obs_source_video_render(matte_source);
 			gs_matrix_pop();
 
-			gs_texrender_end(s->matte_tex);
+			gs_texrender_end(s->matte_texrender);
 		}
 	}
 
 	gs_effect_set_texture(s->ep_a_tex, a);
 	gs_effect_set_texture(s->ep_b_tex, b);
 	gs_effect_set_texture(s->ep_matte_tex,
-			      gs_texrender_get_texture(s->matte_tex));
+			      gs_texrender_get_texture(s->matte_texrender));
 	gs_effect_set_bool(s->ep_invert_matte, s->invert_matte);
 
 	while (gs_effect_loop(s->matte_effect, "StingerMatte"))
@@ -269,8 +268,8 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	/* --------------------- */
 
-	float source_cx = (float)obs_source_get_width(s->source);
-	float source_cy = (float)obs_source_get_height(s->source);
+	float cx = (float)obs_source_get_width(s->source);
+	float cy = (float)obs_source_get_height(s->source);
 
 	uint32_t media_cx = obs_source_get_width(s->media_source);
 	uint32_t media_cy = obs_source_get_height(s->media_source);
@@ -280,20 +279,36 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	float scale_x, scale_y;
 	if (s->track_matte_enabled) {
-		scale_x = source_cx / ((float)media_cx / s->matte_width_factor);
-		scale_y =
-			source_cy / ((float)media_cy / s->matte_height_factor);
+		scale_x = cx / ((float)media_cx / s->matte_width_factor);
+		scale_y = cy / ((float)media_cy / s->matte_height_factor);
 	} else {
-		scale_x = source_cx / (float)media_cx;
-		scale_y = source_cy / (float)media_cy;
+		scale_x = cx / (float)media_cx;
+		scale_y = cy / (float)media_cy;
 	}
 
-	gs_matrix_push();
-	gs_matrix_scale3f(scale_x, scale_y, 1.0f);
-	obs_source_video_render(s->media_source);
-	gs_matrix_pop();
+	// rendering the stinger media in an intermediary texture with the same size
+	// as the transition itself ensures that stacked and side-by-side files used with
+	// the Track Matte mode will only show their stinger side, and crop out the matte side
+	// of the texture
+	gs_texrender_reset(s->stinger_texrender);
+	if (gs_texrender_begin(s->stinger_texrender, cx, cy)) {
+		struct vec4 background;
+		vec4_zero(&background);
+		gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
 
-	UNUSED_PARAMETER(effect);
+		obs_source_video_render(s->media_source);
+
+		gs_texrender_end(s->stinger_texrender);
+	}
+
+	gs_texture_t *stinger_tex =
+		gs_texrender_get_texture(s->stinger_texrender);
+	if (stinger_tex) {
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		while (gs_effect_loop(effect, "Draw")) {
+			obs_source_draw(stinger_tex, 0, 0, 0, 0, false);
+		}
+	}
 }
 
 static inline float calc_fade(float t, float mul)

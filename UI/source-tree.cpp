@@ -1143,7 +1143,10 @@ void SourceTree::dropEvent(QDropEvent *event)
 		return;
 	}
 
+	OBSBasic *main = OBSBasic::Get();
+
 	OBSScene scene = GetCurrentScene();
+	obs_source_t *scenesource = obs_scene_get_source(scene);
 	SourceTreeModel *stm = GetStm();
 	auto &items = stm->items;
 	QModelIndexList indices = selectedIndexes();
@@ -1240,6 +1243,11 @@ void SourceTree::dropEvent(QDropEvent *event)
 		QListView::dropEvent(event);
 		return;
 	}
+
+	/* --------------------------------------- */
+	/* save undo data                          */
+
+	OBSData undo_data = main->BackupScene(scenesource);
 
 	/* --------------------------------------- */
 	/* if selection includes base group items, */
@@ -1403,6 +1411,18 @@ void SourceTree::dropEvent(QDropEvent *event)
 	ignoreReorder = true;
 	obs_scene_atomic_update(scene, preUpdateScene, &updateScene);
 	ignoreReorder = false;
+
+	/* --------------------------------------- */
+	/* save redo data                          */
+
+	OBSData redo_data = main->BackupScene(scenesource);
+
+	/* --------------------------------------- */
+	/* add undo/redo action                    */
+
+	const char *scene_name = obs_source_get_name(scenesource);
+	QString action_name = QTStr("Undo.ReorderSources").arg(scene_name);
+	main->CreateSceneUndoRedoAction(action_name, undo_data, redo_data);
 
 	/* --------------------------------------- */
 	/* remove items if dropped in to collapsed */

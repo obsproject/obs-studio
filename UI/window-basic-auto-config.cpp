@@ -626,12 +626,15 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	} else if (serviceName.startsWith("Restream.io")) {
 		streamKeyLink =
 			"https://restream.io/settings/streaming-setup?from=OBS";
+	} else if (serviceName == "Luzento.com - RTMP") {
+		streamKeyLink =
+			"https://cms.luzento.com/dashboard/stream-key?from=OBS";
 	} else if (serviceName == "Facebook Live" ||
 		   (customServer.contains("fbcdn.net") && IsCustomService())) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
 	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = "https://www.pscp.tv/account/producer";
+		streamKeyLink = "https://studio.twitter.com/producer/sources";
 	} else if (serviceName.startsWith("YouStreamer")) {
 		streamKeyLink = "https://www.app.youstreamer.com/stream/";
 	} else if (serviceName == "Trovo") {

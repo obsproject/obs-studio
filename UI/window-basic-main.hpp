@@ -217,6 +217,7 @@ private:
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
 	QPointer<OBSAbout> about;
+	QPointer<OBSMissingFiles> missDialog;
 
 	OBSLogViewer *logView = nullptr;
 
@@ -376,7 +377,6 @@ private:
 	void ChangeSceneCollection();
 	void LogScenes();
 
-	void LoadProfile();
 	void ResetProfileData();
 	bool AddProfile(bool create_new, const char *title, const char *text,
 			const char *init_text = nullptr, bool rename = false);
@@ -485,8 +485,6 @@ private:
 	QList<QDialog *> visDialogs;
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
-
-	OBSMissingFiles *missDialog;
 
 	QList<QPoint> visDlgPositions;
 
@@ -858,6 +856,10 @@ public:
 	OBSWeakSource copyFilter = nullptr;
 
 	void ShowStatusBarMessage(const QString &message);
+
+	static OBSData BackupScene(obs_source_t *scene_source);
+	void CreateSceneUndoRedoAction(const QString &action_name,
+				       OBSData undo_data, OBSData redo_data);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
