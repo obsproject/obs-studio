@@ -33,6 +33,35 @@ float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 	return float4(rgba.rgb * multiplier, alpha);
 }
 
+float srgb_linear_to_nonlinear_channel(float u)
+{
+	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
+}
+
+float3 srgb_linear_to_nonlinear(float3 v)
+{
+	return float3(srgb_linear_to_nonlinear_channel(v.r), srgb_linear_to_nonlinear_channel(v.g), srgb_linear_to_nonlinear_channel(v.b));
+}
+
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
+float4 PSDrawNonlinearAlpha(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	rgba.rgb *= rgba.a;
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
+}
+
 technique Draw
 {
 	pass
@@ -48,5 +77,14 @@ technique DrawAlphaDivide
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAlphaDivide(vert_in);
+	}
+}
+
+technique DrawNonlinearAlpha
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawNonlinearAlpha(vert_in);
 	}
 }
