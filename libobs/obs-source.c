@@ -2056,16 +2056,29 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 {
 	gs_effect_t *effect = gs_get_effect();
 	bool def_draw = (!effect);
+	bool premultiplied = false;
 	gs_technique_t *tech = NULL;
 
 	if (def_draw) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		tech = gs_effect_get_technique(effect, "Draw");
+		const bool linear = gs_get_linear_srgb();
+		const char *tech_name = linear ? "DrawNonlinearAlpha" : "Draw";
+		premultiplied = linear;
+		tech = gs_effect_get_technique(effect, tech_name);
 		gs_technique_begin(tech);
 		gs_technique_begin_pass(tech, 0);
 	}
 
+	if (premultiplied) {
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	}
+
 	obs_source_draw_texture(source, effect);
+
+	if (premultiplied) {
+		gs_blend_state_pop();
+	}
 
 	if (def_draw) {
 		gs_technique_end_pass(tech);
@@ -3701,10 +3714,11 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		filter->filter_texrender =
 			gs_texrender_create(format, GS_ZS_NONE);
 
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
+		gs_blend_state_push();
+		gs_blend_function_separate(GS_BLEND_SRCALPHA, GS_BLEND_ZERO,
+					   GS_BLEND_ONE, GS_BLEND_ZERO);
+
 		bool custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 		bool async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
 		struct vec4 clear_color;
@@ -3718,10 +3732,10 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		else
 			obs_source_video_render(target);
 
+		gs_blend_state_pop();
+
 		gs_texrender_end(filter->filter_texrender);
 	}
-
-	gs_blend_state_pop();
 	return true;
 }
 
@@ -3748,6 +3762,9 @@ static void obs_source_process_filter_tech_end_internal(
 
 	const char *tech = tech_name ? tech_name : "Draw";
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
 		render_filter_bypass(target, effect, tech);
 	} else {
@@ -3756,6 +3773,8 @@ static void obs_source_process_filter_tech_end_internal(
 			render_filter_tex(texture, effect, width, height, tech);
 		}
 	}
+
+	gs_blend_state_pop();
 
 	gs_set_linear_srgb(previous);
 }
