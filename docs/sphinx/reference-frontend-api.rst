@@ -161,7 +161,7 @@ Structures/Enumerations
 
 .. code:: cpp
 
-   struct obs_frontend_source_list scenes;
+   struct obs_frontend_source_list scenes = {0};
 
    obs_frontend_get_scenes(&scenes);
 
