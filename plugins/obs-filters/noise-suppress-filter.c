@@ -164,7 +164,8 @@ static void noise_suppress_destroy(void *data)
 	struct noise_suppress_data *ng = data;
 
 #ifdef LIBNVAFX_ENABLED
-	pthread_mutex_lock(&ng->nvafx_mutex);
+	if (ng->nvafx_enabled)
+		pthread_mutex_lock(&ng->nvafx_mutex);
 #endif
 
 	for (size_t i = 0; i < ng->channels; i++) {
@@ -205,10 +206,13 @@ static void noise_suppress_destroy(void *data)
 		audio_resampler_destroy(ng->nvafx_resampler_back);
 	}
 	bfree(ng->model);
-	if (ng->use_nvafx)
-		pthread_join(ng->nvafx_thread, NULL);
-	pthread_mutex_unlock(&ng->nvafx_mutex);
-	pthread_mutex_destroy(&ng->nvafx_mutex);
+
+	if (ng->nvafx_enabled) {
+		if (ng->use_nvafx)
+			pthread_join(ng->nvafx_thread, NULL);
+		pthread_mutex_unlock(&ng->nvafx_mutex);
+		pthread_mutex_destroy(&ng->nvafx_mutex);
+	}
 #endif
 
 	bfree(ng->copy_buffers[0]);
