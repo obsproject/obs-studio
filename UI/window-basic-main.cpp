@@ -5656,40 +5656,52 @@ void OBSBasic::on_actionSourceProperties_triggered()
 		CreatePropertiesWindow(source);
 }
 
+void OBSBasic::MoveSceneItem(enum obs_order_movement movement,
+			     const QString &action_name)
+{
+	OBSSource scene_source = GetCurrentSceneSource();
+	OBSData undo_data = BackupScene(scene_source);
+
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_sceneitem_set_order(item, movement);
+
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	const char *source_name = obs_source_get_name(source);
+	const char *scene_name = obs_source_get_name(scene_source);
+
+	OBSData redo_data = BackupScene(scene_source);
+	CreateSceneUndoRedoAction(action_name.arg(source_name, scene_name),
+				  undo_data, redo_data);
+}
+
 void OBSBasic::on_actionSourceUp_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
+	MoveSceneItem(OBS_ORDER_MOVE_UP, QTStr("Undo.MoveUp"));
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
+	MoveSceneItem(OBS_ORDER_MOVE_DOWN, QTStr("Undo.MoveDown"));
 }
 
 void OBSBasic::on_actionMoveUp_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_UP);
+	MoveSceneItem(OBS_ORDER_MOVE_UP, QTStr("Undo.MoveUp"));
 }
 
 void OBSBasic::on_actionMoveDown_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_DOWN);
+	MoveSceneItem(OBS_ORDER_MOVE_DOWN, QTStr("Undo.MoveDown"));
 }
 
 void OBSBasic::on_actionMoveToTop_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_TOP);
+	MoveSceneItem(OBS_ORDER_MOVE_TOP, QTStr("Undo.MoveToTop"));
 }
 
 void OBSBasic::on_actionMoveToBottom_triggered()
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_sceneitem_set_order(item, OBS_ORDER_MOVE_BOTTOM);
+	MoveSceneItem(OBS_ORDER_MOVE_BOTTOM, QTStr("Undo.MoveToBottom"));
 }
 
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)

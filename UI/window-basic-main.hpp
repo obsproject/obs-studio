@@ -551,6 +551,9 @@ private:
 
 	QPointer<QObject> screenshotData;
 
+	void MoveSceneItem(enum obs_order_movement movement,
+			   const QString &action_name);
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
