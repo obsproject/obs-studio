@@ -116,7 +116,8 @@ void undo_stack::enable_undo_redo()
 	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(false);
-	ui->actionMainRedo->setDisabled(false);
+	if (redo_items.size() > 0)
+		ui->actionMainRedo->setDisabled(false);
 }
 
 void undo_stack::disable_undo_redo()
