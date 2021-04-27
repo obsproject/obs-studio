@@ -1026,6 +1026,14 @@ General Source Functions
 
 ---------------------
 
+.. function:: void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
+
+   Copies a single filter to the destination.  If filters by the
+   same name already exist in the destination source, the new filter
+   will be given a unique name.
+
+---------------------
+
 .. function:: size_t obs_source_filter_count(const obs_source_t *source)
 
    Returns the number of filters the source has.
