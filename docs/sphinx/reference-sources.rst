@@ -1026,11 +1026,30 @@ General Source Functions
 
 ---------------------
 
+.. function:: char **obs_source_copy_filters2(obs_source_t *dst, obs_source_t *src)
+
+   Identical to obs_source_copy_filters(), but also returns the copied filters' names.
+
+   Array of strings containing names of new filters. Caller is responsible for
+   freeing this array by calling bfee() on every name and on the whole list as well.
+   Array is NULL-terminated.
+
+---------------------
+
 .. function:: void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
 
    Copies a single filter to the destination.  If filters by the
    same name already exist in the destination source, the new filter
    will be given a unique name.
+
+---------------------
+
+.. function:: char *obs_source_copy_single_filter2(obs_source_t *dst, obs_source_t *filter)
+
+   Identical to obs_source_copy_single_filter(), but returns the name of the new filter.
+
+   A NULL-terminated string containing the name of the new filter. Caller is responsible for
+   freeing this memory by calling bfee().
 
 ---------------------
 

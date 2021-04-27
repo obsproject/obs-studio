@@ -1121,8 +1121,11 @@ EXPORT obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 EXPORT size_t obs_source_filter_count(const obs_source_t *source);
 
 EXPORT void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src);
+EXPORT char **obs_source_copy_filters2(obs_source_t *dst, obs_source_t *src);
 EXPORT void obs_source_copy_single_filter(obs_source_t *dst,
 					  obs_source_t *filter);
+EXPORT char *obs_source_copy_single_filter2(obs_source_t *dst,
+					    obs_source_t *filter);
 
 EXPORT bool obs_source_enabled(const obs_source_t *source);
 EXPORT void obs_source_set_enabled(obs_source_t *source, bool enabled);

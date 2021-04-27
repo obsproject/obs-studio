@@ -456,8 +456,8 @@ static char *get_new_filter_name(obs_source_t *dst, const char *name)
 	return new_name.array;
 }
 
-static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
-			      bool private)
+static char **duplicate_filters(obs_source_t *dst, obs_source_t *src,
+				bool private, bool recordNames)
 {
 	DARRAY(obs_source_t *) filters;
 
@@ -469,6 +469,12 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 	da_copy(filters, src->filters);
 	pthread_mutex_unlock(&src->filter_mutex);
 
+	char **new_names = NULL;
+	if (recordNames) {
+		new_names = bmalloc(sizeof(char **) * (filters.num + 1));
+		new_names[filters.num] = NULL;
+	}
+
 	for (size_t i = filters.num; i > 0; i--) {
 		obs_source_t *src_filter = filters.array[i - 1];
 		char *new_name =
@@ -479,29 +485,42 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 			obs_source_duplicate(src_filter, new_name, private);
 		obs_source_set_enabled(dst_filter, enabled);
 
-		bfree(new_name);
+		if (recordNames) {
+			new_names[i - 1] = new_name;
+		} else {
+			bfree(new_name);
+		}
+
 		obs_source_filter_add(dst, dst_filter);
 		obs_source_release(dst_filter);
 		obs_source_release(src_filter);
 	}
 
 	da_free(filters);
+
+	return new_names;
 }
 
 void obs_source_copy_filters(obs_source_t *dst, obs_source_t *src)
 {
-	if (!obs_source_valid(dst, "obs_source_copy_filters"))
-		return;
-	if (!obs_source_valid(src, "obs_source_copy_filters"))
-		return;
-
-	duplicate_filters(dst, src, dst->context.private);
+	obs_source_copy_filters2(dst, src);
 }
 
-static void duplicate_filter(obs_source_t *dst, obs_source_t *filter)
+char **obs_source_copy_filters2(obs_source_t *dst, obs_source_t *src)
+{
+	if (!obs_source_valid(dst, "obs_source_copy_filters"))
+		return NULL;
+	if (!obs_source_valid(src, "obs_source_copy_filters"))
+		return NULL;
+
+	return duplicate_filters(dst, src, dst->context.private, true);
+}
+
+static char *duplicate_filter(obs_source_t *dst, obs_source_t *filter,
+			      bool retName)
 {
 	if (!filter_compatible(dst, filter))
-		return;
+		return NULL;
 
 	char *new_name = get_new_filter_name(dst, filter->context.name);
 	bool enabled = obs_source_enabled(filter);
@@ -509,9 +528,15 @@ static void duplicate_filter(obs_source_t *dst, obs_source_t *filter)
 	obs_source_t *dst_filter = obs_source_duplicate(filter, new_name, true);
 	obs_source_set_enabled(dst_filter, enabled);
 
-	bfree(new_name);
+	if (!retName) {
+		bfree(new_name);
+		new_name = NULL;
+	}
+
 	obs_source_filter_add(dst, dst_filter);
 	obs_source_release(dst_filter);
+
+	return new_name;
 }
 
 void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
@@ -521,7 +546,17 @@ void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
 	if (!obs_source_valid(filter, "obs_source_copy_single_filter"))
 		return;
 
-	duplicate_filter(dst, filter);
+	duplicate_filter(dst, filter, false);
+}
+
+char *obs_source_copy_single_filter2(obs_source_t *dst, obs_source_t *filter)
+{
+	if (!obs_source_valid(dst, "obs_source_copy_single_filter"))
+		return NULL;
+	if (!obs_source_valid(filter, "obs_source_copy_single_filter"))
+		return NULL;
+
+	return duplicate_filter(dst, filter, true);
 }
 
 obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
@@ -577,7 +612,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	obs_data_apply(new_source->private_settings, source->private_settings);
 
 	if (source->info.type != OBS_SOURCE_TYPE_FILTER)
-		duplicate_filters(new_source, source, create_private);
+		duplicate_filters(new_source, source, create_private, false);
 
 	obs_data_release(settings);
 	return new_source;
