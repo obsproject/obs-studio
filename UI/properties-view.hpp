@@ -59,6 +59,7 @@ public:
 	{
 		if (update_timer) {
 			update_timer->stop();
+			QMetaObject::invokeMethod(update_timer, "timeout");
 			update_timer->deleteLater();
 			obs_data_release(old_settings_cache);
 		}
