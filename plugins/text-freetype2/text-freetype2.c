@@ -248,7 +248,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata->text == NULL || *srcdata->text == 0)
 		return;
 
-	const bool previous = gs_set_linear_srgb(true);
+	const bool previous = gs_set_linear_srgb(false);
 
 	gs_reset_blend_state();
 	if (srcdata->outline_text)

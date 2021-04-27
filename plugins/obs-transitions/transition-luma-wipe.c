@@ -165,11 +165,8 @@ static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 {
 	struct luma_wipe_info *lwipe = data;
 
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(true);
-
-	gs_effect_set_texture_srgb(lwipe->ep_a_tex, a);
-	gs_effect_set_texture_srgb(lwipe->ep_b_tex, b);
+	gs_effect_set_texture(lwipe->ep_a_tex, a);
+	gs_effect_set_texture(lwipe->ep_b_tex, b);
 	gs_effect_set_texture(lwipe->ep_l_tex, lwipe->luma_image.texture);
 	gs_effect_set_float(lwipe->ep_progress, t);
 
@@ -178,8 +175,6 @@ static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 
 	while (gs_effect_loop(lwipe->effect, "LumaWipe"))
 		gs_draw_sprite(NULL, 0, cx, cy);
-
-	gs_enable_framebuffer_srgb(previous);
 }
 
 void luma_wipe_video_render(void *data, gs_effect_t *effect)
