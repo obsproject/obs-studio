@@ -71,6 +71,8 @@ private:
 
 	void FilterNameEdited(QWidget *editor, QListWidget *list);
 
+	void delete_filter(OBSSource filter);
+
 	bool isAsync;
 
 	int noPreviewMargin;
