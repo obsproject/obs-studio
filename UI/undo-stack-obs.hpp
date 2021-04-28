@@ -20,7 +20,6 @@ class undo_stack {
 		std::string redo_data;
 		undo_redo_cb undo;
 		undo_redo_cb redo;
-		func d;
 	};
 
 	ui_ptr ui;
@@ -36,11 +35,10 @@ public:
 	void enable_undo_redo();
 	void disable_undo_redo();
 
-	void release();
 	void clear();
 	void add_action(const QString &name, undo_redo_cb undo,
 			undo_redo_cb redo, std::string undo_data,
-			std::string redo_data, func d);
+			std::string redo_data);
 	void undo();
 	void redo();
 };

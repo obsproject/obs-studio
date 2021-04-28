@@ -199,7 +199,7 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 	};
 
 	undo_s.add_action(QTStr("Undo.Add").arg(name.c_str()), undo, redo, file,
-			  "", NULL);
+			  "");
 
 	blog(LOG_INFO, "Added scene collection '%s' (%s, %s.json)",
 	     name.c_str(), create_new ? "clean" : "duplicate", file.c_str());
@@ -376,7 +376,7 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 	RefreshSceneCollections();
 
 	undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()), undo, redo,
-			  "", "", NULL);
+			  "", "");
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED);
@@ -450,7 +450,7 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 
 	std::string undo_data = std::string(obs_data_get_json(data));
 	undo_s.add_action(QTStr("Undo.Delete").arg(oldName.c_str()), undo, redo,
-			  undo_data, "", NULL);
+			  undo_data, "");
 	obs_data_release(data);
 
 	os_unlink(oldFile.c_str());

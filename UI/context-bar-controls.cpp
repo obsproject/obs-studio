@@ -84,7 +84,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source)
 		main->undo_s.add_action(
 			QTStr("Undo.Properties")
 				.arg(obs_source_get_name(source)),
-			undo_redo, undo_redo, undo_data, redo_data, nullptr);
+			undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(new_settings);
 	obs_data_release(curr_settings);

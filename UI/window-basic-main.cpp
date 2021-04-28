@@ -3663,8 +3663,7 @@ void OBSBasic::DuplicateSelectedScene()
 			QTStr("Undo.Scene.Duplicate")
 				.arg(obs_source_get_name(source)),
 			undo, redo, obs_source_get_name(source),
-			obs_source_get_name(obs_scene_get_source(curScene)),
-			NULL);
+			obs_source_get_name(obs_scene_get_source(curScene)));
 
 		obs_scene_release(scene);
 
@@ -3765,7 +3764,7 @@ void OBSBasic::RemoveSelectedScene()
 	obs_data_set_int(data, "index", ui->scenes->currentRow());
 
 	undo_s.add_action("Delete Scene", undo, redo, obs_data_get_json(data),
-			  obs_source_get_name(source), NULL);
+			  obs_source_get_name(source));
 
 	obs_data_array_release(array);
 	obs_data_release(data);
@@ -4468,7 +4467,6 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
-	undo_s.release();
 	ClearSceneData();
 
 	App()->quit();
@@ -4672,8 +4670,7 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 
 		if (undo_data.compare(redo_data) != 0)
 			undo_s.add_action(QTStr("Undo.Audio"), undo_redo,
-					  undo_redo, undo_data, redo_data,
-					  NULL);
+					  undo_redo, undo_data, redo_data);
 
 		obs_data_release(wrapper);
 	});
@@ -4917,7 +4914,7 @@ void OBSBasic::on_actionAddScene_triggered()
 			obs_scene_release(scene);
 		};
 		undo_s.add_action(QTStr("Undo.Add").arg(QString(name.c_str())),
-				  undo_fn, redo_fn, name, name, NULL);
+				  undo_fn, redo_fn, name, name);
 
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
@@ -5552,7 +5549,7 @@ void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name,
 	const char *redo_json = obs_data_get_last_json(redo_data);
 
 	undo_s.add_action(action_name, undo_redo, undo_redo, undo_json,
-			  redo_json, nullptr);
+			  redo_json);
 }
 
 void OBSBasic::on_actionRemoveSource_triggered()
@@ -5893,7 +5890,7 @@ static void RenameListItem(OBSBasic *parent, QListWidget *listWidget,
 		std::string redo_data(prevName);
 		parent->undo_s.add_action(
 			QTStr("Undo.Rename").arg(name.c_str()), undo, redo,
-			undo_data, redo_data, NULL);
+			undo_data, redo_data);
 
 		listItem->setText(QT_UTF8(name.c_str()));
 		obs_source_set_name(source, name.c_str());
@@ -7183,7 +7180,7 @@ void OBSBasic::on_actionPasteTransform_triggered()
 	undo_s.add_action(
 		QTStr("Undo.Transform.Paste")
 			.arg(obs_source_get_name(GetCurrentSceneSource())),
-		undo_redo, undo_redo, undo_data, redo_data, NULL);
+		undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7233,7 +7230,7 @@ void OBSBasic::on_actionResetTransform_triggered()
 	undo_s.add_action(
 		QTStr("Undo.Transform.Reset")
 			.arg(obs_source_get_name(obs_scene_get_source(scene))),
-		undo_redo, undo_redo, undo_data, redo_data, NULL);
+		undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7326,7 +7323,7 @@ void OBSBasic::on_actionRotate90CW_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.Rotate")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7346,7 +7343,7 @@ void OBSBasic::on_actionRotate90CCW_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.Rotate")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7366,7 +7363,7 @@ void OBSBasic::on_actionRotate180_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.Rotate")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7416,7 +7413,7 @@ void OBSBasic::on_actionFlipHorizontal_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.HFlip")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7438,7 +7435,7 @@ void OBSBasic::on_actionFlipVertical_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.VFlip")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7493,7 +7490,7 @@ void OBSBasic::on_actionFitToScreen_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.FitToScreen")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7514,7 +7511,7 @@ void OBSBasic::on_actionStretchToScreen_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.StretchToScreen")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7589,7 +7586,7 @@ void OBSBasic::on_actionCenterToScreen_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.Center")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7609,7 +7606,7 @@ void OBSBasic::on_actionVerticalCenter_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.VCenter")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7629,7 +7626,7 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 	undo_s.add_action(QTStr("Undo.Transform.HCenter")
 				  .arg(obs_source_get_name(obs_scene_get_source(
 					  GetCurrentScene()))),
-			  undo_redo, undo_redo, undo_data, redo_data, NULL);
+			  undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 	obs_data_release(rwrapper);
@@ -7744,7 +7741,7 @@ void OBSBasic::Nudge(int dist, MoveDir dir)
 						.arg(obs_source_get_name(
 							GetCurrentSceneSource())),
 					undo_redo, undo_redo, undo_data,
-					redo_data, NULL);
+					redo_data);
 
 				recent_nudge = false;
 				obs_data_release(rwrapper);

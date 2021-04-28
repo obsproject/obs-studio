@@ -258,7 +258,7 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		std::string redo_data = obs_data_get_json(redo_wrapper);
 		main->undo_s.add_action(QTStr("Undo.Filters").arg(name.c_str()),
 					undo_redo, undo_redo, undo_data,
-					redo_data, NULL);
+					redo_data);
 
 		obs_data_release(redo_wrapper);
 		obs_data_release(undo_wrapper);
@@ -621,7 +621,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		std::string undo_data(obs_data_get_json(wrapper));
 		std::string redo_data(obs_data_get_json(rwrapper));
 		main->undo_s.add_action(QTStr("Undo.Add").arg(name.c_str()),
-					undo, redo, undo_data, redo_data, NULL);
+					undo, redo, undo_data, redo_data);
 
 		obs_data_release(wrapper);
 		obs_data_release(rwrapper);
@@ -877,7 +877,7 @@ void OBSBasicFilters::on_removeEffectFilter_clicked()
 			main->undo_s.add_action(
 				QTStr("Undo.Delete")
 					.arg(obs_source_get_name(filter)),
-				undo, redo, undo_data, redo_data, NULL);
+				undo, redo, undo_data, redo_data);
 			obs_source_filter_remove(source, filter);
 
 			obs_data_release(wrapper);
@@ -1166,7 +1166,7 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 		std::string undo_data(sourceName);
 		std::string redo_data(sourceName);
 		main->undo_s.add_action(QTStr("Undo.Rename").arg(name.c_str()),
-					undo, redo, undo_data, redo_data, NULL);
+					undo, redo, undo_data, redo_data);
 	}
 
 	listItem->setText(QString());
