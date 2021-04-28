@@ -193,8 +193,13 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 	gs_effect_set_vec2(filter->param_mul, &filter->mul_val);
 	gs_effect_set_vec2(filter->param_add, &filter->add_val);
 
-	obs_source_process_filter_end(filter->context, filter->effect,
-				      filter->width, filter->height);
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+	obs_source_process_filter_end_srgb(filter->context, filter->effect,
+					   filter->width, filter->height);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
