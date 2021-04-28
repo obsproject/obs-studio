@@ -3762,9 +3762,6 @@ static void obs_source_process_filter_tech_end_internal(
 
 	const char *tech = tech_name ? tech_name : "Draw";
 
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-
 	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
 		render_filter_bypass(target, effect, tech);
 	} else {
@@ -3773,8 +3770,6 @@ static void obs_source_process_filter_tech_end_internal(
 			render_filter_tex(texture, effect, width, height, tech);
 		}
 	}
-
-	gs_blend_state_pop();
 
 	gs_set_linear_srgb(previous);
 }
