@@ -1236,8 +1236,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 					.arg(obs_source_get_name(
 						obs_sceneitem_get_source(
 							sceneItem))),
-				undo_redo, undo_redo, undo_data, redo_data,
-				NULL);
+				undo_redo, undo_redo, undo_data, redo_data);
 		obs_data_release(newTransitionData);
 		obs_data_release(oldTransitionData);
 	};

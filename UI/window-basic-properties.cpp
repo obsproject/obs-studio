@@ -398,8 +398,7 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			main->undo_s.add_action(
 				QTStr("Undo.Properties")
 					.arg(obs_source_get_name(source)),
-				undo_redo, undo_redo, undo_data, redo_data,
-				NULL);
+				undo_redo, undo_redo, undo_data, redo_data);
 
 		obs_data_release(new_settings);
 		obs_data_release(curr_settings);

@@ -154,7 +154,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		OBSBasic *main = OBSBasic::Get();
 		main->undo_s.add_action(str, undo_redo, undo_redo,
 					checked ? "0" : "1",
-					checked ? "1" : "0", nullptr);
+					checked ? "1" : "0");
 
 		SignalBlocker sourcesSignalBlocker(this);
 		obs_sceneitem_set_visible(sceneitem, checked);
@@ -454,7 +454,7 @@ void SourceTreeItem::ExitEditMode(bool save)
 	};
 
 	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,
-				redo, newName, prevName, NULL);
+				redo, newName, prevName);
 
 	obs_source_set_name(source, newName.c_str());
 	label->setText(QT_UTF8(newName.c_str()));

@@ -745,8 +745,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 				QTStr("Undo.Transform")
 					.arg(obs_source_get_name(
 						main->GetCurrentSceneSource())),
-				undo_redo, undo_redo, undo_data, redo_data,
-				NULL);
+				undo_redo, undo_redo, undo_data, redo_data);
 	}
 
 	if (wrapper)
