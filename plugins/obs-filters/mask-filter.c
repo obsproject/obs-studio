@@ -293,9 +293,13 @@ static void mask_filter_render_internal(void *data, bool srgb)
 	param = gs_effect_get_param_by_name(filter->effect, "add_val");
 	gs_effect_set_vec2(param, &add_val);
 
-	const bool previous = gs_set_linear_srgb(srgb);
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-	gs_set_linear_srgb(previous);
+	if (srgb) {
+		obs_source_process_filter_end_srgb(filter->context,
+						   filter->effect, 0, 0);
+	} else {
+		obs_source_process_filter_end(filter->context, filter->effect,
+					      0, 0);
+	}
 }
 
 static void mask_filter_render_v1(void *data, gs_effect_t *effect)

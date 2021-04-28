@@ -90,9 +90,13 @@ static void sharpness_render_internal(void *data, bool srgb)
 	gs_effect_set_float(filter->texture_width, filter->texwidth);
 	gs_effect_set_float(filter->texture_height, filter->texheight);
 
-	const bool previous = gs_set_linear_srgb(srgb);
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-	gs_set_linear_srgb(previous);
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+	obs_source_process_filter_end_srgb(filter->context, filter->effect, 0,
+					   0);
+
+	gs_blend_state_pop();
 }
 
 static void sharpness_render_v1(void *data, gs_effect_t *effect)
