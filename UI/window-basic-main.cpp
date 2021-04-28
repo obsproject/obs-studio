@@ -1157,10 +1157,6 @@ retryScene:
 		opt_start_virtualcam = false;
 	}
 
-	copyStrings.clear();
-	copyFiltersString = nullptr;
-	copyFilter = nullptr;
-
 	LogScenes();
 
 	if (obs_missing_files_count(files) > 0) {
@@ -4370,6 +4366,10 @@ void OBSBasic::ClearSceneData()
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
+
+	copyStrings.clear();
+	copyFiltersString = nullptr;
+	copyFilter = nullptr;
 
 	auto cb = [](void *unused, obs_source_t *source) {
 		obs_source_remove(source);
