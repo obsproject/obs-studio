@@ -8475,7 +8475,81 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	if (source == dstSource)
 		return;
 
-	obs_source_copy_filters(dstSource, source);
+	char **newNames = obs_source_copy_filters2(dstSource, source);
+	if (!newNames)
+		return;
+
+	const char *sourceName = obs_source_get_name(source);
+	const char *dstSourceName = obs_source_get_name(dstSource);
+
+	obs_data_t *undo_wrapper = obs_data_create();
+	obs_data_array_t *undoNameArray = obs_data_array_create();
+	obs_data_set_string(undo_wrapper, "source-name", dstSourceName);
+	obs_data_set_array(undo_wrapper, "filters", undoNameArray);
+
+	for (size_t i = 0; newNames[i]; i++) {
+		char *newName = newNames[i];
+		obs_data_t *filter = obs_data_create();
+		obs_data_set_string(filter, "name", newName);
+		obs_data_array_push_back(undoNameArray, filter);
+		bfree(newName);
+	}
+	bfree(newNames);
+	std::string undo_data = obs_data_get_json(undo_wrapper);
+
+	obs_data_array_release(undoNameArray);
+	obs_data_release(undo_wrapper);
+
+	auto undo = [](const std::string &data) {
+		obs_data_t *undo_wrapper =
+			obs_data_create_from_json(data.c_str());
+		obs_source_t *source = obs_get_source_by_name(
+			obs_data_get_string(undo_wrapper, "source-name"));
+
+		obs_data_array_t *undoNameArray =
+			obs_data_get_array(undo_wrapper, "filters");
+		size_t numFilters = obs_data_array_count(undoNameArray);
+		for (size_t i = numFilters; i > 0; i--) {
+			obs_data_t *data =
+				obs_data_array_item(undoNameArray, i - 1);
+			obs_data_array_erase(undoNameArray, i - 1);
+			const char *name = obs_data_get_string(data, "name");
+			obs_source_t *filter =
+				obs_source_get_filter_by_name(source, name);
+			obs_data_release(data);
+			obs_source_filter_remove(source, filter);
+			obs_source_release(filter);
+		}
+		obs_data_release(undo_wrapper);
+		obs_data_array_release(undoNameArray);
+		obs_source_release(source);
+	};
+
+	obs_data_t *redo_wrapper = obs_data_create();
+	obs_data_set_string(redo_wrapper, "source-name", sourceName);
+	obs_data_set_string(redo_wrapper, "destination-name", dstSourceName);
+	std::string redo_data = obs_data_get_json(redo_wrapper);
+	obs_data_release(redo_wrapper);
+
+	auto redo = [](const std::string &data) {
+		obs_data_t *redo_wrapper =
+			obs_data_create_from_json(data.c_str());
+		obs_source_t *source = obs_get_source_by_name(
+			obs_data_get_string(redo_wrapper, "source-name"));
+		obs_source_t *dstSource = obs_get_source_by_name(
+			obs_data_get_string(redo_wrapper, "destination-name"));
+
+		obs_source_copy_filters2(dstSource, source);
+
+		obs_source_release(source);
+		obs_source_release(dstSource);
+		obs_data_release(redo_wrapper);
+	};
+
+	undo_s.add_action(QTStr("Undo.Filters.Paste.ContextMenu")
+				  .arg(sourceName)
+				  .arg(dstSourceName),
+			  undo, redo, undo_data, redo_data, false);
 }
 
 static void ConfirmColor(SourceTree *sources, const QColor &color,
