@@ -2039,6 +2039,22 @@
             }
         },
         {
+            "name": "Odysee",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://stream.odysee.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "max video bitrate": 2500,
+                "profile": "high",
+                "x264opts": "tune=zerolatency"
+                
+            }
+        },
+        {
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
             "servers": [
                 {
