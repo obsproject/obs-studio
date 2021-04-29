@@ -9,7 +9,7 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
 
-.. image:: https://discordapp.com/api/guilds/348973006581923840/widget.png?style=shield
+.. image:: https://img.shields.io/discord/348973006581923840.svg?label=&logo=discord&logoColor=ffffff&color=7389D8&labelColor=6A7EC2
    :alt: OBS Studio Discord Server
    :target: https://obsproject.com/discord
 
