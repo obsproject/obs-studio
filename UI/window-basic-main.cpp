@@ -1164,10 +1164,15 @@ retryScene:
 	LogScenes();
 
 	if (obs_missing_files_count(files) > 0) {
-		missDialog = new OBSMissingFiles(files, this);
-		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-		missDialog->show();
-		missDialog->raise();
+		/* the window hasn't fully initialized by this point on macOS,
+		 * so put this at the end of the current task queue. Fixes a
+		 * bug where the window be behind OBS on startup */
+		QTimer::singleShot(0, [this, files] {
+			missDialog = new OBSMissingFiles(files, this);
+			missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+			missDialog->show();
+			missDialog->raise();
+		});
 	} else {
 		obs_missing_files_destroy(files);
 	}
