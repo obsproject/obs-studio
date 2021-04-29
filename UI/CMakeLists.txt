@@ -170,6 +170,12 @@ endif()
 
 if(PEERTUBE_ENABLED)
 	add_definitions(-DPEERTUBE_ENABLED)
+	list(APPEND obs_PLATFORM_SOURCES
+		auth-peertube.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		auth-peertube.hpp
+		)
 endif()
 
 set(obs_libffutil_SOURCES
