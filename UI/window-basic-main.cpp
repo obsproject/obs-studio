@@ -206,6 +206,9 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 
 extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
+#ifdef PEERTUBE_ENABLED
+extern void RegisterPeerTubeAuth();
+#endif
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
@@ -222,6 +225,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 #if RESTREAM_ENABLED
 	RegisterRestreamAuth();
+#endif
+#ifdef PEERTUBE_ENABLED
+	RegisterPeerTubeAuth();
 #endif
 
 	setAcceptDrops(true);

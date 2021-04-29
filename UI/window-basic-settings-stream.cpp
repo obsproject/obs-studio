@@ -13,6 +13,10 @@
 #include "auth-oauth.hpp"
 #endif
 
+#ifdef PEERTUBE_ENABLED
+#include "auth-peertube.hpp"
+#endif
+
 struct QCef;
 struct QCefCookieManager;
 
@@ -135,7 +139,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 		const char *instance =
 			obs_data_get_string(settings, "instance");
-		ui->customServer->setText(instance);
+		ui->instance->setText(instance);
 #endif
 	} else {
 		int idx = ui->service->findText(service);
@@ -220,7 +224,7 @@ void OBSBasicSettings::SaveStream1Settings()
 #ifdef PEERTUBE_ENABLED
 	} else if (peertubeServer) {
 		obs_data_set_string(settings, "instance",
-				    QT_TO_UTF8(ui->customServer->text()));
+				    QT_TO_UTF8(ui->instance->text()));
 #endif
 	} else {
 		obs_data_set_string(settings, "server",
@@ -411,13 +415,21 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	if (showMore)
 		return;
 
-	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
 #ifdef PEERTUBE_ENABLED
 	bool peertube = IsPeerTubeService();
+	std::string service;
+	if (peertube) {
+		service = "PeerTube";
+	} else {
+		service = QT_TO_UTF8(ui->service->currentText());
+	}
+#else
+	std::string service = QT_TO_UTF8(ui->service->currentText());
 #endif
 
 	ui->disconnectAccount->setVisible(false);
+	ui->disconnectAccount2->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
@@ -425,14 +437,35 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	if (lastService != service.c_str()) {
 		QString key = ui->key->text();
 		bool can_auth = is_auth_service(service);
+#ifdef PEERTUBE_ENABLED
+		int page = can_auth && (!loading || key.isEmpty() || peertube)
+				   ? (int)Section::Connect
+				   : (int)Section::StreamKey;
+#else
 		int page = can_auth && (!loading || key.isEmpty())
 				   ? (int)Section::Connect
 				   : (int)Section::StreamKey;
+#endif
 
 		ui->streamStackWidget->setCurrentIndex(page);
 		ui->streamKeyWidget->setVisible(true);
 		ui->streamKeyLabel->setVisible(true);
 		ui->connectAccount2->setVisible(can_auth);
+#ifdef PEERTUBE_ENABLED
+		if (peertube) {
+			ui->connectAccount->setText(QTStr(
+				"Basic.AutoConfig.StreamPage.ConnectAccount.Required"));
+		} else {
+			ui->connectAccount->setText(QTStr(
+				"Basic.AutoConfig.StreamPage.ConnectAccount"));
+		}
+		ui->instanceLabel->setVisible(peertube);
+		ui->instance->setVisible(peertube);
+		ui->useStreamKey->setVisible(!peertube);
+#else
+		ui->instanceLabel->setVisible(false);
+		ui->instance->setVisible(false);
+#endif
 	}
 
 	ui->useAuth->setVisible(custom);
@@ -441,11 +474,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->authPwLabel->setVisible(custom);
 	ui->authPwWidget->setVisible(custom);
 
-#ifdef PEERTUBE_ENABLED
-	if (custom ^ peertube) {
-#else
 	if (custom) {
-#endif
 		ui->streamkeyPageLayout->insertRow(1, ui->serverLabel,
 						   ui->serverStackedWidget);
 
@@ -456,15 +485,6 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
-
-#ifdef PEERTUBE_ENABLED
-	if (peertube)
-		ui->serverLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.Instance"));
-	else
-		ui->serverLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.Server"));
-#endif
 
 	auth.reset();
 
@@ -561,7 +581,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 #ifdef PEERTUBE_ENABLED
 	} else if (peertube) {
 		obs_data_set_string(settings, "instance",
-				    QT_TO_UTF8(ui->customServer->text()));
+				    QT_TO_UTF8(ui->instance->text()));
 #endif
 	} else {
 		obs_data_set_string(settings, "server",
@@ -606,14 +626,48 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 #endif
 }
 
+#ifdef PEERTUBE_ENABLED
+void OBSBasicSettings::OnOAuthPeerTubeConnected()
+{
+	PeerTubeAuth *a = reinterpret_cast<PeerTubeAuth *>(auth.get());
+
+	if (a) {
+
+		//TODO: À terminer
+
+		ui->instance->setReadOnly(true);
+		ui->connectAccount->setVisible(false);
+		ui->disconnectAccount2->setVisible(true);
+	}
+
+	ui->streamStackWidget->setCurrentIndex((int)Section::Connect);
+}
+#endif
+
 void OBSBasicSettings::OnAuthConnected()
 {
+#ifdef PEERTUBE_ENABLED
+	bool peertube = IsPeerTubeService();
+	std::string service;
+	if (peertube) {
+		service = "PeerTube";
+	} else {
+		service = QT_TO_UTF8(ui->service->currentText());
+	}
+#else
 	std::string service = QT_TO_UTF8(ui->service->currentText());
+#endif
 	Auth::Type type = Auth::AuthType(service);
 
 	if (type == Auth::Type::OAuth_StreamKey) {
 		OnOAuthStreamKeyConnected();
 	}
+
+#ifdef PEERTUBE_ENABLED
+	if (type == Auth::Type::OAuth_PeerTube) {
+		OnOAuthPeerTubeConnected();
+	}
+#endif
 
 	if (!loading) {
 		stream1Changed = true;
@@ -623,8 +677,19 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-
+#ifdef PEERTUBE_ENABLED
+	bool peertube = IsPeerTubeService();
+	std::string service;
+	if (peertube) {
+		service = "PeerTube";
+		//XXX: Instance needs to be saved beforehand for login
+		SaveStream1Settings();
+	} else {
+		service = QT_TO_UTF8(ui->service->currentText());
+	}
+#else
 	std::string service = QT_TO_UTF8(ui->service->currentText());
+#endif
 
 #ifdef BROWSER_AVAILABLE
 	BrowserOAuth::DeleteCookies(service);
@@ -669,12 +734,16 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);
+	ui->connectAccount->setVisible(true);
 	ui->connectAccount2->setVisible(true);
 	ui->disconnectAccount->setVisible(false);
+	ui->disconnectAccount2->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");
+	ui->instance->setReadOnly(false);
+	ui->instance->setText("");
 }
 
 void OBSBasicSettings::on_useStreamKey_clicked()

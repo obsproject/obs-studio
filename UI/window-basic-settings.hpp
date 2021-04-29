@@ -249,6 +249,9 @@ private:
 #endif
 	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
+#ifdef PEERTUBE_ENABLED
+	void OnOAuthPeerTubeConnected();
+#endif
 	void OnAuthConnected();
 	QString lastService;
 	int prevLangIndex;
