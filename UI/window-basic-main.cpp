@@ -74,9 +74,6 @@
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
 
-#include <fstream>
-#include <sstream>
-
 #include <QWindow>
 
 #include <json11.hpp>
