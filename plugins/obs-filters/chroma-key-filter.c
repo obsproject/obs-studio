@@ -119,8 +119,7 @@ static inline void
 color_settings_update_v2(struct chroma_key_filter_data_v2 *filter,
 			 obs_data_t *settings)
 {
-	filter->opacity =
-		(float)obs_data_get_int(settings, SETTING_OPACITY) * 0.01f;
+	filter->opacity = (float)obs_data_get_double(settings, SETTING_OPACITY);
 
 	double contrast = obs_data_get_double(settings, SETTING_CONTRAST);
 	contrast = (contrast < 0.0) ? (1.0 / (-contrast + 1.0))
@@ -388,8 +387,13 @@ static void chroma_key_render_v2(void *data, gs_effect_t *effect)
 	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
 	gs_effect_set_float(filter->spill_param, filter->spill);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_end_srgb(filter->context, filter->effect, 0,
 					   0);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -466,8 +470,8 @@ static obs_properties_t *chroma_key_properties_v2(void *data)
 	obs_properties_add_int_slider(props, SETTING_SPILL, TEXT_SPILL, 1, 1000,
 				      1);
 
-	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
-				      100, 1);
+	obs_properties_add_float_slider(props, SETTING_OPACITY, TEXT_OPACITY,
+					0.0, 1.0, 0.0001);
 	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
 					-4.0, 4.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
@@ -479,9 +483,22 @@ static obs_properties_t *chroma_key_properties_v2(void *data)
 	return props;
 }
 
-static void chroma_key_defaults(obs_data_t *settings)
+static void chroma_key_defaults_v1(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
+	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
+	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
+	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
+	obs_data_set_default_int(settings, SETTING_KEY_COLOR, 0x00FF00);
+	obs_data_set_default_string(settings, SETTING_COLOR_TYPE, "green");
+	obs_data_set_default_int(settings, SETTING_SIMILARITY, 400);
+	obs_data_set_default_int(settings, SETTING_SMOOTHNESS, 80);
+	obs_data_set_default_int(settings, SETTING_SPILL, 100);
+}
+
+static void chroma_key_defaults_v2(obs_data_t *settings)
+{
+	obs_data_set_default_double(settings, SETTING_OPACITY, 1.0);
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
@@ -502,7 +519,7 @@ struct obs_source_info chroma_key_filter = {
 	.video_render = chroma_key_render_v1,
 	.update = chroma_key_update_v1,
 	.get_properties = chroma_key_properties_v1,
-	.get_defaults = chroma_key_defaults,
+	.get_defaults = chroma_key_defaults_v1,
 };
 
 struct obs_source_info chroma_key_filter_v2 = {
@@ -516,5 +533,5 @@ struct obs_source_info chroma_key_filter_v2 = {
 	.video_render = chroma_key_render_v2,
 	.update = chroma_key_update_v2,
 	.get_properties = chroma_key_properties_v2,
-	.get_defaults = chroma_key_defaults,
+	.get_defaults = chroma_key_defaults_v2,
 };

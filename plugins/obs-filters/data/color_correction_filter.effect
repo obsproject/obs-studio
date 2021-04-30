@@ -59,6 +59,8 @@ float4 PSColorFilterRGBA(VertData vert_in) : TARGET
 	 */
 	currentPixel = mul(color_matrix, currentPixel);
 
+	currentPixel.rgb *= currentPixel.a;
+
 	return currentPixel;
 }
 

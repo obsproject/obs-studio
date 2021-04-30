@@ -40,6 +40,7 @@ float4 PSAddImageRGBA(VertDataOut v_in) : TARGET
 
 	float3 targetRGB = target.Sample(textureSampler, v_in.uv2).rgb;
 	rgba.rgb = saturate(rgba.rgb + targetRGB);
+	rgba.rgb *= rgba.a;
 	return rgba;
 }
 
