@@ -8464,6 +8464,44 @@ void OBSBasic::on_actionCopyFilters_triggered()
 	ui->actionPasteFilters->setEnabled(true);
 }
 
+void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
+					       obs_source_t *source,
+					       obs_data_array_t *undo_array,
+					       obs_data_array_t *redo_array)
+{
+	auto undo_redo = [this](const std::string &json) {
+		obs_data_t *data = obs_data_create_from_json(json.c_str());
+		obs_data_array_t *array = obs_data_get_array(data, "array");
+		const char *name = obs_data_get_string(data, "name");
+		obs_source_t *source = obs_get_source_by_name(name);
+
+		obs_source_restore_filters(source, array);
+		obs_source_release(source);
+
+		obs_data_array_release(array);
+		obs_data_release(data);
+
+		if (filters)
+			filters->UpdateSource(source);
+	};
+
+	const char *name = obs_source_get_name(source);
+
+	obs_data_t *undo_data = obs_data_create();
+	obs_data_t *redo_data = obs_data_create();
+	obs_data_set_array(undo_data, "array", undo_array);
+	obs_data_set_array(redo_data, "array", redo_array);
+	obs_data_set_string(undo_data, "name", name);
+	obs_data_set_string(redo_data, "name", name);
+
+	undo_s.add_action(text, undo_redo, undo_redo,
+			  obs_data_get_json(undo_data),
+			  obs_data_get_json(redo_data));
+
+	obs_data_release(undo_data);
+	obs_data_release(redo_data);
+}
+
 void OBSBasic::on_actionPasteFilters_triggered()
 {
 	OBSSource source = obs_get_source_by_name(copyFiltersString);
@@ -8475,7 +8513,19 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	if (source == dstSource)
 		return;
 
+	obs_data_array_t *undo_array = obs_source_backup_filters(dstSource);
 	obs_source_copy_filters(dstSource, source);
+	obs_data_array_t *redo_array = obs_source_backup_filters(dstSource);
+
+	const char *srcName = obs_source_get_name(source);
+	const char *dstName = obs_source_get_name(dstSource);
+	QString text =
+		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
+
+	CreateFilterPasteUndoRedoAction(text, source, undo_array, redo_array);
+
+	obs_data_array_release(undo_array);
+	obs_data_array_release(redo_array);
 }
 
 static void ConfirmColor(SourceTree *sources, const QColor &color,
