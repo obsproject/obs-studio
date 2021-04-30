@@ -1204,6 +1204,10 @@ obs_source_get_monitoring_type(const obs_source_t *source);
  * automatically.  Returns an incremented reference. */
 EXPORT obs_data_t *obs_source_get_private_settings(obs_source_t *item);
 
+EXPORT obs_data_array_t *obs_source_backup_filters(obs_source_t *source);
+EXPORT void obs_source_restore_filters(obs_source_t *source,
+				       obs_data_array_t *array);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
 
