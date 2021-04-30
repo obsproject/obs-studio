@@ -8522,7 +8522,8 @@ void OBSBasic::on_actionPasteFilters_triggered()
 	QString text =
 		QTStr("Undo.Filters.Paste.Multiple").arg(srcName, dstName);
 
-	CreateFilterPasteUndoRedoAction(text, source, undo_array, redo_array);
+	CreateFilterPasteUndoRedoAction(text, dstSource, undo_array,
+					redo_array);
 
 	obs_data_array_release(undo_array);
 	obs_data_array_release(redo_array);
