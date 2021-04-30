@@ -125,6 +125,12 @@ public:
 
 	void Init();
 
+	inline void UpdateSource(obs_source_t *target)
+	{
+		if (source == target)
+			UpdateFilters();
+	}
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 };
