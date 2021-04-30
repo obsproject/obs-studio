@@ -1160,7 +1160,20 @@ void OBSBasicFilters::PasteFilter()
 	if (!filter)
 		return;
 
+	obs_data_array_t *undo_array = obs_source_backup_filters(source);
 	obs_source_copy_single_filter(source, filter);
+	obs_data_array_t *redo_array = obs_source_backup_filters(source);
+
+	const char *filterName = obs_source_get_name(filter);
+	const char *sourceName = obs_source_get_name(source);
+	QString text =
+		QTStr("Undo.Filters.Paste.Single").arg(filterName, sourceName);
+
+	main->CreateFilterPasteUndoRedoAction(text, source, undo_array,
+					      redo_array);
+
+	obs_data_array_release(undo_array);
+	obs_data_array_release(redo_array);
 }
 
 void OBSBasicFilters::delete_filter(OBSSource filter)
