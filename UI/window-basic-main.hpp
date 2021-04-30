@@ -41,6 +41,7 @@
 
 #include <obs-frontend-internal.hpp>
 
+#include <set>
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/util.hpp>
@@ -907,6 +908,10 @@ public:
 					     obs_source_t *source,
 					     obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
+
+	void CreateFilterPasteMultipleUndoRedoAction(
+		const QString &text, obs_source_t *source,
+		std::set<OBSSource> &dstSources);
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
