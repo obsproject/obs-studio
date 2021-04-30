@@ -79,8 +79,53 @@ static inline void color_settings_update(struct color_key_filter_data *filter,
 	vec4_from_rgba(&filter->color, color);
 }
 
-static inline void key_settings_update(struct color_key_filter_data *filter,
-				       obs_data_t *settings)
+static inline void
+color_settings_update_v2(struct color_key_filter_data_v2 *filter,
+			 obs_data_t *settings)
+{
+	filter->opacity = (float)obs_data_get_double(settings, SETTING_OPACITY);
+
+	double contrast = obs_data_get_double(settings, SETTING_CONTRAST);
+	contrast = (contrast < 0.0) ? (1.0 / (-contrast + 1.0))
+				    : (contrast + 1.0);
+	filter->contrast = (float)contrast;
+
+	filter->brightness =
+		(float)obs_data_get_double(settings, SETTING_BRIGHTNESS);
+
+	double gamma = obs_data_get_double(settings, SETTING_GAMMA);
+	gamma = (gamma < 0.0) ? (-gamma + 1.0) : (1.0 / (gamma + 1.0));
+	filter->gamma = (float)gamma;
+}
+
+static inline void key_settings_update_v1(struct color_key_filter_data *filter,
+					  obs_data_t *settings)
+{
+	int64_t similarity = obs_data_get_int(settings, SETTING_SIMILARITY);
+	int64_t smoothness = obs_data_get_int(settings, SETTING_SMOOTHNESS);
+	uint32_t key_color =
+		(uint32_t)obs_data_get_int(settings, SETTING_KEY_COLOR);
+	const char *key_type =
+		obs_data_get_string(settings, SETTING_COLOR_TYPE);
+
+	if (strcmp(key_type, "green") == 0)
+		key_color = 0x00FF00;
+	else if (strcmp(key_type, "blue") == 0)
+		key_color = 0xFF0000;
+	else if (strcmp(key_type, "red") == 0)
+		key_color = 0x0000FF;
+	else if (strcmp(key_type, "magenta") == 0)
+		key_color = 0xFF00FF;
+
+	vec4_from_rgba(&filter->key_color, key_color | 0xFF000000);
+
+	filter->similarity = (float)similarity / 1000.0f;
+	filter->smoothness = (float)smoothness / 1000.0f;
+}
+
+static inline void
+key_settings_update_v2(struct color_key_filter_data_v2 *filter,
+		       obs_data_t *settings)
 {
 	int64_t similarity = obs_data_get_int(settings, SETTING_SIMILARITY);
 	int64_t smoothness = obs_data_get_int(settings, SETTING_SMOOTHNESS);
@@ -210,6 +255,8 @@ static void color_key_render_v2(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
+	gs_blend_state_pop();
+
 	UNUSED_PARAMETER(effect);
 }
 
@@ -262,9 +309,57 @@ static obs_properties_t *color_key_properties(void *data)
 	return props;
 }
 
-static void color_key_defaults(obs_data_t *settings)
+static obs_properties_t *color_key_properties_v2(void *data)
+{
+	obs_properties_t *props = obs_properties_create();
+
+	obs_property_t *p = obs_properties_add_list(props, SETTING_COLOR_TYPE,
+						    TEXT_COLOR_TYPE,
+						    OBS_COMBO_TYPE_LIST,
+						    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, obs_module_text("Green"), "green");
+	obs_property_list_add_string(p, obs_module_text("Blue"), "blue");
+	obs_property_list_add_string(p, obs_module_text("Red"), "red");
+	obs_property_list_add_string(p, obs_module_text("Magenta"), "magenta");
+	obs_property_list_add_string(p, obs_module_text("CustomColor"),
+				     "custom");
+
+	obs_property_set_modified_callback(p, key_type_changed);
+
+	obs_properties_add_color(props, SETTING_KEY_COLOR, TEXT_KEY_COLOR);
+	obs_properties_add_int_slider(props, SETTING_SIMILARITY,
+				      TEXT_SIMILARITY, 1, 1000, 1);
+	obs_properties_add_int_slider(props, SETTING_SMOOTHNESS,
+				      TEXT_SMOOTHNESS, 1, 1000, 1);
+
+	obs_properties_add_float_slider(props, SETTING_OPACITY, TEXT_OPACITY,
+					0.0, 1.0, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
+					-4.0, 4.0, 0.01);
+	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
+					TEXT_BRIGHTNESS, -1.0, 1.0, 0.0001);
+	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -1.0,
+					1.0, 0.01);
+
+	UNUSED_PARAMETER(data);
+	return props;
+}
+
+static void color_key_defaults_v1(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
+	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
+	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
+	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
+	obs_data_set_default_int(settings, SETTING_KEY_COLOR, 0x00FF00);
+	obs_data_set_default_string(settings, SETTING_COLOR_TYPE, "green");
+	obs_data_set_default_int(settings, SETTING_SIMILARITY, 80);
+	obs_data_set_default_int(settings, SETTING_SMOOTHNESS, 50);
+}
+
+static void color_key_defaults_v2(obs_data_t *settings)
+{
+	obs_data_set_default_double(settings, SETTING_OPACITY, 1.0);
 	obs_data_set_default_double(settings, SETTING_CONTRAST, 0.0);
 	obs_data_set_default_double(settings, SETTING_BRIGHTNESS, 0.0);
 	obs_data_set_default_double(settings, SETTING_GAMMA, 0.0);
@@ -293,10 +388,10 @@ struct obs_source_info color_key_filter_v2 = {
 	.type = OBS_SOURCE_TYPE_FILTER,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = color_key_name,
-	.create = color_key_create,
-	.destroy = color_key_destroy,
-	.video_render = color_key_render,
-	.update = color_key_update,
-	.get_properties = color_key_properties,
-	.get_defaults = color_key_defaults,
+	.create = color_key_create_v2,
+	.destroy = color_key_destroy_v2,
+	.video_render = color_key_render_v2,
+	.update = color_key_update_v2,
+	.get_properties = color_key_properties_v2,
+	.get_defaults = color_key_defaults_v2,
 };
