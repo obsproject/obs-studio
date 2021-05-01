@@ -942,6 +942,8 @@ EXPORT obs_properties_t *obs_source_properties(const obs_source_t *source);
 
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t *source, obs_data_t *settings);
+EXPORT void obs_source_reset_settings(obs_source_t *source,
+				      obs_data_t *settings);
 
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t *source);
