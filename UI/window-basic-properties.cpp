@@ -368,7 +368,7 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 				obs_data_create_from_json(data.c_str());
 			obs_source_t *source = obs_get_source_by_name(
 				obs_data_get_string(settings, "undo_sname"));
-			obs_source_update(source, settings);
+			obs_source_reset_settings(source, settings);
 
 			obs_source_update_properties(source);
 
