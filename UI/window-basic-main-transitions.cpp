@@ -415,10 +415,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		}
 
 		if (black && !prevFTBSource) {
+			prevFTBSource = source;
 			source = nullptr;
-			prevFTBSource =
-				obs_transition_get_active_source(transition);
-			obs_source_release(prevFTBSource);
 		} else if (black && prevFTBSource) {
 			source = prevFTBSource;
 			prevFTBSource = nullptr;
