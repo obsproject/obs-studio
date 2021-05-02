@@ -268,23 +268,14 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	/* --------------------- */
 
-	float cx = (float)obs_source_get_width(s->source);
-	float cy = (float)obs_source_get_height(s->source);
+	const uint32_t cx = obs_source_get_width(s->source);
+	const uint32_t cy = obs_source_get_height(s->source);
 
-	uint32_t media_cx = obs_source_get_width(s->media_source);
-	uint32_t media_cy = obs_source_get_height(s->media_source);
+	const uint32_t media_cx = obs_source_get_width(s->media_source);
+	const uint32_t media_cy = obs_source_get_height(s->media_source);
 
 	if (!media_cx || !media_cy)
 		return;
-
-	float scale_x, scale_y;
-	if (s->track_matte_enabled) {
-		scale_x = cx / ((float)media_cx / s->matte_width_factor);
-		scale_y = cy / ((float)media_cy / s->matte_height_factor);
-	} else {
-		scale_x = cx / (float)media_cx;
-		scale_y = cy / (float)media_cy;
-	}
 
 	// rendering the stinger media in an intermediary texture with the same size
 	// as the transition itself ensures that stacked and side-by-side files used with
