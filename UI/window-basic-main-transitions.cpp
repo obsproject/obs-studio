@@ -1681,6 +1681,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programScene = nullptr;
 		swapScene = nullptr;
+		prevFTBSource = nullptr;
 
 		for (QuickTransition &qt : quickTransitions)
 			qt.button = nullptr;
