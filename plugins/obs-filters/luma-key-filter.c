@@ -115,8 +115,10 @@ static void *luma_key_create_v2(obs_data_t *settings, obs_source_t *context)
 					"luma_key_filter_v2.effect");
 }
 
-static void luma_key_render_internal(void *data, bool srgb)
+static void luma_key_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	struct luma_key_filter_data *filter = data;
 
 	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
@@ -130,27 +132,7 @@ static void luma_key_render_internal(void *data, bool srgb)
 	gs_effect_set_float(filter->luma_min_smooth_param,
 			    filter->luma_min_smooth);
 
-	if (srgb) {
-		obs_source_process_filter_end_srgb(filter->context,
-						   filter->effect, 0, 0);
-	} else {
-		obs_source_process_filter_end(filter->context, filter->effect,
-					      0, 0);
-	}
-}
-
-static void luma_key_render_v1(void *data, gs_effect_t *effect)
-{
-	UNUSED_PARAMETER(effect);
-
-	luma_key_render_internal(data, false);
-}
-
-static void luma_key_render_v2(void *data, gs_effect_t *effect)
-{
-	UNUSED_PARAMETER(effect);
-
-	luma_key_render_internal(data, true);
+	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 }
 
 static obs_properties_t *luma_key_properties(void *data)
@@ -185,7 +167,7 @@ struct obs_source_info luma_key_filter = {
 	.get_name = luma_key_name,
 	.create = luma_key_create_v1,
 	.destroy = luma_key_destroy,
-	.video_render = luma_key_render_v1,
+	.video_render = luma_key_render,
 	.update = luma_key_update,
 	.get_properties = luma_key_properties,
 	.get_defaults = luma_key_defaults,
@@ -195,11 +177,11 @@ struct obs_source_info luma_key_filter_v2 = {
 	.id = "luma_key_filter",
 	.version = 2,
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = luma_key_name,
 	.create = luma_key_create_v2,
 	.destroy = luma_key_destroy,
-	.video_render = luma_key_render_v2,
+	.video_render = luma_key_render,
 	.update = luma_key_update,
 	.get_properties = luma_key_properties,
 	.get_defaults = luma_key_defaults,
