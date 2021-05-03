@@ -422,7 +422,7 @@ static uint32_t scale_filter_height(void *data)
 struct obs_source_info scale_filter = {
 	.id = "scale_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = scale_filter_name,
 	.create = scale_filter_create,
 	.destroy = scale_filter_destroy,

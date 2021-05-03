@@ -279,7 +279,12 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "add_val");
 	gs_effect_set_vec2(param, &add_val);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -287,7 +292,22 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 struct obs_source_info mask_filter = {
 	.id = "mask_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+	.get_name = mask_filter_get_name,
+	.create = mask_filter_create,
+	.destroy = mask_filter_destroy,
+	.update = mask_filter_update_v1,
+	.get_defaults = mask_filter_defaults_v1,
+	.get_properties = mask_filter_properties_v1,
+	.video_tick = mask_filter_tick,
+	.video_render = mask_filter_render,
+};
+
+struct obs_source_info mask_filter_v2 = {
+	.id = "mask_filter",
+	.version = 2,
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = mask_filter_get_name,
 	.create = mask_filter_create,
 	.destroy = mask_filter_destroy,

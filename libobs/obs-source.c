@@ -2188,14 +2188,24 @@ static inline void obs_source_main_render(obs_source_t *source)
 {
 	uint32_t flags = source->info.output_flags;
 	bool custom_draw = (flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
+	bool srgb_aware = (flags & OBS_SOURCE_SRGB) != 0;
 	bool default_effect = !source->filter_parent &&
 			      source->filters.num == 0 && !custom_draw;
+	bool previous_srgb;
+
+	if (!srgb_aware) {
+		previous_srgb = gs_get_linear_srgb();
+		gs_set_linear_srgb(false);
+	}
 
 	if (default_effect)
 		obs_source_default_render(source);
 	else if (source->context.data)
 		source->info.video_render(source->context.data,
 					  custom_draw ? NULL : gs_get_effect());
+
+	if (!srgb_aware)
+		gs_set_linear_srgb(previous_srgb);
 }
 
 static bool ready_async_frame(obs_source_t *source, uint64_t sys_time);
@@ -3601,13 +3611,15 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 }
 
 static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
-			      uint32_t parent_flags,
+			      uint32_t filter_flags, uint32_t parent_flags,
 			      enum obs_allow_direct_render allow_direct)
 {
 	return (target == parent) &&
 	       (allow_direct == OBS_ALLOW_DIRECT_RENDERING) &&
 	       ((parent_flags & OBS_SOURCE_CUSTOM_DRAW) == 0) &&
-	       ((parent_flags & OBS_SOURCE_ASYNC) == 0);
+	       ((parent_flags & OBS_SOURCE_ASYNC) == 0) &&
+	       (((filter_flags & OBS_SOURCE_SRGB) == 0) ||
+		((parent_flags & OBS_SOURCE_SRGB) == 0));
 }
 
 bool obs_source_process_filter_begin(obs_source_t *filter,
@@ -3615,7 +3627,7 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 				     enum obs_allow_direct_render allow_direct)
 {
 	obs_source_t *target, *parent;
-	uint32_t parent_flags;
+	uint32_t filter_flags, parent_flags;
 	int cx, cy;
 
 	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
@@ -3635,6 +3647,7 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		return false;
 	}
 
+	filter_flags = filter->info.output_flags;
 	parent_flags = parent->info.output_flags;
 	cx = get_base_width(target);
 	cy = get_base_height(target);
@@ -3645,7 +3658,8 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 	 * filter in the chain for the parent, then render the parent directly
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
-	if (can_bypass(target, parent, parent_flags, allow_direct)) {
+	if (can_bypass(target, parent, filter_flags, parent_flags,
+		       allow_direct)) {
 		return true;
 	}
 
@@ -3688,7 +3702,7 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t parent_flags;
+	uint32_t filter_flags, parent_flags;
 
 	if (!filter)
 		return;
@@ -3699,11 +3713,16 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 	if (!target || !parent)
 		return;
 
+	filter_flags = filter->info.output_flags;
 	parent_flags = parent->info.output_flags;
+
+	const bool previous =
+		gs_set_linear_srgb((filter_flags & OBS_SOURCE_SRGB) != 0);
 
 	const char *tech = tech_name ? tech_name : "Draw";
 
-	if (can_bypass(target, parent, parent_flags, filter->allow_direct)) {
+	if (can_bypass(target, parent, filter_flags, parent_flags,
+		       filter->allow_direct)) {
 		render_filter_bypass(target, effect, tech);
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);
@@ -3711,6 +3730,8 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 			render_filter_tex(texture, effect, width, height, tech);
 		}
 	}
+
+	gs_set_linear_srgb(previous);
 }
 
 void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect,

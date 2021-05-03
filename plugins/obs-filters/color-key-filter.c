@@ -187,6 +187,32 @@ static void color_key_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
+static void color_key_render_v2(void *data, gs_effect_t *effect)
+{
+	struct color_key_filter_data_v2 *filter = data;
+
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+					     OBS_ALLOW_DIRECT_RENDERING))
+		return;
+
+	gs_effect_set_float(filter->opacity_param, filter->opacity);
+	gs_effect_set_float(filter->contrast_param, filter->contrast);
+	gs_effect_set_float(filter->brightness_param, filter->brightness);
+	gs_effect_set_float(filter->gamma_param, filter->gamma);
+	gs_effect_set_vec4(filter->key_color_param, &filter->key_color);
+	gs_effect_set_float(filter->similarity_param, filter->similarity);
+	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
+
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+
+	gs_blend_state_pop();
+
+	UNUSED_PARAMETER(effect);
+}
+
 static bool key_type_changed(obs_properties_t *props, obs_property_t *p,
 			     obs_data_t *settings)
 {
@@ -251,7 +277,21 @@ static void color_key_defaults(obs_data_t *settings)
 struct obs_source_info color_key_filter = {
 	.id = "color_key_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+	.get_name = color_key_name,
+	.create = color_key_create_v1,
+	.destroy = color_key_destroy_v1,
+	.video_render = color_key_render_v1,
+	.update = color_key_update_v1,
+	.get_properties = color_key_properties_v1,
+	.get_defaults = color_key_defaults_v1,
+};
+
+struct obs_source_info color_key_filter_v2 = {
+	.id = "color_key_filter",
+	.version = 2,
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = color_key_name,
 	.create = color_key_create,
 	.destroy = color_key_destroy,

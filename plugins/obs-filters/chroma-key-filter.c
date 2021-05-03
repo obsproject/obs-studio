@@ -216,6 +216,40 @@ static void chroma_key_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
+static void chroma_key_render_v2(void *data, gs_effect_t *effect)
+{
+	struct chroma_key_filter_data_v2 *filter = data;
+	obs_source_t *target = obs_filter_get_target(filter->context);
+	uint32_t width = obs_source_get_base_width(target);
+	uint32_t height = obs_source_get_base_height(target);
+	struct vec2 pixel_size;
+
+	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
+					     OBS_ALLOW_DIRECT_RENDERING))
+		return;
+
+	vec2_set(&pixel_size, 1.0f / (float)width, 1.0f / (float)height);
+
+	gs_effect_set_float(filter->opacity_param, filter->opacity);
+	gs_effect_set_float(filter->contrast_param, filter->contrast);
+	gs_effect_set_float(filter->brightness_param, filter->brightness);
+	gs_effect_set_float(filter->gamma_param, filter->gamma);
+	gs_effect_set_vec2(filter->chroma_param, &filter->chroma);
+	gs_effect_set_vec2(filter->pixel_size_param, &pixel_size);
+	gs_effect_set_float(filter->similarity_param, filter->similarity);
+	gs_effect_set_float(filter->smoothness_param, filter->smoothness);
+	gs_effect_set_float(filter->spill_param, filter->spill);
+
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+
+	gs_blend_state_pop();
+
+	UNUSED_PARAMETER(effect);
+}
+
 static bool key_type_changed(obs_properties_t *props, obs_property_t *p,
 			     obs_data_t *settings)
 {
@@ -281,7 +315,21 @@ static void chroma_key_defaults(obs_data_t *settings)
 struct obs_source_info chroma_key_filter = {
 	.id = "chroma_key_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
+	.get_name = chroma_key_name,
+	.create = chroma_key_create_v1,
+	.destroy = chroma_key_destroy_v1,
+	.video_render = chroma_key_render_v1,
+	.update = chroma_key_update_v1,
+	.get_properties = chroma_key_properties_v1,
+	.get_defaults = chroma_key_defaults_v1,
+};
+
+struct obs_source_info chroma_key_filter_v2 = {
+	.id = "chroma_key_filter",
+	.version = 2,
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = chroma_key_name,
 	.create = chroma_key_create,
 	.destroy = chroma_key_destroy,

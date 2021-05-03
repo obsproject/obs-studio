@@ -461,7 +461,7 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 struct obs_source_info color_grade_filter = {
 	.id = "clut_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = color_grade_filter_get_name,
 	.create = color_grade_filter_create,
 	.destroy = color_grade_filter_destroy,
