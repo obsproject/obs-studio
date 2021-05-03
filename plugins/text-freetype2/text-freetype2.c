@@ -248,8 +248,6 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata->text == NULL || *srcdata->text == 0)
 		return;
 
-	const bool previous = gs_set_linear_srgb(false);
-
 	gs_reset_blend_state();
 	if (srcdata->outline_text)
 		draw_outlines(srcdata);
@@ -258,8 +256,6 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
 			(uint32_t)wcslen(srcdata->text) * 6);
-
-	gs_set_linear_srgb(previous);
 
 	UNUSED_PARAMETER(effect);
 }
