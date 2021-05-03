@@ -310,7 +310,8 @@ static obs_missing_files_t *image_source_missingfiles(void *data)
 static struct obs_source_info image_source_info = {
 	.id = "image_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_SRGB,
 	.get_name = image_source_get_name,
 	.create = image_source_create,
 	.destroy = image_source_destroy,
