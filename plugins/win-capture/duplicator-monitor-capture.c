@@ -533,8 +533,6 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 
 		rot = capture->rot;
 
-		const bool previous = gs_set_linear_srgb(false);
-
 		while (gs_effect_loop(effect, "Draw")) {
 			if (rot != 0) {
 				float x = 0.0f;
@@ -564,8 +562,6 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 			if (rot != 0)
 				gs_matrix_pop();
 		}
-
-		gs_set_linear_srgb(previous);
 
 		if (capture->capture_cursor) {
 			effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
