@@ -196,8 +196,8 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	obs_source_process_filter_end_srgb(filter->context, filter->effect,
-					   filter->width, filter->height);
+	obs_source_process_filter_end(filter->context, filter->effect,
+				      filter->width, filter->height);
 
 	gs_blend_state_pop();
 
@@ -219,7 +219,7 @@ static uint32_t crop_filter_height(void *data)
 struct obs_source_info crop_filter = {
 	.id = "crop_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = crop_filter_get_name,
 	.create = crop_filter_create,
 	.destroy = crop_filter_destroy,

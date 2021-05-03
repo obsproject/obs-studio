@@ -297,9 +297,9 @@ static void scale_filter_render(void *data, gs_effect_t *effect)
 		gs_effect_set_next_sampler(filter->image_param,
 					   filter->point_sampler);
 
-	obs_source_process_filter_tech_end_srgb(filter->context, filter->effect,
-						filter->cx_out, filter->cy_out,
-						technique);
+	obs_source_process_filter_tech_end(filter->context, filter->effect,
+					   filter->cx_out, filter->cy_out,
+					   technique);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -422,7 +422,7 @@ static uint32_t scale_filter_height(void *data)
 struct obs_source_info scale_filter = {
 	.id = "scale_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = scale_filter_name,
 	.create = scale_filter_create,
 	.destroy = scale_filter_destroy,

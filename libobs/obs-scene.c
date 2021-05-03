@@ -1261,7 +1261,8 @@ const struct obs_source_info scene_info = {
 	.id = "scene",
 	.type = OBS_SOURCE_TYPE_SCENE,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE | OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_DO_NOT_DUPLICATE |
+			OBS_SOURCE_SRGB,
 	.get_name = scene_getname,
 	.create = scene_create,
 	.destroy = scene_destroy,
@@ -1279,7 +1280,7 @@ const struct obs_source_info group_info = {
 	.id = "group",
 	.type = OBS_SOURCE_TYPE_SCENE,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_SRGB,
 	.get_name = group_getname,
 	.create = scene_create,
 	.destroy = scene_destroy,
