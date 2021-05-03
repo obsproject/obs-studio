@@ -4,25 +4,24 @@
 
 #define MAX_STACK_SIZE 5000
 
-undo_stack::undo_stack(ui_ptr ui) : ui(ui) {}
-
-void undo_stack::release()
+undo_stack::undo_stack(ui_ptr ui) : ui(ui)
 {
-	for (auto f : undo_items)
-		if (f.d)
-			f.d(true);
+	QObject::connect(&repeat_reset_timer, &QTimer::timeout, this,
+			 &undo_stack::reset_repeatable_state);
+	repeat_reset_timer.setSingleShot(true);
+	repeat_reset_timer.setInterval(3000);
+}
 
-	for (auto f : redo_items)
-		if (f.d)
-			f.d(false);
+void undo_stack::reset_repeatable_state()
+{
+	last_is_repeatable = false;
 }
 
 void undo_stack::clear()
 {
-	release();
-
 	undo_items.clear();
 	redo_items.clear();
+	last_is_repeatable = false;
 
 	ui->actionMainUndo->setText(QTStr("Undo.Undo"));
 	ui->actionMainRedo->setText(QTStr("Undo.Redo"));
@@ -33,17 +32,26 @@ void undo_stack::clear()
 
 void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 			    undo_redo_cb redo, std::string undo_data,
-			    std::string redo_data, func d)
+			    std::string redo_data, bool repeatable)
 {
 	while (undo_items.size() >= MAX_STACK_SIZE) {
 		undo_redo_t item = undo_items.back();
-		if (item.d)
-			item.d(true);
 		undo_items.pop_back();
 	}
 
-	undo_redo_t n = {name, undo_data, redo_data, undo, redo, d};
+	undo_redo_t n = {name, undo_data, redo_data, undo, redo};
 
+	if (repeatable) {
+		repeat_reset_timer.start();
+	}
+
+	if (last_is_repeatable && repeatable && name == undo_items[0].name) {
+		undo_items[0].redo = redo;
+		undo_items[0].redo_data = redo_data;
+		return;
+	}
+
+	last_is_repeatable = repeatable;
 	undo_items.push_front(n);
 	clear_redo();
 
@@ -58,6 +66,8 @@ void undo_stack::undo()
 {
 	if (undo_items.size() == 0 || disabled)
 		return;
+
+	last_is_repeatable = false;
 
 	undo_redo_t temp = undo_items.front();
 	temp.undo(temp.undo_data);
@@ -81,6 +91,8 @@ void undo_stack::redo()
 	if (redo_items.size() == 0 || disabled)
 		return;
 
+	last_is_repeatable = false;
+
 	undo_redo_t temp = redo_items.front();
 	temp.redo(temp.redo_data);
 	undo_items.push_front(temp);
@@ -101,14 +113,17 @@ void undo_stack::redo()
 void undo_stack::enable_undo_redo()
 {
 	disabled = false;
+	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(false);
-	ui->actionMainRedo->setDisabled(false);
+	if (redo_items.size() > 0)
+		ui->actionMainRedo->setDisabled(false);
 }
 
 void undo_stack::disable_undo_redo()
 {
 	disabled = true;
+	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(true);
 	ui->actionMainRedo->setDisabled(true);
@@ -116,9 +131,5 @@ void undo_stack::disable_undo_redo()
 
 void undo_stack::clear_redo()
 {
-	for (auto f : redo_items)
-		if (f.d)
-			f.d(false);
-
 	redo_items.clear();
 }

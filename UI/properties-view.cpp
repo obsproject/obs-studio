@@ -393,13 +393,6 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	double stepVal = obs_property_float_step(prop);
 	const char *suffix = obs_property_float_suffix(prop);
 
-	spin->setMinimum(minVal);
-	spin->setMaximum(maxVal);
-	spin->setSingleStep(stepVal);
-	spin->setValue(val);
-	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
-	spin->setSuffix(QT_UTF8(suffix));
-
 	if (stepVal < 1.0) {
 		int decimals = (int)(log10(1.0 / stepVal) + 0.99);
 		constexpr int sane_limit = 8;
@@ -407,6 +400,13 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 		if (decimals > spin->decimals())
 			spin->setDecimals(decimals);
 	}
+
+	spin->setMinimum(minVal);
+	spin->setMaximum(maxVal);
+	spin->setSingleStep(stepVal);
+	spin->setValue(val);
+	spin->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	spin->setSuffix(QT_UTF8(suffix));
 
 	WidgetInfo *info = new WidgetInfo(this, prop, spin);
 	children.emplace_back(info);

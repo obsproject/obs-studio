@@ -292,8 +292,7 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		undo_s.add_action(QTStr("Undo.Add").arg(ui->sourceName->text()),
 				  undo, redo,
 				  std::string(obs_source_get_name(newSource)),
-				  std::string(obs_data_get_json(wrapper)),
-				  NULL);
+				  std::string(obs_data_get_json(wrapper)));
 		obs_data_release(wrapper);
 		obs_sceneitem_release(item);
 	}

@@ -95,7 +95,10 @@ float4 ProcessChromaKey(float4 rgba, VertData v_in)
 float4 PSChromaKeyRGBA(VertData v_in) : TARGET
 {
 	float4 rgba = image.Sample(textureSampler, v_in.uv);
-	return ProcessChromaKey(rgba, v_in);
+	rgba.rgb = max(float3(0.0, 0.0, 0.0), rgba.rgb / rgba.a);
+	rgba = ProcessChromaKey(rgba, v_in);
+	rgba.rgb *= rgba.a;
+	return rgba;
 }
 
 technique Draw

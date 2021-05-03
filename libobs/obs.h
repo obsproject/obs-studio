@@ -942,6 +942,8 @@ EXPORT obs_properties_t *obs_source_properties(const obs_source_t *source);
 
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t *source, obs_data_t *settings);
+EXPORT void obs_source_reset_settings(obs_source_t *source,
+				      obs_data_t *settings);
 
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t *source);
@@ -1203,6 +1205,10 @@ obs_source_get_monitoring_type(const obs_source_t *source);
 /** Gets private front-end settings data.  This data is saved/loaded
  * automatically.  Returns an incremented reference. */
 EXPORT obs_data_t *obs_source_get_private_settings(obs_source_t *item);
+
+EXPORT obs_data_array_t *obs_source_backup_filters(obs_source_t *source);
+EXPORT void obs_source_restore_filters(obs_source_t *source,
+				       obs_data_array_t *array);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */

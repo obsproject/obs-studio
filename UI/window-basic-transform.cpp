@@ -105,7 +105,7 @@ OBSBasicTransform::~OBSBasicTransform()
 			QTStr("Undo.Transform")
 				.arg(obs_source_get_name(obs_scene_get_source(
 					main->GetCurrentScene()))),
-			undo_redo, undo_redo, undo_data, redo_data, NULL);
+			undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(wrapper);
 }

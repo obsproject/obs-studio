@@ -488,7 +488,7 @@ skip_font_load:
 		}
 	} else {
 		const char *tmp = obs_data_get_string(settings, "text");
-		if (!tmp || !*tmp)
+		if (!tmp)
 			goto error;
 
 		if (srcdata->text != NULL) {

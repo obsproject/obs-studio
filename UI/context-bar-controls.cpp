@@ -58,7 +58,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source)
 		obs_data_t *settings = obs_data_create_from_json(data.c_str());
 		obs_source_t *source = obs_get_source_by_name(
 			obs_data_get_string(settings, "undo_sname"));
-		obs_source_update(source, settings);
+		obs_source_reset_settings(source, settings);
 
 		obs_source_t *scene_source =
 			obs_get_source_by_name(scene_name.c_str());
@@ -84,7 +84,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source)
 		main->undo_s.add_action(
 			QTStr("Undo.Properties")
 				.arg(obs_source_get_name(source)),
-			undo_redo, undo_redo, undo_data, redo_data, nullptr);
+			undo_redo, undo_redo, undo_data, redo_data);
 
 	obs_data_release(new_settings);
 	obs_data_release(curr_settings);

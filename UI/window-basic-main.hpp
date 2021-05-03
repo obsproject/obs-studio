@@ -864,6 +864,11 @@ public:
 	void CreateSceneUndoRedoAction(const QString &action_name,
 				       OBSData undo_data, OBSData redo_data);
 
+	void CreateFilterPasteUndoRedoAction(const QString &text,
+					     obs_source_t *source,
+					     obs_data_array_t *undo_array,
+					     obs_data_array_t *redo_array);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
