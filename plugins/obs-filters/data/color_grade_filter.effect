@@ -86,7 +86,7 @@ float4 LUT1D(VertDataOut v_in) : TARGET
 float4 LUT3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
-	textureColor.rgb = max(0.0, textureColor.rgb / textureColor.a);
+	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
 	textureColor.rgb = srgb_linear_to_nonlinear(textureColor.rgb);
 	float r = textureColor.r;
 	float g = textureColor.g;
