@@ -151,12 +151,8 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	if (!context->if2.image.texture)
 		return;
 
-	const char *tech_name = "DrawNonlinearAlpha";
-	enum gs_blend_type blend_src_color = GS_BLEND_ONE;
-	if (context->linear_alpha) {
-		tech_name = "Draw";
-		blend_src_color = GS_BLEND_SRCALPHA;
-	}
+	const char *tech_name = context->linear_alpha ? "DrawAlphaBlend"
+						      : "DrawNonlinearAlpha";
 
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
@@ -165,8 +161,7 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	gs_enable_framebuffer_srgb(true);
 
 	gs_blend_state_push();
-	gs_blend_function_separate(blend_src_color, GS_BLEND_INVSRCALPHA,
-				   GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
 	gs_eparam_t *const param = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture_srgb(param, context->if2.image.texture);
