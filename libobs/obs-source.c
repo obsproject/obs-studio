@@ -2224,7 +2224,7 @@ static inline void obs_source_main_render(obs_source_t *source)
 	bool srgb_aware = (flags & OBS_SOURCE_SRGB) != 0;
 	bool default_effect = !source->filter_parent &&
 			      source->filters.num == 0 && !custom_draw;
-	bool previous_srgb;
+	bool previous_srgb = false;
 
 	if (!srgb_aware) {
 		previous_srgb = gs_get_linear_srgb();
