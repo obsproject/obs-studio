@@ -115,30 +115,64 @@ fail:
 	return false;
 }
 
-static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
-					AVFrame *frame, uint8_t *out,
-					int linesize)
+#ifdef _MSC_VER
+#define obs_bswap16(v) _byteswap_ushort(v)
+#else
+#define obs_bswap16(v) __builtin_bswap16(v)
+#endif
+
+static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
+					 AVFrame *frame)
 {
 	struct SwsContext *sws_ctx = NULL;
+	void *data = NULL;
 	int ret = 0;
 
 	if (info->format == AV_PIX_FMT_RGBA ||
 	    info->format == AV_PIX_FMT_BGRA ||
 	    info->format == AV_PIX_FMT_BGR0) {
+		const size_t linesize = (size_t)info->cx * 4;
+		const size_t totalsize = info->cy * linesize;
+		data = bmalloc(totalsize);
 
-		if (linesize != frame->linesize[0]) {
-			int min_line = linesize < frame->linesize[0]
-					       ? linesize
-					       : frame->linesize[0];
+		const size_t src_linesize = frame->linesize[0];
+		if (linesize != src_linesize) {
+			const size_t min_line = linesize < src_linesize
+							? linesize
+							: src_linesize;
 
-			for (int y = 0; y < info->cy; y++)
-				memcpy(out + y * linesize,
-				       frame->data[0] + y * frame->linesize[0],
-				       min_line);
+			uint8_t *dst = data;
+			const uint8_t *src = frame->data[0];
+			for (int y = 0; y < info->cy; y++) {
+				memcpy(dst, src, min_line);
+				dst += linesize;
+				src += src_linesize;
+			}
 		} else {
-			memcpy(out, frame->data[0], linesize * info->cy);
+			memcpy(data, frame->data[0], totalsize);
 		}
+	} else if (info->format == AV_PIX_FMT_RGBA64BE) {
+		const size_t linesize = (size_t)info->cx * 8;
+		data = bmalloc(info->cy * linesize);
 
+		const size_t src_linesize = frame->linesize[0];
+		const size_t min_line = linesize < src_linesize ? linesize
+								: src_linesize;
+		const size_t pairs = min_line >> 1;
+
+		const uint8_t *src = frame->data[0];
+		uint16_t *dst = data;
+		for (int y = 0; y < info->cy; y++) {
+			for (size_t x = 0; x < pairs; ++x) {
+				uint16_t value;
+				memcpy(&value, src, sizeof(value));
+				*dst = obs_bswap16(value);
+				++dst;
+				src += sizeof(value);
+			}
+
+			src += src_linesize - min_line;
+		}
 	} else {
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
@@ -150,7 +184,7 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 			     "Failed to create scale context "
 			     "for '%s'",
 			     info->file);
-			return false;
+			goto fail;
 		}
 
 		uint8_t *pointers[4];
@@ -161,7 +195,7 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 			blog(LOG_WARNING, "av_image_alloc failed for '%s': %s",
 			     info->file, av_err2str(ret));
 			sws_freeContext(sws_ctx);
-			return false;
+			goto fail;
 		}
 
 		ret = sws_scale(sws_ctx, (const uint8_t *const *)frame->data,
@@ -173,26 +207,32 @@ static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 			blog(LOG_WARNING, "sws_scale failed for '%s': %s",
 			     info->file, av_err2str(ret));
 			av_freep(pointers);
-			return false;
+			goto fail;
 		}
 
-		for (size_t y = 0; y < (size_t)info->cy; y++)
-			memcpy(out + y * linesize,
-			       pointers[0] + y * linesizes[0], linesize);
+		const size_t linesize = (size_t)info->cx * 4;
+		data = bmalloc(info->cy * linesize);
+		const uint8_t *src = pointers[0];
+		uint8_t *dst = data;
+		for (size_t y = 0; y < (size_t)info->cy; y++) {
+			memcpy(dst, src, linesize);
+			dst += linesize;
+			src += linesizes[0];
+		}
 
 		av_freep(pointers);
 
 		info->format = format;
 	}
 
-	return true;
+fail:
+	return data;
 }
 
-static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
-				int linesize)
+static void *ffmpeg_image_decode(struct ffmpeg_image *info)
 {
 	AVPacket packet = {0};
-	bool success = false;
+	void *data = NULL;
 	AVFrame *frame = av_frame_alloc();
 	int got_frame = 0;
 	int ret;
@@ -200,7 +240,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 	if (!frame) {
 		blog(LOG_WARNING, "Failed to create frame data for '%s'",
 		     info->file);
-		return false;
+		return NULL;
 	}
 
 	ret = av_read_frame(info->fmt_ctx, &packet);
@@ -231,12 +271,12 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 		}
 	}
 
-	success = ffmpeg_image_reformat_frame(info, frame, out, linesize);
+	data = ffmpeg_image_reformat_frame(info, frame);
 
 fail:
 	av_packet_unref(&packet);
 	av_frame_free(&frame);
-	return success;
+	return data;
 }
 
 void gs_init_image_deps(void)
@@ -257,6 +297,8 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 		return GS_BGRA;
 	case AV_PIX_FMT_BGR0:
 		return GS_BGRX;
+	case AV_PIX_FMT_RGBA64BE:
+		return GS_RGBA16;
 	}
 
 	return GS_BGRX;
@@ -270,15 +312,11 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	uint8_t *data = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
-		data = bmalloc(image.cx * image.cy * 4);
-
-		if (ffmpeg_image_decode(&image, data, image.cx * 4)) {
+		data = ffmpeg_image_decode(&image);
+		if (data) {
 			*format = convert_format(image.format);
 			*cx_out = (uint32_t)image.cx;
 			*cy_out = (uint32_t)image.cy;
-		} else {
-			bfree(data);
-			data = NULL;
 		}
 
 		ffmpeg_image_free(&image);
