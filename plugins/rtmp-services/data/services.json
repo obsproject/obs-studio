@@ -2135,6 +2135,64 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "Brime Live",
+            "servers": [
+                {
+                    "name": "North America - Ashburn, VA",
+                    "url": "rtmp://ingest-us-ashburn.brimelive.com/live"
+                },
+                {
+                    "name": "North America - San Jose, CA",
+                    "url": "rtmp://ingest-us-sanjose.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Atlanta, GA",
+                    "url": "rtmp://ingest-us-atlanta.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Dallas, TX",
+                    "url": "rtmp://ingest-us-dallas.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Chicago, IL",
+                    "url": "rtmp://ingest-us-chicago.brimelive.com/live"
+                },
+                {
+                    "name": "Canada Southeast - Montreal",
+                    "url": "rtmp://ingest-ca-montreal.brimelive.com/live"
+                },
+                {
+                    "name": "Latin America - Brazil East (Sao Paulo)",
+                    "url": "rtmp://ingest-la-saopaulo.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - Germany (Frankfurt)",
+                    "url": "rtmp://ingest-eu-frankfurt.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - UK South (London)",
+                    "url": "rtmp://ingest-eu-london.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - Russia (Moscow)",
+                    "url": "rtmp://ingest-eu-moscow.brimelive.com/live"
+                },
+                {
+                    "name": "APAC - Japan East (Tokyo)",
+                    "url": "rtmp://ingest-apac-tokyo.brimelive.com/live"
+                },
+                {
+                    "name": "APAC - Australia East (Sydney)",
+                    "url": "rtmp://ingest-apac-sydney.brimelive.com/live"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 20000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
         }
     ]
 }
