@@ -604,7 +604,19 @@ extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 {
 	if (capture->capture_cursor) {
 		if (capture->cursor_visible != visible) {
-			capture->session.IsCursorCaptureEnabled(visible);
+			try {
+				capture->session.IsCursorCaptureEnabled(
+					visible);
+			} catch (winrt::hresult_error &err) {
+				blog(LOG_ERROR,
+				     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X): %ls",
+				     err.to_abi(), err.message().c_str());
+			} catch (...) {
+				blog(LOG_ERROR,
+				     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X)",
+				     winrt::to_hresult());
+			}
+
 			capture->cursor_visible = visible;
 		}
 	}
