@@ -39,7 +39,7 @@ typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
-typedef void (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
+typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
 					 gs_effect_t *effect);

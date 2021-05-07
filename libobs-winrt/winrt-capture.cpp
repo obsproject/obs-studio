@@ -599,7 +599,7 @@ extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)
 	return capture->active;
 }
 
-extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
+extern "C" EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture,
 						 BOOL visible)
 {
 	if (capture->capture_cursor) {
@@ -611,15 +611,18 @@ extern "C" EXPORT void winrt_capture_show_cursor(struct winrt_capture *capture,
 				blog(LOG_ERROR,
 				     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X): %ls",
 				     err.to_abi(), err.message().c_str());
+				return FALSE;
 			} catch (...) {
 				blog(LOG_ERROR,
 				     "GraphicsCaptureSession::IsCursorCaptureEnabled (0x%08X)",
 				     winrt::to_hresult());
+				return FALSE;
 			}
 
 			capture->cursor_visible = visible;
 		}
 	}
+	return TRUE;
 }
 
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
