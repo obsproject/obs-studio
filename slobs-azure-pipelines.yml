@@ -9,7 +9,7 @@ trigger:
 variables:
   InstallPath: packed_build
   CEF_VERSION: 75.1.16_g16a67c4_chromium-75.0.3770.100
-  CEF_MAC_BUILD_VERSION: 4183
+  CEF_MAC_BUILD_VERSION: 3770
 
 jobs:
 - job: 'Windows64'
