@@ -1970,13 +1970,13 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	set_visibility(item, false);
 
-	obs_sceneitem_set_show_transition(item, NULL);
-	obs_sceneitem_set_hide_transition(item, NULL);
-
 	signal_item_remove(item);
 	detach_sceneitem(item);
 
 	full_unlock(scene);
+
+	obs_sceneitem_set_show_transition(item, NULL);
+	obs_sceneitem_set_hide_transition(item, NULL);
 
 	obs_sceneitem_release(item);
 }
