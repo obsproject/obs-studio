@@ -509,6 +509,8 @@ static void wc_tick(void *data, float seconds)
 				/* forces a reset */
 				wc->window = NULL;
 				wc->check_window_timer = WC_CHECK_TIMER;
+				wc->cursor_check_time = CURSOR_CHECK_TIME;
+				return;
 			}
 		}
 
