@@ -503,9 +503,14 @@ static void wc_tick(void *data, float seconds)
 		const bool cursor_hidden = foreground_pid && target_pid &&
 					   foreground_pid != target_pid;
 		wc->capture.cursor_hidden = cursor_hidden;
-		if (wc->capture_winrt)
-			wc->exports.winrt_capture_show_cursor(wc->capture_winrt,
-							      !cursor_hidden);
+		if (wc->capture_winrt) {
+			if (!wc->exports.winrt_capture_show_cursor(
+				    wc->capture_winrt, !cursor_hidden)) {
+				/* forces a reset */
+				wc->window = NULL;
+				wc->check_window_timer = WC_CHECK_TIMER;
+			}
+		}
 
 		wc->cursor_check_time = 0.0f;
 	}

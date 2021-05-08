@@ -430,9 +430,12 @@ static void duplicator_capture_tick(void *data, float seconds)
 		}
 
 		if (capture->capture_winrt) {
-			capture->exports.winrt_capture_show_cursor(
-				capture->capture_winrt,
-				capture->capture_cursor);
+			if (!capture->exports.winrt_capture_show_cursor(
+				    capture->capture_winrt,
+				    capture->capture_cursor)) {
+				/* fource a reset */
+				capture->reset_wgc = true;
+			}
 		}
 	} else {
 		if (capture->capture_winrt) {
