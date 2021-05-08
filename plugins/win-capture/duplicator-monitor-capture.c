@@ -39,8 +39,6 @@ typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
-typedef void (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
-					      BOOL visible);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
 					 gs_effect_t *effect);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
@@ -54,7 +52,6 @@ struct winrt_exports {
 	PFN_winrt_capture_init_monitor winrt_capture_init_monitor;
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
-	PFN_winrt_capture_show_cursor winrt_capture_show_cursor;
 	PFN_winrt_capture_render winrt_capture_render;
 	PFN_winrt_capture_width winrt_capture_width;
 	PFN_winrt_capture_height winrt_capture_height;
@@ -302,7 +299,6 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_init_monitor);
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
-	WINRT_IMPORT(winrt_capture_show_cursor);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -397,10 +393,11 @@ static void duplicator_capture_tick(void *data, float seconds)
 			capture->showing = false;
 		}
 		return;
+	}
 
-		/* always try to load the capture immediately when the source is first
+	/* always try to load the capture immediately when the source is first
 	 * shown */
-	} else if (!capture->showing) {
+	if (!capture->showing) {
 		capture->reset_timeout = RESET_INTERVAL_SEC;
 	}
 
@@ -427,12 +424,6 @@ static void duplicator_capture_tick(void *data, float seconds)
 
 				capture->reset_timeout = 0.0f;
 			}
-		}
-
-		if (capture->capture_winrt) {
-			capture->exports.winrt_capture_show_cursor(
-				capture->capture_winrt,
-				capture->capture_cursor);
 		}
 	} else {
 		if (capture->capture_winrt) {
