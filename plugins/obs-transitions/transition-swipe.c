@@ -88,12 +88,17 @@ static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 
 	vec2_mulf(&swipe_val, &swipe_val, swipe->swipe_in ? 1.0f - t : t);
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_effect_set_texture(swipe->a_param, swipe->swipe_in ? b : a);
 	gs_effect_set_texture(swipe->b_param, swipe->swipe_in ? a : b);
 	gs_effect_set_vec2(swipe->swipe_param, &swipe_val);
 
 	while (gs_effect_loop(swipe->effect, "Swipe"))
 		gs_draw_sprite(NULL, 0, cx, cy);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void swipe_video_render(void *data, gs_effect_t *effect)

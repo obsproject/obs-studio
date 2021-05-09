@@ -93,6 +93,9 @@ static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	vec2_mulf(&tex_a_dir, &tex_a_dir, t);
 	vec2_mulf(&tex_b_dir, &tex_b_dir, 1.0f - t);
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_effect_set_texture(slide->a_param, a);
 	gs_effect_set_texture(slide->b_param, b);
 
@@ -101,6 +104,8 @@ static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 
 	while (gs_effect_loop(slide->effect, "Slide"))
 		gs_draw_sprite(NULL, 0, cx, cy);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void slide_video_render(void *data, gs_effect_t *effect)

@@ -236,6 +236,9 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		}
 	}
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_effect_set_texture(s->ep_a_tex, a);
 	gs_effect_set_texture(s->ep_b_tex, b);
 	gs_effect_set_texture(s->ep_matte_tex,
@@ -244,6 +247,8 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 
 	while (gs_effect_loop(s->matte_effect, "StingerMatte"))
 		gs_draw_sprite(NULL, 0, cx, cy);
+
+	gs_enable_framebuffer_srgb(previous);
 
 	UNUSED_PARAMETER(t);
 }
