@@ -56,15 +56,15 @@ class WASAPISource : public ISoundTouchCb {
 	WinHandle stopSignal;
 	WinHandle receiveSignal;
 
+	bool stIsOn;
+	long long stTempo;
+	long long stPitch;
+	long long stRate;
+
 	uint32_t channels;
 	speaker_layout speakers;
 	audio_format format;
 	uint32_t sampleRate;
-
-	bool stOn;
-	long long tp;
-	long long pt;
-	long long rt;
 
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
@@ -206,22 +206,23 @@ void WASAPISource::UpdateSettings(obs_data_t *settings)
 	useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
 
-	stOn = obs_data_get_bool(settings, ST_ONOFF);
-	tp = obs_data_get_int(settings, ST_TEMPO);
-	pt = obs_data_get_int(settings, ST_PITCH);
-	rt = obs_data_get_int(settings, ST_RATE);
+	stIsOn = obs_data_get_bool(settings, ST_ONOFF);
+	stTempo = obs_data_get_int(settings, ST_TEMPO);
+	stPitch = obs_data_get_int(settings, ST_PITCH);
+	stRate = obs_data_get_int(settings, ST_RATE);
 }
 
 void WASAPISource::Update(obs_data_t *settings)
 {
 	string newDevice = obs_data_get_string(settings, OPT_DEVICE_ID);
-	bool stOn_t = obs_data_get_bool(settings, ST_ONOFF);
-	long long tp_t = obs_data_get_int(settings, ST_TEMPO);
-	long long pt_t = obs_data_get_int(settings, ST_PITCH);
-	long long rt_t = obs_data_get_int(settings, ST_RATE);
+	bool onoff = obs_data_get_bool(settings, ST_ONOFF);
+	long long tempo = obs_data_get_int(settings, ST_TEMPO);
+	long long pitch = obs_data_get_int(settings, ST_PITCH);
+	long long rate = obs_data_get_int(settings, ST_RATE);
 
-	bool restart = newDevice.compare(device_id) != 0 || stOn_t != stOn ||
-		       tp_t != tp || pt_t != pt || rt_t != rt;
+	bool restart = (newDevice.compare(device_id) != 0) ||
+		       (onoff != stIsOn) || (tempo != stTempo) ||
+		       (pitch != stPitch) || (rate != stRate);
 
 	if (restart)
 		Stop();
@@ -618,15 +619,15 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	os_set_thread_name("win-wasapi: capture thread");
 
 	std::shared_ptr<SoundTouchWrapper> st;
-	if (source->stOn) {
+	if (source->stIsOn) {
 		SoundTouchStreamSettings stream;
 		stream.sampleRate = source->sampleRate;
 		stream.channels = source->channels;
 
 		SoundTouchEffectSettings effect;
-		effect.newTempo = source->tp;
-		effect.newPitch = source->pt;
-		effect.newRate = source->rt;
+		effect.newTempo = source->stTempo;
+		effect.newPitch = source->stPitch;
+		effect.newRate = source->stRate;
 
 		st = std::shared_ptr<SoundTouchWrapper>(
 			new SoundTouchWrapper(source));
@@ -706,7 +707,7 @@ static void GetWASAPIDefaultsInput(obs_data_t *settings)
 
 	obs_data_set_default_bool(settings, ST_ONOFF, true);
 	obs_data_set_default_int(settings, ST_TEMPO, 0);
-	obs_data_set_default_int(settings, ST_PITCH, 1);
+	obs_data_set_default_int(settings, ST_PITCH, -3);
 	obs_data_set_default_int(settings, ST_RATE, 0);
 }
 
@@ -775,15 +776,15 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 				obs_module_text("UseDeviceTiming"));
 
 	if (input) {
-		obs_properties_add_bool(props, "onoff",
+		obs_properties_add_bool(props, ST_ONOFF,
 					obs_module_text(ST_ONOFF));
-		obs_properties_add_int_slider(props, "tempo",
+		obs_properties_add_int_slider(props, ST_TEMPO,
 					      obs_module_text(ST_TEMPO), -50,
 					      100, 10);
 		obs_properties_add_int_slider(
-			props, "pitch", obs_module_text(ST_PITCH), -7, 9, 1);
+			props, ST_PITCH, obs_module_text(ST_PITCH), -7, 9, 1);
 		obs_properties_add_int_slider(
-			props, "rate", obs_module_text(ST_RATE), -50, 100, 10);
+			props, ST_RATE, obs_module_text(ST_RATE), -50, 100, 10);
 	}
 
 	return props;
