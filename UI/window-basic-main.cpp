@@ -2068,11 +2068,8 @@ void OBSBasic::OnFirstLoad()
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 
-	if (showLogViewerOnStartup) {
-		if (!logView)
-			logView = new OBSLogViewer();
-		logView->show();
-	}
+	if (showLogViewerOnStartup)
+		on_actionViewCurrentLog_triggered();
 }
 
 void OBSBasic::DeferredSysTrayLoad(int requeueCount)
