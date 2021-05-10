@@ -1,4 +1,5 @@
 #include "enum-wasapi.hpp"
+#include "SoundTouch-pipe.h"
 
 #include <obs-module.h>
 #include <obs.h>
@@ -17,12 +18,17 @@ using namespace std;
 #define OPT_DEVICE_ID "device_id"
 #define OPT_USE_DEVICE_TIMING "use_device_timing"
 
+#define ST_ONOFF "st_onoff"
+#define ST_TEMPO "st_tempo"
+#define ST_PITCH "st_pitch"
+#define ST_RATE "st_rate"
+
 static void GetWASAPIDefaults(obs_data_t *settings);
 
 #define OBS_KSAUDIO_SPEAKER_4POINT1 \
 	(KSAUDIO_SPEAKER_SURROUND | SPEAKER_LOW_FREQUENCY)
 
-class WASAPISource {
+class WASAPISource : public ISoundTouchCb {
 	ComPtr<IMMDevice> device;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
@@ -50,14 +56,23 @@ class WASAPISource {
 	WinHandle stopSignal;
 	WinHandle receiveSignal;
 
+	uint32_t channels;
 	speaker_layout speakers;
 	audio_format format;
 	uint32_t sampleRate;
 
+	bool stOn;
+	long long tp;
+	long long pt;
+	long long rt;
+
 	static DWORD WINAPI ReconnectThread(LPVOID param);
 	static DWORD WINAPI CaptureThread(LPVOID param);
 
-	bool ProcessCaptureData();
+	virtual void OnPopAudio(float *data, unsigned framesPerChn,
+				uint64_t timestamp);
+
+	bool ProcessCaptureData(std::shared_ptr<SoundTouchWrapper> st);
 
 	inline void Start();
 	inline void Stop();
@@ -190,12 +205,23 @@ void WASAPISource::UpdateSettings(obs_data_t *settings)
 	device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
 	useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
+
+	stOn = obs_data_get_bool(settings, ST_ONOFF);
+	tp = obs_data_get_int(settings, ST_TEMPO);
+	pt = obs_data_get_int(settings, ST_PITCH);
+	rt = obs_data_get_int(settings, ST_RATE);
 }
 
 void WASAPISource::Update(obs_data_t *settings)
 {
 	string newDevice = obs_data_get_string(settings, OPT_DEVICE_ID);
-	bool restart = newDevice.compare(device_id) != 0;
+	bool stOn_t = obs_data_get_bool(settings, ST_ONOFF);
+	long long tp_t = obs_data_get_int(settings, ST_TEMPO);
+	long long pt_t = obs_data_get_int(settings, ST_PITCH);
+	long long rt_t = obs_data_get_int(settings, ST_RATE);
+
+	bool restart = newDevice.compare(device_id) != 0 || stOn_t != stOn ||
+		       tp_t != tp || pt_t != pt || rt_t != rt;
 
 	if (restart)
 		Stop();
@@ -337,6 +363,7 @@ void WASAPISource::InitFormat(WAVEFORMATEX *wfex)
 	sampleRate = wfex->nSamplesPerSec;
 	format = AUDIO_FORMAT_FLOAT;
 	speakers = ConvertSpeakerLayout(layout, wfex->nChannels);
+	channels = wfex->nChannels;
 }
 
 void WASAPISource::InitCapture()
@@ -491,7 +518,21 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 	return 0;
 }
 
-bool WASAPISource::ProcessCaptureData()
+void WASAPISource::OnPopAudio(float *buf, unsigned framesPerChn,
+			      uint64_t timestamp)
+{
+	obs_source_audio data = {};
+	data.data[0] = (const uint8_t *)buf;
+	data.frames = (uint32_t)framesPerChn;
+	data.speakers = speakers;
+	data.samples_per_sec = sampleRate;
+	data.format = format;
+	data.timestamp = timestamp;
+
+	obs_source_output_audio(source, &data);
+}
+
+bool WASAPISource::ProcessCaptureData(std::shared_ptr<SoundTouchWrapper> st)
 {
 	HRESULT res;
 	LPBYTE buffer;
@@ -539,9 +580,17 @@ bool WASAPISource::ProcessCaptureData()
 			data.timestamp -= util_mul_div64(frames, 1000000000ULL,
 							 sampleRate);
 
-		obs_source_output_audio(source, &data);
+		if (st) {
+			st->PushAudio((float *)buffer, frames, data.timestamp);
+		} else {
+			obs_source_output_audio(source, &data);
+		}
 
 		capture->ReleaseBuffer(frames);
+
+		if (st) {
+			st->PopAudio();
+		}
 	}
 
 	return true;
@@ -568,10 +617,30 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 	os_set_thread_name("win-wasapi: capture thread");
 
+	std::shared_ptr<SoundTouchWrapper> st;
+	if (source->stOn) {
+		SoundTouchStreamSettings stream;
+		stream.sampleRate = source->sampleRate;
+		stream.channels = source->channels;
+
+		SoundTouchEffectSettings effect;
+		effect.newTempo = source->tp;
+		effect.newPitch = source->pt;
+		effect.newRate = source->rt;
+
+		st = std::shared_ptr<SoundTouchWrapper>(
+			new SoundTouchWrapper(source));
+		st->SetupStream(stream, effect);
+	}
+
 	while (WaitForCaptureSignal(2, sigs, dur)) {
-		if (!source->ProcessCaptureData()) {
+		if (!source->ProcessCaptureData(st)) {
 			reconnect = true;
 			break;
+		}
+
+		if (st) {
+			st->PopAudio();
 		}
 	}
 
@@ -634,12 +703,19 @@ static void GetWASAPIDefaultsInput(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, false);
+
+	obs_data_set_default_bool(settings, ST_ONOFF, true);
+	obs_data_set_default_int(settings, ST_TEMPO, 0);
+	obs_data_set_default_int(settings, ST_PITCH, 1);
+	obs_data_set_default_int(settings, ST_RATE, 0);
 }
 
 static void GetWASAPIDefaultsOutput(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, OPT_DEVICE_ID, "default");
 	obs_data_set_default_bool(settings, OPT_USE_DEVICE_TIMING, true);
+
+	obs_data_set_default_bool(settings, ST_ONOFF, false);
 }
 
 static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
@@ -697,6 +773,18 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 				obs_module_text("UseDeviceTiming"));
+
+	if (input) {
+		obs_properties_add_bool(props, "onoff",
+					obs_module_text(ST_ONOFF));
+		obs_properties_add_int_slider(props, "tempo",
+					      obs_module_text(ST_TEMPO), -50,
+					      100, 10);
+		obs_properties_add_int_slider(
+			props, "pitch", obs_module_text(ST_PITCH), -7, 9, 1);
+		obs_properties_add_int_slider(
+			props, "rate", obs_module_text(ST_RATE), -50, 100, 10);
+	}
 
 	return props;
 }
