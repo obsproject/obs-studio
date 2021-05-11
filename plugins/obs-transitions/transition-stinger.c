@@ -224,13 +224,11 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		float scale_y = (float)cy / matte_cy;
 
 		if (gs_texrender_begin(s->matte_tex, cx, cy)) {
-			gs_matrix_push();
 			gs_matrix_scale3f(scale_x, scale_y, 1.0f);
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
 			gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
 			obs_source_video_render(matte_source);
-			gs_matrix_pop();
 
 			gs_texrender_end(s->matte_tex);
 		}
