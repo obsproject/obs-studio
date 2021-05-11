@@ -1159,10 +1159,9 @@ retryScene:
 		 * so put this at the end of the current task queue. Fixes a
 		 * bug where the window be behind OBS on startup */
 		QTimer::singleShot(0, [this, files] {
-			missDialog = new OBSMissingFiles(files, this);
-			missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-			missDialog->show();
-			missDialog->raise();
+			missDialog.reset(new OBSMissingFiles(files, this));
+			missDialog.data()->show();
+			missDialog.data()->raise();
 		});
 	} else {
 		obs_missing_files_destroy(files);
@@ -2594,24 +2593,6 @@ OBSBasic::~OBSBasic()
 	service = nullptr;
 	outputHandler.reset();
 
-	if (interaction)
-		delete interaction;
-
-	if (properties)
-		delete properties;
-
-	if (filters)
-		delete filters;
-
-	if (transformWindow)
-		delete transformWindow;
-
-	if (advAudioWindow)
-		delete advAudioWindow;
-
-	if (about)
-		delete about;
-
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
 					 OBSBasic::RenderMain, this);
 
@@ -2781,43 +2762,40 @@ void OBSBasic::UpdatePreviewScalingMenu()
 void OBSBasic::CreateInteractionWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (interaction)
-		closed = interaction->close();
+	if (interaction.data())
+		closed = interaction.data()->close();
 
 	if (!closed)
 		return;
 
-	interaction = new OBSBasicInteraction(this, source);
-	interaction->Init();
-	interaction->setAttribute(Qt::WA_DeleteOnClose, true);
+	interaction.reset(new OBSBasicInteraction(this, source));
+	interaction.data()->Init();
 }
 
 void OBSBasic::CreatePropertiesWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (properties)
-		closed = properties->close();
+	if (properties.data())
+		closed = properties.data()->close();
 
 	if (!closed)
 		return;
 
-	properties = new OBSBasicProperties(this, source);
-	properties->Init();
-	properties->setAttribute(Qt::WA_DeleteOnClose, true);
+	properties.reset(new OBSBasicProperties(this, source));
+	properties.data()->Init();
 }
 
 void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 {
 	bool closed = true;
-	if (filters)
+	if (filters.data())
 		closed = filters->close();
 
 	if (!closed)
 		return;
 
-	filters = new OBSBasicFilters(this, source);
-	filters->Init();
-	filters->setAttribute(Qt::WA_DeleteOnClose, true);
+	filters.reset(new OBSBasicFilters(this, source));
+	filters.data()->Init();
 }
 
 /* Qt callbacks for invokeMethod */
@@ -4806,10 +4784,9 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	obs_enum_all_sources(cb_transitions, files);
 
 	if (obs_missing_files_count(files) > 0) {
-		missDialog = new OBSMissingFiles(files, this);
-		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-		missDialog->show();
-		missDialog->raise();
+		missDialog.reset(new OBSMissingFiles(files, this));
+		missDialog.data()->show();
+		missDialog.data()->raise();
 	} else {
 		obs_missing_files_destroy(files);
 		OBSMessageBox::information(
@@ -4856,18 +4833,17 @@ void load_audio_source(int channel, obs_data_t *data)
 
 void OBSBasic::on_actionAdvAudioProperties_triggered()
 {
-	if (advAudioWindow != nullptr) {
-		advAudioWindow->raise();
+	if (advAudioWindow.data()) {
+		advAudioWindow.data()->raise();
 		return;
 	}
 
 	bool iconsVisible = config_get_bool(App()->GlobalConfig(),
 					    "BasicWindow", "ShowSourceIcons");
 
-	advAudioWindow = new OBSBasicAdvAudio(this);
-	advAudioWindow->show();
-	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
-	advAudioWindow->SetIconsVisible(iconsVisible);
+	advAudioWindow.reset(new OBSBasicAdvAudio(this));
+	advAudioWindow.data()->show();
+	advAudioWindow.data()->SetIconsVisible(iconsVisible);
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
@@ -6027,15 +6003,15 @@ void OBSBasic::on_actionUploadLastLog_triggered()
 
 void OBSBasic::on_actionViewCurrentLog_triggered()
 {
-	if (!logView)
-		logView = new OBSLogViewer();
+	if (!logView.data())
+		logView.reset(new OBSLogViewer());
 
-	logView->show();
-	logView->setWindowState(
+	logView.data()->show();
+	logView.data()->setWindowState(
 		(logView->windowState() & ~Qt::WindowMinimized) |
 		Qt::WindowActive);
-	logView->activateWindow();
-	logView->raise();
+	logView.data()->activateWindow();
+	logView.data()->raise();
 }
 
 void OBSBasic::on_actionShowCrashLogs_triggered()
@@ -7838,11 +7814,10 @@ void OBSBasic::on_actionEditTransform_triggered()
 	if (!GetCurrentSceneItem())
 		return;
 
-	transformWindow = new OBSBasicTransform(this);
-	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow,
-		&OBSBasicTransform::OnSceneChanged);
-	transformWindow->show();
-	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
+	transformWindow.reset(new OBSBasicTransform(this));
+	connect(ui->scenes, &QListWidget::currentItemChanged,
+		transformWindow.data(), &OBSBasicTransform::OnSceneChanged);
+	transformWindow.data()->show();
 }
 
 void OBSBasic::on_actionCopyTransform_triggered()
@@ -8800,8 +8775,8 @@ void OBSBasic::on_toggleStatusBar_toggled(bool visible)
 void OBSBasic::on_toggleSourceIcons_toggled(bool visible)
 {
 	ui->sources->SetIconsVisible(visible);
-	if (advAudioWindow != nullptr)
-		advAudioWindow->SetIconsVisible(visible);
+	if (advAudioWindow.data())
+		advAudioWindow.data()->SetIconsVisible(visible);
 
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "ShowSourceIcons",
 			visible);
@@ -9482,13 +9457,11 @@ void OBSBasic::on_stats_triggered()
 
 void OBSBasic::on_actionShowAbout_triggered()
 {
-	if (about)
-		about->close();
+	if (about.data())
+		about.data()->close();
 
-	about = new OBSAbout(this);
-	about->show();
-
-	about->setAttribute(Qt::WA_DeleteOnClose, true);
+	about.reset(new OBSAbout(this));
+	about.data()->show();
 }
 
 void OBSBasic::ResizeOutputSizeOfSource()

@@ -233,15 +233,15 @@ private:
 	QScopedPointer<QThread> introCheckThread;
 	QScopedPointer<QThread> logUploadThread;
 
-	QPointer<OBSBasicInteraction> interaction;
-	QPointer<OBSBasicProperties> properties;
-	QPointer<OBSBasicTransform> transformWindow;
-	QPointer<OBSBasicAdvAudio> advAudioWindow;
-	QPointer<OBSBasicFilters> filters;
+	QScopedPointer<OBSBasicInteraction> interaction;
+	QScopedPointer<OBSBasicProperties> properties;
+	QScopedPointer<OBSBasicTransform> transformWindow;
+	QScopedPointer<OBSBasicAdvAudio> advAudioWindow;
+	QScopedPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
-	QPointer<OBSAbout> about;
-	QPointer<OBSMissingFiles> missDialog;
-	QPointer<OBSLogViewer> logView;
+	QScopedPointer<OBSAbout> about;
+	QScopedPointer<OBSMissingFiles> missDialog;
+	QScopedPointer<OBSLogViewer> logView;
 
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;

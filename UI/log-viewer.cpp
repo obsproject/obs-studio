@@ -16,7 +16,6 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 {
 	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint &
 		       ~Qt::WindowContextHelpButtonHint);
-	setAttribute(Qt::WA_DeleteOnClose);
 
 	QVBoxLayout *layout = new QVBoxLayout();
 	layout->setContentsMargins(0, 0, 0, 0);

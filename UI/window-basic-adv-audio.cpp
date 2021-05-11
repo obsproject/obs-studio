@@ -126,7 +126,6 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	setSizeGripEnabled(true);
 	setWindowModality(Qt::NonModal);
-	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
 }
