@@ -3684,7 +3684,7 @@ static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
 	       ((parent_flags & OBS_SOURCE_CUSTOM_DRAW) == 0) &&
 	       ((parent_flags & OBS_SOURCE_ASYNC) == 0) &&
 	       (((filter_flags & OBS_SOURCE_SRGB) == 0) ||
-		((parent_flags & OBS_SOURCE_SRGB) == 0));
+		((parent_flags & OBS_SOURCE_SRGB) != 0));
 }
 
 bool obs_source_process_filter_begin(obs_source_t *filter,
