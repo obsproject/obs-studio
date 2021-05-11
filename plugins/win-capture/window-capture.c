@@ -25,6 +25,8 @@
 /* clang-format on */
 
 #define WC_CHECK_TIMER 1.0f
+#define RESIZE_CHECK_TIME 0.2f
+#define CURSOR_CHECK_TIME 0.2f
 
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
@@ -33,7 +35,7 @@ typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
-typedef void (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
+typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
 					 gs_effect_t *effect);
@@ -290,17 +292,23 @@ static void wc_destroy(void *data)
 	obs_queue_task(OBS_TASK_GRAPHICS, wc_actual_destroy, data, false);
 }
 
+static void force_reset(struct window_capture *wc)
+{
+	wc->window = NULL;
+	wc->resize_timer = RESIZE_CHECK_TIME;
+	wc->check_window_timer = WC_CHECK_TIMER;
+	wc->cursor_check_time = CURSOR_CHECK_TIME;
+
+	wc->previously_failed = false;
+}
+
 static void wc_update(void *data, obs_data_t *settings)
 {
 	struct window_capture *wc = data;
 	update_settings(wc, settings);
 	log_settings(wc, settings);
 
-	/* forces a reset */
-	wc->window = NULL;
-	wc->check_window_timer = WC_CHECK_TIMER;
-
-	wc->previously_failed = false;
+	force_reset(wc);
 }
 
 static uint32_t wc_width(void *data)
@@ -432,9 +440,6 @@ static void wc_hide(void *data)
 	memset(&wc->last_rect, 0, sizeof(wc->last_rect));
 }
 
-#define RESIZE_CHECK_TIME 0.2f
-#define CURSOR_CHECK_TIME 0.2f
-
 static void wc_tick(void *data, float seconds)
 {
 	struct window_capture *wc = data;
@@ -489,7 +494,7 @@ static void wc_tick(void *data, float seconds)
 	}
 
 	wc->cursor_check_time += seconds;
-	if (wc->cursor_check_time > CURSOR_CHECK_TIME) {
+	if (wc->cursor_check_time >= CURSOR_CHECK_TIME) {
 		DWORD foreground_pid, target_pid;
 
 		// Can't just compare the window handle in case of app with child windows
@@ -503,9 +508,12 @@ static void wc_tick(void *data, float seconds)
 		const bool cursor_hidden = foreground_pid && target_pid &&
 					   foreground_pid != target_pid;
 		wc->capture.cursor_hidden = cursor_hidden;
-		if (wc->capture_winrt)
-			wc->exports.winrt_capture_show_cursor(wc->capture_winrt,
-							      !cursor_hidden);
+		if (wc->capture_winrt &&
+		    !wc->exports.winrt_capture_show_cursor(wc->capture_winrt,
+							   !cursor_hidden)) {
+			force_reset(wc);
+			return;
+		}
 
 		wc->cursor_check_time = 0.0f;
 	}
@@ -586,7 +594,8 @@ static void wc_render(void *data, gs_effect_t *effect)
 struct obs_source_info window_capture_info = {
 	.id = "window_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_SRGB,
 	.get_name = wc_getname,
 	.create = wc_create,
 	.destroy = wc_destroy,

@@ -953,7 +953,11 @@ static void noise_suppress_defaults_v2(obs_data_t *s)
 static obs_properties_t *noise_suppress_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
+#ifdef LIBNVAFX_ENABLED
 	struct noise_suppress_data *ng = (struct noise_suppress_data *)data;
+#else
+	UNUSED_PARAMETER(data);
+#endif
 
 #if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)
 	obs_property_t *method = obs_properties_add_list(
@@ -977,7 +981,6 @@ static obs_properties_t *noise_suppress_properties(void *data)
 	obs_property_int_set_suffix(speex_slider, " dB");
 #endif
 
-	UNUSED_PARAMETER(data);
 #ifdef LIBNVAFX_ENABLED
 	obs_property_t *nvafx_slider = obs_properties_add_float_slider(
 		ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,

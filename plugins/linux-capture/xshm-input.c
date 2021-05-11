@@ -346,10 +346,9 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 	bool randr = randr_is_active(xcb);
 	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count =
-		(randr) ? randr_screen_count(xcb)
-			: (xinerama)
-				  ? xinerama_screen_count(xcb)
-				  : xcb_setup_roots_length(xcb_get_setup(xcb));
+		randr ? randr_screen_count(xcb)
+		      : (xinerama ? xinerama_screen_count(xcb)
+				  : xcb_setup_roots_length(xcb_get_setup(xcb)));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		char *name;
@@ -571,7 +570,7 @@ struct obs_source_info xshm_input = {
 	.id = "xshm_input",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = xshm_getname,
 	.create = xshm_create,
 	.destroy = xshm_destroy,

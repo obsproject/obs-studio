@@ -17,6 +17,7 @@ struct image_source {
 
 	char *file;
 	bool persistent;
+	bool linear_alpha;
 	time_t file_timestamp;
 	float update_time_elapsed;
 	uint64_t last_time;
@@ -74,11 +75,13 @@ static void image_source_update(void *data, obs_data_t *settings)
 	struct image_source *context = data;
 	const char *file = obs_data_get_string(settings, "file");
 	const bool unload = obs_data_get_bool(settings, "unload");
+	const bool linear_alpha = obs_data_get_bool(settings, "linear_alpha");
 
 	if (context->file)
 		bfree(context->file);
 	context->file = bstrdup(file);
 	context->persistent = !unload;
+	context->linear_alpha = linear_alpha;
 
 	/* Load the image if the source is persistent or showing */
 	if (context->persistent || obs_source_showing(context->source))
@@ -90,6 +93,7 @@ static void image_source_update(void *data, obs_data_t *settings)
 static void image_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "unload", false);
+	obs_data_set_default_bool(settings, "linear_alpha", false);
 }
 
 static void image_source_show(void *data)
@@ -147,9 +151,11 @@ static void image_source_render(void *data, gs_effect_t *effect)
 	if (!context->if2.image.texture)
 		return;
 
+	const char *tech_name = context->linear_alpha ? "DrawAlphaBlend"
+						      : "DrawNonlinearAlpha";
+
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-	gs_technique_t *tech =
-		gs_effect_get_technique(effect, "DrawNonlinearAlpha");
+	gs_technique_t *tech = gs_effect_get_technique(effect, tech_name);
 
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
@@ -265,6 +271,8 @@ static obs_properties_t *image_source_properties(void *data)
 				OBS_PATH_FILE, image_filter, path.array);
 	obs_properties_add_bool(props, "unload",
 				obs_module_text("UnloadWhenNotShowing"));
+	obs_properties_add_bool(props, "linear_alpha",
+				obs_module_text("LinearAlpha"));
 	dstr_free(&path);
 
 	return props;
@@ -310,7 +318,8 @@ static obs_missing_files_t *image_source_missingfiles(void *data)
 static struct obs_source_info image_source_info = {
 	.id = "image_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_SRGB,
 	.get_name = image_source_get_name,
 	.create = image_source_create,
 	.destroy = image_source_destroy,

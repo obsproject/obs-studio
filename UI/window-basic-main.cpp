@@ -4368,6 +4368,7 @@ void OBSBasic::ClearSceneData()
 	lastScene = nullptr;
 	swapScene = nullptr;
 	programScene = nullptr;
+	prevFTBSource = nullptr;
 
 	copyStrings.clear();
 	copyFiltersString = nullptr;

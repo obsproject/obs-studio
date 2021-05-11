@@ -62,6 +62,13 @@ float4 PSDrawNonlinearAlpha(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawAlphaBlend(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb *= rgba.a;
+	return rgba;
+}
+
 technique Draw
 {
 	pass
@@ -86,5 +93,14 @@ technique DrawNonlinearAlpha
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawNonlinearAlpha(vert_in);
+	}
+}
+
+technique DrawAlphaBlend
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAlphaBlend(vert_in);
 	}
 }

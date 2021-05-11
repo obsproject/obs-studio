@@ -262,7 +262,7 @@ static void mask_filter_tick(void *data, float seconds)
 	}
 }
 
-static void mask_filter_render_internal(void *data, bool srgb)
+static void mask_filter_render(void *data, gs_effect_t *effect)
 {
 	struct mask_filter_data *filter = data;
 	obs_source_t *target = obs_filter_get_target(filter->context);
@@ -324,27 +324,9 @@ static void mask_filter_render_internal(void *data, bool srgb)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	if (srgb) {
-		obs_source_process_filter_end_srgb(filter->context,
-						   filter->effect, 0, 0);
-	} else {
-		obs_source_process_filter_end(filter->context, filter->effect,
-					      0, 0);
-	}
+	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
 	gs_blend_state_pop();
-}
-
-static void mask_filter_render_v1(void *data, gs_effect_t *effect)
-{
-	mask_filter_render_internal(data, false);
-
-	UNUSED_PARAMETER(effect);
-}
-
-static void mask_filter_render_v2(void *data, gs_effect_t *effect)
-{
-	mask_filter_render_internal(data, true);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -360,14 +342,14 @@ struct obs_source_info mask_filter = {
 	.get_defaults = mask_filter_defaults_v1,
 	.get_properties = mask_filter_properties_v1,
 	.video_tick = mask_filter_tick,
-	.video_render = mask_filter_render_v1,
+	.video_render = mask_filter_render,
 };
 
 struct obs_source_info mask_filter_v2 = {
 	.id = "mask_filter",
 	.version = 2,
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = mask_filter_get_name,
 	.create = mask_filter_create,
 	.destroy = mask_filter_destroy,
@@ -375,5 +357,5 @@ struct obs_source_info mask_filter_v2 = {
 	.get_defaults = mask_filter_defaults_v2,
 	.get_properties = mask_filter_properties_v2,
 	.video_tick = mask_filter_tick,
-	.video_render = mask_filter_render_v2,
+	.video_render = mask_filter_render,
 };

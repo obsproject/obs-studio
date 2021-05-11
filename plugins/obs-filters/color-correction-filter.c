@@ -613,8 +613,7 @@ static void color_correction_filter_render_v2(void *data, gs_effect_t *effect)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	obs_source_process_filter_end_srgb(filter->context, filter->effect, 0,
-					   0);
+	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 
 	gs_blend_state_pop();
 
@@ -734,7 +733,7 @@ struct obs_source_info color_filter_v2 = {
 	.id = "color_filter",
 	.version = 2,
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = color_correction_filter_name,
 	.create = color_correction_filter_create_v2,
 	.destroy = color_correction_filter_destroy_v2,

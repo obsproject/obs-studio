@@ -658,7 +658,7 @@ struct obs_source_info display_capture_info = {
 	.destroy = display_capture_destroy,
 
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.video_tick = display_capture_video_tick,
 	.video_render = display_capture_video_render,
 
