@@ -33,6 +33,7 @@ struct stinger_info {
 	float matte_width_factor;
 	float matte_height_factor;
 	bool invert_matte;
+	bool do_texrender;
 
 	gs_effect_t *matte_effect;
 	gs_eparam_t *ep_a_tex;
@@ -41,6 +42,7 @@ struct stinger_info {
 	gs_eparam_t *ep_invert_matte;
 
 	gs_texrender_t *matte_tex;
+	gs_texrender_t *stinger_tex;
 
 	float (*mix_a)(void *data, float t);
 	float (*mix_b)(void *data, float t);
@@ -97,6 +99,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? 2.0f : 1.0f);
 	s->invert_matte = obs_data_get_bool(settings, "invert_matte");
 
+	s->do_texrender = s->track_matte_enabled &&
+			  s->matte_layout != MATTE_LAYOUT_SEPARATE_FILE;
+
 	if (s->matte_source) {
 		obs_source_release(s->matte_source);
 		s->matte_source = NULL;
@@ -139,10 +144,14 @@ static void stinger_update(void *data, obs_data_t *settings)
 
 	if (s->track_matte_enabled != track_matte_was_enabled) {
 		gs_texrender_destroy(s->matte_tex);
+		gs_texrender_destroy(s->stinger_tex);
 		s->matte_tex = NULL;
+		s->stinger_tex = NULL;
 
 		if (s->track_matte_enabled) {
 			s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+			s->stinger_tex =
+				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		}
 	}
 }
@@ -192,6 +201,7 @@ static void stinger_destroy(void *data)
 	obs_source_release(s->matte_source);
 
 	gs_texrender_destroy(s->matte_tex);
+	gs_texrender_destroy(s->stinger_tex);
 
 	gs_effect_destroy(s->matte_effect);
 
@@ -263,6 +273,25 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 	UNUSED_PARAMETER(t);
 }
 
+static void stinger_texrender(struct stinger_info *s, uint32_t source_cx,
+			      uint32_t source_cy, uint32_t media_cx,
+			      uint32_t media_cy)
+{
+	if (gs_texrender_begin(s->stinger_tex, source_cx, source_cy)) {
+		float cx = (float)media_cx / s->matte_width_factor;
+		float cy = (float)media_cy / s->matte_height_factor;
+
+		gs_ortho(0.0f, cx, 0.0f, cy, -100.0f, 100.0f);
+
+		gs_blend_state_push();
+		gs_enable_blending(false);
+		obs_source_video_render(s->media_source);
+		gs_blend_state_pop();
+
+		gs_texrender_end(s->stinger_tex);
+	}
+}
+
 static void stinger_video_render(void *data, gs_effect_t *effect)
 {
 	struct stinger_info *s = data;
@@ -283,8 +312,11 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	/* --------------------- */
 
-	float source_cx = (float)obs_source_get_width(s->source);
-	float source_cy = (float)obs_source_get_height(s->source);
+	uint32_t source_cx = obs_source_get_width(s->source);
+	uint32_t source_cy = obs_source_get_height(s->source);
+
+	float source_cxf = (float)source_cx;
+	float source_cyf = (float)source_cy;
 
 	uint32_t media_cx = obs_source_get_width(s->media_source);
 	uint32_t media_cy = obs_source_get_height(s->media_source);
@@ -292,20 +324,23 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	if (!media_cx || !media_cy)
 		return;
 
-	float scale_x, scale_y;
-	if (s->track_matte_enabled) {
-		scale_x = source_cx / ((float)media_cx / s->matte_width_factor);
-		scale_y =
-			source_cy / ((float)media_cy / s->matte_height_factor);
-	} else {
-		scale_x = source_cx / (float)media_cx;
-		scale_y = source_cy / (float)media_cy;
-	}
+	if (s->do_texrender) {
+		stinger_texrender(s, source_cx, source_cy, media_cx, media_cy);
 
-	gs_matrix_push();
-	gs_matrix_scale3f(scale_x, scale_y, 1.0f);
-	obs_source_video_render(s->media_source);
-	gs_matrix_pop();
+		gs_effect_t *e = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		gs_eparam_t *p = gs_effect_get_param_by_name(e, "image");
+		gs_texture_t *tex = gs_texrender_get_texture(s->stinger_tex);
+
+		gs_effect_set_texture(p, tex);
+		while (gs_effect_loop(e, "Draw"))
+			gs_draw_sprite(NULL, 0, source_cx, source_cy);
+	} else {
+		gs_matrix_push();
+		gs_matrix_scale3f(source_cxf / (float)media_cx,
+				  source_cyf / (float)media_cy, 1.0f);
+		obs_source_video_render(s->media_source);
+		gs_matrix_pop();
+	}
 
 	UNUSED_PARAMETER(effect);
 }
@@ -315,6 +350,7 @@ static void stinger_video_tick(void *data, float seconds)
 	struct stinger_info *s = data;
 
 	if (s->track_matte_enabled) {
+		gs_texrender_reset(s->stinger_tex);
 		gs_texrender_reset(s->matte_tex);
 	}
 
