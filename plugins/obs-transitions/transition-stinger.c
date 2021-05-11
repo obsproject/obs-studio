@@ -439,7 +439,7 @@ static void stinger_transition_start(void *data)
 		s->transition_a_mul = (1.0f / s->transition_point);
 		s->transition_b_mul = (1.0f / (1.0f - s->transition_point));
 
-		if (s->track_matte_enabled) {
+		if (s->track_matte_enabled && s->matte_source) {
 			proc_handler_call(matte_ph, "get_duration", &cd);
 			uint64_t tm_duration_ns =
 				(uint64_t)calldata_int(&cd, "duration");
