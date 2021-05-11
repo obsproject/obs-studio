@@ -406,7 +406,9 @@ static void stinger_transition_start(void *data)
 		proc_handler_t *ph =
 			obs_source_get_proc_handler(s->media_source);
 		proc_handler_t *matte_ph =
-			obs_source_get_proc_handler(s->matte_source);
+			s->matte_source
+				? obs_source_get_proc_handler(s->matte_source)
+				: NULL;
 
 		if (s->transitioning) {
 			proc_handler_call(ph, "restart", &cd);
