@@ -86,6 +86,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 	else
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
 
+	bool track_matte_was_enabled = s->track_matte_enabled;
+
 	s->track_matte_enabled =
 		obs_data_get_bool(settings, "track_matte_enabled");
 	s->matte_layout = (int)obs_data_get_int(settings, "track_matte_layout");
@@ -134,6 +136,15 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->mix_b = mix_b_cross_fade;
 		break;
 	}
+
+	if (s->track_matte_enabled != track_matte_was_enabled) {
+		gs_texrender_destroy(s->matte_tex);
+		s->matte_tex = NULL;
+
+		if (s->track_matte_enabled) {
+			s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		}
+	}
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -168,8 +179,6 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 		gs_effect_get_param_by_name(s->matte_effect, "matte_tex");
 	s->ep_invert_matte =
 		gs_effect_get_param_by_name(s->matte_effect, "invert_matte");
-
-	s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
