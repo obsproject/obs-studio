@@ -6,6 +6,7 @@
 #include <libswscale/swscale.h>
 
 #include "../obs-ffmpeg-compat.h"
+#include "srgb.h"
 
 struct ffmpeg_image {
 	const char *file;
@@ -121,58 +122,129 @@ fail:
 #define obs_bswap16(v) __builtin_bswap16(v)
 #endif
 
+static void *ffmpeg_image_copy_data_straight(struct ffmpeg_image *info,
+					     AVFrame *frame)
+{
+	const size_t linesize = (size_t)info->cx * 4;
+	const size_t totalsize = info->cy * linesize;
+	void *data = bmalloc(totalsize);
+
+	const size_t src_linesize = frame->linesize[0];
+	if (linesize != src_linesize) {
+		const size_t min_line = linesize < src_linesize ? linesize
+								: src_linesize;
+
+		uint8_t *dst = data;
+		const uint8_t *src = frame->data[0];
+		for (int y = 0; y < info->cy; y++) {
+			memcpy(dst, src, min_line);
+			dst += linesize;
+			src += src_linesize;
+		}
+	} else {
+		memcpy(data, frame->data[0], totalsize);
+	}
+
+	return data;
+}
+
 static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
-					 AVFrame *frame)
+					 AVFrame *frame,
+					 enum gs_image_alpha_mode alpha_mode)
 {
 	struct SwsContext *sws_ctx = NULL;
 	void *data = NULL;
 	int ret = 0;
 
-	if (info->format == AV_PIX_FMT_RGBA ||
-	    info->format == AV_PIX_FMT_BGRA ||
-	    info->format == AV_PIX_FMT_BGR0) {
-		const size_t linesize = (size_t)info->cx * 4;
-		const size_t totalsize = info->cy * linesize;
-		data = bmalloc(totalsize);
-
-		const size_t src_linesize = frame->linesize[0];
-		if (linesize != src_linesize) {
+	if (info->format == AV_PIX_FMT_BGR0) {
+		data = ffmpeg_image_copy_data_straight(info, frame);
+	} else if (info->format == AV_PIX_FMT_RGBA ||
+		   info->format == AV_PIX_FMT_BGRA) {
+		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
+			data = ffmpeg_image_copy_data_straight(info, frame);
+		} else {
+			const size_t linesize = (size_t)info->cx * 4;
+			const size_t totalsize = info->cy * linesize;
+			data = bmalloc(totalsize);
+			const size_t src_linesize = frame->linesize[0];
 			const size_t min_line = linesize < src_linesize
 							? linesize
 							: src_linesize;
-
 			uint8_t *dst = data;
 			const uint8_t *src = frame->data[0];
-			for (int y = 0; y < info->cy; y++) {
-				memcpy(dst, src, min_line);
-				dst += linesize;
-				src += src_linesize;
+			const size_t row_elements = min_line >> 2;
+			if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
+				for (int y = 0; y < info->cy; y++) {
+					gs_premultiply_xyza_srgb_loop_restrict(
+						dst, src, row_elements);
+					dst += linesize;
+					src += src_linesize;
+				}
+			} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
+				for (int y = 0; y < info->cy; y++) {
+					gs_premultiply_xyza_loop_restrict(
+						dst, src, row_elements);
+					dst += linesize;
+					src += src_linesize;
+				}
 			}
-		} else {
-			memcpy(data, frame->data[0], totalsize);
 		}
 	} else if (info->format == AV_PIX_FMT_RGBA64BE) {
-		const size_t linesize = (size_t)info->cx * 8;
-		data = bmalloc(info->cy * linesize);
-
+		const size_t dst_linesize = (size_t)info->cx * 4;
+		data = bmalloc(info->cy * dst_linesize);
 		const size_t src_linesize = frame->linesize[0];
-		const size_t min_line = linesize < src_linesize ? linesize
-								: src_linesize;
-		const size_t pairs = min_line >> 1;
-
+		const size_t src_min_line = (dst_linesize * 2) < src_linesize
+						    ? (dst_linesize * 2)
+						    : src_linesize;
+		const size_t row_elements = src_min_line >> 3;
+		uint8_t *dst = data;
 		const uint8_t *src = frame->data[0];
-		uint16_t *dst = data;
-		for (int y = 0; y < info->cy; y++) {
-			for (size_t x = 0; x < pairs; ++x) {
-				uint16_t value;
-				memcpy(&value, src, sizeof(value));
-				*dst = obs_bswap16(value);
-				++dst;
-				src += sizeof(value);
-			}
+		uint16_t value[4];
+		float f[4];
+		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
+			for (int y = 0; y < info->cy; y++) {
+				for (size_t x = 0; x < row_elements; ++x) {
+					memcpy(value, src, sizeof(value));
+					f[0] = (float)obs_bswap16(value[0]) /
+					       65535.0f;
+					f[1] = (float)obs_bswap16(value[1]) /
+					       65535.0f;
+					f[2] = (float)obs_bswap16(value[2]) /
+					       65535.0f;
+					f[3] = (float)obs_bswap16(value[3]) /
+					       65535.0f;
+					gs_float3_srgb_linear_to_nonlinear(f);
+					gs_float4_to_u8x4(dst, f);
+					dst += sizeof(*dst) * 4;
+					src += sizeof(value);
+				}
 
-			src += src_linesize - min_line;
+				src += src_linesize - src_min_line;
+			}
+		} else {
+			for (int y = 0; y < info->cy; y++) {
+				for (size_t x = 0; x < row_elements; ++x) {
+					memcpy(value, src, sizeof(value));
+					f[0] = (float)obs_bswap16(value[0]) /
+					       65535.0f;
+					f[1] = (float)obs_bswap16(value[1]) /
+					       65535.0f;
+					f[2] = (float)obs_bswap16(value[2]) /
+					       65535.0f;
+					f[3] = (float)obs_bswap16(value[3]) /
+					       65535.0f;
+					gs_premultiply_float4(f);
+					gs_float3_srgb_linear_to_nonlinear(f);
+					gs_float4_to_u8x4(dst, f);
+					dst += sizeof(*dst) * 4;
+					src += sizeof(value);
+				}
+
+				src += src_linesize - src_min_line;
+			}
 		}
+
+		info->format = AV_PIX_FMT_RGBA;
 	} else {
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
@@ -222,6 +294,14 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 		av_freep(pointers);
 
+		if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
+			gs_premultiply_xyza_srgb_loop(data, (size_t)info->cx *
+								    info->cy);
+		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
+			gs_premultiply_xyza_loop(data,
+						 (size_t)info->cx * info->cy);
+		}
+
 		info->format = format;
 	}
 
@@ -229,7 +309,8 @@ fail:
 	return data;
 }
 
-static void *ffmpeg_image_decode(struct ffmpeg_image *info)
+static void *ffmpeg_image_decode(struct ffmpeg_image *info,
+				 enum gs_image_alpha_mode alpha_mode)
 {
 	AVPacket packet = {0};
 	void *data = NULL;
@@ -271,7 +352,7 @@ static void *ffmpeg_image_decode(struct ffmpeg_image *info)
 		}
 	}
 
-	data = ffmpeg_image_reformat_frame(info, frame);
+	data = ffmpeg_image_reformat_frame(info, frame, alpha_mode);
 
 fail:
 	av_packet_unref(&packet);
@@ -312,7 +393,29 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	uint8_t *data = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
-		data = ffmpeg_image_decode(&image);
+		data = ffmpeg_image_decode(&image, GS_IMAGE_ALPHA_STRAIGHT);
+		if (data) {
+			*format = convert_format(image.format);
+			*cx_out = (uint32_t)image.cx;
+			*cy_out = (uint32_t)image.cy;
+		}
+
+		ffmpeg_image_free(&image);
+	}
+
+	return data;
+}
+
+uint8_t *gs_create_texture_file_data2(const char *file,
+				      enum gs_image_alpha_mode alpha_mode,
+				      enum gs_color_format *format,
+				      uint32_t *cx_out, uint32_t *cy_out)
+{
+	struct ffmpeg_image image;
+	uint8_t *data = NULL;
+
+	if (ffmpeg_image_init(&image, file)) {
+		data = ffmpeg_image_decode(&image, alpha_mode);
 		if (data) {
 			*format = convert_format(image.format);
 			*cx_out = (uint32_t)image.cx;
