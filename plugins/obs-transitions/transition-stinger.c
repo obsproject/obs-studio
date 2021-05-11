@@ -237,6 +237,9 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
 			gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+			gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f,
+				 100.0f);
+
 			obs_source_video_render(matte_source);
 
 			gs_texrender_end(s->matte_tex);
