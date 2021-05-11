@@ -219,7 +219,6 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? (-matte_cy) : 0.0f);
 
 	// Track matte media render
-	gs_texrender_reset(s->matte_tex);
 	if (matte_cx > 0 && matte_cy > 0) {
 		float scale_x = (float)cx / matte_cx;
 		float scale_y = (float)cy / matte_cy;
@@ -299,6 +298,17 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	gs_matrix_pop();
 
 	UNUSED_PARAMETER(effect);
+}
+
+static void stinger_video_tick(void *data, float seconds)
+{
+	struct stinger_info *s = data;
+
+	if (s->track_matte_enabled) {
+		gs_texrender_reset(s->matte_tex);
+	}
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static inline float calc_fade(float t, float mul)
@@ -645,6 +655,7 @@ struct obs_source_info stinger_transition = {
 	.update = stinger_update,
 	.get_defaults = stinger_defaults,
 	.video_render = stinger_video_render,
+	.video_tick = stinger_video_tick,
 	.audio_render = stinger_audio_render,
 	.get_properties = stinger_properties,
 	.enum_active_sources = stinger_enum_active_sources,
