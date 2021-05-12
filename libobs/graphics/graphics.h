@@ -559,10 +559,19 @@ EXPORT gs_shader_t *gs_vertexshader_create_from_file(const char *file,
 EXPORT gs_shader_t *gs_pixelshader_create_from_file(const char *file,
 						    char **error_string);
 
+enum gs_image_alpha_mode {
+	GS_IMAGE_ALPHA_STRAIGHT,
+	GS_IMAGE_ALPHA_PREMULTIPLY_SRGB,
+	GS_IMAGE_ALPHA_PREMULTIPLY,
+};
+
 EXPORT gs_texture_t *gs_texture_create_from_file(const char *file);
 EXPORT uint8_t *gs_create_texture_file_data(const char *file,
 					    enum gs_color_format *format,
 					    uint32_t *cx, uint32_t *cy);
+EXPORT uint8_t *gs_create_texture_file_data2(
+	const char *file, enum gs_image_alpha_mode alpha_mode,
+	enum gs_color_format *format, uint32_t *cx, uint32_t *cy);
 
 #define GS_FLIP_U (1 << 0)
 #define GS_FLIP_V (1 << 1)
