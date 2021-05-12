@@ -104,10 +104,6 @@ static void decklink_output_stop(void *data, uint64_t)
 
 	obs_output_end_data_capture(decklink->GetOutput());
 
-	ComPtr<DeckLinkDevice> device;
-
-	device.Set(deviceEnum->FindByHash(decklink->deviceHash));
-
 	decklink->Deactivate();
 }
 
