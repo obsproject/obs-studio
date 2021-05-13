@@ -200,10 +200,13 @@ static void stinger_destroy(void *data)
 	obs_source_release(s->media_source);
 	obs_source_release(s->matte_source);
 
+	obs_enter_graphics();
+
 	gs_texrender_destroy(s->matte_tex);
 	gs_texrender_destroy(s->stinger_tex);
-
 	gs_effect_destroy(s->matte_effect);
+
+	obs_leave_graphics();
 
 	bfree(s);
 }
