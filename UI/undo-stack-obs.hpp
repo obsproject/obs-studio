@@ -42,8 +42,8 @@ private slots:
 public:
 	undo_stack(ui_ptr ui);
 
-	void enable_undo_redo();
-	void disable_undo_redo();
+	void enable();
+	void disable();
 
 	void clear();
 	void add_action(const QString &name, undo_redo_cb undo,

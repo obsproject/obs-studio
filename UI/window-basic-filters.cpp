@@ -267,13 +267,13 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 		obs_source_update(source, new_settings);
 
-		main->undo_s.enable_undo_redo();
+		main->undo_s.enable();
 	};
 
 	auto disabled_undo = [](void *vp, obs_data_t *settings) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		main->undo_s.disable_undo_redo();
+		main->undo_s.disable();
 		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
 		obs_source_update(source, settings);
 	};
