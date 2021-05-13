@@ -64,7 +64,7 @@ void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 
 void undo_stack::undo()
 {
-	if (undo_items.size() == 0 || disabled)
+	if (undo_items.size() == 0 || !enabled)
 		return;
 
 	last_is_repeatable = false;
@@ -88,7 +88,7 @@ void undo_stack::undo()
 
 void undo_stack::redo()
 {
-	if (redo_items.size() == 0 || disabled)
+	if (redo_items.size() == 0 || !enabled)
 		return;
 
 	last_is_repeatable = false;
@@ -112,7 +112,7 @@ void undo_stack::redo()
 
 void undo_stack::enable()
 {
-	disabled = false;
+	enabled = true;
 	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(false);
@@ -122,7 +122,7 @@ void undo_stack::enable()
 
 void undo_stack::disable()
 {
-	disabled = true;
+	enabled = false;
 	last_is_repeatable = false;
 
 	ui->actionMainUndo->setDisabled(true);
