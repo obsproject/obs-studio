@@ -29,7 +29,7 @@ class undo_stack : public QObject {
 	ui_ptr ui;
 	std::deque<undo_redo_t> undo_items;
 	std::deque<undo_redo_t> redo_items;
-	bool disabled = false;
+	bool enabled = true;
 	bool last_is_repeatable = false;
 
 	QTimer repeat_reset_timer;
