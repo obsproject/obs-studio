@@ -399,7 +399,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 			if (result != S_OK) {
 				LOG(LOG_ERROR,
 				    "Couldn't set input audio port to %d\n\n",
-				    bmdVideoConnection);
+				    bmdAudioConnection);
 			}
 		}
 	}
