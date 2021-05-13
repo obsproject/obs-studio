@@ -110,7 +110,7 @@ void undo_stack::redo()
 	}
 }
 
-void undo_stack::enable_undo_redo()
+void undo_stack::enable()
 {
 	disabled = false;
 	last_is_repeatable = false;
@@ -120,7 +120,7 @@ void undo_stack::enable_undo_redo()
 		ui->actionMainRedo->setDisabled(false);
 }
 
-void undo_stack::disable_undo_redo()
+void undo_stack::disable()
 {
 	disabled = true;
 	last_is_repeatable = false;
