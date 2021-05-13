@@ -29,11 +29,16 @@ class undo_stack : public QObject {
 	ui_ptr ui;
 	std::deque<undo_redo_t> undo_items;
 	std::deque<undo_redo_t> redo_items;
+	int disable_refs = 0;
 	bool enabled = true;
 	bool last_is_repeatable = false;
 
 	QTimer repeat_reset_timer;
 
+	inline bool is_enabled() const { return !disable_refs && enabled; }
+
+	void enable_internal();
+	void disable_internal();
 	void clear_redo();
 
 private slots:
@@ -44,6 +49,8 @@ public:
 
 	void enable();
 	void disable();
+	void push_disabled();
+	void pop_disabled();
 
 	void clear();
 	void add_action(const QString &name, undo_redo_cb undo,
