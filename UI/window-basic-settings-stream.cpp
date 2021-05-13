@@ -293,7 +293,7 @@ void OBSBasicSettings::UpdateKeyLink()
 		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
 	} else if (serviceName == "Glimesh") {
 		streamKeyLink = "https://glimesh.tv/users/settings/stream";
-	} else if (serviceName == "Odysee") {
+	} else if (serviceName == "Odysee (Beta)") {
 		streamKeyLink = "https://odysee.com/$/livestream";
 	} else if (serviceName.startsWith("OPENREC.tv")) {
 		streamKeyLink =
