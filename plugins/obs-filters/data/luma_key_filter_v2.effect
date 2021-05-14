@@ -38,8 +38,10 @@ float4 PSALumaKeyRGBA(VertData v_in) : TARGET
 	float chi = 1. - smoothstep(lumaMax - lumaMaxSmooth, lumaMax, luminance);
 
 	float amask = clo * chi;
+	rgba.a *= amask;
+	rgba.rgb *= rgba.a;
 
-	return float4(rgba.rgb, rgba.a * amask);
+	return rgba;
 }
 
 technique Draw
