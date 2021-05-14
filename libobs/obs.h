@@ -612,6 +612,10 @@ EXPORT void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *),
 EXPORT void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *),
 			    void *param);
 
+/** Enumerates all sources (regardless of type) */
+EXPORT void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+				 void *param);
+
 /** Enumerates outputs */
 EXPORT void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *),
 			     void *param);

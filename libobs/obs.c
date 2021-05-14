@@ -1526,6 +1526,13 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	pthread_mutex_unlock(mutex);
 }
 
+void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+			  void *param)
+{
+	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
+		 param);
+}
+
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
 {
 	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex, enum_proc,
