@@ -171,6 +171,7 @@ float4 LUT3D(VertDataOut v_in) : TARGET
 	}
 
 	textureColor.rgb = srgb_nonlinear_to_linear(textureColor.rgb);
+	textureColor.rgb *= textureColor.a;
 	return textureColor;
 }
 
