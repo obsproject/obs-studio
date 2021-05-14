@@ -143,6 +143,7 @@ void TranslateOSStudio(Json &res)
 #undef ClearTranslation
 	}
 
+	out["sources"] = sources;
 	res = out;
 }
 
