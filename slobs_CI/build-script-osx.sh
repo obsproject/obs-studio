@@ -47,14 +47,10 @@ cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded
 cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libGLESv2.dylib \
 ./obs-plugins/libswiftshader_libGLESv2.dylib
 
-cp -R "../build/${BUILDCONFIG}/bin/obs64 Helper.app" "./Frameworks/"
-cp -R "../build/${BUILDCONFIG}/bin/obs64 Helper (GPU).app" "./Frameworks/"
-cp -R "../build/${BUILDCONFIG}/bin/obs64 Helper (Plugin).app" "./Frameworks/"
-cp -R "../build/${BUILDCONFIG}/bin/obs64 Helper (Renderer).app" "./Frameworks/"
-
-ls
-
-chmod +x "Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework"
+cp -R "../build/rundir/${BUILDCONFIG}/bin/obs64 Helper.app" "./Frameworks/"
+cp -R "../build/rundir/${BUILDCONFIG}/bin/obs64 Helper (GPU).app" "./Frameworks/"
+cp -R "../build/rundir/${BUILDCONFIG}/bin/obs64 Helper (Plugin).app" "./Frameworks/"
+cp -R "../build/rundir/${BUILDCONFIG}/bin/obs64 Helper (Renderer).app" "./Frameworks/"
 
 # Apply new Framework load path
 sudo install_name_tool -change \
