@@ -7,15 +7,16 @@
 #include <d3d12.h>
 #include <dxgi1_4.h>
 
+#include <detours.h>
+
 #include "dxgi-helpers.hpp"
-#include "../funchook.h"
 
 #define MAX_BACKBUFFERS 8
 
-typedef HRESULT(STDMETHODCALLTYPE *execute_command_lists_t)(
+typedef HRESULT(STDMETHODCALLTYPE *PFN_ExecuteCommandLists)(
 	ID3D12CommandQueue *, UINT, ID3D12CommandList *const *);
 
-static struct func_hook execute_command_lists;
+static PFN_ExecuteCommandLists RealExecuteCommandLists = nullptr;
 
 struct d3d12_data {
 	ID3D12Device *device; /* do not release */
@@ -142,12 +143,10 @@ static bool create_d3d12_tex(bb_info &bb)
 	return true;
 }
 
-typedef PFN_D3D11ON12_CREATE_DEVICE create_11_on_12_t;
-
 static bool d3d12_init_11on12(void)
 {
 	static HMODULE d3d11 = nullptr;
-	static create_11_on_12_t create_11_on_12 = nullptr;
+	static PFN_D3D11ON12_CREATE_DEVICE create_11_on_12 = nullptr;
 	static bool initialized_11 = false;
 	static bool initialized_func = false;
 	HRESULT hr;
@@ -165,7 +164,7 @@ static bool d3d12_init_11on12(void)
 	}
 
 	if (!initialized_func && !create_11_on_12) {
-		create_11_on_12 = (create_11_on_12_t)GetProcAddress(
+		create_11_on_12 = (PFN_D3D11ON12_CREATE_DEVICE)GetProcAddress(
 			d3d11, "D3D11On12CreateDevice");
 		if (!create_11_on_12) {
 			hlog("d3d12_init_11on12: Failed to get "
@@ -368,8 +367,6 @@ static HRESULT STDMETHODCALLTYPE
 hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 			   ID3D12CommandList *const *ppCommandLists)
 {
-	HRESULT hr;
-
 	if (!dxgi_possible_swap_queue) {
 		if (dxgi_presenting) {
 			hlog("D3D12 queue from present");
@@ -382,17 +379,12 @@ hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 		}
 	}
 
-	unhook(&execute_command_lists);
-	execute_command_lists_t call =
-		(execute_command_lists_t)execute_command_lists.call_addr;
-	hr = call(queue, NumCommandLists, ppCommandLists);
-	rehook(&execute_command_lists);
-
-	return hr;
+	return RealExecuteCommandLists(queue, NumCommandLists, ppCommandLists);
 }
 
-static bool manually_get_d3d12_addrs(HMODULE d3d12_module,
-				     void **execute_command_lists_addr)
+static bool
+manually_get_d3d12_addrs(HMODULE d3d12_module,
+			 PFN_ExecuteCommandLists *execute_command_lists_addr)
 {
 	PFN_D3D12_CREATE_DEVICE create =
 		(PFN_D3D12_CREATE_DEVICE)GetProcAddress(d3d12_module,
@@ -413,7 +405,8 @@ static bool manually_get_d3d12_addrs(HMODULE d3d12_module,
 		success = SUCCEEDED(hr);
 		if (success) {
 			void **queue_vtable = *(void ***)queue;
-			*execute_command_lists_addr = queue_vtable[10];
+			*execute_command_lists_addr =
+				(PFN_ExecuteCommandLists)queue_vtable[10];
 
 			queue->Release();
 		} else {
@@ -435,7 +428,7 @@ bool hook_d3d12(void)
 		return false;
 	}
 
-	void *execute_command_lists_addr = nullptr;
+	PFN_ExecuteCommandLists execute_command_lists_addr = nullptr;
 	if (!manually_get_d3d12_addrs(d3d12_module,
 				      &execute_command_lists_addr)) {
 		hlog("Failed to get D3D12 values");
@@ -447,13 +440,23 @@ bool hook_d3d12(void)
 		return true;
 	}
 
-	hook_init(&execute_command_lists, execute_command_lists_addr,
-		  (void *)hook_execute_command_lists,
-		  "ID3D12CommandQueue::ExecuteCommandLists");
-	rehook(&execute_command_lists);
+	DetourTransactionBegin();
 
-	hlog("Hooked D3D12");
-	return true;
+	RealExecuteCommandLists = execute_command_lists_addr;
+	DetourAttach(&(PVOID &)RealExecuteCommandLists,
+		     hook_execute_command_lists);
+
+	const LONG error = DetourTransactionCommit();
+	const bool success = error == NO_ERROR;
+	if (success) {
+		hlog("Hooked ID3D12CommandQueue::ExecuteCommandLists");
+		hlog("Hooked D3D12");
+	} else {
+		RealExecuteCommandLists = nullptr;
+		hlog("Failed to attach Detours hook: %ld", error);
+	}
+
+	return success;
 }
 
 #endif
