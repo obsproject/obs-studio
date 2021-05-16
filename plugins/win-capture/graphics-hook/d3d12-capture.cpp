@@ -6,6 +6,7 @@
 #include <d3d11on12.h>
 #include <d3d12.h>
 #include <dxgi1_4.h>
+#include <inttypes.h>
 
 #include <detours.h>
 
@@ -182,7 +183,8 @@ static bool d3d12_init_11on12(void)
 	IUnknown *const *queues = nullptr;
 	UINT num_queues = 0;
 	if (global_hook_info->d3d12_use_swap_queue) {
-		hlog("d3d12_init_11on12: creating 11 device with swap queue");
+		hlog("d3d12_init_11on12: creating 11 device with swap queue: 0x%" PRIX64,
+		     (uint64_t)(uintptr_t)dxgi_possible_swap_queue);
 		queue = dxgi_possible_swap_queue;
 		queues = &queue;
 		num_queues = 1;
@@ -367,15 +369,20 @@ static HRESULT STDMETHODCALLTYPE
 hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 			   ID3D12CommandList *const *ppCommandLists)
 {
+	hlog_verbose("ExecuteCommandLists callback: queue=0x%" PRIX64,
+		     (uint64_t)(uintptr_t)queue);
+
 	if (!dxgi_possible_swap_queue) {
 		if (dxgi_presenting) {
-			hlog("D3D12 queue from present");
+			hlog("Remembering D3D12 queue from present");
 			dxgi_possible_swap_queue = queue;
 		} else if (dxgi_present_attempted &&
 			   (queue->GetDesc().Type ==
 			    D3D12_COMMAND_LIST_TYPE_DIRECT)) {
-			hlog("D3D12 queue from first direct after present");
+			hlog("Remembering D3D12 queue from first direct submit after present");
 			dxgi_possible_swap_queue = queue;
+		} else {
+			hlog_verbose("Ignoring D3D12 queue");
 		}
 	}
 
@@ -425,6 +432,8 @@ bool hook_d3d12(void)
 {
 	HMODULE d3d12_module = get_system_module("d3d12.dll");
 	if (!d3d12_module) {
+		hlog_verbose(
+			"Failed to find d3d12.dll. Skipping hook attempt.");
 		return false;
 	}
 
