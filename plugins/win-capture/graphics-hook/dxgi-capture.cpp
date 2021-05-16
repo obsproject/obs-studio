@@ -42,7 +42,7 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 
 	hr = swap->GetDevice(__uuidof(ID3D11Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
-		ID3D11Device *d3d11 = reinterpret_cast<ID3D11Device *>(device);
+		ID3D11Device *d3d11 = static_cast<ID3D11Device *>(device);
 		D3D_FEATURE_LEVEL level = d3d11->GetFeatureLevel();
 		device->Release();
 
@@ -56,31 +56,34 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 
 	hr = swap->GetDevice(__uuidof(ID3D10Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
+		device->Release();
+
 		data.swap = swap;
 		data.capture = d3d10_capture;
 		data.free = d3d10_free;
-		device->Release();
 		return true;
 	}
 
 	hr = swap->GetDevice(__uuidof(ID3D11Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
+		device->Release();
+
 		data.swap = swap;
 		data.capture = d3d11_capture;
 		data.free = d3d11_free;
-		device->Release();
 		return true;
 	}
 
 #if COMPILE_D3D12_HOOK
 	hr = swap->GetDevice(__uuidof(ID3D12Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
+		device->Release();
+
 		if (!global_hook_info->d3d12_use_swap_queue ||
 		    dxgi_possible_swap_queue) {
 			data.swap = swap;
 			data.capture = d3d12_capture;
 			data.free = d3d12_free;
-			device->Release();
 			return true;
 		}
 	}
