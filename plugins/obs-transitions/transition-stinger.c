@@ -143,6 +143,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 	}
 
 	if (s->track_matte_enabled != track_matte_was_enabled) {
+		obs_enter_graphics();
+
 		gs_texrender_destroy(s->matte_tex);
 		gs_texrender_destroy(s->stinger_tex);
 		s->matte_tex = NULL;
@@ -153,6 +155,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 			s->stinger_tex =
 				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		}
+
+		obs_leave_graphics();
 	}
 }
 
@@ -200,10 +204,13 @@ static void stinger_destroy(void *data)
 	obs_source_release(s->media_source);
 	obs_source_release(s->matte_source);
 
+	obs_enter_graphics();
+
 	gs_texrender_destroy(s->matte_tex);
 	gs_texrender_destroy(s->stinger_tex);
-
 	gs_effect_destroy(s->matte_effect);
+
+	obs_leave_graphics();
 
 	bfree(s);
 }
