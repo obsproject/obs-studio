@@ -120,8 +120,6 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 						     DXGI_FORMAT format,
 						     UINT flags)
 {
-	HRESULT hr;
-
 	data.swap = nullptr;
 	data.capture = nullptr;
 	dxgi_possible_swap_queue = nullptr;
@@ -133,7 +131,8 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 
 	unhook(&resize_buffers);
 	resize_buffers_t call = (resize_buffers_t)resize_buffers.call_addr;
-	hr = call(swap, buffer_count, width, height, format, flags);
+	const HRESULT hr =
+		call(swap, buffer_count, width, height, format, flags);
 	rehook(&resize_buffers);
 
 	resize_buffers_called = true;
@@ -143,10 +142,9 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 
 static inline IUnknown *get_dxgi_backbuffer(IDXGISwapChain *swap)
 {
-	IDXGIResource *res = nullptr;
-	HRESULT hr;
+	IUnknown *res = nullptr;
 
-	hr = swap->GetBuffer(0, __uuidof(IUnknown), (void **)&res);
+	const HRESULT hr = swap->GetBuffer(0, IID_PPV_ARGS(&res));
 	if (FAILED(hr))
 		hlog_hr("get_dxgi_backbuffer: GetBuffer failed", hr);
 
@@ -156,21 +154,18 @@ static inline IUnknown *get_dxgi_backbuffer(IDXGISwapChain *swap)
 static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 					      UINT sync_interval, UINT flags)
 {
-	IUnknown *backbuffer = nullptr;
-	bool capture_overlay = global_hook_info->capture_overlay;
-	bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
-	bool capture;
-	HRESULT hr;
+	const bool capture_overlay = global_hook_info->capture_overlay;
+	const bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
 
 	if (!data.swap && !capture_active()) {
 		setup_dxgi(swap);
 	}
 
-	capture = !test_draw && swap == data.swap && !!data.capture;
+	const bool capture = !test_draw && swap == data.swap && data.capture;
 	if (capture && !capture_overlay) {
-		backbuffer = get_dxgi_backbuffer(swap);
+		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
-		if (!!backbuffer) {
+		if (backbuffer) {
 			data.capture(swap, backbuffer, capture_overlay);
 			backbuffer->Release();
 		}
@@ -179,7 +174,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 	dxgi_presenting = true;
 	unhook(&present);
 	present_t call = (present_t)present.call_addr;
-	hr = call(swap, sync_interval, flags);
+	const HRESULT hr = call(swap, sync_interval, flags);
 	rehook(&present);
 	dxgi_presenting = false;
 	dxgi_present_attempted = true;
@@ -195,9 +190,9 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		if (resize_buffers_called) {
 			resize_buffers_called = false;
 		} else {
-			backbuffer = get_dxgi_backbuffer(swap);
+			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
-			if (!!backbuffer) {
+			if (backbuffer) {
 				data.capture(swap, backbuffer, capture_overlay);
 				backbuffer->Release();
 			}
@@ -211,21 +206,18 @@ static HRESULT STDMETHODCALLTYPE
 hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 	      const DXGI_PRESENT_PARAMETERS *params)
 {
-	IUnknown *backbuffer = nullptr;
-	bool capture_overlay = global_hook_info->capture_overlay;
-	bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
-	bool capture;
-	HRESULT hr;
+	const bool capture_overlay = global_hook_info->capture_overlay;
+	const bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
 
 	if (!data.swap && !capture_active()) {
 		setup_dxgi(swap);
 	}
 
-	capture = !test_draw && swap == data.swap && !!data.capture;
+	const bool capture = !test_draw && swap == data.swap && data.capture;
 	if (capture && !capture_overlay) {
-		backbuffer = get_dxgi_backbuffer(swap);
+		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
-		if (!!backbuffer) {
+		if (backbuffer) {
 			DXGI_SWAP_CHAIN_DESC1 desc;
 			swap->GetDesc1(&desc);
 			data.capture(swap, backbuffer, capture_overlay);
@@ -236,7 +228,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 	dxgi_presenting = true;
 	unhook(&present1);
 	present1_t call = (present1_t)present1.call_addr;
-	hr = call(swap, sync_interval, flags, params);
+	const HRESULT hr = call(swap, sync_interval, flags, params);
 	rehook(&present1);
 	dxgi_presenting = false;
 	dxgi_present_attempted = true;
@@ -245,9 +237,9 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		if (resize_buffers_called) {
 			resize_buffers_called = false;
 		} else {
-			backbuffer = get_dxgi_backbuffer(swap);
+			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
-			if (!!backbuffer) {
+			if (backbuffer) {
 				data.capture(swap, backbuffer, capture_overlay);
 				backbuffer->Release();
 			}
@@ -260,24 +252,21 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 bool hook_dxgi(void)
 {
 	HMODULE dxgi_module = get_system_module("dxgi.dll");
-	void *present_addr;
-	void *resize_addr;
-	void *present1_addr = nullptr;
-	void *release_addr = nullptr;
-
 	if (!dxgi_module) {
 		return false;
 	}
 
 	/* ---------------------- */
 
-	present_addr = get_offset_addr(dxgi_module,
-				       global_hook_info->offsets.dxgi.present);
-	resize_addr = get_offset_addr(dxgi_module,
-				      global_hook_info->offsets.dxgi.resize);
+	void *present_addr = get_offset_addr(
+		dxgi_module, global_hook_info->offsets.dxgi.present);
+	void *resize_addr = get_offset_addr(
+		dxgi_module, global_hook_info->offsets.dxgi.resize);
+	void *present1_addr = nullptr;
 	if (global_hook_info->offsets.dxgi.present1)
 		present1_addr = get_offset_addr(
 			dxgi_module, global_hook_info->offsets.dxgi.present1);
+	void *release_addr = nullptr;
 	if (global_hook_info->offsets.dxgi2.release)
 		release_addr = get_offset_addr(
 			dxgi_module, global_hook_info->offsets.dxgi2.release);
