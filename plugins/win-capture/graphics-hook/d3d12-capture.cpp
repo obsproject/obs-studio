@@ -20,7 +20,6 @@ typedef HRESULT(STDMETHODCALLTYPE *PFN_ExecuteCommandLists)(
 static PFN_ExecuteCommandLists RealExecuteCommandLists = nullptr;
 
 struct d3d12_data {
-	ID3D12Device *device; /* do not release */
 	uint32_t cx;
 	uint32_t cy;
 	DXGI_FORMAT format;
@@ -144,7 +143,7 @@ static bool create_d3d12_tex(bb_info &bb)
 	return true;
 }
 
-static bool d3d12_init_11on12(void)
+static bool d3d12_init_11on12(ID3D12Device *device)
 {
 	static HMODULE d3d11 = nullptr;
 	static PFN_D3D11ON12_CREATE_DEVICE create_11_on_12 = nullptr;
@@ -192,7 +191,7 @@ static bool d3d12_init_11on12(void)
 		hlog("d3d12_init_11on12: creating 11 device without swap queue");
 	}
 
-	hr = create_11_on_12(data.device, 0, nullptr, 0, queues, num_queues, 0,
+	hr = create_11_on_12(device, 0, nullptr, 0, queues, num_queues, 0,
 			     &data.device11, &data.context11, nullptr);
 
 	if (FAILED(hr)) {
@@ -210,9 +209,9 @@ static bool d3d12_init_11on12(void)
 	return true;
 }
 
-static bool d3d12_shtex_init(HWND window, bb_info &bb)
+static bool d3d12_shtex_init(ID3D12Device *device, HWND window, bb_info &bb)
 {
-	if (!d3d12_init_11on12()) {
+	if (!d3d12_init_11on12(device)) {
 		return false;
 	}
 	if (!create_d3d12_tex(bb)) {
@@ -285,29 +284,28 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 
 static void d3d12_init(IDXGISwapChain *swap)
 {
-	bb_info bb = {};
-	HWND window;
-	HRESULT hr;
+	ID3D12Device *device = nullptr;
+	const HRESULT hr = swap->GetDevice(IID_PPV_ARGS(&device));
+	if (SUCCEEDED(hr)) {
+		hlog("d3d12_init: device=0x%" PRIX64,
+		     (uint64_t)(uintptr_t)device);
 
-	hr = swap->GetDevice(__uuidof(ID3D12Device), (void **)&data.device);
-	if (FAILED(hr)) {
+		HWND window;
+		bb_info bb = {};
+		if (d3d12_init_format(swap, window, bb)) {
+			if (global_hook_info->force_shmem) {
+				hlog("d3d12_init: shared memory capture currently "
+				     "unsupported; ignoring");
+			}
+
+			if (!d3d12_shtex_init(device, window, bb))
+				d3d12_free();
+		}
+
+		device->Release();
+	} else {
 		hlog_hr("d3d12_init: failed to get device from swap", hr);
-		return;
 	}
-
-	data.device->Release();
-
-	if (!d3d12_init_format(swap, window, bb)) {
-		return;
-	}
-
-	if (global_hook_info->force_shmem) {
-		hlog("d3d12_init: shared memory capture currently "
-		     "unsupported; ignoring");
-	}
-
-	if (!d3d12_shtex_init(window, bb))
-		d3d12_free();
 }
 
 static inline void d3d12_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
