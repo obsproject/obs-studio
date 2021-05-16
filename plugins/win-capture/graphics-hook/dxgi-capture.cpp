@@ -2,6 +2,7 @@
 #include <d3d11.h>
 #include <dxgi1_2.h>
 #include <d3dcompiler.h>
+#include <inttypes.h>
 
 #include "graphics-hook.h"
 #include "../funchook.h"
@@ -49,6 +50,8 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 		device->Release();
 
 		if (level >= D3D_FEATURE_LEVEL_11_0) {
+			hlog("Found D3D11 11.0 device on swap chain");
+
 			data.swap = swap;
 			data.capture = d3d11_capture;
 			data.free = d3d11_free;
@@ -60,6 +63,8 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 	if (SUCCEEDED(hr)) {
 		device->Release();
 
+		hlog("Found D3D10 device on swap chain");
+
 		data.swap = swap;
 		data.capture = d3d10_capture;
 		data.free = d3d10_free;
@@ -69,6 +74,8 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 	hr = swap->GetDevice(__uuidof(ID3D11Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
 		device->Release();
+
+		hlog("Found D3D11 device on swap chain");
 
 		data.swap = swap;
 		data.capture = d3d11_capture;
@@ -81,6 +88,12 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 	if (SUCCEEDED(hr)) {
 		device->Release();
 
+		hlog("Found D3D12 device on swap chain: swap=0x%" PRIX64
+		     ", device=0x%" PRIX64 ", use_queue=%d, queue=0x%" PRIX64,
+		     (uint64_t)(uintptr_t)swap, (uint64_t)(uintptr_t)device,
+		     (int)global_hook_info->d3d12_use_swap_queue,
+		     (uint64_t)(uintptr_t)dxgi_possible_swap_queue);
+
 		if (!global_hook_info->d3d12_use_swap_queue ||
 		    dxgi_possible_swap_queue) {
 			data.swap = swap;
@@ -91,6 +104,7 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 	}
 #endif
 
+	hlog_verbose("Failed to setup DXGI");
 	return false;
 }
 
@@ -101,7 +115,10 @@ static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
 	ULONG refs = call(unknown);
 	rehook(&release);
 
+	hlog_verbose("Release callback: Refs=%lu", refs);
 	if (unknown == data.swap && refs == 0) {
+		hlog_verbose("No more refs, so reset capture");
+
 		data.swap = nullptr;
 		data.capture = nullptr;
 		dxgi_possible_swap_queue = nullptr;
@@ -122,6 +139,8 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 						     DXGI_FORMAT format,
 						     UINT flags)
 {
+	hlog_verbose("ResizeBuffers callback");
+
 	data.swap = nullptr;
 	data.capture = nullptr;
 	dxgi_possible_swap_queue = nullptr;
@@ -188,6 +207,10 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		setup_dxgi(swap);
 	}
 
+	hlog_verbose(
+		"Present callback: sync_interval=%u, flags=%u, current_swap=0x%" PRIX64
+		", expected_swap=0x%" PRIX64,
+		sync_interval, flags, swap, data.swap);
 	const bool capture = !test_draw && swap == data.swap && data.capture;
 	if (capture && !capture_overlay) {
 		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
@@ -244,7 +267,11 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		setup_dxgi(swap);
 	}
 
-	const bool capture = !test_draw && swap == data.swap && data.capture;
+	hlog_verbose(
+		"Present1 callback: sync_interval=%u, flags=%u, current_swap=0x%" PRIX64
+		", expected_swap=0x%" PRIX64,
+		sync_interval, flags, swap, data.swap);
+	const bool capture = !test_draw && swap == data.swap && !!data.capture;
 	if (capture && !capture_overlay) {
 		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
@@ -284,6 +311,7 @@ bool hook_dxgi(void)
 {
 	HMODULE dxgi_module = get_system_module("dxgi.dll");
 	if (!dxgi_module) {
+		hlog_verbose("Failed to find dxgi.dll. Skipping hook attempt.");
 		return false;
 	}
 
@@ -304,14 +332,20 @@ bool hook_dxgi(void)
 
 	hook_init(&present, present_addr, (void *)hook_present,
 		  "IDXGISwapChain::Present");
+	hlog("Hooked IDXGISwapChain::Present");
 	hook_init(&resize_buffers, resize_addr, (void *)hook_resize_buffers,
 		  "IDXGISwapChain::ResizeBuffers");
-	if (present1_addr)
+	hlog("Hooked IDXGISwapChain::ResizeBuffers");
+	if (present1_addr) {
 		hook_init(&present1, present1_addr, (void *)hook_present1,
 			  "IDXGISwapChain1::Present1");
-	if (release_addr)
+		hlog("Hooked IDXGISwapChain::Present1");
+	}
+	if (release_addr) {
 		hook_init(&release, release_addr, (void *)hook_release,
 			  "IDXGISwapChain::Release");
+		hlog("Hooked IDXGISwapChain::Release");
+	}
 
 	rehook(&resize_buffers);
 	rehook(&present);
