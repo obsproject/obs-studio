@@ -25,7 +25,8 @@ static struct func_hook present;
 static struct func_hook present1;
 
 thread_local bool dxgi_presenting = false;
-struct ID3D12CommandQueue *dxgi_possible_swap_queue = nullptr;
+struct ID3D12CommandQueue *dxgi_possible_swap_queues[8]{};
+size_t dxgi_possible_swap_queue_count;
 bool dxgi_present_attempted = false;
 
 struct dxgi_swap_data {
@@ -89,13 +90,16 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 		device->Release();
 
 		hlog("Found D3D12 device on swap chain: swap=0x%" PRIX64
-		     ", device=0x%" PRIX64 ", use_queue=%d, queue=0x%" PRIX64,
+		     ", device=0x%" PRIX64 ", use_queue=%d",
 		     (uint64_t)(uintptr_t)swap, (uint64_t)(uintptr_t)device,
-		     (int)global_hook_info->d3d12_use_swap_queue,
-		     (uint64_t)(uintptr_t)dxgi_possible_swap_queue);
+		     (int)global_hook_info->d3d12_use_swap_queue);
+		for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
+			hlog("\tqueue=0x%" PRIX64,
+			     (uint64_t)(uintptr_t)dxgi_possible_swap_queues[i]);
+		}
 
 		if (!global_hook_info->d3d12_use_swap_queue ||
-		    dxgi_possible_swap_queue) {
+		    (dxgi_possible_swap_queue_count > 0)) {
 			data.swap = swap;
 			data.capture = d3d12_capture;
 			data.free = d3d12_free;
@@ -121,7 +125,9 @@ static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
 
 		data.swap = nullptr;
 		data.capture = nullptr;
-		dxgi_possible_swap_queue = nullptr;
+		memset(dxgi_possible_swap_queues, 0,
+		       sizeof(dxgi_possible_swap_queues));
+		dxgi_possible_swap_queue_count = 0;
 		dxgi_present_attempted = false;
 
 		data.free();
@@ -143,7 +149,8 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 
 	data.swap = nullptr;
 	data.capture = nullptr;
-	dxgi_possible_swap_queue = nullptr;
+	memset(dxgi_possible_swap_queues, 0, sizeof(dxgi_possible_swap_queues));
+	dxgi_possible_swap_queue_count = 0;
 	dxgi_present_attempted = false;
 
 	if (data.free)
@@ -182,7 +189,9 @@ static void update_mismatch_count(bool match)
 		if (swap_chain_mismatch_count == swap_chain_mismtach_limit) {
 			data.swap = nullptr;
 			data.capture = nullptr;
-			dxgi_possible_swap_queue = nullptr;
+			memset(dxgi_possible_swap_queues, 0,
+			       sizeof(dxgi_possible_swap_queues));
+			dxgi_possible_swap_queue_count = 0;
 			dxgi_present_attempted = false;
 
 			data.free();
