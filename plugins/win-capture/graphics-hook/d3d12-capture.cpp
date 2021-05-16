@@ -46,7 +46,8 @@ struct d3d12_data {
 static struct d3d12_data data = {};
 
 extern thread_local bool dxgi_presenting;
-extern ID3D12CommandQueue *dxgi_possible_swap_queue;
+extern ID3D12CommandQueue *dxgi_possible_swap_queues[8];
+extern size_t dxgi_possible_swap_queue_count;
 extern bool dxgi_present_attempted;
 
 void d3d12_free(void)
@@ -149,7 +150,6 @@ static bool d3d12_init_11on12(ID3D12Device *device)
 	static PFN_D3D11ON12_CREATE_DEVICE create_11_on_12 = nullptr;
 	static bool initialized_11 = false;
 	static bool initialized_func = false;
-	HRESULT hr;
 
 	if (!initialized_11 && !d3d11) {
 		d3d11 = load_system_library("d3d11.dll");
@@ -178,29 +178,47 @@ static bool d3d12_init_11on12(ID3D12Device *device)
 		return false;
 	}
 
-	IUnknown *queue = nullptr;
-	IUnknown *const *queues = nullptr;
-	UINT num_queues = 0;
+	bool created = false;
+
 	if (global_hook_info->d3d12_use_swap_queue) {
-		hlog("d3d12_init_11on12: creating 11 device with swap queue: 0x%" PRIX64,
-		     (uint64_t)(uintptr_t)dxgi_possible_swap_queue);
-		queue = dxgi_possible_swap_queue;
-		queues = &queue;
-		num_queues = 1;
+		for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
+			hlog("d3d12_init_11on12: creating 11 device with swap queue: 0x%" PRIX64,
+			     (uint64_t)(uintptr_t)dxgi_possible_swap_queues[i]);
+			IUnknown *const queue = dxgi_possible_swap_queues[i];
+			const HRESULT hr = create_11_on_12(
+				device, 0, nullptr, 0, &queue, 1, 0,
+				&data.device11, &data.context11, nullptr);
+			created = SUCCEEDED(hr);
+			if (created) {
+				break;
+			}
+
+			hlog_hr("d3d12_init_11on12: failed to create 11 device",
+				hr);
+		}
 	} else {
 		hlog("d3d12_init_11on12: creating 11 device without swap queue");
+		const HRESULT hr = create_11_on_12(device, 0, nullptr, 0,
+						   nullptr, 0, 0,
+						   &data.device11,
+						   &data.context11, nullptr);
+		created = SUCCEEDED(hr);
+		if (!created) {
+			hlog_hr("d3d12_init_11on12: failed to create 11 device",
+				hr);
+		}
 	}
 
-	hr = create_11_on_12(device, 0, nullptr, 0, queues, num_queues, 0,
-			     &data.device11, &data.context11, nullptr);
-
-	if (FAILED(hr)) {
-		hlog_hr("d3d12_init_11on12: failed to create 11 device", hr);
+	if (!created) {
 		return false;
 	}
 
-	data.device11->QueryInterface(__uuidof(ID3D11On12Device),
-				      (void **)&data.device11on12);
+	memset(dxgi_possible_swap_queues, 0, sizeof(dxgi_possible_swap_queues));
+	dxgi_possible_swap_queue_count = 0;
+	dxgi_present_attempted = false;
+
+	const HRESULT hr =
+		data.device11->QueryInterface(IID_PPV_ARGS(&data.device11on12));
 	if (FAILED(hr)) {
 		hlog_hr("d3d12_init_11on12: failed to query 11on12 device", hr);
 		return false;
@@ -363,6 +381,18 @@ void d3d12_capture(void *swap_ptr, void *, bool capture_overlay)
 	}
 }
 
+static bool try_append_queue_if_unique(ID3D12CommandQueue *queue)
+{
+	for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
+		if (dxgi_possible_swap_queues[i] == queue)
+			return false;
+	}
+
+	dxgi_possible_swap_queues[dxgi_possible_swap_queue_count] = queue;
+	++dxgi_possible_swap_queue_count;
+	return true;
+}
+
 static HRESULT STDMETHODCALLTYPE
 hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 			   ID3D12CommandList *const *ppCommandLists)
@@ -370,17 +400,24 @@ hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 	hlog_verbose("ExecuteCommandLists callback: queue=0x%" PRIX64,
 		     (uint64_t)(uintptr_t)queue);
 
-	if (!dxgi_possible_swap_queue) {
-		if (dxgi_presenting) {
-			hlog("Remembering D3D12 queue from present");
-			dxgi_possible_swap_queue = queue;
+	if (dxgi_possible_swap_queue_count <
+	    _countof(dxgi_possible_swap_queues)) {
+		if (dxgi_presenting &&
+		    (queue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT)) {
+			if (try_append_queue_if_unique(queue)) {
+				hlog("Remembering D3D12 queue from present: queue=0x%" PRIX64,
+				     (uint64_t)(uintptr_t)queue);
+			}
 		} else if (dxgi_present_attempted &&
 			   (queue->GetDesc().Type ==
 			    D3D12_COMMAND_LIST_TYPE_DIRECT)) {
-			hlog("Remembering D3D12 queue from first direct submit after present");
-			dxgi_possible_swap_queue = queue;
+			if (try_append_queue_if_unique(queue)) {
+				hlog("Remembering D3D12 queue from first direct submit after present: queue=0x%" PRIX64,
+				     (uint64_t)(uintptr_t)queue);
+			}
 		} else {
-			hlog_verbose("Ignoring D3D12 queue");
+			hlog_verbose("Ignoring D3D12 queue=0x%" PRIX64,
+				     (uint64_t)(uintptr_t)queue);
 		}
 	}
 
