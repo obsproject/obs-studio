@@ -34,6 +34,8 @@ struct dxgi_swap_data {
 };
 
 static struct dxgi_swap_data data = {};
+static int swap_chain_mismatch_count = 0;
+constexpr int swap_chain_mismtach_limit = 16;
 
 static bool setup_dxgi(IDXGISwapChain *swap)
 {
@@ -151,11 +153,36 @@ static inline IUnknown *get_dxgi_backbuffer(IDXGISwapChain *swap)
 	return res;
 }
 
+static void update_mismatch_count(bool match)
+{
+	if (match) {
+		swap_chain_mismatch_count = 0;
+	} else {
+		++swap_chain_mismatch_count;
+
+		if (swap_chain_mismatch_count == swap_chain_mismtach_limit) {
+			data.swap = nullptr;
+			data.capture = nullptr;
+			dxgi_possible_swap_queue = nullptr;
+			dxgi_present_attempted = false;
+
+			data.free();
+			data.free = nullptr;
+
+			swap_chain_mismatch_count = 0;
+		}
+	}
+}
+
 static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 					      UINT sync_interval, UINT flags)
 {
 	const bool capture_overlay = global_hook_info->capture_overlay;
 	const bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
+
+	if (data.swap) {
+		update_mismatch_count(swap == data.swap);
+	}
 
 	if (!data.swap && !capture_active()) {
 		setup_dxgi(swap);
@@ -208,6 +235,10 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 {
 	const bool capture_overlay = global_hook_info->capture_overlay;
 	const bool test_draw = (flags & DXGI_PRESENT_TEST) != 0;
+
+	if (data.swap) {
+		update_mismatch_count(swap == data.swap);
+	}
 
 	if (!data.swap && !capture_active()) {
 		setup_dxgi(swap);
