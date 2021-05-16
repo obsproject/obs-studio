@@ -68,12 +68,12 @@ bool init_pipe(void)
 	char new_name[64];
 	sprintf(new_name, "%s%lu", PIPE_NAME, GetCurrentProcessId());
 
-	if (!ipc_pipe_client_open(&pipe, new_name)) {
+	const bool success = ipc_pipe_client_open(&pipe, new_name);
+	if (!success) {
 		DbgOut("[OBS] Failed to open pipe\n");
-		return false;
 	}
 
-	return true;
+	return success;
 }
 
 static HANDLE init_event(const wchar_t *name, DWORD pid)
