@@ -100,12 +100,13 @@ static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
 	rehook(&release);
 
 	if (unknown == data.swap && refs == 0) {
-		data.free();
 		data.swap = nullptr;
-		data.free = nullptr;
 		data.capture = nullptr;
 		dxgi_possible_swap_queue = nullptr;
 		dxgi_present_attempted = false;
+
+		data.free();
+		data.free = nullptr;
 	}
 
 	return refs;
@@ -121,14 +122,14 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 {
 	HRESULT hr;
 
-	if (!!data.free)
-		data.free();
-
 	data.swap = nullptr;
-	data.free = nullptr;
 	data.capture = nullptr;
 	dxgi_possible_swap_queue = nullptr;
 	dxgi_present_attempted = false;
+
+	if (data.free)
+		data.free();
+	data.free = nullptr;
 
 	unhook(&resize_buffers);
 	resize_buffers_t call = (resize_buffers_t)resize_buffers.call_addr;
