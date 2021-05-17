@@ -139,12 +139,13 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 		auto undo_redo = [](const std::string &name, int64_t id,
 				    bool val) {
-			obs_scene_t *s = obs_get_scene_by_name(name.c_str());
+			obs_source_t *s = obs_get_source_by_name(name.c_str());
+			obs_scene_t *sc = obs_group_or_scene_from_source(s);
 			obs_sceneitem_t *si =
-				obs_scene_find_sceneitem_by_id(s, id);
+				obs_scene_find_sceneitem_by_id(sc, id);
 			if (si)
 				obs_sceneitem_set_visible(si, val);
-			obs_scene_release(s);
+			obs_source_release(s);
 		};
 
 		QString str = QTStr(val ? "Undo.ShowSceneItem"
