@@ -399,13 +399,21 @@ static void display_capture_video_render(void *data, gs_effect_t *effect)
 	if (!dc->tex || (requires_window(dc->crop) && !dc->on_screen))
 		return;
 
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_vertexbuffer_flush(dc->vertbuf);
 	gs_load_vertexbuffer(dc->vertbuf);
 	gs_load_indexbuffer(NULL);
 	gs_load_samplerstate(dc->sampler, 0);
 	gs_technique_t *tech = gs_effect_get_technique(dc->effect, "Draw");
-	gs_effect_set_texture(gs_effect_get_param_by_name(dc->effect, "image"),
-			      dc->tex);
+	gs_eparam_t *param = gs_effect_get_param_by_name(dc->effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(param, dc->tex);
+	else
+		gs_effect_set_texture(param, dc->tex);
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
@@ -413,6 +421,8 @@ static void display_capture_video_render(void *data, gs_effect_t *effect)
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static const char *display_capture_getname(void *unused)
@@ -648,7 +658,7 @@ struct obs_source_info display_capture_info = {
 	.destroy = display_capture_destroy,
 
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.video_tick = display_capture_video_tick,
 	.video_render = display_capture_video_render,
 

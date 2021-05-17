@@ -31,7 +31,7 @@ static inline bool delay_capturing(const struct obs_output *output)
 static inline void push_packet(struct obs_output *output,
 			       struct encoder_packet *packet, uint64_t t)
 {
-	struct delay_data dd = {0};
+	struct delay_data dd;
 
 	dd.msg = DELAY_MSG_PACKET;
 	dd.ts = t;

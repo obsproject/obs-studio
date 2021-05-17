@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/dstr.h>
 #include <util/platform.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
@@ -26,6 +27,35 @@ static void virtualcam_destroy(void *data)
 	bfree(data);
 }
 
+static bool is_flatpak_sandbox(void)
+{
+	static bool flatpak_info_exists = false;
+	static bool initialized = false;
+
+	if (!initialized) {
+		flatpak_info_exists = access("/.flatpak-info", F_OK) == 0;
+		initialized = true;
+	}
+
+	return flatpak_info_exists;
+}
+
+static int run_command(const char *command)
+{
+	struct dstr str;
+	int result;
+
+	dstr_init_copy(&str, "PATH=\"$PATH:/sbin\" ");
+
+	if (is_flatpak_sandbox())
+		dstr_cat(&str, "flatpak-spawn --host ");
+
+	dstr_cat(&str, command);
+	result = system(str.array);
+	dstr_free(&str);
+	return result;
+}
+
 static bool loopback_module_loaded()
 {
 	bool loaded = false;
@@ -50,9 +80,22 @@ static bool loopback_module_loaded()
 	return loaded;
 }
 
+bool loopback_module_available()
+{
+	if (loopback_module_loaded()) {
+		return true;
+	}
+
+	if (run_command("modinfo v4l2loopback >/dev/null 2>&1") == 0) {
+		return true;
+	}
+
+	return false;
+}
+
 static int loopback_module_load()
 {
-	return system(
+	return run_command(
 		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
 
@@ -79,7 +122,9 @@ static bool try_connect(void *data, int device)
 	vcam->frame_size = width * height * 2;
 
 	char new_device[16];
-	sprintf(new_device, "/dev/video%d", device);
+	if (device < 0 || device >= MAX_DEVICES)
+		return false;
+	snprintf(new_device, 16, "/dev/video%d", device);
 
 	vcam->device = open(new_device, O_RDWR);
 
@@ -161,7 +206,14 @@ static void virtualcam_stop(void *data, uint64_t ts)
 static void virtual_video(void *param, struct video_data *frame)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)param;
-	write(vcam->device, frame->data[0], vcam->frame_size);
+	uint32_t frame_size = vcam->frame_size;
+	while (frame_size > 0) {
+		ssize_t written =
+			write(vcam->device, frame->data[0], vcam->frame_size);
+		if (written == -1)
+			break;
+		frame_size -= written;
+	}
 }
 
 struct obs_output_info virtualcam_info = {

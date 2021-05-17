@@ -699,9 +699,9 @@ static void ss_video_tick(void *data, float seconds)
 	if (!ss->transition || !ss->slide_time)
 		return;
 
-	if (ss->restart_on_activate && !ss->randomize && ss->use_cut) {
+	if (ss->restart_on_activate && ss->use_cut) {
 		ss->elapsed = 0.0f;
-		ss->cur_item = 0;
+		ss->cur_item = ss->randomize ? random_file(ss) : 0;
 		do_transition(ss, false);
 		ss->restart_on_activate = false;
 		ss->use_cut = false;
@@ -848,7 +848,7 @@ static void ss_defaults(obs_data_t *settings)
 }
 
 static const char *file_filter =
-	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif)";
+	"Image files (*.bmp *.tga *.png *.jpeg *.jpg *.gif *.webp)";
 
 static const char *aspects[] = {"16:9", "16:10", "4:3", "1:1"};
 
@@ -958,6 +958,71 @@ static void ss_deactivate(void *data)
 		ss->pause_on_deactivate = true;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct slideshow *s = src;
+	const char *orig_path = data;
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_array_t *files = obs_data_get_array(settings, S_FILES);
+
+	size_t l = obs_data_array_count(files);
+	for (size_t i = 0; i < l; i++) {
+		obs_data_t *file = obs_data_array_item(files, i);
+		const char *path = obs_data_get_string(file, "value");
+
+		if (strcmp(path, orig_path) == 0) {
+			obs_data_set_string(file, "value", new_path);
+
+			obs_data_release(file);
+			break;
+		}
+
+		obs_data_release(file);
+	}
+
+	obs_source_update(source, settings);
+
+	obs_data_array_release(files);
+	obs_data_release(settings);
+}
+
+static obs_missing_files_t *ss_missingfiles(void *data)
+{
+	struct slideshow *s = data;
+	obs_missing_files_t *missing_files = obs_missing_files_create();
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_array_t *files = obs_data_get_array(settings, S_FILES);
+
+	size_t l = obs_data_array_count(files);
+	for (size_t i = 0; i < l; i++) {
+		obs_data_t *item = obs_data_array_item(files, i);
+		const char *path = obs_data_get_string(item, "value");
+
+		if (strcmp(path, "") != 0) {
+			if (!os_file_exists(path)) {
+				obs_missing_file_t *file =
+					obs_missing_file_create(
+						path, missing_file_callback,
+						OBS_MISSING_FILE_SOURCE, source,
+						(void *)path);
+
+				obs_missing_files_add_file(missing_files, file);
+			}
+		}
+
+		obs_data_release(item);
+	}
+
+	obs_data_array_release(files);
+	obs_data_release(settings);
+
+	return missing_files;
+}
+
 struct obs_source_info slideshow_info = {
 	.id = "slideshow",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -977,6 +1042,7 @@ struct obs_source_info slideshow_info = {
 	.get_height = ss_height,
 	.get_defaults = ss_defaults,
 	.get_properties = ss_properties,
+	.missing_files = ss_missingfiles,
 	.icon_type = OBS_ICON_TYPE_SLIDESHOW,
 	.media_play_pause = ss_play_pause,
 	.media_restart = ss_restart,

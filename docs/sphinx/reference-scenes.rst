@@ -298,9 +298,37 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene, obs_source_t *source)
+
+   This will add a reference to the sceneitem.
+
+   :return: The sceneitem associated with a source in a scene. Returns NULL if not found.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_id(obs_sceneitem_t *item);
+
+   Sets the unique numeric identifier of the sceneitem. This is dangerous function and should not
+   normally be used. It can cause errors within obs.
+
+---------------------
+
 .. function:: int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
 
-   :return: The unique numeric identifier of the scene item.
+   This is a dangerous function and should not
+   normally be used. It can cause errors within obs.
+
+   :return: Gets the unique numeric identifier of the scene item.
+
+---------------------
+
+.. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
+.. function:: void obs_scene_load_transform_states(oconst char *states)
+
+   Saves all the transformation states for the sceneitms in scene. When all_items is false, it
+   will only save selected items
+
+   :return: Data containing transformation states for all* sceneitems in scene
 
 ---------------------
 
@@ -354,7 +382,13 @@ Scene Item Functions
 
 .. function:: void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 
-   Changes the scene item's order index.
+   Changes the sceneitem's order index.
+
+---------------------
+
+.. function:: int obs_sceneitem_get_order_position(obs_sceneitem_t *item)
+
+   :return: Gets position of sceneitem in its scene.
 
 ---------------------
 
@@ -467,6 +501,40 @@ Scene Item Functions
    :return: An incremented reference to the private settings of the
             scene item.  Allows the front-end to set custom information
             which is saved with the scene item
+
+---------------------
+
+.. function:: void obs_sceneitem_set_show_transition(obs_sceneitem_t *item, obs_source_t *transition)
+              void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item, obs_source_t *transition)
+
+   Set a transition for showing or hiding a scene item. Set *NULL* to remove the transition.
+
+---------------------
+
+.. function:: obs_source_t *obs_sceneitem_get_show_transition(obs_sceneitem_t *item)
+              obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item)
+
+   :return: The transition for showing or hiding a scene item. *NULL* if no transition is set.
+
+---------------------
+
+.. function:: void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
+              void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item, uint32_t duration_ms)
+
+   Set transition duration for showing or hiding a scene item.
+
+---------------------
+
+.. function:: uint32_t obs_sceneitem_get_show_transition_duration(obs_sceneitem_t *item)
+              uint32_t obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item)
+
+   :return: The transition duration in ms for showing or hiding a scene item.
+
+---------------------
+
+.. function:: void obs_sceneitem_do_transition(obs_sceneitem_t *item, bool visible)
+
+   Start the transition for showing or hiding a scene item.
 
 ---------------------
 

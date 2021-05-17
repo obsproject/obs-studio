@@ -332,6 +332,8 @@ static void vlcs_get_metadata(void *data, calldata_t *cd)
 	VLC_META(media, cd, data_id, "album_artist", libvlc_meta_AlbumArtist)
 	VLC_META(media, cd, data_id, "disc_number", libvlc_meta_DiscNumber)
 	VLC_META(media, cd, data_id, "disc_total", libvlc_meta_DiscTotal)
+
+	libvlc_media_release_(media);
 #undef VLC_META
 }
 
@@ -1084,6 +1086,72 @@ static obs_properties_t *vlcs_properties(void *data)
 	return ppts;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct vlc_source *s = src;
+	const char *orig_path = data;
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_array_t *files = obs_data_get_array(settings, S_PLAYLIST);
+
+	size_t l = obs_data_array_count(files);
+	for (size_t i = 0; i < l; i++) {
+		obs_data_t *file = obs_data_array_item(files, i);
+		const char *path = obs_data_get_string(file, "value");
+
+		if (strcmp(path, orig_path) == 0) {
+			obs_data_set_string(file, "value", new_path);
+
+			obs_data_release(file);
+			break;
+		}
+
+		obs_data_release(file);
+	}
+
+	obs_source_update(source, settings);
+
+	obs_data_array_release(files);
+	obs_data_release(settings);
+}
+
+static obs_missing_files_t *vlcs_missingfiles(void *data)
+{
+	struct vlc_source *s = data;
+	obs_missing_files_t *missing_files = obs_missing_files_create();
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_array_t *files = obs_data_get_array(settings, S_PLAYLIST);
+
+	size_t l = obs_data_array_count(files);
+	for (size_t i = 0; i < l; i++) {
+		obs_data_t *item = obs_data_array_item(files, i);
+		const char *path = obs_data_get_string(item, "value");
+
+		if (strcmp(path, "") != 0) {
+			if (!os_file_exists(path) &&
+			    strstr(path, "://") == NULL) {
+				obs_missing_file_t *file =
+					obs_missing_file_create(
+						path, missing_file_callback,
+						OBS_MISSING_FILE_SOURCE, source,
+						(void *)path);
+
+				obs_missing_files_add_file(missing_files, file);
+			}
+		}
+
+		obs_data_release(item);
+	}
+
+	obs_data_array_release(files);
+	obs_data_release(settings);
+
+	return missing_files;
+}
+
 struct obs_source_info vlc_source_info = {
 	.id = "vlc_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -1098,6 +1166,7 @@ struct obs_source_info vlc_source_info = {
 	.get_properties = vlcs_properties,
 	.activate = vlcs_activate,
 	.deactivate = vlcs_deactivate,
+	.missing_files = vlcs_missingfiles,
 	.icon_type = OBS_ICON_TYPE_MEDIA,
 	.media_play_pause = vlcs_play_pause,
 	.media_restart = vlcs_restart,

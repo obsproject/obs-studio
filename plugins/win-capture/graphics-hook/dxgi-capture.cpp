@@ -23,6 +23,10 @@ static struct func_hook resize_buffers;
 static struct func_hook present;
 static struct func_hook present1;
 
+thread_local bool dxgi_presenting = false;
+struct ID3D12CommandQueue *dxgi_possible_swap_queue = nullptr;
+bool dxgi_present_attempted = false;
+
 struct dxgi_swap_data {
 	IDXGISwapChain *swap;
 	void (*capture)(void *, void *, bool);
@@ -71,11 +75,14 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 #if COMPILE_D3D12_HOOK
 	hr = swap->GetDevice(__uuidof(ID3D12Device), (void **)&device);
 	if (SUCCEEDED(hr)) {
-		data.swap = swap;
-		data.capture = d3d12_capture;
-		data.free = d3d12_free;
-		device->Release();
-		return true;
+		if (!global_hook_info->d3d12_use_swap_queue ||
+		    dxgi_possible_swap_queue) {
+			data.swap = swap;
+			data.capture = d3d12_capture;
+			data.free = d3d12_free;
+			device->Release();
+			return true;
+		}
 	}
 #endif
 
@@ -94,6 +101,8 @@ static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
 		data.swap = nullptr;
 		data.free = nullptr;
 		data.capture = nullptr;
+		dxgi_possible_swap_queue = nullptr;
+		dxgi_present_attempted = false;
 	}
 
 	return refs;
@@ -115,6 +124,8 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 	data.swap = nullptr;
 	data.free = nullptr;
 	data.capture = nullptr;
+	dxgi_possible_swap_queue = nullptr;
+	dxgi_present_attempted = false;
 
 	unhook(&resize_buffers);
 	resize_buffers_t call = (resize_buffers_t)resize_buffers.call_addr;
@@ -161,10 +172,13 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		}
 	}
 
+	dxgi_presenting = true;
 	unhook(&present);
 	present_t call = (present_t)present.call_addr;
 	hr = call(swap, sync_interval, flags);
 	rehook(&present);
+	dxgi_presenting = false;
+	dxgi_present_attempted = true;
 
 	if (capture && capture_overlay) {
 		/*
@@ -215,10 +229,13 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		}
 	}
 
+	dxgi_presenting = true;
 	unhook(&present1);
 	present1_t call = (present1_t)present1.call_addr;
 	hr = call(swap, sync_interval, flags, params);
 	rehook(&present1);
+	dxgi_presenting = false;
+	dxgi_present_attempted = true;
 
 	if (capture && capture_overlay) {
 		if (resize_buffers_called) {

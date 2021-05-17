@@ -237,7 +237,9 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 
 	vsnprintf(out_buffer, sizeof(out_buffer), format, args);
 	dstr_copy(&out, out_buffer);
-	dstr_replace(&out, global_stream_key, "{stream_key}");
+	if (global_stream_key && *global_stream_key) {
+		dstr_replace(&out, global_stream_key, "{stream_key}");
+	}
 
 	switch (level) {
 	case AV_LOG_INFO:
@@ -808,7 +810,7 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	}
 
 	/* Treat "Invalid data found when processing input" and "Invalid argument" as non-fatal */
-	if (ret == AVERROR_INVALIDDATA || ret == EINVAL) {
+	if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
 		return true;
 	}
 

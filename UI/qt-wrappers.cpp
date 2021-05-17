@@ -30,7 +30,11 @@
 #include <QStandardItemModel>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
-#include <QX11Info>
+#include <obs-nix-platform.h>
+#endif
+
+#ifdef ENABLE_WAYLAND
+#include <qpa/qplatformnativeinterface.h>
 #endif
 
 static inline void OBSErrorBoxva(QWidget *parent, const char *msg, va_list args)
@@ -108,16 +112,33 @@ void OBSMessageBox::critical(QWidget *parent, const QString &title,
 	mb.exec();
 }
 
-void QTToGSWindow(WId windowId, gs_window &gswindow)
+bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 {
+	bool success = true;
+
 #ifdef _WIN32
-	gswindow.hwnd = (HWND)windowId;
+	gswindow.hwnd = (HWND)window->winId();
 #elif __APPLE__
-	gswindow.view = (id)windowId;
+	gswindow.view = (id)window->winId();
 #else
-	gswindow.id = windowId;
-	gswindow.display = QX11Info::display();
+	switch (obs_get_nix_platform()) {
+	case OBS_NIX_PLATFORM_X11_GLX:
+	case OBS_NIX_PLATFORM_X11_EGL:
+		gswindow.id = window->winId();
+		gswindow.display = obs_get_nix_platform_display();
+		break;
+#ifdef ENABLE_WAYLAND
+	case OBS_NIX_PLATFORM_WAYLAND:
+		QPlatformNativeInterface *native =
+			QGuiApplication::platformNativeInterface();
+		gswindow.display =
+			native->nativeResourceForWindow("surface", window);
+		success = gswindow.display != nullptr;
+		break;
 #endif
+	}
+#endif
+	return success;
 }
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods)
@@ -351,16 +372,9 @@ void setThemeID(QWidget *widget, const QString &themeID)
 
 QString SelectDirectory(QWidget *parent, QString title, QString path)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString dir = QFileDialog::getExistingDirectory(
-		parent, title, path,
-		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks |
-			QFileDialog::DontUseNativeDialog);
-#else
 	QString dir = QFileDialog::getExistingDirectory(
 		parent, title, path,
 		QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks);
-#endif
 
 	return dir;
 }
@@ -368,14 +382,8 @@ QString SelectDirectory(QWidget *parent, QString title, QString path)
 QString SaveFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString file = QFileDialog::getSaveFileName(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QString file =
 		QFileDialog::getSaveFileName(parent, title, path, extensions);
-#endif
 
 	return file;
 }
@@ -383,14 +391,8 @@ QString SaveFile(QWidget *parent, QString title, QString path,
 QString OpenFile(QWidget *parent, QString title, QString path,
 		 QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QString file = QFileDialog::getOpenFileName(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QString file =
 		QFileDialog::getOpenFileName(parent, title, path, extensions);
-#endif
 
 	return file;
 }
@@ -398,14 +400,8 @@ QString OpenFile(QWidget *parent, QString title, QString path,
 QStringList OpenFiles(QWidget *parent, QString title, QString path,
 		      QString extensions)
 {
-#if defined(BROWSER_AVAILABLE) && defined(__linux__)
-	QStringList files = QFileDialog::getOpenFileNames(
-		parent, title, path, extensions, nullptr,
-		QFileDialog::DontUseNativeDialog);
-#else
 	QStringList files =
 		QFileDialog::getOpenFileNames(parent, title, path, extensions);
-#endif
 
 	return files;
 }

@@ -26,18 +26,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 extern struct obs_source_info v4l2_input;
 extern struct obs_output_info virtualcam_info;
-
-static bool v4l2loopback_installed()
-{
-	bool loaded = false;
-
-	int ret = system("modinfo v4l2loopback &>/dev/null");
-
-	if (ret == 0)
-		loaded = true;
-
-	return loaded;
-}
+extern bool loopback_module_available();
 
 bool obs_module_load(void)
 {
@@ -45,7 +34,7 @@ bool obs_module_load(void)
 
 	obs_data_t *obs_settings = obs_data_create();
 
-	if (v4l2loopback_installed()) {
+	if (loopback_module_available()) {
 		obs_register_output(&virtualcam_info);
 		obs_data_set_bool(obs_settings, "vcamEnabled", true);
 	} else {

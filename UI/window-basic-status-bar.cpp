@@ -145,7 +145,7 @@ void OBSBasicStatusBar::Deactivate()
 		totalRecordSeconds = 0;
 	}
 
-	if (!main->outputHandler->Active()) {
+	if (main->outputHandler && !main->outputHandler->Active()) {
 		delete refreshTimer;
 
 		delayInfo->setText("");

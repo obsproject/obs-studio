@@ -35,9 +35,31 @@ VertDataOut VSDefault(VertDataIn v_in)
 	return vert_out;
 }
 
+float srgb_linear_to_nonlinear_channel(float u)
+{
+	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
+}
+
+float3 srgb_linear_to_nonlinear(float3 v)
+{
+	return float3(srgb_linear_to_nonlinear_channel(v.r), srgb_linear_to_nonlinear_channel(v.g), srgb_linear_to_nonlinear_channel(v.b));
+}
+
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
 float4 LUT1D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb = srgb_linear_to_nonlinear(textureColor.rgb);
 
 	if (textureColor.r >= domain_min.r && textureColor.r <= domain_max.r) {
 		float u = textureColor.r * clut_scale.r + clut_offset.r;
@@ -57,12 +79,15 @@ float4 LUT1D(VertDataOut v_in) : TARGET
 		textureColor.b = lerp(textureColor.b, channel, clut_amount);
 	}
 
+	textureColor.rgb = srgb_nonlinear_to_linear(textureColor.rgb);
 	return textureColor;
 }
 
 float4 LUT3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	textureColor.rgb = srgb_linear_to_nonlinear(textureColor.rgb);
 	float r = textureColor.r;
 	float g = textureColor.g;
 	float b = textureColor.b;
@@ -145,6 +170,8 @@ float4 LUT3D(VertDataOut v_in) : TARGET
 		textureColor.rgb = lerp(textureColor.rgb, luttedColor, clut_amount);
 	}
 
+	textureColor.rgb = srgb_nonlinear_to_linear(textureColor.rgb);
+	textureColor.rgb *= textureColor.a;
 	return textureColor;
 }
 

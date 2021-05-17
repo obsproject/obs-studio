@@ -72,6 +72,20 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 		cx = query.queryItemValue("layer-width").toInt();
 	if (query.hasQueryItem("layer-height"))
 		cy = query.queryItemValue("layer-height").toInt();
+	if (query.hasQueryItem("layer-css")) {
+		// QUrl::FullyDecoded does NOT properly decode a
+		// application/x-www-form-urlencoded space represented as '+'
+		// Thus, this is manually filtered out before QUrl's
+		// decoding kicks in again. This is to allow JavaScript's
+		// default searchParams.append function to simply append css
+		// to the query parameters, which is the intended usecase for this.
+		QString fullyEncoded =
+			query.queryItemValue("layer-css", QUrl::FullyEncoded);
+		fullyEncoded = fullyEncoded.replace("+", "%20");
+		QString decoded = QUrl::fromPercentEncoding(
+			QByteArray::fromStdString(QT_TO_UTF8(fullyEncoded)));
+		obs_data_set_string(settings, "css", QT_TO_UTF8(decoded));
+	}
 
 	obs_data_set_int(settings, "width", cx);
 	obs_data_set_int(settings, "height", cy);
@@ -83,6 +97,7 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 	query.removeQueryItem("layer-width");
 	query.removeQueryItem("layer-height");
 	query.removeQueryItem("layer-name");
+	query.removeQueryItem("layer-css");
 	path.setQuery(query);
 
 	obs_data_set_string(settings, "url", QT_TO_UTF8(path.url()));
@@ -247,7 +262,7 @@ void OBSBasic::dropEvent(QDropEvent *event)
 #define CHECK_SUFFIX(extensions, type)                         \
 	cmp = extensions;                                      \
 	while (*cmp) {                                         \
-		if (strcmp(*cmp, suffix) == 0) {               \
+		if (astrcmpi(*cmp, suffix) == 0) {             \
 			AddDropSource(QT_TO_UTF8(file), type); \
 			found = true;                          \
 			break;                                 \

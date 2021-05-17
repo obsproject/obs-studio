@@ -6,11 +6,20 @@
 #include "../shared-memory-queue.h"
 #include "../tiny-nv12-scale.h"
 #include "../libdshowcapture/source/output-filter.hpp"
+#include "../libdshowcapture/source/dshow-formats.hpp"
 #include "../../../libobs/util/windows/WinHandle.hpp"
 
 #define DEFAULT_CX 1920
 #define DEFAULT_CY 1080
 #define DEFAULT_INTERVAL 333333ULL
+
+typedef struct {
+	int cx;
+	int cy;
+	nv12_scale_t scaler;
+	const uint8_t *source_data;
+	uint8_t *scaled_data;
+} placeholder_t;
 
 class VCamFilter : public DShow::OutputFilter {
 	std::thread th;
@@ -19,9 +28,10 @@ class VCamFilter : public DShow::OutputFilter {
 	int queue_mode = 0;
 	bool in_obs = false;
 	enum queue_state prev_state = SHARED_QUEUE_STATE_INVALID;
-	const uint8_t *placeholder;
+	placeholder_t placeholder;
 	uint32_t cx = DEFAULT_CX;
 	uint32_t cy = DEFAULT_CY;
+	DShow::VideoFormat format;
 	uint64_t interval = DEFAULT_INTERVAL;
 	WinHandle thread_start;
 	WinHandle thread_stop;
@@ -39,6 +49,8 @@ class VCamFilter : public DShow::OutputFilter {
 	void Frame(uint64_t ts);
 	void ShowOBSFrame(uint8_t *ptr);
 	void ShowDefaultFrame(uint8_t *ptr);
+	void UpdatePlaceholder(void);
+	const int GetOutputBufferSize(void);
 
 protected:
 	const wchar_t *FilterName() const override;

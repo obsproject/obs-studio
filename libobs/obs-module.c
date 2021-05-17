@@ -223,6 +223,11 @@ obs_module_t *obs_get_module(const char *name)
 	return NULL;
 }
 
+void *obs_get_module_lib(obs_module_t *module)
+{
+	return module ? module->module : NULL;
+}
+
 char *obs_find_module_file(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
@@ -272,6 +277,10 @@ void obs_add_module_path(const char *bin, const char *data)
 static void load_all_callback(void *param, const struct obs_module_info *info)
 {
 	obs_module_t *module;
+
+	if (!os_is_obs_plugin(info->bin_path))
+		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
+		     info->bin_path);
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	if (code != MODULE_SUCCESS) {

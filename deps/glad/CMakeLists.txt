@@ -3,7 +3,8 @@ project(glad)
 find_package(OpenGL)
 
 if(NOT WIN32 AND NOT APPLE)
-	find_package(X11)
+	find_package(X11 REQUIRED)
+	find_package(EGL REQUIRED)
 endif()
 
 set(glad_SOURCES
@@ -19,7 +20,9 @@ if(WIN32)
 		obsglad.rc)
 elseif(NOT APPLE)
 	set(glad_PLATFORM_SOURCES
+		src/glad_egl.c
 		src/glad_glx.c
+		include/glad/glad_egl.h
 		include/glad/glad_glx.h)
 endif()
 
@@ -28,7 +31,9 @@ set(glad_include_dirs
 
 if (UNIX AND NOT APPLE)
 list (APPEND glad_include_dirs
-	PRIVATE ${X11_X11_INCLUDE_PATH})
+	PRIVATE
+		${X11_X11_INCLUDE_PATH}
+		${EGL_INCLUDE_DIRS})
 endif()
 
 add_library(glad SHARED
@@ -53,7 +58,9 @@ endif()
 
 if(NOT WIN32 AND NOT APPLE)
 	set(glad_PLATFORM_DEPS
-		${X11_X11_LIB})
+		${X11_X11_LIB}
+		${EGL_LIBRARIES})
+
 	# only link to libdl on linux
 	if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
 		set(glad_PLATFORM_DEPS

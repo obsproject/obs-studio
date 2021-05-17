@@ -18,6 +18,7 @@
 #pragma once
 
 #include "math-defs.h"
+#include "srgb.h"
 
 #include "../util/sse-intrin.h"
 
@@ -198,44 +199,50 @@ static inline void vec4_ceil(struct vec4 *dst, const struct vec4 *v)
 
 static inline uint32_t vec4_to_rgba(const struct vec4 *src)
 {
+	float f[4];
+	memcpy(f, src->ptr, sizeof(f));
+	uint8_t u[4];
+	gs_float4_to_u8x4(u, f);
 	uint32_t val;
-	val = (uint32_t)((double)src->x * 255.0);
-	val |= (uint32_t)((double)src->y * 255.0) << 8;
-	val |= (uint32_t)((double)src->z * 255.0) << 16;
-	val |= (uint32_t)((double)src->w * 255.0) << 24;
+	memcpy(&val, u, sizeof(val));
 	return val;
 }
 
 static inline uint32_t vec4_to_bgra(const struct vec4 *src)
 {
+	float f[4];
+	memcpy(f, src->ptr, sizeof(f));
+	uint8_t u[4];
+	gs_float4_to_u8x4(u, f);
+	uint8_t temp = u[0];
+	u[0] = u[2];
+	u[2] = temp;
 	uint32_t val;
-	val = (uint32_t)((double)src->z * 255.0);
-	val |= (uint32_t)((double)src->y * 255.0) << 8;
-	val |= (uint32_t)((double)src->x * 255.0) << 16;
-	val |= (uint32_t)((double)src->w * 255.0) << 24;
+	memcpy(&val, u, sizeof(val));
 	return val;
 }
 
 static inline void vec4_from_rgba(struct vec4 *dst, uint32_t rgba)
 {
-	dst->x = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
-	rgba >>= 8;
-	dst->y = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
-	rgba >>= 8;
-	dst->z = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
-	rgba >>= 8;
-	dst->w = (float)((double)(rgba & 0xFF) * (1.0 / 255.0));
+	uint8_t u[4];
+	memcpy(u, &rgba, sizeof(u));
+	gs_u8x4_to_float4(dst->ptr, u);
 }
 
 static inline void vec4_from_bgra(struct vec4 *dst, uint32_t bgra)
 {
-	dst->z = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
-	bgra >>= 8;
-	dst->y = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
-	bgra >>= 8;
-	dst->x = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
-	bgra >>= 8;
-	dst->w = (float)((double)(bgra & 0xFF) * (1.0 / 255.0));
+	uint8_t u[4];
+	memcpy(u, &bgra, sizeof(u));
+	uint8_t temp = u[0];
+	u[0] = u[2];
+	u[2] = temp;
+	gs_u8x4_to_float4(dst->ptr, u);
+}
+
+static inline void vec4_from_rgba_srgb(struct vec4 *dst, uint32_t rgba)
+{
+	vec4_from_rgba(dst, rgba);
+	gs_float3_srgb_nonlinear_to_linear(dst->ptr);
 }
 
 EXPORT void vec4_transform(struct vec4 *dst, const struct vec4 *v,

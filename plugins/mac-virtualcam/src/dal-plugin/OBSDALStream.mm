@@ -25,7 +25,7 @@
 
 #import "Logging.h"
 #import "CMSampleBufferUtils.h"
-#import "OBSDALPlugin.h"
+#import "OBSDALPlugIn.h"
 
 @interface OBSDALStream () {
 	CMSimpleQueueRef _queue;
@@ -170,6 +170,15 @@
 		NSString *placeHolderPath = [bundlePath
 			stringByAppendingString:
 				@"/Contents/Resources/placeholder.png"];
+		NSFileManager *fileManager = [NSFileManager defaultManager];
+		NSURL *homeUrl = [fileManager homeDirectoryForCurrentUser];
+		NSURL *customUrl = [homeUrl
+			URLByAppendingPathComponent:
+				@"Library/Application Support/obs-studio/plugin_config/mac-virtualcam/placeholder.png"];
+		NSString *customPlaceHolder = customUrl.path;
+		if ([fileManager isReadableFileAtPath:customPlaceHolder])
+			placeHolderPath = customPlaceHolder;
+		DLog(@"PlaceHolder:%@", placeHolderPath);
 		NSImage *placeholderImage = [[NSImage alloc]
 			initWithContentsOfFile:placeHolderPath];
 
@@ -267,6 +276,7 @@
 		pxdata, width, height, 8,
 		CVPixelBufferGetBytesPerRowOfPlane(pxbuffer, 0), rgbColorSpace,
 		kCGImageAlphaPremultipliedFirst | kCGImageByteOrder32Big);
+	CFRelease(rgbColorSpace);
 	NSParameterAssert(context);
 
 	NSGraphicsContext *nsContext = [NSGraphicsContext
@@ -299,7 +309,6 @@
 - (void)fillFrame
 {
 	if (CMSimpleQueueGetFullness(self.queue) >= 1.0) {
-		DLog(@"Queue is full, bailing out");
 		return;
 	}
 
@@ -433,9 +442,6 @@
 	case kCMIOStreamPropertyClock:
 		return sizeof(CFTypeRef);
 	default:
-		DLog(@"Stream unhandled getPropertyDataSizeWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		return 0;
 	};
 }
@@ -509,9 +515,6 @@
 		*dataUsed = sizeof(CFTypeRef);
 		break;
 	default:
-		DLog(@"Stream unhandled getPropertyDataWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		*dataUsed = 0;
 	};
 }
@@ -543,17 +546,12 @@
 			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	default:
-		DLog(@"Stream unhandled hasPropertyWithAddress for %@",
-		     [OBSDALObjectStore
-			     StringFromPropertySelector:address.mSelector]);
 		return false;
 	};
 }
 
 - (BOOL)isPropertySettableWithAddress:(CMIOObjectPropertyAddress)address
 {
-	DLog(@"Stream unhandled isPropertySettableWithAddress for %@",
-	     [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
 	return false;
 }
 
@@ -563,8 +561,6 @@
 			  dataSize:(UInt32)dataSize
 			      data:(nonnull const void *)data
 {
-	DLog(@"Stream unhandled setPropertyDataWithAddress for %@",
-	     [OBSDALObjectStore StringFromPropertySelector:address.mSelector]);
 }
 
 @end

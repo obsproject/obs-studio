@@ -1,6 +1,6 @@
 extern "C" EXPORT void winrt_initialize()
 {
-	winrt::init_apartment(winrt::apartment_type::single_threaded);
+	winrt::init_apartment(winrt::apartment_type::multi_threaded);
 }
 
 extern "C" EXPORT void winrt_uninitialize()

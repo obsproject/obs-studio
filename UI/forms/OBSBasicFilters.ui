@@ -22,7 +22,7 @@
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QWidget" name="asyncWidget" native="true">
+        <widget class="QWidget" name="asyncWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -63,7 +63,7 @@
            </widget>
           </item>
           <item alignment="Qt::AlignLeft">
-           <widget class="QWidget" name="widget" native="true">
+           <widget class="QWidget" name="widget">
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <property name="spacing">
               <number>4</number>
@@ -210,7 +210,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="effectWidget" native="true">
+        <widget class="QWidget" name="effectWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>0</horstretch>
@@ -251,7 +251,7 @@
            </widget>
           </item>
           <item alignment="Qt::AlignLeft">
-           <widget class="QWidget" name="widget_2" native="true">
+           <widget class="QWidget" name="widget_2">
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <property name="spacing">
               <number>4</number>
@@ -397,7 +397,7 @@
        <item>
         <layout class="QVBoxLayout" name="rightLayout">
          <item>
-          <widget class="OBSQTDisplay" name="preview" native="true">
+          <widget class="OBSQTDisplay" name="preview">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>

@@ -38,7 +38,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #define berr(level, msg, ...)                                   \
 	do {                                                    \
-		const char *errstr = strerror_l(errno, NULL);   \
+		const char *errstr = strerror(errno);           \
 		blog(level, msg ": %s", ##__VA_ARGS__, errstr); \
 	} while (0)
 

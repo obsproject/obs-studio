@@ -31,6 +31,7 @@
 #include <obs-config.h>
 #include <obs.hpp>
 
+#include <QFile>
 #include <QGuiApplication>
 #include <QProxyStyle>
 #include <QScreen>
@@ -58,6 +59,11 @@
 #include <pthread.h>
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__)
+#include <obs-nix-platform.h>
+#include <qpa/qplatformnativeinterface.h>
+#endif
+
 #include <iostream>
 
 #include "ui-config.h"
@@ -82,6 +88,7 @@ bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
 string opt_starting_collection;
 string opt_starting_profile;
@@ -116,7 +123,7 @@ QObject *CreateShortcutFilter()
 			case Qt::MouseButtonMask:
 				return false;
 
-			case Qt::MidButton:
+			case Qt::MiddleButton:
 				hotkey.key = OBS_KEY_MOUSE3;
 				break;
 
@@ -483,6 +490,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 #endif
 
 #ifdef __APPLE__
+	config_set_default_bool(globalConfig, "General", "BrowserHWAccel",
+				true);
 	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
 	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
 				true);
@@ -1376,9 +1385,32 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
+#endif
 
 	qRegisterMetaType<VoidFunc>();
+
+#if !defined(_WIN32) && !defined(__APPLE__)
+	obs_set_nix_platform(OBS_NIX_PLATFORM_X11_GLX);
+	if (QApplication::platformName() == "xcb" && getenv("OBS_USE_EGL")) {
+		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
+		blog(LOG_INFO, "Using EGL/X11");
+	}
+
+#ifdef ENABLE_WAYLAND
+	if (QApplication::platformName().contains("wayland")) {
+		obs_set_nix_platform(OBS_NIX_PLATFORM_WAYLAND);
+		setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+		blog(LOG_INFO, "Platform: Wayland");
+	}
+#endif
+
+	QPlatformNativeInterface *native =
+		QGuiApplication::platformNativeInterface();
+	obs_set_nix_platform_display(
+		native->nativeResourceForIntegration("display"));
+#endif
 
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
@@ -1387,7 +1419,7 @@ bool OBSApp::OBSInit()
 
 	obs_set_ui_task_handler(ui_task_handler);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 	bool browserHWAccel =
 		config_get_bool(globalConfig, "General", "BrowserHWAccel");
 
@@ -1930,15 +1962,13 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	ScopeProfiler prof{run_program_init};
 
 #if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
-	QGuiApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
+	QGuiApplication::setAttribute(opt_disable_high_dpi_scaling
+					      ? Qt::AA_DisableHighDpiScaling
+					      : Qt::AA_EnableHighDpiScaling);
 #endif
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 14, 0)) && defined(_WIN32)
 	QGuiApplication::setHighDpiScaleFactorRoundingPolicy(
 		Qt::HighDpiScaleFactorRoundingPolicy::PassThrough);
-#endif
-
-#if !defined(_WIN32) && !defined(__APPLE__) && BROWSER_AVAILABLE
-	setenv("QT_NO_GLIB", "1", true);
 #endif
 
 	QCoreApplication::addLibraryPath(".");
@@ -2291,6 +2321,36 @@ bool GetClosestUnusedFileName(std::string &path, const char *extension)
 	return true;
 }
 
+bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
+{
+	char path[512];
+	int ret;
+
+	if (!GetFileSafeName(name.c_str(), file)) {
+		blog(LOG_WARNING, "Failed to create safe file name for '%s'",
+		     name.c_str());
+		return false;
+	}
+
+	ret = GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes/");
+	if (ret <= 0) {
+		blog(LOG_WARNING, "Failed to get scene collection config path");
+		return false;
+	}
+
+	file.insert(0, path);
+
+	if (!GetClosestUnusedFileName(file, "json")) {
+		blog(LOG_WARNING, "Failed to get closest file name for %s",
+		     file.c_str());
+		return false;
+	}
+
+	file.erase(file.size() - 5, 5);
+	file.erase(0, strlen(path));
+	return true;
+}
+
 bool WindowPositionValid(QRect rect)
 {
 	for (QScreen *screen : QGuiApplication::screens()) {
@@ -2637,6 +2697,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
+		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
+				  nullptr)) {
+			opt_disable_high_dpi_scaling = true;
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -2655,7 +2719,8 @@ int main(int argc, char *argv[])
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
-				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n";
+				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
+				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
 
 #ifdef _WIN32
 			MessageBoxA(NULL, help.c_str(), "Help",

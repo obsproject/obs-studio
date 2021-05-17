@@ -35,6 +35,7 @@ protected:
 	AudioRepacker *audioRepacker = nullptr;
 	speaker_layout channelFormat = SPEAKERS_STEREO;
 	bool swap;
+	bool allow10Bit;
 
 	OBSVideoFrame *convertFrame = nullptr;
 	IDeckLinkMutableVideoFrame *decklinkOutputFrame = nullptr;
@@ -85,7 +86,7 @@ public:
 
 	inline DeckLinkDeviceMode *GetMode() const { return mode; }
 
-	bool StartCapture(DeckLinkDeviceMode *mode,
+	bool StartCapture(DeckLinkDeviceMode *mode, bool allow10Bit,
 			  BMDVideoConnection bmdVideoConnection,
 			  BMDAudioConnection bmdAudioConnection);
 	bool StopCapture(void);

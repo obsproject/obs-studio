@@ -7,6 +7,7 @@
 #include <QTimer>
 #include <QMutex>
 #include <QList>
+#include <QMenu>
 
 class QPushButton;
 class VolumeMeterTimer;
@@ -219,6 +220,7 @@ private:
 	obs_fader_t *obs_fader;
 	obs_volmeter_t *obs_volmeter;
 	bool vertical;
+	QMenu *contextMenu;
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data,
@@ -254,4 +256,5 @@ public:
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
 
 	void EnableSlider(bool enable);
+	inline void SetContextMenu(QMenu *cm) { contextMenu = cm; }
 };

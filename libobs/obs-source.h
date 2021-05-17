@@ -191,6 +191,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CEA_708 (1 << 14)
 
+/**
+ * Source understands SRGB rendering
+ */
+#define OBS_SOURCE_SRGB (1 << 15)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,
@@ -532,6 +537,9 @@ struct obs_source_info {
 	/* version-related stuff */
 	uint32_t version; /* increment if needed to specify a new version */
 	const char *unversioned_id; /* set internally, don't set manually */
+
+	/** Missing files **/
+	obs_missing_files_t *(*missing_files)(void *data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

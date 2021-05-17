@@ -278,16 +278,34 @@ void OBSBasicSettings::UpdateKeyLink()
 	} else if (serviceName.startsWith("Restream.io")) {
 		streamKeyLink =
 			"https://restream.io/settings/streaming-setup?from=OBS";
+	} else if (serviceName == "Luzento.com - RTMP") {
+		streamKeyLink =
+			"https://cms.luzento.com/dashboard/stream-key?from=OBS";
 	} else if (serviceName == "Facebook Live" ||
 		   (customServer.contains("fbcdn.net") && IsCustomService())) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
 	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = "https://www.pscp.tv/account/producer";
+		streamKeyLink = "https://studio.twitter.com/producer/sources";
 	} else if (serviceName.startsWith("YouStreamer")) {
 		streamKeyLink = "https://app.youstreamer.com/stream/";
 	} else if (serviceName == "Trovo") {
 		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
+	} else if (serviceName == "Glimesh") {
+		streamKeyLink = "https://glimesh.tv/users/settings/stream";
+	} else if (serviceName.startsWith("OPENREC.tv")) {
+		streamKeyLink =
+			"https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs";
+	} else if (serviceName == "Brime Live") {
+		streamKeyLink = "https://brimelive.com/obs-stream-key-link";
+	}
+
+	if (serviceName == "Dacast") {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+	} else {
+		ui->streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
 	}
 
 	if (QString(streamKeyLink).isNull()) {
@@ -619,8 +637,13 @@ void OBSBasicSettings::on_useAuth_toggled()
 
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
+	bool enableForCustomServer = config_get_bool(
+		GetGlobalConfig(), "General", "EnableCustomServerVodTrack");
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
+
+	if (enableForCustomServer && IsCustomService())
+		enableVodTrack = true;
 
 	if (enableVodTrack == wasEnabled)
 		return;
@@ -985,6 +1008,9 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	if (res_count) {
 		ui->outputResolution->clear();
 		ui->outputResolution->setEditable(false);
+		HookWidget(ui->outputResolution,
+			   SIGNAL(currentIndexChanged(int)),
+			   SLOT(VideoChangedResolution()));
 
 		int new_res_index = -1;
 

@@ -20,6 +20,7 @@
 #include <QStackedWidget>
 #include <QDir>
 #include <QGroupBox>
+#include <QObject>
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
 #include "spinbox-ignorewheel.hpp"
@@ -31,6 +32,9 @@
 
 #include <cstdlib>
 #include <initializer_list>
+#include <obs-data.h>
+#include <obs.h>
+#include <qtimer.h>
 #include <string>
 
 using namespace std;
@@ -171,13 +175,14 @@ void OBSPropertiesView::GetScrollPos(int &h, int &v)
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 				     PropertiesReloadCallback reloadCallback,
 				     PropertiesUpdateCallback callback_,
-				     int minSize_)
+				     PropertiesVisualUpdateCb cb_, int minSize_)
 	: VScrollArea(nullptr),
 	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
 	  obj(obj_),
 	  reloadCallback(reloadCallback),
 	  callback(callback_),
+	  cb(cb_),
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
@@ -329,8 +334,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 	int val = (int)obs_data_get_int(settings, name);
 	QSpinBox *spin = new SpinBoxIgnoreScroll();
 
-	if (!obs_property_enabled(prop))
-		spin->setEnabled(false);
+	spin->setEnabled(obs_property_enabled(prop));
 
 	int minVal = obs_property_int_min(prop);
 	int maxVal = obs_property_int_max(prop);
@@ -354,6 +358,7 @@ void OBSPropertiesView::AddInt(obs_property_t *prop, QFormLayout *layout,
 		slider->setPageStep(stepVal);
 		slider->setValue(val);
 		slider->setOrientation(Qt::Horizontal);
+		slider->setEnabled(obs_property_enabled(prop));
 		subLayout->addWidget(slider);
 
 		connect(slider, SIGNAL(valueChanged(int)), spin,
@@ -387,6 +392,14 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	double maxVal = obs_property_float_max(prop);
 	double stepVal = obs_property_float_step(prop);
 	const char *suffix = obs_property_float_suffix(prop);
+
+	if (stepVal < 1.0) {
+		int decimals = (int)(log10(1.0 / stepVal) + 0.99);
+		constexpr int sane_limit = 8;
+		decimals = std::min(decimals, sane_limit);
+		if (decimals > spin->decimals())
+			spin->setDecimals(decimals);
+	}
 
 	spin->setMinimum(minVal);
 	spin->setMaximum(maxVal);
@@ -635,14 +648,16 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 	return NewWidget(prop, button, SIGNAL(clicked()));
 }
 
-void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
-				 QLabel *&label)
+void OBSPropertiesView::AddColorInternal(obs_property_t *prop,
+					 QFormLayout *layout, QLabel *&label,
+					 bool supportAlpha)
 {
 	QPushButton *button = new QPushButton;
 	QLabel *colorLabel = new QLabel;
 	const char *name = obs_property_name(prop);
 	long long val = obs_data_get_int(settings, name);
 	QColor color = color_from_int(val);
+	QColor::NameFormat format;
 
 	if (!obs_property_enabled(prop)) {
 		button->setEnabled(false);
@@ -653,19 +668,21 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 	button->setText(QTStr("Basic.PropertiesWindow.SelectColor"));
 	button->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	color.setAlpha(255);
+	if (supportAlpha) {
+		format = QColor::HexArgb;
+	} else {
+		format = QColor::HexRgb;
+		color.setAlpha(255);
+	}
 
 	QPalette palette = QPalette(color);
 	colorLabel->setFrameStyle(QFrame::Sunken | QFrame::Panel);
-	// The picker doesn't have an alpha option, show only RGB
-	colorLabel->setText(color.name(QColor::HexRgb));
+	colorLabel->setText(color.name(format));
 	colorLabel->setPalette(palette);
 	colorLabel->setStyleSheet(
 		QString("background-color :%1; color: %2;")
-			.arg(palette.color(QPalette::Window)
-				     .name(QColor::HexRgb))
-			.arg(palette.color(QPalette::WindowText)
-				     .name(QColor::HexRgb)));
+			.arg(palette.color(QPalette::Window).name(format))
+			.arg(palette.color(QPalette::WindowText).name(format)));
 	colorLabel->setAutoFillBackground(true);
 	colorLabel->setAlignment(Qt::AlignCenter);
 	colorLabel->setToolTip(QT_UTF8(obs_property_long_description(prop)));
@@ -682,6 +699,18 @@ void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
 
 	label = new QLabel(QT_UTF8(obs_property_description(prop)));
 	layout->addRow(label, subLayout);
+}
+
+void OBSPropertiesView::AddColor(obs_property_t *prop, QFormLayout *layout,
+				 QLabel *&label)
+{
+	AddColorInternal(prop, layout, label, false);
+}
+
+void OBSPropertiesView::AddColorAlpha(obs_property_t *prop, QFormLayout *layout,
+				      QLabel *&label)
+{
+	AddColorInternal(prop, layout, label, true);
 }
 
 void MakeQFont(obs_data_t *font_obj, QFont &font, bool limit = false)
@@ -1419,6 +1448,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_GROUP:
 		AddGroup(property, layout);
+		break;
+	case OBS_PROPERTY_COLOR_ALPHA:
+		AddColorAlpha(property, layout, label);
 	}
 
 	if (widget && !obs_property_enabled(property))
@@ -1698,13 +1730,18 @@ void WidgetInfo::ListChanged(const char *setting)
 	}
 }
 
-bool WidgetInfo::ColorChanged(const char *setting)
+bool WidgetInfo::ColorChangedInternal(const char *setting, bool supportAlpha)
 {
 	const char *desc = obs_property_description(property);
 	long long val = obs_data_get_int(view->settings, setting);
 	QColor color = color_from_int(val);
+	QColor::NameFormat format;
 
 	QColorDialog::ColorDialogOptions options;
+
+	if (supportAlpha) {
+		options |= QColorDialog::ShowAlphaChannel;
+	}
 
 	/* The native dialog on OSX has all kinds of problems, like closing
 	 * other open QDialogs on exit, and
@@ -1715,24 +1752,38 @@ bool WidgetInfo::ColorChanged(const char *setting)
 #endif
 
 	color = QColorDialog::getColor(color, view, QT_UTF8(desc), options);
-	color.setAlpha(255);
-
 	if (!color.isValid())
 		return false;
 
+	if (supportAlpha) {
+		format = QColor::HexArgb;
+	} else {
+		color.setAlpha(255);
+		format = QColor::HexRgb;
+	}
+
 	QLabel *label = static_cast<QLabel *>(widget);
-	label->setText(color.name(QColor::HexRgb));
+	label->setText(color.name(format));
 	QPalette palette = QPalette(color);
 	label->setPalette(palette);
-	label->setStyleSheet(QString("background-color :%1; color: %2;")
-				     .arg(palette.color(QPalette::Window)
-						  .name(QColor::HexRgb))
-				     .arg(palette.color(QPalette::WindowText)
-						  .name(QColor::HexRgb)));
+	label->setStyleSheet(
+		QString("background-color :%1; color: %2;")
+			.arg(palette.color(QPalette::Window).name(format))
+			.arg(palette.color(QPalette::WindowText).name(format)));
 
 	obs_data_set_int(view->settings, setting, color_to_int(color));
 
 	return true;
+}
+
+bool WidgetInfo::ColorChanged(const char *setting)
+{
+	return ColorChangedInternal(setting, false);
+}
+
+bool WidgetInfo::ColorAlphaChanged(const char *setting)
+{
+	return ColorChangedInternal(setting, true);
 }
 
 bool WidgetInfo::FontChanged(const char *setting)
@@ -1847,6 +1898,12 @@ void WidgetInfo::ControlChanged()
 	const char *setting = obs_property_name(property);
 	obs_property_type type = obs_property_get_type(property);
 
+	if (!recently_updated) {
+		old_settings_cache = obs_data_create();
+		obs_data_apply(old_settings_cache, view->settings);
+		obs_data_release(old_settings_cache);
+	}
+
 	switch (type) {
 	case OBS_PROPERTY_INVALID:
 		return;
@@ -1889,10 +1946,38 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_GROUP:
 		GroupChanged(setting);
 		break;
+	case OBS_PROPERTY_COLOR_ALPHA:
+		if (!ColorAlphaChanged(setting))
+			return;
+		break;
 	}
 
-	if (view->callback && !view->deferUpdate)
-		view->callback(view->obj, view->settings);
+	if (!recently_updated) {
+		recently_updated = true;
+		update_timer = new QTimer;
+		connect(update_timer, &QTimer::timeout,
+			[this, &ru = recently_updated]() {
+				if (view->callback && !view->deferUpdate) {
+					view->callback(view->obj,
+						       old_settings_cache,
+						       view->settings);
+				}
+
+				ru = false;
+			});
+		connect(update_timer, &QTimer::timeout, &QTimer::deleteLater);
+		update_timer->setSingleShot(true);
+	}
+
+	if (update_timer) {
+		update_timer->stop();
+		update_timer->start(500);
+	} else {
+		blog(LOG_DEBUG, "No update timer or no callback!");
+	}
+
+	if (view->cb && !view->deferUpdate)
+		view->cb(view->obj, view->settings);
 
 	view->SignalChanged();
 

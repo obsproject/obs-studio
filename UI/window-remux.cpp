@@ -33,6 +33,7 @@
 #include <QTimer>
 
 #include "qt-wrappers.hpp"
+#include "window-basic-main.hpp"
 
 #include <memory>
 #include <cmath>
@@ -100,7 +101,7 @@ QWidget *RemuxEntryPathItemDelegate::createEditor(
 		};
 
 		QHBoxLayout *layout = new QHBoxLayout();
-		layout->setMargin(0);
+		layout->setContentsMargins(0, 0, 0, 0);
 		layout->setSpacing(0);
 
 		QLineEdit *text = new QLineEdit();
@@ -927,6 +928,11 @@ void OBSRemux::remuxFinished(bool success)
 
 	if (autoRemux && autoRemuxFile != "") {
 		QTimer::singleShot(3000, this, SLOT(close()));
+
+		OBSBasic *main = OBSBasic::Get();
+		main->ShowStatusBarMessage(
+			QTStr("Basic.StatusBar.AutoRemuxedTo")
+				.arg(autoRemuxFile));
 	}
 
 	remuxNextEntry();

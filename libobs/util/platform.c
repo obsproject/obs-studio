@@ -339,12 +339,14 @@ int64_t os_get_file_size(const char *path)
 
 size_t os_mbs_to_wcs(const char *str, size_t len, wchar_t *dst, size_t dst_size)
 {
+	UNUSED_PARAMETER(len);
+
 	size_t out_len;
 
 	if (!str)
 		return 0;
 
-	out_len = dst ? (dst_size - 1) : mbstowcs(NULL, str, len);
+	out_len = dst ? (dst_size - 1) : mbstowcs(NULL, str, 0);
 
 	if (dst) {
 		if (!dst_size)
@@ -387,12 +389,14 @@ size_t os_utf8_to_wcs(const char *str, size_t len, wchar_t *dst,
 
 size_t os_wcs_to_mbs(const wchar_t *str, size_t len, char *dst, size_t dst_size)
 {
+	UNUSED_PARAMETER(len);
+
 	size_t out_len;
 
 	if (!str)
 		return 0;
 
-	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, len);
+	out_len = dst ? (dst_size - 1) : wcstombs(NULL, str, 0);
 
 	if (dst) {
 		if (!dst_size)

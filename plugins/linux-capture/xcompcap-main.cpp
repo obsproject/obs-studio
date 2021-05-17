@@ -24,6 +24,8 @@ bool XCompcapMain::init()
 		return false;
 	}
 
+	XInitThreads();
+
 	int eventBase, errorBase;
 	if (!XCompositeQueryExtension(xdisp, &eventBase, &errorBase)) {
 		blog(LOG_ERROR, "Xcomposite extension not supported");
@@ -104,7 +106,7 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
 }
 
-#define FIND_WINDOW_INTERVAL 2.0
+#define FIND_WINDOW_INTERVAL 0.5
 
 struct XCompcapMain_private {
 	XCompcapMain_private()
@@ -189,6 +191,8 @@ XCompcapMain::~XCompcapMain()
 {
 	ObsGsContextHolder obsctx;
 
+	XCompcap::unregisterSource(this);
+
 	if (p->tex) {
 		gs_texture_destroy(p->tex);
 		p->tex = 0;
@@ -218,33 +222,44 @@ static Window getWindowFromString(std::string wstr)
 	}
 
 	size_t firstMark = wstr.find(WIN_STRING_DIV);
+	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
 	size_t markSize = strlen(WIN_STRING_DIV);
 
+	// wstr only consists of the window-id
 	if (firstMark == std::string::npos)
 		return (Window)std::stol(wstr);
 
-	Window wid = 0;
-
-	wstr = wstr.substr(firstMark + markSize);
-
-	size_t lastMark = wstr.rfind(WIN_STRING_DIV);
-	std::string wname = wstr.substr(0, lastMark);
+	// wstr also contains window-name and window-class
+	std::string wid = wstr.substr(0, firstMark);
+	std::string wname = wstr.substr(firstMark + markSize,
+					lastMark - firstMark - markSize);
 	std::string wcls = wstr.substr(lastMark + markSize);
 
-	Window matchedNameWin = wid;
+	Window winById = (Window)std::stol(wid);
+
+	// first try to find a match by the window-id
+	for (Window cwin : XCompcap::getTopLevelWindows()) {
+		// match by window-id
+		if (cwin == winById) {
+			return cwin;
+		}
+	}
+
+	// then try to find a match by name & class
 	for (Window cwin : XCompcap::getTopLevelWindows()) {
 		std::string cwinname = XCompcap::getWindowName(cwin);
 		std::string ccls = XCompcap::getWindowClass(cwin);
 
-		if (cwin == wid && wname == cwinname && wcls == ccls)
-			return wid;
-
-		if (wname == cwinname ||
-		    (!matchedNameWin && !wcls.empty() && wcls == ccls))
-			matchedNameWin = cwin;
+		// match by name and class
+		if (wname == cwinname && wcls == ccls) {
+			return cwin;
+		}
 	}
 
-	return matchedNameWin;
+	// no match
+	blog(LOG_DEBUG, "Did not find Window By ID %s, Name '%s' or Class '%s'",
+	     wid.c_str(), wname.c_str(), wcls.c_str());
+	return 0;
 }
 
 static void xcc_cleanup(XCompcapMain_private *p)
@@ -288,9 +303,6 @@ static void xcc_cleanup(XCompcapMain_private *p)
 	}
 
 	if (p->win) {
-		XCompositeUnredirectWindow(xdisp, p->win,
-					   CompositeRedirectAutomatic);
-		XSelectInput(xdisp, p->win, 0);
 		p->win = 0;
 	}
 
@@ -313,11 +325,11 @@ static gs_color_format gs_format_from_tex()
 	// GS_RGBX format
 	switch (iformat) {
 	case GL_RGB:
-		return GS_BGRX;
+		return GS_BGRX_UNORM;
 	case GL_RGBA:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	default:
-		return GS_RGBA;
+		return GS_RGBA_UNORM;
 	}
 }
 
@@ -346,8 +358,10 @@ struct gs_texture {
 
 void XCompcapMain::updateSettings(obs_data_t *settings)
 {
-	PLock lock(&p->lock);
 	ObsGsContextHolder obsctx;
+	XErrorLock xlock;
+
+	PLock lock(&p->lock);
 
 	blog(LOG_DEBUG, "Settings updating");
 
@@ -356,11 +370,13 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	xcc_cleanup(p);
 
 	if (settings) {
+		/* Settings initialized or changed */
 		const char *windowName =
 			obs_data_get_string(settings, "capture_window");
 
 		p->windowName = windowName;
 		p->win = getWindowFromString(windowName);
+		XCompcap::registerSource(this, p->win);
 
 		p->cut_top = obs_data_get_int(settings, "cut_top");
 		p->cut_left = obs_data_get_int(settings, "cut_left");
@@ -374,23 +390,15 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
 		p->draw_opaque = false;
 	} else {
+		/* New Window found (stored in p->win), just re-initialize GL-Mapping  */
 		p->win = prevWin;
 	}
 
-	XErrorLock xlock;
-	if (p->win)
-		XCompositeRedirectWindow(xdisp, p->win,
-					 CompositeRedirectAutomatic);
 	if (xlock.gotError()) {
-		blog(LOG_ERROR, "XCompositeRedirectWindow failed: %s",
+		blog(LOG_ERROR, "registeringSource failed: %s",
 		     xlock.getErrorText().c_str());
 		return;
 	}
-
-	if (p->win)
-		XSelectInput(xdisp, p->win,
-			     StructureNotifyMask | ExposureMask |
-				     VisibilityChangeMask);
 	XSync(xdisp, 0);
 
 	XWindowAttributes attr;
@@ -513,7 +521,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	XFree(configs);
 
 	// Build an OBS texture to bind the pixmap to.
-	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA, 1, 0,
+	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA_UNORM, 1, 0,
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
@@ -568,6 +576,9 @@ void XCompcapMain::tick(float seconds)
 	if (!obs_source_showing(p->source))
 		return;
 
+	// Must be taken before xlock to prevent deadlock on shutdown
+	ObsGsContextHolder obsctx;
+
 	PLock lock(&p->lock, true);
 
 	if (!lock.isLocked())
@@ -575,7 +586,7 @@ void XCompcapMain::tick(float seconds)
 
 	XCompcap::processEvents();
 
-	if (p->win && XCompcap::windowWasReconfigured(p->win)) {
+	if (p->win && XCompcap::sourceWasReconfigured(this)) {
 		p->window_check_time = FIND_WINDOW_INTERVAL;
 		p->win = 0;
 	}
@@ -595,6 +606,7 @@ void XCompcapMain::tick(float seconds)
 
 		if (newWin && XGetWindowAttributes(xdisp, newWin, &attr)) {
 			p->win = newWin;
+			XCompcap::registerSource(this, p->win);
 			updateSettings(0);
 		} else {
 			return;
@@ -603,8 +615,6 @@ void XCompcapMain::tick(float seconds)
 
 	if (!p->tex || !p->gltex)
 		return;
-
-	obs_enter_graphics();
 
 	if (p->lockX) {
 		// XDisplayLock is still live so we should already be locked.
@@ -634,8 +644,6 @@ void XCompcapMain::tick(float seconds)
 
 	if (p->lockX)
 		XUnlockDisplay(xdisp);
-
-	obs_leave_graphics();
 }
 
 void XCompcapMain::render(gs_effect_t *effect)

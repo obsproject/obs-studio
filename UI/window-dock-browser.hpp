@@ -9,7 +9,7 @@ extern QCefCookieManager *panel_cookies;
 
 class BrowserDock : public OBSDock {
 public:
-	inline BrowserDock() : OBSDock() {}
+	inline BrowserDock() : OBSDock() { setAttribute(Qt::WA_NativeWindow); }
 
 	QScopedPointer<QCefWidget> cefWidget;
 

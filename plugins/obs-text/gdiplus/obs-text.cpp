@@ -871,15 +871,20 @@ inline void TextSource::Render()
 	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			      tex);
+	gs_effect_set_texture_srgb(gs_effect_get_param_by_name(effect, "image"),
+				   tex);
 	gs_draw_sprite(tex, 0, cx, cy);
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1088,13 +1093,26 @@ static void defaults(obs_data_t *settings, int ver)
 	obs_data_release(font_obj);
 };
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	TextSource *s = reinterpret_cast<TextSource *>(src);
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, S_FILE, new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
 bool obs_module_load(void)
 {
 	obs_source_info si = {};
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
 	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			  OBS_SOURCE_CAP_OBSOLETE;
+			  OBS_SOURCE_CAP_OBSOLETE | OBS_SOURCE_SRGB;
 	si.get_properties = get_properties;
 	si.icon_type = OBS_ICON_TYPE_TEXT;
 
@@ -1120,6 +1138,32 @@ bool obs_module_load(void)
 	};
 	si.video_render = [](void *data, gs_effect_t *) {
 		reinterpret_cast<TextSource *>(data)->Render();
+	};
+	si.missing_files = [](void *data) {
+		TextSource *s = reinterpret_cast<TextSource *>(data);
+		obs_missing_files_t *files = obs_missing_files_create();
+
+		obs_source_t *source = s->source;
+		obs_data_t *settings = obs_source_get_settings(source);
+
+		bool read = obs_data_get_bool(settings, S_USE_FILE);
+		const char *path = obs_data_get_string(settings, S_FILE);
+
+		if (read && strcmp(path, "") != 0) {
+			if (!os_file_exists(path)) {
+				obs_missing_file_t *file =
+					obs_missing_file_create(
+						path, missing_file_callback,
+						OBS_MISSING_FILE_SOURCE,
+						s->source, NULL);
+
+				obs_missing_files_add_file(files, file);
+			}
+		}
+
+		obs_data_release(settings);
+
+		return files;
 	};
 
 	obs_source_info si_v2 = si;

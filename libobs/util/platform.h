@@ -84,6 +84,7 @@ EXPORT int os_dtostr(double value, char *dst, size_t size);
 EXPORT void *os_dlopen(const char *path);
 EXPORT void *os_dlsym(void *module, const char *func);
 EXPORT void os_dlclose(void *module);
+EXPORT bool os_is_obs_plugin(const char *path);
 
 struct os_cpu_usage_info;
 typedef struct os_cpu_usage_info os_cpu_usage_info_t;

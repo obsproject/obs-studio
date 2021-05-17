@@ -68,7 +68,6 @@ void output_start()
 					   settings, NULL);
 
 		bool started = obs_output_start(output);
-		obs_data_release(settings);
 
 		main_output_running = started;
 
@@ -106,6 +105,16 @@ OBSData load_preview_settings()
 void on_preview_scene_changed(enum obs_frontend_event event, void *param);
 void render_preview_source(void *param, uint32_t cx, uint32_t cy);
 
+static void preview_tick(void *param, float sec)
+{
+	UNUSED_PARAMETER(sec);
+
+	auto ctx = (struct preview_output *)param;
+
+	if (ctx->texrender)
+		gs_texrender_reset(ctx->texrender);
+}
+
 void preview_output_stop()
 {
 	obs_output_stop(context.output);
@@ -123,6 +132,7 @@ void preview_output_stop()
 	obs_leave_graphics();
 
 	video_output_close(context.video_queue);
+	obs_remove_tick_callback(preview_tick, &context);
 
 	preview_output_running = false;
 	doUI->PreviewOutputStateChanged(false);
@@ -133,6 +143,7 @@ void preview_output_start()
 	OBSData settings = load_preview_settings();
 
 	if (settings != nullptr) {
+		obs_add_tick_callback(preview_tick, &context);
 		context.output = obs_output_create("decklink_output",
 						   "decklink_preview_output",
 						   settings, NULL);
@@ -232,8 +243,6 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 	uint32_t width = obs_source_get_base_width(ctx->current_source);
 	uint32_t height = obs_source_get_base_height(ctx->current_source);
 
-	gs_texrender_reset(ctx->texrender);
-
 	if (gs_texrender_begin(ctx->texrender, width, height)) {
 		struct vec4 background;
 		vec4_zero(&background);
@@ -320,4 +329,13 @@ bool obs_module_load(void)
 	obs_frontend_add_event_callback(OBSEvent, nullptr);
 
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	if (preview_output_running)
+		preview_output_stop();
+
+	if (main_output_running)
+		output_stop();
 }

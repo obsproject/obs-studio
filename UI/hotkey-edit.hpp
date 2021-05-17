@@ -36,7 +36,11 @@ public:
 	QPointer<OBSHotkeyLabel> pairPartner;
 	QPointer<OBSHotkeyWidget> widget;
 	void highlightPair(bool highlight);
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	void enterEvent(QEnterEvent *event) override;
+#else
 	void enterEvent(QEvent *event) override;
+#endif
 	void leaveEvent(QEvent *event) override;
 	void setToolTip(const QString &toolTip);
 };
@@ -102,7 +106,7 @@ public:
 	{
 		auto layout = new QVBoxLayout;
 		layout->setSpacing(0);
-		layout->setMargin(0);
+		layout->setContentsMargins(0, 0, 0, 0);
 		setLayout(layout);
 
 		SetKeyCombinations(combos);
@@ -131,7 +135,11 @@ public:
 	void Save();
 	void Save(std::vector<obs_key_combination_t> &combinations);
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	void enterEvent(QEnterEvent *event) override;
+#else
 	void enterEvent(QEvent *event) override;
+#endif
 	void leaveEvent(QEvent *event) override;
 
 private:

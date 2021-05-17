@@ -93,45 +93,58 @@ Function PreReqCheck
 !ifdef INSTALL64
 	${if} ${RunningX64}
 	${Else}
+		IfSilent +1 +3
+			SetErrorLevel 3
+			Quit
 		MessageBox MB_OK|MB_ICONSTOP "This version of OBS Studio is not compatible with your system.  Please use the 32bit (x86) installer."
 	${EndIf}
 	; Abort on XP or lower
 !endif
 
 	${If} ${AtMostWinVista}
+		IfSilent +1 +3
+			SetErrorLevel 3
+			Quit
 		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows 7 or higher and cannot be installed on this version of Windows."
 		Quit
 	${EndIf}
 
 !ifdef INSTALL64
-	; 64 bit Visual Studio 2017 runtime check
+	; 64 bit Visual Studio 2019 runtime check
 	ClearErrors
 	SetOutPath "$PLUGINSDIR"
-	File check_for_64bit_visual_studio_2017_runtimes.exe
-	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2017_runtimes.exe" $R0
-	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2017_runtimes.exe"
-	IntCmp $R0 126 vs2017Missing_64 vs2017OK_64
-	vs2017Missing_64:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2017true_64 IDNO vs2017false_64
-		vs2017true_64:
-			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-64-bit"
-		vs2017false_64:
+	File check_for_64bit_visual_studio_2019_runtimes.exe
+	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe" $R0
+	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe"
+	IntCmp $R0 126 vs2019Missing_64 vs2019OK_64
+	vs2019Missing_64:
+		IfSilent +1 +3
+			SetErrorLevel 4
+			Quit
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2019true_64 IDNO vs2019false_64
+		vs2019true_64:
+			ExecShell "open" "https://obsproject.com/visual-studio-2019-runtimes-64-bit"
+		vs2019false_64:
 		Quit
-	vs2017OK_64:
+	vs2019OK_64:
 	ClearErrors
 !else
-	; 32 bit Visual Studio 2017 runtime check
+	; 32 bit Visual Studio 2019 runtime check
 	ClearErrors
 	GetDLLVersion "vcruntime140.DLL" $R0 $R1
 	GetDLLVersion "msvcp140.DLL" $R0 $R1
-	IfErrors vs2017Missing_32 vs2017OK_32
-	vs2017Missing_32:
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2017true_32 IDNO vs2017false_32
-		vs2017true_32:
-			ExecShell "open" "https://obsproject.com/visual-studio-2017-runtimes-32-bit"
-		vs2017false_32:
+	GetDLLVersion "msvcp140_1.DLL" $R0 $R1
+	IfErrors vs2019Missing_32 vs2019OK_32
+	vs2019Missing_32:
+		IfSilent +1 +3
+			SetErrorLevel 4
+			Quit
+		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2019true_32 IDNO vs2019false_32
+		vs2019true_32:
+			ExecShell "open" "https://obsproject.com/visual-studio-2019-runtimes-32-bit"
+		vs2019false_32:
 		Quit
-	vs2017OK_32:
+	vs2019OK_32:
 	ClearErrors
 !endif
 
@@ -188,6 +201,9 @@ Function PreReqCheck
 	GetDLLVersion "D3DCompiler_49.dll" $R0 $R1
 	IfErrors dxMissing49 dxOK
 	dxMissing49:
+	IfSilent +1 +3
+		SetErrorLevel 4
+		Quit
 	MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing DirectX components that ${APPNAME} requires. Would you like to download them?" IDYES dxtrue IDNO dxfalse
 	dxtrue:
 		ExecShell "open" "https://obsproject.com/go/dxwebsetup"
@@ -200,6 +216,9 @@ Function PreReqCheck
 	check32BitRunning:
 	OBSInstallerUtils::IsProcessRunning "obs32.exe"
 	IntCmp $R0 1 0 notRunning1
+		IfSilent +1 +3
+			SetErrorLevel 5
+			Quit
 		MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDCANCEL IDRETRY check32BitRunning
 		Quit
 	notRunning1:
@@ -208,6 +227,9 @@ Function PreReqCheck
 		check64BitRunning:
 		OBSInstallerUtils::IsProcessRunning "obs64.exe"
 		IntCmp $R0 1 0 notRunning2
+			IfSilent +1 +3
+				SetErrorLevel 5
+				Quit
 			MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "${APPNAME} is already running. Please close it first before installing a new version." /SD IDCANCEL IDRETRY check64BitRunning
 			Quit
 		notRunning2:
@@ -239,6 +261,9 @@ Function checkFilesInUse
 	retryFileChecks:
 	Call checkDLLs
 	StrCmp $dllFilesInUse "" dllsNotInUse
+	IfSilent +1 +3
+		SetErrorLevel 6
+		Quit
 	MessageBox MB_RETRYCANCEL|MB_ICONEXCLAMATION "OBS files are being used by the following applications:$\r$\n$\r$\n$dllFilesInUse$\r$\nPlease close these applications to continue setup." /SD IDCANCEL IDRETRY retryFileChecks
 	Quit
 

@@ -94,6 +94,14 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
+bool os_is_obs_plugin(const char *path)
+{
+	UNUSED_PARAMETER(path);
+
+	/* not necessary on this platform */
+	return true;
+}
+
 #if !defined(__APPLE__)
 
 struct os_cpu_usage_info {
@@ -452,7 +460,10 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	if (!dir->cur_dirent)
 		return NULL;
 
-	strncpy(dir->out.d_name, dir->cur_dirent->d_name, 255);
+	const size_t length = strlen(dir->cur_dirent->d_name);
+	if (sizeof(dir->out.d_name) <= length)
+		return NULL;
+	memcpy(dir->out.d_name, dir->cur_dirent->d_name, length + 1);
 
 	dstr_copy(&file_path, dir->path);
 	dstr_cat(&file_path, "/");

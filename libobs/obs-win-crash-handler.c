@@ -67,6 +67,8 @@ typedef HINSTANCE(WINAPI *SHELLEXECUTEA)(HWND hwnd, LPCTSTR operation,
 					 LPCTSTR file, LPCTSTR parameters,
 					 LPCTSTR directory, INT show_flags);
 
+typedef HRESULT(WINAPI *GETTHREADDESCRIPTION)(HANDLE thread, PWSTR *desc);
+
 struct stack_trace {
 	CONTEXT context;
 	DWORD64 instruction_ptr;
@@ -391,6 +393,40 @@ static inline bool walk_stack(struct exception_handler_data *data,
 	"Arg1     Arg2     Arg3     Address\r\n"
 #endif
 
+static inline char *get_thread_name(HANDLE thread)
+{
+	static GETTHREADDESCRIPTION get_thread_desc = NULL;
+	static bool failed = false;
+
+	if (!get_thread_desc) {
+		if (failed) {
+			return NULL;
+		}
+
+		HMODULE k32 = LoadLibraryW(L"kernel32.dll");
+		get_thread_desc = (GETTHREADDESCRIPTION)GetProcAddress(
+			k32, "GetThreadDescription");
+		if (!get_thread_desc) {
+			failed = true;
+			return NULL;
+		}
+	}
+
+	wchar_t *w_name;
+	HRESULT hr = get_thread_desc(thread, &w_name);
+	if (FAILED(hr) || !w_name) {
+		return NULL;
+	}
+
+	struct dstr name = {0};
+	dstr_from_wcs(&name, w_name);
+	if (name.len)
+		dstr_insert_ch(&name, 0, ' ');
+	LocalFree(w_name);
+
+	return name.array;
+}
+
 static inline void write_thread_trace(struct exception_handler_data *data,
 				      THREADENTRY32 *entry, bool first_thread)
 {
@@ -398,6 +434,7 @@ static inline void write_thread_trace(struct exception_handler_data *data,
 	struct stack_trace trace = {0};
 	struct stack_trace *ptrace;
 	HANDLE thread;
+	char *thread_name;
 
 	if (first_thread != crash_thread)
 		return;
@@ -413,8 +450,13 @@ static inline void write_thread_trace(struct exception_handler_data *data,
 	GetThreadContext(thread, &trace.context);
 	init_instruction_data(&trace);
 
-	dstr_catf(&data->str, "\r\nThread %lX%s\r\n" TRACE_TOP,
-		  entry->th32ThreadID, crash_thread ? " (Crashed)" : "");
+	thread_name = get_thread_name(thread);
+
+	dstr_catf(&data->str, "\r\nThread %lX:%s%s\r\n" TRACE_TOP,
+		  entry->th32ThreadID, thread_name ? thread_name : "",
+		  crash_thread ? " (Crashed)" : "");
+
+	bfree(thread_name);
 
 	ptrace = crash_thread ? &data->main_trace : &trace;
 

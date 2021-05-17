@@ -218,7 +218,12 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 
 	gs_effect_set_next_sampler(filter->param_image, filter->sampler);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_end(filter->context, filter->effect, cx, cy);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -251,7 +256,7 @@ static void scroll_filter_show(void *data)
 struct obs_source_info scroll_filter = {
 	.id = "scroll_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = scroll_filter_get_name,
 	.create = scroll_filter_create,
 	.destroy = scroll_filter_destroy,

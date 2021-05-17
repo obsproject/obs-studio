@@ -75,29 +75,31 @@ static void mask_filter_image_load(struct mask_filter_data *filter)
 		obs_enter_graphics();
 		gs_image_file_init_texture(&filter->image);
 		obs_leave_graphics();
-
-		filter->target = filter->image.texture;
 	}
+
+	filter->target = filter->image.texture;
 }
 
-static void mask_filter_update(void *data, obs_data_t *settings)
+static void mask_filter_update_internal(void *data, obs_data_t *settings,
+					float opacity, bool srgb)
 {
 	struct mask_filter_data *filter = data;
 
 	const char *path = obs_data_get_string(settings, SETTING_IMAGE_PATH);
 	const char *effect_file = obs_data_get_string(settings, SETTING_TYPE);
 	uint32_t color = (uint32_t)obs_data_get_int(settings, SETTING_COLOR);
-	int opacity = (int)obs_data_get_int(settings, SETTING_OPACITY);
 	char *effect_path;
 
 	if (filter->image_file)
 		bfree(filter->image_file);
 	filter->image_file = bstrdup(path);
 
-	color &= 0xFFFFFF;
-	color |= (uint32_t)(((double)opacity) * 2.55) << 24;
+	if (srgb)
+		vec4_from_rgba_srgb(&filter->color, color);
+	else
+		vec4_from_rgba(&filter->color, color);
+	filter->color.w = opacity;
 
-	vec4_from_rgba(&filter->color, color);
 	mask_filter_image_load(filter);
 	filter->lock_aspect = !obs_data_get_bool(settings, SETTING_STRETCH);
 
@@ -111,7 +113,21 @@ static void mask_filter_update(void *data, obs_data_t *settings)
 	obs_leave_graphics();
 }
 
-static void mask_filter_defaults(obs_data_t *settings)
+static void mask_filter_update_v1(void *data, obs_data_t *settings)
+{
+	const float opacity =
+		(float)(obs_data_get_int(settings, SETTING_OPACITY) * 0.01);
+	mask_filter_update_internal(data, settings, opacity, false);
+}
+
+static void mask_filter_update_v2(void *data, obs_data_t *settings)
+{
+	const float opacity =
+		(float)obs_data_get_double(settings, SETTING_OPACITY);
+	mask_filter_update_internal(data, settings, opacity, true);
+}
+
+static void mask_filter_defaults_v1(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, SETTING_TYPE,
 				    "mask_color_filter.effect");
@@ -119,9 +135,17 @@ static void mask_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, SETTING_OPACITY, 100);
 }
 
+static void mask_filter_defaults_v2(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, SETTING_TYPE,
+				    "mask_color_filter.effect");
+	obs_data_set_default_int(settings, SETTING_COLOR, 0xFFFFFF);
+	obs_data_set_default_double(settings, SETTING_OPACITY, 1.0);
+}
+
 #define IMAGE_FILTER_EXTENSIONS " (*.bmp *.jpg *.jpeg *.tga *.gif *.png)"
 
-static obs_properties_t *mask_filter_properties(void *data)
+static obs_properties_t *mask_filter_properties_internal(bool use_float_opacity)
 {
 	obs_properties_t *props = obs_properties_create();
 	struct dstr filter_str = {0};
@@ -155,14 +179,32 @@ static obs_properties_t *mask_filter_properties(void *data)
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
 				OBS_PATH_FILE, filter_str.array, NULL);
 	obs_properties_add_color(props, SETTING_COLOR, TEXT_COLOR);
-	obs_properties_add_int_slider(props, SETTING_OPACITY, TEXT_OPACITY, 0,
-				      100, 1);
+	if (use_float_opacity) {
+		obs_properties_add_float_slider(props, SETTING_OPACITY,
+						TEXT_OPACITY, 0.0, 1.0, 0.0001);
+	} else {
+		obs_properties_add_int_slider(props, SETTING_OPACITY,
+					      TEXT_OPACITY, 0, 100, 1);
+	}
 	obs_properties_add_bool(props, SETTING_STRETCH, TEXT_STRETCH);
 
 	dstr_free(&filter_str);
 
-	UNUSED_PARAMETER(data);
 	return props;
+}
+
+static obs_properties_t *mask_filter_properties_v1(void *data)
+{
+	UNUSED_PARAMETER(data);
+
+	return mask_filter_properties_internal(false);
+}
+
+static obs_properties_t *mask_filter_properties_v2(void *data)
+{
+	UNUSED_PARAMETER(data);
+
+	return mask_filter_properties_internal(true);
 }
 
 static void *mask_filter_create(obs_data_t *settings, obs_source_t *context)
@@ -279,7 +321,12 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "add_val");
 	gs_effect_set_vec2(param, &add_val);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -287,13 +334,28 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 struct obs_source_info mask_filter = {
 	.id = "mask_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE,
 	.get_name = mask_filter_get_name,
 	.create = mask_filter_create,
 	.destroy = mask_filter_destroy,
-	.update = mask_filter_update,
-	.get_defaults = mask_filter_defaults,
-	.get_properties = mask_filter_properties,
+	.update = mask_filter_update_v1,
+	.get_defaults = mask_filter_defaults_v1,
+	.get_properties = mask_filter_properties_v1,
+	.video_tick = mask_filter_tick,
+	.video_render = mask_filter_render,
+};
+
+struct obs_source_info mask_filter_v2 = {
+	.id = "mask_filter",
+	.version = 2,
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
+	.get_name = mask_filter_get_name,
+	.create = mask_filter_create,
+	.destroy = mask_filter_destroy,
+	.update = mask_filter_update_v2,
+	.get_defaults = mask_filter_defaults_v2,
+	.get_properties = mask_filter_properties_v2,
 	.video_tick = mask_filter_tick,
 	.video_render = mask_filter_render,
 };

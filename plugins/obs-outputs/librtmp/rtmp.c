@@ -463,6 +463,17 @@ RTMP_Init(RTMP *r)
 {
     memset(r, 0, sizeof(RTMP));
     r->m_sb.sb_socket = -1;
+    RTMP_Reset(r);
+
+#ifdef CRYPTO
+    RTMP_TLS_Init(r);
+#endif
+
+}
+
+void
+RTMP_Reset(RTMP *r)
+{
     r->m_inChunkSize = RTMP_DEFAULT_CHUNKSIZE;
     r->m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
     r->m_bSendChunkSizeInfo = 1;
@@ -476,11 +487,6 @@ RTMP_Init(RTMP *r)
     r->Link.nStreams = 0;
     r->Link.timeout = 30;
     r->Link.swfAge = 30;
-
-#ifdef CRYPTO
-    RTMP_TLS_Init(r);
-#endif
-
 }
 
 void

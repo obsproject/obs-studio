@@ -20,6 +20,7 @@
 #include <QApplication>
 #include <QMessageBox>
 #include <QWidget>
+#include <QWindow>
 #include <QThread>
 #include <obs.hpp>
 
@@ -27,7 +28,7 @@
 #include <memory>
 #include <vector>
 
-#define QT_UTF8(str) QString::fromUtf8(str)
+#define QT_UTF8(str) QString::fromUtf8(str, -1)
 #define QT_TO_UTF8(str) str.toUtf8().constData()
 
 class QDataStream;
@@ -56,7 +57,7 @@ public:
 
 void OBSErrorBox(QWidget *parent, const char *msg, ...);
 
-void QTToGSWindow(WId windowId, gs_window &gswindow);
+bool QTToGSWindow(QWindow *window, gs_window &gswindow);
 
 uint32_t TranslateQtKeyboardEventModifiers(Qt::KeyboardModifiers mods);
 

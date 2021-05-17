@@ -70,6 +70,7 @@ static struct obs_source_info freetype2_source_info_v2 = {
 	.video_render = ft2_source_render,
 	.video_tick = ft2_video_tick,
 	.get_properties = ft2_source_properties,
+	.missing_files = ft2_missing_files,
 	.icon_type = OBS_ICON_TYPE_TEXT,
 };
 
@@ -483,7 +484,7 @@ skip_font_load:
 		}
 	} else {
 		const char *tmp = obs_data_get_string(settings, "text");
-		if (!tmp || !*tmp)
+		if (!tmp)
 			goto error;
 
 		if (srcdata->text != NULL) {
@@ -526,9 +527,14 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source,
 
 	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
 	obs_data_set_default_int(font_obj, "size", font_size);
+	obs_data_set_default_int(font_obj, "flags", 0);
+	obs_data_set_default_string(font_obj, "style", "");
 	obs_data_set_default_obj(settings, "font", font_obj);
 
 	obs_data_set_default_bool(settings, "antialiasing", true);
+	obs_data_set_default_bool(settings, "word_wrap", false);
+	obs_data_set_default_bool(settings, "outline", false);
+	obs_data_set_default_bool(settings, "drop_shadow", false);
 
 	obs_data_set_default_int(settings, "log_lines", 6);
 
@@ -550,4 +556,43 @@ static void *ft2_source_create_v1(obs_data_t *settings, obs_source_t *source)
 static void *ft2_source_create_v2(obs_data_t *settings, obs_source_t *source)
 {
 	return ft2_source_create(settings, source, 2);
+}
+
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct ft2_source *s = src;
+
+	obs_source_t *source = s->src;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "text_file", new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
+static obs_missing_files_t *ft2_missing_files(void *data)
+{
+	struct ft2_source *s = data;
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	obs_source_t *source = s->src;
+	obs_data_t *settings = obs_source_get_settings(source);
+
+	bool read = obs_data_get_bool(settings, "from_file");
+	const char *path = obs_data_get_string(settings, "text_file");
+
+	if (read && strcmp(path, "") != 0) {
+		if (!os_file_exists(path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->src, NULL);
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	obs_data_release(settings);
+
+	return files;
 }

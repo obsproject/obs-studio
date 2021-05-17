@@ -460,6 +460,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 	obsx264->params.i_height = height;
 	obsx264->params.i_fps_num = voi->fps_num;
 	obsx264->params.i_fps_den = voi->fps_den;
+	obsx264->params.i_timebase_num = voi->fps_den;
+	obsx264->params.i_timebase_den = voi->fps_num;
 	obsx264->params.pf_log = log_x264;
 	obsx264->params.p_log_private = obsx264;
 	obsx264->params.i_log_level = X264_LOG_WARNING;
@@ -492,6 +494,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		break;
 	}
 
+	obsx264->params.vui.i_sar_height = 1;
+	obsx264->params.vui.i_sar_width = 1;
 	obsx264->params.vui.b_fullrange = info.range == VIDEO_RANGE_FULL;
 	obsx264->params.vui.i_colorprim =
 		get_x264_cs_val(colorprim, x264_colorprim_names);
@@ -514,9 +518,8 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		}
 	} else {
 		obsx264->params.rc.i_rc_method = X264_RC_CRF;
+		obsx264->params.rc.f_rf_constant = (float)crf;
 	}
-
-	obsx264->params.rc.f_rf_constant = (float)crf;
 
 	if (info.format == VIDEO_FORMAT_NV12)
 		obsx264->params.i_csp = X264_CSP_NV12;
