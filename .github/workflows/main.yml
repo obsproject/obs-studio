@@ -482,6 +482,7 @@ jobs:
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
       WINDOWS_DEPS_VERSION: '2019'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
       VLC_VERSION: '3.0.0-git'
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
@@ -524,7 +525,7 @@ jobs:
           CACHE_NAME: 'windows-deps-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/deps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}-${{ env.WINDOWS_DEPS_CACHE_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
         uses: actions/cache@v2.1.2
@@ -591,6 +592,7 @@ jobs:
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
       WINDOWS_DEPS_VERSION: '2019'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
       - name: 'Add msbuild to PATH'
@@ -632,7 +634,7 @@ jobs:
           CACHE_NAME: 'deps-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/deps
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_DEPS_VERSION }}-${{ env.WINDOWS_DEPS_CACHE_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
         uses: actions/cache@v2.1.2
