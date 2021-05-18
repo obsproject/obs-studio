@@ -90,16 +90,14 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 		device->Release();
 
 		hlog("Found D3D12 device on swap chain: swap=0x%" PRIX64
-		     ", device=0x%" PRIX64 ", use_queue=%d",
-		     (uint64_t)(uintptr_t)swap, (uint64_t)(uintptr_t)device,
-		     (int)global_hook_info->d3d12_use_swap_queue);
+		     ", device=0x%" PRIX64,
+		     (uint64_t)(uintptr_t)swap, (uint64_t)(uintptr_t)device);
 		for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
-			hlog("\tqueue=0x%" PRIX64,
+			hlog("    queue=0x%" PRIX64,
 			     (uint64_t)(uintptr_t)dxgi_possible_swap_queues[i]);
 		}
 
-		if (!global_hook_info->d3d12_use_swap_queue ||
-		    (dxgi_possible_swap_queue_count > 0)) {
+		if (dxgi_possible_swap_queue_count > 0) {
 			data.swap = swap;
 			data.capture = d3d12_capture;
 			data.free = d3d12_free;
