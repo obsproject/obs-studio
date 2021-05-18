@@ -180,33 +180,19 @@ static bool d3d12_init_11on12(ID3D12Device *device)
 
 	bool created = false;
 
-	if (global_hook_info->d3d12_use_swap_queue) {
-		for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
-			hlog("d3d12_init_11on12: creating 11 device with swap queue: 0x%" PRIX64,
-			     (uint64_t)(uintptr_t)dxgi_possible_swap_queues[i]);
-			IUnknown *const queue = dxgi_possible_swap_queues[i];
-			const HRESULT hr = create_11_on_12(
-				device, 0, nullptr, 0, &queue, 1, 0,
-				&data.device11, &data.context11, nullptr);
-			created = SUCCEEDED(hr);
-			if (created) {
-				break;
-			}
-
-			hlog_hr("d3d12_init_11on12: failed to create 11 device",
-				hr);
-		}
-	} else {
-		hlog("d3d12_init_11on12: creating 11 device without swap queue");
+	for (size_t i = 0; i < dxgi_possible_swap_queue_count; ++i) {
+		hlog("d3d12_init_11on12: creating 11 device: queue=0x%" PRIX64,
+		     (uint64_t)(uintptr_t)dxgi_possible_swap_queues[i]);
+		IUnknown *const queue = dxgi_possible_swap_queues[i];
 		const HRESULT hr = create_11_on_12(device, 0, nullptr, 0,
-						   nullptr, 0, 0,
-						   &data.device11,
+						   &queue, 1, 0, &data.device11,
 						   &data.context11, nullptr);
 		created = SUCCEEDED(hr);
-		if (!created) {
-			hlog_hr("d3d12_init_11on12: failed to create 11 device",
-				hr);
+		if (created) {
+			break;
 		}
+
+		hlog_hr("d3d12_init_11on12: failed to create 11 device", hr);
 	}
 
 	if (!created) {
