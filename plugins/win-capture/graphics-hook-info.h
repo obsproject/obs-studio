@@ -109,7 +109,6 @@ struct hook_info {
 	bool flip;
 
 	/* additional options */
-	bool d3d12_use_swap_queue;
 	uint64_t frame_interval;
 	bool UNUSED_use_scale;
 	bool force_shmem;
