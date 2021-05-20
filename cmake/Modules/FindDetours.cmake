@@ -59,7 +59,7 @@ find_library(DETOURS_LIB
 		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(DETOURS DEFAULT_MSG DETOURS_LIB DETOURS_INCLUDE_DIR)
+find_package_handle_standard_args(Detours DEFAULT_MSG DETOURS_LIB DETOURS_INCLUDE_DIR)
 mark_as_advanced(DETOURS_INCLUDE_DIR DETOURS_LIB)
 
 if(DETOURS_FOUND)
