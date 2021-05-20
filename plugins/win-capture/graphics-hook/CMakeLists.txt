@@ -51,6 +51,7 @@ add_library(graphics-hook MODULE
 	${graphics-hook_HEADERS})
 
 target_include_directories(graphics-hook PUBLIC
+	${DETOURS_INCLUDE_DIR}
 	"${CMAKE_BINARY_DIR}/plugins/win-capture/graphics-hook/config")
 
 target_link_libraries(graphics-hook
