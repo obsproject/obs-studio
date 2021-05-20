@@ -34,6 +34,48 @@ inline bool OBSBasicSettings::IsCustomService() const
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
 }
 
+static inline bool WidgetChanged(QWidget *widget)
+{
+	return widget->property("changed").toBool();
+}
+
+static inline bool SetComboByValue(QComboBox *combo, const char *name)
+{
+	int idx = combo->findData(QT_UTF8(name));
+	if (idx != -1) {
+		combo->setCurrentIndex(idx);
+		return true;
+	}
+
+	return false;
+}
+
+static inline QString GetComboData(QComboBox *combo)
+{
+	int idx = combo->currentIndex();
+	if (idx == -1)
+		return QString();
+
+	return combo->itemData(idx).toString();
+}
+
+static void WriteJsonData(OBSPropertiesView *view, const char *path)
+{
+	char full_path[512];
+
+	if (!view || !WidgetChanged(view))
+		return;
+
+	int ret = GetProfilePath(full_path, sizeof(full_path), path);
+	if (ret > 0) {
+		obs_data_t *settings = view->GetSettings();
+		if (settings) {
+			obs_data_save_json_safe(settings, full_path, "tmp",
+						"bak");
+		}
+	}
+}
+
 void OBSBasicSettings::InitStreamPage()
 {
 	ui->connectAccount2->setVisible(false);
