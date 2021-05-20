@@ -31,11 +31,7 @@ VertData VSDefault(VertData v_in)
 
 float4 CalcColor(float4 rgba)
 {
-<<<<<<< HEAD
 	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
-=======
-	return float4(pow(rgba.rgb, gamma) * contrast + brightness, rgba.a);
->>>>>>> e66d49cd8 (obs-filters: Apply color key filter in linear space)
 }
 
 float GetColorDist(float3 rgb)
@@ -54,16 +50,11 @@ float4 ProcessColorKey(float4 rgba, VertData v_in)
 float4 PSColorKeyRGBA(VertData v_in) : TARGET
 {
 	float4 rgba = image.Sample(textureSampler, v_in.uv);
-<<<<<<< HEAD
 	rgba.rgb = max(float3(0.0, 0.0, 0.0), rgba.rgb / rgba.a);
 	rgba.a *= opacity;
 	rgba = ProcessColorKey(rgba, v_in);
 	rgba.rgb *= rgba.a;
 	return rgba;
-=======
-	rgba.a *= opacity;
-	return ProcessColorKey(rgba, v_in);
->>>>>>> e66d49cd8 (obs-filters: Apply color key filter in linear space)
 }
 
 technique Draw
