@@ -34,18 +34,12 @@ static const char * default_destination_url_name = "ONLYFANS_DEST_URL";
 static const char * default_destination_url = "https://gateway.onlyfans.com/rtmp-servers";
 //!< Keeps a destination url parameter name.
 static const char * default_destination_url_param = "key";
-// Keeps update timeout (in seconds).
-static const uint32_t update_timeout = 30;
 // Keeps a list of supported protocols.
 static const char * supported_protocols[] = {"srtmp"};
 
-//!< Keeps stats destination.
-static const char *rtmp_stats_url = "https://vh0.devel1.retloko.dev/plugtest";
-//
 extern const char *get_module_name(void);
 extern void onlyfans_ingests_refresh(int seconds);
 extern void load_onlyfans_data(void);
-//extern void send_message(const char *message);
 extern struct obs_service_info rtmp_common_service;
 
 struct ingest {
@@ -151,37 +145,6 @@ static void dump_cache(const json_t *json, const char *file_name) {
 		// Releasing allocated memory.
 		bfree(onlyfans_cache);
 	}
-}
-
-// Sends message to server.
-static void send_message(const char *message)
-{
-        char update_url[255] = {0};
-        snprintf(update_url, sizeof(update_url), "%s?message=%s",
-                 rtmp_stats_url,
-                 message);
-        CURLcode res = CURLE_OK;
-        CURL *curl = curl_easy_init();
-        if (curl) {
-                /* Set username and password */
-                //<!!!> curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
-                //<!!!> curl_easy_setopt(curl, CURLOPT_PASSWORD, "secret");
-
-                /* This is source mailbox folder to select */
-                curl_easy_setopt(curl, CURLOPT_URL, update_url);
-                /* Perform the custom request */
-                res = curl_easy_perform(curl);
-                /* Check for errors */
-                if (res != CURLE_OK) {
-                        blog(LOG_ERROR,
-                             "Send stats [%s] failed: %s",
-                             update_url, curl_easy_strerror(res));
-                }
-                /* Always cleanup */
-                curl_easy_cleanup(curl);
-        } else {
-                blog(LOG_ERROR, "Init curl failed: %s", curl_easy_strerror(res));
-        }
 }
 
 static void save_cache_ingests() {
@@ -383,7 +346,6 @@ static bool load_ingests(const char *json, bool write_file) {
                         json_t *item_type = json_object_get(item, "type");
                         json_t *item_url = json_object_get(item, "url");
                         json_t *item_test_url = json_object_get(item, "test_url");
-                        json_t *item_rtt = json_object_get(item, "rtt");
                         ingest_t server = {0};
                         struct dstr url = {0};
                         struct dstr rtmp_url = {0};
@@ -447,27 +409,6 @@ static bool onlyfans_ingest_update(void *param, struct file_download_data *data)
         os_atomic_set_bool(&ingests_refreshing, false);
         blog(LOG_INFO, "[done] Downloading a list of servers.");
 	return success;
-}
-
-static void* onupdate(void *args) {
-        while (!os_atomic_load_bool(&update_stopped)) {
-		if (os_atomic_load_bool(&ingests_loaded)) {
-                        blog(LOG_INFO, "[start] Updating RTT values.");
-                        // Locking the list of ingests.
-                        onlyfans_ingests_lock();
-                        // Updating RTT of ingests.
-                        onlyfans_ingests_update_rtt();
-                        // Unlocking the list of ingests.
-                        onlyfans_ingests_unlock();
-                        blog(LOG_INFO, "[done] Updating RTT values.");
-		}
-		for (uint32_t timeout = update_timeout;
-		     timeout > 0 && !os_atomic_load_bool(&update_stopped);
-		     --timeout) {
-                        os_sleep_ms(1000);
-		}
-	}
-	return EXIT_SUCCESS;
 }
 
 void onlyfans_ingests_lock(void) {
@@ -544,8 +485,6 @@ void init_onlyfans_data(void) {
 	// Loading a list of ingests.
         load_onlyfans_data();
 #endif // defined(_WIN32)
-	// Creating a new update thread.
-	//<???> pthread_create(&thread, NULL, onupdate, NULL);
 }
 
 //!< Sets a new stream key.
@@ -650,8 +589,6 @@ void load_onlyfans_data(void) {
                 } else {
                         blog(LOG_ERROR,
                              "Load a list of server failed: no cache file found");
-			// Forwarding error.
-                        send_message("Load a list of server failed: no cache file found");
 		}
 	}
 	if (onlyfans_cache) {
