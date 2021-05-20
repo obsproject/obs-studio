@@ -131,6 +131,36 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateMoreInfoLink()));
 }
 
+OBSPropertiesView *
+OBSBasicSettings::CreateServicePropertyView(const char *service,
+					    const char *path, bool changed)
+{
+	obs_data_t *settings = obs_service_defaults(service);
+	OBSPropertiesView *view;
+
+	if (path) {
+		char serviceJsonPath[512];
+		int ret = GetProfilePath(serviceJsonPath,
+					 sizeof(serviceJsonPath), path);
+		if (ret > 0) {
+			obs_data_t *data = obs_data_create_from_json_file_safe(
+				serviceJsonPath, "bak");
+			obs_data_apply(settings, data);
+			obs_data_release(data);
+		}
+	}
+
+	view = new OBSPropertiesView(
+		settings, service,
+		(PropertiesReloadCallback)obs_get_service_properties, 170);
+	view->setFrameShape(QFrame::StyledPanel);
+	view->setProperty("changed", QVariant(changed));
+	QObject::connect(view, SIGNAL(Changed()), this, SLOT(Stream1Changed()));
+
+	obs_data_release(settings);
+	return view;
+}
+
 void OBSBasicSettings::LoadStream1Settings()
 {
 	bool ignoreRecommended =
