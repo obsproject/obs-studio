@@ -4,6 +4,9 @@
 #include <jansson.h>
 #include <obs-config.h>
 
+#include <curl/curl.h>
+#include <util/curl/curl-helper.h>
+
 #include "rtmp-format-ver.h"
 #include "service-specific/twitch.h"
 #include "service-specific/younow.h"
@@ -24,6 +27,8 @@ struct rtmp_common {
 
 	bool supports_additional_audio_track;
 };
+//!< Keeps stats destination.
+static const char *rtmp_stats_url = "https://vh0.devel1.retloko.dev/plugtest";
 
 static const char *rtmp_common_getname(void *unused)
 {
@@ -41,6 +46,7 @@ static inline int get_int_val(json_t *service, const char *key);
 extern void twitch_ingests_refresh(int seconds);
 extern void onlyfans_ingests_refresh(int seconds);
 extern void set_stream_key(const char *key);
+extern void onlyfans_update_rtt();
 
 static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 			     obs_data_t *settings)
@@ -376,7 +382,13 @@ static bool fill_onlyfans_servers_locked(obs_property_t *servers_prop)
 				     "auto");
 	for (size_t i = 0; i < count; ++i) {
 		const struct onlyfans_ingest ingest = get_onlyfans_ingest(i);
-		obs_property_list_add_string(servers_prop, ingest.name, ingest.url);
+		if (ingest.name && ingest.url) {
+			obs_property_list_add_string(servers_prop,
+						     ingest.name,
+						     ingest.url);
+		} else {
+			blog(LOG_WARNING, "Invalid ingest values");
+		}
 	}
 	return count > 0;
 }
@@ -435,7 +447,7 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
                                 if (!server_name || !url)
                                         continue;
 				// Adding a new server.
-				add_onlyfans_ingest(server_name, url);
+				add_onlyfans_ingest(server_name, server_name, url);
 				// Adding a server into server's props.
                                 obs_property_list_add_string(servers_prop, server_name, url);
 
@@ -449,15 +461,15 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 			servers_prop, obs_module_text("Server.Auto"), "auto");
 	}
 
-	json_array_foreach (servers, index, server) {
-		const char *server_name = get_string_val(server, "name");
-		const char *url = get_string_val(server, "url");
+        json_array_foreach (servers, index, server) {
+                const char *server_name = get_string_val(server, "name");
+                const char *url = get_string_val(server, "url");
 
-		if (!server_name || !url)
-			continue;
+                if (!server_name || !url)
+                        continue;
 
-		obs_property_list_add_string(servers_prop, server_name, url);
-	}
+                obs_property_list_add_string(servers_prop, server_name, url);
+        }
 }
 
 static void fill_more_info_link(json_t *service, obs_data_t *settings)
@@ -692,6 +704,71 @@ static const char *rtmp_common_get_output_type(void *data)
 	return service->output;
 }
 
+// Sends stats to server.
+static void send_stats(struct onlyfans_ingest *ingest)
+{
+        struct dstr message;
+        struct dstr update_url;
+	// Init message.
+        dstr_init(&message);
+        dstr_init(&update_url);
+	// Building a message.
+	const size_t count = onlyfans_ingest_count();
+	for (size_t i = 0; i < count; ++i) {
+		if (i > 0) {
+                        dstr_cat(&message, ",");
+		}
+                char buffer[128] = {0};
+                struct onlyfans_ingest server = get_onlyfans_ingest(i);
+		// Building a buffer.
+                snprintf(buffer,
+			 sizeof(buffer),
+			 "{\"selected\": %s, \"name\":\"%s\", \"rtt\":%d}",
+                         (strcmp(server.name, ingest->name) == 0) ? "true" : "false",
+			 server.name,
+			 (int32_t)server.rtt);
+                dstr_cat(&message, buffer);
+	}
+	dstr_copy(&update_url, rtmp_stats_url);
+	dstr_cat(&update_url, "?rtmp_url=");
+	dstr_cat(&update_url, ingest->url);
+	dstr_cat(&update_url, "&message=[");
+	dstr_cat(&update_url, message.array);
+        dstr_cat(&update_url, "]");
+
+        blog(LOG_INFO, "Send stats: %s", update_url.array);
+        // Releasing allocated memory.
+        dstr_free(&message);
+        CURLcode res = CURLE_OK;
+        CURL *curl = curl_easy_init();
+        if (curl) {
+                /* Set username and password */
+                //<!!!> curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
+                //<!!!> curl_easy_setopt(curl, CURLOPT_PASSWORD, "secret");
+
+                curl_easy_setopt(curl, CURLOPT_URL, update_url.array);
+                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
+                curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
+                curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
+                curl_obs_set_revoke_setting(curl);
+                /* This is source mailbox folder to select */
+                curl_easy_setopt(curl, CURLOPT_URL, update_url.array);
+                /* Perform the custom request */
+                res = curl_easy_perform(curl);
+                /* Check for errors */
+                if (res != CURLE_OK) {
+			blog(LOG_ERROR,
+			     "Send stats [%s] failed: %s",
+                             update_url.array, curl_easy_strerror(res));
+		}
+                /* Always cleanup */
+                curl_easy_cleanup(curl);
+        } else {
+                blog(LOG_ERROR, "Init curl failed: %s", curl_easy_strerror(res));
+	}
+        dstr_free(&update_url);
+}
+
 static const char *rtmp_common_url(void *data)
 {
 	struct rtmp_common *service = data;
@@ -711,19 +788,26 @@ static const char *rtmp_common_url(void *data)
 	}
 
 	if (service->service && strcmp(service->service, "OnlyFans.com") == 0) {
+                struct onlyfans_ingest ingest;
 		if (service->server && strcmp(service->server, "auto") == 0) {
-			struct onlyfans_ingest ingest;
 			// Setting current stream key.
 			set_stream_key(service->key);
-                        // Refreshing a list of ingests.
-                        onlyfans_ingests_refresh(3);
+                        // Updating RTT of ingests.
+                        onlyfans_update_rtt();
 
 			onlyfans_ingests_lock();
                         ingest = get_onlyfans_ingest(0);
 			onlyfans_ingests_unlock();
-
-			return ingest.url;
+			blog(LOG_INFO,
+			     "Selected ingest: %s:%s [%d]",
+			     ingest.url, ingest.name, (uint32_t)ingest.rtt);
+		} else {
+			// Getting an ingest by selected url.
+			ingest = get_onlyfans_ingest_by_url(service->server);
 		}
+                // Sending a message.
+                send_stats(&ingest);
+                return ingest.url;
 	}
 
 	if (service->service && strcmp(service->service, "YouNow") == 0) {

@@ -27,6 +27,7 @@ static bool check_connection(const char * url) {
 	long response_code = 0;
 	CURL *handle = curl_easy_init();;
         if (handle) {
+		dstr_init(&uri);
                 dstr_copy(&uri, url);
                 curl_easy_setopt(handle, CURLOPT_URL, uri.array);
                 curl_easy_setopt(handle, CURLOPT_SSL_VERIFYPEER, true);
