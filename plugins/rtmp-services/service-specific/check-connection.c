@@ -15,7 +15,7 @@
 #endif // SEC_TO_MSEC
 // Keeps a connection timeout.
 static long g_default_timeout = 3L;
-// Gets current time in nanoseconds.
+// Gets current time in milliseconds.
 static uint64_t now()
 {
 	return os_gettime_ns() / SEC_TO_MSEC;
@@ -24,10 +24,10 @@ static uint64_t now()
 static bool check_connection(const char *url)
 {
 	struct dstr uri = {0};
-	CURLcode code = CURLE_OK;
+	CURLcode code = CURLE_FAILED_INIT;
 	long response_code = 0;
 	CURL *handle = curl_easy_init();
-	;
+
 	if (handle) {
 		dstr_init(&uri);
 		dstr_copy(&uri, url);

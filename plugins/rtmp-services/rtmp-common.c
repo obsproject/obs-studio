@@ -2,10 +2,6 @@
 #include <util/dstr.h>
 #include <obs-module.h>
 #include <jansson.h>
-#include <obs-config.h>
-
-#include <curl/curl.h>
-#include <util/curl/curl-helper.h>
 
 #include "rtmp-format-ver.h"
 #include "service-specific/twitch.h"
