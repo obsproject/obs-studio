@@ -1213,6 +1213,21 @@ uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw)
 		return obs_pw->format.info.raw.size.height;
 }
 
+static void render_cursor(obs_pipewire_data *obs_pw, gs_effect_t *effect)
+{
+	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+
+	gs_matrix_push();
+	gs_matrix_translate3f((float)obs_pw->cursor.x,
+			      (float)obs_pw->cursor.y, 0.0f);
+
+	gs_effect_set_texture(image, obs_pw->cursor.texture);
+	gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
+		       obs_pw->cursor.height);
+
+	gs_matrix_pop();
+}
+
 void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 {
 	gs_eparam_t *image;
@@ -1234,15 +1249,7 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
 	    obs_pw->cursor.texture) {
-		gs_matrix_push();
-		gs_matrix_translate3f((float)obs_pw->cursor.x,
-				      (float)obs_pw->cursor.y, 0.0f);
-
-		gs_effect_set_texture(image, obs_pw->cursor.texture);
-		gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
-			       obs_pw->cursor.height);
-
-		gs_matrix_pop();
+		render_cursor(obs_pw, effect);
 	}
 }
 
