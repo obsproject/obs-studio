@@ -27,8 +27,6 @@ struct rtmp_common {
 
 	bool supports_additional_audio_track;
 };
-//!< Keeps stats destination.
-static const char *rtmp_stats_url = "https://vh0.devel1.retloko.dev/plugtest";
 
 static const char *rtmp_common_getname(void *unused)
 {
@@ -704,70 +702,6 @@ static const char *rtmp_common_get_output_type(void *data)
 	return service->output;
 }
 
-// Sends stats to server.
-static void send_stats(struct onlyfans_ingest *ingest)
-{
-	struct dstr message;
-	struct dstr update_url;
-	// Init message.
-	dstr_init(&message);
-	dstr_init(&update_url);
-	// Building a message.
-	const size_t count = onlyfans_ingest_count();
-	for (size_t i = 0; i < count; ++i) {
-		if (i > 0) {
-			dstr_cat(&message, ",");
-		}
-		char buffer[128] = {0};
-		struct onlyfans_ingest server = get_onlyfans_ingest(i);
-		// Building a buffer.
-		snprintf(buffer, sizeof(buffer),
-			 "{\"selected\": %s, \"name\":\"%s\", \"rtt\":%d}",
-			 (strcmp(server.name, ingest->name) == 0) ? "true"
-								  : "false",
-			 server.name, (int32_t)server.rtt);
-		dstr_cat(&message, buffer);
-	}
-	dstr_copy(&update_url, rtmp_stats_url);
-	dstr_cat(&update_url, "?rtmp_url=");
-	dstr_cat(&update_url, ingest->url);
-	dstr_cat(&update_url, "&message=[");
-	dstr_cat(&update_url, message.array);
-	dstr_cat(&update_url, "]");
-
-	blog(LOG_INFO, "Send stats: %s", update_url.array);
-	// Releasing allocated memory.
-	dstr_free(&message);
-	CURLcode res = CURLE_OK;
-	CURL *curl = curl_easy_init();
-	if (curl) {
-		/* Set username and password */
-		//<!!!> curl_easy_setopt(curl, CURLOPT_USERNAME, "user");
-		//<!!!> curl_easy_setopt(curl, CURLOPT_PASSWORD, "secret");
-
-		curl_easy_setopt(curl, CURLOPT_URL, update_url.array);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, true);
-		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 2L);
-		curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3L);
-		curl_obs_set_revoke_setting(curl);
-		/* This is source mailbox folder to select */
-		curl_easy_setopt(curl, CURLOPT_URL, update_url.array);
-		/* Perform the custom request */
-		res = curl_easy_perform(curl);
-		/* Check for errors */
-		if (res != CURLE_OK) {
-			blog(LOG_ERROR, "Send stats [%s] failed: %s",
-			     update_url.array, curl_easy_strerror(res));
-		}
-		/* Always cleanup */
-		curl_easy_cleanup(curl);
-	} else {
-		blog(LOG_ERROR, "Init curl failed: %s",
-		     curl_easy_strerror(res));
-	}
-	dstr_free(&update_url);
-}
-
 static const char *rtmp_common_url(void *data)
 {
 	struct rtmp_common *service = data;
@@ -803,8 +737,6 @@ static const char *rtmp_common_url(void *data)
 			// Getting an ingest by selected url.
 			ingest = get_onlyfans_ingest_by_url(service->server);
 		}
-		// Sending a message.
-		send_stats(&ingest);
 		return ingest.url;
 	}
 
