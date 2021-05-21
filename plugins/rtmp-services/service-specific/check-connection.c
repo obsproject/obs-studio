@@ -10,15 +10,15 @@
 #include <curl/curl.h>
 #include <util/curl/curl-helper.h>
 
-#ifndef SEC_TO_MSEC
-#define SEC_TO_MSEC 1000000ULL
-#endif // SEC_TO_MSEC
+#ifndef NSEC_TO_MSEC
+#define NSEC_TO_MSEC 1000000ULL
+#endif // NSEC_TO_MSEC
 // Keeps a connection timeout.
 static long g_default_timeout = 3L;
 // Gets current time in milliseconds.
 static uint64_t now()
 {
-	return os_gettime_ns() / SEC_TO_MSEC;
+	return os_gettime_ns() / NSEC_TO_MSEC;
 }
 // Connects to ingest server.
 static bool check_connection(const char *url)
