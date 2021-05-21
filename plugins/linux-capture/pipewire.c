@@ -1215,17 +1215,31 @@ uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw)
 
 static void render_cursor(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 {
+	const bool linear_srgb = gs_get_linear_srgb();
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, obs_pw->cursor.texture);
+	else
+		gs_effect_set_texture(image, obs_pw->cursor.texture);
+
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
+	gs_enable_color(true, true, true, false);
 
 	gs_matrix_push();
-	gs_matrix_translate3f((float)obs_pw->cursor.x,
-			      (float)obs_pw->cursor.y, 0.0f);
-
-	gs_effect_set_texture(image, obs_pw->cursor.texture);
+	gs_matrix_translate3f((float)obs_pw->cursor.x, (float)obs_pw->cursor.y,
+			      0.0f);
 	gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
 		       obs_pw->cursor.height);
-
 	gs_matrix_pop();
+
+	gs_enable_color(true, true, true, true);
+	gs_blend_state_pop();
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
