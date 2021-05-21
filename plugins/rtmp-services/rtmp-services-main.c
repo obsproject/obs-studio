@@ -81,7 +81,7 @@ static void refresh_callback(void *unused, calldata_t *cd)
 bool obs_module_load(void)
 {
 	init_twitch_data();
-        init_dacast_data();
+	init_dacast_data();
 	// Initializing OnlyFans data.
 	init_onlyfans_data();
 
@@ -92,10 +92,8 @@ bool obs_module_load(void)
 	proc_handler_t *ph = obs_get_proc_handler();
 	proc_handler_add(ph, "void twitch_ingests_refresh(int seconds)",
 			 refresh_callback, NULL);
-	proc_handler_add(ph,
-			 "void onlyfans_ingests_refresh(int seconds)",
-			 refresh_callback,
-			 NULL);
+	proc_handler_add(ph, "void onlyfans_ingests_refresh(int seconds)",
+			 refresh_callback, NULL);
 
 #if !defined(_WIN32) || CHECK_FOR_SERVICE_UPDATES
 	char *local_dir = obs_module_file("");
