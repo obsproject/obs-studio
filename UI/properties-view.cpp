@@ -21,6 +21,7 @@
 #include <QDir>
 #include <QGroupBox>
 #include <QObject>
+#include <QDesktopServices>
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
 #include "spinbox-ignorewheel.hpp"
@@ -1397,6 +1398,21 @@ void OBSPropertiesView::AddGroup(obs_property_t *prop, QFormLayout *layout)
 	connect(groupBox, SIGNAL(toggled(bool)), info, SLOT(ControlChanged()));
 }
 
+QWidget *OBSPropertiesView::AddOpenUrl(obs_property_t *prop)
+{
+	const char *name = obs_property_name(prop);
+	const char *desc = obs_property_description(prop);
+	const char *val = obs_data_get_string(settings, name);
+
+	QPushButton *button = new QPushButton(QT_UTF8(desc));
+	button->setProperty("themeID", "settingsButtons");
+	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	QUrl qurl = QString::fromUtf8(val);
+	connect(button, &QPushButton::clicked, this,
+		[=]() { this->OpenUrl(qurl); });
+	return NewWidget(prop, button, SIGNAL(clicked()));
+}
+
 void OBSPropertiesView::AddProperty(obs_property_t *property,
 				    QFormLayout *layout)
 {
@@ -1451,13 +1467,17 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_COLOR_ALPHA:
 		AddColorAlpha(property, layout, label);
+		break;
+	case OBS_PROPERTY_OPEN_URL:
+		widget = AddOpenUrl(property);
 	}
 
 	if (widget && !obs_property_enabled(property))
 		widget->setEnabled(false);
 
 	if (!label && type != OBS_PROPERTY_BOOL &&
-	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP)
+	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP &&
+	    type != OBS_PROPERTY_OPEN_URL)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (warning && label) //TODO: select color based on background color
@@ -1527,6 +1547,11 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 void OBSPropertiesView::SignalChanged()
 {
 	emit Changed();
+}
+
+void OBSPropertiesView::OpenUrl(QUrl url)
+{
+	QDesktopServices::openUrl(url);
 }
 
 static bool FrameRateChangedVariant(const QVariant &variant,
@@ -1950,6 +1975,8 @@ void WidgetInfo::ControlChanged()
 		if (!ColorAlphaChanged(setting))
 			return;
 		break;
+	case OBS_PROPERTY_OPEN_URL:
+		return;
 	}
 
 	if (!recently_updated) {

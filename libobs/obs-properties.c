@@ -440,6 +440,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 		return sizeof(struct group_data);
 	case OBS_PROPERTY_COLOR_ALPHA:
 		return 0;
+	case OBS_PROPERTY_OPEN_URL:
+		return 0;
 	}
 
 	return 0;
@@ -803,6 +805,17 @@ obs_property_t *obs_properties_add_group(obs_properties_t *props,
 	struct group_data *data = get_property_data(p);
 	data->type = type;
 	data->content = group;
+	return p;
+}
+
+obs_property_t *obs_properties_add_open_url(obs_properties_t *props,
+					    const char *name, const char *desc)
+{
+	if (!props || has_prop(props, name))
+		return NULL;
+
+	struct obs_property *p =
+		new_prop(props, name, desc, OBS_PROPERTY_OPEN_URL);
 	return p;
 }
 

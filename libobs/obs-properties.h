@@ -57,6 +57,7 @@ enum obs_property_type {
 	OBS_PROPERTY_FRAME_RATE,
 	OBS_PROPERTY_GROUP,
 	OBS_PROPERTY_COLOR_ALPHA,
+	OBS_PROPERTY_OPEN_URL,
 };
 
 enum obs_combo_format {
@@ -266,6 +267,10 @@ EXPORT obs_property_t *obs_properties_add_group(obs_properties_t *props,
 						const char *description,
 						enum obs_group_type type,
 						obs_properties_t *group);
+
+EXPORT obs_property_t *obs_properties_add_open_url(obs_properties_t *props,
+						   const char *name,
+						   const char *desc);
 
 /* ------------------------------------------------------------------------- */
 
