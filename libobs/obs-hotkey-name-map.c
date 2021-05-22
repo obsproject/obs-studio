@@ -134,7 +134,7 @@ static void shrink_prefix(obs_hotkey_name_map_edge_t *e, size_t l)
 }
 
 static void connect_edge2node(obs_hotkey_name_map_edge_t *e,
-		    obs_hotkey_name_map_node_t *n)
+			      obs_hotkey_name_map_node_t *n)
 {
 	e->node = n;
 }
