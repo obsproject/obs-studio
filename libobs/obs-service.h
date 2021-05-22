@@ -128,6 +128,26 @@ struct obs_service_info {
 
 	void (*get_max_bitrate)(void *data, int *video_bitrate,
 				int *audio_bitrate);
+
+	/**
+	 * Gets the default settings for this service
+	 *
+	 * If get_defaults is also defined both will be called, and the first
+	 * call will be to get_defaults, then to get_defaults2.
+	 *
+	 * @param[out]  settings  Data to assign default settings to
+	 * @param[in]   typedata  Type Data
+	 */
+	void (*get_defaults2)(obs_data_t *settings, void *type_data);
+
+	/**
+	 * Gets the property information of this service
+	 *
+	 * @param[in]   data      Pointer from create (or null)
+	 * @param[in]   typedata  Type Data
+	 * @return                The properties data
+	 */
+	obs_properties_t *(*get_properties2)(void *data, void *type_data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,
