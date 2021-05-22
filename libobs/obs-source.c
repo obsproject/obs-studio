@@ -3739,8 +3739,9 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
 		gs_blend_state_push();
-		gs_blend_function_separate(GS_BLEND_SRCALPHA, GS_BLEND_ZERO,
-					   GS_BLEND_ONE, GS_BLEND_ZERO);
+		gs_blend_function_separate(GS_BLEND_SRCALPHA,
+					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
+					   GS_BLEND_INVSRCALPHA);
 
 		bool custom_draw = (parent_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 		bool async = (parent_flags & OBS_SOURCE_ASYNC) != 0;
