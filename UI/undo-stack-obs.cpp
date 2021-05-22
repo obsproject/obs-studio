@@ -34,6 +34,9 @@ void undo_stack::add_action(const QString &name, undo_redo_cb undo,
 			    undo_redo_cb redo, std::string undo_data,
 			    std::string redo_data, bool repeatable)
 {
+	if (!is_enabled())
+		return;
+
 	while (undo_items.size() >= MAX_STACK_SIZE) {
 		undo_redo_t item = undo_items.back();
 		undo_items.pop_back();
