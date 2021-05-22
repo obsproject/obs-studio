@@ -104,8 +104,6 @@ if(WIN32)
 		winmm
 		Iphlpapi)
 
-	add_definitions(-DWIN32_LEAN_AND_MEAN)
-
 	if (WITH_RTMPS OR (WITH_RTMPS STREQUAL "AUTO"))
 		SET(obs-outputs_PLATFORM_DEPS
 			${obs-outputs_PLATFORM_DEPS}
