@@ -47,7 +47,7 @@ General Functions
 
    :param flags: 0 or a bitwise OR combination of one of the following
                  values:
-                 
+
                  - OBS_PROPERTIES_DEFER_UPDATE - A hint that tells the
                    front-end to defers updating the settings until the
                    user has finished editing all properties rather than
@@ -266,7 +266,7 @@ Property Object Functions
    :param    name:         Setting identifier string
    :param    description:  Localized name shown to user
    :param    type:         Can be one of the following values:
-                          
+
                            - **OBS_EDITABLE_LIST_TYPE_STRINGS** - An
                              editable list of strings.
                            - **OBS_EDITABLE_LIST_TYPE_FILES** - An
@@ -317,6 +317,19 @@ Property Object Functions
    - :c:func:`obs_property_group_type`
    - :c:func:`obs_property_group_content`
    - :c:func:`obs_properties_get_parent`
+
+---------------------
+
+.. function:: obs_property_t *obs_properties_add_open_url(obs_properties_t *props, const char *name, const char *description)
+
+   Adds a button which open a URL.    This property does not actually
+   store any settings;        it's used to implement a button in user
+   interface if the properties are used to generate user interface.
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+
+   :return:               The property
 
 ---------------------
 
