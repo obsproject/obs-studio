@@ -377,13 +377,32 @@ void SourceTreeItem::EnterEditMode()
 
 void SourceTreeItem::ExitEditMode(bool save)
 {
-	if (!editor)
+	ExitEditModeInternal(save);
+
+	if (tree->undoSceneData) {
+		OBSBasic *main = OBSBasic::Get();
+		main->undo_s.pop_disabled();
+
+		OBSData redoSceneData = main->BackupScene(GetCurrentScene());
+
+		QString text = QTStr("Undo.GroupItems").arg(newName.c_str());
+		main->CreateSceneUndoRedoAction(text, tree->undoSceneData,
+						redoSceneData);
+
+		tree->undoSceneData = nullptr;
+	}
+}
+
+void SourceTreeItem::ExitEditModeInternal(bool save)
+{
+	if (!editor) {
 		return;
+	}
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	OBSScene scene = main->GetCurrentScene();
 
-	std::string newName = QT_TO_UTF8(editor->text());
+	newName = QT_TO_UTF8(editor->text());
 
 	setFocusProxy(nullptr);
 	int index = boxLayout->indexOf(editor);
@@ -444,9 +463,11 @@ void SourceTreeItem::ExitEditMode(bool save)
 		obs_source_release(scene_source);
 	};
 
-	auto redo = [scene_name, main, newName](const std::string &data) {
+	std::string editedName = newName;
+
+	auto redo = [scene_name, main, editedName](const std::string &data) {
 		obs_source_t *source = obs_get_source_by_name(data.c_str());
-		obs_source_set_name(source, newName.c_str());
+		obs_source_set_name(source, editedName.c_str());
 		obs_source_release(source);
 
 		obs_source_t *scene_source =
@@ -913,6 +934,7 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	if (indices.count() == 0)
 		return;
 
+	OBSBasic *main = OBSBasic::Get();
 	OBSScene scene = GetCurrentScene();
 	QString name = GetNewGroupName();
 
@@ -923,11 +945,16 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 		item_order << item;
 	}
 
+	st->undoSceneData = main->BackupScene(scene);
+
 	obs_sceneitem_t *item = obs_scene_insert_group(
 		scene, QT_TO_UTF8(name), item_order.data(), item_order.size());
 	if (!item) {
+		st->undoSceneData = nullptr;
 		return;
 	}
+
+	main->undo_s.push_disabled();
 
 	for (obs_sceneitem_t *item : item_order)
 		obs_sceneitem_select(item, false);
@@ -954,14 +981,18 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 
 	obs_sceneitem_select(item, true);
 
-	QMetaObject::invokeMethod(st, "Edit", Qt::QueuedConnection,
+	QMetaObject::invokeMethod(st, "NewGroupEdit", Qt::QueuedConnection,
 				  Q_ARG(int, newIdx));
 }
 
 void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 {
+	OBSBasic *main = OBSBasic::Get();
 	if (indices.count() == 0)
 		return;
+
+	OBSScene scene = main->GetCurrentScene();
+	OBSData undoData = main->BackupScene(scene);
 
 	for (int i = indices.count() - 1; i >= 0; i--) {
 		obs_sceneitem_t *item = items[indices[i].row()];
@@ -969,6 +1000,10 @@ void SourceTreeModel::UngroupSelectedGroups(QModelIndexList &indices)
 	}
 
 	SceneChanged();
+
+	OBSData redoData = main->BackupScene(scene);
+	main->CreateSceneUndoRedoAction(QTStr("Basic.Main.Ungroup"), undoData,
+					redoData);
 }
 
 void SourceTreeModel::ExpandGroup(obs_sceneitem_t *item)
@@ -1495,20 +1530,55 @@ void SourceTree::selectionChanged(const QItemSelection &selected,
 	QListView::selectionChanged(selected, deselected);
 }
 
-void SourceTree::Edit(int row)
+void SourceTree::NewGroupEdit(int row)
+{
+	if (!Edit(row)) {
+		OBSBasic *main = OBSBasic::Get();
+		main->undo_s.pop_disabled();
+
+		blog(LOG_WARNING, "Uh, somehow the edit didn't process, this "
+				  "code should never be reached.\nAnd by "
+				  "\"never be reached\", I mean that "
+				  "theoretically, it should be\nimpossible "
+				  "for this code to be reached. But if this "
+				  "code is reached,\nfeel free to laugh at "
+				  "Jim, because apparently it is, in fact, "
+				  "actually\npossible for this code to be "
+				  "reached. But I mean, again, theoretically\n"
+				  "it should be impossible. So if you see "
+				  "this in your log, just know that\nit's "
+				  "really dumb, and depressing. But at least "
+				  "the undo/redo action is\nstill covered, so "
+				  "in theory things *should* be fine. But "
+				  "it's entirely\npossible that they might "
+				  "not be exactly. But again, yea. This "
+				  "really\nshould not be possible.");
+
+		OBSData redoSceneData = main->BackupScene(GetCurrentScene());
+
+		QString text = QTStr("Undo.GroupItems").arg("Unknown");
+		main->CreateSceneUndoRedoAction(text, undoSceneData,
+						redoSceneData);
+
+		undoSceneData = nullptr;
+	}
+}
+
+bool SourceTree::Edit(int row)
 {
 	SourceTreeModel *stm = GetStm();
 	if (row < 0 || row >= stm->items.count())
-		return;
+		return false;
 
 	QModelIndex index = stm->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = reinterpret_cast<SourceTreeItem *>(widget);
 	if (itemWidget->IsEditing())
-		return;
+		return false;
 
 	itemWidget->EnterEditMode();
 	edit(index);
+	return true;
 }
 
 bool SourceTree::MultipleBaseSelected() const
