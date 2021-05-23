@@ -509,7 +509,6 @@ set(libobs_PLATFORM_DEPS
 
 add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
 if(UNIX AND NOT APPLE)
-	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
 	foreach(LIB "obs" "rt")
 		set(PRIVATE_LIBS "${PRIVATE_LIBS} -l${LIB}")
 	endforeach()
@@ -517,7 +516,7 @@ if(UNIX AND NOT APPLE)
 		set(PPC64_CFLAGS "-DNO_WARN_X86_INTRINSICS -mvsx")
 	endif()
 	CONFIGURE_FILE("libobs.pc.in" "libobs.pc" @ONLY)
-	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
+	install(FILES "${CMAKE_CURRENT_BINARY_DIR}/libobs.pc" DESTINATION "${CMAKE_INSTALL_PREFIX}/${OBS_LIBRARY_DESTINATION}/pkgconfig")
 endif()
 
 set_target_properties(libobs PROPERTIES
