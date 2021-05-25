@@ -333,6 +333,19 @@ Property Object Functions
 
 ---------------------
 
+.. function:: obs_property_t *obs_properties_add_info(obs_properties_t *props, const char *name, const char *description)
+
+   Adds a label.  This property does not actually store any settings;
+   it's used to implement a label in user interface if the properties
+   are used to generate user interface.
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+
+   :return:               The property
+
+---------------------
+
 .. function:: obs_property_t *obs_properties_add_info_bitrate(obs_properties_t *props, const char *name, const char *description)
 
    Adds a label with a bitrate in kbps.        This property does not
