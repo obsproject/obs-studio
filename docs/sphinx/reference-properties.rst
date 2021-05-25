@@ -347,6 +347,20 @@ Property Object Functions
 
 ---------------------
 
+.. function:: obs_property_t *obs_properties_add_info_fps(obs_properties_t *props, const char *name, const char *description)
+
+   Adds a label with a frequency in FPS.       This property does not
+   actually store any settings;     it's used to implement a label in
+   user interface         if the properties are used to generate user
+   interface.
+
+   :param    name:        Setting identifier string
+   :param    description: Localized name shown to user
+
+   :return:               The property
+
+---------------------
+
 Property Enumeration Functions
 ------------------------------
 
