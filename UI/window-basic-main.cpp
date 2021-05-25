@@ -4718,6 +4718,7 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
 		QRect screenGeometry = screen->geometry();
+		qreal ratio = screen->devicePixelRatio();
 		QString name = "";
 #ifdef _WIN32
 		QTextStream fullname(&name);
@@ -4743,8 +4744,10 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str =
 			QString("%1: %2x%3 @ %4,%5")
 				.arg(name,
-				     QString::number(screenGeometry.width()),
-				     QString::number(screenGeometry.height()),
+				     QString::number(screenGeometry.width() *
+						     ratio),
+				     QString::number(screenGeometry.height() *
+						     ratio),
 				     QString::number(screenGeometry.x()),
 				     QString::number(screenGeometry.y()));
 
