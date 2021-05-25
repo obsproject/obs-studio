@@ -209,6 +209,14 @@ service_factory::service_factory(json_t *service)
 	_id = get_string_val(service, "id");
 	_name = get_string_val(service, "name");
 
+	const char *info_link = get_string_val(service, "more_info_link");
+	if (info_link != NULL)
+		more_info_link = info_link;
+
+	const char *key_link = get_string_val(service, "stream_key_link");
+	if (key_link != NULL)
+		stream_key_link = key_link;
+
 	json_t *object;
 	size_t idx;
 	json_t *element;
@@ -299,6 +307,14 @@ void *service_factory::create(obs_data_t *settings, obs_service_t *service)
 
 void service_factory::get_defaults2(obs_data_t *settings)
 {
+	if (!more_info_link.empty())
+		obs_data_set_default_string(settings, "info_link",
+					    more_info_link.c_str());
+
+	if (!stream_key_link.empty())
+		obs_data_set_default_string(settings, "key_link",
+					    stream_key_link.c_str());
+
 	obs_data_set_default_string(settings, "protocol", protocols[0].c_str());
 }
 
@@ -337,6 +353,10 @@ obs_properties_t *service_factory::get_properties2(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
+	if (!more_info_link.empty())
+		obs_properties_add_open_url(props, "info_link",
+					    obs_module_text("MoreInfo"));
+
 	p = obs_properties_add_list(props, "protocol",
 				    obs_module_text("Protocol"),
 				    OBS_COMBO_TYPE_LIST,
@@ -352,6 +372,10 @@ obs_properties_t *service_factory::get_properties2(void *data)
 
 	obs_properties_add_text(props, "key", obs_module_text("StreamKey"),
 				OBS_TEXT_PASSWORD);
+
+	if (!stream_key_link.empty())
+		obs_properties_add_open_url(props, "key_link",
+					    obs_module_text("StreamKeyLink"));
 
 	return props;
 }

@@ -20,6 +20,8 @@ class service_factory {
 
 	std::string _id;
 	std::string _name;
+	std::string more_info_link;
+	std::string stream_key_link;
 	std::vector<std::string> protocols;
 	std::vector<server_t> servers;
 

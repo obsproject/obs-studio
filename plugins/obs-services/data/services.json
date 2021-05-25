@@ -4,6 +4,8 @@
         {
 	    "id": "youtube",
             "name": "YouTube",
+            "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
+	    "stream_key_link": "https://www.youtube.com/live_dashboard",
             "available_protocols": ["HLS", "RTMPS", "RTMP"],
             "servers": [
                 {
@@ -68,6 +70,7 @@
         {
 	    "id": "luzento",
             "name": "Luzento.com",
+	    "stream_key_link": "https://cms.luzento.com/dashboard/stream-key?from=OBS",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -131,6 +134,7 @@
         {
 	    "id": "youstreamer",
             "name": "YouStreamer",
+	    "stream_key_link": "https://app.youstreamer.com/stream/",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -220,6 +224,7 @@
         {
 	    "id": "facebook",
             "name": "Facebook Live",
+	    "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
 	    "available_protocols": ["RTMPS"],
             "servers": [
                 {
@@ -232,6 +237,7 @@
         {
 	    "id": "restream_io",
             "name": "Restream.io",
+	    "stream_key_link": "https://restream.io/settings/streaming-setup?from=OBS",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -737,6 +743,7 @@
         {
 	    "id": "twitter",
             "name": "Twitter",
+	    "stream_key_link": "https://studio.twitter.com/producer/sources",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -914,6 +921,7 @@
         {
 	    "id": "trovo",
             "name": "Trovo",
+	    "stream_key_link": "https://studio.trovo.live/mychannel/stream",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -1502,6 +1510,7 @@
         {
 	    "id": "glimesh",
             "name": "Glimesh",
+	    "stream_key_link": "https://glimesh.tv/users/settings/stream",
 	    "available_protocols": ["FTL"],
             "servers": [
                 {
@@ -1554,6 +1563,7 @@
         {
 	    "id": "openrec",
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
+	    "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
@@ -1630,6 +1640,7 @@
         {
 	    "id": "brime_live",
             "name": "Brime Live",
+	    "stream_key_link": "https://brimelive.com/obs-stream-key-link",
 	    "available_protocols": ["RTMP"],
             "servers": [
                 {
