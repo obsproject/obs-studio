@@ -322,6 +322,12 @@ static void render_convert_texture(struct obs_core_video *video,
 	gs_enable_blending(false);
 
 	if (video->convert_textures[0]) {
+
+		// Added for tracing direct ARGB encoding
+		blog(LOG_DEBUG,
+		     "=== [obs-video] render_convert_texture, from %p to %p",
+		     texture, video->convert_textures[0]);
+
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
 		render_convert_plane(effect, video->convert_textures[0],
@@ -420,16 +426,30 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	 * reason.  otherwise, it goes to the 'duplicate' case above, which
 	 * will ensure better performance. */
 	if (raw_active || vframe_info->count > 1) {
-		gs_copy_texture(tf.tex, video->convert_textures[0]);
+
+		// Added to support direct ARGB encoding - ARGB can use output_texture, not convert_textures[0]
+		if (video->using_argb_tex) {
+			gs_copy_texture(tf.tex, video->output_texture);
+		} else {
+			gs_copy_texture(tf.tex, video->convert_textures[0]);
+		}
 	} else {
+		// Added to support direct ARGB encoding
 		gs_texture_t *tex = video->convert_textures[0];
 		gs_texture_t *tex_uv = video->convert_textures[1];
-
-		video->convert_textures[0] = tf.tex;
-		video->convert_textures[1] = tf.tex_uv;
-
-		tf.tex = tex;
-		tf.tex_uv = tex_uv;
+		if (video->using_argb_tex) {
+			gs_texture_t *tex = video->output_texture;
+			video->output_texture = tf.tex;
+			tf.tex = tex;
+			tf.tex_uv = NULL;
+		} else {
+			gs_texture_t *tex = video->convert_textures[0];
+			gs_texture_t *tex_uv = video->convert_textures[1];
+			video->convert_textures[0] = tf.tex;
+			video->convert_textures[1] = tf.tex_uv;
+			tf.tex = tex;
+			tf.tex_uv = tex_uv;
+		}
 	}
 
 	tf.count = 1;
@@ -458,6 +478,10 @@ static const char *output_gpu_encoders_name = "output_gpu_encoders";
 static void output_gpu_encoders(struct obs_core_video *video, bool raw_active)
 {
 	profile_start(output_gpu_encoders_name);
+
+	if (video->using_argb_tex) {
+		video->texture_converted = true;
+	}
 
 	if (!video->texture_converted)
 		goto end;

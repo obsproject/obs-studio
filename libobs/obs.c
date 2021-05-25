@@ -53,6 +53,7 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 	video->conversion_width_i = 0.f;
 
 	switch ((uint32_t)ovi->output_format) {
+
 	case VIDEO_FORMAT_I420:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
@@ -85,9 +86,12 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 					? gs_nv12_available()
 					: false;
 
+	video->using_argb_tex = ovi->output_format == VIDEO_FORMAT_RGBA;
+
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u",
 		     (unsigned int)ovi->output_format);
+
 		video->gpu_conversion = false;
 		video->using_nv12_tex = false;
 		blog(LOG_INFO, "NV12 texture support not available");
@@ -237,9 +241,9 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	if (!video->render_texture)
 		return false;
 
-	video->output_texture = gs_texture_create(ovi->output_width,
-						  ovi->output_height, GS_RGBA,
-						  1, NULL, GS_RENDER_TARGET);
+	video->output_texture = gs_texture_create(
+		ovi->output_width, ovi->output_height, GS_RGBA, 1, NULL,
+		GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 
 	if (!video->output_texture)
 		return false;
@@ -2483,6 +2487,12 @@ bool obs_nv12_tex_active(void)
 {
 	struct obs_core_video *video = &obs->video;
 	return video->using_nv12_tex;
+}
+
+bool obs_argb_tex_active(void)
+{
+	struct obs_core_video *video = &obs->video;
+	return video->using_argb_tex;
 }
 
 /* ------------------------------------------------------------------------- */
