@@ -224,6 +224,16 @@ proc_handler_t *obs_service_get_proc_handler(const obs_service_t *service)
 		       : NULL;
 }
 
+const char *obs_service_get_protocol(const obs_service_t *service)
+{
+	if (!obs_service_valid(service, "obs_service_get_protocol"))
+		return NULL;
+
+	if (!service->info.get_protocol)
+		return NULL;
+	return service->info.get_protocol(service->context.data);
+}
+
 const char *obs_service_get_url(const obs_service_t *service)
 {
 	if (!obs_service_valid(service, "obs_service_get_url"))

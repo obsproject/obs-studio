@@ -104,6 +104,7 @@ struct obs_service_info {
 	 */
 	bool (*initialize)(void *data, obs_output_t *output);
 
+	const char *(*get_protocol)(void *data);
 	const char *(*get_url)(void *data);
 	const char *(*get_key)(void *data);
 
