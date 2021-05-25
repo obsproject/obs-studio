@@ -38,6 +38,23 @@
 		    "name": "Backup YouTube ingest server (legacy RTMP)",
 		    "url": "rtmp://b.rtmp.youtube.com/live2?backup=1"
 		}
+            ],
+	    "maximum": [
+		{
+		    "protocol": "HLS",
+		    "video_bitrate": 51000,
+		    "audio_bitrate": 160
+		},
+		{
+		    "protocol": "RTMPS",
+		    "video_bitrate": 51000,
+		    "audio_bitrate": 160
+		},
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 51000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -65,6 +82,13 @@
                     "name": "Middle East: Bahrain",
                     "url": "rtmp://rtmp-me.loola.tv/push"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 2500,
+		    "audio_bitrate": 160
+		}
 	   ]
         },
         {
@@ -81,6 +105,13 @@
                     "name": "Primary (Test)",
                     "url": "rtmp://ingest.luzento.com/test"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 256
+		}
 	    ]
         },
         {
@@ -96,6 +127,13 @@
                     "name": "North America: Montreal",
                     "url": "rtmp://us.vimm.tv/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 8000,
+		    "audio_bitrate": 320
+		}
 	    ]
         },
         {
@@ -107,6 +145,13 @@
                     "name": "Primary",
                     "url": "rtmp://live.mobcrush.net/mob"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -118,6 +163,13 @@
                     "name": "Primary",
                     "url": "rtmp://live3.origins.web.tv/liveext"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3500,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -180,6 +232,13 @@
                     "name": "EU: London, UK",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 15000,
+		    "audio_bitrate": 320
+		}
 	    ]
         },
         {
@@ -219,6 +278,13 @@
                     "name": "EU: London, UK",
                     "url": "rtmp://live-lhr.vaughnsoft.net/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 15000,
+		    "audio_bitrate": 320
+		}
 	    ]
         },
         {
@@ -232,6 +298,14 @@
                     "name": "Default",
                     "url": "rtmps://rtmp-api.facebook.com:443/rtmp/"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMPS",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 128,
+		    "fps": 30
+		}
 	    ]
         },
         {
@@ -415,6 +489,13 @@
                     "name": "Asia South: Mumbai, IND",
                     "url": "rtmp://ap-south-1.stream.nood.tv/live_source"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 25000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -528,6 +609,12 @@
                     "name": "Primary",
                     "url": "rtmp://publish.meridix.com/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3500
+		}
 	    ]
         },
         {
@@ -555,6 +642,13 @@
                     "name": "Asia : Singapore",
                     "url": "rtmp://rtmp-sgp.afreecatv.com/app"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 8000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -566,6 +660,13 @@
                     "name": "CAM4",
                     "url": "rtmp://origin.cam4.com/cam4-origin-live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -577,6 +678,13 @@
                     "name": "ePlay Primary",
                     "url": "rtmp://live.eplay.link/origin"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 7500,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -596,6 +704,12 @@
                     "name": "EU West (Düsseldorf, Germany)",
                     "url": "rtmp://live.eu-west1.picarto.tv/golive"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3500
+		}
 	    ]
         },
         {
@@ -629,6 +743,13 @@
                     "name": "Default",
                     "url": "rtmp://global-live.uscreen.app:5222/app"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 8000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -640,6 +761,13 @@
                     "name": "Auto",
                     "url": "rtmp://s-sd.stripst.com/ext"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -667,6 +795,14 @@
                     "name": "Oceania",
                     "url": "rtmp://obs-ingest-oc.camsoda.com/cam_obs"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160,
+		    "fps": 30
+		}
 	    ]
         },
         {
@@ -738,6 +874,13 @@
                     "name": "Australia: Sydney",
                     "url": "rtmp://live-syd.stream.highwebmedia.com/live-origin"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 50000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -794,6 +937,14 @@
                     "name": "Asia/Pacific: Singapore",
                     "url": "rtmp://sg.pscp.tv:80/x"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 12000,
+		    "audio_bitrate": 128,
+		    "fps": 60
+		}
 	    ]
         },
         {
@@ -857,6 +1008,13 @@
                     "name": "Asia South (Mumbai, IN)",
                     "url": "rtmp://ingest-as-south.a.switchboard.zone/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 10000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -868,6 +1026,13 @@
                     "name": "Primary Looch ingest server",
                     "url": "rtmp://ingest.looch.tv/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -879,6 +1044,13 @@
                     "name": "Default",
                     "url": "rtmp://live.eventials.com/eventialsLiveOrigin"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 900,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -890,6 +1062,14 @@
                     "name": "Default",
                     "url": "rtmp://go.eventlive.pro/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3000,
+		    "audio_bitrate": 192,
+		    "fps": 30
+		}
 	    ]
         },
         {
@@ -905,6 +1085,13 @@
                     "name": "Iran",
                     "url": "rtmp://rtmp-iran.lahzecdn.com/pro"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 4000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -916,6 +1103,13 @@
                     "name": "Default",
                     "url": "rtmp://stream.mylive.in.th/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 7000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -928,6 +1122,13 @@
                     "name": "Default",
                     "url": "rtmp://livepush.trovo.live/live/"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 9000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -939,6 +1140,14 @@
                     "name": "Default",
                     "url": "rtmp://rtmp.mixcloud.com/broadcast"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 320,
+		    "fps": 30
+		}
 	    ]
         },
         {
@@ -950,6 +1159,13 @@
                     "name": "Primary",
                     "url": "rtmp://webcast.sermonaudio.com/sa"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 2000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -972,6 +1188,13 @@
                     "name": "Default",
                     "url": "rtmp://rtmp.cdn.asset.aparat.com:443/event"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 320
+		}
 	    ]
         },
         {
@@ -1006,6 +1229,13 @@
                     "name": "Default",
                     "url": "rtmp://rtmp.play.kakao.com/kakaotv"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 8000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1017,6 +1247,13 @@
                     "name": "Default",
                     "url": "rtmp://piczel.tv:1935/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 2500,
+		    "audio_bitrate": 256
+		}
 	    ]
         },
         {
@@ -1029,6 +1266,13 @@
                     "name": "STAGE TEN",
                     "url": "rtmps://app-rtmp.stageten.tv:443/stageten"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMPS",
+		    "video_bitrate": 4000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -1040,6 +1284,13 @@
                     "name": "Default",
                     "url": "rtmp://stream.dlive.tv/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1075,6 +1326,13 @@
                     "name": "Australia / Sydney",
                     "url": "rtmp://australia.live.lightcast.com/202E1F/default"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1098,6 +1356,13 @@
                     "name": "North America",
                     "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1109,6 +1374,13 @@
                     "name": "Default",
                     "url": "rtmp://stream-1.show-it.tv:1935/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1124,6 +1396,13 @@
                     "name": "Chathostess - Backup",
                     "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3600,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -1135,6 +1414,13 @@
                     "name": "Camplace - Default",
                     "url": "rtmp://rtmp.camplace.com"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -1150,6 +1436,13 @@
                     "name": "Europe",
                     "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 2500,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1161,6 +1454,13 @@
                     "name": "Default",
                     "url": "rtmp://ingest-rtmp.broadcast.steamcontent.com/app"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 7000,
+		    "audio_bitrate": 128
+		}
 	    ]
         },
         {
@@ -1172,6 +1472,13 @@
                     "name": "Default",
                     "url": "rtmp://alpha.gateway.stars.avn.com/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 2500,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1194,6 +1501,13 @@
                     "name": "Default",
                     "url": "rtmp://stream.uncanny.gg/fortnite"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 10000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1251,6 +1565,13 @@
                     "name": "Default",
                     "url": "rtmp://aliveorigin.dmc.nico/named_input"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 5808,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1262,6 +1583,13 @@
                     "name": "Default",
                     "url": "rtmp://aliveorigin.dmc.nico/named_input"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 904,
+		    "audio_bitrate": 96
+		}
 	    ]
         },
         {
@@ -1285,6 +1613,13 @@
                     "name": "Finland, Helsinki",
                     "url": "rtmp://fi-helsinki.rtmp.wasd.tv/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 10000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1378,6 +1713,13 @@
                     "name": "Amsterdam 3",
                     "url": "rtmp://ams-ingest.angelthump.com:1935/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 3500,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1389,6 +1731,13 @@
                     "name": "Global: Fastest (Recommended)",
                     "url": "rtmp://cdn.apachat.com:443/multistream"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 4000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1400,6 +1749,13 @@
                     "name": "Default",
                     "url": "rtmp://broadcast.api.video/s"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 20000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1416,6 +1772,18 @@
                     "name": "Global (RTMP)",
                     "url": "rtmp://global-live.mux.com:5222/app"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMPS",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 160
+		},
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1427,6 +1795,13 @@
                     "name": "Default",
                     "url": "rtmp://live.viloud.tv:5222/app"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1466,6 +1841,14 @@
                     "name": "South America",
                     "url": "rtmp://publish-sao.myfreecams.com/NxServer"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 10000,
+		    "audio_bitrate": 192,
+		    "fps": 60
+		}
 	    ]
         },
         {
@@ -1558,6 +1941,13 @@
                     "name": "Asia - Singapore",
                     "url": "ingest.wsss.live.glimesh.tv"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "FTL",
+		    "video_bitrate": 6000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1570,6 +1960,13 @@
                     "name": "Default",
                     "url": "rtmp://a.station.openrec.tv:1935/live1"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 160
+		}
 	    ]
         },
         {
@@ -1635,6 +2032,18 @@
                     "name": "bintu-vtrans Australia (AU)",
                     "url": "rtmp://bintu-vtrans-au.nanocosmos.de/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMPS",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 192
+		},
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 5000,
+		    "audio_bitrate": 192
+		}
 	    ]
         },
         {
@@ -1691,6 +2100,13 @@
                     "name": "APAC - Australia East (Sydney)",
                     "url": "rtmp://ingest-apac-sydney.brimelive.com/live"
                 }
+            ],
+	    "maximum": [
+		{
+		    "protocol": "RTMP",
+		    "video_bitrate": 20000,
+		    "audio_bitrate": 320
+		}
 	    ]
         }
     ]

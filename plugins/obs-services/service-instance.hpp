@@ -13,6 +13,9 @@ class service_instance {
 	std::string protocol;
 	std::string server;
 	std::string key;
+	int max_fps;
+	int max_video_bitrate;
+	int max_audio_bitrate;
 
 public:
 	service_instance(obs_data_t *settings, obs_service_t *self);
@@ -23,4 +26,7 @@ public:
 	const char *get_protocol();
 	const char *get_url();
 	const char *get_key();
+
+	void get_max_fps(int *fps);
+	void get_max_bitrate(int *video, int *audio);
 };

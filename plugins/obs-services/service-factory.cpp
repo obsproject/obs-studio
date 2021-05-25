@@ -53,6 +53,74 @@ void service_factory::create_server_lists(obs_properties_t *props)
 
 /* ----------------------------------------------------------------- */
 
+// XXX: Add maximum default settings for each protocols
+void service_factory::add_maximum_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, "max_video_bitrate_rtmp",
+				 maximum["RTMP"].video_bitrate);
+	obs_data_set_default_int(settings, "max_audio_bitrate_rtmp",
+				 maximum["RTMP"].audio_bitrate);
+	obs_data_set_default_int(settings, "max_fps_rtmp", maximum["RTMP"].fps);
+
+	obs_data_set_default_int(settings, "max_video_bitrate_rtmps",
+				 maximum["RTMPS"].video_bitrate);
+	obs_data_set_default_int(settings, "max_audio_bitrate_rtmps",
+				 maximum["RTMPS"].audio_bitrate);
+	obs_data_set_default_int(settings, "max_fps_rtmps",
+				 maximum["RTMPS"].fps);
+
+	obs_data_set_default_int(settings, "max_video_bitrate_hls",
+				 maximum["HLS"].video_bitrate);
+	obs_data_set_default_int(settings, "max_audio_bitrate_hls",
+				 maximum["HLS"].audio_bitrate);
+	obs_data_set_default_int(settings, "max_fps_hls", maximum["HLS"].fps);
+
+	obs_data_set_default_int(settings, "max_video_bitrate_ftl",
+				 maximum["FTL"].video_bitrate);
+	obs_data_set_default_int(settings, "max_audio_bitrate_ftl",
+				 maximum["FTL"].audio_bitrate);
+	obs_data_set_default_int(settings, "max_fps_ftl", maximum["FTL"].fps);
+
+	obs_data_set_default_bool(settings, "ignore_maximum", false);
+}
+
+// XXX: Add maximum settings for each protocols
+void service_factory::add_maximum_infos(obs_properties_t *props)
+{
+	obs_properties_add_info_bitrate(props, "max_video_bitrate_rtmp",
+					obs_module_text("MaxVideoBitrate"));
+	obs_properties_add_info_bitrate(props, "max_audio_bitrate_rtmp",
+					obs_module_text("MaxAudioBitrate"));
+	obs_properties_add_info_fps(props, "max_fps_rtmp",
+				    obs_module_text("MaxFPS"));
+
+	obs_properties_add_info_bitrate(props, "max_video_bitrate_rtmps",
+					obs_module_text("MaxVideoBitrate"));
+	obs_properties_add_info_bitrate(props, "max_audio_bitrate_rtmps",
+					obs_module_text("MaxAudioBitrate"));
+	obs_properties_add_info_fps(props, "max_fps_rtmps",
+				    obs_module_text("MaxFPS"));
+
+	obs_properties_add_info_bitrate(props, "max_video_bitrate_hls",
+					obs_module_text("MaxVideoBitrate"));
+	obs_properties_add_info_bitrate(props, "max_audio_bitrate_hls",
+					obs_module_text("MaxAudioBitrate"));
+	obs_properties_add_info_fps(props, "max_fps_hls",
+				    obs_module_text("MaxFPS"));
+
+	obs_properties_add_info_bitrate(props, "max_video_bitrate_ftl",
+					obs_module_text("MaxVideoBitrate"));
+	obs_properties_add_info_bitrate(props, "max_audio_bitrate_ftl",
+					obs_module_text("MaxAudioBitrate"));
+	obs_properties_add_info_fps(props, "max_fps_ftl",
+				    obs_module_text("MaxFPS"));
+
+	obs_properties_add_bool(props, "ignore_maximum",
+				obs_module_text("IgnoreMaximum"));
+}
+
+/* ----------------------------------------------------------------- */
+
 static inline int get_int_val(json_t *service, const char *key)
 {
 	json_t *integer_val = json_object_get(service, key);
@@ -200,10 +268,46 @@ try {
 	return nullptr;
 }
 
+void service_factory::_get_max_fps(void *data, int *fps) noexcept
+try {
+	service_instance *priv = reinterpret_cast<service_instance *>(data);
+	if (priv)
+		priv->get_max_fps(fps);
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+}
+
+void service_factory::_get_max_bitrate(void *data, int *video,
+				       int *audio) noexcept
+try {
+	service_instance *priv = reinterpret_cast<service_instance *>(data);
+	if (priv)
+		priv->get_max_bitrate(video, audio);
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+}
+
 /* ----------------------------------------------------------------- */
 
 service_factory::service_factory(json_t *service)
 {
+	// XXX: Initialize maximum settings for each protocols
+	// Clang disabled to keep it readable a a list
+	/* clang-format off */
+	maximum.insert({
+		{"RTMP", {}},
+		{"RTMPS", {}},
+		{"HLS", {}},
+		{"FTL", {}}
+	});
+	/* clang-format on */
+
 	/** JSON data extraction **/
 
 	_id = get_string_val(service, "id");
@@ -265,6 +369,35 @@ service_factory::service_factory(json_t *service)
 		json_decref(object);
 	}
 
+	/* Maximum output settings extraction */
+
+	object = json_object_get(service, "maximum");
+	if (object) {
+		json_incref(object);
+
+		json_array_foreach (object, idx, element) {
+			const char *prtcl = get_string_val(element, "protocol");
+			int video_bitrate =
+				get_int_val(element, "video_bitrate");
+			int audio_bitrate =
+				get_int_val(element, "audio_bitrate");
+			int fps = get_int_val(element, "fps");
+
+			if (prtcl != NULL) {
+				if (video_bitrate != -1)
+					maximum[prtcl].video_bitrate =
+						video_bitrate;
+				if (audio_bitrate != -1)
+					maximum[prtcl].audio_bitrate =
+						audio_bitrate;
+				if (fps != -1)
+					maximum[prtcl].fps = fps;
+			}
+		}
+
+		json_decref(object);
+	}
+
 	/** Service implementation **/
 
 	_info.type_data = this;
@@ -285,6 +418,9 @@ service_factory::service_factory(json_t *service)
 	_info.get_url = _get_url;
 	_info.get_key = _get_key;
 
+	_info.get_max_fps = _get_max_fps;
+	_info.get_max_bitrate = _get_max_bitrate;
+
 	obs_register_service(&_info);
 }
 
@@ -292,6 +428,7 @@ service_factory::~service_factory()
 {
 	protocols.clear();
 	servers.clear();
+	maximum.clear();
 }
 
 const char *service_factory::get_name()
@@ -316,9 +453,31 @@ void service_factory::get_defaults2(obs_data_t *settings)
 					    stream_key_link.c_str());
 
 	obs_data_set_default_string(settings, "protocol", protocols[0].c_str());
+
+	add_maximum_defaults(settings);
 }
 
-// XXX: Set the visibility of server lists for each protocols
+static inline void set_visible_maximum(obs_properties_t *props,
+				       obs_data_t *settings, const char *name,
+				       bool prtcl)
+{
+	obs_property_set_visible(obs_properties_get(props, name),
+				 prtcl && (obs_data_get_int(settings, name) !=
+					   -1));
+}
+
+static inline void
+set_visible_ignore_maximum(obs_properties_t *props, obs_data_t *settings,
+			   const char *max1, const char *max2, const char *max3)
+{
+	obs_property_set_visible(
+		obs_properties_get(props, "ignore_maximum"),
+		(obs_data_get_int(settings, max1) != -1) ||
+			(obs_data_get_int(settings, max2) != -1) ||
+			(obs_data_get_int(settings, max3) != -1));
+}
+
+// XXX: Set the visibility of server lists and maximum settings for each protocols
 static bool modified_protocol(obs_properties_t *props, obs_property_t *,
 			      obs_data_t *settings) noexcept
 try {
@@ -335,6 +494,46 @@ try {
 				 rtmps);
 	obs_property_set_visible(obs_properties_get(props, "server_hls"), hls);
 	obs_property_set_visible(obs_properties_get(props, "server_ftl"), ftl);
+
+	//Max Video Bitrate
+	set_visible_maximum(props, settings, "max_video_bitrate_rtmp", rtmp);
+	set_visible_maximum(props, settings, "max_video_bitrate_rtmps", rtmps);
+	set_visible_maximum(props, settings, "max_video_bitrate_hls", hls);
+	set_visible_maximum(props, settings, "max_video_bitrate_ftl", ftl);
+
+	//Max Audio Bitrate
+	set_visible_maximum(props, settings, "max_audio_bitrate_rtmp", rtmp);
+	set_visible_maximum(props, settings, "max_audio_bitrate_rtmps", rtmps);
+	set_visible_maximum(props, settings, "max_audio_bitrate_hls", hls);
+	set_visible_maximum(props, settings, "max_audio_bitrate_ftl", ftl);
+
+	//Max FPS
+	set_visible_maximum(props, settings, "max_fps_rtmp", rtmp);
+	set_visible_maximum(props, settings, "max_fps_rtmps", rtmps);
+	set_visible_maximum(props, settings, "max_fps_hls", hls);
+	set_visible_maximum(props, settings, "max_fps_ftl", ftl);
+
+	//Ignore Max Toggle
+	if (rtmp)
+		set_visible_ignore_maximum(props, settings,
+					   "max_video_bitrate_rtmp",
+					   "max_audio_bitrate_rtmp",
+					   "max_fps_rtmp");
+	if (rtmps)
+		set_visible_ignore_maximum(props, settings,
+					   "max_video_bitrate_rtmps",
+					   "max_audio_bitrate_rtmps",
+					   "max_fps_rtmps");
+	if (hls)
+		set_visible_ignore_maximum(props, settings,
+					   "max_video_bitrate_hls",
+					   "max_audio_bitrate_hls",
+					   "max_fps_hls");
+	if (ftl)
+		set_visible_ignore_maximum(props, settings,
+					   "max_video_bitrate_ftl",
+					   "max_audio_bitrate_ftl",
+					   "max_fps_ftl");
 
 	return true;
 } catch (const std::exception &ex) {
@@ -376,6 +575,8 @@ obs_properties_t *service_factory::get_properties2(void *data)
 	if (!stream_key_link.empty())
 		obs_properties_add_open_url(props, "key_link",
 					    obs_module_text("StreamKeyLink"));
+
+	add_maximum_infos(props);
 
 	return props;
 }

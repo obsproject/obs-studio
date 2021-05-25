@@ -15,6 +15,12 @@ struct server_t {
 	const char *name;
 };
 
+struct maximum_t {
+	int video_bitrate = -1;
+	int audio_bitrate = -1;
+	int fps = -1;
+};
+
 class service_factory {
 	obs_service_info _info = {};
 
@@ -24,8 +30,12 @@ class service_factory {
 	std::string stream_key_link;
 	std::vector<std::string> protocols;
 	std::vector<server_t> servers;
+	std::map<std::string, maximum_t> maximum;
 
 	void create_server_lists(obs_properties_t *props);
+
+	void add_maximum_defaults(obs_data_t *settings);
+	void add_maximum_infos(obs_properties_t *props);
 
 	static const char *_get_name(void *type_data) noexcept;
 
@@ -44,6 +54,10 @@ class service_factory {
 	static const char *_get_protocol(void *data) noexcept;
 	static const char *_get_url(void *data) noexcept;
 	static const char *_get_key(void *data) noexcept;
+
+	static void _get_max_fps(void *data, int *fps) noexcept;
+	static void _get_max_bitrate(void *data, int *video,
+				     int *audio) noexcept;
 
 public:
 	service_factory(json_t *service);
