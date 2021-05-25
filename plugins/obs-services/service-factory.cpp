@@ -185,6 +185,21 @@ try {
 	return nullptr;
 }
 
+const char *service_factory::_get_key(void *data) noexcept
+try {
+	service_instance *priv = reinterpret_cast<service_instance *>(data);
+	if (priv)
+		return priv->get_key();
+	return nullptr;
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+	return nullptr;
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+	return nullptr;
+}
+
 /* ----------------------------------------------------------------- */
 
 service_factory::service_factory(json_t *service)
@@ -260,6 +275,7 @@ service_factory::service_factory(json_t *service)
 
 	_info.get_protocol = _get_protocol;
 	_info.get_url = _get_url;
+	_info.get_key = _get_key;
 
 	obs_register_service(&_info);
 }
@@ -333,6 +349,9 @@ obs_properties_t *service_factory::get_properties2(void *data)
 					     protocols[idx].c_str());
 
 	create_server_lists(props);
+
+	obs_properties_add_text(props, "key", obs_module_text("StreamKey"),
+				OBS_TEXT_PASSWORD);
 
 	return props;
 }

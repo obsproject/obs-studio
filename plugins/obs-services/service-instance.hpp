@@ -12,6 +12,7 @@ class service_instance {
 
 	std::string protocol;
 	std::string server;
+	std::string key;
 
 public:
 	service_instance(obs_data_t *settings, obs_service_t *self);
@@ -21,4 +22,5 @@ public:
 
 	const char *get_protocol();
 	const char *get_url();
+	const char *get_key();
 };

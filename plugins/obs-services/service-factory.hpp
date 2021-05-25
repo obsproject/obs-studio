@@ -41,6 +41,7 @@ class service_factory {
 
 	static const char *_get_protocol(void *data) noexcept;
 	static const char *_get_url(void *data) noexcept;
+	static const char *_get_key(void *data) noexcept;
 
 public:
 	service_factory(json_t *service);

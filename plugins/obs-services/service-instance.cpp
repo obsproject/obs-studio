@@ -22,6 +22,8 @@ void service_instance::update(obs_data_t *settings)
 		server = obs_data_get_string(settings, "server_hls");
 	if (protocol.compare("FTL") == 0)
 		server = obs_data_get_string(settings, "server_ftl");
+
+	key = obs_data_get_string(settings, "key");
 }
 
 const char *service_instance::get_protocol()
@@ -32,4 +34,9 @@ const char *service_instance::get_protocol()
 const char *service_instance::get_url()
 {
 	return server.c_str();
+}
+
+const char *service_instance::get_key()
+{
+	return key.c_str();
 }
