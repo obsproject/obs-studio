@@ -444,6 +444,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 		return 0;
 	case OBS_PROPERTY_INFO_BITRATE:
 		return 0;
+	case OBS_PROPERTY_INFO_FPS:
+		return 0;
 	}
 
 	return 0;
@@ -828,6 +830,14 @@ obs_property_t *obs_properties_add_info_bitrate(obs_properties_t *props,
 	if (!props || has_prop(props, name))
 		return NULL;
 	return new_prop(props, name, desc, OBS_PROPERTY_INFO_BITRATE);
+}
+
+obs_property_t *obs_properties_add_info_fps(obs_properties_t *props,
+					    const char *name, const char *desc)
+{
+	if (!props || has_prop(props, name))
+		return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_INFO_FPS);
 }
 
 /* ------------------------------------------------------------------------- */

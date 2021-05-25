@@ -136,6 +136,7 @@ private:
 
 	QWidget *AddOpenUrl(obs_property_t *prop);
 	QWidget *AddInfoBitrate(obs_property_t *prop);
+	QWidget *AddInfoFPS(obs_property_t *prop);
 
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
 

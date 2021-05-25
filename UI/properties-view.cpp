@@ -1424,6 +1424,17 @@ QWidget *OBSPropertiesView::AddInfoBitrate(obs_property_t *prop)
 	return NewWidget(prop, label, SIGNAL(linkActivated(QString)));
 }
 
+QWidget *OBSPropertiesView::AddInfoFPS(obs_property_t *prop)
+{
+	const char *name = obs_property_name(prop);
+	const char *desc = obs_property_description(prop);
+	int val = obs_data_get_int(settings, name);
+
+	QLabel *label =
+		new QLabel(QT_UTF8(desc) + " " + QString::number(val) + " FPS");
+	return NewWidget(prop, label, SIGNAL(linkActivated(QString)));
+}
+
 void OBSPropertiesView::AddProperty(obs_property_t *property,
 				    QFormLayout *layout)
 {
@@ -1484,6 +1495,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_INFO_BITRATE:
 		widget = AddInfoBitrate(property);
+		break;
+	case OBS_PROPERTY_INFO_FPS:
+		widget = AddInfoFPS(property);
 	}
 
 	if (widget && !obs_property_enabled(property))
@@ -1492,7 +1506,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	if (!label && type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP &&
 	    type != OBS_PROPERTY_OPEN_URL &&
-	    type != OBS_PROPERTY_INFO_BITRATE)
+	    type != OBS_PROPERTY_INFO_BITRATE && type != OBS_PROPERTY_INFO_FPS)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (warning && label) //TODO: select color based on background color
@@ -1993,6 +2007,8 @@ void WidgetInfo::ControlChanged()
 	case OBS_PROPERTY_OPEN_URL:
 		return;
 	case OBS_PROPERTY_INFO_BITRATE:
+		return;
+	case OBS_PROPERTY_INFO_FPS:
 		return;
 	}
 
