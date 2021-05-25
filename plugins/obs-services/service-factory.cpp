@@ -7,6 +7,52 @@ extern "C" {
 #include <obs-module.h>
 }
 
+// XXX: Add the server list for each protocols
+void service_factory::create_server_lists(obs_properties_t *props)
+{
+	obs_property_t *rtmp, *rtmps, *hls, *ftl;
+	rtmp = obs_properties_add_list(props, "server_rtmp",
+				       obs_module_text("Server"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_STRING);
+	rtmps = obs_properties_add_list(props, "server_rtmps",
+					obs_module_text("Server"),
+					OBS_COMBO_TYPE_LIST,
+					OBS_COMBO_FORMAT_STRING);
+	hls = obs_properties_add_list(props, "server_hls",
+				      obs_module_text("Server"),
+				      OBS_COMBO_TYPE_LIST,
+				      OBS_COMBO_FORMAT_STRING);
+	ftl = obs_properties_add_list(props, "server_ftl",
+				      obs_module_text("Server"),
+				      OBS_COMBO_TYPE_LIST,
+				      OBS_COMBO_FORMAT_STRING);
+
+	for (size_t idx = 0; idx < servers.size(); idx++) {
+		if (strcmp(servers[idx].protocol, "RTMP") == 0)
+			obs_property_list_add_string(
+				rtmp, obs_module_text(servers[idx].name),
+				servers[idx].url);
+
+		if (strcmp(servers[idx].protocol, "RTMPS") == 0)
+			obs_property_list_add_string(
+				rtmps, obs_module_text(servers[idx].name),
+				servers[idx].url);
+
+		if (strcmp(servers[idx].protocol, "HLS") == 0)
+			obs_property_list_add_string(
+				hls, obs_module_text(servers[idx].name),
+				servers[idx].url);
+
+		if (strcmp(servers[idx].protocol, "FTL") == 0)
+			obs_property_list_add_string(
+				ftl, obs_module_text(servers[idx].name),
+				servers[idx].url);
+	}
+}
+
+/* ----------------------------------------------------------------- */
+
 static inline int get_int_val(json_t *service, const char *key)
 {
 	json_t *integer_val = json_object_get(service, key);
@@ -80,6 +126,65 @@ try {
 	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
 }
 
+void service_factory::_get_defaults2(obs_data_t *settings,
+				     void *type_data) noexcept
+try {
+	if (type_data)
+		reinterpret_cast<service_factory *>(type_data)->get_defaults2(
+			settings);
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+}
+
+obs_properties_t *service_factory::_get_properties2(void *data,
+						    void *type_data) noexcept
+try {
+	if (type_data)
+		return reinterpret_cast<service_factory *>(type_data)
+			->get_properties2(data);
+	return nullptr;
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+	return nullptr;
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+	return nullptr;
+}
+
+const char *service_factory::_get_protocol(void *data) noexcept
+try {
+	service_instance *priv = reinterpret_cast<service_instance *>(data);
+	if (priv)
+		return priv->get_protocol();
+	return nullptr;
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+	return nullptr;
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+	return nullptr;
+}
+
+const char *service_factory::_get_url(void *data) noexcept
+try {
+	service_instance *priv = reinterpret_cast<service_instance *>(data);
+	if (priv)
+		return priv->get_url();
+	return nullptr;
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+	return nullptr;
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+	return nullptr;
+}
+
 /* ----------------------------------------------------------------- */
 
 service_factory::service_factory(json_t *service)
@@ -149,6 +254,13 @@ service_factory::service_factory(json_t *service)
 
 	_info.update = _update;
 
+	_info.get_defaults2 = _get_defaults2;
+
+	_info.get_properties2 = _get_properties2;
+
+	_info.get_protocol = _get_protocol;
+	_info.get_url = _get_url;
+
 	obs_register_service(&_info);
 }
 
@@ -167,4 +279,60 @@ void *service_factory::create(obs_data_t *settings, obs_service_t *service)
 {
 	return reinterpret_cast<void *>(
 		new service_instance(settings, service));
+}
+
+void service_factory::get_defaults2(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "protocol", protocols[0].c_str());
+}
+
+// XXX: Set the visibility of server lists for each protocols
+static bool modified_protocol(obs_properties_t *props, obs_property_t *,
+			      obs_data_t *settings) noexcept
+try {
+	const char *protocol = obs_data_get_string(settings, "protocol");
+	bool rtmp = strcmp(protocol, "RTMP") == 0;
+	bool rtmps = strcmp(protocol, "RTMPS") == 0;
+	bool hls = strcmp(protocol, "HLS") == 0;
+	bool ftl = strcmp(protocol, "FTL") == 0;
+
+	//Server lists
+	obs_property_set_visible(obs_properties_get(props, "server_rtmp"),
+				 rtmp);
+	obs_property_set_visible(obs_properties_get(props, "server_rtmps"),
+				 rtmps);
+	obs_property_set_visible(obs_properties_get(props, "server_hls"), hls);
+	obs_property_set_visible(obs_properties_get(props, "server_ftl"), ftl);
+
+	return true;
+} catch (const std::exception &ex) {
+	blog(LOG_ERROR, "Unexpected exception in function %s: %s", __func__,
+	     ex.what());
+	return false;
+} catch (...) {
+	blog(LOG_ERROR, "Unexpected exception in function %s", __func__);
+	return false;
+}
+
+obs_properties_t *service_factory::get_properties2(void *data)
+{
+	UNUSED_PARAMETER(data);
+
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *p;
+
+	p = obs_properties_add_list(props, "protocol",
+				    obs_module_text("Protocol"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+	obs_property_set_modified_callback(p, modified_protocol);
+
+	for (size_t idx = 0; idx < protocols.size(); idx++)
+		obs_property_list_add_string(p, protocols[idx].c_str(),
+					     protocols[idx].c_str());
+
+	create_server_lists(props);
+
+	return props;
 }
