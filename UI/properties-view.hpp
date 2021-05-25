@@ -135,6 +135,7 @@ private:
 	void AddGroup(obs_property_t *prop, QFormLayout *layout);
 
 	QWidget *AddOpenUrl(obs_property_t *prop);
+	QWidget *AddInfoBitrate(obs_property_t *prop);
 
 	void AddProperty(obs_property_t *property, QFormLayout *layout);
 
