@@ -58,6 +58,7 @@ enum obs_property_type {
 	OBS_PROPERTY_GROUP,
 	OBS_PROPERTY_COLOR_ALPHA,
 	OBS_PROPERTY_OPEN_URL,
+	OBS_PROPERTY_INFO,
 	OBS_PROPERTY_INFO_BITRATE,
 	OBS_PROPERTY_INFO_FPS,
 };
@@ -273,6 +274,10 @@ EXPORT obs_property_t *obs_properties_add_group(obs_properties_t *props,
 EXPORT obs_property_t *obs_properties_add_open_url(obs_properties_t *props,
 						   const char *name,
 						   const char *desc);
+
+EXPORT obs_property_t *obs_properties_add_info(obs_properties_t *props,
+					       const char *name,
+					       const char *desc);
 
 EXPORT obs_property_t *obs_properties_add_info_bitrate(obs_properties_t *props,
 						       const char *name,

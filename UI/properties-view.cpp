@@ -1413,6 +1413,14 @@ QWidget *OBSPropertiesView::AddOpenUrl(obs_property_t *prop)
 	return NewWidget(prop, button, SIGNAL(clicked()));
 }
 
+QWidget *OBSPropertiesView::AddInfo(obs_property_t *prop)
+{
+	const char *desc = obs_property_description(prop);
+
+	QLabel *label = new QLabel(QT_UTF8(desc));
+	return NewWidget(prop, label, SIGNAL(linkActivated(QString)));
+}
+
 QWidget *OBSPropertiesView::AddInfoBitrate(obs_property_t *prop)
 {
 	const char *name = obs_property_name(prop);
@@ -1493,6 +1501,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	case OBS_PROPERTY_OPEN_URL:
 		widget = AddOpenUrl(property);
 		break;
+	case OBS_PROPERTY_INFO:
+		widget = AddInfo(property);
+		break;
 	case OBS_PROPERTY_INFO_BITRATE:
 		widget = AddInfoBitrate(property);
 		break;
@@ -1505,7 +1516,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 
 	if (!label && type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP &&
-	    type != OBS_PROPERTY_OPEN_URL &&
+	    type != OBS_PROPERTY_OPEN_URL && type != OBS_PROPERTY_INFO &&
 	    type != OBS_PROPERTY_INFO_BITRATE && type != OBS_PROPERTY_INFO_FPS)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
@@ -2005,6 +2016,8 @@ void WidgetInfo::ControlChanged()
 			return;
 		break;
 	case OBS_PROPERTY_OPEN_URL:
+		return;
+	case OBS_PROPERTY_INFO:
 		return;
 	case OBS_PROPERTY_INFO_BITRATE:
 		return;

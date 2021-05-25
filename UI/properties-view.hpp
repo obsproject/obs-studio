@@ -135,6 +135,7 @@ private:
 	void AddGroup(obs_property_t *prop, QFormLayout *layout);
 
 	QWidget *AddOpenUrl(obs_property_t *prop);
+	QWidget *AddInfo(obs_property_t *prop);
 	QWidget *AddInfoBitrate(obs_property_t *prop);
 	QWidget *AddInfoFPS(obs_property_t *prop);
 
