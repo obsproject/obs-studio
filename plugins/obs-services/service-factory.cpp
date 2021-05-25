@@ -398,6 +398,29 @@ service_factory::service_factory(json_t *service)
 		json_decref(object);
 	}
 
+	/* Supported resolutions extraction */
+
+	object = json_object_get(service, "supported_resolutions");
+	if (object) {
+		json_incref(object);
+
+		json_array_foreach (object, idx, element) {
+			const char *res_str = json_string_value(element);
+			obs_service_resolution res;
+
+			if (res_str != NULL) {
+				if (sscanf(res_str, "%dx%d", &res.cx,
+					   &res.cy) == 2) {
+					supported_resolutions_str.push_back(
+						res_str);
+					supported_resolutions.push_back(res);
+				}
+			}
+		}
+
+		json_decref(object);
+	}
+
 	/** Service implementation **/
 
 	_info.type_data = this;
@@ -429,6 +452,8 @@ service_factory::~service_factory()
 	protocols.clear();
 	servers.clear();
 	maximum.clear();
+	supported_resolutions_str.clear();
+	supported_resolutions.clear();
 }
 
 const char *service_factory::get_name()
@@ -455,6 +480,9 @@ void service_factory::get_defaults2(obs_data_t *settings)
 	obs_data_set_default_string(settings, "protocol", protocols[0].c_str());
 
 	add_maximum_defaults(settings);
+
+	obs_data_set_default_bool(settings, "ignore_supported_resolutions",
+				  false);
 }
 
 static inline void set_visible_maximum(obs_properties_t *props,
@@ -577,6 +605,23 @@ obs_properties_t *service_factory::get_properties2(void *data)
 					    obs_module_text("StreamKeyLink"));
 
 	add_maximum_infos(props);
+
+	if (!supported_resolutions_str.empty()) {
+		std::string label = obs_module_text("SupportedResolutions");
+		label += " ";
+
+		for (size_t idx = 0; idx < supported_resolutions_str.size();
+		     idx++) {
+			label += supported_resolutions_str[idx];
+			if ((supported_resolutions_str.size() - idx) != 1)
+				label += ", ";
+		}
+
+		obs_properties_add_info(props, "resolutions", label.c_str());
+		obs_properties_add_bool(
+			props, "ignore_supported_resolutions",
+			obs_module_text("IgnoreSupportedResolutions"));
+	}
 
 	return props;
 }

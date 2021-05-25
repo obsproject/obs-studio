@@ -31,6 +31,8 @@ class service_factory {
 	std::vector<std::string> protocols;
 	std::vector<server_t> servers;
 	std::map<std::string, maximum_t> maximum;
+	std::vector<std::string> supported_resolutions_str;
+	std::vector<obs_service_resolution> supported_resolutions;
 
 	void create_server_lists(obs_properties_t *props);
 

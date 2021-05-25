@@ -306,6 +306,11 @@
 		    "audio_bitrate": 128,
 		    "fps": 30
 		}
+	    ],
+	    "supported_resolutions": [
+		"1280x720",
+		"852x480",
+		"480x360"
 	    ]
         },
         {
@@ -803,6 +808,12 @@
 		    "audio_bitrate": 160,
 		    "fps": 30
 		}
+	    ],
+	    "supported_resolutions": [
+		"1920x1080",
+		"1280x720",
+		"852x480",
+		"480x360"
 	    ]
         },
         {
@@ -1070,6 +1081,10 @@
 		    "audio_bitrate": 192,
 		    "fps": 30
 		}
+	    ],
+	    "supported_resolutions": [
+		    "1920x1080",
+		    "1280x720"
 	    ]
         },
         {
@@ -1148,6 +1163,11 @@
 		    "audio_bitrate": 320,
 		    "fps": 30
 		}
+	    ],
+	    "supported_resolutions": [
+		    "1280x720",
+		    "852x480",
+		    "480x360"
 	    ]
         },
         {
