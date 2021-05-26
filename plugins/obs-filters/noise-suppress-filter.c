@@ -514,8 +514,6 @@ bool load_nvafx(void)
 		blog(LOG_INFO,
 		     "[noise suppress: Nvidia RTX denoiser disabled, redistributable not found]");
 		return false;
-	} else {
-		blog(LOG_INFO, "[noise suppress: Nvidia RTX denoiser enabled]");
 	}
 
 	pthread_mutex_init(&nvafx_initializer_mutex, PTHREAD_MUTEX_DEFAULT);
@@ -542,7 +540,31 @@ bool load_nvafx(void)
 	LOAD_SYM(NvAFX_Load);
 	LOAD_SYM(NvAFX_Run);
 #undef LOAD_SYM
+
+	int err;
+	NvAFX_Handle h = NULL;
+
+	err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER, &h);
+	if (err != NVAFX_STATUS_SUCCESS) {
+		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
+			blog(LOG_INFO,
+			     "[noise suppress: Nvidia RTX denoiser disabled: unsupported GPU]");
+		} else {
+			blog(LOG_ERROR,
+			     "[noise suppress: Nvidia RTX denoiser disabled: error %i",
+			     err);
+		}
+		goto unload_everything;
+	}
+
+	err = NvAFX_DestroyEffect(h);
+	if (err != NVAFX_STATUS_SUCCESS) {
+		blog(LOG_ERROR, "NvAFX_DestroyEffect() failed, error %i", err);
+		goto unload_everything;
+	}
+
 	nvafx_loaded = true;
+	blog(LOG_INFO, "[noise suppress: Nvidia RTX denoiser enabled]");
 	return true;
 
 unload_everything:
