@@ -1,5 +1,6 @@
 #include "service-factory.hpp"
 
+#include "protocols.hpp"
 #include "plugin.hpp"
 #include "service-instance.hpp"
 
@@ -10,23 +11,26 @@ extern "C" {
 // XXX: Add the server list for each protocols
 void service_factory::create_server_lists(obs_properties_t *props)
 {
-	obs_property_t *rtmp, *rtmps, *hls, *ftl;
+	obs_property_t *rtmp, *hls;
 	rtmp = obs_properties_add_list(props, "server_rtmp",
 				       obs_module_text("Server"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	rtmps = obs_properties_add_list(props, "server_rtmps",
-					obs_module_text("Server"),
-					OBS_COMBO_TYPE_LIST,
-					OBS_COMBO_FORMAT_STRING);
+#if !RTMPS_DISABLED
+	obs_property_t *rtmps = obs_properties_add_list(
+		props, "server_rtmps", obs_module_text("Server"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+#endif
 	hls = obs_properties_add_list(props, "server_hls",
 				      obs_module_text("Server"),
 				      OBS_COMBO_TYPE_LIST,
 				      OBS_COMBO_FORMAT_STRING);
-	ftl = obs_properties_add_list(props, "server_ftl",
-				      obs_module_text("Server"),
-				      OBS_COMBO_TYPE_LIST,
-				      OBS_COMBO_FORMAT_STRING);
+#if !FTL_DISABLED
+	obs_property_t *ftl = obs_properties_add_list(props, "server_ftl",
+						      obs_module_text("Server"),
+						      OBS_COMBO_TYPE_LIST,
+						      OBS_COMBO_FORMAT_STRING);
+#endif
 
 	for (size_t idx = 0; idx < servers.size(); idx++) {
 		if (strcmp(servers[idx].protocol, "RTMP") == 0)
@@ -34,20 +38,24 @@ void service_factory::create_server_lists(obs_properties_t *props)
 				rtmp, obs_module_text(servers[idx].name),
 				servers[idx].url);
 
+#if !RTMPS_DISABLED
 		if (strcmp(servers[idx].protocol, "RTMPS") == 0)
 			obs_property_list_add_string(
 				rtmps, obs_module_text(servers[idx].name),
 				servers[idx].url);
+#endif
 
 		if (strcmp(servers[idx].protocol, "HLS") == 0)
 			obs_property_list_add_string(
 				hls, obs_module_text(servers[idx].name),
 				servers[idx].url);
 
+#if !FTL_DISABLED
 		if (strcmp(servers[idx].protocol, "FTL") == 0)
 			obs_property_list_add_string(
 				ftl, obs_module_text(servers[idx].name),
 				servers[idx].url);
+#endif
 	}
 }
 
@@ -62,12 +70,14 @@ void service_factory::add_maximum_defaults(obs_data_t *settings)
 				 maximum["RTMP"].audio_bitrate);
 	obs_data_set_default_int(settings, "max_fps_rtmp", maximum["RTMP"].fps);
 
+#if !RTMPS_DISABLED
 	obs_data_set_default_int(settings, "max_video_bitrate_rtmps",
 				 maximum["RTMPS"].video_bitrate);
 	obs_data_set_default_int(settings, "max_audio_bitrate_rtmps",
 				 maximum["RTMPS"].audio_bitrate);
 	obs_data_set_default_int(settings, "max_fps_rtmps",
 				 maximum["RTMPS"].fps);
+#endif
 
 	obs_data_set_default_int(settings, "max_video_bitrate_hls",
 				 maximum["HLS"].video_bitrate);
@@ -75,11 +85,13 @@ void service_factory::add_maximum_defaults(obs_data_t *settings)
 				 maximum["HLS"].audio_bitrate);
 	obs_data_set_default_int(settings, "max_fps_hls", maximum["HLS"].fps);
 
+#if !FTL_DISABLED
 	obs_data_set_default_int(settings, "max_video_bitrate_ftl",
 				 maximum["FTL"].video_bitrate);
 	obs_data_set_default_int(settings, "max_audio_bitrate_ftl",
 				 maximum["FTL"].audio_bitrate);
 	obs_data_set_default_int(settings, "max_fps_ftl", maximum["FTL"].fps);
+#endif
 
 	obs_data_set_default_bool(settings, "ignore_maximum", false);
 }
@@ -94,12 +106,14 @@ void service_factory::add_maximum_infos(obs_properties_t *props)
 	obs_properties_add_info_fps(props, "max_fps_rtmp",
 				    obs_module_text("MaxFPS"));
 
+#if !RTMPS_DISABLED
 	obs_properties_add_info_bitrate(props, "max_video_bitrate_rtmps",
 					obs_module_text("MaxVideoBitrate"));
 	obs_properties_add_info_bitrate(props, "max_audio_bitrate_rtmps",
 					obs_module_text("MaxAudioBitrate"));
 	obs_properties_add_info_fps(props, "max_fps_rtmps",
 				    obs_module_text("MaxFPS"));
+#endif
 
 	obs_properties_add_info_bitrate(props, "max_video_bitrate_hls",
 					obs_module_text("MaxVideoBitrate"));
@@ -108,12 +122,14 @@ void service_factory::add_maximum_infos(obs_properties_t *props)
 	obs_properties_add_info_fps(props, "max_fps_hls",
 				    obs_module_text("MaxFPS"));
 
+#if !FTL_DISABLED
 	obs_properties_add_info_bitrate(props, "max_video_bitrate_ftl",
 					obs_module_text("MaxVideoBitrate"));
 	obs_properties_add_info_bitrate(props, "max_audio_bitrate_ftl",
 					obs_module_text("MaxAudioBitrate"));
 	obs_properties_add_info_fps(props, "max_fps_ftl",
 				    obs_module_text("MaxFPS"));
+#endif
 
 	obs_properties_add_bool(props, "ignore_maximum",
 				obs_module_text("IgnoreMaximum"));
@@ -302,9 +318,13 @@ service_factory::service_factory(json_t *service)
 	/* clang-format off */
 	maximum.insert({
 		{"RTMP", {}},
+#if !RTMPS_DISABLED
 		{"RTMPS", {}},
+#endif
 		{"HLS", {}},
-		{"FTL", {}}
+#if !FTL_DISABLED
+		{"FTL", {}},
+#endif
 	});
 	/* clang-format on */
 
@@ -444,6 +464,16 @@ service_factory::service_factory(json_t *service)
 	_info.get_max_fps = _get_max_fps;
 	_info.get_max_bitrate = _get_max_bitrate;
 
+#if RTMPS_DISABLED
+	if ((protocols.size() == 1) && (protocols[0].compare("RTMPS") == 0))
+		return;
+#endif
+
+#if FTL_DISABLED
+	if ((protocols.size() == 1) && (protocols[0].compare("FTL") == 0))
+		return;
+#endif
+
 	obs_register_service(&_info);
 }
 
@@ -510,36 +540,36 @@ static bool modified_protocol(obs_properties_t *props, obs_property_t *,
 			      obs_data_t *settings) noexcept
 try {
 	const char *protocol = obs_data_get_string(settings, "protocol");
-	bool rtmp = strcmp(protocol, "RTMP") == 0;
-	bool rtmps = strcmp(protocol, "RTMPS") == 0;
-	bool hls = strcmp(protocol, "HLS") == 0;
-	bool ftl = strcmp(protocol, "FTL") == 0;
 
-	//Server lists
+	bool rtmp = strcmp(protocol, "RTMP") == 0;
 	obs_property_set_visible(obs_properties_get(props, "server_rtmp"),
 				 rtmp);
+	set_visible_maximum(props, settings, "max_video_bitrate_rtmp", rtmp);
+	set_visible_maximum(props, settings, "max_audio_bitrate_rtmp", rtmp);
+	set_visible_maximum(props, settings, "max_fps_rtmp", rtmp);
+
+#if !RTMPS_DISABLED
+	bool rtmps = strcmp(protocol, "RTMPS") == 0;
 	obs_property_set_visible(obs_properties_get(props, "server_rtmps"),
 				 rtmps);
-	obs_property_set_visible(obs_properties_get(props, "server_hls"), hls);
-	obs_property_set_visible(obs_properties_get(props, "server_ftl"), ftl);
-
-	//Max Video Bitrate
-	set_visible_maximum(props, settings, "max_video_bitrate_rtmp", rtmp);
 	set_visible_maximum(props, settings, "max_video_bitrate_rtmps", rtmps);
-	set_visible_maximum(props, settings, "max_video_bitrate_hls", hls);
-	set_visible_maximum(props, settings, "max_video_bitrate_ftl", ftl);
-
-	//Max Audio Bitrate
-	set_visible_maximum(props, settings, "max_audio_bitrate_rtmp", rtmp);
 	set_visible_maximum(props, settings, "max_audio_bitrate_rtmps", rtmps);
-	set_visible_maximum(props, settings, "max_audio_bitrate_hls", hls);
-	set_visible_maximum(props, settings, "max_audio_bitrate_ftl", ftl);
-
-	//Max FPS
-	set_visible_maximum(props, settings, "max_fps_rtmp", rtmp);
 	set_visible_maximum(props, settings, "max_fps_rtmps", rtmps);
+#endif
+
+	bool hls = strcmp(protocol, "HLS") == 0;
+	obs_property_set_visible(obs_properties_get(props, "server_hls"), hls);
+	set_visible_maximum(props, settings, "max_video_bitrate_hls", hls);
+	set_visible_maximum(props, settings, "max_audio_bitrate_hls", hls);
 	set_visible_maximum(props, settings, "max_fps_hls", hls);
+
+#if !FTL_DISABLED
+	bool ftl = strcmp(protocol, "FTL") == 0;
+	obs_property_set_visible(obs_properties_get(props, "server_ftl"), ftl);
+	set_visible_maximum(props, settings, "max_video_bitrate_ftl", ftl);
+	set_visible_maximum(props, settings, "max_audio_bitrate_ftl", ftl);
 	set_visible_maximum(props, settings, "max_fps_ftl", ftl);
+#endif
 
 	//Ignore Max Toggle
 	if (rtmp)
@@ -547,21 +577,25 @@ try {
 					   "max_video_bitrate_rtmp",
 					   "max_audio_bitrate_rtmp",
 					   "max_fps_rtmp");
+#if !RTMPS_DISABLED
 	if (rtmps)
 		set_visible_ignore_maximum(props, settings,
 					   "max_video_bitrate_rtmps",
 					   "max_audio_bitrate_rtmps",
 					   "max_fps_rtmps");
+#endif
 	if (hls)
 		set_visible_ignore_maximum(props, settings,
 					   "max_video_bitrate_hls",
 					   "max_audio_bitrate_hls",
 					   "max_fps_hls");
+#if !FTL_DISABLED
 	if (ftl)
 		set_visible_ignore_maximum(props, settings,
 					   "max_video_bitrate_ftl",
 					   "max_audio_bitrate_ftl",
 					   "max_fps_ftl");
+#endif
 
 	return true;
 } catch (const std::exception &ex) {
@@ -591,9 +625,18 @@ obs_properties_t *service_factory::get_properties2(void *data)
 
 	obs_property_set_modified_callback(p, modified_protocol);
 
-	for (size_t idx = 0; idx < protocols.size(); idx++)
+	for (size_t idx = 0; idx < protocols.size(); idx++) {
+#if RTMPS_DISABLED
+		if (protocols[idx].compare("RTMPS") == 0)
+			continue;
+#endif
+#if FTL_DISABLED
+		if (protocols[idx].compare("FTL") == 0)
+			continue;
+#endif
 		obs_property_list_add_string(p, protocols[idx].c_str(),
 					     protocols[idx].c_str());
+	}
 
 	create_server_lists(props);
 
