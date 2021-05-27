@@ -262,7 +262,7 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->item = nullptr;
 }
 
-#ifdef NTDDI_WIN10_FE
+#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 static bool winrt_capture_border_toggle_supported()
 try {
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
@@ -362,7 +362,7 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
 
-#ifdef NTDDI_WIN10_FE
+#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
 			RequestAccessAsync(
@@ -443,7 +443,7 @@ try {
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
 
-#ifdef NTDDI_WIN10_FE
+#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
 			RequestAccessAsync(
