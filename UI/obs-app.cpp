@@ -1774,13 +1774,27 @@ string GetFormatString(const char *format, const char *prefix,
 {
 	string f;
 
-	if (prefix && *prefix) {
-		f += prefix;
-		if (f.back() != ' ')
-			f += " ";
-	}
+	f = format;
 
-	f += format;
+	if (prefix && *prefix) {
+		string str_prefix = prefix;
+
+		if (str_prefix.back() != ' ')
+			str_prefix += " ";
+
+		size_t insert_pos = 0;
+		size_t tmp;
+
+		tmp = f.find_last_of('/');
+		if (tmp != string::npos && tmp > insert_pos)
+			insert_pos = tmp + 1;
+
+		tmp = f.find_last_of('\\');
+		if (tmp != string::npos && tmp > insert_pos)
+			insert_pos = tmp + 1;
+
+		f.insert(insert_pos, str_prefix);
+	}
 
 	if (suffix && *suffix) {
 		if (*suffix != ' ')
