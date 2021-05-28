@@ -2059,6 +2059,12 @@ void OBSBasic::OBSInit()
 #endif
 #endif
 
+#ifdef __APPLE__
+	/* Remove OBS' Fullscreen Interface menu in favor of the one macOS adds by default */
+	delete ui->actionFullscreenInterface;
+	ui->actionFullscreenInterface = nullptr;
+#endif
+
 #if defined(_WIN32) || defined(__APPLE__)
 	if (App()->IsUpdaterDisabled())
 		ui->actionCheckForUpdates->setEnabled(false);
