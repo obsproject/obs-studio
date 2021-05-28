@@ -2674,6 +2674,10 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+#ifdef __APPLE__
+	DisableFullScreenViewMenuItem();
+#endif
+
 #ifdef _WIN32
 	obs_init_win32_crash_handler();
 	SetErrorMode(SEM_FAILCRITICALERRORS);
