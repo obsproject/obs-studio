@@ -377,7 +377,9 @@ void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 
 void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)
 {
+	syncOffset->blockSignals(true);
 	syncOffset->setValue(offset / NSEC_PER_MSEC);
+	syncOffset->blockSignals(false);
 }
 
 void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
