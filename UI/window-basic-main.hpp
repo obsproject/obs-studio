@@ -864,6 +864,12 @@ public:
 	void CreateSceneUndoRedoAction(const QString &action_name,
 				       OBSData undo_data, OBSData redo_data);
 
+	static inline OBSData BackupScene(obs_scene_t *scene)
+	{
+		obs_source_t *source = obs_scene_get_source(scene);
+		return BackupScene(source);
+	}
+
 	void CreateFilterPasteUndoRedoAction(const QString &text,
 					     obs_source_t *source,
 					     obs_data_array_t *undo_array,

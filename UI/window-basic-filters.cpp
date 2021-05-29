@@ -1229,7 +1229,7 @@ void OBSBasicFilters::delete_filter(OBSSource filter)
 	std::string redo_data(obs_data_get_json(rwrapper));
 	main->undo_s.add_action(
 		QTStr("Undo.Delete").arg(obs_source_get_name(filter)), undo,
-		redo, undo_data, redo_data, NULL);
+		redo, undo_data, redo_data, false);
 	obs_source_filter_remove(source, filter);
 
 	obs_data_release(wrapper);

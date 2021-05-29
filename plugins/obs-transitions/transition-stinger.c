@@ -648,9 +648,14 @@ static obs_properties_t *stinger_properties(void *data)
 		obs_property_list_add_int(
 			p, obs_module_text("TrackMatteLayoutVertical"),
 			MATTE_LAYOUT_VERTICAL);
+
+		/* TODO: Requires way to synchronize or combine two media files
+		 * together */
+#if 0
 		obs_property_list_add_int(
 			p, obs_module_text("TrackMatteLayoutSeparateFile"),
 			MATTE_LAYOUT_SEPARATE_FILE);
+#endif
 
 		obs_property_set_modified_callback(p,
 						   track_matte_layout_modified);
