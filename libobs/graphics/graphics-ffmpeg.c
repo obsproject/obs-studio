@@ -213,6 +213,27 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 					       65535.0f;
 					f[3] = (float)obs_bswap16(value[3]) /
 					       65535.0f;
+					gs_float4_to_u8x4(dst, f);
+					dst += sizeof(*dst) * 4;
+					src += sizeof(value);
+				}
+
+				src += src_linesize - src_min_line;
+			}
+		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
+			for (int y = 0; y < info->cy; y++) {
+				for (size_t x = 0; x < row_elements; ++x) {
+					memcpy(value, src, sizeof(value));
+					f[0] = (float)obs_bswap16(value[0]) /
+					       65535.0f;
+					f[1] = (float)obs_bswap16(value[1]) /
+					       65535.0f;
+					f[2] = (float)obs_bswap16(value[2]) /
+					       65535.0f;
+					f[3] = (float)obs_bswap16(value[3]) /
+					       65535.0f;
+					gs_float3_srgb_nonlinear_to_linear(f);
+					gs_premultiply_float4(f);
 					gs_float3_srgb_linear_to_nonlinear(f);
 					gs_float4_to_u8x4(dst, f);
 					dst += sizeof(*dst) * 4;
@@ -221,7 +242,7 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 				src += src_linesize - src_min_line;
 			}
-		} else {
+		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
 			for (int y = 0; y < info->cy; y++) {
 				for (size_t x = 0; x < row_elements; ++x) {
 					memcpy(value, src, sizeof(value));
@@ -234,7 +255,6 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 					f[3] = (float)obs_bswap16(value[3]) /
 					       65535.0f;
 					gs_premultiply_float4(f);
-					gs_float3_srgb_linear_to_nonlinear(f);
 					gs_float4_to_u8x4(dst, f);
 					dst += sizeof(*dst) * 4;
 					src += sizeof(value);
