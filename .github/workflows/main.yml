@@ -166,7 +166,7 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         shell: bash
         run: |
-          pip3 install dmgbuild==1.4.2
+          pip3 install dmgbuild==1.5.2
       - name: 'Install Apple Developer Certificate'
         if: success() && startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
