@@ -3337,6 +3337,9 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
+	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
+				     0);
+
 	if (copyFiltersString == nullptr)
 		pasteFiltersAction.setEnabled(false);
 	else
