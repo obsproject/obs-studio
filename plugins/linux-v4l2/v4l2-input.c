@@ -693,8 +693,10 @@ static bool format_selected(obs_properties_t *props, obs_property_t *p,
 
 	int input = (int)obs_data_get_int(settings, "input");
 	uint32_t caps = 0;
-	if (v4l2_get_input_caps(dev, input, &caps) < 0)
-		return false;
+        if (v4l2_get_input_caps(dev, input, &caps) < 0) {
+                v4l2_close(dev);
+                return false;
+        }
 	caps &= V4L2_IN_CAP_STD | V4L2_IN_CAP_DV_TIMINGS;
 
 	obs_property_t *resolution = obs_properties_get(props, "resolution");
