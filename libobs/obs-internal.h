@@ -685,6 +685,7 @@ struct obs_source {
 	int async_channel_count;
 	long async_rotation;
 	bool async_flip;
+	bool async_linear_alpha;
 	bool async_active;
 	bool async_update_texture;
 	bool async_unbuffered;
