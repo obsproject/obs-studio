@@ -233,6 +233,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSProxyStyle);
 
+	/* XXX: Disable drag/drop on Linux until Qt issues are fixed */
+#if !defined(_WIN32) && !defined(__APPLE__)
+	ui->scenes->setDragDropMode(QAbstractItemView::NoDragDrop);
+#endif
+
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
@@ -3332,6 +3337,9 @@ void OBSBasic::VolControlContextMenu()
 
 	/* ------------------- */
 
+	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
+				     0);
+
 	if (copyFiltersString == nullptr)
 		pasteFiltersAction.setEnabled(false);
 	else
@@ -4648,10 +4656,21 @@ void OBSBasic::AdvAudioPropsDestroyed()
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 					    QListWidgetItem *prev)
 {
+	obs_source_t *source = NULL;
+
 	if (current) {
-		OBSScene scene = GetOBSRef<OBSScene>(current);
-		SetCurrentScene(scene);
+		obs_scene_t *scene;
+
+		scene = GetOBSRef<OBSScene>(current);
+		source = obs_scene_get_source(scene);
 	}
+
+	SetCurrentScene(source);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PREVIEW_SCENE_CHANGED);
+
+	UpdateContextBar();
 
 	UNUSED_PARAMETER(prev);
 }
@@ -4721,6 +4740,10 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			SLOT(on_actionAddScene_triggered()));
 
 	if (item) {
+		QAction *copyFilters = new QAction(QTStr("Copy.Filters"), this);
+		copyFilters->setEnabled(false);
+		connect(copyFilters, SIGNAL(triggered()), this,
+			SLOT(SceneCopyFilters()));
 		QAction *pasteFilters =
 			new QAction(QTStr("Paste.Filters"), this);
 		pasteFilters->setEnabled(copyFiltersString);
@@ -4730,8 +4753,7 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 		popup.addSeparator();
 		popup.addAction(QTStr("Duplicate"), this,
 				SLOT(DuplicateSelectedScene()));
-		popup.addAction(QTStr("Copy.Filters"), this,
-				SLOT(SceneCopyFilters()));
+		popup.addAction(copyFilters);
 		popup.addAction(pasteFilters);
 		popup.addSeparator();
 		popup.addAction(QTStr("Rename"), this, SLOT(EditSceneName()));
@@ -4798,6 +4820,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 
 		connect(multiviewAction, &QAction::triggered,
 			std::bind(showInMultiview, data));
+
+		copyFilters->setEnabled(obs_source_filter_count(source) > 0);
 	}
 
 	popup.addSeparator();

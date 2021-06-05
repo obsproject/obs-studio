@@ -729,10 +729,11 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				obs_source_inc_showing(scene);
 			if (actualLastScene)
 				obs_source_dec_showing(actualLastScene);
+			lastScene = OBSGetWeakRef(scene);
 		}
 	}
 
-	if (OBSGetStrongRef(lastScene) != scene) {
+	if (obs_scene_get_source(GetCurrentScene()) != scene) {
 		for (int i = 0; i < ui->scenes->count(); i++) {
 			QListWidgetItem *item = ui->scenes->item(i);
 			OBSScene itemScene = GetOBSRef<OBSScene>(item);
@@ -748,16 +749,16 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				break;
 			}
 		}
+	}
 
-		lastScene = OBSGetWeakRef(scene);
+	UpdateContextBar(true);
 
+	if (scene) {
 		bool userSwitched = (!force && !disableSaving);
 		blog(LOG_INFO, "%s to scene '%s'",
 		     userSwitched ? "User switched" : "Switched",
 		     obs_source_get_name(scene));
 	}
-
-	UpdateContextBar(true);
 }
 
 void OBSBasic::CreateProgramDisplay()
@@ -1685,6 +1686,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 			OBSSource actualLastScene = OBSGetStrongRef(lastScene);
 			if (actualLastScene)
 				obs_source_dec_showing(actualLastScene);
+			lastScene = nullptr;
 		}
 
 		programScene = nullptr;
