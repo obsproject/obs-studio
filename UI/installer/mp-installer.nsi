@@ -10,6 +10,10 @@
 ; have replaced every OBS specific check, whether process names,
 ; application names, files, registry entries, etc.
 ;
+; To auto-install required Visual C++ components, download from
+; https://support.microsoft.com/en-us/topic/the-latest-supported-visual-c-downloads-2647da03-1eea-4433-9aff-95f26a218cc0
+; and copy to this directory (UI/installer/)
+;
 ; This script also requires OBSInstallerUtils for additional
 ; functions. You can find it at
 ; https://github.com/notr1ch/OBSInstallerUtils
@@ -108,45 +112,6 @@ Function PreReqCheck
 		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows 7 or higher and cannot be installed on this version of Windows."
 		Quit
 	${EndIf}
-
-!ifdef INSTALL64
-	; 64 bit Visual Studio 2019 runtime check
-	ClearErrors
-	SetOutPath "$PLUGINSDIR"
-	File check_for_64bit_visual_studio_2019_runtimes.exe
-	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe" $R0
-	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe"
-	IntCmp $R0 126 vs2019Missing_64 vs2019OK_64
-	vs2019Missing_64:
-		IfSilent +1 +3
-			SetErrorLevel 4
-			Quit
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2019true_64 IDNO vs2019false_64
-		vs2019true_64:
-			ExecShell "open" "https://obsproject.com/visual-studio-2019-runtimes-64-bit"
-		vs2019false_64:
-		Quit
-	vs2019OK_64:
-	ClearErrors
-!else
-	; 32 bit Visual Studio 2019 runtime check
-	ClearErrors
-	GetDLLVersion "vcruntime140.DLL" $R0 $R1
-	GetDLLVersion "msvcp140.DLL" $R0 $R1
-	GetDLLVersion "msvcp140_1.DLL" $R0 $R1
-	IfErrors vs2019Missing_32 vs2019OK_32
-	vs2019Missing_32:
-		IfSilent +1 +3
-			SetErrorLevel 4
-			Quit
-		MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing runtime components that ${APPNAME} requires. Would you like to download them?" IDYES vs2019true_32 IDNO vs2019false_32
-		vs2019true_32:
-			ExecShell "open" "https://obsproject.com/visual-studio-2019-runtimes-32-bit"
-		vs2019false_32:
-		Quit
-	vs2019OK_32:
-	ClearErrors
-!endif
 
 	; DirectX Version Check
 	ClearErrors
@@ -305,6 +270,36 @@ Section "OBS Studio" SecCore
 	File /r "new\core\bin\32bit"
 	SetOutPath "$INSTDIR\obs-plugins"
 	File /r "new\core\obs-plugins\32bit"
+!endif
+
+!ifdef INSTALL64
+	; 64 bit Visual Studio 2019 runtime check
+	ClearErrors
+	SetOutPath "$PLUGINSDIR"
+	File check_for_64bit_visual_studio_2019_runtimes.exe
+	ExecWait "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe" $R0
+	Delete "$PLUGINSDIR\check_for_64bit_visual_studio_2019_runtimes.exe"
+	IntCmp $R0 126 vs2019Missing_64 vs2019OK_64
+	vs2019Missing_64:
+		File VC_redist.x64.exe
+		ExecWait '"$PLUGINSDIR\VC_redist.x64.exe" /quiet /norestart'
+		Delete "$PLUGINSDIR\VC_redist.x64.exe"
+	vs2019OK_64:
+	ClearErrors
+!else
+	; 32 bit Visual Studio 2019 runtime check
+	ClearErrors
+	SetOutPath "$PLUGINSDIR"
+	GetDLLVersion "vcruntime140.DLL" $R0 $R1
+	GetDLLVersion "msvcp140.DLL" $R0 $R1
+	GetDLLVersion "msvcp140_1.DLL" $R0 $R1
+	IfErrors vs2019Missing_32 vs2019OK_32
+	vs2019Missing_32:
+		File VC_redist.x86.exe
+		ExecWait '"$PLUGINSDIR\VC_redist.x86.exe" /quiet /norestart'
+		Delete "$PLUGINSDIR\VC_redist.x86.exe"
+	vs2019OK_32:
+	ClearErrors
 !endif
 
 	# ----------------------------
