@@ -508,6 +508,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 		config->rcParams.enableAQ = psycho_aq;
 		config->rcParams.aqStrength = 8;
 		config->rcParams.enableTemporalAQ = psycho_aq;
+	} else if (psycho_aq) {
+		warn("Ignoring Psycho Visual Tuning request since GPU is not capable");
 	}
 
 	/* -------------------------- */
@@ -559,7 +561,17 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings)
 	/* -------------------------- */
 	/* initialize                 */
 
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
+	err = nv.nvEncInitializeEncoder(enc->session, params);
+	if ((err == NV_ENC_ERR_INVALID_PARAM) && psycho_aq) {
+		warn("nvEncInitializeEncoder failed, "
+		     "trying again without Psycho Visual Tuning");
+		config->rcParams.enableAQ = 0;
+		config->rcParams.enableTemporalAQ = 0;
+		err = nv.nvEncInitializeEncoder(enc->session, params);
+	}
+
+	if (nv_failed(enc->encoder, err, __FUNCTION__,
+		      "nvEncInitializeEncoder")) {
 		return false;
 	}
 
