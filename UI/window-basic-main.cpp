@@ -3769,8 +3769,9 @@ void OBSBasic::RemoveSelectedScene()
 	obs_data_set_array(data, "array", array);
 	obs_data_set_int(data, "index", ui->scenes->currentRow());
 
-	undo_s.add_action("Delete Scene", undo, redo, obs_data_get_json(data),
-			  obs_source_get_name(source));
+	const char *scene_name = obs_source_get_name(source);
+	undo_s.add_action(QTStr("Undo.Delete").arg(scene_name), undo, redo,
+			  obs_data_get_json(data), scene_name);
 
 	obs_data_array_release(array);
 	obs_data_release(data);
