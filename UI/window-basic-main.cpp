@@ -5626,13 +5626,17 @@ void OBSBasic::on_actionSourceProperties_triggered()
 void OBSBasic::MoveSceneItem(enum obs_order_movement movement,
 			     const QString &action_name)
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+	obs_source_t *source = obs_sceneitem_get_source(item);
+
+	if (!source)
+		return;
+
 	OBSSource scene_source = GetCurrentSceneSource();
 	OBSData undo_data = BackupScene(scene_source);
 
-	OBSSceneItem item = GetCurrentSceneItem();
 	obs_sceneitem_set_order(item, movement);
 
-	obs_source_t *source = obs_sceneitem_get_source(item);
 	const char *source_name = obs_source_get_name(source);
 	const char *scene_name = obs_source_get_name(scene_source);
 
