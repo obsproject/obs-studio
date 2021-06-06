@@ -6480,7 +6480,7 @@ inline void OBSBasic::OnActivate()
 		if (trayIcon && trayIcon->isVisible()) {
 #ifdef __APPLE__
 			QIcon trayMask =
-				QIcon(":/res/images/tray_active_macos.png");
+				QIcon(":/res/images/tray_active_macos.svg");
 			trayMask.setIsMask(true);
 			trayIcon->setIcon(
 				QIcon::fromTheme("obs-tray", trayMask));
@@ -6507,7 +6507,7 @@ inline void OBSBasic::OnDeactivate()
 		if (trayIcon && trayIcon->isVisible()) {
 #ifdef __APPLE__
 			QIcon trayIconFile =
-				QIcon(":/res/images/obs_macos.png");
+				QIcon(":/res/images/obs_macos.svg");
 			trayIconFile.setIsMask(true);
 #else
 			QIcon trayIconFile = QIcon(":/res/images/obs.png");
@@ -6520,7 +6520,7 @@ inline void OBSBasic::OnDeactivate()
 		if (os_atomic_load_bool(&recording_paused)) {
 #ifdef __APPLE__
 			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused_macos.png");
+				QIcon(":/res/images/obs_paused_macos.svg");
 			trayIconFile.setIsMask(true);
 #else
 			QIcon trayIconFile =
@@ -6531,7 +6531,7 @@ inline void OBSBasic::OnDeactivate()
 		} else {
 #ifdef __APPLE__
 			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active_macos.png");
+				QIcon(":/res/images/tray_active_macos.svg");
 			trayIconFile.setIsMask(true);
 #else
 			QIcon trayIconFile =
@@ -8767,7 +8767,7 @@ void OBSBasic::ToggleShowHide()
 void OBSBasic::SystemTrayInit()
 {
 #ifdef __APPLE__
-	QIcon trayIconFile = QIcon(":/res/images/obs_macos.png");
+	QIcon trayIconFile = QIcon(":/res/images/obs_macos.svg");
 	trayIconFile.setIsMask(true);
 #else
 	QIcon trayIconFile = QIcon(":/res/images/obs.png");
@@ -9455,7 +9455,7 @@ void OBSBasic::PauseRecording()
 		if (trayIcon && trayIcon->isVisible()) {
 #ifdef __APPLE__
 			QIcon trayIconFile =
-				QIcon(":/res/images/obs_paused_macos.png");
+				QIcon(":/res/images/obs_paused_macos.svg");
 			trayIconFile.setIsMask(true);
 #else
 			QIcon trayIconFile =
@@ -9495,7 +9495,7 @@ void OBSBasic::UnpauseRecording()
 		if (trayIcon && trayIcon->isVisible()) {
 #ifdef __APPLE__
 			QIcon trayIconFile =
-				QIcon(":/res/images/tray_active_macos.png");
+				QIcon(":/res/images/tray_active_macos.svg");
 			trayIconFile.setIsMask(true);
 #else
 			QIcon trayIconFile =
