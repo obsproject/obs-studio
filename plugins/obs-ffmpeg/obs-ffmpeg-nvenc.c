@@ -84,7 +84,13 @@ static void nvenc_video_info(void *data, struct video_scale_info *info)
 	info->format = pref_format;
 }
 
-static bool nvenc_init_codec(struct nvenc_encoder *enc)
+static void set_psycho_aq(struct nvenc_encoder *enc, bool psycho_aq)
+{
+	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
+}
+
+static bool nvenc_init_codec(struct nvenc_encoder *enc, bool psycho_aq)
 {
 	int ret;
 
@@ -96,6 +102,13 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 	}
 
 	ret = avcodec_open2(enc->context, enc->nvenc, NULL);
+	if ((ret < 0) && psycho_aq) {
+		warn("avcodec_open2 failed, "
+		     "trying again without Psycho Visual Tuning");
+		set_psycho_aq(enc, false);
+		ret = avcodec_open2(enc->context, enc->nvenc, NULL);
+	}
+
 	if (ret < 0) {
 		// if we were a fallback from jim-nvenc, there may already be a
 		// more useful error returned from that, so don't overwrite.
@@ -231,8 +244,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
 
-	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
-	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
+	set_psycho_aq(enc, psycho_aq);
 
 	const int rate = bitrate * 1000;
 	enc->context->bit_rate = rate;
@@ -291,7 +303,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     twopass ? "true" : "false", enc->context->max_b_frames, psycho_aq,
 	     gpu);
 
-	return nvenc_init_codec(enc);
+	return nvenc_init_codec(enc, psycho_aq);
 }
 
 static bool nvenc_reconfigure(void *data, obs_data_t *settings)
