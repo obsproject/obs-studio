@@ -306,6 +306,8 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	return success;
 }
 
+extern bool graphics_uses_d3d11;
+
 static void *duplicator_capture_create(obs_data_t *settings,
 				       obs_source_t *source)
 {
@@ -316,11 +318,7 @@ static void *duplicator_capture_create(obs_data_t *settings,
 
 	pthread_mutex_init(&capture->update_mutex, NULL);
 
-	obs_enter_graphics();
-	const bool uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
-	obs_leave_graphics();
-
-	if (uses_d3d11) {
+	if (graphics_uses_d3d11) {
 		static const char *const module = "libobs-winrt";
 		capture->winrt_module = os_dlopen(module);
 		if (capture->winrt_module &&
