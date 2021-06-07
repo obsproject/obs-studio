@@ -85,7 +85,6 @@ struct duplicator_capture {
 	float reset_timeout;
 	struct cursor_data cursor_data;
 
-	bool wgc_supported;
 	void *winrt_module;
 	struct winrt_exports exports;
 	struct winrt_capture *capture_winrt;
@@ -176,6 +175,8 @@ choose_method(enum display_capture_method method, bool wgc_supported,
 	return method;
 }
 
+extern bool wgc_supported;
+
 static inline void update_settings(struct duplicator_capture *capture,
 				   obs_data_t *settings)
 {
@@ -186,8 +187,8 @@ static inline void update_settings(struct duplicator_capture *capture,
 	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
 
 	capture->method = choose_method(
-		(int)obs_data_get_int(settings, "method"),
-		capture->wgc_supported, monitor.handle, &capture->dxgi_index);
+		(int)obs_data_get_int(settings, "method"), wgc_supported,
+		monitor.handle, &capture->dxgi_index);
 
 	capture->monitor = monitor.id;
 	capture->handle = monitor.handle;
@@ -321,11 +322,9 @@ static void *duplicator_capture_create(obs_data_t *settings,
 	if (graphics_uses_d3d11) {
 		static const char *const module = "libobs-winrt";
 		capture->winrt_module = os_dlopen(module);
-		if (capture->winrt_module &&
-		    load_winrt_imports(&capture->exports, capture->winrt_module,
-				       module) &&
-		    capture->exports.winrt_capture_supported()) {
-			capture->wgc_supported = true;
+		if (capture->winrt_module) {
+			load_winrt_imports(&capture->exports,
+					   capture->winrt_module, module);
 		}
 	}
 
@@ -650,7 +649,7 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
 	obs_property_list_add_int(p, TEXT_METHOD_DXGI, METHOD_DXGI);
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
-	obs_property_list_item_disable(p, 2, !capture->wgc_supported);
+	obs_property_list_item_disable(p, 2, !wgc_supported);
 	obs_property_set_modified_callback(p, display_capture_method_changed);
 
 	obs_property_t *monitors = obs_properties_add_list(
