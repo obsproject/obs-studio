@@ -7,7 +7,7 @@ AppDir:
     name: obs-studio
     icon: com.obsproject.Studio
     version: !ENV ${OBS_VERSION}
-    exec: usr/bin/obs
+    exec: opt/obs/usr/bin/obs
 
   apt:
     arch: amd64
@@ -52,6 +52,7 @@ AppDir:
       - libxcb-randr0
       - libfontconfig1
       - libfreetype6
+      - libigdgmm11
     exclude:
       - libva-drm2
       - libva-x11-2
@@ -69,12 +70,11 @@ AppDir:
   
   runtime:
     env:
-      APPDIR_LIBRARY_PATH: $APPDIR/usr/lib:$APPDIR/lib/x86_64-linux-gnu:$APPDIR/usr/lib/x86_64-linux-gnu:$APPDIR/usr/lib/x86_64-linux-gnu/pulseaudio
-      OBS_DATA_PATH: $APPDIR/usr/share/obs/obs-studio/
-      OBS_PLUGINS_LIB_PATH: $APPDIR/usr/lib/obs-plugins/
-      OBS_PLUGINS_DATA_PATH: $APPDIR/usr/share/obs/obs-plugins/%module%
-      LIBOBS_DATA_PATH: $APPDIR/usr/share/obs/libobs/
-      OBS_SCRIPT_PATH: $APPDIR/usr/lib/obs-scripting
+      OBS_DATA_PATH: $APPDIR/opt/obs/usr/share/obs/obs-studio/
+      OBS_PLUGINS_LIB_PATH: $APPDIR/opt/obs/usr/lib/obs-plugins/
+      OBS_PLUGINS_DATA_PATH: $APPDIR/opt/obs/usr/share/obs/obs-plugins/%module%
+      LIBOBS_DATA_PATH: $APPDIR/opt/obs/usr/share/obs/libobs/
+      OBS_SCRIPT_PATH: $APPDIR/opt/obs/usr/lib/obs-scripting
       PYTHONHOME: $APPDIR/usr
 
   after_runtime:
