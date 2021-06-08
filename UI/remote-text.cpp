@@ -157,6 +157,7 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_in);
+		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
