@@ -399,6 +399,8 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		     "trying again without Psycho Visual Tuning");
 		enc = nvenc_create_internal(settings, encoder, false);
 	}
+
+	return enc;
 }
 
 static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
