@@ -191,7 +191,7 @@ static bool init_display_stream(struct display_capture *dc)
 	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
 
 	NSNumber *screen_num = dc->screen.deviceDescription[@"NSScreenNumber"];
-	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
+	CGDirectDisplayID disp_id = screen_num.unsignedIntValue;
 
 	NSDictionary *rect_dict =
 		CFBridgingRelease(CGRectCreateDictionaryRepresentation(
