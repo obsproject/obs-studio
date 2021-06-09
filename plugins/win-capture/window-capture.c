@@ -363,6 +363,9 @@ static bool wc_capture_method_changed(obs_properties_t *props,
 	UNUSED_PARAMETER(p);
 
 	struct window_capture *wc = obs_properties_get_param(props);
+	if (!wc)
+		return false;
+
 	update_settings(wc, settings);
 
 	update_settings_visibility(props, wc);
@@ -379,6 +382,9 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 			      obs_data_t *settings)
 {
 	struct window_capture *wc = obs_properties_get_param(props);
+	if (!wc)
+		return false;
+
 	update_settings(wc, settings);
 
 	update_settings_visibility(props, wc);
