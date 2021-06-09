@@ -5,6 +5,7 @@
 
 #import <CoreGraphics/CGDisplayStream.h>
 #import <Cocoa/Cocoa.h>
+#import <mach/mach_time.h>
 
 #include "window-utils.h"
 
@@ -24,14 +25,9 @@ static inline bool requires_window(enum crop_mode mode)
 struct display_capture {
 	obs_source_t *source;
 
-	gs_samplerstate_t *sampler;
-	gs_effect_t *effect;
-	gs_texture_t *tex;
-	gs_vertbuffer_t *vertbuf;
-
 	NSScreen *screen;
 	unsigned display;
-	NSRect frame;
+	NSRect screen_rect;
 	bool hide_cursor;
 
 	enum crop_mode crop;
@@ -40,13 +36,15 @@ struct display_capture {
 	struct cocoa_window window;
 	CGRect window_rect;
 	bool on_screen;
-	bool hide_when_minimized;
 
 	os_event_t *disp_finished;
 	CGDisplayStreamRef disp;
-	IOSurfaceRef current, prev;
 
-	pthread_mutex_t mutex;
+	mach_timebase_info_data_t timebase_info;
+
+	CGRect capture_rect;
+
+	double frame_interval;
 };
 
 static inline bool crop_mode_valid(enum crop_mode mode)
@@ -54,31 +52,17 @@ static inline bool crop_mode_valid(enum crop_mode mode)
 	return CROP_NONE <= mode && mode < CROP_INVALID;
 }
 
+static inline bool is_valid_capture_rect(CGRect *rect)
+{
+	return !(rect->size.width <= 0.0f || rect->size.height <= 0.0f);
+}
+
 static void destroy_display_stream(struct display_capture *dc)
 {
 	if (dc->disp) {
 		CGDisplayStreamStop(dc->disp);
 		os_event_wait(dc->disp_finished);
-	}
 
-	if (dc->tex) {
-		gs_texture_destroy(dc->tex);
-		dc->tex = NULL;
-	}
-
-	if (dc->current) {
-		IOSurfaceDecrementUseCount(dc->current);
-		CFRelease(dc->current);
-		dc->current = NULL;
-	}
-
-	if (dc->prev) {
-		IOSurfaceDecrementUseCount(dc->prev);
-		CFRelease(dc->prev);
-		dc->prev = NULL;
-	}
-
-	if (dc->disp) {
 		CFRelease(dc->disp);
 		dc->disp = NULL;
 	}
@@ -102,18 +86,14 @@ static void display_capture_destroy(void *data)
 
 	destroy_display_stream(dc);
 
-	if (dc->sampler)
-		gs_samplerstate_destroy(dc->sampler);
-	if (dc->vertbuf)
-		gs_vertexbuffer_destroy(dc->vertbuf);
-
 	obs_leave_graphics();
 
 	destroy_window(&dc->window);
 
-	pthread_mutex_destroy(&dc->mutex);
 	bfree(dc);
 }
+
+static void update_capture_rect(struct display_capture *dc);
 
 static inline void update_window_params(struct display_capture *dc)
 {
@@ -142,36 +122,46 @@ static inline void update_window_params(struct display_capture *dc)
 	[arr release];
 }
 
+static bool init_display_stream(struct display_capture *dc);
+
 static inline void display_stream_update(struct display_capture *dc,
 					 CGDisplayStreamFrameStatus status,
 					 uint64_t display_time,
 					 IOSurfaceRef frame_surface,
 					 CGDisplayStreamUpdateRef update_ref)
 {
-	UNUSED_PARAMETER(display_time);
-	UNUSED_PARAMETER(update_ref);
-
 	if (status == kCGDisplayStreamFrameStatusStopped) {
 		os_event_signal(dc->disp_finished);
 		return;
 	}
 
-	IOSurfaceRef prev_current = NULL;
-
-	if (frame_surface && !pthread_mutex_lock(&dc->mutex)) {
-		prev_current = dc->current;
-		dc->current = frame_surface;
-		CFRetain(dc->current);
-		IOSurfaceIncrementUseCount(dc->current);
-
+	if (requires_window(dc->crop)) {
 		update_window_params(dc);
-
-		pthread_mutex_unlock(&dc->mutex);
 	}
+	update_capture_rect(dc);
 
-	if (prev_current) {
-		IOSurfaceDecrementUseCount(prev_current);
-		CFRelease(prev_current);
+	if (frame_surface) {
+		// Convert mach timestamp to nanosecond timestamp
+		uint64_t ts =
+			(uint64_t)((display_time * dc->timebase_info.numer) /
+				   (double)dc->timebase_info.denom);
+		uint8_t *address = IOSurfaceGetBaseAddress(frame_surface) +
+				   (int)(dc->screen_rect.size.width *
+					 dc->capture_rect.origin.y * 4) +
+				   (int)(dc->capture_rect.origin.x * 4);
+
+		struct obs_source_frame frame = {
+			.format = VIDEO_FORMAT_BGRA,
+			.width = dc->capture_rect.size.width,
+			.height = dc->capture_rect.size.height,
+			.data[0] = address,
+			.linesize[0] = (size_t)(dc->screen_rect.size.width * 4),
+			.timestamp = ts,
+		};
+
+		IOSurfaceLock(frame_surface, kIOSurfaceLockReadOnly, NULL);
+		obs_source_output_video(dc->source, &frame);
+		IOSurfaceUnlock(frame_surface, kIOSurfaceLockReadOnly, NULL);
 	}
 
 	size_t dropped_frames = CGDisplayStreamUpdateGetDropCount(update_ref);
@@ -186,22 +176,25 @@ static bool init_display_stream(struct display_capture *dc)
 		return false;
 
 	dc->screen = [[NSScreen screens][dc->display] retain];
-
-	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
+	dc->screen_rect = [dc->screen convertRectToBacking:dc->screen.frame];
 
 	NSNumber *screen_num = dc->screen.deviceDescription[@"NSScreenNumber"];
-	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
+	CGDirectDisplayID disp_id = [screen_num unsignedIntValue];
 
-	NSDictionary *rect_dict =
-		CFBridgingRelease(CGRectCreateDictionaryRepresentation(
-			CGRectMake(0, 0, dc->screen.frame.size.width,
-				   dc->screen.frame.size.height)));
+	CGRect screen_capture_rect = dc->screen_rect;
+	screen_capture_rect.origin = CGPointZero;
+	NSDictionary *rect_dict = CFBridgingRelease(
+		CGRectCreateDictionaryRepresentation(screen_capture_rect));
 
+	NSNumber *frame_interval =
+		[NSNumber numberWithDouble:dc->frame_interval];
 	CFBooleanRef show_cursor_cf = dc->hide_cursor ? kCFBooleanFalse
 						      : kCFBooleanTrue;
 
 	NSDictionary *dict = @{
 		(__bridge NSString *)kCGDisplayStreamSourceRect: rect_dict,
+		(__bridge NSString *)
+		kCGDisplayStreamMinimumFrameTime: frame_interval,
 		(__bridge NSString *)kCGDisplayStreamQueueDepth: @5,
 		(__bridge NSString *)
 		kCGDisplayStreamShowCursor: (id)show_cursor_cf,
@@ -209,11 +202,16 @@ static bool init_display_stream(struct display_capture *dc)
 
 	os_event_init(&dc->disp_finished, OS_EVENT_TYPE_MANUAL);
 
-	const CGSize *size = &dc->frame.size;
+	dispatch_queue_attr_t dispatchQueueAttr =
+		dispatch_queue_attr_make_with_qos_class(DISPATCH_QUEUE_SERIAL,
+							QOS_CLASS_UTILITY, 0);
+	dispatch_queue_t displayCaptureDispatchQueue =
+		dispatch_queue_create(DISPATCH_QUEUE_SERIAL, dispatchQueueAttr);
+
 	dc->disp = CGDisplayStreamCreateWithDispatchQueue(
-		disp_id, size->width, size->height, 'BGRA',
-		(__bridge CFDictionaryRef)dict,
-		dispatch_queue_create(NULL, NULL),
+		disp_id, dc->screen_rect.size.width,
+		dc->screen_rect.size.height, 'BGRA',
+		(__bridge CFDictionaryRef)dict, displayCaptureDispatchQueue,
 		^(CGDisplayStreamFrameStatus status, uint64_t displayTime,
 		  IOSurfaceRef frameSurface,
 		  CGDisplayStreamUpdateRef updateRef) {
@@ -221,70 +219,33 @@ static bool init_display_stream(struct display_capture *dc)
 					      frameSurface, updateRef);
 		});
 
-	return !CGDisplayStreamStart(dc->disp);
-}
-
-bool init_vertbuf(struct display_capture *dc)
-{
-	struct gs_vb_data *vb_data = gs_vbdata_create();
-	vb_data->num = 4;
-	vb_data->points = bzalloc(sizeof(struct vec3) * 4);
-	if (!vb_data->points)
-		return false;
-
-	vb_data->num_tex = 1;
-	vb_data->tvarray = bzalloc(sizeof(struct gs_tvertarray));
-	if (!vb_data->tvarray)
-		return false;
-
-	vb_data->tvarray[0].width = 2;
-	vb_data->tvarray[0].array = bzalloc(sizeof(struct vec2) * 4);
-	if (!vb_data->tvarray[0].array)
-		return false;
-
-	dc->vertbuf = gs_vertexbuffer_create(vb_data, GS_DYNAMIC);
-	return dc->vertbuf != NULL;
+	CGError err = CGDisplayStreamStart(dc->disp);
+	return !err;
 }
 
 void load_crop(struct display_capture *dc, obs_data_t *settings);
 
 static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-	UNUSED_PARAMETER(settings);
-
 	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
 
 	dc->source = source;
 	dc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
+	dc->display = obs_data_get_int(settings, "display");
 
-	dc->effect = obs_get_base_effect(OBS_EFFECT_DEFAULT_RECT);
-	if (!dc->effect)
+	struct obs_video_info ovi = {};
+	if (obs_get_video_info(&ovi)) {
+		dc->frame_interval = (double)ovi.fps_den / (double)ovi.fps_num;
+
+		// Truncate value to 3 decimal places (ms accuracy)
+		dc->frame_interval = floorf(dc->frame_interval * 1000) / 1000;
+	}
+
+	if (mach_timebase_info(&dc->timebase_info))
 		goto fail;
-
-	obs_enter_graphics();
-
-	struct gs_sampler_info info = {
-		.filter = GS_FILTER_LINEAR,
-		.address_u = GS_ADDRESS_CLAMP,
-		.address_v = GS_ADDRESS_CLAMP,
-		.address_w = GS_ADDRESS_CLAMP,
-		.max_anisotropy = 1,
-	};
-	dc->sampler = gs_samplerstate_create(&info);
-	if (!dc->sampler)
-		goto fail;
-
-	if (!init_vertbuf(dc))
-		goto fail;
-
-	obs_leave_graphics();
 
 	init_window(&dc->window, settings);
 	load_crop(dc, settings);
-
-	dc->display = obs_data_get_int(settings, "display");
-	pthread_mutex_init(&dc->mutex, NULL);
 
 	if (!init_display_stream(dc))
 		goto fail;
@@ -292,195 +253,81 @@ static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 	return dc;
 
 fail:
-	obs_leave_graphics();
 	display_capture_destroy(dc);
 	return NULL;
 }
 
-static void build_sprite(struct gs_vb_data *data, float fcx, float fcy,
-			 float start_u, float end_u, float start_v, float end_v)
+static void update_capture_rect(struct display_capture *dc)
 {
-	struct vec2 *tvarray = data->tvarray[0].array;
-
-	vec3_set(data->points + 1, fcx, 0.0f, 0.0f);
-	vec3_set(data->points + 2, 0.0f, fcy, 0.0f);
-	vec3_set(data->points + 3, fcx, fcy, 0.0f);
-	vec2_set(tvarray, start_u, start_v);
-	vec2_set(tvarray + 1, end_u, start_v);
-	vec2_set(tvarray + 2, start_u, end_v);
-	vec2_set(tvarray + 3, end_u, end_v);
-}
-
-static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
-				     float origin_y, float end_x, float end_y)
-{
-	build_sprite(data, fabs(end_x - origin_x), fabs(end_y - origin_y),
-		     origin_x, end_x, origin_y, end_y);
-}
-
-static void display_capture_video_tick(void *data, float seconds)
-{
-	UNUSED_PARAMETER(seconds);
-
-	struct display_capture *dc = data;
-
-	if (!dc->current)
-		return;
-	if (!obs_source_showing(dc->source))
-		return;
-
-	IOSurfaceRef prev_prev = dc->prev;
-	if (pthread_mutex_lock(&dc->mutex))
-		return;
-	dc->prev = dc->current;
-	dc->current = NULL;
-	pthread_mutex_unlock(&dc->mutex);
-
-	if (prev_prev == dc->prev)
-		return;
-
-	if (requires_window(dc->crop) && !dc->on_screen)
-		goto cleanup;
-
-	CGPoint origin = {0.f};
-	CGPoint end = {0.f};
-
 	switch (dc->crop) {
-		float x, y;
+	case CROP_NONE: {
+		dc->capture_rect.origin = CGPointZero;
+		dc->capture_rect.size = dc->screen.frame.size;
+	} break;
+	case CROP_MANUAL: {
+		float crop_width =
+			dc->crop_rect.origin.x + dc->crop_rect.size.width;
+		float crop_height =
+			dc->crop_rect.origin.y + dc->crop_rect.size.height;
+		dc->capture_rect.origin = dc->crop_rect.origin;
+		dc->capture_rect.size.width =
+			fabs(dc->screen_rect.size.width - crop_width);
+		dc->capture_rect.size.height =
+			fabs(dc->screen_rect.size.height - crop_height);
+	} break;
+	case CROP_TO_WINDOW: {
+		if (is_valid_capture_rect(&dc->window_rect))
+			dc->capture_rect = dc->window_rect;
+	} break;
+	case CROP_TO_WINDOW_AND_MANUAL: {
+		if (is_valid_capture_rect(&dc->window_rect)) {
+			dc->capture_rect = dc->window_rect;
+		} else {
+			dc->capture_rect.origin = CGPointZero;
+			dc->capture_rect.size = dc->screen.frame.size;
+		}
+		float crop_width =
+			dc->crop_rect.origin.x + dc->crop_rect.size.width;
+		float crop_height =
+			dc->crop_rect.origin.y + dc->crop_rect.size.height;
+		dc->capture_rect.origin.x += dc->crop_rect.origin.x;
+		dc->capture_rect.origin.y += dc->crop_rect.origin.y;
+		dc->capture_rect.size.width =
+			fabs(dc->capture_rect.size.width - crop_width);
+		dc->capture_rect.size.height =
+			fabs(dc->capture_rect.size.height - crop_height);
+	} break;
 	case CROP_INVALID:
-		break;
-
-	case CROP_MANUAL:
-		origin.x += dc->crop_rect.origin.x;
-		origin.y += dc->crop_rect.origin.y;
-		end.y -= dc->crop_rect.size.height;
-		end.x -= dc->crop_rect.size.width;
-	case CROP_NONE:
-		end.y += dc->frame.size.height;
-		end.x += dc->frame.size.width;
-		break;
-
-	case CROP_TO_WINDOW_AND_MANUAL:
-		origin.x += dc->crop_rect.origin.x;
-		origin.y += dc->crop_rect.origin.y;
-		end.y -= dc->crop_rect.size.height;
-		end.x -= dc->crop_rect.size.width;
-	case CROP_TO_WINDOW:
-		origin.x += x = dc->window_rect.origin.x - dc->frame.origin.x;
-		origin.y += y = dc->window_rect.origin.y - dc->frame.origin.y;
-		end.y += dc->window_rect.size.height + y;
-		end.x += dc->window_rect.size.width + x;
-		break;
+	default: {
+	} break;
 	}
 
-	obs_enter_graphics();
-	build_sprite_rect(gs_vertexbuffer_get_data(dc->vertbuf), origin.x,
-			  origin.y, end.x, end.y);
+	CGFloat right_edge =
+		dc->capture_rect.origin.x + dc->capture_rect.size.width;
+	CGFloat bottom_edge =
+		dc->capture_rect.origin.y + dc->capture_rect.size.height;
+	CGFloat right_diff = right_edge - dc->screen_rect.size.width;
+	CGFloat bottom_diff = bottom_edge - dc->screen_rect.size.height;
 
-	if (dc->tex)
-		gs_texture_rebind_iosurface(dc->tex, dc->prev);
-	else
-		dc->tex = gs_texture_create_from_iosurface(dc->prev);
-	obs_leave_graphics();
-
-cleanup:
-	if (prev_prev) {
-		IOSurfaceDecrementUseCount(prev_prev);
-		CFRelease(prev_prev);
+	if (dc->capture_rect.origin.x < 0) {
+		dc->capture_rect.size.width += dc->capture_rect.origin.x;
+		dc->capture_rect.origin.x = 0;
+	} else if (right_diff > 0) {
+		dc->capture_rect.size.width -= right_diff;
 	}
-}
 
-static void display_capture_video_render(void *data, gs_effect_t *effect)
-{
-	UNUSED_PARAMETER(effect);
-
-	struct display_capture *dc = data;
-
-	if (!dc->tex || (requires_window(dc->crop) && !dc->on_screen))
-		return;
-
-	const bool linear_srgb = gs_get_linear_srgb();
-
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
-
-	gs_vertexbuffer_flush(dc->vertbuf);
-	gs_load_vertexbuffer(dc->vertbuf);
-	gs_load_indexbuffer(NULL);
-	gs_load_samplerstate(dc->sampler, 0);
-	gs_technique_t *tech = gs_effect_get_technique(dc->effect, "Draw");
-	gs_eparam_t *param = gs_effect_get_param_by_name(dc->effect, "image");
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(param, dc->tex);
-	else
-		gs_effect_set_texture(param, dc->tex);
-	gs_technique_begin(tech);
-	gs_technique_begin_pass(tech, 0);
-
-	gs_draw(GS_TRISTRIP, 0, 4);
-
-	gs_technique_end_pass(tech);
-	gs_technique_end(tech);
-
-	gs_enable_framebuffer_srgb(previous);
+	if (dc->capture_rect.origin.y < 0) {
+		dc->capture_rect.size.height += dc->capture_rect.origin.y;
+		dc->capture_rect.origin.y = 0;
+	} else if (bottom_diff > 0) {
+		dc->capture_rect.size.height -= bottom_diff;
+	}
 }
 
 static const char *display_capture_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return obs_module_text("DisplayCapture");
-}
-
-#define CROPPED_LENGTH(rect, origin_, length)                       \
-	fabs((rect##.size.##length - dc->crop_rect.size.##length) - \
-	     (rect##.origin.##origin_ + dc->crop_rect.origin.##origin_))
-
-static uint32_t display_capture_getwidth(void *data)
-{
-	struct display_capture *dc = data;
-
-	float crop = dc->crop_rect.origin.x + dc->crop_rect.size.width;
-	switch (dc->crop) {
-	case CROP_NONE:
-		return dc->frame.size.width;
-
-	case CROP_MANUAL:
-		return fabs(dc->frame.size.width - crop);
-
-	case CROP_TO_WINDOW:
-		return dc->window_rect.size.width;
-
-	case CROP_TO_WINDOW_AND_MANUAL:
-		return fabs(dc->window_rect.size.width - crop);
-
-	case CROP_INVALID:
-		break;
-	}
-	return 0;
-}
-
-static uint32_t display_capture_getheight(void *data)
-{
-	struct display_capture *dc = data;
-
-	float crop = dc->crop_rect.origin.y + dc->crop_rect.size.height;
-	switch (dc->crop) {
-	case CROP_NONE:
-		return dc->frame.size.height;
-
-	case CROP_MANUAL:
-		return fabs(dc->frame.size.height - crop);
-
-	case CROP_TO_WINDOW:
-		return dc->window_rect.size.height;
-
-	case CROP_TO_WINDOW_AND_MANUAL:
-		return fabs(dc->window_rect.size.height - crop);
-
-	case CROP_INVALID:
-		break;
-	}
-	return 0;
 }
 
 static void display_capture_defaults(obs_data_t *settings)
@@ -536,22 +383,19 @@ static void display_capture_update(void *data, obs_data_t *settings)
 
 	load_crop(dc, settings);
 
-	if (requires_window(dc->crop))
-		update_window(&dc->window, settings);
-
 	unsigned display = obs_data_get_int(settings, "display");
 	bool show_cursor = obs_data_get_bool(settings, "show_cursor");
-	if (dc->display == display && dc->hide_cursor != show_cursor)
-		return;
 
-	obs_enter_graphics();
+	if ((dc->display != display) || (dc->hide_cursor == show_cursor)) {
+		obs_enter_graphics();
 
-	destroy_display_stream(dc);
-	dc->display = display;
-	dc->hide_cursor = !show_cursor;
-	init_display_stream(dc);
+		destroy_display_stream(dc);
+		dc->display = display;
+		dc->hide_cursor = !show_cursor;
+		init_display_stream(dc);
 
-	obs_leave_graphics();
+		obs_leave_graphics();
+	}
 }
 
 static bool switch_crop_mode(obs_properties_t *props, obs_property_t *p,
@@ -602,11 +446,26 @@ static obs_properties_t *display_capture_properties(void *unused)
 		props, "display", obs_module_text("DisplayCapture.Display"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	for (unsigned i = 0; i < [NSScreen screens].count; i++) {
-		char buf[10];
-		sprintf(buf, "%u", i);
-		obs_property_list_add_int(list, buf, i);
-	}
+	[[NSScreen screens] enumerateObjectsUsingBlock:^(
+				    NSScreen *_Nonnull screen, NSUInteger index,
+				    BOOL *_Nonnull stop
+				    __attribute__((unused))) {
+		char dimension_buffer[4][12];
+		char name_buffer[256];
+		sprintf(dimension_buffer[0], "%u",
+			(uint32_t)[screen frame].size.width);
+		sprintf(dimension_buffer[1], "%u",
+			(uint32_t)[screen frame].size.height);
+		sprintf(dimension_buffer[2], "%d",
+			(int32_t)[screen frame].origin.x);
+		sprintf(dimension_buffer[3], "%d",
+			(int32_t)[screen frame].origin.y);
+		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			[[screen localizedName] UTF8String],
+			dimension_buffer[0], dimension_buffer[1],
+			dimension_buffer[2], dimension_buffer[3]);
+		obs_property_list_add_int(list, name_buffer, index);
+	}];
 
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("DisplayCapture.ShowCursor"));
@@ -657,13 +516,8 @@ struct obs_source_info display_capture_info = {
 	.create = display_capture_create,
 	.destroy = display_capture_destroy,
 
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
-	.video_tick = display_capture_video_tick,
-	.video_render = display_capture_video_render,
-
-	.get_width = display_capture_getwidth,
-	.get_height = display_capture_getheight,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_ASYNC_VIDEO,
+	.video_tick = NULL,
 
 	.get_defaults = display_capture_defaults,
 	.get_properties = display_capture_properties,
