@@ -628,6 +628,9 @@ static bool display_capture_method_changed(obs_properties_t *props,
 	UNUSED_PARAMETER(p);
 
 	struct duplicator_capture *capture = obs_properties_get_param(props);
+	if (!capture)
+		return false;
+
 	update_settings(capture, settings);
 
 	update_settings_visibility(props, capture);
