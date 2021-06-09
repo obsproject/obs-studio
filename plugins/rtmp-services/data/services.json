@@ -2236,6 +2236,19 @@
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }
+        },
+        {
+            "name": "Bilibili Live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Tencent Cloud",
+                    "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
+                }
+            ]
         }
     ]
 }

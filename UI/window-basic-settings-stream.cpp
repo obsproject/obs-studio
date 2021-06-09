@@ -298,6 +298,9 @@ void OBSBasicSettings::UpdateKeyLink()
 			"https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs";
 	} else if (serviceName == "Brime Live") {
 		streamKeyLink = "https://brimelive.com/obs-stream-key-link";
+	} else if (serviceName == "Bilibili Live") {
+		streamKeyLink =
+			"https://link.bilibili.com/p/center/index#/my-room/start-live";
 	}
 
 	if (serviceName == "Dacast") {
