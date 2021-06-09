@@ -20,6 +20,16 @@ IDeckLinkIterator *CreateDeckLinkIteratorInstance(void)
 	return result == S_OK ? iterator : nullptr;
 }
 
+IDeckLinkVideoConversion *CreateVideoConversionInstance(void)
+{
+	IDeckLinkVideoConversion *conversion;
+	const HRESULT result = CoCreateInstance(CLSID_CDeckLinkVideoConversion,
+						nullptr, CLSCTX_ALL,
+						IID_IDeckLinkVideoConversion,
+						(void **)&conversion);
+	return result == S_OK ? conversion : nullptr;
+}
+
 bool DeckLinkStringToStdString(decklink_string_t input, std::string &output)
 {
 	if (input == nullptr)

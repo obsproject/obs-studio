@@ -65,9 +65,6 @@ set(mac-syphon_SOURCES
 	syphon.m
 	plugin-main.c)
 
-set_source_files_properties(${mac-syphon_SOURCES} ${syphon_SOURCES}
-	PROPERTIES LANGUAGE C)
-
 add_definitions(-DSYPHON_UNIQUE_CLASS_NAME_PREFIX=OBS_ -include
 	${PROJECT_SOURCE_DIR}/syphon-framework/Syphon_Prefix.pch)
 

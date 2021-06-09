@@ -26,6 +26,7 @@
 #include <mutex>
 
 using namespace std;
+using namespace json11;
 
 /* ----------------------------------------------------------------------- */
 
@@ -59,7 +60,7 @@ void FreeWinHttpHandle(HINTERNET handle)
 
 static inline bool is_64bit_windows(void);
 
-static inline bool HasVS2017Redist2()
+static inline bool HasVS2019Redist2()
 {
 	wchar_t base[MAX_PATH];
 	wchar_t path[MAX_PATH];
@@ -70,32 +71,34 @@ static inline bool HasVS2017Redist2()
 
 	SHGetFolderPathW(NULL, folder, NULL, SHGFP_TYPE_CURRENT, base);
 
-	StringCbCopyW(path, sizeof(path), base);
-	StringCbCatW(path, sizeof(path), L"\\msvcp140.dll");
-	handle = FindFirstFileW(path, &wfd);
-	if (handle == INVALID_HANDLE_VALUE) {
-		return false;
-	} else {
-		FindClose(handle);
+#define check_dll_installed(dll)                                    \
+	do {                                                        \
+		StringCbCopyW(path, sizeof(path), base);            \
+		StringCbCatW(path, sizeof(path), L"\\" dll ".dll"); \
+		handle = FindFirstFileW(path, &wfd);                \
+		if (handle == INVALID_HANDLE_VALUE) {               \
+			return false;                               \
+		} else {                                            \
+			FindClose(handle);                          \
+		}                                                   \
+	} while (false)
+
+	check_dll_installed(L"msvcp140");
+	check_dll_installed(L"vcruntime140");
+	if (!is32bit) {
+		check_dll_installed(L"vcruntime140_1");
 	}
 
-	StringCbCopyW(path, sizeof(path), base);
-	StringCbCatW(path, sizeof(path), L"\\vcruntime140.dll");
-	handle = FindFirstFileW(path, &wfd);
-	if (handle == INVALID_HANDLE_VALUE) {
-		return false;
-	} else {
-		FindClose(handle);
-	}
+#undef check_dll_installed
 
 	return true;
 }
 
-static bool HasVS2017Redist()
+static bool HasVS2019Redist()
 {
 	PVOID old = nullptr;
 	bool redirect = !!Wow64DisableWow64FsRedirection(&old);
-	bool success = HasVS2017Redist2();
+	bool success = HasVS2019Redist2();
 	if (redirect)
 		Wow64RevertWow64FsRedirection(old);
 	return success;
@@ -295,6 +298,8 @@ struct update_t {
 			} else {
 				DeleteFile(outputPath.c_str());
 			}
+			if (state == STATE_INSTALL_FAILED)
+				DeleteFile(tempPath.c_str());
 		} else if (state == STATE_DOWNLOADED) {
 			DeleteFile(tempPath.c_str());
 		}
@@ -334,7 +339,10 @@ static inline void CleanupPartialUpdates()
 
 bool DownloadWorkerThread()
 {
-	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2;
+	const DWORD tlsProtocols = WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_2 |
+				   WINHTTP_FLAG_SECURE_PROTOCOL_TLS1_3;
+
+	const DWORD enableHTTP2Flag = WINHTTP_PROTOCOL_FLAG_HTTP2;
 
 	HttpHandle hSession = WinHttpOpen(L"OBS Studio Updater/2.1",
 					  WINHTTP_ACCESS_TYPE_DEFAULT_PROXY,
@@ -348,6 +356,9 @@ bool DownloadWorkerThread()
 
 	WinHttpSetOption(hSession, WINHTTP_OPTION_SECURE_PROTOCOLS,
 			 (LPVOID)&tlsProtocols, sizeof(tlsProtocols));
+
+	WinHttpSetOption(hSession, WINHTTP_OPTION_ENABLE_HTTP_PROTOCOL,
+			 (LPVOID)&enableHTTP2Flag, sizeof(enableHTTP2Flag));
 
 	HttpHandle hConnect = WinHttpConnect(hSession,
 					     L"cdn-fastly.obsproject.com",
@@ -603,68 +614,63 @@ static inline bool is_64bit_file(const char *file)
 	       strstr(file, "64.exe") != nullptr;
 }
 
-static inline bool has_str(const char *file, const char *str)
-{
-	return (file && str) ? (strstr(file, str) != nullptr) : false;
-}
-
 #define UTF8ToWideBuf(wide, utf8) UTF8ToWide(wide, _countof(wide), utf8)
 #define WideToUTF8Buf(utf8, wide) WideToUTF8(utf8, _countof(utf8), wide)
 
 #define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
 
-static bool AddPackageUpdateFiles(json_t *root, size_t idx,
+static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 				  const wchar_t *tempPath)
 {
-	json_t *package = json_array_get(root, idx);
-	json_t *name = json_object_get(package, "name");
-	json_t *files = json_object_get(package, "files");
+	const Json &package = root[idx];
+	const Json &name = package["name"];
+	const Json &files = package["files"];
 
 	bool isWin64 = is_64bit_windows();
 
-	if (!json_is_array(files))
+	if (!files.is_array())
 		return true;
-	if (!json_is_string(name))
+	if (!name.is_string())
 		return true;
 
 	wchar_t wPackageName[512];
-	const char *packageName = json_string_value(name);
-	size_t fileCount = json_array_size(files);
+	const string &packageName = name.string_value();
+	size_t fileCount = files.array_items().size();
 
-	if (!UTF8ToWideBuf(wPackageName, packageName))
+	if (!UTF8ToWideBuf(wPackageName, packageName.c_str()))
 		return false;
 
-	if (strcmp(packageName, "core") != 0 &&
-	    !NonCorePackageInstalled(packageName))
+	if (packageName != "core" &&
+	    !NonCorePackageInstalled(packageName.c_str()))
 		return true;
 
 	for (size_t j = 0; j < fileCount; j++) {
-		json_t *file = json_array_get(files, j);
-		json_t *fileName = json_object_get(file, "name");
-		json_t *hash = json_object_get(file, "hash");
-		json_t *size = json_object_get(file, "size");
+		const Json &file = files[j];
+		const Json &fileName = file["name"];
+		const Json &hash = file["hash"];
+		const Json &size = file["size"];
 
-		if (!json_is_string(fileName))
+		if (!fileName.is_string())
 			continue;
-		if (!json_is_string(hash))
+		if (!hash.is_string())
 			continue;
-		if (!json_is_integer(size))
-			continue;
-
-		const char *fileUTF8 = json_string_value(fileName);
-		const char *hashUTF8 = json_string_value(hash);
-		int fileSize = (int)json_integer_value(size);
-
-		if (strlen(hashUTF8) != BLAKE2_HASH_LENGTH * 2)
+		if (!size.is_number())
 			continue;
 
-		if (!isWin64 && is_64bit_file(fileUTF8))
+		const string &fileUTF8 = fileName.string_value();
+		const string &hashUTF8 = hash.string_value();
+		int fileSize = size.int_value();
+
+		if (hashUTF8.size() != BLAKE2_HASH_LENGTH * 2)
+			continue;
+
+		if (!isWin64 && is_64bit_file(fileUTF8.c_str()))
 			continue;
 
 		/* ignore update files of opposite arch to reduce download */
 
-		if ((is32bit && has_str(fileUTF8, "/64bit/")) ||
-		    (!is32bit && has_str(fileUTF8, "/32bit/")))
+		if ((is32bit && fileUTF8.find("/64bit/") != string::npos) ||
+		    (!is32bit && fileUTF8.find("/32bit/") != string::npos))
 			continue;
 
 		/* convert strings to wide */
@@ -674,9 +680,9 @@ static bool AddPackageUpdateFiles(json_t *root, size_t idx,
 		wchar_t updateHashStr[BLAKE2_HASH_STR_LENGTH];
 		wchar_t tempFilePath[MAX_PATH];
 
-		if (!UTF8ToWideBuf(updateFileName, fileUTF8))
+		if (!UTF8ToWideBuf(updateFileName, fileUTF8.c_str()))
 			continue;
-		if (!UTF8ToWideBuf(updateHashStr, hashUTF8))
+		if (!UTF8ToWideBuf(updateHashStr, hashUTF8.c_str()))
 			continue;
 
 		/* make sure paths are safe */
@@ -786,6 +792,41 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 	}
 }
 
+static bool MoveInUseFileAway(update_t &file)
+{
+	_TCHAR deleteMeName[MAX_PATH];
+	_TCHAR randomStr[MAX_PATH];
+
+	BYTE junk[40];
+	BYTE hash[BLAKE2_HASH_LENGTH];
+
+	CryptGenRandom(hProvider, sizeof(junk), junk);
+	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, randomStr);
+	randomStr[8] = 0;
+
+	StringCbCopy(deleteMeName, sizeof(deleteMeName),
+		     file.outputPath.c_str());
+
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
+	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".deleteme");
+
+	if (MoveFile(file.outputPath.c_str(), deleteMeName)) {
+
+		if (MyCopyFile(deleteMeName, file.outputPath.c_str())) {
+			MoveFileEx(deleteMeName, NULL,
+				   MOVEFILE_DELAY_UNTIL_REBOOT);
+
+			return true;
+		} else {
+			MoveFile(deleteMeName, file.outputPath.c_str());
+		}
+	}
+
+	return false;
+}
+
 static bool UpdateFile(update_t &file)
 {
 	wchar_t oldFileRenamedPath[MAX_PATH];
@@ -838,6 +879,9 @@ static bool UpdateFile(update_t &file)
 
 		int error_code;
 		bool installed_ok;
+		bool already_tried_to_move = false;
+
+	retryAfterMovingFile:
 
 		if (file.patchable) {
 			error_code = ApplyPatch(file.tempPath.c_str(),
@@ -877,15 +921,23 @@ static bool UpdateFile(update_t &file)
 			int is_sharing_violation =
 				(error_code == ERROR_SHARING_VIOLATION);
 
-			if (is_sharing_violation)
+			if (is_sharing_violation) {
+				if (!already_tried_to_move) {
+					already_tried_to_move = true;
+
+					if (MoveInUseFileAway(file))
+						goto retryAfterMovingFile;
+				}
+
 				Status(L"Update failed: %s is still in use.  "
 				       L"Close all "
 				       L"programs and try again.",
 				       curFileName);
-			else
+			} else {
 				Status(L"Update failed: Couldn't update %s "
 				       L"(error %d)",
 				       curFileName, GetLastError());
+			}
 
 			file.state = STATE_INSTALL_FAILED;
 			return false;
@@ -928,7 +980,7 @@ static wchar_t tempPath[MAX_PATH] = {};
 	L"https://obsproject.com/update_studio/getpatchmanifest"
 #define HASH_NULL L"0000000000000000000000000000000000000000"
 
-static bool UpdateVS2017Redists(json_t *root)
+static bool UpdateVS2019Redists(const Json &root)
 {
 	/* ------------------------------------------ *
 	 * Initialize session                         */
@@ -965,10 +1017,10 @@ static bool UpdateVS2017Redists(json_t *root)
 	/* ------------------------------------------ *
 	 * Download redist                            */
 
-	Status(L"Downloading %s", L"Visual C++ 2017 Redistributable");
+	Status(L"Downloading %s", L"Visual C++ 2019 Redistributable");
 
-	const wchar_t *file = (is32bit) ? L"vc2017redist_x86.exe"
-					: L"vc2017redist_x64.exe";
+	const wchar_t *file = (is32bit) ? L"VC_redist.x86.exe"
+					: L"VC_redist.x64.exe";
 
 	wstring sourceURL;
 	sourceURL += L"https://cdn-fastly.obsproject.com/downloads/";
@@ -985,25 +1037,25 @@ static bool UpdateVS2017Redists(json_t *root)
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Could not download "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2017 Redistributable", responseCode);
+		       L"Visual C++ 2019 Redistributable", responseCode);
 		return false;
 	}
 
 	/* ------------------------------------------ *
 	 * Get expected hash                          */
 
-	json_t *redistJson = json_object_get(
-		root, is32bit ? "vc2017_redist_x86" : "vc2017_redist_x64");
-	if (!redistJson) {
-		Status(L"Update failed: Could not parse VC2017 redist json");
+	const char *which = is32bit ? "vc2019_redist_x86" : "vc2019_redist_x64";
+	const Json &redistJson = root[which];
+	if (!redistJson.is_string()) {
+		Status(L"Update failed: Could not parse VC2019 redist json");
 		return false;
 	}
 
-	const char *expectedHashUTF8 = json_string_value(redistJson);
+	const string &expectedHashUTF8 = redistJson.string_value();
 	wchar_t expectedHashWide[BLAKE2_HASH_STR_LENGTH];
 	BYTE expectedHash[BLAKE2_HASH_LENGTH];
 
-	if (!UTF8ToWideBuf(expectedHashWide, expectedHashUTF8)) {
+	if (!UTF8ToWideBuf(expectedHashWide, expectedHashUTF8.c_str())) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't convert Json for redist hash");
 		return false;
@@ -1020,7 +1072,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	if (!CalculateFileHash(destPath.c_str(), downloadHash)) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2017 Redistributable");
+		       L"Visual C++ 2019 Redistributable");
 		return false;
 	}
 
@@ -1031,7 +1083,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	if (wcscmp(expectedHashWide, downloadHashWide) != 0) {
 		DeleteFile(destPath.c_str());
 		Status(L"Update failed: Couldn't verify integrity of %s",
-		       L"Visual C++ 2017 Redistributable");
+		       L"Visual C++ 2019 Redistributable");
 		return false;
 	}
 
@@ -1050,7 +1102,7 @@ static bool UpdateVS2017Redists(json_t *root)
 					nullptr, false, CREATE_NO_WINDOW,
 					nullptr, nullptr, &si, &pi);
 	if (success) {
-		Status(L"Installing %s...", L"Visual C++ 2017 Redistributable");
+		Status(L"Installing %s...", L"Visual C++ 2019 Redistributable");
 
 		CloseHandle(pi.hThread);
 		WaitForSingleObject(pi.hProcess, INFINITE);
@@ -1058,7 +1110,7 @@ static bool UpdateVS2017Redists(json_t *root)
 	} else {
 		Status(L"Update failed: Could not execute "
 		       L"%s (error code %d)",
-		       L"Visual C++ 2017 Redistributable", (int)GetLastError());
+		       L"Visual C++ 2019 Redistributable", (int)GetLastError());
 	}
 
 	DeleteFile(destPath.c_str());
@@ -1218,18 +1270,18 @@ static bool Update(wchar_t *cmdLine)
 			return false;
 		}
 
-		json_error_t error;
-		root = json_loads(manifestFile.c_str(), 0, &error);
+		string error;
+		root = Json::parse(manifestFile, error);
 
-		if (!root) {
+		if (!error.empty()) {
 			Status(L"Update failed: Couldn't parse update "
 			       L"manifest: %S",
-			       error.text);
+			       error.c_str());
 			return false;
 		}
 	}
 
-	if (!json_is_object(root.get())) {
+	if (!root.is_object()) {
 		Status(L"Update failed: Invalid update manifest");
 		return false;
 	}
@@ -1237,10 +1289,8 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Parse current manifest update files   */
 
-	json_t *packages = json_object_get(root, "packages");
-	size_t packageCount = json_array_size(packages);
-
-	for (size_t i = 0; i < packageCount; i++) {
+	const Json::array &packages = root["packages"].array_items();
+	for (size_t i = 0; i < packages.size(); i++) {
 		if (!AddPackageUpdateFiles(packages, i, tempPath)) {
 			Status(L"Update failed: Failed to process update packages");
 			return false;
@@ -1260,10 +1310,10 @@ static bool Update(wchar_t *cmdLine)
 	}
 
 	/* ------------------------------------- *
-	 * Check for VS2017 redistributables     */
+	 * Check for VS2019 redistributables     */
 
-	if (!HasVS2017Redist()) {
-		if (!UpdateVS2017Redists(root)) {
+	if (!HasVS2019Redist()) {
+		if (!UpdateVS2019Redists(root)) {
 			return false;
 		}
 	}
@@ -1271,7 +1321,7 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Generate file hash json               */
 
-	Json files(json_array());
+	Json::array files;
 
 	for (update_t &update : updates) {
 		wchar_t whash_string[BLAKE2_HASH_STR_LENGTH];
@@ -1296,10 +1346,10 @@ static bool Update(wchar_t *cmdLine)
 		package_path += "/";
 		package_path += outputPath;
 
-		json_t *obj = json_object();
-		json_object_set(obj, "name", json_string(package_path.c_str()));
-		json_object_set(obj, "hash", json_string(hash_string));
-		json_array_append_new(files, obj);
+		files.emplace_back(Json::object{
+			{"name", package_path},
+			{"hash", hash_string},
+		});
 	}
 
 	/* ------------------------------------- *
@@ -1307,18 +1357,20 @@ static bool Update(wchar_t *cmdLine)
 
 	string newManifest;
 
-	if (json_array_size(files) > 0) {
-		char *post_body = json_dumps(files, JSON_COMPACT);
+	if (files.size() > 0) {
+		string post_body;
+		Json(files).dump(post_body);
 
 		int responseCode;
 
-		int len = (int)strlen(post_body);
+		int len = (int)post_body.size();
 		uLong compressSize = compressBound(len);
 		string compressedJson;
 
 		compressedJson.resize(compressSize);
 		compress2((Bytef *)&compressedJson[0], &compressSize,
-			  (const Bytef *)post_body, len, Z_BEST_COMPRESSION);
+			  (const Bytef *)post_body.c_str(), len,
+			  Z_BEST_COMPRESSION);
 		compressedJson.resize(compressSize);
 
 		bool success = !!HTTPPostData(PATCH_MANIFEST_URL,
@@ -1326,7 +1378,6 @@ static bool Update(wchar_t *cmdLine)
 					      (int)compressedJson.size(),
 					      L"Accept-Encoding: gzip",
 					      &responseCode, newManifest);
-		free(post_body);
 
 		if (!success)
 			return false;
@@ -1344,55 +1395,56 @@ static bool Update(wchar_t *cmdLine)
 	/* ------------------------------------- *
 	 * Parse new manifest                    */
 
-	json_error_t error;
-	root = json_loads(newManifest.c_str(), 0, &error);
-	if (!root) {
+	string error;
+	root = Json::parse(newManifest, error);
+	if (!error.empty()) {
 		Status(L"Update failed: Couldn't parse patch manifest: %S",
-		       error.text);
+		       error.c_str());
 		return false;
 	}
 
-	if (!json_is_array(root.get())) {
+	if (!root.is_array()) {
 		Status(L"Update failed: Invalid patch manifest");
 		return false;
 	}
 
-	packageCount = json_array_size(root);
+	size_t packageCount = root.array_items().size();
 
 	for (size_t i = 0; i < packageCount; i++) {
-		json_t *patch = json_array_get(root, i);
+		const Json &patch = root[i];
 
-		if (!json_is_object(patch)) {
+		if (!patch.is_object()) {
 			Status(L"Update failed: Invalid patch manifest");
 			return false;
 		}
 
-		json_t *name_json = json_object_get(patch, "name");
-		json_t *hash_json = json_object_get(patch, "hash");
-		json_t *source_json = json_object_get(patch, "source");
-		json_t *size_json = json_object_get(patch, "size");
+		const Json &name_json = patch["name"];
+		const Json &hash_json = patch["hash"];
+		const Json &source_json = patch["source"];
+		const Json &size_json = patch["size"];
 
-		if (!json_is_string(name_json))
+		if (!name_json.is_string())
 			continue;
-		if (!json_is_string(hash_json))
+		if (!hash_json.is_string())
 			continue;
-		if (!json_is_string(source_json))
+		if (!source_json.is_string())
 			continue;
-		if (!json_is_integer(size_json))
+		if (!size_json.is_number())
 			continue;
 
-		const char *name = json_string_value(name_json);
-		const char *hash = json_string_value(hash_json);
-		const char *source = json_string_value(source_json);
-		int size = (int)json_integer_value(size_json);
+		const string &name = name_json.string_value();
+		const string &hash = hash_json.string_value();
+		const string &source = source_json.string_value();
+		int size = size_json.int_value();
 
-		UpdateWithPatchIfAvailable(name, hash, source, size);
+		UpdateWithPatchIfAvailable(name.c_str(), hash.c_str(),
+					   source.c_str(), size);
 	}
 
 	/* ------------------------------------- *
 	 * Download Updates                      */
 
-	if (!RunDownloadWorkers(2))
+	if (!RunDownloadWorkers(4))
 		return false;
 
 	if ((size_t)completedUpdates != updates.size()) {

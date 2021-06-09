@@ -8,6 +8,7 @@ int main(int argc, char *argv[])
 	struct d3d8_offsets d3d8 = {0};
 	struct d3d9_offsets d3d9 = {0};
 	struct dxgi_offsets dxgi = {0};
+	struct dxgi_offsets2 dxgi2 = {0};
 
 	WNDCLASSA wc = {0};
 	wc.style = CS_OWNDC;
@@ -24,7 +25,7 @@ int main(int argc, char *argv[])
 
 	get_d3d9_offsets(&d3d9);
 	get_d3d8_offsets(&d3d8);
-	get_dxgi_offsets(&dxgi);
+	get_dxgi_offsets(&dxgi, &dxgi2);
 
 	printf("[d3d8]\n");
 	printf("present=0x%" PRIx32 "\n", d3d8.present);
@@ -38,6 +39,7 @@ int main(int argc, char *argv[])
 	printf("present=0x%" PRIx32 "\n", dxgi.present);
 	printf("present1=0x%" PRIx32 "\n", dxgi.present1);
 	printf("resize=0x%" PRIx32 "\n", dxgi.resize);
+	printf("release=0x%" PRIx32 "\n", dxgi2.release);
 
 	(void)argc;
 	(void)argv;

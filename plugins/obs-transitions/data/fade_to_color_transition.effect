@@ -22,10 +22,21 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
 float4 PSFadeToColor(VertData v_in) : TARGET
 {
-	float4 premultiplied = float4(color.rgb * color.a, color.a);
-	return lerp(tex.Sample(textureSampler, v_in.uv), premultiplied, swp);
+	float4 rgba = lerp(tex.Sample(textureSampler, v_in.uv), color, swp);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
 }
 
 technique FadeToColor

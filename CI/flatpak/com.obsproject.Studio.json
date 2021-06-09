@@ -1,0 +1,274 @@
+{
+  "app-id": "com.obsproject.Studio",
+  "runtime": "org.kde.Platform",
+  "runtime-version": "5.15",
+  "sdk": "org.kde.Sdk",
+  "command": "obs",
+  "finish-args": [
+    "--socket=wayland",
+    "--socket=x11",
+    "--socket=pulseaudio",
+    "--device=all",
+    "--share=network",
+    "--share=ipc",
+    "--filesystem=xdg-run/pipewire-0",
+    "--filesystem=host",
+    "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.Flatpak",
+    "--talk-name=org.freedesktop.ScreenSaver",
+    "--talk-name=org.freedesktop.PowerManagement.Inhibit",
+    "--talk-name=org.freedesktop.Notifications",
+    "--talk-name=org.mate.SessionManager",
+    "--talk-name=org.gnome.SessionManager",
+    "--own-name=org.kde.StatusNotifierItem-2-2",
+    "--system-talk-name=org.freedesktop.Avahi"
+  ],
+  "cleanup": [
+    "/lib/pkgconfig",
+    "/share/man",
+    "*.la"
+  ],
+  "modules": [
+    {
+      "name": "x264",
+      "config-opts": [
+        "--disable-cli",
+        "--enable-shared"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://code.videolan.org/videolan/x264.git",
+          "commit": "b86ae3c66f51ac9eab5ab7ad09a9d62e67961b8a"
+        }
+      ]
+    },
+    {
+      "name": "v4l-utils",
+      "config-opts": [
+        "--disable-static",
+        "--disable-doxygen-doc",
+        "--disable-libdvbv5",
+        "--disable-v4l-utils",
+        "--disable-qv4l2",
+        "--with-udevdir=/app/lib/udev/"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://linuxtv.org/downloads/v4l-utils/v4l-utils-1.20.0.tar.bz2",
+          "sha256": "956118713f7ccb405c55c7088a6a2490c32d54300dd9a30d8d5008c28d3726f7"
+        }
+      ]
+    },
+    {
+      "name": "nv-codec-headers",
+      "no-autogen": true,
+      "make-install-args": [
+        "PREFIX=/app"
+      ],
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
+          "commit": "7a81595786463d1c7efcb03aa85def69fc2cad41",
+          "tag": "n11.0.10.0"
+        }
+      ]
+    },
+    {
+      "name": "srt",
+      "buildsystem": "cmake-ninja",
+      "config-opts": [
+        "-DENABLE_STATIC=OFF",
+        "-DENABLE_APPS=OFF",
+        "-DENABLE_LOGGING=OFF"
+      ],
+      "cleanup": [
+        "/include",
+        "/bin"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/Haivision/srt.git",
+          "tag": "v1.4.2",
+          "commit": "50b7af06f3a0a456c172b4cb3aceafa8a5cc0036"
+        }
+      ]
+    },
+    {
+      "name": "ffmpeg",
+      "config-opts": [
+        "--enable-gpl",
+        "--enable-shared",
+        "--disable-static",
+        "--enable-gnutls",
+        "--disable-doc",
+        "--disable-programs",
+        "--disable-devices",
+        "--enable-libopus",
+        "--enable-libvpx",
+        "--enable-libvorbis",
+        "--enable-libx264",
+        "--enable-nvenc",
+        "--enable-libsrt"
+      ],
+      "cleanup": [
+        "/share/ffmpeg",
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://www.ffmpeg.org/releases/ffmpeg-4.3.2.tar.xz",
+          "sha256": "46e4e64f1dd0233cbc0934b9f1c0da676008cad34725113fb7f802cfa84ccddb"
+        }
+      ]
+    },
+    {
+      "name": "luajit",
+      "no-autogen": true,
+      "cleanup": [
+        "/bin",
+        "/include",
+        "*.a"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://luajit.org/git/luajit-2.0.git",
+          "branch": "v2.1",
+          "disable-shallow-clone": true
+        },
+        {
+          "type": "shell",
+          "commands": [
+            "sed -i 's|/usr/local|/app|' ./Makefile"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "swig",
+      "config-opts": [
+        "--without-boost",
+        "--without-pcre",
+        "--without-alllang",
+        "--with-lua=/app/bin/luajit-2.1.0-beta3",
+        "--with-luaincl=/app/include/luajit-2.1",
+        "--with-python3"
+      ],
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz",
+          "sha256": "d53be9730d8d58a16bf0cbd1f8ac0c0c3e1090573168bfa151b01eb47fa906fc"
+        }
+      ]
+    },
+    {
+      "name": "mbedtls",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DUSE_SHARED_MBEDTLS_LIBRARY=ON",
+        "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF",
+        "-DENABLE_TESTING=OFF",
+        "-DENABLE_PROGRAMS=OFF"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/ARMmbed/mbedtls.git",
+          "commit": "1c54b5410fd48d6bcada97e30cac417c5c7eea67",
+          "tag": "v2.25.0"
+        }
+      ]
+    },
+    {
+      "name": "jack2",
+      "buildsystem": "simple",
+      "build-commands": [
+        "./waf configure --prefix=$FLATPAK_DEST",
+        "./waf build -j $FLATPAK_BUILDER_N_JOBS",
+        "./waf install"
+      ],
+      "cleanup": [
+        "*"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://github.com/jackaudio/jack2/releases/download/v1.9.14/v1.9.14.tar.gz",
+          "sha256": "a20a32366780c0061fd58fbb5f09e514ea9b7ce6e53b080a44b11a558a83217c"
+        }
+      ]
+    },
+    {
+      "name": "cef",
+      "buildsystem": "cmake-ninja",
+      "no-make-install": true,
+      "make-args": [
+        "libcef_dll_wrapper"
+      ],
+      "build-commands": [
+        "mkdir -p /app/cef/libcef_dll_wrapper",
+        "cp -R ./include /app/cef",
+        "cp -R ./Release /app/cef",
+        "cp -R ./Resources /app/cef",
+        "cp -R ./libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+      ],
+      "cleanup": [
+        "*.a",
+        "./*"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_4280_linux64.tar.bz2",
+          "sha256": "d91c78349ecbfbfdfc18d5f882dc28b939028f1a631191c603b5d0d938ada972"
+        }
+      ]
+    },
+    {
+      "name": "obs",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DENABLE_WAYLAND=ON",
+        "-DBUILD_BROWSER=ON",
+        "-DCEF_ROOT_DIR=/app/cef",
+        "-DUNIX_STRUCTURE=ON",
+        "-DUSE_XDG=ON",
+        "-DDISABLE_ALSA=ON",
+        "-DENABLE_PULSEAUDIO=ON",
+        "-DWITH_RTMPS=ON"
+      ],
+      "sources": [
+        {
+          "type": "dir",
+          "path": "../../"
+        }
+      ]
+    }
+  ]
+}

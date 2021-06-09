@@ -61,6 +61,45 @@ int_fast32_t v4l2_stop_capture(int_fast32_t dev)
 	return 0;
 }
 
+int_fast32_t v4l2_reset_capture(int_fast32_t dev, struct v4l2_buffer_data *buf)
+{
+	blog(LOG_DEBUG, "attempting to reset capture");
+	if (v4l2_stop_capture(dev) < 0)
+		return -1;
+	if (v4l2_start_capture(dev, buf) < 0)
+		return -1;
+
+	return 0;
+}
+
+#ifdef _DEBUG
+int_fast32_t v4l2_query_all_buffers(int_fast32_t dev,
+				    struct v4l2_buffer_data *buf_data)
+{
+	struct v4l2_buffer buf;
+
+	blog(LOG_DEBUG, "attempting to read buffer data for %ld buffers",
+	     buf_data->count);
+
+	for (uint_fast32_t i = 0; i < buf_data->count; i++) {
+		buf.index = i;
+		buf.type = V4L2_BUF_TYPE_VIDEO_CAPTURE;
+		buf.memory = V4L2_MEMORY_MMAP;
+		if (v4l2_ioctl(dev, VIDIOC_QUERYBUF, &buf) < 0) {
+			blog(LOG_DEBUG,
+			     "failed to read buffer data for buffer #%ld", i);
+		} else {
+			blog(LOG_DEBUG,
+			     "query buf #%ld info: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
+			     i, buf.timestamp.tv_usec, buf.index, buf.flags,
+			     buf.sequence, buf.length, buf.bytesused);
+		}
+	}
+
+	return 0;
+}
+#endif
+
 int_fast32_t v4l2_create_mmap(int_fast32_t dev, struct v4l2_buffer_data *buf)
 {
 	struct v4l2_requestbuffers req;

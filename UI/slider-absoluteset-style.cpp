@@ -15,6 +15,6 @@ int SliderAbsoluteSetStyle::styleHint(QStyle::StyleHint hint,
 				      QStyleHintReturn *returnData = 0) const
 {
 	if (hint == QStyle::SH_Slider_AbsoluteSetButtons)
-		return (Qt::LeftButton | Qt::MidButton);
+		return (Qt::LeftButton | Qt::MiddleButton);
 	return QProxyStyle::styleHint(hint, option, widget, returnData);
 }

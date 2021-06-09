@@ -154,6 +154,14 @@ These functions are roughly equivalent to dlopen/dlsym/dlclose.
 
 ---------------------
 
+.. function:: bool os_is_obs_plugin(const char *path)
+
+   Returns true if the path is a dynamic library that looks like an OBS plugin.
+
+   Currently only needed on Windows for performance reasons.
+
+---------------------
+
 
 CPU Usage Functions
 -------------------

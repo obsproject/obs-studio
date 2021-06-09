@@ -452,8 +452,13 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "cube_width_i");
 	gs_effect_set_float(param, 1.0f / filter->cube_width);
 
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
 					   0, tech_name);
+
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -461,7 +466,7 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 struct obs_source_info color_grade_filter = {
 	.id = "clut_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = color_grade_filter_get_name,
 	.create = color_grade_filter_create,
 	.destroy = color_grade_filter_destroy,

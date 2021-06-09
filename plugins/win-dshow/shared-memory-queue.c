@@ -90,6 +90,10 @@ video_queue_t *video_queue_create(uint32_t cx, uint32_t cy, uint64_t interval)
 
 	vq.header = (struct queue_header *)MapViewOfFile(
 		vq.handle, FILE_MAP_ALL_ACCESS, 0, 0, 0);
+	if (!vq.header) {
+		CloseHandle(vq.handle);
+		return NULL;
+	}
 	memcpy(vq.header, &header, sizeof(header));
 
 	for (size_t i = 0; i < 3; i++) {
@@ -98,6 +102,10 @@ video_queue_t *video_queue_create(uint32_t cx, uint32_t cy, uint64_t interval)
 		vq.frame[i] = ((uint8_t *)vq.header) + off + FRAME_HEADER_SIZE;
 	}
 	pvq = malloc(sizeof(vq));
+	if (!pvq) {
+		CloseHandle(vq.handle);
+		return NULL;
+	}
 	memcpy(pvq, &vq, sizeof(vq));
 	return pvq;
 }
@@ -113,8 +121,16 @@ video_queue_t *video_queue_open()
 
 	vq.header = (struct queue_header *)MapViewOfFile(
 		vq.handle, FILE_MAP_READ, 0, 0, 0);
+	if (!vq.header) {
+		CloseHandle(vq.handle);
+		return NULL;
+	}
 
 	struct video_queue *pvq = malloc(sizeof(vq));
+	if (!pvq) {
+		CloseHandle(vq.handle);
+		return NULL;
+	}
 	memcpy(pvq, &vq, sizeof(vq));
 	return pvq;
 }

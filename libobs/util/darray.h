@@ -88,10 +88,12 @@ static inline void darray_reserve(const size_t element_size, struct darray *dst,
 		return;
 
 	ptr = bmalloc(element_size * capacity);
-	if (dst->num)
-		memcpy(ptr, dst->array, element_size * dst->num);
-	if (dst->array)
+	if (dst->array) {
+		if (dst->num)
+			memcpy(ptr, dst->array, element_size * dst->num);
+
 		bfree(dst->array);
+	}
 	dst->array = ptr;
 	dst->capacity = capacity;
 }
@@ -109,10 +111,12 @@ static inline void darray_ensure_capacity(const size_t element_size,
 	if (new_size > new_cap)
 		new_cap = new_size;
 	ptr = bmalloc(element_size * new_cap);
-	if (dst->capacity)
-		memcpy(ptr, dst->array, element_size * dst->capacity);
-	if (dst->array)
+	if (dst->array) {
+		if (dst->capacity)
+			memcpy(ptr, dst->array, element_size * dst->capacity);
+
 		bfree(dst->array);
+	}
 	dst->array = ptr;
 	dst->capacity = new_cap;
 }
@@ -405,6 +409,11 @@ static inline void darray_move_item(const size_t element_size,
 		return;
 
 	temp = malloc(element_size);
+	if (!temp) {
+		bcrash("darray_move_item: out of memory");
+		return;
+	}
+
 	p_from = darray_item(element_size, dst, from);
 	p_to = darray_item(element_size, dst, to);
 
@@ -433,6 +442,9 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 		return;
 
 	temp = malloc(element_size);
+	if (!temp)
+		bcrash("darray_swap: out of memory");
+
 	a_ptr = darray_item(element_size, dst, a);
 	b_ptr = darray_item(element_size, dst, b);
 

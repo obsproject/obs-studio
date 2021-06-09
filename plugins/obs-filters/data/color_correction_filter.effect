@@ -18,7 +18,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 uniform float4x4 ViewProj;
 uniform texture2d image;
 
-uniform float3 gamma;
+uniform float gamma;
 
 /* Pre-Compute variables. */
 uniform float4x4 color_matrix;
@@ -47,9 +47,10 @@ float4 PSColorFilterRGBA(VertData vert_in) : TARGET
 {
 	/* Grab the current pixel to perform operations on. */
 	float4 currentPixel = image.Sample(textureSampler, vert_in.uv);
+	currentPixel.rgb = max(float3(0.0, 0.0, 0.0), currentPixel.rgb / currentPixel.a);
 
 	/* Always address the gamma first. */
-	currentPixel.rgb = pow(currentPixel.rgb, gamma);
+	currentPixel.rgb = pow(currentPixel.rgb, float3(gamma, gamma, gamma));
 
 	/* Much easier to manipulate pixels for these types of operations
 	 * when in a matrix such as the below. See
@@ -57,6 +58,8 @@ float4 PSColorFilterRGBA(VertData vert_in) : TARGET
 	 * https://docs.rainmeter.net/tips/colormatrix-guide/for more info.
 	 */
 	currentPixel = mul(color_matrix, currentPixel);
+
+	currentPixel.rgb *= currentPixel.a;
 
 	return currentPixel;
 }

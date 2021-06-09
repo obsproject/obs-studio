@@ -12,7 +12,7 @@
 
 #include <util/windows/WinHandle.hpp>
 #include <util/util.hpp>
-#include <jansson.h>
+#include <json11.hpp>
 #include <blake2.h>
 
 #include <time.h>
@@ -25,6 +25,7 @@
 #endif
 
 using namespace std;
+using namespace json11;
 
 struct QCef;
 extern QCef *cef;
@@ -402,31 +403,31 @@ static bool ParseUpdateManifest(const char *manifest, bool *updatesAvailable,
 				string &notes_str, int &updateVer)
 try {
 
-	json_error_t error;
-	Json root(json_loads(manifest, 0, &error));
-	if (!root)
-		throw strprintf("Failed reading json string (%d): %s",
-				error.line, error.text);
+	string error;
+	Json root = Json::parse(manifest, error);
+	if (!error.empty())
+		throw strprintf("Failed reading json string: %s",
+				error.c_str());
 
-	if (!json_is_object(root.get()))
+	if (!root.is_object())
 		throw string("Root of manifest is not an object");
 
-	int major = root.GetInt("version_major");
-	int minor = root.GetInt("version_minor");
-	int patch = root.GetInt("version_patch");
+	int major = root["version_major"].int_value();
+	int minor = root["version_minor"].int_value();
+	int patch = root["version_patch"].int_value();
 
 	if (major == 0)
 		throw strprintf("Invalid version number: %d.%d.%d", major,
 				minor, patch);
 
-	json_t *notes = json_object_get(root, "notes");
-	if (!json_is_string(notes))
+	const Json &notes = root["notes"];
+	if (!notes.is_string())
 		throw string("'notes' value invalid");
 
-	notes_str = json_string_value(notes);
+	notes_str = notes.string_value();
 
-	json_t *packages = json_object_get(root, "packages");
-	if (!json_is_array(packages))
+	const Json &packages = root["packages"];
+	if (!packages.is_array())
 		throw string("'packages' value invalid");
 
 	int cur_ver = LIBOBS_API_VER;

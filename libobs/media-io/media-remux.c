@@ -224,6 +224,12 @@ static inline int process_packets(media_remux_job_t job,
 		if (ret < 0) {
 			blog(LOG_ERROR, "media_remux: Error muxing packet: %s",
 			     av_err2str(ret));
+
+			/* Treat "Invalid data found when processing input" and
+			 * "Invalid argument" as non-fatal */
+			if (ret == AVERROR_INVALIDDATA || ret == -EINVAL)
+				continue;
+
 			break;
 		}
 	}

@@ -785,7 +785,7 @@ const char *obs_data_get_json(obs_data_t *data)
 	data->json = NULL;
 
 	json_t *root = obs_data_to_json(data);
-	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_INDENT(4));
+	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_COMPACT);
 	json_decref(root);
 
 	return data->json;
@@ -803,6 +803,11 @@ const char *obs_data_get_full_json(obs_data_t *data) {
 	json_decref(root);
 
 	return data->json;
+}
+
+const char *obs_data_get_last_json(obs_data_t *data)
+{
+	return data ? data->json : NULL;
 }
 
 bool obs_data_save_json(obs_data_t *data, const char *file)
@@ -830,6 +835,98 @@ bool obs_data_save_json_safe(obs_data_t *data, const char *file,
 	return false;
 }
 
+static void get_defaults_array_cb(obs_data_t *data, void *vp)
+{
+	obs_data_array_t *defs = (obs_data_array_t *)vp;
+	obs_data_t *obs_defaults = obs_data_get_defaults(data);
+
+	obs_data_array_push_back(defs, obs_defaults);
+
+	obs_data_release(obs_defaults);
+}
+
+obs_data_t *obs_data_get_defaults(obs_data_t *data)
+{
+	obs_data_t *defaults = obs_data_create();
+
+	if (!data)
+		return defaults;
+
+	struct obs_data_item *item = data->first_item;
+
+	while (item) {
+		const char *name = get_item_name(item);
+		switch (item->type) {
+		case OBS_DATA_NULL:
+			break;
+
+		case OBS_DATA_STRING: {
+			const char *str =
+				obs_data_get_default_string(data, name);
+			obs_data_set_string(defaults, name, str);
+			break;
+		}
+
+		case OBS_DATA_NUMBER: {
+			switch (obs_data_item_numtype(item)) {
+			case OBS_DATA_NUM_DOUBLE: {
+				double val =
+					obs_data_get_default_double(data, name);
+				obs_data_set_double(defaults, name, val);
+				break;
+			}
+
+			case OBS_DATA_NUM_INT: {
+				long long val =
+					obs_data_get_default_int(data, name);
+				obs_data_set_int(defaults, name, val);
+				break;
+			}
+
+			case OBS_DATA_NUM_INVALID:
+				break;
+			}
+			break;
+		}
+
+		case OBS_DATA_BOOLEAN: {
+			bool val = obs_data_get_default_bool(data, name);
+			obs_data_set_bool(defaults, name, val);
+			break;
+		}
+
+		case OBS_DATA_OBJECT: {
+			obs_data_t *val = obs_data_get_default_obj(data, name);
+			obs_data_t *defs = obs_data_get_defaults(val);
+
+			obs_data_set_obj(defaults, name, defs);
+
+			obs_data_release(defs);
+			obs_data_release(val);
+			break;
+		}
+
+		case OBS_DATA_ARRAY: {
+			obs_data_array_t *arr =
+				obs_data_get_default_array(data, name);
+			obs_data_array_t *defs = obs_data_array_create();
+
+			obs_data_array_enum(arr, get_defaults_array_cb,
+					    (void *)defs);
+			obs_data_set_array(defaults, name, defs);
+
+			obs_data_array_release(defs);
+			obs_data_array_release(arr);
+			break;
+		}
+		}
+
+		item = item->next;
+	}
+
+	return defaults;
+}
+
 static struct obs_data_item *get_item(struct obs_data *data, const char *name)
 {
 	if (!data)
@@ -854,7 +951,7 @@ static void set_item_data(struct obs_data *data, struct obs_data_item **item,
 {
 	obs_data_item_t *new_item = NULL;
 
-	if ((!item || (item && !*item)) && data) {
+	if ((!item || !*item) && data) {
 		new_item = obs_data_item_create(name, ptr, size, type,
 						default_data, autoselect_data);
 
@@ -923,7 +1020,7 @@ static inline void set_item_def(struct obs_data *data, obs_data_item_t **item,
 		item = &actual_item;
 	}
 
-	if (item && *item && (*item)->type != type)
+	if (*item && (*item)->type != type)
 		return;
 
 	set_item_data(data, item, name, ptr, size, type, true, false);
@@ -1197,6 +1294,12 @@ void obs_data_set_default_obj(obs_data_t *data, const char *name,
 	obs_set_obj(data, NULL, name, obj, set_item_def);
 }
 
+void obs_data_set_default_array(obs_data_t *data, const char *name,
+				obs_data_array_t *arr)
+{
+	obs_set_array(data, NULL, name, arr, set_item_def);
+}
+
 void obs_data_set_autoselect_string(obs_data_t *data, const char *name,
 				    const char *val)
 {
@@ -1414,6 +1517,16 @@ void obs_data_array_erase(obs_data_array_t *array, size_t idx)
 	}
 }
 
+void obs_data_array_enum(obs_data_array_t *array,
+			 void (*cb)(obs_data_t *data, void *param), void *param)
+{
+	if (array && cb) {
+		for (size_t i = 0; i < array->objects.num; i++) {
+			cb(array->objects.array[i], param);
+		}
+	}
+}
+
 /* ------------------------------------------------------------------------- */
 /* Item status inspection */
 
@@ -1580,6 +1693,9 @@ enum obs_data_number_type obs_data_item_numtype(obs_data_item_t *item)
 		return OBS_DATA_NUM_INVALID;
 
 	num = get_item_data(item);
+	if (!num)
+		return OBS_DATA_NUM_INVALID;
+
 	return num->type;
 }
 
@@ -1825,12 +1941,12 @@ bool obs_data_item_get_default_bool(obs_data_item_t *item)
 
 obs_data_t *obs_data_item_get_default_obj(obs_data_item_t *item)
 {
-	return data_item_get_obj(item, get_item_obj);
+	return data_item_get_obj(item, get_item_default_obj);
 }
 
 obs_data_array_t *obs_data_item_get_default_array(obs_data_item_t *item)
 {
-	return data_item_get_array(item, get_item_array);
+	return data_item_get_array(item, get_item_default_array);
 }
 
 const char *obs_data_item_get_autoselect_string(obs_data_item_t *item)

@@ -67,6 +67,19 @@ General Functions
 
 .. function:: const char *obs_data_get_json(obs_data_t *data)
 
+   Generates a new json string. The string allocation is stored within
+   the data object itself, and does not need to be manually freed.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_last_json(obs_data_t *data)
+
+   Returns the last json string generated for this data object. Does not
+   generate a new string. Use :c:func:`obs_data_get_json()` to generate
+   a json string first.
+
    :return: Json string for this object
 
 ---------------------
@@ -182,6 +195,12 @@ Default Value Functions
 Default values are used to determine what value will be given if a value
 is not set.
 
+.. function:: obs_data_t *obs_data_get_defaults(obs_data_t *data);
+
+   :return: obs_data_t * with all default values (recursively for all objects as well).
+
+-----------------------
+
 .. function:: void obs_data_set_default_string(obs_data_t *data, const char *name, const char *val)
               const char *obs_data_get_default_string(obs_data_t *data, const char *name)
 
@@ -207,7 +226,10 @@ is not set.
 
    :return: An incremented reference to a data object.
 
----------------------
+----------------------
+
+.. function:: void obs_data_set_default_array(obs_data_t *data, const char *name, obs_data_array_t *arr)
+              obs_data_array_t *obs_data_get_default_array(obs_data_t *data, const char *name)
 
 
 Autoselect Functions

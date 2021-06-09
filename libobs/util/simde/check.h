@@ -18,6 +18,7 @@
 #endif
 
 #include "hedley.h"
+#include "simde-diagnostic.h"
 #include <stdint.h>
 
 #if !defined(_WIN32)

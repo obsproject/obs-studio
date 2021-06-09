@@ -5,6 +5,8 @@ if(DISABLE_DECKLINK)
 	return()
 endif()
 
+include_directories(${CMAKE_SOURCE_DIR}/deps/libcaption)
+
 set(linux-decklink-sdk_HEADERS
 	decklink-sdk/DeckLinkAPI.h
 	decklink-sdk/DeckLinkAPIConfiguration.h
@@ -34,6 +36,7 @@ set(linux-decklink_HEADERS
 	../audio-repack.h
 	../audio-repack.hpp
 	../util.hpp
+	../OBSVideoFrame.h
 	)
 
 set(linux-decklink_SOURCES
@@ -51,6 +54,7 @@ set(linux-decklink_SOURCES
 	../audio-repack.c
 	platform.cpp
 	../util.cpp
+	../OBSVideoFrame.cpp
 	)
 
 add_library(linux-decklink MODULE
@@ -62,7 +66,7 @@ add_library(linux-decklink MODULE
 
 target_link_libraries(linux-decklink
 	libobs
-	)
-set_target_properties(linux-decklink PROPERTIES FOLDER "plugins")
+	caption)
+set_target_properties(linux-decklink PROPERTIES FOLDER "plugins/decklink")
 
 install_obs_plugin_with_data(linux-decklink ../data)

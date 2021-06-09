@@ -2,8 +2,9 @@
 #include <stdio.h>
 #include "app-helpers.h"
 #include "nt-stuff.h"
+#include "util/base.h"
 
-WINADVAPI WINAPI ConvertSidToStringSidW(PSID sid, LPWSTR *str);
+WINADVAPI BOOL WINAPI ConvertSidToStringSidW(PSID sid, LPWSTR *str);
 
 bool is_app(HANDLE process)
 {
@@ -16,8 +17,10 @@ bool is_app(HANDLE process)
 						   &ret, sizeof(ret),
 						   &size_ret);
 		if (!success) {
-			DWORD error = GetLastError();
-			int test = 0;
+			const DWORD error = GetLastError();
+			blog(LOG_ERROR,
+			     "is_app GetTokenInformation failed: 0x%08lX",
+			     error);
 		}
 
 		CloseHandle(token);

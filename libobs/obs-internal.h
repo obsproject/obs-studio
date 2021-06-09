@@ -36,6 +36,8 @@
 
 #include "obs.h"
 
+//#include <caption/caption.h>
+
 #define NUM_TEXTURES 2
 #define NUM_CHANNELS 3
 #define MICROSECOND_DEN 1000000
@@ -562,12 +564,12 @@ static inline bool obs_weak_ref_release(struct obs_weak_ref *ref)
 
 static inline bool obs_weak_ref_get_ref(struct obs_weak_ref *ref)
 {
-	long owners = ref->refs;
+	long owners = os_atomic_load_long(&ref->refs);
 	while (owners > -1) {
-		if (os_atomic_compare_swap_long(&ref->refs, owners, owners + 1))
+		if (os_atomic_compare_exchange_long(&ref->refs, &owners,
+						    owners + 1)) {
 			return true;
-
-		owners = ref->refs;
+		}
 	}
 
 	return false;
@@ -608,6 +610,11 @@ struct audio_cb_info {
 	void *param;
 };
 
+struct caption_cb_info {
+	obs_source_caption_t callback;
+	void *param;
+};
+
 struct obs_source {
 	struct obs_context_data context;
 	struct obs_source_info info;
@@ -634,6 +641,9 @@ struct obs_source {
 	 * references to it should be released (not exactly how I would prefer
 	 * to handle things but it's the best option) */
 	bool removed;
+
+	/*  used to indicate if the source should show up when queried for user ui */
+	bool temp_removed;
 
 	bool active;
 	bool showing;
@@ -710,6 +720,9 @@ struct obs_source {
 	uint32_t async_cache_height;
 	uint32_t async_convert_width[MAX_AV_PLANES];
 	uint32_t async_convert_height[MAX_AV_PLANES];
+
+	pthread_mutex_t caption_cb_mutex;
+	DARRAY(struct caption_cb_info) caption_cb_list;
 
 	/* async video deinterlacing */
 	uint64_t deinterlace_offset;
@@ -997,6 +1010,8 @@ struct obs_output {
 	double caption_timestamp;
 	struct caption_text *caption_head;
 	struct caption_text *caption_tail;
+
+	struct circlebuf caption_data;
 
 	bool valid;
 

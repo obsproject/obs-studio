@@ -346,10 +346,9 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 	bool randr = randr_is_active(xcb);
 	bool xinerama = xinerama_is_active(xcb);
 	int_fast32_t count =
-		(randr) ? randr_screen_count(xcb)
-			: (xinerama)
-				  ? xinerama_screen_count(xcb)
-				  : xcb_setup_roots_length(xcb_get_setup(xcb));
+		randr ? randr_screen_count(xcb)
+		      : (xinerama ? xinerama_screen_count(xcb)
+				  : xcb_setup_roots_length(xcb_get_setup(xcb)));
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		char *name;
@@ -523,12 +522,22 @@ static void xshm_video_render(void *vptr, gs_effect_t *effect)
 	if (!data->texture)
 		return;
 
+	const bool linear_srgb = gs_get_linear_srgb();
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, data->texture);
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, data->texture);
+	else
+		gs_effect_set_texture(image, data->texture);
 
 	while (gs_effect_loop(effect, "Draw")) {
 		gs_draw_sprite(data->texture, 0, 0, 0);
 	}
+
+	gs_enable_framebuffer_srgb(previous);
 
 	if (data->show_cursor) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
@@ -561,7 +570,7 @@ struct obs_source_info xshm_input = {
 	.id = "xshm_input",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = xshm_getname,
 	.create = xshm_create,
 	.destroy = xshm_destroy,

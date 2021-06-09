@@ -25,6 +25,7 @@ struct ts_info {
 };
 
 #define DEBUG_AUDIO 0
+#define DEBUG_LAGGED_AUDIO 0
 #define MAX_BUFFERING_TICKS 45
 
 // Cached state of multiple rendering so each run of in audio-io thread work with same state
@@ -53,7 +54,7 @@ static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 
 static inline size_t convert_time_to_frames(size_t sample_rate, uint64_t t)
 {
-	return util_mul_div64(t, sample_rate, 1000000000ULL);
+	return (size_t)util_mul_div64(t, sample_rate, 1000000000ULL);
 }
 
 static inline void mix_audio(struct audio_output_data *main_mixes,
@@ -120,8 +121,8 @@ static inline void mix_audio(struct audio_output_data *main_mixes,
 	}
 }
 
-static void ignore_audio(obs_source_t *source, size_t channels,
-			 size_t sample_rate)
+static bool ignore_audio(obs_source_t *source, size_t channels,
+			 size_t sample_rate, uint64_t start_ts)
 {
 	enum obs_audio_rendering_mode start =
 		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
@@ -132,22 +133,73 @@ static void ignore_audio(obs_source_t *source, size_t channels,
 					     : OBS_MAIN_AUDIO_RENDERING;
 
 	for (enum obs_audio_rendering_mode mode = start; mode <= end; mode++) {
-		size_t num_floats =
-			source->audio_input_buf[mode][0].size / sizeof(float);
+
+		size_t num_floats = source->audio_input_buf[mode][0].size / sizeof(float);
+		const char *name = obs_source_get_name(source);
+
+		if (!source->audio_ts && num_floats) {
+#if DEBUG_LAGGED_AUDIO == 1
+			blog(LOG_DEBUG, "[src: %s] no timestamp, but audio available?",
+			name);
+#endif
+			for (size_t ch = 0; ch < channels; ch++)
+				circlebuf_pop_front(&source->audio_input_buf[mode][ch], NULL,
+						source->audio_input_buf[mode][ch].size);
+			source->last_audio_input_buf_size[mode] = 0;
+			return false;
+		}
 
 		if (num_floats) {
+			/* round up the number of samples to drop */
+			size_t drop = util_mul_div64(start_ts - source->audio_ts - 1,
+						sample_rate, 1000000000ULL) + 1;
+			if (drop > num_floats)
+				drop = num_floats;
+
+#if DEBUG_LAGGED_AUDIO == 1
+			blog(LOG_DEBUG,
+			"[src: %s] ignored %" PRIu64 "/%" PRIu64 " samples", name,
+			(uint64_t)drop, (uint64_t)num_floats);
+#endif
 			for (size_t ch = 0; ch < channels; ch++)
-				circlebuf_pop_front(
-					&source->audio_input_buf[mode][ch], NULL,
-					source->audio_input_buf[mode][ch].size);
+				circlebuf_pop_front(&source->audio_input_buf[mode][ch], NULL,
+						drop * sizeof(float));
 
 			source->last_audio_input_buf_size[mode] = 0;
-
 			if ((!get_cached_multiple_rendering() && mode == OBS_MAIN_AUDIO_RENDERING) ||
 			    (get_cached_multiple_rendering() && mode == OBS_STREAMING_AUDIO_RENDERING))
-				source->audio_ts += util_mul_div64(num_floats, 1000000000ULL, sample_rate);
+				source->audio_ts += util_mul_div64(drop, 1000000000ULL, sample_rate);
+			blog(LOG_DEBUG, "[src: %s] ts lag after ignoring: %" PRIu64,
+			name, start_ts - source->audio_ts);
+
+			/* rounding error, adjust */
+			if (source->audio_ts == (start_ts - 1))
+				source->audio_ts = start_ts;
+
+			/* source is back in sync */
+			if (source->audio_ts >= start_ts)
+				return true;
+		} else {
+#if DEBUG_LAGGED_AUDIO == 1
+			blog(LOG_DEBUG, "[src: %s] no samples to ignore! ts = %" PRIu64,
+			name, source->audio_ts);
+#endif
+		}
+
+		if (!source->audio_pending || num_floats) {
+			blog(LOG_WARNING,
+			"Source %s audio is lagging (over by %.02f ms) "
+			"at max audio buffering. Restarting source audio.",
+			name, (start_ts - source->audio_ts) / 1000000.);
 		}
 	}
+
+	source->audio_pending = true;
+	source->audio_ts = 0;
+	/* tell the timestamp adjustment code in source_output_audio_data to
+	 * reset everything, and hopefully fix the timestamps */
+	source->timing_set = false;
+	return false;
 }
 
 static bool discard_if_stopped(obs_source_t *source, size_t channels)
@@ -180,7 +232,7 @@ static bool discard_if_stopped(obs_source_t *source, size_t channels)
 			blog(LOG_DEBUG, "doing pending stop trick: '%s'",
 			     source->context.name);
 #endif
-			return true;
+			return false;
 		}
 
 		for (enum obs_audio_rendering_mode mode = start; mode <= end;
@@ -221,6 +273,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 	enum obs_audio_rendering_mode mode =
 		get_cached_multiple_rendering() ? OBS_STREAMING_AUDIO_RENDERING
 					     : OBS_MAIN_AUDIO_RENDERING;
+	/* debug assert only */
+	UNUSED_PARAMETER(audio);
 
 #if DEBUG_AUDIO == 1
 	bool is_audio_source = source->info.output_flags & OBS_SOURCE_AUDIO;
@@ -257,9 +311,13 @@ static inline void discard_audio(struct obs_core_audio *audio,
 			     "start timestamp (%" PRIu64 ")",
 			     source->audio_ts, ts->start);
 		}
+
+		/* ignore_audio should have already run and marked this source
+		 * pending, unless we *just* added buffering */
+		assert(audio->total_buffering_ticks < MAX_BUFFERING_TICKS ||
+		       source->audio_pending || !source->audio_ts ||
+		       audio->buffering_wait_ticks);
 #endif
-		if (audio->total_buffering_ticks == MAX_BUFFERING_TICKS)
-			ignore_audio(source, channels, sample_rate);
 		return;
 	}
 
@@ -538,6 +596,38 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		obs_source_t *source = audio->render_order.array[i];
 		obs_source_audio_render(source, mixers, channels, sample_rate,
 					audio_size);
+
+		/* if a source has gone backward in time and we can no
+		 * longer buffer, drop some or all of its audio */
+		if (audio->total_buffering_ticks == MAX_BUFFERING_TICKS &&
+		    source->audio_ts < ts.start) {
+			if (source->info.audio_render) {
+				blog(LOG_DEBUG,
+				     "render audio source %s timestamp has "
+				     "gone backwards",
+				     obs_source_get_name(source));
+
+				/* just avoid further damage */
+				source->audio_pending = true;
+#if DEBUG_AUDIO == 1
+				/* this should really be fixed */
+				assert(false);
+#endif
+			} else {
+				pthread_mutex_lock(&source->audio_buf_mutex);
+				bool rerender = ignore_audio(source, channels,
+							     sample_rate,
+							     ts.start);
+				pthread_mutex_unlock(&source->audio_buf_mutex);
+
+				/* if we (potentially) recovered, re-render */
+				if (rerender)
+					obs_source_audio_render(source, mixers,
+								channels,
+								sample_rate,
+								audio_size);
+			}
+		}
 	}
 
 	/* ------------------------------------------------ */

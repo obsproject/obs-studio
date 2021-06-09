@@ -82,6 +82,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
+	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
+	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);
 	GRAPHICS_IMPORT(device_copy_texture_region);
 	GRAPHICS_IMPORT(device_copy_texture);
 	GRAPHICS_IMPORT(device_stage_texture);
@@ -193,6 +195,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
+	GRAPHICS_IMPORT(device_shared_texture_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_from_iosurface);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_rebind_iosurface);
 	GRAPHICS_IMPORT_OPTIONAL(create_iosurface);
@@ -202,21 +206,26 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_gdi_texture_available);
 	GRAPHICS_IMPORT(device_shared_texture_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_get_duplicator_monitor_info);
+	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_get_monitor_index);
 	GRAPHICS_IMPORT_OPTIONAL(device_duplicator_create);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_destroy);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_update_frame);
 	GRAPHICS_IMPORT_OPTIONAL(gs_duplicator_get_texture);
+	GRAPHICS_IMPORT_OPTIONAL(gs_get_adapter_count);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_gdi);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_get_shared_handle);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_wrap_obj);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_release_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
 	GRAPHICS_IMPORT_OPTIONAL(device_register_loss_callbacks);
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
+#elif __linux__
+	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
 #endif
 
 	/* SLOBS custom functions */

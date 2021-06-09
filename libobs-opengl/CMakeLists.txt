@@ -16,10 +16,6 @@ elseif(APPLE)
 	set(libobs-opengl_PLATFORM_SOURCES
 		gl-cocoa.m)
 
-	set_source_files_properties(${libobs-opengl_PLATFORM_SOURCES}
-		PROPERTIES
-			LANGUAGE C)
-
 	find_library(COCOA Cocoa)
 	include_directories(${COCOA})
 	mark_as_advanced(COCOA)
@@ -32,7 +28,7 @@ elseif(APPLE)
 		${COCOA}
 		${IOSURF}
 		${OPENGL_gl_LIBRARY})
-else() #This needs to change to be more specific to get ready for Wayland
+else()
 	find_package(XCB COMPONENTS XCB REQUIRED)
 	find_package(X11_XCB REQUIRED)
 
@@ -49,7 +45,33 @@ else() #This needs to change to be more specific to get ready for Wayland
 		${X11_XCB_LIBRARIES})
 
 	set(libobs-opengl_PLATFORM_SOURCES
-		gl-x11.c)
+		gl-egl-common.c
+		gl-nix.c
+		gl-x11-egl.c
+		gl-x11-glx.c)
+
+	if(ENABLE_WAYLAND)
+		find_package(EGL REQUIRED)
+		find_package(Wayland REQUIRED)
+
+		include_directories(
+			${WAYLAND_CLIENT_INCLUDE_DIRS}
+			${WAYLAND_EGL_INCLUDE_DIRS}
+			${EGL_INCLUDE_DIRS})
+
+		add_definitions(
+			${WAYLAND_DEFINITIONS})
+
+		set(libobs-opengl_PLATFORM_DEPS
+			${libobs-opengl_PLATFORM_DEPS}
+			${WAYLAND_CLIENT_LIBRARIES}
+			${WAYLAND_EGL_LIBRARIES}
+			${EGL_LIBRARIES})
+
+		set(libobs-opengl_PLATFORM_SOURCES
+			${libobs-opengl_PLATFORM_SOURCES}
+			gl-wayland-egl.c)
+	endif()
 endif()
 
 set(libobs-opengl_SOURCES

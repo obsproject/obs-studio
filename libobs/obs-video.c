@@ -261,8 +261,9 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video *video,
 		gs_effect_set_vec2(bres_i, &base_i);
 	}
 
-	gs_effect_set_texture(image, texture);
+	gs_effect_set_texture_srgb(image, texture);
 
+	gs_enable_framebuffer_srgb(true);
 	gs_enable_blending(false);
 	passes = gs_technique_begin(tech);
 	for (i = 0; i < passes; i++) {
@@ -272,6 +273,7 @@ static inline gs_texture_t *render_output_texture(struct obs_core_video *video,
 	}
 	gs_technique_end(tech);
 	gs_enable_blending(true);
+	gs_enable_framebuffer_srgb(false);
 
 	profile_end(render_output_texture_name);
 

@@ -1,8 +1,8 @@
-if not exist "dependencies2017.zip" appveyor DownloadFile "%DependenciesUrl%"
+if not exist "dependencies2019.0.zip" appveyor DownloadFile "%DependenciesUrl%"
 if not exist "%CefZip%" appveyor DownloadFile "%CefUrl%" -FileName "%CefZip%"
 if not exist "vlc.zip" appveyor DownloadFile %VLCUrl%
 7z x "%CefZip%"
-7z x dependencies2017.zip -odependencies2017
+7z x dependencies2019.0.zip -odependencies2019
 7z x vlc.zip -ovlc
 
 cmake ^

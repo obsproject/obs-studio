@@ -42,6 +42,9 @@ Graphics Enumerations
    - GS_DXT1        - Compressed DXT1
    - GS_DXT3        - Compressed DXT3
    - GS_DXT5        - Compressed DXT5
+   - GS_RGBA_UNORM  - RGBA, 8 bits per channel, no SRGB aliasing
+   - GS_BGRX_UNORM  - BGRX, 8 bits per channel, no SRGB aliasing
+   - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
 
 .. type:: enum gs_zstencil_format
 
@@ -960,6 +963,34 @@ Texture Functions
    :param data:     Data to set as the image
    :param linesize: Line size (pitch) of the data
    :param invert:   *true* to invert vertically, *false* otherwise
+
+---------------------
+
+.. function:: gs_texture_t *gs_texture_create_from_dmabuf(unsigned int width, unsigned int height, uint32_t drm_format, enum gs_color_format color_format, uint32_t n_planes, const int *fds, const uint32_t *strides, const uint32_t *offsets, const uint64_t *modifiers)
+
+   **Linux only:** Creates a texture from DMA-BUF metadata.
+
+   Exchanging DMA-BUFs is a verbose process because of its multiplanar nature.
+   For example, YUV can have each plane as a color channel, or a monitor buffer
+   can have the cursor stored in a separate plane.
+
+   This function treats the OBS Studio format and the DRM format separately.
+   This allows creating textures from DMA-BUFs with unsupported formats (e.g.
+   YUV) and perform the color format conversion using shaders. However, be
+   careful to always try and match the formats correctly, otherwise textures
+   can fail to be created or rendered.
+
+   :param width:        Width of the texture
+   :param height:       Height of the texture
+   :param drm_format:   DRM format of the DMA-BUF buffer
+   :param color_format: Color format compatible with OBS Studio
+   :param n_planes:     Number of planes of the DMA-BUF
+   :param fds:          Array of size *n_planes* with the file descriptor of each plane
+   :param strides:      Array of size *n_planes* with the stride of each plane
+   :param offsets:      Array of size *n_planes* with the offset of each plane
+   :param modifiers:    Array of size *n_planes* with the modifier of each plane
+   :return:             A texture object on success, or *NULL* on failure
+   :rtype:              gs_texture_t*
 
 ---------------------
 

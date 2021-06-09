@@ -73,8 +73,41 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	SetScene(scene);
 	SetItem(item);
 
+	obs_data_t *wrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), false);
+	undo_data = std::string(obs_data_get_json(wrapper));
+
+	obs_data_release(wrapper);
+
 	channelChangedSignal.Connect(obs_get_signal_handler(), "channel_change",
 				     OBSChannelChanged, this);
+}
+
+OBSBasicTransform::~OBSBasicTransform()
+{
+	obs_data_t *wrapper =
+		obs_scene_save_transform_states(main->GetCurrentScene(), false);
+
+	auto undo_redo = [](const std::string &data) {
+		obs_data_t *dat = obs_data_create_from_json(data.c_str());
+		obs_source_t *source = obs_get_source_by_name(
+			obs_data_get_string(dat, "scene_name"));
+		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
+			->SetCurrentScene(source, true);
+		obs_source_release(source);
+		obs_data_release(dat);
+		obs_scene_load_transform_states(data.c_str());
+	};
+
+	std::string redo_data(obs_data_get_json(wrapper));
+	if (undo_data.compare(redo_data) != 0)
+		main->undo_s.add_action(
+			QTStr("Undo.Transform")
+				.arg(obs_source_get_name(obs_scene_get_source(
+					main->GetCurrentScene()))),
+			undo_redo, undo_redo, undo_data, redo_data);
+
+	obs_data_release(wrapper);
 }
 
 void OBSBasicTransform::SetScene(OBSScene scene)

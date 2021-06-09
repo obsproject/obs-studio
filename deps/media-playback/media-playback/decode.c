@@ -25,7 +25,8 @@
 enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_D3D11VA, AV_HWDEVICE_TYPE_DXVA2,
 	AV_HWDEVICE_TYPE_VAAPI,   AV_HWDEVICE_TYPE_VDPAU,
-	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_NONE,
+	AV_HWDEVICE_TYPE_QSV,     AV_HWDEVICE_TYPE_VIDEOTOOLBOX,
+	AV_HWDEVICE_TYPE_NONE,
 };
 
 static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type,
@@ -250,14 +251,14 @@ void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 static inline int64_t get_estimated_duration(struct mp_decode *d,
 					     int64_t last_pts)
 {
-	if (last_pts)
-		return d->frame_pts - last_pts;
-
 	if (d->audio) {
 		return av_rescale_q(d->in_frame->nb_samples,
 				    (AVRational){1, d->in_frame->sample_rate},
 				    (AVRational){1, 1000000000});
 	} else {
+		if (last_pts)
+			return d->frame_pts - last_pts;
+
 		if (d->last_duration)
 			return d->last_duration;
 

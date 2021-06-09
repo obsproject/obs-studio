@@ -73,8 +73,9 @@ void *os_dlopen(const char *path)
 	dstr_replace(&dll_name, "\\", "/");
 	if (!dstr_find(&dll_name, ".dll"))
 		dstr_cat(&dll_name, ".dll");
-
 	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
+
+	dstr_free(&dll_name);
 
 	/* to make module dependency issues easier to deal with, allow
 	 * dynamically loaded libraries on windows to search for dependent
@@ -87,8 +88,8 @@ void *os_dlopen(const char *path)
 	}
 
 	h_library = LoadLibraryW(wpath);
+
 	bfree(wpath);
-	dstr_free(&dll_name);
 
 	if (wpath_slash)
 		SetDllDirectoryW(NULL);
@@ -132,6 +133,144 @@ void *os_dlsym(void *module, const char *func)
 void os_dlclose(void *module)
 {
 	FreeLibrary(module);
+}
+
+bool os_is_obs_plugin(const char *path)
+{
+	struct dstr dll_name;
+	wchar_t *wpath;
+
+	HANDLE hFile = INVALID_HANDLE_VALUE;
+	HANDLE hFileMapping = NULL;
+	VOID *base = NULL;
+
+	PIMAGE_DOS_HEADER dos_header;
+	PIMAGE_NT_HEADERS nt_headers;
+	PIMAGE_SECTION_HEADER section, last_section;
+
+	bool ret = false;
+
+	if (!path)
+		return false;
+
+	dstr_init_copy(&dll_name, path);
+	dstr_replace(&dll_name, "\\", "/");
+	if (!dstr_find(&dll_name, ".dll"))
+		dstr_cat(&dll_name, ".dll");
+	os_utf8_to_wcs_ptr(dll_name.array, 0, &wpath);
+
+	dstr_free(&dll_name);
+
+	hFile = CreateFileW(wpath, GENERIC_READ, FILE_SHARE_READ, NULL,
+			    OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, 0);
+
+	bfree(wpath);
+
+	if (hFile == INVALID_HANDLE_VALUE)
+		goto cleanup;
+
+	hFileMapping =
+		CreateFileMapping(hFile, NULL, PAGE_READONLY, 0, 0, NULL);
+	if (hFileMapping == NULL)
+		goto cleanup;
+
+	base = MapViewOfFile(hFileMapping, FILE_MAP_READ, 0, 0, 0);
+	if (!base)
+		goto cleanup;
+
+	/* all mapped file i/o must be prepared to handle exceptions */
+	__try {
+
+		dos_header = (PIMAGE_DOS_HEADER)base;
+
+		if (dos_header->e_magic != IMAGE_DOS_SIGNATURE)
+			goto cleanup;
+
+		nt_headers = (PIMAGE_NT_HEADERS)((byte *)dos_header +
+						 dos_header->e_lfanew);
+
+		if (nt_headers->Signature != IMAGE_NT_SIGNATURE)
+			goto cleanup;
+
+		PIMAGE_DATA_DIRECTORY data_dir;
+		data_dir =
+			&nt_headers->OptionalHeader
+				 .DataDirectory[IMAGE_DIRECTORY_ENTRY_EXPORT];
+
+		if (data_dir->Size == 0)
+			goto cleanup;
+
+		section = IMAGE_FIRST_SECTION(nt_headers);
+		last_section = section;
+
+		/* find the section that contains the export directory */
+		int i;
+		for (i = 0; i < nt_headers->FileHeader.NumberOfSections; i++) {
+			if (section->VirtualAddress <=
+			    data_dir->VirtualAddress) {
+				last_section = section;
+				section++;
+				continue;
+			} else {
+				break;
+			}
+		}
+
+		/* double check in case we exited early */
+		if (last_section->VirtualAddress > data_dir->VirtualAddress ||
+		    section->VirtualAddress <= data_dir->VirtualAddress)
+			goto cleanup;
+
+		section = last_section;
+
+		/* get a pointer to the export directory */
+		PIMAGE_EXPORT_DIRECTORY export;
+		export = (PIMAGE_EXPORT_DIRECTORY)(
+			(byte *)base + data_dir->VirtualAddress -
+			section->VirtualAddress + section->PointerToRawData);
+
+		if (export->NumberOfNames == 0)
+			goto cleanup;
+
+		/* get a pointer to the export directory names */
+		DWORD *names_ptr;
+		names_ptr = (DWORD *)((byte *)base + export->AddressOfNames -
+				      section->VirtualAddress +
+				      section->PointerToRawData);
+
+		/* iterate through each name and see if its an obs plugin */
+		CHAR *name;
+		size_t j;
+		for (j = 0; j < export->NumberOfNames; j++) {
+
+			name = (CHAR *)base + names_ptr[j] -
+			       section->VirtualAddress +
+			       section->PointerToRawData;
+
+			if (!strcmp(name, "obs_module_load")) {
+				ret = true;
+				goto cleanup;
+			}
+		}
+
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		/* we failed somehow, for compatibility let's assume it
+		 * was a valid plugin and let the loader deal with it */
+		ret = true;
+		goto cleanup;
+	}
+
+cleanup:
+	if (base)
+		UnmapViewOfFile(base);
+
+	if (hFileMapping != NULL)
+		CloseHandle(hFileMapping);
+
+	if (hFile != INVALID_HANDLE_VALUE)
+		CloseHandle(hFile);
+
+	return ret;
 }
 
 union time_data {

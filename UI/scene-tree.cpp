@@ -142,21 +142,21 @@ void SceneTree::dropEvent(QDropEvent *event)
 	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
 }
 
-void SceneTree::dragMoveEvent(QDragMoveEvent *event)
+void SceneTree::RepositionGrid(QDragMoveEvent *event)
 {
-	if (gridMode) {
-		int scrollWid = verticalScrollBar()->sizeHint().width();
-		int h = visualItemRect(item(count() - 1)).bottom();
+	int scrollWid = verticalScrollBar()->sizeHint().width();
+	int h = visualItemRect(item(count() - 1)).bottom();
 
-		if (h < height()) {
-			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
-			scrollWid = 0;
-		} else {
-			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
-		}
+	if (h < height()) {
+		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+		scrollWid = 0;
+	} else {
+		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOn);
+	}
 
-		float wid = contentsRect().width() - scrollWid - 1;
+	float wid = contentsRect().width() - scrollWid - 1;
 
+	if (event) {
 		QPoint point = event->pos();
 
 		int x = (float)point.x() / wid * ceil(wid / maxWidth);
@@ -184,9 +184,41 @@ void SceneTree::dragMoveEvent(QDragMoveEvent *event)
 			QPoint position(xPos * g.width(), yPos * g.height());
 			setPositionForIndex(position, index);
 		}
+	} else {
+		for (int i = 0; i < count(); i++) {
+			auto *wItem = item(i);
+
+			if (wItem->isSelected())
+				continue;
+
+			QModelIndex index = indexFromItem(wItem);
+
+			int xPos = i % (int)ceil(wid / maxWidth);
+			int yPos = i / (int)ceil(wid / maxWidth);
+			QSize g = gridSize();
+
+			QPoint position(xPos * g.width(), yPos * g.height());
+			setPositionForIndex(position, index);
+		}
+	}
+}
+
+void SceneTree::dragMoveEvent(QDragMoveEvent *event)
+{
+	if (gridMode) {
+		RepositionGrid(event);
 	}
 
 	QListWidget::dragMoveEvent(event);
+}
+
+void SceneTree::dragLeaveEvent(QDragLeaveEvent *event)
+{
+	if (gridMode) {
+		RepositionGrid();
+	}
+
+	QListWidget::dragLeaveEvent(event);
 }
 
 void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)

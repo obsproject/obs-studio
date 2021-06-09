@@ -56,6 +56,7 @@ enum obs_property_type {
 	OBS_PROPERTY_EDITABLE_LIST,
 	OBS_PROPERTY_FRAME_RATE,
 	OBS_PROPERTY_GROUP,
+	OBS_PROPERTY_COLOR_ALPHA,
 };
 
 enum obs_combo_format {
@@ -223,6 +224,10 @@ EXPORT obs_property_t *obs_properties_add_list(obs_properties_t *props,
 EXPORT obs_property_t *obs_properties_add_color(obs_properties_t *props,
 						const char *name,
 						const char *description);
+
+EXPORT obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props,
+						      const char *name,
+						      const char *description);
 
 EXPORT obs_property_t *
 obs_properties_add_button(obs_properties_t *props, const char *name,

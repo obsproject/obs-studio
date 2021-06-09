@@ -22,6 +22,7 @@
 #include <QVariant>
 #include <QFileDialog>
 #include "window-basic-main.hpp"
+#include "window-basic-auto-config.hpp"
 #include "window-namedialog.hpp"
 #include "qt-wrappers.hpp"
 
@@ -93,14 +94,25 @@ static bool ProfileExists(const char *findName)
 
 static bool GetProfileName(QWidget *parent, std::string &name,
 			   std::string &file, const char *title,
-			   const char *text, const char *oldName = nullptr)
+			   const char *text, const bool showWizard,
+			   bool &wizardChecked, const char *oldName = nullptr)
 {
 	char path[512];
 	int ret;
 
 	for (;;) {
-		bool success = NameDialog::AskForName(parent, title, text, name,
-						      QT_UTF8(oldName));
+		bool success = false;
+
+		if (showWizard) {
+			success = NameDialog::AskForNameWithOption(
+				parent, title, text, name,
+				QTStr("AddProfile.WizardCheckbox"),
+				wizardChecked, QT_UTF8(oldName));
+		} else {
+			success = NameDialog::AskForName(
+				parent, title, text, name, QT_UTF8(oldName));
+		}
+
 		if (!success) {
 			return false;
 		}
@@ -193,8 +205,17 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 	std::string newPath;
 	ConfigFile config;
 
-	if (!GetProfileName(this, newName, newDir, title, text, init_text))
+	bool showWizardChecked = config_get_bool(App()->GlobalConfig(), "Basic",
+						 "ConfigOnNewProfile");
+
+	if (!GetProfileName(this, newName, newDir, title, text, create_new,
+			    showWizardChecked, init_text))
 		return false;
+
+	if (create_new) {
+		config_set_bool(App()->GlobalConfig(), "Basic",
+				"ConfigOnNewProfile", showWizardChecked);
+	}
 
 	std::string curDir =
 		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
@@ -257,6 +278,15 @@ bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+
+	// Run auto configuration setup wizard when a new profile is made to assist
+	// setting up blank settings
+	if (create_new && showWizardChecked) {
+		AutoConfig wizard(this);
+		wizard.setModal(true);
+		wizard.show();
+		wizard.exec();
+	}
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);

@@ -73,7 +73,7 @@ void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
 	os_globfree(glob);
 }
 
-static bool SceneCollectionExists(const char *findName)
+bool SceneCollectionExists(const char *findName)
 {
 	bool found = false;
 	auto func = [&](const char *name, const char *) {
@@ -87,36 +87,6 @@ static bool SceneCollectionExists(const char *findName)
 
 	EnumSceneCollections(func);
 	return found;
-}
-
-static bool GetUnusedSceneCollectionFile(std::string &name, std::string &file)
-{
-	char path[512];
-	int ret;
-
-	if (!GetFileSafeName(name.c_str(), file)) {
-		blog(LOG_WARNING, "Failed to create safe file name for '%s'",
-		     name.c_str());
-		return false;
-	}
-
-	ret = GetConfigPath(path, sizeof(path), "obs-studio/basic/scenes/");
-	if (ret <= 0) {
-		blog(LOG_WARNING, "Failed to get scene collection config path");
-		return false;
-	}
-
-	file.insert(0, path);
-
-	if (!GetClosestUnusedFileName(file, "json")) {
-		blog(LOG_WARNING, "Failed to get closest file name for %s",
-		     file.c_str());
-		return false;
-	}
-
-	file.erase(file.size() - 5, 5);
-	file.erase(0, strlen(path));
-	return true;
 }
 
 static bool GetSceneCollectionName(QWidget *parent, std::string &name,
@@ -181,17 +151,22 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 		}
 	}
 
-	SaveProjectNow();
+	auto new_collection = [this, create_new](const std::string &file,
+						 const std::string &name) {
+		SaveProjectNow();
 
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollection",
-			  name.c_str());
-	config_set_string(App()->GlobalConfig(), "Basic", "SceneCollectionFile",
-			  file.c_str());
-	if (create_new) {
-		CreateDefaultScene(false);
-	}
-	SaveProjectNow();
-	RefreshSceneCollections();
+		config_set_string(App()->GlobalConfig(), "Basic",
+				  "SceneCollection", name.c_str());
+		config_set_string(App()->GlobalConfig(), "Basic",
+				  "SceneCollectionFile", file.c_str());
+		if (create_new) {
+			CreateDefaultScene(false);
+		}
+		SaveProjectNow();
+		RefreshSceneCollections();
+	};
+
+	new_collection(file, name);
 
 	blog(LOG_INFO, "Added scene collection '%s' (%s, %s.json)",
 	     name.c_str(), create_new ? "clean" : "duplicate", file.c_str());
@@ -275,11 +250,13 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 {
 	std::string name;
 	std::string file;
+	std::string oname;
 
 	std::string oldFile = config_get_string(App()->GlobalConfig(), "Basic",
 						"SceneCollectionFile");
 	const char *oldName = config_get_string(App()->GlobalConfig(), "Basic",
 						"SceneCollection");
+	oname = std::string(oldName);
 
 	bool success = GetSceneCollectionName(this, name, file, oldName);
 	if (!success)
@@ -361,6 +338,7 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 
 	oldFile.insert(0, path);
 	oldFile += ".json";
+
 	os_unlink(oldFile.c_str());
 	oldFile += ".bak";
 	os_unlink(oldFile.c_str());
@@ -440,6 +418,7 @@ void OBSBasic::ChangeSceneCollection()
 
 	const char *oldName = config_get_string(App()->GlobalConfig(), "Basic",
 						"SceneCollection");
+
 	if (action->text().compare(QT_UTF8(oldName)) == 0) {
 		action->setChecked(true);
 		return;

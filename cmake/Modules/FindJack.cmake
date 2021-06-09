@@ -33,7 +33,7 @@ else (JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
     NAMES
       jack/jack.h
     PATHS
-      ${_JACK_INCLUDEDIR}
+      ${_JACK_INCLUDE_DIRS}
       /usr/include
       /usr/local/include
       /opt/local/include
@@ -44,7 +44,7 @@ else (JACK_LIBRARIES AND JACK_INCLUDE_DIRS)
     NAMES
       jack
     PATHS
-      ${_JACK_LIBDIR}
+      ${_JACK_LIBRARY_DIRS}
       /usr/lib
       /usr/local/lib
       /opt/local/lib

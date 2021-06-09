@@ -71,6 +71,7 @@ struct gl_data {
 static HMODULE gl = NULL;
 static bool nv_capture_available = false;
 static struct gl_data data = {0};
+__declspec(thread) static int swap_recurse;
 
 static inline bool gl_error(const char *func, const char *str)
 {
@@ -285,7 +286,7 @@ static inline bool gl_shtex_init_d3d11(void)
 
 	DXGI_SWAP_CHAIN_DESC desc = {0};
 	desc.BufferCount = 2;
-	desc.BufferDesc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.BufferDesc.Format = data.format;
 	desc.BufferDesc.Width = 2;
 	desc.BufferDesc.Height = 2;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
@@ -350,11 +351,11 @@ static inline bool gl_shtex_init_d3d11_tex(void)
 	desc.Height = data.cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_B8G8R8A8_UNORM;
+	desc.Format = data.format;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D11_USAGE_DEFAULT;
 	desc.MiscFlags = D3D11_RESOURCE_MISC_SHARED;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET | D3D11_BIND_SHADER_RESOURCE;
+	desc.BindFlags = D3D11_BIND_SHADER_RESOURCE;
 
 	hr = ID3D11Device_CreateTexture2D(data.d3d11_device, &desc, NULL,
 					  &data.d3d11_tex);
@@ -759,20 +760,36 @@ static void gl_capture(HDC hdc)
 	}
 }
 
+static inline void gl_swap_begin(HDC hdc)
+{
+	const bool first = swap_recurse == 0;
+	++swap_recurse;
+
+	if (first && !global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
+static inline void gl_swap_end(HDC hdc)
+{
+	--swap_recurse;
+	const bool first = swap_recurse == 0;
+
+	if (first && global_hook_info->capture_overlay)
+		gl_capture(hdc);
+}
+
 static BOOL WINAPI hook_swap_buffers(HDC hdc)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&swap_buffers);
 	BOOL(WINAPI * call)(HDC) = swap_buffers.call_addr;
 	ret = call(hdc);
 	rehook(&swap_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
@@ -781,16 +798,14 @@ static BOOL WINAPI hook_wgl_swap_buffers(HDC hdc)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&wgl_swap_buffers);
 	BOOL(WINAPI * call)(HDC) = wgl_swap_buffers.call_addr;
 	ret = call(hdc);
 	rehook(&wgl_swap_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }
@@ -799,16 +814,14 @@ static BOOL WINAPI hook_wgl_swap_layer_buffers(HDC hdc, UINT planes)
 {
 	BOOL ret;
 
-	if (!global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_begin(hdc);
 
 	unhook(&wgl_swap_layer_buffers);
 	BOOL(WINAPI * call)(HDC, UINT) = wgl_swap_layer_buffers.call_addr;
 	ret = call(hdc, planes);
 	rehook(&wgl_swap_layer_buffers);
 
-	if (global_hook_info->capture_overlay)
-		gl_capture(hdc);
+	gl_swap_end(hdc);
 
 	return ret;
 }

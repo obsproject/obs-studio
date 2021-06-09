@@ -317,8 +317,8 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
     max-height: 40px;
 }
 
-#contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 0px;
+#contextContainer QPushButton {
+    padding: 0px 12px;
 }
 
 QPushButton#sourcePropertiesButton {
@@ -1046,6 +1046,10 @@ QPushButton#extraPanelDelete:hover {
 
 QPushButton#extraPanelDelete:pressed {
     background-color: #161f41;
+}
+
+OBSMissingFiles {
+	qproperty-warningIcon: url(./Dark/alert.svg);
 }
 
 /* Source Icons */

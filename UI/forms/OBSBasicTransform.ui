@@ -2,9 +2,6 @@
 <ui version="4.0">
  <class>OBSBasicTransform</class>
  <widget class="QDialog" name="OBSBasicTransform">
-  <property name="enabled">
-   <bool>false</bool>
-  </property>
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -42,13 +39,16 @@
        <property name="text">
         <string>Basic.TransformWindow.Position</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Position</string>
+       </property>
        <property name="alignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QWidget" name="widget" native="true">
+      <widget class="QWidget" name="widget">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Fixed" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -85,6 +85,9 @@
           <property name="maximum">
            <double>90001.000000000000000</double>
           </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.PositionX</string>
+          </property>
          </widget>
         </item>
         <item>
@@ -104,6 +107,9 @@
           <property name="maximum">
            <double>90001.000000000000000</double>
           </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.PositionY</string>
+          </property>
          </widget>
         </item>
        </layout>
@@ -112,6 +118,9 @@
      <item row="1" column="0">
       <widget class="QLabel" name="label_2">
        <property name="text">
+        <string>Basic.TransformWindow.Rotation</string>
+       </property>
+       <property name="accessibleName">
         <string>Basic.TransformWindow.Rotation</string>
        </property>
       </widget>
@@ -139,6 +148,9 @@
        <property name="singleStep">
         <double>0.100000000000000</double>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Rotation</string>
+       </property>
       </widget>
      </item>
      <item row="2" column="0">
@@ -146,10 +158,13 @@
        <property name="text">
         <string>Basic.TransformWindow.Size</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Size</string>
+       </property>
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QWidget" name="widget_2" native="true">
+      <widget class="QWidget" name="widget_2">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -189,6 +204,9 @@
           <property name="singleStep">
            <double>1.000000000000000</double>
           </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.Width</string>
+          </property>
          </widget>
         </item>
         <item>
@@ -211,6 +229,9 @@
           <property name="singleStep">
            <double>1.000000000000000</double>
           </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.Height</string>
+          </property>
          </widget>
         </item>
        </layout>
@@ -221,12 +242,18 @@
        <property name="text">
         <string>Basic.TransformWindow.Alignment</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Alignment</string>
+       </property>
       </widget>
      </item>
      <item row="3" column="1">
       <widget class="QComboBox" name="align">
        <property name="currentText">
         <string>Basic.TransformWindow.Alignment.TopLeft</string>
+       </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Alignment</string>
        </property>
        <item>
         <property name="text">
@@ -293,10 +320,16 @@
        <property name="text">
         <string>Basic.TransformWindow.BoundsType</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.BoundsType</string>
+       </property>
       </widget>
      </item>
      <item row="5" column="1">
       <widget class="QComboBox" name="boundsType">
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.BoundsType</string>
+       </property>
        <item>
         <property name="text">
          <string>Basic.TransformWindow.BoundsType.None</string>
@@ -339,6 +372,9 @@
        <property name="text">
         <string>Basic.TransformWindow.BoundsAlignment</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.BoundsAlignment</string>
+       </property>
       </widget>
      </item>
      <item row="6" column="1">
@@ -348,6 +384,9 @@
        </property>
        <property name="currentText">
         <string>Basic.TransformWindow.Alignment.TopLeft</string>
+       </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.BoundsAlignment</string>
        </property>
        <item>
         <property name="text">
@@ -401,10 +440,13 @@
        <property name="text">
         <string>Basic.TransformWindow.Bounds</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Bounds</string>
+       </property>
       </widget>
      </item>
      <item row="7" column="1">
-      <widget class="QWidget" name="widget_3" native="true">
+      <widget class="QWidget" name="widget_3">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
          <horstretch>0</horstretch>
@@ -444,6 +486,9 @@
           <property name="maximum">
            <double>90001.000000000000000</double>
           </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.BoundsWidth</string>
+          </property>
          </widget>
         </item>
         <item>
@@ -465,6 +510,9 @@
           </property>
           <property name="maximum">
            <double>90001.000000000000000</double>
+          </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.BoundsHeight</string>
           </property>
          </widget>
         </item>
@@ -489,6 +537,9 @@
        <property name="text">
         <string>Basic.TransformWindow.Crop</string>
        </property>
+       <property name="accessibleName">
+        <string>Basic.TransformWindow.Crop</string>
+       </property>
       </widget>
      </item>
      <item row="9" column="1">
@@ -510,6 +561,9 @@
          <property name="maximum">
           <number>100000</number>
          </property>
+         <property name="accessibleName">
+          <string>Basic.TransformWindow.CropLeft</string>
+         </property>
         </widget>
        </item>
        <item row="0" column="3">
@@ -528,6 +582,9 @@
          </property>
          <property name="maximum">
           <number>100000</number>
+         </property>
+         <property name="accessibleName">
+          <string>Basic.TransformWindow.CropRight</string>
          </property>
         </widget>
        </item>
@@ -574,6 +631,9 @@
          <property name="maximum">
           <number>100000</number>
          </property>
+         <property name="accessibleName">
+          <string>Basic.TransformWindow.CropTop</string>
+         </property>
         </widget>
        </item>
        <item row="1" column="3">
@@ -592,6 +652,9 @@
          </property>
          <property name="maximum">
           <number>100000</number>
+         </property>
+         <property name="accessibleName">
+          <string>Basic.TransformWindow.CropBottom</string>
          </property>
         </widget>
        </item>

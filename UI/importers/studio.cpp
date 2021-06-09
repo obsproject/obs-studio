@@ -31,15 +31,17 @@ void TranslateOSStudio(Json &res)
 
 		string id = source["id"].string_value();
 
-#define DirectTranslation(before, after) \
-	if (id == before) {              \
-		source["id"] = after;    \
+#define DirectTranslation(before, after)                                      \
+	if (id == before) {                                                   \
+		source["id"] = after;                                         \
+		source["versioned_id"] = obs_get_latest_input_type_id(after); \
 	}
 
-#define ClearTranslation(before, after)              \
-	if (id == before) {                          \
-		source["id"] = after;                \
-		source["settings"] = Json::object{}; \
+#define ClearTranslation(before, after)                                       \
+	if (id == before) {                                                   \
+		source["id"] = after;                                         \
+		source["settings"] = Json::object{};                          \
+		source["versioned_id"] = obs_get_latest_input_type_id(after); \
 	}
 
 #ifdef __APPLE__
@@ -143,6 +145,7 @@ void TranslateOSStudio(Json &res)
 #undef ClearTranslation
 	}
 
+	out["sources"] = sources;
 	res = out;
 }
 

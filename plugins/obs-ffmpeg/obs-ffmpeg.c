@@ -25,6 +25,7 @@ extern struct obs_output_info ffmpeg_output;
 extern struct obs_output_info ffmpeg_muxer;
 extern struct obs_output_info ffmpeg_mpegts_muxer;
 extern struct obs_output_info replay_buffer;
+extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
@@ -82,6 +83,7 @@ static const int blacklisted_adapters[] = {
 	0x1d11, // GP108M [GeForce MX230]
 	0x1d13, // GP108M [GeForce MX250]
 	0x1d52, // GP108BM [GeForce MX250]
+	0x1c94, // GP107 [GeForce MX350]
 	0x137b, // GM108GLM [Quadro M520 Mobile]
 	0x1d33, // GP108GLM [Quadro P500 Mobile]
 	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
@@ -241,6 +243,7 @@ bool obs_module_load(void)
 	obs_register_output(&ffmpeg_output);
 	obs_register_output(&ffmpeg_muxer);
 	obs_register_output(&ffmpeg_mpegts_muxer);
+	obs_register_output(&ffmpeg_hls_muxer);
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
 	obs_register_encoder(&opus_encoder_info);

@@ -52,10 +52,6 @@ find_package(Qt5Xml ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 
-if(APPLE)
-	find_package(Qt5MacExtras REQUIRED)
-endif(APPLE)
-
 if(NOT Qt5Widgets_FOUND)
 	if (ENABLE_UI)
 		message(FATAL_ERROR "Failed to find Qt5")
@@ -81,7 +77,6 @@ include_directories(${LIBCURL_INCLUDE_DIRS})
 add_definitions(${LIBCURL_DEFINITIONS})
 
 if(WIN32)
-	include_directories(${OBS_JANSSON_INCLUDE_DIRS})
 	include_directories(${BLAKE2_INCLUDE_DIR})
 
 	set(obs_PLATFORM_SOURCES
@@ -96,8 +91,7 @@ if(WIN32)
 		win-update/win-update-helpers.hpp)
 	set(obs_PLATFORM_LIBRARIES
 		crypt32
-		blake2
-		${OBS_JANSSON_IMPORT})
+		blake2)
 
 	if(CMAKE_SIZEOF_VOID_P EQUAL 4)
 		set(CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} /LARGEADDRESSAWARE")
@@ -125,13 +119,22 @@ elseif(APPLE)
 	endif()
 
 elseif(UNIX)
-        find_package(Qt5X11Extras REQUIRED)
+	find_package(Qt5Gui REQUIRED)
+
+	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
 	set(obs_PLATFORM_SOURCES
 		platform-x11.cpp)
 
-        set(obs_PLATFORM_LIBRARIES
-                Qt5::X11Extras)
+	set(obs_PLATFORM_LIBRARIES
+		${obs_PLATFORM_LIBRARIES}
+		Qt5::Gui
+		Qt5::GuiPrivate)
+
+	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
+		list(APPEND obs_PLATFORM_LIBRARIES
+			procstat)
+	endif()
 endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
@@ -220,6 +223,7 @@ set(obs_SOURCES
 	window-log-reply.cpp
 	window-projector.cpp
 	window-remux.cpp
+	window-missing-files.cpp
 	auth-base.cpp
 	source-tree.cpp
 	scene-tree.cpp
@@ -252,7 +256,8 @@ set(obs_SOURCES
 	obs-proxy-style.cpp
 	locked-checkbox.cpp
 	visibility-checkbox.cpp
-	media-slider.cpp)
+	media-slider.cpp
+	undo-stack-obs.cpp)
 
 set(obs_HEADERS
 	${obs_PLATFORM_HEADERS}
@@ -282,6 +287,7 @@ set(obs_HEADERS
 	window-log-reply.hpp
 	window-projector.hpp
 	window-remux.hpp
+	window-missing-files.hpp
 	auth-base.hpp
 	source-tree.hpp
 	scene-tree.hpp
@@ -322,7 +328,8 @@ set(obs_HEADERS
 	log-viewer.hpp
 	obs-proxy-style.hpp
 	obs-proxy-style.hpp
-	media-slider.hpp)
+	media-slider.hpp
+	undo-stack-obs.hpp)
 
 set(obs_importers_HEADERS
 	importers/importers.hpp)
@@ -345,7 +352,6 @@ set(obs_UI
 	forms/source-toolbar/color-source-toolbar.ui
 	forms/source-toolbar/text-source-toolbar.ui
 	forms/source-toolbar/media-controls.ui
-	forms/NameDialog.ui
 	forms/AutoConfigStartPage.ui
 	forms/AutoConfigVideoPage.ui
 	forms/AutoConfigStreamPage.ui
@@ -362,6 +368,7 @@ set(obs_UI
 	forms/OBSUpdate.ui
 	forms/OBSRemux.ui
 	forms/OBSImporter.ui
+	forms/OBSMissingFiles.ui
 	forms/OBSAbout.ui)
 
 set(obs_QRC
@@ -401,11 +408,6 @@ target_link_libraries(obs
 	${LIBCURL_LIBRARIES}
 	${obs_PLATFORM_LIBRARIES})
 
-if (APPLE)
-	target_link_libraries(obs
-			Qt5::MacExtras)
-	set_target_properties(obs PROPERTIES LINK_FLAGS "-pagezero_size 10000 -image_base 100000000")
-endif()
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
 define_graphic_modules(obs)

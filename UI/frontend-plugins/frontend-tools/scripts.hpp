@@ -45,6 +45,7 @@ public slots:
 	void on_addScripts_clicked();
 	void on_removeScripts_clicked();
 	void on_reloadScripts_clicked();
+	void on_editScript_clicked();
 	void on_scriptLog_clicked();
 	void on_defaults_clicked();
 

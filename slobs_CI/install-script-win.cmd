@@ -1,4 +1,4 @@
-set DEPS=dependencies2017.3
+set DEPS=dependencies2019.0
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS%.zip
 set VLCURL=https://obsproject.com/downloads/vlc.zip
 set CEFURL=https://s3-us-west-2.amazonaws.com/streamlabs-cef-dist

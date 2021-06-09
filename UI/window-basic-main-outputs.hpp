@@ -33,6 +33,7 @@ struct BasicOutputHandler {
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
 	OBSSignal replayBufferStopping;
+	OBSSignal replayBufferSaved;
 
 	inline BasicOutputHandler(OBSBasic *main_);
 
@@ -62,7 +63,7 @@ struct BasicOutputHandler {
 	}
 
 protected:
-	bool SetupAutoRemux(const char *&ext);
+	void SetupAutoRemux(const char *&ext);
 	std::string GetRecordingFilename(const char *path, const char *ext,
 					 bool noSpace, bool overwrite,
 					 const char *format, bool ffmpeg);
