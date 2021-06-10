@@ -36,19 +36,22 @@ SourceToolbar::SourceToolbar(QWidget *parent, OBSSource source)
 
 void SourceToolbar::SaveOldProperties(obs_source_t *source)
 {
-	if (oldData)
-		obs_data_release(oldData);
-
 	oldData = obs_data_create();
+	obs_data_release(oldData);
+
 	obs_data_t *oldSettings = obs_source_get_settings(source);
 	obs_data_apply(oldData, oldSettings);
 	obs_data_set_string(oldData, "undo_sname", obs_source_get_name(source));
 	obs_data_release(oldSettings);
-	obs_data_release(oldData);
 }
 
 void SourceToolbar::SetUndoProperties(obs_source_t *source)
 {
+	if (!oldData) {
+		blog(LOG_ERROR, "%s: somehow oldData was null.", __FUNCTION__);
+		return;
+	}
+
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
 	std::string scene_name =
@@ -88,7 +91,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source)
 
 	obs_data_release(new_settings);
 	obs_data_release(curr_settings);
-	obs_data_release(oldData);
+	oldData = nullptr;
 }
 
 /* ========================================================================= */
