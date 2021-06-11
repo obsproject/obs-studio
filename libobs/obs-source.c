@@ -2019,7 +2019,7 @@ bool update_async_textures(struct obs_source *source,
 {
 	enum convert_type type;
 
-	source->async_flip = (frame->flags & OBS_SOURCE_FRAME_FLIP) != 0;
+	source->async_flip = frame->flip;
 	source->async_linear_alpha =
 		(frame->flags & OBS_SOURCE_FRAME_LINEAR_ALPHA) != 0;
 
@@ -2724,6 +2724,7 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 static void copy_frame_data(struct obs_source_frame *dst,
 			    const struct obs_source_frame *src)
 {
+	dst->flip = src->flip;
 	dst->flags = src->flags;
 	dst->full_range = src->full_range;
 	dst->timestamp = src->timestamp;
@@ -2955,6 +2956,7 @@ void obs_source_output_video2(obs_source_t *source,
 	new_frame.timestamp = frame->timestamp;
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
+	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
@@ -3086,6 +3088,7 @@ void obs_source_preload_video2(obs_source_t *source,
 	new_frame.timestamp = frame->timestamp;
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
+	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
@@ -3190,6 +3193,7 @@ void obs_source_set_video_frame2(obs_source_t *source,
 	new_frame.timestamp = frame->timestamp;
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
+	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
