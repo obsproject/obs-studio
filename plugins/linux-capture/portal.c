@@ -72,3 +72,15 @@ uint32_t portal_get_available_capture_types(void)
 
 	return available_source_types;
 }
+
+GDBusConnection *portal_get_dbus_connection(void)
+{
+	ensure_proxy();
+	return connection;
+}
+
+GDBusProxy *portal_get_dbus_proxy(void)
+{
+	ensure_proxy();
+	return proxy;
+}
