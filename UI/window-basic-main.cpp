@@ -3680,6 +3680,8 @@ void OBSBasic::DuplicateSelectedScene()
 static bool save_undo_source_enum(obs_scene_t *scene, obs_sceneitem_t *item,
 				  void *p)
 {
+	UNUSED_PARAMETER(scene);
+
 	obs_source_t *source = obs_sceneitem_get_source(item);
 	if (obs_obj_is_private(source) && !obs_source_removed(source))
 		return true;
