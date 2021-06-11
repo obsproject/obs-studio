@@ -21,5 +21,9 @@
 #pragma once
 
 #include <stdint.h>
+#include <gio/gio.h>
 
 uint32_t portal_get_available_capture_types(void);
+
+GDBusConnection *portal_get_dbus_connection(void);
+GDBusProxy *portal_get_dbus_proxy(void);
