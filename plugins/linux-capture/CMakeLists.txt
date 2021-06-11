@@ -72,11 +72,13 @@ if(ENABLE_PIPEWIRE)
 		${linux-capture_SOURCES}
 		pipewire.c
 		pipewire-capture.c
+		portal.c
 	)
 	set(linux-capture_HEADERS
 		${linux-capture_HEADERS}
 		pipewire.h
 		pipewire-capture.h
+		portal.h
 	)
 	set(linux-capture_LIBRARIES
 		${linux-capture_LIBRARIES}
