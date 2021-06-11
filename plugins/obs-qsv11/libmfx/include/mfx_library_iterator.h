@@ -1,32 +1,22 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2012-2018 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_library_iterator.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2012-2020 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #if !defined(__MFX_LIBRARY_ITERATOR_H)
 #define __MFX_LIBRARY_ITERATOR_H
@@ -34,68 +24,41 @@ File Name: mfx_library_iterator.h
 
 #include <mfxvideo.h>
 
-#if !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
+#if !defined(MEDIASDK_UWP_DISPATCHER)
 #include "mfx_win_reg_key.h"
 #endif
 
+#include "mfx_driver_store_loader.h"
+
 #include "mfx_dispatcher.h"
-
-#if !defined(_WIN32) && !defined(_WIN64)
-struct mfx_disp_adapters
-{
-    mfxU32 vendor_id;
-    mfxU32 device_id;
-};
-
-#ifndef __APPLE__
-#define MFX_SO_BASE_NAME_LEN 15 // sizeof("libmfxhw32-p.so") = 15
-#else
-
-#define MFX_SO_BASE_NAME_LEN 16 // sizeof("libmfxhw64.dylib") = 16
-#endif
-
-#define MFX_MIN_REAL_LIBNAME MFX_SO_BASE_NAME_LEN + 4 // sizeof("libmfxhw32-p.so.0.0") >= 19
-#define MFX_MAX_REAL_LIBNAME MFX_MIN_REAL_LIBNAME + 8 // sizeof("libmfxhw32-p.so.<mj>.<mn>") <= 27, max(sizeof(<mj>))=sizeof(0xFFFF) = sizeof(65535) = 5
-
-struct mfx_libs
-{
-    char name[MFX_MAX_REAL_LIBNAME+1];
-    mfxVersion version;
-};
-#endif
 
 namespace MFX
 {
 
 // declare desired storage ID
-#if defined(_WIN32) || defined(_WIN64)
 enum
 {
+#if defined (MFX_TRACER_WA_FOR_DS)
     MFX_UNKNOWN_KEY             = -1,
-    MFX_CURRENT_USER_KEY        = 0,
-    MFX_LOCAL_MACHINE_KEY       = 1,
-    MFX_APP_FOLDER              = 2,
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
-    MFX_PATH_MSDK_FOLDER = 3,
-    MFX_STORAGE_ID_FIRST    = MFX_CURRENT_USER_KEY,
-    MFX_STORAGE_ID_LAST     = MFX_PATH_MSDK_FOLDER
-#else
-    MFX_PATH_MSDK_FOLDER = 3,
-    MFX_STORAGE_ID_FIRST = MFX_PATH_MSDK_FOLDER,
+    MFX_TRACER                  = 0,
+    MFX_DRIVER_STORE            = 1,
+    MFX_CURRENT_USER_KEY        = 2,
+    MFX_LOCAL_MACHINE_KEY       = 3,
+    MFX_APP_FOLDER              = 4,
+    MFX_PATH_MSDK_FOLDER        = 5,
+    MFX_STORAGE_ID_FIRST = MFX_TRACER,
     MFX_STORAGE_ID_LAST = MFX_PATH_MSDK_FOLDER
-#endif // !defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE)
-};
 #else
-enum
-{
-    MFX_UNKNOWN_KEY     = -1,
-    MFX_STORAGE_ID_OPT  = 0, // storage is: MFX_MODULES_DIR
-    MFX_APP_FOLDER      = 1,
-
-    MFX_STORAGE_ID_FIRST   =  MFX_STORAGE_ID_OPT,
-    MFX_STORAGE_ID_LAST    = MFX_STORAGE_ID_OPT
-};
+    MFX_UNKNOWN_KEY             = -1,
+    MFX_DRIVER_STORE            = 0,
+    MFX_CURRENT_USER_KEY        = 1,
+    MFX_LOCAL_MACHINE_KEY       = 2,
+    MFX_APP_FOLDER              = 3,
+    MFX_PATH_MSDK_FOLDER        = 4,
+    MFX_STORAGE_ID_FIRST    = MFX_DRIVER_STORE,
+    MFX_STORAGE_ID_LAST     = MFX_PATH_MSDK_FOLDER
 #endif
+};
 
 // Try to initialize using given implementation type. Select appropriate type automatically in case of MFX_IMPL_VIA_ANY.
 // Params: adapterNum - in, pImplInterface - in/out, pVendorID - out, pDeviceID - out
@@ -115,14 +78,14 @@ public:
     mfxStatus Init(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
 
     // Get the next library path
-    mfxStatus SelectDLLVersion(msdk_disp_char *pPath, size_t pathSize,
+    mfxStatus SelectDLLVersion(wchar_t *pPath, size_t pathSize,
                                eMfxImplType *pImplType, mfxVersion minVersion);
 
     // Return interface type on which Intel adapter was found (if any): D3D9 or D3D11
     mfxIMPL GetImplementationType();
 
     // Retrun registry subkey name on which dll was selected after sucesfull call to selectDllVesion
-    bool GetSubKeyName(msdk_disp_char *subKeyName, size_t length) const;
+    bool GetSubKeyName(wchar_t *subKeyName, size_t length) const;
 
     int  GetStorageID() const { return m_StorageID; }
 protected:
@@ -131,9 +94,13 @@ protected:
     void Release(void);
 
     // Initialize the registry iterator
-    mfxStatus InitRegistry(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, int storageID);
-    // Initialize the app folder iterator
-    mfxStatus InitFolder(eMfxImplType implType, mfxIMPL implInterface, const mfxU32 adapterNum, const msdk_disp_char * path);
+    mfxStatus InitRegistry(int storageID);
+#if defined(MFX_TRACER_WA_FOR_DS)
+    // Initialize the registry iterator for searching for tracer
+    mfxStatus InitRegistryTracer();
+#endif
+    // Initialize the app/module folder iterator
+    mfxStatus InitFolder(eMfxImplType implType, const wchar_t * path, const int storageID);
 
 
     eMfxImplType m_implType;                                    // Required library implementation
@@ -145,25 +112,16 @@ protected:
     wchar_t m_SubKeyName[MFX_MAX_REGISTRY_KEY_NAME];            // registry subkey for selected module loaded
     int    m_StorageID;
 
-#if defined(_WIN32) || defined(_WIN64)
-
-#if defined(MEDIASDK_USE_REGISTRY) || (!defined(MEDIASDK_UWP_LOADER) && !defined(MEDIASDK_UWP_PROCTABLE))
+#if !defined(MEDIASDK_UWP_DISPATCHER)
     WinRegKey m_baseRegKey;                                     // (WinRegKey) main registry key
 #endif
 
     mfxU32 m_lastLibIndex;                                      // (mfxU32) index of previously returned library
     mfxU32 m_lastLibMerit;                                      // (mfxU32) merit of previously returned library
-#else
-    int                       m_lastLibIndex;                   // (mfxU32) index of previously returned library
 
-    mfxU32                    m_adapters_num;
-    struct mfx_disp_adapters* m_adapters;
-    int                       m_selected_adapter;
-    mfxU32                    m_libs_num;
-    struct mfx_libs*          m_libs;
-#endif // #if defined(_WIN32) || defined(_WIN64)
+    wchar_t  m_path[msdk_disp_path_len];
 
-    msdk_disp_char  m_path[msdk_disp_path_len];
+    DriverStoreLoader m_driverStoreLoader;                      // for loading MediaSDK from DriverStore
 
 private:
     // unimplemented by intent to make this class non-copyable
