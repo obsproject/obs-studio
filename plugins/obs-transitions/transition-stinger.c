@@ -646,6 +646,12 @@ static obs_properties_t *stinger_properties(void *data)
 	{
 		obs_properties_t *track_matte_group = obs_properties_create();
 
+		p = obs_properties_add_bool(track_matte_group,"track_matte_enabled",
+					obs_module_text("TrackMatteEnabled"));
+
+		obs_property_set_modified_callback(
+			p, track_matte_enabled_modified);
+
 		p = obs_properties_add_list(track_matte_group,
 					    "track_matte_layout",
 					    obs_module_text("TrackMatteLayout"),
@@ -676,13 +682,10 @@ static obs_properties_t *stinger_properties(void *data)
 		obs_properties_add_bool(track_matte_group, "invert_matte",
 					obs_module_text("InvertTrackMatte"));
 
-		p = obs_properties_add_group(
-			ppts, "track_matte_enabled",
+		obs_properties_add_group(
+			ppts, "track_matte_enabled_group",
 			obs_module_text("TrackMatteEnabled"),
 			OBS_GROUP_CHECKABLE, track_matte_group);
-
-		obs_property_set_modified_callback(
-			p, track_matte_enabled_modified);
 	}
 
 	// audio output settings
