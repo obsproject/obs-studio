@@ -173,7 +173,7 @@ inline void WASAPISource::Stop()
 
 	if (active) {
 		blog(LOG_INFO, "[WASAPISource::Stop]: Device '%s' Terminated",
-		     device_name.c_str());
+		     device_id.c_str());
 		WaitForSingleObject(captureThread, INFINITE);
 	}
 
@@ -234,9 +234,10 @@ bool WASAPISource::InitDevice()
 
 		bfree(w_id);
 	}
-	blog(LOG_INFO, "[WASAPISource::_InitDevice]: Returning device = %08x",
-		device.Get());
-	return res;
+	blog(LOG_INFO, "[WASAPISource::InitDevice]: Returning device = %08x , %s",
+		device.Get(), device_id.c_str());
+
+	return SUCCEEDED(res);
 }
 
 #define BUFFER_TIME_100NS (5 * 10000000)
@@ -382,7 +383,7 @@ void WASAPISource::Initialize()
 	if (!InitDevice())
 		return;
 
-	if (FAILED(res) || device.Get() == nullptr) {
+	if (device.Get() == nullptr) {
 		// fail early
 		blog(LOG_ERROR, "[WASAPISource::Initialize] Device pointer is %p res is %d", device.Get(), res);
 		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
@@ -433,10 +434,6 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 	} catch (HRError &error) {
 		if (previouslyFailed) {
-			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d, %s: %lX",
-			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active, error.str, error.hr);
 			return active;
 		}
 
@@ -446,10 +443,6 @@ bool WASAPISource::TryInitialize()
 
 	} catch (const char *error) {
 		if (previouslyFailed) {
-			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d,  %s",
-			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active, error);
 			return active;
 		}
 
