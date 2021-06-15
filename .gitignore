@@ -41,7 +41,7 @@ GeneratedFiles/
 .vscode/
 
 
-
+/packed_build/
 /other/
 
 #make stuff

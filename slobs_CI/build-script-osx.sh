@@ -1,14 +1,18 @@
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 
 git fetch --tags
-
-mkdir build packed_build
-
+DEPS_DIR=$PWD/build/deps
+mkdir packed_build
+PACKED_BUILD=$PWD/packed_build
 cd build
+echo $DEPS_DIR
+echo $PWD 
+echo $PACKED_BUILD
+
 cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
--DDepsPath=/tmp/obsdeps \
--DCMAKE_INSTALL_PREFIX=$PWD/../packed_build \
--DVLCPath=$PWD/../../vlc-3.0.4 \
+-DDepsPath=$DEPS_DIR/obsdeps \
+-DCMAKE_INSTALL_PREFIX=$PACKED_BUILD \
+-DVLCPath=$DEPS_DIR/vlc-$VLC_VERSION \
 -DENABLE_UI=false \
 -DDISABLE_UI=true \
 -DCOPIED_DEPENDENCIES=false \
@@ -21,184 +25,181 @@ cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
 -DBROWSER_PANEL_SUPPORT=false \
 -DUSE_UI_LOOP=true \
 -DCHECK_FOR_SERVICE_UPDATES=true \
--DCEF_ROOT_DIR=$PWD/../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64 ..
+-DCEF_ROOT_DIR=$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64 ..
 
 cd ..
 
 cmake --build build --target install --config %BuildConfig% -v
 
 # Install Chromium Embedded Framework
-cd packed_build
+cd $PACKED_BUILD
 mkdir Frameworks
 
 cp -R \
-../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework \
+$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework \
 Frameworks/Chromium\ Embedded\ Framework.framework
 
-cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libEGL.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libEGL.dylib \
 ./obs-plugins/libEGL.dylib
 
-cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libGLESv2.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libGLESv2.dylib \
 ./obs-plugins/libGLESv2.dylib
 
-cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libEGL.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libEGL.dylib \
 ./obs-plugins/libswiftshader_libEGL.dylib
 
-cp ../../cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libGLESv2.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libGLESv2.dylib \
 ./obs-plugins/libswiftshader_libGLESv2.dylib
 
 # Apply new Framework load path
 sudo install_name_tool -change \
     @executable_path/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
     @rpath/Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
-    $PWD/../packed_build/obs-plugins/obs-browser.so
+    $PACKED_BUILD/obs-plugins/obs-browser.so
 
 sudo install_name_tool -change \
     @executable_path/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
     @rpath/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
-    $PWD/../packed_build/obs-plugins/obs-browser-page
+    $PACKED_BUILD/obs-plugins/obs-browser-page
 
 # Install obs dependencies
-cp -R /tmp/obsdeps/bin/. $PWD/../packed_build/bin/
+cp -R $DEPS_DIR/obsdeps/bin/. $PACKED_BUILD/bin/
 
-cp -R /tmp/obsdeps/lib/. $PWD/../packed_build/bin/
+cp -R $DEPS_DIR/obsdeps/lib/. $PACKED_BUILD/bin/
 
 # Change load path
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/libobs.0.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/bin/libobs.0.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libobs.0.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/bin/libobs.0.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libobs.0.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PWD/../packed_build/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libobs.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/bin/libobs.0.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/libavcodec.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libavcodec.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libavcodec.58.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libavformat.58.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libavutil.56.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libavutil.56.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/bin/libswscale.5.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libswscale.5.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/bin/libswscale.5.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libswscale.5.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libswresample.3.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libswresample.3.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libswresample.3.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libswresample.3.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libx264.155.dylib @executable_path/libx264.155.dylib $PWD/../packed_build/obs-plugins/obs-x264.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libx264.155.dylib @executable_path/libx264.155.dylib $PACKED_BUILD/obs-plugins/obs-x264.so
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/obs-plugins/obs-ffmpeg.so
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/obs-ffmpeg-mux
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/obs-ffmpeg-mux
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/bin/obs-ffmpeg-mux
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/obs-ffmpeg-mux
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/obs-ffmpeg-mux
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/bin/obs-ffmpeg-mux
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PWD/../packed_build/bin/libpostproc.55.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libpostproc.55.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PACKED_BUILD/bin/libpostproc.55.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libpostproc.55.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libpostproc.55.dylib @executable_path/libpostproc.55.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
 
-cp /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib $PWD/../packed_build/bin/libcrypto.1.1.dylib
-cp /usr/local/opt/curl/lib/libcurl.4.dylib $PWD/../packed_build/bin/libcurl.4.dylib
-cp /usr/local/Cellar/berkeley-db/18.1.32_1/lib/libdb-18.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
-cp /usr/local/Cellar/fdk-aac/2.0.1/lib/libfdk-aac.2.dylib $PWD/../packed_build/bin/libfdk-aac.2.dylib
-cp /usr/local/opt/freetype/lib/libfreetype.6.dylib $PWD/../packed_build/bin/libfreetype.6.dylib
-cp /usr/local/opt/jack/lib/libjack.0.dylib $PWD/../packed_build/bin/libjack.0.dylib
-cp /usr/local/opt/mbedtls/lib/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libmbedcrypto.3.dylib
-cp /usr/local/opt/mbedtls/lib/libmbedtls.12.dylib $PWD/../packed_build/bin/libmbedtls.12.dylib
-cp /usr/local/opt/mbedtls/lib/libmbedx509.0.dylib $PWD/../packed_build/bin/libmbedx509.0.dylib
-cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PWD/../packed_build/bin/libpng16.16.dylib
-cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PWD/../packed_build/bin/libspeexdsp.1.dylib
-cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PWD/../packed_build/bin/libssl.1.1.dylib
-cp /usr/local/opt/xz/lib/liblzma.5.dylib $PWD/../packed_build/bin/liblzma.5.dylib
+cp /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
+cp /usr/local/opt/curl/lib/libcurl.4.dylib $PACKED_BUILD/bin/libcurl.4.dylib
+cp /usr/local/Cellar/berkeley-db/18.1.32_1/lib/libdb-18.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
+cp /usr/local/Cellar/fdk-aac/2.0.1/lib/libfdk-aac.2.dylib $PACKED_BUILD/bin/libfdk-aac.2.dylib
+cp /usr/local/opt/freetype/lib/libfreetype.6.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
+cp /usr/local/opt/jack/lib/libjack.0.dylib $PACKED_BUILD/bin/libjack.0.dylib
+cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PACKED_BUILD/bin/libpng16.16.dylib
+cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PACKED_BUILD/bin/libspeexdsp.1.dylib
+cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
+cp /usr/local/opt/xz/lib/liblzma.5.dylib $PACKED_BUILD/bin/liblzma.5.dylib
 
-chmod u+w $PWD/../packed_build/bin/libspeexdsp.1.dylib
-chmod u+w $PWD/../packed_build/bin/libssl.1.1.dylib
-chmod u+w $PWD/../packed_build/bin/libfdk-aac.2.dylib
-chmod u+w $PWD/../packed_build/bin/libcurl.4.dylib
-chmod u+w $PWD/../packed_build/bin/liblzma.5.dylib
+chmod u+w $PACKED_BUILD/bin/libspeexdsp.1.dylib
+chmod u+w $PACKED_BUILD/bin/libssl.1.1.dylib
+chmod u+w $PACKED_BUILD/bin/libfdk-aac.2.dylib
+chmod u+w $PACKED_BUILD/bin/libcurl.4.dylib
+chmod u+w $PACKED_BUILD/bin/liblzma.5.dylib
 
-sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib @executable_path/libssl.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
-sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libdb-18.1.dylib
+sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib @executable_path/libssl.1.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
+sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
 
-sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libssl.1.1.dylib
+sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
 
-sudo install_name_tool -change /usr/local/opt/libpng/lib/libpng16.16.dylib @executable_path/libpng16.16.dylib $PWD/../packed_build/bin/libfreetype.6.dylib
+sudo install_name_tool -change /usr/local/opt/libpng/lib/libpng16.16.dylib @executable_path/libpng16.16.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
 
-sudo install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @executable_path/libdb-18.1.dylib $PWD/../packed_build/bin/libjack.0.dylib
+sudo install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @executable_path/libdb-18.1.dylib $PACKED_BUILD/bin/libjack.0.dylib
 
-sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PWD/../packed_build/bin/libcrypto.1.1.dylib
+sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
 
-sudo install_name_tool -change libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PWD/../packed_build/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 
-sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PWD/../packed_build/obs-plugins/rtmp-services.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PWD/../packed_build/obs-plugins/rtmp-services.so
+sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
 
-sudo install_name_tool -change /usr/local/opt/freetype/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PWD/../packed_build/obs-plugins/text-freetype2.so
+sudo install_name_tool -change /usr/local/opt/freetype/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
 
-sudo install_name_tool -change /usr/local/opt/speexdsp/lib/libspeexdsp.1.dylib @executable_path/libspeexdsp.1.dylib $PWD/../packed_build/obs-plugins/obs-filters.so
+sudo install_name_tool -change /usr/local/opt/speexdsp/lib/libspeexdsp.1.dylib @executable_path/libspeexdsp.1.dylib $PACKED_BUILD/obs-plugins/obs-filters.so
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
-sudo install_name_tool -change /tmp/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PWD/../packed_build/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavdevice.58.dylib @executable_path/libavdevice.58.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavutil.56.dylib @executable_path/libavutil.56.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswscale.5.dylib @executable_path/libswscale.5.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libavformat.58.dylib @executable_path/libavformat.58.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libswresample.3.dylib @executable_path/libswresample.3.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
 
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libavformat.58.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedtls.12.dylib @executable_path/libmbedtls.12.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedx509.0.dylib @executable_path/libmbedx509.0.dylib $PWD/../packed_build/bin/libmbedtls.12.dylib
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libmbedtls.12.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/libmbedtls.13.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libmbedtls.13.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libmbedcrypto.3.dylib @executable_path/libmbedcrypto.3.dylib $PWD/../packed_build/bin/libmbedx509.0.dylib
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libmbedx509.1.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/bin/libx264.159.dylib @executable_path/libx264.159.dylib $PWD/../packed_build/obs-plugins/obs-x264.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/bin/libx264.159.dylib @executable_path/libx264.159.dylib $PACKED_BUILD/obs-plugins/obs-x264.so
 
-sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PWD/../packed_build/obs-plugins/text-freetype2.so
+sudo install_name_tool -change $DEPS_DIR/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
 
-sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PWD/../packed_build/obs-plugins/obs-libfdk.so
+sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PACKED_BUILD/obs-plugins/obs-libfdk.so
 
-sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavcodec.58.dylib
-sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavformat.58.dylib
-sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavfilter.7.dylib
-sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PWD/../packed_build/bin/libavdevice.58.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavcodec.58.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavformat.58.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavfilter.7.dylib
+sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
