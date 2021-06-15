@@ -1,8 +1,10 @@
 #include <obs-module.h>
 #include <obs.hpp>
 #include <pthread.h>
+#if ENABLE_UI
 #include <QMainWindow.h>
 #include <QAction.h>
+#endif
 #include <obs-frontend-api.h>
 #include <obs.h>
 #include <CoreFoundation/CoreFoundation.h>
