@@ -612,6 +612,13 @@ static bool track_matte_enabled_modified(obs_properties_t *ppts,
 			prop_tp_type, obs_module_text("TransitionPointType"));
 	}
 
+	obs_property_t *prop_matte_layout = obs_properties_get(ppts, "track_matte_layout");
+	obs_property_set_visible(prop_matte_layout, track_matte_enabled);
+	obs_property_t *prop_matte_path = obs_properties_get(ppts, "track_matte_path");
+	obs_property_set_visible(prop_matte_path, track_matte_enabled);
+	obs_property_t *prop_matte_invert = obs_properties_get(ppts, "invert_matte");
+	obs_property_set_visible(prop_matte_invert, track_matte_enabled);
+
 	UNUSED_PARAMETER(p);
 	return true;
 }
