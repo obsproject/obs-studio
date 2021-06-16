@@ -499,7 +499,6 @@ static void *color_correction_filter_create_v1(obs_data_t *settings,
 	 */
 	if (!filter->effect) {
 		color_correction_filter_destroy_v1(filter);
-<<<<<<< HEAD
 		return NULL;
 	}
 
@@ -562,8 +561,6 @@ static void *color_correction_filter_create_v2(obs_data_t *settings,
 	 */
 	if (!filter->effect) {
 		color_correction_filter_destroy_v2(filter);
-=======
->>>>>>> origin/cef-4183-browser-source
 		return NULL;
 	}
 
@@ -572,71 +569,6 @@ static void *color_correction_filter_create_v2(obs_data_t *settings,
 	 * we could end up with the user controlled sliders and values
 	 * updating, but the visuals not updating to match.
 	 */
-<<<<<<< HEAD
-=======
-	color_correction_filter_update_v1(filter, settings);
-	return filter;
-}
-
-static void *color_correction_filter_create_v2(obs_data_t *settings,
-					       obs_source_t *context)
-{
-	/*
-	* Because of limitations of pre-c99 compilers, you can't create an
-	* array that doesn't have a known size at compile time. The below
-	* function calculates the size needed and allocates memory to
-	* handle the source.
-	*/
-	struct color_correction_filter_data_v2 *filter =
-		bzalloc(sizeof(struct color_correction_filter_data_v2));
-
-	/*
-	 * By default the effect file is stored in the ./data directory that
-	 * your filter resides in.
-	 */
-	char *effect_path = obs_module_file("color_correction_filter.effect");
-
-	filter->context = context;
-
-	/* Set/clear/assign for all necessary vectors. */
-	vec3_set(&filter->half_unit, 0.5f, 0.5f, 0.5f);
-	matrix4_identity(&filter->bright_matrix);
-	matrix4_identity(&filter->color_matrix);
-
-	/* Here we enter the GPU drawing/shader portion of our code. */
-	obs_enter_graphics();
-
-	/* Load the shader on the GPU. */
-	filter->effect = gs_effect_create_from_file(effect_path, NULL);
-
-	/* If the filter is active pass the parameters to the filter. */
-	if (filter->effect) {
-		filter->gamma_param = gs_effect_get_param_by_name(
-			filter->effect, SETTING_GAMMA);
-		filter->final_matrix_param = gs_effect_get_param_by_name(
-			filter->effect, "color_matrix");
-	}
-
-	obs_leave_graphics();
-
-	bfree(effect_path);
-
-	/*
-	 * If the filter has been removed/deactivated, destroy the filter
-	 * and exit out so we don't crash OBS by telling it to update
-	 * values that don't exist anymore.
-	 */
-	if (!filter->effect) {
-		color_correction_filter_destroy_v2(filter);
-		return NULL;
-	}
-
-	/*
-	 * It's important to call the update function here. If we don't
-	 * we could end up with the user controlled sliders and values
-	 * updating, but the visuals not updating to match.
-	 */
->>>>>>> origin/cef-4183-browser-source
 	color_correction_filter_update_v2(filter, settings);
 	return filter;
 }
@@ -685,11 +617,6 @@ static void color_correction_filter_render_v2(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
-<<<<<<< HEAD
-=======
-	gs_blend_state_pop();
-
->>>>>>> origin/cef-4183-browser-source
 	UNUSED_PARAMETER(effect);
 }
 
@@ -734,32 +661,6 @@ static obs_properties_t *color_correction_filter_properties_v2(void *data)
 					-4.0, 4.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
 					TEXT_BRIGHTNESS, -1.0, 1.0, 0.0001);
-	obs_properties_add_float_slider(props, SETTING_SATURATION,
-					TEXT_SATURATION, -1.0, 5.0, 0.01);
-	obs_properties_add_float_slider(props, SETTING_HUESHIFT, TEXT_HUESHIFT,
-					-180.0, 180.0, 0.01);
-	obs_properties_add_float_slider(props, SETTING_OPACITY, TEXT_OPACITY,
-					0.0, 1.0, 0.0001);
-
-	obs_properties_add_color(props, SETTING_COLOR_MULTIPLY,
-				 TEXT_COLOR_MULTIPLY);
-	obs_properties_add_color(props, SETTING_COLOR_ADD, TEXT_COLOR_ADD);
-
-	UNUSED_PARAMETER(data);
-	return props;
-}
-
-static obs_properties_t *color_correction_filter_properties_v2(void *data)
-{
-	obs_properties_t *props = obs_properties_create();
-
-	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -3.0,
-					3.0, 0.01);
-
-	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
-					-4.0, 4.0, 0.01);
-	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
-					TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_SATURATION,
 					TEXT_SATURATION, -1.0, 5.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_HUESHIFT, TEXT_HUESHIFT,

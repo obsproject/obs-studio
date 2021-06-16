@@ -859,11 +859,7 @@ obs_properties_t *obs_get_source_properties(const char *id)
 
 obs_missing_files_t *obs_source_get_missing_files(const obs_source_t *source)
 {
-<<<<<<< HEAD
 	if (!data_valid(source, "obs_source_get_missing_files"))
-=======
-	if (!obs_source_valid(source, "obs_source_get_missing_files"))
->>>>>>> origin/cef-4183-browser-source
 		return obs_missing_files_create();
 
 	if (source->info.missing_files) {
@@ -877,11 +873,7 @@ void obs_source_replace_missing_file(obs_missing_file_cb cb,
 				     obs_source_t *source, const char *new_path,
 				     void *data)
 {
-<<<<<<< HEAD
 	if (!data_valid(source, "obs_source_replace_missing_file"))
-=======
-	if (!obs_source_valid(source, "obs_source_replace_missing_file"))
->>>>>>> origin/cef-4183-browser-source
 		return;
 
 	cb(source->context.data, new_path, data);
@@ -2255,11 +2247,7 @@ static inline void obs_source_main_render(obs_source_t *source)
 	bool srgb_aware = (flags & OBS_SOURCE_SRGB) != 0;
 	bool default_effect = !source->filter_parent &&
 			      source->filters.num == 0 && !custom_draw;
-<<<<<<< HEAD
 	bool previous_srgb = false;
-=======
-	bool previous_srgb;
->>>>>>> origin/cef-4183-browser-source
 
 	if (!srgb_aware) {
 		previous_srgb = gs_get_linear_srgb();
@@ -3730,13 +3718,8 @@ static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
 	       (allow_direct == OBS_ALLOW_DIRECT_RENDERING) &&
 	       ((parent_flags & OBS_SOURCE_CUSTOM_DRAW) == 0) &&
 	       ((parent_flags & OBS_SOURCE_ASYNC) == 0) &&
-<<<<<<< HEAD
 	       ((filter_flags & OBS_SOURCE_SRGB) ==
 		(parent_flags & OBS_SOURCE_SRGB));
-=======
-	       (((filter_flags & OBS_SOURCE_SRGB) == 0) ||
-		((parent_flags & OBS_SOURCE_SRGB) == 0));
->>>>>>> origin/cef-4183-browser-source
 }
 
 bool obs_source_process_filter_begin(obs_source_t *filter,
@@ -4328,7 +4311,6 @@ void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 	}
 
 	const bool linear_srgb = gs_get_linear_srgb();
-<<<<<<< HEAD
 
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(linear_srgb);
@@ -4339,18 +4321,6 @@ void obs_source_draw(gs_texture_t *texture, int x, int y, uint32_t cx,
 	else
 		gs_effect_set_texture(image, texture);
 
-=======
-
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
-
-	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(image, texture);
-	else
-		gs_effect_set_texture(image, texture);
-
->>>>>>> origin/cef-4183-browser-source
 	const bool change_pos = (x != 0 || y != 0);
 	if (change_pos) {
 		gs_matrix_push();

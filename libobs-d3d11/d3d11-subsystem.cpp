@@ -1524,7 +1524,6 @@ static void device_load_texture_internal(gs_device_t *device, gs_texture_t *tex,
 
 	device->curTextures[unit] = tex;
 	device->context->PSSetShaderResources(unit, 1, &view);
-<<<<<<< HEAD
 }
 
 void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
@@ -1544,20 +1543,6 @@ void device_load_texture_srgb(gs_device_t *device, gs_texture_t *tex, int unit)
 		view = tex->shaderResLinear;
 	else
 		view = NULL;
-	return device_load_texture_internal(device, tex, unit, view);
-=======
->>>>>>> origin/cef-4183-browser-source
-}
-
-void device_load_texture(gs_device_t *device, gs_texture_t *tex, int unit)
-{
-	ID3D11ShaderResourceView *view = tex ? tex->shaderRes : NULL;
-	return device_load_texture_internal(device, tex, unit, view);
-}
-
-void device_load_texture_srgb(gs_device_t *device, gs_texture_t *tex, int unit)
-{
-	ID3D11ShaderResourceView *view = tex ? tex->shaderResLinear : NULL;
 	return device_load_texture_internal(device, tex, unit, view);
 }
 

@@ -1160,19 +1160,6 @@ bool obs_module_load(void)
 	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-<<<<<<< HEAD
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_SRGB;
-	si.create = text_create;
-	si.destroy = text_destroy;
-	si.get_name = text_get_name;
-	si.get_properties = text_get_properties;
-	si.get_width = text_get_width;
-	si.get_height = text_get_height;
-	si.get_defaults = text_get_defaults;
-	si.update = text_update;
-	si.video_tick = text_tick;
-	si.video_render = text_render;
-=======
 	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			  OBS_SOURCE_CAP_OBSOLETE;
 	si.get_properties = get_properties;
@@ -1227,7 +1214,6 @@ bool obs_module_load(void)
 
 		return files;
 	};
->>>>>>> origin/cef-4183-browser-source
 
 	obs_source_info si_v2 = si;
 	si_v2.version = 2;

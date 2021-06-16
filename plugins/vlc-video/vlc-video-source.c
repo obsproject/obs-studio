@@ -1131,12 +1131,8 @@ static obs_missing_files_t *vlcs_missingfiles(void *data)
 		const char *path = obs_data_get_string(item, "value");
 
 		if (strcmp(path, "") != 0) {
-<<<<<<< HEAD
 			if (!os_file_exists(path) &&
 			    strstr(path, "://") == NULL) {
-=======
-			if (!os_file_exists(path)) {
->>>>>>> origin/cef-4183-browser-source
 				obs_missing_file_t *file =
 					obs_missing_file_create(
 						path, missing_file_callback,

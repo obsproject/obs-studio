@@ -886,11 +886,8 @@ fail:
 
 void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
 {
-<<<<<<< HEAD
 	UNUSED_PARAMETER(device);
 
-=======
->>>>>>> origin/cef-4183-browser-source
 	if (enable)
 		gl_enable(GL_FRAMEBUFFER_SRGB);
 	else
@@ -899,11 +896,8 @@ void device_enable_framebuffer_srgb(gs_device_t *device, bool enable)
 
 bool device_framebuffer_srgb_enabled(gs_device_t *device)
 {
-<<<<<<< HEAD
 	UNUSED_PARAMETER(device);
 
-=======
->>>>>>> origin/cef-4183-browser-source
 	const GLboolean enabled = glIsEnabled(GL_FRAMEBUFFER_SRGB);
 	gl_success("glIsEnabled");
 	return enabled == GL_TRUE;
