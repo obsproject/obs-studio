@@ -190,7 +190,11 @@ chroma_settings_update_v2(struct chroma_key_filter_data_v2 *filter,
 	else if (strcmp(key_type, "magenta") == 0)
 		key_color = 0xFF00FF;
 
+<<<<<<< HEAD
 	vec4_from_rgba(&key_rgb, key_color | 0xFF000000);
+=======
+	vec4_from_rgba_srgb(&key_rgb, key_color | 0xFF000000);
+>>>>>>> origin/cef-4183-browser-source
 
 	memcpy(&cb_v4, cb_vec, sizeof(cb_v4));
 	memcpy(&cr_v4, cr_vec, sizeof(cr_v4));
@@ -282,6 +286,7 @@ static void *chroma_key_create_v1(obs_data_t *settings, obs_source_t *context)
 
 	if (!filter->effect) {
 		chroma_key_destroy_v1(filter);
+<<<<<<< HEAD
 		return NULL;
 	}
 
@@ -334,6 +339,60 @@ static void *chroma_key_create_v2(obs_data_t *settings, obs_source_t *context)
 	return filter;
 }
 
+=======
+		return NULL;
+	}
+
+	chroma_key_update_v1(filter, settings);
+	return filter;
+}
+
+static void *chroma_key_create_v2(obs_data_t *settings, obs_source_t *context)
+{
+	struct chroma_key_filter_data_v2 *filter =
+		bzalloc(sizeof(struct chroma_key_filter_data_v2));
+	char *effect_path = obs_module_file("chroma_key_filter_v2.effect");
+
+	filter->context = context;
+
+	obs_enter_graphics();
+
+	filter->effect = gs_effect_create_from_file(effect_path, NULL);
+	if (filter->effect) {
+		filter->opacity_param =
+			gs_effect_get_param_by_name(filter->effect, "opacity");
+		filter->contrast_param =
+			gs_effect_get_param_by_name(filter->effect, "contrast");
+		filter->brightness_param = gs_effect_get_param_by_name(
+			filter->effect, "brightness");
+		filter->gamma_param =
+			gs_effect_get_param_by_name(filter->effect, "gamma");
+		filter->chroma_param = gs_effect_get_param_by_name(
+			filter->effect, "chroma_key");
+		filter->pixel_size_param = gs_effect_get_param_by_name(
+			filter->effect, "pixel_size");
+		filter->similarity_param = gs_effect_get_param_by_name(
+			filter->effect, "similarity");
+		filter->smoothness_param = gs_effect_get_param_by_name(
+			filter->effect, "smoothness");
+		filter->spill_param =
+			gs_effect_get_param_by_name(filter->effect, "spill");
+	}
+
+	obs_leave_graphics();
+
+	bfree(effect_path);
+
+	if (!filter->effect) {
+		chroma_key_destroy_v2(filter);
+		return NULL;
+	}
+
+	chroma_key_update_v2(filter, settings);
+	return filter;
+}
+
+>>>>>>> origin/cef-4183-browser-source
 static void chroma_key_render_v1(void *data, gs_effect_t *effect)
 {
 	struct chroma_key_filter_data *filter = data;
@@ -394,6 +453,11 @@ static void chroma_key_render_v2(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
+<<<<<<< HEAD
+=======
+	gs_blend_state_pop();
+
+>>>>>>> origin/cef-4183-browser-source
 	UNUSED_PARAMETER(effect);
 }
 
@@ -474,7 +538,11 @@ static obs_properties_t *chroma_key_properties_v2(void *data)
 	obs_properties_add_float_slider(props, SETTING_CONTRAST, TEXT_CONTRAST,
 					-4.0, 4.0, 0.01);
 	obs_properties_add_float_slider(props, SETTING_BRIGHTNESS,
+<<<<<<< HEAD
 					TEXT_BRIGHTNESS, -1.0, 1.0, 0.0001);
+=======
+					TEXT_BRIGHTNESS, -1.0, 1.0, 0.01);
+>>>>>>> origin/cef-4183-browser-source
 	obs_properties_add_float_slider(props, SETTING_GAMMA, TEXT_GAMMA, -1.0,
 					1.0, 0.01);
 

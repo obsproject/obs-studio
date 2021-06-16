@@ -250,6 +250,7 @@ static void *color_key_create_v1(obs_data_t *settings, obs_source_t *context)
 
 	if (!filter->effect) {
 		color_key_destroy_v1(filter);
+<<<<<<< HEAD
 		return NULL;
 	}
 
@@ -298,6 +299,56 @@ static void *color_key_create_v2(obs_data_t *settings, obs_source_t *context)
 	return filter;
 }
 
+=======
+		return NULL;
+	}
+
+	color_key_update_v1(filter, settings);
+	return filter;
+}
+
+static void *color_key_create_v2(obs_data_t *settings, obs_source_t *context)
+{
+	struct color_key_filter_data_v2 *filter =
+		bzalloc(sizeof(struct color_key_filter_data_v2));
+	char *effect_path = obs_module_file("color_key_filter_v2.effect");
+
+	filter->context = context;
+
+	obs_enter_graphics();
+
+	filter->effect = gs_effect_create_from_file(effect_path, NULL);
+	if (filter->effect) {
+		filter->opacity_param =
+			gs_effect_get_param_by_name(filter->effect, "opacity");
+		filter->contrast_param =
+			gs_effect_get_param_by_name(filter->effect, "contrast");
+		filter->brightness_param = gs_effect_get_param_by_name(
+			filter->effect, "brightness");
+		filter->gamma_param =
+			gs_effect_get_param_by_name(filter->effect, "gamma");
+		filter->key_color_param = gs_effect_get_param_by_name(
+			filter->effect, "key_color");
+		filter->similarity_param = gs_effect_get_param_by_name(
+			filter->effect, "similarity");
+		filter->smoothness_param = gs_effect_get_param_by_name(
+			filter->effect, "smoothness");
+	}
+
+	obs_leave_graphics();
+
+	bfree(effect_path);
+
+	if (!filter->effect) {
+		color_key_destroy_v2(filter);
+		return NULL;
+	}
+
+	color_key_update_v2(filter, settings);
+	return filter;
+}
+
+>>>>>>> origin/cef-4183-browser-source
 static void color_key_render_v1(void *data, gs_effect_t *effect)
 {
 	struct color_key_filter_data *filter = data;
@@ -342,6 +393,11 @@ static void color_key_render_v2(void *data, gs_effect_t *effect)
 
 	gs_blend_state_pop();
 
+<<<<<<< HEAD
+=======
+	gs_blend_state_pop();
+
+>>>>>>> origin/cef-4183-browser-source
 	UNUSED_PARAMETER(effect);
 }
 

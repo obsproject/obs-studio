@@ -34,6 +34,7 @@ float4 CalcColor(float4 rgba)
 	return float4(pow(rgba.rgb, float3(gamma, gamma, gamma)) * contrast + brightness, rgba.a);
 }
 
+<<<<<<< HEAD
 float GetNonlinearChannel(float u)
 {
 	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
@@ -47,6 +48,11 @@ float3 GetNonlinearColor(float3 rgb)
 float GetColorDist(float3 rgb)
 {
 	return distance(key_color.rgb, GetNonlinearColor(rgb));
+=======
+float GetColorDist(float3 rgb)
+{
+	return distance(key_color.rgb, rgb);
+>>>>>>> origin/cef-4183-browser-source
 }
 
 float4 ProcessColorKey(float4 rgba, VertData v_in)
