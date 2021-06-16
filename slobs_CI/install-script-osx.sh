@@ -8,10 +8,10 @@ mkdir deps
 cd deps
 pwd
 
-brew install ccache mbedtls ffmpeg x264 cmake p7zip berkeley-db fdk-aac speexdsp python
+brew install ccache mbedtls freetype cmocka ffmpeg x264 cmake p7zip berkeley-db fdk-aac speexdsp python
 brew uninstall --ignore-dependencies curl
 # curl 7.77
-wget https://github.com/Homebrew/homebrew-core/blob/676285054598fbe257b05505f03ff7e8abcfd548/Formula/curl.rb
+wget https://raw.githubusercontent.com/Homebrew/homebrew-core/676285054598fbe257b05505f03ff7e8abcfd548/Formula/curl.rb
 brew install ./curl.rb
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
