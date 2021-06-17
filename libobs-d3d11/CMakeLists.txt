@@ -22,6 +22,7 @@ configure_file(
 include_directories(${CMAKE_CURRENT_BINARY_DIR})
 
 set(libobs-d3d11_SOURCES
+	d3d11-fence.cpp
 	d3d11-indexbuffer.cpp
 	d3d11-samplerstate.cpp
 	d3d11-shader.cpp
@@ -39,6 +40,7 @@ set(libobs-d3d11_SOURCES
 set(libobs-d3d11_HEADERS
 	${CMAKE_CURRENT_BINARY_DIR}/d3d11-config.h
 	intel-nv12-support.hpp
+	d3d11-fence.hpp
 	d3d11-shaderprocessor.hpp
 	d3d11-subsystem.hpp)
 

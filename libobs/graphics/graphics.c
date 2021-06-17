@@ -2738,6 +2738,74 @@ bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 								frequency);
 }
 
+bool gs_fence_available()
+{
+	if (!gs_valid("gs_fence_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_fence_available)
+		return false;
+
+	return thread_graphics->exports.device_fence_available(
+		thread_graphics->device);
+}
+
+gs_fence_t *gs_fence_create()
+{
+	if (!gs_valid("gs_fence_create"))
+		return NULL;
+
+	if (!thread_graphics->exports.device_fence_create)
+		return NULL;
+
+	return thread_graphics->exports.device_fence_create(
+		thread_graphics->device);
+}
+
+void gs_fence_destroy(gs_fence_t *fence)
+{
+	if (!gs_valid("gs_fence_destroy"))
+		return;
+
+	if (!thread_graphics->exports.gs_fence_destroy)
+		return;
+
+	thread_graphics->exports.gs_fence_destroy(fence);
+}
+
+void gs_fence_signal(gs_fence_t *fence)
+{
+	if (!gs_valid("gs_fence_signal"))
+		return;
+
+	if (!thread_graphics->exports.gs_fence_signal)
+		return;
+
+	thread_graphics->exports.gs_fence_signal(fence);
+}
+
+void gs_fence_wait(gs_fence_t *fence)
+{
+	if (!gs_valid("gs_fence_wait"))
+		return;
+
+	if (!thread_graphics->exports.gs_fence_wait)
+		return;
+
+	thread_graphics->exports.gs_fence_wait(fence);
+}
+
+bool gs_fence_timed_wait(gs_fence_t *fence, uint64_t nanoseconds)
+{
+	if (!gs_valid("gs_fence_timed_wait"))
+		return false;
+
+	if (!thread_graphics->exports.gs_fence_timed_wait)
+		return false;
+
+	thread_graphics->exports.gs_fence_timed_wait(fence, nanoseconds);
+}
+
 bool gs_nv12_available(void)
 {
 	if (!gs_valid("gs_nv12_available"))

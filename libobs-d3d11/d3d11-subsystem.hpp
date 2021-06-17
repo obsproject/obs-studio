@@ -336,6 +336,7 @@ enum class gs_type {
 	gs_timer,
 	gs_timer_range,
 	gs_texture_3d,
+	gs_fence,
 };
 
 struct gs_obj {

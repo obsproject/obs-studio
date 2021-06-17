@@ -193,6 +193,14 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_debug_marker_begin);
 	GRAPHICS_IMPORT(device_debug_marker_end);
 
+	// Synchronization: Fences
+	GRAPHICS_IMPORT_OPTIONAL(device_fence_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_fence_create);
+	GRAPHICS_IMPORT_OPTIONAL(gs_fence_destroy);
+	GRAPHICS_IMPORT_OPTIONAL(gs_fence_signal);
+	GRAPHICS_IMPORT_OPTIONAL(gs_fence_wait);
+	GRAPHICS_IMPORT_OPTIONAL(gs_fence_timed_wait);
+
 	/* OSX/Cocoa specific functions */
 #ifdef __APPLE__
 	GRAPHICS_IMPORT(device_shared_texture_available);

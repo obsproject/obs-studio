@@ -334,6 +334,13 @@ struct gs_exports {
 		uint32_t n_planes, const int *fds, const uint32_t *strides,
 		const uint32_t *offsets, const uint64_t *modifiers);
 #endif
+
+	bool (*device_fence_available)(gs_device_t *device);
+	void *(*device_fence_create)(gs_device_t *device);
+	void (*gs_fence_destroy)(void *fence);
+	void (*gs_fence_signal)(void *fence);
+	void (*gs_fence_wait)(void *fence);
+	void (*gs_fence_timed_wait)(void *fence, uint32_t nanoseconds);
 };
 
 struct blend_state {

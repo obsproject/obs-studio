@@ -24,6 +24,7 @@
 #include <winternl.h>
 #include <d3d9.h>
 #include "d3d11-subsystem.hpp"
+#include "d3d11-fence.hpp"
 #include "d3d11-config.h"
 #include "intel-nv12-support.hpp"
 
@@ -290,6 +291,7 @@ void gs_device::InitAdapter(uint32_t adapterIdx)
 }
 
 const static D3D_FEATURE_LEVEL featureLevels[] = {
+	D3D_FEATURE_LEVEL_11_1,
 	D3D_FEATURE_LEVEL_11_0,
 	D3D_FEATURE_LEVEL_10_1,
 	D3D_FEATURE_LEVEL_10_0,

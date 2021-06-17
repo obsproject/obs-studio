@@ -264,6 +264,7 @@ struct gs_effect_technique;
 struct gs_effect_pass;
 struct gs_effect_param;
 struct gs_device;
+struct gs_fence;
 struct graphics_subsystem;
 
 typedef struct gs_texture gs_texture_t;
@@ -283,6 +284,7 @@ typedef struct gs_effect_technique gs_technique_t;
 typedef struct gs_effect_pass gs_epass_t;
 typedef struct gs_effect_param gs_eparam_t;
 typedef struct gs_device gs_device_t;
+typedef struct gs_fence gs_fence_t;
 typedef struct graphics_subsystem graphics_t;
 
 /* ---------------------------------------------------
@@ -848,6 +850,42 @@ EXPORT void gs_debug_marker_begin(const float color[4], const char *markername);
 EXPORT void gs_debug_marker_begin_format(const float color[4],
 					 const char *format, ...);
 EXPORT void gs_debug_marker_end(void);
+
+/** Check if fences are supported by the current GPU context.
+ * @return 'true' if fences are supported by the current GPU, otherwise false.
+*/
+EXPORT bool gs_fence_available();
+
+/** Create a new fence
+ * @return Non-zero if fences are supported and successful, otherwise zero.
+*/
+EXPORT gs_fence_t *gs_fence_create();
+
+/** Destroy an existing fence.
+ *
+ * @param fence A valid fence object.
+ */
+EXPORT void gs_fence_destroy(gs_fence_t *fence);
+
+/** Signal an existing fence.
+ *
+ * @param fence A valid fence object.
+ */
+EXPORT void gs_fence_signal(gs_fence_t *fence);
+
+/** Wait for an existing fence indefinitely.
+ *
+ * @param fence A valid fence object.
+ */
+EXPORT void gs_fence_wait(gs_fence_t *fence);
+
+/** Wait for an existing fence for a specific amount of nanoseconds.
+ *
+ * @param fence A valid fence object.
+ * @param nanoseconds Ideal time to wait for the fence to be signalled.
+ * @return 'true' if signalled, otherwise false.
+ */
+EXPORT bool gs_fence_timed_wait(gs_fence_t *fence, uint64_t nanoseconds);
 
 #ifdef __APPLE__
 
