@@ -227,7 +227,7 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 		d->device->context->CopyResource(d->texture->texture, tex);
 }
 
-EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
+EXPORT bool gs_duplicator_update_frame_timed(gs_duplicator_t *d, uint32_t ms)
 {
 	DXGI_OUTDUPL_FRAME_INFO info;
 	ComPtr<ID3D11Texture2D> tex;
@@ -241,7 +241,7 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 		return true;
 	}
 
-	hr = d->duplicator->AcquireNextFrame(0, &info, res.Assign());
+	hr = d->duplicator->AcquireNextFrame(ms, &info, res.Assign());
 	if (hr == DXGI_ERROR_ACCESS_LOST) {
 		return false;
 
@@ -271,6 +271,11 @@ EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
 	d->duplicator->ReleaseFrame();
 	d->updated = true;
 	return true;
+}
+
+EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *d)
+{
+	return gs_duplicator_update_frame_timed(d, 0);
 }
 
 EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)

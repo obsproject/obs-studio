@@ -918,6 +918,13 @@ EXPORT int gs_duplicator_get_monitor_index(void *monitor);
 EXPORT gs_duplicator_t *gs_duplicator_create(int monitor_idx);
 EXPORT void gs_duplicator_destroy(gs_duplicator_t *duplicator);
 
+/** Update the Display Duplicator object with a new frame.
+ * @param duplicator The Display Duplicator object.
+ * @param ms Ideal maximum time to wait for a new frame.
+ * @return true if there was a new frame, otherwise false.
+*/
+EXPORT bool gs_duplicator_update_frame_timed(gs_duplicator_t *duplicator,
+					     uint32_t ms);
 EXPORT bool gs_duplicator_update_frame(gs_duplicator_t *duplicator);
 EXPORT gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator);
 

@@ -2969,6 +2969,17 @@ void gs_duplicator_destroy(gs_duplicator_t *duplicator)
 	thread_graphics->exports.gs_duplicator_destroy(duplicator);
 }
 
+bool gs_duplicator_update_frame_timed(gs_duplicator_t *duplicator, uint32_t ms)
+{
+	if (!gs_valid_p("gs_duplicator_update_frame_timed", duplicator))
+		return false;
+	if (!thread_graphics->exports.gs_duplicator_update_frame_timed)
+		return false;
+
+	return thread_graphics->exports.gs_duplicator_update_frame_timed(
+		duplicator, ms);
+}
+
 bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
 {
 	if (!gs_valid_p("gs_duplicator_update_frame", duplicator))
