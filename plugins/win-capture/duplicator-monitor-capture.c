@@ -1,6 +1,7 @@
 #include <windows.h>
 
 #include <obs-module.h>
+#include <obs.h>
 #include <util/dstr.h>
 #include <util/threading.h>
 
@@ -27,6 +28,7 @@
 #define TEXT_METHOD_AUTO     obs_module_text("WindowCapture.Method.Auto")
 #define TEXT_METHOD_DXGI     obs_module_text("Method.DXGI")
 #define TEXT_METHOD_WGC      obs_module_text("Method.WindowsGraphicsCapture")
+#define TEXT_SYNC            obs_module_text("Sync")
 
 /* clang-format on */
 
@@ -89,6 +91,8 @@ struct duplicator_capture {
 	void *winrt_module;
 	struct winrt_exports exports;
 	struct winrt_capture *capture_winrt;
+
+	bool sync;
 };
 
 struct wgc_monitor_info {
@@ -137,10 +141,12 @@ static void log_settings(struct duplicator_capture *capture, int monitor,
 	info("update settings:\n"
 	     "\tdisplay: %d (%ldx%ld)\n"
 	     "\tcursor: %s\n"
-	     "\tmethod: %s",
+	     "\tmethod: %s\n"
+	     "\tsync: %s",
 	     monitor + 1, width, height,
 	     capture->capture_cursor ? "true" : "false",
-	     get_method_name(capture->method));
+	     get_method_name(capture->method),
+	     capture->sync ? "true" : "false");
 }
 
 static enum display_capture_method
@@ -213,6 +219,8 @@ static inline void update_settings(struct duplicator_capture *capture,
 	capture->rot = 0;
 	capture->reset_timeout = RESET_INTERVAL_SEC;
 
+	capture->sync = obs_data_get_bool(settings, "sync");
+
 	pthread_mutex_unlock(&capture->update_mutex);
 }
 
@@ -266,6 +274,7 @@ static void duplicator_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "monitor", 0);
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
+	obs_data_set_default_bool(settings, "sync", false);
 }
 
 static void duplicator_capture_update(void *data, obs_data_t *settings)
@@ -447,7 +456,15 @@ static void duplicator_capture_tick(void *data, float seconds)
 			if (capture->capture_cursor)
 				cursor_capture(&capture->cursor_data);
 
-			if (!gs_duplicator_update_frame(capture->duplicator)) {
+			struct obs_video_info ovi;
+			uint32_t max_wait = 0;
+			if (capture->sync && obs_get_video_info(&ovi)) {
+				// At most wait half the frame time for a new DXGI frame.
+				max_wait = (500 * ovi.fps_den / ovi.fps_num);
+			}
+
+			if (!gs_duplicator_update_frame_timed(
+				    capture->duplicator, max_wait)) {
 				free_capture_data(capture);
 
 			} else if (capture->width == 0) {
@@ -621,6 +638,10 @@ static void update_settings_visibility(obs_properties_t *props,
 	obs_property_t *p = obs_properties_get(props, "cursor");
 	obs_property_set_visible(p, dxgi_options || wgc_cursor_toggle);
 
+	// Only show VSync for DXGI
+	obs_property_set_visible(obs_properties_get(props, "sync"),
+				 dxgi_options);
+
 	pthread_mutex_unlock(&capture->update_mutex);
 }
 
@@ -660,6 +681,8 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 		OBS_COMBO_FORMAT_INT);
 
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
+
+	obs_properties_add_bool(props, "sync", TEXT_SYNC);
 
 	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 
