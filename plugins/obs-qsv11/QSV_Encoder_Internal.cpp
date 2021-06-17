@@ -323,7 +323,10 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 
 	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
 	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
-		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
+		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
+			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
+			m_co2.LookAheadDepth = 0;
+		}
 	}
 
 	return true;

@@ -20,8 +20,9 @@ set(obs-ffmpeg_config_HEADERS
 	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
 
 set(obs-ffmpeg_HEADERS
+	obs-ffmpeg-compat.h
 	obs-ffmpeg-formats.h
-	obs-ffmpeg-compat.h)
+	obs-ffmpeg-mux.h)
 
 set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
@@ -29,6 +30,7 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg-nvenc.c
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
+	obs-ffmpeg-hls-mux.c
 	obs-ffmpeg-source.c)
 
 if(UNIX AND NOT APPLE)

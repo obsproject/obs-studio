@@ -53,12 +53,17 @@ static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
 {
 	struct fade_info *fade = data;
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_effect_set_texture(fade->a_param, a);
 	gs_effect_set_texture(fade->b_param, b);
 	gs_effect_set_float(fade->fade_param, t);
 
 	while (gs_effect_loop(fade->effect, "Fade"))
 		gs_draw_sprite(NULL, 0, cx, cy);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 static void fade_video_render(void *data, gs_effect_t *effect)

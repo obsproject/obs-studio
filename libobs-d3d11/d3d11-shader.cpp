@@ -262,10 +262,15 @@ inline void gs_shader::UpdateParam(vector<uint8_t> &constData,
 			param.changed = false;
 		}
 
-	} else if (param.curValue.size() == sizeof(gs_texture_t *)) {
-		gs_texture_t *tex;
-		memcpy(&tex, param.curValue.data(), sizeof(gs_texture_t *));
-		device_load_texture(device, tex, param.textureID);
+	} else if (param.curValue.size() == sizeof(struct gs_shader_texture)) {
+		struct gs_shader_texture shader_tex;
+		memcpy(&shader_tex, param.curValue.data(), sizeof(shader_tex));
+		if (shader_tex.srgb)
+			device_load_texture_srgb(device, shader_tex.tex,
+						 param.textureID);
+		else
+			device_load_texture(device, shader_tex.tex,
+					    param.textureID);
 
 		if (param.nextSampler) {
 			ID3D11SamplerState *state = param.nextSampler->state;

@@ -10,9 +10,13 @@
     <file>images/plus.svg</file>
     <file>images/down.svg</file>
     <file>images/up.svg</file>
+    <file>images/obs_256x256.png</file>
     <file>images/obs.png</file>
+    <file>images/obs_macos.png</file>
     <file>images/obs_paused.png</file>
+    <file>images/obs_paused_macos.png</file>
     <file>images/tray_active.png</file>
+    <file>images/tray_active_macos.png</file>
     <file>images/expand.svg</file>
     <file>images/unlocked.svg</file>
     <file>images/locked.svg</file>
@@ -22,6 +26,7 @@
     <file>images/help_light.svg</file>
     <file>images/trash.svg</file>
     <file>images/revert.svg</file>
+    <file>images/alert.svg</file>
     <file>images/sources/brush.svg</file>
     <file>images/sources/camera.svg</file>
     <file>images/sources/gamepad.svg</file>
@@ -47,6 +52,7 @@
     <file>images/media/media_previous.svg</file>
     <file>images/media/media_restart.svg</file>
     <file>images/media/media_stop.svg</file>
+    <file>images/interact.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

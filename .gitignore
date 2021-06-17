@@ -41,7 +41,7 @@ GeneratedFiles/
 .vscode/
 
 
-
+/packed_build/
 /other/
 
 #make stuff
@@ -62,7 +62,6 @@ __pycache__
 #random useless file stuff
 *.dmg
 *.app
-.DS_Store
 .directory
 .hg
 .depend

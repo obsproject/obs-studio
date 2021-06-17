@@ -1,3 +1,4 @@
+#include "window-basic-main.hpp"
 #include "context-bar-controls.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -31,6 +32,63 @@ SourceToolbar::SourceToolbar(QWidget *parent, OBSSource source)
 	  weakSource(OBSGetWeakRef(source)),
 	  props(obs_source_properties(source), obs_properties_destroy)
 {
+}
+
+void SourceToolbar::SaveOldProperties(obs_source_t *source)
+{
+	if (oldData)
+		obs_data_release(oldData);
+
+	oldData = obs_data_create();
+	obs_data_t *oldSettings = obs_source_get_settings(source);
+	obs_data_apply(oldData, oldSettings);
+	obs_data_set_string(oldData, "undo_sname", obs_source_get_name(source));
+	obs_data_release(oldSettings);
+	obs_data_release(oldData);
+}
+
+void SourceToolbar::SetUndoProperties(obs_source_t *source)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	std::string scene_name =
+		obs_source_get_name(main->GetCurrentSceneSource());
+	auto undo_redo = [scene_name,
+			  main = std::move(main)](const std::string &data) {
+		obs_data_t *settings = obs_data_create_from_json(data.c_str());
+		obs_source_t *source = obs_get_source_by_name(
+			obs_data_get_string(settings, "undo_sname"));
+		obs_source_reset_settings(source, settings);
+
+		obs_source_t *scene_source =
+			obs_get_source_by_name(scene_name.c_str());
+		main->SetCurrentScene(scene_source, true);
+		obs_source_release(scene_source);
+
+		obs_data_release(settings);
+		obs_source_release(source);
+
+		main->UpdateContextBar();
+	};
+
+	OBSData new_settings = obs_data_create();
+	OBSData curr_settings = obs_source_get_settings(source);
+	obs_data_apply(new_settings, curr_settings);
+	obs_data_set_string(new_settings, "undo_sname",
+			    obs_source_get_name(source));
+
+	std::string undo_data(obs_data_get_json(oldData));
+	std::string redo_data(obs_data_get_json(new_settings));
+
+	if (undo_data.compare(redo_data) != 0)
+		main->undo_s.add_action(
+			QTStr("Undo.Properties")
+				.arg(obs_source_get_name(source)),
+			undo_redo, undo_redo, undo_data, redo_data);
+
+	obs_data_release(new_settings);
+	obs_data_release(curr_settings);
+	obs_data_release(oldData);
 }
 
 /* ========================================================================= */
@@ -96,14 +154,6 @@ static int FillPropertyCombo(QComboBox *c, obs_property_t *p,
 	return cur_idx;
 }
 
-static void SetComboItemDisabled(QComboBox *c, int idx)
-{
-	QStandardItemModel *model =
-		dynamic_cast<QStandardItemModel *>(c->model());
-	QStandardItem *item = model->item(idx);
-	item->setFlags(Qt::NoItemFlags);
-}
-
 void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
 					obs_properties_t *props,
 					const char *prop_name, bool is_int)
@@ -131,7 +181,7 @@ void UpdateSourceComboToolbarProperties(QComboBox *combo, OBSSource source,
 			cur_idx = 0;
 		}
 
-		SetComboItemDisabled(combo, cur_idx);
+		SetComboItemEnabled(combo, cur_idx, false);
 	}
 
 	combo->setCurrentIndex(cur_idx);
@@ -171,8 +221,10 @@ void ComboSelectToolbar::on_device_currentIndexChanged(int idx)
 		return;
 	}
 
+	SaveOldProperties(source);
 	UpdateSourceComboToolbarValue(ui->device, source, idx, prop_name,
 				      is_int);
+	SetUndoProperties(source);
 }
 
 AudioCaptureToolbar::AudioCaptureToolbar(QWidget *parent, OBSSource source)
@@ -187,6 +239,10 @@ void AudioCaptureToolbar::Init()
 
 	obs_module_t *mod =
 		get_os_module("win-wasapi", "mac-capture", "linux-pulseaudio");
+	if (!mod) {
+		return;
+	}
+
 	const char *device_str =
 		get_os_text(mod, "Device", "CoreAudio.Device", "Device");
 	ui->deviceLabel->setText(device_str);
@@ -345,7 +401,7 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	ui->window->blockSignals(false);
 
 	if (cur_idx != -1 && obs_property_list_item_disabled(p, cur_idx)) {
-		SetComboItemDisabled(ui->window, cur_idx);
+		SetComboItemEnabled(ui->window, cur_idx, false);
 	}
 
 	UpdateWindowVisibility();
@@ -374,10 +430,12 @@ void GameCaptureToolbar::on_mode_currentIndexChanged(int idx)
 
 	QString id = ui->mode->itemData(idx).toString();
 
+	SaveOldProperties(source);
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "capture_mode", QT_TO_UTF8(id));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+	SetUndoProperties(source);
 
 	UpdateWindowVisibility();
 }
@@ -391,10 +449,12 @@ void GameCaptureToolbar::on_window_currentIndexChanged(int idx)
 
 	QString id = ui->window->itemData(idx).toString();
 
+	SaveOldProperties(source);
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "window", QT_TO_UTF8(id));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+	SetUndoProperties(source);
 }
 
 /* ========================================================================= */
@@ -438,10 +498,12 @@ void ImageSourceToolbar::on_browse_clicked()
 
 	ui->path->setText(path);
 
+	SaveOldProperties(source);
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "file", QT_TO_UTF8(path));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+	SetUndoProperties(source);
 }
 
 /* ========================================================================= */
@@ -522,10 +584,14 @@ void ColorSourceToolbar::on_choose_clicked()
 	color = newColor;
 	UpdateColor();
 
+	SaveOldProperties(source);
+
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_int(settings, "color", color_to_int(color));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+
+	SetUndoProperties(source);
 }
 
 /* ========================================================================= */
@@ -600,6 +666,8 @@ void TextSourceToolbar::on_selectFont_clicked()
 	flags |= font.strikeOut() ? OBS_FONT_STRIKEOUT : 0;
 	obs_data_set_int(font_obj, "flags", flags);
 
+	SaveOldProperties(source);
+
 	obs_data_t *settings = obs_data_create();
 
 	obs_data_set_obj(settings, "font", font_obj);
@@ -607,6 +675,8 @@ void TextSourceToolbar::on_selectFont_clicked()
 
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+
+	SetUndoProperties(source);
 }
 
 void TextSourceToolbar::on_selectColor_clicked()
@@ -632,6 +702,8 @@ void TextSourceToolbar::on_selectColor_clicked()
 
 	color = newColor;
 
+	SaveOldProperties(source);
+
 	obs_data_t *settings = obs_data_create();
 	if (!strncmp(obs_source_get_id(source), "text_ft2_source", 15)) {
 		obs_data_set_int(settings, "color1", color_to_int(color));
@@ -641,6 +713,8 @@ void TextSourceToolbar::on_selectColor_clicked()
 	}
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+
+	SetUndoProperties(source);
 }
 
 void TextSourceToolbar::on_text_textChanged()

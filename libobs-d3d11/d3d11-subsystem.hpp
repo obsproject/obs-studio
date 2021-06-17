@@ -59,7 +59,7 @@ static inline uint32_t GetWinVer()
 	return (ver.major << 8) | ver.minor;
 }
 
-static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
+static inline DXGI_FORMAT ConvertGSTextureFormatResource(gs_color_format format)
 {
 	switch (format) {
 	case GS_UNKNOWN:
@@ -69,11 +69,11 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 	case GS_R8:
 		return DXGI_FORMAT_R8_UNORM;
 	case GS_RGBA:
-		return DXGI_FORMAT_R8G8B8A8_UNORM;
+		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
 	case GS_BGRX:
-		return DXGI_FORMAT_B8G8R8X8_UNORM;
+		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
 	case GS_BGRA:
-		return DXGI_FORMAT_B8G8R8A8_UNORM;
+		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
 	case GS_R10G10B10A2:
 		return DXGI_FORMAT_R10G10B10A2_UNORM;
 	case GS_RGBA16:
@@ -100,9 +100,44 @@ static inline DXGI_FORMAT ConvertGSTextureFormat(gs_color_format format)
 		return DXGI_FORMAT_BC3_UNORM;
 	case GS_R8G8:
 		return DXGI_FORMAT_R8G8_UNORM;
+	case GS_RGBA_UNORM:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case GS_BGRX_UNORM:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case GS_BGRA_UNORM:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
 	}
 
 	return DXGI_FORMAT_UNKNOWN;
+}
+
+static inline DXGI_FORMAT ConvertGSTextureFormatView(gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case GS_BGRX:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	case GS_BGRA:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
+	default:
+		return ConvertGSTextureFormatResource(format);
+	}
+}
+
+static inline DXGI_FORMAT
+ConvertGSTextureFormatViewLinear(gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA:
+		return DXGI_FORMAT_R8G8B8A8_UNORM_SRGB;
+	case GS_BGRX:
+		return DXGI_FORMAT_B8G8R8X8_UNORM_SRGB;
+	case GS_BGRA:
+		return DXGI_FORMAT_B8G8R8A8_UNORM_SRGB;
+	default:
+		return ConvertGSTextureFormatResource(format);
+	}
 }
 
 static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
@@ -114,11 +149,11 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 		return GS_R8;
 	case DXGI_FORMAT_R8G8_UNORM:
 		return GS_R8G8;
-	case DXGI_FORMAT_R8G8B8A8_UNORM:
+	case DXGI_FORMAT_R8G8B8A8_TYPELESS:
 		return GS_RGBA;
-	case DXGI_FORMAT_B8G8R8X8_UNORM:
+	case DXGI_FORMAT_B8G8R8X8_TYPELESS:
 		return GS_BGRX;
-	case DXGI_FORMAT_B8G8R8A8_UNORM:
+	case DXGI_FORMAT_B8G8R8A8_TYPELESS:
 		return GS_BGRA;
 	case DXGI_FORMAT_R10G10B10A2_UNORM:
 		return GS_R10G10B10A2;
@@ -144,6 +179,12 @@ static inline gs_color_format ConvertDXGITextureFormat(DXGI_FORMAT format)
 		return GS_DXT3;
 	case DXGI_FORMAT_BC3_UNORM:
 		return GS_DXT5;
+	case DXGI_FORMAT_R8G8B8A8_UNORM:
+		return GS_RGBA_UNORM;
+	case DXGI_FORMAT_B8G8R8X8_UNORM:
+		return GS_BGRX_UNORM;
+	case DXGI_FORMAT_B8G8R8A8_UNORM:
+		return GS_BGRA_UNORM;
 	}
 
 	return GS_UNKNOWN;
@@ -407,7 +448,9 @@ struct gs_texture : gs_obj {
 	gs_color_format format;
 
 	ComPtr<ID3D11ShaderResourceView> shaderRes;
-	D3D11_SHADER_RESOURCE_VIEW_DESC resourceDesc = {};
+	ComPtr<ID3D11ShaderResourceView> shaderResLinear;
+	D3D11_SHADER_RESOURCE_VIEW_DESC viewDesc{};
+	D3D11_SHADER_RESOURCE_VIEW_DESC viewDescLinear{};
 
 	void Rebuild(ID3D11Device *dev);
 
@@ -437,11 +480,14 @@ struct gs_texture : gs_obj {
 struct gs_texture_2d : gs_texture {
 	ComPtr<ID3D11Texture2D> texture;
 	ComPtr<ID3D11RenderTargetView> renderTarget[6];
+	ComPtr<ID3D11RenderTargetView> renderTargetLinear[6];
 	ComPtr<IDXGISurface1> gdiSurface;
 
 	uint32_t width = 0, height = 0;
 	uint32_t flags = 0;
-	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatResource = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatView = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatViewLinear = DXGI_FORMAT_UNKNOWN;
 	bool isRenderTarget = false;
 	bool isGDICompatible = false;
 	bool isDynamic = false;
@@ -473,10 +519,13 @@ struct gs_texture_2d : gs_texture {
 	inline void Release()
 	{
 		texture.Release();
-		for (auto &rt : renderTarget)
+		for (ComPtr<ID3D11RenderTargetView> &rt : renderTarget)
+			rt.Release();
+		for (ComPtr<ID3D11RenderTargetView> &rt : renderTargetLinear)
 			rt.Release();
 		gdiSurface.Release();
 		shaderRes.Release();
+		shaderResLinear.Release();
 	}
 
 	inline gs_texture_2d() : gs_texture(GS_TEXTURE_2D, 0, GS_UNKNOWN) {}
@@ -490,6 +539,7 @@ struct gs_texture_2d : gs_texture {
 	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12,
 		      uint32_t flags);
 	gs_texture_2d(gs_device_t *device, uint32_t handle);
+	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *obj);
 };
 
 struct gs_texture_3d : gs_texture {
@@ -497,7 +547,9 @@ struct gs_texture_3d : gs_texture {
 
 	uint32_t width = 0, height = 0, depth = 0;
 	uint32_t flags = 0;
-	DXGI_FORMAT dxgiFormat = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatResource = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatView = DXGI_FORMAT_UNKNOWN;
+	DXGI_FORMAT dxgiFormatViewLinear = DXGI_FORMAT_UNKNOWN;
 	bool isDynamic = false;
 	bool isShared = false;
 	bool genMipmaps = false;
@@ -908,6 +960,8 @@ struct gs_device {
 	gs_texture_2d *curRenderTarget = nullptr;
 	gs_zstencil_buffer *curZStencilBuffer = nullptr;
 	int curRenderSide = 0;
+	bool curFramebufferSrgb = false;
+	bool curFramebufferInvalidate = false;
 	gs_texture *curTextures[GS_MAX_TEXTURES];
 	gs_sampler_state *curSamplers[GS_MAX_TEXTURES];
 	gs_vertex_buffer *curVertexBuffer = nullptr;
@@ -950,7 +1004,9 @@ struct gs_device {
 	gs_obj *first_obj = nullptr;
 
 	void InitCompiler();
-	void InitFactory(uint32_t adapterIdx);
+	void InitFactory();
+	void ReorderAdapters(uint32_t &adapterIdx);
+	void InitAdapter(uint32_t adapterIdx);
 	void InitDevice(uint32_t adapterIdx);
 
 	ID3D11DepthStencilState *AddZStencilState();
@@ -967,6 +1023,8 @@ struct gs_device {
 			    uint32_t src_y, uint32_t src_w, uint32_t src_h);
 
 	void UpdateViewProjMatrix();
+
+	void FlushOutputViews();
 
 	void RebuildDevice();
 

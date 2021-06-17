@@ -34,14 +34,16 @@
 #include <sys/times.h>
 #include <sys/wait.h>
 #include <libgen.h>
-#ifdef __FreeBSD__
+#if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/param.h>
 #include <sys/queue.h>
 #include <sys/socket.h>
 #include <sys/sysctl.h>
 #include <sys/user.h>
 #include <unistd.h>
+#if defined(__FreeBSD__)
 #include <libprocstat.h>
+#endif
 #else
 #include <sys/resource.h>
 #endif
@@ -90,6 +92,14 @@ void os_dlclose(void *module)
 {
 	if (module)
 		dlclose(module);
+}
+
+bool os_is_obs_plugin(const char *path)
+{
+	UNUSED_PARAMETER(path);
+
+	/* not necessary on this platform */
+	return true;
 }
 
 #if !defined(__APPLE__)
@@ -272,6 +282,62 @@ char *os_get_program_data_path_ptr(const char *name)
 	return str;
 }
 
+#if defined(__OpenBSD__)
+// a bit modified version of https://stackoverflow.com/a/31495527
+ssize_t os_openbsd_get_executable_path(char *epath)
+{
+	int mib[4];
+	char **argv;
+	size_t len;
+	const char *comm;
+	int ok = 0;
+
+	mib[0] = CTL_KERN;
+	mib[1] = KERN_PROC_ARGS;
+	mib[2] = getpid();
+	mib[3] = KERN_PROC_ARGV;
+
+	if (sysctl(mib, 4, NULL, &len, NULL, 0) < 0)
+		abort();
+
+	if (!(argv = malloc(len)))
+		abort();
+
+	if (sysctl(mib, 4, argv, &len, NULL, 0) < 0)
+		abort();
+
+	comm = argv[0];
+
+	if (*comm == '/' || *comm == '.') {
+		if (realpath(comm, epath))
+			ok = 1;
+	} else {
+		char *sp;
+		char *xpath = strdup(getenv("PATH"));
+		char *path = strtok_r(xpath, ":", &sp);
+		struct stat st;
+
+		if (!xpath)
+			abort();
+
+		while (path) {
+			snprintf(epath, PATH_MAX, "%s/%s", path, comm);
+
+			if (!stat(epath, &st) && (st.st_mode & S_IXUSR)) {
+				ok = 1;
+				break;
+			}
+			path = strtok_r(NULL, ":", &sp);
+		}
+
+		free(xpath);
+	}
+
+	free(argv);
+	return ok ? (ssize_t)strlen(epath) : -1;
+}
+#endif
+
 char *os_get_executable_path_ptr(const char *name)
 {
 	char exe[PATH_MAX];
@@ -286,6 +352,8 @@ char *os_get_executable_path_ptr(const char *name)
 		return NULL;
 	}
 	count = pathlen;
+#elif defined(__OpenBSD__)
+	ssize_t count = os_openbsd_get_executable_path(exe);
 #else
 	ssize_t count = readlink("/proc/self/exe", exe, PATH_MAX - 1);
 	if (count >= 0) {
@@ -392,7 +460,10 @@ struct os_dirent *os_readdir(os_dir_t *dir)
 	if (!dir->cur_dirent)
 		return NULL;
 
-	strncpy(dir->out.d_name, dir->cur_dirent->d_name, 255);
+	const size_t length = strlen(dir->cur_dirent->d_name);
+	if (sizeof(dir->out.d_name) <= length)
+		return NULL;
+	memcpy(dir->out.d_name, dir->cur_dirent->d_name, length + 1);
 
 	dstr_copy(&file_path, dir->path);
 	dstr_cat(&file_path, "/");

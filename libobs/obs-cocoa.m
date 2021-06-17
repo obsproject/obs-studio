@@ -24,7 +24,6 @@
 #include <sys/types.h>
 #include <sys/sysctl.h>
 
-#include <objc/objc.h>
 #include <Carbon/Carbon.h>
 #include <IOKit/hid/IOHIDDevice.h>
 #include <IOKit/hid/IOHIDManager.h>
@@ -152,65 +151,17 @@ static void log_available_memory(void)
 		     memory_available / 1024 / 1024);
 }
 
-static void log_os_name(id pi, SEL UTF8StringSel)
-{
-	typedef int (*os_func)(id, SEL);
-	os_func operatingSystem = (os_func)objc_msgSend;
-	unsigned long os_id = (unsigned long)operatingSystem(
-		pi, sel_registerName("operatingSystem"));
-
-	typedef id (*os_name_func)(id, SEL);
-	os_name_func operatingSystemName = (os_name_func)objc_msgSend;
-	id os = operatingSystemName(pi,
-				    sel_registerName("operatingSystemName"));
-	typedef const char *(*utf8_func)(id, SEL);
-	utf8_func UTF8String = (utf8_func)objc_msgSend;
-	const char *name = UTF8String(os, UTF8StringSel);
-
-	if (os_id == 5 /*NSMACHOperatingSystem*/) {
-		blog(LOG_INFO, "OS Name: Mac OS X (%s)", name);
-		return;
-	}
-
-	blog(LOG_INFO, "OS Name: %s", name ? name : "Unknown");
-}
-
 static bool using_10_15_or_above = true;
-
-static void log_os_version(id pi, SEL UTF8StringSel)
-{
-	typedef id (*version_func)(id, SEL);
-	version_func operatingSystemVersionString = (version_func)objc_msgSend;
-	id vs = operatingSystemVersionString(
-		pi, sel_registerName("operatingSystemVersionString"));
-	typedef const char *(*utf8_func)(id, SEL);
-	utf8_func UTF8String = (utf8_func)objc_msgSend;
-	const char *version = UTF8String(vs, UTF8StringSel);
-
-	blog(LOG_INFO, "OS Version: %s", version ? version : "Unknown");
-
-	if (version) {
-		int major;
-		int minor;
-
-		int count = sscanf(version, "Version %d.%d", &major, &minor);
-		if (count == 2 && major == 10) {
-			using_10_15_or_above = minor >= 15;
-		}
-	}
-}
 
 static void log_os(void)
 {
-	Class NSProcessInfo = objc_getClass("NSProcessInfo");
-	typedef id (*func)(id, SEL);
-	func processInfo = (func)objc_msgSend;
-	id pi = processInfo((id)NSProcessInfo, sel_registerName("processInfo"));
+	NSProcessInfo *pi = [NSProcessInfo processInfo];
+	blog(LOG_INFO, "OS Name: Mac OS X");
+	blog(LOG_INFO, "OS Version: %s",
+	     [[pi operatingSystemVersionString] UTF8String]);
 
-	SEL UTF8String = sel_registerName("UTF8String");
-
-	log_os_name(pi, UTF8String);
-	log_os_version(pi, UTF8String);
+	NSOperatingSystemVersion catalina = {10, 15, 0};
+	using_10_15_or_above = [pi isOperatingSystemAtLeastVersion:catalina];
 }
 
 static void log_kernel_version(void)
@@ -1738,13 +1689,7 @@ static bool mouse_button_pressed(obs_key_t key, bool *pressed)
 		return false;
 	}
 
-	Class NSEvent = objc_getClass("NSEvent");
-	SEL pressedMouseButtonsSel = sel_registerName("pressedMouseButtons");
-	typedef int (*func)(id, SEL);
-	func pressedMouseButtons = (func)objc_msgSend;
-	NSUInteger buttons = (NSUInteger)pressedMouseButtons(
-		(id)NSEvent, pressedMouseButtonsSel);
-
+	NSUInteger buttons = [NSEvent pressedMouseButtons];
 	*pressed = (buttons & (1 << button)) != 0;
 	return true;
 }

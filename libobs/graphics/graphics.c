@@ -1363,6 +1363,23 @@ gs_texture_t *gs_texture_create(uint32_t width, uint32_t height,
 						       levels, data, flags);
 }
 
+#if __linux__
+
+gs_texture_t *gs_texture_create_from_dmabuf(
+	unsigned int width, unsigned int height, uint32_t drm_format,
+	enum gs_color_format color_format, uint32_t n_planes, const int *fds,
+	const uint32_t *strides, const uint32_t *offsets,
+	const uint64_t *modifiers)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_texture_create_from_dmabuf(
+		graphics->device, width, height, drm_format, color_format,
+		n_planes, fds, strides, offsets, modifiers);
+}
+
+#endif
+
 gs_texture_t *gs_cubetexture_create(uint32_t size,
 				    enum gs_color_format color_format,
 				    uint32_t levels, const uint8_t **data,
@@ -1706,6 +1723,50 @@ void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 
 	graphics->exports.device_set_cube_render_target(
 		graphics->device, cubetex, side, zstencil);
+}
+
+void gs_enable_framebuffer_srgb(bool enable)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_enable_framebuffer_srgb"))
+		return;
+
+	graphics->exports.device_enable_framebuffer_srgb(graphics->device,
+							 enable);
+}
+
+bool gs_framebuffer_srgb_enabled(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_framebuffer_srgb_enabled"))
+		return false;
+
+	return graphics->exports.device_framebuffer_srgb_enabled(
+		graphics->device);
+}
+
+bool gs_get_linear_srgb(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_linear_srgb"))
+		return false;
+
+	return graphics->linear_srgb;
+}
+
+bool gs_set_linear_srgb(bool linear_srgb)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_linear_srgb"))
+		return false;
+
+	const bool previous = graphics->linear_srgb;
+	graphics->linear_srgb = linear_srgb;
+	return previous;
 }
 
 void gs_copy_texture(gs_texture_t *dst, gs_texture_t *src)
@@ -2768,6 +2829,26 @@ uint32_t gs_create_iosurface(uint32_t width, uint32_t height)
 	return graphics->exports.create_iosurface(graphics->device, width, height);
 }
 
+bool gs_shared_texture_available(void)
+{
+	if (!gs_valid("gs_shared_texture_available"))
+		return false;
+
+	return thread_graphics->exports.device_shared_texture_available();
+}
+
+gs_texture_t *gs_texture_open_shared(uint32_t handle)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_open_shared"))
+		return NULL;
+
+	if (graphics->exports.device_texture_open_shared)
+		return graphics->exports.device_texture_open_shared(
+			graphics->device, handle);
+	return NULL;
+}
+
 #elif _WIN32
 
 bool gs_gdi_texture_available(void)
@@ -2798,6 +2879,17 @@ bool gs_get_duplicator_monitor_info(int monitor_idx,
 		thread_graphics->device, monitor_idx, monitor_info);
 }
 
+int gs_duplicator_get_monitor_index(void *monitor)
+{
+	if (!gs_valid("gs_duplicator_get_monitor_index"))
+		return false;
+	if (!thread_graphics->exports.device_duplicator_get_monitor_index)
+		return false;
+
+	return thread_graphics->exports.device_duplicator_get_monitor_index(
+		thread_graphics->device, monitor);
+}
+
 gs_duplicator_t *gs_duplicator_create(int monitor_idx)
 {
 	if (!gs_valid("gs_duplicator_create"))
@@ -2825,10 +2917,20 @@ bool gs_duplicator_update_frame(gs_duplicator_t *duplicator)
 {
 	if (!gs_valid_p("gs_duplicator_update_frame", duplicator))
 		return false;
-	if (!thread_graphics->exports.gs_duplicator_get_texture)
+	if (!thread_graphics->exports.gs_duplicator_update_frame)
 		return false;
 
 	return thread_graphics->exports.gs_duplicator_update_frame(duplicator);
+}
+
+uint32_t gs_get_adapter_count(void)
+{
+	if (!gs_valid("gs_get_adapter_count"))
+		return 0;
+	if (!thread_graphics->exports.gs_get_adapter_count)
+		return 0;
+
+	return thread_graphics->exports.gs_get_adapter_count();
 }
 
 gs_texture_t *gs_duplicator_get_texture(gs_duplicator_t *duplicator)
@@ -2895,6 +2997,18 @@ uint32_t gs_texture_get_shared_handle(gs_texture_t *tex)
 	if (graphics->exports.device_texture_get_shared_handle)
 		return graphics->exports.device_texture_get_shared_handle(tex);
 	return GS_INVALID_HANDLE;
+}
+
+gs_texture_t *gs_texture_wrap_obj(void *obj)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_wrap_obj"))
+		return NULL;
+
+	if (graphics->exports.device_texture_wrap_obj)
+		return graphics->exports.device_texture_wrap_obj(
+			graphics->device, obj);
+	return NULL;
 }
 
 int gs_texture_acquire_sync(gs_texture_t *tex, uint64_t key, uint32_t ms)

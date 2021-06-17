@@ -86,11 +86,15 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 		szPathEnd[0] = '\0';
 		lpWorkingDirectory = &szPathBuffer[0];
 	}
+	DWORD flags = 0;
+#ifndef SHOW_SUBPROCESSES
+	flags = CREATE_NO_WINDOW;
+#endif
 
 	os_utf8_to_wcs_ptr(cmd_line, 0, &cmd_line_w);
 	if (cmd_line_w) {
 		success = !!CreateProcessW(NULL, cmd_line_w, NULL, NULL, true,
-				CREATE_NO_WINDOW, NULL, szPathBuffer, &si, &pi);
+					   flags, NULL, szPathBuffer, &si, &pi);
 
 		if (success) {
 			*process = pi.hProcess;

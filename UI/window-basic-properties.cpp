@@ -26,6 +26,10 @@
 #include <QScreen>
 #include <QWindow>
 #include <QMessageBox>
+#include <obs-data.h>
+#include <obs.h>
+#include <qpointer.h>
+#include <util/c99defs.h>
 
 using namespace std;
 
@@ -74,14 +78,28 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
 
-	OBSData settings = obs_source_get_settings(source);
+	OBSData nd_settings = obs_source_get_settings(source);
+	OBSData settings = obs_data_get_defaults(nd_settings);
+	obs_data_apply(settings, nd_settings);
 	obs_data_apply(oldSettings, settings);
 	obs_data_release(settings);
+	obs_data_release(nd_settings);
+
+	auto handle_memory = [](void *vp, obs_data_t *old_settings,
+				obs_data_t *new_settings) {
+		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+
+		obs_source_update(source, new_settings);
+
+		UNUSED_PARAMETER(old_settings);
+		UNUSED_PARAMETER(vp);
+	};
 
 	view = new OBSPropertiesView(
-		settings, source,
+		nd_settings, source,
 		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)obs_source_update);
+		(PropertiesUpdateCallback)handle_memory,
+		(PropertiesVisualUpdateCb)obs_source_update);
 	view->setMinimumHeight(150);
 
 	preview->setMinimumSize(20, 150);
@@ -341,6 +359,50 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 	QDialogButtonBox::ButtonRole val = buttonBox->buttonRole(button);
 
 	if (val == QDialogButtonBox::AcceptRole) {
+
+		std::string scene_name =
+			obs_source_get_name(main->GetCurrentSceneSource());
+
+		auto undo_redo = [scene_name](const std::string &data) {
+			obs_data_t *settings =
+				obs_data_create_from_json(data.c_str());
+			obs_source_t *source = obs_get_source_by_name(
+				obs_data_get_string(settings, "undo_sname"));
+			obs_source_reset_settings(source, settings);
+
+			obs_source_update_properties(source);
+
+			obs_source_t *scene_source =
+				obs_get_source_by_name(scene_name.c_str());
+
+			OBSBasic::Get()->SetCurrentScene(source, true);
+
+			obs_source_release(scene_source);
+
+			obs_data_release(settings);
+			obs_source_release(source);
+		};
+
+		obs_data_t *new_settings = obs_data_create();
+		obs_data_t *curr_settings = obs_source_get_settings(source);
+		obs_data_apply(new_settings, curr_settings);
+		obs_data_set_string(new_settings, "undo_sname",
+				    obs_source_get_name(source));
+		obs_data_set_string(oldSettings, "undo_sname",
+				    obs_source_get_name(source));
+
+		std::string undo_data(obs_data_get_json(oldSettings));
+		std::string redo_data(obs_data_get_json(new_settings));
+
+		if (undo_data.compare(redo_data) != 0)
+			main->undo_s.add_action(
+				QTStr("Undo.Properties")
+					.arg(obs_source_get_name(source)),
+				undo_redo, undo_redo, undo_data, redo_data);
+
+		obs_data_release(new_settings);
+		obs_data_release(curr_settings);
+
 		acceptClicked = true;
 		close();
 
@@ -392,11 +454,13 @@ void OBSBasicProperties::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 	gs_viewport_push();
 	gs_projection_push();
+	const bool previous = gs_set_linear_srgb(true);
+
 	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
-
 	obs_source_video_render(window->source);
 
+	gs_set_linear_srgb(previous);
 	gs_projection_pop();
 	gs_viewport_pop();
 }
@@ -406,11 +470,11 @@ void OBSBasicProperties::DrawTransitionPreview(void *data, uint32_t cx,
 {
 	OBSBasicProperties *window = static_cast<OBSBasicProperties *>(data);
 
-	if (!window->source)
+	if (!window->sourceClone)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+	uint32_t sourceCX = max(obs_source_get_width(window->sourceClone), 1u);
+	uint32_t sourceCY = max(obs_source_get_height(window->sourceClone), 1u);
 
 	int x, y;
 	int newCX, newCY;

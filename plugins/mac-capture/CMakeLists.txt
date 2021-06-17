@@ -24,11 +24,6 @@ set(mac-capture_SOURCES
 	mac-window-capture.m
 	window-utils.m)
 
-set_source_files_properties(mac-display-capture.m
-			    mac-window-capture.m
-			    window-utils.m
-	PROPERTIES LANGUAGE C)
-
 add_library(mac-capture MODULE
 	${mac-capture_SOURCES}
 	${mac-capture_HEADERS})

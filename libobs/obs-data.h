@@ -71,6 +71,7 @@ EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
 EXPORT const char *obs_data_get_full_json(obs_data_t *data);
+EXPORT const char *obs_data_get_last_json(obs_data_t *data);
 EXPORT bool obs_data_save_json(obs_data_t *data, const char *file);
 EXPORT bool obs_data_save_json_safe(obs_data_t *data, const char *file,
 				    const char *temp_ext,
@@ -93,6 +94,11 @@ EXPORT void obs_data_set_array(obs_data_t *data, const char *name,
 			       obs_data_array_t *array);
 
 /*
+ * Creates an obs_data_t * filled with all default values.
+ */
+EXPORT obs_data_t *obs_data_get_defaults(obs_data_t *data);
+
+/*
  * Default value functions.
  */
 EXPORT void obs_data_set_default_string(obs_data_t *data, const char *name,
@@ -105,6 +111,8 @@ EXPORT void obs_data_set_default_bool(obs_data_t *data, const char *name,
 				      bool val);
 EXPORT void obs_data_set_default_obj(obs_data_t *data, const char *name,
 				     obs_data_t *obj);
+EXPORT void obs_data_set_default_array(obs_data_t *data, const char *name,
+				       obs_data_array_t *arr);
 
 /*
  * Application overrides
@@ -167,6 +175,9 @@ EXPORT void obs_data_array_insert(obs_data_array_t *array, size_t idx,
 EXPORT void obs_data_array_push_back_array(obs_data_array_t *array,
 					   obs_data_array_t *array2);
 EXPORT void obs_data_array_erase(obs_data_array_t *array, size_t idx);
+EXPORT void obs_data_array_enum(obs_data_array_t *array,
+				void (*cb)(obs_data_t *data, void *param),
+				void *param);
 
 /* ------------------------------------------------------------------------- */
 /* Item status inspection */

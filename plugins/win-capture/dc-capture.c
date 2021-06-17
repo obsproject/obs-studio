@@ -172,7 +172,15 @@ static void draw_texture(struct dc_capture *capture, gs_effect_t *effect)
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	size_t passes;
 
-	gs_effect_set_texture(image, texture);
+	const bool linear_srgb = gs_get_linear_srgb() && capture->compatibility;
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(linear_srgb);
+
+	if (linear_srgb)
+		gs_effect_set_texture_srgb(image, texture);
+	else
+		gs_effect_set_texture(image, texture);
 
 	passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
@@ -186,6 +194,8 @@ static void draw_texture(struct dc_capture *capture, gs_effect_t *effect)
 		}
 	}
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect)

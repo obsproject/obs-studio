@@ -1,3 +1,4 @@
+#include "window-basic-main.hpp"
 #include "volume-control.hpp"
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
@@ -63,13 +64,46 @@ void VolControl::VolumeMuted(bool muted)
 
 void VolControl::SetMuted(bool checked)
 {
+	bool prev = obs_source_muted(source);
 	obs_source_set_muted(source, checked);
+
+	auto undo_redo = [](const std::string &name, bool val) {
+		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		obs_source_set_muted(source, val);
+		obs_source_release(source);
+	};
+
+	QString text =
+		QTStr(checked ? "Undo.Volume.Mute" : "Undo.Volume.Unmute");
+
+	const char *name = obs_source_get_name(source);
+	OBSBasic::Get()->undo_s.add_action(
+		text.arg(name),
+		std::bind(undo_redo, std::placeholders::_1, prev),
+		std::bind(undo_redo, std::placeholders::_1, checked), name,
+		name);
 }
 
 void VolControl::SliderChanged(int vol)
 {
+	float prev = obs_source_get_volume(source);
+
 	obs_fader_set_deflection(obs_fader, float(vol) / FADER_PRECISION);
 	updateText();
+
+	auto undo_redo = [](const std::string &name, float val) {
+		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		obs_source_set_volume(source, val);
+		obs_source_release(source);
+	};
+
+	float val = obs_source_get_volume(source);
+	const char *name = obs_source_get_name(source);
+	OBSBasic::Get()->undo_s.add_action(
+		QTStr("Undo.Volume.Change").arg(name),
+		std::bind(undo_redo, std::placeholders::_1, prev),
+		std::bind(undo_redo, std::placeholders::_1, val), name, name,
+		true);
 }
 
 void VolControl::updateText()
@@ -89,7 +123,7 @@ void VolControl::updateText()
 					  : "VolControl.SliderUnmuted";
 
 	QString sourceName = obs_source_get_name(source);
-	QString accText = QTStr(accTextLookup).arg(sourceName, db);
+	QString accText = QTStr(accTextLookup).arg(sourceName);
 
 	slider->setAccessibleName(accText);
 }
@@ -125,7 +159,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 	  levelCount(0.0f),
 	  obs_fader(obs_fader_create(OBS_FADER_LOG)),
 	  obs_volmeter(obs_volmeter_create(OBS_FADER_LOG)),
-	  vertical(vertical)
+	  vertical(vertical),
+	  contextMenu(nullptr)
 {
 	nameLabel = new QLabel();
 	volLabel = new QLabel();
@@ -161,7 +196,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *meterLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
-		slider = new SliderIgnoreScroll(Qt::Vertical);
+		slider = new VolumeSlider(obs_fader, Qt::Vertical);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
@@ -205,7 +240,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		QHBoxLayout *botLayout = new QHBoxLayout;
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, false);
-		slider = new SliderIgnoreScroll(Qt::Horizontal);
+		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);
@@ -291,6 +326,8 @@ VolControl::~VolControl()
 
 	obs_fader_destroy(obs_fader);
 	obs_volmeter_destroy(obs_volmeter);
+	if (contextMenu)
+		contextMenu->close();
 }
 
 QColor VolumeMeter::getBackgroundNominalColor() const

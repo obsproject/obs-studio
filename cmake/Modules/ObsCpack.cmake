@@ -28,6 +28,9 @@ else()
 	set(OBS_VERSION "${OBS_VERSION_OVERRIDE}")
 endif()
 
+if("${OBS_VERSION}" STREQUAL "")
+	message(FATAL_ERROR "Failed to configure OBS_VERSION. Either set OBS_VERSION_OVERRIDE or ensure `git describe` succeeds.")
+endif()
 MESSAGE(STATUS "OBS_VERSION: ${OBS_VERSION}")
 
 if(INSTALLER_RUN)

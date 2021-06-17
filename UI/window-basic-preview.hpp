@@ -90,7 +90,7 @@ private:
 
 	static vec3 GetSnapOffset(const vec3 &tl, const vec3 &br);
 
-	void GetStretchHandleData(const vec2 &pos);
+	void GetStretchHandleData(const vec2 &pos, bool ignoreGroup);
 
 	void UpdateCursor(uint32_t &flags);
 
@@ -105,6 +105,9 @@ private:
 	void BoxItems(const vec2 &startPos, const vec2 &pos);
 
 	void ProcessClick(const vec2 &pos);
+
+	obs_data_t *wrapper = NULL;
+	bool changed;
 
 public:
 	OBSBasicPreview(QWidget *parent,

@@ -1058,7 +1058,11 @@ bool profiler_snapshot_dump_csv_gz(const profiler_snapshot_t *snap,
 
 	profiler_snapshot_dump(snap, dump_csv_gzwrite, gz);
 
+#ifdef _WIN32
 	gzclose_w(gz);
+#else
+	gzclose(gz);
+#endif
 	return true;
 }
 

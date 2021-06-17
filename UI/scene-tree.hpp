@@ -26,12 +26,16 @@ public:
 
 	explicit SceneTree(QWidget *parent = nullptr);
 
+private:
+	void RepositionGrid(QDragMoveEvent *event = nullptr);
+
 protected:
 	virtual bool eventFilter(QObject *obj, QEvent *event) override;
 	virtual void resizeEvent(QResizeEvent *event) override;
 	virtual void startDrag(Qt::DropActions supportedActions) override;
 	virtual void dropEvent(QDropEvent *event) override;
 	virtual void dragMoveEvent(QDragMoveEvent *event) override;
+	virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
 	virtual void rowsInserted(const QModelIndex &parent, int start,
 				  int end) override;
 

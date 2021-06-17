@@ -234,6 +234,10 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+#contextContainer QPushButton#sourceInteractButton {
+    qproperty-icon: url(./Dark/interact.svg);
+}
+
 /* Scenes and Sources toolbar */
 
 QToolBar {
@@ -767,6 +771,10 @@ QPushButton#extraPanelDelete:hover {
 
 QPushButton#extraPanelDelete:pressed {
     background-color: rgb(31,30,31);
+}
+
+OBSMissingFiles {
+	qproperty-warningIcon: url(./Dark/alert.svg);
 }
 
 /* Source Icons */

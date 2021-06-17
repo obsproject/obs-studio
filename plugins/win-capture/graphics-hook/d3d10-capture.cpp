@@ -32,7 +32,6 @@ struct d3d10_data {
 		struct {
 			struct shtex_data *shtex_info;
 			ID3D10Texture2D *texture;
-			ID3D10RenderTargetView *render_target;
 			HANDLE handle;
 		};
 		/* shared memory */
@@ -78,8 +77,6 @@ void d3d10_free(void)
 	if (data.using_shtex) {
 		if (data.texture)
 			data.texture->Release();
-		if (data.render_target)
-			data.render_target->Release();
 	} else {
 		for (size_t i = 0; i < NUM_BUFFERS; i++) {
 			if (data.copy_surfaces[i]) {
@@ -120,63 +117,26 @@ static bool create_d3d10_stage_surface(ID3D10Texture2D **tex)
 }
 
 static bool create_d3d10_tex(uint32_t cx, uint32_t cy, ID3D10Texture2D **tex,
-			     ID3D10ShaderResourceView **resource,
-			     ID3D10RenderTargetView **render_target,
 			     HANDLE *handle)
 {
-	UINT flags = 0;
-	UINT misc_flags = 0;
 	HRESULT hr;
-
-	if (!!resource)
-		flags |= D3D10_BIND_SHADER_RESOURCE;
-	if (!!render_target)
-		flags |= D3D10_BIND_RENDER_TARGET;
-	if (!!handle)
-		misc_flags |= D3D10_RESOURCE_MISC_SHARED;
 
 	D3D10_TEXTURE2D_DESC desc = {};
 	desc.Width = cx;
 	desc.Height = cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = data.format;
-	desc.BindFlags = flags;
+	desc.Format = apply_dxgi_format_typeless(
+		data.format, global_hook_info->allow_srgb_alias);
+	desc.BindFlags = D3D10_BIND_SHADER_RESOURCE;
 	desc.SampleDesc.Count = 1;
 	desc.Usage = D3D10_USAGE_DEFAULT;
-	desc.MiscFlags = misc_flags;
+	desc.MiscFlags = D3D10_RESOURCE_MISC_SHARED;
 
 	hr = data.device->CreateTexture2D(&desc, nullptr, tex);
 	if (FAILED(hr)) {
 		hlog_hr("create_d3d10_tex: failed to create texture", hr);
 		return false;
-	}
-
-	if (!!resource) {
-		D3D10_SHADER_RESOURCE_VIEW_DESC res_desc = {};
-		res_desc.Format = data.format;
-		res_desc.ViewDimension = D3D10_SRV_DIMENSION_TEXTURE2D;
-		res_desc.Texture2D.MipLevels = 1;
-
-		hr = data.device->CreateShaderResourceView(*tex, &res_desc,
-							   resource);
-		if (FAILED(hr)) {
-			hlog_hr("create_d3d10_tex: failed to create resource "
-				"view",
-				hr);
-			return false;
-		}
-	}
-
-	if (!!render_target) {
-		hr = data.device->CreateRenderTargetView(*tex, nullptr,
-							 render_target);
-		if (FAILED(hr)) {
-			hlog_hr("create_d3d10_tex: failed to create render "
-				"target view",
-				hr);
-			return false;
-		}
 	}
 
 	if (!!handle) {
@@ -213,7 +173,7 @@ static inline bool d3d10_init_format(IDXGISwapChain *swap, HWND &window)
 		return false;
 	}
 
-	data.format = fix_dxgi_format(desc.BufferDesc.Format);
+	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
 	data.cx = desc.BufferDesc.Width;
@@ -271,15 +231,12 @@ static bool d3d10_shmem_init(HWND window)
 
 static bool d3d10_shtex_init(HWND window)
 {
-	ID3D10ShaderResourceView *resource = nullptr;
 	bool success;
 
 	data.using_shtex = true;
 
-	success = create_d3d10_tex(data.cx, data.cy, &data.texture, &resource,
-				   &data.render_target, &data.handle);
-	if (resource)
-		resource->Release();
+	success =
+		create_d3d10_tex(data.cx, data.cy, &data.texture, &data.handle);
 
 	if (!success) {
 		hlog("d3d10_shtex_init: failed to create texture");

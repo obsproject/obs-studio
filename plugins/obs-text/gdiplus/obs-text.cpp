@@ -869,15 +869,20 @@ inline void TextSource::Render()
 	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	gs_technique_begin(tech);
 	gs_technique_begin_pass(tech, 0);
 
-	gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"),
-			      tex);
+	gs_effect_set_texture_srgb(gs_effect_get_param_by_name(effect, "image"),
+				   tex);
 	gs_draw_sprite(tex, 0, cx, cy);
 
 	gs_technique_end_pass(tech);
 	gs_technique_end(tech);
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1134,6 +1139,19 @@ void text_render(void *data, gs_effect_t *effect)
 	reinterpret_cast<TextSource*>(data)->Render();
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	TextSource *s = reinterpret_cast<TextSource *>(src);
+
+	obs_source_t *source = s->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, S_FILE, new_path);
+	obs_source_update(source, settings);
+	obs_data_release(settings);
+
+	UNUSED_PARAMETER(data);
+}
+
 bool obs_module_load(void)
 {
 	const GdiplusStartupInput gdip_input;
@@ -1142,7 +1160,7 @@ bool obs_module_load(void)
 	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_SRGB;
 	si.create = text_create;
 	si.destroy = text_destroy;
 	si.get_name = text_get_name;

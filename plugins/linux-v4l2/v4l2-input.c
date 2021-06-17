@@ -88,6 +88,9 @@ struct v4l2_data {
 	int height;
 	int linesize;
 	struct v4l2_buffer_data buffers;
+
+	bool auto_reset;
+	int timeout_frames;
 };
 
 /* forward declarations */
@@ -161,28 +164,71 @@ static void *v4l2_thread(void *vptr)
 	struct v4l2_buffer buf;
 	struct obs_source_frame out;
 	size_t plane_offsets[MAX_AV_PLANES];
+	int fps_num, fps_denom;
+	float ffps;
+	uint64_t timeout_usec;
+
+	blog(LOG_DEBUG, "%s: new capture thread", data->device_id);
+	os_set_thread_name("v4l2: capture");
+
+	/* Get framerate and calculate appropriate select timeout value. */
+	v4l2_unpack_tuple(&fps_num, &fps_denom, data->framerate);
+	ffps = (float)fps_denom / fps_num;
+	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
+	/* Timeout set to 5 frame periods. */
+	timeout_usec = (1000000 * data->timeout_frames) / ffps;
+	blog(LOG_INFO, "%s: select timeout set to %ldus (%dx frame periods)",
+	     data->device_id, timeout_usec, data->timeout_frames);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
 		goto exit;
+
+	blog(LOG_DEBUG, "%s: new capture started", data->device_id);
 
 	frames = 0;
 	first_ts = 0;
 	v4l2_prep_obs_frame(data, &out, plane_offsets);
 
+	blog(LOG_DEBUG, "%s: obs frame prepared", data->device_id);
+
 	while (os_event_try(data->event) == EAGAIN) {
 		FD_ZERO(&fds);
 		FD_SET(data->dev, &fds);
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+
+		/* Set timeout timevalue. */
+		tv.tv_sec = 0;
+		tv.tv_usec = timeout_usec;
 
 		r = select(data->dev + 1, &fds, NULL, NULL, &tv);
 		if (r < 0) {
 			if (errno == EINTR)
 				continue;
-			blog(LOG_DEBUG, "select failed");
+			blog(LOG_ERROR, "%s: select failed", data->device_id);
 			break;
 		} else if (r == 0) {
-			blog(LOG_DEBUG, "select timeout");
+			blog(LOG_ERROR, "%s: select timed out",
+			     data->device_id);
+
+#ifdef _DEBUG
+			v4l2_query_all_buffers(data->dev, &data->buffers);
+#endif
+
+			if (v4l2_ioctl(data->dev, VIDIOC_LOG_STATUS) < 0) {
+				blog(LOG_ERROR, "%s: failed to log status",
+				     data->device_id);
+			}
+
+			if (data->auto_reset) {
+				if (v4l2_reset_capture(data->dev,
+						       &data->buffers) == 0)
+					blog(LOG_INFO,
+					     "%s: stream reset successful",
+					     data->device_id);
+				else
+					blog(LOG_ERROR, "%s: failed to reset",
+					     data->device_id);
+			}
+
 			continue;
 		}
 
@@ -190,11 +236,20 @@ static void *v4l2_thread(void *vptr)
 		buf.memory = V4L2_MEMORY_MMAP;
 
 		if (v4l2_ioctl(data->dev, VIDIOC_DQBUF, &buf) < 0) {
-			if (errno == EAGAIN)
+			if (errno == EAGAIN) {
+				blog(LOG_DEBUG, "%s: ioctl dqbuf eagain",
+				     data->device_id);
 				continue;
-			blog(LOG_DEBUG, "failed to dequeue buffer");
+			}
+			blog(LOG_ERROR, "%s: failed to dequeue buffer",
+			     data->device_id);
 			break;
 		}
+
+		blog(LOG_DEBUG,
+		     "%s: ts: %06ld buf id #%d, flags 0x%08X, seq #%d, len %d, used %d",
+		     data->device_id, buf.timestamp.tv_usec, buf.index,
+		     buf.flags, buf.sequence, buf.length, buf.bytesused);
 
 		out.timestamp = timeval2ns(buf.timestamp);
 		if (!frames)
@@ -207,14 +262,16 @@ static void *v4l2_thread(void *vptr)
 		obs_source_output_video(data->source, &out);
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
-			blog(LOG_DEBUG, "failed to enqueue buffer");
+			blog(LOG_ERROR, "%s: failed to enqueue buffer",
+			     data->device_id);
 			break;
 		}
 
 		frames++;
 	}
 
-	blog(LOG_INFO, "Stopped capture after %" PRIu64 " frames", frames);
+	blog(LOG_INFO, "%s: Stopped capture after %" PRIu64 " frames",
+	     data->device_id, frames);
 
 exit:
 	v4l2_stop_capture(data->dev);
@@ -237,6 +294,8 @@ static void v4l2_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "framerate", -1);
 	obs_data_set_default_int(settings, "color_range", VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_bool(settings, "buffering", true);
+	obs_data_set_default_bool(settings, "auto_reset", false);
+	obs_data_set_default_int(settings, "timeout_frames", 5);
 }
 
 /**
@@ -796,6 +855,13 @@ static obs_properties_t *v4l2_properties(void *vptr)
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("UseBuffering"));
 
+	obs_properties_add_bool(props, "auto_reset",
+				obs_module_text("AutoresetOnTimeout"));
+
+	obs_properties_add_int(props, "timeout_frames",
+			       obs_module_text("FramesUntilTimeout"), 2, 120,
+			       1);
+
 	// a group to contain the camera control
 	obs_properties_t *ctrl_props = obs_properties_create();
 	obs_properties_add_group(props, "controls",
@@ -1040,6 +1106,8 @@ static void v4l2_update(void *vptr, obs_data_t *settings)
 	data->resolution = obs_data_get_int(settings, "resolution");
 	data->framerate = obs_data_get_int(settings, "framerate");
 	data->color_range = obs_data_get_int(settings, "color_range");
+	data->auto_reset = obs_data_get_bool(settings, "auto_reset");
+	data->timeout_frames = obs_data_get_int(settings, "timeout_frames");
 
 	v4l2_update_source_flags(data, settings);
 

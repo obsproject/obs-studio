@@ -348,6 +348,12 @@ RTMP_TLS_LoadCerts(RTMP *r) {
             "/etc/ssl/certs");
         goto error;
     }
+#elif defined(__OpenBSD__)
+    if (mbedtls_x509_crt_parse_file(chain, "/etc/ssl/cert.pem") < 0) {
+        RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_file: Couldn't parse "
+            "/etc/ssl/cert.pem");
+        goto error;
+    }
 #endif
 
     mbedtls_ssl_conf_ca_chain(&r->RTMP_TLS_ctx->conf, chain, NULL);
@@ -457,6 +463,17 @@ RTMP_Init(RTMP *r)
 {
     memset(r, 0, sizeof(RTMP));
     r->m_sb.sb_socket = -1;
+    RTMP_Reset(r);
+
+#ifdef CRYPTO
+    RTMP_TLS_Init(r);
+#endif
+
+}
+
+void
+RTMP_Reset(RTMP *r)
+{
     r->m_inChunkSize = RTMP_DEFAULT_CHUNKSIZE;
     r->m_outChunkSize = RTMP_DEFAULT_CHUNKSIZE;
     r->m_bSendChunkSizeInfo = 1;
@@ -470,11 +487,6 @@ RTMP_Init(RTMP *r)
     r->Link.nStreams = 0;
     r->Link.timeout = 30;
     r->Link.swfAge = 30;
-
-#ifdef CRYPTO
-    RTMP_TLS_Init(r);
-#endif
-
 }
 
 void
@@ -817,8 +829,10 @@ add_addr_info(struct sockaddr_storage *service, socklen_t *addrlen, AVal *host, 
         *socket_error = WSANO_DATA;
 #elif __FreeBSD__
         *socket_error = ENOATTR;
-#else
+#elif defined(ENODATA)
         *socket_error = ENODATA;
+#else
+        *socket_error = EAFNOSUPPORT;
 #endif
 
         RTMP_Log(RTMP_LOGERROR, "Could not resolve server '%s': no valid address found", hostname);
@@ -3385,10 +3399,9 @@ HandleInvoke(RTMP *r, const char *body, unsigned int nBodySize)
 
         else
         {
+            RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s", r->Link.tcUrl.av_val, code.av_val);
             if (description.av_len)
-                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s (%s)", r->Link.tcUrl.av_val, code.av_val, description.av_val);
-            else
-                RTMP_Log(RTMP_LOGWARNING, "Unhandled: %s:\n%s", r->Link.tcUrl.av_val, code.av_val);
+                RTMP_Log(RTMP_LOGDEBUG, "Description: %s", description.av_val);
         }
     }
     else if (AVMATCH(&method, &av_playlist_ready))

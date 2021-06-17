@@ -6,6 +6,7 @@
 #include <libswscale/swscale.h>
 
 #include "../obs-ffmpeg-compat.h"
+#include "srgb.h"
 
 struct ffmpeg_image {
 	const char *file;
@@ -115,87 +116,217 @@ fail:
 	return false;
 }
 
-static bool ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
-					AVFrame *frame, uint8_t *out,
-					int linesize, int new_cx, int new_cy)
+#ifdef _MSC_VER
+#define obs_bswap16(v) _byteswap_ushort(v)
+#else
+#define obs_bswap16(v) __builtin_bswap16(v)
+#endif
+
+static void *ffmpeg_image_copy_data_straight(struct ffmpeg_image *info,
+					     AVFrame *frame)
+{
+	const size_t linesize = (size_t)info->cx * 4;
+	const size_t totalsize = info->cy * linesize;
+	void *data = bmalloc(totalsize);
+
+	const size_t src_linesize = frame->linesize[0];
+	if (linesize != src_linesize) {
+		const size_t min_line = linesize < src_linesize ? linesize
+								: src_linesize;
+
+		uint8_t *dst = data;
+		const uint8_t *src = frame->data[0];
+		for (int y = 0; y < info->cy; y++) {
+			memcpy(dst, src, min_line);
+			dst += linesize;
+			src += src_linesize;
+		}
+	} else {
+		memcpy(data, frame->data[0], totalsize);
+	}
+
+	return data;
+}
+
+static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
+					 AVFrame *frame,
+					 enum gs_image_alpha_mode alpha_mode)
 {
 	struct SwsContext *sws_ctx = NULL;
+	void *data = NULL;
 	int ret = 0;
-	bool rescale = new_cx != info->cx || new_cy != info->cy;
 
-	if (!rescale && 
-	   (info->format == AV_PIX_FMT_RGBA ||
-	    info->format == AV_PIX_FMT_BGRA ||
-	    info->format == AV_PIX_FMT_BGR0)) {
+	int cx_out = info->cx;
+	int cy_out = info->cy;
+	const int image_resolution_limit = 10000*10000;
+	bool downsize = info->cx * info->cy > image_resolution_limit;
+	if (downsize) {
+		float devider = (float)(cx_out * cy_out) / (float)image_resolution_limit;
+		cx_out = (uint32_t)(cx_out/devider);
+		cy_out = (uint32_t)(cy_out/devider);
+		blog(LOG_WARNING, "Image resolution over 100MP limit and get downscaled from %d x %d  to %d x %d ", info->cx , info->cy, cx_out, cy_out);
+	}
 
-		if (linesize != frame->linesize[0]) {
-			int min_line = linesize < frame->linesize[0]
-					       ? linesize
-					       : frame->linesize[0];
-
-			for (int y = 0; y < info->cy; y++)
-				memcpy(out + y * linesize,
-				       frame->data[0] + y * frame->linesize[0],
-				       min_line);
+	if (!downsize && info->format == AV_PIX_FMT_BGR0) {
+		data = ffmpeg_image_copy_data_straight(info, frame);
+	} else if ( !downsize && (info->format == AV_PIX_FMT_RGBA ||
+		   info->format == AV_PIX_FMT_BGRA)) {
+		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
+			data = ffmpeg_image_copy_data_straight(info, frame);
 		} else {
-			memcpy(out, frame->data[0], linesize * info->cy);
+			const size_t linesize = (size_t)info->cx * 4;
+			const size_t totalsize = info->cy * linesize;
+			data = bmalloc(totalsize);
+			const size_t src_linesize = frame->linesize[0];
+			const size_t min_line = linesize < src_linesize
+							? linesize
+							: src_linesize;
+			uint8_t *dst = data;
+			const uint8_t *src = frame->data[0];
+			const size_t row_elements = min_line >> 2;
+			if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
+				for (int y = 0; y < info->cy; y++) {
+					gs_premultiply_xyza_srgb_loop_restrict(
+						dst, src, row_elements);
+					dst += linesize;
+					src += src_linesize;
+				}
+			} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
+				for (int y = 0; y < info->cy; y++) {
+					gs_premultiply_xyza_loop_restrict(
+						dst, src, row_elements);
+					dst += linesize;
+					src += src_linesize;
+				}
+			}
+		}
+	} else if (!downsize && info->format == AV_PIX_FMT_RGBA64BE) {
+		const size_t dst_linesize = (size_t)info->cx * 4;
+		data = bmalloc(info->cy * dst_linesize);
+		const size_t src_linesize = frame->linesize[0];
+		const size_t src_min_line = (dst_linesize * 2) < src_linesize
+						    ? (dst_linesize * 2)
+						    : src_linesize;
+		const size_t row_elements = src_min_line >> 3;
+		uint8_t *dst = data;
+		const uint8_t *src = frame->data[0];
+		uint16_t value[4];
+		float f[4];
+		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
+			for (int y = 0; y < info->cy; y++) {
+				for (size_t x = 0; x < row_elements; ++x) {
+					memcpy(value, src, sizeof(value));
+					f[0] = (float)obs_bswap16(value[0]) /
+					       65535.0f;
+					f[1] = (float)obs_bswap16(value[1]) /
+					       65535.0f;
+					f[2] = (float)obs_bswap16(value[2]) /
+					       65535.0f;
+					f[3] = (float)obs_bswap16(value[3]) /
+					       65535.0f;
+					gs_float3_srgb_linear_to_nonlinear(f);
+					gs_float4_to_u8x4(dst, f);
+					dst += sizeof(*dst) * 4;
+					src += sizeof(value);
+				}
+
+				src += src_linesize - src_min_line;
+			}
+		} else {
+			for (int y = 0; y < info->cy; y++) {
+				for (size_t x = 0; x < row_elements; ++x) {
+					memcpy(value, src, sizeof(value));
+					f[0] = (float)obs_bswap16(value[0]) /
+					       65535.0f;
+					f[1] = (float)obs_bswap16(value[1]) /
+					       65535.0f;
+					f[2] = (float)obs_bswap16(value[2]) /
+					       65535.0f;
+					f[3] = (float)obs_bswap16(value[3]) /
+					       65535.0f;
+					gs_premultiply_float4(f);
+					gs_float3_srgb_linear_to_nonlinear(f);
+					gs_float4_to_u8x4(dst, f);
+					dst += sizeof(*dst) * 4;
+					src += sizeof(value);
+				}
+
+				src += src_linesize - src_min_line;
+			}
 		}
 
+		info->format = AV_PIX_FMT_RGBA;
 	} else {
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
 		sws_ctx = sws_getContext(info->cx, info->cy, info->format,
-					 new_cx, new_cy, format, 
-					 rescale? SWS_BICUBIC : SWS_POINT,
+					 cx_out, cy_out, format, downsize? SWS_BICUBIC : SWS_POINT,
 					 NULL, NULL, NULL);
 		if (!sws_ctx) {
 			blog(LOG_WARNING,
 			     "Failed to create scale context "
 			     "for '%s'",
 			     info->file);
-			return false;
+			goto fail;
 		}
 
 		uint8_t *pointers[4];
 		int linesizes[4];
-		ret = av_image_alloc(pointers, linesizes, new_cx, new_cy,
+		ret = av_image_alloc(pointers, linesizes, cx_out, cy_out,
 				     format, 32);
 		if (ret < 0) {
 			blog(LOG_WARNING, "av_image_alloc failed for '%s': %s",
 			     info->file, av_err2str(ret));
 			sws_freeContext(sws_ctx);
-			return false;
+			goto fail;
 		}
 
 		ret = sws_scale(sws_ctx, (const uint8_t *const *)frame->data,
 				frame->linesize, 0, info->cy, pointers,
 				linesizes);
 		sws_freeContext(sws_ctx);
+		info->cx = cx_out;
+		info->cy = cy_out;
 
 		if (ret < 0) {
 			blog(LOG_WARNING, "sws_scale failed for '%s': %s",
 			     info->file, av_err2str(ret));
 			av_freep(pointers);
-			return false;
+			goto fail;
 		}
 
-		for (size_t y = 0; y < (size_t)new_cy; y++)
-			memcpy(out + y * linesize,
-			       pointers[0] + y * linesizes[0], linesize);
+		const size_t linesize = (size_t)info->cx * 4;
+		data = bmalloc(info->cy * linesize);
+		const uint8_t *src = pointers[0];
+		uint8_t *dst = data;
+		for (size_t y = 0; y < (size_t)info->cy; y++) {
+			memcpy(dst, src, linesize);
+			dst += linesize;
+			src += linesizes[0];
+		}
 
 		av_freep(pointers);
+
+		if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY_SRGB) {
+			gs_premultiply_xyza_srgb_loop(data, (size_t)info->cx *
+								    info->cy);
+		} else if (alpha_mode == GS_IMAGE_ALPHA_PREMULTIPLY) {
+			gs_premultiply_xyza_loop(data,
+						 (size_t)info->cx * info->cy);
+		}
 
 		info->format = format;
 	}
 
-	return true;
+fail:
+	return data;
 }
 
-static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
-				int linesize, int new_cx, int new_cy)
+static void *ffmpeg_image_decode(struct ffmpeg_image *info,
+				 enum gs_image_alpha_mode alpha_mode)
 {
 	AVPacket packet = {0};
-	bool success = false;
+	void *data = NULL;
 	AVFrame *frame = av_frame_alloc();
 	int got_frame = 0;
 	int ret;
@@ -203,7 +334,7 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 	if (!frame) {
 		blog(LOG_WARNING, "Failed to create frame data for '%s'",
 		     info->file);
-		return false;
+		return NULL;
 	}
 
 	ret = av_read_frame(info->fmt_ctx, &packet);
@@ -234,12 +365,12 @@ static bool ffmpeg_image_decode(struct ffmpeg_image *info, uint8_t *out,
 		}
 	}
 
-	success = ffmpeg_image_reformat_frame(info, frame, out, linesize, new_cx, new_cy);
+	data = ffmpeg_image_reformat_frame(info, frame, alpha_mode);
 
 fail:
 	av_packet_unref(&packet);
 	av_frame_free(&frame);
-	return success;
+	return data;
 }
 
 void gs_init_image_deps(void)
@@ -260,6 +391,8 @@ static inline enum gs_color_format convert_format(enum AVPixelFormat format)
 		return GS_BGRA;
 	case AV_PIX_FMT_BGR0:
 		return GS_BGRX;
+	case AV_PIX_FMT_RGBA64BE:
+		return GS_RGBA16;
 	}
 
 	return GS_BGRX;
@@ -273,24 +406,33 @@ uint8_t *gs_create_texture_file_data(const char *file,
 	uint8_t *data = NULL;
 
 	if (ffmpeg_image_init(&image, file)) {
-		*cx_out = (uint32_t)image.cx;
-		*cy_out = (uint32_t)image.cy;
-		const int image_resolution_limit = 10000*10000;
-		if ((image.cx * image.cy > image_resolution_limit)) {
-			blog(LOG_WARNING, "Image resolution over 100MP limit and get downscaled");
-			float down_scale = (image.cx * image.cy) / (float)image_resolution_limit;
-			*cx_out = (uint32_t)(image.cx/down_scale);
-			*cy_out = (uint32_t)(image.cy/down_scale);
+		data = ffmpeg_image_decode(&image, GS_IMAGE_ALPHA_STRAIGHT);
+		if (data) {
+			*format = convert_format(image.format);
+			*cx_out = (uint32_t)image.cx;
+			*cy_out = (uint32_t)image.cy;
 		}
 
-		data = bmalloc((*cx_out) * (*cy_out) * 4);
+		ffmpeg_image_free(&image);
+	}
 
-		if (ffmpeg_image_decode(&image, data, (*cx_out) * 4,
-		                        *cx_out, *cy_out)) {
+	return data;
+}
+
+uint8_t *gs_create_texture_file_data2(const char *file,
+				      enum gs_image_alpha_mode alpha_mode,
+				      enum gs_color_format *format,
+				      uint32_t *cx_out, uint32_t *cy_out)
+{
+	struct ffmpeg_image image;
+	uint8_t *data = NULL;
+
+	if (ffmpeg_image_init(&image, file)) {
+		data = ffmpeg_image_decode(&image, alpha_mode);
+		if (data) {
 			*format = convert_format(image.format);
-		} else {
-			bfree(data);
-			data = NULL;
+			*cx_out = (uint32_t)image.cx;
+			*cy_out = (uint32_t)image.cy;
 		}
 
 		ffmpeg_image_free(&image);

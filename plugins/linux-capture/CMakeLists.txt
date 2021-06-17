@@ -9,7 +9,7 @@ endif()
 find_package(XCB COMPONENTS XCB RANDR SHM XFIXES XINERAMA REQUIRED)
 find_package(X11_XCB REQUIRED)
 
-include_directories(SYSTEM
+set(linux-capture_INCLUDES
 	"${CMAKE_SOURCE_DIR}/libobs"
 	${X11_Xcomposite_INCLUDE_PATH}
 	${X11_X11_INCLUDE_PATH}
@@ -34,11 +34,7 @@ set(linux-capture_HEADERS
 	xcompcap-helper.hpp
 )
 
-add_library(linux-capture MODULE
-	${linux-capture_SOURCES}
-	${linux-capture_HEADERS}
-)
-target_link_libraries(linux-capture
+set(linux-capture_LIBRARIES
 	libobs
 	glad
 	${X11_LIBRARIES}
@@ -47,6 +43,59 @@ target_link_libraries(linux-capture
 	${X11_Xcomposite_LIB}
 	${XCB_LIBRARIES}
 )
+
+option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
+if(ENABLE_PIPEWIRE)
+	find_package(PipeWire QUIET)
+	find_package(Gio QUIET)
+
+	if(NOT PIPEWIRE_FOUND)
+		message(FATAL_ERROR "PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF")
+	elseif(NOT GIO_FOUND)
+		message(FATAL_ERROR "Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF")
+	endif()
+
+	add_definitions(-DENABLE_PIPEWIRE)
+
+	set(linux-capture_INCLUDES
+		${linux-capture_INCLUDES}
+		${GIO_INCLUDE_DIRS}
+		${PIPEWIRE_INCLUDE_DIRS}
+	)
+
+	add_definitions(
+		${GIO_DEFINITIONS}
+		${PIPEWIRE_DEFINITIONS}
+	)
+
+	set(linux-capture_SOURCES
+		${linux-capture_SOURCES}
+		pipewire.c
+		pipewire-capture.c
+	)
+	set(linux-capture_HEADERS
+		${linux-capture_HEADERS}
+		pipewire.h
+		pipewire-capture.h
+	)
+	set(linux-capture_LIBRARIES
+		${linux-capture_LIBRARIES}
+		${GIO_LIBRARIES}
+		${PIPEWIRE_LIBRARIES}
+	)
+endif()
+
+include_directories(SYSTEM
+	${linux-capture_INCLUDES}
+)
+add_library(linux-capture MODULE
+	${linux-capture_SOURCES}
+	${linux-capture_HEADERS}
+)
+target_link_libraries(linux-capture
+	${linux-capture_LIBRARIES}
+)
+
 set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(linux-capture data)

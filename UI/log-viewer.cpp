@@ -101,7 +101,9 @@ void OBSLogViewer::InitLog()
 
 	if (file.open(QIODevice::ReadOnly)) {
 		QTextStream in(&file);
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		in.setCodec("UTF-8");
+#endif
 
 		while (!in.atEnd()) {
 			QString line = in.readLine();

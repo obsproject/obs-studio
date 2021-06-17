@@ -1229,31 +1229,69 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 
 static NSArray *presets(void)
 {
-	return @[
-		//AVCaptureSessionPresetiFrame1280x720,
-		//AVCaptureSessionPresetiFrame960x540,
-		AVCaptureSessionPreset1280x720, AVCaptureSessionPreset960x540,
-		AVCaptureSessionPreset640x480, AVCaptureSessionPreset352x288,
-		AVCaptureSessionPreset320x240, AVCaptureSessionPresetHigh,
-		//AVCaptureSessionPresetMedium,
-		//AVCaptureSessionPresetLow,
-		//AVCaptureSessionPresetPhoto,
-	];
+	if (@available(macOS 10.15, *)) {
+		return @[
+			//AVCaptureSessionPresetiFrame1280x720,
+			//AVCaptureSessionPresetiFrame960x540,
+			AVCaptureSessionPreset3840x2160,
+			AVCaptureSessionPreset1920x1080,
+			AVCaptureSessionPreset1280x720,
+			AVCaptureSessionPreset960x540,
+			AVCaptureSessionPreset640x480,
+			AVCaptureSessionPreset352x288,
+			AVCaptureSessionPreset320x240,
+			AVCaptureSessionPresetHigh,
+			//AVCaptureSessionPresetMedium,
+			//AVCaptureSessionPresetLow,
+			//AVCaptureSessionPresetPhoto,
+		];
+	} else {
+		return @[
+			//AVCaptureSessionPresetiFrame1280x720,
+			//AVCaptureSessionPresetiFrame960x540,
+			AVCaptureSessionPreset1280x720,
+			AVCaptureSessionPreset960x540,
+			AVCaptureSessionPreset640x480,
+			AVCaptureSessionPreset352x288,
+			AVCaptureSessionPreset320x240,
+			AVCaptureSessionPresetHigh,
+			//AVCaptureSessionPresetMedium,
+			//AVCaptureSessionPresetLow,
+			//AVCaptureSessionPresetPhoto,
+		];
+	}
 }
 
 static NSString *preset_names(NSString *preset)
 {
-	NSDictionary *preset_names = @{
-		AVCaptureSessionPresetLow: @"Low",
-		AVCaptureSessionPresetMedium: @"Medium",
-		AVCaptureSessionPresetHigh: @"High",
-		AVCaptureSessionPreset320x240: @"320x240",
-		AVCaptureSessionPreset352x288: @"352x288",
-		AVCaptureSessionPreset640x480: @"640x480",
-		AVCaptureSessionPreset960x540: @"960x540",
-		AVCaptureSessionPreset1280x720: @"1280x720",
-		AVCaptureSessionPresetHigh: @"High",
-	};
+	NSDictionary *preset_names = nil;
+	if (@available(macOS 10.15, *)) {
+		preset_names = @{
+			AVCaptureSessionPresetLow: @"Low",
+			AVCaptureSessionPresetMedium: @"Medium",
+			AVCaptureSessionPresetHigh: @"High",
+			AVCaptureSessionPreset320x240: @"320x240",
+			AVCaptureSessionPreset352x288: @"352x288",
+			AVCaptureSessionPreset640x480: @"640x480",
+			AVCaptureSessionPreset960x540: @"960x540",
+			AVCaptureSessionPreset1280x720: @"1280x720",
+			AVCaptureSessionPreset1920x1080: @"1920x1080",
+			AVCaptureSessionPreset3840x2160: @"3840x2160",
+			AVCaptureSessionPresetHigh: @"High",
+		};
+	} else {
+		preset_names = @{
+			AVCaptureSessionPresetLow: @"Low",
+			AVCaptureSessionPresetMedium: @"Medium",
+			AVCaptureSessionPresetHigh: @"High",
+			AVCaptureSessionPreset320x240: @"320x240",
+			AVCaptureSessionPreset352x288: @"352x288",
+			AVCaptureSessionPreset640x480: @"640x480",
+			AVCaptureSessionPreset960x540: @"960x540",
+			AVCaptureSessionPreset1280x720: @"1280x720",
+			AVCaptureSessionPresetHigh: @"High",
+		};
+	}
 	NSString *name = preset_names[preset];
 	if (name)
 		return name;
