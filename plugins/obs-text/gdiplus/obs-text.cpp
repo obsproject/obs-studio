@@ -1160,17 +1160,60 @@ bool obs_module_load(void)
 	obs_source_info si = { 0 };
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
-	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW | OBS_SOURCE_SRGB;
-	si.create = text_create;
-	si.destroy = text_destroy;
-	si.get_name = text_get_name;
-	si.get_properties = text_get_properties;
-	si.get_width = text_get_width;
-	si.get_height = text_get_height;
-	si.get_defaults = text_get_defaults;
-	si.update = text_update;
-	si.video_tick = text_tick;
-	si.video_render = text_render;
+	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			  OBS_SOURCE_CAP_OBSOLETE;
+	si.get_properties = get_properties;
+	si.icon_type = OBS_ICON_TYPE_TEXT;
+
+	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
+	si.create = [](obs_data_t *settings, obs_source_t *source) {
+		return (void *)new TextSource(source, settings);
+	};
+	si.destroy = [](void *data) {
+		delete reinterpret_cast<TextSource *>(data);
+	};
+	si.get_width = [](void *data) {
+		return reinterpret_cast<TextSource *>(data)->cx;
+	};
+	si.get_height = [](void *data) {
+		return reinterpret_cast<TextSource *>(data)->cy;
+	};
+	si.get_defaults = [](obs_data_t *settings) { defaults(settings, 1); };
+	si.update = [](void *data, obs_data_t *settings) {
+		reinterpret_cast<TextSource *>(data)->Update(settings);
+	};
+	si.video_tick = [](void *data, float seconds) {
+		reinterpret_cast<TextSource *>(data)->Tick(seconds);
+	};
+	si.video_render = [](void *data, gs_effect_t *) {
+		reinterpret_cast<TextSource *>(data)->Render();
+	};
+	si.missing_files = [](void *data) {
+		TextSource *s = reinterpret_cast<TextSource *>(data);
+		obs_missing_files_t *files = obs_missing_files_create();
+
+		obs_source_t *source = s->source;
+		obs_data_t *settings = obs_source_get_settings(source);
+
+		bool read = obs_data_get_bool(settings, S_USE_FILE);
+		const char *path = obs_data_get_string(settings, S_FILE);
+
+		if (read && strcmp(path, "") != 0) {
+			if (!os_file_exists(path)) {
+				obs_missing_file_t *file =
+					obs_missing_file_create(
+						path, missing_file_callback,
+						OBS_MISSING_FILE_SOURCE,
+						s->source, NULL);
+
+				obs_missing_files_add_file(files, file);
+			}
+		}
+
+		obs_data_release(settings);
+
+		return files;
+	};
 
 	obs_source_info si_v2 = si;
 	si_v2.version = 2;

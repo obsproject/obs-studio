@@ -8,10 +8,10 @@ mkdir deps
 cd deps
 pwd
 
-brew install ccache mbedtls ffmpeg x264 cmake p7zip berkeley-db fdk-aac speexdsp python
+brew install ccache mbedtls freetype cmocka ffmpeg x264 cmake p7zip berkeley-db fdk-aac speexdsp python
 brew uninstall --ignore-dependencies curl
 # curl 7.77
-wget https://github.com/Homebrew/homebrew-core/blob/676285054598fbe257b05505f03ff7e8abcfd548/Formula/curl.rb
+wget https://raw.githubusercontent.com/Homebrew/homebrew-core/676285054598fbe257b05505f03ff7e8abcfd548/Formula/curl.rb
 brew install ./curl.rb
 
 export PATH=/usr/local/opt/ccache/libexec:$PATH
@@ -25,9 +25,9 @@ rm ./osx-deps-${MACOS_DEPS_VERSION}.tar.gz
 
 # Fetch vlc codebase
 hr "Downloading VLC repo"
-wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/3.0.4/vlc-3.0.4.tar.xz
-tar -xf vlc-3.0.4.tar.xz
-rm vlc-3.0.4.tar.xz
+wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/${VLC_VERSION}/vlc-${VLC_VERSION}.tar.xz
+tar -xf vlc-${VLC_VERSION}.tar.xz
+rm vlc-${VLC_VERSION}.tar.xz
 
 # CEF Stuff
 hr "Downloading CEF"
