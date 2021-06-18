@@ -1090,36 +1090,7 @@ uint32_t text_get_height(void *data)
 
 	return source->cy;
 }
-
-void text_get_defaults(obs_data_t *settings)
-{
-	obs_data_t *font_obj = obs_data_create();
-	obs_data_set_default_string(font_obj, "face", "Arial");
-	obs_data_set_default_int(font_obj, "size", 36);
-
-	obs_data_set_default_obj(settings, S_FONT, font_obj);
-	obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
-	obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
-	obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
-	obs_data_set_default_int(settings, S_OPACITY, 100);
-	obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
-	obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
-	obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
-	obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
-	obs_data_set_default_int(settings, S_BKOPACITY, 0);
-	obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
-	obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
-	obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
-	obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
-	obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
-	obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
-	obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
-	obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
-	obs_data_set_default_bool(settings, S_ANTIALIASING, true);
-
-	obs_data_release(font_obj);
-}
-
+ 
 void text_update(void *data, obs_data_t *settings)
 {
 	TextSource *source = reinterpret_cast<TextSource*>(data);
@@ -1152,6 +1123,35 @@ static void missing_file_callback(void *src, const char *new_path, void *data)
 	UNUSED_PARAMETER(data);
 }
 
+static void defaults(obs_data_t *settings, int ver)
+{
+	obs_data_t *font_obj = obs_data_create();
+	obs_data_set_default_string(font_obj, "face", "Arial");
+	obs_data_set_default_int(font_obj, "size", ver == 1 ? 36 : 256);
+
+	obs_data_set_default_obj(settings, S_FONT, font_obj);
+	obs_data_set_default_string(settings, S_ALIGN, S_ALIGN_LEFT);
+	obs_data_set_default_string(settings, S_VALIGN, S_VALIGN_TOP);
+	obs_data_set_default_int(settings, S_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OPACITY, 100);
+	obs_data_set_default_int(settings, S_GRADIENT_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_GRADIENT_OPACITY, 100);
+	obs_data_set_default_double(settings, S_GRADIENT_DIR, 90.0);
+	obs_data_set_default_int(settings, S_BKCOLOR, 0x000000);
+	obs_data_set_default_int(settings, S_BKOPACITY, 0);
+	obs_data_set_default_int(settings, S_OUTLINE_SIZE, 2);
+	obs_data_set_default_int(settings, S_OUTLINE_COLOR, 0xFFFFFF);
+	obs_data_set_default_int(settings, S_OUTLINE_OPACITY, 100);
+	obs_data_set_default_int(settings, S_CHATLOG_LINES, 6);
+	obs_data_set_default_bool(settings, S_EXTENTS_WRAP, true);
+	obs_data_set_default_int(settings, S_EXTENTS_CX, 100);
+	obs_data_set_default_int(settings, S_EXTENTS_CY, 100);
+	obs_data_set_default_int(settings, S_TRANSFORM, S_TRANSFORM_NONE);
+	obs_data_set_default_bool(settings, S_ANTIALIASING, true);
+
+	obs_data_release(font_obj);
+};
+
 bool obs_module_load(void)
 {
 	const GdiplusStartupInput gdip_input;
@@ -1162,7 +1162,7 @@ bool obs_module_load(void)
 	si.type = OBS_SOURCE_TYPE_INPUT;
 	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
 			  OBS_SOURCE_CAP_OBSOLETE;
-	si.get_properties = get_properties;
+	si.get_properties = text_get_properties;
 	si.icon_type = OBS_ICON_TYPE_TEXT;
 
 	si.get_name = [](void *) { return obs_module_text("TextGDIPlus"); };
@@ -1218,7 +1218,9 @@ bool obs_module_load(void)
 	obs_source_info si_v2 = si;
 	si_v2.version = 2;
 	si_v2.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
-	si_v2.get_defaults = text_get_defaults;
+	si_v2.get_defaults = [](obs_data_t *settings) {
+		defaults(settings, 2);
+	};
 
 	obs_register_source(&si);
 	obs_register_source(&si_v2);
