@@ -68,7 +68,7 @@ sudo install_name_tool -change \
     $PACKED_BUILD/obs-plugins/obs-browser-page
 
 # Install obs dependencies
-cp -R /tmp/obsdeps/bin/. $PACKED_BUILD/bin/
+cp -R $DEPS_DIR/obsdeps/bin/. $PACKED_BUILD/bin/
 
 cp -R $DEPS_DIR/obsdeps/lib/. $PACKED_BUILD/bin/
 
