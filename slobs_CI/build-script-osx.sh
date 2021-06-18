@@ -173,18 +173,19 @@ sudo install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @
 
 sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
 
-sudo install_name_tool -change libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
-sudo install_name_tool -change libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
-sudo install_name_tool -change libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/bin/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/obs-outputs.so
 
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
 
-sudo install_name_tool -change /usr/local/opt/freetype/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
 
-sudo install_name_tool -change /usr/local/opt/speexdsp/lib/libspeexdsp.1.dylib @executable_path/libspeexdsp.1.dylib $PACKED_BUILD/obs-plugins/obs-filters.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libspeexdsp.1.dylib  @executable_path/libspeexdsp.1.dylib $PACKED_BUILD/obs-plugins/obs-filters.so
+sudo install_name_tool -change /tmp/obsdeps/lib/librnnoise.0.dylib  @executable_path/librnnoise.0.dylib $PACKED_BUILD/obs-plugins/obs-filters.so
 
 sudo install_name_tool -change /tmp/obsdeps/lib/libavcodec.58.dylib @executable_path/libavcodec.58.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libavfilter.7.dylib @executable_path/libavfilter.7.dylib $PACKED_BUILD/obs-plugins/slobs-virtual-cam.so
@@ -212,7 +213,7 @@ sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executabl
 
 sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/libmbedx509.1.dylib
 
-sudo install_name_tool -change /tmp/obsdeps/lib/libx264.159.dylib @executable_path/libx264.159.dylib $PACKED_BUILD/obs-plugins/obs-x264.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libx264.161.dylib @executable_path/libx264.161.dylib $PACKED_BUILD/obs-plugins/obs-x264.so
 
 sudo install_name_tool -change $DEPS_DIR/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
 
