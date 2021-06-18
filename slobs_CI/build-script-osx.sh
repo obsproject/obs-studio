@@ -175,12 +175,12 @@ sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypt
 
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/bin/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.2.24.0.dylib @executable_path/llibmbedtls.2.24.0.dylib $PACKED_BUILD/bin/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/bin/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/bin/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.2.24.0.dylib  @executable_path/libmbedcrypto.2.24.0.dylib $PACKED_BUILD/bin/obs-outputs.so
-sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.2.24.0.dylib @executable_path/libmbedx509.2.24.0.dylib $PACKED_BUILD/bin/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.13.dylib @executable_path/libmbedtls.13.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.2.24.0.dylib @executable_path/llibmbedtls.2.24.0.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.1.dylib @executable_path/libmbedx509.1.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executable_path/libmbedcrypto.5.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.2.24.0.dylib  @executable_path/libmbedcrypto.2.24.0.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
+sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.2.24.0.dylib @executable_path/libmbedx509.2.24.0.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/rtmp-services.so
