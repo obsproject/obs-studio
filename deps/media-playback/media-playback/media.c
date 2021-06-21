@@ -618,6 +618,11 @@ static bool init_avformat(mp_media_t *m)
 	if (m->buffering && !m->is_local_file)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
+	if (m->rtsp_tcp_protocol && !m->is_local_file) {
+		blog(LOG_INFO, "Setting rtsp_transport to TCP");
+		av_dict_set(&opts, "rtsp_transport", "tcp", 0);
+	}
+
 	m->fmt = avformat_alloc_context();
 	if (m->buffering == 0) {
 		m->fmt->flags |= AVFMT_FLAG_NOBUFFER;
@@ -808,6 +813,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+	media->rtsp_tcp_protocol = info->rtsp_tcp_protocol;
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;

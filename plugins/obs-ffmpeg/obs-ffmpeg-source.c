@@ -54,6 +54,7 @@ struct ffmpeg_source {
 	bool is_looping;
 	bool is_local_file;
 	bool is_hw_decoding;
+	bool rtsp_tcp_protocol;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
@@ -92,6 +93,8 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
+	obs_property_t *rtsp_tcp_protocol =
+		obs_properties_get(props, "rtsp_tcp_protocol");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
@@ -100,6 +103,7 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
+	obs_property_set_visible(rtsp_tcp_protocol, !enabled);
 
 	return true;
 }
@@ -111,6 +115,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
+	obs_data_set_default_bool(settings, "rtsp_tcp_protocol", false); // UDP by default
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
@@ -221,6 +226,12 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
+	prop = obs_properties_add_bool(props, "rtsp_tcp_protocol", obs_module_text("RTSPOverTCP"));
+
+	obs_property_set_long_description(
+		prop,
+		obs_module_text("RTSPOverTCP.Tooltip"));
+
 	return props;
 }
 
@@ -237,6 +248,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tis_hw_decoding:          %s\n"
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
+		"\trtsp_tcp_protocol:       %s\n"
 		"\tclose_when_inactive:     %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -244,6 +256,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
+		s->rtsp_tcp_protocol ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no");
 }
 
@@ -312,6 +325,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.force_range = s->range,
 			.is_linear_alpha = s->is_linear_alpha,
 			.hardware_decoding = s->is_hw_decoding,
+			.rtsp_tcp_protocol = s->rtsp_tcp_protocol,
 			.is_local_file = s->is_local_file || s->seekable,
 			.reconnecting = s->reconnecting,
 		};
@@ -426,6 +440,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->input = input ? bstrdup(input) : NULL;
 	s->input_format = input_format ? bstrdup(input_format) : NULL;
 	s->is_hw_decoding = obs_data_get_bool(settings, "hw_decode");
+	s->rtsp_tcp_protocol = obs_data_get_bool(settings, "rtsp_tcp_protocol");
 	s->is_clear_on_media_end =
 		obs_data_get_bool(settings, "clear_on_media_end");
 	s->restart_on_activate =
