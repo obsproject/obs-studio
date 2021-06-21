@@ -71,6 +71,7 @@ struct mp_media {
 	bool is_file;
 	bool eof;
 	bool hw;
+	bool rtsp_tcp_protocol;
 
 	struct obs_source_frame obsframe;
 	enum video_colorspace cur_space;
@@ -122,6 +123,7 @@ struct mp_media_info {
 	enum video_range_type force_range;
 	bool is_linear_alpha;
 	bool hardware_decoding;
+	bool rtsp_tcp_protocol;
 	bool is_local_file;
 	bool reconnecting;
 };
