@@ -226,11 +226,11 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
-	prop = obs_properties_add_bool(props, "rtsp_tcp_protocol", obs_module_text("RTSPOverTCP"));
+	prop = obs_properties_add_bool(props, "rtsp_tcp_protocol",
+				       obs_module_text("RTSPOverTCP"));
 
 	obs_property_set_long_description(
-		prop,
-		obs_module_text("RTSPOverTCP.Tooltip"));
+		prop, obs_module_text("RTSPOverTCP.Tooltip"));
 
 	return props;
 }
