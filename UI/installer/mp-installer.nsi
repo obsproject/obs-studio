@@ -453,12 +453,14 @@ Section "un.obs-studio Program Files" UninstallSection1
 	Delete "$INSTDIR\uninstall.exe"
 
 	; Delete Shortcuts
+	SetShellVarContext all
 	Delete "$DESKTOP\OBS Studio.lnk"
 	Delete "$SMPROGRAMS\OBS Studio\OBS Studio (32bit).lnk"
 	Delete "$SMPROGRAMS\OBS Studio\Uninstall.lnk"
 	${if} ${RunningX64}
 		Delete "$SMPROGRAMS\OBS Studio\OBS Studio (64bit).lnk"
 	${endif}
+	SetShellVarContext current
 
 	IfFileExists "$INSTDIR\data\obs-plugins\win-ivcam\seg_service.exe" UnregisterSegService SkipUnreg
 	UnregisterSegService:
