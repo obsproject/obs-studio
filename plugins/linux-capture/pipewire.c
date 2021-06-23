@@ -1234,9 +1234,11 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
 	    obs_pw->cursor.texture) {
+		float cursor_x = obs_pw->cursor.x - obs_pw->cursor.hotspot_x;
+		float cursor_y = obs_pw->cursor.y - obs_pw->cursor.hotspot_y;
+
 		gs_matrix_push();
-		gs_matrix_translate3f((float)obs_pw->cursor.x,
-				      (float)obs_pw->cursor.y, 0.0f);
+		gs_matrix_translate3f(cursor_x, cursor_y, 0.0f);
 
 		gs_effect_set_texture(image, obs_pw->cursor.texture);
 		gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
