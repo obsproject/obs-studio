@@ -31,7 +31,7 @@ bool dxgi_present_attempted = false;
 
 struct dxgi_swap_data {
 	IDXGISwapChain *swap;
-	void (*capture)(void *, void *, bool);
+	void (*capture)(void *, void *);
 	void (*free)(void);
 };
 
@@ -223,7 +223,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 		if (backbuffer) {
-			data.capture(swap, backbuffer, capture_overlay);
+			data.capture(swap, backbuffer);
 			backbuffer->Release();
 		}
 	}
@@ -250,7 +250,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 			if (backbuffer) {
-				data.capture(swap, backbuffer, capture_overlay);
+				data.capture(swap, backbuffer);
 				backbuffer->Release();
 			}
 		}
@@ -285,7 +285,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		if (backbuffer) {
 			DXGI_SWAP_CHAIN_DESC1 desc;
 			swap->GetDesc1(&desc);
-			data.capture(swap, backbuffer, capture_overlay);
+			data.capture(swap, backbuffer);
 			backbuffer->Release();
 		}
 	}
@@ -305,7 +305,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 			if (backbuffer) {
-				data.capture(swap, backbuffer, capture_overlay);
+				data.capture(swap, backbuffer);
 				backbuffer->Release();
 			}
 		}
