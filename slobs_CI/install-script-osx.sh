@@ -25,9 +25,9 @@ rm ./osx-deps-${MACOS_DEPS_VERSION}.tar.gz
 
 # Fetch vlc codebase
 hr "Downloading VLC repo"
-wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/vlc.zip
-tar -xf vlc.zip
-rm vlc.zip
+wget --quiet --retry-connrefused --waitretry=1 https://downloads.videolan.org/vlc/${VLC_VERISON}/vlc-${VLC_VERISON}.tar.gz
+tar -xf vlc-${VLC_VERISON}.tar.gz
+rm vlc-${VLC_VERISON}.tar.gz
 
 # CEF Stuff
 hr "Downloading CEF"
