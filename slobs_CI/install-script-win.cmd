@@ -10,24 +10,27 @@ set AMD_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%AMD_OLD%.z
 set OBS_VIRTUALCAM=obs-virtualsource_32bit
 set OBS_VIRTUALCAM_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%OBS_VIRTUALCAM%.zip
 
+mkdir build
+cd build
+
 if exist %DEPS%.zip (curl -kLO %DepsURL% -f --retry 5 -z %DEPS%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
 if exist vlc.zip (curl -kLO %VLCURL% -f --retry 5 -z vlc.zip) else (curl -kLO %VLCURL% -f --retry 5 -C -)
 if exist %CefFileName%.zip (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -z %CefFileName%.zip) else (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -C -)
 if exist %AMD_OLD%.zip (curl -kLO %AMD_URL% -f --retry 5 -z %AMD_OLD%.zip) else (curl -kLO %AMD_URL% -f --retry 5 -C -)
 if exist %OBS_VIRTUALCAM%.zip (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -z %OBS_VIRTUALCAM%.zip) else (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -C -)
 
-mkdir build
-
-7z x %DEPS%.zip -o%DEPS%
-7z x vlc.zip -ovlc
-7z x %CefFileName%.zip -oCEF
-7z x %AMD_OLD%.zip -o%AMD_OLD%
-7z x %OBS_VIRTUALCAM%.zip -o%OBS_VIRTUALCAM%
+7z x %DEPS%.zip -aoa -o%DEPS%
+7z x vlc.zip -aoa -ovlc
+7z x %CefFileName%.zip -aoa -oCEF
+7z x %AMD_OLD%.zip -aoa -o%AMD_OLD%
+7z x %OBS_VIRTUALCAM%.zip -aoa -o%OBS_VIRTUALCAM%
 
 set CEFPATH=%CD%\CEF\%CefFileName%
 
 cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD"
 cmake --build %CEFPATH%\build --config %CefBuildConfig% --target libcef_dll_wrapper -v
+
+cd ..
 
 cmake -H. ^
          -B%CD%\build ^
@@ -35,8 +38,8 @@ cmake -H. ^
          -A x64 ^
          -DCMAKE_SYSTEM_VERSION=10.0 ^
          -DCMAKE_INSTALL_PREFIX=%CD%\%InstallPath% ^
-         -DDepsPath=%CD%\%DEPS%\win64 ^
-         -DVLCPath=%CD%\vlc ^
+         -DDepsPath=%CD%\build\%DEPS%\win64 ^
+         -DVLCPath=%CD%\build\vlc ^
          -DCEF_ROOT_DIR=%CEFPATH% ^
          -DUSE_UI_LOOP=false ^
          -DENABLE_UI=false ^
@@ -55,7 +58,7 @@ cmake -H. ^
 
 cmake --build %CD%\build --target install --config %BuildConfig% -v
 
-move %CD%\%AMD_OLD% %CD%\%InstallPath%\%AMD_OLD%
+move %CD%\build\%AMD_OLD% %CD%\%InstallPath%\%AMD_OLD%
 
 mkdir %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput
-move %CD%\%OBS_VIRTUALCAM% %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput\%OBS_VIRTUALCAM%
+move %CD%\build\%OBS_VIRTUALCAM% %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput\%OBS_VIRTUALCAM%
