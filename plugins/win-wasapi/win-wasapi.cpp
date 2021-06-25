@@ -143,15 +143,16 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	: source          (source_),
 	  isInputDevice   (input)
 {
+	blog(LOG_INFO, "[WASAPISource][%08X] WASAPI Source constructor", this);
 	UpdateSettings(settings);
 
 	stopSignal = CreateEvent(nullptr, true, false, nullptr);
 	if (!stopSignal.Valid())
-		throw "Could not create stop signal";
+		throw "[WASAPISource] Could not create stop signal";
 
 	receiveSignal = CreateEvent(nullptr, false, false, nullptr);
 	if (!receiveSignal.Valid())
-		throw "Could not create receive signal";
+		throw "[WASAPISource] Could not create receive signal";
 
 	Start();
 }
@@ -160,9 +161,9 @@ inline void WASAPISource::Start()
 {
 	if (!TryInitialize()) {
 		blog(LOG_INFO,
-		     "[WASAPISource::Start] "
+		     "[WASAPISource::Start][%08X] "
 		     "Device '%s' not found.  Waiting for device",
-		     device_id.c_str());
+		     this, device_id.c_str());
 		Reconnect();
 	}
 }
@@ -172,7 +173,7 @@ inline void WASAPISource::Stop()
 	SetEvent(stopSignal);
 
 	if (active) {
-		blog(LOG_INFO, "[WASAPISource::Stop]: Device '%s' Terminated",
+		blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Terminated", this,
 		     device_id.c_str());
 		WaitForSingleObject(captureThread, INFINITE);
 	}
@@ -219,12 +220,11 @@ bool WASAPISource::InitDevice()
 			isInputDevice ? eCapture : eRender,
 			isInputDevice ? eCommunications : eConsole,
 			device.Assign());
-		if (FAILED(res))
-			return false;
-
-		CoTaskMemPtr<wchar_t> id;
-		res = device->GetId(&id);
-		default_id = id;
+		if (SUCCEEDED(res)) {
+			CoTaskMemPtr<wchar_t> id;
+			res = device->GetId(&id);
+			default_id = id;
+		}
 
 	} else {
 		wchar_t *w_id;
@@ -234,8 +234,9 @@ bool WASAPISource::InitDevice()
 
 		bfree(w_id);
 	}
-	blog(LOG_INFO, "[WASAPISource::InitDevice]: Returning device = %08x , %s",
-		device.Get(), device_id.c_str());
+	blog(LOG_INFO, "[WASAPISource::InitDevice][%08X] Returning device = %08x, %s, %s%s",
+		this, device.Get(), device_id.c_str(),
+		isDefaultDevice ? "" : "Default-", isInputDevice ? "Input" : "Output");
 
 	return SUCCEEDED(res);
 }
@@ -366,8 +367,8 @@ void WASAPISource::InitCapture()
 	client->Start();
 	active = true;
 
-	blog(LOG_INFO, "[WASAPISource::InitCapture] Device '%s' [%s Hz] initialized",
-	     device_name.c_str(), device_sample.c_str());
+	blog(LOG_INFO, "[WASAPISource::InitCapture][%08X] Device '%s' [%s Hz] initialized",
+	     this, device_name.c_str(), device_sample.c_str());
 }
 
 void WASAPISource::Initialize()
@@ -384,8 +385,6 @@ void WASAPISource::Initialize()
 		return;
 
 	if (device.Get() == nullptr) {
-		// fail early
-		blog(LOG_ERROR, "[WASAPISource::Initialize] Device pointer is %p res is %d", device.Get(), res);
 		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
 	}
 
@@ -399,8 +398,8 @@ void WASAPISource::Initialize()
 	PWAVEFORMATEX deviceFormatProperties;
 	PROPVARIANT prop;
 
-	blog(LOG_INFO, "[WASAPISource::Initialize] Device '%s':'%08x' Initialization ready to call OpenPropertyStore",
-	     device_name.c_str(), device.Get());
+	blog(LOG_INFO, "[WASAPISource::Initialize][%08X] Device '%s':'%08x' Initialization ready to call OpenPropertyStore",
+	     this, device_name.c_str(), device.Get());
 
 	resSample = device->OpenPropertyStore(STGM_READ, &store);
 	if (!FAILED(resSample)) {
@@ -418,8 +417,8 @@ void WASAPISource::Initialize()
 		store->Release();
 	}
 
-	blog(LOG_INFO, "[WASAPISource::Initialize] Device '%s' Initialization ready to init Client",
-	     device_name.c_str(), device.Get());
+	blog(LOG_INFO, "[WASAPISource::Initialize][%08X] Device '%s':'%08x' Initialization ready to init Client",
+	     this, device_name.c_str(), device.Get());
 
 	InitClient();
 	if (!isInputDevice)
@@ -433,27 +432,19 @@ bool WASAPISource::TryInitialize()
 	try {
 		Initialize();
 	} catch (HRError &error) {
-		if (previouslyFailed) {
-			return active;
+		if (!previouslyFailed) {
+			blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X] Catch [%s] %s: %lX",
+					this, device_name.empty() ? device_id.c_str(): device_name.c_str(),
+					error.str, error.hr);
 		}
-
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s: %lX",
-				device_name.empty() ? device_id.c_str(): device_name.c_str(),
-		     error.str, error.hr);
-
 	} catch (const char *error) {
-		if (previouslyFailed) {
-			return active;
+		if (!previouslyFailed) {
+			blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X] Catch [%s] %s",
+			this, device_name.empty() ? device_id.c_str() : device_name.c_str(), error);
 		}
-
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s",
-		     device_name.empty() ? device_id.c_str()
-					 : device_name.c_str(),
-		     error);
 	} catch (...) {
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] failed",
-		     device_name.empty() ? device_id.c_str()
-					 : device_name.c_str());
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X] Catch [%s] failed",
+		     device_name.empty() ? device_id.c_str() : device_name.c_str());
 	}
 
 	previouslyFailed = !active;
@@ -462,15 +453,22 @@ bool WASAPISource::TryInitialize()
 
 void WASAPISource::Reconnect()
 {
+	if (reconnecting || reconnectThread.Valid()) {
+		blog(LOG_WARNING,
+		     "[WASAPISource::Reconnect][%08X] "
+		     "Already have reconnect in progress", this);
+		return;
+	}
+
 	reconnecting = true;
 	reconnectThread = CreateThread(
 		nullptr, 0, WASAPISource::ReconnectThread, this, 0, nullptr);
 
 	if (!reconnectThread.Valid())
 		blog(LOG_WARNING,
-		     "[WASAPISource::Reconnect] "
+		     "[WASAPISource::Reconnect][%08X] "
 		     "Failed to initialize reconnect thread: %lu",
-		     GetLastError());
+		     this, GetLastError());
 }
 
 //returns false for wait timed out
@@ -491,9 +489,9 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 	const bool com_initialized = SUCCEEDED(hr);
 	if (!com_initialized) {
 		blog(LOG_ERROR,
-		     "[WASAPISource::ReconnectThread]"
+		     "[WASAPISource::ReconnectThread][%08X]"
 		     " CoInitializeEx failed: 0x%08X",
-		     hr);
+		     source, hr);
 	}
 
 	obs_monitoring_type type =
@@ -513,6 +511,9 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 
 	source->reconnectThread = nullptr;
 	source->reconnecting = false;
+	blog(LOG_WARNING,
+		     "[WASAPISource::ReconnectThread][%08X] "
+		     "Thread finished", source);
 	return 0;
 }
 
@@ -531,10 +532,10 @@ bool WASAPISource::ProcessCaptureData()
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
 				blog(LOG_WARNING,
-				     "[WASAPISource::GetCaptureData]"
+				     "[WASAPISource::GetCaptureData][%08X]"
 				     " capture->GetNextPacketSize"
 				     " failed: %lX",
-				     res);
+				     this, res);
 			return false;
 		}
 
@@ -545,10 +546,10 @@ bool WASAPISource::ProcessCaptureData()
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
 				blog(LOG_WARNING,
-				     "[WASAPISource::GetCaptureData]"
+				     "[WASAPISource::GetCaptureData][%08X]"
 				     " capture->GetBuffer"
 				     " failed: %lX",
-				     res);
+				     this, res);
 			return false;
 		}
 
@@ -587,8 +588,8 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 {
 	WASAPISource *source = (WASAPISource *)param;
 	bool reconnect = false;
-	blog(LOG_INFO, "[WASAPISource::CaptureThread] Device '%s' capture thread started",
-	     source->device_name.c_str());
+	blog(LOG_INFO, "[WASAPISource::CaptureThread][%08X] Device '%s' capture thread started",
+	     source, source->device_name.c_str());
 
 	/* Output devices don't signal, so just make it check every 10 ms */
 	DWORD dur = source->isInputDevice ? RECONNECT_INTERVAL : 10;
@@ -598,9 +599,11 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	os_set_thread_name("win-wasapi: capture thread");
 
 	while (WaitForCaptureSignal(2, sigs, dur)) {
-		if (source->hadDefaultChangeEvent || !source->ProcessCaptureData()) {
+		if (source->hadDefaultChangeEvent) {
+			break;
+		}
+		if (!source->ProcessCaptureData()) {
 			ResetEvent(source->receiveSignal);
-			source->hadDefaultChangeEvent = false;
 			reconnect = true;
 			break;
 		}
@@ -610,11 +613,15 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 
 	source->captureThread = nullptr;
 	source->active = false;
+	source->hadDefaultChangeEvent = false;
 
 	if (reconnect) {
-		blog(LOG_INFO, "[WASAPISource::CaptureThread] Device '%s' invalidated. Retrying",
-		     source->device_name.c_str());
+		blog(LOG_INFO, "[WASAPISource::CaptureThread][%08X] Device '%s' invalidated. Reconnect",
+		     source, source->device_name.c_str());
 		source->Reconnect();
+	} else {
+		blog(LOG_INFO, "[WASAPISource::CaptureThread][%08X] Device '%s' invalidated. Finish",
+		     source, source->device_name.c_str());
 	}
 
 	return 0;
@@ -633,8 +640,10 @@ void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
 	if (id && default_id.compare(id) == 0)
 		return;
 
-	blog(LOG_INFO, "WASAPI: Default %s device changed",
-	     isInputDevice ? "input" : "output");
+	hadDefaultChangeEvent = true;
+
+	blog(LOG_INFO, "[WASAPISource::SetDefaultDevice][%08X] Default %s device changed",
+	     this, isInputDevice ? "input" : "output");
 
 	/* reset device only once every 300ms */
 	uint64_t t = os_gettime_ns();
@@ -679,7 +688,7 @@ static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 	try {
 		return new WASAPISource(settings, source, input);
 	} catch (const char *error) {
-		blog(LOG_ERROR, "[CreateWASAPISource] %s", error);
+		blog(LOG_ERROR, "[WASAPISource][CreateWASAPISource] Catch %s", error);
 	}
 
 	return nullptr;
