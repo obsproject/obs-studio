@@ -1286,8 +1286,16 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	/* --------------------------------------- */
 	/* save undo data                          */
-
-	OBSData undo_data = main->BackupScene(scenesource);
+	std::vector<obs_source_t *> sources;
+	for (int i = 0; i < indices.size(); i++) {
+		obs_sceneitem_t *item = items[indices[i].row()];
+		if (obs_sceneitem_get_scene(item) != scene)
+			sources.push_back(obs_scene_get_source(
+				obs_sceneitem_get_scene(item)));
+	}
+	if (dropGroup)
+		sources.push_back(obs_sceneitem_get_source(dropGroup));
+	OBSData undo_data = main->BackupScene(scene, &sources);
 
 	/* --------------------------------------- */
 	/* if selection includes base group items, */
@@ -1455,7 +1463,7 @@ void SourceTree::dropEvent(QDropEvent *event)
 	/* --------------------------------------- */
 	/* save redo data                          */
 
-	OBSData redo_data = main->BackupScene(scenesource);
+	OBSData redo_data = main->BackupScene(scene, &sources);
 
 	/* --------------------------------------- */
 	/* add undo/redo action                    */

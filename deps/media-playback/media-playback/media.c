@@ -419,7 +419,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 	frame->width = f->width;
 	frame->height = f->height;
-	frame->flags = flip ? OBS_SOURCE_FRAME_FLIP : 0;
+	frame->flip = flip;
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
 
 	if (!m->is_local_file && !d->got_first_keyframe) {

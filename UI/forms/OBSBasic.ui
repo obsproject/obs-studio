@@ -2042,19 +2042,19 @@
    <property name="enabled">
     <bool>false</bool>
    </property>
-    <property name="text">
-      <string>Undo.Undo</string>
-    </property>
+   <property name="text">
+    <string>Undo.Undo</string>
+   </property>
   </action>
   <action name="actionMainRedo">
    <property name="enabled">
     <bool>false</bool>
-    </property>
-    <property name="text">
-      <string>Undo.Redo</string>
-    </property>
-    </action>
-  </widget>
+   </property>
+   <property name="text">
+    <string>Undo.Redo</string>
+   </property>
+  </action>
+ </widget>
  <customwidgets>
   <customwidget>
    <class>OBSBasicPreview</class>

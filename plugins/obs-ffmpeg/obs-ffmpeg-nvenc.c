@@ -84,7 +84,13 @@ static void nvenc_video_info(void *data, struct video_scale_info *info)
 	info->format = pref_format;
 }
 
-static bool nvenc_init_codec(struct nvenc_encoder *enc)
+static void set_psycho_aq(struct nvenc_encoder *enc, bool psycho_aq)
+{
+	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
+	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
+}
+
+static bool nvenc_init_codec(struct nvenc_encoder *enc, bool psycho_aq)
 {
 	int ret;
 
@@ -160,10 +166,9 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc)
 
 enum RC_MODE { RC_MODE_CBR, RC_MODE_VBR, RC_MODE_CQP, RC_MODE_LOSSLESS };
 
-static bool nvenc_update(void *data, obs_data_t *settings)
+static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
+			 bool psycho_aq)
 {
-	struct nvenc_encoder *enc = data;
-
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
 	int cqp = (int)obs_data_get_int(settings, "cqp");
@@ -173,7 +178,6 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
 	int bf = (int)obs_data_get_int(settings, "bf");
-	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -231,8 +235,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	av_opt_set_int(enc->context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->context->priv_data, "gpu", gpu, 0);
 
-	av_opt_set_int(enc->context->priv_data, "spatial-aq", psycho_aq, 0);
-	av_opt_set_int(enc->context->priv_data, "temporal-aq", psycho_aq, 0);
+	set_psycho_aq(enc, psycho_aq);
 
 	const int rate = bitrate * 1000;
 	enc->context->bit_rate = rate;
@@ -291,7 +294,7 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 	     twopass ? "true" : "false", enc->context->max_b_frames, psycho_aq,
 	     gpu);
 
-	return nvenc_init_codec(enc);
+	return nvenc_init_codec(enc, psycho_aq);
 }
 
 static bool nvenc_reconfigure(void *data, obs_data_t *settings)
@@ -345,7 +348,8 @@ static void nvenc_destroy(void *data)
 	bfree(enc);
 }
 
-static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
+				   bool psycho_aq)
 {
 	struct nvenc_encoder *enc;
 
@@ -375,7 +379,7 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		goto fail;
 	}
 
-	if (!nvenc_update(enc, settings))
+	if (!nvenc_update(enc, settings, psycho_aq))
 		goto fail;
 
 	return enc;
@@ -383,6 +387,20 @@ static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 fail:
 	nvenc_destroy(enc);
 	return NULL;
+}
+
+static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq);
+	if ((enc == NULL) && psycho_aq) {
+		blog(LOG_WARNING,
+		     "[NVENC encoder] nvenc_create_internal failed, "
+		     "trying again without Psycho Visual Tuning");
+		enc = nvenc_create_internal(settings, encoder, false);
+	}
+
+	return enc;
 }
 
 static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
