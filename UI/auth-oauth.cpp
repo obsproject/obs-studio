@@ -120,7 +120,7 @@ std::shared_ptr<Auth> OAuth::Login(QWidget *parent, const std::string &service)
 {
 	for (auto &a : loginCBs) {
 		if (service.find(a.def.service) != std::string::npos) {
-			return a.login(parent);
+			return a.login(parent, service);
 		}
 	}
 

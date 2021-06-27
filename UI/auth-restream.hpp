@@ -29,5 +29,6 @@ class RestreamAuth : public OAuthStreamKey {
 public:
 	RestreamAuth(const Def &d);
 
-	static std::shared_ptr<Auth> Login(QWidget *parent);
+	static std::shared_ptr<Auth> Login(QWidget *parent,
+					   const std::string &service_name);
 };

@@ -35,7 +35,9 @@ class OAuth : public Auth {
 public:
 	inline OAuth(const Def &d) : Auth(d) {}
 
-	typedef std::function<std::shared_ptr<Auth>(QWidget *)> login_cb;
+	typedef std::function<std::shared_ptr<Auth>(
+		QWidget *, const std::string &service_name)>
+		login_cb;
 	typedef std::function<void()> delete_cookies_cb;
 
 	static std::shared_ptr<Auth> Login(QWidget *parent,

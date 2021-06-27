@@ -225,7 +225,7 @@ bool RestreamAuth::RetryLogin()
 			QT_TO_UTF8(login.GetCode()), true);
 }
 
-std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent)
+std::shared_ptr<Auth> RestreamAuth::Login(QWidget *parent, const std::string &)
 {
 	OAuthLogin login(parent, RESTREAM_AUTH_URL, false);
 	cef->add_popup_whitelist_url("about:blank", &login);
