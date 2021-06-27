@@ -16,15 +16,18 @@
 
 using namespace json11;
 
+#ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
+#endif
 
 /* ------------------------------------------------------------------------- */
 
 OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	: QDialog(parent), get_token(token)
 {
+#ifdef BROWSER_AVAILABLE
 	if (!cef) {
 		return;
 	}
@@ -61,19 +64,23 @@ OAuthLogin::OAuthLogin(QWidget *parent, const std::string &url, bool token)
 	QVBoxLayout *topLayout = new QVBoxLayout(this);
 	topLayout->addWidget(cefWidget);
 	topLayout->addLayout(bottomLayout);
+#endif
 }
 
 OAuthLogin::~OAuthLogin()
 {
+#ifdef BROWSER_AVAILABLE
 	delete cefWidget;
+#endif
 }
 
 int OAuthLogin::exec()
 {
+#ifdef BROWSER_AVAILABLE
 	if (cefWidget) {
 		return QDialog::exec();
 	}
-
+#endif
 	return QDialog::Rejected;
 }
 
@@ -174,7 +181,24 @@ bool OAuth::TokenExpired()
 }
 
 bool OAuth::GetToken(const char *url, const std::string &client_id,
+		     const std::string &secret, const std::string &redirect_uri,
 		     int scope_ver, const std::string &auth_code, bool retry)
+{
+	return GetTokenInternal(url, client_id, secret, redirect_uri, scope_ver,
+				auth_code, retry);
+}
+
+bool OAuth::GetToken(const char *url, const std::string &client_id,
+		     int scope_ver, const std::string &auth_code, bool retry)
+{
+	return GetTokenInternal(url, client_id, {}, {}, scope_ver, auth_code,
+				retry);
+}
+
+bool OAuth::GetTokenInternal(const char *url, const std::string &client_id,
+			     const std::string &secret,
+			     const std::string &redirect_uri, int scope_ver,
+			     const std::string &auth_code, bool retry)
 try {
 	std::string output;
 	std::string error;
@@ -199,6 +223,14 @@ try {
 	std::string post_data;
 	post_data += "action=redirect&client_id=";
 	post_data += client_id;
+	if (!secret.empty()) {
+		post_data += "&client_secret=";
+		post_data += secret;
+	}
+	if (!redirect_uri.empty()) {
+		post_data += "&redirect_uri=";
+		post_data += redirect_uri;
+	}
 
 	if (!auth_code.empty()) {
 		post_data += "&grant_type=authorization_code&code=";

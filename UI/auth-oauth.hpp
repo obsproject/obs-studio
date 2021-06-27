@@ -64,6 +64,16 @@ protected:
 		      int scope_ver,
 		      const std::string &auth_code = std::string(),
 		      bool retry = false);
+	bool GetToken(const char *url, const std::string &client_id,
+		      const std::string &secret,
+		      const std::string &redirect_uri, int scope_ver,
+		      const std::string &auth_code, bool retry);
+
+private:
+	bool GetTokenInternal(const char *url, const std::string &client_id,
+			      const std::string &secret,
+			      const std::string &redirect_uri, int scope_ver,
+			      const std::string &auth_code, bool retry);
 };
 
 class OAuthStreamKey : public OAuth {
