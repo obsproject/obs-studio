@@ -58,8 +58,8 @@ try {
 
 	auto func = [&]() {
 		success = GetRemoteFile(RESTREAM_STREAMKEY_URL, output, error,
-					nullptr, "application/json", nullptr,
-					headers, nullptr, 5);
+					nullptr, "application/json", "",
+					nullptr, headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(

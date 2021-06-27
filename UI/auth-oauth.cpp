@@ -212,7 +212,7 @@ try {
 
 	auto func = [&]() {
 		success = GetRemoteFile(url, output, error, nullptr,
-					"application/x-www-form-urlencoded",
+					"application/x-www-form-urlencoded", "",
 					post_data.c_str(),
 					std::vector<std::string>(), nullptr, 5);
 	};

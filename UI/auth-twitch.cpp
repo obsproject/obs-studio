@@ -78,8 +78,8 @@ try {
 	auto func = [&]() {
 		success = GetRemoteFile("https://api.twitch.tv/kraken/channel",
 					output, error, &error_code,
-					"application/json", nullptr, headers,
-					nullptr, 5);
+					"application/json", "", nullptr,
+					headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(
