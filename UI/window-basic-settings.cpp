@@ -908,6 +908,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegularExpressionValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+
+	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
+		SLOT(UseStreamKeyAdvClicked()));
 }
 
 OBSBasicSettings::~OBSBasicSettings()

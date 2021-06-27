@@ -39,6 +39,28 @@ else()
 	set(RESTREAM_ENABLED TRUE)
 endif()
 
+if(DEFINED ENV{YOUTUBE_CLIENTID} AND NOT DEFINED YOUTUBE_CLIENTID)
+	set(YOUTUBE_CLIENTID "$ENV{YOUTUBE_CLIENTID}")
+endif()
+if(DEFINED ENV{YOUTUBE_CLIENTID_HASH} AND NOT DEFINED YOUTUBE_CLIENTID_HASH)
+	set(YOUTUBE_CLIENTID_HASH "$ENV{YOUTUBE_CLIENTID_HASH}")
+endif()
+if(DEFINED ENV{YOUTUBE_SECRET} AND NOT DEFINED YOUTUBE_SECRET)
+	set(YOUTUBE_SECRET "$ENV{YOUTUBE_SECRET}")
+endif()
+if(DEFINED ENV{YOUTUBE_SECRET_HASH} AND NOT DEFINED YOUTUBE_SECRET_HASH)
+	set(YOUTUBE_SECRET_HASH "$ENV{YOUTUBE_SECRET_HASH}")
+endif()
+
+if(NOT DEFINED YOUTUBE_CLIENTID OR "${YOUTUBE_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_SECRET OR "${YOUTUBE_SECRET}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_CLIENTID_HASH OR "${YOUTUBE_CLIENTID_HASH}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_SECRET_HASH OR "${YOUTUBE_SECRET_HASH}" STREQUAL "")
+	set(YOUTUBE_ENABLED FALSE)
+else()
+	set(YOUTUBE_ENABLED TRUE)
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
@@ -167,6 +189,18 @@ if(BROWSER_AVAILABLE_INTERNAL)
 			auth-restream.hpp
 			)
 	endif()
+
+endif()
+
+if(YOUTUBE_ENABLED)
+	list(APPEND obs_PLATFORM_SOURCES
+		auth-youtube.cpp
+		youtube-api-wrappers.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		auth-youtube.hpp
+		youtube-api-wrappers.hpp
+		)
 endif()
 
 set(obs_libffutil_SOURCES
@@ -376,6 +410,18 @@ set(obs_UI
 
 set(obs_QRC
 	forms/obs.qrc)
+
+if(YOUTUBE_ENABLED)
+	list(APPEND obs_SOURCES
+		window-youtube-actions.cpp
+		)
+	list(APPEND obs_HEADERS
+		window-youtube-actions.hpp
+		)
+	list(APPEND obs_UI
+		forms/OBSYoutubeActions.ui
+		)
+endif()
 
 qt5_wrap_ui(obs_UI_HEADERS ${obs_UI})
 qt5_add_resources(obs_QRC_SOURCES ${obs_QRC})

@@ -15,7 +15,12 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#endif
+
 #include "auth-oauth.hpp"
+#include "ui-config.h"
+#if YOUTUBE_ENABLED
+#include "youtube-api-wrappers.hpp"
 #endif
 
 struct QCef;
@@ -257,6 +262,9 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+
 	int vertSpacing = ui->topLayout->verticalSpacing();
 
 	QMargins m = ui->topLayout->contentsMargins();
@@ -294,6 +302,9 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 		SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
+
+	connect(ui->useStreamKeyAdv, &QPushButton::clicked, this,
+		[&]() { ui->streamKeyWidget->setVisible(true); });
 
 	connect(ui->key, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateCompleted()));
@@ -413,7 +424,6 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 {
-#ifdef BROWSER_AVAILABLE
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
@@ -422,15 +432,45 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 		if (validKey)
 			ui->key->setText(QT_UTF8(a->key().c_str()));
 
-		ui->streamKeyWidget->setVisible(!validKey);
-		ui->streamKeyLabel->setVisible(!validKey);
-		ui->connectAccount2->setVisible(!validKey);
-		ui->disconnectAccount->setVisible(validKey);
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(false);
+		ui->disconnectAccount->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(false);
+
+		ui->connectedAccountLabel->setVisible(false);
+		ui->connectedAccountText->setVisible(false);
+
+#if YOUTUBE_ENABLED
+		if (IsYouTubeService(a->service())) {
+			ui->key->clear();
+
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Title"));
+
+			QScopedPointer<QThread> thread(CreateQThread([&]() {
+				std::shared_ptr<YoutubeApiWrappers> ytAuth =
+					std::dynamic_pointer_cast<
+						YoutubeApiWrappers>(auth);
+				if (ytAuth.get()) {
+					ChannelDescription cd;
+					if (ytAuth->GetChannelDescription(cd)) {
+						ui->connectedAccountText
+							->setText(cd.title);
+					}
+				}
+			}));
+			thread->start();
+			thread->wait();
+		}
+#endif
 	}
 
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
 	UpdateCompleted();
-#endif
 }
 
 void AutoConfigStreamPage::OnAuthConnected()
@@ -446,15 +486,16 @@ void AutoConfigStreamPage::OnAuthConnected()
 
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
 	OAuth::DeleteCookies(service);
 
 	auth = OAuthStreamKey::Login(this, service);
-	if (!!auth)
+	if (!!auth) {
 		OnAuthConnected();
-#endif
+
+		ui->useStreamKeyAdv->setVisible(false);
+	}
 }
 
 #define DISCONNECT_COMFIRM_TITLE \
@@ -484,11 +525,14 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	OAuth::DeleteCookies(service);
 #endif
 
+	reset_service_ui_fields(service);
+
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);
-	ui->connectAccount2->setVisible(true);
-	ui->disconnectAccount->setVisible(false);
 	ui->key->setText("");
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -500,6 +544,55 @@ void AutoConfigStreamPage::on_useStreamKey_clicked()
 static inline bool is_auth_service(const std::string &service)
 {
 	return Auth::AuthType(service) != Auth::Type::None;
+}
+
+static inline bool is_external_oauth(const std::string &service)
+{
+	return Auth::External(service);
+}
+
+void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
+{
+	// when account is already connected:
+	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+#if YOUTUBE_ENABLED
+	if (a && service == a->service() && IsYouTubeService(a->service())) {
+		ui->connectedAccountLabel->setVisible(true);
+		ui->connectedAccountText->setVisible(true);
+		ui->connectAccount2->setVisible(false);
+		ui->disconnectAccount->setVisible(true);
+		return;
+	}
+#endif
+
+	bool external_oauth = is_external_oauth(service);
+	if (external_oauth) {
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(true);
+
+		ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+
+	} else if (cef) {
+		QString key = ui->key->text();
+		bool can_auth = is_auth_service(service);
+		int page = can_auth && key.isEmpty() ? (int)Section::Connect
+						     : (int)Section::StreamKey;
+
+		ui->stackedWidget->setCurrentIndex(page);
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->connectAccount2->setVisible(can_auth);
+		ui->useStreamKeyAdv->setVisible(false);
+	} else {
+		ui->connectAccount2->setVisible(false);
+		ui->useStreamKeyAdv->setVisible(false);
+	}
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
 }
 
 void AutoConfigStreamPage::ServiceChanged()
@@ -514,30 +607,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
 
-	ui->disconnectAccount->setVisible(false);
-
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			bool can_auth = is_auth_service(service);
-			int page = can_auth ? (int)Section::Connect
-					    : (int)Section::StreamKey;
-
-			ui->stackedWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-			auth.reset();
-
-			if (lastService.isEmpty())
-				lastService = service.c_str();
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
-	}
-#else
-	ui->connectAccount2->setVisible(false);
-#endif
+	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
 	if (service == "Twitch" && wiz->twitchAuto)
@@ -570,15 +640,23 @@ void AutoConfigStreamPage::ServiceChanged()
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
 
-#ifdef BROWSER_AVAILABLE
 	OBSBasic *main = OBSBasic::Get();
 
-	if (!!main->auth &&
-	    service.find(main->auth->service()) != std::string::npos) {
-		auth = main->auth;
-		OnAuthConnected();
-	}
+	if (main->auth) {
+		auto system_auth_service = main->auth->service();
+		bool service_check = service == system_auth_service;
+#if YOUTUBE_ENABLED
+		service_check =
+			service_check ? service_check
+				      : IsYouTubeService(system_auth_service) &&
+						IsYouTubeService(service);
 #endif
+		if (service_check) {
+			auth.reset();
+			auth = main->auth;
+			OnAuthConnected();
+		}
+	}
 
 	UpdateCompleted();
 }
