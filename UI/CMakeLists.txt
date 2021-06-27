@@ -46,6 +46,7 @@ configure_file(
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
+find_package(Qt5Network ${FIND_MODE})
 find_package(Qt5Widgets ${FIND_MODE})
 find_package(Qt5Svg ${FIND_MODE})
 find_package(Qt5Xml ${FIND_MODE})
@@ -400,6 +401,7 @@ endif()
 
 target_link_libraries(obs
 	libobs
+	Qt5::Network
 	Qt5::Widgets
 	Qt5::Svg
 	Qt5::Xml
