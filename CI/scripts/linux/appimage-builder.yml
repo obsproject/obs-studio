@@ -55,9 +55,6 @@ AppDir:
       - libigdgmm11
       - i965-va-driver-shaders
       - intel-media-va-driver-non-free
-    exclude:
-      - libva-drm2
-      - libva-x11-2
 
   files:
     exclude:
