@@ -53,8 +53,12 @@ AppDir:
       - libfontconfig1
       - libfreetype6
       - libigdgmm11
+    exclude:
       - i965-va-driver-shaders
       - intel-media-va-driver-non-free
+      - libva-drm2
+      - libva2
+      - libva-x11-2
 
   files:
     exclude:
