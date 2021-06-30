@@ -116,7 +116,7 @@ jobs:
       - name: 'Build'
         shell: bash
         working-directory: ${{ github.workspace }}/build
-        run: make -j`nproc` install DESTDIR=${{ github.workspace }}/AppDir/opt/obs
+        run: make -j`nproc` install DESTDIR=${{ github.workspace }}/AppDir/
       - name: 'Package'
         if: success() && (github.event_name != 'pull_request' || contains( github.event.pull_request.labels.*.name, 'Seeking Testers'))
         uses: AppImageCrafters/build-appimage-action@v1
