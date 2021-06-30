@@ -106,5 +106,4 @@ AppDir:
 
 AppImage:
   update-information: !ENV ${UPDATE_INFORMATION}
-  sign-key: None
   arch: x86_64
