@@ -849,7 +849,16 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 		} else if (!this->isMaximized()) {
 			popup.addAction(QTStr("ResizeProjectorWindowToContent"),
-					this, SLOT(ResizeToContent()));
+					this, SLOT(ResizeToContentNone()));
+			popup.addAction(
+				QTStr("ResizeProjectorWindowToContent50"), this,
+				SLOT(ResizeToContent50()));
+			popup.addAction(
+				QTStr("ResizeProjectorWindowToContent100"),
+				this, SLOT(ResizeToContent100()));
+			popup.addAction(
+				QTStr("ResizeProjectorWindowToContent200"),
+				this, SLOT(ResizeToContent200()));
 		}
 
 		QAction *alwaysOnTopButton =
@@ -1088,7 +1097,27 @@ void OBSProjector::OpenWindowedProjector()
 	screen = nullptr;
 }
 
-void OBSProjector::ResizeToContent()
+void OBSProjector::ResizeToContentNone()
+{
+	return this->ResizeToContent(-1);
+}
+
+void OBSProjector::ResizeToContent50()
+{
+	return this->ResizeToContent(50);
+}
+
+void OBSProjector::ResizeToContent100()
+{
+	return this->ResizeToContent(100);
+}
+
+void OBSProjector::ResizeToContent200()
+{
+	return this->ResizeToContent(200);
+}
+
+void OBSProjector::ResizeToContent(int percent)
 {
 	OBSSource source = GetSource();
 	uint32_t targetCX;
@@ -1107,8 +1136,15 @@ void OBSProjector::ResizeToContent()
 	}
 
 	QSize size = this->size();
-	GetScaleAndCenterPos(targetCX, targetCY, size.width(), size.height(), x,
-			     y, scale);
+	if (percent == -1) {
+		GetScaleAndCenterPos(targetCX, targetCY, size.width(),
+				     size.height(), x, y, scale);
+
+	} else {
+		scale = (static_cast<float>(percent)) / 100.0;
+		GetCenterPosFromFixedScale(targetCX, targetCY, size.width(),
+					   size.height(), x, y, scale);
+	}
 
 	newX = size.width() - (x * 2);
 	newY = size.height() - (y * 2);

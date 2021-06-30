@@ -36,6 +36,8 @@ private:
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
 
+	void ResizeToContent(int percent);
+
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
 	int savedMonitor = -1;
@@ -82,7 +84,10 @@ private:
 private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
-	void ResizeToContent();
+	void ResizeToContentNone();
+	void ResizeToContent50();
+	void ResizeToContent100();
+	void ResizeToContent200();
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
