@@ -426,14 +426,14 @@ static obs_properties_t *wc_properties(void *data)
 	obs_property_list_add_int(p, TEXT_MATCH_CLASS, WINDOW_PRIORITY_CLASS);
 	obs_property_list_add_int(p, TEXT_MATCH_EXE, WINDOW_PRIORITY_EXE);
 
+	obs_properties_add_bool(ppts, "allow_transparency",
+				TEXT_ALLOW_TRANSPARENCY);
+
 	obs_properties_add_bool(ppts, "cursor", TEXT_CAPTURE_CURSOR);
 
 	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
 
 	obs_properties_add_bool(ppts, "client_area", TEXT_CLIENT_AREA);
-
-	obs_properties_add_bool(ppts, "allow_transparency",
-				TEXT_ALLOW_TRANSPARENCY);
 
 	return ppts;
 }
