@@ -538,6 +538,8 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 	return ppts;
 }
 
+static int get_bitrate_matrix_max(json_t *array);
+
 static void apply_video_encoder_settings(obs_data_t *settings,
 					 json_t *recommended)
 {
