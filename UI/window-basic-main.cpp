@@ -264,6 +264,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		}
 	}
 
+	qRegisterMetaType<int64_t>("int64_t");
+	qRegisterMetaType<uint32_t>("uint32_t");
 	qRegisterMetaType<OBSScene>("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>("OBSSource");
