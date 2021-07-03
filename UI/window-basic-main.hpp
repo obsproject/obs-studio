@@ -624,6 +624,14 @@ private:
 	void CenterSelectedSceneItems(const CenterType &centerType);
 	void ShowMissingFilesDialog(obs_missing_files_t *files);
 
+	QColor selectionColor;
+	QColor cropColor;
+	QColor hoverColor;
+
+	QColor GetSelectionColor() const;
+	QColor GetCropColor() const;
+	QColor GetHoverColor() const;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -865,6 +873,8 @@ public:
 
 	void AddVCamButton();
 	void ResetOutputs();
+
+	void RefreshVolumeColors();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceId,
 			      const char *deviceDesc, int channel);
