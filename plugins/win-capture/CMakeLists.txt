@@ -30,7 +30,8 @@ set(win-capture_SOURCES
 	load-graphics-offsets.c
 	game-capture-file-init.c
 	duplicator-monitor-capture.c
-	plugin-main.c)
+	plugin-main.c
+	nt-stuff.c)
 
 add_library(win-capture MODULE
 	${win-capture_SOURCES}
