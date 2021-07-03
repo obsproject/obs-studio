@@ -156,7 +156,7 @@ NTSTATUS nt_query_information(SYSTEM_INFORMATION_CLASS info_class, PVOID info,
 
 bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 {
-	ULONG size = 4096;
+	ULONG size = 524288;
 	bool suspended = false;
 	void *data = malloc(size);
 	if (!data)
@@ -173,7 +173,7 @@ bool thread_is_suspended(DWORD process_id, DWORD thread_id)
 		}
 
 		free(data);
-		size += 1024;
+		size += 524288;
 		data = malloc(size);
 		if (!data)
 			return false;
