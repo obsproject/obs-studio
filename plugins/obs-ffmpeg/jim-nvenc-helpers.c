@@ -72,10 +72,18 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 
 bool load_nvenc_lib(void)
 {
+#if !defined(__APPLE__)
+#ifdef _WIN32
 	const char *const file = (sizeof(void *) == 8) ? "nvEncodeAPI64.dll"
 						       : "nvEncodeAPI.dll";
+#else
+	const char *const file = "libnvidia-encode.so.1";
+#endif
 	nvenc_lib = os_dlopen(file);
 	return nvenc_lib != NULL;
+#else
+	return false;
+#endif
 }
 
 static void *load_nv_func(const char *func)
