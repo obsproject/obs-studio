@@ -174,7 +174,7 @@ static void *gpu_encode_thread(void *unused)
 
 bool init_gpu_encoding(struct obs_core_video *video)
 {
-#ifdef _WIN32
+#ifndef __APPLE__
 	struct obs_video_info *ovi = &video->ovi;
 
 	video->gpu_encode_stop = false;
@@ -184,6 +184,7 @@ bool init_gpu_encoding(struct obs_core_video *video)
 		gs_texture_t *tex;
 		gs_texture_t *tex_uv = NULL;
 
+#ifdef _WIN32
 		if (ovi->output_format == VIDEO_FORMAT_P010) {
 			gs_texture_create_p010(&tex, &tex_uv, ovi->output_width,
 					       ovi->output_height,
@@ -195,6 +196,9 @@ bool init_gpu_encoding(struct obs_core_video *video)
 					       GS_RENDER_TARGET |
 						       GS_SHARED_KM_TEX);
 		} else {
+#else
+		if (true) {
+#endif
 			/* Keep in sync with obs.c:obs_init_textures */
 			enum gs_color_format format = GS_RGBA;
 			switch (ovi->output_format) {
@@ -214,7 +218,11 @@ bool init_gpu_encoding(struct obs_core_video *video)
 			return false;
 		}
 
+#ifdef _WIN32
 		uint32_t handle = gs_texture_get_shared_handle(tex);
+#else
+		uint32_t handle = (uint32_t)-1;
+#endif
 
 		struct obs_tex_frame frame = {
 			.tex = tex, .tex_uv = tex_uv, .handle = handle};

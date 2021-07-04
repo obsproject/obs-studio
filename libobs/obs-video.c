@@ -417,7 +417,7 @@ stage_output_texture(struct obs_core_video *video, int cur_texture,
 	profile_end(stage_output_texture_name);
 }
 
-#ifdef _WIN32
+#ifndef __APPLE__
 static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 			       struct obs_vframe_info *vframe_info)
 {
@@ -444,7 +444,9 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	circlebuf_pop_front(&video->gpu_encoder_avail_queue, &tf, sizeof(tf));
 
 	if (tf.released) {
+#ifdef _WIN32
 		gs_texture_acquire_sync(tf.tex, tf.lock_key, GS_WAIT_INFINITE);
+#endif
 		tf.released = false;
 	}
 
@@ -479,8 +481,12 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	tf.count = 1;
 	tf.timestamp = vframe_info->timestamp;
 	tf.released = true;
+#ifdef _WIN32
 	tf.handle = gs_texture_get_shared_handle(tf.tex);
 	gs_texture_release_sync(tf.tex, ++tf.lock_key);
+#else
+	tf.handle = (uint32_t)-1;
+#endif
 	circlebuf_push_back(&video->gpu_encoder_queue, &tf, sizeof(tf));
 
 	os_sem_post(video->gpu_encode_semaphore);
@@ -536,7 +542,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 		size_t channel_count = NUM_CHANNELS;
 		gs_texture_t *texture = render_output_texture(video);
 
-#ifdef _WIN32
+#ifndef __APPLE__
 		if (gpu_active) {
 			convert_textures = video->convert_textures_encode;
 			copy_surfaces = video->copy_surfaces_encode;
@@ -549,7 +555,7 @@ static inline void render_video(struct obs_core_video *video, bool raw_active,
 			render_convert_texture(video, convert_textures,
 					       texture);
 
-#ifdef _WIN32
+#ifndef __APPLE__
 		if (gpu_active) {
 			gs_flush();
 			output_gpu_encoders(video, raw_active);
