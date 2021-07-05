@@ -307,14 +307,10 @@
         {
             "name": "VIMM",
             "servers": [
-                {
-                    "name": "Europe: Frankfurt",
-                    "url": "rtmp://eu.vimm.tv/live"
-                },
-                {
-                    "name": "North America: Montreal",
-                    "url": "rtmp://us.vimm.tv/live"
-                }
+		{
+	            "name": "Autodetect",
+                    "url": "rtmp://ingest.vimm.tv/live"
+		}
             ],
             "recommended": {
                 "keyint": 2,
