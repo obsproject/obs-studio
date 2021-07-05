@@ -307,10 +307,10 @@
         {
             "name": "VIMM",
             "servers": [
-		{
+                {
 	            "name": "Autodetect",
                     "url": "rtmp://ingest.vimm.tv/live"
-		}
+                }
             ],
             "recommended": {
                 "keyint": 2,
