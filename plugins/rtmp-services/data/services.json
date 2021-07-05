@@ -308,7 +308,7 @@
             "name": "VIMM",
             "servers": [
                 {
-	            "name": "Autodetect",
+                    "name": "Autodetect",
                     "url": "rtmp://ingest.vimm.tv/live"
                 }
             ],
