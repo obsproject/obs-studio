@@ -1200,9 +1200,8 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 
 	if (has_effective_crop(obs_pw)) {
 		gs_draw_sprite_subregion(obs_pw->texture, 0, obs_pw->crop.x,
-					 obs_pw->crop.y,
-					 obs_pw->crop.x + obs_pw->crop.width,
-					 obs_pw->crop.y + obs_pw->crop.height);
+					 obs_pw->crop.y, obs_pw->crop.width,
+					 obs_pw->crop.height);
 	} else {
 		gs_draw_sprite(obs_pw->texture, 0, 0, 0);
 	}
