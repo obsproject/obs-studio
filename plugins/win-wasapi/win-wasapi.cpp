@@ -404,7 +404,6 @@ void WASAPISource::InitCapture()
 void WASAPISource::Initialize()
 {
 	blog(LOG_INFO, "[WASAPISource::Initialize] Device initialize called");
-	ComPtr<IMMDeviceEnumerator> enumerator;
 	HRESULT res;
 
 	res = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
