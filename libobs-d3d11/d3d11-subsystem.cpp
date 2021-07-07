@@ -1768,6 +1768,20 @@ inline void gs_device::CopyTex(ID3D11Texture2D *dst, uint32_t dst_x,
 	}
 }
 
+static DXGI_FORMAT get_copy_compare_format(gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA_UNORM:
+		return DXGI_FORMAT_R8G8B8A8_TYPELESS;
+	case GS_BGRX_UNORM:
+		return DXGI_FORMAT_B8G8R8X8_TYPELESS;
+	case GS_BGRA_UNORM:
+		return DXGI_FORMAT_B8G8R8A8_TYPELESS;
+	default:
+		return ConvertGSTextureFormatResource(format);
+	}
+}
+
 void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst,
 				uint32_t dst_x, uint32_t dst_y,
 				gs_texture_t *src, uint32_t src_x,
@@ -1784,7 +1798,8 @@ void device_copy_texture_region(gs_device_t *device, gs_texture_t *dst,
 		if (src->type != GS_TEXTURE_2D || dst->type != GS_TEXTURE_2D)
 			throw "Source and destination textures must be a 2D "
 			      "textures";
-		if (dst->format != src->format)
+		if (get_copy_compare_format(dst->format) !=
+		    get_copy_compare_format(src->format))
 			throw "Source and destination formats do not match";
 
 		/* apparently casting to the same type that the variable
