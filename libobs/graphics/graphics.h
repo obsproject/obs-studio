@@ -1005,6 +1005,24 @@ static inline bool gs_is_srgb_format(enum gs_color_format format)
 	}
 }
 
+static inline enum gs_color_format
+gs_generalize_format(enum gs_color_format format)
+{
+	switch (format) {
+	case GS_RGBA_UNORM:
+		format = GS_RGBA;
+		break;
+	case GS_BGRX_UNORM:
+		format = GS_BGRX;
+		break;
+	case GS_BGRA_UNORM:
+		format = GS_BGRA;
+	default:;
+	}
+
+	return format;
+}
+
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,
 					   uint32_t depth)
 {
