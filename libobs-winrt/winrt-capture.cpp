@@ -564,24 +564,20 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 	}
 }
 
-static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
+static void draw_texture(struct winrt_capture *capture)
 {
-	gs_texture_t *const texture = capture->texture;
+	gs_effect_t *const effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-	size_t passes;
-
-	const bool linear_srgb = gs_get_linear_srgb();
 
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
+	gs_enable_framebuffer_srgb(true);
+	gs_enable_blending(false);
 
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(image, texture);
-	else
-		gs_effect_set_texture(image, texture);
+	gs_texture_t *const texture = capture->texture;
+	gs_effect_set_texture_srgb(image, texture);
 
-	passes = gs_technique_begin(tech);
+	const size_t passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
 		if (gs_technique_begin_pass(tech, i)) {
 			gs_draw_sprite(texture, 0, 0, 0);
@@ -591,6 +587,7 @@ static void draw_texture(struct winrt_capture *capture, gs_effect_t *effect)
 	}
 	gs_technique_end(tech);
 
+	gs_enable_blending(true);
 	gs_enable_framebuffer_srgb(previous);
 }
 
@@ -627,11 +624,10 @@ extern "C" EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture,
 	return success;
 }
 
-extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture,
-					    gs_effect_t *effect)
+extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture)
 {
 	if (capture->texture_written)
-		draw_texture(capture, effect);
+		draw_texture(capture);
 }
 
 extern "C" EXPORT uint32_t

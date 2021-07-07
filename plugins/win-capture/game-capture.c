@@ -149,7 +149,9 @@ struct game_capture {
 
 	ipc_pipe_server_t pipe;
 	gs_texture_t *texture;
-	bool supports_srgb;
+	gs_texture_t *extra_texture;
+	gs_texrender_t *extra_texrender;
+	bool linear_sample;
 	struct hook_info *global_hook_info;
 	HANDLE keepalive_mutex;
 	HANDLE hook_init;
@@ -332,12 +334,14 @@ static void stop_capture(struct game_capture *gc)
 	close_handle(&gc->texture_mutexes[0]);
 	close_handle(&gc->texture_mutexes[1]);
 
-	if (gc->texture) {
-		obs_enter_graphics();
-		gs_texture_destroy(gc->texture);
-		obs_leave_graphics();
-		gc->texture = NULL;
-	}
+	obs_enter_graphics();
+	gs_texrender_destroy(gc->extra_texrender);
+	gs_texture_destroy(gc->extra_texture);
+	gs_texture_destroy(gc->texture);
+	obs_leave_graphics();
+	gc->extra_texrender = NULL;
+	gc->extra_texture = NULL;
+	gc->texture = NULL;
 
 	if (gc->active)
 		info("capture stopped");
@@ -1552,49 +1556,104 @@ static inline bool is_16bit_format(uint32_t format)
 
 static inline bool init_shmem_capture(struct game_capture *gc)
 {
-	enum gs_color_format format;
-
-	gc->texture_buffers[0] =
-		(uint8_t *)gc->data + gc->shmem_data->tex1_offset;
-	gc->texture_buffers[1] =
-		(uint8_t *)gc->data + gc->shmem_data->tex2_offset;
-
-	gc->convert_16bit = is_16bit_format(gc->global_hook_info->format);
-	format = gc->convert_16bit
-			 ? GS_BGRA
-			 : convert_format(gc->global_hook_info->format);
+	const uint32_t dxgi_format = gc->global_hook_info->format;
+	const bool convert_16bit = is_16bit_format(dxgi_format);
+	const enum gs_color_format format =
+		convert_16bit ? GS_BGRA : convert_format(dxgi_format);
 
 	obs_enter_graphics();
+	gs_texrender_destroy(gc->extra_texrender);
+	gs_texture_destroy(gc->extra_texture);
 	gs_texture_destroy(gc->texture);
-	gc->texture =
+	gs_texture_t *const texture =
 		gs_texture_create(gc->cx, gc->cy, format, 1, NULL, GS_DYNAMIC);
 	obs_leave_graphics();
 
-	if (!gc->texture) {
+	bool success = texture != NULL;
+	if (success) {
+		const bool linear_sample = format != GS_R10G10B10A2;
+
+		gs_texrender_t *extra_texrender = NULL;
+		if (!linear_sample) {
+			extra_texrender =
+				gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+			success = extra_texrender != NULL;
+			if (!success)
+				warn("init_shmem_capture: failed to create extra texrender");
+		}
+
+		if (success) {
+			gc->texture_buffers[0] = (uint8_t *)gc->data +
+						 gc->shmem_data->tex1_offset;
+			gc->texture_buffers[1] = (uint8_t *)gc->data +
+						 gc->shmem_data->tex2_offset;
+			gc->convert_16bit = convert_16bit;
+
+			gc->texture = texture;
+			gc->extra_texture = NULL;
+			gc->extra_texrender = extra_texrender;
+			gc->linear_sample = linear_sample;
+			gc->copy_texture = copy_shmem_tex;
+		} else {
+			gs_texture_destroy(texture);
+		}
+	} else {
 		warn("init_shmem_capture: failed to create texture");
-		return false;
 	}
 
-	gc->supports_srgb = true;
-	gc->copy_texture = copy_shmem_tex;
-	return true;
+	return success;
 }
 
 static inline bool init_shtex_capture(struct game_capture *gc)
 {
 	obs_enter_graphics();
+	gs_texrender_destroy(gc->extra_texrender);
+	gs_texture_destroy(gc->extra_texture);
 	gs_texture_destroy(gc->texture);
-	gc->texture = gs_texture_open_shared(gc->shtex_data->tex_handle);
-	enum gs_color_format format = gs_texture_get_color_format(gc->texture);
-	gc->supports_srgb = gs_is_srgb_format(format);
+	gs_texture_t *const texture =
+		gs_texture_open_shared(gc->shtex_data->tex_handle);
+	bool success = texture != NULL;
+	if (success) {
+		enum gs_color_format format =
+			gs_texture_get_color_format(texture);
+		const bool ten_bit_srgb = (format == GS_R10G10B10A2);
+		enum gs_color_format linear_format =
+			ten_bit_srgb ? GS_BGRA : gs_generalize_format(format);
+		const bool linear_sample = (linear_format == format);
+		gs_texture_t *extra_texture = NULL;
+		gs_texrender_t *extra_texrender = NULL;
+		if (!linear_sample) {
+			if (ten_bit_srgb) {
+				extra_texrender = gs_texrender_create(
+					linear_format, GS_ZS_NONE);
+				success = extra_texrender != NULL;
+				if (!success)
+					warn("init_shtex_capture: failed to create extra texrender");
+			} else {
+				extra_texture = gs_texture_create(
+					gs_texture_get_width(texture),
+					gs_texture_get_height(texture),
+					linear_format, 1, NULL, 0);
+				success = extra_texture != NULL;
+				if (!success)
+					warn("init_shtex_capture: failed to create extra texture");
+			}
+		}
+
+		if (success) {
+			gc->texture = texture;
+			gc->linear_sample = linear_sample;
+			gc->extra_texture = extra_texture;
+			gc->extra_texrender = extra_texrender;
+		} else {
+			gs_texture_destroy(texture);
+		}
+	} else {
+		warn("init_shtex_capture: failed to open shared handle");
+	}
 	obs_leave_graphics();
 
-	if (!gc->texture) {
-		warn("init_shtex_capture: failed to open shared handle");
-		return false;
-	}
-
-	return true;
+	return success;
 }
 
 static bool start_capture(struct game_capture *gc)
@@ -1802,36 +1861,86 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 		    gc->global_hook_info->cy);
 }
 
-static void game_capture_render(void *data, gs_effect_t *effect)
+static void game_capture_render(void *data, gs_effect_t *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	struct game_capture *gc = data;
 	if (!gc->texture || !gc->active)
 		return;
 
-	effect = obs_get_base_effect(gc->config.allow_transparency
-					     ? OBS_EFFECT_DEFAULT
-					     : OBS_EFFECT_OPAQUE);
+	const bool allow_transparency = gc->config.allow_transparency;
+	gs_effect_t *const effect = obs_get_base_effect(
+		allow_transparency ? OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
 
-	const bool linear_srgb = gs_get_linear_srgb() && gc->supports_srgb;
-	const bool previous = gs_set_linear_srgb(linear_srgb);
+	bool linear_sample = gc->linear_sample;
+	gs_texture_t *texture = gc->texture;
+	if (!linear_sample && !obs_source_get_texcoords_centered(gc->source)) {
+		gs_texture_t *const extra_texture = gc->extra_texture;
+		if (extra_texture) {
+			gs_copy_texture(extra_texture, texture);
+			texture = extra_texture;
+		} else {
+			gs_texrender_t *const texrender = gc->extra_texrender;
+			gs_texrender_reset(texrender);
+			const uint32_t cx = gs_texture_get_width(texture);
+			const uint32_t cy = gs_texture_get_height(texture);
+			if (gs_texrender_begin(texrender, cx, cy)) {
+				gs_effect_t *const default_effect =
+					obs_get_base_effect(OBS_EFFECT_DEFAULT);
+				const bool previous =
+					gs_framebuffer_srgb_enabled();
+				gs_enable_framebuffer_srgb(false);
+				gs_enable_blending(false);
+				gs_ortho(0.0f, (float)cx, 0.0f, (float)cy,
+					 -100.0f, 100.0f);
+				gs_eparam_t *const image =
+					gs_effect_get_param_by_name(
+						default_effect, "image");
+				gs_effect_set_texture(image, texture);
+				while (gs_effect_loop(default_effect, "Draw")) {
+					gs_draw_sprite(texture, 0, 0, 0);
+				}
+				gs_enable_blending(true);
+				gs_enable_framebuffer_srgb(previous);
 
-	while (gs_effect_loop(effect, "Draw")) {
-		obs_source_draw(gc->texture, 0, 0, 0, 0,
-				gc->global_hook_info->flip);
+				gs_texrender_end(texrender);
 
-		if (gc->config.allow_transparency && gc->config.cursor &&
+				texture = gs_texrender_get_texture(texrender);
+			}
+		}
+
+		linear_sample = true;
+	}
+
+	gs_eparam_t *const image = gs_effect_get_param_by_name(effect, "image");
+	const uint32_t flip = gc->global_hook_info->flip ? GS_FLIP_V : 0;
+	const char *tech_name = allow_transparency && !linear_sample
+					? "DrawSrgbDecompress"
+					: "Draw";
+	while (gs_effect_loop(effect, tech_name)) {
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(allow_transparency || linear_sample);
+		gs_enable_blending(allow_transparency);
+		if (linear_sample)
+			gs_effect_set_texture_srgb(image, texture);
+		else
+			gs_effect_set_texture(image, texture);
+		gs_draw_sprite(texture, flip, 0, 0);
+		gs_enable_blending(true);
+		gs_enable_framebuffer_srgb(previous);
+
+		if (allow_transparency && gc->config.cursor &&
 		    !gc->cursor_hidden) {
 			game_capture_render_cursor(gc);
 		}
 	}
 
-	gs_set_linear_srgb(previous);
+	if (!allow_transparency && gc->config.cursor && !gc->cursor_hidden) {
+		gs_effect_t *const default_effect =
+			obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
-	if (!gc->config.allow_transparency && gc->config.cursor &&
-	    !gc->cursor_hidden) {
-		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-
-		while (gs_effect_loop(effect, "Draw")) {
+		while (gs_effect_loop(default_effect, "Draw")) {
 			game_capture_render_cursor(gc);
 		}
 	}
