@@ -962,6 +962,9 @@ EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 /** Gets the height of a source (if it has video) */
 EXPORT uint32_t obs_source_get_height(obs_source_t *source);
 
+/** Hints whether or not the source will blend texels */
+EXPORT bool obs_source_get_texcoords_centered(obs_source_t *source);
+
 /**
  * If the source is a filter, returns the parent source of the filter.  Only
  * guaranteed to be valid inside of the video_render, filter_audio,
