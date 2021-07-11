@@ -1030,6 +1030,16 @@ void obs_source_send_key_click(obs_source_t *source,
 	}
 }
 
+bool obs_source_get_texcoords_centered(obs_source_t *source)
+{
+	return source->texcoords_centered;
+}
+
+void obs_source_set_texcoords_centered(obs_source_t *source, bool centered)
+{
+	source->texcoords_centered = centered;
+}
+
 static void activate_source(obs_source_t *source)
 {
 	if (source->context.data && source->info.activate)

@@ -37,8 +37,7 @@ typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
-typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
-					 gs_effect_t *effect);
+typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
 	const struct winrt_capture *capture);
@@ -574,13 +573,12 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
-	gs_effect_t *const opaque = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 	if (wc->method == METHOD_WGC) {
 		if (wc->capture_winrt) {
 			if (wc->exports.winrt_capture_active(
 				    wc->capture_winrt)) {
 				wc->exports.winrt_capture_render(
-					wc->capture_winrt, opaque);
+					wc->capture_winrt);
 			} else {
 				wc->exports.winrt_capture_free(
 					wc->capture_winrt);
@@ -588,7 +586,9 @@ static void wc_render(void *data, gs_effect_t *effect)
 			}
 		}
 	} else {
-		dc_capture_render(&wc->capture, opaque);
+		dc_capture_render(
+			&wc->capture,
+			obs_source_get_texcoords_centered(wc->source));
 	}
 
 	UNUSED_PARAMETER(effect);
