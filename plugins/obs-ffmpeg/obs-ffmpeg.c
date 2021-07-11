@@ -224,16 +224,6 @@ static bool nvenc_device_available(void)
 
 extern bool load_nvenc_lib(void);
 
-#ifndef _WIN32
-bool load_nvenc_lib(void)
-{
-	void *lib = os_dlopen("libnvidia-encode.so.1");
-	if (lib)
-		os_dlclose(lib);
-	return !!lib;
-}
-#endif
-
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
 	AVCodec *nvenc = avcodec_find_encoder_by_name(name);
@@ -288,11 +278,6 @@ static bool vaapi_supported(void)
 
 extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
-
-#ifndef _WIN32
-void jim_nvenc_load(bool h264, bool hevc) {}
-void jim_nvenc_unload(void) {}
-#endif
 
 #if ENABLE_FFMPEG_LOGGING
 extern void obs_ffmpeg_load_logging(void);

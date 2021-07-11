@@ -57,22 +57,30 @@ endif()
 set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
                                                                         "")
 
-if(OS_WINDOWS)
+if(OS_WINDOWS OR OS_POSIX)
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
 
-  set(MODULE_DESCRIPTION "OBS FFmpeg module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-ffmpeg.rc)
+  if(OS_WINDOWS)
+    set(MODULE_DESCRIPTION "OBS FFmpeg module")
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
+                   obs-ffmpeg.rc)
+  endif()
 
-  target_sources(obs-ffmpeg PRIVATE jim-nvenc.c jim-nvenc.h jim-nvenc-helpers.c
-                                    obs-ffmpeg.rc)
+  if(NOT OS_MACOS)
+    target_sources(obs-ffmpeg PRIVATE jim-nvenc.c jim-nvenc.h
+                                      jim-nvenc-helpers.c)
+    if(OS_WINDOWS)
+      target_sources(obs-ffmpeg PRIVATE obs-ffmpeg.rc)
+    endif()
+  endif()
 
-elseif(OS_POSIX AND NOT OS_MACOS)
-  find_package(Libpci REQUIRED)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c)
-  target_link_libraries(obs-ffmpeg PRIVATE LIBPCI::LIBPCI)
+  if(OS_POSIX AND NOT OS_MACOS)
+    find_package(Libpci REQUIRED)
+    target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c)
+    target_link_libraries(obs-ffmpeg PRIVATE LIBPCI::LIBPCI)
+  endif()
 endif()
 
 setup_plugin_target(obs-ffmpeg)

@@ -552,7 +552,7 @@ struct obs_encoder_info h264_nvenc_encoder_info = {
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
-#ifdef _WIN32
+#ifndef __APPLE__
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
 #else
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE,

@@ -1,13 +1,20 @@
+#define GL_GLEXT_PROTOTYPES 1
+
 #include "jim-nvenc.h"
 #include <util/circlebuf.h>
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-avc.h>
 #include <libavutil/rational.h>
+#ifdef _WIN32
 #define INITGUID
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#else
+#include <graphics/graphics.h>
+#include <GL/gl.h>
+#endif
 #ifdef ENABLE_HEVC
 #include <obs-hevc.h>
 #endif
@@ -32,8 +39,12 @@ struct nv_texture;
 
 struct handle_tex {
 	uint32_t handle;
+#ifdef _WIN32
 	ID3D11Texture2D *tex;
 	IDXGIKeyedMutex *km;
+#else
+	GLuint tex[2];
+#endif
 };
 
 /* ------------------------------------------------------------------------- */
@@ -61,15 +72,19 @@ struct nvenc_data {
 
 	DARRAY(struct nv_bitstream) bitstreams;
 	DARRAY(struct nv_texture) textures;
+#ifdef _WIN32
 	DARRAY(struct handle_tex) input_textures;
+#endif
 	struct circlebuf dts_list;
 
 	DARRAY(uint8_t) packet_data;
 	int64_t packet_pts;
 	bool packet_keyframe;
 
+#ifdef _WIN32
 	ID3D11Device *device;
 	ID3D11DeviceContext *context;
+#endif
 
 	uint32_t cx;
 	uint32_t cy;
@@ -86,7 +101,9 @@ struct nvenc_data {
 
 struct nv_bitstream {
 	void *ptr;
+#ifdef _WIN32
 	HANDLE event;
+#endif
 };
 
 #define NV_FAIL(...) nv_fail(enc->encoder, __VA_ARGS__)
@@ -96,12 +113,16 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {
 		NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
-	NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
-	HANDLE event = NULL;
 
 	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
 		return false;
 	}
+
+	bs->ptr = buf.bitstreamBuffer;
+
+#ifdef _WIN32
+	NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
+	HANDLE event = NULL;
 
 	event = CreateEvent(NULL, true, true, NULL);
 	if (!event) {
@@ -114,10 +135,12 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 		goto fail;
 	}
 
-	bs->ptr = buf.bitstreamBuffer;
 	bs->event = event;
+#endif
+
 	return true;
 
+#ifdef _WIN32
 fail:
 	if (event) {
 		CloseHandle(event);
@@ -127,6 +150,7 @@ fail:
 					       buf.bitstreamBuffer);
 	}
 	return false;
+#endif
 }
 
 static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
@@ -134,10 +158,12 @@ static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 	if (bs->ptr) {
 		nv.nvEncDestroyBitstreamBuffer(enc->session, bs->ptr);
 
+#ifdef _WIN32
 		NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
 		params.completionEvent = bs->event;
 		nv.nvEncUnregisterAsyncEvent(enc->session, &params);
 		CloseHandle(bs->event);
+#endif
 	}
 }
 
@@ -146,7 +172,11 @@ static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 
 struct nv_texture {
 	void *res;
+#ifdef _WIN32
 	ID3D11Texture2D *tex;
+#else
+	GLuint tex;
+#endif
 	enum video_format format;
 	void *mapped_res;
 };
@@ -169,6 +199,8 @@ video_to_nvenc_format(enum video_format format)
 
 	return 0;
 }
+
+#ifdef _WIN32
 
 static inline DXGI_FORMAT video_to_dxgi_format(enum video_format format)
 {
@@ -230,6 +262,153 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex,
 	return true;
 }
 
+#else /* defined(_WIN32) */
+
+static bool impl_gl_error(const char *func, int line)
+{
+	GLenum gl_err = glGetError();
+	if (gl_err == GL_NO_ERROR) {
+		return false;
+	}
+
+	do {
+		blog(LOG_ERROR, "%s:%d: OpenGL error: 0x%x", func, line,
+		     gl_err);
+	} while ((gl_err = glGetError()) != GL_NO_ERROR);
+
+	return true;
+}
+#define gl_error() impl_gl_error(__FUNCTION__, __LINE__)
+
+#define check_error()                 \
+	do {                          \
+		if (gl_error()) {     \
+			return false; \
+		}                     \
+	} while (0)
+
+static inline GLenum video_to_gl_format(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_NV12:
+		return GL_RED;
+	case VIDEO_FORMAT_RGBA:
+		return GL_RGBA;
+	case VIDEO_FORMAT_BGRA:
+		return GL_RGBA;
+	case VIDEO_FORMAT_BGRX:
+		return GL_RGBA;
+	default:;
+	}
+
+	return 0;
+}
+
+static inline GLenum video_to_gl_internal_format(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_NV12:
+		return GL_R8;
+	case VIDEO_FORMAT_RGBA:
+		return GL_RGBA8;
+	case VIDEO_FORMAT_BGRA:
+		return GL_RGBA8;
+	case VIDEO_FORMAT_BGRX:
+		return GL_RGBA8;
+	default:;
+	}
+
+	return 0;
+}
+
+static bool setup_texture(GLuint tex, uint32_t width, uint32_t height,
+			  enum video_format format)
+{
+	glBindTexture(GL_TEXTURE_2D, tex);
+	check_error();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	check_error();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	check_error();
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAX_LEVEL, 0);
+	check_error();
+	if (format == VIDEO_FORMAT_NV12) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_R8, width,
+			     height + height / 2, 0, GL_RED, GL_UNSIGNED_BYTE,
+			     NULL);
+	} else {
+		GLenum fmt = video_to_gl_format(format);
+		GLenum intl_fmt = video_to_gl_internal_format(format);
+		glTexImage2D(GL_TEXTURE_2D, 0, intl_fmt, width, height, 0, fmt,
+			     GL_UNSIGNED_BYTE, NULL);
+	}
+	check_error();
+	if (format == VIDEO_FORMAT_BGRA) {
+		GLint swizzle[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ALPHA};
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA,
+				 swizzle);
+	} else if (format == VIDEO_FORMAT_BGRX) {
+		GLint swizzle[] = {GL_BLUE, GL_GREEN, GL_RED, GL_ONE};
+		glTexParameteriv(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_RGBA,
+				 swizzle);
+	}
+	check_error();
+	/*glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_PRIORITY, 1);
+	check_error();*/
+	glBindTexture(GL_TEXTURE_2D, 0);
+	check_error();
+	return true;
+}
+
+#undef check_error
+
+static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex,
+			    enum video_format format)
+{
+	if (gl_error()) {
+		goto gl_enter_err;
+	}
+
+	GLuint tex;
+	glGenTextures(1, &tex);
+	if (gl_error()) {
+		goto gen_tex_err;
+	}
+
+	if (!setup_texture(tex, enc->cx, enc->cy, format)) {
+		goto setup_tex_err;
+	}
+
+	NV_ENC_INPUT_RESOURCE_OPENGL_TEX texRes = {tex, GL_TEXTURE_2D};
+
+	NV_ENC_REGISTER_RESOURCE res = {NV_ENC_REGISTER_RESOURCE_VER};
+	res.resourceType = NV_ENC_INPUT_RESOURCE_TYPE_OPENGL_TEX;
+	res.resourceToRegister = (void *)&texRes;
+	res.width = enc->cx;
+	res.height = enc->cy;
+	res.pitch = format == VIDEO_FORMAT_NV12 ? enc->cx : enc->cx * 4;
+	res.bufferFormat = video_to_nvenc_format(format);
+
+	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
+		goto reg_tex_err;
+	}
+
+	nvtex->res = res.registeredResource;
+	nvtex->tex = tex;
+	nvtex->format = format;
+	nvtex->mapped_res = NULL;
+	return true;
+
+reg_tex_err:
+setup_tex_err:
+	glDeleteTextures(1, &tex);
+gen_tex_err:
+gl_enter_err:
+	return false;
+}
+
+#endif /* defined(_WIN32) */
+
 static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 {
 	if (nvtex->res) {
@@ -238,7 +417,11 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 						   nvtex->mapped_res);
 		}
 		nv.nvEncUnregisterResource(enc->session, nvtex->res);
+#ifdef _WIN32
 		nvtex->tex->lpVtbl->Release(nvtex->tex);
+#else
+		glDeleteTextures(1, &nvtex->tex);
+#endif
 	}
 }
 
@@ -302,14 +485,23 @@ static bool nvenc_update(void *data, obs_data_t *settings)
 		params.resetEncoder = 1;
 		params.forceIDR = 1;
 
-		if (NV_FAILED(nv.nvEncReconfigureEncoder(enc->session,
-							 &params))) {
+#ifndef _WIN32
+		obs_enter_graphics();
+#endif
+		NVENCSTATUS s =
+			nv.nvEncReconfigureEncoder(enc->session, &params);
+#ifndef _WIN32
+		obs_leave_graphics();
+#endif
+		if (NV_FAILED(s)) {
 			return false;
 		}
 	}
 
 	return true;
 }
+
+#ifdef _WIN32
 
 static HANDLE get_lib(struct nvenc_data *enc, const char *lib)
 {
@@ -377,12 +569,18 @@ static bool init_d3d11(struct nvenc_data *enc, obs_data_t *settings)
 	return true;
 }
 
+#endif /* defined(_WIN32) */
+
 static bool init_session(struct nvenc_data *enc)
 {
 	NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS params = {
 		NV_ENC_OPEN_ENCODE_SESSION_EX_PARAMS_VER};
+#ifdef _WIN32
 	params.device = enc->device;
 	params.deviceType = NV_ENC_DEVICE_TYPE_DIRECTX;
+#else
+	params.deviceType = NV_ENC_DEVICE_TYPE_OPENGL;
+#endif
 	params.apiVersion = NVENCAPI_VERSION;
 
 	if (NV_FAILED(nv.nvEncOpenEncodeSessionEx(&params, &enc->session))) {
@@ -390,6 +588,11 @@ static bool init_session(struct nvenc_data *enc)
 	}
 	return true;
 }
+
+#ifndef _WIN32
+#define max(x, y) ((x) < (y) ? (y) : (x))
+#define min(x, y) ((x) > (y) ? (y) : (x))
+#endif
 
 static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 			      int bf, bool psycho_aq)
@@ -498,7 +701,9 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	params->darHeight = darHeight;
 	params->frameRateNum = voi->fps_num;
 	params->frameRateDen = voi->fps_den;
+#ifdef _WIN32
 	params->enableEncodeAsync = 1;
+#endif
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
 	config->gopLength = gop_size;
@@ -770,7 +975,9 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	params->darHeight = darHeight;
 	params->frameRateNum = voi->fps_num;
 	params->frameRateDen = voi->fps_den;
+#ifdef _WIN32
 	params->enableEncodeAsync = 1;
+#endif
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
 	config->gopLength = gop_size;
@@ -1052,9 +1259,11 @@ static void *nvenc_create_internal(bool hevc, obs_data_t *settings,
 	if (NV_FAILED(nv_create_instance(&init))) {
 		goto fail;
 	}
+#ifdef _WIN32
 	if (!init_d3d11(enc, settings)) {
 		goto fail;
 	}
+#endif
 	if (!init_session(enc)) {
 		goto fail;
 	}
@@ -1080,9 +1289,14 @@ fail:
 
 static bool is_format_supported(enum video_format format)
 {
+#ifdef _WIN32
 	return format == VIDEO_FORMAT_P010 || format == VIDEO_FORMAT_NV12 ||
 	       format == VIDEO_FORMAT_RGBA || format == VIDEO_FORMAT_BGRA ||
 	       format == VIDEO_FORMAT_BGRX;
+#else
+	return format == VIDEO_FORMAT_RGBA || format == VIDEO_FORMAT_BGRA ||
+	       format == VIDEO_FORMAT_BGRX;
+#endif
 }
 
 static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
@@ -1111,7 +1325,13 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 		goto reroute;
 	}
 
+#ifndef _WIN32
+	obs_enter_graphics();
+#endif
 	struct nvenc_data *enc = nvenc_create_internal(hevc, settings, encoder);
+#ifndef _WIN32
+	obs_leave_graphics();
+#endif
 
 	if (enc) {
 		return enc;
@@ -1144,13 +1364,18 @@ static void nvenc_destroy(void *data)
 {
 	struct nvenc_data *enc = data;
 
-	if (enc->encode_started) {
-		size_t next_bitstream = enc->next_bitstream;
-		HANDLE next_event = enc->bitstreams.array[next_bitstream].event;
+#ifndef _WIN32
+	obs_enter_graphics();
+#endif
 
+	if (enc->encode_started) {
 		NV_ENC_PIC_PARAMS params = {NV_ENC_PIC_PARAMS_VER};
 		params.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
+#ifdef _WIN32
+		size_t next_bitstream = enc->next_bitstream;
+		HANDLE next_event = enc->bitstreams.array[next_bitstream].event;
 		params.completionEvent = next_event;
+#endif
 		nv.nvEncEncodePicture(enc->session, &params);
 		get_encoded_packet(enc, true);
 	}
@@ -1163,6 +1388,7 @@ static void nvenc_destroy(void *data)
 	if (enc->session) {
 		nv.nvEncDestroyEncoder(enc->session);
 	}
+#ifdef _WIN32
 	for (size_t i = 0; i < enc->input_textures.num; i++) {
 		ID3D11Texture2D *tex = enc->input_textures.array[i].tex;
 		IDXGIKeyedMutex *km = enc->input_textures.array[i].km;
@@ -1175,16 +1401,25 @@ static void nvenc_destroy(void *data)
 	if (enc->device) {
 		enc->device->lpVtbl->Release(enc->device);
 	}
+#endif
+
+#ifndef _WIN32
+	obs_leave_graphics();
+#endif
 
 	bfree(enc->header);
 	bfree(enc->sei);
 	circlebuf_free(&enc->dts_list);
 	da_free(enc->textures);
 	da_free(enc->bitstreams);
+#ifdef _WIN32
 	da_free(enc->input_textures);
+#endif
 	da_free(enc->packet_data);
 	bfree(enc);
 }
+
+#ifdef _WIN32
 
 static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 					    uint32_t handle,
@@ -1229,6 +1464,8 @@ static ID3D11Texture2D *get_tex_from_handle(struct nvenc_data *enc,
 	da_push_back(enc->input_textures, &new_ht);
 	return input_tex;
 }
+
+#endif /* defined(_WIN32) */
 
 static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 {
@@ -1317,22 +1554,31 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 	return true;
 }
 
-static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
-			     uint64_t lock_key, uint64_t *next_key,
+static bool nvenc_encode_tex(void *data, struct encoder_texture *tex,
+			     int64_t pts, uint64_t lock_key, uint64_t *next_key,
 			     struct encoder_packet *packet,
 			     bool *received_packet)
 {
 	struct nvenc_data *enc = data;
+#ifdef _WIN32
 	ID3D11Device *device = enc->device;
 	ID3D11DeviceContext *context = enc->context;
 	ID3D11Texture2D *input_tex;
 	ID3D11Texture2D *output_tex;
 	IDXGIKeyedMutex *km;
+#else
+	GLuint input_tex[2];
+	GLuint output_tex;
+#endif
 	struct nv_texture *nvtex;
 	struct nv_bitstream *bs;
 	NVENCSTATUS err;
 
-	if (handle == GS_INVALID_HANDLE) {
+#ifdef _WIN32
+	if (tex == NULL || tex->handle == GS_INVALID_HANDLE) {
+#else
+	if (tex == NULL || tex->tex[0] == NULL) {
+#endif
 		error("Encode failed: bad texture handle");
 		*next_key = lock_key;
 		return false;
@@ -1341,31 +1587,43 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	bs = &enc->bitstreams.array[enc->next_bitstream];
 	nvtex = &enc->textures.array[enc->next_bitstream];
 
-	video_t *video = obs_encoder_video(enc->encoder);
-	const struct video_output_info *voi = video_output_get_info(video);
-	if (nvtex->format != voi->format) {
+	if (nvtex->format != tex->info.format) {
 		error("Encode failed: wrong texture format");
 		*next_key = lock_key;
-		return false;
+		goto error;
 	}
 
-	input_tex = get_tex_from_handle(enc, handle, &km);
-	output_tex = nvtex->tex;
+#ifndef _WIN32
+	obs_enter_graphics();
+#endif
 
+#ifdef _WIN32
+	input_tex = get_tex_from_handle(enc, tex->handle, &km);
 	if (!input_tex) {
 		*next_key = lock_key;
 		return false;
 	}
+#else
+	input_tex[0] = *(GLuint *)gs_texture_get_obj(tex->tex[0]);
+	if (tex->info.format == VIDEO_FORMAT_NV12) {
+		input_tex[1] = *(GLuint *)gs_texture_get_obj(tex->tex[1]);
+	}
+#endif
+	output_tex = nvtex->tex;
 
 	circlebuf_push_back(&enc->dts_list, &pts, sizeof(pts));
 
 	/* ------------------------------------ */
 	/* wait for output bitstream/tex        */
 
+#ifdef _WIN32
 	WaitForSingleObject(bs->event, INFINITE);
+#endif
 
 	/* ------------------------------------ */
 	/* copy to output tex                   */
+
+#ifdef _WIN32
 
 	km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
 
@@ -1374,13 +1632,32 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	km->lpVtbl->ReleaseSync(km, *next_key);
 
+#else /* defined(_WIN32) */
+
+	glCopyImageSubData(input_tex[0], GL_TEXTURE_2D, 0, 0, 0, 0, output_tex,
+			   GL_TEXTURE_2D, 0, 0, 0, 0, enc->cx, enc->cy, 1);
+	if (gl_error()) {
+		goto error;
+	}
+
+	/*if (tex->info.format == VIDEO_FORMAT_NV12) {
+		glCopyImageSubData(input_tex[1], GL_TEXTURE_2D, 0, 0, 0, 0,
+				   output_tex, GL_TEXTURE_2D, 0, 0, enc->cy, 0,
+				   enc->cx / 2, enc->cy / 2, 1);
+		if (gl_error()) {
+			goto error;
+		}
+	}*/
+
+#endif /* defined(_WIN32) */
+
 	/* ------------------------------------ */
 	/* map output tex so nvenc can use it   */
 
-	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER};
+	NV_ENC_MAP_INPUT_RESOURCE map = {NV_ENC_MAP_INPUT_RESOURCE_VER, 0};
 	map.registeredResource = nvtex->res;
 	if (NV_FAILED(nv.nvEncMapInputResource(enc->session, &map))) {
-		return false;
+		goto error;
 	}
 
 	nvtex->mapped_res = map.mappedResource;
@@ -1398,13 +1675,15 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
 	params.outputBitstream = bs->ptr;
+#ifdef _WIN32
 	params.completionEvent = bs->event;
+#endif
 
 	err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
 		nv_failed(enc->encoder, err, __FUNCTION__,
 			  "nvEncEncodePicture");
-		return false;
+		goto error;
 	}
 
 	enc->encode_started = true;
@@ -1418,8 +1697,12 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	/* check for encoded packet and parse   */
 
 	if (!get_encoded_packet(enc, false)) {
-		return false;
+		goto error;
 	}
+
+#ifndef _WIN32
+	obs_leave_graphics();
+#endif
 
 	/* ------------------------------------ */
 	/* output encoded packet                */
@@ -1443,6 +1726,12 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	}
 
 	return true;
+
+error:
+#ifndef _WIN32
+	obs_leave_graphics();
+#endif
+	return false;
 }
 
 static bool nvenc_encode_texture_available(void *data,
@@ -1494,8 +1783,8 @@ struct obs_encoder_info h264_nvenc_info = {
 	.create = h264_nvenc_create,
 	.destroy = nvenc_destroy,
 	.update = nvenc_update,
-	.encode_texture = nvenc_encode_tex,
 	.encode_texture_available = nvenc_encode_texture_available,
+	.encode_texture2 = nvenc_encode_tex,
 	.get_defaults = h264_nvenc_defaults,
 	.get_properties = h264_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
@@ -1512,8 +1801,8 @@ struct obs_encoder_info hevc_nvenc_info = {
 	.create = hevc_nvenc_create,
 	.destroy = nvenc_destroy,
 	.update = nvenc_update,
-	.encode_texture = nvenc_encode_tex,
 	.encode_texture_available = nvenc_encode_texture_available,
+	.encode_texture2 = nvenc_encode_tex,
 	.get_defaults = hevc_nvenc_defaults,
 	.get_properties = hevc_nvenc_properties,
 	.get_extra_data = nvenc_extra_data,
