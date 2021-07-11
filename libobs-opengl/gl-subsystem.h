@@ -150,7 +150,7 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_BGRA:
 		return GL_UNSIGNED_BYTE;
 	case GS_R10G10B10A2:
-		return GL_UNSIGNED_INT_10_10_10_2;
+		return GL_UNSIGNED_INT_2_10_10_10_REV;
 	case GS_RGBA16:
 		return GL_UNSIGNED_SHORT;
 	case GS_R16:
