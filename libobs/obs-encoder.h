@@ -102,6 +102,18 @@ struct encoder_frame {
 	int64_t pts;
 };
 
+struct gs_texture;
+
+/** Encoder input texture */
+struct encoder_texture {
+	/** Texture format and size */
+	struct video_scale_info info;
+	/** Shared texture handle, only set on Windows */
+	uint32_t handle;
+	/** Textures, NULL-terminated */
+	struct gs_texture *tex[];
+};
+
 /**
  * Encoder interface
  *
@@ -277,6 +289,12 @@ struct obs_encoder_info {
 	 */
 	bool (*encode_texture_available)(void *data,
 					 const struct video_scale_info *info);
+
+	bool (*encode_texture2)(void *data, struct encoder_texture *texture,
+				int64_t pts, uint64_t lock_key,
+				uint64_t *next_key,
+				struct encoder_packet *packet,
+				bool *received_packet);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,

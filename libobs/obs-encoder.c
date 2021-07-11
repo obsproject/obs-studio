@@ -156,25 +156,6 @@ static inline void get_audio_info(const struct obs_encoder *encoder,
 		encoder->info.get_audio_info(encoder->context.data, info);
 }
 
-static inline void get_video_info(struct obs_encoder *encoder,
-				  struct video_scale_info *info)
-{
-	const struct video_output_info *voi;
-	voi = video_output_get_info(encoder->media);
-
-	info->format = voi->format;
-	info->colorspace = voi->colorspace;
-	info->range = voi->range;
-	info->width = obs_encoder_get_width(encoder);
-	info->height = obs_encoder_get_height(encoder);
-
-	if (encoder->info.get_video_info)
-		encoder->info.get_video_info(encoder->context.data, info);
-
-	if (info->width != voi->width || info->height != voi->height)
-		obs_encoder_set_scaled_size(encoder, info->width, info->height);
-}
-
 static inline bool has_scaling(const struct obs_encoder *encoder)
 {
 	uint32_t video_width = video_output_get_width(encoder->media);
@@ -209,7 +190,7 @@ static bool add_connection(struct obs_encoder *encoder)
 				     &audio_info, receive_audio, encoder);
 	} else {
 		struct video_scale_info info = {0};
-		get_video_info(encoder, &info);
+		obs_encoder_get_video_info(encoder, &info);
 
 		if (gpu_encode_available(encoder, &info)) {
 			start_gpu_encode(encoder);
@@ -545,6 +526,25 @@ void obs_encoder_shutdown(obs_encoder_t *encoder)
 	}
 	obs_encoder_set_last_error(encoder, NULL);
 	pthread_mutex_unlock(&encoder->init_mutex);
+}
+
+void obs_encoder_get_video_info(struct obs_encoder *encoder,
+				struct video_scale_info *info)
+{
+	const struct video_output_info *voi;
+	voi = video_output_get_info(encoder->media);
+
+	info->format = voi->format;
+	info->colorspace = voi->colorspace;
+	info->range = voi->range;
+	info->width = obs_encoder_get_width(encoder);
+	info->height = obs_encoder_get_height(encoder);
+
+	if (encoder->info.get_video_info)
+		encoder->info.get_video_info(encoder->context.data, info);
+
+	if (info->width != voi->width || info->height != voi->height)
+		obs_encoder_set_scaled_size(encoder, info->width, info->height);
 }
 
 static inline size_t
