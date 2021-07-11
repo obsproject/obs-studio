@@ -147,19 +147,57 @@ static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 struct nv_texture {
 	void *res;
 	ID3D11Texture2D *tex;
+	enum video_format format;
 	void *mapped_res;
 };
 
-static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
+static inline NV_ENC_BUFFER_FORMAT
+video_to_nvenc_format(enum video_format format)
 {
-	const bool p010 = obs_p010_tex_active();
+	switch (format) {
+	case VIDEO_FORMAT_P010:
+		return NV_ENC_BUFFER_FORMAT_YUV420_10BIT;
+	case VIDEO_FORMAT_NV12:
+		return NV_ENC_BUFFER_FORMAT_NV12;
+	case VIDEO_FORMAT_RGBA:
+		return NV_ENC_BUFFER_FORMAT_ABGR;
+	case VIDEO_FORMAT_BGRA:
+	case VIDEO_FORMAT_BGRX:
+		return NV_ENC_BUFFER_FORMAT_ARGB;
+	default:;
+	}
 
+	return 0;
+}
+
+static inline DXGI_FORMAT video_to_dxgi_format(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_P010:
+		return DXGI_FORMAT_P010;
+	case VIDEO_FORMAT_NV12:
+		return DXGI_FORMAT_NV12;
+	case VIDEO_FORMAT_RGBA:
+		return DXGI_FORMAT_R8G8B8A8_UNORM;
+	case VIDEO_FORMAT_BGRA:
+		return DXGI_FORMAT_B8G8R8A8_UNORM;
+	case VIDEO_FORMAT_BGRX:
+		return DXGI_FORMAT_B8G8R8X8_UNORM;
+	default:;
+	}
+
+	return 0;
+}
+
+static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex,
+			    enum video_format format)
+{
 	D3D11_TEXTURE2D_DESC desc = {0};
 	desc.Width = enc->cx;
 	desc.Height = enc->cy;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = p010 ? DXGI_FORMAT_P010 : DXGI_FORMAT_NV12;
+	desc.Format = video_to_dxgi_format(format);
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
@@ -178,8 +216,7 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 	res.resourceToRegister = tex;
 	res.width = enc->cx;
 	res.height = enc->cy;
-	res.bufferFormat = p010 ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				: NV_ENC_BUFFER_FORMAT_NV12;
+	res.bufferFormat = video_to_nvenc_format(format);
 
 	if (NV_FAILED(nv.nvEncRegisterResource(enc->session, &res))) {
 		tex->lpVtbl->Release(tex);
@@ -188,6 +225,7 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 
 	nvtex->res = res.registeredResource;
 	nvtex->tex = tex;
+	nvtex->format = format;
 	nvtex->mapped_res = NULL;
 	return true;
 }
@@ -924,10 +962,13 @@ static bool init_bitstreams(struct nvenc_data *enc)
 
 static bool init_textures(struct nvenc_data *enc)
 {
+	video_t *video = obs_encoder_video(enc->encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+
 	da_reserve(enc->textures, enc->buf_count);
 	for (int i = 0; i < enc->buf_count; i++) {
 		struct nv_texture texture;
-		if (!nv_texture_init(enc, &texture)) {
+		if (!nv_texture_init(enc, &texture, voi->format)) {
 			return false;
 		}
 
@@ -1037,6 +1078,13 @@ fail:
 	return NULL;
 }
 
+static bool is_format_supported(enum video_format format)
+{
+	return format == VIDEO_FORMAT_P010 || format == VIDEO_FORMAT_NV12 ||
+	       format == VIDEO_FORMAT_RGBA || format == VIDEO_FORMAT_BGRA ||
+	       format == VIDEO_FORMAT_BGRX;
+}
+
 static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 				    obs_encoder_t *encoder)
 {
@@ -1055,9 +1103,11 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 		goto reroute;
 	}
 
-	if (!obs_p010_tex_active() && !obs_nv12_tex_active()) {
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	if (!is_format_supported(voi->format)) {
 		blog(LOG_INFO,
-		     "[jim-nvenc] nv12/p010 not active, falling back to ffmpeg");
+		     "[jim-nvenc] unsupported video format, falling back to ffmpeg");
 		goto reroute;
 	}
 
@@ -1291,6 +1341,14 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	bs = &enc->bitstreams.array[enc->next_bitstream];
 	nvtex = &enc->textures.array[enc->next_bitstream];
 
+	video_t *video = obs_encoder_video(enc->encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	if (nvtex->format != voi->format) {
+		error("Encode failed: wrong texture format");
+		*next_key = lock_key;
+		return false;
+	}
+
 	input_tex = get_tex_from_handle(enc, handle, &km);
 	output_tex = nvtex->tex;
 
@@ -1333,10 +1391,8 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	NV_ENC_PIC_PARAMS params = {0};
 	params.version = NV_ENC_PIC_PARAMS_VER;
 	params.pictureStruct = NV_ENC_PIC_STRUCT_FRAME;
-	params.inputBuffer = nvtex->mapped_res;
-	params.bufferFmt = obs_p010_tex_active()
-				   ? NV_ENC_BUFFER_FORMAT_YUV420_10BIT
-				   : NV_ENC_BUFFER_FORMAT_NV12;
+	params.inputBuffer = map.mappedResource;
+	params.bufferFmt = map.mappedBufferFmt;
 	params.inputTimeStamp = (uint64_t)pts;
 	params.inputWidth = enc->cx;
 	params.inputHeight = enc->cy;
@@ -1393,7 +1449,7 @@ static bool nvenc_encode_texture_available(void *data,
 					   const struct video_scale_info *info)
 {
 	UNUSED_PARAMETER(data);
-	return info->format == VIDEO_FORMAT_NV12;
+	return is_format_supported(info->format);
 }
 
 extern void h264_nvenc_defaults(obs_data_t *settings);
