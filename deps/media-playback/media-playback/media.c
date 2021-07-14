@@ -526,6 +526,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		current_frame->width = f->width;
 		current_frame->height = f->height;
 		current_frame->flip = flip;
+		current_frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
 
 		if (!m->is_local_file && !d->got_first_keyframe) {
 			if (!f->key_frame)
@@ -1046,6 +1047,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
+	media->is_linear_alpha = info->is_linear_alpha;
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;

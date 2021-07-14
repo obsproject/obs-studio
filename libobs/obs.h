@@ -237,6 +237,8 @@ struct obs_source_cea_708 {
 	uint64_t timestamp;
 };
 
+#define OBS_SOURCE_FRAME_LINEAR_ALPHA (1 << 0)
+
 /**
  * Source asynchronous video output structure.  Used with
  * obs_source_output_video to output asynchronous video.  Video is buffered as
@@ -264,6 +266,7 @@ struct obs_source_frame {
 	float color_range_min[3];
 	float color_range_max[3];
 	bool flip;
+	uint8_t flags;
 
 	/* used internally by libobs */
 	volatile long refs;
@@ -283,6 +286,7 @@ struct obs_source_frame2 {
 	float color_range_min[3];
 	float color_range_max[3];
 	bool flip;
+	uint8_t flags;
 };
 
 /** Access to the argc/argv used to start OBS. What you see is what you get. */

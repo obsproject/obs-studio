@@ -860,14 +860,18 @@ public:
 
 	void ShowStatusBarMessage(const QString &message);
 
-	static OBSData BackupScene(obs_source_t *scene_source);
+	static OBSData
+	BackupScene(obs_scene_t *scene,
+		    std::vector<obs_source_t *> *sources = nullptr);
 	void CreateSceneUndoRedoAction(const QString &action_name,
 				       OBSData undo_data, OBSData redo_data);
 
-	static inline OBSData BackupScene(obs_scene_t *scene)
+	static inline OBSData
+	BackupScene(obs_source_t *scene_source,
+		    std::vector<obs_source_t *> *sources = nullptr)
 	{
-		obs_source_t *source = obs_scene_get_source(scene);
-		return BackupScene(source);
+		obs_scene_t *scene = obs_scene_from_source(scene_source);
+		return BackupScene(scene, sources);
 	}
 
 	void CreateFilterPasteUndoRedoAction(const QString &text,

@@ -43,7 +43,7 @@ float GetChromaDist(float3 rgb)
 {
 	float cb = dot(rgb.rgb, cb_v4.xyz) + cb_v4.w;
 	float cr = dot(rgb.rgb, cr_v4.xyz) + cr_v4.w;
-	return distance(chroma_key, float2(cr, cb));
+	return distance(chroma_key, float2(cb, cr));
 }
 
 float GetNonlinearChannel(float u)
