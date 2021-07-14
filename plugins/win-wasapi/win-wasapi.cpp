@@ -380,6 +380,9 @@ void WASAPISource::InitFormat(WAVEFORMATEX *wfex)
 
 void WASAPISource::InitCapture()
 {
+	if (client.Get() == nullptr)
+		throw "[WASAPISource::InitCapture] Failed to create a valid client";
+
 	HRESULT res = client->GetService(__uuidof(IAudioCaptureClient),
 					 (void **)capture.Assign());
 	if (FAILED(res))
