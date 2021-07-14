@@ -253,6 +253,9 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 			obs_source_release(filter);
 			obs_source_release(parent_source);
 		};
+
+		main->undo_s.enable();
+
 		std::string name = std::string(obs_source_get_name(source));
 		std::string undo_data = obs_data_get_json(undo_wrapper);
 		std::string redo_data = obs_data_get_json(redo_wrapper);
@@ -266,8 +269,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		obs_data_release(filter_settings);
 
 		obs_source_update(source, new_settings);
-
-		main->undo_s.enable();
 	};
 
 	auto disabled_undo = [](void *vp, obs_data_t *settings) {

@@ -2043,6 +2043,8 @@ bool update_async_textures(struct obs_source *source,
 	enum convert_type type;
 
 	source->async_flip = frame->flip;
+	source->async_linear_alpha =
+		(frame->flags & OBS_SOURCE_FRAME_LINEAR_ALPHA) != 0;
 
 	if (source->async_gpu_conversion && texrender)
 		return update_async_texrender(source, frame, tex, texrender);
@@ -2093,9 +2095,11 @@ static void obs_source_draw_async_texture(struct obs_source *source)
 
 	if (def_draw) {
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-		const bool linear = gs_get_linear_srgb();
-		const char *tech_name = linear ? "DrawNonlinearAlpha" : "Draw";
-		premultiplied = linear;
+		const bool nonlinear_alpha = gs_get_linear_srgb() &&
+					     !source->async_linear_alpha;
+		const char *tech_name = nonlinear_alpha ? "DrawNonlinearAlpha"
+							: "Draw";
+		premultiplied = nonlinear_alpha;
 		tech = gs_effect_get_technique(effect, tech_name);
 		gs_technique_begin(tech);
 		gs_technique_begin_pass(tech, 0);
@@ -2745,6 +2749,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 {
 	dst->duration = src->duration;
 	dst->flip = src->flip;
+	dst->flags = src->flags;
 	dst->full_range = src->full_range;
 	dst->timestamp = src->timestamp;
 	memcpy(dst->color_matrix, src->color_matrix, sizeof(float) * 16);
@@ -2976,6 +2981,7 @@ void obs_source_output_video2(obs_source_t *source,
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
+	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));
@@ -3117,6 +3123,7 @@ void obs_source_preload_video2(obs_source_t *source,
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
+	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));
@@ -3221,6 +3228,7 @@ void obs_source_set_video_frame2(obs_source_t *source,
 	new_frame.format = frame->format;
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
+	new_frame.flags = frame->flags;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));

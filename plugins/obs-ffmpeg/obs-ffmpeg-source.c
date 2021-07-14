@@ -43,6 +43,7 @@ struct ffmpeg_source {
 	uint8_t *sws_data;
 	int sws_linesize;
 	enum video_range_type range;
+	bool is_linear_alpha;
 	obs_source_t *source;
 	obs_hotkey_id hotkey;
 
@@ -121,6 +122,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
+	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
@@ -176,8 +178,7 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_free(&filter);
 	dstr_free(&path);
 
-	prop = obs_properties_add_bool(props, "looping",
-				       obs_module_text("Looping"));
+	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
 
 	obs_properties_add_bool(props, "restart_on_activate",
 				obs_module_text("RestartWhenActivated"));
@@ -227,6 +228,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 				  VIDEO_RANGE_PARTIAL);
 	obs_property_list_add_int(prop, obs_module_text("ColorRange.Full"),
 				  VIDEO_RANGE_FULL);
+
+	obs_properties_add_bool(props, "linear_alpha",
+				obs_module_text("LinearAlpha"));
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
@@ -334,6 +338,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.buffering = s->buffering_mb * 1024 * 1024,
 			.speed = s->speed_percent,
 			.force_range = s->range,
+			.is_linear_alpha = s->is_linear_alpha,
 			.hardware_decoding = s->is_hw_decoding,
 			.is_local_file = s->is_local_file || s->seekable,
 			.enable_caching = s->enable_caching,
@@ -461,6 +466,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		obs_data_get_bool(settings, "restart_on_activate");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 							   "color_range");
+	s->is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
 	s->is_local_file = is_local_file;
