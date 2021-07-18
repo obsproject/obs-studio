@@ -168,8 +168,8 @@ static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture_srgb(lwipe->ep_a_tex, a);
-	gs_effect_set_texture_srgb(lwipe->ep_b_tex, b);
+	gs_effect_set_texture(lwipe->ep_a_tex, a);
+	gs_effect_set_texture(lwipe->ep_b_tex, b);
 	gs_effect_set_texture(lwipe->ep_l_tex, lwipe->luma_image.texture);
 	gs_effect_set_float(lwipe->ep_progress, t);
 

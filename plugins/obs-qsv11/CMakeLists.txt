@@ -8,6 +8,7 @@ set(obs-qsv11_libmfx_SOURCES
 	libmfx/src/mfx_critical_section.cpp
 	libmfx/src/mfx_dispatcher.cpp
 	libmfx/src/mfx_dispatcher_log.cpp
+	libmfx/src/mfx_driver_store_loader.cpp
 	libmfx/src/mfx_dxva2_device.cpp
 	libmfx/src/mfx_function_table.cpp
 	libmfx/src/mfx_library_iterator.cpp
@@ -18,6 +19,7 @@ set(obs-qsv11_libmfx_SOURCES
 	)
 
 set(obs-qsv11_libmfx_HEADERS
+	libmfx/include/msdk/include/mfxadapter.h
 	libmfx/include/msdk/include/mfxastructures.h
 	libmfx/include/msdk/include/mfxaudio.h
 	libmfx/include/msdk/include/mfxaudio++.h
@@ -36,6 +38,7 @@ set(obs-qsv11_libmfx_HEADERS
 	libmfx/include/mfx_dispatcher.h
 	libmfx/include/mfx_dispatcher_defs.h
 	libmfx/include/mfx_dispatcher_log.h
+	libmfx/include/mfx_driver_store_loader.h
 	libmfx/include/mfx_dxva2_device.h
 	libmfx/include/mfx_exposed_functions_list.h
 	libmfx/include/mfx_library_iterator.h

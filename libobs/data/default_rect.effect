@@ -25,11 +25,52 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 	return image.Sample(def_sampler, vert_in.uv);
 }
 
+float4 PSDrawOpaque(VertInOut vert_in) : TARGET
+{
+	return float4(image.Sample(def_sampler, vert_in.uv).rgb, 1.0);
+}
+
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
+float4 PSDrawSrgbDecompressPremultiplied(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = max(float3(0.0, 0.0, 0.0), rgba.rgb / rgba.a);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
+}
+
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawBare(vert_in);
+	}
+}
+
+technique DrawOpaque
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawOpaque(vert_in);
+	}
+}
+
+technique DrawSrgbDecompressPremultiplied
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgbDecompressPremultiplied(vert_in);
 	}
 }

@@ -73,7 +73,7 @@ static void *sharpness_create(obs_data_t *settings, obs_source_t *context)
 	return filter;
 }
 
-static void sharpness_render_internal(void *data, bool srgb)
+static void sharpness_render(void *data, gs_effect_t *effect)
 {
 	struct sharpness_data *filter = data;
 
@@ -90,21 +90,12 @@ static void sharpness_render_internal(void *data, bool srgb)
 	gs_effect_set_float(filter->texture_width, filter->texwidth);
 	gs_effect_set_float(filter->texture_height, filter->texheight);
 
-	const bool previous = gs_set_linear_srgb(srgb);
+	gs_blend_state_push();
+	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-	gs_set_linear_srgb(previous);
-}
 
-static void sharpness_render_v1(void *data, gs_effect_t *effect)
-{
-	sharpness_render_internal(data, false);
-
-	UNUSED_PARAMETER(effect);
-}
-
-static void sharpness_render_v2(void *data, gs_effect_t *effect)
-{
-	sharpness_render_internal(data, true);
+	gs_blend_state_pop();
 
 	UNUSED_PARAMETER(effect);
 }
@@ -134,7 +125,7 @@ struct obs_source_info sharpness_filter = {
 	.create = sharpness_create,
 	.destroy = sharpness_destroy,
 	.update = sharpness_update,
-	.video_render = sharpness_render_v1,
+	.video_render = sharpness_render,
 	.get_properties = sharpness_properties,
 	.get_defaults = sharpness_defaults,
 };
@@ -143,12 +134,12 @@ struct obs_source_info sharpness_filter_v2 = {
 	.id = "sharpness_filter",
 	.version = 2,
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = sharpness_getname,
 	.create = sharpness_create,
 	.destroy = sharpness_destroy,
 	.update = sharpness_update,
-	.video_render = sharpness_render_v2,
+	.video_render = sharpness_render,
 	.get_properties = sharpness_properties,
 	.get_defaults = sharpness_defaults,
 };

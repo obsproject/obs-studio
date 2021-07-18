@@ -68,11 +68,17 @@ void wait_for_hook_initialization(void)
 
 void init_hook_files(void);
 
+bool graphics_uses_d3d11 = false;
+bool wgc_supported = false;
+
 bool obs_module_load(void)
 {
 	struct win_version_info ver;
 	bool win8_or_above = false;
 	char *config_dir;
+
+	struct win_version_info win1903 = {
+		.major = 10, .minor = 0, .build = 18362, .revis = 0};
 
 	config_dir = obs_module_config_path(NULL);
 	if (config_dir) {
@@ -85,13 +91,16 @@ bool obs_module_load(void)
 	win8_or_above = ver.major > 6 || (ver.major == 6 && ver.minor >= 2);
 
 	obs_enter_graphics();
+	graphics_uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
+	obs_leave_graphics();
 
-	if (win8_or_above && gs_get_device_type() == GS_DEVICE_DIRECT3D_11)
+	if (graphics_uses_d3d11)
+		wgc_supported = win_version_compare(&ver, &win1903) >= 0;
+
+	if (win8_or_above && graphics_uses_d3d11)
 		obs_register_source(&duplicator_capture_info);
 	else
 		obs_register_source(&monitor_capture_info);
-
-	obs_leave_graphics();
 
 	obs_register_source(&window_capture_info);
 

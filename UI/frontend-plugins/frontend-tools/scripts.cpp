@@ -504,8 +504,8 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 
 	propertiesView = new OBSPropertiesView(
 		settings, script,
-		(PropertiesReloadCallback)obs_script_get_properties,
-		(PropertiesUpdateCallback)obs_script_update);
+		(PropertiesReloadCallback)obs_script_get_properties, nullptr,
+		(PropertiesVisualUpdateCb)obs_script_update);
 	ui->propertiesLayout->addWidget(propertiesView);
 	ui->description->setText(obs_script_get_description(script));
 }

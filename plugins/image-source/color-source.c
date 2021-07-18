@@ -177,7 +177,8 @@ struct obs_source_info color_source_info_v3 = {
 	.id = "color_source",
 	.version = 3,
 	.type = OBS_SOURCE_TYPE_INPUT,
-	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+			OBS_SOURCE_SRGB,
 	.create = color_source_create,
 	.destroy = color_source_destroy,
 	.update = color_source_update,

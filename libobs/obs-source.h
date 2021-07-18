@@ -191,6 +191,11 @@ enum obs_media_state {
  */
 #define OBS_SOURCE_CEA_708 (1 << 14)
 
+/**
+ * Source understands SRGB rendering
+ */
+#define OBS_SOURCE_SRGB (1 << 15)
+
 /** @} */
 
 typedef void (*obs_source_enum_proc_t)(obs_source_t *parent,

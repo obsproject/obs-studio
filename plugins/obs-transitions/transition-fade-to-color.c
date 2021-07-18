@@ -52,7 +52,7 @@ static void fade_to_color_update(void *data, obs_data_t *settings)
 
 	color |= 0xFF000000;
 
-	vec4_from_rgba_srgb_premultiply(&fade_to_color->color, color);
+	vec4_from_rgba(&fade_to_color->color, color);
 
 	fade_to_color->switch_point = (float)swp / 100.0f;
 }
@@ -110,7 +110,7 @@ static void fade_to_color_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture_srgb(fade_to_color->ep_tex, tex);
+	gs_effect_set_texture(fade_to_color->ep_tex, tex);
 	gs_effect_set_vec4(fade_to_color->ep_color, &fade_to_color->color);
 	gs_effect_set_float(fade_to_color->ep_swp, swp);
 

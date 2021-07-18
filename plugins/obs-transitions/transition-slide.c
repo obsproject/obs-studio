@@ -93,18 +93,11 @@ static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	vec2_mulf(&tex_a_dir, &tex_a_dir, t);
 	vec2_mulf(&tex_b_dir, &tex_b_dir, 1.0f - t);
 
-	const bool linear_srgb = gs_get_linear_srgb();
-
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
+	gs_enable_framebuffer_srgb(true);
 
-	if (linear_srgb) {
-		gs_effect_set_texture_srgb(slide->a_param, a);
-		gs_effect_set_texture_srgb(slide->b_param, b);
-	} else {
-		gs_effect_set_texture(slide->a_param, a);
-		gs_effect_set_texture(slide->b_param, b);
-	}
+	gs_effect_set_texture(slide->a_param, a);
+	gs_effect_set_texture(slide->b_param, b);
 
 	gs_effect_set_vec2(slide->tex_a_dir_param, &tex_a_dir);
 	gs_effect_set_vec2(slide->tex_b_dir_param, &tex_b_dir);

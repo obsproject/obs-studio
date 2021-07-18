@@ -1218,10 +1218,10 @@
              <string> ms</string>
             </property>
             <property name="minimum">
-             <number>2</number>
+             <number>50</number>
             </property>
             <property name="maximum">
-             <number>10000</number>
+             <number>20000</number>
             </property>
             <property name="singleStep">
              <number>50</number>
@@ -2042,19 +2042,19 @@
    <property name="enabled">
     <bool>false</bool>
    </property>
-    <property name="text">
-      <string>Undo.Undo</string>
-    </property>
+   <property name="text">
+    <string>Undo.Undo</string>
+   </property>
   </action>
   <action name="actionMainRedo">
    <property name="enabled">
     <bool>false</bool>
-    </property>
-    <property name="text">
-      <string>Undo.Redo</string>
-    </property>
-    </action>
-  </widget>
+   </property>
+   <property name="text">
+    <string>Undo.Redo</string>
+   </property>
+  </action>
+ </widget>
  <customwidgets>
   <customwidget>
    <class>OBSBasicPreview</class>

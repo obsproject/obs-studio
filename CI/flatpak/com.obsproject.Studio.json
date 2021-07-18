@@ -14,6 +14,7 @@
     "--filesystem=xdg-run/pipewire-0",
     "--filesystem=host",
     "--talk-name=org.kde.StatusNotifierWatcher",
+    "--talk-name=org.freedesktop.Flatpak",
     "--talk-name=org.freedesktop.ScreenSaver",
     "--talk-name=org.freedesktop.PowerManagement.Inhibit",
     "--talk-name=org.freedesktop.Notifications",
@@ -139,7 +140,8 @@
       "no-autogen": true,
       "cleanup": [
         "/bin",
-        "/include"
+        "/include",
+        "*.a"
       ],
       "sources": [
         {
@@ -221,12 +223,40 @@
       ]
     },
     {
+      "name": "cef",
+      "buildsystem": "cmake-ninja",
+      "no-make-install": true,
+      "make-args": [
+        "libcef_dll_wrapper"
+      ],
+      "build-commands": [
+        "mkdir -p /app/cef/libcef_dll_wrapper",
+        "cp -R ./include /app/cef",
+        "cp -R ./Release /app/cef",
+        "cp -R ./Resources /app/cef",
+        "cp -R ./libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
+      ],
+      "cleanup": [
+        "*.a",
+        "./*"
+      ],
+      "sources": [
+        {
+          "type": "archive",
+          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_4280_linux64.tar.bz2",
+          "sha256": "d91c78349ecbfbfdfc18d5f882dc28b939028f1a631191c603b5d0d938ada972"
+        }
+      ]
+    },
+    {
       "name": "obs",
       "buildsystem": "cmake-ninja",
       "builddir": true,
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_WAYLAND=ON",
+        "-DBUILD_BROWSER=ON",
+        "-DCEF_ROOT_DIR=/app/cef",
         "-DUNIX_STRUCTURE=ON",
         "-DUSE_XDG=ON",
         "-DDISABLE_ALSA=ON",

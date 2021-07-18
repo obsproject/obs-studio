@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/dstr.h>
 #include <util/platform.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
@@ -24,6 +25,35 @@ static void virtualcam_destroy(void *data)
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 	close(vcam->device);
 	bfree(data);
+}
+
+static bool is_flatpak_sandbox(void)
+{
+	static bool flatpak_info_exists = false;
+	static bool initialized = false;
+
+	if (!initialized) {
+		flatpak_info_exists = access("/.flatpak-info", F_OK) == 0;
+		initialized = true;
+	}
+
+	return flatpak_info_exists;
+}
+
+static int run_command(const char *command)
+{
+	struct dstr str;
+	int result;
+
+	dstr_init_copy(&str, "PATH=\"$PATH:/sbin\" ");
+
+	if (is_flatpak_sandbox())
+		dstr_cat(&str, "flatpak-spawn --host ");
+
+	dstr_cat(&str, command);
+	result = system(str.array);
+	dstr_free(&str);
+	return result;
 }
 
 static bool loopback_module_loaded()
@@ -56,8 +86,7 @@ bool loopback_module_available()
 		return true;
 	}
 
-	if (system("PATH=\"$PATH:/sbin\" modinfo v4l2loopback >/dev/null 2>&1") ==
-	    0) {
+	if (run_command("modinfo v4l2loopback >/dev/null 2>&1") == 0) {
 		return true;
 	}
 
@@ -66,8 +95,8 @@ bool loopback_module_available()
 
 static int loopback_module_load()
 {
-	return system(
-		"PATH=\"$PATH:/sbin\" pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+	return run_command(
+		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)

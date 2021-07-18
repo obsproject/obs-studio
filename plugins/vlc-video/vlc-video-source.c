@@ -1131,7 +1131,8 @@ static obs_missing_files_t *vlcs_missingfiles(void *data)
 		const char *path = obs_data_get_string(item, "value");
 
 		if (strcmp(path, "") != 0) {
-			if (!os_file_exists(path)) {
+			if (!os_file_exists(path) &&
+			    strstr(path, "://") == NULL) {
 				obs_missing_file_t *file =
 					obs_missing_file_create(
 						path, missing_file_callback,

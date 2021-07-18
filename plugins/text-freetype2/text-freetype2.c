@@ -170,9 +170,11 @@ static obs_properties_t *ft2_source_properties(void *unused)
 				OBS_PATH_FILE,
 				obs_module_text("TextFileFilter"), NULL);
 
-	obs_properties_add_color(props, "color1", obs_module_text("Color1"));
+	obs_properties_add_color_alpha(props, "color1",
+				       obs_module_text("Color1"));
 
-	obs_properties_add_color(props, "color2", obs_module_text("Color2"));
+	obs_properties_add_color_alpha(props, "color2",
+				       obs_module_text("Color2"));
 
 	obs_properties_add_bool(props, "outline", obs_module_text("Outline"));
 
@@ -248,8 +250,6 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 	if (srcdata->text == NULL || *srcdata->text == 0)
 		return;
 
-	const bool previous = gs_set_linear_srgb(true);
-
 	gs_reset_blend_state();
 	if (srcdata->outline_text)
 		draw_outlines(srcdata);
@@ -258,8 +258,6 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
 			(uint32_t)wcslen(srcdata->text) * 6);
-
-	gs_set_linear_srgb(previous);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -488,7 +486,7 @@ skip_font_load:
 		}
 	} else {
 		const char *tmp = obs_data_get_string(settings, "text");
-		if (!tmp || !*tmp)
+		if (!tmp)
 			goto error;
 
 		if (srcdata->text != NULL) {

@@ -44,9 +44,7 @@ sudo apt-get install -y \
         qtbase5-dev \
         qtbase5-private-dev \
         libqt5svg5-dev \
-        swig \
-        linux-generic \
-        v4l2loopback-dkms
+        swig
 
 # build cef
 wget --quiet --retry-connrefused --waitretry=1 https://cdn-fastly.obsproject.com/downloads/cef_binary_${LINUX_CEF_BUILD_VERSION}_linux64.tar.bz2

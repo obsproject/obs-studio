@@ -30,6 +30,8 @@
 #include "qt-wrappers.hpp"
 #include "importers/importers.hpp"
 
+extern bool SceneCollectionExists(const char *findName);
+
 enum ImporterColumn {
 	Selected,
 	Name,
@@ -532,6 +534,23 @@ void OBSImporter::browseImport()
 	}
 }
 
+bool GetUnusedName(std::string &name)
+{
+	if (!SceneCollectionExists(name.c_str()))
+		return false;
+
+	std::string newName;
+	int inc = 2;
+	do {
+		newName = name;
+		newName += " ";
+		newName += std::to_string(inc++);
+	} while (SceneCollectionExists(newName.c_str()));
+
+	name = newName;
+	return true;
+}
+
 void OBSImporter::importCollections()
 {
 	setEnabled(false);
@@ -565,6 +584,12 @@ void OBSImporter::importCollections()
 			json11::Json::object out = res.object_items();
 			std::string name = res["name"].string_value();
 			std::string file;
+
+			if (GetUnusedName(name)) {
+				json11::Json::object newOut = out;
+				newOut["name"] = name;
+				out = newOut;
+			}
 
 			GetUnusedSceneCollectionFile(name, file);
 

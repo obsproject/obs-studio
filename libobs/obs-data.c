@@ -736,10 +736,15 @@ const char *obs_data_get_json(obs_data_t *data)
 	data->json = NULL;
 
 	json_t *root = obs_data_to_json(data);
-	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_INDENT(4));
+	data->json = json_dumps(root, JSON_PRESERVE_ORDER | JSON_COMPACT);
 	json_decref(root);
 
 	return data->json;
+}
+
+const char *obs_data_get_last_json(obs_data_t *data)
+{
+	return data ? data->json : NULL;
 }
 
 bool obs_data_save_json(obs_data_t *data, const char *file)

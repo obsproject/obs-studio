@@ -20,6 +20,8 @@
 
 #include "pipewire.h"
 
+#include "portal.h"
+
 #include <util/dstr.h>
 
 #include <gio/gio.h>
@@ -58,8 +60,6 @@
 		    '4') /* [31:0] A:B:G:R 8:8:8:8 little endian */
 
 struct _obs_pipewire_data {
-	GDBusConnection *connection;
-	GDBusProxy *proxy;
 	GCancellable *cancellable;
 
 	char *sender_name;
@@ -180,7 +180,7 @@ static void on_cancelled_cb(GCancellable *cancellable, void *data)
 	blog(LOG_INFO, "[pipewire] screencast session cancelled");
 
 	g_dbus_connection_call(
-		call->obs_pw->connection, "org.freedesktop.portal.Desktop",
+		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
 		call->request_path, "org.freedesktop.portal.Request", "Close",
 		NULL, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
 }
@@ -198,7 +198,7 @@ static struct dbus_call_data *subscribe_to_signal(obs_pipewire_data *obs_pw,
 					      G_CALLBACK(on_cancelled_cb),
 					      call);
 	call->signal_id = g_dbus_connection_signal_subscribe(
-		obs_pw->connection, "org.freedesktop.portal.Desktop",
+		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
 		"org.freedesktop.portal.Request", "Response",
 		call->request_path, NULL, G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE,
 		callback, call, NULL);
@@ -212,8 +212,8 @@ static void dbus_call_data_free(struct dbus_call_data *call)
 		return;
 
 	if (call->signal_id)
-		g_dbus_connection_signal_unsubscribe(call->obs_pw->connection,
-						     call->signal_id);
+		g_dbus_connection_signal_unsubscribe(
+			portal_get_dbus_connection(), call->signal_id);
 
 	if (call->cancelled_id > 0)
 		g_signal_handler_disconnect(call->obs_pw->cancellable,
@@ -247,11 +247,13 @@ static void teardown_pipewire(obs_pipewire_data *obs_pw)
 static void destroy_session(obs_pipewire_data *obs_pw)
 {
 	if (obs_pw->session_handle) {
-		g_dbus_connection_call(
-			obs_pw->connection, "org.freedesktop.portal.Desktop",
-			obs_pw->session_handle,
-			"org.freedesktop.portal.Session", "Close", NULL, NULL,
-			G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
+		g_dbus_connection_call(portal_get_dbus_connection(),
+				       "org.freedesktop.portal.Desktop",
+				       obs_pw->session_handle,
+				       "org.freedesktop.portal.Session",
+				       "Close", NULL, NULL,
+				       G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL,
+				       NULL);
 
 		g_clear_pointer(&obs_pw->session_handle, g_free);
 	}
@@ -261,8 +263,6 @@ static void destroy_session(obs_pipewire_data *obs_pw)
 	g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
 	g_cancellable_cancel(obs_pw->cancellable);
 	g_clear_object(&obs_pw->cancellable);
-	g_clear_object(&obs_pw->connection);
-	g_clear_object(&obs_pw->proxy);
 }
 
 static inline bool has_effective_crop(obs_pipewire_data *obs_pw)
@@ -730,7 +730,7 @@ static void open_pipewire_remote(obs_pipewire_data *obs_pw)
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
 	g_dbus_proxy_call_with_unix_fd_list(
-		obs_pw->proxy, "OpenPipeWireRemote",
+		portal_get_dbus_proxy(), "OpenPipeWireRemote",
 		g_variant_new("(oa{sv})", obs_pw->session_handle, &builder),
 		G_DBUS_CALL_FLAGS_NONE, -1, NULL, obs_pw->cancellable,
 		on_pipewire_remote_opened_cb, obs_pw);
@@ -758,6 +758,7 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 	obs_pipewire_data *obs_pw = call->obs_pw;
 	GVariantIter iter;
 	uint32_t response;
+	size_t n_streams;
 
 	g_clear_pointer(&call, dbus_call_data_free);
 
@@ -773,7 +774,27 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 		g_variant_lookup_value(result, "streams", G_VARIANT_TYPE_ARRAY);
 
 	g_variant_iter_init(&iter, streams);
-	g_assert(g_variant_iter_n_children(&iter) == 1);
+
+	n_streams = g_variant_iter_n_children(&iter);
+	if (n_streams != 1) {
+		blog(LOG_WARNING,
+		     "[pipewire] Received more than one stream when only one was expected. "
+		     "This is probably a bug in the desktop portal implementation you are "
+		     "using.");
+
+		// The KDE Desktop portal implementation sometimes sends an invalid
+		// response where more than one stream is attached, and only the
+		// last one is the one we're looking for. This is the only known
+		// buggy implementation, so let's at least try to make it work here.
+		for (size_t i = 0; i < n_streams - 1; i++) {
+			g_autoptr(GVariant) throwaway_properties = NULL;
+			uint32_t throwaway_pipewire_node;
+
+			g_variant_iter_loop(&iter, "(u@a{sv})",
+					    &throwaway_pipewire_node,
+					    &throwaway_properties);
+		}
+	}
 
 	g_variant_iter_loop(&iter, "(u@a{sv})", &obs_pw->pipewire_node,
 			    &stream_properties);
@@ -820,7 +841,7 @@ static void start(obs_pipewire_data *obs_pw)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
-	g_dbus_proxy_call(obs_pw->proxy, "Start",
+	g_dbus_proxy_call(portal_get_dbus_proxy(), "Start",
 			  g_variant_new("(osa{sv})", obs_pw->session_handle, "",
 					&builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, obs_pw->cancellable,
@@ -911,7 +932,7 @@ static void select_source(obs_pipewire_data *obs_pw)
 		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
 				      g_variant_new_uint32(1));
 
-	g_dbus_proxy_call(obs_pw->proxy, "SelectSources",
+	g_dbus_proxy_call(portal_get_dbus_proxy(), "SelectSources",
 			  g_variant_new("(oa{sv})", obs_pw->session_handle,
 					&builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, obs_pw->cancellable,
@@ -995,7 +1016,7 @@ static void create_session(obs_pipewire_data *obs_pw)
 	g_variant_builder_add(&builder, "{sv}", "session_handle_token",
 			      g_variant_new_string(session_token));
 
-	g_dbus_proxy_call(obs_pw->proxy, "CreateSession",
+	g_dbus_proxy_call(portal_get_dbus_proxy(), "CreateSession",
 			  g_variant_new("(a{sv})", &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, obs_pw->cancellable,
 			  on_session_created_cb, call);
@@ -1007,13 +1028,14 @@ static void create_session(obs_pipewire_data *obs_pw)
 
 /* ------------------------------------------------- */
 
-static void update_available_cursor_modes(obs_pipewire_data *obs_pw)
+static void update_available_cursor_modes(obs_pipewire_data *obs_pw,
+					  GDBusProxy *proxy)
 {
 	g_autoptr(GVariant) cached_cursor_modes = NULL;
 	uint32_t available_cursor_modes;
 
-	cached_cursor_modes = g_dbus_proxy_get_cached_property(
-		obs_pw->proxy, "AvailableCursorModes");
+	cached_cursor_modes =
+		g_dbus_proxy_get_cached_property(proxy, "AvailableCursorModes");
 	available_cursor_modes =
 		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
 				    : 0;
@@ -1029,52 +1051,26 @@ static void update_available_cursor_modes(obs_pipewire_data *obs_pw)
 		blog(LOG_INFO, "[pipewire]     - Hidden");
 }
 
-static void on_proxy_created_cb(GObject *source, GAsyncResult *res,
-				void *user_data)
-{
-	UNUSED_PARAMETER(source);
-
-	g_autoptr(GError) error = NULL;
-	obs_pipewire_data *obs_pw = user_data;
-
-	obs_pw->proxy = g_dbus_proxy_new_finish(res, &error);
-
-	if (error) {
-		if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
-			blog(LOG_ERROR, "[pipewire] Error creating proxy: %s",
-			     error->message);
-		return;
-	}
-
-	update_available_cursor_modes(obs_pw);
-	create_session(obs_pw);
-}
-
-static void create_proxy(obs_pipewire_data *obs_pw)
-{
-	g_dbus_proxy_new(obs_pw->connection, G_DBUS_PROXY_FLAGS_NONE, NULL,
-			 "org.freedesktop.portal.Desktop",
-			 "/org/freedesktop/portal/desktop",
-			 "org.freedesktop.portal.ScreenCast",
-			 obs_pw->cancellable, on_proxy_created_cb, obs_pw);
-}
-
 /* ------------------------------------------------- */
 
 static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 {
-	g_autoptr(GError) error = NULL;
+	GDBusConnection *connection;
+	GDBusProxy *proxy;
 	char *aux;
 
 	obs_pw->cancellable = g_cancellable_new();
-	obs_pw->connection = g_bus_get_sync(G_BUS_TYPE_SESSION, NULL, &error);
-	if (error) {
-		g_error("Error getting session bus: %s", error->message);
+	connection = portal_get_dbus_connection();
+	if (!connection)
 		return FALSE;
-	}
+	proxy = portal_get_dbus_proxy();
+	if (!proxy)
+		return FALSE;
 
-	obs_pw->sender_name = bstrdup(
-		g_dbus_connection_get_unique_name(obs_pw->connection) + 1);
+	update_available_cursor_modes(obs_pw, proxy);
+
+	obs_pw->sender_name =
+		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);
 
 	/* Replace dots by underscores */
 	while ((aux = strstr(obs_pw->sender_name, ".")) != NULL)
@@ -1083,7 +1079,7 @@ static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 	blog(LOG_INFO, "PipeWire initialized (sender name: %s)",
 	     obs_pw->sender_name);
 
-	create_proxy(obs_pw);
+	create_session(obs_pw);
 
 	return TRUE;
 }
@@ -1204,18 +1200,19 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 
 	if (has_effective_crop(obs_pw)) {
 		gs_draw_sprite_subregion(obs_pw->texture, 0, obs_pw->crop.x,
-					 obs_pw->crop.y,
-					 obs_pw->crop.x + obs_pw->crop.width,
-					 obs_pw->crop.y + obs_pw->crop.height);
+					 obs_pw->crop.y, obs_pw->crop.width,
+					 obs_pw->crop.height);
 	} else {
 		gs_draw_sprite(obs_pw->texture, 0, 0, 0);
 	}
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
 	    obs_pw->cursor.texture) {
+		float cursor_x = obs_pw->cursor.x - obs_pw->cursor.hotspot_x;
+		float cursor_y = obs_pw->cursor.y - obs_pw->cursor.hotspot_y;
+
 		gs_matrix_push();
-		gs_matrix_translate3f((float)obs_pw->cursor.x,
-				      (float)obs_pw->cursor.y, 0.0f);
+		gs_matrix_translate3f(cursor_x, cursor_y, 0.0f);
 
 		gs_effect_set_texture(image, obs_pw->cursor.texture);
 		gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
