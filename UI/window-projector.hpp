@@ -19,6 +19,7 @@ enum class MultiviewLayout : uint8_t {
 	VERTICAL_LEFT_8_SCENES = 2,
 	VERTICAL_RIGHT_8_SCENES = 3,
 	HORIZONTAL_TOP_24_SCENES = 4,
+	HORIZONTAL_TOP_18_SCENES = 5,
 };
 
 class OBSProjector : public OBSQTDisplay {

@@ -246,6 +246,9 @@ static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 
 	int n; // Number of scenes per row
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		n = 6;
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		n = 6;
 		break;
@@ -338,6 +341,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	auto calcBaseSource = [&](size_t i) {
 		switch (multiviewLayout) {
+		case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+			window->sourceX = (i % 6) * window->scenesCX;
+			window->sourceY =
+				window->pvwprgCY + (i / 6) * window->scenesCY;
+			break;
 		case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 			window->sourceX = (i % 6) * window->scenesCX;
 			window->sourceY =
@@ -423,7 +431,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				window->labelX += window->pvwprgCX;
 			}
 			break;
-		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
+		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES and 18_SCENES
 			window->sourceX = window->thickness;
 			window->sourceY = window->thickness;
 			window->labelX = window->offset;
@@ -703,6 +711,24 @@ static int getSourceByPosition(int x, int y, float ratio)
 	int maxY = cy;
 
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+		}
+		minY = cy / 2;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 6);
+		pos += ((y - minY) / ((maxY - minY) / 3)) * 6;
+
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
@@ -929,6 +955,12 @@ void OBSProjector::UpdateMultiview()
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
 
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		pvwprgCX = fw / 2;
+		pvwprgCY = fh / 2;
+
+		maxSrcs = 18;
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		pvwprgCX = fw / 3;
 		pvwprgCY = fh / 3;
@@ -947,8 +979,16 @@ void OBSProjector::UpdateMultiview()
 	ppiScaleX = (pvwprgCX - thicknessx2) / fw;
 	ppiScaleY = (pvwprgCY - thicknessx2) / fh;
 
-	scenesCX = pvwprgCX / 2;
-	scenesCY = pvwprgCY / 2;
+	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		scenesCX = pvwprgCX / 3;
+		scenesCY = pvwprgCY / 3;
+		break;
+	default:
+		scenesCX = pvwprgCX / 2;
+		scenesCY = pvwprgCY / 2;
+	}
+
 	siCX = scenesCX - thicknessx2;
 	siCY = scenesCY - thicknessx2;
 	siScaleX = (scenesCX - thicknessx2) / fw;
