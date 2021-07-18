@@ -1,46 +1,34 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2012-2017 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_dxva2_device.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2012-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #if !defined(__MFX_DXVA2_DEVICE_H)
 #define __MFX_DXVA2_DEVICE_H
 
-#if defined(_WIN32) || defined(_WIN64)
 #include <windows.h>
 
 #define TOSTRING(L) #L
 #define STRINGIFY(L) TOSTRING(L)
 
-#if defined(MEDIASDK_UWP_LOADER) || defined(MEDIASDK_UWP_PROCTABLE)
+#if defined(MEDIASDK_UWP_DISPATCHER)
     #if defined(MFX_D3D9_ENABLED) && !defined(MFX_FORCE_D3D9_ENABLED)
         #undef MFX_D3D9_ENABLED
-        // if you really like to use D3D9 from intel_gfx_api-x64/x86.dll, use MFX_FORCE_D3D9_ENABLED
         #pragma message("\n\nATTENTION:\nin file\n\t" __FILE__ " (" STRINGIFY(__LINE__) "):\nUsing of D3D9 disabled for UWP!\n\n")
     #endif
     #if defined(MFX_FORCE_D3D9_ENABLED)
@@ -50,8 +38,6 @@ File Name: mfx_dxva2_device.h
     #define MFX_D3D9_ENABLED
     #pragma message("\n\nATTENTION:\nin file\n\t" __FILE__ " (" STRINGIFY(__LINE__) "):\nUsing of D3D9 enabled!\n\n")
 #endif
-
-#endif // #if defined(_WIN32) || defined(_WIN64)
 
 #include <mfxdefs.h>
 
@@ -101,10 +87,8 @@ protected:
     // Free DLL module
     void UnloadDLLModule(void);
 
-#if defined(_WIN32) || defined(_WIN64)
     // Handle to the DLL library
     HMODULE m_hModule;
-#endif // #if defined(_WIN32) || defined(_WIN64)
 
     // Number of adapters available
     mfxU32 m_numAdapters;
@@ -123,9 +107,6 @@ private:
     DXDevice(const DXDevice &);
     void operator=(const DXDevice &);
 };
-
-
-#if defined(_WIN32) || defined(_WIN64)
 
 #ifdef MFX_D3D9_ENABLED
 class D3D9Device : public DXDevice
@@ -180,7 +161,6 @@ protected:
     void *m_pDXGIAdapter1;
 
 };
-#endif // #if defined(_WIN32) || defined(_WIN64)
 
 class DXVA2Device
 {

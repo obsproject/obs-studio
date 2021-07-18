@@ -35,7 +35,7 @@ jobs:
         submodules: 'recursive'
 
     - name: Build Flatpak Manifest
-      uses: bilelmoussaoui/flatpak-github-actions@master
+      uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v3
       if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
       with:
         bundle: obs-studio-${{ github.sha }}.flatpak

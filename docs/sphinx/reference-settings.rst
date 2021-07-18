@@ -67,6 +67,19 @@ General Functions
 
 .. function:: const char *obs_data_get_json(obs_data_t *data)
 
+   Generates a new json string. The string allocation is stored within
+   the data object itself, and does not need to be manually freed.
+
+   :return: Json string for this object
+
+---------------------
+
+.. function:: const char *obs_data_get_last_json(obs_data_t *data)
+
+   Returns the last json string generated for this data object. Does not
+   generate a new string. Use :c:func:`obs_data_get_json()` to generate
+   a json string first.
+
    :return: Json string for this object
 
 ---------------------

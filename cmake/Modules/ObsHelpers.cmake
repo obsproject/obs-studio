@@ -111,17 +111,6 @@ else()
 	set(OBS_SCRIPT_PLUGIN_PATH "${OBS_INSTALL_PREFIX}${OBS_SCRIPT_PLUGIN_DESTINATION}")
 endif()
 
-function(obs_finish_bundle)
-	if(NOT APPLE OR UNIX_STRUCTURE)
-		return()
-	endif()
-
-	install(CODE
-		"if(DEFINED ENV{FIXUP_BUNDLE})
-			execute_process(COMMAND \"${CMAKE_SOURCE_DIR}/cmake/osxbundle/fixup_bundle.sh\" . bin WORKING_DIRECTORY \"\${CMAKE_INSTALL_PREFIX}\")
-		endif()")
-endfunction()
-
 function(obs_generate_multiarch_installer)
 	install(DIRECTORY "$ENV{obsInstallerTempDir}/"
 		DESTINATION "."
@@ -561,6 +550,10 @@ function(install_obs_datatarget target datadest)
 				"$<TARGET_FILE:${target}>"
 				"$ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${datadest}/$<TARGET_FILE_NAME:${target}>"
 			VERBATIM)
+	endif()
+
+	if(MSVC)
+		obs_debug_copy_helper(${target} "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/${datadest}")
 	endif()
 endfunction()
 

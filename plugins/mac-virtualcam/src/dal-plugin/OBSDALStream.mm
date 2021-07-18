@@ -276,6 +276,7 @@
 		pxdata, width, height, 8,
 		CVPixelBufferGetBytesPerRowOfPlane(pxbuffer, 0), rgbColorSpace,
 		kCGImageAlphaPremultipliedFirst | kCGImageByteOrder32Big);
+	CFRelease(rgbColorSpace);
 	NSParameterAssert(context);
 
 	NSGraphicsContext *nsContext = [NSGraphicsContext

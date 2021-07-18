@@ -28,6 +28,16 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
 float4 PSLumaWipe(VertData v_in) : TARGET
 {
 	float2 uv = v_in.uv;
@@ -40,15 +50,18 @@ float4 PSLumaWipe(VertData v_in) : TARGET
 
 	float time = lerp(0.0f, 1.0f + softness, progress);
 
-	if (luma <= time - softness)
-		return b_color;
+	float4 rgba;
+	if (luma <= time - softness) {
+		rgba = b_color;
+	} else if (luma >= time) {
+		rgba = a_color;
+	} else {
+		float alpha = (time - luma) / softness;
+		rgba = lerp(a_color, b_color, alpha);
+	}
 
-	if (luma >= time)
-		return a_color;
-
-	float alpha = (time - luma) / softness;
-
-	return lerp(a_color, b_color, alpha);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
 }
 
 technique LumaWipe

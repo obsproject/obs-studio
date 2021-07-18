@@ -219,6 +219,8 @@ struct obs_source_cea_708 {
 	uint64_t timestamp;
 };
 
+#define OBS_SOURCE_FRAME_LINEAR_ALPHA (1 << 0)
+
 /**
  * Source asynchronous video output structure.  Used with
  * obs_source_output_video to output asynchronous video.  Video is buffered as
@@ -245,6 +247,7 @@ struct obs_source_frame {
 	float color_range_min[3];
 	float color_range_max[3];
 	bool flip;
+	uint8_t flags;
 
 	/* used internally by libobs */
 	volatile long refs;
@@ -264,6 +267,7 @@ struct obs_source_frame2 {
 	float color_range_min[3];
 	float color_range_max[3];
 	bool flip;
+	uint8_t flags;
 };
 
 /** Access to the argc/argv used to start OBS. What you see is what you get. */
@@ -608,6 +612,10 @@ EXPORT void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *),
 EXPORT void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *),
 			    void *param);
 
+/** Enumerates all sources (regardless of type) */
+EXPORT void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+				 void *param);
+
 /** Enumerates outputs */
 EXPORT void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *),
 			     void *param);
@@ -696,8 +704,11 @@ EXPORT obs_source_t *obs_load_source(obs_data_t *data);
 /** Send a save signal to sources */
 EXPORT void obs_source_save(obs_source_t *source);
 
-/** Send a load signal to sources */
+/** Send a load signal to sources (soft deprecated; does not load filters) */
 EXPORT void obs_source_load(obs_source_t *source);
+
+/** Send a load signal to sources */
+EXPORT void obs_source_load2(obs_source_t *source);
 
 typedef void (*obs_load_source_cb)(void *private_data, obs_source_t *source);
 
@@ -724,6 +735,7 @@ EXPORT enum obs_obj_type obs_obj_get_type(void *obj);
 EXPORT const char *obs_obj_get_id(void *obj);
 EXPORT bool obs_obj_invalid(void *obj);
 EXPORT void *obs_obj_get_data(void *obj);
+EXPORT bool obs_obj_is_private(void *obj);
 
 typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 					 const char *id);
@@ -938,6 +950,8 @@ EXPORT obs_properties_t *obs_source_properties(const obs_source_t *source);
 
 /** Updates settings for this source */
 EXPORT void obs_source_update(obs_source_t *source, obs_data_t *settings);
+EXPORT void obs_source_reset_settings(obs_source_t *source,
+				      obs_data_t *settings);
 
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t *source);
@@ -947,6 +961,9 @@ EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 
 /** Gets the height of a source (if it has video) */
 EXPORT uint32_t obs_source_get_height(obs_source_t *source);
+
+/** Hints whether or not the source will blend texels */
+EXPORT bool obs_source_get_texcoords_centered(obs_source_t *source);
 
 /**
  * If the source is a filter, returns the parent source of the filter.  Only
@@ -1030,6 +1047,10 @@ EXPORT void obs_source_enum_active_sources(obs_source_t *source,
 EXPORT void obs_source_enum_active_tree(obs_source_t *source,
 					obs_source_enum_proc_t enum_callback,
 					void *param);
+
+EXPORT void obs_source_enum_full_tree(obs_source_t *source,
+				      obs_source_enum_proc_t enum_callback,
+				      void *param);
 
 /** Returns true if active, false if not */
 EXPORT bool obs_source_active(const obs_source_t *source);
@@ -1195,6 +1216,10 @@ obs_source_get_monitoring_type(const obs_source_t *source);
 /** Gets private front-end settings data.  This data is saved/loaded
  * automatically.  Returns an incremented reference. */
 EXPORT obs_data_t *obs_source_get_private_settings(obs_source_t *item);
+
+EXPORT obs_data_array_t *obs_source_backup_filters(obs_source_t *source);
+EXPORT void obs_source_restore_filters(obs_source_t *source,
+				       obs_data_array_t *array);
 
 /* ------------------------------------------------------------------------- */
 /* Functions used by sources */
@@ -1555,6 +1580,18 @@ EXPORT obs_sceneitem_t *obs_scene_find_source_recursive(obs_scene_t *scene,
 EXPORT obs_sceneitem_t *obs_scene_find_sceneitem_by_id(obs_scene_t *scene,
 						       int64_t id);
 
+/** Gets scene by name, increments the reference */
+static inline obs_scene_t *obs_get_scene_by_name(const char *name)
+{
+	obs_source_t *source = obs_get_source_by_name(name);
+	obs_scene_t *scene = obs_scene_from_source(source);
+	if (!scene) {
+		obs_source_release(source);
+		return NULL;
+	}
+	return scene;
+}
+
 /** Enumerates sources within a scene */
 EXPORT void obs_scene_enum_items(obs_scene_t *scene,
 				 bool (*callback)(obs_scene_t *,
@@ -1574,6 +1611,8 @@ EXPORT bool
 obs_scene_reorder_items2(obs_scene_t *scene,
 			 struct obs_sceneitem_order_info *item_order,
 			 size_t item_order_size);
+
+EXPORT bool obs_source_is_scene(const obs_source_t *source);
 
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
@@ -1744,6 +1783,13 @@ EXPORT void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
 /** Gets the group from its source, or NULL if not a group */
 EXPORT obs_scene_t *obs_group_from_source(const obs_source_t *source);
 
+static inline obs_scene_t *
+obs_group_or_scene_from_source(const obs_source_t *source)
+{
+	obs_scene_t *s = obs_scene_from_source(source);
+	return s ? s : obs_group_from_source(source);
+}
+
 EXPORT void obs_sceneitem_defer_group_resize_begin(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_defer_group_resize_end(obs_sceneitem_t *item);
 
@@ -1762,6 +1808,10 @@ EXPORT obs_source_t *obs_sceneitem_get_hide_transition(obs_sceneitem_t *item);
 EXPORT uint32_t
 obs_sceneitem_get_hide_transition_duration(obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_do_transition(obs_sceneitem_t *item, bool visible);
+EXPORT void obs_sceneitem_transition_load(struct obs_scene_item *item,
+					  obs_data_t *data, bool show);
+EXPORT obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
+						 bool show);
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */

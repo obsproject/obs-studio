@@ -49,7 +49,9 @@ float4 ProcessColorKey(float4 rgba, VertData v_in)
 
 float4 PSColorKeyRGBA(VertData v_in) : TARGET
 {
-	float4 rgba = image.Sample(textureSampler, v_in.uv) * color;
+	float4 rgba = image.Sample(textureSampler, v_in.uv);
+	rgba.rgb = max(float3(0.0, 0.0, 0.0), rgba.rgb / rgba.a);
+	rgba *= color;
 	return ProcessColorKey(rgba, v_in);
 }
 

@@ -56,8 +56,8 @@ static void fade_callback(void *data, gs_texture_t *a, gs_texture_t *b, float t,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture_srgb(fade->a_param, a);
-	gs_effect_set_texture_srgb(fade->b_param, b);
+	gs_effect_set_texture(fade->a_param, a);
+	gs_effect_set_texture(fade->b_param, b);
 	gs_effect_set_float(fade->fade_param, t);
 
 	while (gs_effect_loop(fade->effect, "Fade"))

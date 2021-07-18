@@ -90,6 +90,7 @@ bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
+bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1497,6 +1498,11 @@ bool OBSApp::IsUpdaterDisabled()
 	return opt_disable_updater;
 }
 
+bool OBSApp::IsMissingFilesCheckDisabled()
+{
+	return opt_disable_missing_files_check;
+}
+
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
@@ -2697,6 +2703,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
+		} else if (arg_is(argv[i], "--disable-missing-files-check",
+				  nullptr)) {
+			opt_disable_missing_files_check = true;
+
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
 				  nullptr)) {
 			opt_disable_high_dpi_scaling = true;
@@ -2720,6 +2730,7 @@ int main(int argc, char *argv[])
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
+				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n"
 				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
 
 #ifdef _WIN32
@@ -2751,6 +2762,14 @@ int main(int argc, char *argv[])
 		opt_disable_updater =
 			os_file_exists(BASE_PATH "/disable_updater") ||
 			os_file_exists(BASE_PATH "/disable_updater.txt");
+	}
+
+	if (!opt_disable_missing_files_check) {
+		opt_disable_missing_files_check =
+			os_file_exists(BASE_PATH
+				       "/disable_missing_files_check") ||
+			os_file_exists(BASE_PATH
+				       "/disable_missing_files_check.txt");
 	}
 #endif
 

@@ -285,6 +285,26 @@
             }
         },
         {
+            "name": "Luzento.com - RTMP",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://ingest.luzento.com/live"
+                },
+                {
+                    "name": "Primary (Test)",
+                    "url": "rtmp://ingest.luzento.com/test"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 256,
+                "bframes": 2,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
             "name": "VIMM",
             "servers": [
                 {
@@ -448,12 +468,55 @@
                 "keyint": 2,
                 "profile": "main",
                 "supported resolutions": [
+                    "1920x1080",
                     "1280x720",
                     "852x480",
-                    "480x360"
+                    "640x360"
                 ],
-                "max fps": 30,
-                "max video bitrate": 6000,
+                "bitrate matrix": [
+                    {
+                        "res": "640x360",
+                        "fps": 30,
+                        "max bitrate": 1000
+                    },
+                    {
+                        "res": "640x360",
+                        "fps": 60,
+                        "max bitrate": 1500
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 2000
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 60,
+                        "max bitrate": 3000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 9000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 9000,
                 "max audio bitrate": 128
             }
         },
@@ -1007,8 +1070,11 @@
             }
         },
         {
-            "name": "Twitter / Periscope",
+            "name": "Twitter",
             "common": true,
+            "alt_names": [
+                "Twitter / Periscope"
+            ],
             "servers": [
                 {
                     "name": "US West: California",
@@ -1027,6 +1093,10 @@
                     "url": "rtmp://br.pscp.tv:80/x"
                 },
                 {
+                    "name": "EU West: France",
+                    "url": "rtmp://fr.pscp.tv:80/x"
+                },
+                {
                     "name": "EU West: Ireland",
                     "url": "rtmp://ie.pscp.tv:80/x"
                 },
@@ -1039,8 +1109,16 @@
                     "url": "rtmp://au.pscp.tv:80/x"
                 },
                 {
+                    "name": "Asia/Pacific: India",
+                    "url": "rtmp://in.pscp.tv:80/x"
+                },
+                {
                     "name": "Asia/Pacific: Japan",
                     "url": "rtmp://jp.pscp.tv:80/x"
+                },
+                {
+                    "name": "Asia/Pacific: Korea",
+                    "url": "rtmp://kr.pscp.tv:80/x"
                 },
                 {
                     "name": "Asia/Pacific: Singapore",
@@ -1049,8 +1127,9 @@
             ],
             "recommended": {
                 "keyint": 3,
-                "max video bitrate": 4000,
-                "max audio bitrate": 128
+                "max video bitrate": 12000,
+                "max audio bitrate": 128,
+                "max fps": 60
             }
         },
         {
@@ -1232,6 +1311,12 @@
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 320,
+                "supported resolutions": [
+                    "1280x720",
+                    "852x480",
+                    "480x360"
+                ],
+                "max fps": 30,
                 "x264opts": "scenecut=0"
             }
         },
@@ -2093,6 +2178,77 @@
                 "max video bitrate": 7000,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "Brime Live",
+            "servers": [
+                {
+                    "name": "North America - Ashburn, VA",
+                    "url": "rtmp://ingest-us-ashburn.brimelive.com/live"
+                },
+                {
+                    "name": "North America - San Jose, CA",
+                    "url": "rtmp://ingest-us-sanjose.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Atlanta, GA",
+                    "url": "rtmp://ingest-us-atlanta.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Dallas, TX",
+                    "url": "rtmp://ingest-us-dallas.brimelive.com/live"
+                },
+                {
+                    "name": "North America - Chicago, IL",
+                    "url": "rtmp://ingest-us-chicago.brimelive.com/live"
+                },
+                {
+                    "name": "Canada Southeast - Montreal",
+                    "url": "rtmp://ingest-ca-montreal.brimelive.com/live"
+                },
+                {
+                    "name": "Latin America - Brazil East (Sao Paulo)",
+                    "url": "rtmp://ingest-la-saopaulo.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - Germany (Frankfurt)",
+                    "url": "rtmp://ingest-eu-frankfurt.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - UK South (London)",
+                    "url": "rtmp://ingest-eu-london.brimelive.com/live"
+                },
+                {
+                    "name": "Europe / EMEA - Russia (Moscow)",
+                    "url": "rtmp://ingest-eu-moscow.brimelive.com/live"
+                },
+                {
+                    "name": "APAC - Japan East (Tokyo)",
+                    "url": "rtmp://ingest-apac-tokyo.brimelive.com/live"
+                },
+                {
+                    "name": "APAC - Australia East (Sydney)",
+                    "url": "rtmp://ingest-apac-sydney.brimelive.com/live"
+                }
+            ],
+            "recommended": {
+                "max video bitrate": 20000,
+                "max audio bitrate": 320,
+                "x264opts": "scenecut=0"
+            }
+        },
+        {
+            "name": "Bilibili Live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live-push.bilivideo.com/live-bvc/"
+                },
+                {
+                    "name": "Tencent Cloud",
+                    "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
+                }
+            ]
         }
     ]
 }

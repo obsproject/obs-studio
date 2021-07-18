@@ -33,6 +33,7 @@ struct stinger_info {
 	float matte_width_factor;
 	float matte_height_factor;
 	bool invert_matte;
+	bool do_texrender;
 
 	gs_effect_t *matte_effect;
 	gs_eparam_t *ep_a_tex;
@@ -41,6 +42,7 @@ struct stinger_info {
 	gs_eparam_t *ep_invert_matte;
 
 	gs_texrender_t *matte_tex;
+	gs_texrender_t *stinger_tex;
 
 	float (*mix_a)(void *data, float t);
 	float (*mix_b)(void *data, float t);
@@ -86,6 +88,8 @@ static void stinger_update(void *data, obs_data_t *settings)
 	else
 		s->transition_point_ns = (uint64_t)(point * 1000000LL);
 
+	bool track_matte_was_enabled = s->track_matte_enabled;
+
 	s->track_matte_enabled =
 		obs_data_get_bool(settings, "track_matte_enabled");
 	s->matte_layout = (int)obs_data_get_int(settings, "track_matte_layout");
@@ -94,6 +98,9 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->matte_height_factor =
 		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? 2.0f : 1.0f);
 	s->invert_matte = obs_data_get_bool(settings, "invert_matte");
+
+	s->do_texrender = s->track_matte_enabled &&
+			  s->matte_layout != MATTE_LAYOUT_SEPARATE_FILE;
 
 	if (s->matte_source) {
 		obs_source_release(s->matte_source);
@@ -134,6 +141,23 @@ static void stinger_update(void *data, obs_data_t *settings)
 		s->mix_b = mix_b_cross_fade;
 		break;
 	}
+
+	if (s->track_matte_enabled != track_matte_was_enabled) {
+		obs_enter_graphics();
+
+		gs_texrender_destroy(s->matte_tex);
+		gs_texrender_destroy(s->stinger_tex);
+		s->matte_tex = NULL;
+		s->stinger_tex = NULL;
+
+		if (s->track_matte_enabled) {
+			s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+			s->stinger_tex =
+				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
+		}
+
+		obs_leave_graphics();
+	}
 }
 
 static void *stinger_create(obs_data_t *settings, obs_source_t *source)
@@ -169,8 +193,6 @@ static void *stinger_create(obs_data_t *settings, obs_source_t *source)
 	s->ep_invert_matte =
 		gs_effect_get_param_by_name(s->matte_effect, "invert_matte");
 
-	s->matte_tex = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-
 	obs_transition_enable_fixed(s->source, true, 0);
 	obs_source_update(source, settings);
 	return s;
@@ -182,9 +204,13 @@ static void stinger_destroy(void *data)
 	obs_source_release(s->media_source);
 	obs_source_release(s->matte_source);
 
-	gs_texrender_destroy(s->matte_tex);
+	obs_enter_graphics();
 
+	gs_texrender_destroy(s->matte_tex);
+	gs_texrender_destroy(s->stinger_tex);
 	gs_effect_destroy(s->matte_effect);
+
+	obs_leave_graphics();
 
 	bfree(s);
 }
@@ -219,23 +245,26 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 		(s->matte_layout == MATTE_LAYOUT_VERTICAL ? (-matte_cy) : 0.0f);
 
 	// Track matte media render
-	gs_texrender_reset(s->matte_tex);
 	if (matte_cx > 0 && matte_cy > 0) {
 		float scale_x = (float)cx / matte_cx;
 		float scale_y = (float)cy / matte_cy;
 
 		if (gs_texrender_begin(s->matte_tex, cx, cy)) {
-			gs_matrix_push();
 			gs_matrix_scale3f(scale_x, scale_y, 1.0f);
 			gs_matrix_translate3f(width_offset, height_offset,
 					      0.0f);
 			gs_clear(GS_CLEAR_COLOR, &background, 0.0f, 0);
+			gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f,
+				 100.0f);
+
 			obs_source_video_render(matte_source);
-			gs_matrix_pop();
 
 			gs_texrender_end(s->matte_tex);
 		}
 	}
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
 
 	gs_effect_set_texture(s->ep_a_tex, a);
 	gs_effect_set_texture(s->ep_b_tex, b);
@@ -246,7 +275,28 @@ static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
 	while (gs_effect_loop(s->matte_effect, "StingerMatte"))
 		gs_draw_sprite(NULL, 0, cx, cy);
 
+	gs_enable_framebuffer_srgb(previous);
+
 	UNUSED_PARAMETER(t);
+}
+
+static void stinger_texrender(struct stinger_info *s, uint32_t source_cx,
+			      uint32_t source_cy, uint32_t media_cx,
+			      uint32_t media_cy)
+{
+	if (gs_texrender_begin(s->stinger_tex, source_cx, source_cy)) {
+		float cx = (float)media_cx / s->matte_width_factor;
+		float cy = (float)media_cy / s->matte_height_factor;
+
+		gs_ortho(0.0f, cx, 0.0f, cy, -100.0f, 100.0f);
+
+		gs_blend_state_push();
+		gs_enable_blending(false);
+		obs_source_video_render(s->media_source);
+		gs_blend_state_pop();
+
+		gs_texrender_end(s->stinger_tex);
+	}
 }
 
 static void stinger_video_render(void *data, gs_effect_t *effect)
@@ -269,8 +319,11 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	/* --------------------- */
 
-	float source_cx = (float)obs_source_get_width(s->source);
-	float source_cy = (float)obs_source_get_height(s->source);
+	uint32_t source_cx = obs_source_get_width(s->source);
+	uint32_t source_cy = obs_source_get_height(s->source);
+
+	float source_cxf = (float)source_cx;
+	float source_cyf = (float)source_cy;
 
 	uint32_t media_cx = obs_source_get_width(s->media_source);
 	uint32_t media_cy = obs_source_get_height(s->media_source);
@@ -278,22 +331,37 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 	if (!media_cx || !media_cy)
 		return;
 
-	float scale_x, scale_y;
-	if (s->track_matte_enabled) {
-		scale_x = source_cx / ((float)media_cx / s->matte_width_factor);
-		scale_y =
-			source_cy / ((float)media_cy / s->matte_height_factor);
+	if (s->do_texrender) {
+		stinger_texrender(s, source_cx, source_cy, media_cx, media_cy);
+
+		gs_effect_t *e = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		gs_eparam_t *p = gs_effect_get_param_by_name(e, "image");
+		gs_texture_t *tex = gs_texrender_get_texture(s->stinger_tex);
+
+		gs_effect_set_texture(p, tex);
+		while (gs_effect_loop(e, "Draw"))
+			gs_draw_sprite(NULL, 0, source_cx, source_cy);
 	} else {
-		scale_x = source_cx / (float)media_cx;
-		scale_y = source_cy / (float)media_cy;
+		gs_matrix_push();
+		gs_matrix_scale3f(source_cxf / (float)media_cx,
+				  source_cyf / (float)media_cy, 1.0f);
+		obs_source_video_render(s->media_source);
+		gs_matrix_pop();
 	}
 
-	gs_matrix_push();
-	gs_matrix_scale3f(scale_x, scale_y, 1.0f);
-	obs_source_video_render(s->media_source);
-	gs_matrix_pop();
-
 	UNUSED_PARAMETER(effect);
+}
+
+static void stinger_video_tick(void *data, float seconds)
+{
+	struct stinger_info *s = data;
+
+	if (s->track_matte_enabled) {
+		gs_texrender_reset(s->stinger_tex);
+		gs_texrender_reset(s->matte_tex);
+	}
+
+	UNUSED_PARAMETER(seconds);
 }
 
 static inline float calc_fade(float t, float mul)
@@ -384,7 +452,9 @@ static void stinger_transition_start(void *data)
 		proc_handler_t *ph =
 			obs_source_get_proc_handler(s->media_source);
 		proc_handler_t *matte_ph =
-			obs_source_get_proc_handler(s->matte_source);
+			s->matte_source
+				? obs_source_get_proc_handler(s->matte_source)
+				: NULL;
 
 		if (s->transitioning) {
 			proc_handler_call(ph, "restart", &cd);
@@ -417,7 +487,7 @@ static void stinger_transition_start(void *data)
 		s->transition_a_mul = (1.0f / s->transition_point);
 		s->transition_b_mul = (1.0f / (1.0f - s->transition_point));
 
-		if (s->track_matte_enabled) {
+		if (s->track_matte_enabled && s->matte_source) {
 			proc_handler_call(matte_ph, "get_duration", &cd);
 			uint64_t tm_duration_ns =
 				(uint64_t)calldata_int(&cd, "duration");
@@ -578,9 +648,14 @@ static obs_properties_t *stinger_properties(void *data)
 		obs_property_list_add_int(
 			p, obs_module_text("TrackMatteLayoutVertical"),
 			MATTE_LAYOUT_VERTICAL);
+
+		/* TODO: Requires way to synchronize or combine two media files
+		 * together */
+#if 0
 		obs_property_list_add_int(
 			p, obs_module_text("TrackMatteLayoutSeparateFile"),
 			MATTE_LAYOUT_SEPARATE_FILE);
+#endif
 
 		obs_property_set_modified_callback(p,
 						   track_matte_layout_modified);
@@ -640,6 +715,7 @@ struct obs_source_info stinger_transition = {
 	.update = stinger_update,
 	.get_defaults = stinger_defaults,
 	.video_render = stinger_video_render,
+	.video_tick = stinger_video_tick,
 	.audio_render = stinger_audio_render,
 	.get_properties = stinger_properties,
 	.enum_active_sources = stinger_enum_active_sources,

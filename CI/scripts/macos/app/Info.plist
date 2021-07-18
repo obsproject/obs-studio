@@ -6,8 +6,6 @@
 	<string>AppIcon.icns</string>
 	<key>CFBundleName</key>
 	<string>OBS</string>
-	<key>CFBundleGetInfoString</key>
-	<string>OBS - Free and Open Source Streaming/Recording Software</string>
 	<key>CFBundleExecutable</key>
 	<string>obs</string>
 	<key>CFBundleIdentifier</key>

@@ -117,7 +117,11 @@ EXPORT bool obs_frontend_add_scene_collection(const char *name);
 
 EXPORT char **obs_frontend_get_profiles(void);
 EXPORT char *obs_frontend_get_current_profile(void);
+EXPORT char *obs_frontend_get_current_profile_path(void);
 EXPORT void obs_frontend_set_current_profile(const char *profile);
+EXPORT void obs_frontend_create_profile(const char *name);
+EXPORT void obs_frontend_duplicate_profile(const char *name);
+EXPORT void obs_frontend_delete_profile(const char *profile);
 
 typedef void (*obs_frontend_cb)(void *private_data);
 

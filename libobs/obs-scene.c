@@ -561,6 +561,20 @@ static void render_item_texture(struct obs_scene_item *item)
 	GS_DEBUG_MARKER_END();
 }
 
+static bool are_texcoords_centered(struct matrix4 *m)
+{
+	static const struct matrix4 identity = {
+		{1.0f, 0.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f},
+	};
+	struct matrix4 copy = identity;
+	copy.t.x = floorf(m->t.x);
+	copy.t.y = floorf(m->t.y);
+	return memcmp(m, &copy, sizeof(*m)) == 0;
+}
+
 static inline void render_item(struct obs_scene_item *item)
 {
 	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_ITEM, "Item: %s",
@@ -610,7 +624,11 @@ static inline void render_item(struct obs_scene_item *item)
 							cx, cy);
 				obs_source_video_render(item->hide_transition);
 			} else {
+				obs_source_set_texcoords_centered(item->source,
+								  true);
 				obs_source_video_render(item->source);
+				obs_source_set_texcoords_centered(item->source,
+								  false);
 			}
 
 			gs_texrender_end(item->item_render);
@@ -635,7 +653,11 @@ static inline void render_item(struct obs_scene_item *item)
 		obs_transition_set_size(item->hide_transition, cx, cy);
 		obs_source_video_render(item->hide_transition);
 	} else {
+		const bool centered =
+			are_texcoords_centered(&item->draw_transform);
+		obs_source_set_texcoords_centered(item->source, centered);
 		obs_source_video_render(item->source);
+		obs_source_set_texcoords_centered(item->source, false);
 	}
 	gs_matrix_pop();
 	gs_set_linear_srgb(previous);
@@ -854,35 +876,13 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 
 	obs_data_t *show_data = obs_data_get_obj(item_data, "show_transition");
 	if (show_data) {
-		const char *id = obs_data_get_string(show_data, "id");
-		if (id && strlen(id)) {
-			const char *tn = obs_data_get_string(show_data, "name");
-			obs_data_t *s =
-				obs_data_get_obj(show_data, "transition");
-			obs_source_t *t = obs_source_create_private(id, tn, s);
-			obs_sceneitem_set_show_transition(item, t);
-			obs_source_release(t);
-			obs_data_release(s);
-		}
-		item->show_transition_duration =
-			(uint32_t)obs_data_get_int(show_data, "duration");
+		obs_sceneitem_transition_load(item, show_data, true);
 		obs_data_release(show_data);
 	}
 
 	obs_data_t *hide_data = obs_data_get_obj(item_data, "hide_transition");
 	if (hide_data) {
-		const char *id = obs_data_get_string(hide_data, "id");
-		if (id && strlen(id)) {
-			const char *tn = obs_data_get_string(hide_data, "name");
-			obs_data_t *s =
-				obs_data_get_obj(hide_data, "transition");
-			obs_source_t *t = obs_source_create_private(id, tn, s);
-			obs_sceneitem_set_hide_transition(item, t);
-			obs_source_release(t);
-			obs_data_release(s);
-		}
-		item->hide_transition_duration =
-			(uint32_t)obs_data_get_int(hide_data, "duration");
+		obs_sceneitem_transition_load(item, hide_data, false);
 		obs_data_release(hide_data);
 	}
 
@@ -1001,37 +1001,11 @@ static void scene_save_item(obs_data_array_t *array,
 
 	obs_data_set_string(item_data, "scale_filter", scale_filter);
 
-	obs_data_t *show_data = obs_data_create();
-	if (item->show_transition) {
-		obs_data_set_string(
-			show_data, "id",
-			obs_source_get_unversioned_id(item->show_transition));
-		obs_data_set_string(show_data, "versioned_id",
-				    obs_source_get_id(item->show_transition));
-		obs_data_set_string(show_data, "name",
-				    obs_source_get_name(item->show_transition));
-		obs_data_t *s = obs_source_get_settings(item->show_transition);
-		obs_data_set_obj(show_data, "transition", s);
-		obs_data_release(s);
-	}
-	obs_data_set_int(show_data, "duration", item->show_transition_duration);
+	obs_data_t *show_data = obs_sceneitem_transition_save(item, true);
 	obs_data_set_obj(item_data, "show_transition", show_data);
 	obs_data_release(show_data);
 
-	obs_data_t *hide_data = obs_data_create();
-	if (item->hide_transition) {
-		obs_data_set_string(
-			hide_data, "id",
-			obs_source_get_unversioned_id(item->hide_transition));
-		obs_data_set_string(hide_data, "versioned_id",
-				    obs_source_get_id(item->hide_transition));
-		obs_data_set_string(hide_data, "name",
-				    obs_source_get_name(item->hide_transition));
-		obs_data_t *s = obs_source_get_settings(item->hide_transition);
-		obs_data_set_obj(hide_data, "transition", s);
-		obs_data_release(s);
-	}
-	obs_data_set_int(hide_data, "duration", item->hide_transition_duration);
+	obs_data_t *hide_data = obs_sceneitem_transition_save(item, false);
 	obs_data_set_obj(item_data, "hide_transition", hide_data);
 	obs_data_release(hide_data);
 
@@ -1309,7 +1283,8 @@ const struct obs_source_info scene_info = {
 	.id = "scene",
 	.type = OBS_SOURCE_TYPE_SCENE,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE | OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_DO_NOT_DUPLICATE |
+			OBS_SOURCE_SRGB,
 	.get_name = scene_getname,
 	.create = scene_create,
 	.destroy = scene_destroy,
@@ -1327,7 +1302,7 @@ const struct obs_source_info group_info = {
 	.id = "group",
 	.type = OBS_SOURCE_TYPE_SCENE,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_COMPOSITE,
+			OBS_SOURCE_COMPOSITE | OBS_SOURCE_SRGB,
 	.get_name = group_getname,
 	.create = scene_create,
 	.destroy = scene_destroy,
@@ -2017,13 +1992,13 @@ void obs_sceneitem_remove(obs_sceneitem_t *item)
 
 	set_visibility(item, false);
 
-	obs_sceneitem_set_show_transition(item, NULL);
-	obs_sceneitem_set_hide_transition(item, NULL);
-
 	signal_item_remove(item);
 	detach_sceneitem(item);
 
 	full_unlock(scene);
+
+	obs_sceneitem_set_show_transition(item, NULL);
+	obs_sceneitem_set_hide_transition(item, NULL);
 
 	obs_sceneitem_release(item);
 }
@@ -2063,6 +2038,7 @@ static void signal_parent(obs_scene_t *parent, const char *command,
 
 struct passthrough {
 	obs_data_array_t *ids;
+	obs_data_array_t *scenes_and_groups;
 	bool all_items;
 };
 
@@ -2105,6 +2081,32 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_release(temp);
 	}
 
+	obs_source_t *item_source = obs_sceneitem_get_source(item);
+
+	if (obs_source_is_group(item_source)) {
+		obs_data_t *temp = obs_data_create();
+		obs_data_array_t *nids = obs_data_array_create();
+
+		obs_data_set_string(temp, "scene_name",
+				    obs_source_get_name(item_source));
+		obs_data_set_bool(temp, "is_group", true);
+		obs_data_set_string(
+			temp, "group_parent",
+			obs_source_get_name(obs_scene_get_source(scene)));
+
+		struct passthrough npass = {nids, pass->scenes_and_groups,
+					    pass->all_items};
+		obs_sceneitem_group_enum_items(item, save_transform_states,
+					       (void *)&npass);
+
+		obs_data_set_array(temp, "items", nids);
+
+		obs_data_array_push_back(pass->scenes_and_groups, temp);
+
+		obs_data_release(temp);
+		obs_data_array_release(nids);
+	}
+
 	UNUSED_PARAMETER(scene);
 	return true;
 }
@@ -2112,15 +2114,27 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
 {
 	obs_data_t *wrapper = obs_data_create();
+	obs_data_array_t *scenes_and_groups = obs_data_array_create();
 	obs_data_array_t *item_ids = obs_data_array_create();
-	struct passthrough pass = {item_ids, all_items};
+
+	struct passthrough pass = {item_ids, scenes_and_groups, all_items};
+
+	obs_data_t *temp = obs_data_create();
+
+	obs_data_set_string(temp, "scene_name",
+			    obs_source_get_name(obs_scene_get_source(scene)));
+	obs_data_set_bool(temp, "is_group", false);
 
 	obs_scene_enum_items(scene, save_transform_states, (void *)&pass);
-	obs_data_set_array(wrapper, "item_ids", item_ids);
-	obs_data_set_string(wrapper, "scene_name",
-			    obs_source_get_name(obs_scene_get_source(scene)));
+
+	obs_data_set_array(temp, "items", item_ids);
+	obs_data_array_push_back(scenes_and_groups, temp);
+
+	obs_data_set_array(wrapper, "scenes_and_groups", scenes_and_groups);
 
 	obs_data_array_release(item_ids);
+	obs_data_array_release(scenes_and_groups);
+	obs_data_release(temp);
 
 	return wrapper;
 }
@@ -2155,18 +2169,44 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	obs_sceneitem_defer_update_end(item);
 }
 
+void iterate_scenes_and_groups_transform_states(obs_data_t *data, void *vp)
+{
+	obs_data_array_t *items = obs_data_get_array(data, "items");
+	obs_source_t *scene_source =
+		obs_get_source_by_name(obs_data_get_string(data, "scene_name"));
+	obs_scene_t *scene = obs_scene_from_source(scene_source);
+
+	if (obs_data_get_bool(data, "is_group")) {
+		obs_source_t *parent_source = obs_get_source_by_name(
+			obs_data_get_string(data, "group_parent"));
+		obs_scene_t *parent = obs_scene_from_source(parent_source);
+		obs_sceneitem_t *group = obs_scene_get_group(
+			parent, obs_data_get_string(data, "scene_name"));
+		scene = obs_sceneitem_group_get_scene(group);
+
+		obs_source_release(parent_source);
+	}
+
+	obs_data_array_enum(items, load_transform_states, (void *)scene);
+
+	UNUSED_PARAMETER(vp);
+
+	obs_data_array_release(items);
+	obs_source_release(scene_source);
+}
+
 void obs_scene_load_transform_states(const char *data)
 {
 	obs_data_t *dat = obs_data_create_from_json(data);
-	obs_data_array_t *item_ids = obs_data_get_array(dat, "item_ids");
-	obs_source_t *source =
-		obs_get_source_by_name(obs_data_get_string(dat, "scene_name"));
-	obs_scene_t *scene = obs_scene_from_source(source);
-	obs_data_array_enum(item_ids, load_transform_states, (void *)scene);
+
+	obs_data_array_t *scenes_and_groups =
+		obs_data_get_array(dat, "scenes_and_groups");
+
+	obs_data_array_enum(scenes_and_groups,
+			    iterate_scenes_and_groups_transform_states, NULL);
 
 	obs_data_release(dat);
-	obs_data_array_release(item_ids);
-	obs_source_release(source);
+	obs_data_array_release(scenes_and_groups);
 }
 
 void obs_sceneitem_select(obs_sceneitem_t *item, bool select)
@@ -3349,6 +3389,11 @@ bool obs_source_is_group(const obs_source_t *source)
 	return source && strcmp(source->info.id, group_info.id) == 0;
 }
 
+bool obs_source_is_scene(const obs_source_t *source)
+{
+	return source && strcmp(source->info.id, scene_info.id) == 0;
+}
+
 bool obs_scene_is_group(const obs_scene_t *scene)
 {
 	return scene ? scene->is_group : false;
@@ -3508,4 +3553,52 @@ void obs_sceneitem_do_transition(obs_sceneitem_t *item, bool visible)
 		obs_transition_start(transition, OBS_TRANSITION_MODE_AUTO,
 				     duration, item->source);
 	}
+}
+
+void obs_sceneitem_transition_load(struct obs_scene_item *item,
+				   obs_data_t *data, bool show)
+{
+	if (!item || !data)
+		return;
+	const char *id = obs_data_get_string(data, "id");
+	if (id && strlen(id)) {
+		const char *tn = obs_data_get_string(data, "name");
+		obs_data_t *s = obs_data_get_obj(data, "transition");
+		obs_source_t *t = obs_source_create_private(id, tn, s);
+		if (show)
+			obs_sceneitem_set_show_transition(item, t);
+		else
+			obs_sceneitem_set_hide_transition(item, t);
+		obs_source_release(t);
+		obs_data_release(s);
+	}
+	if (show)
+		item->show_transition_duration =
+			(uint32_t)obs_data_get_int(data, "duration");
+	else
+		item->hide_transition_duration =
+			(uint32_t)obs_data_get_int(data, "duration");
+}
+
+obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
+					  bool show)
+{
+	obs_data_t *data = obs_data_create();
+	struct obs_source *transition = show ? item->show_transition
+					     : item->hide_transition;
+	if (transition) {
+		obs_data_set_string(data, "id",
+				    obs_source_get_unversioned_id(transition));
+		obs_data_set_string(data, "versioned_id",
+				    obs_source_get_id(transition));
+		obs_data_set_string(data, "name",
+				    obs_source_get_name(transition));
+		obs_data_t *s = obs_source_get_settings(transition);
+		obs_data_set_obj(data, "transition", s);
+		obs_data_release(s);
+	}
+	obs_data_set_int(data, "duration",
+			 show ? item->show_transition_duration
+			      : item->hide_transition_duration);
+	return data;
 }

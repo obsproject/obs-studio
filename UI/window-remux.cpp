@@ -865,7 +865,7 @@ void OBSRemux::AutoRemux(QString inFile, QString outFile)
 {
 	if (inFile != "" && outFile != "" && autoRemux) {
 		emit remux(inFile, outFile);
-		autoRemuxFile = inFile;
+		autoRemuxFile = outFile;
 	}
 }
 

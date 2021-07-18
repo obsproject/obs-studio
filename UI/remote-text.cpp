@@ -67,6 +67,7 @@ void RemoteTextThread::run()
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error);
+		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
@@ -88,6 +89,9 @@ void RemoteTextThread::run()
 
 		code = curl_easy_perform(curl.get());
 		if (code != CURLE_OK) {
+			blog(LOG_WARNING,
+			     "RemoteTextThread: HTTP request failed. %s",
+			     error);
 			emit Result(QString(), QT_UTF8(error));
 		} else {
 			emit Result(QT_UTF8(str.c_str()), QString());
@@ -153,6 +157,7 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_in);
+		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);

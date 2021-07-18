@@ -22,6 +22,16 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
+float srgb_nonlinear_to_linear_channel(float u)
+{
+	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
+}
+
+float3 srgb_nonlinear_to_linear(float3 v)
+{
+	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+}
+
 float4 PSSwipe(VertData v_in) : TARGET
 {
 	float2 swipe_uv = v_in.uv + swipe_val;
@@ -32,6 +42,7 @@ float4 PSSwipe(VertData v_in) : TARGET
 		   ? tex_b.Sample(textureSampler, v_in.uv)
 		   : tex_a.Sample(textureSampler, swipe_uv);
 
+	outc.rgb = srgb_nonlinear_to_linear(outc.rgb);
 	return outc;
 }
 

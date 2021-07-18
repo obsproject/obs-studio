@@ -415,10 +415,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		}
 
 		if (black && !prevFTBSource) {
+			prevFTBSource = source;
 			source = nullptr;
-			prevFTBSource =
-				obs_transition_get_active_source(transition);
-			obs_source_release(prevFTBSource);
 		} else if (black && prevFTBSource) {
 			source = prevFTBSource;
 			prevFTBSource = nullptr;
@@ -752,6 +750,8 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 			}
 		}
 	}
+
+	UpdateContextBar(true);
 
 	if (scene) {
 		bool userSwitched = (!force && !disableSaving);
@@ -1151,7 +1151,28 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 
 		QString id = action->property("transition_id").toString();
 		OBSSceneItem sceneItem = main->GetCurrentSceneItem();
+		int64_t sceneItemId = obs_sceneitem_get_id(sceneItem);
+		std::string sceneName =
+			obs_source_get_name(obs_scene_get_source(
+				obs_sceneitem_get_scene(sceneItem)));
 
+		auto undo_redo = [sceneName, sceneItemId,
+				  visible](const std::string &data) {
+			obs_source_t *source =
+				obs_get_source_by_name(sceneName.c_str());
+			obs_scene_t *scene = obs_scene_from_source(source);
+			obs_sceneitem_t *i = obs_scene_find_sceneitem_by_id(
+				scene, sceneItemId);
+			if (i) {
+				obs_data_t *dat =
+					obs_data_create_from_json(data.c_str());
+				obs_sceneitem_transition_load(i, dat, visible);
+				obs_data_release(dat);
+			}
+			obs_source_release(source);
+		};
+		obs_data_t *oldTransitionData =
+			obs_sceneitem_transition_save(sceneItem, visible);
 		if (id.isNull() || id.isEmpty()) {
 			if (visible)
 				obs_sceneitem_set_show_transition(sceneItem,
@@ -1203,6 +1224,20 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			if (obs_source_configurable(tr))
 				CreatePropertiesWindow(tr);
 		}
+		obs_data_t *newTransitionData =
+			obs_sceneitem_transition_save(sceneItem, visible);
+		std::string undo_data(obs_data_get_json(oldTransitionData));
+		std::string redo_data(obs_data_get_json(newTransitionData));
+		if (undo_data.compare(redo_data) != 0)
+			main->undo_s.add_action(
+				QTStr(visible ? "Undo.ShowTransition"
+					      : "Undo.HideTransition")
+					.arg(obs_source_get_name(
+						obs_sceneitem_get_source(
+							sceneItem))),
+				undo_redo, undo_redo, undo_data, redo_data);
+		obs_data_release(newTransitionData);
+		obs_data_release(oldTransitionData);
 	};
 	if (visible) {
 		auto setDuration = [this](int duration) {
@@ -1522,6 +1557,14 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 {
 	ui->transitions->setEnabled(enable);
 
+	if (!enable) {
+		ui->transitionProps->setEnabled(false);
+	} else {
+		bool configurable =
+			obs_source_configurable(GetCurrentTransition());
+		ui->transitionProps->setEnabled(configurable);
+	}
+
 	if (!IsPreviewProgramMode())
 		return;
 
@@ -1648,6 +1691,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programScene = nullptr;
 		swapScene = nullptr;
+		prevFTBSource = nullptr;
 
 		for (QuickTransition &qt : quickTransitions)
 			qt.button = nullptr;

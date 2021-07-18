@@ -3,6 +3,7 @@
 #include "platform.hpp"
 
 #include <string>
+#include <numeric>
 
 #define MODE_ID_AUTO -1
 
@@ -21,6 +22,7 @@ public:
 	BMDDisplayModeFlags GetDisplayModeFlags(void) const;
 	long long GetId(void) const;
 	const std::string &GetName(void) const;
+	bool IsEqualFrameRate(int64_t num, int64_t den);
 
 	void SetMode(IDeckLinkDisplayMode *mode);
 

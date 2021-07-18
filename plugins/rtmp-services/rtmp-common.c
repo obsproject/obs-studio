@@ -538,6 +538,8 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 	return ppts;
 }
 
+static int get_bitrate_matrix_max(json_t *array);
+
 static void apply_video_encoder_settings(obs_data_t *settings,
 					 json_t *recommended)
 {
@@ -559,13 +561,21 @@ static void apply_video_encoder_settings(obs_data_t *settings,
 
 	obs_data_item_release(&enc_item);
 
+	int max_bitrate = 0;
+	item = json_object_get(recommended, "bitrate matrix");
+	if (json_is_array(item)) {
+		max_bitrate = get_bitrate_matrix_max(item);
+	}
+
 	item = json_object_get(recommended, "max video bitrate");
-	if (json_is_integer(item)) {
-		int max_bitrate = (int)json_integer_value(item);
-		if (obs_data_get_int(settings, "bitrate") > max_bitrate) {
-			obs_data_set_int(settings, "bitrate", max_bitrate);
-			obs_data_set_int(settings, "buffer_size", max_bitrate);
-		}
+	if (!max_bitrate && json_is_integer(item)) {
+		max_bitrate = (int)json_integer_value(item);
+	}
+
+	if (max_bitrate &&
+	    obs_data_get_int(settings, "bitrate") > max_bitrate) {
+		obs_data_set_int(settings, "bitrate", max_bitrate);
+		obs_data_set_int(settings, "buffer_size", max_bitrate);
 	}
 
 	item = json_object_get(recommended, "bframes");
@@ -741,6 +751,41 @@ static void rtmp_common_get_max_fps(void *data, int *fps)
 	*fps = service->max_fps;
 }
 
+static int get_bitrate_matrix_max(json_t *array)
+{
+	size_t index;
+	json_t *item;
+
+	struct obs_video_info ovi;
+	if (!obs_get_video_info(&ovi))
+		return 0;
+
+	double cur_fps = (double)ovi.fps_num / (double)ovi.fps_den;
+
+	json_array_foreach (array, index, item) {
+		if (!json_is_object(item))
+			continue;
+
+		const char *res = get_string_val(item, "res");
+		double fps = (double)get_int_val(item, "fps") + 0.0000001;
+		int bitrate = get_int_val(item, "max bitrate");
+
+		if (!res)
+			continue;
+
+		int cx, cy;
+		int c = sscanf(res, "%dx%d", &cx, &cy);
+		if (c != 2)
+			continue;
+
+		if (ovi.output_width == cx && ovi.output_height == cy &&
+		    cur_fps <= fps)
+			return bitrate;
+	}
+
+	return 0;
+}
+
 static void rtmp_common_get_max_bitrate(void *data, int *video_bitrate,
 					int *audio_bitrate)
 {
@@ -768,9 +813,19 @@ static void rtmp_common_get_max_bitrate(void *data, int *video_bitrate,
 	}
 
 	if (video_bitrate) {
-		item = json_object_get(recommended, "max video bitrate");
-		if (json_is_integer(item))
-			*video_bitrate = (int)json_integer_value(item);
+		int bitrate = 0;
+		item = json_object_get(recommended, "bitrate matrix");
+		if (json_is_array(item)) {
+			bitrate = get_bitrate_matrix_max(item);
+		}
+		if (!bitrate) {
+			item = json_object_get(recommended,
+					       "max video bitrate");
+			if (json_is_integer(item))
+				bitrate = (int)json_integer_value(item);
+		}
+
+		*video_bitrate = bitrate;
 	}
 
 fail:

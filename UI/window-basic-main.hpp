@@ -217,6 +217,7 @@ private:
 	QPointer<OBSBasicFilters> filters;
 	QPointer<QDockWidget> statsDock;
 	QPointer<OBSAbout> about;
+	QPointer<OBSMissingFiles> missDialog;
 
 	OBSLogViewer *logView = nullptr;
 
@@ -376,10 +377,11 @@ private:
 	void ChangeSceneCollection();
 	void LogScenes();
 
-	void LoadProfile();
 	void ResetProfileData();
 	bool AddProfile(bool create_new, const char *title, const char *text,
 			const char *init_text = nullptr, bool rename = false);
+	bool CreateProfile(const std::string &newName, bool create_new,
+			   bool showWizardChecked, bool rename = false);
 	void DeleteProfile(const char *profile_name, const char *profile_dir);
 	void RefreshProfiles();
 	void ChangeProfile();
@@ -486,8 +488,6 @@ private:
 	QList<QDialog *> modalDialogs;
 	QList<QMessageBox *> visMsgBoxes;
 
-	OBSMissingFiles *missDialog;
-
 	QList<QPoint> visDlgPositions;
 
 	QByteArray startingDockLayout;
@@ -553,6 +553,9 @@ private:
 
 	QPointer<QObject> screenshotData;
 
+	void MoveSceneItem(enum obs_order_movement movement,
+			   const QString &action_name);
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -607,6 +610,10 @@ public slots:
 
 	bool AddSceneCollection(bool create_new,
 				const QString &name = QString());
+
+	bool NewProfile(const QString &name);
+	bool DuplicateProfile(const QString &name);
+	void DeleteProfile(const QString &profileName);
 
 	void UpdatePatronJson(const QString &text, const QString &error);
 
@@ -859,6 +866,25 @@ public:
 
 	void ShowStatusBarMessage(const QString &message);
 
+	static OBSData
+	BackupScene(obs_scene_t *scene,
+		    std::vector<obs_source_t *> *sources = nullptr);
+	void CreateSceneUndoRedoAction(const QString &action_name,
+				       OBSData undo_data, OBSData redo_data);
+
+	static inline OBSData
+	BackupScene(obs_source_t *scene_source,
+		    std::vector<obs_source_t *> *sources = nullptr)
+	{
+		obs_scene_t *scene = obs_scene_from_source(scene_source);
+		return BackupScene(scene, sources);
+	}
+
+	void CreateFilterPasteUndoRedoAction(const QString &text,
+					     obs_source_t *source,
+					     obs_data_array_t *undo_array,
+					     obs_data_array_t *redo_array);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -953,7 +979,7 @@ private slots:
 	void on_actionNewProfile_triggered();
 	void on_actionDupProfile_triggered();
 	void on_actionRenameProfile_triggered();
-	void on_actionRemoveProfile_triggered();
+	void on_actionRemoveProfile_triggered(bool skipConfirmation = false);
 	void on_actionImportProfile_triggered();
 	void on_actionExportProfile_triggered();
 

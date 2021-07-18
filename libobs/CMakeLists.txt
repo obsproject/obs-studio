@@ -334,6 +334,7 @@ set(libobs_graphics_HEADERS
 	graphics/libnsgif/libnsgif.h
 	graphics/device-exports.h
 	graphics/image-file.h
+	graphics/srgb.h
 	graphics/vec2.h
 	graphics/vec4.h
 	graphics/matrix3.h

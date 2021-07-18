@@ -1526,6 +1526,13 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	pthread_mutex_unlock(mutex);
 }
 
+void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+			  void *param)
+{
+	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
+		 param);
+}
+
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
 {
 	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex, enum_proc,
@@ -1904,12 +1911,7 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 		if (source) {
 			if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 				obs_transition_load(source, source_data);
-			obs_source_load(source);
-			for (size_t i = source->filters.num; i > 0; i--) {
-				obs_source_t *filter =
-					source->filters.array[i - 1];
-				obs_source_load(filter);
-			}
+			obs_source_load2(source);
 			if (cb)
 				cb(private_data, source);
 		}
@@ -2242,6 +2244,15 @@ void *obs_obj_get_data(void *obj)
 		return NULL;
 
 	return context->data;
+}
+
+bool obs_obj_is_private(void *obj)
+{
+	struct obs_context_data *context = obj;
+	if (!context)
+		return false;
+
+	return context->private;
 }
 
 bool obs_set_audio_monitoring_device(const char *name, const char *id)

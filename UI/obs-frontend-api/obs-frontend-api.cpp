@@ -204,10 +204,34 @@ char *obs_frontend_get_current_profile(void)
 				   : nullptr;
 }
 
+char *obs_frontend_get_current_profile_path(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_current_profile_path()
+				   : nullptr;
+}
+
 void obs_frontend_set_current_profile(const char *profile)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_current_profile(profile);
+}
+
+void obs_frontend_create_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_create_profile(name);
+}
+
+void obs_frontend_duplicate_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_duplicate_profile(name);
+}
+
+void obs_frontend_delete_profile(const char *profile)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_profile(profile);
 }
 
 void obs_frontend_streaming_start(void)
