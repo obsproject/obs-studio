@@ -883,11 +883,8 @@ Qt::ItemFlags SourceTreeModel::flags(const QModelIndex &index) const
 	obs_sceneitem_t *item = items[index.row()];
 	bool is_group = obs_sceneitem_is_group(item);
 
-	/* XXX: Disable drag/drop on Linux until Qt issues are fixed */
 	return QAbstractListModel::flags(index) | Qt::ItemIsEditable |
-#if defined(_WIN32) || defined(__APPLE__)
 	       Qt::ItemIsDragEnabled |
-#endif
 	       (is_group ? Qt::ItemIsDropEnabled : Qt::NoItemFlags);
 }
 

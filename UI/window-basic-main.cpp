@@ -233,11 +233,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSProxyStyle);
 
-	/* XXX: Disable drag/drop on Linux until Qt issues are fixed */
-#if !defined(_WIN32) && !defined(__APPLE__)
-	ui->scenes->setDragDropMode(QAbstractItemView::NoDragDrop);
-#endif
-
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
