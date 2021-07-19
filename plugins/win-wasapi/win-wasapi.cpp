@@ -41,7 +41,7 @@ class WASAPISource {
 	bool isInputDevice;
 	bool useDeviceTiming = false;
 	bool isDefaultDevice = false;
-	bool hadDefaultChangeEvent = false;
+
 	bool reconnecting = false;
 	bool previouslyFailed = false;
 	WinHandle reconnectThread;
@@ -76,8 +76,6 @@ class WASAPISource {
 
 	bool TryInitialize();
 	void UpdateSettings(obs_data_t *settings);
-	void RegisterNotificationCallback();
-	void UnRegisterNotificationCallback();
 
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
@@ -641,9 +639,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	os_set_thread_name("win-wasapi: capture thread");
 
 	while (WaitForCaptureSignal(2, sigs, dur)) {
-		if (source->hadDefaultChangeEvent || !source->ProcessCaptureData()) {
-			ResetEvent(source->receiveSignal);
-			source->hadDefaultChangeEvent = false;
+		if (!source->ProcessCaptureData()) {
 			reconnect = true;
 			break;
 		}
@@ -678,8 +674,6 @@ void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
 		return;
 	if (id && default_id.compare(id) == 0)
 		return;
-
-	hadDefaultChangeEvent = true;
 
 	blog(LOG_INFO, "[WASAPISource::SetDefaultDevice][%08X] Default %s device changed",
 	     this, isInputDevice ? "input" : "output");
