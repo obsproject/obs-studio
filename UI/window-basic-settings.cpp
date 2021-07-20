@@ -1358,8 +1358,8 @@ void OBSBasicSettings::LoadGeneralSettings()
 		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
 	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
-		config_get_int(GetGlobalConfig(), "BasicWindow",
-			       "MultiviewLayout")));
+		QVariant::fromValue(config_get_int(
+			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
 
 	prevLangIndex = ui->language->currentIndex();
 
