@@ -3209,9 +3209,13 @@ build_current_order_info(obs_scene_t *scene,
 	DARRAY(struct obs_sceneitem_order_info) items;
 	da_init(items);
 
+	struct obs_sceneitem_order_info info;
+
 	obs_sceneitem_t *item = scene->first_item;
 	while (item) {
-		da_push_back(items, &item);
+		info.group = NULL;
+		info.item = item;
+		da_push_back(items, &info);
 
 		if (item->is_group) {
 			obs_scene_t *sub_scene = item->source->context.data;
@@ -3221,7 +3225,9 @@ build_current_order_info(obs_scene_t *scene,
 			obs_sceneitem_t *sub_item = sub_scene->first_item;
 
 			while (sub_item) {
-				da_push_back(items, &item);
+				info.group = item;
+				info.item = sub_item;
+				da_push_back(items, &info);
 
 				sub_item = sub_item->next;
 			}
