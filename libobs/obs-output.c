@@ -1222,7 +1222,7 @@ static bool add_caption(struct obs_output *output, struct encoder_packet *out)
 	sei_init(&sei, 0.0);
 
 	da_init(out_data);
-	da_push_back_array(out_data, &ref, sizeof(ref));
+	da_push_back_array(out_data, (uint8_t *)&ref, sizeof(ref));
 	da_push_back_array(out_data, out->data, out->size);
 
 	if (output->caption_data.size > 0) {
