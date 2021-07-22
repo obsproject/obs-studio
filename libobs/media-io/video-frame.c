@@ -37,34 +37,40 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 	case VIDEO_FORMAT_NONE:
 		return;
 
-	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_I420: {
 		size = width * height;
 		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
-		size += (width / 2) * (height / 2);
+		const uint32_t half_width = (width + 1) / 2;
+		const uint32_t half_height = (height + 1) / 2;
+		const uint32_t quarter_area = half_width * half_height;
+		size += quarter_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[1] = size;
-		size += (width / 2) * (height / 2);
+		size += quarter_area;
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
 		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
 		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
 		frame->linesize[0] = width;
-		frame->linesize[1] = width / 2;
-		frame->linesize[2] = width / 2;
+		frame->linesize[1] = half_width;
+		frame->linesize[2] = half_width;
 		break;
+	}
 
-	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_NV12: {
 		size = width * height;
 		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
-		size += (width / 2) * (height / 2) * 2;
+		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
+		size += cbcr_width * ((height + 1) / 2);
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
 		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
 		frame->linesize[0] = width;
-		frame->linesize[1] = width;
+		frame->linesize[1] = cbcr_width;
 		break;
+	}
 
 	case VIDEO_FORMAT_Y800:
 		size = width * height;
@@ -75,12 +81,15 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
-	case VIDEO_FORMAT_UYVY:
-		size = width * height * 2;
+	case VIDEO_FORMAT_UYVY: {
+		const uint32_t double_width =
+			((width + 1) & (UINT32_MAX - 1)) * 2;
+		size = double_width * height;
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
-		frame->linesize[0] = width * 2;
+		frame->linesize[0] = double_width;
 		break;
+	}
 
 	case VIDEO_FORMAT_RGBA:
 	case VIDEO_FORMAT_BGRA:
@@ -110,31 +119,37 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[0] = width * 3;
 		break;
 
-	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I422: {
 		size = width * height;
 		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
-		size += (width / 2) * height;
+		const uint32_t half_width = (width + 1) / 2;
+		const uint32_t half_area = half_width * height;
+		size += half_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[1] = size;
-		size += (width / 2) * height;
+		size += half_area;
 		ALIGN_SIZE(size, alignment);
 		frame->data[0] = bmalloc(size);
 		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
 		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
 		frame->linesize[0] = width;
-		frame->linesize[1] = width / 2;
-		frame->linesize[2] = width / 2;
+		frame->linesize[1] = half_width;
+		frame->linesize[2] = half_width;
 		break;
+	}
 
-	case VIDEO_FORMAT_I40A:
+	case VIDEO_FORMAT_I40A: {
 		size = width * height;
 		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
-		size += (width / 2) * (height / 2);
+		const uint32_t half_width = (width + 1) / 2;
+		const uint32_t half_height = (height + 1) / 2;
+		const uint32_t quarter_area = half_width * half_height;
+		size += quarter_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[1] = size;
-		size += (width / 2) * (height / 2);
+		size += quarter_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[2] = size;
 		size += width * height;
@@ -144,19 +159,22 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
 		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
 		frame->linesize[0] = width;
-		frame->linesize[1] = width / 2;
-		frame->linesize[2] = width / 2;
+		frame->linesize[1] = half_width;
+		frame->linesize[2] = half_width;
 		frame->linesize[3] = width;
 		break;
+	}
 
-	case VIDEO_FORMAT_I42A:
+	case VIDEO_FORMAT_I42A: {
 		size = width * height;
 		ALIGN_SIZE(size, alignment);
 		offsets[0] = size;
-		size += (width / 2) * height;
+		const uint32_t half_width = (width + 1) / 2;
+		const uint32_t half_area = half_width * height;
+		size += half_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[1] = size;
-		size += (width / 2) * height;
+		size += half_area;
 		ALIGN_SIZE(size, alignment);
 		offsets[2] = size;
 		size += width * height;
@@ -166,10 +184,11 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
 		frame->data[3] = (uint8_t *)frame->data[0] + offsets[2];
 		frame->linesize[0] = width;
-		frame->linesize[1] = width / 2;
-		frame->linesize[2] = width / 2;
+		frame->linesize[1] = half_width;
+		frame->linesize[2] = half_width;
 		frame->linesize[3] = width;
 		break;
+	}
 
 	case VIDEO_FORMAT_YUVA:
 		size = width * height;
