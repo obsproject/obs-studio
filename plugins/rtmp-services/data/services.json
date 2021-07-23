@@ -285,6 +285,26 @@
             }
         },
         {
+            "name": "Lovecast",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live-a.lovecastapp.com:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 8000,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 30
+            }
+        },
+        {
             "name": "Luzento.com - RTMP",
             "servers": [
                 {
