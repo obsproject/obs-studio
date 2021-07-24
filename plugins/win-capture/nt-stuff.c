@@ -106,7 +106,7 @@ void rtl_init_str(UNICODE_STRING *unistr, const wchar_t *str)
 }
 
 #define MAKE_NT_OPEN_FUNC(func_name, nt_name, access)             \
-	HANDLE func_name(const wchar_t *name)              \
+	HANDLE func_name(const wchar_t *name)                     \
 	{                                                         \
 		static bool initialized = false;                  \
 		static NTOPENFUNC open = NULL;                    \
