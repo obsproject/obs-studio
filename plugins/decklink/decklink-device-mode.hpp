@@ -3,7 +3,6 @@
 #include "platform.hpp"
 
 #include <string>
-#include <numeric>
 
 #define MODE_ID_AUTO -1
 

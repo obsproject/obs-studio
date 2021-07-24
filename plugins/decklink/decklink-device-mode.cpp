@@ -68,20 +68,16 @@ const std::string &DeckLinkDeviceMode::GetName(void) const
 
 bool DeckLinkDeviceMode::IsEqualFrameRate(int64_t num, int64_t den)
 {
-	if (!mode)
-		return false;
+	bool equal = false;
 
-	BMDTimeValue timeValue;
-	BMDTimeScale timeScale;
-	if (mode->GetFrameRate(&timeValue, &timeScale) != S_OK)
-		return false;
+	if (mode) {
+		BMDTimeValue frameDuration;
+		BMDTimeScale timeScale;
+		if (SUCCEEDED(mode->GetFrameRate(&frameDuration, &timeScale)))
+			equal = timeScale * den == frameDuration * num;
+	}
 
-	// Calculate greatest common divisor of both values to properly compare framerates
-	int decklinkGcd = std::gcd(timeScale, timeValue);
-	int inputGcd = std::gcd(num, den);
-
-	return ((timeScale / decklinkGcd) == (num / inputGcd) &&
-		(timeValue / decklinkGcd) == (den / inputGcd));
+	return equal;
 }
 
 void DeckLinkDeviceMode::SetMode(IDeckLinkDisplayMode *mode_)
