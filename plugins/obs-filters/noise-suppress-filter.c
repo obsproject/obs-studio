@@ -235,7 +235,7 @@ static void *nvafx_initialize(void *data)
 	if (!ng->handle[0]) {
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 
-		for (int i = 0; i < ng->channels; i++) {
+		for (size_t i = 0; i < ng->channels; i++) {
 			err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER,
 						 &ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -397,7 +397,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		pthread_mutex_lock(&ng->nvafx_mutex);
 		if (ng->nvafx_initialized) {
 			int err;
-			for (int i = 0; i < ng->channels; i++) {
+			for (size_t i = 0; i < ng->channels; i++) {
 				err = NvAFX_SetFloat(
 					ng->handle[i],
 					NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
@@ -516,7 +516,7 @@ bool load_nvafx(void)
 		return false;
 	}
 
-	pthread_mutex_init(&nvafx_initializer_mutex, PTHREAD_MUTEX_DEFAULT);
+	pthread_mutex_init(&nvafx_initializer_mutex, NULL);
 
 #define LOAD_SYM_FROM_LIB(sym, lib, dll)                                   \
 	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                 \
@@ -601,7 +601,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
 
-		pthread_mutex_init(&ng->nvafx_mutex, PTHREAD_MUTEX_DEFAULT);
+		pthread_mutex_init(&ng->nvafx_mutex, NULL);
 
 		info("NVAFX SDK redist path was found here %s", sdk_path);
 	}
@@ -1004,9 +1004,9 @@ static obs_properties_t *noise_suppress_properties(void *data)
 #endif
 
 #ifdef LIBNVAFX_ENABLED
-	obs_property_t *nvafx_slider = obs_properties_add_float_slider(
-		ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
-		0.01f);
+	obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
+					TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
+					0.01f);
 
 	if (!nvafx_loaded) {
 		obs_property_list_item_disable(method, 2, true);

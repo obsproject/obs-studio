@@ -233,11 +233,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSProxyStyle);
 
-	/* XXX: Disable drag/drop on Linux until Qt issues are fixed */
-#if !defined(_WIN32) && !defined(__APPLE__)
-	ui->scenes->setDragDropMode(QAbstractItemView::NoDragDrop);
-#endif
-
 	startingDockLayout = saveState();
 
 	statsDock = new OBSDock();
@@ -264,6 +259,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		}
 	}
 
+	qRegisterMetaType<int64_t>("int64_t");
+	qRegisterMetaType<uint32_t>("uint32_t");
 	qRegisterMetaType<OBSScene>("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>("OBSSource");
@@ -900,6 +897,16 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 	int child_indent = 1 + indent_count;
 	obs_source_enum_filters(source, LogFilter,
 				(void *)(intptr_t)child_indent);
+
+	obs_source_t *show_tn = obs_sceneitem_get_show_transition(item);
+	obs_source_t *hide_tn = obs_sceneitem_get_hide_transition(item);
+	if (show_tn)
+		blog(LOG_INFO, "    %s- show: '%s' (%s)", indent.c_str(),
+		     obs_source_get_name(show_tn), obs_source_get_id(show_tn));
+	if (hide_tn)
+		blog(LOG_INFO, "    %s- hide: '%s' (%s)", indent.c_str(),
+		     obs_source_get_name(hide_tn), obs_source_get_id(hide_tn));
+
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, LogSceneItem,
 					       (void *)(intptr_t)child_indent);
@@ -1161,7 +1168,8 @@ retryScene:
 
 	LogScenes();
 
-	if (obs_missing_files_count(files) > 0) {
+	if (obs_missing_files_count(files) > 0 &&
+	    !App()->IsMissingFilesCheckDisabled()) {
 		/* the window hasn't fully initialized by this point on macOS,
 		 * so put this at the end of the current task queue. Fixes a
 		 * bug where the window be behind OBS on startup */
@@ -1279,13 +1287,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = primaryScreen->size().width();
 	uint32_t cy = primaryScreen->size().height();
 
-#ifdef SUPPORTS_FRACTIONAL_SCALING
 	cx *= devicePixelRatioF();
 	cy *= devicePixelRatioF();
-#elif
-	cx *= devicePixelRatio();
-	cy *= devicePixelRatio();
-#endif
 
 	bool oldResolutionDefaults = config_get_bool(
 		App()->GlobalConfig(), "General", "Pre19Defaults");
@@ -1715,15 +1718,15 @@ void OBSBasic::OBSInit()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		throw "Failed to get scene collection name";
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		throw "Failed to create scene collection file name";
 
@@ -1816,15 +1819,6 @@ void OBSBasic::OBSInit()
 	editPropertiesMode = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "EditPropertiesMode");
 
-	if (!opt_studio_mode) {
-		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
-						      "BasicWindow",
-						      "PreviewProgramMode"));
-	} else {
-		SetPreviewProgramMode(true);
-		opt_studio_mode = false;
-	}
-
 #define SET_VISIBILITY(name, control)                                         \
 	do {                                                                  \
 		if (config_has_user_value(App()->GlobalConfig(),              \
@@ -1859,6 +1853,15 @@ void OBSBasic::OBSInit()
 
 	TimedCheckForUpdates();
 	loaded = true;
+
+	if (!opt_studio_mode) {
+		SetPreviewProgramMode(config_get_bool(App()->GlobalConfig(),
+						      "BasicWindow",
+						      "PreviewProgramMode"));
+	} else {
+		SetPreviewProgramMode(true);
+		opt_studio_mode = false;
+	}
 
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					 "PreviewEnabled");
@@ -2709,15 +2712,16 @@ void OBSBasic::SaveProjectDeferred()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		return;
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		return;
 
@@ -4718,6 +4722,7 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
 		QRect screenGeometry = screen->geometry();
+		qreal ratio = screen->devicePixelRatio();
 		QString name = "";
 #ifdef _WIN32
 		QTextStream fullname(&name);
@@ -4743,8 +4748,10 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str =
 			QString("%1: %2x%3 @ %4,%5")
 				.arg(name,
-				     QString::number(screenGeometry.width()),
-				     QString::number(screenGeometry.height()),
+				     QString::number(screenGeometry.width() *
+						     ratio),
+				     QString::number(screenGeometry.height() *
+						     ratio),
 				     QString::number(screenGeometry.x()),
 				     QString::number(screenGeometry.y()));
 
@@ -8967,7 +8974,8 @@ void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
 
 void OBSBasic::PauseRecording()
 {
-	if (!pause || !outputHandler || !outputHandler->fileOutput)
+	if (!pause || !outputHandler || !outputHandler->fileOutput ||
+	    os_atomic_load_bool(&recording_paused))
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;
@@ -9006,7 +9014,8 @@ void OBSBasic::PauseRecording()
 
 void OBSBasic::UnpauseRecording()
 {
-	if (!pause || !outputHandler || !outputHandler->fileOutput)
+	if (!pause || !outputHandler || !outputHandler->fileOutput ||
+	    !os_atomic_load_bool(&recording_paused))
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;

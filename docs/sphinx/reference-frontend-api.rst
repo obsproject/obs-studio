@@ -314,9 +314,34 @@ Functions
 
 ---------------------------------------
 
+.. function:: char *obs_frontend_get_current_profile_path(void)
+
+   :return: A new pointer to the current profile's path on the filesystem. Free
+            with :c:func:`bfree()`.
+
+---------------------------------------
+
 .. function:: void obs_frontend_set_current_profile(const char *profile)
 
    :param profile: Name of the profile to activate.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_create_profile(const char *name)
+
+   :param name: Name of the new profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: bool obs_frontend_duplicate_profile(const char *name)
+
+   :param name: Name of the duplicate profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_profile(const char *profile)
+
+   :param profile: Name of the profile to delete.
 
 ---------------------------------------
 

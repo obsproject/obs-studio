@@ -561,6 +561,20 @@ static void render_item_texture(struct obs_scene_item *item)
 	GS_DEBUG_MARKER_END();
 }
 
+static bool are_texcoords_centered(struct matrix4 *m)
+{
+	static const struct matrix4 identity = {
+		{1.0f, 0.0f, 0.0f, 0.0f},
+		{0.0f, 1.0f, 0.0f, 0.0f},
+		{0.0f, 0.0f, 1.0f, 0.0f},
+		{0.0f, 0.0f, 0.0f, 1.0f},
+	};
+	struct matrix4 copy = identity;
+	copy.t.x = floorf(m->t.x);
+	copy.t.y = floorf(m->t.y);
+	return memcmp(m, &copy, sizeof(*m)) == 0;
+}
+
 static inline void render_item(struct obs_scene_item *item)
 {
 	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_ITEM, "Item: %s",
@@ -610,7 +624,11 @@ static inline void render_item(struct obs_scene_item *item)
 							cx, cy);
 				obs_source_video_render(item->hide_transition);
 			} else {
+				obs_source_set_texcoords_centered(item->source,
+								  true);
 				obs_source_video_render(item->source);
+				obs_source_set_texcoords_centered(item->source,
+								  false);
 			}
 
 			gs_texrender_end(item->item_render);
@@ -635,7 +653,11 @@ static inline void render_item(struct obs_scene_item *item)
 		obs_transition_set_size(item->hide_transition, cx, cy);
 		obs_source_video_render(item->hide_transition);
 	} else {
+		const bool centered =
+			are_texcoords_centered(&item->draw_transform);
+		obs_source_set_texcoords_centered(item->source, centered);
 		obs_source_video_render(item->source);
+		obs_source_set_texcoords_centered(item->source, false);
 	}
 	gs_matrix_pop();
 	gs_set_linear_srgb(previous);
@@ -3189,7 +3211,9 @@ build_current_order_info(obs_scene_t *scene,
 
 	obs_sceneitem_t *item = scene->first_item;
 	while (item) {
-		da_push_back(items, &item);
+		struct obs_sceneitem_order_info info = {0};
+		info.item = item;
+		da_push_back(items, &info);
 
 		if (item->is_group) {
 			obs_scene_t *sub_scene = item->source->context.data;
@@ -3199,7 +3223,9 @@ build_current_order_info(obs_scene_t *scene,
 			obs_sceneitem_t *sub_item = sub_scene->first_item;
 
 			while (sub_item) {
-				da_push_back(items, &item);
+				info.group = item;
+				info.item = sub_item;
+				da_push_back(items, &info);
 
 				sub_item = sub_item->next;
 			}

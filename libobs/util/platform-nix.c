@@ -631,16 +631,23 @@ int os_chdir(const char *path)
 
 #if HAVE_DBUS
 struct dbus_sleep_info;
+struct portal_inhibit_info;
 
 extern struct dbus_sleep_info *dbus_sleep_info_create(void);
 extern void dbus_inhibit_sleep(struct dbus_sleep_info *dbus, const char *sleep,
 			       bool active);
 extern void dbus_sleep_info_destroy(struct dbus_sleep_info *dbus);
+
+extern struct portal_inhibit_info *portal_inhibit_info_create(void);
+extern void portal_inhibit(struct portal_inhibit_info *portal,
+			   const char *reason, bool active);
+extern void portal_inhibit_info_destroy(struct portal_inhibit_info *portal);
 #endif
 
 struct os_inhibit_info {
 #if HAVE_DBUS
 	struct dbus_sleep_info *dbus;
+	struct portal_inhibit_info *portal;
 #endif
 	pthread_t screensaver_thread;
 	os_event_t *stop_event;
@@ -655,7 +662,9 @@ os_inhibit_t *os_inhibit_sleep_create(const char *reason)
 	sigset_t set;
 
 #if HAVE_DBUS
-	info->dbus = dbus_sleep_info_create();
+	info->portal = portal_inhibit_info_create();
+	if (!info->portal)
+		info->dbus = dbus_sleep_info_create();
 #endif
 
 	os_event_init(&info->stop_event, OS_EVENT_TYPE_AUTO);
@@ -710,6 +719,8 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 		return false;
 
 #if HAVE_DBUS
+	if (info->portal)
+		portal_inhibit(info->portal, info->reason, active);
 	if (info->dbus)
 		dbus_inhibit_sleep(info->dbus, info->reason, active);
 #endif
@@ -739,6 +750,7 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 	if (info) {
 		os_inhibit_sleep_set_active(info, false);
 #if HAVE_DBUS
+		portal_inhibit_info_destroy(info->portal);
 		dbus_sleep_info_destroy(info->dbus);
 #endif
 		os_event_destroy(info->stop_event);

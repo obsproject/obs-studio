@@ -39,8 +39,7 @@ typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
-typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
-					 gs_effect_t *effect);
+typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
 	const struct winrt_capture *capture);
@@ -85,7 +84,6 @@ struct duplicator_capture {
 	float reset_timeout;
 	struct cursor_data cursor_data;
 
-	bool wgc_supported;
 	void *winrt_module;
 	struct winrt_exports exports;
 	struct winrt_capture *capture_winrt;
@@ -176,6 +174,8 @@ choose_method(enum display_capture_method method, bool wgc_supported,
 	return method;
 }
 
+extern bool wgc_supported;
+
 static inline void update_settings(struct duplicator_capture *capture,
 				   obs_data_t *settings)
 {
@@ -186,8 +186,8 @@ static inline void update_settings(struct duplicator_capture *capture,
 	EnumDisplayMonitors(NULL, NULL, enum_monitor, (LPARAM)&monitor);
 
 	capture->method = choose_method(
-		(int)obs_data_get_int(settings, "method"),
-		capture->wgc_supported, monitor.handle, &capture->dxgi_index);
+		(int)obs_data_get_int(settings, "method"), wgc_supported,
+		monitor.handle, &capture->dxgi_index);
 
 	capture->monitor = monitor.id;
 	capture->handle = monitor.handle;
@@ -306,6 +306,8 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	return success;
 }
 
+extern bool graphics_uses_d3d11;
+
 static void *duplicator_capture_create(obs_data_t *settings,
 				       obs_source_t *source)
 {
@@ -316,18 +318,12 @@ static void *duplicator_capture_create(obs_data_t *settings,
 
 	pthread_mutex_init(&capture->update_mutex, NULL);
 
-	obs_enter_graphics();
-	const bool uses_d3d11 = gs_get_device_type() == GS_DEVICE_DIRECT3D_11;
-	obs_leave_graphics();
-
-	if (uses_d3d11) {
+	if (graphics_uses_d3d11) {
 		static const char *const module = "libobs-winrt";
 		capture->winrt_module = os_dlopen(module);
-		if (capture->winrt_module &&
-		    load_winrt_imports(&capture->exports, capture->winrt_module,
-				       module) &&
-		    capture->exports.winrt_capture_supported()) {
-			capture->wgc_supported = true;
+		if (capture->winrt_module) {
+			load_winrt_imports(&capture->exports,
+					   capture->winrt_module, module);
 		}
 	}
 
@@ -491,18 +487,18 @@ static void draw_cursor(struct duplicator_capture *capture)
 		    capture->rot % 180 == 0 ? capture->height : capture->width);
 }
 
-static void duplicator_capture_render(void *data, gs_effect_t *effect)
+static void duplicator_capture_render(void *data, gs_effect_t *unused)
 {
+	UNUSED_PARAMETER(unused);
+
 	struct duplicator_capture *capture = data;
 
 	if (capture->method == METHOD_WGC) {
-		gs_effect_t *const opaque =
-			obs_get_base_effect(OBS_EFFECT_OPAQUE);
 		if (capture->capture_winrt) {
 			if (capture->exports.winrt_capture_active(
 				    capture->capture_winrt)) {
 				capture->exports.winrt_capture_render(
-					capture->capture_winrt, opaque);
+					capture->capture_winrt);
 			} else {
 				capture->exports.winrt_capture_free(
 					capture->capture_winrt);
@@ -510,54 +506,62 @@ static void duplicator_capture_render(void *data, gs_effect_t *effect)
 			}
 		}
 	} else {
-		gs_texture_t *texture;
-		int rot;
-
 		if (!capture->duplicator)
 			return;
 
-		texture = gs_duplicator_get_texture(capture->duplicator);
+		gs_texture_t *const texture =
+			gs_duplicator_get_texture(capture->duplicator);
 		if (!texture)
 			return;
 
-		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(true);
+		gs_enable_blending(false);
 
-		rot = capture->rot;
+		const int rot = capture->rot;
+		if (rot != 0) {
+			float x = 0.0f;
+			float y = 0.0f;
 
-		while (gs_effect_loop(effect, "Draw")) {
-			if (rot != 0) {
-				float x = 0.0f;
-				float y = 0.0f;
-
-				switch (rot) {
-				case 90:
-					x = (float)capture->height;
-					break;
-				case 180:
-					x = (float)capture->width;
-					y = (float)capture->height;
-					break;
-				case 270:
-					y = (float)capture->width;
-					break;
-				}
-
-				gs_matrix_push();
-				gs_matrix_translate3f(x, y, 0.0f);
-				gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f,
-						  RAD((float)rot));
+			switch (rot) {
+			case 90:
+				x = (float)capture->height;
+				break;
+			case 180:
+				x = (float)capture->width;
+				y = (float)capture->height;
+				break;
+			case 270:
+				y = (float)capture->width;
+				break;
 			}
 
-			obs_source_draw(texture, 0, 0, 0, 0, false);
-
-			if (rot != 0)
-				gs_matrix_pop();
+			gs_matrix_push();
+			gs_matrix_translate3f(x, y, 0.0f);
+			gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD((float)rot));
 		}
 
-		if (capture->capture_cursor) {
-			effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		gs_effect_t *const opaque_effect =
+			obs_get_base_effect(OBS_EFFECT_OPAQUE);
+		while (gs_effect_loop(opaque_effect, "Draw")) {
+			gs_eparam_t *image = gs_effect_get_param_by_name(
+				opaque_effect, "image");
+			gs_effect_set_texture_srgb(image, texture);
 
-			while (gs_effect_loop(effect, "Draw")) {
+			gs_draw_sprite(texture, 0, 0, 0);
+		}
+
+		if (rot != 0)
+			gs_matrix_pop();
+
+		gs_enable_blending(true);
+		gs_enable_framebuffer_srgb(previous);
+
+		if (capture->capture_cursor) {
+			gs_effect_t *const default_effect =
+				obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+			while (gs_effect_loop(default_effect, "Draw")) {
 				draw_cursor(capture);
 			}
 		}
@@ -631,6 +635,9 @@ static bool display_capture_method_changed(obs_properties_t *props,
 	UNUSED_PARAMETER(p);
 
 	struct duplicator_capture *capture = obs_properties_get_param(props);
+	if (!capture)
+		return false;
+
 	update_settings(capture, settings);
 
 	update_settings_visibility(props, capture);
@@ -652,7 +659,7 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_METHOD_AUTO, METHOD_AUTO);
 	obs_property_list_add_int(p, TEXT_METHOD_DXGI, METHOD_DXGI);
 	obs_property_list_add_int(p, TEXT_METHOD_WGC, METHOD_WGC);
-	obs_property_list_item_disable(p, 2, !capture->wgc_supported);
+	obs_property_list_item_disable(p, 2, !wgc_supported);
 	obs_property_set_modified_callback(p, display_capture_method_changed);
 
 	obs_property_t *monitors = obs_properties_add_list(
@@ -670,7 +677,7 @@ struct obs_source_info duplicator_capture_info = {
 	.id = "monitor_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
 	.get_name = duplicator_capture_getname,
 	.create = duplicator_capture_create,
 	.destroy = duplicator_capture_destroy,

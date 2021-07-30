@@ -597,6 +597,16 @@ static bool obs_init_audio(struct audio_output_info *ai)
 	return false;
 }
 
+static void stop_audio(void)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (audio->audio) {
+		audio_output_close(audio->audio);
+		audio->audio = NULL;
+	}
+}
+
 static void obs_free_audio(void)
 {
 	struct obs_core_audio *audio = &obs->audio;
@@ -1026,6 +1036,7 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 
 	stop_video();
+	stop_audio();
 	stop_hotkeys();
 
 	module = obs->first_module;
@@ -1036,8 +1047,8 @@ void obs_shutdown(void)
 	}
 	obs->first_module = NULL;
 
-	obs_free_audio();
 	obs_free_data();
+	obs_free_audio();
 	obs_free_video();
 	obs_free_hotkeys();
 	obs_free_graphics();
@@ -1524,6 +1535,13 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	}
 
 	pthread_mutex_unlock(mutex);
+}
+
+void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+			  void *param)
+{
+	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
+		 param);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)

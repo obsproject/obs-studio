@@ -51,13 +51,18 @@ const char *get_module_extension(void)
 #define BIT_STRING "32bit"
 #endif
 
-static const char *module_bin[] = {"../../obs-plugins/" BIT_STRING,
-				   OBS_INSTALL_PREFIX
-				   "/" OBS_PLUGIN_DESTINATION};
+#define FLATPAK_PLUGIN_PATH "/app/plugins"
+
+static const char *module_bin[] = {
+	"../../obs-plugins/" BIT_STRING,
+	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
+	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
+};
 
 static const char *module_data[] = {
 	OBS_DATA_PATH "/obs-plugins/%module%",
 	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
+	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
 };
 
 static const int module_patterns_size =

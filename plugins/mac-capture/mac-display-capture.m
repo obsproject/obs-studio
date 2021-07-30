@@ -3,6 +3,7 @@
 #include <util/threading.h>
 #include <pthread.h>
 
+#import <AvailabilityMacros.h>
 #import <CoreGraphics/CGDisplayStream.h>
 #import <Cocoa/Cocoa.h>
 
@@ -602,11 +603,43 @@ static obs_properties_t *display_capture_properties(void *unused)
 		props, "display", obs_module_text("DisplayCapture.Display"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	for (unsigned i = 0; i < [NSScreen screens].count; i++) {
-		char buf[10];
-		sprintf(buf, "%u", i);
-		obs_property_list_add_int(list, buf, i);
-	}
+	[[NSScreen screens] enumerateObjectsUsingBlock:^(
+				    NSScreen *_Nonnull screen, NSUInteger index,
+				    BOOL *_Nonnull stop
+				    __attribute__((unused))) {
+		char dimension_buffer[4][12];
+		char name_buffer[256];
+		sprintf(dimension_buffer[0], "%u",
+			(uint32_t)[screen frame].size.width);
+		sprintf(dimension_buffer[1], "%u",
+			(uint32_t)[screen frame].size.height);
+		sprintf(dimension_buffer[2], "%d",
+			(int32_t)[screen frame].origin.x);
+		sprintf(dimension_buffer[3], "%d",
+			(int32_t)[screen frame].origin.y);
+
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_15
+		if (__builtin_available(macOS 10.15, *)) {
+			sprintf(name_buffer,
+				"%.200s: %.12sx%.12s @ %.12s,%.12s",
+				[[screen localizedName] UTF8String],
+				dimension_buffer[0], dimension_buffer[1],
+				dimension_buffer[2], dimension_buffer[3]);
+		} else
+#endif
+		{
+			char disp_num_buffer[11];
+			sprintf(disp_num_buffer, "%lu", (unsigned long)index);
+			sprintf(name_buffer,
+				"%.189s %.10s: %.12sx%.12s @ %.12s,%.12s",
+				obs_module_text("DisplayCapture.Display"),
+				disp_num_buffer, dimension_buffer[0],
+				dimension_buffer[1], dimension_buffer[2],
+				dimension_buffer[3]);
+		}
+
+		obs_property_list_add_int(list, name_buffer, index);
+	}];
 
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("DisplayCapture.ShowCursor"));

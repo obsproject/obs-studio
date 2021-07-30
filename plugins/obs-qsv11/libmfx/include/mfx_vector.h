@@ -1,81 +1,71 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2013-2014 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_vector.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2013-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #pragma once
 #include "mfxstructures.h"
 #include <exception>
 
-namespace MFX 
+namespace MFX
 {
     template <class T>
-    class iterator_tmpl 
+    class iterator_tmpl
     {
         template <class U> friend class MFXVector;
         mfxU32 mIndex;
         T* mRecords;
-        iterator_tmpl(mfxU32 index , T * records) 
+        iterator_tmpl(mfxU32 index , T * records)
             : mIndex (index)
             , mRecords(records)
         {}
     public:
-        iterator_tmpl() 
+        iterator_tmpl()
             : mIndex ()
-            , mRecords() 
+            , mRecords()
         {}
-        bool  operator ==(const iterator_tmpl<T> & that )const 
+        bool  operator ==(const iterator_tmpl<T> & that )const
         {
             return mIndex == that.mIndex;
         }
-        bool  operator !=(const iterator_tmpl<T> & that )const 
+        bool  operator !=(const iterator_tmpl<T> & that )const
         {
             return mIndex != that.mIndex;
         }
-        mfxU32 operator - (const iterator_tmpl<T> &that) const 
+        mfxU32 operator - (const iterator_tmpl<T> &that) const
         {
             return mIndex - that.mIndex;
         }
-        iterator_tmpl<T> & operator ++() 
+        iterator_tmpl<T> & operator ++()
         {
             mIndex++;
             return * this;
         }
-        iterator_tmpl<T> & operator ++(int) 
+        iterator_tmpl<T> & operator ++(int)
         {
             mIndex++;
             return * this;
         }
-        T & operator *() 
+        T & operator *()
         {
             return mRecords[mIndex];
         }
-        T * operator ->() 
+        T * operator ->()
         {
             return mRecords + mIndex;
         }
@@ -86,7 +76,7 @@ namespace MFX
     };
 
     template <class T>
-    class MFXVector  
+    class MFXVector
     {
         T*      mRecords;
         mfxU32  mNrecords;
@@ -103,7 +93,7 @@ namespace MFX
         }
         MFXVector & operator = (const MFXVector & rhs)
         {
-            if (this != &rhs) 
+            if (this != &rhs)
             {
                 clear();
                 insert(end(), rhs.begin(), rhs.end());
@@ -116,15 +106,15 @@ namespace MFX
         }
         typedef iterator_tmpl<T> iterator;
 
-        iterator begin() const 
+        iterator begin() const
         {
             return iterator(0u, mRecords);
         }
-        iterator end() const 
+        iterator end() const
         {
             return iterator(mNrecords, mRecords);
         }
-        void insert(iterator where, iterator beg_iter, iterator end_iter) 
+        void insert(iterator where, iterator beg_iter, iterator end_iter)
         {
             mfxU32 elementsToInsert = (end_iter - beg_iter);
             if (!elementsToInsert)
@@ -138,20 +128,20 @@ namespace MFX
 
             T *newRecords = new T[mNrecords + elementsToInsert]();
             mfxU32 i = 0;
-            
+
             // save left
-            for (; i < where.mIndex; i++) 
+            for (; i < where.mIndex; i++)
             {
                 newRecords[i] = mRecords[i];
             }
             // insert
-            for (; beg_iter != end_iter; beg_iter++, i++) 
+            for (; beg_iter != end_iter; beg_iter++, i++)
             {
                 newRecords[i] = *beg_iter;
             }
-    
+
             //save right
-            for (; i < mNrecords + elementsToInsert; i++) 
+            for (; i < mNrecords + elementsToInsert; i++)
             {
                 newRecords[i] = mRecords[i - elementsToInsert];
             }
@@ -161,15 +151,15 @@ namespace MFX
             mRecords = newRecords;
             mNrecords = i;
         }
-        T& operator [] (mfxU32 idx) 
+        T& operator [] (mfxU32 idx)
         {
           return mRecords[idx];
         }
-        void push_back(const T& obj) 
+        void push_back(const T& obj)
         {
             T *newRecords = new T[mNrecords + 1]();
             mfxU32 i = 0;
-            for (; i <mNrecords; i++) 
+            for (; i <mNrecords; i++)
             {
                 newRecords[i] = mRecords[i];
             }
@@ -178,15 +168,14 @@ namespace MFX
 
             mRecords = newRecords;
             mNrecords = i + 1;
-            
         }
-        void erase (iterator at) 
+        void erase (iterator at)
         {
             if (at.mIndex >= mNrecords)
             {
                 throw MFXVectorRangeError();
             }
-            mNrecords--; 
+            mNrecords--;
             mfxU32 i = at.mIndex;
             for (; i != mNrecords; i++)
             {
@@ -195,10 +184,10 @@ namespace MFX
             //destroy last element
             mRecords[i] = T();
         }
-        void resize(mfxU32 nSize) 
+        void resize(mfxU32 nSize)
         {
             T * newRecords = new T[nSize]();
-            for (mfxU32 i = 0; i <mNrecords; i++) 
+            for (mfxU32 i = 0; i <mNrecords; i++)
             {
                 newRecords[i] = mRecords[i];
             }
@@ -206,15 +195,23 @@ namespace MFX
             mRecords = newRecords;
             mNrecords = nSize;
         }
-        mfxU32 size() const 
+        mfxU32 size() const
         {
             return mNrecords;
         }
-        void clear() 
+        void clear()
         {
             delete [] mRecords;
             mRecords = 0;
             mNrecords = 0;
+        }
+        bool empty()
+        {
+            return !mRecords;
+        }
+        T * data() const
+        {
+            return mRecords;
         }
     };
 }

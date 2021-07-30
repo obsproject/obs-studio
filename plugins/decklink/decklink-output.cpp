@@ -66,6 +66,18 @@ static bool decklink_output_start(void *data)
 
 	DeckLinkDeviceMode *mode = device->FindOutputMode(decklink->modeID);
 
+	struct obs_video_info ovi;
+	if (!obs_get_video_info(&ovi)) {
+		LOG(LOG_ERROR,
+		    "Start failed: could not retrieve obs_video_info!");
+		return false;
+	}
+
+	if (!mode->IsEqualFrameRate(ovi.fps_num, ovi.fps_den)) {
+		LOG(LOG_ERROR, "Start failed: FPS mismatch!");
+		return false;
+	}
+
 	decklink->SetSize(mode->GetWidth(), mode->GetHeight());
 
 	struct video_scale_info to = {};
@@ -204,10 +216,17 @@ static bool decklink_output_device_changed(obs_properties_t *props,
 		const std::vector<DeckLinkDeviceMode *> &modes =
 			device->GetOutputModes();
 
-		for (DeckLinkDeviceMode *mode : modes) {
-			obs_property_list_add_int(modeList,
-						  mode->GetName().c_str(),
-						  mode->GetId());
+		struct obs_video_info ovi;
+		if (obs_get_video_info(&ovi)) {
+			for (DeckLinkDeviceMode *mode : modes) {
+				if (mode->IsEqualFrameRate(ovi.fps_num,
+							   ovi.fps_den)) {
+					obs_property_list_add_int(
+						modeList,
+						mode->GetName().c_str(),
+						mode->GetId());
+				}
+			}
 		}
 
 		obs_property_list_add_int(keyerList, "Disabled", 0);

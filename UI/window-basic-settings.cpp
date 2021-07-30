@@ -1351,11 +1351,15 @@ void OBSBasicSettings::LoadGeneralSettings()
 		QTStr("Basic.Settings.General.MultiviewLayout.Vertical.Right"),
 		static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.18Scene.Top"),
+		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_18_SCENES));
+	ui->multiviewLayout->addItem(
 		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
 		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
-	ui->multiviewLayout->setCurrentIndex(config_get_int(
-		GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
+	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
+		QVariant::fromValue(config_get_int(
+			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
 
 	prevLangIndex = ui->language->currentIndex();
 
