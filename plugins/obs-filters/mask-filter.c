@@ -310,7 +310,7 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 		return;
 
 	param = gs_effect_get_param_by_name(filter->effect, "target");
-	gs_effect_set_texture(param, filter->target);
+	gs_effect_set_texture_srgb(param, filter->target);
 
 	param = gs_effect_get_param_by_name(filter->effect, "color");
 	gs_effect_set_vec4(param, &filter->color);
