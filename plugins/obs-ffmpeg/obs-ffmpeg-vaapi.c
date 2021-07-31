@@ -545,7 +545,8 @@ static obs_properties_t *vaapi_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list;
 
-	list = obs_properties_add_list(props, "vaapi_device", "VAAPI Device",
+	list = obs_properties_add_list(props, "vaapi_device",
+				       obs_module_text("VAAPI.Device"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
 	char path[32] = "/dev/dri/renderD1";
@@ -560,13 +561,15 @@ static obs_properties_t *vaapi_properties(void *unused)
 		}
 	}
 
-	list = obs_properties_add_list(props, "vaapi_codec", "VAAPI Codec",
+	list = obs_properties_add_list(props, "vaapi_codec",
+				       obs_module_text("VAAPI.Codec"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 
 	obs_property_list_add_int(list, "H.264 (default)", AV_CODEC_ID_H264);
 
-	list = obs_properties_add_list(props, "profile", "Profile",
+	list = obs_properties_add_list(props, "profile",
+				       obs_module_text("Profile"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, "Constrained Baseline (default)",
@@ -574,7 +577,7 @@ static obs_properties_t *vaapi_properties(void *unused)
 	obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
 	obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
 
-	list = obs_properties_add_list(props, "level", "Level",
+	list = obs_properties_add_list(props, "level", obs_module_text("Level"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
