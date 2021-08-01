@@ -83,7 +83,7 @@ OBSTheme::inactive {
 /************************/
 
 SourceTree::item:selected:!active {
-	color: rgb(239, 240, 241); /* White */
+	color: palette(window-text);
 	background-color: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
 	border: none;
 }
@@ -96,8 +96,8 @@ SourceTree::item:selected {
 SourceTree::item:hover,
 SourceTree::item:disabled:hover,
 SourceTree::item:hover:!active {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	color: rgb(239, 240, 241); /* White */
+	background-color: palette(button);
+	color: palette(window-text);
 	border: none;
 }
 
@@ -117,10 +117,10 @@ SourceTree QLineEdit {
 QMainWindow,
 QDialog,
 QWidget {
-	background-color: rgb(49, 54, 59); /* Blue-gray */
-	color: rgb(239, 240, 241); /* White */
-	selection-background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	selection-color: rgb(239, 240, 241); /* White */
+	background-color: palette(window);
+	color: palette(window-text);
+	selection-background-color: palette(button);
+	selection-color: palette(window-text);
 	outline: none;
 	font-family: Noto Sans, Tahoma;
 	font-size: 11px;
@@ -131,8 +131,8 @@ QWidget::disabled {
 }
 
 QWidget:item:hover {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	color: rgb(118, 121, 124); /* Light Gray */
+	background-color: palette(button);
+	color: palette(mid);
 }
 
 QComboBox:hover,
@@ -142,8 +142,8 @@ QTextEdit:hover,
 QPlainTextEdit:hover,
 QAbstractView:hover,
 QTreeView:hover {
-	border: 1px solid rgb(0, 188, 212); /* Cyan (Primary) */
-	color: rgb(239, 240, 241); /* White */
+	border: 1px solid palette(button);
+	color: palette(window-text);
 }
 
 QSizeGrip {
@@ -166,7 +166,7 @@ QListWidget QLineEdit {
 /***********************/
 
 QListWidget::item:selected:!active {
-	color: rgb(239, 240, 241); /* White */
+	color: palette(window-text);
 	background-color: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
 	border: none;
 }
@@ -179,8 +179,8 @@ QListWidget::item:selected {
 QListWidget::item:hover,
 QListWidget::item:disabled:hover,
 QListWidget::item:hover:!active {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
-	color: rgb(239, 240, 241); /* White */
+	background-color: palette(button);
+	color: palette(window-text);
 	border: none;
 }
 
@@ -194,13 +194,13 @@ QDockWidget {
 }
 
 QDockWidget {
-	background: rgb(49, 54, 59); /* Blue-gray */
+	background: palette(window);
 	border: 1px solid rgb(58, 64, 69); /* Light Blue-gray */
 }
 
 QDockWidget::title {
 	text-align: left;
-	background: rgb(35, 38, 41); /* Dark Gray */
+	background: palette(shadow);
 	padding-left: 5px;
 }
 
@@ -227,7 +227,7 @@ QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
 
 QGroupBox {
 	font-size: 13px;
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	border: 1px solid palette(mid);
 	border-radius: 2px;
 	padding-top: 16px;
 	margin-top: 20px;
@@ -246,8 +246,8 @@ QGroupBox::title {
 /*****************/
 
 QMenuBar {
-	background-color: rgb(49, 54, 59); /* Blue-gray */
-	color: rgb(239, 240, 241); /* White */
+	background-color: palette(window);
+	color: palette(window-text);
 }
 
 QMenuBar::item {
@@ -261,7 +261,7 @@ QMenuBar::item:selected {
 
 QMenuBar::item:pressed {
 	border: none;
-	background-color: rgb(0, 188, 212);
+	background-color: palette(button);
 	margin-bottom: -1px;
 	padding-bottom: 1px;
 }
@@ -275,11 +275,11 @@ QScrollBar:horizontal {
 	margin: 3px 15px 3px 15px;
 	border: 1px transparent;
 	border-radius: 4px;
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 }
 
 QScrollBar::handle:horizontal {
-	background-color: rgb(118, 121, 124); /* Light Gray */
+	background-color: palette(mid);
 	min-width: 5px;
 	border-radius: 4px;
 }
@@ -331,7 +331,7 @@ QScrollBar::sub-page:horizontal {
 }
 
 QScrollBar:vertical {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 	width: 15px;
 	margin: 15px 3px 15px 3px;
 	border: 1px transparent;
@@ -339,7 +339,7 @@ QScrollBar:vertical {
 }
 
 QScrollBar::handle:vertical {
-	background-color: rgb(118, 121, 124); /* Light Gray */
+	background-color: palette(mid);
 	min-height: 5px;
 	border-radius: 4px;
 }
@@ -399,7 +399,7 @@ QTabWidget {
 }
 
 QTabWidget::pane {
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	border: 1px solid palette(mid);
 	padding: 5px;
 	margin: 0;
 }
@@ -436,8 +436,8 @@ QTabBar::close-button:pressed {
 }
 
 QTabBar::tab {
-	color: rgb(239, 240, 241); /* White */
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	color: palette(window-text);
+	border: 1px solid palette(mid); /* Light Gray */
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	padding: 5px;
 	min-width: 50px;
@@ -457,12 +457,12 @@ QTabBar::tab:bottom {
 }
 
 QTabBar::tab:!selected {
-	color: rgb(239, 240, 241); /* White */
-	background-color: rgb(84, 87, 91); /* Gray */
+	color: palette(window-text);
+	background-color: palette(dark);
 }
 
 QTabBar::tab:!selected:hover {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 }
 
 /********************/
@@ -470,7 +470,7 @@ QTabBar::tab:!selected:hover {
 /********************/
 
 QToolBar {
-	background-color: rgb(49, 54, 59); /* Blue-gray */
+	background-color: palette(window);
 	border: none;
 }
 
@@ -521,8 +521,8 @@ QToolButton:pressed {
 /***********************/
 
 QComboBox {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	background-color: palette(shadow);
+	border: 1px solid palette(mid);
 	border-radius: 2px;
 	padding: 5px;
 	min-width: 75px;
@@ -534,9 +534,9 @@ QComboBox:on {
 }
 
 QComboBox QAbstractItemView {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 	border-radius: 2px;
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	border: 1px solid palette(mid);
 }
 
 QComboBox::drop-down {
@@ -568,9 +568,9 @@ QComboBox::down-arrow:hover {
 
 QAbstractSpinBox {
 	padding: 5px;
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	background-color: rgb(35, 38, 41); /* Dark Gray */
-	color: rgb(239, 240, 241); /* White */
+	border: 1px solid palette(mid);
+	background-color: palette(shadow);
+	color: palette(window-text);
 	border-radius: 2px;
 	min-width: 75px;
 }
@@ -616,11 +616,11 @@ QAbstractSpinBox::down-arrow:hover {
 /**********************/
 
 QLineEdit {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 	padding: 5px;
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	border: 1px solid palette(mid);
 	border-radius: 2px;
-	color: rgb(239, 240, 241); /* White */
+	color: palette(window-text);
 }
 
 /**********************/
@@ -630,7 +630,7 @@ QLineEdit {
 QCheckBox {
 	spacing: 5px;
 	outline: none;
-	color: rgb(239, 240, 241); /* White */
+	color: palette(window-text);
 	margin-bottom: 2px;
 }
 
@@ -639,7 +639,7 @@ QCheckBox:hover, QCheckBox:focus {
 }
 
 QCheckBox:disabled {
-	color: rgb(118, 121, 124); /* Light Gray */
+	color: palette(mid);
 }
 
 QCheckBox::indicator,
@@ -689,12 +689,12 @@ QGroupBox::indicator:unchecked:disabled {
 QRadioButton {
 	spacing: 5px;
 	outline: none;
-	color: rgb(239, 240, 241); /* White */
+	color: palette(window-text);
 	margin-bottom: 2px;
 }
 
 QRadioButton:disabled {
-	color: rgb(118, 121, 124); /* Light Gray */
+	color: palette(mid);
 }
 
 QRadioButton::indicator {
@@ -808,13 +808,13 @@ SourceTreeSubItemCheckBox::indicator:unchecked:hover {
 /*************************/
 
 QProgressBar {
-	border: 2px solid rgb(118, 121, 124); /* Light Gray */
+	border: 2px solid palette(mid);
 	border-radius: 5px;
 	text-align: center;
 }
 
 QProgressBar::chunk {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 }
 
 /**************************/
@@ -828,9 +828,9 @@ VolumeMeter {
 	qproperty-foregroundNominalColor: rgb(119, 255, 143);
 	qproperty-foregroundWarningColor: rgb(255, 157, 76);
 	qproperty-foregroundErrorColor: rgb(255, 89, 76);
-	qproperty-magnitudeColor: rgb(49, 54, 59); /* Blue-gray */
-	qproperty-majorTickColor: rgb(239, 240, 241); /* White */
-	qproperty-minorTickColor: rgb(118, 121, 124); /* Light Gray */
+	qproperty-magnitudeColor: palette(window);
+	qproperty-majorTickColor: palette(window-text);
+	qproperty-minorTickColor: palette(mid);
 }
 
 /*******************/
@@ -838,10 +838,10 @@ VolumeMeter {
 /*******************/
 
 QPushButton {
-	background-color: rgb(0, 188, 212);; /* Cyan (Primary) */
-	color: rgb(239, 240, 241); /* White */
+	background-color: palette(button);
+	color: palette(window-text);
 	border-radius: 2px;
-	border: 1px solid rgb(0, 188, 212); /* Cyan (Primary) */
+	border: 1px solid palette(button);
 	padding: 4px;
 	padding-left: 15px;
 	padding-right: 15px;
@@ -871,9 +871,9 @@ QPushButton:checked:hover {
 }
 
 QPushButton:disabled {
-	background-color: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
-	border: 1px solid rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
-	color: rgb(162, 161, 162); /* Lighter Gray */
+	background-color: palette(base);
+	border: 1px solid palette(base);
+	color: palette(light);
 }
 
 QPushButton::menu-indicator {
@@ -893,7 +893,7 @@ QPushButton::menu-indicator {
 /******************************/
 
 QDialogButtonBox QPushButton {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 }
 
 QDialogButtonBox QPushButton:hover {
@@ -906,9 +906,9 @@ QDialogButtonBox QPushButton:pressed {
 }
 
 QDialogButtonBox QPushButton:disabled {
-	background-color: rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
-	border: 1px solid rgb(0, 139, 163); /* Dark Cyan (Primary Dark) */
-	color: rgb(162, 161, 162); /* Lighter Gray */
+	background-color: palette(base);
+	border: 1px solid palette(base);
+	color: palette(light);
 }
 
 /*******************************/
@@ -928,7 +928,7 @@ QPushButton[themeID="replayBufferButton"],
 QPushButton#modeSwitch,
 QPushButton#settingsButton,
 QPushButton#exitButton {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 }
 
 QPushButton#recordButton {
@@ -993,7 +993,7 @@ QPushButton#moveAsyncFilterUp,
 QPushButton#moveAsyncFilterDown,
 QPushButton#moveEffectFilterDown,
 QPushButton#moveEffectFilterUp {
-	background-color: rgb(49, 54, 59); /* Blue-gray */
+	background-color: palette(window);
 	border: none;
 }
 
@@ -1037,12 +1037,12 @@ QLabel#sceneTransitionsLabel {
 
 /* warning and error */
 QLabel#warningLabel {
-	color: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+	color: palette(bright-text);
 	font-weight: bold;
 }
 
 QLabel#errorLabel {
-	color: rgb(186, 45, 101); /* Dark Pink (Secondary Dark) */
+	color: palette(alternate-base);
 	font-weight: bold;
 }
 
@@ -1057,7 +1057,7 @@ QLabel#errorLabel {
 /****************************/
 
 QSplitter::handle {
-	border: 1px dashed rgb(118, 121, 124); /* Light Gray */
+	border: 1px dashed palette(mid);
 }
 
 QSplitter::handle:hover {
@@ -1083,7 +1083,7 @@ QSplitter::handle:vertical {
 
 QSlider::groove:horizontal {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0 palette(shadow), /* Dark Gray */
 	stop: 0.75 rgb(50, 49, 50));
 	height: 4px;
 	border: none;
@@ -1094,7 +1094,7 @@ QSlider::handle:horizontal {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
 	stop: 0 rgb(240, 239, 240),
 	stop: 0.25 rgb(200, 199, 200),
-	stop: 1 rgb(162, 161, 162));
+	stop: 1 palette(light));
 	border: 1px solid rgb(58, 57, 58);
 	border-radius: 3px;
 	height: 10px;
@@ -1106,24 +1106,24 @@ QSlider::handle:horizontal:pressed {
 	background-color: QLinearGradient(x1: 0, y1: 1, x2: 0, y2: 0,
 	stop: 0 rgb(240, 239, 240),
 	stop: 0.25 rgb(200, 199, 200),
-	stop: 1 rgb(162, 161, 162));
+	stop: 1 palette(light));
 }
 
 QSlider::sub-page:horizontal {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 	border-radius: 2px;
 }
 
 QSlider::sub-page:horizontal:disabled {
 	background-color: QLinearGradient(x1: 0, y1: 0, x2: 0, y2: 1,
-	stop: 0 rgb(35, 38, 41), /* Dark Gray */
-	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
+	stop: 0 palette(shadow),
+	stop: 0.75 palette(shadow));
 	border-radius: 2px;
 }
 
 QSlider::groove:vertical {
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-	stop: 0 rgb(35, 38, 41), /* Dark Gray */
+	stop: 0 palette(shadow),
 	stop: 0.75 rgb(50, 49, 50));
 	width: 4px;
 	border: none;
@@ -1134,7 +1134,7 @@ QSlider::handle:vertical {
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
 	stop: 0 rgb(240, 239, 240),
 	stop: 0.25 rgb(200, 199, 200),
-	stop: 1 rgb(162, 161, 162));
+	stop: 1 palette(light));
 	border: 1px solid rgb(58, 57, 58);
 	border-radius: 3px;
 	width: 10px;
@@ -1146,18 +1146,18 @@ QSlider::handle:vertical:pressed {
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
 	stop: 0 rgb(240, 239, 240),
 	stop: 0.25 rgb(200, 199, 200),
-	stop: 1 rgb(162, 161, 162));
+	stop: 1 palette(light));
 }
 
 QSlider::add-page:vertical {
-	background-color: rgb(0, 188, 212); /* Cyan (Primary) */
+	background-color: palette(button);
 	border-radius: 2px;
 }
 
 QSlider::add-page:vertical:disabled {
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-	stop: 0 rgb(35, 38, 41), /* Dark Gray */
-	stop: 0.75 rgb(35, 38, 41)); /* Dark Gray */
+	stop: 0 palette(shadow),
+	stop: 0.75 palette(shadow));
 	border-radius: 2px;
 }
 
@@ -1173,13 +1173,13 @@ QSlider::handle:disabled {
 /**********************/
 
 QTableView {
-    gridline-color: rgb(118, 121, 124); /* Light Gray */
+    gridline-color: palette(mid);
 }
 
 QHeaderView::section {
-    background-color: rgb(35, 38, 41); /* Dark Gray */
-    color: rgb(239, 240, 241); /* "White" */
-    border: 1px solid rgb(118, 121, 124); /* Light Gray */
+    background-color: palette(shadow);
+    color: palette(window-text);
+    border: 1px solid palette(mid);
     border-radius: 2px;
     padding: 4px;
 }
@@ -1200,8 +1200,8 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
 * [frameShape="4"],
 * [frameShape="5"],
 * [frameShape="6"] {
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	border: 1px solid palette(mid);
+	background-color: palette(shadow);
 }
 
 QFrame[frameShape="0"] {
@@ -1215,7 +1215,7 @@ QFrame[frameShape="0"] {
 }
 
 * [themeID="warning"] {
-	color: rgb(255, 148, 194); /* Light Pink (Secondary Light) */
+	color: palette(bright-text);
 }
 
 QStatusBar::item {
@@ -1223,12 +1223,12 @@ QStatusBar::item {
 }
 
 QAbstractItemView {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 }
 
 QToolTip {
-	border: 1px solid rgb(118, 121, 124); /* Light Gray */
-	background-color: rgb(49, 54, 59); /* Blue-gray */
+	border: 1px solid palette(mid);
+	background-color: palette(window);
 	color: rgb(240, 98, 146); /* Pink (Secondary) */
 }
 
@@ -1249,13 +1249,13 @@ QToolTip {
 }
 
 * [themeID="aboutHLayout"] {
-	background-color: rgb(35, 38, 41); /* Dark Gray */
+	background-color: palette(shadow);
 }
 
 /* Preview background color */
 
 OBSQTDisplay {
-	qproperty-displayBackgroundColor: rgb(35, 38, 41);
+	qproperty-displayBackgroundColor: palette(shadow);
 }
 
 /* Preview/Program labels */
@@ -1263,7 +1263,7 @@ OBSQTDisplay {
 * [themeID="previewProgramLabels"] {
 	font-size: 18px;
 	font-weight: bold;
-	color: rgb(122,121,122);
+	color: rgb(122, 121, 122);
 }
 
 /* Settings Icons */
@@ -1348,7 +1348,7 @@ VisibilityCheckBox::indicator:unchecked:hover {
 }
 
 QPushButton#extraPanelDelete {
-    background-color: rgb(35, 38, 41);
+    background-color: palette(shadow);
 }
 
 QPushButton#extraPanelDelete:hover {
@@ -1405,7 +1405,7 @@ QSlider[themeID="tBarSlider"] {
 QSlider::groove:horizontal[themeID="tBarSlider"] {
 	height: 5px;
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-		stop: 0 rgb(35, 38, 41), /* Dark Gray */
+		stop: 0 palette(shadow),
 		stop: 0.75 rgb(50, 49, 50));
 	border: none;
 	border-radius: 2px;
@@ -1414,14 +1414,14 @@ QSlider::groove:horizontal[themeID="tBarSlider"] {
 QSlider::sub-page:horizontal[themeID="tBarSlider"] {
 	height: 5px;
 	background-color: QLinearGradient(x1: 1, y1: 0, x2: 0, y2: 0,
-		stop: 0 rgb(35, 38, 41), /* Dark Gray */
+		stop: 0 palette(shadow),
 		stop: 0.75 rgb(50, 49, 50));
 	border: none;
 	border-radius: 2px;
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: #d2d2d2;
+	background-color: rgb(210, 210, 210);
 	width: 12px;
 	height: 24px;
 	margin: -24px 0px;
