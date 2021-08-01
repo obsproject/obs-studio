@@ -15,7 +15,7 @@ OBSTheme {
     shadow: rgb(0,0,0);
 
     highlight: rgb(37,36,88);
-    highlightText: rgb(255,255,255);
+    highlightedText: rgb(255,255,255);
 
     link: rgb(96,94,230);
     linkVisited: rgb(96,94,230);
@@ -29,7 +29,7 @@ OBSTheme::disabled {
 
 OBSTheme::inactive {
     highlight: rgb(48,47,48);
-    highlightText: rgb(255,255,255);
+    highlightedText: rgb(255,255,255);
 }
 
 /* General style, we override only what is needed. */

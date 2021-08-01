@@ -60,7 +60,7 @@ OBSTheme {
 	shadow: rgb(35, 38, 41); /* Dark Gray */
 
 	highlight: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
-	highlightText: rgb(0,0,0);
+	highlightedText: rgb(0,0,0);
 
 	link: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
 	linkVisited: rgb(98, 238, 255); /* Light Cyan (Primary Light) */
@@ -74,7 +74,7 @@ OBSTheme::disabled {
 
 OBSTheme::inactive {
 	highlight: rgb(0, 188, 212); /* Cyan (Primary) */
-	highlightText: rgb(239, 240, 241); /* White */
+	highlightedText: rgb(239, 240, 241); /* White */
 }
 
 

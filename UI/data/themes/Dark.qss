@@ -49,7 +49,7 @@ OBSTheme {
     shadow: rgb(11,10,11); /* veryVeryDark */
 
     highlight: rgb(42,130,218); /* blue */
-    highlightText: rgb(0,0,0);
+    highlightedText: rgb(0,0,0);
 
     link: rgb(114,162,255); /* OBS blue */
     linkVisited: rgb(114,162,255); /* OBS blue */
@@ -63,7 +63,7 @@ OBSTheme::disabled {
 
 OBSTheme::inactive {
     highlight: rgb(48,47,48);
-    highlightText: rgb(255,255,255);
+    highlightedText: rgb(255,255,255);
 }
 
 
