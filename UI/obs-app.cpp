@@ -1111,8 +1111,8 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
-	setStyleSheet(mpath);
 	ParseExtraThemeData(path.c_str());
+	setStyleSheet(mpath);
 
 	emit StyleChanged();
 	return true;
