@@ -169,38 +169,58 @@ check_ccache() {
 install_obs-deps() {
     hr "Setting up pre-built macOS OBS dependencies v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
+    DEPS_ARCHIVE="./macos-deps-${CURRENT_ARCH}-${1}.tar.xz"
+    if [ -f $DEPS_ARCHIVE ]; then
+      info "Warning - ${DEPS_ARCHIVE} already downloaded so assuming previously installed and skipping"
+      return
+    fi
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${CURRENT_ARCH}-${1}.tar.gz
+    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${1}/${DEPS_ARCHIVE}
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-${CURRENT_ARCH}-${1}.tar.gz" -C /tmp
+    /usr/bin/tar -xf ${DEPS_ARCHIVE} -C /tmp
 }
 
 install_qt-deps() {
     hr "Setting up pre-built dependency QT v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
+    QT_DEPS_ARCHIVE="./macos-qt-${1}-${CURRENT_ARCH}-${2}.tar.xz"
+    if [ -f $QT_DEPS_ARCHIVE ]; then
+      info "Warning - ${QT_DEPS_ARCHIVE} already downloaded so assuming previously installed and skipping"
+      return
+    fi
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${2}/macos-qt-${1}-${CURRENT_ARCH}-${2}.tar.gz
+    ${CURLCMD} --progress-bar -L -C - -O https://github.com/obsproject/obs-deps/releases/download/${2}/${QT_DEPS_ARCHIVE}
     step "Unpack..."
-    /usr/bin/tar -xf ./macos-qt-${1}-${CURRENT_ARCH}-${2}.tar.gz -C /tmp
+    /usr/bin/tar -xf ${QT_DEPS_ARCHIVE} -C /tmp
     /usr/bin/xattr -r -d com.apple.quarantine /tmp/obsdeps
 }
 
 install_vlc() {
     hr "Setting up dependency VLC v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
+    VLC_ARCHIVE="vlc-${1}.tar.xz"
+    if [ -f $VLC_ARCHIVE ]; then
+      info "Warning - $VLC_ARCHIVE already downloaded so assuming previously installed and skipping"
+      return
+    fi
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://downloads.videolan.org/vlc/${1}/vlc-${1}.tar.xz
+    ${CURLCMD} --progress-bar -L -C - -O https://downloads.videolan.org/vlc/${1}/${VLC_ARCHIVE}
     step "Unpack ..."
-    /usr/bin/tar -xf vlc-${1}.tar.xz
+    /usr/bin/tar -xf $VLC_ARCHIVE
 }
 
 install_sparkle() {
     hr "Setting up dependency Sparkle v${1} (might prompt for password)"
     ensure_dir "${DEPS_BUILD_DIR}/sparkle"
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.bz2
+    SPARKLE_ARCHIVE="Sparkle-${1}.tar.xz"
+    if [ -f $SPARKLE_ARCHIVE ]; then
+        info "Warning - ${SPARKLE_ARCHIVE} already downloaded so assuming previously installed and skipping"
+        return
+    fi
+    ${CURLCMD} --progress-bar -L -C - -o $SPARKLE_ARCHIVE https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.xz
     step "Unpack..."
-    /usr/bin/tar -xf ./sparkle.tar.bz2
+    /usr/bin/tar -xf $SPARKLE_ARCHIVE
     step "Copy to destination..."
     if [ -d /Library/Frameworks/Sparkle.framework/ ]; then
         info "Warning - Sparkle framework already found in /Library/Frameworks"
@@ -212,19 +232,28 @@ install_sparkle() {
 install_cef() {
     hr "Building dependency CEF v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
+    CEF_ARCHIVE="cef_binary_${1}_macos${CURRENT_ARCH}.tar.bz2"
+    CEF_DIR="./cef_binary_${1}_macos${CURRENT_ARCH}"
+    if [ -d $CEF_DIR ]; then
+        info "Warning - ${CEF_DIR} already downloaded so assuming previously installed and skipping"
+        return
+    fi
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macosx64.tar.bz2
+    ${CURLCMD} --progress-bar -L -C - -O https://cdn-fastly.obsproject.com/downloads/${CEF_ARCHIVE}
     step "Unpack..."
-    /usr/bin/tar -xf ./cef_binary_${1}_macosx64.tar.bz2
-    cd ./cef_binary_${1}_macosx64
-    step "Fix tests..."
-    /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-    /usr/bin/sed -i '.orig' 's/"'$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
+    /usr/bin/tar -xf ./${CEF_ARCHIVE}
+    cd ${CEF_DIR}
+    step "Apply patches..."
+    patch -p1 < ${CI_SCRIPTS}/cef.patch
+    # step "Fix tests..."
+    # /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
+    # /usr/bin/sed -i '.orig' 's/"'$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
     ensure_dir ./build
     step "Run CMAKE..."
     cmake \
         -DCMAKE_CXX_FLAGS="-std=c++11 -stdlib=libc++ -Wno-deprecated-declarations"\
         -DCMAKE_EXE_LINKER_FLAGS="-std=c++11 -stdlib=libc++"\
+        -DPROJECT_ARCH=${CURRENT_ARCH} \
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}} \
         ..
     step "Build..."
@@ -271,6 +300,9 @@ configure_obs_build() {
     ensure_dir "${CHECKOUT_DIR}/${BUILD_DIR}"
 
     hr "Run CMAKE for OBS..."
+    PYTHON_INCLUDE_DIR=`python3 -c "from distutils.sysconfig import get_python_inc; print(get_python_inc())"`
+    PYTHON_LIBRARY=`python3 -c "import distutils.sysconfig as sysconfig; print(sysconfig.get_config_var('LIBDIR'))"`
+
     cmake -DENABLE_SPARKLE_UPDATER=ON \
         -DCMAKE_OSX_DEPLOYMENT_TARGET=${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}} \
         -DQTDIR="/tmp/obsdeps" \
@@ -278,10 +310,11 @@ configure_obs_build() {
         -DDepsPath="/tmp/obsdeps" \
         -DVLCPath="${DEPS_BUILD_DIR}/vlc-${VLC_VERSION:-${CI_VLC_VERSION}}" \
         -DBUILD_BROWSER=ON \
-        -DBROWSER_LEGACY="$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "ON" || echo "OFF")" \
         -DWITH_RTMPS=ON \
-        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64" \
+        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macos${CURRENT_ARCH}" \
         -DCMAKE_BUILD_TYPE="${BUILD_CONFIG}" \
+        -DPYTHON_INCLUDE_DIR="${PYTHON_INCLUDE_DIR}" \
+        -DPYTHON_LIBRARY="${PYTHON_LIBRARY}" \
         ..
 
 }
@@ -335,6 +368,14 @@ bundle_dylibs() {
             -s ./OBS.app/Contents/MacOS \
             -s "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" \
             -s ./rundir/${BUILD_CONFIG}/bin/ \
+            -s /tmp/obsdeps/lib/ \
+            -s /tmp/obsdeps/lib/QtXml.framework \
+            -s /tmp/obsdeps/lib/QtSvg.framework  \
+            -s /tmp/obsdeps/lib/QtWidgets.framework \
+            -s /tmp/obsdeps/lib/QtGui.framework \
+            -s /tmp/obsdeps/lib/QtCore.framework \
+            -s /tmp/obsdeps/lib/QtDBus.framework \
+            -s /tmp/obsdeps/lib/QtPrintSupport.framework \
             $(echo "${BUNDLE_PLUGINS[@]/#/-x }")
     else
         "${CI_SCRIPTS}/app/dylibbundler" -cd -of -a ./OBS.app -q -f \
@@ -372,7 +413,7 @@ install_frameworks() {
 
     hr "Adding Chromium Embedded Framework"
     step "Copy Framework..."
-    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macos${CURRENT_ARCH}/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
 }
 
 prepare_macos_bundle() {

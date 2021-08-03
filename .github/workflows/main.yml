@@ -15,7 +15,7 @@ on:
       - master
 
 env:
-  MACOS_CEF_BUILD_VERSION: '4183'
+  MACOS_CEF_BUILD_VERSION: '4430'
   LINUX_CEF_BUILD_VERSION: '4280'
   CEF_VERSION: '75.1.16+g16a67c4+chromium-75.0.3770.100'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
@@ -29,9 +29,9 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2021-03-25'
+      MACOS_DEPS_VERSION: '2021-06-20'
       VLC_VERSION: '3.0.8'
-      SPARKLE_VERSION: '1.23.0'
+      SPARKLE_VERSION: '1.26.0'
       QT_VERSION: '5.15.2'
       SIGN_IDENTITY: ''
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
@@ -85,7 +85,7 @@ jobs:
         env:
           CACHE_NAME: 'cef-cache'
         with:
-          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macos${{ env.CURRENT_ARCH }}
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.MACOS_CEF_BUILD_VERSION }}
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
@@ -107,12 +107,22 @@ jobs:
         if: steps.deps-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
-          tar -xf ./macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
+          DEPS_ARCHIVE="./macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.xz"
+          if [ -f $DEPS_ARCHIVE ]; then
+            info "Warning - ${DEPS_ARCHIVE} already downloaded so assuming previously installed and skipping"
+            return
+          fi
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.xz
+          tar -xf ./macos-deps-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.xz -C "/tmp"
       - name: 'Install prerequisite: Pre-built dependency Qt'
         if: steps.deps-qt-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          QT_DEPS_ARCHIVE="./macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz"
+          if [ -f $QT_DEPS_ARCHIVE ]; then
+            info "Warning - ${QT_DEPS_ARCHIVE} already downloaded so assuming previously installed and skipping"
+            return
+          fi
           curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz
           tar -xf ./macos-qt-${{ env.QT_VERSION }}-${{ env.CURRENT_ARCH }}-${{ env.MACOS_DEPS_VERSION }}.tar.gz -C "/tmp"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
@@ -127,9 +137,9 @@ jobs:
         if: steps.sparkle-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
+          curl -L -o sparkle.tar.xz https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.xz
           mkdir ${{ github.workspace }}/cmbuild/sparkle
-          tar -xf ./sparkle.tar.bz2 -C ${{ github.workspace }}/cmbuild/sparkle
+          tar -xf ./sparkle.tar.xz -C ${{ github.workspace }}/cmbuild/sparkle
       - name: 'Setup prerequisite: Sparkle'
         shell: bash
         run: sudo cp -R ${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework /Library/Frameworks/Sparkle.framework
@@ -137,9 +147,9 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64.tar.bz2
-          tar -xf ./cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64.tar.bz2 -C ${{ github.workspace }}/cmbuild/
-          cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macosx64
+          curl -L -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macos${{ env.CURRENT_ARCH }}.tar.bz2
+          tar -xf ./cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macos${{ env.CURRENT_ARCH }}.tar.bz2 -C ${{ github.workspace }}/cmbuild/
+          cd ${{ github.workspace }}/cmbuild/cef_binary_${{ env.MACOS_CEF_BUILD_VERSION }}_macos${{ env.CURRENT_ARCH }}
           /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
           /usr/bin/sed -i '.orig' s/\"10.9\"/\"${{ env.MIN_MACOS_VERSION }}\"/ ./cmake/cef_variables.cmake
           mkdir build && cd build
