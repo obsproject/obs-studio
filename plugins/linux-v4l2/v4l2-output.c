@@ -28,6 +28,7 @@ static void virtualcam_destroy(void *data)
 	bfree(data);
 }
 
+#if defined(__linux__)
 static bool is_flatpak_sandbox(void)
 {
 	static bool flatpak_info_exists = false;
@@ -99,6 +100,32 @@ static int loopback_module_load()
 	return run_command(
 		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
 }
+#else
+bool loopback_module_available()
+{
+	struct v4l2_capability capability;
+	char new_device[16];
+	int fd;
+	int i;
+
+	for (i = 0; i != 32; i++) {
+		snprintf(new_device, 16, "/dev/video%d", i);
+		fd = open(new_device, O_RDWR);
+		if (fd < 0)
+			continue;
+		if (ioctl(fd, VIDIOC_QUERYCAP, &capability) < 0) {
+			close(fd);
+			continue;
+		}
+		if (capability.capabilities & V4L2_CAP_VIDEO_OUTPUT) {
+			close(fd);
+			return true;
+		}
+		close(fd);
+	}
+	return false;
+}
+#endif
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 {
@@ -192,10 +219,12 @@ static bool virtualcam_start(void *data)
 	bool success = false;
 	int n;
 
+#if defined(__linux__)
 	if (!loopback_module_loaded()) {
 		if (loopback_module_load() != 0)
 			return false;
 	}
+#endif
 
 	n = scandir("/dev", &list, scanfilter,
 #if defined(__linux__)
@@ -210,7 +239,10 @@ static bool virtualcam_start(void *data)
 
 	for (int i = 0; i < n; i++) {
 		char device[32];
-
+#if !defined(__linux__)
+		if (strstr(list[i]->d_name, "video") != list[i]->d_name)
+			continue;
+#endif
 		snprintf(device, 32, "/dev/%s", list[i]->d_name);
 
 		if (try_connect(vcam, device)) {
