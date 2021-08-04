@@ -76,14 +76,14 @@
 #define SIMDE_DETECT_CLANG_VERSION 50000
 #elif __has_attribute(diagnose_if)
 #define SIMDE_DETECT_CLANG_VERSION 40000
-#elif __has_warning("-Wcast-calling-convention")
-#define SIMDE_DETECT_CLANG_VERSION 30900
-#elif __has_warning("-WCL4")
-#define SIMDE_DETECT_CLANG_VERSION 30800
-#elif __has_warning("-WIndependentClass-attribute")
-#define SIMDE_DETECT_CLANG_VERSION 30700
+#elif __has_warning("-Wcomma")
+#define SIMDE_DETECT_CLANG_VERSION 39000
+#elif __has_warning("-Wdouble-promotion")
+#define SIMDE_DETECT_CLANG_VERSION 38000
+#elif __has_warning("-Wshift-negative-value")
+#define SIMDE_DETECT_CLANG_VERSION 37000
 #elif __has_warning("-Wambiguous-ellipsis")
-#define SIMDE_DETECT_CLANG_VERSION 30600
+#define SIMDE_DETECT_CLANG_VERSION 36000
 #else
 #define SIMDE_DETECT_CLANG_VERSION 1
 #endif
@@ -108,7 +108,7 @@
 	 ((major * 10000) + (minor * 1000) + (revision)))
 #else
 #define SIMDE_DETECT_CLANG_VERSION_CHECK(major, minor, revision) (0)
-#define SIMDE_DETECT_CLANG_VERSION_NOT(major, minor, revision) (1)
+#define SIMDE_DETECT_CLANG_VERSION_NOT(major, minor, revision) (0)
 #endif
 
 #endif /* !defined(SIMDE_DETECT_CLANG_H) */

@@ -112,20 +112,21 @@
 #elif (defined(__cplusplus) && (__cplusplus >= 201103L)) || \
 	(0 && HEDLEY_HAS_FEATURE(cxx_alignof))
 #define SIMDE_ALIGN_OF(Type) alignof(Type)
-#elif HEDLEY_GCC_VERSION_CHECK(2, 95, 0) ||                                    \
-	HEDLEY_ARM_VERSION_CHECK(4, 1, 0) ||                                   \
-	HEDLEY_INTEL_VERSION_CHECK(13, 0, 0) ||                                \
-	HEDLEY_SUNPRO_VERSION_CHECK(5, 13, 0) ||                               \
-	HEDLEY_TINYC_VERSION_CHECK(0, 9, 24) ||                                \
-	HEDLEY_PGI_VERSION_CHECK(19, 10, 0) ||                                 \
-	HEDLEY_CRAY_VERSION_CHECK(10, 0, 0) ||                                 \
-	HEDLEY_TI_ARMCL_VERSION_CHECK(16, 9, 0) ||                             \
-	HEDLEY_TI_CL2000_VERSION_CHECK(16, 9, 0) ||                            \
-	HEDLEY_TI_CL6X_VERSION_CHECK(8, 0, 0) ||                               \
-	HEDLEY_TI_CL7X_VERSION_CHECK(1, 2, 0) ||                               \
-	HEDLEY_TI_CL430_VERSION_CHECK(16, 9, 0) ||                             \
-	HEDLEY_TI_CLPRU_VERSION_CHECK(2, 3, 2) || defined(__IBM__ALIGNOF__) || \
-	defined(__clang__)
+#elif HEDLEY_GCC_VERSION_CHECK(2, 95, 0) ||         \
+	HEDLEY_ARM_VERSION_CHECK(4, 1, 0) ||        \
+	HEDLEY_INTEL_VERSION_CHECK(13, 0, 0) ||     \
+	HEDLEY_SUNPRO_VERSION_CHECK(5, 13, 0) ||    \
+	HEDLEY_TINYC_VERSION_CHECK(0, 9, 24) ||     \
+	HEDLEY_PGI_VERSION_CHECK(19, 10, 0) ||      \
+	HEDLEY_CRAY_VERSION_CHECK(10, 0, 0) ||      \
+	HEDLEY_TI_ARMCL_VERSION_CHECK(16, 9, 0) ||  \
+	HEDLEY_TI_CL2000_VERSION_CHECK(16, 9, 0) || \
+	HEDLEY_TI_CL6X_VERSION_CHECK(8, 0, 0) ||    \
+	HEDLEY_TI_CL7X_VERSION_CHECK(1, 2, 0) ||    \
+	HEDLEY_TI_CL430_VERSION_CHECK(16, 9, 0) ||  \
+	HEDLEY_TI_CLPRU_VERSION_CHECK(2, 3, 2) ||   \
+	HEDLEY_MCST_LCC_VERSION_CHECK(1, 25, 10) || \
+	defined(__IBM__ALIGNOF__) || defined(__clang__)
 #define SIMDE_ALIGN_OF(Type) __alignof__(Type)
 #elif HEDLEY_IAR_VERSION_CHECK(8, 40, 0)
 #define SIMDE_ALIGN_OF(Type) __ALIGNOF__(Type)
@@ -145,8 +146,8 @@
  *
  * Most compilers are okay with types which are aligned beyond what
  * they think is the maximum, as long as the alignment is a power
- * of two.  MSVC is the exception (of course), so we need to cap the
- * alignment requests at values that the implementation supports.
+ * of two.  Older versions of MSVC is the exception, so we need to cap
+ * the alignment requests at values that the implementation supports.
  *
  * XL C/C++ will accept values larger than 16 (which is the alignment
  * of an AltiVec vector), but will not reliably align to the larger
@@ -157,18 +158,22 @@
  * macro will just return the value passed to it. */
 #if !defined(SIMDE_ALIGN_MAXIMUM)
 #if defined(HEDLEY_MSVC_VERSION)
+#if HEDLEY_MSVC_VERSION_CHECK(19, 16, 0)
+// Visual studio 2017 and newer does not need a max
+#else
 #if defined(_M_IX86) || defined(_M_AMD64)
 #if HEDLEY_MSVC_VERSION_CHECK(19, 14, 0)
 #define SIMDE_ALIGN_PLATFORM_MAXIMUM 64
 #elif HEDLEY_MSVC_VERSION_CHECK(16, 0, 0)
 /* VS 2010 is really a guess based on Wikipedia; if anyone can
-         * test with old VS versions I'd really appreciate it. */
+           * test with old VS versions I'd really appreciate it. */
 #define SIMDE_ALIGN_PLATFORM_MAXIMUM 32
 #else
 #define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
 #endif
 #elif defined(_M_ARM) || defined(_M_ARM64)
 #define SIMDE_ALIGN_PLATFORM_MAXIMUM 8
+#endif
 #endif
 #elif defined(HEDLEY_IBM_VERSION)
 #define SIMDE_ALIGN_PLATFORM_MAXIMUM 16
