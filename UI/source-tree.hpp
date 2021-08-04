@@ -62,6 +62,7 @@ public:
 private:
 	QSpacerItem *spacer = nullptr;
 	QCheckBox *expand = nullptr;
+	QLabel *iconLabel = nullptr;
 	VisibilityCheckBox *vis = nullptr;
 	LockedCheckBox *lock = nullptr;
 	QHBoxLayout *boxLayout = nullptr;
