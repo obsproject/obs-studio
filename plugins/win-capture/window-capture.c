@@ -357,9 +357,18 @@ static void wc_update(void *data, obs_data_t *settings)
 	force_reset(wc);
 }
 
+static bool window_normal(struct window_capture *wc)
+{
+	return (IsWindow(wc->window) && !IsIconic(wc->window));
+}
+
 static uint32_t wc_width(void *data)
 {
 	struct window_capture *wc = data;
+
+	if (!window_normal(wc))
+		return 0;
+
 	return (wc->method == METHOD_WGC)
 		       ? wc->exports.winrt_capture_width(wc->capture_winrt)
 		       : wc->capture.width;
@@ -368,6 +377,10 @@ static uint32_t wc_width(void *data)
 static uint32_t wc_height(void *data)
 {
 	struct window_capture *wc = data;
+
+	if (!window_normal(wc))
+		return 0;
+
 	return (wc->method == METHOD_WGC)
 		       ? wc->exports.winrt_capture_height(wc->capture_winrt)
 		       : wc->capture.height;
@@ -664,6 +677,10 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
+
+	if (!window_normal(wc))
+		return;
+
 	if (wc->method == METHOD_WGC) {
 		if (wc->capture_winrt) {
 			if (wc->exports.winrt_capture_active(
