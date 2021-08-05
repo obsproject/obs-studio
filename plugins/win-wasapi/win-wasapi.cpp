@@ -173,23 +173,31 @@ inline void WASAPISource::Start()
 
 inline void WASAPISource::Stop()
 {
+	blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Stop called", this,
+		device_id.c_str());
+
 	SetEvent(stopSignal);
 
-	if (active) {
-		blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Terminated", this,
+	if (active || captureThread.Valid()) {
+		blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Wait for captureThread to stop", this,
 		     device_id.c_str());
 		WaitForSingleObject(captureThread, INFINITE);
 	}
 
-	if (reconnecting)
+	if (reconnecting || reconnectThread.Valid()) {
+		blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Wait for reconnectThread to stop", this,
+		     device_id.c_str());
+
 		WaitForSingleObject(reconnectThread, INFINITE);
+	}
 
 	ResetEvent(stopSignal);
 }
 
 WASAPISource::~WASAPISource()
 {
-	enumerator->UnregisterEndpointNotificationCallback(notify);
+	if (enumerator.Get() != nullptr && notify.Get() != nullptr)
+		enumerator->UnregisterEndpointNotificationCallback(notify);
 	Stop();
 }
 
@@ -541,11 +549,13 @@ void WASAPISource::Reconnect()
 	reconnectThread = CreateThread(
 		nullptr, 0, WASAPISource::ReconnectThread, this, 0, nullptr);
 
-	if (!reconnectThread.Valid())
+	if (!reconnectThread.Valid()) {
 		blog(LOG_WARNING,
 		     "[WASAPISource::Reconnect][%08X] "
 		     "Failed to initialize reconnect thread: %lu",
 		     this, GetLastError());
+		     reconnecting = false;
+	}
 }
 
 //returns false for wait timed out
