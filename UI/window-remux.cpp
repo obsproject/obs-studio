@@ -866,7 +866,8 @@ void OBSRemux::AutoRemux(QString inFile, QString outFile)
 	if (inFile != "" && outFile != "" && autoRemux) {
 		ui->progressBar->setVisible(true);
 		emit remux(inFile, outFile);
-		autoRemuxFile = outFile;
+		autoRemuxInFile = inFile;
+		autoRemuxOutFile = outFile;
 	}
 }
 
@@ -927,13 +928,28 @@ void OBSRemux::remuxFinished(bool success)
 
 	queueModel->finishEntry(success);
 
-	if (autoRemux && autoRemuxFile != "") {
+	if (autoRemux && autoRemuxInFile != "" && autoRemuxOutFile != "") {
 		QTimer::singleShot(3000, this, SLOT(close()));
 
 		OBSBasic *main = OBSBasic::Get();
 		main->ShowStatusBarMessage(
 			QTStr("Basic.StatusBar.AutoRemuxedTo")
-				.arg(autoRemuxFile));
+				.arg(autoRemuxOutFile));
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 15, 0)
+		bool deleteFile = config_get_bool(main->Config(), "Video",
+						  "AutoRemuxDelete");
+		if (deleteFile && success) {
+			if (!QFile::moveToTrash(autoRemuxInFile, nullptr))
+				blog(LOG_WARNING,
+				     "Couldn't move file '%s' to trash. Is the trash disabled on the system?",
+				     autoRemuxInFile.toStdString().c_str());
+		} else if (deleteFile) {
+			blog(LOG_WARNING,
+			     "Not moving file '%s' to trash since remux was unsuccessful",
+			     autoRemuxInFile.toStdString().c_str());
+		}
+#endif
 	}
 
 	remuxNextEntry();

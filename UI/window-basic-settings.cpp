@@ -558,6 +558,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->autoRemuxDelete,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
 	/* clang-format on */
 
@@ -2502,6 +2503,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
+	bool autoRemuxDelete =
+		config_get_bool(main->Config(), "Video", "AutoRemuxDelete");
 	const char *hotkeyFocusType = config_get_string(
 		App()->GlobalConfig(), "General", "HotkeyFocusType");
 	bool dynBitrate =
@@ -2533,7 +2536,16 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
 	ui->autoRemux->setChecked(autoRemux);
+	ui->autoRemuxDelete->setChecked(autoRemuxDelete);
 	ui->dynBitrate->setChecked(dynBitrate);
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 15, 0)
+	// Hide option to autodelete remuxed files on QT versions older than 5.15
+	int row;
+	ui->formLayout_17->getWidgetPosition(ui->autoRemuxDelete, &row,
+					     nullptr);
+	ui->formLayout_17->removeRow(row);
+#endif
 
 	SetComboByName(ui->colorFormat, videoColorFormat);
 	SetComboByName(ui->colorSpace, videoColorSpace);
@@ -3256,6 +3268,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
+	SaveCheckBox(ui->autoRemuxDelete, "Video", "AutoRemuxDelete");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
 
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO

@@ -5020,7 +5020,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_14">
                      <property name="leftMargin">
                       <number>0</number>
@@ -5052,7 +5052,7 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="3" column="0">
+                   <item row="4" column="0">
                     <widget class="QLabel" name="label_57">
                      <property name="text">
                       <string>Basic.Settings.Output.ReplayBuffer.Prefix</string>
@@ -5084,6 +5084,29 @@
                    </item>
                    <item row="2" column="0">
                     <spacer name="horizontalSpacer_16">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
+                     </property>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>40</width>
+                       <height>20</height>
+                      </size>
+                     </property>
+                    </spacer>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="autoRemuxDelete">
+                     <property name="enabled">
+                      <bool>false</bool>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.AutoRemuxDelete</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <spacer name="horizontalSpacer_27">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
                      </property>
@@ -5702,6 +5725,7 @@
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
   <tabstop>autoRemux</tabstop>
+  <tabstop>autoRemuxDelete</tabstop>
   <tabstop>simpleRBPrefix</tabstop>
   <tabstop>simpleRBSuffix</tabstop>
   <tabstop>streamDelayEnable</tabstop>
@@ -6072,6 +6096,12 @@
      <y>291</y>
     </hint>
    </hints>
+  </connection>
+  <connection>
+   <sender>autoRemux</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>autoRemuxDelete</receiver>
+   <slot>setEnabled(bool)</slot>
   </connection>
   <connection>
    <sender>streamDelayEnable</sender>
