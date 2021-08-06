@@ -541,6 +541,18 @@
             }
         },
         {
+            "name": "Rawa.TV",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.rawa.tv:1935/ingest"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
+        },
+        {
             "name": "Restream.io",
             "alt_names": [
                 "Restream.io - RTMP",
