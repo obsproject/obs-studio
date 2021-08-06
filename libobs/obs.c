@@ -990,6 +990,7 @@ static inline bool obs_init_hotkeys(void)
 			   NULL))
 		goto fail;
 
+	hotkeys->strict_modifiers = true;
 	hotkeys->hotkey_thread_initialized = true;
 
 	success = true;
