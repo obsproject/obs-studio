@@ -127,13 +127,19 @@ static bool try_connect(void *data, const char *device)
 	if (vcam->device < 0)
 		return false;
 
-	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0)
+	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0) {
+		close(vcam->device);
+		vcam->device = -1;
 		return false;
+	}
 
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) < 0)
+	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) < 0) {
+		close(vcam->device);
+		vcam->device = -1;
 		return false;
+	}
 
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -145,16 +151,22 @@ static bool try_connect(void *data, const char *device)
 	parm.parm.output.timeperframe.numerator = ovi.fps_den;
 	parm.parm.output.timeperframe.denominator = ovi.fps_num;
 
-	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0)
+	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0) {
+		close(vcam->device);
+		vcam->device = -1;
 		return false;
+	}
 
 	format.fmt.pix.width = width;
 	format.fmt.pix.height = height;
 	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 	format.fmt.pix.sizeimage = vcam->frame_size;
 
-	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0)
+	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0) {
+		close(vcam->device);
+		vcam->device = -1;
 		return false;
+	}
 
 	struct video_scale_info vsi = {0};
 	vsi.format = VIDEO_FORMAT_YUY2;
