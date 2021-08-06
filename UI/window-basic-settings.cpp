@@ -396,6 +396,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->systemTrayWhenStarted,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->systemTrayAlways,     CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->saveProjectors,       CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->closeProjectors,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->snappingEnabled,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->screenSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->centerSnapping,       CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1258,6 +1259,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool saveProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					      "SaveProjectors");
 	ui->saveProjectors->setChecked(saveProjectors);
+
+	bool closeProjectors = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					       "CloseExistingProjectors");
+	ui->closeProjectors->setChecked(closeProjectors);
 
 	bool snappingEnabled = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "SnappingEnabled");
@@ -3171,6 +3176,11 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SaveProjectors",
 				ui->saveProjectors->isChecked());
+
+	if (WidgetChanged(ui->closeProjectors))
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"CloseExistingProjectors",
+				ui->closeProjectors->isChecked());
 
 	if (WidgetChanged(ui->studioPortraitLayout)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
