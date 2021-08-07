@@ -864,6 +864,7 @@ void OBSRemux::beginRemux()
 void OBSRemux::AutoRemux(QString inFile, QString outFile)
 {
 	if (inFile != "" && outFile != "" && autoRemux) {
+		ui->progressBar->setVisible(true);
 		emit remux(inFile, outFile);
 		autoRemuxFile = outFile;
 	}
