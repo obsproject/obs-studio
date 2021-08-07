@@ -71,4 +71,4 @@ Commit Guidelines
 Conduct Guidelines
 ------------------
 
-- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/CODE_OF_CONDUCT.rst
