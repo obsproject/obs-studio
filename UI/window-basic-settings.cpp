@@ -2625,7 +2625,9 @@ LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 template<typename Func, typename T>
 static QLabel *makeLabel(T &t, Func &&getName)
 {
-	return new QLabel(getName(t));
+	QLabel *label = new QLabel(getName(t));
+	label->setStyleSheet("font-weight: bold;");
+	return label;
 }
 
 template<typename Func>
