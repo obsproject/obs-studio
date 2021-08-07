@@ -6395,7 +6395,7 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	}
 }
 
-void OBSBasic::AutoRemux()
+void OBSBasic::AutoRemux(QString input)
 {
 	bool autoRemux = config_get_bool(Config(), "Video", "AutoRemux");
 
@@ -6409,7 +6409,6 @@ void OBSBasic::AutoRemux()
 	if (ffmpegOutput)
 		return;
 
-	QString input = outputHandler->lastRecordingPath.c_str();
 	if (input.isEmpty())
 		return;
 
@@ -6571,7 +6570,7 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (diskFullTimer->isActive())
 		diskFullTimer->stop();
 
-	AutoRemux();
+	AutoRemux(outputHandler->lastRecordingPath.c_str());
 
 	OnDeactivate();
 	UpdatePause(false);
@@ -6721,6 +6720,8 @@ void OBSBasic::ReplayBufferSaved()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
+
+	AutoRemux(path);
 }
 
 void OBSBasic::ReplayBufferStop(int code)
