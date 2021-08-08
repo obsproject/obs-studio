@@ -4,9 +4,12 @@
 #define TIMING_TIME 0
 #define TIMING_FRAME 1
 
-#define MATTE_LAYOUT_HORIZONTAL 0
-#define MATTE_LAYOUT_VERTICAL 1
-#define MATTE_LAYOUT_SEPARATE_FILE 2
+enum matte_layout {
+	MATTE_LAYOUT_HORIZONTAL,
+	MATTE_LAYOUT_VERTICAL,
+	MATTE_LAYOUT_SEPARATE_FILE,
+	MATTE_LAYOUT_MASK,
+};
 
 enum fade_style { FADE_STYLE_FADE_OUT_FADE_IN, FADE_STYLE_CROSS_FADE };
 
@@ -100,7 +103,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->invert_matte = obs_data_get_bool(settings, "invert_matte");
 
 	s->do_texrender = s->track_matte_enabled &&
-			  s->matte_layout != MATTE_LAYOUT_SEPARATE_FILE;
+			  s->matte_layout < MATTE_LAYOUT_SEPARATE_FILE;
 
 	if (s->matte_source) {
 		obs_source_release(s->matte_source);
@@ -305,6 +308,8 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	if (s->track_matte_enabled) {
 		obs_transition_video_render(s->source, stinger_matte_render);
+		if (s->matte_layout == MATTE_LAYOUT_MASK)
+			return;
 	} else {
 		float t = obs_transition_get_time(s->source);
 		bool use_a = t < s->transition_point;
@@ -656,6 +661,9 @@ static obs_properties_t *stinger_properties(void *data)
 			p, obs_module_text("TrackMatteLayoutSeparateFile"),
 			MATTE_LAYOUT_SEPARATE_FILE);
 #endif
+		obs_property_list_add_int(
+			p, obs_module_text("TrackMatteLayoutMask"),
+			MATTE_LAYOUT_MASK);
 
 		obs_property_set_modified_callback(p,
 						   track_matte_layout_modified);
