@@ -121,7 +121,8 @@ static size_t header_write(char *ptr, size_t size, size_t nmemb,
 
 bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		   long *responseCode, const char *contentType,
-		   const char *postData, std::vector<std::string> extraHeaders,
+		   std::string request_type, const char *postData,
+		   std::vector<std::string> extraHeaders,
 		   std::string *signature, int timeoutSec)
 {
 	vector<string> header_in_list;
@@ -178,7 +179,21 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		// A lot of servers don't yet support ALPN
 		curl_easy_setopt(curl.get(), CURLOPT_SSL_ENABLE_ALPN, 0);
 #endif
+		if (!request_type.empty()) {
+			if (request_type != "GET")
+				curl_easy_setopt(curl.get(),
+						 CURLOPT_CUSTOMREQUEST,
+						 request_type.c_str());
 
+			// Special case of "POST"
+			if (request_type == "POST") {
+				curl_easy_setopt(curl.get(), CURLOPT_POST, 1);
+				if (!postData)
+					curl_easy_setopt(curl.get(),
+							 CURLOPT_POSTFIELDS,
+							 "{}");
+			}
+		}
 		if (postData) {
 			curl_easy_setopt(curl.get(), CURLOPT_POSTFIELDS,
 					 postData);

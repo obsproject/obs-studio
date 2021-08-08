@@ -10,7 +10,14 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#endif
+
 #include "auth-oauth.hpp"
+
+#include "ui-config.h"
+
+#if YOUTUBE_ENABLED
+#include "youtube-api-wrappers.hpp"
 #endif
 
 struct QCef;
@@ -39,8 +46,12 @@ void OBSBasicSettings::InitStreamPage()
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
+
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
 
 	int vertSpacing = ui->topStreamLayout->verticalSpacing();
 
@@ -375,6 +386,68 @@ static inline bool is_auth_service(const std::string &service)
 	return Auth::AuthType(service) != Auth::Type::None;
 }
 
+static inline bool is_external_oauth(const std::string &service)
+{
+	return Auth::External(service);
+}
+
+static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
+				    std::string &service, bool loading)
+{
+	bool external_oauth = is_external_oauth(service);
+	if (external_oauth) {
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(true);
+		ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
+	} else if (cef) {
+		QString key = ui->key->text();
+		bool can_auth = is_auth_service(service);
+		int page = can_auth && (!loading || key.isEmpty())
+				   ? (int)Section::Connect
+				   : (int)Section::StreamKey;
+
+		ui->streamStackWidget->setCurrentIndex(page);
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->connectAccount2->setVisible(can_auth);
+		ui->useStreamKeyAdv->setVisible(false);
+	} else {
+		ui->connectAccount2->setVisible(false);
+		ui->useStreamKeyAdv->setVisible(false);
+	}
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
+}
+
+#if YOUTUBE_ENABLED
+static void get_yt_ch_title(Ui::OBSBasicSettings *ui,
+			    YoutubeApiWrappers *ytAuth)
+{
+	if (ytAuth) {
+		ChannelDescription cd;
+		if (ytAuth->GetChannelDescription(cd)) {
+			ui->connectedAccountText->setText(cd.title);
+		} else {
+			// if we still not changed the service page
+			if (IsYouTubeService(
+				    QT_TO_UTF8(ui->service->currentText()))) {
+				ui->connectedAccountText->setText(
+					QTStr("Auth.LoadingChannel.Error"));
+			}
+		}
+	}
+}
+#endif
+
+void OBSBasicSettings::UseStreamKeyAdvClicked()
+{
+	ui->streamKeyWidget->setVisible(true);
+}
+
 void OBSBasicSettings::on_service_currentIndexChanged(int)
 {
 	bool showMore = ui->service->currentData().toInt() ==
@@ -390,26 +463,9 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			QString key = ui->key->text();
-			bool can_auth = is_auth_service(service);
-			int page = can_auth && (!loading || key.isEmpty())
-					   ? (int)Section::Connect
-					   : (int)Section::StreamKey;
-
-			ui->streamStackWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
+	if (lastService != service.c_str()) {
+		reset_service_ui_fields(ui.get(), service, loading);
 	}
-#else
-	ui->connectAccount2->setVisible(false);
-#endif
 
 	ui->useAuth->setVisible(custom);
 	ui->authUsernameLabel->setVisible(custom);
@@ -429,15 +485,22 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
-#ifdef BROWSER_AVAILABLE
-	auth.reset();
+	if (!main->auth) {
+		return;
+	}
 
-	if (!!main->auth &&
-	    service.find(main->auth->service()) != std::string::npos) {
+	auto system_auth_service = main->auth->service();
+	bool service_check = service == system_auth_service;
+#if YOUTUBE_ENABLED
+	service_check = service_check ? service_check
+				      : IsYouTubeService(system_auth_service) &&
+						IsYouTubeService(service);
+#endif
+	if (service_check) {
+		auth.reset();
 		auth = main->auth;
 		OnAuthConnected();
 	}
-#endif
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -528,7 +591,6 @@ OBSService OBSBasicSettings::SpawnTempService()
 
 void OBSBasicSettings::OnOAuthStreamKeyConnected()
 {
-#ifdef BROWSER_AVAILABLE
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
@@ -541,18 +603,43 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 		ui->streamKeyLabel->setVisible(false);
 		ui->connectAccount2->setVisible(false);
 		ui->disconnectAccount->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(false);
+
+		ui->connectedAccountLabel->setVisible(false);
+		ui->connectedAccountText->setVisible(false);
 
 		if (strcmp(a->service(), "Twitch") == 0) {
 			ui->bandwidthTestEnable->setVisible(true);
 			ui->twitchAddonLabel->setVisible(true);
 			ui->twitchAddonDropdown->setVisible(true);
-		} else {
-			ui->bandwidthTestEnable->setChecked(false);
 		}
+#if YOUTUBE_ENABLED
+		if (IsYouTubeService(a->service())) {
+			ui->key->clear();
+
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Title"));
+
+			std::string a_service = a->service();
+			std::shared_ptr<YoutubeApiWrappers> ytAuth =
+				std::dynamic_pointer_cast<YoutubeApiWrappers>(
+					auth);
+			auto act = [&]() {
+				get_yt_ch_title(ui.get(), ytAuth.get());
+			};
+
+			QScopedPointer<QThread> thread(CreateQThread(act));
+			thread->start();
+			thread->wait();
+		}
+#endif
+		ui->bandwidthTestEnable->setChecked(false);
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
-#endif
 }
 
 void OBSBasicSettings::OnAuthConnected()
@@ -560,7 +647,8 @@ void OBSBasicSettings::OnAuthConnected()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	Auth::Type type = Auth::AuthType(service);
 
-	if (type == Auth::Type::OAuth_StreamKey) {
+	if (type == Auth::Type::OAuth_StreamKey ||
+	    type == Auth::Type::OAuth_LinkedAccount) {
 		OnOAuthStreamKeyConnected();
 	}
 
@@ -572,15 +660,16 @@ void OBSBasicSettings::OnAuthConnected()
 
 void OBSBasicSettings::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
 	OAuth::DeleteCookies(service);
 
 	auth = OAuthStreamKey::Login(this, service);
-	if (!!auth)
+	if (!!auth) {
 		OnAuthConnected();
-#endif
+
+		ui->useStreamKeyAdv->setVisible(false);
+	}
 }
 
 #define DISCONNECT_COMFIRM_TITLE \
@@ -610,14 +699,15 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	ui->bandwidthTestEnable->setChecked(false);
 
-	ui->streamKeyWidget->setVisible(true);
-	ui->streamKeyLabel->setVisible(true);
-	ui->connectAccount2->setVisible(true);
-	ui->disconnectAccount->setVisible(false);
+	reset_service_ui_fields(ui.get(), service, loading);
+
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 	ui->key->setText("");
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
 }
 
 void OBSBasicSettings::on_useStreamKey_clicked()

@@ -78,8 +78,8 @@ try {
 	auto func = [&]() {
 		success = GetRemoteFile("https://api.twitch.tv/kraken/channel",
 					output, error, &error_code,
-					"application/json", nullptr, headers,
-					nullptr, 5);
+					"application/json", "", nullptr,
+					headers, nullptr, 5);
 	};
 
 	ExecThreadedWithoutBlocking(
@@ -423,7 +423,7 @@ bool TwitchAuth::RetryLogin()
 			QT_TO_UTF8(login.GetCode()), true);
 }
 
-std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent)
+std::shared_ptr<Auth> TwitchAuth::Login(QWidget *parent, const std::string &)
 {
 	OAuthLogin login(parent, TWITCH_AUTH_URL, false);
 	if (login.exec() == QDialog::Rejected) {

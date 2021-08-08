@@ -19,6 +19,7 @@
 
 #include <QBuffer>
 #include <QAction>
+#include <QThread>
 #include <QWidgetAction>
 #include <QSystemTrayIcon>
 #include <QStyledItemDelegate>
@@ -555,6 +556,17 @@ private:
 
 	void MoveSceneItem(enum obs_order_movement movement,
 			   const QString &action_name);
+
+	bool autoStartBroadcast = true;
+	bool autoStopBroadcast = true;
+	bool broadcastActive = false;
+	QPointer<QThread> youtubeStreamCheckThread;
+#if YOUTUBE_ENABLED
+	void YoutubeStreamCheck(const std::string &key);
+	void YouTubeActionDialogOk(const QString &id, const QString &key,
+				   bool autostart, bool autostop);
+#endif
+	void BroadcastButtonClicked();
 
 public slots:
 	void DeferSaveBegin();
