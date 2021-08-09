@@ -246,8 +246,8 @@ HRESULT WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool defaultD
 		bfree(w_id);
 	}
 
-	blog(LOG_INFO, "[WASAPISource::_InitDevice]: Returning device = %08x",
-		device.Get());
+	blog(LOG_INFO, "[WASAPISource::_InitDevice][%08X]: Returning device pointer = %08x",
+		this, device.Get());
 	return res;
 }
 
@@ -264,13 +264,13 @@ HRESULT WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator)
 		return res;
 
 	if (!device_name.empty()) {
-		blog(LOG_INFO, "[WASAPISource::InitDevice]: Failed to init device and device name not empty",
-		     device_name.c_str());
+		blog(LOG_INFO, "[WASAPISource::InitDevice][%08X]: Failed to init device and device name not empty '%s'",
+		     this, device_name.c_str());
 		devices.clear();
 		GetWASAPIAudioDevices(devices, isInputDevice, device_name);
 		if (devices.size()) {
-			blog(LOG_INFO, "[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices",
-			     device_name.c_str());
+			blog(LOG_INFO, "[WASAPISource::InitDevice][%08X]: Use divice from GetWASAPIAudioDevices, name '%s'",
+			     this, device_name.c_str());
 
 			this->device = devices[0].device;
 			this->device_id = devices[0].id;
@@ -439,7 +439,7 @@ void WASAPISource::InitCapture()
 
 void WASAPISource::Initialize()
 {
-	blog(LOG_INFO, "[WASAPISource::Initialize] Device initialize called");
+	blog(LOG_INFO, "[WASAPISource::Initialize][%08X] Device initialize called", this);
 	HRESULT res;
 
 	res = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
@@ -452,7 +452,7 @@ void WASAPISource::Initialize()
 
 	if (FAILED(res) || device.Get() == nullptr) {
 		// fail early
-		blog(LOG_ERROR, "[WASAPISource::Initialize] Device pointer is %p res is %d", device.Get(), res);
+		blog(LOG_ERROR, "[WASAPISource::Initialize][%08X] Device pointer is %p res is %d", this, device.Get(), res);
 		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
 	}
 
@@ -507,31 +507,26 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 	} catch (HRError &error) {
 		if (previouslyFailed) {
-			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d, %s: %lX",
-			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active, error.str, error.hr);
 			return active;
 		}
 
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s: %lX",
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X]:[%s] %s: %lX", this,
 				device_name.empty() ? device_id.c_str(): device_name.c_str(),
 		     error.str, error.hr);
 	} catch (const char *error) {
 		if (previouslyFailed) {
-			blog(LOG_WARNING,
-			     "[WASAPISource::TryInitialize]:[%s] Device id %s previously failed, aborting with active = %d,  %s",
-			     device_name.empty() ? device_id.c_str(): device_name.c_str(),
-			     device_id.c_str(), active, error);
 			return active;
 		}
 
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize]:[%s] %s",
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X]:[%s] %s", this, 
 		     device_name.empty() ? device_id.c_str()
 					 : device_name.c_str(),
 		     error);
 	} catch (...) {
-		blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X] Catch [%s] failed",
+		if (previouslyFailed) {
+			return active;
+		}
+		blog(LOG_WARNING, "[WASAPISource::TryInitialize][%08X] Catch [%s] failed", this,
 		     device_name.empty() ? device_id.c_str() : device_name.c_str());
 	}
 	{
@@ -722,8 +717,9 @@ void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
 	if (id && default_id.compare(id) == 0)
 		return;
 
-	blog(LOG_INFO, "[WASAPISource::SetDefaultDevice][%08X] Default %s device changed",
-	     this, isInputDevice ? "input" : "output");
+	blog(LOG_INFO, "[WASAPISource::SetDefaultDevice][%08X] Default %s device changed, name was '%s'",
+	     this, isInputDevice ? "input" : "output",
+	     device_name.empty() ? device_id.c_str() : device_name.c_str());
 
 	std::lock_guard<std::recursive_mutex> guard(state_mutex);	
 
