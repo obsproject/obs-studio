@@ -606,6 +606,18 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_reset_video(void) override { main->ResetVideo(); }
 
+	void obs_frontend_open_source_properties(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenProperties",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_source_filters(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenFilters",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

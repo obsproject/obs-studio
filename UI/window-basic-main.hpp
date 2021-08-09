@@ -1047,7 +1047,8 @@ private slots:
 			     QAbstractItemDelegate::EndEditHint endHint);
 
 	void OpenSceneFilters();
-	void OpenFilters();
+	void OpenFilters(OBSSource source = nullptr);
+	void OpenProperties(OBSSource source = nullptr);
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();
