@@ -2009,6 +2009,18 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	InstallNSApplicationSubclass();
 #endif
 
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(USE_XDG) && \
+	defined(ENABLE_WAYLAND)
+	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
+	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
+	 * use other QPA platforms using this env var, or the -platform command
+	 * line option. */
+
+	const char *session_type = getenv("XDG_SESSION_TYPE");
+	if (session_type && strcmp(session_type, "wayland") == 0)
+		setenv("QT_QPA_PLATFORM", "wayland", false);
+#endif
+
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		QAccessible::installFactory(accessibleFactory);
