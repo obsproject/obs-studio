@@ -134,6 +134,10 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_virtualcam_active(void) = 0;
 
 	virtual void obs_frontend_reset_video(void) = 0;
+
+	virtual void
+	obs_frontend_open_source_properties(obs_source_t *source) = 0;
+	virtual void obs_frontend_open_source_filters(obs_source_t *source) = 0;
 };
 
 EXPORT void
