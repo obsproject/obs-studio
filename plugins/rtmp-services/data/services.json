@@ -2300,6 +2300,44 @@
                 "max video bitrate": 20000,
                 "max fps": 60
             }
+        },
+        {
+            "name": "17LIVE",
+            "stream key link": "https://17.live/settings/live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://wansu-global-push-rtmp.17app.co/vod"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "supported resolutions": [
+                            "1280x720",
+                            "960x540",
+                            "640x360"
+                ],
+                "bitrate matrix": [
+                            {
+                                "res": "640x360",
+                                "fps": 30,
+                                "max bitrate": 1000
+                            },
+                            {
+                                "res": "960x540",
+                                "fps": 30,
+                                "max bitrate": 1600
+                            },
+                            {
+                                "res": "1280x720",
+                                "fps": 30,
+                                "max bitrate": 3000
+                            }
+                ],
+                "max video bitrate": 3000,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
