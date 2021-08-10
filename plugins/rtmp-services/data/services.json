@@ -1452,7 +1452,7 @@
                     "url": "rtmp://stream.dlive.tv/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
@@ -1490,7 +1490,7 @@
                     "url": "rtmp://australia.live.lightcast.com/202E1F/default"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
@@ -1516,7 +1516,7 @@
                     "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 192,
@@ -1532,7 +1532,7 @@
                     "url": "rtmp://stream-1.show-it.tv:1935/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "max video bitrate": 6000,
                 "max audio bitrate": 192
             }
@@ -1563,7 +1563,7 @@
                     "url": "rtmp://rtmp.camplace.com"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
@@ -1581,7 +1581,7 @@
                     "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "profile": "main",
                 "max video bitrate": 2500,
