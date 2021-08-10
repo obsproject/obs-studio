@@ -312,6 +312,8 @@ void OBSBasicSettings::UpdateKeyLink()
 	} else if (serviceName == "Bilibili Live") {
 		streamKeyLink =
 			"https://link.bilibili.com/p/center/index#/my-room/start-live";
+	} else if (serviceName == "17LIVE") {
+		streamKeyLink = "https://17.live/settings/live";
 	}
 
 	if (serviceName == "Dacast") {
