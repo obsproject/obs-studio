@@ -37,6 +37,7 @@ struct stinger_info {
 	float matte_height_factor;
 	bool invert_matte;
 	bool do_texrender;
+	bool matte_rendered;
 
 	gs_effect_t *matte_effect;
 	gs_eparam_t *ep_a_tex;
@@ -306,8 +307,23 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 {
 	struct stinger_info *s = data;
 
+	uint32_t media_cx = obs_source_get_width(s->media_source);
+	uint32_t media_cy = obs_source_get_height(s->media_source);
+
 	if (s->track_matte_enabled) {
-		obs_transition_video_render(s->source, stinger_matte_render);
+		bool ready = obs_source_active(s->media_source) && !!media_cx &&
+			     !!media_cy;
+		if (ready) {
+			if (!s->matte_rendered)
+				s->matte_rendered = true;
+			obs_transition_video_render(s->source,
+						    stinger_matte_render);
+		} else {
+			obs_transition_video_render_direct(
+				s->source, s->matte_rendered
+						   ? OBS_TRANSITION_SOURCE_B
+						   : OBS_TRANSITION_SOURCE_A);
+		}
 		if (s->matte_layout == MATTE_LAYOUT_MASK)
 			return;
 	} else {
@@ -329,9 +345,6 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	float source_cxf = (float)source_cx;
 	float source_cyf = (float)source_cy;
-
-	uint32_t media_cx = obs_source_get_width(s->media_source);
-	uint32_t media_cy = obs_source_get_height(s->media_source);
 
 	if (!media_cx || !media_cy)
 		return;
@@ -468,6 +481,8 @@ static void stinger_transition_start(void *data)
 			}
 			return;
 		}
+
+		s->matte_rendered = false;
 
 		proc_handler_call(ph, "get_duration", &cd);
 		proc_handler_call(ph, "get_nb_frames", &cd);
