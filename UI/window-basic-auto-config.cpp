@@ -553,9 +553,9 @@ static inline bool is_external_oauth(const std::string &service)
 
 void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
 {
+#if YOUTUBE_ENABLED
 	// when account is already connected:
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
-#if YOUTUBE_ENABLED
 	if (a && service == a->service() && IsYouTubeService(a->service())) {
 		ui->connectedAccountLabel->setVisible(true);
 		ui->connectedAccountText->setVisible(true);
