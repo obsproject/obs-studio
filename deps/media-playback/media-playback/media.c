@@ -540,21 +540,22 @@ static bool mp_media_reset(mp_media_t *m)
 	return true;
 }
 
-static inline bool mp_media_sleepto(mp_media_t *m)
+static inline bool mp_media_sleep(mp_media_t *m)
 {
 	bool timeout = false;
 
 	if (!m->next_ns) {
 		m->next_ns = os_gettime_ns();
 	} else {
-		uint64_t t = os_gettime_ns();
-		const uint64_t timeout_ns = 200000000;
-
-		if (m->next_ns > t && (m->next_ns - t) > timeout_ns) {
-			os_sleepto_ns(t + timeout_ns);
-			timeout = true;
-		} else {
-			os_sleepto_ns(m->next_ns);
+		const uint64_t t = os_gettime_ns();
+		if (m->next_ns > t) {
+			const uint32_t delta_ms =
+				(uint32_t)((m->next_ns - t + 500000) / 1000000);
+			if (delta_ms > 0) {
+				static const uint32_t timeout_ms = 200;
+				timeout = delta_ms > timeout_ms;
+				os_sleep_ms(timeout ? timeout_ms : delta_ms);
+			}
 		}
 	}
 
@@ -695,7 +696,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 			if (pause)
 				reset_ts(m);
 		} else {
-			timeout = mp_media_sleepto(m);
+			timeout = mp_media_sleep(m);
 		}
 
 		pthread_mutex_lock(&m->mutex);
