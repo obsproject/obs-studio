@@ -129,7 +129,7 @@ void gs_technique_end(gs_technique_t *tech)
 	for (i = 0; i < effect->params.num; i++) {
 		struct gs_effect_param *param = params + i;
 
-		da_free(param->cur_val);
+		da_resize(param->cur_val, 0);
 		param->changed = false;
 		if (param->next_sampler)
 			param->next_sampler = NULL;
