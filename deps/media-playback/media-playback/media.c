@@ -16,6 +16,7 @@
 
 #include <obs.h>
 #include <util/platform.h>
+#include <sys/stat.h>
 
 #include <assert.h>
 
