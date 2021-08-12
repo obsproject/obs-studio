@@ -198,8 +198,9 @@ void OBSBasicSettings::SaveStream1Settings()
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
-		obs_data_set_string(settings, "server",
-				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->customServer->text().trimmed()));
 		obs_data_set_bool(settings, "use_auth",
 				  ui->useAuth->isChecked());
 		if (ui->useAuth->isChecked()) {
@@ -280,7 +281,7 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 void OBSBasicSettings::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text();
+	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 	if (serviceName == "Twitch") {
 		streamKeyLink = "https://dashboard.twitch.tv/settings/stream";
@@ -577,8 +578,9 @@ OBSService OBSBasicSettings::SpawnTempService()
 			settings, "server",
 			QT_TO_UTF8(ui->server->currentData().toString()));
 	} else {
-		obs_data_set_string(settings, "server",
-				    QT_TO_UTF8(ui->customServer->text()));
+		obs_data_set_string(
+			settings, "server",
+			QT_TO_UTF8(ui->customServer->text().trimmed()));
 	}
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 

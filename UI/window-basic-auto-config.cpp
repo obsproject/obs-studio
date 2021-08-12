@@ -369,7 +369,7 @@ bool AutoConfigStreamPage::validatePage()
 	obs_service_apply_encoder_settings(service, settings, nullptr);
 
 	if (wiz->customServer) {
-		QString server = ui->customServer->text();
+		QString server = ui->customServer->text().trimmed();
 		wiz->server = wiz->serverName = QT_TO_UTF8(server);
 	} else {
 		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
@@ -693,7 +693,7 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 void AutoConfigStreamPage::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text();
+	QString customServer = ui->customServer->text().trimmed();
 	bool isYoutube = false;
 	QString streamKeyLink;
 
