@@ -364,9 +364,8 @@ struct gs_vertex_buffer : gs_obj {
 
 	void FlushBuffer(ID3D11Buffer *buffer, void *array, size_t elementSize);
 
-	void MakeBufferList(gs_vertex_shader *shader,
-			    vector<ID3D11Buffer *> &buffers,
-			    vector<uint32_t> &strides);
+	UINT MakeBufferList(gs_vertex_shader *shader, ID3D11Buffer **buffers,
+			    uint32_t *strides);
 
 	void InitBuffer(const size_t elementSize, const size_t numVerts,
 			void *array, ID3D11Buffer **buffer);

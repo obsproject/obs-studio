@@ -15,6 +15,7 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#include <cassert>
 #include <cinttypes>
 #include <util/base.h>
 #include <util/platform.h>
@@ -1439,24 +1440,28 @@ void gs_device::LoadVertexBufferData()
 	    curVertexShader == lastVertexShader)
 		return;
 
-	vector<ID3D11Buffer *> buffers;
-	vector<uint32_t> strides;
-	vector<uint32_t> offsets;
+	ID3D11Buffer *buffers[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+	uint32_t strides[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+	uint32_t offsets[D3D11_IA_VERTEX_INPUT_RESOURCE_SLOT_COUNT];
+	UINT numBuffers{};
+
+	assert(curVertexShader->NumBuffersExpected() <= _countof(buffers));
+	assert(curVertexShader->NumBuffersExpected() <= _countof(strides));
+	assert(curVertexShader->NumBuffersExpected() <= _countof(offsets));
 
 	if (curVertexBuffer && curVertexShader) {
-		curVertexBuffer->MakeBufferList(curVertexShader, buffers,
-						strides);
+		numBuffers = curVertexBuffer->MakeBufferList(curVertexShader,
+							     buffers, strides);
 	} else {
-		size_t buffersToClear =
-			curVertexShader ? curVertexShader->NumBuffersExpected()
-					: 0;
-		buffers.resize(buffersToClear);
-		strides.resize(buffersToClear);
+		numBuffers = curVertexShader
+				     ? curVertexShader->NumBuffersExpected()
+				     : 0;
+		std::fill_n(buffers, numBuffers, nullptr);
+		std::fill_n(strides, numBuffers, 0);
 	}
 
-	offsets.resize(buffers.size());
-	context->IASetVertexBuffers(0, (UINT)buffers.size(), buffers.data(),
-				    strides.data(), offsets.data());
+	std::fill_n(offsets, numBuffers, 0);
+	context->IASetVertexBuffers(0, numBuffers, buffers, strides, offsets);
 
 	lastVertexBuffer = curVertexBuffer;
 	lastVertexShader = curVertexShader;
