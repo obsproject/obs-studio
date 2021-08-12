@@ -2853,23 +2853,6 @@ static inline void free_async_cache(struct obs_source *source)
 	source->prev_async_frame = NULL;
 }
 
-#define MAX_UNUSED_FRAME_DURATION 5
-
-/* frees frame allocations if they haven't been used for a specific period
- * of time */
-static void clean_cache(obs_source_t *source)
-{
-	for (size_t i = source->async_cache.num; i > 0; i--) {
-		struct async_frame *af = &source->async_cache.array[i - 1];
-		if (!af->used) {
-			if (++af->unused_count == MAX_UNUSED_FRAME_DURATION) {
-				obs_source_frame_destroy(af->frame);
-				da_erase(source->async_cache, i - 1);
-			}
-		}
-	}
-}
-
 #define MAX_ASYNC_FRAMES 30
 //if return value is not null then do (os_atomic_dec_long(&output->refs) == 0) && obs_source_frame_destroy(output)
 static inline struct obs_source_frame *
@@ -2879,17 +2862,27 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 
 	pthread_mutex_lock(&source->async_mutex);
 
-	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
-		free_async_cache(source);
-		source->last_frame_ts = 0;
-		pthread_mutex_unlock(&source->async_mutex);
-		return NULL;
-	}
-
 	if (async_texture_changed(source, frame)) {
 		free_async_cache(source);
 		source->async_cache_width = frame->width;
 		source->async_cache_height = frame->height;
+	}
+
+	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
+		bool available = false;
+		for (size_t i = 0; i < source->async_cache.num; i++) {
+			struct async_frame *af = &source->async_cache.array[i];
+			if (!af->used) {
+				available = true;
+				break;
+			}
+		}
+
+		if (!available) {
+			source->last_frame_ts = 0;
+			pthread_mutex_unlock(&source->async_mutex);
+			return NULL;
+		}
 	}
 
 	const enum video_format format = frame->format;
@@ -2906,8 +2899,6 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 			break;
 		}
 	}
-
-	clean_cache(source);
 
 	if (!new_frame) {
 		struct async_frame new_af;
