@@ -381,10 +381,11 @@ static void on_process_cb(void *user_data)
 		goto read_metadata;
 
 	if (buffer->datas[0].type == SPA_DATA_DmaBuf) {
-		uint32_t offsets[1];
-		uint32_t strides[1];
-		uint64_t modifiers[1];
-		int fds[1];
+		uint32_t planes = buffer->n_datas;
+		uint32_t offsets[planes];
+		uint32_t strides[planes];
+		uint64_t modifiers[planes];
+		int fds[planes];
 
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
@@ -401,16 +402,18 @@ static void on_process_cb(void *user_data)
 			goto read_metadata;
 		}
 
-		fds[0] = buffer->datas[0].fd;
-		offsets[0] = buffer->datas[0].chunk->offset;
-		strides[0] = buffer->datas[0].chunk->stride;
-		modifiers[0] = obs_pw->format.info.raw.modifier;
+		for (uint32_t plane = 0; plane < planes; plane++) {
+			fds[plane] = buffer->datas[plane].fd;
+			offsets[plane] = buffer->datas[plane].chunk->offset;
+			strides[plane] = buffer->datas[plane].chunk->stride;
+			modifiers[plane] = obs_pw->format.info.raw.modifier;
+		}
 
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
 		obs_pw->texture = gs_texture_create_from_dmabuf(
 			obs_pw->format.info.raw.size.width,
 			obs_pw->format.info.raw.size.height, drm_format,
-			GS_BGRX, 1, fds, strides, offsets, modifiers);
+			GS_BGRX, planes, fds, strides, offsets, modifiers);
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
 		enum gs_color_format obs_format;
