@@ -342,6 +342,59 @@ static void swap_texture_red_blue(gs_texture_t *texture)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
+static inline struct spa_pod *build_format(struct spa_pod_builder *b,
+					   struct obs_video_info *ovi,
+					   uint32_t format, uint64_t *modifiers,
+					   size_t modifier_count)
+{
+	uint32_t i, c;
+	struct spa_pod_frame f[2];
+
+	/* make an object of type SPA_TYPE_OBJECT_Format and id SPA_PARAM_EnumFormat.
+	 * The object type is important because it defines the properties that are
+	 * acceptable. The id gives more context about what the object is meant to
+	 * contain. In this case we enumerate supported formats. */
+	spa_pod_builder_push_object(b, &f[0], SPA_TYPE_OBJECT_Format,
+				    SPA_PARAM_EnumFormat);
+	/* add media type and media subtype properties */
+	spa_pod_builder_prop(b, SPA_FORMAT_mediaType, 0);
+	spa_pod_builder_id(b, SPA_MEDIA_TYPE_video);
+	spa_pod_builder_prop(b, SPA_FORMAT_mediaSubtype, 0);
+	spa_pod_builder_id(b, SPA_MEDIA_SUBTYPE_raw);
+
+	/* formats */
+	spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_format, 0);
+	spa_pod_builder_id(b, format);
+
+	/* modifier */
+	if (modifier_count > 0) {
+		/* build an enumeration of modifiers */
+		spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_modifier,
+				     SPA_POD_PROP_FLAG_MANDATORY);
+		spa_pod_builder_push_choice(b, &f[1], SPA_CHOICE_Enum, 0);
+		/* modifiers from  an array */
+		for (i = 0, c = 0; i < modifier_count; i++) {
+			uint64_t modifier = modifiers[i];
+			spa_pod_builder_long(b, modifier);
+			if (c++ == 0)
+				spa_pod_builder_long(b, modifier);
+		}
+		spa_pod_builder_pop(b, &f[1]);
+	}
+	/* add size and framerate ranges */
+	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size,
+			    SPA_POD_CHOICE_RANGE_Rectangle(
+				    &SPA_RECTANGLE(320, 240), // Arbitrary
+				    &SPA_RECTANGLE(1, 1),
+				    &SPA_RECTANGLE(8192, 4320)),
+			    SPA_FORMAT_VIDEO_framerate,
+			    SPA_POD_CHOICE_RANGE_Fraction(
+				    &SPA_FRACTION(ovi->fps_num, ovi->fps_den),
+				    &SPA_FRACTION(0, 1), &SPA_FRACTION(360, 1)),
+			    0);
+	return spa_pod_builder_pop(b, &f[0]);
+}
+
 /* ------------------------------------------------- */
 
 static void on_process_cb(void *user_data)
