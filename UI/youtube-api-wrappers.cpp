@@ -238,7 +238,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 		return false;
 	}
 	const QByteArray url = YOUTUBE_LIVE_STREAM_URL
-		"?part=snippet,cdn,status";
+		"?part=snippet,cdn,status,contentDetails";
 	const Json data = Json::object{
 		{"snippet",
 		 Json::object{
@@ -250,6 +250,7 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 			 {"ingestionType", "rtmp"},
 			 {"resolution", "variable"},
 		 }},
+		{"contentDetails", Json::object{{"isReusable", false}}},
 	};
 	Json json_out;
 	if (!InsertCommand(url, "application/json", "", data.dump().c_str(),
