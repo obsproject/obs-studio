@@ -507,7 +507,7 @@ static bool mp_media_reset(mp_media_t *m)
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
-	
+
 	seek_to(m, m->fmt->start_time);
 
 	pthread_mutex_lock(&m->mutex);
