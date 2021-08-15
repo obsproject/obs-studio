@@ -3123,6 +3123,19 @@ void OBSBasic::UpdateContextBar(bool force)
 			ui->emptySpace->layout()->addWidget(c);
 		}
 
+		QIcon icon;
+
+		if (strcmp(id, "scene") == 0)
+			icon = GetSceneIcon();
+		else if (strcmp(id, "group") == 0)
+			icon = GetGroupIcon();
+		else
+			icon = GetSourceIcon(id);
+
+		QPixmap pixmap = icon.pixmap(QSize(16, 16));
+		ui->contextSourceIcon->setPixmap(pixmap);
+		ui->contextSourceIcon->show();
+
 		const char *name = obs_source_get_name(source);
 		ui->contextSourceLabel->setText(name);
 
@@ -3130,6 +3143,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourcePropertiesButton->setEnabled(
 			obs_source_configurable(source));
 	} else {
+		ui->contextSourceIcon->hide();
 		ui->contextSourceLabel->setText(
 			QTStr("ContextBar.NoSelectedSource"));
 
