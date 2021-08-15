@@ -40,12 +40,27 @@ extern void xcomposite_unload(void);
 
 bool obs_module_load(void)
 {
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_GLX) {
+	enum obs_nix_platform_type platform = obs_get_nix_platform();
+
+	switch (platform) {
+	case OBS_NIX_PLATFORM_X11_GLX:
 		obs_register_source(&xshm_input);
 		xcomposite_load();
+		break;
+
+	case OBS_NIX_PLATFORM_X11_EGL:
+		obs_register_source(&xshm_input);
 #ifdef ENABLE_PIPEWIRE
-	} else {
 		pipewire_capture_load();
+#endif
+		break;
+
+#ifdef ENABLE_WAYLAND
+	case OBS_NIX_PLATFORM_WAYLAND:
+#ifdef ENABLE_PIPEWIRE
+		pipewire_capture_load();
+#endif
+		break;
 #endif
 	}
 
