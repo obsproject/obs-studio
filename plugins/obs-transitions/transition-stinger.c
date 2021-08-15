@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <util/dstr.h>
+#include "util/platform.h"
 
 #define TIMING_TIME 0
 #define TIMING_FRAME 1
@@ -729,6 +730,60 @@ static obs_properties_t *stinger_properties(void *data)
 	return ppts;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct stinger_info *s = src;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+
+	const char *type = data;
+
+	if (strcmp(type, "media_source") == 0) {
+		obs_data_set_string(settings, "path", new_path);
+	} else if (strcmp(type, "matte_source") == 0) {
+		obs_data_set_string(settings, "track_matte_path", new_path);
+	}
+
+	obs_source_update(s->source, settings);
+	obs_data_release(settings);
+}
+
+static obs_missing_files_t *stinger_missing_files(void *data)
+{
+	struct stinger_info *s = data;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	const char *path = obs_data_get_string(settings, "path");
+
+	if (strcmp(path, "") != 0) {
+		if (!os_file_exists(path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source,
+				(void *)"media_source");
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	const char *track_matte_path =
+		obs_data_get_string(settings, "track_matte_path");
+
+	if (strcmp(track_matte_path, "") != 0) {
+		if (!os_file_exists(track_matte_path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				track_matte_path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source,
+				(void *)"matte_source");
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	obs_data_release(settings);
+	return files;
+}
+
 struct obs_source_info stinger_transition = {
 	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -740,6 +795,7 @@ struct obs_source_info stinger_transition = {
 	.video_render = stinger_video_render,
 	.video_tick = stinger_video_tick,
 	.audio_render = stinger_audio_render,
+	.missing_files = stinger_missing_files,
 	.get_properties = stinger_properties,
 	.enum_active_sources = stinger_enum_active_sources,
 	.enum_all_sources = stinger_enum_all_sources,
