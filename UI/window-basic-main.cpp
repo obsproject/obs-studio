@@ -4654,6 +4654,47 @@ void OBSBasic::on_action_Settings_triggered()
 	}
 }
 
+static inline void AddMissingFiles(void *data, obs_source_t *source)
+{
+	obs_missing_files_t *f = (obs_missing_files_t *)data;
+	obs_missing_files_t *sf = obs_source_get_missing_files(source);
+
+	obs_missing_files_append(f, sf);
+	obs_missing_files_destroy(sf);
+}
+
+void OBSBasic::on_actionShowMissingFiles_triggered()
+{
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	auto cb_sources = [](void *data, obs_source_t *source) {
+		AddMissingFiles(data, source);
+		return true;
+	};
+	obs_enum_sources(cb_sources, files);
+
+	auto cb_transitions = [](void *data, obs_source_t *source) {
+		if (obs_source_get_type(source) != OBS_SOURCE_TYPE_TRANSITION)
+			return true;
+
+		AddMissingFiles(data, source);
+		return true;
+	};
+	obs_enum_all_sources(cb_transitions, files);
+
+	if (obs_missing_files_count(files) > 0) {
+		missDialog = new OBSMissingFiles(files, this);
+		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+		missDialog->show();
+		missDialog->raise();
+	} else {
+		obs_missing_files_destroy(files);
+		OBSMessageBox::information(
+			this, QTStr("MissingFiles.NoMissing.Title"),
+			QTStr("MissingFiles.NoMissing.Text"));
+	}
+}
+
 void save_audio_source(int channel, obs_data_t *save)
 {
 	obs_source_t *source = obs_get_output_source(channel);

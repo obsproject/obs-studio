@@ -909,6 +909,7 @@ private slots:
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
+	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
 	void AdvAudioPropsClicked();
 	void AdvAudioPropsDestroyed();

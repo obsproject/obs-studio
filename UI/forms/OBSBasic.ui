@@ -597,6 +597,8 @@
     <addaction name="actionImportSceneCollection"/>
     <addaction name="actionExportSceneCollection"/>
     <addaction name="separator"/>
+    <addaction name="actionShowMissingFiles"/>
+    <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="viewMenu">
     <property name="title">
@@ -1776,6 +1778,11 @@
   <action name="actionExportSceneCollection">
    <property name="text">
     <string>Export</string>
+   </property>
+  </action>
+  <action name="actionShowMissingFiles">
+   <property name="text">
+    <string>Basic.MainMenu.File.ShowMissingFiles</string>
    </property>
   </action>
   <action name="actionNewProfile">
