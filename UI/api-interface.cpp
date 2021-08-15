@@ -646,7 +646,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		if (main->disableSaving &&
 		    event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
-		    event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_EXIT)
+		    event != OBS_FRONTEND_EVENT_EXIT)
 			return;
 
 		for (size_t i = callbacks.size(); i > 0; i--) {
