@@ -424,7 +424,10 @@ static void get_yt_ch_title(Ui::OBSBasicSettings *ui,
 			if (IsYouTubeService(
 				    QT_TO_UTF8(ui->service->currentText()))) {
 				ui->connectedAccountText->setText(
-					QTStr("Auth.LoadingChannel.Error"));
+					ytAuth->GetLastError().isEmpty()
+						? QTStr("Auth.LoadingChannel.Error")
+						: QTStr("YouTube.AuthError.Text")
+							  .arg(ytAuth->GetLastError()));
 			}
 		}
 	}
