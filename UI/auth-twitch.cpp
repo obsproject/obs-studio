@@ -22,7 +22,6 @@ using namespace json11;
 
 #define TWITCH_AUTH_URL "https://obsproject.com/app-auth/twitch?action=redirect"
 #define TWITCH_TOKEN_URL "https://obsproject.com/app-auth/twitch-token"
-#define ACCEPT_HEADER "Accept: application/vnd.twitchtv.v5+json"
 
 #define TWITCH_SCOPE_VERSION 1
 
@@ -48,26 +47,17 @@ TwitchAuth::TwitchAuth(const Def &d) : OAuthStreamKey(d)
 		&TwitchAuth::TryLoadSecondaryUIPanes);
 }
 
-bool TwitchAuth::GetChannelInfo()
-try {
+bool TwitchAuth::MakeApiRequest(const char *path, Json &json_out)
+{
 	std::string client_id = TWITCH_CLIENTID;
 	deobfuscate_str(&client_id[0], TWITCH_HASH);
 
-	if (!GetToken(TWITCH_TOKEN_URL, client_id, TWITCH_SCOPE_VERSION))
-		return false;
-	if (token.empty())
-		return false;
-	if (!key_.empty())
-		return true;
-
-	std::string auth;
-	auth += "Authorization: OAuth ";
-	auth += token;
+	std::string url = "https://api.twitch.tv/helix/";
+	url += std::string(path);
 
 	std::vector<std::string> headers;
 	headers.push_back(std::string("Client-ID: ") + client_id);
-	headers.push_back(ACCEPT_HEADER);
-	headers.push_back(std::move(auth));
+	headers.push_back(std::string("Authorization: Bearer ") + token);
 
 	std::string output;
 	std::string error;
@@ -76,8 +66,7 @@ try {
 	bool success = false;
 
 	auto func = [&]() {
-		success = GetRemoteFile("https://api.twitch.tv/kraken/channel",
-					output, error, &error_code,
+		success = GetRemoteFile(url.c_str(), output, error, &error_code,
 					"application/json", "", nullptr,
 					headers, nullptr, 5);
 	};
@@ -100,24 +89,44 @@ try {
 	if (!success || output.empty())
 		throw ErrorInfo("Failed to get text from remote", error);
 
-	Json json = Json::parse(output, error);
+	json_out = Json::parse(output, error);
 	if (!error.empty())
 		throw ErrorInfo("Failed to parse json", error);
 
-	error = json["error"].string_value();
-	if (!error.empty()) {
-		if (error == "Unauthorized") {
-			if (RetryLogin()) {
-				return GetChannelInfo();
-			}
-			throw ErrorInfo(error, json["message"].string_value());
-		}
-		throw ErrorInfo(error,
-				json["error_description"].string_value());
-	}
+	error = json_out["error"].string_value();
+	if (!error.empty())
+		throw ErrorInfo(error, json_out["message"].string_value());
 
-	name = json["name"].string_value();
-	key_ = json["stream_key"].string_value();
+	return true;
+}
+
+bool TwitchAuth::GetChannelInfo()
+try {
+	std::string client_id = TWITCH_CLIENTID;
+	deobfuscate_str(&client_id[0], TWITCH_HASH);
+
+	if (!GetToken(TWITCH_TOKEN_URL, client_id, TWITCH_SCOPE_VERSION))
+		return false;
+	if (token.empty())
+		return false;
+	if (!key_.empty())
+		return true;
+
+	Json json;
+	bool success = MakeApiRequest("users", json);
+
+	if (!success)
+		return false;
+
+	name = json["data"][0]["login"].string_value();
+
+	std::string path = "streams/key?broadcaster_id=" +
+			   json["data"][0]["id"].string_value();
+	success = MakeApiRequest(path.c_str(), json);
+	if (!success)
+		return false;
+
+	key_ = json["data"][0]["stream_key"].string_value();
 
 	return true;
 } catch (ErrorInfo info) {
