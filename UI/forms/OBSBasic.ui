@@ -209,12 +209,6 @@
         <height>30</height>
        </size>
       </property>
-      <property name="maximumSize">
-       <size>
-        <width>16777215</width>
-        <height>30</height>
-       </size>
-      </property>
       <layout class="QHBoxLayout" name="horizontalLayout9">
        <property name="spacing">
         <number>6</number>
@@ -310,12 +304,6 @@
               <height>22</height>
              </size>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>22</height>
-             </size>
-            </property>
             <property name="toolTip">
              <string>Properties</string>
             </property>
@@ -342,12 +330,6 @@
               <height>22</height>
              </size>
             </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
-              <height>22</height>
-             </size>
-            </property>
             <property name="toolTip">
              <string>Filters</string>
             </property>
@@ -371,12 +353,6 @@
             <property name="minimumSize">
              <size>
               <width>0</width>
-              <height>22</height>
-             </size>
-            </property>
-            <property name="maximumSize">
-             <size>
-              <width>16777215</width>
               <height>22</height>
              </size>
             </property>
@@ -408,7 +384,7 @@
        <item>
         <widget class="QFrame" name="emptySpace">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+          <sizepolicy hsizetype="Expanding" vsizetype="Minimum">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
@@ -416,12 +392,6 @@
          <property name="minimumSize">
           <size>
            <width>0</width>
-           <height>22</height>
-          </size>
-         </property>
-         <property name="maximumSize">
-          <size>
-           <width>16777215</width>
            <height>22</height>
           </size>
          </property>
