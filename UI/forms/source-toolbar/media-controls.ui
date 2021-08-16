@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -19,12 +19,6 @@
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>22</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>16777215</width>
     <height>22</height>
    </size>
   </property>
@@ -56,12 +50,6 @@
       </sizepolicy>
      </property>
      <property name="minimumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
       <size>
        <width>22</width>
        <height>22</height>
@@ -121,12 +109,6 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="toolTip">
       <string>ContextBar.MediaControls.PlaylistPrevious</string>
      </property>
@@ -160,12 +142,6 @@
       </sizepolicy>
      </property>
      <property name="minimumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
       <size>
        <width>22</width>
        <height>22</height>
@@ -209,12 +185,6 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>22</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="toolTip">
       <string>ContextBar.MediaControls.PlaylistNext</string>
      </property>
@@ -244,12 +214,6 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
        <height>22</height>
       </size>
      </property>
@@ -297,12 +261,6 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="text">
       <string>--:--:--</string>
      </property>
@@ -338,12 +296,6 @@
        <height>22</height>
       </size>
      </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
-       <height>22</height>
-      </size>
-     </property>
      <property name="text">
       <string>/</string>
      </property>
@@ -376,12 +328,6 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
        <height>22</height>
       </size>
      </property>
