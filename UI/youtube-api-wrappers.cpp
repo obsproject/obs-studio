@@ -41,6 +41,17 @@ bool IsYouTubeService(const std::string &service)
 	return it != youtubeServices.end();
 }
 
+bool YoutubeApiWrappers::GetTranslatedError(QString &error_message)
+{
+	QString translated =
+		QTStr("YouTube.Errors." + lastErrorReason.toUtf8());
+	// No translation found
+	if (translated.startsWith("YouTube.Errors."))
+		return false;
+	error_message = translated;
+	return true;
+}
+
 YoutubeApiWrappers::YoutubeApiWrappers(const Def &d) : YoutubeAuth(d) {}
 
 bool YoutubeApiWrappers::TryInsertCommand(const char *url,
@@ -136,6 +147,10 @@ bool YoutubeApiWrappers::InsertCommand(const char *url,
 		     error_code, url, json_out.dump().c_str());
 
 		lastError = json_out["error"]["code"].int_value();
+		lastErrorReason =
+			QString(json_out["error"]["errors"][0]["reason"]
+					.string_value()
+					.c_str());
 		lastErrorMessage = QString(
 			json_out["error"]["message"].string_value().c_str());
 
@@ -149,6 +164,7 @@ bool YoutubeApiWrappers::GetChannelDescription(
 	ChannelDescription &channel_description)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QByteArray url = YOUTUBE_LIVE_CHANNEL_URL
 		"?part=snippet,contentDetails,statistics"
 		"&mine=true";
@@ -158,8 +174,7 @@ bool YoutubeApiWrappers::GetChannelDescription(
 	}
 
 	if (json_out["pageInfo"]["totalResults"].int_value() == 0) {
-		lastErrorMessage =
-			"No channel(s) available on selected account";
+		lastErrorMessage = QTStr("YouTube.Auth.NoChannels");
 		return false;
 	}
 
@@ -180,18 +195,8 @@ bool YoutubeApiWrappers::GetChannelDescription(
 
 bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 {
-	// Youtube API: The Title property's value must be between 1 and 100 characters long.
-	if (broadcast.title.isEmpty() || broadcast.title.length() > 100) {
-		blog(LOG_ERROR, "Insert broadcast FAIL: Wrong title.");
-		lastErrorMessage = "Broadcast title too long.";
-		return false;
-	}
-	// Youtube API: The property's value can contain up to 5000 characters.
-	if (broadcast.description.length() > 5000) {
-		blog(LOG_ERROR, "Insert broadcast FAIL: Description too long.");
-		lastErrorMessage = "Broadcast description too long.";
-		return false;
-	}
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QByteArray url = YOUTUBE_LIVE_BROADCAST_URL
 		"?part=snippet,status,contentDetails";
 	const Json data = Json::object{
@@ -233,16 +238,8 @@ bool YoutubeApiWrappers::InsertBroadcast(BroadcastDescription &broadcast)
 
 bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 {
-	// Youtube API documentation: The snippet.title property's value in the liveStream resource must be between 1 and 128 characters long.
-	if (stream.title.isEmpty() || stream.title.length() > 128) {
-		blog(LOG_ERROR, "Insert stream FAIL: wrong argument");
-		return false;
-	}
-	// Youtube API: The snippet.description property's value in the liveStream resource can have up to 10000 characters.
-	if (stream.description.length() > 10000) {
-		blog(LOG_ERROR, "Insert stream FAIL: Description too long.");
-		return false;
-	}
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QByteArray url = YOUTUBE_LIVE_STREAM_URL
 		"?part=snippet,cdn,status,contentDetails";
 	const Json data = Json::object{
@@ -273,6 +270,8 @@ bool YoutubeApiWrappers::InsertStream(StreamDescription &stream)
 bool YoutubeApiWrappers::BindStream(const QString broadcast_id,
 				    const QString stream_id)
 {
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QString url_template = YOUTUBE_LIVE_BROADCAST_BIND_URL
 		"?id=%1"
 		"&streamId=%2"
@@ -288,6 +287,7 @@ bool YoutubeApiWrappers::BindStream(const QString broadcast_id,
 bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, QString page)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL
 		"?part=snippet,contentDetails,status"
 		"&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY
@@ -301,6 +301,8 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(
 	const QString &country, const QString &language,
 	QVector<CategoryDescription> &category_list_out)
 {
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QString url_template = YOUTUBE_LIVE_VIDEOCATEGORIES_URL
 		"?part=snippet"
 		"&regionCode=%1"
@@ -330,6 +332,8 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id,
 					  const QString &video_description,
 					  const QString &categorie_id)
 {
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	const QByteArray url = YOUTUBE_LIVE_VIDEOS_URL "?part=snippet";
 	const Json data = Json::object{
 		{"id", QT_TO_UTF8(video_id)},
@@ -348,6 +352,7 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id,
 bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 
 	if (!ResetBroadcast(broadcast_id))
 		return false;
@@ -370,6 +375,7 @@ bool YoutubeApiWrappers::StartLatestBroadcast()
 bool YoutubeApiWrappers::StopBroadcast(const QString &broadcast_id)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 
 	const QString url_template = YOUTUBE_LIVE_BROADCAST_TRANSITION_URL
 		"?id=%1"
@@ -389,6 +395,7 @@ bool YoutubeApiWrappers::StopLatestBroadcast()
 bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 
 	const QString url_template = YOUTUBE_LIVE_BROADCAST_URL
 		"?part=id,snippet,contentDetails,status"
@@ -448,6 +455,7 @@ bool YoutubeApiWrappers::FindBroadcast(const QString &id,
 				       json11::Json &json_out)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL
 		"?part=id,snippet,contentDetails,status"
 		"&broadcastType=all&maxResults=1";
@@ -458,7 +466,8 @@ bool YoutubeApiWrappers::FindBroadcast(const QString &id,
 
 	auto items = json_out["items"].array_items();
 	if (items.size() != 1) {
-		lastErrorMessage = "No active broadcast found.";
+		lastErrorMessage =
+			QTStr("YouTube.Actions.Error.BroadcastNotFound");
 		return false;
 	}
 
@@ -468,6 +477,7 @@ bool YoutubeApiWrappers::FindBroadcast(const QString &id,
 bool YoutubeApiWrappers::FindStream(const QString &id, json11::Json &json_out)
 {
 	lastErrorMessage.clear();
+	lastErrorReason.clear();
 	QByteArray url = YOUTUBE_LIVE_STREAM_URL "?part=id,snippet,cdn,status"
 						 "&maxResults=1";
 	url += "&id=" + id.toUtf8();

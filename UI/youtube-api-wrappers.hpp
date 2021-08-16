@@ -83,10 +83,12 @@ public:
 	bool FindStream(const QString &id, json11::Json &json_out);
 
 	QString GetLastError() { return lastErrorMessage; };
+	bool GetTranslatedError(QString &error_message);
 
 private:
 	QString broadcast_id;
 
 	int lastError;
 	QString lastErrorMessage;
+	QString lastErrorReason;
 };
