@@ -2272,7 +2272,7 @@
         },
         {
             "name": "Volume.com",
-            "stream key link": "https://volume.com/b?show_key=1&webrtc=0",
+            "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
             "servers": [
                 {
                     "name": "Default - Recommended",
@@ -2303,7 +2303,7 @@
         },
         {
             "name": "17LIVE",
-            "stream key link": "https://17.live/settings/live",
+            "stream_key_link": "https://17.live/settings/live",
             "servers": [
                 {
                     "name": "Default",
@@ -2341,7 +2341,7 @@
         },
         {
             "name": "BoxCast",
-            "stream key link": "https://dashboard.boxcast.com/#/sources",
+            "stream_key_link": "https://dashboard.boxcast.com/#/sources",
             "servers": [
                 {
                     "name": "BoxCast",
