@@ -1303,7 +1303,7 @@
                <item>
                 <widget class="QPushButton" name="connectAccount2">
                  <property name="cursor">
-                  <cursorShape>PointingHandCursor</cursorShape>
+                  <cursorshape>PointingHandCursor</cursorshape>
                  </property>
                  <property name="text">
                   <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
