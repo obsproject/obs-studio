@@ -2338,6 +2338,16 @@
                 "max video bitrate": 3000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "BoxCast",
+            "stream key link": "https://dashboard.boxcast.com/#/sources",
+            "servers": [
+                {
+                    "name": "BoxCast",
+                    "url":  "rtmp://rtmp.boxcast.com/live"
+                }
+            ]
         }
     ]
 }
