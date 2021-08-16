@@ -49,8 +49,8 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 					  const char *data, Json &json_out,
 					  long *error_code)
 {
-	if (error_code)
-		*error_code = 0;
+	long httpStatusCode = 0;
+
 #ifdef _DEBUG
 	blog(LOG_DEBUG, "YouTube API command URL: %s", url);
 	blog(LOG_DEBUG, "YouTube API command data: %s", data);
@@ -59,10 +59,12 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 		return false;
 	std::string output;
 	std::string error;
-	bool success = GetRemoteFile(url, output, error, error_code,
+	bool success = GetRemoteFile(url, output, error, &httpStatusCode,
 				     content_type, request_type, data,
 				     {"Authorization: Bearer " + token},
-				     nullptr, 5);
+				     nullptr, 5, false);
+	if (error_code)
+		*error_code = httpStatusCode;
 
 	if (!success || output.empty())
 		return false;
@@ -74,7 +76,7 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	if (!error.empty()) {
 		return false;
 	}
-	return true;
+	return httpStatusCode < 400;
 }
 
 bool YoutubeApiWrappers::UpdateAccessToken()
@@ -116,34 +118,31 @@ bool YoutubeApiWrappers::InsertCommand(const char *url,
 				       const char *data, Json &json_out)
 {
 	long error_code;
-	if (!TryInsertCommand(url, content_type, request_type, data, json_out,
-			      &error_code)) {
-		if (error_code == 401) {
-			if (!UpdateAccessToken()) {
-				return false;
-			}
-			//The second try after update token.
-			return TryInsertCommand(url, content_type, request_type,
-						data, json_out);
-		}
-		return false;
+	bool success = TryInsertCommand(url, content_type, request_type, data,
+					json_out, &error_code);
+
+	if (error_code == 401) {
+		// Attempt to update access token and try again
+		if (!UpdateAccessToken())
+			return false;
+		success = TryInsertCommand(url, content_type, request_type,
+					   data, json_out, &error_code);
 	}
+
 	if (json_out.object_items().find("error") !=
 	    json_out.object_items().end()) {
+		blog(LOG_ERROR,
+		     "YouTube API error:\n\tHTTP status: %d\n\tURL: %s\n\tJSON: %s",
+		     error_code, url, json_out.dump().c_str());
+
 		lastError = json_out["error"]["code"].int_value();
 		lastErrorMessage = QString(
 			json_out["error"]["message"].string_value().c_str());
-		if (json_out["error"]["code"] == 401) {
-			if (!UpdateAccessToken()) {
-				return false;
-			}
-			//The second try after update token.
-			return TryInsertCommand(url, content_type, request_type,
-						data, json_out);
-		}
-		return false;
+
+		// The existence of an error implies non-success even if the HTTP status code disagrees.
+		success = false;
 	}
-	return true;
+	return success;
 }
 
 bool YoutubeApiWrappers::GetChannelDescription(
