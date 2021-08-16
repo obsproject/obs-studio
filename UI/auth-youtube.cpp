@@ -23,6 +23,10 @@
 #include "window-basic-main.hpp"
 #include "obf.h"
 
+#ifdef BROWSER_AVAILABLE
+#include "window-dock-browser.hpp"
+#endif
+
 using namespace json11;
 
 /* ------------------------------------------------------------------------- */
@@ -31,6 +35,11 @@ using namespace json11;
 #define YOUTUBE_SCOPE_VERSION 1
 #define YOUTUBE_API_STATE_LENGTH 32
 #define SECTION_NAME "YouTube"
+
+#define YOUTUBE_CHAT_PLACEHOLDER_URL \
+	"https://obsproject.com/placeholders/youtube-chat"
+#define YOUTUBE_CHAT_POPOUT_URL \
+	"https://www.youtube.com/live_chat?is_popout=1&dark_theme=1&v=%1"
 
 static const char allowedChars[] =
 	"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
@@ -100,12 +109,85 @@ bool YoutubeAuth::LoadInternal()
 		config_get_uint(main->Config(), section_name, "ExpireTime");
 	currentScopeVer =
 		(int)config_get_int(main->Config(), section_name, "ScopeVer");
+	firstLoad = false;
 	return implicit ? !token.empty() : !refresh_token.empty();
 }
 
+#ifdef BROWSER_AVAILABLE
+static const char *ytchat_script = "\
+const obsCSS = document.createElement('style');\
+obsCSS.innerHTML = \"#panel-pages.yt-live-chat-renderer {display: none;}\
+yt-live-chat-viewer-engagement-message-renderer {display: none;}\";\
+document.querySelector('head').appendChild(obsCSS);";
+#endif
+
 void YoutubeAuth::LoadUI()
 {
+	if (uiLoaded)
+		return;
+
+#ifdef BROWSER_AVAILABLE
+	if (!cef)
+		return;
+
+	OBSBasic::InitBrowserPanelSafeBlock();
+	OBSBasic *main = OBSBasic::Get();
+
+	QCefWidget *browser;
+
+	QSize size = main->frameSize();
+	QPoint pos = main->pos();
+
+	chat.reset(new BrowserDock());
+	chat->setObjectName("ytChat");
+	chat->resize(300, 600);
+	chat->setMinimumSize(200, 300);
+	chat->setWindowTitle(QTStr("Auth.Chat"));
+	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	browser = cef->create_widget(nullptr, YOUTUBE_CHAT_PLACEHOLDER_URL,
+				     panel_cookies);
+	browser->setStartupScript(ytchat_script);
+
+	chat->SetWidget(browser);
+	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
+	chatMenu.reset(main->AddDockWidget(chat.data()));
+
+	chat->setFloating(true);
+	chat->move(pos.x() + size.width() - chat->width() - 50, pos.y() + 50);
+
+	if (firstLoad) {
+		chat->setVisible(true);
+	} else {
+		const char *dockStateStr = config_get_string(
+			main->Config(), service(), "DockState");
+		QByteArray dockState =
+			QByteArray::fromBase64(QByteArray(dockStateStr));
+		main->restoreState(dockState);
+	}
+#endif
+
 	uiLoaded = true;
+}
+
+void YoutubeAuth::SetChatId(QString &chat_id)
+{
+#ifdef BROWSER_AVAILABLE
+	QString chat_url = QString(YOUTUBE_CHAT_POPOUT_URL).arg(chat_id);
+
+	if (chat && chat->cefWidget) {
+		chat->cefWidget->setURL(chat_url.toStdString());
+	}
+#endif
+}
+
+void YoutubeAuth::ResetChat()
+{
+#ifdef BROWSER_AVAILABLE
+	if (chat && chat->cefWidget) {
+		chat->cefWidget->setURL(YOUTUBE_CHAT_PLACEHOLDER_URL);
+	}
+#endif
 }
 
 QString YoutubeAuth::GenerateState()

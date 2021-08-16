@@ -402,6 +402,12 @@ bool OBSYoutubeActions::StreamNowAction(YoutubeApiWrappers *api,
 		blog(LOG_DEBUG, "No category set.");
 		return false;
 	}
+
+	if (broadcast.privacy != "private")
+		apiYouTube->SetChatId(broadcast.id);
+	else
+		apiYouTube->ResetChat();
+
 	return true;
 }
 
@@ -429,6 +435,12 @@ bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
 		blog(LOG_DEBUG, "No category set.");
 		return false;
 	}
+
+	if (broadcast.privacy != "private")
+		apiYouTube->SetChatId(broadcast.id);
+	else
+		apiYouTube->ResetChat();
+
 	return true;
 }
 
@@ -447,6 +459,9 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		json["items"]
 			.array_items()[0]["contentDetails"]["boundStreamId"]
 			.string_value();
+
+	std::string broadcastPrivacy =
+		json["status"]["privacyStatus"].string_value();
 
 	stream.id = boundStreamId.c_str();
 	if (!stream.id.isEmpty() && apiYouTube->FindStream(stream.id, json)) {
@@ -472,6 +487,11 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 			return false;
 		}
 	}
+
+	if (broadcastPrivacy != "private")
+		apiYouTube->SetChatId(selectedBroadcast);
+	else
+		apiYouTube->ResetChat();
 
 	return true;
 }
