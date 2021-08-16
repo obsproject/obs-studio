@@ -135,7 +135,18 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 	qDeleteAll(ui->scrollAreaWidgetContents->findChildren<QWidget *>(
 		QString(), Qt::FindDirectChildrenOnly));
 
-	connect(workerThread, &WorkerThread::failed, this, &QDialog::reject);
+	connect(workerThread, &WorkerThread::failed, this, [&]() {
+		auto last_error = apiYouTube->GetLastError();
+		if (last_error.isEmpty())
+			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
+
+		if (!apiYouTube->GetTranslatedError(last_error))
+			last_error = QTStr("YouTube.Actions.Error.Text")
+					     .arg(last_error);
+
+		ShowErrorDialog(this, last_error);
+		QDialog::reject();
+	});
 
 	connect(workerThread, &WorkerThread::new_item, this,
 		[&](const QString &title, const QString &dateTimeString,
@@ -147,8 +158,8 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 				QString("<big>%1 %2</big><br/>%3 %4")
 					.arg(title,
 					     QTStr("YouTube.Actions.Stream"),
-					     QTStr("YouTube.Actions.Stream.ScheduledFor"),
-					     dateTimeString));
+					     QTStr("YouTube.Actions.Stream.ScheduledFor")
+						     .arg(dateTimeString)));
 			label->setAlignment(Qt::AlignHCenter);
 			label->setMargin(4);
 
@@ -380,8 +391,6 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		}
 	}
 
-	if (start)
-		api->StartBroadcast(selectedBroadcast);
 	return true;
 }
 
@@ -458,12 +467,14 @@ void OBSYoutubeActions::InitBroadcast()
 	} else {
 		// Fail.
 		auto last_error = apiYouTube->GetLastError();
-		if (last_error.isEmpty()) {
+		if (last_error.isEmpty())
 			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
-		}
-		ShowErrorDialog(
-			this, QTStr("YouTube.Actions.Error.NoBroadcastCreated")
-				      .arg(last_error));
+		if (!apiYouTube->GetTranslatedError(last_error))
+			last_error =
+				QTStr("YouTube.Actions.Error.NoBroadcastCreated")
+					.arg(last_error);
+
+		ShowErrorDialog(this, last_error);
 	}
 }
 
