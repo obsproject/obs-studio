@@ -123,7 +123,7 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		   long *responseCode, const char *contentType,
 		   std::string request_type, const char *postData,
 		   std::vector<std::string> extraHeaders,
-		   std::string *signature, int timeoutSec)
+		   std::string *signature, int timeoutSec, bool fail_on_error)
 {
 	vector<string> header_in_list;
 	char error_in[CURL_ERROR_SIZE];
@@ -158,7 +158,8 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 		curl_easy_setopt(curl.get(), CURLOPT_ACCEPT_ENCODING, "");
 		curl_easy_setopt(curl.get(), CURLOPT_HTTPHEADER, header);
 		curl_easy_setopt(curl.get(), CURLOPT_ERRORBUFFER, error_in);
-		curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
+		if (fail_on_error)
+			curl_easy_setopt(curl.get(), CURLOPT_FAILONERROR, 1L);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEFUNCTION,
 				 string_write);
 		curl_easy_setopt(curl.get(), CURLOPT_WRITEDATA, &str);
