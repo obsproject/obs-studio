@@ -156,6 +156,13 @@ bool YoutubeApiWrappers::GetChannelDescription(
 	if (!InsertCommand(url, "application/json", "", nullptr, json_out)) {
 		return false;
 	}
+
+	if (json_out["pageInfo"]["totalResults"].int_value() == 0) {
+		lastErrorMessage =
+			"No channel(s) available on selected account";
+		return false;
+	}
+
 	channel_description.id =
 		QString(json_out["items"][0]["id"].string_value().c_str());
 	channel_description.country =
