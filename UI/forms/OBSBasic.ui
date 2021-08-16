@@ -61,7 +61,7 @@
          <number>2</number>
         </property>
         <item>
-         <widget class="QWidget" name="previewDisabledWidget">
+         <widget class="QFrame" name="previewDisabledWidget">
           <property name="sizePolicy">
            <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
             <horstretch>0</horstretch>
@@ -196,7 +196,7 @@
      </layout>
     </item>
     <item>
-     <widget class="QWidget" name="contextContainer">
+     <widget class="QFrame" name="contextContainer">
       <property name="sizePolicy">
        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
         <horstretch>0</horstretch>
@@ -235,7 +235,7 @@
         <number>4</number>
        </property>
        <item>
-        <widget class="QWidget" name="contextSubContainer">
+        <widget class="QFrame" name="contextSubContainer">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
            <horstretch>0</horstretch>
@@ -406,7 +406,7 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="emptySpace">
+        <widget class="QFrame" name="emptySpace">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -1116,7 +1116,7 @@
       <number>4</number>
      </property>
      <item>
-      <widget class="QWidget" name="transitionsContainer">
+      <widget class="QFrame" name="transitionsContainer">
        <layout class="QVBoxLayout" name="verticalLayout_2">
         <property name="spacing">
          <number>2</number>
