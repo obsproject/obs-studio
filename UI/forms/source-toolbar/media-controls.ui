@@ -77,6 +77,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -131,6 +134,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -169,6 +175,9 @@
      <property name="flat">
       <bool>true</bool>
      </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
+     </property>
     </widget>
    </item>
    <item>
@@ -206,6 +215,9 @@
      </property>
      <property name="flat">
       <bool>true</bool>
+     </property>
+     <property name="themeID2" stdset="0">
+      <string notr="true">contextBarButton</string>
      </property>
     </widget>
    </item>
@@ -337,9 +349,9 @@
     </widget>
    </item>
    <item>
-    <widget class="QWidget" name="emptySpaceAgain">
+    <widget class="QFrame" name="emptySpaceAgain">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
+      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
