@@ -1,0 +1,29 @@
+name: UI XML Validator
+
+on:
+  push:
+    paths-ignore:
+      - "cmake/**"
+  pull_request:
+    paths:
+      - "UI/forms/**"
+
+jobs:
+  ubuntu64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Install xmllint
+        run: |
+          sudo apt-get install --no-install-recommends -y libxml2-utils
+
+      - name: Register Annotations
+        uses: korelstar/xmllint-problem-matcher@v1
+
+      - name: Validate
+        run: |
+          xmllint --schema UI/forms/XML-Schema-Qt5.15.xsd --noout UI/forms/*.ui UI/forms/**/*.ui
