@@ -2728,7 +2728,9 @@ static inline void copy_frame_data_line(struct obs_source_frame *dst,
 				 ? dst->linesize[plane]
 				 : src->linesize[plane];
 
-	memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
+	if (dst->data[plane] + pos_dst != NULL &&
+	    src->data[plane] + pos_src != NULL)
+		memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
 }
 
 static inline void copy_frame_data_plane(struct obs_source_frame *dst,
@@ -2739,8 +2741,9 @@ static inline void copy_frame_data_plane(struct obs_source_frame *dst,
 		for (uint32_t y = 0; y < lines; y++)
 			copy_frame_data_line(dst, src, plane, y);
 	} else {
-		memcpy(dst->data[plane], src->data[plane],
-		       (size_t)dst->linesize[plane] * (size_t)lines);
+		if (dst->data[plane] != NULL && src->data[plane] != NULL)
+			memcpy(dst->data[plane], src->data[plane],
+			       (size_t)dst->linesize[plane] * (size_t)lines);
 	}
 }
 
@@ -2752,6 +2755,10 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	dst->flags = src->flags;
 	dst->full_range = src->full_range;
 	dst->timestamp = src->timestamp;
+
+	if (!dst->color_matrix || !src->color_matrix)
+		return;
+
 	memcpy(dst->color_matrix, src->color_matrix, sizeof(float) * 16);
 	if (!dst->full_range) {
 		size_t const size = sizeof(float) * 3;

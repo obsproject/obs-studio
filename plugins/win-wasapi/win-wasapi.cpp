@@ -44,6 +44,7 @@ class WASAPISource {
 
 	recursive_mutex state_mutex;
 	bool initInterrupted = false;
+	bool changeStarted = false;
 	bool initializing = false;
 	bool reconnecting = false;
 	bool previouslyFailed = false;
@@ -502,6 +503,7 @@ bool WASAPISource::TryInitialize()
 		{
 			std::lock_guard<std::recursive_mutex> guard(state_mutex);
 			initializing = true;
+			changeStarted = false;
 		}
 
 		Initialize();
@@ -726,10 +728,13 @@ void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
 	if (initializing) {
 		initInterrupted = true;
 	} else {
-		std::thread([this]() {
-			Stop();
-			Start();
-		}).detach();
+		if (!changeStarted) {
+			changeStarted = true;
+			std::thread([this]() {
+				Stop();
+				Start();
+			}).detach();
+		}
 	}
 }
 
