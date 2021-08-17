@@ -150,16 +150,35 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 
 	connect(workerThread, &WorkerThread::new_item, this,
 		[&](const QString &title, const QString &dateTimeString,
-		    const QString &broadcast, bool astart, bool astop) {
+		    const QString &broadcast, const QString &status,
+		    bool astart, bool astop) {
 			ClickableLabel *label = new ClickableLabel();
 			label->setStyleSheet(NormalStylesheet);
 			label->setTextFormat(Qt::RichText);
-			label->setText(
-				QString("<big>%1 %2</big><br/>%3 %4")
-					.arg(title,
-					     QTStr("YouTube.Actions.Stream"),
-					     QTStr("YouTube.Actions.Stream.ScheduledFor")
-						     .arg(dateTimeString)));
+
+			if (status == "live" || status == "testing") {
+				// Resumable stream
+				label->setText(
+					QString("<big>%1</big><br/>%2")
+						.arg(title,
+						     QTStr("YouTube.Actions.Stream.Resume")));
+
+			} else if (dateTimeString.isEmpty()) {
+				// The broadcast created by YouTube Studio has no start time.
+				// Yes this does violate the restrictions set in YouTube's API
+				// But why would YouTube care about consistency?
+				label->setText(
+					QString("<big>%1</big><br/>%2")
+						.arg(title,
+						     QTStr("YouTube.Actions.Stream.YTStudio")));
+			} else {
+				label->setText(
+					QString("<big>%1</big><br/>%2")
+						.arg(title,
+						     QTStr("YouTube.Actions.Stream.ScheduledFor")
+							     .arg(dateTimeString)));
+			}
+
 			label->setAlignment(Qt::AlignHCenter);
 			label->setMargin(4);
 
@@ -205,39 +224,65 @@ void WorkerThread::run()
 	if (!pending)
 		return;
 	json11::Json broadcasts;
-	if (!apiYouTube->GetBroadcastsList(broadcasts, "")) {
-		emit failed();
-		return;
-	}
 
-	while (pending) {
-		auto items = broadcasts["items"].array_items();
-		for (auto item = items.begin(); item != items.end(); item++) {
-			auto status = (*item)["status"]["lifeCycleStatus"]
-					      .string_value();
-			if (status == "created" || status == "ready") {
-				auto title = QString::fromStdString(
-					(*item)["snippet"]["title"]
-						.string_value());
-				auto scheduledStartTime = QString::fromStdString(
-					(*item)["snippet"]["scheduledStartTime"]
-						.string_value());
-				auto broadcast = QString::fromStdString(
-					(*item)["id"].string_value());
-				auto astart = (*item)["contentDetails"]
-						     ["enableAutoStart"]
-							     .bool_value();
-				auto astop = (*item)["contentDetails"]
-						    ["enableAutoStop"]
-							    .bool_value();
+	for (QString broacastStatus : {"active", "upcoming"}) {
+		if (!apiYouTube->GetBroadcastsList(broadcasts, "",
+						   broacastStatus)) {
+			emit failed();
+			return;
+		}
 
-				auto utcDTime = QDateTime::fromString(
+		while (pending) {
+			auto items = broadcasts["items"].array_items();
+			for (auto item : items) {
+				QString status = QString::fromStdString(
+					item["status"]["lifeCycleStatus"]
+						.string_value());
+
+				if (status == "live" || status == "testing") {
+					// Check that the attached liveStream is offline (reconnectable)
+					QString stream_id = QString::fromStdString(
+						item["contentDetails"]
+						    ["boundStreamId"]
+							    .string_value());
+					json11::Json stream;
+					if (!apiYouTube->FindStream(stream_id,
+								    stream))
+						continue;
+					if (stream["status"]["streamStatus"] ==
+					    "active")
+						continue;
+				}
+
+				QString title = QString::fromStdString(
+					item["snippet"]["title"].string_value());
+				QString scheduledStartTime =
+					QString::fromStdString(
+						item["snippet"]
+						    ["scheduledStartTime"]
+							    .string_value());
+				QString broadcast = QString::fromStdString(
+					item["id"].string_value());
+
+				// Treat already started streams as autostart for UI purposes
+				bool astart =
+					status == "live"
+						? true
+						: item["contentDetails"]
+						      ["enableAutoStart"]
+							      .bool_value();
+				bool astop =
+					item["contentDetails"]["enableAutoStop"]
+						.bool_value();
+
+				QDateTime utcDTime = QDateTime::fromString(
 					scheduledStartTime,
 					SchedulDateAndTimeFormat);
 				// DateTime parser means that input datetime is a local, so we need to move it
-				auto dateTime = utcDTime.addSecs(
+				QDateTime dateTime = utcDTime.addSecs(
 					utcDTime.offsetFromUtc());
-				auto dateTimeString = QLocale().toString(
+
+				QString dateTimeString = QLocale().toString(
 					dateTime,
 					QString("%1  %2").arg(
 						QLocale().dateFormat(
@@ -246,21 +291,24 @@ void WorkerThread::run()
 							QLocale::ShortFormat)));
 
 				emit new_item(title, dateTimeString, broadcast,
-					      astart, astop);
+					      status, astart, astop);
 			}
-		}
 
-		auto nextPageToken = broadcasts["nextPageToken"].string_value();
-		if (nextPageToken.empty() || items.empty())
-			break;
-		else {
-			if (!pending)
-				return;
-			if (!apiYouTube->GetBroadcastsList(
-				    broadcasts,
-				    QString::fromStdString(nextPageToken))) {
-				emit failed();
-				return;
+			auto nextPageToken =
+				broadcasts["nextPageToken"].string_value();
+			if (nextPageToken.empty() || items.empty())
+				break;
+			else {
+				if (!pending)
+					return;
+				if (!apiYouTube->GetBroadcastsList(
+					    broadcasts,
+					    QString::fromStdString(
+						    nextPageToken),
+					    broacastStatus)) {
+					emit failed();
+					return;
+				}
 			}
 		}
 	}
@@ -345,33 +393,36 @@ bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
 		blog(LOG_DEBUG, "No broadcast created.");
 		return false;
 	}
+	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title,
+					  broadcast.description,
+					  broadcast.category.id)) {
+		blog(LOG_DEBUG, "No category set.");
+		return false;
+	}
 	return true;
 }
 
 bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
-					    StreamDescription &stream,
-					    bool start)
+					    StreamDescription &stream)
 {
 	YoutubeApiWrappers *apiYouTube = api;
 
-	std::string boundStreamId;
-	{
-		json11::Json json;
-		if (!apiYouTube->FindBroadcast(selectedBroadcast, json)) {
-			blog(LOG_DEBUG, "No broadcast found.");
-			return false;
-		}
-
-		auto item = json["items"].array_items()[0];
-		auto boundStreamId =
-			item["contentDetails"]["boundStreamId"].string_value();
+	json11::Json json;
+	if (!apiYouTube->FindBroadcast(selectedBroadcast, json)) {
+		blog(LOG_DEBUG, "No broadcast found.");
+		return false;
 	}
 
+	std::string boundStreamId =
+		json["items"]
+			.array_items()[0]["contentDetails"]["boundStreamId"]
+			.string_value();
+
 	stream.id = boundStreamId.c_str();
-	json11::Json json;
 	if (!stream.id.isEmpty() && apiYouTube->FindStream(stream.id, json)) {
 		auto item = json["items"].array_items()[0];
-		auto streamName = item["cdn"]["streamName"].string_value();
+		auto streamName = item["cdn"]["ingestionInfo"]["streamName"]
+					  .string_value();
 		auto title = item["snippet"]["title"].string_value();
 		auto description =
 			item["snippet"]["description"].string_value();
@@ -379,6 +430,7 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		stream.name = streamName.c_str();
 		stream.title = title.c_str();
 		stream.description = description.c_str();
+		api->SetBroadcastId(selectedBroadcast);
 	} else {
 		stream = {"", "", "OBS Studio Video Stream", ""};
 		if (!apiYouTube->InsertStream(stream)) {
@@ -426,8 +478,7 @@ void OBSYoutubeActions::InitBroadcast()
 								stream);
 			}
 		} else {
-			success = this->ChooseAnEventAction(apiYouTube, stream,
-							    this->autostart);
+			success = this->ChooseAnEventAction(apiYouTube, stream);
 		};
 		QMetaObject::invokeMethod(&msgBox, "accept",
 					  Qt::QueuedConnection);
