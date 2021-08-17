@@ -927,8 +927,6 @@ private slots:
 	void on_action_Settings_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
-	void AdvAudioPropsClicked();
-	void AdvAudioPropsDestroyed();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
