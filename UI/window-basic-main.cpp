@@ -6266,8 +6266,10 @@ void OBSBasic::StartStreaming()
 	if (replayBufferWhileStreaming)
 		StartReplayBuffer();
 
+#if YOUTUBE_ENABLED
 	if (!autoStartBroadcast)
 		OBSBasic::ShowYouTubeAutoStartWarning();
+#endif
 }
 
 void OBSBasic::BroadcastButtonClicked()
