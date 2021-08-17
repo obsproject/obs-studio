@@ -564,6 +564,7 @@ private:
 	QPointer<QThread> youtubeStreamCheckThread;
 #if YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
+	void ShowYouTubeAutoStartWarning();
 	void YouTubeActionDialogOk(const QString &id, const QString &key,
 				   bool autostart, bool autostop);
 #endif
