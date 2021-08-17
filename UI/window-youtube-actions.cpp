@@ -135,6 +135,22 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 	qDeleteAll(ui->scrollAreaWidgetContents->findChildren<QWidget *>(
 		QString(), Qt::FindDirectChildrenOnly));
 
+	// Add label indicating loading state
+	QLabel *loadingLabel = new QLabel();
+	loadingLabel->setTextFormat(Qt::RichText);
+	loadingLabel->setAlignment(Qt::AlignHCenter);
+	loadingLabel->setText(
+		QString("<big>%1</big>")
+			.arg(QTStr("YouTube.Actions.EventsLoading")));
+	ui->scrollAreaWidgetContents->layout()->addWidget(loadingLabel);
+
+	// Delete "loading..." label on completion
+	connect(workerThread, &WorkerThread::finished, this, [&] {
+		QLayoutItem *item =
+			ui->scrollAreaWidgetContents->layout()->takeAt(0);
+		item->widget()->deleteLater();
+	});
+
 	connect(workerThread, &WorkerThread::failed, this, [&]() {
 		auto last_error = apiYouTube->GetLastError();
 		if (last_error.isEmpty())
