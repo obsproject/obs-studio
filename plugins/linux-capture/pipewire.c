@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <glad/glad.h>
 #include <linux/dma-buf.h>
+#include <libdrm/drm_fourcc.h>
 #include <spa/param/video/format-utils.h>
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>
@@ -673,9 +674,12 @@ static const struct pw_core_events core_events = {
 static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 {
 	struct spa_pod_builder pod_builder;
-	const struct spa_pod *params[1];
-	uint8_t params_buffer[1024];
+	const struct spa_pod **params;
+	uint32_t n_formats, n_params;
+	uint8_t params_buffer[2048];
 	struct obs_video_info ovi;
+	int n_modifiers;
+	uint64_t modifier;
 
 	obs_pw->thread_loop = pw_thread_loop_new("PipeWire thread loop", NULL);
 	obs_pw->context = pw_context_new(
@@ -716,32 +720,43 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
 
 	obs_get_video_info(&ovi);
-	params[0] = spa_pod_builder_add_object(
-		&pod_builder, SPA_TYPE_OBJECT_Format, SPA_PARAM_EnumFormat,
-		SPA_FORMAT_mediaType, SPA_POD_Id(SPA_MEDIA_TYPE_video),
-		SPA_FORMAT_mediaSubtype, SPA_POD_Id(SPA_MEDIA_SUBTYPE_raw),
-		SPA_FORMAT_VIDEO_format,
-		SPA_POD_CHOICE_ENUM_Id(
-			4, SPA_VIDEO_FORMAT_BGRA, SPA_VIDEO_FORMAT_RGBA,
-			SPA_VIDEO_FORMAT_BGRx, SPA_VIDEO_FORMAT_RGBx),
-		SPA_FORMAT_VIDEO_size,
-		SPA_POD_CHOICE_RANGE_Rectangle(
-			&SPA_RECTANGLE(320, 240), // Arbitrary
-			&SPA_RECTANGLE(1, 1), &SPA_RECTANGLE(8192, 4320)),
-		SPA_FORMAT_VIDEO_framerate,
-		SPA_POD_CHOICE_RANGE_Fraction(
-			&SPA_FRACTION(ovi.fps_num, ovi.fps_den),
-			&SPA_FRACTION(0, 1), &SPA_FRACTION(360, 1)));
+	uint32_t formats[] = {
+		SPA_VIDEO_FORMAT_BGRA,
+		SPA_VIDEO_FORMAT_RGBA,
+		SPA_VIDEO_FORMAT_BGRx,
+		SPA_VIDEO_FORMAT_RGBx,
+	};
+
+	n_formats = sizeof(formats) / sizeof(formats[0]);
+	n_params = 0;
+
+	params = bzalloc(2 * n_formats * sizeof(struct spa_param *));
+
+	for (uint32_t i = 0; i < n_formats; i++) {
+		if (false) { // TODO: Check if we don't support modifiers
+			continue;
+		}
+		n_modifiers = 1;
+		modifier = DRM_FORMAT_MOD_INVALID;
+		params[n_params++] = build_format(
+			&pod_builder, &ovi, formats[i], &modifier, n_modifiers);
+	}
+	for (uint32_t i = 0; i < n_formats; i++) {
+		params[n_params++] =
+			build_format(&pod_builder, &ovi, formats[i], NULL, 0);
+	}
+
 	obs_pw->video_info = ovi;
 
 	pw_stream_connect(
 		obs_pw->stream, PW_DIRECTION_INPUT, obs_pw->pipewire_node,
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
-		1);
+		n_params);
 
 	blog(LOG_INFO, "[pipewire] playing stream…");
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
+	bfree(params);
 }
 
 /* ------------------------------------------------- */
