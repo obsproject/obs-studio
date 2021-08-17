@@ -65,7 +65,8 @@ public:
 	bool InsertBroadcast(BroadcastDescription &broadcast);
 	bool InsertStream(StreamDescription &stream);
 	bool BindStream(const QString broadcast_id, const QString stream_id);
-	bool GetBroadcastsList(json11::Json &json_out, QString page);
+	bool GetBroadcastsList(json11::Json &json_out, const QString &page,
+			       const QString &status);
 	bool
 	GetVideoCategoriesList(const QString &country, const QString &language,
 			       QVector<CategoryDescription> &category_list_out);
@@ -78,6 +79,8 @@ public:
 	bool ResetBroadcast(const QString &broadcast_id);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
+
+	void SetBroadcastId(QString &broadcast_id);
 
 	bool FindBroadcast(const QString &id, json11::Json &json_out);
 	bool FindStream(const QString &id, json11::Json &json_out);

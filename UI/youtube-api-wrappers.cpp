@@ -29,7 +29,7 @@ using namespace json11;
 #define YOUTUBE_LIVE_VIDEOS_URL YOUTUBE_LIVE_API_URL "/videos"
 
 #define DEFAULT_BROADCASTS_PER_QUERY \
-	"7" // acceptable values are 0 to 50, inclusive
+	"50" // acceptable values are 0 to 50, inclusive
 /* ------------------------------------------------------------------------- */
 
 bool IsYouTubeService(const std::string &service)
@@ -284,14 +284,20 @@ bool YoutubeApiWrappers::BindStream(const QString broadcast_id,
 			     data.dump().c_str(), json_out);
 }
 
-bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, QString page)
+bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page,
+					   const QString &status)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
 	QByteArray url = YOUTUBE_LIVE_BROADCAST_URL
 		"?part=snippet,contentDetails,status"
-		"&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY
-		"&mine=true";
+		"&broadcastType=all&maxResults=" DEFAULT_BROADCASTS_PER_QUERY;
+
+	if (status.isEmpty())
+		url += "&mine=true";
+	else
+		url += "&broadcastStatus=" + status.toUtf8();
+
 	if (!page.isEmpty())
 		url += "&pageToken=" + page.toUtf8();
 	return InsertCommand(url, "application/json", "", nullptr, json_out);
@@ -390,6 +396,11 @@ bool YoutubeApiWrappers::StopBroadcast(const QString &broadcast_id)
 bool YoutubeApiWrappers::StopLatestBroadcast()
 {
 	return StopBroadcast(this->broadcast_id);
+}
+
+void YoutubeApiWrappers::SetBroadcastId(QString &broadcast_id)
+{
+	this->broadcast_id = broadcast_id;
 }
 
 bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)

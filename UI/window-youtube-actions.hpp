@@ -23,7 +23,8 @@ public slots:
 signals:
 	void ready();
 	void new_item(const QString &title, const QString &dateTimeString,
-		      const QString &broadcast, bool astart, bool astop);
+		      const QString &broadcast, const QString &status,
+		      bool astart, bool astop);
 	void failed();
 };
 
@@ -43,7 +44,7 @@ protected:
 			     StreamDescription &stream);
 	bool StreamLaterAction(YoutubeApiWrappers *api);
 	bool ChooseAnEventAction(YoutubeApiWrappers *api,
-				 StreamDescription &stream, bool start);
+				 StreamDescription &stream);
 
 	void ShowErrorDialog(QWidget *parent, QString text);
 
