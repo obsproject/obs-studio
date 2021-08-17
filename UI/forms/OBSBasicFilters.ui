@@ -15,19 +15,25 @@
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout">
+    <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
      <property name="sizeConstraint">
       <enum>QLayout::SetMinimumSize</enum>
      </property>
      <item>
       <layout class="QVBoxLayout" name="verticalLayout_2">
        <item>
-        <widget class="QWidget" name="asyncWidget">
+        <widget class="QFrame" name="asyncWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>255</width>
+           <height>0</height>
+          </size>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_3">
           <property name="leftMargin">
@@ -62,8 +68,8 @@
             </property>
            </widget>
           </item>
-          <item alignment="Qt::AlignLeft">
-           <widget class="QWidget" name="widget">
+          <item>
+           <widget class="QFrame" name="widget">
             <layout class="QHBoxLayout" name="horizontalLayout_4">
              <property name="spacing">
               <number>4</number>
@@ -88,11 +94,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>Add</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
                </property>
                <property name="autoDefault">
@@ -104,9 +113,6 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>Add</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -117,11 +123,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>Remove</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
                </property>
                <property name="autoDefault">
@@ -133,9 +142,6 @@
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>Remove</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -146,11 +152,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>MoveUp</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
                </property>
                <property name="autoDefault">
@@ -162,9 +171,6 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>MoveUp</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -175,11 +181,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>MoveDown</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
                </property>
                <property name="autoDefault">
@@ -191,10 +200,23 @@
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>MoveDown</string>
-               </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="asyncToolbarSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Expanding</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -210,12 +232,18 @@
         </widget>
        </item>
        <item>
-        <widget class="QWidget" name="effectWidget">
+        <widget class="QFrame" name="effectWidget">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
+         </property>
+         <property name="minimumSize">
+          <size>
+           <width>255</width>
+           <height>0</height>
+          </size>
          </property>
          <layout class="QVBoxLayout" name="verticalLayout_4">
           <property name="leftMargin">
@@ -250,8 +278,8 @@
             </property>
            </widget>
           </item>
-          <item alignment="Qt::AlignLeft">
-           <widget class="QWidget" name="widget_2">
+          <item>
+           <widget class="QFrame" name="widget_2">
             <layout class="QHBoxLayout" name="horizontalLayout_6">
              <property name="spacing">
               <number>4</number>
@@ -276,11 +304,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>Add</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
                </property>
                <property name="autoDefault">
@@ -292,9 +323,6 @@
                <property name="themeID" stdset="0">
                 <string>addIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>Add</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -305,11 +333,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>Remove</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
                </property>
                <property name="autoDefault">
@@ -321,9 +352,6 @@
                <property name="themeID" stdset="0">
                 <string>removeIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>Remove</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -334,11 +362,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>MoveUp</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
                </property>
                <property name="autoDefault">
@@ -350,9 +381,6 @@
                <property name="themeID" stdset="0">
                 <string>upArrowIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>MoveUp</string>
-               </property>
               </widget>
              </item>
              <item>
@@ -363,11 +391,14 @@
                  <height>22</height>
                 </size>
                </property>
+               <property name="accessibleName">
+                <string>MoveDown</string>
+               </property>
                <property name="text">
                 <string notr="true"/>
                </property>
                <property name="icon">
-                <iconset resource="obs.qrc">
+                <iconset>
                  <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
                </property>
                <property name="autoDefault">
@@ -379,10 +410,23 @@
                <property name="themeID" stdset="0">
                 <string>downArrowIconSmall</string>
                </property>
-               <property name="accessibleName">
-                <string>MoveDown</string>
-               </property>
               </widget>
+             </item>
+             <item>
+              <spacer name="effectToolbarSpacer">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeType">
+                <enum>QSizePolicy::Expanding</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>20</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </spacer>
              </item>
             </layout>
            </widget>
@@ -397,7 +441,7 @@
        <item>
         <layout class="QVBoxLayout" name="rightLayout">
          <item>
-          <widget class="OBSQTDisplay" name="preview">
+          <widget class="OBSQTDisplay" name="preview" native="true">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -438,7 +482,7 @@
          <item>
           <widget class="QDialogButtonBox" name="buttonBox">
            <property name="standardButtons">
-            <set>QDialogButtonBox::Reset|QDialogButtonBox::Close</set>
+            <set>QDialogButtonBox::Close|QDialogButtonBox::Reset</set>
            </property>
           </widget>
          </item>
@@ -451,7 +495,7 @@
   </layout>
   <action name="actionRemoveFilter">
    <property name="icon">
-    <iconset resource="obs.qrc">
+    <iconset>
      <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
    </property>
    <property name="text">
@@ -463,7 +507,7 @@
   </action>
   <action name="actionMoveUp">
    <property name="icon">
-    <iconset resource="obs.qrc">
+    <iconset>
      <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
    </property>
    <property name="text">
@@ -475,7 +519,7 @@
   </action>
   <action name="actionMoveDown">
    <property name="icon">
-    <iconset resource="obs.qrc">
+    <iconset>
      <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
    </property>
    <property name="text">
@@ -502,6 +546,5 @@
  <resources>
   <include location="obs.qrc"/>
  </resources>
- <connections>
- </connections>
+ <connections/>
 </ui>
