@@ -4750,19 +4750,6 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 	advAudioWindow->SetIconsVisible(iconsVisible);
-
-	connect(advAudioWindow, SIGNAL(destroyed()), this,
-		SLOT(AdvAudioPropsDestroyed()));
-}
-
-void OBSBasic::AdvAudioPropsClicked()
-{
-	on_actionAdvAudioProperties_triggered();
-}
-
-void OBSBasic::AdvAudioPropsDestroyed()
-{
-	advAudioWindow = nullptr;
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
