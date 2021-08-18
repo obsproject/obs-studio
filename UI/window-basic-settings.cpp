@@ -3744,6 +3744,12 @@ void OBSBasicSettings::closeEvent(QCloseEvent *event)
 {
 	if (!AskIfCanCloseSettings())
 		event->ignore();
+#if YOUTUBE_ENABLED
+	if (fetchInfoThread) {
+		fetchInfoThread->terminate();
+		fetchInfoThread->wait();
+	}
+#endif
 }
 
 void OBSBasicSettings::reject()

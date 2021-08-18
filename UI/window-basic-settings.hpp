@@ -29,6 +29,7 @@
 #include <obs.hpp>
 
 #include "auth-base.hpp"
+#include "ui-config.h"
 
 class OBSBasic;
 class QAbstractButton;
@@ -250,6 +251,12 @@ private:
 	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
+#if YOUTUBE_ENABLED
+	void FetchUserInfo();
+	void FetchUserInfoFinished();
+	QScopedPointer<QThread> fetchInfoThread;
+	QString fetchInfoResult;
+#endif
 private slots:
 	void UpdateServerList();
 	void UpdateKeyLink();

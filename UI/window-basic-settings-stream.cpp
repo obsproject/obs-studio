@@ -412,25 +412,31 @@ static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
 }
 
 #if YOUTUBE_ENABLED
-static void get_yt_ch_title(Ui::OBSBasicSettings *ui,
-			    YoutubeApiWrappers *ytAuth)
+void OBSBasicSettings::FetchUserInfo()
 {
-	if (ytAuth) {
+	YoutubeApiWrappers *apiYouTube(
+		dynamic_cast<YoutubeApiWrappers *>(auth.get()));
+	if (apiYouTube) {
 		ChannelDescription cd;
-		if (ytAuth->GetChannelDescription(cd)) {
-			ui->connectedAccountText->setText(cd.title);
+		if (apiYouTube->GetChannelDescription(cd)) {
+			fetchInfoResult = cd.title;
 		} else {
-			// if we still not changed the service page
-			if (IsYouTubeService(
-				    QT_TO_UTF8(ui->service->currentText()))) {
-				ui->connectedAccountText->setText(
-					ytAuth->GetLastError().isEmpty()
-						? QTStr("Auth.LoadingChannel.Error")
-						: QTStr("YouTube.AuthError.Text")
-							  .arg(ytAuth->GetLastError()));
-			}
+			auto last_error = apiYouTube->GetLastError();
+
+			if (last_error.isEmpty())
+				fetchInfoResult =
+					QTStr("Auth.LoadingChannel.Error");
+			else
+				fetchInfoResult =
+					QTStr("YouTube.AuthError.Text")
+						.arg(last_error);
 		}
 	}
+}
+
+void OBSBasicSettings::FetchUserInfoFinished()
+{
+	ui->connectedAccountText->setText(fetchInfoResult);
 }
 #endif
 
@@ -615,17 +621,16 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			ui->connectedAccountText->setText(
 				QTStr("Auth.LoadingChannel.Title"));
 
-			std::string a_service = a->service();
-			std::shared_ptr<YoutubeApiWrappers> ytAuth =
-				std::dynamic_pointer_cast<YoutubeApiWrappers>(
-					auth);
-			auto act = [&]() {
-				get_yt_ch_title(ui.get(), ytAuth.get());
-			};
-
-			QScopedPointer<QThread> thread(CreateQThread(act));
-			thread->start();
-			thread->wait();
+			// Do not block UI with HTTP requests.
+			// Fetch user info in separate thread (once)
+			if (!fetchInfoThread) {
+				fetchInfoThread.reset(CreateQThread(
+					[this] { FetchUserInfo(); }));
+				connect(fetchInfoThread.data(),
+					&QThread::finished, this,
+					&OBSBasicSettings::FetchUserInfoFinished);
+				fetchInfoThread->start();
+			}
 		}
 #endif
 		ui->bandwidthTestEnable->setChecked(false);
