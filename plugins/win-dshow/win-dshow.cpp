@@ -932,8 +932,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 		interval = best_interval;
 	}
 
-	videoConfig.name = id.name.c_str();
-	videoConfig.path = id.path.c_str();
+	videoConfig.name = id.name;
+	videoConfig.path = id.path;
 	videoConfig.useDefaultConfig = resType == ResType_Preferred;
 	videoConfig.cx = cx;
 	videoConfig.cy_abs = abs(cy);
@@ -1000,8 +1000,8 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 		if (!DecodeDeviceId(id, audio_device_id.c_str()))
 			return false;
 
-		audioConfig.name = id.name.c_str();
-		audioConfig.path = id.path.c_str();
+		audioConfig.name = id.name;
+		audioConfig.path = id.path;
 
 	} else if (!deviceHasAudio) {
 		return true;
