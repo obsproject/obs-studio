@@ -241,8 +241,51 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		if (!item)
 			return;
 
-		AddExisting(QT_TO_UTF8(item->text()), visible, false, nullptr,
+		QString source_name = item->text();
+		AddExisting(QT_TO_UTF8(source_name), visible, false, nullptr,
 			    nullptr);
+
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		const char *scene_name =
+			obs_source_get_name(main->GetCurrentSceneSource());
+
+		auto undo = [scene_name, main](const std::string &data) {
+			UNUSED_PARAMETER(data);
+			obs_source_t *scene_source =
+				obs_get_source_by_name(scene_name);
+			main->SetCurrentScene(scene_source, true);
+			obs_source_release(scene_source);
+
+			obs_scene_t *scene = obs_get_scene_by_name(scene_name);
+			OBSSceneItem item;
+			auto cb = [](obs_scene_t *scene,
+				     obs_sceneitem_t *sceneitem, void *data) {
+				UNUSED_PARAMETER(scene);
+				OBSSceneItem &last =
+					*reinterpret_cast<OBSSceneItem *>(data);
+				last = sceneitem;
+				return true;
+			};
+			obs_scene_enum_items(scene, cb, &item);
+
+			obs_sceneitem_remove(item);
+			obs_scene_release(scene);
+		};
+
+		auto redo = [scene_name, main, source_name,
+			     visible](const std::string &data) {
+			UNUSED_PARAMETER(data);
+			obs_source_t *scene_source =
+				obs_get_source_by_name(scene_name);
+			main->SetCurrentScene(scene_source, true);
+			obs_source_release(scene_source);
+			AddExisting(QT_TO_UTF8(source_name), visible, false,
+				    nullptr, nullptr);
+		};
+
+		undo_s.add_action(QTStr("Undo.Add").arg(source_name), undo,
+				  redo, "", "");
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			OBSMessageBox::warning(this,
