@@ -709,7 +709,7 @@ static inline bool FormatMatches(VideoFormat left, VideoFormat right)
 	       left == right;
 }
 
-static inline bool ResolutionValid(string res, int &cx, int &cy)
+static inline bool ResolutionValid(const string &res, int &cx, int &cy)
 {
 	if (!res.size())
 		return false;
@@ -816,7 +816,7 @@ static bool ResolutionAvailable(const VideoDevice &dev, int cx, int cy)
 }
 
 static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings,
-				VideoDevice dev)
+				VideoDevice &dev)
 {
 	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
 	if (obs_data_has_autoselect_value(settings, RESOLUTION) &&
@@ -1274,7 +1274,7 @@ static const FPSFormat validFPSFormats[] = {
 static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
 				  obs_data_t *settings);
 
-static bool TryResolution(VideoDevice &dev, string res)
+static bool TryResolution(const VideoDevice &dev, const string &res)
 {
 	int cx, cy;
 	if (!ConvertRes(cx, cy, res.c_str()))
@@ -1284,7 +1284,7 @@ static bool TryResolution(VideoDevice &dev, string res)
 }
 
 static bool SetResolution(obs_properties_t *props, obs_data_t *settings,
-			  string res, bool autoselect = false)
+			  const string &res, bool autoselect = false)
 {
 	if (autoselect)
 		obs_data_set_autoselect_string(settings, RESOLUTION,
