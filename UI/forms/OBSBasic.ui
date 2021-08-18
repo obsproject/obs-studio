@@ -1173,7 +1173,7 @@
             </property>
             <property name="icon">
              <iconset>
-              <normaloff>:/res/images/configuration21_16.png</normaloff>:/res/images/configuration21_16.png</iconset>
+              <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
             </property>
             <property name="flat">
              <bool>true</bool>
@@ -1453,7 +1453,7 @@
   <action name="actionAddScene">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -1465,7 +1465,7 @@
   <action name="actionAddSource">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+     <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
    </property>
    <property name="text">
     <string>Add</string>
@@ -1477,7 +1477,7 @@
   <action name="actionRemoveScene">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
@@ -1495,7 +1495,7 @@
   <action name="actionRemoveSource">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
@@ -1516,7 +1516,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/properties.png</normaloff>:/res/images/properties.png</iconset>
+     <normaloff>:/settings/images/settings/general.svg</normaloff>:/settings/images/settings/general.svg</iconset>
    </property>
    <property name="text">
     <string>Properties</string>
@@ -1528,7 +1528,7 @@
   <action name="actionSceneUp">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
     <string>MoveUp</string>
@@ -1543,7 +1543,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
     <string>MoveUp</string>
@@ -1555,7 +1555,7 @@
   <action name="actionSceneDown">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
     <string>MoveDown</string>
@@ -1570,7 +1570,7 @@
    </property>
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
     <string>MoveDown</string>

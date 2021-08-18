@@ -102,7 +102,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+                 <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -131,7 +131,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+                 <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -160,7 +160,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+                 <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -189,7 +189,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+                 <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -312,7 +312,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/add.png</normaloff>:/res/images/add.png</iconset>
+                 <normaloff>:/res/images/plus.svg</normaloff>:/res/images/plus.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -341,7 +341,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+                 <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -370,7 +370,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+                 <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -399,7 +399,7 @@
                </property>
                <property name="icon">
                 <iconset>
-                 <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+                 <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
                </property>
                <property name="autoDefault">
                 <bool>false</bool>
@@ -496,7 +496,7 @@
   <action name="actionRemoveFilter">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/list_remove.png</normaloff>:/res/images/list_remove.png</iconset>
+     <normaloff>:/res/images/minus.svg</normaloff>:/res/images/minus.svg</iconset>
    </property>
    <property name="text">
     <string>Remove</string>
@@ -508,7 +508,7 @@
   <action name="actionMoveUp">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/up.png</normaloff>:/res/images/up.png</iconset>
+     <normaloff>:/res/images/up.svg</normaloff>:/res/images/up.svg</iconset>
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.Order.MoveUp</string>
@@ -520,7 +520,7 @@
   <action name="actionMoveDown">
    <property name="icon">
     <iconset>
-     <normaloff>:/res/images/down.png</normaloff>:/res/images/down.png</iconset>
+     <normaloff>:/res/images/down.svg</normaloff>:/res/images/down.svg</iconset>
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.Order.MoveDown</string>
