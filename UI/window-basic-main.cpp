@@ -1035,22 +1035,10 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 		obs_data_array_push_back_array(sources, groups);
 	}
 
-	obs_missing_files_t *files = obs_missing_files_create();
-
-	auto cb = [](void *private_data, obs_source_t *source) {
-		obs_missing_files_t *f = (obs_missing_files_t *)private_data;
-		obs_missing_files_t *sf = obs_source_get_missing_files(source);
-
-		obs_missing_files_append(f, sf);
-		obs_missing_files_destroy(sf);
-
-		UNUSED_PARAMETER(source);
-	};
-
-	obs_load_sources(sources, cb, files);
+	obs_load_sources(sources, nullptr, nullptr);
 
 	if (transitions)
-		LoadTransitions(transitions, cb, files);
+		LoadTransitions(transitions);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
 
@@ -1171,20 +1159,8 @@ retryScene:
 
 	LogScenes();
 
-	if (obs_missing_files_count(files) > 0 &&
-	    !App()->IsMissingFilesCheckDisabled()) {
-		/* the window hasn't fully initialized by this point on macOS,
-		 * so put this at the end of the current task queue. Fixes a
-		 * bug where the window be behind OBS on startup */
-		QTimer::singleShot(0, [this, files] {
-			missDialog = new OBSMissingFiles(files, this);
-			missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-			missDialog->show();
-			missDialog->raise();
-		});
-	} else {
-		obs_missing_files_destroy(files);
-	}
+	if (!App()->IsMissingFilesCheckDisabled())
+		on_actionShowMissingFiles_triggered();
 
 	disableSaving--;
 
@@ -4895,15 +4871,24 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	obs_enum_all_sources(cb_transitions, files);
 
 	if (obs_missing_files_count(files) > 0) {
-		missDialog = new OBSMissingFiles(files, this);
-		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
-		missDialog->show();
-		missDialog->raise();
+		/* When loading the missing files dialog on launch, the
+		* window hasn't fully initialized by this point on macOS,
+		* so put this at the end of the current task queue. Fixes
+		* a bug where the window is behind OBS on startup. */
+		QTimer::singleShot(0, [this, files] {
+			missDialog = new OBSMissingFiles(files, this);
+			missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+			missDialog->show();
+			missDialog->raise();
+		});
 	} else {
 		obs_missing_files_destroy(files);
-		OBSMessageBox::information(
-			this, QTStr("MissingFiles.NoMissing.Title"),
-			QTStr("MissingFiles.NoMissing.Text"));
+
+		/* Only raise dialog if triggered manually */
+		if (!disableSaving)
+			OBSMessageBox::information(
+				this, QTStr("MissingFiles.NoMissing.Title"),
+				QTStr("MissingFiles.NoMissing.Text"));
 	}
 }
 
