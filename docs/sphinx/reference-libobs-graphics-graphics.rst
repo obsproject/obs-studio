@@ -980,6 +980,9 @@ Texture Functions
    careful to always try and match the formats correctly, otherwise textures
    can fail to be created or rendered.
 
+   All modifiers passed in the modifiers array must be equal. Passing different
+   modifiers for each plane is unsupported.
+
    :param width:        Width of the texture
    :param height:       Height of the texture
    :param drm_format:   DRM format of the DMA-BUF buffer
