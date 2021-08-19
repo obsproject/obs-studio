@@ -243,8 +243,6 @@ install_cef() {
     step "Unpack..."
     /usr/bin/tar -xf ./${CEF_ARCHIVE}
     cd ${CEF_DIR}
-    step "Apply patches..."
-    patch -p1 < ${CI_SCRIPTS}/cef.patch
     # step "Fix tests..."
     # /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
     # /usr/bin/sed -i '.orig' 's/"'$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
