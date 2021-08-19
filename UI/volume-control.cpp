@@ -683,7 +683,6 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 VolumeMeter::~VolumeMeter()
 {
 	updateTimerRef->RemoveVolControl(this);
-	delete tickPaintCache;
 }
 
 void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS],
@@ -899,11 +898,11 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 		QString str = QString::number(i);
 
 		if (i == 0)
-			painter.drawText(x + 5, position + 4, str);
+			painter.drawText(x + 5, position + 5, str);
 		else if (i == -60)
-			painter.drawText(x + 4, position, str);
+			painter.drawText(x + 4, position + 1, str);
 		else
-			painter.drawText(x + 4, position + 2, str);
+			painter.drawText(x + 4, position + 3, str);
 		painter.drawLine(x, position, x + 2, position);
 	}
 
@@ -1151,58 +1150,38 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 {
 	uint64_t ts = os_gettime_ns();
 	qreal timeSinceLastRedraw = (ts - lastRedrawTime) * 0.000000001;
-
-	const QRect rect = event->region().boundingRect();
-	int width = rect.width();
-	int height = rect.height();
-
-	handleChannelCofigurationChange();
 	calculateBallistics(ts, timeSinceLastRedraw);
 	bool idle = detectIdle(ts);
 
-	// Draw the ticks in a off-screen buffer when the widget changes size.
-	QSize tickPaintCacheSize;
-	if (vertical)
-		tickPaintCacheSize = QSize(14, height);
-	else
-		tickPaintCacheSize = QSize(width, 9);
-	if (tickPaintCache == nullptr ||
-	    tickPaintCache->size() != tickPaintCacheSize) {
-		delete tickPaintCache;
-		tickPaintCache = new QPixmap(tickPaintCacheSize);
+	QRect widgetRect = rect();
+	int width = widgetRect.width();
+	int height = widgetRect.height();
 
-		QColor clearColor(0, 0, 0, 0);
-		tickPaintCache->fill(clearColor);
-
-		QPainter tickPainter(tickPaintCache);
-		if (vertical) {
-			tickPainter.translate(0, height);
-			tickPainter.scale(1, -1);
-			paintVTicks(tickPainter, 0, 11,
-				    tickPaintCacheSize.height() - 11);
-		} else {
-			paintHTicks(tickPainter, 6, 0,
-				    tickPaintCacheSize.width() - 6,
-				    tickPaintCacheSize.height());
-		}
-		tickPainter.end();
-	}
-
-	// Actual painting of the widget starts here.
 	QPainter painter(this);
 
-	// Paint window background color (as widget is opaque)
-	QColor background = palette().color(QPalette::ColorRole::Window);
-	painter.fillRect(rect, background);
+	// timerEvent requests update of the bar(s) only, so we can avoid the
+	// overhead of repainting the scale and labels
+	if (event->region().boundingRect() != getBarRect()) {
+		handleChannelCofigurationChange();
+
+		// Paint window background color (as widget is opaque)
+		QColor background =
+			palette().color(QPalette::ColorRole::Window);
+		painter.fillRect(widgetRect, background);
+
+		if (vertical) {
+			paintVTicks(painter, displayNrAudioChannels * 4 - 1, 1,
+				    height - 6);
+		} else {
+			paintHTicks(painter, 6, displayNrAudioChannels * 4 - 1,
+				    width - 6, height);
+		}
+	}
 
 	if (vertical) {
 		// Invert the Y axis to ease the math
 		painter.translate(0, height);
 		painter.scale(1, -1);
-		painter.drawPixmap(displayNrAudioChannels * 4 - 1, 7,
-				   *tickPaintCache);
-	} else {
-		painter.drawPixmap(0, height - 9, *tickPaintCache);
 	}
 
 	for (int channelNr = 0; channelNr < displayNrAudioChannels;
@@ -1214,7 +1193,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 				: channelNr;
 
 		if (vertical)
-			paintVMeter(painter, channelNr * 4, 8, 3, height - 10,
+			paintVMeter(painter, channelNr * 4, 5, 3, height - 5,
 				    displayMagnitude[channelNrFixed],
 				    displayPeak[channelNrFixed],
 				    displayPeakHold[channelNrFixed]);
@@ -1231,7 +1210,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 		// see that the audio stream has been stopped, without
 		// having too much visual impact.
 		if (vertical)
-			paintInputMeter(painter, channelNr * 4, 3, 3, 3,
+			paintInputMeter(painter, channelNr * 4, 0, 3, 3,
 					displayInputPeakHold[channelNrFixed]);
 		else
 			paintInputMeter(painter, 0, channelNr * 4, 3, 3,
@@ -1239,6 +1218,16 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 	}
 
 	lastRedrawTime = ts;
+}
+
+QRect VolumeMeter::getBarRect()
+{
+	QRect rec = rect();
+	if (vertical)
+		rec.setWidth(displayNrAudioChannels * 4);
+	else
+		rec.setHeight(displayNrAudioChannels * 4);
+	return rec;
 }
 
 void VolumeMeterTimer::AddVolControl(VolumeMeter *meter)
@@ -1253,6 +1242,7 @@ void VolumeMeterTimer::RemoveVolControl(VolumeMeter *meter)
 
 void VolumeMeterTimer::timerEvent(QTimerEvent *)
 {
+	// Tell paintEvent to paint only the bars, leaving the scale alone.
 	for (VolumeMeter *meter : volumeMeters)
-		meter->update();
+		meter->update(meter->getBarRect());
 }
