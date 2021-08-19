@@ -816,6 +816,7 @@
           <addaction name="separator"/>
           <addaction name="actionSceneUp"/>
           <addaction name="actionSceneDown"/>
+          <addaction name="actionSceneScreenshot"/>
          </widget>
         </item>
         <item>
@@ -952,6 +953,7 @@
           <addaction name="separator"/>
           <addaction name="actionSourceUp"/>
           <addaction name="actionSourceDown"/>
+          <addaction name="actionSourceScreenshot"/>
          </widget>
         </item>
         <item>
@@ -1538,6 +1540,18 @@
     <string notr="true">removeIconSmall</string>
    </property>
   </action>
+  <action name="actionSceneScreenshot">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/screenshot.svg</normaloff>:/res/images/screenshot.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Screenshot.Scene</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">screenshotIcon</string>
+   </property>
+  </action>
   <action name="actionSourceProperties">
    <property name="enabled">
     <bool>true</bool>
@@ -1605,6 +1619,18 @@
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">downArrowIconSmall</string>
+   </property>
+  </action>
+  <action name="actionSourceScreenshot">
+   <property name="icon">
+    <iconset>
+     <normaloff>:/res/images/screenshot.svg</normaloff>:/res/images/sources/screenshot.svg</iconset>
+   </property>
+   <property name="text">
+    <string>Screenshot.Source</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string notr="true">screenshotIcon</string>
    </property>
   </action>
   <action name="actionShow_Recordings">

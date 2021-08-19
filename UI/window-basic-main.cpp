@@ -462,6 +462,18 @@ OBSBasic::OBSBasic(QWidget *parent)
 		&OBSBasic::BroadcastButtonClicked);
 
 	UpdatePreviewSafeAreas();
+
+	QWidget *scenesToolbarStretch = new QWidget(this);
+	scenesToolbarStretch->setSizePolicy(QSizePolicy::Expanding,
+					    QSizePolicy::Preferred);
+	ui->scenesToolbar->insertWidget(ui->actionSceneScreenshot,
+					scenesToolbarStretch);
+
+	QWidget *sourcesToolbarStretch = new QWidget(this);
+	sourcesToolbarStretch->setSizePolicy(QSizePolicy::Expanding,
+					     QSizePolicy::Preferred);
+	ui->sourcesToolbar->insertWidget(ui->actionSourceScreenshot,
+					 sourcesToolbarStretch);
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -9958,4 +9970,14 @@ void OBSBasic::UpdatePreviewSafeAreas()
 {
 	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					"ShowSafeAreas");
+}
+
+void OBSBasic::on_actionSceneScreenshot_triggered()
+{
+	ScreenshotScene();
+}
+
+void OBSBasic::on_actionSourceScreenshot_triggered()
+{
+	ScreenshotSelectedSource();
 }

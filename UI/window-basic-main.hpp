@@ -1124,6 +1124,9 @@ private slots:
 
 	void ResizeOutputSizeOfSource();
 
+	void on_actionSceneScreenshot_triggered();
+	void on_actionSourceScreenshot_triggered();
+
 public slots:
 	void on_actionResetTransform_triggered();
 

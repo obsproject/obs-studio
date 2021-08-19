@@ -1094,6 +1094,10 @@ OBSBasic {
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
 }
 
+* [themeID="screenshotIcon"] {
+    qproperty-icon: url(./Dark/screenshot.svg);
+}
+
 /* Scene Tree */
 
 SceneTree#scenes {
