@@ -243,6 +243,13 @@ private:
 	gs_vertbuffer_t *boxBottom = nullptr;
 	gs_vertbuffer_t *circle = nullptr;
 
+	gs_vertbuffer_t *actionSafeMargin = nullptr;
+	gs_vertbuffer_t *graphicsSafeMargin = nullptr;
+	gs_vertbuffer_t *fourByThreeSafeMargin = nullptr;
+	gs_vertbuffer_t *leftLine = nullptr;
+	gs_vertbuffer_t *topLine = nullptr;
+	gs_vertbuffer_t *rightLine = nullptr;
+
 	int previewX = 0, previewY = 0;
 	int previewCX = 0, previewCY = 0;
 	float previewScale = 0.0f;
@@ -569,6 +576,9 @@ private:
 				   bool autostart, bool autostop);
 #endif
 	void BroadcastButtonClicked();
+
+	void UpdatePreviewSafeAreas();
+	bool drawSafeAreas = false;
 
 public slots:
 	void DeferSaveBegin();
