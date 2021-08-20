@@ -1463,3 +1463,149 @@ QPushButton#sourceFiltersButton {
 * [themeID="nextIcon"] {
     qproperty-icon: url(./Dark/media/media_next.svg);
 }
+
+/* YouTube Integration */
+#ytEventList QLabel {
+    background-color: rgb(0, 188, 212);; /* Cyan (Primary) */
+	color: rgb(239, 240, 241); /* White */
+	border-radius: 2px;
+	border: 1px solid rgb(0, 188, 212); /* Cyan (Primary) */
+	padding: 4px;
+	padding-left: 15px;
+	padding-right: 15px;
+}
+
+#ytEventList QLabel:hover {
+    background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+}
+
+#ytEventList QLabel[isSelectedEvent=true] {
+	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
+    border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+}
+
+#ytEventList QLabel[isSelectedEvent=true]:hover {
+	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+}
+
+/* Calendar Widget */
+QDateTimeEdit {
+	background-color: rgb(35, 38, 41); /* Dark Gray */
+	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	border-radius: 2px;
+	padding: 5px;
+	min-width: 75px;
+}
+
+QDateTimeEdit:on {
+	padding-top: 3px;
+	padding-left: 4px;
+}
+
+QDateTimeEdit::drop-down {
+	subcontrol-origin: padding;
+	subcontrol-position: top right;
+	width: 15px;
+
+	border-left-width: 0;
+	border-left-color: rgb(169, 169, 169);
+	border-left-style: solid;
+	border-top-right-radius: 3px;
+	border-bottom-right-radius: 3px;
+}
+
+QDateTimeEdit::down-arrow,
+QDateTimeEdit::down-arrow:pressed,
+QDateTimeEdit::down-arrow:focus {
+	image: url(./Rachni/down_arrow_disabled.png);
+}
+
+QDateTimeEdit::down-arrow:on,
+QDateTimeEdit::down-arrow:hover {
+	image: url(./Rachni/down_arrow.png);
+}
+
+QDateTimeEdit::down-arrow {
+    qproperty-alignment: AlignTop;
+    image: url(./Rachni/down_arrow.png);
+    width: 100%;
+}
+
+/* Calendar Top Bar */
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: #181819;
+    padding: 2px 8px;
+}
+
+/* Calendar Top Bar Buttons */
+QCalendarWidget QToolButton {
+    background-color: rgb(0, 188, 212);; /* Cyan (Primary) */
+	color: rgb(239, 240, 241); /* White */
+	border-radius: 2px;
+	border: 1px solid rgb(0, 188, 212); /* Cyan (Primary) */
+	padding: 2px;
+	padding-left: 15px;
+	padding-right: 15px;
+	margin: 2px;
+}
+
+#qt_calendar_monthbutton::menu-indicator {
+    image: url(./Dark/down.svg);
+    subcontrol-position: right;
+    padding-top: 2px;
+    padding-right: 4px;
+    height: 10px;
+    width: 10px;
+}
+
+QCalendarWidget #qt_calendar_prevmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/left.svg);
+    icon-size: 16px, 16px;
+}
+
+QCalendarWidget #qt_calendar_nextmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/expand.svg);
+    icon-size: 16px, 16px;
+}
+
+QCalendarWidget QToolButton:hover {
+    background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+	border: 1px solid rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+}
+
+QCalendarWidget QToolButton:pressed {
+    background-color: rgb(240, 98, 146); /* Pink (Secondary) */
+	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
+}
+
+/* Year spinbox */
+QCalendarWidget QSpinBox {
+    padding: 5px;
+	border: 1px solid rgb(118, 121, 124); /* Light Gray */
+	background-color: rgb(35, 38, 41); /* Dark Gray */
+	color: rgb(239, 240, 241); /* White */
+	border-radius: 2px;
+	min-width: 0px;
+}
+
+QCalendarWidget QSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 16px; }
+QCalendarWidget QSpinBox::down-button {subcontrol-origin: border; subcontrol-position: bottom right; width: 16px;}
+QCalendarWidget QSpinBox::up-arrow { width: 16px; height: 10px; }
+QCalendarWidget QSpinBox::down-arrow { width: 16px; height: 10px; }
+
+/* Days of the Week Bar */
+QCalendarWidget QWidget { alternate-background-color: #232629; }
+
+QCalendarWidget QAbstractItemView:enabled {
+    background-color: rgb(31,30,31);
+    color: rgb(225,224,225);
+    selection-background-color: rgb(25,51,75);
+    selection-color: rgb(225,224,225);
+}
+
+QCalendarWidget QAbstractItemView:disabled {
+    color: rgb(122,121,122);
+}

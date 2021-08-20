@@ -6306,7 +6306,9 @@ void OBSBasic::StartStreaming()
 		ui->broadcastButton->setVisible(true);
 		ui->broadcastButton->setText(
 			QTStr("Basic.Main.StartBroadcast"));
-		ui->broadcastButton->setStyleSheet("background-color:#6699cc");
+		ui->broadcastButton->setProperty("broadcastState", "ready");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
 		// well, we need to disable button while stream is not active
 #if YOUTUBE_ENABLED
 		// get a current stream key
@@ -6326,7 +6328,9 @@ void OBSBasic::StartStreaming()
 		broadcastActive = true;
 		ui->broadcastButton->setVisible(true);
 		ui->broadcastButton->setText(QTStr("Basic.Main.StopBroadcast"));
-		ui->broadcastButton->setStyleSheet("background-color:#ff0000");
+		ui->broadcastButton->setProperty("broadcastState", "active");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
 	}
 
 	bool recordWhenStreaming = config_get_bool(
@@ -6361,8 +6365,12 @@ void OBSBasic::BroadcastButtonClicked()
 		if (!autoStopBroadcast) {
 			ui->broadcastButton->setText(
 				QTStr("Basic.Main.StopBroadcast"));
-			ui->broadcastButton->setStyleSheet(
-				"background-color:#ff0000");
+			ui->broadcastButton->setProperty("broadcastState",
+							 "active");
+			ui->broadcastButton->style()->unpolish(
+				ui->broadcastButton);
+			ui->broadcastButton->style()->polish(
+				ui->broadcastButton);
 		} else {
 			ui->broadcastButton->setVisible(false);
 		}
