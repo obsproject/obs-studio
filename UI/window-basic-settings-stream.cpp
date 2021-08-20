@@ -837,13 +837,13 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 				.arg(QString::number(vbitrate));
 	if (abitrate) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 		text += ENFORCE_TEXT("MaxAudioBitrate")
 				.arg(QString::number(abitrate));
 	}
 	if (res_count) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 
 		obs_service_resolution best_res = {};
 		int best_res_pixels = 0;
@@ -864,12 +864,25 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 	}
 	if (fps) {
 		if (!text.isEmpty())
-			text += "\n";
+			text += "<br>";
 
 		text += ENFORCE_TEXT("MaxFPS").arg(QString::number(fps));
 	}
 #undef ENFORCE_TEXT
 
+#if YOUTUBE_ENABLED
+	if (IsYouTubeService(QT_TO_UTF8(ui->service->currentText()))) {
+		if (!text.isEmpty())
+			text += "<br><br>";
+
+		text += "<a href=\"https://www.youtube.com/t/terms\">"
+			"YouTube Terms of Service</a><br>"
+			"<a href=\"http://www.google.com/policies/privacy\">"
+			"Google Privacy Policy</a><br>"
+			"<a href=\"https://security.google.com/settings/security/permissions\">"
+			"Google Third-Party Permissions</a>";
+	}
+#endif
 	ui->enforceSettingsLabel->setText(text);
 }
 

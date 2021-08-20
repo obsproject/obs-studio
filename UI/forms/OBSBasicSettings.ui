@@ -1252,6 +1252,12 @@
                <property name="text">
                 <string notr="true"/>
                </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
+               </property>
               </widget>
              </item>
              <item row="5" column="1">
@@ -1348,8 +1354,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>677</height>
+              <width>601</width>
+              <height>602</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
