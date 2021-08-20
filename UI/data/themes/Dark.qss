@@ -336,6 +336,7 @@ QTabBar::tab:pressed {
 
 /* ComboBox */
 
+QDateTimeEdit,
 QComboBox {
     background-color: rgb(76,76,76);
     border-style: solid;
@@ -346,36 +347,43 @@ QComboBox {
     padding-left: 10px;
 }
 
+QDateTimeEdit:hover,
 QComboBox:hover {
     background-color: rgb(88,87,88);
 }
 
+QDateTimeEdit::drop-down,
 QComboBox::drop-down {
     border:none;
     border-left: 1px solid rgba(31,30,31,155); /* veryDark */
     width: 20px;
 }
 
+QDateTimeEdit::down-arrow,
 QComboBox::down-arrow {
     qproperty-alignment: AlignTop;
     image: url(./Dark/updown.svg);
     width: 100%;
 }
 
+QDateTimeEdit:on,
 QComboBox:on {
     background-color: rgb(31,30,31); /* veryDark */
 }
 
+QDateTimeEdit:editable,
 QComboBox:editable {
     border-top-left-radius: 0px;
     border-bottom-left-radius: 0px;
 }
 
+QDateTimeEdit::drop-down:editable,
 QComboBox::drop-down:editable {
     border-top-right-radius: 3px;
     border-bottom-right-radius: 3px;
 }
 
+QDateTimeEdit::down-arrow:editable,
 QComboBox::down-arrow:editable {
     qproperty-alignment: AlignTop;
     image: url(./Dark/down.svg);
@@ -885,4 +893,117 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 
 * [themeID="previousIcon"] {
     qproperty-icon: url(./Dark/media/media_previous.svg);
+}
+
+/* YouTube Integration */
+#broadcastButton[broadcastState=ready] {
+    background: blue;
+}
+
+#broadcastButton[broadcastState=active] {
+    background: green;
+}
+
+#ytEventList QLabel {
+    color: rgb(225,224,225); /* veryLight */
+    background-color: rgb(76,76,76);
+    border: none;
+    border-radius: 3px;
+    padding: 4px 20px;
+}
+
+#ytEventList QLabel:hover {
+    background: rgb(122,121,122);
+}
+
+#ytEventList QLabel[isSelectedEvent=true] {
+    background: rgb(31,30,31);
+    border: none;
+}
+
+/* Calendar Widget */
+QDateTimeEdit::down-arrow {
+    qproperty-alignment: AlignTop;
+    image: url(./Dark/down.svg);
+    width: 100%;
+}
+
+QDateTimeEdit:on {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+/* Calendar Top Bar */
+QCalendarWidget QWidget#qt_calendar_navigationbar {
+    background-color: rgb(58,57,58);
+    padding: 4px 8px;
+}
+
+/* Calendar Top Bar Buttons */
+QCalendarWidget QToolButton {
+    background-color: rgb(76,76,76);
+    padding: 2px 16px;
+    border-radius: 3px;
+    margin: 2px;
+}
+
+#qt_calendar_monthbutton::menu-indicator {
+    image: url(./Dark/down.svg);
+    subcontrol-position: right;
+    padding-top: 2px;
+    padding-right: 6px;
+    height: 10px;
+    width: 10px;
+}
+
+QCalendarWidget #qt_calendar_prevmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/left.svg);
+    icon-size: 16px, 16px;
+}
+
+QCalendarWidget #qt_calendar_nextmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/expand.svg);
+    icon-size: 16px, 16px;
+}
+
+QCalendarWidget QToolButton:hover {
+    background-color: rgb(122,121,122);
+    border-radius: 3px;
+}
+
+QCalendarWidget QToolButton:pressed {
+    background-color: rgb(31,30,31); /* veryDark */
+}
+
+/* Month Dropdown Menu */
+QCalendarWidget QMenu {
+    
+}
+/* Year spinbox */
+QCalendarWidget QSpinBox {
+    background-color: rgb(31,30,31); /* veryDark */
+    border: none;
+    border-radius: 3px;
+    margin: 0px 3px 0px 0px;
+    padding: 4px 16px;
+}
+
+QCalendarWidget QSpinBox::up-button { subcontrol-origin: border; subcontrol-position: top right; width: 16px; }
+QCalendarWidget QSpinBox::down-button {subcontrol-origin: border; subcontrol-position: bottom right; width: 16px;}
+QCalendarWidget QSpinBox::up-arrow { width: 10px; height: 10px; }
+QCalendarWidget QSpinBox::down-arrow { width: 10px; height: 10px; }
+
+/* Days of the Week Bar */
+QCalendarWidget QWidget { alternate-background-color: rgb(70,69,70); }
+
+QCalendarWidget QAbstractItemView:enabled {
+    background-color: rgb(31,30,31);
+    color: rgb(225,224,225);
+    selection-background-color: rgb(25,51,75);
+    selection-color: rgb(225,224,225);
+}
+
+QCalendarWidget QAbstractItemView:disabled {
+    color: rgb(122,121,122);
 }

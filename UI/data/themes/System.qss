@@ -300,3 +300,50 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 * [themeID="previousIcon"] {
     qproperty-icon: url(./Dark/media/media_previous.svg);
 }
+
+/* YouTube Integration */
+#ytEventList QLabel {
+	background-color: #e1e1e1;
+	border: 1px solid #ddd;
+}
+
+#ytEventList QLabel:hover {
+    background-color: #eee;
+	border: 1px solid #777;
+}
+
+#ytEventList QLabel[isSelectedEvent=true] {
+    background-color: #ccc;
+	border: 1px solid #444;
+}
+
+/* Calendar Widget */
+QCalendarWidget QToolButton {
+    padding: 0px 12px;
+}
+
+#qt_calendar_monthbutton::menu-indicator {
+    image: url(./Dark/down.svg);
+    subcontrol-position: right;
+    padding-top: 2px;
+    padding-right: 2px;
+    height: 8px;
+    width: 8px;
+}
+
+#qt_calendar_monthbutton::menu-indicator:hover {
+    image: url(:/res/images/down.svg);
+    color: red;
+}
+
+QCalendarWidget #qt_calendar_prevmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/left.svg);
+    icon-size: 16px, 16px;
+}
+
+QCalendarWidget #qt_calendar_nextmonth {
+    padding: 2px;
+    qproperty-icon: url(./Dark/expand.svg);
+    icon-size: 16px, 16px;
+}

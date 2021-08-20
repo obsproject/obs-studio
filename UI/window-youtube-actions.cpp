@@ -10,9 +10,6 @@
 
 const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";
-const QString NormalStylesheet = "border: 1px solid black; border-radius: 5px;";
-const QString SelectedStylesheet =
-	"border: 2px solid black; border-radius: 5px;";
 const QString IndexOfGamingCategory = "20";
 
 OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
@@ -169,7 +166,6 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 		    const QString &broadcast, const QString &status,
 		    bool astart, bool astop) {
 			ClickableLabel *label = new ClickableLabel();
-			label->setStyleSheet(NormalStylesheet);
 			label->setTextFormat(Qt::RichText);
 
 			if (status == "live" || status == "testing") {
@@ -204,11 +200,18 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 					     ui->scrollAreaWidgetContents->findChildren<
 						     QWidget *>(
 						     QString(),
-						     Qt::FindDirectChildrenOnly))
-						i->setStyleSheet(
-							NormalStylesheet);
-					label->setStyleSheet(
-						SelectedStylesheet);
+						     Qt::FindDirectChildrenOnly)) {
+
+						i->setProperty(
+							"isSelectedEvent",
+							"false");
+						i->style()->unpolish(i);
+						i->style()->polish(i);
+					}
+					label->setProperty("isSelectedEvent",
+							   "true");
+					label->style()->unpolish(label);
+					label->style()->polish(label);
 
 					this->selectedBroadcast = broadcast;
 					this->autostart = astart;
