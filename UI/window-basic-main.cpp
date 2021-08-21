@@ -6162,6 +6162,8 @@ void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
 	obs_service_update(service_obj, settings);
 	autoStartBroadcast = autostart;
 	autoStopBroadcast = autostop;
+
+	obs_data_release(settings);
 }
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
