@@ -87,9 +87,8 @@ static void decklink_update(void *data, obs_data_t *settings)
 static void decklink_show(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
-	obs_source_t *source = decklink->GetSource();
-	bool showing = obs_source_showing(source);
-	if (decklink->dwns && showing && !decklink->Capturing()) {
+
+	if (decklink->dwns && !decklink->Capturing()) {
 		ComPtr<DeckLinkDevice> device;
 		device.Set(deviceEnum->FindByHash(decklink->hash.c_str()));
 		decklink->Activate(device, decklink->id,
@@ -100,9 +99,8 @@ static void decklink_show(void *data)
 static void decklink_hide(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
-	obs_source_t *source = decklink->GetSource();
-	bool showing = obs_source_showing(source);
-	if (decklink->dwns && !showing && decklink->Capturing())
+
+	if (decklink->dwns && decklink->Capturing())
 		decklink->Deactivate();
 }
 
