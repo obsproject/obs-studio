@@ -90,6 +90,12 @@ static void *gpu_encode_thread(void *unused)
 			if (video_pause_check(&encoder->pause, timestamp))
 				continue;
 
+			if (encoder->reconfigure_requested) {
+				encoder->reconfigure_requested = false;
+				encoder->info.update(encoder->context.data,
+						     encoder->context.settings);
+			}
+
 			if (!encoder->start_ts)
 				encoder->start_ts = timestamp;
 
