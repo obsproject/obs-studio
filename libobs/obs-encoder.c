@@ -397,9 +397,12 @@ void obs_encoder_update(obs_encoder_t *encoder, obs_data_t *settings)
 
 	obs_data_apply(encoder->context.settings, settings);
 
-	if (encoder->info.update && encoder->context.data)
-		encoder->info.update(encoder->context.data,
-				     encoder->context.settings);
+	// Note, we don't actually apply the changes to the encoder here
+	// as it may be active in another thread. Setting this to true
+	// makes the changes apply at the next possible moment in the
+	// encoder / GPU encoder thread.
+	if (encoder->info.update)
+		encoder->reconfigure_requested = true;
 }
 
 bool obs_encoder_get_extra_data(const obs_encoder_t *encoder,
@@ -969,6 +972,12 @@ bool do_encode(struct obs_encoder *encoder, struct encoder_frame *frame)
 	struct encoder_packet pkt = {0};
 	bool received = false;
 	bool success;
+
+	if (encoder->reconfigure_requested) {
+		encoder->reconfigure_requested = false;
+		encoder->info.update(encoder->context.data,
+				     encoder->context.settings);
+	}
 
 	pkt.timebase_num = encoder->timebase_num;
 	pkt.timebase_den = encoder->timebase_den;
