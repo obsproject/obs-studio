@@ -5,6 +5,7 @@
 #include "qt-wrappers.hpp"
 #include "youtube-api-wrappers.hpp"
 
+#include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>
 
@@ -56,7 +57,11 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 		&OBSYoutubeActions::OpenYouTubeDashboard);
 
 	connect(ui->helpAutoStartStop, &QLabel::linkActivated, this,
-		[](const QString &link) { QDesktopServices::openUrl(link); });
+		[](const QString &) {
+			QToolTip::showText(
+				QCursor::pos(),
+				QTStr("YouTube.Actions.AutoStartStop.TT"));
+		});
 	connect(ui->help360Video, &QLabel::linkActivated, this,
 		[](const QString &link) { QDesktopServices::openUrl(link); });
 	connect(ui->helpMadeForKids, &QLabel::linkActivated, this,

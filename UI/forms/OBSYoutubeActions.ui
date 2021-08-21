@@ -262,7 +262,7 @@
             </sizepolicy>
            </property>
            <property name="text">
-            <string>YouTube.Actions.AutoStartStop.Help</string>
+            <string notr="true">&lt;a href=&quot;.&quot;&gt;(?)&lt;/a&gt;</string>
            </property>
            <property name="textFormat">
             <enum>Qt::RichText</enum>
@@ -474,7 +474,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>179</width>
+            <width>522</width>
             <height>192</height>
            </rect>
           </property>
