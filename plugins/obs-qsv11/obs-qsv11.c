@@ -1029,7 +1029,7 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
-	.caps = OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
 };
 
 struct obs_encoder_info obs_qsv_encoder_tex = {
@@ -1039,7 +1039,7 @@ struct obs_encoder_info obs_qsv_encoder_tex = {
 	.get_name = obs_qsv_getname,
 	.create = obs_qsv_create_tex,
 	.destroy = obs_qsv_destroy,
-	.caps = OBS_ENCODER_CAP_PASS_TEXTURE,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE,
 	.encode_texture = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props,
