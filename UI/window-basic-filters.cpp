@@ -119,6 +119,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	if (audioOnly) {
 		ui->effectWidget->setVisible(false);
 		ui->separatorLine->setVisible(false);
+		UpdateSplitter(false);
 	}
 
 	if (async && !audioOnly && ui->asyncFilters->count() == 0 &&
@@ -128,6 +129,12 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 	if (audioOnly || (audio && !async))
 		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
+
+	if (async && audio && ui->asyncFilters->count() == 0) {
+		UpdateSplitter(false);
+	} else if (!audioOnly) {
+		UpdateSplitter();
+	}
 
 	auto addDrawCallback = [this]() {
 		obs_display_add_draw_callback(ui->preview->GetDisplay(),
@@ -147,7 +154,6 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 				addDrawCallback);
 	} else {
 		ui->rightLayout->setContentsMargins(0, noPreviewMargin, 0, 0);
-		ui->rightContainerLayout->insertStretch(1);
 		ui->preview->hide();
 	}
 
@@ -255,7 +261,8 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
 	if (view) {
 		updatePropertiesSignal.Disconnect();
-		ui->rightLayout->removeWidget(view);
+		ui->propertiesFrame->setVisible(false);
+		view->hide();
 		view->deleteLater();
 		view = nullptr;
 	}
@@ -284,9 +291,9 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 				       "update_properties",
 				       OBSBasicFilters::UpdateProperties, this);
 
-	view->setMaximumHeight(250);
 	view->setMinimumHeight(150);
-	ui->rightLayout->addWidget(view);
+	UpdateSplitter();
+	ui->propertiesLayout->addWidget(view);
 	view->show();
 }
 
@@ -436,6 +443,28 @@ void OBSBasicFilters::UpdateFilters()
 	}
 
 	main->SaveProject();
+}
+
+void OBSBasicFilters::UpdateSplitter()
+{
+	bool show_splitter_frame =
+		ui->asyncFilters->count() + ui->effectFilters->count() > 0;
+	UpdateSplitter(show_splitter_frame);
+}
+
+void OBSBasicFilters::UpdateSplitter(bool show_splitter_frame)
+{
+	bool show_splitter_handle = show_splitter_frame;
+	uint32_t caps = obs_source_get_output_flags(source);
+	if ((caps & OBS_SOURCE_VIDEO) == 0)
+		show_splitter_handle = false;
+
+	for (int i = 0; i < ui->rightLayout->count(); i++) {
+		QSplitterHandle *hndl = ui->rightLayout->handle(i);
+		hndl->setEnabled(show_splitter_handle);
+	}
+
+	ui->propertiesFrame->setVisible(show_splitter_frame);
 }
 
 static bool filter_compatible(bool async, uint32_t sourceFlags,
