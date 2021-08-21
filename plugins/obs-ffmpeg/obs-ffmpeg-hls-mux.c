@@ -331,6 +331,7 @@ struct obs_output_info ffmpeg_hls_muxer = {
 	.id = "ffmpeg_hls_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
+	.protocols = "HLS",
 #ifdef ENABLE_HEVC
 	.encoded_video_codecs = "h264;hevc",
 #else

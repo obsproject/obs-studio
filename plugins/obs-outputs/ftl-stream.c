@@ -1159,6 +1159,7 @@ static int _ftl_error_to_obs_error(int status)
 struct obs_output_info ftl_output_info = {
 	.id = "ftl_output",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_SERVICE,
+	.protocols = "FTL",
 	.encoded_video_codecs = "h264",
 	.encoded_audio_codecs = "opus",
 	.get_name = ftl_stream_getname,

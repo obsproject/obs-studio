@@ -1289,6 +1289,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
+	.protocols = "SRT;RIST",
 #ifdef ENABLE_HEVC
 	.encoded_video_codecs = "h264;hevc;av1",
 #else
