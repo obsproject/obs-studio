@@ -661,6 +661,8 @@ struct obs_encoder_info nvenc_encoder_info = {
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
 #ifdef _WIN32
-	.caps = OBS_ENCODER_CAP_INTERNAL,
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+#else
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
 #endif
 };
