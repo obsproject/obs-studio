@@ -2211,6 +2211,10 @@ obs_output_get_supported_video_codecs(const obs_output_t *output);
 EXPORT const char *
 obs_output_get_supported_audio_codecs(const obs_output_t *output);
 
+EXPORT const char *obs_output_get_protocols(const obs_output_t *output);
+
+EXPORT bool obs_is_output_protocol_registered(const char *protocol);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

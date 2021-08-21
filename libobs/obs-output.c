@@ -2713,3 +2713,13 @@ const char *obs_output_get_supported_audio_codecs(const obs_output_t *output)
 		       ? output->info.encoded_audio_codecs
 		       : NULL;
 }
+
+const char *obs_output_get_protocols(const obs_output_t *output)
+{
+	if (!obs_output_valid(output, "obs_output_get_protocols"))
+		return NULL;
+
+	return (output->info.flags & OBS_OUTPUT_SERVICE)
+		       ? output->info.protocols
+		       : NULL;
+}

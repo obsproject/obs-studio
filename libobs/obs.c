@@ -1078,6 +1078,10 @@ static void obs_free_data(void)
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
 	obs_data_release(data->private_data);
+
+	for (size_t i = 0; i < data->protocols.num; i++)
+		bfree(data->protocols.array[i]);
+	da_free(data->protocols);
 }
 
 static const char *obs_signals[] = {
@@ -3451,4 +3455,14 @@ bool obs_weak_object_references_object(obs_weak_object_t *weak,
 				       obs_object_t *object)
 {
 	return weak && object && weak->object == object;
+}
+
+bool obs_is_output_protocol_registered(const char *protocol)
+{
+	for (size_t i = 0; i < obs->data.protocols.num; i++) {
+		if (strcmp(protocol, obs->data.protocols.array[i]) == 0)
+			return true;
+	}
+
+	return false;
 }
