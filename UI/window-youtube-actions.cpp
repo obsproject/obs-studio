@@ -72,20 +72,26 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 		[&](int state) {
 			ui->scheduledTime->setVisible(state);
 			if (state) {
-				ui->checkAutoStart->setEnabled(true);
-				ui->checkAutoStop->setEnabled(true);
+				ui->checkAutoStart->setVisible(true);
+				ui->checkAutoStop->setVisible(true);
+				ui->helpAutoStartStop->setVisible(true);
 
 				ui->checkAutoStart->setChecked(false);
 				ui->checkAutoStop->setChecked(false);
 			} else {
-				ui->checkAutoStart->setEnabled(false);
-				ui->checkAutoStop->setEnabled(false);
+				ui->checkAutoStart->setVisible(false);
+				ui->checkAutoStop->setVisible(false);
+				ui->helpAutoStartStop->setVisible(false);
 
 				ui->checkAutoStart->setChecked(true);
 				ui->checkAutoStop->setChecked(true);
 			}
 			UpdateOkButtonStatus();
 		});
+
+	ui->checkAutoStart->setVisible(false);
+	ui->checkAutoStop->setVisible(false);
+	ui->helpAutoStartStop->setVisible(false);
 
 	ui->scheduledTime->setDateTime(QDateTime::currentDateTime());
 
