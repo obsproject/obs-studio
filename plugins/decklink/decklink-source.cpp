@@ -102,7 +102,7 @@ static void decklink_hide(void *data)
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
 	obs_source_t *source = decklink->GetSource();
 	bool showing = obs_source_showing(source);
-	if (decklink->dwns && showing)
+	if (decklink->dwns && !showing && decklink->Capturing())
 		decklink->Deactivate();
 }
 
