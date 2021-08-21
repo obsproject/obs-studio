@@ -2096,11 +2096,8 @@ void OBSBasic::OnFirstLoad()
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 
-	if (showLogViewerOnStartup) {
-		if (!logView)
-			logView = new OBSLogViewer();
-		logView->show();
-	}
+	if (showLogViewerOnStartup)
+		on_actionViewCurrentLog_triggered();
 }
 
 void OBSBasic::DeferredSysTrayLoad(int requeueCount)
@@ -2585,7 +2582,6 @@ OBSBasic::~OBSBasic()
 		updateCheckThread->wait();
 
 	delete screenshotData;
-	delete logView;
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
@@ -5938,15 +5934,12 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 	if (!logView)
 		logView = new OBSLogViewer();
 
-	if (!logView->isVisible()) {
-		logView->setVisible(true);
-	} else {
-		logView->setWindowState(
-			(logView->windowState() & ~Qt::WindowMinimized) |
-			Qt::WindowActive);
-		logView->activateWindow();
-		logView->raise();
-	}
+	logView->show();
+	logView->setWindowState(
+		(logView->windowState() & ~Qt::WindowMinimized) |
+		Qt::WindowActive);
+	logView->activateWindow();
+	logView->raise();
 }
 
 void OBSBasic::on_actionShowCrashLogs_triggered()

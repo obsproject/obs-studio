@@ -219,8 +219,7 @@ private:
 	QPointer<QDockWidget> statsDock;
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
-
-	OBSLogViewer *logView = nullptr;
+	QPointer<OBSLogViewer> logView;
 
 	QPointer<QTimer> cpuUsageTimer;
 	QPointer<QTimer> diskFullTimer;
