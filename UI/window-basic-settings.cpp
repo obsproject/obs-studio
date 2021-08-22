@@ -1892,7 +1892,8 @@ OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 	view = new OBSPropertiesView(
 		settings.Get(), encoder,
 		(PropertiesReloadCallback)obs_get_encoder_properties, 170);
-	view->setFrameShape(QFrame::StyledPanel);
+	view->setFrameShape(QFrame::NoFrame);
+	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 	view->setProperty("changed", QVariant(changed));
 	QObject::connect(view, SIGNAL(Changed()), this, SLOT(OutputsChanged()));
 
@@ -1907,7 +1908,9 @@ void OBSBasicSettings::LoadAdvOutputStreamingEncoderProperties()
 	delete streamEncoderProps;
 	streamEncoderProps =
 		CreateEncoderPropertyView(type, "streamEncoder.json");
-	ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
+	streamEncoderProps->setSizePolicy(QSizePolicy::Preferred,
+					  QSizePolicy::Minimum);
+	ui->advOutEncoderLayout->addWidget(streamEncoderProps);
 
 	connect(streamEncoderProps, SIGNAL(Changed()), this,
 		SLOT(UpdateStreamDelayEstimate()));
@@ -2019,7 +2022,10 @@ void OBSBasicSettings::LoadAdvOutputRecordingEncoderProperties()
 	if (astrcmpi(type, "none") != 0) {
 		recordEncoderProps =
 			CreateEncoderPropertyView(type, "recordEncoder.json");
-		ui->advOutRecStandard->layout()->addWidget(recordEncoderProps);
+		recordEncoderProps->setSizePolicy(QSizePolicy::Preferred,
+						  QSizePolicy::Minimum);
+		ui->advOutRecEncoderProps->layout()->addWidget(
+			recordEncoderProps);
 		connect(recordEncoderProps, SIGNAL(Changed()), this,
 			SLOT(AdvReplayBufferChanged()));
 	}
@@ -3985,7 +3991,9 @@ void OBSBasicSettings::on_advOutEncoder_currentIndexChanged(int idx)
 		streamEncoderProps = CreateEncoderPropertyView(
 			QT_TO_UTF8(encoder),
 			loadSettings ? "streamEncoder.json" : nullptr, true);
-		ui->advOutputStreamTab->layout()->addWidget(streamEncoderProps);
+		streamEncoderProps->setSizePolicy(QSizePolicy::Preferred,
+						  QSizePolicy::Minimum);
+		ui->advOutEncoderLayout->addWidget(streamEncoderProps);
 	}
 
 	ui->advOutUseRescale->setVisible(true);
@@ -4005,6 +4013,7 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 		ui->advOutRecUseRescale->setChecked(false);
 		ui->advOutRecUseRescale->setVisible(false);
 		ui->advOutRecRescaleContainer->setVisible(false);
+		ui->advOutRecEncoderProps->setVisible(false);
 		return;
 	}
 
@@ -4015,13 +4024,17 @@ void OBSBasicSettings::on_advOutRecEncoder_currentIndexChanged(int idx)
 		recordEncoderProps = CreateEncoderPropertyView(
 			QT_TO_UTF8(encoder),
 			loadSettings ? "recordEncoder.json" : nullptr, true);
-		ui->advOutRecStandard->layout()->addWidget(recordEncoderProps);
+		recordEncoderProps->setSizePolicy(QSizePolicy::Preferred,
+						  QSizePolicy::Minimum);
+		ui->advOutRecEncoderProps->layout()->addWidget(
+			recordEncoderProps);
 		connect(recordEncoderProps, SIGNAL(Changed()), this,
 			SLOT(AdvReplayBufferChanged()));
 	}
 
 	ui->advOutRecUseRescale->setVisible(true);
 	ui->advOutRecRescaleContainer->setVisible(true);
+	ui->advOutRecEncoderProps->setVisible(true);
 }
 
 void OBSBasicSettings::on_advOutFFIgnoreCompat_stateChanged(int)
@@ -5037,8 +5050,7 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	else
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 
-	ui->advReplayBufferGroupBox->setVisible(!lossless &&
-						replayBufferEnabled);
+	ui->advReplayBufferFrame->setEnabled(!lossless && replayBufferEnabled);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
