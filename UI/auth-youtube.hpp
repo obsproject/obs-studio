@@ -7,7 +7,7 @@
 
 #include "auth-oauth.hpp"
 
-const std::vector<Auth::Def> youtubeServices = {
+inline const std::vector<Auth::Def> youtubeServices = {
 	{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true},
 	{"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true},
 	{"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true}};
