@@ -18,7 +18,6 @@
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
 #define PLUGIN_NAME "mac-virtualcam"
-#define PLUGIN_VERSION "1.3.0"
 
 #define blog(level, msg, ...) \
 	blog(level, "[" PLUGIN_NAME "] " msg, ##__VA_ARGS__)

@@ -211,8 +211,6 @@ struct obs_output_info virtualcam_output_info = {
 
 bool obs_module_load(void)
 {
-	blog(LOG_INFO, "version=%s", PLUGIN_VERSION);
-
 	obs_register_output(&virtualcam_output_info);
 
 	obs_data_t *obs_settings = obs_data_create();
