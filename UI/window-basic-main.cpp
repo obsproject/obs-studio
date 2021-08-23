@@ -3140,6 +3140,7 @@ void OBSBasic::UpdateContextBar(bool force)
 
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 		ui->contextSourceIcon->setPixmap(pixmap);
+		ui->contextSourceIconSpacer->hide();
 		ui->contextSourceIcon->show();
 
 		const char *name = obs_source_get_name(source);
@@ -3150,6 +3151,7 @@ void OBSBasic::UpdateContextBar(bool force)
 			obs_source_configurable(source));
 	} else {
 		ui->contextSourceIcon->hide();
+		ui->contextSourceIconSpacer->show();
 		ui->contextSourceLabel->setText(
 			QTStr("ContextBar.NoSelectedSource"));
 
