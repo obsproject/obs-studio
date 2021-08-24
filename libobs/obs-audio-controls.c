@@ -535,7 +535,7 @@ static void volmeter_source_data_received(void *vptr, obs_source_t *source,
 
 	// Adjust magnitude/peak based on the volume level set by the user.
 	// And convert to dB.
-	mul = muted ? 0.0f : db_to_mul(volmeter->cur_db);
+	mul = db_to_mul(volmeter->cur_db);
 	for (int channel_nr = 0; channel_nr < MAX_AUDIO_CHANNELS;
 	     channel_nr++) {
 		magnitude[channel_nr] =
@@ -552,6 +552,7 @@ static void volmeter_source_data_received(void *vptr, obs_source_t *source,
 	signal_levels_updated(volmeter, magnitude, peak, input_peak);
 
 	UNUSED_PARAMETER(source);
+	UNUSED_PARAMETER(muted);
 }
 
 obs_fader_t *obs_fader_create(enum obs_fader_type type)

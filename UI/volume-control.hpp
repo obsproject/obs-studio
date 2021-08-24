@@ -62,6 +62,8 @@ class VolumeMeter : public QWidget {
 	Q_PROPERTY(qreal inputPeakHoldDuration READ getInputPeakHoldDuration
 			   WRITE setInputPeakHoldDuration DESIGNABLE true)
 
+	friend class VolControl;
+
 private slots:
 	void ClipEnding();
 
@@ -87,6 +89,8 @@ private:
 	void paintVMeter(QPainter &painter, int x, int y, int width, int height,
 			 float magnitude, float peak, float peakHold);
 	void paintVTicks(QPainter &painter, int x, int y, int height);
+
+	QColor ConvertToGrayscale(const QColor &color) const;
 
 	QMutex dataMutex;
 
@@ -129,6 +133,7 @@ private:
 	int channels = 0;
 	bool clipping = false;
 	bool vertical;
+	bool muted = false;
 
 public:
 	explicit VolumeMeter(QWidget *parent = nullptr,
