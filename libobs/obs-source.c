@@ -172,8 +172,6 @@ extern char *find_libobs_data_file(const char *file);
 /* internal initialization */
 static bool obs_source_init(struct obs_source *source)
 {
-	pthread_mutexattr_t attr;
-
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
@@ -186,11 +184,7 @@ static bool obs_source_init(struct obs_source *source)
 	pthread_mutex_init_value(&source->audio_cb_mutex);
 	pthread_mutex_init_value(&source->caption_cb_mutex);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return false;
-	if (pthread_mutex_init(&source->filter_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&source->filter_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_buf_mutex, NULL) != 0)
 		return false;
