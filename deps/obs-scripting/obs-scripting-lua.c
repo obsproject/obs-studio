@@ -55,10 +55,10 @@ package.path = package.path .. \";\" .. script_path() .. \"/?.lua\"\n";
 
 static char *startup_script = NULL;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_lua_script *first_tick_script = NULL;
 
-pthread_mutex_t lua_source_def_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lua_source_def_mutex;
 
 #define ls_get_libobs_obj(type, lua_index, obs_obj)                      \
 	ls_get_libobs_obj_(script, #type " *", lua_index, obs_obj, NULL, \
@@ -242,7 +242,7 @@ struct lua_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct lua_obs_timer *first_timer = NULL;
 
 static inline void lua_obs_timer_init(struct lua_obs_timer *timer)
@@ -1119,12 +1119,9 @@ obs_script_t *obs_lua_script_create(const char *path, obs_data_t *settings)
 	data->base.type = OBS_SCRIPT_LANG_LUA;
 	data->tick = LUA_REFNIL;
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
 	pthread_mutex_init_value(&data->mutex);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
-	if (pthread_mutex_init(&data->mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&data->mutex) != 0) {
 		bfree(data);
 		return NULL;
 	}
@@ -1300,12 +1297,8 @@ void obs_lua_load(void)
 	struct dstr dep_paths = {0};
 	struct dstr tmp = {0};
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
 	pthread_mutex_init(&lua_source_def_mutex, NULL);
 
 	/* ---------------------------------------------- */
