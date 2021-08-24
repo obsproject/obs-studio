@@ -354,7 +354,6 @@ static inline bool valid_audio_params(const struct audio_output_info *info)
 int audio_output_open(audio_t **audio, struct audio_output_info *info)
 {
 	struct audio_output *out;
-	pthread_mutexattr_t attr;
 	bool planar = is_audio_planar(info->format);
 
 	if (!valid_audio_params(info))
@@ -362,7 +361,7 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 
 	out = bzalloc(sizeof(struct audio_output));
 	if (!out)
-		goto fail;
+		goto fail0;
 
 	memcpy(&out->info, info, sizeof(struct audio_output_info));
 	out->channels = get_audio_channels(info->speakers);
@@ -372,22 +371,22 @@ int audio_output_open(audio_t **audio, struct audio_output_info *info)
 	out->block_size = (planar ? 1 : out->channels) *
 			  get_audio_bytes_per_channel(info->format);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		goto fail;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
-		goto fail;
+	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
+		goto fail0;
 	if (os_event_init(&out->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
-		goto fail;
+		goto fail1;
 	if (pthread_create(&out->thread, NULL, audio_thread, out) != 0)
-		goto fail;
+		goto fail2;
 
 	out->initialized = true;
 	*audio = out;
 	return AUDIO_OUTPUT_SUCCESS;
 
-fail:
+fail2:
+	os_event_destroy(out->stop_event);
+fail1:
+	pthread_mutex_destroy(&out->input_mutex);
+fail0:
 	audio_output_close(out);
 	return AUDIO_OUTPUT_FAIL;
 }
@@ -402,6 +401,8 @@ void audio_output_close(audio_t *audio)
 	if (audio->initialized) {
 		os_event_signal(audio->stop_event);
 		pthread_join(audio->thread, &thread_ret);
+		os_event_destroy(audio->stop_event);
+		pthread_mutex_destroy(&audio->input_mutex);
 	}
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
@@ -412,8 +413,6 @@ void audio_output_close(audio_t *audio)
 
 		da_free(mix->inputs);
 	}
-
-	os_event_destroy(audio->stop_event);
 	bfree(audio);
 }
 
