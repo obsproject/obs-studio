@@ -38,22 +38,13 @@ struct signal_info {
 
 static inline struct signal_info *signal_info_create(struct decl_info *info)
 {
-	pthread_mutexattr_t attr;
-	struct signal_info *si;
-
-	if (pthread_mutexattr_init(&attr) != 0)
-		return NULL;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return NULL;
-
-	si = bmalloc(sizeof(struct signal_info));
-
+	struct signal_info *si = bmalloc(sizeof(struct signal_info));
 	si->func = *info;
 	si->next = NULL;
 	si->signalling = false;
 	da_init(si->callbacks);
 
-	if (pthread_mutex_init(&si->mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&si->mutex) != 0) {
 		blog(LOG_ERROR, "Could not create signal");
 
 		decl_info_free(&si->func);
@@ -132,18 +123,13 @@ signal_handler_t *signal_handler_create(void)
 	handler->first = NULL;
 	handler->refs = 1;
 
-	pthread_mutexattr_t attr;
-	if (pthread_mutexattr_init(&attr) != 0)
-		return NULL;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return NULL;
-
 	if (pthread_mutex_init(&handler->mutex, NULL) != 0) {
 		blog(LOG_ERROR, "Couldn't create signal handler mutex!");
 		bfree(handler);
 		return NULL;
 	}
-	if (pthread_mutex_init(&handler->global_callbacks_mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&handler->global_callbacks_mutex) !=
+	    0) {
 		blog(LOG_ERROR, "Couldn't create signal handler global "
 				"callbacks mutex!");
 		pthread_mutex_destroy(&handler->mutex);
