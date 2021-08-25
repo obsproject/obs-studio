@@ -1,3 +1,5 @@
+#define _GNU_SOURCE
+
 #include <obs-module.h>
 #include <util/dstr.h>
 #include <util/platform.h>
@@ -5,8 +7,7 @@
 #include <sys/ioctl.h>
 #include <fcntl.h>
 #include <unistd.h>
-
-#define MAX_DEVICES 64
+#include <dirent.h>
 
 struct virtualcam_data {
 	obs_output_t *output;
@@ -109,7 +110,7 @@ static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
 	return vcam;
 }
 
-static bool try_connect(void *data, int device)
+static bool try_connect(void *data, const char *device)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 	struct v4l2_format format;
@@ -121,12 +122,7 @@ static bool try_connect(void *data, int device)
 
 	vcam->frame_size = width * height * 2;
 
-	char new_device[16];
-	if (device < 0 || device >= MAX_DEVICES)
-		return false;
-	snprintf(new_device, 16, "/dev/video%d", device);
-
-	vcam->device = open(new_device, O_RDWR);
+	vcam->device = open(device, O_RDWR);
 
 	if (vcam->device < 0)
 		return false;
@@ -172,24 +168,46 @@ static bool try_connect(void *data, int device)
 	return true;
 }
 
+static int scanfilter(const struct dirent *entry)
+{
+	return !astrcmp_n(entry->d_name, "video", 5);
+}
+
 static bool virtualcam_start(void *data)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
+	struct dirent **list;
+	bool success = false;
+	int n;
 
 	if (!loopback_module_loaded()) {
 		if (loopback_module_load() != 0)
 			return false;
 	}
 
-	for (int i = 0; i < MAX_DEVICES; i++) {
-		if (!try_connect(vcam, i))
-			continue;
-		else
-			return true;
+	n = scandir("/dev", &list, scanfilter, versionsort);
+	if (n == -1)
+		return false;
+
+	for (int i = 0; i < n; i++) {
+		char device[32];
+
+		snprintf(device, 32, "/dev/%s", list[i]->d_name);
+
+		if (try_connect(vcam, device)) {
+			success = true;
+			break;
+		}
 	}
 
-	blog(LOG_WARNING, "Failed to start virtual camera");
-	return false;
+	while (n--)
+		free(list[n]);
+	free(list);
+
+	if (!success)
+		blog(LOG_WARNING, "Failed to start virtual camera");
+
+	return success;
 }
 
 static void virtualcam_stop(void *data, uint64_t ts)
