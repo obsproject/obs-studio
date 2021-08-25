@@ -402,6 +402,8 @@ struct obs_core_hotkeys {
 	char *push_to_talk;
 	char *sceneitem_show;
 	char *sceneitem_hide;
+	char *filter_enable;
+	char *filter_disable;
 };
 
 struct obs_core {
@@ -727,6 +729,7 @@ struct obs_source {
 	gs_texrender_t *filter_texrender;
 	enum obs_allow_direct_render allow_direct;
 	bool rendering_filter;
+	obs_hotkey_pair_id filter_toggle_visibility_key;
 
 	/* sources specific hotkeys */
 	obs_hotkey_pair_id mute_unmute_key;

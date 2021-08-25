@@ -2492,6 +2492,107 @@ static bool filter_compatible(obs_source_t *source, obs_source_t *filter)
 	return (s_caps & f_caps) == f_caps;
 }
 
+static bool obs_source_filter_hotkey_enable(void *data, obs_hotkey_pair_id id,
+					    obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || obs_source_enabled(source))
+		return false;
+
+	obs_source_set_enabled(source, true);
+
+	return true;
+}
+
+static bool obs_source_filter_hotkey_disable(void *data, obs_hotkey_pair_id id,
+					     obs_hotkey_t *key, bool pressed)
+{
+	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(key);
+
+	struct obs_source *source = data;
+
+	if (!pressed || !obs_source_enabled(source))
+		return false;
+
+	obs_source_set_enabled(source, false);
+
+	return true;
+}
+
+static void obs_source_filter_hotkeys_init(obs_source_t *source,
+					   obs_source_t *filter)
+{
+	const char *source_name = obs_source_get_name(source);
+	const char *filter_name = obs_source_get_name(filter);
+
+	struct dstr enable = {0};
+	struct dstr disable = {0};
+	struct dstr enable_desc = {0};
+	struct dstr disable_desc = {0};
+
+	dstr_copy(&enable, "libobs.enable_source_filter.%1.%2");
+	dstr_replace(&enable, "%1", source_name);
+	dstr_replace(&enable, "%2", filter_name);
+	dstr_copy(&disable, "libobs.disable_source_filter.%1.%2");
+	dstr_replace(&disable, "%1", source_name);
+	dstr_replace(&disable, "%2", filter_name);
+
+	dstr_copy(&enable_desc, obs->hotkeys.filter_enable);
+	dstr_replace(&enable_desc, "%1", filter_name);
+	dstr_copy(&disable_desc, obs->hotkeys.filter_disable);
+	dstr_replace(&disable_desc, "%1", filter_name);
+
+	filter->filter_toggle_visibility_key = obs_hotkey_pair_register_source(
+		source, enable.array, enable_desc.array, disable.array,
+		disable_desc.array, obs_source_filter_hotkey_enable,
+		obs_source_filter_hotkey_disable, filter, filter);
+
+	dstr_free(&enable);
+	dstr_free(&disable);
+	dstr_free(&enable_desc);
+	dstr_free(&disable_desc);
+}
+
+static void obs_source_filter_hotkeys_renamed(obs_source_t *source,
+					      obs_source_t *filter)
+{
+	const char *source_name = obs_source_get_name(source);
+	const char *filter_name = obs_source_get_name(filter);
+
+	struct dstr enable = {0};
+	struct dstr disable = {0};
+	struct dstr enable_desc = {0};
+	struct dstr disable_desc = {0};
+
+	dstr_copy(&enable, "libobs.enable_source_filter.%1.%2");
+	dstr_replace(&enable, "%1", source_name);
+	dstr_replace(&enable, "%2", filter_name);
+	dstr_copy(&disable, "libobs.disable_source_filter.%1.%2");
+	dstr_replace(&disable, "%1", source_name);
+	dstr_replace(&disable, "%2", filter_name);
+
+	obs_hotkey_pair_set_names(filter->filter_toggle_visibility_key,
+				  enable.array, disable.array);
+
+	dstr_copy(&enable_desc, obs->hotkeys.filter_enable);
+	dstr_replace(&enable_desc, "%1", filter_name);
+	dstr_copy(&disable_desc, obs->hotkeys.filter_disable);
+	dstr_replace(&disable_desc, "%1", filter_name);
+
+	obs_hotkey_pair_set_descriptions(filter->filter_toggle_visibility_key,
+					 enable_desc.array, disable_desc.array);
+
+	dstr_free(&enable);
+	dstr_free(&disable);
+	dstr_free(&enable_desc);
+	dstr_free(&disable_desc);
+}
+
 void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 {
 	struct calldata cd;
@@ -2525,6 +2626,8 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 	da_insert(source->filters, 0, &filter);
 
 	pthread_mutex_unlock(&source->filter_mutex);
+
+	obs_source_filter_hotkeys_init(source, filter);
 
 	calldata_init_fixed(&cd, stack, sizeof(stack));
 	calldata_set_ptr(&cd, "source", source);
@@ -2563,6 +2666,8 @@ static bool obs_source_filter_remove_refless(obs_source_t *source,
 	calldata_init_fixed(&cd, stack, sizeof(stack));
 	calldata_set_ptr(&cd, "source", source);
 	calldata_set_ptr(&cd, "filter", filter);
+
+	obs_hotkey_pair_unregister(filter->filter_toggle_visibility_key);
 
 	signal_handler_signal(source->context.signals, "filter_remove", &cd);
 
@@ -3646,6 +3751,10 @@ void obs_source_set_name(obs_source_t *source, const char *name)
 		signal_handler_signal(source->context.signals, "rename", &data);
 		calldata_free(&data);
 		bfree(prev_name);
+
+		if (source->info.type == OBS_SOURCE_TYPE_FILTER)
+			obs_source_filter_hotkeys_renamed(source->filter_parent,
+							  source);
 	}
 }
 
@@ -5326,6 +5435,8 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 		da_push_back(cur_filters, &filter);
 		filter->filter_parent = NULL;
 		filter->filter_target = NULL;
+		obs_hotkey_pair_unregister(
+			filter->filter_toggle_visibility_key);
 	}
 
 	da_free(source->filters);
