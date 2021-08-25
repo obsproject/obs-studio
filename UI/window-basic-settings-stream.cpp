@@ -412,23 +412,17 @@ static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
 }
 
 #if YOUTUBE_ENABLED
-static void get_yt_ch_title(Ui::OBSBasicSettings *ui,
-			    YoutubeApiWrappers *ytAuth)
+static void get_yt_ch_title(Ui::OBSBasicSettings *ui)
 {
-	if (ytAuth) {
-		ChannelDescription cd;
-		if (ytAuth->GetChannelDescription(cd)) {
-			ui->connectedAccountText->setText(cd.title);
-		} else {
-			// if we still not changed the service page
-			if (IsYouTubeService(
-				    QT_TO_UTF8(ui->service->currentText()))) {
-				ui->connectedAccountText->setText(
-					ytAuth->GetLastError().isEmpty()
-						? QTStr("Auth.LoadingChannel.Error")
-						: QTStr("YouTube.AuthError.Text")
-							  .arg(ytAuth->GetLastError()));
-			}
+	const char *name = config_get_string(OBSBasic::Get()->Config(),
+					     "YouTube", "ChannelName");
+	if (name) {
+		ui->connectedAccountText->setText(name);
+	} else {
+		// if we still not changed the service page
+		if (IsYouTubeService(QT_TO_UTF8(ui->service->currentText()))) {
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Error"));
 		}
 	}
 }
@@ -615,17 +609,7 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			ui->connectedAccountText->setText(
 				QTStr("Auth.LoadingChannel.Title"));
 
-			std::string a_service = a->service();
-			std::shared_ptr<YoutubeApiWrappers> ytAuth =
-				std::dynamic_pointer_cast<YoutubeApiWrappers>(
-					auth);
-			auto act = [&]() {
-				get_yt_ch_title(ui.get(), ytAuth.get());
-			};
-
-			QScopedPointer<QThread> thread(CreateQThread(act));
-			thread->start();
-			thread->wait();
+			get_yt_ch_title(ui.get());
 		}
 #endif
 		ui->bandwidthTestEnable->setChecked(false);

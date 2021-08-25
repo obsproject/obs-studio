@@ -287,5 +287,14 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 		return nullptr;
 	}
 
+	config_t *config = OBSBasic::Get()->Config();
+	config_remove_value(config, "YouTube", "ChannelName");
+
+	ChannelDescription cd;
+	if (auth->GetChannelDescription(cd))
+		config_set_string(config, "YouTube", "ChannelName",
+				  QT_TO_UTF8(cd.title));
+
+	config_save_safe(config, "tmp", nullptr);
 	return auth;
 }
