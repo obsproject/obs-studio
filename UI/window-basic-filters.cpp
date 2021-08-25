@@ -121,6 +121,11 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->separatorLine->setVisible(false);
 	}
 
+	if (async && !audioOnly && ui->asyncFilters->count() == 0 &&
+	    ui->effectFilters->count() != 0) {
+		ui->effectFilters->setFocus();
+	}
+
 	if (audioOnly || (audio && !async))
 		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
 
