@@ -421,7 +421,6 @@ void GameCaptureToolbar::UpdateWindowVisibility()
 	bool is_window = (mode == "window");
 	ui->windowLabel->setVisible(is_window);
 	ui->window->setVisible(is_window);
-	ui->empty->setVisible(!is_window);
 }
 
 void GameCaptureToolbar::on_mode_currentIndexChanged(int idx)

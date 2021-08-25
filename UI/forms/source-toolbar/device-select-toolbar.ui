@@ -25,7 +25,7 @@
   <property name="windowTitle">
    <string notr="true">Form</string>
   </property>
-  <layout class="QHBoxLayout" name="horizontalLayout_2">
+  <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="0,1,0,0">
    <property name="sizeConstraint">
     <enum>QLayout::SetNoConstraint</enum>
    </property>
@@ -44,7 +44,7 @@
    <item>
     <widget class="QLabel" name="deviceLabel">
      <property name="sizePolicy">
-      <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
        <horstretch>0</horstretch>
        <verstretch>0</verstretch>
       </sizepolicy>
@@ -77,6 +77,12 @@
        <height>22</height>
       </size>
      </property>
+     <property name="maximumSize">
+      <size>
+       <width>600</width>
+       <height>16777215</height>
+      </size>
+     </property>
      <property name="currentText">
       <string notr="true"/>
      </property>
@@ -87,6 +93,12 @@
    </item>
    <item>
     <widget class="QPushButton" name="activateButton">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
      <property name="minimumSize">
       <size>
        <width>0</width>
@@ -103,9 +115,12 @@
      <property name="orientation">
       <enum>Qt::Horizontal</enum>
      </property>
+     <property name="sizeType">
+      <enum>QSizePolicy::Expanding</enum>
+     </property>
      <property name="sizeHint" stdset="0">
       <size>
-       <width>40</width>
+       <width>0</width>
        <height>20</height>
       </size>
      </property>
