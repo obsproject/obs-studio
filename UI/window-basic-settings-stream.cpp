@@ -1,6 +1,7 @@
 #include <QMessageBox>
 #include <QUrl>
 
+#include "obs-internal.hpp"
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
@@ -39,6 +40,23 @@ enum class Section : int {
 inline bool OBSBasicSettings::IsCustomService() const
 {
 	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+}
+
+char *OBSBasicSettings::GetCurrentServiceId()
+{
+	char *result = NULL;
+
+	if (ui->service->currentData().toInt() == (int)ListOpt::Custom)
+		result = bstrdup("rtmp_custom");
+	else if (ui->service->currentData().toInt() == (int)ListOpt::ShowAll)
+		result = bstrdup("rtmp_common");
+	else
+		result = bstrdup(ui->service->currentData()
+					 .toString()
+					 .toStdString()
+					 .c_str());
+
+	return result;
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -182,7 +200,9 @@ void OBSBasicSettings::LoadStream1Settings()
 void OBSBasicSettings::SaveStream1Settings()
 {
 	bool customServer = IsCustomService();
-	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
+
+	char *service_id = GetCurrentServiceId();
+	blog(LOG_DEBUG, "GetCurrentServiceId(): %s", service_id);
 
 	obs_service_t *oldService = main->GetService();
 	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
@@ -237,6 +257,8 @@ void OBSBasicSettings::SaveStream1Settings()
 		service_id, "default_service", settings, hotkeyData);
 	obs_service_release(newService);
 
+	bfree(service_id);
+
 	if (!newService)
 		return;
 
@@ -257,7 +279,9 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	char *service_id = GetCurrentServiceId();
+	obs_properties_t *props = obs_get_service_properties(service_id);
+	bfree(service_id);
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSData settings = obs_data_create();
@@ -284,7 +308,9 @@ void OBSBasicSettings::UpdateKeyLink()
 	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	char *service_id = GetCurrentServiceId();
+	obs_properties_t *props = obs_get_service_properties(service_id);
+	bfree(service_id);
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSData settings = obs_data_create();
@@ -320,33 +346,57 @@ void OBSBasicSettings::UpdateKeyLink()
 
 void OBSBasicSettings::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
 
 	obs_data_set_bool(settings, "show_all", showAll);
 
-	obs_property_t *prop = obs_properties_get(props, "show_all");
-	obs_property_modified(prop, settings);
-
 	ui->service->blockSignals(true);
 	ui->service->clear();
 
-	QStringList names;
+	blog(LOG_DEBUG, "obs->service_types.num: %lu", obs->service_types.num);
+	size_t i;
+	for (i = 0; i < obs->service_types.num; i++) {
+		const char *service_id = obs->service_types.array[i].id;
+		blog(LOG_DEBUG, "service_id: %s", service_id);
+		obs_properties_t *props =
+			obs_get_service_properties(service_id);
+		blog(LOG_DEBUG, "props is %s",
+		     props == NULL ? "NULL" : "not NULL");
+		if (props != NULL) {
+			obs_property_t *prop =
+				obs_properties_get(props, "show_all");
+			obs_property_modified(prop, settings);
 
-	obs_property_t *services = obs_properties_get(props, "service");
-	size_t services_count = obs_property_list_item_count(services);
-	for (size_t i = 0; i < services_count; i++) {
-		const char *name = obs_property_list_item_string(services, i);
-		names.push_back(name);
+			QStringList names;
+
+			obs_property_t *services =
+				obs_properties_get(props, "service");
+			size_t services_count =
+				obs_property_list_item_count(services);
+			for (size_t i = 0; i < services_count; i++) {
+				const char *name =
+					obs_property_list_item_string(services,
+								      i);
+				names.push_back(name);
+			}
+
+			if (showAll)
+				names.sort(Qt::CaseInsensitive);
+
+			for (QString &name : names)
+				ui->service->addItem(name,
+						     QVariant(service_id));
+
+			obs_properties_destroy(props);
+		} else {
+			const char *display_name =
+				obs_service_get_display_name(service_id);
+			ui->service->addItem(QString(display_name),
+					     QVariant(service_id));
+		}
 	}
-
-	if (showAll)
-		names.sort(Qt::CaseInsensitive);
-
-	for (QString &name : names)
-		ui->service->addItem(name);
 
 	if (!showAll) {
 		ui->service->addItem(
@@ -363,8 +413,6 @@ void OBSBasicSettings::LoadServices(bool showAll)
 		if (idx != -1)
 			ui->service->setCurrentIndex(idx);
 	}
-
-	obs_properties_destroy(props);
 
 	ui->service->blockSignals(false);
 }
@@ -503,7 +551,9 @@ void OBSBasicSettings::UpdateServerList()
 		lastService = serviceName;
 	}
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	char *service_id = GetCurrentServiceId();
+	obs_properties_t *props = obs_get_service_properties(service_id);
+	bfree(service_id);
 	obs_property_t *services = obs_properties_get(props, "service");
 
 	OBSData settings = obs_data_create();
@@ -551,7 +601,7 @@ void OBSBasicSettings::on_authPwShow_clicked()
 OBSService OBSBasicSettings::SpawnTempService()
 {
 	bool custom = IsCustomService();
-	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
+	char *service_id = GetCurrentServiceId();
 
 	OBSData settings = obs_data_create();
 	obs_data_release(settings);
@@ -572,6 +622,8 @@ OBSService OBSBasicSettings::SpawnTempService()
 	OBSService newService = obs_service_create(service_id, "temp_service",
 						   settings, nullptr);
 	obs_service_release(newService);
+
+	bfree(service_id);
 
 	return newService;
 }
