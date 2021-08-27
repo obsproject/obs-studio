@@ -35,9 +35,6 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 	ui->latencyBox->addItem(QTStr("YouTube.Actions.Latency.UltraLow"),
 				"ultraLow");
 
-	ui->checkAutoStart->setEnabled(false);
-	ui->checkAutoStop->setEnabled(false);
-
 	UpdateOkButtonStatus();
 
 	connect(ui->title, &QLineEdit::textChanged, this,
