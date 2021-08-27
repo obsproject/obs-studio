@@ -50,6 +50,16 @@ typedef void(APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(
 	GLenum target, GLeglImageOES image);
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
 
+typedef EGLBoolean(APIENTRYP PFNEGLQUERYDMABUFFORMATSEXTPROC)(
+	EGLDisplay dpy, EGLint max_formats, EGLint *formats,
+	EGLint *num_formats);
+static PFNEGLQUERYDMABUFFORMATSEXTPROC glEGLQueryDmaBufFormats;
+typedef EGLBoolean(APIENTRYP PFNEGLQUERYDMABUFMODIFIERSEXTPROC)(
+	EGLDisplay dpy, EGLint format, EGLint max_modifiers,
+	EGLuint64KHR *modifiers, EGLBoolean *external_only,
+	EGLint *num_modifiers);
+static PFNEGLQUERYDMABUFMODIFIERSEXTPROC glEGLQueryDmaBufModifiers;
+
 static bool find_gl_extension(const char *extension)
 {
 	GLint n, i;
@@ -81,6 +91,66 @@ static bool init_egl_image_target_texture_2d_ext(void)
 	}
 
 	if (!glEGLImageTargetTexture2DOES)
+		return false;
+
+	return true;
+}
+
+static bool init_egl_image_dma_buf_import_ext(void)
+{
+	static bool initialized = false;
+	static bool extension_available = false;
+
+	if (!initialized) {
+		initialized = true;
+
+		if (!find_gl_extension("EGL_KHR_image_base")) {
+			blog(LOG_ERROR, "No EGL_KHR_image_base");
+			return false;
+		}
+
+		if (!(extension_available = find_gl_extension(
+			      "EGL_EXT_image_dma_buf_import"))) {
+			blog(LOG_ERROR, "No EGL_EXT_image_dma_buf_import");
+			return false;
+		}
+	}
+
+	return extension_available;
+}
+
+static bool init_egl_image_dma_buf_import_modifiers_ext(void)
+{
+	static bool initialized = false;
+
+	if (!initialized) {
+		initialized = true;
+
+		if (!init_egl_image_dma_buf_import_ext()) {
+			return false;
+		}
+
+		if (!find_gl_extension(
+			    "EGL_EXT_image_dma_buf_import_modifiers")) {
+			blog(LOG_ERROR,
+			     "No EGL_EXT_image_dma_buf_import_modifiers");
+			return false;
+		}
+
+		glEGLQueryDmaBufFormats =
+			(PFNEGLQUERYDMABUFFORMATSEXTPROC)eglGetProcAddress(
+				"eglQueryDmaBufFormatsEXT");
+		if (!glEGLQueryDmaBufFormats)
+			blog(LOG_ERROR, "No eglQueryDmaBufFormatsEXT");
+
+		glEGLQueryDmaBufModifiers =
+			(PFNEGLQUERYDMABUFMODIFIERSEXTPROC)eglGetProcAddress(
+				"eglQueryDmaBufModifiersEXT");
+		if (!glEGLQueryDmaBufModifiers)
+			blog(LOG_ERROR, "No eglQueryDmaBufFormatsEXT");
+	}
+
+	if (!glEGLQueryDmaBufFormats || !glEGLQueryDmaBufModifiers)
 		return false;
 
 	return true;
@@ -188,6 +258,13 @@ gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 	EGLImage egl_image;
 
 	if (!init_egl_image_target_texture_2d_ext())
+		return NULL;
+
+	if (!init_egl_image_dma_buf_import_ext())
+		return NULL;
+
+	if (!init_egl_image_dma_buf_import_modifiers_ext() &&
+	    (n_planes > 3 || modifiers))
 		return NULL;
 
 	egl_image = create_dmabuf_egl_image(egl_display, width, height,
