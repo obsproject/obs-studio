@@ -219,15 +219,18 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 			monitor->source, on_audio_playback, monitor);
 	}
 
+	pthread_mutex_lock(&monitor->playback_mutex);
 	if (monitor->client)
 		monitor->client->lpVtbl->Stop(monitor->client);
-
 	safe_release(monitor->device);
 	safe_release(monitor->client);
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
 	circlebuf_free(&monitor->delay_buffer);
 	da_free(monitor->buf);
+	pthread_mutex_unlock(&monitor->playback_mutex);
+
+	pthread_mutex_destroy(&monitor->playback_mutex);
 }
 
 static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)

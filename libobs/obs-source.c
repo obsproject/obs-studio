@@ -5014,8 +5014,11 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 
 	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
 		return;
+
+	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
 	if (source->monitoring_type == type)
-		return;
+		goto unlock;
 
 	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
 	now_on = type != OBS_MONITORING_TYPE_NONE;
@@ -5030,6 +5033,9 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 	}
 
 	source->monitoring_type = type;
+
+unlock:
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 }
 
 enum obs_monitoring_type
