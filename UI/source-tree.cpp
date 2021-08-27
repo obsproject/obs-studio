@@ -61,7 +61,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	const char *id = obs_source_get_id(source);
 
-	QLabel *iconLabel = nullptr;
+	bool sourceVisible = obs_sceneitem_visible(sceneitem);
+
 	if (tree->iconsVisible) {
 		QIcon icon;
 
@@ -77,13 +78,14 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 		iconLabel = new QLabel();
 		iconLabel->setPixmap(pixmap);
 		iconLabel->setFixedSize(16, 16);
+		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
 	}
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	vis->setFixedSize(16, 16);
-	vis->setChecked(obs_sceneitem_visible(sceneitem));
+	vis->setChecked(sourceVisible);
 	vis->setStyleSheet("background: none");
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
 	vis->setAccessibleDescription(
@@ -102,6 +104,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Preferred);
 	label->setAlignment(Qt::AlignLeft | Qt::AlignVCenter);
 	label->setAttribute(Qt::WA_TranslucentBackground);
+	label->setEnabled(sourceVisible);
 
 #ifdef __APPLE__
 	vis->setAttribute(Qt::WA_LayoutUsesWidgetRect);
@@ -506,6 +509,10 @@ bool SourceTreeItem::eventFilter(QObject *object, QEvent *event)
 
 void SourceTreeItem::VisibilityChanged(bool visible)
 {
+	if (iconLabel) {
+		iconLabel->setEnabled(visible);
+	}
+	label->setEnabled(visible);
 	vis->setChecked(visible);
 }
 

@@ -424,6 +424,16 @@ static void fill_more_info_link(json_t *service, obs_data_t *settings)
 		obs_data_set_string(settings, "more_info_link", more_info_link);
 }
 
+static void fill_stream_key_link(json_t *service, obs_data_t *settings)
+{
+	const char *stream_key_link;
+
+	stream_key_link = get_string_val(service, "stream_key_link");
+	if (stream_key_link)
+		obs_data_set_string(settings, "stream_key_link",
+				    stream_key_link);
+}
+
 static inline json_t *find_service(json_t *root, const char *name,
 				   const char **p_new_name)
 {
@@ -487,6 +497,7 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 
 	fill_servers(obs_properties_get(props, "server"), service, name);
 	fill_more_info_link(service, settings);
+	fill_stream_key_link(service, settings);
 	return true;
 }
 
@@ -778,8 +789,8 @@ static int get_bitrate_matrix_max(json_t *array)
 		if (c != 2)
 			continue;
 
-		if (ovi.output_width == cx && ovi.output_height == cy &&
-		    cur_fps <= fps)
+		if ((int)ovi.output_width == cx &&
+		    (int)ovi.output_height == cy && cur_fps <= fps)
 			return bitrate;
 	}
 

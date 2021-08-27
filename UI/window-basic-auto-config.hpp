@@ -197,6 +197,8 @@ public slots:
 	void UpdateMoreInfoLink();
 	void UpdateServerList();
 	void UpdateCompleted();
+
+	void reset_service_ui_fields(std::string &service);
 };
 
 class AutoConfigTestPage : public QWizardPage {

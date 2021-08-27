@@ -648,3 +648,19 @@ Functions
 
    :return: The value of the position of the T-bar to, with a value in 0-1023.
    :rtype: int
+
+---------------------------------------
+
+.. function:: void *obs_frontend_open_properties(obs_source_t *source)
+
+   Opens the properties window of the specified source.
+
+   :param source: The source to open the properties window of.
+   
+---------------------------------------
+
+.. function:: void *obs_frontend_open_filters(obs_source_t *source)
+
+   Opens the filters window of the specified source.
+
+   :param source: The source to open the filters window of.

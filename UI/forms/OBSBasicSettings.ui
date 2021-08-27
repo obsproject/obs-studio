@@ -168,8 +168,8 @@
              <property name="bottomMargin">
               <number>9</number>
              </property>
-             <item alignment="Qt::AlignTop">
-              <widget class="QWidget" name="widget_2">
+             <item>
+              <widget class="QFrame" name="widget_2">
                <layout class="QVBoxLayout" name="verticalLayout_20">
                 <item>
                  <widget class="QGroupBox" name="groupBox_15">
@@ -595,6 +595,13 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="previewSafeAreas">
+                     <property name="text">
+                      <string>Basic.Settings.General.Multiview.DrawSafeAreas</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="0" column="1">
                     <widget class="QCheckBox" name="overflowHide">
                      <property name="text">
@@ -799,7 +806,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QWidget" name="widget_5">
+          <widget class="QFrame" name="widget_5">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
              <horstretch>0</horstretch>
@@ -824,7 +831,7 @@
              </widget>
             </item>
             <item row="3" column="1">
-             <widget class="QWidget" name="serviceWidget">
+             <widget class="QFrame" name="serviceWidget">
               <layout class="QHBoxLayout" name="serviceWidgetLayout" stretch="0,0">
                <property name="leftMargin">
                 <number>0</number>
@@ -1052,7 +1059,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QWidget" name="streamKeyWidget">
+              <widget class="QFrame" name="streamKeyWidget">
                <layout class="QHBoxLayout" name="horizontalLayout_11">
                 <property name="leftMargin">
                  <number>0</number>
@@ -1115,32 +1122,27 @@
                </property>
               </spacer>
              </item>
-             <item row="3" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_15">
+             <item row="4" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_23">
+               <property name="spacing">
+                <number>8</number>
+               </property>
+               <property name="leftMargin">
+                <number>7</number>
+               </property>
+               <property name="rightMargin">
+                <number>7</number>
+               </property>
                <item>
-                <widget class="QPushButton" name="connectAccount2">
+                <widget class="QLabel" name="connectedAccountText">
+                 <property name="styleSheet">
+                  <string notr="true">font-weight: bold</string>
+                 </property>
                  <property name="text">
-                  <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
+                  <string>Auth.LoadingChannel.Title</string>
                  </property>
                 </widget>
                </item>
-               <item>
-                <spacer name="horizontalSpacer_19">
-                 <property name="orientation">
-                  <enum>Qt::Horizontal</enum>
-                 </property>
-                 <property name="sizeHint" stdset="0">
-                  <size>
-                   <width>40</width>
-                   <height>20</height>
-                  </size>
-                 </property>
-                </spacer>
-               </item>
-              </layout>
-             </item>
-             <item row="4" column="1">
-              <layout class="QHBoxLayout" name="horizontalLayout_23">
                <item>
                 <widget class="QPushButton" name="disconnectAccount">
                  <property name="text">
@@ -1163,21 +1165,21 @@
                </item>
               </layout>
              </item>
-             <item row="5" column="1">
+             <item row="6" column="1">
               <widget class="QCheckBox" name="bandwidthTestEnable">
                <property name="text">
                 <string>Basic.Settings.Stream.BandwidthTestMode</string>
                </property>
               </widget>
              </item>
-             <item row="6" column="1">
+             <item row="7" column="1">
               <widget class="QCheckBox" name="useAuth">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.UseAuthentication</string>
                </property>
               </widget>
              </item>
-             <item row="8" column="0">
+             <item row="9" column="0">
               <widget class="QLabel" name="authUsernameLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Username</string>
@@ -1187,10 +1189,10 @@
                </property>
               </widget>
              </item>
-             <item row="8" column="1">
+             <item row="9" column="1">
               <widget class="QLineEdit" name="authUsername"/>
              </item>
-             <item row="9" column="0">
+             <item row="10" column="0">
               <widget class="QLabel" name="authPwLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.Custom.Password</string>
@@ -1200,8 +1202,8 @@
                </property>
               </widget>
              </item>
-             <item row="9" column="1">
-              <widget class="QWidget" name="authPwWidget">
+             <item row="10" column="1">
+              <widget class="QFrame" name="authPwWidget">
                <layout class="QHBoxLayout" name="horizontalLayout_25">
                 <property name="leftMargin">
                  <number>0</number>
@@ -1232,10 +1234,10 @@
                </layout>
               </widget>
              </item>
-             <item row="7" column="1">
+             <item row="8" column="1">
               <widget class="QComboBox" name="twitchAddonDropdown"/>
              </item>
-             <item row="7" column="0">
+             <item row="8" column="0">
               <widget class="QLabel" name="twitchAddonLabel">
                <property name="text">
                 <string>Basic.Settings.Stream.TTVAddon</string>
@@ -1245,19 +1247,83 @@
                </property>
               </widget>
              </item>
-             <item row="10" column="1">
+             <item row="11" column="1">
               <widget class="QCheckBox" name="ignoreRecommended">
                <property name="text">
                 <string>Basic.Settings.Stream.IgnoreRecommended</string>
                </property>
               </widget>
              </item>
-             <item row="11" column="1">
+             <item row="12" column="1">
               <widget class="QLabel" name="enforceSettingsLabel">
                <property name="text">
                 <string notr="true"/>
                </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+               <property name="openExternalLinks">
+                <bool>true</bool>
+               </property>
               </widget>
+             </item>
+             <item row="5" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_28">
+               <item>
+                <widget class="QPushButton" name="useStreamKeyAdv">
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.UseStreamKeyAdvanced</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_28">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
+             </item>
+             <item row="4" column="0">
+              <widget class="QLabel" name="connectedAccountLabel">
+               <property name="text">
+                <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
+               </property>
+              </widget>
+             </item>
+             <item row="3" column="1">
+              <layout class="QHBoxLayout" name="horizontalLayout_15">
+               <item>
+                <widget class="QPushButton" name="connectAccount2">
+                 <property name="cursor">
+                  <cursorShape>PointingHandCursor</cursorShape>
+                 </property>
+                 <property name="text">
+                  <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
+                 </property>
+                </widget>
+               </item>
+               <item>
+                <spacer name="horizontalSpacer_19">
+                 <property name="orientation">
+                  <enum>Qt::Horizontal</enum>
+                 </property>
+                 <property name="sizeHint" stdset="0">
+                  <size>
+                   <width>40</width>
+                   <height>20</height>
+                  </size>
+                 </property>
+                </spacer>
+               </item>
+              </layout>
              </item>
             </layout>
            </widget>
@@ -1295,8 +1361,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>677</height>
+              <width>601</width>
+              <height>602</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -1312,8 +1378,8 @@
              <property name="bottomMargin">
               <number>9</number>
              </property>
-             <item alignment="Qt::AlignTop">
-              <widget class="QWidget" name="widget">
+             <item>
+              <widget class="QFrame" name="widget">
                <property name="sizePolicy">
                 <sizepolicy hsizetype="Expanding" vsizetype="Preferred">
                  <horstretch>0</horstretch>
@@ -1829,8 +1895,8 @@
                    </property>
                   </spacer>
                  </item>
-                 <item alignment="Qt::AlignTop">
-                  <widget class="QWidget" name="simpleOutputContainer">
+                 <item>
+                  <widget class="QFrame" name="simpleOutputContainer">
                    <layout class="QVBoxLayout" name="verticalLayout_4">
                     <property name="leftMargin">
                      <number>0</number>
@@ -1888,8 +1954,8 @@
                      <property name="bottomMargin">
                       <number>9</number>
                      </property>
-                     <item alignment="Qt::AlignTop">
-                      <widget class="QWidget" name="widget_4">
+                     <item>
+                      <widget class="QFrame" name="widget_4">
                        <layout class="QVBoxLayout" name="verticalLayout_14">
                         <property name="spacing">
                          <number>0</number>
@@ -1907,7 +1973,7 @@
                          <number>0</number>
                         </property>
                         <item>
-                         <widget class="QWidget" name="advOutTopContainer">
+                         <widget class="QFrame" name="advOutTopContainer">
                           <property name="sizePolicy">
                            <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                             <horstretch>0</horstretch>
@@ -1938,7 +2004,7 @@
                             </widget>
                            </item>
                            <item row="1" column="1">
-                            <widget class="QWidget" name="widget_8">
+                            <widget class="QFrame" name="widget_8">
                              <property name="sizePolicy">
                               <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                                <horstretch>0</horstretch>
@@ -2071,7 +2137,7 @@
                       <number>9</number>
                      </property>
                      <item>
-                      <widget class="QWidget" name="advOutRecTypeContainer">
+                      <widget class="QFrame" name="advOutRecTypeContainer">
                        <layout class="QFormLayout" name="formLayout_9">
                         <property name="fieldGrowthPolicy">
                          <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
@@ -2141,7 +2207,7 @@
                           <number>0</number>
                          </property>
                          <item>
-                          <widget class="QWidget" name="advOutRecTopContainer">
+                          <widget class="QFrame" name="advOutRecTopContainer">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
                              <horstretch>0</horstretch>
@@ -2295,7 +2361,7 @@
                              </widget>
                             </item>
                             <item row="5" column="1">
-                             <widget class="QWidget" name="advOutRecRescaleContainer">
+                             <widget class="QFrame" name="advOutRecRescaleContainer">
                               <layout class="QHBoxLayout" name="horizontalLayout_4">
                                <property name="leftMargin">
                                 <number>0</number>
@@ -2465,8 +2531,8 @@
                            </layout>
                           </widget>
                          </item>
-                         <item alignment="Qt::AlignTop">
-                          <widget class="QWidget" name="widget_7">
+                         <item>
+                          <widget class="QFrame" name="widget_7">
                            <layout class="QVBoxLayout" name="verticalLayout_15">
                             <property name="leftMargin">
                              <number>0</number>
@@ -2820,7 +2886,7 @@
                           </widget>
                          </item>
                          <item row="13" column="1">
-                          <widget class="QWidget" name="widget_10">
+                          <widget class="QFrame" name="widget_10">
                            <property name="sizePolicy">
                             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
                              <horstretch>0</horstretch>
@@ -2957,8 +3023,8 @@
                      <property name="bottomMargin">
                       <number>0</number>
                      </property>
-                     <item alignment="Qt::AlignTop">
-                      <widget class="QWidget" name="widget_3">
+                     <item>
+                      <widget class="QFrame" name="widget_3">
                        <property name="sizePolicy">
                         <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
                          <horstretch>0</horstretch>
@@ -3821,8 +3887,8 @@
              <property name="bottomMargin">
               <number>9</number>
              </property>
-             <item alignment="Qt::AlignTop">
-              <widget class="QWidget" name="widget_50">
+             <item>
+              <widget class="QFrame" name="widget_50">
                <layout class="QVBoxLayout" name="verticalLayout_51">
                 <item>
                  <widget class="QGroupBox" name="audioGeneralGroupBox">
@@ -4678,7 +4744,7 @@
               <number>9</number>
              </property>
              <item>
-              <widget class="QWidget" name="widget_11">
+              <widget class="QFrame" name="widget_11">
                <layout class="QVBoxLayout" name="verticalLayout_24">
                 <item>
                  <widget class="QGroupBox" name="advancedGeneralGroupBox">
@@ -5071,7 +5137,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QWidget" name="widget_12">
+                    <widget class="QFrame" name="widget_12">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>

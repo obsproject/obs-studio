@@ -818,6 +818,11 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
+	// set basic default application locale
+	if (!locale.empty())
+		QLocale::setDefault(
+			QString::fromStdString(locale).replace('-', '_'));
+
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -856,6 +861,13 @@ bool OBSApp::InitLocale()
 			blog(LOG_INFO, "Using preferred locale '%s'",
 			     locale_.c_str());
 			locale = locale_;
+
+			// set application default locale to the new choosen one
+			if (!locale.empty())
+				QLocale::setDefault(
+					QString::fromStdString(locale).replace(
+						'-', '_'));
+
 			return true;
 		}
 
@@ -1099,8 +1111,8 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
-	setStyleSheet(mpath);
 	ParseExtraThemeData(path.c_str());
+	setStyleSheet(mpath);
 
 	emit StyleChanged();
 	return true;
@@ -1995,6 +2007,18 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #if __APPLE__
 	InstallNSApplicationSubclass();
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(USE_XDG) && \
+	defined(ENABLE_WAYLAND)
+	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
+	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
+	 * use other QPA platforms using this env var, or the -platform command
+	 * line option. */
+
+	const char *session_type = getenv("XDG_SESSION_TYPE");
+	if (session_type && strcmp(session_type, "wayland") == 0)
+		setenv("QT_QPA_PLATFORM", "wayland", false);
 #endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());

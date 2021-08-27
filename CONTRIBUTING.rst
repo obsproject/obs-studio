@@ -67,3 +67,8 @@ Commit Guidelines
   Note: When modifying cmake modules, just prefix with "cmake".
 
 - If you still need examples, please view the commit history.
+
+Conduct Guidelines
+------------------
+
+- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst

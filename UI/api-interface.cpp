@@ -117,8 +117,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		struct obs_frontend_source_list *sources) override
 	{
 		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			OBSSource tr = main->ui->transitions->itemData(i)
-					       .value<OBSSource>();
+			obs_source_t *tr = main->ui->transitions->itemData(i)
+						   .value<OBSSource>();
 
 			if (!tr)
 				continue;
@@ -606,6 +606,18 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_reset_video(void) override { main->ResetVideo(); }
 
+	void obs_frontend_open_source_properties(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenProperties",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_source_filters(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenFilters",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {
@@ -632,7 +644,9 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void on_event(enum obs_frontend_event event) override
 	{
-		if (main->disableSaving)
+		if (main->disableSaving &&
+		    event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
+		    event != OBS_FRONTEND_EVENT_EXIT)
 			return;
 
 		for (size_t i = callbacks.size(); i > 0; i--) {

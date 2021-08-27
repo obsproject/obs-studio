@@ -1120,6 +1120,9 @@ struct obs_encoder {
 
 	const char *profile_encoder_encode_name;
 	char *last_error_message;
+
+	/* reconfigure encoder at next possible opportunity */
+	bool reconfigure_requested;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

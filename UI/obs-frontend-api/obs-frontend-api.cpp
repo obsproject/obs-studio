@@ -534,3 +534,15 @@ void obs_frontend_reset_video(void)
 	if (callbacks_valid())
 		c->obs_frontend_reset_video();
 }
+
+void obs_frontend_open_source_properties(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_properties(source);
+}
+
+void obs_frontend_open_source_filters(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_filters(source);
+}

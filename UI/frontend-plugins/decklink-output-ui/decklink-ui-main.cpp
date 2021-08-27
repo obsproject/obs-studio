@@ -14,6 +14,8 @@ OBS_MODULE_USE_DEFAULT_LOCALE("decklink-output-ui", "en-US")
 
 DecklinkOutputUI *doUI;
 
+bool shutting_down = false;
+
 bool main_output_running = false;
 bool preview_output_running = false;
 
@@ -56,7 +58,9 @@ void output_stop()
 	obs_output_stop(output);
 	obs_output_release(output);
 	main_output_running = false;
-	doUI->OutputStateChanged(false);
+
+	if (!shutting_down)
+		doUI->OutputStateChanged(false);
 }
 
 void output_start()
@@ -71,7 +75,8 @@ void output_start()
 
 		main_output_running = started;
 
-		doUI->OutputStateChanged(started);
+		if (!shutting_down)
+			doUI->OutputStateChanged(started);
 
 		if (!started)
 			output_stop();
@@ -135,7 +140,9 @@ void preview_output_stop()
 	obs_remove_tick_callback(preview_tick, &context);
 
 	preview_output_running = false;
-	doUI->PreviewOutputStateChanged(false);
+
+	if (!shutting_down)
+		doUI->PreviewOutputStateChanged(false);
 }
 
 void preview_output_start()
@@ -191,7 +198,8 @@ void preview_output_start()
 		bool started = obs_output_start(context.output);
 
 		preview_output_running = started;
-		doUI->PreviewOutputStateChanged(started);
+		if (!shutting_down)
+			doUI->PreviewOutputStateChanged(started);
 
 		if (!started)
 			preview_output_stop();
@@ -333,6 +341,8 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+	shutting_down = true;
+
 	if (preview_output_running)
 		preview_output_stop();
 

@@ -4,6 +4,7 @@
         {
             "name": "Twitch",
             "common": true,
+            "stream_key_link": "https://dashboard.twitch.tv/settings/stream",
             "servers": [
                 {
                     "name": "Asia: Hong Kong",
@@ -201,6 +202,7 @@
             "name": "YouTube - HLS",
             "common": false,
             "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
+            "stream_key_link": "https://www.youtube.com/live_dashboard",
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -221,6 +223,7 @@
         {
             "name": "YouTube - RTMPS",
             "common": true,
+            "stream_key_link": "https://www.youtube.com/live_dashboard",
             "alt_names": [
                 "YouTube / YouTube Gaming",
                 "YouTube - RTMP",
@@ -285,7 +288,28 @@
             }
         },
         {
+            "name": "Lovecast",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live-a.lovecastapp.com:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "max video bitrate": 8000,
+                "max audio bitrate": 192,
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720"
+                ],
+                "max fps": 30
+            }
+        },
+        {
             "name": "Luzento.com - RTMP",
+            "stream_key_link": "https://cms.luzento.com/dashboard/stream-key?from=OBS",
             "servers": [
                 {
                     "name": "Primary",
@@ -364,6 +388,7 @@
         },
         {
             "name": "YouStreamer",
+            "stream_key_link": "https://www.app.youstreamer.com/stream/",
             "servers": [
                 {
                     "name": "Moscow",
@@ -458,6 +483,7 @@
         {
             "name": "Facebook Live",
             "common": true,
+            "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
             "servers": [
                 {
                     "name": "Default",
@@ -527,6 +553,7 @@
                 "Restream.io - FTL"
             ],
             "common": true,
+            "stream_key_link": "https://restream.io/settings/streaming-setup?from=OBS",
             "servers": [
                 {
                     "name": "Autodetect",
@@ -1072,6 +1099,7 @@
         {
             "name": "Twitter",
             "common": true,
+            "stream_key_link": "https://studio.twitter.com/producer/sources",
             "alt_names": [
                 "Twitter / Periscope"
             ],
@@ -1286,6 +1314,7 @@
         {
             "name": "Trovo",
             "alt_names": ["Madcat"],
+            "stream_key_link": "https://studio.trovo.live/mychannel/stream",
             "servers": [
                 {
                     "name": "Default",
@@ -1432,7 +1461,7 @@
                     "url": "rtmp://stream.dlive.tv/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
@@ -1470,7 +1499,7 @@
                     "url": "rtmp://australia.live.lightcast.com/202E1F/default"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
@@ -1496,7 +1525,7 @@
                     "url": "rtmp://z-us.origin.gnsbc.com:1934/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 6000,
                 "max audio bitrate": 192,
@@ -1512,7 +1541,7 @@
                     "url": "rtmp://stream-1.show-it.tv:1935/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "max video bitrate": 6000,
                 "max audio bitrate": 192
             }
@@ -1543,7 +1572,7 @@
                     "url": "rtmp://rtmp.camplace.com"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "max video bitrate": 3000,
                 "max audio bitrate": 128
@@ -1561,7 +1590,7 @@
                     "url": "rtmp://route0-dc2.onlyfans.com/live"
                 }
             ],
-            "recommend": {
+            "recommended": {
                 "keyint": 2,
                 "profile": "main",
                 "max video bitrate": 2500,
@@ -2034,6 +2063,7 @@
         },
         {
             "name": "Glimesh",
+            "stream_key_link": "https://glimesh.tv/users/settings/stream",
             "servers": [
                 {
                     "name": "North America - Chicago, United States",
@@ -2083,6 +2113,7 @@
         },
         {
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
+            "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
             "servers": [
                 {
                     "name": "Default",
@@ -2181,6 +2212,7 @@
         },
         {
             "name": "Brime Live",
+            "stream_key_link": "https://brimelive.com/obs-stream-key-link",
             "servers": [
                 {
                     "name": "North America - Ashburn, VA",
@@ -2239,6 +2271,7 @@
         },
         {
             "name": "Bilibili Live",
+            "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
             "servers": [
                 {
                     "name": "Default",
@@ -2247,6 +2280,47 @@
                 {
                     "name": "Tencent Cloud",
                     "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
+                }
+            ]
+        },
+        {
+            "name": "Volume.com",
+            "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
+            "servers": [
+                {
+                    "name": "Default - Recommended",
+                    "url": "rtmp://live.volume.com/live-origin"
+                },
+                {
+                    "name": "EU - Amsterdam",
+                    "url": "rtmp://live-ams.volume.com/live-origin"
+                },
+                {
+                    "name": "EU - Frankfurt",
+                    "url": "rtmp://live-fra.volume.com/live-origin"
+                },
+                {
+                    "name": "US - West",
+                    "url": "rtmp://live-pdx.volume.com/live-origin"
+                },
+                {
+                    "name": "US - East",
+                    "url": "rtmp://live-ash.volume.com/live-origin"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 20000,
+                "max fps": 60
+            }
+        },
+        {
+            "name": "BoxCast",
+            "stream_key_link": "https://dashboard.boxcast.com/#/sources",
+            "servers": [
+                {
+                    "name": "BoxCast",
+                    "url":  "rtmp://rtmp.boxcast.com/live"
                 }
             ]
         }
