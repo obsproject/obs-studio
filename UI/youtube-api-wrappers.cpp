@@ -431,7 +431,9 @@ bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
 		{"snippet",
 		 Json::object{
 			 {"title", snippet["title"]},
+			 {"description", snippet["description"]},
 			 {"scheduledStartTime", snippet["scheduledStartTime"]},
+			 {"scheduledEndTime", snippet["scheduledEndTime"]},
 		 }},
 		{"status",
 		 Json::object{
@@ -450,6 +452,10 @@ bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
 					  monitorStream["broadcastStreamDelayMs"]},
 				 },
 			 },
+			 {"enableAutoStart", contentDetails["enableAutoStart"]},
+			 {"enableAutoStop", contentDetails["enableAutoStop"]},
+			 {"enableClosedCaptions",
+			  contentDetails["enableClosedCaptions"]},
 			 {"enableDvr", contentDetails["enableDvr"]},
 			 {"enableContentEncryption",
 			  contentDetails["enableContentEncryption"]},
