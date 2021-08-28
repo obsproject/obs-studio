@@ -408,7 +408,8 @@ set(libobs_util_HEADERS
 	util/platform.h
 	util/profiler.h
 	util/profiler.hpp
-	util/bitstream.h)
+	util/bitstream.h
+	util/util.hpp)
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}

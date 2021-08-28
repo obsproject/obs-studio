@@ -140,6 +140,7 @@ struct noise_suppress_data {
 
 #ifdef LIBNVAFX_ENABLED
 /* global mutex for nvafx load functions since they aren't thread-safe */
+bool nvafx_initializer_mutex_initialized;
 pthread_mutex_t nvafx_initializer_mutex;
 #endif
 
@@ -516,7 +517,8 @@ bool load_nvafx(void)
 		return false;
 	}
 
-	pthread_mutex_init(&nvafx_initializer_mutex, NULL);
+	nvafx_initializer_mutex_initialized =
+		pthread_mutex_init(&nvafx_initializer_mutex, NULL) == 0;
 
 #define LOAD_SYM_FROM_LIB(sym, lib, dll)                                    \
 	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                  \
@@ -575,6 +577,18 @@ unload_everything:
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+void unload_nvafx(void)
+{
+#ifdef LIBNVAFX_ENABLED
+	release_lib();
+
+	if (nvafx_initializer_mutex_initialized) {
+		pthread_mutex_destroy(&nvafx_initializer_mutex);
+		nvafx_initializer_mutex_initialized = false;
+	}
+#endif
+}
 
 static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 {

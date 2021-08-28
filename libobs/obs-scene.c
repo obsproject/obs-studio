@@ -84,7 +84,6 @@ static const char *group_getname(void *unused)
 
 static void *scene_create(obs_data_t *settings, struct obs_source *source)
 {
-	pthread_mutexattr_t attr;
 	struct obs_scene *scene = bzalloc(sizeof(struct obs_scene));
 	scene->source = source;
 
@@ -98,16 +97,12 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 	signal_handler_add_array(obs_source_get_signal_handler(source),
 				 obs_scene_signals);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		goto fail;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&scene->audio_mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&scene->audio_mutex) != 0) {
 		blog(LOG_ERROR, "scene_create: Couldn't initialize audio "
 				"mutex");
 		goto fail;
 	}
-	if (pthread_mutex_init(&scene->video_mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&scene->video_mutex) != 0) {
 		blog(LOG_ERROR, "scene_create: Couldn't initialize video "
 				"mutex");
 		goto fail;
@@ -117,7 +112,6 @@ static void *scene_create(obs_data_t *settings, struct obs_source *source)
 	return scene;
 
 fail:
-	pthread_mutexattr_destroy(&attr);
 	bfree(scene);
 	return NULL;
 }
