@@ -21,4 +21,3 @@
 #pragma once
 
 void pipewire_capture_load(void);
-void pipewire_capture_unload(void);

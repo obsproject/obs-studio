@@ -174,13 +174,4 @@ void pipewire_capture_load(void)
 	};
 	if (window_capture_available)
 		obs_register_source(&pipewire_window_capture_info);
-
-	pw_init(NULL, NULL);
-	initialized = true;
-}
-
-void pipewire_capture_unload(void)
-{
-	if (initialized)
-		pw_deinit();
 }
