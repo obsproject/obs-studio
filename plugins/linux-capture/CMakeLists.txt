@@ -1,10 +1,5 @@
 project(linux-capture)
 
-option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
-if(NOT ENABLE_PIPEWIRE)
-  message(STATUS "OBS:    -        PipeWire support disabled")
-endif()
-
 find_package(X11 REQUIRED)
 if(NOT TARGET X11::Xcomposite)
   message(
@@ -45,35 +40,5 @@ target_link_libraries(
           XCB::XINERAMA)
 
 set_target_properties(linux-capture PROPERTIES FOLDER "plugins")
-
-if(ENABLE_PIPEWIRE)
-  find_package(PipeWire 0.3.32 QUIET)
-  find_package(Gio QUIET)
-  find_package(Libdrm QUIET)
-
-  if(NOT TARGET PipeWire::PipeWire)
-    message(
-      FATAL_ERROR
-        "OBS:    -        PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF"
-    )
-  elseif(NOT TARGET GIO::GIO)
-    message(
-      FATAL_ERROR
-        "OBS:    -        Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF"
-    )
-  elseif(NOT TARGET Libdrm::Libdrm)
-    message(
-      FATAL_ERROR
-        "OBS:    -        libdrm headers not found! Please install libdrm or set ENABLE_PIPEWIRE=OFF"
-    )
-  endif()
-
-  target_sources(linux-capture PRIVATE pipewire.c pipewire.h pipewire-capture.c
-                                       pipewire-capture.h portal.c portal.h)
-
-  target_link_libraries(linux-capture PRIVATE PipeWire::PipeWire GIO::GIO
-                                              Libdrm::Libdrm)
-  target_compile_definitions(linux-capture PRIVATE ENABLE_PIPEWIRE)
-endif()
 
 setup_plugin_target(linux-capture)
