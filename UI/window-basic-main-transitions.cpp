@@ -388,6 +388,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	}
 
 	OBSSource transition = obs_get_output_source(0);
+	if (!transition) {
+		if (usingPreviewProgram && sceneDuplicationMode)
+			obs_scene_release(scene);
+		return;
+	}
 	obs_source_release(transition);
 
 	float t = obs_transition_get_time(transition);
