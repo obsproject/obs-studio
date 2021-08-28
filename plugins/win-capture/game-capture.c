@@ -336,12 +336,12 @@ static void stop_capture(struct game_capture *gc)
 
 	obs_enter_graphics();
 	gs_texrender_destroy(gc->extra_texrender);
-	gs_texture_destroy(gc->extra_texture);
-	gs_texture_destroy(gc->texture);
-	obs_leave_graphics();
 	gc->extra_texrender = NULL;
+	gs_texture_destroy(gc->extra_texture);
 	gc->extra_texture = NULL;
+	gs_texture_destroy(gc->texture);
 	gc->texture = NULL;
+	obs_leave_graphics();
 
 	if (gc->active)
 		info("capture stopped");
@@ -1563,8 +1563,11 @@ static inline bool init_shmem_capture(struct game_capture *gc)
 
 	obs_enter_graphics();
 	gs_texrender_destroy(gc->extra_texrender);
+	gc->extra_texrender = NULL;
 	gs_texture_destroy(gc->extra_texture);
+	gc->extra_texture = NULL;
 	gs_texture_destroy(gc->texture);
+	gc->texture = NULL;
 	gs_texture_t *const texture =
 		gs_texture_create(gc->cx, gc->cy, format, 1, NULL, GS_DYNAMIC);
 	obs_leave_graphics();
@@ -1608,8 +1611,11 @@ static inline bool init_shtex_capture(struct game_capture *gc)
 {
 	obs_enter_graphics();
 	gs_texrender_destroy(gc->extra_texrender);
+	gc->extra_texrender = NULL;
 	gs_texture_destroy(gc->extra_texture);
+	gc->extra_texture = NULL;
 	gs_texture_destroy(gc->texture);
+	gc->texture = NULL;
 	gs_texture_t *const texture =
 		gs_texture_open_shared(gc->shtex_data->tex_handle);
 	bool success = texture != NULL;
