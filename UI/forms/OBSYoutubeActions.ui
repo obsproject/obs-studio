@@ -7,7 +7,7 @@
     <x>0</x>
     <y>0</y>
     <width>583</width>
-    <height>452</height>
+    <height>510</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -73,9 +73,9 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QLineEdit" name="description">
-         <property name="maxLength">
-          <number>5000</number>
+        <widget class="QPlainTextEdit" name="description">
+         <property name="tabChangesFocus">
+          <bool>true</bool>
          </property>
         </widget>
        </item>

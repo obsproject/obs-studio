@@ -579,7 +579,8 @@ void OBSYoutubeActions::InitBroadcast()
 void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 {
 	broadcast.title = ui->title->text();
-	broadcast.description = ui->description->text();
+	// ToDo: UI warning rather than silent truncation
+	broadcast.description = ui->description->toPlainText().left(5000);
 	broadcast.privacy = ui->privacyBox->currentData().toString();
 	broadcast.category.title = ui->categoryBox->currentText();
 	broadcast.category.id = ui->categoryBox->currentData().toString();
