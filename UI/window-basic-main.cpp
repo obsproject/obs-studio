@@ -6544,6 +6544,18 @@ void OBSBasic::ForceStopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming(true);
 
+	// special case: force reset broadcast state if
+	// no autostart and no autostop selected
+	if (!autoStartBroadcast && !broadcastActive) {
+		broadcastActive = false;
+		autoStartBroadcast = true;
+		autoStopBroadcast = true;
+		ui->broadcastButton->setVisible(false);
+	}
+
+	if (autoStopBroadcast)
+		broadcastActive = false;
+
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
