@@ -6186,7 +6186,7 @@ void OBSBasic::YoutubeStreamCheck(const std::string &key)
 	json11::Json json;
 	QString id = key.c_str();
 
-	for (;;) {
+	while (StreamingActive()) {
 		if (timeout == 14) {
 			QMetaObject::invokeMethod(this, "ForceStopStreaming",
 						  Qt::QueuedConnection);
@@ -6318,20 +6318,7 @@ void OBSBasic::StartStreaming()
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
 		// well, we need to disable button while stream is not active
-#if YOUTUBE_ENABLED
-		// get a current stream key
-		obs_service_t *service_obj = GetService();
-		obs_data_t *settings = obs_service_get_settings(service_obj);
-		std::string key = obs_data_get_string(settings, "stream_id");
-		if (!key.empty() && !youtubeStreamCheckThread) {
-			ui->broadcastButton->setEnabled(false);
-			youtubeStreamCheckThread = CreateQThread(
-				[this, key] { YoutubeStreamCheck(key); });
-			youtubeStreamCheckThread->setObjectName(
-				"YouTubeStreamCheckThread");
-			youtubeStreamCheckThread->start();
-		}
-#endif
+		ui->broadcastButton->setEnabled(false);
 	} else if (!autoStopBroadcast) {
 		broadcastActive = true;
 		ui->broadcastButton->setVisible(true);
@@ -6640,6 +6627,20 @@ void OBSBasic::StreamingStart()
 		sysTrayStream->setText(ui->streamButton->text());
 		sysTrayStream->setEnabled(true);
 	}
+
+#if YOUTUBE_ENABLED
+	// get a current stream key
+	obs_service_t *service_obj = GetService();
+	obs_data_t *settings = obs_service_get_settings(service_obj);
+	std::string key = obs_data_get_string(settings, "stream_id");
+	if (!key.empty() && !youtubeStreamCheckThread) {
+		youtubeStreamCheckThread =
+			CreateQThread([this, key] { YoutubeStreamCheck(key); });
+		youtubeStreamCheckThread->setObjectName(
+			"YouTubeStreamCheckThread");
+		youtubeStreamCheckThread->start();
+	}
+#endif
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTED);
