@@ -237,12 +237,16 @@ gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 	if (!init_egl_image_target_texture_2d_ext())
 		return NULL;
 
-	if (!init_egl_image_dma_buf_import_ext())
+	if (!init_egl_image_dma_buf_import_ext()) {
+		blog(LOG_ERROR, "No EGL_EXT_image_dma_buf_import");
 		return NULL;
+	}
 
 	if (!init_egl_image_dma_buf_import_modifiers_ext() &&
-	    (n_planes > 3 || modifiers))
+	    (n_planes > 3 || modifiers)) {
+		blog(LOG_ERROR, "No EGL_EXT_image_dma_buf_import_modifiers");
 		return NULL;
+	}
 
 	egl_image = create_dmabuf_egl_image(egl_display, width, height,
 					    drm_format, n_planes, fds, strides,
