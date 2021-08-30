@@ -349,7 +349,7 @@
           <number>500</number>
          </property>
          <property name="maximum">
-          <number>10000</number>
+          <number>510000</number>
          </property>
          <property name="value">
           <number>2500</number>
