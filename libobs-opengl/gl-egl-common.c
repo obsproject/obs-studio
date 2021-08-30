@@ -50,16 +50,6 @@ typedef void(APIENTRYP PFNGLEGLIMAGETARGETTEXTURE2DOESPROC)(
 	GLenum target, GLeglImageOES image);
 static PFNGLEGLIMAGETARGETTEXTURE2DOESPROC glEGLImageTargetTexture2DOES;
 
-typedef EGLBoolean(APIENTRYP PFNEGLQUERYDMABUFFORMATSEXTPROC)(
-	EGLDisplay dpy, EGLint max_formats, EGLint *formats,
-	EGLint *num_formats);
-static PFNEGLQUERYDMABUFFORMATSEXTPROC glEGLQueryDmaBufFormats;
-typedef EGLBoolean(APIENTRYP PFNEGLQUERYDMABUFMODIFIERSEXTPROC)(
-	EGLDisplay dpy, EGLint format, EGLint max_modifiers,
-	EGLuint64KHR *modifiers, EGLBoolean *external_only,
-	EGLint *num_modifiers);
-static PFNEGLQUERYDMABUFMODIFIERSEXTPROC glEGLQueryDmaBufModifiers;
-
 static bool find_gl_extension(const char *extension)
 {
 	GLint n, i;
@@ -104,13 +94,8 @@ static bool init_egl_image_dma_buf_import_ext(void)
 	if (!initialized) {
 		initialized = true;
 
-		if (!find_gl_extension("EGL_KHR_image_base")) {
-			blog(LOG_ERROR, "No EGL_KHR_image_base");
-			return false;
-		}
-
-		if (!(extension_available = find_gl_extension(
-			      "EGL_EXT_image_dma_buf_import"))) {
+		extension_available = EGL_EXT_image_dma_buf_import;
+		if (!extension_available) {
 			blog(LOG_ERROR, "No EGL_EXT_image_dma_buf_import");
 			return false;
 		}
@@ -130,27 +115,19 @@ static bool init_egl_image_dma_buf_import_modifiers_ext(void)
 			return false;
 		}
 
-		if (!find_gl_extension(
-			    "EGL_EXT_image_dma_buf_import_modifiers")) {
+		if (!EGL_EXT_image_dma_buf_import_modifiers) {
 			blog(LOG_ERROR,
 			     "No EGL_EXT_image_dma_buf_import_modifiers");
 			return false;
 		}
 
-		glEGLQueryDmaBufFormats =
-			(PFNEGLQUERYDMABUFFORMATSEXTPROC)eglGetProcAddress(
-				"eglQueryDmaBufFormatsEXT");
-		if (!glEGLQueryDmaBufFormats)
+		if (!glad_eglQueryDmaBufFormatsEXT)
 			blog(LOG_ERROR, "No eglQueryDmaBufFormatsEXT");
 
-		glEGLQueryDmaBufModifiers =
-			(PFNEGLQUERYDMABUFMODIFIERSEXTPROC)eglGetProcAddress(
-				"eglQueryDmaBufModifiersEXT");
-		if (!glEGLQueryDmaBufModifiers)
-			blog(LOG_ERROR, "No eglQueryDmaBufFormatsEXT");
+		if (!glad_eglQueryDmaBufModifiersEXT)
+			blog(LOG_ERROR, "No eglQueryDmaBufModifiersEXT");
 	}
-
-	if (!glEGLQueryDmaBufFormats || !glEGLQueryDmaBufModifiers)
+	if (!glad_eglQueryDmaBufFormatsEXT || !glad_eglQueryDmaBufModifiersEXT)
 		return false;
 
 	return true;
