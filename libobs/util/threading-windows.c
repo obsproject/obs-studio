@@ -194,20 +194,23 @@ void os_set_thread_name(const char *name)
 	}
 #endif
 
-	typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE thread,
-							   PCWSTR desc);
+	const HMODULE hModule = LoadLibrary(L"KernelBase.dll");
+	if (hModule) {
+		typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE,
+								   PCWSTR);
 
-	HMODULE k32 = LoadLibraryW(L"Kernel32.dll");
-	set_thread_description_t std = NULL;
-	std = (set_thread_description_t)GetProcAddress(k32,
-						       "SetThreadDescription");
-	if (std) {
-		wchar_t *wname;
-		os_utf8_to_wcs_ptr(name, 0, &wname);
+		const set_thread_description_t std =
+			(set_thread_description_t)GetProcAddress(
+				hModule, "SetThreadDescription");
+		if (std) {
+			wchar_t *wname;
+			os_utf8_to_wcs_ptr(name, 0, &wname);
 
-		std(GetCurrentThread(), wname);
+			std(GetCurrentThread(), wname);
 
-		bfree(wname);
+			bfree(wname);
+		}
+
+		FreeLibrary(hModule);
 	}
-	FreeLibrary(k32);
 }
