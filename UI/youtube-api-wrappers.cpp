@@ -304,7 +304,6 @@ bool YoutubeApiWrappers::GetBroadcastsList(Json &json_out, const QString &page,
 }
 
 bool YoutubeApiWrappers::GetVideoCategoriesList(
-	const QString &country, const QString &language,
 	QVector<CategoryDescription> &category_list_out)
 {
 	lastErrorMessage.clear();
@@ -313,13 +312,28 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(
 		"?part=snippet"
 		"&regionCode=%1"
 		"&hl=%2";
-	const QString url =
-		url_template.arg(country.isEmpty() ? "US" : country,
-				 language.isEmpty() ? "en" : language);
+	/*
+	* All OBS locale regions aside from "US" are missing category id 29
+	* ("Nonprofits & Activism"), but it is still available to channels
+	* set to those regions via the YouTube Studio website.
+	* To work around this inconsistency with the API all locales will
+	* use the "US" region and only set the language part for localisation.
+	* It is worth noting that none of the regions available on YouTube
+	* feature any category not also available to the "US" region.
+	*/
+	QString url = url_template.arg("US", QLocale().name());
+
 	Json json_out;
 	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr,
 			   json_out)) {
-		return false;
+		if (lastErrorReason != "unsupportedLanguageCode" &&
+		    lastErrorReason != "invalidLanguage")
+			return false;
+		// Try again with en-US if YouTube error indicates an unsupported locale
+		url = url_template.arg("US", "en_US");
+		if (!InsertCommand(QT_TO_UTF8(url), "application/json", "",
+				   nullptr, json_out))
+			return false;
 	}
 	category_list_out = {};
 	for (auto &j : json_out["items"].array_items()) {
