@@ -2248,7 +2248,9 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	if (!name || !id || !*name || !*id)
 		return false;
 
-#if defined(_WIN32) || HAVE_PULSEAUDIO || defined(__APPLE__)
+	if (!obs_audio_monitoring_supported())
+		return false;
+
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 
 	if (strcmp(id, obs->audio.monitoring_device_id) == 0) {
@@ -2269,9 +2271,6 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 	return true;
-#else
-	return false;
-#endif
 }
 
 void obs_get_audio_monitoring_device(const char **name, const char **id)
