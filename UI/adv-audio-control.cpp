@@ -60,6 +60,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 				 this);
 	flagsSignal.Connect(handler, "update_flags", OBSSourceFlagsChanged,
 			    this);
+	if (obs_audio_monitoring_supported())
+		monitoringTypeSignal.Connect(handler, "audio_monitoring",
+					     OBSSourceMonitoringTypeChanged,
+					     this);
 	mixersSignal.Connect(handler, "audio_mixers", OBSSourceMixersChanged,
 			     this);
 
@@ -330,6 +334,15 @@ void OBSAdvAudioCtrl::OBSSourceSyncChanged(void *param, calldata_t *calldata)
 				  "SourceSyncChanged", Q_ARG(int64_t, offset));
 }
 
+void OBSAdvAudioCtrl::OBSSourceMonitoringTypeChanged(void *param,
+						     calldata_t *calldata)
+{
+	int type = calldata_int(calldata, "type");
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
+				  "SourceMonitoringTypeChanged",
+				  Q_ARG(int, type));
+}
+
 void OBSAdvAudioCtrl::OBSSourceMixersChanged(void *param, calldata_t *calldata)
 {
 	uint32_t mixers = (uint32_t)calldata_int(calldata, "mixers");
@@ -380,6 +393,14 @@ void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)
 	syncOffset->blockSignals(true);
 	syncOffset->setValue(offset / NSEC_PER_MSEC);
 	syncOffset->blockSignals(false);
+}
+
+void OBSAdvAudioCtrl::SourceMonitoringTypeChanged(int type)
+{
+	int idx = monitoringType->findData(type);
+	monitoringType->blockSignals(true);
+	monitoringType->setCurrentIndex(idx);
+	monitoringType->blockSignals(false);
 }
 
 void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
