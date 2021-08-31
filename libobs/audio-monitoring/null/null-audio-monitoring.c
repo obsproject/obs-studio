@@ -1,5 +1,10 @@
 #include <obs-internal.h>
 
+bool obs_audio_monitoring_supported(void)
+{
+	return false;
+}
+
 void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 {
 	UNUSED_PARAMETER(cb);

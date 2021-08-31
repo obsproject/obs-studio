@@ -114,8 +114,9 @@ if(WIN32)
 		util/windows/HRError.hpp
 		util/windows/WinHandle.hpp)
 	set(libobs_audio_monitoring_SOURCES
-		audio-monitoring/win32/wasapi-output.c
 		audio-monitoring/win32/wasapi-enum-devices.c
+		audio-monitoring/win32/wasapi-monitoring-supported.c
+		audio-monitoring/win32/wasapi-output.c
 		)
 	set(libobs_audio_monitoring_HEADERS
 		audio-monitoring/win32/wasapi-output.h
@@ -138,6 +139,7 @@ elseif(APPLE)
 		util/apple/cfstring-utils.h)
 	set(libobs_audio_monitoring_SOURCES
 		audio-monitoring/osx/coreaudio-enum-devices.c
+		audio-monitoring/osx/coreaudio-monitoring-supported.c
 		audio-monitoring/osx/coreaudio-output.c
 		)
 	set(libobs_audio_monitoring_HEADERS
@@ -219,6 +221,7 @@ elseif(UNIX)
 		set(libobs_audio_monitoring_SOURCES
 			audio-monitoring/pulse/pulseaudio-wrapper.c
 			audio-monitoring/pulse/pulseaudio-enum-devices.c
+			audio-monitoring/pulse/pulseaudio-monitoring-supported.c
 			audio-monitoring/pulse/pulseaudio-output.c)
 	else()
 		set(libobs_audio_monitoring_SOURCES
