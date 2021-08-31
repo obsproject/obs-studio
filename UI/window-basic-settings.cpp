@@ -535,9 +535,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
-#endif
+	if (obs_audio_monitoring_supported())
+		HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
 #endif
@@ -585,10 +584,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->enableAutoUpdates = nullptr;
 #endif
 
-#if !defined(_WIN32) && !defined(__APPLE__) && !HAVE_PULSEAUDIO
-	delete ui->audioAdvGroupBox;
-	ui->audioAdvGroupBox = nullptr;
-#endif
+	// Remove the Advanced Audio section if monitoring is not supported, as the monitoring device selection is the only item in the group box.
+	if (!obs_audio_monitoring_supported()) {
+		delete ui->audioAdvGroupBox;
+		ui->audioAdvGroupBox = nullptr;
+	}
 
 #ifdef _WIN32
 	uint32_t winVer = GetWindowsVersion();
@@ -738,9 +738,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	FillSimpleRecordingValues();
 	FillSimpleStreamingValues();
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	FillAudioMonitoringDevices();
-#endif
+	if (obs_audio_monitoring_supported())
+		FillAudioMonitoringDevices();
 
 	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(SurroundWarning(int)));
@@ -2482,12 +2481,15 @@ void OBSBasicSettings::LoadAdvancedSettings()
 		config_get_string(main->Config(), "Video", "ColorSpace");
 	const char *videoColorRange =
 		config_get_string(main->Config(), "Video", "ColorRange");
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *monDevName = config_get_string(main->Config(), "Audio",
-						   "MonitoringDeviceName");
-	const char *monDevId = config_get_string(main->Config(), "Audio",
-						 "MonitoringDeviceId");
-#endif
+
+	QString monDevName;
+	QString monDevId;
+	if (obs_audio_monitoring_supported()) {
+		monDevName = config_get_string(main->Config(), "Audio",
+					       "MonitoringDeviceName");
+		monDevId = config_get_string(main->Config(), "Audio",
+					     "MonitoringDeviceId");
+	}
 	bool enableDelay =
 		config_get_bool(main->Config(), "Output", "DelayEnable");
 	int delaySec = config_get_int(main->Config(), "Output", "DelaySec");
@@ -2523,10 +2525,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	LoadRendererList();
 
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	if (!SetComboByValue(ui->monitoringDevice, monDevId))
-		SetInvalidValue(ui->monitoringDevice, monDevName, monDevId);
-#endif
+	if (obs_audio_monitoring_supported() &&
+	    !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
+		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(),
+				monDevId.toUtf8());
 
 	ui->filenameFormatting->setText(filename);
 	ui->overwriteIfExists->setChecked(overwriteIfExists);
@@ -3310,10 +3312,12 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	SaveCombo(ui->monitoringDevice, "Audio", "MonitoringDeviceName");
-	SaveComboData(ui->monitoringDevice, "Audio", "MonitoringDeviceId");
-#endif
+	if (obs_audio_monitoring_supported()) {
+		SaveCombo(ui->monitoringDevice, "Audio",
+			  "MonitoringDeviceName");
+		SaveComboData(ui->monitoringDevice, "Audio",
+			      "MonitoringDeviceId");
+	}
 
 #ifdef _WIN32
 	if (WidgetChanged(ui->disableAudioDucking)) {
@@ -3342,19 +3346,21 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
 
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	QString newDevice = ui->monitoringDevice->currentData().toString();
+	if (obs_audio_monitoring_supported()) {
+		QString newDevice =
+			ui->monitoringDevice->currentData().toString();
 
-	if (lastMonitoringDevice != newDevice) {
-		obs_set_audio_monitoring_device(
-			QT_TO_UTF8(ui->monitoringDevice->currentText()),
-			QT_TO_UTF8(newDevice));
+		if (lastMonitoringDevice != newDevice) {
+			obs_set_audio_monitoring_device(
+				QT_TO_UTF8(ui->monitoringDevice->currentText()),
+				QT_TO_UTF8(newDevice));
 
-		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-		     QT_TO_UTF8(ui->monitoringDevice->currentText()),
-		     QT_TO_UTF8(newDevice));
+			blog(LOG_INFO,
+			     "Audio monitoring device:\n\tname: %s\n\tid: %s",
+			     QT_TO_UTF8(ui->monitoringDevice->currentText()),
+			     QT_TO_UTF8(newDevice));
+		}
 	}
-#endif
 }
 
 static inline const char *OutputModeFromIdx(int idx)

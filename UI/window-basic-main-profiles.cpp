@@ -492,17 +492,17 @@ void OBSBasic::ResetProfileData()
 	CreateHotkeys();
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *device_name =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
-	const char *device_id =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
+	if (obs_audio_monitoring_supported()) {
+		const char *device_name = config_get_string(
+			basicConfig, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(basicConfig, "Audio",
+							  "MonitoringDeviceId");
 
-	obs_set_audio_monitoring_device(device_name, device_id);
+		obs_set_audio_monitoring_device(device_name, device_id);
 
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-	     device_name, device_id);
-#endif
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+		     device_name, device_id);
+	}
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
