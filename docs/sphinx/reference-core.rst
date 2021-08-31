@@ -425,6 +425,12 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: bool obs_audio_monitoring_supported(void)
+
+   :return: Whether audio monitoring is supported on the current platform
+
+---------------------
+
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.
