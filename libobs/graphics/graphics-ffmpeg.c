@@ -144,6 +144,213 @@ static void *ffmpeg_image_copy_data_straight(struct ffmpeg_image *info,
 	return data;
 }
 
+static inline size_t get_dst_position(size_t src, const size_t w,
+				      const size_t h, const size_t x,
+				      const size_t y, int orient)
+{
+	size_t res_x = 0;
+	size_t res_y = 0;
+
+	if (orient == 2) {
+		/*
+		 * Orientation 2: Flip X
+		 *
+		 * 888888        888888
+		 *     88   ->   88
+		 *   8888   ->   8888
+		 *     88   ->   88
+		 *     88        88
+		 *
+		 * (0, 0) -> (w, 0)
+		 * (0, h) -> (w, h)
+		 * (w, 0) -> (0, 0)
+		 * (w, h) -> (0, h)
+		 *
+		 * (w - x, y)
+		 */
+
+		res_x = w - 1 - x;
+		res_y = y;
+
+	} else if (orient == 3) {
+		/*
+		 * Orientation 3: 180°
+		 *
+		 *     88        888888
+		 *     88   ->   88
+		 *   8888   ->   8888
+		 *     88   ->   88
+		 * 888888        88
+		 *
+		 * (0, 0) -> (w, h)
+		 * (0, h) -> (w, 0)
+		 * (w, 0) -> (0, h)
+		 * (w, h) -> (0, 0)
+		 *
+		 * (w - x, h - y)
+		 */
+
+		res_x = w - 1 - x;
+		res_y = h - 1 - y;
+
+	} else if (orient == 4) {
+		/*
+		 * Orientation 4: Flip Y
+		 *
+		 * 88            888888
+		 * 88       ->   88
+		 * 8888     ->   8888
+		 * 88       ->   88
+		 * 888888        88
+		 *
+		 * (0, 0) -> (0, h)
+		 * (0, h) -> (0, 0)
+		 * (w, 0) -> (w, h)
+		 * (w, h) -> (w, 0)
+		 *
+		 * (x, h - y)
+		 */
+
+		res_x = x;
+		res_y = h - 1 - y;
+
+	} else if (orient == 5) {
+		/*
+		 * Orientation 5: Flip Y + 90° CW
+		 *
+		 * 8888888888        888888
+		 * 88  88       ->   88
+		 * 88           ->   8888
+		 *              ->   88
+		 *                   88
+		 *
+		 * (0, 0) -> (0, 0)
+		 * (0, h) -> (w, 0)
+		 * (w, 0) -> (0, h)
+		 * (w, h) -> (w, h)
+		 *
+		 * (y, x)
+		 */
+
+		res_x = y;
+		res_y = x;
+
+	} else if (orient == 6) {
+		/*
+		 * Orientation 6: 90° CW
+		 *
+		 * 88                888888
+		 * 88  88       ->   88
+		 * 8888888888   ->   8888
+		 *              ->   88
+		 *                   88
+		 *
+		 * (0, 0) -> (w, 0)
+		 * (0, h) -> (0, 0)
+		 * (w, 0) -> (w, h)
+		 * (w, h) -> (0, h)
+		 *
+		 * (w - y, x)
+		 */
+
+		res_x = w - 1 - y;
+		res_y = x;
+
+	} else if (orient == 7) {
+		/*
+		 * Orientation 7: Flip Y + 90° CCW
+		 *
+		 *         88        888888
+		 *     88  88   ->   88
+		 * 8888888888   ->   8888
+		 *              ->   88
+		 *                   88
+		 *
+		 * (0, 0) -> (w, h)
+		 * (0, h) -> (0, h)
+		 * (w, 0) -> (w, 0)
+		 * (w, h) -> (0, 0)
+		 *
+		 * (w - y, h - x)
+		 */
+
+		res_x = w - 1 - y;
+		res_y = h - 1 - x;
+
+	} else if (orient == 8) {
+		/*
+		 * Orientation 8: 90° CCW
+		 *
+		 * 8888888888        888888
+		 *     88  88   ->   88
+		 *         88   ->   8888
+		 *              ->   88
+		 *                   88
+		 *
+		 * (0, 0) -> (0, h)
+		 * (0, h) -> (w, h)
+		 * (w, 0) -> (0, 0)
+		 * (w, h) -> (w, 0)
+		 *
+		 * (y, h - x)
+		 */
+
+		res_x = y;
+		res_y = h - 1 - x;
+	}
+
+	return (res_x + res_y * w) * 4;
+}
+
+#define TILE_SIZE 16
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
+static void *ffmpeg_image_orient(struct ffmpeg_image *info, void *in_data,
+				 int orient)
+{
+	const size_t sx = (size_t)info->cx;
+	const size_t sy = (size_t)info->cy;
+	uint8_t *data = NULL;
+
+	if (orient == 0 || orient == 1)
+		return in_data;
+
+	data = bmalloc(sx * 4 * sy);
+
+	if (orient >= 5 && orient < 9) {
+		info->cx = (int)sy;
+		info->cy = (int)sx;
+	}
+
+	uint8_t *src = in_data;
+
+	size_t off_dst;
+	size_t off_src = 0;
+	for (size_t y0 = 0; y0 < sy; y0 += TILE_SIZE) {
+		for (size_t x0 = 0; x0 < sx; x0 += TILE_SIZE) {
+			size_t lim_x = MIN((size_t)sx, x0 + TILE_SIZE);
+			size_t lim_y = MIN((size_t)sy, y0 + TILE_SIZE);
+
+			for (size_t y = y0; y < lim_y; y++) {
+				for (size_t x = x0; x < lim_x; x++) {
+					off_src = (x + y * sx) * 4;
+
+					off_dst = get_dst_position(off_src,
+								   info->cx,
+								   info->cy, x,
+								   y, orient);
+
+					memcpy(data + off_dst, src + off_src,
+					       4);
+				}
+			}
+		}
+	}
+
+	bfree(in_data);
+	return data;
+}
+
 static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 					 AVFrame *frame,
 					 enum gs_image_alpha_mode alpha_mode)
@@ -151,6 +358,19 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 	struct SwsContext *sws_ctx = NULL;
 	void *data = NULL;
 	int ret = 0;
+
+	AVDictionary *dict = frame->metadata;
+	AVDictionaryEntry *entry = NULL;
+
+	int orient = 0;
+
+	if (dict) {
+		entry = av_dict_get(dict, "Orientation", NULL,
+				    AV_DICT_MATCH_CASE);
+		if (entry && entry->value) {
+			orient = atoi(entry->value);
+		}
+	}
 
 	if (info->format == AV_PIX_FMT_BGR0) {
 		data = ffmpeg_image_copy_data_straight(info, frame);
@@ -320,6 +540,8 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 		info->format = format;
 	}
+
+	data = ffmpeg_image_orient(info, data, orient);
 
 fail:
 	return data;
