@@ -88,6 +88,7 @@ static const char *source_signals[] = {
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
 	"void audio_mixers(ptr source, in out int mixers)",
+	"void audio_monitoring(ptr source, int type)",
 	"void audio_activate(ptr source)",
 	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
@@ -5025,6 +5026,8 @@ void obs_source_remove_audio_capture_callback(
 void obs_source_set_monitoring_type(obs_source_t *source,
 				    enum obs_monitoring_type type)
 {
+	struct calldata data;
+	uint8_t stack[128];
 	bool was_on;
 	bool now_on;
 
@@ -5032,6 +5035,13 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 		return;
 	if (source->monitoring_type == type)
 		return;
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_int(&data, "type", type);
+
+	signal_handler_signal(source->context.signals, "audio_monitoring",
+			      &data);
 
 	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
 	now_on = type != OBS_MONITORING_TYPE_NONE;
