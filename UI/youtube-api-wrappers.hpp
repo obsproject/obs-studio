@@ -68,8 +68,7 @@ public:
 	bool GetBroadcastsList(json11::Json &json_out, const QString &page,
 			       const QString &status);
 	bool
-	GetVideoCategoriesList(const QString &country, const QString &language,
-			       QVector<CategoryDescription> &category_list_out);
+	GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
 	bool SetVideoCategory(const QString &video_id,
 			      const QString &video_title,
 			      const QString &video_description,

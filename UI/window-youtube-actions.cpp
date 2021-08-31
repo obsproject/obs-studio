@@ -109,8 +109,7 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 	this->setWindowTitle(channel.title);
 
 	QVector<CategoryDescription> category_list;
-	if (!apiYouTube->GetVideoCategoriesList(
-		    channel.country, channel.language, category_list)) {
+	if (!apiYouTube->GetVideoCategoriesList(category_list)) {
 		blog(LOG_DEBUG, "Could not get video category for country; %s.",
 		     channel.country.toStdString().c_str());
 		ShowErrorDialog(
