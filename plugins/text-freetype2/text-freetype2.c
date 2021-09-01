@@ -41,13 +41,14 @@ static struct obs_source_info freetype2_source_info_v1 = {
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CAP_OBSOLETE |
 			OBS_SOURCE_CUSTOM_DRAW,
 	.get_name = ft2_source_get_name,
-	.create = ft2_source_create_v1,
+	.create = ft2_source_create,
 	.destroy = ft2_source_destroy,
 	.update = ft2_source_update,
 	.get_width = ft2_source_get_width,
 	.get_height = ft2_source_get_height,
 	.video_render = ft2_source_render,
 	.video_tick = ft2_video_tick,
+	.get_defaults = ft2_source_defaults_v1,
 	.get_properties = ft2_source_properties,
 	.icon_type = OBS_ICON_TYPE_TEXT,
 };
@@ -62,13 +63,14 @@ static struct obs_source_info freetype2_source_info_v2 = {
 #endif
 			OBS_SOURCE_CUSTOM_DRAW,
 	.get_name = ft2_source_get_name,
-	.create = ft2_source_create_v2,
+	.create = ft2_source_create,
 	.destroy = ft2_source_destroy,
 	.update = ft2_source_update,
 	.get_width = ft2_source_get_width,
 	.get_height = ft2_source_get_height,
 	.video_render = ft2_source_render,
 	.video_tick = ft2_video_tick,
+	.get_defaults = ft2_source_defaults_v2,
 	.get_properties = ft2_source_properties,
 	.missing_files = ft2_missing_files,
 	.icon_type = OBS_ICON_TYPE_TEXT,
@@ -514,50 +516,16 @@ error:
 #define DEFAULT_FACE "Sans Serif"
 #endif
 
-static void *ft2_source_create(obs_data_t *settings, obs_source_t *source,
-			       int ver)
+static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct ft2_source *srcdata = bzalloc(sizeof(struct ft2_source));
-	obs_data_t *font_obj = obs_data_create();
 	srcdata->src = source;
 
 	init_plugin();
 
-	const uint16_t font_size = ver == 1 ? 32 : 256;
-
-	srcdata->font_size = font_size;
-
-	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
-	obs_data_set_default_int(font_obj, "size", font_size);
-	obs_data_set_default_int(font_obj, "flags", 0);
-	obs_data_set_default_string(font_obj, "style", "");
-	obs_data_set_default_obj(settings, "font", font_obj);
-
-	obs_data_set_default_bool(settings, "antialiasing", true);
-	obs_data_set_default_bool(settings, "word_wrap", false);
-	obs_data_set_default_bool(settings, "outline", false);
-	obs_data_set_default_bool(settings, "drop_shadow", false);
-
-	obs_data_set_default_int(settings, "log_lines", 6);
-
-	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
-	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
-
-	ft2_source_update(srcdata, settings);
-
-	obs_data_release(font_obj);
+	obs_source_update(source, NULL);
 
 	return srcdata;
-}
-
-static void *ft2_source_create_v1(obs_data_t *settings, obs_source_t *source)
-{
-	return ft2_source_create(settings, source, 1);
-}
-
-static void *ft2_source_create_v2(obs_data_t *settings, obs_source_t *source)
-{
-	return ft2_source_create(settings, source, 2);
 }
 
 static void missing_file_callback(void *src, const char *new_path, void *data)
@@ -597,4 +565,37 @@ static obs_missing_files_t *ft2_missing_files(void *data)
 	obs_data_release(settings);
 
 	return files;
+}
+
+static void ft2_source_defaults(obs_data_t *settings, int ver)
+{
+	const uint16_t font_size = ver == 1 ? 32 : 256;
+
+	obs_data_t *font_obj = obs_data_create();
+	obs_data_set_default_string(font_obj, "face", DEFAULT_FACE);
+	obs_data_set_default_int(font_obj, "size", font_size);
+	obs_data_set_default_int(font_obj, "flags", 0);
+	obs_data_set_default_string(font_obj, "style", "");
+	obs_data_set_default_obj(settings, "font", font_obj);
+	obs_data_release(font_obj);
+
+	obs_data_set_default_bool(settings, "antialiasing", true);
+	obs_data_set_default_bool(settings, "word_wrap", false);
+	obs_data_set_default_bool(settings, "outline", false);
+	obs_data_set_default_bool(settings, "drop_shadow", false);
+
+	obs_data_set_default_int(settings, "log_lines", 6);
+
+	obs_data_set_default_int(settings, "color1", 0xFFFFFFFF);
+	obs_data_set_default_int(settings, "color2", 0xFFFFFFFF);
+}
+
+static void ft2_source_defaults_v1(obs_data_t *settings)
+{
+	ft2_source_defaults(settings, 1);
+}
+
+static void ft2_source_defaults_v2(obs_data_t *settings)
+{
+	ft2_source_defaults(settings, 2);
 }
