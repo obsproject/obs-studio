@@ -29,3 +29,4 @@ bool GetRemoteFile(
 	std::vector<std::string> extraHeaders = std::vector<std::string>(),
 	std::string *signature = nullptr, int timeoutSec = 0,
 	bool fail_on_error = true);
+int GetProfilePath(char *path, size_t size, const char *file);

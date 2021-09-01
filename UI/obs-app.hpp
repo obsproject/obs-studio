@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define OBS_APP_EXPORT __attribute__((visibility("default")))
+
 #include <QApplication>
 #include <QTranslator>
 #include <QPointer>
@@ -218,7 +220,8 @@ bool GetUnusedSceneCollectionFile(std::string &name, std::string &file);
 
 bool WindowPositionValid(QRect rect);
 
-static inline int GetProfilePath(char *path, size_t size, const char *file)
+OBS_APP_EXPORT inline int GetProfilePath(char *path, size_t size,
+					 const char *file)
 {
 	OBSMainWindow *window =
 		reinterpret_cast<OBSMainWindow *>(App()->GetMainWindow());
