@@ -38,6 +38,7 @@
 #define SETTING_CAPTURE_OVERLAYS     "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
 #define SETTING_HOOK_RATE            "hook_rate"
+#define SETTING_CURSOR_DPI_OFFSET    "cursor_dpi_offset"
 
 /* deprecated */
 #define SETTING_ANY_FULLSCREEN   "capture_any_fullscreen"
@@ -68,6 +69,7 @@
 #define TEXT_HOOK_RATE_NORMAL    obs_module_text("GameCapture.HookRate.Normal")
 #define TEXT_HOOK_RATE_FAST      obs_module_text("GameCapture.HookRate.Fast")
 #define TEXT_HOOK_RATE_FASTEST   obs_module_text("GameCapture.HookRate.Fastest")
+#define TEXT_CURSOR_DPI_OFFSET   obs_module_text("GameCapture.CursorDPIOffset")
 
 #define TEXT_MODE_ANY            TEXT_ANY_FULLSCREEN
 #define TEXT_MODE_WINDOW         obs_module_text("GameCapture.CaptureWindow")
@@ -80,6 +82,9 @@
 
 #define DEFAULT_RETRY_INTERVAL 2.0f
 #define ERROR_RETRY_INTERVAL 4.0f
+
+#define DPI_OFFSET_MIN 100
+#define DPI_OFFSET_MAX 500
 
 enum capture_mode {
 	CAPTURE_MODE_ANY,
@@ -107,6 +112,7 @@ struct game_capture_config {
 	bool capture_overlays;
 	bool anticheat_hook;
 	enum hook_rate hook_rate;
+	int cursor_dpi_offset;
 };
 
 struct game_capture {
@@ -424,6 +430,8 @@ static inline void get_config(struct game_capture_config *cfg,
 		obs_data_get_bool(settings, SETTING_ANTI_CHEAT_HOOK);
 	cfg->hook_rate =
 		(enum hook_rate)obs_data_get_int(settings, SETTING_HOOK_RATE);
+	cfg->cursor_dpi_offset =
+		obs_data_get_int(settings, SETTING_CURSOR_DPI_OFFSET);
 }
 
 static inline int s_cmp(const char *str1, const char *str2)
@@ -1854,6 +1862,20 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 	POINT p = {0};
 	HWND window;
 
+	// Cursor Position DPI Scaling:
+	//
+	// Note that we need to modify the boundaries passed to cursor_draw()
+	// by the DPI scale factor, or the cursor only gets drawn on part
+	// of the output. (scaled_width, scaled_height) [1]
+	//
+	// Note also that as both cursor coords & ClientToScreen()-offset
+	// are too 'large' pre-correction, we need to modify those coords
+	// by the *reciprocal* of the scaling factor.  [2]
+
+	float cursor_boundary_scale =
+		(float)(gc->config.cursor_dpi_offset / 100.0f); // [1]
+	float cursor_dpi_offset = 1 / cursor_boundary_scale;    // [2]
+
 	if (!gc->global_hook_info->cx || !gc->global_hook_info->cy)
 		return;
 
@@ -1863,8 +1885,20 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 
 	ClientToScreen(window, &p);
 
-	cursor_draw(&gc->cursor_data, -p.x, -p.y, gc->global_hook_info->cx,
-		    gc->global_hook_info->cy);
+	gc->cursor_data.cursor_pos.x =
+		(long)(gc->cursor_data.cursor_pos.x * cursor_dpi_offset);
+	gc->cursor_data.cursor_pos.y =
+		(long)(gc->cursor_data.cursor_pos.y * cursor_dpi_offset);
+
+	p.x = (long)(p.x * cursor_dpi_offset);
+	p.y = (long)(p.y * cursor_dpi_offset);
+
+	long scaled_width =
+		(long)(gc->global_hook_info->cx * cursor_boundary_scale);
+	long scaled_height =
+		(long)(gc->global_hook_info->cy * cursor_boundary_scale);
+
+	cursor_draw(&gc->cursor_data, -p.x, -p.y, scaled_width, scaled_height);
 }
 
 static void game_capture_render(void *data, gs_effect_t *unused)
@@ -1983,6 +2017,8 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
 	obs_data_set_default_int(settings, SETTING_HOOK_RATE,
 				 (int)HOOK_RATE_NORMAL);
+	obs_data_set_default_int(settings, SETTING_CURSOR_DPI_OFFSET,
+				 DPI_OFFSET_MIN);
 }
 
 static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
@@ -2171,6 +2207,10 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_int(p, TEXT_HOOK_RATE_NORMAL, HOOK_RATE_NORMAL);
 	obs_property_list_add_int(p, TEXT_HOOK_RATE_FAST, HOOK_RATE_FAST);
 	obs_property_list_add_int(p, TEXT_HOOK_RATE_FASTEST, HOOK_RATE_FASTEST);
+
+	obs_properties_add_int(ppts, SETTING_CURSOR_DPI_OFFSET,
+			       TEXT_CURSOR_DPI_OFFSET, DPI_OFFSET_MAX,
+			       DPI_OFFSET_MIN, 1);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
