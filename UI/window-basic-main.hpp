@@ -170,6 +170,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
+	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 

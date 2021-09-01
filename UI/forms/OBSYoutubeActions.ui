@@ -48,14 +48,14 @@
        <property name="labelAlignment">
         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
        </property>
-       <item row="0" column="0">
+       <item row="1" column="0">
         <widget class="QLabel" name="label">
          <property name="text">
           <string>YouTube.Actions.Title</string>
          </property>
         </widget>
        </item>
-       <item row="0" column="1">
+       <item row="1" column="1">
         <widget class="QLineEdit" name="title">
          <property name="text">
           <string>YouTube.Actions.MyBroadcast</string>
@@ -65,28 +65,28 @@
          </property>
         </widget>
        </item>
-       <item row="1" column="0">
+       <item row="2" column="0">
         <widget class="QLabel" name="label_2">
          <property name="text">
           <string>YouTube.Actions.Description</string>
          </property>
         </widget>
        </item>
-       <item row="1" column="1">
+       <item row="2" column="1">
         <widget class="QPlainTextEdit" name="description">
          <property name="tabChangesFocus">
           <bool>true</bool>
          </property>
         </widget>
        </item>
-       <item row="2" column="0">
+       <item row="3" column="0">
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>YouTube.Actions.Privacy</string>
          </property>
         </widget>
        </item>
-       <item row="2" column="1">
+       <item row="3" column="1">
         <widget class="QComboBox" name="privacyBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -99,14 +99,14 @@
          </property>
         </widget>
        </item>
-       <item row="3" column="0">
+       <item row="4" column="0">
         <widget class="QLabel" name="label_5">
          <property name="text">
           <string>YouTube.Actions.Category</string>
          </property>
         </widget>
        </item>
-       <item row="3" column="1">
+       <item row="4" column="1">
         <widget class="QComboBox" name="categoryBox">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
@@ -116,14 +116,14 @@
          </property>
         </widget>
        </item>
-       <item row="4" column="0">
+       <item row="5" column="0">
         <widget class="QLabel" name="label_8">
          <property name="text">
           <string>YouTube.Actions.MadeForKids</string>
          </property>
         </widget>
        </item>
-       <item row="4" column="1">
+       <item row="5" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_5">
          <item>
           <widget class="QRadioButton" name="notMakeForKids">
@@ -150,7 +150,7 @@
          </item>
         </layout>
        </item>
-       <item row="5" column="0">
+       <item row="6" column="0">
         <spacer name="horizontalSpacer_5">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -163,7 +163,7 @@
          </property>
         </spacer>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_8">
          <item>
           <widget class="QRadioButton" name="yesMakeForKids">
@@ -174,14 +174,14 @@
          </item>
         </layout>
        </item>
-       <item row="6" column="0">
+       <item row="7" column="0">
         <widget class="QLabel" name="label_7">
          <property name="text">
           <string>YouTube.Actions.AdditionalSettings</string>
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="7" column="1">
         <spacer name="horizontalSpacer_2">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -194,7 +194,7 @@
          </property>
         </spacer>
        </item>
-       <item row="7" column="0">
+       <item row="8" column="0">
         <spacer name="horizontalSpacer_7">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -207,7 +207,7 @@
          </property>
         </spacer>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout">
          <item>
           <widget class="QLabel" name="label_3">
@@ -228,7 +228,7 @@
          </item>
         </layout>
        </item>
-       <item row="11" column="0">
+       <item row="12" column="0">
         <spacer name="horizontalSpacer_6">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -241,7 +241,7 @@
          </property>
         </spacer>
        </item>
-       <item row="11" column="1">
+       <item row="12" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <item>
           <widget class="QCheckBox" name="checkAutoStart">
@@ -290,7 +290,7 @@
          </item>
         </layout>
        </item>
-       <item row="12" column="0">
+       <item row="13" column="0">
         <spacer name="horizontalSpacer_3">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -303,7 +303,7 @@
          </property>
         </spacer>
        </item>
-       <item row="12" column="1">
+       <item row="13" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_4">
          <item>
           <widget class="QCheckBox" name="checkAutoStop">
@@ -320,7 +320,7 @@
          </item>
         </layout>
        </item>
-       <item row="10" column="1">
+       <item row="11" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_9">
          <item>
           <widget class="QCheckBox" name="checkScheduledLater">
@@ -334,7 +334,7 @@
          </item>
         </layout>
        </item>
-       <item row="10" column="0">
+       <item row="11" column="0">
         <spacer name="horizontalSpacer_12">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -347,7 +347,7 @@
          </property>
         </spacer>
        </item>
-       <item row="13" column="0">
+       <item row="14" column="0">
         <spacer name="horizontalSpacer_13">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -360,7 +360,7 @@
          </property>
         </spacer>
        </item>
-       <item row="13" column="1">
+       <item row="14" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_10">
          <item>
           <widget class="QDateTimeEdit" name="scheduledTime">
@@ -380,7 +380,7 @@
          </item>
         </layout>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_3">
          <item>
           <widget class="QCheckBox" name="checkDVR">
@@ -394,7 +394,7 @@
          </item>
         </layout>
        </item>
-       <item row="8" column="0">
+       <item row="9" column="0">
         <spacer name="horizontalSpacer_14">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -407,7 +407,7 @@
          </property>
         </spacer>
        </item>
-       <item row="9" column="0">
+       <item row="10" column="0">
         <spacer name="horizontalSpacer_8">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -420,7 +420,7 @@
          </property>
         </spacer>
        </item>
-       <item row="9" column="1">
+       <item row="10" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_7">
          <item>
           <widget class="QCheckBox" name="check360Video">
@@ -459,6 +459,13 @@
           </spacer>
          </item>
         </layout>
+       </item>
+       <item row="0" column="1">
+        <widget class="QCheckBox" name="saveSettings">
+         <property name="text">
+          <string>RememberSettings</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

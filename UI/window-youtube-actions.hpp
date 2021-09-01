@@ -66,4 +66,7 @@ private:
 	bool valid = false;
 	YoutubeApiWrappers *apiYouTube;
 	WorkerThread *workerThread;
+
+	void SaveSettings(BroadcastDescription &broadcast);
+	void LoadSettings();
 };
