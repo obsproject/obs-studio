@@ -61,6 +61,11 @@ enum window_capture_method {
 	METHOD_WGC,
 };
 
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(
+	DPI_AWARENESS_CONTEXT);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetThreadDpiAwarenessContext)(VOID);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetWindowDpiAwarenessContext)(HWND);
+
 struct window_capture {
 	obs_source_t *source;
 
@@ -89,6 +94,10 @@ struct window_capture {
 
 	HWND window;
 	RECT last_rect;
+
+	PFN_SetThreadDpiAwarenessContext set_thread_dpi_awareness_context;
+	PFN_GetThreadDpiAwarenessContext get_thread_dpi_awareness_context;
+	PFN_GetWindowDpiAwarenessContext get_window_dpi_awareness_context;
 };
 
 static const char *wgc_partial_match_classes[] = {
@@ -251,6 +260,35 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 		if (wc->winrt_module) {
 			load_winrt_imports(&wc->exports, wc->winrt_module,
 					   module);
+		}
+	}
+
+	const HMODULE hModuleUser32 = GetModuleHandle(L"User32.dll");
+	if (hModuleUser32) {
+		PFN_SetThreadDpiAwarenessContext
+			set_thread_dpi_awareness_context =
+				(PFN_SetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"SetThreadDpiAwarenessContext");
+		PFN_GetThreadDpiAwarenessContext
+			get_thread_dpi_awareness_context =
+				(PFN_GetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetThreadDpiAwarenessContext");
+		PFN_GetWindowDpiAwarenessContext
+			get_window_dpi_awareness_context =
+				(PFN_GetWindowDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetWindowDpiAwarenessContext");
+		if (set_thread_dpi_awareness_context &&
+		    get_thread_dpi_awareness_context &&
+		    get_window_dpi_awareness_context) {
+			wc->set_thread_dpi_awareness_context =
+				set_thread_dpi_awareness_context;
+			wc->get_thread_dpi_awareness_context =
+				get_thread_dpi_awareness_context;
+			wc->get_window_dpi_awareness_context =
+				get_window_dpi_awareness_context;
 		}
 	}
 
@@ -523,6 +561,15 @@ static void wc_tick(void *data, float seconds)
 	obs_enter_graphics();
 
 	if (wc->method == METHOD_BITBLT) {
+		DPI_AWARENESS_CONTEXT previous = NULL;
+		if (wc->get_window_dpi_awareness_context != NULL) {
+			const DPI_AWARENESS_CONTEXT context =
+				wc->get_window_dpi_awareness_context(
+					wc->window);
+			previous =
+				wc->set_thread_dpi_awareness_context(context);
+		}
+
 		GetClientRect(wc->window, &rect);
 
 		if (!reset_capture) {
@@ -552,6 +599,9 @@ static void wc_tick(void *data, float seconds)
 		}
 
 		dc_capture_capture(&wc->capture, wc->window);
+
+		if (previous)
+			wc->set_thread_dpi_awareness_context(previous);
 	} else if (wc->method == METHOD_WGC) {
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			if (!wc->previously_failed) {
