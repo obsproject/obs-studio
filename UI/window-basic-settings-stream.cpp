@@ -470,6 +470,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
+	auth.reset();
+
 	if (!main->auth) {
 		return;
 	}
@@ -482,7 +484,6 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 						IsYouTubeService(service);
 #endif
 	if (service_check) {
-		auth.reset();
 		auth = main->auth;
 		OnAuthConnected();
 	}
