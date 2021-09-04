@@ -110,8 +110,6 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 
 	QVector<CategoryDescription> category_list;
 	if (!apiYouTube->GetVideoCategoriesList(category_list)) {
-		blog(LOG_DEBUG, "Could not get video category for country; %s.",
-		     channel.country.toStdString().c_str());
 		ShowErrorDialog(
 			parent,
 			apiYouTube->GetLastError().isEmpty()
@@ -383,7 +381,7 @@ bool OBSYoutubeActions::StreamNowAction(YoutubeApiWrappers *api,
 		blog(LOG_DEBUG, "No broadcast created.");
 		return false;
 	}
-	stream = {"", "", "OBS Studio Video Stream", ""};
+	stream = {"", "", "OBS Studio Video Stream"};
 	if (!apiYouTube->InsertStream(stream)) {
 		blog(LOG_DEBUG, "No stream created.");
 		return false;
@@ -465,15 +463,12 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		auto streamName = item["cdn"]["ingestionInfo"]["streamName"]
 					  .string_value();
 		auto title = item["snippet"]["title"].string_value();
-		auto description =
-			item["snippet"]["description"].string_value();
 
 		stream.name = streamName.c_str();
 		stream.title = title.c_str();
-		stream.description = description.c_str();
 		api->SetBroadcastId(selectedBroadcast);
 	} else {
-		stream = {"", "", "OBS Studio Video Stream", ""};
+		stream = {"", "", "OBS Studio Video Stream"};
 		if (!apiYouTube->InsertStream(stream)) {
 			blog(LOG_DEBUG, "No stream created.");
 			return false;

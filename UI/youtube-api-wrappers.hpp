@@ -8,15 +8,12 @@
 struct ChannelDescription {
 	QString id;
 	QString title;
-	QString country;
-	QString language;
 };
 
 struct StreamDescription {
 	QString id;
 	QString name;
 	QString title;
-	QString description;
 };
 
 struct CategoryDescription {
