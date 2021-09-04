@@ -40,11 +40,6 @@ struct BroadcastDescription {
 	QString projection;
 };
 
-struct BindDescription {
-	const QString id;
-	const QString stream_name;
-};
-
 bool IsYouTubeService(const std::string &service);
 
 class YoutubeApiWrappers : public YoutubeAuth {
