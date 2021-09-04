@@ -180,14 +180,6 @@ bool YoutubeApiWrappers::GetChannelDescription(
 
 	channel_description.id =
 		QString(json_out["items"][0]["id"].string_value().c_str());
-	channel_description.country =
-		QString(json_out["items"][0]["snippet"]["country"]
-				.string_value()
-				.c_str());
-	channel_description.language =
-		QString(json_out["items"][0]["snippet"]["defaultLanguage"]
-				.string_value()
-				.c_str());
 	channel_description.title = QString(
 		json_out["items"][0]["snippet"]["title"].string_value().c_str());
 	return channel_description.id.isEmpty() ? false : true;
