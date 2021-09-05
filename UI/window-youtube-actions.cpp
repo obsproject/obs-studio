@@ -453,9 +453,10 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		json["items"]
 			.array_items()[0]["contentDetails"]["boundStreamId"]
 			.string_value();
-
 	std::string broadcastPrivacy =
-		json["status"]["privacyStatus"].string_value();
+		json["items"]
+			.array_items()[0]["status"]["privacyStatus"]
+			.string_value();
 
 	stream.id = boundStreamId.c_str();
 	if (!stream.id.isEmpty() && apiYouTube->FindStream(stream.id, json)) {
