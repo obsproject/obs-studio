@@ -6648,16 +6648,18 @@ void OBSBasic::StreamingStart()
 	}
 
 #if YOUTUBE_ENABLED
-	// get a current stream key
-	obs_service_t *service_obj = GetService();
-	obs_data_t *settings = obs_service_get_settings(service_obj);
-	std::string key = obs_data_get_string(settings, "stream_id");
-	if (!key.empty() && !youtubeStreamCheckThread) {
-		youtubeStreamCheckThread =
-			CreateQThread([this, key] { YoutubeStreamCheck(key); });
-		youtubeStreamCheckThread->setObjectName(
-			"YouTubeStreamCheckThread");
-		youtubeStreamCheckThread->start();
+	if (!autoStartBroadcast) {
+		// get a current stream key
+		obs_service_t *service_obj = GetService();
+		obs_data_t *settings = obs_service_get_settings(service_obj);
+		std::string key = obs_data_get_string(settings, "stream_id");
+		if (!key.empty() && !youtubeStreamCheckThread) {
+			youtubeStreamCheckThread = CreateQThread(
+				[this, key] { YoutubeStreamCheck(key); });
+			youtubeStreamCheckThread->setObjectName(
+				"YouTubeStreamCheckThread");
+			youtubeStreamCheckThread->start();
+		}
 	}
 #endif
 
