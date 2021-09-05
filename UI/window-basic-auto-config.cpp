@@ -357,10 +357,23 @@ bool AutoConfigStreamPage::validatePage()
 						service_settings, nullptr);
 	obs_service_release(service);
 
-	int bitrate = 10000;
+	int bitrate;
 	if (!ui->doBandwidthTest->isChecked()) {
 		bitrate = ui->bitrate->value();
 		wiz->idealBitrate = bitrate;
+	} else {
+		/* Default test target is 10 Mbps */
+		bitrate = 10000;
+#if YOUTUBE_ENABLED
+		if (IsYouTubeService(wiz->serviceName)) {
+			/* Adjust upper bound to YouTube limits
+			 * for resolutions above 1080p */
+			if (wiz->baseResolutionCY > 1440)
+				bitrate = 51000;
+			else if (wiz->baseResolutionCY > 1080)
+				bitrate = 18000;
+		}
+#endif
 	}
 
 	OBSData settings = obs_data_create();
@@ -391,13 +404,19 @@ bool AutoConfigStreamPage::validatePage()
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
 			wiz->service = AutoConfig::Service::Twitch;
+#if YOUTUBE_ENABLED
+		else if (IsYouTubeService(wiz->serviceName))
+			wiz->service = AutoConfig::Service::YouTube;
+#endif
 		else
 			wiz->service = AutoConfig::Service::Other;
 	} else {
 		wiz->service = AutoConfig::Service::Other;
 	}
 
-	if (wiz->service != AutoConfig::Service::Twitch && wiz->bandwidthTest) {
+	if (wiz->service != AutoConfig::Service::Twitch &&
+	    wiz->service != AutoConfig::Service::YouTube &&
+	    wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"),
@@ -460,6 +479,26 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 					if (ytAuth->GetChannelDescription(cd)) {
 						ui->connectedAccountText
 							->setText(cd.title);
+					}
+					StreamDescription stream = {
+						"", "",
+						"OBS Studio Test Stream"};
+					if (ytAuth->InsertStream(stream)) {
+						ui->key->setText(stream.name);
+						/* Re-enable BW test if creating throwaway
+						 * stream key succeeded. Also check it if
+						 * it was previously disabled */
+						if (!ui->doBandwidthTest
+							     ->isEnabled())
+							QMetaObject::invokeMethod(
+								ui->doBandwidthTest,
+								"setChecked",
+								Q_ARG(bool,
+								      true));
+						QMetaObject::invokeMethod(
+							ui->doBandwidthTest,
+							"setEnabled",
+							Q_ARG(bool, true));
 					}
 				}
 			}));
@@ -533,6 +572,9 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 
 	ui->connectedAccountLabel->setVisible(false);
 	ui->connectedAccountText->setVisible(false);
+
+	/* Restore key link when disconnecting account */
+	UpdateKeyLink();
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -1071,7 +1113,12 @@ void AutoConfig::SaveStreamSettings()
 	if (!customServer)
 		obs_data_set_string(settings, "service", serviceName.c_str());
 	obs_data_set_string(settings, "server", server.c_str());
+#if YOUTUBE_ENABLED
+	if (!IsYouTubeService(serviceName))
+		obs_data_set_string(settings, "key", key.c_str());
+#else
 	obs_data_set_string(settings, "key", key.c_str());
+#endif
 
 	OBSService newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
