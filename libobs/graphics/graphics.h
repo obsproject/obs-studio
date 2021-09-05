@@ -1010,17 +1010,14 @@ gs_generalize_format(enum gs_color_format format)
 {
 	switch (format) {
 	case GS_RGBA_UNORM:
-		format = GS_RGBA;
-		break;
+		return GS_RGBA;
 	case GS_BGRX_UNORM:
-		format = GS_BGRX;
-		break;
+		return GS_BGRX;
 	case GS_BGRA_UNORM:
-		format = GS_BGRA;
-	default:;
+		return GS_BGRA;
+	default:
+		return format;
 	}
-
-	return format;
 }
 
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,
