@@ -57,7 +57,7 @@ public:
 		if (ptr)
 			ptr->AddRef();
 	}
-	inline ComPtr(ComPtr<T> &&c) : ptr(c.ptr) { c.ptr = nullptr; }
+	inline ComPtr(ComPtr<T> &&c) noexcept : ptr(c.ptr) { c.ptr = nullptr; }
 	inline ~ComPtr() { Kill(); }
 
 	inline void Clear()
@@ -80,7 +80,7 @@ public:
 		return *this;
 	}
 
-	inline ComPtr<T> &operator=(ComPtr<T> &&c)
+	inline ComPtr<T> &operator=(ComPtr<T> &&c) noexcept
 	{
 		if (&ptr != &c.ptr) {
 			Kill();
