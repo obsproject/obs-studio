@@ -262,6 +262,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		 * server */
 		servers.erase(servers.begin() + 1);
 		servers.resize(3);
+	} else if (wiz->service == AutoConfig::Service::YouTube) {
+		/* Only test first set of primary + backup servers */
+		servers.resize(2);
 	}
 
 	/* -----------------------------------*/

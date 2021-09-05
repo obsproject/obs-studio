@@ -38,6 +38,7 @@ class AutoConfig : public QWizard {
 
 	enum class Service {
 		Twitch,
+		YouTube,
 		Other,
 	};
 
