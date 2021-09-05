@@ -96,19 +96,10 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 		Cancel();
 		return;
 	}
-	ChannelDescription channel;
-	if (!apiYouTube->GetChannelDescription(channel)) {
-		blog(LOG_DEBUG, "Could not get channel description.");
-		ShowErrorDialog(
-			parent,
-			apiYouTube->GetLastError().isEmpty()
-				? QTStr("YouTube.Actions.Error.General")
-				: QTStr("YouTube.Actions.Error.Text")
-					  .arg(apiYouTube->GetLastError()));
-		Cancel();
-		return;
-	}
-	this->setWindowTitle(channel.title);
+
+	const char *name = config_get_string(OBSBasic::Get()->Config(),
+					     "YouTube", "ChannelName");
+	this->setWindowTitle(QTStr("YouTube.Actions.WindowTitle").arg(name));
 
 	QVector<CategoryDescription> category_list;
 	if (!apiYouTube->GetVideoCategoriesList(category_list)) {

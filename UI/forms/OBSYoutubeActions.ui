@@ -23,7 +23,7 @@
    </size>
   </property>
   <property name="windowTitle">
-   <string>YouTube Actions</string>
+   <string>YouTube.Actions.WindowTitle</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
