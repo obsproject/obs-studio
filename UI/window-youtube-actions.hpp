@@ -62,6 +62,8 @@ private:
 	void OpenYouTubeDashboard();
 	void Cancel();
 	void Accept();
+	void SaveSettings(BroadcastDescription &broadcast);
+	void LoadSettings();
 
 	QString selectedBroadcast;
 	bool autostart, autostop;

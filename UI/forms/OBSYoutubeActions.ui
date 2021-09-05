@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>584</width>
-    <height>510</height>
+    <width>585</width>
+    <height>536</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -228,6 +228,113 @@
          </item>
         </layout>
        </item>
+       <item row="8" column="0">
+        <spacer name="horizontalSpacer_14">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="8" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_3">
+         <item>
+          <widget class="QCheckBox" name="checkDVR">
+           <property name="text">
+            <string>YouTube.Actions.EnableDVR</string>
+           </property>
+           <property name="checked">
+            <bool>true</bool>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="9" column="0">
+        <spacer name="horizontalSpacer_8">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="9" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_7">
+         <item>
+          <widget class="QCheckBox" name="check360Video">
+           <property name="text">
+            <string>YouTube.Actions.360Video</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="help360Video">
+           <property name="sizePolicy">
+            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+             <horstretch>0</horstretch>
+             <verstretch>0</verstretch>
+            </sizepolicy>
+           </property>
+           <property name="text">
+            <string>YouTube.Actions.360Video.Help</string>
+           </property>
+           <property name="textFormat">
+            <enum>Qt::RichText</enum>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <spacer name="horizontalSpacer_10">
+           <property name="orientation">
+            <enum>Qt::Horizontal</enum>
+           </property>
+           <property name="sizeHint" stdset="0">
+            <size>
+             <width>40</width>
+             <height>20</height>
+            </size>
+           </property>
+          </spacer>
+         </item>
+        </layout>
+       </item>
+       <item row="10" column="0">
+        <spacer name="horizontalSpacer_12">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="10" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_9">
+         <item>
+          <widget class="QCheckBox" name="checkScheduledLater">
+           <property name="enabled">
+            <bool>true</bool>
+           </property>
+           <property name="text">
+            <string>YouTube.Actions.ScheduleForLater</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
        <item row="11" column="0">
         <spacer name="horizontalSpacer_6">
          <property name="orientation">
@@ -320,33 +427,6 @@
          </item>
         </layout>
        </item>
-       <item row="10" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <item>
-          <widget class="QCheckBox" name="checkScheduledLater">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.ScheduleForLater</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="10" column="0">
-        <spacer name="horizontalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
        <item row="13" column="0">
         <spacer name="horizontalSpacer_13">
          <property name="orientation">
@@ -380,22 +460,19 @@
          </item>
         </layout>
        </item>
-       <item row="8" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
+       <item row="14" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_12">
          <item>
-          <widget class="QCheckBox" name="checkDVR">
+          <widget class="QCheckBox" name="checkRememberSettings">
            <property name="text">
-            <string>YouTube.Actions.EnableDVR</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
+            <string>YouTube.Actions.RememberSettings</string>
            </property>
           </widget>
          </item>
         </layout>
        </item>
-       <item row="8" column="0">
-        <spacer name="horizontalSpacer_14">
+       <item row="14" column="0">
+        <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
          </property>
@@ -406,59 +483,6 @@
           </size>
          </property>
         </spacer>
-       </item>
-       <item row="9" column="0">
-        <spacer name="horizontalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="9" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QCheckBox" name="check360Video">
-           <property name="text">
-            <string>YouTube.Actions.360Video</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="help360Video">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.360Video.Help</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::RichText</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_10">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
        </item>
       </layout>
      </widget>
@@ -480,7 +504,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>179</width>
+            <width>524</width>
             <height>192</height>
            </rect>
           </property>
