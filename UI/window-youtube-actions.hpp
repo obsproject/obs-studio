@@ -35,27 +35,29 @@ class OBSYoutubeActions : public QDialog {
 
 signals:
 	void ok(const QString &id, const QString &key, bool autostart,
-		bool autostop);
+		bool autostop, bool start_now);
 
 protected:
 	void UpdateOkButtonStatus();
 
-	bool StreamNowAction(YoutubeApiWrappers *api,
-			     StreamDescription &stream);
-	bool StreamLaterAction(YoutubeApiWrappers *api);
+	bool CreateEventAction(YoutubeApiWrappers *api,
+			       StreamDescription &stream, bool stream_later,
+			       bool ready_broadcast = false);
 	bool ChooseAnEventAction(YoutubeApiWrappers *api,
 				 StreamDescription &stream);
 
 	void ShowErrorDialog(QWidget *parent, QString text);
 
 public:
-	explicit OBSYoutubeActions(QWidget *parent, Auth *auth);
+	explicit OBSYoutubeActions(QWidget *parent, Auth *auth,
+				   bool broadcastReady);
 	virtual ~OBSYoutubeActions() override;
 
 	bool Valid() { return valid; };
 
 private:
 	void InitBroadcast();
+	void ReadyBroadcast();
 	void UiToBroadcast(BroadcastDescription &broadcast);
 	void OpenYouTubeDashboard();
 	void Cancel();
@@ -64,6 +66,7 @@ private:
 	QString selectedBroadcast;
 	bool autostart, autostop;
 	bool valid = false;
+	bool broadcastReady = false;
 	YoutubeApiWrappers *apiYouTube;
 	WorkerThread *workerThread;
 };

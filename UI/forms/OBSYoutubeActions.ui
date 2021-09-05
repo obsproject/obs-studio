@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>583</width>
+    <width>584</width>
     <height>510</height>
    </rect>
   </property>
@@ -480,7 +480,7 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>522</width>
+            <width>179</width>
             <height>192</height>
            </rect>
           </property>
@@ -576,7 +576,7 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,6">
+    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,0,6">
      <item>
       <widget class="QPushButton" name="cancelButton">
        <property name="text">
@@ -588,6 +588,13 @@
       <widget class="QPushButton" name="pushButton">
        <property name="text">
         <string>YouTube.Actions.Dashboard</string>
+       </property>
+      </widget>
+     </item>
+     <item>
+      <widget class="QPushButton" name="saveButton">
+       <property name="text">
+        <string>YouTube.Actions.Create_Ready</string>
        </property>
       </widget>
      </item>

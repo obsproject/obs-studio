@@ -12,9 +12,9 @@ class BrowserDock;
 #endif
 
 inline const std::vector<Auth::Def> youtubeServices = {
-	{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true},
-	{"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true},
-	{"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true}};
+	{"YouTube - RTMP", Auth::Type::OAuth_LinkedAccount, true, true},
+	{"YouTube - RTMPS", Auth::Type::OAuth_LinkedAccount, true, true},
+	{"YouTube - HLS", Auth::Type::OAuth_LinkedAccount, true, true}};
 
 class YoutubeAuth : public OAuthStreamKey {
 	Q_OBJECT

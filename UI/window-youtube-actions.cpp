@@ -13,11 +13,13 @@ const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";
 const QString IndexOfGamingCategory = "20";
 
-OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
+OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
+				     bool broadcastReady)
 	: QDialog(parent),
 	  ui(new Ui::OBSYoutubeActions),
 	  apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth)),
-	  workerThread(new WorkerThread(apiYouTube))
+	  workerThread(new WorkerThread(apiYouTube)),
+	  broadcastReady(broadcastReady)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
@@ -128,6 +130,8 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 
 	connect(ui->okButton, &QPushButton::clicked, this,
 		&OBSYoutubeActions::InitBroadcast);
+	connect(ui->saveButton, &QPushButton::clicked, this,
+		&OBSYoutubeActions::ReadyBroadcast);
 	connect(ui->cancelButton, &QPushButton::clicked, this, [&]() {
 		blog(LOG_DEBUG, "YouTube live broadcast creation cancelled.");
 		// Close the dialog.
@@ -249,9 +253,9 @@ void WorkerThread::run()
 		return;
 	json11::Json broadcasts;
 
-	for (QString broacastStatus : {"active", "upcoming"}) {
+	for (QString broadcastStatus : {"active", "upcoming"}) {
 		if (!apiYouTube->GetBroadcastsList(broadcasts, "",
-						   broacastStatus)) {
+						   broadcastStatus)) {
 			emit failed();
 			return;
 		}
@@ -290,11 +294,9 @@ void WorkerThread::run()
 
 				// Treat already started streams as autostart for UI purposes
 				bool astart =
-					status == "live"
-						? true
-						: item["contentDetails"]
-						      ["enableAutoStart"]
-							      .bool_value();
+					status == "live" ||
+					item["contentDetails"]["enableAutoStart"]
+						.bool_value();
 				bool astop =
 					item["contentDetails"]["enableAutoStop"]
 						.bool_value();
@@ -329,7 +331,7 @@ void WorkerThread::run()
 					    broadcasts,
 					    QString::fromStdString(
 						    nextPageToken),
-					    broacastStatus)) {
+					    broadcastStatus)) {
 					emit failed();
 					return;
 				}
@@ -342,80 +344,64 @@ void WorkerThread::run()
 
 void OBSYoutubeActions::UpdateOkButtonStatus()
 {
+	bool enable = false;
+
 	if (ui->tabWidget->currentIndex() == 0) {
-		ui->okButton->setEnabled(
-			!ui->title->text().isEmpty() &&
-			!ui->privacyBox->currentText().isEmpty() &&
-			(ui->yesMakeForKids->isChecked() ||
-			 ui->notMakeForKids->isChecked()));
+		enable = !ui->title->text().isEmpty() &&
+			 !ui->privacyBox->currentText().isEmpty() &&
+			 (ui->yesMakeForKids->isChecked() ||
+			  ui->notMakeForKids->isChecked());
+		ui->okButton->setEnabled(enable);
+		ui->saveButton->setEnabled(enable);
+
 		if (ui->checkScheduledLater->checkState() == Qt::Checked) {
 			ui->okButton->setText(
-				QTStr("YouTube.Actions.Create_Save"));
+				QTStr("YouTube.Actions.Create_Schedule"));
+			ui->saveButton->setText(
+				QTStr("YouTube.Actions.Create_Schedule_Ready"));
 		} else {
 			ui->okButton->setText(
 				QTStr("YouTube.Actions.Create_GoLive"));
+			ui->saveButton->setText(
+				QTStr("YouTube.Actions.Create_Ready"));
 		}
-
 		ui->pushButton->setVisible(false);
 	} else {
-		ui->okButton->setEnabled(!selectedBroadcast.isEmpty());
+		enable = !selectedBroadcast.isEmpty();
+		ui->okButton->setEnabled(enable);
+		ui->saveButton->setEnabled(enable);
 		ui->okButton->setText(QTStr("YouTube.Actions.Choose_GoLive"));
+		ui->saveButton->setText(QTStr("YouTube.Actions.Choose_Ready"));
 
 		ui->pushButton->setVisible(true);
 	}
 }
-
-bool OBSYoutubeActions::StreamNowAction(YoutubeApiWrappers *api,
-					StreamDescription &stream)
-{
-	YoutubeApiWrappers *apiYouTube = api;
-	BroadcastDescription broadcast = {};
-	UiToBroadcast(broadcast);
-	// stream now is always autostart/autostop
-	broadcast.auto_start = true;
-	broadcast.auto_stop = true;
-
-	blog(LOG_DEBUG, "Scheduled date and time: %s",
-	     broadcast.schedul_date_time.toStdString().c_str());
-	if (!apiYouTube->InsertBroadcast(broadcast)) {
-		blog(LOG_DEBUG, "No broadcast created.");
-		return false;
-	}
-	stream = {"", "", "OBS Studio Video Stream"};
-	if (!apiYouTube->InsertStream(stream)) {
-		blog(LOG_DEBUG, "No stream created.");
-		return false;
-	}
-	if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
-		blog(LOG_DEBUG, "No stream binded.");
-		return false;
-	}
-	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title,
-					  broadcast.description,
-					  broadcast.category.id)) {
-		blog(LOG_DEBUG, "No category set.");
-		return false;
-	}
-
-	if (broadcast.privacy != "private")
-		apiYouTube->SetChatId(broadcast.id);
-	else
-		apiYouTube->ResetChat();
-
-	return true;
-}
-
-bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
+bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
+					  StreamDescription &stream,
+					  bool stream_later,
+					  bool ready_broadcast)
 {
 	YoutubeApiWrappers *apiYouTube = api;
 	BroadcastDescription broadcast = {};
 	UiToBroadcast(broadcast);
 
-	// DateTime parser means that input datetime is a local, so we need to move it
-	auto dateTime = ui->scheduledTime->dateTime();
-	auto utcDTime = dateTime.addSecs(-dateTime.offsetFromUtc());
-	broadcast.schedul_date_time =
-		utcDTime.toString(SchedulDateAndTimeFormat);
+	if (stream_later) {
+		// DateTime parser means that input datetime is a local, so we need to move it
+		auto dateTime = ui->scheduledTime->dateTime();
+		auto utcDTime = dateTime.addSecs(-dateTime.offsetFromUtc());
+		broadcast.schedul_date_time =
+			utcDTime.toString(SchedulDateAndTimeFormat);
+	} else {
+		// stream now is always autostart/autostop
+		broadcast.auto_start = true;
+		broadcast.auto_stop = true;
+		broadcast.schedul_date_time =
+			QDateTime::currentDateTimeUtc().toString(
+				SchedulDateAndTimeFormat);
+	}
+
+	autostart = broadcast.auto_start;
+	autostop = broadcast.auto_stop;
 
 	blog(LOG_DEBUG, "Scheduled date and time: %s",
 	     broadcast.schedul_date_time.toStdString().c_str());
@@ -430,10 +416,22 @@ bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
 		return false;
 	}
 
-	if (broadcast.privacy != "private")
-		apiYouTube->SetChatId(broadcast.id);
-	else
-		apiYouTube->ResetChat();
+	if (!stream_later || ready_broadcast) {
+		stream = {"", "", "OBS Studio Video Stream"};
+		if (!apiYouTube->InsertStream(stream)) {
+			blog(LOG_DEBUG, "No stream created.");
+			return false;
+		}
+		if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
+			blog(LOG_DEBUG, "No stream binded.");
+			return false;
+		}
+
+		if (broadcast.privacy != "private")
+			apiYouTube->SetChatId(broadcast.id);
+		else
+			apiYouTube->ResetChat();
+	}
 
 	return true;
 }
@@ -513,12 +511,9 @@ void OBSYoutubeActions::InitBroadcast()
 	bool success = false;
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
-			if (ui->checkScheduledLater->isChecked()) {
-				success = this->StreamLaterAction(apiYouTube);
-			} else {
-				success = this->StreamNowAction(apiYouTube,
-								stream);
-			}
+			success = this->CreateEventAction(
+				apiYouTube, stream,
+				ui->checkScheduledLater->isChecked());
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
 		};
@@ -548,15 +543,61 @@ void OBSYoutubeActions::InitBroadcast()
 				blog(LOG_DEBUG, "New valid stream: %s",
 				     QT_TO_UTF8(stream.name));
 				emit ok(QT_TO_UTF8(stream.id),
-					QT_TO_UTF8(stream.name), true, true);
+					QT_TO_UTF8(stream.name), true, true,
+					true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
 			emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-				autostart, autostop);
+				autostart, autostop, true);
 			Accept();
 		}
+	} else {
+		// Fail.
+		auto last_error = apiYouTube->GetLastError();
+		if (last_error.isEmpty())
+			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
+		if (!apiYouTube->GetTranslatedError(last_error))
+			last_error =
+				QTStr("YouTube.Actions.Error.NoBroadcastCreated")
+					.arg(last_error);
+
+		ShowErrorDialog(this, last_error);
+	}
+}
+
+void OBSYoutubeActions::ReadyBroadcast()
+{
+	StreamDescription stream;
+	QMessageBox msgBox(this);
+	msgBox.setWindowFlags(msgBox.windowFlags() &
+			      ~Qt::WindowCloseButtonHint);
+	msgBox.setWindowTitle(QTStr("YouTube.Actions.Notify.Title"));
+	msgBox.setText(QTStr("YouTube.Actions.Notify.CreatingBroadcast"));
+	msgBox.setStandardButtons(QMessageBox::StandardButtons());
+
+	bool success = false;
+	auto action = [&]() {
+		if (ui->tabWidget->currentIndex() == 0) {
+			success = this->CreateEventAction(
+				apiYouTube, stream,
+				ui->checkScheduledLater->isChecked(), true);
+		} else {
+			success = this->ChooseAnEventAction(apiYouTube, stream);
+		};
+		QMetaObject::invokeMethod(&msgBox, "accept",
+					  Qt::QueuedConnection);
+	};
+	QScopedPointer<QThread> thread(CreateQThread(action));
+	thread->start();
+	msgBox.exec();
+	thread->wait();
+
+	if (success) {
+		emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
+			autostart, autostop, false);
+		Accept();
 	} else {
 		// Fail.
 		auto last_error = apiYouTube->GetLastError();
@@ -587,9 +628,6 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.schedul_for_later = ui->checkScheduledLater->isChecked();
 	broadcast.projection = ui->check360Video->isChecked() ? "360"
 							      : "rectangular";
-	// Current time by default.
-	broadcast.schedul_date_time = QDateTime::currentDateTimeUtc().toString(
-		SchedulDateAndTimeFormat);
 }
 
 void OBSYoutubeActions::OpenYouTubeDashboard()
