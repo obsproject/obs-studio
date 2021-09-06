@@ -305,6 +305,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	obs_output_set_video_encoder(output, vencoder);
 	obs_output_set_audio_encoder(output, aencoder, 0);
+	obs_output_set_reconnect_settings(output, 0, 0);
 
 	obs_output_set_service(output, service);
 
