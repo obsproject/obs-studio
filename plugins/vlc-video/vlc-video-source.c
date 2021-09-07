@@ -382,6 +382,36 @@ static void vlcs_video_display(void *data, void *picture)
 	UNUSED_PARAMETER(picture);
 }
 
+/* This is used because VLC will by default try to use a different
+ * scaling than what the file uses (probably for optimization reasons).
+ * For example, if the file is 1920x1080, it will try to render it by
+ * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
+ * gets the actual video file's size, and thus fixes the problem.
+ * However this doesn't work with URLs, so if it returns a 0 value, it
+ * shouldn't be used.
+ */
+static void fix_dimensions(struct vlc_source *c, unsigned *width,
+			   unsigned *height)
+{
+	unsigned new_width = 0;
+	unsigned new_height = 0;
+
+	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
+
+	if (!new_width || !new_height)
+		return;
+
+	if (*width > *height && new_width > new_height ||
+	    *width < *height && new_width < new_height) {
+		*width = new_width;
+		*height = new_height;
+	} else {
+		/* video is rotated 90 or 270 degrees, height and width need to be swapped */
+		*width = new_height;
+		*height = new_width;
+	}
+}
+
 static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 				  unsigned *height, unsigned *pitches,
 				  unsigned *lines)
@@ -390,25 +420,11 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
-	unsigned new_width = 0;
-	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	/* This is used because VLC will by default try to use a different
-	 * scaling than what the file uses (probably for optimization reasons).
-	 * For example, if the file is 1920x1080, it will try to render it by
-	 * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
-	 * gets the actual video file's size, and thus fixes the problem.
-	 * However this doesn't work with URLs, so if it returns a 0 value, it
-	 * shouldn't be used. */
-	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
-
-	if (new_width && new_height) {
-		*width = new_width;
-		*height = new_height;
-	}
+	fix_dimensions(c, width, height);
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format || c->frame.width != *width ||
