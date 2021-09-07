@@ -44,23 +44,6 @@
 	(sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) + \
 	 width * height * 4)
 
-#define fourcc_code(a, b, c, d)                                \
-	((__u32)(a) | ((__u32)(b) << 8) | ((__u32)(c) << 16) | \
-	 ((__u32)(d) << 24))
-
-#define DRM_FORMAT_XRGB8888        \
-	fourcc_code('X', 'R', '2', \
-		    '4') /* [31:0] x:R:G:B 8:8:8:8 little endian */
-#define DRM_FORMAT_XBGR8888        \
-	fourcc_code('X', 'B', '2', \
-		    '4') /* [31:0] x:B:G:R 8:8:8:8 little endian */
-#define DRM_FORMAT_ARGB8888        \
-	fourcc_code('A', 'R', '2', \
-		    '4') /* [31:0] A:R:G:B 8:8:8:8 little endian */
-#define DRM_FORMAT_ABGR8888        \
-	fourcc_code('A', 'B', '2', \
-		    '4') /* [31:0] A:B:G:R 8:8:8:8 little endian */
-
 struct obs_pw_version {
 	int major;
 	int minor;
