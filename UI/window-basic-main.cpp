@@ -386,7 +386,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	// Register shortcuts for Undo/Redo
 	ui->actionMainUndo->setShortcut(Qt::CTRL + Qt::Key_Z);
 	QList<QKeySequence> shrt;
-	shrt << QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_Z)
+	shrt << QKeySequence(Qt::CTRL | Qt::SHIFT + Qt::Key_Z)
 	     << QKeySequence(Qt::CTRL + Qt::Key_Y);
 	ui->actionMainRedo->setShortcuts(shrt);
 
