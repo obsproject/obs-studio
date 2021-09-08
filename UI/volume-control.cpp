@@ -601,8 +601,6 @@ VolumeMeter::VolumeMeter(QWidget *parent, obs_volmeter_t *obs_volmeter,
 	updateTimerRef = updateTimer.toStrongRef();
 	if (!updateTimerRef) {
 		updateTimerRef = QSharedPointer<VolumeMeterTimer>::create();
-		updateTimerRef->setTimerType(Qt::PreciseTimer);
-		updateTimerRef->start(16);
 		updateTimer = updateTimerRef;
 	}
 
@@ -633,6 +631,8 @@ void VolumeMeter::setLevels(const float magnitude[MAX_AUDIO_CHANNELS],
 	// that the ballistics of peak and hold are recalculated.
 	locker.unlock();
 	calculateBallistics(ts);
+
+	updateTimerRef->SignalUpdate();
 }
 
 inline void VolumeMeter::resetLevels()
@@ -1141,7 +1141,23 @@ void VolumeMeterTimer::RemoveVolControl(VolumeMeter *meter)
 	volumeMeters.removeOne(meter);
 }
 
-void VolumeMeterTimer::timerEvent(QTimerEvent *)
+void VolumeMeterTimer::SignalUpdate()
+{
+	const uint64_t current = os_gettime_ns();
+	uint64_t previous = lastUpdate.load();
+	uint64_t next = previous + 16666666;
+	if (current > next) {
+		if (current - next > 100000000) {
+			next = current;
+		}
+
+		if (lastUpdate.compare_exchange_strong(previous, next)) {
+			QMetaObject::invokeMethod(this, "UpdateMeters");
+		}
+	}
+}
+
+void VolumeMeterTimer::UpdateMeters()
 {
 	for (VolumeMeter *meter : volumeMeters)
 		meter->update();
