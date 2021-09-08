@@ -143,6 +143,7 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc);
 
 void register_amf_h264_encoder();
 void register_amf_hevc_encoder();
+void log_amf_properties(amf::AMFPropertyStorage *component);
 
 #ifdef __cplusplus
 }

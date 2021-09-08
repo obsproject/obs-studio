@@ -16,6 +16,69 @@
 #include <iostream>
 #include <fstream>
 
+void log_amf_properties(amf::AMFPropertyStorage *component)
+{
+	AMF_RESULT res;
+
+	size_t count = component->GetPropertyCount();
+	AMF_LOG(LOG_INFO, "Encoder properties log start.");
+	AMF_LOG(LOG_INFO, "Properties count = %d", count);
+	int i;
+	amf::AMFVariantStruct var;
+	res = AMFVariantInit(&var);
+
+	for (i = 0; i < count; ++i) {
+		wchar_t *name = new wchar_t[100];
+		amf_size nameSize = 40;
+
+		res = component->GetPropertyAt(i, name, nameSize, &var);
+
+		switch (var.type) {
+		case amf::AMF_VARIANT_BOOL:
+			AMF_LOG(LOG_INFO, "%S %s", name,
+				var.boolValue == true ? "true" : "false");
+			break;
+		case amf::AMF_VARIANT_INT64:
+			AMF_LOG(LOG_INFO, "%S %d", name, var.int64Value);
+			break;
+		case amf::AMF_VARIANT_DOUBLE:
+			AMF_LOG(LOG_INFO, "%S %f", name, var.doubleValue);
+			break;
+		case amf::AMF_VARIANT_STRING:
+			AMF_LOG(LOG_INFO, "%S %s", name, var.stringValue);
+			break;
+		case amf::AMF_VARIANT_WSTRING:
+			AMF_LOG(LOG_INFO, "%S %S", name, var.wstringValue);
+			break;
+		case amf::AMF_VARIANT_RATE:
+			AMF_LOG(LOG_INFO, "%S %d:%d", name, var.rateValue.num,
+				var.rateValue.den);
+			break;
+		case amf::AMF_VARIANT_RATIO:
+			AMF_LOG(LOG_INFO, "%S %d:%d", name, var.ratioValue.num,
+				var.ratioValue.den);
+			break;
+		case amf::AMF_VARIANT_SIZE:
+			AMF_LOG(LOG_INFO, "%S %d - %d", name,
+				var.sizeValue.width, var.sizeValue.height);
+			break;
+		case amf::AMF_VARIANT_POINT:
+			AMF_LOG(LOG_INFO, "%S %d - %d", name, var.pointValue.x,
+				var.pointValue.y);
+			break;
+		case amf::AMF_VARIANT_COLOR:
+			AMF_LOG(LOG_INFO, "%S %d.%d.%d.%d", name,
+				var.colorValue.r, var.colorValue.g,
+				var.colorValue.b, var.colorValue.a);
+			break;
+		default:
+			AMF_LOG(LOG_INFO, "%S %s", name, "type = AMFInterface");
+			break;
+		}
+	}
+	AMF_LOG(LOG_INFO, "Encoder properties log end.");
+}
+
 AMF_RESULT init_d3d11(obs_data_t *settings, struct amf_data *enc)
 {
 	ATL::CComPtr<IDXGIFactory> pFactory;
@@ -164,7 +227,6 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 		    bool *received_packet)
 {
 	AMF_RESULT res = AMF_FAIL;
-	int block_and_wait;
 	AMFSurfacePtr surface;
 	AMFDataPtr pData = NULL;
 	AMFDataPtr pOutData = NULL;
@@ -209,12 +271,9 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 		return false;
 	}
 
-	bool frameSubmitted = false, packetRetrieved = false;
-
-	bool keepLooping = true;
 	res = enc->encoder_amf->SubmitInput(surface);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Fialed to sub  with error %d\n", res);
+		AMF_LOG_ERROR("Failed to SubmitInput with error %d\n", res);
 	}
 	while (true) {
 		res = enc->encoder_amf->QueryOutput(&pOutData);
@@ -230,7 +289,7 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 		}
 		default: {
 			AMF_LOG_WARNING(
-				"Fialed to QueryOutput  with code: %ls\n",
+				"Failed to QueryOutput  with code: %ls\n",
 				AMF::Instance()->GetTrace()->GetResultText(
 					res));
 			break;
@@ -321,19 +380,13 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 	result = AMF::Instance()->GetFactory()->CreateContext(&enc->context);
 	if (result != AMF_OK) {
 		AMF_LOG_WARNING("Context Failed");
-		goto clean;
+		return result;
 	}
 
 	result = enc->context->InitDX11(enc->pD3D11Device, AMF_DX11_1);
 	if (result != AMF_OK) {
 		AMF_LOG_WARNING("Failed to init from dx11.");
-		goto clean;
-	}
-
-	if (result != AMF_OK) {
-		AMF_LOG_WARNING(
-			"Failed to set converter transfer characteristic");
-		goto clean;
+		return result;
 	}
 
 	// Create Encoder
@@ -345,11 +398,5 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 		result = AMF::Instance()->GetFactory()->CreateComponent(
 			enc->context, AMFVideoEncoder_HEVC, &enc->encoder_amf);
 	}
-
-	if (result != AMF_OK) {
-		goto clean;
-	}
-
-clean:
 	return result;
 }

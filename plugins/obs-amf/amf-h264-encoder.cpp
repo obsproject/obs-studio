@@ -26,6 +26,12 @@ static bool amf_h264_update(void *data, obs_data_t *settings)
 {
 	AMF_RESULT result = AMF_FAIL;
 	struct amf_data *enc = (amf_data *)data;
+
+	if (obs_data_get_int(settings, LOG_LEVEL) >= (int)AMF_TRACE_DEBUG) {
+		AMF_LOG(LOG_INFO, "obs_data properties = %s",
+			obs_data_get_json(settings));
+	}
+
 	AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM rcm =
 		static_cast<AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_ENUM>(
 			obs_data_get_int(settings, RATE_CONTROL_METHOD));
@@ -72,8 +78,16 @@ static bool amf_h264_update(void *data, obs_data_t *settings)
 		      obs_data_get_bool(settings, DEBLOCKINGFILTER));
 	AMF::Instance()->GetTrace()->SetGlobalLevel(
 		obs_data_get_int(settings, LOG_LEVEL));
+
+	if (obs_data_get_int(settings, LOG_LEVEL) >= (int)AMF_TRACE_DEBUG) {
+		log_amf_properties(enc->encoder_amf);
+	}
 	return true;
 fail:
+	if (obs_data_get_int(settings, LOG_LEVEL) >= (int)AMF_TRACE_DEBUG) {
+		AMF_LOG_ERROR("Failed to amf_h264_update!");
+		log_amf_properties(enc->encoder_amf);
+	}
 	return false;
 }
 
@@ -177,9 +191,8 @@ void amf_h264_defaults(obs_data_t *settings)
 		settings, CODINGTYPE,
 		static_cast<int64_t>(AMF_VIDEO_ENCODER_UNDEFINED));
 	obs_data_set_default_bool(settings, LOW_LATENCY_MODE, false);
-	obs_data_set_default_int(
-		settings, PREPASSMODE,
-		static_cast<int64_t>(AMF_VIDEO_ENCODER_PREENCODE_ENABLED));
+	obs_data_set_default_bool(settings, PREPASSMODE,
+				  AMF_VIDEO_ENCODER_PREENCODE_ENABLED);
 
 	// Rate Control Properties
 	obs_data_set_default_int(
