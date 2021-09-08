@@ -4,7 +4,6 @@
 #include <QWidget>
 #include <QPaintEvent>
 #include <QSharedPointer>
-#include <QTimer>
 #include <QMutex>
 #include <QList>
 #include <QMenu>
@@ -186,18 +185,20 @@ protected:
 	void paintEvent(QPaintEvent *event) override;
 };
 
-class VolumeMeterTimer : public QTimer {
+class VolumeMeterTimer : public QObject {
 	Q_OBJECT
 
 public:
-	inline VolumeMeterTimer() : QTimer() {}
-
 	void AddVolControl(VolumeMeter *meter);
 	void RemoveVolControl(VolumeMeter *meter);
+	void SignalUpdate();
+
+protected slots:
+	void UpdateMeters();
 
 protected:
-	void timerEvent(QTimerEvent *event) override;
 	QList<VolumeMeter *> volumeMeters;
+	std::atomic<uint64_t> lastUpdate = 0;
 };
 
 class QLabel;
