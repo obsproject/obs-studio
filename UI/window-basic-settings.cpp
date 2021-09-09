@@ -47,6 +47,7 @@
 #include "window-projector.hpp"
 
 #include <util/platform.h>
+#include <util/dstr.hpp>
 #include "ui-config.h"
 
 #define ENCODER_HIDE_FLAGS \
@@ -712,6 +713,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 			      ReloadAudioSources, this);
 	channelChanged.Connect(obs_get_signal_handler(), "channel_change",
 			       ReloadAudioSources, this);
+
+	hotkeyConflictIcon =
+		QIcon::fromTheme("obs", QIcon(":/res/images/warning.svg"));
 
 	auto ReloadHotkeys = [](void *data, calldata_t *) {
 		auto settings = static_cast<OBSBasicSettings *>(data);
@@ -2600,7 +2604,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 template<typename Func>
 static inline void
-LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
+LayoutHotkey(OBSBasicSettings *settings, obs_hotkey_id id, obs_hotkey_t *key,
+	     Func &&fun,
 	     const map<obs_hotkey_id, vector<obs_key_combination_t>> &keys)
 {
 	auto *label = new OBSHotkeyLabel;
@@ -2619,9 +2624,10 @@ LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 
 	auto combos = keys.find(id);
 	if (combos == std::end(keys))
-		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key));
-	else
 		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key),
+					 settings);
+	else
+		hw = new OBSHotkeyWidget(id, obs_hotkey_get_name(key), settings,
 					 combos->second);
 
 	hw->label = label;
@@ -2715,58 +2721,104 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		},
 		&keys);
 
-	auto layout = new QFormLayout();
-	layout->setVerticalSpacing(0);
-	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
-	layout->setLabelAlignment(Qt::AlignRight | Qt::AlignTrailing |
-				  Qt::AlignVCenter);
+	auto layout = new QVBoxLayout();
+	ui->hotkeyPage->setLayout(layout);
 
 	auto widget = new QWidget();
-	widget->setLayout(layout);
-	ui->hotkeyPage->setWidget(widget);
+	auto scrollArea = new QScrollArea();
+	scrollArea->setWidgetResizable(true);
+	scrollArea->setWidget(widget);
+
+	auto hotkeysLayout = new QFormLayout();
+	hotkeysLayout->setVerticalSpacing(0);
+	hotkeysLayout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
+	hotkeysLayout->setLabelAlignment(Qt::AlignRight | Qt::AlignTrailing |
+					 Qt::AlignVCenter);
+	widget->setLayout(hotkeysLayout);
 
 	auto filterLayout = new QGridLayout();
-	auto filterWidget = new QWidget();
-	filterWidget->setLayout(filterLayout);
-
 	auto filterLabel = new QLabel(QTStr("Basic.Settings.Hotkeys.Filter"));
 	auto filter = new QLineEdit();
+	auto filterHotkeyLabel =
+		new QLabel(QTStr("Basic.Settings.Hotkeys.FilterByHotkey"));
+	auto filterHotkeyInput = new OBSHotkeyEdit({}, this);
+	auto filterReset = new QPushButton;
+	filterReset->setProperty("themeID", "trashIcon");
+	filterReset->setToolTip(QTStr("Clear"));
+	filterReset->setFixedSize(24, 24);
+	filterReset->setFlat(true);
 
 	auto setRowVisible = [=](int row, bool visible, QLayoutItem *label) {
 		label->widget()->setVisible(visible);
 
-		auto field = layout->itemAt(row, QFormLayout::FieldRole);
+		auto field = hotkeysLayout->itemAt(row, QFormLayout::FieldRole);
 		if (field)
 			field->widget()->setVisible(visible);
 	};
 
-	auto searchFunction = [=](const QString &text) {
-		for (int i = 0; i < layout->rowCount(); i++) {
-			auto label = layout->itemAt(i, QFormLayout::LabelRole);
-			if (label) {
-				OBSHotkeyLabel *item =
-					qobject_cast<OBSHotkeyLabel *>(
-						label->widget());
-				if (item) {
-					QString fullname =
-						item->property("fullName")
-							.value<QString>();
-					if (fullname.toLower().contains(
-						    text.toLower()))
-						setRowVisible(i, true, label);
-					else
-						setRowVisible(i, false, label);
+	auto searchFunction = [=](const QString &text,
+				  obs_key_combination_t filterCombo) {
+		std::vector<obs_key_combination_t> combos;
+		bool showHotkey;
+		scrollArea->ensureVisible(0, 0);
+		scrollArea->setUpdatesEnabled(false);
+
+		for (int i = 0; i < hotkeysLayout->rowCount(); i++) {
+			auto label = hotkeysLayout->itemAt(
+				i, QFormLayout::LabelRole);
+			if (!label)
+				continue;
+
+			OBSHotkeyLabel *item =
+				qobject_cast<OBSHotkeyLabel *>(label->widget());
+			if (!item)
+				continue;
+
+			item->widget->GetCombinations(combos);
+			QString fullname =
+				item->property("fullName").value<QString>();
+
+			showHotkey =
+				text.isEmpty() ||
+				fullname.toLower().contains(text.toLower());
+
+			if (showHotkey &&
+			    !obs_key_combination_is_empty(filterCombo)) {
+				showHotkey = false;
+				for (auto combo : combos) {
+					if (combo == filterCombo) {
+						showHotkey = true;
+						continue;
+					}
 				}
 			}
+			setRowVisible(i, showHotkey, label);
 		}
+		scrollArea->setUpdatesEnabled(true);
 	};
 
-	connect(filter, &QLineEdit::textChanged, this, searchFunction);
+	connect(filter, &QLineEdit::textChanged, this, [=](const QString text) {
+		searchFunction(text, filterHotkeyInput->key);
+	});
+
+	connect(filterHotkeyInput, &OBSHotkeyEdit::KeyChanged, this,
+		[=](obs_key_combination_t combo) {
+			searchFunction(filter->text(), combo);
+		});
+
+	connect(filterReset, &QPushButton::clicked, this, [=]() {
+		filter->setText("");
+		filterHotkeyInput->ResetKey();
+	});
 
 	filterLayout->addWidget(filterLabel, 0, 0);
 	filterLayout->addWidget(filter, 0, 1);
+	filterLayout->addWidget(filterHotkeyLabel, 0, 2);
+	filterLayout->addWidget(filterHotkeyInput, 0, 3);
+	filterLayout->addWidget(filterReset, 0, 4);
 
-	layout->addRow(filterWidget);
+	layout->addLayout(filterLayout);
+	layout->addWidget(scrollArea);
 
 	using namespace std;
 	using encoders_elem_t =
@@ -2858,7 +2910,7 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 		switch (registerer_type) {
 		case OBS_HOTKEY_REGISTERER_FRONTEND:
-			layout->addRow(label, hw);
+			hotkeysLayout->addRow(label, hw);
 			break;
 
 		case OBS_HOTKEY_REGISTERER_ENCODER:
@@ -2884,17 +2936,27 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 
 		hotkeys.emplace_back(
 			registerer_type == OBS_HOTKEY_REGISTERER_FRONTEND, hw);
-		connect(hw, &OBSHotkeyWidget::KeyChanged, this,
-			&OBSBasicSettings::HotkeysChanged);
+		connect(hw, &OBSHotkeyWidget::KeyChanged, this, [=]() {
+			HotkeysChanged();
+			ScanDuplicateHotkeys(hotkeysLayout);
+		});
+		connect(hw, &OBSHotkeyWidget::SearchKey,
+			[=](obs_key_combination_t combo) {
+				filter->setText("");
+				filterHotkeyInput->HandleNewKey(combo);
+				filterHotkeyInput->KeyChanged(combo);
+			});
 	};
 
-	auto data = make_tuple(RegisterHotkey, std::move(keys), ignoreKey);
+	auto data =
+		make_tuple(RegisterHotkey, std::move(keys), ignoreKey, this);
 	using data_t = decltype(data);
 	obs_enum_hotkeys(
 		[](void *data, obs_hotkey_id id, obs_hotkey_t *key) {
 			data_t &d = *static_cast<data_t *>(data);
 			if (id != get<2>(d))
-				LayoutHotkey(id, key, get<0>(d), get<1>(d));
+				LayoutHotkey(get<3>(d), id, key, get<0>(d),
+					     get<1>(d));
 			return true;
 		},
 		&data);
@@ -2937,11 +2999,13 @@ void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 		Update(label2, name2, label1, name1);
 	}
 
-	AddHotkeys(*layout, obs_output_get_name, outputs);
-	AddHotkeys(*layout, obs_source_get_name, scenes);
-	AddHotkeys(*layout, obs_source_get_name, sources);
-	AddHotkeys(*layout, obs_encoder_get_name, encoders);
-	AddHotkeys(*layout, obs_service_get_name, services);
+	AddHotkeys(*hotkeysLayout, obs_output_get_name, outputs);
+	AddHotkeys(*hotkeysLayout, obs_source_get_name, scenes);
+	AddHotkeys(*hotkeysLayout, obs_source_get_name, sources);
+	AddHotkeys(*hotkeysLayout, obs_encoder_get_name, encoders);
+	AddHotkeys(*hotkeysLayout, obs_service_get_name, services);
+
+	ScanDuplicateHotkeys(hotkeysLayout);
 }
 
 void OBSBasicSettings::LoadSettings(bool changedOnly)
@@ -4272,6 +4336,66 @@ void OBSBasicSettings::HotkeysChanged()
 
 	if (hotkeysChanged)
 		EnableApplyButton(true);
+}
+
+static bool MarkHotkeyConflicts(OBSHotkeyLabel *item1, OBSHotkeyLabel *item2)
+{
+	if (item1->pairPartner == item2)
+		return false;
+
+	auto &edits1 = item1->widget->edits;
+	auto &edits2 = item2->widget->edits;
+	bool hasDupes = false;
+
+	for (auto &edit1 : edits1) {
+		for (auto &edit2 : edits2) {
+			bool isDupe =
+				!obs_key_combination_is_empty(edit1->key) &&
+				edit1->key == edit2->key;
+
+			hasDupes |= isDupe;
+			edit1->hasDuplicate |= isDupe;
+			edit2->hasDuplicate |= isDupe;
+		}
+	}
+
+	return hasDupes;
+};
+
+bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
+{
+	vector<OBSHotkeyLabel *> items;
+	bool hasDupes = false;
+
+	for (int i = 0; i < layout->rowCount(); i++) {
+		auto label = layout->itemAt(i, QFormLayout::LabelRole);
+		if (!label)
+			continue;
+		OBSHotkeyLabel *item =
+			qobject_cast<OBSHotkeyLabel *>(label->widget());
+		if (!item)
+			continue;
+
+		items.push_back(item);
+
+		for (auto &edit : item->widget->edits)
+			edit->hasDuplicate = false;
+	}
+
+	for (int i = 0; i < items.size(); i++) {
+		OBSHotkeyLabel *item1 = items[i];
+
+		for (int j = i + 1; j < items.size(); j++)
+			hasDupes |= MarkHotkeyConflicts(item1, items[j]);
+	}
+
+	for (auto *item : items) {
+		for (auto &edit : item->widget->edits) {
+			edit->UpdateDuplicationState();
+		}
+	}
+
+	return hasDupes;
 }
 
 void OBSBasicSettings::ReloadHotkeys(obs_hotkey_id ignoreKey)
