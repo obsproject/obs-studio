@@ -220,6 +220,9 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 				});
 			ui->scrollAreaWidgetContents->layout()->addWidget(
 				label);
+
+			if (selectedBroadcast == broadcast)
+				label->clicked();
 		});
 	workerThread->start();
 
@@ -228,6 +231,12 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 						"RememberSettings");
 	if (rememberSettings)
 		LoadSettings();
+
+	// Switch to events page and select readied broadcast once loaded
+	if (broadcastReady) {
+		ui->tabWidget->setCurrentIndex(1);
+		selectedBroadcast = apiYouTube->GetBroadcastId();
+	}
 
 #ifdef __APPLE__
 	// MacOS theming issues
