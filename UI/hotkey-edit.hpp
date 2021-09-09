@@ -27,6 +27,19 @@
 
 #include <obs.hpp>
 
+static inline bool operator!=(const obs_key_combination_t &c1,
+			      const obs_key_combination_t &c2)
+{
+	return c1.modifiers != c2.modifiers || c1.key != c2.key;
+}
+
+static inline bool operator==(const obs_key_combination_t &c1,
+			      const obs_key_combination_t &c2)
+{
+	return !(c1 != c2);
+}
+
+class OBSBasicSettings;
 class OBSHotkeyWidget;
 
 class OBSHotkeyLabel : public QLabel {
@@ -49,8 +62,9 @@ class OBSHotkeyEdit : public QLineEdit {
 	Q_OBJECT;
 
 public:
-	OBSHotkeyEdit(obs_key_combination_t original, QWidget *parent = nullptr)
-		: QLineEdit(parent), original(original)
+	OBSHotkeyEdit(obs_key_combination_t original,
+		      OBSBasicSettings *settings)
+		: QLineEdit(nullptr), original(original), settings(settings)
 	{
 #ifdef __APPLE__
 		// disable the input cursor on OSX, focus should be clear
@@ -60,17 +74,24 @@ public:
 		setAttribute(Qt::WA_InputMethodEnabled, false);
 		setAttribute(Qt::WA_MacShowFocusRect, true);
 		InitSignalHandler();
+		CreateDupeIcon();
 		ResetKey();
 	}
 
 	obs_key_combination_t original;
 	obs_key_combination_t key;
+	OBSBasicSettings *settings;
 	bool changed = false;
+
+	void UpdateDuplicationState();
+	bool hasDuplicate = false;
 
 protected:
 	OBSSignal layoutChanged;
+	QAction *dupeIcon;
 
 	void InitSignalHandler();
+	void CreateDupeIcon();
 
 	void keyPressEvent(QKeyEvent *event) override;
 #ifdef __APPLE__
@@ -78,16 +99,17 @@ protected:
 #endif
 	void mousePressEvent(QMouseEvent *event) override;
 
-	void HandleNewKey(obs_key_combination_t new_key);
 	void RenderKey();
 
 public slots:
+	void HandleNewKey(obs_key_combination_t new_key);
 	void ReloadKeyLayout();
 	void ResetKey();
 	void ClearKey();
 
 signals:
 	void KeyChanged(obs_key_combination_t);
+	void SearchKey(obs_key_combination_t);
 };
 
 class OBSHotkeyWidget : public QWidget {
@@ -95,14 +117,15 @@ class OBSHotkeyWidget : public QWidget {
 
 public:
 	OBSHotkeyWidget(obs_hotkey_id id, std::string name,
-			const std::vector<obs_key_combination_t> &combos = {},
-			QWidget *parent = nullptr)
-		: QWidget(parent),
+			OBSBasicSettings *settings,
+			const std::vector<obs_key_combination_t> &combos = {})
+		: QWidget(nullptr),
 		  id(id),
 		  name(name),
 		  bindingsChanged(obs_get_signal_handler(),
 				  "hotkey_bindings_changed",
-				  &OBSHotkeyWidget::BindingsChanged, this)
+				  &OBSHotkeyWidget::BindingsChanged, this),
+		  settings(settings)
 	{
 		auto layout = new QVBoxLayout;
 		layout->setSpacing(0);
@@ -121,6 +144,7 @@ public:
 	bool Changed() const;
 
 	QPointer<OBSHotkeyLabel> label;
+	std::vector<QPointer<OBSHotkeyEdit>> edits;
 
 	QString toolTip;
 	void setToolTip(const QString &toolTip_)
@@ -148,11 +172,11 @@ private:
 
 	static void BindingsChanged(void *data, calldata_t *param);
 
-	std::vector<QPointer<OBSHotkeyEdit>> edits;
 	std::vector<QPointer<QPushButton>> removeButtons;
 	std::vector<QPointer<QPushButton>> revertButtons;
 	OBSSignal bindingsChanged;
 	bool ignoreChangedBindings = false;
+	OBSBasicSettings *settings;
 
 	QVBoxLayout *layout() const
 	{
@@ -164,4 +188,5 @@ private slots:
 
 signals:
 	void KeyChanged();
+	void SearchKey(obs_key_combination_t);
 };
