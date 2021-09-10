@@ -4676,6 +4676,12 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		}
 	}
 
+	if (remux && !remux->close()) {
+		event->ignore();
+		restart = false;
+		return;
+	}
+
 	QWidget::closeEvent(event);
 	if (!event->isAccepted())
 		return;
