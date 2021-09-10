@@ -1,0 +1,58 @@
+#!/bin/sh
+SELF_DIR="$( cd "$(dirname "$0")" ; pwd -P )"
+
+# set this if compatibility with the old /dev/oem2k* device nodes is needed
+AJA_LOAD_OLD_DEV_NAMES=0
+
+if [ `id -u` != "0" ]; then
+    echo "error: You must have superuser privileges to run this script."
+    exit 13
+fi
+
+# install module into kernel
+# Default install:
+/sbin/insmod "$SELF_DIR/ajantv2.ko" 2>/dev/null
+
+# To install without mapping framebuffers (driverbuffer-DMA only, 
+# see readme-linux.txt) do this instead:
+#/sbin/insmod "$SELF_DIR/ajantv2.ko" AJANTV2_MapFrameBuffers=0
+
+# To install with a particular number of driverbuffers, do this instead:
+# /sbin/insmod "$SELF_DIR/ajantv2.ko" AJANTV2_NumDmaDriverBuffers=2
+
+if [ $? -eq 0 ]; then
+    echo "loaded ajantv2 driver module"
+fi
+
+# find ajantv2 major number, will only find one
+major=`awk "\\$2==\"ajantv2\" {print \\$1}" /proc/devices`
+if [ "$major" != "" ]; then 
+    # find ajantv2 minor numbers, this is the number of aja devices attached
+    num_minor=`cat /proc/bus/pci/devices | grep ajantv2 | wc -l`
+
+    # add the new nodes
+    minor=0
+    while [ $minor -lt "$num_minor" ]; do 
+        dev_name="/dev/ajantv2${minor}"
+        # remove any existing node
+        [ -e $dev_name ] && rm -f $dev_name
+        # add new node
+        mknod $dev_name c $major $minor
+        [ -e $dev_name ] && chmod 666 $dev_name
+        echo "created node $dev_name"
+
+        if [ "$AJA_LOAD_OLD_DEV_NAMES" != "0" ]; then
+            dev_name="/dev/oem2k${minor}"
+            # remove any existing node
+            [ -e $dev_name ] && rm -f $dev_name
+            # add new node
+            mknod $dev_name c $major $minor
+            [ -e $dev_name ] && chmod 666 $dev_name
+            echo "created node $dev_name"
+        fi
+        minor=`expr $minor + 1`
+    done
+else
+    echo "error: Couldn't find ajantv2 device in /proc/devices, device nodes not created."
+    echo "       Do you have an AJA ntv2 device attached to the system?"
+fi

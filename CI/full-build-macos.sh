@@ -329,6 +329,8 @@ bundle_dylibs() {
         ./OBS.app/Contents/PlugIns/obs-x264.so
         ./OBS.app/Contents/PlugIns/text-freetype2.so
         ./OBS.app/Contents/PlugIns/obs-outputs.so
+        ./OBS.app/Contents/PlugIns/aja.so
+        ./OBS.app/Contents/PlugIns/aja-output-ui.so
         )
     if ! [ "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 ]; then
         "${CI_SCRIPTS}/app/dylibbundler" -cd -of -a ./OBS.app -q -f \

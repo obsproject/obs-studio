@@ -1,0 +1,33 @@
+cmake_minimum_required(VERSION 3.10)
+
+project(ntv2)
+
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_CURRENT_SOURCE_DIR}/cmake/")
+
+include(BuildConfig)
+
+message ("Platform: ${CMAKE_SYSTEM_NAME}")
+message ("Arch: ${CMAKE_HOST_SYSTEM_PROCESSOR}")
+message ("Compiler: ${CMAKE_CXX_COMPILER_ID}")
+if (APPLE)
+    message ("OSX Architectures: ${CMAKE_OSX_ARCHITECTURES}")
+    message ("OSX Deployment Target: ${CMAKE_OSX_DEPLOYMENT_TARGET}")
+endif()
+if(CMAKE_BUILD_TYPE MATCHES Debug)
+    message("Build Type: Debug")
+    add_definitions(-DAJA_DEBUG)
+elseif(CMAKE_BUILD_TYPE MATCHES RelWithDebInfo)
+    message("Build Type: Release with Debug Symbols")
+else()
+    message("Build Type: Release")
+endif()
+
+if (BUILD_AJA_APPS)
+    add_subdirectory(ajaapps)
+endif()
+if (BUILD_AJA_LIBS)
+    add_subdirectory(ajalibraries)
+endif()
+if (BUILD_AJA_PLUGINS)
+    add_subdirectory(ajaplugins)
+endif()
