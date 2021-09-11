@@ -25,8 +25,7 @@
 #include <memory>
 
 #include <windows.h>
-#include <dxgi.h>
-#include <dxgi1_2.h>
+#include <dxgi1_5.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
@@ -797,6 +796,7 @@ struct gs_swap_chain : gs_obj {
 	HWND hwnd;
 	gs_init_data initData;
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
+	UINT presentFlags = 0;
 
 	gs_texture_2d target;
 	gs_zstencil_buffer zs;
