@@ -478,6 +478,10 @@ QPushButton::flat {
     background-color: palette(window);
 }
 
+QPushButton:checked {
+    background-color: palette(base);
+}
+
 QPushButton:hover {
     background-color: rgb(122,121,122); /* light */
 }
@@ -486,8 +490,8 @@ QPushButton:pressed {
     background-color: palette(base);
 }
 
-QPushButton:checked {
-    background-color: rgb(122,121,122); /* light */
+QPushButton:disabled {
+    background-color: rgb(46,45,46);
 }
 
 QPushButton::menu-indicator {
