@@ -794,7 +794,6 @@ struct gs_pixel_shader : gs_shader {
 };
 
 struct gs_swap_chain : gs_obj {
-	uint32_t numBuffers;
 	HWND hwnd;
 	gs_init_data initData;
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
