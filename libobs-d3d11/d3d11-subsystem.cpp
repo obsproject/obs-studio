@@ -76,7 +76,7 @@ gs_obj::~gs_obj()
 
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
 				  const gs_init_data *data,
-				  DXGI_SWAP_EFFECT effect)
+				  DXGI_SWAP_EFFECT effect, UINT flags)
 {
 	memset(&desc, 0, sizeof(desc));
 	desc.BufferDesc.Width = data->cx;
@@ -88,6 +88,7 @@ static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
 	desc.OutputWindow = (HWND)data->window.hwnd;
 	desc.Windowed = TRUE;
 	desc.SwapEffect = effect;
+	desc.Flags = flags;
 }
 
 void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
@@ -158,7 +159,7 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 	}
 
 	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy,
-				 DXGI_FORMAT_UNKNOWN, 0);
+				 DXGI_FORMAT_UNKNOWN, swapDesc.Flags);
 	if (FAILED(hr))
 		throw HRError("Failed to resize swap buffers", hr);
 
@@ -202,14 +203,30 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	}();
 
 	DXGI_SWAP_EFFECT effect = DXGI_SWAP_EFFECT_DISCARD;
+	UINT flags = 0;
 
 	if (win_version_compare(&ver, &minimum) >= 0) {
 		initData.num_backbuffers = max(data->num_backbuffers, 2);
 
 		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+
+		ComPtr<IDXGIFactory5> factory5;
+		HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory5));
+		if (SUCCEEDED(hr)) {
+			BOOL featureSupportData = FALSE;
+			hr = factory5->CheckFeatureSupport(
+				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+				&featureSupportData,
+				sizeof(featureSupportData));
+			if (SUCCEEDED(hr) && featureSupportData) {
+				presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+
+				flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+			}
+		}
 	}
 
-	make_swap_desc(swapDesc, &initData, effect);
+	make_swap_desc(swapDesc, &initData, effect, flags);
 	const HRESULT hr = device->factory->CreateSwapChain(
 		device->device, &swapDesc, swap.Assign());
 	if (FAILED(hr))
@@ -2016,10 +2033,10 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 
 void device_present(gs_device_t *device)
 {
-	HRESULT hr;
-
-	if (device->curSwapChain) {
-		hr = device->curSwapChain->swap->Present(0, 0);
+	gs_swap_chain *const curSwapChain = device->curSwapChain;
+	if (curSwapChain) {
+		const HRESULT hr = curSwapChain->swap->Present(
+			0, curSwapChain->presentFlags);
 		if (hr == DXGI_ERROR_DEVICE_REMOVED ||
 		    hr == DXGI_ERROR_DEVICE_RESET) {
 			device->RebuildDevice();
