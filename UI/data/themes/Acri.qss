@@ -428,6 +428,11 @@ QComboBox {
 	padding-left: 10px;
 }
 
+QDateTimeEdit:hover,
+QComboBox:hover {
+    background-color: rgb(61,61,63);
+}
+
 QDateTimeEdit::drop-down,
 QComboBox::drop-down {
 	border:none;
@@ -563,8 +568,18 @@ QPushButton:hover {
 	border: 1px solid rgb(54,70,131);
 }
 
+QPushButton:checked:hover {
+	background-color: rgb(116,32,49);
+	border-color: rgb(176,12,47);
+}
+
 QPushButton:pressed {
 	background-color: rgb(22,31,65);
+}
+
+QPushButton:checked:pressed {
+	background-color: rgb(63,21,30);
+	border-color: rgb(132,22,45);
 }
 
 QPushButton:disabled {
