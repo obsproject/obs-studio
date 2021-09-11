@@ -75,17 +75,19 @@ gs_obj::~gs_obj()
 }
 
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
-				  const gs_init_data *data)
+				  const gs_init_data *data,
+				  DXGI_SWAP_EFFECT effect)
 {
 	memset(&desc, 0, sizeof(desc));
-	desc.BufferCount = data->num_backbuffers;
-	desc.BufferDesc.Format = ConvertGSTextureFormatView(data->format);
 	desc.BufferDesc.Width = data->cx;
 	desc.BufferDesc.Height = data->cy;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.BufferDesc.Format = ConvertGSTextureFormatView(data->format);
 	desc.SampleDesc.Count = 1;
-	desc.Windowed = true;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferCount = data->num_backbuffers;
+	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.Windowed = TRUE;
+	desc.SwapEffect = effect;
 }
 
 void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
@@ -155,7 +157,8 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 			cy = clientRect.bottom;
 	}
 
-	hr = swap->ResizeBuffers(numBuffers, cx, cy, DXGI_FORMAT_UNKNOWN, 0);
+	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy,
+				 DXGI_FORMAT_UNKNOWN, 0);
 	if (FAILED(hr))
 		throw HRError("Failed to resize swap buffers", hr);
 
@@ -183,15 +186,32 @@ void gs_swap_chain::Init()
 
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	: gs_obj(device, gs_type::gs_swap_chain),
-	  numBuffers(data->num_backbuffers),
 	  hwnd((HWND)data->window.hwnd),
 	  initData(*data)
 {
-	HRESULT hr;
+	struct win_version_info ver;
+	get_win_ver(&ver);
 
-	make_swap_desc(swapDesc, data);
-	hr = device->factory->CreateSwapChain(device->device, &swapDesc,
-					      swap.Assign());
+	constexpr win_version_info minimum = [] {
+		win_version_info ver{};
+		ver.major = 10;
+		ver.minor = 0;
+		ver.build = 22000;
+		ver.revis = 0;
+		return ver;
+	}();
+
+	DXGI_SWAP_EFFECT effect = DXGI_SWAP_EFFECT_DISCARD;
+
+	if (win_version_compare(&ver, &minimum) >= 0) {
+		initData.num_backbuffers = max(data->num_backbuffers, 2);
+
+		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+	}
+
+	make_swap_desc(swapDesc, &initData, effect);
+	const HRESULT hr = device->factory->CreateSwapChain(
+		device->device, &swapDesc, swap.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
