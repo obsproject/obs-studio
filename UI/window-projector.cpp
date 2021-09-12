@@ -22,7 +22,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	: OBSQTDisplay(widget, Qt::Window),
 	  source(source_),
 	  removedSignal(obs_source_get_signal_handler(source), "remove",
-			OBSSourceRemoved, this)
+			OBSSourceRemoved, this),
+	  savedSignal(obs_source_get_signal_handler(source), "save",
+		      OBSSourceSaved, this)
 {
 	isAlwaysOnTop = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"ProjectorAlwaysOnTop");
@@ -628,6 +630,50 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 	window->deleteLater();
 
 	UNUSED_PARAMETER(params);
+}
+
+/* When a source gets removed from all scenes but a projector is still
+ open, "save" is the only signal that gets sent due to the projector
+ keeping a reference (thus keeping it from getting destroyed), so that's
+ the signal we'll have to use. */
+void OBSProjector::OBSSourceSaved(void *data, calldata_t *params)
+{
+	UNUSED_PARAMETER(params);
+
+	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
+	OBSSource source = window->source;
+
+	bool sourceExists = false;
+	struct cb_data {
+		obs_source_t *source;
+		bool *sourceExists;
+	} cbdata;
+	cbdata.source = source;
+	cbdata.sourceExists = &sourceExists;
+
+	auto cb = [](void *data_, obs_source_t *source) {
+		struct cb_data *data = (cb_data *)data_;
+
+		obs_scene_t *scene = obs_scene_from_source(source);
+		obs_sceneitem_t *item =
+			obs_scene_sceneitem_from_source(scene, data->source);
+
+		if (item || data->source == source) {
+			*(data->sourceExists) = true;
+			obs_sceneitem_release(item);
+			return false;
+		}
+
+		return true;
+	};
+	obs_enum_scenes(cb, (void *)&cbdata);
+
+	if (!sourceExists) {
+		OBSBasic *main =
+			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+		main->DeleteProjector(window);
+		allProjectors.removeAll(window);
+	}
 }
 
 static int getSourceByPosition(int x, int y, float ratio)

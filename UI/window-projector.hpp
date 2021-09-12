@@ -28,10 +28,12 @@ class OBSProjector : public OBSQTDisplay {
 private:
 	OBSSource source;
 	OBSSignal removedSignal;
+	OBSSignal savedSignal;
 
 	static void OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy);
 	static void OBSRender(void *data, uint32_t cx, uint32_t cy);
 	static void OBSSourceRemoved(void *data, calldata_t *params);
+	static void OBSSourceSaved(void *data, calldata_t *params);
 
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
