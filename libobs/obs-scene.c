@@ -1811,7 +1811,8 @@ static inline bool source_has_audio(obs_source_t *source)
 
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
-					       obs_sceneitem_t *insert_after)
+					       obs_sceneitem_t *insert_after,
+					       bool create_texture)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -1866,7 +1867,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		item->visible = true;
 	}
 
-	if (item_texture_enabled(item)) {
+	if (create_texture && item_texture_enabled(item)) {
 		obs_enter_graphics();
 		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
 		obs_leave_graphics();
@@ -1907,7 +1908,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
-	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
+	obs_sceneitem_t *item =
+		obs_scene_add_internal(scene, source, NULL, true);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -2990,8 +2992,8 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_scene_t *sub_scene = create_id("group", name);
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
-	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, sub_scene->source, last_item);
+	obs_sceneitem_t *item = obs_scene_add_internal(scene, sub_scene->source,
+						       last_item, true);
 
 	obs_scene_release(sub_scene);
 
@@ -3102,7 +3104,8 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 		obs_sceneitem_t *dst;
 
 		remove_group_transform(item, last);
-		dst = obs_scene_add_internal(scene, last->source, insert_after);
+		dst = obs_scene_add_internal(scene, last->source, insert_after,
+					     false);
 		duplicate_item_data(dst, last, true, true, true);
 		apply_group_transform(last, item);
 
