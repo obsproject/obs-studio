@@ -1465,6 +1465,10 @@ QPushButton#sourceFiltersButton {
 }
 
 /* YouTube Integration */
+OBSYoutubeActions {
+    qproperty-thumbPlaceholder: url(./Dark/sources/image.svg);
+}
+
 #ytEventList QLabel {
     background-color: rgb(0, 188, 212);; /* Cyan (Primary) */
 	color: rgb(239, 240, 241); /* White */
