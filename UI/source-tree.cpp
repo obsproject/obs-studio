@@ -311,6 +311,7 @@ void SourceTreeItem::ReconnectSignals()
 			reinterpret_cast<SourceTreeItem *>(data);
 		this_->DisconnectSignals();
 		this_->sceneitem = nullptr;
+		QMetaObject::invokeMethod(this_->tree, "RefreshItems");
 	};
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
