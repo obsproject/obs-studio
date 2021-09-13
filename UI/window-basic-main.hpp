@@ -660,7 +660,6 @@ private slots:
 
 	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
-	void RemoveSelectedSceneItem();
 
 	void ToggleAlwaysOnTop();
 
