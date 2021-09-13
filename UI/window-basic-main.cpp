@@ -5054,7 +5054,6 @@ void OBSBasic::on_actionAddScene_triggered()
 		obs_scene_t *scene = obs_scene_create(name.c_str());
 		source = obs_scene_get_source(scene);
 		SetCurrentScene(source);
-		RefreshSources(scene);
 		obs_scene_release(scene);
 	}
 }

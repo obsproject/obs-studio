@@ -273,8 +273,6 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 				obs_get_source_by_name(scene_name.c_str());
 			main->SetCurrentScene(scene_source, true);
 			obs_source_release(scene_source);
-
-			main->RefreshSources(main->GetCurrentScene());
 		};
 		obs_data_t *wrapper = obs_data_create();
 		obs_data_set_string(wrapper, "id", id);
@@ -304,7 +302,6 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(
 							   dat, "item_id"));
 
-			main->RefreshSources(main->GetCurrentScene());
 			obs_data_release(dat);
 			obs_sceneitem_release(item);
 		};
