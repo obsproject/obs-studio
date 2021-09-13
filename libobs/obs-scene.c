@@ -1829,6 +1829,11 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		return NULL;
 	}
 
+	if (source->removed) {
+		blog(LOG_WARNING, "Tried to add a removed source to a scene");
+		return NULL;
+	}
+
 	if (pthread_mutex_init(&mutex, NULL) != 0) {
 		blog(LOG_WARNING, "Failed to create scene item mutex");
 		return NULL;
