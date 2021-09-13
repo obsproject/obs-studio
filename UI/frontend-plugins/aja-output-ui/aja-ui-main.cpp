@@ -67,8 +67,8 @@ void output_start()
 	OBSData settings = load_settings(kProgramPropsFilename);
 
 	if (settings != nullptr) {
-		output = obs_output_create("aja_output", kProgramOutputID, settings,
-					   NULL);
+		output = obs_output_create("aja_output", kProgramOutputID,
+					   settings, NULL);
 
 		bool started = obs_output_start(output);
 		obs_data_release(settings);
@@ -290,13 +290,15 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	if (event == OBS_FRONTEND_EVENT_FINISHED_LOADING) {
 		OBSData settings = load_settings(kProgramPropsFilename);
 
-		if (settings && obs_data_get_bool(settings, kUIPropAutoStartOutput.id))
+		if (settings &&
+		    obs_data_get_bool(settings, kUIPropAutoStartOutput.id))
 			output_start();
 
 		OBSData previewSettings = load_settings(kPreviewPropsFilename);
 
 		if (previewSettings &&
-		    obs_data_get_bool(previewSettings, kUIPropAutoStartOutput.id))
+		    obs_data_get_bool(previewSettings,
+				      kUIPropAutoStartOutput.id))
 			preview_output_start();
 
 		// doUI->ShowHideDialog();
