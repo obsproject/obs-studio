@@ -1900,6 +1900,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		}
 	}
 
+	os_atomic_inc_long(&source->scene_item_refs);
+
 	full_unlock(scene);
 
 	if (!scene->source->context.private)
@@ -1947,8 +1949,12 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 			obs_source_release(item->show_transition);
 		if (item->hide_transition)
 			obs_source_release(item->hide_transition);
-		if (item->source)
+		if (item->source) {
+			if (os_atomic_dec_long(
+				    &item->source->scene_item_refs) == 0)
+				obs_source_remove(item->source);
 			obs_source_release(item->source);
+		}
 		da_free(item->audio_actions);
 		bfree(item);
 	}
