@@ -2078,13 +2078,13 @@ void OBSBasic::OBSInit()
 	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
 				  Qt::QueuedConnection, Q_ARG(int, 10));
 #endif
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 }
 
 void OBSBasic::OnFirstLoad()
 {
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
-
 #if defined(BROWSER_AVAILABLE) && defined(_WIN32)
 	/* Attempt to load init screen if available */
 	if (cef) {
