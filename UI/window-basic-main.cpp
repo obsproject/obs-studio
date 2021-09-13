@@ -3874,16 +3874,6 @@ void OBSBasic::RemoveSelectedScene()
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
-void OBSBasic::RemoveSelectedSceneItem()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (item) {
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (QueryRemoveSource(source))
-			obs_sceneitem_remove(item);
-	}
-}
-
 void OBSBasic::ReorderSources(OBSScene scene)
 {
 	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
