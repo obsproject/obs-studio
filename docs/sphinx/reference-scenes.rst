@@ -205,6 +205,20 @@ General Scene Functions
 
 .. function:: obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 
+   Creates a new scene item for a source within the scene. Created
+   with `tracked` being true, where the source will be removed once
+   the last tracked scene item for that source is removed.
+
+   :return: A new scene item for a source within a scene.  Does not
+            increment the reference
+
+---------------------
+
+.. function:: obs_sceneitem_t *obs_scene_add2(obs_scene_t *scene, obs_source_t *source, bool tracked)
+
+   Similar to :c:func:`obs_scene_add()`, with the difference being the
+   ability to set the `tracked` value.
+
    :return: A new scene item for a source within a scene.  Does not
             increment the reference
 

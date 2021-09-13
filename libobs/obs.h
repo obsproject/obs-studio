@@ -1617,6 +1617,12 @@ EXPORT bool obs_source_is_scene(const obs_source_t *source);
 /** Adds/creates a new scene item for a source */
 EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
 
+/** Adds/creates a new scene item for a source, with the option of tracking the
+ * scene item in the source's scene item refcount
+ */
+EXPORT obs_sceneitem_t *obs_scene_add2(obs_scene_t *scene, obs_source_t *source,
+				       bool tracked);
+
 typedef void (*obs_scene_atomic_update_func)(void *, obs_scene_t *scene);
 EXPORT void obs_scene_atomic_update(obs_scene_t *scene,
 				    obs_scene_atomic_update_func func,

@@ -1400,6 +1400,16 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->bounds_align = src->bounds_align;
 	dst->bounds = src->bounds;
 
+	if (dst->tracked != src->tracked) {
+		if (src->tracked) {
+			dst->tracked = true;
+			os_atomic_inc_long(&dst->source->scene_item_refs);
+		} else {
+			dst->tracked = false;
+			os_atomic_dec_long(&dst->source->scene_item_refs);
+		}
+	}
+
 	if (src->show_transition) {
 		obs_source_t *transition = obs_source_duplicate(
 			src->show_transition,
@@ -1812,7 +1822,8 @@ static inline bool source_has_audio(obs_source_t *source)
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
 					       obs_sceneitem_t *insert_after,
-					       bool create_texture)
+					       bool create_texture,
+					       bool tracked)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -1855,6 +1866,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->actions_mutex = mutex;
 	item->user_visible = true;
 	item->locked = false;
+	item->tracked = tracked;
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
@@ -1900,7 +1912,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		}
 	}
 
-	os_atomic_inc_long(&source->scene_item_refs);
+	if (item->tracked)
+		os_atomic_inc_long(&source->scene_item_refs);
 
 	full_unlock(scene);
 
@@ -1915,8 +1928,14 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
+	return obs_scene_add2(scene, source, true);
+}
+
+obs_sceneitem_t *obs_scene_add2(obs_scene_t *scene, obs_source_t *source,
+				bool tracked)
+{
 	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, source, NULL, true);
+		obs_scene_add_internal(scene, source, NULL, true, tracked);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -1950,7 +1969,8 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 		if (item->hide_transition)
 			obs_source_release(item->hide_transition);
 		if (item->source) {
-			if (os_atomic_dec_long(
+			if (item->tracked &&
+			    os_atomic_dec_long(
 				    &item->source->scene_item_refs) == 0)
 				obs_source_remove(item->source);
 			obs_source_release(item->source);
@@ -3004,7 +3024,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
 	obs_sceneitem_t *item = obs_scene_add_internal(scene, sub_scene->source,
-						       last_item, true);
+						       last_item, true, true);
 
 	obs_scene_release(sub_scene);
 
@@ -3116,7 +3136,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after,
-					     false);
+					     false, true);
 		duplicate_item_data(dst, last, true, true, true);
 		apply_group_transform(last, item);
 
