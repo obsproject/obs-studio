@@ -7,6 +7,7 @@
 #include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QUrl>
+#include <QRandomGenerator>
 
 #ifdef WIN32
 #include <windows.h>
@@ -192,15 +193,15 @@ void YoutubeAuth::ResetChat()
 
 QString YoutubeAuth::GenerateState()
 {
-	std::uniform_int_distribution<> distr(0, allowedCount);
-	std::string result;
-	result.reserve(YOUTUBE_API_STATE_LENGTH);
-	std::generate_n(std::back_inserter(result), YOUTUBE_API_STATE_LENGTH,
-			[&] {
-				return static_cast<char>(
-					allowedChars[distr(randomSeed)]);
-			});
-	return result.c_str();
+	char state[YOUTUBE_API_STATE_LENGTH + 1];
+	QRandomGenerator *rng = QRandomGenerator::system();
+	int i;
+
+	for (i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
+		state[i] = allowedChars[rng->bounded(0, allowedCount)];
+	state[i] = 0;
+
+	return state;
 }
 
 // Static.
