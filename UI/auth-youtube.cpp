@@ -231,6 +231,10 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	deobfuscate_str(&clientid[0], YOUTUBE_CLIENTID_HASH);
 	deobfuscate_str(&secret[0], YOUTUBE_SECRET_HASH);
 
+	QString state;
+	state = auth->GenerateState();
+	server.SetState(state);
+
 	QString url_template;
 	url_template += "%1";
 	url_template += "?response_type=code";
@@ -239,7 +243,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	url_template += "&state=%4";
 	url_template += "&scope=https://www.googleapis.com/auth/youtube";
 	QString url = url_template.arg(YOUTUBE_AUTH_URL, clientid.c_str(),
-				       redirect_uri, auth->GenerateState());
+				       redirect_uri, state);
 
 	QString text = QTStr("YouTube.Auth.WaitingAuth.Text");
 	text = text.arg(

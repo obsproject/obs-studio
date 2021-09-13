@@ -45,6 +45,11 @@ quint16 AuthListener::GetPort()
 	return server ? server->serverPort() : 0;
 }
 
+void AuthListener::SetState(QString state)
+{
+	this->state = state;
+}
+
 void AuthListener::NewConnection()
 {
 	QTcpSocket *socket = server->nextPendingConnection();
@@ -60,12 +65,34 @@ void AuthListener::NewConnection()
 			QString redirect = QString::fromLatin1(buffer);
 			blog(LOG_DEBUG, "redirect: %s", QT_TO_UTF8(redirect));
 
-			QRegularExpression re("(&|\\?)code=(?<code>[^&]+)");
-			QRegularExpressionMatch match = re.match(redirect);
-			if (!match.hasMatch())
-				blog(LOG_DEBUG, "no 'code' in server redirect");
+			QRegularExpression re_state(
+				"(&|\\?)state=(?<state>[^&]+)");
+			QRegularExpression re_code(
+				"(&|\\?)code=(?<code>[^&]+)");
 
-			QString code = match.captured("code");
+			QRegularExpressionMatch match =
+				re_state.match(redirect);
+
+			QString code;
+
+			if (match.hasMatch()) {
+				if (state == match.captured("state")) {
+					match = re_code.match(redirect);
+					if (!match.hasMatch())
+						blog(LOG_DEBUG, "no 'code' "
+								"in server "
+								"redirect");
+
+					code = match.captured("code");
+				} else {
+					blog(LOG_WARNING, "state mismatch "
+							  "while handling "
+							  "redirect");
+				}
+			} else {
+				blog(LOG_DEBUG, "no 'state' in "
+						"server redirect");
+			}
 
 			if (code.isEmpty()) {
 				auto data = QTStr("YouTube.Auth.NoCode");
