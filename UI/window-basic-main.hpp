@@ -170,6 +170,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
+	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
@@ -567,14 +568,17 @@ private:
 	bool autoStartBroadcast = true;
 	bool autoStopBroadcast = true;
 	bool broadcastActive = false;
+	bool broadcastReady = false;
 	QPointer<QThread> youtubeStreamCheckThread;
 #if YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
 	void YouTubeActionDialogOk(const QString &id, const QString &key,
-				   bool autostart, bool autostop);
+				   bool autostart, bool autostop,
+				   bool start_now);
 #endif
 	void BroadcastButtonClicked();
+	void SetBroadcastFlowEnabled(bool enabled);
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
@@ -584,6 +588,8 @@ public slots:
 	void DeferSaveEnd();
 
 	void DisplayStreamStartError();
+
+	void SetupBroadcast();
 
 	void StartStreaming();
 	void StopStreaming();

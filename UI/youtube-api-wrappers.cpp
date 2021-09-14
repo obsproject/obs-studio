@@ -409,6 +409,11 @@ void YoutubeApiWrappers::SetBroadcastId(QString &broadcast_id)
 	this->broadcast_id = broadcast_id;
 }
 
+QString YoutubeApiWrappers::GetBroadcastId()
+{
+	return this->broadcast_id;
+}
+
 bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
 {
 	lastErrorMessage.clear();

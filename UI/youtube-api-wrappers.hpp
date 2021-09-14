@@ -72,6 +72,7 @@ public:
 	bool StopLatestBroadcast();
 
 	void SetBroadcastId(QString &broadcast_id);
+	QString GetBroadcastId();
 
 	bool FindBroadcast(const QString &id, json11::Json &json_out);
 	bool FindStream(const QString &id, json11::Json &json_out);

@@ -1130,8 +1130,12 @@ void AutoConfig::SaveStreamSettings()
 	main->SetService(newService);
 	main->SaveService();
 	main->auth = streamPage->auth;
-	if (!!main->auth)
+	if (!!main->auth) {
 		main->auth->LoadUI();
+		main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
+	} else {
+		main->SetBroadcastFlowEnabled(false);
+	}
 
 	/* ---------------------------------- */
 	/* save stream settings               */
