@@ -17,6 +17,8 @@
 
 #pragma once
 
+#define REMOTE_TEXT_EXPORT __attribute__((visibility("default")))
+
 #include <QThread>
 #include <vector>
 #include <string>
@@ -63,7 +65,7 @@ public:
 	}
 };
 
-bool GetRemoteFile(
+REMOTE_TEXT_EXPORT bool GetRemoteFile(
 	const char *url, std::string &str, std::string &error,
 	long *responseCode = nullptr, const char *contentType = nullptr,
 	std::string request_type = "", const char *postData = nullptr,
