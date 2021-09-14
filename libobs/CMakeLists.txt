@@ -470,7 +470,8 @@ set(libobs_libobs_HEADERS
 	obs-source.h
 	obs-output.h
 	obs-ffmpeg-compat.h
-	obs.hpp)
+	obs.hpp
+	obs-utils.hpp)
 
 set(libobs_SOURCES
 	${libobs_callback_SOURCES}
