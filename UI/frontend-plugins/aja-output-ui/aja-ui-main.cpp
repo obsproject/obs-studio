@@ -300,8 +300,6 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 		    obs_data_get_bool(previewSettings,
 				      kUIPropAutoStartOutput.id))
 			preview_output_start();
-
-		// doUI->ShowHideDialog();
 	} else if (event == OBS_FRONTEND_EVENT_EXIT) {
 		if (main_output_running)
 			output_stop();

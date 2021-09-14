@@ -19,8 +19,6 @@ static const uint32_t kStreamingAppID = NTV2_FOURCC('O', 'B', 'S', ' ');
 
 namespace aja {
 
-// CardManager Singleton
-// http://www.modernescpp.com/index.php/thread-safe-initialization-of-data
 CardManager &CardManager::Instance()
 {
 	static CardManager instance;
@@ -153,11 +151,12 @@ std::string CardEntry::GetDisplayName() const
 		const std::string &serial = GetSerial();
 		if (!serial.empty())
 			oss << " (" << serial << ")";
+
 		return oss.str();
 	}
 
 	// very bad if we get here...
-	return "???";
+	return "Unknown";
 }
 
 std::string CardEntry::GetSerial() const
@@ -267,8 +266,7 @@ bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
 bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 				    const std::string &owner) const
 {
-	// uncomment if we add device-specific logic
-	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
 
 	NTV2InputSourceSet inputSources;
 	aja::IOSelectionToInputSources(io, inputSources);
@@ -292,21 +290,20 @@ bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 				     const std::string &owner) const
 {
-	// Handle checking special case outputs --
-	// HDMI Monitor uses framestore 4
+	/* Handle checking special case outputs before all other outputs.
+	 * 1. HDMI Monitor uses framestore 4
+	 * 2. SDI Monitor on Io 4K/Io 4K Plus, etc. uses framestore 4.
+	 * 3. Everything else...
+	 */
 	if (aja::CardCanDoHDMIMonitorOutput(id) &&
 	    io == IOSelection::HDMIMonitorOut) {
 		NTV2Channel hdmiMonChannel = NTV2_CHANNEL4;
 		return ChannelReady(hdmiMonChannel, owner);
-	}
-	// SDI Monitor on io4K/io4K+/etc. uses framestore 4
-	else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		 io == IOSelection::SDI5) {
+	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
+		   io == IOSelection::SDI5) {
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		return ChannelReady(sdiMonChannel, owner);
-	}
-	// Check readiness of all other channels
-	else {
+	} else {
 		NTV2OutputDestinations outputDests;
 		aja::IOSelectionToOutputDests(io, outputDests);
 		if (outputDests.size() > 0) {
@@ -330,8 +327,7 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 				      const std::string &owner)
 {
-	// uncomment if we handle device-specific input selections
-	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
 
 	NTV2InputSourceSet inputSources;
 	aja::IOSelectionToInputSources(io, inputSources);
@@ -365,8 +361,7 @@ bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 bool CardEntry::ReleaseInputSelection(IOSelection io, NTV2DeviceID id,
 				      const std::string &owner)
 {
-	// uncomment if we handle device-specific input selections
-	UNUSED_PARAMETER(id);
+	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
 
 	NTV2InputSourceSet currentInputSources;
 	aja::IOSelectionToInputSources(io, currentInputSources);

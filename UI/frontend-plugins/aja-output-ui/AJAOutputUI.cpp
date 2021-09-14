@@ -38,9 +38,9 @@ void AJAOutputUI::SetupPropertiesView()
 	obs_data_t *settings = obs_data_create();
 
 	OBSData data = load_settings(kProgramPropsFilename);
-	if (data)
+	if (data) {
 		obs_data_apply(settings, data);
-	else {
+	} else {
 		// apply default settings
 		obs_data_set_int(settings, kUIPropOutput.id,
 				 static_cast<long long>(IOSelection::Invalid));
@@ -89,9 +89,9 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 	obs_data_t *settings = obs_data_create();
 
 	OBSData data = load_settings(kPreviewPropsFilename);
-	if (data)
+	if (data) {
 		obs_data_apply(settings, data);
-	else {
+	} else {
 		// apply default settings
 		obs_data_set_int(settings, kUIPropOutput.id,
 				 static_cast<long long>(IOSelection::Invalid));

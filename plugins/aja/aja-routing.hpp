@@ -10,17 +10,19 @@
 
 class CNTV2Card;
 
-// The AJA hardware and NTV2 SDK uses a concept called "Signal Routing" to connect high-level firmware
-// blocks known as "Widgets" to one another via "crosspoint" connections. This facilitates streaming
-// data from one Widget to another for specific functions. Functions such as capture and output,
-// colorspace conversion and LUTs, mixing and keying, etc.
-// For example, in order to capture an SDI video signal from SDI spigot 1 into a YUV framebuffer
-// we must connect the YUV output crosspoint from the SDI1 Widget to the YUV input crosspoint of a
-// framebuffer Widget.
+/* The AJA hardware and NTV2 SDK uses a concept called "Signal Routing" to connect high-level firmware
+ * blocks known as "Widgets" to one another via "crosspoint" connections. This facilitates streaming
+ * data from one Widget to another to achieve specific functionality.
+ * Such functionality may include SDI/HDMI capture/output, colorspace conversion, hardware LUTs, etc.
+ * 
+ * This code references a table of RoutingConfig entries, where each entry contains the settings required
+ * to configure an AJA device for a particular capture or output task. These settings include the number of
+ * physical IO Widgets (SDI or HDMI) required, number of framestore Widgets required, register settings
+ * that must be enabled or disabled, and a special short-hand "route string".
+ * Of special note is the route string, which is parsed into a map of NTV2XptConnections. These connections
+ * are then applied as the "signal route", connecting the Widget's crosspoints together.
+ */
 
-// A group of settings for configuring a particular type of signal route on an AJA card.
-// For example a group of settings might represent the settings required to configure the
-// card for capturing 2x SDI 4K two-sample-interleave YCbCr, or outputting 1x HDMI RGB, etc.
 struct RoutingConfig {
 	NTV2Mode mode;            // capture or playout?
 	uint32_t num_wires;       // number of physical connections
@@ -39,12 +41,13 @@ struct RoutingConfig {
 		route_string; // signal routing shorthand string to parse into crosspoint connections
 };
 
-// This table is used to correlate a particular "raster definition" (i.e. SD/HD/4K/etc.)
-// and SMPTE VPID transport byte (VPIDStandard) to an SDIWireFormat enum.
-// This allows mapping SDI video signals to the correct format, particularly in the case
-// where multiple SDI formats share the same VPID transport value.
-// For example: VPIDStandard_1080 (0x85) is used on the wire for both single-link (1x SDI wire)
-// 1080-line HD SDI video AND quad-link (4x SDI wires) UHD/4K "square-division" video.
+/* This table is used to correlate a particular "raster definition" (i.e. SD/HD/4K/etc.)
+ * and SMPTE VPID transport byte (VPIDStandard) to an SDIWireFormat enum.
+ * This allows mapping SDI video signals to the correct format, particularly in the case
+ * where multiple SDI formats share the same VPID transport value.
+ * For example: VPIDStandard_1080 (0x85) is used on the wire for both single-link (1x SDI wire)
+ * 1080-line HD SDI video AND quad-link (4x SDI wires) UHD/4K "square-division" video.
+ */
 using VPIDSpec = std::pair<RasterDefinition, VPIDStandard>;
 
 // clang-format off

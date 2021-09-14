@@ -20,11 +20,12 @@ namespace aja {
 
 using ChannelPwnz = std::map<std::string, int32_t>;
 
-// A CardEntry for each physical AJA card is added to a map retained by the CardManager.
-// Each CardEntry itself maintains a map representing which AJA card "Channels" are owned
-// by a particular capture or output plugin instance. The Channel ownership map is then
-// used to determine which "IOSelection" (i.e. SDI1, SDI3+4, HDMI Out, etc.) options
-// are either accessible or grayed out in the capture and output plugin UIs.
+/* A CardEntry for each physical AJA card is added to a map retained by the CardManager.
+ * Each CardEntry itself maintains a map representing the AJA card "Channels" the are
+ * owned by a particular capture or output plugin instance. The Channel ownership map is
+ * then used to determine which "IOSelection" (i.e. SDI1, SDI3+4, HDMI Monitor Output, etc.)
+ * drop-down menu items are either accessible or grayed out in the capture and output plugin UIs.
+ */
 class CardEntry {
 public:
 	CardEntry(uint32_t cardIndex, const std::string &cardID);
@@ -70,9 +71,12 @@ protected:
 using CardEntryPtr = std::shared_ptr<CardEntry>;
 using CardEntries = std::map<std::string, CardEntryPtr>;
 
-// The CardManager enumerates the physical AJA cards in the system, shuts them down
-// on exit and maintains a map of CardEntry objects. Each CardEntry object holds a
-// pointer to the CNTV2Card instance and a map of Channels "owned" by each plugin instance.
+/* The CardManager enumerates the physical AJA cards in the system, reverts them to a default
+ * state on exit, and maintains a map of CardEntry objects corresponding to each physical card.
+ * Each CardEntry object holds a pointer to the CNTV2Card instance and a map of NTV2Channels
+ * that are "owned" by each plugin instance. NTV2Channels are essentially treated as indices
+ * for various firwmare Widgets and sub-systems throughout the AJA NTV2 SDK.
+ */
 class CardManager {
 public:
 	static CardManager &Instance();

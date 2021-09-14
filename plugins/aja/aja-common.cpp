@@ -36,7 +36,6 @@ void filter_io_selection_input_list(const std::string &cardID,
 			continue;
 		}
 
-		// bool enabled = cardManager.IOSelectionInputReady(cardID, channelOwner, io_select);
 		bool enabled = cardEntry->InputSelectionReady(
 			io_select, deviceID, channelOwner);
 		obs_property_list_item_disable(list, idx, !enabled);
@@ -176,9 +175,6 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 		orderedStandards.push_back(NTV2_STANDARD_4096HFR);
 	}
 
-	// No 8K support for initial release
-	// stdOrder.push_back(NTV2_STANDARD_7680);
-	// stdOrder.push_back(NTV2_STANDARD_8192);
 	aja::GetSortedVideoFormats(deviceID, orderedStandards, videoFormats);
 	for (const auto &vf : videoFormats) {
 		bool addFormat = true;
@@ -257,16 +253,13 @@ video_format AJAPixelFormatToOBSVideoFormat(NTV2PixelFormat pf)
 		obs_video_format = VIDEO_FORMAT_BGRA;
 		break;
 	case NTV2_FBF_10BIT_YCBCR:
-	// case NTV2_FBF_ARGB:
 	case NTV2_FBF_10BIT_RGB:
 	case NTV2_FBF_8BIT_YCBCR_YUY2:
-	// case NTV2_FBF_ABGR:
 	case NTV2_FBF_10BIT_DPX:
 	case NTV2_FBF_10BIT_YCBCR_DPX:
 	case NTV2_FBF_8BIT_DVCPRO:
 	case NTV2_FBF_8BIT_YCBCR_420PL3:
 	case NTV2_FBF_8BIT_HDV:
-	// case NTV2_FBF_24BIT_RGB:
 	case NTV2_FBF_10BIT_YCBCRA:
 	case NTV2_FBF_10BIT_DPX_LE:
 	case NTV2_FBF_48BIT_RGB:

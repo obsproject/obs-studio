@@ -28,9 +28,8 @@ static const char *kFrameSyncNickname = "fsync";
 static const char *kTestPatternNickname = "pat";
 static const char *kOENickname = "oe";
 
-// clang-format off
-
 // Table of firmware widget's input crosspoint/id/channel/name/datastream index
+// clang-format off
 static const WidgetInputSocket kWidgetInputSockets[] = {
 	// NTV2InputCrosspointID        | NTV2WidgetID       | NTV2Channel         | Name | DatastreamIndex
 	{ NTV2_INPUT_CROSSPOINT_INVALID, NTV2_WIDGET_INVALID, NTV2_CHANNEL_INVALID, "", -1},

@@ -31,10 +31,9 @@ RasterDefinition GetRasterDefinition(IOSelection io, NTV2VideoFormat vf,
 	} else if (NTV2_IS_QUAD_FRAME_FORMAT(vf)) {
 		def = RasterDefinition::UHD_4K;
 
-		// NOTE(paulh): Special enum for Kona5 Retail & IO4K+ firmwares
-		// which route UHD/4K formats over 1x 6G/12G SDI using an undocumented crosspoint config.
-		// Ideally this special case would be handled in some other manner but it will have to
-		// suffice for now.
+		/* NOTE(paulh): Special enum for Kona5 Retail & IO4K+ firmwares which route UHD/4K formats
+		 * over 1x 6G/12G SDI using an undocumented crosspoint config.
+		 */
 		if (aja::IsSDIOneWireIOSelection(io) &&
 		    aja::IsRetailSDI12G(deviceID))
 			def = RasterDefinition::UHD_4K_Retail_12G;
@@ -65,26 +64,32 @@ std::string RasterDefinitionToString(RasterDefinition rd)
 	return str;
 }
 
-// clang-format off
-
-// Parse the widget routing shorthand string into a map of input and output NTV2CrosspointIDs.
-// For example "sdi[0][0]->fb[0][0]" is shorthand for connecting the output crosspoint for
-// SDI1/Datastream1 (NTV2_XptSDIIn1) to the input crosspoint for Framestore1/Datastream1 (NTV2_XptFrameBuffer1Input).
-// These routing shorthand strings are found within the RoutingConfig structs in the "routing" sub-directory of the plugin.
-bool Routing::ParseRouteString(const std::string& route, NTV2XptConnections &cnx)
+/*
+ * Parse the widget routing shorthand string into a map of input and output NTV2CrosspointIDs.
+ * For example "sdi[0][0]->fb[0][0]" is shorthand for connecting the output crosspoint for
+ * SDI1/Datastream1 (NTV2_XptSDIIn1) to the input crosspoint for Framestore1/Datastream1 (NTV2_XptFrameBuffer1Input).
+ * These routing shorthand strings are found within the RoutingConfig structs in the "routing" sub-directory of the plugin.
+ */
+bool Routing::ParseRouteString(const std::string &route,
+			       NTV2XptConnections &cnx)
 {
-	blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Input string: %s", route.c_str());
+	blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Input string: %s",
+	     route.c_str());
 
 	std::string route_lower(route);
 	route_lower = aja::lower(route_lower);
 	const std::string &route_strip = aja::replace(route_lower, " ", "");
 
 	if (route_strip.empty()) {
-		blog(LOG_DEBUG, "Routing::ParseRouteString: input string is empty!");
+		blog(LOG_DEBUG,
+		     "Routing::ParseRouteString: input string is empty!");
 		return false;
 	}
 
-	//TODO(paulh): Need to tally up the lines and tokens and check that all are parsed OK
+	/* TODO(paulh): Tally up the lines and tokens and check that they are all parsed OK.
+	 * Right now we just return true if ANY tokens were parsed. This is OK _for now_ because
+	 * the route strings currently only come from a known set.
+	 */
 	NTV2StringList lines;
 	NTV2StringList tokens;
 
@@ -95,45 +100,56 @@ bool Routing::ParseRouteString(const std::string& route, NTV2XptConnections &cnx
 	int32_t parse_ok = 0;
 	for (const auto &l : lines) {
 		if (l.empty()) {
-			blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Empty line!");
+			blog(LOG_DEBUG,
+			     "aja::Routing::ParseRouteString: Empty line!");
 			continue;
 		}
 
-		blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Line: %s", l.c_str());
+		blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Line: %s",
+		     l.c_str());
 
 		NTV2StringList tokens = aja::split(l, "->");
 		if (tokens.empty() || tokens.size() != 2) {
-			blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Invalid token count!");
+			blog(LOG_DEBUG,
+			     "aja::Routing::ParseRouteString: Invalid token count!");
 			continue;
 		}
 
 		const std::string &left = tokens[0];  // output crosspoint
 		const std::string &right = tokens[1]; // input crosspoint
 		if (left.empty() || left.length() > 64) {
-			blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Invalid Left token!");
+			blog(LOG_DEBUG,
+			     "aja::Routing::ParseRouteString: Invalid Left token!");
 			continue;
 		}
 		if (right.empty() || right.length() > 64) {
-			blog(LOG_DEBUG, "aja::Routing::ParseRouteString: Invalid right token!");
+			blog(LOG_DEBUG,
+			     "aja::Routing::ParseRouteString: Invalid right token!");
 			continue;
 		}
 
 		blog(LOG_DEBUG,
-			"aja::Routing::ParseRouteString: Left Token: %s -> Right Token: %s",
-			left.c_str(), right.c_str());
+		     "aja::Routing::ParseRouteString: Left Token: %s -> Right Token: %s",
+		     left.c_str(), right.c_str());
 
 		// Parse Output Crosspoint from left token
 		int32_t out_chan = 0;
 		int32_t out_ds = 0;
 		std::string out_name(64, ' ');
-		if (std::sscanf(left.c_str(), "%[A-Za-z_0-9][%d][%d]", &out_name[0], &out_chan, &out_ds)) {
-			out_name = aja::rstrip(out_name).substr(0, out_name.find_first_of('\0'));
+		if (std::sscanf(left.c_str(), "%[A-Za-z_0-9][%d][%d]",
+				&out_name[0], &out_chan, &out_ds)) {
+			out_name = aja::rstrip(out_name).substr(
+				0, out_name.find_first_of('\0'));
 
 			WidgetOutputSocket widget_out;
-			if (WidgetOutputSocket::Find(out_name, (NTV2Channel)out_chan, out_ds, widget_out)) {
+			if (WidgetOutputSocket::Find(out_name,
+						     (NTV2Channel)out_chan,
+						     out_ds, widget_out)) {
 				blog(LOG_DEBUG,
-						"aja::Routing::ParseRouteString: Found NTV2OutputCrosspointID %s",
-						NTV2OutputCrosspointIDToString(widget_out.id).c_str());
+				     "aja::Routing::ParseRouteString: Found NTV2OutputCrosspointID %s",
+				     NTV2OutputCrosspointIDToString(
+					     widget_out.id)
+					     .c_str());
 
 				// Parse Input Crosspoint from right token
 				int32_t inp_chan = 0;
@@ -143,31 +159,38 @@ bool Routing::ParseRouteString(const std::string& route, NTV2XptConnections &cnx
 						"%[A-Za-z_0-9][%d][%d]",
 						&inp_name[0], &inp_chan,
 						&inp_ds)) {
-					inp_name = aja::rstrip(inp_name).substr(0, inp_name.find_first_of('\0'));
+					inp_name = aja::rstrip(inp_name).substr(
+						0,
+						inp_name.find_first_of('\0'));
 
 					WidgetInputSocket widget_inp;
-					if (WidgetInputSocket::Find(inp_name, (NTV2Channel)inp_chan, inp_ds, widget_inp)) {
+					if (WidgetInputSocket::Find(
+						    inp_name,
+						    (NTV2Channel)inp_chan,
+						    inp_ds, widget_inp)) {
 						blog(LOG_DEBUG,
-								"aja::Routing::ParseRouteString: Found NTV2InputCrosspointID %s",
-								NTV2InputCrosspointIDToString(widget_inp.id).c_str());
+						     "aja::Routing::ParseRouteString: Found NTV2InputCrosspointID %s",
+						     NTV2InputCrosspointIDToString(
+							     widget_inp.id)
+							     .c_str());
 
-						cnx[widget_inp.id] = widget_out.id;
+						cnx[widget_inp.id] =
+							widget_out.id;
 						parse_ok++;
 					} else {
 						blog(LOG_DEBUG,
-								"aja::Routing::ParseRouteString: NTV2InputCrosspointID not found!");
+						     "aja::Routing::ParseRouteString: NTV2InputCrosspointID not found!");
 					}
 				}
 			} else {
 				blog(LOG_DEBUG,
-						"aja::Routing::ParseRouteString: NTV2OutputCrosspointID not found!");
+				     "aja::Routing::ParseRouteString: NTV2OutputCrosspointID not found!");
 			}
 		}
 	}
 
 	return parse_ok > 0;
 }
-// clang-format on
 
 // Determine the appropriate SDIWireFormat based on the specified device ID and VPID specification.
 bool Routing::DetermineSDIWireFormat(NTV2DeviceID deviceID, VPIDSpec spec,
@@ -733,17 +756,18 @@ void Routing::ConfigureOutputAudio(const OutputProps &props, CNTV2Card *card)
 	card->SetSDIOutputAudioSystem(channel, audioSys);
 	card->SetSDIOutputDS2AudioSystem(channel, audioSys);
 
-	// NOTE(paulh):
-	// The SDK has a specifies an SDI audio system by Channel rather than by SDI output
-	// and certain devices require setting the SDI audio system to NTV2_CHANNEL1.
-	// i.e.
-	// SDI 1 = NTV2_CHANNEL1
-	// SDI 2 = NTV2_CHANNEL2
-	// ...
-	// SDI 5/Monitor = NTV2_CHANNEL5
-	// etc...
-	//
-	// This fixes bugs: 10730, 10986, 16274
+	/* NOTE(paulh):
+	 * The SDK has a specifies an SDI audio system by Channel rather than by SDI output
+	 * and certain devices require setting the SDI audio system to NTV2_CHANNEL1.
+	 * i.e.
+	 * SDI 1 = NTV2_CHANNEL1
+	 * SDI 2 = NTV2_CHANNEL2
+	 * ...
+	 * SDI 5/Monitor = NTV2_CHANNEL5
+	 * etc...
+	 *
+	 * This fixes AJA internal bugs: 10730, 10986, 16274
+	 */
 	if (deviceID == DEVICE_ID_IOXT || deviceID == DEVICE_ID_IO4KUFC ||
 	    deviceID == DEVICE_ID_IO4KPLUS || deviceID == DEVICE_ID_KONA1 ||
 	    deviceID == DEVICE_ID_KONA3G || deviceID == DEVICE_ID_KONA4UFC ||
