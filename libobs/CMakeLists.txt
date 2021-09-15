@@ -1,5 +1,9 @@
 project(libobs)
 
+find_package(Libcurl REQUIRED)
+include_directories(${LIBCURL_INCLUDE_DIRS})
+add_definitions(${LIBCURL_DEFINITIONS})
+
 find_package(Threads REQUIRED)
 
 find_package(FFmpeg REQUIRED
@@ -434,7 +438,8 @@ set(libobs_libobs_SOURCES
 	obs-scene.c
 	obs-audio.c
 	obs-video-gpu-encode.c
-	obs-video.c)
+	obs-video.c
+	obs-remote-text.cpp)
 set(libobs_libobs_HEADERS
 	util/simde/check.h
 	util/simde/debug-trap.h
@@ -551,7 +556,8 @@ target_link_libraries(libobs
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
 		${ZLIB_LIBRARIES}
-		Threads::Threads)
+		Threads::Threads
+		${LIBCURL_LIBRARIES})
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)
