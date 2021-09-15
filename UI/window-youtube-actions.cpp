@@ -704,6 +704,10 @@ void OBSYoutubeActions::LoadSettings()
 	else
 		ui->notMakeForKids->setChecked(true);
 
+	bool schedLater = config_get_bool(main->basicConfig, "YouTube",
+					  "ScheduleForLater");
+	ui->checkScheduledLater->setChecked(schedLater);
+
 	bool autoStart =
 		config_get_bool(main->basicConfig, "YouTube", "AutoStart");
 	ui->checkAutoStart->setChecked(autoStart);
@@ -711,10 +715,6 @@ void OBSYoutubeActions::LoadSettings()
 	bool autoStop =
 		config_get_bool(main->basicConfig, "YouTube", "AutoStop");
 	ui->checkAutoStop->setChecked(autoStop);
-
-	bool schedLater = config_get_bool(main->basicConfig, "YouTube",
-					  "ScheduleForLater");
-	ui->checkScheduledLater->setChecked(schedLater);
 
 	const char *projection =
 		config_get_string(main->basicConfig, "YouTube", "Projection");
