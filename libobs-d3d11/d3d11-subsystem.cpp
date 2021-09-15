@@ -50,12 +50,6 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 	}
 }
 
-static const IID dxgiFactory2 = {0x50c83a1c,
-				 0xe072,
-				 0x4c48,
-				 {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6,
-				  0xd0}};
-
 gs_obj::gs_obj(gs_device_t *device_, gs_type type)
 	: device(device_), obj_type(type)
 {
@@ -211,10 +205,10 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 
 		ComPtr<IDXGIFactory5> factory5;
-		HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory5));
-		if (SUCCEEDED(hr)) {
+		factory5 = ComQIPtr<IDXGIFactory5>(device->factory);
+		if (factory5) {
 			BOOL featureSupportData = FALSE;
-			hr = factory5->CheckFeatureSupport(
+			const HRESULT hr = factory5->CheckFeatureSupport(
 				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
 				&featureSupportData,
 				sizeof(featureSupportData));
@@ -272,11 +266,7 @@ void gs_device::InitCompiler()
 
 void gs_device::InitFactory()
 {
-	HRESULT hr;
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 }
@@ -902,10 +892,7 @@ EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
 	HRESULT hr;
 	UINT i;
 
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
@@ -1047,10 +1034,7 @@ static inline void LogD3DAdapters()
 
 	blog(LOG_INFO, "Available Video Adapters: ");
 
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
@@ -2972,10 +2956,8 @@ uint32_t gs_get_adapter_count(void)
 {
 	uint32_t count = 0;
 
-	const IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						      : __uuidof(IDXGIFactory1);
 	ComPtr<IDXGIFactory1> factory;
-	HRESULT hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (SUCCEEDED(hr)) {
 		ComPtr<IDXGIAdapter1> adapter;
 		for (UINT i = 0;
