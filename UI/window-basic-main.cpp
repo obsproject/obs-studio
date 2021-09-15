@@ -1373,6 +1373,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 	}
 
 	/* ----------------------------------------------------- */
+	/* enforce minimum retry delay of 1 second prior to 27.1 */
+	if (config_has_user_value(basicConfig, "Output", "RetryDelay")) {
+		int retryDelay =
+			config_get_uint(basicConfig, "Output", "RetryDelay");
+		if (retryDelay < 1) {
+			config_set_uint(basicConfig, "Output", "RetryDelay", 1);
+			changed = true;
+		}
+	}
+
+	/* ----------------------------------------------------- */
 
 	if (changed)
 		config_save_safe(basicConfig, "tmp", nullptr);
