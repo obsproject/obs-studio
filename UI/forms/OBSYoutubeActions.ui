@@ -59,6 +59,9 @@
          <property name="text">
           <string>YouTube.Actions.Title</string>
          </property>
+         <property name="buddy">
+          <cstring>title</cstring>
+         </property>
         </widget>
        </item>
        <item row="0" column="1">
@@ -76,6 +79,9 @@
          <property name="text">
           <string>YouTube.Actions.Description</string>
          </property>
+         <property name="buddy">
+          <cstring>description</cstring>
+         </property>
         </widget>
        </item>
        <item row="1" column="1">
@@ -89,6 +95,9 @@
         <widget class="QLabel" name="label_4">
          <property name="text">
           <string>YouTube.Actions.Privacy</string>
+         </property>
+         <property name="buddy">
+          <cstring>privacyBox</cstring>
          </property>
         </widget>
        </item>
@@ -109,6 +118,9 @@
         <widget class="QLabel" name="label_5">
          <property name="text">
           <string>YouTube.Actions.Category</string>
+         </property>
+         <property name="buddy">
+          <cstring>categoryBox</cstring>
          </property>
         </widget>
        </item>
@@ -226,6 +238,9 @@
           <widget class="QLabel" name="label_3">
            <property name="text">
             <string>YouTube.Actions.Latency</string>
+           </property>
+           <property name="buddy">
+            <cstring>latencyBox</cstring>
            </property>
           </widget>
          </item>
