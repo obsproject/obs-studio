@@ -382,6 +382,62 @@ static void vlcs_video_display(void *data, void *picture)
 	UNUSED_PARAMETER(picture);
 }
 
+static void calculate_display_size(struct vlc_source *c, unsigned *width,
+				   unsigned *height)
+{
+	libvlc_media_t *media = libvlc_media_player_get_media_(c->media_player);
+
+	if (!media)
+		return;
+
+	libvlc_media_track_t **tracks;
+
+	unsigned count = libvlc_media_tracks_get_(media, &tracks);
+
+	if (count > 0) {
+		for (unsigned i = 0; i < count; i++) {
+			libvlc_media_track_t *track = tracks[i];
+
+			if (track->i_type != libvlc_track_video)
+				continue;
+
+			int display_width = track->video->i_width;
+			int display_height = track->video->i_height;
+
+			if (display_width == 0 || display_height == 0)
+				continue;
+
+			/* Adjust for Sample Aspect Ratio (SAR) */
+			if (track->video->i_sar_num > 0 &&
+			    track->video->i_sar_den > 0) {
+				display_width = display_width *
+						track->video->i_sar_num /
+						track->video->i_sar_den;
+			}
+
+			switch (track->video->i_orientation) {
+			case libvlc_video_orient_left_top:
+			case libvlc_video_orient_left_bottom:
+			case libvlc_video_orient_right_top:
+			case libvlc_video_orient_right_bottom:
+				/* orientation swaps height and width */
+				*width = display_height;
+				*height = display_width;
+				break;
+			default:
+				/* height and width not swapped */
+				*width = display_width;
+				*height = display_height;
+				break;
+			}
+		}
+
+		libvlc_media_tracks_release_(tracks, count);
+	}
+
+	libvlc_media_release_(media);
+}
+
 static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 				  unsigned *height, unsigned *pitches,
 				  unsigned *lines)
@@ -396,19 +452,12 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	/* This is used because VLC will by default try to use a different
-	 * scaling than what the file uses (probably for optimization reasons).
-	 * For example, if the file is 1920x1080, it will try to render it by
-	 * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
-	 * gets the actual video file's size, and thus fixes the problem.
-	 * However this doesn't work with URLs, so if it returns a 0 value, it
-	 * shouldn't be used. */
-	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
-
-	if (new_width && new_height) {
-		*width = new_width;
-		*height = new_height;
-	}
+	/* The width and height passed from VLC are the buffer size rather than
+	 * the correct video display size, and may be the next multiple of 32
+	 * up from the original dimension, e.g. 1080 would become 1088. VLC 4.0
+	 * will pass the correct display size in *(width+1) and *(height+1) but
+	 * for now we need to calculate it ourselves. */
+	calculate_display_size(c, width, height);
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format || c->frame.width != *width ||
