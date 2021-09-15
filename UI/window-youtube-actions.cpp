@@ -8,6 +8,9 @@
 #include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QImageReader>
 
 const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";
@@ -90,6 +93,55 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 	ui->helpAutoStartStop->setVisible(false);
 
 	ui->scheduledTime->setDateTime(QDateTime::currentDateTime());
+
+	auto thumbSelectionHandler = [&]() {
+		if (thumbnailFile.isEmpty()) {
+			QString filePath = OpenFile(
+				this,
+				QTStr("YouTube.Actions.Thumbnail.SelectFile"),
+				QStandardPaths::writableLocation(
+					QStandardPaths::PicturesLocation),
+				QString("Images (*.png *.jpg *.jpeg *.gif)"));
+
+			if (!filePath.isEmpty()) {
+				QFileInfo tFile(filePath);
+				if (!tFile.exists()) {
+					return ShowErrorDialog(
+						this,
+						QTStr("YouTube.Actions.Error.FileMissing"));
+				} else if (tFile.size() > 2 * 1024 * 1024) {
+					return ShowErrorDialog(
+						this,
+						QTStr("YouTube.Actions.Error.FileTooLarge"));
+				}
+
+				thumbnailFile = filePath;
+				ui->selectedFileName->setText(thumbnailFile);
+				ui->selectFileButton->setText(QTStr(
+					"YouTube.Actions.Thumbnail.ClearFile"));
+
+				QImageReader imgReader(filePath);
+				imgReader.setAutoTransform(true);
+				const QImage newImage = imgReader.read();
+				ui->thumbnailPreview->setPixmap(
+					QPixmap::fromImage(newImage).scaled(
+						160, 90, Qt::KeepAspectRatio));
+			}
+		} else {
+			thumbnailFile.clear();
+			ui->selectedFileName->setText(QTStr(
+				"YouTube.Actions.Thumbnail.NoFileSelected"));
+			ui->selectFileButton->setText(
+				QTStr("YouTube.Actions.Thumbnail.SelectFile"));
+			ui->thumbnailPreview->setPixmap(
+				GetPlaceholder().pixmap(QSize(16, 16)));
+		}
+	};
+
+	connect(ui->selectFileButton, &QPushButton::clicked, this,
+		thumbSelectionHandler);
+	connect(ui->thumbnailPreview, &ClickableLabel::clicked, this,
+		thumbSelectionHandler);
 
 	if (!apiYouTube) {
 		blog(LOG_DEBUG, "YouTube API auth NOT found.");
@@ -243,6 +295,14 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
 	this->resize(this->width() + 200, this->height() + 120);
 #endif
 	valid = true;
+}
+
+void OBSYoutubeActions::showEvent(QShowEvent *event)
+{
+	QDialog::showEvent(event);
+	if (thumbnailFile.isEmpty())
+		ui->thumbnailPreview->setPixmap(
+			GetPlaceholder().pixmap(QSize(16, 16)));
 }
 
 OBSYoutubeActions::~OBSYoutubeActions()
@@ -420,6 +480,15 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
 					  broadcast.category.id)) {
 		blog(LOG_DEBUG, "No category set.");
 		return false;
+	}
+	if (!thumbnailFile.isEmpty()) {
+		blog(LOG_INFO, "Uploading thumbnail file \"%s\"...",
+		     thumbnailFile.toStdString().c_str());
+		if (!apiYouTube->SetVideoThumbnail(broadcast.id,
+						   thumbnailFile)) {
+			blog(LOG_DEBUG, "No thumbnail set.");
+			return false;
+		}
 	}
 
 	if (!stream_later || ready_broadcast) {
@@ -664,6 +733,8 @@ void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 			broadcast.schedul_for_later);
 	config_set_string(main->basicConfig, "YouTube", "Projection",
 			  QT_TO_UTF8(broadcast.projection));
+	config_set_string(main->basicConfig, "YouTube", "ThumbnailFile",
+			  QT_TO_UTF8(thumbnailFile));
 	config_set_bool(main->basicConfig, "YouTube", "RememberSettings", true);
 }
 
@@ -723,6 +794,26 @@ void OBSYoutubeActions::LoadSettings()
 			ui->check360Video->setChecked(true);
 		else
 			ui->check360Video->setChecked(false);
+	}
+
+	const char *thumbFile = config_get_string(main->basicConfig, "YouTube",
+						  "ThumbnailFile");
+	if (thumbFile && *thumbFile) {
+		QFileInfo tFile(thumbFile);
+		// Re-check validity before setting path again
+		if (tFile.exists() && tFile.size() <= 2 * 1024 * 1024) {
+			thumbnailFile = tFile.absoluteFilePath();
+			ui->selectedFileName->setText(thumbnailFile);
+			ui->selectFileButton->setText(
+				QTStr("YouTube.Actions.Thumbnail.ClearFile"));
+
+			QImageReader imgReader(thumbnailFile);
+			imgReader.setAutoTransform(true);
+			const QImage newImage = imgReader.read();
+			ui->thumbnailPreview->setPixmap(
+				QPixmap::fromImage(newImage).scaled(
+					160, 90, Qt::KeepAspectRatio));
+		}
 	}
 }
 

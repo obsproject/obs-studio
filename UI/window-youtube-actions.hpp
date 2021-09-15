@@ -30,6 +30,8 @@ signals:
 
 class OBSYoutubeActions : public QDialog {
 	Q_OBJECT
+	Q_PROPERTY(QIcon thumbPlaceholder READ GetPlaceholder WRITE
+			   SetPlaceholder DESIGNABLE true)
 
 	std::unique_ptr<Ui::OBSYoutubeActions> ui;
 
@@ -38,6 +40,7 @@ signals:
 		bool autostop, bool start_now);
 
 protected:
+	void showEvent(QShowEvent *event);
 	void UpdateOkButtonStatus();
 
 	bool CreateEventAction(YoutubeApiWrappers *api,
@@ -65,10 +68,15 @@ private:
 	void SaveSettings(BroadcastDescription &broadcast);
 	void LoadSettings();
 
+	QIcon GetPlaceholder() { return thumbPlaceholder; }
+	void SetPlaceholder(const QIcon &icon) { thumbPlaceholder = icon; }
+
 	QString selectedBroadcast;
 	bool autostart, autostop;
 	bool valid = false;
 	bool broadcastReady = false;
 	YoutubeApiWrappers *apiYouTube;
 	WorkerThread *workerThread;
+	QString thumbnailFile;
+	QIcon thumbPlaceholder;
 };

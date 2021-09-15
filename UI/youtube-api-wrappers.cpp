@@ -1,6 +1,8 @@
 #include "youtube-api-wrappers.hpp"
 
 #include <QUrl>
+#include <QMimeDatabase>
+#include <QFile>
 
 #include <string>
 #include <iostream>
@@ -27,6 +29,8 @@ using namespace json11;
 #define YOUTUBE_LIVE_TOKEN_URL "https://oauth2.googleapis.com/token"
 #define YOUTUBE_LIVE_VIDEOCATEGORIES_URL YOUTUBE_LIVE_API_URL "/videoCategories"
 #define YOUTUBE_LIVE_VIDEOS_URL YOUTUBE_LIVE_API_URL "/videos"
+#define YOUTUBE_LIVE_THUMBNAIL_URL \
+	"https://www.googleapis.com/upload/youtube/v3/thumbnails/set"
 
 #define DEFAULT_BROADCASTS_PER_QUERY \
 	"50" // acceptable values are 0 to 50, inclusive
@@ -58,22 +62,25 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 					  const char *content_type,
 					  std::string request_type,
 					  const char *data, Json &json_out,
-					  long *error_code)
+					  long *error_code, int data_size)
 {
 	long httpStatusCode = 0;
 
 #ifdef _DEBUG
 	blog(LOG_DEBUG, "YouTube API command URL: %s", url);
-	blog(LOG_DEBUG, "YouTube API command data: %s", data);
+	if (data && data[0] == '{') // only log JSON data
+		blog(LOG_DEBUG, "YouTube API command data: %s", data);
 #endif
 	if (token.empty())
 		return false;
 	std::string output;
 	std::string error;
+	// Increase timeout by the time it takes to transfer `data_size` at 1 Mbps
+	int timeout = 5 + data_size / 125000;
 	bool success = GetRemoteFile(url, output, error, &httpStatusCode,
 				     content_type, request_type, data,
 				     {"Authorization: Bearer " + token},
-				     nullptr, 5, false);
+				     nullptr, timeout, false, data_size);
 	if (error_code)
 		*error_code = httpStatusCode;
 
@@ -126,18 +133,20 @@ bool YoutubeApiWrappers::UpdateAccessToken()
 bool YoutubeApiWrappers::InsertCommand(const char *url,
 				       const char *content_type,
 				       std::string request_type,
-				       const char *data, Json &json_out)
+				       const char *data, Json &json_out,
+				       int data_size)
 {
 	long error_code;
 	bool success = TryInsertCommand(url, content_type, request_type, data,
-					json_out, &error_code);
+					json_out, &error_code, data_size);
 
 	if (error_code == 401) {
 		// Attempt to update access token and try again
 		if (!UpdateAccessToken())
 			return false;
 		success = TryInsertCommand(url, content_type, request_type,
-					   data, json_out, &error_code);
+					   data, json_out, &error_code,
+					   data_size);
 	}
 
 	if (json_out.object_items().find("error") !=
@@ -359,6 +368,36 @@ bool YoutubeApiWrappers::SetVideoCategory(const QString &video_id,
 	Json json_out;
 	return InsertCommand(url, "application/json", "PUT",
 			     data.dump().c_str(), json_out);
+}
+
+bool YoutubeApiWrappers::SetVideoThumbnail(const QString &video_id,
+					   const QString &thumbnail_file)
+{
+	lastErrorMessage.clear();
+	lastErrorReason.clear();
+
+	// Make sure the file hasn't been deleted since originally selecting it
+	if (!QFile::exists(thumbnail_file)) {
+		lastErrorMessage = QTStr("YouTube.Actions.Error.FileMissing");
+		return false;
+	}
+
+	QFile thumbFile(thumbnail_file);
+	if (!thumbFile.open(QFile::ReadOnly)) {
+		lastErrorMessage =
+			QTStr("YouTube.Actions.Error.FileOpeningFailed");
+		return false;
+	}
+
+	const QByteArray fileContents = thumbFile.readAll();
+	const QString mime =
+		QMimeDatabase().mimeTypeForData(fileContents).name();
+
+	const QString url = YOUTUBE_LIVE_THUMBNAIL_URL "?videoId=" + video_id;
+	Json json_out;
+	return InsertCommand(QT_TO_UTF8(url), QT_TO_UTF8(mime), "POST",
+			     fileContents.constData(), json_out,
+			     fileContents.size());
 }
 
 bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)

@@ -44,11 +44,12 @@ class YoutubeApiWrappers : public YoutubeAuth {
 
 	bool TryInsertCommand(const char *url, const char *content_type,
 			      std::string request_type, const char *data,
-			      json11::Json &ret, long *error_code = nullptr);
+			      json11::Json &ret, long *error_code = nullptr,
+			      int data_size = 0);
 	bool UpdateAccessToken();
 	bool InsertCommand(const char *url, const char *content_type,
 			   std::string request_type, const char *data,
-			   json11::Json &ret);
+			   json11::Json &ret, int data_size = 0);
 
 public:
 	YoutubeApiWrappers(const Def &d);
@@ -65,6 +66,8 @@ public:
 			      const QString &video_title,
 			      const QString &video_description,
 			      const QString &categorie_id);
+	bool SetVideoThumbnail(const QString &video_id,
+			       const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);
 	bool StopBroadcast(const QString &broadcast_id);
 	bool ResetBroadcast(const QString &broadcast_id);

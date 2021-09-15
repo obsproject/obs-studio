@@ -896,6 +896,10 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 /* YouTube Integration */
+OBSYoutubeActions {
+    qproperty-thumbPlaceholder: url(./Dark/sources/image.svg);
+}
+
 #broadcastButton[broadcastState=ready] {
     background: blue;
 }

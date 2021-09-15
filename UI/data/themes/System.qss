@@ -302,6 +302,10 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 /* YouTube Integration */
+OBSYoutubeActions {
+    qproperty-thumbPlaceholder: url(:res/images/sources/image.svg);
+}
+
 #ytEventList QLabel {
 	background-color: #e1e1e1;
 	border: 1px solid #ddd;
