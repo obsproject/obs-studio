@@ -203,6 +203,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 		initData.num_backbuffers = max(data->num_backbuffers, 2);
 
 		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		flags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
 		ComPtr<IDXGIFactory5> factory5;
 		factory5 = ComQIPtr<IDXGIFactory5>(device->factory);
@@ -221,15 +222,32 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	}
 
 	make_swap_desc(swapDesc, &initData, effect, flags);
-	const HRESULT hr = device->factory->CreateSwapChain(
-		device->device, &swapDesc, swap.Assign());
+	HRESULT hr = device->factory->CreateSwapChain(device->device, &swapDesc,
+						      swap.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
 	/* Ignore Alt+Enter */
 	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
+	if (flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) {
+		ComPtr<IDXGISwapChain2> swap2 = ComQIPtr<IDXGISwapChain2>(swap);
+		hWaitable = swap2->GetFrameLatencyWaitableObject();
+		if (hWaitable) {
+			hr = swap2->SetMaximumFrameLatency(40);
+			if (FAILED(hr))
+				throw HRError("Could not relax frame latency",
+					      hr);
+		}
+	}
+
 	Init();
+}
+
+gs_swap_chain::~gs_swap_chain()
+{
+	if (hWaitable)
+		CloseHandle(hWaitable);
 }
 
 void gs_device::InitCompiler()
@@ -2019,11 +2037,16 @@ void device_present(gs_device_t *device)
 {
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	if (curSwapChain) {
-		const HRESULT hr = curSwapChain->swap->Present(
-			0, curSwapChain->presentFlags);
-		if (hr == DXGI_ERROR_DEVICE_REMOVED ||
-		    hr == DXGI_ERROR_DEVICE_RESET) {
-			device->RebuildDevice();
+		/* Skip Present because full queue may cause a stall */
+		const HANDLE hWaitiable = curSwapChain->hWaitable;
+		if ((hWaitiable == NULL) ||
+		    WaitForSingleObject(hWaitiable, 0) == WAIT_OBJECT_0) {
+			const HRESULT hr = curSwapChain->swap->Present(
+				0, curSwapChain->presentFlags);
+			if (hr == DXGI_ERROR_DEVICE_REMOVED ||
+			    hr == DXGI_ERROR_DEVICE_RESET) {
+				device->RebuildDevice();
+			}
 		}
 	} else {
 		blog(LOG_WARNING, "device_present (D3D11): No active swap");
