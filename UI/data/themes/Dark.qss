@@ -817,6 +817,7 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
 }
 
 /* Scene Tree */

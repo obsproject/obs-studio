@@ -58,6 +58,7 @@ enum obs_icon_type {
 	OBS_ICON_TYPE_MEDIA,
 	OBS_ICON_TYPE_BROWSER,
 	OBS_ICON_TYPE_CUSTOM,
+	OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT,
 };
 
 enum obs_media_state {
