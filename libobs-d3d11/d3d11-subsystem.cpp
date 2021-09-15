@@ -2037,10 +2037,10 @@ void device_present(gs_device_t *device)
 {
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	if (curSwapChain) {
-		/* Skip Present because full queue may cause a stall */
-		const HANDLE hWaitiable = curSwapChain->hWaitable;
-		if ((hWaitiable == NULL) ||
-		    WaitForSingleObject(hWaitiable, 0) == WAIT_OBJECT_0) {
+		/* Skip Present at frame limit to avoid stall */
+		const HANDLE hWaitable = curSwapChain->hWaitable;
+		if ((hWaitable == NULL) ||
+		    WaitForSingleObject(hWaitable, 0) == WAIT_OBJECT_0) {
 			const HRESULT hr = curSwapChain->swap->Present(
 				0, curSwapChain->presentFlags);
 			if (hr == DXGI_ERROR_DEVICE_REMOVED ||
