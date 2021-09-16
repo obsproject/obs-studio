@@ -197,6 +197,8 @@ EXPORT bool os_get_proc_memory_usage(os_proc_memory_usage_t *usage);
 EXPORT uint64_t os_get_proc_resident_size(void);
 EXPORT uint64_t os_get_proc_virtual_size(void);
 
+EXPORT void os_random_bytes(void *buffer, uint32_t length);
+
 /* clang-format off */
 #ifdef __APPLE__
 # define ARCH_BITS 64

@@ -12,6 +12,7 @@ Platform/Utility API Reference (libobs/util)
    reference-libobs-util-dstr
    reference-libobs-util-platform
    reference-libobs-util-profiler
+   reference-libobs-util-rng
    reference-libobs-util-serializers
    reference-libobs-util-text-lookup
    reference-libobs-util-threading

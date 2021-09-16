@@ -20,6 +20,7 @@
 #include <shlobj.h>
 #include <intrin.h>
 #include <psapi.h>
+#include <ntsecapi.h>
 
 #include "base.h"
 #include "platform.h"
@@ -1311,4 +1312,10 @@ uint64_t os_get_free_disk_space(const char *dir)
 	bfree(wdir);
 
 	return success ? free.QuadPart : 0;
+}
+
+void os_random_bytes(void *buffer, uint32_t length)
+{
+	if (!RtlGenRandom(buffer, length))
+		bcrash("System RNG failure");
 }

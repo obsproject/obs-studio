@@ -471,3 +471,9 @@ Other Functions
 .. function:: uint64_t os_get_proc_virtual_size(void)
 
    Returns the virtual memory size of the current process.
+
+---------------------
+
+.. function:: void os_random_bytes(void *buffer, uint32_t length)
+
+   Generates cryptographically-secure random bytes.

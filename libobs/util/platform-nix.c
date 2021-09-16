@@ -33,6 +33,7 @@
 #if !defined(__APPLE__)
 #include <sys/times.h>
 #include <sys/wait.h>
+#include <sys/random.h>
 #include <libgen.h>
 #if defined(__FreeBSD__) || defined(__OpenBSD__)
 #include <sys/param.h>
@@ -1033,3 +1034,32 @@ uint64_t os_get_free_disk_space(const char *dir)
 
 	return (uint64_t)info.f_frsize * (uint64_t)info.f_bavail;
 }
+
+#if !defined(__APPLE__)
+void os_random_bytes(void *buffer, uint32_t length)
+{
+	getrandom(buffer, length, 0);
+}
+#else
+void os_random_bytes(void *buffer, uint32_t length)
+{
+	// FIXME: Leaks file handle. Ideally we want some kind of
+	// platform_init / platform_free for maintaining state.
+	static FILE *devurandom;
+
+	if (!devurandom) {
+		devurandom = fopen("/dev/urandom", "rb");
+		if (!devurandom)
+			bcrash("Unable to open /dev/urandom");
+	}
+
+	for (;;) {
+		int ret = fread(buffer, length, 1, devurandom);
+		if (ret == 1)
+			break;
+		if (ret == -1 && (errno == EAGAIN || errno == EINTR))
+			continue;
+		bcrash("Unable to read /dev/urandom");
+	}
+}
+#endif
