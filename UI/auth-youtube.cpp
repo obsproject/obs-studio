@@ -285,6 +285,9 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	thread->start();
 
 	dlg.exec();
+	if (dlg.result() == QMessageBox::Cancel ||
+	    dlg.result() == QDialog::Rejected)
+		return nullptr;
 
 	if (!auth->GetToken(YOUTUBE_TOKEN_URL, clientid, secret,
 			    QT_TO_UTF8(redirect_uri), YOUTUBE_SCOPE_VERSION,
