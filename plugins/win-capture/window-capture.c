@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <util/dstr.h>
 #include <util/threading.h>
+#include <util/windows/window-helpers.h>
 #include "dc-capture.h"
-#include "window-helpers.h"
 #include "../../libobs/util/platform.h"
 #include "../../libobs-winrt/winrt-capture.h"
 
@@ -198,7 +198,8 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	bfree(wc->class);
 	bfree(wc->executable);
 
-	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
+	ms_build_window_strings(window, &wc->class, &wc->title,
+				&wc->executable);
 
 	wc->method = choose_method(method, wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
@@ -414,11 +415,6 @@ static bool wc_capture_method_changed(obs_properties_t *props,
 	return true;
 }
 
-extern bool check_window_property_setting(obs_properties_t *ppts,
-					  obs_property_t *p,
-					  obs_data_t *settings, const char *val,
-					  size_t idx);
-
 static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 			      obs_data_t *settings)
 {
@@ -430,7 +426,7 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 
 	update_settings_visibility(props, wc);
 
-	check_window_property_setting(props, p, settings, "window", 0);
+	ms_check_window_property_setting(props, p, settings, "window", 0);
 	return true;
 }
 
@@ -446,7 +442,7 @@ static obs_properties_t *wc_properties(void *data)
 	p = obs_properties_add_list(ppts, "window", TEXT_WINDOW,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
+	ms_fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
 	obs_property_set_modified_callback(p, wc_window_changed);
 
 	p = obs_properties_add_list(ppts, "method", TEXT_METHOD,
@@ -515,15 +511,15 @@ static void wc_tick(void *data, float seconds)
 
 		wc->check_window_timer = 0.0f;
 
-		wc->window = (wc->method == METHOD_WGC)
-				     ? find_window_top_level(INCLUDE_MINIMIZED,
-							     wc->priority,
-							     wc->class,
-							     wc->title,
-							     wc->executable)
-				     : find_window(INCLUDE_MINIMIZED,
-						   wc->priority, wc->class,
-						   wc->title, wc->executable);
+		wc->window =
+			(wc->method == METHOD_WGC)
+				? ms_find_window_top_level(INCLUDE_MINIMIZED,
+							   wc->priority,
+							   wc->class, wc->title,
+							   wc->executable)
+				: ms_find_window(INCLUDE_MINIMIZED,
+						 wc->priority, wc->class,
+						 wc->title, wc->executable);
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
