@@ -7,7 +7,10 @@
 #include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QUrl>
+
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 #include <QRandomGenerator>
+#endif
 
 #ifdef WIN32
 #include <windows.h>
@@ -193,13 +196,17 @@ void YoutubeAuth::ResetChat()
 
 QString YoutubeAuth::GenerateState()
 {
-	char state[YOUTUBE_API_STATE_LENGTH + 1];
-	QRandomGenerator *rng = QRandomGenerator::system();
-	int i;
+	QByteArray state;
 
-	for (i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
-		state[i] = allowedChars[rng->bounded(0, allowedCount)];
-	state[i] = 0;
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+	// Qt < 5.10.0 does not include QRandomGenerator, so we use qrand()
+	for (size_t i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
+		state += allowedChars[qrand() % allowedCount];
+#else
+	QRandomGenerator *rng = QRandomGenerator::system();
+	for (size_t i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
+		state.append(allowedChars[rng->bounded(0, allowedCount)]);
+#endif
 
 	return state;
 }

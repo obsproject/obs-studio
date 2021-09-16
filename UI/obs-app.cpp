@@ -38,6 +38,10 @@
 #include <QProcess>
 #include <QAccessible>
 
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+#include <QTime>
+#endif
+
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "log-viewer.hpp"
@@ -2019,6 +2023,11 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	const char *session_type = getenv("XDG_SESSION_TYPE");
 	if (session_type && strcmp(session_type, "wayland") == 0)
 		setenv("QT_QPA_PLATFORM", "wayland", false);
+#endif
+
+#if QT_VERSION < QT_VERSION_CHECK(5, 10, 0)
+	// Initialize the Qt random generator using the current time
+	qsrand(QTime::currentTime().msec());
 #endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());
