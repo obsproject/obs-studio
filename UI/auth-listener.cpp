@@ -95,7 +95,8 @@ void AuthListener::NewConnection()
 			}
 
 			if (code.isEmpty()) {
-				auto data = QTStr("YouTube.Auth.NoCode");
+				auto data = responseTemplate.arg(
+					QTStr("YouTube.Auth.NoCode"));
 				socket->write(QT_TO_UTF8(data));
 				emit fail();
 			} else {
