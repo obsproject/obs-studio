@@ -904,14 +904,6 @@ OBSYoutubeActions {
     qproperty-thumbPlaceholder: url(./Dark/sources/image.svg);
 }
 
-#broadcastButton[broadcastState=ready] {
-    background: blue;
-}
-
-#broadcastButton[broadcastState=active] {
-    background: green;
-}
-
 #ytEventList QLabel {
     color: rgb(225,224,225); /* veryLight */
     background-color: rgb(76,76,76);
