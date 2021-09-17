@@ -409,9 +409,13 @@ void WASAPISource::InitCapture()
 	if (client.Get() == nullptr)
 		throw "[WASAPISource::InitCapture] Failed to create a valid client";
 
-	ThrowOnInterrupt("[WASAPISource::InitCapture]: Interrupted before client GetService");
-	HRESULT res = client->GetService(__uuidof(IAudioCaptureClient),
+	HRESULT res;
+	{
+		::lock_guard<std::recursive_mutex> guard(state_mutex);
+		ThrowOnInterrupt("[WASAPISource::InitCapture]: Interrupted before client GetService");
+		res = client->GetService(__uuidof(IAudioCaptureClient),
 					 (void **)capture.Assign());
+	}
 	if (FAILED(res))
 		throw HRError("[WASAPISource::InitCapture] Failed to create capture context", res);
 
