@@ -958,6 +958,7 @@ static void on_create_session_response_received_cb(
 	UNUSED_PARAMETER(interface_name);
 	UNUSED_PARAMETER(signal_name);
 
+	g_autoptr(GVariant) session_handle_variant = NULL;
 	g_autoptr(GVariant) result = NULL;
 	struct dbus_call_data *call = user_data;
 	obs_pipewire_data *obs_pw = call->obs_pw;
@@ -975,8 +976,10 @@ static void on_create_session_response_received_cb(
 
 	blog(LOG_INFO, "[pipewire] screencast session created");
 
-	g_variant_lookup(result, "session_handle", "s",
-			 &obs_pw->session_handle);
+	session_handle_variant =
+		g_variant_lookup_value(result, "session_handle", NULL);
+	obs_pw->session_handle =
+		g_variant_dup_string(session_handle_variant, NULL);
 
 	select_source(obs_pw);
 }
