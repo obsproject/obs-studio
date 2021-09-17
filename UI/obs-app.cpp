@@ -820,8 +820,8 @@ bool OBSApp::InitLocale()
 
 	// set basic default application locale
 	if (!locale.empty())
-		QLocale::setDefault(
-			QString::fromStdString(locale).replace('-', '_'));
+		QLocale::setDefault(QLocale(
+			QString::fromStdString(locale).replace('-', '_')));
 
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
@@ -864,9 +864,9 @@ bool OBSApp::InitLocale()
 
 			// set application default locale to the new choosen one
 			if (!locale.empty())
-				QLocale::setDefault(
+				QLocale::setDefault(QLocale(
 					QString::fromStdString(locale).replace(
-						'-', '_'));
+						'-', '_')));
 
 			return true;
 		}

@@ -61,7 +61,11 @@ void Auth::Load()
 	if (main->auth) {
 		if (main->auth->LoadInternal()) {
 			main->auth->LoadUI();
+			main->SetBroadcastFlowEnabled(
+				main->auth->broadcastFlow());
 		}
+	} else {
+		main->SetBroadcastFlowEnabled(false);
 	}
 }
 

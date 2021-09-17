@@ -386,7 +386,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	// Register shortcuts for Undo/Redo
 	ui->actionMainUndo->setShortcut(Qt::CTRL + Qt::Key_Z);
 	QList<QKeySequence> shrt;
-	shrt << QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_Z)
+	shrt << QKeySequence(Qt::CTRL | Qt::SHIFT + Qt::Key_Z)
 	     << QKeySequence(Qt::CTRL + Qt::Key_Y);
 	ui->actionMainRedo->setShortcuts(shrt);
 
@@ -1370,6 +1370,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 		config_set_bool(basicConfig, "Stream1", "MovedOldEnforce",
 				true);
 		changed = true;
+	}
+
+	/* ----------------------------------------------------- */
+	/* enforce minimum retry delay of 1 second prior to 27.1 */
+	if (config_has_user_value(basicConfig, "Output", "RetryDelay")) {
+		int retryDelay =
+			config_get_uint(basicConfig, "Output", "RetryDelay");
+		if (retryDelay < 1) {
+			config_set_uint(basicConfig, "Output", "RetryDelay", 1);
+			changed = true;
+		}
 	}
 
 	/* ----------------------------------------------------- */
@@ -3874,16 +3885,6 @@ void OBSBasic::RemoveSelectedScene()
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
 }
 
-void OBSBasic::RemoveSelectedSceneItem()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (item) {
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (QueryRemoveSource(source))
-			obs_sceneitem_remove(item);
-	}
-}
-
 void OBSBasic::ReorderSources(OBSScene scene)
 {
 	if (scene != GetCurrentScene() || ui->sources->IgnoreReorder())
@@ -6155,7 +6156,8 @@ void OBSBasic::DisplayStreamStartError()
 
 #if YOUTUBE_ENABLED
 void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
-				     bool autostart, bool autostop)
+				     bool autostart, bool autostop,
+				     bool start_now)
 {
 	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
 	obs_service_t *service_obj = GetService();
@@ -6170,8 +6172,12 @@ void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
 	obs_service_update(service_obj, settings);
 	autoStartBroadcast = autostart;
 	autoStopBroadcast = autostop;
+	broadcastReady = true;
 
 	obs_data_release(settings);
+
+	if (start_now)
+		QMetaObject::invokeMethod(this, "StartStreaming");
 }
 
 void OBSBasic::YoutubeStreamCheck(const std::string &key)
@@ -6264,33 +6270,28 @@ void OBSBasic::StartStreaming()
 	if (disableOutputsRef)
 		return;
 
-	Auth *auth = GetAuth();
-	if (auth) {
-		auth->OnStreamConfig();
-#if YOUTUBE_ENABLED
-		if (!broadcastActive && autoStartBroadcast &&
-		    IsYouTubeService(auth->service())) {
-			OBSYoutubeActions *dialog;
-			dialog = new OBSYoutubeActions(this, auth);
-			connect(dialog, &OBSYoutubeActions::ok, this,
-				&OBSBasic::YouTubeActionDialogOk);
-			int result = dialog->Valid() ? dialog->exec()
-						     : QDialog::Rejected;
-			if (result != QDialog::Accepted) {
-				ui->streamButton->setText(
-					QTStr("Basic.Main.StartStreaming"));
-				ui->streamButton->setEnabled(true);
-				ui->streamButton->setChecked(false);
+	if (auth && auth->broadcastFlow()) {
+		if (!broadcastActive && !broadcastReady) {
+			ui->streamButton->setChecked(false);
 
-				if (sysTrayStream) {
-					sysTrayStream->setText(
-						ui->streamButton->text());
-					sysTrayStream->setEnabled(true);
-				}
-				return;
-			}
+			QMessageBox no_broadcast(this);
+			no_broadcast.setText(QTStr("Output.NoBroadcast.Text"));
+			QPushButton *SetupBroadcast = no_broadcast.addButton(
+				QTStr("Basic.Main.SetupBroadcast"),
+				QMessageBox::YesRole);
+			no_broadcast.setDefaultButton(SetupBroadcast);
+			no_broadcast.addButton(QTStr("Close"),
+					       QMessageBox::NoRole);
+			no_broadcast.setIcon(QMessageBox::Information);
+			no_broadcast.setWindowTitle(
+				QTStr("Output.NoBroadcast.Title"));
+			no_broadcast.exec();
+
+			if (no_broadcast.clickedButton() == SetupBroadcast)
+				QMetaObject::invokeMethod(this,
+							  "SetupBroadcast");
+			return;
 		}
-#endif
 	}
 
 	if (!outputHandler->SetupStreaming(service)) {
@@ -6306,6 +6307,7 @@ void OBSBasic::StartStreaming()
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setChecked(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	ui->broadcastButton->setChecked(false);
 
 	if (sysTrayStream) {
 		sysTrayStream->setEnabled(false);
@@ -6318,7 +6320,6 @@ void OBSBasic::StartStreaming()
 	}
 
 	if (!autoStartBroadcast) {
-		ui->broadcastButton->setVisible(true);
 		ui->broadcastButton->setText(
 			QTStr("Basic.Main.StartBroadcast"));
 		ui->broadcastButton->setProperty("broadcastState", "ready");
@@ -6328,11 +6329,12 @@ void OBSBasic::StartStreaming()
 		ui->broadcastButton->setEnabled(false);
 	} else if (!autoStopBroadcast) {
 		broadcastActive = true;
-		ui->broadcastButton->setVisible(true);
 		ui->broadcastButton->setText(QTStr("Basic.Main.StopBroadcast"));
 		ui->broadcastButton->setProperty("broadcastState", "active");
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
+	} else {
+		ui->broadcastButton->setEnabled(false);
 	}
 
 	bool recordWhenStreaming = config_get_bool(
@@ -6353,6 +6355,14 @@ void OBSBasic::StartStreaming()
 
 void OBSBasic::BroadcastButtonClicked()
 {
+	if (!broadcastReady ||
+	    !broadcastActive && !outputHandler->StreamingActive()) {
+		SetupBroadcast();
+		if (broadcastReady)
+			ui->broadcastButton->setChecked(true);
+		return;
+	}
+
 	if (!autoStartBroadcast) {
 #if YOUTUBE_ENABLED
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
@@ -6362,20 +6372,20 @@ void OBSBasic::BroadcastButtonClicked()
 		}
 #endif
 		broadcastActive = true;
-
 		autoStartBroadcast = true; // and clear the flag
+
 		if (!autoStopBroadcast) {
 			ui->broadcastButton->setText(
 				QTStr("Basic.Main.StopBroadcast"));
-			ui->broadcastButton->setProperty("broadcastState",
-							 "active");
-			ui->broadcastButton->style()->unpolish(
-				ui->broadcastButton);
-			ui->broadcastButton->style()->polish(
-				ui->broadcastButton);
 		} else {
-			ui->broadcastButton->setVisible(false);
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.AutoStopEnabled"));
+			ui->broadcastButton->setEnabled(false);
 		}
+
+		ui->broadcastButton->setProperty("broadcastState", "active");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
 	} else if (!autoStopBroadcast) {
 #if YOUTUBE_ENABLED
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
@@ -6388,6 +6398,7 @@ void OBSBasic::BroadcastButtonClicked()
 				QMessageBox::No);
 
 			if (button == QMessageBox::No) {
+				ui->broadcastButton->setChecked(true);
 				return;
 			}
 		}
@@ -6399,12 +6410,42 @@ void OBSBasic::BroadcastButtonClicked()
 		}
 #endif
 		broadcastActive = false;
+		broadcastReady = false;
 
 		autoStopBroadcast = true;
-		ui->broadcastButton->setVisible(false);
-
 		QMetaObject::invokeMethod(this, "StopStreaming");
+		SetBroadcastFlowEnabled(true);
 	}
+}
+
+void OBSBasic::SetBroadcastFlowEnabled(bool enabled)
+{
+	ui->broadcastButton->setEnabled(enabled);
+	ui->broadcastButton->setVisible(enabled);
+	ui->broadcastButton->setChecked(broadcastReady);
+	ui->broadcastButton->setProperty("broadcastState", "idle");
+	ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+	ui->broadcastButton->style()->polish(ui->broadcastButton);
+	ui->broadcastButton->setText(QTStr("Basic.Main.SetupBroadcast"));
+}
+
+void OBSBasic::SetupBroadcast()
+{
+	Auth *auth = GetAuth();
+#if YOUTUBE_ENABLED
+	if (IsYouTubeService(auth->service())) {
+		OBSYoutubeActions *dialog;
+		dialog = new OBSYoutubeActions(this, auth, broadcastReady);
+		connect(dialog, &OBSYoutubeActions::ok, this,
+			&OBSBasic::YouTubeActionDialogOk);
+		int result = dialog->Valid() ? dialog->exec()
+					     : QDialog::Rejected;
+		if (result != QDialog::Accepted) {
+			if (!broadcastReady)
+				ui->broadcastButton->setChecked(false);
+		}
+	}
+#endif
 }
 
 #ifdef _WIN32
@@ -6519,11 +6560,13 @@ void OBSBasic::StopStreaming()
 		broadcastActive = false;
 		autoStartBroadcast = true;
 		autoStopBroadcast = true;
-		ui->broadcastButton->setVisible(false);
+		broadcastReady = false;
 	}
 
-	if (autoStopBroadcast)
+	if (autoStopBroadcast) {
 		broadcastActive = false;
+		broadcastReady = false;
+	}
 
 	OnDeactivate();
 
@@ -6557,11 +6600,13 @@ void OBSBasic::ForceStopStreaming()
 		broadcastActive = false;
 		autoStartBroadcast = true;
 		autoStopBroadcast = true;
-		ui->broadcastButton->setVisible(false);
+		broadcastReady = false;
 	}
 
-	if (autoStopBroadcast)
+	if (autoStopBroadcast) {
 		broadcastActive = false;
+		broadcastReady = false;
+	}
 
 	OnDeactivate();
 
@@ -6766,6 +6811,10 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+
+	// Reset broadcast button state/text
+	if (!broadcastActive)
+		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
 }
 
 void OBSBasic::AutoRemux(QString input)
@@ -7281,6 +7330,10 @@ void OBSBasic::on_streamButton_clicked()
 				obs_service_get_settings(service);
 			bwtest = obs_data_get_bool(settings, "bwtest");
 			obs_data_release(settings);
+			// Disable confirmation if this is going to open broadcast setup
+			if (auth && auth->broadcastFlow() && !broadcastReady &&
+			    !broadcastActive)
+				confirm = false;
 		}
 
 		if (bwtest && isVisible()) {

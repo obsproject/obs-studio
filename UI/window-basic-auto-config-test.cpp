@@ -262,6 +262,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		 * server */
 		servers.erase(servers.begin() + 1);
 		servers.resize(3);
+	} else if (wiz->service == AutoConfig::Service::YouTube) {
+		/* Only test first set of primary + backup servers */
+		servers.resize(2);
 	}
 
 	/* -----------------------------------*/
@@ -302,6 +305,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	obs_output_set_video_encoder(output, vencoder);
 	obs_output_set_audio_encoder(output, aencoder, 0);
+	obs_output_set_reconnect_settings(output, 0, 0);
 
 	obs_output_set_service(output, service);
 

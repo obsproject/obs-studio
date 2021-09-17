@@ -8,16 +8,21 @@
 #include <QToolTip>
 #include <QDateTime>
 #include <QDesktopServices>
+#include <QFileInfo>
+#include <QStandardPaths>
+#include <QImageReader>
 
 const QString SchedulDateAndTimeFormat = "yyyy-MM-dd'T'hh:mm:ss'Z'";
 const QString RepresentSchedulDateAndTimeFormat = "dddd, MMMM d, yyyy h:m";
 const QString IndexOfGamingCategory = "20";
 
-OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
+OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth,
+				     bool broadcastReady)
 	: QDialog(parent),
 	  ui(new Ui::OBSYoutubeActions),
 	  apiYouTube(dynamic_cast<YoutubeApiWrappers *>(auth)),
-	  workerThread(new WorkerThread(apiYouTube))
+	  workerThread(new WorkerThread(apiYouTube)),
+	  broadcastReady(broadcastReady)
 {
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 	ui->setupUi(this);
@@ -89,24 +94,64 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 
 	ui->scheduledTime->setDateTime(QDateTime::currentDateTime());
 
+	auto thumbSelectionHandler = [&]() {
+		if (thumbnailFile.isEmpty()) {
+			QString filePath = OpenFile(
+				this,
+				QTStr("YouTube.Actions.Thumbnail.SelectFile"),
+				QStandardPaths::writableLocation(
+					QStandardPaths::PicturesLocation),
+				QString("Images (*.png *.jpg *.jpeg *.gif)"));
+
+			if (!filePath.isEmpty()) {
+				QFileInfo tFile(filePath);
+				if (!tFile.exists()) {
+					return ShowErrorDialog(
+						this,
+						QTStr("YouTube.Actions.Error.FileMissing"));
+				} else if (tFile.size() > 2 * 1024 * 1024) {
+					return ShowErrorDialog(
+						this,
+						QTStr("YouTube.Actions.Error.FileTooLarge"));
+				}
+
+				thumbnailFile = filePath;
+				ui->selectedFileName->setText(thumbnailFile);
+				ui->selectFileButton->setText(QTStr(
+					"YouTube.Actions.Thumbnail.ClearFile"));
+
+				QImageReader imgReader(filePath);
+				imgReader.setAutoTransform(true);
+				const QImage newImage = imgReader.read();
+				ui->thumbnailPreview->setPixmap(
+					QPixmap::fromImage(newImage).scaled(
+						160, 90, Qt::KeepAspectRatio));
+			}
+		} else {
+			thumbnailFile.clear();
+			ui->selectedFileName->setText(QTStr(
+				"YouTube.Actions.Thumbnail.NoFileSelected"));
+			ui->selectFileButton->setText(
+				QTStr("YouTube.Actions.Thumbnail.SelectFile"));
+			ui->thumbnailPreview->setPixmap(
+				GetPlaceholder().pixmap(QSize(16, 16)));
+		}
+	};
+
+	connect(ui->selectFileButton, &QPushButton::clicked, this,
+		thumbSelectionHandler);
+	connect(ui->thumbnailPreview, &ClickableLabel::clicked, this,
+		thumbSelectionHandler);
+
 	if (!apiYouTube) {
 		blog(LOG_DEBUG, "YouTube API auth NOT found.");
 		Cancel();
 		return;
 	}
-	ChannelDescription channel;
-	if (!apiYouTube->GetChannelDescription(channel)) {
-		blog(LOG_DEBUG, "Could not get channel description.");
-		ShowErrorDialog(
-			parent,
-			apiYouTube->GetLastError().isEmpty()
-				? QTStr("YouTube.Actions.Error.General")
-				: QTStr("YouTube.Actions.Error.Text")
-					  .arg(apiYouTube->GetLastError()));
-		Cancel();
-		return;
-	}
-	this->setWindowTitle(channel.title);
+
+	const char *name = config_get_string(OBSBasic::Get()->Config(),
+					     "YouTube", "ChannelName");
+	this->setWindowTitle(QTStr("YouTube.Actions.WindowTitle").arg(name));
 
 	QVector<CategoryDescription> category_list;
 	if (!apiYouTube->GetVideoCategoriesList(category_list)) {
@@ -128,6 +173,8 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 
 	connect(ui->okButton, &QPushButton::clicked, this,
 		&OBSYoutubeActions::InitBroadcast);
+	connect(ui->saveButton, &QPushButton::clicked, this,
+		&OBSYoutubeActions::ReadyBroadcast);
 	connect(ui->cancelButton, &QPushButton::clicked, this, [&]() {
 		blog(LOG_DEBUG, "YouTube live broadcast creation cancelled.");
 		// Close the dialog.
@@ -225,14 +272,37 @@ OBSYoutubeActions::OBSYoutubeActions(QWidget *parent, Auth *auth)
 				});
 			ui->scrollAreaWidgetContents->layout()->addWidget(
 				label);
+
+			if (selectedBroadcast == broadcast)
+				label->clicked();
 		});
 	workerThread->start();
+
+	OBSBasic *main = OBSBasic::Get();
+	bool rememberSettings = config_get_bool(main->basicConfig, "YouTube",
+						"RememberSettings");
+	if (rememberSettings)
+		LoadSettings();
+
+	// Switch to events page and select readied broadcast once loaded
+	if (broadcastReady) {
+		ui->tabWidget->setCurrentIndex(1);
+		selectedBroadcast = apiYouTube->GetBroadcastId();
+	}
 
 #ifdef __APPLE__
 	// MacOS theming issues
 	this->resize(this->width() + 200, this->height() + 120);
 #endif
 	valid = true;
+}
+
+void OBSYoutubeActions::showEvent(QShowEvent *event)
+{
+	QDialog::showEvent(event);
+	if (thumbnailFile.isEmpty())
+		ui->thumbnailPreview->setPixmap(
+			GetPlaceholder().pixmap(QSize(16, 16)));
 }
 
 OBSYoutubeActions::~OBSYoutubeActions()
@@ -249,9 +319,9 @@ void WorkerThread::run()
 		return;
 	json11::Json broadcasts;
 
-	for (QString broacastStatus : {"active", "upcoming"}) {
+	for (QString broadcastStatus : {"active", "upcoming"}) {
 		if (!apiYouTube->GetBroadcastsList(broadcasts, "",
-						   broacastStatus)) {
+						   broadcastStatus)) {
 			emit failed();
 			return;
 		}
@@ -290,11 +360,9 @@ void WorkerThread::run()
 
 				// Treat already started streams as autostart for UI purposes
 				bool astart =
-					status == "live"
-						? true
-						: item["contentDetails"]
-						      ["enableAutoStart"]
-							      .bool_value();
+					status == "live" ||
+					item["contentDetails"]["enableAutoStart"]
+						.bool_value();
 				bool astop =
 					item["contentDetails"]["enableAutoStop"]
 						.bool_value();
@@ -329,7 +397,7 @@ void WorkerThread::run()
 					    broadcasts,
 					    QString::fromStdString(
 						    nextPageToken),
-					    broacastStatus)) {
+					    broadcastStatus)) {
 					emit failed();
 					return;
 				}
@@ -342,80 +410,64 @@ void WorkerThread::run()
 
 void OBSYoutubeActions::UpdateOkButtonStatus()
 {
+	bool enable = false;
+
 	if (ui->tabWidget->currentIndex() == 0) {
-		ui->okButton->setEnabled(
-			!ui->title->text().isEmpty() &&
-			!ui->privacyBox->currentText().isEmpty() &&
-			(ui->yesMakeForKids->isChecked() ||
-			 ui->notMakeForKids->isChecked()));
+		enable = !ui->title->text().isEmpty() &&
+			 !ui->privacyBox->currentText().isEmpty() &&
+			 (ui->yesMakeForKids->isChecked() ||
+			  ui->notMakeForKids->isChecked());
+		ui->okButton->setEnabled(enable);
+		ui->saveButton->setEnabled(enable);
+
 		if (ui->checkScheduledLater->checkState() == Qt::Checked) {
 			ui->okButton->setText(
-				QTStr("YouTube.Actions.Create_Save"));
+				QTStr("YouTube.Actions.Create_Schedule"));
+			ui->saveButton->setText(
+				QTStr("YouTube.Actions.Create_Schedule_Ready"));
 		} else {
 			ui->okButton->setText(
 				QTStr("YouTube.Actions.Create_GoLive"));
+			ui->saveButton->setText(
+				QTStr("YouTube.Actions.Create_Ready"));
 		}
-
 		ui->pushButton->setVisible(false);
 	} else {
-		ui->okButton->setEnabled(!selectedBroadcast.isEmpty());
+		enable = !selectedBroadcast.isEmpty();
+		ui->okButton->setEnabled(enable);
+		ui->saveButton->setEnabled(enable);
 		ui->okButton->setText(QTStr("YouTube.Actions.Choose_GoLive"));
+		ui->saveButton->setText(QTStr("YouTube.Actions.Choose_Ready"));
 
 		ui->pushButton->setVisible(true);
 	}
 }
-
-bool OBSYoutubeActions::StreamNowAction(YoutubeApiWrappers *api,
-					StreamDescription &stream)
-{
-	YoutubeApiWrappers *apiYouTube = api;
-	BroadcastDescription broadcast = {};
-	UiToBroadcast(broadcast);
-	// stream now is always autostart/autostop
-	broadcast.auto_start = true;
-	broadcast.auto_stop = true;
-
-	blog(LOG_DEBUG, "Scheduled date and time: %s",
-	     broadcast.schedul_date_time.toStdString().c_str());
-	if (!apiYouTube->InsertBroadcast(broadcast)) {
-		blog(LOG_DEBUG, "No broadcast created.");
-		return false;
-	}
-	stream = {"", "", "OBS Studio Video Stream"};
-	if (!apiYouTube->InsertStream(stream)) {
-		blog(LOG_DEBUG, "No stream created.");
-		return false;
-	}
-	if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
-		blog(LOG_DEBUG, "No stream binded.");
-		return false;
-	}
-	if (!apiYouTube->SetVideoCategory(broadcast.id, broadcast.title,
-					  broadcast.description,
-					  broadcast.category.id)) {
-		blog(LOG_DEBUG, "No category set.");
-		return false;
-	}
-
-	if (broadcast.privacy != "private")
-		apiYouTube->SetChatId(broadcast.id);
-	else
-		apiYouTube->ResetChat();
-
-	return true;
-}
-
-bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
+bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
+					  StreamDescription &stream,
+					  bool stream_later,
+					  bool ready_broadcast)
 {
 	YoutubeApiWrappers *apiYouTube = api;
 	BroadcastDescription broadcast = {};
 	UiToBroadcast(broadcast);
 
-	// DateTime parser means that input datetime is a local, so we need to move it
-	auto dateTime = ui->scheduledTime->dateTime();
-	auto utcDTime = dateTime.addSecs(-dateTime.offsetFromUtc());
-	broadcast.schedul_date_time =
-		utcDTime.toString(SchedulDateAndTimeFormat);
+	if (stream_later) {
+		// DateTime parser means that input datetime is a local, so we need to move it
+		auto dateTime = ui->scheduledTime->dateTime();
+		auto utcDTime = dateTime.addSecs(-dateTime.offsetFromUtc());
+		broadcast.schedul_date_time =
+			utcDTime.toString(SchedulDateAndTimeFormat);
+	} else {
+		// stream now is always autostart/autostop
+		broadcast.auto_start = true;
+		broadcast.auto_stop = true;
+		broadcast.schedul_date_time =
+			QDateTime::currentDateTimeUtc().toString(
+				SchedulDateAndTimeFormat);
+	}
+
+	autostart = broadcast.auto_start;
+	autostop = broadcast.auto_stop;
 
 	blog(LOG_DEBUG, "Scheduled date and time: %s",
 	     broadcast.schedul_date_time.toStdString().c_str());
@@ -429,11 +481,32 @@ bool OBSYoutubeActions::StreamLaterAction(YoutubeApiWrappers *api)
 		blog(LOG_DEBUG, "No category set.");
 		return false;
 	}
+	if (!thumbnailFile.isEmpty()) {
+		blog(LOG_INFO, "Uploading thumbnail file \"%s\"...",
+		     thumbnailFile.toStdString().c_str());
+		if (!apiYouTube->SetVideoThumbnail(broadcast.id,
+						   thumbnailFile)) {
+			blog(LOG_DEBUG, "No thumbnail set.");
+			return false;
+		}
+	}
 
-	if (broadcast.privacy != "private")
-		apiYouTube->SetChatId(broadcast.id);
-	else
-		apiYouTube->ResetChat();
+	if (!stream_later || ready_broadcast) {
+		stream = {"", "", "OBS Studio Video Stream"};
+		if (!apiYouTube->InsertStream(stream)) {
+			blog(LOG_DEBUG, "No stream created.");
+			return false;
+		}
+		if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
+			blog(LOG_DEBUG, "No stream binded.");
+			return false;
+		}
+
+		if (broadcast.privacy != "private")
+			apiYouTube->SetChatId(broadcast.id);
+		else
+			apiYouTube->ResetChat();
+	}
 
 	return true;
 }
@@ -513,12 +586,9 @@ void OBSYoutubeActions::InitBroadcast()
 	bool success = false;
 	auto action = [&]() {
 		if (ui->tabWidget->currentIndex() == 0) {
-			if (ui->checkScheduledLater->isChecked()) {
-				success = this->StreamLaterAction(apiYouTube);
-			} else {
-				success = this->StreamNowAction(apiYouTube,
-								stream);
-			}
+			success = this->CreateEventAction(
+				apiYouTube, stream,
+				ui->checkScheduledLater->isChecked());
 		} else {
 			success = this->ChooseAnEventAction(apiYouTube, stream);
 		};
@@ -548,15 +618,61 @@ void OBSYoutubeActions::InitBroadcast()
 				blog(LOG_DEBUG, "New valid stream: %s",
 				     QT_TO_UTF8(stream.name));
 				emit ok(QT_TO_UTF8(stream.id),
-					QT_TO_UTF8(stream.name), true, true);
+					QT_TO_UTF8(stream.name), true, true,
+					true);
 				Accept();
 			}
 		} else {
 			// Stream to precreated broadcast usecase.
 			emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
-				autostart, autostop);
+				autostart, autostop, true);
 			Accept();
 		}
+	} else {
+		// Fail.
+		auto last_error = apiYouTube->GetLastError();
+		if (last_error.isEmpty())
+			last_error = QTStr("YouTube.Actions.Error.YouTubeApi");
+		if (!apiYouTube->GetTranslatedError(last_error))
+			last_error =
+				QTStr("YouTube.Actions.Error.NoBroadcastCreated")
+					.arg(last_error);
+
+		ShowErrorDialog(this, last_error);
+	}
+}
+
+void OBSYoutubeActions::ReadyBroadcast()
+{
+	StreamDescription stream;
+	QMessageBox msgBox(this);
+	msgBox.setWindowFlags(msgBox.windowFlags() &
+			      ~Qt::WindowCloseButtonHint);
+	msgBox.setWindowTitle(QTStr("YouTube.Actions.Notify.Title"));
+	msgBox.setText(QTStr("YouTube.Actions.Notify.CreatingBroadcast"));
+	msgBox.setStandardButtons(QMessageBox::StandardButtons());
+
+	bool success = false;
+	auto action = [&]() {
+		if (ui->tabWidget->currentIndex() == 0) {
+			success = this->CreateEventAction(
+				apiYouTube, stream,
+				ui->checkScheduledLater->isChecked(), true);
+		} else {
+			success = this->ChooseAnEventAction(apiYouTube, stream);
+		};
+		QMetaObject::invokeMethod(&msgBox, "accept",
+					  Qt::QueuedConnection);
+	};
+	QScopedPointer<QThread> thread(CreateQThread(action));
+	thread->start();
+	msgBox.exec();
+	thread->wait();
+
+	if (success) {
+		emit ok(QT_TO_UTF8(stream.id), QT_TO_UTF8(stream.name),
+			autostart, autostop, false);
+		Accept();
 	} else {
 		// Fail.
 		auto last_error = apiYouTube->GetLastError();
@@ -587,9 +703,118 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.schedul_for_later = ui->checkScheduledLater->isChecked();
 	broadcast.projection = ui->check360Video->isChecked() ? "360"
 							      : "rectangular";
-	// Current time by default.
-	broadcast.schedul_date_time = QDateTime::currentDateTimeUtc().toString(
-		SchedulDateAndTimeFormat);
+
+	if (ui->checkRememberSettings->isChecked())
+		SaveSettings(broadcast);
+}
+
+void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	config_set_string(main->basicConfig, "YouTube", "Title",
+			  QT_TO_UTF8(broadcast.title));
+	config_set_string(main->basicConfig, "YouTube", "Description",
+			  QT_TO_UTF8(broadcast.description));
+	config_set_string(main->basicConfig, "YouTube", "Privacy",
+			  QT_TO_UTF8(broadcast.privacy));
+	config_set_string(main->basicConfig, "YouTube", "CategoryID",
+			  QT_TO_UTF8(broadcast.category.id));
+	config_set_string(main->basicConfig, "YouTube", "Latency",
+			  QT_TO_UTF8(broadcast.latency));
+	config_set_bool(main->basicConfig, "YouTube", "MadeForKids",
+			broadcast.made_for_kids);
+	config_set_bool(main->basicConfig, "YouTube", "AutoStart",
+			broadcast.auto_start);
+	config_set_bool(main->basicConfig, "YouTube", "AutoStop",
+			broadcast.auto_start);
+	config_set_bool(main->basicConfig, "YouTube", "DVR", broadcast.dvr);
+	config_set_bool(main->basicConfig, "YouTube", "ScheduleForLater",
+			broadcast.schedul_for_later);
+	config_set_string(main->basicConfig, "YouTube", "Projection",
+			  QT_TO_UTF8(broadcast.projection));
+	config_set_string(main->basicConfig, "YouTube", "ThumbnailFile",
+			  QT_TO_UTF8(thumbnailFile));
+	config_set_bool(main->basicConfig, "YouTube", "RememberSettings", true);
+}
+
+void OBSYoutubeActions::LoadSettings()
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	const char *title =
+		config_get_string(main->basicConfig, "YouTube", "Title");
+	ui->title->setText(QT_UTF8(title));
+
+	const char *desc =
+		config_get_string(main->basicConfig, "YouTube", "Description");
+	ui->description->setPlainText(QT_UTF8(desc));
+
+	const char *priv =
+		config_get_string(main->basicConfig, "YouTube", "Privacy");
+	int index = ui->privacyBox->findData(priv);
+	ui->privacyBox->setCurrentIndex(index);
+
+	const char *catID =
+		config_get_string(main->basicConfig, "YouTube", "CategoryID");
+	index = ui->categoryBox->findData(catID);
+	ui->categoryBox->setCurrentIndex(index);
+
+	const char *latency =
+		config_get_string(main->basicConfig, "YouTube", "Latency");
+	index = ui->latencyBox->findData(latency);
+	ui->latencyBox->setCurrentIndex(index);
+
+	bool dvr = config_get_bool(main->basicConfig, "YouTube", "DVR");
+	ui->checkDVR->setChecked(dvr);
+
+	bool forKids =
+		config_get_bool(main->basicConfig, "YouTube", "MadeForKids");
+	if (forKids)
+		ui->yesMakeForKids->setChecked(true);
+	else
+		ui->notMakeForKids->setChecked(true);
+
+	bool schedLater = config_get_bool(main->basicConfig, "YouTube",
+					  "ScheduleForLater");
+	ui->checkScheduledLater->setChecked(schedLater);
+
+	bool autoStart =
+		config_get_bool(main->basicConfig, "YouTube", "AutoStart");
+	ui->checkAutoStart->setChecked(autoStart);
+
+	bool autoStop =
+		config_get_bool(main->basicConfig, "YouTube", "AutoStop");
+	ui->checkAutoStop->setChecked(autoStop);
+
+	const char *projection =
+		config_get_string(main->basicConfig, "YouTube", "Projection");
+	if (projection && *projection) {
+		if (strcmp(projection, "360") == 0)
+			ui->check360Video->setChecked(true);
+		else
+			ui->check360Video->setChecked(false);
+	}
+
+	const char *thumbFile = config_get_string(main->basicConfig, "YouTube",
+						  "ThumbnailFile");
+	if (thumbFile && *thumbFile) {
+		QFileInfo tFile(thumbFile);
+		// Re-check validity before setting path again
+		if (tFile.exists() && tFile.size() <= 2 * 1024 * 1024) {
+			thumbnailFile = tFile.absoluteFilePath();
+			ui->selectedFileName->setText(thumbnailFile);
+			ui->selectFileButton->setText(
+				QTStr("YouTube.Actions.Thumbnail.ClearFile"));
+
+			QImageReader imgReader(thumbnailFile);
+			imgReader.setAutoTransform(true);
+			const QImage newImage = imgReader.read();
+			ui->thumbnailPreview->setPixmap(
+				QPixmap::fromImage(newImage).scaled(
+					160, 90, Qt::KeepAspectRatio));
+		}
+	}
 }
 
 void OBSYoutubeActions::OpenYouTubeDashboard()

@@ -243,8 +243,12 @@ void OBSBasicSettings::SaveStream1Settings()
 	main->SetService(newService);
 	main->SaveService();
 	main->auth = auth;
-	if (!!main->auth)
+	if (!!main->auth) {
 		main->auth->LoadUI();
+		main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
+	} else {
+		main->SetBroadcastFlowEnabled(false);
+	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
@@ -667,6 +671,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	main->auth.reset();
 	auth.reset();
+	main->SetBroadcastFlowEnabled(false);
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 

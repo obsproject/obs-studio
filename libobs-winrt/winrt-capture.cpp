@@ -262,7 +262,6 @@ static void winrt_capture_device_loss_release(void *data)
 	capture->item = nullptr;
 }
 
-#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 static bool winrt_capture_border_toggle_supported()
 try {
 	return winrt::Windows::Foundation::Metadata::ApiInformation::
@@ -278,7 +277,6 @@ try {
 	     winrt::to_hresult().value);
 	return false;
 }
-#endif
 
 static winrt::Windows::Graphics::Capture::GraphicsCaptureItem
 winrt_capture_create_item(IGraphicsCaptureItemInterop *const interop_factory,
@@ -362,7 +360,6 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
 
-#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
 			RequestAccessAsync(
@@ -371,7 +368,6 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 				.get();
 		session.IsBorderRequired(false);
 	}
-#endif
 
 	if (winrt_capture_cursor_toggle_supported())
 		session.IsCursorCaptureEnabled(capture->capture_cursor &&
@@ -444,7 +440,6 @@ try {
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
 
-#if WINDOWS_FOUNDATION_UNIVERSALAPICONTRACT_VERSION >= 0xc0000
 	if (winrt_capture_border_toggle_supported()) {
 		winrt::Windows::Graphics::Capture::GraphicsCaptureAccess::
 			RequestAccessAsync(
@@ -453,7 +448,6 @@ try {
 				.get();
 		session.IsBorderRequired(false);
 	}
-#endif
 
 	/* disable cursor capture if possible since ours performs better */
 	const BOOL cursor_toggle_supported =
