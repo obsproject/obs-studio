@@ -106,17 +106,13 @@ fail:
 
 void get_window_title(struct dstr *name, HWND hwnd)
 {
-	wchar_t *temp;
-	int len;
-
-	len = GetWindowTextLengthW(hwnd);
-	if (!len)
-		return;
-
-	temp = malloc(sizeof(wchar_t) * (len + 1));
-	if (GetWindowTextW(hwnd, temp, len + 1))
-		dstr_from_wcs(name, temp);
-	free(temp);
+	wchar_t name_temp[MAX_PATH] = {0};
+	ULONG_PTR copy_count = 0;
+	LRESULT res = SendMessageTimeoutW(hwnd, WM_GETTEXT, MAX_PATH, name_temp,
+					  SMTO_ABORTIFHUNG, 2000, &copy_count);
+	if (0 != res && copy_count > 0) {
+		dstr_from_wcs(name, name_temp);
+	}
 }
 
 void get_window_class(struct dstr *class, HWND hwnd)
