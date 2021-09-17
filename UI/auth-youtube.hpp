@@ -20,6 +20,7 @@ class YoutubeAuth : public OAuthStreamKey {
 	Q_OBJECT
 
 	bool uiLoaded = false;
+	std::mt19937 randomSeed;
 	std::string section;
 
 #ifdef BROWSER_AVAILABLE
