@@ -147,8 +147,11 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	: source          (source_),
 	  isInputDevice   (input)
 {
-	blog(LOG_INFO, "[WASAPISource][%08X] WASAPI Source constructor", this);
 	UpdateSettings(settings);
+	if (device_id.compare("does_not_exist") == 0)
+		return;
+
+	blog(LOG_INFO, "[WASAPISource][%08X] WASAPI Source constructor", this);
 
 	stopSignal = CreateEvent(nullptr, true, false, nullptr);
 	if (!stopSignal.Valid())
@@ -174,6 +177,9 @@ inline void WASAPISource::Start()
 
 inline void WASAPISource::Stop()
 {
+	if (device_id.compare("does_not_exist") == 0)
+		return;
+
 	blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Stop called", this,
 		device_id.c_str());
 
@@ -456,8 +462,6 @@ void WASAPISource::Initialize()
 	res = InitDevice(enumerator);
 
 	if (FAILED(res) || device.Get() == nullptr) {
-		// fail early
-		blog(LOG_ERROR, "[WASAPISource::Initialize][%08X] Device pointer is %p res is %d", this, device.Get(), res);
 		throw HRError("[WASAPISource::Initialize] Failed to init device", res);
 	}
 
