@@ -19,6 +19,12 @@ int hls_stream_dropped_frames(void *data)
 	return stream->dropped_frames;
 }
 
+static bool ffmpeg_hls_is_ready_to_update(void *data)
+{
+	struct ffmpeg_muxer *stream = data;
+	return !(active(stream) || stopping(stream));
+}
+
 void ffmpeg_hls_mux_destroy(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -329,4 +335,5 @@ struct obs_output_info ffmpeg_hls_muxer = {
 	.encoded_packet = ffmpeg_hls_mux_data,
 	.get_total_bytes = ffmpeg_mux_total_bytes,
 	.get_dropped_frames = hls_stream_dropped_frames,
+	.is_ready_to_update = ffmpeg_hls_is_ready_to_update,
 };

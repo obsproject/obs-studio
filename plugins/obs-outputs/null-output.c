@@ -81,6 +81,12 @@ static void null_output_stop(void *data, uint64_t ts)
 						     data) == 0;
 }
 
+static bool null_output_is_ready_to_update(void *data)
+{
+	struct null_output *stream = data;
+	return !(stream->stop_thread_active);
+}
+
 static void null_output_data(void *data, struct encoder_packet *packet)
 {
 	UNUSED_PARAMETER(data);
@@ -96,4 +102,5 @@ struct obs_output_info null_output_info = {
 	.start = null_output_start,
 	.stop = null_output_stop,
 	.encoded_packet = null_output_data,
+	.is_ready_to_update = null_output_is_ready_to_update,
 };

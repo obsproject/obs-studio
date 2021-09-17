@@ -561,6 +561,12 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 	write_packet(stream, packet);
 }
 
+static bool ffmpeg_mux_is_ready_to_update(void *data)
+{
+	struct ffmpeg_muxer *stream = data;
+	return !(capturing(stream) || active(stream) || stopping(stream));
+}
+
 static obs_properties_t *ffmpeg_mux_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -590,6 +596,7 @@ struct obs_output_info ffmpeg_muxer = {
 	.encoded_packet = ffmpeg_mux_data,
 	.get_total_bytes = ffmpeg_mux_total_bytes,
 	.get_properties = ffmpeg_mux_properties,
+	.is_ready_to_update = ffmpeg_mux_is_ready_to_update,
 };
 
 static int connect_time(struct ffmpeg_muxer *stream)
@@ -621,6 +628,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.get_total_bytes = ffmpeg_mux_total_bytes,
 	.get_properties = ffmpeg_mux_properties,
 	.get_connect_time_ms = ffmpeg_mpegts_mux_connect_time,
+	.is_ready_to_update = ffmpeg_mux_is_ready_to_update,
 };
 
 /* ------------------------------------------------------------------------ */
@@ -1026,4 +1034,5 @@ struct obs_output_info replay_buffer = {
 	.encoded_packet = replay_buffer_data,
 	.get_total_bytes = ffmpeg_mux_total_bytes,
 	.get_defaults = replay_buffer_defaults,
+	.is_ready_to_update = ffmpeg_mux_is_ready_to_update,
 };

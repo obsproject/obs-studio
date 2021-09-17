@@ -252,6 +252,12 @@ unlock:
 	pthread_mutex_unlock(&stream->mutex);
 }
 
+static bool flv_output_is_ready_to_update(void *data)
+{
+	struct flv_output *stream = data;
+	return !(active(stream) || stopping(stream));
+}
+
 static obs_properties_t *flv_output_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -276,4 +282,5 @@ struct obs_output_info flv_output_info = {
 	.stop = flv_output_stop,
 	.encoded_packet = flv_output_data,
 	.get_properties = flv_output_properties,
+	.is_ready_to_update = flv_output_is_ready_to_update,
 };

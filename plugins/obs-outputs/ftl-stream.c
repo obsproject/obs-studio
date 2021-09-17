@@ -280,7 +280,7 @@ static void ftl_stream_stop(void *data, uint64_t ts)
 static bool ftl_stream_is_ready_to_update(void *data)
 {
 	struct ftl_stream *stream = data;
-	return !(connecting(stream) || active(stream));
+	return !(connecting(stream) || active(stream) || stopping(stream));
 }
 
 static inline bool get_next_packet(struct ftl_stream *stream,
