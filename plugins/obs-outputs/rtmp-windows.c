@@ -1,6 +1,5 @@
 #ifdef _WIN32
 #include "rtmp-stream.h"
-#include <winsock2.h>
 
 static void fatal_sock_shutdown(struct rtmp_stream *stream)
 {
