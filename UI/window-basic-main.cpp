@@ -6427,8 +6427,8 @@ void OBSBasic::SetBroadcastFlowEnabled(bool enabled)
 
 void OBSBasic::SetupBroadcast()
 {
-	Auth *auth = GetAuth();
 #if YOUTUBE_ENABLED
+	Auth *const auth = GetAuth();
 	if (IsYouTubeService(auth->service())) {
 		OBSYoutubeActions *dialog;
 		dialog = new OBSYoutubeActions(this, auth, broadcastReady);
