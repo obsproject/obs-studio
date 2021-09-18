@@ -3,7 +3,7 @@
 #include <util/util.hpp>
 #include <obs-module.h>
 #include <sys/stat.h>
-#include <windows.h>
+#include <combaseapi.h>
 #include <gdiplus.h>
 #include <algorithm>
 #include <string>
