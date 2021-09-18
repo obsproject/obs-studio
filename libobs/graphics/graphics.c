@@ -28,8 +28,10 @@
 #include "effect-parser.h"
 #include "effect.h"
 
-#ifdef _MSC_VER
+#ifdef near
 #undef near
+#endif
+#ifdef far
 #undef far
 #endif
 
