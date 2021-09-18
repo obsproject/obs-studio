@@ -1,7 +1,6 @@
 #include <QGuiApplication>
 #include <QMouseEvent>
 
-#include <algorithm>
 #include <cmath>
 #include <string>
 #include <graphics/vec4.h>
@@ -1049,10 +1048,14 @@ static bool FindItemsInBox(obs_scene_t *scene, obs_sceneitem_t *item,
 	vec3 pos3;
 	vec3 pos3_;
 
-	float x1 = std::min(data->startPos.x, data->pos.x);
-	float x2 = std::max(data->startPos.x, data->pos.x);
-	float y1 = std::min(data->startPos.y, data->pos.y);
-	float y2 = std::max(data->startPos.y, data->pos.y);
+	vec2 pos_min, pos_max;
+	vec2_min(&pos_min, &data->startPos, &data->pos);
+	vec2_max(&pos_max, &data->startPos, &data->pos);
+
+	const float x1 = pos_min.x;
+	const float x2 = pos_max.x;
+	const float y1 = pos_min.y;
+	const float y2 = pos_max.y;
 
 	if (!SceneItemHasVideo(item))
 		return true;
