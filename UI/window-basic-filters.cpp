@@ -197,6 +197,68 @@ inline OBSSource OBSBasicFilters::GetFilter(int row, bool async)
 	return v.value<OBSSource>();
 }
 
+void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
+			  obs_data_t *new_settings)
+{
+	obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
+	obs_source_t *parent = obs_filter_get_parent(source);
+	const char *source_name = obs_source_get_name(source);
+	OBSBasic *main = OBSBasic::Get();
+
+	obs_data_t *redo_wrapper = obs_data_create();
+	obs_data_set_string(redo_wrapper, "name", source_name);
+	obs_data_set_string(redo_wrapper, "settings",
+			    obs_data_get_json(new_settings));
+	obs_data_set_string(redo_wrapper, "parent",
+			    obs_source_get_name(parent));
+
+	obs_data_t *filter_settings = obs_source_get_settings(source);
+
+	obs_data_t *undo_wrapper = obs_data_create();
+	obs_data_set_string(undo_wrapper, "name", source_name);
+	obs_data_set_string(undo_wrapper, "settings",
+			    obs_data_get_json(nd_old_settings));
+	obs_data_set_string(undo_wrapper, "parent",
+			    obs_source_get_name(parent));
+
+	auto undo_redo = [](const std::string &data) {
+		obs_data_t *dat = obs_data_create_from_json(data.c_str());
+		obs_source_t *parent_source = obs_get_source_by_name(
+			obs_data_get_string(dat, "parent"));
+		const char *filter_name = obs_data_get_string(dat, "name");
+		obs_source_t *filter = obs_source_get_filter_by_name(
+			parent_source, filter_name);
+		obs_data_t *new_settings = obs_data_create_from_json(
+			obs_data_get_string(dat, "settings"));
+
+		obs_data_t *current_settings = obs_source_get_settings(filter);
+		obs_data_clear(current_settings);
+		obs_data_release(current_settings);
+
+		obs_source_update(filter, new_settings);
+		obs_source_update_properties(filter);
+
+		obs_data_release(dat);
+		obs_data_release(new_settings);
+		obs_source_release(filter);
+		obs_source_release(parent_source);
+	};
+
+	main->undo_s.enable();
+
+	std::string name = std::string(obs_source_get_name(source));
+	std::string undo_data = obs_data_get_json(undo_wrapper);
+	std::string redo_data = obs_data_get_json(redo_wrapper);
+	main->undo_s.add_action(QTStr("Undo.Filters").arg(name.c_str()),
+				undo_redo, undo_redo, undo_data, redo_data);
+
+	obs_data_release(redo_wrapper);
+	obs_data_release(undo_wrapper);
+	obs_data_release(filter_settings);
+
+	obs_source_update(source, new_settings);
+}
+
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
 	if (view) {
@@ -212,70 +274,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 
 	obs_data_t *settings = obs_source_get_settings(filter);
 
-	auto filter_change = [](void *vp, obs_data_t *nd_old_settings,
-				obs_data_t *new_settings) {
-		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
-		obs_source_t *parent = obs_filter_get_parent(source);
-		const char *source_name = obs_source_get_name(source);
-		OBSBasic *main = OBSBasic::Get();
-
-		obs_data_t *redo_wrapper = obs_data_create();
-		obs_data_set_string(redo_wrapper, "name", source_name);
-		obs_data_set_string(redo_wrapper, "settings",
-				    obs_data_get_json(new_settings));
-		obs_data_set_string(redo_wrapper, "parent",
-				    obs_source_get_name(parent));
-
-		obs_data_t *filter_settings = obs_source_get_settings(source);
-		obs_data_t *old_settings =
-			obs_data_get_defaults(filter_settings);
-		obs_data_apply(old_settings, nd_old_settings);
-
-		obs_data_t *undo_wrapper = obs_data_create();
-		obs_data_set_string(undo_wrapper, "name", source_name);
-		obs_data_set_string(undo_wrapper, "settings",
-				    obs_data_get_json(old_settings));
-		obs_data_set_string(undo_wrapper, "parent",
-				    obs_source_get_name(parent));
-
-		auto undo_redo = [](const std::string &data) {
-			obs_data_t *dat =
-				obs_data_create_from_json(data.c_str());
-			obs_source_t *parent_source = obs_get_source_by_name(
-				obs_data_get_string(dat, "parent"));
-			const char *filter_name =
-				obs_data_get_string(dat, "name");
-			obs_source_t *filter = obs_source_get_filter_by_name(
-				parent_source, filter_name);
-			obs_data_t *settings = obs_data_create_from_json(
-				obs_data_get_string(dat, "settings"));
-
-			obs_source_update(filter, settings);
-			obs_source_update_properties(filter);
-
-			obs_data_release(dat);
-			obs_data_release(settings);
-			obs_source_release(filter);
-			obs_source_release(parent_source);
-		};
-
-		main->undo_s.enable();
-
-		std::string name = std::string(obs_source_get_name(source));
-		std::string undo_data = obs_data_get_json(undo_wrapper);
-		std::string redo_data = obs_data_get_json(redo_wrapper);
-		main->undo_s.add_action(QTStr("Undo.Filters").arg(name.c_str()),
-					undo_redo, undo_redo, undo_data,
-					redo_data);
-
-		obs_data_release(redo_wrapper);
-		obs_data_release(undo_wrapper);
-		obs_data_release(old_settings);
-		obs_data_release(filter_settings);
-
-		obs_source_update(source, new_settings);
-	};
-
 	auto disabled_undo = [](void *vp, obs_data_t *settings) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -287,7 +285,7 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 	view = new OBSPropertiesView(
 		settings, filter,
 		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)filter_change,
+		(PropertiesUpdateCallback)FilterChangeUndoRedo,
 		(PropertiesVisualUpdateCb)disabled_undo);
 
 	updatePropertiesSignal.Connect(obs_source_get_signal_handler(filter),
@@ -1141,6 +1139,11 @@ void OBSBasicFilters::ResetFilters()
 		return;
 
 	obs_data_t *settings = obs_source_get_settings(filter);
+
+	obs_data_t *empty_settings = obs_data_create();
+	FilterChangeUndoRedo((void *)filter, settings, empty_settings);
+	obs_data_release(empty_settings);
+
 	obs_data_clear(settings);
 	obs_data_release(settings);
 
