@@ -20,8 +20,12 @@
 #include "gl-subsystem.h"
 
 /* Goofy Windows.h macros need to be removed */
-#undef far
+#ifdef near
 #undef near
+#endif
+#ifdef far
+#undef far
+#endif
 
 /* #define SHOW_ALL_GL_MESSAGES */
 
