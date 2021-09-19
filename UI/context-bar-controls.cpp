@@ -546,8 +546,6 @@ ColorSourceToolbar::~ColorSourceToolbar()
 
 void ColorSourceToolbar::UpdateColor()
 {
-	color.setAlpha(255);
-
 	QPalette palette = QPalette(color);
 	ui->color->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	ui->color->setText(color.name(QColor::HexRgb));
@@ -574,6 +572,7 @@ void ColorSourceToolbar::on_choose_clicked()
 
 	QColorDialog::ColorDialogOptions options;
 
+	options |= QColorDialog::ShowAlphaChannel;
 #ifndef _WIN32
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
@@ -693,6 +692,7 @@ void TextSourceToolbar::on_selectColor_clicked()
 
 	QColorDialog::ColorDialogOptions options;
 
+	options |= QColorDialog::ShowAlphaChannel;
 #ifndef _WIN32
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
