@@ -19,7 +19,6 @@
 
 #import "OBSDALDevice.h"
 
-#import <CoreFoundation/CoreFoundation.h>
 #include <IOKit/audio/IOAudioTypes.h>
 
 #import "OBSDALPlugIn.h"

@@ -1,11 +1,4 @@
 #include <obs-module.h>
-#include <obs.hpp>
-#include <pthread.h>
-#include <QMainWindow.h>
-#include <QAction.h>
-#include <obs-frontend-api.h>
-#include <obs.h>
-#include <CoreFoundation/CoreFoundation.h>
 #include <AppKit/AppKit.h>
 #include "OBSDALMachServer.h"
 #include "Defines.h"
