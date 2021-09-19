@@ -21,8 +21,6 @@
 
 #import "OBSDALPlugInInterface.h"
 
-#import <CoreFoundation/CFUUID.h>
-
 #import "OBSDALPlugIn.h"
 #import "OBSDALDevice.h"
 #import "OBSDALStream.h"
