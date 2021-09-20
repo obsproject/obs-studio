@@ -330,27 +330,30 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 
 bool os_sleepto_ns(uint64_t time_target)
 {
-	uint64_t t = os_gettime_ns();
-	uint32_t milliseconds;
+	const double freq = (double)get_clockfreq();
+	const LONGLONG count_target =
+		(LONGLONG)((double)time_target * freq / 1000000000.0);
 
-	if (t >= time_target)
-		return false;
+	LARGE_INTEGER count;
+	QueryPerformanceCounter(&count);
 
-	milliseconds = (uint32_t)((time_target - t) / 1000000);
-	if (milliseconds > 1)
-		Sleep(milliseconds - 1);
+	const bool stall = count.QuadPart < count_target;
+	if (stall) {
+		const DWORD milliseconds = (DWORD)(
+			((count_target - count.QuadPart) * 1000.0) / freq);
+		if (milliseconds > 1)
+			Sleep(milliseconds - 1);
 
-	for (;;) {
-		t = os_gettime_ns();
-		if (t >= time_target)
-			return true;
+		for (;;) {
+			QueryPerformanceCounter(&count);
+			if (count.QuadPart >= count_target)
+				break;
 
-#if 0
-		Sleep(1);
-#else
-		Sleep(0);
-#endif
+			YieldProcessor();
+		}
 	}
+
+	return stall;
 }
 
 void os_sleep_ms(uint32_t duration)
