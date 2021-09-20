@@ -60,6 +60,10 @@ Structures/Enumerations
 
      Triggered when the current transition has changed by the user.
 
+   - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
+
+     Triggered when the transition duration has been changed by the user.
+
    - **OBS_FRONTEND_EVENT_TRANSITION_STOPPED**
 
      Triggered when a transition has completed.
