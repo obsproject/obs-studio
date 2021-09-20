@@ -704,13 +704,19 @@ void OBSYoutubeActions::UiToBroadcast(BroadcastDescription &broadcast)
 	broadcast.projection = ui->check360Video->isChecked() ? "360"
 							      : "rectangular";
 
-	if (ui->checkRememberSettings->isChecked())
-		SaveSettings(broadcast);
+	SaveSettings(broadcast);
 }
 
 void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 {
 	OBSBasic *main = OBSBasic::Get();
+
+	bool remember = ui->checkRememberSettings->isChecked();
+	config_set_bool(main->basicConfig, "YouTube", "RememberSettings",
+			remember);
+
+	if (!remember)
+		return;
 
 	config_set_string(main->basicConfig, "YouTube", "Title",
 			  QT_TO_UTF8(broadcast.title));
@@ -735,7 +741,6 @@ void OBSYoutubeActions::SaveSettings(BroadcastDescription &broadcast)
 			  QT_TO_UTF8(broadcast.projection));
 	config_set_string(main->basicConfig, "YouTube", "ThumbnailFile",
 			  QT_TO_UTF8(thumbnailFile));
-	config_set_bool(main->basicConfig, "YouTube", "RememberSettings", true);
 }
 
 void OBSYoutubeActions::LoadSettings()
@@ -815,6 +820,10 @@ void OBSYoutubeActions::LoadSettings()
 					160, 90, Qt::KeepAspectRatio));
 		}
 	}
+
+	bool rememberSettings = config_get_bool(main->basicConfig, "YouTube",
+						"RememberSettings");
+	ui->checkRememberSettings->setChecked(rememberSettings);
 }
 
 void OBSYoutubeActions::OpenYouTubeDashboard()
