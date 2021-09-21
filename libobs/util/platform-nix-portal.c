@@ -24,6 +24,7 @@
 
 struct portal_inhibit_info {
 	GDBusConnection *c;
+	GCancellable *cancellable;
 	unsigned int signal_id;
 	char *sender_name;
 	char *request_path;
@@ -91,10 +92,30 @@ static void response_received(GDBusConnection *bus, const char *sender_name,
 	unsubscribe_from_request(info);
 }
 
-static void do_inhibit(struct portal_inhibit_info *info, const char *reason)
+static void inhibited_cb(GObject *source_object, GAsyncResult *result,
+			 gpointer user_data)
 {
+	UNUSED_PARAMETER(source_object);
+
+	struct portal_inhibit_info *info = user_data;
 	g_autoptr(GVariant) reply = NULL;
 	g_autoptr(GError) error = NULL;
+
+	reply = g_dbus_connection_call_finish(info->c, result, &error);
+
+	if (error != NULL) {
+		if (!g_error_matches(error, G_IO_ERROR, G_IO_ERROR_CANCELLED))
+			blog(LOG_ERROR, "Failed to inhibit: %s",
+			     error->message);
+		unsubscribe_from_request(info);
+		remove_inhibit_data(info);
+	}
+
+	g_clear_object(&info->cancellable);
+}
+
+static void do_inhibit(struct portal_inhibit_info *info, const char *reason)
+{
 	GVariantBuilder options;
 	uint32_t flags = 0xC;
 	char *token;
@@ -117,41 +138,58 @@ static void do_inhibit(struct portal_inhibit_info *info, const char *reason)
 
 	bfree(token);
 
-	reply = g_dbus_connection_call_sync(
-		info->c, PORTAL_NAME, "/org/freedesktop/portal/desktop",
-		"org.freedesktop.portal.Inhibit", "Inhibit",
-		g_variant_new("(sua{sv})", "", flags, &options), NULL,
-		G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-	if (error != NULL) {
-		blog(LOG_ERROR, "Failed to inhibit: %s", error->message);
-		unsubscribe_from_request(info);
-		remove_inhibit_data(info);
-		return;
-	}
+	info->cancellable = g_cancellable_new();
+	g_dbus_connection_call(info->c, PORTAL_NAME,
+			       "/org/freedesktop/portal/desktop",
+			       "org.freedesktop.portal.Inhibit", "Inhibit",
+			       g_variant_new("(sua{sv})", "", flags, &options),
+			       NULL, G_DBUS_CALL_FLAGS_NONE, -1,
+			       info->cancellable, inhibited_cb, info);
 }
 
-static void do_uninhibit(struct portal_inhibit_info *info)
+static void uninhibited_cb(GObject *source_object, GAsyncResult *result,
+			   gpointer user_data)
 {
+	UNUSED_PARAMETER(source_object);
+
+	struct portal_inhibit_info *info = user_data;
+	g_autoptr(GVariant) reply = NULL;
 	g_autoptr(GError) error = NULL;
 
-	g_dbus_connection_call_sync(info->c, PORTAL_NAME, info->request_path,
-				    "org.freedesktop.portal.Request", "Close",
-				    g_variant_new("()"), G_VARIANT_TYPE_UNIT,
-				    G_DBUS_CALL_FLAGS_NONE, -1, NULL, &error);
-
-	remove_inhibit_data(info);
+	reply = g_dbus_connection_call_finish(info->c, result, &error);
 
 	if (error)
 		blog(LOG_WARNING, "Error uninhibiting: %s", error->message);
 }
 
+static void do_uninhibit(struct portal_inhibit_info *info)
+{
+	if (info->cancellable) {
+		/* If uninhibit is called before the inhibit call is finished,
+		 * cancel it instead.
+		 */
+		g_cancellable_cancel(info->cancellable);
+		g_clear_object(&info->cancellable);
+	} else {
+		g_dbus_connection_call(info->c, PORTAL_NAME, info->request_path,
+				       "org.freedesktop.portal.Request",
+				       "Close", g_variant_new("()"),
+				       G_VARIANT_TYPE_UNIT,
+				       G_DBUS_CALL_FLAGS_NONE, -1, NULL,
+				       uninhibited_cb, info);
+	}
+
+	remove_inhibit_data(info);
+}
+
 void portal_inhibit_info_destroy(struct portal_inhibit_info *info)
 {
 	if (info) {
+		g_cancellable_cancel(info->cancellable);
 		unsubscribe_from_request(info);
 		remove_inhibit_data(info);
 		g_clear_pointer(&info->sender_name, bfree);
+		g_clear_object(&info->cancellable);
 		g_clear_object(&info->c);
 		bfree(info);
 	}
