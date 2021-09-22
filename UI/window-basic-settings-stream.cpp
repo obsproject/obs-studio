@@ -481,7 +481,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	}
 
 	auto system_auth_service = main->auth->service();
-	bool service_check = service == system_auth_service;
+	bool service_check = service.find(system_auth_service) !=
+			     std::string::npos;
 #if YOUTUBE_ENABLED
 	service_check = service_check ? service_check
 				      : IsYouTubeService(system_auth_service) &&
