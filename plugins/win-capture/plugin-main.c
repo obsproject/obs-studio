@@ -14,6 +14,7 @@ extern struct obs_source_info duplicator_capture_info;
 extern struct obs_source_info monitor_capture_info;
 extern struct obs_source_info window_capture_info;
 extern struct obs_source_info game_capture_info;
+extern struct obs_source_info screen_capture_info;
 
 static HANDLE init_hooks_thread = NULL;
 
@@ -101,6 +102,8 @@ bool obs_module_load(void)
 	init_hooks_thread =
 		CreateThread(NULL, 0, init_hooks, config_path, 0, NULL);
 	obs_register_source(&game_capture_info);
+
+	obs_register_source(&screen_capture_info);
 
 	return true;
 }

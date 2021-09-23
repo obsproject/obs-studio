@@ -1015,6 +1015,9 @@ EXPORT void obs_source_reset_settings(obs_source_t *source,
 /** Renders a video source. */
 EXPORT void obs_source_video_render(obs_source_t *source);
 
+/** Updates a source. */
+EXPORT void obs_source_video_tick(obs_source_t *source, float seconds);
+
 /** Gets the width of a source (if it has video) */
 EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 

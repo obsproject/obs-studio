@@ -433,6 +433,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 		return sizeof(struct list_data);
 	case OBS_PROPERTY_COLOR:
 		return 0;
+	case OBS_PROPERTY_CAPTURE:
+		return 0;
 	case OBS_PROPERTY_BUTTON:
 		return sizeof(struct button_data);
 	case OBS_PROPERTY_FONT:
@@ -657,6 +659,14 @@ obs_property_t *obs_properties_add_color(obs_properties_t *props,
 	if (!props || has_prop(props, name))
 		return NULL;
 	return new_prop(props, name, desc, OBS_PROPERTY_COLOR);
+}
+
+obs_property_t *obs_properties_add_capture(obs_properties_t *props,
+					 const char *name, const char *desc)
+{
+	if (!props || has_prop(props, name))
+		return NULL;
+	return new_prop(props, name, desc, OBS_PROPERTY_CAPTURE);
 }
 
 obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props,
