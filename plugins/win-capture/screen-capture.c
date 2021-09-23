@@ -193,20 +193,16 @@ static void scs_defaults(obs_data_t *settings)
 
 static uint32_t scs_getwidth(void *data)
 {
-	struct screen_capture *context = data;
-	if (context->current_capture_source)
-		return obs_source_get_width(context->current_capture_source);
-
-	return 0;
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	return ovi.output_width;
 }
 
 static uint32_t scs_getheight(void *data)
 {
-	struct screen_capture *context = data;
-	if (context->current_capture_source)
-		return obs_source_get_height(context->current_capture_source);
-
-	return 0;
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	return ovi.output_height;
 }
 
 static void scs_show(void *data) {}
@@ -233,6 +229,30 @@ static void scs_deactivate(void *data)
 	blog(LOG_DEBUG, "[SCREEN_CAPTURE]: deactivated ");
 }
 
+static void scs_render_source(struct obs_source * source)
+{
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	float source_height = obs_source_get_height(source);
+	float source_width = obs_source_get_width(source);
+
+	float scale_y = (float)ovi.output_height/source_height;
+	float scale_x = (float)ovi.output_width/source_width;
+	scale_x = min(scale_x, scale_y);
+	scale_y = min(scale_x, scale_y);
+
+	float translate_x = (ovi.output_width - source_width*scale_x)/2.0;
+	float translate_y = (ovi.output_height - source_height*scale_y)/2.0;
+
+	gs_matrix_push();
+	gs_matrix_translate3f(translate_x, translate_y, 0.0f);
+	gs_matrix_scale3f(scale_x, scale_y, 1.0f);
+
+	obs_source_video_render(source);
+	gs_matrix_pop();
+}
+
 static void scs_render(void *data, gs_effect_t *effect)
 {
 	struct screen_capture *context = data;
@@ -240,8 +260,7 @@ static void scs_render(void *data, gs_effect_t *effect)
 		DWORD ret = WaitForSingleObject(context->sources_mutex, 0);
 		if (ret == WAIT_OBJECT_0) {
 			if (context->current_capture_source) {
-				obs_source_video_render(
-					context->current_capture_source);
+				scs_render_source(context->current_capture_source);
 			}
 			ReleaseMutex(context->sources_mutex);
 		}
