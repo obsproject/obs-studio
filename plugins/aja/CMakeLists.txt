@@ -43,27 +43,14 @@ if(APPLE)
 
 	set(aja_INCLUDE_DIRS
 		${aja_INCLUDE_DIRS}
-		ntv2/ajantv2/src/mac)
+		sdk/ajantv2/src/mac)
 
-	if (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
-		if(CMAKE_BUILD_TYPE STREQUAL Debug)
-			set(aja_LINK_DIRS
-				sdk/lib/Debug/macos/x64)
-		else()
-			set(aja_LINK_DIRS
-				sdk/lib/Release/macos/x64)
-		endif()
-	elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
-		if(CMAKE_BUILD_TYPE STREQUAL Debug)
-			set(aja_LINK_DIRS
-				sdk/lib/Debug/macos/arm64)
-		else()
-			set(aja_LINK_DIRS
-				sdk/lib/Release/macos/arm64)
-		endif()
-	elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64;arm64"|"arm64;x86_64")
-		message(WARNING "aja plugin macOS universal build not yet implemented!")
-		return()
+	if(CMAKE_BUILD_TYPE STREQUAL Debug)
+		set(aja_LINK_DIRS
+			sdk/lib/Debug/macos/x64)
+	else()
+		set(aja_LINK_DIRS
+			sdk/lib/Release/macos/x64)
 	endif()
 
 	find_library(IOKIT_FRAMEWORK Iokit)
