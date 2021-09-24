@@ -173,7 +173,13 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 		IDeckLinkVideoConversion *frameConverter =
 			CreateVideoConversionInstance();
 
+		if (!frameConverter) {
+			LOG(LOG_WARNING,
+			    "Failed to create video conversion instance.");
+			return;
+		}
 		frameConverter->ConvertFrame(videoFrame, convertFrame);
+		frameConverter->Release();
 
 		frame = convertFrame;
 	} else {
@@ -402,6 +408,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 				    bmdVideoConnection);
 			}
 		}
+		deckLinkConfiguration->Release();
 	}
 
 	videoConnection = bmdVideoConnection;
@@ -534,6 +541,7 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		} else {
 			deckLinkKeyer->Disable();
 		}
+		deckLinkKeyer->Release();
 	}
 
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);

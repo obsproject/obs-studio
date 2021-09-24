@@ -45,6 +45,8 @@ void log_sdk_version()
 
 		deckLinkAPIInformation->Release();
 	}
+
+	deckLinkIterator->Release();
 }
 
 bool obs_module_load(void)
