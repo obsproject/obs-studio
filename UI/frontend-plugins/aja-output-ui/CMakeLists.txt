@@ -83,7 +83,7 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 target_include_directories(aja-output-ui PUBLIC
-	../../../plugins/aja/sdk/ajalibraries)
+	../../../plugins/aja/sdk)
 
 target_link_libraries(aja-output-ui
 	${frontend-tools_PLATFORM_LIBS}

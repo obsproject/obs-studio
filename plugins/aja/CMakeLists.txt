@@ -1,10 +1,15 @@
 project(aja)
 
+if(DISABLE_AJA)
+	message(STATUS "aja plugin disabled")
+	return()
+endif()
+
 set(aja_INCLUDE_DIRS
-	sdk/ajalibraries
-	sdk/ajalibraries/ajabase
-	sdk/ajalibraries/ajaanc
-	sdk/ajalibraries/ajantv2/includes)
+	sdk
+	sdk/ajabase
+	sdk/ajaanc
+	sdk/ajantv2/includes)
 
 set(aja_SOURCES
 	main.cpp
@@ -32,9 +37,34 @@ set(aja_LIBRARIES
 
 # macOS
 if(APPLE)
+	set(aja_COMPILE_DEFS
+		AJAMac
+		AJA_MAC)
+
 	set(aja_INCLUDE_DIRS
 		${aja_INCLUDE_DIRS}
-		sdk/ajalibraries/ajantv2/src/mac)
+		ntv2/ajantv2/src/mac)
+
+	if (CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64")
+		if(CMAKE_BUILD_TYPE STREQUAL Debug)
+			set(aja_LINK_DIRS
+				sdk/lib/Debug/macos/x64)
+		else()
+			set(aja_LINK_DIRS
+				sdk/lib/Release/macos/x64)
+		endif()
+	elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+		if(CMAKE_BUILD_TYPE STREQUAL Debug)
+			set(aja_LINK_DIRS
+				sdk/lib/Debug/macos/arm64)
+		else()
+			set(aja_LINK_DIRS
+				sdk/lib/Release/macos/arm64)
+		endif()
+	elseif(CMAKE_OSX_ARCHITECTURES STREQUAL "x86_64;arm64"|"arm64;x86_64")
+		message(WARNING "aja plugin macOS universal build not yet implemented!")
+		return()
+	endif()
 
 	find_library(IOKIT_FRAMEWORK Iokit)
 	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
@@ -46,9 +76,29 @@ if(APPLE)
 		${APPKIT_FRAMEWORK})
 # Windows
 elseif(WIN32)
+	set(aja_COMPILE_DEFS
+		AJA_WINDOWS
+		_WINDOWS
+		WIN32
+		MSWindows)
+
 	set(aja_INCLUDE_DIRS
 		${aja_INCLUDE_DIRS}
-		sdk/ajalibraries/ajantv2/src/win)
+		sdk/ajantv2/src/win)
+
+	if(CMAKE_BUILD_TYPE STREQUAL Debug)
+		list(APPEND aja_COMPILE_DEFS
+			_DEBUG)
+
+		set(aja_LINK_DIRS
+			sdk/lib/Debug/windows/x64)
+	else()
+		list(APPEND aja_COMPILE_DEFS
+			NDEBUG)
+
+		set(aja_LINK_DIRS
+			sdk/lib/Release/windows/x64)
+	endif()
 
 	list(APPEND aja_LIBRARIES
 		ws2_32.lib
@@ -58,12 +108,24 @@ elseif(WIN32)
 		Shlwapi.lib)
 # Linux
 elseif(UNIX AND NOT APPLE)
+	if (CMAKE_BUILD_TYPE STREQUAL Debug)
+		set(aja_LINK_DIRS
+			sdk/lib/Debug/linux/x64)
+	else()
+		set(aja_LINK_DIRS
+			sdk/lib/Release/linux/x64)
+	endif()
+
+	set(aja_COMPILE_DEFS
+		AJA_LINUX
+		AJALinux)
+
 	set(aja_INCLUDE_DIRS
 		${aja_INCLUDE_DIRS}
-		sdk/ajalibraries/ajantv2/src/lin)
+		sdk/ajantv2/src/lin)
 endif()
 
-if(DEFINED CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
+if(CMAKE_BUILD_TYPE STREQUAL Debug)
 	list(APPEND aja_LIBRARIES
 		ajantv2d)
 else()
@@ -72,45 +134,11 @@ else()
 endif()
 
 add_library(aja MODULE ${aja_SOURCES} ${aja_HEADERS})
+
 target_include_directories(aja PUBLIC ${aja_INCLUDE_DIRS})
+target_link_directories(aja PUBLIC ${aja_LINK_DIRS})
 target_link_libraries(aja PUBLIC ${aja_LIBRARIES})
-
-# add aja SDK CMakeLists (libajantv2)
-add_subdirectory(sdk)
-add_dependencies(aja ajantv2)
-
-# macOS
-if(APPLE)
-	target_compile_definitions(aja PUBLIC
-		AJAMac
-		AJA_MAC)
-	target_link_directories(aja PUBLIC
-		${CMAKE_BINARY_DIR}/plugins/aja/sdk/ajalibraries/ajantv2)
-# Windows
-elseif(WIN32)
-	target_compile_definitions(aja PUBLIC
-		AJA_WINDOWS
-		_WINDOWS
-		WIN32
-		MSWindows)
-
-	if(DEFINED CMAKE_BUILD_TYPE AND CMAKE_BUILD_TYPE STREQUAL "Debug")
-		target_compile_definitions(aja PUBLIC _DEBUG)
-		target_link_directories(aja PUBLIC
-			${CMAKE_BINARY_DIR}/plugins/aja/sdk/ajalibraries/ajantv2/Debug)
-	else()
-		target_compile_definitions(aja PUBLIC NDEBUG)
-		target_link_directories(aja PUBLIC
-			${CMAKE_BINARY_DIR}/plugins/aja/sdk/ajalibraries/ajantv2/Release)
-	endif()
-# Linux
-elseif(UNIX AND NOT APPLE)
-	target_compile_definitions(aja PUBLIC
-		AJA_LINUX
-		AJALinux)
-	target_link_directories(aja PUBLIC
-		${CMAKE_BINARY_DIR}/plugins/aja/sdk/ajalibraries/ajantv2)
-endif()
+target_compile_definitions(aja PUBLIC ${aja_COMPILE_DEFS})
 
 set_target_properties(aja PROPERTIES FOLDER
 		"plugins")
