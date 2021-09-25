@@ -57,8 +57,8 @@ class WASAPISource {
 
 	bool ProcessCaptureData();
 
-	inline void Start();
-	inline void Stop();
+	void Start();
+	void Stop();
 	void Reconnect();
 
 	ComPtr<IMMDevice> InitDevice();
@@ -74,7 +74,7 @@ class WASAPISource {
 
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
-	inline ~WASAPISource();
+	~WASAPISource();
 
 	void Update(obs_data_t *settings);
 
@@ -163,7 +163,7 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	Start();
 }
 
-inline void WASAPISource::Start()
+void WASAPISource::Start()
 {
 	if (!TryInitialize()) {
 		blog(LOG_INFO, "WASAPI: Device '%s' failed to start",
@@ -172,7 +172,7 @@ inline void WASAPISource::Start()
 	}
 }
 
-inline void WASAPISource::Stop()
+void WASAPISource::Stop()
 {
 	SetEvent(stopSignal);
 
@@ -188,7 +188,7 @@ inline void WASAPISource::Stop()
 	ResetEvent(stopSignal);
 }
 
-inline WASAPISource::~WASAPISource()
+WASAPISource::~WASAPISource()
 {
 	enumerator->UnregisterEndpointNotificationCallback(notify);
 	Stop();
