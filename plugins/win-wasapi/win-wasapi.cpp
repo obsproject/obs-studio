@@ -63,7 +63,7 @@ class WASAPISource {
 	inline void Stop();
 	void Reconnect();
 
-	bool InitDevice();
+	void InitDevice();
 	void InitName();
 	void InitClient();
 	void InitRender();
@@ -204,32 +204,35 @@ void WASAPISource::Update(obs_data_t *settings)
 		Start();
 }
 
-bool WASAPISource::InitDevice()
+void WASAPISource::InitDevice()
 {
-	HRESULT res;
-
 	if (isDefaultDevice) {
-		res = enumerator->GetDefaultAudioEndpoint(
+		HRESULT res = enumerator->GetDefaultAudioEndpoint(
 			isInputDevice ? eCapture : eRender,
 			isInputDevice ? eCommunications : eConsole,
 			device.Assign());
 		if (FAILED(res))
-			return false;
+			throw HRError("Failed GetDefaultAudioEndpoint", res);
 
 		CoTaskMemPtr<wchar_t> id;
 		res = device->GetId(&id);
+		if (FAILED(res))
+			throw HRError("Failed to get default id", res);
 		default_id = id;
-
 	} else {
 		wchar_t *w_id;
 		os_utf8_to_wcs_ptr(device_id.c_str(), device_id.size(), &w_id);
+		if (!w_id)
+			throw "Failed to widen device id string";
 
-		res = enumerator->GetDevice(w_id, device.Assign());
+		const HRESULT res =
+			enumerator->GetDevice(w_id, device.Assign());
 
 		bfree(w_id);
-	}
 
-	return SUCCEEDED(res);
+		if (FAILED(res))
+			throw HRError("Failed to enumerate device", res);
+	}
 }
 
 #define BUFFER_TIME_100NS (5 * 10000000)
@@ -370,8 +373,7 @@ void WASAPISource::Initialize()
 	if (FAILED(res))
 		throw HRError("Failed to create enumerator", res);
 
-	if (!InitDevice())
-		return;
+	InitDevice();
 
 	device_name = GetDeviceName(device);
 
