@@ -23,6 +23,7 @@
 #include <util/util.hpp>
 #include <string>
 #include <vector>
+#include <QDir>
 
 enum obs_importer_responses {
 	IMPORTER_SUCCESS,
@@ -106,6 +107,7 @@ int ImportSC(const std::string &path, std::string &name, json11::Json &res);
 OBSImporterFiles ImportersFindFiles();
 
 void TranslateOSStudio(json11::Json &data);
+void TranslatePaths(json11::Json &data, const std::string &rootDir);
 
 static inline std::string GetFilenameFromPath(const std::string &path)
 {
