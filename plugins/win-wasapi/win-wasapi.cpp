@@ -62,7 +62,6 @@ class WASAPISource {
 	void Reconnect();
 
 	ComPtr<IMMDevice> InitDevice();
-	void InitName();
 	void InitClient(IMMDevice *device);
 	void ClearBuffer(IMMDevice *device);
 	void InitFormat(WAVEFORMATEX *wfex);
