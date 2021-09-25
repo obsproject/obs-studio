@@ -25,10 +25,8 @@ static void GetWASAPIDefaults(obs_data_t *settings);
 class WASAPISource {
 	ComPtr<IMMNotificationClient> notify;
 	ComPtr<IMMDeviceEnumerator> enumerator;
-	ComPtr<IMMDevice> device;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
-	ComPtr<IAudioRenderClient> render;
 
 	obs_source_t *source;
 	wstring default_id;
@@ -63,10 +61,10 @@ class WASAPISource {
 	inline void Stop();
 	void Reconnect();
 
-	void InitDevice();
+	ComPtr<IMMDevice> InitDevice();
 	void InitName();
-	void InitClient();
-	void InitRender();
+	void InitClient(IMMDevice *device);
+	void InitRender(IMMDevice *device);
 	void InitFormat(WAVEFORMATEX *wfex);
 	void InitCapture();
 	void Initialize();
@@ -218,8 +216,10 @@ void WASAPISource::Update(obs_data_t *settings)
 		Start();
 }
 
-void WASAPISource::InitDevice()
+ComPtr<IMMDevice> WASAPISource::InitDevice()
 {
+	ComPtr<IMMDevice> device;
+
 	if (isDefaultDevice) {
 		HRESULT res = enumerator->GetDefaultAudioEndpoint(
 			isInputDevice ? eCapture : eRender,
@@ -247,11 +247,13 @@ void WASAPISource::InitDevice()
 		if (FAILED(res))
 			throw HRError("Failed to enumerate device", res);
 	}
+
+	return device;
 }
 
 #define BUFFER_TIME_100NS (5 * 10000000)
 
-void WASAPISource::InitClient()
+void WASAPISource::InitClient(IMMDevice *device)
 {
 	CoTaskMemPtr<WAVEFORMATEX> wfex;
 	HRESULT res;
@@ -277,7 +279,7 @@ void WASAPISource::InitClient()
 		throw HRError("Failed to initialize audio client", res);
 }
 
-void WASAPISource::InitRender()
+void WASAPISource::InitRender(IMMDevice *device)
 {
 	CoTaskMemPtr<WAVEFORMATEX> wfex;
 	HRESULT res;
@@ -307,8 +309,8 @@ void WASAPISource::InitRender()
 	if (FAILED(res))
 		throw HRError("Failed to get buffer size", res);
 
-	res = client->GetService(__uuidof(IAudioRenderClient),
-				 (void **)render.Assign());
+	ComPtr<IAudioRenderClient> render;
+	res = client->GetService(IID_PPV_ARGS(render.Assign()));
 	if (FAILED(res))
 		throw HRError("Failed to get render client", res);
 
@@ -316,7 +318,7 @@ void WASAPISource::InitRender()
 	if (FAILED(res))
 		throw HRError("Failed to get buffer", res);
 
-	memset(buffer, 0, frames * wfex->nBlockAlign);
+	memset(buffer, 0, (size_t)frames * (size_t)wfex->nBlockAlign);
 
 	render->ReleaseBuffer(frames, 0);
 }
@@ -379,7 +381,7 @@ void WASAPISource::InitCapture()
 
 void WASAPISource::Initialize()
 {
-	InitDevice();
+	ComPtr<IMMDevice> device = InitDevice();
 
 	device_name = GetDeviceName(device);
 
@@ -403,9 +405,9 @@ void WASAPISource::Initialize()
 		store->Release();
 	}
 
-	InitClient();
+	InitClient(device);
 	if (!isInputDevice)
-		InitRender();
+		InitRender(device);
 	InitCapture();
 }
 
