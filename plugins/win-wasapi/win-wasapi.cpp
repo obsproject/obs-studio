@@ -64,7 +64,7 @@ class WASAPISource {
 	ComPtr<IMMDevice> InitDevice();
 	void InitName();
 	void InitClient(IMMDevice *device);
-	void InitRender(IMMDevice *device);
+	void ClearBuffer(IMMDevice *device);
 	void InitFormat(WAVEFORMATEX *wfex);
 	void InitCapture();
 	void Initialize();
@@ -279,7 +279,7 @@ void WASAPISource::InitClient(IMMDevice *device)
 		throw HRError("Failed to initialize audio client", res);
 }
 
-void WASAPISource::InitRender(IMMDevice *device)
+void WASAPISource::ClearBuffer(IMMDevice *device)
 {
 	CoTaskMemPtr<WAVEFORMATEX> wfex;
 	HRESULT res;
@@ -384,7 +384,7 @@ void WASAPISource::Initialize()
 
 	InitClient(device);
 	if (!isInputDevice)
-		InitRender(device);
+		ClearBuffer(device);
 	InitCapture();
 
 	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
