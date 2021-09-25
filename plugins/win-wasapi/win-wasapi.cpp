@@ -10,6 +10,7 @@
 #include <util/threading.h>
 #include <util/util_uint64.h>
 
+#include <cinttypes>
 #include <thread>
 
 using namespace std;
@@ -32,7 +33,6 @@ class WASAPISource {
 	wstring default_id;
 	string device_id;
 	string device_name;
-	string device_sample = "-";
 	uint64_t lastNotifyTime = 0;
 	bool isInputDevice;
 	bool useDeviceTiming = false;
@@ -374,9 +374,6 @@ void WASAPISource::InitCapture()
 
 	client->Start();
 	active = true;
-
-	blog(LOG_INFO, "WASAPI: Device '%s' [%s Hz] initialized",
-	     device_name.c_str(), device_sample.c_str());
 }
 
 void WASAPISource::Initialize()
@@ -385,30 +382,13 @@ void WASAPISource::Initialize()
 
 	device_name = GetDeviceName(device);
 
-	HRESULT resSample;
-	IPropertyStore *store = nullptr;
-	PWAVEFORMATEX deviceFormatProperties;
-	PROPVARIANT prop;
-	resSample = device->OpenPropertyStore(STGM_READ, &store);
-	if (!FAILED(resSample)) {
-		resSample =
-			store->GetValue(PKEY_AudioEngine_DeviceFormat, &prop);
-		if (!FAILED(resSample)) {
-			if (prop.vt != VT_EMPTY && prop.blob.pBlobData) {
-				deviceFormatProperties =
-					(PWAVEFORMATEX)prop.blob.pBlobData;
-				device_sample = std::to_string(
-					deviceFormatProperties->nSamplesPerSec);
-			}
-		}
-
-		store->Release();
-	}
-
 	InitClient(device);
 	if (!isInputDevice)
 		InitRender(device);
 	InitCapture();
+
+	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
+	     device_name.c_str(), sampleRate);
 }
 
 bool WASAPISource::TryInitialize()
