@@ -23,12 +23,12 @@ static void GetWASAPIDefaults(obs_data_t *settings);
 	(KSAUDIO_SPEAKER_SURROUND | SPEAKER_LOW_FREQUENCY)
 
 class WASAPISource {
+	ComPtr<IMMNotificationClient> notify;
+	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IMMDevice> device;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
 	ComPtr<IAudioRenderClient> render;
-	ComPtr<IMMDeviceEnumerator> enumerator;
-	ComPtr<IMMNotificationClient> notify;
 
 	obs_source_t *source;
 	wstring default_id;
@@ -148,6 +148,20 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	receiveSignal = CreateEvent(nullptr, false, false, nullptr);
 	if (!receiveSignal.Valid())
 		throw "Could not create receive signal";
+
+	notify = new WASAPINotify(this);
+	if (!notify)
+		throw "Could not create WASAPINotify";
+
+	HRESULT res = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
+				       CLSCTX_ALL,
+				       IID_PPV_ARGS(enumerator.Assign()));
+	if (FAILED(res))
+		throw HRError("Failed to create enumerator", res);
+
+	res = enumerator->RegisterEndpointNotificationCallback(notify);
+	if (FAILED(res))
+		throw HRError("Failed to register endpoint callback", res);
 
 	Start();
 }
@@ -365,22 +379,9 @@ void WASAPISource::InitCapture()
 
 void WASAPISource::Initialize()
 {
-	HRESULT res;
-
-	res = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
-			       CLSCTX_ALL, __uuidof(IMMDeviceEnumerator),
-			       (void **)enumerator.Assign());
-	if (FAILED(res))
-		throw HRError("Failed to create enumerator", res);
-
 	InitDevice();
 
 	device_name = GetDeviceName(device);
-
-	if (!notify) {
-		notify = new WASAPINotify(this);
-		enumerator->RegisterEndpointNotificationCallback(notify);
-	}
 
 	HRESULT resSample;
 	IPropertyStore *store = nullptr;
