@@ -477,6 +477,11 @@ int XSplitImporter::ImportScenes(const string &path, string &name,
 
 	res = r;
 
+	QDir dir(path.c_str());
+
+	TranslateOSStudio(res);
+	TranslatePaths(res, QDir::cleanPath(dir.filePath("..")).toStdString());
+
 	return IMPORTER_SUCCESS;
 }
 

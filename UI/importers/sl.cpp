@@ -439,7 +439,10 @@ int SLImporter::ImportScenes(const string &path, string &name, Json &res)
 		}
 	}
 
+	QDir dir(path.c_str());
+
 	TranslateOSStudio(res);
+	TranslatePaths(res, QDir::cleanPath(dir.filePath("..")).toStdString());
 
 	return result;
 }
