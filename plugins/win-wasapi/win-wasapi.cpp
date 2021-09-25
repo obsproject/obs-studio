@@ -155,9 +155,7 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 inline void WASAPISource::Start()
 {
 	if (!TryInitialize()) {
-		blog(LOG_INFO,
-		     "[WASAPISource::WASAPISource] "
-		     "Device '%s' not found.  Waiting for device",
+		blog(LOG_INFO, "WASAPI: Device '%s' failed to start",
 		     device_id.c_str());
 		Reconnect();
 	}
@@ -259,7 +257,7 @@ void WASAPISource::InitClient()
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, flags,
 				 BUFFER_TIME_100NS, 0, wfex, nullptr);
 	if (FAILED(res))
-		throw HRError("Failed to get initialize audio client", res);
+		throw HRError("Failed to initialize audio client", res);
 }
 
 void WASAPISource::InitRender()
@@ -282,7 +280,7 @@ void WASAPISource::InitRender()
 	res = client->Initialize(AUDCLNT_SHAREMODE_SHARED, 0, BUFFER_TIME_100NS,
 				 0, wfex, nullptr);
 	if (FAILED(res))
-		throw HRError("Failed to get initialize audio client", res);
+		throw HRError("Failed to initialize audio client", res);
 
 	/* Silent loopback fix. Prevents audio stream from stopping and */
 	/* messing up timestamps and other weird glitches during silence */
@@ -499,7 +497,7 @@ bool WASAPISource::ProcessCaptureData()
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
 				blog(LOG_WARNING,
-				     "[WASAPISource::GetCaptureData]"
+				     "[WASAPISource::ProcessCaptureData]"
 				     " capture->GetNextPacketSize"
 				     " failed: %lX",
 				     res);
@@ -513,7 +511,7 @@ bool WASAPISource::ProcessCaptureData()
 		if (FAILED(res)) {
 			if (res != AUDCLNT_E_DEVICE_INVALIDATED)
 				blog(LOG_WARNING,
-				     "[WASAPISource::GetCaptureData]"
+				     "[WASAPISource::ProcessCaptureData]"
 				     " capture->GetBuffer"
 				     " failed: %lX",
 				     res);
