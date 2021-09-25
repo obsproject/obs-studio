@@ -61,11 +61,22 @@ class WASAPISource {
 	void Stop();
 	void Reconnect();
 
-	ComPtr<IMMDevice> InitDevice();
-	void InitClient(IMMDevice *device);
-	void ClearBuffer(IMMDevice *device);
-	void InitFormat(WAVEFORMATEX *wfex);
-	void InitCapture();
+	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator,
+					    bool isDefaultDevice,
+					    bool isInputDevice,
+					    const string device_id,
+					    wstring &default_id);
+	static ComPtr<IAudioClient> InitClient(IMMDevice *device,
+					       bool isInputDevice,
+					       enum speaker_layout &speakers,
+					       enum audio_format &format,
+					       uint32_t &sampleRate);
+	static void InitFormat(const WAVEFORMATEX *wfex,
+			       enum speaker_layout &speakers,
+			       enum audio_format &format, uint32_t &sampleRate);
+	static void ClearBuffer(IMMDevice *device);
+	static ComPtr<IAudioCaptureClient> InitCapture(IAudioClient *client,
+						       HANDLE receiveSignal);
 	void Initialize();
 
 	bool TryInitialize();
@@ -186,6 +197,9 @@ void WASAPISource::Stop()
 		WaitForSingleObject(reconnectThread, INFINITE);
 
 	ResetEvent(stopSignal);
+
+	capture.Clear();
+	client.Clear();
 }
 
 WASAPISource::~WASAPISource()
@@ -215,7 +229,11 @@ void WASAPISource::Update(obs_data_t *settings)
 		Start();
 }
 
-ComPtr<IMMDevice> WASAPISource::InitDevice()
+ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
+					   bool isDefaultDevice,
+					   bool isInputDevice,
+					   const string device_id,
+					   wstring &default_id)
 {
 	ComPtr<IMMDevice> device;
 
@@ -252,23 +270,26 @@ ComPtr<IMMDevice> WASAPISource::InitDevice()
 
 #define BUFFER_TIME_100NS (5 * 10000000)
 
-void WASAPISource::InitClient(IMMDevice *device)
+ComPtr<IAudioClient> WASAPISource::InitClient(IMMDevice *device,
+					      bool isInputDevice,
+					      enum speaker_layout &speakers,
+					      enum audio_format &format,
+					      uint32_t &sampleRate)
 {
-	CoTaskMemPtr<WAVEFORMATEX> wfex;
-	HRESULT res;
-	DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
-
-	res = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL, nullptr,
-			       (void **)client.Assign());
+	ComPtr<IAudioClient> client;
+	HRESULT res = device->Activate(__uuidof(IAudioClient), CLSCTX_ALL,
+				       nullptr, (void **)client.Assign());
 	if (FAILED(res))
 		throw HRError("Failed to activate client context", res);
 
+	CoTaskMemPtr<WAVEFORMATEX> wfex;
 	res = client->GetMixFormat(&wfex);
 	if (FAILED(res))
 		throw HRError("Failed to get mix format", res);
 
-	InitFormat(wfex);
+	InitFormat(wfex, speakers, format, sampleRate);
 
+	DWORD flags = AUDCLNT_STREAMFLAGS_EVENTCALLBACK;
 	if (!isInputDevice)
 		flags |= AUDCLNT_STREAMFLAGS_LOOPBACK;
 
@@ -276,6 +297,8 @@ void WASAPISource::InitClient(IMMDevice *device)
 				 BUFFER_TIME_100NS, 0, wfex, nullptr);
 	if (FAILED(res))
 		throw HRError("Failed to initialize audio client", res);
+
+	return client;
 }
 
 void WASAPISource::ClearBuffer(IMMDevice *device)
@@ -340,7 +363,9 @@ static speaker_layout ConvertSpeakerLayout(DWORD layout, WORD channels)
 	return (speaker_layout)channels;
 }
 
-void WASAPISource::InitFormat(WAVEFORMATEX *wfex)
+void WASAPISource::InitFormat(const WAVEFORMATEX *wfex,
+			      enum speaker_layout &speakers,
+			      enum audio_format &format, uint32_t &sampleRate)
 {
 	DWORD layout = 0;
 
@@ -350,15 +375,16 @@ void WASAPISource::InitFormat(WAVEFORMATEX *wfex)
 	}
 
 	/* WASAPI is always float */
-	sampleRate = wfex->nSamplesPerSec;
-	format = AUDIO_FORMAT_FLOAT;
 	speakers = ConvertSpeakerLayout(layout, wfex->nChannels);
+	format = AUDIO_FORMAT_FLOAT;
+	sampleRate = wfex->nSamplesPerSec;
 }
 
-void WASAPISource::InitCapture()
+ComPtr<IAudioCaptureClient> WASAPISource::InitCapture(IAudioClient *client,
+						      HANDLE receiveSignal)
 {
-	HRESULT res = client->GetService(__uuidof(IAudioCaptureClient),
-					 (void **)capture.Assign());
+	ComPtr<IAudioCaptureClient> capture;
+	HRESULT res = client->GetService(IID_PPV_ARGS(capture.Assign()));
 	if (FAILED(res))
 		throw HRError("Failed to create capture context", res);
 
@@ -366,25 +392,40 @@ void WASAPISource::InitCapture()
 	if (FAILED(res))
 		throw HRError("Failed to set event handle", res);
 
-	captureThread = CreateThread(nullptr, 0, WASAPISource::CaptureThread,
-				     this, 0, nullptr);
-	if (!captureThread.Valid())
-		throw "Failed to create capture thread";
+	res = client->Start();
+	if (FAILED(res))
+		throw HRError("Failed to start capture client", res);
 
-	client->Start();
-	active = true;
+	return capture;
 }
 
 void WASAPISource::Initialize()
 {
-	ComPtr<IMMDevice> device = InitDevice();
+	ComPtr<IMMDevice> device = InitDevice(enumerator, isDefaultDevice,
+					      isInputDevice, device_id,
+					      default_id);
 
 	device_name = GetDeviceName(device);
 
-	InitClient(device);
+	ComPtr<IAudioClient> temp_client =
+		InitClient(device, isInputDevice, speakers, format, sampleRate);
 	if (!isInputDevice)
 		ClearBuffer(device);
-	InitCapture();
+	ComPtr<IAudioCaptureClient> temp_capture =
+		InitCapture(temp_client, receiveSignal);
+
+	client = std::move(temp_client);
+	capture = std::move(temp_capture);
+
+	captureThread = CreateThread(nullptr, 0, WASAPISource::CaptureThread,
+				     this, 0, nullptr);
+	if (!captureThread.Valid()) {
+		capture.Clear();
+		client.Clear();
+		throw "Failed to create capture thread";
+	}
+
+	active = true;
 
 	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
 	     device_name.c_str(), sampleRate);
