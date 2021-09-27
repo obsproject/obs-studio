@@ -356,8 +356,7 @@ static void switch_to_window_capture_mode(struct screen_capture *context)
 
 	obs_data_t *settings = obs_source_get_settings(context->source);
 	obs_data_t *window_settings = obs_get_source_defaults("window_capture");
-
-	obs_data_set_int(window_settings, "method", 0);
+	obs_data_set_int(window_settings, "method", 2);
 	obs_data_set_string(window_settings, "window",
 			    obs_data_get_string(settings, S_CAPTURE_WINDOW));
 	obs_data_set_bool(window_settings, S_CAPTURE_CURSOR,
