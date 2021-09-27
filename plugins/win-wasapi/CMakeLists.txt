@@ -15,6 +15,7 @@ add_library(win-wasapi MODULE
 	${win-wasapi_SOURCES}
 	${win-wasapi_HEADERS})
 target_link_libraries(win-wasapi
+	Avrt
 	libobs)
 set_target_properties(win-wasapi PROPERTIES FOLDER "plugins")
 

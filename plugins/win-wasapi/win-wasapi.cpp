@@ -13,6 +13,8 @@
 #include <atomic>
 #include <cinttypes>
 
+#include <avrt.h>
+
 using namespace std;
 
 #define OPT_DEVICE_ID "device_id"
@@ -577,6 +579,9 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 		     hr);
 	}
 
+	DWORD unused = 0;
+	const HANDLE handle = AvSetMmThreadCharacteristics(L"Audio", &unused);
+
 	WASAPISource *source = (WASAPISource *)param;
 
 	const HANDLE inactive_sigs[] = {
@@ -683,6 +688,9 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 			SetEvent(source->reconnectSignal);
 		}
 	}
+
+	if (handle)
+		AvRevertMmThreadCharacteristics(handle);
 
 	if (com_initialized)
 		CoUninitialize();
