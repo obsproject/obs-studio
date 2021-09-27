@@ -293,7 +293,7 @@ void obs_add_module_path(const char *bin, const char *data)
 
 static void load_all_callback(void *param, const struct obs_module_info *info)
 {
-	obs_module_t *module;
+	obs_module_t *module = NULL;
 
 	if (!os_is_obs_plugin(info->bin_path))
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
@@ -306,7 +306,8 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 		return;
 	}
 
-	obs_init_module(module);
+	if (module != NULL)
+		obs_init_module(module);
 
 	UNUSED_PARAMETER(param);
 }
