@@ -392,8 +392,8 @@ static void scs_check_window_capture_state(struct screen_capture *context)
 				obs_source_remove_active_child(
 					context->source,
 					context->window_capture);
-				obs_source_release(context->window_capture);
-				context->window_capture = NULL;
+				obs_source_set_hidden(context->window_capture, true);
+				obs_source_dec_active(context->window_capture);
 			}
 			ReleaseMutex(context->sources_mutex);
 			context->game_window_checking = -1.0f;
@@ -405,8 +405,8 @@ static void scs_check_window_capture_state(struct screen_capture *context)
 			WaitForSingleObject(context->sources_mutex, INFINITE);
 			obs_source_remove_active_child(context->source,
 						       context->game_capture);
-			obs_source_release(context->game_capture);
-			context->game_capture = NULL;
+			obs_source_set_hidden(context->game_capture, true);
+			obs_source_dec_active(context->game_capture);
 			ReleaseMutex(context->sources_mutex);
 		}
 		context->game_window_checking = -1.0f;
