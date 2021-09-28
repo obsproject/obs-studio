@@ -4485,7 +4485,7 @@ void OBSBasic::ClearSceneData()
 	programScene = nullptr;
 	prevFTBSource = nullptr;
 
-	copySources.clear();
+	clipboard.clear();
 	copyFiltersSource = nullptr;
 	copyFilter = nullptr;
 
@@ -7662,11 +7662,11 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
-	for (size_t i = copySources.size(); i > 0; i--) {
+	for (size_t i = clipboard.size(); i > 0; i--) {
 		const size_t idx = i - 1;
-		OBSWeakSource &weak = copySources[idx];
+		OBSWeakSource &weak = clipboard[idx].weak_source;
 		if (obs_weak_source_expired(weak))
-			copySources.erase(copySources.begin() + idx);
+			clipboard.erase(clipboard.begin() + idx);
 	}
 
 	ui->actionCopySource->setEnabled(idx != -1);
@@ -7675,8 +7675,8 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
-	ui->actionPasteRef->setEnabled(!!copySources.size());
-	ui->actionPasteDup->setEnabled(!!copySources.size());
+	ui->actionPasteRef->setEnabled(!!clipboard.size());
+	ui->actionPasteDup->setEnabled(!!clipboard.size());
 
 	ui->actionMoveUp->setEnabled(idx != -1);
 	ui->actionMoveDown->setEnabled(idx != -1);
@@ -7720,26 +7720,8 @@ void OBSBasic::on_actionEditTransform_triggered()
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
-static obs_transform_info copiedTransformInfo;
-static obs_sceneitem_crop copiedCropInfo;
-
 void OBSBasic::on_actionCopyTransform_triggered()
 {
-	auto func = [](obs_scene_t *scene, obs_sceneitem_t *item, void *param) {
-		if (!obs_sceneitem_selected(item))
-			return true;
-
-		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_get_info(item, &copiedTransformInfo);
-		obs_sceneitem_get_crop(item, &copiedCropInfo);
-		obs_sceneitem_defer_update_end(item);
-
-		UNUSED_PARAMETER(scene);
-		UNUSED_PARAMETER(param);
-		return true;
-	};
-
-	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
 	ui->actionPasteTransform->setEnabled(true);
 }
 
@@ -7754,40 +7736,6 @@ void undo_redo(const std::string &data)
 	obs_data_release(dat);
 
 	obs_scene_load_transform_states(data.c_str());
-}
-
-void OBSBasic::on_actionPasteTransform_triggered()
-{
-	obs_data_t *wrapper =
-		obs_scene_save_transform_states(GetCurrentScene(), false);
-	auto func = [](obs_scene_t *scene, obs_sceneitem_t *item, void *param) {
-		if (!obs_sceneitem_selected(item))
-			return true;
-
-		obs_sceneitem_defer_update_begin(item);
-		obs_sceneitem_set_info(item, &copiedTransformInfo);
-		obs_sceneitem_set_crop(item, &copiedCropInfo);
-		obs_sceneitem_defer_update_end(item);
-
-		UNUSED_PARAMETER(scene);
-		UNUSED_PARAMETER(param);
-		return true;
-	};
-
-	obs_scene_enum_items(GetCurrentScene(), func, nullptr);
-
-	obs_data_t *rwrapper =
-		obs_scene_save_transform_states(GetCurrentScene(), false);
-
-	std::string undo_data(obs_data_get_json(wrapper));
-	std::string redo_data(obs_data_get_json(rwrapper));
-	undo_s.add_action(
-		QTStr("Undo.Transform.Paste")
-			.arg(obs_source_get_name(GetCurrentSceneSource())),
-		undo_redo, undo_redo, undo_data, redo_data);
-
-	obs_data_release(wrapper);
-	obs_data_release(rwrapper);
 }
 
 static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
@@ -9011,7 +8959,7 @@ void OBSBasic::on_actionMainRedo_triggered()
 
 void OBSBasic::on_actionCopySource_triggered()
 {
-	copySources.clear();
+	clipboard.clear();
 	bool allowPastingDuplicate = true;
 
 	for (auto &selectedSource : GetAllSelectedSourceItems()) {
@@ -9023,11 +8971,15 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		OBSSource source = obs_sceneitem_get_source(item);
 
-		obs_weak_source *weak = obs_source_get_weak_source(source);
-		copySources.emplace_front(weak);
-		obs_weak_source_release(weak);
+		SourceCopyInfo copyInfo;
+		copyInfo.weak_source = OBSGetWeakRef(source);
+		copyInfo.transform = std::make_shared<obs_transform_info>();
+		obs_sceneitem_get_info(item, copyInfo.transform.get());
+		copyInfo.crop = std::make_shared<obs_sceneitem_crop>();
+		obs_sceneitem_get_crop(item, copyInfo.crop.get());
+		copyInfo.visible = obs_sceneitem_visible(item);
 
-		copyVisible = obs_sceneitem_visible(item);
+		clipboard.push_back(copyInfo);
 
 		uint32_t output_flags = obs_source_get_output_flags(source);
 		if (output_flags & OBS_SOURCE_DO_NOT_DUPLICATE)
@@ -9046,20 +8998,22 @@ void OBSBasic::on_actionPasteRef_triggered()
 
 	undo_s.push_disabled();
 
-	for (auto &copySource : copySources) {
-		obs_source_t *source = obs_weak_source_get_source(copySource);
+	for (size_t i = clipboard.size(); i > 0; i--) {
+		SourceCopyInfo &copyInfo = clipboard[i - 1];
+
+		OBSSource source = OBSGetStrongRef(copyInfo.weak_source);
 		if (!source)
 			continue;
 
 		const char *name = obs_source_get_name(source);
 
-		/* do not allow duplicate refs of the same group in the same scene */
-		if (!!obs_scene_get_group(scene, name))
+		/* do not allow duplicate refs of the same group in the same
+		 * scene */
+		if (!!obs_scene_get_group(scene, name)) {
 			continue;
+		}
 
-		OBSBasicSourceSelect::SourcePaste(name, copyVisible, false);
-		on_actionPasteTransform_triggered();
-		obs_source_release(source);
+		OBSBasicSourceSelect::SourcePaste(copyInfo, false);
 	}
 
 	undo_s.pop_disabled();
@@ -9079,15 +9033,9 @@ void OBSBasic::on_actionPasteDup_triggered()
 
 	undo_s.push_disabled();
 
-	for (auto &copySource : copySources) {
-		obs_source_t *source = obs_weak_source_get_source(copySource);
-		if (!source)
-			continue;
-
-		const char *name = obs_source_get_name(source);
-		OBSBasicSourceSelect::SourcePaste(name, copyVisible, true);
-		on_actionPasteTransform_triggered();
-		obs_source_release(source);
+	for (size_t i = clipboard.size(); i > 0; i--) {
+		SourceCopyInfo &copyInfo = clipboard[i - 1];
+		OBSBasicSourceSelect::SourcePaste(copyInfo, true);
 	}
 
 	undo_s.pop_disabled();

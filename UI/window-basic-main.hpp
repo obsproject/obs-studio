@@ -89,6 +89,13 @@ struct SavedProjectorInfo {
 	bool alwaysOnTopOverridden;
 };
 
+struct SourceCopyInfo {
+	OBSWeakSource weak_source;
+	bool visible;
+	std::shared_ptr<obs_sceneitem_crop> crop;
+	std::shared_ptr<obs_transform_info> transform;
+};
+
 struct QuickTransition {
 	QPushButton *button = nullptr;
 	OBSSource source;
@@ -204,7 +211,7 @@ private:
 	bool projectChanged = false;
 	bool previewEnabled = true;
 
-	std::deque<OBSWeakSource> copySources;
+	std::deque<SourceCopyInfo> clipboard;
 	OBSWeakSource copyFiltersSource;
 	bool copyVisible = true;
 
@@ -946,7 +953,6 @@ private slots:
 
 	void on_actionEditTransform_triggered();
 	void on_actionCopyTransform_triggered();
-	void on_actionPasteTransform_triggered();
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
 	void on_actionRotate180_triggered();
