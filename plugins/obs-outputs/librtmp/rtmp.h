@@ -342,9 +342,11 @@ extern "C"
 
 #ifdef CRYPTO
 #define RTMP_SWF_HASHLEN	32
+#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
         void *dh;			/* for encryption */
         void *rc4keyIn;
         void *rc4keyOut;
+#endif
 
         uint32_t SWFSize;
         uint8_t SWFHash[RTMP_SWF_HASHLEN];
