@@ -22,6 +22,7 @@
 
 #include "ui_OBSBasicSourceSelect.h"
 #include "undo-stack-obs.hpp"
+#include "window-basic-main.hpp"
 
 class OBSBasic;
 
@@ -52,5 +53,5 @@ public:
 
 	OBSSource newSource;
 
-	static void SourcePaste(const char *name, bool visible, bool duplicate);
+	static void SourcePaste(SourceCopyInfo &info, bool duplicate);
 };

@@ -24,6 +24,8 @@
 struct AddSourceData {
 	obs_source_t *source;
 	bool visible;
+	obs_transform_info *transform = nullptr;
+	obs_sceneitem_crop *crop = nullptr;
 };
 
 bool OBSBasicSourceSelect::EnumSources(void *data, obs_source_t *source)
@@ -116,6 +118,13 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	obs_sceneitem_t *sceneitem;
 
 	sceneitem = obs_scene_add(scene, data->source);
+
+	if (data->transform != nullptr)
+		obs_sceneitem_set_info(sceneitem, data->transform);
+
+	if (data->crop != nullptr)
+		obs_sceneitem_set_crop(sceneitem, data->crop);
+
 	obs_sceneitem_set_visible(sceneitem, data->visible);
 }
 
@@ -140,34 +149,43 @@ static char *get_new_source_name(const char *name)
 	return new_name.array;
 }
 
-static void AddExisting(const char *name, bool visible, bool duplicate)
+static void AddExisting(OBSSource source, bool visible, bool duplicate,
+			obs_transform_info *transform, obs_sceneitem_crop *crop)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	OBSScene scene = main->GetCurrentScene();
 	if (!scene)
 		return;
 
+	if (duplicate) {
+		OBSSource from = source;
+		char *new_name =
+			get_new_source_name(obs_source_get_name(source));
+		source = obs_source_duplicate(from, new_name, false);
+		obs_source_release(source);
+		bfree(new_name);
+
+		if (!source)
+			return;
+	}
+
+	AddSourceData data;
+	data.source = source;
+	data.visible = visible;
+	data.transform = transform;
+	data.crop = crop;
+
+	obs_enter_graphics();
+	obs_scene_atomic_update(scene, AddSource, &data);
+	obs_leave_graphics();
+}
+
+static void AddExisting(const char *name, bool visible, bool duplicate,
+			obs_transform_info *transform, obs_sceneitem_crop *crop)
+{
 	obs_source_t *source = obs_get_source_by_name(name);
 	if (source) {
-		if (duplicate) {
-			obs_source_t *from = source;
-			char *new_name = get_new_source_name(name);
-			source = obs_source_duplicate(from, new_name, false);
-			bfree(new_name);
-			obs_source_release(from);
-
-			if (!source)
-				return;
-		}
-
-		AddSourceData data;
-		data.source = source;
-		data.visible = visible;
-
-		obs_enter_graphics();
-		obs_scene_atomic_update(scene, AddSource, &data);
-		obs_leave_graphics();
-
+		AddExisting(source, visible, duplicate, transform, crop);
 		obs_source_release(source);
 	}
 }
@@ -227,7 +245,8 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		if (!item)
 			return;
 
-		AddExisting(QT_TO_UTF8(item->text()), visible, false);
+		AddExisting(QT_TO_UTF8(item->text()), visible, false, nullptr,
+			    nullptr);
 	} else {
 		if (ui->sourceName->text().isEmpty()) {
 			OBSMessageBox::warning(this,
@@ -378,7 +397,12 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 	}
 }
 
-void OBSBasicSourceSelect::SourcePaste(const char *name, bool visible, bool dup)
+void OBSBasicSourceSelect::SourcePaste(SourceCopyInfo &info, bool dup)
 {
-	AddExisting(name, visible, dup);
+	OBSSource source = OBSGetStrongRef(info.weak_source);
+	if (!source)
+		return;
+
+	AddExisting(source, info.visible, dup, info.transform.get(),
+		    info.crop.get());
 }
