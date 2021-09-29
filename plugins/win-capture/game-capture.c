@@ -109,6 +109,11 @@ struct game_capture_config {
 	enum hook_rate hook_rate;
 };
 
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(
+	DPI_AWARENESS_CONTEXT);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetThreadDpiAwarenessContext)(VOID);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetWindowDpiAwarenessContext)(HWND);
+
 struct game_capture {
 	obs_source_t *source;
 
@@ -178,6 +183,10 @@ struct game_capture {
 	};
 
 	void (*copy_texture)(struct game_capture *);
+
+	PFN_SetThreadDpiAwarenessContext set_thread_dpi_awareness_context;
+	PFN_GetThreadDpiAwarenessContext get_thread_dpi_awareness_context;
+	PFN_GetWindowDpiAwarenessContext get_window_dpi_awareness_context;
 };
 
 struct graphics_offsets offsets32 = {0};
@@ -556,6 +565,35 @@ static void *game_capture_create(obs_data_t *settings, obs_source_t *source)
 	gc->hotkey_pair = obs_hotkey_pair_register_source(
 		gc->source, HOTKEY_START, TEXT_HOTKEY_START, HOTKEY_STOP,
 		TEXT_HOTKEY_STOP, hotkey_start, hotkey_stop, gc, gc);
+
+	const HMODULE hModuleUser32 = GetModuleHandle(L"User32.dll");
+	if (hModuleUser32) {
+		PFN_SetThreadDpiAwarenessContext
+			set_thread_dpi_awareness_context =
+				(PFN_SetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"SetThreadDpiAwarenessContext");
+		PFN_GetThreadDpiAwarenessContext
+			get_thread_dpi_awareness_context =
+				(PFN_GetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetThreadDpiAwarenessContext");
+		PFN_GetWindowDpiAwarenessContext
+			get_window_dpi_awareness_context =
+				(PFN_GetWindowDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetWindowDpiAwarenessContext");
+		if (set_thread_dpi_awareness_context &&
+		    get_thread_dpi_awareness_context &&
+		    get_window_dpi_awareness_context) {
+			gc->set_thread_dpi_awareness_context =
+				set_thread_dpi_awareness_context;
+			gc->get_thread_dpi_awareness_context =
+				get_thread_dpi_awareness_context;
+			gc->get_window_dpi_awareness_context =
+				get_window_dpi_awareness_context;
+		}
+	}
 
 	game_capture_update(gc, settings);
 	return gc;
@@ -1831,10 +1869,26 @@ static void game_capture_tick(void *data, float seconds)
 			}
 
 			if (gc->config.cursor) {
+				DPI_AWARENESS_CONTEXT previous = NULL;
+				if (gc->get_window_dpi_awareness_context !=
+				    NULL) {
+					const DPI_AWARENESS_CONTEXT context =
+						gc->get_window_dpi_awareness_context(
+							gc->window);
+					previous =
+						gc->set_thread_dpi_awareness_context(
+							context);
+				}
+
 				check_foreground_window(gc, seconds);
 				obs_enter_graphics();
 				cursor_capture(&gc->cursor_data);
 				obs_leave_graphics();
+
+				if (previous) {
+					gc->set_thread_dpi_awareness_context(
+						previous);
+				}
 			}
 
 			gc->fps_reset_time += seconds;
@@ -1861,7 +1915,17 @@ static inline void game_capture_render_cursor(struct game_capture *gc)
 			 ? (HWND)(uintptr_t)gc->global_hook_info->window
 			 : gc->window;
 
+	DPI_AWARENESS_CONTEXT previous = NULL;
+	if (gc->get_window_dpi_awareness_context != NULL) {
+		const DPI_AWARENESS_CONTEXT context =
+			gc->get_window_dpi_awareness_context(gc->window);
+		previous = gc->set_thread_dpi_awareness_context(context);
+	}
+
 	ClientToScreen(window, &p);
+
+	if (previous)
+		gc->set_thread_dpi_awareness_context(previous);
 
 	cursor_draw(&gc->cursor_data, -p.x, -p.y, gc->global_hook_info->cx,
 		    gc->global_hook_info->cy);
