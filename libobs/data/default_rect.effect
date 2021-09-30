@@ -40,6 +40,13 @@ float3 srgb_nonlinear_to_linear(float3 v)
 	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
 }
 
+float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
+}
+
 float4 PSDrawSrgbDecompressPremultiplied(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
@@ -63,6 +70,15 @@ technique DrawOpaque
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawOpaque(vert_in);
+	}
+}
+
+technique DrawSrgbDecompress
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgbDecompress(vert_in);
 	}
 }
 
