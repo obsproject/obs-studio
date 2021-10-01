@@ -459,6 +459,34 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 	os_atomic_set_bool(&stream->capturing, false);
 }
 
+static void generate_filename(struct ffmpeg_muxer *stream, struct dstr *dst)
+{
+	obs_data_t *settings = obs_output_get_settings(stream->output);
+	const char *dir = obs_data_get_string(settings, "directory");
+	const char *fmt = obs_data_get_string(settings, "format");
+	const char *ext = obs_data_get_string(settings, "extension");
+	bool space = obs_data_get_bool(settings, "allow_spaces");
+	// TODO: allow_overwrite
+
+	char *filename = os_generate_formatted_filename(ext, space, fmt);
+
+	dstr_copy(dst, dir);
+	dstr_replace(dst, "\\", "/");
+	if (dstr_end(dst) != '/')
+		dstr_cat_ch(dst, '/');
+	dstr_cat(dst, filename);
+
+	char *slash = strrchr(dst->array, '/');
+	if (slash) {
+		*slash = 0;
+		os_mkdirs(dst->array);
+		*slash = '/';
+	}
+
+	bfree(filename);
+	obs_data_release(settings);
+}
+
 bool write_packet(struct ffmpeg_muxer *stream, struct encoder_packet *packet)
 {
 	bool is_video = packet->type == OBS_ENCODER_VIDEO;
@@ -909,34 +937,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 			      audio_dts_offsets);
 	}
 
-	/* ---------------------------- */
-	/* generate filename */
-
-	obs_data_t *settings = obs_output_get_settings(stream->output);
-	const char *dir = obs_data_get_string(settings, "directory");
-	const char *fmt = obs_data_get_string(settings, "format");
-	const char *ext = obs_data_get_string(settings, "extension");
-	bool space = obs_data_get_bool(settings, "allow_spaces");
-
-	char *filename = os_generate_formatted_filename(ext, space, fmt);
-
-	dstr_copy(&stream->path, dir);
-	dstr_replace(&stream->path, "\\", "/");
-	if (dstr_end(&stream->path) != '/')
-		dstr_cat_ch(&stream->path, '/');
-	dstr_cat(&stream->path, filename);
-
-	char *slash = strrchr(stream->path.array, '/');
-	if (slash) {
-		*slash = 0;
-		os_mkdirs(stream->path.array);
-		*slash = '/';
-	}
-
-	bfree(filename);
-	obs_data_release(settings);
-
-	/* ---------------------------- */
+	generate_filename(stream, &stream->path);
 
 	os_atomic_set_bool(&stream->muxing, true);
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
