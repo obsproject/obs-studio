@@ -470,40 +470,33 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 			ui->connectedAccountText->setText(
 				QTStr("Auth.LoadingChannel.Title"));
 
-			QScopedPointer<QThread> thread(CreateQThread([&]() {
-				std::shared_ptr<YoutubeApiWrappers> ytAuth =
-					std::dynamic_pointer_cast<
-						YoutubeApiWrappers>(auth);
-				if (ytAuth.get()) {
-					ChannelDescription cd;
-					if (ytAuth->GetChannelDescription(cd)) {
-						ui->connectedAccountText
-							->setText(cd.title);
-					}
-					StreamDescription stream = {
-						"", "",
-						"OBS Studio Test Stream"};
-					if (ytAuth->InsertStream(stream)) {
-						ui->key->setText(stream.name);
-						/* Re-enable BW test if creating throwaway
+			std::shared_ptr<YoutubeApiWrappers> ytAuth =
+				std::dynamic_pointer_cast<YoutubeApiWrappers>(
+					auth);
+			if (ytAuth.get()) {
+				ChannelDescription cd;
+				if (ytAuth->GetChannelDescription(cd)) {
+					ui->connectedAccountText->setText(
+						cd.title);
+				}
+				StreamDescription stream = {
+					"", "", "OBS Studio Test Stream"};
+				if (ytAuth->InsertStream(stream)) {
+					ui->key->setText(stream.name);
+					/* Re-enable BW test if creating throwaway
 						 * stream key succeeded. Also check it if
 						 * it was previously disabled */
-						if (!ui->doBandwidthTest
-							     ->isEnabled())
-							QMetaObject::invokeMethod(
-								ui->doBandwidthTest,
-								"setChecked",
-								Q_ARG(bool,
-								      true));
+					if (!ui->doBandwidthTest->isEnabled())
 						QMetaObject::invokeMethod(
 							ui->doBandwidthTest,
-							"setEnabled",
+							"setChecked",
 							Q_ARG(bool, true));
-					}
+					QMetaObject::invokeMethod(
+						ui->doBandwidthTest,
+						"setEnabled",
+						Q_ARG(bool, true));
 				}
-			}));
-			thread->start();
-			thread->wait();
+			}
 		}
 #endif
 	}
