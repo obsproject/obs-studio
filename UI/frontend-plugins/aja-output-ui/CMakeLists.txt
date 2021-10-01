@@ -1,5 +1,24 @@
 project(aja-output-ui)
 
+if(DISABLE_AJA)
+	message(STATUS "aja-output-ui plugin disabled")
+	return()
+endif()
+
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	find_package(LibAJANTV2)
+	if (NOT LIBAJANTV2_FOUND)
+		message(STATUS "aja-output-ui plugin disabled (deps not found)")
+		return()
+	else()
+		message("aja-output-ui includes: ${LIBAJANTV2_INCLUDE_DIRS}")
+		message("aja-output-ui libs: ${LIBAJANTV2_LIBRARIES}")
+	endif()
+else()
+	message(STATUS "aja-output-ui disabled (32-bit not supported)")
+	return()
+endif()
+
 if(APPLE)
 	find_library(COCOA Cocoa)
 	include_directories(${COCOA})
@@ -26,8 +45,8 @@ set(aja-output-ui_HEADERS
 		AJAOutputUI.h
 		aja-ui-main.h
 	../../../plugins/aja/aja-ui-props.hpp
-	../../../plugins/aja/aja-enums.hpp
-	)
+	../../../plugins/aja/aja-enums.hpp)
+
 set(aja-output-ui_SOURCES
 	${aja-output-ui_SOURCES}
 	../../qt-wrappers.cpp
@@ -38,8 +57,7 @@ set(aja-output-ui_SOURCES
 	../../combobox-ignorewheel.cpp
 	../../spinbox-ignorewheel.cpp
 		AJAOutputUI.cpp
-		aja-ui-main.cpp
-	)
+		aja-ui-main.cpp)
 
 set(aja-output-ui_UI
 	${aja-output-ui_UI}
@@ -63,8 +81,7 @@ qt5_wrap_ui(aja-output-ui_UI_HEADERS
 add_library(aja-output-ui MODULE
 	${aja-output-ui_HEADERS}
 	${aja-output-ui_SOURCES}
-	${aja-output-ui_UI_HEADERS}
-	)
+	${aja-output-ui_UI_HEADERS})
 
 if (APPLE)
 	target_compile_definitions(aja-output-ui PUBLIC
@@ -83,7 +100,7 @@ elseif(UNIX AND NOT APPLE)
 endif()
 
 target_include_directories(aja-output-ui PUBLIC
-	../../../plugins/aja/sdk)
+	${LIBAJANTV2_INCLUDE_DIRS})
 
 target_link_libraries(aja-output-ui
 	${frontend-tools_PLATFORM_LIBS}

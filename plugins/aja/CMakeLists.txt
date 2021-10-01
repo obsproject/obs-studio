@@ -5,11 +5,25 @@ if(DISABLE_AJA)
 	return()
 endif()
 
+if(CMAKE_SIZEOF_VOID_P EQUAL 8)
+	find_package(LibAJANTV2)
+	if (NOT LIBAJANTV2_FOUND)
+		message(STATUS "aja plugin disabled (deps not found)")
+		return()
+	else()
+		message("aja plugin includes: ${LIBAJANTV2_INCLUDE_DIRS}")
+		message("aja plugin libs: ${LIBAJANTV2_LIBRARIES}")
+	endif()
+else()
+	message(STATUS "aja plugin disabled (32-bit not supported)")
+	return()
+endif()
+
 set(aja_INCLUDE_DIRS
-	sdk
-	sdk/ajabase
-	sdk/ajaanc
-	sdk/ajantv2/includes)
+	${LIBAJANTV2_INCLUDE_DIRS})
+set(aja_LIBRARIES
+	${LIBAJANTV2_LIBRARIES}
+	libobs)
 
 set(aja_SOURCES
 	main.cpp
@@ -32,26 +46,11 @@ set(aja_HEADERS
 	aja-source.hpp
 	aja-widget-io.hpp)
 
-set(aja_LIBRARIES
-	libobs)
-
 # macOS
 if(APPLE)
 	set(aja_COMPILE_DEFS
 		AJAMac
 		AJA_MAC)
-
-	set(aja_INCLUDE_DIRS
-		${aja_INCLUDE_DIRS}
-		sdk/ajantv2/src/mac)
-
-	if(CMAKE_BUILD_TYPE STREQUAL Debug)
-		set(aja_LINK_DIRS
-			sdk/lib/Debug/macos/x64)
-	else()
-		set(aja_LINK_DIRS
-			sdk/lib/Release/macos/x64)
-	endif()
 
 	find_library(IOKIT_FRAMEWORK Iokit)
 	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
@@ -69,22 +68,12 @@ elseif(WIN32)
 		WIN32
 		MSWindows)
 
-	set(aja_INCLUDE_DIRS
-		${aja_INCLUDE_DIRS}
-		sdk/ajantv2/src/win)
-
 	if(CMAKE_BUILD_TYPE STREQUAL Debug)
 		list(APPEND aja_COMPILE_DEFS
 			_DEBUG)
-
-		set(aja_LINK_DIRS
-			sdk/lib/Debug/windows/x64)
 	else()
 		list(APPEND aja_COMPILE_DEFS
 			NDEBUG)
-
-		set(aja_LINK_DIRS
-			sdk/lib/Release/windows/x64)
 	endif()
 
 	list(APPEND aja_LIBRARIES
@@ -95,35 +84,23 @@ elseif(WIN32)
 		Shlwapi.lib)
 # Linux
 elseif(UNIX AND NOT APPLE)
-	if (CMAKE_BUILD_TYPE STREQUAL Debug)
-		set(aja_LINK_DIRS
-			sdk/lib/Debug/linux/x64)
-	else()
-		set(aja_LINK_DIRS
-			sdk/lib/Release/linux/x64)
-	endif()
-
 	set(aja_COMPILE_DEFS
 		AJA_LINUX
 		AJALinux)
-
-	set(aja_INCLUDE_DIRS
-		${aja_INCLUDE_DIRS}
-		sdk/ajantv2/src/lin)
 endif()
 
-if(CMAKE_BUILD_TYPE STREQUAL Debug)
-	list(APPEND aja_LIBRARIES
-		ajantv2d)
-else()
-	list(APPEND aja_LIBRARIES
-		ajantv2)
-endif()
+# if(CMAKE_BUILD_TYPE STREQUAL Debug)
+# 	list(APPEND aja_LIBRARIES
+# 		ajantv2d)
+# else()
+# 	list(APPEND aja_LIBRARIES
+# 		ajantv2)
+# endif()
 
 add_library(aja MODULE ${aja_SOURCES} ${aja_HEADERS})
 
 target_include_directories(aja PUBLIC ${aja_INCLUDE_DIRS})
-target_link_directories(aja PUBLIC ${aja_LINK_DIRS})
+# target_link_directories(aja PUBLIC ${aja_LINK_DIRS})
 target_link_libraries(aja PUBLIC ${aja_LIBRARIES})
 target_compile_definitions(aja PUBLIC ${aja_COMPILE_DEFS})
 
