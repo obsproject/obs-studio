@@ -207,6 +207,11 @@ if(APPLE)
 elseif(UNIX)
 	option(USE_XDG "Utilize XDG Base Directory Specification" ON)
 	option(ENABLE_WAYLAND "Build support for Wayland" ON)
+	if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+		option(ENABLE_DARRAY_TYPE_TEST "Test types of darray argument" ON)
+	else()
+		option(ENABLE_DARRAY_TYPE_TEST "Test types of darray argument" OFF)
+	endif()
 
 	if(USE_XDG)
 		add_definitions(-DUSE_XDG)
@@ -214,6 +219,10 @@ elseif(UNIX)
 
 	if(NOT UNIX_STRUCTURE)
 		list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN")
+	endif()
+
+	if(ENABLE_DARRAY_TYPE_TEST)
+		add_definitions(-DENABLE_DARRAY_TYPE_TEST)
 	endif()
 endif()
 
