@@ -578,6 +578,10 @@ Source Signals
 
    Called when the audio sync offset has changed.
 
+**audio_balance** (ptr source, in out float balance)
+
+   Called when the audio balance has changed.
+
 **audio_mixers** (ptr source, in out int mixers)
 
    Called when the audio mixers have changed.
