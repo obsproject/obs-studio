@@ -494,33 +494,124 @@ static inline void darray_swap(const size_t element_size, struct darray *dst,
 
 #define da_move(dst, src) darray_move(&dst.da, &src.da)
 
-#define da_find(v, item, idx) darray_find(sizeof(*v.array), &v.da, item, idx)
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#ifdef __cplusplus
+#define da_type_test(v, item)                 \
+	({                                    \
+		if (false) {                  \
+			auto _t = v.array;    \
+			_t = (item);          \
+			(void)_t;             \
+			*(v).array = *(item); \
+		}                             \
+	})
+#else
+#define da_type_test(v, item)                       \
+	({                                          \
+		if (false) {                        \
+			const typeof(*v.array) *_t; \
+			_t = (item);                \
+			(void)_t;                   \
+			*(v).array = *(item);       \
+		}                                   \
+	})
+#endif
+#endif // ENABLE_DARRAY_TYPE_TEST
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_find(v, item, idx)                                    \
+	({                                                       \
+		da_type_test(v, item);                           \
+		darray_find(sizeof(*v.array), &v.da, item, idx); \
+	})
+#else
+#define da_find(v, item, idx) darray_find(sizeof(*v.array), &v.da, item, idx)
+#endif
+
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_push_back(v, item)                                    \
+	({                                                       \
+		da_type_test(v, item);                           \
+		darray_push_back(sizeof(*v.array), &v.da, item); \
+	})
+#else
 #define da_push_back(v, item) darray_push_back(sizeof(*v.array), &v.da, item)
+#endif
 
 #define da_push_back_new(v) darray_push_back_new(sizeof(*v.array), &v.da)
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_push_back_array(dst, src_array, n)                                  \
+	({                                                                     \
+		da_type_test(dst, src_array);                                  \
+		darray_push_back_array(sizeof(*dst.array), &dst.da, src_array, \
+				       n);                                     \
+	})
+#else
 #define da_push_back_array(dst, src_array, n) \
 	darray_push_back_array(sizeof(*dst.array), &dst.da, src_array, n)
+#endif
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_push_back_da(dst, src)                                              \
+	({                                                                     \
+		da_type_test(dst, src.array);                                  \
+		darray_push_back_darray(sizeof(*dst.array), &dst.da, &src.da); \
+	})
+#else
 #define da_push_back_da(dst, src) \
 	darray_push_back_darray(sizeof(*dst.array), &dst.da, &src.da)
+#endif
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_insert(v, idx, item)                                    \
+	({                                                         \
+		da_type_test(v, item);                             \
+		darray_insert(sizeof(*v.array), &v.da, idx, item); \
+	})
+#else
 #define da_insert(v, idx, item) \
 	darray_insert(sizeof(*v.array), &v.da, idx, item)
+#endif
 
 #define da_insert_new(v, idx) darray_insert_new(sizeof(*v.array), &v.da, idx)
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_insert_array(dst, idx, src_array, n)                       \
+	({                                                            \
+		da_type_test(dst, src_array);                         \
+		darray_insert_array(sizeof(*dst.array), &dst.da, idx, \
+				    src_array, n);                    \
+	})
+#else
 #define da_insert_array(dst, idx, src_array, n) \
 	darray_insert_array(sizeof(*dst.array), &dst.da, idx, src_array, n)
+#endif
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_insert_da(dst, idx, src)                                    \
+	({                                                             \
+		da_type_test(dst, src.array);                          \
+		darray_insert_darray(sizeof(*dst.array), &dst.da, idx, \
+				     &src.da);                         \
+	})
+#else
 #define da_insert_da(dst, idx, src) \
 	darray_insert_darray(sizeof(*dst.array), &dst.da, idx, &src.da)
+#endif
 
 #define da_erase(dst, idx) darray_erase(sizeof(*dst.array), &dst.da, idx)
 
+#ifdef ENABLE_DARRAY_TYPE_TEST
+#define da_erase_item(dst, item)                                      \
+	({                                                            \
+		da_type_test(dst, item);                              \
+		darray_erase_item(sizeof(*dst.array), &dst.da, item); \
+	})
+#else
 #define da_erase_item(dst, item) \
 	darray_erase_item(sizeof(*dst.array), &dst.da, item)
+#endif
 
 #define da_erase_range(dst, from, to) \
 	darray_erase_range(sizeof(*dst.array), &dst.da, from, to)
