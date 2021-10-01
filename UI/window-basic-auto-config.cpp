@@ -470,31 +470,20 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 			ui->connectedAccountText->setText(
 				QTStr("Auth.LoadingChannel.Title"));
 
-			std::shared_ptr<YoutubeApiWrappers> ytAuth =
-				std::dynamic_pointer_cast<YoutubeApiWrappers>(
-					auth);
-			if (ytAuth.get()) {
-				ChannelDescription cd;
-				if (ytAuth->GetChannelDescription(cd)) {
-					ui->connectedAccountText->setText(
-						cd.title);
-				}
-				StreamDescription stream = {
-					"", "", "OBS Studio Test Stream"};
-				if (ytAuth->InsertStream(stream)) {
-					ui->key->setText(stream.name);
-					/* Re-enable BW test if creating throwaway
-						 * stream key succeeded. Also check it if
-						 * it was previously disabled */
-					if (!ui->doBandwidthTest->isEnabled())
-						QMetaObject::invokeMethod(
-							ui->doBandwidthTest,
-							"setChecked",
-							Q_ARG(bool, true));
-					QMetaObject::invokeMethod(
-						ui->doBandwidthTest,
-						"setEnabled",
-						Q_ARG(bool, true));
+			YoutubeApiWrappers *ytAuth =
+				reinterpret_cast<YoutubeApiWrappers *>(a);
+			ChannelDescription cd;
+			if (ytAuth->GetChannelDescription(cd)) {
+				ui->connectedAccountText->setText(cd.title);
+
+				/* Create throwaway stream key for bandwidth test */
+				if (ui->doBandwidthTest->isChecked()) {
+					StreamDescription stream = {
+						"", "",
+						"OBS Studio Test Stream"};
+					if (ytAuth->InsertStream(stream)) {
+						ui->key->setText(stream.name);
+					}
 				}
 			}
 		}
@@ -730,7 +719,6 @@ void AutoConfigStreamPage::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
 	QString customServer = ui->customServer->text().trimmed();
-	bool isYoutube = false;
 	QString streamKeyLink;
 
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
@@ -744,9 +732,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 
 	streamKeyLink = obs_data_get_string(settings, "stream_key_link");
 
-	if (serviceName.startsWith("YouTube")) {
-		isYoutube = true;
-	} else if (customServer.contains("fbcdn.net") && IsCustomService()) {
+	if (customServer.contains("fbcdn.net") && IsCustomService()) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
 	}
@@ -767,13 +753,6 @@ void AutoConfigStreamPage::UpdateKeyLink()
 		ui->streamKeyButton->show();
 	}
 	obs_properties_destroy(props);
-
-	if (isYoutube) {
-		ui->doBandwidthTest->setChecked(false);
-		ui->doBandwidthTest->setEnabled(false);
-	} else {
-		ui->doBandwidthTest->setEnabled(true);
-	}
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
