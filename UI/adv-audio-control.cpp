@@ -66,6 +66,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 					     this);
 	mixersSignal.Connect(handler, "audio_mixers", OBSSourceMixersChanged,
 			     this);
+	balChangedSignal.Connect(handler, "audio_balance",
+				 OBSSourceBalanceChanged, this);
 
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
@@ -351,6 +353,13 @@ void OBSAdvAudioCtrl::OBSSourceMixersChanged(void *param, calldata_t *calldata)
 				  Q_ARG(uint32_t, mixers));
 }
 
+void OBSAdvAudioCtrl::OBSSourceBalanceChanged(void *param, calldata_t *calldata)
+{
+	int balance = (float)calldata_float(calldata, "balance") * 100.0f;
+	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
+				  "SourceBalanceChanged", Q_ARG(int, balance));
+}
+
 /* ------------------------------------------------------------------------- */
 /* Qt event queue source callbacks */
 
@@ -386,6 +395,13 @@ void OBSAdvAudioCtrl::SourceVolumeChanged(float value)
 	percent->setValue((int)std::round(value * 100.0f));
 	percent->blockSignals(false);
 	volume->blockSignals(false);
+}
+
+void OBSAdvAudioCtrl::SourceBalanceChanged(int value)
+{
+	balance->blockSignals(true);
+	balance->setValue(value);
+	balance->blockSignals(false);
 }
 
 void OBSAdvAudioCtrl::SourceSyncChanged(int64_t offset)

@@ -55,6 +55,7 @@ private:
 	OBSSignal mixersSignal;
 	OBSSignal activateSignal;
 	OBSSignal deactivateSignal;
+	OBSSignal balChangedSignal;
 
 	static void OBSSourceActivated(void *param, calldata_t *calldata);
 	static void OBSSourceDeactivated(void *param, calldata_t *calldata);
@@ -64,6 +65,7 @@ private:
 	static void OBSSourceMonitoringTypeChanged(void *param,
 						   calldata_t *calldata);
 	static void OBSSourceMixersChanged(void *param, calldata_t *calldata);
+	static void OBSSourceBalanceChanged(void *param, calldata_t *calldata);
 
 public:
 	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
@@ -82,6 +84,7 @@ public slots:
 	void SourceSyncChanged(int64_t offset);
 	void SourceMonitoringTypeChanged(int type);
 	void SourceMixersChanged(uint32_t mixers);
+	void SourceBalanceChanged(int balance);
 
 	void volumeChanged(double db);
 	void percentChanged(int percent);
