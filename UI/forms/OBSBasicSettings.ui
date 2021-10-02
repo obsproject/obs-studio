@@ -5587,6 +5587,7 @@
   <tabstop>overflowHide</tabstop>
   <tabstop>overflowAlwaysVisible</tabstop>
   <tabstop>overflowSelectionHide</tabstop>
+  <tabstop>previewSafeAreas</tabstop>
   <tabstop>automaticSearch</tabstop>
   <tabstop>doubleClickSwitch</tabstop>
   <tabstop>studioPortraitLayout</tabstop>
