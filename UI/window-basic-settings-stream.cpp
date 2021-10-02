@@ -604,6 +604,8 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			ui->bandwidthTestEnable->setVisible(true);
 			ui->twitchAddonLabel->setVisible(true);
 			ui->twitchAddonDropdown->setVisible(true);
+		} else {
+			ui->bandwidthTestEnable->setChecked(false);
 		}
 #if YOUTUBE_ENABLED
 		if (IsYouTubeService(a->service())) {
@@ -618,7 +620,6 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			get_yt_ch_title(ui.get());
 		}
 #endif
-		ui->bandwidthTestEnable->setChecked(false);
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
