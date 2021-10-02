@@ -30,7 +30,6 @@ ACTUALLY_DEFINE_GUID(IID_IAudioRenderClient, 0xF294ACFC, 0x3146, 0x4483, 0xA7,
 
 struct audio_monitor {
 	obs_source_t *source;
-	IMMDevice *device;
 	IAudioClient *client;
 	IAudioRenderClient *render;
 
@@ -222,7 +221,6 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	if (monitor->client)
 		monitor->client->lpVtbl->Stop(monitor->client);
 
-	safe_release(monitor->device);
 	safe_release(monitor->client);
 	safe_release(monitor->render);
 	audio_resampler_destroy(monitor->resampler);
@@ -290,14 +288,15 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
+	IMMDevice *device = NULL;
 	if (strcmp(id, "default") == 0) {
-		hr = immde->lpVtbl->GetDefaultAudioEndpoint(
-			immde, eRender, eConsole, &monitor->device);
+		hr = immde->lpVtbl->GetDefaultAudioEndpoint(immde, eRender,
+							    eConsole, &device);
 	} else {
 		wchar_t w_id[512];
 		os_utf8_to_wcs(id, 0, w_id, 512);
 
-		hr = immde->lpVtbl->GetDevice(immde, w_id, &monitor->device);
+		hr = immde->lpVtbl->GetDevice(immde, w_id, &device);
 	}
 
 	if (FAILED(hr)) {
@@ -308,9 +307,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	/* ------------------------------------------ *
 	 * Init client                                */
 
-	hr = monitor->device->lpVtbl->Activate(monitor->device,
-					       &IID_IAudioClient, CLSCTX_ALL,
-					       NULL, (void **)&monitor->client);
+	hr = device->lpVtbl->Activate(device, &IID_IAudioClient, CLSCTX_ALL,
+				      NULL, (void **)&monitor->client);
+	device->lpVtbl->Release(device);
 	if (FAILED(hr)) {
 		warn("%s: Failed to activate device: %08lX", __FUNCTION__, hr);
 		goto fail;
