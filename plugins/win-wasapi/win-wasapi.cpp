@@ -471,17 +471,10 @@ DWORD WINAPI WASAPISource::ReconnectThread(LPVOID param)
 		     hr);
 	}
 
-	obs_monitoring_type type =
-		obs_source_get_monitoring_type(source->source);
-	obs_source_set_monitoring_type(source->source,
-				       OBS_MONITORING_TYPE_NONE);
-
 	while (!WaitForSignal(source->stopSignal, RECONNECT_INTERVAL)) {
 		if (source->TryInitialize())
 			break;
 	}
-
-	obs_source_set_monitoring_type(source->source, type);
 
 	if (com_initialized)
 		CoUninitialize();
