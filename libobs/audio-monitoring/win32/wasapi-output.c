@@ -276,6 +276,29 @@ fail:
 	return success;
 }
 
+static void audio_monitor_free_for_reconnect(struct audio_monitor *monitor)
+{
+	if (monitor->client)
+		monitor->client->lpVtbl->Stop(monitor->client);
+
+	if (monitor->render) {
+		monitor->render->lpVtbl->Release(monitor->render);
+		monitor->render = NULL;
+	}
+
+	if (monitor->client) {
+		monitor->client->lpVtbl->Stop(monitor->client);
+		monitor->client->lpVtbl->Release(monitor->client);
+		monitor->client = NULL;
+	}
+
+	audio_resampler_destroy(monitor->resampler);
+	monitor->resampler = NULL;
+
+	circlebuf_free(&monitor->delay_buffer);
+	da_free(monitor->buf);
+}
+
 static void on_audio_playback(void *param, obs_source_t *source,
 			      const struct audio_data *audio_data, bool muted)
 {
@@ -294,6 +317,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		goto unlock;
 	}
 
+	if (!monitor->client && !audio_monitor_init_wasapi(monitor)) {
+		goto free_for_reconnect;
+	}
+
 	success = audio_resampler_resample(
 		monitor->resampler, resample_data, &resample_frames, &ts_offset,
 		(const uint8_t *const *)audio_data->data,
@@ -303,7 +330,11 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	}
 
 	UINT32 pad = 0;
-	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
+	HRESULT hr = monitor->client->lpVtbl->GetCurrentPadding(monitor->client,
+								&pad);
+	if (FAILED(hr)) {
+		goto free_for_reconnect;
+	}
 
 	bool decouple_audio = source->async_unbuffered &&
 			      source->async_decoupled;
@@ -318,10 +349,9 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	}
 
 	IAudioRenderClient *const render = monitor->render;
-	HRESULT hr =
-		render->lpVtbl->GetBuffer(render, resample_frames, &output);
+	hr = render->lpVtbl->GetBuffer(render, resample_frames, &output);
 	if (FAILED(hr)) {
-		goto unlock;
+		goto free_for_reconnect;
 	}
 
 	if (!muted) {
@@ -338,9 +368,17 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		       resample_frames * monitor->channels * sizeof(float));
 	}
 
-	render->lpVtbl->ReleaseBuffer(render, resample_frames,
-				      muted ? AUDCLNT_BUFFERFLAGS_SILENT : 0);
+	hr = render->lpVtbl->ReleaseBuffer(render, resample_frames,
+					   muted ? AUDCLNT_BUFFERFLAGS_SILENT
+						 : 0);
+	if (FAILED(hr)) {
+		goto free_for_reconnect;
+	}
 
+	goto unlock;
+
+free_for_reconnect:
+	audio_monitor_free_for_reconnect(monitor);
 unlock:
 	ReleaseSRWLockExclusive(&monitor->playback_mutex);
 }
