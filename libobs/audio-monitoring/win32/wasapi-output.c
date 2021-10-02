@@ -48,7 +48,7 @@ struct audio_monitor {
 	uint32_t delay_size;
 
 	DARRAY(float) buf;
-	pthread_mutex_t playback_mutex;
+	SRWLOCK playback_mutex;
 };
 
 /* #define DEBUG_AUDIO */
@@ -152,7 +152,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	bool success;
 	BYTE *output;
 
-	if (pthread_mutex_trylock(&monitor->playback_mutex) != 0) {
+	if (!TryAcquireSRWLockExclusive(&monitor->playback_mutex)) {
 		return;
 	}
 	if (os_atomic_load_long(&source->activate_refs) == 0) {
@@ -206,7 +206,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 				      muted ? AUDCLNT_BUFFERFLAGS_SILENT : 0);
 
 unlock:
-	pthread_mutex_unlock(&monitor->playback_mutex);
+	ReleaseSRWLockExclusive(&monitor->playback_mutex);
 }
 
 static inline void audio_monitor_free(struct audio_monitor *monitor)
@@ -258,8 +258,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	bool success = false;
 	UINT32 frames;
 	HRESULT hr;
-
-	pthread_mutex_init_value(&monitor->playback_mutex);
 
 	monitor->source = source;
 
@@ -375,16 +373,13 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		goto fail;
 	}
 
-	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
-		warn("%s: Failed to initialize mutex", __FUNCTION__);
-		goto fail;
-	}
-
 	hr = monitor->client->lpVtbl->Start(monitor->client);
 	if (FAILED(hr)) {
 		warn("%s: Failed to start audio: %08lX", __FUNCTION__, hr);
 		goto fail;
 	}
+
+	InitializeSRWLock(&monitor->playback_mutex);
 
 	success = true;
 
@@ -434,9 +429,9 @@ void audio_monitor_reset(struct audio_monitor *monitor)
 	struct audio_monitor new_monitor = {0};
 	bool success;
 
-	pthread_mutex_lock(&monitor->playback_mutex);
+	AcquireSRWLockExclusive(&monitor->playback_mutex);
 	success = audio_monitor_init(&new_monitor, monitor->source);
-	pthread_mutex_unlock(&monitor->playback_mutex);
+	ReleaseSRWLockExclusive(&monitor->playback_mutex);
 
 	if (success) {
 		obs_source_t *source = monitor->source;
