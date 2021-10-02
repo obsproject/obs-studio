@@ -280,7 +280,6 @@ static void on_audio_playback(void *param, obs_source_t *source,
 			      const struct audio_data *audio_data, bool muted)
 {
 	struct audio_monitor *monitor = param;
-	IAudioRenderClient *render = monitor->render;
 	uint8_t *resample_data[MAX_AV_PLANES];
 	float vol = source->user_volume;
 	uint32_t resample_frames;
@@ -318,6 +317,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		}
 	}
 
+	IAudioRenderClient *const render = monitor->render;
 	HRESULT hr =
 		render->lpVtbl->GetBuffer(render, resample_frames, &output);
 	if (FAILED(hr)) {
