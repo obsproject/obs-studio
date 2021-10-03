@@ -436,6 +436,13 @@ void WASAPISource::UpdateSettings(obs_data_t *settings)
 	device_id = obs_data_get_string(settings, OPT_DEVICE_ID);
 	useDeviceTiming = obs_data_get_bool(settings, OPT_USE_DEVICE_TIMING);
 	isDefaultDevice = _strcmpi(device_id.c_str(), "default") == 0;
+
+	blog(LOG_INFO,
+	     "[win-wasapi: '%s'] update settings:\n"
+	     "\tdevice id: %s\n"
+	     "\tuse device timing: %d",
+	     obs_source_get_name(source), device_id.c_str(),
+	     (int)useDeviceTiming);
 }
 
 void WASAPISource::Update(obs_data_t *settings)
