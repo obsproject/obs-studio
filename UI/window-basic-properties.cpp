@@ -214,8 +214,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	} else {
 		preview->hide();
 	}
-
-	App()->DisableHotkeys();
 }
 
 OBSBasicProperties::~OBSBasicProperties()
@@ -226,7 +224,6 @@ OBSBasicProperties::~OBSBasicProperties()
 	obs_source_dec_showing(source);
 	main->SaveProject();
 	main->UpdateContextBar();
-	App()->UpdateHotkeyFocusSetting();
 }
 
 void OBSBasicProperties::AddPreviewButton()
