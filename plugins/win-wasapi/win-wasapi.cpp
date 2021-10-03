@@ -102,10 +102,9 @@ class WASAPISource {
 	PFN_RtwqPutWorkItem rtwq_put_work_item = NULL;
 	PFN_RtwqPutWaitingWorkItem rtwq_put_waiting_work_item = NULL;
 	bool rtwq_supported = false;
-	uint64_t lastNotifyTime = 0;
-	bool isInputDevice;
+	const bool isInputDevice;
 	std::atomic<bool> useDeviceTiming = false;
-	bool isDefaultDevice = false;
+	std::atomic<bool> isDefaultDevice = false;
 
 	bool previouslyFailed = false;
 	WinHandle reconnectThread;
@@ -184,8 +183,7 @@ class WASAPISource {
 	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator,
 					    bool isDefaultDevice,
 					    bool isInputDevice,
-					    const string device_id,
-					    wstring &default_id);
+					    const string device_id);
 	static ComPtr<IAudioClient> InitClient(IMMDevice *device,
 					       bool isInputDevice,
 					       enum speaker_layout &speakers,
@@ -454,8 +452,7 @@ void WASAPISource::Update(obs_data_t *settings)
 ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 					   bool isDefaultDevice,
 					   bool isInputDevice,
-					   const string device_id,
-					   wstring &default_id)
+					   const string device_id)
 {
 	ComPtr<IMMDevice> device;
 
@@ -466,12 +463,6 @@ ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 			device.Assign());
 		if (FAILED(res))
 			throw HRError("Failed GetDefaultAudioEndpoint", res);
-
-		CoTaskMemPtr<wchar_t> id;
-		res = device->GetId(&id);
-		if (FAILED(res))
-			throw HRError("Failed to get default id", res);
-		default_id = id;
 	} else {
 		wchar_t *w_id;
 		os_utf8_to_wcs_ptr(device_id.c_str(), device_id.size(), &w_id);
@@ -624,8 +615,7 @@ ComPtr<IAudioCaptureClient> WASAPISource::InitCapture(IAudioClient *client,
 void WASAPISource::Initialize()
 {
 	ComPtr<IMMDevice> device = InitDevice(enumerator, isDefaultDevice,
-					      isInputDevice, device_id,
-					      default_id);
+					      isInputDevice, device_id);
 
 	device_name = GetDeviceName(device);
 
@@ -918,23 +908,23 @@ void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
 	if (!isDefaultDevice)
 		return;
 
-	EDataFlow expectedFlow = isInputDevice ? eCapture : eRender;
-	ERole expectedRole = isInputDevice ? eCommunications : eConsole;
-
+	const EDataFlow expectedFlow = isInputDevice ? eCapture : eRender;
+	const ERole expectedRole = isInputDevice ? eCommunications : eConsole;
 	if (flow != expectedFlow || role != expectedRole)
 		return;
-	if (id && default_id.compare(id) == 0)
-		return;
+
+	if (id) {
+		if (default_id.compare(id) == 0)
+			return;
+		default_id = id;
+	} else {
+		if (default_id.empty())
+			return;
+		default_id.clear();
+	}
 
 	blog(LOG_INFO, "WASAPI: Default %s device changed",
 	     isInputDevice ? "input" : "output");
-
-	/* reset device only once every 300ms */
-	uint64_t t = os_gettime_ns();
-	if (t - lastNotifyTime < 300000000)
-		return;
-
-	lastNotifyTime = t;
 
 	SetEvent(restartSignal);
 }
