@@ -457,6 +457,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFile,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileType,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileTime,  SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileSize,  SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack1,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack2,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack3,      CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -769,6 +773,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		this, SLOT(SimpleReplayBufferChanged()));
 	connect(ui->simpleRBSecMax, SIGNAL(valueChanged(int)), this,
 		SLOT(SimpleReplayBufferChanged()));
+	connect(ui->advOutSplitFile, SIGNAL(stateChanged(int)), this,
+		SLOT(AdvOutSplitFileChanged()));
+	connect(ui->advOutSplitFileType, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutSplitFileChanged()));
 	connect(ui->advReplayBuf, SIGNAL(toggled(bool)), this,
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advOutRecTrack1, SIGNAL(toggled(bool)), this,
@@ -895,6 +903,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
 	SimpleRecordingQualityChanged();
+	AdvOutSplitFileChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
@@ -1901,6 +1910,14 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 		config_get_string(main->Config(), "AdvOut", "RecMuxerCustom");
 	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
 	int flvTrack = config_get_int(main->Config(), "AdvOut", "FLVTrack");
+	bool splitFile =
+		config_get_bool(main->Config(), "AdvOut", "RecSplitFile");
+	const char *splitFileType =
+		config_get_string(main->Config(), "AdvOut", "RecSplitFileType");
+	int splitFileTime =
+		config_get_int(main->Config(), "AdvOut", "RecSplitFileTime");
+	int splitFileSize =
+		config_get_int(main->Config(), "AdvOut", "RecSplitFileSize");
 
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
 	ui->advOutRecType->setCurrentIndex(typeIndex);
@@ -1919,6 +1936,12 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecTrack4->setChecked(tracks & (1 << 3));
 	ui->advOutRecTrack5->setChecked(tracks & (1 << 4));
 	ui->advOutRecTrack6->setChecked(tracks & (1 << 5));
+
+	idx = (astrcmpi(splitFileType, "Size") == 0) ? 1 : 0;
+	ui->advOutSplitFile->setChecked(splitFile);
+	ui->advOutSplitFileType->setCurrentIndex(idx);
+	ui->advOutSplitFileTime->setValue(splitFileTime);
+	ui->advOutSplitFileSize->setValue(splitFileSize);
 
 	switch (flvTrack) {
 	case 1:
@@ -3378,6 +3401,14 @@ static inline const char *RecTypeFromIdx(int idx)
 		return "Standard";
 }
 
+static inline const char *SplitFileTypeFromIdx(int idx)
+{
+	if (idx == 1)
+		return "Size";
+	else
+		return "Time";
+}
+
 static void WriteJsonData(OBSPropertiesView *view, const char *path)
 {
 	char full_path[512];
@@ -3513,6 +3544,12 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
+	SaveCheckBox(ui->advOutSplitFile, "AdvOut", "RecSplitFile");
+	config_set_string(
+		main->Config(), "AdvOut", "RecSplitFileType",
+		SplitFileTypeFromIdx(ui->advOutSplitFileType->currentIndex()));
+	SaveSpinBox(ui->advOutSplitFileTime, "AdvOut", "RecSplitFileTime");
+	SaveSpinBox(ui->advOutSplitFileSize, "AdvOut", "RecSplitFileSize");
 
 	config_set_int(
 		main->Config(), "AdvOut", "RecTracks",
@@ -4412,6 +4449,19 @@ void OBSBasicSettings::AdvancedChanged()
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
+}
+
+void OBSBasicSettings::AdvOutSplitFileChanged()
+{
+	bool splitFile = ui->advOutSplitFile->isChecked();
+	int splitFileType = splitFile ? ui->advOutSplitFileType->currentIndex()
+				      : -1;
+
+	ui->advOutSplitFileType->setEnabled(splitFile);
+	ui->advOutSplitFileTimeLabel->setVisible(splitFileType == 0);
+	ui->advOutSplitFileTime->setVisible(splitFileType == 0);
+	ui->advOutSplitFileSizeLabel->setVisible(splitFileType == 1);
+	ui->advOutSplitFileSize->setVisible(splitFileType == 1);
 }
 
 void OBSBasicSettings::AdvOutRecCheckWarnings()

@@ -110,6 +110,20 @@ static void OBSRecordStopping(void *data, calldata_t *params)
 	UNUSED_PARAMETER(params);
 }
 
+static void OBSRecordFileChanged(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+	const char *next_file = calldata_string(params, "next_file");
+
+	QString arg_last_file =
+		QString::fromUtf8(output->lastRecordingPath.c_str());
+
+	QMetaObject::invokeMethod(output->main, "RecordingFileChanged",
+				  Q_ARG(QString, arg_last_file));
+
+	output->lastRecordingPath = next_file;
+}
+
 static void OBSStartReplayBuffer(void *data, calldata_t *params)
 {
 	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
@@ -1311,6 +1325,8 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 			      OBSStopRecording, this);
 	recordStopping.Connect(obs_output_get_signal_handler(fileOutput),
 			       "stopping", OBSRecordStopping, this);
+	recordFileChanged.Connect(obs_output_get_signal_handler(fileOutput),
+				  "file_changed", OBSRecordFileChanged, this);
 }
 
 void AdvancedOutput::UpdateStreamSettings()
@@ -1834,6 +1850,10 @@ bool AdvancedOutput::StartRecording()
 	const char *filenameFormat;
 	bool noSpace = false;
 	bool overwriteIfExists = false;
+	bool splitFile;
+	const char *splitFileType;
+	int splitFileTime;
+	int splitFileSize;
 
 	if (!useStreamEncoder) {
 		if (!ffmpegOutput) {
@@ -1863,6 +1883,8 @@ bool AdvancedOutput::StartRecording()
 					  ffmpegRecording
 						  ? "FFFileNameWithoutSpace"
 						  : "RecFileNameWithoutSpace");
+		splitFile = config_get_bool(main->Config(), "AdvOut",
+					    "RecSplitFile");
 
 		string strPath = GetRecordingFilename(path, recFormat, noSpace,
 						      overwriteIfExists,
@@ -1872,6 +1894,33 @@ bool AdvancedOutput::StartRecording()
 		OBSDataAutoRelease settings = obs_data_create();
 		obs_data_set_string(settings, ffmpegRecording ? "url" : "path",
 				    strPath.c_str());
+
+		if (splitFile) {
+			splitFileType = config_get_string(
+				main->Config(), "AdvOut", "RecSplitFileType");
+			splitFileTime =
+				(astrcmpi(splitFileType, "Time") == 0)
+					? config_get_int(main->Config(),
+							 "AdvOut",
+							 "RecSplitFileTime")
+					: 0;
+			splitFileSize =
+				(astrcmpi(splitFileType, "Size") == 0)
+					? config_get_int(main->Config(),
+							 "AdvOut",
+							 "RecSplitFileSize")
+					: 0;
+			obs_data_set_string(settings, "directory", path);
+			obs_data_set_string(settings, "format", filenameFormat);
+			obs_data_set_string(settings, "extension", recFormat);
+			obs_data_set_bool(settings, "allow_spaces", !noSpace);
+			obs_data_set_bool(settings, "allow_overwrite",
+					  overwriteIfExists);
+			obs_data_set_int(settings, "max_time_sec",
+					 splitFileTime);
+			obs_data_set_int(settings, "max_size_mb",
+					 splitFileSize);
+		}
 
 		obs_output_update(fileOutput, settings);
 	}

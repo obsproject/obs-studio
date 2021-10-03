@@ -381,6 +381,7 @@ private slots:
 
 	void UpdateAutomaticReplayBufferCheckboxes();
 
+	void AdvOutSplitFileChanged();
 	void AdvOutRecCheckWarnings();
 
 	void SimpleRecordingQualityChanged();

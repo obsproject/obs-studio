@@ -32,6 +32,7 @@ struct BasicOutputHandler {
 	OBSSignal streamDelayStarting;
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
+	OBSSignal recordFileChanged;
 	OBSSignal replayBufferStopping;
 	OBSSignal replayBufferSaved;
 
