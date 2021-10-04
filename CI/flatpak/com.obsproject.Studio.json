@@ -97,8 +97,8 @@
         {
           "type": "git",
           "url": "https://github.com/Haivision/srt.git",
-          "tag": "v1.4.2",
-          "commit": "50b7af06f3a0a456c172b4cb3aceafa8a5cc0036"
+          "tag": "v1.4.4",
+          "commit": "8b32f3734ff6af7cc7b0fef272591cb80a2d1aae"
         }
       ]
     },
@@ -194,8 +194,8 @@
         {
           "type": "git",
           "url": "https://github.com/ARMmbed/mbedtls.git",
-          "commit": "1c54b5410fd48d6bcada97e30cac417c5c7eea67",
-          "tag": "v2.25.0"
+          "commit": "f71e2878084126737cc39083e1e15afc459bd93d",
+          "tag": "v2.27.0"
         }
       ]
     },
