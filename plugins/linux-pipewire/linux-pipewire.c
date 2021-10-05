@@ -26,6 +26,10 @@
 #include <pipewire/pipewire.h>
 #include "screencast-portal.h"
 
+#if PW_CHECK_VERSION(0, 3, 60)
+#include "camera-portal.h"
+#endif
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("linux-pipewire", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
@@ -41,6 +45,10 @@ bool obs_module_load(void)
 
 	pw_init(NULL, NULL);
 
+#if PW_CHECK_VERSION(0, 3, 60)
+	camera_portal_load();
+#endif
+
 	screencast_portal_load();
 
 	return true;
@@ -49,6 +57,10 @@ bool obs_module_load(void)
 void obs_module_unload(void)
 {
 	screencast_portal_unload();
+
+#if PW_CHECK_VERSION(0, 3, 60)
+	camera_portal_unload();
+#endif
 
 #if PW_CHECK_VERSION(0, 3, 49)
 	pw_deinit();
