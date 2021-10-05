@@ -1,6 +1,5 @@
-/* linux-pipewire.c
+/* camera-portal.h
  *
- * Copyright 2021 columbarius <co1umbarius@protonmail.com>
  * Copyright 2021 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
@@ -19,36 +18,7 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <obs-module.h>
-#include <obs-nix-platform.h>
+#pragma once
 
-#include <pipewire/pipewire.h>
-#include "screencast-portal.h"
-#include "camera-portal.h"
-
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("linux-pipewire", "en-US")
-MODULE_EXPORT const char *obs_module_description(void)
-{
-	return "PipeWire based sources/outputs";
-}
-
-bool obs_module_load(void)
-{
-	pw_init(NULL, NULL);
-
-	screencast_portal_load();
-	camera_portal_load();
-
-	return true;
-}
-
-void obs_module_unload(void)
-{
-	camera_portal_unload();
-	screencast_portal_unload();
-
-#if PW_CHECK_VERSION(0, 3, 49)
-	pw_deinit();
-#endif
-}
+void camera_portal_load(void);
+void camera_portal_unload(void);

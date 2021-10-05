@@ -37,6 +37,8 @@ target_sources(
           pipewire.h
           portal.c
           portal.h
+          camera-portal.c
+          camera-portal.h
           screencast-portal.c
           screencast-portal.h)
 
