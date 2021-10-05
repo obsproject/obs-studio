@@ -217,9 +217,14 @@ static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
 inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 {
 	if (main->vcamEnabled) {
+#if defined(_WIN32) || defined(__APPLE__)
 		virtualCam = obs_output_create("virtualcam_output",
 					       "virtualcam_output", nullptr,
 					       nullptr);
+#else
+		virtualCam = obs_output_create(
+			"v4l2_output", "virtualcam_output", nullptr, nullptr);
+#endif
 
 		signal_handler_t *signal =
 			obs_output_get_signal_handler(virtualCam);
