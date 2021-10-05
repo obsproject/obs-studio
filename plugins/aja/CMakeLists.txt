@@ -89,18 +89,9 @@ elseif(UNIX AND NOT APPLE)
 		AJALinux)
 endif()
 
-# if(CMAKE_BUILD_TYPE STREQUAL Debug)
-# 	list(APPEND aja_LIBRARIES
-# 		ajantv2d)
-# else()
-# 	list(APPEND aja_LIBRARIES
-# 		ajantv2)
-# endif()
-
 add_library(aja MODULE ${aja_SOURCES} ${aja_HEADERS})
 
 target_include_directories(aja PUBLIC ${aja_INCLUDE_DIRS})
-# target_link_directories(aja PUBLIC ${aja_LINK_DIRS})
 target_link_libraries(aja PUBLIC ${aja_LIBRARIES})
 target_compile_definitions(aja PUBLIC ${aja_COMPILE_DEFS})
 
