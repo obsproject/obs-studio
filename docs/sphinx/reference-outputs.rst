@@ -74,6 +74,8 @@ Output Definition Structure (obs_output_info)
      frame.  Audio data will be correctly truncated down to the exact
      audio sample according to that video frame timing.
 
+   - **OBS_OUTPUT_VIRTUALCAM** - Output is a virtual camera
+
 .. member:: const char *(*obs_output_info.get_name)(void *type_data)
 
    Get the translated name of the output type.

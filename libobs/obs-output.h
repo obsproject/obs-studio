@@ -28,6 +28,7 @@ extern "C" {
 #define OBS_OUTPUT_SERVICE (1 << 3)
 #define OBS_OUTPUT_MULTI_TRACK (1 << 4)
 #define OBS_OUTPUT_CAN_PAUSE (1 << 5)
+#define OBS_OUTPUT_VIRTUALCAM (1 << 6)
 
 struct encoder_packet;
 
