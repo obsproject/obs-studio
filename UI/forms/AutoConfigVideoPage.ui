@@ -33,7 +33,7 @@
       </widget>
      </item>
      <item row="0" column="1">
-      <widget class="QComboBox" name="canvasRes"/>
+      <widget class="ComboBoxIgnoreScroll" name="canvasRes"/>
      </item>
      <item row="2" column="0">
       <widget class="QLabel" name="label_3">
@@ -46,7 +46,7 @@
       </widget>
      </item>
      <item row="2" column="1">
-      <widget class="QComboBox" name="fps"/>
+      <widget class="ComboBoxIgnoreScroll" name="fps"/>
      </item>
      <item row="3" column="0">
       <spacer name="horizontalSpacer">
@@ -91,6 +91,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+   <customwidget>
+    <class>ComboBoxIgnoreScroll</class>
+    <extends>QComboBox</extends>
+    <header>combobox-ignorewheel.hpp</header>
+   </customwidget>
+  </customwidgets>
  <resources/>
  <connections/>
 </ui>
