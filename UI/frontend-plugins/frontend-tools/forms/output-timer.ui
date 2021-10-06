@@ -22,7 +22,7 @@
     </widget>
    </item>
    <item row="3" column="2">
-    <widget class="QSpinBox" name="recordingTimerHours">
+    <widget class="SpinBoxIgnoreScroll" name="recordingTimerHours">
      <property name="minimum">
       <number>0</number>
      </property>
@@ -35,7 +35,7 @@
     </widget>
    </item>
    <item row="0" column="6">
-    <widget class="QSpinBox" name="streamingTimerSeconds">
+    <widget class="SpinBoxIgnoreScroll" name="streamingTimerSeconds">
      <property name="minimum">
       <number>0</number>
      </property>
@@ -58,7 +58,7 @@
     </widget>
    </item>
    <item row="3" column="4">
-    <widget class="QSpinBox" name="recordingTimerMinutes">
+    <widget class="SpinBoxIgnoreScroll" name="recordingTimerMinutes">
      <property name="minimum">
       <number>0</number>
      </property>
@@ -78,7 +78,7 @@
     </widget>
    </item>
    <item row="0" column="4">
-    <widget class="QSpinBox" name="streamingTimerMinutes">
+    <widget class="SpinBoxIgnoreScroll" name="streamingTimerMinutes">
      <property name="maximum">
       <number>59</number>
      </property>
@@ -126,7 +126,7 @@
     </widget>
    </item>
    <item row="0" column="2">
-    <widget class="QSpinBox" name="streamingTimerHours">
+    <widget class="SpinBoxIgnoreScroll" name="streamingTimerHours">
      <property name="minimum">
       <number>0</number>
      </property>
@@ -160,7 +160,7 @@
     </widget>
    </item>
    <item row="3" column="6">
-    <widget class="QSpinBox" name="recordingTimerSeconds">
+    <widget class="SpinBoxIgnoreScroll" name="recordingTimerSeconds">
      <property name="minimum">
       <number>0</number>
      </property>
@@ -245,6 +245,13 @@
   <tabstop>autoStartRecordTimer</tabstop>
   <tabstop>pauseRecordTimer</tabstop>
  </tabstops>
+ <customwidgets>
+  <customwidget>
+   <class>SpinBoxIgnoreScroll</class>
+   <extends>QSpinBox</extends>
+   <header>../spinbox-ignorewheel.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

@@ -17,7 +17,7 @@
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <item>
-      <widget class="QComboBox" name="windows">
+      <widget class="ComboBoxIgnoreScroll" name="windows">
        <property name="editable">
         <bool>true</bool>
        </property>
@@ -27,7 +27,7 @@
       </widget>
      </item>
      <item>
-      <widget class="QComboBox" name="scenes">
+      <widget class="ComboBoxIgnoreScroll" name="scenes">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -179,7 +179,7 @@
           </widget>
          </item>
          <item>
-          <widget class="QComboBox" name="noMatchSwitchScene">
+          <widget class="ComboBoxIgnoreScroll" name="noMatchSwitchScene">
            <property name="enabled">
             <bool>false</bool>
            </property>
@@ -206,7 +206,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QSpinBox" name="checkInterval">
+      <widget class="SpinBoxIgnoreScroll" name="checkInterval">
        <property name="minimumSize">
         <size>
          <width>100</width>
@@ -288,6 +288,18 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>../combobox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBoxIgnoreScroll</class>
+   <extends>QSpinBox</extends>
+   <header>../spinbox-ignorewheel.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
