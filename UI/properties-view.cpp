@@ -385,7 +385,7 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 
 	const char *name = obs_property_name(prop);
 	double val = obs_data_get_double(settings, name);
-	QDoubleSpinBox *spin = new QDoubleSpinBox();
+	QDoubleSpinBox *spin = new DoubleSpinBoxIgnoreScroll();
 
 	if (!obs_property_enabled(prop))
 		spin->setEnabled(false);
