@@ -9,6 +9,7 @@ struct BasicOutputHandler {
 	OBSOutputAutoRelease streamOutput;
 	OBSOutputAutoRelease replayBuffer;
 	OBSOutputAutoRelease virtualCam;
+	OBSOutputAutoRelease virtualCam2;
 	bool streamingActive = false;
 	bool recordingActive = false;
 	bool delayActive = false;

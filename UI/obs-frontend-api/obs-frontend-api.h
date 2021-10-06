@@ -214,6 +214,7 @@ EXPORT void obs_frontend_take_screenshot(void);
 EXPORT void obs_frontend_take_source_screenshot(obs_source_t *source);
 
 EXPORT obs_output_t *obs_frontend_get_virtualcam_output(void);
+EXPORT obs_output_t *obs_frontend_get_virtualcam_output_2(void);
 EXPORT void obs_frontend_start_virtualcam(void);
 EXPORT void obs_frontend_stop_virtualcam(void);
 EXPORT bool obs_frontend_virtualcam_active(void);

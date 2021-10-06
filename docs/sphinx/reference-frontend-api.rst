@@ -714,6 +714,13 @@ Functions
 
 ---------------------------------------
 
+.. function:: obs_output_t *obs_frontend_get_virtualcam_output_2(void)
+
+   :return: A new reference to the current second virtual camera output,
+            if a second virtual camera implementation is available
+
+---------------------------------------
+
 .. function:: void obs_frontend_start_virtualcam(void)
 
    Starts the virtual camera.
