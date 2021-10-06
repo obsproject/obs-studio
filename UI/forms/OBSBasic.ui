@@ -1161,7 +1161,7 @@
            <number>4</number>
           </property>
           <item>
-           <widget class="QComboBox" name="transitions">
+           <widget class="ComboBoxIgnoreScroll" name="transitions">
             <property name="minimumSize">
              <size>
               <width>120</width>
@@ -1232,7 +1232,7 @@
            </widget>
           </item>
           <item>
-           <widget class="QSpinBox" name="transitionDuration">
+           <widget class="SpinBoxIgnoreScroll" name="transitionDuration">
             <property name="accessibleName">
              <string>Basic.TransitionDuration</string>
             </property>
@@ -2155,6 +2155,16 @@
    <class>RecordButton</class>
    <extends>QPushButton</extends>
    <header>record-button.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>combobox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBoxIgnoreScroll</class>
+   <extends>QSpinBox</extends>
+   <header>spinbox-ignorewheel.hpp</header>
   </customwidget>
  </customwidgets>
  <resources>

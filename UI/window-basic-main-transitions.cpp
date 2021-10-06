@@ -25,6 +25,7 @@
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
+#include "spinbox-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
 
 #include "obs-hotkey.h"
@@ -1037,7 +1038,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 	const char *curTransition = obs_data_get_string(data, "transition");
 	int curDuration = (int)obs_data_get_int(data, "transition_duration");
 
-	QSpinBox *duration = new QSpinBox(menu);
+	QSpinBox *duration = new SpinBoxIgnoreScroll(menu);
 	duration->setMinimum(50);
 	duration->setSuffix("ms");
 	duration->setMaximum(20000);
@@ -1143,7 +1144,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	if (curDuration <= 0)
 		curDuration = obs_frontend_get_transition_duration();
 
-	QSpinBox *duration = new QSpinBox(menu);
+	QSpinBox *duration = new SpinBoxIgnoreScroll(menu);
 	duration->setMinimum(50);
 	duration->setSuffix("ms");
 	duration->setMaximum(20000);
@@ -1319,7 +1320,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 		menu->addSeparator();
 	}
 
-	QSpinBox *duration = new QSpinBox(menu);
+	QSpinBox *duration = new SpinBoxIgnoreScroll(menu);
 	if (qt)
 		duration->setProperty("id", qt->id);
 	duration->setMinimum(50);
