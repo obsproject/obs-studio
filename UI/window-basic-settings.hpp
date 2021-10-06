@@ -29,6 +29,7 @@
 #include <obs.hpp>
 
 #include "auth-base.hpp"
+#include "spinbox-ignorewheel.hpp"
 
 class OBSBasic;
 class QAbstractButton;
@@ -57,7 +58,7 @@ public slots:
 	}
 };
 
-class SilentUpdateSpinBox : public QSpinBox {
+class SilentUpdateSpinBox : public SpinBoxIgnoreScroll {
 	Q_OBJECT
 
 public slots:

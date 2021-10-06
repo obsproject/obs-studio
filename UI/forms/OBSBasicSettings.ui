@@ -197,7 +197,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="language"/>
+                    <widget class="ComboBoxIgnoreScroll" name="language"/>
                    </item>
                    <item row="1" column="0">
                     <widget class="QLabel" name="label_42">
@@ -210,7 +210,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QComboBox" name="theme"/>
+                    <widget class="ComboBoxIgnoreScroll" name="theme"/>
                    </item>
                    <item row="2" column="0">
                     <spacer name="horizontalSpacer_3">
@@ -402,7 +402,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QDoubleSpinBox" name="snapDistance">
+                    <widget class="DoubleSpinBoxIgnoreScroll" name="snapDistance">
                      <property name="decimals">
                       <number>1</number>
                      </property>
@@ -767,7 +767,7 @@
                     </widget>
                    </item>
                    <item row="3" column="1">
-                    <widget class="QComboBox" name="multiviewLayout"/>
+                    <widget class="ComboBoxIgnoreScroll" name="multiviewLayout"/>
                    </item>
                    <item row="3" column="0">
                     <widget class="QLabel" name="label_64">
@@ -846,7 +846,7 @@
                 <number>0</number>
                </property>
                <item>
-                <widget class="QComboBox" name="service">
+                <widget class="ComboBoxIgnoreScroll" name="service">
                  <property name="maxVisibleItems">
                   <number>20</number>
                  </property>
@@ -1020,7 +1020,7 @@
                   <number>0</number>
                  </property>
                  <item>
-                  <widget class="QComboBox" name="server"/>
+                  <widget class="ComboBoxIgnoreScroll" name="server"/>
                  </item>
                 </layout>
                </widget>
@@ -1235,7 +1235,7 @@
               </widget>
              </item>
              <item row="8" column="1">
-              <widget class="QComboBox" name="twitchAddonDropdown"/>
+              <widget class="ComboBoxIgnoreScroll" name="twitchAddonDropdown"/>
              </item>
              <item row="8" column="0">
               <widget class="QLabel" name="twitchAddonLabel">
@@ -1410,7 +1410,7 @@
                  </widget>
                 </item>
                 <item row="0" column="1">
-                 <widget class="QComboBox" name="outputMode">
+                 <widget class="ComboBoxIgnoreScroll" name="outputMode">
                   <property name="enabled">
                    <bool>true</bool>
                   </property>
@@ -1495,7 +1495,7 @@
                      </widget>
                     </item>
                     <item row="0" column="1">
-                     <widget class="QSpinBox" name="simpleOutputVBitrate">
+                     <widget class="SpinBoxIgnoreScroll" name="simpleOutputVBitrate">
                       <property name="minimum">
                        <number>200</number>
                       </property>
@@ -1518,7 +1518,7 @@
                      </widget>
                     </item>
                     <item row="1" column="1">
-                     <widget class="QComboBox" name="simpleOutStrEncoder"/>
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutStrEncoder"/>
                     </item>
                     <item row="2" column="0">
                      <widget class="QLabel" name="label_20">
@@ -1531,7 +1531,7 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QComboBox" name="simpleOutputABitrate">
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutputABitrate">
                       <property name="currentIndex">
                        <number>8</number>
                       </property>
@@ -1616,7 +1616,7 @@
                      </widget>
                     </item>
                     <item row="4" column="1">
-                     <widget class="QComboBox" name="simpleOutPreset"/>
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutPreset"/>
                     </item>
                     <item row="5" column="0">
                      <widget class="QLabel" name="label_23">
@@ -1713,7 +1713,7 @@
                      </widget>
                     </item>
                     <item row="2" column="1">
-                     <widget class="QComboBox" name="simpleOutRecQuality"/>
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutRecQuality"/>
                     </item>
                     <item row="3" column="0">
                      <widget class="QLabel" name="simpleOutRecFormatLabel">
@@ -1726,7 +1726,7 @@
                      </widget>
                     </item>
                     <item row="3" column="1">
-                     <widget class="QComboBox" name="simpleOutRecFormat">
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutRecFormat">
                       <item>
                        <property name="text">
                         <string notr="true">flv</string>
@@ -1770,7 +1770,7 @@
                      </widget>
                     </item>
                     <item row="4" column="1">
-                     <widget class="QComboBox" name="simpleOutRecEncoder"/>
+                     <widget class="ComboBoxIgnoreScroll" name="simpleOutRecEncoder"/>
                     </item>
                     <item row="5" column="0">
                      <widget class="QLabel" name="label_420">
@@ -1818,7 +1818,7 @@
                      </widget>
                     </item>
                     <item row="0" column="1">
-                     <widget class="QSpinBox" name="simpleRBSecMax">
+                     <widget class="SpinBoxIgnoreScroll" name="simpleRBSecMax">
                       <property name="suffix">
                        <string notr="true"> sec</string>
                       </property>
@@ -1841,7 +1841,7 @@
                      </widget>
                     </item>
                     <item row="1" column="1">
-                     <widget class="QSpinBox" name="simpleRBMegsMax">
+                     <widget class="SpinBoxIgnoreScroll" name="simpleRBMegsMax">
                       <property name="suffix">
                        <string notr="true"> MB</string>
                       </property>
@@ -2083,7 +2083,7 @@
                             </widget>
                            </item>
                            <item row="2" column="1">
-                            <widget class="QComboBox" name="advOutEncoder"/>
+                            <widget class="ComboBoxIgnoreScroll" name="advOutEncoder"/>
                            </item>
                            <item row="3" column="0">
                             <widget class="QCheckBox" name="advOutUseRescale">
@@ -2102,7 +2102,7 @@
                             </widget>
                            </item>
                            <item row="3" column="1">
-                            <widget class="QComboBox" name="advOutRescale">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutRescale">
                              <property name="enabled">
                               <bool>false</bool>
                              </property>
@@ -2171,7 +2171,7 @@
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QComboBox" name="advOutRecType">
+                         <widget class="ComboBoxIgnoreScroll" name="advOutRecType">
                           <item>
                            <property name="text">
                             <string>Basic.Settings.Output.Adv.Recording.Type.Standard</string>
@@ -2291,7 +2291,7 @@
                              </widget>
                             </item>
                             <item row="2" column="1">
-                             <widget class="QComboBox" name="advOutRecFormat">
+                             <widget class="ComboBoxIgnoreScroll" name="advOutRecFormat">
                               <item>
                                <property name="text">
                                 <string notr="true">flv</string>
@@ -2342,7 +2342,7 @@
                              </widget>
                             </item>
                             <item row="4" column="1">
-                             <widget class="QComboBox" name="advOutRecEncoder"/>
+                             <widget class="ComboBoxIgnoreScroll" name="advOutRecEncoder"/>
                             </item>
                             <item row="5" column="0">
                              <widget class="QCheckBox" name="advOutRecUseRescale">
@@ -2376,7 +2376,7 @@
                                 <number>0</number>
                                </property>
                                <item>
-                                <widget class="QComboBox" name="advOutRecRescale">
+                                <widget class="ComboBoxIgnoreScroll" name="advOutRecRescale">
                                  <property name="enabled">
                                   <bool>false</bool>
                                  </property>
@@ -2679,7 +2679,7 @@
                           </widget>
                          </item>
                          <item row="3" column="1">
-                          <widget class="QComboBox" name="advOutFFFormat"/>
+                          <widget class="ComboBoxIgnoreScroll" name="advOutFFFormat"/>
                          </item>
                          <item row="4" column="0">
                           <widget class="QLabel" name="label_44">
@@ -2721,7 +2721,7 @@
                           </widget>
                          </item>
                          <item row="0" column="1">
-                          <widget class="QComboBox" name="advOutFFType">
+                          <widget class="ComboBoxIgnoreScroll" name="advOutFFType">
                            <item>
                             <property name="text">
                              <string>Basic.Settings.Output.Adv.FFmpeg.Type.RecordToFile</string>
@@ -2768,7 +2768,7 @@
                           </widget>
                          </item>
                          <item row="6" column="1">
-                          <widget class="QSpinBox" name="advOutFFVBitrate">
+                          <widget class="SpinBoxIgnoreScroll" name="advOutFFVBitrate">
                            <property name="minimum">
                             <number>0</number>
                            </property>
@@ -2791,7 +2791,7 @@
                           </widget>
                          </item>
                          <item row="7" column="1">
-                          <widget class="QSpinBox" name="advOutFFVGOPSize">
+                          <widget class="SpinBoxIgnoreScroll" name="advOutFFVGOPSize">
                            <property name="maximum">
                             <number>1000000000</number>
                            </property>
@@ -2817,7 +2817,7 @@
                           </widget>
                          </item>
                          <item row="8" column="1">
-                          <widget class="QComboBox" name="advOutFFRescale">
+                          <widget class="ComboBoxIgnoreScroll" name="advOutFFRescale">
                            <property name="enabled">
                             <bool>false</bool>
                            </property>
@@ -2834,7 +2834,7 @@
                           </widget>
                          </item>
                          <item row="10" column="1">
-                          <widget class="QComboBox" name="advOutFFVEncoder"/>
+                          <widget class="ComboBoxIgnoreScroll" name="advOutFFVEncoder"/>
                          </item>
                          <item row="10" column="0">
                           <widget class="QLabel" name="label_37">
@@ -2860,7 +2860,7 @@
                           </widget>
                          </item>
                          <item row="12" column="1">
-                          <widget class="QSpinBox" name="advOutFFABitrate">
+                          <widget class="SpinBoxIgnoreScroll" name="advOutFFABitrate">
                            <property name="minimum">
                             <number>32</number>
                            </property>
@@ -2972,7 +2972,7 @@
                           </widget>
                          </item>
                          <item row="14" column="1">
-                          <widget class="QComboBox" name="advOutFFAEncoder"/>
+                          <widget class="ComboBoxIgnoreScroll" name="advOutFFAEncoder"/>
                          </item>
                          <item row="15" column="0">
                           <widget class="QLabel" name="label_46">
@@ -3051,7 +3051,7 @@
                             <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                            </property>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack1Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack1Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3185,7 +3185,7 @@
                             </widget>
                            </item>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack2Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack2Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3300,7 +3300,7 @@
                             </widget>
                            </item>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack3Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack3Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3415,7 +3415,7 @@
                             </widget>
                            </item>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack4Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack4Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3530,7 +3530,7 @@
                             </widget>
                            </item>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack5Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack5Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3645,7 +3645,7 @@
                             </widget>
                            </item>
                            <item row="0" column="1">
-                            <widget class="QComboBox" name="advOutTrack6Bitrate">
+                            <widget class="ComboBoxIgnoreScroll" name="advOutTrack6Bitrate">
                              <property name="currentIndex">
                               <number>8</number>
                              </property>
@@ -3765,7 +3765,7 @@
                          </widget>
                         </item>
                         <item row="0" column="1">
-                         <widget class="QSpinBox" name="advRBSecMax">
+                         <widget class="SpinBoxIgnoreScroll" name="advRBSecMax">
                           <property name="suffix">
                            <string notr="true"> s</string>
                           </property>
@@ -3788,7 +3788,7 @@
                          </widget>
                         </item>
                         <item row="1" column="1">
-                         <widget class="QSpinBox" name="advRBMegsMax">
+                         <widget class="SpinBoxIgnoreScroll" name="advRBMegsMax">
                           <property name="suffix">
                            <string> MB</string>
                           </property>
@@ -3925,7 +3925,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="sampleRate">
+                    <widget class="ComboBoxIgnoreScroll" name="sampleRate">
                      <property name="currentText">
                       <string notr="true">44.1 kHz</string>
                      </property>
@@ -3955,7 +3955,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QComboBox" name="channelSetup">
+                    <widget class="ComboBoxIgnoreScroll" name="channelSetup">
                      <property name="currentText">
                       <string>Mono</string>
                      </property>
@@ -4037,7 +4037,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="desktopAudioDevice1">
+                    <widget class="ComboBoxIgnoreScroll" name="desktopAudioDevice1">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
@@ -4057,7 +4057,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QComboBox" name="desktopAudioDevice2">
+                    <widget class="ComboBoxIgnoreScroll" name="desktopAudioDevice2">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
@@ -4074,7 +4074,7 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QComboBox" name="auxAudioDevice1">
+                    <widget class="ComboBoxIgnoreScroll" name="auxAudioDevice1">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
@@ -4091,7 +4091,7 @@
                     </widget>
                    </item>
                    <item row="3" column="1">
-                    <widget class="QComboBox" name="auxAudioDevice2">
+                    <widget class="ComboBoxIgnoreScroll" name="auxAudioDevice2">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
@@ -4108,14 +4108,14 @@
                     </widget>
                    </item>
                    <item row="4" column="1">
-                    <widget class="QComboBox" name="auxAudioDevice3">
+                    <widget class="ComboBoxIgnoreScroll" name="auxAudioDevice3">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
                     </widget>
                    </item>
                    <item row="5" column="1">
-                    <widget class="QComboBox" name="auxAudioDevice4">
+                    <widget class="ComboBoxIgnoreScroll" name="auxAudioDevice4">
                      <property name="enabled">
                       <bool>true</bool>
                      </property>
@@ -4169,7 +4169,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="meterDecayRate">
+                    <widget class="ComboBoxIgnoreScroll" name="meterDecayRate">
                      <property name="currentText">
                       <string>Basic.Settings.Audio.MeterDecayRate.Fast</string>
                      </property>
@@ -4204,7 +4204,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QComboBox" name="peakMeterType">
+                    <widget class="ComboBoxIgnoreScroll" name="peakMeterType">
                      <property name="currentIndex">
                       <number>0</number>
                      </property>
@@ -4249,7 +4249,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="monitoringDevice"/>
+                    <widget class="ComboBoxIgnoreScroll" name="monitoringDevice"/>
                    </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_11">
@@ -4373,7 +4373,7 @@
             <number>6</number>
            </property>
            <item>
-            <widget class="QComboBox" name="baseResolution">
+            <widget class="ComboBoxIgnoreScroll" name="baseResolution">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -4424,14 +4424,14 @@
           </widget>
          </item>
          <item row="5" column="1">
-          <widget class="QComboBox" name="downscaleFilter">
+          <widget class="ComboBoxIgnoreScroll" name="downscaleFilter">
            <property name="enabled">
             <bool>true</bool>
            </property>
           </widget>
          </item>
          <item row="6" column="0">
-          <widget class="QComboBox" name="fpsType">
+          <widget class="ComboBoxIgnoreScroll" name="fpsType">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
              <horstretch>0</horstretch>
@@ -4481,7 +4481,7 @@
               <number>0</number>
              </property>
              <item alignment="Qt::AlignTop">
-              <widget class="QComboBox" name="fpsCommon">
+              <widget class="ComboBoxIgnoreScroll" name="fpsCommon">
                <property name="currentText">
                 <string notr="true">10</string>
                </property>
@@ -4557,7 +4557,7 @@
               <number>0</number>
              </property>
              <item alignment="Qt::AlignTop">
-              <widget class="QSpinBox" name="fpsInteger">
+              <widget class="SpinBoxIgnoreScroll" name="fpsInteger">
                <property name="minimum">
                 <number>1</number>
                </property>
@@ -4592,7 +4592,7 @@
               <number>0</number>
              </property>
              <item row="0" column="1">
-              <widget class="QSpinBox" name="fpsNumerator">
+              <widget class="SpinBoxIgnoreScroll" name="fpsNumerator">
                <property name="minimum">
                 <number>1</number>
                </property>
@@ -4605,7 +4605,7 @@
               </widget>
              </item>
              <item row="1" column="1">
-              <widget class="QSpinBox" name="fpsDenominator">
+              <widget class="SpinBoxIgnoreScroll" name="fpsDenominator">
                <property name="minimum">
                 <number>1</number>
                </property>
@@ -4657,7 +4657,7 @@
             <number>6</number>
            </property>
            <item>
-            <widget class="QComboBox" name="outputResolution">
+            <widget class="ComboBoxIgnoreScroll" name="outputResolution">
              <property name="sizePolicy">
               <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
                <horstretch>0</horstretch>
@@ -4785,7 +4785,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="processPriority"/>
+                    <widget class="ComboBoxIgnoreScroll" name="processPriority"/>
                    </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_13">
@@ -4829,7 +4829,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="renderer">
+                    <widget class="ComboBoxIgnoreScroll" name="renderer">
                      <property name="currentText">
                       <string notr="true"/>
                      </property>
@@ -4849,7 +4849,7 @@
                     </widget>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QComboBox" name="adapter">
+                    <widget class="ComboBoxIgnoreScroll" name="adapter">
                      <property name="enabled">
                       <bool>false</bool>
                      </property>
@@ -4878,7 +4878,7 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QComboBox" name="colorFormat">
+                    <widget class="ComboBoxIgnoreScroll" name="colorFormat">
                      <item>
                       <property name="text">
                        <string notr="true">NV12</string>
@@ -4946,7 +4946,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QComboBox" name="colorSpace">
+                      <widget class="ComboBoxIgnoreScroll" name="colorSpace">
                        <item>
                         <property name="text">
                          <string notr="true">sRGB</string>
@@ -4981,7 +4981,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QComboBox" name="colorRange"/>
+                      <widget class="ComboBoxIgnoreScroll" name="colorRange"/>
                      </item>
                     </layout>
                    </item>
@@ -5171,7 +5171,7 @@
                        <number>0</number>
                       </property>
                       <item>
-                       <widget class="QSpinBox" name="streamDelaySec">
+                       <widget class="SpinBoxIgnoreScroll" name="streamDelaySec">
                         <property name="enabled">
                          <bool>true</bool>
                         </property>
@@ -5281,7 +5281,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QSpinBox" name="reconnectRetryDelay">
+                      <widget class="SpinBoxIgnoreScroll" name="reconnectRetryDelay">
                        <property name="suffix">
                         <string> s</string>
                        </property>
@@ -5310,7 +5310,7 @@
                       </widget>
                      </item>
                      <item>
-                      <widget class="QSpinBox" name="reconnectMaxRetries">
+                      <widget class="SpinBoxIgnoreScroll" name="reconnectMaxRetries">
                        <property name="minimum">
                         <number>1</number>
                        </property>
@@ -5373,7 +5373,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="bindToIP"/>
+                    <widget class="ComboBoxIgnoreScroll" name="bindToIP"/>
                    </item>
                    <item row="2" column="1">
                     <widget class="QCheckBox" name="enableNewSocketLoop">
@@ -5470,7 +5470,7 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="hotkeyFocusType"/>
+                    <widget class="ComboBoxIgnoreScroll" name="hotkeyFocusType"/>
                    </item>
                    <item row="1" column="0">
                     <spacer name="horizontalSpacer_14">
@@ -5557,6 +5557,21 @@
    <class>UrlPushButton</class>
    <extends>QPushButton</extends>
    <header>url-push-button.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>combobox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBoxIgnoreScroll</class>
+   <extends>QSpinBox</extends>
+   <header>spinbox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>DoubleSpinBoxIgnoreScroll</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>spinbox-ignorewheel.hpp</header>
   </customwidget>
  </customwidgets>
  <tabstops>

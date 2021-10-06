@@ -4975,7 +4975,7 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 	bool changed = WidgetChanged(ui->outputResolution);
 
 	delete ui->outputResolution;
-	ui->outputResolution = new QComboBox(ui->videoPage);
+	ui->outputResolution = new ComboBoxIgnoreScroll(ui->videoPage);
 	ui->outputResolution->setObjectName(
 		QString::fromUtf8("outputResolution"));
 	ui->outputResolution->setSizePolicy(sizePolicy);
