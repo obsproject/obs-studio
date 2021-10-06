@@ -61,7 +61,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="mode">
+    <widget class="ComboBoxIgnoreScroll" name="mode">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -108,7 +108,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="window">
+    <widget class="ComboBoxIgnoreScroll" name="window">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -150,6 +150,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>combobox-ignorewheel.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>

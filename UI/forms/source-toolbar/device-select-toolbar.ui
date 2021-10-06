@@ -64,7 +64,7 @@
     </widget>
    </item>
    <item>
-    <widget class="QComboBox" name="device">
+    <widget class="ComboBoxIgnoreScroll" name="device">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
        <horstretch>0</horstretch>
@@ -128,6 +128,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>combobox-ignorewheel.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections/>
 </ui>
