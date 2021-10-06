@@ -1813,8 +1813,10 @@ void OBSBasic::OBSInit()
 	vcamEnabled = (obs_get_output_flags("virtualcam_output") &
 		       OBS_OUTPUT_VIRTUALCAM) != 0;
 #else
-	vcamEnabled = (obs_get_output_flags("v4l2_output") &
-		       OBS_OUTPUT_VIRTUALCAM) != 0;
+	vcamEnabled = ((obs_get_output_flags("v4l2_output") &
+			OBS_OUTPUT_VIRTUALCAM) != 0) ||
+		      ((obs_get_output_flags("pw_vcam_output") &
+			OBS_OUTPUT_VIRTUALCAM) != 0);
 #endif
 
 	if (vcamEnabled) {
