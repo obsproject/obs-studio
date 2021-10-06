@@ -69,7 +69,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QDoubleSpinBox" name="positionX">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="positionX">
           <property name="minimumSize">
            <size>
             <width>100</width>
@@ -91,7 +91,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="positionY">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="positionY">
           <property name="minimumSize">
            <size>
             <width>100</width>
@@ -126,7 +126,7 @@
       </widget>
      </item>
      <item row="1" column="1">
-      <widget class="QDoubleSpinBox" name="rotation">
+      <widget class="DoubleSpinBoxIgnoreScroll" name="rotation">
        <property name="sizePolicy">
         <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
          <horstretch>0</horstretch>
@@ -185,7 +185,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QDoubleSpinBox" name="sizeX">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="sizeX">
           <property name="minimumSize">
            <size>
             <width>100</width>
@@ -210,7 +210,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="sizeY">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="sizeY">
           <property name="minimumSize">
            <size>
             <width>100</width>
@@ -248,7 +248,7 @@
       </widget>
      </item>
      <item row="3" column="1">
-      <widget class="QComboBox" name="align">
+      <widget class="ComboBoxIgnoreScroll" name="align">
        <property name="accessibleName">
         <string>Basic.TransformWindow.Alignment</string>
        </property>
@@ -326,7 +326,7 @@
       </widget>
      </item>
      <item row="5" column="1">
-      <widget class="QComboBox" name="boundsType">
+      <widget class="ComboBoxIgnoreScroll" name="boundsType">
        <property name="accessibleName">
         <string>Basic.TransformWindow.BoundsType</string>
        </property>
@@ -378,7 +378,7 @@
       </widget>
      </item>
      <item row="6" column="1">
-      <widget class="QComboBox" name="boundsAlign">
+      <widget class="ComboBoxIgnoreScroll" name="boundsAlign">
        <property name="enabled">
         <bool>false</bool>
        </property>
@@ -467,7 +467,7 @@
          <number>0</number>
         </property>
         <item>
-         <widget class="QDoubleSpinBox" name="boundsWidth">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="boundsWidth">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -492,7 +492,7 @@
          </widget>
         </item>
         <item>
-         <widget class="QDoubleSpinBox" name="boundsHeight">
+         <widget class="DoubleSpinBoxIgnoreScroll" name="boundsHeight">
           <property name="enabled">
            <bool>false</bool>
           </property>
@@ -545,7 +545,7 @@
      <item row="9" column="1">
       <layout class="QGridLayout" name="gridLayout">
        <item row="0" column="1">
-        <widget class="QSpinBox" name="cropLeft">
+        <widget class="SpinBoxIgnoreScroll" name="cropLeft">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -567,7 +567,7 @@
         </widget>
        </item>
        <item row="0" column="3">
-        <widget class="QSpinBox" name="cropRight">
+        <widget class="SpinBoxIgnoreScroll" name="cropRight">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -615,7 +615,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QSpinBox" name="cropTop">
+        <widget class="SpinBoxIgnoreScroll" name="cropTop">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -637,7 +637,7 @@
         </widget>
        </item>
        <item row="1" column="3">
-        <widget class="QSpinBox" name="cropBottom">
+        <widget class="SpinBoxIgnoreScroll" name="cropBottom">
          <property name="sizePolicy">
           <sizepolicy hsizetype="Maximum" vsizetype="Fixed">
            <horstretch>0</horstretch>
@@ -723,6 +723,23 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>ComboBoxIgnoreScroll</class>
+   <extends>QComboBox</extends>
+   <header>combobox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>SpinBoxIgnoreScroll</class>
+   <extends>QSpinBox</extends>
+   <header>spinbox-ignorewheel.hpp</header>
+  </customwidget>
+  <customwidget>
+   <class>DoubleSpinBoxIgnoreScroll</class>
+   <extends>QDoubleSpinBox</extends>
+   <header>spinbox-ignorewheel.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>
