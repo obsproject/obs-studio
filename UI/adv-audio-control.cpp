@@ -1,14 +1,14 @@
 #include <QHBoxLayout>
 #include <QGridLayout>
 #include <QLabel>
-#include <QSpinBox>
-#include <QComboBox>
 #include <QCheckBox>
 #include <cmath>
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "adv-audio-control.hpp"
 #include "window-basic-main.hpp"
+#include "combobox-ignorewheel.hpp"
+#include "spinbox-ignorewheel.hpp"
 
 #ifndef NSEC_PER_MSEC
 #define NSEC_PER_MSEC 1000000
@@ -37,14 +37,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	nameLabel = new QLabel();
 	active = new QLabel();
 	stackedWidget = new QStackedWidget();
-	volume = new QDoubleSpinBox();
-	percent = new QSpinBox();
+	volume = new DoubleSpinBoxIgnoreScroll();
+	percent = new SpinBoxIgnoreScroll();
 	forceMono = new QCheckBox();
 	balance = new BalanceSlider();
 #if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	monitoringType = new QComboBox();
+	monitoringType = new ComboBoxIgnoreScroll();
 #endif
-	syncOffset = new QSpinBox();
+	syncOffset = new SpinBoxIgnoreScroll();
 	mixer1 = new QCheckBox();
 	mixer2 = new QCheckBox();
 	mixer3 = new QCheckBox();

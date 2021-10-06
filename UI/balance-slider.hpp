@@ -1,13 +1,15 @@
 #pragma once
 
-#include <QSlider>
+#include "slider-ignorewheel.hpp"
 #include <QMouseEvent>
 
-class BalanceSlider : public QSlider {
+class BalanceSlider : public SliderIgnoreScroll {
 	Q_OBJECT
 
 public:
-	inline BalanceSlider(QWidget *parent = 0) : QSlider(parent) {}
+	inline BalanceSlider(QWidget *parent = 0) : SliderIgnoreScroll(parent)
+	{
+	}
 
 signals:
 	void doubleClicked();

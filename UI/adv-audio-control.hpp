@@ -3,15 +3,14 @@
 #include <obs.hpp>
 #include <QWidget>
 #include <QPointer>
-#include <QDoubleSpinBox>
 #include <QStackedWidget>
 #include "balance-slider.hpp"
+#include "combobox-ignorewheel.hpp"
+#include "spinbox-ignorewheel.hpp"
 
 class QGridLayout;
 class QLabel;
-class QSpinBox;
 class QCheckBox;
-class QComboBox;
 
 enum class VolumeType {
 	dB,
@@ -33,14 +32,14 @@ private:
 	QPointer<QLabel> nameLabel;
 	QPointer<QLabel> active;
 	QPointer<QStackedWidget> stackedWidget;
-	QPointer<QSpinBox> percent;
-	QPointer<QDoubleSpinBox> volume;
+	QPointer<SpinBoxIgnoreScroll> percent;
+	QPointer<DoubleSpinBoxIgnoreScroll> volume;
 	QPointer<QCheckBox> forceMono;
 	QPointer<BalanceSlider> balance;
 	QPointer<QLabel> labelL;
 	QPointer<QLabel> labelR;
-	QPointer<QSpinBox> syncOffset;
-	QPointer<QComboBox> monitoringType;
+	QPointer<SpinBoxIgnoreScroll> syncOffset;
+	QPointer<ComboBoxIgnoreScroll> monitoringType;
 	QPointer<QCheckBox> mixer1;
 	QPointer<QCheckBox> mixer2;
 	QPointer<QCheckBox> mixer3;

@@ -1,6 +1,5 @@
 #pragma once
 
-#include <QSlider>
 #include "slider-ignorewheel.hpp"
 
 class DoubleSlider : public SliderIgnoreScroll {
