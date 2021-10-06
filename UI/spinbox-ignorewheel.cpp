@@ -12,3 +12,17 @@ void SpinBoxIgnoreScroll::wheelEvent(QWheelEvent *event)
 	else
 		QSpinBox::wheelEvent(event);
 }
+
+DoubleSpinBoxIgnoreScroll::DoubleSpinBoxIgnoreScroll(QWidget *parent)
+	: QDoubleSpinBox(parent)
+{
+	setFocusPolicy(Qt::StrongFocus);
+}
+
+void DoubleSpinBoxIgnoreScroll::wheelEvent(QWheelEvent *event)
+{
+	if (!hasFocus())
+		event->ignore();
+	else
+		QDoubleSpinBox::wheelEvent(event);
+}
