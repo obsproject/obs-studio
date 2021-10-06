@@ -60,7 +60,7 @@ static void netif_convert_to_string(char *dest,
 			  temp_char, INET6_ADDRSTRLEN);
 	else if (family == AF_INET6)
 		inet_ntop(family,
-			  &(((struct sockaddr_in *)byte_address)->sin_addr),
+			  &(((struct sockaddr_in6 *)byte_address)->sin6_addr),
 			  temp_char, INET6_ADDRSTRLEN);
 #else
 	if (family == AF_INET)
@@ -116,12 +116,12 @@ bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len,
 		warn("Could not parse address, error code: %d", GetLastError());
 	return ret != SOCKET_ERROR;
 #else
-	struct sockaddr_in *sin = (struct sockaddr_in *)out;
-	if (inet_pton(out->ss_family, addr, &sin->sin_addr)) {
-		*addr_len = ipv6 ? sizeof(struct sockaddr_in6)
-				 : sizeof(struct sockaddr_in);
+	*addr_len = ipv6 ? sizeof(struct sockaddr_in6)
+			 : sizeof(struct sockaddr_in);
+	void *dst = ipv6 ? &((struct sockaddr_in6 *)out)->sin6_addr
+			 : &((struct sockaddr_in *)out)->sin_addr;
+	if (inet_pton(out->ss_family, addr, dst))
 		return true;
-	}
 
 	return false;
 #endif

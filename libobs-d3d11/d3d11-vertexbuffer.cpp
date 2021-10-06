@@ -19,13 +19,15 @@
 #include <graphics/vec3.h>
 #include "d3d11-subsystem.hpp"
 
-static inline void PushBuffer(vector<ID3D11Buffer *> &buffers,
-			      vector<uint32_t> &strides, ID3D11Buffer *buffer,
+static inline void PushBuffer(UINT *refNumBuffers, ID3D11Buffer **buffers,
+			      uint32_t *strides, ID3D11Buffer *buffer,
 			      size_t elementSize, const char *name)
 {
+	const UINT numBuffers = *refNumBuffers;
 	if (buffer) {
-		buffers.push_back(buffer);
-		strides.push_back((uint32_t)elementSize);
+		buffers[numBuffers] = buffer;
+		strides[numBuffers] = (uint32_t)elementSize;
+		*refNumBuffers = numBuffers + 1;
 	} else {
 		blog(LOG_ERROR, "This vertex shader requires a %s buffer",
 		     name);
@@ -46,25 +48,27 @@ void gs_vertex_buffer::FlushBuffer(ID3D11Buffer *buffer, void *array,
 	device->context->Unmap(buffer, 0);
 }
 
-void gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
-				      vector<ID3D11Buffer *> &buffers,
-				      vector<uint32_t> &strides)
+UINT gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
+				      ID3D11Buffer **buffers, uint32_t *strides)
 {
-	PushBuffer(buffers, strides, vertexBuffer, sizeof(vec3), "point");
+	UINT numBuffers = 0;
+	PushBuffer(&numBuffers, buffers, strides, vertexBuffer, sizeof(vec3),
+		   "point");
 
 	if (shader->hasNormals)
-		PushBuffer(buffers, strides, normalBuffer, sizeof(vec3),
-			   "normal");
+		PushBuffer(&numBuffers, buffers, strides, normalBuffer,
+			   sizeof(vec3), "normal");
 	if (shader->hasColors)
-		PushBuffer(buffers, strides, colorBuffer, sizeof(uint32_t),
-			   "color");
+		PushBuffer(&numBuffers, buffers, strides, colorBuffer,
+			   sizeof(uint32_t), "color");
 	if (shader->hasTangents)
-		PushBuffer(buffers, strides, tangentBuffer, sizeof(vec3),
-			   "tangent");
+		PushBuffer(&numBuffers, buffers, strides, tangentBuffer,
+			   sizeof(vec3), "tangent");
 	if (shader->nTexUnits <= uvBuffers.size()) {
 		for (size_t i = 0; i < shader->nTexUnits; i++) {
-			buffers.push_back(uvBuffers[i]);
-			strides.push_back((uint32_t)uvSizes[i]);
+			buffers[numBuffers] = uvBuffers[i];
+			strides[numBuffers] = (uint32_t)uvSizes[i];
+			++numBuffers;
 		}
 	} else {
 		blog(LOG_ERROR,
@@ -72,6 +76,8 @@ void gs_vertex_buffer::MakeBufferList(gs_vertex_shader *shader,
 		     "texture buffers.",
 		     (uint32_t)shader->nTexUnits);
 	}
+
+	return numBuffers;
 }
 
 void gs_vertex_buffer::InitBuffer(const size_t elementSize,

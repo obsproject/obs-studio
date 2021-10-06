@@ -16,6 +16,7 @@
     You should have received a copy of the GNU General Public License
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
+#include "ui-config.h"
 
 #include <cstddef>
 #include <ctime>
@@ -54,6 +55,11 @@
 #include "window-log-reply.hpp"
 #include "window-projector.hpp"
 #include "window-remux.hpp"
+#if YOUTUBE_ENABLED
+#include "auth-youtube.hpp"
+#include "window-youtube-actions.hpp"
+#include "youtube-api-wrappers.hpp"
+#endif
 #include "qt-wrappers.hpp"
 #include "context-bar-controls.hpp"
 #include "obs-proxy-style.hpp"
@@ -203,6 +209,9 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 
 extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
+#if YOUTUBE_ENABLED
+extern void RegisterYoutubeAuth();
+#endif
 
 OBSBasic::OBSBasic(QWidget *parent)
 	: OBSMainWindow(parent), undo_s(ui), ui(new Ui::OBSBasic)
@@ -220,6 +229,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 #if RESTREAM_ENABLED
 	RegisterRestreamAuth();
 #endif
+#if YOUTUBE_ENABLED
+	RegisterYoutubeAuth();
+#endif
 
 	setAcceptDrops(true);
 
@@ -232,11 +244,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
 	ui->contextContainer->setStyle(new OBSProxyStyle);
-
-	/* XXX: Disable drag/drop on Linux until Qt issues are fixed */
-#if !defined(_WIN32) && !defined(__APPLE__)
-	ui->scenes->setDragDropMode(QAbstractItemView::NoDragDrop);
-#endif
+	ui->broadcastButton->setVisible(false);
 
 	startingDockLayout = saveState();
 
@@ -264,6 +272,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 		}
 	}
 
+	qRegisterMetaType<int64_t>("int64_t");
+	qRegisterMetaType<uint32_t>("uint32_t");
 	qRegisterMetaType<OBSScene>("OBSScene");
 	qRegisterMetaType<OBSSceneItem>("OBSSceneItem");
 	qRegisterMetaType<OBSSource>("OBSSource");
@@ -376,7 +386,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	// Register shortcuts for Undo/Redo
 	ui->actionMainUndo->setShortcut(Qt::CTRL + Qt::Key_Z);
 	QList<QKeySequence> shrt;
-	shrt << QKeySequence(Qt::CTRL + Qt::SHIFT + Qt::Key_Z)
+	shrt << QKeySequence(Qt::CTRL | Qt::SHIFT + Qt::Key_Z)
 	     << QKeySequence(Qt::CTRL + Qt::Key_Y);
 	ui->actionMainRedo->setShortcuts(shrt);
 
@@ -445,6 +455,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	connect(ui->scenes, SIGNAL(scenesReordered()), this,
 		SLOT(ScenesReordered()));
+
+	connect(ui->broadcastButton, &QPushButton::clicked, this,
+		&OBSBasic::BroadcastButtonClicked);
+
+	UpdatePreviewSafeAreas();
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -900,6 +915,16 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 	int child_indent = 1 + indent_count;
 	obs_source_enum_filters(source, LogFilter,
 				(void *)(intptr_t)child_indent);
+
+	obs_source_t *show_tn = obs_sceneitem_get_show_transition(item);
+	obs_source_t *hide_tn = obs_sceneitem_get_hide_transition(item);
+	if (show_tn)
+		blog(LOG_INFO, "    %s- show: '%s' (%s)", indent.c_str(),
+		     obs_source_get_name(show_tn), obs_source_get_id(show_tn));
+	if (hide_tn)
+		blog(LOG_INFO, "    %s- hide: '%s' (%s)", indent.c_str(),
+		     obs_source_get_name(hide_tn), obs_source_get_id(hide_tn));
+
 	if (obs_sceneitem_is_group(item))
 		obs_sceneitem_group_enum_items(item, LogSceneItem,
 					       (void *)(intptr_t)child_indent);
@@ -1024,7 +1049,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	obs_load_sources(sources, cb, files);
 
 	if (transitions)
-		LoadTransitions(transitions);
+		LoadTransitions(transitions, cb, files);
 	if (sceneOrder)
 		LoadSceneListOrder(sceneOrder);
 
@@ -1161,7 +1186,8 @@ retryScene:
 
 	LogScenes();
 
-	if (obs_missing_files_count(files) > 0) {
+	if (obs_missing_files_count(files) > 0 &&
+	    !App()->IsMissingFilesCheckDisabled()) {
 		/* the window hasn't fully initialized by this point on macOS,
 		 * so put this at the end of the current task queue. Fixes a
 		 * bug where the window be behind OBS on startup */
@@ -1279,13 +1305,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	uint32_t cx = primaryScreen->size().width();
 	uint32_t cy = primaryScreen->size().height();
 
-#ifdef SUPPORTS_FRACTIONAL_SCALING
 	cx *= devicePixelRatioF();
 	cy *= devicePixelRatioF();
-#elif
-	cx *= devicePixelRatio();
-	cy *= devicePixelRatio();
-#endif
 
 	bool oldResolutionDefaults = config_get_bool(
 		App()->GlobalConfig(), "General", "Pre19Defaults");
@@ -1349,6 +1370,17 @@ bool OBSBasic::InitBasicConfigDefaults()
 		config_set_bool(basicConfig, "Stream1", "MovedOldEnforce",
 				true);
 		changed = true;
+	}
+
+	/* ----------------------------------------------------- */
+	/* enforce minimum retry delay of 1 second prior to 27.1 */
+	if (config_has_user_value(basicConfig, "Output", "RetryDelay")) {
+		int retryDelay =
+			config_get_uint(basicConfig, "Output", "RetryDelay");
+		if (retryDelay < 1) {
+			config_set_uint(basicConfig, "Output", "RetryDelay", 1);
+			changed = true;
+		}
 	}
 
 	/* ----------------------------------------------------- */
@@ -1623,6 +1655,8 @@ void OBSBasic::InitPrimitives()
 	}
 	circle = gs_render_save();
 
+	InitSafeAreas(&actionSafeMargin, &graphicsSafeMargin,
+		      &fourByThreeSafeMargin, &leftLine, &topLine, &rightLine);
 	obs_leave_graphics();
 }
 
@@ -1715,15 +1749,15 @@ void OBSBasic::OBSInit()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		throw "Failed to get scene collection name";
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		throw "Failed to create scene collection file name";
 
@@ -2036,6 +2070,12 @@ void OBSBasic::OBSInit()
 #endif
 #endif
 
+#ifdef __APPLE__
+	/* Remove OBS' Fullscreen Interface menu in favor of the one macOS adds by default */
+	delete ui->actionFullscreenInterface;
+	ui->actionFullscreenInterface = nullptr;
+#endif
+
 #if defined(_WIN32) || defined(__APPLE__)
 	if (App()->IsUpdaterDisabled())
 		ui->actionCheckForUpdates->setEnabled(false);
@@ -2073,11 +2113,8 @@ void OBSBasic::OnFirstLoad()
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 
-	if (showLogViewerOnStartup) {
-		if (!logView)
-			logView = new OBSLogViewer();
-		logView->show();
-	}
+	if (showLogViewerOnStartup)
+		on_actionViewCurrentLog_triggered();
 }
 
 void OBSBasic::DeferredSysTrayLoad(int requeueCount)
@@ -2562,7 +2599,6 @@ OBSBasic::~OBSBasic()
 		updateCheckThread->wait();
 
 	delete screenshotData;
-	delete logView;
 	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
@@ -2624,6 +2660,12 @@ OBSBasic::~OBSBasic()
 	gs_vertexbuffer_destroy(boxRight);
 	gs_vertexbuffer_destroy(boxBottom);
 	gs_vertexbuffer_destroy(circle);
+	gs_vertexbuffer_destroy(actionSafeMargin);
+	gs_vertexbuffer_destroy(graphicsSafeMargin);
+	gs_vertexbuffer_destroy(fourByThreeSafeMargin);
+	gs_vertexbuffer_destroy(leftLine);
+	gs_vertexbuffer_destroy(topLine);
+	gs_vertexbuffer_destroy(rightLine);
 	obs_leave_graphics();
 
 	/* When shutting down, sometimes source references can get in to the
@@ -2709,15 +2751,16 @@ void OBSBasic::SaveProjectDeferred()
 
 	const char *sceneCollection = config_get_string(
 		App()->GlobalConfig(), "Basic", "SceneCollectionFile");
-	char savePath[512];
-	char fileName[512];
+
+	char savePath[1024];
+	char fileName[1024];
 	int ret;
 
 	if (!sceneCollection)
 		return;
 
-	ret = snprintf(fileName, 512, "obs-studio/basic/scenes/%s.json",
-		       sceneCollection);
+	ret = snprintf(fileName, sizeof(fileName),
+		       "obs-studio/basic/scenes/%s.json", sceneCollection);
 	if (ret <= 0)
 		return;
 
@@ -3103,6 +3146,20 @@ void OBSBasic::UpdateContextBar(bool force)
 			ui->emptySpace->layout()->addWidget(c);
 		}
 
+		QIcon icon;
+
+		if (strcmp(id, "scene") == 0)
+			icon = GetSceneIcon();
+		else if (strcmp(id, "group") == 0)
+			icon = GetGroupIcon();
+		else
+			icon = GetSourceIcon(id);
+
+		QPixmap pixmap = icon.pixmap(QSize(16, 16));
+		ui->contextSourceIcon->setPixmap(pixmap);
+		ui->contextSourceIconSpacer->hide();
+		ui->contextSourceIcon->show();
+
 		const char *name = obs_source_get_name(source);
 		ui->contextSourceLabel->setText(name);
 
@@ -3110,6 +3167,8 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourcePropertiesButton->setEnabled(
 			obs_source_configurable(source));
 	} else {
+		ui->contextSourceIcon->hide();
+		ui->contextSourceIconSpacer->show();
 		ui->contextSourceLabel->setText(
 			QTStr("ContextBar.NoSelectedSource"));
 
@@ -3733,6 +3792,24 @@ void OBSBasic::RemoveSelectedScene()
 	obs_data_array_push_back(array, scene_data);
 	obs_data_release(scene_data);
 
+	/* ----------------------------------------------- */
+	/* save all scenes and groups the scene is used in */
+
+	for (int i = 0; i < ui->scenes->count(); i++) {
+		QListWidgetItem *widget_item = ui->scenes->item(i);
+		auto item_scene = GetOBSRef<OBSScene>(widget_item);
+		if (scene == item_scene)
+			continue;
+		auto *item = obs_scene_find_source_recursive(
+			item_scene, obs_source_get_name(source));
+		if (item) {
+			scene_data = obs_save_source(obs_scene_get_source(
+				obs_sceneitem_get_scene(item)));
+			obs_data_array_push_back(array, scene_data);
+			obs_data_release(scene_data);
+		}
+	}
+
 	/* --------------------------- */
 	/* undo/redo                   */
 
@@ -3806,16 +3883,6 @@ void OBSBasic::RemoveSelectedScene()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
-}
-
-void OBSBasic::RemoveSelectedSceneItem()
-{
-	OBSSceneItem item = GetCurrentSceneItem();
-	if (item) {
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (QueryRemoveSource(source))
-			obs_sceneitem_remove(item);
-	}
 }
 
 void OBSBasic::ReorderSources(OBSScene scene)
@@ -4028,6 +4095,19 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 	gs_reset_viewport();
 
 	window->ui->preview->DrawSceneEditing();
+
+	uint32_t targetCX = window->previewCX;
+	uint32_t targetCY = window->previewCY;
+
+	if (window->drawSafeAreas) {
+		RenderSafeAreas(window->actionSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->graphicsSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->fourByThreeSafeMargin, targetCX,
+				targetCY);
+		RenderSafeAreas(window->leftLine, targetCX, targetCY);
+		RenderSafeAreas(window->topLine, targetCX, targetCY);
+		RenderSafeAreas(window->rightLine, targetCX, targetCY);
+	}
 
 	/* --------------------------------------- */
 
@@ -4437,6 +4517,15 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		return;
 	}
 
+#if YOUTUBE_ENABLED
+	/* Also don't close the window if the youtube stream check is active */
+	if (youtubeStreamCheckThread) {
+		QTimer::singleShot(1000, this, SLOT(close()));
+		event->ignore();
+		return;
+	}
+#endif
+
 	if (isVisible())
 		config_set_string(App()->GlobalConfig(), "BasicWindow",
 				  "geometry",
@@ -4495,14 +4584,14 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	ClearExtraBrowserDocks();
 #endif
 
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_EXIT);
-
 	disableSaving++;
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
 	ClearSceneData();
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
 	App()->quit();
 }
@@ -4604,6 +4693,47 @@ void OBSBasic::on_action_Settings_triggered()
 			close();
 		else
 			restart = false;
+	}
+}
+
+static inline void AddMissingFiles(void *data, obs_source_t *source)
+{
+	obs_missing_files_t *f = (obs_missing_files_t *)data;
+	obs_missing_files_t *sf = obs_source_get_missing_files(source);
+
+	obs_missing_files_append(f, sf);
+	obs_missing_files_destroy(sf);
+}
+
+void OBSBasic::on_actionShowMissingFiles_triggered()
+{
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	auto cb_sources = [](void *data, obs_source_t *source) {
+		AddMissingFiles(data, source);
+		return true;
+	};
+	obs_enum_sources(cb_sources, files);
+
+	auto cb_transitions = [](void *data, obs_source_t *source) {
+		if (obs_source_get_type(source) != OBS_SOURCE_TYPE_TRANSITION)
+			return true;
+
+		AddMissingFiles(data, source);
+		return true;
+	};
+	obs_enum_all_sources(cb_transitions, files);
+
+	if (obs_missing_files_count(files) > 0) {
+		missDialog = new OBSMissingFiles(files, this);
+		missDialog->setAttribute(Qt::WA_DeleteOnClose, true);
+		missDialog->show();
+		missDialog->raise();
+	} else {
+		obs_missing_files_destroy(files);
+		OBSMessageBox::information(
+			this, QTStr("MissingFiles.NoMissing.Title"),
+			QTStr("MissingFiles.NoMissing.Text"));
 	}
 }
 
@@ -4718,6 +4848,7 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 	for (int i = 0; i < screens.size(); i++) {
 		QScreen *screen = screens[i];
 		QRect screenGeometry = screen->geometry();
+		qreal ratio = screen->devicePixelRatio();
 		QString name = "";
 #ifdef _WIN32
 		QTextStream fullname(&name);
@@ -4743,8 +4874,10 @@ void OBSBasic::AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 		QString str =
 			QString("%1: %2x%3 @ %4,%5")
 				.arg(name,
-				     QString::number(screenGeometry.width()),
-				     QString::number(screenGeometry.height()),
+				     QString::number(screenGeometry.width() *
+						     ratio),
+				     QString::number(screenGeometry.height() *
+						     ratio),
 				     QString::number(screenGeometry.x()),
 				     QString::number(screenGeometry.y()));
 
@@ -5810,15 +5943,12 @@ void OBSBasic::on_actionViewCurrentLog_triggered()
 	if (!logView)
 		logView = new OBSLogViewer();
 
-	if (!logView->isVisible()) {
-		logView->setVisible(true);
-	} else {
-		logView->setWindowState(
-			(logView->windowState() & ~Qt::WindowMinimized) |
-			Qt::WindowActive);
-		logView->activateWindow();
-		logView->raise();
-	}
+	logView->show();
+	logView->setWindowState(
+		(logView->windowState() & ~Qt::WindowMinimized) |
+		Qt::WindowActive);
+	logView->activateWindow();
+	logView->raise();
 }
 
 void OBSBasic::on_actionShowCrashLogs_triggered()
@@ -5957,12 +6087,22 @@ void OBSBasic::SceneNameEdited(QWidget *editor,
 	UNUSED_PARAMETER(endHint);
 }
 
-void OBSBasic::OpenFilters()
+void OBSBasic::OpenFilters(OBSSource source)
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	OBSSource source = obs_sceneitem_get_source(item);
-
+	if (source == nullptr) {
+		OBSSceneItem item = GetCurrentSceneItem();
+		source = obs_sceneitem_get_source(item);
+	}
 	CreateFiltersWindow(source);
+}
+
+void OBSBasic::OpenProperties(OBSSource source)
+{
+	if (source == nullptr) {
+		OBSSceneItem item = GetCurrentSceneItem();
+		source = obs_sceneitem_get_source(item);
+	}
+	CreatePropertiesWindow(source);
 }
 
 void OBSBasic::OpenSceneFilters()
@@ -6007,12 +6147,145 @@ void OBSBasic::DisplayStreamStartError()
 	QMessageBox::critical(this, QTStr("Output.StartStreamFailed"), message);
 }
 
+#if YOUTUBE_ENABLED
+void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
+				     bool autostart, bool autostop,
+				     bool start_now)
+{
+	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
+	obs_service_t *service_obj = GetService();
+	obs_data_t *settings = obs_service_get_settings(service_obj);
+
+	const std::string a_key = QT_TO_UTF8(key);
+	obs_data_set_string(settings, "key", a_key.c_str());
+
+	const std::string an_id = QT_TO_UTF8(id);
+	obs_data_set_string(settings, "stream_id", an_id.c_str());
+
+	obs_service_update(service_obj, settings);
+	autoStartBroadcast = autostart;
+	autoStopBroadcast = autostop;
+	broadcastReady = true;
+
+	obs_data_release(settings);
+
+	if (start_now)
+		QMetaObject::invokeMethod(this, "StartStreaming");
+}
+
+void OBSBasic::YoutubeStreamCheck(const std::string &key)
+{
+	YoutubeApiWrappers *apiYouTube(
+		dynamic_cast<YoutubeApiWrappers *>(GetAuth()));
+	if (!apiYouTube) {
+		/* technically we should never get here -Jim */
+		QMetaObject::invokeMethod(this, "ForceStopStreaming",
+					  Qt::QueuedConnection);
+		youtubeStreamCheckThread->deleteLater();
+		blog(LOG_ERROR, "==========================================");
+		blog(LOG_ERROR, "%s: Uh, hey, we got here", __FUNCTION__);
+		blog(LOG_ERROR, "==========================================");
+		return;
+	}
+
+	int timeout = 0;
+	json11::Json json;
+	QString id = key.c_str();
+
+	while (StreamingActive()) {
+		if (timeout == 14) {
+			QMetaObject::invokeMethod(this, "ForceStopStreaming",
+						  Qt::QueuedConnection);
+			break;
+		}
+
+		if (!apiYouTube->FindStream(id, json)) {
+			QMetaObject::invokeMethod(this,
+						  "DisplayStreamStartError",
+						  Qt::QueuedConnection);
+			QMetaObject::invokeMethod(this, "StopStreaming",
+						  Qt::QueuedConnection);
+			break;
+		}
+
+		auto item = json["items"][0];
+		auto status = item["status"]["streamStatus"].string_value();
+		if (status == "active") {
+			QMetaObject::invokeMethod(ui->broadcastButton,
+						  "setEnabled",
+						  Q_ARG(bool, true));
+			break;
+		} else {
+			QThread::sleep(1);
+			timeout++;
+		}
+	}
+
+	youtubeStreamCheckThread->deleteLater();
+}
+
+void OBSBasic::ShowYouTubeAutoStartWarning()
+{
+	auto msgBox = []() {
+		QMessageBox msgbox(App()->GetMainWindow());
+		msgbox.setWindowTitle(QTStr(
+			"YouTube.Actions.AutoStartStreamingWarning.Title"));
+		msgbox.setText(
+			QTStr("YouTube.Actions.AutoStartStreamingWarning"));
+		msgbox.setIcon(QMessageBox::Icon::Information);
+		msgbox.addButton(QMessageBox::Ok);
+
+		QCheckBox *cb = new QCheckBox(QTStr("DoNotShowAgain"));
+		msgbox.setCheckBox(cb);
+
+		msgbox.exec();
+
+		if (cb->isChecked()) {
+			config_set_bool(App()->GlobalConfig(), "General",
+					"WarnedAboutYouTubeAutoStart", true);
+			config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+		}
+	};
+
+	bool warned = config_get_bool(App()->GlobalConfig(), "General",
+				      "WarnedAboutYouTubeAutoStart");
+	if (!warned) {
+		QMetaObject::invokeMethod(App(), "Exec", Qt::QueuedConnection,
+					  Q_ARG(VoidFunc, msgBox));
+	}
+}
+#endif
+
 void OBSBasic::StartStreaming()
 {
 	if (outputHandler->StreamingActive())
 		return;
 	if (disableOutputsRef)
 		return;
+
+	if (auth && auth->broadcastFlow()) {
+		if (!broadcastActive && !broadcastReady) {
+			ui->streamButton->setChecked(false);
+
+			QMessageBox no_broadcast(this);
+			no_broadcast.setText(QTStr("Output.NoBroadcast.Text"));
+			QPushButton *SetupBroadcast = no_broadcast.addButton(
+				QTStr("Basic.Main.SetupBroadcast"),
+				QMessageBox::YesRole);
+			no_broadcast.setDefaultButton(SetupBroadcast);
+			no_broadcast.addButton(QTStr("Close"),
+					       QMessageBox::NoRole);
+			no_broadcast.setIcon(QMessageBox::Information);
+			no_broadcast.setWindowTitle(
+				QTStr("Output.NoBroadcast.Title"));
+			no_broadcast.exec();
+
+			if (no_broadcast.clickedButton() == SetupBroadcast)
+				QMetaObject::invokeMethod(this,
+							  "SetupBroadcast");
+			return;
+		}
+	}
 
 	if (!outputHandler->SetupStreaming(service)) {
 		DisplayStreamStartError();
@@ -6027,6 +6300,7 @@ void OBSBasic::StartStreaming()
 	ui->streamButton->setEnabled(false);
 	ui->streamButton->setChecked(false);
 	ui->streamButton->setText(QTStr("Basic.Main.Connecting"));
+	ui->broadcastButton->setChecked(false);
 
 	if (sysTrayStream) {
 		sysTrayStream->setEnabled(false);
@@ -6038,6 +6312,24 @@ void OBSBasic::StartStreaming()
 		return;
 	}
 
+	if (!autoStartBroadcast) {
+		ui->broadcastButton->setText(
+			QTStr("Basic.Main.StartBroadcast"));
+		ui->broadcastButton->setProperty("broadcastState", "ready");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
+		// well, we need to disable button while stream is not active
+		ui->broadcastButton->setEnabled(false);
+	} else if (!autoStopBroadcast) {
+		broadcastActive = true;
+		ui->broadcastButton->setText(QTStr("Basic.Main.StopBroadcast"));
+		ui->broadcastButton->setProperty("broadcastState", "active");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
+	} else {
+		ui->broadcastButton->setEnabled(false);
+	}
+
 	bool recordWhenStreaming = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "RecordWhenStreaming");
 	if (recordWhenStreaming)
@@ -6047,6 +6339,106 @@ void OBSBasic::StartStreaming()
 		GetGlobalConfig(), "BasicWindow", "ReplayBufferWhileStreaming");
 	if (replayBufferWhileStreaming)
 		StartReplayBuffer();
+
+#if YOUTUBE_ENABLED
+	if (!autoStartBroadcast)
+		OBSBasic::ShowYouTubeAutoStartWarning();
+#endif
+}
+
+void OBSBasic::BroadcastButtonClicked()
+{
+	if (!broadcastReady ||
+	    !broadcastActive && !outputHandler->StreamingActive()) {
+		SetupBroadcast();
+		if (broadcastReady)
+			ui->broadcastButton->setChecked(true);
+		return;
+	}
+
+	if (!autoStartBroadcast) {
+#if YOUTUBE_ENABLED
+		std::shared_ptr<YoutubeApiWrappers> ytAuth =
+			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
+		if (ytAuth.get()) {
+			ytAuth->StartLatestBroadcast();
+		}
+#endif
+		broadcastActive = true;
+		autoStartBroadcast = true; // and clear the flag
+
+		if (!autoStopBroadcast) {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.StopBroadcast"));
+		} else {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.AutoStopEnabled"));
+			ui->broadcastButton->setEnabled(false);
+		}
+
+		ui->broadcastButton->setProperty("broadcastState", "active");
+		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+		ui->broadcastButton->style()->polish(ui->broadcastButton);
+	} else if (!autoStopBroadcast) {
+#if YOUTUBE_ENABLED
+		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					       "WarnBeforeStoppingStream");
+		if (confirm && isVisible()) {
+			QMessageBox::StandardButton button = OBSMessageBox::question(
+				this, QTStr("ConfirmStop.Title"),
+				QTStr("YouTube.Actions.AutoStopStreamingWarning"),
+				QMessageBox::Yes | QMessageBox::No,
+				QMessageBox::No);
+
+			if (button == QMessageBox::No) {
+				ui->broadcastButton->setChecked(true);
+				return;
+			}
+		}
+
+		std::shared_ptr<YoutubeApiWrappers> ytAuth =
+			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
+		if (ytAuth.get()) {
+			ytAuth->StopLatestBroadcast();
+		}
+#endif
+		broadcastActive = false;
+		broadcastReady = false;
+
+		autoStopBroadcast = true;
+		QMetaObject::invokeMethod(this, "StopStreaming");
+		SetBroadcastFlowEnabled(true);
+	}
+}
+
+void OBSBasic::SetBroadcastFlowEnabled(bool enabled)
+{
+	ui->broadcastButton->setEnabled(enabled);
+	ui->broadcastButton->setVisible(enabled);
+	ui->broadcastButton->setChecked(broadcastReady);
+	ui->broadcastButton->setProperty("broadcastState", "idle");
+	ui->broadcastButton->style()->unpolish(ui->broadcastButton);
+	ui->broadcastButton->style()->polish(ui->broadcastButton);
+	ui->broadcastButton->setText(QTStr("Basic.Main.SetupBroadcast"));
+}
+
+void OBSBasic::SetupBroadcast()
+{
+	Auth *auth = GetAuth();
+#if YOUTUBE_ENABLED
+	if (IsYouTubeService(auth->service())) {
+		OBSYoutubeActions *dialog;
+		dialog = new OBSYoutubeActions(this, auth, broadcastReady);
+		connect(dialog, &OBSYoutubeActions::ok, this,
+			&OBSBasic::YouTubeActionDialogOk);
+		int result = dialog->Valid() ? dialog->exec()
+					     : QDialog::Rejected;
+		if (result != QDialog::Accepted) {
+			if (!broadcastReady)
+				ui->broadcastButton->setChecked(false);
+		}
+	}
+#endif
 }
 
 #ifdef _WIN32
@@ -6155,6 +6547,20 @@ void OBSBasic::StopStreaming()
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming(streamingStopping);
 
+	// special case: force reset broadcast state if
+	// no autostart and no autostop selected
+	if (!autoStartBroadcast && !broadcastActive) {
+		broadcastActive = false;
+		autoStartBroadcast = true;
+		autoStopBroadcast = true;
+		broadcastReady = false;
+	}
+
+	if (autoStopBroadcast) {
+		broadcastActive = false;
+		broadcastReady = false;
+	}
+
 	OnDeactivate();
 
 	bool recordWhenStreaming = config_get_bool(
@@ -6180,6 +6586,20 @@ void OBSBasic::ForceStopStreaming()
 
 	if (outputHandler->StreamingActive())
 		outputHandler->StopStreaming(true);
+
+	// special case: force reset broadcast state if
+	// no autostart and no autostop selected
+	if (!autoStartBroadcast && !broadcastActive) {
+		broadcastActive = false;
+		autoStartBroadcast = true;
+		autoStopBroadcast = true;
+		broadcastReady = false;
+	}
+
+	if (autoStopBroadcast) {
+		broadcastActive = false;
+		broadcastReady = false;
+	}
 
 	OnDeactivate();
 
@@ -6264,6 +6684,22 @@ void OBSBasic::StreamingStart()
 		sysTrayStream->setText(ui->streamButton->text());
 		sysTrayStream->setEnabled(true);
 	}
+
+#if YOUTUBE_ENABLED
+	if (!autoStartBroadcast) {
+		// get a current stream key
+		obs_service_t *service_obj = GetService();
+		obs_data_t *settings = obs_service_get_settings(service_obj);
+		std::string key = obs_data_get_string(settings, "stream_id");
+		if (!key.empty() && !youtubeStreamCheckThread) {
+			youtubeStreamCheckThread = CreateQThread(
+				[this, key] { YoutubeStreamCheck(key); });
+			youtubeStreamCheckThread->setObjectName(
+				"YouTubeStreamCheckThread");
+			youtubeStreamCheckThread->start();
+		}
+	}
+#endif
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_STREAMING_STARTED);
@@ -6368,9 +6804,13 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 		startStreamMenu->deleteLater();
 		startStreamMenu = nullptr;
 	}
+
+	// Reset broadcast button state/text
+	if (!broadcastActive)
+		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
 }
 
-void OBSBasic::AutoRemux()
+void OBSBasic::AutoRemux(QString input)
 {
 	bool autoRemux = config_get_bool(Config(), "Video", "AutoRemux");
 
@@ -6384,7 +6824,6 @@ void OBSBasic::AutoRemux()
 	if (ffmpegOutput)
 		return;
 
-	QString input = outputHandler->lastRecordingPath.c_str();
 	if (input.isEmpty())
 		return;
 
@@ -6546,7 +6985,7 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 	if (diskFullTimer->isActive())
 		diskFullTimer->stop();
 
-	AutoRemux();
+	AutoRemux(outputHandler->lastRecordingPath.c_str());
 
 	OnDeactivate();
 	UpdatePause(false);
@@ -6696,6 +7135,8 @@ void OBSBasic::ReplayBufferSaved()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
+
+	AutoRemux(path);
 }
 
 void OBSBasic::ReplayBufferStop(int code)
@@ -6815,6 +7256,23 @@ void OBSBasic::on_streamButton_clicked()
 		bool confirm = config_get_bool(GetGlobalConfig(), "BasicWindow",
 					       "WarnBeforeStoppingStream");
 
+#if YOUTUBE_ENABLED
+		if (isVisible() && auth && IsYouTubeService(auth->service()) &&
+		    autoStopBroadcast) {
+			QMessageBox::StandardButton button = OBSMessageBox::question(
+				this, QTStr("ConfirmStop.Title"),
+				QTStr("YouTube.Actions.AutoStopStreamingWarning"),
+				QMessageBox::Yes | QMessageBox::No,
+				QMessageBox::No);
+
+			if (button == QMessageBox::No) {
+				ui->streamButton->setChecked(true);
+				return;
+			}
+
+			confirm = false;
+		}
+#endif
 		if (confirm && isVisible()) {
 			QMessageBox::StandardButton button =
 				OBSMessageBox::question(
@@ -6836,8 +7294,13 @@ void OBSBasic::on_streamButton_clicked()
 			return;
 		}
 
+		Auth *auth = GetAuth();
+
 		auto action =
-			UIValidation::StreamSettingsConfirmation(this, service);
+			(auth && auth->external())
+				? StreamSettingsAction::ContinueStream
+				: UIValidation::StreamSettingsConfirmation(
+					  this, service);
 		switch (action) {
 		case StreamSettingsAction::ContinueStream:
 			break;
@@ -6860,6 +7323,10 @@ void OBSBasic::on_streamButton_clicked()
 				obs_service_get_settings(service);
 			bwtest = obs_data_get_bool(settings, "bwtest");
 			obs_data_release(settings);
+			// Disable confirmation if this is going to open broadcast setup
+			if (auth && auth->broadcastFlow() && !broadcastReady &&
+			    !broadcastActive)
+				confirm = false;
 		}
 
 		if (bwtest && isVisible()) {
@@ -8967,7 +9434,8 @@ void OBSBasic::UpdatePatronJson(const QString &text, const QString &error)
 
 void OBSBasic::PauseRecording()
 {
-	if (!pause || !outputHandler || !outputHandler->fileOutput)
+	if (!pause || !outputHandler || !outputHandler->fileOutput ||
+	    os_atomic_load_bool(&recording_paused))
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;
@@ -9006,7 +9474,8 @@ void OBSBasic::PauseRecording()
 
 void OBSBasic::UnpauseRecording()
 {
-	if (!pause || !outputHandler || !outputHandler->fileOutput)
+	if (!pause || !outputHandler || !outputHandler->fileOutput ||
+	    !os_atomic_load_bool(&recording_paused))
 		return;
 
 	obs_output_t *output = outputHandler->fileOutput;
@@ -9282,4 +9751,10 @@ void OBSBasic::ShowStatusBarMessage(const QString &message)
 {
 	ui->statusbar->clearMessage();
 	ui->statusbar->showMessage(message, 10000);
+}
+
+void OBSBasic::UpdatePreviewSafeAreas()
+{
+	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					"ShowSafeAreas");
 }

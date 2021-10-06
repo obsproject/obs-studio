@@ -15,11 +15,7 @@
     "--filesystem=host",
     "--talk-name=org.kde.StatusNotifierWatcher",
     "--talk-name=org.freedesktop.Flatpak",
-    "--talk-name=org.freedesktop.ScreenSaver",
-    "--talk-name=org.freedesktop.PowerManagement.Inhibit",
     "--talk-name=org.freedesktop.Notifications",
-    "--talk-name=org.mate.SessionManager",
-    "--talk-name=org.gnome.SessionManager",
     "--own-name=org.kde.StatusNotifierItem-2-2",
     "--system-talk-name=org.freedesktop.Avahi"
   ],

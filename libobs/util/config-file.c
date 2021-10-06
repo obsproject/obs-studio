@@ -61,16 +61,6 @@ struct config_data {
 	pthread_mutex_t mutex;
 };
 
-static inline bool init_mutex(config_t *config)
-{
-	pthread_mutexattr_t attr;
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return false;
-	return pthread_mutex_init(&config->mutex, &attr) == 0;
-}
-
 config_t *config_create(const char *file)
 {
 	struct config_data *config;
@@ -83,7 +73,7 @@ config_t *config_create(const char *file)
 
 	config = bzalloc(sizeof(struct config_data));
 
-	if (!init_mutex(config)) {
+	if (pthread_mutex_init_recursive(&config->mutex) != 0) {
 		bfree(config);
 		return NULL;
 	}
@@ -302,7 +292,7 @@ int config_open(config_t **config, const char *file,
 	if (!*config)
 		return CONFIG_ERROR;
 
-	if (!init_mutex(*config)) {
+	if (pthread_mutex_init_recursive(&(*config)->mutex) != 0) {
 		bfree(*config);
 		return CONFIG_ERROR;
 	}
@@ -330,7 +320,7 @@ int config_open_string(config_t **config, const char *str)
 	if (!*config)
 		return CONFIG_ERROR;
 
-	if (!init_mutex(*config)) {
+	if (pthread_mutex_init_recursive(&(*config)->mutex) != 0) {
 		bfree(*config);
 		return CONFIG_ERROR;
 	}

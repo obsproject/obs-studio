@@ -1,67 +1,153 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2007-2018 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfxdefs.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2019-2020 Intel Corporation
+// 
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+// 
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+// 
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 #ifndef __MFXDEFS_H__
 #define __MFXDEFS_H__
 
 #define MFX_VERSION_MAJOR 1
-#define MFX_VERSION_MINOR 27
+#define MFX_VERSION_MINOR 35
 
-#define MFX_VERSION_NEXT 1028
+// MFX_VERSION_NEXT is always +1 from last public release
+// may be enforced by MFX_VERSION_USE_LATEST define
+// if MFX_VERSION_USE_LATEST is defined  MFX_VERSION is ignored
 
-#ifndef MFX_VERSION
-#define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
+#define MFX_VERSION_NEXT (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR + 1)
+
+// MFX_VERSION - version of API that 'assumed' by build may be provided externally
+// if it omitted then latest stable API derived from Major.Minor is assumed
+
+
+#if !defined(MFX_VERSION)
+  #if defined(MFX_VERSION_USE_LATEST)
+    #define MFX_VERSION MFX_VERSION_NEXT
+  #else
+    #define MFX_VERSION (MFX_VERSION_MAJOR * 1000 + MFX_VERSION_MINOR)
+  #endif
+#else
+  #undef MFX_VERSION_MINOR
+  #define MFX_VERSION_MINOR ((MFX_VERSION) % 1000)
 #endif
+
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif /* __cplusplus */
 
+/* In preprocessor syntax # symbol has stringize meaning,
+   so to expand some macro to preprocessor pragma we need to use
+   special compiler dependent construction */
 
-#if (defined( _WIN32 ) || defined ( _WIN64 )) && !defined (__GNUC__)
-  #define __INT64   __int64
-  #define __UINT64  unsigned __int64
+#if defined(_MSC_VER)
+    #define MFX_PRAGMA_IMPL(x) __pragma(x)
 #else
-  #define __INT64   long long
-  #define __UINT64  unsigned long long
+    #define MFX_PRAGMA_IMPL(x) _Pragma(#x)
 #endif
 
-#ifdef _WIN32
-    #define MFX_CDECL __cdecl
-    #define MFX_STDCALL __stdcall
+#define MFX_PACK_BEGIN_X(x) MFX_PRAGMA_IMPL(pack(push, x))
+#define MFX_PACK_END()      MFX_PRAGMA_IMPL(pack(pop))
+
+/* The general rule for alignment is following:
+   - structures with pointers have 4/8 bytes alignment on 32/64 bit systems
+   - structures with fields of type mfxU64/mfxF64 (unsigned long long / double)
+     have alignment 8 bytes on 64 bit and 32 bit Windows, on Linux alignment is 4 bytes
+   - all the rest structures are 4 bytes aligned
+   - there are several exceptions: some structs which had 4-byte alignment were extended
+     with pointer / long type fields; such structs have 4-byte alignment to keep binary
+     compatibility with previously release API */
+
+#define MFX_PACK_BEGIN_USUAL_STRUCT()        MFX_PACK_BEGIN_X(4)
+
+/* 64-bit LP64 data model */
+#if defined(_WIN64) || defined(__LP64__)
+    #define MFX_PACK_BEGIN_STRUCT_W_PTR()    MFX_PACK_BEGIN_X(8)
+    #define MFX_PACK_BEGIN_STRUCT_W_L_TYPE() MFX_PACK_BEGIN_X(8)
+/* 32-bit ILP32 data model Windows (Intel architecture) */
+#elif defined(_WIN32) || defined(_M_IX86) && !defined(__linux__)
+    #define MFX_PACK_BEGIN_STRUCT_W_PTR()    MFX_PACK_BEGIN_X(4)
+    #define MFX_PACK_BEGIN_STRUCT_W_L_TYPE() MFX_PACK_BEGIN_X(8)
+/* 32-bit ILP32 data model Linux */
+#elif defined(__ILP32__)
+    #define MFX_PACK_BEGIN_STRUCT_W_PTR()    MFX_PACK_BEGIN_X(4)
+    #define MFX_PACK_BEGIN_STRUCT_W_L_TYPE() MFX_PACK_BEGIN_X(4)
 #else
-    #define MFX_CDECL
-    #define MFX_STDCALL
+    #error Unknown packing
+#endif
+
+  #define __INT64   long long
+  #define __UINT64  unsigned long long
+
+#ifdef _WIN32
+  #define MFX_CDECL __cdecl
+  #define MFX_STDCALL __stdcall
+#else
+  #define MFX_CDECL
+  #define MFX_STDCALL
 #endif /* _WIN32 */
 
 #define MFX_INFINITE 0xFFFFFFFF
+
+#if !defined(MFX_DEPRECATED_OFF) && (MFX_VERSION >= 1034)
+#define MFX_DEPRECATED_OFF
+#endif
+
+#ifndef MFX_DEPRECATED_OFF
+  #if defined(__cplusplus) && __cplusplus >= 201402L
+    #define MFX_DEPRECATED [[deprecated]]
+    #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg [[deprecated]]
+    #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+  #elif defined(__clang__)
+    #define MFX_DEPRECATED __attribute__((deprecated))
+    #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg __attribute__((deprecated))
+    #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+  #elif defined(__INTEL_COMPILER)
+    #if (defined(_WIN32) || defined(_WIN64))
+      #define MFX_DEPRECATED __declspec(deprecated)
+      #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg
+      #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg) __pragma(deprecated(arg))
+    #elif defined(__linux__)
+      #define MFX_DEPRECATED __attribute__((deprecated))
+      #if defined(__cplusplus)
+        #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg __attribute__((deprecated))
+      #else
+        #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg
+      #endif
+      #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+    #endif
+  #elif defined(_MSC_VER) && _MSC_VER > 1200 // VS 6 doesn't support deprecation
+    #define MFX_DEPRECATED __declspec(deprecated)
+    #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg
+    #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg) __pragma(deprecated(arg))
+  #elif defined(__GNUC__)
+    #define MFX_DEPRECATED __attribute__((deprecated))
+    #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg __attribute__((deprecated))
+    #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+  #else
+    #define MFX_DEPRECATED
+    #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg
+    #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+  #endif
+#else
+  #define MFX_DEPRECATED
+  #define MFX_DEPRECATED_ENUM_FIELD_INSIDE(arg) arg
+  #define MFX_DEPRECATED_ENUM_FIELD_OUTSIDE(arg)
+#endif
 
 typedef unsigned char       mfxU8;
 typedef char                mfxI8;
@@ -140,6 +226,11 @@ typedef enum
     MFX_WRN_OUT_OF_RANGE                = 7,    /* the value is out of valid range */
     MFX_WRN_FILTER_SKIPPED              = 10,   /* one of requested filters has been skipped */
     MFX_WRN_INCOMPATIBLE_AUDIO_PARAM    = 11,   /* incompatible audio parameters */
+
+#if MFX_VERSION >= 1031
+    /* low-delay partial output */
+    MFX_ERR_NONE_PARTIAL_OUTPUT         = 12,   /* frame is not ready, but bitstream contains partial output */
+#endif
 
     /* threading statuses */
     MFX_TASK_DONE = MFX_ERR_NONE,               /* task has been completed */

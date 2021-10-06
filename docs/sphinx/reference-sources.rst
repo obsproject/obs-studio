@@ -847,6 +847,14 @@ General Source Functions
 
 ---------------------
 
+.. function:: bool obs_source_get_texcoords_centered(obs_source_t *source)
+
+   Hints whether or not the source will blend texels.
+
+   :return: Whether or not the source will blend texels
+
+---------------------
+
 .. function:: obs_data_t *obs_source_get_settings(const obs_source_t *source)
 
    :return: The settings string for a source.  The reference counter of the

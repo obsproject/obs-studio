@@ -196,27 +196,31 @@ void os_set_thread_name(const char *name)
 	}
 #endif
 
-	typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE thread,
-							   PCWSTR desc);
 
 	wchar_t *path;
 	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
 		return false;
 
 	SetDllDirectory(path);
-	HMODULE k32 = LoadLibraryW(L"Kernel32.dll");
-	CoTaskMemFree(path);
-	SetDllDirectory(NULL);
-	set_thread_description_t std = NULL;
-	std = (set_thread_description_t)GetProcAddress(k32,
-						       "SetThreadDescription");
-	if (std) {
-		wchar_t *wname;
-		os_utf8_to_wcs_ptr(name, 0, &wname);
+	const HMODULE hModule = LoadLibrary(L"KernelBase.dll");
+	if (hModule) {
+		typedef HRESULT(WINAPI * set_thread_description_t)(HANDLE,
+								   PCWSTR);
 
-		std(GetCurrentThread(), wname);
+		CoTaskMemFree(path);
+		SetDllDirectory(NULL);
 
-		bfree(wname);
+		set_thread_description_t std = NULL;
+		std = (set_thread_description_t)GetProcAddress(hModule, "SetThreadDescription");
+		if (std) {
+			wchar_t *wname;
+			os_utf8_to_wcs_ptr(name, 0, &wname);
+
+			std(GetCurrentThread(), wname);
+
+			bfree(wname);
+		}
+
+		FreeLibrary(hModule);
 	}
-	FreeLibrary(k32);
 }

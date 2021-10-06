@@ -154,12 +154,14 @@ static void *gpu_encode_thread(void *unused)
 					else
 						next_key++;
 
-					success = encoder->info.encode_texture(
-						encoder->context.data, tf.handle,
-						encoder->cur_pts, lock_key, &next_key, &pkt,
-						&received);
-					send_off_encoder_packet(encoder, success, received,
-								&pkt);
+				if (encoder->reconfigure_requested) {
+					encoder->reconfigure_requested = false;
+					encoder->info.update(encoder->context.data,
+							encoder->context.settings);
+				}
+
+				if (!encoder->start_ts)
+					encoder->start_ts = timestamp;
 
 					lock_key = next_key;
 

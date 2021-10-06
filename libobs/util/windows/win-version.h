@@ -29,8 +29,8 @@ struct win_version_info {
 	int revis;
 };
 
-static inline int win_version_compare(struct win_version_info *dst,
-				      struct win_version_info *src)
+static inline int win_version_compare(const struct win_version_info *dst,
+				      const struct win_version_info *src)
 {
 	if (dst->major > src->major)
 		return 1;

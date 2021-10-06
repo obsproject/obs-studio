@@ -90,6 +90,7 @@ bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
+bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -166,7 +167,11 @@ QObject *CreateShortcutFilter()
 		};
 
 		auto key_event = [&](QKeyEvent *event) {
-			if (!App()->HotkeysEnabledInFocus())
+			int key = event->key();
+			bool enabledInFocus = App()->HotkeysEnabledInFocus();
+
+			if (key != Qt::Key_Enter && key != Qt::Key_Escape &&
+			    key != Qt::Key_Return && !enabledInFocus)
 				return true;
 
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
@@ -174,7 +179,7 @@ QObject *CreateShortcutFilter()
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event->type() == QEvent::KeyPress;
 
-			switch (event->key()) {
+			switch (key) {
 			case Qt::Key_Shift:
 			case Qt::Key_Control:
 			case Qt::Key_Alt:
@@ -194,6 +199,8 @@ QObject *CreateShortcutFilter()
 			case Qt::Key_Return:
 				if (dialog && pressed)
 					return false;
+				if (!enabledInFocus)
+					return true;
 				/* Falls through. */
 			default:
 				hotkey.key = obs_key_from_virtual_key(
@@ -817,6 +824,11 @@ bool OBSApp::InitLocale()
 
 	locale = lang;
 
+	// set basic default application locale
+	if (!locale.empty())
+		QLocale::setDefault(QLocale(
+			QString::fromStdString(locale).replace('-', '_')));
+
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
 		OBSErrorBox(NULL, "Failed to find locale/" DEFAULT_LANG ".ini");
@@ -855,6 +867,13 @@ bool OBSApp::InitLocale()
 			blog(LOG_INFO, "Using preferred locale '%s'",
 			     locale_.c_str());
 			locale = locale_;
+
+			// set application default locale to the new choosen one
+			if (!locale.empty())
+				QLocale::setDefault(QLocale(
+					QString::fromStdString(locale).replace(
+						'-', '_')));
+
 			return true;
 		}
 
@@ -1098,8 +1117,8 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
-	setStyleSheet(mpath);
 	ParseExtraThemeData(path.c_str());
+	setStyleSheet(mpath);
 
 	emit StyleChanged();
 	return true;
@@ -1497,6 +1516,11 @@ bool OBSApp::IsUpdaterDisabled()
 	return opt_disable_updater;
 }
 
+bool OBSApp::IsMissingFilesCheckDisabled()
+{
+	return opt_disable_missing_files_check;
+}
+
 #ifdef __APPLE__
 #define INPUT_AUDIO_SOURCE "coreaudio_input_capture"
 #define OUTPUT_AUDIO_SOURCE "coreaudio_output_capture"
@@ -1768,13 +1792,27 @@ string GetFormatString(const char *format, const char *prefix,
 {
 	string f;
 
-	if (prefix && *prefix) {
-		f += prefix;
-		if (f.back() != ' ')
-			f += " ";
-	}
+	f = format;
 
-	f += format;
+	if (prefix && *prefix) {
+		string str_prefix = prefix;
+
+		if (str_prefix.back() != ' ')
+			str_prefix += " ";
+
+		size_t insert_pos = 0;
+		size_t tmp;
+
+		tmp = f.find_last_of('/');
+		if (tmp != string::npos && tmp > insert_pos)
+			insert_pos = tmp + 1;
+
+		tmp = f.find_last_of('\\');
+		if (tmp != string::npos && tmp > insert_pos)
+			insert_pos = tmp + 1;
+
+		f.insert(insert_pos, str_prefix);
+	}
 
 	if (suffix && *suffix) {
 		if (*suffix != ' ')
@@ -1975,6 +2013,18 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #if __APPLE__
 	InstallNSApplicationSubclass();
+#endif
+
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(USE_XDG) && \
+	defined(ENABLE_WAYLAND)
+	/* NOTE: Qt doesn't use the Wayland platform on GNOME, so we have to
+	 * force it using the QT_QPA_PLATFORM env var. It's still possible to
+	 * use other QPA platforms using this env var, or the -platform command
+	 * line option. */
+
+	const char *session_type = getenv("XDG_SESSION_TYPE");
+	if (session_type && strcmp(session_type, "wayland") == 0)
+		setenv("QT_QPA_PLATFORM", "wayland", false);
 #endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());
@@ -2697,6 +2747,10 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-updater", nullptr)) {
 			opt_disable_updater = true;
 
+		} else if (arg_is(argv[i], "--disable-missing-files-check",
+				  nullptr)) {
+			opt_disable_missing_files_check = true;
+
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
 				  nullptr)) {
 			opt_disable_high_dpi_scaling = true;
@@ -2720,6 +2774,7 @@ int main(int argc, char *argv[])
 				"--always-on-top: Start in 'always on top' mode.\n\n"
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
+				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n"
 				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
 
 #ifdef _WIN32
@@ -2751,6 +2806,14 @@ int main(int argc, char *argv[])
 		opt_disable_updater =
 			os_file_exists(BASE_PATH "/disable_updater") ||
 			os_file_exists(BASE_PATH "/disable_updater.txt");
+	}
+
+	if (!opt_disable_missing_files_check) {
+		opt_disable_missing_files_check =
+			os_file_exists(BASE_PATH
+				       "/disable_missing_files_check") ||
+			os_file_exists(BASE_PATH
+				       "/disable_missing_files_check.txt");
 	}
 #endif
 

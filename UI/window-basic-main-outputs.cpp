@@ -1343,10 +1343,16 @@ void AdvancedOutput::UpdateStreamSettings()
 
 	if (applyServiceSettings) {
 		int bitrate = (int)obs_data_get_int(settings, "bitrate");
+		int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 		obs_service_apply_encoder_settings(main->GetService(), settings,
 						   nullptr);
 		if (!enforceBitrate)
 			obs_data_set_int(settings, "bitrate", bitrate);
+
+		int enforced_keyint_sec =
+			(int)obs_data_get_int(settings, "keyint_sec");
+		if (keyint_sec != 0 && keyint_sec < enforced_keyint_sec)
+			obs_data_set_int(settings, "keyint_sec", keyint_sec);
 	}
 
 	if (dynBitrate && astrcmpi(streamEncoder, "jim_nvenc") == 0)

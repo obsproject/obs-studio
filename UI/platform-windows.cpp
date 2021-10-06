@@ -368,17 +368,17 @@ QString GetMonitorName(const QString &id)
 	}
 
 	UINT32 numPath, numMode;
-	if (!GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
-					 &numMode) == ERROR_SUCCESS) {
+	if (GetDisplayConfigBufferSizes(QDC_ONLY_ACTIVE_PATHS, &numPath,
+					&numMode) != ERROR_SUCCESS) {
 		return GENERIC_MONITOR_NAME;
 	}
 
 	std::vector<DISPLAYCONFIG_PATH_INFO> paths(numPath);
 	std::vector<DISPLAYCONFIG_MODE_INFO> modes(numMode);
 
-	if (!QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths.data(),
-				&numMode, modes.data(),
-				nullptr) == ERROR_SUCCESS) {
+	if (QueryDisplayConfig(QDC_ONLY_ACTIVE_PATHS, &numPath, paths.data(),
+			       &numMode, modes.data(),
+			       nullptr) != ERROR_SUCCESS) {
 		return GENERIC_MONITOR_NAME;
 	}
 

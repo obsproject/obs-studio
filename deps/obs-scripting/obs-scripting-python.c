@@ -53,8 +53,9 @@ static wchar_t home_path[1024] = {0};
 
 DARRAY(char *) python_paths;
 static bool python_loaded = false;
+static bool mutexes_loaded = false;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_python_script *first_tick_script = NULL;
 
 static PyObject *py_obspython = NULL;
@@ -378,7 +379,7 @@ struct python_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct python_obs_timer *first_timer = NULL;
 
 static inline void python_obs_timer_init(struct python_obs_timer *timer)
@@ -1570,12 +1571,10 @@ void obs_python_load(void)
 {
 	da_init(python_paths);
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
+
+	mutexes_loaded = true;
 }
 
 extern void add_python_frontend_funcs(PyObject *module);
@@ -1702,6 +1701,11 @@ out:
 
 void obs_python_unload(void)
 {
+	if (mutexes_loaded) {
+		pthread_mutex_destroy(&tick_mutex);
+		pthread_mutex_destroy(&timer_mutex);
+	}
+
 	if (!python_loaded_at_all)
 		return;
 
@@ -1720,8 +1724,6 @@ void obs_python_unload(void)
 		bfree(python_paths.array[i]);
 	da_free(python_paths);
 
-	pthread_mutex_destroy(&tick_mutex);
-	pthread_mutex_destroy(&timer_mutex);
 	dstr_free(&cur_py_log_chunk);
 
 	python_loaded_at_all = false;

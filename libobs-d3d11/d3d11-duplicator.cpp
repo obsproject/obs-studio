@@ -218,9 +218,12 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 	    d->texture->height != desc.Height) {
 
 		delete d->texture;
+		const gs_color_format format =
+			ConvertDXGITextureFormat(desc.Format);
+		const gs_color_format srgb_format =
+			gs_generalize_format(format);
 		d->texture = (gs_texture_2d *)gs_texture_create(
-			desc.Width, desc.Height,
-			ConvertDXGITextureFormat(desc.Format), 1, nullptr, 0);
+			desc.Width, desc.Height, srgb_format, 1, nullptr, 0);
 	}
 
 	if (!!d->texture)

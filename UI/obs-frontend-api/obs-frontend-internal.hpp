@@ -37,7 +37,11 @@ struct obs_frontend_callbacks {
 	virtual void
 	obs_frontend_get_profiles(std::vector<std::string> &strings) = 0;
 	virtual char *obs_frontend_get_current_profile(void) = 0;
+	virtual char *obs_frontend_get_current_profile_path(void) = 0;
 	virtual void obs_frontend_set_current_profile(const char *profile) = 0;
+	virtual void obs_frontend_create_profile(const char *name) = 0;
+	virtual void obs_frontend_duplicate_profile(const char *name) = 0;
+	virtual void obs_frontend_delete_profile(const char *profile) = 0;
 
 	virtual void obs_frontend_streaming_start(void) = 0;
 	virtual void obs_frontend_streaming_stop(void) = 0;
@@ -130,6 +134,10 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_virtualcam_active(void) = 0;
 
 	virtual void obs_frontend_reset_video(void) = 0;
+
+	virtual void
+	obs_frontend_open_source_properties(obs_source_t *source) = 0;
+	virtual void obs_frontend_open_source_filters(obs_source_t *source) = 0;
 };
 
 EXPORT void

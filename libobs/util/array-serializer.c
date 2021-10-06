@@ -20,7 +20,7 @@
 static size_t array_output_write(void *param, const void *data, size_t size)
 {
 	struct array_output_data *output = param;
-	da_push_back_array(output->bytes, data, size);
+	da_push_back_array(output->bytes, (uint8_t *)data, size);
 	return size;
 }
 

@@ -388,6 +388,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	}
 
 	OBSSource transition = obs_get_output_source(0);
+	if (!transition) {
+		if (usingPreviewProgram && sceneDuplicationMode)
+			obs_scene_release(scene);
+		return;
+	}
 	obs_source_release(transition);
 
 	float t = obs_transition_get_time(transition);
@@ -1791,7 +1796,8 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 	return transitions;
 }
 
-void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
+void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
+			       obs_load_source_cb cb, void *private_data)
 {
 	size_t count = obs_data_array_count(transitions);
 
@@ -1806,6 +1812,8 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 		if (!obs_obj_invalid(source)) {
 			InitTransition(source);
 			AddTransitionBeforeSeparator(QT_UTF8(name), source);
+			if (cb)
+				cb(private_data, source);
 		}
 
 		obs_data_release(settings);

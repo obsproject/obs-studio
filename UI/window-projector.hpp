@@ -19,6 +19,7 @@ enum class MultiviewLayout : uint8_t {
 	VERTICAL_LEFT_8_SCENES = 2,
 	VERTICAL_RIGHT_8_SCENES = 3,
 	HORIZONTAL_TOP_24_SCENES = 4,
+	HORIZONTAL_TOP_18_SCENES = 5,
 };
 
 class OBSProjector : public OBSQTDisplay {
@@ -48,8 +49,6 @@ private:
 	gs_vertbuffer_t *leftLine = nullptr;
 	gs_vertbuffer_t *topLine = nullptr;
 	gs_vertbuffer_t *rightLine = nullptr;
-	gs_effect_t *solid = nullptr;
-	gs_eparam_t *color = nullptr;
 	// Multiview position helpers
 	float thickness = 4;
 	float offset, thicknessx2 = thickness * 2, pvwprgCX, pvwprgCY, sourceX,
@@ -57,11 +56,6 @@ private:
 		      siX, siY, siCX, siCY, ppiScaleX, ppiScaleY, siScaleX,
 		      siScaleY, fw, fh, ratio;
 
-	float lineLength = 0.1f;
-	// Rec. ITU-R BT.1848-1 / EBU R 95
-	float actionSafePercentage = 0.035f;       // 3.5%
-	float graphicsSafePercentage = 0.05f;      // 5.0%
-	float fourByThreeSafePercentage = 0.1625f; // 16.25%
 	bool ready = false;
 
 	// argb colors

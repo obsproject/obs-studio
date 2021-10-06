@@ -120,7 +120,7 @@ if(WIN32)
 	set(libobs_audio_monitoring_HEADERS
 		audio-monitoring/win32/wasapi-output.h
 		)
-	set(libobs_PLATFORM_DEPS winmm psapi)
+	set(libobs_PLATFORM_DEPS winmm)
 	if(MSVC)
 		set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
@@ -226,7 +226,8 @@ elseif(UNIX)
 	endif()
 	if(GIO_FOUND)
 		set(libobs_PLATFORM_SOURCES ${libobs_PLATFORM_SOURCES}
-			util/platform-nix-dbus.c)
+			util/platform-nix-dbus.c
+			util/platform-nix-portal.c)
 		include_directories(${GIO_INCLUDE_DIRS})
 		add_definitions(
 			${GIO_DEFINITIONS})
@@ -407,7 +408,8 @@ set(libobs_util_HEADERS
 	util/platform.h
 	util/profiler.h
 	util/profiler.hpp
-	util/bitstream.h)
+	util/bitstream.h
+	util/util.hpp)
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}
@@ -537,9 +539,6 @@ target_compile_options(libobs
 	PUBLIC
 	${ARCH_SIMD_FLAGS})
 
-target_compile_options(libobs
-	PUBLIC
-		"${THREADS_DEFINITIONS}")
 target_include_directories(libobs
 	PUBLIC
 		"$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>"
@@ -552,8 +551,7 @@ target_link_libraries(libobs
 		${OBS_JANSSON_IMPORT}
 		${FFMPEG_LIBRARIES}
 		${ZLIB_LIBRARIES}
-	PUBLIC
-		${THREADS_LIBRARIES})
+		Threads::Threads)
 
 install_obs_core(libobs EXPORT LibObs)
 install_obs_data(libobs data libobs)
