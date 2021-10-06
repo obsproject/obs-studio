@@ -3408,16 +3408,24 @@ static void process_audio(obs_source_t *source,
 }
 
 void obs_source_output_audio(obs_source_t *source,
-			     const struct obs_source_audio *audio)
+			     const struct obs_source_audio *audio_in)
 {
 	struct obs_audio_data *output;
 
 	if (!obs_source_valid(source, "obs_source_output_audio"))
 		return;
-	if (!obs_ptr_valid(audio, "obs_source_output_audio"))
+	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
 		return;
 
-	process_audio(source, audio);
+	/* sets unused data pointers to NULL automatically because apparently
+	 * some filter plugins aren't checking the actual channel count, and
+	 * instead are checking to see whether the pointer is non-zero. */
+	struct obs_source_audio audio = *audio_in;
+	size_t channels = get_audio_planes(audio.format, audio.speakers);
+	for (size_t i = channels; i < MAX_AUDIO_CHANNELS; i++)
+		audio.data[i] = NULL;
+
+	process_audio(source, &audio);
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_audio(source, &source->audio_data);
