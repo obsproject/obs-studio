@@ -166,6 +166,9 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 		RefreshSceneCollections();
 	};
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+
 	new_collection(file, name);
 
 	blog(LOG_INFO, "Added scene collection '%s' (%s, %s.json)",
@@ -275,6 +278,9 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+
 	oldFile.insert(0, path);
 	oldFile += ".json";
 	os_unlink(oldFile.c_str());
@@ -335,6 +341,9 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 		blog(LOG_WARNING, "Failed to get scene collection config path");
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	oldFile.insert(0, path);
 	oldFile += ".json";
@@ -423,6 +432,9 @@ void OBSBasic::ChangeSceneCollection()
 		action->setChecked(true);
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	SaveProjectNow();
 
