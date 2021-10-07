@@ -1813,10 +1813,17 @@ void OBSBasic::OBSInit()
 	vcamEnabled = (obs_get_output_flags("virtualcam_output") &
 		       OBS_OUTPUT_VIRTUALCAM) != 0;
 #else
-	vcamEnabled = ((obs_get_output_flags("v4l2_output") &
-			OBS_OUTPUT_VIRTUALCAM) != 0) ||
-		      ((obs_get_output_flags("pw_vcam_output") &
-			OBS_OUTPUT_VIRTUALCAM) != 0);
+	bool v4l2Output = (obs_get_output_flags("v4l2_output") &
+			   OBS_OUTPUT_VIRTUALCAM) != 0;
+	bool pwCamOutput = (obs_get_output_flags("pw_vcam_output") &
+			    OBS_OUTPUT_VIRTUALCAM) != 0;
+
+	vcamEnabled = v4l2Output || pwCamOutput;
+
+	if (v4l2Output && pwCamOutput) {
+		OBSDataAutoRelease obsData = obs_get_private_data();
+		obs_data_set_bool(obsData, "dualVirtualCams", true);
+	}
 #endif
 
 	if (vcamEnabled) {

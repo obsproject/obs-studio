@@ -217,26 +217,41 @@ static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
 inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 {
 	if (main->vcamEnabled) {
-#if defined(_WIN32) || defined(__APPLE__)
-		virtualCam = obs_output_create("virtualcam_output",
-					       "virtualcam_output", nullptr,
-					       nullptr);
-#else
-		if (obs_get_output_flags("v4l2_output") & OBS_OUTPUT_VIRTUALCAM)
-			virtualCam = obs_output_create("v4l2_output",
+		const char *vcamOutput = config_get_string(
+			main->basicConfig, "VirtualCam", "Type");
+
+		if (vcamOutput &&
+		    (obs_get_output_flags(vcamOutput) & OBS_OUTPUT_VIRTUALCAM))
+			virtualCam = obs_output_create(vcamOutput,
 						       "virtualcam_output",
 						       nullptr, nullptr);
 
-		if (obs_get_output_flags("pw_vcam_output") &
-		    OBS_OUTPUT_VIRTUALCAM) {
-			if (!virtualCam) {
+#if defined(_WIN32) || defined(__APPLE__)
+		if (!virtualCam)
+			virtualCam = obs_output_create("virtualcam_output",
+						       "virtualcam_output",
+						       nullptr, nullptr);
+#else
+		if (!virtualCam || (strcmp(vcamOutput, "UseBoth") == 0)) {
+			if (obs_get_output_flags("v4l2_output") &
+			    OBS_OUTPUT_VIRTUALCAM)
 				virtualCam = obs_output_create(
-					"pw_vcam_output", "virtualcam_output",
+					"v4l2_output", "virtualcam_output",
 					nullptr, nullptr);
-			} else {
-				virtualCam2 = obs_output_create(
-					"pw_vcam_output", "virtualcam_output_2",
-					nullptr, nullptr);
+
+			if (obs_get_output_flags("pw_vcam_output") &
+			    OBS_OUTPUT_VIRTUALCAM) {
+				if (!virtualCam) {
+					virtualCam = obs_output_create(
+						"pw_vcam_output",
+						"virtualcam_output", nullptr,
+						nullptr);
+				} else {
+					virtualCam2 = obs_output_create(
+						"pw_vcam_output",
+						"virtualcam_output_2", nullptr,
+						nullptr);
+				}
 			}
 		}
 #endif

@@ -129,6 +129,8 @@ private:
 	int lastIgnoreRecommended = -1;
 	int lastChannelSetupIdx = 0;
 
+	bool dualVirtualCams = false;
+
 	OBSFFFormatDesc formats;
 
 	OBSPropertiesView *streamProperties = nullptr;
@@ -369,6 +371,8 @@ private slots:
 	void on_baseResolution_editTextChanged(const QString &text);
 
 	void on_disableOSXVSync_clicked();
+
+	void on_virtualCamSelect_currentIndexChanged(int idx);
 
 	void GeneralChanged();
 	void HideOBSWindowWarning(int state);
