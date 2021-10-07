@@ -18,7 +18,7 @@ struct virtualcam_data {
 static const char *virtualcam_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "V4L2 Virtual Camera Output";
+	return obs_module_text("V4L2Output");
 }
 
 static void virtualcam_destroy(void *data)
