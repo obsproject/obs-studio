@@ -74,20 +74,24 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED**
 
-     Triggered when the user has changed the current scene collection.
+     Triggered when the current scene collection has changed.
 
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED**
 
-     Triggered when the user has added/removed/renamed scene
-     collections.
+     Triggered when a scene collection has been
+     added/removed/renamed.
 
    - **OBS_FRONTEND_EVENT_PROFILE_CHANGED**
 
-     Triggered when the user has changed the current profile.
+     Triggered when the current profile is about to change.
+
+   - **OBS_FRONTEND_EVENT_PROFILE_CHANGED**
+
+     Triggered when the current profile has changed.
 
    - **OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED**
 
-     Triggered when the user has added/removed/renamed profiles.
+     Triggered when a profile has been added/removed/renamed.
 
    - **OBS_FRONTEND_EVENT_EXIT**
 
@@ -155,6 +159,14 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
 
      Triggered when the transition bar is moved. 
+
+   - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING**
+
+     Triggered when the current scene collection is about to change.
+
+   - **OBS_FRONTEND_EVENT_PROFILE_CHANGING**
+
+     Triggered when the current profile is about to change.
 
 
 .. type:: struct obs_frontend_source_list
