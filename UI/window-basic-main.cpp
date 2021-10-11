@@ -2089,6 +2089,10 @@ void OBSBasic::OBSInit()
 	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
 				  Qt::QueuedConnection, Q_ARG(int, 10));
 #endif
+
+#ifdef WIN32
+	winDetectMonitor.Start();
+#endif
 }
 
 void OBSBasic::OnFirstLoad()
@@ -2592,6 +2596,10 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
+#ifdef WIN32
+	winDetectMonitor.Stop();
+#endif
+
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(App());
 
