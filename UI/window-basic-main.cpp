@@ -4861,14 +4861,15 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	};
 	obs_enum_sources(cb_sources, files);
 
-	auto cb_transitions = [](void *data, obs_source_t *source) {
-		if (obs_source_get_type(source) != OBS_SOURCE_TYPE_TRANSITION)
-			return true;
+	auto cb_transitions_filters = [](void *data, obs_source_t *source) {
+		enum obs_source_type type = obs_source_get_type(source);
+		if (type == OBS_SOURCE_TYPE_TRANSITION ||
+		    type == OBS_SOURCE_TYPE_FILTER)
+			AddMissingFiles(data, source);
 
-		AddMissingFiles(data, source);
 		return true;
 	};
-	obs_enum_all_sources(cb_transitions, files);
+	obs_enum_all_sources(cb_transitions_filters, files);
 
 	if (obs_missing_files_count(files) > 0) {
 		/* When loading the missing files dialog on launch, the

@@ -95,7 +95,16 @@ obs_missing_file_t *obs_missing_file_create(const char *path,
 
 	switch (src_type) {
 	case OBS_MISSING_FILE_SOURCE:
-		file->src_name = bstrdup(obs_source_get_name(src));
+		if (obs_source_get_type(src) == OBS_SOURCE_TYPE_FILTER) {
+			obs_source_t *parent = obs_filter_get_parent(src);
+			struct dstr name = {0};
+			dstr_printf(&name, "%s (%s)", obs_source_get_name(src),
+				    obs_source_get_name(parent));
+			file->src_name = bstrdup(name.array);
+			dstr_free(&name);
+		} else {
+			file->src_name = bstrdup(obs_source_get_name(src));
+		}
 		break;
 	case OBS_MISSING_FILE_SCRIPT:
 		break;
