@@ -22,7 +22,6 @@ struct audio_monitor {
 	audio_resampler_t *resampler;
 	size_t buffer_size;
 	size_t bytesRemaining;
-	size_t bytes_per_channel;
 
 	bool ignore;
 	pthread_mutex_t playback_mutex;
@@ -134,10 +133,19 @@ static void process_byte(void *p, size_t frames, size_t channels, float vol)
 		*(cur++) *= vol;
 }
 
-static void process_short(void *p, size_t frames, size_t channels, float vol)
+static void process_s16(void *p, size_t frames, size_t channels, float vol)
 {
-	register short *cur = (short *)p;
-	register short *end = cur + frames * channels;
+	register int16_t *cur = (int16_t *)p;
+	register int16_t *end = cur + frames * channels;
+
+	while (cur < end)
+		*(cur++) *= vol;
+}
+
+static void process_s32(void *p, size_t frames, size_t channels, float vol)
+{
+	register int32_t *cur = (int32_t *)p;
+	register int32_t *end = cur + frames * channels;
 
 	while (cur < end)
 		*(cur++) *= vol;
@@ -155,18 +163,25 @@ static void process_float(void *p, size_t frames, size_t channels, float vol)
 void process_volume(const struct audio_monitor *monitor, float vol,
 		    uint8_t *const *resample_data, uint32_t resample_frames)
 {
-	switch (monitor->bytes_per_channel) {
-	case 1:
+	switch (monitor->format) {
+	case PA_SAMPLE_U8:
 		process_byte(resample_data[0], resample_frames,
 			     monitor->channels, vol);
 		break;
-	case 2:
-		process_short(resample_data[0], resample_frames,
+	case PA_SAMPLE_S16LE:
+		process_s16(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_S32LE:
+		process_s32(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_FLOAT32LE:
+		process_float(resample_data[0], resample_frames,
 			      monitor->channels, vol);
 		break;
 	default:
-		process_float(resample_data[0], resample_frames,
-			      monitor->channels, vol);
+		// just ignore
 		break;
 	}
 }
@@ -440,8 +455,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	monitor->bytes_per_channel = get_audio_bytes_per_channel(
-		pulseaudio_to_obs_audio_format(monitor->format));
 	monitor->speakers = pulseaudio_channels_to_obs_speakers(spec.channels);
 	monitor->bytes_per_frame = pa_frame_size(&spec);
 
