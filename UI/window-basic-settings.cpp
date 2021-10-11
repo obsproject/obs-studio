@@ -1555,30 +1555,42 @@ void OBSBasicSettings::ResetDownscales(uint32_t cx, uint32_t cy,
 
 void OBSBasicSettings::LoadDownscaleFilters()
 {
-	ui->downscaleFilter->addItem(
-		QTStr("Basic.Settings.Video.DownscaleFilter.Bilinear"),
-		QT_UTF8("bilinear"));
-	ui->downscaleFilter->addItem(
-		QTStr("Basic.Settings.Video.DownscaleFilter.Area"),
-		QT_UTF8("area"));
-	ui->downscaleFilter->addItem(
-		QTStr("Basic.Settings.Video.DownscaleFilter.Bicubic"),
-		QT_UTF8("bicubic"));
-	ui->downscaleFilter->addItem(
-		QTStr("Basic.Settings.Video.DownscaleFilter.Lanczos"),
-		QT_UTF8("lanczos"));
+	QString downscaleFilter = ui->downscaleFilter->currentData().toString();
+	if (downscaleFilter.isEmpty())
+		downscaleFilter =
+			config_get_string(main->Config(), "Video", "ScaleType");
 
-	const char *scaleType =
-		config_get_string(main->Config(), "Video", "ScaleType");
+	ui->downscaleFilter->clear();
+	if (ui->baseResolution->currentText() ==
+	    ui->outputResolution->currentText()) {
+		ui->downscaleFilter->setEnabled(false);
+		ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Unavailable"),
+			downscaleFilter);
+	} else {
+		ui->downscaleFilter->setEnabled(true);
+		ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Bilinear"),
+			QT_UTF8("bilinear"));
+		ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Area"),
+			QT_UTF8("area"));
+		ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Bicubic"),
+			QT_UTF8("bicubic"));
+		ui->downscaleFilter->addItem(
+			QTStr("Basic.Settings.Video.DownscaleFilter.Lanczos"),
+			QT_UTF8("lanczos"));
 
-	if (astrcmpi(scaleType, "bilinear") == 0)
-		ui->downscaleFilter->setCurrentIndex(0);
-	else if (astrcmpi(scaleType, "lanczos") == 0)
-		ui->downscaleFilter->setCurrentIndex(3);
-	else if (astrcmpi(scaleType, "area") == 0)
-		ui->downscaleFilter->setCurrentIndex(1);
-	else
-		ui->downscaleFilter->setCurrentIndex(2);
+		if (downscaleFilter == "bilinear")
+			ui->downscaleFilter->setCurrentIndex(0);
+		else if (downscaleFilter == "lanczos")
+			ui->downscaleFilter->setCurrentIndex(3);
+		else if (downscaleFilter == "area")
+			ui->downscaleFilter->setCurrentIndex(1);
+		else
+			ui->downscaleFilter->setCurrentIndex(2);
+	}
 }
 
 void OBSBasicSettings::LoadResolutionLists()
@@ -4085,8 +4097,10 @@ void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 {
-	if (!loading)
+	if (!loading) {
 		RecalcOutputResPixels(QT_TO_UTF8(text));
+		LoadDownscaleFilters();
+	}
 }
 
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
