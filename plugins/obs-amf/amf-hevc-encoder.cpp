@@ -19,7 +19,7 @@ using namespace amf;
 static const char *amf_hevc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "AMD H265/HEVC Encoder (new)";
+	return "AMD HW H.265(HEVC)";
 }
 
 static bool amf_hevc_update(void *data, obs_data_t *settings)
@@ -48,6 +48,14 @@ static bool amf_hevc_update(void *data, obs_data_t *settings)
 	SET_AMF_VALUE_OR_FAIL(enc->encoder_amf,
 			      AMF_VIDEO_ENCODER_HEVC_ENFORCE_HRD,
 			      obs_data_get_bool(settings, ENFORCE_HRD));
+
+	SET_AMF_VALUE(
+		enc->encoder_amf, AMF_VIDEO_ENCODER_HEVC_QP_I,
+		static_cast<amf_int64>(obs_data_get_int(settings, QP_IFRAME)));
+
+	SET_AMF_VALUE(
+		enc->encoder_amf, AMF_VIDEO_ENCODER_HEVC_QP_P,
+		static_cast<amf_int64>(obs_data_get_int(settings, QP_PFRAME)));
 
 	AMF::Instance()->GetTrace()->SetGlobalLevel(
 		obs_data_get_int(settings, LOG_LEVEL));
@@ -178,6 +186,8 @@ void amf_hevc_defaults(obs_data_t *settings)
 			AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR));
 	obs_data_set_default_int(settings, BITRATE, 6000);
 	obs_data_set_default_int(settings, BITRATE_PEAK, 150);
+	obs_data_set_default_int(settings, QP_IFRAME, 22);
+	obs_data_set_default_int(settings, QP_PFRAME, 22);
 	obs_data_set_default_bool(settings, VBAQ, true);
 	obs_data_set_default_bool(settings, ENFORCE_HRD, true);
 	obs_data_set_default_bool(settings, HIGHMOTIONQUALITYBOOST, false);
@@ -231,12 +241,20 @@ bool amf_hevc_properties_modified(obs_properties_t *props, obs_property_t *,
 			obs_properties_get(props, BITRATE_PEAK), false);
 		obs_property_set_visible(obs_properties_get(props, BITRATE),
 					 false);
+		obs_property_set_visible(obs_properties_get(props, QP_IFRAME),
+					 true);
+		obs_property_set_visible(obs_properties_get(props, QP_PFRAME),
+					 true);
 	} else {
 		obs_property_set_visible(obs_properties_get(props,
 							    BITRATE_PEAK),
 					 curView > ViewMode::Basic);
 		obs_property_set_visible(obs_properties_get(props, BITRATE),
 					 true);
+		obs_property_set_visible(obs_properties_get(props, QP_IFRAME),
+					 false);
+		obs_property_set_visible(obs_properties_get(props, QP_PFRAME),
+					 false);
 	}
 
 	return true;
@@ -397,6 +415,11 @@ obs_properties_t *amf_hevc_properties(void *unused)
 	p = obs_properties_add_int(props, BITRATE_PEAK, TEXT_BITRATE_PEAK, 100,
 				   1000, 10);
 	obs_property_int_set_suffix(p, " %");
+
+	p = obs_properties_add_int_slider(props, QP_IFRAME, QP_IFRAME_TEXT, 0,
+					  51, 1);
+	p = obs_properties_add_int_slider(props, QP_PFRAME, QP_PFRAME_TEXT, 0,
+					  51, 1);
 #pragma endregion Parameters
 
 #pragma region VBAQ

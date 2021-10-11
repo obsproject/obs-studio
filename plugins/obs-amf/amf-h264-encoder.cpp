@@ -76,6 +76,15 @@ static bool amf_h264_update(void *data, obs_data_t *settings)
 			      (int64_t)AMF_CLAMP(idrperiod, 0, 1000000));
 	SET_AMF_VALUE(enc->encoder_amf, AMF_VIDEO_ENCODER_DE_BLOCKING_FILTER,
 		      obs_data_get_bool(settings, DEBLOCKINGFILTER));
+
+	SET_AMF_VALUE(
+		enc->encoder_amf, AMF_VIDEO_ENCODER_QP_I,
+		static_cast<amf_int64>(obs_data_get_int(settings, QP_IFRAME)));
+
+	SET_AMF_VALUE(
+		enc->encoder_amf, AMF_VIDEO_ENCODER_QP_P,
+		static_cast<amf_int64>(obs_data_get_int(settings, QP_PFRAME)));
+
 	AMF::Instance()->GetTrace()->SetGlobalLevel(
 		obs_data_get_int(settings, LOG_LEVEL));
 
@@ -162,7 +171,6 @@ static void *amf_h264_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	if (!amf_h264_update(enc, settings))
 		goto fail;
-	SET_AMF_VALUE(enc->encoder_amf, AMF_VIDEO_ENCODER_MIN_QP, 18);
 	//This property reduces polling latency.
 	SET_AMF_VALUE(enc->encoder_amf, L"TIMEOUT", 50);
 
@@ -201,6 +209,8 @@ void amf_h264_defaults(obs_data_t *settings)
 			AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR));
 	obs_data_set_default_int(settings, BITRATE, 6000);
 	obs_data_set_default_int(settings, BITRATE_PEAK, 150);
+	obs_data_set_default_int(settings, QP_IFRAME, 22);
+	obs_data_set_default_int(settings, QP_PFRAME, 22);
 	obs_data_set_default_bool(settings, VBAQ, true);
 	obs_data_set_default_bool(settings, ENFORCE_HRD, true);
 	obs_data_set_default_bool(settings, HIGHMOTIONQUALITYBOOST, false);
@@ -256,12 +266,20 @@ bool amf_h264_properties_modified(obs_properties_t *props, obs_property_t *,
 			obs_properties_get(props, BITRATE_PEAK), false);
 		obs_property_set_visible(obs_properties_get(props, BITRATE),
 					 false);
+		obs_property_set_visible(obs_properties_get(props, QP_IFRAME),
+					 true);
+		obs_property_set_visible(obs_properties_get(props, QP_PFRAME),
+					 true);
 	} else {
 		obs_property_set_visible(obs_properties_get(props,
 							    BITRATE_PEAK),
 					 curView > ViewMode::Basic);
 		obs_property_set_visible(obs_properties_get(props, BITRATE),
 					 true);
+		obs_property_set_visible(obs_properties_get(props, QP_IFRAME),
+					 false);
+		obs_property_set_visible(obs_properties_get(props, QP_PFRAME),
+					 false);
 	}
 
 	return true;
@@ -452,6 +470,11 @@ obs_properties_t *amf_h264_properties(void *unused)
 	p = obs_properties_add_int(props, BITRATE_PEAK, TEXT_BITRATE_PEAK, 100,
 				   1000, 10);
 	obs_property_int_set_suffix(p, " %");
+
+	p = obs_properties_add_int_slider(props, QP_IFRAME, QP_IFRAME_TEXT, 0,
+					  51, 1);
+	p = obs_properties_add_int_slider(props, QP_PFRAME, QP_PFRAME_TEXT, 0,
+					  51, 1);
 #pragma endregion Parameters
 
 #pragma region VBAQ

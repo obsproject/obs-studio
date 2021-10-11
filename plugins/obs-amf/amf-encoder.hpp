@@ -36,6 +36,10 @@
 #define TEXT_BITRATE obs_module_text("Bitrate")
 #define BITRATE_PEAK "max_bitrate"
 #define TEXT_BITRATE_PEAK obs_module_text("MaxBitrate")
+#define QP_IFRAME "QP_I"
+#define QP_IFRAME_TEXT "QP.IFrame"
+#define QP_PFRAME "QP_P"
+#define QP_PFRAME_TEXT "QP.PFrame"
 #define ENFORCE_HRD "enforce_HRD"
 #define TEXT_ENFORCE_HRD obs_module_text("Enforce HRD")
 #define HIGHMOTIONQUALITYBOOST "high_motion_quality_boost"

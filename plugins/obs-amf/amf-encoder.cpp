@@ -16,6 +16,30 @@
 #include <iostream>
 #include <fstream>
 
+static ID3D11Texture2D *create_texture(struct amf_data *enc, DXGI_FORMAT format)
+{
+	ATL::CComPtr<ID3D11Device> device = enc->pD3D11Device;
+	ID3D11Texture2D *tex;
+	HRESULT hr;
+
+	D3D11_TEXTURE2D_DESC desc = {0};
+	desc.Width = enc->frameW;
+	desc.Height = enc->frameH;
+	desc.MipLevels = 1;
+	desc.ArraySize = 1;
+	desc.Format = format;
+	desc.SampleDesc.Count = 1;
+	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
+
+	hr = device->CreateTexture2D(&desc, NULL, &tex);
+	if (FAILED(hr)) {
+		AMF_LOG_ERROR("Failed to create texture");
+		return nullptr;
+	}
+
+	return tex;
+}
+
 void log_amf_properties(amf::AMFPropertyStorage *component)
 {
 	AMF_RESULT res;
@@ -232,7 +256,7 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 	AMFDataPtr pOutData = NULL;
 	struct amf_data *enc = (amf_data *)data;
 	CComPtr<ID3D11Texture2D> input_tex;
-	CComPtr<ID3D11Texture2D> output_tex = enc->texture;
+	CComPtr<ID3D11Texture2D> output_tex;
 	IDXGIKeyedMutex *km;
 	ATL::CComPtr<ID3D11DeviceContext> context = enc->pD3D11Context;
 
@@ -248,6 +272,12 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 						      {0x99, 0xd3, 0x4f, 0x2a,
 						       0xe6, 0xb4, 0x7f, 0xaf}};
 	input_tex = get_tex_from_handle(enc, handle, &km);
+	if (!enc->texture) {
+		D3D11_TEXTURE2D_DESC textureDesc;
+		input_tex->GetDesc(&textureDesc);
+		enc->texture = create_texture(enc, textureDesc.Format);
+	}
+	output_tex = enc->texture;
 	km->AcquireSync(lock_key, INFINITE);
 	context->CopyResource((ID3D11Resource *)output_tex.p,
 			      (ID3D11Resource *)input_tex.p);
@@ -331,29 +361,6 @@ bool amf_extra_data(void *data, uint8_t **header, size_t *size)
 	return true;
 }
 
-static ID3D11Texture2D *create_texture(struct amf_data *enc)
-{
-	ATL::CComPtr<ID3D11Device> device = enc->pD3D11Device;
-	ID3D11Texture2D *tex;
-	HRESULT hr;
-
-	D3D11_TEXTURE2D_DESC desc = {0};
-	desc.Width = enc->frameW;
-	desc.Height = enc->frameH;
-	desc.MipLevels = 1;
-	desc.ArraySize = 1;
-	desc.Format = DXGI_FORMAT_NV12;
-	desc.SampleDesc.Count = 1;
-	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
-
-	hr = device->CreateTexture2D(&desc, NULL, &tex);
-	if (FAILED(hr)) {
-		AMF_LOG_ERROR("Failed to create texture");
-		return nullptr;
-	}
-
-	return tex;
-}
 AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 {
 	AMF_RESULT result = AMF_FAIL;
@@ -372,7 +379,7 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 	double_t frameRateFraction =
 		((double_t)obsFPSden / (double_t)obsFPSnum);
 	enc->timestamp_step = AMF_SECOND * frameRateFraction;
-	enc->texture = create_texture(enc);
+	enc->texture = nullptr;
 
 	//////////////////////////////////////////////////////////////////////////
 	/// Initialize Encoder
