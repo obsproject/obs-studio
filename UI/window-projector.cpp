@@ -1,3 +1,4 @@
+#define NOMINMAX
 #include <QAction>
 #include <QGuiApplication>
 #include <QMouseEvent>
