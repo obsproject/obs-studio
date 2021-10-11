@@ -83,7 +83,7 @@ static void *amf_hevc_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	SET_AMF_VALUE_OR_FAIL(enc->encoder_amf,
 			      AMF_VIDEO_ENCODER_HEVC_FRAMESIZE,
-			      AMFConstructSize(enc->frameW, enc->frameH));
+			      AMFConstructSize(enc->frame_w, enc->frame_h));
 
 	SET_AMF_VALUE_OR_FAIL(enc->encoder_amf, AMF_VIDEO_ENCODER_HEVC_USAGE,
 			      AMF_VIDEO_ENCODER_HEVC_USAGE_TRANSCONDING);
@@ -135,8 +135,8 @@ static void *amf_hevc_create(obs_data_t *settings, obs_encoder_t *encoder)
 		      AMF_VIDEO_ENCODER_HEVC_HIGH_MOTION_QUALITY_BOOST_ENABLE,
 		      obs_data_get_bool(settings, HIGHMOTIONQUALITYBOOST));
 
-	result = enc->encoder_amf->Init(AMF_SURFACE_NV12, enc->frameW,
-					enc->frameH);
+	result = enc->encoder_amf->Init(AMF_SURFACE_NV12, enc->frame_w,
+					enc->frame_h);
 	if (result != AMF_OK) {
 		AMF_LOG_WARNING("AMF: Failed to init encoder");
 		goto fail;
@@ -501,6 +501,7 @@ void register_amf_hevc_encoder()
 	obs_amf_hevc_encoder.destroy = amf_destroy;
 	obs_amf_hevc_encoder.update = amf_hevc_update;
 	obs_amf_hevc_encoder.encode_texture = amf_encode_tex;
+	obs_amf_hevc_encoder.encode = amf_encode;
 	obs_amf_hevc_encoder.get_defaults = amf_hevc_defaults;
 	obs_amf_hevc_encoder.get_properties = amf_hevc_properties;
 	obs_amf_hevc_encoder.get_extra_data = amf_extra_data;

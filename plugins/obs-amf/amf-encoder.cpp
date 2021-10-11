@@ -3,6 +3,7 @@
 #include "amf-encoder.hpp"
 #include <obs-avc.h>
 #include "obs-amf.hpp"
+#include "AMF/include/components/VideoConverter.h"
 
 #define INITGUID
 #include <dxgi.h>
@@ -16,18 +17,19 @@
 #include <iostream>
 #include <fstream>
 
-static ID3D11Texture2D *create_texture(struct amf_data *enc, DXGI_FORMAT format)
+static ID3D11Texture2D *create_texture(struct amf_data *enc,
+				       const D3D11_TEXTURE2D_DESC &textureDesc)
 {
 	ATL::CComPtr<ID3D11Device> device = enc->pD3D11Device;
 	ID3D11Texture2D *tex;
 	HRESULT hr;
 
 	D3D11_TEXTURE2D_DESC desc = {0};
-	desc.Width = enc->frameW;
-	desc.Height = enc->frameH;
+	desc.Width = textureDesc.Width;
+	desc.Height = textureDesc.Height;
 	desc.MipLevels = 1;
 	desc.ArraySize = 1;
-	desc.Format = format;
+	desc.Format = textureDesc.Format;
 	desc.SampleDesc.Count = 1;
 	desc.BindFlags = D3D11_BIND_RENDER_TARGET;
 
@@ -253,6 +255,7 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 	AMF_RESULT res = AMF_FAIL;
 	AMFSurfacePtr surface;
 	AMFDataPtr pData = NULL;
+	AMFDataPtr pConvData = NULL;
 	AMFDataPtr pOutData = NULL;
 	struct amf_data *enc = (amf_data *)data;
 	CComPtr<ID3D11Texture2D> input_tex;
@@ -275,7 +278,7 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 	if (!enc->texture) {
 		D3D11_TEXTURE2D_DESC textureDesc;
 		input_tex->GetDesc(&textureDesc);
-		enc->texture = create_texture(enc, textureDesc.Format);
+		enc->texture = create_texture(enc, textureDesc);
 	}
 	output_tex = enc->texture;
 	km->AcquireSync(lock_key, INFINITE);
@@ -301,9 +304,138 @@ bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 		return false;
 	}
 
-	res = enc->encoder_amf->SubmitInput(surface);
+	bool scaling = obs_encoder_scaling_enabled(enc->encoder);
+
+	if (scaling) {
+		res = enc->converter_amf->SubmitInput(surface);
+		if (res != AMF_OK) {
+			AMF_LOG_ERROR(
+				"Failed to SubmitInput(converter) with error  %ls\n",
+				AMF::Instance()->GetTrace()->GetResultText(
+					res));
+		}
+		while (true) {
+			res = enc->converter_amf->QueryOutput(&pConvData);
+			if (res == AMF_INPUT_FULL)
+				std::this_thread::sleep_for(
+					enc->query_wait_time);
+			else
+				break;
+		}
+		res = enc->encoder_amf->SubmitInput(pConvData);
+		if (res != AMF_OK) {
+			AMF_LOG_ERROR(
+				"Failed to SubmitInput with error  %ls\n",
+				AMF::Instance()->GetTrace()->GetResultText(
+					res));
+			*received_packet = false;
+			return false;
+		}
+	} else { // !scaling
+		res = enc->encoder_amf->SubmitInput(surface);
+		if (res != AMF_OK) {
+			AMF_LOG_ERROR(
+				"Failed to SubmitInput with error %ls\n",
+				AMF::Instance()->GetTrace()->GetResultText(
+					res));
+			*received_packet = false;
+			return false;
+		}
+	}
+
+	while (true) {
+		res = enc->encoder_amf->QueryOutput(&pOutData);
+		if (res == AMF_OK)
+			break;
+		switch (res) {
+		case AMF_NEED_MORE_INPUT: {
+			*received_packet = false;
+			return true;
+		}
+		case AMF_REPEAT: {
+			break;
+		}
+		default: {
+			AMF_LOG_WARNING(
+				"Failed to QueryOutput  with code: %ls\n",
+				AMF::Instance()->GetTrace()->GetResultText(
+					res));
+			break;
+		}
+		}
+
+		std::this_thread::sleep_for(enc->query_wait_time);
+	}
+	*received_packet = true;
+	return amf_data_to_encoder_packet(data, pOutData, packet);
+}
+
+bool amf_encode(void *data, struct encoder_frame *frame,
+		struct encoder_packet *packet, bool *received_packet)
+{
+	AMF_RESULT res;
+
+	AMFSurfacePtr surface;
+	AMFDataPtr pData = NULL;
+	AMFDataPtr pConvData = NULL;
+	AMFDataPtr pOutData = NULL;
+	struct amf_data *enc = (amf_data *)data;
+
+	// Encoding Steps
+	res = enc->context->AllocSurface(amf::AMF_MEMORY_HOST,
+					 enc->in_surface_format,
+					 enc->convertor_frame_w,
+					 enc->convertor_frame_h, &surface);
+
+	size_t planeCount = surface->GetPlanesCount();
+	for (uint8_t i = 0; i < planeCount; i++) {
+		amf::AMFPlanePtr plane = surface->GetPlaneAt(i);
+		int32_t width = plane->GetWidth();
+		int32_t height = plane->GetHeight();
+		int32_t hpitch = plane->GetHPitch();
+
+		void *plane_nat = plane->GetNative();
+		for (int32_t py = 0; py < height; py++) {
+			int32_t plane_off = py * hpitch;
+			int32_t frame_off = py * frame->linesize[i];
+			std::memcpy(
+				static_cast<void *>(
+					static_cast<uint8_t *>(plane_nat) +
+					plane_off),
+				static_cast<void *>(frame->data[i] + frame_off),
+				frame->linesize[i]);
+		}
+	}
+
+	int64_t tsLast = (int64_t)round((frame->pts - 1) * enc->timestamp_step);
+	int64_t tsNow = (int64_t)round(frame->pts * enc->timestamp_step);
+
+	surface->SetPts(tsNow);
+	surface->SetProperty(AMF_PRESENT_TIMESTAMP, frame->pts);
+	surface->SetDuration(tsNow - tsLast);
+
+	//convert
+	res = enc->converter_amf->SubmitInput(surface);
 	if (res != AMF_OK) {
-		AMF_LOG_ERROR("Failed to SubmitInput with error %d\n", res);
+		AMF_LOG_ERROR(
+			"Failed to SubmitInput(converter) with error lsd\n",
+			AMF::Instance()->GetTrace()->GetResultText(res));
+	}
+	while (true) {
+		res = enc->converter_amf->QueryOutput(&pConvData);
+		if (res == AMF_INPUT_FULL)
+			std::this_thread::sleep_for(enc->query_wait_time);
+		else
+			break;
+	}
+
+	AMF_RESULT tmp = res;
+	res = enc->encoder_amf->SubmitInput(pConvData);
+	if (res != AMF_OK) {
+		AMF_LOG_ERROR("Failed to SubmitInput(encoder) with error %ls\n",
+			      AMF::Instance()->GetTrace()->GetResultText(res));
+		*received_packet = false;
+		return false;
 	}
 	while (true) {
 		res = enc->encoder_amf->QueryOutput(&pOutData);
@@ -372,8 +504,9 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 	uint32_t obsFPSnum = voi->fps_num;
 	uint32_t obsFPSden = voi->fps_den;
 
-	enc->frameW = voi->width;
-	enc->frameH = voi->height;
+	enc->frame_w = obs_encoder_get_width(enc->encoder);
+	enc->frame_h = obs_encoder_get_height(enc->encoder);
+
 	enc->frame_rate = AMFConstructRate(obsFPSnum, obsFPSden);
 	enc->query_wait_time = std::chrono::milliseconds(1);
 	double_t frameRateFraction =
@@ -381,8 +514,51 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 	enc->timestamp_step = AMF_SECOND * frameRateFraction;
 	enc->texture = nullptr;
 
+	switch (voi->colorspace) {
+	case VIDEO_CS_601:
+		enc->in_color_profile = AMF_VIDEO_CONVERTER_COLOR_PROFILE_601;
+		enc->in_characteristic =
+			AMF_COLOR_TRANSFER_CHARACTERISTIC_SMPTE170M;
+		break;
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_709:
+		enc->in_color_profile = AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
+		enc->in_characteristic =
+			AMF_COLOR_TRANSFER_CHARACTERISTIC_BT709;
+		break;
+	case VIDEO_CS_SRGB:
+		enc->in_color_profile = AMF_VIDEO_CONVERTER_COLOR_PROFILE_709;
+		enc->in_characteristic =
+			AMF_COLOR_TRANSFER_CHARACTERISTIC_IEC61966_2_1;
+		break;
+	}
+
+	switch (voi->format) {
+	case VIDEO_FORMAT_NV12:
+		enc->in_surface_format = amf::AMF_SURFACE_NV12;
+		break;
+	case VIDEO_FORMAT_I420:
+		enc->in_surface_format = amf::AMF_SURFACE_YUV420P;
+		break;
+	case VIDEO_FORMAT_YUY2:
+		enc->in_surface_format = amf::AMF_SURFACE_YUY2;
+		break;
+	case VIDEO_FORMAT_RGBA:
+		enc->in_surface_format = amf::AMF_SURFACE_RGBA;
+		break;
+	case VIDEO_FORMAT_BGRA:
+		enc->in_surface_format = amf::AMF_SURFACE_BGRA;
+		break;
+	case VIDEO_FORMAT_Y800:
+		enc->in_surface_format = amf::AMF_SURFACE_GRAY8;
+		break;
+	default: {
+		AMF_LOG_ERROR("Unsupported surface format.");
+		return AMF_FAIL;
+	}
+	}
+
 	//////////////////////////////////////////////////////////////////////////
-	/// Initialize Encoder
 
 	result = AMF::Instance()->GetFactory()->CreateContext(&enc->context);
 	if (result != AMF_OK) {
@@ -396,6 +572,45 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 		return result;
 	}
 
+	/// Create Converter
+	bool scaling = obs_encoder_scaling_enabled(enc->encoder);
+	if (!obs_nv12_tex_active() || scaling) {
+		if (!obs_nv12_tex_active()) {
+			enc->convertor_frame_w = enc->frame_w;
+			enc->convertor_frame_h = enc->frame_h;
+		} else {
+			enc->convertor_frame_w = voi->width;
+			enc->convertor_frame_h = voi->height;
+		}
+
+		result = AMF::Instance()->GetFactory()->CreateComponent(
+			enc->context, AMFVideoConverter, &enc->converter_amf);
+		if (result != AMF_OK) {
+			AMF_LOG_WARNING(
+				"CreateComponent AMFVideoConverter Failed");
+			return result;
+		}
+		SET_AMF_VALUE_OR_FAIL(enc->converter_amf,
+				      AMF_VIDEO_CONVERTER_MEMORY_TYPE,
+				      amf::AMF_MEMORY_UNKNOWN);
+		SET_AMF_VALUE_OR_FAIL(enc->converter_amf,
+				      AMF_VIDEO_CONVERTER_OUTPUT_FORMAT,
+				      amf::AMF_SURFACE_NV12);
+		SET_AMF_VALUE_OR_FAIL(enc->converter_amf,
+				      AMF_VIDEO_CONVERTER_COLOR_PROFILE,
+				      enc->in_color_profile);
+		SET_AMF_VALUE_OR_FAIL(
+			enc->converter_amf,
+			AMF_VIDEO_CONVERTER_INPUT_TRANSFER_CHARACTERISTIC,
+			enc->in_characteristic);
+		SET_AMF_VALUE_OR_FAIL(
+			enc->converter_amf, AMF_VIDEO_CONVERTER_OUTPUT_SIZE,
+			AMFConstructSize(enc->frame_w, enc->frame_h));
+		enc->converter_amf->Init(enc->in_surface_format,
+					 enc->convertor_frame_w,
+					 enc->convertor_frame_h);
+	}
+
 	// Create Encoder
 	if (enc->codec == amf_data::CODEC_ID_H264) {
 		result = AMF::Instance()->GetFactory()->CreateComponent(
@@ -406,4 +621,6 @@ AMF_RESULT amf_create_encoder(obs_data_t *settings, amf_data *enc)
 			enc->context, AMFVideoEncoder_HEVC, &enc->encoder_amf);
 	}
 	return result;
+fail:
+	return AMF_FAIL;
 }

@@ -10,6 +10,7 @@
 #include <condition_variable>
 #include <vector>
 #include <atlbase.h>
+#include "AMF/include/components/ColorSpace.h"
 
 #define AMF_PRESENT_TIMESTAMP L"PTS"
 #define SET_AMF_VALUE_OR_FAIL(object, name, val)                             \
@@ -104,15 +105,23 @@ struct amf_data {
 
 	void *session;
 	amf::AMFContextPtr context;
+	amf::AMFComponentPtr converter_amf;
 	amf::AMFComponentPtr encoder_amf;
 	CODEC_ID codec;
 
 	ATL::CComPtr<ID3D11Device> pD3D11Device;
 	ATL::CComPtr<ID3D11DeviceContext> pD3D11Context;
 
-	int frameW;
-	int frameH;
+	int frame_w;
+	int frame_h;
+
+	int convertor_frame_w;
+	int convertor_frame_h;
+
 	AMFRate frame_rate;
+	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM in_color_profile;
+	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM in_characteristic;
+	amf::AMF_SURFACE_FORMAT in_surface_format;
 
 	AMFBufferPtr header;
 	AMFBufferPtr sei;
@@ -139,6 +148,9 @@ AMF_RESULT init_d3d11(obs_data_t *settings, struct amf_data *enc);
 bool amf_encode_tex(void *data, uint32_t handle, int64_t pts, uint64_t lock_key,
 		    uint64_t *next_key, struct encoder_packet *packet,
 		    bool *received_packet);
+bool amf_encode(void *data, struct encoder_frame *frame,
+		struct encoder_packet *packet, bool *received_packet);
+
 void amf_destroy(void *data);
 
 bool amf_extra_data(void *data, uint8_t **header, size_t *size);
