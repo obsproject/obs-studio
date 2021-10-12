@@ -126,11 +126,11 @@ static pa_channel_map pulseaudio_channel_map(enum speaker_layout layout)
 
 static void process_byte(void *p, size_t frames, size_t channels, float vol)
 {
-	register char *cur = (char *)p;
-	register char *end = cur + frames * channels;
+	register uint8_t *cur = (uint8_t *)p;
+	register uint8_t *end = cur + frames * channels;
 
-	while (cur < end)
-		*(cur++) *= vol;
+	for (; cur < end; cur++)
+		*cur = ((int)*cur - 128) * vol + 128;
 }
 
 static void process_s16(void *p, size_t frames, size_t channels, float vol)
