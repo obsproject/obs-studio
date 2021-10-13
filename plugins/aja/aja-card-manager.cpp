@@ -268,7 +268,7 @@ bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
 bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 				    const std::string &owner) const
 {
-	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
+	UNUSED_PARAMETER(id);
 
 	NTV2InputSourceSet inputSources;
 	aja::IOSelectionToInputSources(io, inputSources);
@@ -329,7 +329,7 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 				      const std::string &owner)
 {
-	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
+	UNUSED_PARAMETER(id);
 
 	NTV2InputSourceSet inputSources;
 	aja::IOSelectionToInputSources(io, inputSources);
@@ -363,7 +363,7 @@ bool CardEntry::AcquireInputSelection(IOSelection io, NTV2DeviceID id,
 bool CardEntry::ReleaseInputSelection(IOSelection io, NTV2DeviceID id,
 				      const std::string &owner)
 {
-	UNUSED_PARAMETER(id); // Placeholder for device-specific logic
+	UNUSED_PARAMETER(id);
 
 	NTV2InputSourceSet currentInputSources;
 	aja::IOSelectionToInputSources(io, currentInputSources);
@@ -402,10 +402,9 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			     owner.c_str(),
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
 		}
-	}
-	// SDI Monitor on io4K/io4K+/etc. uses framestore 4
-	else if (aja::CardCanDoSDIMonitorOutput(id) &&
+	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
 		 io == IOSelection::SDI5) {
+		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (AcquireChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {
 			blog(LOG_DEBUG, "Output %s acquired channel %s",
@@ -418,9 +417,8 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			     owner.c_str(),
 			     NTV2ChannelToString(sdiMonChannel).c_str());
 		}
-	}
-	// Handle acquiring all other channels
-	else {
+	} else {
+		// Handle acquiring all other channels
 		for (auto &&dst : outputDests) {
 			auto acqChan = NTV2OutputDestinationToChannel(dst);
 			if (AcquireChannel(acqChan, NTV2_MODE_DISPLAY, owner)) {
@@ -464,19 +462,17 @@ bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
 			releasedCount++;
 		}
-	}
-	// SDI Monitor on io4K/io4K+/etc. uses framestore 4
-	else if (aja::CardCanDoSDIMonitorOutput(id) &&
+	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
 		 io == IOSelection::SDI5) {
+		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (ReleaseChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {
 			blog(LOG_DEBUG, "Released Channel %s",
 			     NTV2ChannelToString(sdiMonChannel).c_str());
 			releasedCount++;
 		}
-	}
-	// Release all other channels
-	else {
+	} else {
+		// Release all other channels
 		for (auto &&dst : currentOutputDests) {
 			auto relChan = NTV2OutputDestinationToChannel(dst);
 			if (ReleaseChannel(relChan, NTV2_MODE_DISPLAY, owner)) {
