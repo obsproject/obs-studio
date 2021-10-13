@@ -6323,14 +6323,19 @@ void OBSBasic::StartStreaming()
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
 		// well, we need to disable button while stream is not active
 		ui->broadcastButton->setEnabled(false);
-	} else if (!autoStopBroadcast) {
-		broadcastActive = true;
-		ui->broadcastButton->setText(QTStr("Basic.Main.StopBroadcast"));
+	} else {
+		if (!autoStopBroadcast) {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.StopBroadcast"));
+		} else {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.AutoStopEnabled"));
+			ui->broadcastButton->setEnabled(false);
+		}
 		ui->broadcastButton->setProperty("broadcastState", "active");
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
-	} else {
-		ui->broadcastButton->setEnabled(false);
+		broadcastActive = true;
 	}
 
 	bool recordWhenStreaming = config_get_bool(
