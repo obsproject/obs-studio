@@ -42,8 +42,8 @@ set(aja-output-ui_HEADERS
 	../../slider-ignorewheel.hpp
 	../../combobox-ignorewheel.hpp
 	../../spinbox-ignorewheel.hpp
-		AJAOutputUI.h
-		aja-ui-main.h
+	AJAOutputUI.h
+	aja-ui-main.h
 	../../../plugins/aja/aja-ui-props.hpp
 	../../../plugins/aja/aja-enums.hpp)
 
