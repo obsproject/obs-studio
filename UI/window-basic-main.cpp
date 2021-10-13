@@ -6364,7 +6364,24 @@ void OBSBasic::BroadcastButtonClicked()
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
-			ytAuth->StartLatestBroadcast();
+			if (!ytAuth->StartLatestBroadcast()) {
+				auto last_error = ytAuth->GetLastError();
+				if (last_error.isEmpty())
+					last_error = QTStr(
+						"YouTube.Actions.Error.YouTubeApi");
+				if (!ytAuth->GetTranslatedError(last_error))
+					last_error =
+						QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
+							.arg(last_error,
+							     ytAuth->GetBroadcastId());
+
+				OBSMessageBox::warning(
+					this,
+					QTStr("Output.BroadcastStartFailed"),
+					last_error, true);
+				ui->broadcastButton->setChecked(false);
+				return;
+			}
 		}
 #endif
 		broadcastActive = true;
@@ -6402,7 +6419,22 @@ void OBSBasic::BroadcastButtonClicked()
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
-			ytAuth->StopLatestBroadcast();
+			if (!ytAuth->StopLatestBroadcast()) {
+				auto last_error = ytAuth->GetLastError();
+				if (last_error.isEmpty())
+					last_error = QTStr(
+						"YouTube.Actions.Error.YouTubeApi");
+				if (!ytAuth->GetTranslatedError(last_error))
+					last_error =
+						QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
+							.arg(last_error,
+							     ytAuth->GetBroadcastId());
+
+				OBSMessageBox::warning(
+					this,
+					QTStr("Output.BroadcastStopFailed"),
+					last_error, true);
+			}
 		}
 #endif
 		broadcastActive = false;
