@@ -56,8 +56,8 @@ set(aja-output-ui_SOURCES
 	../../slider-ignorewheel.cpp
 	../../combobox-ignorewheel.cpp
 	../../spinbox-ignorewheel.cpp
-		AJAOutputUI.cpp
-		aja-ui-main.cpp)
+	AJAOutputUI.cpp
+	aja-ui-main.cpp)
 
 set(aja-output-ui_UI
 	${aja-output-ui_UI}
