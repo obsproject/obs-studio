@@ -11,11 +11,6 @@
 
 #include <ajantv2/includes/ntv2card.h>
 
-// #define AJA_CAPTURE_PROFILE 1
-#ifdef AJA_CAPTURE_PROFILE
-#include <ajabase/system/systemtime.h>
-#endif
-
 #define NTV2_AUDIOSIZE_MAX (401 * 1024)
 
 AJASource::AJASource(obs_source_t *source)
@@ -233,19 +228,11 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			break;
 		}
 
-#ifdef AJA_CAPTURE_PROFILE
-		uint64_t timeStart = AJATime::GetSystemNanoseconds();
-#endif
 		bool audioOverrun = false;
 
 		card->WaitForInputFieldID(NTV2_FIELD0, channel);
 
 		currentCardFrame ^= 1;
-
-		// blog(LOG_INFO,
-		//      "AJASource::CaptureThread: Channel: %s | Frame: %d",
-		//      NTV2ChannelToString(channel, true).c_str(),
-		//      currentCardFrame);
 
 		auto videoFormat = sourceProps.videoFormat;
 		auto pixelFormat = sourceProps.pixelFormat;
@@ -412,13 +399,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		obs_source_output_video2(ajaSource->mSource, &obsFrame);
 
 		card->SetInputFrame(channel, currentCardFrame);
-
-#ifdef AJA_CAPTURE_PROFILE
-		uint64_t timeElapsed =
-			AJATime::GetSystemNanoseconds() - timeStart;
-		blog(LOG_DEBUG, "Capture Time: %lld (%fms)", timeElapsed,
-		     (double)timeElapsed / 1000000);
-#endif
 	}
 
 	blog(LOG_INFO, "AJASource::Capturethread: Thread loop stopped");
@@ -549,7 +529,6 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id,
 			if (hdmi_version == 1) {
 				pf = kDefaultAJAPixelFormat;
 			} else {
-				//HACK(paulh): Can we read the pixel format from the HDMI widget?
 				NTV2LHIHDMIColorSpace hdmiInputColor;
 				mCard->GetHDMIInputColor(hdmiInputColor,
 							 channel);
@@ -703,7 +682,6 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	auto curr_vf = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 
-	// auto have_cards = cardManager.NumCards() > 0;
 	bool have_cards = cardManager.NumCardEntries() > 0;
 	obs_property_set_visible(devices_list, have_cards);
 	obs_property_set_visible(io_select_list, have_cards);
