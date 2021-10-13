@@ -512,8 +512,8 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 
 	obs_data_array_t *sourcesArray = obs_save_sources_filtered(
 		[](void *data, obs_source_t *source) {
-			return (*static_cast<FilterAudioSources_t *>(
-				data))(source);
+			auto &func = *static_cast<FilterAudioSources_t *>(data);
+			return func(source);
 		},
 		static_cast<void *>(&FilterAudioSources));
 
