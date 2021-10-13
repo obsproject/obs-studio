@@ -224,9 +224,10 @@ bool os_is_obs_plugin(const char *path)
 
 		/* get a pointer to the export directory */
 		PIMAGE_EXPORT_DIRECTORY export;
-		export = (PIMAGE_EXPORT_DIRECTORY)(
-			(byte *)base + data_dir->VirtualAddress -
-			section->VirtualAddress + section->PointerToRawData);
+		export = (PIMAGE_EXPORT_DIRECTORY)((byte *)base +
+						   data_dir->VirtualAddress -
+						   section->VirtualAddress +
+						   section->PointerToRawData);
 
 		if (export->NumberOfNames == 0)
 			goto cleanup;
@@ -339,8 +340,9 @@ bool os_sleepto_ns(uint64_t time_target)
 
 	const bool stall = count.QuadPart < count_target;
 	if (stall) {
-		const DWORD milliseconds = (DWORD)(
-			((count_target - count.QuadPart) * 1000.0) / freq);
+		const DWORD milliseconds =
+			(DWORD)(((count_target - count.QuadPart) * 1000.0) /
+				freq);
 		if (milliseconds > 1)
 			Sleep(milliseconds - 1);
 
