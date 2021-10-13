@@ -75,7 +75,6 @@ void populate_source_device_list(obs_property_t *list)
 	obs_property_list_clear(list);
 
 	auto &cardManager = aja::CardManager::Instance();
-
 	cardManager.EnumerateCards();
 
 	for (const auto &iter : cardManager.GetCardEntries()) {
@@ -533,11 +532,12 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id,
 				mCard->GetHDMIInputColor(hdmiInputColor,
 							 channel);
 				if (hdmiInputColor ==
-				    NTV2_LHIHDMIColorSpaceYCbCr)
+				    NTV2_LHIHDMIColorSpaceYCbCr) {
 					pf = kDefaultAJAPixelFormat;
-				else if (hdmiInputColor ==
-					 NTV2_LHIHDMIColorSpaceRGB)
+				} else if (hdmiInputColor ==
+					   NTV2_LHIHDMIColorSpaceRGB) {
 					pf = NTV2_FBF_24BIT_BGR;
+				}
 			}
 		}
 	}
@@ -645,10 +645,11 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 
 	const NTV2DeviceID deviceID = card->GetDeviceID();
 
-	// If Channel 1 is actively in use, filter the video format list to only
-	// show video formats within the same framerate family. If Channel 1 is
-	// not active we just go ahead and try to set all framestores to the same video format.
-	// This is because Channel 1's clock rate will govern the card's Free Run clock.
+	/* If Channel 1 is actively in use, filter the video format list to only
+	 * show video formats within the same framerate family. If Channel 1 is
+	 * not active we just go ahead and try to set all framestores to the same video format.
+	 * This is because Channel 1's clock rate will govern the card's Free Run clock.
+	 */
 	NTV2VideoFormat videoFormatChannel1 = NTV2_FORMAT_UNKNOWN;
 	if (!cardEntry->ChannelReady(NTV2_CHANNEL1, ajaSource->GetName())) {
 		card->GetVideoFormat(videoFormatChannel1, NTV2_CHANNEL1);
@@ -706,9 +707,7 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 	}
 
 	auto &cardManager = aja::CardManager::Instance();
-
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -970,10 +969,11 @@ static void aja_source_update(void *data, obs_data_t *settings)
 
 	if (NTV2_IS_4K_VIDEO_FORMAT(want_props.videoFormat) &&
 	    want_props.sdi4kTransport == SDI4KTransport::Squares) {
-		if (want_props.ioSelect == IOSelection::SDI1_2)
+		if (want_props.ioSelect == IOSelection::SDI1_2) {
 			want_props.ioSelect = IOSelection::SDI1_2_Squares;
-		else if (want_props.ioSelect == IOSelection::SDI3_4)
+		} else if (want_props.ioSelect == IOSelection::SDI3_4) {
 			want_props.ioSelect = IOSelection::SDI3_4_Squares;
+		}
 	}
 
 	// Release Channels if IOSelection changes

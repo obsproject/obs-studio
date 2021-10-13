@@ -374,13 +374,14 @@ NTV2Channel OutputProps::Channel() const
 {
 	// Output Channel Special Cases
 	// KONA1 -- Has 2 framestores but only 1 bi-directional SDI widget
-	if (deviceID == DEVICE_ID_KONA1)
+	if (deviceID == DEVICE_ID_KONA1) {
 		return NTV2_CHANNEL2;
-	// IO4K/IO4K+ SDI Monitor - Use framestore 4 but SDI5
-	else if ((deviceID == DEVICE_ID_IO4K ||
-		  deviceID == DEVICE_ID_IO4KPLUS) &&
-		 outputDest == NTV2_OUTPUTDESTINATION_SDI5)
+	} else if ((deviceID == DEVICE_ID_IO4K ||
+		    deviceID == DEVICE_ID_IO4KPLUS) &&
+		   outputDest == NTV2_OUTPUTDESTINATION_SDI5) {
+		// IO4K/IO4K+ SDI Monitor - Use framestore 4 but SDI5
 		return NTV2_CHANNEL4;
+	}
 
 	if (NTV2_OUTPUT_DEST_IS_HDMI(outputDest))
 		return static_cast<NTV2Channel>(

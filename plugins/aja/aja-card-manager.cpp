@@ -164,6 +164,7 @@ std::string CardEntry::GetSerial() const
 	std::string serial;
 	if (mCard)
 		mCard->GetSerialNumberString(serial);
+
 	return serial;
 }
 
@@ -172,6 +173,7 @@ NTV2DeviceID CardEntry::GetDeviceID() const
 	NTV2DeviceID id = DEVICE_ID_NOTFOUND;
 	if (mCard)
 		id = mCard->GetDeviceID();
+
 	return id;
 }
 
@@ -566,9 +568,8 @@ void CardManager::EnumerateCards()
 				iter.deviceIndex, cardID);
 			if (cardEntry && cardEntry->Initialize())
 				mCardEntries.emplace(cardID, cardEntry);
-		}
-		// Card fell off of the bus and came back with a new physical index?
-		else {
+		} else {
+			// Card fell off of the bus and came back with a new physical index?
 			auto currEntry = mCardEntries[cardID];
 			if (currEntry) {
 				if (currEntry->GetCardIndex() !=

@@ -201,7 +201,6 @@ void AJAOutput::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 		pix_fmt = kDefaultAJAPixelFormat;
 
 	NTV2FormatDesc fd(vid_fmt, pix_fmt, NTV2_VANCMODE_OFF);
-
 	auto bufSize = fd.GetTotalRasterBytes();
 
 	// Raster size changed, regenerate pattern
@@ -343,9 +342,7 @@ size_t AJAOutput::AudioQueueSize()
 void AJAOutput::DMAAudioFromQueue(NTV2AudioSystem audioSys)
 {
 	bool restartAudio = false;
-
 	auto &audioFront = mAudioQueue->front();
-
 	size_t samplesLeft = audioFront.size;
 
 	if (mAudioWriteCursor < mAudioPlayCursor &&
@@ -422,9 +419,7 @@ void AJAOutput::DMAAudioFromQueue(NTV2AudioSystem audioSys)
 void AJAOutput::DMAVideoFromQueue()
 {
 	auto &vf = mVideoQueue->front();
-
 	auto data = vf.frame.data[0];
-
 	auto outputChannel = mOutputProps.Channel();
 
 	increment_card_frame();
@@ -468,15 +463,14 @@ void AJAOutput::calculate_card_frame_indices(uint32_t numFrames,
 
 	mFirstCardFrame = channelIndex * numFrames;
 
-	// Reserve N framebuffers in card DRAM.
 	if (mFirstCardFrame < totalCardFrames &&
 	    (mFirstCardFrame + numFrames) < totalCardFrames) {
+		// Reserve N framebuffers in card DRAM.
 		mNumCardFrames = numFrames;
 		mCurrentCardFrame = mFirstCardFrame;
 		mLastCardFrame = mCurrentCardFrame + numFrames;
-	}
-	// otherwise just grab 2 frames to ping-pong between
-	else {
+	} else {
+		// otherwise just grab 2 frames to ping-pong between
 		mNumCardFrames = 2;
 		mCurrentCardFrame = channelIndex * 2;
 		mLastCardFrame = mCurrentCardFrame + 2;
@@ -531,9 +525,8 @@ void AJAOutput::dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data,
 		}
 
 		mAudioWriteCursor = (uint32_t)size - remainingBuffer;
-	}
-	//	No wrap, so just do a linear DMA from the buffer...
-	else {
+	} else {
+		//	No wrap, so just do a linear DMA from the buffer...
 		if (size > 0) {
 			result = mCard->DMAWriteAudio(audioSys, data,
 						      mAudioWriteCursor,
@@ -895,10 +888,11 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 
 	if (NTV2_IS_4K_VIDEO_FORMAT(outputProps.videoFormat) &&
 	    outputProps.sdi4kTransport == SDI4KTransport::Squares) {
-		if (outputProps.ioSelect == IOSelection::SDI1_2)
+		if (outputProps.ioSelect == IOSelection::SDI1_2) {
 			outputProps.ioSelect = IOSelection::SDI1_2_Squares;
-		else if (outputProps.ioSelect == IOSelection::SDI3_4)
+		} else if (outputProps.ioSelect == IOSelection::SDI3_4) {
 			outputProps.ioSelect = IOSelection::SDI3_4_Squares;
+		}
 	}
 
 	const std::string &ioSelectStr =
@@ -968,7 +962,6 @@ static bool aja_output_start(void *data)
 	}
 
 	const std::string &cardID = ajaOutput->mCardID;
-
 	auto &cardManager = aja::CardManager::Instance();
 
 	cardManager.EnumerateCards();
@@ -1027,7 +1020,6 @@ static bool aja_output_start(void *data)
 	Routing::ConfigureOutputAudio(outputProps, card);
 
 	const auto &formatDesc = outputProps.FormatDesc();
-
 	struct video_scale_info scaler = {};
 	scaler.format = aja::AJAPixelFormatToOBSVideoFormat(pixelFormat);
 	scaler.width = formatDesc.GetRasterWidth();
@@ -1072,7 +1064,6 @@ static void aja_output_stop(void *data, uint64_t ts)
 
 	auto outputProps = ajaOutput->GetOutputProps();
 	const std::string &cardID = ajaOutput->mCardID;
-
 	auto &cardManager = aja::CardManager::Instance();
 
 	cardManager.EnumerateCards();

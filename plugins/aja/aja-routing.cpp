@@ -394,41 +394,45 @@ SDIWireFormat GuessSDIWireFormat(NTV2VideoFormat vf, IOSelection io,
 	auto fg = GetNTV2FrameGeometryFromVideoFormat(vf);
 
 	SDIWireFormat swf = SDIWireFormat::Unknown;
-	if (rd == RasterDefinition::SD)
+	if (rd == RasterDefinition::SD) {
 		swf = SDIWireFormat::SD_ST352;
-	else if (rd == RasterDefinition::HD) {
-		if (fg == NTV2_FG_1280x720)
+	} else if (rd == RasterDefinition::HD) {
+		if (fg == NTV2_FG_1280x720) {
 			swf = SDIWireFormat::HD_720p_ST292;
-		else if (fg == NTV2_FG_1920x1080 || fg == NTV2_FG_2048x1080)
+		} else if (fg == NTV2_FG_1920x1080 || fg == NTV2_FG_2048x1080) {
 			swf = SDIWireFormat::HD_1080_ST292;
+		}
 	} else if (rd == RasterDefinition::UHD_4K) {
 		if (t4k == SDI4KTransport::Squares) {
-			if (aja::IsSDIFourWireIOSelection(io))
+			if (aja::IsSDIFourWireIOSelection(io)) {
 				swf = SDIWireFormat::UHD4K_ST292_Quad_1_5_Squares;
-			else if (aja::IsSDITwoWireIOSelection(io)) {
-				if (t4k == SDI4KTransport::Squares)
+			} else if (aja::IsSDITwoWireIOSelection(io)) {
+				if (t4k == SDI4KTransport::Squares) {
 					swf = SDIWireFormat::
 						UHD4K_ST292_Dual_1_5_Squares;
-				else
+				} else {
 					swf = SDIWireFormat::
 						UHD4K_ST425_Dual_3Gb_2SI;
+				}
 			}
 		} else if (t4k == SDI4KTransport::TwoSampleInterleave) {
 			if (aja::IsSDIOneWireIOSelection(io)) {
 				if (NTV2_IS_4K_HFR_VIDEO_FORMAT(vf)) {
-					if (aja::IsRetailSDI12G(device_id))
+					if (aja::IsRetailSDI12G(device_id)) {
 						swf = SDIWireFormat::
 							UHD4K_ST2018_12G_Squares_2SI_Kona5_io4KPlus;
-					else
+					} else {
 						swf = SDIWireFormat::
 							UHD4K_ST2018_12G_Squares_2SI;
+					}
 				} else {
-					if (aja::IsRetailSDI12G(device_id))
+					if (aja::IsRetailSDI12G(device_id)) {
 						swf = SDIWireFormat::
 							UHD4K_ST2018_6G_Squares_2SI_Kona5_io4KPlus;
-					else
+					} else {
 						swf = SDIWireFormat::
 							UHD4K_ST2018_6G_Squares_2SI;
+					}
 				}
 			} else if (aja::IsSDITwoWireIOSelection(io)) {
 				swf = SDIWireFormat::UHD4K_ST425_Dual_3Gb_2SI;
@@ -471,17 +475,14 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 		if (vpidList.size() > 0)
 			standard = vpidList.at(0).Standard();
 
-		// Determine SDI format based on raster "definition" and VPID byte 1 value (AKA SMPTE standard)
 		if (standard != VPIDStandard_Unknown) {
+			// Determine SDI format based on raster "definition" and VPID byte 1 value (AKA SMPTE standard)
 			auto rasterDef = GetRasterDefinition(props.ioSelect, vf,
 							     props.deviceID);
-
 			VPIDSpec vpidSpec = std::make_pair(rasterDef, standard);
-
 			DetermineSDIWireFormat(deviceID, vpidSpec, swf);
-		}
-		// Best guess SDI format from incoming video format if no VPIDs detected
-		else {
+		} else {
+			// Best guess SDI format from incoming video format if no VPIDs detected
 			swf = GuessSDIWireFormat(vf, props.ioSelect,
 						 props.sdi4kTransport,
 						 props.deviceID);
@@ -570,7 +571,6 @@ bool Routing::ConfigureSourceRoute(const SourceProps &props, NTV2Mode mode,
 		card->SetTsiFrameEnable(rc.enable_tsi, channel);
 		card->Set4kSquaresEnable(rc.enable_4k_squares, channel);
 		card->SetQuadQuadSquaresEnable(rc.enable_8k_squares, channel);
-		// set_frame_number(fs.Channel(), fs.GetFrameBufferMode(), fs.GetFrameNumber());
 	}
 
 	return true;
@@ -620,18 +620,19 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 		// special case devices...
 		if (props.deviceID == DEVICE_ID_TTAP_PRO) {
 			hwf = HDMIWireFormat::TTAP_PRO;
-		}
-		// ...everything else
-		else {
+		} else {
+			// ...all other devices.
 			if (NTV2_IS_FBF_RGB(props.pixelFormat)) {
 				if (NTV2_IS_HD_VIDEO_FORMAT(props.videoFormat))
 					hwf = HDMIWireFormat::HD_RGB_LFR;
 			} else {
-				if (NTV2_IS_HD_VIDEO_FORMAT(props.videoFormat))
+				if (NTV2_IS_HD_VIDEO_FORMAT(
+					    props.videoFormat)) {
 					hwf = HDMIWireFormat::HD_YCBCR_LFR;
-				else if (NTV2_IS_4K_VIDEO_FORMAT(
-						 props.videoFormat))
+				} else if (NTV2_IS_4K_VIDEO_FORMAT(
+						   props.videoFormat)) {
 					hwf = HDMIWireFormat::UHD_4K_YCBCR_LFR;
+				}
 			}
 		}
 
@@ -669,7 +670,6 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 
 	NTV2XptConnections cnx;
 	ParseRouteString(route_string, cnx);
-
 	card->ApplySignalRoute(cnx, false);
 
 	// Apply SDI widget settings
@@ -709,7 +709,6 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 		card->SetTsiFrameEnable(rc.enable_tsi, channel);
 		card->Set4kSquaresEnable(rc.enable_4k_squares, channel);
 		card->SetQuadQuadSquaresEnable(rc.enable_8k_squares, channel);
-		// set_frame_number(fs.Channel(), fs.GetFrameBufferMode(), fs.GetFrameNumber());
 	}
 
 	return true;

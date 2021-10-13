@@ -878,13 +878,12 @@ bool IsMonitorOutputSelection(NTV2DeviceID id, IOSelection io)
 std::string MakeCardID(CNTV2Card &card)
 {
 	std::string cardID;
-	// Try to construct CardID from device ID and serial number...
 	if (card.GetSerialNumberString(cardID)) {
+		// Try to construct CardID from device ID and serial number...
 		cardID = NTV2DeviceIDToString(card.GetDeviceID(), false) + "_" +
 			 cardID;
-	}
-	// ...otherwise fall back to the CNTV2DeviceScanner method.
-	else {
+	} else {
+		// ...otherwise fall back to the CNTV2DeviceScanner method.
 		cardID = CNTV2DeviceScanner::GetDeviceRefName(card);
 	}
 	return cardID;
