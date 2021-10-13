@@ -301,6 +301,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 		if (obs_get_video_info(&ovi))
 			ResizePreview(ovi.base_width, ovi.base_height);
+
+		UpdateContextBarVisibility();
 	};
 
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
@@ -3047,6 +3049,26 @@ void OBSBasic::ClearContextBar()
 	}
 }
 
+void OBSBasic::UpdateContextBarVisibility()
+{
+	int width = ui->centralwidget->size().width();
+
+	ContextBarSize contextBarSizeNew;
+	if (width >= 740) {
+		contextBarSizeNew = ContextBarSize_Normal;
+	} else if (width >= 600) {
+		contextBarSizeNew = ContextBarSize_Reduced;
+	} else {
+		contextBarSizeNew = ContextBarSize_Minimized;
+	}
+
+	if (contextBarSize == contextBarSizeNew)
+		return;
+
+	contextBarSize = contextBarSizeNew;
+	UpdateContextBarDeferred();
+}
+
 static bool is_network_media_source(obs_source_t *source, const char *id)
 {
 	if (strcmp(id, "ffmpeg_source") != 0)
@@ -3072,82 +3094,109 @@ void OBSBasic::UpdateContextBar(bool force)
 
 	OBSSceneItem item = GetCurrentSceneItem();
 
-	ClearContextBar();
-
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
+
+		bool updateNeeded = true;
+		QLayoutItem *la = ui->emptySpace->layout()->itemAt(0);
+		if (la) {
+			if (SourceToolbar *toolbar =
+				    dynamic_cast<SourceToolbar *>(
+					    la->widget())) {
+				if (toolbar->GetSource() == source)
+					updateNeeded = false;
+			} else if (MediaControls *toolbar =
+					   dynamic_cast<MediaControls *>(
+						   la->widget())) {
+				if (toolbar->GetSource() == source)
+					updateNeeded = false;
+			}
+		}
+
 		const char *id = obs_source_get_unversioned_id(source);
 		uint32_t flags = obs_source_get_output_flags(source);
 
 		ui->sourceInteractButton->setVisible(flags &
 						     OBS_SOURCE_INTERACTION);
 
-		if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
-			if (!is_network_media_source(source, id)) {
-				MediaControls *mediaControls =
-					new MediaControls(ui->emptySpace);
-				mediaControls->SetSource(source);
+		if (contextBarSize >= ContextBarSize_Reduced &&
+		    (updateNeeded || force)) {
+			ClearContextBar();
+			if (flags & OBS_SOURCE_CONTROLLABLE_MEDIA) {
+				if (!is_network_media_source(source, id)) {
+					MediaControls *mediaControls =
+						new MediaControls(
+							ui->emptySpace);
+					mediaControls->SetSource(source);
 
-				ui->emptySpace->layout()->addWidget(
-					mediaControls);
+					ui->emptySpace->layout()->addWidget(
+						mediaControls);
+				}
+			} else if (strcmp(id, "browser_source") == 0) {
+				BrowserToolbar *c = new BrowserToolbar(
+					ui->emptySpace, source);
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "wasapi_input_capture") == 0 ||
+				   strcmp(id, "wasapi_output_capture") == 0 ||
+				   strcmp(id, "coreaudio_input_capture") == 0 ||
+				   strcmp(id, "coreaudio_output_capture") ==
+					   0 ||
+				   strcmp(id, "pulse_input_capture") == 0 ||
+				   strcmp(id, "pulse_output_capture") == 0 ||
+				   strcmp(id, "alsa_input_capture") == 0) {
+				AudioCaptureToolbar *c =
+					new AudioCaptureToolbar(ui->emptySpace,
+								source);
+				c->Init();
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "window_capture") == 0 ||
+				   strcmp(id, "xcomposite_input") == 0) {
+				WindowCaptureToolbar *c =
+					new WindowCaptureToolbar(ui->emptySpace,
+								 source);
+				c->Init();
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "monitor_capture") == 0 ||
+				   strcmp(id, "display_capture") == 0 ||
+				   strcmp(id, "xshm_input") == 0) {
+				DisplayCaptureToolbar *c =
+					new DisplayCaptureToolbar(
+						ui->emptySpace, source);
+				c->Init();
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "dshow_input") == 0) {
+				DeviceCaptureToolbar *c =
+					new DeviceCaptureToolbar(ui->emptySpace,
+								 source);
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "game_capture") == 0) {
+				GameCaptureToolbar *c = new GameCaptureToolbar(
+					ui->emptySpace, source);
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "image_source") == 0) {
+				ImageSourceToolbar *c = new ImageSourceToolbar(
+					ui->emptySpace, source);
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "color_source") == 0) {
+				ColorSourceToolbar *c = new ColorSourceToolbar(
+					ui->emptySpace, source);
+				ui->emptySpace->layout()->addWidget(c);
+
+			} else if (strcmp(id, "text_ft2_source") == 0 ||
+				   strcmp(id, "text_gdiplus") == 0) {
+				TextSourceToolbar *c = new TextSourceToolbar(
+					ui->emptySpace, source);
+				ui->emptySpace->layout()->addWidget(c);
 			}
-		} else if (strcmp(id, "browser_source") == 0) {
-			BrowserToolbar *c =
-				new BrowserToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "wasapi_input_capture") == 0 ||
-			   strcmp(id, "wasapi_output_capture") == 0 ||
-			   strcmp(id, "coreaudio_input_capture") == 0 ||
-			   strcmp(id, "coreaudio_output_capture") == 0 ||
-			   strcmp(id, "pulse_input_capture") == 0 ||
-			   strcmp(id, "pulse_output_capture") == 0 ||
-			   strcmp(id, "alsa_input_capture") == 0) {
-			AudioCaptureToolbar *c =
-				new AudioCaptureToolbar(ui->emptySpace, source);
-			c->Init();
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "window_capture") == 0 ||
-			   strcmp(id, "xcomposite_input") == 0) {
-			WindowCaptureToolbar *c = new WindowCaptureToolbar(
-				ui->emptySpace, source);
-			c->Init();
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "monitor_capture") == 0 ||
-			   strcmp(id, "display_capture") == 0 ||
-			   strcmp(id, "xshm_input") == 0) {
-			DisplayCaptureToolbar *c = new DisplayCaptureToolbar(
-				ui->emptySpace, source);
-			c->Init();
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "dshow_input") == 0) {
-			DeviceCaptureToolbar *c = new DeviceCaptureToolbar(
-				ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "game_capture") == 0) {
-			GameCaptureToolbar *c =
-				new GameCaptureToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "image_source") == 0) {
-			ImageSourceToolbar *c =
-				new ImageSourceToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "color_source") == 0) {
-			ColorSourceToolbar *c =
-				new ColorSourceToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
-
-		} else if (strcmp(id, "text_ft2_source") == 0 ||
-			   strcmp(id, "text_gdiplus") == 0) {
-			TextSourceToolbar *c =
-				new TextSourceToolbar(ui->emptySpace, source);
-			ui->emptySpace->layout()->addWidget(c);
+		} else if (contextBarSize == ContextBarSize_Minimized) {
+			ClearContextBar();
 		}
 
 		QIcon icon;
@@ -3171,6 +3220,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourcePropertiesButton->setEnabled(
 			obs_source_configurable(source));
 	} else {
+		ClearContextBar();
 		ui->contextSourceIcon->hide();
 		ui->contextSourceIconSpacer->show();
 		ui->contextSourceLabel->setText(
@@ -3179,6 +3229,16 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
 		ui->sourceInteractButton->setVisible(false);
+	}
+
+	if (contextBarSize == ContextBarSize_Normal) {
+		ui->sourcePropertiesButton->setText(QTStr("Properties"));
+		ui->sourceFiltersButton->setText(QTStr("Filters"));
+		ui->sourceInteractButton->setText(QTStr("Interact"));
+	} else {
+		ui->sourcePropertiesButton->setText("");
+		ui->sourceFiltersButton->setText("");
+		ui->sourceInteractButton->setText("");
 	}
 }
 

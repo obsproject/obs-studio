@@ -195,6 +195,12 @@ class OBSBasic : public OBSMainWindow {
 		DropType_Url,
 	};
 
+	enum ContextBarSize {
+		ContextBarSize_Minimized,
+		ContextBarSize_Reduced,
+		ContextBarSize_Normal
+	};
+
 private:
 	obs_frontend_callbacks *api = nullptr;
 
@@ -210,6 +216,7 @@ private:
 	long disableSaving = 1;
 	bool projectChanged = false;
 	bool previewEnabled = true;
+	ContextBarSize contextBarSize = ContextBarSize_Normal;
 
 	std::deque<SourceCopyInfo> clipboard;
 	OBSWeakSource copyFiltersSource;
@@ -1118,6 +1125,7 @@ public slots:
 	void ClearContextBar();
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
+	void UpdateContextBarVisibility();
 
 public:
 	explicit OBSBasic(QWidget *parent = 0);
