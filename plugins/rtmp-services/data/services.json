@@ -990,23 +990,23 @@
             "servers": [
                 {
                     "name": "North America",
-                    "url": "rtmp://obs-ingest-na.camsoda.com/cam_obs"
+                    "url": "rtmp://obs-ingest-na.livemediahost.com/cam_obs"
                 },
                 {
                     "name": "South America",
-                    "url": "rtmp://obs-ingest-sa.camsoda.com/cam_obs"
+                    "url": "rtmp://obs-ingest-sa.livemediahost.com/cam_obs"
                 },
                 {
                     "name": "Asia",
-                    "url": "rtmp://obs-ingest-as.camsoda.com/cam_obs"
+                    "url": "rtmp://obs-ingest-as.livemediahost.com/cam_obs"
                 },
                 {
                     "name": "Europe",
-                    "url": "rtmp://obs-ingest-eu.camsoda.com/cam_obs"
+                    "url": "rtmp://obs-ingest-eu.livemediahost.com/cam_obs"
                 },
                 {
                     "name": "Oceania",
-                    "url": "rtmp://obs-ingest-oc.camsoda.com/cam_obs"
+                    "url": "rtmp://obs-ingest-oc.livemediahost.com/cam_obs"
                 }
             ],
             "recommended": {
