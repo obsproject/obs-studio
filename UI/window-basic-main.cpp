@@ -3399,10 +3399,13 @@ void OBSBasic::VolControlContextMenu()
 	copyFiltersAction.setEnabled(obs_source_filter_count(vol->GetSource()) >
 				     0);
 
-	if (copyFiltersString == nullptr)
-		pasteFiltersAction.setEnabled(false);
-	else
+	obs_source_t *source = obs_weak_source_get_source(copyFiltersSource);
+	if (source) {
 		pasteFiltersAction.setEnabled(true);
+		obs_source_release(source);
+	} else {
+		pasteFiltersAction.setEnabled(false);
+	}
 
 	QMenu popup;
 	vol->SetContextMenu(&popup);
@@ -4482,8 +4485,8 @@ void OBSBasic::ClearSceneData()
 	programScene = nullptr;
 	prevFTBSource = nullptr;
 
-	copyStrings.clear();
-	copyFiltersString = nullptr;
+	copySources.clear();
+	copyFiltersSource = nullptr;
 	copyFilter = nullptr;
 
 	auto cb = [](void *unused, obs_source_t *source) {
@@ -4906,7 +4909,8 @@ void OBSBasic::on_scenes_customContextMenuRequested(const QPoint &pos)
 			SLOT(SceneCopyFilters()));
 		QAction *pasteFilters =
 			new QAction(QTStr("Paste.Filters"), this);
-		pasteFilters->setEnabled(copyFiltersString);
+		pasteFilters->setEnabled(
+			!obs_weak_source_expired(copyFiltersSource));
 		connect(pasteFilters, SIGNAL(triggered()), this,
 			SLOT(ScenePasteFilters()));
 
@@ -7611,7 +7615,8 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionEditTransform->setEnabled(idx != -1);
 	ui->actionCopyTransform->setEnabled(idx != -1);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
-	ui->actionPasteFilters->setEnabled(copyFiltersString && idx != -1);
+	ui->actionPasteFilters->setEnabled(
+		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
 
 	ui->actionMoveUp->setEnabled(idx != -1);
 	ui->actionMoveDown->setEnabled(idx != -1);
@@ -8938,7 +8943,7 @@ void OBSBasic::on_actionMainRedo_triggered()
 
 void OBSBasic::on_actionCopySource_triggered()
 {
-	copyStrings.clear();
+	copySources.clear();
 	bool allowPastingDuplicate = true;
 
 	for (auto &selectedSource : GetAllSelectedSourceItems()) {
@@ -8950,7 +8955,9 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		OBSSource source = obs_sceneitem_get_source(item);
 
-		copyStrings.push_front(obs_source_get_name(source));
+		obs_weak_source *weak = obs_source_get_weak_source(source);
+		copySources.emplace_front(weak);
+		obs_weak_source_release(weak);
 
 		copyVisible = obs_sceneitem_visible(item);
 
@@ -8967,18 +8974,24 @@ void OBSBasic::on_actionPasteRef_triggered()
 {
 	OBSSource scene_source = GetCurrentSceneSource();
 	OBSData undo_data = BackupScene(scene_source);
+	OBSScene scene = GetCurrentScene();
 
 	undo_s.push_disabled();
 
-	for (auto &copyString : copyStrings) {
-		/* do not allow duplicate refs of the same group in the same scene */
-		OBSScene scene = GetCurrentScene();
-		if (!!obs_scene_get_group(scene, copyString))
+	for (auto &copySource : copySources) {
+		obs_source_t *source = obs_weak_source_get_source(copySource);
+		if (!source)
 			continue;
 
-		OBSBasicSourceSelect::SourcePaste(copyString, copyVisible,
-						  false);
+		const char *name = obs_source_get_name(source);
+
+		/* do not allow duplicate refs of the same group in the same scene */
+		if (!!obs_scene_get_group(scene, name))
+			continue;
+
+		OBSBasicSourceSelect::SourcePaste(name, copyVisible, false);
 		on_actionPasteTransform_triggered();
+		obs_source_release(source);
 	}
 
 	undo_s.pop_disabled();
@@ -8998,10 +9011,15 @@ void OBSBasic::on_actionPasteDup_triggered()
 
 	undo_s.push_disabled();
 
-	for (auto &copyString : copyStrings) {
-		OBSBasicSourceSelect::SourcePaste(copyString, copyVisible,
-						  true);
+	for (auto &copySource : copySources) {
+		obs_source_t *source = obs_weak_source_get_source(copySource);
+		if (!source)
+			continue;
+
+		const char *name = obs_source_get_name(source);
+		OBSBasicSourceSelect::SourcePaste(name, copyVisible, true);
 		on_actionPasteTransform_triggered();
+		obs_source_release(source);
 	}
 
 	undo_s.pop_disabled();
@@ -9020,7 +9038,8 @@ void OBSBasic::AudioMixerCopyFilters()
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *source = vol->GetSource();
 
-	copyFiltersString = obs_source_get_name(source);
+	copyFiltersSource = obs_source_get_weak_source(source);
+	obs_weak_source_release(copyFiltersSource);
 }
 
 void OBSBasic::AudioMixerPasteFilters()
@@ -9029,7 +9048,7 @@ void OBSBasic::AudioMixerPasteFilters()
 	VolControl *vol = action->property("volControl").value<VolControl *>();
 	obs_source_t *dstSource = vol->GetSource();
 
-	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	OBSSource source = obs_weak_source_get_source(copyFiltersSource);
 	obs_source_release(source);
 
 	if (source == dstSource)
@@ -9040,12 +9059,13 @@ void OBSBasic::AudioMixerPasteFilters()
 
 void OBSBasic::SceneCopyFilters()
 {
-	copyFiltersString = obs_source_get_name(GetCurrentSceneSource());
+	copyFiltersSource = obs_source_get_weak_source(GetCurrentSceneSource());
+	obs_weak_source_release(copyFiltersSource);
 }
 
 void OBSBasic::ScenePasteFilters()
 {
-	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	OBSSource source = obs_weak_source_get_source(copyFiltersSource);
 	obs_source_release(source);
 
 	OBSSource dstSource = GetCurrentSceneSource();
@@ -9065,7 +9085,8 @@ void OBSBasic::on_actionCopyFilters_triggered()
 
 	OBSSource source = obs_sceneitem_get_source(item);
 
-	copyFiltersString = obs_source_get_name(source);
+	copyFiltersSource = obs_source_get_weak_source(source);
+	obs_weak_source_release(copyFiltersSource);
 
 	ui->actionPasteFilters->setEnabled(true);
 }
@@ -9110,7 +9131,7 @@ void OBSBasic::CreateFilterPasteUndoRedoAction(const QString &text,
 
 void OBSBasic::on_actionPasteFilters_triggered()
 {
-	OBSSource source = obs_get_source_by_name(copyFiltersString);
+	OBSSource source = obs_weak_source_get_source(copyFiltersSource);
 	obs_source_release(source);
 
 	OBSSceneItem sceneItem = GetCurrentSceneItem();

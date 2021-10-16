@@ -201,8 +201,8 @@ private:
 	bool projectChanged = false;
 	bool previewEnabled = true;
 
-	std::list<const char *> copyStrings;
-	const char *copyFiltersString = nullptr;
+	std::deque<OBSWeakSource> copySources;
+	OBSWeakSource copyFiltersSource;
 	bool copyVisible = true;
 
 	bool closing = false;
@@ -890,7 +890,7 @@ public:
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
 
-	OBSWeakSource copyFilter = nullptr;
+	OBSWeakSource copyFilter;
 
 	void ShowStatusBarMessage(const QString &message);
 
