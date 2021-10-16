@@ -900,6 +900,7 @@ EXPORT void obs_weak_source_release(obs_weak_source_t *weak);
 EXPORT obs_source_t *obs_source_get_ref(obs_source_t *source);
 EXPORT obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source);
 EXPORT obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak);
+EXPORT bool obs_weak_source_expired(obs_weak_source_t *weak);
 
 EXPORT bool obs_weak_source_references_source(obs_weak_source_t *weak,
 					      obs_source_t *source);
