@@ -7611,12 +7611,21 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
+	for (size_t i = copySources.size(); i > 0; i--) {
+		const size_t idx = i - 1;
+		OBSWeakSource &weak = copySources[idx];
+		if (obs_weak_source_expired(weak))
+			copySources.erase(copySources.begin() + idx);
+	}
+
 	ui->actionCopySource->setEnabled(idx != -1);
 	ui->actionEditTransform->setEnabled(idx != -1);
 	ui->actionCopyTransform->setEnabled(idx != -1);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
+	ui->actionPasteRef->setEnabled(!!copySources.size());
+	ui->actionPasteDup->setEnabled(!!copySources.size());
 
 	ui->actionMoveUp->setEnabled(idx != -1);
 	ui->actionMoveDown->setEnabled(idx != -1);
