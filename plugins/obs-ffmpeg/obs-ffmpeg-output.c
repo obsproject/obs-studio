@@ -913,7 +913,7 @@ static void receive_audio(void *param, size_t mix_idx, struct audio_data *frame)
 
 	AVCodecContext *context = data->audio_infos[track_order].ctx;
 
-	if (!data->start_timestamp)
+	if (!data->start_timestamp && data->video)
 		return;
 
 	if (!output->audio_start_ts)
