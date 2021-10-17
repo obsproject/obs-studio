@@ -6,6 +6,7 @@
 #include <VideoToolbox/VideoToolbox.h>
 #include <VideoToolbox/VTVideoEncoderList.h>
 #include <CoreMedia/CoreMedia.h>
+#include <Metal/MTLDevice.h>
 
 #include <util/apple/cfstring-utils.h>
 
@@ -24,7 +25,13 @@ static DARRAY(struct vt_encoder {
 	const char *disp_name;
 	const char *id;
 	const char *codec_name;
+	uint64_t gpu_reg_id;
 }) vt_encoders;
+
+static DARRAY(struct mtl_device {
+	const char *name;
+	uint64_t id;
+}) mtl_devices;
 
 struct vt_h264_encoder {
 	obs_encoder_t *encoder;
@@ -833,9 +840,24 @@ static bool vt_h264_extra_data(void *data, uint8_t **extra_data, size_t *size)
 static const char *vt_h264_getname(void *data)
 {
 	const char *disp_name = vt_encoders.array[(int)data].disp_name;
+	uint64_t gpu_reg_id = vt_encoders.array[(int)data].gpu_reg_id;
+
+	char *gpu_name = NULL;
+	for (size_t i = 0; i < mtl_devices.num; i++) {
+		if (mtl_devices.array[i].id == gpu_reg_id)
+			gpu_name = (char *)mtl_devices.array[i].name;
+	}
 
 	if (strcmp("Apple H.264 (HW)", disp_name) == 0) {
-		return obs_module_text("VTH264EncHW");
+		if (gpu_name) {
+			struct dstr name = {0};
+			dstr_printf(&name, obs_module_text("VTH264EncHWGpu"),
+				    gpu_name);
+			char *name_cstr = name.array;
+			dstr_free(&name);
+			return name_cstr;
+		} else
+			return obs_module_text("VTH264EncHW");
 	} else if (strcmp("Apple H.264 (SW)", disp_name) == 0) {
 		return obs_module_text("VTH264EncSW");
 	}
@@ -939,11 +961,20 @@ void encoder_list_create()
 		VT_DICTSTR(kVTVideoEncoderList_EncoderName, name);
 		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
 		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
+
+		CFNumberRef gpu_reg_id_ref = CFDictionaryGetValue(
+			encoder_dict, kVTVideoEncoderList_GPURegistryID);
+		uint64_t gpu_reg_id = 0;
+		if (gpu_reg_id_ref)
+			CFNumberGetValue(gpu_reg_id_ref, kCFNumberLongLongType,
+					 &gpu_reg_id);
+
 		struct vt_encoder enc = {
 			.name = name,
 			.id = id,
 			.disp_name = disp_name,
 			.codec_name = codec_name,
+			.gpu_reg_id = gpu_reg_id,
 		};
 		da_push_back(vt_encoders, &enc);
 #undef VT_DICTSTR
@@ -987,9 +1018,23 @@ void register_encoders()
 	}
 }
 
+void metal_gpu_list_create()
+{
+	NSArray<id<MTLDevice>> *devices = MTLCopyAllDevices();
+	for (id<MTLDevice> device in devices.objectEnumerator) {
+		struct mtl_device dev = {
+			.name = (char *)[device.name UTF8String],
+			.id = device.registryID,
+		};
+		da_push_back(mtl_devices, &dev);
+	}
+	CFRelease(devices);
+}
+
 bool obs_module_load(void)
 {
 	encoder_list_create();
+	metal_gpu_list_create();
 	register_encoders();
 
 	VT_LOG(LOG_INFO, "Adding VideoToolbox H264 encoders");
@@ -1000,4 +1045,5 @@ bool obs_module_load(void)
 void obs_module_unload(void)
 {
 	encoder_list_destroy();
+	da_free(mtl_devices);
 }

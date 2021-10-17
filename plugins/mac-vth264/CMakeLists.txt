@@ -6,13 +6,15 @@ find_library(COREFOUNDATION CoreFoundation)
 find_library(COREVIDEO CoreVideo)
 find_library(VIDEOTOOLBOX VideoToolbox)
 find_library(COREMEDIA CoreMedia)
+find_library(METAL Metal)
 
 include_directories(${AVFOUNDATION}
 	${COCOA}
 	${COREFOUNDATION}
 	${COREVIDEO}
 	${VIDEOTOOLBOX}
-	${COREMEDIA})
+	${COREMEDIA}
+	${METAL})
 
 set(mac-vth264_SOURCES
 	encoder.m)
@@ -27,7 +29,8 @@ target_link_libraries(mac-vth264
 	${COREFOUNDATION}
 	${COREVIDEO}
 	${VIDEOTOOLBOX}
-	${COREMEDIA})
+	${COREMEDIA}
+	${METAL})
 set_target_properties(mac-vth264 PROPERTIES FOLDER "plugins")
 
 install_obs_plugin_with_data(mac-vth264 data)
