@@ -2378,6 +2378,20 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Autistici.org Live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url":  "rtmp://live.autistici.org/ingest"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 2500,
+                "max audio bitrate": 128
+            }
         }
     ]
 }
