@@ -15,7 +15,7 @@ include_directories(${AVFOUNDATION}
 	${COREMEDIA})
 
 set(mac-vth264_SOURCES
-	encoder.c)
+	encoder.m)
 
 add_library(mac-vth264 MODULE
 	${mac-vth264_SOURCES})
