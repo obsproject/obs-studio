@@ -732,6 +732,8 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 {
 	struct encoder_packet pkt;
 	bool keyframe;
+	if(!stream->cur_size)
+		return;
 
 	circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
 
@@ -773,19 +775,17 @@ static inline void purge(struct ffmpeg_muxer *stream)
 static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 				       struct encoder_packet *pkt)
 {
-	if (stream->max_size) {
-		if (!stream->packets.size || stream->keyframes <= 2)
-			return;
+	if (!stream->packets.size || stream->keyframes <= 2)
+		return;
 
+	if (stream->max_size) {
 		while ((stream->cur_size + (int64_t)pkt->size) >
 		       stream->max_size)
 			purge(stream);
 	}
 
-	if (!stream->packets.size || stream->keyframes <= 2)
-		return;
-
-	while ((pkt->dts_usec - stream->cur_time) > stream->max_time)
+	while ((pkt->dts_usec - stream->cur_time) > stream->max_time
+		&& stream->cur_size)
 		purge(stream);
 }
 
