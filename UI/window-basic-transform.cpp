@@ -73,6 +73,9 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	SetScene(scene);
 	SetItem(item);
 
+	std::string name = obs_source_get_name(obs_sceneitem_get_source(item));
+	setWindowTitle(QTStr("Basic.TransformWindow.Title").arg(name.c_str()));
+
 	obs_data_t *wrapper =
 		obs_scene_save_transform_states(main->GetCurrentScene(), false);
 	undo_data = std::string(obs_data_get_json(wrapper));
@@ -204,8 +207,11 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 	OBSScene scene = (obs_scene_t *)calldata_ptr(data, "scene");
 	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
-	if (item == window->item)
+	if (item == window->item) {
+		window->setWindowTitle(
+			QTStr("Basic.TransformWindow.NoSelectedSource"));
 		window->SetItem(FindASelectedItem(scene));
+	}
 }
 
 static const uint32_t listToAlign[] = {OBS_ALIGN_TOP | OBS_ALIGN_LEFT,
@@ -266,6 +272,9 @@ void OBSBasicTransform::RefreshControls()
 	ui->cropTop->setValue(int(crop.top));
 	ui->cropBottom->setValue(int(crop.bottom));
 	ignoreItemChange = false;
+
+	std::string name = obs_source_get_name(source);
+	setWindowTitle(QTStr("Basic.TransformWindow.Title").arg(name.c_str()));
 }
 
 void OBSBasicTransform::OnBoundsType(int index)

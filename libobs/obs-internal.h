@@ -339,7 +339,7 @@ struct obs_core_audio {
 
 	uint64_t buffered_ts;
 	struct circlebuf buffered_timestamps;
-	int buffering_wait_ticks;
+	uint64_t buffering_wait_ticks;
 	int total_buffering_ticks;
 
 	float user_volume;
@@ -651,6 +651,9 @@ struct obs_source {
 	/* used to temporarily disable sources if needed */
 	bool enabled;
 
+	/* hint to allow sources to render more quickly */
+	bool texcoords_centered;
+
 	/* timing (if video is present, is based upon video) */
 	volatile bool timing_set;
 	volatile uint64_t timing_adjust;
@@ -868,6 +871,8 @@ convert_video_format(enum video_format format)
 	}
 }
 
+extern void obs_source_set_texcoords_centered(obs_source_t *source,
+					      bool centered);
 extern void obs_source_activate(obs_source_t *source, enum view_type type);
 extern void obs_source_deactivate(obs_source_t *source, enum view_type type);
 extern void obs_source_video_tick(obs_source_t *source, float seconds);
@@ -1136,6 +1141,9 @@ struct obs_encoder {
 
 	const char *profile_encoder_encode_name;
 	char *last_error_message;
+
+	/* reconfigure encoder at next possible opportunity */
+	bool reconfigure_requested;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

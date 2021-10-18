@@ -28,8 +28,8 @@ extern struct obs_source_info async_delay_filter;
 #if NOISEREDUCTION_ENABLED
 extern struct obs_source_info noise_suppress_filter;
 extern struct obs_source_info noise_suppress_filter_v2;
-extern bool load_nvafx();
-extern void release_lib();
+extern bool load_nvafx(void);
+extern void unload_nvafx(void);
 #endif
 extern struct obs_source_info invert_polarity_filter;
 extern struct obs_source_info noise_gate_filter;
@@ -79,6 +79,6 @@ bool obs_module_load(void)
 #ifdef LIBNVAFX_ENABLED
 void obs_module_unload(void)
 {
-	release_lib();
+	unload_nvafx();
 }
 #endif

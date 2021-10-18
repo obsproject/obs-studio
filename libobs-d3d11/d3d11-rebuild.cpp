@@ -471,10 +471,10 @@ try {
 	context->ClearState();
 	context->Flush();
 
-	context.Release();
-	device.Release();
-	adapter.Release();
-	factory.Release();
+	context.Clear();
+	device.Clear();
+	adapter.Clear();
+	factory.Clear();
 
 	/* ----------------------------------------------------------------- */
 

@@ -117,8 +117,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		struct obs_frontend_source_list *sources) override
 	{
 		for (int i = 0; i < main->ui->transitions->count(); i++) {
-			OBSSource tr = main->ui->transitions->itemData(i)
-					       .value<OBSSource>();
+			obs_source_t *tr = main->ui->transitions->itemData(i)
+						   .value<OBSSource>();
 
 			if (!tr)
 				continue;
@@ -238,6 +238,16 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return bstrdup(name);
 	}
 
+	char *obs_frontend_get_current_profile_path(void) override
+	{
+		char profilePath[512];
+		int ret = GetProfilePath(profilePath, sizeof(profilePath), "");
+		if (ret <= 0)
+			return nullptr;
+
+		return bstrdup(profilePath);
+	}
+
 	void obs_frontend_set_current_profile(const char *profile) override
 	{
 		QList<QAction *> menuActions = main->ui->profileMenu->actions();
@@ -254,6 +264,24 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 				}
 			}
 		}
+	}
+
+	void obs_frontend_create_profile(const char *name) override
+	{
+		QMetaObject::invokeMethod(main, "NewProfile",
+					  Q_ARG(QString, name));
+	}
+
+	void obs_frontend_duplicate_profile(const char *name) override
+	{
+		QMetaObject::invokeMethod(main, "DuplicateProfile",
+					  Q_ARG(QString, name));
+	}
+
+	void obs_frontend_delete_profile(const char *profile) override
+	{
+		QMetaObject::invokeMethod(main, "DeleteProfile",
+					  Q_ARG(QString, profile));
 	}
 
 	void obs_frontend_streaming_start(void) override
@@ -578,6 +606,18 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void obs_frontend_reset_video(void) override { main->ResetVideo(); }
 
+	void obs_frontend_open_source_properties(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenProperties",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
+	void obs_frontend_open_source_filters(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenFilters",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {
@@ -604,7 +644,9 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void on_event(enum obs_frontend_event event) override
 	{
-		if (main->disableSaving)
+		if (main->disableSaving &&
+		    event != OBS_FRONTEND_EVENT_SCENE_COLLECTION_CLEANUP &&
+		    event != OBS_FRONTEND_EVENT_EXIT)
 			return;
 
 		for (size_t i = callbacks.size(); i > 0; i--) {

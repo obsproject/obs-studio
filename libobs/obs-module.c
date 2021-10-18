@@ -613,8 +613,8 @@ cleanup:
 		memcpy(&data, info,                                        \
 		       sizeof(data) < size_var ? sizeof(data) : size_var); \
                                                                            \
-		if (info->type_data && info->free_type_data)               \
-			info->free_type_data(info->type_data);             \
+		if (data.type_data && data.free_type_data)                 \
+			data.free_type_data(data.type_data);               \
 	} while (false)
 
 #define source_warn(format, ...) \
@@ -647,6 +647,15 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		source_warn("Source '%s' already exists!  "
 			    "Duplicate library?",
 			    info->id);
+		goto error;
+	}
+
+	if (size > sizeof(data)) {
+		source_warn("Tried to register obs_source_info with size "
+			    "%llu which is more than libobs currently "
+			    "supports (%llu)",
+			    (long long unsigned)size,
+			    (long long unsigned)sizeof(data));
 		goto error;
 	}
 
@@ -702,15 +711,6 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		CHECK_REQUIRED_VAL_(info, audio_render, obs_register_source);
 	}
 #undef CHECK_REQUIRED_VAL_
-
-	if (size > sizeof(data)) {
-		source_warn("Tried to register obs_source_info with size "
-			    "%llu which is more than libobs currently "
-			    "supports (%llu)",
-			    (long long unsigned)size,
-			    (long long unsigned)sizeof(data));
-		goto error;
-	}
 
 	/* version-related stuff */
 	data.unversioned_id = data.id;

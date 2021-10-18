@@ -22,6 +22,7 @@ struct image_source {
 	float update_time_elapsed;
 	uint64_t last_time;
 	bool active;
+	bool restart_gif;
 
 	gs_image_file3_t if3;
 };
@@ -115,6 +116,29 @@ static void image_source_hide(void *data)
 		image_source_unload(context);
 }
 
+static void restart_gif(void *data)
+{
+	struct image_source *context = data;
+
+	if (context->if3.image2.image.is_animated_gif) {
+		context->if3.image2.image.cur_frame = 0;
+		context->if3.image2.image.cur_loop = 0;
+		context->if3.image2.image.cur_time = 0;
+
+		obs_enter_graphics();
+		gs_image_file3_update_texture(&context->if3);
+		obs_leave_graphics();
+
+		context->restart_gif = false;
+	}
+}
+
+static void image_source_activate(void *data)
+{
+	struct image_source *context = data;
+	context->restart_gif = true;
+}
+
 static void *image_source_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct image_source *context = bzalloc(sizeof(struct image_source));
@@ -190,25 +214,19 @@ static void image_source_tick(void *data, float seconds)
 		}
 	}
 
-	if (obs_source_active(context->source)) {
+	if (obs_source_showing(context->source)) {
 		if (!context->active) {
 			if (context->if3.image2.image.is_animated_gif)
 				context->last_time = frame_time;
 			context->active = true;
 		}
 
+		if (context->restart_gif)
+			restart_gif(context);
+
 	} else {
 		if (context->active) {
-			if (context->if3.image2.image.is_animated_gif) {
-				context->if3.image2.image.cur_frame = 0;
-				context->if3.image2.image.cur_loop = 0;
-				context->if3.image2.image.cur_time = 0;
-
-				obs_enter_graphics();
-				gs_image_file3_update_texture(&context->if3);
-				obs_leave_graphics();
-			}
-
+			restart_gif(context);
 			context->active = false;
 		}
 
@@ -323,6 +341,7 @@ static struct obs_source_info image_source_info = {
 	.missing_files = image_source_missingfiles,
 	.get_properties = image_source_properties,
 	.icon_type = OBS_ICON_TYPE_IMAGE,
+	.activate = image_source_activate,
 };
 
 OBS_DECLARE_MODULE()

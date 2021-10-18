@@ -408,6 +408,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->overflowHide,         CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowAlwaysVisible,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->previewSafeAreas,     CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->automaticSearch,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
@@ -908,6 +909,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	QValidator *validator = new QRegularExpressionValidator(rx, this);
 	ui->baseResolution->lineEdit()->setValidator(validator);
 	ui->outputResolution->lineEdit()->setValidator(validator);
+
+	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
+		SLOT(UseStreamKeyAdvClicked()));
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -1310,6 +1314,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 		GetGlobalConfig(), "BasicWindow", "OverflowSelectionHidden");
 	ui->overflowSelectionHide->setChecked(overflowSelectionHide);
 
+	bool safeAreas = config_get_bool(GetGlobalConfig(), "BasicWindow",
+					 "ShowSafeAreas");
+	ui->previewSafeAreas->setChecked(safeAreas);
+
 	bool automaticSearch = config_get_bool(GetGlobalConfig(), "General",
 					       "AutomaticCollectionSearch");
 	ui->automaticSearch->setChecked(automaticSearch);
@@ -1351,11 +1359,15 @@ void OBSBasicSettings::LoadGeneralSettings()
 		QTStr("Basic.Settings.General.MultiviewLayout.Vertical.Right"),
 		static_cast<int>(MultiviewLayout::VERTICAL_RIGHT_8_SCENES));
 	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.18Scene.Top"),
+		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_18_SCENES));
+	ui->multiviewLayout->addItem(
 		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
 		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
 
-	ui->multiviewLayout->setCurrentIndex(config_get_int(
-		GetGlobalConfig(), "BasicWindow", "MultiviewLayout"));
+	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
+		QVariant::fromValue(config_get_int(
+			GetGlobalConfig(), "BasicWindow", "MultiviewLayout"))));
 
 	prevLangIndex = ui->language->currentIndex();
 
@@ -2618,7 +2630,9 @@ LayoutHotkey(obs_hotkey_id id, obs_hotkey_t *key, Func &&fun,
 template<typename Func, typename T>
 static QLabel *makeLabel(T &t, Func &&getName)
 {
-	return new QLabel(getName(t));
+	QLabel *label = new QLabel(getName(t));
+	label->setStyleSheet("font-weight: bold;");
+	return label;
 }
 
 template<typename Func>
@@ -3012,6 +3026,12 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"OverflowSelectionHidden",
 				ui->overflowSelectionHide->isChecked());
+	if (WidgetChanged(ui->previewSafeAreas)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"ShowSafeAreas",
+				ui->previewSafeAreas->isChecked());
+		main->UpdatePreviewSafeAreas();
+	}
 	if (WidgetChanged(ui->doubleClickSwitch))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"TransitionOnDoubleClick",

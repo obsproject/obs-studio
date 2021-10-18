@@ -825,6 +825,8 @@ void profiler_free(void)
 	}
 
 	da_free(old_root_entries);
+
+	pthread_mutex_destroy(&root_mutex);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -858,6 +860,9 @@ void profiler_name_store_free(profiler_name_store_t *store)
 		bfree(store->names.array[i]);
 
 	da_free(store->names);
+
+	pthread_mutex_destroy(&store->mutex);
+
 	bfree(store);
 }
 

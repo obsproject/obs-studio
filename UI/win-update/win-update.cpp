@@ -370,7 +370,7 @@ try {
 	string data;
 
 	bool success = GetRemoteFile(url, data, error, &responseCode, nullptr,
-				     nullptr, extraHeaders, &signature);
+				     "", nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
@@ -570,7 +570,7 @@ try {
 	 * get manifest from server            */
 
 	success = GetRemoteFile(WIN_MANIFEST_URL, text, error, &responseCode,
-				nullptr, nullptr, extraHeaders, &signature);
+				nullptr, "", nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
@@ -766,7 +766,7 @@ try {
 	 * get json from server                */
 
 	success = GetRemoteFile(WIN_WHATSNEW_URL, text, error, &responseCode,
-				nullptr, nullptr, extraHeaders, &signature);
+				nullptr, "", nullptr, extraHeaders, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)

@@ -15,6 +15,10 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
+#ifdef _MSC_VER
+#define WIN32_LEAN_AND_MEAN
+#endif
+
 #include "rtmp-stream.h"
 
 #ifndef SEC_TO_NSEC
@@ -1136,6 +1140,13 @@ static bool init_connect(struct rtmp_stream *stream)
 		obs_data_get_bool(settings, OPT_NEWSOCKETLOOP_ENABLED);
 	stream->low_latency_mode =
 		obs_data_get_bool(settings, OPT_LOWLATENCY_ENABLED);
+
+	// ugly hack for now, can be removed once new loop is reworked
+	if (stream->new_socket_loop &&
+	    !strncmp(stream->path.array, "rtmps://", 8)) {
+		warn("Disabling network optimizations, not compatible with RTMPS");
+		stream->new_socket_loop = false;
+	}
 
 	obs_data_release(settings);
 	return true;

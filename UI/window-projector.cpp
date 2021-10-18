@@ -70,58 +70,9 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 		&OBSProjector::ScreenRemoved);
 
 	if (type == ProjectorType::Multiview) {
-		obs_enter_graphics();
-
-		// All essential action should be placed inside this area
-		gs_render_start(true);
-		gs_vertex2f(actionSafePercentage, actionSafePercentage);
-		gs_vertex2f(actionSafePercentage, 1 - actionSafePercentage);
-		gs_vertex2f(1 - actionSafePercentage, 1 - actionSafePercentage);
-		gs_vertex2f(1 - actionSafePercentage, actionSafePercentage);
-		gs_vertex2f(actionSafePercentage, actionSafePercentage);
-		actionSafeMargin = gs_render_save();
-
-		// All graphics should be placed inside this area
-		gs_render_start(true);
-		gs_vertex2f(graphicsSafePercentage, graphicsSafePercentage);
-		gs_vertex2f(graphicsSafePercentage, 1 - graphicsSafePercentage);
-		gs_vertex2f(1 - graphicsSafePercentage,
-			    1 - graphicsSafePercentage);
-		gs_vertex2f(1 - graphicsSafePercentage, graphicsSafePercentage);
-		gs_vertex2f(graphicsSafePercentage, graphicsSafePercentage);
-		graphicsSafeMargin = gs_render_save();
-
-		// 4:3 safe area for widescreen
-		gs_render_start(true);
-		gs_vertex2f(fourByThreeSafePercentage, graphicsSafePercentage);
-		gs_vertex2f(1 - fourByThreeSafePercentage,
-			    graphicsSafePercentage);
-		gs_vertex2f(1 - fourByThreeSafePercentage,
-			    1 - graphicsSafePercentage);
-		gs_vertex2f(fourByThreeSafePercentage,
-			    1 - graphicsSafePercentage);
-		gs_vertex2f(fourByThreeSafePercentage, graphicsSafePercentage);
-		fourByThreeSafeMargin = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.0f, 0.5f);
-		gs_vertex2f(lineLength, 0.5f);
-		leftLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(0.5f, 0.0f);
-		gs_vertex2f(0.5f, lineLength);
-		topLine = gs_render_save();
-
-		gs_render_start(true);
-		gs_vertex2f(1.0f, 0.5f);
-		gs_vertex2f(1 - lineLength, 0.5f);
-		rightLine = gs_render_save();
-		obs_leave_graphics();
-
-		solid = obs_get_base_effect(OBS_EFFECT_SOLID);
-		color = gs_effect_get_param_by_name(solid, "color");
-
+		InitSafeAreas(&actionSafeMargin, &graphicsSafeMargin,
+			      &fourByThreeSafeMargin, &leftLine, &topLine,
+			      &rightLine);
 		UpdateMultiview();
 
 		multiviewProjectors.push_back(this);
@@ -246,6 +197,9 @@ static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 
 	int n; // Number of scenes per row
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		n = 6;
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		n = 6;
 		break;
@@ -294,31 +248,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 	OBSSource programSrc = main->GetProgramSource();
 	bool studioMode = main->IsPreviewProgramMode();
 
-	auto renderVB = [&](gs_vertbuffer_t *vb, int cx, int cy,
-			    uint32_t colorVal) {
-		if (!vb)
-			return;
-
-		matrix4 transform;
-		matrix4_identity(&transform);
-		transform.x.x = cx;
-		transform.y.y = cy;
-
-		gs_load_vertexbuffer(vb);
-
-		gs_matrix_push();
-		gs_matrix_mul(&transform);
-
-		gs_effect_set_color(window->color, colorVal);
-		while (gs_effect_loop(window->solid, "Solid"))
-			gs_draw(GS_LINESTRIP, 0, 0);
-
-		gs_matrix_pop();
-	};
-
 	auto drawBox = [&](float cx, float cy, uint32_t colorVal) {
-		gs_effect_set_color(window->color, colorVal);
-		while (gs_effect_loop(window->solid, "Solid"))
+		gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+		gs_eparam_t *color =
+			gs_effect_get_param_by_name(solid, "color");
+
+		gs_effect_set_color(color, colorVal);
+		while (gs_effect_loop(solid, "Solid"))
 			gs_draw_sprite(nullptr, 0, (uint32_t)cx, (uint32_t)cy);
 	};
 
@@ -338,6 +274,11 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 
 	auto calcBaseSource = [&](size_t i) {
 		switch (multiviewLayout) {
+		case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+			window->sourceX = (i % 6) * window->scenesCX;
+			window->sourceY =
+				window->pvwprgCY + (i / 6) * window->scenesCY;
+			break;
 		case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 			window->sourceX = (i % 6) * window->scenesCX;
 			window->sourceY =
@@ -423,7 +364,7 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				window->labelX += window->pvwprgCX;
 			}
 			break;
-		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
+		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES and 18_SCENES
 			window->sourceX = window->thickness;
 			window->sourceY = window->thickness;
 			window->labelX = window->offset;
@@ -541,17 +482,17 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 		obs_source_video_render(previewSrc);
 	else
 		obs_render_main_texture();
+
 	if (drawSafeArea) {
-		renderVB(window->actionSafeMargin, targetCX, targetCY,
-			 outerColor);
-		renderVB(window->graphicsSafeMargin, targetCX, targetCY,
-			 outerColor);
-		renderVB(window->fourByThreeSafeMargin, targetCX, targetCY,
-			 outerColor);
-		renderVB(window->leftLine, targetCX, targetCY, outerColor);
-		renderVB(window->topLine, targetCX, targetCY, outerColor);
-		renderVB(window->rightLine, targetCX, targetCY, outerColor);
+		RenderSafeAreas(window->actionSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->graphicsSafeMargin, targetCX, targetCY);
+		RenderSafeAreas(window->fourByThreeSafeMargin, targetCX,
+				targetCY);
+		RenderSafeAreas(window->leftLine, targetCX, targetCY);
+		RenderSafeAreas(window->topLine, targetCX, targetCY);
+		RenderSafeAreas(window->rightLine, targetCX, targetCY);
 	}
+
 	endRegion();
 	gs_matrix_pop();
 
@@ -703,6 +644,24 @@ static int getSourceByPosition(int x, int y, float ratio)
 	int maxY = cy;
 
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+		}
+		minY = cy / 2;
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 6);
+		pos += ((y - minY) / ((maxY - minY) / 3)) * 6;
+
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
@@ -929,6 +888,12 @@ void OBSProjector::UpdateMultiview()
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
 
 	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		pvwprgCX = fw / 2;
+		pvwprgCY = fh / 2;
+
+		maxSrcs = 18;
+		break;
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		pvwprgCX = fw / 3;
 		pvwprgCY = fh / 3;
@@ -947,8 +912,16 @@ void OBSProjector::UpdateMultiview()
 	ppiScaleX = (pvwprgCX - thicknessx2) / fw;
 	ppiScaleY = (pvwprgCY - thicknessx2) / fh;
 
-	scenesCX = pvwprgCX / 2;
-	scenesCY = pvwprgCY / 2;
+	switch (multiviewLayout) {
+	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
+		scenesCX = pvwprgCX / 3;
+		scenesCY = pvwprgCY / 3;
+		break;
+	default:
+		scenesCX = pvwprgCX / 2;
+		scenesCY = pvwprgCY / 2;
+	}
+
 	siCX = scenesCX - thicknessx2;
 	siCY = scenesCY - thicknessx2;
 	siScaleX = (scenesCX - thicknessx2) / fw;

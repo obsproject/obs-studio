@@ -401,7 +401,6 @@ static int obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 	struct video_output_info vi;
-	pthread_mutexattr_t attr;
 	int errorcode;
 
 	make_video_info(&vi, ovi);
@@ -435,10 +434,6 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	gs_leave_context();
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return OBS_VIDEO_FAIL;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
@@ -609,15 +604,9 @@ static bool obs_init_audio(struct audio_output_info *ai)
 	struct obs_core_audio *audio = &obs->audio;
 	int errorcode;
 
-	pthread_mutexattr_t attr;
-
 	pthread_mutex_init_value(&audio->monitoring_mutex);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return false;
-	if (pthread_mutex_init(&audio->monitoring_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&audio->monitoring_mutex) != 0)
 		return false;
 
 	audio->user_volume = 1.0f;
@@ -634,6 +623,16 @@ static bool obs_init_audio(struct audio_output_info *ai)
 		blog(LOG_ERROR, "Could not open audio output");
 
 	return false;
+}
+
+static void stop_audio(void)
+{
+	struct obs_core_audio *audio = &obs->audio;
+
+	if (audio->audio) {
+		audio_output_close(audio->audio);
+		audio->audio = NULL;
+	}
 }
 
 static void obs_free_audio(void)
@@ -657,30 +656,25 @@ static void obs_free_audio(void)
 static bool obs_init_data(void)
 {
 	struct obs_core_data *data = &obs->data;
-	pthread_mutexattr_t attr;
 
 	assert(data != NULL);
 
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 	pthread_mutex_init_value(&obs->data.draw_callbacks_mutex);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
+	if (pthread_mutex_init_recursive(&data->sources_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->sources_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&data->audio_sources_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->audio_sources_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&data->displays_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->displays_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&data->outputs_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->outputs_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&data->encoders_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->encoders_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&data->services_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init(&data->services_mutex, &attr) != 0)
-		goto fail;
-	if (pthread_mutex_init(&obs->data.draw_callbacks_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&obs->data.draw_callbacks_mutex) != 0)
 		goto fail;
 	if (!obs_view_init(&data->main_view))
 		goto fail;
@@ -689,7 +683,6 @@ static bool obs_init_data(void)
 	data->valid = true;
 
 fail:
-	pthread_mutexattr_destroy(&attr);
 	return data->valid;
 }
 
@@ -793,7 +786,6 @@ static pthread_once_t obs_pthread_once_init_token = PTHREAD_ONCE_INIT;
 static inline bool obs_init_hotkeys(void)
 {
 	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
-	pthread_mutexattr_t attr;
 	bool success = false;
 
 	assert(hotkeys != NULL);
@@ -811,11 +803,7 @@ static inline bool obs_init_hotkeys(void)
 	if (!obs_hotkeys_platform_init(hotkeys))
 		return false;
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&hotkeys->mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&hotkeys->mutex) != 0)
 		goto fail;
 
 	if (os_event_init(&hotkeys->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
@@ -829,7 +817,6 @@ static inline bool obs_init_hotkeys(void)
 	success = true;
 
 fail:
-	pthread_mutexattr_destroy(&attr);
 	return success;
 }
 
@@ -1064,6 +1051,7 @@ void obs_shutdown(void)
 	da_free(obs->transition_types);
 
 	stop_video();
+	stop_audio();
 	stop_hotkeys();
 
 	module = obs->first_module;
@@ -1074,8 +1062,8 @@ void obs_shutdown(void)
 	}
 	obs->first_module = NULL;
 
-	obs_free_audio();
 	obs_free_data();
+	obs_free_audio();
 	obs_free_video();
 	obs_free_graphics();
 	proc_handler_destroy(obs->procs);
@@ -1601,6 +1589,13 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	}
 
 	pthread_mutex_unlock(mutex);
+}
+
+void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
+			  void *param)
+{
+	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
+		 param);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)

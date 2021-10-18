@@ -20,6 +20,7 @@
       <widget class="QLabel" name="warningIcon">
        <property name="minimumSize">
         <size>
+         <width>0</width>
          <height>20</height>
         </size>
        </property>
@@ -45,10 +46,10 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::NoSelection</enum>
      </property>
-     <attribute name="horizontalHeaderDefaultSectionSize">
+     <attribute name="horizontalHeaderMinimumSectionSize">
       <number>23</number>
      </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
+     <attribute name="horizontalHeaderDefaultSectionSize">
       <number>23</number>
      </attribute>
      <attribute name="verticalHeaderVisible">
@@ -108,8 +109,8 @@
          </item>
         </layout>
        </item>
-       </layout>
-      </item>
+      </layout>
+     </item>
     </layout>
    </item>
   </layout>

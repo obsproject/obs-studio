@@ -735,6 +735,9 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 	if(!stream->cur_size)
 		return;
 
+	if (!stream->packets.size)
+		return false;
+
 	circlebuf_pop_front(&stream->packets, &pkt, sizeof(pkt));
 
 	keyframe = pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe;
@@ -762,6 +765,8 @@ static inline void purge(struct ffmpeg_muxer *stream)
 		struct encoder_packet pkt;
 
 		for (;;) {
+			if (!stream->packets.size)
+				return;
 			circlebuf_peek_front(&stream->packets, &pkt,
 					     sizeof(pkt));
 			if (pkt.type == OBS_ENCODER_VIDEO && pkt.keyframe)

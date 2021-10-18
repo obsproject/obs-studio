@@ -269,6 +269,11 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		obs_data_set_bool(wrapper, "visible", visible);
 
 		auto redo = [scene_name, main](const std::string &data) {
+			obs_source_t *scene_source =
+				obs_get_source_by_name(scene_name.c_str());
+			main->SetCurrentScene(scene_source, true);
+			obs_source_release(scene_source);
+
 			obs_data_t *dat =
 				obs_data_create_from_json(data.c_str());
 			OBSSource source;
@@ -279,11 +284,6 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 				main->GetCurrentScene(), source);
 			obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(
 							   dat, "item_id"));
-
-			obs_source_t *scene_source =
-				obs_get_source_by_name(scene_name.c_str());
-			main->SetCurrentScene(scene_source, true);
-			obs_source_release(scene_source);
 
 			main->RefreshSources(main->GetCurrentScene());
 			obs_data_release(dat);

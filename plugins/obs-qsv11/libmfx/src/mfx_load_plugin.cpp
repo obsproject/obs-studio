@@ -1,32 +1,22 @@
-/* ****************************************************************************** *\
-
-Copyright (C) 2013-2017 Intel Corporation.  All rights reserved.
-
-Redistribution and use in source and binary forms, with or without
-modification, are permitted provided that the following conditions are met:
-- Redistributions of source code must retain the above copyright notice,
-this list of conditions and the following disclaimer.
-- Redistributions in binary form must reproduce the above copyright notice,
-this list of conditions and the following disclaimer in the documentation
-and/or other materials provided with the distribution.
-- Neither the name of Intel Corporation nor the names of its contributors
-may be used to endorse or promote products derived from this software
-without specific prior written permission.
-
-THIS SOFTWARE IS PROVIDED BY INTEL CORPORATION "AS IS" AND ANY EXPRESS OR
-IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES
-OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED.
-IN NO EVENT SHALL INTEL CORPORATION BE LIABLE FOR ANY DIRECT, INDIRECT,
-INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT
-NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
-DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
-THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
-(INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF
-THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-File Name: mfx_load_plugin.h
-
-\* ****************************************************************************** */
+// Copyright (c) 2013-2019 Intel Corporation
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
 
 #include "mfx_load_plugin.h"
 #include "mfx_load_dll.h"
@@ -48,7 +38,7 @@ MFX::PluginModule::PluginModule(const PluginModule & that)
     : mHmodule(mfx_dll_load(that.mPath))
     , mCreatePluginPtr(that.mCreatePluginPtr)
 {
-    msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
+    wcscpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
 }
 
 MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & that)
@@ -58,20 +48,20 @@ MFX::PluginModule & MFX::PluginModule::operator = (const MFX::PluginModule & tha
         Tidy();
         mHmodule = mfx_dll_load(that.mPath);
         mCreatePluginPtr = that.mCreatePluginPtr;
-        msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
+        wcscpy_s(mPath, sizeof(mPath) / sizeof(*mPath), that.mPath);
     }
     return *this;
 }
 
-MFX::PluginModule::PluginModule(const msdk_disp_char * path)
+MFX::PluginModule::PluginModule(const wchar_t * path)
     : mCreatePluginPtr()
 {
     mHmodule = mfx_dll_load(path);
     if (NULL == mHmodule) {
-        TRACE_PLUGIN_ERROR("Cannot load module: %S\n", MSDK2WIDE(path));
+        TRACE_PLUGIN_ERROR("Cannot load module: %S\n", path);
         return ;
     }
-    TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", MSDK2WIDE(path));
+    TRACE_PLUGIN_INFO("Plugin loaded at: %S\n", path);
 
     mCreatePluginPtr = (CreatePluginPtr_t)mfx_dll_get_addr(mHmodule, CREATE_PLUGIN_FNC);
     if (NULL == mCreatePluginPtr) {
@@ -79,7 +69,7 @@ MFX::PluginModule::PluginModule(const msdk_disp_char * path)
         return ;
     }
 
-    msdk_disp_char_cpy_s(mPath, sizeof(mPath) / sizeof(*mPath), path);
+    wcscpy_s(mPath, sizeof(mPath) / sizeof(*mPath), path);
 }
 
 bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg)
@@ -90,9 +80,9 @@ bool MFX::PluginModule::Create( mfxPluginUID uid, mfxPlugin& plg)
         mfxStatus mfxResult = mCreatePluginPtr(uid, &plg);
         result = (MFX_ERR_NONE == mfxResult);
         if (!result) {
-            TRACE_PLUGIN_ERROR("\"%S::%s\" returned %d\n", MSDK2WIDE(mPath), CREATE_PLUGIN_FNC, mfxResult);
+            TRACE_PLUGIN_ERROR("\"%S::%s\" returned %d\n", mPath, CREATE_PLUGIN_FNC, mfxResult);
         } else {
-            TRACE_PLUGIN_INFO("\"%S::%s\" SUCCEED\n", MSDK2WIDE(mPath), CREATE_PLUGIN_FNC);
+            TRACE_PLUGIN_INFO("\"%S::%s\" SUCCEED\n", mPath, CREATE_PLUGIN_FNC);
         }
     }
     return result;
@@ -110,7 +100,7 @@ MFX::PluginModule::~PluginModule(void)
     Tidy();
 }
 
-#if !defined(MEDIASDK_UWP_PROCTABLE)
+#if !defined(MEDIASDK_UWP_DISPATCHER)
 
 bool MFX::MFXPluginFactory::RunVerification( const mfxPlugin & plg, const PluginDescriptionRecord &dsc, mfxPluginParam &pluginParams)
 {
@@ -413,7 +403,8 @@ MFX::MFXPluginFactory::~MFXPluginFactory()
     Close();
 }
 
-MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session )
+MFX::MFXPluginFactory::MFXPluginFactory( mfxSession session ) :
+    mPlugins()
 {
     mSession = session;
     nPlugins = 0;
@@ -460,4 +451,4 @@ void MFX::MFXPluginFactory::DestroyPlugin( FactoryRecord & record)
     }
 }
 
-#endif //!defined(MEDIASDK_UWP_PROCTABLE)
+#endif //!defined(MEDIASDK_UWP_DISPATCHER)

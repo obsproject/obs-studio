@@ -60,6 +60,10 @@ Structures/Enumerations
 
      Triggered when the current transition has changed by the user.
 
+   - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
+
+     Triggered when the transition duration has been changed by the user.
+
    - **OBS_FRONTEND_EVENT_TRANSITION_STOPPED**
 
      Triggered when a transition has completed.
@@ -314,9 +318,34 @@ Functions
 
 ---------------------------------------
 
+.. function:: char *obs_frontend_get_current_profile_path(void)
+
+   :return: A new pointer to the current profile's path on the filesystem. Free
+            with :c:func:`bfree()`.
+
+---------------------------------------
+
 .. function:: void obs_frontend_set_current_profile(const char *profile)
 
    :param profile: Name of the profile to activate.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_create_profile(const char *name)
+
+   :param name: Name of the new profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: bool obs_frontend_duplicate_profile(const char *name)
+
+   :param name: Name of the duplicate profile to create (must be unique).
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_profile(const char *profile)
+
+   :param profile: Name of the profile to delete.
 
 ---------------------------------------
 
@@ -623,3 +652,19 @@ Functions
 
    :return: The value of the position of the T-bar to, with a value in 0-1023.
    :rtype: int
+
+---------------------------------------
+
+.. function:: void *obs_frontend_open_properties(obs_source_t *source)
+
+   Opens the properties window of the specified source.
+
+   :param source: The source to open the properties window of.
+   
+---------------------------------------
+
+.. function:: void *obs_frontend_open_filters(obs_source_t *source)
+
+   Opens the filters window of the specified source.
+
+   :param source: The source to open the filters window of.
