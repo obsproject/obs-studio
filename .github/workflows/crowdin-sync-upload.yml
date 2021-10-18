@@ -1,0 +1,26 @@
+name: "Crowdin Sync: Upload English strings"
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - "**/en-US.ini"
+jobs:
+  upload:
+    name: Upload English strings
+    runs-on: ubuntu-latest
+    env:
+      CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+      GITHUB_EVENT_BEFORE: ${{ github.event.before }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 2
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - name: Download Script
+        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.0/dist/upload.mjs
+      - name: Upload English strings to Crowdin
+        run: node ./other/upload.mjs
