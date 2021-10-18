@@ -733,7 +733,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 	struct encoder_packet pkt;
 	bool keyframe;
 	if(!stream->cur_size)
-		return;
+		return false;
 
 	if (!stream->packets.size)
 		return false;
