@@ -1,0 +1,21 @@
+name: "Crowdin Sync: Import latest translations"
+on: workflow_dispatch
+jobs:
+  download:
+    name: Import latest translations
+    runs-on: ubuntu-latest
+    env:
+      CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
+    steps:
+      - uses: actions/checkout@v2
+        with:
+          submodules: recursive
+          fetch-depth: 0
+          token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 16
+      - name: Download Script
+        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.0/dist/download.mjs
+      - name: Import latest translations from Crowdin
+        run: node ./other/download.mjs
