@@ -81,7 +81,6 @@ static const char *my_dhm_G = "4";
 #include <nettle/md5.h>
 #else	/* USE_OPENSSL */
 #include <openssl/ssl.h>
-#include <openssl/rc4.h>
 #include <openssl/md5.h>
 #include <openssl/bio.h>
 #include <openssl/buffer.h>
@@ -1544,13 +1543,6 @@ ReadN(RTMP *r, char *buffer, int n)
         if (r->Link.protocol & RTMP_FEATURE_HTTP)
             r->m_resplen -= nBytes;
 
-#if defined(CRYPTO) && (!defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3)
-        if (r->Link.rc4keyIn)
-        {
-            RC4_encrypt(r->Link.rc4keyIn, nBytes, ptr);
-        }
-#endif
-
         n -= nBytes;
         ptr += nBytes;
     }
@@ -1562,22 +1554,6 @@ static int
 WriteN(RTMP *r, const char *buffer, int n)
 {
     const char *ptr = buffer;
-#ifdef CRYPTO
-    char *encrypted = 0;
-    char buf[RTMP_BUFFER_CACHE_SIZE];
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    if (r->Link.rc4keyOut)
-    {
-        if (n > (int)sizeof(buf))
-            encrypted = (char *)malloc(n);
-        else
-            encrypted = (char *)buf;
-        ptr = encrypted;
-        RC4_encrypt2(r->Link.rc4keyOut, n, buffer, ptr);
-    }
-#endif
-#endif
 
     while (n > 0)
     {
@@ -1613,11 +1589,6 @@ WriteN(RTMP *r, const char *buffer, int n)
         n -= nBytes;
         ptr += nBytes;
     }
-
-#ifdef CRYPTO
-    if (encrypted && encrypted != buf)
-        free(encrypted);
-#endif
 
     return n == 0;
 }
@@ -4414,22 +4385,6 @@ RTMP_Close(RTMP *r)
         r->Link.app.av_val = NULL;
         free(r->Link.tcUrl.av_val);
         r->Link.tcUrl.av_val = NULL;
-    }
-#elif defined(CRYPTO) && (!defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3)
-    if (r->Link.dh)
-    {
-        MDH_free(r->Link.dh);
-        r->Link.dh = NULL;
-    }
-    if (r->Link.rc4keyIn)
-    {
-        RC4_free(r->Link.rc4keyIn);
-        r->Link.rc4keyIn = NULL;
-    }
-    if (r->Link.rc4keyOut)
-    {
-        RC4_free(r->Link.rc4keyOut);
-        r->Link.rc4keyOut = NULL;
     }
 #else
     for (int idx = 0; idx < r->Link.nStreams; idx++)

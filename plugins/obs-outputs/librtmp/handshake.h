@@ -26,9 +26,6 @@
 
 #if defined(USE_MBEDTLS)
 #include <mbedtls/md.h>
-#if MBEDTLS_VERSION_MAJOR < 3
-#include <mbedtls/arc4.h>
-#endif
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
 #endif
@@ -40,18 +37,8 @@ typedef mbedtls_md_context_t *HMAC_CTX;
 #define HMAC_finish(ctx, dig)		mbedtls_md_hmac_finish(ctx, dig)
 #define HMAC_close(ctx)			mbedtls_md_free(ctx); free(ctx); ctx = NULL
 
-#if MBEDTLS_VERSION_MAJOR < 3
-typedef mbedtls_arc4_context*	RC4_handle;
-#define RC4_alloc(h)	*h = malloc(sizeof(mbedtls_arc4_context)); mbedtls_arc4_init(*h)
-#define RC4_setkey(h,l,k)	mbedtls_arc4_setup(h,k,l)
-#define RC4_encrypt(h,l,d)	mbedtls_arc4_crypt(h,l,(unsigned char *)d,(unsigned char *)d)
-#define RC4_encrypt2(h,l,s,d)	mbedtls_arc4_crypt(h,l,(unsigned char *)s,(unsigned char *)d)
-#define RC4_free(h)	mbedtls_arc4_free(h); free(h); h = NULL
-#endif
-
 #elif defined(USE_POLARSSL)
 #include <polarssl/sha2.h>
-#include <polarssl/arc4.h>
 #ifndef SHA256_DIGEST_LENGTH
 #define SHA256_DIGEST_LENGTH	32
 #endif
@@ -59,13 +46,6 @@ typedef mbedtls_arc4_context*	RC4_handle;
 #define HMAC_setup(ctx, key, len)	sha2_hmac_starts(&ctx, (unsigned char *)key, len, 0)
 #define HMAC_crunch(ctx, buf, len)	sha2_hmac_update(&ctx, buf, len)
 #define HMAC_finish(ctx, dig)		sha2_hmac_finish(&ctx, dig)
-
-typedef arc4_context *	RC4_handle;
-#define RC4_alloc(h)	*h = malloc(sizeof(arc4_context))
-#define RC4_setkey(h,l,k)	arc4_setup(h,k,l)
-#define RC4_encrypt(h,l,d)	arc4_crypt(h,l,(unsigned char *)d,(unsigned char *)d)
-#define RC4_encrypt2(h,l,s,d)	arc4_crypt(h,l,(unsigned char *)s,(unsigned char *)d)
-#define RC4_free(h)	free(h)
 
 #elif defined(USE_GNUTLS)
 #include <nettle/hmac.h>
@@ -80,37 +60,18 @@ typedef arc4_context *	RC4_handle;
 #define HMAC_finish(ctx, dig)		hmac_sha256_digest(&ctx, SHA256_DIGEST_LENGTH, dig)
 #define HMAC_close(ctx)
 
-typedef struct arcfour_ctx*	RC4_handle;
-#define RC4_alloc(h)	*h = malloc(sizeof(struct arcfour_ctx))
-#define RC4_setkey(h,l,k)	arcfour_set_key(h, l, k)
-#define RC4_encrypt(h,l,d)	arcfour_crypt(h,l,(uint8_t *)d,(uint8_t *)d)
-#define RC4_encrypt2(h,l,s,d)	arcfour_crypt(h,l,(uint8_t *)d,(uint8_t *)s)
-#define RC4_free(h)	free(h)
-
 #else	/* USE_OPENSSL */
 #include <openssl/sha.h>
 #include <openssl/hmac.h>
-#include <openssl/rc4.h>
 #if OPENSSL_VERSION_NUMBER < 0x0090800 || !defined(SHA256_DIGEST_LENGTH)
 #error Your OpenSSL is too old, need 0.9.8 or newer with SHA256
 #endif
 #define HMAC_setup(ctx, key, len)	HMAC_CTX_init(&ctx); HMAC_Init_ex(&ctx, key, len, EVP_sha256(), 0)
 #define HMAC_crunch(ctx, buf, len)	HMAC_Update(&ctx, buf, len)
 #define HMAC_finish(ctx, dig, len)	HMAC_Final(&ctx, dig, &len); HMAC_CTX_cleanup(&ctx)
-
-typedef RC4_KEY *	RC4_handle;
-#define RC4_alloc(h)	*h = malloc(sizeof(RC4_KEY))
-#define RC4_setkey(h,l,k)	RC4_set_key(h,l,k)
-#define RC4_encrypt(h,l,d)	RC4(h,l,(uint8_t *)d,(uint8_t *)d)
-#define RC4_encrypt2(h,l,s,d)	RC4(h,l,(uint8_t *)s,(uint8_t *)d)
-#define RC4_free(h)	free(h)
 #endif
 
 #define FP10
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-#include "dh.h"
-#endif
 
 static const uint8_t GenuineFMSKey[] =
 {
@@ -139,83 +100,7 @@ static const uint8_t GenuineFPKey[] =
     0x31, 0xAE
 };				/* 62 */
 
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-static void InitRC4Encryption
-(uint8_t * secretKey,
- uint8_t * pubKeyIn,
- uint8_t * pubKeyOut, RC4_handle *rc4keyIn, RC4_handle *rc4keyOut)
-{
-    uint8_t digest[SHA256_DIGEST_LENGTH];
-#if !(defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS))
-    unsigned int digestLen = 0;
-#endif
-    HMAC_CTX ctx;
-
-    RC4_alloc(rc4keyIn);
-    RC4_alloc(rc4keyOut);
-
-    HMAC_setup(ctx, secretKey, 128);
-    HMAC_crunch(ctx, pubKeyIn, 128);
-#if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
-    HMAC_finish(ctx, digest);
-#else
-    HMAC_finish(ctx, digest, digestLen);
-#endif
-
-    RTMP_Log(RTMP_LOGDEBUG, "RC4 Out Key: ");
-    RTMP_LogHex(RTMP_LOGDEBUG, digest, 16);
-
-    RC4_setkey(*rc4keyOut, 16, digest);
-
-    HMAC_setup(ctx, secretKey, 128);
-    HMAC_crunch(ctx, pubKeyOut, 128);
-#if defined(USE_MBEDTLS) || defined(USE_POLARSSL) || defined(USE_GNUTLS)
-    HMAC_finish(ctx, digest);
-#else
-    HMAC_finish(ctx, digest, digestLen);
-#endif
-
-    RTMP_Log(RTMP_LOGDEBUG, "RC4 In Key: ");
-    RTMP_LogHex(RTMP_LOGDEBUG, digest, 16);
-
-    RC4_setkey(*rc4keyIn, 16, digest);
-}
-#endif
-
 typedef unsigned int (getoff)(uint8_t *buf, unsigned int len);
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-static unsigned int
-GetDHOffset2(uint8_t *handshake, unsigned int len)
-{
-    (void) len;
-
-    unsigned int offset = 0;
-    uint8_t *ptr = handshake + 768;
-    unsigned int res;
-
-    assert(RTMP_SIG_SIZE <= len);
-
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-
-    res = (offset % 632) + 8;
-
-    if (res + 128 > 767)
-    {
-        RTMP_Log(RTMP_LOGERROR,
-                 "%s: Couldn't calculate correct DH offset (got %d), exiting!",
-                 __FUNCTION__, res);
-        exit(1);
-    }
-    return res;
-}
-#endif
 
 static unsigned int
 GetDigestOffset2(uint8_t *handshake, unsigned int len)
@@ -247,39 +132,6 @@ GetDigestOffset2(uint8_t *handshake, unsigned int len)
     (void)len;
     return res;
 }
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-static unsigned int
-GetDHOffset1(uint8_t *handshake, unsigned int len)
-{
-    (void) len;
-
-    unsigned int offset = 0;
-    uint8_t *ptr = handshake + 1532;
-    unsigned int res;
-
-    assert(RTMP_SIG_SIZE <= len);
-
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-    ptr++;
-    offset += (*ptr);
-
-    res = (offset % 632) + 772;
-
-    if (res + 128 > 1531)
-    {
-        RTMP_Log(RTMP_LOGERROR, "%s: Couldn't calculate DH offset (got %d), exiting!",
-                 __FUNCTION__, res);
-        exit(1);
-    }
-
-    return res;
-}
-#endif
 
 static unsigned int
 GetDigestOffset1(uint8_t *handshake, unsigned int len)
@@ -314,9 +166,6 @@ GetDigestOffset1(uint8_t *handshake, unsigned int len)
 }
 
 static getoff *digoff[] = {GetDigestOffset1, GetDigestOffset2};
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-static getoff *dhoff[] = {GetDHOffset1, GetDHOffset2};
-#endif
 
 static void
 HMACsha256(const uint8_t *message, size_t messageLen, const uint8_t *key,
@@ -819,16 +668,8 @@ static int
 HandShake(RTMP * r, int FP9HandShake)
 {
     int i, offalg = 0;
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    int dhposClient = 0;
-#endif
     int digestPosClient = 0;
     int encrypted = r->Link.protocol & RTMP_FEATURE_ENC;
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    RC4_handle keyIn = 0;
-    RC4_handle keyOut = 0;
-#endif
 
 #ifndef _DEBUG
     int32_t *ip;
@@ -838,71 +679,32 @@ HandShake(RTMP * r, int FP9HandShake)
     uint8_t clientbuf[RTMP_SIG_SIZE + 4], *clientsig=clientbuf+4;
     uint8_t serversig[RTMP_SIG_SIZE], client2[RTMP_SIG_SIZE], *reply;
     uint8_t type;
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    getoff *getdh = NULL;
-#endif
     getoff *getdig = NULL;
 
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    if (encrypted || r->Link.SWFSize)
-        FP9HandShake = TRUE;
-    else
-        FP9HandShake = FALSE;
-
-    r->Link.rc4keyIn = r->Link.rc4keyOut = 0;
-#else
     if (encrypted)
     {
-        RTMP_Log(RTMP_LOGWARNING, "%s: encrypted RTMP is no longer supported with mbedtls 3 and later", __FUNCTION__);
+        RTMP_Log(RTMP_LOGERROR, "%s: encrypted RTMP is not supported", __FUNCTION__);
         return FALSE;
     }
     else if (r->Link.SWFSize)
         FP9HandShake = TRUE;
     else
         FP9HandShake = FALSE;
-#endif
 
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-    if (encrypted)
-    {
-        clientsig[-1] = 0x06;	/* 0x08 is RTMPE as well */
-        offalg = 1;
-    }
-    else
-        clientsig[-1] = 0x03;
-#else
     clientsig[-1] = 0x03;
-#endif
 
     uptime = htonl(RTMP_GetTime());
     memcpy(clientsig, &uptime, 4);
 
     if (FP9HandShake)
     {
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-        /* set version to at least 9.0.115.0 */
-        if (encrypted)
-        {
-            clientsig[4] = 128;
-            clientsig[6] = 3;
-        }
-        else
-        {
-            clientsig[4] = 10;
-            clientsig[6] = 45;
-        }
-#else
         clientsig[4] = 10;
         clientsig[6] = 45;
-#endif
         clientsig[5] = 0;
         clientsig[7] = 2;
 
         RTMP_Log(RTMP_LOGDEBUG, "%s: Client type: %02X", __FUNCTION__, clientsig[-1]);
         getdig = digoff[offalg];
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-        getdh  = dhoff[offalg];
-#endif
     }
     else
     {
@@ -921,36 +723,6 @@ HandShake(RTMP * r, int FP9HandShake)
     /* set handshake digest */
     if (FP9HandShake)
     {
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-        if (encrypted)
-        {
-            /* generate Diffie-Hellmann parameters */
-            r->Link.dh = DHInit(1024);
-            if (!r->Link.dh)
-            {
-                RTMP_Log(RTMP_LOGERROR, "%s: Couldn't initialize Diffie-Hellmann!",
-                         __FUNCTION__);
-                return FALSE;
-            }
-
-            dhposClient = getdh(clientsig, RTMP_SIG_SIZE);
-            RTMP_Log(RTMP_LOGDEBUG, "%s: DH pubkey position: %d", __FUNCTION__, dhposClient);
-
-            if (!DHGenerateKey(r))
-            {
-                RTMP_Log(RTMP_LOGERROR, "%s: Couldn't generate Diffie-Hellmann public key!",
-                         __FUNCTION__);
-                return FALSE;
-            }
-
-            if (!DHGetPublicKey(r->Link.dh, &clientsig[dhposClient], 128))
-            {
-                RTMP_Log(RTMP_LOGERROR, "%s: Couldn't write public key!", __FUNCTION__);
-                return FALSE;
-            }
-        }
-#endif
-
         digestPosClient = getdig(clientsig, RTMP_SIG_SIZE);	/* reuse this value in verification */
         RTMP_Log(RTMP_LOGDEBUG, "%s: Client digest offset: %d", __FUNCTION__,
                  digestPosClient);
@@ -1012,9 +784,6 @@ HandShake(RTMP * r, int FP9HandShake)
             RTMP_Log(RTMP_LOGWARNING, "Trying different position for server digest!");
             offalg ^= 1;
             getdig = digoff[offalg];
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-            getdh  = dhoff[offalg];
-#endif
             digestPosServer = getdig(serversig, RTMP_SIG_SIZE);
 
             if (!VerifyDigest(digestPosServer, serversig, GenuineFMSKey, 36))
@@ -1038,36 +807,6 @@ HandShake(RTMP * r, int FP9HandShake)
                        SHA256_DIGEST_LENGTH,
                        (uint8_t *)&r->Link.SWFVerificationResponse[10]);
         }
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-        /* do Diffie-Hellmann Key exchange for encrypted RTMP */
-        if (encrypted)
-        {
-            /* compute secret key */
-            uint8_t secretKey[128] = { 0 };
-            int len, dhposServer;
-
-            dhposServer = getdh(serversig, RTMP_SIG_SIZE);
-            RTMP_Log(RTMP_LOGDEBUG, "%s: Server DH public key offset: %d", __FUNCTION__,
-                     dhposServer);
-            len = DHComputeSharedSecretKey(r->Link.dh, &serversig[dhposServer],
-                                           128, secretKey);
-            if (len < 0)
-            {
-                RTMP_Log(RTMP_LOGDEBUG, "%s: Wrong secret key position!", __FUNCTION__);
-                return FALSE;
-            }
-
-            RTMP_Log(RTMP_LOGDEBUG, "%s: Secret key: ", __FUNCTION__);
-            RTMP_LogHex(RTMP_LOGDEBUG, secretKey, 128);
-
-            InitRC4Encryption(secretKey,
-                              (uint8_t *) & serversig[dhposServer],
-                              (uint8_t *) & clientsig[dhposClient],
-                              &keyIn, &keyOut);
-        }
-#endif
-
 
         reply = client2;
 #ifdef _DEBUG
@@ -1195,28 +934,6 @@ HandShake(RTMP * r, int FP9HandShake)
         {
             RTMP_Log(RTMP_LOGDEBUG, "%s: Genuine Adobe Flash Media Server", __FUNCTION__);
         }
-
-#if !defined(USE_MBEDTLS) || MBEDTLS_VERSION_MAJOR < 3
-        if (encrypted)
-        {
-            char buff[RTMP_SIG_SIZE];
-            /* set keys for encryption from now on */
-            r->Link.rc4keyIn = keyIn;
-            r->Link.rc4keyOut = keyOut;
-
-
-            /* update the keystreams */
-            if (r->Link.rc4keyIn)
-            {
-                RC4_encrypt(r->Link.rc4keyIn, RTMP_SIG_SIZE, (uint8_t *) buff);
-            }
-
-            if (r->Link.rc4keyOut)
-            {
-                RC4_encrypt(r->Link.rc4keyOut, RTMP_SIG_SIZE, (uint8_t *) buff);
-            }
-        }
-#endif
     }
     else
     {
