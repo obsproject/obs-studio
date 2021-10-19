@@ -72,8 +72,6 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
               librtmp/bytes.h
               librtmp/cencode.c
               librtmp/cencode.h
-              librtmp/dh.h
-              librtmp/dhgroups.h
               librtmp/handshake.h
               librtmp/hashswf.c
               librtmp/http.h
