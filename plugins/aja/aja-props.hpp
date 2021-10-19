@@ -74,7 +74,7 @@ public:
 	uint32_t audioSampleSize;
 	uint32_t audioSampleRate;
 	bool autoDetect;
-	bool dwns; // deactivate while not showing
+	bool deactivateWhileNotShowing;
 };
 
 class OutputProps {

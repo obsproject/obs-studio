@@ -403,7 +403,7 @@ bool CardEntry::AcquireOutputSelection(IOSelection io, NTV2DeviceID id,
 			     NTV2ChannelToString(hdmiMonChannel).c_str());
 		}
 	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		 io == IOSelection::SDI5) {
+		   io == IOSelection::SDI5) {
 		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (AcquireChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {
@@ -463,7 +463,7 @@ bool CardEntry::ReleaseOutputSelection(IOSelection io, NTV2DeviceID id,
 			releasedCount++;
 		}
 	} else if (aja::CardCanDoSDIMonitorOutput(id) &&
-		 io == IOSelection::SDI5) {
+		   io == IOSelection::SDI5) {
 		// SDI Monitor on io4K/io4K+/etc. uses framestore 4
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		if (ReleaseChannel(sdiMonChannel, NTV2_MODE_DISPLAY, owner)) {

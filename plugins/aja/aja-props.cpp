@@ -129,7 +129,7 @@ SourceProps::SourceProps()
 	  audioSampleRate{48000},
 	  vpids{},
 	  autoDetect{false},
-	  dwns{false}
+	  deactivateWhileNotShowing{false}
 {
 }
 
@@ -145,7 +145,7 @@ SourceProps::SourceProps(NTV2DeviceID devID)
 	  audioSampleRate{48000},
 	  vpids{},
 	  autoDetect{false},
-	  dwns{false}
+	  deactivateWhileNotShowing{false}
 {
 }
 
@@ -162,7 +162,7 @@ SourceProps::SourceProps(const SourceProps &props)
 	audioSampleRate = props.audioSampleRate;
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
-	dwns = props.dwns;
+	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
 }
 
 SourceProps::SourceProps(SourceProps &&props)
@@ -178,7 +178,7 @@ SourceProps::SourceProps(SourceProps &&props)
 	audioSampleRate = props.audioSampleRate;
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
-	dwns = props.dwns;
+	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
 }
 
 void SourceProps::operator=(const SourceProps &props)
@@ -194,7 +194,7 @@ void SourceProps::operator=(const SourceProps &props)
 	audioSampleRate = props.audioSampleRate;
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
-	dwns = props.dwns;
+	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
 }
 
 void SourceProps::operator=(SourceProps &&props)
@@ -210,7 +210,7 @@ void SourceProps::operator=(SourceProps &&props)
 	audioSampleRate = props.audioSampleRate;
 	vpids = props.vpids;
 	autoDetect = props.autoDetect;
-	dwns = props.dwns;
+	deactivateWhileNotShowing = props.deactivateWhileNotShowing;
 }
 
 bool SourceProps::operator==(const SourceProps &props)
@@ -224,7 +224,8 @@ bool SourceProps::operator==(const SourceProps &props)
 		sdi4kTransport == props.sdi4kTransport &&
 		audioNumChannels == props.audioNumChannels &&
 		audioSampleSize == props.audioSampleSize &&
-		audioSampleRate == props.audioSampleRate && dwns == props.dwns);
+		audioSampleRate == props.audioSampleRate &&
+		deactivateWhileNotShowing == props.deactivateWhileNotShowing);
 }
 
 bool SourceProps::operator!=(const SourceProps &props)

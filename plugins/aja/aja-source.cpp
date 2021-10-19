@@ -810,11 +810,14 @@ static void aja_source_show(void *data)
 		return;
 	}
 
-	bool dwns = ajaSource->GetSourceProps().dwns;
+	bool deactivateWhileNotShowing =
+		ajaSource->GetSourceProps().deactivateWhileNotShowing;
 	bool showing = obs_source_showing(ajaSource->GetOBSSource());
-	blog(LOG_DEBUG, "aja_source_show: dwns = %s, showing = %s",
-	     dwns ? "true" : "false", showing ? "true" : "false");
-	if (dwns && showing && !ajaSource->IsCapturing()) {
+	blog(LOG_DEBUG,
+	     "aja_source_show: deactivateWhileNotShowing = %s, showing = %s",
+	     deactivateWhileNotShowing ? "true" : "false",
+	     showing ? "true" : "false");
+	if (deactivateWhileNotShowing && showing && !ajaSource->IsCapturing()) {
 		ajaSource->Activate(true);
 		blog(LOG_DEBUG, "aja_source_show: activated capture thread!");
 	}
@@ -826,11 +829,14 @@ static void aja_source_hide(void *data)
 	if (!ajaSource)
 		return;
 
-	bool dwns = ajaSource->GetSourceProps().dwns;
+	bool deactivateWhileNotShowing =
+		ajaSource->GetSourceProps().deactivateWhileNotShowing;
 	bool showing = obs_source_showing(ajaSource->GetOBSSource());
-	blog(LOG_DEBUG, "aja_source_hide: dwns = %s, showing = %s",
-	     dwns ? "true" : "false", showing ? "true" : "false");
-	if (dwns && !showing && ajaSource->IsCapturing()) {
+	blog(LOG_DEBUG,
+	     "aja_source_hide: deactivateWhileNotShowing = %s, showing = %s",
+	     deactivateWhileNotShowing ? "true" : "false",
+	     showing ? "true" : "false");
+	if (deactivateWhileNotShowing && !showing && ajaSource->IsCapturing()) {
 		ajaSource->Deactivate();
 		blog(LOG_DEBUG, "aja_source_hide: deactivated capture thread!");
 	}
@@ -871,7 +877,7 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		obs_data_get_int(settings, kUIPropPixelFormatSelect.id));
 	auto t4_select = static_cast<SDI4KTransport>(
 		obs_data_get_int(settings, kUIPropSDI4KTransport.id));
-	bool dwns =
+	bool deactivateWhileNotShowing =
 		obs_data_get_bool(settings, kUIPropDeactivateWhenNotShowing.id);
 
 	auto &cardManager = aja::CardManager::Instance();
@@ -961,7 +967,7 @@ static void aja_source_update(void *data, obs_data_t *settings)
 			: static_cast<NTV2PixelFormat>(pf_select);
 	want_props.sdi4kTransport = t4_select;
 	want_props.vpids.clear();
-	want_props.dwns = dwns;
+	want_props.deactivateWhileNotShowing = deactivateWhileNotShowing;
 	want_props.autoDetect = ((int32_t)vf_select == kVideoFormatAuto ||
 				 (int32_t)pf_select == kPixelFormatAuto);
 	ajaSource->SetCardID(wantCardID);
