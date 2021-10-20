@@ -2333,5 +2333,44 @@
                 }
             ]
         }
+	{ 
+
+            "name": "stockjunkies", 
+
+            "common": true, 
+
+            "servers": [ 
+
+                { 
+
+                    "name": "stockjunkies core", 
+
+                    "url": " rtmp://wos.in1.streamzilla.xlcdn.com/live" 
+
+                }, 
+
+                { 
+
+                    "name": "stockjunkies backup", 
+
+                    "url": " rtmp://wos.in2.streamzilla.xlcdn.com/live " 
+
+                }, 
+
+            ], 
+
+            "recommended": { 
+
+                "keyint": 2, 
+
+                "max video bitrate": 6000, 
+
+                "max audio bitrate": 320, 
+
+                "x264opts": "scenecut=0" 
+
+           	}	 
+
+   	} 
     ]
 }
