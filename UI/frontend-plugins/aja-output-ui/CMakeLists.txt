@@ -108,11 +108,6 @@ target_link_libraries(aja-output-ui
 	Qt5::Widgets
 	libobs)
 
-if(UNIX AND NOT APPLE)
-	target_link_libraries(aja-output-ui
-		Qt5::X11Extras)
-endif()
-
 set_target_properties(aja-output-ui PROPERTIES FOLDER "frontend")
 
 install_obs_plugin_with_data(aja-output-ui data)
