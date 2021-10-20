@@ -8117,15 +8117,8 @@ static bool center_to_scene(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	obs_get_video_info(&ovi);
 	obs_sceneitem_get_info(item, &oti);
 
-	if (centerType == CenterType::Scene)
-		vec3_set(&screenCenter, float(ovi.base_width),
-			 float(ovi.base_height), 0.0f);
-	else if (centerType == CenterType::Vertical)
-		vec3_set(&screenCenter, float(oti.bounds.x),
-			 float(ovi.base_height), 0.0f);
-	else if (centerType == CenterType::Horizontal)
-		vec3_set(&screenCenter, float(ovi.base_width),
-			 float(oti.bounds.y), 0.0f);
+	vec3_set(&screenCenter, float(ovi.base_width), float(ovi.base_height),
+		 0.0f);
 
 	vec3_mulf(&screenCenter, &screenCenter, 0.5f);
 
@@ -8138,10 +8131,12 @@ static bool center_to_scene(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	vec3_sub(&offset, &screenCenter, &itemCenter);
 	vec3_add(&tl, &tl, &offset);
 
+	vec3 itemTL = GetItemTL(item);
+
 	if (centerType == CenterType::Vertical)
-		tl.x = oti.pos.x;
+		tl.x = itemTL.x;
 	else if (centerType == CenterType::Horizontal)
-		tl.y = oti.pos.y;
+		tl.y = itemTL.y;
 
 	SetItemTL(item, tl);
 	return true;
