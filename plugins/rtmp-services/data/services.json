@@ -2324,6 +2324,16 @@
                 }
             ]
         },
+	{
+            "name": "PhoneLiveStreaming",
+            "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "servers": [
+                {
+                    "name": "PhoneLiveSreaming",
+                    "url":  "rtmp://live.phonelivestreaming.com/live/"
+                }
+            ]
+        },
         {
             "name": "Disciple Media",
             "servers": [
