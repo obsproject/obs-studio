@@ -145,6 +145,13 @@ static void *gpu_encode_thread(void *unused)
 						skip_processing = true;
 					}
 				}
+
+				if (encoder->reconfigure_requested) {
+					encoder->reconfigure_requested = false;
+					encoder->info.update(encoder->context.data,
+						     encoder->context.settings);
+				}
+
 				if (!skip_processing) {
 					if (!encoder->start_ts)
 						encoder->start_ts = timestamp;
@@ -154,20 +161,16 @@ static void *gpu_encode_thread(void *unused)
 					else
 						next_key++;
 
-				if (encoder->reconfigure_requested) {
-					encoder->reconfigure_requested = false;
-					encoder->info.update(encoder->context.data,
-							encoder->context.settings);
-				}
-
-				if (!encoder->start_ts)
-					encoder->start_ts = timestamp;
+					success = encoder->info.encode_texture(
+						encoder->context.data, tf.handle,
+						encoder->cur_pts, lock_key, &next_key, &pkt,
+						&received);
+					send_off_encoder_packet(encoder, success, received,
+								&pkt);
 
 					lock_key = next_key;
 
 					encoder->cur_pts += encoder->timebase_num;
-
-
 				}
 				/* -------------- */
 
