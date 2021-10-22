@@ -2332,6 +2332,24 @@
                     "url":  "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ]
+        },
+        {
+            "name": "Jio Games",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://livepub1.api.engageapps.jio/live"
+                },
+                {
+                    "name": "Secondary",
+                    "url": "rtmp://livepub2.api.engageapps.jio/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 32000,
+                "max audio bitrate": 256
+            }
         }
     ]
 }
