@@ -4,7 +4,7 @@
 #include <string.h>
 #include <util/bmem.h>
 #include <util/dstr.h>
-#include "obs-x264-options.h"
+#include "opts-parser.h"
 
 static bool getparam(const char *param, char **name, const char **value)
 {
@@ -22,11 +22,11 @@ static bool getparam(const char *param, char **name, const char **value)
 	return true;
 }
 
-struct obs_x264_options obs_x264_parse_options(const char *options_string)
+struct obs_options obs_parse_options(const char *options_string)
 {
 	char **input_words = strlist_split(options_string, ' ', false);
 	if (!input_words) {
-		return (struct obs_x264_options){
+		return (struct obs_options){
 			.count = 0,
 			.options = NULL,
 			.ignored_word_count = 0,
@@ -40,9 +40,9 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 	char **ignored_words =
 		bmalloc(input_option_count * sizeof(*ignored_words));
 	char **ignored_word = ignored_words;
-	struct obs_x264_option *out_options =
+	struct obs_option *out_options =
 		bmalloc(input_option_count * sizeof(*out_options));
-	struct obs_x264_option *out_option = out_options;
+	struct obs_option *out_option = out_options;
 	for (char **input_word = input_words; *input_word; ++input_word) {
 		if (getparam(*input_word, &out_option->name,
 			     (const char **)&out_option->value)) {
@@ -52,7 +52,7 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 			++ignored_word;
 		}
 	}
-	return (struct obs_x264_options){
+	return (struct obs_options){
 		.count = out_option - out_options,
 		.options = out_options,
 		.ignored_word_count = ignored_word - ignored_words,
@@ -61,7 +61,7 @@ struct obs_x264_options obs_x264_parse_options(const char *options_string)
 	};
 }
 
-void obs_x264_free_options(struct obs_x264_options options)
+void obs_free_options(struct obs_options options)
 {
 	for (size_t i = 0; i < options.count; ++i) {
 		bfree(options.options[i].name);
