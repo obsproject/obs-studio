@@ -6800,9 +6800,13 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	blog(LOG_INFO, STREAMING_STOP);
 
 	if (encode_error) {
+		QString msg =
+			last_error.isEmpty()
+				? QTStr("Output.StreamEncodeError.Msg")
+				: QTStr("Output.StreamEncodeError.Msg.LastError")
+					  .arg(last_error);
 		OBSMessageBox::information(
-			this, QTStr("Output.StreamEncodeError.Title"),
-			QTStr("Output.StreamEncodeError.Msg"));
+			this, QTStr("Output.StreamEncodeError.Title"), msg);
 
 	} else if (code != OBS_OUTPUT_SUCCESS && isVisible()) {
 		OBSMessageBox::information(this,
@@ -6949,9 +6953,13 @@ void OBSBasic::RecordingStop(int code, QString last_error)
 					QTStr("Output.RecordFail.Unsupported"));
 
 	} else if (code == OBS_OUTPUT_ENCODE_ERROR && isVisible()) {
-		OBSMessageBox::warning(
-			this, QTStr("Output.RecordError.Title"),
-			QTStr("Output.RecordError.EncodeErrorMsg"));
+		QString msg =
+			last_error.isEmpty()
+				? QTStr("Output.RecordError.EncodeErrorMsg")
+				: QTStr("Output.RecordError.EncodeErrorMsg.LastError")
+					  .arg(last_error);
+		OBSMessageBox::warning(this, QTStr("Output.RecordError.Title"),
+				       msg);
 
 	} else if (code == OBS_OUTPUT_NO_SPACE && isVisible()) {
 		OBSMessageBox::warning(this,

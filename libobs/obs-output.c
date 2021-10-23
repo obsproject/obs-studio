@@ -1982,7 +1982,8 @@ static inline void signal_stop(struct obs_output *output)
 	struct calldata params;
 
 	calldata_init(&params);
-	calldata_set_string(&params, "last_error", output->last_error_message);
+	calldata_set_string(&params, "last_error",
+			    obs_output_get_last_error(output));
 	calldata_set_int(&params, "code", output->stop_code);
 	calldata_set_ptr(&params, "output", output);
 
@@ -2617,7 +2618,23 @@ const char *obs_output_get_last_error(obs_output_t *output)
 	if (!obs_output_valid(output, "obs_output_get_last_error"))
 		return NULL;
 
-	return output->last_error_message;
+	if (output->last_error_message) {
+		return output->last_error_message;
+	} else {
+		obs_encoder_t *vencoder = output->video_encoder;
+		if (vencoder && vencoder->last_error_message) {
+			return vencoder->last_error_message;
+		}
+
+		for (size_t i = 0; i < MAX_AUDIO_MIXES; i++) {
+			obs_encoder_t *aencoder = output->audio_encoders[i];
+			if (aencoder && aencoder->last_error_message) {
+				return aencoder->last_error_message;
+			}
+		}
+	}
+
+	return NULL;
 }
 
 void obs_output_set_last_error(obs_output_t *output, const char *message)
