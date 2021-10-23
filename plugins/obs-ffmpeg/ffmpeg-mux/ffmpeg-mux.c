@@ -134,9 +134,7 @@ static void header_free(struct header *header)
 static void free_avformat(struct ffmpeg_mux *ffm)
 {
 	if (ffm->output) {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		avcodec_free_context(&ffm->video_ctx);
-#endif
 
 		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
 			avio_close(ffm->output->pb);
@@ -146,10 +144,8 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 	}
 
 	if (ffm->audio_infos) {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		for (int i = 0; i < ffm->num_audio_streams; ++i)
 			avcodec_free_context(&ffm->audio_infos[i].ctx);
-#endif
 		free(ffm->audio_infos);
 	}
 
@@ -353,22 +349,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 }
 
 static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
-		       const char *name, AVCodec **codec)
+		       const char *name)
 {
-	const AVCodecDescriptor *desc = avcodec_descriptor_get_by_name(name);
-
-	if (!desc) {
-		fprintf(stderr, "Couldn't find encoder '%s'\n", name);
-		return false;
-	}
-
-	*codec = avcodec_find_encoder(desc->id);
-	if (!*codec) {
-		fprintf(stderr, "Couldn't create encoder\n");
-		return false;
-	}
-
-	*stream = avformat_new_stream(ffm->output, *codec);
+	*stream = avformat_new_stream(ffm->output, NULL);
 	if (!*stream) {
 		fprintf(stderr, "Couldn't create stream for encoder '%s'\n",
 			name);
@@ -381,11 +364,17 @@ static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
 
 static void create_video_stream(struct ffmpeg_mux *ffm)
 {
-	AVCodec *codec;
 	AVCodecContext *context;
 	void *extradata = NULL;
+	const char *name = ffm->params.vcodec;
 
-	if (!new_stream(ffm, &ffm->video_stream, ffm->params.vcodec, &codec))
+	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	if (!codec) {
+		fprintf(stderr, "Couldn't find codec '%s'\n", name);
+		return;
+	}
+
+	if (!new_stream(ffm, &ffm->video_stream, name))
 		return;
 
 	if (ffm->video_header.size) {
@@ -393,11 +382,9 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 				      ffm->video_header.size);
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-	context = avcodec_alloc_context3(codec);
-#else
-	context = ffm->video_stream->codec;
-#endif
+	context = avcodec_alloc_context3(NULL);
+	context->codec_type = codec->type;
+	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
@@ -422,21 +409,25 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
-#endif
 
 	ffm->video_ctx = context;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 {
-	AVCodec *codec;
 	AVCodecContext *context;
 	AVStream *stream;
 	void *extradata = NULL;
+	const char *name = ffm->params.acodec;
 
-	if (!new_stream(ffm, &stream, ffm->params.acodec, &codec))
+	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	if (!codec) {
+		fprintf(stderr, "Couldn't find codec '%s'\n", name);
+		return;
+	}
+
+	if (!new_stream(ffm, &stream, name))
 		return;
 
 	av_dict_set(&stream->metadata, "title", ffm->audio[idx].name, 0);
@@ -448,11 +439,9 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 				      ffm->audio_header[idx].size);
 	}
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-	context = avcodec_alloc_context3(codec);
-#else
-	context = stream->codec;
-#endif
+	context = avcodec_alloc_context3(NULL);
+	context->codec_type = codec->type;
+	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
 	context->channels = ffm->audio[idx].channels;
 	context->sample_rate = ffm->audio[idx].sample_rate;
@@ -471,9 +460,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
 
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_parameters_from_context(stream->codecpar, context);
-#endif
 
 	ffm->audio_infos[ffm->num_audio_streams].stream = stream;
 	ffm->audio_infos[ffm->num_audio_streams].ctx = context;
