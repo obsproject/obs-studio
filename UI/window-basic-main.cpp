@@ -8256,62 +8256,97 @@ void OBSBasic::on_actionStretchToScreen_triggered()
 			  undo_redo, undo_redo, undo_data, redo_data);
 }
 
-enum class CenterType {
-	Scene,
-	Vertical,
-	Horizontal,
-};
-
-static bool center_to_scene(obs_scene_t *, obs_sceneitem_t *item, void *param)
+void OBSBasic::CenterSelectedSceneItems(const CenterType &centerType)
 {
-	CenterType centerType = *reinterpret_cast<CenterType *>(param);
+	QModelIndexList selectedItems = GetAllSelectedSourceItems();
 
-	vec3 tl, br, itemCenter, screenCenter, offset;
+	if (!selectedItems.count())
+		return;
+
+	vector<OBSSceneItem> items;
+
+	// Filter out items that have no size
+	for (int x = 0; x < selectedItems.count(); x++) {
+		OBSSceneItem item = ui->sources->Get(selectedItems[x].row());
+		obs_transform_info oti;
+		obs_sceneitem_get_info(item, &oti);
+
+		obs_source_t *source = obs_sceneitem_get_source(item);
+		float width = float(obs_source_get_width(source)) * oti.scale.x;
+		float height =
+			float(obs_source_get_height(source)) * oti.scale.y;
+
+		if (width == 0.0f || height == 0.0f)
+			continue;
+
+		items.emplace_back(item);
+	}
+
+	if (!items.size())
+		return;
+
+	// Get center x, y coordinates of items
+	vec3 center;
+
+	float top = M_INFINITE;
+	float left = M_INFINITE;
+	float right = 0.0f;
+	float bottom = 0.0f;
+
+	for (auto &item : items) {
+		vec3 tl, br;
+
+		GetItemBox(item, tl, br);
+
+		left = (std::min)(tl.x, left);
+		top = (std::min)(tl.y, top);
+		right = (std::max)(br.x, right);
+		bottom = (std::max)(br.y, bottom);
+	}
+
+	center.x = (right + left) / 2.0f;
+	center.y = (top + bottom) / 2.0f;
+	center.z = 0.0f;
+
+	// Get coordinates of screen center
 	obs_video_info ovi;
-	obs_transform_info oti;
-
-	if (obs_sceneitem_is_group(item))
-		obs_sceneitem_group_enum_items(item, center_to_scene,
-					       &centerType);
-	if (!obs_sceneitem_selected(item))
-		return true;
-	if (obs_sceneitem_locked(item))
-		return true;
-
 	obs_get_video_info(&ovi);
-	obs_sceneitem_get_info(item, &oti);
 
+	vec3 screenCenter;
 	vec3_set(&screenCenter, float(ovi.base_width), float(ovi.base_height),
 		 0.0f);
 
 	vec3_mulf(&screenCenter, &screenCenter, 0.5f);
 
-	GetItemBox(item, tl, br);
+	// Calculate difference between screen center and item center
+	vec3 offset;
+	vec3_sub(&offset, &screenCenter, &center);
 
-	vec3_sub(&itemCenter, &br, &tl);
-	vec3_mulf(&itemCenter, &itemCenter, 0.5f);
-	vec3_add(&itemCenter, &itemCenter, &tl);
+	// Shift items by offset
+	for (auto &item : items) {
+		vec3 tl, br;
 
-	vec3_sub(&offset, &screenCenter, &itemCenter);
-	vec3_add(&tl, &tl, &offset);
+		GetItemBox(item, tl, br);
 
-	vec3 itemTL = GetItemTL(item);
+		vec3_add(&tl, &tl, &offset);
 
-	if (centerType == CenterType::Vertical)
-		tl.x = itemTL.x;
-	else if (centerType == CenterType::Horizontal)
-		tl.y = itemTL.y;
+		vec3 itemTL = GetItemTL(item);
 
-	SetItemTL(item, tl);
-	return true;
-};
+		if (centerType == CenterType::Vertical)
+			tl.x = itemTL.x;
+		else if (centerType == CenterType::Horizontal)
+			tl.y = itemTL.y;
+
+		SetItemTL(item, tl);
+	}
+}
 
 void OBSBasic::on_actionCenterToScreen_triggered()
 {
 	CenterType centerType = CenterType::Scene;
 	OBSDataAutoRelease wrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
-	obs_scene_enum_items(GetCurrentScene(), center_to_scene, &centerType);
+	CenterSelectedSceneItems(centerType);
 	OBSDataAutoRelease rwrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
 
@@ -8328,7 +8363,7 @@ void OBSBasic::on_actionVerticalCenter_triggered()
 	CenterType centerType = CenterType::Vertical;
 	OBSDataAutoRelease wrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
-	obs_scene_enum_items(GetCurrentScene(), center_to_scene, &centerType);
+	CenterSelectedSceneItems(centerType);
 	OBSDataAutoRelease rwrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
 
@@ -8345,7 +8380,7 @@ void OBSBasic::on_actionHorizontalCenter_triggered()
 	CenterType centerType = CenterType::Horizontal;
 	OBSDataAutoRelease wrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
-	obs_scene_enum_items(GetCurrentScene(), center_to_scene, &centerType);
+	CenterSelectedSceneItems(centerType);
 	OBSDataAutoRelease rwrapper =
 		obs_scene_save_transform_states(GetCurrentScene(), false);
 
