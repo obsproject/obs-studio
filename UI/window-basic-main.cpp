@@ -2568,6 +2568,7 @@ OBSBasic::~OBSBasic()
 	delete sourceProjector;
 	delete sceneProjectorMenu;
 	delete scaleFilteringMenu;
+	delete blendingModeMenu;
 	delete colorMenu;
 	delete colorWidgetAction;
 	delete colorSelect;
@@ -5268,6 +5269,40 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	return menu;
 }
 
+void OBSBasic::SetBlendingMode()
+{
+	QAction *action = reinterpret_cast<QAction *>(sender());
+	obs_blending_type mode =
+		(obs_blending_type)action->property("mode").toInt();
+	OBSSceneItem sceneItem = GetCurrentSceneItem();
+
+	obs_sceneitem_set_blending_mode(sceneItem, mode);
+}
+
+QMenu *OBSBasic::AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item)
+{
+	obs_blending_type blendingMode = obs_sceneitem_get_blending_mode(item);
+	QAction *action;
+
+#define ADD_MODE(name, mode)                               \
+	action = menu->addAction(QTStr("" name), this,     \
+				 SLOT(SetBlendingMode())); \
+	action->setProperty("mode", (int)mode);            \
+	action->setCheckable(true);                        \
+	action->setChecked(blendingMode == mode);
+
+	ADD_MODE("BlendingMode.Normal", OBS_BLEND_NORMAL);
+	ADD_MODE("BlendingMode.Additive", OBS_BLEND_ADDITIVE);
+	ADD_MODE("BlendingMode.Subtract", OBS_BLEND_SUBTRACT);
+	ADD_MODE("BlendingMode.Screen", OBS_BLEND_SCREEN);
+	ADD_MODE("BlendingMode.Multiply", OBS_BLEND_MULTIPLY);
+	ADD_MODE("BlendingMode.Lighten", OBS_BLEND_LIGHTEN);
+	ADD_MODE("BlendingMode.Darken", OBS_BLEND_DARKEN);
+#undef ADD_MODE
+
+	return menu;
+}
+
 QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 					QWidgetAction *widgetAction,
 					ColorSelect *select,
@@ -5338,6 +5373,7 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
+	delete blendingModeMenu;
 	delete colorMenu;
 	delete colorWidgetAction;
 	delete colorSelect;
@@ -5467,6 +5503,10 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
 		popup.addMenu(
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
+		popup.addSeparator();
+
+		blendingModeMenu = new QMenu(QTStr("BlendingMode"));
+		popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
 		popup.addSeparator();
 
 		popup.addMenu(sourceProjector);

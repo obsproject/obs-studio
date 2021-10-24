@@ -492,6 +492,22 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item, enum obs_blending_type type)
+              enum obs_blending_type obs_sceneitem_get_blending_mode(obs_sceneitem_t *item)
+
+   Sets/gets the blending mode used for the scene item.
+
+   :param type: | Can be one of the following values:
+                | OBS_BLEND_NORMAL
+                | OBS_BLEND_ADDITIVE
+                | OBS_BLEND_SUBTRACT
+                | OBS_BLEND_SCREEN
+                | OBS_BLEND_MULTIPLY
+                | OBS_BLEND_LIGHTEN
+                | OBS_BLEND_DARKEN
+
+---------------------
+
 .. function:: void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)
               void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
 

@@ -121,6 +121,16 @@ enum obs_scale_type {
 	OBS_SCALE_AREA,
 };
 
+enum obs_blending_type {
+	OBS_BLEND_NORMAL,
+	OBS_BLEND_ADDITIVE,
+	OBS_BLEND_SUBTRACT,
+	OBS_BLEND_SCREEN,
+	OBS_BLEND_MULTIPLY,
+	OBS_BLEND_LIGHTEN,
+	OBS_BLEND_DARKEN,
+};
+
 /**
  * Used with scene items to indicate the type of bounds to use for scene items.
  * Mostly determines how the image will be scaled within those bounds, or
@@ -1751,6 +1761,11 @@ EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 					   enum obs_scale_type filter);
 EXPORT enum obs_scale_type
 obs_sceneitem_get_scale_filter(obs_sceneitem_t *item);
+
+EXPORT void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
+					    enum obs_blending_type type);
+EXPORT enum obs_blending_type
+obs_sceneitem_get_blending_mode(obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_force_update_transform(obs_sceneitem_t *item);
 

@@ -59,6 +59,73 @@ static const char *obs_scene_signals[] = {
 	NULL,
 };
 
+static const struct {
+	enum gs_blend_type src_color;
+	enum gs_blend_type src_alpha;
+	enum gs_blend_type dst_color;
+	enum gs_blend_type dst_alpha;
+	enum gs_blend_op_type op;
+} obs_blend_mode_params[] = {
+	/* clang-format off */
+	// OBS_BLEND_NORMAL
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_INVSRCALPHA,
+		GS_BLEND_INVSRCALPHA,
+		GS_BLEND_OP_ADD,
+	},
+	// OBS_BLEND_ADDITIVE
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_OP_ADD,
+	},
+	// OBS_BLEND_SUBTRACT
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_OP_REVERSE_SUBTRACT,
+	},
+	// OBS_BLEND_SCREEN
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_INVSRCCOLOR,
+		GS_BLEND_INVSRCALPHA,
+		GS_BLEND_OP_ADD
+	},
+	// OBS_BLEND_MULTIPLY
+	{
+		GS_BLEND_DSTCOLOR,
+		GS_BLEND_DSTALPHA,
+		GS_BLEND_INVSRCALPHA,
+		GS_BLEND_INVSRCALPHA,
+		GS_BLEND_OP_ADD
+	},
+	// OBS_BLEND_LIGHTEN
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_OP_MAX,
+	},
+	// OBS_BLEND_DARKEN
+	{
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_ONE,
+		GS_BLEND_OP_MIN,
+	},
+	/* clang-format on */
+};
+
 static inline void signal_item_remove(struct obs_scene_item *item)
 {
 	struct calldata params;
@@ -472,6 +539,11 @@ static inline bool scale_filter_enabled(const struct obs_scene_item *item)
 	return item->scale_filter != OBS_SCALE_DISABLE;
 }
 
+static inline bool default_blending_enabled(const struct obs_scene_item *item)
+{
+	return item->blend_type == OBS_BLEND_NORMAL;
+}
+
 static inline bool item_is_scene(const struct obs_scene_item *item)
 {
 	return item->source && item->source->info.type == OBS_SOURCE_TYPE_SCENE;
@@ -480,6 +552,7 @@ static inline bool item_is_scene(const struct obs_scene_item *item)
 static inline bool item_texture_enabled(const struct obs_scene_item *item)
 {
 	return crop_enabled(&item->crop) || scale_filter_enabled(item) ||
+	       !default_blending_enabled(item) ||
 	       (item_is_scene(item) && !item->is_group);
 }
 
@@ -545,7 +618,13 @@ static void render_item_texture(struct obs_scene_item *item)
 	}
 
 	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+	gs_blend_function_separate(
+		obs_blend_mode_params[item->blend_type].src_color,
+		obs_blend_mode_params[item->blend_type].dst_color,
+		obs_blend_mode_params[item->blend_type].src_alpha,
+		obs_blend_mode_params[item->blend_type].dst_alpha);
+	gs_blend_op(obs_blend_mode_params[item->blend_type].op);
 
 	while (gs_effect_loop(effect, tech))
 		obs_source_draw(tex, 0, 0, 0, 0, 0);
@@ -789,6 +868,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	const char *name = obs_data_get_string(item_data, "name");
 	obs_source_t *source;
 	const char *scale_filter_str;
+	const char *blend_str;
 	struct obs_scene_item *item;
 	bool visible;
 	bool lock;
@@ -868,6 +948,26 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 			item->scale_filter = OBS_SCALE_AREA;
 	}
 
+	blend_str = obs_data_get_string(item_data, "blend_type");
+	item->blend_type = OBS_BLEND_NORMAL;
+
+	if (blend_str) {
+		if (astrcmpi(blend_str, "normal") == 0)
+			item->blend_type = OBS_BLEND_NORMAL;
+		else if (astrcmpi(blend_str, "additive") == 0)
+			item->blend_type = OBS_BLEND_ADDITIVE;
+		else if (astrcmpi(blend_str, "subtract") == 0)
+			item->blend_type = OBS_BLEND_SUBTRACT;
+		else if (astrcmpi(blend_str, "screen") == 0)
+			item->blend_type = OBS_BLEND_SCREEN;
+		else if (astrcmpi(blend_str, "multiply") == 0)
+			item->blend_type = OBS_BLEND_MULTIPLY;
+		else if (astrcmpi(blend_str, "lighten") == 0)
+			item->blend_type = OBS_BLEND_LIGHTEN;
+		else if (astrcmpi(blend_str, "darken") == 0)
+			item->blend_type = OBS_BLEND_DARKEN;
+	}
+
 	obs_data_t *show_data = obs_data_get_obj(item_data, "show_transition");
 	if (show_data) {
 		obs_sceneitem_transition_load(item, show_data, true);
@@ -937,6 +1037,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_t *item_data = obs_data_create();
 	const char *name = obs_source_get_name(item->source);
 	const char *scale_filter;
+	const char *blend_type;
 	struct vec2 pos = item->pos;
 	struct vec2 scale = item->scale;
 	float rot = item->rot;
@@ -994,6 +1095,25 @@ static void scene_save_item(obs_data_array_t *array,
 		scale_filter = "disable";
 
 	obs_data_set_string(item_data, "scale_filter", scale_filter);
+
+	if (item->blend_type == OBS_BLEND_NORMAL)
+		blend_type = "normal";
+	else if (item->blend_type == OBS_BLEND_ADDITIVE)
+		blend_type = "additive";
+	else if (item->blend_type == OBS_BLEND_SUBTRACT)
+		blend_type = "subtract";
+	else if (item->blend_type == OBS_BLEND_SCREEN)
+		blend_type = "screen";
+	else if (item->blend_type == OBS_BLEND_MULTIPLY)
+		blend_type = "multiply";
+	else if (item->blend_type == OBS_BLEND_LIGHTEN)
+		blend_type = "lighten";
+	else if (item->blend_type == OBS_BLEND_DARKEN)
+		blend_type = "darken";
+	else
+		blend_type = "normal";
+
+	obs_data_set_string(item_data, "blend_type", blend_type);
 
 	obs_data_t *show_data = obs_sceneitem_transition_save(item, true);
 	obs_data_set_obj(item_data, "show_transition", show_data);
@@ -1393,6 +1513,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->last_height = src->last_height;
 	dst->output_scale = src->output_scale;
 	dst->scale_filter = src->scale_filter;
+	dst->blend_type = src->blend_type;
 	dst->box_transform = src->box_transform;
 	dst->box_scale = src->box_scale;
 	dst->draw_transform = src->draw_transform;
@@ -2739,6 +2860,24 @@ enum obs_scale_type obs_sceneitem_get_scale_filter(obs_sceneitem_t *item)
 	return obs_ptr_valid(item, "obs_sceneitem_get_scale_filter")
 		       ? item->scale_filter
 		       : OBS_SCALE_DISABLE;
+}
+
+void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
+				     enum obs_blending_type type)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_set_blending_mode"))
+		return;
+
+	item->blend_type = type;
+
+	os_atomic_set_bool(&item->update_transform, true);
+}
+
+enum obs_blending_type obs_sceneitem_get_blending_mode(obs_sceneitem_t *item)
+{
+	return obs_ptr_valid(item, "obs_sceneitem_get_blending_mode")
+		       ? item->blend_type
+		       : OBS_BLEND_NORMAL;
 }
 
 void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)
