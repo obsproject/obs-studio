@@ -204,6 +204,12 @@ class OBSBasic : public OBSMainWindow {
 		ContextBarSize_Normal
 	};
 
+	enum class CenterType {
+		Scene,
+		Vertical,
+		Horizontal,
+	};
+
 private:
 	obs_frontend_callbacks *api = nullptr;
 
@@ -608,6 +614,8 @@ private:
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
+
+	void CenterSelectedSceneItems(const CenterType &centerType);
 
 public slots:
 	void DeferSaveBegin();
