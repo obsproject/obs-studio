@@ -6296,14 +6296,19 @@ void OBSBasic::StartStreaming()
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
 		// well, we need to disable button while stream is not active
 		ui->broadcastButton->setEnabled(false);
-	} else if (!autoStopBroadcast) {
-		broadcastActive = true;
-		ui->broadcastButton->setText(QTStr("Basic.Main.StopBroadcast"));
+	} else {
+		if (!autoStopBroadcast) {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.StopBroadcast"));
+		} else {
+			ui->broadcastButton->setText(
+				QTStr("Basic.Main.AutoStopEnabled"));
+			ui->broadcastButton->setEnabled(false);
+		}
 		ui->broadcastButton->setProperty("broadcastState", "active");
 		ui->broadcastButton->style()->unpolish(ui->broadcastButton);
 		ui->broadcastButton->style()->polish(ui->broadcastButton);
-	} else {
-		ui->broadcastButton->setEnabled(false);
+		broadcastActive = true;
 	}
 
 	bool recordWhenStreaming = config_get_bool(
@@ -6337,7 +6342,24 @@ void OBSBasic::BroadcastButtonClicked()
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
-			ytAuth->StartLatestBroadcast();
+			if (!ytAuth->StartLatestBroadcast()) {
+				auto last_error = ytAuth->GetLastError();
+				if (last_error.isEmpty())
+					last_error = QTStr(
+						"YouTube.Actions.Error.YouTubeApi");
+				if (!ytAuth->GetTranslatedError(last_error))
+					last_error =
+						QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
+							.arg(last_error,
+							     ytAuth->GetBroadcastId());
+
+				OBSMessageBox::warning(
+					this,
+					QTStr("Output.BroadcastStartFailed"),
+					last_error, true);
+				ui->broadcastButton->setChecked(false);
+				return;
+			}
 		}
 #endif
 		broadcastActive = true;
@@ -6375,7 +6397,22 @@ void OBSBasic::BroadcastButtonClicked()
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
-			ytAuth->StopLatestBroadcast();
+			if (!ytAuth->StopLatestBroadcast()) {
+				auto last_error = ytAuth->GetLastError();
+				if (last_error.isEmpty())
+					last_error = QTStr(
+						"YouTube.Actions.Error.YouTubeApi");
+				if (!ytAuth->GetTranslatedError(last_error))
+					last_error =
+						QTStr("YouTube.Actions.Error.BroadcastTransitionFailed")
+							.arg(last_error,
+							     ytAuth->GetBroadcastId());
+
+				OBSMessageBox::warning(
+					this,
+					QTStr("Output.BroadcastStopFailed"),
+					last_error, true);
+			}
 		}
 #endif
 		broadcastActive = false;
