@@ -2689,6 +2689,14 @@ int main(int argc, char *argv[])
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
+
+	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
+	if (hRtwq) {
+		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqStartup)();
+		PFN_RtwqStartup func =
+			(PFN_RtwqStartup)GetProcAddress(hRtwq, "RtwqStartup");
+		func();
+	}
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
@@ -2827,6 +2835,16 @@ int main(int argc, char *argv[])
 
 	curl_global_init(CURL_GLOBAL_ALL);
 	int ret = run_program(logFile, argc, argv);
+
+#ifdef _WIN32
+	if (hRtwq) {
+		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqShutdown)();
+		PFN_RtwqShutdown func =
+			(PFN_RtwqShutdown)GetProcAddress(hRtwq, "RtwqShutdown");
+		func();
+		FreeLibrary(hRtwq);
+	}
+#endif
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);
