@@ -294,6 +294,24 @@ static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
 	return GL_ONE;
 }
 
+static inline GLenum convert_gs_blend_op_type(enum gs_blend_op_type type)
+{
+	switch (type) {
+	case GS_BLEND_OP_ADD:
+		return GL_FUNC_ADD;
+	case GS_BLEND_OP_SUBTRACT:
+		return GL_FUNC_SUBTRACT;
+	case GS_BLEND_OP_REVERSE_SUBTRACT:
+		return GL_FUNC_REVERSE_SUBTRACT;
+	case GS_BLEND_OP_MIN:
+		return GL_MIN;
+	case GS_BLEND_OP_MAX:
+		return GL_MAX;
+	}
+
+	return GL_FUNC_ADD;
+}
+
 static inline GLenum convert_shader_type(enum gs_shader_type type)
 {
 	switch (type) {

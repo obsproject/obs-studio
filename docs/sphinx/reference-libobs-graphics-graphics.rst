@@ -768,21 +768,29 @@ Draw Functions
 
 .. function:: void gs_blend_function(enum gs_blend_type src, enum gs_blend_type dest)
 
-   Sets the blend function
+   Sets the blend function's source and destination factors
 
-   :param src:  Blend type for the source
-   :param dest: Blend type for the destination
+   :param src:  Blend type for the blending equation's source factors
+   :param dest: Blend type for the blending equation's destination factors
 
 ---------------------
 
 .. function:: void gs_blend_function_separate(enum gs_blend_type src_c, enum gs_blend_type dest_c, enum gs_blend_type src_a, enum gs_blend_type dest_a)
 
-   Sets the blend function for RGB and alpha separately
+   Sets the blend function's source and destination factors for RGB and alpha separately
 
-   :param src_c:  Blend type for the source RGB
-   :param dest_c: Blend type for the destination RGB
-   :param src_a:  Blend type for the source alpha
-   :param dest_a: Blend type for the destination alpha
+   :param src_c:  Blend type for the blending equation's source RGB factor
+   :param dest_c: Blend type for the blending equation's destination RGB factor
+   :param src_a:  Blend type for the blending equation's source alpha factor
+   :param dest_a: Blend type for the blending equation's destination alpha factor
+
+---------------------
+
+.. function:: void gs_blend_op(enum gs_blend_op_type op)
+
+   Sets the blend function's operation type
+
+   :param op: Operation type for the blending equation
 
 ---------------------
 
@@ -881,7 +889,7 @@ Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic
@@ -1080,7 +1088,7 @@ Cube Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic

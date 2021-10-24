@@ -172,6 +172,10 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	graphics->cur_blend_state.src_a = GS_BLEND_ONE;
 	graphics->cur_blend_state.dest_a = GS_BLEND_INVSRCALPHA;
 
+	graphics->cur_blend_state.op = GS_BLEND_OP_ADD;
+	graphics->exports.device_blend_op(graphics->device,
+					  graphics->cur_blend_state.op);
+
 	graphics->exports.device_leave_context(graphics->device);
 
 	gs_init_image_deps();
@@ -1241,6 +1245,7 @@ void gs_blend_state_pop(void)
 	gs_enable_blending(state->enabled);
 	gs_blend_function_separate(state->src_c, state->dest_c, state->src_a,
 				   state->dest_a);
+	gs_blend_op(state->op);
 
 	da_pop_back(graphics->blend_state_stack);
 }
@@ -1258,10 +1263,12 @@ void gs_reset_blend_state(void)
 	if (graphics->cur_blend_state.src_c != GS_BLEND_SRCALPHA ||
 	    graphics->cur_blend_state.dest_c != GS_BLEND_INVSRCALPHA ||
 	    graphics->cur_blend_state.src_a != GS_BLEND_ONE ||
-	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA)
+	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA) {
 		gs_blend_function_separate(GS_BLEND_SRCALPHA,
 					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
 					   GS_BLEND_INVSRCALPHA);
+		gs_blend_op(GS_BLEND_OP_ADD);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1996,6 +2003,18 @@ void gs_blend_function_separate(enum gs_blend_type src_c,
 	graphics->cur_blend_state.dest_a = dest_a;
 	graphics->exports.device_blend_function_separate(
 		graphics->device, src_c, dest_c, src_a, dest_a);
+}
+
+void gs_blend_op(enum gs_blend_op_type op)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_blend_op"))
+		return;
+
+	graphics->cur_blend_state.op = op;
+	graphics->exports.device_blend_op(graphics->device,
+					  graphics->cur_blend_state.op);
 }
 
 void gs_depth_function(enum gs_depth_test test)

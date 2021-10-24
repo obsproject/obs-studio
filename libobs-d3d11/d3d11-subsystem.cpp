@@ -705,8 +705,10 @@ ID3D11BlendState *gs_device::AddBlendState()
 	memset(&bd, 0, sizeof(bd));
 	for (int i = 0; i < 8; i++) {
 		bd.RenderTarget[i].BlendEnable = blendState.blendEnabled;
-		bd.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
-		bd.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[i].BlendOp =
+			ConvertGSBlendOpType(blendState.op);
+		bd.RenderTarget[i].BlendOpAlpha =
+			ConvertGSBlendOpType(blendState.op);
 		bd.RenderTarget[i].SrcBlend =
 			ConvertGSBlendType(blendState.srcFactorC);
 		bd.RenderTarget[i].DestBlend =
@@ -2156,6 +2158,15 @@ void device_blend_function_separate(gs_device_t *device,
 	device->blendState.destFactorC = dest_c;
 	device->blendState.srcFactorA = src_a;
 	device->blendState.destFactorA = dest_a;
+	device->blendStateChanged = true;
+}
+
+void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
+{
+	if (device->blendState.op == op)
+		return;
+
+	device->blendState.op = op;
 	device->blendStateChanged = true;
 }
 

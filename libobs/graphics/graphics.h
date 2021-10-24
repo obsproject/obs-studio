@@ -111,6 +111,14 @@ enum gs_blend_type {
 	GS_BLEND_SRCALPHASAT,
 };
 
+enum gs_blend_op_type {
+	GS_BLEND_OP_ADD,
+	GS_BLEND_OP_SUBTRACT,
+	GS_BLEND_OP_REVERSE_SUBTRACT,
+	GS_BLEND_OP_MIN,
+	GS_BLEND_OP_MAX
+};
+
 enum gs_depth_test {
 	GS_NEVER,
 	GS_LESS,
@@ -728,6 +736,8 @@ EXPORT void gs_blend_function_separate(enum gs_blend_type src_c,
 				       enum gs_blend_type dest_c,
 				       enum gs_blend_type src_a,
 				       enum gs_blend_type dest_a);
+EXPORT void gs_blend_op(enum gs_blend_op_type op);
+
 EXPORT void gs_depth_function(enum gs_depth_test test);
 
 EXPORT void gs_stencil_function(enum gs_stencil_side side,
