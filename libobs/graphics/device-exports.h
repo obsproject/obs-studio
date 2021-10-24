@@ -145,6 +145,8 @@ EXPORT void device_blend_function_separate(gs_device_t *device,
 					   enum gs_blend_type dest_c,
 					   enum gs_blend_type src_a,
 					   enum gs_blend_type dest_a);
+EXPORT void device_blend_op(gs_device_t *device, enum gs_blend_op_type op);
+
 EXPORT void device_depth_function(gs_device_t *device, enum gs_depth_test test);
 EXPORT void device_stencil_function(gs_device_t *device,
 				    enum gs_stencil_side side,

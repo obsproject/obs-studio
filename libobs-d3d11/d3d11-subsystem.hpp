@@ -281,6 +281,24 @@ static inline D3D11_BLEND ConvertGSBlendType(gs_blend_type type)
 	return D3D11_BLEND_ONE;
 }
 
+static inline D3D11_BLEND_OP ConvertGSBlendOpType(gs_blend_op_type type)
+{
+	switch (type) {
+	case GS_BLEND_OP_ADD:
+		return D3D11_BLEND_OP_ADD;
+	case GS_BLEND_OP_SUBTRACT:
+		return D3D11_BLEND_OP_SUBTRACT;
+	case GS_BLEND_OP_REVERSE_SUBTRACT:
+		return D3D11_BLEND_OP_REV_SUBTRACT;
+	case GS_BLEND_OP_MIN:
+		return D3D11_BLEND_OP_MIN;
+	case GS_BLEND_OP_MAX:
+		return D3D11_BLEND_OP_MAX;
+	}
+
+	return D3D11_BLEND_OP_ADD;
+}
+
 static inline D3D11_CULL_MODE ConvertGSCullMode(gs_cull_mode mode)
 {
 	switch (mode) {
@@ -832,6 +850,7 @@ struct BlendState {
 	gs_blend_type destFactorC;
 	gs_blend_type srcFactorA;
 	gs_blend_type destFactorA;
+	gs_blend_op_type op;
 
 	bool redEnabled;
 	bool greenEnabled;
@@ -844,6 +863,7 @@ struct BlendState {
 		  destFactorC(GS_BLEND_INVSRCALPHA),
 		  srcFactorA(GS_BLEND_ONE),
 		  destFactorA(GS_BLEND_INVSRCALPHA),
+		  op(GS_BLEND_OP_ADD),
 		  redEnabled(true),
 		  greenEnabled(true),
 		  blueEnabled(true),

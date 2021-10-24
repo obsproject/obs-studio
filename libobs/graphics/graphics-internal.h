@@ -147,6 +147,8 @@ struct gs_exports {
 					       enum gs_blend_type dest_c,
 					       enum gs_blend_type src_a,
 					       enum gs_blend_type dest_a);
+	void (*device_blend_op)(gs_device_t *device, enum gs_blend_op_type op);
+
 	void (*device_depth_function)(gs_device_t *device,
 				      enum gs_depth_test test);
 	void (*device_stencil_function)(gs_device_t *device,
@@ -344,6 +346,7 @@ struct blend_state {
 	enum gs_blend_type dest_c;
 	enum gs_blend_type src_a;
 	enum gs_blend_type dest_a;
+	enum gs_blend_op_type op;
 };
 
 struct graphics_subsystem {

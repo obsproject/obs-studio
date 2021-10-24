@@ -1262,6 +1262,17 @@ void device_blend_function_separate(gs_device_t *device,
 	UNUSED_PARAMETER(device);
 }
 
+void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
+{
+	GLenum gl_blend_op = convert_gs_blend_op_type(op);
+
+	glBlendEquation(gl_blend_op);
+	if (!gl_success("glBlendEquation"))
+		blog(LOG_ERROR, "device_blend_op (GL) failed");
+
+	UNUSED_PARAMETER(device);
+}
+
 void device_depth_function(gs_device_t *device, enum gs_depth_test test)
 {
 	GLenum gl_test = convert_gs_depth_test(test);
