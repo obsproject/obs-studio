@@ -41,12 +41,13 @@ struct screen_capture {
 	int game_mode;
 	int monitor_id;
 
-	float game_window_checking;
-	float game_window_checking_interval;
+	bool  is_game_capture_attempting;
+	float game_capture_attempts_time;
+	float game_capture_attempts_time_max;
 
 	struct dstr prev_line;
 
-	HANDLE sources_mutex;
+	HANDLE subsources_mutex;
 	HANDLE update_mutex;
 	obs_source_t *game_capture;
 	obs_source_t *window_capture;
@@ -82,7 +83,7 @@ static void close_prev_source(struct screen_capture *context)
 {
 	blog(LOG_DEBUG, "[SCREEN_CAPTURE]: remove all sources");
 
-	WaitForSingleObject(context->sources_mutex, INFINITE);
+	WaitForSingleObject(context->subsources_mutex, INFINITE);
 	context->current_capture_source = NULL;
 	if (context->window_capture) {
 		obs_source_remove_active_child(context->source,
@@ -102,7 +103,7 @@ static void close_prev_source(struct screen_capture *context)
 		obs_source_release(context->game_capture);
 		context->game_capture = NULL;
 	}
-	ReleaseMutex(context->sources_mutex);
+	ReleaseMutex(context->subsources_mutex);
 }
 static void scs_update_window_mode_line(struct screen_capture *contex,
 					obs_data_t *settings)
@@ -147,8 +148,8 @@ static void scs_init(void *data, obs_data_t *settings)
 	context->capture_mode = CAPTURE_MODE_UNSET;
 	context->game_mode = GAME_MODE_UNSET;
 	context->monitor_id = -1;
-	context->game_window_checking = 0.0f;
-	context->game_window_checking_interval = 5.0f;
+	context->is_game_capture_attempting = false;
+	context->game_capture_attempts_time_max = 5.0f;
 	dstr_init(&context->prev_line);
 	dstr_from_mbs(&context->prev_line, "");
 
@@ -215,7 +216,7 @@ static void scs_destroy(void *data)
 
 	scs_deinit(data);
 	CloseHandle(context->update_mutex);
-	CloseHandle(context->sources_mutex);
+	CloseHandle(context->subsources_mutex);
 	bfree(context);
 }
 
@@ -257,12 +258,12 @@ static void scs_render(void *data, gs_effect_t *effect)
 {
 	struct screen_capture *context = data;
 	if (context->initialized) {
-		DWORD ret = WaitForSingleObject(context->sources_mutex, 0);
+		DWORD ret = WaitForSingleObject(context->subsources_mutex, 0);
 		if (ret == WAIT_OBJECT_0) {
 			if (context->current_capture_source) {
 				scs_render_source(context->current_capture_source);
 			}
-			ReleaseMutex(context->sources_mutex);
+			ReleaseMutex(context->subsources_mutex);
 		}
 	}
 	UNUSED_PARAMETER(effect);
@@ -308,14 +309,13 @@ static void switch_to_game_capture_mode(struct screen_capture *context)
 		break;
 	}
 
-	WaitForSingleObject(context->sources_mutex, INFINITE);
+	WaitForSingleObject(context->subsources_mutex, INFINITE);
 	context->game_capture = obs_source_create_private(
 		"game_capture", "screen_capture_game_capture",
 		game_capture_settings);
 	obs_source_add_active_child(context->source, context->game_capture);
-	ReleaseMutex(context->sources_mutex);
+	ReleaseMutex(context->subsources_mutex);
 
-	context->game_window_checking = -1.0f;
 	obs_data_release(game_capture_settings);
 	obs_data_release(settings);
 	context->current_capture_source = context->game_capture;
@@ -335,14 +335,13 @@ static void switch_to_monitor_capture_mode(struct screen_capture *context)
 	obs_data_set_bool(monitor_settings, S_CAPTURE_CURSOR,
 			  obs_data_get_bool(settings, S_CAPTURE_CURSOR));
 
-	WaitForSingleObject(context->sources_mutex, INFINITE);
+	WaitForSingleObject(context->subsources_mutex, INFINITE);
 	context->monitor_capture = obs_source_create_private(
 		"monitor_capture", "screen_capture_monitor_capture",
 		monitor_settings);
 	obs_source_add_active_child(context->source, context->monitor_capture);
-	ReleaseMutex(context->sources_mutex);
+	ReleaseMutex(context->subsources_mutex);
 
-	context->game_window_checking = 0.0f;
 	obs_data_release(monitor_settings);
 	obs_data_release(settings);
 	context->current_capture_source = context->monitor_capture;
@@ -362,14 +361,13 @@ static void switch_to_window_capture_mode(struct screen_capture *context)
 	obs_data_set_bool(window_settings, S_CAPTURE_CURSOR,
 			  obs_data_get_bool(settings, S_CAPTURE_CURSOR));
 
-	WaitForSingleObject(context->sources_mutex, INFINITE);
+	WaitForSingleObject(context->subsources_mutex, INFINITE);
 	context->window_capture = obs_source_create_private(
 		"window_capture", "screen_capture_window_capture",
 		window_settings);
 	obs_source_add_active_child(context->source, context->window_capture);
-	ReleaseMutex(context->sources_mutex);
+	ReleaseMutex(context->subsources_mutex);
 
-	context->game_window_checking = 0.0f;
 	obs_data_release(window_settings);
 	obs_data_release(settings);
 
@@ -378,15 +376,15 @@ static void switch_to_window_capture_mode(struct screen_capture *context)
 
 static void scs_check_window_capture_state(struct screen_capture *context)
 {
-	if (context->game_window_checking < 0.0f)
+	if (!context->is_game_capture_attempting)
 		return;
 
-	if (context->game_window_checking <
-	    context->game_window_checking_interval) {
+	if (context->game_capture_attempts_time <
+	    context->game_capture_attempts_time_max) {
 		if (obs_source_get_height(context->game_capture)) {
 			blog(LOG_DEBUG,
 			     "[SCREEN_CAPTURE]: game capture have non zero height can make it main source");
-			WaitForSingleObject(context->sources_mutex, INFINITE);
+			WaitForSingleObject(context->subsources_mutex, INFINITE);
 			context->current_capture_source = context->game_capture;
 			if (context->window_capture) {
 				obs_source_remove_active_child(
@@ -395,21 +393,21 @@ static void scs_check_window_capture_state(struct screen_capture *context)
 				obs_source_set_hidden(context->window_capture, true);
 				obs_source_dec_active(context->window_capture);
 			}
-			ReleaseMutex(context->sources_mutex);
-			context->game_window_checking = -1.0f;
+			ReleaseMutex(context->subsources_mutex);
+			context->is_game_capture_attempting = false;
 		}
 	} else {
 		blog(LOG_DEBUG,
 		     "[SCREEN_CAPTURE]: game try interval expired switch to window as main source");
 		if (context->game_capture) {
-			WaitForSingleObject(context->sources_mutex, INFINITE);
+			WaitForSingleObject(context->subsources_mutex, INFINITE);
 			obs_source_remove_active_child(context->source,
 						       context->game_capture);
 			obs_source_set_hidden(context->game_capture, true);
 			obs_source_dec_active(context->game_capture);
-			ReleaseMutex(context->sources_mutex);
+			ReleaseMutex(context->subsources_mutex);
 		}
-		context->game_window_checking = -1.0f;
+		context->is_game_capture_attempting = false;
 	}
 }
 
@@ -418,8 +416,8 @@ static void scs_tick(void *data, float seconds)
 	struct screen_capture *context = data;
 
 	if (context->initialized) {
-		if (context->game_window_checking >= 0.0f)
-			context->game_window_checking += seconds;
+		if (context->is_game_capture_attempting)
+			context->game_capture_attempts_time += seconds;
 		if (context->current_capture_source) {
 			obs_source_video_tick(context->current_capture_source, seconds);
 			scs_check_window_capture_state(context);
@@ -437,23 +435,24 @@ static bool capture_source_update(struct screen_capture *context,
 	     capture_source_string);
 	
 	DWORD mutex_ret = WaitForSingleObject(context->update_mutex, 0);
-	if (mutex_ret != WAIT_OBJECT_0) { 
+	if (mutex_ret != WAIT_OBJECT_0) {
 		return;
 	}
 
 	if (dstr_cmp(&context->prev_line, capture_source_string) == 0) {
 		bool capture_cursor = obs_data_get_bool(settings, S_CAPTURE_CURSOR);
-		DWORD ret = WaitForSingleObject(context->sources_mutex, 0);
+		DWORD ret = WaitForSingleObject(context->subsources_mutex, 0);
 		if (ret == WAIT_OBJECT_0) {
 			apply_cursor_option(context->monitor_capture, capture_cursor);
 			apply_cursor_option(context->game_capture, capture_cursor);
 			apply_cursor_option(context->window_capture, capture_cursor);
-			ReleaseMutex(context->sources_mutex);
+			ReleaseMutex(context->subsources_mutex);
 		}
 		return true;
 	} else {
 		dstr_from_mbs(&context->prev_line, capture_source_string);
 	}
+	context->is_game_capture_attempting = false;
 
 	char **strlist;
 	strlist = strlist_split(capture_source_string, ':', true);
@@ -511,6 +510,8 @@ static bool capture_source_update(struct screen_capture *context,
 	case CAPTURE_MODE_WINDOW:
 		switch_to_game_capture_mode(context);
 		switch_to_window_capture_mode(context);
+		context->is_game_capture_attempting = true;
+		context->game_capture_attempts_time = 0.0f;
 		break;
 	};
 	ReleaseMutex(context->update_mutex);
@@ -531,7 +532,7 @@ static void *scs_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct screen_capture *context = bzalloc(sizeof(struct screen_capture));
 	context->source = source;
-	context->sources_mutex = CreateMutexW(NULL, false, NULL);
+	context->subsources_mutex = CreateMutexW(NULL, false, NULL);
 	context->update_mutex = CreateMutexW(NULL, false, NULL);
 
 	set_initialized(context, false);
