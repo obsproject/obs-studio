@@ -638,8 +638,13 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_context_data_remove(&source->context);
 
+#ifdef WIN32
+	blog(LOG_DEBUG, "%ssource '%s' destroyed (0x%I64X) (Thread %d)",
+	     source->context.private ? "private " : "", source->context.name, (uintptr_t)source, pthread_getw32threadid_np(pthread_self()));
+#else
 	blog(LOG_DEBUG, "%ssource '%s' destroyed",
 	     source->context.private ? "private " : "", source->context.name);
+#endif
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
