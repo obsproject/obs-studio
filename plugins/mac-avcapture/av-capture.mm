@@ -77,7 +77,8 @@ struct av_capture;
 	     ##__VA_ARGS__)
 
 @interface OBSAVCaptureDelegate
-	: NSObject <AVCaptureVideoDataOutputSampleBufferDelegate> {
+	: NSObject <AVCaptureVideoDataOutputSampleBufferDelegate,
+		    AVCaptureAudioDataOutputSampleBufferDelegate> {
 @public
 	struct av_capture *capture;
 }
@@ -118,6 +119,7 @@ struct av_video_info {
 struct av_capture {
 	OBSAVCaptureDelegate *delegate;
 	dispatch_queue_t queue;
+	dispatch_queue_t audioQueue;
 	bool has_clock;
 
 	bool device_locked;
@@ -125,6 +127,7 @@ struct av_capture {
 	left_right::left_right<av_video_info> video_info;
 
 	AVCaptureVideoDataOutput *out;
+	AVCaptureAudioDataOutput *audioOut;
 	AVCaptureDevice *device;
 	AVCaptureDeviceInput *device_input;
 	AVCaptureSession *session;
@@ -139,10 +142,12 @@ struct av_capture {
 	bool use_preset = false;
 	int requested_colorspace = COLOR_SPACE_AUTO;
 	int requested_video_range = VIDEO_RANGE_AUTO;
+	bool enable_audio;
 
 	obs_source_t *source;
 
 	obs_source_frame frame;
+	obs_source_audio audio;
 };
 
 static NSString *get_string(obs_data_t *data, char const *name)
@@ -593,6 +598,70 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame,
 	return true;
 }
 
+static inline bool update_audio(obs_source_audio *audio,
+				CMSampleBufferRef sample_buffer)
+{
+	size_t requiredSize;
+	OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+		sample_buffer, &requiredSize, nullptr, NULL, nullptr, nullptr,
+		kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
+		nullptr);
+
+	if (status != noErr) {
+		blog(LOG_WARNING,
+		     "[mac-avcapture]: Error while getting size of sample buffer");
+		return false;
+	}
+
+	AudioBufferList *list = (AudioBufferList *)bmalloc(requiredSize);
+	CMBlockBufferRef buffer;
+
+	status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
+		sample_buffer, nullptr, list, requiredSize, nullptr, nullptr,
+		kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
+		&buffer);
+
+	if (status != noErr || !list) {
+		if (list)
+			bfree(list);
+
+		blog(LOG_WARNING,
+		     "[mac-avcapture]: Error while copying sample buffer to audio buffer list");
+		return false;
+	}
+
+	for (size_t i = 0; i < list->mNumberBuffers; i++)
+		audio->data[i] = (uint8_t *)list->mBuffers[i].mData;
+
+	audio->frames = CMSampleBufferGetNumSamples(sample_buffer);
+	CMFormatDescriptionRef desc =
+		CMSampleBufferGetFormatDescription(sample_buffer);
+	const AudioStreamBasicDescription *asbd =
+		CMAudioFormatDescriptionGetStreamBasicDescription(desc);
+	audio->samples_per_sec = asbd->mSampleRate;
+	audio->speakers = (enum speaker_layout)asbd->mChannelsPerFrame;
+	switch (asbd->mBitsPerChannel) {
+	case 8:
+		audio->format = AUDIO_FORMAT_U8BIT;
+		break;
+	case 16:
+		audio->format = AUDIO_FORMAT_16BIT;
+		break;
+	case 32:
+		audio->format = AUDIO_FORMAT_32BIT;
+		break;
+	default:
+		audio->format = AUDIO_FORMAT_UNKNOWN;
+	}
+
+	if (buffer)
+		CFRelease(buffer);
+
+	bfree(list);
+
+	return true;
+}
+
 @implementation OBSAVCaptureDelegate
 - (void)captureOutput:(AVCaptureOutput *)out
 	didDropSampleBuffer:(CMSampleBufferRef)sampleBuffer
@@ -614,23 +683,42 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame,
 	if (count < 1 || !capture)
 		return;
 
-	obs_source_frame *frame = &capture->frame;
-
 	CMTime target_pts =
 		CMSampleBufferGetOutputPresentationTimeStamp(sampleBuffer);
 	CMTime target_pts_nano = CMTimeConvertScale(
 		target_pts, NANO_TIMESCALE, kCMTimeRoundingMethod_Default);
-	frame->timestamp = target_pts_nano.value;
 
-	if (!update_frame(capture, frame, sampleBuffer)) {
-		obs_source_output_video(capture->source, nullptr);
-		return;
+	CMFormatDescriptionRef desc =
+		CMSampleBufferGetFormatDescription(sampleBuffer);
+	CMMediaType type = CMFormatDescriptionGetMediaType(desc);
+	if (type == kCMMediaType_Video) {
+		obs_source_frame *frame = &capture->frame;
+		frame->timestamp = target_pts_nano.value;
+
+		if (!update_frame(capture, frame, sampleBuffer)) {
+			obs_source_output_video(capture->source, nullptr);
+			return;
+		}
+
+		obs_source_output_video(capture->source, frame);
+
+		CVImageBufferRef img =
+			CMSampleBufferGetImageBuffer(sampleBuffer);
+		CVPixelBufferUnlockBaseAddress(img,
+					       kCVPixelBufferLock_ReadOnly);
+	} else if (type == kCMMediaType_Audio) {
+		if (!capture->enable_audio)
+			return;
+
+		obs_source_audio *audio = &capture->audio;
+		audio->timestamp = target_pts_nano.value;
+
+		if (!update_audio(audio, sampleBuffer)) {
+			obs_source_output_audio(capture->source, nullptr);
+			return;
+		}
+		obs_source_output_audio(capture->source, audio);
 	}
-
-	obs_source_output_video(capture->source, frame);
-
-	CVImageBufferRef img = CMSampleBufferGetImageBuffer(sampleBuffer);
-	CVPixelBufferUnlockBaseAddress(img, kCVPixelBufferLock_ReadOnly);
 }
 @end
 
@@ -667,6 +755,7 @@ static void clear_capture(av_capture *capture)
 		[capture->session stopRunning];
 
 	obs_source_output_video(capture->source, nullptr);
+	obs_source_output_audio(capture->source, nullptr);
 }
 
 static void remove_device(av_capture *capture)
@@ -710,20 +799,37 @@ static bool init_session(av_capture *capture)
 		return false;
 	}
 
+	auto audioOut = [[AVCaptureAudioDataOutput alloc] init];
+	if (!audioOut) {
+		AVLOG(LOG_ERROR, "Could not create AVCaptureAudioDataOutput");
+		return false;
+	}
+
 	auto queue = dispatch_queue_create(NULL, NULL);
 	if (!queue) {
 		AVLOG(LOG_ERROR, "Could not create dispatch queue");
 		return false;
 	}
 
+	auto audioQueue = dispatch_queue_create(NULL, NULL);
+	if (!queue) {
+		AVLOG(LOG_ERROR, "Could not create dispatch queue for audio");
+		return false;
+	}
+
 	capture->session = session;
 	capture->delegate = delegate;
 	capture->out = out;
+	capture->audioOut = audioOut;
 	capture->queue = queue;
+	capture->audioQueue = audioQueue;
 
 	[capture->session addOutput:capture->out];
 	[capture->out setSampleBufferDelegate:capture->delegate
 					queue:capture->queue];
+	[capture->session addOutput:capture->audioOut];
+	[capture->audioOut setSampleBufferDelegate:capture->delegate
+					     queue:capture->audioQueue];
 
 	return true;
 }
@@ -1075,6 +1181,12 @@ static bool init_manual(av_capture *capture, AVCaptureDevice *dev,
 	return true;
 }
 
+static inline void av_capture_set_audio_active(av_capture *capture, bool active)
+{
+	obs_source_set_audio_active(capture->source, active);
+	capture->enable_audio = active;
+}
+
 static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 			   obs_data_t *settings)
 {
@@ -1091,6 +1203,11 @@ static void capture_device(av_capture *capture, AVCaptureDevice *dev,
 		if (!init_manual(capture, dev, settings))
 			return;
 	}
+
+	av_capture_set_audio_active(
+		capture, obs_data_get_bool(settings, "enable_audio") &&
+				 ([dev hasMediaType:AVMediaTypeAudio] ||
+				  [dev hasMediaType:AVMediaTypeMuxed]));
 
 	if (!init_device_input(capture, dev))
 		return;
@@ -1298,7 +1415,7 @@ static NSString *preset_names(NSString *preset)
 	return [NSString stringWithFormat:@"Unknown (%@)", preset];
 }
 
-static void av_capture_defaults(obs_data_t *settings)
+inline static void av_capture_defaults(obs_data_t *settings, bool enable_audio)
 {
 	obs_data_set_default_string(settings, "uid", "");
 	obs_data_set_default_bool(settings, "use_preset", true);
@@ -1309,6 +1426,18 @@ static void av_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "input_format", INPUT_FORMAT_AUTO);
 	obs_data_set_default_int(settings, "color_space", COLOR_SPACE_AUTO);
 	obs_data_set_default_int(settings, "video_range", VIDEO_RANGE_AUTO);
+
+	obs_data_set_default_bool(settings, "enable_audio", enable_audio);
+}
+
+static void av_capture_defaults_v1(obs_data_t *settings)
+{
+	av_capture_defaults(settings, false);
+}
+
+static void av_capture_defaults_v2(obs_data_t *settings)
+{
+	av_capture_defaults(settings, true);
 }
 
 static bool update_device_list(obs_property_t *list, NSString *uid,
@@ -2094,11 +2223,13 @@ static void add_manual_properties(obs_properties_t *props)
 #undef ADD_RANGE
 }
 
-static obs_properties_t *av_capture_properties(void *capture)
+static obs_properties_t *av_capture_properties(void *data)
 {
+	struct av_capture *capture = static_cast<av_capture *>(data);
+
 	obs_properties_t *props = obs_properties_create();
 
-	add_properties_param(props, static_cast<av_capture *>(capture));
+	add_properties_param(props, capture);
 
 	obs_property_t *dev_list = obs_properties_add_list(
 		props, "device", TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
@@ -2127,6 +2258,27 @@ static obs_properties_t *av_capture_properties(void *capture)
 
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("Buffering"));
+
+	OBSDataAutoRelease current_settings =
+		obs_source_get_settings(capture->source);
+	if (!obs_data_get_bool(current_settings, "enable_audio")) {
+		auto cb = [](obs_properties_t *, obs_property_t *prop,
+			     void *data) {
+			struct av_capture *capture =
+				static_cast<av_capture *>(data);
+			OBSDataAutoRelease settings = obs_data_create();
+			obs_data_set_bool(settings, "enable_audio", true);
+			obs_source_update(capture->source, settings);
+
+			// Enable all audio tracks
+			obs_source_set_audio_mixers(capture->source, 0x3F);
+			obs_property_set_visible(prop, false);
+			return true;
+		};
+		obs_properties_add_button2(props, "enable_audio_button",
+					   obs_module_text("EnableAudio"), cb,
+					   capture);
+	}
 
 	return props;
 }
@@ -2197,6 +2349,12 @@ static void av_capture_update(void *data, obs_data_t *settings)
 
 	av_capture_enable_buffering(capture,
 				    obs_data_get_bool(settings, "buffering"));
+
+	av_capture_set_audio_active(
+		capture,
+		obs_data_get_bool(settings, "enable_audio") &&
+			([capture->device hasMediaType:AVMediaTypeAudio] ||
+			 [capture->device hasMediaType:AVMediaTypeMuxed]));
 }
 
 OBS_DECLARE_MODULE()
@@ -2224,16 +2382,24 @@ bool obs_module_load(void)
 	obs_source_info av_capture_info = {
 		.id = "av_capture_input",
 		.type = OBS_SOURCE_TYPE_INPUT,
-		.output_flags = OBS_SOURCE_ASYNC_VIDEO |
-				OBS_SOURCE_DO_NOT_DUPLICATE,
+		.output_flags = OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+				OBS_SOURCE_DO_NOT_DUPLICATE |
+				OBS_SOURCE_CAP_OBSOLETE,
 		.get_name = av_capture_getname,
 		.create = av_capture_create,
 		.destroy = av_capture_destroy,
-		.get_defaults = av_capture_defaults,
+		.get_defaults = av_capture_defaults_v1,
 		.get_properties = av_capture_properties,
 		.update = av_capture_update,
 		.icon_type = OBS_ICON_TYPE_CAMERA,
 	};
+	obs_register_source(&av_capture_info);
+
+	av_capture_info.version = 2;
+	av_capture_info.output_flags = OBS_SOURCE_ASYNC_VIDEO |
+				       OBS_SOURCE_AUDIO |
+				       OBS_SOURCE_DO_NOT_DUPLICATE;
+	av_capture_info.get_defaults = av_capture_defaults_v2,
 
 	obs_register_source(&av_capture_info);
 	return true;
