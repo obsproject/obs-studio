@@ -832,7 +832,8 @@ static bool vt_h264_extra_data(void *data, uint8_t **extra_data, size_t *size)
 
 static const char *vt_h264_getname(void *data)
 {
-	const char *disp_name = vt_encoders.array[(int)data].disp_name;
+	uintptr_t encoder_id = (uintptr_t)data;
+	const char *disp_name = vt_encoders.array[(int)encoder_id].disp_name;
 
 	if (strcmp("Apple H.264 (HW)", disp_name) == 0) {
 		return obs_module_text("VTH264EncHW");
