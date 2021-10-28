@@ -13,6 +13,7 @@ if(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	else()
 		message("aja plugin includes: ${LIBAJANTV2_INCLUDE_DIRS}")
 		message("aja plugin libs: ${LIBAJANTV2_LIBRARIES}")
+		message("aja plugin debug libs: ${LIBAJANTV2_DEBUG_LIBRARIES}")
 	endif()
 else()
 	message(STATUS "aja plugin disabled (32-bit not supported)")
@@ -22,7 +23,7 @@ endif()
 set(aja_INCLUDE_DIRS
 	${LIBAJANTV2_INCLUDE_DIRS})
 set(aja_LIBRARIES
-	${LIBAJANTV2_LIBRARIES}
+	$<IF:$<CONFIG:Debug>,${LIBAJANTV2_DEBUG_LIBRARIES},${LIBAJANTV2_LIBRARIES}>
 	libobs)
 
 set(aja_SOURCES

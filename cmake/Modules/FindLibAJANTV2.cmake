@@ -32,14 +32,30 @@ find_path(AJA_LIBRARIES_INCLUDE_DIR
 	PATH_SUFFIXES
 		include)
 
-if (CMAKE_BUILD_TYPE STREQUAL "Debug")
-	set(AJA_LIB_FILENAMES ajantv2d libajantv2d)
-else()
-	set(AJA_LIB_FILENAMES ajantv2 libajantv2)
-endif()
-
 find_library(AJA_NTV2_LIB
-	NAMES ${_AJA_NTV2_LIBRARIES} ${AJA_LIB_FILENAMES}
+	NAMES ${_AJA_NTV2_LIBRARIES} ajantv2 libajantv2
+	HINTS
+		ENV AJASDKPath${_lib_suffix}
+		ENV AJASDKPath
+		ENV DepsPath${_lib_suffix}
+		ENV DepsPath
+		${AJASDKPath${_lib_suffix}}
+		${AJASDKPath}
+		${DepsPath${_lib_suffix}}
+		${DepsPath}
+		${_AJA_NTV2_LIBRARY_DIRS}
+	PATHS
+		/usr/lib /usr/local/lib /opt/local/lib /sw/lib
+	PATH_SUFFIXES
+		lib${_lib_suffix} lib
+		libs${_lib_suffix} libs
+		bin${_lib_suffix} bin
+		../lib${_lib_suffix} ../lib
+		../libs${_lib_suffix} ../libs
+		../bin${_lib_suffix} ../bin)
+
+find_library(AJA_NTV2_DEBUG_LIB
+	NAMES ajantv2d libajantv2d
 	HINTS
 		ENV AJASDKPath${_lib_suffix}
 		ENV AJASDKPath
@@ -89,5 +105,9 @@ if(LIBAJANTV2_FOUND)
 	endif()
 
 	set(LIBAJANTV2_LIBRARIES ${AJA_NTV2_LIB})
+	if(AJA_NTV2_DEBUG_LIB STREQUAL "AJA_NTV2_DEBUG_LIB-NOTFOUND")
+		set(AJA_NTV2_DEBUG_LIB ${AJA_NTV2_LIB})
+	endif()
+	set(LIBAJANTV2_DEBUG_LIBRARIES ${AJA_NTV2_DEBUG_LIB})
 	set(LIBAJANTV2_INCLUDE_DIRS ${AJA_LIBRARIES_INCLUDE_DIRS})
 endif()
