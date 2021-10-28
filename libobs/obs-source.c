@@ -5384,3 +5384,14 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 
 	da_free(cur_filters);
 }
+
+uint32_t obs_source_get_version(const obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_version"))
+		return 0;
+
+	if (!source->info.version)
+		return 1;
+
+	return source->info.version;
+}
