@@ -57,6 +57,7 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED,
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING,
 	OBS_FRONTEND_EVENT_PROFILE_CHANGING,
+	OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN,
 };
 
 /* ------------------------------------------------------------------------- */
