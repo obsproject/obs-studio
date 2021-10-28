@@ -93,6 +93,10 @@ Structures/Enumerations
 
      Triggered when a profile has been added/removed/renamed.
 
+   - **OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN**
+
+     Triggered when scripts are unloaded when exiting OBS.
+
    - **OBS_FRONTEND_EVENT_EXIT**
 
      Triggered when the program is about to exit.

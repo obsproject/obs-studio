@@ -4590,6 +4590,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	ClearExtraBrowserDocks();
 #endif
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN);
+
 	disableSaving++;
 
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
