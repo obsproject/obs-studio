@@ -1151,8 +1151,10 @@ int obs_reset_video(struct obs_video_info *ovi)
 
 	struct obs_core_video *video = &obs->video;
 
+	blog(LOG_INFO, "About to stop and reset video");
 	stop_video();
 	obs_free_video();
+	blog(LOG_INFO, "Video stopped and ready too init");
 
 	/* align to multiple-of-two and SSE alignment sizes */
 	ovi->output_width &= 0xFFFFFFFC;

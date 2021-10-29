@@ -111,7 +111,7 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
-	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);
+	blog(LOG_DEBUG, "encoder '%s' (%s) created (0x%I64X)", name, id, encoder);
 	return encoder;
 }
 
@@ -259,8 +259,8 @@ static void obs_encoder_actually_destroy(obs_encoder_t *encoder)
 		da_free(encoder->outputs);
 		pthread_mutex_unlock(&encoder->outputs_mutex);
 
-		blog(LOG_DEBUG, "encoder '%s' destroyed",
-		     encoder->context.name);
+		blog(LOG_DEBUG, "encoder '%s' destroyed (0x%I64X)",
+		     encoder->context.name, encoder);
 
 		free_audio_buffers(encoder);
 
