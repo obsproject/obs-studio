@@ -39,6 +39,17 @@ jobs:
     - script: ./slobs_CI/install-script-win.cmd
       displayName: 'Configure / Build'
 
+    - script: 'git clone https://github.com/stream-labs/symsrv-scripts.git'
+      displayName: 'Fetch symsrv-scripts'
+      condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
+
+    - script: ./symsrv-scripts/main.bat "%CD%/symsrv-scripts" ".\main.ps1 -localSourceDir '%CD%' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '$(Build.SourceVersion)' -subModules 'plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/obs-vst,stream-labs,obs-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs'"
+      displayName: 'Run symbol server scripts'
+      condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
+      env:
+        AWS_SYMB_ACCESS_KEY_ID: $(AWS_SYMB_ACCESS_KEY_ID)
+        AWS_SYMB_SECRET_ACCESS_KEY: $(AWS_SYMB_SECRET_ACCESS_KEY)
+
     - task: ArchiveFiles@2
       inputs:
         rootFolderOrFile: $(InstallPath)
