@@ -617,13 +617,15 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define UDP_PROTO "udp"
 #define TCP_PROTO "tcp"
 #define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
 
 static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
 {
 	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
 	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
 	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1);
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
