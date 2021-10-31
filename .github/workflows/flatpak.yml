@@ -8,6 +8,16 @@ on:
     paths-ignore: ['**.md']
     branches: [master]
 
+env:
+  TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+  TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+  RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+  RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+  YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+  YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+  YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+  YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+
 jobs:
   flatpak_builder:
     name: Bundle
