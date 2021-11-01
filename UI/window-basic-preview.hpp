@@ -20,6 +20,8 @@ class QMouseEvent;
 
 #define ZOOM_SENSITIVITY 1.125f
 
+#define SPACER_LABEL_MARGIN 6.0f
+
 enum class ItemHandle : uint32_t {
 	None = 0,
 	TopLeft = ITEM_TOP | ITEM_LEFT,
@@ -166,4 +168,9 @@ public:
 	 * byte boundary. */
 	static inline void *operator new(size_t size) { return bmalloc(size); }
 	static inline void operator delete(void *ptr) { bfree(ptr); }
+
+	OBSSourceAutoRelease spacerLabel[4];
+	int spacerPx[4] = {0};
+
+	void DrawSpacingHelpers();
 };

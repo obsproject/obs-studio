@@ -469,6 +469,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 		&OBSBasic::BroadcastButtonClicked);
 
 	UpdatePreviewSafeAreas();
+	UpdatePreviewSpacingHelpers();
 }
 
 static void SaveAudioDevice(const char *name, int channel, obs_data_t *parent,
@@ -4245,6 +4246,9 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 		RenderSafeAreas(window->topLine, targetCX, targetCY);
 		RenderSafeAreas(window->rightLine, targetCX, targetCY);
 	}
+
+	if (window->drawSpacingHelpers)
+		window->ui->preview->DrawSpacingHelpers();
 
 	/* --------------------------------------- */
 
@@ -10176,4 +10180,10 @@ QColor OBSBasic::GetHoverColor() const
 	} else {
 		return QColor::fromRgb(0, 127, 255);
 	}
+}
+
+void OBSBasic::UpdatePreviewSpacingHelpers()
+{
+	drawSpacingHelpers = config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
 }

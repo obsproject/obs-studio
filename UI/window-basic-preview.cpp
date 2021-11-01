@@ -12,6 +12,7 @@
 
 #define HANDLE_RADIUS 4.0f
 #define HANDLE_SEL_RADIUS (HANDLE_RADIUS * 1.5f)
+#define HELPER_ROT_BREAKPONT 45.0f
 
 /* TODO: make C++ math classes and clean up code here later */
 
@@ -2285,4 +2286,299 @@ void OBSBasicPreview::SetScalingAmount(float newScalingAmountVal)
 OBSBasicPreview *OBSBasicPreview::Get()
 {
 	return OBSBasic::Get()->ui->preview;
+}
+
+static obs_source_t *CreateLabel()
+{
+	OBSDataAutoRelease settings = obs_data_create();
+	OBSDataAutoRelease font = obs_data_create();
+
+#if defined(_WIN32)
+	obs_data_set_string(font, "face", "Arial");
+#elif defined(__APPLE__)
+	obs_data_set_string(font, "face", "Helvetica");
+#else
+	obs_data_set_string(font, "face", "Monospace");
+#endif
+	obs_data_set_int(font, "flags", 1); // Bold text
+	obs_data_set_int(font, "size", 16);
+
+	obs_data_set_obj(settings, "font", font);
+	obs_data_set_bool(settings, "outline", true);
+
+#ifdef _WIN32
+	obs_data_set_int(settings, "outline_color", 0x000000);
+	obs_data_set_int(settings, "outline_size", 3);
+	const char *text_source_id = "text_gdiplus";
+#else
+	const char *text_source_id = "text_ft2_source";
+#endif
+
+	OBSSource txtSource =
+		obs_source_create_private(text_source_id, NULL, settings);
+
+	return txtSource;
+}
+
+static void SetLabelText(int sourceIndex, int px)
+{
+	OBSBasicPreview *prev = OBSBasicPreview::Get();
+
+	if (px == prev->spacerPx[sourceIndex])
+		return;
+
+	std::string text = std::to_string(px) + " px";
+
+	obs_source_t *source = prev->spacerLabel[sourceIndex];
+
+	OBSDataAutoRelease settings = obs_source_get_settings(source);
+	obs_data_set_string(settings, "text", text.c_str());
+	obs_source_update(source, settings);
+
+	prev->spacerPx[sourceIndex] = px;
+}
+
+static void DrawLabel(OBSSource source, vec3 &pos, vec3 &viewport)
+{
+	if (!source)
+		return;
+
+	vec3_mul(&pos, &pos, &viewport);
+
+	gs_matrix_push();
+	gs_matrix_identity();
+	gs_matrix_translate(&pos);
+	obs_source_video_render(source);
+	gs_matrix_pop();
+}
+
+static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport)
+{
+	matrix4 transform;
+	matrix4_identity(&transform);
+	transform.x.x = viewport.x;
+	transform.y.y = viewport.y;
+
+	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
+	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
+
+	vec4 color;
+	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
+	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
+
+	gs_technique_begin(tech);
+	gs_technique_begin_pass(tech, 0);
+
+	gs_matrix_push();
+	gs_matrix_mul(&transform);
+
+	vec2 scale;
+	vec2_set(&scale, viewport.x, viewport.y);
+
+	DrawLine(start.x, start.y, end.x, end.y, HANDLE_RADIUS / 2, scale);
+
+	gs_matrix_pop();
+
+	gs_load_vertexbuffer(nullptr);
+
+	gs_technique_end_pass(tech);
+	gs_technique_end(tech);
+}
+
+static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end,
+				vec3 &viewport)
+{
+	bool horizontal = (sourceIndex == 2 || sourceIndex == 3);
+
+	// If outside of preview, don't render
+	if (!((horizontal && (end.x >= start.x)) ||
+	      (!horizontal && (end.y >= start.y))))
+		return;
+
+	float length = vec3_dist(&start, &end);
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	float px;
+
+	if (horizontal) {
+		px = length * ovi.base_width;
+	} else {
+		px = length * ovi.base_height;
+	}
+
+	if (px <= 0.0f)
+		return;
+
+	OBSBasicPreview *prev = OBSBasicPreview::Get();
+	obs_source_t *source = prev->spacerLabel[sourceIndex];
+	vec3 labelSize, labelPos;
+	vec3_set(&labelSize, obs_source_get_width(source),
+		 obs_source_get_height(source), 1.0f);
+
+	vec3_div(&labelSize, &labelSize, &viewport);
+
+	vec3 labelMargin;
+	vec3_set(&labelMargin, SPACER_LABEL_MARGIN, SPACER_LABEL_MARGIN, 1.0f);
+	vec3_div(&labelMargin, &labelMargin, &viewport);
+
+	vec3_set(&labelPos, end.x, end.y, end.z);
+	if (horizontal) {
+		labelPos.x -= (end.x - start.x) / 2;
+		labelPos.x -= labelSize.x / 2;
+		labelPos.y -= labelMargin.y + (labelSize.y / 2) +
+			      (HANDLE_RADIUS / viewport.y);
+	} else {
+		labelPos.y -= (end.y - start.y) / 2;
+		labelPos.y -= labelSize.y / 2;
+		labelPos.x += labelMargin.x;
+	}
+
+	DrawSpacingLine(start, end, viewport);
+	SetLabelText(sourceIndex, (int)px);
+	DrawLabel(source, labelPos, viewport);
+}
+
+void OBSBasicPreview::DrawSpacingHelpers()
+{
+	if (locked)
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+
+	if (main->ui->sources->selectionModel()->selectedIndexes().count() > 1)
+		return;
+
+	OBSSceneItem item = main->GetCurrentSceneItem();
+	if (!item)
+		return;
+
+	if (obs_sceneitem_locked(item))
+		return;
+
+	vec2 itemSize = GetItemSize(item);
+	if (itemSize.x == 0.0f || itemSize.y == 0.0f)
+		return;
+
+	matrix4 boxTransform;
+	obs_sceneitem_get_box_transform(item, &boxTransform);
+
+	obs_transform_info oti;
+	obs_sceneitem_get_info(item, &oti);
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+
+	vec3 size;
+	vec3_set(&size, ovi.base_width, ovi.base_height, 1.0f);
+
+	// Init box transform side locations
+	vec3 left, right, top, bottom;
+
+	vec3_set(&left, 0.0f, 0.5f, 1.0f);
+	vec3_set(&right, 1.0f, 0.5f, 1.0f);
+	vec3_set(&top, 0.5f, 0.0f, 1.0f);
+	vec3_set(&bottom, 0.5f, 1.0f, 1.0f);
+
+	// Decide which side to use with box transform, based on rotation
+	// Seems hacky, probably a better way to do it
+	float rot = oti.rot;
+
+	if (rot >= HELPER_ROT_BREAKPONT) {
+		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
+			if (rot < i)
+				break;
+
+			vec3 l = left;
+			vec3 r = right;
+			vec3 t = top;
+			vec3 b = bottom;
+
+			vec3_copy(&top, &l);
+			vec3_copy(&right, &t);
+			vec3_copy(&bottom, &r);
+			vec3_copy(&left, &b);
+		}
+	} else if (rot <= -HELPER_ROT_BREAKPONT) {
+		for (float i = -HELPER_ROT_BREAKPONT; i >= -360.0f;
+		     i -= 90.0f) {
+			if (rot > i)
+				break;
+
+			vec3 l = left;
+			vec3 r = right;
+			vec3 t = top;
+			vec3 b = bottom;
+
+			vec3_copy(&top, &r);
+			vec3_copy(&right, &b);
+			vec3_copy(&bottom, &l);
+			vec3_copy(&left, &t);
+		}
+	}
+
+	// Switch top/bottom or right/left if scale is negative
+	if (oti.scale.x < 0.0f) {
+		vec3 l = left;
+		vec3 r = right;
+
+		vec3_copy(&left, &r);
+		vec3_copy(&right, &l);
+	}
+
+	if (oti.scale.y < 0.0f) {
+		vec3 t = top;
+		vec3 b = bottom;
+
+		vec3_copy(&top, &b);
+		vec3_copy(&bottom, &t);
+	}
+
+	// Get sides of box transform
+	left = GetTransformedPos(left.x, left.y, boxTransform);
+	right = GetTransformedPos(right.x, right.y, boxTransform);
+	top = GetTransformedPos(top.x, top.y, boxTransform);
+	bottom = GetTransformedPos(bottom.x, bottom.y, boxTransform);
+
+	bottom.y = size.y - bottom.y;
+	right.x = size.x - right.x;
+
+	// Init viewport
+	vec3 viewport;
+	vec3_set(&viewport, main->previewCX, main->previewCY, 1.0f);
+
+	vec3_div(&left, &left, &viewport);
+	vec3_div(&right, &right, &viewport);
+	vec3_div(&top, &top, &viewport);
+	vec3_div(&bottom, &bottom, &viewport);
+
+	vec3_mulf(&left, &left, main->previewScale);
+	vec3_mulf(&right, &right, main->previewScale);
+	vec3_mulf(&top, &top, main->previewScale);
+	vec3_mulf(&bottom, &bottom, main->previewScale);
+
+	// Draw spacer lines and labels
+	vec3 start, end;
+
+	for (int i = 0; i < 4; i++) {
+		if (!spacerLabel[i])
+			spacerLabel[i] = CreateLabel();
+	}
+
+	vec3_set(&start, top.x, 0.0f, 1.0f);
+	vec3_set(&end, top.x, top.y, 1.0f);
+	RenderSpacingHelper(0, start, end, viewport);
+
+	vec3_set(&start, bottom.x, 1.0f - bottom.y, 1.0f);
+	vec3_set(&end, bottom.x, 1.0f, 1.0f);
+	RenderSpacingHelper(1, start, end, viewport);
+
+	vec3_set(&start, 0.0f, left.y, 1.0f);
+	vec3_set(&end, left.x, left.y, 1.0f);
+	RenderSpacingHelper(2, start, end, viewport);
+
+	vec3_set(&start, 1.0f - right.x, right.y, 1.0f);
+	vec3_set(&end, 1.0f, right.y, 1.0f);
+	RenderSpacingHelper(3, start, end, viewport);
 }
