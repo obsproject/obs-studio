@@ -2350,6 +2350,20 @@
                 "max video bitrate": 32000,
                 "max audio bitrate": 256
             }
+        },
+        {
+            "name": "Kuaishou Live",
+            "stream_key_link": "https://studio.kuaishou.com/live/list",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://open-push.voip.yximgs.com/gifshow/"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://tx.push.yximgs.com/live/"
+                }
+            ]
         }
     ]
 }
