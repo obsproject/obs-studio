@@ -632,6 +632,9 @@ private:
 	QColor GetCropColor() const;
 	QColor GetHoverColor() const;
 
+	void UpdatePreviewSpacingHelpers();
+	bool drawSpacingHelpers = true;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

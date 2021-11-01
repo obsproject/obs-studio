@@ -407,6 +407,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->overflowSelectionHide,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->previewSafeAreas,     CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->automaticSearch,      CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->previewSpacingHelpers,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->prevProgLabelToggle,  CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1309,6 +1310,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool warnBeforeStreamStart = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "WarnBeforeStartingStream");
 	ui->warnBeforeStreamStart->setChecked(warnBeforeStreamStart);
+
+	bool spacingHelpersEnabled = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
+	ui->previewSpacingHelpers->setChecked(spacingHelpersEnabled);
 
 	bool warnBeforeStreamStop = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "WarnBeforeStoppingStream");
@@ -3121,6 +3126,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 				ui->previewSafeAreas->isChecked());
 		main->UpdatePreviewSafeAreas();
 	}
+
+	if (WidgetChanged(ui->previewSpacingHelpers)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"SpacingHelpersEnabled",
+				ui->previewSpacingHelpers->isChecked());
+		main->UpdatePreviewSpacingHelpers();
+	}
+
 	if (WidgetChanged(ui->doubleClickSwitch))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"TransitionOnDoubleClick",
