@@ -839,7 +839,8 @@ static long long GetOBSFPS();
 static inline bool IsDelayedDevice(const VideoConfig &config)
 {
 	return config.format > VideoFormat::MJPEG ||
-	       wstrstri(config.name.c_str(), L"elgato") != NULL ||
+	       (wstrstri(config.name.c_str(), L"elgato") != NULL &&
+		wstrstri(config.name.c_str(), L"facecam") == NULL) ||
 	       wstrstri(config.name.c_str(), L"stream engine") != NULL;
 }
 

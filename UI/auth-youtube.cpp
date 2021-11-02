@@ -7,6 +7,9 @@
 #include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QUrl>
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+#include <QRandomGenerator>
+#endif
 
 #ifdef WIN32
 #include <windows.h>
@@ -192,6 +195,17 @@ void YoutubeAuth::ResetChat()
 
 QString YoutubeAuth::GenerateState()
 {
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
+	char state[YOUTUBE_API_STATE_LENGTH + 1];
+	QRandomGenerator *rng = QRandomGenerator::system();
+	int i;
+
+	for (i = 0; i < YOUTUBE_API_STATE_LENGTH; i++)
+		state[i] = allowedChars[rng->bounded(0, allowedCount)];
+	state[i] = 0;
+
+	return state;
+#else
 	std::uniform_int_distribution<> distr(0, allowedCount);
 	std::string result;
 	result.reserve(YOUTUBE_API_STATE_LENGTH);
@@ -201,6 +215,7 @@ QString YoutubeAuth::GenerateState()
 					allowedChars[distr(randomSeed)]);
 			});
 	return result.c_str();
+#endif
 }
 
 // Static.
@@ -231,6 +246,10 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	deobfuscate_str(&clientid[0], YOUTUBE_CLIENTID_HASH);
 	deobfuscate_str(&secret[0], YOUTUBE_SECRET_HASH);
 
+	QString state;
+	state = auth->GenerateState();
+	server.SetState(state);
+
 	QString url_template;
 	url_template += "%1";
 	url_template += "?response_type=code";
@@ -239,7 +258,7 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	url_template += "&state=%4";
 	url_template += "&scope=https://www.googleapis.com/auth/youtube";
 	QString url = url_template.arg(YOUTUBE_AUTH_URL, clientid.c_str(),
-				       redirect_uri, auth->GenerateState());
+				       redirect_uri, state);
 
 	QString text = QTStr("YouTube.Auth.WaitingAuth.Text");
 	text = text.arg(
@@ -280,6 +299,9 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	thread->start();
 
 	dlg.exec();
+	if (dlg.result() == QMessageBox::Cancel ||
+	    dlg.result() == QDialog::Rejected)
+		return nullptr;
 
 	if (!auth->GetToken(YOUTUBE_TOKEN_URL, clientid, secret,
 			    QT_TO_UTF8(redirect_uri), YOUTUBE_SCOPE_VERSION,

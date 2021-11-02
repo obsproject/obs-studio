@@ -554,6 +554,12 @@ static inline bool obs_weak_ref_get_ref(struct obs_weak_ref *ref)
 	return false;
 }
 
+static inline bool obs_weak_ref_expired(struct obs_weak_ref *ref)
+{
+	long owners = os_atomic_load_long(&ref->refs);
+	return owners < 0;
+}
+
 /* ------------------------------------------------------------------------- */
 /* sources  */
 

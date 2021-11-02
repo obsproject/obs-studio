@@ -8,15 +8,12 @@
 struct ChannelDescription {
 	QString id;
 	QString title;
-	QString country;
-	QString language;
 };
 
 struct StreamDescription {
 	QString id;
 	QString name;
 	QString title;
-	QString description;
 };
 
 struct CategoryDescription {
@@ -40,11 +37,6 @@ struct BroadcastDescription {
 	QString projection;
 };
 
-struct BindDescription {
-	const QString id;
-	const QString stream_name;
-};
-
 bool IsYouTubeService(const std::string &service);
 
 class YoutubeApiWrappers : public YoutubeAuth {
@@ -52,11 +44,12 @@ class YoutubeApiWrappers : public YoutubeAuth {
 
 	bool TryInsertCommand(const char *url, const char *content_type,
 			      std::string request_type, const char *data,
-			      json11::Json &ret, long *error_code = nullptr);
+			      json11::Json &ret, long *error_code = nullptr,
+			      int data_size = 0);
 	bool UpdateAccessToken();
 	bool InsertCommand(const char *url, const char *content_type,
 			   std::string request_type, const char *data,
-			   json11::Json &ret);
+			   json11::Json &ret, int data_size = 0);
 
 public:
 	YoutubeApiWrappers(const Def &d);
@@ -68,19 +61,22 @@ public:
 	bool GetBroadcastsList(json11::Json &json_out, const QString &page,
 			       const QString &status);
 	bool
-	GetVideoCategoriesList(const QString &country, const QString &language,
-			       QVector<CategoryDescription> &category_list_out);
+	GetVideoCategoriesList(QVector<CategoryDescription> &category_list_out);
 	bool SetVideoCategory(const QString &video_id,
 			      const QString &video_title,
 			      const QString &video_description,
 			      const QString &categorie_id);
+	bool SetVideoThumbnail(const QString &video_id,
+			       const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);
 	bool StopBroadcast(const QString &broadcast_id);
-	bool ResetBroadcast(const QString &broadcast_id);
+	bool ResetBroadcast(const QString &broadcast_id,
+			    json11::Json &json_out);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
 
 	void SetBroadcastId(QString &broadcast_id);
+	QString GetBroadcastId();
 
 	bool FindBroadcast(const QString &id, json11::Json &json_out);
 	bool FindStream(const QString &id, json11::Json &json_out);

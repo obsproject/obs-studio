@@ -243,8 +243,12 @@ void OBSBasicSettings::SaveStream1Settings()
 	main->SetService(newService);
 	main->SaveService();
 	main->auth = auth;
-	if (!!main->auth)
+	if (!!main->auth) {
 		main->auth->LoadUI();
+		main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
+	} else {
+		main->SetBroadcastFlowEnabled(false);
+	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
 }
@@ -470,19 +474,21 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
 
+	auth.reset();
+
 	if (!main->auth) {
 		return;
 	}
 
 	auto system_auth_service = main->auth->service();
-	bool service_check = service == system_auth_service;
+	bool service_check = service.find(system_auth_service) !=
+			     std::string::npos;
 #if YOUTUBE_ENABLED
 	service_check = service_check ? service_check
 				      : IsYouTubeService(system_auth_service) &&
 						IsYouTubeService(service);
 #endif
 	if (service_check) {
-		auth.reset();
 		auth = main->auth;
 		OnAuthConnected();
 	}
@@ -598,6 +604,8 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			ui->bandwidthTestEnable->setVisible(true);
 			ui->twitchAddonLabel->setVisible(true);
 			ui->twitchAddonDropdown->setVisible(true);
+		} else {
+			ui->bandwidthTestEnable->setChecked(false);
 		}
 #if YOUTUBE_ENABLED
 		if (IsYouTubeService(a->service())) {
@@ -612,7 +620,6 @@ void OBSBasicSettings::OnOAuthStreamKeyConnected()
 			get_yt_ch_title(ui.get());
 		}
 #endif
-		ui->bandwidthTestEnable->setChecked(false);
 	}
 
 	ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
@@ -666,6 +673,7 @@ void OBSBasicSettings::on_disconnectAccount_clicked()
 
 	main->auth.reset();
 	auth.reset();
+	main->SetBroadcastFlowEnabled(false);
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 

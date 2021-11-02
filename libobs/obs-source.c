@@ -172,8 +172,6 @@ extern char *find_libobs_data_file(const char *file);
 /* internal initialization */
 static bool obs_source_init(struct obs_source *source)
 {
-	pthread_mutexattr_t attr;
-
 	source->user_volume = 1.0f;
 	source->volume = 1.0f;
 	source->sync_offset = 0;
@@ -186,11 +184,7 @@ static bool obs_source_init(struct obs_source *source)
 	pthread_mutex_init_value(&source->audio_cb_mutex);
 	pthread_mutex_init_value(&source->caption_cb_mutex);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return false;
-	if (pthread_mutex_init(&source->filter_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&source->filter_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&source->audio_buf_mutex, NULL) != 0)
 		return false;
@@ -778,6 +772,11 @@ obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak)
 		return weak->source;
 
 	return NULL;
+}
+
+bool obs_weak_source_expired(obs_weak_source_t *weak)
+{
+	return weak ? obs_weak_ref_expired(&weak->ref) : true;
 }
 
 bool obs_weak_source_references_source(obs_weak_source_t *weak,
@@ -3414,16 +3413,24 @@ static void process_audio(obs_source_t *source,
 }
 
 void obs_source_output_audio(obs_source_t *source,
-			     const struct obs_source_audio *audio)
+			     const struct obs_source_audio *audio_in)
 {
 	struct obs_audio_data *output;
 
 	if (!obs_source_valid(source, "obs_source_output_audio"))
 		return;
-	if (!obs_ptr_valid(audio, "obs_source_output_audio"))
+	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
 		return;
 
-	process_audio(source, audio);
+	/* sets unused data pointers to NULL automatically because apparently
+	 * some filter plugins aren't checking the actual channel count, and
+	 * instead are checking to see whether the pointer is non-zero. */
+	struct obs_source_audio audio = *audio_in;
+	size_t channels = get_audio_planes(audio.format, audio.speakers);
+	for (size_t i = channels; i < MAX_AUDIO_CHANNELS; i++)
+		audio.data[i] = NULL;
+
+	process_audio(source, &audio);
 
 	pthread_mutex_lock(&source->filter_mutex);
 	output = filter_async_audio(source, &source->audio_data);
@@ -5376,4 +5383,15 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 	}
 
 	da_free(cur_filters);
+}
+
+uint32_t obs_source_get_version(const obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_get_version"))
+		return 0;
+
+	if (!source->info.version)
+		return 1;
+
+	return source->info.version;
 }

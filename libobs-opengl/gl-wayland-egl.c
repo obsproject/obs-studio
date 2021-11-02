@@ -209,8 +209,14 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 		goto fail_load_gl;
 	}
 
+	if (!gladLoadEGL()) {
+		blog(LOG_ERROR, "Unable to load EGL entry functions.");
+		goto fail_load_egl;
+	}
+
 	goto success;
 
+fail_load_egl:
 fail_load_gl:
 	egl_context_destroy(plat);
 fail_context_create:

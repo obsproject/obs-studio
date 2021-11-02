@@ -170,6 +170,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceCaptureToolbar;
 	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
+	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
@@ -200,8 +201,8 @@ private:
 	bool projectChanged = false;
 	bool previewEnabled = true;
 
-	std::list<const char *> copyStrings;
-	const char *copyFiltersString = nullptr;
+	std::deque<OBSWeakSource> copySources;
+	OBSWeakSource copyFiltersSource;
 	bool copyVisible = true;
 
 	bool closing = false;
@@ -567,14 +568,17 @@ private:
 	bool autoStartBroadcast = true;
 	bool autoStopBroadcast = true;
 	bool broadcastActive = false;
+	bool broadcastReady = false;
 	QPointer<QThread> youtubeStreamCheckThread;
 #if YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
 	void ShowYouTubeAutoStartWarning();
 	void YouTubeActionDialogOk(const QString &id, const QString &key,
-				   bool autostart, bool autostop);
+				   bool autostart, bool autostop,
+				   bool start_now);
 #endif
 	void BroadcastButtonClicked();
+	void SetBroadcastFlowEnabled(bool enabled);
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
@@ -584,6 +588,8 @@ public slots:
 	void DeferSaveEnd();
 
 	void DisplayStreamStartError();
+
+	void SetupBroadcast();
 
 	void StartStreaming();
 	void StopStreaming();
@@ -660,7 +666,6 @@ private slots:
 
 	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
-	void RemoveSelectedSceneItem();
 
 	void ToggleAlwaysOnTop();
 
@@ -885,7 +890,7 @@ public:
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
 
-	OBSWeakSource copyFilter = nullptr;
+	OBSWeakSource copyFilter;
 
 	void ShowStatusBarMessage(const QString &message);
 
@@ -908,6 +913,8 @@ public:
 					     obs_data_array_t *undo_array,
 					     obs_data_array_t *redo_array);
 
+	void UpdateEditMenu();
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;
@@ -920,8 +927,6 @@ private slots:
 	void on_action_Settings_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
-	void AdvAudioPropsClicked();
-	void AdvAudioPropsDestroyed();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -930,6 +935,8 @@ private slots:
 
 	void on_actionShowCrashLogs_triggered();
 	void on_actionUploadLastCrashLog_triggered();
+
+	void on_menuBasic_MainMenu_Edit_aboutToShow();
 
 	void on_actionEditTransform_triggered();
 	void on_actionCopyTransform_triggered();

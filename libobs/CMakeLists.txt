@@ -28,8 +28,8 @@ if(UNIX)
 		else()
 			set(USE_XINPUT "0")
 		endif()
-		find_package(PulseAudio)
-		if (NOT "${PULSEAUDIO_LIBRARY}" STREQUAL "")
+		if (NOT DISABLE_PULSEAUDIO)
+			find_package(PulseAudio REQUIRED)
 			message(STATUS "Found PulseAudio - Audio Monitor enabled")
 			set(HAVE_PULSEAUDIO "1")
 		else()
@@ -120,7 +120,7 @@ if(WIN32)
 	set(libobs_audio_monitoring_HEADERS
 		audio-monitoring/win32/wasapi-output.h
 		)
-	set(libobs_PLATFORM_DEPS winmm psapi)
+	set(libobs_PLATFORM_DEPS Avrt winmm)
 	if(MSVC)
 		set(libobs_PLATFORM_DEPS
 		${libobs_PLATFORM_DEPS}
@@ -408,7 +408,8 @@ set(libobs_util_HEADERS
 	util/platform.h
 	util/profiler.h
 	util/profiler.hpp
-	util/bitstream.h)
+	util/bitstream.h
+	util/util.hpp)
 
 set(libobs_libobs_SOURCES
 	${libobs_PLATFORM_SOURCES}

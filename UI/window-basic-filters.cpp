@@ -121,6 +121,11 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		ui->separatorLine->setVisible(false);
 	}
 
+	if (async && !audioOnly && ui->asyncFilters->count() == 0 &&
+	    ui->effectFilters->count() != 0) {
+		ui->effectFilters->setFocus();
+	}
+
 	if (audioOnly || (audio && !async))
 		ui->asyncLabel->setText(QTStr("Basic.Filters.AudioFilters"));
 
@@ -764,6 +769,7 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 
 void OBSBasicFilters::on_addAsyncFilter_clicked()
 {
+	ui->asyncFilters->setFocus();
 	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(true));
 	if (popup)
 		popup->exec(QCursor::pos());
@@ -806,6 +812,7 @@ void OBSBasicFilters::on_asyncFilters_currentRowChanged(int row)
 
 void OBSBasicFilters::on_addEffectFilter_clicked()
 {
+	ui->effectFilters->setFocus();
 	QScopedPointer<QMenu> popup(CreateAddFilterPopupMenu(false));
 	if (popup)
 		popup->exec(QCursor::pos());

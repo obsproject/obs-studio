@@ -28,6 +28,8 @@ extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_encoder_info svt_av1_encoder_info;
+extern struct obs_encoder_info aom_av1_encoder_info;
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
 #define LIBAVUTIL_VAAPI_AVAILABLE
@@ -227,6 +229,15 @@ extern void obs_ffmpeg_load_logging(void);
 extern void obs_ffmpeg_unload_logging(void);
 #endif
 
+static void register_encoder_if_available(struct obs_encoder_info *info,
+					  const char *id)
+{
+	AVCodec *c = avcodec_find_encoder_by_name(id);
+	if (c) {
+		obs_register_encoder(info);
+	}
+}
+
 bool obs_module_load(void)
 {
 	obs_register_source(&ffmpeg_source);
@@ -236,6 +247,8 @@ bool obs_module_load(void)
 	obs_register_output(&ffmpeg_hls_muxer);
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
+	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
+	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
 #ifndef __APPLE__
 	if (nvenc_supported()) {

@@ -546,8 +546,6 @@ ColorSourceToolbar::~ColorSourceToolbar()
 
 void ColorSourceToolbar::UpdateColor()
 {
-	color.setAlpha(255);
-
 	QPalette palette = QPalette(color);
 	ui->color->setFrameStyle(QFrame::Sunken | QFrame::Panel);
 	ui->color->setText(color.name(QColor::HexRgb));
@@ -574,6 +572,7 @@ void ColorSourceToolbar::on_choose_clicked()
 
 	QColorDialog::ColorDialogOptions options;
 
+	options |= QColorDialog::ShowAlphaChannel;
 #ifndef _WIN32
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
@@ -616,7 +615,13 @@ TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
 	MakeQFont(font_obj, font);
 	obs_data_release(font_obj);
 
-	unsigned int val = (unsigned int)obs_data_get_int(settings, "color");
+	// Use "color1" if it's a freetype source and "color" elsewise
+	unsigned int val = (unsigned int)obs_data_get_int(
+		settings,
+		(strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0)
+			? "color1"
+			: "color");
+
 	color = color_from_int(val);
 
 	const char *text = obs_data_get_string(settings, "text");
@@ -688,11 +693,17 @@ void TextSourceToolbar::on_selectColor_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "color");
+	bool freetype =
+		strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0;
+
+	obs_property_t *p =
+		obs_properties_get(props.get(), freetype ? "color1" : "color");
+
 	const char *desc = obs_property_description(p);
 
 	QColorDialog::ColorDialogOptions options;
 
+	options |= QColorDialog::ShowAlphaChannel;
 #ifndef _WIN32
 	options |= QColorDialog::DontUseNativeDialog;
 #endif
@@ -707,7 +718,7 @@ void TextSourceToolbar::on_selectColor_clicked()
 	SaveOldProperties(source);
 
 	obs_data_t *settings = obs_data_create();
-	if (!strncmp(obs_source_get_id(source), "text_ft2_source", 15)) {
+	if (freetype) {
 		obs_data_set_int(settings, "color1", color_to_int(color));
 		obs_data_set_int(settings, "color2", color_to_int(color));
 	} else {

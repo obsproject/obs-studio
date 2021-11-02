@@ -30,7 +30,6 @@ ACTUALLY_DEFINE_GUID(IID_IAudioRenderClient, 0xF294ACFC, 0x3146, 0x4483, 0xA7,
 
 struct audio_monitor {
 	obs_source_t *source;
-	IMMDevice *device;
 	IAudioClient *client;
 	IAudioRenderClient *render;
 
@@ -48,7 +47,7 @@ struct audio_monitor {
 	uint32_t delay_size;
 
 	DARRAY(float) buf;
-	pthread_mutex_t playback_mutex;
+	SRWLOCK playback_mutex;
 };
 
 /* #define DEBUG_AUDIO */
@@ -140,96 +139,6 @@ static bool process_audio_delay(struct audio_monitor *monitor, float **data,
 	return false;
 }
 
-static void on_audio_playback(void *param, obs_source_t *source,
-			      const struct audio_data *audio_data, bool muted)
-{
-	struct audio_monitor *monitor = param;
-	IAudioRenderClient *render = monitor->render;
-	uint8_t *resample_data[MAX_AV_PLANES];
-	float vol = source->user_volume;
-	uint32_t resample_frames;
-	uint64_t ts_offset;
-	bool success;
-	BYTE *output;
-
-	if (pthread_mutex_trylock(&monitor->playback_mutex) != 0) {
-		return;
-	}
-	if (os_atomic_load_long(&source->activate_refs) == 0) {
-		goto unlock;
-	}
-
-	success = audio_resampler_resample(
-		monitor->resampler, resample_data, &resample_frames, &ts_offset,
-		(const uint8_t *const *)audio_data->data,
-		(uint32_t)audio_data->frames);
-	if (!success) {
-		goto unlock;
-	}
-
-	UINT32 pad = 0;
-	monitor->client->lpVtbl->GetCurrentPadding(monitor->client, &pad);
-
-	bool decouple_audio = source->async_unbuffered &&
-			      source->async_decoupled;
-
-	if (monitor->source_has_video && !decouple_audio) {
-		uint64_t ts = audio_data->timestamp - ts_offset;
-
-		if (!process_audio_delay(monitor, (float **)(&resample_data[0]),
-					 &resample_frames, ts, pad)) {
-			goto unlock;
-		}
-	}
-
-	HRESULT hr =
-		render->lpVtbl->GetBuffer(render, resample_frames, &output);
-	if (FAILED(hr)) {
-		goto unlock;
-	}
-
-	if (!muted) {
-		/* apply volume */
-		if (!close_float(vol, 1.0f, EPSILON)) {
-			register float *cur = (float *)resample_data[0];
-			register float *end =
-				cur + resample_frames * monitor->channels;
-
-			while (cur < end)
-				*(cur++) *= vol;
-		}
-		memcpy(output, resample_data[0],
-		       resample_frames * monitor->channels * sizeof(float));
-	}
-
-	render->lpVtbl->ReleaseBuffer(render, resample_frames,
-				      muted ? AUDCLNT_BUFFERFLAGS_SILENT : 0);
-
-unlock:
-	pthread_mutex_unlock(&monitor->playback_mutex);
-}
-
-static inline void audio_monitor_free(struct audio_monitor *monitor)
-{
-	if (monitor->ignore)
-		return;
-
-	if (monitor->source) {
-		obs_source_remove_audio_capture_callback(
-			monitor->source, on_audio_playback, monitor);
-	}
-
-	if (monitor->client)
-		monitor->client->lpVtbl->Stop(monitor->client);
-
-	safe_release(monitor->device);
-	safe_release(monitor->client);
-	safe_release(monitor->render);
-	audio_resampler_destroy(monitor->resampler);
-	circlebuf_free(&monitor->delay_buffer);
-	da_free(monitor->buf);
-}
-
 static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 {
 	switch (layout) {
@@ -248,38 +157,13 @@ static enum speaker_layout convert_speaker_layout(DWORD layout, WORD channels)
 	return (enum speaker_layout)channels;
 }
 
-extern bool devices_match(const char *id1, const char *id2);
-
-static bool audio_monitor_init(struct audio_monitor *monitor,
-			       obs_source_t *source)
+static bool audio_monitor_init_wasapi(struct audio_monitor *monitor)
 {
+	bool success = false;
 	IMMDeviceEnumerator *immde = NULL;
 	WAVEFORMATEX *wfex = NULL;
-	bool success = false;
 	UINT32 frames;
 	HRESULT hr;
-
-	pthread_mutex_init_value(&monitor->playback_mutex);
-
-	monitor->source = source;
-
-	const char *id = obs->audio.monitoring_device_id;
-	if (!id) {
-		warn("%s: No device ID set", __FUNCTION__);
-		return false;
-	}
-
-	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
-		obs_data_t *s = obs_source_get_settings(source);
-		const char *s_dev_id = obs_data_get_string(s, "device_id");
-		bool match = devices_match(s_dev_id, id);
-		obs_data_release(s);
-
-		if (match) {
-			monitor->ignore = true;
-			return true;
-		}
-	}
 
 	/* ------------------------------------------ *
 	 * Init device                                */
@@ -292,14 +176,16 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
+	IMMDevice *device = NULL;
+	const char *const id = obs->audio.monitoring_device_id;
 	if (strcmp(id, "default") == 0) {
-		hr = immde->lpVtbl->GetDefaultAudioEndpoint(
-			immde, eRender, eConsole, &monitor->device);
+		hr = immde->lpVtbl->GetDefaultAudioEndpoint(immde, eRender,
+							    eConsole, &device);
 	} else {
 		wchar_t w_id[512];
 		os_utf8_to_wcs(id, 0, w_id, 512);
 
-		hr = immde->lpVtbl->GetDevice(immde, w_id, &monitor->device);
+		hr = immde->lpVtbl->GetDevice(immde, w_id, &device);
 	}
 
 	if (FAILED(hr)) {
@@ -310,9 +196,9 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	/* ------------------------------------------ *
 	 * Init client                                */
 
-	hr = monitor->device->lpVtbl->Activate(monitor->device,
-					       &IID_IAudioClient, CLSCTX_ALL,
-					       NULL, (void **)&monitor->client);
+	hr = device->lpVtbl->Activate(device, &IID_IAudioClient, CLSCTX_ALL,
+				      NULL, (void **)&monitor->client);
+	device->lpVtbl->Release(device);
 	if (FAILED(hr)) {
 		warn("%s: Failed to activate device: %08lX", __FUNCTION__, hr);
 		goto fail;
@@ -375,11 +261,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		goto fail;
 	}
 
-	if (pthread_mutex_init(&monitor->playback_mutex, NULL) != 0) {
-		warn("%s: Failed to initialize mutex", __FUNCTION__);
-		goto fail;
-	}
-
 	hr = monitor->client->lpVtbl->Start(monitor->client);
 	if (FAILED(hr)) {
 		warn("%s: Failed to start audio: %08lX", __FUNCTION__, hr);
@@ -393,6 +274,163 @@ fail:
 	if (wfex)
 		CoTaskMemFree(wfex);
 	return success;
+}
+
+static void audio_monitor_free_for_reconnect(struct audio_monitor *monitor)
+{
+	if (monitor->client)
+		monitor->client->lpVtbl->Stop(monitor->client);
+
+	if (monitor->render) {
+		monitor->render->lpVtbl->Release(monitor->render);
+		monitor->render = NULL;
+	}
+
+	if (monitor->client) {
+		monitor->client->lpVtbl->Stop(monitor->client);
+		monitor->client->lpVtbl->Release(monitor->client);
+		monitor->client = NULL;
+	}
+
+	audio_resampler_destroy(monitor->resampler);
+	monitor->resampler = NULL;
+
+	circlebuf_free(&monitor->delay_buffer);
+	da_free(monitor->buf);
+}
+
+static void on_audio_playback(void *param, obs_source_t *source,
+			      const struct audio_data *audio_data, bool muted)
+{
+	struct audio_monitor *monitor = param;
+	uint8_t *resample_data[MAX_AV_PLANES];
+	float vol = source->user_volume;
+	uint32_t resample_frames;
+	uint64_t ts_offset;
+	bool success;
+	BYTE *output;
+
+	if (!TryAcquireSRWLockExclusive(&monitor->playback_mutex)) {
+		return;
+	}
+	if (os_atomic_load_long(&source->activate_refs) == 0) {
+		goto unlock;
+	}
+
+	if (!monitor->client && !audio_monitor_init_wasapi(monitor)) {
+		goto free_for_reconnect;
+	}
+
+	success = audio_resampler_resample(
+		monitor->resampler, resample_data, &resample_frames, &ts_offset,
+		(const uint8_t *const *)audio_data->data,
+		(uint32_t)audio_data->frames);
+	if (!success) {
+		goto unlock;
+	}
+
+	UINT32 pad = 0;
+	HRESULT hr = monitor->client->lpVtbl->GetCurrentPadding(monitor->client,
+								&pad);
+	if (FAILED(hr)) {
+		goto free_for_reconnect;
+	}
+
+	bool decouple_audio = source->async_unbuffered &&
+			      source->async_decoupled;
+
+	if (monitor->source_has_video && !decouple_audio) {
+		uint64_t ts = audio_data->timestamp - ts_offset;
+
+		if (!process_audio_delay(monitor, (float **)(&resample_data[0]),
+					 &resample_frames, ts, pad)) {
+			goto unlock;
+		}
+	}
+
+	IAudioRenderClient *const render = monitor->render;
+	hr = render->lpVtbl->GetBuffer(render, resample_frames, &output);
+	if (FAILED(hr)) {
+		goto free_for_reconnect;
+	}
+
+	if (!muted) {
+		/* apply volume */
+		if (!close_float(vol, 1.0f, EPSILON)) {
+			register float *cur = (float *)resample_data[0];
+			register float *end =
+				cur + resample_frames * monitor->channels;
+
+			while (cur < end)
+				*(cur++) *= vol;
+		}
+		memcpy(output, resample_data[0],
+		       resample_frames * monitor->channels * sizeof(float));
+	}
+
+	hr = render->lpVtbl->ReleaseBuffer(render, resample_frames,
+					   muted ? AUDCLNT_BUFFERFLAGS_SILENT
+						 : 0);
+	if (FAILED(hr)) {
+		goto free_for_reconnect;
+	}
+
+	goto unlock;
+
+free_for_reconnect:
+	audio_monitor_free_for_reconnect(monitor);
+unlock:
+	ReleaseSRWLockExclusive(&monitor->playback_mutex);
+}
+
+static inline void audio_monitor_free(struct audio_monitor *monitor)
+{
+	if (monitor->ignore)
+		return;
+
+	if (monitor->source) {
+		obs_source_remove_audio_capture_callback(
+			monitor->source, on_audio_playback, monitor);
+	}
+
+	if (monitor->client)
+		monitor->client->lpVtbl->Stop(monitor->client);
+
+	safe_release(monitor->client);
+	safe_release(monitor->render);
+	audio_resampler_destroy(monitor->resampler);
+	circlebuf_free(&monitor->delay_buffer);
+	da_free(monitor->buf);
+}
+
+extern bool devices_match(const char *id1, const char *id2);
+
+static bool audio_monitor_init(struct audio_monitor *monitor,
+			       obs_source_t *source)
+{
+	monitor->source = source;
+
+	const char *id = obs->audio.monitoring_device_id;
+	if (!id) {
+		warn("%s: No device ID set", __FUNCTION__);
+		return false;
+	}
+
+	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+		obs_data_t *s = obs_source_get_settings(source);
+		const char *s_dev_id = obs_data_get_string(s, "device_id");
+		bool match = devices_match(s_dev_id, id);
+		obs_data_release(s);
+
+		if (match) {
+			monitor->ignore = true;
+			return true;
+		}
+	}
+
+	InitializeSRWLock(&monitor->playback_mutex);
+
+	return audio_monitor_init_wasapi(monitor);
 }
 
 static void audio_monitor_init_final(struct audio_monitor *monitor)
@@ -434,9 +472,9 @@ void audio_monitor_reset(struct audio_monitor *monitor)
 	struct audio_monitor new_monitor = {0};
 	bool success;
 
-	pthread_mutex_lock(&monitor->playback_mutex);
+	AcquireSRWLockExclusive(&monitor->playback_mutex);
 	success = audio_monitor_init(&new_monitor, monitor->source);
-	pthread_mutex_unlock(&monitor->playback_mutex);
+	ReleaseSRWLockExclusive(&monitor->playback_mutex);
 
 	if (success) {
 		obs_source_t *source = monitor->source;

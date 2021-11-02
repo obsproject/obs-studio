@@ -900,6 +900,7 @@ EXPORT void obs_weak_source_release(obs_weak_source_t *weak);
 EXPORT obs_source_t *obs_source_get_ref(obs_source_t *source);
 EXPORT obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source);
 EXPORT obs_source_t *obs_weak_source_get_source(obs_weak_source_t *weak);
+EXPORT bool obs_weak_source_expired(obs_weak_source_t *weak);
 
 EXPORT bool obs_weak_source_references_source(obs_weak_source_t *weak,
 					      obs_source_t *source);
@@ -1175,6 +1176,9 @@ EXPORT void obs_source_add_caption_callback(obs_source_t *source,
 EXPORT void obs_source_remove_caption_callback(obs_source_t *source,
 					       obs_source_caption_t callback,
 					       void *param);
+
+/** Get version of a source **/
+EXPORT uint32_t obs_source_get_version(const obs_source_t *source);
 
 enum obs_deinterlace_mode {
 	OBS_DEINTERLACE_MODE_DISABLE,

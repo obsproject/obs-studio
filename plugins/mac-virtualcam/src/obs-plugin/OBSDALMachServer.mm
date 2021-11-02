@@ -6,7 +6,6 @@
 //
 
 #import "OBSDALMachServer.h"
-#import <Foundation/Foundation.h>
 #include <obs-module.h>
 #include "MachProtocol.h"
 #include "Defines.h"

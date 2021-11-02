@@ -28,6 +28,7 @@ set(obs-ffmpeg_SOURCES
 	obs-ffmpeg.c
 	obs-ffmpeg-audio-encoders.c
 	obs-ffmpeg-nvenc.c
+	obs-ffmpeg-av1.c
 	obs-ffmpeg-output.c
 	obs-ffmpeg-mux.c
 	obs-ffmpeg-hls-mux.c
@@ -62,6 +63,7 @@ add_library(obs-ffmpeg MODULE
 	${obs-ffmpeg_SOURCES})
 target_link_libraries(obs-ffmpeg
 	libobs
+	opts-parser
 	media-playback
 	${obs-ffmpeg_PLATFORM_DEPS}
 	${FFMPEG_LIBRARIES})

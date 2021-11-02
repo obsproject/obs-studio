@@ -223,10 +223,10 @@ struct ep_func {
 	char *name, *ret_type, *mapping;
 	struct dstr contents;
 	DARRAY(struct ep_var) param_vars;
-	DARRAY(const char *) func_deps;
-	DARRAY(const char *) struct_deps;
-	DARRAY(const char *) param_deps;
-	DARRAY(const char *) sampler_deps;
+	DARRAY(char *) func_deps;
+	DARRAY(char *) struct_deps;
+	DARRAY(char *) param_deps;
+	DARRAY(char *) sampler_deps;
 	bool written;
 };
 

@@ -25,8 +25,7 @@
 #include <memory>
 
 #include <windows.h>
-#include <dxgi.h>
-#include <dxgi1_2.h>
+#include <dxgi1_5.h>
 #include <d3d11_1.h>
 #include <d3dcompiler.h>
 
@@ -794,14 +793,15 @@ struct gs_pixel_shader : gs_shader {
 };
 
 struct gs_swap_chain : gs_obj {
-	uint32_t numBuffers;
 	HWND hwnd;
 	gs_init_data initData;
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
+	UINT presentFlags = 0;
 
 	gs_texture_2d target;
 	gs_zstencil_buffer zs;
 	ComPtr<IDXGISwapChain> swap;
+	HANDLE hWaitable = NULL;
 
 	void InitTarget(uint32_t cx, uint32_t cy);
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
@@ -814,10 +814,15 @@ struct gs_swap_chain : gs_obj {
 	{
 		target.Release();
 		zs.Release();
-		swap.Release();
+		if (hWaitable) {
+			CloseHandle(hWaitable);
+			hWaitable = NULL;
+		}
+		swap.Clear();
 	}
 
 	gs_swap_chain(gs_device *device, const gs_init_data *data);
+	virtual ~gs_swap_chain();
 };
 
 struct BlendState {

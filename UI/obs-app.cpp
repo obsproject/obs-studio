@@ -167,7 +167,11 @@ QObject *CreateShortcutFilter()
 		};
 
 		auto key_event = [&](QKeyEvent *event) {
-			if (!App()->HotkeysEnabledInFocus())
+			int key = event->key();
+			bool enabledInFocus = App()->HotkeysEnabledInFocus();
+
+			if (key != Qt::Key_Enter && key != Qt::Key_Escape &&
+			    key != Qt::Key_Return && !enabledInFocus)
 				return true;
 
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
@@ -175,7 +179,7 @@ QObject *CreateShortcutFilter()
 			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
 			bool pressed = event->type() == QEvent::KeyPress;
 
-			switch (event->key()) {
+			switch (key) {
 			case Qt::Key_Shift:
 			case Qt::Key_Control:
 			case Qt::Key_Alt:
@@ -195,6 +199,8 @@ QObject *CreateShortcutFilter()
 			case Qt::Key_Return:
 				if (dialog && pressed)
 					return false;
+				if (!enabledInFocus)
+					return true;
 				/* Falls through. */
 			default:
 				hotkey.key = obs_key_from_virtual_key(
@@ -412,6 +418,8 @@ bool OBSApp::InitGlobalConfigDefaults()
 				  "Normal");
 	config_set_default_bool(globalConfig, "General", "EnableAutoUpdates",
 				true);
+
+	config_set_default_bool(globalConfig, "General", "ConfirmOnExit", true);
 
 #if _WIN32
 	config_set_default_string(globalConfig, "Video", "Renderer",
@@ -820,8 +828,8 @@ bool OBSApp::InitLocale()
 
 	// set basic default application locale
 	if (!locale.empty())
-		QLocale::setDefault(
-			QString::fromStdString(locale).replace('-', '_'));
+		QLocale::setDefault(QLocale(
+			QString::fromStdString(locale).replace('-', '_')));
 
 	string englishPath;
 	if (!GetDataFilePath("locale/" DEFAULT_LANG ".ini", englishPath)) {
@@ -864,9 +872,9 @@ bool OBSApp::InitLocale()
 
 			// set application default locale to the new choosen one
 			if (!locale.empty())
-				QLocale::setDefault(
+				QLocale::setDefault(QLocale(
 					QString::fromStdString(locale).replace(
-						'-', '_'));
+						'-', '_')));
 
 			return true;
 		}
@@ -1448,6 +1456,8 @@ bool OBSApp::OBSInit()
 	     browserHWAccel ? "true" : "false");
 #endif
 
+	blog(LOG_INFO, "Qt Version: %s (runtime), %s (compiled)", qVersion(),
+	     QT_VERSION_STR);
 	blog(LOG_INFO, "Portable mode: %s", portable_mode ? "true" : "false");
 
 	setQuitOnLastWindowClosed(false);
@@ -2679,6 +2689,14 @@ int main(int argc, char *argv[])
 	SetErrorMode(SEM_FAILCRITICALERRORS);
 	load_debug_privilege();
 	base_set_crash_handler(main_crash_handler, nullptr);
+
+	const HMODULE hRtwq = LoadLibrary(L"RTWorkQ.dll");
+	if (hRtwq) {
+		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqStartup)();
+		PFN_RtwqStartup func =
+			(PFN_RtwqStartup)GetProcAddress(hRtwq, "RtwqStartup");
+		func();
+	}
 #endif
 
 	base_get_log_handler(&def_log_handler, nullptr);
@@ -2817,6 +2835,16 @@ int main(int argc, char *argv[])
 
 	curl_global_init(CURL_GLOBAL_ALL);
 	int ret = run_program(logFile, argc, argv);
+
+#ifdef _WIN32
+	if (hRtwq) {
+		typedef HRESULT(STDAPICALLTYPE * PFN_RtwqShutdown)();
+		PFN_RtwqShutdown func =
+			(PFN_RtwqShutdown)GetProcAddress(hRtwq, "RtwqShutdown");
+		func();
+		FreeLibrary(hRtwq);
+	}
+#endif
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
 	base_set_log_handler(nullptr, nullptr);

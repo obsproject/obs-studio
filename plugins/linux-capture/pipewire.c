@@ -30,6 +30,7 @@
 #include <fcntl.h>
 #include <glad/glad.h>
 #include <linux/dma-buf.h>
+#include <libdrm/drm_fourcc.h>
 #include <spa/param/video/format-utils.h>
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>
@@ -386,6 +387,7 @@ static void on_process_cb(void *user_data)
 		uint32_t strides[planes];
 		uint64_t modifiers[planes];
 		int fds[planes];
+		bool modifierless; // DMA-BUF without explicit modifier
 
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
@@ -410,10 +412,14 @@ static void on_process_cb(void *user_data)
 		}
 
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
+
+		modifierless = obs_pw->format.info.raw.modifier ==
+			       DRM_FORMAT_MOD_INVALID;
 		obs_pw->texture = gs_texture_create_from_dmabuf(
 			obs_pw->format.info.raw.size.width,
 			obs_pw->format.info.raw.size.height, drm_format,
-			GS_BGRX, planes, fds, strides, offsets, modifiers);
+			GS_BGRX, planes, fds, strides, offsets,
+			modifierless ? NULL : modifiers);
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
 		enum gs_color_format obs_format;
@@ -958,6 +964,7 @@ static void on_create_session_response_received_cb(
 	UNUSED_PARAMETER(interface_name);
 	UNUSED_PARAMETER(signal_name);
 
+	g_autoptr(GVariant) session_handle_variant = NULL;
 	g_autoptr(GVariant) result = NULL;
 	struct dbus_call_data *call = user_data;
 	obs_pipewire_data *obs_pw = call->obs_pw;
@@ -975,8 +982,10 @@ static void on_create_session_response_received_cb(
 
 	blog(LOG_INFO, "[pipewire] screencast session created");
 
-	g_variant_lookup(result, "session_handle", "s",
-			 &obs_pw->session_handle);
+	session_handle_variant =
+		g_variant_lookup_value(result, "session_handle", NULL);
+	obs_pw->session_handle =
+		g_variant_dup_string(session_handle_variant, NULL);
 
 	select_source(obs_pw);
 }

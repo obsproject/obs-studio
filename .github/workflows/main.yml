@@ -571,16 +571,16 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64.zip"
+          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win64"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build64\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
-          7z a ${env:FILE_NAME} .\build\*
+          7z
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
-          path: '*-win64.zip'
+          path: build/*
   win32:
     name: 'Windows 32-bit'
     runs-on: [windows-latest]
@@ -680,13 +680,13 @@ jobs:
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         run: |
           $env:FILE_DATE=(Get-Date -UFormat "%F")
-          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32.zip"
+          $env:FILE_NAME="${env:FILE_DATE}-${{ env.OBS_GIT_HASH }}-${{ env.OBS_GIT_TAG }}-win32"
           echo "FILE_NAME=${env:FILE_NAME}" >> ${env:GITHUB_ENV}
           robocopy .\build32\rundir\RelWithDebInfo .\build\ /E /XF .gitignore
-          7z a ${env:FILE_NAME} .\build\*
+          7z
       - name: 'Publish'
         if: success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1')
         uses: actions/upload-artifact@v2.2.0
         with:
           name: '${{ env.FILE_NAME }}'
-          path: '*-win32.zip'
+          path: build/*

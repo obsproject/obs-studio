@@ -1112,6 +1112,13 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->low_latency_mode =
 		obs_data_get_bool(settings, OPT_LOWLATENCY_ENABLED);
 
+	// ugly hack for now, can be removed once new loop is reworked
+	if (stream->new_socket_loop &&
+	    !strncmp(stream->path.array, "rtmps://", 8)) {
+		warn("Disabling network optimizations, not compatible with RTMPS");
+		stream->new_socket_loop = false;
+	}
+
 	obs_data_release(settings);
 	return true;
 }

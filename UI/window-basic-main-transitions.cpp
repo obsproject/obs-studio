@@ -388,6 +388,11 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	}
 
 	OBSSource transition = obs_get_output_source(0);
+	if (!transition) {
+		if (usingPreviewProgram && sceneDuplicationMode)
+			obs_scene_release(scene);
+		return;
+	}
 	obs_source_release(transition);
 
 	float t = obs_transition_get_time(transition);
@@ -1034,7 +1039,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 
 	QSpinBox *duration = new QSpinBox(menu);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(curDuration);
@@ -1140,7 +1145,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 
 	QSpinBox *duration = new QSpinBox(menu);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(curDuration);
@@ -1318,7 +1323,7 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 	if (qt)
 		duration->setProperty("id", qt->id);
 	duration->setMinimum(50);
-	duration->setSuffix("ms");
+	duration->setSuffix(" ms");
 	duration->setMaximum(20000);
 	duration->setSingleStep(50);
 	duration->setValue(qt ? qt->duration : 300);

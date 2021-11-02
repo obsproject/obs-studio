@@ -349,7 +349,7 @@
           <number>500</number>
          </property>
          <property name="maximum">
-          <number>10000</number>
+          <number>51000</number>
          </property>
          <property name="value">
           <number>2500</number>
@@ -419,7 +419,7 @@
        <item row="7" column="1">
         <widget class="QPushButton" name="connectAccount2">
          <property name="cursor">
-          <cursorShape>PointingHandCursor</cursorShape>
+          <cursorshape>PointingHandCursor</cursorshape>
          </property>
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>

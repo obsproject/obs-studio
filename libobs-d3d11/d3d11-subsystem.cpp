@@ -50,12 +50,6 @@ static inline void LogD3D11ErrorDetails(HRError error, gs_device_t *device)
 	}
 }
 
-static const IID dxgiFactory2 = {0x50c83a1c,
-				 0xe072,
-				 0x4c48,
-				 {0x87, 0xb0, 0x36, 0x30, 0xfa, 0x36, 0xa6,
-				  0xd0}};
-
 gs_obj::gs_obj(gs_device_t *device_, gs_type type)
 	: device(device_), obj_type(type)
 {
@@ -75,17 +69,20 @@ gs_obj::~gs_obj()
 }
 
 static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
-				  const gs_init_data *data)
+				  const gs_init_data *data,
+				  DXGI_SWAP_EFFECT effect, UINT flags)
 {
 	memset(&desc, 0, sizeof(desc));
-	desc.BufferCount = data->num_backbuffers;
-	desc.BufferDesc.Format = ConvertGSTextureFormatView(data->format);
 	desc.BufferDesc.Width = data->cx;
 	desc.BufferDesc.Height = data->cy;
-	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
-	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.BufferDesc.Format = ConvertGSTextureFormatView(data->format);
 	desc.SampleDesc.Count = 1;
-	desc.Windowed = true;
+	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
+	desc.BufferCount = data->num_backbuffers;
+	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.Windowed = TRUE;
+	desc.SwapEffect = effect;
+	desc.Flags = flags;
 }
 
 void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
@@ -155,7 +152,8 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 			cy = clientRect.bottom;
 	}
 
-	hr = swap->ResizeBuffers(numBuffers, cx, cy, DXGI_FORMAT_UNKNOWN, 0);
+	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy,
+				 DXGI_FORMAT_UNKNOWN, swapDesc.Flags);
 	if (FAILED(hr))
 		throw HRError("Failed to resize swap buffers", hr);
 
@@ -183,22 +181,73 @@ void gs_swap_chain::Init()
 
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	: gs_obj(device, gs_type::gs_swap_chain),
-	  numBuffers(data->num_backbuffers),
 	  hwnd((HWND)data->window.hwnd),
 	  initData(*data)
 {
-	HRESULT hr;
+	struct win_version_info ver;
+	get_win_ver(&ver);
 
-	make_swap_desc(swapDesc, data);
-	hr = device->factory->CreateSwapChain(device->device, &swapDesc,
-					      swap.Assign());
+	constexpr win_version_info minimum = [] {
+		win_version_info ver{};
+		ver.major = 10;
+		ver.minor = 0;
+		ver.build = 22000;
+		ver.revis = 0;
+		return ver;
+	}();
+
+	DXGI_SWAP_EFFECT effect = DXGI_SWAP_EFFECT_DISCARD;
+	UINT flags = 0;
+
+	if (win_version_compare(&ver, &minimum) >= 0) {
+		initData.num_backbuffers = max(data->num_backbuffers, 2);
+
+		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
+		flags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
+
+		ComPtr<IDXGIFactory5> factory5;
+		factory5 = ComQIPtr<IDXGIFactory5>(device->factory);
+		if (factory5) {
+			BOOL featureSupportData = FALSE;
+			const HRESULT hr = factory5->CheckFeatureSupport(
+				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
+				&featureSupportData,
+				sizeof(featureSupportData));
+			if (SUCCEEDED(hr) && featureSupportData) {
+				presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+
+				flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
+			}
+		}
+	}
+
+	make_swap_desc(swapDesc, &initData, effect, flags);
+	HRESULT hr = device->factory->CreateSwapChain(device->device, &swapDesc,
+						      swap.Assign());
 	if (FAILED(hr))
 		throw HRError("Failed to create swap chain", hr);
 
 	/* Ignore Alt+Enter */
 	device->factory->MakeWindowAssociation(hwnd, DXGI_MWA_NO_ALT_ENTER);
 
+	if (flags & DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT) {
+		ComPtr<IDXGISwapChain2> swap2 = ComQIPtr<IDXGISwapChain2>(swap);
+		hWaitable = swap2->GetFrameLatencyWaitableObject();
+		if (hWaitable) {
+			hr = swap2->SetMaximumFrameLatency(40);
+			if (FAILED(hr))
+				throw HRError("Could not relax frame latency",
+					      hr);
+		}
+	}
+
 	Init();
+}
+
+gs_swap_chain::~gs_swap_chain()
+{
+	if (hWaitable)
+		CloseHandle(hWaitable);
 }
 
 void gs_device::InitCompiler()
@@ -235,11 +284,7 @@ void gs_device::InitCompiler()
 
 void gs_device::InitFactory()
 {
-	HRESULT hr;
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw UnsupportedHWError("Failed to create DXGIFactory", hr);
 }
@@ -865,10 +910,7 @@ EnumD3DAdapters(bool (*callback)(void *, const char *, uint32_t), void *param)
 	HRESULT hr;
 	UINT i;
 
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
@@ -1010,10 +1052,7 @@ static inline void LogD3DAdapters()
 
 	blog(LOG_INFO, "Available Video Adapters: ");
 
-	IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						: __uuidof(IDXGIFactory1);
-
-	hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (FAILED(hr))
 		throw HRError("Failed to create DXGIFactory", hr);
 
@@ -1996,13 +2035,18 @@ void device_clear(gs_device_t *device, uint32_t clear_flags,
 
 void device_present(gs_device_t *device)
 {
-	HRESULT hr;
-
-	if (device->curSwapChain) {
-		hr = device->curSwapChain->swap->Present(0, 0);
-		if (hr == DXGI_ERROR_DEVICE_REMOVED ||
-		    hr == DXGI_ERROR_DEVICE_RESET) {
-			device->RebuildDevice();
+	gs_swap_chain *const curSwapChain = device->curSwapChain;
+	if (curSwapChain) {
+		/* Skip Present at frame limit to avoid stall */
+		const HANDLE hWaitable = curSwapChain->hWaitable;
+		if ((hWaitable == NULL) ||
+		    WaitForSingleObject(hWaitable, 0) == WAIT_OBJECT_0) {
+			const HRESULT hr = curSwapChain->swap->Present(
+				0, curSwapChain->presentFlags);
+			if (hr == DXGI_ERROR_DEVICE_REMOVED ||
+			    hr == DXGI_ERROR_DEVICE_RESET) {
+				device->RebuildDevice();
+			}
 		}
 	} else {
 		blog(LOG_WARNING, "device_present (D3D11): No active swap");
@@ -2935,10 +2979,8 @@ uint32_t gs_get_adapter_count(void)
 {
 	uint32_t count = 0;
 
-	const IID factoryIID = (GetWinVer() >= 0x602) ? dxgiFactory2
-						      : __uuidof(IDXGIFactory1);
 	ComPtr<IDXGIFactory1> factory;
-	HRESULT hr = CreateDXGIFactory1(factoryIID, (void **)factory.Assign());
+	HRESULT hr = CreateDXGIFactory1(IID_PPV_ARGS(&factory));
 	if (SUCCEEDED(hr)) {
 		ComPtr<IDXGIAdapter1> adapter;
 		for (UINT i = 0;

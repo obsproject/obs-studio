@@ -40,8 +40,7 @@ target_link_libraries(win-capture
 	${win-capture_PLATFORM_DEPS}
 	libobs
 	Dwmapi
-	ipc-util
-	psapi)
+	ipc-util)
 set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 
 install_obs_plugin_with_data(win-capture data)

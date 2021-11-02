@@ -13,7 +13,7 @@ jobs:
     name: Bundle
     runs-on: [ubuntu-latest]
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-5.15
+      image: bilelmoussaoui/flatpak-github-actions:kde-5.15-21.08
       options: --privileged
     steps:
     - name: 'Check for Github Labels'

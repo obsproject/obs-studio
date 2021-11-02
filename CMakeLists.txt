@@ -14,8 +14,8 @@ set_property(GLOBAL PROPERTY USE_FOLDERS ON)
 if(WIN32)
 	cmake_minimum_required(VERSION 3.16)
 
-	# Check for Win SDK version 10.0.19041 or above
-	if(MSVC AND MSVC_VERSION LESS 1920)
+	# Check for Win SDK version 10.0.20348 or above
+	if(MSVC)
 		message(STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 		string(REPLACE "." ";" WINAPI_VER "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 
@@ -26,7 +26,7 @@ if(WIN32)
 		set(WINAPI_COMPATIBLE FALSE)
 		if(WINAPI_VER_MAJOR EQUAL 10)
 			if (WINAPI_VER_MINOR EQUAL 0)
-				if (WINAPI_VER_BUILD GREATER_EQUAL 19041)
+				if (WINAPI_VER_BUILD GREATER_EQUAL 20348)
 					set(WINAPI_COMPATIBLE TRUE)
 				endif()
 			else()
@@ -37,7 +37,7 @@ if(WIN32)
 		endif()
 
 		if(NOT WINAPI_COMPATIBLE)
-			message(FATAL_ERROR "OBS requires Windows 10 SDK version 10.0.19041.0 and above to compile.\nPlease download the most recent Windows 10 SDK in order to compile (or update to Visual Studio 2019).")
+			message(FATAL_ERROR "OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\nPlease download the most recent Windows 10 SDK in order to compile.")
 		endif()
 	endif()
 
@@ -207,6 +207,11 @@ if(APPLE)
 elseif(UNIX)
 	option(USE_XDG "Utilize XDG Base Directory Specification" ON)
 	option(ENABLE_WAYLAND "Build support for Wayland" ON)
+	if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
+		option(ENABLE_DARRAY_TYPE_TEST "Test types of darray argument" ON)
+	else()
+		option(ENABLE_DARRAY_TYPE_TEST "Test types of darray argument" OFF)
+	endif()
 
 	if(USE_XDG)
 		add_definitions(-DUSE_XDG)
@@ -214,6 +219,10 @@ elseif(UNIX)
 
 	if(NOT UNIX_STRUCTURE)
 		list(APPEND CMAKE_INSTALL_RPATH "$ORIGIN")
+	endif()
+
+	if(ENABLE_DARRAY_TYPE_TEST)
+		add_definitions(-DENABLE_DARRAY_TYPE_TEST)
 	endif()
 endif()
 

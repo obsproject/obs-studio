@@ -44,23 +44,17 @@ const char *obs_encoder_get_display_name(const char *id)
 static bool init_encoder(struct obs_encoder *encoder, const char *name,
 			 obs_data_t *settings, obs_data_t *hotkey_data)
 {
-	pthread_mutexattr_t attr;
-
 	pthread_mutex_init_value(&encoder->init_mutex);
 	pthread_mutex_init_value(&encoder->callbacks_mutex);
 	pthread_mutex_init_value(&encoder->outputs_mutex);
 	pthread_mutex_init_value(&encoder->pause.mutex);
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		return false;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		return false;
 	if (!obs_context_data_init(&encoder->context, OBS_OBJ_TYPE_ENCODER,
 				   settings, name, hotkey_data, false))
 		return false;
-	if (pthread_mutex_init(&encoder->init_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&encoder->init_mutex) != 0)
 		return false;
-	if (pthread_mutex_init(&encoder->callbacks_mutex, &attr) != 0)
+	if (pthread_mutex_init_recursive(&encoder->callbacks_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&encoder->outputs_mutex, NULL) != 0)
 		return false;
@@ -888,15 +882,18 @@ static void send_first_video_packet(struct obs_encoder *encoder,
 	da_free(data);
 }
 
+static const char *send_packet_name = "send_packet";
 static inline void send_packet(struct obs_encoder *encoder,
 			       struct encoder_callback *cb,
 			       struct encoder_packet *packet)
 {
+	profile_start(send_packet_name);
 	/* include SEI in first video packet */
 	if (encoder->info.type == OBS_ENCODER_VIDEO && !cb->sent_first_packet)
 		send_first_video_packet(encoder, cb, packet);
 	else
 		cb->new_packet(cb->param, packet);
+	profile_end(send_packet_name);
 }
 
 void full_stop(struct obs_encoder *encoder)
