@@ -63,4 +63,4 @@ Contributing
   our forums or in our community chat.  Please limit support to topics
   you fully understand -- bad advice is worse than no advice.  When it
   comes to something that you don't fully know or understand, please
-  defer to the official help or official channels.
+  defer to the official help or official channels. 
