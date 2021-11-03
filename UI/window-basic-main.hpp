@@ -482,7 +482,7 @@ private:
 
 	int disableOutputsRef = 0;
 
-	inline void OnActivate();
+	inline void OnActivate(bool force = false);
 	inline void OnDeactivate();
 
 	void AddDropSource(const char *file, DropType image);
@@ -1107,6 +1107,7 @@ public slots:
 	bool StreamingActive();
 	bool RecordingActive();
 	bool ReplayBufferActive();
+	bool VirtualCamActive();
 
 	void ClearContextBar();
 	void UpdateContextBar(bool force = false);
