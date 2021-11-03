@@ -787,7 +787,7 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 
 static void insert_packet(struct darray *array, struct encoder_packet *packet,
 			  int64_t video_offset, int64_t *audio_offsets,
-			  int64_t video_dts_offset, int64_t *audio_dts_offsets)
+			  int64_t video_pts_offset, int64_t *audio_dts_offsets)
 {
 	struct encoder_packet pkt;
 	DARRAY(struct encoder_packet) packets;
@@ -798,8 +798,8 @@ static void insert_packet(struct darray *array, struct encoder_packet *packet,
 
 	if (pkt.type == OBS_ENCODER_VIDEO) {
 		pkt.dts_usec -= video_offset;
-		pkt.dts -= video_dts_offset;
-		pkt.pts -= video_dts_offset;
+		pkt.dts -= video_pts_offset;
+		pkt.pts -= video_pts_offset;
 	} else {
 		pkt.dts_usec -= audio_offsets[pkt.track_idx];
 		pkt.dts -= audio_dts_offsets[pkt.track_idx];
@@ -873,7 +873,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	bool found_video = false;
 	bool found_audio[MAX_AUDIO_MIXES] = {0};
 	int64_t video_offset = 0;
-	int64_t video_dts_offset = 0;
+	int64_t video_pts_offset = 0;
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
@@ -883,8 +883,9 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
-				video_offset = pkt->dts_usec;
-				video_dts_offset = pkt->dts;
+				video_pts_offset = pkt->pts;
+				video_offset = video_pts_offset * 1000000 /
+					       pkt->timebase_den;
 				found_video = true;
 			}
 		} else {
@@ -896,7 +897,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 		}
 
 		insert_packet(&stream->mux_packets.da, pkt, video_offset,
-			      audio_offsets, video_dts_offset,
+			      audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}
 
