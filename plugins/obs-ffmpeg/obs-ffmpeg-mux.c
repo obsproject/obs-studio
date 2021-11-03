@@ -202,6 +202,34 @@ static void log_muxer_params(struct ffmpeg_muxer *stream, const char *settings)
 	av_dict_free(&dict);
 }
 
+static void log_proto_params(struct ffmpeg_muxer *stream, const char *settings)
+{
+	int ret;
+
+	AVDictionary *dict = NULL;
+	if ((ret = av_dict_parse_string(&dict, settings, "=", " ", 0))) {
+		warn("Failed to parse protocol settings: %s\n%s",
+		     av_err2str(ret), settings);
+
+		av_dict_free(&dict);
+		return;
+	}
+
+	if (av_dict_count(dict) > 0) {
+		struct dstr str = {0};
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+					    AV_DICT_IGNORE_SUFFIX)))
+			dstr_catf(&str, "\n\t%s=%s", entry->key, entry->value);
+
+		info("Using protocol settings:%s", str.array);
+		dstr_free(&str);
+	}
+
+	av_dict_free(&dict);
+}
+
 static void add_stream_key(struct dstr *cmd, struct ffmpeg_muxer *stream)
 {
 	dstr_catf(cmd, "\"%s\" ",
@@ -232,6 +260,27 @@ static void add_muxer_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
 	dstr_free(&mux);
 }
 
+static void add_proto_params(struct dstr *cmd, struct ffmpeg_muxer *stream)
+{
+	struct dstr proto = {0};
+
+	if (dstr_is_empty(&stream->proto_settings)) {
+		obs_data_t *settings = obs_output_get_settings(stream->output);
+		dstr_copy(&proto,
+			  obs_data_get_string(settings, "protocol_settings"));
+		obs_data_release(settings);
+	} else {
+		dstr_copy(&proto, stream->proto_settings.array);
+	}
+
+	log_proto_params(stream, proto.array);
+
+	dstr_replace(&proto, "\"", "\\\"");
+
+	dstr_catf(cmd, "\"%s\" ", proto.array ? proto.array : "");
+
+	dstr_free(&proto);
+}
 static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 			       const char *path)
 {
@@ -272,6 +321,7 @@ static void build_command_line(struct ffmpeg_muxer *stream, struct dstr *cmd,
 
 	add_stream_key(cmd, stream);
 	add_muxer_params(cmd, stream);
+	add_proto_params(cmd, stream);
 }
 
 void start_pipe(struct ffmpeg_muxer *stream, const char *path)

@@ -93,6 +93,7 @@ struct main_params {
 	int color_range;
 	char *acodec;
 	char *muxer_settings;
+	char *proto_settings;
 };
 
 struct audio_params {
@@ -344,7 +345,7 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 	av_log_set_callback(ffmpeg_log_callback);
 
 	get_opt_str(argc, argv, &params->muxer_settings, "muxer settings");
-
+	get_opt_str(argc, argv, &params->proto_settings, "protocol settings");
 	return true;
 }
 
@@ -567,9 +568,27 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 	AVOutputFormat *format = ffm->output->oformat;
 	int ret;
 
+	AVDictionary *dict = NULL;
+	if ((ret = av_dict_parse_string(&dict, ffm->params.proto_settings, "=",
+					" ", 0))) {
+		fprintf(stderr, "Failed to parse protocol settings: %s\n%s\n",
+			av_err2str(ret), ffm->params.proto_settings);
+
+		av_dict_free(&dict);
+	}
+	if (av_dict_count(dict) > 0) {
+		printf("Using protocol settings:");
+
+		AVDictionaryEntry *entry = NULL;
+		while ((entry = av_dict_get(dict, "", entry,
+					    AV_DICT_IGNORE_SUFFIX)))
+			printf("\n\t%s=%s", entry->key, entry->value);
+
+		printf("\n");
+	}
 	if ((format->flags & AVFMT_NOFILE) == 0) {
-		ret = avio_open(&ffm->output->pb, ffm->params.file,
-				AVIO_FLAG_WRITE);
+		ret = avio_open2(&ffm->output->pb, ffm->params.file,
+				 AVIO_FLAG_WRITE, NULL, &dict);
 		if (ret < 0) {
 			fprintf(stderr, "Couldn't open '%s', %s\n",
 				ffm->params.printable_file.array,
@@ -577,8 +596,8 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 			return FFM_ERROR;
 		}
 	}
-
-	AVDictionary *dict = NULL;
+	av_dict_free(&dict);
+	dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings, "=",
 					" ", 0))) {
 		fprintf(stderr, "Failed to parse muxer settings: %s\n%s\n",

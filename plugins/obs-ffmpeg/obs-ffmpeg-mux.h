@@ -22,6 +22,7 @@ struct ffmpeg_muxer {
 	struct dstr path;
 	struct dstr printable_path;
 	struct dstr muxer_settings;
+	struct dstr proto_settings;
 	struct dstr stream_key;
 
 	/* replay buffer */
