@@ -4150,13 +4150,6 @@ int OBSBasic::GetTransitionDuration()
 	return ui->transitionDuration->value();
 }
 
-bool OBSBasic::StreamingActive() const
-{
-	if (!outputHandler)
-		return false;
-	return outputHandler->StreamingActive();
-}
-
 bool OBSBasic::Active() const
 {
 	if (!outputHandler)

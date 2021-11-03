@@ -819,7 +819,6 @@ public:
 
 	inline bool VCamEnabled() const { return vcamEnabled; }
 
-	bool StreamingActive() const;
 	bool Active() const;
 
 	void ResetUI();
