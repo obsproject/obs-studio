@@ -333,7 +333,7 @@ static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
 	}
 }
 
-#define SEC_TO_NSEC 1000000000ULL
+#define SEC_TO_NSEC 1000000000LL
 #define TIMEOUT_MAX_SEC 5
 #define TIMEOUT_MAX_NSEC (TIMEOUT_MAX_SEC * SEC_TO_NSEC)
 static const AVRational nsec_timebase = {1, 1000000000};
@@ -374,7 +374,7 @@ static bool av1_encode(void *data, struct encoder_frame *frame,
 					      enc->context->extradata,
 					      enc->context->extradata_size);
 			} else {
-				for (size_t i = 0; i < av_pkt.side_data_elems;
+				for (int i = 0; i < av_pkt.side_data_elems;
 				     i++) {
 					AVPacketSideData *side_data =
 						av_pkt.side_data + i;
