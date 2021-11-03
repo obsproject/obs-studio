@@ -783,8 +783,6 @@ obs_volmeter_t *obs_volmeter_create(enum obs_fader_type type)
 
 	volmeter->type = type;
 
-	obs_volmeter_set_update_interval(volmeter, 50);
-
 	return volmeter;
 fail:
 	obs_volmeter_destroy(volmeter);

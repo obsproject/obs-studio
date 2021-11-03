@@ -4382,10 +4382,10 @@ bool OBSBasicSettings::ScanDuplicateHotkeys(QFormLayout *layout)
 			edit->hasDuplicate = false;
 	}
 
-	for (int i = 0; i < items.size(); i++) {
+	for (size_t i = 0; i < items.size(); i++) {
 		OBSHotkeyLabel *item1 = items[i];
 
-		for (int j = i + 1; j < items.size(); j++)
+		for (size_t j = i + 1; j < items.size(); j++)
 			hasDupes |= MarkHotkeyConflicts(item1, items[j]);
 	}
 
