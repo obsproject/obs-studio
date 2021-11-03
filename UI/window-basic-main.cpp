@@ -6485,9 +6485,9 @@ static inline void ClearProcessPriority()
 	} while (false)
 #endif
 
-inline void OBSBasic::OnActivate()
+inline void OBSBasic::OnActivate(bool force)
 {
-	if (ui->profileMenu->isEnabled()) {
+	if (ui->profileMenu->isEnabled() || force) {
 		ui->profileMenu->setEnabled(false);
 		ui->autoConfigure->setEnabled(false);
 		App()->IncrementSleepInhibition();
@@ -8869,14 +8869,22 @@ void OBSBasic::SystemTrayInit()
 	trayIcon->setToolTip("OBS Studio");
 
 	showHide = new QAction(QTStr("Basic.SystemTray.Show"), trayIcon.data());
-	sysTrayStream = new QAction(QTStr("Basic.Main.StartStreaming"),
-				    trayIcon.data());
-	sysTrayRecord = new QAction(QTStr("Basic.Main.StartRecording"),
-				    trayIcon.data());
-	sysTrayReplayBuffer = new QAction(QTStr("Basic.Main.StartReplayBuffer"),
-					  trayIcon.data());
-	sysTrayVirtualCam = new QAction(QTStr("Basic.Main.StartVirtualCam"),
-					trayIcon.data());
+	sysTrayStream = new QAction(
+		StreamingActive() ? QTStr("Basic.Main.StopStreaming")
+				  : QTStr("Basic.Main.StartStreaming"),
+		trayIcon.data());
+	sysTrayRecord = new QAction(
+		RecordingActive() ? QTStr("Basic.Main.StopRecording")
+				  : QTStr("Basic.Main.StartRecording"),
+		trayIcon.data());
+	sysTrayReplayBuffer = new QAction(
+		ReplayBufferActive() ? QTStr("Basic.Main.StopReplayBuffer")
+				     : QTStr("Basic.Main.StartReplayBuffer"),
+		trayIcon.data());
+	sysTrayVirtualCam = new QAction(
+		VirtualCamActive() ? QTStr("Basic.Main.StopVirtualCam")
+				   : QTStr("Basic.Main.StartVirtualCam"),
+		trayIcon.data());
 	exit = new QAction(QTStr("Exit"), trayIcon.data());
 
 	trayMenu = new QMenu;
@@ -8901,6 +8909,9 @@ void OBSBasic::SystemTrayInit()
 		sysTrayReplayBuffer->setEnabled(false);
 
 	sysTrayVirtualCam->setEnabled(vcamEnabled);
+
+	if (Active())
+		OnActivate(true);
 
 	connect(trayIcon.data(),
 		SIGNAL(activated(QSystemTrayIcon::ActivationReason)), this,
@@ -9505,6 +9516,13 @@ bool OBSBasic::ReplayBufferActive()
 	if (!outputHandler)
 		return false;
 	return outputHandler->ReplayBufferActive();
+}
+
+bool OBSBasic::VirtualCamActive()
+{
+	if (!outputHandler)
+		return false;
+	return outputHandler->VirtualCamActive();
 }
 
 SceneRenameDelegate::SceneRenameDelegate(QObject *parent)
