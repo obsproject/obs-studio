@@ -914,6 +914,15 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	bool enableDynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
+	obs_service_t *service_obj = main->GetService();
+	obs_data_t *serv_settings = obs_service_get_settings(service_obj);
+	bool mpegtsOpts = obs_data_get_bool(serv_settings, "mpegts_opts");
+	const char *muxer_settings =
+		obs_data_get_string(serv_settings, "mpegts_muxer_settings");
+	const char *proto_settings =
+		obs_data_get_string(serv_settings, "mpegts_proto_settings");
+	obs_data_release(serv_settings);
+
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
 	obs_data_set_bool(settings, "new_socket_loop_enabled",
@@ -921,6 +930,11 @@ bool SimpleOutput::StartStreaming(obs_service_t *service)
 	obs_data_set_bool(settings, "low_latency_mode_enabled",
 			  enableLowLatencyMode);
 	obs_data_set_bool(settings, "dyn_bitrate", enableDynBitrate);
+	if (mpegtsOpts) {
+		obs_data_set_string(settings, "muxer_settings", muxer_settings);
+		obs_data_set_string(settings, "protocol_settings",
+				    proto_settings);
+	}
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 
@@ -1813,6 +1827,15 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	bool enableDynBitrate =
 		config_get_bool(main->Config(), "Output", "DynamicBitrate");
 
+	obs_service_t *service_obj = main->GetService();
+	obs_data_t *serv_settings = obs_service_get_settings(service_obj);
+	bool mpegtsOpts = obs_data_get_bool(serv_settings, "mpegts_opts");
+	const char *muxer_settings =
+		obs_data_get_string(serv_settings, "mpegts_muxer_opts");
+	const char *proto_settings =
+		obs_data_get_string(serv_settings, "mpegts_proto_opts");
+	obs_data_release(serv_settings);
+
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "bind_ip", bindIP);
 	obs_data_set_bool(settings, "new_socket_loop_enabled",
@@ -1820,6 +1843,11 @@ bool AdvancedOutput::StartStreaming(obs_service_t *service)
 	obs_data_set_bool(settings, "low_latency_mode_enabled",
 			  enableLowLatencyMode);
 	obs_data_set_bool(settings, "dyn_bitrate", enableDynBitrate);
+	if (mpegtsOpts) {
+		obs_data_set_string(settings, "muxer_settings", muxer_settings);
+		obs_data_set_string(settings, "protocol_settings",
+				    proto_settings);
+	}
 	obs_output_update(streamOutput, settings);
 	obs_data_release(settings);
 

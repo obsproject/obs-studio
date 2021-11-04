@@ -1325,6 +1325,45 @@
                </item>
               </layout>
              </item>
+             <item row="13" column="1">
+              <widget class="QCheckBox" name="mpegtsOpts">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.MpegtsOptions</string>
+               </property>
+              </widget>
+             </item>
+             <item row="14" column="0">
+              <widget class="QLabel" name="mpegtsMuxerOptionsLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.MpegtsMuxerOptions</string>
+               </property>
+               <property name="buddy">
+                <cstring>mpegtsMuxerOpts</cstring>
+               </property>
+               <property name="toolTip">
+                <string>Basic.Settings.Stream.Custom.MpegtsMuxerOptions.TT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="14" column="1">
+              <widget class="QLineEdit" name="mpegtsMuxerOpts"/>
+             </item>
+             <item row="15" column="0">
+              <widget class="QLabel" name="mpegtsProtocolOptionsLabel">
+               <property name="text">
+                <string>Basic.Settings.Stream.Custom.MpegtsProtocolOptions</string>
+               </property>
+               <property name="buddy">
+                <cstring>mpegtsProtoOpts</cstring>
+               </property>
+               <property name="toolTip">
+                <string>Basic.Settings.Stream.Custom.MpegtsProtocolOptions.TT</string>
+               </property>
+              </widget>
+             </item>
+             <item row="15" column="1">
+              <widget class="QLineEdit" name="mpegtsProtoOpts"/>
+             </item>
             </layout>
            </widget>
           </widget>
@@ -5619,6 +5658,9 @@
   <tabstop>authUsername</tabstop>
   <tabstop>authPw</tabstop>
   <tabstop>authPwShow</tabstop>
+  <tabstop>mpegtsOpts</tabstop>
+  <tabstop>mpegtsMuxerOpts</tabstop>
+  <tabstop>mpegtsProtoOpts</tabstop>
   <tabstop>scrollArea_3</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>

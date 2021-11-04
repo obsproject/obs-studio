@@ -267,6 +267,7 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
+	void on_mpegtsOpts_toggled();
 
 private:
 	/* output */

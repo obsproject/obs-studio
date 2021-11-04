@@ -128,6 +128,15 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->authUsername->setText(QT_UTF8(username));
 		ui->authPw->setText(QT_UTF8(password));
 		ui->useAuth->setChecked(use_auth);
+
+		bool mpegts_opts = obs_data_get_bool(settings, "mpegts_opts");
+		const char *muxer_settings =
+			obs_data_get_string(settings, "mpegts_muxer_opts");
+		const char *proto_settings =
+			obs_data_get_string(settings, "mpegts_proto_opts");
+		ui->mpegtsMuxerOpts->setText(QT_UTF8(muxer_settings));
+		ui->mpegtsProtoOpts->setText(QT_UTF8(proto_settings));
+		ui->mpegtsOpts->setChecked(mpegts_opts);
 	} else {
 		int idx = ui->service->findText(service);
 		if (idx == -1) {
@@ -209,6 +218,16 @@ void OBSBasicSettings::SaveStream1Settings()
 				QT_TO_UTF8(ui->authUsername->text()));
 			obs_data_set_string(settings, "password",
 					    QT_TO_UTF8(ui->authPw->text()));
+		}
+		obs_data_set_bool(settings, "mpegts_opts",
+				  ui->mpegtsOpts->isChecked());
+		if (ui->mpegtsOpts->isChecked()) {
+			obs_data_set_string(
+				settings, "mpegts_muxer_opts",
+				QT_TO_UTF8(ui->mpegtsMuxerOpts->text()));
+			obs_data_set_string(
+				settings, "mpegts_proto_opts",
+				QT_TO_UTF8(ui->mpegtsProtoOpts->text()));
 		}
 	}
 
@@ -470,6 +489,7 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		ui->serverStackedWidget->setVisible(true);
 		ui->serverLabel->setVisible(true);
 		on_useAuth_toggled();
+		on_mpegtsOpts_toggled();
 	} else {
 		ui->serverStackedWidget->setCurrentIndex(0);
 	}
@@ -712,6 +732,18 @@ void OBSBasicSettings::on_useAuth_toggled()
 	ui->authPwWidget->setVisible(use_auth);
 }
 
+void OBSBasicSettings::on_mpegtsOpts_toggled()
+{
+	if (!IsCustomService())
+		return;
+
+	bool mpegts_opts = ui->mpegtsOpts->isChecked();
+
+	ui->mpegtsMuxerOpts->setVisible(mpegts_opts);
+	ui->mpegtsProtoOpts->setVisible(mpegts_opts);
+	ui->mpegtsMuxerOptionsLabel->setVisible(mpegts_opts);
+	ui->mpegtsProtocolOptionsLabel->setVisible(mpegts_opts);
+}
 void OBSBasicSettings::UpdateVodTrackSetting()
 {
 	bool enableForCustomServer = config_get_bool(
