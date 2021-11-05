@@ -45,7 +45,7 @@ void SourceToolbar::SaveOldProperties(obs_source_t *source)
 	obs_data_release(oldSettings);
 }
 
-void SourceToolbar::SetUndoProperties(obs_source_t *source)
+void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 {
 	if (!oldData) {
 		blog(LOG_ERROR, "%s: somehow oldData was null.", __FUNCTION__);
@@ -87,7 +87,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source)
 		main->undo_s.add_action(
 			QTStr("Undo.Properties")
 				.arg(obs_source_get_name(source)),
-			undo_redo, undo_redo, undo_data, redo_data);
+			undo_redo, undo_redo, undo_data, redo_data, repeatable);
 
 	obs_data_release(new_settings);
 	obs_data_release(curr_settings);
@@ -737,8 +737,12 @@ void TextSourceToolbar::on_text_textChanged()
 		return;
 	}
 
+	SaveOldProperties(source);
+
 	obs_data_t *settings = obs_data_create();
 	obs_data_set_string(settings, "text", QT_TO_UTF8(ui->text->text()));
 	obs_source_update(source, settings);
 	obs_data_release(settings);
+
+	SetUndoProperties(source, true);
 }

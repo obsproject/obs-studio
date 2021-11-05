@@ -25,7 +25,7 @@ protected:
 	OBSData oldData;
 
 	void SaveOldProperties(obs_source_t *source);
-	void SetUndoProperties(obs_source_t *source);
+	void SetUndoProperties(obs_source_t *source, bool repeatable = false);
 
 public:
 	SourceToolbar(QWidget *parent, OBSSource source);
