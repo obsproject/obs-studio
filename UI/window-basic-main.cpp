@@ -3835,9 +3835,12 @@ void OBSBasic::RemoveSelectedScene()
 			const char *name = obs_data_get_string(data, "name");
 
 			obs_source_t *source = obs_get_source_by_name(name);
-			if (!source)
+			if (!source) {
 				source = obs_load_source(data);
-			sources.push_back(source);
+				sources.push_back(source);
+			} else {
+				obs_source_release(source);
+			}
 
 			obs_data_release(data);
 		}
