@@ -565,7 +565,11 @@ static inline bool ffmpeg_mux_get_extra_data(struct ffmpeg_mux *ffm)
 
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *format = ffm->output->oformat;
+#else
+	const AVOutputFormat *format = ffm->output->oformat;
+#endif
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
@@ -631,7 +635,11 @@ static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *output_format;
+#else
+	const AVOutputFormat *output_format;
+#endif
 	int ret;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
@@ -665,8 +673,10 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 		return FFM_ERROR;
 	}
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
+#endif
 
 	if (!init_streams(ffm)) {
 		free_avformat(ffm);

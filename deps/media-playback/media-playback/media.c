@@ -608,7 +608,11 @@ static int interrupt_callback(void *data)
 
 static bool init_avformat(mp_media_t *m)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVInputFormat *format = NULL;
+#else
+	const AVInputFormat *format = NULL;
+#endif
 
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
