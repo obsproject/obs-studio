@@ -27,6 +27,7 @@
 #include "ffmpeg-mux.h"
 
 #include <util/dstr.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
