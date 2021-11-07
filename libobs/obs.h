@@ -636,6 +636,9 @@ EXPORT void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *),
  */
 EXPORT obs_source_t *obs_get_source_by_name(const char *name);
 
+/** Get a transition source by its name. */
+EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
+
 /** Gets an output by its name. */
 EXPORT obs_output_t *obs_get_output_by_name(const char *name);
 

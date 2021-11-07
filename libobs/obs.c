@@ -1593,6 +1593,27 @@ obs_source_t *obs_get_source_by_name(const char *name)
 				   obs_source_addref_safe_);
 }
 
+obs_source_t *obs_get_transition_by_name(const char *name)
+{
+	struct obs_source **first = &obs->data.first_source;
+	struct obs_source *source;
+
+	pthread_mutex_lock(&obs->data.sources_mutex);
+
+	source = *first;
+	while (source) {
+		if (source->info.type == OBS_SOURCE_TYPE_TRANSITION &&
+		    strcmp(source->context.name, name) == 0) {
+			source = obs_source_addref_safe_(source);
+			break;
+		}
+		source = (void *)source->context.next;
+	}
+
+	pthread_mutex_unlock(&obs->data.sources_mutex);
+	return source;
+}
+
 obs_output_t *obs_get_output_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_output, name,
