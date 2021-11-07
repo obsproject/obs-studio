@@ -249,40 +249,25 @@ static inline bool get_next_packet(struct rtmp_stream *stream,
 	return new_packet;
 }
 
-static bool discard_recv_data(struct rtmp_stream *stream, size_t size)
+static bool process_recv_data(struct rtmp_stream *stream, size_t size)
 {
 	RTMP *rtmp = &stream->rtmp;
-	uint8_t buf[512];
+	RTMPPacket packet = {0};
+
+	if (!RTMP_ReadPacket(rtmp, &packet)) {
 #ifdef _WIN32
-	int ret;
+		int error = WSAGetLastError();
 #else
-	ssize_t ret;
+		int error = errno;
 #endif
+		do_log(LOG_ERROR, "RTMP_ReadPacket error: %d", error);
+		return false;
+	}
 
-	do {
-		size_t bytes = size > 512 ? 512 : size;
-		size -= bytes;
-
-#ifdef _WIN32
-		ret = recv(rtmp->m_sb.sb_socket, buf, (int)bytes, 0);
-#else
-		ret = recv(rtmp->m_sb.sb_socket, buf, bytes, 0);
-#endif
-
-		if (ret <= 0) {
-#ifdef _WIN32
-			int error = WSAGetLastError();
-#else
-			int error = errno;
-#endif
-			if (ret < 0) {
-				do_log(LOG_ERROR, "recv error: %d (%d bytes)",
-				       error, (int)size);
-			}
-			return false;
-		}
-	} while (size > 0);
-
+	if (packet.m_body) {
+		/* do processing here */
+		RTMPPacket_Free(&packet);
+	}
 	return true;
 }
 
@@ -418,7 +403,7 @@ static int send_packet(struct rtmp_stream *stream,
 #endif
 
 		if (ret >= 0 && recv_size > 0) {
-			if (!discard_recv_data(stream, (size_t)recv_size))
+			if (!process_recv_data(stream, (size_t)recv_size))
 				return -1;
 		}
 	}
