@@ -2364,6 +2364,20 @@
                     "url": "rtmp://tx.push.yximgs.com/live/"
                 }
             ]
+        },
+        {
+            "name": "Utreon",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.utreon.com:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
