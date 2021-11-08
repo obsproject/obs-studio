@@ -285,6 +285,8 @@ extern "C"
         AVal playpath;
     } RTMP_Stream;
 
+    typedef void (*CUSTOMCONNECTENCODING)(char **penc, char *ppend);
+
     typedef struct RTMP_LNK
     {
 #define RTMP_MAX_STREAMS 8
@@ -295,6 +297,8 @@ extern "C"
 
         AVal hostname;
         AVal sockshost;
+
+        CUSTOMCONNECTENCODING customConnectEncode;
 
         AVal tcUrl;
         AVal swfUrl;
