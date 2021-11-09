@@ -65,6 +65,7 @@ struct _obs_pipewire_data {
 
 	char *sender_name;
 	char *session_handle;
+	char *restore_token;
 
 	uint32_t pipewire_node;
 	int pipewire_fd;
@@ -808,6 +809,20 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 	g_variant_iter_loop(&iter, "(u@a{sv})", &obs_pw->pipewire_node,
 			    &stream_properties);
 
+	if (portal_get_screencast_version() >= 4) {
+		g_autoptr(GVariant) restore_token = NULL;
+
+		g_clear_pointer(&obs_pw->restore_token, bfree);
+
+		restore_token = g_variant_lookup_value(result, "restore_token",
+						       G_VARIANT_TYPE_STRING);
+		if (restore_token)
+			obs_pw->restore_token = bstrdup(
+				g_variant_get_string(restore_token, NULL));
+
+		obs_source_save(obs_pw->source);
+	}
+
 	blog(LOG_INFO, "[pipewire] %s selected, setting up screencast",
 	     capture_type_to_string(obs_pw->capture_type));
 
@@ -940,6 +955,16 @@ static void select_source(obs_pipewire_data *obs_pw)
 	else
 		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
 				      g_variant_new_uint32(1));
+
+	if (portal_get_screencast_version() >= 4) {
+		g_variant_builder_add(&builder, "{sv}", "persist_mode",
+				      g_variant_new_uint32(2));
+		if (obs_pw->restore_token && *obs_pw->restore_token) {
+			g_variant_builder_add(
+				&builder, "{sv}", "restore_token",
+				g_variant_new_string(obs_pw->restore_token));
+		}
+	}
 
 	g_dbus_proxy_call(portal_get_dbus_proxy(), "SelectSources",
 			  g_variant_new("(oa{sv})", obs_pw->session_handle,
@@ -1104,6 +1129,8 @@ static bool reload_session_cb(obs_properties_t *properties,
 
 	obs_pipewire_data *obs_pw = data;
 
+	g_clear_pointer(&obs_pw->restore_token, bfree);
+
 	teardown_pipewire(obs_pw);
 	destroy_session(obs_pw);
 
@@ -1123,6 +1150,8 @@ void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
 	obs_pw->settings = settings;
 	obs_pw->capture_type = capture_type;
 	obs_pw->cursor.visible = obs_data_get_bool(settings, "ShowCursor");
+	obs_pw->restore_token =
+		bstrdup(obs_data_get_string(settings, "RestoreToken"));
 
 	if (!init_obs_pipewire(obs_pw))
 		g_clear_pointer(&obs_pw, bfree);
@@ -1138,12 +1167,20 @@ void obs_pipewire_destroy(obs_pipewire_data *obs_pw)
 	teardown_pipewire(obs_pw);
 	destroy_session(obs_pw);
 
+	g_clear_pointer(&obs_pw->restore_token, bfree);
+
 	bfree(obs_pw);
+}
+
+void obs_pipewire_save(obs_pipewire_data *obs_pw, obs_data_t *settings)
+{
+	obs_data_set_string(settings, "RestoreToken", obs_pw->restore_token);
 }
 
 void obs_pipewire_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "ShowCursor", true);
+	obs_data_set_default_string(settings, "RestoreToken", NULL);
 }
 
 obs_properties_t *obs_pipewire_get_properties(obs_pipewire_data *obs_pw,
