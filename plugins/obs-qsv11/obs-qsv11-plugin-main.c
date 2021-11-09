@@ -54,6 +54,7 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <obs-module.h>
+#include <windows.h>
 #include "mfxsession.h"
 
 OBS_DECLARE_MODULE()
@@ -73,8 +74,19 @@ bool obs_module_load(void)
 	mfxSession session;
 	mfxStatus sts;
 
-	sts = MFXInit(impl, &ver, &session);
+	__try {
+		sts = MFXInit(impl, &ver, &session);
+	} __except(EXCEPTION_EXECUTE_HANDLER) {
+		blog(LOG_DEBUG, "QSV encoder initialization failed with exception");
+		MessageBox(NULL,
+			(LPCWSTR)L"Failed to load the QSV encoder. Please update your Intel"
+			" graphics driver, you can find more information at:\n"
+			" https://www.intel.com/content/www/us/en/download-center/home.html",
+			(LPCWSTR)L"Intel QSV H.264 encoder",
+			MB_ICONWARNING | MB_OK);
 
+		return false;
+	}
 	if (sts == MFX_ERR_NONE) {
 		obs_register_encoder(&obs_qsv_encoder);
 		obs_register_encoder(&obs_qsv_encoder_tex);
