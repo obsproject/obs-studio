@@ -51,6 +51,11 @@ static void pipewire_capture_destroy(void *data)
 	obs_pipewire_destroy(data);
 }
 
+static void pipewire_capture_save(void *data, obs_data_t *settings)
+{
+	obs_pipewire_save(data, settings);
+}
+
 static void pipewire_capture_get_defaults(obs_data_t *settings)
 {
 	obs_pipewire_get_defaults(settings);
@@ -132,6 +137,7 @@ void pipewire_capture_load(void)
 		.get_name = pipewire_desktop_capture_get_name,
 		.create = pipewire_desktop_capture_create,
 		.destroy = pipewire_capture_destroy,
+		.save = pipewire_capture_save,
 		.get_defaults = pipewire_capture_get_defaults,
 		.get_properties = pipewire_capture_get_properties,
 		.update = pipewire_capture_update,
