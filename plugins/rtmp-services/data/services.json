@@ -2407,6 +2407,36 @@
                 "max video bitrate": 128,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "ManyVids",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.str.manyvids.com:1935/live_stream/"
+                }
+            ],
+            "recommended": {
+                "supported resolutions": [
+                    "1280x720",
+                    "960x540"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "960x540",
+                        "fps": 30,
+                        "max bitrate": 3000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    }
+                ],
+                "keyint": 2,
+                "max video bitrate": 4000,
+                "max fps": 30
+            }
         }
     ]
 }
