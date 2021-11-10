@@ -2392,6 +2392,21 @@
                 "max video bitrate": 2500,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "PhoneLiveStreaming",
+            "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "servers": [
+                {
+                    "name": "PhoneLiveStreaming",
+                    "url":  "rtmp://live.phonelivestreaming.com/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 128,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
