@@ -148,6 +148,7 @@ elseif(APPLE)
 
 elseif(UNIX)
 	find_package(Qt5Gui REQUIRED)
+	find_package(PythonDeps QUIET)
 
 	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
@@ -158,6 +159,16 @@ elseif(UNIX)
 		${obs_PLATFORM_LIBRARIES}
 		Qt5::Gui
 		Qt5::GuiPrivate)
+
+	# python symbols must be in the global symbol table
+	# so we link the main executable to python if we expect
+	# obs-scripting python support to be enabled.
+	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
+	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
+		set(obs_PLATFORM_LIBRARIES
+			${obs_PLATFORM_LIBRARIES}
+			${PYTHON_LIBRARIES})
+	endif()
 
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 		list(APPEND obs_PLATFORM_LIBRARIES
