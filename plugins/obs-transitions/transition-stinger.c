@@ -73,6 +73,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
+	obs_data_set_bool(media_settings, "looping", false);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -119,6 +120,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 
 		obs_data_t *tm_media_settings = obs_data_create();
 		obs_data_set_string(tm_media_settings, "local_file", tm_path);
+		obs_data_set_bool(tm_media_settings, "looping", false);
 
 		s->matte_source = obs_source_create_private(
 			"ffmpeg_source", NULL, tm_media_settings);
