@@ -78,15 +78,9 @@ bool obs_module_load(void)
 		sts = MFXInit(impl, &ver, &session);
 	} __except(EXCEPTION_EXECUTE_HANDLER) {
 		blog(LOG_DEBUG, "QSV encoder initialization failed with exception");
-		MessageBox(NULL,
-			(LPCWSTR)L"Failed to load the QSV encoder. Please update your Intel"
-			" graphics driver, you can find more information at:\n"
-			" https://www.intel.com/content/www/us/en/download-center/home.html",
-			(LPCWSTR)L"Intel QSV H.264 encoder",
-			MB_ICONWARNING | MB_OK);
-
 		return false;
 	}
+
 	if (sts == MFX_ERR_NONE) {
 		obs_register_encoder(&obs_qsv_encoder);
 		obs_register_encoder(&obs_qsv_encoder_tex);
