@@ -536,7 +536,8 @@ struct gs_texture_2d : gs_texture {
 
 	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12,
 		      uint32_t flags);
-	gs_texture_2d(gs_device_t *device, uint32_t handle);
+	gs_texture_2d(gs_device_t *device, uint32_t handle,
+		      bool ntHandle = false);
 	gs_texture_2d(gs_device_t *device, ID3D11Texture2D *obj);
 };
 

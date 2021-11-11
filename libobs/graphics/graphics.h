@@ -893,6 +893,7 @@ EXPORT void gs_texture_release_dc(gs_texture_t *gdi_tex);
 
 /** creates a windows shared texture from a texture handle */
 EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
+EXPORT gs_texture_t *gs_texture_open_nt_shared(uint32_t handle);
 
 #define GS_INVALID_HANDLE (uint32_t) - 1
 EXPORT uint32_t gs_texture_get_shared_handle(gs_texture_t *tex);
