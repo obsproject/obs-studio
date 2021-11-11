@@ -2826,6 +2826,23 @@ extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
 	return texture;
 }
 
+extern "C" EXPORT gs_texture_t *
+device_texture_open_nt_shared(gs_device_t *device, uint32_t handle)
+{
+	gs_texture *texture = nullptr;
+	try {
+		texture = new gs_texture_2d(device, handle, true);
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "gs_texture_open_nt_shared (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_open_nt_shared (D3D11): %s", error);
+	}
+
+	return texture;
+}
+
 extern "C" EXPORT uint32_t device_texture_get_shared_handle(gs_texture_t *tex)
 {
 	gs_texture_2d *tex2d = reinterpret_cast<gs_texture_2d *>(tex);

@@ -313,15 +313,24 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
 		InitRenderTargets();
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle,
+			     bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
 	  sharedHandle(handle)
 {
 	HRESULT hr;
-	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
-						__uuidof(ID3D11Texture2D),
-						(void **)texture.Assign());
+	if (ntHandle) {
+		ComQIPtr<ID3D11Device1> dev = device->device;
+		hr = dev->OpenSharedResource1((HANDLE)(uintptr_t)handle,
+					      __uuidof(ID3D11Texture2D),
+					      (void **)texture.Assign());
+	} else {
+		hr = device->device->OpenSharedResource(
+			(HANDLE)(uintptr_t)handle, __uuidof(ID3D11Texture2D),
+			(void **)texture.Assign());
+	}
+
 	if (FAILED(hr))
 		throw HRError("Failed to open shared 2D texture", hr);
 
