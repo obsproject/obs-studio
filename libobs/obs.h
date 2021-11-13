@@ -1821,6 +1821,7 @@ EXPORT void obs_sceneitem_transition_load(struct obs_scene_item *item,
 					  obs_data_t *data, bool show);
 EXPORT obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
 						 bool show);
+EXPORT void obs_scene_prune_sources(obs_scene_t *scene);
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */

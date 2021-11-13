@@ -3608,3 +3608,18 @@ obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
 			      : item->hide_transition_duration);
 	return data;
 }
+
+void obs_scene_prune_sources(obs_scene_t *scene)
+{
+	DARRAY(struct obs_scene_item *) remove_items;
+	da_init(remove_items);
+
+	video_lock(scene);
+	update_transforms_and_prune_sources(scene, &remove_items.da, NULL);
+	video_unlock(scene);
+
+	for (size_t i = 0; i < remove_items.num; i++)
+		obs_sceneitem_release(remove_items.array[i]);
+
+	da_free(remove_items);
+}
