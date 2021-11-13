@@ -160,15 +160,6 @@ elseif(UNIX)
 		Qt5::Gui
 		Qt5::GuiPrivate)
 
-	# python symbols must be in the global symbol table
-	# so we link the main executable to python if we expect
-	# obs-scripting python support to be enabled.
-	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
-	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
-		set(obs_PLATFORM_LIBRARIES
-			${obs_PLATFORM_LIBRARIES}
-			${PYTHON_LIBRARIES})
-	endif()
 
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 		list(APPEND obs_PLATFORM_LIBRARIES
@@ -487,6 +478,19 @@ install_obs_data_file(obs ../AUTHORS obs-studio/authors)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	add_subdirectory(xdg-data)
+endif()
+
+if (UNIX AND NOT APPLE)
+	# python symbols must be in the global symbol table
+	# so we link the main executable to python if we expect
+	# obs-scripting python support to be enabled.
+	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
+	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
+		target_link_libraries(obs ${PYTHON_LIBRARIES})
+		set_target_properties(obs PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
+		# Use this after cmake 3.13 aka we drop ubuntu 18.04.
+		# target_link_options(obs PRIVATE "LINKER:-no-as-needed")
+	endif()
 endif()
 
 add_subdirectory(frontend-plugins)
