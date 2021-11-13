@@ -265,6 +265,12 @@ General Scene Functions
 
 ---------------------
 
+.. function:: void obs_scene_prune_sources(obs_scene_t *scene)
+
+   Releases all sources from a scene that have been marked as removed by obs_source_remove.
+
+---------------------
+
 
 .. _scene_item_reference:
 
