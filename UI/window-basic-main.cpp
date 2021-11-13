@@ -3777,6 +3777,18 @@ static bool save_undo_source_enum(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+static inline void RemoveSceneAndReleaseNested(obs_source_t *source)
+{
+	obs_source_remove(source);
+	auto cb = [](void *unused, obs_source_t *source) {
+		UNUSED_PARAMETER(unused);
+		if (strcmp(obs_source_get_id(source), "scene") == 0)
+			obs_scene_prune_sources(obs_scene_from_source(source));
+		return true;
+	};
+	obs_enum_scenes(cb, NULL);
+}
+
 void OBSBasic::RemoveSelectedScene()
 {
 	OBSScene scene = GetCurrentScene();
@@ -3791,47 +3803,68 @@ void OBSBasic::RemoveSelectedScene()
 	/* ------------------------------ */
 	/* save all sources in scene      */
 
-	obs_data_array_t *array = obs_data_array_create();
+	obs_data_array_t *sources_in_deleted_scene = obs_data_array_create();
 
-	obs_scene_enum_items(scene, save_undo_source_enum, array);
+	obs_scene_enum_items(scene, save_undo_source_enum,
+			     sources_in_deleted_scene);
 
 	obs_data_t *scene_data = obs_save_source(source);
-	obs_data_array_push_back(array, scene_data);
+	obs_data_array_push_back(sources_in_deleted_scene, scene_data);
 	obs_data_release(scene_data);
 
 	/* ----------------------------------------------- */
 	/* save all scenes and groups the scene is used in */
 
-	for (int i = 0; i < ui->scenes->count(); i++) {
-		QListWidgetItem *widget_item = ui->scenes->item(i);
-		auto item_scene = GetOBSRef<OBSScene>(widget_item);
-		if (scene == item_scene)
-			continue;
-		auto *item = obs_scene_find_source_recursive(
-			item_scene, obs_source_get_name(source));
+	obs_data_array_t *scene_used_in_other_scenes = obs_data_array_create();
+
+	struct other_scenes_cb_data {
+		obs_source_t *oldScene;
+		obs_data_array_t *scene_used_in_other_scenes;
+	} other_scenes_cb_data;
+	other_scenes_cb_data.oldScene = source;
+	other_scenes_cb_data.scene_used_in_other_scenes =
+		scene_used_in_other_scenes;
+
+	auto other_scenes_cb = [](void *data_ptr, obs_source_t *scene) {
+		struct other_scenes_cb_data *data =
+			(struct other_scenes_cb_data *)data_ptr;
+		if (strcmp(obs_source_get_name(scene),
+			   obs_source_get_name(data->oldScene)) == 0)
+			return true;
+		obs_sceneitem_t *item = obs_scene_find_source(
+			obs_group_or_scene_from_source(scene),
+			obs_source_get_name(data->oldScene));
 		if (item) {
-			scene_data = obs_save_source(obs_scene_get_source(
-				obs_sceneitem_get_scene(item)));
-			obs_data_array_push_back(array, scene_data);
+			obs_data_t *scene_data =
+				obs_save_source(obs_scene_get_source(
+					obs_sceneitem_get_scene(item)));
+			obs_data_array_push_back(
+				data->scene_used_in_other_scenes, scene_data);
 			obs_data_release(scene_data);
 		}
-	}
+		return true;
+	};
+	obs_enum_scenes(other_scenes_cb, &other_scenes_cb_data);
 
 	/* --------------------------- */
 	/* undo/redo                   */
 
 	auto undo = [this](const std::string &json) {
 		obs_data_t *base = obs_data_create_from_json(json.c_str());
-		obs_data_array_t *array = obs_data_get_array(base, "array");
+		obs_data_array_t *sources_in_deleted_scene =
+			obs_data_get_array(base, "sources_in_deleted_scene");
+		obs_data_array_t *scene_used_in_other_scenes =
+			obs_data_get_array(base, "scene_used_in_other_scenes");
 		int savedIndex = (int)obs_data_get_int(base, "index");
 		std::vector<obs_source_t *> sources;
 
 		/* create missing sources */
-		size_t count = obs_data_array_count(array);
+		size_t count = obs_data_array_count(sources_in_deleted_scene);
 		sources.reserve(count);
 
 		for (size_t i = 0; i < count; i++) {
-			obs_data_t *data = obs_data_array_item(array, i);
+			obs_data_t *data = obs_data_array_item(
+				sources_in_deleted_scene, i);
 			const char *name = obs_data_get_string(data, "name");
 
 			obs_source_t *source = obs_get_source_by_name(name);
@@ -3849,6 +3882,52 @@ void OBSBasic::RemoveSelectedScene()
 		for (obs_source_t *source : sources)
 			obs_source_load2(source);
 
+		/* Add scene to scenes and groups it was nested in */
+		for (size_t i = 0;
+		     i < obs_data_array_count(scene_used_in_other_scenes);
+		     i++) {
+			obs_data_t *data = obs_data_array_item(
+				scene_used_in_other_scenes, i);
+			const char *name = obs_data_get_string(data, "name");
+			obs_source_t *source = obs_get_source_by_name(name);
+
+			obs_data_t *settings =
+				obs_data_get_obj(data, "settings");
+			obs_data_array_t *items =
+				obs_data_get_array(settings, "items");
+
+			/* Clear scene, but keep a reference to all sources in the scene to make sure they don't get destroyed */
+			std::vector<obs_source_t *> existing_sources;
+			auto cb = [](obs_scene_t *scene, obs_sceneitem_t *item,
+				     void *data) {
+				UNUSED_PARAMETER(scene);
+				std::vector<obs_source_t *> *existing =
+					(std::vector<obs_source_t *> *)data;
+				obs_source_t *source =
+					obs_sceneitem_get_source(item);
+				obs_source_addref(source);
+				obs_sceneitem_remove(item);
+				existing->push_back(source);
+				return true;
+			};
+			obs_scene_enum_items(
+				obs_group_or_scene_from_source(source), cb,
+				(void *)&existing_sources);
+
+			/* Re-add sources to the scene */
+			obs_sceneitems_add(
+				obs_group_or_scene_from_source(source), items);
+
+			/* Release source references */
+			for (obs_source_t *source : existing_sources)
+				obs_source_release(source);
+
+			obs_data_array_release(items);
+			obs_data_release(settings);
+			obs_source_release(source);
+			obs_data_release(data);
+		}
+
 		obs_source_t *scene_source = sources.back();
 		OBSScene scene = obs_scene_from_source(scene_source);
 		SetCurrentScene(scene, true);
@@ -3865,31 +3944,36 @@ void OBSBasic::RemoveSelectedScene()
 		for (obs_source_t *source : sources)
 			obs_source_release(source);
 
-		obs_data_array_release(array);
+		obs_data_array_release(sources_in_deleted_scene);
+		obs_data_array_release(scene_used_in_other_scenes);
 		obs_data_release(base);
 	};
 
 	auto redo = [](const std::string &name) {
 		obs_source_t *source = obs_get_source_by_name(name.c_str());
-		obs_source_remove(source);
+		RemoveSceneAndReleaseNested(source);
 		obs_source_release(source);
 	};
 
 	obs_data_t *data = obs_data_create();
-	obs_data_set_array(data, "array", array);
+	obs_data_set_array(data, "sources_in_deleted_scene",
+			   sources_in_deleted_scene);
+	obs_data_set_array(data, "scene_used_in_other_scenes",
+			   scene_used_in_other_scenes);
 	obs_data_set_int(data, "index", ui->scenes->currentRow());
 
 	const char *scene_name = obs_source_get_name(source);
 	undo_s.add_action(QTStr("Undo.Delete").arg(scene_name), undo, redo,
 			  obs_data_get_json(data), scene_name);
 
-	obs_data_array_release(array);
+	obs_data_array_release(sources_in_deleted_scene);
+	obs_data_array_release(scene_used_in_other_scenes);
 	obs_data_release(data);
 
 	/* --------------------------- */
 	/* remove                      */
 
-	obs_source_remove(source);
+	RemoveSceneAndReleaseNested(source);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
