@@ -546,3 +546,10 @@ void obs_frontend_open_source_filters(obs_source_t *source)
 	if (callbacks_valid())
 		c->obs_frontend_open_source_filters(source);
 }
+
+char *obs_frontend_get_current_record_output_path(void)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_get_current_record_output_path()
+		       : nullptr;
+}

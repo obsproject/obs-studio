@@ -618,6 +618,13 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	char *obs_frontend_get_current_record_output_path(void) override
+	{
+		const char *recordOutputPath = main->GetCurrentOutputPath();
+
+		return bstrdup(recordOutputPath);
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {
