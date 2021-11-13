@@ -17,9 +17,9 @@
 	<key>LSMinimumSystemVersion</key>
 	<string>10.13.0</string>
 	<key>NSHighResolutionCapable</key>
-	<true/>
+	<string>True</string>
 	<key>LSAppNapIsDisabled</key>
-	<true/>
+	<string>True</string>
 	<key>NSCameraUsageDescription</key>
  	<string>OBS needs to access the camera to enable camera sources to work.</string>
  	<key>NSMicrophoneUsageDescription</key>
