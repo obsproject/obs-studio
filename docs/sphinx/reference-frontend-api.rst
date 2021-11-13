@@ -680,3 +680,10 @@ Functions
    Opens the filters window of the specified source.
 
    :param source: The source to open the filters window of.
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_current_record_output_path(void)
+
+   :return: A new pointer to the current record output path. Free
+            with :c:func:`bfree()`.
