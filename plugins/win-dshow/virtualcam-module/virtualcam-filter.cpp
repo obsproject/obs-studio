@@ -7,7 +7,7 @@
 
 using namespace DShow;
 
-extern bool initialize_placeholder();
+extern bool initialize_placeholder(int dest_cx, int dest_cy);
 extern const uint8_t *get_placeholder_ptr();
 extern const bool get_placeholder_size(int *out_cx, int *out_cy);
 
@@ -167,7 +167,7 @@ void VCamFilter::Thread()
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
 
-	if (initialize_placeholder()) {
+	if (initialize_placeholder(cx, cy)) {
 		placeholder.source_data = get_placeholder_ptr();
 		get_placeholder_size(&placeholder.cx, &placeholder.cy);
 	} else {

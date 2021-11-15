@@ -81,7 +81,7 @@ static void convert_placeholder(const uint8_t *rgb_in, int width, int height)
 	}
 }
 
-static bool load_placeholder_internal()
+static bool load_placeholder_internal(int dest_cx, int dest_cy)
 {
 	Status s;
 
@@ -107,27 +107,73 @@ static bool load_placeholder_internal()
 	cx = bmp.GetWidth();
 	cy = bmp.GetHeight();
 
-	BitmapData bmd = {};
-	Rect r(0, 0, cx, cy);
+	if (cx == dest_cx && cy == dest_cy) {
+		BitmapData bmd = {};
+		Rect r(0, 0, cx, cy);
 
-	s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB, &bmd);
-	if (s != Status::Ok) {
-		return false;
+		s = bmp.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB,
+				 &bmd);
+		if (s != Status::Ok) {
+			return false;
+		}
+
+		convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
+
+		bmp.UnlockBits(&bmd);
+	} else {
+		int rect_x, rect_y, rect_w, rect_h;
+		float ratio_x = (float)cx / (float)dest_cx;
+		float ratio_y = (float)cy / (float)dest_cy;
+		if (ratio_x < ratio_y) {
+			rect_y = 0;
+			rect_h = dest_cy;
+			rect_w = rect_h * ((float)cx / (float)cy);
+			rect_x = (dest_cx - rect_w) / 2;
+		} else {
+			rect_x = 0;
+			rect_w = dest_cx;
+			rect_h = rect_w * ((float)cy / (float)cx);
+			rect_y = (dest_cy - rect_h) / 2;
+		}
+
+		Bitmap target(dest_cx, dest_cy, bmp.GetPixelFormat());
+		Gdiplus::Graphics graphics(&target);
+		graphics.Clear(Color(0, 0, 0));
+
+		Rect dest_r(rect_x, rect_y, rect_w, rect_h);
+		graphics.SetInterpolationMode(
+			Gdiplus::InterpolationModeHighQualityBicubic);
+		graphics.DrawImage(&bmp, dest_r, 0, 0, cx, cy,
+				   Gdiplus::UnitPixel);
+
+		BitmapData bmd = {};
+		Rect r(0, 0, dest_cx, dest_cy);
+
+		s = target.LockBits(&r, ImageLockModeRead, PixelFormat24bppRGB,
+				    &bmd);
+		if (s != Status::Ok) {
+			return false;
+		}
+
+		convert_placeholder((const uint8_t *)bmd.Scan0, dest_cx,
+				    dest_cy);
+
+		target.UnlockBits(&bmd);
+
+		cx = dest_cx;
+		cy = dest_cy;
 	}
 
-	convert_placeholder((const uint8_t *)bmd.Scan0, cx, cy);
-
-	bmp.UnlockBits(&bmd);
 	return true;
 }
 
-bool initialize_placeholder()
+bool initialize_placeholder(int dest_cx, int dest_cy)
 {
 	GdiplusStartupInput si;
 	ULONG_PTR token;
 	GdiplusStartup(&token, &si, nullptr);
 
-	initialized = load_placeholder_internal();
+	initialized = load_placeholder_internal(dest_cx, dest_cy);
 
 	GdiplusShutdown(token);
 	return initialized;
