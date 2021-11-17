@@ -224,6 +224,32 @@ static void get_scene_items(const Json &root, const Json::array &out_sources,
 		Json::object{{"items", out_items}, {"id_counter", length}};
 }
 
+static void translate_screen_capture(Json::object &out_settings, string &type)
+{
+	string subtype_info =
+		out_settings["capture_source_list"].string_value();
+	size_t pos = subtype_info.find(':');
+	string subtype = subtype_info.substr(0, pos);
+
+	if (subtype == "game") {
+		type = "game_capture";
+	} else if (subtype == "monitor") {
+		type = "monitor_capture";
+		out_settings["monitor"] = subtype_info.substr(pos);
+	} else if (subtype == "window") {
+		type = "window_capture";
+		out_settings["cursor"] = out_settings["capture_cursor"];
+		out_settings["window"] =
+			out_settings["capture_window_line"].string_value();
+		out_settings["capture_cursor"] = nullptr;
+	}
+	out_settings["auto_capture_rules_path"] = nullptr;
+	out_settings["auto_placeholder_image"] = nullptr;
+	out_settings["auto_placeholder_message"] = nullptr;
+	out_settings["capture_source_list"] = nullptr;
+	out_settings["capture_window_line"] = nullptr;
+}
+
 static int attempt_import(const Json &root, const string &name, Json &res)
 {
 	Json::array source_arr = root["sources"]["items"].array_items();
@@ -274,12 +300,18 @@ static int attempt_import(const Json &root, const string &name, Json &res)
 
 		string sl_id = source["id"].string_value();
 
+		string type = source["type"].string_value();
+		Json::object out_settings = in_settings.object_items();
+		if (type == "screen_capture") {
+			translate_screen_capture(out_settings, type);
+		}
+
 		out_sources.push_back(
 			Json::object{{"filters", out_filters},
 				     {"hotkeys", out_hotkeys},
-				     {"id", source["type"]},
+				     {"id", type},
 				     {"sl_id", sl_id},
-				     {"settings", in_settings},
+				     {"settings", out_settings},
 				     {"sync", sync},
 				     {"volume", vol},
 				     {"muted", muted},
