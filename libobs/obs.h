@@ -768,6 +768,14 @@ EXPORT void obs_add_raw_video_callback(
 EXPORT void obs_remove_raw_video_callback(
 	void (*callback)(void *param, struct video_data *frame), void *param);
 
+EXPORT void
+obs_add_raw_audio_callback(size_t mix_idx,
+			   const struct audio_convert_info *conversion,
+			   audio_output_callback_t callback, void *param);
+EXPORT void obs_remove_raw_audio_callback(size_t mix_idx,
+					  audio_output_callback_t callback,
+					  void *param);
+
 EXPORT uint64_t obs_get_video_frame_time(void);
 
 EXPORT double obs_get_active_fps(void);
