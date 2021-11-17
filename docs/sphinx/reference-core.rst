@@ -473,6 +473,18 @@ Video, Audio, and Graphics
    :param callback:   The callback that receives raw video frames.
    :param param:      The private data associated with the callback.
 
+---------------------
+
+.. function:: void obs_add_raw_audio_callback(size_t mix_idx, const struct audio_convert_info *conversion, audio_output_callback_t callback, void *param)
+              void obs_remove_raw_raw_callback(size_t track, audio_output_callback_t callback, void *param)
+
+   Adds/removes a raw audio callback.  Allows the ability to obtain raw
+   audio data without necessarily using an output.
+
+   :param mix_idx:    Specifies audio track to get data from.
+   :param conversion: Specifies conversion requirements.  Can be NULL.
+   :param callback:   The callback that receives raw audio data.
+   :param param:      The private data associated with the callback.
 
 Primary signal/procedure handlers
 ---------------------------------
