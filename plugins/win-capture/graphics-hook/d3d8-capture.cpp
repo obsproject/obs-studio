@@ -2,8 +2,7 @@
 
 #include "../d3d8-api/d3d8.h"
 #include "graphics-hook.h"
-
-#include <detours.h>
+#include "../funchook.h"
 
 typedef HRESULT(STDMETHODCALLTYPE *reset_t)(IDirect3DDevice8 *,
 					    D3DPRESENT_PARAMETERS *);
@@ -11,8 +10,8 @@ typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDirect3DDevice8 *, CONST RECT *,
 					      CONST RECT *, HWND,
 					      CONST RGNDATA *);
 
-reset_t RealReset = NULL;
-present_t RealPresent = NULL;
+static struct func_hook present;
+static struct func_hook reset;
 
 struct d3d8_data {
 	HMODULE d3d8;
@@ -251,10 +250,17 @@ static void d3d8_capture(IDirect3DDevice8 *device,
 static HRESULT STDMETHODCALLTYPE hook_reset(IDirect3DDevice8 *device,
 					    D3DPRESENT_PARAMETERS *parameters)
 {
+	HRESULT hr;
+
 	if (capture_active())
 		d3d8_free();
 
-	return RealReset(device, parameters);
+	unhook(&reset);
+	reset_t call = (reset_t)reset.call_addr;
+	hr = call(device, parameters);
+	rehook(&reset);
+
+	return hr;
 }
 
 static bool hooked_reset = false;
@@ -263,19 +269,11 @@ static void setup_reset_hooks(IDirect3DDevice8 *device)
 {
 	uintptr_t *vtable = *(uintptr_t **)device;
 
-	DetourTransactionBegin();
+	hook_init(&reset, (void *)vtable[14], (void *)hook_reset,
+		  "IDirect3DDevice8::Reset");
+	rehook(&reset);
 
-	RealReset = (reset_t)vtable[14];
-	DetourAttach((PVOID *)&RealReset, hook_reset);
-
-	const LONG error = DetourTransactionCommit();
-	const bool success = error == NO_ERROR;
-	if (success) {
-		hlog("Hooked IDirect3DDevice8::Reset");
-		hooked_reset = true;
-	} else {
-		RealReset = nullptr;
-	}
+	hooked_reset = true;
 }
 
 static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
@@ -285,6 +283,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
 					      CONST RGNDATA *dirty_region)
 {
 	IDirect3DSurface8 *backbuffer;
+	HRESULT hr;
 
 	if (!hooked_reset)
 		setup_reset_hooks(device);
@@ -295,8 +294,12 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDirect3DDevice8 *device,
 		backbuffer->Release();
 	}
 
-	return RealPresent(device, src_rect, dst_rect, override_window,
-			   dirty_region);
+	unhook(&present);
+	present_t call = (present_t)present.call_addr;
+	hr = call(device, src_rect, dst_rect, override_window, dirty_region);
+	rehook(&present);
+
+	return hr;
 }
 
 typedef IDirect3D8 *(WINAPI *d3d8create_t)(UINT);
@@ -385,20 +388,11 @@ bool hook_d3d8(void)
 		return true;
 	}
 
-	DetourTransactionBegin();
+	hook_init(&present, present_addr, (void *)hook_present,
+		  "IDirect3DDevice8::Present");
 
-	RealPresent = (present_t)present_addr;
-	DetourAttach((PVOID *)&RealPresent, hook_present);
+	rehook(&present);
 
-	const LONG error = DetourTransactionCommit();
-	const bool success = error == NO_ERROR;
-	if (success) {
-		hlog("Hooked IDirect3DDevice8::Present");
-		hlog("Hooked D3D8");
-	} else {
-		RealPresent = nullptr;
-		hlog("Failed to attach Detours hook: %ld", error);
-	}
-
-	return success;
+	hlog("Hooked D3D8");
+	return true;
 }

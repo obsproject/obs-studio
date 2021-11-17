@@ -7,7 +7,6 @@
 
 struct dc_capture {
 	gs_texture_t *texture;
-	gs_texture_t *extra_texture;
 	bool texture_written;
 	int x, y;
 	uint32_t width;
@@ -32,5 +31,4 @@ extern void dc_capture_init(struct dc_capture *capture, int x, int y,
 extern void dc_capture_free(struct dc_capture *capture);
 
 extern void dc_capture_capture(struct dc_capture *capture, HWND window);
-extern void dc_capture_render(struct dc_capture *capture,
-			      bool texcoords_centered);
+extern void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect);

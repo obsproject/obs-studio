@@ -89,9 +89,10 @@ static bool create_d3d12_tex(bb_info &bb)
 
 	for (UINT i = 0; i < bb.count; i++) {
 		hr = data.device11on12->CreateWrappedResource(
-			bb.backbuffer[i], &rf11, D3D12_RESOURCE_STATE_PRESENT,
-			D3D12_RESOURCE_STATE_PRESENT,
-			IID_PPV_ARGS(&data.backbuffer11[i]));
+			bb.backbuffer[i], &rf11,
+			D3D12_RESOURCE_STATE_COPY_SOURCE,
+			D3D12_RESOURCE_STATE_PRESENT, __uuidof(ID3D11Resource),
+			(void **)&data.backbuffer11[i]);
 		if (FAILED(hr)) {
 			hlog_hr("create_d3d12_tex: failed to create "
 				"backbuffer11",
@@ -118,8 +119,14 @@ static bool create_d3d12_tex(bb_info &bb)
 		return false;
 	}
 
+	for (UINT i = 0; i < bb.count; i++) {
+		data.device11on12->ReleaseWrappedResources(
+			&data.backbuffer11[i], 1);
+	}
+
 	IDXGIResource *dxgi_res;
-	hr = data.copy_tex->QueryInterface(&dxgi_res);
+	hr = data.copy_tex->QueryInterface(__uuidof(IDXGIResource),
+					   (void **)&dxgi_res);
 	if (FAILED(hr)) {
 		hlog_hr("create_d3d12_tex: failed to query "
 			"IDXGIResource interface from texture",
@@ -242,7 +249,7 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	data.cx = desc.BufferDesc.Width;
 	data.cy = desc.BufferDesc.Height;
 
-	hr = swap->QueryInterface(&swap3);
+	hr = swap->QueryInterface(__uuidof(IDXGISwapChain3), (void **)&swap3);
 	if (SUCCEEDED(hr)) {
 		data.dxgi_1_4 = true;
 		hlog("We're DXGI1.4 boys!");
@@ -267,7 +274,8 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 	}
 
 	for (UINT i = 0; i < bb.count; i++) {
-		hr = swap->GetBuffer(i, IID_PPV_ARGS(&bb.backbuffer[i]));
+		hr = swap->GetBuffer(i, __uuidof(ID3D12Resource),
+				     (void **)&bb.backbuffer[i]);
 		if (SUCCEEDED(hr)) {
 			bb.backbuffer[i]->Release();
 		} else {
@@ -313,7 +321,8 @@ static inline void d3d12_copy_texture(ID3D11Resource *dst, ID3D11Resource *src)
 	}
 }
 
-static inline void d3d12_shtex_capture(IDXGISwapChain *swap)
+static inline void d3d12_shtex_capture(IDXGISwapChain *swap,
+				       bool capture_overlay)
 {
 	bool dxgi_1_4 = data.dxgi_1_4;
 	UINT cur_idx;
@@ -322,6 +331,10 @@ static inline void d3d12_shtex_capture(IDXGISwapChain *swap)
 		IDXGISwapChain3 *swap3 =
 			reinterpret_cast<IDXGISwapChain3 *>(swap);
 		cur_idx = swap3->GetCurrentBackBufferIndex();
+		if (!capture_overlay) {
+			if (++cur_idx >= data.backbuffer_count)
+				cur_idx = 0;
+		}
 	} else {
 		cur_idx = data.cur_backbuffer;
 	}
@@ -339,7 +352,7 @@ static inline void d3d12_shtex_capture(IDXGISwapChain *swap)
 	}
 }
 
-void d3d12_capture(void *swap_ptr, void *)
+void d3d12_capture(void *swap_ptr, void *, bool capture_overlay)
 {
 	IDXGISwapChain *swap = (IDXGISwapChain *)swap_ptr;
 
@@ -350,7 +363,7 @@ void d3d12_capture(void *swap_ptr, void *)
 		d3d12_init(swap);
 	}
 	if (capture_ready()) {
-		d3d12_shtex_capture(swap);
+		d3d12_shtex_capture(swap, capture_overlay);
 	}
 }
 

@@ -5,26 +5,13 @@
 
 static inline void init_textures(struct dc_capture *capture)
 {
-	if (capture->compatibility) {
+	if (capture->compatibility)
 		capture->texture = gs_texture_create(capture->width,
 						     capture->height, GS_BGRA,
 						     1, NULL, GS_DYNAMIC);
-	} else {
+	else
 		capture->texture =
 			gs_texture_create_gdi(capture->width, capture->height);
-
-		if (capture->texture) {
-			capture->extra_texture = gs_texture_create(
-				capture->width, capture->height, GS_BGRA, 1,
-				NULL, 0);
-			if (!capture->extra_texture) {
-				blog(LOG_WARNING, "[dc_capture_init] Failed to "
-						  "create textures");
-				gs_texture_destroy(capture->texture);
-				capture->texture = NULL;
-			}
-		}
-	}
 
 	if (!capture->texture) {
 		blog(LOG_WARNING, "[dc_capture_init] Failed to "
@@ -86,7 +73,6 @@ void dc_capture_free(struct dc_capture *capture)
 	}
 
 	obs_enter_graphics();
-	gs_texture_destroy(capture->extra_texture);
 	gs_texture_destroy(capture->texture);
 	obs_leave_graphics();
 
@@ -179,48 +165,41 @@ void dc_capture_capture(struct dc_capture *capture, HWND window)
 	capture->texture_written = true;
 }
 
-static void draw_texture(struct dc_capture *capture, bool texcoords_centered)
+static void draw_texture(struct dc_capture *capture, gs_effect_t *effect)
 {
-	gs_effect_t *effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+	gs_texture_t *texture = capture->texture;
 	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
+	size_t passes;
 
-	gs_texture_t *texture = capture->texture;
-	const bool compatibility = capture->compatibility;
-	bool linear_sample = compatibility;
-	if (!linear_sample && !texcoords_centered) {
-		gs_texture_t *const extra_texture = capture->extra_texture;
-		gs_copy_texture(extra_texture, texture);
-		texture = extra_texture;
-		linear_sample = true;
-	}
+	const bool linear_srgb = gs_get_linear_srgb() && capture->compatibility;
 
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_sample);
-	gs_enable_blending(false);
+	gs_enable_framebuffer_srgb(linear_srgb);
 
-	if (linear_sample)
+	if (linear_srgb)
 		gs_effect_set_texture_srgb(image, texture);
 	else
 		gs_effect_set_texture(image, texture);
 
-	const uint32_t flip = compatibility ? GS_FLIP_V : 0;
-	const size_t passes = gs_technique_begin(tech);
+	passes = gs_technique_begin(tech);
 	for (size_t i = 0; i < passes; i++) {
 		if (gs_technique_begin_pass(tech, i)) {
-			gs_draw_sprite(texture, flip, 0, 0);
+			if (capture->compatibility)
+				gs_draw_sprite(texture, GS_FLIP_V, 0, 0);
+			else
+				gs_draw_sprite(texture, 0, 0, 0);
 
 			gs_technique_end_pass(tech);
 		}
 	}
 	gs_technique_end(tech);
 
-	gs_enable_blending(true);
 	gs_enable_framebuffer_srgb(previous);
 }
 
-void dc_capture_render(struct dc_capture *capture, bool texcoords_centered)
+void dc_capture_render(struct dc_capture *capture, gs_effect_t *effect)
 {
 	if (capture->valid && capture->texture_written)
-		draw_texture(capture, texcoords_centered);
+		draw_texture(capture, effect);
 }

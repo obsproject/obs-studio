@@ -5,8 +5,7 @@
 #include <inttypes.h>
 
 #include "graphics-hook.h"
-
-#include <detours.h>
+#include "../funchook.h"
 
 #if COMPILE_D3D12_HOOK
 #include <d3d12.h>
@@ -20,10 +19,10 @@ typedef HRESULT(STDMETHODCALLTYPE *present_t)(IDXGISwapChain *, UINT, UINT);
 typedef HRESULT(STDMETHODCALLTYPE *present1_t)(IDXGISwapChain1 *, UINT, UINT,
 					       const DXGI_PRESENT_PARAMETERS *);
 
-release_t RealRelease = nullptr;
-resize_buffers_t RealResizeBuffers = nullptr;
-present_t RealPresent = nullptr;
-present1_t RealPresent1 = nullptr;
+static struct func_hook release;
+static struct func_hook resize_buffers;
+static struct func_hook present;
+static struct func_hook present1;
 
 thread_local bool dxgi_presenting = false;
 struct ID3D12CommandQueue *dxgi_possible_swap_queues[8]{};
@@ -32,7 +31,7 @@ bool dxgi_present_attempted = false;
 
 struct dxgi_swap_data {
 	IDXGISwapChain *swap;
-	void (*capture)(void *, void *);
+	void (*capture)(void *, void *, bool);
 	void (*free)(void);
 };
 
@@ -113,7 +112,10 @@ static bool setup_dxgi(IDXGISwapChain *swap)
 
 static ULONG STDMETHODCALLTYPE hook_release(IUnknown *unknown)
 {
-	const ULONG refs = RealRelease(unknown);
+	unhook(&release);
+	release_t call = (release_t)release.call_addr;
+	ULONG refs = call(unknown);
+	rehook(&release);
 
 	hlog_verbose("Release callback: Refs=%lu", refs);
 	if (unknown == data.swap && refs == 0) {
@@ -153,8 +155,11 @@ static HRESULT STDMETHODCALLTYPE hook_resize_buffers(IDXGISwapChain *swap,
 		data.free();
 	data.free = nullptr;
 
-	const HRESULT hr = RealResizeBuffers(swap, buffer_count, width, height,
-					     format, flags);
+	unhook(&resize_buffers);
+	resize_buffers_t call = (resize_buffers_t)resize_buffers.call_addr;
+	const HRESULT hr =
+		call(swap, buffer_count, width, height, format, flags);
+	rehook(&resize_buffers);
 
 	resize_buffers_called = true;
 
@@ -218,13 +223,16 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 		if (backbuffer) {
-			data.capture(swap, backbuffer);
+			data.capture(swap, backbuffer, capture_overlay);
 			backbuffer->Release();
 		}
 	}
 
 	dxgi_presenting = true;
-	const HRESULT hr = RealPresent(swap, sync_interval, flags);
+	unhook(&present);
+	present_t call = (present_t)present.call_addr;
+	const HRESULT hr = call(swap, sync_interval, flags);
+	rehook(&present);
 	dxgi_presenting = false;
 	dxgi_present_attempted = true;
 
@@ -242,7 +250,7 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 			if (backbuffer) {
-				data.capture(swap, backbuffer);
+				data.capture(swap, backbuffer, capture_overlay);
 				backbuffer->Release();
 			}
 		}
@@ -277,13 +285,16 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		if (backbuffer) {
 			DXGI_SWAP_CHAIN_DESC1 desc;
 			swap->GetDesc1(&desc);
-			data.capture(swap, backbuffer);
+			data.capture(swap, backbuffer, capture_overlay);
 			backbuffer->Release();
 		}
 	}
 
 	dxgi_presenting = true;
-	const HRESULT hr = RealPresent1(swap, sync_interval, flags, params);
+	unhook(&present1);
+	present1_t call = (present1_t)present1.call_addr;
+	const HRESULT hr = call(swap, sync_interval, flags, params);
+	rehook(&present1);
 	dxgi_presenting = false;
 	dxgi_present_attempted = true;
 
@@ -294,7 +305,7 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 			IUnknown *backbuffer = get_dxgi_backbuffer(swap);
 
 			if (backbuffer) {
-				data.capture(swap, backbuffer);
+				data.capture(swap, backbuffer, capture_overlay);
 				backbuffer->Release();
 			}
 		}
@@ -326,41 +337,30 @@ bool hook_dxgi(void)
 		release_addr = get_offset_addr(
 			dxgi_module, global_hook_info->offsets.dxgi2.release);
 
-	DetourTransactionBegin();
-
-	RealPresent = (present_t)present_addr;
-	DetourAttach(&(PVOID &)RealPresent, hook_present);
-
-	RealResizeBuffers = (resize_buffers_t)resize_addr;
-	DetourAttach(&(PVOID &)RealResizeBuffers, hook_resize_buffers);
-
+	hook_init(&present, present_addr, (void *)hook_present,
+		  "IDXGISwapChain::Present");
+	hlog("Hooked IDXGISwapChain::Present");
+	hook_init(&resize_buffers, resize_addr, (void *)hook_resize_buffers,
+		  "IDXGISwapChain::ResizeBuffers");
+	hlog("Hooked IDXGISwapChain::ResizeBuffers");
 	if (present1_addr) {
-		RealPresent1 = (present1_t)present1_addr;
-		DetourAttach(&(PVOID &)RealPresent1, hook_present1);
+		hook_init(&present1, present1_addr, (void *)hook_present1,
+			  "IDXGISwapChain1::Present1");
+		hlog("Hooked IDXGISwapChain::Present1");
 	}
-
 	if (release_addr) {
-		RealRelease = (release_t)release_addr;
-		DetourAttach(&(PVOID &)RealRelease, hook_release);
+		hook_init(&release, release_addr, (void *)hook_release,
+			  "IDXGISwapChain::Release");
+		hlog("Hooked IDXGISwapChain::Release");
 	}
 
-	const LONG error = DetourTransactionCommit();
-	const bool success = error == NO_ERROR;
-	if (success) {
-		hlog("Hooked IDXGISwapChain::Present");
-		hlog("Hooked IDXGISwapChain::ResizeBuffers");
-		if (RealPresent1)
-			hlog("Hooked IDXGISwapChain1::Present1");
-		if (RealRelease)
-			hlog("Hooked IDXGISwapChain::Release");
-		hlog("Hooked DXGI");
-	} else {
-		RealPresent = nullptr;
-		RealResizeBuffers = nullptr;
-		RealPresent1 = nullptr;
-		RealRelease = nullptr;
-		hlog("Failed to attach Detours hook: %ld", error);
-	}
+	rehook(&resize_buffers);
+	rehook(&present);
+	if (present1_addr)
+		rehook(&present1);
+	if (release_addr)
+		rehook(&release);
 
-	return success;
+	hlog("Hooked DXGI");
+	return true;
 }

@@ -152,7 +152,7 @@ static void monitor_capture_render(void *data, gs_effect_t *effect)
 {
 	struct monitor_capture *capture = data;
 	dc_capture_render(&capture->data,
-			  obs_source_get_texcoords_centered(capture->source));
+			  obs_get_base_effect(OBS_EFFECT_OPAQUE));
 
 	UNUSED_PARAMETER(effect);
 }
