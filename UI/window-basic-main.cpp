@@ -1409,7 +1409,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  "hq");
 	config_set_default_string(basicConfig, "SimpleOutput", "RecQuality",
 				  "Stream");
-	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", false);
+	config_set_default_bool(basicConfig, "SimpleOutput", "RecRB", true);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "SimpleOutput", "RecRBSize", 512);
 	config_set_default_string(basicConfig, "SimpleOutput", "RecRBPrefix",
@@ -1450,7 +1450,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(basicConfig, "AdvOut", "Track5Bitrate", 160);
 	config_set_default_uint(basicConfig, "AdvOut", "Track6Bitrate", 160);
 
-	config_set_default_bool(basicConfig, "AdvOut", "RecRB", false);
+	config_set_default_bool(basicConfig, "AdvOut", "RecRB", true);
 	config_set_default_uint(basicConfig, "AdvOut", "RecRBTime", 20);
 	config_set_default_int(basicConfig, "AdvOut", "RecRBSize", 512);
 
