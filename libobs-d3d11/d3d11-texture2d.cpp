@@ -50,26 +50,31 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 
 void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 {
-	this->data.resize(levels);
-
-	uint32_t w = width;
-	uint32_t h = height;
+	uint32_t textures = type == GS_TEXTURE_CUBE ? 6 : 1;
 	uint32_t bbp = gs_get_format_bpp(format);
 
-	for (uint32_t i = 0; i < levels; i++) {
-		if (!data[i])
-			break;
+	this->data.resize(levels * textures);
 
-		uint32_t texSize = bbp * w * h / 8;
-		this->data[i].resize(texSize);
+	for (uint32_t t = 0; t < textures; t++) {
+		uint32_t w = width;
+		uint32_t h = height;
 
-		vector<uint8_t> &subData = this->data[i];
-		memcpy(&subData[0], data[i], texSize);
+		for (uint32_t lv = 0; lv < levels; lv++) {
+			uint32_t i = levels * t + lv;
+			if (!data[i])
+				break;
 
-		if (w > 1)
-			w /= 2;
-		if (h > 1)
-			h /= 2;
+			uint32_t texSize = bbp * w * h / 8;
+
+			vector<uint8_t> &subData = this->data[i];
+			subData.resize(texSize);
+			memcpy(&subData[0], data[i], texSize);
+
+			if (w > 1)
+				w /= 2;
+			if (h > 1)
+				h /= 2;
+		}
 	}
 }
 
