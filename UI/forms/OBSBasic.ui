@@ -657,20 +657,6 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
-    <widget class="QMenu" name="viewMenuDocks">
-     <property name="title">
-      <string>Basic.MainMenu.View.Docks</string>
-     </property>
-     <addaction name="resetUI"/>
-     <addaction name="lockUI"/>
-     <addaction name="separator"/>
-     <addaction name="toggleScenes"/>
-     <addaction name="toggleSources"/>
-     <addaction name="toggleMixer"/>
-     <addaction name="toggleTransitions"/>
-     <addaction name="toggleControls"/>
-     <addaction name="toggleStats"/>
-    </widget>
     <action name="actionFullscreenInterface">
      <property name="text">
       <string>Basic.MainMenu.View.Fullscreen.Interface</string>
@@ -681,7 +667,6 @@
     </action>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
-    <addaction name="viewMenuDocks"/>
     <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
@@ -696,9 +681,24 @@
     <addaction name="autoConfigure"/>
     <addaction name="separator"/>
    </widget>
+   <widget class="QMenu" name="menuDocks">
+    <property name="title">
+     <string>Basic.MainMenu.Docks</string>
+    </property>
+    <addaction name="lockUI"/>
+    <addaction name="resetUI"/>
+    <addaction name="separator"/>
+    <addaction name="toggleScenes"/>
+    <addaction name="toggleSources"/>
+    <addaction name="toggleMixer"/>
+    <addaction name="toggleTransitions"/>
+    <addaction name="toggleControls"/>
+    <addaction name="toggleStats"/>
+   </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
    <addaction name="viewMenu"/>
+   <addaction name="menuDocks"/>
    <addaction name="profileMenu"/>
    <addaction name="sceneCollectionMenu"/>
    <addaction name="menuTools"/>
@@ -1962,7 +1962,7 @@
   </action>
   <action name="resetUI">
    <property name="text">
-    <string>Basic.MainMenu.View.Docks.ResetUI</string>
+    <string>Basic.MainMenu.Docks.ResetUI</string>
    </property>
   </action>
   <action name="lockUI">
@@ -1973,7 +1973,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic.MainMenu.View.Docks.LockUI</string>
+    <string>Basic.MainMenu.Docks.LockUI</string>
    </property>
   </action>
   <action name="toggleScenes">

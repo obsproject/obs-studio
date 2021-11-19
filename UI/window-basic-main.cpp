@@ -1966,14 +1966,13 @@ void OBSBasic::OBSInit()
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
-		QAction *action = new QAction(QTStr("Basic.MainMenu."
-						    "View.Docks."
+		QAction *action = new QAction(QTStr("Basic.MainMenu.Docks."
 						    "CustomBrowserDocks"),
 					      this);
-		ui->viewMenuDocks->insertAction(ui->toggleScenes, action);
+		ui->menuDocks->insertAction(ui->toggleScenes, action);
 		connect(action, &QAction::triggered, this,
 			&OBSBasic::ManageExtraBrowserDocks);
-		ui->viewMenuDocks->insertSeparator(ui->toggleScenes);
+		ui->menuDocks->insertSeparator(ui->toggleScenes);
 
 		LoadExtraBrowserDocks();
 	}
@@ -9571,7 +9570,7 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
-	QAction *action = ui->viewMenuDocks->addAction(dock->windowTitle());
+	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
 	extraDocks.push_back(dock);
@@ -9948,7 +9947,7 @@ void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
 		className = widget->metaObject()->className();
 
 	if (!className || strstr(className, "Dock") != nullptr)
-		ui->viewMenuDocks->exec(mapToGlobal(pos));
+		ui->menuDocks->exec(mapToGlobal(pos));
 }
 
 void OBSBasic::UpdateProjectorHideCursor()
