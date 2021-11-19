@@ -315,8 +315,7 @@ Scene Item Functions
 
 .. function:: int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
 
-   This is a dangerous function and should not
-   normally be used. It can cause errors within obs.
+   Gets the numeric identifier of the sceneitem.
 
    :return: Gets the unique numeric identifier of the scene item.
 
@@ -615,8 +614,9 @@ Scene Item Group Functions
 
 .. function:: obs_scene_t *obs_group_or_scene_from_source(const obs_source_t *source)
 
-   :return: The group or scene context, or *NULL* if neither a
-            group nor a scene.  Does not increase the reference
+   :return: The context for the source, regardless of if it is a
+            group or a scene.  *NULL* if neither.  Does not increase
+            the reference
 
 ---------------------
 
