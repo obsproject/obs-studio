@@ -294,14 +294,9 @@ static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 	}
 }
 
-static int gcd(int a, int b)
-{
-	return b == 0 ? a : gcd(b, a % b);
-}
-
 static std::tuple<int, int> aspect_ratio(int cx, int cy)
 {
-	int common = gcd(cx, cy);
+	int common = std::gcd(cx, cy);
 	int newCX = cx / common;
 	int newCY = cy / common;
 
