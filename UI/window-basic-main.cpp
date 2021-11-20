@@ -2779,6 +2779,21 @@ OBSSceneItem OBSBasic::GetCurrentSceneItem()
 	return ui->sources->Get(GetTopSelectedSourceItem());
 }
 
+std::vector<OBSSceneItem> OBSBasic::GetCurrentSelectedSceneItems()
+{
+	std::vector<OBSSceneItem> items;
+	QModelIndexList selectedItems =
+		ui->sources->selectionModel()->selectedIndexes();
+	/* Sorts like std::greater<QModelIndex> would if it was a thing */
+	std::sort(selectedItems.begin(), selectedItems.end(),
+		  [](const QModelIndex &a, const QModelIndex &b) {
+			  return b < a;
+		  });
+	for (QModelIndex index : selectedItems)
+		items.push_back(ui->sources->Get(index.row()));
+	return items;
+}
+
 void OBSBasic::UpdatePreviewScalingMenu()
 {
 	bool fixedScaling = ui->preview->IsFixedScaling();
@@ -5994,61 +6009,150 @@ void OBSBasic::on_actionSourceProperties_triggered()
 }
 
 void OBSBasic::MoveSceneItem(enum obs_order_movement movement,
-			     const QString &action_name)
+			     std::string action_name)
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	obs_source_t *source = obs_sceneitem_get_source(item);
+	std::vector<OBSSceneItem> items = GetCurrentSelectedSceneItems();
 
-	if (!source)
+	if (items.empty())
 		return;
 
+	/* Ignore (remove) grouped items if items not in a group are selected as well */
+	bool hasNormalItems = false;
+	bool hasGroupedItems = false;
+	for (OBSSceneItem sceneItem : items) {
+		if (obs_scene_is_group(obs_sceneitem_get_scene(sceneItem)))
+			hasGroupedItems = true;
+		else
+			hasNormalItems = true;
+	}
+	if (hasNormalItems && hasGroupedItems) {
+		std::vector<OBSSceneItem>::iterator sceneItem = items.begin();
+		while (sceneItem != items.end()) {
+			if (obs_scene_is_group(
+				    obs_sceneitem_get_scene(*sceneItem))) {
+				sceneItem = items.erase(sceneItem);
+			} else
+				sceneItem++;
+		}
+	}
+
+	/* Check if selection is already on top/bottom */
+	if (movement == OBS_ORDER_MOVE_DOWN ||
+	    movement == OBS_ORDER_MOVE_BOTTOM) {
+		if (obs_sceneitem_get_order_position(items[0]) == 0)
+			return;
+	} else {
+		if (obs_sceneitem_get_order_position(items[items.size() - 1]) ==
+		    (obs_scene_get_sceneitem_count(
+			     obs_sceneitem_get_scene(items[0])) -
+		     1))
+			return;
+	}
+
+	/* Backup for undo */
 	OBSScene scene = GetCurrentScene();
-	std::vector<obs_source_t *> sources;
-	if (scene != obs_sceneitem_get_scene(item))
-		sources.push_back(
-			obs_scene_get_source(obs_sceneitem_get_scene(item)));
+	std::vector<obs_source_t *> sourcesInGroups;
+	for (OBSSceneItem item : items) {
+		if (scene != obs_sceneitem_get_scene(item) &&
+		    std::find(sourcesInGroups.begin(), sourcesInGroups.end(),
+			      obs_scene_get_source(obs_sceneitem_get_scene(
+				      item))) == sourcesInGroups.end()) {
+			sourcesInGroups.push_back(obs_scene_get_source(
+				obs_sceneitem_get_scene(item)));
+		}
+	}
+	OBSData undo_data = BackupScene(scene, &sourcesInGroups);
 
-	OBSData undo_data = BackupScene(scene, &sources);
+	OBSScene scene_or_group;
+	if (hasGroupedItems)
+		scene_or_group = obs_sceneitem_get_scene(items[0]);
+	else
+		scene_or_group = scene;
 
-	obs_sceneitem_set_order(item, movement);
+	/* Create vector of sceneitems */
+	std::vector<obs_sceneitem_t *> new_order;
+	auto cb_create_vector = [](obs_scene_t *scene, obs_sceneitem_t *item,
+				   void *data) {
+		UNUSED_PARAMETER(scene);
+		std::vector<obs_sceneitem_t *> *new_order =
+			(std::vector<obs_sceneitem_t *> *)data;
+		new_order->push_back(item);
+		return true;
+	};
+	obs_scene_enum_items(scene_or_group, cb_create_vector, &new_order);
 
-	const char *source_name = obs_source_get_name(source);
+	/* Find out how far to move the selected items in the vector */
+	int firstSelected = obs_sceneitem_get_order_position(items[0]);
+	int lastSelected =
+		obs_sceneitem_get_order_position(items[items.size() - 1]);
+	int moveDistance = 0;
+	if (movement == OBS_ORDER_MOVE_UP) {
+		moveDistance = 1;
+	} else if (movement == OBS_ORDER_MOVE_DOWN) {
+		moveDistance = -1;
+	} else if (movement == OBS_ORDER_MOVE_TOP) {
+		moveDistance = obs_scene_get_sceneitem_count(scene_or_group) -
+			       lastSelected - 1;
+	} else {
+		moveDistance = -firstSelected;
+	}
+
+	/* Move items */
+	new_order.erase(new_order.begin() + firstSelected,
+			new_order.begin() + lastSelected + 1);
+	new_order.insert(new_order.begin() + firstSelected + moveDistance,
+			 items.begin(), items.end());
+
+	obs_scene_reorder_items(scene_or_group, new_order.data(),
+				new_order.size());
+
+	/* Create undo/redo action */
+	OBSData redo_data = BackupScene(scene, &sourcesInGroups);
 	const char *scene_name =
 		obs_source_get_name(obs_scene_get_source(scene));
-
-	OBSData redo_data = BackupScene(scene, &sources);
-	CreateSceneUndoRedoAction(action_name.arg(source_name, scene_name),
-				  undo_data, redo_data);
+	QString action_name_qstring;
+	if (items.size() > 1) {
+		action_name += ".Multi";
+		action_name_qstring =
+			QTStr(action_name.c_str()).arg(scene_name);
+	} else {
+		action_name_qstring =
+			QTStr(action_name.c_str())
+				.arg(obs_source_get_name(
+					     obs_sceneitem_get_source(items[0])),
+				     scene_name);
+	}
+	CreateSceneUndoRedoAction(action_name_qstring, undo_data, redo_data);
 }
 
 void OBSBasic::on_actionSourceUp_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_UP, QTStr("Undo.MoveUp"));
+	MoveSceneItem(OBS_ORDER_MOVE_UP, "Undo.MoveUp");
 }
 
 void OBSBasic::on_actionSourceDown_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_DOWN, QTStr("Undo.MoveDown"));
+	MoveSceneItem(OBS_ORDER_MOVE_DOWN, "Undo.MoveDown");
 }
 
 void OBSBasic::on_actionMoveUp_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_UP, QTStr("Undo.MoveUp"));
+	MoveSceneItem(OBS_ORDER_MOVE_UP, "Undo.MoveUp");
 }
 
 void OBSBasic::on_actionMoveDown_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_DOWN, QTStr("Undo.MoveDown"));
+	MoveSceneItem(OBS_ORDER_MOVE_DOWN, "Undo.MoveDown");
 }
 
 void OBSBasic::on_actionMoveToTop_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_TOP, QTStr("Undo.MoveToTop"));
+	MoveSceneItem(OBS_ORDER_MOVE_TOP, "Undo.MoveToTop");
 }
 
 void OBSBasic::on_actionMoveToBottom_triggered()
 {
-	MoveSceneItem(OBS_ORDER_MOVE_BOTTOM, QTStr("Undo.MoveToBottom"));
+	MoveSceneItem(OBS_ORDER_MOVE_BOTTOM, "Undo.MoveToBottom");
 }
 
 static BPtr<char> ReadLogFile(const char *subdir, const char *log)

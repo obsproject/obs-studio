@@ -373,6 +373,7 @@ private:
 
 	OBSSceneItem GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem GetCurrentSceneItem();
+	std::vector<OBSSceneItem> GetCurrentSelectedSceneItems();
 
 	bool QueryRemoveSource(obs_source_t *source);
 
@@ -594,7 +595,7 @@ private:
 	QPointer<QObject> screenshotData;
 
 	void MoveSceneItem(enum obs_order_movement movement,
-			   const QString &action_name);
+			   std::string action_name);
 
 	bool autoStartBroadcast = true;
 	bool autoStopBroadcast = true;
