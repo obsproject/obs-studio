@@ -54,8 +54,10 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
-	std::string scene_name =
-		obs_source_get_name(main->GetCurrentSceneSource());
+	OBSSource currentSceneSource = main->GetCurrentSceneSource();
+	if (!currentSceneSource)
+		return;
+	std::string scene_name = obs_source_get_name(currentSceneSource);
 	auto undo_redo = [scene_name,
 			  main = std::move(main)](const std::string &data) {
 		obs_data_t *settings = obs_data_create_from_json(data.c_str());
