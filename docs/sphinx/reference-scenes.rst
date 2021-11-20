@@ -268,6 +268,12 @@ General Scene Functions
 
 ---------------------
 
+.. function:: void obs_scene_get_sceneitem_count(obs_scene_t *scene)
+
+   :return: The count of scene items in the scene (not recursive).
+
+---------------------
+
 .. function:: bool obs_scene_reorder_items(obs_scene_t *scene, obs_sceneitem_t * const *item_order, size_t item_order_size)
 
    Reorders items within a scene.

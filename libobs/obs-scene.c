@@ -1949,6 +1949,19 @@ void obs_scene_enum_items(obs_scene_t *scene,
 	full_unlock(scene);
 }
 
+int obs_scene_get_sceneitem_count(obs_scene_t *scene)
+{
+	int i = 0;
+	full_lock(scene);
+	struct obs_scene_item *item = scene->first_item;
+	while (item) {
+		i++;
+		item = item->next;
+	}
+	full_unlock(scene);
+	return i;
+}
+
 static obs_sceneitem_t *sceneitem_get_ref(obs_sceneitem_t *si)
 {
 	long owners = os_atomic_load_long(&si->ref);
