@@ -74,6 +74,7 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 	std::string theme;
+	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
@@ -127,6 +128,7 @@ public:
 
 	inline const char *GetTheme() const { return theme.c_str(); }
 	bool SetTheme(std::string name, std::string path = "");
+	inline bool IsThemeDark() const { return themeDarkMode; };
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 

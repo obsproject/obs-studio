@@ -229,7 +229,11 @@ void TwitchAuth::LoadUI()
 	chat->SetWidget(browser);
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 
 	const int twAddonChoice =
 		config_get_int(main->Config(), service(), "AddonChoice");
@@ -276,7 +280,11 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 	script += referrer_script1;
 	script += "https://www.twitch.tv/";
 	script += name;

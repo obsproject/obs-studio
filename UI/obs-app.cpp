@@ -1121,6 +1121,8 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	setPalette(defaultPalette);
 	ParseExtraThemeData(path.c_str());
 	setStyleSheet(mpath);
+	QColor color = palette().text().color();
+	themeDarkMode = !(color.redF() < 0.5);
 
 	emit StyleChanged();
 	return true;
