@@ -7,12 +7,7 @@
 #include <ajabase/common/types.h>
 #include <ajabase/system/thread.h>
 
-// #define AJA_OUTPUT_PROFILE 1
-#ifdef AJA_OUTPUT_PROFILE
-#include <ajabase/system/log.h>
-#endif
-
-// #define AJA_WRITE_DEBUG_WAV 1
+// #define AJA_WRITE_DEBUG_WAV
 #ifdef AJA_WRITE_DEBUG_WAV
 #include <ajabase/common/wavewriter.h>
 #endif
@@ -81,7 +76,6 @@ public:
 	size_t VideoQueueSize();
 	size_t AudioQueueSize();
 
-	bool PrerolledAudio();
 	bool HaveEnoughAudio(size_t needAudioSize);
 	void DMAAudioFromQueue(NTV2AudioSystem audioSys);
 	void DMAVideoFromQueue();
@@ -98,34 +92,38 @@ public:
 
 	FrameTimes mFrameTimes;
 
-	double mAudioPrerollSec;
-	uint32_t mAudioPrerollBytes;
-
-	uint32_t mMinVideoQueueSize;
-	uint32_t mMinAudioQueueSize;
-
 	uint32_t mAudioPlayCursor;
 	uint32_t mAudioWriteCursor;
 	uint32_t mAudioWrapAddress;
+	uint32_t mAudioRate;
+
+	uint64_t mAudioQueueSamples;
+	uint64_t mAudioWriteSamples;
+	uint64_t mAudioPlaySamples;
 
 	uint32_t mNumCardFrames;
 	uint32_t mFirstCardFrame;
-	uint32_t mCurrentCardFrame;
 	uint32_t mLastCardFrame;
+	uint32_t mWriteCardFrame;
+	uint32_t mPlayCardFrame;
+	uint32_t mPlayCardNext;
+	uint32_t mFrameRateNum;
+	uint32_t mFrameRateDen;
 
-	uint64_t mVideoFrameCount;
+	uint64_t mVideoQueueFrames;
+	uint64_t mVideoWriteFrames;
+	uint64_t mVideoPlayFrames;
+
 	uint64_t mFirstVideoTS;
 	uint64_t mFirstAudioTS;
 	uint64_t mLastVideoTS;
 	uint64_t mLastAudioTS;
 
-#ifdef AJA_OUTPUT_PROFILE
-	uint64_t mVideoLastTime{0};
-	uint64_t mAudioLastTime{0};
-	AJARunAverage *mVideoQueueTimes;
-	AJARunAverage *mAudioQueueTimes;
-#endif
-
+	int64_t mVideoDelay;
+	int64_t mAudioDelay;
+	int64_t mAudioVideoSync;
+	int64_t mAudioAdjust;
+	int64_t mLastStatTime;
 #ifdef AJA_WRITE_DEBUG_WAV
 	AJAWavWriter *mWaveWriter;
 #endif
@@ -136,12 +134,10 @@ private:
 					  NTV2VideoFormat vf,
 					  NTV2PixelFormat pf);
 
-	void increment_card_frame();
+	uint32_t get_frame_count();
 
 	void dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data,
 			       size_t size);
-
-	void adjust_initial_card_av_sync();
 
 	CNTV2Card *mCard;
 
