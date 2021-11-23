@@ -21,8 +21,8 @@ env:
   YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
 
 jobs:
-  flatpak_builder:
-    name: Bundle
+  generate_bundle:
+    name: Generate Flatpak Bundle
     runs-on: [ubuntu-latest]
     container:
       image: bilelmoussaoui/flatpak-github-actions:kde-5.15-21.08
