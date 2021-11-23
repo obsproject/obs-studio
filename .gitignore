@@ -99,3 +99,10 @@ tags
 .DS_Store
 */.DS_Store
 */**/.DS_Store
+
+#flatpak
+/.flatpak-builder/
+/_flatpak_build/
+/flatpak_app/
+/repo/
+/CI/flatpak/flatpak-github-action-modified-*
