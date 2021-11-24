@@ -2940,7 +2940,11 @@ obs_source_output_video_internal(obs_source_t *source,
 		return;
 
 	if (!frame) {
+		pthread_mutex_lock(&source->async_mutex);
 		source->async_active = false;
+		source->last_frame_ts = 0;
+		free_async_cache(source);
+		pthread_mutex_unlock(&source->async_mutex);
 		return;
 	}
 
