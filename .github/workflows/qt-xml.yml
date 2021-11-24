@@ -9,7 +9,7 @@ on:
       - "UI/forms/**"
 
 jobs:
-  ubuntu64:
+  qt-xml-validator:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
