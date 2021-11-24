@@ -1,6 +1,6 @@
 ---
 
-name: Flatpak (Experimental)
+name: Flatpak
 
 on:
   push:
