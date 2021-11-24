@@ -3,7 +3,7 @@ name: Clang Format Check
 on: [push, pull_request]
 
 jobs:
-  ubuntu64:
+  clang-format-check:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
