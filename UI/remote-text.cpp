@@ -91,7 +91,7 @@ void RemoteTextThread::run()
 		if (code != CURLE_OK) {
 			blog(LOG_WARNING,
 			     "RemoteTextThread: HTTP request failed. %s",
-			     error);
+			     strlen(error) ? error : curl_easy_strerror(code));
 			emit Result(QString(), QT_UTF8(error));
 		} else {
 			emit Result(QT_UTF8(str.c_str()), QString());
@@ -212,7 +212,8 @@ bool GetRemoteFile(const char *url, std::string &str, std::string &error,
 					  responseCode);
 
 		if (code != CURLE_OK) {
-			error = error_in;
+			error = strlen(error_in) ? error_in
+						 : curl_easy_strerror(code);
 		} else if (signature) {
 			for (string &h : header_in_list) {
 				string name = h.substr(0, 13);
