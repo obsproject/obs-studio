@@ -19,6 +19,16 @@
     "--own-name=org.kde.StatusNotifierItem-2-2",
     "--system-talk-name=org.freedesktop.Avahi"
   ],
+  "add-extensions": {
+    "com.obsproject.Studio.Plugin": {
+      "directory": "plugins",
+      "subdirectories": true,
+      "add-ld-path": "lib",
+      "merge-dirs": "lib/obs-plugins;share/obs/obs-plugins",
+      "no-autodownload": true,
+      "autodelete": true
+    }
+  },
   "cleanup": [
     "/lib/pkgconfig",
     "/share/man",
@@ -268,6 +278,9 @@
         "-DYOUTUBE_CLIENTID_HASH=$YOUTUBE_CLIENTID_HASH",
         "-DYOUTUBE_SECRET=$YOUTUBE_SECRET",
         "-DYOUTUBE_SECRET_HASH=$YOUTUBE_SECRET_HASH"
+      ],
+      "post-install": [
+        "install -d /app/plugins"
       ],
       "sources": [
         {
