@@ -17,7 +17,8 @@
     "--talk-name=org.freedesktop.Flatpak",
     "--talk-name=org.freedesktop.Notifications",
     "--own-name=org.kde.StatusNotifierItem-2-2",
-    "--system-talk-name=org.freedesktop.Avahi"
+    "--system-talk-name=org.freedesktop.Avahi",
+    "--env=VST_PATH=/app/extensions/Plugins/lxvst"
   ],
   "add-extensions": {
     "com.obsproject.Studio.Plugin": {
@@ -27,6 +28,14 @@
       "merge-dirs": "lib/obs-plugins;share/obs/obs-plugins",
       "no-autodownload": true,
       "autodelete": true
+    },
+    "org.freedesktop.LinuxAudio.Plugins": {
+      "directory": "extensions/Plugins",
+      "version": "21.08",
+      "add-ld-path": "lib",
+      "merge-dirs": "lxvst",
+      "subdirectories": true,
+      "no-autodownload": true
     }
   },
   "cleanup": [
@@ -280,7 +289,8 @@
         "-DYOUTUBE_SECRET_HASH=$YOUTUBE_SECRET_HASH"
       ],
       "post-install": [
-        "install -d /app/plugins"
+        "install -d /app/plugins",
+        "install -d /app/extensions/Plugins"
       ],
       "sources": [
         {
