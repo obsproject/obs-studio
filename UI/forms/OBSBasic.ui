@@ -406,6 +406,9 @@
               <height>22</height>
              </size>
             </property>
+            <property name="toolTip">
+             <string>Interact</string>
+            </property>
             <property name="text">
              <string>Interact</string>
             </property>
