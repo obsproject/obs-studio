@@ -68,9 +68,9 @@ void VolControl::SetMuted(bool checked)
 	obs_source_set_muted(source, checked);
 
 	auto undo_redo = [](const std::string &name, bool val) {
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(name.c_str());
 		obs_source_set_muted(source, val);
-		obs_source_release(source);
 	};
 
 	QString text =
@@ -92,9 +92,9 @@ void VolControl::SliderChanged(int vol)
 	updateText();
 
 	auto undo_redo = [](const std::string &name, float val) {
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(name.c_str());
 		obs_source_set_volume(source, val);
-		obs_source_release(source);
 	};
 
 	float val = obs_source_get_volume(source);

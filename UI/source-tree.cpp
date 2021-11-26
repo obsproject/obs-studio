@@ -41,7 +41,8 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
 	const char *name = obs_source_get_name(source);
 
-	obs_data_t *privData = obs_sceneitem_get_private_settings(sceneitem);
+	OBSDataAutoRelease privData =
+		obs_sceneitem_get_private_settings(sceneitem);
 	int preset = obs_data_get_int(privData, "color-preset");
 
 	if (preset == 1) {
@@ -55,8 +56,6 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	} else {
 		setStyleSheet("background: none");
 	}
-
-	obs_data_release(privData);
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	const char *id = obs_source_get_id(source);
@@ -142,13 +141,13 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 		auto undo_redo = [](const std::string &name, int64_t id,
 				    bool val) {
-			obs_source_t *s = obs_get_source_by_name(name.c_str());
+			OBSSourceAutoRelease s =
+				obs_get_source_by_name(name.c_str());
 			obs_scene_t *sc = obs_group_or_scene_from_source(s);
 			obs_sceneitem_t *si =
 				obs_scene_find_sceneitem_by_id(sc, id);
 			if (si)
 				obs_sceneitem_set_visible(si, val);
-			obs_source_release(s);
 		};
 
 		QString str = QTStr(val ? "Undo.ShowSceneItem"
@@ -439,8 +438,8 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	/* ----------------------------------------- */
 	/* check for existing source                 */
 
-	obs_source_t *existingSource = obs_get_source_by_name(newName.c_str());
-	obs_source_release(existingSource);
+	OBSSourceAutoRelease existingSource =
+		obs_get_source_by_name(newName.c_str());
 	bool exists = !!existingSource;
 
 	if (exists) {
@@ -457,27 +456,25 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	std::string scene_name =
 		obs_source_get_name(main->GetCurrentSceneSource());
 	auto undo = [scene_name, prevName, main](const std::string &data) {
-		obs_source_t *source = obs_get_source_by_name(data.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(data.c_str());
 		obs_source_set_name(source, prevName.c_str());
-		obs_source_release(source);
 
-		obs_source_t *scene_source =
+		OBSSourceAutoRelease scene_source =
 			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source, true);
-		obs_source_release(scene_source);
+		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	std::string editedName = newName;
 
 	auto redo = [scene_name, main, editedName](const std::string &data) {
-		obs_source_t *source = obs_get_source_by_name(data.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(data.c_str());
 		obs_source_set_name(source, editedName.c_str());
-		obs_source_release(source);
 
-		obs_source_t *scene_source =
+		OBSSourceAutoRelease scene_source =
 			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source, true);
-		obs_source_release(scene_source);
+		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,
@@ -592,12 +589,11 @@ void SourceTreeItem::Update(bool force)
 #endif
 		boxLayout->insertWidget(0, expand);
 
-		obs_data_t *data =
+		OBSDataAutoRelease data =
 			obs_sceneitem_get_private_settings(sceneitem);
 		expand->blockSignals(true);
 		expand->setChecked(obs_data_get_bool(data, "collapsed"));
 		expand->blockSignals(false);
-		obs_data_release(data);
 
 		connect(expand, &QPushButton::toggled, this,
 			&SourceTreeItem::ExpandClicked);
@@ -610,8 +606,7 @@ void SourceTreeItem::Update(bool force)
 
 void SourceTreeItem::ExpandClicked(bool checked)
 {
-	OBSData data = obs_sceneitem_get_private_settings(sceneitem);
-	obs_data_release(data);
+	OBSDataAutoRelease data = obs_sceneitem_get_private_settings(sceneitem);
 
 	obs_data_set_bool(data, "collapsed", checked);
 
@@ -670,7 +665,8 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 	}
 
 	if (obs_sceneitem_is_group(item)) {
-		obs_data_t *data = obs_sceneitem_get_private_settings(item);
+		OBSDataAutoRelease data =
+			obs_sceneitem_get_private_settings(item);
 
 		bool collapse = obs_data_get_bool(data, "collapsed");
 		if (!collapse) {
@@ -679,8 +675,6 @@ static bool enumItem(obs_scene_t *, obs_sceneitem_t *item, void *ptr)
 
 			obs_scene_enum_items(scene, enumItem, &items);
 		}
-
-		obs_data_release(data);
 	}
 
 	items.insert(0, item);
@@ -908,8 +902,8 @@ QString SourceTreeModel::GetNewGroupName()
 
 	int i = 2;
 	for (;;) {
-		obs_source_t *group = obs_get_source_by_name(QT_TO_UTF8(name));
-		obs_source_release(group);
+		OBSSourceAutoRelease group =
+			obs_get_source_by_name(QT_TO_UTF8(name));
 		if (!group)
 			break;
 		name = QTStr("Basic.Main.Group").arg(QString::number(i++));
@@ -1398,10 +1392,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 	};
 
 	auto insertLastGroup = [&]() {
-		obs_data_t *data =
+		OBSDataAutoRelease data =
 			obs_sceneitem_get_private_settings(lastGroup);
 		bool collapsed = obs_data_get_bool(data, "collapsed");
-		obs_data_release(data);
 
 		if (collapsed) {
 			insertCollapsedIdx = 0;

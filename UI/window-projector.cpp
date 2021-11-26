@@ -153,8 +153,8 @@ void OBSProjector::SetHideCursor()
 
 static OBSSource CreateLabel(const char *name, size_t h)
 {
-	obs_data_t *settings = obs_data_create();
-	obs_data_t *font = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
+	OBSDataAutoRelease font = obs_data_create();
 
 	std::string text;
 	text += " ";
@@ -181,14 +181,10 @@ static OBSSource CreateLabel(const char *name, size_t h)
 	const char *text_source_id = "text_ft2_source";
 #endif
 
-	OBSSource txtSource =
+	OBSSourceAutoRelease txtSource =
 		obs_source_create_private(text_source_id, name, settings);
-	obs_source_release(txtSource);
 
-	obs_data_release(font);
-	obs_data_release(settings);
-
-	return txtSource;
+	return txtSource.Get();
 }
 
 static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
@@ -931,8 +927,7 @@ void OBSProjector::UpdateMultiview()
 	size_t i = 0;
 	while (i < scenes.sources.num && numSrcs < maxSrcs) {
 		obs_source_t *src = scenes.sources.array[i++];
-		OBSData data = obs_source_get_private_settings(src);
-		obs_data_release(data);
+		OBSDataAutoRelease data = obs_source_get_private_settings(src);
 
 		obs_data_set_default_bool(data, "show_in_multiview", true);
 		if (!obs_data_get_bool(data, "show_in_multiview"))

@@ -219,7 +219,7 @@ private:
 	ContextBarSize contextBarSize = ContextBarSize_Normal;
 
 	std::deque<SourceCopyInfo> clipboard;
-	OBSWeakSource copyFiltersSource;
+	OBSWeakSourceAutoRelease copyFiltersSource;
 	bool copyVisible = true;
 
 	bool closing = false;
