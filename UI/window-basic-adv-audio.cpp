@@ -129,9 +129,6 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
-
-	connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this,
-		SLOT(ShowContextMenu(const QPoint &)));
 }
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()

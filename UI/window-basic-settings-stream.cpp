@@ -94,8 +94,6 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(DisplayEnforceWarning(bool)));
 	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
 		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
-		this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
 }
