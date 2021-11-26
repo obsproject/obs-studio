@@ -1245,7 +1245,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		obs_data_release(oldTransitionData);
 	};
 	if (visible) {
-		auto setDuration = [this](int duration) {
+		auto setDuration = [](int duration) {
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
 
@@ -1257,7 +1257,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 			(void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
 			setDuration);
 	} else {
-		auto setDuration = [this](int duration) {
+		auto setDuration = [](int duration) {
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
 
