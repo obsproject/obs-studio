@@ -473,6 +473,9 @@ void OBSBasic::LoadExtraBrowserDocks()
 		return;
 
 	Json::array array = json.array_items();
+	if (!array.empty())
+		ui->menuDocks->addSeparator();
+
 	for (Json &item : array) {
 		std::string title = item["title"].string_value();
 		std::string url = item["url"].string_value();
