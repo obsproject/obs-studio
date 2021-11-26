@@ -17,6 +17,10 @@
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1"/>
+  <kudos>
+    <kudo>ModernToolkit</kudo>
+    <kudo>HiDpiIcon</kudo>
+  </kudos>
   <releases>
     <release version="@OBS_VERSION@" date="@APPDATA_RELEASE_DATE@"/>
   </releases>
