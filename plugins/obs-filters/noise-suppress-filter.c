@@ -149,8 +149,10 @@ pthread_mutex_t nvafx_initializer_mutex;
 #define SUP_MIN -60
 #define SUP_MAX 0
 
+#ifdef LIBSPEEXDSP_ENABLED
 static const float c_32_to_16 = (float)INT16_MAX;
 static const float c_16_to_32 = ((float)INT16_MAX + 1.0f);
+#endif
 
 /* -------------------------------------------------------- */
 
@@ -338,6 +340,8 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 #ifdef LIBSPEEXDSP_ENABLED
 	ng->spx_states[channel] =
 		speex_preprocess_state_init((int)frames, sample_rate);
+#else
+	UNUSED_PARAMETER(sample_rate);
 #endif
 #ifdef LIBRNNOISE_ENABLED
 	ng->rnn_states[channel] = rnnoise_create(NULL);
@@ -656,6 +660,8 @@ static inline void process_speexdsp(struct noise_suppress_data *ng)
 			ng->copy_buffers[i][j] =
 				(float)ng->spx_segment_buffers[i][j] /
 				c_16_to_32;
+#else
+	UNUSED_PARAMETER(ng);
 #endif
 }
 
