@@ -553,6 +553,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	obs_pipewire_data *obs_pw = user_data;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod *params[3];
+	uint32_t buffer_types;
 	uint8_t params_buffer[1024];
 	int result;
 
@@ -569,6 +570,10 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 		return;
 
 	spa_format_video_raw_parse(param, &obs_pw->format.info.raw);
+
+	buffer_types = 1 << SPA_DATA_MemPtr;
+	if (check_pw_version(&obs_pw->server_version, 0, 3, 24))
+		buffer_types |= 1 << SPA_DATA_DmaBuf;
 
 	blog(LOG_DEBUG, "[pipewire] Negotiated format:");
 
@@ -606,8 +611,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	/* Buffer options */
 	params[2] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
-		SPA_PARAM_BUFFERS_dataType,
-		SPA_POD_Int((1 << SPA_DATA_MemPtr) | (1 << SPA_DATA_DmaBuf)));
+		SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(buffer_types));
 
 	pw_stream_update_params(obs_pw->stream, params, 3);
 
