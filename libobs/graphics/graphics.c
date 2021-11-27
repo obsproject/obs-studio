@@ -1392,6 +1392,25 @@ gs_texture_t *gs_texture_create_from_dmabuf(
 		n_planes, fds, strides, offsets, modifiers);
 }
 
+bool gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags,
+				  uint32_t **drm_formats, size_t *n_formats)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_query_dmabuf_capabilities(
+		graphics->device, dmabuf_flags, drm_formats, n_formats);
+}
+
+bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format,
+					  uint64_t **modifiers,
+					  size_t *n_modifiers)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_query_dmabuf_modifiers_for_format(
+		graphics->device, drm_format, modifiers, n_modifiers);
+}
+
 #endif
 
 gs_texture_t *gs_cubetexture_create(uint32_t size,

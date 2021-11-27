@@ -943,6 +943,19 @@ EXPORT gs_texture_t *gs_texture_create_from_dmabuf(
 	const uint32_t *strides, const uint32_t *offsets,
 	const uint64_t *modifiers);
 
+enum gs_dmabuf_flags {
+	GS_DMABUF_FLAG_NONE = 0,
+	GS_DMABUF_FLAG_IMPLICIT_MODIFIERS_SUPPORTED = (1 << 0),
+};
+
+EXPORT bool gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags,
+					 uint32_t **drm_formats,
+					 size_t *n_formats);
+
+EXPORT bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format,
+						 uint64_t **modifiers,
+						 size_t *n_modifiers);
+
 #endif
 
 /* inline functions used by modules */
