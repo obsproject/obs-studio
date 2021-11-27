@@ -35,6 +35,7 @@
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>
 #include <spa/param/video/type-info.h>
+#include <spa/utils/result.h>
 
 #define REQUEST_PATH "/org/freedesktop/portal/desktop/request/%s/obs%u"
 #define SESSION_PATH "/org/freedesktop/portal/desktop/session/%s/obs%u"
@@ -60,6 +61,12 @@
 	fourcc_code('A', 'B', '2', \
 		    '4') /* [31:0] A:B:G:R 8:8:8:8 little endian */
 
+struct obs_pw_version {
+	int major;
+	int minor;
+	int micro;
+};
+
 struct _obs_pipewire_data {
 	GCancellable *cancellable;
 
@@ -82,6 +89,9 @@ struct _obs_pipewire_data {
 
 	struct pw_core *core;
 	struct spa_hook core_listener;
+	int server_version_sync;
+
+	struct obs_pw_version server_version;
 
 	struct pw_stream *stream;
 	struct spa_hook stream_listener;
@@ -115,6 +125,35 @@ struct dbus_call_data {
 };
 
 /* auxiliary methods */
+
+static bool parse_pw_version(struct obs_pw_version *dst, const char *version)
+{
+	int n_matches = sscanf(version, "%d.%d.%d", &dst->major, &dst->minor,
+			       &dst->micro);
+	return n_matches == 3;
+}
+
+static bool check_pw_version(const struct obs_pw_version *pw_version, int major,
+			     int minor, int micro)
+{
+	if (pw_version->major != major)
+		return pw_version->major > major;
+	if (pw_version->minor != minor)
+		return pw_version->minor > minor;
+	return pw_version->micro >= micro;
+}
+
+static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
+{
+	blog(LOG_INFO, "[pipewire] server version: %s", version);
+	blog(LOG_INFO, "[pipewire] library version: %s",
+	     pw_get_library_version());
+	blog(LOG_INFO, "[pipewire] header version: %s",
+	     pw_get_headers_version());
+
+	if (!parse_pw_version(&obs_pw->server_version, version))
+		blog(LOG_WARNING, "[pipewire] failed to parse server version");
+}
 
 static const char *capture_type_to_string(enum obs_pw_capture_type capture_type)
 {
@@ -595,6 +634,13 @@ static const struct pw_stream_events stream_events = {
 	.process = on_process_cb,
 };
 
+static void on_core_info_cb(void *user_data, const struct pw_core_info *info)
+{
+	obs_pipewire_data *obs_pw = user_data;
+
+	update_pw_versions(obs_pw, info->version);
+}
+
 static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 			     const char *message)
 {
@@ -610,16 +656,15 @@ static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 
 static void on_core_done_cb(void *user_data, uint32_t id, int seq)
 {
-	UNUSED_PARAMETER(seq);
-
 	obs_pipewire_data *obs_pw = user_data;
 
-	if (id == PW_ID_CORE)
+	if (id == PW_ID_CORE && obs_pw->server_version_sync == seq)
 		pw_thread_loop_signal(obs_pw->thread_loop, FALSE);
 }
 
 static const struct pw_core_events core_events = {
 	PW_VERSION_CORE_EVENTS,
+	.info = on_core_info_cb,
 	.done = on_core_done_cb,
 	.error = on_core_error_cb,
 };
@@ -654,6 +699,11 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 
 	pw_core_add_listener(obs_pw->core, &obs_pw->core_listener, &core_events,
 			     obs_pw);
+
+	// Dispatch to receive the info core event
+	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
+						   obs_pw->server_version_sync);
+	pw_thread_loop_wait(obs_pw->thread_loop);
 
 	/* Stream */
 	obs_pw->stream = pw_stream_new(
