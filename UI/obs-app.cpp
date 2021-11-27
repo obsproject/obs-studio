@@ -70,6 +70,29 @@
 
 using namespace std;
 
+#ifdef _DEBUG
+void *operator new(size_t size)
+{
+	if (size == 0)
+		size++;
+
+	if (void *ptr = bzalloc(size))
+		return ptr;
+
+	throw bad_alloc{};
+}
+
+void operator delete(void *p) noexcept
+{
+	bfree(p);
+}
+
+void operator delete(void *p, size_t) noexcept
+{
+	bfree(p);
+}
+#endif
+
 static log_handler_t def_log_handler;
 
 static string currentLogFile;
