@@ -1005,6 +1005,50 @@ Texture Functions
 
 ---------------------
 
+.. type:: enum gs_dmabuf_flags
+
+   DMA-BUF capabilities:
+
+   - GS_DMABUF_FLAG_NONE
+   - GS_DMABUF_FLAG_SUPPORTS_IMPLICIT_MODIFIERS  - Renderer supports implicit modifiers
+
+---------------------
+
+.. function:: bool *gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags, uint32_t **drm_formats, size_t *n_formats)
+
+   **Linux only:** Queries the capabilities for DMA-BUFs.
+
+   Graphics cards can optimize frame buffers by storing them in custom layouts,
+   depending on their hardware features. These layouts can make these frame
+   buffers unsuitable for linear processing. This function allows querying whether
+   the graphics card in use supports implicit modifiers, and the supported texture
+   formats.
+
+   The caller must free the `drm_formats` array with `bfree()` after use.
+
+   :param dmabuf_flags: Pointer to receive a capability bitmap
+   :param drm_formats:  Pointer to receive an array of DRM formats
+   :param n_formats:    Pointer to receive the number of formats
+   :rtype:              bool
+
+---------------------
+
+.. function:: bool *gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t **modifiers, size_t *n_modifiers)
+
+   **Linux only:** Queries the supported DMA-BUF modifiers for a given format.
+
+   This function queries all supported explicit modifiers for a format,
+   stores them as an array and returns the number of supported modifiers.
+
+   The caller must free the `modifiers` array with `bfree()` after use.
+
+   :param drm_format:   DRM format of the DMA-BUF buffer
+   :param modifiers:    Pointer to receive an array of modifiers
+   :param n_modifiers:  Pointer to receive the number of modifiers
+   :rtype:              bool
+
+---------------------
+
 .. function:: gs_texture_t *gs_texture_create_from_iosurface(void *iosurf)
 
    **Mac only:** Creates a texture from an IOSurface.
