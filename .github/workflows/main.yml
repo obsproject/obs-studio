@@ -17,7 +17,7 @@ on:
 env:
   MACOS_CEF_BUILD_VERSION: '4638'
   LINUX_CEF_BUILD_VERSION: '4638'
-  CEF_VERSION: '75.1.16+g16a67c4+chromium-75.0.3770.100'
+  WINDOWS_CEF_BUILD_VERSION: '4638'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
   TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
   RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
@@ -557,8 +557,8 @@ jobs:
         env:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
-          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -577,14 +577,14 @@ jobs:
       - name: 'Install prerequisite: Chromium Embedded Framework'
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
-          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal.zip -f --retry 5 -o cef.zip
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64.zip -f --retry 5 -o cef.zip
           7z x cef.zip -o"${{ github.workspace }}/cmbuild"
       - name: 'Configure'
         run: |
           mkdir ./build
           mkdir ./build64
           cd ./build64
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows64_minimal" -DTWITCH_CLIENTID='${{ env.TWITCH_CLIENTID }}' -DTWITCH_HASH='${{ env.TWITCH_HASH }}' -DRESTREAM_CLIENTID='${{ env.RESTREAM_CLIENTID }}' -DRESTREAM_HASH='${{ env.RESTREAM_HASH }}' -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"x64" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win64" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019_64" -DENABLE_VLC=ON -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64" -DTWITCH_CLIENTID='${{ env.TWITCH_CLIENTID }}' -DTWITCH_HASH='${{ env.TWITCH_HASH }}' -DRESTREAM_CLIENTID='${{ env.RESTREAM_CLIENTID }}' -DRESTREAM_HASH='${{ env.RESTREAM_HASH }}' -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build64\obs-studio.sln
       - name: 'Package'
@@ -666,8 +666,8 @@ jobs:
         env:
           CACHE_NAME: 'cef-32-cache'
         with:
-          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_VERSION }}
+          path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -686,14 +686,14 @@ jobs:
       - name: 'Install prerequisite: Chromium Embedded Framework'
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
-          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal.zip -f --retry 5 -o cef.zip
+          curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86.zip -f --retry 5 -o cef.zip
           7z x cef.zip -o"${{ github.workspace }}/cmbuild"
       - name: 'Configure'
         run: |
           mkdir ./build
           mkdir ./build32
           cd ./build32
-          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.CEF_VERSION }}_windows32_minimal" -DTWITCH_CLIENTID='${{ env.TWITCH_CLIENTID }}' -DTWITCH_HASH='${{ env.TWITCH_HASH }}' -DRESTREAM_CLIENTID='${{ env.RESTREAM_CLIENTID }}' -DRESTREAM_HASH='${{ env.RESTREAM_HASH }}' -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
+          cmake -G"${{ env.CMAKE_GENERATOR }}" -A"Win32" -DCMAKE_SYSTEM_VERSION="${{ env.CMAKE_SYSTEM_VERSION }}" -DENABLE_VLC=ON -DBUILD_BROWSER=true -DCOMPILE_D3D12_HOOK=true -DVLCPath="${{ github.workspace }}/cmbuild/vlc" -DDepsPath="${{ github.workspace }}/cmbuild/deps/win32" -DQTDIR="${{ github.workspace }}/cmbuild/QT/${{ env.QT_VERSION }}/msvc2019" -DCEF_ROOT_DIR="${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86" -DTWITCH_CLIENTID='${{ env.TWITCH_CLIENTID }}' -DTWITCH_HASH='${{ env.TWITCH_HASH }}' -DRESTREAM_CLIENTID='${{ env.RESTREAM_CLIENTID }}' -DRESTREAM_HASH='${{ env.RESTREAM_HASH }}' -DCOPIED_DEPENDENCIES=FALSE -DCOPY_DEPENDENCIES=TRUE -DVIRTUALCAM_GUID=${{ env.VIRTUALCAM-GUID }} ..
       - name: 'Build'
         run: msbuild /m /p:Configuration=RelWithDebInfo .\build32\obs-studio.sln
       - name: 'Package'
