@@ -213,10 +213,10 @@ install_cef() {
     hr "Building dependency CEF v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    ${CURLCMD} --progress-bar -L -C - -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macosx64.tar.bz2
+    ${CURLCMD} --progress-bar -L -C - -O https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macos_x86_64.tar.xz
     step "Unpack..."
-    /usr/bin/tar -xf ./cef_binary_${1}_macosx64.tar.bz2
-    cd ./cef_binary_${1}_macosx64
+    /usr/bin/tar -xf ./cef_binary_${1}_macos_x86_64.tar.xz
+    cd ./cef_binary_${1}_macos_x86_64
     step "Fix tests..."
     /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
     /usr/bin/sed -i '.orig' 's/"'$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "10.9" || echo "10.10")'"/"'${MIN_MACOS_VERSION:-${CI_MIN_MACOS_VERSION}}'"/' ./cmake/cef_variables.cmake
@@ -280,7 +280,7 @@ configure_obs_build() {
         -DBUILD_BROWSER=ON \
         -DBROWSER_LEGACY="$(test "${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}" -le 3770 && echo "ON" || echo "OFF")" \
         -DWITH_RTMPS=ON \
-        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64" \
+        -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macos_x86_64" \
         -DCMAKE_BUILD_TYPE="${BUILD_CONFIG}" \
         ..
 
@@ -365,7 +365,7 @@ install_frameworks() {
 
     hr "Adding Chromium Embedded Framework"
     step "Copy Framework..."
-    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macosx64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
+    /bin/cp -R "${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macos_x86_64/Release/Chromium Embedded Framework.framework" ./OBS.app/Contents/Frameworks/
 }
 
 prepare_macos_bundle() {
