@@ -783,7 +783,8 @@ struct gs_duplicator_frame {
 	uint64_t present_time = 0;
 	ComPtr<ID3D11Texture2D> worker_tex;
 	ComPtr<IDXGIKeyedMutex> worker_km;
-	HANDLE shared_handle{};
+	gs_color_format format = GS_UNKNOWN;
+	uint32_t shared_handle{};
 	gs_texture_2d *shared_tex = nullptr;
 	ComPtr<IDXGIKeyedMutex> shared_km;
 };
@@ -927,15 +928,39 @@ public:
 };
 
 struct gs_duplicator : gs_obj {
-	ComPtr<IDXGIOutputDuplication> duplicator;
-	gs_texture_2d *texture;
-	int idx;
+	uint8_t padding[gs_cache_line_size - sizeof(gs_obj)];
+
+	/* Member after cache will be cache-line aligned */
+	gs_duplicator_frame_padded frame_cache[gs_duplicator_frame_count];
+
+	/* Graphics thread members, cache-line aligned */
+	const int idx;
 	long refs;
 	bool updated;
+	HANDLE worker_thread;
+	gs_duplicator_frame *graphics_frame;
+
+	/* Queue inserts cache-line padding before and aligns after */
+	gs_duplicator_queue written_frames;
+
+	/* Worker thread members, cache-line aligned */
+	gs_duplicator_frame *pending_frames[gs_duplicator_frame_count];
+	size_t pending_frame_count;
+	gs_duplicator_frame *worker_frame;
+	ComPtr<ID3D11Device> worker_device;
+	ComPtr<ID3D11DeviceContext> worker_context;
+	ComPtr<IDXGIOutputDuplication> duplicator;
+	bool acquired;
+
+	/* Queue inserts cache-line padding before and aligns after */
+	gs_duplicator_queue available_frames;
+
+	/* Stragglers, cache-line aligned */
+	std::atomic<bool> kill_thread;
+	gs_duplicator_eventcount worker_progress_ec;
 
 	void Start();
-
-	inline void Release() { duplicator.Release(); }
+	void Release();
 
 	gs_duplicator(gs_device_t *device, int monitor_idx);
 	~gs_duplicator();
