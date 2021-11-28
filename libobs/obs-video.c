@@ -1035,7 +1035,7 @@ void *obs_graphics_thread(void *param)
 	srand((unsigned int)time(NULL));
 
 	struct obs_graphics_context context;
-	context.interval = video_output_get_frame_time(obs->video.video);
+	context.interval = interval;
 	context.frame_time_total_ns = 0;
 	context.fps_total_ns = 0;
 	context.fps_total_frames = 0;
