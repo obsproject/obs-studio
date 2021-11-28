@@ -503,11 +503,12 @@ bool SLImporter::Check(const string &path)
 OBSImporterFiles SLImporter::FindFiles()
 {
 	OBSImporterFiles res;
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__APPLE__)
 	char dst[512];
 
-	int found = os_get_config_path(dst, 512,
-				       "slobs-client\\SceneCollections\\");
+	int found =
+		os_get_config_path(dst, 512, "slobs-client/SceneCollections/");
+
 	if (found == -1)
 		return res;
 
