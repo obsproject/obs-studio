@@ -91,7 +91,6 @@ bool Routing::ParseRouteString(const std::string &route,
 	 * the route strings currently only come from a known set.
 	 */
 	NTV2StringList lines;
-	NTV2StringList tokens;
 
 	lines = aja::split(route_strip, ';');
 	if (lines.empty())
