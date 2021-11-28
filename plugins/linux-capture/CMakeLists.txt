@@ -46,7 +46,7 @@ set(linux-capture_LIBRARIES
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(ENABLE_PIPEWIRE)
-	find_package(PipeWire 0.3.33 QUIET)
+	find_package(PipeWire 0.3.32 QUIET)
 	find_package(Libdrm QUIET) # we require libdrm/drm_fourcc.h to build
 	find_package(Gio QUIET)
 

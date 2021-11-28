@@ -38,6 +38,10 @@
 #include <spa/param/video/type-info.h>
 #include <spa/utils/result.h>
 
+#ifndef SPA_POD_PROP_FLAG_DONT_FIXATE
+#define SPA_POD_PROP_FLAG_DONT_FIXATE (1 << 4)
+#endif
+
 #define REQUEST_PATH "/org/freedesktop/portal/desktop/request/%s/obs%u"
 #define SESSION_PATH "/org/freedesktop/portal/desktop/session/%s/obs%u"
 
