@@ -20,6 +20,7 @@
 #include <util/AlignedNew.hpp>
 #include <util/windows/win-version.h>
 
+#include <atomic>
 #include <vector>
 #include <string>
 #include <memory>
@@ -769,6 +770,160 @@ struct gs_vertex_shader : gs_shader {
 
 	gs_vertex_shader(gs_device_t *device, const char *file,
 			 const char *shaderString);
+};
+
+constexpr int gs_cache_line_size = 64;
+
+/* not scientific */
+constexpr int gs_duplicator_frame_count = 24;
+
+struct gs_duplicator_frame {
+	uint32_t width = 0;
+	uint32_t height = 0;
+	uint64_t present_time = 0;
+	ComPtr<ID3D11Texture2D> worker_tex;
+	ComPtr<IDXGIKeyedMutex> worker_km;
+	HANDLE shared_handle{};
+	gs_texture_2d *shared_tex = nullptr;
+	ComPtr<IDXGIKeyedMutex> shared_km;
+};
+
+struct alignas(gs_cache_line_size) gs_duplicator_frame_padded {
+	gs_duplicator_frame frame;
+	uint8_t padding[gs_cache_line_size - sizeof(gs_duplicator_frame)];
+};
+
+/*
+Unbounded SPSC Queue with modifications:
+https://www.1024cores.net/home/lock-free-algorithms/queues/unbounded-spsc-queue
+- Convert to bounded. Fixed node cache is part of the class layout.
+- Queue doesn't handle push failure because it should never be full.
+- Templated type has been replaced with a hard-coded type.
+
+The license text has been copied below.
+
+Copyright (c) 2010-2011 Dmitry Vyukov. All rights reserved.
+
+Redistribution and use in source and binary forms, with or without modification,
+are permitted provided that the following conditions are met:
+
+   1. Redistributions of source code must retain the above copyright notice,
+      this list of conditions and the following disclaimer.
+
+   2. Redistributions in binary form must reproduce the above copyright notice,
+      this list of conditions and the following disclaimer in the documentation
+      and/or other materials provided with the distribution.
+
+THIS SOFTWARE IS PROVIDED BY DMITRY VYUKOV "AS IS" AND ANY EXPRESS OR IMPLIED
+WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT
+SHALL DMITRY VYUKOV OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
+LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF
+ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+The views and conclusions contained in the software and documentation are those
+of the authors and should not be interpreted as representing official policies,
+either expressed or implied, of Dmitry Vyukov.
+*/
+class alignas(gs_cache_line_size) gs_duplicator_queue {
+private:
+	struct node {
+		std::atomic<node *> next = nullptr;
+		gs_duplicator_frame *frame = nullptr;
+	};
+
+	struct alignas(gs_cache_line_size) node_padded {
+		node node;
+		uint8_t padding[gs_cache_line_size - sizeof(struct node)]{};
+	};
+
+	node_padded cache[gs_duplicator_frame_count + 1];
+
+	node *front;
+	node *back;
+	node *cache_list;
+
+public:
+	gs_duplicator_queue()
+	{
+		for (size_t i = 0; i < gs_duplicator_frame_count; ++i) {
+			cache[i].node.next.store(&cache[i + 1].node,
+						 std::memory_order_relaxed);
+		}
+
+		node *const last = &cache[gs_duplicator_frame_count].node;
+		front = last;
+		back = last;
+		cache_list = &cache[0].node;
+	}
+
+	void push(gs_duplicator_frame *v)
+	{
+		node *const n = cache_list;
+		cache_list = cache_list->next.load(std::memory_order_relaxed);
+
+		n->next.store(nullptr, std::memory_order_relaxed);
+		n->frame = v;
+
+		back->next.store(n, std::memory_order_release);
+
+		back = n;
+	}
+
+	gs_duplicator_frame *pop()
+	{
+		gs_duplicator_frame *frame = nullptr;
+
+		node *const n_front =
+			front->next.load(std::memory_order_consume);
+		const bool exists = n_front != nullptr;
+		if (exists) {
+			frame = n_front->frame;
+			front = n_front;
+		}
+
+		return frame;
+	}
+};
+
+/* Eventcount from Chris M. Thomasson on comp.lang.c++, simplified for OBS */
+class gs_duplicator_eventcount {
+private:
+	std::atomic<unsigned> count = 0;
+	SRWLOCK lock = SRWLOCK_INIT;
+	CONDITION_VARIABLE cond = CONDITION_VARIABLE_INIT;
+
+public:
+	unsigned prepare_wait()
+	{
+		return count.fetch_or(1, std::memory_order_acquire);
+	}
+
+	void wait(unsigned key)
+	{
+		AcquireSRWLockExclusive(&lock);
+		if ((count & ~1) == (key & ~1)) {
+			SleepConditionVariableSRW(&cond, &lock, INFINITE, 0);
+		}
+		ReleaseSRWLockExclusive(&lock);
+	}
+
+	void notify()
+	{
+		unsigned key = count.fetch_add(0);
+		if (key & 1) {
+			AcquireSRWLockExclusive(&lock);
+			while (!count.compare_exchange_weak(key,
+							    (key + 2) & ~1))
+				;
+			ReleaseSRWLockExclusive(&lock);
+			WakeConditionVariable(&cond);
+		}
+	}
 };
 
 struct gs_duplicator : gs_obj {
