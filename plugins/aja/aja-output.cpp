@@ -237,7 +237,6 @@ void AJAOutput::QueueVideoFrame(struct video_data *frame, size_t size)
 	vf.frame = *frame;
 	vf.frameNum = mVideoWriteFrames;
 	vf.size = size;
-	vf.frame = *frame;
 
 	if (mVideoQueue->size() > kVideoQueueMaxSize) {
 		auto &front = mVideoQueue->front();
@@ -259,7 +258,6 @@ void AJAOutput::QueueAudioFrames(struct audio_data *frames, size_t size)
 	af.frames = *frames;
 	af.offset = 0;
 	af.size = size;
-	af.frames = *frames;
 
 	if (mAudioQueue->size() > kAudioQueueMaxSize) {
 		auto &front = mAudioQueue->front();

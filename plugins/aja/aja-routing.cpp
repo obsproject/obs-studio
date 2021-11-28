@@ -338,7 +338,6 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 	// Fix for AJA NTV2 internal bug #11467
 	ULWord magicAudioBits = 0;
 	if (NTV2_INPUT_SOURCE_IS_HDMI(inputSrc)) {
-		magicAudioBits = 0x00100000;
 		switch (inputSrc) {
 		default:
 		case NTV2_INPUTSOURCE_HDMI1:
