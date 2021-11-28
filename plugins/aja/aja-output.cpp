@@ -372,8 +372,8 @@ void AJAOutput::DMAAudioFromQueue(NTV2AudioSystem audioSys)
 				     "AJAOutput::DMAAudioFromQueue: Drop %d audio samples",
 				     adjustSamples);
 			} else {
-				uint32_t samples =
-					sizeLeft / (kDefaultAudioSampleSize *
+				uint32_t samples = (uint32_t)sizeLeft /
+						   (kDefaultAudioSampleSize *
 						    kDefaultAudioChannels);
 				af.offset += sizeLeft;
 				sizeLeft = 0;
