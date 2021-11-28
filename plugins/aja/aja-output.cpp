@@ -780,6 +780,24 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 	populate_output_device_list(list);
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+
+	size_t itemCount = obs_property_list_item_count(list);
+	bool itemFound = false;
+
+	for (size_t i = 0; i < itemCount; i++) {
+		const char *itemCardID = obs_property_list_item_string(list, i);
+		if (strcmp(cardID, itemCardID) == 0) {
+			itemFound = true;
+			break;
+		}
+	}
+
+	if (!itemFound) {
+		obs_property_list_insert_string(list, 0, cardID, cardID);
+		obs_property_list_item_disable(list, 0, true);
+		return true;
+	}
+
 	if (!cardID) {
 		blog(LOG_ERROR, "aja_output_device_changed: Card ID is null!");
 		return false;
@@ -845,14 +863,33 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
 
-	auto &cardManager = aja::CardManager::Instance();
-	cardManager.EnumerateCards();
+	int dest = obs_data_get_int(settings, kUIPropOutput.id);
+
+	size_t itemCount = obs_property_list_item_count(list);
+	bool itemFound = false;
+
+	for (size_t i = 0; i < itemCount; i++) {
+		int itemDest = obs_property_list_item_int(list, i);
+		if (dest == itemDest) {
+			itemFound = true;
+			break;
+		}
+	}
+
+	if (!itemFound) {
+		obs_property_list_insert_int(list, 0, "", dest);
+		obs_property_list_item_disable(list, 0, true);
+		return true;
+	}
+
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
 	if (!cardID) {
 		blog(LOG_ERROR, "aja_output_dest_changed: Card ID is null!");
 		return false;
 	}
 
+	auto &cardManager = aja::CardManager::Instance();
+	cardManager.EnumerateCards();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_ERROR,

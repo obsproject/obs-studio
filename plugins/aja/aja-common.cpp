@@ -226,6 +226,23 @@ bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 	auto vid_fmt = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 
+	size_t itemCount = obs_property_list_item_count(list);
+	bool itemFound = false;
+
+	for (size_t i = 0; i < itemCount; i++) {
+		int itemFormat = obs_property_list_item_int(list, i);
+		if (itemFormat == vid_fmt) {
+			itemFound = true;
+			break;
+		}
+	}
+
+	if (!itemFound) {
+		obs_property_list_insert_int(list, 0, "", vid_fmt);
+		obs_property_list_item_disable(list, 0, true);
+		return true;
+	}
+
 	obs_property_t *sdi_4k_trx =
 		obs_properties_get(props, kUIPropSDI4KTransport.id);
 

@@ -854,8 +854,6 @@ static void aja_source_deactivate(void *data)
 
 static void aja_source_update(void *data, obs_data_t *settings)
 {
-	blog(LOG_INFO, "aja_source_update: Begin callback...");
-
 	static bool initialized = false;
 
 	auto ajaSource = (AJASource *)data;
