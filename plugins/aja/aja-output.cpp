@@ -913,7 +913,7 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
 	if (!cardID) {
 		blog(LOG_ERROR, "aja_output_create: Card ID is null!");
-		return false;
+		return nullptr;
 	}
 	const char *outputID =
 		obs_data_get_string(settings, kUIPropAJAOutputID.id);
