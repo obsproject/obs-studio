@@ -58,7 +58,7 @@ find_library(PYTHON_LIB
 		../bin${_lib_suffix} ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Python DEFAULT_MSG PYTHON_LIB PYTHON_INCLUDE_DIR)
+find_package_handle_standard_args(PythonDeps DEFAULT_MSG PYTHON_LIB PYTHON_INCLUDE_DIR)
 mark_as_advanced(PYTHON_INCLUDE_DIR PYTHON_LIB)
 
 if(PYTHON_FOUND)
