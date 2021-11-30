@@ -530,7 +530,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser =
-		cef->create_widget(nullptr, QT_TO_UTF8(url), nullptr);
+		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
 	if (browser && panel_version >= 1)
 		browser->allowAllPopups(true);
 
