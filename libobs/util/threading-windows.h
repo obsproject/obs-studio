@@ -63,8 +63,10 @@ static inline long os_atomic_load_long(const volatile long *ptr)
 {
 #if defined(_M_ARM64)
 	const long val = __ldar32((volatile unsigned *)ptr);
-#else
+#elif defined(_M_ARM)
 	const long val = __iso_volatile_load32((const volatile __int32 *)ptr);
+#else
+	const long val = *ptr;
 #endif
 
 #if defined(_M_ARM)
@@ -129,8 +131,10 @@ static inline bool os_atomic_load_bool(const volatile bool *ptr)
 
 #if defined(_M_ARM64)
 	const unsigned char c = __ldar8((volatile unsigned char *)ptr);
-#else
+#elif defined(_M_ARM)
 	const char c = __iso_volatile_load8((const volatile char *)ptr);
+#else
+	const char c = *ptr;
 #endif
 
 #if defined(_M_ARM)
