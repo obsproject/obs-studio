@@ -142,7 +142,7 @@ void RestreamAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.get(), url, panel_cookies);
+	browser = cef->create_widget(chat.data(), url, panel_cookies);
 	chat->SetWidget(browser);
 
 	main->addDockWidget(Qt::RightDockWidgetArea, chat.data());
@@ -159,7 +159,7 @@ void RestreamAuth::LoadUI()
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info.get(), url, panel_cookies);
+	browser = cef->create_widget(info.data(), url, panel_cookies);
 	info->SetWidget(browser);
 
 	main->addDockWidget(Qt::LeftDockWidgetArea, info.data());
@@ -176,7 +176,7 @@ void RestreamAuth::LoadUI()
 	channels->setWindowTitle(QTStr("RestreamAuth.Channels"));
 	channels->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(channels.get(), url, panel_cookies);
+	browser = cef->create_widget(channels.data(), url, panel_cookies);
 	channels->SetWidget(browser);
 
 	main->addDockWidget(Qt::LeftDockWidgetArea, channels.data());

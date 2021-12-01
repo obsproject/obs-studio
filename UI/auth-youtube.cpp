@@ -148,7 +148,7 @@ void YoutubeAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.get(), YOUTUBE_CHAT_PLACEHOLDER_URL,
+	browser = cef->create_widget(chat.data(), YOUTUBE_CHAT_PLACEHOLDER_URL,
 				     panel_cookies);
 	browser->setStartupScript(ytchat_script);
 

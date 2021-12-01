@@ -225,7 +225,7 @@ void TwitchAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(chat.get(), url, panel_cookies);
+	browser = cef->create_widget(chat.data(), url, panel_cookies);
 	chat->SetWidget(browser);
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
@@ -313,7 +313,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(info.get(), url, panel_cookies);
+	browser = cef->create_widget(info.data(), url, panel_cookies);
 	info->SetWidget(browser);
 	browser->setStartupScript(script);
 
@@ -333,7 +333,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
 	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(stat.get(), url, panel_cookies);
+	browser = cef->create_widget(stat.data(), url, panel_cookies);
 	stat->SetWidget(browser);
 	browser->setStartupScript(script);
 
@@ -353,7 +353,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
 	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(feed.get(), url, panel_cookies);
+	browser = cef->create_widget(feed.data(), url, panel_cookies);
 	feed->SetWidget(browser);
 	browser->setStartupScript(script);
 
