@@ -66,6 +66,8 @@ static void ffmpeg_mux_destroy(void *data)
 	replay_buffer_clear(stream);
 	if (stream->mux_thread_joinable)
 		pthread_join(stream->mux_thread, NULL);
+	for (size_t i = 0; i < stream->mux_packets.num; i++)
+		obs_encoder_packet_release(&stream->mux_packets.array[i]);
 	da_free(stream->mux_packets);
 	circlebuf_free(&stream->packets);
 
@@ -847,6 +849,11 @@ static void *replay_buffer_mux_thread(void *data)
 error:
 	os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
+	if (error) {
+		for (size_t i = 0; i < stream->mux_packets.num; i++)
+			obs_encoder_packet_release(
+				&stream->mux_packets.array[i]);
+	}
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
 
@@ -934,6 +941,10 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
 						     replay_buffer_mux_thread,
 						     stream) == 0;
+	if (!stream->mux_thread_joinable) {
+		warn("Failed to create muxer thread");
+		os_atomic_set_bool(&stream->muxing, false);
+	}
 }
 
 static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)
