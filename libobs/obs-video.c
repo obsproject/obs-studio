@@ -1046,12 +1046,34 @@ void *obs_graphics_thread(void *param)
 	context.was_active = false;
 	context.video_thread_name = video_thread_name;
 
+	bool res = true;
+	while (res) {
+		DARRAY(struct obs_source *) temp_list;
+		da_init(temp_list);
+
+		pthread_mutex_lock(&obs->data.sources_mutex);
+		obs_source_t *source = obs->data.first_source;
+		while (source) {
+			if (!obs_source_removed(source)) {
+				obs_source_addref(source);
+				da_push_back(temp_list, &source);
+			}
+			source = (obs_source_t *)source->context.next;
+		}
+		pthread_mutex_unlock(&obs->data.sources_mutex);
+
 #ifdef __APPLE__
-	while (obs_graphics_thread_loop_autorelease(&context))
+		res = obs_graphics_thread_loop_autorelease(&context);
 #else
-	while (obs_graphics_thread_loop(&context))
+		res = obs_graphics_thread_loop(&context);
 #endif
-		;
+
+		for (size_t i = 0; i < temp_list.num; i++) {
+			struct obs_source *src = *(temp_list.array + i);
+			obs_source_release(src);
+		}
+		da_free(temp_list);
+	}
 
 #ifdef _WIN32
 	uninit_winrt_state(&winrt);
