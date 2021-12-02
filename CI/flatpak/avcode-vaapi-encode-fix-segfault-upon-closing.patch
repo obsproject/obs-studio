@@ -1,0 +1,52 @@
+From d1b47f3bfcc625ca1cae210fc198dcbd54381a88 Mon Sep 17 00:00:00 2001
+From: Andreas Rheinhardt <andreas.rheinhardt@outlook.com>
+Date: Mon, 29 Nov 2021 15:29:11 +0100
+Subject: [PATCH] avcodec/vaapi_encode: Fix segfault upon closing uninitialized
+ encoder
+
+Fixes ticket #9537.
+Probably a regression since 2b3206891649f317c20993411efef4bee39ae784.
+
+Signed-off-by: Andreas Rheinhardt <andreas.rheinhardt@outlook.com>
+---
+ libavcodec/vaapi_encode.c | 13 ++++++++++---
+ 1 file changed, 10 insertions(+), 3 deletions(-)
+
+diff --git a/libavcodec/vaapi_encode.c b/libavcodec/vaapi_encode.c
+index ec054ae70152..3bf379b1a0bd 100644
+--- a/libavcodec/vaapi_encode.c
++++ b/libavcodec/vaapi_encode.c
+@@ -2366,6 +2366,11 @@ av_cold int ff_vaapi_encode_init(AVCodecContext *avctx)
+     VAStatus vas;
+     int err;
+ 
++    ctx->va_config  = VA_INVALID_ID;
++    ctx->va_context = VA_INVALID_ID;
++
++    /* If you add something that can fail above this av_frame_alloc(),
++     * modify ff_vaapi_encode_close() accordingly. */
+     ctx->frame = av_frame_alloc();
+     if (!ctx->frame) {
+         return AVERROR(ENOMEM);
+@@ -2377,9 +2382,6 @@ av_cold int ff_vaapi_encode_init(AVCodecContext *avctx)
+         return AVERROR(EINVAL);
+     }
+ 
+-    ctx->va_config  = VA_INVALID_ID;
+-    ctx->va_context = VA_INVALID_ID;
+-
+     ctx->input_frames_ref = av_buffer_ref(avctx->hw_frames_ctx);
+     if (!ctx->input_frames_ref) {
+         err = AVERROR(ENOMEM);
+@@ -2531,6 +2533,11 @@ av_cold int ff_vaapi_encode_close(AVCodecContext *avctx)
+     VAAPIEncodeContext *ctx = avctx->priv_data;
+     VAAPIEncodePicture *pic, *next;
+ 
++    /* We check ctx->frame to know whether ff_vaapi_encode_init()
++     * has been called and va_config/va_context initialized. */
++    if (!ctx->frame)
++        return 0;
++
+     for (pic = ctx->pic_start; pic; pic = next) {
+         next = pic->next;
+         vaapi_encode_free(avctx, pic);
