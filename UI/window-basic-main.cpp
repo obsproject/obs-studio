@@ -121,15 +121,13 @@ Q_DECLARE_METATYPE(OBSSource);
 Q_DECLARE_METATYPE(obs_order_movement);
 Q_DECLARE_METATYPE(SignalContainer<OBSScene>);
 
-QDataStream &operator<<(QDataStream &out, const SignalContainer<OBSScene> &v)
+QDataStream &operator<<(QDataStream &out, const SignalContainer<OBSScene> &)
 {
-	out << v.ref;
 	return out;
 }
 
-QDataStream &operator>>(QDataStream &in, SignalContainer<OBSScene> &v)
+QDataStream &operator>>(QDataStream &in, SignalContainer<OBSScene> &)
 {
-	in >> v.ref;
 	return in;
 }
 
