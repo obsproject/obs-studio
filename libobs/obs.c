@@ -1461,7 +1461,6 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 			    !enum_proc(param, source)) {
 				obs_source_release(source);
 				break;
-
 			} else if (source->info.type == OBS_SOURCE_TYPE_INPUT &&
 				   !source->context.private &&
 				   !enum_proc(param, source)) {
