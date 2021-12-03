@@ -320,12 +320,12 @@ void obs_service_apply_encoder_settings(obs_service_t *service,
 						     audio_encoder_settings);
 }
 
-void obs_service_addref(obs_service_t *service)
+bool obs_service_addref(obs_service_t *service)
 {
 	if (!service)
-		return;
+		return false;
 
-	obs_ref_addref(&service->control->ref);
+	return obs_ref_addref(&service->control->ref);
 }
 
 void obs_service_release(obs_service_t *service)
@@ -343,12 +343,12 @@ void obs_service_release(obs_service_t *service)
 	}
 }
 
-void obs_weak_service_addref(obs_weak_service_t *weak)
+bool obs_weak_service_addref(obs_weak_service_t *weak)
 {
 	if (!weak)
-		return;
+		return false;
 
-	obs_weak_ref_addref(&weak->ref);
+	return obs_weak_ref_addref(&weak->ref);
 }
 
 void obs_weak_service_release(obs_weak_service_t *weak)

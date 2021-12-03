@@ -2440,12 +2440,12 @@ void obs_output_signal_stop(obs_output_t *output, int code)
 	}
 }
 
-void obs_output_addref(obs_output_t *output)
+bool obs_output_addref(obs_output_t *output)
 {
 	if (!output)
-		return;
+		return false;
 
-	obs_ref_addref(&output->control->ref);
+	return obs_ref_addref(&output->control->ref);
 }
 
 void obs_output_release(obs_output_t *output)
@@ -2463,12 +2463,12 @@ void obs_output_release(obs_output_t *output)
 	}
 }
 
-void obs_weak_output_addref(obs_weak_output_t *weak)
+bool obs_weak_output_addref(obs_weak_output_t *weak)
 {
 	if (!weak)
-		return;
+		return false;
 
-	obs_weak_ref_addref(&weak->ref);
+	return obs_weak_ref_addref(&weak->ref);
 }
 
 void obs_weak_output_release(obs_weak_output_t *weak)

@@ -704,12 +704,12 @@ void obs_source_destroy(struct obs_source *source)
 	bfree(source);
 }
 
-void obs_source_addref(obs_source_t *source)
+bool obs_source_addref(obs_source_t *source)
 {
 	if (!source)
-		return;
+		return false;
 
-	obs_ref_addref(&source->control->ref);
+	return obs_ref_addref(&source->control->ref);
 }
 
 void obs_source_release(obs_source_t *source)
@@ -730,12 +730,12 @@ void obs_source_release(obs_source_t *source)
 	}
 }
 
-void obs_weak_source_addref(obs_weak_source_t *weak)
+bool obs_weak_source_addref(obs_weak_source_t *weak)
 {
 	if (!weak)
-		return;
+		return false;
 
-	obs_weak_ref_addref(&weak->ref);
+	return obs_weak_ref_addref(&weak->ref);
 }
 
 void obs_weak_source_release(obs_weak_source_t *weak)

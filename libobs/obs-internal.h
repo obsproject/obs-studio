@@ -521,9 +521,12 @@ struct obs_weak_ref {
 	volatile long weak_refs;
 };
 
-static inline void obs_ref_addref(struct obs_weak_ref *ref)
+/* if return false, obs_ref_release should not be called */
+static inline bool obs_ref_addref(struct obs_weak_ref *ref)
 {
-	os_atomic_inc_long(&ref->refs);
+	long value = os_atomic_inc_long(&ref->refs);
+	assert(value > 0);
+	return (value > 0);
 }
 
 static inline bool obs_ref_release(struct obs_weak_ref *ref)
@@ -531,9 +534,11 @@ static inline bool obs_ref_release(struct obs_weak_ref *ref)
 	return os_atomic_dec_long(&ref->refs) == -1;
 }
 
-static inline void obs_weak_ref_addref(struct obs_weak_ref *ref)
+static inline bool obs_weak_ref_addref(struct obs_weak_ref *ref)
 {
-	os_atomic_inc_long(&ref->weak_refs);
+	long value = os_atomic_inc_long(&ref->weak_refs);
+	assert(value > 0);
+	return (value > 0);
 }
 
 static inline bool obs_weak_ref_release(struct obs_weak_ref *ref)

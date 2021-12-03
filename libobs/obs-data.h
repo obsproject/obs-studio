@@ -66,7 +66,7 @@ EXPORT obs_data_t *obs_data_create_from_json(const char *json_string);
 EXPORT obs_data_t *obs_data_create_from_json_file(const char *json_file);
 EXPORT obs_data_t *obs_data_create_from_json_file_safe(const char *json_file,
 						       const char *backup_ext);
-EXPORT void obs_data_addref(obs_data_t *data);
+EXPORT bool obs_data_addref(obs_data_t *data);
 EXPORT void obs_data_release(obs_data_t *data);
 
 EXPORT const char *obs_data_get_json(obs_data_t *data);
@@ -162,7 +162,7 @@ EXPORT obs_data_array_t *obs_data_get_autoselect_array(obs_data_t *data,
 
 /* Array functions */
 EXPORT obs_data_array_t *obs_data_array_create();
-EXPORT void obs_data_array_addref(obs_data_array_t *array);
+EXPORT bool obs_data_array_addref(obs_data_array_t *array);
 EXPORT void obs_data_array_release(obs_data_array_t *array);
 
 EXPORT size_t obs_data_array_count(obs_data_array_t *array);

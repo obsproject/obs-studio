@@ -23,7 +23,7 @@
 
 /* RAII wrappers */
 
-template<typename T, void addref(T), void release(T)> class OBSRef;
+template<typename T, bool addref(T), void release(T)> class OBSRef;
 
 using OBSSource = OBSRef<obs_source_t *, obs_source_addref, obs_source_release>;
 using OBSScene = OBSRef<obs_scene_t *, obs_scene_addref, obs_scene_release>;
@@ -47,7 +47,7 @@ using OBSWeakEncoder = OBSRef<obs_weak_encoder_t *, obs_weak_encoder_addref,
 using OBSWeakService = OBSRef<obs_weak_service_t *, obs_weak_service_addref,
 			      obs_weak_service_release>;
 
-template<typename T, void addref(T), void release(T)> class OBSRef {
+template<typename T, bool addref(T), void release(T)> class OBSRef {
 	T val;
 
 	inline OBSRef &Replace(T valIn)

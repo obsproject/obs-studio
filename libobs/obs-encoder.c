@@ -1385,12 +1385,12 @@ obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 	return encoder->preferred_format;
 }
 
-void obs_encoder_addref(obs_encoder_t *encoder)
+bool obs_encoder_addref(obs_encoder_t *encoder)
 {
 	if (!encoder)
-		return;
+		return false;
 
-	obs_ref_addref(&encoder->control->ref);
+	return obs_ref_addref(&encoder->control->ref);
 }
 
 void obs_encoder_release(obs_encoder_t *encoder)
@@ -1408,12 +1408,12 @@ void obs_encoder_release(obs_encoder_t *encoder)
 	}
 }
 
-void obs_weak_encoder_addref(obs_weak_encoder_t *weak)
+bool obs_weak_encoder_addref(obs_weak_encoder_t *weak)
 {
 	if (!weak)
-		return;
+		return false;
 
-	obs_weak_ref_addref(&weak->ref);
+	return obs_weak_ref_addref(&weak->ref);
 }
 
 void obs_weak_encoder_release(obs_weak_encoder_t *weak)

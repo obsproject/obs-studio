@@ -696,10 +696,12 @@ obs_data_t *obs_data_create_from_json_file_safe(const char *json_file,
 	return file_data;
 }
 
-void obs_data_addref(obs_data_t *data)
+bool obs_data_addref(obs_data_t *data)
 {
 	if (data)
-		os_atomic_inc_long(&data->ref);
+		return os_atomic_inc_long(&data->ref) > 1;
+	else
+		return false;
 }
 
 static inline void obs_data_destroy(struct obs_data *data)
@@ -1371,10 +1373,12 @@ obs_data_array_t *obs_data_array_create()
 	return array;
 }
 
-void obs_data_array_addref(obs_data_array_t *array)
+bool obs_data_array_addref(obs_data_array_t *array)
 {
 	if (array)
-		os_atomic_inc_long(&array->ref);
+		return os_atomic_inc_long(&array->ref) > 1;
+	else
+		return false;
 }
 
 static inline void obs_data_array_destroy(obs_data_array_t *array)

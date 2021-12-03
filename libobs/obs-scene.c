@@ -1522,10 +1522,12 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 	return new_scene;
 }
 
-void obs_scene_addref(obs_scene_t *scene)
+bool obs_scene_addref(obs_scene_t *scene)
 {
 	if (scene)
-		obs_source_addref(scene->source);
+		return obs_source_addref(scene->source);
+	else
+		return false;
 }
 
 void obs_scene_release(obs_scene_t *scene)
@@ -1954,10 +1956,12 @@ static void obs_sceneitem_destroy(obs_sceneitem_t *item)
 	}
 }
 
-void obs_sceneitem_addref(obs_sceneitem_t *item)
+bool obs_sceneitem_addref(obs_sceneitem_t *item)
 {
 	if (item)
-		os_atomic_inc_long(&item->ref);
+		return os_atomic_inc_long(&item->ref) > 1;
+	else
+		return false;
 }
 
 void obs_sceneitem_release(obs_sceneitem_t *item)
