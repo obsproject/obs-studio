@@ -1287,6 +1287,11 @@ double obs_data_get_double(obs_data_t *data, const char *name)
 	return obs_data_item_get_double(get_item(data, name));
 }
 
+double obs_data_get_float(obs_data_t *data, const char *name)
+{
+	return obs_data_item_get_double(get_item(data, name));
+}
+
 bool obs_data_get_bool(obs_data_t *data, const char *name)
 {
 	return obs_data_item_get_bool(get_item(data, name));
