@@ -865,7 +865,7 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 }
 
 static const struct pw_stream_events stream_events = {
-	PW_VERSION_STREAM_EVENTS,
+	0, // PW_VERSION_STREAM_EVENTS
 	.state_changed = on_state_changed_cb,
 	.param_changed = on_param_changed_cb,
 	.process = on_process_cb,
@@ -900,7 +900,7 @@ static void on_core_done_cb(void *user_data, uint32_t id, int seq)
 }
 
 static const struct pw_core_events core_events = {
-	PW_VERSION_CORE_EVENTS,
+	0, // PW_VERSION_CORE_EVENTS
 	.info = on_core_info_cb,
 	.done = on_core_done_cb,
 	.error = on_core_error_cb,
