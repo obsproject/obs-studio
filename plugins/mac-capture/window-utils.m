@@ -136,6 +136,31 @@ void update_window(cocoa_window_t cw, obs_data_t *settings)
 	[cw->window_name retain];
 	pthread_mutex_unlock(&cw->name_lock);
 
+	NSNumber *window_id = @(obs_data_get_int(settings, "window"));
+	NSNumber *owner_pid = @(obs_data_get_int(settings, "owner_pid"));
+	NSString *owner_name = @(obs_data_get_string(settings, "owner_name"));
+	NSString *window_name = @(obs_data_get_string(settings, "window_name"));
+	NSDictionary *win_info = @{
+		OWNER_NAME: owner_name,
+		OWNER_PID: owner_pid,
+		WINDOW_NAME: window_name,
+		WINDOW_NUMBER: window_id,
+	};
+	NSArray *arr = enumerate_windows();
+	NSDictionary *cur = nil;
+	for (NSDictionary *dict in arr) {
+		if ([window_id isEqualToNumber:dict[WINDOW_NUMBER]]) {
+			cur = dict;
+			break;
+		}
+	}
+	obs_data_set_int(settings, "window", [cur[WINDOW_NUMBER] intValue]);
+	obs_data_set_int(settings, "owner_pid", [cur[OWNER_PID] intValue]);
+	obs_data_set_string(settings, "owner_name",
+			    [cur[OWNER_NAME] UTF8String]);
+	obs_data_set_string(settings, "window_name",
+			    [cur[WINDOW_NAME] UTF8String]);
+	
 	cw->owner_pid = obs_data_get_int(settings, "owner_pid");
 	cw->window_id = obs_data_get_int(settings, "window");
 }
