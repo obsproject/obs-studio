@@ -276,6 +276,9 @@ static obs_properties_t *window_capture_properties(void *unused)
 
 	obs_properties_add_bool(props, "show_shadow",
 				obs_module_text("WindowCapture.ShowShadow"));
+	
+	obs_properties_add_bool(props, "show_cursor",
+				obs_module_text("WindowCapture.ShowCursor"));
 
 	return props;
 }
