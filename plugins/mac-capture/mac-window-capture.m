@@ -8,9 +8,17 @@
 
 #include "window-utils.h"
 
+typedef int CGSConnectionRef;
+static CGSConnectionRef connection = 0;
+extern CGError CGSNewConnection(void*, CGSConnectionRef*);
+extern CGError CGSReleaseConnection(CGSConnectionRef);
+extern CGError CGSGetGlobalCursorDataSize(CGSConnectionRef, int*);
+extern CGError CGSGetGlobalCursorData(CGSConnectionRef, unsigned char*,int*, int*, CGRect*, CGPoint*, int*, int*, int*);
+
 struct window_capture {
 	obs_source_t *source;
-
+	obs_data_t *settings;
+	
 	struct cocoa_window window;
 
 	//CGRect              bounds;
