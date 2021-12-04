@@ -8,9 +8,17 @@
 
 #include "window-utils.h"
 
+typedef int CGSConnectionRef;
+static CGSConnectionRef connection = 0;
+extern CGError CGSNewConnection(void*, CGSConnectionRef*);
+extern CGError CGSReleaseConnection(CGSConnectionRef);
+extern CGError CGSGetGlobalCursorDataSize(CGSConnectionRef, int*);
+extern CGError CGSGetGlobalCursorData(CGSConnectionRef, unsigned char*,int*, int*, CGRect*, CGPoint*, int*, int*, int*);
+
 struct window_capture {
 	obs_source_t *source;
-
+	obs_data_t *settings;
+	
 	struct cocoa_window window;
 
 	//CGRect              bounds;
@@ -19,6 +27,9 @@ struct window_capture {
 
 	CGColorSpaceRef color_space;
 
+	NSRect sRect;
+	bool hide_cursor;
+	
 	DARRAY(uint8_t) buffer;
 
 	pthread_t capture_thread;
@@ -27,7 +38,7 @@ struct window_capture {
 };
 
 static CGImageRef get_image(struct window_capture *wc)
-{
+{	
 	NSArray *arr = (NSArray *)CGWindowListCreate(
 		kCGWindowListOptionIncludingWindow, wc->window.window_id);
 	[arr autorelease];
@@ -35,9 +46,107 @@ static CGImageRef get_image(struct window_capture *wc)
 	if (!arr.count && !find_window(&wc->window, NULL, false))
 		return NULL;
 
-	return CGWindowListCreateImage(CGRectNull,
+	CGImageRef image = CGWindowListCreateImage(CGRectNull,
 				       kCGWindowListOptionIncludingWindow,
 				       wc->window.window_id, wc->image_option);
+	
+	if (!wc->hide_cursor) {
+		update_window(&wc->window, wc->settings);
+		
+		CGFloat displayScale = 1.f;
+		if ([[NSScreen mainScreen] respondsToSelector:@selector(backingScaleFactor)]) {
+			displayScale = [NSScreen mainScreen].backingScaleFactor;
+		}
+		
+		CGRect windowRect = CGRectZero;
+		CFIndex i;
+		CFStringRef owner_name;
+		CFStringRef window_name;
+		CFDictionaryRef window;
+		CFArrayRef window_list =CGWindowListCopyWindowInfo(kCGWindowListOptionAll, kCGNullWindowID);
+		for (i=0; i < CFArrayGetCount(window_list); i++) {
+			window = CFArrayGetValueAtIndex(window_list, i);
+			owner_name = CFDictionaryGetValue(window, kCGWindowOwnerName);
+			if ([(NSString*)owner_name isEqualToString:(NSString*)wc->window.owner_name]) {
+				window_name = CFDictionaryGetValue(window, kCGWindowName);
+				if ([(NSString*)window_name isEqualToString:(NSString*)wc->window.window_name]) {
+					CGRectMakeWithDictionaryRepresentation((CFDictionaryRef)[window objectForKey:@"kCGWindowBounds"], &windowRect);
+					break;
+				}
+			}
+		}
+		CFRelease(window_list);
+		NSPoint mousePoint = [NSEvent mouseLocation];
+		CGColorSpaceRef colorSpace = CGColorSpaceCreateDeviceRGB();
+		CGContextRef windowContext = CGBitmapContextCreate(nil, CGImageGetWidth(image), CGImageGetHeight(image), 8, 0, colorSpace, kCGBitmapByteOrder32Little | kCGImageAlphaPremultipliedFirst);
+		CGContextDrawImage(windowContext, NSMakeRect(0, 0, CGImageGetWidth(image), CGImageGetHeight(image)), image);
+		int cursorDataSize;
+		int cursorRowBytes;
+		CGRect cursorRect;
+		CGPoint hotSpot;
+		int colorDepth;
+		int components;
+		int cursorBitsPerComponent;
+		if (CGSNewConnection(NULL, &connection) != kCGErrorSuccess) {
+			NSLog(@"CGSNewConnection error.\n");
+			CGColorSpaceRelease(colorSpace);
+			CGContextRelease(windowContext);
+			return image;
+		}
+		if (CGSGetGlobalCursorDataSize(connection, &cursorDataSize) != kCGErrorSuccess) {
+			NSLog(@"CGSGetGlobalCursorDataSize error\n");
+			CGColorSpaceRelease(colorSpace);
+			CGContextRelease(windowContext);
+			return image;
+		}
+		unsigned char *cursorData = (unsigned char*) malloc(cursorDataSize);
+		CGError err = CGSGetGlobalCursorData(connection,
+											cursorData,
+											&cursorDataSize,
+											&cursorRowBytes,
+											&cursorRect,
+											&hotSpot,
+											&colorDepth,
+											&components,
+											&cursorBitsPerComponent);
+		if (err != kCGErrorSuccess) {
+			NSLog(@"CGSGetGlobalCursorData error\n");
+			CGColorSpaceRelease(colorSpace);
+			CGContextRelease(windowContext);
+			return image;
+		}
+		CGDataProviderRef providerRef =
+				CGDataProviderCreateWithData(nil, cursorData, cursorDataSize, nil);
+		CGImageRef cursorImage = CGImageCreate(cursorRect.size.width,
+										cursorRect.size.height,
+										cursorBitsPerComponent,
+										cursorBitsPerComponent * components,
+										cursorRowBytes,
+										colorSpace,
+										kCGImageAlphaPremultipliedLast,
+										providerRef,
+										nil,
+										NO,
+											kCGRenderingIntentDefault);
+		NSPoint cursorHotspot = NSPointFromCGPoint(hotSpot);
+		NSRect rectMouseCursor = NSMakeRect(
+			(mousePoint.x-cursorHotspot.x-windowRect.origin.x)*displayScale, 
+			CGImageGetHeight(image)-(wc->sRect.size.height-mousePoint.y+cursorRect.size.height-cursorHotspot.y-windowRect.origin.y)*displayScale,
+			cursorRect.size.width*displayScale, 
+			cursorRect.size.height*displayScale);
+		CGContextDrawImage(windowContext, rectMouseCursor, cursorImage);
+		CGImageRelease(image);
+		CGImageRef image2 = CGBitmapContextCreateImage(windowContext);
+		CGDataProviderRelease(providerRef);
+		CGColorSpaceRelease(colorSpace);
+		CGSReleaseConnection(connection);
+		CGImageRelease(cursorImage);
+		CGContextRelease(windowContext);
+		free(cursorData);
+		return image2;
+	}
+	
+	return image;
 }
 
 static inline void capture_frame(struct window_capture *wc)
@@ -97,7 +206,11 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
 
 	wc->source = source;
-
+	wc->settings = settings;
+	
+	NSArray *screens = [NSScreen screens];
+	wc->sRect = [screens[0] frame];
+	
 	wc->color_space = CGColorSpaceCreateDeviceRGB();
 
 	da_init(wc->buffer);
@@ -108,6 +221,8 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 				   ? kCGWindowImageDefault
 				   : kCGWindowImageBoundsIgnoreFraming;
 
+	wc->hide_cursor = !obs_data_get_bool(settings, "show_cursor");
+	
 	os_event_init(&wc->capture_event, OS_EVENT_TYPE_AUTO);
 	os_event_init(&wc->stop_event, OS_EVENT_TYPE_MANUAL);
 
@@ -147,6 +262,7 @@ static void window_capture_destroy(void *data)
 static void window_capture_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "show_shadow", false);
+	obs_data_set_default_bool(settings, "show_cursor", true);
 	window_defaults(settings);
 }
 
@@ -160,6 +276,9 @@ static obs_properties_t *window_capture_properties(void *unused)
 
 	obs_properties_add_bool(props, "show_shadow",
 				obs_module_text("WindowCapture.ShowShadow"));
+	
+	obs_properties_add_bool(props, "show_cursor",
+				obs_module_text("WindowCapture.ShowCursor"));
 
 	return props;
 }
@@ -171,6 +290,9 @@ static inline void window_capture_update_internal(struct window_capture *wc,
 				   ? kCGWindowImageDefault
 				   : kCGWindowImageBoundsIgnoreFraming;
 
+	bool show_cursor = obs_data_get_bool(settings, "show_cursor");
+	wc->hide_cursor = !show_cursor;
+	
 	update_window(&wc->window, settings);
 
 	if (wc->window.window_name.length) {
