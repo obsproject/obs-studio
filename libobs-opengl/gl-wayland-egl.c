@@ -24,6 +24,22 @@
 
 #include <glad/glad_egl.h>
 
+static const EGLint config_attribs_native[] = {EGL_SURFACE_TYPE,
+					       EGL_WINDOW_BIT,
+					       EGL_RENDERABLE_TYPE,
+					       EGL_OPENGL_BIT,
+					       EGL_STENCIL_SIZE,
+					       0,
+					       EGL_DEPTH_SIZE,
+					       0,
+					       EGL_BUFFER_SIZE,
+					       32,
+					       EGL_ALPHA_SIZE,
+					       8,
+					       EGL_NATIVE_RENDERABLE,
+					       EGL_TRUE,
+					       EGL_NONE};
+
 static const EGLint config_attribs[] = {EGL_SURFACE_TYPE,
 					EGL_WINDOW_BIT,
 					EGL_RENDERABLE_TYPE,
@@ -36,8 +52,6 @@ static const EGLint config_attribs[] = {EGL_SURFACE_TYPE,
 					32,
 					EGL_ALPHA_SIZE,
 					8,
-					EGL_NATIVE_RENDERABLE,
-					EGL_TRUE,
 					EGL_NONE};
 
 static const EGLint ctx_attribs[] = {
@@ -110,6 +124,10 @@ static bool egl_make_current(EGLDisplay display, EGLSurface surface,
 		blog(LOG_ERROR, "eglMakeCurrent failed");
 		return false;
 	}
+
+	if (surface != EGL_NO_SURFACE)
+		glDrawBuffer(GL_BACK);
+
 	return true;
 }
 
@@ -122,11 +140,16 @@ static bool egl_context_create(struct gl_platform *plat, const EGLint *attribs)
 		blog(LOG_ERROR, "eglBindAPI failed");
 	}
 
-	EGLBoolean result = eglChooseConfig(plat->display, config_attribs,
+	EGLBoolean result = eglChooseConfig(plat->display,
+					    config_attribs_native,
 					    &plat->config, 1, &num_config);
 	if (result != EGL_TRUE || num_config == 0) {
-		blog(LOG_ERROR, "eglChooseConfig failed");
-		goto error;
+		result = eglChooseConfig(plat->display, config_attribs,
+					 &plat->config, 1, &num_config);
+		if (result != EGL_TRUE || num_config == 0) {
+			blog(LOG_ERROR, "eglChooseConfig failed");
+			goto error;
+		}
 	}
 
 	plat->context = eglCreateContext(plat->display, plat->config,
