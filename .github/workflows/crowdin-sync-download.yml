@@ -1,7 +1,7 @@
 name: "Crowdin Sync: Import latest translations"
 on: workflow_dispatch
 jobs:
-  download:
+  crowdin-sync-download:
     name: Import latest translations
     runs-on: ubuntu-latest
     env:
