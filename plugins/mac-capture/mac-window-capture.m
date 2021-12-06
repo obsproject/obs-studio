@@ -13,13 +13,7 @@ struct window_capture {
 
 	struct cocoa_window window;
 
-	//CGRect              bounds;
-	//CGWindowListOption  window_option;
 	CGWindowImageOption image_option;
-
-	CGColorSpaceRef color_space;
-
-	DARRAY(uint8_t) buffer;
 
 	pthread_t capture_thread;
 	os_event_t *capture_event;
@@ -28,55 +22,65 @@ struct window_capture {
 
 static CGImageRef get_image(struct window_capture *wc)
 {
-	NSArray *arr = (NSArray *)CGWindowListCreate(
-		kCGWindowListOptionIncludingWindow, wc->window.window_id);
-	[arr autorelease];
+	CFMutableArrayRef arr =
+		CFArrayCreateMutable(kCFAllocatorDefault, 0, NULL);
+	CFArrayAppendValue(arr, (void *)(uintptr_t)wc->window.window_id);
 
-	if (!arr.count && !find_window(&wc->window, NULL, false))
-		return NULL;
+	CGImageRef image = CGWindowListCreateImageFromArray(
+		CGRectNull, (CFArrayRef)arr, wc->image_option);
+	CFRelease(arr);
 
-	return CGWindowListCreateImage(CGRectNull,
-				       kCGWindowListOptionIncludingWindow,
-				       wc->window.window_id, wc->image_option);
+	if (!image && find_window(&wc->window, NULL))
+		image = get_image(wc);
+
+	return image;
 }
 
 static inline void capture_frame(struct window_capture *wc)
 {
 	uint64_t ts = os_gettime_ns();
-	CGImageRef img = get_image(wc);
-	if (!img)
+	CGImageRef image = get_image(wc);
+
+	if (!image)
 		return;
 
-	size_t width = CGImageGetWidth(img);
-	size_t height = CGImageGetHeight(img);
+	size_t width = CGImageGetWidth(image);
+	size_t height = CGImageGetHeight(image);
+	size_t bytes_per_row = CGImageGetBytesPerRow(image);
 
-	CGRect rect = {{0, 0}, {width, height}};
-	da_resize(wc->buffer, width * height * 4);
-	uint8_t *data = wc->buffer.array;
+	if ((!width && !height) || CGImageGetBitsPerPixel(image) != 32 ||
+	    CGImageGetBitsPerComponent(image) != 8) {
+		CGImageRelease(image);
+		return;
+	}
 
-	CGContextRef cg_context = CGBitmapContextCreate(
-		data, width, height, 8, width * 4, wc->color_space,
-		kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst);
-	CGContextSetBlendMode(cg_context, kCGBlendModeCopy);
-	CGContextDrawImage(cg_context, rect, img);
-	CGContextRelease(cg_context);
-	CGImageRelease(img);
+	// float fps = 1e9 / (ts - wc->frame.timestamp);
+	// NSLog(@"FPS %.4f", fps);
+
+	CGDataProviderRef provider = CGImageGetDataProvider(image);
+	CFDataRef data = CGDataProviderCopyData(provider);
+	const uint8_t *buffer = CFDataGetBytePtr(data);
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
 		.width = width,
 		.height = height,
-		.data[0] = data,
-		.linesize[0] = width * 4,
+		.data[0] = (uint8_t *)buffer,
+		.linesize[0] = bytes_per_row,
 		.timestamp = ts,
 	};
 
 	obs_source_output_video(wc->source, &frame);
+
+	CFRelease(data);
+	CGImageRelease(image);
 }
 
 static void *capture_thread(void *data)
 {
 	struct window_capture *wc = data;
+
+	os_set_thread_name(obs_source_get_name(wc->source));
 
 	for (;;) {
 		os_event_wait(wc->capture_event);
@@ -98,10 +102,6 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 
 	wc->source = source;
 
-	wc->color_space = CGColorSpaceCreateDeviceRGB();
-
-	da_init(wc->buffer);
-
 	init_window(&wc->window, settings);
 
 	wc->image_option = obs_data_get_bool(settings, "show_shadow")
@@ -111,7 +111,21 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 	os_event_init(&wc->capture_event, OS_EVENT_TYPE_AUTO);
 	os_event_init(&wc->stop_event, OS_EVENT_TYPE_MANUAL);
 
-	pthread_create(&wc->capture_thread, NULL, capture_thread, wc);
+	/*
+	 * "To let Cocoa know that you intend to use multiple threads, all you
+	 * have to do is spawn a single thread using the NSThread class and
+	 * let that thread immediately exit."
+	 *
+	 * @see https://developer.apple.com/library/archive/documentation/Cocoa/Conceptual/Multithreading/CreatingThreads/CreatingThreads.html#//apple_ref/doc/uid/10000057i-CH15-SW21
+	 */
+
+	[[NSThread new] start];
+
+	if ([NSThread isMultiThreaded] != 1)
+		abort();
+
+	if (pthread_create(&wc->capture_thread, NULL, capture_thread, wc))
+		abort();
 
 	return wc;
 }
@@ -125,29 +139,26 @@ static void *window_capture_create(obs_data_t *settings, obs_source_t *source)
 
 static void window_capture_destroy(void *data)
 {
-	struct window_capture *cap = data;
+	struct window_capture *wc = data;
 
-	os_event_signal(cap->stop_event);
-	os_event_signal(cap->capture_event);
+	os_event_signal(wc->stop_event);
+	os_event_signal(wc->capture_event);
 
-	pthread_join(cap->capture_thread, NULL);
+	pthread_join(wc->capture_thread, NULL);
 
-	CGColorSpaceRelease(cap->color_space);
+	os_event_destroy(wc->capture_event);
+	os_event_destroy(wc->stop_event);
 
-	da_free(cap->buffer);
+	destroy_window(&wc->window);
 
-	os_event_destroy(cap->capture_event);
-	os_event_destroy(cap->stop_event);
-
-	destroy_window(&cap->window);
-
-	bfree(cap);
+	bfree(wc);
 }
 
 static void window_capture_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_bool(settings, "show_shadow", false);
 	window_defaults(settings);
+
+	obs_data_set_default_bool(settings, "show_shadow", false);
 }
 
 static obs_properties_t *window_capture_properties(void *unused)
@@ -173,15 +184,14 @@ static inline void window_capture_update_internal(struct window_capture *wc,
 
 	update_window(&wc->window, settings);
 
-	if (wc->window.window_name.length) {
-		blog(LOG_INFO,
-		     "[window-capture: '%s'] update settings:\n"
-		     "\twindow: %s\n"
-		     "\towner:  %s",
-		     obs_source_get_name(wc->source),
-		     [wc->window.window_name UTF8String],
-		     [wc->window.owner_name UTF8String]);
-	}
+	blog(LOG_INFO,
+	     "[window-capture: '%s'] update settings:\n"
+	     "\twindow: %s\n"
+	     "\towner:  %s",
+	     obs_source_get_name(wc->source),
+	     wc->window.window_name.length ? [wc->window.window_name UTF8String]
+					   : "(null)",
+	     [wc->window.owner_name UTF8String]);
 }
 
 static void window_capture_update(void *data, obs_data_t *settings)
@@ -197,23 +207,16 @@ static const char *window_capture_getname(void *unused)
 	return obs_module_text("WindowCapture");
 }
 
-static inline void window_capture_tick_internal(struct window_capture *wc,
-						float seconds)
-{
-	UNUSED_PARAMETER(seconds);
-	os_event_signal(wc->capture_event);
-}
-
 static void window_capture_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(seconds);
+
 	struct window_capture *wc = data;
 
 	if (!obs_source_showing(wc->source))
 		return;
 
-	@autoreleasepool {
-		return window_capture_tick_internal(data, seconds);
-	}
+	os_event_signal(wc->capture_event);
 }
 
 struct obs_source_info window_capture_info = {
