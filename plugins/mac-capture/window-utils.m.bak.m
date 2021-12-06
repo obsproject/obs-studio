@@ -160,7 +160,7 @@ void update_window(cocoa_window_t cw, obs_data_t *settings)
 			    [cur[OWNER_NAME] UTF8String]);
 	obs_data_set_string(settings, "window_name",
 			    [cur[WINDOW_NAME] UTF8String]);
-
+	
 	cw->owner_pid = obs_data_get_int(settings, "owner_pid");
 	cw->window_id = obs_data_get_int(settings, "window");
 }
