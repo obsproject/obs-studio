@@ -405,13 +405,7 @@ SDIWireFormat GuessSDIWireFormat(NTV2VideoFormat vf, IOSelection io,
 			if (aja::IsSDIFourWireIOSelection(io)) {
 				swf = SDIWireFormat::UHD4K_ST292_Quad_1_5_Squares;
 			} else if (aja::IsSDITwoWireIOSelection(io)) {
-				if (t4k == SDI4KTransport::Squares) {
-					swf = SDIWireFormat::
-						UHD4K_ST292_Dual_1_5_Squares;
-				} else {
-					swf = SDIWireFormat::
-						UHD4K_ST425_Dual_3Gb_2SI;
-				}
+				swf = SDIWireFormat::UHD4K_ST292_Dual_1_5_Squares;
 			}
 		} else if (t4k == SDI4KTransport::TwoSampleInterleave) {
 			if (aja::IsSDIOneWireIOSelection(io)) {
