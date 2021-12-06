@@ -243,12 +243,30 @@ jobs:
           if ! [ "${{ env.MACOS_CEF_BUILD_VERSION }}" -le 3770 ]; then
           ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
+            -s /tmp/obsdeps/lib \
+            -s /tmp/obsdeps/lib/QtSvg.framework \
+            -s /tmp/obsdeps/lib/QtXml.framework \
+            -s /tmp/obsdeps/lib/QtNetwork.framework \
+            -s /tmp/obsdeps/lib/QtCore.framework \
+            -s /tmp/obsdeps/lib/QtGui.framework \
+            -s /tmp/obsdeps/lib/QtWidgets.framework \
+            -s /tmp/obsdeps/lib/QtDBus.framework \
+            -s /tmp/obsdeps/lib/QtPrintSupport.framework \
             -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
             -s ./rundir/RelWithDebInfo/bin \
             $(echo "${BUNDLE_PLUGINS[@]/#/-x }")
           else
           ../CI/scripts/macos/app/dylibBundler -cd -of -a ./OBS.app -q -f \
             -s ./OBS.app/Contents/MacOS \
+            -s /tmp/obsdeps/lib \
+            -s /tmp/obsdeps/lib/QtSvg.framework \
+            -s /tmp/obsdeps/lib/QtXml.framework \
+            -s /tmp/obsdeps/lib/QtNetwork.framework \
+            -s /tmp/obsdeps/lib/QtCore.framework \
+            -s /tmp/obsdeps/lib/QtGui.framework \
+            -s /tmp/obsdeps/lib/QtWidgets.framework \
+            -s /tmp/obsdeps/lib/QtDBus.framework \
+            -s /tmp/obsdeps/lib/QtPrintSupport.framework \
             -s "${{ github.workspace }}/cmbuild/sparkle/Sparkle.framework" \
             -s ./rundir/RelWithDebInfo/bin \
             $(echo "${BUNDLE_PLUGINS[@]/#/-x }") \
