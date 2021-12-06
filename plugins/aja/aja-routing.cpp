@@ -91,7 +91,6 @@ bool Routing::ParseRouteString(const std::string &route,
 	 * the route strings currently only come from a known set.
 	 */
 	NTV2StringList lines;
-	NTV2StringList tokens;
 
 	lines = aja::split(route_strip, ';');
 	if (lines.empty())
@@ -338,7 +337,6 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 	// Fix for AJA NTV2 internal bug #11467
 	ULWord magicAudioBits = 0;
 	if (NTV2_INPUT_SOURCE_IS_HDMI(inputSrc)) {
-		magicAudioBits = 0x00100000;
 		switch (inputSrc) {
 		default:
 		case NTV2_INPUTSOURCE_HDMI1:
@@ -407,13 +405,7 @@ SDIWireFormat GuessSDIWireFormat(NTV2VideoFormat vf, IOSelection io,
 			if (aja::IsSDIFourWireIOSelection(io)) {
 				swf = SDIWireFormat::UHD4K_ST292_Quad_1_5_Squares;
 			} else if (aja::IsSDITwoWireIOSelection(io)) {
-				if (t4k == SDI4KTransport::Squares) {
-					swf = SDIWireFormat::
-						UHD4K_ST292_Dual_1_5_Squares;
-				} else {
-					swf = SDIWireFormat::
-						UHD4K_ST425_Dual_3Gb_2SI;
-				}
+				swf = SDIWireFormat::UHD4K_ST292_Dual_1_5_Squares;
 			}
 		} else if (t4k == SDI4KTransport::TwoSampleInterleave) {
 			if (aja::IsSDIOneWireIOSelection(io)) {

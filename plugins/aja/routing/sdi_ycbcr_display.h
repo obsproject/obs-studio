@@ -2,7 +2,7 @@
 
 #include "../aja-routing.hpp"
 
-static const std::map<SDIWireFormat, RoutingConfig> kSDIYCbCrDisplayConfigs = {
+static inline const std::map<SDIWireFormat, RoutingConfig> kSDIYCbCrDisplayConfigs = {
 	{
 		SDIWireFormat::SD_ST352,
 		{

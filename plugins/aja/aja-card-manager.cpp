@@ -181,15 +181,13 @@ bool CardEntry::ChannelReady(NTV2Channel chan, const std::string &owner) const
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
 
-	bool found = false;
-
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.second & (1 << static_cast<int32_t>(chan))) {
 			return pwn.first == owner;
 		}
 	}
 
-	return !found;
+	return true;
 }
 
 bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode,
