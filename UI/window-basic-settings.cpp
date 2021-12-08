@@ -631,7 +631,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->browserHWAccel;
 	delete ui->sourcesGroup;
 #endif
-#if defined(__APPLE__) || HAVE_PULSEAUDIO
+#if defined(__APPLE__) || defined(PULSEAUDIO_FOUND)
 	delete ui->disableAudioDucking;
 #endif
 	ui->rendererLabel = nullptr;
@@ -646,7 +646,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->browserHWAccel = nullptr;
 	ui->sourcesGroup = nullptr;
 #endif
-#if defined(__APPLE__) || HAVE_PULSEAUDIO
+#if defined(__APPLE__) || defined(PULSEAUDIO_FOUND)
 	ui->disableAudioDucking = nullptr;
 #endif
 #endif
