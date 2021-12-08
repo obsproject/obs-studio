@@ -5607,6 +5607,11 @@ static inline bool should_show_properties(obs_source_t *source, const char *id)
 		return false;
 	if (!obs_source_configurable(source))
 		return false;
+
+	uint32_t caps = obs_source_get_output_flags(source);
+	if ((caps & OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES) != 0)
+		return false;
+
 	return true;
 }
 
