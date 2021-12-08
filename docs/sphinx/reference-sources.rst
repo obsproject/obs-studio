@@ -156,6 +156,18 @@ Source Definition Structure (obs_source_info)
    - **OBS_SOURCE_CONTROLLABLE_MEDIA** - This source has media that can
      be controlled
 
+   - **OBS_SOURCE_MONITOR_BY_DEFAULT** - Source should enable
+     monitoring by default.  Monitoring should be set by the
+     frontend if this flag is set.
+
+   - **OBS_SOURCE_CEA_708** - Source type provides cea708 data
+
+   - **OBS_SOURCE_SRGB** - Source understands SRGB rendering
+
+   - **OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES** - Source type prefers not
+     to have its properties shown on creation (prefers to rely on 
+     defaults first)
+
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
 
    Get the translated name of the source type.
