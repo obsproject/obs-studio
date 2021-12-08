@@ -5599,12 +5599,23 @@ void OBSBasic::on_scenes_itemDoubleClicked(QListWidgetItem *witem)
 	}
 }
 
+static inline bool should_show_properties(obs_source_t *source, const char *id)
+{
+	if (!source)
+		return false;
+	if (strcmp(id, "group") == 0)
+		return false;
+	if (!obs_source_configurable(source))
+		return false;
+	return true;
+}
+
 void OBSBasic::AddSource(const char *id)
 {
 	if (id && *id) {
 		OBSBasicSourceSelect sourceSelect(this, id, undo_s);
 		sourceSelect.exec();
-		if (sourceSelect.newSource && strcmp(id, "group") != 0) {
+		if (should_show_properties(sourceSelect.newSource, id)) {
 			CreatePropertiesWindow(sourceSelect.newSource);
 		}
 	}
