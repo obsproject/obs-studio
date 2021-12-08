@@ -75,7 +75,6 @@ OBSMessageBox::question(QWidget *parent, const QString &title,
 	translate_button(Reset);
 	translate_button(Yes);
 	translate_button(No);
-	translate_button(No);
 	translate_button(Abort);
 	translate_button(Retry);
 	translate_button(Ignore);
