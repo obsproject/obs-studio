@@ -78,11 +78,6 @@ endif()
 qt5_wrap_ui(aja-output-ui_UI_HEADERS
 	${aja-output-ui_UI})
 
-add_library(aja-output-ui MODULE
-	${aja-output-ui_HEADERS}
-	${aja-output-ui_SOURCES}
-	${aja-output-ui_UI_HEADERS})
-
 set(aja_LIBRARIES
 		$<IF:$<CONFIG:Debug>,${LIBAJANTV2_DEBUG_LIBRARIES},${LIBAJANTV2_LIBRARIES}>
 		libobs)
@@ -123,12 +118,23 @@ elseif(WIN32)
 			Winmm.lib
 			netapi32.lib
 			Shlwapi.lib)
+
+	set(MODULE_DESCRIPTION "OBS AJA Output UI")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-aja-output-ui.rc)
+	list(APPEND aja-output-ui_SOURCES
+			win-aja-output-ui.rc)
+
 	# Linux
 elseif(UNIX AND NOT APPLE)
 	set(aja_COMPILE_DEFS
 			AJA_LINUX
 			AJALinux)
 endif()
+
+add_library(aja-output-ui MODULE
+		${aja-output-ui_HEADERS}
+		${aja-output-ui_SOURCES}
+		${aja-output-ui_UI_HEADERS})
 
 target_include_directories(aja-output-ui PUBLIC
 	${LIBAJANTV2_INCLUDE_DIRS})

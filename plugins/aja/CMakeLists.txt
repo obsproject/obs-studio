@@ -83,6 +83,11 @@ elseif(WIN32)
 		Winmm.lib
 		netapi32.lib
 		Shlwapi.lib)
+
+	set(MODULE_DESCRIPTION "OBS AJA Windows module")
+	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in win-aja.rc)
+	list(APPEND aja_SOURCES
+		win-aja.rc)
 # Linux
 elseif(UNIX AND NOT APPLE)
 	set(aja_COMPILE_DEFS
