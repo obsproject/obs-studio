@@ -11,6 +11,9 @@
     <p>Free and open source software for video capturing, recording, and live streaming.</p>
   </description>
   <url type="homepage">https://obsproject.com</url>
+  <url type="bugtracker">https://github.org/obsproject/obs-studio/issues</url>
+  <url type="donation">https://obsproject.com/contribute</url>
+  <url type="translate">https://crowdin.com/project/obs-studio</url>
   <screenshots>
     <screenshot type="default">
       <image>https://obsproject.com/assets/images/OBSDemoApp.jpg</image>
