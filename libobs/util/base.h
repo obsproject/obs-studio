@@ -85,7 +85,7 @@ EXPORT void blogva(int log_level, const char *format, va_list args);
 PRINTFATTR(2, 3)
 EXPORT void blog(int log_level, const char *format, ...);
 PRINTFATTR(1, 2)
-EXPORT void bcrash(const char *format, ...);
+OBS_NORETURN EXPORT void bcrash(const char *format, ...);
 
 #undef PRINTFATTR
 
