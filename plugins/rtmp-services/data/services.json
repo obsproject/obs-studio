@@ -2437,6 +2437,70 @@
                 "max video bitrate": 4000,
                 "max fps": 30
             }
+        },
+        {
+            "name": "Fantasy.Club",
+            "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
+            "more_info_link": "https://help.fantasy.club/",
+            "servers": [
+                {
+                    "name": "US: East",
+                    "url": "rtmp://live-east.fantasy.club/live"
+                },
+                {
+                    "name": "US: West",
+                    "url": "rtmp://live-west.fantasy.club/live"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://live-eu.fantasy.club/live"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://live-sa.fantasy.club/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "bframes": 0,
+                "x264opts": "scenecut=0",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 1200
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 3600
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 4200
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 5000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 7200
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 7200,
+                "max audio bitrate": 196
+            }
         }
     ]
 }
