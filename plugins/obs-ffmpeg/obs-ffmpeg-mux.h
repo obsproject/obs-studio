@@ -42,6 +42,7 @@ struct ffmpeg_muxer {
 	bool found_audio[MAX_AUDIO_MIXES];
 	int64_t video_pts_offset;
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES];
+	bool split_file_ready;
 
 	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;

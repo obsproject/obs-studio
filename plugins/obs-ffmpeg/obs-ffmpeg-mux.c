@@ -320,6 +320,11 @@ inline static void ts_offset_clear(struct ffmpeg_muxer *stream)
 	}
 }
 
+static inline int64_t packet_pts_usec(struct encoder_packet *packet)
+{
+	return packet->pts * 1000000 / packet->timebase_den;
+}
+
 inline static void ts_offset_update(struct ffmpeg_muxer *stream,
 				    struct encoder_packet *packet)
 {
@@ -731,6 +736,19 @@ static bool prepare_split_file(struct ffmpeg_muxer *stream,
 	return true;
 }
 
+static inline bool has_audio(struct ffmpeg_muxer *stream)
+{
+	return !!obs_output_get_audio_encoder(stream->output, 0);
+}
+
+static void push_back_packet(struct darray *packets,
+			     struct encoder_packet *packet)
+{
+	struct encoder_packet pkt;
+	obs_encoder_packet_ref(&pkt, packet);
+	darray_push_back(sizeof(pkt), packets, &pkt);
+}
+
 static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -744,9 +762,31 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		return;
 	}
 
-	if (stream->split_file && should_split(stream, packet)) {
-		if (!prepare_split_file(stream, packet))
+	if (stream->split_file && stream->mux_packets.num) {
+		int64_t pts_usec = packet_pts_usec(packet);
+		struct encoder_packet *first_pkt = stream->mux_packets.array;
+		int64_t first_pts_usec = packet_pts_usec(first_pkt);
+
+		if (pts_usec >= first_pts_usec) {
+			if (packet->type != OBS_ENCODER_AUDIO) {
+				push_back_packet(&stream->mux_packets.da,
+						 packet);
+				return;
+			}
+
+			if (!prepare_split_file(stream, first_pkt))
+				return;
+			stream->split_file_ready = true;
+		}
+	} else if (stream->split_file && should_split(stream, packet)) {
+		if (has_audio(stream)) {
+			push_back_packet(&stream->mux_packets.da, packet);
 			return;
+		} else {
+			if (!prepare_split_file(stream, packet))
+				return;
+			stream->split_file_ready = true;
+		}
 	}
 
 	if (!stream->sent_headers) {
@@ -764,6 +804,19 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 			deactivate(stream, 0);
 			return;
 		}
+	}
+
+	if (stream->split_file && stream->split_file_ready) {
+		for (size_t i = 0; i < stream->mux_packets.num; i++) {
+			struct encoder_packet *pkt =
+				&stream->mux_packets.array[i];
+			if (stream->reset_timestamps)
+				ts_offset_update(stream, pkt);
+			write_packet(stream, pkt);
+			obs_encoder_packet_release(pkt);
+		}
+		da_free(stream->mux_packets);
+		stream->split_file_ready = false;
 	}
 
 	if (stream->split_file && stream->reset_timestamps)
