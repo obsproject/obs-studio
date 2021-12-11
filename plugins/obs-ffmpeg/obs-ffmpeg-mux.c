@@ -355,7 +355,8 @@ inline static void ts_offset_update(struct ffmpeg_muxer *stream,
 	if (stream->found_audio[packet->track_idx])
 		return;
 
-	stream->audio_dts_offsets[packet->track_idx] = packet->dts;
+	stream->audio_dts_offsets[packet->track_idx] =
+		stream->video_pts_offset_usec * packet->timebase_den / 1000000;
 	stream->found_audio[packet->track_idx] = true;
 }
 
@@ -747,6 +748,7 @@ static bool prepare_split_file(struct ffmpeg_muxer *stream,
 
 	stream->cur_size = 0;
 	stream->cur_time = packet->dts_usec;
+	stream->video_pts_offset_usec = packet_pts_usec(packet);
 	ts_offset_clear(stream);
 
 	return true;
