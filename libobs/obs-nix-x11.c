@@ -1179,6 +1179,8 @@ static void obs_nix_x11_key_to_str(obs_key_t key, struct dstr *dstr)
 		return translate_key(key, "Numpad *");
 	case OBS_KEY_NUMPLUS:
 		return translate_key(key, "Numpad +");
+	case OBS_KEY_NUMMINUS:
+		return translate_key(key, "Numpad -");
 	case OBS_KEY_NUMCOMMA:
 		return translate_key(key, "Numpad ,");
 	case OBS_KEY_NUMPERIOD:
