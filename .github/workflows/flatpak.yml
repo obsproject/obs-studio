@@ -5,13 +5,13 @@ name: Flatpak
 on:
   push:
     paths-ignore: ['**.md']
-    branches: [master]
+    branches: [master, 'release/**']
   pull_request:
     paths-ignore: ['**.md']
-    branches: [master]
+    branches: [master, 'release/**']
   release:
     types: [published]
-    branches: [master]
+    branches: [master, 'release/**']
 
 env:
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
