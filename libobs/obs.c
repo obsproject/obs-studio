@@ -456,6 +456,8 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 static void stop_video(void)
 {
+	pthread_mutex_lock(&obs->video_stop_mutex);
+
 	struct obs_core_video *video = &obs->video;
 	void *thread_retval;
 
@@ -466,10 +468,14 @@ static void stop_video(void)
 			video->thread_initialized = false;
 		}
 	}
+
+	pthread_mutex_unlock(&obs->video_stop_mutex);
 }
 
 static void obs_free_video(void)
 {
+	pthread_mutex_lock(&obs->video_stop_mutex);
+
 	struct obs_core_video *video = &obs->video;
 
 	if (video->video) {
@@ -567,6 +573,8 @@ static void obs_free_video(void)
 		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
 	}
+
+	pthread_mutex_unlock(&obs->video_stop_mutex);
 }
 
 static void obs_free_graphics(void)
@@ -879,6 +887,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
+	pthread_mutex_init_recursive(&obs->video_stop_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -1078,6 +1087,8 @@ void obs_shutdown(void)
 	if (obs->name_store_owned)
 		profiler_name_store_free(obs->name_store);
 
+	pthread_mutex_destroy(&obs->video_stop_mutex);
+
 	bfree(obs->module_config_path);
 	bfree(obs->locale);
 	bfree(obs);
@@ -1149,6 +1160,8 @@ int obs_reset_video(struct obs_video_info *ovi)
 	    !size_valid(ovi->base_width, ovi->base_height))
 		return OBS_VIDEO_INVALID_PARAM;
 
+	pthread_mutex_lock(&obs->video_stop_mutex);
+
 	struct obs_core_video *video = &obs->video;
 
 	blog(LOG_INFO, "About to stop and reset video");
@@ -1164,6 +1177,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 		int errorcode = obs_init_graphics(ovi);
 		if (errorcode != OBS_VIDEO_SUCCESS) {
 			obs_free_graphics();
+			pthread_mutex_unlock(&obs->video_stop_mutex);
 			return errorcode;
 		}
 	}
@@ -1209,6 +1223,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 	     get_video_format_name(ovi->output_format),
 	     yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
 
+	pthread_mutex_unlock(&obs->video_stop_mutex);
 	return obs_init_video(ovi);
 }
 
