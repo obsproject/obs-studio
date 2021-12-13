@@ -188,6 +188,9 @@ static void free_files(struct darray *array)
 
 static inline size_t random_file(struct slideshow *ss)
 {
+	if (ss->files.num == 0)
+		return 0;
+
 	return (size_t)rand() % ss->files.num;
 }
 
