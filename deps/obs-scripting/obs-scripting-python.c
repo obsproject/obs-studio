@@ -1644,9 +1644,11 @@ bool obs_scripting_load_python(const char *python_path)
 	dstr_free(&old_path);
 #endif
 
+#if PY_VERSION_HEX < 0x03070000
 	PyEval_InitThreads();
 	if (!PyEval_ThreadsInitialized())
 		return false;
+#endif
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
