@@ -26,6 +26,32 @@ class VolumeMeter : public QWidget {
 			   WRITE setForegroundWarningColor DESIGNABLE true)
 	Q_PROPERTY(QColor foregroundErrorColor READ getForegroundErrorColor
 			   WRITE setForegroundErrorColor DESIGNABLE true)
+
+	Q_PROPERTY(QColor backgroundNominalColorDisabled READ
+			   getBackgroundNominalColorDisabled WRITE
+				   setBackgroundNominalColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(QColor backgroundWarningColorDisabled READ
+			   getBackgroundWarningColorDisabled WRITE
+				   setBackgroundWarningColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor backgroundErrorColorDisabled READ
+			getBackgroundErrorColorDisabled WRITE
+				setBackgroundErrorColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundNominalColorDisabled READ
+			   getForegroundNominalColorDisabled WRITE
+				   setForegroundNominalColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundWarningColorDisabled READ
+			   getForegroundWarningColorDisabled WRITE
+				   setForegroundWarningColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor foregroundErrorColorDisabled READ
+			getForegroundErrorColorDisabled WRITE
+				setForegroundErrorColorDisabled DESIGNABLE true)
+
 	Q_PROPERTY(QColor clipColor READ getClipColor WRITE setClipColor
 			   DESIGNABLE true)
 	Q_PROPERTY(QColor magnitudeColor READ getMagnitudeColor WRITE
@@ -90,8 +116,6 @@ private:
 			 float magnitude, float peak, float peakHold);
 	void paintVTicks(QPainter &painter, int x, int y, int height);
 
-	QColor ConvertToGrayscale(const QColor &color) const;
-
 	QMutex dataMutex;
 
 	uint64_t currentLastUpdateTime = 0;
@@ -115,6 +139,14 @@ private:
 	QColor foregroundNominalColor;
 	QColor foregroundWarningColor;
 	QColor foregroundErrorColor;
+
+	QColor backgroundNominalColorDisabled;
+	QColor backgroundWarningColorDisabled;
+	QColor backgroundErrorColorDisabled;
+	QColor foregroundNominalColorDisabled;
+	QColor foregroundWarningColorDisabled;
+	QColor foregroundErrorColorDisabled;
+
 	QColor clipColor;
 	QColor magnitudeColor;
 	QColor majorTickColor;
@@ -157,6 +189,20 @@ public:
 	void setForegroundWarningColor(QColor c);
 	QColor getForegroundErrorColor() const;
 	void setForegroundErrorColor(QColor c);
+
+	QColor getBackgroundNominalColorDisabled() const;
+	void setBackgroundNominalColorDisabled(QColor c);
+	QColor getBackgroundWarningColorDisabled() const;
+	void setBackgroundWarningColorDisabled(QColor c);
+	QColor getBackgroundErrorColorDisabled() const;
+	void setBackgroundErrorColorDisabled(QColor c);
+	QColor getForegroundNominalColorDisabled() const;
+	void setForegroundNominalColorDisabled(QColor c);
+	QColor getForegroundWarningColorDisabled() const;
+	void setForegroundWarningColorDisabled(QColor c);
+	QColor getForegroundErrorColorDisabled() const;
+	void setForegroundErrorColorDisabled(QColor c);
+
 	QColor getClipColor() const;
 	void setClipColor(QColor c);
 	QColor getMagnitudeColor() const;
