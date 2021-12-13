@@ -97,6 +97,8 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (hw)
 		init_hw_decoder(d, c);
+#else
+	UNUSED_PARAMETER(hw);
 #endif
 
 	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
