@@ -43,7 +43,7 @@ jobs:
       displayName: 'Fetch symsrv-scripts'
       condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
 
-    - script: ./symsrv-scripts/main.bat "%CD%/symsrv-scripts" ".\main.ps1 -localSourceDir '%CD%' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '$(Build.SourceVersion)' -subModules 'plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/obs-vst,stream-labs,obs-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs'"
+    - script: ./symsrv-scripts/main.bat "%CD%/symsrv-scripts" ".\main.ps1 -localSourceDir '%CD%' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '$(Build.SourceVersion)' -subModules 'plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/obs-vst,stream-labs,obs-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs;plugins/win-dshow/libdshowcapture,stream-labs,libdshowcapture,streamlabs'"
       displayName: 'Run symbol server scripts'
       condition: and(succeeded(), contains(variables['Build.SourceBranch'], 'tags'))
       env:
