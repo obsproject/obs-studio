@@ -181,6 +181,8 @@ void YoutubeAuth::SetChatId(QString &chat_id)
 	if (chat && chat->cefWidget) {
 		chat->cefWidget->setURL(chat_url.toStdString());
 	}
+#else
+	UNUSED_PARAMETER(chat_id);
 #endif
 }
 
