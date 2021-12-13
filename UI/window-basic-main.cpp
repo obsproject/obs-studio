@@ -2015,7 +2015,7 @@ void OBSBasic::OBSInit()
 	SystemTray(true);
 #endif
 
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	taskBtn->setWindow(windowHandle());
 #endif
 
@@ -6650,7 +6650,7 @@ inline void OBSBasic::OnActivate(bool force)
 		App()->IncrementSleepInhibition();
 		UpdateProcessPriority();
 
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		taskBtn->setOverlayIcon(QIcon::fromTheme(
 			"obs-active", QIcon(":/res/images/active.png")));
 #endif
@@ -6681,7 +6681,7 @@ inline void OBSBasic::OnDeactivate()
 		App()->DecrementSleepInhibition();
 		ClearProcessPriority();
 
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		taskBtn->clearOverlayIcon();
 #endif
 		if (trayIcon && trayIcon->isVisible()) {
@@ -6708,7 +6708,7 @@ inline void OBSBasic::OnDeactivate()
 #endif
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray-paused",
 							   trayIconFile));
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 			taskBtn->setOverlayIcon(QIcon::fromTheme(
 				"obs-paused",
 				QIcon(":/res/images/paused.png")));
@@ -6724,7 +6724,7 @@ inline void OBSBasic::OnDeactivate()
 #endif
 			trayIcon->setIcon(QIcon::fromTheme("obs-tray-active",
 							   trayIconFile));
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 			taskBtn->setOverlayIcon(QIcon::fromTheme(
 				"obs-active",
 				QIcon(":/res/images/active.png")));
@@ -9697,7 +9697,7 @@ void OBSBasic::PauseRecording()
 
 		ui->statusbar->RecordingPaused();
 
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		taskBtn->setOverlayIcon(QIcon::fromTheme(
 			"obs-paused", QIcon(":/res/images/paused.png")));
 #endif
@@ -9741,7 +9741,7 @@ void OBSBasic::UnpauseRecording()
 
 		ui->statusbar->RecordingUnpaused();
 
-#ifdef _WIN32
+#if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		taskBtn->setOverlayIcon(QIcon::fromTheme(
 			"obs-active", QIcon(":/res/images/active.png")));
 #endif
