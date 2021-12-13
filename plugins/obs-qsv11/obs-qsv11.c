@@ -998,6 +998,13 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
+	if (voi->fps_num == 0)
+	{
+		warn("Encode failed: null fps_num");
+		LeaveCriticalSection(&g_QsvCs);
+		return false;
+	}
+
 	mfxBitstream *pBS = NULL;
 
 	int ret;
