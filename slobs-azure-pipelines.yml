@@ -76,7 +76,7 @@ jobs:
 
 - job: 'MacOX'
   pool:
-    vmImage: 'macos-10.14'
+    vmImage: 'macOS-11'
 
   strategy:
     matrix:
