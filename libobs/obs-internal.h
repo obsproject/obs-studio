@@ -448,8 +448,6 @@ struct obs_core {
 	enum obs_audio_rendering_mode audio_rendering_mode;
 
 	obs_task_handler_t ui_task_handler;
-
-	pthread_mutex_t video_stop_mutex;
 };
 
 extern struct obs_core *obs;

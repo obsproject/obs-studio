@@ -305,8 +305,6 @@ void video_output_close(video_t *video)
 {
 	if (!video)
 		return;
-	
-	pthread_mutex_lock(&obs->video_stop_mutex);
 
 	video_output_stop(video);
 
@@ -322,8 +320,6 @@ void video_output_close(video_t *video)
 	}
 
 	bfree(video);
-
-	pthread_mutex_unlock(&obs->video_stop_mutex);
 }
 
 static size_t video_get_input_idx(const video_t *video,
@@ -560,19 +556,25 @@ void video_output_stop(video_t *video)
 	if (!video)
 		return;
 
-	pthread_mutex_lock(&obs->video_stop_mutex);
-
 	if (video->initialized) {
 		video->initialized = false;
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
+		
+		if (video == obs->video.video)
+		{
+			// The graphics thread must end before mutexes are destroyed
+			if (obs->video.thread_initialized) {
+				pthread_join(obs->video.video_thread, &thread_ret);
+				obs->video.thread_initialized = false;
+			}
+		}
+
 		os_sem_destroy(video->update_semaphore);
 		pthread_mutex_destroy(&video->data_mutex);
 		pthread_mutex_destroy(&video->input_mutex);
 	}
-
-	pthread_mutex_unlock(&obs->video_stop_mutex);
 }
 
 bool video_output_stopped(video_t *video)

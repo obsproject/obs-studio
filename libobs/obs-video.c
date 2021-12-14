@@ -1045,9 +1045,8 @@ static const char *render_displays_name = "render_displays";
 static const char *output_frame_name = "output_frame";
 bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
-	// This should only fail to lock if there's a shutdown happening 
-	if (pthread_mutex_trylock(&obs->video_stop_mutex) != 0)
-		return !video_output_stopped(obs->video.video);
+	/* defer loop break to clean up sources */
+	const bool stop_requested = video_output_stopped(obs->video.video);
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
@@ -1127,9 +1126,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		context->fps_total_ns = 0;
 		context->fps_total_frames = 0;
 	}
-	
-	pthread_mutex_unlock(&obs->video_stop_mutex);
-	return !video_output_stopped(obs->video.video);
+
+	return !stop_requested;
 }
 
 void *obs_graphics_thread(void *param)
