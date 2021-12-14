@@ -587,7 +587,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 					QFormLayout *layout, QLabel *&label)
 {
 	const char *name = obs_property_name(prop);
-	obs_data_array_t *array = obs_data_get_array(settings, name);
+	OBSDataArrayAutoRelease array = obs_data_get_array(settings, name);
 	QListWidget *list = new QListWidget();
 	size_t count = obs_data_array_count(array);
 
@@ -599,12 +599,11 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
 	for (size_t i = 0; i < count; i++) {
-		obs_data_t *item = obs_data_array_item(array, i);
+		OBSDataAutoRelease item = obs_data_array_item(array, i);
 		list->addItem(QT_UTF8(obs_data_get_string(item, "value")));
 		QListWidgetItem *const list_item = list->item((int)i);
 		list_item->setSelected(obs_data_get_bool(item, "selected"));
 		list_item->setHidden(obs_data_get_bool(item, "hidden"));
-		obs_data_release(item);
 	}
 
 	WidgetInfo *info = new WidgetInfo(this, prop, list);
@@ -636,8 +635,6 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 
 	label = new QLabel(QT_UTF8(obs_property_description(prop)));
 	layout->addRow(label, subLayout);
-
-	obs_data_array_release(array);
 }
 
 QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
@@ -752,7 +749,7 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 				QLabel *&label)
 {
 	const char *name = obs_property_name(prop);
-	obs_data_t *font_obj = obs_data_get_obj(settings, name);
+	OBSDataAutoRelease font_obj = obs_data_get_obj(settings, name);
 	const char *face = obs_data_get_string(font_obj, "face");
 	const char *style = obs_data_get_string(font_obj, "style");
 	QPushButton *button = new QPushButton;
@@ -789,8 +786,6 @@ void OBSPropertiesView::AddFont(obs_property_t *prop, QFormLayout *layout,
 
 	label = new QLabel(QT_UTF8(obs_property_description(prop)));
 	layout->addRow(label, subLayout);
-
-	obs_data_release(font_obj);
 }
 
 namespace std {
@@ -1790,7 +1785,7 @@ bool WidgetInfo::ColorAlphaChanged(const char *setting)
 
 bool WidgetInfo::FontChanged(const char *setting)
 {
-	obs_data_t *font_obj = obs_data_get_obj(view->settings, setting);
+	OBSDataAutoRelease font_obj = obs_data_get_obj(view->settings, setting);
 	bool success;
 	uint32_t flags;
 	QFont font;
@@ -1809,7 +1804,6 @@ bool WidgetInfo::FontChanged(const char *setting)
 		MakeQFont(font_obj, font);
 		font = QFontDialog::getFont(&success, font, view, "Pick a Font",
 					    options);
-		obs_data_release(font_obj);
 	}
 
 	if (!success)
@@ -1833,7 +1827,6 @@ bool WidgetInfo::FontChanged(const char *setting)
 	label->setText(QString("%1 %2").arg(font.family(), font.styleName()));
 
 	obs_data_set_obj(view->settings, setting, font_obj);
-	obs_data_release(font_obj);
 	return true;
 }
 
@@ -1862,21 +1855,19 @@ void WidgetInfo::EditableListChanged()
 {
 	const char *setting = obs_property_name(property);
 	QListWidget *list = reinterpret_cast<QListWidget *>(widget);
-	obs_data_array *array = obs_data_array_create();
+	OBSDataArrayAutoRelease array = obs_data_array_create();
 
 	for (int i = 0; i < list->count(); i++) {
 		QListWidgetItem *item = list->item(i);
-		obs_data_t *arrayItem = obs_data_create();
+		OBSDataAutoRelease arrayItem = obs_data_create();
 		obs_data_set_string(arrayItem, "value",
 				    QT_TO_UTF8(item->text()));
 		obs_data_set_bool(arrayItem, "selected", item->isSelected());
 		obs_data_set_bool(arrayItem, "hidden", item->isHidden());
 		obs_data_array_push_back(array, arrayItem);
-		obs_data_release(arrayItem);
 	}
 
 	obs_data_set_array(view->settings, setting, array);
-	obs_data_array_release(array);
 
 	ControlChanged();
 }

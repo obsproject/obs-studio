@@ -136,12 +136,10 @@ static char *get_new_source_name(const char *name)
 	dstr_copy(&new_name, name);
 
 	for (;;) {
-		obs_source_t *existing_source =
+		OBSSourceAutoRelease existing_source =
 			obs_get_source_by_name(new_name.array);
 		if (!existing_source)
 			break;
-
-		obs_source_release(existing_source);
 
 		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
 	}
@@ -183,10 +181,9 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate,
 static void AddExisting(const char *name, bool visible, bool duplicate,
 			obs_transform_info *transform, obs_sceneitem_crop *crop)
 {
-	obs_source_t *source = obs_get_source_by_name(name);
+	OBSSourceAutoRelease source = obs_get_source_by_name(name);
 	if (source) {
-		AddExisting(source, visible, duplicate, transform, crop);
-		obs_source_release(source);
+		AddExisting(source.Get(), visible, duplicate, transform, crop);
 	}
 }
 
@@ -199,7 +196,7 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 	if (!scene)
 		return false;
 
-	obs_source_t *source = obs_get_source_by_name(name);
+	OBSSourceAutoRelease source = obs_get_source_by_name(name);
 	if (source && parent) {
 		OBSMessageBox::information(parent, QTStr("NameExists.Title"),
 					   QTStr("NameExists.Text"));
@@ -231,7 +228,6 @@ bool AddNew(QWidget *parent, const char *id, const char *name,
 		}
 	}
 
-	obs_source_release(source);
 	return success;
 }
 
@@ -264,19 +260,17 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		std::string scene_name =
 			obs_source_get_name(main->GetCurrentSceneSource());
 		auto undo = [scene_name, main](const std::string &data) {
-			obs_source_t *source =
+			OBSSourceAutoRelease source =
 				obs_get_source_by_name(data.c_str());
-			obs_source_release(source);
 			obs_source_remove(source);
 
-			obs_source_t *scene_source =
+			OBSSourceAutoRelease scene_source =
 				obs_get_source_by_name(scene_name.c_str());
-			main->SetCurrentScene(scene_source, true);
-			obs_source_release(scene_source);
+			main->SetCurrentScene(scene_source.Get(), true);
 		};
-		obs_data_t *wrapper = obs_data_create();
+		OBSDataAutoRelease wrapper = obs_data_create();
 		obs_data_set_string(wrapper, "id", id);
-		obs_sceneitem_t *item = obs_scene_sceneitem_from_source(
+		OBSSceneItemAutoRelease item = obs_scene_sceneitem_from_source(
 			main->GetCurrentScene(), newSource);
 		obs_data_set_int(wrapper, "item_id",
 				 obs_sceneitem_get_id(item));
@@ -286,31 +280,26 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 		obs_data_set_bool(wrapper, "visible", visible);
 
 		auto redo = [scene_name, main](const std::string &data) {
-			obs_source_t *scene_source =
+			OBSSourceAutoRelease scene_source =
 				obs_get_source_by_name(scene_name.c_str());
-			main->SetCurrentScene(scene_source, true);
-			obs_source_release(scene_source);
+			main->SetCurrentScene(scene_source.Get(), true);
 
-			obs_data_t *dat =
+			OBSDataAutoRelease dat =
 				obs_data_create_from_json(data.c_str());
 			OBSSource source;
 			AddNew(NULL, obs_data_get_string(dat, "id"),
 			       obs_data_get_string(dat, "name"),
 			       obs_data_get_bool(dat, "visible"), source);
-			obs_sceneitem_t *item = obs_scene_sceneitem_from_source(
-				main->GetCurrentScene(), source);
+			OBSSceneItemAutoRelease item =
+				obs_scene_sceneitem_from_source(
+					main->GetCurrentScene(), source);
 			obs_sceneitem_set_id(item, (int64_t)obs_data_get_int(
 							   dat, "item_id"));
-
-			obs_data_release(dat);
-			obs_sceneitem_release(item);
 		};
 		undo_s.add_action(QTStr("Undo.Add").arg(ui->sourceName->text()),
 				  undo, redo,
 				  std::string(obs_source_get_name(newSource)),
 				  std::string(obs_data_get_json(wrapper)));
-		obs_data_release(wrapper);
-		obs_sceneitem_release(item);
 	}
 
 	done(DialogCode::Accepted);
@@ -353,9 +342,8 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 
 	QString text{placeHolderText};
 	int i = 2;
-	obs_source_t *source = nullptr;
+	OBSSourceAutoRelease source = nullptr;
 	while ((source = obs_get_source_by_name(QT_TO_UTF8(text)))) {
-		obs_source_release(source);
 		text = QString("%1 %2").arg(placeHolderText).arg(i++);
 	}
 

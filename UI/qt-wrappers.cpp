@@ -189,9 +189,9 @@ QDataStream &operator>>(QDataStream &in, OBSScene &scene)
 
 	in >> sceneName;
 
-	obs_source_t *source = obs_get_source_by_name(QT_TO_UTF8(sceneName));
+	OBSSourceAutoRelease source =
+		obs_get_source_by_name(QT_TO_UTF8(sceneName));
 	scene = obs_scene_from_source(source);
-	obs_source_release(source);
 
 	return in;
 }
@@ -211,13 +211,11 @@ QDataStream &operator>>(QDataStream &in, OBSSceneItem &si)
 
 	in >> sceneName >> sourceName;
 
-	obs_source_t *sceneSource =
+	OBSSourceAutoRelease sceneSource =
 		obs_get_source_by_name(QT_TO_UTF8(sceneName));
 
 	obs_scene_t *scene = obs_scene_from_source(sceneSource);
 	si = obs_scene_find_source(scene, QT_TO_UTF8(sourceName));
-
-	obs_source_release(sceneSource);
 
 	return in;
 }

@@ -50,12 +50,11 @@ static string GenerateSourceName(const char *base)
 			name += ")";
 		}
 
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(name.c_str());
 
 		if (!source)
 			return name;
-		else
-			obs_source_release(source);
 	}
 }
 
@@ -106,8 +105,8 @@ void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	obs_data_t *settings = obs_data_create();
-	obs_source_t *source = nullptr;
+	OBSDataAutoRelease settings = obs_data_create();
+	OBSSourceAutoRelease source = nullptr;
 	const char *type = nullptr;
 	std::vector<const char *> types;
 	QString name;
@@ -167,7 +166,6 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 		}
 	}
 	if (type == nullptr || !obs_source_get_display_name(type)) {
-		obs_data_release(settings);
 		return;
 	}
 
@@ -179,10 +177,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
 		obs_scene_add(scene, source);
-		obs_source_release(source);
 	}
-
-	obs_data_release(settings);
 }
 
 void OBSBasic::dragEnterEvent(QDragEnterEvent *event)
