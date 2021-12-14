@@ -222,8 +222,16 @@ static bool nvenc_device_available(void)
 }
 #endif
 
-#ifdef _WIN32
 extern bool load_nvenc_lib(void);
+
+#ifndef _WIN32
+bool load_nvenc_lib(void)
+{
+	void *lib = os_dlopen("libnvidia-encode.so.1");
+	if (lib)
+		os_dlclose(lib);
+	return !!lib;
+}
 #endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
@@ -252,21 +260,10 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 
 	bool success = h264 || hevc;
 	if (success) {
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
 		success = nvenc_device_available() && load_nvenc_lib();
-#elif defined(__linux__)
-		success = nvenc_device_available();
-		if (success) {
-			void *const lib = os_dlopen("libnvidia-encode.so.1");
-			success = lib != NULL;
-			if (success)
-				os_dlclose(lib);
-		}
 #else
-		void *const lib = os_dlopen("libnvidia-encode.so.1");
-		success = lib != NULL;
-		if (success)
-			os_dlclose(lib);
+		success = load_nvenc_lib();
 #endif
 
 		if (success) {
