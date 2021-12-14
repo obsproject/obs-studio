@@ -79,6 +79,8 @@ bool load_nvenc_lib(void)
 #else
 	const char *const file = "libnvidia-encode.so.1";
 #endif
+	if (nvenc_lib)
+		return true;
 	nvenc_lib = os_dlopen(file);
 	return nvenc_lib != NULL;
 #else
