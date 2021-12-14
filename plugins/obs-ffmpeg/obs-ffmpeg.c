@@ -289,9 +289,12 @@ static bool vaapi_supported(void)
 }
 #endif
 
-#ifdef _WIN32
 extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
+
+#ifndef _WIN32
+void jim_nvenc_load(bool h264, bool hevc) {}
+void jim_nvenc_unload(void) {}
 #endif
 
 #if ENABLE_FFMPEG_LOGGING
@@ -343,6 +346,8 @@ bool obs_module_load(void)
 			}
 #endif
 		}
+#else
+		jim_nvenc_load(h264, hevc);
 #endif
 		if (h264)
 			obs_register_encoder(&h264_nvenc_encoder_info);
@@ -371,7 +376,7 @@ void obs_module_unload(void)
 	obs_ffmpeg_unload_logging();
 #endif
 
-#ifdef _WIN32
+#ifndef __APPLE__
 	jim_nvenc_unload();
 #endif
 }
