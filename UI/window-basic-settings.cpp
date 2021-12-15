@@ -1387,6 +1387,18 @@ void OBSBasicSettings::LoadGeneralSettings()
 	ui->multiviewLayout->addItem(
 		QTStr("Basic.Settings.General.MultiviewLayout.Horizontal.Extended.Top"),
 		static_cast<int>(MultiviewLayout::HORIZONTAL_TOP_24_SCENES));
+	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.4Scene"),
+		static_cast<int>(MultiviewLayout::SCENES_ONLY_4_SCENES));
+	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.9Scene"),
+		static_cast<int>(MultiviewLayout::SCENES_ONLY_9_SCENES));
+	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.16Scene"),
+		static_cast<int>(MultiviewLayout::SCENES_ONLY_16_SCENES));
+	ui->multiviewLayout->addItem(
+		QTStr("Basic.Settings.General.MultiviewLayout.25Scene"),
+		static_cast<int>(MultiviewLayout::SCENES_ONLY_25_SCENES));
 
 	ui->multiviewLayout->setCurrentIndex(ui->multiviewLayout->findData(
 		QVariant::fromValue(config_get_int(

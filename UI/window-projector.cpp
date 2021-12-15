@@ -205,6 +205,15 @@ static inline uint32_t labelOffset(obs_source_t *label, uint32_t cx)
 	case MultiviewLayout::HORIZONTAL_TOP_24_SCENES:
 		n = 6;
 		break;
+	case MultiviewLayout::SCENES_ONLY_25_SCENES:
+		n = 5;
+		break;
+	case MultiviewLayout::SCENES_ONLY_9_SCENES:
+		n = 3;
+		break;
+	case MultiviewLayout::SCENES_ONLY_4_SCENES:
+		n = 2;
+		break;
 	default:
 		n = 4;
 		break;
@@ -308,6 +317,22 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				window->sourceY = window->scenesCY;
 			}
 			break;
+		case MultiviewLayout::SCENES_ONLY_4_SCENES:
+			window->sourceX = (i % 2) * window->scenesCX;
+			window->sourceY = (i / 2) * window->scenesCY;
+			break;
+		case MultiviewLayout::SCENES_ONLY_9_SCENES:
+			window->sourceX = (i % 3) * window->scenesCX;
+			window->sourceY = (i / 3) * window->scenesCY;
+			break;
+		case MultiviewLayout::SCENES_ONLY_16_SCENES:
+			window->sourceX = (i % 4) * window->scenesCX;
+			window->sourceY = (i / 4) * window->scenesCY;
+			break;
+		case MultiviewLayout::SCENES_ONLY_25_SCENES:
+			window->sourceX = (i % 5) * window->scenesCX;
+			window->sourceY = (i / 5) * window->scenesCY;
+			break;
 		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES:
 			if (i < 4) {
 				window->sourceX = (float(i) * window->scenesCX);
@@ -365,6 +390,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 				window->sourceX += window->pvwprgCX;
 				window->labelX += window->pvwprgCX;
 			}
+			break;
+		case MultiviewLayout::SCENES_ONLY_4_SCENES:
+		case MultiviewLayout::SCENES_ONLY_9_SCENES:
+		case MultiviewLayout::SCENES_ONLY_16_SCENES:
+			window->sourceX = window->thickness;
+			window->sourceY = window->thickness;
+			window->labelX = window->offset;
 			break;
 		default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES and 18_SCENES
 			window->sourceX = window->thickness;
@@ -461,6 +493,13 @@ void OBSProjector::OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy)
 			labelColor);
 		obs_source_video_render(label);
 		gs_matrix_pop();
+	}
+	if (multiviewLayout == MultiviewLayout::SCENES_ONLY_4_SCENES ||
+	    multiviewLayout == MultiviewLayout::SCENES_ONLY_9_SCENES ||
+	    multiviewLayout == MultiviewLayout::SCENES_ONLY_16_SCENES ||
+	    multiviewLayout == MultiviewLayout::SCENES_ONLY_25_SCENES) {
+		endRegion();
+		return;
 	}
 
 	/* ----------------------------- */
@@ -742,6 +781,78 @@ static int getSourceByPosition(int x, int y, float ratio)
 		if (y > minY + ((maxY - minY) / 2))
 			pos += 4;
 		break;
+	case MultiviewLayout::SCENES_ONLY_4_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+			minY = (cy / 2) - (validY / 2);
+		}
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 2);
+		pos += ((y - minY) / ((maxY - minY) / 2)) * 2;
+
+		break;
+	case MultiviewLayout::SCENES_ONLY_9_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+			minY = (cy / 2) - (validY / 2);
+		}
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 3);
+		pos += ((y - minY) / ((maxY - minY) / 3)) * 3;
+
+		break;
+	case MultiviewLayout::SCENES_ONLY_16_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+			minY = (cy / 2) - (validY / 2);
+		}
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 4);
+		pos += ((y - minY) / ((maxY - minY) / 4)) * 4;
+
+		break;
+	case MultiviewLayout::SCENES_ONLY_25_SCENES:
+		if (float(cx) / float(cy) > ratio) {
+			int validX = cy * ratio;
+			minX = (cx / 2) - (validX / 2);
+			maxX = (cx / 2) + (validX / 2);
+		} else {
+			int validY = cx / ratio;
+			maxY = (cy / 2) + (validY / 2);
+			minY = (cy / 2) - (validY / 2);
+		}
+
+		if (x < minX || x > maxX || y < minY || y > maxY)
+			break;
+
+		pos = (x - minX) / ((maxX - minX) / 5);
+		pos += ((y - minY) / ((maxY - minY) / 5)) * 5;
+
+		break;
 	default: // MultiviewLayout::HORIZONTAL_TOP_8_SCENES
 		if (float(cx) / float(cy) > ratio) {
 			int validX = cy * ratio;
@@ -904,6 +1015,26 @@ void OBSProjector::UpdateMultiview()
 
 		maxSrcs = 24;
 		break;
+	case MultiviewLayout::SCENES_ONLY_4_SCENES:
+		pvwprgCX = fw / 2;
+		pvwprgCY = fh / 2;
+		maxSrcs = 4;
+		break;
+	case MultiviewLayout::SCENES_ONLY_9_SCENES:
+		pvwprgCX = fw / 3;
+		pvwprgCY = fh / 3;
+		maxSrcs = 9;
+		break;
+	case MultiviewLayout::SCENES_ONLY_16_SCENES:
+		pvwprgCX = fw / 4;
+		pvwprgCY = fh / 4;
+		maxSrcs = 16;
+		break;
+	case MultiviewLayout::SCENES_ONLY_25_SCENES:
+		pvwprgCX = fw / 5;
+		pvwprgCY = fh / 5;
+		maxSrcs = 25;
+		break;
 	default:
 		pvwprgCX = fw / 2;
 		pvwprgCY = fh / 2;
@@ -920,6 +1051,13 @@ void OBSProjector::UpdateMultiview()
 	case MultiviewLayout::HORIZONTAL_TOP_18_SCENES:
 		scenesCX = pvwprgCX / 3;
 		scenesCY = pvwprgCY / 3;
+		break;
+	case MultiviewLayout::SCENES_ONLY_4_SCENES:
+	case MultiviewLayout::SCENES_ONLY_9_SCENES:
+	case MultiviewLayout::SCENES_ONLY_16_SCENES:
+	case MultiviewLayout::SCENES_ONLY_25_SCENES:
+		scenesCX = pvwprgCX;
+		scenesCY = pvwprgCY;
 		break;
 	default:
 		scenesCX = pvwprgCX / 2;
