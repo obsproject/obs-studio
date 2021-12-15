@@ -16,6 +16,6 @@ jobs:
         with:
           node-version: 16
       - name: Download Script
-        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.1/dist/download.mjs
+        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.2/dist/download.mjs
       - name: Import latest translations from Crowdin
         run: node ./other/download.mjs
