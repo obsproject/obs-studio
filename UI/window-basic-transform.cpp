@@ -23,7 +23,7 @@ static bool find_sel(obs_scene_t *, obs_sceneitem_t *item, void *param)
 	return true;
 };
 
-static OBSSceneItem FindASelectedItem(OBSScene scene)
+static OBSSceneItem FindASelectedItem(obs_scene_t *scene)
 {
 	OBSSceneItem item;
 	obs_scene_enum_items(scene, find_sel, &item);
@@ -179,8 +179,8 @@ void OBSBasicTransform::OBSSceneItemRemoved(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window =
 		reinterpret_cast<OBSBasicTransform *>(param);
-	OBSScene scene = (obs_scene_t *)calldata_ptr(data, "scene");
-	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
+	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(data, "scene");
+	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item)
 		window->SetItem(FindASelectedItem(scene));
@@ -200,8 +200,8 @@ void OBSBasicTransform::OBSSceneItemDeselect(void *param, calldata_t *data)
 {
 	OBSBasicTransform *window =
 		reinterpret_cast<OBSBasicTransform *>(param);
-	OBSScene scene = (obs_scene_t *)calldata_ptr(data, "scene");
-	OBSSceneItem item = (obs_sceneitem_t *)calldata_ptr(data, "item");
+	obs_scene_t *scene = (obs_scene_t *)calldata_ptr(data, "scene");
+	obs_sceneitem_t *item = (obs_sceneitem_t *)calldata_ptr(data, "item");
 
 	if (item == window->item) {
 		window->setWindowTitle(
