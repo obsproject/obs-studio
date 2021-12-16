@@ -525,6 +525,8 @@ static void *ft2_source_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_source_update(source, NULL);
 
+	UNUSED_PARAMETER(settings);
+
 	return srcdata;
 }
 

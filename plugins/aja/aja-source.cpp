@@ -854,8 +854,6 @@ static void aja_source_deactivate(void *data)
 
 static void aja_source_update(void *data, obs_data_t *settings)
 {
-	blog(LOG_INFO, "aja_source_update: Begin callback...");
-
 	static bool initialized = false;
 
 	auto ajaSource = (AJASource *)data;
@@ -919,8 +917,7 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		auto prevCardEntry = cardManager.GetCardEntry(currentCardID);
 		if (prevCardEntry) {
 			const std::string &ioSelectStr =
-				aja::IOSelectionToString(curr_props.ioSelect)
-					.c_str();
+				aja::IOSelectionToString(curr_props.ioSelect);
 			if (!prevCardEntry->ReleaseInputSelection(
 				    curr_props.ioSelect, curr_props.deviceID,
 				    ajaSource->GetName())) {
@@ -985,7 +982,7 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	// Release Channels if IOSelection changes
 	if (want_props.ioSelect != curr_props.ioSelect) {
 		const std::string &ioSelectStr =
-			aja::IOSelectionToString(curr_props.ioSelect).c_str();
+			aja::IOSelectionToString(curr_props.ioSelect);
 		if (!cardEntry->ReleaseInputSelection(curr_props.ioSelect,
 						      curr_props.deviceID,
 						      ajaSource->GetName())) {

@@ -200,6 +200,7 @@ struct XCompcapMain_private {
 	bool show_cursor = true;
 	bool cursor_outside = false;
 	xcursor_t *cursor = nullptr;
+	bool tick_error_suppressed = false;
 };
 
 XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
@@ -300,14 +301,6 @@ static void xcc_cleanup(XCompcapMain_private *p)
 		GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 		glBindTexture(GL_TEXTURE_2D, gltex);
 		if (p->glxpixmap) {
-			glXReleaseTexImageEXT(xdisp, p->glxpixmap,
-					      GLX_FRONT_LEFT_EXT);
-			if (xlock.gotError()) {
-				blog(LOG_ERROR,
-				     "cleanup glXReleaseTexImageEXT failed: %s",
-				     xlock.getErrorText().c_str());
-				xlock.resetError();
-			}
 			glXDestroyPixmap(xdisp, p->glxpixmap);
 			if (xlock.gotError()) {
 				blog(LOG_ERROR,
@@ -397,6 +390,8 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	Window prevWin = p->win;
 
 	xcc_cleanup(p);
+
+	p->tick_error_suppressed = false;
 
 	if (settings) {
 		/* Settings initialized or changed */
@@ -554,7 +549,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
-	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT, NULL);
+	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
 	if (xlock.gotError()) {
 		blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
 		     xlock.getErrorText().c_str());
@@ -568,6 +563,12 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// glxBindTexImageEXT might modify the textures format.
 	gs_color_format format = gs_format_from_tex();
+	glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
+	if (xlock.gotError()) {
+		blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
+		     xlock.getErrorText().c_str());
+		xlock.resetError();
+	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 	// sync OBS texture format based on any glxBindTexImageEXT changes
 	p->gltex->format = format;
@@ -620,7 +621,7 @@ void XCompcapMain::tick(float seconds)
 		p->win = 0;
 	}
 
-	XDisplayLock xlock;
+	XErrorLock xlock;
 	XWindowAttributes attr;
 
 	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
@@ -651,6 +652,14 @@ void XCompcapMain::tick(float seconds)
 		XSync(xdisp, 0);
 	}
 
+	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(p->gltex));
+	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
+	if (xlock.gotError() && !p->tick_error_suppressed) {
+		blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
+		     xlock.getErrorText().c_str());
+		p->tick_error_suppressed = true;
+	}
+
 	if (p->include_border) {
 		gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
 				       p->cur_cut_top, width(), height());
@@ -660,6 +669,14 @@ void XCompcapMain::tick(float seconds)
 				       p->cur_cut_top + p->border, width(),
 				       height());
 	}
+
+	glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
+	if (xlock.gotError() && !p->tick_error_suppressed) {
+		blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
+		     xlock.getErrorText().c_str());
+		p->tick_error_suppressed = true;
+	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (p->cursor && p->show_cursor) {
 		xcursor_tick(p->cursor);

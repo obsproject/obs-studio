@@ -25,9 +25,11 @@
 
 #ifdef _MSC_VER
 #define OBS_DEPRECATED __declspec(deprecated)
+#define OBS_NORETURN __declspec(noreturn)
 #define FORCE_INLINE __forceinline
 #else
 #define OBS_DEPRECATED __attribute__((deprecated))
+#define OBS_NORETURN __attribute__((noreturn))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 

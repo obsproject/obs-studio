@@ -360,6 +360,8 @@ struct obs_core_data {
 	DARRAY(struct draw_callback) draw_callbacks;
 	DARRAY(struct tick_callback) tick_callbacks;
 
+	DARRAY(struct obs_source *) source_iteration_list;
+
 	struct obs_view main_view;
 
 	long long unnamed_index;

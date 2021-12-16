@@ -643,17 +643,14 @@ static string GetSceneCollectionFileFromName(const char *name)
 		if (ent.directory)
 			continue;
 
-		obs_data_t *data =
+		OBSDataAutoRelease data =
 			obs_data_create_from_json_file_safe(ent.path, "bak");
 		const char *curName = obs_data_get_string(data, "name");
 
 		if (astrcmpi(name, curName) == 0) {
 			outputPath = ent.path;
-			obs_data_release(data);
 			break;
 		}
-
-		obs_data_release(data);
 	}
 
 	os_globfree(glob);
@@ -1446,10 +1443,9 @@ bool OBSApp::OBSInit()
 	bool browserHWAccel =
 		config_get_bool(globalConfig, "General", "BrowserHWAccel");
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_bool(settings, "BrowserHWAccel", browserHWAccel);
 	obs_apply_private_data(settings);
-	obs_data_release(settings);
 
 	blog(LOG_INFO, "Current Date/Time: %s",
 	     CurrentDateTimeString().c_str());
@@ -2556,7 +2552,8 @@ static void convert_x264_settings(obs_data_t *data)
 
 static void convert_14_2_encoder_setting(const char *encoder, const char *file)
 {
-	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	OBSDataAutoRelease data =
+		obs_data_create_from_json_file_safe(file, "bak");
 	obs_data_item_t *cbr_item = obs_data_item_byname(data, "cbr");
 	obs_data_item_t *rc_item = obs_data_item_byname(data, "rate_control");
 	bool modified = false;
@@ -2585,7 +2582,6 @@ static void convert_14_2_encoder_setting(const char *encoder, const char *file)
 
 	obs_data_item_release(&rc_item);
 	obs_data_item_release(&cbr_item);
-	obs_data_release(data);
 }
 
 static void upgrade_settings(void)

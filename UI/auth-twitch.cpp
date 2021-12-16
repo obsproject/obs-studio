@@ -1,8 +1,10 @@
 #include "auth-twitch.hpp"
 
+#include <QRegularExpression>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QUuid>
 
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
@@ -146,6 +148,8 @@ void TwitchAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
 	config_set_string(main->Config(), service(), "Name", name.c_str());
+	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
+
 	if (uiLoaded) {
 		config_set_string(main->Config(), service(), "DockState",
 				  main->saveState().toBase64().constData());
@@ -167,6 +171,8 @@ bool TwitchAuth::LoadInternal()
 
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
+	uuid = get_config_str(main, service(), "UUID");
+
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
@@ -203,6 +209,15 @@ void TwitchAuth::LoadUI()
 	QCefWidget *browser;
 	std::string url;
 	std::string script;
+
+	/* Twitch panels require a UUID, it does not actually need to be unique,
+	 * and is generated client-side.
+	 * It is only for preferences stored in the browser's local store. */
+	if (uuid.empty()) {
+		QString qtUuid = QUuid::createUuid().toString();
+		qtUuid.replace(QRegularExpression("[{}-]"), "");
+		uuid = qtUuid.toStdString();
+	}
 
 	std::string moderation_tools_url;
 	moderation_tools_url = "https://www.twitch.tv/";
@@ -345,6 +360,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url = "https://dashboard.twitch.tv/popout/u/";
 	url += name;
 	url += "/stream-manager/activity-feed";
+	url += "?uuid=" + uuid;
 
 	feed.reset(new BrowserDock());
 	feed->setObjectName("twitchFeed");

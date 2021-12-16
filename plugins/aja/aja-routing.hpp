@@ -50,7 +50,7 @@ struct RoutingConfig {
  */
 using VPIDSpec = std::pair<RasterDefinition, VPIDStandard>;
 
-static const std::map<VPIDSpec, SDIWireFormat> kSDIWireFormats = {
+static inline const std::map<VPIDSpec, SDIWireFormat> kSDIWireFormats = {
 	{{RasterDefinition::SD, VPIDStandard_483_576}, SDIWireFormat::SD_ST352},
 	{{RasterDefinition::HD, VPIDStandard_720},
 	 SDIWireFormat::HD_720p_ST292},

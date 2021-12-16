@@ -696,6 +696,7 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
+	da_free(data->source_iteration_list);
 	obs_data_release(data->private_data);
 }
 

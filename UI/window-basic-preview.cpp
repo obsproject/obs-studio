@@ -32,9 +32,6 @@ OBSBasicPreview::~OBSBasicPreview()
 		gs_vertexbuffer_destroy(rectFill);
 
 	obs_leave_graphics();
-
-	if (wrapper)
-		obs_data_release(wrapper);
 }
 
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
@@ -568,8 +565,6 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	vec2_zero(&lastMoveOffset);
 
 	mousePos = startPos;
-	if (wrapper)
-		obs_data_release(wrapper);
 	wrapper =
 		obs_scene_save_transform_states(main->GetCurrentScene(), true);
 	changed = false;
@@ -706,17 +701,16 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 		selectedItems.clear();
 	}
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	obs_data_t *rwrapper =
+	OBSDataAutoRelease rwrapper =
 		obs_scene_save_transform_states(main->GetCurrentScene(), true);
 
 	auto undo_redo = [](const std::string &data) {
-		obs_data_t *dat = obs_data_create_from_json(data.c_str());
-		obs_source_t *source = obs_get_source_by_name(
+		OBSDataAutoRelease dat =
+			obs_data_create_from_json(data.c_str());
+		OBSSourceAutoRelease source = obs_get_source_by_name(
 			obs_data_get_string(dat, "scene_name"));
 		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-			->SetCurrentScene(source, true);
-		obs_source_release(source);
-		obs_data_release(dat);
+			->SetCurrentScene(source.Get(), true);
 
 		obs_scene_load_transform_states(data.c_str());
 	};
@@ -732,13 +726,7 @@ void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 				undo_redo, undo_redo, undo_data, redo_data);
 	}
 
-	if (wrapper)
-		obs_data_release(wrapper);
-
-	if (rwrapper)
-		obs_data_release(rwrapper);
-
-	wrapper = NULL;
+	wrapper = nullptr;
 }
 
 struct SelectedItemBounds {

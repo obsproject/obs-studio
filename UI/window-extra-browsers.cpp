@@ -5,6 +5,7 @@
 
 #include <QLineEdit>
 #include <QHBoxLayout>
+#include <QUuid>
 
 #include <json11.hpp>
 
@@ -178,6 +179,7 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 		main->extraBrowserDocks[idx].data());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
+	dock->setProperty("uuid", item.uuid);
 	main->extraBrowserDockActions[idx]->setText(item.title);
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
@@ -224,7 +226,8 @@ void ExtraBrowsersModel::Apply()
 		if (item.prevIdx != -1) {
 			UpdateItem(item);
 		} else {
-			main->AddExtraBrowserDock(item.title, item.url, true);
+			main->AddExtraBrowserDock(item.title, item.url,
+						  item.uuid, true);
 		}
 	}
 
@@ -479,8 +482,10 @@ void OBSBasic::LoadExtraBrowserDocks()
 	for (Json &item : array) {
 		std::string title = item["title"].string_value();
 		std::string url = item["url"].string_value();
+		std::string uuid = item["uuid"].string_value();
 
-		AddExtraBrowserDock(title.c_str(), url.c_str(), false);
+		AddExtraBrowserDock(title.c_str(), url.c_str(), uuid.c_str(),
+				    false);
 	}
 }
 
@@ -490,9 +495,11 @@ void OBSBasic::SaveExtraBrowserDocks()
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
 		QAction *action = extraBrowserDockActions[i].data();
 		QString url = extraBrowserDockTargets[i];
+		QString uuid = action->property("uuid").toString();
 		Json::object obj{
 			{"title", QT_TO_UTF8(action->text())},
 			{"url", QT_TO_UTF8(url)},
+			{"uuid", QT_TO_UTF8(uuid)},
 		};
 		array.push_back(obj);
 	}
@@ -515,7 +522,7 @@ void OBSBasic::ManageExtraBrowserDocks()
 }
 
 void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
-				   bool firstCreate)
+				   const QString &uuid, bool firstCreate)
 {
 	static int panel_version = -1;
 	if (panel_version == -1) {
@@ -523,6 +530,9 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	}
 
 	BrowserDock *dock = new BrowserDock();
+	QString bId(uuid.isEmpty() ? QUuid::createUuid().toString() : uuid);
+	bId.replace(QRegularExpression("[{}-]"), "");
+	dock->setProperty("uuid", bId);
 	dock->setObjectName(title + OBJ_NAME_SUFFIX);
 	dock->resize(460, 600);
 	dock->setMinimumSize(80, 80);

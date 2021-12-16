@@ -6,7 +6,7 @@ on:
     paths:
       - "**/en-US.ini"
 jobs:
-  upload:
+  crowdin-sync-upload:
     name: Upload English strings
     runs-on: ubuntu-latest
     env:
@@ -16,11 +16,11 @@ jobs:
       - uses: actions/checkout@v2
         with:
           submodules: recursive
-          fetch-depth: 2
+          fetch-depth: 100
       - uses: actions/setup-node@v2
         with:
           node-version: 16
       - name: Download Script
-        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.0/dist/upload.mjs
+        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.2/dist/upload.mjs
       - name: Upload English strings to Crowdin
         run: node ./other/upload.mjs

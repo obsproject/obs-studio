@@ -83,27 +83,59 @@ add_library(aja-output-ui MODULE
 	${aja-output-ui_SOURCES}
 	${aja-output-ui_UI_HEADERS})
 
-if (APPLE)
-	target_compile_definitions(aja-output-ui PUBLIC
-		AJAMac
-		AJA_MAC)
+set(aja_LIBRARIES
+		$<IF:$<CONFIG:Debug>,${LIBAJANTV2_DEBUG_LIBRARIES},${LIBAJANTV2_LIBRARIES}>
+		libobs)
+
+# macOS
+if(APPLE)
+	set(aja_COMPILE_DEFS
+			AJAMac
+			AJA_MAC)
+
+	find_library(IOKIT_FRAMEWORK Iokit)
+	find_library(COREFOUNDATION_LIBRARY CoreFoundation)
+	find_library(APPKIT_FRAMEWORK AppKit)
+
+	list(APPEND aja_LIBRARIES
+			${IOKIT_FRAMEWORK}
+			${COREFOUNDATION_LIBRARY}
+			${APPKIT_FRAMEWORK})
+	# Windows
 elseif(WIN32)
-	target_compile_definitions(aja-output-ui PUBLIC
-		AJA_WINDOWS
-		_WINDOWS
-		WIN32
-		MSWindows)
+	set(aja_COMPILE_DEFS
+			AJA_WINDOWS
+			_WINDOWS
+			WIN32
+			MSWindows)
+
+	if(CMAKE_BUILD_TYPE STREQUAL Debug)
+		list(APPEND aja_COMPILE_DEFS
+				_DEBUG)
+	else()
+		list(APPEND aja_COMPILE_DEFS
+				NDEBUG)
+	endif()
+
+	list(APPEND aja_LIBRARIES
+			ws2_32.lib
+			setupapi.lib
+			Winmm.lib
+			netapi32.lib
+			Shlwapi.lib)
+	# Linux
 elseif(UNIX AND NOT APPLE)
-	target_compile_definitions(aja-output-ui PUBLIC
-		AJA_LINUX
-		AJALinux)
+	set(aja_COMPILE_DEFS
+			AJA_LINUX
+			AJALinux)
 endif()
 
 target_include_directories(aja-output-ui PUBLIC
 	${LIBAJANTV2_INCLUDE_DIRS})
-
+target_compile_definitions(aja-output-ui PUBLIC ${aja_COMPILE_DEFS})
 target_link_libraries(aja-output-ui
 	${frontend-tools_PLATFORM_LIBS}
+	${aja_LIBRARIES}
 	obs-frontend-api
 	Qt5::Widgets
 	libobs)

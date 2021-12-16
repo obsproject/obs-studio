@@ -390,21 +390,21 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
-		OBSOutput output = main->outputHandler->streamOutput;
+		OBSOutput output = main->outputHandler->streamOutput.Get();
 		obs_output_addref(output);
 		return output;
 	}
 
 	obs_output_t *obs_frontend_get_recording_output(void) override
 	{
-		OBSOutput out = main->outputHandler->fileOutput;
+		OBSOutput out = main->outputHandler->fileOutput.Get();
 		obs_output_addref(out);
 		return out;
 	}
 
 	obs_output_t *obs_frontend_get_replay_buffer_output(void) override
 	{
-		OBSOutput out = main->outputHandler->replayBuffer;
+		OBSOutput out = main->outputHandler->replayBuffer.Get();
 		obs_output_addref(out);
 		return out;
 	}
@@ -584,7 +584,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_virtualcam_output(void) override
 	{
-		OBSOutput output = main->outputHandler->virtualCam;
+		OBSOutput output = main->outputHandler->virtualCam.Get();
 		obs_output_addref(output);
 		return output;
 	}

@@ -11,6 +11,7 @@
 #include <util/platform.h>
 #include <media-io/video-io.h>
 #include <media-io/video-frame.h>
+#include <ajantv2/includes/ntv2devicescanner.h>
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("aja-output-ui", "en-US")
@@ -310,6 +311,13 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 bool obs_module_load(void)
 {
+	CNTV2DeviceScanner scanner;
+	auto numDevices = scanner.GetNumDevices();
+
+	if (numDevices == 0) {
+		return false;
+	}
+
 	addOutputUI();
 
 	obs_frontend_add_event_callback(OBSEvent, nullptr);

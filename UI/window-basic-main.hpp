@@ -219,7 +219,7 @@ private:
 	ContextBarSize contextBarSize = ContextBarSize_Normal;
 
 	std::deque<SourceCopyInfo> clipboard;
-	OBSWeakSource copyFiltersSource;
+	OBSWeakSourceAutoRelease copyFiltersSource;
 	bool copyVisible = true;
 
 	bool closing = false;
@@ -538,7 +538,7 @@ private:
 	void SaveExtraBrowserDocks();
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
-				 bool firstCreate);
+				 const QString &uuid, bool firstCreate);
 #endif
 
 	QIcon imageIcon;
