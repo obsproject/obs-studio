@@ -367,24 +367,20 @@ static bool gl_wayland_egl_device_query_dmabuf_capabilities(
 	gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
 	uint32_t **drm_formats, size_t *n_formats)
 {
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(dmabuf_flags);
-	UNUSED_PARAMETER(drm_formats);
-	UNUSED_PARAMETER(n_formats);
+	struct gl_platform *plat = device->plat;
 
-	return false;
+	return gl_egl_query_dmabuf_capabilities(plat->display, dmabuf_flags,
+						drm_formats, n_formats);
 }
 
 static bool gl_wayland_egl_device_query_dmabuf_modifiers_for_format(
 	gs_device_t *device, uint32_t drm_format, uint64_t **modifiers,
 	size_t *n_modifiers)
 {
-	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(drm_format);
-	UNUSED_PARAMETER(modifiers);
-	UNUSED_PARAMETER(n_modifiers);
+	struct gl_platform *plat = device->plat;
 
-	return false;
+	return gl_egl_query_dmabuf_modifiers_for_format(
+		plat->display, drm_format, modifiers, n_modifiers);
 }
 
 static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
