@@ -25,6 +25,7 @@
 #include "obs-ffmpeg-output.h"
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
+#include <libavutil/channel_layout.h>
 
 struct ffmpeg_output {
 	obs_output_t *output;

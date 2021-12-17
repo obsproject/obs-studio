@@ -29,6 +29,7 @@
 #include <util/dstr.h>
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/channel_layout.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
 #define ANSI_COLOR_MAGENTA "\x1b[0;95m"
