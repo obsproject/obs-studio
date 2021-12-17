@@ -47,6 +47,7 @@ using OBSWeakEncoder = OBSRef<obs_weak_encoder_t *, obs_weak_encoder_addref,
 using OBSWeakService = OBSRef<obs_weak_service_t *, obs_weak_service_addref,
 			      obs_weak_service_release>;
 
+#define OBS_AUTORELEASE
 inline void ___source_dummy_addref(obs_source_t *){};
 inline void ___scene_dummy_addref(obs_scene_t *){};
 inline void ___sceneitem_dummy_addref(obs_sceneitem_t *){};
