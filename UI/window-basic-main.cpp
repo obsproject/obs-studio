@@ -4563,6 +4563,13 @@ void OBSBasic::ClearSceneData()
 
 	undo_s.clear();
 
+	// Wait one frame for the graphics thread to remove any remaining references
+	obs_queue_task(
+		OBS_TASK_GRAPHICS, [](void *) {}, nullptr, true);
+
+	// Post all UI events to purge any remaining references
+	QApplication::sendPostedEvents(this);
+
 	auto leakCb = [](void *, obs_source_t *source) {
 		blog(LOG_WARNING,
 		     "Source '%s' not destroyed after remove! Leaking refs: %ld",
