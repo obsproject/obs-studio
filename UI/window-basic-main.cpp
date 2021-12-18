@@ -4563,6 +4563,16 @@ void OBSBasic::ClearSceneData()
 
 	undo_s.clear();
 
+	auto leakCb = [](void *, obs_source_t *source) {
+		blog(LOG_WARNING,
+		     "Source '%s' not destroyed after remove! Leaking refs: %ld",
+		     obs_source_get_name(source),
+		     obs_source_get_refs(source) + 1);
+		return true;
+	};
+
+	obs_enum_all_sources(leakCb, nullptr);
+
 	disableSaving--;
 
 	blog(LOG_INFO, "All scene data cleared");
