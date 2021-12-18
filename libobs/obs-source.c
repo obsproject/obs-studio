@@ -793,8 +793,12 @@ void obs_source_remove(obs_source_t *source)
 		return;
 
 	if (!source->removed) {
-		source->removed = true;
-		obs_source_dosignal(source, "source_remove", "remove");
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) {
+			s->removed = true;
+			obs_source_dosignal(s, "source_remove", "remove");
+			obs_source_release(s);
+		}
 	}
 }
 
