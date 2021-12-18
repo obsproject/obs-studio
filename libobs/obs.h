@@ -905,6 +905,7 @@ EXPORT obs_source_t *obs_source_duplicate(obs_source_t *source,
  * released, the source is destroyed.
  */
 EXPORT void obs_source_addref(obs_source_t *source);
+EXPORT long obs_source_get_refs(obs_source_t *source);
 EXPORT void obs_source_release(obs_source_t *source);
 
 EXPORT void obs_weak_source_addref(obs_weak_source_t *weak);

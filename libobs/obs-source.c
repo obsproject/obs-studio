@@ -712,6 +712,14 @@ void obs_source_addref(obs_source_t *source)
 	obs_ref_addref(&source->control->ref);
 }
 
+long obs_source_get_refs(obs_source_t *source)
+{
+	if (!source)
+		return 0;
+
+	return os_atomic_load_long(&source->control->ref);
+}
+
 void obs_source_release(obs_source_t *source)
 {
 	if (!obs) {
