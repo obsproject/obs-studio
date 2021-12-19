@@ -271,6 +271,15 @@ Libobs Objects
 
 ---------------------
 
+.. function:: obs_scene_t *obs_get_scene_by_name(const char *name)
+
+   Gets a scene by its name.
+  
+   Increments the scene reference counter, use
+   :c:func:`obs_scene_release()` to release it when complete.
+
+---------------------
+
 .. function:: obs_output_t *obs_get_output_by_name(const char *name)
 
    Gets an output by its name.
