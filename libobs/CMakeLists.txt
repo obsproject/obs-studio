@@ -381,6 +381,7 @@ set(libobs_util_SOURCES
 	util/bmem.c
 	util/config-file.c
 	util/lexer.c
+	util/task.c
 	util/dstr.c
 	util/utf8.c
 	util/crc32.c
@@ -411,6 +412,7 @@ set(libobs_util_HEADERS
 	util/serializer.h
 	util/config-file.h
 	util/lexer.h
+	util/task.h
 	util/platform.h
 	util/profiler.h
 	util/profiler.hpp
