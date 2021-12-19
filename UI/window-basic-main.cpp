@@ -4563,6 +4563,10 @@ void OBSBasic::ClearSceneData()
 
 	undo_s.clear();
 
+	/* using QEvent::DeferredDelete explicitly is the only way to ensure
+	 * that deleteLater events are processed at this point */
+	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
+
 	disableSaving--;
 
 	blog(LOG_INFO, "All scene data cleared");
