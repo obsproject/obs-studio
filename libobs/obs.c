@@ -560,6 +560,8 @@ static void obs_free_graphics(void)
 	}
 }
 
+static void set_audio_thread(void *unused);
+
 static bool obs_init_audio(struct audio_output_info *ai)
 {
 	struct obs_core_audio *audio = &obs->audio;
@@ -569,6 +571,11 @@ static bool obs_init_audio(struct audio_output_info *ai)
 
 	if (pthread_mutex_init_recursive(&audio->monitoring_mutex) != 0)
 		return false;
+	if (pthread_mutex_init(&audio->task_mutex, NULL) != 0)
+		return false;
+
+	struct obs_task_info audio_init = {.task = set_audio_thread};
+	circlebuf_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
 
 	audio->user_volume = 1.0f;
 
@@ -609,6 +616,8 @@ static void obs_free_audio(void)
 	da_free(audio->monitors);
 	bfree(audio->monitoring_device_name);
 	bfree(audio->monitoring_device_id);
+	circlebuf_free(&audio->tasks);
+	pthread_mutex_destroy(&audio->task_mutex);
 	pthread_mutex_destroy(&audio->monitoring_mutex);
 
 	memset(audio, 0, sizeof(struct obs_core_audio));
@@ -838,6 +847,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	obs = bzalloc(sizeof(struct obs_core));
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
+	pthread_mutex_init_value(&obs->audio.task_mutex);
 	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 
@@ -2511,11 +2521,19 @@ struct task_wait_info {
 static void task_wait_callback(void *param)
 {
 	struct task_wait_info *info = param;
-	info->task(info->param);
+	if (info->task)
+		info->task(info->param);
 	os_event_signal(info->event);
 }
 
 THREAD_LOCAL bool is_graphics_thread = false;
+THREAD_LOCAL bool is_audio_thread = false;
+
+static void set_audio_thread(void *unused)
+{
+	is_audio_thread = true;
+	UNUSED_PARAMETER(unused);
+}
 
 static bool in_task_thread(enum obs_task_type type)
 {
@@ -2523,6 +2541,8 @@ static bool in_task_thread(enum obs_task_type type)
 
 	if (type == OBS_TASK_GRAPHICS)
 		return is_graphics_thread;
+	else if (type == OBS_TASK_AUDIO)
+		return is_audio_thread;
 
 	assert(false);
 	return false;
@@ -2541,6 +2561,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 	} else {
 		if (in_task_thread(type)) {
 			task(param);
+
 		} else if (wait) {
 			struct task_wait_info info = {
 				.task = task,
@@ -2551,13 +2572,22 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 			obs_queue_task(type, task_wait_callback, &info, false);
 			os_event_wait(info.event);
 			os_event_destroy(info.event);
-		} else {
+
+		} else if (type == OBS_TASK_GRAPHICS) {
 			struct obs_core_video *video = &obs->video;
 			struct obs_task_info info = {task, param};
 
 			pthread_mutex_lock(&video->task_mutex);
 			circlebuf_push_back(&video->tasks, &info, sizeof(info));
 			pthread_mutex_unlock(&video->task_mutex);
+
+		} else if (type == OBS_TASK_AUDIO) {
+			struct obs_core_audio *audio = &obs->audio;
+			struct obs_task_info info = {task, param};
+
+			pthread_mutex_lock(&audio->task_mutex);
+			circlebuf_push_back(&audio->tasks, &info, sizeof(info));
+			pthread_mutex_unlock(&audio->task_mutex);
 		}
 	}
 }

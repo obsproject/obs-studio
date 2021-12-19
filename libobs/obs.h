@@ -796,6 +796,7 @@ typedef void (*obs_task_t)(void *param);
 enum obs_task_type {
 	OBS_TASK_UI,
 	OBS_TASK_GRAPHICS,
+	OBS_TASK_AUDIO,
 };
 
 EXPORT void obs_queue_task(enum obs_task_type type, obs_task_t task,
