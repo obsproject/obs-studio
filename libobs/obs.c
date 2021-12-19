@@ -25,6 +25,8 @@
 
 struct obs_core *obs = NULL;
 
+static THREAD_LOCAL bool is_ui_thread = false;
+
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
 
@@ -2535,14 +2537,14 @@ static void set_audio_thread(void *unused)
 	UNUSED_PARAMETER(unused);
 }
 
-static bool in_task_thread(enum obs_task_type type)
+bool obs_in_task_thread(enum obs_task_type type)
 {
-	/* NOTE: OBS_TASK_UI is handled independently */
-
 	if (type == OBS_TASK_GRAPHICS)
 		return is_graphics_thread;
 	else if (type == OBS_TASK_AUDIO)
 		return is_audio_thread;
+	else if (type == OBS_TASK_UI)
+		return is_ui_thread;
 
 	assert(false);
 	return false;
@@ -2559,7 +2561,7 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 					"there's no UI task handler!");
 		}
 	} else {
-		if (in_task_thread(type)) {
+		if (obs_in_task_thread(type)) {
 			task(param);
 
 		} else if (wait) {
@@ -2592,7 +2594,14 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 	}
 }
 
+static void set_ui_thread(void *unused)
+{
+	is_ui_thread = true;
+	UNUSED_PARAMETER(unused);
+}
+
 void obs_set_ui_task_handler(obs_task_handler_t handler)
 {
 	obs->ui_task_handler = handler;
+	obs_queue_task(OBS_TASK_UI, set_ui_thread, NULL, false);
 }
