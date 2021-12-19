@@ -797,11 +797,14 @@ enum obs_task_type {
 	OBS_TASK_UI,
 	OBS_TASK_GRAPHICS,
 	OBS_TASK_AUDIO,
+	OBS_TASK_DESTROY,
 };
 
 EXPORT void obs_queue_task(enum obs_task_type type, obs_task_t task,
 			   void *param, bool wait);
 EXPORT bool obs_in_task_thread(enum obs_task_type type);
+
+EXPORT bool obs_wait_for_destroy_queue(void);
 
 typedef void (*obs_task_handler_t)(obs_task_t task, void *param, bool wait);
 EXPORT void obs_set_ui_task_handler(obs_task_handler_t handler);

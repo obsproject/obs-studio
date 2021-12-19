@@ -607,11 +607,10 @@ static inline void obs_source_frame_decref(struct obs_source_frame *frame)
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
 					     obs_source_t *filter);
+static void obs_source_destroy_defer(struct obs_source *source);
 
 void obs_source_destroy(struct obs_source *source)
 {
-	size_t i;
-
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
 
@@ -635,15 +634,28 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_context_data_remove(&source->context);
 
-	blog(LOG_DEBUG, "%ssource '%s' destroyed",
-	     source->context.private ? "private " : "", source->context.name);
+	/* defer source destroy */
+	os_task_queue_queue_task(obs->data.destruction_task_thread,
+				 (os_task_t)obs_source_destroy_defer, source);
+}
+
+static void obs_source_destroy_defer(struct obs_source *source)
+{
+	size_t i;
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
+
+	/* prevents the destruction of sources if destroy triggered inside of
+	 * a video tick call */
+	obs_context_wait(&source->context);
 
 	if (source->context.data) {
 		source->info.destroy(source->context.data);
 		source->context.data = NULL;
 	}
+
+	blog(LOG_DEBUG, "%ssource '%s' destroyed",
+	     source->context.private ? "private " : "", source->context.name);
 
 	audio_monitor_destroy(source->monitor);
 

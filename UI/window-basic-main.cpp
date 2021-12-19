@@ -4567,6 +4567,10 @@ void OBSBasic::ClearSceneData()
 	 * that deleteLater events are processed at this point */
 	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
+	do {
+		QApplication::sendPostedEvents(nullptr);
+	} while (obs_wait_for_destroy_queue());
+
 	disableSaving--;
 
 	blog(LOG_INFO, "All scene data cleared");
