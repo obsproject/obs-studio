@@ -5,6 +5,9 @@
 #include <QFileInfo>
 #include <QMimeData>
 #include <QUrlQuery>
+#ifdef _WIN32
+#include <QSettings>
+#endif
 #include <string>
 
 #include "window-basic-main.hpp"
@@ -57,6 +60,15 @@ static string GenerateSourceName(const char *base)
 			return name;
 	}
 }
+
+#ifdef _WIN32
+static QString ReadWindowsURLFile(const QString &file)
+{
+	QSettings iniFile(file, QSettings::IniFormat);
+	QVariant url = iniFile.value("InternetShortcut/URL");
+	return url.toString();
+}
+#endif
 
 void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 			  const obs_video_info &ovi)
@@ -246,6 +258,23 @@ void OBSBasic::dropEvent(QDropEvent *event)
 				ConfirmDropUrl(url.url());
 				continue;
 			}
+
+#ifdef _WIN32
+			if (fileInfo.suffix().compare(
+				    "url", Qt::CaseInsensitive) == 0) {
+				QString urlTarget = ReadWindowsURLFile(file);
+				if (!urlTarget.isEmpty()) {
+					ConfirmDropUrl(urlTarget);
+				}
+				continue;
+			} else if (fileInfo.isShortcut()) {
+				file = fileInfo.symLinkTarget();
+				fileInfo = QFileInfo(file);
+				if (!fileInfo.exists()) {
+					continue;
+				}
+			}
+#endif
 
 			QString suffixQStr = fileInfo.suffix();
 			QByteArray suffixArray = suffixQStr.toUtf8();
