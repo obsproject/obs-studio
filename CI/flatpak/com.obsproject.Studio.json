@@ -259,7 +259,7 @@
         {
           "type": "archive",
           "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_4638_linux64.tar.bz2",
-          "sha256": "3c7707b13ca99c220e1650381f3d301c016f5c6ed6f478b83223645031fb13b9"
+          "sha256": "f639d8923be42730419d703259125a3dd5349c6eb2b4d6381dd7e766500629ef"
         }
       ]
     },
