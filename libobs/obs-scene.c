@@ -21,6 +21,7 @@
 #include "graphics/math-defs.h"
 #include "obs-scene.h"
 #include "obs-internal.h"
+#include <math.h>
 
 const struct obs_source_info group_info;
 
@@ -358,7 +359,7 @@ void add_alignment(struct vec2 *v, uint32_t align, int cx, int cy)
 		v->y += (float)(cy / 2);
 }
 
-static void calculate_bounds_data(struct obs_scene_item *item,
+static void calculate_bounds_data(const struct obs_scene_item *item,
 				  struct vec2 *origin, struct vec2 *scale,
 				  uint32_t *cx, uint32_t *cy)
 {
@@ -431,8 +432,6 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	struct vec2 base_origin;
 	struct vec2 origin;
 	struct vec2 scale;
-	struct calldata params;
-	uint8_t stack[128];
 
 	if (os_atomic_load_long(&item->defer_update) > 0)
 		return;
@@ -499,9 +498,13 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 
 	/* ----------------------- */
 
-	calldata_init_fixed(&params, stack, sizeof(stack));
-	calldata_set_ptr(&params, "item", item);
-	signal_parent(item->parent, "item_transform", &params);
+	if (item->parent) {
+		struct calldata params;
+		uint8_t stack[128];
+		calldata_init_fixed(&params, stack, sizeof(stack));
+		calldata_set_ptr(&params, "item", item);
+		signal_parent(item->parent, "item_transform", &params);
+	}
 
 	if (!update_tex)
 		return;
@@ -2731,6 +2734,48 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds = info->bounds;
 		do_update_transform(item);
 	}
+}
+
+void obs_sceneitem_alignment_get_vecdiff(const obs_sceneitem_t *item,
+					 struct vec2 *offset,
+					 uint32_t align_from, uint32_t align_to)
+{
+	if (!item || !offset)
+		return;
+
+	// Mathematical background based on update_item_transform:
+	// matrix4 children seen as rows (implied in matrix multiply function):
+	// T_i = Eye(4) * M_Scale * M_Align_i^(-1) * M_Rot * M_Pos_i
+	// Original alignment transformation:
+	// T_1 (stored in mat_T1)
+	//   = Eye(4) * M_Scale * M_Align_1^(-1) * M_Rot * M_Pos_1
+	// New alignment transformation without position adaptation:
+	// T_2* (stored in mat_T2_star)
+	//   = Eye(4) * M_Scale * M_Align_2^(-1) * M_Rot * M_Pos_1
+	// New whole transformation should be equal to previous
+	// T_2 = T_2* * M_pos_12 =? T_1
+	// ->
+	// M_pos_12 = (T_2*)^(-1) * T_1
+
+	struct matrix4 mat_T1, mat_T2_star, mat_t12;
+
+	obs_sceneitem_t temp_item = *item;
+
+	// prevent signals to be sent to the scene
+	temp_item.parent = NULL;
+
+	temp_item.align = align_from;
+	update_item_transform(&temp_item, false);
+	obs_sceneitem_get_draw_transform(&temp_item, &mat_T1);
+
+	temp_item.align = align_to;
+	update_item_transform(&temp_item, false);
+	obs_sceneitem_get_draw_transform(&temp_item, &mat_T2_star);
+	matrix4_inv(&mat_T2_star, &mat_T2_star);
+
+	matrix4_mul(&mat_t12, &mat_T2_star, &mat_T1);
+
+	vec2_set(offset, mat_t12.t.x, mat_t12.t.y);
 }
 
 void obs_sceneitem_get_draw_transform(const obs_sceneitem_t *item,
