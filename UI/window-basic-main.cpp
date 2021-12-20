@@ -3798,8 +3798,6 @@ void OBSBasic::RemoveSelectedScene()
 	OBSScene scene = GetCurrentScene();
 	obs_source_t *source = obs_scene_get_source(scene);
 
-	OBSSource curProgramScene = OBSGetStrongRef(programScene);
-
 	if (!source || !QueryRemoveSource(source)) {
 		return;
 	}
