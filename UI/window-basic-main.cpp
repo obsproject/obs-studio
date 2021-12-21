@@ -4672,7 +4672,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
-	App()->quit();
+	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 
 void OBSBasic::changeEvent(QEvent *event)
