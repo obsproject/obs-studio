@@ -8871,7 +8871,11 @@ void OBSBasic::SystemTray(bool firstStarted)
 	if (!sysTrayEnabled) {
 		trayIcon->hide();
 	} else {
-		trayIcon->show();
+		if(true) {
+			trayIcon->hide();
+		} else {
+			trayIcon->show();
+		}
 		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
 			QTimer::singleShot(50, this, SLOT(hide()));
 			EnablePreviewDisplay(false);
