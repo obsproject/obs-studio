@@ -960,7 +960,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 		devicePropertiesThread.reset();
 	}
 
-	QApplication::sendPostedEvents(this);
+	QApplication::sendPostedEvents(nullptr);
 
 	OBSDataAutoRelease modulesObj = obs_data_get_obj(data, "modules");
 	if (api)
@@ -2554,7 +2554,7 @@ void OBSBasic::ClearHotkeys()
 OBSBasic::~OBSBasic()
 {
 	/* clear out UI event queue */
-	QApplication::sendPostedEvents(App());
+	QApplication::sendPostedEvents(nullptr);
 
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
@@ -2637,7 +2637,7 @@ OBSBasic::~OBSBasic()
 	 * but Qt doesn't use C++ in a normal way, so you can't really rely on
 	 * normal C++ behavior for your data to be freed in the order that you
 	 * expect or want it to. */
-	QApplication::sendPostedEvents(this);
+	QApplication::sendPostedEvents(nullptr);
 
 	config_set_int(App()->GlobalConfig(), "General", "LastVersion",
 		       LIBOBS_API_VER);
@@ -4641,7 +4641,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		devicePropertiesThread.reset();
 	}
 
-	QApplication::sendPostedEvents(this);
+	QApplication::sendPostedEvents(nullptr);
 
 	signalHandlers.clear();
 
