@@ -498,8 +498,8 @@ jobs:
       QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-      WINDOWS_DEPS_VERSION: '2019'
-      WINDOWS_DEPS_CACHE_VERSION: '2'
+      WINDOWS_DEPS_VERSION: '2021-11-13'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
       VLC_VERSION: '3.0.0-git'
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
@@ -567,8 +567,8 @@ jobs:
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
-          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'
         run: |
@@ -608,8 +608,8 @@ jobs:
       QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
       CMAKE_SYSTEM_VERSION: "10.0.18363.657"
-      WINDOWS_DEPS_VERSION: '2019'
-      WINDOWS_DEPS_CACHE_VERSION: '2'
+      WINDOWS_DEPS_VERSION: '2021-11-13'
+      WINDOWS_DEPS_CACHE_VERSION: '1'
       VIRTUALCAM-GUID: "A3FCE0F5-3493-419F-958A-ABA1250EC20B"
     steps:
       - name: 'Add msbuild to PATH'
@@ -676,8 +676,8 @@ jobs:
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
-          curl -kLO https://cdn-fastly.obsproject.com/downloads/dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -f --retry 5 -C -
-          7z x dependencies${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
+          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'
         run: |
