@@ -2555,6 +2555,7 @@ OBSBasic::~OBSBasic()
 {
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
+	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);
 
 	if (updateCheckThread && updateCheckThread->isRunning())
 		updateCheckThread->wait();
