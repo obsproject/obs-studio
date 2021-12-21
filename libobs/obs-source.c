@@ -635,7 +635,7 @@ void obs_source_destroy(struct obs_source *source)
 	obs_context_data_remove(&source->context);
 
 	/* defer source destroy */
-	os_task_queue_queue_task(obs->data.destruction_task_thread,
+	os_task_queue_queue_task(obs->destruction_task_thread,
 				 (os_task_t)obs_source_destroy_defer, source);
 }
 

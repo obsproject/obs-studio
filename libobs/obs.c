@@ -649,10 +649,6 @@ static bool obs_init_data(void)
 	if (pthread_mutex_init_recursive(&obs->data.draw_callbacks_mutex) != 0)
 		goto fail;
 
-	data->destruction_task_thread = os_task_queue_create();
-	if (!data->destruction_task_thread)
-		goto fail;
-
 	if (!obs_view_init(&data->main_view))
 		goto fail;
 
@@ -710,7 +706,6 @@ static void obs_free_data(void)
 	pthread_mutex_destroy(&data->encoders_mutex);
 	pthread_mutex_destroy(&data->services_mutex);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
-	os_task_queue_destroy(data->destruction_task_thread);
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
 	obs_data_release(data->private_data);
@@ -873,6 +868,10 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	if (!obs_init_handlers())
 		return false;
 	if (!obs_init_hotkeys())
+		return false;
+
+	obs->destruction_task_thread = os_task_queue_create();
+	if (!obs->destruction_task_thread)
 		return false;
 
 	if (module_config_path)
@@ -1047,6 +1046,7 @@ void obs_shutdown(void)
 	obs_free_data();
 	obs_free_audio();
 	obs_free_video();
+	os_task_queue_destroy(obs->destruction_task_thread);
 	obs_free_hotkeys();
 	obs_free_graphics();
 	proc_handler_destroy(obs->procs);
@@ -2563,7 +2563,7 @@ bool obs_in_task_thread(enum obs_task_type type)
 	else if (type == OBS_TASK_UI)
 		return is_ui_thread;
 	else if (type == OBS_TASK_DESTROY)
-		return os_task_queue_inside(obs->data.destruction_task_thread);
+		return os_task_queue_inside(obs->destruction_task_thread);
 
 	assert(false);
 	return false;
@@ -2612,9 +2612,8 @@ void obs_queue_task(enum obs_task_type type, obs_task_t task, void *param,
 
 		} else if (type == OBS_TASK_DESTROY) {
 			os_task_t os_task = (os_task_t)task;
-			os_task_queue_queue_task(
-				obs->data.destruction_task_thread, os_task,
-				param);
+			os_task_queue_queue_task(obs->destruction_task_thread,
+						 os_task, param);
 		}
 	}
 }
@@ -2635,7 +2634,7 @@ bool obs_wait_for_destroy_queue(void)
 	os_event_destroy(info.event);
 
 	/* wait for destroy task queue */
-	return os_task_queue_wait(obs->data.destruction_task_thread);
+	return os_task_queue_wait(obs->destruction_task_thread);
 }
 
 static void set_ui_thread(void *unused)

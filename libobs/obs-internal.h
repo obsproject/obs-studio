@@ -364,8 +364,6 @@ struct obs_core_data {
 	DARRAY(struct draw_callback) draw_callbacks;
 	DARRAY(struct tick_callback) tick_callbacks;
 
-	os_task_queue_t *destruction_task_thread;
-
 	struct obs_view main_view;
 
 	long long unnamed_index;
@@ -438,6 +436,8 @@ struct obs_core {
 	struct obs_core_audio audio;
 	struct obs_core_data data;
 	struct obs_core_hotkeys hotkeys;
+
+	os_task_queue_t *destruction_task_thread;
 
 	obs_task_handler_t ui_task_handler;
 };
