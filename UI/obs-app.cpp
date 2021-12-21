@@ -86,6 +86,7 @@ bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
 bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
+bool opt_hide_trayicon = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
 bool opt_disable_high_dpi_scaling = false;
@@ -2737,6 +2738,9 @@ int main(int argc, char *argv[])
 
 		} else if (arg_is(argv[i], "--minimize-to-tray", nullptr)) {
 			opt_minimize_tray = true;
+
+		} else if (arg_is(argv[i], "--hide-trayicon", nullptr)) {
+			opt_hide_trayicon = true;
 
 		} else if (arg_is(argv[i], "--studio-mode", nullptr)) {
 			opt_studio_mode = true;

@@ -8800,7 +8800,11 @@ void OBSBasic::SystemTrayInit()
 	trayMenu->addAction(sysTrayVirtualCam);
 	trayMenu->addAction(exit);
 	trayIcon->setContextMenu(trayMenu);
-	trayIcon->show();
+	if(opt_hide_trayicon) {
+		trayIcon->hide();
+	} else {
+		trayIcon->show();
+	}
 
 	if (outputHandler && !outputHandler->replayBuffer)
 		sysTrayReplayBuffer->setEnabled(false);
@@ -8871,9 +8875,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 	if (!sysTrayEnabled) {
 		trayIcon->hide();
 	} else {
-		if(true) {
-			trayIcon->hide();
-		} else {
+		if(!opt_hide_trayicon) {
 			trayIcon->show();
 		}
 		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
