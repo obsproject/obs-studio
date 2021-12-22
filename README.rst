@@ -3,6 +3,8 @@ Capturehelper - based on OBS Studio
 
 Fork for pseudo headless streaming, bugs included =)
 
+See `Launch Parameters <https://github.com/sodgeit/capturehelper/wiki/Launch-Parameters>`_ for Usage-Instructions
+
 
 OBS Studio <https://obsproject.com>
 ===================================
