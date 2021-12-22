@@ -1928,7 +1928,9 @@ void OBSBasic::OBSInit()
 
 #ifdef _WIN32
 	SetWin32DropStyle(this);
-	show();
+	if(!opt_minimize_tray) {
+		show();
+	}
 #endif
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1952,7 +1954,9 @@ void OBSBasic::OBSInit()
 	}
 
 #ifndef _WIN32
-	show();
+	if(!opt_minimize_tray) {
+		show();
+	}
 #endif
 
 	/* setup stats dock */
