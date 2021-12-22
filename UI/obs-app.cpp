@@ -2728,7 +2728,7 @@ int main(int argc, char *argv[])
 				opt_custom_stream_settings = true;
 				opt_custom_stream_key = argv[i];
 			}
-		
+
 		} else if (arg_is(argv[i], "--startrecording", nullptr)) {
 			opt_start_recording = true;
 
