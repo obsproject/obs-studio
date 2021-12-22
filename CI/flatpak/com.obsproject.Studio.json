@@ -122,6 +122,51 @@
       ]
     },
     {
+      "name": "mbedtls",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
+        "-DUSE_SHARED_MBEDTLS_LIBRARY=ON",
+        "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF",
+        "-DENABLE_TESTING=OFF",
+        "-DENABLE_PROGRAMS=OFF"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/ARMmbed/mbedtls.git",
+          "commit": "f71e2878084126737cc39083e1e15afc459bd93d",
+          "tag": "v2.27.0"
+        }
+      ]
+    },
+    {
+      "name": "librist",
+      "buildsystem":"meson",
+      "builddir": true,
+      "config-opts": [
+        "-Duse_mbedtls=true",
+        "-Dtest=false",
+        "-Dbuilt_tools=false",
+        "-Dbuiltin_cjson=true"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://code.videolan.org/rist/librist.git",
+          "commit": "0b1aaf995c4cad83d562ec7887180cc6ee132c84"
+        }
+      ]
+    },
+    {
       "name": "ffmpeg",
       "config-opts": [
         "--enable-gpl",
@@ -136,7 +181,8 @@
         "--enable-libvorbis",
         "--enable-libx264",
         "--enable-nvenc",
-        "--enable-libsrt"
+        "--enable-libsrt",
+        "--enable-librist"
       ],
       "cleanup": [
         "/share/ffmpeg",
@@ -161,6 +207,7 @@
           "commands": [
             "git cherry-pick -n d1b47f3bfcc625ca1cae210fc198dcbd54381a88 # avcodec/vaapi_encode: Fix segfault upon closing uninitialized encoder",
             "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-OBS.patch",
+            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-librist.patch",
             "patch -Np1 -i obs-deps/CI/patches/FFmpeg-9010.patch"
           ]
         }
@@ -207,30 +254,6 @@
           "type": "archive",
           "url": "https://prdownloads.sourceforge.net/swig/swig-4.0.2.tar.gz",
           "sha256": "d53be9730d8d58a16bf0cbd1f8ac0c0c3e1090573168bfa151b01eb47fa906fc"
-        }
-      ]
-    },
-    {
-      "name": "mbedtls",
-      "buildsystem": "cmake-ninja",
-      "builddir": true,
-      "config-opts": [
-        "-DCMAKE_BUILD_TYPE=Release",
-        "-DCMAKE_POSITION_INDEPENDENT_CODE=ON",
-        "-DUSE_SHARED_MBEDTLS_LIBRARY=ON",
-        "-DUSE_STATIC_MBEDTLS_LIBRARY=OFF",
-        "-DENABLE_TESTING=OFF",
-        "-DENABLE_PROGRAMS=OFF"
-      ],
-      "cleanup": [
-        "/include"
-      ],
-      "sources": [
-        {
-          "type": "git",
-          "url": "https://github.com/ARMmbed/mbedtls.git",
-          "commit": "f71e2878084126737cc39083e1e15afc459bd93d",
-          "tag": "v2.27.0"
         }
       ]
     },
