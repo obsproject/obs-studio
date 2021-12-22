@@ -264,6 +264,32 @@
       ]
     },
     {
+      "name": "ntv2",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DAJA_BUILD_OPENSOURCE=ON"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://github.com/aja-video/ntv2.git",
+          "commit": "abf17cc1e7aadd9f3e4972774a3aba2812c51b75"
+        },
+        {
+          "type": "shell",
+          "commands": [
+            "sed -i 's/Clang|GNU/GNU/g' cmake/CommonFlags.cmake",
+            "sed -i 's/Linux|Darwin/Linux/g' cmake/CommonFlags.cmake"
+          ]
+        }
+      ]
+    },
+    {
       "name": "cef",
       "buildsystem": "cmake-ninja",
       "no-make-install": true,
