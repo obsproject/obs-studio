@@ -304,8 +304,7 @@
         "cp -R ./libcef_dll_wrapper/libcef_dll_wrapper.a /app/cef/libcef_dll_wrapper"
       ],
       "cleanup": [
-        "*.a",
-        "./*"
+        "*"
       ],
       "sources": [
         {
