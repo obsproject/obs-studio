@@ -583,11 +583,30 @@ static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
 static void dbr_set_bitrate(struct rtmp_stream *stream);
 static bool rtmp_stream_start(void *data);
 
+#ifdef _WIN32
+#define socklen_t int
+#endif
+
+static void log_sndbuf_size(struct rtmp_stream *stream)
+{
+	int cur_sendbuf_size;
+	socklen_t int_size = sizeof(int);
+
+	if (!getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
+			(char *)&cur_sendbuf_size, &int_size)) {
+		info("Socket send buffer is %d bytes", cur_sendbuf_size);
+	}
+}
+
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
 
 	os_set_thread_name("rtmp-stream: send_thread");
+
+#if defined(_WIN32)
+	log_sndbuf_size(stream);
+#endif
 
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
@@ -652,6 +671,10 @@ static void *send_thread(void *data)
 	} else {
 		info("User stopped the stream");
 	}
+
+#if defined(_WIN32)
+	log_sndbuf_size(stream);
+#endif
 
 	if (stream->new_socket_loop) {
 		os_event_signal(stream->send_thread_signaled_exit);
@@ -794,35 +817,10 @@ static inline bool reset_semaphore(struct rtmp_stream *stream)
 	return os_sem_init(&stream->send_sem, 0) == 0;
 }
 
-#ifdef _WIN32
-#define socklen_t int
-#endif
-
-#define MIN_SENDBUF_SIZE 65535
-
-static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
-{
-	int cur_sendbuf_size = new_size;
-	socklen_t int_size = sizeof(int);
-
-	getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
-		   (char *)&cur_sendbuf_size, &int_size);
-
-	if (cur_sendbuf_size < new_size) {
-		cur_sendbuf_size = new_size;
-		setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
-			   (const char *)&cur_sendbuf_size, int_size);
-	}
-}
-
 static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
 	obs_output_t *context = stream->output;
-
-#if defined(_WIN32)
-	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
-#endif
 
 	if (!silently_reconnecting(stream))
 		reset_semaphore(stream);
