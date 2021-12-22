@@ -5,9 +5,9 @@ elseif(WIN32 AND NOT CPACK_GENERATOR)
 	set(CPACK_GENERATOR "WIX" "ZIP")
 endif()
 
-set(CPACK_PACKAGE_NAME "OBS")
+set(CPACK_PACKAGE_NAME "Capturehelper")
 set(CPACK_PACKAGE_VENDOR "obsproject.com")
-set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "OBS - Live video and audio streaming and recording software")
+set(CPACK_PACKAGE_DESCRIPTION_SUMMARY "Capturehelper based on OBS - Live video and audio streaming and recording software")
 set(CPACK_RESOURCE_FILE_LICENSE "${CMAKE_CURRENT_SOURCE_DIR}/UI/data/license/gplv2.txt")
 
 set(CPACK_PACKAGE_VERSION_MAJOR "0")
@@ -35,11 +35,11 @@ MESSAGE(STATUS "OBS_VERSION: ${OBS_VERSION}")
 
 if(INSTALLER_RUN)
 	set(CPACK_PACKAGE_EXECUTABLES
-		"obs32" "OBS Studio (32bit)"
-		"obs64" "OBS Studio (64bit)")
+		"capturehelper32" "Capturehelper based on OBS Studio (32bit)"
+		"capturehelper64" "Capturehelper based on OBS Studio (64bit)")
 	set(CPACK_CREATE_DESKTOP_LINKS
-		"obs32"
-		"obs64")
+		"capturehelper32"
+		"capturehelper64")
 else()
 	if(WIN32)
 		if(CMAKE_SIZEOF_VOID_P EQUAL 8)
@@ -51,11 +51,11 @@ else()
 		set(_output_suffix "")
 	endif()
 
-	set(CPACK_PACKAGE_EXECUTABLES "obs${_output_suffix}" "OBS Studio")
-	set(CPACK_CREATE_DESKTOP_LINKS "obs${_output_suffix}")
+	set(CPACK_PACKAGE_EXECUTABLES "capturehelper${_output_suffix}" "Capturehelper based on OBS Studio")
+	set(CPACK_CREATE_DESKTOP_LINKS "capturehelper${_output_suffix}")
 endif()
 
-set(CPACK_BUNDLE_NAME "OBS")
+set(CPACK_BUNDLE_NAME "Capturehelper")
 set(CPACK_BUNDLE_PLIST "${CMAKE_SOURCE_DIR}/cmake/osxbundle/Info.plist")
 set(CPACK_BUNDLE_ICON "${CMAKE_SOURCE_DIR}/cmake/osxbundle/obs.icns")
 set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_SOURCE_DIR}/cmake/osxbundle/obslaunch.sh")
@@ -63,13 +63,13 @@ set(CPACK_BUNDLE_STARTUP_COMMAND "${CMAKE_SOURCE_DIR}/cmake/osxbundle/obslaunch.
 set(CPACK_WIX_TEMPLATE "${CMAKE_SOURCE_DIR}/cmake/Modules/WIX.template.in")
 
 if(INSTALLER_RUN)
-	set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio")
+	set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "Capturehelper based on OBSStudio")
 	set(CPACK_WIX_UPGRADE_GUID "1f59ff79-2a3c-43c1-b2b2-033a5e6342eb")
 	set(CPACK_WIX_PRODUCT_GUID "0c7bec2a-4f07-41b2-9dff-d64b09c9c384")
 	set(CPACK_PACKAGE_FILE_NAME "obs-studio-${OBS_VERSION}")
 elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	if(WIN32)
-		set(CPACK_PACKAGE_NAME "OBS Studio (64bit)")
+		set(CPACK_PACKAGE_NAME "Capturehelper based on OBS Studio (64bit)")
 	endif()
 	set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio64")
 	set(CPACK_WIX_UPGRADE_GUID "44c72510-2e8e-489c-8bc0-2011a9631b0b")
@@ -77,7 +77,7 @@ elseif(CMAKE_SIZEOF_VOID_P EQUAL 8)
 	set(CPACK_PACKAGE_FILE_NAME "obs-studio-x64-${OBS_VERSION}")
 else()
 	if(WIN32)
-		set(CPACK_PACKAGE_NAME "OBS Studio (32bit)")
+		set(CPACK_PACKAGE_NAME "Capturehelper based on OBS Studio (32bit)")
 	endif()
 	set(CPACK_PACKAGE_INSTALL_REGISTRY_KEY "OBSStudio32")
 	set(CPACK_WIX_UPGRADE_GUID "a26acea4-6190-4470-9fb9-f6d32f3ba030")

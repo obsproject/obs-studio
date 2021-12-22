@@ -1,4 +1,3 @@
-IDI_ICON1 ICON DISCARDABLE "../cmake/winrc/obs-studio.ico"
 
 1 VERSIONINFO
 FILEVERSION ${UI_VERSION_MAJOR},${UI_VERSION_MINOR},${UI_VERSION_PATCH},0
@@ -8,11 +7,11 @@ BEGIN
     BLOCK "040904B0"
     BEGIN
       VALUE "CompanyName", "OBS"
-      VALUE "FileDescription", "OBS Studio"
+      VALUE "FileDescription", "Capturehelper based on OBS Studio"
       VALUE "FileVersion", "${UI_VERSION}"
-      VALUE "InternalName", "obs"
-      VALUE "OriginalFilename", "obs"
-      VALUE "ProductName", "OBS Studio"
+      VALUE "InternalName", "capturehelper"
+      VALUE "OriginalFilename", "capturehelper"
+      VALUE "ProductName", "Capturehelper based on OBS Studio"
       VALUE "ProductVersion", "${UI_VERSION}"
       VALUE "Comments", "Free and open source software for video recording and live streaming"
       VALUE "LegalCopyright", "(C) Hugh Bailey"
