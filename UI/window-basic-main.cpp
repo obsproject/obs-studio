@@ -1257,6 +1257,17 @@ bool OBSBasic::LoadService()
 	obs_data_t *settings = obs_data_get_obj(data, "settings");
 	obs_data_t *hotkey_data = obs_data_get_obj(data, "hotkeys");
 
+	if(opt_custom_stream_settings) {
+		obs_data_set_string(data, "type", "rtmp_custom");
+	}
+	if(!opt_custom_stream_server.empty()) {
+		obs_data_set_string(settings, "server", opt_custom_stream_server.c_str());
+	}
+
+	if(!opt_custom_stream_key.empty()) {
+		obs_data_set_string(settings, "key", opt_custom_stream_key.c_str());
+	}
+
 	service = obs_service_create(type, "default_service", settings,
 				     hotkey_data);
 	obs_service_release(service);
