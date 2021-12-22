@@ -753,7 +753,7 @@ EXPORT bool obs_obj_is_private(void *obj);
 typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 					 const char *id);
 
-EXPORT bool obs_audio_monitoring_supported(void);
+EXPORT bool obs_audio_monitoring_available(void);
 
 EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 					      void *data);
