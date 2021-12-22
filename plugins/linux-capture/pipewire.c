@@ -446,9 +446,11 @@ static bool build_format_params(obs_pipewire_data *obs_pw,
 		return false;
 	}
 
+	if (!check_pw_version(&obs_pw->server_version, 0, 3, 33))
+		goto build_shm;
+
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
-		if (obs_pw->format_info.array[i].modifiers.num == 0 ||
-		    !check_pw_version(&obs_pw->server_version, 0, 3, 33)) {
+		if (obs_pw->format_info.array[i].modifiers.num == 0) {
 			continue;
 		}
 		params[params_count++] = build_format(
@@ -457,6 +459,8 @@ static bool build_format_params(obs_pipewire_data *obs_pw,
 			obs_pw->format_info.array[i].modifiers.array,
 			obs_pw->format_info.array[i].modifiers.num);
 	}
+
+build_shm:
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
 		params[params_count++] = build_format(
 			pod_builder, &obs_pw->video_info,
@@ -553,6 +557,13 @@ static void remove_modifier_from_format(obs_pipewire_data *obs_pw,
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
 		if (obs_pw->format_info.array[i].spa_format != spa_format)
 			continue;
+
+		if (!check_pw_version(&obs_pw->server_version, 0, 3, 40)) {
+			da_erase_range(
+				obs_pw->format_info.array[i].modifiers, 0,
+				obs_pw->format_info.array[i].modifiers.num - 1);
+			continue;
+		}
 
 		int idx = da_find(obs_pw->format_info.array[i].modifiers,
 				  &modifier, 0);
