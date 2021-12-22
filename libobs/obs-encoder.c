@@ -221,7 +221,7 @@ static void remove_connection(struct obs_encoder *encoder, bool shutdown)
 		audio_output_disconnect(encoder->media, encoder->mixer_idx,
 					receive_audio, encoder);
 	} else {
-		if (gpu_encode_available(encoder)) {
+		if (os_atomic_load_long(&obs->video.gpu_encoder_active)) {
 			stop_gpu_encode(encoder);
 		} else {
 			stop_raw_video(encoder->media, receive_video, encoder);
