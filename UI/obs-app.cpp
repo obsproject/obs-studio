@@ -81,6 +81,7 @@ static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
 bool opt_start_streaming = false;
+bool opt_custom_stream_settings = false;
 bool opt_start_recording = false;
 bool opt_studio_mode = false;
 bool opt_start_replaybuffer = false;
@@ -95,6 +96,8 @@ bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
+string opt_custom_stream_server;
+string opt_custom_stream_key;
 
 bool restart = false;
 
@@ -2715,6 +2718,17 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--startstreaming", nullptr)) {
 			opt_start_streaming = true;
 
+		} else if (arg_is(argv[i], "--custom-stream-server", nullptr)) {
+			if (++i < argc) {
+				opt_custom_stream_settings = true;
+				opt_custom_stream_server = argv[i];
+			}
+		} else if (arg_is(argv[i], "--custom-stream-key", nullptr)) {
+			if (++i < argc) {
+				opt_custom_stream_settings = true;
+				opt_custom_stream_key = argv[i];
+			}
+		
 		} else if (arg_is(argv[i], "--startrecording", nullptr)) {
 			opt_start_recording = true;
 
@@ -2770,6 +2784,8 @@ int main(int argc, char *argv[])
 				"\n"
 				"--profile <string>: Use specific profile.\n"
 				"--scene <string>: Start with specific scene.\n\n"
+				"--custom-stream-server <string>: Override the server for streaming.\n"
+				"--custom-stream-key <string>: Override the key for streaming.\n\n"
 				"--studio-mode: Enable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
 				"--hide-trayicon: Do not show the system trayicon.\n"

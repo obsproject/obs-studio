@@ -228,6 +228,7 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 extern bool portable_mode;
 
 extern bool opt_start_streaming;
+extern bool opt_custom_stream_settings;
 extern bool opt_start_recording;
 extern bool opt_start_replaybuffer;
 extern bool opt_start_virtualcam;
@@ -238,4 +239,6 @@ extern bool opt_allow_opengl;
 extern bool opt_always_on_top;
 extern bool opt_disable_high_dpi_scaling;
 extern std::string opt_starting_scene;
+extern std::string opt_custom_stream_server;
+extern std::string opt_custom_stream_key;
 extern bool restart;
