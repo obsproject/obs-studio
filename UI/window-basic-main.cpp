@@ -1749,7 +1749,7 @@ void OBSBasic::OBSInit()
 	}
 
 	/* load audio monitoring */
-	if (obs_audio_monitoring_supported()) {
+	if (obs_audio_monitoring_available()) {
 		const char *device_name = config_get_string(
 			basicConfig, "Audio", "MonitoringDeviceName");
 		const char *device_id = config_get_string(basicConfig, "Audio",

@@ -2298,7 +2298,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	if (!name || !id || !*name || !*id)
 		return false;
 
-	if (!obs_audio_monitoring_supported())
+	if (!obs_audio_monitoring_available())
 		return false;
 
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);

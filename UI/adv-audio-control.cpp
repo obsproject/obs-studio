@@ -41,7 +41,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	percent = new QSpinBox();
 	forceMono = new QCheckBox();
 	balance = new BalanceSlider();
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		monitoringType = new QComboBox();
 	syncOffset = new QSpinBox();
 	mixer1 = new QCheckBox();
@@ -60,7 +60,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 				 this);
 	flagsSignal.Connect(handler, "update_flags", OBSSourceFlagsChanged,
 			    this);
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		monitoringTypeSignal.Connect(handler, "audio_monitoring",
 					     OBSSourceMonitoringTypeChanged,
 					     this);
@@ -175,7 +175,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 		QTStr("Basic.AdvAudio.SyncOffsetSource").arg(sourceName));
 
 	int idx;
-	if (obs_audio_monitoring_supported()) {
+	if (obs_audio_monitoring_available()) {
 		monitoringType->addItem(QTStr("Basic.AdvAudio.Monitoring.None"),
 					(int)OBS_MONITORING_TYPE_NONE);
 		monitoringType->addItem(
@@ -245,7 +245,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 			 SLOT(ResetBalance()));
 	QWidget::connect(syncOffset, SIGNAL(valueChanged(int)), this,
 			 SLOT(syncOffsetChanged(int)));
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		QWidget::connect(monitoringType,
 				 SIGNAL(currentIndexChanged(int)), this,
 				 SLOT(monitoringTypeChanged(int)));
@@ -274,7 +274,7 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 	forceMonoContainer->deleteLater();
 	balanceContainer->deleteLater();
 	syncOffset->deleteLater();
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		monitoringType->deleteLater();
 	mixerContainer->deleteLater();
 }
@@ -291,7 +291,7 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 	layout->addWidget(forceMonoContainer, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		layout->addWidget(monitoringType, lastRow, idx++);
 	layout->addWidget(mixerContainer, lastRow, idx++);
 	layout->layout()->setAlignment(mixerContainer, Qt::AlignVCenter);

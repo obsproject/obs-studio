@@ -531,7 +531,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
 #ifdef _WIN32
 	HookWidget(ui->disableAudioDucking,  CHECK_CHANGED,  ADV_CHANGED);
@@ -581,7 +581,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #endif
 
 	// Remove the Advanced Audio section if monitoring is not supported, as the monitoring device selection is the only item in the group box.
-	if (!obs_audio_monitoring_supported()) {
+	if (!obs_audio_monitoring_available()) {
 		delete ui->audioAdvGroupBox;
 		ui->audioAdvGroupBox = nullptr;
 	}
@@ -734,7 +734,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	FillSimpleRecordingValues();
 	FillSimpleStreamingValues();
-	if (obs_audio_monitoring_supported())
+	if (obs_audio_monitoring_available())
 		FillAudioMonitoringDevices();
 
 	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)), this,
@@ -2478,7 +2478,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	QString monDevName;
 	QString monDevId;
-	if (obs_audio_monitoring_supported()) {
+	if (obs_audio_monitoring_available()) {
 		monDevName = config_get_string(main->Config(), "Audio",
 					       "MonitoringDeviceName");
 		monDevId = config_get_string(main->Config(), "Audio",
@@ -2519,7 +2519,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	LoadRendererList();
 
-	if (obs_audio_monitoring_supported() &&
+	if (obs_audio_monitoring_available() &&
 	    !SetComboByValue(ui->monitoringDevice, monDevId.toUtf8()))
 		SetInvalidValue(ui->monitoringDevice, monDevName.toUtf8(),
 				monDevId.toUtf8());
@@ -3311,7 +3311,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
 	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
-	if (obs_audio_monitoring_supported()) {
+	if (obs_audio_monitoring_available()) {
 		SaveCombo(ui->monitoringDevice, "Audio",
 			  "MonitoringDeviceName");
 		SaveComboData(ui->monitoringDevice, "Audio",
@@ -3345,7 +3345,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
 	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
 
-	if (obs_audio_monitoring_supported()) {
+	if (obs_audio_monitoring_available()) {
 		QString newDevice =
 			ui->monitoringDevice->currentData().toString();
 

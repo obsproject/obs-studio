@@ -425,9 +425,9 @@ Video, Audio, and Graphics
 
 ---------------------
 
-.. function:: bool obs_audio_monitoring_supported(void)
+.. function:: bool obs_audio_monitoring_available(void)
 
-   :return: Whether audio monitoring is supported on the current platform
+   :return: Whether audio monitoring is supported and available on the current platform
 
 ---------------------
 
