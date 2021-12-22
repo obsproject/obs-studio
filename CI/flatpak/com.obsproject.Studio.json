@@ -95,8 +95,8 @@
         {
           "type": "git",
           "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
-          "commit": "7a81595786463d1c7efcb03aa85def69fc2cad41",
-          "tag": "n11.0.10.0"
+          "tag": "n11.1.5.0",
+          "commit": "b641a195edbe3ac9788e681e22c2e2fad8aacddb"
         }
       ]
     },
@@ -144,9 +144,25 @@
       ],
       "sources": [
         {
-          "type": "archive",
-          "url": "https://www.ffmpeg.org/releases/ffmpeg-4.3.2.tar.xz",
-          "sha256": "46e4e64f1dd0233cbc0934b9f1c0da676008cad34725113fb7f802cfa84ccddb"
+          "type": "git",
+          "url": "https://git.ffmpeg.org/ffmpeg.git",
+          "commit": "cc33e73618a981de7fd96385ecb34719de031f16",
+          "disable-shallow-clone": true
+        },
+        {
+          "type": "git",
+          "dest": "obs-deps",
+          "url": "https://github.com/obsproject/obs-deps.git",
+          "tag": "2021-12-22",
+          "commit": "42f0384e2f39a53b6386924cf4c1a643f766e164"
+        },
+        {
+          "type": "shell",
+          "commands": [
+            "git cherry-pick -n d1b47f3bfcc625ca1cae210fc198dcbd54381a88 # avcodec/vaapi_encode: Fix segfault upon closing uninitialized encoder",
+            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-OBS.patch",
+            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-9010.patch"
+          ]
         }
       ]
     },
