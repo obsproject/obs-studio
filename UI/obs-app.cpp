@@ -2772,6 +2772,7 @@ int main(int argc, char *argv[])
 				"--scene <string>: Start with specific scene.\n\n"
 				"--studio-mode: Enable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
+				"--hide-trayicon: Do not show the system trayicon.\n"
 				"--portable, -p: Use portable mode.\n"
 				"--multi, -m: Don't warn when launching multiple instances.\n\n"
 				"--verbose: Make log more verbose.\n"
