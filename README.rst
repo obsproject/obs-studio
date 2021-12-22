@@ -9,9 +9,9 @@ See `Launch Parameters <https://github.com/sodgeit/capturehelper/wiki/Launch-Par
 OBS Studio <https://obsproject.com>
 ===================================
 
-.. image:: https://github.com/sodgeit/capturehelper/actions/workflows/main.yml/badge.svg?branch=master&event=push
+.. image:: https://github.com/sodgeit/capturehelper/actions/workflows/main.yml/badge.svg?branch=main&event=push
    :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/sodgeit/capturehelper/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
+   :target: https://github.com/sodgeit/capturehelper/actions/workflows/main.yml?query=event%3Apush+branch%3Amain
 
 .. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
