@@ -1,3 +1,9 @@
+Capturehelper - based on OBS Studio
+===================================
+
+Fork for pseudo headless streaming, bugs included =)
+
+
 OBS Studio <https://obsproject.com>
 ===================================
 
