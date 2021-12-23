@@ -600,8 +600,16 @@ static obs_properties_t *vaapi_properties(void *unused)
 			    strcmp(file_name, "..") == 0)
 				continue;
 
-			char path[64] = "\0";
-			sprintf(path, "/dev/dri/by-path/%s", file_name);
+			char path[64] = {0};
+
+			// Use the return value of snprintf to prevent truncation warning.
+			int written = snprintf(path, 64, "/dev/dri/by-path/%s",
+					       file_name);
+			if (written >= 64)
+				blog(LOG_DEBUG,
+				     "obs-ffmpeg-vaapi: A format truncation may have occurred."
+				     " This can be ignored since it is quite improbable.");
+
 			type = strrchr(file_name, '-');
 			if (type == NULL)
 				continue;
