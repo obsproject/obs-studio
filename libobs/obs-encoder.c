@@ -185,11 +185,18 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 		video_height != encoder->scaled_height);
 }
 
-static inline bool gpu_encode_available(const struct obs_encoder *encoder)
+static inline bool gpu_encode_available(const struct obs_encoder *encoder,
+					struct video_scale_info *info)
 {
 	struct obs_core_video *const video = &obs->video;
-	return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
-	       (video->using_p010_tex || video->using_nv12_tex);
+	if ((encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) == 0) {
+		return false;
+	}
+	if (!encoder->info.encode_texture_available) {
+		return video->using_p010_tex || video->using_nv12_tex;
+	}
+	return encoder->info.encode_texture_available(encoder->context.data,
+						      info);
 }
 
 static void add_connection(struct obs_encoder *encoder)
@@ -204,7 +211,7 @@ static void add_connection(struct obs_encoder *encoder)
 		struct video_scale_info info = {0};
 		get_video_info(encoder, &info);
 
-		if (gpu_encode_available(encoder)) {
+		if (gpu_encode_available(encoder, &info)) {
 			start_gpu_encode(encoder);
 		} else {
 			start_raw_video(encoder->media, &info, receive_video,

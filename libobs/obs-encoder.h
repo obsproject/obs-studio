@@ -262,6 +262,21 @@ struct obs_encoder_info {
 			       uint64_t lock_key, uint64_t *next_key,
 			       struct encoder_packet *packet,
 			       bool *received_packet);
+
+	/**
+	 * Returns whether texture encoding is available for this video format
+	 *
+	 * Has no effect if caps does not contain OBS_ENCODER_CAP_PASS_TEXTURE.
+	 * If this function is not defined, it is assumed that only textures in
+	 * NV12 format are supported.
+	 *
+	 * @param          data  Data associated with this encoder context
+	 * @param[in]      info  Video format information
+	 * @return               Whether the encoder supports texture encoding
+	 *                       with this video format
+	 */
+	bool (*encode_texture_available)(void *data,
+					 const struct video_scale_info *info);
 };
 
 EXPORT void obs_register_encoder_s(const struct obs_encoder_info *info,
