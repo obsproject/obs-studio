@@ -202,6 +202,9 @@ static bool nvenc_reconfigure(void *data, obs_data_t *settings)
 		enc->ffve.context->bit_rate = rate;
 		enc->ffve.context->rc_max_rate = rate;
 	}
+#else
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(settings);
 #endif
 	return true;
 }
