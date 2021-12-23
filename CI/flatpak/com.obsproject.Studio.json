@@ -347,7 +347,14 @@
         "-Dbluez5-codec-aptx=disabled",
         "-Dlibcamera=disabled",
         "-Dudevrulesdir=/app/lib/udev/rules.d/",
-        "-Dsession-managers=[]"
+        "-Dsession-managers=[]",
+        "-Dtests=disabled",
+        "-Dexamples=disabled",
+        "-Dpw-cat=disabled"
+      ],
+      "cleanup": [
+        "/include",
+        "/bin"
       ],
       "sources": [
         {
