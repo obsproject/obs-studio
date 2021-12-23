@@ -760,6 +760,21 @@ uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
 		       : audio_output_get_sample_rate(encoder->media);
 }
 
+uint32_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_get_frame_size"))
+		return 0;
+	if (encoder->info.type != OBS_ENCODER_AUDIO) {
+		blog(LOG_WARNING,
+		     "obs_encoder_get_frame_size: "
+		     "encoder '%s' is not an audio encoder",
+		     obs_encoder_get_name(encoder));
+		return 0;
+	}
+
+	return encoder->framesize != 0 ? encoder->framesize : 0;
+}
+
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)
 {
 	const struct video_output_info *voi;
