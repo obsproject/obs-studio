@@ -3782,18 +3782,6 @@ static bool save_undo_source_enum(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
-static inline void RemoveSceneAndReleaseNested(obs_source_t *source)
-{
-	obs_source_remove(source);
-	auto cb = [](void *unused, obs_source_t *source) {
-		UNUSED_PARAMETER(unused);
-		if (strcmp(obs_source_get_id(source), "scene") == 0)
-			obs_scene_prune_sources(obs_scene_from_source(source));
-		return true;
-	};
-	obs_enum_scenes(cb, NULL);
-}
-
 void OBSBasic::RemoveSelectedScene()
 {
 	OBSScene scene = GetCurrentScene();
@@ -3933,10 +3921,33 @@ void OBSBasic::RemoveSelectedScene()
 		ui->scenes->blockSignals(false);
 	};
 
-	auto redo = [](const std::string &name) {
+	auto removeSceneWithoutTransition = [this](obs_source_t *source) {
+		/* Force-switch away from scene to avoid transition */
+		if (GetCurrentSceneSource() == source) {
+			int index = ui->scenes->currentRow();
+			SetCurrentScene(GetOBSRef<OBSScene>(ui->scenes->item(
+						index == ui->scenes->count() - 1
+							? index - 1
+							: index + 1)),
+					true);
+		}
+
+		/* Remove scene and prune others in which it was nested */
+		obs_source_remove(source);
+		auto cb = [](void *unused, obs_source_t *source) {
+			UNUSED_PARAMETER(unused);
+			if (strcmp(obs_source_get_id(source), "scene") == 0)
+				obs_scene_prune_sources(
+					obs_scene_from_source(source));
+			return true;
+		};
+		obs_enum_scenes(cb, NULL);
+	};
+
+	auto redo = [removeSceneWithoutTransition](const std::string &name) {
 		OBSSourceAutoRelease source =
 			obs_get_source_by_name(name.c_str());
-		RemoveSceneAndReleaseNested(source);
+		removeSceneWithoutTransition(source);
 	};
 
 	OBSDataAutoRelease data = obs_data_create();
@@ -3952,8 +3963,7 @@ void OBSBasic::RemoveSelectedScene()
 
 	/* --------------------------- */
 	/* remove                      */
-
-	RemoveSceneAndReleaseNested(source);
+	removeSceneWithoutTransition(source);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_LIST_CHANGED);
