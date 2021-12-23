@@ -280,6 +280,8 @@ static void reinsert_packet_at_front(struct rtmp_stream *stream,
 
 static bool process_recv_data(struct rtmp_stream *stream, size_t size)
 {
+	UNUSED_PARAMETER(size);
+
 	RTMP *rtmp = &stream->rtmp;
 	RTMPPacket packet = {0};
 
