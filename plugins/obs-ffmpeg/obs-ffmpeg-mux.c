@@ -169,8 +169,9 @@ static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
 	dstr_copy(&name, obs_encoder_get_name(aencoder));
 	dstr_replace(&name, "\"", "\"\"");
 
-	dstr_catf(cmd, "\"%s\" %d %d %d ", name.array, bitrate,
+	dstr_catf(cmd, "\"%s\" %d %d %d %d ", name.array, bitrate,
 		  (int)obs_encoder_get_sample_rate(aencoder),
+		  (int)obs_encoder_get_frame_size(aencoder),
 		  (int)audio_output_get_channels(audio));
 
 	dstr_free(&name);
