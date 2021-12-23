@@ -400,6 +400,12 @@ General Encoder Functions
 
 ---------------------
 
+.. function:: uint32_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
+
+   :return: The frame size of the audio packet
+
+---------------------
+
 .. function:: void obs_encoder_set_preferred_video_format(obs_encoder_t *encoder, enum video_format format)
               enum video_format obs_encoder_get_preferred_video_format(const obs_encoder_t *encoder)
 
