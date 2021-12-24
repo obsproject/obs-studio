@@ -964,8 +964,6 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		tick_sources(obs->video.video_time, context->last_time);
 	profile_end(tick_sources_name);
 
-	execute_graphics_tasks();
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -981,6 +979,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);
+
+	execute_graphics_tasks();
 
 	frame_time_ns = os_gettime_ns() - frame_start;
 
