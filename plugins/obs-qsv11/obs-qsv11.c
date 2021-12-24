@@ -1009,6 +1009,13 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	return true;
 }
 
+static bool obs_qsv_encode_texture_available(void *data,
+					     struct video_scale_info *info)
+{
+	UNUSED_PARAMETER(data);
+	return valid_format(info->format);
+}
+
 struct obs_encoder_info obs_qsv_encoder = {
 	.id = "obs_qsv11_soft",
 	.type = OBS_ENCODER_VIDEO,
@@ -1035,6 +1042,7 @@ struct obs_encoder_info obs_qsv_encoder_tex = {
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE,
 	.encode_texture = obs_qsv_encode_tex,
+	.encode_texture_available = obs_qsv_encode_texture_available,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props,
 	.get_defaults = obs_qsv_defaults,
