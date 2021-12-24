@@ -201,6 +201,11 @@ struct XCompcapMain_private {
 	bool cursor_outside = false;
 	xcursor_t *cursor = nullptr;
 	bool tick_error_suppressed = false;
+	// Whether to rebind the GLX Pixmap on every tick. This is the correct
+	// mode of operation, according to GLX_EXT_texture_from_pixmap. However
+	// certain drivers exhibits poor performance when this is done, so
+	// setting this to false allows working around it.
+	bool strict_binding = true;
 };
 
 XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
@@ -209,6 +214,11 @@ XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
 	p->source = source;
 
 	obs_enter_graphics();
+	if (strcmp(reinterpret_cast<const char *>(glGetString(GL_VENDOR)),
+		   "NVIDIA Corporation") == 0) {
+		// Pixmap binds are extremely slow on NVIDIA cards (https://github.com/obsproject/obs-studio/issues/5685)
+		p->strict_binding = false;
+	}
 	p->cursor = xcursor_init(xdisp);
 	obs_leave_graphics();
 
@@ -301,6 +311,14 @@ static void xcc_cleanup(XCompcapMain_private *p)
 		GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 		glBindTexture(GL_TEXTURE_2D, gltex);
 		if (p->glxpixmap) {
+			glXReleaseTexImageEXT(xdisp, p->glxpixmap,
+					      GLX_FRONT_EXT);
+			if (xlock.gotError()) {
+				blog(LOG_ERROR,
+				     "cleanup glXReleaseTexImageEXT failed: %s",
+				     xlock.getErrorText().c_str());
+				xlock.resetError();
+			}
 			glXDestroyPixmap(xdisp, p->glxpixmap);
 			if (xlock.gotError()) {
 				blog(LOG_ERROR,
@@ -563,12 +581,6 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 	// glxBindTexImageEXT might modify the textures format.
 	gs_color_format format = gs_format_from_tex();
-	glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
-	if (xlock.gotError()) {
-		blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
-		     xlock.getErrorText().c_str());
-		xlock.resetError();
-	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 	// sync OBS texture format based on any glxBindTexImageEXT changes
 	p->gltex->format = format;
@@ -653,11 +665,19 @@ void XCompcapMain::tick(float seconds)
 	}
 
 	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(p->gltex));
-	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
-	if (xlock.gotError() && !p->tick_error_suppressed) {
-		blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
-		     xlock.getErrorText().c_str());
-		p->tick_error_suppressed = true;
+	if (p->strict_binding) {
+		glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
+		if (xlock.gotError() && !p->tick_error_suppressed) {
+			blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
+			     xlock.getErrorText().c_str());
+			p->tick_error_suppressed = true;
+		}
+		glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
+		if (xlock.gotError() && !p->tick_error_suppressed) {
+			blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
+			     xlock.getErrorText().c_str());
+			p->tick_error_suppressed = true;
+		}
 	}
 
 	if (p->include_border) {
@@ -668,13 +688,6 @@ void XCompcapMain::tick(float seconds)
 				       p->cur_cut_left + p->border,
 				       p->cur_cut_top + p->border, width(),
 				       height());
-	}
-
-	glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
-	if (xlock.gotError() && !p->tick_error_suppressed) {
-		blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
-		     xlock.getErrorText().c_str());
-		p->tick_error_suppressed = true;
 	}
 	glBindTexture(GL_TEXTURE_2D, 0);
 
