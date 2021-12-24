@@ -5740,7 +5740,7 @@ OBSData OBSBasic::BackupScene(obs_scene_t *scene,
 
 static bool add_source_enum(obs_scene_t *, obs_sceneitem_t *item, void *p)
 {
-	auto sources = static_cast<std::vector<obs_source_t *> *>(p);
+	auto sources = static_cast<std::vector<OBSSource> *>(p);
 	sources->push_back(obs_sceneitem_get_source(item));
 	return true;
 }
