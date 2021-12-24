@@ -3903,8 +3903,8 @@ void OBSBasic::RemoveSelectedScene()
 			auto cb = [](obs_scene_t *scene, obs_sceneitem_t *item,
 				     void *data) {
 				UNUSED_PARAMETER(scene);
-				std::vector<obs_source_t *> *existing =
-					(std::vector<obs_source_t *> *)data;
+				std::vector<OBSSource> *existing =
+					(std::vector<OBSSource> *)data;
 				OBSSource source =
 					obs_sceneitem_get_source(item);
 				obs_sceneitem_remove(item);
