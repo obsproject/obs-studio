@@ -375,6 +375,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 		}
 	}
 
+	/* Keep in sync with obs-video-gpu-encode.c:init_gpu_encoding */
 	enum gs_color_format format = GS_RGBA;
 	switch (ovi->output_format) {
 	case VIDEO_FORMAT_I010:
@@ -399,15 +400,15 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 		}
 	}
 
-	video->render_texture = gs_texture_create(ovi->base_width,
-						  ovi->base_height, format, 1,
-						  NULL, GS_RENDER_TARGET);
+	video->render_texture =
+		gs_texture_create(ovi->base_width, ovi->base_height, format, 1,
+				  NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 	if (!video->render_texture)
 		success = false;
 
-	video->output_texture = gs_texture_create(ovi->output_width,
-						  ovi->output_height, format, 1,
-						  NULL, GS_RENDER_TARGET);
+	video->output_texture =
+		gs_texture_create(ovi->output_width, ovi->output_height, format,
+				  1, NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 	if (!video->output_texture)
 		success = false;
 

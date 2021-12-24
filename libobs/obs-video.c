@@ -453,8 +453,12 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 	 * reason.  otherwise, it goes to the 'duplicate' case above, which
 	 * will ensure better performance. */
 	if (raw_active || vframe_info->count > 1) {
-		gs_copy_texture(tf.tex, video->convert_textures_encode[0]);
-	} else {
+		gs_texture_t *tex = video->gpu_conversion
+					    ? video->convert_textures_encode[0]
+					    : video->output_texture;
+
+		gs_copy_texture(tf.tex, tex);
+	} else if (video->gpu_conversion) {
 		gs_texture_t *tex = video->convert_textures_encode[0];
 		gs_texture_t *tex_uv = video->convert_textures_encode[1];
 
@@ -463,6 +467,13 @@ static inline bool queue_frame(struct obs_core_video *video, bool raw_active,
 
 		tf.tex = tex;
 		tf.tex_uv = tex_uv;
+	} else {
+		gs_texture_t *tex = video->output_texture;
+
+		video->output_texture = tf.tex;
+
+		tf.tex = tex;
+		tf.tex_uv = NULL;
 	}
 
 	tf.count = 1;
@@ -492,8 +503,6 @@ static void output_gpu_encoders(struct obs_core_video *video, bool raw_active)
 {
 	profile_start(output_gpu_encoders_name);
 
-	if (!video->texture_converted)
-		goto end;
 	if (!video->vframe_info_buffer_gpu.size)
 		goto end;
 
@@ -1015,7 +1024,7 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
 	bool raw_active = os_atomic_load_long(&obs->video.raw_active) > 0;
-#ifdef _WIN32
+#ifndef __APPLE__
 	const bool gpu_active =
 		os_atomic_load_long(&obs->video.gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
