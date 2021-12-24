@@ -519,6 +519,16 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 	obsqsv->params.bMBBRC = enhancements;
 	obsqsv->params.bCQM = enhancements;
 
+	if (voi->format == VIDEO_FORMAT_NV12) {
+		obsqsv->params.nFourCC = MFX_FOURCC_NV12;
+		obsqsv->params.nChromaFormat = MFX_CHROMAFORMAT_YUV420;
+	} else if (voi->format == VIDEO_FORMAT_RGBA) {
+		// OBS's GS_RGBA is DXGI_FORMAT_R8G8B8A8_TYPELESS: LSB is 'R' (https://docs.microsoft.com/en-us/windows/win32/api/dxgiformat/ne-dxgiformat-dxgi_format)
+		// MFX_FOURCC_BGR4: LSB is 'R' (https://github.com/Intel-Media-SDK/MediaSDK/blob/master/doc/mediasdk-man.md)
+		obsqsv->params.nFourCC = MFX_FOURCC_BGR4;
+		obsqsv->params.nChromaFormat = MFX_CHROMAFORMAT_YUV444;
+	}
+
 	info("settings:\n\trate_control:   %s", rate_control);
 
 	if (obsqsv->params.nRateControl != MFX_RATECONTROL_LA_ICQ &&
@@ -732,6 +742,19 @@ static bool is_intel_gpu_primary()
 	}
 }
 
+static inline bool valid_format(enum video_format format)
+{
+	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
+
+	// Platforms >= KBL have direct ARGB encoding support
+	if (qsv_platform >= QSV_CPU_PLATFORM_KBL) {
+		return format == VIDEO_FORMAT_NV12 ||
+		       format == VIDEO_FORMAT_RGBA;
+	} else {
+		return format == VIDEO_FORMAT_NV12;
+	}
+}
+
 static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	if (!is_intel_gpu_primary()) {
@@ -740,9 +763,11 @@ static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
 		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
 	}
 
-	if (!obs_nv12_tex_active()) {
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	if (!valid_format(voi->format)) {
 		blog(LOG_INFO,
-		     ">>> nv12 tex not active, fall back to old qsv encoder");
+		     ">>> unsupported video format, fall back to old qsv encoder");
 		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
 	}
 
@@ -784,11 +809,6 @@ static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 	return true;
 }
 
-static inline bool valid_format(enum video_format format)
-{
-	return format == VIDEO_FORMAT_NV12;
-}
-
 static inline void cap_resolution(obs_encoder_t *encoder,
 				  struct video_scale_info *info)
 {
@@ -817,6 +837,10 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 
 	pref_format = obs_encoder_get_preferred_video_format(obsqsv->encoder);
 
+	if (obsqsv->context) {
+		pref_format = qsv_encoder_get_video_format(obsqsv->context);
+	}
+
 	if (!valid_format(pref_format)) {
 		pref_format = valid_format(info->format) ? info->format
 							 : VIDEO_FORMAT_NV12;
@@ -824,6 +848,12 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 
 	info->format = pref_format;
 	cap_resolution(obsqsv->encoder, info);
+
+	if (info->format == VIDEO_FORMAT_NV12) {
+		blog(LOG_DEBUG, "\t>>> QSV NV12");
+	} else {
+		blog(LOG_DEBUG, "\t>>> QSV ARGB");
+	}
 }
 
 static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,

@@ -151,6 +151,14 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
+
+	// Fall back to NV12 from ARGB, if needed
+	if (sts == MFX_ERR_UNSUPPORTED && pParams->nFourCC == MFX_FOURCC_BGR4) {
+		pParams->nFourCC == MFX_FOURCC_NV12;
+		pParams->nChromaFormat == MFX_CHROMAFORMAT_YUV420;
+		sts = pEncoder->Reset(pParams);
+	}
+
 	if (sts != MFX_ERR_NONE) {
 
 #define WARN_ERR_IMPL(err, str, err_name)                   \
@@ -254,7 +262,8 @@ int qsv_encoder_encode(qsv_t *pContext, uint64_t ts, uint8_t *pDataY,
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
 	mfxStatus sts = MFX_ERR_NONE;
 
-	if (pDataY != NULL && pDataUV != NULL)
+	// Changed as ARGB direct encoding texture will have pDataUV == NULL
+	if (pDataY != NULL)
 		sts = pEncoder->Encode(ts, pDataY, pDataUV, strideY, strideUV,
 				       pBS);
 
@@ -403,4 +412,23 @@ enum qsv_cpu_platform qsv_get_cpu_platform()
 
 	//assume newer revisions are at least as capable as Haswell
 	return QSV_CPU_PLATFORM_INTEL;
+}
+
+enum video_format qsv_encoder_get_video_format(qsv_t *pContext)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+
+	mfxU32 fourCC;
+	mfxStatus sts = pEncoder->GetCurrentFourCC(fourCC);
+	if (sts != MFX_ERR_NONE)
+		return VIDEO_FORMAT_NONE;
+
+	switch (fourCC) {
+	case MFX_FOURCC_NV12:
+		return VIDEO_FORMAT_NV12;
+	case MFX_FOURCC_BGR4:
+		return VIDEO_FORMAT_RGBA;
+	}
+
+	return VIDEO_FORMAT_NONE;
 }
