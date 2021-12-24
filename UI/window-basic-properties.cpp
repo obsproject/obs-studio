@@ -343,10 +343,7 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 
 	if (val == QDialogButtonBox::AcceptRole) {
 
-		std::string scene_name =
-			obs_source_get_name(main->GetCurrentSceneSource());
-
-		auto undo_redo = [scene_name](const std::string &data) {
+		auto undo_redo = [](const std::string &data) {
 			OBSDataAutoRelease settings =
 				obs_data_create_from_json(data.c_str());
 			OBSSourceAutoRelease source = obs_get_source_by_name(
@@ -354,12 +351,6 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_reset_settings(source, settings);
 
 			obs_source_update_properties(source);
-
-			OBSSourceAutoRelease scene_source =
-				obs_get_source_by_name(scene_name.c_str());
-
-			OBSBasic::Get()->SetCurrentScene(scene_source.Get(),
-							 true);
 		};
 
 		OBSDataAutoRelease new_settings = obs_data_create();

@@ -64,11 +64,7 @@ void SourceToolbar::SetUndoProperties(obs_source_t *source, bool repeatable)
 			obs_data_get_string(settings, "undo_sname"));
 		obs_source_reset_settings(source, settings);
 
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source.Get(), true);
-
-		main->UpdateContextBar();
+		main->UpdateContextBar(true);
 	};
 
 	OBSDataAutoRelease new_settings = obs_data_create();

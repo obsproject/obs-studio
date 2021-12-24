@@ -3733,14 +3733,12 @@ void OBSBasic::DuplicateSelectedScene()
 			obs_source_remove(source);
 		};
 
-		auto redo = [this, name](const std::string &data) {
+		auto redo = [name](const std::string &data) {
 			OBSSourceAutoRelease source =
 				obs_get_source_by_name(data.c_str());
-			obs_scene_t *scene = obs_scene_from_source(source);
-			scene = obs_scene_duplicate(scene, name.c_str(),
-						    OBS_SCENE_DUP_REFS);
-			source = obs_scene_get_source(scene);
-			SetCurrentScene(source.Get(), true);
+			OBSScene scene = obs_scene_from_source(source);
+			OBSSceneAutoRelease newScene = obs_scene_duplicate(
+				scene, name.c_str(), OBS_SCENE_DUP_REFS);
 		};
 
 		undo_s.add_action(
@@ -3908,16 +3906,14 @@ void OBSBasic::RemoveSelectedScene()
 				obs_group_or_scene_from_source(source), items);
 		}
 
-		obs_source_t *scene_source = sources.back();
-		OBSScene scene = obs_scene_from_source(scene_source);
-		SetCurrentScene(scene, true);
-
 		/* set original index in list box */
 		ui->scenes->blockSignals(true);
 		int curIndex = ui->scenes->currentRow();
-		QListWidgetItem *item = ui->scenes->takeItem(curIndex);
+		QListWidgetItem *item =
+			ui->scenes->takeItem(ui->scenes->count() - 1);
 		ui->scenes->insertItem(savedIndex, item);
-		ui->scenes->setCurrentRow(savedIndex);
+		ui->scenes->setCurrentRow(curIndex < savedIndex ? curIndex
+								: curIndex + 1);
 		ui->scenes->blockSignals(false);
 	};
 
@@ -5114,11 +5110,9 @@ void OBSBasic::on_actionAddScene_triggered()
 			}
 		};
 
-		auto redo_fn = [this](const std::string &data) {
+		auto redo_fn = [](const std::string &data) {
 			OBSSceneAutoRelease scene =
 				obs_scene_create(data.c_str());
-			obs_source_t *source = obs_scene_get_source(scene);
-			SetCurrentScene(source, true);
 		};
 		undo_s.add_action(QTStr("Undo.Add").arg(QString(name.c_str())),
 				  undo_fn, redo_fn, name, name);
@@ -7839,12 +7833,6 @@ void OBSBasic::on_actionCopyTransform_triggered()
 
 void undo_redo(const std::string &data)
 {
-	OBSDataAutoRelease dat = obs_data_create_from_json(data.c_str());
-	OBSSourceAutoRelease source =
-		obs_get_source_by_name(obs_data_get_string(dat, "scene_name"));
-	reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-		->SetCurrentScene(source.Get(), true);
-
 	obs_scene_load_transform_states(data.c_str());
 }
 

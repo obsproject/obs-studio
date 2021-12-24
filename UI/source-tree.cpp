@@ -453,28 +453,18 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 
 	SignalBlocker sourcesSignalBlocker(this);
 	std::string prevName(obs_source_get_name(source));
-	std::string scene_name =
-		obs_source_get_name(main->GetCurrentSceneSource());
-	auto undo = [scene_name, prevName, main](const std::string &data) {
+	auto undo = [prevName](const std::string &data) {
 		OBSSourceAutoRelease source =
 			obs_get_source_by_name(data.c_str());
 		obs_source_set_name(source, prevName.c_str());
-
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	std::string editedName = newName;
 
-	auto redo = [scene_name, main, editedName](const std::string &data) {
+	auto redo = [editedName](const std::string &data) {
 		OBSSourceAutoRelease source =
 			obs_get_source_by_name(data.c_str());
 		obs_source_set_name(source, editedName.c_str());
-
-		OBSSourceAutoRelease scene_source =
-			obs_get_source_by_name(scene_name.c_str());
-		main->SetCurrentScene(scene_source.Get(), true);
 	};
 
 	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,

@@ -590,16 +590,7 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		obs_data_set_string(wrapper, "sname",
 				    obs_source_get_name(source));
 		obs_data_set_string(wrapper, "fname", name.c_str());
-		std::string scene_name = obs_source_get_name(
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->GetCurrentSceneSource());
-		auto undo = [scene_name](const std::string &data) {
-			obs_source_t *ssource =
-				obs_get_source_by_name(scene_name.c_str());
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource, true);
-			obs_source_release(ssource);
-
+		auto undo = [](const std::string &data) {
 			obs_data_t *dat =
 				obs_data_create_from_json(data.c_str());
 			obs_source_t *source = obs_get_source_by_name(
@@ -616,13 +607,8 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 		OBSDataAutoRelease rwrapper = obs_data_create();
 		obs_data_set_string(rwrapper, "sname",
 				    obs_source_get_name(source));
-		auto redo = [scene_name, id = std::string(id),
+		auto redo = [id = std::string(id),
 			     name](const std::string &data) {
-			OBSSourceAutoRelease ssource =
-				obs_get_source_by_name(scene_name.c_str());
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource.Get(), true);
-
 			OBSDataAutoRelease dat =
 				obs_data_create_from_json(data.c_str());
 			OBSSourceAutoRelease source = obs_get_source_by_name(
@@ -1073,13 +1059,8 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 		std::string scene_name = obs_source_get_name(
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 				->GetCurrentSceneSource());
-		auto undo = [scene_name, prev = std::string(prevName),
+		auto undo = [prev = std::string(prevName),
 			     name](const std::string &data) {
-			OBSSourceAutoRelease ssource =
-				obs_get_source_by_name(scene_name.c_str());
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource.Get(), true);
-
 			OBSSourceAutoRelease source =
 				obs_get_source_by_name(data.c_str());
 			OBSSourceAutoRelease filter =
@@ -1088,13 +1069,8 @@ void OBSBasicFilters::FilterNameEdited(QWidget *editor, QListWidget *list)
 			obs_source_set_name(filter, prev.c_str());
 		};
 
-		auto redo = [scene_name, prev = std::string(prevName),
+		auto redo = [prev = std::string(prevName),
 			     name](const std::string &data) {
-			OBSSourceAutoRelease ssource =
-				obs_get_source_by_name(scene_name.c_str());
-			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-				->SetCurrentScene(ssource.Get(), true);
-
 			OBSSourceAutoRelease source =
 				obs_get_source_by_name(data.c_str());
 			OBSSourceAutoRelease filter =
@@ -1188,15 +1164,7 @@ void OBSBasicFilters::delete_filter(OBSSource filter)
 	std::string parent_name(obs_source_get_name(source));
 	obs_data_set_string(wrapper, "undo_name", parent_name.c_str());
 
-	std::string scene_name = obs_source_get_name(
-		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-			->GetCurrentSceneSource());
-	auto undo = [scene_name](const std::string &data) {
-		OBSSourceAutoRelease ssource =
-			obs_get_source_by_name(scene_name.c_str());
-		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-			->SetCurrentScene(ssource.Get(), true);
-
+	auto undo = [](const std::string &data) {
 		OBSDataAutoRelease dat =
 			obs_data_create_from_json(data.c_str());
 		OBSSourceAutoRelease source = obs_get_source_by_name(
@@ -1208,12 +1176,7 @@ void OBSBasicFilters::delete_filter(OBSSource filter)
 	OBSDataAutoRelease rwrapper = obs_data_create();
 	obs_data_set_string(rwrapper, "fname", obs_source_get_name(filter));
 	obs_data_set_string(rwrapper, "sname", parent_name.c_str());
-	auto redo = [scene_name](const std::string &data) {
-		OBSSourceAutoRelease ssource =
-			obs_get_source_by_name(scene_name.c_str());
-		reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
-			->SetCurrentScene(ssource.Get(), true);
-
+	auto redo = [](const std::string &data) {
 		OBSDataAutoRelease dat =
 			obs_data_create_from_json(data.c_str());
 		OBSSourceAutoRelease source = obs_get_source_by_name(
