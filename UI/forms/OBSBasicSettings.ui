@@ -2487,6 +2487,16 @@
                               </property>
                              </widget>
                             </item>
+                            <item row="10" column="1">
+                             <widget class="QCheckBox" name="advOutSplitFileRstTS">
+                              <property name="text">
+                               <string>Basic.Settings.Output.SplitFile.ResetTimestamps</string>
+                              </property>
+                              <property name="checked">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
                             <item row="3" column="1">
                              <widget class="QStackedWidget" name="advRecTrackWidget">
                               <property name="sizePolicy">
@@ -5758,6 +5768,7 @@
   <tabstop>advOutSplitFileType</tabstop>
   <tabstop>advOutSplitFileTime</tabstop>
   <tabstop>advOutSplitFileSize</tabstop>
+  <tabstop>advOutSplitFileRstTS</tabstop>
   <tabstop>advOutFFType</tabstop>
   <tabstop>advOutFFRecPath</tabstop>
   <tabstop>advOutFFPathBrowse</tabstop>

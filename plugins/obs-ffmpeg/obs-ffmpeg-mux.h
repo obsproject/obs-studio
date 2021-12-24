@@ -37,6 +37,12 @@ struct ffmpeg_muxer {
 	volatile bool muxing;
 	DARRAY(struct encoder_packet) mux_packets;
 
+	/* split file */
+	bool found_video;
+	bool found_audio[MAX_AUDIO_MIXES];
+	int64_t video_pts_offset;
+	int64_t audio_dts_offsets[MAX_AUDIO_MIXES];
+
 	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;
 	bool mux_thread_joinable;
@@ -54,6 +60,7 @@ struct ffmpeg_muxer {
 
 	bool is_network;
 	bool split_file;
+	bool reset_timestamps;
 	bool allow_overwrite;
 };
 
