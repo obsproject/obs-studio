@@ -138,6 +138,45 @@ static uint32_t ft2_source_get_height(void *data)
 	return srcdata->cy + srcdata->outline_width;
 }
 
+#define SET_ENABLED(name, enabled)                       \
+	prop = obs_properties_get(props, name);          \
+	if (obs_property_enabled(prop) != enabled) {     \
+		obs_property_set_enabled(prop, enabled); \
+		modified = true;                         \
+	}
+
+static bool properties_from_file_changed(obs_properties_t *props,
+					 obs_property_t *prop,
+					 obs_data_t *settings)
+{
+	bool modified = false;
+	bool from_file = obs_data_get_bool(settings, "from_file");
+	SET_ENABLED("text", !from_file);
+	return modified;
+}
+
+static bool properties_log_mode_changed(obs_properties_t *props,
+					obs_property_t *prop,
+					obs_data_t *settings)
+{
+	bool modified = false;
+	bool log_mode = obs_data_get_bool(settings, "log_mode");
+	SET_ENABLED("log_lines", log_mode);
+	return modified;
+}
+
+static bool properties_custom_width_changed(obs_properties_t *props,
+					    obs_property_t *prop,
+					    obs_data_t *settings)
+{
+	bool modified = false;
+	int width = obs_data_get_int(settings, "custom_width");
+	SET_ENABLED("word_wrap", width >= 100);
+	return modified;
+}
+
+#undef SET_ENABLED
+
 static obs_properties_t *ft2_source_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -156,21 +195,28 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_properties_add_text(props, "text", obs_module_text("Text"),
 				OBS_TEXT_MULTILINE);
 
-	obs_properties_add_bool(props, "from_file",
-				obs_module_text("ReadFromFile"));
+	{
+		obs_properties_t *file_group = obs_properties_create();
 
-	obs_properties_add_bool(props, "antialiasing",
-				obs_module_text("Antialiasing"));
+		obs_properties_add_path(
+			file_group, "text_file", obs_module_text("TextFile"),
+			OBS_PATH_FILE, obs_module_text("TextFileFilter"), NULL);
 
-	obs_properties_add_bool(props, "log_mode",
-				obs_module_text("ChatLogMode"));
+		obs_property_t *log_mode = obs_properties_add_bool(
+			file_group, "log_mode", obs_module_text("ChatLogMode"));
+		obs_property_set_modified_callback(log_mode,
+						   properties_log_mode_changed);
 
-	obs_properties_add_int(props, "log_lines",
-			       obs_module_text("ChatLogLines"), 1, 1000, 1);
+		obs_properties_add_int(file_group, "log_lines",
+				       obs_module_text("ChatLogLines"), 1, 1000,
+				       1);
 
-	obs_properties_add_path(props, "text_file", obs_module_text("TextFile"),
-				OBS_PATH_FILE,
-				obs_module_text("TextFileFilter"), NULL);
+		obs_property_t *from_file = obs_properties_add_group(
+			props, "from_file", obs_module_text("ReadFromFile"),
+			OBS_GROUP_CHECKABLE, file_group);
+		obs_property_set_modified_callback(
+			from_file, properties_from_file_changed);
+	}
 
 	obs_properties_add_color_alpha(props, "color1",
 				       obs_module_text("Color1"));
@@ -178,13 +224,19 @@ static obs_properties_t *ft2_source_properties(void *unused)
 	obs_properties_add_color_alpha(props, "color2",
 				       obs_module_text("Color2"));
 
+	obs_properties_add_bool(props, "antialiasing",
+				obs_module_text("Antialiasing"));
+
 	obs_properties_add_bool(props, "outline", obs_module_text("Outline"));
 
 	obs_properties_add_bool(props, "drop_shadow",
 				obs_module_text("DropShadow"));
 
-	obs_properties_add_int(props, "custom_width",
-			       obs_module_text("CustomWidth"), 0, 4096, 1);
+	obs_property_t *custom_width = obs_properties_add_int(
+		props, "custom_width", obs_module_text("CustomWidth"), 0, 4096,
+		1);
+	obs_property_set_modified_callback(custom_width,
+					   properties_custom_width_changed);
 
 	obs_properties_add_bool(props, "word_wrap",
 				obs_module_text("WordWrap"));
