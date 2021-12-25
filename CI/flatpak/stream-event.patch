@@ -1,0 +1,13 @@
+diff --git a/src/pipewire/stream.c b/src/pipewire/stream.c
+index 4c322d57f..780040d8e 100644
+--- a/src/pipewire/stream.c
++++ b/src/pipewire/stream.c
+@@ -1288,7 +1288,7 @@ static void on_core_error(void *object, uint32_t id, int seq, int res, const cha
+ }
+ 
+ static const struct pw_core_events core_events = {
+-	PW_VERSION_CORE_EVENTS,
++	0,
+ 	.error = on_core_error,
+ };
+ 
