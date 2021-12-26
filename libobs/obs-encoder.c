@@ -760,7 +760,7 @@ uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
 		       : audio_output_get_sample_rate(encoder->media);
 }
 
-uint32_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
+size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_get_frame_size"))
 		return 0;
@@ -772,7 +772,7 @@ uint32_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 		return 0;
 	}
 
-	return encoder->framesize != 0 ? encoder->framesize : 0;
+	return encoder->framesize;
 }
 
 void obs_encoder_set_video(obs_encoder_t *encoder, video_t *video)

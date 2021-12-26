@@ -400,7 +400,7 @@ General Encoder Functions
 
 ---------------------
 
-.. function:: uint32_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
+.. function:: size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
 
    :return: The frame size of the audio packet
 
