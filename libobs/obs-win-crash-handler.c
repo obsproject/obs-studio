@@ -184,8 +184,10 @@ static inline void init_sym_info(struct exception_handler_data *data)
 		data->sym_refresh_module_list(data->process);
 
 	data->sym_info = LocalAlloc(LPTR, sizeof(*data->sym_info) + 256);
-	data->sym_info->SizeOfStruct = sizeof(SYMBOL_INFO);
-	data->sym_info->MaxNameLen = 256;
+	if (data->sym_info) {
+		data->sym_info->SizeOfStruct = sizeof(SYMBOL_INFO);
+		data->sym_info->MaxNameLen = 256;
+	}
 }
 
 static inline void init_version_info(struct exception_handler_data *data)
@@ -335,12 +337,16 @@ static inline bool walk_stack(struct exception_handler_data *data,
 		p = module_info.name_utf8;
 	}
 
-	success = !!data->sym_from_addr(data->process,
-					trace->frame.AddrPC.Offset,
-					&func_offset, data->sym_info);
+	if (data->sym_info) {
+		success = !!data->sym_from_addr(data->process,
+						trace->frame.AddrPC.Offset,
+						&func_offset, data->sym_info);
 
-	if (success)
-		os_wcs_to_utf8(data->sym_info->Name, 0, sym_name, 256);
+		if (success)
+			os_wcs_to_utf8(data->sym_info->Name, 0, sym_name, 256);
+	} else {
+		success = false;
+	}
 
 #ifdef _WIN64
 #define SUCCESS_FORMAT                         \
