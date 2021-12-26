@@ -187,6 +187,7 @@ static bool nv_texture_init(struct nvenc_data *enc, struct nv_texture *nvtex)
 
 	nvtex->res = res.registeredResource;
 	nvtex->tex = tex;
+	nvtex->mapped_res = NULL;
 	return true;
 }
 
