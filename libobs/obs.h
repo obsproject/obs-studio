@@ -1205,9 +1205,6 @@ EXPORT void obs_source_remove_caption_callback(obs_source_t *source,
 					       obs_source_caption_t callback,
 					       void *param);
 
-/** Get version of a source **/
-EXPORT uint32_t obs_source_get_version(const obs_source_t *source);
-
 enum obs_deinterlace_mode {
 	OBS_DEINTERLACE_MODE_DISABLE,
 	OBS_DEINTERLACE_MODE_DISCARD,

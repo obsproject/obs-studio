@@ -903,12 +903,6 @@ General Source Functions
 
 ---------------------
 
-.. function:: uint32_t obs_source_get_version(const obs_source_t *source)
-
-   :return: Get version of a source
-
----------------------
-
 .. function:: signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
 
    :return: The source's signal handler
