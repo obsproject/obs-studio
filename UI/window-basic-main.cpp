@@ -2119,6 +2119,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		const std::string &version = item["version"].string_value();
 		const std::string &url = item["url"].string_value();
 		int increment = item["increment"].int_value();
+		int beta = item["Beta"].int_value();
 		int rc = item["RC"].int_value();
 
 		int major = 0;
@@ -2129,9 +2130,12 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		if (major == OBS_RELEASE_CANDIDATE_MAJOR &&
 		    minor == OBS_RELEASE_CANDIDATE_MINOR &&
 		    rc == OBS_RELEASE_CANDIDATE) {
+#elif OBS_BETA > 0
+		if (major == OBS_BETA_MAJOR && minor == OBS_BETA_MINOR &&
+		    beta == OBS_BETA) {
 #else
 		if (major == LIBOBS_API_MAJOR_VER &&
-		    minor == LIBOBS_API_MINOR_VER && rc == 0) {
+		    minor == LIBOBS_API_MINOR_VER && rc == 0 && beta == 0) {
 #endif
 			info_url = url;
 			info_increment = increment;
@@ -2146,6 +2150,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #if OBS_RELEASE_CANDIDATE > 0
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
 					      "LastRCVersion");
+#elif OBS_BETA > 0
+	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
+					      "LastBetaVersion");
 #else
 	uint32_t lastVersion =
 		config_get_int(App()->GlobalConfig(), "General", "LastVersion");
@@ -2155,6 +2162,8 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 #if OBS_RELEASE_CANDIDATE > 0
 	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
+#elif OBS_BETA > 0
+	if (lastVersion < OBS_BETA_VER) {
 #else
 	if ((lastVersion & ~0xFFFF) < (LIBOBS_API_VER & ~0xFFFF)) {
 #endif
@@ -2173,7 +2182,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		       info_increment);
 
 	/* Don't show What's New dialog for new users */
-#if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0
+#if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0 || \
+	!defined(OBS_BETA) || OBS_BETA == 0
+
 	if (!lastVersion) {
 		return;
 	}
@@ -2645,6 +2656,9 @@ OBSBasic::~OBSBasic()
 #if OBS_RELEASE_CANDIDATE > 0
 	config_set_int(App()->GlobalConfig(), "General", "LastRCVersion",
 		       OBS_RELEASE_CANDIDATE_VER);
+#elif OBS_BETA > 0
+	config_set_int(App()->GlobalConfig(), "General", "LastBetaVersion",
+		       OBS_BETA_VER);
 #endif
 
 	bool alwaysOnTop = IsAlwaysOnTop(this);
