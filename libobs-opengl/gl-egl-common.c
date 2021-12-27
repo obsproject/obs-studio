@@ -221,7 +221,7 @@ static inline bool is_implicit_dmabuf_modifiers_supported(void)
 }
 
 static inline bool query_dmabuf_formats(EGLDisplay egl_display,
-					EGLint *num_formats, EGLint **formats)
+					EGLint **formats, EGLint *num_formats)
 {
 	EGLint max_formats = 0;
 	EGLint *format_list = NULL;
@@ -268,8 +268,8 @@ bool gl_egl_query_dmabuf_capabilities(EGLDisplay egl_display,
 		return ret;
 	}
 
-	if (!query_dmabuf_formats(egl_display, (EGLint *)n_formats,
-				  (EGLint **)formats)) {
+	if (!query_dmabuf_formats(egl_display, (EGLint **)formats,
+				  (EGLint *)n_formats)) {
 		*n_formats = 0;
 		*formats = NULL;
 	}
