@@ -215,10 +215,8 @@ gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 	return texture;
 }
 
-static inline bool
-is_implicit_dmabuf_modifiers_supported(EGLDisplay egl_display)
+static inline bool is_implicit_dmabuf_modifiers_supported(void)
 {
-	UNUSED_PARAMETER(egl_display);
 	return EGL_EXT_image_dma_buf_import > 0;
 }
 
@@ -260,7 +258,7 @@ bool gl_egl_query_dmabuf_capabilities(EGLDisplay egl_display,
 {
 	bool ret = false;
 
-	if (is_implicit_dmabuf_modifiers_supported(egl_display)) {
+	if (is_implicit_dmabuf_modifiers_supported()) {
 		*dmabuf_flags = GS_DMABUF_FLAG_IMPLICIT_MODIFIERS_SUPPORTED;
 		ret = true;
 	}
