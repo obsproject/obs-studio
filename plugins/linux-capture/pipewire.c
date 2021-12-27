@@ -386,13 +386,13 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 					   uint32_t format, uint64_t *modifiers,
 					   size_t modifier_count)
 {
-	struct spa_pod_frame f[2];
+	struct spa_pod_frame format_frame;
 
 	/* Make an object of type SPA_TYPE_OBJECT_Format and id SPA_PARAM_EnumFormat.
 	 * The object type is important because it defines the properties that are
 	 * acceptable. The id gives more context about what the object is meant to
 	 * contain. In this case we enumerate supported formats. */
-	spa_pod_builder_push_object(b, &f[0], SPA_TYPE_OBJECT_Format,
+	spa_pod_builder_push_object(b, &format_frame, SPA_TYPE_OBJECT_Format,
 				    SPA_PARAM_EnumFormat);
 	/* add media type and media subtype properties */
 	spa_pod_builder_add(b, SPA_FORMAT_mediaType,
@@ -405,12 +405,15 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 
 	/* modifier */
 	if (modifier_count > 0) {
+		struct spa_pod_frame modifier_frame;
+
 		/* build an enumeration of modifiers */
 		spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_modifier,
 				     SPA_POD_PROP_FLAG_MANDATORY |
 					     SPA_POD_PROP_FLAG_DONT_FIXATE);
 
-		spa_pod_builder_push_choice(b, &f[1], SPA_CHOICE_Enum, 0);
+		spa_pod_builder_push_choice(b, &modifier_frame, SPA_CHOICE_Enum,
+					    0);
 
 		/* The first element of choice pods is the preferred value. Here
 		 * we arbitrarily pick the first modifier as the preferred one.
@@ -421,7 +424,7 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 		for (uint32_t i = 0; i < modifier_count; i++)
 			spa_pod_builder_long(b, modifiers[i]);
 
-		spa_pod_builder_pop(b, &f[1]);
+		spa_pod_builder_pop(b, &modifier_frame);
 	}
 	/* add size and framerate ranges */
 	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size,
@@ -434,7 +437,7 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 				    &SPA_FRACTION(ovi->fps_num, ovi->fps_den),
 				    &SPA_FRACTION(0, 1), &SPA_FRACTION(360, 1)),
 			    0);
-	return spa_pod_builder_pop(b, &f[0]);
+	return spa_pod_builder_pop(b, &format_frame);
 }
 
 static bool build_format_params(obs_pipewire_data *obs_pw,
