@@ -312,63 +312,72 @@ static inline bool has_effective_crop(obs_pipewire_data *obs_pw)
 		obs_pw->crop.height < obs_pw->format.info.raw.size.height);
 }
 
+static const struct {
+	uint32_t spa_format;
+	uint32_t drm_format;
+	enum gs_color_format gs_format;
+	bool swap_red_blue;
+	const char *pretty_name;
+} supported_formats[] = {
+	{
+		SPA_VIDEO_FORMAT_BGRA,
+		DRM_FORMAT_ARGB8888,
+		GS_BGRA,
+		false,
+		"ARGB8888",
+	},
+	{
+		SPA_VIDEO_FORMAT_RGBA,
+		DRM_FORMAT_ABGR8888,
+		GS_RGBA,
+		false,
+		"ABGR8888",
+	},
+	{
+		SPA_VIDEO_FORMAT_BGRx,
+		DRM_FORMAT_XRGB8888,
+		GS_BGRX,
+		false,
+		"XRGB8888",
+	},
+	{
+		SPA_VIDEO_FORMAT_RGBx,
+		DRM_FORMAT_XBGR8888,
+		GS_BGRX,
+		true,
+		"XBGR8888",
+	},
+};
+
+#define N_SUPPORTED_FORMATS \
+	(sizeof(supported_formats) / sizeof(supported_formats[0]))
+
 static bool spa_pixel_format_to_drm_format(uint32_t spa_format,
 					   uint32_t *out_format)
 {
-	switch (spa_format) {
-	case SPA_VIDEO_FORMAT_RGBA:
-		*out_format = DRM_FORMAT_ABGR8888;
-		break;
+	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
+		if (supported_formats[i].spa_format != spa_format)
+			continue;
 
-	case SPA_VIDEO_FORMAT_RGBx:
-		*out_format = DRM_FORMAT_XBGR8888;
-		break;
-
-	case SPA_VIDEO_FORMAT_BGRA:
-		*out_format = DRM_FORMAT_ARGB8888;
-		break;
-
-	case SPA_VIDEO_FORMAT_BGRx:
-		*out_format = DRM_FORMAT_XRGB8888;
-		break;
-
-	default:
-		return false;
+		*out_format = supported_formats[i].drm_format;
+		return true;
 	}
-
-	return true;
+	return false;
 }
 
 static bool spa_pixel_format_to_obs_format(uint32_t spa_format,
 					   enum gs_color_format *out_format,
 					   bool *swap_red_blue)
 {
-	switch (spa_format) {
-	case SPA_VIDEO_FORMAT_RGBA:
-		*out_format = GS_RGBA;
-		*swap_red_blue = false;
-		break;
+	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
+		if (supported_formats[i].spa_format != spa_format)
+			continue;
 
-	case SPA_VIDEO_FORMAT_RGBx:
-		*out_format = GS_BGRX;
-		*swap_red_blue = true;
-		break;
-
-	case SPA_VIDEO_FORMAT_BGRA:
-		*out_format = GS_BGRA;
-		*swap_red_blue = false;
-		break;
-
-	case SPA_VIDEO_FORMAT_BGRx:
-		*out_format = GS_BGRX;
-		*swap_red_blue = false;
-		break;
-
-	default:
-		return false;
+		*out_format = supported_formats[i].gs_format;
+		*swap_red_blue = supported_formats[i].swap_red_blue;
+		return true;
 	}
-
-	return true;
+	return false;
 }
 
 static void swap_texture_red_blue(gs_texture_t *texture)
@@ -497,15 +506,6 @@ static void init_format_info(obs_pipewire_data *obs_pw)
 {
 	da_init(obs_pw->format_info);
 
-	uint32_t formats[] = {
-		SPA_VIDEO_FORMAT_BGRA,
-		SPA_VIDEO_FORMAT_RGBA,
-		SPA_VIDEO_FORMAT_BGRx,
-		SPA_VIDEO_FORMAT_RGBx,
-	};
-
-	size_t n_formats = sizeof(formats) / sizeof(formats[0]);
-
 	obs_enter_graphics();
 
 	enum gs_dmabuf_flags dmabuf_flags;
@@ -515,29 +515,26 @@ static void init_format_info(obs_pipewire_data *obs_pw)
 	bool capabilities_queried = gs_query_dmabuf_capabilities(
 		&dmabuf_flags, &drm_formats, &n_drm_formats);
 
-	for (size_t i = 0; i < n_formats; i++) {
+	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
 		struct format_info *info;
-		uint32_t drm_format;
 
-		if (!spa_pixel_format_to_drm_format(formats[i], &drm_format))
-			continue;
-
-		if (!drm_format_available(drm_format, drm_formats,
-					  n_drm_formats))
+		if (!drm_format_available(supported_formats[i].drm_format,
+					  drm_formats, n_drm_formats))
 			continue;
 
 		info = da_push_back_new(obs_pw->format_info);
 		da_init(info->modifiers);
-		info->spa_format = formats[i];
-		info->drm_format = drm_format;
+		info->spa_format = supported_formats[i].spa_format;
+		info->drm_format = supported_formats[i].drm_format;
 
 		if (!capabilities_queried)
 			continue;
 
 		size_t n_modifiers;
 		uint64_t *modifiers = NULL;
-		if (gs_query_dmabuf_modifiers_for_format(drm_format, &modifiers,
-							 &n_modifiers)) {
+		if (gs_query_dmabuf_modifiers_for_format(
+			    supported_formats[i].drm_format, &modifiers,
+			    &n_modifiers)) {
 			da_push_back_array(info->modifiers, modifiers,
 					   n_modifiers);
 		}
