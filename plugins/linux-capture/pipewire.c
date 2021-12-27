@@ -648,7 +648,7 @@ static void on_process_cb(void *user_data)
 		uint32_t strides[planes];
 		uint64_t modifiers[planes];
 		int fds[planes];
-		bool modifierless; // DMA-BUF without explicit modifier
+		bool use_modifiers;
 
 		blog(LOG_DEBUG,
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
@@ -674,13 +674,13 @@ static void on_process_cb(void *user_data)
 
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
 
-		modifierless = obs_pw->format.info.raw.modifier ==
-			       DRM_FORMAT_MOD_INVALID;
+		use_modifiers = obs_pw->format.info.raw.modifier !=
+				DRM_FORMAT_MOD_INVALID;
 		obs_pw->texture = gs_texture_create_from_dmabuf(
 			obs_pw->format.info.raw.size.width,
 			obs_pw->format.info.raw.size.height, drm_format,
 			GS_BGRX, planes, fds, strides, offsets,
-			modifierless ? NULL : modifiers);
+			use_modifiers ? modifiers : NULL);
 
 		if (obs_pw->texture == NULL) {
 			remove_modifier_from_format(
