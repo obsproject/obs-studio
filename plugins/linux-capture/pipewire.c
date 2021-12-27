@@ -352,29 +352,20 @@ static const struct {
 #define N_SUPPORTED_FORMATS \
 	(sizeof(supported_formats) / sizeof(supported_formats[0]))
 
-static bool spa_pixel_format_to_drm_format(uint32_t spa_format,
-					   uint32_t *out_format)
+static bool lookup_format_info_from_spa_format(
+	uint32_t spa_format, uint32_t *out_drm_format,
+	enum gs_color_format *out_gs_format, bool *out_swap_red_blue)
 {
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
 		if (supported_formats[i].spa_format != spa_format)
 			continue;
 
-		*out_format = supported_formats[i].drm_format;
-		return true;
-	}
-	return false;
-}
-
-static bool spa_pixel_format_to_obs_format(uint32_t spa_format,
-					   enum gs_color_format *out_format,
-					   bool *swap_red_blue)
-{
-	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
-		if (supported_formats[i].spa_format != spa_format)
-			continue;
-
-		*out_format = supported_formats[i].gs_format;
-		*swap_red_blue = supported_formats[i].swap_red_blue;
+		if (out_drm_format)
+			*out_drm_format = supported_formats[i].drm_format;
+		if (out_gs_format)
+			*out_gs_format = supported_formats[i].gs_format;
+		if (out_swap_red_blue)
+			*out_swap_red_blue = supported_formats[i].swap_red_blue;
 		return true;
 	}
 	return false;
@@ -661,8 +652,9 @@ static void on_process_cb(void *user_data)
 		     obs_pw->format.info.raw.size.width,
 		     obs_pw->format.info.raw.size.height);
 
-		if (!spa_pixel_format_to_drm_format(
-			    obs_pw->format.info.raw.format, &drm_format)) {
+		if (!lookup_format_info_from_spa_format(
+			    obs_pw->format.info.raw.format, &drm_format, NULL,
+			    NULL)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw->format.info.raw.format);
@@ -698,8 +690,8 @@ static void on_process_cb(void *user_data)
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
 		enum gs_color_format obs_format;
 
-		if (!spa_pixel_format_to_obs_format(
-			    obs_pw->format.info.raw.format, &obs_format,
+		if (!lookup_format_info_from_spa_format(
+			    obs_pw->format.info.raw.format, NULL, &obs_format,
 			    &swap_red_blue)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
@@ -751,8 +743,8 @@ read_metadata:
 
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
-		    spa_pixel_format_to_obs_format(bitmap->format, &format,
-						   &swap_red_blue)) {
+		    lookup_format_info_from_spa_format(
+			    bitmap->format, NULL, &format, &swap_red_blue)) {
 			const uint8_t *bitmap_data;
 
 			bitmap_data =
