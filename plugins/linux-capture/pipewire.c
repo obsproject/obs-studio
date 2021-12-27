@@ -409,14 +409,18 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 		spa_pod_builder_prop(b, SPA_FORMAT_VIDEO_modifier,
 				     SPA_POD_PROP_FLAG_MANDATORY |
 					     SPA_POD_PROP_FLAG_DONT_FIXATE);
+
 		spa_pod_builder_push_choice(b, &f[1], SPA_CHOICE_Enum, 0);
+
+		/* The first element of choice pods is the preferred value. Here
+		 * we arbitrarily pick the first modifier as the preferred one.
+		 */
+		spa_pod_builder_long(b, modifiers[0]);
+
 		/* modifiers from  an array */
-		for (uint32_t i = 0; i < modifier_count; i++) {
-			uint64_t modifier = modifiers[i];
-			spa_pod_builder_long(b, modifier);
-			if (i == 0)
-				spa_pod_builder_long(b, modifier);
-		}
+		for (uint32_t i = 0; i < modifier_count; i++)
+			spa_pod_builder_long(b, modifiers[i]);
+
 		spa_pod_builder_pop(b, &f[1]);
 	}
 	/* add size and framerate ranges */
