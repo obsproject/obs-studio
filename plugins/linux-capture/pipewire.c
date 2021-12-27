@@ -688,10 +688,10 @@ static void on_process_cb(void *user_data)
 		}
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
-		enum gs_color_format obs_format;
+		enum gs_color_format gs_format;
 
 		if (!lookup_format_info_from_spa_format(
-			    obs_pw->format.info.raw.format, NULL, &obs_format,
+			    obs_pw->format.info.raw.format, NULL, &gs_format,
 			    &swap_red_blue)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
@@ -702,7 +702,7 @@ static void on_process_cb(void *user_data)
 		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
 		obs_pw->texture = gs_texture_create(
 			obs_pw->format.info.raw.size.width,
-			obs_pw->format.info.raw.size.height, obs_format, 1,
+			obs_pw->format.info.raw.size.height, gs_format, 1,
 			(const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
 
@@ -735,7 +735,7 @@ read_metadata:
 	obs_pw->cursor.valid = cursor && spa_meta_cursor_is_valid(cursor);
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid) {
 		struct spa_meta_bitmap *bitmap = NULL;
-		enum gs_color_format format;
+		enum gs_color_format gs_format;
 
 		if (cursor->bitmap_offset)
 			bitmap = SPA_MEMBER(cursor, cursor->bitmap_offset,
@@ -744,7 +744,7 @@ read_metadata:
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
 		    lookup_format_info_from_spa_format(
-			    bitmap->format, NULL, &format, &swap_red_blue)) {
+			    bitmap->format, NULL, &gs_format, &swap_red_blue)) {
 			const uint8_t *bitmap_data;
 
 			bitmap_data =
@@ -758,7 +758,7 @@ read_metadata:
 					gs_texture_destroy);
 			obs_pw->cursor.texture = gs_texture_create(
 				obs_pw->cursor.width, obs_pw->cursor.height,
-				format, 1, &bitmap_data, GS_DYNAMIC);
+				gs_format, 1, &bitmap_data, GS_DYNAMIC);
 
 			if (swap_red_blue)
 				swap_texture_red_blue(obs_pw->cursor.texture);
