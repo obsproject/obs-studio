@@ -212,7 +212,7 @@ OBSBasicProperties::~OBSBasicProperties()
 	}
 	obs_source_dec_showing(source);
 	main->SaveProject();
-	main->UpdateContextBar();
+	main->UpdateContextBarDeferred(true);
 }
 
 void OBSBasicProperties::AddPreviewButton()
