@@ -2700,7 +2700,10 @@ static inline void AddHotkeys(
 void OBSBasicSettings::LoadHotkeySettings(obs_hotkey_id ignoreKey)
 {
 	hotkeys.clear();
-	ui->hotkeyPage->takeWidget()->deleteLater();
+
+	QLayout *oldLayout = ui->hotkeyPage->layout();
+	if (oldLayout)
+		delete oldLayout;
 
 	using keys_t = map<obs_hotkey_id, vector<obs_key_combination_t>>;
 	keys_t keys;

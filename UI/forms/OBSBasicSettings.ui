@@ -4690,32 +4690,7 @@
          </item>
         </layout>
        </widget>
-       <widget class="QScrollArea" name="hotkeyPage">
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="hotkeyWidget">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>98</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <layout class="QFormLayout" name="hotkeyLayout">
-          <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-          </property>
-          <property name="labelAlignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="verticalSpacing">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
-       </widget>
+       <widget class="QWidget" name="hotkeyPage"/>
        <widget class="QWidget" name="advancedPage">
         <layout class="QVBoxLayout" name="verticalLayout_16">
          <property name="leftMargin">
