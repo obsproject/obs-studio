@@ -94,6 +94,7 @@ struct SourceCopyInfo {
 	bool visible;
 	obs_sceneitem_crop crop;
 	obs_transform_info transform;
+	obs_blending_type blend;
 };
 
 struct QuickTransition {

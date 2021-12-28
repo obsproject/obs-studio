@@ -9064,6 +9064,7 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyInfo.weak_source = OBSGetWeakRef(source);
 		obs_sceneitem_get_info(item, &copyInfo.transform);
 		obs_sceneitem_get_crop(item, &copyInfo.crop);
+		copyInfo.blend = obs_sceneitem_get_blending_mode(item);
 		copyInfo.visible = obs_sceneitem_visible(item);
 
 		clipboard.push_back(copyInfo);
