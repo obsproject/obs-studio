@@ -92,8 +92,8 @@ struct SavedProjectorInfo {
 struct SourceCopyInfo {
 	OBSWeakSource weak_source;
 	bool visible;
-	std::shared_ptr<obs_sceneitem_crop> crop;
-	std::shared_ptr<obs_transform_info> transform;
+	obs_sceneitem_crop crop;
+	obs_transform_info transform;
 };
 
 struct QuickTransition {

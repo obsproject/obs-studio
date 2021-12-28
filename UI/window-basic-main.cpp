@@ -9062,10 +9062,8 @@ void OBSBasic::on_actionCopySource_triggered()
 
 		SourceCopyInfo copyInfo;
 		copyInfo.weak_source = OBSGetWeakRef(source);
-		copyInfo.transform = std::make_shared<obs_transform_info>();
-		obs_sceneitem_get_info(item, copyInfo.transform.get());
-		copyInfo.crop = std::make_shared<obs_sceneitem_crop>();
-		obs_sceneitem_get_crop(item, copyInfo.crop.get());
+		obs_sceneitem_get_info(item, &copyInfo.transform);
+		obs_sceneitem_get_crop(item, &copyInfo.crop);
 		copyInfo.visible = obs_sceneitem_visible(item);
 
 		clipboard.push_back(copyInfo);

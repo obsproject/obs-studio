@@ -431,6 +431,5 @@ void OBSBasicSourceSelect::SourcePaste(SourceCopyInfo &info, bool dup)
 	if (!source)
 		return;
 
-	AddExisting(source, info.visible, dup, info.transform.get(),
-		    info.crop.get());
+	AddExisting(source, info.visible, dup, &info.transform, &info.crop);
 }
