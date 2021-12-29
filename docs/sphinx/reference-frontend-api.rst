@@ -733,7 +733,7 @@ Functions
 
 ---------------------------------------
 
-.. function:: void *obs_frontend_open_properties(obs_source_t *source)
+.. function:: void *obs_frontend_open_source_properties(obs_source_t *source)
 
    Opens the properties window of the specified source.
 
@@ -741,7 +741,7 @@ Functions
 
 ---------------------------------------
 
-.. function:: void *obs_frontend_open_filters(obs_source_t *source)
+.. function:: void *obs_frontend_open_source_filters(obs_source_t *source)
 
    Opens the filters window of the specified source.
 
