@@ -1092,6 +1092,7 @@ private slots:
 	void OpenSceneFilters();
 	void OpenFilters(OBSSource source = nullptr);
 	void OpenProperties(OBSSource source = nullptr);
+	void OpenInteraction(OBSSource source = nullptr);
 
 	void EnablePreviewDisplay(bool enable);
 	void TogglePreview();

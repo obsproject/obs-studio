@@ -547,6 +547,12 @@ void obs_frontend_open_source_filters(obs_source_t *source)
 		c->obs_frontend_open_source_filters(source);
 }
 
+void obs_frontend_open_source_interaction(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_interaction(source);
+}
+
 char *obs_frontend_get_current_record_output_path(void)
 {
 	return !!callbacks_valid()
