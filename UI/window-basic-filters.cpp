@@ -136,6 +136,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 		UpdateSplitter();
 	}
 
+	obs_source_inc_showing(source);
+
 	auto addDrawCallback = [this]() {
 		obs_display_add_draw_callback(ui->preview->GetDisplay(),
 					      OBSBasicFilters::DrawPreview,
@@ -180,6 +182,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 
 OBSBasicFilters::~OBSBasicFilters()
 {
+	obs_source_dec_showing(source);
 	ClearListItems(ui->asyncFilters);
 	ClearListItems(ui->effectFilters);
 }
