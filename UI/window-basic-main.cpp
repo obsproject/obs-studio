@@ -6199,6 +6199,15 @@ void OBSBasic::OpenProperties(OBSSource source)
 	CreatePropertiesWindow(source);
 }
 
+void OBSBasic::OpenInteraction(OBSSource source)
+{
+	if (source == nullptr) {
+		OBSSceneItem item = GetCurrentSceneItem();
+		source = obs_sceneitem_get_source(item);
+	}
+	CreateInteractionWindow(source);
+}
+
 void OBSBasic::OpenSceneFilters()
 {
 	OBSScene scene = GetCurrentScene();

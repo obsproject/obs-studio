@@ -749,6 +749,15 @@ Functions
 
 ---------------------------------------
 
+.. function:: void *obs_frontend_open_source_interaction(obs_source_t *source)
+
+   Opens the interact window of the specified source. Only call if
+   source has the *OBS_SOURCE_INTERACTION* output flag.
+
+   :param source: The source to open the interact window of
+
+---------------------------------------
+
 .. function:: char *obs_frontend_get_current_record_output_path(void)
 
    :return: A new pointer to the current record output path.  Free

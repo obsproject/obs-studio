@@ -618,6 +618,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 
+	void obs_frontend_open_source_interaction(obs_source_t *source) override
+	{
+		QMetaObject::invokeMethod(main, "OpenInteraction",
+					  Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	char *obs_frontend_get_current_record_output_path(void) override
 	{
 		const char *recordOutputPath = main->GetCurrentOutputPath();
