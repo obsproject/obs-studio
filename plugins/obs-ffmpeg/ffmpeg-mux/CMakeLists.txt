@@ -11,6 +11,9 @@ target_sources(obs-ffmpeg-mux PRIVATE ffmpeg-mux.c ffmpeg-mux.h)
 
 target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::libobs FFmpeg::avcodec
                                              FFmpeg::avutil FFmpeg::avformat)
+if(OS_WINDOWS)
+  target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::w32-pthreads)
+endif()
 
 if(ENABLE_FFMPEG_MUX_DEBUG)
   target_compile_definitions(obs-ffmpeg-mux PRIVATE ENABLE_FFMPEG_MUX_DEBUG)
