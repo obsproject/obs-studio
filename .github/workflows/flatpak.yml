@@ -98,14 +98,14 @@ jobs:
         run: |
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
 
-      - name: "Publish to Flathub Beta"
+      - name: Publish to Flathub Beta
         uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
         with:
           flat-manager-url: https://hub.flathub.org/
           repository: beta
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
 
-      - name: "Publish to Flathub"
+      - name: Publish to Flathub
         uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
         if: "!contains(github.ref, '-beta') && !contains(github.ref, '-rc')"
         with:
