@@ -169,12 +169,10 @@ endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
-		obf.c
 		window-dock-browser.cpp
 		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
-		obf.h
 		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
@@ -267,6 +265,7 @@ set(obs_SOURCES
 	auth-base.cpp
 	auth-oauth.cpp
 	auth-listener.cpp
+	obf.c
 	source-tree.cpp
 	scene-tree.cpp
 	properties-view.cpp
@@ -333,6 +332,7 @@ set(obs_HEADERS
 	auth-base.hpp
 	auth-oauth.hpp
 	auth-listener.hpp
+	obf.h
 	source-tree.hpp
 	scene-tree.hpp
 	properties-view.hpp
