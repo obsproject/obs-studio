@@ -1061,44 +1061,59 @@ void VolumeMeter::paintVMeter(QPainter &painter, int x, int y, int width,
 
 	if (peakPosition < minimumPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 backgroundNominalColor);
+				 muted ? backgroundNominalColorDisabled
+				       : backgroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 backgroundWarningColor);
+				 muted ? backgroundWarningColorDisabled
+				       : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 backgroundErrorColor);
+				 muted ? backgroundErrorColorDisabled
+				       : backgroundErrorColor);
 	} else if (peakPosition < warningPosition) {
 		painter.fillRect(x, minimumPosition, width,
 				 peakPosition - minimumPosition,
-				 foregroundNominalColor);
+				 muted ? foregroundNominalColorDisabled
+				       : foregroundNominalColor);
 		painter.fillRect(x, peakPosition, width,
 				 warningPosition - peakPosition,
-				 backgroundNominalColor);
+				 muted ? backgroundNominalColorDisabled
+				       : backgroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 backgroundWarningColor);
+				 muted ? backgroundWarningColorDisabled
+				       : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 backgroundErrorColor);
+				 muted ? backgroundErrorColorDisabled
+				       : backgroundErrorColor);
 	} else if (peakPosition < errorPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 foregroundNominalColor);
+				 muted ? foregroundNominalColorDisabled
+				       : foregroundNominalColor);
 		painter.fillRect(x, warningPosition, width,
 				 peakPosition - warningPosition,
-				 foregroundWarningColor);
+				 muted ? foregroundWarningColorDisabled
+				       : foregroundWarningColor);
 		painter.fillRect(x, peakPosition, width,
 				 errorPosition - peakPosition,
-				 backgroundWarningColor);
+				 muted ? backgroundWarningColorDisabled
+				       : backgroundWarningColor);
 		painter.fillRect(x, errorPosition, width, errorLength,
-				 backgroundErrorColor);
+				 muted ? backgroundErrorColorDisabled
+				       : backgroundErrorColor);
 	} else if (peakPosition < maximumPosition) {
 		painter.fillRect(x, minimumPosition, width, nominalLength,
-				 foregroundNominalColor);
+				 muted ? foregroundNominalColorDisabled
+				       : foregroundNominalColor);
 		painter.fillRect(x, warningPosition, width, warningLength,
-				 foregroundWarningColor);
+				 muted ? foregroundWarningColorDisabled
+				       : foregroundWarningColor);
 		painter.fillRect(x, errorPosition, width,
 				 peakPosition - errorPosition,
-				 foregroundErrorColor);
+				 muted ? foregroundErrorColorDisabled
+				       : foregroundErrorColor);
 		painter.fillRect(x, peakPosition, width,
 				 maximumPosition - peakPosition,
-				 backgroundErrorColor);
+				 muted ? backgroundErrorColorDisabled
+				       : backgroundErrorColor);
 	} else {
 		if (!clipping) {
 			QTimer::singleShot(CLIP_FLASH_DURATION_MS, this,
@@ -1108,20 +1123,24 @@ void VolumeMeter::paintVMeter(QPainter &painter, int x, int y, int width,
 
 		int end = errorLength + warningLength + nominalLength;
 		painter.fillRect(x, minimumPosition, width, end,
-				 QBrush(foregroundErrorColor));
+				 QBrush(muted ? foregroundErrorColorDisabled
+					      : foregroundErrorColor));
 	}
 
 	if (peakHoldPosition - 3 < minimumPosition)
 		; // Peak-hold below minimum, no drawing.
 	else if (peakHoldPosition < warningPosition)
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 foregroundNominalColor);
+				 muted ? foregroundNominalColorDisabled
+				       : foregroundNominalColor);
 	else if (peakHoldPosition < errorPosition)
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 foregroundWarningColor);
+				 muted ? foregroundWarningColorDisabled
+				       : foregroundWarningColor);
 	else
 		painter.fillRect(x, peakHoldPosition - 3, width, 3,
-				 foregroundErrorColor);
+				 muted ? foregroundErrorColorDisabled
+				       : foregroundErrorColor);
 
 	if (magnitudePosition - 3 >= minimumPosition)
 		painter.fillRect(x, magnitudePosition - 3, width, 3,
