@@ -23,6 +23,7 @@
 
 /* RAII wrappers */
 
+template<typename T, void release(T)> class OBSRefAutoRelease;
 template<typename T, void addref(T), void release(T)> class OBSRef;
 
 using OBSSource = OBSRef<obs_source_t *, obs_source_addref, obs_source_release>;
@@ -48,54 +49,72 @@ using OBSWeakService = OBSRef<obs_weak_service_t *, obs_weak_service_addref,
 			      obs_weak_service_release>;
 
 #define OBS_AUTORELEASE
-inline void ___source_dummy_addref(obs_source_t *){};
-inline void ___scene_dummy_addref(obs_scene_t *){};
-inline void ___sceneitem_dummy_addref(obs_sceneitem_t *){};
-inline void ___data_dummy_addref(obs_data_t *){};
-inline void ___data_array_dummy_addref(obs_data_array_t *){};
-inline void ___output_dummy_addref(obs_output_t *){};
-inline void ___encoder_dummy_addref(obs_encoder_t *){};
-inline void ___service_dummy_addref(obs_service_t *){};
-
-inline void ___weak_source_dummy_addref(obs_weak_source_t *){};
-inline void ___weak_output_dummy_addref(obs_weak_output_t *){};
-inline void ___weak_encoder_dummy_addref(obs_weak_encoder_t *){};
-inline void ___weak_service_dummy_addref(obs_weak_service_t *){};
-
 using OBSSourceAutoRelease =
-	OBSRef<obs_source_t *, ___source_dummy_addref, obs_source_release>;
-using OBSSceneAutoRelease =
-	OBSRef<obs_scene_t *, ___scene_dummy_addref, obs_scene_release>;
+	OBSRefAutoRelease<obs_source_t *, obs_source_release>;
+using OBSSceneAutoRelease = OBSRefAutoRelease<obs_scene_t *, obs_scene_release>;
 using OBSSceneItemAutoRelease =
-	OBSRef<obs_sceneitem_t *, ___sceneitem_dummy_addref,
-	       obs_sceneitem_release>;
-using OBSDataAutoRelease =
-	OBSRef<obs_data_t *, ___data_dummy_addref, obs_data_release>;
+	OBSRefAutoRelease<obs_sceneitem_t *, obs_sceneitem_release>;
+using OBSDataAutoRelease = OBSRefAutoRelease<obs_data_t *, obs_data_release>;
 using OBSDataArrayAutoRelease =
-	OBSRef<obs_data_array_t *, ___data_array_dummy_addref,
-	       obs_data_array_release>;
+	OBSRefAutoRelease<obs_data_array_t *, obs_data_array_release>;
 using OBSOutputAutoRelease =
-	OBSRef<obs_output_t *, ___output_dummy_addref, obs_output_release>;
+	OBSRefAutoRelease<obs_output_t *, obs_output_release>;
 using OBSEncoderAutoRelease =
-	OBSRef<obs_encoder_t *, ___encoder_dummy_addref, obs_encoder_release>;
+	OBSRefAutoRelease<obs_encoder_t *, obs_encoder_release>;
 using OBSServiceAutoRelease =
-	OBSRef<obs_service_t *, ___service_dummy_addref, obs_service_release>;
+	OBSRefAutoRelease<obs_service_t *, obs_service_release>;
 
 using OBSWeakSourceAutoRelease =
-	OBSRef<obs_weak_source_t *, ___weak_source_dummy_addref,
-	       obs_weak_source_release>;
+	OBSRefAutoRelease<obs_weak_source_t *, obs_weak_source_release>;
 using OBSWeakOutputAutoRelease =
-	OBSRef<obs_weak_output_t *, ___weak_output_dummy_addref,
-	       obs_weak_output_release>;
+	OBSRefAutoRelease<obs_weak_output_t *, obs_weak_output_release>;
 using OBSWeakEncoderAutoRelease =
-	OBSRef<obs_weak_encoder_t *, ___weak_encoder_dummy_addref,
-	       obs_weak_encoder_release>;
+	OBSRefAutoRelease<obs_weak_encoder_t *, obs_weak_encoder_release>;
 using OBSWeakServiceAutoRelease =
-	OBSRef<obs_weak_service_t *, ___weak_service_dummy_addref,
-	       obs_weak_service_release>;
+	OBSRefAutoRelease<obs_weak_service_t *, obs_weak_service_release>;
 
-template<typename T, void addref(T), void release(T)> class OBSRef {
+template<typename T, void release(T)> class OBSRefAutoRelease {
+protected:
 	T val;
+
+public:
+	inline OBSRefAutoRelease() : val(nullptr) {}
+	inline OBSRefAutoRelease(T val_) : val(val_) {}
+	OBSRefAutoRelease(const OBSRefAutoRelease &ref) = delete;
+	inline OBSRefAutoRelease(OBSRefAutoRelease &&ref) : val(ref.val)
+	{
+		ref.val = nullptr;
+	}
+
+	inline ~OBSRefAutoRelease() { release(val); }
+
+	inline operator T() const { return val; }
+	inline T Get() const { return val; }
+
+	inline bool operator==(T p) const { return val == p; }
+	inline bool operator!=(T p) const { return val != p; }
+
+	inline OBSRefAutoRelease &operator=(OBSRefAutoRelease &&ref)
+	{
+		if (this != &ref) {
+			release(val);
+			val = ref.val;
+			ref.val = nullptr;
+		}
+
+		return *this;
+	}
+
+	inline OBSRefAutoRelease &operator=(T new_val)
+	{
+		release(val);
+		val = new_val;
+		return *this;
+	}
+};
+
+template<typename T, void addref(T), void release(T)>
+class OBSRef : public OBSRefAutoRelease<T, release> {
 
 	inline OBSRef &Replace(T valIn)
 	{
@@ -107,35 +126,18 @@ template<typename T, void addref(T), void release(T)> class OBSRef {
 
 	struct TakeOwnership {
 	};
-	inline OBSRef(T val, TakeOwnership) : val(val) {}
+	inline OBSRef(T val, TakeOwnership) : OBSRefAutoRelease(val) {}
 
 public:
-	inline OBSRef() : val(nullptr) {}
-	inline OBSRef(T val_) : val(val_) { addref(val); }
-	inline OBSRef(const OBSRef &ref) : val(ref.val) { addref(val); }
-	inline OBSRef(OBSRef &&ref) : val(ref.val) { ref.val = nullptr; }
-
-	inline ~OBSRef() { release(val); }
-
-	inline OBSRef &operator=(T valIn) { return Replace(valIn); }
-	inline OBSRef &operator=(const OBSRef &ref) { return Replace(ref.val); }
-
-	inline OBSRef &operator=(OBSRef &&ref)
+	inline OBSRef() : OBSRefAutoRelease(nullptr) {}
+	inline OBSRef(const OBSRef &ref) : OBSRefAutoRelease(ref.val)
 	{
-		if (this != &ref) {
-			release(val);
-			val = ref.val;
-			ref.val = nullptr;
-		}
-
-		return *this;
+		addref(val);
 	}
+	inline OBSRef(T val_) : OBSRefAutoRelease(val_) { addref(val); }
 
-	inline operator T() const { return val; }
-	inline T Get() const { return val; }
-
-	inline bool operator==(T p) const { return val == p; }
-	inline bool operator!=(T p) const { return val != p; }
+	inline OBSRef &operator=(const OBSRef &ref) { return Replace(ref.val); }
+	inline OBSRef &operator=(T valIn) { return Replace(valIn); }
 
 	friend OBSSource OBSGetStrongRef(obs_weak_source_t *weak);
 	friend OBSWeakSource OBSGetWeakRef(obs_source_t *source);

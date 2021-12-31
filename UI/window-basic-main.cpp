@@ -1012,9 +1012,7 @@ void OBSBasic::LoadData(obs_data_t *data, const char *file)
 	LoadAudioDevice(AUX_AUDIO_4, 6, data);
 
 	if (!sources) {
-		sources = groups;
-		obs_data_array_addref(groups);
-		groups = nullptr;
+		sources = std::move(groups);
 	} else {
 		obs_data_array_push_back_array(sources, groups);
 	}
@@ -1059,12 +1057,10 @@ retryScene:
 		goto retryScene;
 	}
 
-	if (!curProgramScene) {
-		curProgramScene = curScene;
-		obs_source_addref(curScene);
-	}
-
 	SetCurrentScene(curScene.Get(), true);
+
+	if (!curProgramScene)
+		curProgramScene = std::move(curScene);
 	if (IsPreviewProgramMode())
 		TransitionToScene(curProgramScene.Get(), true);
 
@@ -5128,9 +5124,8 @@ void OBSBasic::on_actionAddScene_triggered()
 				  undo_fn, redo_fn, name, name);
 
 		OBSSceneAutoRelease scene = obs_scene_create(name.c_str());
-		source = obs_scene_get_source(scene);
-		obs_source_addref(source);
-		SetCurrentScene(source.Get());
+		obs_source_t *scene_source = obs_scene_get_source(scene);
+		SetCurrentScene(scene_source);
 	}
 }
 
