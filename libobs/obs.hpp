@@ -119,22 +119,33 @@ class OBSRef : public OBSRefAutoRelease<T, release> {
 	inline OBSRef &Replace(T valIn)
 	{
 		addref(valIn);
-		release(val);
-		val = valIn;
+		release(this->val);
+		this->val = valIn;
 		return *this;
 	}
 
 	struct TakeOwnership {
 	};
-	inline OBSRef(T val, TakeOwnership) : OBSRefAutoRelease(val) {}
+	inline OBSRef(T val_, TakeOwnership)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
+	{
+	}
 
 public:
-	inline OBSRef() : OBSRefAutoRelease(nullptr) {}
-	inline OBSRef(const OBSRef &ref) : OBSRefAutoRelease(ref.val)
+	inline OBSRef()
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(nullptr)
 	{
-		addref(val);
 	}
-	inline OBSRef(T val_) : OBSRefAutoRelease(val_) { addref(val); }
+	inline OBSRef(const OBSRef &ref)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(ref.val)
+	{
+		addref(this->val);
+	}
+	inline OBSRef(T val_)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
+	{
+		addref(this->val);
+	}
 
 	inline OBSRef &operator=(const OBSRef &ref) { return Replace(ref.val); }
 	inline OBSRef &operator=(T valIn) { return Replace(valIn); }
