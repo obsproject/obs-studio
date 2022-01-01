@@ -659,15 +659,14 @@ Functions
 .. function:: obs_source_t *obs_frontend_get_current_preview_scene(void)
 
    :return: A new reference to the current preview scene if studio mode
-            is active, or the current scene if studio mode is not
-            active
+            is active, or *NULL* if studio mode is not active.
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_preview_scene(obs_source_t *scene)
 
-   Sets the current preview scene in studio mode, or the currently
-   active scene if not in studio mode.
+   Sets the current preview scene in studio mode. Does nothing if studio
+   mode is disabled.
 
    :param scene: The scene to set as the current preview
 
