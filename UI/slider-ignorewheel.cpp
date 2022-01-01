@@ -1,5 +1,4 @@
 #include "slider-ignorewheel.hpp"
-#include "volume-control.hpp"
 
 SliderIgnoreScroll::SliderIgnoreScroll(QWidget *parent) : QSlider(parent)
 {
