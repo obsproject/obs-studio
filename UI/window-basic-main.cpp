@@ -7782,11 +7782,20 @@ void OBSBasic::UpdateEditMenu()
 		filter_count = obs_source_filter_count(source);
 	}
 
+	bool allowPastingDuplicate = !!clipboard.size();
 	for (size_t i = clipboard.size(); i > 0; i--) {
 		const size_t idx = i - 1;
 		OBSWeakSource &weak = clipboard[idx].weak_source;
-		if (obs_weak_source_expired(weak))
+		if (obs_weak_source_expired(weak)) {
 			clipboard.erase(clipboard.begin() + idx);
+			continue;
+		}
+		OBSSourceAutoRelease strong =
+			obs_weak_source_get_source(weak.Get());
+		if (allowPastingDuplicate &&
+		    obs_source_get_output_flags(source) &
+			    OBS_SOURCE_DO_NOT_DUPLICATE)
+			allowPastingDuplicate = false;
 	}
 
 	ui->actionCopySource->setEnabled(idx != -1);
@@ -7796,7 +7805,7 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
-	ui->actionPasteDup->setEnabled(!!clipboard.size());
+	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 
 	ui->actionMoveUp->setEnabled(idx != -1);
 	ui->actionMoveDown->setEnabled(idx != -1);
@@ -9053,7 +9062,6 @@ void OBSBasic::on_actionMainRedo_triggered()
 void OBSBasic::on_actionCopySource_triggered()
 {
 	clipboard.clear();
-	bool allowPastingDuplicate = true;
 
 	for (auto &selectedSource : GetAllSelectedSourceItems()) {
 		OBSSceneItem item = ui->sources->Get(selectedSource.row());
@@ -9072,14 +9080,9 @@ void OBSBasic::on_actionCopySource_triggered()
 		copyInfo.visible = obs_sceneitem_visible(item);
 
 		clipboard.push_back(copyInfo);
-
-		uint32_t output_flags = obs_source_get_output_flags(source);
-		if (output_flags & OBS_SOURCE_DO_NOT_DUPLICATE)
-			allowPastingDuplicate = false;
 	}
 
-	ui->actionPasteRef->setEnabled(true);
-	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
+	UpdateEditMenu();
 }
 
 void OBSBasic::on_actionPasteRef_triggered()
