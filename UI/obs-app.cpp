@@ -2116,6 +2116,12 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 #endif
 
+#ifdef __APPLE__
+		bool rosettaTranslated = ProcessIsRosettaTranslated();
+		blog(LOG_INFO, "Rosetta translation used: %s",
+		     rosettaTranslated ? "true" : "false");
+#endif
+
 		if (!created_log) {
 			create_log_file(logFile);
 			created_log = true;
