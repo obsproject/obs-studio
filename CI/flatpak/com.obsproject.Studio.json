@@ -192,6 +192,30 @@
       ]
     },
     {
+      "name": "svt-av1",
+      "buildsystem": "cmake-ninja",
+      "builddir": true,
+      "config-opts": [
+        "-DCMAKE_BUILD_TYPE=Release",
+        "-DBUILD_SHARED_LIBS=ON",
+        "-DBUILD_APPS=OFF",
+        "-DBUILD_DEC=ON",
+        "-DBUILD_ENC=ON",
+        "-DBUILD_TESTING=OFF"
+      ],
+      "cleanup": [
+        "/include"
+      ],
+      "sources": [
+        {
+          "type": "git",
+          "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
+          "tag": "v0.8.6",
+          "commit": "a5ec26c0f0bd6e872a0b2bb340b4a777f4847020"
+        }
+      ]
+    },
+    {
       "name": "ffmpeg",
       "config-opts": [
         "--enable-gpl",
@@ -208,7 +232,8 @@
         "--enable-nvenc",
         "--enable-libsrt",
         "--enable-librist",
-        "--enable-libaom"
+        "--enable-libaom",
+        "--enable-libsvtav1"
       ],
       "cleanup": [
         "/share/ffmpeg",
