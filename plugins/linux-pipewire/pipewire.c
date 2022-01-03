@@ -301,6 +301,15 @@ static const struct format_data supported_formats[] = {
 		4,
 		"XBGR8888",
 	},
+	{
+		SPA_VIDEO_FORMAT_YUY2,
+		DRM_FORMAT_YUYV,
+		GS_UNKNOWN,
+		VIDEO_FORMAT_YUY2,
+		false,
+		2,
+		"YUYV422",
+	},
 #if PW_CHECK_VERSION(0, 3, 41)
 	{
 		SPA_VIDEO_FORMAT_ABGR_210LE,
@@ -330,6 +339,7 @@ static const struct format_data supported_formats[] = {
 
 static const uint32_t supported_formats_async[] = {
 	SPA_VIDEO_FORMAT_RGBA,
+	SPA_VIDEO_FORMAT_YUY2,
 };
 
 #define N_SUPPORTED_FORMATS_ASYNC \
@@ -819,7 +829,8 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 
 		if (!lookup_format_info_from_spa_format(
 			    obs_pw_stream->format.info.raw.format,
-			    &format_data)) {
+			    &format_data) ||
+		    format_data.gs_format == GS_UNKNOWN) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -867,7 +878,8 @@ static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
 
 		if (!lookup_format_info_from_spa_format(
 			    obs_pw_stream->format.info.raw.format,
-			    &format_data)) {
+			    &format_data) ||
+		    format_data.gs_format == GS_UNKNOWN) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -947,7 +959,8 @@ read_metadata:
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
 		    lookup_format_info_from_spa_format(bitmap->format,
-						       &format_data)) {
+						       &format_data) &&
+		    format_data.gs_format != GS_UNKNOWN) {
 			const uint8_t *bitmap_data;
 
 			bitmap_data =
