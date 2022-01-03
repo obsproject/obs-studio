@@ -7770,6 +7770,8 @@ config_t *OBSBasic::Config() const
 void OBSBasic::UpdateEditMenu()
 {
 	int idx = GetTopSelectedSourceItem();
+	QModelIndexList items = GetAllSelectedSourceItems();
+	int count = items.count();
 	size_t filter_count = 0;
 	OBSSceneItem sceneItem;
 	OBSSource source;
@@ -7798,7 +7800,8 @@ void OBSBasic::UpdateEditMenu()
 
 	ui->actionCopySource->setEnabled(idx != -1);
 	ui->actionEditTransform->setEnabled(idx != -1);
-	ui->actionCopyTransform->setEnabled(idx != -1);
+	ui->actionCopyTransform->setEnabled(count == 1);
+	ui->actionPasteTransform->setEnabled(hasCopiedTransform && count > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
 		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
@@ -7849,7 +7852,13 @@ void OBSBasic::on_actionEditTransform_triggered()
 
 void OBSBasic::on_actionCopyTransform_triggered()
 {
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	obs_sceneitem_get_info(item, &copiedTransformInfo);
+	obs_sceneitem_get_crop(item, &copiedCropInfo);
+
 	ui->actionPasteTransform->setEnabled(true);
+	hasCopiedTransform = true;
 }
 
 void undo_redo(const std::string &data)
@@ -7861,6 +7870,37 @@ void undo_redo(const std::string &data)
 		->SetCurrentScene(source.Get(), true);
 
 	obs_scene_load_transform_states(data.c_str());
+}
+
+void OBSBasic::on_actionPasteTransform_triggered()
+{
+	OBSDataAutoRelease wrapper =
+		obs_scene_save_transform_states(GetCurrentScene(), false);
+	auto func = [](obs_scene_t *, obs_sceneitem_t *item, void *data) {
+		if (!obs_sceneitem_selected(item))
+			return true;
+
+		OBSBasic *main = reinterpret_cast<OBSBasic *>(data);
+
+		obs_sceneitem_defer_update_begin(item);
+		obs_sceneitem_set_info(item, &main->copiedTransformInfo);
+		obs_sceneitem_set_crop(item, &main->copiedCropInfo);
+		obs_sceneitem_defer_update_end(item);
+
+		return true;
+	};
+
+	obs_scene_enum_items(GetCurrentScene(), func, this);
+
+	OBSDataAutoRelease rwrapper =
+		obs_scene_save_transform_states(GetCurrentScene(), false);
+
+	std::string undo_data(obs_data_get_json(wrapper));
+	std::string redo_data(obs_data_get_json(rwrapper));
+	undo_s.add_action(
+		QTStr("Undo.Transform.Paste")
+			.arg(obs_source_get_name(GetCurrentSceneSource())),
+		undo_redo, undo_redo, undo_data, redo_data);
 }
 
 static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
@@ -9065,8 +9105,6 @@ void OBSBasic::on_actionCopySource_triggered()
 		OBSSceneItem item = ui->sources->Get(selectedSource.row());
 		if (!item)
 			continue;
-
-		on_actionCopyTransform_triggered();
 
 		OBSSource source = obs_sceneitem_get_source(item);
 
