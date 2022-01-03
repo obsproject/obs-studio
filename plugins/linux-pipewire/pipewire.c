@@ -257,7 +257,9 @@ struct format_data {
 	uint32_t spa_format;
 	uint32_t drm_format;
 	enum gs_color_format gs_format;
+	enum video_format video_format;
 	bool swap_red_blue;
+	uint32_t bpp;
 	const char *pretty_name;
 };
 
@@ -266,28 +268,36 @@ static const struct format_data supported_formats[] = {
 		SPA_VIDEO_FORMAT_BGRA,
 		DRM_FORMAT_ARGB8888,
 		GS_BGRA,
+		VIDEO_FORMAT_BGRA,
 		false,
+		4,
 		"ARGB8888",
 	},
 	{
 		SPA_VIDEO_FORMAT_RGBA,
 		DRM_FORMAT_ABGR8888,
 		GS_RGBA,
+		VIDEO_FORMAT_RGBA,
 		false,
+		4,
 		"ABGR8888",
 	},
 	{
 		SPA_VIDEO_FORMAT_BGRx,
 		DRM_FORMAT_XRGB8888,
 		GS_BGRX,
+		VIDEO_FORMAT_BGRX,
 		false,
+		4,
 		"XRGB8888",
 	},
 	{
 		SPA_VIDEO_FORMAT_RGBx,
 		DRM_FORMAT_XBGR8888,
 		GS_BGRX,
+		VIDEO_FORMAT_NONE,
 		true,
+		4,
 		"XBGR8888",
 	},
 #if PW_CHECK_VERSION(0, 3, 41)
@@ -295,7 +305,9 @@ static const struct format_data supported_formats[] = {
 		SPA_VIDEO_FORMAT_ABGR_210LE,
 		DRM_FORMAT_ABGR2101010,
 		GS_R10G10B10A2,
+		VIDEO_FORMAT_NONE,
 		false,
+		10,
 		"ABGR2101010",
 
 	},
@@ -303,7 +315,9 @@ static const struct format_data supported_formats[] = {
 		SPA_VIDEO_FORMAT_xBGR_210LE,
 		DRM_FORMAT_XBGR2101010,
 		GS_R10G10B10A2,
+		VIDEO_FORMAT_NONE,
 		false,
+		10,
 		"XBGR2101010",
 
 	},
