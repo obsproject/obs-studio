@@ -175,7 +175,7 @@ void OBSHotkeyEdit::ClearKey()
 
 void OBSHotkeyEdit::UpdateDuplicationState()
 {
-	if (dupeIcon->isVisible() != hasDuplicate) {
+	if (dupeIcon && dupeIcon->isVisible() != hasDuplicate) {
 		dupeIcon->setVisible(hasDuplicate);
 		update();
 	}
@@ -194,8 +194,8 @@ void OBSHotkeyEdit::InitSignalHandler()
 
 void OBSHotkeyEdit::CreateDupeIcon()
 {
-	dupeIcon = this->addAction(settings->GetHotkeyConflictIcon(),
-				   ActionPosition::TrailingPosition);
+	dupeIcon = addAction(settings->GetHotkeyConflictIcon(),
+			     ActionPosition::TrailingPosition);
 	dupeIcon->setToolTip(QTStr("Basic.Settings.Hotkeys.DuplicateWarning"));
 	QObject::connect(dupeIcon, &QAction::triggered,
 			 [=] { emit SearchKey(key); });
@@ -274,7 +274,7 @@ void OBSHotkeyWidget::Save(std::vector<obs_key_combination_t> &combinations)
 
 void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 {
-	auto edit = new OBSHotkeyEdit(combo, settings);
+	auto edit = new OBSHotkeyEdit(parentWidget(), combo, settings);
 	edit->setToolTip(toolTip);
 
 	auto revert = new QPushButton;
