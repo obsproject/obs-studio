@@ -222,6 +222,9 @@ private:
 	std::deque<SourceCopyInfo> clipboard;
 	OBSWeakSourceAutoRelease copyFiltersSource;
 	bool copyVisible = true;
+	obs_transform_info copiedTransformInfo;
+	obs_sceneitem_crop copiedCropInfo;
+	bool hasCopiedTransform = false;
 
 	bool closing = false;
 	QScopedPointer<QThread> devicePropertiesThread;
@@ -965,6 +968,7 @@ private slots:
 
 	void on_actionEditTransform_triggered();
 	void on_actionCopyTransform_triggered();
+	void on_actionPasteTransform_triggered();
 	void on_actionRotate90CW_triggered();
 	void on_actionRotate90CCW_triggered();
 	void on_actionRotate180_triggered();
