@@ -245,7 +245,7 @@ string CurrentTimeString()
 	auto now = system_clock::to_time_t(tp);
 	tstruct = *localtime(&now);
 
-	size_t written = strftime(buf, sizeof(buf), "%X", &tstruct);
+	size_t written = strftime(buf, sizeof(buf), "%T", &tstruct);
 	if (ratio_less<system_clock::period, seconds::period>::value &&
 	    written && (sizeof(buf) - written) > 5) {
 		auto tp_secs = time_point_cast<seconds>(tp);
