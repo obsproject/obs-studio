@@ -31,7 +31,14 @@
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
-extensions = []
+extensions = [
+    "sphinx.ext.autodoc",
+    "sphinx.ext.coverage",
+    "sphinx.ext.viewcode",
+    "sphinx_rtd_theme",
+    "sphinxcontrib.napoleon",
+    "sphinx.ext.autosectionlabel",
+]
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
@@ -85,7 +92,28 @@ todo_include_todos = False
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'bizstyle'
+html_theme = 'sphinx_rtd_theme'
+html_theme_options = {
+    "logo_only": False,
+    "navigation_depth": 5,
+    'prev_next_buttons_location': 'both',
+    'vcs_pageview_mode': 'edit',
+    'style_external_links': True,
+    'style_nav_header_background': '#202C73',
+    'collapse_navigation': False
+}
+
+html_logo = '../../icons/macos.png'
+
+html_favicon = 'favicon.ico'
+
+html_context = {
+    "display_github": True, # Integrate GitHub
+    "github_user": "OBSProject", # Username
+    "github_repo": "obs-studio", # Repo name
+    "github_version": "master", # Version
+    "conf_py_path": "/docs/sphinx/", # Path in the checkout to the docs root
+}
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
