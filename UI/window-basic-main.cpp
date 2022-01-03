@@ -7769,16 +7769,14 @@ config_t *OBSBasic::Config() const
 
 void OBSBasic::UpdateEditMenu()
 {
-	int idx = GetTopSelectedSourceItem();
 	QModelIndexList items = GetAllSelectedSourceItems();
 	int count = items.count();
 	size_t filter_count = 0;
-	OBSSceneItem sceneItem;
-	OBSSource source;
 
-	if (idx != -1) {
-		sceneItem = ui->sources->Get(idx);
-		source = obs_sceneitem_get_source(sceneItem);
+	if (count == 1) {
+		OBSSceneItem sceneItem =
+			ui->sources->Get(GetTopSelectedSourceItem());
+		OBSSource source = obs_sceneitem_get_source(sceneItem);
 		filter_count = obs_source_filter_count(source);
 	}
 
@@ -7798,24 +7796,27 @@ void OBSBasic::UpdateEditMenu()
 			allowPastingDuplicate = false;
 	}
 
-	ui->actionCopySource->setEnabled(idx != -1);
-	ui->actionEditTransform->setEnabled(idx != -1);
+	ui->actionCopySource->setEnabled(count > 0);
+	ui->actionEditTransform->setEnabled(count == 1);
 	ui->actionCopyTransform->setEnabled(count == 1);
 	ui->actionPasteTransform->setEnabled(hasCopiedTransform && count > 0);
 	ui->actionCopyFilters->setEnabled(filter_count > 0);
 	ui->actionPasteFilters->setEnabled(
-		!obs_weak_source_expired(copyFiltersSource) && idx != -1);
+		!obs_weak_source_expired(copyFiltersSource) && count > 0);
 	ui->actionPasteRef->setEnabled(!!clipboard.size());
 	ui->actionPasteDup->setEnabled(allowPastingDuplicate);
 
-	ui->actionMoveUp->setEnabled(idx != -1);
-	ui->actionMoveDown->setEnabled(idx != -1);
-	ui->actionMoveToTop->setEnabled(idx != -1);
-	ui->actionMoveToBottom->setEnabled(idx != -1);
+	ui->actionMoveUp->setEnabled(count > 0);
+	ui->actionMoveDown->setEnabled(count > 0);
+	ui->actionMoveToTop->setEnabled(count > 0);
+	ui->actionMoveToBottom->setEnabled(count > 0);
 
 	bool canTransform = false;
-	if (sceneItem)
-		canTransform = !obs_sceneitem_locked(sceneItem);
+	for (int i = 0; i < count; i++) {
+		OBSSceneItem item = ui->sources->Get(i);
+		if (!obs_sceneitem_locked(item))
+			canTransform = true;
+	}
 
 	ui->actionResetTransform->setEnabled(canTransform);
 	ui->actionRotate90CW->setEnabled(canTransform);
