@@ -1118,9 +1118,11 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		new QMenu(QTStr(visible ? "ShowTransition" : "HideTransition"));
 	QAction *action;
 
-	const char *curId = obs_source_get_id(
+	OBSSource curTransition =
 		visible ? obs_sceneitem_get_show_transition(si)
-			: obs_sceneitem_get_hide_transition(si));
+			: obs_sceneitem_get_hide_transition(si);
+	const char *curId = curTransition ? obs_source_get_id(curTransition)
+					  : nullptr;
 	int curDuration =
 		(int)(visible ? obs_sceneitem_get_show_transition_duration(si)
 			      : obs_sceneitem_get_hide_transition_duration(si));
