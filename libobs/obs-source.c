@@ -43,6 +43,11 @@ static inline bool deinterlacing_enabled(const struct obs_source *source)
 	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
 }
 
+static inline bool destroying(const struct obs_source *source)
+{
+	return os_atomic_load_long(&source->destroying);
+}
+
 struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
@@ -613,6 +618,8 @@ void obs_source_destroy(struct obs_source *source)
 {
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
+
+	os_atomic_set_long(&source->destroying, true);
 
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&source->audio_cb_mutex);
@@ -2993,6 +3000,8 @@ obs_source_output_video_internal(obs_source_t *source,
 void obs_source_output_video(obs_source_t *source,
 			     const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_output_video_internal(source, NULL);
 		return;
@@ -3008,6 +3017,8 @@ void obs_source_output_video(obs_source_t *source,
 void obs_source_output_video2(obs_source_t *source,
 			      const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_output_video_internal(source, NULL);
 		return;
@@ -3049,6 +3060,8 @@ void obs_source_set_async_rotation(obs_source_t *source, long rotation)
 void obs_source_output_cea708(obs_source_t *source,
 			      const struct obs_source_cea_708 *captions)
 {
+	if (destroying(source))
+		return;
 	if (!captions) {
 		return;
 	}
@@ -3108,6 +3121,8 @@ obs_source_preload_video_internal(obs_source_t *source,
 {
 	if (!obs_source_valid(source, "obs_source_preload_video"))
 		return;
+	if (destroying(source))
+		return;
 	if (!frame)
 		return;
 
@@ -3125,6 +3140,8 @@ obs_source_preload_video_internal(obs_source_t *source,
 void obs_source_preload_video(obs_source_t *source,
 			      const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3140,6 +3157,8 @@ void obs_source_preload_video(obs_source_t *source,
 void obs_source_preload_video2(obs_source_t *source,
 			       const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3178,7 +3197,8 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 
 	if (!obs_source_valid(source, "obs_source_show_preloaded_video"))
 		return;
-
+	if (destroying(source))
+		return;
 	if (!source->async_preload_frame)
 		return;
 
@@ -3230,6 +3250,8 @@ obs_source_set_video_frame_internal(obs_source_t *source,
 void obs_source_set_video_frame(obs_source_t *source,
 				const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3245,6 +3267,8 @@ void obs_source_set_video_frame(obs_source_t *source,
 void obs_source_set_video_frame2(obs_source_t *source,
 				 const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3459,6 +3483,8 @@ void obs_source_output_audio(obs_source_t *source,
 	struct obs_audio_data *output;
 
 	if (!obs_source_valid(source, "obs_source_output_audio"))
+		return;
+	if (destroying(source))
 		return;
 	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
 		return;
