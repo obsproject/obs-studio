@@ -653,11 +653,11 @@ static void obs_source_destroy_defer(struct obs_source *source)
 {
 	size_t i;
 
-	obs_source_dosignal(source, "source_destroy", "destroy");
-
 	/* prevents the destruction of sources if destroy triggered inside of
 	 * a video tick call */
 	obs_context_wait(&source->context);
+
+	obs_source_dosignal(source, "source_destroy", "destroy");
 
 	if (source->context.data) {
 		source->info.destroy(source->context.data);
