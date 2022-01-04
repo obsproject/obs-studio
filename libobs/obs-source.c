@@ -614,6 +614,16 @@ void obs_source_destroy(struct obs_source *source)
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
 
+	if (is_audio_source(source)) {
+		pthread_mutex_lock(&source->audio_cb_mutex);
+		da_free(source->audio_cb_list);
+		pthread_mutex_unlock(&source->audio_cb_mutex);
+	}
+
+	pthread_mutex_lock(&source->caption_cb_mutex);
+	da_free(source->caption_cb_list);
+	pthread_mutex_unlock(&source->caption_cb_mutex);
+
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_clear(source);
 
