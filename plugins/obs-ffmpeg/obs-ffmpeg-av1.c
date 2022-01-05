@@ -336,7 +336,6 @@ static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
 #define SEC_TO_NSEC 1000000000LL
 #define TIMEOUT_MAX_SEC 5
 #define TIMEOUT_MAX_NSEC (TIMEOUT_MAX_SEC * SEC_TO_NSEC)
-static const AVRational nsec_timebase = {1, 1000000000};
 
 static bool av1_encode(void *data, struct encoder_frame *frame,
 		       struct encoder_packet *packet, bool *received_packet)
@@ -400,10 +399,9 @@ static bool av1_encode(void *data, struct encoder_frame *frame,
 		*received_packet = true;
 
 		uint64_t recv_ts_nsec =
-			(uint64_t)av_rescale_q_rnd(
-				av_pkt.dts, enc->context->time_base,
-				nsec_timebase,
-				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX) +
+			util_mul_div64((uint64_t)av_pkt.dts,
+				       (uint64_t)SEC_TO_NSEC,
+				       (uint64_t)enc->context->time_base.den) +
 			enc->start_ts;
 
 #if 0
