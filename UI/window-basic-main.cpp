@@ -7791,7 +7791,7 @@ void OBSBasic::UpdateEditMenu()
 		OBSSourceAutoRelease strong =
 			obs_weak_source_get_source(weak.Get());
 		if (allowPastingDuplicate &&
-		    obs_source_get_output_flags(source) &
+		    obs_source_get_output_flags(strong) &
 			    OBS_SOURCE_DO_NOT_DUPLICATE)
 			allowPastingDuplicate = false;
 	}
