@@ -3151,10 +3151,13 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"KeepReplayBufferStreamStops",
 				ui->keepReplayStreamStops->isChecked());
 
-	if (WidgetChanged(ui->systemTrayEnabled))
+	if (WidgetChanged(ui->systemTrayEnabled)) {
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"SysTrayEnabled",
 				ui->systemTrayEnabled->isChecked());
+
+		main->SystemTray(false);
+	}
 
 	if (WidgetChanged(ui->systemTrayWhenStarted))
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
