@@ -4768,8 +4768,6 @@ void OBSBasic::on_action_Settings_triggered()
 		settings.exec();
 	}
 
-	SystemTray(false);
-
 	settings_already_executing = false;
 
 	if (restart) {
