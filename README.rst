@@ -1,4 +1,4 @@
-OBS Studio <https://obsproject.com>
+OBS Studio (https://obsproject.com)
 ===================================
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
@@ -16,8 +16,9 @@ OBS Studio <https://obsproject.com>
 What is OBS Studio?
 -------------------
 
-OBS Studio is software designed for capturing, compositing, encoding,
-recording, and streaming video content, efficiently.
+OBS Studio is cross-platform (Linux, macOS, Windows) software designed
+for efficiently capturing, compositing, encoding, recording, and streaming
+video content.
 
 It's distributed under the GNU General Public License v2 (or any later
 version) - see the accompanying COPYING file for more details.
@@ -55,12 +56,12 @@ Contributing
 - Developer/API documentation can be found here:
   https://obsproject.com/docs
 
-- If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this thread:
+- If you wish to contribute translations, please do not submit pull
+  requests.  Instead, use Crowdin.  For more information read this thread:
   https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics
-  you fully understand -- bad advice is worse than no advice.  When it
+  you fully understand - bad advice is worse than no advice.  When it
   comes to something that you don't fully know or understand, please
   defer to the official help or official channels.
