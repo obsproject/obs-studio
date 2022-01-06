@@ -39,7 +39,9 @@
 #define PYTHON_UI 0
 #endif
 
-#if ARCH_BITS == 64
+#if ARCH_BITS == 64 && (defined(__aarch64__) || defined(_M_ARM64))
+#define ARCH_NAME "ARM64"
+#elif ARCH_BITS == 64
 #define ARCH_NAME "64bit"
 #else
 #define ARCH_NAME "32bit"
