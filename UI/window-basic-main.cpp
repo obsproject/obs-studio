@@ -1981,9 +1981,7 @@ void OBSBasic::OBSInit()
 	ui->lockUI->setChecked(docksLocked);
 	ui->lockUI->blockSignals(false);
 
-#ifndef __APPLE__
 	SystemTray(true);
-#endif
 
 #if defined(_WIN32) && QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	taskBtn->setWindow(windowHandle());
@@ -2059,11 +2057,6 @@ void OBSBasic::OBSInit()
 	OnFirstLoad();
 
 	activateWindow();
-
-#ifdef __APPLE__
-	QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
-				  Qt::QueuedConnection, Q_ARG(int, 10));
-#endif
 }
 
 void OBSBasic::OnFirstLoad()
@@ -2090,20 +2083,6 @@ void OBSBasic::OnFirstLoad()
 
 	if (showLogViewerOnStartup)
 		on_actionViewCurrentLog_triggered();
-}
-
-void OBSBasic::DeferredSysTrayLoad(int requeueCount)
-{
-	if (--requeueCount > 0) {
-		QMetaObject::invokeMethod(this, "DeferredSysTrayLoad",
-					  Qt::QueuedConnection,
-					  Q_ARG(int, requeueCount));
-		return;
-	}
-
-	/* Minimizng to tray on initial startup does not work on mac
-	 * unless it is done in the deferred load */
-	SystemTray(true);
 }
 
 /* shows a "what's new" page on startup of new versions using CEF */

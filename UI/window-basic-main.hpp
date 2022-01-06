@@ -1118,8 +1118,6 @@ private slots:
 	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
-	void DeferredSysTrayLoad(int requeueCount);
-
 	void StackedMixerAreaContextMenuRequested();
 
 	void ResizeOutputSizeOfSource();
