@@ -572,6 +572,11 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 void OBSBasicPreview::UpdateCursor(uint32_t &flags)
 {
+	if (obs_sceneitem_locked(stretchItem)) {
+		unsetCursor();
+		return;
+	}
+
 	if (!flags && cursor().shape() != Qt::OpenHandCursor)
 		unsetCursor();
 	if (cursor().shape() != Qt::ArrowCursor)
@@ -1481,6 +1486,9 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 		pos.y = std::round(pos.y);
 
 		if (stretchHandle != ItemHandle::None) {
+			if (obs_sceneitem_locked(stretchItem))
+				return;
+
 			selectionBox = false;
 
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
