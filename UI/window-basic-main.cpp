@@ -1885,9 +1885,21 @@ void OBSBasic::OBSInit()
 
 	connect(ui->preview, &OBSQTDisplay::DisplayCreated, addDisplay);
 
+	/* Show the main window, unless the tray icon isn't available
+	 * or neither the setting nor flag for starting minimized is set. */
+	bool sysTrayEnabled = config_get_bool(App()->GlobalConfig(),
+					      "BasicWindow", "sysTrayEnabled");
+	bool sysTrayWhenStarted = config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "SysTrayWhenStarted");
+	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&
+				 sysTrayEnabled &&
+				 (opt_minimize_tray || sysTrayWhenStarted);
+
 #ifdef _WIN32
 	SetWin32DropStyle(this);
-	show();
+
+	if (!hideWindowOnStart)
+		show();
 #endif
 
 	bool alwaysOnTop = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -1911,7 +1923,8 @@ void OBSBasic::OBSInit()
 	}
 
 #ifndef _WIN32
-	show();
+	if (!hideWindowOnStart)
+		show();
 #endif
 
 	/* setup stats dock */
@@ -9064,9 +9077,7 @@ void OBSBasic::SystemTray(bool firstStarted)
 	} else {
 		trayIcon->show();
 		if (firstStarted && (sysTrayWhenStarted || opt_minimize_tray)) {
-			QTimer::singleShot(50, this, SLOT(hide()));
 			EnablePreviewDisplay(false);
-			setVisible(false);
 #ifdef __APPLE__
 			EnableOSXDockIcon(false);
 #endif
