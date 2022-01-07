@@ -458,6 +458,9 @@ void OBSExtraBrowsers::on_apply_clicked()
 
 /* ------------------------------------------------------------------------- */
 
+static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
+					 QString url, bool firstCreate);
+
 void OBSBasic::ClearExtraBrowserDocks()
 {
 	extraBrowserDockTargets.clear();
@@ -524,11 +527,6 @@ void OBSBasic::ManageExtraBrowserDocks()
 void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 				   const QString &uuid, bool firstCreate)
 {
-	static int panel_version = -1;
-	if (panel_version == -1) {
-		panel_version = obs_browser_qcef_version();
-	}
-
 	BrowserDock *dock = new BrowserDock();
 	QString bId(uuid.isEmpty() ? QUuid::createUuid().toString() : uuid);
 	bId.replace(QRegularExpression("[{}-]"), "");
@@ -538,6 +536,84 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setMinimumSize(80, 80);
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+
+	QAction *action =
+		PrepareBrowserDockWindow(this, dock, url, firstCreate);
+	if (!action) {
+		return;
+	}
+
+	if (firstCreate) {
+		dock->setVisible(true);
+		action->blockSignals(true);
+		action->setChecked(true);
+		action->blockSignals(false);
+	}
+
+	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
+	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
+	extraBrowserDockTargets.push_back(url);
+}
+
+void OBSBasic::LoadPluginBrowserDocks()
+{
+	/* Deferred loading of plugin browser docks since CEF is initialized
+	   at this point */
+	for (int i = 0; i < pluginBrowserDocks.size(); ++i) {
+		auto dock = static_cast<BrowserDock *>(
+			pluginBrowserDocks[i].data());
+		(void)PrepareBrowserDockWindow(
+			this, dock, pluginBrowserDockTargets[i], true);
+	}
+}
+
+void *OBSBasic::AddPluginBrowserDock(const QString &id, const QString &title,
+				     const QString &url)
+{
+
+	BrowserDock *dock = new BrowserDock();
+	QString bId(QUuid::createUuid().toString());
+	bId.replace(QRegularExpression("[{}-]"), "");
+	dock->setProperty("uuid", bId);
+	dock->setObjectName(id + "_pluginBrowser");
+	dock->resize(460, 600);
+	dock->setMinimumSize(80, 80);
+	dock->setWindowTitle(title);
+	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
+	dock->setVisible(false);
+
+	pluginBrowserDocks.push_back(dock);
+	pluginBrowserDockTargets.push_back(url);
+
+	if (cef) {
+		(void)PrepareBrowserDockWindow(this, dock, url, true);
+	}
+
+	return static_cast<QDockWidget *>(dock);
+}
+
+void OBSBasic::RemovePluginBrowserDock(QDockWidget *dock)
+{
+	QString dockUUID = dock->property("uuid").toString();
+	for (const auto action : ui->menuDocks->actions()) {
+		if (action && action->property("uuid").toString() == dockUUID) {
+			delete action;
+		}
+	}
+	delete dock;
+}
+
+/* fills a browser dock window with CEF and adds compatibility shims */
+static QAction *PrepareBrowserDockWindow(OBSBasic *api, BrowserDock *dock,
+					 QString url, bool firstCreate)
+{
+	if (!dock) {
+		return nullptr;
+	}
+	static int panel_version = -1;
+	if (panel_version == -1) {
+		panel_version = obs_browser_qcef_version();
+	}
 
 	QCefWidget *browser =
 		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
@@ -564,30 +640,20 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 		}
 	}
 
-	addDockWidget(Qt::RightDockWidgetArea, dock);
+	api->addDockWidget(Qt::RightDockWidgetArea, dock);
 
 	if (firstCreate) {
 		dock->setFloating(true);
 
-		QPoint curPos = pos();
-		QSize wSizeD2 = size() / 2;
+		QPoint curPos = api->pos();
+		QSize wSizeD2 = api->size() / 2;
 		QSize dSizeD2 = dock->size() / 2;
 
 		curPos.setX(curPos.x() + wSizeD2.width() - dSizeD2.width());
 		curPos.setY(curPos.y() + wSizeD2.height() - dSizeD2.height());
 
 		dock->move(curPos);
-		dock->setVisible(true);
 	}
 
-	QAction *action = AddDockWidget(dock);
-	if (firstCreate) {
-		action->blockSignals(true);
-		action->setChecked(true);
-		action->blockSignals(false);
-	}
-
-	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
-	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
-	extraBrowserDockTargets.push_back(url);
+	return api->AddDockWidget(dock);
 }

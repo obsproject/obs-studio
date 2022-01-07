@@ -79,7 +79,7 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
 
      Triggered when the transition duration has been changed by the
-	 user.
+     user.
 
    - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
 
@@ -420,6 +420,30 @@ Functions
 
    :param dock: QDockWidget to add/create
    :return: A pointer to the added QAction
+
+---------------------------------------
+
+.. function:: void *obs_frontend_add_browser_dock(const char *id, const char *title, const char *url)
+
+   Adds a plugin-controlled browser dock to the UI. The dock will automatically
+   be added to the Docks menu, however in order to retrieve the associated
+   QAction, you must call :c:func:`obs_frontend_add_dock()` with the returned
+   pointer.
+
+   :param id: A unique ID used to identify this dock
+   :param title: Name of the dock to create
+   :param url: URL of page to show in the new dock
+   :return: A pointer to a new QDockWidget
+
+---------------------------------------
+
+.. function:: void obs_frontend_remove_browser_dock(void *dock)
+
+   Deletes a browser dock and any associated QActions. This is an alternative
+   to calling delete directly on the returned pointer for non-C++ plugins.
+
+   :param dock: A pointer to a QDockWidget returned from
+        :c:func:`obs_frontend_add_browser_dock()`
 
 ---------------------------------------
 

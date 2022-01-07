@@ -544,6 +544,15 @@ private:
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
 				 const QString &uuid, bool firstCreate);
+
+	QStringList pluginBrowserDockTargets;
+	QList<QPointer<QDockWidget>> pluginBrowserDocks;
+
+	void LoadPluginBrowserDocks();
+	void *AddPluginBrowserDock(const QString &id, const QString &title,
+				   const QString &url);
+	void RemovePluginBrowserDock(QDockWidget *dock);
+
 #endif
 
 	QIcon imageIcon;

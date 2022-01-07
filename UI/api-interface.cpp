@@ -370,6 +370,32 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return (void *)main->AddDockWidget((QDockWidget *)dock);
 	}
 
+	void *obs_frontend_add_browser_dock(const char *id, const char *title,
+					    const char *url) override
+	{
+#ifdef BROWSER_AVAILABLE
+		QString qstrID = QT_UTF8(id);
+		QString qstrTitle = QT_UTF8(title);
+		QString qstrURL = QT_UTF8(url);
+
+		return main->AddPluginBrowserDock(qstrID, qstrTitle, qstrURL);
+#else
+		UNUSED_PARAMETER(id);
+		UNUSED_PARAMETER(title);
+		UNUSED_PARAMETER(url);
+		return nullptr;
+#endif
+	}
+
+	void obs_frontend_remove_browser_dock(void *dock) override
+	{
+#ifdef BROWSER_AVAILABLE
+		main->RemovePluginBrowserDock((QDockWidget *)dock);
+#else
+		UNUSED_PARAMETER(dock);
+#endif
+	}
+
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					     void *private_data) override
 	{

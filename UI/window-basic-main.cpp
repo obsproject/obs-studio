@@ -1923,6 +1923,8 @@ void OBSBasic::OBSInit()
 
 #ifdef BROWSER_AVAILABLE
 	if (cef) {
+		LoadPluginBrowserDocks();
+
 		QAction *action = new QAction(QTStr("Basic.MainMenu.Docks."
 						    "CustomBrowserDocks"),
 					      this);
@@ -9530,8 +9532,30 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
+	bool hasDock = false;
+	QString dockUUID = dock->property("uuid").toString();
+	/* prune deleted docks and prevent adding the same dock again */
+	for (int i = extraDocks.size() - 1; i >= 0; i--) {
+		if (!extraDocks[i]) {
+			extraDocks.removeAt(i);
+			continue;
+		}
+		if (!hasDock &&
+		    extraDocks[i]->property("uuid").toString() == dockUUID) {
+			hasDock = true;
+		}
+	}
+	if (hasDock) {
+		/* Return the existing action */
+		for (const auto action : ui->menuDocks->actions()) {
+			if (action->property("uuid").toString() == dockUUID) {
+				return action;
+			}
+		}
+	}
+
 	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
-	action->setProperty("uuid", dock->property("uuid").toString());
+	action->setProperty("uuid", dockUUID);
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
 	extraDocks.push_back(dock);
@@ -9544,13 +9568,6 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 			QDockWidget::DockWidgetFloatable);
 
 	dock->setFeatures(features);
-
-	/* prune deleted docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
-		}
-	}
 
 	return action;
 }

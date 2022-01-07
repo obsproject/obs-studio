@@ -324,6 +324,20 @@ void *obs_frontend_add_dock(void *dock)
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
 }
 
+void *obs_frontend_add_browser_dock(const char *id, const char *title,
+				    const char *url)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_browser_dock(id, title, url)
+		       : nullptr;
+}
+
+void obs_frontend_remove_browser_dock(void *dock)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_browser_dock(dock);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {
