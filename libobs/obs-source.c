@@ -4572,7 +4572,7 @@ static void source_signal_push_to_delay(obs_source_t *source,
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "source", source);
-	calldata_set_bool(&data, "delay", delay);
+	calldata_set_int(&data, "delay", delay);
 
 	signal_handler_signal(source->context.signals, signal, &data);
 }
