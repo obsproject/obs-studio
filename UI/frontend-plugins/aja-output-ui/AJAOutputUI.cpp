@@ -1,10 +1,15 @@
 #include "AJAOutputUI.h"
 #include "aja-ui-main.h"
 
+#include "../../../plugins/aja/aja-common.hpp"
 #include "../../../plugins/aja/aja-ui-props.hpp"
 #include "../../../plugins/aja/aja-enums.hpp"
+#include "../../../plugins/aja/aja-card-manager.hpp"
 
+#include <ajantv2/includes/ntv2card.h>
+#include <ajantv2/includes/ntv2devicefeatures.h>
 #include <ajantv2/includes/ntv2enums.h>
+#include <ajantv2/includes/ntv2utils.h>
 
 #include <obs-module.h>
 #include <util/platform.h>
@@ -13,19 +18,19 @@
 AJAOutputUI::AJAOutputUI(QWidget *parent) : QDialog(parent), ui(new Ui_Output)
 {
 	ui->setupUi(this);
-
 	setSizeGripEnabled(true);
-
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	propertiesView = nullptr;
 	previewPropertiesView = nullptr;
+	miscPropertiesView = nullptr;
 }
 
 void AJAOutputUI::ShowHideDialog()
 {
 	SetupPropertiesView();
 	SetupPreviewPropertiesView();
+	SetupMiscPropertiesView();
 
 	setVisible(!isVisible());
 }
@@ -36,7 +41,6 @@ void AJAOutputUI::SetupPropertiesView()
 		delete propertiesView;
 
 	obs_data_t *settings = obs_data_create();
-
 	OBSData data = load_settings(kProgramPropsFilename);
 	if (data) {
 		obs_data_apply(settings, data);
@@ -180,4 +184,93 @@ void AJAOutputUI::PreviewOutputStateChanged(bool active)
 
 	ui->previewOutputButton->setChecked(active);
 	ui->previewOutputButton->setText(text);
+}
+
+static obs_properties_t *create_misc_props_ui(void *vp)
+{
+	AJAOutputUI *outputUI = (AJAOutputUI *)vp;
+	if (!outputUI)
+		return nullptr;
+	aja::CardManager *cardManager = outputUI->GetCardManager();
+	if (!cardManager)
+		return nullptr;
+
+	bool haveMultiView = false;
+	for (auto &c : *cardManager) {
+		auto deviceID = c.second->GetDeviceID();
+		for (const auto &id : aja::MultiViewCards()) {
+			if (deviceID == id) {
+				haveMultiView = true;
+				break;
+			}
+		}
+	}
+
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *deviceList = obs_properties_add_list(
+		props, kUIPropDevice.id, obs_module_text(kUIPropDevice.text),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	obs_property_t *multiViewEnable = obs_properties_add_bool(
+		props, kUIPropMultiViewEnable.id,
+		obs_module_text(kUIPropMultiViewEnable.text));
+	obs_property_t *multiViewAudioSources = obs_properties_add_list(
+		props, kUIPropMultiViewAudioSource.id,
+		obs_module_text(kUIPropMultiViewAudioSource.text),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	obs_property_list_clear(deviceList);
+	obs_property_list_clear(multiViewAudioSources);
+
+	NTV2DeviceID firstDeviceID = DEVICE_ID_NOTFOUND;
+	populate_misc_device_list(deviceList, cardManager, firstDeviceID);
+	populate_multi_view_audio_sources(multiViewAudioSources, firstDeviceID);
+	obs_property_set_modified_callback2(deviceList, on_misc_device_selected,
+					    cardManager);
+	obs_property_set_modified_callback2(multiViewEnable,
+					    on_multi_view_toggle, cardManager);
+	obs_property_set_modified_callback2(multiViewAudioSources,
+					    on_multi_view_toggle, cardManager);
+
+	outputUI->ui->label_3->setVisible(haveMultiView);
+	obs_property_set_visible(deviceList, haveMultiView);
+	obs_property_set_visible(multiViewEnable, haveMultiView);
+	obs_property_set_visible(multiViewAudioSources, haveMultiView);
+
+	return props;
+}
+
+void AJAOutputUI::MiscPropertiesChanged()
+{
+	SaveSettings(kMiscPropsFilename, miscPropertiesView->GetSettings());
+}
+
+void AJAOutputUI::SetCardManager(aja::CardManager *cm)
+{
+	cardManager = cm;
+}
+
+aja::CardManager *AJAOutputUI::GetCardManager()
+{
+	return cardManager;
+}
+
+void AJAOutputUI::SetupMiscPropertiesView()
+{
+	if (miscPropertiesView)
+		delete miscPropertiesView;
+
+	obs_data_t *settings = obs_data_create();
+	OBSData data = load_settings(kMiscPropsFilename);
+	if (data) {
+		obs_data_apply(settings, data);
+	}
+
+	miscPropertiesView = new OBSPropertiesView(
+		settings, this, (PropertiesReloadCallback)create_misc_props_ui,
+		nullptr, nullptr, 170);
+
+	ui->miscPropertiesLayout->addWidget(miscPropertiesView);
+	obs_data_release(settings);
+	connect(miscPropertiesView, SIGNAL(Changed()), this,
+		SLOT(MiscPropertiesChanged()));
 }
