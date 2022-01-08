@@ -11,7 +11,6 @@ using InputXpt = NTV2InputCrosspointID;   // dest
 struct WidgetInputSocket {
 	InputXpt id;
 	NTV2WidgetID widget_id;
-	NTV2Channel channel;
 	const char *name;
 	int32_t datastream_index;
 
@@ -28,7 +27,6 @@ struct WidgetInputSocket {
 struct WidgetOutputSocket {
 	OutputXpt id;
 	NTV2WidgetID widget_id;
-	NTV2Channel channel;
 	const char *name;
 	int32_t datastream_index;
 

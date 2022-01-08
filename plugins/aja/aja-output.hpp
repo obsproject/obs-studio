@@ -28,14 +28,6 @@ struct AudioFrames {
 	size_t size;
 };
 
-//TODO(paulh): Refactor me into OutputProps
-struct FrameTimes {
-	double obsFps;
-	uint64_t obsFrameTime;
-	double cardFps;
-	uint64_t cardFrameTime;
-};
-
 using VideoQueue = std::deque<VideoFrame>;
 using AudioQueue = std::deque<AudioFrames>;
 
@@ -89,8 +81,6 @@ public:
 	std::string mOutputID;
 	UWord mDeviceIndex;
 	NTV2DeviceID mDeviceID;
-
-	FrameTimes mFrameTimes;
 
 	uint32_t mAudioPlayCursor;
 	uint32_t mAudioWriteCursor;

@@ -1,6 +1,24 @@
 #pragma once
 
-// Additional enums used throughout the AJA plugins for signal routing configuration.
+#include <ajantv2/includes/ntv2vpid.h>
+
+#include <utility>
+
+// Flags corresponding to card register enables
+typedef enum {
+	kEnable3GOut = 1 << 0,
+	kEnable6GOut = 1 << 1,
+	kEnable12GOut = 1 << 2,
+	kConvert3GIn = 1 << 3,
+	kConvert3GOut = 1 << 4,
+	kConvert3GaRGBOut = 1 << 5,
+	kEnable3GbOut = 1 << 6,
+	kEnable4KSquares = 1 << 7,
+	kEnable8KSquares = 1 << 8,
+	kEnable4KTSI = 1 << 9,
+} RoutingPresetFlags;
+
+enum class ConnectionKind { SDI = 0, HDMI = 1, Analog = 2, Unknown };
 
 enum class IOSelection {
 	SDI1 = 0,
@@ -33,44 +51,24 @@ enum class IOSelection {
 	NumIOSelections = Invalid
 };
 
-enum class SDI4KTransport { Squares = 0, TwoSampleInterleave = 1, Unknown = 2 };
+enum class SDITransport {
+	SingleLink = 0, // SD/HD up to 1.5Gbps link
+	HDDualLink = 1, // HD Dual-1.5Gbps Links
+	SDI3Ga = 2,     // 3Gbps Level-A
+	SDI3Gb = 3,     // 3Gbps Level-B
+	SDI6G = 4,      // 6Gbps
+	SDI12G = 5,     // 12Gbps
+	Unknown
+};
+
+enum class SDITransport4K { Squares = 0, TwoSampleInterleave = 1, Unknown = 2 };
 
 enum class RasterDefinition {
 	SD = 0,
 	HD = 1,
 	UHD_4K = 2,
-	UHD_4K_Retail_12G = 3,
-	UHD2_8K = 4,
-	Unknown = 5
-};
-
-enum class SDIWireFormat {
-	SD_ST352 = 0,
-	HD_720p_ST292 = 1,
-	HD_1080_ST292 = 2,
-	HD_1080_ST372_Dual = 3,
-	HD_720p_ST425_3Ga = 4,
-	HD_1080p_ST425_3Ga = 5,
-	HD_1080p_ST425_3Gb_DL = 6,
-	HD_720p_ST425_3Gb = 7,
-	HD_1080p_ST425_3Gb = 8,
-	HD_1080p_ST425_Dual_3Ga = 9,
-	HD_1080p_ST425_Dual_3Gb = 10,
-	UHD4K_ST292_Dual_1_5_Squares = 11,
-	UHD4K_ST292_Quad_1_5_Squares = 12,
-	UHD4K_ST425_Quad_3Ga_Squares = 13,
-	UHD4K_ST425_Quad_3Gb_Squares = 14,
-	UHD4K_ST425_Dual_3Gb_2SI = 15,
-	UHD4K_ST425_Quad_3Ga_2SI = 16,
-	UHD4K_ST425_Quad_3Gb_2SI = 17,
-	UHD4K_ST2018_6G_Squares_2SI = 18,
-	UHD4K_ST2018_6G_Squares_2SI_Kona5_io4KPlus = 19,
-	UHD4K_ST2018_12G_Squares_2SI = 20,
-	UHD4K_ST2018_12G_Squares_2SI_Kona5_io4KPlus = 21,
-	UHD28K_ST2082_Dual_12G = 22,
-	UHD28K_ST2082_RGB_Dual_12G = 23,
-	UHD28K_ST2082_Quad_12G = 24,
-	Unknown = 25,
+	UHD2_8K = 3,
+	Unknown
 };
 
 enum class HDMIWireFormat {
@@ -84,5 +82,7 @@ enum class HDMIWireFormat {
 	UHD_4K_RGB_LFR = 7,
 	UHD_4K_RGB_HFR = 8,
 	TTAP_PRO = 9,
-	Unknown = 10
+	Unknown
 };
+
+using VPIDSpec = std::pair<RasterDefinition, VPIDStandard>;

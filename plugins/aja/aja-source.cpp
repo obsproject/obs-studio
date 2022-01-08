@@ -10,6 +10,7 @@
 #include <obs-module.h>
 
 #include <ajantv2/includes/ntv2card.h>
+#include <ajantv2/includes/ntv2utils.h>
 
 #define NTV2_AUDIOSIZE_MAX (401 * 1024)
 
@@ -73,10 +74,8 @@ std::string AJASource::GetName() const
 void populate_source_device_list(obs_property_t *list)
 {
 	obs_property_list_clear(list);
-
 	auto &cardManager = aja::CardManager::Instance();
 	cardManager.EnumerateCards();
-
 	for (const auto &iter : cardManager.GetCardEntries()) {
 		if (iter.second) {
 			CNTV2Card *card = iter.second->GetCard();
@@ -117,11 +116,9 @@ static void ResetAudioBufferOffsets(CNTV2Card *card,
 	offsets.readOffset = 0;
 	offsets.wrapAddress = 0;
 	offsets.bytesRead = 0;
-
 	card->GetAudioReadOffset(offsets.readOffset, audioSystem);
 	card->GetAudioWrapAddress(offsets.wrapAddress, audioSystem);
 	offsets.wrapAddress += offsets.readOffset;
-
 	offsets.lastAddress = offsets.readOffset;
 }
 
@@ -130,7 +127,6 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 {
 	NTV2VideoFormat vid_fmt = vf;
 	NTV2PixelFormat pix_fmt = pf;
-
 	if (vid_fmt == NTV2_FORMAT_UNKNOWN)
 		vid_fmt = NTV2_FORMAT_720p_5994;
 	if (pix_fmt == NTV2_FBF_INVALID)
@@ -138,17 +134,14 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 
 	NTV2FormatDesc fd(vid_fmt, pix_fmt, NTV2_VANCMODE_OFF);
 	auto bufSize = fd.GetTotalRasterBytes();
-
 	if (bufSize != mTestPattern.size()) {
 		mTestPattern.clear();
 		mTestPattern.resize(bufSize);
-
 		NTV2TestPatternGen gen;
 		gen.DrawTestPattern(ps, fd.GetRasterWidth(),
 				    fd.GetRasterHeight(), pix_fmt,
 				    mTestPattern);
 	}
-
 	if (mTestPattern.size() == 0) {
 		blog(LOG_DEBUG,
 		     "AJASource::GenerateTestPattern: Error generating test pattern!");
@@ -163,13 +156,12 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 	obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
 	obsFrame.data[0] = mTestPattern.data();
 	obsFrame.linesize[0] = fd.GetBytesPerRow();
-
 	video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_FULL,
 				    obsFrame.color_matrix,
 				    obsFrame.color_range_min,
 				    obsFrame.color_range_max);
-
 	obs_source_output_video2(mSource, &obsFrame);
+	blog(LOG_DEBUG, "AJASource::GenerateTestPattern: Black");
 }
 
 void AJASource::CaptureThread(AJAThread *thread, void *data)
@@ -195,9 +187,9 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	}
 
 	auto sourceProps = ajaSource->GetSourceProps();
+	auto inputSource = sourceProps.InitialInputSource();
 	auto channel = sourceProps.Channel();
 	auto audioSystem = sourceProps.AudioSystem();
-
 	// Current "on-air" frame on the card. The capture thread "Ping-pongs" between
 	// two frames, starting at an index corresponding to the framestore channel.
 	// For example:
@@ -221,26 +213,21 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	while (ajaSource->IsCapturing()) {
 		if (card->GetModelName() == "(Not Found)") {
 			os_sleep_ms(250);
-
 			obs_source_update(ajaSource->mSource, settings);
-
 			break;
 		}
 
+		auto videoFormat = sourceProps.videoFormat;
+		auto pixelFormat = sourceProps.pixelFormat;
+		auto ioSelection = sourceProps.ioSelect;
 		bool audioOverrun = false;
 
 		card->WaitForInputFieldID(NTV2_FIELD0, channel);
-
 		currentCardFrame ^= 1;
-
-		auto videoFormat = sourceProps.videoFormat;
-		auto pixelFormat = sourceProps.pixelFormat;
 
 		// Card format detection -- restarts capture thread via aja_source_update callback
 		auto newVideoFormat = card->GetInputVideoFormat(
-			sourceProps.inputSource,
-			aja::Is3GLevelB(card, channel));
-
+			inputSource, aja::Is3GLevelB(card, channel));
 		if (newVideoFormat == NTV2_FORMAT_UNKNOWN) {
 			blog(LOG_DEBUG,
 			     "AJASource::CaptureThread: Video format unknown!");
@@ -250,6 +237,9 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			continue;
 		}
 
+		newVideoFormat = aja::HandleSpecialCaseFormats(
+			ioSelection, newVideoFormat, sourceProps.deviceID);
+
 		if (sourceProps.autoDetect && (videoFormat != newVideoFormat)) {
 			blog(LOG_INFO,
 			     "AJASource::CaptureThread: New Video Format detected! Triggering 'aja_source_update' callback and returning...");
@@ -258,33 +248,26 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			     NTV2VideoFormatToString(videoFormat, true).c_str(),
 			     NTV2VideoFormatToString(newVideoFormat, true)
 				     .c_str());
-
 			os_sleep_ms(250);
-
 			obs_source_update(ajaSource->mSource, settings);
-
 			break;
 		}
 
 		card->ReadAudioLastIn(offsets.currentAddress, audioSystem);
 		offsets.currentAddress &= ~0x3; // Force DWORD alignment
 		offsets.currentAddress += offsets.readOffset;
-
 		if (offsets.currentAddress < offsets.lastAddress) {
 			offsets.bytesRead =
 				offsets.wrapAddress - offsets.lastAddress;
 
 			if (offsets.bytesRead >
 			    ajaSource->mAudioBuffer.GetByteCount()) {
-
 				blog(LOG_DEBUG,
 				     "AJASource::CaptureThread: Audio overrun (1)! Buffer Size: %d, Bytes Captured: %d",
 				     ajaSource->mAudioBuffer.GetByteCount(),
 				     offsets.bytesRead);
-
 				ResetAudioBufferOffsets(card, audioSystem,
 							offsets);
-
 				audioOverrun = true;
 			}
 
@@ -293,7 +276,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 						   ajaSource->mAudioBuffer,
 						   offsets.lastAddress,
 						   offsets.bytesRead);
-
 				card->DMAReadAudio(
 					audioSystem,
 					reinterpret_cast<ULWord *>(
@@ -303,42 +285,33 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 					offsets.readOffset,
 					offsets.currentAddress -
 						offsets.readOffset);
-
 				offsets.bytesRead += offsets.currentAddress -
 						     offsets.readOffset;
 			}
 
 			if (offsets.bytesRead >
 			    ajaSource->mAudioBuffer.GetByteCount()) {
-
 				blog(LOG_DEBUG,
 				     "AJASource::CaptureThread: Audio overrun (2)! Buffer Size: %d, Bytes Captured: %d",
 				     ajaSource->mAudioBuffer.GetByteCount(),
 				     offsets.bytesRead);
-
 				ResetAudioBufferOffsets(card, audioSystem,
 							offsets);
-
 				audioOverrun = true;
 			}
 		} else {
 			offsets.bytesRead =
 				offsets.currentAddress - offsets.lastAddress;
-
 			if (offsets.bytesRead >
 			    ajaSource->mAudioBuffer.GetByteCount()) {
-
 				blog(LOG_DEBUG,
 				     "AJASource::CaptureThread: Audio overrun (3)! Buffer Size: %d, Bytes Captured: %d",
 				     ajaSource->mAudioBuffer.GetByteCount(),
 				     offsets.bytesRead);
-
 				ResetAudioBufferOffsets(card, audioSystem,
 							offsets);
-
 				audioOverrun = true;
 			}
-
 			if (!audioOverrun) {
 				card->DMAReadAudio(audioSystem,
 						   ajaSource->mAudioBuffer,
@@ -349,7 +322,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 
 		if (!audioOverrun) {
 			offsets.lastAddress = offsets.currentAddress;
-
 			obs_source_audio audioPacket;
 			audioPacket.samples_per_sec = 48000;
 			audioPacket.format = AUDIO_FORMAT_32BIT;
@@ -358,7 +330,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			audioPacket.timestamp = os_gettime_ns();
 			audioPacket.data[0] = (uint8_t *)ajaSource->mAudioBuffer
 						      .GetHostPointer();
-
 			obs_source_output_audio(ajaSource->mSource,
 						&audioPacket);
 		}
@@ -378,7 +349,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 				videoFormat);
 
 		NTV2FormatDesc fd(actualVideoFormat, pixelFormat);
-
 		struct obs_source_frame2 obsFrame;
 		obsFrame.flip = false;
 		obsFrame.timestamp = os_gettime_ns();
@@ -497,18 +467,22 @@ bool AJASource::ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids)
 	return read_ok;
 }
 
-bool AJASource::ReadWireFormats(NTV2DeviceID device_id,
-				const NTV2InputSourceSet &srcs,
+bool AJASource::ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
 				NTV2VideoFormat &vf, NTV2PixelFormat &pf,
 				VPIDDataList &vpids)
 {
-	if (srcs.empty())
+	NTV2InputSourceSet input_srcs;
+	aja::IOSelectionToInputSources(io_select, input_srcs);
+	if (input_srcs.empty()) {
+		blog(LOG_INFO,
+		     "AJASource::ReadWireFormats: No NTV2InputSources found for IOSelection %s",
+		     aja::IOSelectionToString(io_select).c_str());
 		return false;
+	}
 
-	NTV2InputSource initial_src = *srcs.begin();
-	for (auto &&src : srcs) {
+	NTV2InputSource initial_src = *input_srcs.begin();
+	for (auto &&src : input_srcs) {
 		auto channel = NTV2InputSourceToChannel(src);
-
 		mCard->EnableChannel(channel);
 		if (NTV2_INPUT_SOURCE_IS_SDI(src)) {
 			if (NTV2DeviceHasBiDirectionalSDI(device_id)) {
@@ -566,6 +540,8 @@ bool AJASource::ReadWireFormats(NTV2DeviceID device_id,
 			}
 		}
 	}
+
+	vf = aja::HandleSpecialCaseFormats(io_select, vf, device_id);
 
 	blog(LOG_INFO, "AJASource::ReadWireFormats - Detected video format %s",
 	     NTV2VideoFormatToString(vf).c_str());
@@ -625,11 +601,13 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 		return false;
 	}
 
-	auto &cardManager = aja::CardManager::Instance();
-
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+	if (!cardID)
+		return false;
+
+	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
-	if (!cardID || !cardEntry) {
+	if (!cardEntry) {
 		blog(LOG_DEBUG,
 		     "aja_source_device_changed: Card Entry not found for %s",
 		     cardID);
@@ -663,16 +641,27 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 		obs_properties_get(props, kUIPropVideoFormatSelect.id);
 	obs_property_t *pix_fmt_list =
 		obs_properties_get(props, kUIPropPixelFormatSelect.id);
+	obs_property_t *sdi_trx_list =
+		obs_properties_get(props, kUIPropSDITransport.id);
 	obs_property_t *sdi_4k_list =
-		obs_properties_get(props, kUIPropSDI4KTransport.id);
+		obs_properties_get(props, kUIPropSDITransport4K.id);
 
 	obs_property_list_clear(vid_fmt_list);
-	obs_property_list_add_int(vid_fmt_list, "Auto", kVideoFormatAuto);
+	obs_property_list_add_int(vid_fmt_list, obs_module_text("Auto"),
+				  kAutoDetect);
 	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1);
 
 	obs_property_list_clear(pix_fmt_list);
-	obs_property_list_add_int(pix_fmt_list, "Auto", kPixelFormatAuto);
+	obs_property_list_add_int(pix_fmt_list, obs_module_text("Auto"),
+				  kAutoDetect);
 	populate_pixel_format_list(deviceID, pix_fmt_list);
+
+	IOSelection io_select = static_cast<IOSelection>(
+		obs_data_get_int(settings, kUIPropInput.id));
+	obs_property_list_clear(sdi_trx_list);
+	obs_property_list_add_int(sdi_trx_list, obs_module_text("Auto"),
+				  kAutoDetect);
+	populate_sdi_transport_list(sdi_trx_list, io_select);
 
 	obs_property_list_clear(sdi_4k_list);
 	populate_sdi_4k_transport_list(sdi_4k_list);
@@ -706,8 +695,11 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 		return false;
 	}
 
-	auto &cardManager = aja::CardManager::Instance();
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+	if (!cardID)
+		return false;
+
+	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -770,7 +762,8 @@ void aja_source_destroy(void *data)
 	CNTV2Card *card = ajaSource->GetCard();
 	if (card) {
 		deviceID = card->GetDeviceID();
-		Routing::StopSourceAudio(ajaSource->GetSourceProps(), card);
+		aja::Routing::StopSourceAudio(ajaSource->GetSourceProps(),
+					      card);
 	}
 
 	ajaSource->mVideoBuffer.Deallocate();
@@ -779,9 +772,7 @@ void aja_source_destroy(void *data)
 	ajaSource->mAudioBuffer = NULL;
 
 	auto &cardManager = aja::CardManager::Instance();
-
 	const auto &cardID = ajaSource->CardID();
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -863,30 +854,29 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		return;
 	}
 
-	const std::string &wantCardID =
-		obs_data_get_string(settings, kUIPropDevice.id);
-	const std::string &currentCardID = ajaSource->CardID();
-
 	auto io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropInput.id));
 	auto vf_select = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 	auto pf_select = static_cast<NTV2PixelFormat>(
 		obs_data_get_int(settings, kUIPropPixelFormatSelect.id));
-	auto t4_select = static_cast<SDI4KTransport>(
-		obs_data_get_int(settings, kUIPropSDI4KTransport.id));
+	auto sdi_trx_select = static_cast<SDITransport>(
+		obs_data_get_int(settings, kUIPropSDITransport.id));
+	auto sdi_t4k_select = static_cast<SDITransport4K>(
+		obs_data_get_int(settings, kUIPropSDITransport4K.id));
 	bool deactivateWhileNotShowing =
 		obs_data_get_bool(settings, kUIPropDeactivateWhenNotShowing.id);
+	const std::string &wantCardID =
+		obs_data_get_string(settings, kUIPropDevice.id);
 
-	auto &cardManager = aja::CardManager::Instance();
-
-	cardManager.EnumerateCards();
-
+	const std::string &currentCardID = ajaSource->CardID();
 	if (wantCardID != currentCardID) {
 		initialized = false;
 		ajaSource->Deactivate();
 	}
 
+	auto &cardManager = aja::CardManager::Instance();
+	cardManager.EnumerateCards();
 	auto cardEntry = cardManager.GetCardEntry(wantCardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -894,7 +884,6 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		     wantCardID.c_str());
 		return;
 	}
-
 	CNTV2Card *card = cardEntry->GetCard();
 	if (!card || !card->IsOpen()) {
 		blog(LOG_ERROR, "aja_source_update: AJA device %s not open!",
@@ -907,7 +896,6 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		     wantCardID.c_str());
 		return;
 	}
-
 	ajaSource->SetCard(cardEntry->GetCard());
 
 	SourceProps curr_props = ajaSource->GetSourceProps();
@@ -941,37 +929,31 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		return;
 	}
 
-	NTV2InputSourceSet input_srcs;
-	aja::IOSelectionToInputSources(io_select, input_srcs);
-	if (input_srcs.empty()) {
-		blog(LOG_INFO,
-		     "aja_source_update: No NTV2InputSources found for IOSelection %s",
-		     aja::IOSelectionToString(io_select).c_str());
-		return;
-	}
-
 	SourceProps want_props;
 	want_props.deviceID = card->GetDeviceID();
 	want_props.ioSelect = io_select;
-	want_props.inputSource = *input_srcs.begin();
 	want_props.videoFormat =
-		((int32_t)vf_select == kVideoFormatAuto)
+		((int32_t)vf_select == kAutoDetect)
 			? NTV2_FORMAT_UNKNOWN
 			: static_cast<NTV2VideoFormat>(vf_select);
 	want_props.pixelFormat =
-		((int32_t)pf_select == kPixelFormatAuto)
+		((int32_t)pf_select == kAutoDetect)
 			? NTV2_FBF_INVALID
 			: static_cast<NTV2PixelFormat>(pf_select);
-	want_props.sdi4kTransport = t4_select;
+	want_props.sdiTransport =
+		((int32_t)sdi_trx_select == kAutoDetect)
+			? SDITransport::Unknown
+			: static_cast<SDITransport>(sdi_trx_select);
+	want_props.sdi4kTransport = sdi_t4k_select;
 	want_props.vpids.clear();
 	want_props.deactivateWhileNotShowing = deactivateWhileNotShowing;
-	want_props.autoDetect = ((int32_t)vf_select == kVideoFormatAuto ||
-				 (int32_t)pf_select == kPixelFormatAuto);
+	want_props.autoDetect = ((int32_t)vf_select == kAutoDetect ||
+				 (int32_t)pf_select == kAutoDetect);
 	ajaSource->SetCardID(wantCardID);
 	ajaSource->SetDeviceIndex((UWord)cardEntry->GetCardIndex());
 
 	if (NTV2_IS_4K_VIDEO_FORMAT(want_props.videoFormat) &&
-	    want_props.sdi4kTransport == SDI4KTransport::Squares) {
+	    want_props.sdi4kTransport == SDITransport4K::Squares) {
 		if (want_props.ioSelect == IOSelection::SDI1_2) {
 			want_props.ioSelect = IOSelection::SDI1_2_Squares;
 		} else if (want_props.ioSelect == IOSelection::SDI3_4) {
@@ -1009,21 +991,20 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	// Read SDI video payload IDs (VPID) used for helping to determine the wire format
 	NTV2VideoFormat new_vf = want_props.videoFormat;
 	NTV2PixelFormat new_pf = want_props.pixelFormat;
-	if (!ajaSource->ReadWireFormats(want_props.deviceID, input_srcs, new_vf,
-					new_pf, want_props.vpids)) {
+	if (!ajaSource->ReadWireFormats(want_props.deviceID,
+					want_props.ioSelect, new_vf, new_pf,
+					want_props.vpids)) {
 		blog(LOG_ERROR, "aja_source_update: ReadWireFormats failed!");
-
 		cardEntry->ReleaseInputSelection(want_props.ioSelect,
 						 curr_props.deviceID,
 						 ajaSource->GetName());
-
 		return;
 	}
 
 	// Set auto-detected formats
-	if ((int32_t)vf_select == kVideoFormatAuto)
+	if ((int32_t)vf_select == kAutoDetect)
 		want_props.videoFormat = new_vf;
-	if ((int32_t)pf_select == kPixelFormatAuto)
+	if ((int32_t)pf_select == kAutoDetect)
 		want_props.pixelFormat = new_pf;
 
 	if (want_props.videoFormat == NTV2_FORMAT_UNKNOWN ||
@@ -1033,66 +1014,51 @@ static void aja_source_update(void *data, obs_data_t *settings)
 		     NTV2VideoFormatToString(want_props.videoFormat).c_str(),
 		     NTV2FrameBufferFormatToString(want_props.pixelFormat)
 			     .c_str());
-
 		cardEntry->ReleaseInputSelection(want_props.ioSelect,
 						 curr_props.deviceID,
 						 ajaSource->GetName());
-
 		return;
 	}
 
 	// Change capture format and restart capture thread
 	if (!initialized || want_props != ajaSource->GetSourceProps()) {
-		Routing::ConfigureSourceRoute(want_props, NTV2_MODE_CAPTURE,
-					      card);
-
+		aja::Routing::ConfigureSourceRoute(want_props,
+						   NTV2_MODE_CAPTURE, card);
 		ajaSource->Deactivate();
-
 		initialized = true;
 	}
 
 	ajaSource->SetSourceProps(want_props);
-
 	ajaSource->ResetVideoBuffer(want_props.videoFormat,
 				    want_props.pixelFormat);
-
-	Routing::StartSourceAudio(want_props, card);
-
+	aja::Routing::StartSourceAudio(want_props, card);
 	card->SetReference(NTV2_REFERENCE_FREERUN);
-
 	ajaSource->Activate(true);
 }
 
 static obs_properties_t *aja_source_get_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
-
-	// Uncomment below to only update when the user presses OK or Apply
-	// obs_properties_set_flags(props, OBS_PROPERTIES_DEFER_UPDATE);
-
 	obs_property_t *device_list = obs_properties_add_list(
 		props, kUIPropDevice.id, obs_module_text(kUIPropDevice.text),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-
 	populate_source_device_list(device_list);
-
 	obs_property_t *io_select_list = obs_properties_add_list(
 		props, kUIPropInput.id, obs_module_text(kUIPropInput.text),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-
 	obs_property_t *vid_fmt_list = obs_properties_add_list(
 		props, kUIPropVideoFormatSelect.id,
 		obs_module_text(kUIPropVideoFormatSelect.text),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-
 	obs_properties_add_list(props, kUIPropPixelFormatSelect.id,
 				obs_module_text(kUIPropPixelFormatSelect.text),
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-
-	obs_properties_add_list(props, kUIPropSDI4KTransport.id,
-				obs_module_text(kUIPropSDI4KTransport.text),
+	obs_properties_add_list(props, kUIPropSDITransport.id,
+				obs_module_text(kUIPropSDITransport.text),
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
-
+	obs_properties_add_list(props, kUIPropSDITransport4K.id,
+				obs_module_text(kUIPropSDITransport4K.text),
+				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_properties_add_bool(
 		props, kUIPropDeactivateWhenNotShowing.id,
 		obs_module_text(kUIPropDeactivateWhenNotShowing.text));
@@ -1111,26 +1077,21 @@ void aja_source_get_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, kUIPropInput.id,
 				 static_cast<long long>(IOSelection::Invalid));
-
 	obs_data_set_default_int(settings, kUIPropVideoFormatSelect.id,
-				 static_cast<long long>(kVideoFormatAuto));
-
+				 static_cast<long long>(kAutoDetect));
+	obs_data_set_default_int(settings, kUIPropPixelFormatSelect.id,
+				 static_cast<long long>(kAutoDetect));
+	obs_data_set_default_int(settings, kUIPropSDITransport.id,
+				 static_cast<long long>(kAutoDetect));
 	obs_data_set_default_int(
-		settings, kUIPropPixelFormatSelect.id,
-		static_cast<long long>(kDefaultAJAPixelFormat));
-
-	obs_data_set_default_int(
-		settings, kUIPropSDI4KTransport.id,
-		static_cast<long long>(SDI4KTransport::TwoSampleInterleave));
-
+		settings, kUIPropSDITransport4K.id,
+		static_cast<long long>(SDITransport4K::TwoSampleInterleave));
 	obs_data_set_default_bool(settings, kUIPropDeactivateWhenNotShowing.id,
 				  false);
 }
 
 void aja_source_save(void *data, obs_data_t *settings)
 {
-	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-
 	AJASource *ajaSource = (AJASource *)data;
 	if (!ajaSource) {
 		blog(LOG_ERROR,
@@ -1138,9 +1099,13 @@ void aja_source_save(void *data, obs_data_t *settings)
 		return;
 	}
 
+	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+	if (!cardID)
+		return;
+
 	auto &cardManager = aja::CardManager::Instance();
 	auto cardEntry = cardManager.GetCardEntry(cardID);
-	if (!cardID || !cardEntry) {
+	if (!cardEntry) {
 		blog(LOG_DEBUG, "aja_source_save: Card Entry not found for %s",
 		     cardID);
 		return;
@@ -1176,6 +1141,5 @@ struct obs_source_info create_aja_source_info()
 	aja_source_info.get_defaults = aja_source_get_defaults;
 	aja_source_info.save = aja_source_save;
 	aja_source_info.icon_type = OBS_ICON_TYPE_CAMERA;
-
 	return aja_source_info;
 }

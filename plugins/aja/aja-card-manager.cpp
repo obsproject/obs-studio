@@ -589,6 +589,14 @@ size_t CardManager::NumCardEntries() const
 	return mCardEntries.size();
 }
 
+CNTV2Card *CardManager::GetCard(const std::string &cardID)
+{
+	auto entry = GetCardEntry(cardID);
+	if (entry)
+		return entry->GetCard();
+	return nullptr;
+}
+
 const CardEntryPtr CardManager::GetCardEntry(const std::string &cardID) const
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
@@ -603,6 +611,18 @@ const CardEntries &CardManager::GetCardEntries() const
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
 	return mCardEntries;
+}
+
+const CardEntries::iterator CardManager::begin()
+{
+	const std::lock_guard<std::mutex> lock(mMutex);
+	return mCardEntries.begin();
+}
+
+const CardEntries::iterator CardManager::end()
+{
+	const std::lock_guard<std::mutex> lock(mMutex);
+	return mCardEntries.end();
 }
 
 } // aja

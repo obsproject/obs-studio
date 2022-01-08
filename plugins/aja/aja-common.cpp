@@ -3,6 +3,7 @@
 #include "aja-ui-props.hpp"
 #include "aja-props.hpp"
 
+#include <ajantv2/includes/ntv2debug.h>
 #include <ajantv2/includes/ntv2devicescanner.h>
 #include <ajantv2/includes/ntv2devicefeatures.h>
 #include <ajantv2/includes/ntv2utils.h>
@@ -160,8 +161,6 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 		orderedStandards.push_back(NTV2_STANDARD_720);
 		orderedStandards.push_back(NTV2_STANDARD_1080);
 		orderedStandards.push_back(NTV2_STANDARD_1080p);
-	}
-	if (NTV2DeviceCanDo2KVideo(deviceID)) {
 		orderedStandards.push_back(NTV2_STANDARD_2K);
 		orderedStandards.push_back(NTV2_STANDARD_2Kx1080p);
 		orderedStandards.push_back(NTV2_STANDARD_2Kx1080i);
@@ -205,17 +204,27 @@ void populate_pixel_format_list(NTV2DeviceID deviceID, obs_property_t *list)
 	}
 }
 
+void populate_sdi_transport_list(obs_property_t *list, IOSelection io)
+{
+	for (int i = 0; i < (int)SDITransport::Unknown; i++) {
+		SDITransport sdi_trx = static_cast<SDITransport>(i);
+		obs_property_list_add_int(
+			list, aja::SDITransportToString(sdi_trx).c_str(),
+			static_cast<long long>(sdi_trx));
+	}
+}
+
 void populate_sdi_4k_transport_list(obs_property_t *list)
 {
 	obs_property_list_add_int(
 		list,
-		aja::SDI4KTransportToString(SDI4KTransport::Squares).c_str(),
-		static_cast<long long>(SDI4KTransport::Squares));
+		aja::SDITransport4KToString(SDITransport4K::Squares).c_str(),
+		static_cast<long long>(SDITransport4K::Squares));
 	obs_property_list_add_int(
 		list,
-		aja::SDI4KTransportToString(SDI4KTransport::TwoSampleInterleave)
+		aja::SDITransport4KToString(SDITransport4K::TwoSampleInterleave)
 			.c_str(),
-		static_cast<long long>(SDI4KTransport::TwoSampleInterleave));
+		static_cast<long long>(SDITransport4K::TwoSampleInterleave));
 }
 
 bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
@@ -244,8 +253,7 @@ bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 	}
 
 	obs_property_t *sdi_4k_trx =
-		obs_properties_get(props, kUIPropSDI4KTransport.id);
-
+		obs_properties_get(props, kUIPropSDITransport4K.id);
 	obs_property_set_visible(sdi_4k_trx, NTV2_IS_4K_VIDEO_FORMAT(vid_fmt));
 
 	return true;
@@ -316,21 +324,13 @@ void GetSortedVideoFormats(NTV2DeviceID id, const VideoStandardList &standards,
 	     i < (size_t)NTV2_MAX_NUM_VIDEO_FORMATS; i++) {
 		NTV2VideoFormat fmt = (NTV2VideoFormat)i;
 		NTV2Standard standard = GetNTV2StandardFromVideoFormat(fmt);
-
-		bool addFmt = true;
-
-		if (id != DEVICE_ID_NOTFOUND) {
-			addFmt = NTV2DeviceCanDoVideoFormat(id, fmt);
-		}
-
-		if (addFmt) {
+		if (id != DEVICE_ID_NOTFOUND &&
+		    NTV2DeviceCanDoVideoFormat(id, fmt)) {
 			if (videoFormatMap.count(standard)) {
 				videoFormatMap.at(standard).push_back(fmt);
 			} else {
 				std::vector<NTV2VideoFormat> v;
-
 				v.push_back(fmt);
-
 				videoFormatMap.insert(
 					std::pair<NTV2Standard,
 						  std::vector<NTV2VideoFormat>>(
@@ -369,6 +369,28 @@ void GetSortedVideoFormats(NTV2DeviceID id, const VideoStandardList &standards,
 			}
 		}
 	}
+}
+
+NTV2VideoFormat HandleSpecialCaseFormats(IOSelection io, NTV2VideoFormat vf,
+					 NTV2DeviceID id)
+{
+	// 1080p Level-B formats and ST372M
+	if (NTV2_VIDEO_FORMAT_IS_B(vf) &&
+	    !(IsSDITwoWireIOSelection(io) && NTV2_IS_HD_VIDEO_FORMAT(vf))) {
+		vf = aja::GetLevelAFormatForLevelBFormat(vf);
+	}
+	// UHD/4K Square Division auto-detect
+	if ((io == IOSelection::SDI1__4 || io == IOSelection::SDI5__8) &&
+	    NTV2_IS_HD_VIDEO_FORMAT(vf)) {
+		vf = GetQuadSizedVideoFormat(vf, true);
+	}
+	// Kona5/io4K+ auto-detection of UHD/4K 6G/12G SDI formats.
+	if (aja::IsSDIOneWireIOSelection(io) && NTV2_IS_4K_VIDEO_FORMAT(vf) &&
+	    !NTV2_IS_SQUARE_DIVISION_FORMAT(vf) &&
+	    !NTV2DeviceCanDo12gRouting(id)) {
+		vf = GetQuadSizedVideoFormat(GetQuarterSizedVideoFormat(vf));
+	}
+	return vf;
 }
 
 uint32_t CardNumFramestores(NTV2DeviceID id)
@@ -495,7 +517,10 @@ bool IsIODevice(NTV2DeviceID id)
 		id == DEVICE_ID_IOIP_2022 || id == DEVICE_ID_IOIP_2110);
 }
 
-bool IsRetailSDI12G(NTV2DeviceID id)
+/* Kona5 retail firmware and io4K+ have limited support for 6G/12G SDI
+ * where SDI 1 is capable of capture and SDI 3 is capable of output.
+ */
+bool IsRetail12GSDICard(NTV2DeviceID id)
 {
 	return (id == DEVICE_ID_KONA5 || id == DEVICE_ID_IO4KPLUS);
 }
@@ -505,18 +530,47 @@ bool IsOutputOnlyDevice(NTV2DeviceID id)
 	return id == DEVICE_ID_TTAP_PRO;
 }
 
-std::string SDI4KTransportToString(SDI4KTransport mode)
+std::string SDITransportToString(SDITransport mode)
 {
 	std::string str = "";
 	switch (mode) {
-	case SDI4KTransport::Squares:
+	case SDITransport::SingleLink:
+		str = "SD/HD Single Link";
+		break;
+	case SDITransport::HDDualLink:
+		str = "HD Dual-Link";
+		break;
+	case SDITransport::SDI3Ga:
+		str = "3G Level-A (3Ga)";
+		break;
+	case SDITransport::SDI3Gb:
+		str = "3G Level-B (3Gb)";
+		break;
+	case SDITransport::SDI6G:
+		str = "6G";
+		break;
+	case SDITransport::SDI12G:
+		str = "12G";
+		break;
+	case SDITransport::Unknown:
+		str = "Unknown";
+		break;
+	}
+	return str;
+}
+
+std::string SDITransport4KToString(SDITransport4K mode)
+{
+	std::string str = "";
+	switch (mode) {
+	case SDITransport4K::Squares:
 		str = "Squares";
 		break;
-	case SDI4KTransport::TwoSampleInterleave:
+	case SDITransport4K::TwoSampleInterleave:
 		str = "2SI";
 		break;
 	default:
-	case SDI4KTransport::Unknown:
+	case SDITransport4K::Unknown:
 		str = "Unknown";
 		break;
 	}
@@ -892,6 +946,21 @@ bool IsMonitorOutputSelection(NTV2DeviceID id, IOSelection io)
 	return false;
 }
 
+bool IsIOSelectionSDI(IOSelection io)
+{
+	if (io == IOSelection::SDI1 || io == IOSelection::SDI2 ||
+	    io == IOSelection::SDI3 || io == IOSelection::SDI4 ||
+	    io == IOSelection::SDI5 || io == IOSelection::SDI6 ||
+	    io == IOSelection::SDI7 || io == IOSelection::SDI8 ||
+	    io == IOSelection::SDI1_2 || io == IOSelection::SDI1_2_Squares ||
+	    io == IOSelection::SDI3_4 || io == IOSelection::SDI3_4_Squares ||
+	    io == IOSelection::SDI5_6 || io == IOSelection::SDI7_8 ||
+	    io == IOSelection::SDI1__4 || io == IOSelection::SDI5__8) {
+		return true;
+	}
+	return false;
+}
+
 std::string MakeCardID(CNTV2Card &card)
 {
 	std::string cardID;
@@ -904,6 +973,166 @@ std::string MakeCardID(CNTV2Card &card)
 		cardID = CNTV2DeviceScanner::GetDeviceRefName(card);
 	}
 	return cardID;
+}
+
+RasterDefinition DetermineRasterDefinition(NTV2VideoFormat vf)
+{
+	RasterDefinition def = RasterDefinition::Unknown;
+	if (NTV2_IS_SD_VIDEO_FORMAT(vf)) {
+		def = RasterDefinition::SD;
+	} else if (NTV2_IS_HD_VIDEO_FORMAT(vf)) {
+		def = RasterDefinition::HD;
+	} else if (NTV2_IS_QUAD_FRAME_FORMAT(vf)) {
+		def = RasterDefinition::UHD_4K;
+	} else if (NTV2_IS_QUAD_QUAD_FORMAT(vf)) {
+		def = RasterDefinition::UHD2_8K;
+	} else {
+		def = RasterDefinition::Unknown;
+	}
+	return def;
+}
+
+inline bool IsStandard1080i(NTV2Standard standard)
+{
+	if (standard == NTV2_STANDARD_1080 ||
+	    standard == NTV2_STANDARD_2Kx1080i) {
+		return true;
+	}
+	return false;
+}
+inline bool IsStandard1080p(NTV2Standard standard)
+{
+	if (standard == NTV2_STANDARD_1080p || standard == NTV2_STANDARD_2K ||
+	    standard == NTV2_STANDARD_2Kx1080p) {
+		return true;
+	}
+	return false;
+}
+
+VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
+				   NTV2VideoFormat vf, NTV2PixelFormat pf,
+				   SDITransport trx, SDITransport4K t4k)
+{
+	VPIDStandard vpid = VPIDStandard_Unknown;
+	auto rd = aja::DetermineRasterDefinition(vf);
+	auto standard = GetNTV2StandardFromVideoFormat(vf);
+	bool is_rgb = NTV2_IS_FBF_RGB(pf);
+	if (rd == RasterDefinition::SD) {
+		vpid = VPIDStandard_483_576;
+	} else if (rd == RasterDefinition::HD) {
+		vpid = VPIDStandard_1080;
+		if (aja::IsSDIOneWireIOSelection(io)) {
+			if (is_rgb) {
+				if (standard == NTV2_STANDARD_720) {
+					if (trx == SDITransport::SingleLink) {
+						vpid = VPIDStandard_720;
+					} else if (trx ==
+						   SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_720_3Ga;
+					} else if (trx ==
+						   SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_720_3Gb;
+					}
+				} else if (IsStandard1080p(standard)) {
+					if (trx == SDITransport::SingleLink) {
+						vpid = VPIDStandard_1080;
+					} else if (trx ==
+						   SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_1080_3Ga;
+					} else if (trx ==
+						   SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_1080_3Gb;
+					}
+				}
+			} else {
+				if (standard == NTV2_STANDARD_720) {
+					vpid = VPIDStandard_720;
+				} else if (IsStandard1080i(standard)) {
+					vpid = VPIDStandard_1080;
+				} else if (IsStandard1080p(standard) &&
+					   trx == SDITransport::SDI3Ga) {
+					vpid = VPIDStandard_1080_3Ga;
+				} else if (IsStandard1080p(standard) &&
+					   trx == SDITransport::SDI3Gb) {
+					vpid = VPIDStandard_1080_3Gb;
+				}
+			}
+		} else if (aja::IsSDITwoWireIOSelection(io)) {
+			if (is_rgb) {
+				if (standard == NTV2_STANDARD_720) {
+					if (trx == SDITransport::SDI3Ga)
+						vpid = VPIDStandard_720_3Ga;
+					else if (trx == SDITransport::SDI3Gb)
+						vpid = VPIDStandard_720_3Gb;
+				} else if (IsStandard1080p(standard)) {
+					if (trx == SDITransport::SDI3Ga)
+						vpid = VPIDStandard_1080_Dual_3Ga;
+					else if (trx == SDITransport::SDI3Gb)
+						vpid = VPIDStandard_1080_Dual_3Gb;
+				}
+			} else {
+				if (IsStandard1080p(standard) &&
+				    trx == SDITransport::HDDualLink) {
+					vpid = VPIDStandard_1080_DualLink;
+				}
+			}
+		}
+	} else if (rd == RasterDefinition::UHD_4K) {
+		if (aja::IsSDIOneWireIOSelection(io)) {
+			if (is_rgb) {
+				if (trx == SDITransport::SDI6G) {
+					vpid = VPIDStandard_2160_DualLink;
+				} else if (trx == SDITransport::SDI12G) {
+					vpid = VPIDStandard_2160_DualLink_12Gb;
+				}
+			} else {
+				// YCbCr
+				if (trx == SDITransport::SDI6G) {
+					vpid = VPIDStandard_2160_Single_6Gb;
+				} else if (trx == SDITransport::SDI12G) {
+					vpid = VPIDStandard_2160_Single_12Gb;
+				} else {
+					vpid = VPIDStandard_2160_Single_6Gb; // fallback
+				}
+			}
+		} else if (aja::IsSDITwoWireIOSelection(io)) {
+			if (is_rgb) {
+			} else {
+				// YCbCr
+				if (t4k == SDITransport4K::Squares) {
+					vpid = VPIDStandard_1080;
+				} else if (t4k ==
+					   SDITransport4K::TwoSampleInterleave) {
+					vpid = VPIDStandard_2160_DualLink;
+				}
+			}
+		} else if (aja::IsSDIFourWireIOSelection(io)) {
+			if (is_rgb) {
+			} else {
+				// YCbCr
+				if (t4k == SDITransport4K::Squares) {
+					if (trx == SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_1080_3Ga;
+					} else if (trx ==
+						   SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_1080_DualLink_3Gb;
+					} else {
+						vpid = VPIDStandard_1080;
+					}
+				} else if (t4k ==
+					   SDITransport4K::TwoSampleInterleave) {
+					if (trx == SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_2160_QuadLink_3Ga;
+					} else if (trx ==
+						   SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_2160_QuadDualLink_3Gb;
+					}
+				}
+			}
+		}
+	} else if (rd == RasterDefinition::UHD2_8K) {
+	}
+	return vpid;
 }
 
 } // aja
