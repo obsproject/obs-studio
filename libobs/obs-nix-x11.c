@@ -828,7 +828,8 @@ static inline void registerMouseEvents(struct obs_core_hotkeys *hotkeys)
 
 static bool obs_nix_x11_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
-	Display *display = obs_get_nix_platform_display();
+	// Open a new X11 connection here, this avoids Qt masking events we care about.
+	Display *display = XOpenDisplay(NULL);
 	if (!display)
 		return false;
 
