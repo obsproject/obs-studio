@@ -161,6 +161,8 @@ target_sources(
           qt-wrappers.hpp
           ui-validation.cpp
           ui-validation.hpp
+          multiview.cpp
+          multiview.hpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.cpp
           ${CMAKE_SOURCE_DIR}/deps/json11/json11.hpp
           ${CMAKE_SOURCE_DIR}/deps/libff/libff/ff-util.c
