@@ -119,6 +119,7 @@ struct ffmpeg_mux {
 	AVFormatContext *output;
 	AVStream *video_stream;
 	AVCodecContext *video_ctx;
+	AVPacket *packet;
 	struct audio_info *audio_infos;
 	struct main_params params;
 	struct audio_params *audio;
@@ -180,6 +181,8 @@ static void ffmpeg_mux_free(struct ffmpeg_mux *ffm)
 	}
 
 	dstr_free(&ffm->params.printable_file);
+
+	av_packet_free(&ffm->packet);
 
 	memset(ffm, 0, sizeof(*ffm));
 }
@@ -717,6 +720,8 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 	if (!ffmpeg_mux_get_extra_data(ffm))
 		return FFM_ERROR;
 
+	ffm->packet = av_packet_alloc();
+
 	/* ffmpeg does not have a way of telling what's supported
 	 * for a given output format, so we try each possibility */
 	return ffmpeg_mux_init_context(ffm);
@@ -786,7 +791,6 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 				     struct ffm_packet_info *info)
 {
 	int idx = get_index(ffm, info);
-	AVPacket packet = {0};
 
 	/* The muxer might not support video/audio, or multiple audio tracks */
 	if (idx == -1) {
@@ -796,18 +800,16 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	const AVRational codec_time_base =
 		get_codec_context(ffm, info)->time_base;
 
-	av_init_packet(&packet);
-
-	packet.data = buf;
-	packet.size = (int)info->size;
-	packet.stream_index = idx;
-	packet.pts = rescale_ts(ffm, codec_time_base, info->pts, idx);
-	packet.dts = rescale_ts(ffm, codec_time_base, info->dts, idx);
+	ffm->packet->data = buf;
+	ffm->packet->size = (int)info->size;
+	ffm->packet->stream_index = idx;
+	ffm->packet->pts = rescale_ts(ffm, codec_time_base, info->pts, idx);
+	ffm->packet->dts = rescale_ts(ffm, codec_time_base, info->dts, idx);
 
 	if (info->keyframe)
-		packet.flags = AV_PKT_FLAG_KEY;
+		ffm->packet->flags = AV_PKT_FLAG_KEY;
 
-	int ret = av_interleaved_write_frame(ffm->output, &packet);
+	int ret = av_interleaved_write_frame(ffm->output, ffm->packet);
 
 	if (ret < 0) {
 		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",

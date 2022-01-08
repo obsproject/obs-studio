@@ -48,7 +48,7 @@ struct ffmpeg_output {
 	os_sem_t *write_sem;
 	os_event_t *stop_event;
 
-	DARRAY(AVPacket) packets;
+	DARRAY(AVPacket *) packets;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -740,10 +740,8 @@ static void receive_video(void *param, struct video_data *frame)
 		return;
 
 	AVCodecContext *context = data->video_ctx;
-	AVPacket packet = {0};
+	AVPacket *packet = NULL;
 	int ret = 0, got_packet;
-
-	av_init_packet(&packet);
 
 	if (!output->video_start_ts)
 		output->video_start_ts = frame->timestamp;
@@ -766,15 +764,19 @@ static void receive_video(void *param, struct video_data *frame)
 	else
 		copy_data(data->vframe, frame, context->height,
 			  context->pix_fmt);
+
+	packet = av_packet_alloc();
+
 #if LIBAVFORMAT_VERSION_MAJOR < 58
 	if (data->output->flags & AVFMT_RAWPICTURE) {
-		packet.flags |= AV_PKT_FLAG_KEY;
-		packet.stream_index = data->video->index;
-		packet.data = data->vframe->data[0];
-		packet.size = sizeof(AVPicture);
+		packet->flags |= AV_PKT_FLAG_KEY;
+		packet->stream_index = data->video->index;
+		packet->data = data->vframe->data[0];
+		packet->size = sizeof(AVPicture);
 
 		pthread_mutex_lock(&output->write_mutex);
 		da_push_back(output->packets, &packet);
+		packet = NULL;
 		pthread_mutex_unlock(&output->write_mutex);
 		os_sem_post(output->write_sem);
 
@@ -784,15 +786,14 @@ static void receive_video(void *param, struct video_data *frame)
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 		ret = avcodec_send_frame(context, data->vframe);
 		if (ret == 0)
-			ret = avcodec_receive_packet(context, &packet);
+			ret = avcodec_receive_packet(context, packet);
 
 		got_packet = (ret == 0);
 
 		if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 			ret = 0;
 #else
-	ret = avcodec_encode_video2(context, &packet, data->vframe,
-				    &got_packet);
+	ret = avcodec_encode_video2(context, packet, data->vframe, &got_packet);
 #endif
 		if (ret < 0) {
 			blog(LOG_WARNING,
@@ -800,20 +801,21 @@ static void receive_video(void *param, struct video_data *frame)
 			     "video: %s",
 			     av_err2str(ret));
 			//FIXME: stop the encode with an error
-			return;
+			goto fail;
 		}
 
-		if (!ret && got_packet && packet.size) {
-			packet.pts = rescale_ts(packet.pts, context,
-						data->video->time_base);
-			packet.dts = rescale_ts(packet.dts, context,
-						data->video->time_base);
-			packet.duration = (int)av_rescale_q(
-				packet.duration, context->time_base,
+		if (!ret && got_packet && packet->size) {
+			packet->pts = rescale_ts(packet->pts, context,
+						 data->video->time_base);
+			packet->dts = rescale_ts(packet->dts, context,
+						 data->video->time_base);
+			packet->duration = (int)av_rescale_q(
+				packet->duration, context->time_base,
 				data->video->time_base);
 
 			pthread_mutex_lock(&output->write_mutex);
 			da_push_back(output->packets, &packet);
+			packet = NULL;
 			pthread_mutex_unlock(&output->write_mutex);
 			os_sem_post(output->write_sem);
 		} else {
@@ -829,6 +831,9 @@ static void receive_video(void *param, struct video_data *frame)
 	}
 
 	data->total_frames++;
+
+fail:
+	av_packet_free(&packet);
 }
 
 static void encode_audio(struct ffmpeg_output *output, int idx,
@@ -836,7 +841,7 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 {
 	struct ffmpeg_data *data = &output->ff_data;
 
-	AVPacket packet = {0};
+	AVPacket *packet = NULL;
 	int ret, got_packet;
 	size_t total_size = data->frame_size * block_size * context->channels;
 
@@ -860,42 +865,48 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	data->total_samples[idx] += data->frame_size;
 
+	packet = av_packet_alloc();
+
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(context, data->aframe[idx]);
 	if (ret == 0)
-		ret = avcodec_receive_packet(context, &packet);
+		ret = avcodec_receive_packet(context, packet);
 
 	got_packet = (ret == 0);
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
 #else
-	ret = avcodec_encode_audio2(context, &packet, data->aframe[idx],
+	ret = avcodec_encode_audio2(context, packet, data->aframe[idx],
 				    &got_packet);
 #endif
 	if (ret < 0) {
 		blog(LOG_WARNING, "encode_audio: Error encoding audio: %s",
 		     av_err2str(ret));
 		//FIXME: stop the encode with an error
-		return;
+		goto fail;
 	}
 
 	if (!got_packet)
-		return;
+		goto fail;
 
-	packet.pts = rescale_ts(packet.pts, context,
-				data->audio_infos[idx].stream->time_base);
-	packet.dts = rescale_ts(packet.dts, context,
-				data->audio_infos[idx].stream->time_base);
-	packet.duration =
-		(int)av_rescale_q(packet.duration, context->time_base,
+	packet->pts = rescale_ts(packet->pts, context,
+				 data->audio_infos[idx].stream->time_base);
+	packet->dts = rescale_ts(packet->dts, context,
+				 data->audio_infos[idx].stream->time_base);
+	packet->duration =
+		(int)av_rescale_q(packet->duration, context->time_base,
 				  data->audio_infos[idx].stream->time_base);
-	packet.stream_index = data->audio_infos[idx].stream->index;
+	packet->stream_index = data->audio_infos[idx].stream->index;
 
 	pthread_mutex_lock(&output->write_mutex);
 	da_push_back(output->packets, &packet);
 	pthread_mutex_unlock(&output->write_mutex);
 	os_sem_post(output->write_sem);
+
+	return;
+fail:
+	av_packet_free(&packet);
 }
 
 /* Given a bitmask for the selected tracks and the mix index,
@@ -978,7 +989,7 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 
 static int process_packet(struct ffmpeg_output *output)
 {
-	AVPacket packet;
+	AVPacket *packet;
 	bool new_packet = false;
 	int ret;
 
@@ -999,16 +1010,16 @@ static int process_packet(struct ffmpeg_output *output)
 			packet.stream_index, output->packets.num);*/
 
 	if (stopping(output)) {
-		uint64_t sys_ts = get_packet_sys_dts(output, &packet);
+		uint64_t sys_ts = get_packet_sys_dts(output, packet);
 		if (sys_ts >= output->stop_ts)
 			return 0;
 	}
 
-	output->total_bytes += packet.size;
+	output->total_bytes += packet->size;
 
-	ret = av_interleaved_write_frame(output->ff_data.output, &packet);
+	ret = av_interleaved_write_frame(output->ff_data.output, packet);
 	if (ret < 0) {
-		av_free_packet(&packet);
+		av_packet_free(&packet);
 		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
 				 "process_packet: Error writing packet: %s",
 				 av_err2str(ret));
@@ -1243,7 +1254,7 @@ static void ffmpeg_deactivate(struct ffmpeg_output *output)
 	pthread_mutex_lock(&output->write_mutex);
 
 	for (size_t i = 0; i < output->packets.num; i++)
-		av_free_packet(output->packets.array + i);
+		av_packet_free(output->packets.array + i);
 	da_free(output->packets);
 
 	pthread_mutex_unlock(&output->write_mutex);

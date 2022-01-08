@@ -225,7 +225,6 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 			 size_t size, struct obs_source_audio *audio,
 			 bool *got_output)
 {
-	AVPacket packet = {0};
 	int got_frame = false;
 	int ret = 0;
 
@@ -233,18 +232,21 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 
 	copy_data(decode, data, size);
 
-	av_init_packet(&packet);
-	packet.data = decode->packet_buffer;
-	packet.size = (int)size;
-
 	if (!decode->frame) {
 		decode->frame = av_frame_alloc();
 		if (!decode->frame)
 			return false;
 	}
 
-	if (data && size)
-		ret = avcodec_send_packet(decode->decoder, &packet);
+	if (data && size) {
+		AVPacket *packet = av_packet_alloc();
+		packet->data = decode->packet_buffer;
+		packet->size = (int)size;
+
+		ret = avcodec_send_packet(decode->decoder, packet);
+
+		av_packet_free(&packet);
+	}
 	if (ret == 0)
 		ret = avcodec_receive_frame(decode->decoder, decode->frame);
 
@@ -297,7 +299,6 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 			 enum video_range_type range,
 			 struct obs_source_frame2 *frame, bool *got_output)
 {
-	AVPacket packet = {0};
 	int got_frame = false;
 	AVFrame *out_frame;
 	int ret;
@@ -305,15 +306,6 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	*got_output = false;
 
 	copy_data(decode, data, size);
-
-	av_init_packet(&packet);
-	packet.data = decode->packet_buffer;
-	packet.size = (int)size;
-	packet.pts = *ts;
-
-	if (decode->codec->id == AV_CODEC_ID_H264 &&
-	    obs_avc_keyframe(data, size))
-		packet.flags |= AV_PKT_FLAG_KEY;
 
 	if (!decode->frame) {
 		decode->frame = av_frame_alloc();
@@ -329,10 +321,21 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 
 	out_frame = decode->hw ? decode->hw_frame : decode->frame;
 
-	ret = avcodec_send_packet(decode->decoder, &packet);
+	AVPacket *packet = av_packet_alloc();
+	packet->data = decode->packet_buffer;
+	packet->size = (int)size;
+	packet->pts = *ts;
+
+	if (decode->codec->id == AV_CODEC_ID_H264 &&
+	    obs_avc_keyframe(data, size))
+		packet->flags |= AV_PKT_FLAG_KEY;
+
+	ret = avcodec_send_packet(decode->decoder, packet);
 	if (ret == 0) {
 		ret = avcodec_receive_frame(decode->decoder, out_frame);
 	}
+
+	av_packet_free(&packet);
 
 	got_frame = (ret == 0);
 
