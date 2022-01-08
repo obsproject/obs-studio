@@ -1135,4 +1135,9 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 	return vpid;
 }
 
+std::vector<NTV2DeviceID> MultiViewCards()
+{
+	return {DEVICE_ID_IOX3};
+}
+
 } // aja

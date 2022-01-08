@@ -106,6 +106,16 @@
      </item>
     </layout>
    </item>
+   <item>
+    <widget class="QLabel" name="label_3">
+     <property name="text">
+      <string>AJAOutput.MiscOutput</string>
+     </property>
+    </widget>
+   </item>
+   <item>
+    <layout class="QVBoxLayout" name="miscPropertiesLayout"/>
+   </item>
   </layout>
  </widget>
  <resources/>

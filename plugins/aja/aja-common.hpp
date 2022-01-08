@@ -98,4 +98,6 @@ extern VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 					  NTV2VideoFormat vf,
 					  NTV2PixelFormat pf, SDITransport trx,
 					  SDITransport4K t4k);
+extern std::vector<NTV2DeviceID> MultiViewCards();
+
 } // aja
