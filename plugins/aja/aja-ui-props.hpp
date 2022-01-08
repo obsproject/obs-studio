@@ -13,13 +13,13 @@ struct UIProperty {
 
 static const UIProperty kUIPropCaptureModule = {
 	"aja_source",
-	obs_module_text("AJACapture.Device"),
+	"AJACapture.Device",
 	"",
 };
 
 static const UIProperty kUIPropOutputModule = {
 	"aja_output",
-	obs_module_text("AJAOutput.Device"),
+	"AJAOutput.Device",
 	"",
 };
 
@@ -35,57 +35,75 @@ static const UIProperty kUIPropAJAOutputID = {
 
 static const UIProperty kUIPropDevice = {
 	"ui_prop_device",
-	obs_module_text("Device"),
+	"Device",
 	"",
 };
 
 static const UIProperty kUIPropOutput = {
 	"ui_prop_output",
-	obs_module_text("Output"),
+	"Output",
 	"",
 };
 
 static const UIProperty kUIPropInput = {
 	"ui_prop_input",
-	obs_module_text("Input"),
+	"Input",
 	"",
 };
 
-static const UIProperty kUIPropIOSelect = {"ui_prop_select_input",
-					   obs_module_text("IOSelect"), ""};
+static const UIProperty kUIPropIOSelect = {"ui_prop_select_input", "IOSelect",
+					   ""};
 
-static const UIProperty kUIPropSDI4KTransport = {
+static const UIProperty kUIPropSDITransport = {
 	"ui_prop_sdi_transport",
-	obs_module_text("SDI4KTransport"),
+	"SDITransport",
+	"",
+};
+
+static const UIProperty kUIPropSDITransport4K = {
+	"ui_prop_sdi_transport_4k",
+	"SDITransport4K",
 	"",
 };
 
 static const UIProperty kUIPropVideoFormatSelect = {
 	"ui_prop_vid_fmt",
-	obs_module_text("VideoFormat"),
+	"VideoFormat",
 	"",
 };
 
 static const UIProperty kUIPropPixelFormatSelect = {
 	"ui_prop_pix_fmt",
-	obs_module_text("PixelFormat"),
+	"PixelFormat",
 	"",
 };
 
 static const UIProperty kUIPropAutoStartOutput = {
 	"ui_prop_auto_start_output",
-	obs_module_text("AutoStart"),
+	"AutoStart",
 	"",
 };
 
 static const UIProperty kUIPropDeactivateWhenNotShowing = {
 	"ui_prop_deactivate_when_not_showing",
-	obs_module_text("DeactivateWhenNotShowing"),
+	"DeactivateWhenNotShowing",
 	"",
 };
 
 static const UIProperty kUIPropBuffering = {
 	"ui_prop_buffering",
-	obs_module_text("Buffering"),
+	"Buffering",
+	"",
+};
+
+static const UIProperty kUIPropMultiViewEnable = {
+	"ui_prop_multi_view_enable",
+	"Enable Multi View",
+	"",
+};
+
+static const UIProperty kUIPropMultiViewAudioSource = {
+	"ui_prop_multi_view_audio_source",
+	"Multi View Audio Source",
 	"",
 };

@@ -50,8 +50,7 @@ public:
 
 	bool ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids);
 
-	bool ReadWireFormats(NTV2DeviceID device_id,
-			     const NTV2InputSourceSet &srcs,
+	bool ReadWireFormats(NTV2DeviceID device_id, IOSelection io_select,
 			     NTV2VideoFormat &vf, NTV2PixelFormat &pf,
 			     VPIDDataList &vpids);
 
