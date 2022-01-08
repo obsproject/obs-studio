@@ -348,7 +348,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://gitlab.freedesktop.org/pipewire/pipewire.git",
+          "url": "https://github.com/pipewire/pipewire.git",
           "tag": "0.3.40",
           "commit": "7afd80052b7c49754a13c9ab49c368f95b60e0a7"
         }
