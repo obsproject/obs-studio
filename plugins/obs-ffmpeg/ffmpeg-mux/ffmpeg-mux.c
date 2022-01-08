@@ -231,7 +231,6 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 static void ffmpeg_log_callback(void *param, int level, const char *format,
 				va_list args)
 {
-#ifdef DEBUG_FFMPEG
 	char out_buffer[4096];
 	struct dstr out = {0};
 
@@ -240,7 +239,7 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 	if (global_stream_key && *global_stream_key) {
 		dstr_replace(&out, global_stream_key, "{stream_key}");
 	}
-
+#ifdef DEBUG_FFMPEG
 	switch (level) {
 	case AV_LOG_INFO:
 		fprintf(stdout, "info: [ffmpeg_muxer] %s", out.array);
@@ -258,13 +257,13 @@ static void ffmpeg_log_callback(void *param, int level, const char *format,
 			out.array, ANSI_COLOR_RESET);
 		fflush(stderr);
 	}
-
-	dstr_free(&out);
 #else
-	UNUSED_PARAMETER(level);
-	UNUSED_PARAMETER(format);
-	UNUSED_PARAMETER(args);
+	if (level == AV_LOG_ERROR) {
+		fprintf(stderr, "%s", out.array);
+		fflush(stderr);
+	}
 #endif
+	dstr_free(&out);
 	UNUSED_PARAMETER(param);
 }
 

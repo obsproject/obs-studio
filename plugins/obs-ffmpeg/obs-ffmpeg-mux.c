@@ -443,13 +443,19 @@ static void signal_failure(struct ffmpeg_muxer *stream)
 
 	ret = deactivate(stream, 0);
 
+#define SRT_HOST_ERROR "Failed to resolve hostname"
+
 	switch (ret) {
 	case FFM_UNSUPPORTED:
 		code = OBS_OUTPUT_UNSUPPORTED;
 		break;
 	default:
 		if (stream->is_network) {
-			code = OBS_OUTPUT_DISCONNECTED;
+			char *result = strstr(error, SRT_HOST_ERROR);
+			if (result != NULL)
+				code = OBS_OUTPUT_CONNECT_FAILED;
+			else
+				code = OBS_OUTPUT_DISCONNECTED;
 		} else {
 			code = OBS_OUTPUT_ENCODE_ERROR;
 		}
