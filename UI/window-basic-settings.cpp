@@ -2380,7 +2380,7 @@ void OBSBasicSettings::LoadAudioSources()
 			},
 			pttSB);
 
-		audioSources.emplace_back(OBSGetWeakRef(source), ptmCB, pttSB,
+		audioSources.emplace_back(OBSGetWeakRef(source), ptmCB, ptmSB,
 					  pttCB, pttSB);
 
 		auto label = new OBSSourceLabel(source);
