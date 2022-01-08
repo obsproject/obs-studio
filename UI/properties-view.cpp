@@ -188,7 +188,8 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	ReloadProperties();
+	QMetaObject::invokeMethod(this, "ReloadProperties",
+				  Qt::QueuedConnection);
 }
 
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
@@ -202,7 +203,8 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
 	  minSize(minSize_)
 {
 	setFrameShape(QFrame::NoFrame);
-	ReloadProperties();
+	QMetaObject::invokeMethod(this, "ReloadProperties",
+				  Qt::QueuedConnection);
 }
 
 void OBSPropertiesView::resizeEvent(QResizeEvent *event)
