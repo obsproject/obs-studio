@@ -574,8 +574,7 @@ void Routing::LogRoutingPreset(const RoutingPreset &rp)
 	};
 
 	std::stringstream ss;
-	ss << "[ AJA Crosspoint Routing Preset ]"
-	   << "\nPreset: " << rp.name;
+	ss << "\nPreset: " << rp.name;
 	if (rp.kind == ConnectionKind::SDI) {
 		ss << "\nVPID Standard: 0x"
 		   << hexStr(static_cast<uint8_t>(rp.vpid_standard));
@@ -584,7 +583,7 @@ void Routing::LogRoutingPreset(const RoutingPreset &rp)
 	   << "\nChannels: " << rp.num_channels
 	   << "\nFramestores: " << rp.num_framestores;
 
-	blog(LOG_INFO, ss.str().c_str());
+	blog(LOG_INFO, "[ AJA Crosspoint Routing Preset ]%s", ss.str().c_str());
 
 	if (rp.device_ids.size() > 0) {
 		ss.clear();
