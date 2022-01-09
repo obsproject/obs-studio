@@ -186,7 +186,8 @@ Property Object Functions
 .. function:: obs_property_t *obs_properties_add_list(obs_properties_t *props, const char *name, const char *description, enum obs_combo_type type, enum obs_combo_format format)
 
    Adds an integer/string/floating point item list.  This would be
-   implemented as a combo box in user interface.
+   implemented as a combo box in user interface. Duplicated item are
+   allowed by default.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -215,6 +216,8 @@ Property Object Functions
    - :c:func:`obs_property_list_insert_float`
    - :c:func:`obs_property_list_item_remove`
    - :c:func:`obs_property_list_clear`
+   - :c:func:`obs_property_list_set_enforce_unique_name`
+   - :c:func:`obs_property_list_set_enforce_unique_value`
 
 ---------------------
 
@@ -479,6 +482,14 @@ Property Enumeration Functions
 
 ---------------------
 
+.. function:: bool obs_property_list_enforce_unique_name(obs_property_t *p)
+
+---------------------
+
+.. function:: bool obs_property_list_enforce_unique_value(obs_property_t *p)
+
+---------------------
+
 .. function:: bool obs_property_list_item_disabled(obs_property_t *p, size_t idx)
 
 ---------------------
@@ -726,3 +737,15 @@ Property Modification Functions
 ---------------------
 
 .. function:: void obs_property_button_set_url(obs_property_t *p, char *url)
+
+---------------------
+
+.. function:: void obs_property_list_set_enforce_unique_name(obs_property_t *p, bool enforce)
+
+    Set up the property to disallow or not items with the same name.
+
+---------------------
+
+.. function:: void obs_property_list_set_enforce_unique_value(obs_property_t *p, bool enforce)
+
+    Set up the property to disallow or not items with the same value.

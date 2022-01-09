@@ -64,6 +64,8 @@ struct list_data {
 	DARRAY(struct list_item) items;
 	enum obs_combo_type type;
 	enum obs_combo_format format;
+	bool enforce_unique_name;
+	bool enforce_unique_value;
 };
 
 struct editable_list_data {
@@ -648,6 +650,8 @@ obs_property_t *obs_properties_add_list(obs_properties_t *props,
 	struct list_data *data = get_property_data(p);
 	data->format = format;
 	data->type = type;
+	data->enforce_unique_name = false;
+	data->enforce_unique_value = false;
 
 	return p;
 }
@@ -1068,6 +1072,18 @@ enum obs_combo_format obs_property_list_format(obs_property_t *p)
 	return data ? data->format : OBS_COMBO_FORMAT_INVALID;
 }
 
+bool obs_property_list_enforce_unique_name(obs_property_t *p)
+{
+	struct list_data *data = get_list_data(p);
+	return data ? data->enforce_unique_name : false;
+}
+
+bool obs_property_list_enforce_unique_value(obs_property_t *p)
+{
+	struct list_data *data = get_list_data(p);
+	return data ? data->enforce_unique_value : false;
+}
+
 void obs_property_int_set_limits(obs_property_t *p, int min, int max, int step)
 {
 	struct int_data *data = get_type_data(p, OBS_PROPERTY_INT);
@@ -1157,11 +1173,50 @@ void obs_property_button_set_url(obs_property_t *p, char *url)
 	data->url = url;
 }
 
+void obs_property_list_set_enforce_unique_name(obs_property_t *p, bool enforce)
+{
+	struct list_data *data = get_type_data(p, OBS_PROPERTY_LIST);
+	if (!data)
+		return;
+	data->enforce_unique_name = enforce;
+}
+
+void obs_property_list_set_enforce_unique_value(obs_property_t *p, bool enforce)
+{
+	struct list_data *data = get_type_data(p, OBS_PROPERTY_LIST);
+	if (!data)
+		return;
+	data->enforce_unique_value = enforce;
+}
+
 void obs_property_list_clear(obs_property_t *p)
 {
 	struct list_data *data = get_list_data(p);
 	if (data)
 		list_data_free(data);
+}
+
+static bool is_item_unique(struct list_data *data, struct list_item *item)
+{
+	for (size_t i = 0; i < data->items.num; i++) {
+		if (data->enforce_unique_name &&
+		    (strcmp(data->items.array[i].name, item->name) == 0))
+			return false;
+
+		if (!data->enforce_unique_value)
+			continue;
+
+		if ((data->format == OBS_COMBO_FORMAT_INT) &&
+		    (data->items.array[i].ll == item->ll))
+			return false;
+		else if ((data->format == OBS_COMBO_FORMAT_FLOAT) &&
+			 (data->items.array[i].d == item->d))
+			return false;
+		else if (strcmp(data->items.array[i].str, item->str) == 0)
+			return false;
+	}
+
+	return true;
 }
 
 static size_t add_item(struct list_data *data, const char *name,
@@ -1176,6 +1231,13 @@ static size_t add_item(struct list_data *data, const char *name,
 		item.d = *(const double *)val;
 	else
 		item.str = bstrdup(val);
+
+	if (data->enforce_unique_name || data->enforce_unique_value) {
+		if (!is_item_unique(data, &item)) {
+			list_item_free(data, &item);
+			return data->items.num;
+		}
+	}
 
 	return da_push_back(data->items, &item);
 }
@@ -1192,6 +1254,13 @@ static void insert_item(struct list_data *data, size_t idx, const char *name,
 		item.d = *(const double *)val;
 	else
 		item.str = bstrdup(val);
+
+	if (data->enforce_unique_name || data->enforce_unique_value) {
+		if (!is_item_unique(data, &item)) {
+			list_item_free(data, &item);
+			return;
+		}
+	}
 
 	da_insert(data->items, idx, &item);
 }

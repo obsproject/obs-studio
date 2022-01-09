@@ -338,6 +338,8 @@ EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);
 EXPORT enum obs_combo_type obs_property_list_type(obs_property_t *p);
 EXPORT enum obs_combo_format obs_property_list_format(obs_property_t *p);
+EXPORT bool obs_property_list_enforce_unique_name(obs_property_t *p);
+EXPORT bool obs_property_list_enforce_unique_value(obs_property_t *p);
 
 EXPORT void obs_property_int_set_limits(obs_property_t *p, int min, int max,
 					int step);
@@ -355,6 +357,12 @@ EXPORT void obs_property_text_set_info_word_wrap(obs_property_t *p,
 EXPORT void obs_property_button_set_type(obs_property_t *p,
 					 enum obs_button_type type);
 EXPORT void obs_property_button_set_url(obs_property_t *p, char *url);
+
+EXPORT void obs_property_list_set_enforce_unique_name(obs_property_t *p,
+						      bool enforce);
+
+EXPORT void obs_property_list_set_enforce_unique_value(obs_property_t *p,
+						       bool enforce);
 
 EXPORT void obs_property_list_clear(obs_property_t *p);
 
