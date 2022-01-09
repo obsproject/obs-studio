@@ -997,24 +997,21 @@ static bool GetMonitorTarget(const MONITORINFOEX &info,
 	return found;
 }
 
-static DXGI_COLOR_SPACE_TYPE GetColorSpace(IDXGIOutput *const output)
+static bool GetOutputDesc1(IDXGIOutput *const output, DXGI_OUTPUT_DESC1 *desc1)
 {
-	DXGI_COLOR_SPACE_TYPE space = DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
-
 	ComPtr<IDXGIOutput6> output6;
 	HRESULT hr = output->QueryInterface(IID_PPV_ARGS(output6.Assign()));
-	if (SUCCEEDED(hr)) {
-		DXGI_OUTPUT_DESC1 desc1;
-		hr = output6->GetDesc1(&desc1);
-		if (SUCCEEDED(hr)) {
-			space = desc1.ColorSpace;
-		} else {
+	bool success = SUCCEEDED(hr);
+	if (success) {
+		hr = output6->GetDesc1(desc1);
+		success = SUCCEEDED(hr);
+		if (!success) {
 			blog(LOG_WARNING,
 			     "IDXGIOutput6::GetDesc1 failed: 0x%08lX", hr);
 		}
 	}
 
-	return space;
+	return success;
 }
 
 // Returns true if this is an integrated display panel e.g. the screen attached to tablets or laptops.
@@ -1204,8 +1201,20 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			target.monitorFriendlyDeviceName[0] = 0;
 		}
 
+		DXGI_COLOR_SPACE_TYPE type =
+			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		FLOAT min_luminance = 0.f;
+		FLOAT max_luminance = 0.f;
+		FLOAT max_full_frame_luminance = 0.f;
+		DXGI_OUTPUT_DESC1 desc1;
+		if (GetOutputDesc1(output, &desc1)) {
+			type = desc1.ColorSpace;
+			min_luminance = desc1.MinLuminance;
+			max_luminance = desc1.MaxLuminance;
+			max_full_frame_luminance = desc1.MaxFullFrameLuminance;
+		}
+
 		const char *space = "Unknown";
-		const DXGI_COLOR_SPACE_TYPE type = GetColorSpace(output);
 		switch (type) {
 		case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709:
 			space = "RGB_FULL_G22_NONE_P709";
@@ -1222,18 +1231,20 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 		const RECT &rect = desc.DesktopCoordinates;
 		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
 		blog(LOG_INFO,
-		     "\t  output %u: "
-		     "pos={%d, %d}, "
-		     "size={%d, %d}, "
-		     "attached=%s, "
-		     "space=%s, "
-		     "sdr_white_nits=%lu, "
-		     "refresh=%u, "
-		     "name=%ls",
-		     i, rect.left, rect.top, rect.right - rect.left,
-		     rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", space, nits,
-		     refresh, target.monitorFriendlyDeviceName);
+		     "\t  output %u:\n"
+		     "\t    name=%ls\n"
+		     "\t    pos={%d, %d}\n"
+		     "\t    size={%d, %d}\n"
+		     "\t    attached=%s\n"
+		     "\t    refresh=%u\n"
+		     "\t    space=%s\n"
+		     "\t    sdr_white_nits=%lu\n"
+		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]",
+		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
+		     rect.right - rect.left, rect.bottom - rect.top,
+		     desc.AttachedToDesktop ? "true" : "false", refresh, space,
+		     nits, min_luminance, max_luminance,
+		     max_full_frame_luminance);
 	}
 }
 
