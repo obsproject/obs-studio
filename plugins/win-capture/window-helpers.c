@@ -347,18 +347,74 @@ static HWND first_window(enum window_search_mode mode, HWND *parent,
 	return window;
 }
 
+struct check_window_helper {
+	enum window_search_mode enum_mode;
+	DARRAY(HWND) window_list;
+};
+
+BOOL CALLBACK enum_windows_proc_test(HWND window, LPARAM lParam)
+{
+	struct check_window_helper *helper =
+		(struct check_window_helper *)lParam;
+
+	if (!check_window_valid(window, helper->enum_mode))
+		return TRUE;
+
+	int cloaked;
+	if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
+					    sizeof(cloaked))) &&
+	    cloaked)
+		return TRUE;
+
+	struct dstr exe = {0};
+	if (!get_window_exe(&exe, window)) /* This is for HWND filter */
+		return TRUE;
+	dstr_free(&exe);
+
+	if (is_uwp_window(window)) {
+		HWND child = get_uwp_actual_window(window);
+		if (child)
+			window = child;
+	}
+
+	da_push_back(helper->window_list, &window);
+	return TRUE;
+}
+
+bool enum_window_found(struct check_window_helper *helper, HWND window)
+{
+	for (size_t i = 0; i < helper->window_list.num; i++) {
+		HWND hWnd = *(helper->window_list.array + i);
+		if (hWnd == window)
+			return true;
+	}
+	return false;
+}
+
 void fill_window_list(obs_property_t *p, enum window_search_mode mode,
 		      add_window_cb callback)
 {
+	struct check_window_helper helper;
+
+	helper.enum_mode = mode;
+	darray_init((struct darray *)&helper.window_list);
+
+	EnumWindows(enum_windows_proc_test, (LPARAM)&helper);
+
 	HWND parent;
 	bool use_findwindowex = false;
 
 	HWND window = first_window(mode, &parent, &use_findwindowex);
 
 	while (window) {
-		add_window(p, window, callback);
+		/* Only display window which can be enumerated by both EnumWindows() and FindWindowEx() */
+		if (enum_window_found(&helper, window))
+			add_window(p, window, callback);
+
 		window = next_window(window, mode, &parent, use_findwindowex);
 	}
+
+	da_free(helper.window_list);
 }
 
 static int window_rating(HWND window, enum window_priority priority,
