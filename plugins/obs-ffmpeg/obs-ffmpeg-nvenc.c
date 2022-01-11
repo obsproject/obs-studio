@@ -21,6 +21,7 @@
 #include <media-io/video-io.h>
 #include <obs-module.h>
 #include <obs-avc.h>
+#include "external/nvEncodeAPI.h"
 
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
@@ -167,14 +168,14 @@ static bool nvenc_init_codec(struct nvenc_encoder *enc, bool psycho_aq)
 	return true;
 }
 
-enum RC_MODE { RC_MODE_CBR, RC_MODE_VBR, RC_MODE_CQP, RC_MODE_LOSSLESS };
-
 static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 			 bool psycho_aq)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
+	int max_bitrate = (int)obs_data_get_int(settings, "max_bitrate");
 	int cqp = (int)obs_data_get_int(settings, "cqp");
+	int crf = (int)obs_data_get_int(settings, "crf");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
@@ -215,7 +216,15 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
 		enc->context->global_quality = cqp;
-
+	} else if (astrcmpi(rc, "crf") == 0) {
+		bitrate = 0;
+		if (max_bitrate == 0) {
+			max_bitrate = 300000;
+		}
+		enc->context->rc_max_rate = max_bitrate * INT64_C(1000);
+		av_opt_set_double(enc->context->priv_data, "cq", (double)crf,
+				  0);
+		cqp = 0;
 	} else if (astrcmpi(rc, "lossless") == 0) {
 		bitrate = 0;
 		cqp = 0;
@@ -283,6 +292,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
+	     "\tcrf:          %d\n"
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
@@ -292,7 +302,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	     "\tb-frames:     %d\n"
 	     "\tpsycho-aq:    %d\n"
 	     "\tGPU:          %d\n",
-	     rc, bitrate, cqp, enc->context->gop_size, preset, profile,
+	     rc, bitrate, cqp, crf, enc->context->gop_size, preset, profile,
 	     enc->context->width, enc->context->height,
 	     twopass ? "true" : "false", enc->context->max_b_frames, psycho_aq,
 	     gpu);
@@ -501,13 +511,46 @@ void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "max_bitrate", 5000);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_int(settings, "lookahead_depth", 32);
+	obs_data_set_default_double(settings, "crf", 23.0);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "hq");
 	obs_data_set_default_string(settings, "profile", "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
+	obs_data_set_default_int(settings, "psycho_aq_strength", 8);
+	obs_data_set_default_int(settings, "bref_mode",
+				 NV_ENC_BFRAME_REF_MODE_DISABLED);
+	obs_data_set_default_int(settings, "ref_frames", 8);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
 	obs_data_set_default_bool(settings, "repeat_headers", false);
+}
+
+static bool lookahead_modified(obs_properties_t *ppts, obs_property_t *p,
+			       obs_data_t *settings)
+{
+	const bool enabled = obs_data_get_bool(settings, "lookahead");
+	p = obs_properties_get(ppts, "lookahead_depth");
+	obs_property_set_visible(p, enabled);
+	return true;
+}
+
+static bool bref_modified(obs_properties_t *ppts, obs_property_t *p,
+			  obs_data_t *settings)
+{
+	const int mode = (int)obs_data_get_int(settings, "bref_mode");
+	p = obs_properties_get(ppts, "ref_frames");
+	obs_property_set_visible(p, mode > 0);
+	return true;
+}
+
+static bool aq_modified(obs_properties_t *ppts, obs_property_t *p,
+			obs_data_t *settings)
+{
+	const bool enabled = obs_data_get_bool(settings, "psycho_aq");
+	p = obs_properties_get(ppts, "psycho_aq_strength");
+	obs_property_set_visible(p, enabled);
+	return true;
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -516,15 +559,18 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	bool cqp = astrcmpi(rc, "CQP") == 0;
 	bool vbr = astrcmpi(rc, "VBR") == 0;
+	bool crf = astrcmpi(rc, "CRF") == 0;
 	bool lossless = astrcmpi(rc, "lossless") == 0;
 	size_t count;
 
 	p = obs_properties_get(ppts, "bitrate");
-	obs_property_set_visible(p, !cqp && !lossless);
+	obs_property_set_visible(p, !cqp && !lossless && !crf);
 	p = obs_properties_get(ppts, "max_bitrate");
-	obs_property_set_visible(p, vbr);
+	obs_property_set_visible(p, vbr || crf);
 	p = obs_properties_get(ppts, "cqp");
 	obs_property_set_visible(p, cqp);
+	p = obs_properties_get(ppts, "crf");
+	obs_property_set_visible(p, crf);
 
 	p = obs_properties_get(ppts, "preset");
 	count = obs_property_list_item_count(p);
@@ -549,6 +595,7 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQP", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
+	obs_property_list_add_string(p, "CRF", "CRF");
 	obs_property_list_add_string(p, obs_module_text("Lossless"),
 				     "lossless");
 
@@ -564,6 +611,9 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
 			       1, 30, 1);
+
+	obs_properties_add_int(props, "crf",
+			       obs_module_text("NVENC.CRFQuality"), 0, 51, 1);
 
 	obs_properties_add_int(props, "keyint_sec",
 			       obs_module_text("KeyframeIntervalSec"), 0, 10,
@@ -601,15 +651,58 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 					    obs_module_text("NVENC.LookAhead"));
 		obs_property_set_long_description(
 			p, obs_module_text("NVENC.LookAhead.ToolTip"));
+
+		obs_property_set_modified_callback(p, lookahead_modified);
+
+		p = obs_properties_add_int(
+			props, "lookahead_depth",
+			obs_module_text("NVENC.LookAheadDepth"), 1, 32, 1);
+
+		obs_property_set_long_description(
+			p, obs_module_text("NVENC.LookAheadDepth.ToolTip"));
+
+		obs_property_set_visible(p, false);
+
 		p = obs_properties_add_bool(props, "repeat_headers",
 					    "repeat_headers");
 		obs_property_set_visible(p, false);
+
+		p = obs_properties_add_list(props, "bref_mode",
+					    obs_module_text("NVENC.BRefMode"),
+					    OBS_COMBO_TYPE_LIST,
+					    OBS_COMBO_FORMAT_INT);
+		obs_property_list_add_int(
+			p, obs_module_text("NVENC.BRefMode.Disabled"),
+			NV_ENC_BFRAME_REF_MODE_DISABLED);
+		obs_property_list_add_int(
+			p, obs_module_text("NVENC.BRefMode.Each"),
+			NV_ENC_BFRAME_REF_MODE_EACH);
+		obs_property_list_add_int(
+			p, obs_module_text("NVENC.BRefMode.MiddleOnly"),
+			NV_ENC_BFRAME_REF_MODE_MIDDLE);
+		obs_property_set_long_description(
+			p, obs_module_text("NVENC.BRefMode.ToolTip"));
+		obs_property_set_modified_callback(p, bref_modified);
+
+		p = obs_properties_add_int(
+			props, "ref_frames",
+			obs_module_text("NVENC.BRefDistance"), 1, 16, 8);
+		obs_property_set_long_description(
+			p, obs_module_text("NVENC.BRefDistance.ToolTip"));
+		obs_property_set_visible(p, false);
 	}
+
 	p = obs_properties_add_bool(
 		props, "psycho_aq",
 		obs_module_text("NVENC.PsychoVisualTuning"));
 	obs_property_set_long_description(
 		p, obs_module_text("NVENC.PsychoVisualTuning.ToolTip"));
+	obs_property_set_modified_callback(p, aq_modified);
+	p = obs_properties_add_int(
+		props, "psycho_aq_strength",
+		obs_module_text("NVENC.PsychoVisualTuningStrength"), 1, 32, 1);
+	obs_property_set_long_description(
+		p, obs_module_text("NVENC.PsychoVisualTuningStrength.ToolTip"));
 
 	obs_properties_add_int(props, "gpu", obs_module_text("GPU"), 0, 8, 1);
 

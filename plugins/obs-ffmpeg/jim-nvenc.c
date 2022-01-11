@@ -335,6 +335,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
 	int bf = (int)obs_data_get_int(settings, "bf");
+	int bref_mode = (int)obs_data_get_int(settings, "bref_mode");
+	int ref_frames = (int)obs_data_get_int(settings, "ref_frames");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
 
@@ -447,7 +449,10 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 	h264_config->sliceMode = 3;
 	h264_config->sliceModeData = 1;
 
-	h264_config->useBFramesAsRef = NV_ENC_BFRAME_REF_MODE_DISABLED;
+	h264_config->useBFramesAsRef = bref_mode;
+	if (bref_mode != NV_ENC_BFRAME_REF_MODE_DISABLED) {
+		h264_config->maxNumRefFrames = ref_frames;
+	}
 
 	vui_params->videoSignalTypePresentFlag = 1;
 	vui_params->videoFullRangeFlag = (voi->range == VIDEO_RANGE_FULL);
@@ -476,16 +481,21 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 
 	/* lookahead */
 	const bool use_profile_lookahead = config->rcParams.enableLookahead;
+
+	bool userLookahead = lookahead;
+
 	lookahead = nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOOKAHEAD) &&
 		    (lookahead || use_profile_lookahead);
-	if (lookahead) {
-		enc->rc_lookahead = use_profile_lookahead
-					    ? config->rcParams.lookaheadDepth
-					    : 8;
-	}
 
 	int buf_count = max(4, config->frameIntervalP * 2 * 2);
 	if (lookahead) {
+		if (userLookahead) {
+			enc->rc_lookahead = (int)obs_data_get_int(
+				settings, "lookahead_depth");
+		} else if (use_profile_lookahead) {
+			enc->rc_lookahead = config->rcParams.lookaheadDepth;
+		}
+
 		buf_count = max(buf_count, config->frameIntervalP +
 						   enc->rc_lookahead +
 						   EXTRA_BUFFERS);
@@ -513,7 +523,8 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 	/* psycho aq */
 	if (nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_TEMPORAL_AQ)) {
 		config->rcParams.enableAQ = psycho_aq;
-		config->rcParams.aqStrength = 8;
+		config->rcParams.aqStrength =
+			(int)obs_data_get_int(settings, "psycho_aq_strength");
 		config->rcParams.enableTemporalAQ = psycho_aq;
 	} else if (psycho_aq) {
 		warn("Ignoring Psycho Visual Tuning request since GPU is not capable");
@@ -526,6 +537,10 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
 		!lookahead;
 
+	/*
+	 * TODO: VBR_HQ is Deprecated.
+	 * Switch to rcParams.multiPass = NV_ENC_TWO_PASS_FULL_RESOLUTION once nvenc api is updated.
+	*/
 	config->rcParams.rateControlMode = twopass ? NV_ENC_PARAMS_RC_VBR_HQ
 						   : NV_ENC_PARAMS_RC_VBR;
 
@@ -543,7 +558,19 @@ static bool init_encoder(struct nvenc_data *enc, obs_data_t *settings,
 
 		bitrate = 0;
 		max_bitrate = 0;
-
+	} else if (astrcmpi(rc, "crf") == 0) {
+		bitrate = 0;
+		vbr = true;
+		if (max_bitrate == 0) {
+			max_bitrate = 300000;
+		}
+		int quality = (int)obs_data_get_int(settings, "crf");
+		config->rcParams.enableMinQP = false;
+		config->rcParams.enableMaxQP = false;
+		config->rcParams.averageBitRate = 0;
+		config->rcParams.targetQuality = quality;
+		config->rcParams.targetQualityLSB = 0;
+		enc->can_change_bitrate = false;
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		h264_config->outputBufferingPeriodSEI = 1;
 		config->rcParams.rateControlMode =

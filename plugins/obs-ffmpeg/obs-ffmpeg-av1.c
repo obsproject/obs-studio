@@ -122,8 +122,6 @@ static bool av1_init_codec(struct av1_encoder *enc)
 	return true;
 }
 
-enum RC_MODE { RC_MODE_CBR, RC_MODE_VBR, RC_MODE_CQP, RC_MODE_LOSSLESS };
-
 static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
