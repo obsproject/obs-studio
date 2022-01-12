@@ -1543,6 +1543,15 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  VOLUME_METER_DECAY_FAST);
 	config_set_default_uint(basicConfig, "Audio", "PeakMeterType", 0);
 
+	if (opt_custom_vbitrate > 0) {
+		config_set_uint(this->Config(), "SimpleOutput", "VBitrate",
+				opt_custom_vbitrate);
+	}
+	if (opt_custom_abitrate > 0) {
+		config_set_uint(this->Config(), "SimpleOutput", "ABitrate",
+				opt_custom_abitrate);
+	}
+
 	CheckExistingCookieId();
 
 	return true;
