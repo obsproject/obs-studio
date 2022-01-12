@@ -606,6 +606,8 @@ static int interrupt_callback(void *data)
 	return stop;
 }
 
+#define RIST_PROTO "rist"
+
 static bool init_avformat(mp_media_t *m)
 {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
@@ -624,7 +626,8 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && !m->is_local_file)
+	bool is_rist = strncmp(m->path, RIST_PROTO, strlen(RIST_PROTO)) == 0;
+	if (m->buffering && !m->is_local_file && !is_rist)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();
