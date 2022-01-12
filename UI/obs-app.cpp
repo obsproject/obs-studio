@@ -1164,6 +1164,8 @@ OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 #else
 	setWindowIcon(QIcon::fromTheme("obs", QIcon(":/res/images/obs.png")));
 #endif
+
+	setDesktopFileName("com.obsproject.Studio");
 }
 
 OBSApp::~OBSApp()
