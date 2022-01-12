@@ -98,6 +98,8 @@ string opt_starting_profile;
 string opt_starting_scene;
 string opt_custom_stream_server;
 string opt_custom_stream_key;
+uint64_t opt_custom_vbitrate;
+uint64_t opt_custom_abitrate;
 
 bool restart = false;
 
@@ -2749,7 +2751,15 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc)
 				opt_starting_scene = argv[i];
-
+		
+		} else if (arg_is(argv[i], "--custom-vbitrate", nullptr)) {
+			if (++i < argc) {
+				opt_custom_vbitrate = std::stoul (argv[i], nullptr, 0);
+			}
+		} else if (arg_is(argv[i], "--custom-abitrate", nullptr)) {
+			if (++i < argc) {
+				opt_custom_abitrate = std::stoul (argv[i], nullptr, 0);
+			}
 		} else if (arg_is(argv[i], "--minimize-to-tray", nullptr)) {
 			opt_minimize_tray = true;
 
@@ -2783,7 +2793,9 @@ int main(int argc, char *argv[])
 				"--collection <string>: Use specific scene collection."
 				"\n"
 				"--profile <string>: Use specific profile.\n"
-				"--scene <string>: Start with specific scene.\n\n"
+				"--scene <string>: Start with specific scene.\n"
+				"--custom-vbitrate <int>: Set specific video-bitrate.\n"
+				"--custom-abitrate <int>: Set specific audio-bitrate.\n\n"
 				"--custom-stream-server <string>: Override the server for streaming.\n"
 				"--custom-stream-key <string>: Override the key for streaming.\n\n"
 				"--studio-mode: Enable studio mode.\n"

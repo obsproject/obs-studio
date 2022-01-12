@@ -241,4 +241,6 @@ extern bool opt_disable_high_dpi_scaling;
 extern std::string opt_starting_scene;
 extern std::string opt_custom_stream_server;
 extern std::string opt_custom_stream_key;
+extern uint64_t opt_custom_vbitrate;
+extern uint64_t opt_custom_abitrate;
 extern bool restart;
