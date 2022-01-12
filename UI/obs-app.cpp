@@ -2751,14 +2751,16 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--scene", nullptr)) {
 			if (++i < argc)
 				opt_starting_scene = argv[i];
-		
+
 		} else if (arg_is(argv[i], "--custom-vbitrate", nullptr)) {
 			if (++i < argc) {
-				opt_custom_vbitrate = std::stoul (argv[i], nullptr, 0);
+				opt_custom_vbitrate =
+					std::stoul(argv[i], nullptr, 0);
 			}
 		} else if (arg_is(argv[i], "--custom-abitrate", nullptr)) {
 			if (++i < argc) {
-				opt_custom_abitrate = std::stoul (argv[i], nullptr, 0);
+				opt_custom_abitrate =
+					std::stoul(argv[i], nullptr, 0);
 			}
 		} else if (arg_is(argv[i], "--minimize-to-tray", nullptr)) {
 			opt_minimize_tray = true;
