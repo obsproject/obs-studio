@@ -84,8 +84,13 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	if (error_code)
 		*error_code = httpStatusCode;
 
-	if (!success || output.empty())
+	if (!success || output.empty()) {
+		if (!error.empty())
+			blog(LOG_WARNING, "YouTube API request failed: %s",
+			     error.c_str());
 		return false;
+	}
+
 	json_out = Json::parse(output, error);
 #ifdef _DEBUG
 	blog(LOG_DEBUG, "YouTube API command answer: %s",
