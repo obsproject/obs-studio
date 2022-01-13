@@ -1067,7 +1067,9 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 					else if (trx == SDITransport::SDI3Gb)
 						vpid = VPIDStandard_720_3Gb;
 				} else if (IsStandard1080p(standard)) {
-					if (trx == SDITransport::SDI3Ga)
+					if (trx == SDITransport::HDDualLink) {
+						vpid = VPIDStandard_1080_DualLink;
+					} else if (trx == SDITransport::SDI3Ga)
 						vpid = VPIDStandard_1080_Dual_3Ga;
 					else if (trx == SDITransport::SDI3Gb)
 						vpid = VPIDStandard_1080_Dual_3Gb;

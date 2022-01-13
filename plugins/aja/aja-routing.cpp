@@ -332,9 +332,8 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 		     "No Output Destinations specified to configure routing!");
 		return false;
 	}
-
 	auto init_dest = *outputDests.begin();
-	auto init_channel = NTV2OutputDestinationToChannel(init_dest);
+
 	RoutingConfigurator rc;
 	RoutingPreset rp;
 	if (NTV2_OUTPUT_DEST_IS_SDI(init_dest)) {
@@ -384,14 +383,28 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	std::string route_string = rp.route_string;
 
 	// Replace framestore channel placeholders
+	auto init_channel = NTV2OutputDestinationToChannel(init_dest);
 	ULWord start_framestore_index = InitialFramestoreOutputIndex(
 		deviceID, props.ioSelect, init_channel);
+	if (rp.verbatim) {
+		// Presets marked "verbatim" must only be routed on the specified channels
+		start_framestore_index = 0;
+		init_channel = NTV2_CHANNEL1;
+	}
+
+	// Channel-substitution for widgets associated with framestore channel(s)
+	const std::vector<std::string> fs_associated = {"fb", "tsi", "dlo"};
 	for (ULWord c = 0; c < NTV2_MAX_NUM_CHANNELS; c++) {
-		std::string fs_channel_placeholder =
-			std::string("fb[{ch" + aja::to_string(c + 1) + "}]");
-		route_string = aja::replace(
-			route_string, fs_channel_placeholder,
-			"fb[" + aja::to_string(start_framestore_index++) + "]");
+		for (const auto &name : fs_associated) {
+			std::string placeholder = std::string(
+				name + "[{ch" + aja::to_string(c + 1) + "}]");
+			route_string = aja::replace(
+				route_string, placeholder,
+				name + "[" +
+					aja::to_string(start_framestore_index) +
+					"]");
+		}
+		start_framestore_index++;
 	}
 
 	// Replace other channel placeholders
@@ -440,6 +453,9 @@ bool Routing::ConfigureOutputRoute(const OutputProps &props, NTV2Mode mode,
 	// Apply Framestore settings
 	start_framestore_index = InitialFramestoreOutputIndex(
 		deviceID, props.ioSelect, init_channel);
+	if (rp.verbatim) {
+		start_framestore_index = 0;
+	}
 	for (uint32_t i = (uint32_t)start_framestore_index;
 	     i < (start_framestore_index + rp.num_framestores); i++) {
 		NTV2Channel channel = GetNTV2ChannelForIndex(i);
