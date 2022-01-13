@@ -88,6 +88,13 @@ enum obs_text_type {
 	OBS_TEXT_DEFAULT,
 	OBS_TEXT_PASSWORD,
 	OBS_TEXT_MULTILINE,
+	OBS_TEXT_INFO,
+};
+
+enum obs_text_info_type {
+	OBS_TEXT_INFO_NORMAL,
+	OBS_TEXT_INFO_WARNING,
+	OBS_TEXT_INFO_ERROR,
 };
 
 enum obs_number_type {
@@ -324,6 +331,8 @@ EXPORT enum obs_number_type obs_property_float_type(obs_property_t *p);
 EXPORT const char *obs_property_float_suffix(obs_property_t *p);
 EXPORT enum obs_text_type obs_property_text_type(obs_property_t *p);
 EXPORT bool obs_property_text_monospace(obs_property_t *p);
+EXPORT enum obs_text_info_type obs_property_text_info_type(obs_property_t *p);
+EXPORT bool obs_property_text_info_word_wrap(obs_property_t *p);
 EXPORT enum obs_path_type obs_property_path_type(obs_property_t *p);
 EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);
@@ -338,6 +347,10 @@ EXPORT void obs_property_int_set_suffix(obs_property_t *p, const char *suffix);
 EXPORT void obs_property_float_set_suffix(obs_property_t *p,
 					  const char *suffix);
 EXPORT void obs_property_text_set_monospace(obs_property_t *p, bool monospace);
+EXPORT void obs_property_text_set_info_type(obs_property_t *p,
+					    enum obs_text_info_type type);
+EXPORT void obs_property_text_set_info_word_wrap(obs_property_t *p,
+						 bool word_wrap);
 
 EXPORT void obs_property_button_set_type(obs_property_t *p,
 					 enum obs_button_type type);

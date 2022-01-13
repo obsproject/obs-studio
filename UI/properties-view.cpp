@@ -310,6 +310,50 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 		connect(edit, SIGNAL(textEdited(const QString &)), info,
 			SLOT(ControlChanged()));
 		return nullptr;
+	} else if (type == OBS_TEXT_INFO) {
+		QString desc = QT_UTF8(obs_property_description(prop));
+		const char *long_desc = obs_property_long_description(prop);
+		obs_text_info_type info_type =
+			obs_property_text_info_type(prop);
+
+		QLabel *info_label = new QLabel(QT_UTF8(val));
+
+		if (info_label->text().isEmpty() && long_desc == NULL) {
+			label = nullptr;
+			info_label->setText(desc);
+		} else
+			label = new QLabel(desc);
+
+		if (long_desc != NULL && !info_label->text().isEmpty()) {
+			QString file = !App()->IsThemeDark()
+					       ? ":/res/images/help.svg"
+					       : ":/res/images/help_light.svg";
+			QString lStr = "<html>%1 <img src='%2' style=' \
+				vertical-align: bottom; ' /></html>";
+
+			info_label->setText(lStr.arg(info_label->text(), file));
+			info_label->setToolTip(QT_UTF8(long_desc));
+		} else if (long_desc != NULL) {
+			info_label->setText(QT_UTF8(long_desc));
+		}
+
+		info_label->setOpenExternalLinks(true);
+		info_label->setWordWrap(obs_property_text_info_word_wrap(prop));
+
+		if (info_type == OBS_TEXT_INFO_WARNING)
+			info_label->setObjectName("warningLabel");
+		else if (info_type == OBS_TEXT_INFO_ERROR)
+			info_label->setObjectName("errorLabel");
+
+		if (label)
+			label->setObjectName(info_label->objectName());
+
+		WidgetInfo *info = new WidgetInfo(this, prop, info_label);
+		children.emplace_back(info);
+
+		layout->addRow(label, info_label);
+
+		return nullptr;
 	}
 
 	QLineEdit *edit = new QLineEdit();
