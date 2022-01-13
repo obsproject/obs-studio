@@ -14,15 +14,16 @@ struct RoutingPreset {
 	std::string name;
 	ConnectionKind kind;
 	NTV2Mode mode;
-	uint32_t num_channels;
-	uint32_t num_framestores;
-	uint32_t flags;
-	bool is_rgb;
-	std::string route_string;
-	std::vector<NTV2DeviceID> device_ids;
 	RasterDefinition raster_def;
 	HDMIWireFormat hdmi_wire_format;
 	VPIDStandard vpid_standard;
+	uint32_t num_channels;
+	uint32_t num_framestores;
+	uint32_t flags;
+	std::string route_string;
+	std::vector<NTV2DeviceID> device_ids;
+	bool is_rgb;
+	bool verbatim;
 };
 
 using RoutingPresets = std::vector<RoutingPreset>;
