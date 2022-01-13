@@ -1016,7 +1016,7 @@ enum obs_text_type obs_property_text_type(obs_property_t *p)
 	return data ? data->type : OBS_TEXT_DEFAULT;
 }
 
-enum obs_text_type obs_property_text_monospace(obs_property_t *p)
+bool obs_property_text_monospace(obs_property_t *p)
 {
 	struct text_data *data = get_type_data(p, OBS_PROPERTY_TEXT);
 	return data ? data->monospace : false;
