@@ -224,7 +224,7 @@ bool on_misc_device_selected(void *data, obs_properties_t *props,
 			     obs_property_t *list, obs_data_t *settings)
 {
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return false;
 	aja::CardManager *cardManager = (aja::CardManager *)data;
 	if (!cardManager)
@@ -305,7 +305,7 @@ bool on_multi_view_toggle(void *data, obs_properties_t *props,
 	const int audioInputSource =
 		obs_data_get_int(settings, kUIPropMultiViewAudioSource.id);
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return false;
 	aja::CardManager *cardManager = (aja::CardManager *)data;
 	if (!cardManager)

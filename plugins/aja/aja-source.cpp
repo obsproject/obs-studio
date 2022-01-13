@@ -602,7 +602,7 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return false;
 
 	auto &cardManager = aja::CardManager::Instance();
@@ -696,7 +696,7 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return false;
 
 	auto &cardManager = aja::CardManager::Instance();
@@ -1100,7 +1100,7 @@ void aja_source_save(void *data, obs_data_t *settings)
 	}
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return;
 
 	auto &cardManager = aja::CardManager::Instance();

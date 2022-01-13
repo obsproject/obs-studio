@@ -51,17 +51,16 @@ void AJAOutputUI::SetupPropertiesView()
 			static_cast<long long>(IOSelection::Invalid));
 		obs_data_set_default_int(
 			settings, kUIPropVideoFormatSelect.id,
-			static_cast<long long>(NTV2_FORMAT_720p_5994));
+			static_cast<long long>(kDefaultAJAVideoFormat));
 		obs_data_set_default_int(
 			settings, kUIPropPixelFormatSelect.id,
-			static_cast<long long>(NTV2_FBF_8BIT_YCBCR));
+			static_cast<long long>(kDefaultAJAPixelFormat));
 		obs_data_set_default_int(
 			settings, kUIPropSDITransport.id,
-			static_cast<long long>(SDITransport::SingleLink));
+			static_cast<long long>(kDefaultAJASDITransport));
 		obs_data_set_default_int(
 			settings, kUIPropSDITransport4K.id,
-			static_cast<long long>(
-				SDITransport4K::TwoSampleInterleave));
+			static_cast<long long>(kDefaultAJASDITransport4K));
 	}
 
 	// Assign an ID to the program output plugin instance for channel usage tracking
@@ -109,17 +108,16 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 			static_cast<long long>(IOSelection::Invalid));
 		obs_data_set_default_int(
 			settings, kUIPropVideoFormatSelect.id,
-			static_cast<long long>(NTV2_FORMAT_720p_5994));
+			static_cast<long long>(kDefaultAJAVideoFormat));
 		obs_data_set_default_int(
 			settings, kUIPropPixelFormatSelect.id,
-			static_cast<long long>(NTV2_FBF_8BIT_YCBCR));
+			static_cast<long long>(kDefaultAJAPixelFormat));
 		obs_data_set_default_int(
 			settings, kUIPropSDITransport.id,
-			static_cast<long long>(SDITransport::SingleLink));
+			static_cast<long long>(kDefaultAJASDITransport));
 		obs_data_set_default_int(
 			settings, kUIPropSDITransport4K.id,
-			static_cast<long long>(
-				SDITransport4K::TwoSampleInterleave));
+			static_cast<long long>(kDefaultAJASDITransport4K));
 	}
 
 	// Assign an ID to the program output plugin instance for channel usage tracking

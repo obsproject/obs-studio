@@ -18,7 +18,11 @@ static const uint32_t kDefaultAudioChannels = 8;
 static const uint32_t kDefaultAudioSampleRate = 48000;
 static const uint32_t kDefaultAudioSampleSize = 4;
 static const int kAutoDetect = -1;
+static const NTV2VideoFormat kDefaultAJAVideoFormat = NTV2_FORMAT_720p_5994;
 static const NTV2PixelFormat kDefaultAJAPixelFormat = NTV2_FBF_8BIT_YCBCR;
+static const SDITransport kDefaultAJASDITransport = SDITransport::SingleLink;
+static const SDITransport4K kDefaultAJASDITransport4K =
+	SDITransport4K::TwoSampleInterleave;
 
 // Common OBS property helpers used by both the capture and output plugins
 extern void filter_io_selection_input_list(const std::string &cardID,

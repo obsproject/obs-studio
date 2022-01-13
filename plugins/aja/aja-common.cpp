@@ -90,7 +90,8 @@ void populate_io_selection_input_list(const std::string &cardID,
 {
 	obs_property_list_clear(list);
 
-	obs_property_list_add_int(list, obs_module_text(kUIPropIOSelect.text),
+	obs_property_list_add_int(list,
+				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
 
 	for (auto i = 0; i < static_cast<int32_t>(IOSelection::NumIOSelections);
@@ -118,7 +119,8 @@ void populate_io_selection_output_list(const std::string &cardID,
 {
 	obs_property_list_clear(list);
 
-	obs_property_list_add_int(list, obs_module_text(kUIPropIOSelect.text),
+	obs_property_list_add_int(list,
+				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
 
 	if (deviceID == DEVICE_ID_TTAP_PRO) {
