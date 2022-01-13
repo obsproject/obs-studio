@@ -765,7 +765,7 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 	populate_output_device_list(list);
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID)
+	if (!cardID || !cardID[0])
 		return false;
 
 	const char *outputID =
@@ -908,10 +908,9 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	blog(LOG_INFO, "Creating AJA Output...");
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
-	if (!cardID) {
-		blog(LOG_ERROR, "aja_output_create: Card ID is null!");
+	if (!cardID || !cardID[0])
 		return nullptr;
-	}
+
 	const char *outputID =
 		obs_data_get_string(settings, kUIPropAJAOutputID.id);
 
@@ -934,11 +933,6 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	OutputProps outputProps(deviceID);
 	outputProps.ioSelect = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropOutput.id));
-	if (outputProps.ioSelect == IOSelection::Invalid) {
-		blog(LOG_DEBUG,
-		     "aja_output_create: Select a valid AJA Output IOSelection!");
-		return nullptr;
-	}
 	outputProps.videoFormat = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 	outputProps.pixelFormat = static_cast<NTV2PixelFormat>(
@@ -957,6 +951,18 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 		} else if (outputProps.ioSelect == IOSelection::SDI3_4) {
 			outputProps.ioSelect = IOSelection::SDI3_4_Squares;
 		}
+	}
+
+	if (outputProps.ioSelect == IOSelection::Invalid) {
+		blog(LOG_DEBUG,
+		     "aja_output_create: Select a valid AJA Output IOSelection!");
+		return nullptr;
+	}
+	if (outputProps.videoFormat == NTV2_FORMAT_UNKNOWN ||
+	    outputProps.pixelFormat == NTV2_FBF_INVALID) {
+		blog(LOG_ERROR,
+		     "aja_output_create: Select a valid video and/or pixel format!");
+		return nullptr;
 	}
 
 	const std::string &ioSelectStr =
@@ -1222,6 +1228,24 @@ static const char *aja_output_get_name(void *)
 	return obs_module_text(kUIPropOutputModule.text);
 }
 
+static void aja_output_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, kUIPropOutput.id,
+				 static_cast<long long>(IOSelection::Invalid));
+	obs_data_set_default_int(
+		settings, kUIPropVideoFormatSelect.id,
+		static_cast<long long>(kDefaultAJAVideoFormat));
+	obs_data_set_default_int(
+		settings, kUIPropPixelFormatSelect.id,
+		static_cast<long long>(kDefaultAJAPixelFormat));
+	obs_data_set_default_int(
+		settings, kUIPropSDITransport.id,
+		static_cast<long long>(kDefaultAJASDITransport));
+	obs_data_set_default_int(
+		settings, kUIPropSDITransport4K.id,
+		static_cast<long long>(kDefaultAJASDITransport4K));
+}
+
 struct obs_output_info create_aja_output_info()
 {
 	struct obs_output_info aja_output_info = {};
@@ -1236,6 +1260,7 @@ struct obs_output_info create_aja_output_info()
 	aja_output_info.raw_video = aja_output_raw_video;
 	aja_output_info.raw_audio = aja_output_raw_audio;
 	aja_output_info.update = aja_output_update;
+	aja_output_info.get_defaults = aja_output_defaults;
 	aja_output_info.get_properties = aja_output_get_properties;
 	return aja_output_info;
 }
