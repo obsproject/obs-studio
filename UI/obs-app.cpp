@@ -93,6 +93,8 @@ bool opt_always_on_top = false;
 bool opt_disable_high_dpi_scaling = false;
 bool opt_disable_updater = false;
 bool opt_disable_missing_files_check = false;
+bool opt_disable_logfile = false;
+bool opt_disable_profilerfile = false;
 string opt_starting_collection;
 string opt_starting_profile;
 string opt_starting_scene;
@@ -1974,7 +1976,9 @@ static auto ProfilerFree = [](void *) {
 	profiler_print(snap.get());
 	profiler_print_time_between_calls(snap.get());
 
-	SaveProfilerData(snap);
+	if (!opt_disable_profilerfile) {
+		SaveProfilerData(snap);
+	}
 
 	profiler_free();
 };
@@ -2038,6 +2042,11 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		QAccessible::installFactory(accessibleFactory);
 
 		bool created_log = false;
+
+		if (opt_disable_logfile) {
+			base_set_log_handler(nullptr, nullptr);
+			created_log = true;
+		}
 
 		program.AppInit();
 		delete_oldest_file(false, "obs-studio/profiler_data");
@@ -2785,6 +2794,12 @@ int main(int argc, char *argv[])
 				  nullptr)) {
 			opt_disable_high_dpi_scaling = true;
 
+		} else if (arg_is(argv[i], "--disable-logfile", nullptr)) {
+			opt_disable_logfile = true;
+
+		} else if (arg_is(argv[i], "--disable-profilerfile", nullptr)) {
+			opt_disable_profilerfile = true;
+
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -2810,7 +2825,9 @@ int main(int argc, char *argv[])
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n"
-				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
+				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n"
+				"--disable-logfile: Disable writing of logfile.\n\n"
+				"--disable-profilerfile: Disable writing of profilerfile.\n\n";
 
 #ifdef _WIN32
 			MessageBoxA(NULL, help.c_str(), "Help",
