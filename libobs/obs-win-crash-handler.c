@@ -549,7 +549,7 @@ static LONG CALLBACK exception_handler(PEXCEPTION_POINTERS exception)
 	inside_handler = true;
 
 	handle_exception(&data, exception);
-	bcrash(data.str.array);
+	bcrash("%s", data.str.array);
 	exception_handler_data_free(&data);
 
 	inside_handler = false;
