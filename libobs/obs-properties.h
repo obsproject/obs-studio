@@ -57,6 +57,7 @@ enum obs_property_type {
 	OBS_PROPERTY_FRAME_RATE,
 	OBS_PROPERTY_GROUP,
 	OBS_PROPERTY_COLOR_ALPHA,
+	OBS_PROPERTY_TIPS,
 };
 
 enum obs_combo_format {
@@ -199,6 +200,11 @@ EXPORT obs_property_t *obs_properties_add_text(obs_properties_t *props,
 					       const char *description,
 					       enum obs_text_type type);
 
+EXPORT obs_property_t *obs_properties_add_tips(obs_properties_t *props,
+					       const char *name,
+					       const char *desc,
+					       const char *color);
+
 /**
  * Adds a 'path' property.  Can be a directory or a file.
  *
@@ -329,6 +335,7 @@ EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);
 EXPORT enum obs_combo_type obs_property_list_type(obs_property_t *p);
 EXPORT enum obs_combo_format obs_property_list_format(obs_property_t *p);
+EXPORT const char *obs_property_tips_color(obs_property_t *p);
 
 EXPORT void obs_property_int_set_limits(obs_property_t *p, int min, int max,
 					int step);

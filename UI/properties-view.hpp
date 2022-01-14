@@ -122,6 +122,7 @@ private:
 	void AddEditableList(obs_property_t *prop, QFormLayout *layout,
 			     QLabel *&label);
 	QWidget *AddButton(obs_property_t *prop);
+	QWidget *AddTextTips(obs_property_t *prop);
 	void AddColorInternal(obs_property_t *prop, QFormLayout *layout,
 			      QLabel *&label, bool supportAlpha);
 	void AddColor(obs_property_t *prop, QFormLayout *layout,

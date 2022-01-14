@@ -58,6 +58,10 @@ struct text_data {
 	bool monospace;
 };
 
+struct tips_data {
+	char *text_color; /* color string defined by QT, such as "red", "black" */
+};
+
 struct list_data {
 	DARRAY(struct list_item) items;
 	enum obs_combo_type type;
@@ -167,6 +171,12 @@ static inline void float_data_free(struct float_data *data)
 		bfree(data->suffix);
 }
 
+static inline void tips_data_free(struct tips_data *data)
+{
+	if (data->text_color)
+		bfree(data->text_color);
+}
+
 struct obs_properties;
 
 struct obs_property {
@@ -257,6 +267,8 @@ static void obs_property_destroy(struct obs_property *property)
 		int_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_FLOAT)
 		float_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_TIPS)
+		tips_data_free(get_property_data(property));
 
 	bfree(property->name);
 	bfree(property->desc);
@@ -424,6 +436,8 @@ static inline size_t get_property_size(enum obs_property_type type)
 		return sizeof(struct float_data);
 	case OBS_PROPERTY_TEXT:
 		return sizeof(struct text_data);
+	case OBS_PROPERTY_TIPS:
+		return sizeof(struct tips_data);
 	case OBS_PROPERTY_PATH:
 		return sizeof(struct path_data);
 	case OBS_PROPERTY_LIST:
@@ -600,6 +614,19 @@ obs_property_t *obs_properties_add_text(obs_properties_t *props,
 	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_TEXT);
 	struct text_data *data = get_property_data(p);
 	data->type = type;
+	return p;
+}
+
+obs_property_t *obs_properties_add_tips(obs_properties_t *props,
+					const char *name, const char *desc,
+					const char *color)
+{
+	if (!props || has_prop(props, name))
+		return NULL;
+
+	struct obs_property *p = new_prop(props, name, desc, OBS_PROPERTY_TIPS);
+	struct tips_data *data = get_property_data(p);
+	data->text_color = bstrdup(color);
 	return p;
 }
 
@@ -1050,6 +1077,15 @@ enum obs_combo_format obs_property_list_format(obs_property_t *p)
 {
 	struct list_data *data = get_list_data(p);
 	return data ? data->format : OBS_COMBO_FORMAT_INVALID;
+}
+
+const char *obs_property_tips_color(obs_property_t *p)
+{
+	if (!p || p->type != OBS_PROPERTY_TIPS)
+		return 0;
+
+	struct tips_data *data = get_property_data(p);
+	return data ? data->text_color : 0;
 }
 
 void obs_property_int_set_limits(obs_property_t *p, int min, int max, int step)

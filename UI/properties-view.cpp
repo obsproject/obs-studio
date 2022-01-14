@@ -219,7 +219,8 @@ QWidget *OBSPropertiesView::NewWidget(obs_property_t *prop, QWidget *widget,
 	const char *long_desc = obs_property_long_description(prop);
 
 	WidgetInfo *info = new WidgetInfo(this, prop, widget);
-	connect(widget, signal, info, SLOT(ControlChanged()));
+	if (signal)
+		connect(widget, signal, info, SLOT(ControlChanged()));
 	children.emplace_back(info);
 
 	widget->setToolTip(QT_UTF8(long_desc));
@@ -647,6 +648,24 @@ QWidget *OBSPropertiesView::AddButton(obs_property_t *prop)
 	button->setProperty("themeID", "settingsButtons");
 	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
 	return NewWidget(prop, button, SIGNAL(clicked()));
+}
+
+QWidget *OBSPropertiesView::AddTextTips(obs_property_t *prop)
+{
+	const char *desc = obs_property_description(prop);
+	const char *color = obs_property_tips_color(prop);
+
+	QLabel *label = new QLabel(QT_UTF8(desc));
+	label->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+	if (color && *color)
+		label->setStyleSheet(
+			QString::asprintf("QLabel { color: %s; }", color));
+
+	if (!desc || !(*desc))
+		label->setFixedHeight(1);
+
+	return NewWidget(prop, label, NULL);
 }
 
 void OBSPropertiesView::AddColorInternal(obs_property_t *prop,
@@ -1439,6 +1458,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 	case OBS_PROPERTY_BUTTON:
 		widget = AddButton(property);
 		break;
+	case OBS_PROPERTY_TIPS:
+		widget = AddTextTips(property);
+		break;
 	case OBS_PROPERTY_EDITABLE_LIST:
 		AddEditableList(property, layout, label);
 		break;
@@ -1450,13 +1472,15 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		break;
 	case OBS_PROPERTY_COLOR_ALPHA:
 		AddColorAlpha(property, layout, label);
+		break;
 	}
 
 	if (widget && !obs_property_enabled(property))
 		widget->setEnabled(false);
 
 	if (!label && type != OBS_PROPERTY_BOOL &&
-	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP)
+	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP &&
+	    type != OBS_PROPERTY_TIPS)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
 	if (warning && label) //TODO: select color based on background color
