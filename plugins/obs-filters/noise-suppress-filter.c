@@ -252,7 +252,7 @@ static void *nvafx_initialize(void *data)
 					   ng->sample_rate);
 			if (err != NVAFX_STATUS_SUCCESS) {
 				do_log(LOG_ERROR,
-				       "NvAFX_SetU32(Sample Rate: %f) failed, error %i",
+				       "NvAFX_SetU32(Sample Rate: %u) failed, error %i",
 				       ng->sample_rate, err);
 				goto failure;
 			}
