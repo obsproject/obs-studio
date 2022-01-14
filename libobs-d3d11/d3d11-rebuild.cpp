@@ -77,8 +77,7 @@ void gs_texture_2d::Rebuild(ID3D11Device *dev)
 					     (void **)&texture);
 		if (FAILED(hr)) {
 			blog(LOG_WARNING,
-			     "Failed to rebuild shared texture: 0x%08lX",
-			     hr);
+			     "Failed to rebuild shared texture: 0x%08lX", hr);
 			RebuildSharedTextureFallback();
 		}
 	}
@@ -338,8 +337,7 @@ void gs_texture_3d::Rebuild(ID3D11Device *dev)
 					     (void **)&texture);
 		if (FAILED(hr)) {
 			blog(LOG_WARNING,
-			     "Failed to rebuild shared texture: 0x%08lX",
-			     hr);
+			     "Failed to rebuild shared texture: 0x%08lX", hr);
 			RebuildSharedTextureFallback();
 		}
 	}
