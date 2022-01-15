@@ -645,16 +645,16 @@ std::string IOSelectionToString(IOSelection io)
 		str = "HDMI 4";
 		break;
 	case IOSelection::HDMIMonitorIn:
-		str = "HDMI Monitor In";
+		str = "HDMI IN";
 		break;
 	case IOSelection::HDMIMonitorOut:
-		str = "HDMI Monitor Out";
+		str = "HDMI OUT";
 		break;
 	case IOSelection::AnalogIn:
-		str = "Analog In";
+		str = "ANALOG IN";
 		break;
 	case IOSelection::AnalogOut:
-		str = "Analog Out";
+		str = "ANALOG OUT";
 		break;
 	case IOSelection::Invalid:
 		str = "Invalid";
