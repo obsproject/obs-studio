@@ -1125,6 +1125,14 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 			}
 		} else if (aja::IsSDIFourWireIOSelection(io)) {
 			if (is_rgb) {
+				if (t4k == SDITransport4K::Squares) {
+					if (trx == SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_1080_3Ga;
+					} else if (trx ==
+						   SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_1080_DualLink_3Gb;
+					}
+				}
 			} else {
 				// YCbCr
 				if (t4k == SDITransport4K::Squares) {
