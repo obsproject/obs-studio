@@ -2291,7 +2291,8 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	obs_sceneitem_defer_update_end(item);
 }
 
-void iterate_scenes_and_groups_transform_states(obs_data_t *data, void *vp)
+void iterate_scenes_and_groups_transform_states(obs_data_t *data,
+						void *out_scene)
 {
 	obs_data_array_t *items = obs_data_get_array(data, "items");
 	obs_source_t *scene_source =
@@ -2307,28 +2308,32 @@ void iterate_scenes_and_groups_transform_states(obs_data_t *data, void *vp)
 		scene = obs_sceneitem_group_get_scene(group);
 
 		obs_source_release(parent_source);
+	} else {
+		/* Only set out_scene if not a group */
+		*(obs_scene_t **)out_scene = scene;
 	}
 
 	obs_data_array_enum(items, load_transform_states, (void *)scene);
-
-	UNUSED_PARAMETER(vp);
 
 	obs_data_array_release(items);
 	obs_source_release(scene_source);
 }
 
-void obs_scene_load_transform_states(const char *data)
+obs_scene_t *obs_scene_load_transform_states(const char *data)
 {
 	obs_data_t *dat = obs_data_create_from_json(data);
+	obs_scene_t *scene = NULL;
 
 	obs_data_array_t *scenes_and_groups =
 		obs_data_get_array(dat, "scenes_and_groups");
 
 	obs_data_array_enum(scenes_and_groups,
-			    iterate_scenes_and_groups_transform_states, NULL);
+			    iterate_scenes_and_groups_transform_states, &scene);
 
 	obs_data_release(dat);
 	obs_data_array_release(scenes_and_groups);
+
+	return scene;
 }
 
 void obs_sceneitem_select(obs_sceneitem_t *item, bool select)

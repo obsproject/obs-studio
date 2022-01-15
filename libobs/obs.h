@@ -1675,7 +1675,7 @@ EXPORT obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene,
 						   bool all_items);
 
 /** Load all the transform states of sceneitems in that scene */
-EXPORT void obs_scene_load_transform_states(const char *state);
+EXPORT obs_scene_t *obs_scene_load_transform_states(const char *state);
 
 /**  Gets a sceneitem's order in its scene */
 EXPORT int obs_sceneitem_get_order_position(obs_sceneitem_t *item);

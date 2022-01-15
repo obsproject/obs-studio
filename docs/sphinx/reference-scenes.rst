@@ -328,7 +328,7 @@ Scene Item Functions
 ---------------------
 
 .. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
-.. function:: void obs_scene_load_transform_states(oconst char *states)
+.. function:: obs_scene_t *obs_scene_load_transform_states(oconst char *states)
 
    Saves all the transformation states for the sceneitms in scene. When all_items is false, it
    will only save selected items

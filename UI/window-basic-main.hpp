@@ -474,7 +474,6 @@ private:
 
 	void SetPreviewProgramMode(bool enabled);
 	void ResizeProgram(uint32_t cx, uint32_t cy);
-	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
 
 	std::vector<QuickTransition> quickTransitions;
@@ -818,6 +817,7 @@ public:
 	undo_stack undo_s;
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
+	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 
 	void SysTrayNotify(const QString &text, QSystemTrayIcon::MessageIcon n);
 
