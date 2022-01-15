@@ -189,7 +189,8 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
 	/* Timeout set to 5 frame periods. */
 	timeout_usec = (1000000 * data->timeout_frames) / ffps;
-	blog(LOG_INFO, "%s: select timeout set to %ldus (%dx frame periods)",
+	blog(LOG_INFO,
+	     "%s: select timeout set to %" PRIu64 " (%dx frame periods)",
 	     data->device_id, timeout_usec, data->timeout_frames);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
