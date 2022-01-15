@@ -318,10 +318,10 @@ void RoutingConfigurator::build_preset_table()
 		  "sdi[{ch3}][1]->dli[{ch3}][1];"
 		  "sdi[{ch4}][0]->dli[{ch4}][0];"
 		  "sdi[{ch4}][1]->dli[{ch4}][1];" // Dual-Links -> Framestores
-		  "dli[{ch1}][0]->fb[{ch1}][2];"
-		  "dli[{ch2}][0]->fb[{ch2}][2];"
-		  "dli[{ch3}][0]->fb[{ch3}][2];"
-		  "dli[{ch4}][0]->fb[{ch4}][2];",
+		  "dli[{ch1}][0]->fb[{ch1}][0];"
+		  "dli[{ch2}][0]->fb[{ch2}][0];"
+		  "dli[{ch3}][0]->fb[{ch3}][0];"
+		  "dli[{ch4}][0]->fb[{ch4}][0];",
 		  {},
 		  true,
 		  false}},
