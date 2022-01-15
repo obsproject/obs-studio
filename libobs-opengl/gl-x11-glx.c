@@ -163,7 +163,6 @@ static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
 		return 0;
 	}
 
-	free(error);
 	return reply;
 }
 
@@ -195,7 +194,6 @@ static bool gl_context_create(struct gl_platform *plat)
 	}
 
 	plat->context = context;
-	plat->display = display;
 
 	plat->pbuffer =
 		glXCreatePbuffer(display, config[0], ctx_pbuffer_attribs);
@@ -273,8 +271,7 @@ static Display *open_windowless_display(void)
 	return display;
 
 error:
-	if (display)
-		XCloseDisplay(display);
+	XCloseDisplay(display);
 	return NULL;
 }
 

@@ -228,12 +228,15 @@ static bool gl_shader_init(struct gs_shader *shader,
 
 		char *infoLog = malloc(sizeof(char) * infoLength);
 
-		GLsizei returnedLength = 0;
-		glGetShaderInfoLog(shader->obj, infoLength, &returnedLength,
-				   infoLog);
-		blog(LOG_ERROR, "Error compiling shader:\n%s\n", infoLog);
+		if (infoLog) {
+			GLsizei returnedLength = 0;
+			glGetShaderInfoLog(shader->obj, infoLength,
+					   &returnedLength, infoLog);
+			blog(LOG_ERROR, "Error compiling shader:\n%s\n",
+			     infoLog);
 
-		free(infoLog);
+			free(infoLog);
+		}
 
 		success = false;
 	}

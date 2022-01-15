@@ -159,7 +159,6 @@ static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
 		return 0;
 	}
 
-	free(error);
 	return reply;
 }
 
@@ -371,8 +370,7 @@ static Display *open_windowless_display(Display *platform_display)
 	return display;
 
 error:
-	if (display)
-		XCloseDisplay(display);
+	XCloseDisplay(display);
 	return NULL;
 }
 
