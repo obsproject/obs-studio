@@ -418,7 +418,15 @@ bool CardCanDoSDIMonitorOutput(NTV2DeviceID id)
 	return (id == DEVICE_ID_IO4K || id == DEVICE_ID_IO4KPLUS);
 }
 
-// Cards with a dedicated HDMI Monitor Output tie it to "Framestore 4".
+// Cards with a dedicated HDMI Monitor Input, tied to "Framestore 4".
+bool CardCanDoHDMIMonitorInput(NTV2DeviceID id)
+{
+	return (id == DEVICE_ID_IO4K || id == DEVICE_ID_IO4KUFC ||
+		id == DEVICE_ID_IO4KPLUS || id == DEVICE_ID_IOXT ||
+		id == DEVICE_ID_IOX3 || id == DEVICE_ID_KONALHI);
+}
+
+// Cards with a dedicated HDMI Monitor Output, tied to "Framestore 4".
 bool CardCanDoHDMIMonitorOutput(NTV2DeviceID id)
 {
 	return (id == DEVICE_ID_IO4K || id == DEVICE_ID_IO4KPLUS ||
@@ -847,6 +855,11 @@ void IOSelectionToOutputDests(IOSelection io,
 
 bool DeviceCanDoIOSelectionIn(NTV2DeviceID id, IOSelection io)
 {
+	// Hide "HDMI1" list selection on devices which have a discrete "HDMI IN" port.
+	if (io == IOSelection::HDMI1 && CardCanDoHDMIMonitorInput(id)) {
+		return false;
+	}
+
 	NTV2InputSourceSet inputSources;
 	if (io != IOSelection::Invalid) {
 		IOSelectionToInputSources(io, inputSources);
