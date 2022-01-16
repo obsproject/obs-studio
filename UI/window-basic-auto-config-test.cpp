@@ -1020,7 +1020,7 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_service_apply_encoder_settings(service, vencoder_settings,
 						   nullptr);
 
-		struct obs_service_resolution *res_list;
+		BPtr<obs_service_resolution> res_list;
 		size_t res_count;
 		int maxFPS;
 		obs_service_get_supported_resolutions(service, &res_list,
