@@ -236,13 +236,22 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 	dstr_free(&exe);
 }
 
+static inline bool IsWindowCloaked(window)
+{
+	int cloaked;
+	HRESULT hr = DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
+					   sizeof(cloaked));
+	return (SUCCEEDED(hr) && cloaked);
+}
+
 static bool check_window_valid(HWND window, enum window_search_mode mode)
 {
 	DWORD styles, ex_styles;
 	RECT rect;
 
 	if (!IsWindowVisible(window) ||
-	    (mode == EXCLUDE_MINIMIZED && IsIconic(window)))
+	    (mode == EXCLUDE_MINIMIZED &&
+	     (IsIconic(window) || IsWindowCloaked(window))))
 		return false;
 
 	GetClientRect(window, &rect);
@@ -497,10 +506,7 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 	if (!check_window_valid(window, data->mode))
 		return TRUE;
 
-	int cloaked;
-	if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
-					    sizeof(cloaked))) &&
-	    cloaked)
+	if (IsWindowCloaked(window))
 		return TRUE;
 
 	const int rating = window_rating(window, data->priority, data->class,
