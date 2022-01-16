@@ -931,9 +931,10 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
-	bool raw_active = obs->video.raw_active > 0;
+	bool raw_active = os_atomic_load_long(&obs->video.raw_active) > 0;
 #ifdef _WIN32
-	const bool gpu_active = obs->video.gpu_encoder_active > 0;
+	const bool gpu_active =
+		os_atomic_load_long(&obs->video.gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
 #else
 	const bool gpu_active = 0;
