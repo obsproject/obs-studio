@@ -84,6 +84,8 @@ private slots:
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
+	void AddWindowBorder();
+	void RemoveWindowBorder();
 
 public:
 	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,

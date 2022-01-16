@@ -922,6 +922,14 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 					this, SLOT(ResizeToContent()));
 		}
 
+		if (bool(windowFlags() & Qt::FramelessWindowHint)) {
+			popup.addAction(QTStr("ToggleWindowBorder"), this,
+					SLOT(AddWindowBorder()));
+		} else {
+			popup.addAction(QTStr("ToggleWindowBorder"), this,
+					SLOT(RemoveWindowBorder()));
+		}
+
 		QAction *alwaysOnTopButton =
 			new QAction(QTStr("Basic.MainMenu.AlwaysOnTop"), this);
 		alwaysOnTopButton->setCheckable(true);
@@ -1196,6 +1204,36 @@ void OBSProjector::OpenWindowedProjector()
 
 	UpdateProjectorTitle(QT_UTF8(obs_source_get_name(source)));
 	screen = nullptr;
+}
+
+void OBSProjector::RemoveWindowBorder()
+{
+	// Calculate the current content position.
+	QRect contentBox = geometry();
+
+	// Remove the window frame.
+	setWindowFlags(Qt::FramelessWindowHint);
+
+	// Make sure the content box doesn't change.
+	setGeometry(contentBox);
+
+	// Restore the window.
+	showNormal();
+}
+
+void OBSProjector::AddWindowBorder()
+{
+	// Calculate the current content position.
+	QRect contentBox = geometry();
+
+	// Restore the window frame.
+	setWindowFlags(windowFlags() & ~Qt::FramelessWindowHint);
+
+	// Make sure the content box doesn't change.
+	setGeometry(contentBox);
+
+	// Restore the window.
+	showNormal();
 }
 
 void OBSProjector::ResizeToContent()
