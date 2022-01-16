@@ -800,6 +800,7 @@ private:
 	void Nudge(int dist, MoveDir dir);
 
 	void UpdateProjectorHideCursor();
+	void UpdateProjectorHideFrame(bool hideFrame);
 	void UpdateProjectorAlwaysOnTop(bool top);
 	void ResetProjectors();
 
