@@ -669,8 +669,10 @@ static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
 	dts = CMTimeMultiplyByFloat64(dts,
 				      ((Float64)enc->fps_num / enc->fps_den));
 
+	if (CMTIME_IS_INVALID(dts))
+		dts = pts;
 	// imitate x264's negative dts when bframes might have pts < dts
-	if (enc->bframes)
+	else if (enc->bframes)
 		dts = CMTimeSubtract(dts, off);
 
 	bool keyframe = is_sample_keyframe(buffer);
