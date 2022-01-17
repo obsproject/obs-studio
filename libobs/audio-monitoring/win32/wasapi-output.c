@@ -393,6 +393,8 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 			monitor->source, on_audio_playback, monitor);
 	}
 
+	pthread_mutex_lock(&monitor->playback_mutex);
+
 	if (monitor->client)
 		monitor->client->lpVtbl->Stop(monitor->client);
 
@@ -401,6 +403,9 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 	audio_resampler_destroy(monitor->resampler);
 	circlebuf_free(&monitor->delay_buffer);
 	da_free(monitor->buf);
+
+	pthread_mutex_unlock(&monitor->playback_mutex);
+	pthread_mutex_destroy(&monitor->playback_mutex);
 }
 
 extern bool devices_match(const char *id1, const char *id2);
