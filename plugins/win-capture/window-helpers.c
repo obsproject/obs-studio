@@ -105,17 +105,29 @@ fail:
 
 void get_window_title(struct dstr *name, HWND hwnd)
 {
-	wchar_t *temp;
 	int len;
 
 	len = GetWindowTextLengthW(hwnd);
 	if (!len)
 		return;
 
-	temp = malloc(sizeof(wchar_t) * (len + 1));
-	if (GetWindowTextW(hwnd, temp, len + 1))
-		dstr_from_wcs(name, temp);
-	free(temp);
+	if (len > 1024) {
+		wchar_t *temp;
+
+		temp = malloc(sizeof(wchar_t) * (len + 1));
+		if (!temp)
+			return;
+
+		if (GetWindowTextW(hwnd, temp, len + 1))
+			dstr_from_wcs(name, temp);
+
+		free(temp);
+	} else {
+		wchar_t temp[1024 + 1];
+
+		if (GetWindowTextW(hwnd, temp, len + 1))
+			dstr_from_wcs(name, temp);
+	}
 }
 
 void get_window_class(struct dstr *class, HWND hwnd)
