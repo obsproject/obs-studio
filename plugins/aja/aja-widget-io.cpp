@@ -1,4 +1,5 @@
 #include "aja-widget-io.hpp"
+#include "aja-common.hpp"
 
 #include <ajantv2/includes/ntv2utils.h>
 #include <ajantv2/includes/ntv2signalrouter.h>
@@ -351,8 +352,7 @@ bool WidgetInputSocket::Find(const std::string &name, NTV2Channel channel,
 {
 	for (const auto &in : kWidgetInputSockets) {
 		if (name == in.name &&
-		    channel == CNTV2SignalRouter::WidgetIDToChannel(
-				       in.widget_id) &&
+		    channel == aja::WidgetIDToChannel(in.widget_id) &&
 		    datastream == in.datastream_index) {
 			inp = in;
 			return true;
@@ -392,8 +392,7 @@ NTV2Channel WidgetInputSocket::InputXptChannel(InputXpt xpt)
 	NTV2Channel channel = NTV2_CHANNEL_INVALID;
 	for (auto &x : kWidgetInputSockets) {
 		if (x.id == xpt) {
-			channel = CNTV2SignalRouter::WidgetIDToChannel(
-				x.widget_id);
+			channel = aja::WidgetIDToChannel(x.widget_id);
 			break;
 		}
 	}
@@ -420,8 +419,7 @@ bool WidgetOutputSocket::Find(const std::string &name, NTV2Channel channel,
 	// 	  << ", datastream = " << datastream << std::endl;
 	for (const auto &wo : kWidgetOutputSockets) {
 		if (name == wo.name &&
-		    channel == CNTV2SignalRouter::WidgetIDToChannel(
-				       wo.widget_id) &&
+		    channel == aja::WidgetIDToChannel(wo.widget_id) &&
 		    datastream == wo.datastream_index) {
 			out = wo;
 			return true;
@@ -461,8 +459,7 @@ NTV2Channel WidgetOutputSocket::OutputXptChannel(OutputXpt xpt)
 	NTV2Channel channel = NTV2_CHANNEL_INVALID;
 	for (auto &x : kWidgetOutputSockets) {
 		if (x.id == xpt) {
-			channel = CNTV2SignalRouter::WidgetIDToChannel(
-				x.widget_id);
+			channel = aja::WidgetIDToChannel(x.widget_id);
 			break;
 		}
 	}

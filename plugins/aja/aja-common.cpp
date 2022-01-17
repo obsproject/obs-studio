@@ -6,6 +6,7 @@
 #include <ajantv2/includes/ntv2debug.h>
 #include <ajantv2/includes/ntv2devicescanner.h>
 #include <ajantv2/includes/ntv2devicefeatures.h>
+#include <ajantv2/includes/ntv2signalrouter.h>
 #include <ajantv2/includes/ntv2utils.h>
 
 void filter_io_selection_input_list(const std::string &cardID,
@@ -393,6 +394,16 @@ NTV2VideoFormat HandleSpecialCaseFormats(IOSelection io, NTV2VideoFormat vf,
 		vf = GetQuadSizedVideoFormat(GetQuarterSizedVideoFormat(vf));
 	}
 	return vf;
+}
+
+NTV2Channel WidgetIDToChannel(NTV2WidgetID id)
+{
+#if AJA_NTV2_SDK_VERSION_MAJOR <= 16 && AJA_NTV2_SDK_VERSION_MINOR <= 2
+	// Workaround for bug in NTV2 SDK <= 16.2 where NTV2_WgtSDIMonOut1 maps incorrectly to NTV2_CHANNEL1.
+	if (id == NTV2_WgtSDIMonOut1)
+		return NTV2_CHANNEL5;
+#endif
+	return CNTV2SignalRouter::WidgetIDToChannel(id);
 }
 
 uint32_t CardNumFramestores(NTV2DeviceID id)
