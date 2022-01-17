@@ -323,7 +323,7 @@ EXPORT double obs_property_float_step(obs_property_t *p);
 EXPORT enum obs_number_type obs_property_float_type(obs_property_t *p);
 EXPORT const char *obs_property_float_suffix(obs_property_t *p);
 EXPORT enum obs_text_type obs_property_text_type(obs_property_t *p);
-EXPORT enum obs_text_type obs_property_text_monospace(obs_property_t *p);
+EXPORT bool obs_property_text_monospace(obs_property_t *p);
 EXPORT enum obs_path_type obs_property_path_type(obs_property_t *p);
 EXPORT const char *obs_property_path_filter(obs_property_t *p);
 EXPORT const char *obs_property_path_default_path(obs_property_t *p);

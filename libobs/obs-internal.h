@@ -24,6 +24,7 @@
 #include "util/threading.h"
 #include "util/platform.h"
 #include "util/profiler.h"
+#include "util/task.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -339,6 +340,9 @@ struct obs_core_audio {
 	DARRAY(struct audio_monitor *) monitors;
 	char *monitoring_device_name;
 	char *monitoring_device_id;
+
+	pthread_mutex_t task_mutex;
+	struct circlebuf tasks;
 };
 
 /* user sources, output channels, and displays */
@@ -433,6 +437,8 @@ struct obs_core {
 	struct obs_core_data data;
 	struct obs_core_hotkeys hotkeys;
 
+	os_task_queue_t *destruction_task_thread;
+
 	obs_task_handler_t ui_task_handler;
 };
 
@@ -509,6 +515,7 @@ extern void obs_context_data_free(struct obs_context_data *context);
 extern void obs_context_data_insert(struct obs_context_data *context,
 				    pthread_mutex_t *mutex, void *first);
 extern void obs_context_data_remove(struct obs_context_data *context);
+extern void obs_context_wait(struct obs_context_data *context);
 
 extern void obs_context_data_setname(struct obs_context_data *context,
 				     const char *name);
@@ -621,6 +628,9 @@ struct obs_source {
 
 	/* ensures activate/deactivate are only called once */
 	volatile long activate_refs;
+
+	/* source is in the process of being destroyed */
+	volatile long destroying;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer

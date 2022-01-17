@@ -752,12 +752,6 @@ static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
 		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
 	}
 
-	if (prefer_igpu_enc(NULL)) {
-		blog(LOG_INFO,
-		     ">>> prefer iGPU encoding, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
-	}
-
 	blog(LOG_INFO, ">>> new qsv encoder");
 	return obs_qsv_create(settings, encoder);
 }

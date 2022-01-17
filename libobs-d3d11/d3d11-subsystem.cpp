@@ -705,8 +705,10 @@ ID3D11BlendState *gs_device::AddBlendState()
 	memset(&bd, 0, sizeof(bd));
 	for (int i = 0; i < 8; i++) {
 		bd.RenderTarget[i].BlendEnable = blendState.blendEnabled;
-		bd.RenderTarget[i].BlendOp = D3D11_BLEND_OP_ADD;
-		bd.RenderTarget[i].BlendOpAlpha = D3D11_BLEND_OP_ADD;
+		bd.RenderTarget[i].BlendOp =
+			ConvertGSBlendOpType(blendState.op);
+		bd.RenderTarget[i].BlendOpAlpha =
+			ConvertGSBlendOpType(blendState.op);
 		bd.RenderTarget[i].SrcBlend =
 			ConvertGSBlendType(blendState.srcFactorC);
 		bd.RenderTarget[i].DestBlend =
@@ -995,6 +997,177 @@ static bool GetMonitorTarget(const MONITORINFOEX &info,
 	return found;
 }
 
+static bool GetOutputDesc1(IDXGIOutput *const output, DXGI_OUTPUT_DESC1 *desc1)
+{
+	ComPtr<IDXGIOutput6> output6;
+	HRESULT hr = output->QueryInterface(IID_PPV_ARGS(output6.Assign()));
+	bool success = SUCCEEDED(hr);
+	if (success) {
+		hr = output6->GetDesc1(desc1);
+		success = SUCCEEDED(hr);
+		if (!success) {
+			blog(LOG_WARNING,
+			     "IDXGIOutput6::GetDesc1 failed: 0x%08lX", hr);
+		}
+	}
+
+	return success;
+}
+
+// Returns true if this is an integrated display panel e.g. the screen attached to tablets or laptops.
+static bool IsInternalVideoOutput(
+	const DISPLAYCONFIG_VIDEO_OUTPUT_TECHNOLOGY VideoOutputTechnologyType)
+{
+	switch (VideoOutputTechnologyType) {
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_INTERNAL:
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_DISPLAYPORT_EMBEDDED:
+	case DISPLAYCONFIG_OUTPUT_TECHNOLOGY_UDI_EMBEDDED:
+		return TRUE;
+
+	default:
+		return FALSE;
+	}
+}
+
+// Note: Since an hmon can represent multiple monitors while in clone, this function as written will return
+//  the value for the internal monitor if one exists, and otherwise the highest clone-path priority.
+static HRESULT GetPathInfo(_In_ PCWSTR pszDeviceName,
+			   _Out_ DISPLAYCONFIG_PATH_INFO *pPathInfo)
+{
+	HRESULT hr = S_OK;
+	UINT32 NumPathArrayElements = 0;
+	UINT32 NumModeInfoArrayElements = 0;
+	DISPLAYCONFIG_PATH_INFO *PathInfoArray = nullptr;
+	DISPLAYCONFIG_MODE_INFO *ModeInfoArray = nullptr;
+
+	do {
+		// In case this isn't the first time through the loop, delete the buffers allocated
+		delete[] PathInfoArray;
+		PathInfoArray = nullptr;
+
+		delete[] ModeInfoArray;
+		ModeInfoArray = nullptr;
+
+		hr = HRESULT_FROM_WIN32(GetDisplayConfigBufferSizes(
+			QDC_ONLY_ACTIVE_PATHS, &NumPathArrayElements,
+			&NumModeInfoArrayElements));
+		if (FAILED(hr)) {
+			break;
+		}
+
+		PathInfoArray = new (std::nothrow)
+			DISPLAYCONFIG_PATH_INFO[NumPathArrayElements];
+		if (PathInfoArray == nullptr) {
+			hr = E_OUTOFMEMORY;
+			break;
+		}
+
+		ModeInfoArray = new (std::nothrow)
+			DISPLAYCONFIG_MODE_INFO[NumModeInfoArrayElements];
+		if (ModeInfoArray == nullptr) {
+			hr = E_OUTOFMEMORY;
+			break;
+		}
+
+		hr = HRESULT_FROM_WIN32(QueryDisplayConfig(
+			QDC_ONLY_ACTIVE_PATHS, &NumPathArrayElements,
+			PathInfoArray, &NumModeInfoArrayElements, ModeInfoArray,
+			nullptr));
+	} while (hr == HRESULT_FROM_WIN32(ERROR_INSUFFICIENT_BUFFER));
+
+	INT DesiredPathIdx = -1;
+
+	if (SUCCEEDED(hr)) {
+		// Loop through all sources until the one which matches the 'monitor' is found.
+		for (UINT PathIdx = 0; PathIdx < NumPathArrayElements;
+		     ++PathIdx) {
+			DISPLAYCONFIG_SOURCE_DEVICE_NAME SourceName = {};
+			SourceName.header.type =
+				DISPLAYCONFIG_DEVICE_INFO_GET_SOURCE_NAME;
+			SourceName.header.size = sizeof(SourceName);
+			SourceName.header.adapterId =
+				PathInfoArray[PathIdx].sourceInfo.adapterId;
+			SourceName.header.id =
+				PathInfoArray[PathIdx].sourceInfo.id;
+
+			hr = HRESULT_FROM_WIN32(
+				DisplayConfigGetDeviceInfo(&SourceName.header));
+			if (SUCCEEDED(hr)) {
+				if (wcscmp(pszDeviceName,
+					   SourceName.viewGdiDeviceName) == 0) {
+					// Found the source which matches this hmonitor. The paths are given in path-priority order
+					// so the first found is the most desired, unless we later find an internal.
+					if (DesiredPathIdx == -1 ||
+					    IsInternalVideoOutput(
+						    PathInfoArray[PathIdx]
+							    .targetInfo
+							    .outputTechnology)) {
+						DesiredPathIdx = PathIdx;
+					}
+				}
+			}
+		}
+	}
+
+	if (DesiredPathIdx != -1) {
+		*pPathInfo = PathInfoArray[DesiredPathIdx];
+	} else {
+		hr = E_INVALIDARG;
+	}
+
+	delete[] PathInfoArray;
+	PathInfoArray = nullptr;
+
+	delete[] ModeInfoArray;
+	ModeInfoArray = nullptr;
+
+	return hr;
+}
+
+// Overloaded function accepts an HMONITOR and converts to DeviceName
+static HRESULT GetPathInfo(HMONITOR hMonitor,
+			   _Out_ DISPLAYCONFIG_PATH_INFO *pPathInfo)
+{
+	HRESULT hr = S_OK;
+
+	// Get the name of the 'monitor' being requested
+	MONITORINFOEXW ViewInfo;
+	RtlZeroMemory(&ViewInfo, sizeof(ViewInfo));
+	ViewInfo.cbSize = sizeof(ViewInfo);
+	if (!GetMonitorInfoW(hMonitor, &ViewInfo)) {
+		// Error condition, likely invalid monitor handle, could log error
+		hr = HRESULT_FROM_WIN32(GetLastError());
+	}
+
+	if (SUCCEEDED(hr)) {
+		hr = GetPathInfo(ViewInfo.szDevice, pPathInfo);
+	}
+
+	return hr;
+}
+
+static ULONG GetSdrWhiteNits(HMONITOR monitor)
+{
+	ULONG nits = 0;
+
+	DISPLAYCONFIG_PATH_INFO info;
+	if (SUCCEEDED(GetPathInfo(monitor, &info))) {
+		const DISPLAYCONFIG_PATH_TARGET_INFO &targetInfo =
+			info.targetInfo;
+
+		DISPLAYCONFIG_SDR_WHITE_LEVEL level;
+		DISPLAYCONFIG_DEVICE_INFO_HEADER &header = level.header;
+		header.type = DISPLAYCONFIG_DEVICE_INFO_GET_SDR_WHITE_LEVEL;
+		header.size = sizeof(level);
+		header.adapterId = targetInfo.adapterId;
+		header.id = targetInfo.id;
+		if (DisplayConfigGetDeviceInfo(&header) == ERROR_SUCCESS)
+			nits = (level.SDRWhiteLevel * 80) / 1000;
+	}
+
+	return nits;
+}
+
 static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 {
 	UINT i;
@@ -1028,18 +1201,50 @@ static inline void LogAdapterMonitors(IDXGIAdapter1 *adapter)
 			target.monitorFriendlyDeviceName[0] = 0;
 		}
 
+		DXGI_COLOR_SPACE_TYPE type =
+			DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		FLOAT min_luminance = 0.f;
+		FLOAT max_luminance = 0.f;
+		FLOAT max_full_frame_luminance = 0.f;
+		DXGI_OUTPUT_DESC1 desc1;
+		if (GetOutputDesc1(output, &desc1)) {
+			type = desc1.ColorSpace;
+			min_luminance = desc1.MinLuminance;
+			max_luminance = desc1.MaxLuminance;
+			max_full_frame_luminance = desc1.MaxFullFrameLuminance;
+		}
+
+		const char *space = "Unknown";
+		switch (type) {
+		case DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709:
+			space = "RGB_FULL_G22_NONE_P709";
+			break;
+		case DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020:
+			space = "RGB_FULL_G2084_NONE_P2020";
+			break;
+		default:
+			blog(LOG_WARNING,
+			     "Unexpected DXGI_COLOR_SPACE_TYPE: %u",
+			     (unsigned)type);
+		}
+
 		const RECT &rect = desc.DesktopCoordinates;
+		const ULONG nits = GetSdrWhiteNits(desc.Monitor);
 		blog(LOG_INFO,
-		     "\t  output %u: "
-		     "pos={%d, %d}, "
-		     "size={%d, %d}, "
-		     "attached=%s, "
-		     "refresh=%u, "
-		     "name=%ls",
-		     i, rect.left, rect.top, rect.right - rect.left,
-		     rect.bottom - rect.top,
-		     desc.AttachedToDesktop ? "true" : "false", refresh,
-		     target.monitorFriendlyDeviceName);
+		     "\t  output %u:\n"
+		     "\t    name=%ls\n"
+		     "\t    pos={%d, %d}\n"
+		     "\t    size={%d, %d}\n"
+		     "\t    attached=%s\n"
+		     "\t    refresh=%u\n"
+		     "\t    space=%s\n"
+		     "\t    sdr_white_nits=%lu\n"
+		     "\t    nit_range=[min=%f, max=%f, max_full_frame=%f]",
+		     i, target.monitorFriendlyDeviceName, rect.left, rect.top,
+		     rect.right - rect.left, rect.bottom - rect.top,
+		     desc.AttachedToDesktop ? "true" : "false", refresh, space,
+		     nits, min_luminance, max_luminance,
+		     max_full_frame_luminance);
 	}
 }
 
@@ -2159,6 +2364,15 @@ void device_blend_function_separate(gs_device_t *device,
 	device->blendStateChanged = true;
 }
 
+void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
+{
+	if (device->blendState.op == op)
+		return;
+
+	device->blendState.op = op;
+	device->blendStateChanged = true;
+}
+
 void device_depth_function(gs_device_t *device, enum gs_depth_test test)
 {
 	if (device->zstencilState.depthFunc == test)
@@ -2821,6 +3035,23 @@ extern "C" EXPORT gs_texture_t *device_texture_open_shared(gs_device_t *device,
 		LogD3D11ErrorDetails(error, device);
 	} catch (const char *error) {
 		blog(LOG_ERROR, "gs_texture_open_shared (D3D11): %s", error);
+	}
+
+	return texture;
+}
+
+extern "C" EXPORT gs_texture_t *
+device_texture_open_nt_shared(gs_device_t *device, uint32_t handle)
+{
+	gs_texture *texture = nullptr;
+	try {
+		texture = new gs_texture_2d(device, handle, true);
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "gs_texture_open_nt_shared (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_open_nt_shared (D3D11): %s", error);
 	}
 
 	return texture;

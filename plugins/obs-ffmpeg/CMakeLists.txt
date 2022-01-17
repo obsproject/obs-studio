@@ -11,6 +11,11 @@ find_package(FFmpeg REQUIRED
 	COMPONENTS avcodec avfilter avdevice avutil swscale avformat swresample)
 include_directories(${FFMPEG_INCLUDE_DIRS})
 
+if(UNIX AND NOT APPLE)
+        find_package(Libpci REQUIRED)
+        include_directories(${LIBPCI_INCLUDE_DIRS})
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/obs-ffmpeg-config.h")
@@ -38,7 +43,8 @@ if(UNIX AND NOT APPLE)
 	list(APPEND obs-ffmpeg_SOURCES
 		obs-ffmpeg-vaapi.c)
 	LIST(APPEND obs-ffmpeg_PLATFORM_DEPS
-		${LIBVA_LBRARIES})
+		${LIBVA_LBRARIES}
+		${LIBPCI_LIBRARIES})
 endif()
 
 if(ENABLE_FFMPEG_LOGGING)

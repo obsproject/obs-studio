@@ -20,8 +20,22 @@
 
 static inline bool ipc_pipe_internal_create_events(ipc_pipe_server_t *pipe)
 {
-	pipe->ready_event = CreateEvent(NULL, false, false, NULL);
-	return !!pipe->ready_event;
+	HANDLE ready_event = CreateEvent(NULL, false, false, NULL);
+	HANDLE stop_event = CreateEvent(NULL, false, false, NULL);
+	const bool success = ready_event && stop_event;
+	if (!success) {
+		if (ready_event) {
+			CloseHandle(ready_event);
+			ready_event = NULL;
+		}
+		if (stop_event) {
+			CloseHandle(stop_event);
+			stop_event = NULL;
+		}
+	}
+	pipe->ready_event = ready_event;
+	pipe->stop_event = stop_event;
+	return success;
 }
 
 static inline void *create_full_access_security_descriptor()
@@ -113,6 +127,7 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 		return 0;
 	}
 
+	const HANDLE handles[] = {pipe->ready_event, pipe->stop_event};
 	for (;;) {
 		DWORD bytes = 0;
 		bool success;
@@ -123,7 +138,8 @@ static DWORD CALLBACK ipc_pipe_internal_server_thread(LPVOID param)
 			break;
 		}
 
-		DWORD wait = WaitForSingleObject(pipe->ready_event, INFINITE);
+		DWORD wait = WaitForMultipleObjects(_countof(handles), handles,
+						    FALSE, INFINITE);
 		if (wait != WAIT_OBJECT_0) {
 			break;
 		}
@@ -216,16 +232,19 @@ void ipc_pipe_server_free(ipc_pipe_server_t *pipe)
 	if (!pipe)
 		return;
 
-	if (pipe->thread) {
-		CancelIoEx(pipe->handle, &pipe->overlap);
-		SetEvent(pipe->ready_event);
-		WaitForSingleObject(pipe->thread, INFINITE);
-		CloseHandle(pipe->thread);
-	}
-	if (pipe->ready_event)
+	if (pipe->stop_event) {
+		if (pipe->handle) {
+			if (pipe->thread) {
+				CancelIoEx(pipe->handle, &pipe->overlap);
+				SetEvent(pipe->stop_event);
+				WaitForSingleObject(pipe->thread, INFINITE);
+				CloseHandle(pipe->thread);
+			}
+			CloseHandle(pipe->handle);
+		}
+		CloseHandle(pipe->stop_event);
 		CloseHandle(pipe->ready_event);
-	if (pipe->handle)
-		CloseHandle(pipe->handle);
+	}
 
 	free(pipe->read_data);
 	memset(pipe, 0, sizeof(*pipe));

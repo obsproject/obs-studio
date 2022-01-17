@@ -63,13 +63,14 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	source = data->first_source;
 	while (source) {
-		struct obs_source *cur_source = obs_source_get_ref(source);
-		source = (struct obs_source *)source->context.next;
+		obs_source_t *s = obs_source_get_ref(source);
 
-		if (cur_source) {
-			obs_source_video_tick(cur_source, seconds);
-			obs_source_release(cur_source);
+		if (s) {
+			obs_source_video_tick(s, seconds);
+			obs_source_release(s);
 		}
+
+		source = (struct obs_source *)source->context.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
@@ -963,8 +964,6 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		tick_sources(obs->video.video_time, context->last_time);
 	profile_end(tick_sources_name);
 
-	execute_graphics_tasks();
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -980,6 +979,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);
+
+	execute_graphics_tasks();
 
 	frame_time_ns = os_gettime_ns() - frame_start;
 

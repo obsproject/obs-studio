@@ -21,6 +21,7 @@
 #include <util/dstr.h>
 #include <obs-module.h>
 
+#include <libavutil/channel_layout.h>
 #include <libavutil/opt.h>
 #include <libavformat/avformat.h>
 

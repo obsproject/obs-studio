@@ -1684,6 +1684,11 @@ SendConnectPacket(RTMP *r, RTMPPacket *cp)
         enc = AMF_EncodeNamedString(enc, pend, &av_type, &av_nonprivate);
         if (!enc)
             return FALSE;
+
+        if (r->Link.customConnectEncode)
+        {
+            r->Link.customConnectEncode(&enc, pend);
+        }
     }
     if (r->Link.flashVer.av_len)
     {

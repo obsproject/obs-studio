@@ -377,7 +377,7 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 
 	frame->range = range;
 
-	*ts = decode->frame->pkt_pts;
+	*ts = decode->frame->pts;
 
 	frame->width = decode->frame->width;
 	frame->height = decode->frame->height;

@@ -2350,6 +2350,157 @@
                 "max video bitrate": 32000,
                 "max audio bitrate": 256
             }
+        },
+        {
+            "name": "Kuaishou Live",
+            "stream_key_link": "https://studio.kuaishou.com/live/list",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://open-push.voip.yximgs.com/gifshow/"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://tx.push.yximgs.com/live/"
+                }
+            ]
+        },
+        {
+            "name": "Utreon",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.utreon.com:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "Autistici.org Live",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url":  "rtmp://live.autistici.org/ingest"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 2500,
+                "max audio bitrate": 128
+            }
+        },
+        {
+            "name": "PhoneLiveStreaming",
+            "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "servers": [
+                {
+                    "name": "PhoneLiveStreaming",
+                    "url":  "rtmp://live.phonelivestreaming.com/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 128,
+                "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "ManyVids",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://rtmp.str.manyvids.com:1935/live_stream/"
+                }
+            ],
+            "recommended": {
+                "supported resolutions": [
+                    "1280x720",
+                    "960x540"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "960x540",
+                        "fps": 30,
+                        "max bitrate": 3000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    }
+                ],
+                "keyint": 2,
+                "max video bitrate": 4000,
+                "max fps": 30
+            }
+        },
+        {
+            "name": "Fantasy.Club",
+            "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
+            "more_info_link": "https://help.fantasy.club/",
+            "servers": [
+                {
+                    "name": "US: East",
+                    "url": "rtmp://live-east.fantasy.club/live"
+                },
+                {
+                    "name": "US: West",
+                    "url": "rtmp://live-west.fantasy.club/live"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://live-eu.fantasy.club/live"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://live-sa.fantasy.club/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "high",
+                "bframes": 0,
+                "x264opts": "scenecut=0",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 1200
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 3600
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 4200
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 5000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 7200
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 7200,
+                "max audio bitrate": 196
+            }
         }
     ]
 }

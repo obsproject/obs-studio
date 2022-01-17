@@ -89,6 +89,11 @@ static inline bool disconnected(struct rtmp_stream *stream)
 	return os_atomic_load_bool(&stream->disconnected);
 }
 
+static inline bool silently_reconnecting(struct rtmp_stream *stream)
+{
+	return os_atomic_load_bool(&stream->silent_reconnect);
+}
+
 static void rtmp_stream_destroy(void *data)
 {
 	struct rtmp_stream *stream = data;
@@ -249,40 +254,48 @@ static inline bool get_next_packet(struct rtmp_stream *stream,
 	return new_packet;
 }
 
-static bool discard_recv_data(struct rtmp_stream *stream, size_t size)
+static inline void peek_next_packet(struct rtmp_stream *stream,
+				    struct encoder_packet *packet)
+{
+	pthread_mutex_lock(&stream->packets_mutex);
+	circlebuf_peek_front(&stream->packets, packet,
+			     sizeof(struct encoder_packet));
+	pthread_mutex_unlock(&stream->packets_mutex);
+}
+
+static void reinsert_packet_at_front(struct rtmp_stream *stream,
+				     struct encoder_packet *packet)
+{
+	pthread_mutex_lock(&stream->packets_mutex);
+	circlebuf_push_front(&stream->packets, packet,
+			     sizeof(struct encoder_packet));
+	pthread_mutex_unlock(&stream->packets_mutex);
+	os_sem_post(stream->send_sem);
+}
+
+#define RTMP_PACKET_TYPE_RECONNECT 0x20
+
+static bool process_recv_data(struct rtmp_stream *stream, size_t size)
 {
 	RTMP *rtmp = &stream->rtmp;
-	uint8_t buf[512];
-#ifdef _WIN32
-	int ret;
-#else
-	ssize_t ret;
-#endif
+	RTMPPacket packet = {0};
 
-	do {
-		size_t bytes = size > 512 ? 512 : size;
-		size -= bytes;
-
+	if (!RTMP_ReadPacket(rtmp, &packet)) {
 #ifdef _WIN32
-		ret = recv(rtmp->m_sb.sb_socket, buf, (int)bytes, 0);
+		int error = WSAGetLastError();
 #else
-		ret = recv(rtmp->m_sb.sb_socket, buf, bytes, 0);
+		int error = errno;
 #endif
+		do_log(LOG_ERROR, "RTMP_ReadPacket error: %d", error);
+		return false;
+	}
 
-		if (ret <= 0) {
-#ifdef _WIN32
-			int error = WSAGetLastError();
-#else
-			int error = errno;
-#endif
-			if (ret < 0) {
-				do_log(LOG_ERROR, "recv error: %d (%d bytes)",
-				       error, (int)size);
-			}
-			return false;
+	if (packet.m_body) {
+		if (packet.m_packetType == RTMP_PACKET_TYPE_RECONNECT) {
+			os_atomic_set_bool(&stream->silent_reconnect, true);
 		}
-	} while (size > 0);
-
+		RTMPPacket_Free(&packet);
+	}
 	return true;
 }
 
@@ -418,7 +431,7 @@ static int send_packet(struct rtmp_stream *stream,
 #endif
 
 		if (ret >= 0 && recv_size > 0) {
-			if (!discard_recv_data(stream, (size_t)recv_size))
+			if (!process_recv_data(stream, (size_t)recv_size))
 				return -1;
 		}
 	}
@@ -568,12 +581,32 @@ static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
 }
 
 static void dbr_set_bitrate(struct rtmp_stream *stream);
+static bool rtmp_stream_start(void *data);
+
+#ifdef _WIN32
+#define socklen_t int
+#endif
+
+static void log_sndbuf_size(struct rtmp_stream *stream)
+{
+	int cur_sendbuf_size;
+	socklen_t int_size = sizeof(int);
+
+	if (!getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
+			(char *)&cur_sendbuf_size, &int_size)) {
+		info("Socket send buffer is %d bytes", cur_sendbuf_size);
+	}
+}
 
 static void *send_thread(void *data)
 {
 	struct rtmp_stream *stream = data;
 
 	os_set_thread_name("rtmp-stream: send_thread");
+
+#if defined(_WIN32)
+	log_sndbuf_size(stream);
+#endif
 
 	while (os_sem_wait(stream->send_sem) == 0) {
 		struct encoder_packet packet;
@@ -598,6 +631,14 @@ static void *send_thread(void *data)
 				os_atomic_set_bool(&stream->disconnected, true);
 				break;
 			}
+		}
+
+		/* silent reconnect signal received from server, reconnect on
+		 * next keyframe */
+		if (silently_reconnecting(stream) &&
+		    packet.type == OBS_ENCODER_VIDEO && packet.keyframe) {
+			reinsert_packet_at_front(stream, &packet);
+			break;
 		}
 
 		if (stream->dbr_enabled) {
@@ -625,9 +666,15 @@ static void *send_thread(void *data)
 		info("Disconnected from %s", stream->path.array);
 	} else if (encode_error) {
 		info("Encoder error, disconnecting");
+	} else if (silently_reconnecting(stream)) {
+		info("Silent reconnect signal received from server");
 	} else {
 		info("User stopped the stream");
 	}
+
+#if defined(_WIN32)
+	log_sndbuf_size(stream);
+#endif
 
 	if (stream->new_socket_loop) {
 		os_event_signal(stream->send_thread_signaled_exit);
@@ -640,18 +687,31 @@ static void *send_thread(void *data)
 	set_output_error(stream);
 	RTMP_Close(&stream->rtmp);
 
+	/* reset bitrate on stop */
+	if (stream->dbr_enabled) {
+		if (stream->dbr_cur_bitrate != stream->dbr_orig_bitrate) {
+			stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
+			dbr_set_bitrate(stream);
+		}
+	}
+
 	if (!stopping(stream)) {
 		pthread_detach(stream->send_thread);
-		obs_output_signal_stop(stream->output, OBS_OUTPUT_DISCONNECTED);
+		if (!silently_reconnecting(stream))
+			obs_output_signal_stop(stream->output,
+					       OBS_OUTPUT_DISCONNECTED);
 	} else if (encode_error) {
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_ENCODE_ERROR);
 	} else {
 		obs_output_end_data_capture(stream->output);
 	}
 
-	free_packets(stream);
-	os_event_reset(stream->stop_event);
-	os_atomic_set_bool(&stream->active, false);
+	if (!silently_reconnecting(stream)) {
+		free_packets(stream);
+		os_event_reset(stream->stop_event);
+		os_atomic_set_bool(&stream->active, false);
+	}
+
 	stream->sent_headers = false;
 
 	/* reset bitrate on stop */
@@ -660,6 +720,10 @@ static void *send_thread(void *data)
 			stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
 			dbr_set_bitrate(stream);
 		}
+	}
+
+	if (silently_reconnecting(stream)) {
+		rtmp_stream_start(stream);
 	}
 
 	return NULL;
@@ -753,37 +817,13 @@ static inline bool reset_semaphore(struct rtmp_stream *stream)
 	return os_sem_init(&stream->send_sem, 0) == 0;
 }
 
-#ifdef _WIN32
-#define socklen_t int
-#endif
-
-#define MIN_SENDBUF_SIZE 65535
-
-static void adjust_sndbuf_size(struct rtmp_stream *stream, int new_size)
-{
-	int cur_sendbuf_size = new_size;
-	socklen_t int_size = sizeof(int);
-
-	getsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
-		   (char *)&cur_sendbuf_size, &int_size);
-
-	if (cur_sendbuf_size < new_size) {
-		cur_sendbuf_size = new_size;
-		setsockopt(stream->rtmp.m_sb.sb_socket, SOL_SOCKET, SO_SNDBUF,
-			   (const char *)&cur_sendbuf_size, int_size);
-	}
-}
-
 static int init_send(struct rtmp_stream *stream)
 {
 	int ret;
 	obs_output_t *context = stream->output;
 
-#if defined(_WIN32)
-	adjust_sndbuf_size(stream, MIN_SENDBUF_SIZE);
-#endif
-
-	reset_semaphore(stream);
+	if (!silently_reconnecting(stream))
+		reset_semaphore(stream);
 
 	ret = pthread_create(&stream->send_thread, NULL, send_thread, stream);
 	if (ret != 0) {
@@ -898,7 +938,8 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_DISCONNECTED;
 	}
 
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!silently_reconnecting(stream))
+		obs_output_begin_data_capture(stream->output, 0);
 
 	return OBS_OUTPUT_SUCCESS;
 }
@@ -960,6 +1001,12 @@ static void win32_log_interface_type(struct rtmp_stream *stream)
 }
 #endif
 
+static void add_connect_data(char **penc, char *pend)
+{
+	const AVal val = AVC("supportsGoAway");
+	*penc = AMF_EncodeNamedBoolean(*penc, pend, &val, true);
+}
+
 static int try_connect(struct rtmp_stream *stream)
 {
 	if (dstr_is_empty(&stream->path)) {
@@ -990,6 +1037,7 @@ static int try_connect(struct rtmp_stream *stream)
 	set_rtmp_dstr(&stream->rtmp.Link.pubPasswd, &stream->password);
 	set_rtmp_dstr(&stream->rtmp.Link.flashVer, &stream->encoder_name);
 	stream->rtmp.Link.swfUrl = stream->rtmp.Link.tcUrl;
+	stream->rtmp.Link.customConnectEncode = add_connect_data;
 
 	if (dstr_is_empty(&stream->bind_ip) ||
 	    dstr_cmp(&stream->bind_ip, "default") == 0) {
@@ -1130,9 +1178,17 @@ static void *connect_thread(void *data)
 
 	os_set_thread_name("rtmp-stream: connect_thread");
 
-	if (!init_connect(stream)) {
-		obs_output_signal_stop(stream->output, OBS_OUTPUT_BAD_PATH);
-		return NULL;
+	if (!silently_reconnecting(stream)) {
+		if (!init_connect(stream)) {
+			obs_output_signal_stop(stream->output,
+					       OBS_OUTPUT_BAD_PATH);
+			os_atomic_set_bool(&stream->silent_reconnect, false);
+			return NULL;
+		}
+	} else {
+		struct encoder_packet packet;
+		peek_next_packet(stream, &packet);
+		stream->start_dts_offset = get_ms_time(&packet, packet.dts);
 	}
 
 	ret = try_connect(stream);
@@ -1145,6 +1201,7 @@ static void *connect_thread(void *data)
 	if (!stopping(stream))
 		pthread_detach(stream->connect_thread);
 
+	os_atomic_set_bool(&stream->silent_reconnect, false);
 	os_atomic_set_bool(&stream->connecting, false);
 	return NULL;
 }
@@ -1153,10 +1210,12 @@ static bool rtmp_stream_start(void *data)
 {
 	struct rtmp_stream *stream = data;
 
-	if (!obs_output_can_begin_data_capture(stream->output, 0))
-		return false;
-	if (!obs_output_initialize_encoders(stream->output, 0))
-		return false;
+	if (!silently_reconnecting(stream)) {
+		if (!obs_output_can_begin_data_capture(stream->output, 0))
+			return false;
+		if (!obs_output_initialize_encoders(stream->output, 0))
+			return false;
+	}
 
 	os_atomic_set_bool(&stream->connecting, true);
 	return pthread_create(&stream->connect_thread, NULL, connect_thread,
@@ -1404,8 +1463,10 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 static bool add_video_packet(struct rtmp_stream *stream,
 			     struct encoder_packet *packet)
 {
-	check_to_drop_frames(stream, false);
-	check_to_drop_frames(stream, true);
+	if (!silently_reconnecting(stream)) {
+		check_to_drop_frames(stream, false);
+		check_to_drop_frames(stream, true);
+	}
 
 	/* if currently dropping frames, drop packets until it reaches the
 	 * desired priority */

@@ -180,7 +180,9 @@ static bool nvenc_supported(void)
 	bool success = false;
 
 	if (!nvenc) {
-		goto cleanup;
+		nvenc = avcodec_find_encoder_by_name("h264_nvenc");
+		if (!nvenc)
+			goto cleanup;
 	}
 
 #if defined(_WIN32)

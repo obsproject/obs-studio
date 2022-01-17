@@ -36,6 +36,7 @@ static inline bool get_monitor(gs_device_t *device, int monitor_idx,
 
 void gs_duplicator::Start()
 {
+	ComPtr<IDXGIOutput5> output5;
 	ComPtr<IDXGIOutput1> output1;
 	ComPtr<IDXGIOutput> output;
 	HRESULT hr;
@@ -43,14 +44,29 @@ void gs_duplicator::Start()
 	if (!get_monitor(device, idx, output.Assign()))
 		throw "Invalid monitor index";
 
-	hr = output->QueryInterface(__uuidof(IDXGIOutput1),
-				    (void **)output1.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to query IDXGIOutput1", hr);
+	hr = output->QueryInterface(IID_PPV_ARGS(output5.Assign()));
+	if (SUCCEEDED(hr)) {
+		constexpr DXGI_FORMAT supportedFormats[]{
+			DXGI_FORMAT_R16G16B16A16_FLOAT,
+			DXGI_FORMAT_R10G10B10A2_UNORM,
+			DXGI_FORMAT_B8G8R8A8_UNORM,
+		};
+		hr = output5->DuplicateOutput1(device->device, 0,
+					       _countof(supportedFormats),
+					       supportedFormats,
+					       duplicator.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to DuplicateOutput1", hr);
+	} else {
+		hr = output->QueryInterface(IID_PPV_ARGS(output1.Assign()));
+		if (FAILED(hr))
+			throw HRError("Failed to query IDXGIOutput1", hr);
 
-	hr = output1->DuplicateOutput(device->device, duplicator.Assign());
-	if (FAILED(hr))
-		throw HRError("Failed to duplicate output", hr);
+		hr = output1->DuplicateOutput(device->device,
+					      duplicator.Assign());
+		if (FAILED(hr))
+			throw HRError("Failed to DuplicateOutput", hr);
+	}
 }
 
 gs_duplicator::gs_duplicator(gs_device_t *device_, int monitor_idx)
@@ -213,20 +229,19 @@ static inline void copy_texture(gs_duplicator_t *d, ID3D11Texture2D *tex)
 {
 	D3D11_TEXTURE2D_DESC desc;
 	tex->GetDesc(&desc);
+	const gs_color_format format = ConvertDXGITextureFormat(desc.Format);
+	const gs_color_format general_format = gs_generalize_format(format);
 
-	if (!d->texture || d->texture->width != desc.Width ||
-	    d->texture->height != desc.Height) {
+	if (!d->texture || (d->texture->width != desc.Width) ||
+	    (d->texture->height != desc.Height) ||
+	    (d->texture->format != general_format)) {
 
 		delete d->texture;
-		const gs_color_format format =
-			ConvertDXGITextureFormat(desc.Format);
-		const gs_color_format srgb_format =
-			gs_generalize_format(format);
 		d->texture = (gs_texture_2d *)gs_texture_create(
-			desc.Width, desc.Height, srgb_format, 1, nullptr, 0);
+			desc.Width, desc.Height, general_format, 1, nullptr, 0);
 	}
 
-	if (!!d->texture)
+	if (d->texture)
 		d->device->context->CopyResource(d->texture->texture, tex);
 }
 

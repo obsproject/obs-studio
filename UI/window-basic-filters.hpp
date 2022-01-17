@@ -50,6 +50,8 @@ private:
 	inline OBSSource GetFilter(int row, bool async);
 
 	void UpdateFilters();
+	void UpdateSplitter();
+	void UpdateSplitter(bool show_splitter_frame);
 	void UpdatePropertiesView(int row, bool async);
 
 	static void OBSSourceFilterAdded(void *param, calldata_t *data);

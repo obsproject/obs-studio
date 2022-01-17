@@ -59,4 +59,13 @@ struct gl_winsys_vtable {
 		uint32_t drm_format, enum gs_color_format color_format,
 		uint32_t n_planes, const int *fds, const uint32_t *strides,
 		const uint32_t *offsets, const uint64_t *modifiers);
+
+	bool (*device_query_dmabuf_capabilities)(
+		gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+		uint32_t **drm_formats, size_t *n_formats);
+
+	bool (*device_query_dmabuf_modifiers_for_format)(gs_device_t *device,
+							 uint32_t drm_format,
+							 uint64_t **modifiers,
+							 size_t *n_modifiers);
 };

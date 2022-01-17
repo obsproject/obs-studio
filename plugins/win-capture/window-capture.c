@@ -529,8 +529,8 @@ static void wc_tick(void *data, float seconds)
 		wc->previously_failed = false;
 		reset_capture = true;
 
-	} else if (IsIconic(wc->window)) {
-		return;
+	} else if (IsIconic(wc->window) || !IsWindowVisible(wc->window)) {
+		return; /* If HWND is invisible, WGC module can't be initialized successfully */
 	}
 
 	wc->cursor_check_time += seconds;

@@ -24,6 +24,7 @@
 
 #include <libavutil/opt.h>
 #include <libavutil/pixdesc.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 
 #include "obs-ffmpeg-formats.h"
@@ -92,6 +93,8 @@ static void set_psycho_aq(struct nvenc_encoder *enc, bool psycho_aq)
 
 static bool nvenc_init_codec(struct nvenc_encoder *enc, bool psycho_aq)
 {
+	UNUSED_PARAMETER(psycho_aq);
+
 	int ret;
 
 	// avcodec_open2 will overwrite priv_data, we call this to get a

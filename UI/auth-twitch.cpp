@@ -1,8 +1,10 @@
 #include "auth-twitch.hpp"
 
+#include <QRegularExpression>
 #include <QPushButton>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
+#include <QUuid>
 
 #include <qt-wrappers.hpp>
 #include <obs-app.hpp>
@@ -146,6 +148,8 @@ void TwitchAuth::SaveInternal()
 {
 	OBSBasic *main = OBSBasic::Get();
 	config_set_string(main->Config(), service(), "Name", name.c_str());
+	config_set_string(main->Config(), service(), "UUID", uuid.c_str());
+
 	if (uiLoaded) {
 		config_set_string(main->Config(), service(), "DockState",
 				  main->saveState().toBase64().constData());
@@ -167,6 +171,8 @@ bool TwitchAuth::LoadInternal()
 
 	OBSBasic *main = OBSBasic::Get();
 	name = get_config_str(main, service(), "Name");
+	uuid = get_config_str(main, service(), "UUID");
+
 	firstLoad = false;
 	return OAuthStreamKey::LoadInternal();
 }
@@ -204,6 +210,15 @@ void TwitchAuth::LoadUI()
 	std::string url;
 	std::string script;
 
+	/* Twitch panels require a UUID, it does not actually need to be unique,
+	 * and is generated client-side.
+	 * It is only for preferences stored in the browser's local store. */
+	if (uuid.empty()) {
+		QString qtUuid = QUuid::createUuid().toString();
+		qtUuid.replace(QRegularExpression("[{}-]"), "");
+		uuid = qtUuid.toStdString();
+	}
+
 	std::string moderation_tools_url;
 	moderation_tools_url = "https://www.twitch.tv/";
 	moderation_tools_url += name;
@@ -225,11 +240,15 @@ void TwitchAuth::LoadUI()
 	chat->setWindowTitle(QTStr("Auth.Chat"));
 	chat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(chat.data(), url, panel_cookies);
 	chat->SetWidget(browser);
 	cef->add_force_popup_url(moderation_tools_url, chat.data());
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 
 	const int twAddonChoice =
 		config_get_int(main->Config(), service(), "AddonChoice");
@@ -276,7 +295,11 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	script = "localStorage.setItem('twilight.theme', 1);";
+	if (App()->IsThemeDark()) {
+		script = "localStorage.setItem('twilight.theme', 1);";
+	} else {
+		script = "localStorage.setItem('twilight.theme', 0);";
+	}
 	script += referrer_script1;
 	script += "https://www.twitch.tv/";
 	script += name;
@@ -305,7 +328,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	info->setWindowTitle(QTStr("Auth.StreamInfo"));
 	info->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(info.data(), url, panel_cookies);
 	info->SetWidget(browser);
 	browser->setStartupScript(script);
 
@@ -325,7 +348,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	stat->setWindowTitle(QTStr("TwitchAuth.Stats"));
 	stat->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(stat.data(), url, panel_cookies);
 	stat->SetWidget(browser);
 	browser->setStartupScript(script);
 
@@ -337,6 +360,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	url = "https://dashboard.twitch.tv/popout/u/";
 	url += name;
 	url += "/stream-manager/activity-feed";
+	url += "?uuid=" + uuid;
 
 	feed.reset(new BrowserDock());
 	feed->setObjectName("twitchFeed");
@@ -345,7 +369,7 @@ void TwitchAuth::LoadSecondaryUIPanes()
 	feed->setWindowTitle(QTStr("TwitchAuth.Feed"));
 	feed->setAllowedAreas(Qt::AllDockWidgetAreas);
 
-	browser = cef->create_widget(nullptr, url, panel_cookies);
+	browser = cef->create_widget(feed.data(), url, panel_cookies);
 	feed->SetWidget(browser);
 	browser->setStartupScript(script);
 

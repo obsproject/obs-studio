@@ -305,6 +305,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		return false;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir",
@@ -489,17 +492,17 @@ void OBSBasic::ResetProfileData()
 	CreateHotkeys();
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *device_name =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
-	const char *device_id =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
+	if (obs_audio_monitoring_available()) {
+		const char *device_name = config_get_string(
+			basicConfig, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(basicConfig, "Audio",
+							  "MonitoringDeviceId");
 
-	obs_set_audio_monitoring_device(device_name, device_id);
+		obs_set_audio_monitoring_device(device_name, device_id);
 
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-	     device_name, device_id);
-#endif
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+		     device_name, device_id);
+	}
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
@@ -514,6 +517,9 @@ void OBSBasic::on_actionDupProfile_triggered()
 
 void OBSBasic::on_actionRenameProfile_triggered()
 {
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	std::string curDir =
 		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
 	std::string curName =
@@ -579,6 +585,9 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		     newPath.c_str());
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	newPath.resize(newPath_len);
 
@@ -754,6 +763,9 @@ void OBSBasic::ChangeProfile()
 		     path.c_str());
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	path.resize(path_len);
 

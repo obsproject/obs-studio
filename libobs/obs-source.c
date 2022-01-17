@@ -43,6 +43,11 @@ static inline bool deinterlacing_enabled(const struct obs_source *source)
 	return source->deinterlace_mode != OBS_DEINTERLACE_MODE_DISABLE;
 }
 
+static inline bool destroying(const struct obs_source *source)
+{
+	return os_atomic_load_long(&source->destroying);
+}
+
 struct obs_source_info *get_source_info(const char *id)
 {
 	for (size_t i = 0; i < obs->source_types.num; i++) {
@@ -87,7 +92,9 @@ static const char *source_signals[] = {
 	"void update_properties(ptr source)",
 	"void update_flags(ptr source, int flags)",
 	"void audio_sync(ptr source, int out int offset)",
+	"void audio_balance(ptr source, in out float balance)",
 	"void audio_mixers(ptr source, in out int mixers)",
+	"void audio_monitoring(ptr source, int type)",
 	"void audio_activate(ptr source)",
 	"void audio_deactivate(ptr source)",
 	"void filter_add(ptr source, ptr filter)",
@@ -605,13 +612,24 @@ static inline void obs_source_frame_decref(struct obs_source_frame *frame)
 
 static bool obs_source_filter_remove_refless(obs_source_t *source,
 					     obs_source_t *filter);
+static void obs_source_destroy_defer(struct obs_source *source);
 
 void obs_source_destroy(struct obs_source *source)
 {
-	size_t i;
-
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
+
+	os_atomic_set_long(&source->destroying, true);
+
+	if (is_audio_source(source)) {
+		pthread_mutex_lock(&source->audio_cb_mutex);
+		da_free(source->audio_cb_list);
+		pthread_mutex_unlock(&source->audio_cb_mutex);
+	}
+
+	pthread_mutex_lock(&source->caption_cb_mutex);
+	da_free(source->caption_cb_list);
+	pthread_mutex_unlock(&source->caption_cb_mutex);
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_clear(source);
@@ -633,8 +651,18 @@ void obs_source_destroy(struct obs_source *source)
 
 	obs_context_data_remove(&source->context);
 
-	blog(LOG_DEBUG, "%ssource '%s' destroyed",
-	     source->context.private ? "private " : "", source->context.name);
+	/* defer source destroy */
+	os_task_queue_queue_task(obs->destruction_task_thread,
+				 (os_task_t)obs_source_destroy_defer, source);
+}
+
+static void obs_source_destroy_defer(struct obs_source *source)
+{
+	size_t i;
+
+	/* prevents the destruction of sources if destroy triggered inside of
+	 * a video tick call */
+	obs_context_wait(&source->context);
 
 	obs_source_dosignal(source, "source_destroy", "destroy");
 
@@ -642,6 +670,9 @@ void obs_source_destroy(struct obs_source *source)
 		source->info.destroy(source->context.data);
 		source->context.data = NULL;
 	}
+
+	blog(LOG_DEBUG, "%ssource '%s' destroyed",
+	     source->context.private ? "private " : "", source->context.name);
 
 	audio_monitor_destroy(source->monitor);
 
@@ -791,8 +822,12 @@ void obs_source_remove(obs_source_t *source)
 		return;
 
 	if (!source->removed) {
-		source->removed = true;
-		obs_source_dosignal(source, "source_remove", "remove");
+		obs_source_t *s = obs_source_get_ref(source);
+		if (s) {
+			s->removed = true;
+			obs_source_dosignal(s, "source_remove", "remove");
+			obs_source_release(s);
+		}
 	}
 }
 
@@ -2852,6 +2887,23 @@ static inline void free_async_cache(struct obs_source *source)
 	source->prev_async_frame = NULL;
 }
 
+#define MAX_UNUSED_FRAME_DURATION 5
+
+/* frees frame allocations if they haven't been used for a specific period
+ * of time */
+static void clean_cache(obs_source_t *source)
+{
+	for (size_t i = source->async_cache.num; i > 0; i--) {
+		struct async_frame *af = &source->async_cache.array[i - 1];
+		if (!af->used) {
+			if (++af->unused_count == MAX_UNUSED_FRAME_DURATION) {
+				obs_source_frame_destroy(af->frame);
+				da_erase(source->async_cache, i - 1);
+			}
+		}
+	}
+}
+
 #define MAX_ASYNC_FRAMES 30
 //if return value is not null then do (os_atomic_dec_long(&output->refs) == 0) && obs_source_frame_destroy(output)
 static inline struct obs_source_frame *
@@ -2861,27 +2913,17 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 
 	pthread_mutex_lock(&source->async_mutex);
 
+	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
+		free_async_cache(source);
+		source->last_frame_ts = 0;
+		pthread_mutex_unlock(&source->async_mutex);
+		return NULL;
+	}
+
 	if (async_texture_changed(source, frame)) {
 		free_async_cache(source);
 		source->async_cache_width = frame->width;
 		source->async_cache_height = frame->height;
-	}
-
-	if (source->async_frames.num >= MAX_ASYNC_FRAMES) {
-		bool available = false;
-		for (size_t i = 0; i < source->async_cache.num; i++) {
-			struct async_frame *af = &source->async_cache.array[i];
-			if (!af->used) {
-				available = true;
-				break;
-			}
-		}
-
-		if (!available) {
-			source->last_frame_ts = 0;
-			pthread_mutex_unlock(&source->async_mutex);
-			return NULL;
-		}
 	}
 
 	const enum video_format format = frame->format;
@@ -2898,6 +2940,8 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 			break;
 		}
 	}
+
+	clean_cache(source);
 
 	if (!new_frame) {
 		struct async_frame new_af;
@@ -2929,7 +2973,11 @@ obs_source_output_video_internal(obs_source_t *source,
 		return;
 
 	if (!frame) {
+		pthread_mutex_lock(&source->async_mutex);
 		source->async_active = false;
+		source->last_frame_ts = 0;
+		free_async_cache(source);
+		pthread_mutex_unlock(&source->async_mutex);
 		return;
 	}
 
@@ -2952,6 +3000,8 @@ obs_source_output_video_internal(obs_source_t *source,
 void obs_source_output_video(obs_source_t *source,
 			     const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_output_video_internal(source, NULL);
 		return;
@@ -2967,6 +3017,8 @@ void obs_source_output_video(obs_source_t *source,
 void obs_source_output_video2(obs_source_t *source,
 			      const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_output_video_internal(source, NULL);
 		return;
@@ -3008,6 +3060,8 @@ void obs_source_set_async_rotation(obs_source_t *source, long rotation)
 void obs_source_output_cea708(obs_source_t *source,
 			      const struct obs_source_cea_708 *captions)
 {
+	if (destroying(source))
+		return;
 	if (!captions) {
 		return;
 	}
@@ -3067,6 +3121,8 @@ obs_source_preload_video_internal(obs_source_t *source,
 {
 	if (!obs_source_valid(source, "obs_source_preload_video"))
 		return;
+	if (destroying(source))
+		return;
 	if (!frame)
 		return;
 
@@ -3084,6 +3140,8 @@ obs_source_preload_video_internal(obs_source_t *source,
 void obs_source_preload_video(obs_source_t *source,
 			      const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3099,6 +3157,8 @@ void obs_source_preload_video(obs_source_t *source,
 void obs_source_preload_video2(obs_source_t *source,
 			       const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3137,7 +3197,8 @@ void obs_source_show_preloaded_video(obs_source_t *source)
 
 	if (!obs_source_valid(source, "obs_source_show_preloaded_video"))
 		return;
-
+	if (destroying(source))
+		return;
 	if (!source->async_preload_frame)
 		return;
 
@@ -3189,6 +3250,8 @@ obs_source_set_video_frame_internal(obs_source_t *source,
 void obs_source_set_video_frame(obs_source_t *source,
 				const struct obs_source_frame *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3204,6 +3267,8 @@ void obs_source_set_video_frame(obs_source_t *source,
 void obs_source_set_video_frame2(obs_source_t *source,
 				 const struct obs_source_frame2 *frame)
 {
+	if (destroying(source))
+		return;
 	if (!frame) {
 		obs_source_preload_video_internal(source, NULL);
 		return;
@@ -3418,6 +3483,8 @@ void obs_source_output_audio(obs_source_t *source,
 	struct obs_audio_data *output;
 
 	if (!obs_source_valid(source, "obs_source_output_audio"))
+		return;
+	if (destroying(source))
 		return;
 	if (!obs_ptr_valid(audio_in, "obs_source_output_audio"))
 		return;
@@ -4505,7 +4572,7 @@ static void source_signal_push_to_delay(obs_source_t *source,
 
 	calldata_init_fixed(&data, stack, sizeof(stack));
 	calldata_set_ptr(&data, "source", source);
-	calldata_set_bool(&data, "delay", delay);
+	calldata_set_int(&data, "delay", delay);
 
 	signal_handler_signal(source->context.signals, signal, &data);
 }
@@ -5016,6 +5083,8 @@ void obs_source_remove_audio_capture_callback(
 void obs_source_set_monitoring_type(obs_source_t *source,
 				    enum obs_monitoring_type type)
 {
+	struct calldata data;
+	uint8_t stack[128];
 	bool was_on;
 	bool now_on;
 
@@ -5023,6 +5092,13 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 		return;
 	if (source->monitoring_type == type)
 		return;
+
+	calldata_init_fixed(&data, stack, sizeof(stack));
+	calldata_set_ptr(&data, "source", source);
+	calldata_set_int(&data, "type", type);
+
+	signal_handler_signal(source->context.signals, "audio_monitoring",
+			      &data);
 
 	was_on = source->monitoring_type != OBS_MONITORING_TYPE_NONE;
 	now_on = type != OBS_MONITORING_TYPE_NONE;
@@ -5115,10 +5191,19 @@ enum speaker_layout obs_source_get_speaker_layout(obs_source_t *source)
 
 void obs_source_set_balance_value(obs_source_t *source, float balance)
 {
-	if (!obs_source_valid(source, "obs_source_set_balance_value"))
-		return;
+	if (obs_source_valid(source, "obs_source_set_balance_value")) {
+		struct calldata data;
+		uint8_t stack[128];
 
-	source->balance = balance;
+		calldata_init_fixed(&data, stack, sizeof(stack));
+		calldata_set_ptr(&data, "source", source);
+		calldata_set_float(&data, "balance", balance);
+
+		signal_handler_signal(source->context.signals, "audio_balance",
+				      &data);
+
+		source->balance = (float)calldata_float(&data, "balance");
+	}
 }
 
 float obs_source_get_balance_value(const obs_source_t *source)
@@ -5383,15 +5468,4 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 	}
 
 	da_free(cur_filters);
-}
-
-uint32_t obs_source_get_version(const obs_source_t *source)
-{
-	if (!obs_source_valid(source, "obs_source_get_version"))
-		return 0;
-
-	if (!source->info.version)
-		return 1;
-
-	return source->info.version;
 }

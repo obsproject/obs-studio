@@ -24,6 +24,9 @@ Quick Links for Contributing
   Instead, use crowdin.  Read here for more information:
   https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
 
+- To add a new service to OBS Studio please see the service submission guidelines:
+  https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
+
 Coding Guidelines
 -----------------
 

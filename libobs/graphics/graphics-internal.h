@@ -147,6 +147,8 @@ struct gs_exports {
 					       enum gs_blend_type dest_c,
 					       enum gs_blend_type src_a,
 					       enum gs_blend_type dest_a);
+	void (*device_blend_op)(gs_device_t *device, enum gs_blend_op_type op);
+
 	void (*device_depth_function)(gs_device_t *device,
 				      enum gs_depth_test test);
 	void (*device_stencil_function)(gs_device_t *device,
@@ -308,6 +310,8 @@ struct gs_exports {
 
 	gs_texture_t *(*device_texture_open_shared)(gs_device_t *device,
 						    uint32_t handle);
+	gs_texture_t *(*device_texture_open_nt_shared)(gs_device_t *device,
+						       uint32_t handle);
 	uint32_t (*device_texture_get_shared_handle)(gs_texture_t *tex);
 	gs_texture_t *(*device_texture_wrap_obj)(gs_device_t *device,
 						 void *obj);
@@ -333,6 +337,13 @@ struct gs_exports {
 		uint32_t drm_format, enum gs_color_format color_format,
 		uint32_t n_planes, const int *fds, const uint32_t *strides,
 		const uint32_t *offsets, const uint64_t *modifiers);
+	bool (*device_query_dmabuf_capabilities)(
+		gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+		uint32_t **drm_formats, size_t *n_formats);
+	bool (*device_query_dmabuf_modifiers_for_format)(gs_device_t *device,
+							 uint32_t drm_format,
+							 uint64_t **modifiers,
+							 size_t *n_modifiers);
 #endif
 };
 
@@ -342,6 +353,7 @@ struct blend_state {
 	enum gs_blend_type dest_c;
 	enum gs_blend_type src_a;
 	enum gs_blend_type dest_a;
+	enum gs_blend_op_type op;
 };
 
 struct graphics_subsystem {

@@ -25,6 +25,7 @@
 #include "obs-ffmpeg-output.h"
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
+#include <libavutil/channel_layout.h>
 
 struct ffmpeg_output {
 	obs_output_t *output;
@@ -345,7 +346,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
 
-	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
+	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
 
@@ -543,6 +544,7 @@ static enum AVCodecID get_codec_id(const char *name, int id)
 	return codec->id;
 }
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 static void set_encoder_ids(struct ffmpeg_data *data)
 {
 	data->output->oformat->video_codec = get_codec_id(
@@ -551,6 +553,7 @@ static void set_encoder_ids(struct ffmpeg_data *data)
 	data->output->oformat->audio_codec = get_codec_id(
 		data->config.audio_encoder, data->config.audio_encoder_id);
 }
+#endif
 
 bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 {
@@ -570,7 +573,13 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 
 	is_rtmp = (astrcmpi_n(config->url, "rtmp://", 7) == 0);
 
-	AVOutputFormat *output_format = av_guess_format(
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
+	AVOutputFormat *output_format;
+#else
+	const AVOutputFormat *output_format;
+#endif
+
+	output_format = av_guess_format(
 		is_rtmp ? "flv" : data->config.format_name, data->config.url,
 		is_rtmp ? NULL : data->config.format_mime_type);
 
@@ -596,6 +605,7 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 		goto fail;
 	}
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	if (is_rtmp) {
 		data->output->oformat->video_codec = AV_CODEC_ID_H264;
 		data->output->oformat->audio_codec = AV_CODEC_ID_AAC;
@@ -603,6 +613,14 @@ bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config)
 		if (data->config.format_name)
 			set_encoder_ids(data);
 	}
+#else
+	if (is_rtmp) {
+		data->config.audio_encoder = "aac";
+		data->config.audio_encoder_id = AV_CODEC_ID_AAC;
+		data->config.video_encoder = "libx264";
+		data->config.video_encoder_id = AV_CODEC_ID_H264;
+	}
+#endif
 
 	if (!init_streams(data))
 		goto fail;

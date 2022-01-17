@@ -199,6 +199,8 @@ void convert_sampler_info(struct gs_sampler_state *sampler,
 	else if (sampler->max_anisotropy > max_anisotropy_max)
 		sampler->max_anisotropy = max_anisotropy_max;
 
+	vec4_from_rgba(&sampler->border_color, info->border_color);
+
 	blog(LOG_DEBUG,
 	     "convert_sampler_info: 1 <= max_anisotropy <= "
 	     "%d violated, selected: %d, set: %d",
@@ -473,6 +475,13 @@ static bool load_texture_sampler(gs_texture_t *tex, gs_samplerstate_t *ss)
 		success = false;
 	if (!gl_tex_param_i(tex->gl_target, GL_TEXTURE_WRAP_R, ss->address_w))
 		success = false;
+	if (ss->address_u == GL_CLAMP_TO_BORDER ||
+	    ss->address_v == GL_CLAMP_TO_BORDER ||
+	    ss->address_w == GL_CLAMP_TO_BORDER) {
+		if (!gl_tex_param_fv(tex->gl_target, GL_TEXTURE_BORDER_COLOR,
+				     ss->border_color.ptr))
+			success = false;
+	}
 	if (GLAD_GL_EXT_texture_filter_anisotropic) {
 		if (!gl_tex_param_i(tex->gl_target,
 				    GL_TEXTURE_MAX_ANISOTROPY_EXT,
@@ -1258,6 +1267,17 @@ void device_blend_function_separate(gs_device_t *device,
 	glBlendFuncSeparate(gl_src_c, gl_dst_c, gl_src_a, gl_dst_a);
 	if (!gl_success("glBlendFuncSeparate"))
 		blog(LOG_ERROR, "device_blend_function_separate (GL) failed");
+
+	UNUSED_PARAMETER(device);
+}
+
+void device_blend_op(gs_device_t *device, enum gs_blend_op_type op)
+{
+	GLenum gl_blend_op = convert_gs_blend_op_type(op);
+
+	glBlendEquation(gl_blend_op);
+	if (!gl_success("glBlendEquation"))
+		blog(LOG_ERROR, "device_blend_op (GL) failed");
 
 	UNUSED_PARAMETER(device);
 }

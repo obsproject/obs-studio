@@ -69,11 +69,11 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	label = new QLabel(QTStr("Basic.AdvAudio.SyncOffset"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	label = new QLabel(QTStr("Basic.AdvAudio.Monitoring"));
-	label->setStyleSheet("font-weight: bold;");
-	mainLayout->addWidget(label, 0, idx++);
-#endif
+	if (obs_audio_monitoring_available()) {
+		label = new QLabel(QTStr("Basic.AdvAudio.Monitoring"));
+		label->setStyleSheet("font-weight: bold;");
+		mainLayout->addWidget(label, 0, idx++);
+	}
 	label = new QLabel(QTStr("Basic.AdvAudio.AudioTracks"));
 	label->setStyleSheet("font-weight: bold;");
 	mainLayout->addWidget(label, 0, idx++);
@@ -129,9 +129,6 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	setAttribute(Qt::WA_DeleteOnClose, true);
 
 	setContextMenuPolicy(Qt::CustomContextMenu);
-
-	connect(this, SIGNAL(customContextMenuRequested(const QPoint &)), this,
-		SLOT(ShowContextMenu(const QPoint &)));
 }
 
 OBSBasicAdvAudio::~OBSBasicAdvAudio()

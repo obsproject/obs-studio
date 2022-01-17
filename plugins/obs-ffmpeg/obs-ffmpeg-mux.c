@@ -66,6 +66,8 @@ static void ffmpeg_mux_destroy(void *data)
 	replay_buffer_clear(stream);
 	if (stream->mux_thread_joinable)
 		pthread_join(stream->mux_thread, NULL);
+	for (size_t i = 0; i < stream->mux_packets.num; i++)
+		obs_encoder_packet_release(&stream->mux_packets.array[i]);
 	da_free(stream->mux_packets);
 	circlebuf_free(&stream->packets);
 
@@ -167,8 +169,9 @@ static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
 	dstr_copy(&name, obs_encoder_get_name(aencoder));
 	dstr_replace(&name, "\"", "\"\"");
 
-	dstr_catf(cmd, "\"%s\" %d %d %d ", name.array, bitrate,
+	dstr_catf(cmd, "\"%s\" %d %d %d %d ", name.array, bitrate,
 		  (int)obs_encoder_get_sample_rate(aencoder),
+		  (int)obs_encoder_get_frame_size(aencoder),
 		  (int)audio_output_get_channels(audio));
 
 	dstr_free(&name);
@@ -787,7 +790,7 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 
 static void insert_packet(struct darray *array, struct encoder_packet *packet,
 			  int64_t video_offset, int64_t *audio_offsets,
-			  int64_t video_dts_offset, int64_t *audio_dts_offsets)
+			  int64_t video_pts_offset, int64_t *audio_dts_offsets)
 {
 	struct encoder_packet pkt;
 	DARRAY(struct encoder_packet) packets;
@@ -798,8 +801,8 @@ static void insert_packet(struct darray *array, struct encoder_packet *packet,
 
 	if (pkt.type == OBS_ENCODER_VIDEO) {
 		pkt.dts_usec -= video_offset;
-		pkt.dts -= video_dts_offset;
-		pkt.pts -= video_dts_offset;
+		pkt.dts -= video_pts_offset;
+		pkt.pts -= video_pts_offset;
 	} else {
 		pkt.dts_usec -= audio_offsets[pkt.track_idx];
 		pkt.dts -= audio_dts_offsets[pkt.track_idx];
@@ -847,6 +850,11 @@ static void *replay_buffer_mux_thread(void *data)
 error:
 	os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
+	if (error) {
+		for (size_t i = 0; i < stream->mux_packets.num; i++)
+			obs_encoder_packet_release(
+				&stream->mux_packets.array[i]);
+	}
 	da_free(stream->mux_packets);
 	os_atomic_set_bool(&stream->muxing, false);
 
@@ -873,7 +881,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	bool found_video = false;
 	bool found_audio[MAX_AUDIO_MIXES] = {0};
 	int64_t video_offset = 0;
-	int64_t video_dts_offset = 0;
+	int64_t video_pts_offset = 0;
 	int64_t audio_offsets[MAX_AUDIO_MIXES] = {0};
 	int64_t audio_dts_offsets[MAX_AUDIO_MIXES] = {0};
 
@@ -883,8 +891,9 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 
 		if (pkt->type == OBS_ENCODER_VIDEO) {
 			if (!found_video) {
-				video_offset = pkt->dts_usec;
-				video_dts_offset = pkt->dts;
+				video_pts_offset = pkt->pts;
+				video_offset = video_pts_offset * 1000000 /
+					       pkt->timebase_den;
 				found_video = true;
 			}
 		} else {
@@ -896,7 +905,7 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 		}
 
 		insert_packet(&stream->mux_packets.da, pkt, video_offset,
-			      audio_offsets, video_dts_offset,
+			      audio_offsets, video_pts_offset,
 			      audio_dts_offsets);
 	}
 
@@ -933,6 +942,10 @@ static void replay_buffer_save(struct ffmpeg_muxer *stream)
 	stream->mux_thread_joinable = pthread_create(&stream->mux_thread, NULL,
 						     replay_buffer_mux_thread,
 						     stream) == 0;
+	if (!stream->mux_thread_joinable) {
+		warn("Failed to create muxer thread");
+		os_atomic_set_bool(&stream->muxing, false);
+	}
 }
 
 static void deactivate_replay_buffer(struct ffmpeg_muxer *stream, int code)

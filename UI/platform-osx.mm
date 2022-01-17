@@ -23,6 +23,7 @@
 #include "obs-app.hpp"
 
 #include <unistd.h>
+#include <sys/sysctl.h>
 
 #import <AppKit/AppKit.h>
 
@@ -233,6 +234,19 @@ void EnableOSXDockIcon(bool enable)
 	else
 		[NSApp setActivationPolicy:
 				NSApplicationActivationPolicyProhibited];
+}
+
+bool ProcessIsRosettaTranslated()
+{
+#ifdef __aarch64__
+	return false;
+#else
+	int ret = 0;
+	size_t size = sizeof(ret);
+	if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1)
+		return false;
+	return ret == 1;
+#endif
 }
 
 /*

@@ -27,7 +27,9 @@
 #include "ffmpeg-mux.h"
 
 #include <util/dstr.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/channel_layout.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
 #define ANSI_COLOR_MAGENTA "\x1b[0;95m"
@@ -99,6 +101,7 @@ struct audio_params {
 	char *name;
 	int abitrate;
 	int sample_rate;
+	int frame_size;
 	int channels;
 };
 
@@ -218,6 +221,8 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 	if (!get_opt_int(argc, argv, &audio->abitrate, "audio bitrate"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->sample_rate, "audio sample rate"))
+		return false;
+	if (!get_opt_int(argc, argv, &audio->frame_size, "audio frame size"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->channels, "audio channels"))
 		return false;
@@ -445,16 +450,17 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
 	context->channels = ffm->audio[idx].channels;
 	context->sample_rate = ffm->audio[idx].sample_rate;
+	context->frame_size = ffm->audio[idx].frame_size;
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
-	//AVlib default channel layout for 4 channels is 4.0 ; fix for quad
+	//avutil default channel layout for 4 channels is 4.0 ; fix for quad
 	if (context->channels == 4)
 		context->channel_layout = av_get_channel_layout("quad");
-	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
+	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (context->channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
@@ -564,7 +570,11 @@ static inline bool ffmpeg_mux_get_extra_data(struct ffmpeg_mux *ffm)
 
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *format = ffm->output->oformat;
+#else
+	const AVOutputFormat *format = ffm->output->oformat;
+#endif
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
@@ -630,7 +640,11 @@ static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *output_format;
+#else
+	const AVOutputFormat *output_format;
+#endif
 	int ret;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
@@ -664,8 +678,10 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 		return FFM_ERROR;
 	}
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
+#endif
 
 	if (!init_streams(ffm)) {
 		free_avformat(ffm);

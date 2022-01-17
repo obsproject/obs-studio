@@ -121,6 +121,16 @@ enum obs_scale_type {
 	OBS_SCALE_AREA,
 };
 
+enum obs_blending_type {
+	OBS_BLEND_NORMAL,
+	OBS_BLEND_ADDITIVE,
+	OBS_BLEND_SUBTRACT,
+	OBS_BLEND_SCREEN,
+	OBS_BLEND_MULTIPLY,
+	OBS_BLEND_LIGHTEN,
+	OBS_BLEND_DARKEN,
+};
+
 /**
  * Used with scene items to indicate the type of bounds to use for scene items.
  * Mostly determines how the image will be scaled within those bounds, or
@@ -636,6 +646,9 @@ EXPORT void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *),
  */
 EXPORT obs_source_t *obs_get_source_by_name(const char *name);
 
+/** Get a transition source by its name. */
+EXPORT obs_source_t *obs_get_transition_by_name(const char *name);
+
 /** Gets an output by its name. */
 EXPORT obs_output_t *obs_get_output_by_name(const char *name);
 
@@ -740,6 +753,8 @@ EXPORT bool obs_obj_is_private(void *obj);
 typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 					 const char *id);
 
+EXPORT bool obs_audio_monitoring_available(void);
+
 EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 					      void *data);
 
@@ -763,6 +778,14 @@ EXPORT void obs_add_raw_video_callback(
 EXPORT void obs_remove_raw_video_callback(
 	void (*callback)(void *param, struct video_data *frame), void *param);
 
+EXPORT void
+obs_add_raw_audio_callback(size_t mix_idx,
+			   const struct audio_convert_info *conversion,
+			   audio_output_callback_t callback, void *param);
+EXPORT void obs_remove_raw_audio_callback(size_t mix_idx,
+					  audio_output_callback_t callback,
+					  void *param);
+
 EXPORT uint64_t obs_get_video_frame_time(void);
 
 EXPORT double obs_get_active_fps(void);
@@ -783,10 +806,15 @@ typedef void (*obs_task_t)(void *param);
 enum obs_task_type {
 	OBS_TASK_UI,
 	OBS_TASK_GRAPHICS,
+	OBS_TASK_AUDIO,
+	OBS_TASK_DESTROY,
 };
 
 EXPORT void obs_queue_task(enum obs_task_type type, obs_task_t task,
 			   void *param, bool wait);
+EXPORT bool obs_in_task_thread(enum obs_task_type type);
+
+EXPORT bool obs_wait_for_destroy_queue(void);
 
 typedef void (*obs_task_handler_t)(obs_task_t task, void *param, bool wait);
 EXPORT void obs_set_ui_task_handler(obs_task_handler_t handler);
@@ -1176,9 +1204,6 @@ EXPORT void obs_source_add_caption_callback(obs_source_t *source,
 EXPORT void obs_source_remove_caption_callback(obs_source_t *source,
 					       obs_source_caption_t callback,
 					       void *param);
-
-/** Get version of a source **/
-EXPORT uint32_t obs_source_get_version(const obs_source_t *source);
 
 enum obs_deinterlace_mode {
 	OBS_DEINTERLACE_MODE_DISABLE,
@@ -1734,6 +1759,11 @@ EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 EXPORT enum obs_scale_type
 obs_sceneitem_get_scale_filter(obs_sceneitem_t *item);
 
+EXPORT void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
+					    enum obs_blending_type type);
+EXPORT enum obs_blending_type
+obs_sceneitem_get_blending_mode(obs_sceneitem_t *item);
+
 EXPORT void obs_sceneitem_force_update_transform(obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item);
@@ -1816,6 +1846,7 @@ EXPORT void obs_sceneitem_transition_load(struct obs_scene_item *item,
 					  obs_data_t *data, bool show);
 EXPORT obs_data_t *obs_sceneitem_transition_save(struct obs_scene_item *item,
 						 bool show);
+EXPORT void obs_scene_prune_sources(obs_scene_t *scene);
 
 /* ------------------------------------------------------------------------- */
 /* Outputs */
@@ -2174,6 +2205,9 @@ EXPORT uint32_t obs_encoder_get_height(const obs_encoder_t *encoder);
 
 /** For audio encoders, returns the sample rate of the audio */
 EXPORT uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder);
+
+/** For audio encoders, returns the frame size of the audio packet */
+EXPORT size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder);
 
 /**
  * Sets the preferred video format for a video encoder.  If the encoder can use
