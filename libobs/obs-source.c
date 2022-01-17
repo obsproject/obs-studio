@@ -5090,6 +5090,7 @@ void obs_source_set_monitoring_type(obs_source_t *source,
 
 	if (!obs_source_valid(source, "obs_source_set_monitoring_type"))
 		return;
+
 	if (source->monitoring_type == type)
 		return;
 
