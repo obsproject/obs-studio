@@ -187,6 +187,8 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	}
 
 	auto sourceProps = ajaSource->GetSourceProps();
+	ajaSource->ResetVideoBuffer(sourceProps.videoFormat,
+				    sourceProps.pixelFormat);
 	auto inputSource = sourceProps.InitialInputSource();
 	auto channel = sourceProps.Channel();
 	auto audioSystem = sourceProps.AudioSystem();
@@ -1028,8 +1030,6 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	}
 
 	ajaSource->SetSourceProps(want_props);
-	ajaSource->ResetVideoBuffer(want_props.videoFormat,
-				    want_props.pixelFormat);
 	aja::Routing::StartSourceAudio(want_props, card);
 	card->SetReference(NTV2_REFERENCE_FREERUN);
 	ajaSource->Activate(true);
