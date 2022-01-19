@@ -45,9 +45,9 @@ private:
 	QDialogButtonBox *buttonBox;
 	QSplitter *windowSplitter;
 
-	OBSSource sourceA;
-	OBSSource sourceB;
-	OBSSource sourceClone;
+	OBSSourceAutoRelease sourceA;
+	OBSSourceAutoRelease sourceB;
+	OBSSourceAutoRelease sourceClone;
 	bool direction = true;
 
 	static void SourceRemoved(void *data, calldata_t *params);

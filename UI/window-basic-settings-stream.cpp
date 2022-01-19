@@ -94,8 +94,6 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(DisplayEnforceWarning(bool)));
 	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
 		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(editingFinished(const QString &)),
-		this, SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
 }
@@ -110,7 +108,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	loading = true;
 
-	obs_data_t *settings = obs_service_get_settings(service_obj);
+	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 
 	const char *service = obs_data_get_string(settings, "service");
 	const char *server = obs_data_get_string(settings, "server");
@@ -161,8 +159,6 @@ void OBSBasicSettings::LoadStream1Settings()
 	lastService.clear();
 	on_service_currentIndexChanged(0);
 
-	obs_data_release(settings);
-
 	UpdateKeyLink();
 	UpdateMoreInfoLink();
 	UpdateVodTrackSetting();
@@ -185,11 +181,9 @@ void OBSBasicSettings::SaveStream1Settings()
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
 	obs_service_t *oldService = main->GetService();
-	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
-	obs_data_release(hotkeyData);
+	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	if (!customServer) {
 		obs_data_set_string(settings, "service",
@@ -233,9 +227,8 @@ void OBSBasicSettings::SaveStream1Settings()
 
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
-	OBSService newService = obs_service_create(
+	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
-	obs_service_release(newService);
 
 	if (!newService)
 		return;
@@ -264,8 +257,7 @@ void OBSBasicSettings::UpdateMoreInfoLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -291,8 +283,7 @@ void OBSBasicSettings::UpdateKeyLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -326,8 +317,7 @@ void OBSBasicSettings::LoadServices(bool showAll)
 {
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_bool(settings, "show_all", showAll);
 
@@ -511,8 +501,7 @@ void OBSBasicSettings::UpdateServerList()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -558,8 +547,7 @@ OBSService OBSBasicSettings::SpawnTempService()
 	bool custom = IsCustomService();
 	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	if (!custom) {
 		obs_data_set_string(settings, "service",
@@ -574,11 +562,9 @@ OBSService OBSBasicSettings::SpawnTempService()
 	}
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
-	OBSService newService = obs_service_create(service_id, "temp_service",
-						   settings, nullptr);
-	obs_service_release(newService);
-
-	return newService;
+	OBSServiceAutoRelease newService = obs_service_create(
+		service_id, "temp_service", settings, nullptr);
+	return newService.Get();
 }
 
 void OBSBasicSettings::OnOAuthStreamKeyConnected()

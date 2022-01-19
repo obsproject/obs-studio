@@ -119,36 +119,28 @@ static inline float vec2_dist(const struct vec2 *v1, const struct vec2 *v2)
 
 static inline void vec2_minf(struct vec2 *dst, const struct vec2 *v, float val)
 {
-	if (v->x < val)
-		dst->x = val;
-	if (v->y < val)
-		dst->y = val;
+	dst->x = (v->x < val) ? v->x : val;
+	dst->y = (v->y < val) ? v->y : val;
 }
 
 static inline void vec2_min(struct vec2 *dst, const struct vec2 *v,
 			    const struct vec2 *min_v)
 {
-	if (v->x < min_v->x)
-		dst->x = min_v->x;
-	if (v->y < min_v->y)
-		dst->y = min_v->y;
+	dst->x = (v->x < min_v->x) ? v->x : min_v->x;
+	dst->y = (v->y < min_v->y) ? v->y : min_v->y;
 }
 
 static inline void vec2_maxf(struct vec2 *dst, const struct vec2 *v, float val)
 {
-	if (v->x > val)
-		dst->x = val;
-	if (v->y > val)
-		dst->y = val;
+	dst->x = (v->x > val) ? v->x : val;
+	dst->y = (v->y > val) ? v->y : val;
 }
 
 static inline void vec2_max(struct vec2 *dst, const struct vec2 *v,
 			    const struct vec2 *max_v)
 {
-	if (v->x > max_v->x)
-		dst->x = max_v->x;
-	if (v->y > max_v->y)
-		dst->y = max_v->y;
+	dst->x = (v->x > max_v->x) ? v->x : max_v->x;
+	dst->y = (v->y > max_v->y) ? v->y : max_v->y;
 }
 
 EXPORT void vec2_abs(struct vec2 *dst, const struct vec2 *v);

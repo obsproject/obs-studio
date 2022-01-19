@@ -10,6 +10,8 @@
 	<string>obs</string>
 	<key>CFBundleIdentifier</key>
 	<string>com.obsproject.obs-studio</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>(c) 2012-2021 Hugh Bailey</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>LSMinimumSystemVersion</key>

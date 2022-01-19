@@ -84,8 +84,13 @@ bool YoutubeApiWrappers::TryInsertCommand(const char *url,
 	if (error_code)
 		*error_code = httpStatusCode;
 
-	if (!success || output.empty())
+	if (!success || output.empty()) {
+		if (!error.empty())
+			blog(LOG_WARNING, "YouTube API request failed: %s",
+			     error.c_str());
 		return false;
+	}
+
 	json_out = Json::parse(output, error);
 #ifdef _DEBUG
 	blog(LOG_DEBUG, "YouTube API command answer: %s",
@@ -152,7 +157,7 @@ bool YoutubeApiWrappers::InsertCommand(const char *url,
 	if (json_out.object_items().find("error") !=
 	    json_out.object_items().end()) {
 		blog(LOG_ERROR,
-		     "YouTube API error:\n\tHTTP status: %d\n\tURL: %s\n\tJSON: %s",
+		     "YouTube API error:\n\tHTTP status: %ld\n\tURL: %s\n\tJSON: %s",
 		     error_code, url, json_out.dump().c_str());
 
 		lastError = json_out["error"]["code"].int_value();
@@ -405,7 +410,31 @@ bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
 
-	if (!ResetBroadcast(broadcast_id))
+	Json json_out;
+	if (!FindBroadcast(broadcast_id, json_out))
+		return false;
+
+	auto lifeCycleStatus =
+		json_out["items"][0]["status"]["lifeCycleStatus"].string_value();
+
+	if (lifeCycleStatus == "live" || lifeCycleStatus == "liveStarting")
+		// Broadcast is already (going to be) live
+		return true;
+	else if (lifeCycleStatus == "testStarting") {
+		// User will need to wait a few seconds before attempting to start broadcast
+		lastErrorMessage =
+			QTStr("YouTube.Actions.Error.BroadcastTestStarting");
+		lastErrorReason.clear();
+		return false;
+	}
+
+	// Only reset if broadcast has monitoring enabled and is not already in "testing" mode
+	auto monitorStreamEnabled =
+		json_out["items"][0]["contentDetails"]["monitorStream"]
+			["enableMonitorStream"]
+				.bool_value();
+	if (lifeCycleStatus != "testing" && monitorStreamEnabled &&
+	    !ResetBroadcast(broadcast_id, json_out))
 		return false;
 
 	const QString url_template = YOUTUBE_LIVE_BROADCAST_TRANSITION_URL
@@ -413,9 +442,10 @@ bool YoutubeApiWrappers::StartBroadcast(const QString &broadcast_id)
 		"&broadcastStatus=%2"
 		"&part=status";
 	const QString live = url_template.arg(broadcast_id, "live");
-	Json json_out;
-	return InsertCommand(QT_TO_UTF8(live), "application/json", "POST", "{}",
-			     json_out);
+	bool success = InsertCommand(QT_TO_UTF8(live), "application/json",
+				     "POST", "{}", json_out);
+	// Return a success if the command failed, but was redundant (broadcast already live)
+	return success || lastErrorReason == "redundantTransition";
 }
 
 bool YoutubeApiWrappers::StartLatestBroadcast()
@@ -434,8 +464,10 @@ bool YoutubeApiWrappers::StopBroadcast(const QString &broadcast_id)
 		"&part=status";
 	const QString url = url_template.arg(broadcast_id);
 	Json json_out;
-	return InsertCommand(QT_TO_UTF8(url), "application/json", "POST", "{}",
-			     json_out);
+	bool success = InsertCommand(QT_TO_UTF8(url), "application/json",
+				     "POST", "{}", json_out);
+	// Return a success if the command failed, but was redundant (broadcast already stopped)
+	return success || lastErrorReason == "redundantTransition";
 }
 
 bool YoutubeApiWrappers::StopLatestBroadcast()
@@ -453,23 +485,11 @@ QString YoutubeApiWrappers::GetBroadcastId()
 	return this->broadcast_id;
 }
 
-bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
+bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id,
+					json11::Json &json_out)
 {
 	lastErrorMessage.clear();
 	lastErrorReason.clear();
-
-	const QString url_template = YOUTUBE_LIVE_BROADCAST_URL
-		"?part=id,snippet,contentDetails,status"
-		"&id=%1";
-	const QString url = url_template.arg(broadcast_id);
-	Json json_out;
-
-	if (!InsertCommand(QT_TO_UTF8(url), "application/json", "", nullptr,
-			   json_out))
-		return false;
-
-	const QString put = YOUTUBE_LIVE_BROADCAST_URL
-		"?part=id,snippet,contentDetails,status";
 
 	auto snippet = json_out["items"][0]["snippet"];
 	auto status = json_out["items"][0]["status"];
@@ -514,6 +534,9 @@ bool YoutubeApiWrappers::ResetBroadcast(const QString &broadcast_id)
 			 {"startWithSlate", contentDetails["startWithSlate"]},
 		 }},
 	};
+
+	const QString put = YOUTUBE_LIVE_BROADCAST_URL
+		"?part=id,snippet,contentDetails,status";
 	return InsertCommand(QT_TO_UTF8(put), "application/json", "PUT",
 			     data.dump().c_str(), json_out);
 }

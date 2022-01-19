@@ -327,6 +327,14 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 		if (previewSettings &&
 		    obs_data_get_bool(previewSettings, "auto_start"))
 			preview_output_start();
+	} else if (event == OBS_FRONTEND_EVENT_EXIT) {
+		shutting_down = true;
+
+		if (preview_output_running)
+			preview_output_stop();
+
+		if (main_output_running)
+			output_stop();
 	}
 }
 

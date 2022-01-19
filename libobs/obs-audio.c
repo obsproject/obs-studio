@@ -442,6 +442,23 @@ static inline void release_audio_sources(struct obs_core_audio *audio)
 		obs_source_release(audio->render_order.array[i]);
 }
 
+static inline void execute_audio_tasks(void)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	bool tasks_remaining = true;
+
+	while (tasks_remaining) {
+		pthread_mutex_lock(&audio->task_mutex);
+		if (audio->tasks.size) {
+			struct obs_task_info info;
+			circlebuf_pop_front(&audio->tasks, &info, sizeof(info));
+			info.task(info.param);
+		}
+		tasks_remaining = !!audio->tasks.size;
+		pthread_mutex_unlock(&audio->task_mutex);
+	}
+}
+
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		    uint64_t *out_ts, uint32_t mixers,
 		    struct audio_output_data *mixes)
@@ -590,6 +607,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		audio->buffering_wait_ticks--;
 		return false;
 	}
+
+	execute_audio_tasks();
 
 	UNUSED_PARAMETER(param);
 	return true;

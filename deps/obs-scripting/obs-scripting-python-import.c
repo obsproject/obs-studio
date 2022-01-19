@@ -81,6 +81,7 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyUnicode_FromFormat);
 	IMPORT_FUNC(PyUnicode_Concat);
 	IMPORT_FUNC(PyLong_FromVoidPtr);
+	IMPORT_FUNC(PyLong_FromLong);
 	IMPORT_FUNC(PyBool_FromLong);
 	IMPORT_FUNC(PyGILState_Ensure);
 	IMPORT_FUNC(PyGILState_GetThisThreadState);

@@ -48,7 +48,9 @@
 #include <thread>
 #endif
 
-using namespace std;
+using std::string;
+using std::vector;
+using std::ostringstream;
 
 #ifdef __linux__
 void RunningInstanceCheck(bool &already_running)

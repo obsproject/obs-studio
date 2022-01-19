@@ -530,6 +530,11 @@ int ClassicImporter::ImportScenes(const string &path, string &name, Json &res)
 	Json sc = data;
 	translate_sc(sc, res);
 
+	QDir dir(path.c_str());
+
+	TranslateOSStudio(res);
+	TranslatePaths(res, QDir::cleanPath(dir.filePath("..")).toStdString());
+
 	return IMPORTER_SUCCESS;
 }
 

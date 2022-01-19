@@ -1,13 +1,8 @@
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #include <obs-module.h>
 
 #include "obs-outputs-config.h"
 
 #ifdef _WIN32
-#define WIN32_LEAN_AND_MEAN
 #include <winsock2.h>
 #include <mbedtls/threading.h>
 #endif

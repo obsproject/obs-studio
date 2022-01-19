@@ -74,7 +74,7 @@ static inline int get_stencil_format_bits(enum gs_zstencil_format zsformat)
 static inline void init_dummy_pixel_format(PIXELFORMATDESCRIPTOR *pfd)
 {
 	memset(pfd, 0, sizeof(PIXELFORMATDESCRIPTOR));
-	pfd->nSize = sizeof(pfd);
+	pfd->nSize = sizeof(PIXELFORMATDESCRIPTOR);
 	pfd->nVersion = 1;
 	pfd->iPixelType = PFD_TYPE_RGBA;
 	pfd->cColorBits = 32;

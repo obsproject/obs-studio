@@ -72,6 +72,7 @@ add_library(obs-virtualcam-module MODULE
 	${obs-virtualcam-module_SOURCES}
 	${obs-virtualcam-module_HEADERS})
 target_link_libraries(obs-virtualcam-module
+	setupapi
 	winmm
 	strmiids
 	gdiplus

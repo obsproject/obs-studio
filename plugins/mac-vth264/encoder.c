@@ -24,7 +24,8 @@ extern const double NSAppKitVersionNumber;
 #define NSAppKitVersionNumber10_8 1187
 
 // Get around missing symbol on 10.8 during compilation
-enum { kCMFormatDescriptionBridgeError_InvalidParameter_ = -12712,
+enum {
+	kCMFormatDescriptionBridgeError_InvalidParameter_ = -12712,
 };
 
 static bool is_appkit10_9_or_greater()
@@ -668,8 +669,10 @@ static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
 	dts = CMTimeMultiplyByFloat64(dts,
 				      ((Float64)enc->fps_num / enc->fps_den));
 
+	if (CMTIME_IS_INVALID(dts))
+		dts = pts;
 	// imitate x264's negative dts when bframes might have pts < dts
-	if (enc->bframes)
+	else if (enc->bframes)
 		dts = CMTimeSubtract(dts, off);
 
 	bool keyframe = is_sample_keyframe(buffer);

@@ -29,9 +29,13 @@ else()
 	endif()
 endif()
 
+find_package(FFmpeg REQUIRED
+        COMPONENTS avcodec avutil avformat)
+
 include_directories(
 	SYSTEM "${CMAKE_SOURCE_DIR}/libobs"
 	${LIBV4L2_INCLUDE_DIRS}
+	${FFMPEG_INCLUDE_DIRS}
 )
 
 set(linux-v4l2_SOURCES
@@ -40,6 +44,7 @@ set(linux-v4l2_SOURCES
 	v4l2-input.c
 	v4l2-helpers.c
 	v4l2-output.c
+	v4l2-mjpeg.c
 	${linux-v4l2-udev_SOURCES}
 )
 
@@ -50,6 +55,7 @@ target_link_libraries(linux-v4l2
 	libobs
 	${LIBV4L2_LIBRARIES}
 	${UDEV_LIBRARIES}
+	${FFMPEG_LIBRARIES}
 )
 set_target_properties(linux-v4l2 PROPERTIES FOLDER "plugins")
 

@@ -43,17 +43,15 @@ static OBSData OpenServiceSettings(std::string &type)
 	if (ret <= 0)
 		return OBSData();
 
-	OBSData data =
+	OBSDataAutoRelease data =
 		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
-	obs_data_release(data);
 
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
 
-	OBSData settings = obs_data_get_obj(data, "settings");
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
 
-	return settings;
+	return settings.Get();
 }
 
 static void GetServiceInfo(std::string &type, std::string &service,
@@ -340,8 +338,7 @@ inline bool AutoConfigStreamPage::IsCustomService() const
 
 bool AutoConfigStreamPage::validatePage()
 {
-	OBSData service_settings = obs_data_create();
-	obs_data_release(service_settings);
+	OBSDataAutoRelease service_settings = obs_data_create();
 
 	wiz->customServer = IsCustomService();
 
@@ -353,9 +350,8 @@ bool AutoConfigStreamPage::validatePage()
 				    QT_TO_UTF8(ui->service->currentText()));
 	}
 
-	OBSService service = obs_service_create(serverType, "temp_service",
-						service_settings, nullptr);
-	obs_service_release(service);
+	OBSServiceAutoRelease service = obs_service_create(
+		serverType, "temp_service", service_settings, nullptr);
 
 	int bitrate;
 	if (!ui->doBandwidthTest->isChecked()) {
@@ -376,8 +372,7 @@ bool AutoConfigStreamPage::validatePage()
 #endif
 	}
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", bitrate);
 	obs_service_apply_encoder_settings(service, settings, nullptr);
 
@@ -697,8 +692,7 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -724,8 +718,7 @@ void AutoConfigStreamPage::UpdateKeyLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -759,8 +752,7 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 {
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_bool(settings, "show_all", showAll);
 
@@ -823,8 +815,7 @@ void AutoConfigStreamPage::UpdateServerList()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -904,8 +895,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	/* ----------------------------------------- */
 	/* check to see if Twitch's "auto" available */
 
-	OBSData twitchSettings = obs_data_create();
-	obs_data_release(twitchSettings);
+	OBSDataAutoRelease twitchSettings = obs_data_create();
 
 	obs_data_set_string(twitchSettings, "service", "Twitch");
 
@@ -1077,11 +1067,9 @@ void AutoConfig::SaveStreamSettings()
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
 	obs_service_t *oldService = main->GetService();
-	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
-	obs_data_release(hotkeyData);
+	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	if (!customServer)
 		obs_data_set_string(settings, "service", serviceName.c_str());
@@ -1093,9 +1081,8 @@ void AutoConfig::SaveStreamSettings()
 	obs_data_set_string(settings, "key", key.c_str());
 #endif
 
-	OBSService newService = obs_service_create(
+	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
-	obs_service_release(newService);
 
 	if (!newService)
 		return;

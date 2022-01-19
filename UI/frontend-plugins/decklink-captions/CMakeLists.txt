@@ -21,6 +21,13 @@ set(decklink-captions_UI
         forms/captions.ui
         )
 
+if(WIN32)
+    set(MODULE_DESCRIPTION "OBS DeckLink Captions module")
+    configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in decklink-captions.rc)
+    list(APPEND decklink-captions_SOURCES
+            decklink-captions.rc)
+endif()
+
 if(APPLE)
     set(decklink-captions_PLATFORM_LIBS
             ${COCOA})

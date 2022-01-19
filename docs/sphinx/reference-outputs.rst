@@ -733,7 +733,7 @@ Functions used by outputs
            SPEAKERS_MONO,
            SPEAKERS_STEREO,
            SPEAKERS_2POINT1,
-           SPEAKERS_QUAD,
+           SPEAKERS_4POINT0,
            SPEAKERS_4POINT1,
            SPEAKERS_5POINT1,
            SPEAKERS_5POINT1_SURROUND,

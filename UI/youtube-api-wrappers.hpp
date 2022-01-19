@@ -70,7 +70,8 @@ public:
 			       const QString &thumbnail_file);
 	bool StartBroadcast(const QString &broadcast_id);
 	bool StopBroadcast(const QString &broadcast_id);
-	bool ResetBroadcast(const QString &broadcast_id);
+	bool ResetBroadcast(const QString &broadcast_id,
+			    json11::Json &json_out);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
 

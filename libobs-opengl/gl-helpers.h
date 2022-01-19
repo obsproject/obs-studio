@@ -173,6 +173,12 @@ static inline bool gl_tex_param_f(GLenum target, GLenum param, GLfloat val)
 	return gl_success("glTexParameterf");
 }
 
+static inline bool gl_tex_param_fv(GLenum target, GLenum param, GLfloat *val)
+{
+	glTexParameterfv(target, param, val);
+	return gl_success("glTexParameterf");
+}
+
 static inline bool gl_tex_param_i(GLenum target, GLenum param, GLint val)
 {
 	glTexParameteri(target, param, val);
