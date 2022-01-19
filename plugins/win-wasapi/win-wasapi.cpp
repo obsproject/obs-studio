@@ -1,5 +1,5 @@
 #include "enum-wasapi.hpp"
-#include <was-notify/audio-device-event.h>
+#include "audio-notify-client.h"
 
 #include <obs-module.h>
 #include <obs.h>
@@ -207,7 +207,7 @@ public:
 	~WASAPISource();
 
 	void Update(obs_data_t *settings);
-  
+
 	// IWASNotifyCallback
 	virtual void NotifyDefaultDeviceChanged(EDataFlow flow, ERole role,
 						LPCWSTR id);
@@ -264,8 +264,8 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	if (!notify)
 		throw "Could not create WASAPINotify";
 
-  notify->Release(); /* Default ref is 1, but ComPtr will call AddRef() */
-      
+	notify->Release(); /* Default ref is 1, but ComPtr will call AddRef() */
+
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
 				      CLSCTX_ALL,
 				      IID_PPV_ARGS(enumerator.Assign()));

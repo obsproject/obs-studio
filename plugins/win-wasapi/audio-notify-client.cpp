@@ -1,5 +1,4 @@
-#ifdef WIN32
-#include "audio-device-event.h"
+#include "audio-notify-client.h"
 #include <windows.h>
 #include <assert.h>
 
@@ -15,7 +14,7 @@ STDMETHODIMP_(ULONG) WASAPINotify::AddRef()
 
 STDMETHODIMP_(ULONG) STDMETHODCALLTYPE WASAPINotify::Release()
 {
-	long temp = InterlockedDecrement(&refs); 
+	long temp = InterlockedDecrement(&refs);
 	if (0 == temp)
 		delete this;
 	return temp;
@@ -63,6 +62,3 @@ STDMETHODIMP WASAPINotify::OnDefaultDeviceChanged(EDataFlow flow, ERole role,
 		cb->NotifyDefaultDeviceChanged(flow, role, pwstrDeviceId);
 	return S_OK;
 }
-
-//-------------------------------------------------------------------------
-#endif // WIN32

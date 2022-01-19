@@ -41,9 +41,6 @@
 #include "auth-base.hpp"
 #include "log-viewer.hpp"
 #include "undo-stack-obs.hpp"
-#ifdef WIN32
-#include "detect-reset-monitor.h"
-#endif
 
 #include <obs-frontend-internal.hpp>
 
@@ -335,10 +332,6 @@ private:
 
 	QScopedPointer<QThread> patronJsonThread;
 	std::string patronJson;
-
-#ifdef WIN32
-	OBSDetectResetAudioMonitor winDetectMonitor;
-#endif
 
 	void UpdateMultiviewProjectorMenu();
 

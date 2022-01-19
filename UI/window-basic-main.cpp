@@ -2057,10 +2057,6 @@ void OBSBasic::OBSInit()
 	OnFirstLoad();
 
 	activateWindow();
-  
-#ifdef WIN32
-	winDetectMonitor.Start();
-#endif
 }
 
 void OBSBasic::OnFirstLoad()
@@ -2556,10 +2552,6 @@ void OBSBasic::ClearHotkeys()
 
 OBSBasic::~OBSBasic()
 {
-#ifdef WIN32
-	winDetectMonitor.Stop();
-#endif
-
 	/* clear out UI event queue */
 	QApplication::sendPostedEvents(nullptr);
 	QApplication::sendPostedEvents(nullptr, QEvent::DeferredDelete);

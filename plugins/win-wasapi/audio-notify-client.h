@@ -1,5 +1,4 @@
 #pragma once
-#ifdef WIN32
 #include <Mmdeviceapi.h>
 
 class IWASNotifyCallback {
@@ -11,7 +10,7 @@ public:
 
 class WASAPINotify : public IMMNotificationClient {
 	long refs = 1;
-	IWASNotifyCallback *cb = NULL;
+	IWASNotifyCallback *cb = nullptr;
 
 public:
 	WASAPINotify(IWASNotifyCallback *cb_);
@@ -27,6 +26,3 @@ public:
 	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role,
 					    LPCWSTR pwstrDeviceId);
 };
-
-//-------------------------------------------------------------------------
-#endif // WIN32

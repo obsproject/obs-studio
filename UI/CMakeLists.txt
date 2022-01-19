@@ -418,17 +418,6 @@ set(obs_UI
 set(obs_QRC
 	forms/obs.qrc)
 
-if(MSVC)
-	list(APPEND obs_HEADERS
-		${CMAKE_SOURCE_DIR}/deps/was-notify/audio-device-event.h
-		detect-reset-monitor.h
-		)
-	list(APPEND obs_SOURCES
-		${CMAKE_SOURCE_DIR}/deps/was-notify/audio-device-event.cpp
-		detect-reset-monitor.cpp
-		)
-endif()
-
 if(YOUTUBE_ENABLED)
 	list(APPEND obs_SOURCES
 		window-youtube-actions.cpp
@@ -483,7 +472,6 @@ target_link_libraries(obs
 	${obs_PLATFORM_LIBRARIES})
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
-target_include_directories(obs PUBLIC ${CMAKE_SOURCE_DIR}/deps/)
 
 define_graphic_modules(obs)
 
