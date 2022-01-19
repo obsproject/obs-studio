@@ -700,6 +700,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	LoadEncoderTypes();
 	LoadColorRanges();
+	LoadColorSpaces();
 	LoadFormats();
 
 	auto ReloadAudioSources = [](void *data, calldata_t *param) {
@@ -1027,6 +1028,21 @@ void OBSBasicSettings::LoadColorRanges()
 {
 	ui->colorRange->addItem(CS_PARTIAL_STR, "Partial");
 	ui->colorRange->addItem(CS_FULL_STR, "Full");
+}
+
+#define CS_SRGB_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.sRGB")
+#define CS_709_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.709")
+#define CS_601_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.601")
+#define CS_2020PQ_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2020PQ")
+#define CS_2020HLG_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2020HLG")
+
+void OBSBasicSettings::LoadColorSpaces()
+{
+	ui->colorSpace->addItem(CS_SRGB_STR, "sRGB");
+	ui->colorSpace->addItem(CS_709_STR, "709");
+	ui->colorSpace->addItem(CS_601_STR, "601");
+	ui->colorSpace->addItem(CS_2020PQ_STR, "2020PQ");
+	ui->colorSpace->addItem(CS_2020HLG_STR, "2020HLG");
 }
 
 #define AV_FORMAT_DEFAULT_STR \
@@ -2514,6 +2530,35 @@ void OBSBasicSettings::LoadAudioSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::UpdateColorFormatSpaceWarning()
+{
+	const QString text = ui->colorFormat->currentText();
+	if (ui->colorSpace->currentIndex() >= 3) {
+		if (text == "P010") {
+			ui->advancedMsg2->clear();
+		} else if (text == "I010") {
+			ui->advancedMsg2->setText(
+				QTStr("Basic.Settings.Advanced.FormatWarning"));
+		} else {
+			ui->advancedMsg2->setText(QTStr(
+				"Basic.Settings.Advanced.FormatWarning2020"));
+		}
+	} else {
+		if (text == "NV12") {
+			ui->advancedMsg2->clear();
+		} else if (text == "I010") {
+			ui->advancedMsg2->setText(QTStr(
+				"Basic.Settings.Advanced.FormatWarningI010"));
+		} else if (text == "P010") {
+			ui->advancedMsg2->setText(QTStr(
+				"Basic.Settings.Advanced.FormatWarningP010"));
+		} else {
+			ui->advancedMsg2->setText(
+				QTStr("Basic.Settings.Advanced.FormatWarning"));
+		}
+	}
+}
+
 void OBSBasicSettings::LoadAdvancedSettings()
 {
 	const char *videoColorFormat =
@@ -2592,8 +2637,10 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->autoRemux->setChecked(autoRemux);
 	ui->dynBitrate->setChecked(dynBitrate);
 
+	UpdateColorFormatSpaceWarning();
+
 	SetComboByName(ui->colorFormat, videoColorFormat);
-	SetComboByName(ui->colorSpace, videoColorSpace);
+	SetComboByValue(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
 	ui->sdrWhiteLevel->setValue(sdrWhiteLevel);
 
@@ -3299,7 +3346,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #endif
 
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
-	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
+	SaveComboData(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
 	SaveSpinBox(ui->sdrWhiteLevel, "Video", "SdrWhiteLevel");
 	if (obs_audio_monitoring_available()) {
@@ -4026,15 +4073,14 @@ void OBSBasicSettings::on_advOutFFType_currentIndexChanged(int idx)
 	ui->advOutFFNoSpace->setHidden(idx != 0);
 }
 
-void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &text)
+void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &)
 {
-	bool usingNV12 = text == "NV12";
+	UpdateColorFormatSpaceWarning();
+}
 
-	if (usingNV12)
-		ui->advancedMsg2->setText(QString());
-	else
-		ui->advancedMsg2->setText(
-			QTStr("Basic.Settings.Advanced.FormatWarning"));
+void OBSBasicSettings::on_colorSpace_currentIndexChanged(const QString &)
+{
+	UpdateColorFormatSpaceWarning();
 }
 
 #define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"

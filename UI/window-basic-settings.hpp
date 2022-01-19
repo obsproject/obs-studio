@@ -222,8 +222,11 @@ private:
 
 	void LoadEncoderTypes();
 	void LoadColorRanges();
+	void LoadColorSpaces();
 	void LoadFormats();
 	void ReloadCodecs(const ff_format_desc *formatDesc);
+
+	void UpdateColorFormatSpaceWarning();
 
 	void LoadGeneralSettings();
 	void LoadStream1Settings();
@@ -360,6 +363,7 @@ private slots:
 	void on_advOutFFType_currentIndexChanged(int idx);
 
 	void on_colorFormat_currentIndexChanged(const QString &text);
+	void on_colorSpace_currentIndexChanged(const QString &text);
 
 	void on_filenameFormatting_textEdited(const QString &text);
 	void on_outputResolution_editTextChanged(const QString &text);
