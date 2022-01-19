@@ -4979,7 +4979,17 @@
                      </item>
                      <item>
                       <property name="text">
-                       <string>I444</string>
+                       <string notr="true">I444</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">P010</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">I010</string>
                       </property>
                      </item>
                      <item>
@@ -5014,23 +5024,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QComboBox" name="colorSpace">
-                       <item>
-                        <property name="text">
-                         <string notr="true">sRGB</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string notr="true">709</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string notr="true">601</string>
-                        </property>
-                       </item>
-                      </widget>
+                      <widget class="QComboBox" name="colorSpace"/>
                      </item>
                      <item>
                       <widget class="QLabel" name="label_34">
