@@ -1955,6 +1955,17 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		return NULL;
 	}
 
+	{
+		obs_sceneitem_t *item = scene->first_item;
+		while (item) {
+			if (item->source == source) {
+				blog(LOG_WARNING, "Tried to add a duplicated source to a scene");
+				return NULL;
+			}
+			item = item->next;
+		}
+	}
+
 	if (pthread_mutex_init(&mutex, NULL) != 0) {
 		blog(LOG_WARNING, "Failed to create scene item mutex");
 		return NULL;
