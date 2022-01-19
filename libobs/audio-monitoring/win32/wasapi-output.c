@@ -41,6 +41,7 @@ struct audio_monitor {
 	uint32_t channels;
 	bool source_has_video;
 	bool ignore;
+	bool check_ignore;
 
 	int64_t lowest_audio_offset;
 	struct circlebuf delay_buffer;
@@ -299,6 +300,43 @@ static void audio_monitor_free_for_reconnect(struct audio_monitor *monitor)
 	da_free(monitor->buf);
 }
 
+void audio_monitor_clear_buffer(struct audio_monitor *monitor);
+extern bool devices_match(const char *id1, const char *id2);
+static void audio_monitor_check_self(struct audio_monitor *monitor,
+				     obs_source_t *source)
+{
+	bool ignore_monitor = false;
+
+	do {
+		const char *id = obs->audio.monitoring_device_id;
+		if (!id) {
+			ignore_monitor = true;
+			break;
+		}
+
+		if (source->info.output_flags &
+		    OBS_SOURCE_DO_NOT_SELF_MONITOR) {
+			obs_data_t *s = obs_source_get_settings(source);
+			const char *s_dev_id =
+				obs_data_get_string(s, "device_id");
+			bool match = devices_match(s_dev_id, id);
+			obs_data_release(s);
+
+			if (match) {
+				ignore_monitor = true;
+				break;
+			}
+		}
+
+		ignore_monitor = false;
+	} while (false);
+
+	audio_monitor_clear_buffer(monitor);
+	monitor->ignore = ignore_monitor;
+
+	info("Should monitor audio : %s", ignore_monitor ? "No" : "Yes");
+}
+
 static void on_audio_playback(void *param, obs_source_t *source,
 			      const struct audio_data *audio_data, bool muted)
 {
@@ -309,6 +347,14 @@ static void on_audio_playback(void *param, obs_source_t *source,
 	uint64_t ts_offset;
 	bool success;
 	BYTE *output;
+
+	if (os_atomic_load_bool(&monitor->check_ignore)) {
+		os_atomic_set_bool(&monitor->check_ignore, false);
+		audio_monitor_check_self(monitor, monitor->source);
+	}
+
+	if (monitor->ignore)
+		return;
 
 	if (!TryAcquireSRWLockExclusive(&monitor->playback_mutex)) {
 		return;
@@ -385,9 +431,6 @@ unlock:
 
 static inline void audio_monitor_free(struct audio_monitor *monitor)
 {
-	if (monitor->ignore)
-		return;
-
 	if (monitor->source) {
 		obs_source_remove_audio_capture_callback(
 			monitor->source, on_audio_playback, monitor);
@@ -398,12 +441,13 @@ static inline void audio_monitor_free(struct audio_monitor *monitor)
 
 	safe_release(monitor->client);
 	safe_release(monitor->render);
-	audio_resampler_destroy(monitor->resampler);
+	if (monitor->resampler) {
+		audio_resampler_destroy(monitor->resampler);
+		monitor->resampler = NULL;
+	}
 	circlebuf_free(&monitor->delay_buffer);
 	da_free(monitor->buf);
 }
-
-extern bool devices_match(const char *id1, const char *id2);
 
 static bool audio_monitor_init(struct audio_monitor *monitor,
 			       obs_source_t *source)
@@ -416,32 +460,27 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	if (source->info.output_flags & OBS_SOURCE_DO_NOT_SELF_MONITOR) {
-		obs_data_t *s = obs_source_get_settings(source);
-		const char *s_dev_id = obs_data_get_string(s, "device_id");
-		bool match = devices_match(s_dev_id, id);
-		obs_data_release(s);
-
-		if (match) {
-			monitor->ignore = true;
-			return true;
-		}
-	}
-
 	InitializeSRWLock(&monitor->playback_mutex);
+
+	// called after initializing playback_mutex
+	audio_monitor_check_self(monitor, source);
 
 	return audio_monitor_init_wasapi(monitor);
 }
 
 static void audio_monitor_init_final(struct audio_monitor *monitor)
 {
-	if (monitor->ignore)
-		return;
-
 	monitor->source_has_video =
 		(monitor->source->info.output_flags & OBS_SOURCE_VIDEO) != 0;
 	obs_source_add_audio_capture_callback(monitor->source,
 					      on_audio_playback, monitor);
+}
+
+void audio_device_changed_callback(void *param, calldata_t *data)
+{
+	struct audio_monitor *monitor = param;
+	info("Receive signal that device is changed.");
+	os_atomic_set_bool(&monitor->check_ignore, true);
 }
 
 struct audio_monitor *audio_monitor_create(obs_source_t *source)
@@ -454,6 +493,10 @@ struct audio_monitor *audio_monitor_create(obs_source_t *source)
 	}
 
 	out = bmemdup(&monitor, sizeof(monitor));
+
+	signal_handler_t *signal = obs_source_get_signal_handler(source);
+	signal_handler_connect_ref(signal, "device_changed",
+				   audio_device_changed_callback, out);
 
 	pthread_mutex_lock(&obs->audio.monitoring_mutex);
 	da_push_back(obs->audio.monitors, &out);
@@ -489,6 +532,12 @@ void audio_monitor_reset(struct audio_monitor *monitor)
 void audio_monitor_destroy(struct audio_monitor *monitor)
 {
 	if (monitor) {
+		signal_handler_t *signal =
+			obs_source_get_signal_handler(monitor->source);
+		signal_handler_disconnect(signal, "device_changed",
+					  audio_device_changed_callback,
+					  monitor);
+
 		audio_monitor_free(monitor);
 
 		pthread_mutex_lock(&obs->audio.monitoring_mutex);
@@ -496,5 +545,24 @@ void audio_monitor_destroy(struct audio_monitor *monitor)
 		pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 
 		bfree(monitor);
+	}
+}
+
+void audio_monitor_clear_buffer(struct audio_monitor *monitor)
+{
+	if (monitor) {
+		AcquireSRWLockExclusive(&monitor->playback_mutex);
+		if (monitor->client) {
+			monitor->client->lpVtbl->Stop(monitor->client);
+			monitor->client->lpVtbl->Reset(monitor->client);
+			monitor->client->lpVtbl->Start(monitor->client);
+		}
+
+		circlebuf_free(&monitor->delay_buffer);
+		da_free(monitor->buf);
+		monitor->last_recv_time = 0;
+		monitor->prev_video_ts = 0;
+		monitor->time_since_prev = 0;
+		ReleaseSRWLockExclusive(&monitor->playback_mutex);
 	}
 }

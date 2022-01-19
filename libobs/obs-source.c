@@ -111,6 +111,7 @@ static const char *source_signals[] = {
 	"void media_previous(ptr source)",
 	"void media_started(ptr source)",
 	"void media_ended(ptr source)",
+	"void device_changed(ptr source)",
 	NULL,
 };
 
@@ -5373,6 +5374,18 @@ void obs_source_media_ended(obs_source_t *source)
 		return;
 
 	obs_source_dosignal(source, NULL, "media_ended");
+}
+
+void obs_source_device_changed(obs_source_t *source)
+{
+	if (!obs_source_valid(source, "obs_source_device_changed"))
+		return;
+
+	obs_source_t *s = obs_source_get_ref(source);
+	if (s) {
+		obs_source_dosignal(source, NULL, "device_changed");
+		obs_source_release(s);
+	}
 }
 
 obs_data_array_t *obs_source_backup_filters(obs_source_t *source)
