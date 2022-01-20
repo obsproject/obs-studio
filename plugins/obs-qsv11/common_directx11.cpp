@@ -460,6 +460,9 @@ mfxStatus simple_copytex(mfxHDL pthis, mfxMemId mid, mfxU32 tex_handle,
 
 	km->ReleaseSync(*next_key);
 
+	km->Release();
+	input_tex->Release();
+
 	return MFX_ERR_NONE;
 }
 
