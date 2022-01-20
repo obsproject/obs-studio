@@ -699,6 +699,8 @@ static void obs_free_data(void)
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
 
+	os_task_queue_wait(obs->destruction_task_thread);
+
 	pthread_mutex_destroy(&data->sources_mutex);
 	pthread_mutex_destroy(&data->audio_sources_mutex);
 	pthread_mutex_destroy(&data->displays_mutex);
