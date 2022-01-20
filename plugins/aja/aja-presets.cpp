@@ -952,7 +952,7 @@ void RoutingConfigurator::build_preset_table()
 		  VPIDStandard_2160_DualLink,
 		  2,
 		  2,
-		  kConvert3GIn | kEnable4KTSI,
+		  kEnable4KTSI,
 		  "sdi[{ch1}][0]->tsi[{ch1}][0];"
 		  "sdi[{ch1}][1]->tsi[{ch1}][1];"
 		  "sdi[{ch2}][0]->tsi[{ch2}][0];"
