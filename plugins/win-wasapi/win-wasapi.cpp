@@ -1,4 +1,5 @@
 #include "enum-wasapi.hpp"
+#include "audio-notify-client.h"
 
 #include <obs-module.h>
 #include <obs.h>
@@ -86,7 +87,7 @@ protected:
 	DWORD queue_id = 0;
 };
 
-class WASAPISource {
+class WASAPISource : public IWASNotifyCallback {
 	ComPtr<IMMNotificationClient> notify;
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IAudioClient> client;
@@ -207,62 +208,13 @@ public:
 
 	void Update(obs_data_t *settings);
 
-	void SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id);
+	// IWASNotifyCallback
+	virtual void NotifyDefaultDeviceChanged(EDataFlow flow, ERole role,
+						LPCWSTR id);
 
 	void OnStartCapture();
 	void OnSampleReady();
 	void OnRestart();
-};
-
-class WASAPINotify : public IMMNotificationClient {
-	long refs = 0; /* auto-incremented to 1 by ComPtr */
-	WASAPISource *source;
-
-public:
-	WASAPINotify(WASAPISource *source_) : source(source_) {}
-
-	STDMETHODIMP_(ULONG) AddRef()
-	{
-		return (ULONG)os_atomic_inc_long(&refs);
-	}
-
-	STDMETHODIMP_(ULONG) STDMETHODCALLTYPE Release()
-	{
-		long val = os_atomic_dec_long(&refs);
-		if (val == 0)
-			delete this;
-		return (ULONG)val;
-	}
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ptr)
-	{
-		if (riid == IID_IUnknown) {
-			*ptr = (IUnknown *)this;
-		} else if (riid == __uuidof(IMMNotificationClient)) {
-			*ptr = (IMMNotificationClient *)this;
-		} else {
-			*ptr = nullptr;
-			return E_NOINTERFACE;
-		}
-
-		os_atomic_inc_long(&refs);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role,
-					    LPCWSTR id)
-	{
-		source->SetDefaultDevice(flow, role, id);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDeviceAdded(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceRemoved(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceStateChanged(LPCWSTR, DWORD) { return S_OK; }
-	STDMETHODIMP OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY)
-	{
-		return S_OK;
-	}
 };
 
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
@@ -311,6 +263,8 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	notify = new WASAPINotify(this);
 	if (!notify)
 		throw "Could not create WASAPINotify";
+
+	notify->Release(); /* Default ref is 1, but ComPtr will call AddRef() */
 
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
 				      CLSCTX_ALL,
@@ -910,7 +864,8 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 	return 0;
 }
 
-void WASAPISource::SetDefaultDevice(EDataFlow flow, ERole role, LPCWSTR id)
+void WASAPISource::NotifyDefaultDeviceChanged(EDataFlow flow, ERole role,
+					      LPCWSTR id)
 {
 	if (!isDefaultDevice)
 		return;

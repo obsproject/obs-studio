@@ -2293,6 +2293,24 @@ bool obs_obj_is_private(void *obj)
 	return context->private;
 }
 
+void obs_default_audio_output_device_changed()
+{
+	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
+	if (strcmp(obs->audio.monitoring_device_id, "default") == 0) {
+		blog(LOG_INFO,
+		     "Default audio output device has changed. Reset monitor if needed.");
+
+		for (size_t i = 0; i < obs->audio.monitors.num; i++) {
+			struct audio_monitor *monitor =
+				obs->audio.monitors.array[i];
+			audio_monitor_reset(monitor);
+		}
+	}
+
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
