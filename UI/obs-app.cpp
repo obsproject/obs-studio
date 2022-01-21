@@ -1178,11 +1178,11 @@ OBSApp::~OBSApp()
 #endif
 
 #ifdef __APPLE__
-	bool vsyncDiabled =
+	bool vsyncDisabled =
 		config_get_bool(globalConfig, "Video", "DisableOSXVSync");
 	bool resetVSync =
 		config_get_bool(globalConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDiabled && resetVSync)
+	if (vsyncDisabled && resetVSync)
 		EnableOSXVSync(true);
 #endif
 
