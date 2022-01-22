@@ -165,4 +165,5 @@ public:
 
 	inline void UpdateSettings() { callback(obj, nullptr, settings); }
 	inline bool DeferUpdate() const { return deferUpdate; }
+	inline void *GetObj() { return obj; }
 };
