@@ -66,6 +66,8 @@ extern void GetSortedVideoFormats(NTV2DeviceID id,
 extern NTV2VideoFormat
 HandleSpecialCaseFormats(IOSelection io, NTV2VideoFormat vf, NTV2DeviceID id);
 
+extern NTV2Channel WidgetIDToChannel(NTV2WidgetID id);
+
 extern uint32_t CardNumFramestores(NTV2DeviceID id);
 extern uint32_t CardNumAudioSystems(NTV2DeviceID id);
 extern bool CardCanDoSDIMonitorOutput(NTV2DeviceID id);

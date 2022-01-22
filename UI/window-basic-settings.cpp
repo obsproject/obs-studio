@@ -4031,17 +4031,18 @@ bool OBSBasicSettings::AskIfCanCloseSettings()
 
 void OBSBasicSettings::on_filenameFormatting_textEdited(const QString &text)
 {
+	QString safeStr = text;
+
 #ifdef __APPLE__
-	size_t invalidLocation = text.toStdString().find_first_of(":");
-#elif _WIN32
-	size_t invalidLocation = text.toStdString().find_first_of("<>:\"|?*");
+	safeStr.replace(QRegularExpression("[:]"), "");
+#elif defined(_WIN32)
+	safeStr.replace(QRegularExpression("[<>:\"\\|\\?\\*]"), "");
 #else
-	size_t invalidLocation = string::npos;
-	UNUSED_PARAMETER(text);
+	// TODO: Add filtering for other platforms
 #endif
 
-	if (invalidLocation != string::npos)
-		ui->filenameFormatting->backspace();
+	if (text != safeStr)
+		ui->filenameFormatting->setText(safeStr);
 }
 
 void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)

@@ -286,7 +286,7 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 				  DWORD process_id)
 {
 	typedef HANDLE(WINAPI * PFN_OpenProcess)(DWORD, BOOL, DWORD);
-	PFN_OpenProcess open_process_proc = NULL;
+	static PFN_OpenProcess open_process_proc = NULL;
 	if (!open_process_proc)
 		open_process_proc = (PFN_OpenProcess)get_obfuscated_func(
 			kernel32(), "NuagUykjcxr", 0x1B694B59451ULL);

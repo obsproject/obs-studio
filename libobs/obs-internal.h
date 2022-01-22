@@ -270,8 +270,8 @@ struct obs_core_video {
 	gs_samplerstate_t *point_sampler;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
-	long raw_active;
-	long gpu_encoder_active;
+	volatile long raw_active;
+	volatile long gpu_encoder_active;
 	pthread_mutex_t gpu_encoder_mutex;
 	struct circlebuf gpu_encoder_queue;
 	struct circlebuf gpu_encoder_avail_queue;
