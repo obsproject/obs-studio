@@ -494,6 +494,12 @@ obs_properties_t *av1_properties(bool svtav1)
 		obs_property_list_add_int(p, "Very likely too slow (6)", 6);
 		obs_property_list_add_int(p, "Probably too slow (7)", 7);
 		obs_property_list_add_int(p, "Seems okay (8)", 8);
+		obs_property_list_add_int(p, "Might be better (9)", 9);
+		obs_property_list_add_int(p, "A little bit faster? (10)", 10);
+		obs_property_list_add_int(p, "Hmm, not bad speed (11)", 11);
+		obs_property_list_add_int(
+			p, "Whoa, although quality might be not so great (12)",
+			12);
 	} else {
 		obs_property_list_add_int(p, "Probably too slow (7)", 7);
 		obs_property_list_add_int(p, "Okay (8)", 8);
