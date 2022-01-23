@@ -236,12 +236,12 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 	dstr_free(&exe);
 }
 
-static inline bool IsWindowCloaked(window)
+static inline bool IsWindowCloaked(HWND window)
 {
-	int cloaked;
+	DWORD cloaked;
 	HRESULT hr = DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
 					   sizeof(cloaked));
-	return (SUCCEEDED(hr) && cloaked);
+	return SUCCEEDED(hr) && cloaked;
 }
 
 static bool check_window_valid(HWND window, enum window_search_mode mode)
