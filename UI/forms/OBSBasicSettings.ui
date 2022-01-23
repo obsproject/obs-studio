@@ -250,6 +250,9 @@
                      <property name="text">
                       <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
                      </property>
+                     <property name="toolTip">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture.Tooltip</string>
+                     </property>
                     </widget>
                    </item>
                   </layout>
