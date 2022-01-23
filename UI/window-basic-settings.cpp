@@ -1241,6 +1241,9 @@ void OBSBasicSettings::LoadGeneralSettings()
 			config_get_bool(GetGlobalConfig(), "BasicWindow",
 					"HideOBSWindowsFromCapture");
 		ui->hideOBSFromCapture->setChecked(hideWindowFromCapture);
+
+		connect(ui->hideOBSFromCapture, SIGNAL(stateChanged(int)), this,
+			SLOT(HideOBSWindowWarning(int)));
 	}
 #endif
 
@@ -4207,6 +4210,24 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 		SaveCombo(ui->advOutTrack5Bitrate, "AdvOut", "Track5Bitrate");
 		SaveCombo(ui->advOutTrack6Bitrate, "AdvOut", "Track6Bitrate");
 	}
+}
+
+void OBSBasicSettings::HideOBSWindowWarning(int state)
+{
+	if (loading || state == Qt::Unchecked)
+		return;
+
+	if (config_get_bool(GetGlobalConfig(), "General",
+			    "WarnedAboutHideOBSFromCapture"))
+		return;
+
+	OBSMessageBox::information(
+		this, QTStr("Basic.Settings.General.HideOBSWindowsFromCapture"),
+		QTStr("Basic.Settings.General.HideOBSWindowsFromCapture.Message"));
+
+	config_set_bool(GetGlobalConfig(), "General",
+			"WarnedAboutHideOBSFromCapture", true);
+	config_save_safe(GetGlobalConfig(), "tmp", nullptr);
 }
 
 /*
