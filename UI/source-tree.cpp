@@ -193,6 +193,9 @@ void SourceTreeItem::DisconnectSignals()
 	lockedSignal.Disconnect();
 	renameSignal.Disconnect();
 	removeSignal.Disconnect();
+
+	if (obs_sceneitem_is_group(sceneitem))
+		groupReorderSignal.Disconnect();
 }
 
 void SourceTreeItem::Clear()
