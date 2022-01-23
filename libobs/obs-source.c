@@ -619,7 +619,13 @@ void obs_source_destroy(struct obs_source *source)
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
 
-	os_atomic_set_long(&source->destroying, true);
+	if (os_atomic_set_long(&source->destroying, true) == true) {
+		blog(LOG_ERROR, "Double destroy just occurred. "
+				"Something called addref on a source "
+				"after it was already fully released, "
+				"I guess.");
+		return;
+	}
 
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&source->audio_cb_mutex);
