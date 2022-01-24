@@ -25,19 +25,23 @@
 
 template<typename T, void release(T)> class OBSRefAutoRelease;
 template<typename T, void addref(T), void release(T)> class OBSRef;
+template<typename T, T getref(T), void release(T)> class OBSSafeRef;
 
-using OBSSource = OBSRef<obs_source_t *, obs_source_addref, obs_source_release>;
-using OBSScene = OBSRef<obs_scene_t *, obs_scene_addref, obs_scene_release>;
+using OBSSource =
+	OBSSafeRef<obs_source_t *, obs_source_get_ref, obs_source_release>;
+using OBSScene =
+	OBSSafeRef<obs_scene_t *, obs_scene_get_ref, obs_scene_release>;
 using OBSSceneItem =
 	OBSRef<obs_sceneitem_t *, obs_sceneitem_addref, obs_sceneitem_release>;
 using OBSData = OBSRef<obs_data_t *, obs_data_addref, obs_data_release>;
 using OBSDataArray = OBSRef<obs_data_array_t *, obs_data_array_addref,
 			    obs_data_array_release>;
-using OBSOutput = OBSRef<obs_output_t *, obs_output_addref, obs_output_release>;
+using OBSOutput =
+	OBSSafeRef<obs_output_t *, obs_output_get_ref, obs_output_release>;
 using OBSEncoder =
-	OBSRef<obs_encoder_t *, obs_encoder_addref, obs_encoder_release>;
+	OBSSafeRef<obs_encoder_t *, obs_encoder_get_ref, obs_encoder_release>;
 using OBSService =
-	OBSRef<obs_service_t *, obs_service_addref, obs_service_release>;
+	OBSSafeRef<obs_service_t *, obs_service_get_ref, obs_service_release>;
 
 using OBSWeakSource = OBSRef<obs_weak_source_t *, obs_weak_source_addref,
 			     obs_weak_source_release>;
@@ -150,17 +154,56 @@ public:
 	inline OBSRef &operator=(const OBSRef &ref) { return Replace(ref.val); }
 	inline OBSRef &operator=(T valIn) { return Replace(valIn); }
 
-	friend OBSSource OBSGetStrongRef(obs_weak_source_t *weak);
 	friend OBSWeakSource OBSGetWeakRef(obs_source_t *source);
-
-	friend OBSOutput OBSGetStrongRef(obs_weak_output_t *weak);
 	friend OBSWeakOutput OBSGetWeakRef(obs_output_t *output);
-
-	friend OBSEncoder OBSGetStrongRef(obs_weak_encoder_t *weak);
 	friend OBSWeakEncoder OBSGetWeakRef(obs_encoder_t *encoder);
-
-	friend OBSService OBSGetStrongRef(obs_weak_service_t *weak);
 	friend OBSWeakService OBSGetWeakRef(obs_service_t *service);
+};
+
+template<typename T, T getref(T), void release(T)>
+class OBSSafeRef : public OBSRefAutoRelease<T, release> {
+
+	inline OBSSafeRef &Replace(T valIn)
+	{
+		T newVal = getref(valIn);
+		release(this->val);
+		this->val = newVal;
+		return *this;
+	}
+
+	struct TakeOwnership {
+	};
+	inline OBSSafeRef(T val_, TakeOwnership)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
+	{
+	}
+
+public:
+	inline OBSSafeRef()
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(nullptr)
+	{
+	}
+	inline OBSSafeRef(const OBSSafeRef &ref)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(ref.val)
+	{
+		this->val = getref(ref.val);
+	}
+	inline OBSSafeRef(T val_)
+		: OBSRefAutoRelease<T, release>::OBSRefAutoRelease(val_)
+	{
+		this->val = getref(this->val);
+	}
+
+	inline OBSSafeRef &operator=(const OBSSafeRef &ref)
+	{
+		return Replace(ref.val);
+	}
+	inline OBSSafeRef &operator=(T valIn) { return Replace(valIn); }
+
+	friend OBSSource OBSGetStrongRef(obs_weak_source_t *weak);
+	friend OBSOutput OBSGetStrongRef(obs_weak_output_t *weak);
+	friend OBSEncoder OBSGetStrongRef(obs_weak_encoder_t *weak);
+	friend OBSService OBSGetStrongRef(obs_weak_service_t *weak);
 };
 
 inline OBSSource OBSGetStrongRef(obs_weak_source_t *weak)
