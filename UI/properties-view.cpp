@@ -1452,26 +1452,31 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		AddColorAlpha(property, layout, label);
 	}
 
-	if (widget && !obs_property_enabled(property))
-		widget->setEnabled(false);
+	if (!widget && !label)
+		return;
 
 	if (!label && type != OBS_PROPERTY_BOOL &&
 	    type != OBS_PROPERTY_BUTTON && type != OBS_PROPERTY_GROUP)
 		label = new QLabel(QT_UTF8(obs_property_description(property)));
 
-	if (warning && label) //TODO: select color based on background color
-		label->setStyleSheet("QLabel { color: red; }");
+	if (label) {
+		if (warning) //TODO: select color based on background color
+			label->setStyleSheet("QLabel { color: red; }");
 
-	if (label && minSize) {
-		label->setMinimumWidth(minSize);
-		label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+		if (minSize) {
+			label->setMinimumWidth(minSize);
+			label->setAlignment(Qt::AlignRight | Qt::AlignVCenter);
+		}
+
+		if (!obs_property_enabled(property))
+			label->setEnabled(false);
 	}
-
-	if (label && !obs_property_enabled(property))
-		label->setEnabled(false);
 
 	if (!widget)
 		return;
+
+	if (!obs_property_enabled(property))
+		widget->setEnabled(false);
 
 	if (obs_property_long_description(property)) {
 		bool lightTheme = palette().text().color().redF() < 0.5;
