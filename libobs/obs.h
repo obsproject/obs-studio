@@ -1593,6 +1593,8 @@ EXPORT obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 EXPORT void obs_scene_addref(obs_scene_t *scene);
 EXPORT void obs_scene_release(obs_scene_t *scene);
 
+EXPORT obs_scene_t *obs_scene_get_ref(obs_scene_t *scene);
+
 /** Gets the scene's source context */
 EXPORT obs_source_t *obs_scene_get_source(const obs_scene_t *scene);
 
