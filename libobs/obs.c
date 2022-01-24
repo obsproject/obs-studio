@@ -1441,7 +1441,7 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 
 	pthread_mutex_lock(&view->channels_mutex);
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
 
 	prev_source = view->channels[channel];
 

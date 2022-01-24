@@ -241,7 +241,7 @@ set_source(obs_source_t *transition, enum obs_transition_target target,
 	bool already_active;
 
 	if (new_child)
-		obs_source_addref(new_child);
+		new_child = obs_source_get_ref(new_child);
 
 	lock_transition(transition);
 
@@ -294,7 +294,7 @@ obs_source_t *obs_transition_get_source(obs_source_t *transition,
 
 	lock_transition(transition);
 	ret = transition->transition_sources[idx];
-	obs_source_addref(ret);
+	ret = obs_source_get_ref(ret);
 	unlock_transition(transition);
 
 	return ret;
@@ -312,7 +312,7 @@ obs_source_t *obs_transition_get_active_source(obs_source_t *transition)
 		ret = transition->transition_sources[1];
 	else
 		ret = transition->transition_sources[0];
-	obs_source_addref(ret);
+	ret = obs_source_get_ref(ret);
 	unlock_transition(transition);
 
 	return ret;
@@ -442,7 +442,7 @@ void obs_transition_set(obs_source_t *transition, obs_source_t *source)
 	if (!transition_valid(transition, "obs_transition_clear"))
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
 
 	lock_transition(transition);
 	for (size_t i = 0; i < 2; i++) {
@@ -632,10 +632,8 @@ struct transition_state {
 static inline void copy_transition_state(obs_source_t *transition,
 					 struct transition_state *state)
 {
-	state->s[0] = transition->transition_sources[0];
-	state->s[1] = transition->transition_sources[1];
-	obs_source_addref(state->s[0]);
-	obs_source_addref(state->s[1]);
+	state->s[0] = obs_source_get_ref(transition->transition_sources[0]);
+	state->s[1] = obs_source_get_ref(transition->transition_sources[1]);
 
 	state->transitioning_video = transition->transitioning_video;
 	state->transitioning_audio = transition->transitioning_audio;
@@ -1038,7 +1036,8 @@ static inline obs_source_t *
 copy_source_state(obs_source_t *tr_dest, obs_source_t *tr_source, size_t idx)
 {
 	obs_source_t *old_child = tr_dest->transition_sources[idx];
-	obs_source_t *new_child = tr_source->transition_sources[idx];
+	obs_source_t *new_child =
+		obs_source_get_ref(tr_source->transition_sources[idx]);
 	bool active = tr_source->transition_source_active[idx];
 
 	if (old_child && tr_dest->transition_source_active[idx])
@@ -1049,7 +1048,6 @@ copy_source_state(obs_source_t *tr_dest, obs_source_t *tr_source, size_t idx)
 
 	if (active && new_child)
 		obs_source_add_active_child(tr_dest, new_child);
-	obs_source_addref(new_child);
 
 	return old_child;
 }

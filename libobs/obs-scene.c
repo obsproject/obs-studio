@@ -1478,8 +1478,7 @@ static inline obs_source_t *dup_child(struct darray *array, size_t idx,
 		struct obs_scene_item *item = old_items.array[i];
 		if (item->source == source) {
 			source = get_child_at_idx(new_scene, i);
-			obs_source_addref(source);
-			return source;
+			return obs_source_get_ref(source);
 		}
 	}
 
@@ -1489,8 +1488,7 @@ static inline obs_source_t *dup_child(struct darray *array, size_t idx,
 
 static inline obs_source_t *new_ref(obs_source_t *source)
 {
-	obs_source_addref(source);
-	return source;
+	return obs_source_get_ref(source);
 }
 
 static inline void duplicate_item_data(struct obs_scene_item *dst,
@@ -1954,6 +1952,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	if (!scene)
 		return NULL;
 
+	source = obs_source_get_ref(source);
 	if (!source) {
 		blog(LOG_ERROR, "Tried to add a NULL source to a scene");
 		return NULL;
@@ -1961,19 +1960,19 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 
 	if (source->removed) {
 		blog(LOG_WARNING, "Tried to add a removed source to a scene");
-		return NULL;
+		goto release_source_and_fail;
 	}
 
 	if (pthread_mutex_init(&mutex, NULL) != 0) {
 		blog(LOG_WARNING, "Failed to create scene item mutex");
-		return NULL;
+		goto release_source_and_fail;
 	}
 
 	if (!obs_source_add_active_child(scene->source, source)) {
 		blog(LOG_WARNING, "Failed to add source to scene due to "
 				  "infinite source recursion");
 		pthread_mutex_destroy(&mutex);
-		return NULL;
+		goto release_source_and_fail;
 	}
 
 	item = bzalloc(sizeof(struct obs_scene_item));
@@ -1992,8 +1991,6 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
 	matrix4_identity(&item->box_transform);
-
-	obs_source_addref(source);
 
 	if (source_has_audio(source)) {
 		item->visible = false;
@@ -2039,6 +2036,10 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 			       sceneitem_renamed, item);
 
 	return item;
+
+release_source_and_fail:
+	obs_source_release(source);
+	return NULL;
 }
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
@@ -2433,9 +2434,11 @@ void obs_sceneitem_set_order(obs_sceneitem_t *item,
 		return;
 
 	struct obs_scene_item *next, *prev;
-	struct obs_scene *scene = item->parent;
+	struct obs_scene *scene = obs_scene_get_ref(item->parent);
 
-	obs_scene_addref(scene);
+	if (!scene)
+		return;
+
 	full_lock(scene);
 
 	next = item->next;
@@ -2493,10 +2496,12 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 	if (!item)
 		return;
 
-	struct obs_scene *scene = item->parent;
+	struct obs_scene *scene = obs_scene_get_ref(item->parent);
 	struct obs_scene_item *next;
 
-	obs_scene_addref(scene);
+	if (!scene)
+		return;
+
 	full_lock(scene);
 
 	detach_sceneitem(item);
@@ -2766,7 +2771,10 @@ bool obs_scene_reorder_items(obs_scene_t *scene,
 	if (!scene || !item_order_size)
 		return false;
 
-	obs_scene_addref(scene);
+	scene = obs_scene_get_ref(scene);
+	if (!scene)
+		return false;
+
 	full_lock(scene);
 
 	bool order_matches = true;
@@ -2804,7 +2812,10 @@ void obs_scene_atomic_update(obs_scene_t *scene,
 	if (!scene)
 		return;
 
-	obs_scene_addref(scene);
+	scene = obs_scene_get_ref(scene);
+	if (!scene)
+		return;
+
 	full_lock(scene);
 	func(data, scene);
 	full_unlock(scene);
@@ -3441,7 +3452,10 @@ bool obs_scene_reorder_items2(obs_scene_t *scene,
 	if (!scene || !item_order_size || !item_order)
 		return false;
 
-	obs_scene_addref(scene);
+	scene = obs_scene_get_ref(scene);
+	if (!scene)
+		return false;
+
 	full_lock(scene);
 
 	if (sceneitems_match2(scene, item_order, item_order_size)) {
@@ -3583,9 +3597,7 @@ void obs_sceneitem_set_show_transition(obs_sceneitem_t *item,
 	if (item->show_transition)
 		obs_source_release(item->show_transition);
 
-	item->show_transition = transition;
-	if (item->show_transition)
-		obs_source_addref(item->show_transition);
+	item->show_transition = obs_source_get_ref(transition);
 }
 
 void obs_sceneitem_set_show_transition_duration(obs_sceneitem_t *item,
@@ -3618,9 +3630,7 @@ void obs_sceneitem_set_hide_transition(obs_sceneitem_t *item,
 	if (item->hide_transition)
 		obs_source_release(item->hide_transition);
 
-	item->hide_transition = transition;
-	if (item->hide_transition)
-		obs_source_addref(item->hide_transition);
+	item->hide_transition = obs_source_get_ref(transition);
 }
 
 void obs_sceneitem_set_hide_transition_duration(obs_sceneitem_t *item,
