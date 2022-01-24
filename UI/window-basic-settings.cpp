@@ -2994,7 +2994,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				ui->enableAutoUpdates->isChecked());
 #endif
 #ifdef _WIN32
-	if (WidgetChanged(ui->hideOBSFromCapture)) {
+	if (ui->hideOBSFromCapture && WidgetChanged(ui->hideOBSFromCapture)) {
 		bool hide_window = ui->hideOBSFromCapture->isChecked();
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"HideOBSWindowsFromCapture", hide_window);
