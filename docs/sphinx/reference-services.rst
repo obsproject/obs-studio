@@ -185,6 +185,16 @@ General Service Functions
    Adds/releases a reference to a service.  When the last reference is
    released, the service is destroyed.
 
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_service_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_service_t *obs_service_get_ref(obs_service_t *service)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
+
 ---------------------
 
 .. function:: obs_weak_service_t *obs_service_get_weak_service(obs_service_t *service)

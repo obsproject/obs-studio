@@ -326,6 +326,16 @@ General Encoder Functions
    Adds/releases a reference to an encoder.  When the last reference is
    released, the encoder is destroyed.
 
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_encoder_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
+
 ---------------------
 
 .. function:: obs_weak_encoder_t *obs_encoder_get_weak_encoder(obs_encoder_t *encoder)
