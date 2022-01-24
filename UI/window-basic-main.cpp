@@ -7803,7 +7803,7 @@ void OBSBasic::UpdateEditMenu()
 
 	bool canTransform = false;
 	for (int i = 0; i < count; i++) {
-		OBSSceneItem item = ui->sources->Get(i);
+		OBSSceneItem item = ui->sources->Get(items.value(i).row());
 		if (!obs_sceneitem_locked(item))
 			canTransform = true;
 	}
