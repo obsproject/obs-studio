@@ -253,7 +253,7 @@ bool SetDisplayAffinitySupported(void)
 
 	if (!checked) {
 		if (GetWindowsVersion() > 0x0A00 ||
-		    GetWindowsVersion() == 0x0A00 && GetWindowsBuild() > 19041)
+		    GetWindowsVersion() == 0x0A00 && GetWindowsBuild() >= 19041)
 			supported = true;
 		else
 			supported = false;
