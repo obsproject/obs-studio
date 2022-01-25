@@ -45,6 +45,7 @@ Graphics Enumerations
    - GS_RGBA_UNORM  - RGBA, 8 bits per channel, no SRGB aliasing
    - GS_BGRX_UNORM  - BGRX, 8 bits per channel, no SRGB aliasing
    - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
+   - GS_RG16        - RG, 16 bits per channel
 
 .. type:: enum gs_zstencil_format
 
