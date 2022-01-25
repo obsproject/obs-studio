@@ -33,6 +33,12 @@
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
+#if defined(IS_LIBOBS) || defined(SWIG)
+#define OBS_EXTERNAL_DEPRECATED
+#else
+#define OBS_EXTERNAL_DEPRECATED OBS_DEPRECATED
+#endif
+
 #ifdef _MSC_VER
 #define EXPORT __declspec(dllexport)
 #else

@@ -165,7 +165,7 @@ Source Definition Structure (obs_source_info)
    - **OBS_SOURCE_SRGB** - Source understands SRGB rendering
 
    - **OBS_SOURCE_CAP_DONT_SHOW_PROPERTIES** - Source type prefers not
-     to have its properties shown on creation (prefers to rely on 
+     to have its properties shown on creation (prefers to rely on
      defaults first)
 
 .. member:: const char *(*obs_source_info.get_name)(void *type_data)
@@ -736,6 +736,16 @@ General Source Functions
 
    Adds/releases a reference to a source.  When the last reference is
    released, the source is destroyed.
+
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_source_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_source_t *obs_source_get_ref(obs_source_t *source)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
 
 ---------------------
 

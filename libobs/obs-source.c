@@ -465,9 +465,12 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 	da_init(filters);
 
 	pthread_mutex_lock(&src->filter_mutex);
-	for (size_t i = 0; i < src->filters.num; i++)
-		obs_source_addref(src->filters.array[i]);
-	da_copy(filters, src->filters);
+	da_reserve(filters, src->filters.num);
+	for (size_t i = 0; i < src->filters.num; i++) {
+		obs_source_t *s = obs_source_get_ref(src->filters.array[i]);
+		if (s)
+			da_push_back(filters, &s);
+	}
 	pthread_mutex_unlock(&src->filter_mutex);
 
 	for (size_t i = filters.num; i > 0; i--) {
@@ -537,8 +540,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
 		obs_scene_t *scene = obs_scene_from_source(source);
 		if (scene && !create_private) {
-			obs_source_addref(source);
-			return source;
+			return obs_source_get_ref(source);
 		}
 		if (!scene)
 			scene = obs_group_from_source(source);
@@ -554,8 +556,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	}
 
 	if ((source->info.output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) != 0) {
-		obs_source_addref(source);
-		return source;
+		return obs_source_get_ref(source);
 	}
 
 	settings = obs_data_create();
@@ -2265,8 +2266,7 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	obs_source_t *first_filter;
 
 	pthread_mutex_lock(&source->filter_mutex);
-	first_filter = source->filters.array[0];
-	obs_source_addref(first_filter);
+	first_filter = obs_source_get_ref(source->filters.array[0]);
 	pthread_mutex_unlock(&source->filter_mutex);
 
 	source->rendering_filter = true;
@@ -2386,9 +2386,11 @@ void obs_source_video_render(obs_source_t *source)
 	if (!obs_source_valid(source, "obs_source_video_render"))
 		return;
 
-	obs_source_addref(source);
-	render_video(source);
-	obs_source_release(source);
+	source = obs_source_get_ref(source);
+	if (source) {
+		render_video(source);
+		obs_source_release(source);
+	}
 }
 
 static inline uint32_t get_async_width(const obs_source_t *source)
@@ -2556,7 +2558,9 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 		return;
 	}
 
-	obs_source_addref(filter);
+	filter = obs_source_get_ref(filter);
+	if (!obs_ptr_valid(filter, "obs_source_filter_add"))
+		return;
 
 	filter->filter_parent = source;
 	filter->filter_target = !source->filters.num ? source
@@ -4071,7 +4075,9 @@ void obs_source_enum_active_sources(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_active_sources"))
+		return;
 
 	if (is_transition)
 		obs_transition_enum_sources(source, enum_callback, param);
@@ -4096,7 +4102,9 @@ void obs_source_enum_active_tree(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_active_tree"))
+		return;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_enum_sources(
@@ -4149,7 +4157,9 @@ void obs_source_enum_full_tree(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_full_tree"))
+		return;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_enum_sources(
@@ -4486,8 +4496,7 @@ obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 	for (size_t i = 0; i < source->filters.num; i++) {
 		struct obs_source *cur_filter = source->filters.array[i];
 		if (strcmp(cur_filter->context.name, name) == 0) {
-			filter = cur_filter;
-			obs_source_addref(filter);
+			filter = obs_source_get_ref(cur_filter);
 			break;
 		}
 	}
@@ -5441,8 +5450,7 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 			obs_source_t *cur = cur_filters.array[j];
 			const char *cur_name = cur->context.name;
 			if (cur_name && strcmp(cur_name, name) == 0) {
-				filter = cur;
-				obs_source_addref(cur);
+				filter = obs_source_get_ref(cur);
 				break;
 			}
 		}

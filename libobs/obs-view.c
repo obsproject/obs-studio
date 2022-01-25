@@ -81,11 +81,7 @@ obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel)
 		return NULL;
 
 	pthread_mutex_lock(&view->channels_mutex);
-
-	source = view->channels[channel];
-	if (source)
-		obs_source_addref(source);
-
+	source = obs_source_get_ref(view->channels[channel]);
 	pthread_mutex_unlock(&view->channels_mutex);
 
 	return source;
@@ -104,9 +100,7 @@ void obs_view_set_source(obs_view_t *view, uint32_t channel,
 		return;
 
 	pthread_mutex_lock(&view->channels_mutex);
-
-	obs_source_addref(source);
-
+	source = obs_source_get_ref(source);
 	prev_source = view->channels[channel];
 	view->channels[channel] = source;
 

@@ -81,22 +81,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			OBSScene scene = GetOBSRef<OBSScene>(item);
 			obs_source_t *source = obs_scene_get_source(scene);
 
-			obs_source_addref(source);
-			da_push_back(sources->sources, &source);
+			if (obs_source_get_ref(source) != nullptr)
+				da_push_back(sources->sources, &source);
 		}
 	}
 
 	obs_source_t *obs_frontend_get_current_scene(void) override
 	{
-		OBSSource source;
-
 		if (main->IsPreviewProgramMode()) {
-			source = obs_weak_source_get_source(main->programScene);
+			return obs_weak_source_get_source(main->programScene);
 		} else {
-			source = main->GetCurrentSceneSource();
-			obs_source_addref(source);
+			OBSSource source = main->GetCurrentSceneSource();
+			return obs_source_get_ref(source);
 		}
-		return source;
 	}
 
 	void obs_frontend_set_current_scene(obs_source_t *scene) override
@@ -123,17 +120,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			if (!tr)
 				continue;
 
-			obs_source_addref(tr);
-			da_push_back(sources->sources, &tr);
+			if (obs_source_get_ref(tr) != nullptr)
+				da_push_back(sources->sources, &tr);
 		}
 	}
 
 	obs_source_t *obs_frontend_get_current_transition(void) override
 	{
 		OBSSource tr = main->GetCurrentTransition();
-
-		obs_source_addref(tr);
-		return tr;
+		return obs_source_get_ref(tr);
 	}
 
 	void
@@ -391,22 +386,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
 		OBSOutput output = main->outputHandler->streamOutput.Get();
-		obs_output_addref(output);
-		return output;
+		return obs_output_get_ref(output);
 	}
 
 	obs_output_t *obs_frontend_get_recording_output(void) override
 	{
 		OBSOutput out = main->outputHandler->fileOutput.Get();
-		obs_output_addref(out);
-		return out;
+		return obs_output_get_ref(out);
 	}
 
 	obs_output_t *obs_frontend_get_replay_buffer_output(void) override
 	{
 		OBSOutput out = main->outputHandler->replayBuffer.Get();
-		obs_output_addref(out);
-		return out;
+		return obs_output_get_ref(out);
 	}
 
 	config_t *obs_frontend_get_profile_config(void) override
@@ -550,14 +542,12 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_source_t *obs_frontend_get_current_preview_scene(void) override
 	{
-		OBSSource source = nullptr;
-
 		if (main->IsPreviewProgramMode()) {
-			source = main->GetCurrentSceneSource();
-			obs_source_addref(source);
+			OBSSource source = main->GetCurrentSceneSource();
+			return obs_source_get_ref(source);
 		}
 
-		return source;
+		return nullptr;
 	}
 
 	void
@@ -585,8 +575,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	obs_output_t *obs_frontend_get_virtualcam_output(void) override
 	{
 		OBSOutput output = main->outputHandler->virtualCam.Get();
-		obs_output_addref(output);
-		return output;
+		return obs_output_get_ref(output);
 	}
 
 	void obs_frontend_start_virtualcam(void) override

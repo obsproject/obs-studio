@@ -339,6 +339,16 @@ General Output Functions
    Adds/releases a reference to an output.  When the last reference is
    released, the output is destroyed.
 
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_output_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_output_t *obs_output_get_ref(obs_output_t *output)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
+
 ---------------------
 
 .. function:: obs_weak_output_t *obs_output_get_weak_output(obs_output_t *output)
