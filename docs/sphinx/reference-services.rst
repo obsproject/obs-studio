@@ -180,10 +180,8 @@ General Service Functions
 ---------------------
 
 .. function:: void obs_service_addref(obs_service_t *service)
-              void obs_service_release(obs_service_t *service)
 
-   Adds/releases a reference to a service.  When the last reference is
-   released, the service is destroyed.
+   Adds a reference to a service.
 
 .. deprecated:: 27.2.0
    Use :c:func:`obs_service_get_ref()` instead.
@@ -194,6 +192,13 @@ General Service Functions
 
    Returns an incremented reference if still valid, otherwise returns
    *NULL*.
+
+---------------------
+
+.. function:: void obs_service_release(obs_service_t *service)
+
+   Releases a reference to a service.  When the last reference is
+   released, the service is destroyed.
 
 ---------------------
 

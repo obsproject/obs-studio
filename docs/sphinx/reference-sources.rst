@@ -732,10 +732,8 @@ General Source Functions
 ---------------------
 
 .. function:: void obs_source_addref(obs_source_t *source)
-              void obs_source_release(obs_source_t *source)
 
-   Adds/releases a reference to a source.  When the last reference is
-   released, the source is destroyed.
+   Adds a reference to a source.
 
 .. deprecated:: 27.2.0
    Use :c:func:`obs_source_get_ref()` instead.
@@ -746,6 +744,13 @@ General Source Functions
 
    Returns an incremented reference if still valid, otherwise returns
    *NULL*.
+
+---------------------
+
+.. function:: void obs_source_release(obs_source_t *source)
+
+   Releases a reference to a source.  When the last reference is
+   released, the source is destroyed.
 
 ---------------------
 

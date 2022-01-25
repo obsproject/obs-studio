@@ -334,10 +334,8 @@ General Output Functions
 ---------------------
 
 .. function:: void obs_output_addref(obs_output_t *output)
-              void obs_output_release(obs_output_t *output)
 
-   Adds/releases a reference to an output.  When the last reference is
-   released, the output is destroyed.
+   Adds a reference to an output.
 
 .. deprecated:: 27.2.0
    Use :c:func:`obs_output_get_ref()` instead.
@@ -348,6 +346,13 @@ General Output Functions
 
    Returns an incremented reference if still valid, otherwise returns
    *NULL*.
+
+---------------------
+
+.. function:: void obs_output_release(obs_output_t *output)
+
+   Releases a reference to an output.  When the last reference is
+   released, the output is destroyed.
 
 ---------------------
 

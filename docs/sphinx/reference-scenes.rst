@@ -197,9 +197,8 @@ General Scene Functions
 ---------------------
 
 .. function:: void obs_scene_addref(obs_scene_t *scene)
-              void obs_scene_release(obs_scene_t *scene)
 
-   Adds/releases a reference to a scene.
+   Adds a reference to a scene.
 
 .. deprecated:: 27.2.0
    Use :c:func:`obs_scene_get_ref()` instead.
@@ -210,6 +209,12 @@ General Scene Functions
 
    Returns an incremented reference if still valid, otherwise returns
    *NULL*.
+
+---------------------
+
+.. function:: void obs_scene_release(obs_scene_t *scene)
+
+   Releases a reference to a scene.
 
 ---------------------
 
