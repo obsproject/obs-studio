@@ -548,6 +548,7 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	frame.height = cy_abs;
 	frame.format = ConvertVideoFormat(config.format);
 	frame.flip = flip;
+	frame.flags = OBS_SOURCE_FRAME_LINEAR_ALPHA;
 
 	/* YUV DIBS are always top-down */
 	if (config.format == VideoFormat::XRGB ||
