@@ -263,9 +263,12 @@ void AJAOutputUI::SetupMiscPropertiesView()
 		obs_data_apply(settings, data);
 	}
 
+	USER_DATA_PTR userData(new CustomUserData(this, nullptr, nullptr));
+
 	miscPropertiesView = new OBSPropertiesView(
-		settings, this, (PropertiesReloadCallback)create_misc_props_ui,
-		nullptr, nullptr, 170);
+		settings, userData,
+		(PropertiesReloadCallback)create_misc_props_ui, nullptr,
+		nullptr, 170);
 
 	ui->miscPropertiesLayout->addWidget(miscPropertiesView);
 	obs_data_release(settings);

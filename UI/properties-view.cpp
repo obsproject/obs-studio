@@ -90,7 +90,7 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 void OBSPropertiesView::ReloadProperties()
 {
 	if (obj) {
-		properties.reset(reloadCallback(obj));
+		properties.reset(reloadCallback(obj->GetData()));
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
@@ -174,7 +174,7 @@ void OBSPropertiesView::GetScrollPos(int &h, int &v)
 		v = scroll->value();
 }
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, USER_DATA_PTR obj_,
 				     PropertiesReloadCallback reloadCallback,
 				     PropertiesUpdateCallback callback_,
 				     PropertiesVisualUpdateCb cb_, int minSize_)
@@ -1900,7 +1900,7 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (obs_property_button_clicked(property, view->obj)) {
+	if (obs_property_button_clicked(property, view->obj->GetData())) {
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 					  Qt::QueuedConnection);
 	}
@@ -1977,7 +1977,7 @@ void WidgetInfo::ControlChanged()
 		connect(update_timer, &QTimer::timeout,
 			[this, &ru = recently_updated]() {
 				if (view->callback && !view->deferUpdate) {
-					view->callback(view->obj,
+					view->callback(view->obj->GetData(),
 						       old_settings_cache,
 						       view->settings);
 				}
@@ -1996,7 +1996,7 @@ void WidgetInfo::ControlChanged()
 	}
 
 	if (view->cb && !view->deferUpdate)
-		view->cb(view->obj, view->settings);
+		view->cb(view->obj->GetData(), view->settings);
 
 	view->SignalChanged();
 

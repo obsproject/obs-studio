@@ -7,6 +7,7 @@
 #include <QPointer>
 #include <vector>
 #include <memory>
+#include <functional>
 
 class QFormLayout;
 class OBSPropertiesView;
@@ -16,6 +17,37 @@ typedef obs_properties_t *(*PropertiesReloadCallback)(void *obj);
 typedef void (*PropertiesUpdateCallback)(void *obj, obs_data_t *old_settings,
 					 obs_data_t *new_settings);
 typedef void (*PropertiesVisualUpdateCb)(void *obj, obs_data_t *settings);
+
+/* ------------------------------------------------------------------------- */
+
+class CustomUserData {
+private:
+	void *user_data = nullptr;
+	std::function<bool(void *)> begin_cb;
+	std::function<void(void *)> end_cb;
+
+public:
+	CustomUserData(void *data, std::function<bool(void *)> begin_func,
+		       std::function<void(void *)> end_func)
+		: user_data(data), begin_cb(begin_func), end_cb(end_func)
+	{
+		if (begin_cb) {
+			bool success = begin_cb(user_data);
+			if (!success)
+				end_cb = nullptr;
+		}
+	}
+
+	~CustomUserData()
+	{
+		if (end_cb)
+			end_cb(user_data);
+	}
+
+	void *GetData() { return user_data; }
+};
+
+typedef std::shared_ptr<CustomUserData> USER_DATA_PTR;
 
 /* ------------------------------------------------------------------------- */
 
@@ -97,7 +129,7 @@ private:
 	QWidget *widget = nullptr;
 	properties_t properties;
 	OBSData settings;
-	void *obj = nullptr;
+	USER_DATA_PTR obj;
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
@@ -152,7 +184,7 @@ signals:
 	void PropertiesRefreshed();
 
 public:
-	OBSPropertiesView(OBSData settings, void *obj,
+	OBSPropertiesView(OBSData settings, USER_DATA_PTR obj_,
 			  PropertiesReloadCallback reloadCallback,
 			  PropertiesUpdateCallback callback,
 			  PropertiesVisualUpdateCb cb = nullptr,
@@ -163,6 +195,9 @@ public:
 
 	inline obs_data_t *GetSettings() const { return settings; }
 
-	inline void UpdateSettings() { callback(obj, nullptr, settings); }
+	inline void UpdateSettings()
+	{
+		callback(obj->GetData(), nullptr, settings);
+	}
 	inline bool DeferUpdate() const { return deferUpdate; }
 };

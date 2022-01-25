@@ -91,8 +91,17 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		UNUSED_PARAMETER(vp);
 	};
 
+	USER_DATA_PTR userData(new CustomUserData(
+		source,
+		[](void *obj) -> bool {
+			obs_source_t *s =
+				obs_source_get_ref((obs_source_t *)obj);
+			return !!s;
+		},
+		[](void *obj) { obs_source_release((obs_source_t *)obj); }));
+
 	view = new OBSPropertiesView(
-		nd_settings.Get(), source,
+		nd_settings.Get(), userData,
 		(PropertiesReloadCallback)obs_source_properties,
 		(PropertiesUpdateCallback)handle_memory,
 		(PropertiesVisualUpdateCb)obs_source_update);

@@ -499,8 +499,10 @@ void ScriptsTool::on_scripts_currentRowChanged(int row)
 
 	OBSDataAutoRelease settings = obs_script_get_settings(script);
 
+	USER_DATA_PTR userData(new CustomUserData(script, nullptr, nullptr));
+
 	propertiesView = new OBSPropertiesView(
-		settings.Get(), script,
+		settings.Get(), userData,
 		(PropertiesReloadCallback)obs_script_get_properties, nullptr,
 		(PropertiesVisualUpdateCb)obs_script_update);
 	ui->propertiesLayout->addWidget(propertiesView);

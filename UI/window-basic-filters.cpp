@@ -284,8 +284,17 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		obs_source_update(source, settings);
 	};
 
+	USER_DATA_PTR userData(new CustomUserData(
+		filter,
+		[](void *obj) -> bool {
+			obs_source_t *s =
+				obs_source_get_ref((obs_source_t *)obj);
+			return !!s;
+		},
+		[](void *obj) { obs_source_release((obs_source_t *)obj); }));
+
 	view = new OBSPropertiesView(
-		settings.Get(), filter,
+		settings.Get(), userData,
 		(PropertiesReloadCallback)obs_source_properties,
 		(PropertiesUpdateCallback)FilterChangeUndoRedo,
 		(PropertiesVisualUpdateCb)disabled_undo);
