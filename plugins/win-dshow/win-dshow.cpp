@@ -973,6 +973,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	os_wcs_to_utf8_ptr(videoConfig.path.c_str(), videoConfig.path.size(),
 			   &path_utf8);
 
+	SetupBuffering(settings);
+
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
 	     "[DShow Device: '%s'] settings updated: \n"
@@ -981,13 +983,13 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	     "\tresolution: %dx%d\n"
 	     "\tflip: %d\n"
 	     "\tfps: %0.2f (interval: %lld)\n"
-	     "\tformat: %s",
+	     "\tformat: %s\n"
+	     "\tbuffering: %s",
 	     obs_source_get_name(source), (const char *)name_utf8,
 	     (const char *)path_utf8, videoConfig.cx, videoConfig.cy_abs,
 	     (int)videoConfig.cy_flip, fps, videoConfig.frameInterval,
-	     formatName->array);
-
-	SetupBuffering(settings);
+	     formatName->array,
+	     obs_source_async_unbuffered(source) ? "disabled" : "enabled");
 
 	return true;
 }
