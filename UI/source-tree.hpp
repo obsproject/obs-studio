@@ -50,7 +50,6 @@ class SourceTreeItem : public QWidget {
 		SubItem,
 	};
 
-	void DisconnectSignals();
 	void ReconnectSignals();
 
 	Type type = Type::Unknown;

@@ -238,8 +238,6 @@ void OBSBasicAdvAudio::SetShowInactive(bool show)
 
 	showInactive = show;
 	activeOnly->setChecked(!showInactive);
-	sourceAddedSignal.Disconnect();
-	sourceRemovedSignal.Disconnect();
 
 	if (showInactive) {
 		sourceAddedSignal.Connect(obs_get_signal_handler(),

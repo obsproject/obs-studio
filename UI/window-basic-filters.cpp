@@ -263,7 +263,6 @@ void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
 	if (view) {
-		updatePropertiesSignal.Disconnect();
 		ui->propertiesFrame->setVisible(false);
 		view->hide();
 		view->deleteLater();
