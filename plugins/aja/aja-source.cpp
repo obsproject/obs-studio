@@ -953,15 +953,6 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	ajaSource->SetCardID(wantCardID);
 	ajaSource->SetDeviceIndex((UWord)cardEntry->GetCardIndex());
 
-	if (NTV2_IS_4K_VIDEO_FORMAT(want_props.videoFormat) &&
-	    want_props.sdi4kTransport == SDITransport4K::Squares) {
-		if (want_props.ioSelect == IOSelection::SDI1_2) {
-			want_props.ioSelect = IOSelection::SDI1_2_Squares;
-		} else if (want_props.ioSelect == IOSelection::SDI3_4) {
-			want_props.ioSelect = IOSelection::SDI3_4_Squares;
-		}
-	}
-
 	// Release Channels if IOSelection changes
 	if (want_props.ioSelect != curr_props.ioSelect) {
 		const std::string &ioSelectStr =
