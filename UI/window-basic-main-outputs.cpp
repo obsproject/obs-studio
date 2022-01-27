@@ -1152,8 +1152,7 @@ static OBSData GetDataFromJsonFile(const char *jsonFile)
 static void ApplyEncoderDefaults(OBSData &settings,
 				 const obs_encoder_t *encoder)
 {
-	OBSData dataRet = obs_encoder_get_defaults(encoder);
-	obs_data_release(dataRet);
+	OBSDataAutoRelease dataRet = obs_encoder_get_defaults(encoder);
 
 	if (!!settings)
 		obs_data_apply(dataRet, settings);

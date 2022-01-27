@@ -371,26 +371,23 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 	}
 
 	if (usingPreviewProgram && sceneDuplicationMode) {
-		scene = obs_scene_duplicate(
+		OBSSceneAutoRelease dupScene = obs_scene_duplicate(
 			scene, obs_source_get_name(obs_scene_get_source(scene)),
 			editPropertiesMode ? OBS_SCENE_DUP_PRIVATE_COPY
 					   : OBS_SCENE_DUP_PRIVATE_REFS);
-		source = obs_scene_get_source(scene);
+		source = obs_scene_get_source(dupScene);
 	}
 
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
-	if (!transition) {
-		if (usingPreviewProgram && sceneDuplicationMode)
-			obs_scene_release(scene);
+	if (!transition)
 		return;
-	}
 
 	float t = obs_transition_get_time(transition);
 	bool stillTransitioning = t < 1.0f && t > 0.0f;
 
 	// If actively transitioning, block new transitions from starting
 	if (usingPreviewProgram && stillTransitioning)
-		goto cleanup;
+		return;
 
 	if (force) {
 		obs_transition_set(transition, source);
@@ -434,10 +431,6 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		if (!success)
 			TransitionFullyStopped();
 	}
-
-cleanup:
-	if (usingPreviewProgram && sceneDuplicationMode)
-		obs_scene_release(scene);
 }
 
 static inline void SetComboTransition(QComboBox *combo, obs_source_t *tr)
@@ -504,7 +497,7 @@ void OBSBasic::AddTransition(QString id)
 	QString placeHolderText =
 		QT_UTF8(obs_source_get_display_name(QT_TO_UTF8(id)));
 	QString format = placeHolderText + " (%1)";
-	obs_source_t *source = nullptr;
+	OBSSourceAutoRelease source;
 	int i = 1;
 
 	while ((source = FindTransition(QT_TO_UTF8(placeHolderText)))) {
@@ -541,7 +534,6 @@ void OBSBasic::AddTransition(QString id)
 						       source);
 		ui->transitions->setCurrentIndex(idx);
 		CreatePropertiesWindow(source);
-		obs_source_release(source);
 
 		if (api)
 			api->on_event(
@@ -711,7 +703,7 @@ template<typename T> static T GetOBSRef(QListWidgetItem *item)
 	return item->data(static_cast<int>(QtDataRole::OBSRef)).value<T>();
 }
 
-void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
+void OBSBasic::SetCurrentScene(obs_source_t *scene, bool force)
 {
 	if (!IsPreviewProgramMode()) {
 		TransitionToScene(scene, force);
@@ -1171,7 +1163,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 				obs_sceneitem_set_hide_transition(sceneItem,
 								  nullptr);
 		} else {
-			OBSSource tr =
+			OBSSourceAutoRelease tr =
 				visible ? obs_sceneitem_get_show_transition(
 						  sceneItem)
 					: obs_sceneitem_get_hide_transition(
@@ -1193,7 +1185,6 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 				else
 					obs_sceneitem_set_hide_transition(
 						sceneItem, tr);
-				obs_source_release(tr);
 
 				int duration =
 					(int)(visible ? obs_sceneitem_get_show_transition_duration(

@@ -47,9 +47,8 @@ OBSData load_settings(const char *filename)
 		obs_module_get_config_path(obs_current_module(), filename);
 	BPtr<char> jsonData = os_quick_read_utf8_file(path);
 	if (!!jsonData) {
-		obs_data_t *data = obs_data_create_from_json(jsonData);
+		OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
 		OBSData dataRet(data);
-		obs_data_release(data);
 
 		return dataRet;
 	}
@@ -67,14 +66,13 @@ void output_stop()
 
 void output_start()
 {
-	OBSData settings = load_settings(kProgramPropsFilename);
+	OBSDataAutoRelease settings = load_settings(kProgramPropsFilename);
 
 	if (settings != nullptr) {
 		output = obs_output_create("aja_output", kProgramOutputID,
 					   settings, NULL);
 
 		bool started = obs_output_start(output);
-		obs_data_release(settings);
 
 		main_output_running = started;
 
@@ -120,7 +118,7 @@ void preview_output_stop()
 
 void preview_output_start()
 {
-	OBSData settings = load_settings(kPreviewPropsFilename);
+	OBSDataAutoRelease settings = load_settings(kPreviewPropsFilename);
 
 	if (settings != nullptr) {
 		context.output = obs_output_create(
@@ -167,8 +165,6 @@ void preview_output_start()
 		obs_output_set_media(context.output, context.video_queue,
 				     obs_get_audio());
 		bool started = obs_output_start(context.output);
-
-		obs_data_release(settings);
 
 		preview_output_running = started;
 		ajaOutputUI->PreviewOutputStateChanged(started);

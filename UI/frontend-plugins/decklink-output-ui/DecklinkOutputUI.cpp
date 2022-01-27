@@ -3,6 +3,7 @@
 #include <util/platform.h>
 #include <util/util.hpp>
 #include "decklink-ui-main.h"
+#include "obs.hpp"
 
 DecklinkOutputUI::DecklinkOutputUI(QWidget *parent)
 	: QDialog(parent), ui(new Ui_Output)
@@ -30,7 +31,7 @@ void DecklinkOutputUI::SetupPropertiesView()
 	if (propertiesView)
 		delete propertiesView;
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 
 	OBSData data = load_settings();
 	if (data)
@@ -41,7 +42,6 @@ void DecklinkOutputUI::SetupPropertiesView()
 		(PropertiesReloadCallback)obs_get_output_properties, 170);
 
 	ui->propertiesLayout->addWidget(propertiesView);
-	obs_data_release(settings);
 
 	connect(propertiesView, SIGNAL(Changed()), this,
 		SLOT(PropertiesChanged()));
@@ -67,7 +67,7 @@ void DecklinkOutputUI::SetupPreviewPropertiesView()
 	if (previewPropertiesView)
 		delete previewPropertiesView;
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 
 	OBSData data = load_preview_settings();
 	if (data)
@@ -78,7 +78,6 @@ void DecklinkOutputUI::SetupPreviewPropertiesView()
 		(PropertiesReloadCallback)obs_get_output_properties, 170);
 
 	ui->previewPropertiesLayout->addWidget(previewPropertiesView);
-	obs_data_release(settings);
 
 	connect(previewPropertiesView, SIGNAL(Changed()), this,
 		SLOT(PreviewPropertiesChanged()));

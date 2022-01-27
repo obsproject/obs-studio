@@ -57,7 +57,8 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 }
 
 StreamSettingsAction
-UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
+UIValidation::StreamSettingsConfirmation(QWidget *parent,
+					 obs_service_t *service)
 {
 	// Custom services can user API key in URL or user/pass combo.
 	// So only check there is a URL

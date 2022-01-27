@@ -174,7 +174,7 @@ void OBSPropertiesView::GetScrollPos(int &h, int &v)
 		v = scroll->value();
 }
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
+OBSPropertiesView::OBSPropertiesView(obs_data_t *settings_, void *obj_,
 				     PropertiesReloadCallback reloadCallback,
 				     PropertiesUpdateCallback callback_,
 				     PropertiesVisualUpdateCb cb_, int minSize_)
@@ -192,7 +192,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
 				  Qt::QueuedConnection);
 }
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_, const char *type_,
+OBSPropertiesView::OBSPropertiesView(obs_data_t *settings_, const char *type_,
 				     PropertiesReloadCallback reloadCallback_,
 				     int minSize_)
 	: VScrollArea(nullptr),
@@ -1925,7 +1925,6 @@ void WidgetInfo::ControlChanged()
 	if (!recently_updated) {
 		old_settings_cache = obs_data_create();
 		obs_data_apply(old_settings_cache, view->settings);
-		obs_data_release(old_settings_cache);
 	}
 
 	switch (type) {

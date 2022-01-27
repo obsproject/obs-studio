@@ -251,7 +251,7 @@ private:
 
 	os_cpu_usage_info_t *cpuUsageInfo = nullptr;
 
-	OBSService service;
+	OBSServiceAutoRelease service;
 	std::unique_ptr<BasicOutputHandler> outputHandler;
 	bool streamingStopping = false;
 	bool recordingStopping = false;
@@ -661,7 +661,7 @@ public slots:
 			       bool quickTransition = false,
 			       int quickDuration = 0, bool black = false,
 			       bool manual = false);
-	void SetCurrentScene(OBSSource scene, bool force = false);
+	void SetCurrentScene(obs_source_t *scene, bool force = false);
 
 	bool AddSceneCollection(bool create_new,
 				const QString &name = QString());

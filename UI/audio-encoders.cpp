@@ -69,9 +69,7 @@ static void HandleListProperty(obs_property_t *prop, const char *id)
 
 static void HandleSampleRate(obs_property_t *prop, const char *id)
 {
-	auto ReleaseData = [](obs_data_t *data) { obs_data_release(data); };
-	std::unique_ptr<obs_data_t, decltype(ReleaseData)> data{
-		obs_encoder_defaults(id), ReleaseData};
+	OBSDataAutoRelease data = obs_encoder_defaults(id);
 
 	if (!data) {
 		blog(LOG_ERROR,
@@ -91,9 +89,9 @@ static void HandleSampleRate(obs_property_t *prop, const char *id)
 	uint32_t sampleRate =
 		config_get_uint(main->Config(), "Audio", "SampleRate");
 
-	obs_data_set_int(data.get(), "samplerate", sampleRate);
+	obs_data_set_int(data, "samplerate", sampleRate);
 
-	obs_property_modified(prop, data.get());
+	obs_property_modified(prop, data);
 }
 
 static void HandleEncoderProperties(const char *id)

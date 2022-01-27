@@ -30,7 +30,7 @@ private:
 	QWidget *widget;
 	QPointer<QTimer> update_timer;
 	bool recently_updated = false;
-	OBSData old_settings_cache;
+	OBSDataAutoRelease old_settings_cache;
 
 	void BoolChanged(const char *setting);
 	void IntChanged(const char *setting);
@@ -61,7 +61,6 @@ public:
 			update_timer->stop();
 			QMetaObject::invokeMethod(update_timer, "timeout");
 			update_timer->deleteLater();
-			obs_data_release(old_settings_cache);
 		}
 	}
 
@@ -152,12 +151,12 @@ signals:
 	void PropertiesRefreshed();
 
 public:
-	OBSPropertiesView(OBSData settings, void *obj,
+	OBSPropertiesView(obs_data_t *settings, void *obj,
 			  PropertiesReloadCallback reloadCallback,
 			  PropertiesUpdateCallback callback,
 			  PropertiesVisualUpdateCb cb = nullptr,
 			  int minSize = 0);
-	OBSPropertiesView(OBSData settings, const char *type,
+	OBSPropertiesView(obs_data_t *settings, const char *type,
 			  PropertiesReloadCallback reloadCallback,
 			  int minSize = 0);
 

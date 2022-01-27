@@ -163,7 +163,6 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate,
 		char *new_name =
 			get_new_source_name(obs_source_get_name(source));
 		source = obs_source_duplicate(from, new_name, false);
-		obs_source_release(source);
 		bfree(new_name);
 
 		if (!source)
@@ -258,12 +257,12 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 
 		auto undo = [scene_name, main](const std::string &data) {
 			UNUSED_PARAMETER(data);
-			obs_source_t *scene_source =
+			OBSSourceAutoRelease scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
-			obs_source_release(scene_source);
 
-			obs_scene_t *scene = obs_get_scene_by_name(scene_name);
+			OBSSceneAutoRelease scene =
+				obs_get_scene_by_name(scene_name);
 			OBSSceneItem item;
 			auto cb = [](obs_scene_t *scene,
 				     obs_sceneitem_t *sceneitem, void *data) {
@@ -276,16 +275,14 @@ void OBSBasicSourceSelect::on_buttonBox_accepted()
 			obs_scene_enum_items(scene, cb, &item);
 
 			obs_sceneitem_remove(item);
-			obs_scene_release(scene);
 		};
 
 		auto redo = [scene_name, main, source_name,
 			     visible](const std::string &data) {
 			UNUSED_PARAMETER(data);
-			obs_source_t *scene_source =
+			OBSSourceAutoRelease scene_source =
 				obs_get_source_by_name(scene_name);
 			main->SetCurrentScene(scene_source, true);
-			obs_source_release(scene_source);
 			AddExisting(QT_TO_UTF8(source_name), visible, false,
 				    nullptr, nullptr, nullptr);
 		};

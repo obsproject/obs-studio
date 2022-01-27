@@ -597,23 +597,20 @@ void OBSBasicFilters::AddNewFilter(const char *id)
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 				->GetCurrentSceneSource());
 		auto undo = [scene_name](const std::string &data) {
-			obs_source_t *ssource =
+			OBSSourceAutoRelease ssource =
 				obs_get_source_by_name(scene_name.c_str());
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow())
 				->SetCurrentScene(ssource, true);
-			obs_source_release(ssource);
 
-			obs_data_t *dat =
+			OBSDataAutoRelease dat =
 				obs_data_create_from_json(data.c_str());
-			obs_source_t *source = obs_get_source_by_name(
+			OBSSourceAutoRelease source = obs_get_source_by_name(
 				obs_data_get_string(dat, "sname"));
-			obs_source_t *filter = obs_source_get_filter_by_name(
-				source, obs_data_get_string(dat, "fname"));
+			OBSSourceAutoRelease filter =
+				obs_source_get_filter_by_name(
+					source,
+					obs_data_get_string(dat, "fname"));
 			obs_source_filter_remove(source, filter);
-
-			obs_data_release(dat);
-			obs_source_release(source);
-			obs_source_release(filter);
 		};
 
 		OBSDataAutoRelease rwrapper = obs_data_create();

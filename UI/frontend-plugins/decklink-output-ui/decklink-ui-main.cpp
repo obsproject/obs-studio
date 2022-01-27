@@ -43,9 +43,8 @@ OBSData load_settings()
 		obs_current_module(), "decklinkOutputProps.json");
 	BPtr<char> jsonData = os_quick_read_utf8_file(path);
 	if (!!jsonData) {
-		obs_data_t *data = obs_data_create_from_json(jsonData);
+		OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
 		OBSData dataRet(data);
-		obs_data_release(data);
 
 		return dataRet;
 	}
@@ -97,9 +96,8 @@ OBSData load_preview_settings()
 		obs_current_module(), "decklinkPreviewOutputProps.json");
 	BPtr<char> jsonData = os_quick_read_utf8_file(path);
 	if (!!jsonData) {
-		obs_data_t *data = obs_data_create_from_json(jsonData);
+		OBSDataAutoRelease data = obs_data_create_from_json(jsonData);
 		OBSData dataRet(data);
-		obs_data_release(data);
 
 		return dataRet;
 	}

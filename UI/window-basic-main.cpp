@@ -509,7 +509,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	};
 	using FilterAudioSources_t = decltype(FilterAudioSources);
 
-	obs_data_array_t *sourcesArray = obs_save_sources_filtered(
+	OBSDataArrayAutoRelease sourcesArray = obs_save_sources_filtered(
 		[](void *data, obs_source_t *source) {
 			auto &func = *static_cast<FilterAudioSources_t *>(data);
 			return func(source);
@@ -520,7 +520,7 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	/* save group sources separately    */
 
 	/* saving separately ensures they won't be loaded in older versions */
-	obs_data_array_t *groupsArray = obs_save_sources_filtered(
+	OBSDataArrayAutoRelease groupsArray = obs_save_sources_filtered(
 		[](void *, obs_source_t *source) {
 			return obs_source_is_group(source);
 		},
@@ -545,8 +545,6 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_set_array(saveData, "quick_transitions", quickTransitionData);
 	obs_data_set_array(saveData, "transitions", transitions);
 	obs_data_set_array(saveData, "saved_projectors", savedProjectorList);
-	obs_data_array_release(sourcesArray);
-	obs_data_array_release(groupsArray);
 
 	obs_data_set_string(saveData, "current_transition",
 			    obs_source_get_name(transition));
@@ -937,7 +935,8 @@ void OBSBasic::Load(const char *file)
 {
 	disableSaving++;
 
-	obs_data_t *data = obs_data_create_from_json_file_safe(file, "bak");
+	OBSDataAutoRelease data =
+		obs_data_create_from_json_file_safe(file, "bak");
 	if (!data) {
 		disableSaving--;
 		blog(LOG_INFO, "No scene file found, creating default scene");
@@ -1119,8 +1118,6 @@ retryScene:
 	if (api)
 		api->on_load(modulesObj);
 
-	obs_data_release(data);
-
 	if (!opt_starting_scene.empty())
 		opt_starting_scene.clear();
 
@@ -1223,7 +1220,6 @@ bool OBSBasic::LoadService()
 
 	service = obs_service_create(type, "default_service", settings,
 				     hotkey_data);
-	obs_service_release(service);
 
 	return !!service;
 }
@@ -1239,7 +1235,6 @@ bool OBSBasic::InitService()
 				     nullptr);
 	if (!service)
 		return false;
-	obs_service_release(service);
 
 	return true;
 }
@@ -3715,12 +3710,12 @@ void OBSBasic::DuplicateSelectedScene()
 			continue;
 		}
 
-		obs_source_t *source = obs_get_source_by_name(name.c_str());
+		OBSSourceAutoRelease source =
+			obs_get_source_by_name(name.c_str());
 		if (source) {
 			OBSMessageBox::warning(this, QTStr("NameExists.Title"),
 					       QTStr("NameExists.Text"));
 
-			obs_source_release(source);
 			continue;
 		}
 
@@ -4200,11 +4195,10 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 obs_service_t *OBSBasic::GetService()
 {
-	if (!service) {
+	if (!service)
 		service =
 			obs_service_create("rtmp_common", NULL, NULL, nullptr);
-		obs_service_release(service);
-	}
+
 	return service;
 }
 
@@ -5097,11 +5091,10 @@ void OBSBasic::on_actionAddScene_triggered()
 		}
 
 		auto undo_fn = [](const std::string &data) {
-			obs_source_t *t = obs_get_source_by_name(data.c_str());
-			if (t) {
-				obs_source_release(t);
+			OBSSourceAutoRelease t =
+				obs_get_source_by_name(data.c_str());
+			if (t)
 				obs_source_remove(t);
-			}
 		};
 
 		auto redo_fn = [this](const std::string &data) {
@@ -5318,9 +5311,7 @@ QMenu *OBSBasic::AddBackgroundColorMenu(QMenu *menu,
 		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
 		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
-	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
-	obs_data_release(privData);
-
+	OBSDataAutoRelease privData = obs_sceneitem_get_private_settings(item);
 	obs_data_set_default_int(privData, "color-preset", 0);
 	int preset = obs_data_get_int(privData, "color-preset");
 
@@ -5720,9 +5711,9 @@ OBSData OBSBasic::BackupScene(obs_scene_t *scene,
 		obs_scene_enum_items(scene, save_undo_source_enum, undo_array);
 	} else {
 		for (obs_source_t *source : *sources) {
-			obs_data_t *source_data = obs_save_source(source);
+			OBSDataAutoRelease source_data =
+				obs_save_source(source);
 			obs_data_array_push_back(undo_array, source_data);
-			obs_data_release(source_data);
 		}
 	}
 

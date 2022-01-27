@@ -1854,10 +1854,10 @@ OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 		int ret = GetProfilePath(encoderJsonPath,
 					 sizeof(encoderJsonPath), path);
 		if (ret > 0) {
-			obs_data_t *data = obs_data_create_from_json_file_safe(
-				encoderJsonPath, "bak");
+			OBSDataAutoRelease data =
+				obs_data_create_from_json_file_safe(
+					encoderJsonPath, "bak");
 			obs_data_apply(settings, data);
-			obs_data_release(data);
 		}
 	}
 

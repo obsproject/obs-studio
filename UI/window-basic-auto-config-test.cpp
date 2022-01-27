@@ -24,7 +24,7 @@ using namespace std;
 
 class TestMode {
 	obs_video_info ovi;
-	OBSSource source[6];
+	OBSSourceAutoRelease source[6];
 
 	static void render_rand(void *, uint32_t cx, uint32_t cy)
 	{
@@ -55,7 +55,6 @@ public:
 
 		for (uint32_t i = 0; i < 6; i++) {
 			source[i] = obs_get_output_source(i);
-			obs_source_release(source[i]);
 			obs_set_output_source(i, nullptr);
 		}
 	}

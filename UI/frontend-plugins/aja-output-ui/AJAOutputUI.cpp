@@ -40,7 +40,7 @@ void AJAOutputUI::SetupPropertiesView()
 	if (propertiesView)
 		delete propertiesView;
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 	OBSData data = load_settings(kProgramPropsFilename);
 	if (data) {
 		obs_data_apply(settings, data);
@@ -71,7 +71,6 @@ void AJAOutputUI::SetupPropertiesView()
 		(PropertiesReloadCallback)obs_get_output_properties, 170);
 
 	ui->propertiesLayout->addWidget(propertiesView);
-	obs_data_release(settings);
 
 	connect(propertiesView, SIGNAL(Changed()), this,
 		SLOT(PropertiesChanged()));
@@ -96,7 +95,7 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 	if (previewPropertiesView)
 		delete previewPropertiesView;
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 
 	OBSData data = load_settings(kPreviewPropsFilename);
 	if (data) {
@@ -128,7 +127,6 @@ void AJAOutputUI::SetupPreviewPropertiesView()
 		(PropertiesReloadCallback)obs_get_output_properties, 170);
 
 	ui->previewPropertiesLayout->addWidget(previewPropertiesView);
-	obs_data_release(settings);
 
 	connect(previewPropertiesView, SIGNAL(Changed()), this,
 		SLOT(PreviewPropertiesChanged()));
@@ -257,7 +255,7 @@ void AJAOutputUI::SetupMiscPropertiesView()
 	if (miscPropertiesView)
 		delete miscPropertiesView;
 
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 	OBSData data = load_settings(kMiscPropsFilename);
 	if (data) {
 		obs_data_apply(settings, data);
@@ -268,7 +266,6 @@ void AJAOutputUI::SetupMiscPropertiesView()
 		nullptr, nullptr, 170);
 
 	ui->miscPropertiesLayout->addWidget(miscPropertiesView);
-	obs_data_release(settings);
 	connect(miscPropertiesView, SIGNAL(Changed()), this,
 		SLOT(MiscPropertiesChanged()));
 }

@@ -26,5 +26,5 @@ public:
 	 * open settings, cancel, or continue.  Returns Continue if all
 	 * settings are valid. */
 	static StreamSettingsAction
-	StreamSettingsConfirmation(QWidget *parent, OBSService service);
+	StreamSettingsConfirmation(QWidget *parent, obs_service_t *service);
 };

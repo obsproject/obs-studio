@@ -1230,10 +1230,9 @@ void SourceTree::dropEvent(QDropEvent *event)
 
 	bool dropOnCollapsed = false;
 	if (dropGroup) {
-		obs_data_t *data =
+		OBSDataAutoRelease data =
 			obs_sceneitem_get_private_settings(dropGroup);
 		dropOnCollapsed = obs_data_get_bool(data, "collapsed");
-		obs_data_release(data);
 	}
 
 	if (indicator == QAbstractItemView::BelowItem ||
