@@ -676,8 +676,6 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropInput.id));
 	obs_property_list_clear(sdi_trx_list);
-	obs_property_list_add_int(sdi_trx_list, obs_module_text("Auto"),
-				  kAutoDetect);
 	populate_sdi_transport_list(sdi_trx_list, io_select, deviceID, true);
 
 	obs_property_list_clear(sdi_4k_list);
@@ -694,6 +692,8 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	obs_property_set_visible(io_select_list, have_cards);
 	obs_property_set_visible(vid_fmt_list, have_cards);
 	obs_property_set_visible(pix_fmt_list, have_cards);
+	obs_property_set_visible(
+		sdi_trx_list, have_cards && aja::IsIOSelectionSDI(io_select));
 	obs_property_set_visible(
 		sdi_4k_list, have_cards && NTV2_IS_4K_VIDEO_FORMAT(curr_vf));
 
@@ -725,11 +725,12 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 		return false;
 	}
 
-	obs_property_t *io_select_list =
-		obs_properties_get(props, kUIPropInput.id);
-
 	filter_io_selection_input_list(cardID, ajaSource->GetName(),
-				       io_select_list);
+				       obs_properties_get(props, kUIPropInput.id));
+	obs_property_set_visible(
+		obs_properties_get(props, kUIPropSDITransport.id),
+		aja::IsIOSelectionSDI(static_cast<IOSelection>(
+			obs_data_get_int(settings, kUIPropInput.id))));
 
 	return true;
 }

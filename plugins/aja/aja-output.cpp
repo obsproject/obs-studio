@@ -58,6 +58,27 @@ static void free_video_frame(struct video_data *frame)
 	memset(frame, 0, sizeof(*frame));
 }
 
+static void update_sdi_transport_and_sdi_transport_4k(obs_properties_t *props,
+						      NTV2DeviceID device_id,
+						      IOSelection io,
+						      NTV2VideoFormat vf)
+{
+	// Update SDI Transport and SDI 4K Transport selections
+	obs_property_t *sdi_trx_list =
+		obs_properties_get(props, kUIPropSDITransport.id);
+	obs_property_list_clear(sdi_trx_list);
+	populate_sdi_transport_list(sdi_trx_list, io, device_id);
+	obs_property_t *sdi_4k_trx_list =
+		obs_properties_get(props, kUIPropSDITransport4K.id);
+	obs_property_list_clear(sdi_4k_trx_list);
+	populate_sdi_4k_transport_list(sdi_4k_trx_list);
+
+	bool is_sdi = aja::IsIOSelectionSDI(io);
+	obs_property_set_visible(sdi_trx_list, is_sdi);
+	obs_property_set_visible(sdi_4k_trx_list,
+				 is_sdi && NTV2_IS_4K_VIDEO_FORMAT(vf));
+}
+
 AJAOutput::AJAOutput(CNTV2Card *card, const std::string &cardID,
 		     const std::string &outputID, UWord deviceIndex,
 		     const NTV2DeviceID deviceID)
@@ -835,11 +856,11 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropOutput.id));
-	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select, deviceID);
 
-	obs_property_list_clear(sdi_4k_list);
-	populate_sdi_4k_transport_list(sdi_4k_list);
+	update_sdi_transport_and_sdi_transport_4k(
+		props, cardEntry->GetDeviceID(), io_select,
+		static_cast<NTV2VideoFormat>(obs_data_get_int(
+			settings, kUIPropVideoFormatSelect.id)));
 
 	return true;
 }
@@ -898,13 +919,10 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 		}
 	}
 
-	obs_property_t *sdi_trx_list =
-		obs_properties_get(props, kUIPropSDITransport.id);
-	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select,
-				    cardEntry->GetDeviceID());
-	obs_property_set_visible(sdi_trx_list,
-				 aja::IsIOSelectionSDI(io_select));
+	update_sdi_transport_and_sdi_transport_4k(
+		props, cardEntry->GetDeviceID(), io_select,
+		static_cast<NTV2VideoFormat>(obs_data_get_int(
+			settings, kUIPropVideoFormatSelect.id)));
 
 	return true;
 }
