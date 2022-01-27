@@ -203,10 +203,23 @@ void populate_pixel_format_list(NTV2DeviceID deviceID, obs_property_t *list)
 	}
 }
 
-void populate_sdi_transport_list(obs_property_t *list, IOSelection io)
+void populate_sdi_transport_list(obs_property_t *list, IOSelection io,
+				 NTV2DeviceID deviceID, bool capture)
 {
+	if (capture) {
+		obs_property_list_add_int(list, obs_module_text("Auto"),
+					  kAutoDetect);
+	}
 	for (int i = 0; i < (int)SDITransport::Unknown; i++) {
 		SDITransport sdi_trx = static_cast<SDITransport>(i);
+		if (sdi_trx == SDITransport::SDI6G ||
+		    sdi_trx == SDITransport::SDI12G) {
+			if (!NTV2DeviceCanDo12GSDI(deviceID))
+				continue;
+		}
+		// Disabling 12G in Output plugin until AJA 4K HFR bug is fixed
+		if (!capture && sdi_trx == SDITransport::SDI12G)
+			continue;
 		obs_property_list_add_int(
 			list, aja::SDITransportToString(sdi_trx).c_str(),
 			static_cast<long long>(sdi_trx));

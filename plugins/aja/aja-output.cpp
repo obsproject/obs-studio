@@ -836,7 +836,7 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropOutput.id));
 	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
+	populate_sdi_transport_list(sdi_trx_list, io_select, deviceID);
 
 	obs_property_list_clear(sdi_4k_list);
 	populate_sdi_4k_transport_list(sdi_4k_list);
@@ -850,6 +850,19 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 	UNUSED_PARAMETER(props);
 
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
+
+	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+	if (!cardID || !cardID[0])
+		return false;
+
+	auto &cardManager = aja::CardManager::Instance();
+	auto cardEntry = cardManager.GetCardEntry(cardID);
+	if (!cardEntry) {
+		blog(LOG_DEBUG,
+		     "aja_output_dest_changed: Card Entry not found for %s",
+		     cardID);
+		return false;
+	}
 
 	bool itemFound = false;
 	int dest = obs_data_get_int(settings, kUIPropOutput.id);
@@ -888,7 +901,8 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 	obs_property_t *sdi_trx_list =
 		obs_properties_get(props, kUIPropSDITransport.id);
 	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
+	populate_sdi_transport_list(sdi_trx_list, io_select,
+				    cardEntry->GetDeviceID());
 	obs_property_set_visible(sdi_trx_list,
 				 aja::IsIOSelectionSDI(io_select));
 

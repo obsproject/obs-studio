@@ -45,7 +45,9 @@ populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 			   bool want4KHFR = false);
 extern void populate_pixel_format_list(NTV2DeviceID deviceID,
 				       obs_property_t *list);
-extern void populate_sdi_transport_list(obs_property_t *list, IOSelection io);
+extern void populate_sdi_transport_list(obs_property_t *list, IOSelection io,
+					NTV2DeviceID deviceID,
+					bool capture = false);
 extern void populate_sdi_4k_transport_list(obs_property_t *list);
 extern bool aja_video_format_changed(obs_properties_t *props,
 				     obs_property_t *list,
