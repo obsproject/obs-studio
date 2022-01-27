@@ -431,8 +431,6 @@ VolControl::~VolControl()
 				  "audio_monitoring",
 				  OBSMixersOrMonitoringChanged, this);
 
-	obs_fader_destroy(obs_fader);
-	obs_volmeter_destroy(obs_volmeter);
 	if (contextMenu)
 		contextMenu->close();
 }
