@@ -678,7 +678,7 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	obs_property_list_clear(sdi_trx_list);
 	obs_property_list_add_int(sdi_trx_list, obs_module_text("Auto"),
 				  kAutoDetect);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
+	populate_sdi_transport_list(sdi_trx_list, io_select, deviceID, true);
 
 	obs_property_list_clear(sdi_4k_list);
 	populate_sdi_4k_transport_list(sdi_4k_list);
