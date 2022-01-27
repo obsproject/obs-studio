@@ -51,7 +51,6 @@ class SourceTreeItem : public QFrame {
 		SubItem,
 	};
 
-	void DisconnectSignals();
 	void ReconnectSignals();
 
 	Type type = Type::Unknown;

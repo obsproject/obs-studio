@@ -37,8 +37,4 @@ void OBSSourceLabel::SourceDestroyed(void *data, calldata_t *)
 {
 	auto &label = *static_cast<OBSSourceLabel *>(data);
 	emit label.Destroyed();
-
-	label.destroyedSignal.Disconnect();
-	label.removedSignal.Disconnect();
-	label.renamedSignal.Disconnect();
 }

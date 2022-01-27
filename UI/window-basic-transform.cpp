@@ -111,11 +111,6 @@ OBSBasicTransform::~OBSBasicTransform()
 
 void OBSBasicTransform::SetScene(OBSScene scene)
 {
-	transformSignal.Disconnect();
-	selectSignal.Disconnect();
-	deselectSignal.Disconnect();
-	removeSignal.Disconnect();
-
 	if (scene) {
 		OBSSource source = obs_scene_get_source(scene);
 		signal_handler_t *signal =

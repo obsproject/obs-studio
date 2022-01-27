@@ -249,7 +249,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 	}
 
 	if (view) {
-		updatePropertiesSignal.Disconnect();
 		ui->propertiesFrame->setVisible(false);
 		/* Deleting a filter will trigger a visibility change, which will also
 		 * trigger a focus change if the focus has not been on the list itself
