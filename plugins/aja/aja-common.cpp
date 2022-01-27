@@ -14,7 +14,6 @@ void filter_io_selection_input_list(const std::string &cardID,
 				    obs_property_t *list)
 {
 	auto &cardManager = aja::CardManager::Instance();
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -52,7 +51,6 @@ void filter_io_selection_output_list(const std::string &cardID,
 				     obs_property_t *list)
 {
 	auto &cardManager = aja::CardManager::Instance();
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -90,7 +88,6 @@ void populate_io_selection_input_list(const std::string &cardID,
 				      obs_property_t *list)
 {
 	obs_property_list_clear(list);
-
 	obs_property_list_add_int(list,
 				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
@@ -115,7 +112,6 @@ void populate_io_selection_output_list(const std::string &cardID,
 				       obs_property_t *list)
 {
 	obs_property_list_clear(list);
-
 	obs_property_list_add_int(list,
 				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
@@ -129,7 +125,6 @@ void populate_io_selection_output_list(const std::string &cardID,
 		     i < static_cast<int32_t>(IOSelection::NumIOSelections);
 		     i++) {
 			auto ioSelect = static_cast<IOSelection>(i);
-
 			if (ioSelect == IOSelection::Invalid)
 				continue;
 
@@ -246,10 +241,8 @@ bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 
 	auto vid_fmt = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
-
 	size_t itemCount = obs_property_list_item_count(list);
 	bool itemFound = false;
-
 	for (size_t i = 0; i < itemCount; i++) {
 		int itemFormat = obs_property_list_item_int(list, i);
 		if (itemFormat == vid_fmt) {

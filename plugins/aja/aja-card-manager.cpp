@@ -180,7 +180,6 @@ NTV2DeviceID CardEntry::GetDeviceID() const
 bool CardEntry::ChannelReady(NTV2Channel chan, const std::string &owner) const
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
-
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.second & (1 << static_cast<int32_t>(chan))) {
 			return pwn.first == owner;
@@ -197,7 +196,6 @@ bool CardEntry::AcquireChannel(NTV2Channel chan, NTV2Mode mode,
 
 	if (ChannelReady(chan, owner)) {
 		const std::lock_guard<std::mutex> lock(mMutex);
-
 		if (mChannelPwnz.find(owner) != mChannelPwnz.end()) {
 			if (mChannelPwnz[owner] &
 			    (1 << static_cast<int32_t>(chan))) {
@@ -232,7 +230,6 @@ bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
 			       const std::string &owner)
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
-
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.first == owner) {
 			if (mChannelPwnz[owner] &
@@ -270,7 +267,6 @@ bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 
 	NTV2InputSourceSet inputSources;
 	aja::IOSelectionToInputSources(io, inputSources);
-
 	if (inputSources.size() > 0) {
 		size_t channelsReady = 0;
 
@@ -487,7 +483,6 @@ bool CardEntry::UpdateChannelOwnerName(const std::string &oldName,
 				       const std::string &newName)
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
-
 	for (const auto &pwn : mChannelPwnz) {
 		if (pwn.first == oldName) {
 			mChannelPwnz.insert(std::pair<std::string, int32_t>{
@@ -523,7 +518,6 @@ bool CardEntry::isAutoCirculateRunning(NTV2Channel chan)
 void CardManager::ClearCardEntries()
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
-
 	for (auto &&entry : mCardEntries) {
 		CNTV2Card *card = entry.second->GetCard();
 		if (card) {
@@ -550,7 +544,6 @@ void CardManager::ClearCardEntries()
 void CardManager::EnumerateCards()
 {
 	const std::lock_guard<std::mutex> lock(mMutex);
-
 	CNTV2DeviceScanner scanner;
 	for (const auto &iter : scanner.GetDeviceInfoList()) {
 		CNTV2Card card((UWord)iter.deviceIndex);
