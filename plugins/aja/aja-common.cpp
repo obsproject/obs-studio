@@ -1031,6 +1031,8 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 	auto rd = aja::DetermineRasterDefinition(vf);
 	auto standard = GetNTV2StandardFromVideoFormat(vf);
 	bool is_rgb = NTV2_IS_FBF_RGB(pf);
+	bool is_hfr =
+		NTV2_IS_HIGH_NTV2FrameRate(GetNTV2FrameRateFromVideoFormat(vf));
 	if (rd == RasterDefinition::SD) {
 		vpid = VPIDStandard_483_576;
 	} else if (rd == RasterDefinition::HD) {
@@ -1119,7 +1121,15 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 					vpid = VPIDStandard_1080;
 				} else if (t4k ==
 					   SDITransport4K::TwoSampleInterleave) {
-					vpid = VPIDStandard_2160_DualLink;
+					if (is_hfr &&
+					    trx == SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_2160_QuadLink_3Ga;
+					} else if (is_hfr &&
+						   trx == SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_2160_QuadDualLink_3Gb;
+					} else {
+						vpid = VPIDStandard_2160_DualLink;
+					}
 				}
 			}
 		} else if (aja::IsSDIFourWireIOSelection(io)) {
