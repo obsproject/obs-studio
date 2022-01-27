@@ -263,21 +263,21 @@ bool CardEntry::ReleaseChannel(NTV2Channel chan, NTV2Mode mode,
 bool CardEntry::InputSelectionReady(IOSelection io, NTV2DeviceID id,
 				    const std::string &owner) const
 {
-	UNUSED_PARAMETER(id);
-
-	NTV2InputSourceSet inputSources;
-	aja::IOSelectionToInputSources(io, inputSources);
-	if (inputSources.size() > 0) {
-		size_t channelsReady = 0;
-
-		for (auto &&src : inputSources) {
-			auto channel = NTV2InputSourceToChannel(src);
-			if (ChannelReady(channel, owner))
-				channelsReady++;
+	if (id == DEVICE_ID_KONA1 && io == IOSelection::SDI1) {
+		return true;
+	} else {
+		NTV2InputSourceSet inputSources;
+		aja::IOSelectionToInputSources(io, inputSources);
+		if (inputSources.size() > 0) {
+			size_t channelsReady = 0;
+			for (auto &&src : inputSources) {
+				auto channel = NTV2InputSourceToChannel(src);
+				if (ChannelReady(channel, owner))
+					channelsReady++;
+			}
+			if (channelsReady == inputSources.size())
+				return true;
 		}
-
-		if (channelsReady == inputSources.size())
-			return true;
 	}
 
 	return false;
@@ -299,19 +299,19 @@ bool CardEntry::OutputSelectionReady(IOSelection io, NTV2DeviceID id,
 		   io == IOSelection::SDI5) {
 		NTV2Channel sdiMonChannel = NTV2_CHANNEL4;
 		return ChannelReady(sdiMonChannel, owner);
+	} else if (id == DEVICE_ID_KONA1 && io == IOSelection::SDI1) {
+		return true;
 	} else {
 		NTV2OutputDestinations outputDests;
 		aja::IOSelectionToOutputDests(io, outputDests);
 		if (outputDests.size() > 0) {
 			size_t channelsReady = 0;
-
 			for (auto &&dst : outputDests) {
 				auto channel =
 					NTV2OutputDestinationToChannel(dst);
 				if (ChannelReady(channel, owner))
 					channelsReady++;
 			}
-
 			if (channelsReady == outputDests.size())
 				return true;
 		}
