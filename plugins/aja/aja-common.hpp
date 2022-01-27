@@ -97,6 +97,7 @@ extern bool IsSDITwoWireIOSelection(IOSelection io);
 extern bool IsSDIFourWireIOSelection(IOSelection io);
 extern bool IsMonitorOutputSelection(NTV2DeviceID id, IOSelection io);
 extern bool IsIOSelectionSDI(IOSelection io);
+extern bool IsIOSelectionHDMI(IOSelection io);
 
 extern std::string MakeCardID(CNTV2Card &card);
 

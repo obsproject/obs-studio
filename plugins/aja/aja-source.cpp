@@ -1023,8 +1023,9 @@ static void aja_source_update(void *data, obs_data_t *settings)
 
 	// Change capture format and restart capture thread
 	if (!initialized || want_props != ajaSource->GetSourceProps()) {
-		aja::Routing::ConfigureSourceRoute(want_props,
-						   NTV2_MODE_CAPTURE, card);
+		NTV2XptConnections xpt_cnx;
+		aja::Routing::ConfigureSourceRoute(
+			want_props, NTV2_MODE_CAPTURE, card, xpt_cnx);
 		ajaSource->Deactivate();
 		initialized = true;
 	}

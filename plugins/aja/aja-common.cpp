@@ -987,6 +987,17 @@ bool IsIOSelectionSDI(IOSelection io)
 	return false;
 }
 
+bool IsIOSelectionHDMI(IOSelection io)
+{
+	if (io == IOSelection::HDMI1 || io == IOSelection::HDMI2 ||
+	    io == IOSelection::HDMI3 || io == IOSelection::HDMI4 ||
+	    io == IOSelection::HDMIMonitorIn ||
+	    io == IOSelection::HDMIMonitorOut) {
+		return true;
+	}
+	return false;
+}
+
 std::string MakeCardID(CNTV2Card &card)
 {
 	std::string cardID;
