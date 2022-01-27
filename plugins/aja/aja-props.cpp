@@ -149,6 +149,15 @@ NTV2Channel SourceProps::Channel() const
 	return NTV2InputSourceToChannel(InitialInputSource());
 }
 
+NTV2Channel SourceProps::Framestore() const
+{
+	if (deviceID == DEVICE_ID_KONAHDMI && ioSelect == IOSelection::HDMI2 &&
+	    NTV2_IS_4K_VIDEO_FORMAT(videoFormat)) {
+		return NTV2_CHANNEL3;
+	}
+	return NTV2InputSourceToChannel(InitialInputSource());
+}
+
 NTV2AudioSystem SourceProps::AudioSystem() const
 {
 	return NTV2ChannelToAudioSystem(Channel());
@@ -301,10 +310,36 @@ NTV2Channel OutputProps::Channel() const
 		return NTV2_CHANNEL4;
 	}
 
-	if (NTV2_OUTPUT_DEST_IS_HDMI(outputDest))
+	if (NTV2_OUTPUT_DEST_IS_HDMI(outputDest)) {
+		if (aja::CardCanDoHDMIMonitorOutput(deviceID) &&
+		    NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
+			return NTV2_CHANNEL3;
 		return static_cast<NTV2Channel>(
 			NTV2DeviceGetNumFrameStores(deviceID) - 1);
+	}
 
+	return NTV2OutputDestinationToChannel(outputDest);
+}
+
+NTV2Channel OutputProps::Framestore() const
+{
+	if (deviceID == DEVICE_ID_TTAP_PRO) {
+		return NTV2_CHANNEL1;
+	} else if (deviceID == DEVICE_ID_KONA1) {
+		return NTV2_CHANNEL2;
+	} else if (deviceID == DEVICE_ID_IO4K ||
+		   deviceID == DEVICE_ID_IO4KPLUS) {
+		// SDI Monitor output uses framestore 4
+		if (ioSelect == IOSelection::SDI5)
+			return NTV2_CHANNEL4;
+	}
+	// HDMI Monitor output uses framestore 4
+	if (ioSelect == IOSelection::HDMIMonitorOut) {
+		if (NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
+			return NTV2_CHANNEL3;
+		else
+			return NTV2_CHANNEL4;
+	}
 	return NTV2OutputDestinationToChannel(outputDest);
 }
 

@@ -28,6 +28,7 @@ public:
 	NTV2InputSource InitialInputSource() const;
 	NTV2InputSourceSet InputSources() const;
 	NTV2Channel Channel() const;
+	NTV2Channel Framestore() const;
 	NTV2AudioSystem AudioSystem() const;
 	NTV2AudioRate AudioRate() const;
 	size_t AudioSize() const;
@@ -61,6 +62,7 @@ public:
 
 	NTV2FormatDesc FormatDesc();
 	NTV2Channel Channel() const;
+	NTV2Channel Framestore() const;
 	NTV2AudioSystem AudioSystem() const;
 	NTV2AudioRate AudioRate() const;
 	size_t AudioSize() const;
