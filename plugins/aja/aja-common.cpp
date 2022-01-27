@@ -98,10 +98,6 @@ void populate_io_selection_input_list(const std::string &cardID,
 	for (auto i = 0; i < static_cast<int32_t>(IOSelection::NumIOSelections);
 	     i++) {
 		auto ioSelect = static_cast<IOSelection>(i);
-		if (ioSelect == IOSelection::SDI1_2_Squares ||
-		    ioSelect == IOSelection::SDI3_4_Squares)
-			continue;
-
 		if (aja::DeviceCanDoIOSelectionIn(deviceID, ioSelect)) {
 			obs_property_list_add_int(
 				list,
@@ -134,9 +130,7 @@ void populate_io_selection_output_list(const std::string &cardID,
 		     i++) {
 			auto ioSelect = static_cast<IOSelection>(i);
 
-			if (ioSelect == IOSelection::Invalid ||
-			    ioSelect == IOSelection::SDI1_2_Squares ||
-			    ioSelect == IOSelection::SDI3_4_Squares)
+			if (ioSelect == IOSelection::Invalid)
 				continue;
 
 			if (aja::DeviceCanDoIOSelectionOut(deviceID,
@@ -630,14 +624,8 @@ std::string IOSelectionToString(IOSelection io)
 	case IOSelection::SDI1_2:
 		str = "SDI 1 & 2";
 		break;
-	case IOSelection::SDI1_2_Squares:
-		str = "SDI 1 & 2 (4K Squares)";
-		break;
 	case IOSelection::SDI3_4:
 		str = "SDI 3 & 4";
-		break;
-	case IOSelection::SDI3_4_Squares:
-		str = "SDI 3 & 4 (4K Squares)";
 		break;
 	case IOSelection::SDI5_6:
 		str = "SDI 5 & 6";
@@ -714,19 +702,7 @@ void IOSelectionToInputSources(IOSelection io, NTV2InputSourceSet &inputSources)
 		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
 		break;
-	case IOSelection::SDI1_2_Squares:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
-		break;
 	case IOSelection::SDI3_4:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
-		break;
-	case IOSelection::SDI3_4_Squares:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
 		break;
@@ -808,21 +784,7 @@ void IOSelectionToOutputDests(IOSelection io,
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
 		break;
-	// Requires 4x framestores and 2x SDI spigots
-	case IOSelection::SDI1_2_Squares:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
-		break;
 	case IOSelection::SDI3_4:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
-		break;
-	// Requires 4x framestores and 2x SDI spigots
-	case IOSelection::SDI3_4_Squares:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
 		break;
@@ -934,9 +896,7 @@ bool IsSDITwoWireIOSelection(IOSelection io)
 	bool result = false;
 	switch (io) {
 	case IOSelection::SDI1_2:
-	case IOSelection::SDI1_2_Squares:
 	case IOSelection::SDI3_4:
-	case IOSelection::SDI3_4_Squares:
 	case IOSelection::SDI5_6:
 	case IOSelection::SDI7_8:
 		result = true;
@@ -978,8 +938,7 @@ bool IsIOSelectionSDI(IOSelection io)
 	    io == IOSelection::SDI3 || io == IOSelection::SDI4 ||
 	    io == IOSelection::SDI5 || io == IOSelection::SDI6 ||
 	    io == IOSelection::SDI7 || io == IOSelection::SDI8 ||
-	    io == IOSelection::SDI1_2 || io == IOSelection::SDI1_2_Squares ||
-	    io == IOSelection::SDI3_4 || io == IOSelection::SDI3_4_Squares ||
+	    io == IOSelection::SDI1_2 || io == IOSelection::SDI3_4 ||
 	    io == IOSelection::SDI5_6 || io == IOSelection::SDI7_8 ||
 	    io == IOSelection::SDI1__4 || io == IOSelection::SDI5__8) {
 		return true;

@@ -944,14 +944,6 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	outputProps.audioNumChannels = kDefaultAudioChannels;
 	outputProps.audioSampleSize = kDefaultAudioSampleSize;
 	outputProps.audioSampleRate = kDefaultAudioSampleRate;
-	if (NTV2_IS_4K_VIDEO_FORMAT(outputProps.videoFormat) &&
-	    outputProps.sdi4kTransport == SDITransport4K::Squares) {
-		if (outputProps.ioSelect == IOSelection::SDI1_2) {
-			outputProps.ioSelect = IOSelection::SDI1_2_Squares;
-		} else if (outputProps.ioSelect == IOSelection::SDI3_4) {
-			outputProps.ioSelect = IOSelection::SDI3_4_Squares;
-		}
-	}
 
 	if (outputProps.ioSelect == IOSelection::Invalid) {
 		blog(LOG_DEBUG,
