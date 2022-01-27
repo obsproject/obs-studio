@@ -549,9 +549,9 @@ void OBSMissingFiles::saveFiles()
 			if (state == MissingFilesState::Cleared) {
 				obs_missing_file_issue_callback(f, "");
 			} else {
-				char *p = bstrdup(path.toStdString().c_str());
+				BPtr<char> p =
+					bstrdup(path.toStdString().c_str());
 				obs_missing_file_issue_callback(f, p);
-				bfree(p);
 			}
 		}
 	}

@@ -160,10 +160,9 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate,
 
 	if (duplicate) {
 		OBSSource from = source;
-		char *new_name =
+		BPtr<char> new_name =
 			get_new_source_name(obs_source_get_name(source));
 		source = obs_source_duplicate(from, new_name, false);
-		bfree(new_name);
 
 		if (!source)
 			return;
