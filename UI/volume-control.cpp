@@ -327,8 +327,6 @@ VolControl::~VolControl()
 	signal_handler_disconnect(obs_source_get_signal_handler(source), "mute",
 				  OBSVolumeMuted, this);
 
-	obs_fader_destroy(obs_fader);
-	obs_volmeter_destroy(obs_volmeter);
 	if (contextMenu)
 		contextMenu->close();
 }
