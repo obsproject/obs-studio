@@ -726,7 +726,8 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 	}
 
 	filter_io_selection_input_list(cardID, ajaSource->GetName(),
-				       obs_properties_get(props, kUIPropInput.id));
+				       obs_properties_get(props,
+							  kUIPropInput.id));
 	obs_property_set_visible(
 		obs_properties_get(props, kUIPropSDITransport.id),
 		aja::IsIOSelectionSDI(static_cast<IOSelection>(
@@ -965,8 +966,12 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	want_props.sdi4kTransport = sdi_t4k_select;
 	want_props.vpids.clear();
 	want_props.deactivateWhileNotShowing = deactivateWhileNotShowing;
-	want_props.autoDetect = ((int32_t)vf_select == kAutoDetect ||
-				 (int32_t)pf_select == kAutoDetect);
+	if (aja::IsIOSelectionSDI(io_select)) {
+		want_props.autoDetect = (int)sdi_trx_select == kAutoDetect;
+	} else {
+		want_props.autoDetect = ((int)vf_select == kAutoDetect ||
+					 (int)pf_select == kAutoDetect);
+	}
 	ajaSource->SetCardID(wantCardID);
 	ajaSource->SetDeviceIndex((UWord)cardEntry->GetCardIndex());
 
