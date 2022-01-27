@@ -163,7 +163,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/rist/librist.git",
-          "commit": "0b1aaf995c4cad83d562ec7887180cc6ee132c84"
+          "commit": "419f09ea9aa9bf15f9c43b7752ca878521543679"
         }
       ]
     },
