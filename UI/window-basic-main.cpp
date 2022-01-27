@@ -9964,10 +9964,14 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 #ifdef _WIN32
 	HWND hwnd = (HWND)window->winId();
 
-	if (hideFromCapture)
-		SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
-	else
-		SetWindowDisplayAffinity(hwnd, WDA_NONE);
+	DWORD curAffinity;
+	if (GetWindowDisplayAffinity(hwnd, &curAffinity)) {
+		if (hideFromCapture && curAffinity != WDA_EXCLUDEFROMCAPTURE)
+			SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+		else if (curAffinity != WDA_NONE)
+			SetWindowDisplayAffinity(hwnd, WDA_NONE);
+	}
+
 #else
 // TODO: Implement for other platforms if possible. Don't forget to
 // implement SetDisplayAffinitySupported too!
