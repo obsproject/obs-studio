@@ -148,7 +148,7 @@ void populate_io_selection_output_list(const std::string &cardID,
 }
 
 void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
-				NTV2VideoFormat genlockFormat)
+				NTV2VideoFormat genlockFormat, bool want4KHFR)
 {
 	VideoFormatList videoFormats = {};
 	VideoStandardList orderedStandards = {};
@@ -165,10 +165,12 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 	if (NTV2DeviceCanDo4KVideo(deviceID)) {
 		orderedStandards.push_back(NTV2_STANDARD_3840i);
 		orderedStandards.push_back(NTV2_STANDARD_3840x2160p);
-		orderedStandards.push_back(NTV2_STANDARD_3840HFR);
+		if (want4KHFR)
+			orderedStandards.push_back(NTV2_STANDARD_3840HFR);
 		orderedStandards.push_back(NTV2_STANDARD_4096i);
 		orderedStandards.push_back(NTV2_STANDARD_4096x2160p);
-		orderedStandards.push_back(NTV2_STANDARD_4096HFR);
+		if (want4KHFR)
+			orderedStandards.push_back(NTV2_STANDARD_4096HFR);
 	}
 
 	aja::GetSortedVideoFormats(deviceID, orderedStandards, videoFormats);

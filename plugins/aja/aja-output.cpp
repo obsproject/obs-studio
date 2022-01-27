@@ -827,7 +827,8 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 	}
 
 	obs_property_list_clear(vid_fmt_list);
-	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1);
+	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1,
+				   false);
 
 	obs_property_list_clear(pix_fmt_list);
 	populate_pixel_format_list(deviceID, pix_fmt_list);
