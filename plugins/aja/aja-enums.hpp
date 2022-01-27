@@ -72,16 +72,10 @@ enum class RasterDefinition {
 };
 
 enum class HDMIWireFormat {
-	SD_HDMI = 0,
-	HD_YCBCR_LFR = 1,
-	HD_YCBCR_HFR = 2,
-	HD_RGB_LFR = 3,
-	HD_RGB_HFR = 4,
-	UHD_4K_YCBCR_LFR = 5,
-	UHD_4K_YCBCR_HFR = 6,
-	UHD_4K_RGB_LFR = 7,
-	UHD_4K_RGB_HFR = 8,
-	TTAP_PRO = 9,
+	SD_HD_YCBCR = 0,
+	SD_HD_RGB = 1,
+	UHD_4K_YCBCR = 2,
+	UHD_4K_RGB = 3,
 	Unknown
 };
 
