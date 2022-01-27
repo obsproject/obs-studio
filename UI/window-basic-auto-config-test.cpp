@@ -121,7 +121,7 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "service", wiz->serviceName.c_str());
 
-	obs_properties_t *ppts = obs_get_service_properties("rtmp_common");
+	OBSProperties ppts = obs_get_service_properties("rtmp_common");
 	obs_property_t *p = obs_properties_get(ppts, "service");
 	obs_property_modified(p, settings);
 
@@ -138,8 +138,6 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 			servers.push_back(info);
 		}
 	}
-
-	obs_properties_destroy(ppts);
 }
 
 static inline void string_depad_key(string &key)

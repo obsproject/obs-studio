@@ -30,7 +30,7 @@
 SourceToolbar::SourceToolbar(QWidget *parent, OBSSource source)
 	: QWidget(parent),
 	  weakSource(OBSGetWeakRef(source)),
-	  props(obs_source_properties(source), obs_properties_destroy)
+	  props(obs_source_properties(source))
 {
 }
 
@@ -109,7 +109,7 @@ void BrowserToolbar::on_refresh_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "refreshnocache");
+	obs_property_t *p = obs_properties_get(props, "refreshnocache");
 	obs_property_button_clicked(p, source.Get());
 }
 
@@ -192,8 +192,8 @@ void ComboSelectToolbar::Init()
 		return;
 	}
 
-	UpdateSourceComboToolbarProperties(ui->device, source, props.get(),
-					   prop_name, is_int);
+	UpdateSourceComboToolbarProperties(ui->device, source, props, prop_name,
+					   is_int);
 }
 
 void UpdateSourceComboToolbarValue(QComboBox *combo, OBSSource source, int idx,
@@ -388,13 +388,13 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	std::string cur_window = obs_data_get_string(settings, "window");
 
 	ui->mode->blockSignals(true);
-	p = obs_properties_get(props.get(), "capture_mode");
+	p = obs_properties_get(props, "capture_mode");
 	cur_idx = FillPropertyCombo(ui->mode, p, cur_mode);
 	ui->mode->setCurrentIndex(cur_idx);
 	ui->mode->blockSignals(false);
 
 	ui->window->blockSignals(true);
-	p = obs_properties_get(props.get(), "window");
+	p = obs_properties_get(props, "window");
 	cur_idx = FillPropertyCombo(ui->window, p, cur_window);
 	ui->window->setCurrentIndex(cur_idx);
 	ui->window->blockSignals(false);
@@ -481,7 +481,7 @@ void ImageSourceToolbar::on_browse_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "file");
+	obs_property_t *p = obs_properties_get(props, "file");
 	const char *desc = obs_property_description(p);
 	const char *filter = obs_property_path_filter(p);
 	const char *default_path = obs_property_path_default_path(p);
@@ -558,7 +558,7 @@ void ColorSourceToolbar::on_choose_clicked()
 		return;
 	}
 
-	obs_property_t *p = obs_properties_get(props.get(), "color");
+	obs_property_t *p = obs_properties_get(props, "color");
 	const char *desc = obs_property_description(p);
 
 	QColorDialog::ColorDialogOptions options;
@@ -682,7 +682,7 @@ void TextSourceToolbar::on_selectColor_clicked()
 		strncmp(obs_source_get_id(source), "text_ft2_source", 15) == 0;
 
 	obs_property_t *p =
-		obs_properties_get(props.get(), freetype ? "color1" : "color");
+		obs_properties_get(props, freetype ? "color1" : "color");
 
 	const char *desc = obs_property_description(p);
 

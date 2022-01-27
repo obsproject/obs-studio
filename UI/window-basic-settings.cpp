@@ -814,7 +814,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(SimpleRecordingEncoderChanged()));
 
 	// Get Bind to IP Addresses
-	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
+	OBSProperties ppts = obs_get_output_properties("rtmp_output");
 	obs_property_t *p = obs_properties_get(ppts, "bind_ip");
 
 	size_t count = obs_property_list_item_count(p);
@@ -824,8 +824,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 		ui->bindToIP->addItem(QT_UTF8(name), val);
 	}
-
-	obs_properties_destroy(ppts);
 
 	InitStreamPage();
 	LoadSettings(false);
@@ -2267,8 +2265,8 @@ void OBSBasicSettings::LoadAudioDevices()
 	const char *input_id = App()->InputAudioSource();
 	const char *output_id = App()->OutputAudioSource();
 
-	obs_properties_t *input_props = obs_get_source_properties(input_id);
-	obs_properties_t *output_props = obs_get_source_properties(output_id);
+	OBSProperties input_props = obs_get_source_properties(input_id);
+	OBSProperties output_props = obs_get_source_properties(output_id);
 
 	if (input_props) {
 		obs_property_t *inputs =
@@ -2277,7 +2275,6 @@ void OBSBasicSettings::LoadAudioDevices()
 		LoadListValues(ui->auxAudioDevice2, inputs, 4);
 		LoadListValues(ui->auxAudioDevice3, inputs, 5);
 		LoadListValues(ui->auxAudioDevice4, inputs, 6);
-		obs_properties_destroy(input_props);
 	}
 
 	if (output_props) {
@@ -2285,7 +2282,6 @@ void OBSBasicSettings::LoadAudioDevices()
 			obs_properties_get(output_props, "device_id");
 		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
 		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
-		obs_properties_destroy(output_props);
 	}
 
 	if (obs_video_active()) {
@@ -4692,8 +4688,6 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
 		}
-
-		obs_properties_destroy(props);
 
 		defaultPreset = "default";
 		preset = curNVENCPreset;
