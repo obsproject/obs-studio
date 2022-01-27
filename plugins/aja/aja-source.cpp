@@ -27,7 +27,8 @@ AJASource::AJASource(obs_source_t *source)
 	  mTestPattern{},
 	  mCaptureThread{nullptr},
 	  mMutex{},
-	  mSource{source}
+	  mSource{source},
+	  mCrosspoints{}
 {
 }
 
@@ -456,6 +457,20 @@ void AJASource::SetSourceProps(const SourceProps &props)
 SourceProps AJASource::GetSourceProps() const
 {
 	return mSourceProps;
+}
+
+void AJASource::CacheConnections(const NTV2XptConnections &cnx)
+{
+	mCrosspoints.clear();
+	mCrosspoints = cnx;
+}
+
+void AJASource::ClearConnections()
+{
+	for (auto &&xpt : mCrosspoints) {
+		mCard->Connect(xpt.first, NTV2_XptBlack);
+	}
+	mCrosspoints.clear();
 }
 
 bool AJASource::ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids)
@@ -1014,9 +1029,11 @@ static void aja_source_update(void *data, obs_data_t *settings)
 
 	// Change capture format and restart capture thread
 	if (!initialized || want_props != ajaSource->GetSourceProps()) {
+		ajaSource->ClearConnections();
 		NTV2XptConnections xpt_cnx;
 		aja::Routing::ConfigureSourceRoute(
 			want_props, NTV2_MODE_CAPTURE, card, xpt_cnx);
+		ajaSource->CacheConnections(xpt_cnx);
 		ajaSource->Deactivate();
 		initialized = true;
 	}
