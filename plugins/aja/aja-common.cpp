@@ -847,6 +847,9 @@ bool DeviceCanDoIOSelectionIn(NTV2DeviceID id, IOSelection io)
 	if (io == IOSelection::HDMI1 && CardCanDoHDMIMonitorInput(id)) {
 		return false;
 	}
+	if (io == IOSelection::HDMIMonitorIn && id == DEVICE_ID_KONAHDMI) {
+		return false;
+	}
 
 	NTV2InputSourceSet inputSources;
 	if (io != IOSelection::Invalid) {
