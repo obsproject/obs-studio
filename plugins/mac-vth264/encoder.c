@@ -19,20 +19,6 @@
 #define VT_BLOG(level, format, ...) \
 	VT_LOG_ENCODER(enc->encoder, level, format, ##__VA_ARGS__)
 
-// Clipped from NSApplication as it is in a ObjC header
-extern const double NSAppKitVersionNumber;
-#define NSAppKitVersionNumber10_8 1187
-
-// Get around missing symbol on 10.8 during compilation
-enum {
-	kCMFormatDescriptionBridgeError_InvalidParameter_ = -12712,
-};
-
-static bool is_appkit10_9_or_greater()
-{
-	return floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_8;
-}
-
 static DARRAY(struct vt_encoder {
 	const char *name;
 	const char *disp_name;
@@ -616,7 +602,7 @@ static bool convert_sample_to_annexb(struct vt_h264_encoder *enc,
 		format_desc, 0, NULL, NULL, &param_count, &nal_length_bytes);
 	// it is not clear what errors this function can return
 	// so we check the two most reasonable
-	if (code == kCMFormatDescriptionBridgeError_InvalidParameter_ ||
+	if (code == kCMFormatDescriptionBridgeError_InvalidParameter ||
 	    code == kCMFormatDescriptionError_InvalidParameter) {
 		VT_BLOG(LOG_WARNING, "assuming 2 parameter sets "
 				     "and 4 byte NAL length header");
@@ -993,12 +979,6 @@ void register_encoders()
 
 bool obs_module_load(void)
 {
-	if (!is_appkit10_9_or_greater()) {
-		VT_LOG(LOG_WARNING, "Not adding VideoToolbox H264 encoder; "
-				    "AppKit must be version 10.9 or greater");
-		return false;
-	}
-
 	encoder_list_create();
 	register_encoders();
 
