@@ -14,7 +14,7 @@ target_sources(
   PRIVATE plugin-main.c
           audio-device-enum.c
           audio-device-enum.h
-          mac-audio.c
+          mac-audio.m
           mac-display-capture.m
           mac-window-capture.m
           window-utils.m
