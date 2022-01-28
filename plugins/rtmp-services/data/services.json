@@ -2128,8 +2128,8 @@
         },
         {
             "name": "nanoStream Cloud / bintu",
-		    "more_info_link": "https://www.nanocosmos.de/obs",
-		    "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
+            "more_info_link": "https://www.nanocosmos.de/obs",
+            "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
             "servers": [
                 {
                     "name": "bintu-stream global ingest (rtmp)",
