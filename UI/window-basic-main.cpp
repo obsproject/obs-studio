@@ -4529,6 +4529,8 @@ void OBSBasic::ClearSceneData()
 {
 	disableSaving++;
 
+	setCursor(Qt::WaitCursor);
+
 	CloseDialogs();
 
 	ClearVolumeControls();
@@ -4572,6 +4574,8 @@ void OBSBasic::ClearSceneData()
 	do {
 		QApplication::sendPostedEvents(nullptr);
 	} while (obs_wait_for_destroy_queue());
+
+	unsetCursor();
 
 	disableSaving--;
 
