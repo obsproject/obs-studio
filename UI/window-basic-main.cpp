@@ -9977,7 +9977,8 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	}
 
 #else
-// TODO: Implement for other platforms if possible. Don't forget to
-// implement SetDisplayAffinitySupported too!
+	// TODO: Implement for other platforms if possible. Don't forget to
+	// implement SetDisplayAffinitySupported too!
+	UNUSED_PARAMETER(hideFromCapture);
 #endif
 }
