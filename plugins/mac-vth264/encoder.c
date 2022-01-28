@@ -319,13 +319,13 @@ static bool create_encoder(struct vt_h264_encoder *enc)
 
 	// This can fail depending on hardware configuration
 	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime,
-				kCFBooleanTrue);
+				kCFBooleanFalse);
 	if (code != noErr)
-		log_osstatus(LOG_WARNING, enc,
-			     "setting "
-			     "kVTCompressionPropertyKey_RealTime, "
-			     "frame delay might be increased",
-			     code);
+		log_osstatus(
+			LOG_WARNING, enc,
+			"setting kVTCompressionPropertyKey_RealTime failed, "
+			"frame delay might be increased",
+			code);
 
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
 				      obs_to_vt_profile(enc->profile)));
