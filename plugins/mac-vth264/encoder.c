@@ -108,6 +108,16 @@ static CFStringRef obs_to_vt_colorspace(enum video_colorspace cs)
 	if ((code = (x)) != noErr) \
 		return code;
 
+static OSStatus session_set_prop_float(VTCompressionSessionRef session,
+				       CFStringRef key, float val)
+{
+	CFNumberRef n = CFNumberCreate(NULL, kCFNumberFloat32Type, &val);
+	OSStatus code = VTSessionSetProperty(session, key, n);
+	CFRelease(n);
+
+	return code;
+}
+
 static OSStatus session_set_prop_int(VTCompressionSessionRef session,
 				     CFStringRef key, int32_t val)
 {
@@ -300,9 +310,9 @@ static bool create_encoder(struct vt_h264_encoder *enc)
 	STATUS_CHECK(session_set_prop_int(
 		s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
 		enc->keyint * ((float)enc->fps_num / enc->fps_den)));
-	STATUS_CHECK(session_set_prop_int(
+	STATUS_CHECK(session_set_prop_float(
 		s, kVTCompressionPropertyKey_ExpectedFrameRate,
-		ceil((float)enc->fps_num / enc->fps_den)));
+		(float)enc->fps_num / enc->fps_den));
 	STATUS_CHECK(session_set_prop(
 		s, kVTCompressionPropertyKey_AllowFrameReordering,
 		enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
