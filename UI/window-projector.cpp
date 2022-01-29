@@ -627,7 +627,9 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
 
-	window->deleteLater();
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	main->DeleteProjector(window);
+	allProjectors.removeAll(window);
 
 	UNUSED_PARAMETER(params);
 }
