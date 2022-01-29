@@ -987,6 +987,7 @@ static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 	case GS_RG16:
 		return 32;
 	case GS_RGBA16:
+	case GS_RGBA16F:
 	case GS_RG32F:
 		return 64;
 	case GS_RGBA32F:
