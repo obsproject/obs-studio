@@ -657,6 +657,11 @@
     <property name="title">
      <string>Basic.MainMenu.View</string>
     </property>
+    <action name="resetUI">
+     <property name="text">
+      <string>Basic.MainMenu.View.ResetUI</string>
+     </property>
+    </action>
     <action name="actionFullscreenInterface">
      <property name="text">
       <string>Basic.MainMenu.View.Fullscreen.Interface</string>
@@ -665,6 +670,7 @@
       <string>F11</string>
      </property>
     </action>
+    <addaction name="resetUI"/>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
     <addaction name="toggleListboxToolbars"/>
@@ -685,8 +691,8 @@
     <property name="title">
      <string>Basic.MainMenu.Docks</string>
     </property>
-    <addaction name="lockUI"/>
-    <addaction name="resetUI"/>
+    <addaction name="lockDocks"/>
+    <addaction name="resetDocks"/>
     <addaction name="separator"/>
     <addaction name="toggleScenes"/>
     <addaction name="toggleSources"/>
@@ -2052,12 +2058,12 @@
     <string>Basic.Stats</string>
    </property>
   </action>
-  <action name="resetUI">
+  <action name="resetDocks">
    <property name="text">
-    <string>Basic.MainMenu.Docks.ResetUI</string>
+    <string>Basic.MainMenu.Docks.ResetDocks</string>
    </property>
   </action>
-  <action name="lockUI">
+  <action name="lockDocks">
    <property name="checkable">
     <bool>true</bool>
    </property>
@@ -2065,7 +2071,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic.MainMenu.Docks.LockUI</string>
+    <string>Basic.MainMenu.Docks.LockDocks</string>
    </property>
   </action>
   <action name="toggleScenes">

@@ -1980,12 +1980,12 @@ void OBSBasic::OBSInit()
 		App()->GlobalConfig(), "BasicWindow", "DockState");
 
 	if (!dockStateStr) {
-		on_resetUI_triggered();
+		on_resetDocks_triggered();
 	} else {
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState))
-			on_resetUI_triggered();
+			on_resetDocks_triggered();
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
@@ -2004,10 +2004,10 @@ void OBSBasic::OBSInit()
 
 	bool docksLocked = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					   "DocksLocked");
-	on_lockUI_toggled(docksLocked);
-	ui->lockUI->blockSignals(true);
-	ui->lockUI->setChecked(docksLocked);
-	ui->lockUI->blockSignals(false);
+	on_lockDocks_toggled(docksLocked);
+	ui->lockDocks->blockSignals(true);
+	ui->lockDocks->setChecked(docksLocked);
+	ui->lockDocks->blockSignals(false);
 
 	SystemTray(true);
 
@@ -2690,7 +2690,7 @@ OBSBasic::~OBSBasic()
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"PreviewProgramMode", IsPreviewProgramMode());
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
-			ui->lockUI->isChecked());
+			ui->lockDocks->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 #ifdef _WIN32
@@ -8776,7 +8776,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }
 
-void OBSBasic::on_resetUI_triggered()
+void OBSBasic::on_resetDocks_triggered()
 {
 	/* prune deleted extra docks */
 	for (int i = extraDocks.size() - 1; i >= 0; i--) {
@@ -8838,7 +8838,7 @@ void OBSBasic::on_resetUI_triggered()
 	activateWindow();
 }
 
-void OBSBasic::on_lockUI_toggled(bool lock)
+void OBSBasic::on_lockDocks_toggled(bool lock)
 {
 	QDockWidget::DockWidgetFeatures features =
 		lock ? QDockWidget::NoDockWidgetFeatures
@@ -8863,6 +8863,16 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 			extraDocks[i]->setFeatures(features);
 		}
 	}
+}
+
+void OBSBasic::on_resetUI_triggered()
+{
+	on_resetDocks_triggered();
+
+	ui->toggleListboxToolbars->setChecked(true);
+	ui->toggleContextBar->setChecked(true);
+	ui->toggleSourceIcons->setChecked(true);
+	ui->toggleStatusBar->setChecked(true);
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
@@ -9605,7 +9615,7 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	assignDockToggle(dock, action);
 	extraDocks.push_back(dock);
 
-	bool lock = ui->lockUI->isChecked();
+	bool lock = ui->lockDocks->isChecked();
 	QDockWidget::DockWidgetFeatures features =
 		lock ? QDockWidget::NoDockWidgetFeatures
 		     : (QDockWidget::DockWidgetClosable |
