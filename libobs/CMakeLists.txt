@@ -501,8 +501,31 @@ set(libobs_HEADERS
 	${libobs_audio_monitoring_HEADERS}
 	)
 
+set(libobs_data_EFFECTS
+	data/area.effect
+	data/bicubic_scale.effect
+	data/bilinear_lowres_scale.effect
+	data/default.effect
+	data/default_rect.effect
+	data/deinterlace_base.effect
+	data/deinterlace_blend.effect
+	data/deinterlace_blend_2x.effect
+	data/deinterlace_discard.effect
+	data/deinterlace_discard_2x.effect
+	data/deinterlace_linear.effect
+	data/deinterlace_linear_2x.effect
+	data/deinterlace_yadif.effect
+	data/deinterlace_yadif_2x.effect
+	data/format_conversion.effect
+	data/lanczos_scale.effect
+	data/opaque.effect
+	data/premultiplied_alpha.effect
+	data/repeat.effect
+	data/solid.effect)
+
 source_group("callback\\Source Files" FILES ${libobs_callback_SOURCES})
 source_group("callback\\Header Files" FILES ${libobs_callback_HEADERS})
+source_group("data\\Effect Files" FILES ${libobs_data_EFFECTS})
 source_group("graphics\\Source Files" FILES ${libobs_graphics_SOURCES})
 source_group("graphics\\Header Files" FILES ${libobs_graphics_HEADERS})
 source_group("libobs\\Source Files" FILES ${libobs_libobs_SOURCES})
@@ -519,7 +542,7 @@ set(libobs_PLATFORM_DEPS
 	${libobs_PLATFORM_DEPS}
 	caption)
 
-add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS})
+add_library(libobs SHARED ${libobs_SOURCES} ${libobs_HEADERS} ${libobs_data_EFFECTS})
 if(UNIX AND NOT APPLE)
 	set(DEST_DIR "${CMAKE_INSTALL_PREFIX}")
 	foreach(LIB "obs" "rt")
