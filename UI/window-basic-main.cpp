@@ -8976,12 +8976,15 @@ void OBSBasic::SystemTrayInit()
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 	trayMenu->addAction(showHide);
+	trayMenu->addSeparator();
 	trayMenu->addMenu(previewProjector);
 	trayMenu->addMenu(studioProgramProjector);
+	trayMenu->addSeparator();
 	trayMenu->addAction(sysTrayStream);
 	trayMenu->addAction(sysTrayRecord);
 	trayMenu->addAction(sysTrayReplayBuffer);
 	trayMenu->addAction(sysTrayVirtualCam);
+	trayMenu->addSeparator();
 	trayMenu->addAction(exit);
 	trayIcon->setContextMenu(trayMenu);
 	trayIcon->show();
