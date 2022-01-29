@@ -95,6 +95,8 @@ void populate_io_selection_input_list(const std::string &cardID,
 	for (auto i = 0; i < static_cast<int32_t>(IOSelection::NumIOSelections);
 	     i++) {
 		auto ioSelect = static_cast<IOSelection>(i);
+		if (ioSelect == IOSelection::AnalogIn)
+			continue;
 		if (aja::DeviceCanDoIOSelectionIn(deviceID, ioSelect)) {
 			obs_property_list_add_int(
 				list,
@@ -125,7 +127,8 @@ void populate_io_selection_output_list(const std::string &cardID,
 		     i < static_cast<int32_t>(IOSelection::NumIOSelections);
 		     i++) {
 			auto ioSelect = static_cast<IOSelection>(i);
-			if (ioSelect == IOSelection::Invalid)
+			if (ioSelect == IOSelection::Invalid ||
+			    ioSelect == IOSelection::AnalogOut)
 				continue;
 
 			if (aja::DeviceCanDoIOSelectionOut(deviceID,
