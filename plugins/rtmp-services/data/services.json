@@ -2128,6 +2128,8 @@
         },
         {
             "name": "nanoStream Cloud / bintu",
+            "more_info_link": "https://www.nanocosmos.de/obs",
+            "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
             "servers": [
                 {
                     "name": "bintu-stream global ingest (rtmp)",
@@ -2139,11 +2141,11 @@
                 },
                 {
                     "name": "bintu-vtrans global ingest with transcoding/ABR (rtmp)",
-                    "url": "rtmp://bintu-stream.nanocosmos.de/live"
+                    "url": "rtmp://bintu-vtrans.nanocosmos.de/live"
                 },
                 {
                     "name": "bintu-vtrans global ingest with transcoding/ABR (rtmps)",
-                    "url": "rtmps://bintu-stream.nanocosmos.de:1937/live"
+                    "url": "rtmps://bintu-vtrans.nanocosmos.de:1937/live"
                 },
                 {
                     "name": "bintu-stream Europe (EU)",
