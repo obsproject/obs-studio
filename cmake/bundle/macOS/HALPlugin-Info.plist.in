@@ -18,14 +18,14 @@
 	<string>${MACOSX_PLUGIN_BUNDLE_TYPE}</string>
 	<key>CFPlugInFactories</key>
 	<dict>
-		<key>99A15A8B-DA3C-42C3-BD5D-D035A0C2377A</key>
-		<string>NullAudio_Create</string>
+		<key>507F8C5E-F42C-48EE-BF70-4C0F1A63256E</key>
+		<string>ODAC_Create</string>
 	</dict>
 	<key>CFPlugInTypes</key>
 	<dict>
 		<key>443ABAB8-E7B3-491A-B985-BEB9187030DB</key>
 		<array>
-			<string>99A15A8B-DA3C-42C3-BD5D-D035A0C2377A</string>
+			<string>507F8C5E-F42C-48EE-BF70-4C0F1A63256E</string>
 		</array>
 	</dict>
 </dict>

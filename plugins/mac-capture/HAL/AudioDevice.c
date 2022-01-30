@@ -1,20 +1,18 @@
 /*
-See LICENSE folder for this sample’s licensing information.
+ Copyright © 2020 Apple Inc.
 
-Abstract:
-A minimal user-space driver.
+ Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated documentation files (the "Software"), to deal in the Software without restriction, including without limitation the rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to permit persons to whom the Software is furnished to do so, subject to the following conditions:
+
+ The above copyright notice and this permission notice shall be included in all copies or substantial portions of the Software.
+
+ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 */
-
-/*==================================================================================================
-	NullAudio.c
-==================================================================================================*/
 
 #include "AudioDevice.h"
 
 #pragma mark Factory
 
-void *NullAudio_Create(CFAllocatorRef inAllocator,
-		       CFUUIDRef inRequestedTypeUUID)
+void *ODAC_Create(CFAllocatorRef inAllocator, CFUUIDRef inRequestedTypeUUID)
 {
 	//	This is the CFPlugIn factory function. Its job is to create the implementation for the given
 	//	type provided that the type is supported. Because this driver is simple and all its
@@ -35,8 +33,8 @@ void *NullAudio_Create(CFAllocatorRef inAllocator,
 
 #pragma mark Inheritence
 
-static HRESULT NullAudio_QueryInterface(void *inDriver, REFIID inUUID,
-					LPVOID *outInterface)
+static HRESULT ODAC_QueryInterface(void *inDriver, REFIID inUUID,
+				   LPVOID *outInterface)
 {
 	//	This function is called by the HAL to get the interface to talk to the plug-in through.
 	//	AudioServerPlugIns are required to support the IUnknown interface and the
@@ -51,18 +49,17 @@ static HRESULT NullAudio_QueryInterface(void *inDriver, REFIID inUUID,
 	//	validate the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_QueryInterface: bad driver reference");
+		       "ODAC_QueryInterface: bad driver reference");
 	FailWithAction(
 		outInterface == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_QueryInterface: no place to store the returned interface");
+		"ODAC_QueryInterface: no place to store the returned interface");
 
 	//	make a CFUUIDRef from inUUID
 	theRequestedUUID = CFUUIDCreateFromUUIDBytes(NULL, inUUID);
-	FailWithAction(
-		theRequestedUUID == NULL,
-		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_QueryInterface: failed to create the CFUUIDRef");
+	FailWithAction(theRequestedUUID == NULL,
+		       theAnswer = kAudioHardwareIllegalOperationError, Done,
+		       "ODAC_QueryInterface: failed to create the CFUUIDRef");
 
 	//	AudioServerPlugIns only support two interfaces, IUnknown (which has to be supported by all
 	//	CFPlugIns and AudioServerPlugInDriverInterface (which is the actual interface the HAL will
@@ -84,7 +81,7 @@ Done:
 	return theAnswer;
 }
 
-static ULONG NullAudio_AddRef(void *inDriver)
+static ULONG ODAC_AddRef(void *inDriver)
 {
 	//	This call returns the resulting reference count after the increment.
 
@@ -93,7 +90,7 @@ static ULONG NullAudio_AddRef(void *inDriver)
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_AddRef: bad driver reference");
+	       "ODAC_AddRef: bad driver reference");
 
 	//	decrement the refcount
 	pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -107,7 +104,7 @@ Done:
 	return theAnswer;
 }
 
-static ULONG NullAudio_Release(void *inDriver)
+static ULONG ODAC_Release(void *inDriver)
 {
 	//	This call returns the resulting reference count after the decrement.
 
@@ -116,7 +113,7 @@ static ULONG NullAudio_Release(void *inDriver)
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_Release: bad driver reference");
+	       "ODAC_Release: bad driver reference");
 
 	//	increment the refcount
 	pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -135,8 +132,8 @@ Done:
 
 #pragma mark Basic Operations
 
-static OSStatus NullAudio_Initialize(AudioServerPlugInDriverRef inDriver,
-				     AudioServerPlugInHostRef inHost)
+static OSStatus ODAC_Initialize(AudioServerPlugInDriverRef inDriver,
+				AudioServerPlugInHostRef inHost)
 {
 	//	The job of this method is, as the name implies, to get the driver initialized. One specific
 	//	thing that needs to be done is to store the AudioServerPlugInHostRef so that it can be used
@@ -151,7 +148,7 @@ static OSStatus NullAudio_Initialize(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_Initialize: bad driver reference");
+		       "ODAC_Initialize: bad driver reference");
 
 	//	store the AudioServerPlugInHostRef
 	gPlugIn_Host = inHost;
@@ -203,10 +200,10 @@ Done:
 }
 
 static OSStatus
-NullAudio_CreateDevice(AudioServerPlugInDriverRef inDriver,
-		       CFDictionaryRef inDescription,
-		       const AudioServerPlugInClientInfo *inClientInfo,
-		       AudioObjectID *outDeviceObjectID)
+ODAC_CreateDevice(AudioServerPlugInDriverRef inDriver,
+		  CFDictionaryRef inDescription,
+		  const AudioServerPlugInClientInfo *inClientInfo,
+		  AudioObjectID *outDeviceObjectID)
 {
 	//	This method is used to tell a driver that implements the Transport Manager semantics to
 	//	create an AudioEndpointDevice from a set of AudioEndpoints. Since this driver is not a
@@ -221,14 +218,14 @@ NullAudio_CreateDevice(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_CreateDevice: bad driver reference");
+		       "ODAC_CreateDevice: bad driver reference");
 
 Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_DestroyDevice(AudioServerPlugInDriverRef inDriver,
-					AudioObjectID inDeviceObjectID)
+static OSStatus ODAC_DestroyDevice(AudioServerPlugInDriverRef inDriver,
+				   AudioObjectID inDeviceObjectID)
 {
 	//	This method is used to tell a driver that implements the Transport Manager semantics to
 	//	destroy an AudioEndpointDevice. Since this driver is not a Transport Manager, we just check
@@ -242,16 +239,16 @@ static OSStatus NullAudio_DestroyDevice(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_DestroyDevice: bad driver reference");
+		       "ODAC_DestroyDevice: bad driver reference");
 
 Done:
 	return theAnswer;
 }
 
 static OSStatus
-NullAudio_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
-			  AudioObjectID inDeviceObjectID,
-			  const AudioServerPlugInClientInfo *inClientInfo)
+ODAC_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
+		     AudioObjectID inDeviceObjectID,
+		     const AudioServerPlugInClientInfo *inClientInfo)
 {
 	//	This method is used to inform the driver about a new client that is using the given device.
 	//	This allows the device to act differently depending on who the client is. This driver does
@@ -266,19 +263,19 @@ NullAudio_AddDeviceClient(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_AddDeviceClient: bad driver reference");
+		       "ODAC_AddDeviceClient: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_AddDeviceClient: bad device ID");
+		       "ODAC_AddDeviceClient: bad device ID");
 
 Done:
 	return theAnswer;
 }
 
 static OSStatus
-NullAudio_RemoveDeviceClient(AudioServerPlugInDriverRef inDriver,
-			     AudioObjectID inDeviceObjectID,
-			     const AudioServerPlugInClientInfo *inClientInfo)
+ODAC_RemoveDeviceClient(AudioServerPlugInDriverRef inDriver,
+			AudioObjectID inDeviceObjectID,
+			const AudioServerPlugInClientInfo *inClientInfo)
 {
 	//	This method is used to inform the driver about a client that is no longer using the given
 	//	device. This driver does not track clients, so we just check the arguments and return
@@ -292,18 +289,19 @@ NullAudio_RemoveDeviceClient(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_RemoveDeviceClient: bad driver reference");
+		       "ODAC_RemoveDeviceClient: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_RemoveDeviceClient: bad device ID");
+		       "ODAC_RemoveDeviceClient: bad device ID");
 
 Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_PerformDeviceConfigurationChange(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID,
-	UInt64 inChangeAction, void *inChangeInfo)
+static OSStatus
+ODAC_PerformDeviceConfigurationChange(AudioServerPlugInDriverRef inDriver,
+				      AudioObjectID inDeviceObjectID,
+				      UInt64 inChangeAction, void *inChangeInfo)
 {
 	//	This method is called to tell the device that it can perform the configuation change that it
 	//	had requested via a call to the host method, RequestDeviceConfigurationChange(). The
@@ -328,15 +326,14 @@ static OSStatus NullAudio_PerformDeviceConfigurationChange(
 	FailWithAction(
 		inDriver != gAudioServerPlugInDriverRef,
 		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_PerformDeviceConfigurationChange: bad driver reference");
-	FailWithAction(
-		inDeviceObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_PerformDeviceConfigurationChange: bad device ID");
+		"ODAC_PerformDeviceConfigurationChange: bad driver reference");
+	FailWithAction(inDeviceObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_PerformDeviceConfigurationChange: bad device ID");
 	FailWithAction(
 		(inChangeAction != 44100) && (inChangeAction != 48000),
 		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_PerformDeviceConfigurationChange: bad sample rate");
+		"ODAC_PerformDeviceConfigurationChange: bad sample rate");
 
 	//	lock the state mutex
 	pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -359,9 +356,10 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_AbortDeviceConfigurationChange(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inDeviceObjectID,
-	UInt64 inChangeAction, void *inChangeInfo)
+static OSStatus
+ODAC_AbortDeviceConfigurationChange(AudioServerPlugInDriverRef inDriver,
+				    AudioObjectID inDeviceObjectID,
+				    UInt64 inChangeAction, void *inChangeInfo)
 {
 	//	This method is called to tell the driver that a request for a config change has been denied.
 	//	This provides the driver an opportunity to clean up any state associated with the request.
@@ -377,11 +375,10 @@ static OSStatus NullAudio_AbortDeviceConfigurationChange(
 	FailWithAction(
 		inDriver != gAudioServerPlugInDriverRef,
 		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_PerformDeviceConfigurationChange: bad driver reference");
-	FailWithAction(
-		inDeviceObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_PerformDeviceConfigurationChange: bad device ID");
+		"ODAC_PerformDeviceConfigurationChange: bad driver reference");
+	FailWithAction(inDeviceObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_PerformDeviceConfigurationChange: bad device ID");
 
 Done:
 	return theAnswer;
@@ -389,10 +386,10 @@ Done:
 
 #pragma mark Property Operations
 
-static Boolean
-NullAudio_HasProperty(AudioServerPlugInDriverRef inDriver,
-		      AudioObjectID inObjectID, pid_t inClientProcessID,
-		      const AudioObjectPropertyAddress *inAddress)
+static Boolean ODAC_HasProperty(AudioServerPlugInDriverRef inDriver,
+				AudioObjectID inObjectID,
+				pid_t inClientProcessID,
+				const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the given object has the given property.
 
@@ -401,31 +398,31 @@ NullAudio_HasProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done, "NullAudio_HasProperty: no address");
+	       "ODAC_HasProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasProperty: no address");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPropertyData() method.
+	//	property in the ODAC_GetPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_PlugIn:
-		theAnswer = NullAudio_HasPlugInProperty(
+		theAnswer = ODAC_HasPlugInProperty(
 			inDriver, inObjectID, inClientProcessID, inAddress);
 		break;
 
 	case kObjectID_Box:
-		theAnswer = NullAudio_HasBoxProperty(
-			inDriver, inObjectID, inClientProcessID, inAddress);
+		theAnswer = ODAC_HasBoxProperty(inDriver, inObjectID,
+						inClientProcessID, inAddress);
 		break;
 
 	case kObjectID_Device:
-		theAnswer = NullAudio_HasDeviceProperty(
+		theAnswer = ODAC_HasDeviceProperty(
 			inDriver, inObjectID, inClientProcessID, inAddress);
 		break;
 
 	case kObjectID_Stream_Input:
 	case kObjectID_Stream_Output:
-		theAnswer = NullAudio_HasStreamProperty(
+		theAnswer = ODAC_HasStreamProperty(
 			inDriver, inObjectID, inClientProcessID, inAddress);
 		break;
 
@@ -436,7 +433,7 @@ NullAudio_HasProperty(AudioServerPlugInDriverRef inDriver,
 	case kObjectID_DataSource_Input_Master:
 	case kObjectID_DataSource_Output_Master:
 	case kObjectID_DataDestination_PlayThru_Master:
-		theAnswer = NullAudio_HasControlProperty(
+		theAnswer = ODAC_HasControlProperty(
 			inDriver, inObjectID, inClientProcessID, inAddress);
 		break;
 	};
@@ -446,10 +443,10 @@ Done:
 }
 
 static OSStatus
-NullAudio_IsPropertySettable(AudioServerPlugInDriverRef inDriver,
-			     AudioObjectID inObjectID, pid_t inClientProcessID,
-			     const AudioObjectPropertyAddress *inAddress,
-			     Boolean *outIsSettable)
+ODAC_IsPropertySettable(AudioServerPlugInDriverRef inDriver,
+			AudioObjectID inObjectID, pid_t inClientProcessID,
+			const AudioObjectPropertyAddress *inAddress,
+			Boolean *outIsSettable)
 {
 	//	This method returns whether or not the given property on the object can have its value
 	//	changed.
@@ -460,42 +457,46 @@ NullAudio_IsPropertySettable(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_IsPropertySettable: bad driver reference");
+		       "ODAC_IsPropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsPropertySettable: no address");
+		       "ODAC_IsPropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsPropertySettable: no place to put the return value");
+		"ODAC_IsPropertySettable: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPropertyData() method.
+	//	property in the ODAC_GetPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_PlugIn:
-		theAnswer = NullAudio_IsPlugInPropertySettable(
-			inDriver, inObjectID, inClientProcessID, inAddress,
-			outIsSettable);
+		theAnswer = ODAC_IsPlugInPropertySettable(inDriver, inObjectID,
+							  inClientProcessID,
+							  inAddress,
+							  outIsSettable);
 		break;
 
 	case kObjectID_Box:
-		theAnswer = NullAudio_IsBoxPropertySettable(
-			inDriver, inObjectID, inClientProcessID, inAddress,
-			outIsSettable);
+		theAnswer = ODAC_IsBoxPropertySettable(inDriver, inObjectID,
+						       inClientProcessID,
+						       inAddress,
+						       outIsSettable);
 		break;
 
 	case kObjectID_Device:
-		theAnswer = NullAudio_IsDevicePropertySettable(
-			inDriver, inObjectID, inClientProcessID, inAddress,
-			outIsSettable);
+		theAnswer = ODAC_IsDevicePropertySettable(inDriver, inObjectID,
+							  inClientProcessID,
+							  inAddress,
+							  outIsSettable);
 		break;
 
 	case kObjectID_Stream_Input:
 	case kObjectID_Stream_Output:
-		theAnswer = NullAudio_IsStreamPropertySettable(
-			inDriver, inObjectID, inClientProcessID, inAddress,
-			outIsSettable);
+		theAnswer = ODAC_IsStreamPropertySettable(inDriver, inObjectID,
+							  inClientProcessID,
+							  inAddress,
+							  outIsSettable);
 		break;
 
 	case kObjectID_Volume_Input_Master:
@@ -505,9 +506,10 @@ NullAudio_IsPropertySettable(AudioServerPlugInDriverRef inDriver,
 	case kObjectID_DataSource_Input_Master:
 	case kObjectID_DataSource_Output_Master:
 	case kObjectID_DataDestination_PlayThru_Master:
-		theAnswer = NullAudio_IsControlPropertySettable(
-			inDriver, inObjectID, inClientProcessID, inAddress,
-			outIsSettable);
+		theAnswer = ODAC_IsControlPropertySettable(inDriver, inObjectID,
+							   inClientProcessID,
+							   inAddress,
+							   outIsSettable);
 		break;
 
 	default:
@@ -520,11 +522,11 @@ Done:
 }
 
 static OSStatus
-NullAudio_GetPropertyDataSize(AudioServerPlugInDriverRef inDriver,
-			      AudioObjectID inObjectID, pid_t inClientProcessID,
-			      const AudioObjectPropertyAddress *inAddress,
-			      UInt32 inQualifierDataSize,
-			      const void *inQualifierData, UInt32 *outDataSize)
+ODAC_GetPropertyDataSize(AudioServerPlugInDriverRef inDriver,
+			 AudioObjectID inObjectID, pid_t inClientProcessID,
+			 const AudioObjectPropertyAddress *inAddress,
+			 UInt32 inQualifierDataSize,
+			 const void *inQualifierData, UInt32 *outDataSize)
 {
 	//	This method returns the byte size of the property's data.
 
@@ -534,40 +536,40 @@ NullAudio_GetPropertyDataSize(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetPropertyDataSize: bad driver reference");
+		       "ODAC_GetPropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetPropertyDataSize: no address");
+		       "ODAC_GetPropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPropertyDataSize: no place to put the return value");
+		"ODAC_GetPropertyDataSize: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPropertyData() method.
+	//	property in the ODAC_GetPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_PlugIn:
-		theAnswer = NullAudio_GetPlugInPropertyDataSize(
+		theAnswer = ODAC_GetPlugInPropertyDataSize(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, outDataSize);
 		break;
 
 	case kObjectID_Box:
-		theAnswer = NullAudio_GetBoxPropertyDataSize(
+		theAnswer = ODAC_GetBoxPropertyDataSize(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, outDataSize);
 		break;
 
 	case kObjectID_Device:
-		theAnswer = NullAudio_GetDevicePropertyDataSize(
+		theAnswer = ODAC_GetDevicePropertyDataSize(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, outDataSize);
 		break;
 
 	case kObjectID_Stream_Input:
 	case kObjectID_Stream_Output:
-		theAnswer = NullAudio_GetStreamPropertyDataSize(
+		theAnswer = ODAC_GetStreamPropertyDataSize(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, outDataSize);
 		break;
@@ -579,7 +581,7 @@ NullAudio_GetPropertyDataSize(AudioServerPlugInDriverRef inDriver,
 	case kObjectID_DataSource_Input_Master:
 	case kObjectID_DataSource_Output_Master:
 	case kObjectID_DataDestination_PlayThru_Master:
-		theAnswer = NullAudio_GetControlPropertyDataSize(
+		theAnswer = ODAC_GetControlPropertyDataSize(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, outDataSize);
 		break;
@@ -593,11 +595,12 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetPropertyData(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	UInt32 inQualifierDataSize, const void *inQualifierData,
-	UInt32 inDataSize, UInt32 *outDataSize, void *outData)
+static OSStatus
+ODAC_GetPropertyData(AudioServerPlugInDriverRef inDriver,
+		     AudioObjectID inObjectID, pid_t inClientProcessID,
+		     const AudioObjectPropertyAddress *inAddress,
+		     UInt32 inQualifierDataSize, const void *inQualifierData,
+		     UInt32 inDataSize, UInt32 *outDataSize, void *outData)
 {
 	//	declare the local variables
 	OSStatus theAnswer = 0;
@@ -605,18 +608,18 @@ static OSStatus NullAudio_GetPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetPropertyData: bad driver reference");
+		       "ODAC_GetPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetPropertyData: no address");
+		       "ODAC_GetPropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPropertyData: no place to put the return value size");
+		"ODAC_GetPropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPropertyData: no place to put the return value");
+		"ODAC_GetPropertyData: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -625,21 +628,21 @@ static OSStatus NullAudio_GetPropertyData(
 	//	it is necessary to lock the state mutex.
 	switch (inObjectID) {
 	case kObjectID_PlugIn:
-		theAnswer = NullAudio_GetPlugInPropertyData(
+		theAnswer = ODAC_GetPlugInPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			outDataSize, outData);
 		break;
 
 	case kObjectID_Box:
-		theAnswer = NullAudio_GetBoxPropertyData(
+		theAnswer = ODAC_GetBoxPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			outDataSize, outData);
 		break;
 
 	case kObjectID_Device:
-		theAnswer = NullAudio_GetDevicePropertyData(
+		theAnswer = ODAC_GetDevicePropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			outDataSize, outData);
@@ -647,7 +650,7 @@ static OSStatus NullAudio_GetPropertyData(
 
 	case kObjectID_Stream_Input:
 	case kObjectID_Stream_Output:
-		theAnswer = NullAudio_GetStreamPropertyData(
+		theAnswer = ODAC_GetStreamPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			outDataSize, outData);
@@ -660,7 +663,7 @@ static OSStatus NullAudio_GetPropertyData(
 	case kObjectID_DataSource_Input_Master:
 	case kObjectID_DataSource_Output_Master:
 	case kObjectID_DataDestination_PlayThru_Master:
-		theAnswer = NullAudio_GetControlPropertyData(
+		theAnswer = ODAC_GetControlPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			outDataSize, outData);
@@ -675,11 +678,12 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetPropertyData(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	UInt32 inQualifierDataSize, const void *inQualifierData,
-	UInt32 inDataSize, const void *inData)
+static OSStatus
+ODAC_SetPropertyData(AudioServerPlugInDriverRef inDriver,
+		     AudioObjectID inObjectID, pid_t inClientProcessID,
+		     const AudioObjectPropertyAddress *inAddress,
+		     UInt32 inQualifierDataSize, const void *inQualifierData,
+		     UInt32 inDataSize, const void *inData)
 {
 	//	declare the local variables
 	OSStatus theAnswer = 0;
@@ -689,17 +693,17 @@ static OSStatus NullAudio_SetPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetPropertyData: bad driver reference");
+		       "ODAC_SetPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetPropertyData: no address");
+		       "ODAC_SetPropertyData: no address");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPropertyData() method.
+	//	property in the ODAC_GetPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_PlugIn:
-		theAnswer = NullAudio_SetPlugInPropertyData(
+		theAnswer = ODAC_SetPlugInPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			inData, &theNumberPropertiesChanged,
@@ -707,7 +711,7 @@ static OSStatus NullAudio_SetPropertyData(
 		break;
 
 	case kObjectID_Box:
-		theAnswer = NullAudio_SetBoxPropertyData(
+		theAnswer = ODAC_SetBoxPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			inData, &theNumberPropertiesChanged,
@@ -715,7 +719,7 @@ static OSStatus NullAudio_SetPropertyData(
 		break;
 
 	case kObjectID_Device:
-		theAnswer = NullAudio_SetDevicePropertyData(
+		theAnswer = ODAC_SetDevicePropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			inData, &theNumberPropertiesChanged,
@@ -724,7 +728,7 @@ static OSStatus NullAudio_SetPropertyData(
 
 	case kObjectID_Stream_Input:
 	case kObjectID_Stream_Output:
-		theAnswer = NullAudio_SetStreamPropertyData(
+		theAnswer = ODAC_SetStreamPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			inData, &theNumberPropertiesChanged,
@@ -738,7 +742,7 @@ static OSStatus NullAudio_SetPropertyData(
 	case kObjectID_DataSource_Input_Master:
 	case kObjectID_DataSource_Output_Master:
 	case kObjectID_DataDestination_PlayThru_Master:
-		theAnswer = NullAudio_SetControlPropertyData(
+		theAnswer = ODAC_SetControlPropertyData(
 			inDriver, inObjectID, inClientProcessID, inAddress,
 			inQualifierDataSize, inQualifierData, inDataSize,
 			inData, &theNumberPropertiesChanged,
@@ -764,9 +768,9 @@ Done:
 #pragma mark PlugIn Property Operations
 
 static Boolean
-NullAudio_HasPlugInProperty(AudioServerPlugInDriverRef inDriver,
-			    AudioObjectID inObjectID, pid_t inClientProcessID,
-			    const AudioObjectPropertyAddress *inAddress)
+ODAC_HasPlugInProperty(AudioServerPlugInDriverRef inDriver,
+		       AudioObjectID inObjectID, pid_t inClientProcessID,
+		       const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the plug-in object has the given property.
 
@@ -777,15 +781,14 @@ NullAudio_HasPlugInProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasPlugInProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done,
-	       "NullAudio_HasPlugInProperty: no address");
+	       "ODAC_HasPlugInProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasPlugInProperty: no address");
 	FailIf(inObjectID != kObjectID_PlugIn, Done,
-	       "NullAudio_HasPlugInProperty: not the plug-in object");
+	       "ODAC_HasPlugInProperty: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPlugInPropertyData() method.
+	//	property in the ODAC_GetPlugInPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -807,10 +810,11 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_IsPlugInPropertySettable(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	Boolean *outIsSettable)
+static OSStatus
+ODAC_IsPlugInPropertySettable(AudioServerPlugInDriverRef inDriver,
+			      AudioObjectID inObjectID, pid_t inClientProcessID,
+			      const AudioObjectPropertyAddress *inAddress,
+			      Boolean *outIsSettable)
 {
 	//	This method returns whether or not the given property on the plug-in object can have its
 	//	value changed.
@@ -821,25 +825,23 @@ static OSStatus NullAudio_IsPlugInPropertySettable(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsPlugInPropertySettable: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsPlugInPropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsPlugInPropertySettable: no address");
+		       "ODAC_IsPlugInPropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsPlugInPropertySettable: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_PlugIn,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsPlugInPropertySettable: not the plug-in object");
+		"ODAC_IsPlugInPropertySettable: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_PlugIn,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsPlugInPropertySettable: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPlugInPropertyData() method.
+	//	property in the ODAC_GetPlugInPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -868,7 +870,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetPlugInPropertyDataSize(
+static OSStatus ODAC_GetPlugInPropertyDataSize(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -882,25 +884,24 @@ static OSStatus NullAudio_GetPlugInPropertyDataSize(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetPlugInPropertyDataSize: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetPlugInPropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetPlugInPropertyDataSize: no address");
+		       "ODAC_GetPlugInPropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPlugInPropertyDataSize: no place to put the return value");
+		"ODAC_GetPlugInPropertyDataSize: no place to put the return value");
 	FailWithAction(
 		inObjectID != kObjectID_PlugIn,
 		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetPlugInPropertyDataSize: not the plug-in object");
+		"ODAC_GetPlugInPropertyDataSize: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPlugInPropertyData() method.
+	//	property in the ODAC_GetPlugInPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 		*outDataSize = sizeof(AudioClassID);
@@ -958,13 +959,13 @@ static OSStatus NullAudio_GetPlugInPropertyDataSize(
 		FailWithAction(
 			inQualifierDataSize != sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyDataSize: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
+			"ODAC_GetPlugInPropertyDataSize: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
 		FailWithAction(
 			inQualifierData == NULL,
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyDataSize: no qualifier for kPlugIn_CustomPropertyID");
+			"ODAC_GetPlugInPropertyDataSize: no qualifier for kPlugIn_CustomPropertyID");
 		DebugMsg(
-			"NullAudio_GetPlugInPropertyDataSize: the qualifier passed to us was:");
+			"ODAC_GetPlugInPropertyDataSize: the qualifier passed to us was:");
 		CFShow(*((CFPropertyListRef *)inQualifierData));
 		*outDataSize = sizeof(CFPropertyListRef);
 		break;
@@ -978,7 +979,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetPlugInPropertyData(
+static OSStatus ODAC_GetPlugInPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -993,22 +994,21 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetPlugInPropertyData: bad driver reference");
+		       "ODAC_GetPlugInPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetPlugInPropertyData: no address");
+		       "ODAC_GetPlugInPropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPlugInPropertyData: no place to put the return value size");
+		"ODAC_GetPlugInPropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetPlugInPropertyData: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_PlugIn,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetPlugInPropertyData: not the plug-in object");
+		"ODAC_GetPlugInPropertyData: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_PlugIn,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetPlugInPropertyData: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -1021,7 +1021,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the plug-in");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the plug-in");
 		*((AudioClassID *)outData) = kAudioObjectClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -1031,7 +1031,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the plug-in");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the plug-in");
 		*((AudioClassID *)outData) = kAudioPlugInClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -1041,7 +1041,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the plug-in");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the plug-in");
 		*((AudioObjectID *)outData) = kAudioObjectUnknown;
 		*outDataSize = sizeof(AudioObjectID);
 		break;
@@ -1051,7 +1051,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the plug-in");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the plug-in");
 		*((CFStringRef *)outData) = CFSTR("Apple Inc.");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1108,15 +1108,15 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyTranslateUIDToBox");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyTranslateUIDToBox");
 		FailWithAction(
 			inQualifierDataSize != sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: the qualifier is the wrong size for kAudioPlugInPropertyTranslateUIDToBox");
+			"ODAC_GetPlugInPropertyData: the qualifier is the wrong size for kAudioPlugInPropertyTranslateUIDToBox");
 		FailWithAction(
 			inQualifierData == NULL,
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToBox");
+			"ODAC_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToBox");
 		if (CFStringCompare(*((CFStringRef *)inQualifierData),
 				    CFSTR(kBox_UID), 0) == kCFCompareEqualTo) {
 			*((AudioObjectID *)outData) = kObjectID_Box;
@@ -1156,15 +1156,15 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyTranslateUIDToDevice");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyTranslateUIDToDevice");
 		FailWithAction(
 			inQualifierDataSize != sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: the qualifier is the wrong size for kAudioPlugInPropertyTranslateUIDToDevice");
+			"ODAC_GetPlugInPropertyData: the qualifier is the wrong size for kAudioPlugInPropertyTranslateUIDToDevice");
 		FailWithAction(
 			inQualifierData == NULL,
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToDevice");
+			"ODAC_GetPlugInPropertyData: no qualifier for kAudioPlugInPropertyTranslateUIDToDevice");
 		if (CFStringCompare(*((CFStringRef *)inQualifierData),
 				    CFSTR(kDevice_UID),
 				    0) == kCFCompareEqualTo) {
@@ -1182,7 +1182,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyResourceBundle");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioPlugInPropertyResourceBundle");
 		*((CFStringRef *)outData) = CFSTR("");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1196,7 +1196,7 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 			inDataSize <
 				sizeof(AudioServerPlugInCustomPropertyInfo),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyCustomPropertyInfoList");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kAudioObjectPropertyCustomPropertyInfoList");
 		((AudioServerPlugInCustomPropertyInfo *)outData)->mSelector =
 			kPlugIn_CustomPropertyID;
 		((AudioServerPlugInCustomPropertyInfo *)outData)
@@ -1212,20 +1212,20 @@ static OSStatus NullAudio_GetPlugInPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: not enough space for the return value of kPlugIn_CustomPropertyID");
+			"ODAC_GetPlugInPropertyData: not enough space for the return value of kPlugIn_CustomPropertyID");
 		FailWithAction(
 			inQualifierDataSize != sizeof(CFPropertyListRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
+			"ODAC_GetPlugInPropertyData: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
 		FailWithAction(
 			inQualifierData == NULL,
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetPlugInPropertyData: no qualifier for kPlugIn_CustomPropertyID");
+			"ODAC_GetPlugInPropertyData: no qualifier for kPlugIn_CustomPropertyID");
 		DebugMsg(
-			"NullAudio_GetPlugInPropertyData: the qualifier passed to us was:");
+			"ODAC_GetPlugInPropertyData: the qualifier passed to us was:");
 		CFShow(*((CFPropertyListRef *)inQualifierData));
 		*((CFStringRef *)outData) =
-			CFSTR("NullAudio PlugIn Custom Property");
+			CFSTR("ODAC PlugIn Custom Property");
 		*outDataSize = sizeof(CFStringRef);
 		break;
 
@@ -1238,7 +1238,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetPlugInPropertyData(
+static OSStatus ODAC_SetPlugInPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -1255,48 +1255,47 @@ static OSStatus NullAudio_SetPlugInPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetPlugInPropertyData: bad driver reference");
+		       "ODAC_SetPlugInPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetPlugInPropertyData: no address");
+		       "ODAC_SetPlugInPropertyData: no address");
 	FailWithAction(
 		outNumberPropertiesChanged == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetPlugInPropertyData: no place to return the number of properties that changed");
+		"ODAC_SetPlugInPropertyData: no place to return the number of properties that changed");
 	FailWithAction(
 		outChangedAddresses == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetPlugInPropertyData: no place to return the properties that changed");
-	FailWithAction(
-		inObjectID != kObjectID_PlugIn,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_SetPlugInPropertyData: not the plug-in object");
+		"ODAC_SetPlugInPropertyData: no place to return the properties that changed");
+	FailWithAction(inObjectID != kObjectID_PlugIn,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_SetPlugInPropertyData: not the plug-in object");
 
 	//	initialize the returned number of changed properties
 	*outNumberPropertiesChanged = 0;
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPlugInPropertyData() method.
+	//	property in the ODAC_GetPlugInPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kPlugIn_CustomPropertyID:
 		FailWithAction(
 			inDataSize != sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetPlugInPropertyData: not enough space for the return value of kPlugIn_CustomPropertyID");
+			"ODAC_SetPlugInPropertyData: not enough space for the return value of kPlugIn_CustomPropertyID");
 		FailWithAction(
 			inQualifierDataSize != sizeof(CFPropertyListRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetPlugInPropertyData: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
+			"ODAC_SetPlugInPropertyData: the qualifier is the wrong size for kPlugIn_CustomPropertyID");
 		FailWithAction(
 			inQualifierData == NULL,
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetPlugInPropertyData: no qualifier for kPlugIn_CustomPropertyID");
+			"ODAC_SetPlugInPropertyData: no qualifier for kPlugIn_CustomPropertyID");
 		DebugMsg(
-			"NullAudio_SetPlugInPropertyData: the qualifier passed to us was:");
+			"ODAC_SetPlugInPropertyData: the qualifier passed to us was:");
 		CFShow(*((CFPropertyListRef *)inQualifierData));
 		DebugMsg(
-			"NullAudio_SetPlugInPropertyData: the data passed to us was:");
+			"ODAC_SetPlugInPropertyData: the data passed to us was:");
 		CFShow(*((CFStringRef *)inData));
 		break;
 
@@ -1311,10 +1310,10 @@ Done:
 
 #pragma mark Box Property Operations
 
-static Boolean
-NullAudio_HasBoxProperty(AudioServerPlugInDriverRef inDriver,
-			 AudioObjectID inObjectID, pid_t inClientProcessID,
-			 const AudioObjectPropertyAddress *inAddress)
+static Boolean ODAC_HasBoxProperty(AudioServerPlugInDriverRef inDriver,
+				   AudioObjectID inObjectID,
+				   pid_t inClientProcessID,
+				   const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the box object has the given property.
 
@@ -1325,14 +1324,14 @@ NullAudio_HasBoxProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasBoxProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done, "NullAudio_HasBoxProperty: no address");
+	       "ODAC_HasBoxProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasBoxProperty: no address");
 	FailIf(inObjectID != kObjectID_Box, Done,
-	       "NullAudio_HasBoxProperty: not the box object");
+	       "ODAC_HasBoxProperty: not the box object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetBoxPropertyData() method.
+	//	property in the ODAC_GetBoxPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -1361,10 +1360,11 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_IsBoxPropertySettable(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	Boolean *outIsSettable)
+static OSStatus
+ODAC_IsBoxPropertySettable(AudioServerPlugInDriverRef inDriver,
+			   AudioObjectID inObjectID, pid_t inClientProcessID,
+			   const AudioObjectPropertyAddress *inAddress,
+			   Boolean *outIsSettable)
 {
 	//	This method returns whether or not the given property on the plug-in object can have its
 	//	value changed.
@@ -1377,22 +1377,21 @@ static OSStatus NullAudio_IsBoxPropertySettable(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_IsBoxPropertySettable: bad driver reference");
+		       "ODAC_IsBoxPropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsBoxPropertySettable: no address");
+		       "ODAC_IsBoxPropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsBoxPropertySettable: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_Box,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsBoxPropertySettable: not the plug-in object");
+		"ODAC_IsBoxPropertySettable: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_Box,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsBoxPropertySettable: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetBoxPropertyData() method.
+	//	property in the ODAC_GetBoxPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -1428,11 +1427,12 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetBoxPropertyDataSize(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	UInt32 inQualifierDataSize, const void *inQualifierData,
-	UInt32 *outDataSize)
+static OSStatus
+ODAC_GetBoxPropertyDataSize(AudioServerPlugInDriverRef inDriver,
+			    AudioObjectID inObjectID, pid_t inClientProcessID,
+			    const AudioObjectPropertyAddress *inAddress,
+			    UInt32 inQualifierDataSize,
+			    const void *inQualifierData, UInt32 *outDataSize)
 {
 	//	This method returns the byte size of the property's data.
 
@@ -1442,25 +1442,23 @@ static OSStatus NullAudio_GetBoxPropertyDataSize(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetBoxPropertyDataSize: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetBoxPropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetBoxPropertyDataSize: no address");
+		       "ODAC_GetBoxPropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetBoxPropertyDataSize: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_Box,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetBoxPropertyDataSize: not the plug-in object");
+		"ODAC_GetBoxPropertyDataSize: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_Box,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetBoxPropertyDataSize: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetBoxPropertyData() method.
+	//	property in the ODAC_GetBoxPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 		*outDataSize = sizeof(AudioClassID);
@@ -1549,11 +1547,12 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetBoxPropertyData(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	UInt32 inQualifierDataSize, const void *inQualifierData,
-	UInt32 inDataSize, UInt32 *outDataSize, void *outData)
+static OSStatus
+ODAC_GetBoxPropertyData(AudioServerPlugInDriverRef inDriver,
+			AudioObjectID inObjectID, pid_t inClientProcessID,
+			const AudioObjectPropertyAddress *inAddress,
+			UInt32 inQualifierDataSize, const void *inQualifierData,
+			UInt32 inDataSize, UInt32 *outDataSize, void *outData)
 {
 #pragma unused(inClientProcessID, inQualifierDataSize, inQualifierData)
 
@@ -1563,21 +1562,21 @@ static OSStatus NullAudio_GetBoxPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetBoxPropertyData: bad driver reference");
+		       "ODAC_GetBoxPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetBoxPropertyData: no address");
+		       "ODAC_GetBoxPropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetBoxPropertyData: no place to put the return value size");
+		"ODAC_GetBoxPropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetBoxPropertyData: no place to put the return value");
+		"ODAC_GetBoxPropertyData: no place to put the return value");
 	FailWithAction(inObjectID != kObjectID_Box,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetBoxPropertyData: not the plug-in object");
+		       "ODAC_GetBoxPropertyData: not the plug-in object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -1590,7 +1589,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the box");
 		*((AudioClassID *)outData) = kAudioObjectClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -1600,7 +1599,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the box");
 		*((AudioClassID *)outData) = kAudioBoxClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -1610,7 +1609,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the box");
 		*((AudioObjectID *)outData) = kObjectID_PlugIn;
 		*outDataSize = sizeof(AudioObjectID);
 		break;
@@ -1620,7 +1619,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		*((CFStringRef *)outData) = gBox_Name;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
@@ -1635,7 +1634,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
 		*((CFStringRef *)outData) = CFSTR("Null Model");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1645,7 +1644,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
 		*((CFStringRef *)outData) = CFSTR("Apple Inc.");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1660,7 +1659,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyIdentify for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyIdentify for the box");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1670,7 +1669,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertySerialNumber for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertySerialNumber for the box");
 		*((CFStringRef *)outData) = CFSTR("00000001");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1680,7 +1679,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyFirmwareVersion for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyFirmwareVersion for the box");
 		*((CFStringRef *)outData) = CFSTR("1.0");
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -1690,7 +1689,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the box");
 		*((CFStringRef *)outData) = CFSTR(kBox_UID);
 		break;
 
@@ -1701,7 +1700,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioDevicePropertyTransportType for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioDevicePropertyTransportType for the box");
 		*((UInt32 *)outData) = kAudioDeviceTransportTypeVirtual;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1711,7 +1710,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasAudio for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasAudio for the box");
 		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1721,7 +1720,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasVideo for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasVideo for the box");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1731,7 +1730,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasMIDI for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyHasMIDI for the box");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1741,7 +1740,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyIsProtected for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyIsProtected for the box");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1751,7 +1750,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyAcquired for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyAcquired for the box");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		*((UInt32 *)outData) = gBox_Acquired ? 1 : 0;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
@@ -1763,7 +1762,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyAcquisitionFailed for the box");
+			"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyAcquisitionFailed for the box");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -1776,7 +1775,7 @@ static OSStatus NullAudio_GetBoxPropertyData(
 				inDataSize < sizeof(AudioObjectID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyDeviceList for the box");
+				"ODAC_GetBoxPropertyData: not enough space for the return value of kAudioBoxPropertyDeviceList for the box");
 			*((AudioObjectID *)outData) = kObjectID_Device;
 			*outDataSize = sizeof(AudioObjectID);
 		} else {
@@ -1794,13 +1793,14 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetBoxPropertyData(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	UInt32 inQualifierDataSize, const void *inQualifierData,
-	UInt32 inDataSize, const void *inData,
-	UInt32 *outNumberPropertiesChanged,
-	AudioObjectPropertyAddress outChangedAddresses[2])
+static OSStatus
+ODAC_SetBoxPropertyData(AudioServerPlugInDriverRef inDriver,
+			AudioObjectID inObjectID, pid_t inClientProcessID,
+			const AudioObjectPropertyAddress *inAddress,
+			UInt32 inQualifierDataSize, const void *inQualifierData,
+			UInt32 inDataSize, const void *inData,
+			UInt32 *outNumberPropertiesChanged,
+			AudioObjectPropertyAddress outChangedAddresses[2])
 {
 #pragma unused(inClientProcessID, inQualifierDataSize, inQualifierData, \
 	       inDataSize, inData)
@@ -1811,28 +1811,28 @@ static OSStatus NullAudio_SetBoxPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetBoxPropertyData: bad driver reference");
+		       "ODAC_SetBoxPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetBoxPropertyData: no address");
+		       "ODAC_SetBoxPropertyData: no address");
 	FailWithAction(
 		outNumberPropertiesChanged == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetBoxPropertyData: no place to return the number of properties that changed");
+		"ODAC_SetBoxPropertyData: no place to return the number of properties that changed");
 	FailWithAction(
 		outChangedAddresses == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetBoxPropertyData: no place to return the properties that changed");
+		"ODAC_SetBoxPropertyData: no place to return the properties that changed");
 	FailWithAction(inObjectID != kObjectID_Box,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetBoxPropertyData: not the box object");
+		       "ODAC_SetBoxPropertyData: not the box object");
 
 	//	initialize the returned number of changed properties
 	*outNumberPropertiesChanged = 0;
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetPlugInPropertyData() method.
+	//	property in the ODAC_GetPlugInPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyName:
 		//	Boxes should allow their name to be editable
@@ -1841,12 +1841,12 @@ static OSStatus NullAudio_SetBoxPropertyData(
 				inDataSize != sizeof(CFStringRef),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetBoxPropertyData: wrong size for the data for kAudioObjectPropertyName");
+				"ODAC_SetBoxPropertyData: wrong size for the data for kAudioObjectPropertyName");
 			FailWithAction(
 				inData == NULL,
 				theAnswer = kAudioHardwareIllegalOperationError,
 				Done,
-				"NullAudio_SetBoxPropertyData: no data to set for kAudioObjectPropertyName");
+				"ODAC_SetBoxPropertyData: no data to set for kAudioObjectPropertyName");
 			CFStringRef *theNewName = (CFStringRef *)inData;
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			if ((theNewName != NULL) && (*theNewName != NULL)) {
@@ -1874,12 +1874,12 @@ static OSStatus NullAudio_SetBoxPropertyData(
 		//	flash it's UI for the device.
 		{
 			syslog(LOG_NOTICE,
-			       "The identify property has been set on the Box implemented by the NullAudio driver.");
+			       "The identify property has been set on the Box implemented by the ODAC driver.");
 			FailWithAction(
 				inDataSize != sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetBoxPropertyData: wrong size for the data for kAudioObjectPropertyIdentify");
+				"ODAC_SetBoxPropertyData: wrong size for the data for kAudioObjectPropertyIdentify");
 			dispatch_after(
 				dispatch_time(0, 2ULL * 1000ULL * 1000ULL *
 							 1000ULL),
@@ -1904,7 +1904,7 @@ static OSStatus NullAudio_SetBoxPropertyData(
 				inDataSize != sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetBoxPropertyData: wrong size for the data for kAudioBoxPropertyAcquired");
+				"ODAC_SetBoxPropertyData: wrong size for the data for kAudioBoxPropertyAcquired");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			if (gBox_Acquired != (*((UInt32 *)inData) != 0)) {
 				//	the new value is different from the old value, so save it
@@ -1961,9 +1961,9 @@ Done:
 #pragma mark Device Property Operations
 
 static Boolean
-NullAudio_HasDeviceProperty(AudioServerPlugInDriverRef inDriver,
-			    AudioObjectID inObjectID, pid_t inClientProcessID,
-			    const AudioObjectPropertyAddress *inAddress)
+ODAC_HasDeviceProperty(AudioServerPlugInDriverRef inDriver,
+		       AudioObjectID inObjectID, pid_t inClientProcessID,
+		       const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the given object has the given property.
 
@@ -1974,15 +1974,14 @@ NullAudio_HasDeviceProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasDeviceProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done,
-	       "NullAudio_HasDeviceProperty: no address");
+	       "ODAC_HasDeviceProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasDeviceProperty: no address");
 	FailIf(inObjectID != kObjectID_Device, Done,
-	       "NullAudio_HasDeviceProperty: not the device object");
+	       "ODAC_HasDeviceProperty: not the device object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetDevicePropertyData() method.
+	//	property in the ODAC_GetDevicePropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -2027,10 +2026,11 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_IsDevicePropertySettable(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	Boolean *outIsSettable)
+static OSStatus
+ODAC_IsDevicePropertySettable(AudioServerPlugInDriverRef inDriver,
+			      AudioObjectID inObjectID, pid_t inClientProcessID,
+			      const AudioObjectPropertyAddress *inAddress,
+			      Boolean *outIsSettable)
 {
 	//	This method returns whether or not the given property on the object can have its value
 	//	changed.
@@ -2041,25 +2041,23 @@ static OSStatus NullAudio_IsDevicePropertySettable(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsDevicePropertySettable: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsDevicePropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsDevicePropertySettable: no address");
+		       "ODAC_IsDevicePropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsDevicePropertySettable: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsDevicePropertySettable: not the device object");
+		"ODAC_IsDevicePropertySettable: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsDevicePropertySettable: not the device object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetDevicePropertyData() method.
+	//	property in the ODAC_GetDevicePropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -2103,7 +2101,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetDevicePropertyDataSize(
+static OSStatus ODAC_GetDevicePropertyDataSize(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -2117,25 +2115,23 @@ static OSStatus NullAudio_GetDevicePropertyDataSize(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetDevicePropertyDataSize: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetDevicePropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetDevicePropertyDataSize: no address");
+		       "ODAC_GetDevicePropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetDevicePropertyDataSize: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetDevicePropertyDataSize: not the device object");
+		"ODAC_GetDevicePropertyDataSize: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetDevicePropertyDataSize: not the device object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetDevicePropertyData() method.
+	//	property in the ODAC_GetDevicePropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 		*outDataSize = sizeof(AudioClassID);
@@ -2280,7 +2276,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetDevicePropertyData(
+static OSStatus ODAC_GetDevicePropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -2296,22 +2292,21 @@ static OSStatus NullAudio_GetDevicePropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetDevicePropertyData: bad driver reference");
+		       "ODAC_GetDevicePropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetDevicePropertyData: no address");
+		       "ODAC_GetDevicePropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetDevicePropertyData: no place to put the return value size");
+		"ODAC_GetDevicePropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetDevicePropertyData: no place to put the return value");
-	FailWithAction(
-		inObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetDevicePropertyData: not the device object");
+		"ODAC_GetDevicePropertyData: no place to put the return value");
+	FailWithAction(inObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetDevicePropertyData: not the device object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -2324,7 +2319,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the device");
 		*((AudioClassID *)outData) = kAudioObjectClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -2334,7 +2329,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyClass for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyClass for the device");
 		*((AudioClassID *)outData) = kAudioDeviceClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -2344,7 +2339,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the device");
 		*((AudioObjectID *)outData) = kObjectID_PlugIn;
 		*outDataSize = sizeof(AudioObjectID);
 		break;
@@ -2354,8 +2349,9 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyName for the device");
-		*((CFStringRef *)outData) = CFSTR("DeviceName");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyName for the device");
+		*((CFStringRef *)outData) =
+			CFSTR("OBS Desktop Audio Capture Device (Internal)");
 		*outDataSize = sizeof(CFStringRef);
 		break;
 
@@ -2364,8 +2360,8 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the device");
-		*((CFStringRef *)outData) = CFSTR("ManufacturerName");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyManufacturer for the device");
+		*((CFStringRef *)outData) = CFSTR("OBS Project");
 		*outDataSize = sizeof(CFStringRef);
 		break;
 
@@ -2374,18 +2370,18 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyElementName for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioObjectPropertyElementName for the device");
 		switch (inAddress->mElement) {
 		case 0:
-			*((CFStringRef *)outData) = CFSTR("MasterElementName");
+			*((CFStringRef *)outData) = CFSTR("Master");
 			break;
 
 		case 1:
-			*((CFStringRef *)outData) = CFSTR("LeftElementName");
+			*((CFStringRef *)outData) = CFSTR("Left");
 			break;
 
 		case 2:
-			*((CFStringRef *)outData) = CFSTR("RightElementName");
+			*((CFStringRef *)outData) = CFSTR("Right");
 			break;
 
 		default:
@@ -2461,7 +2457,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceUID for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceUID for the device");
 		*((CFStringRef *)outData) = CFSTR(kDevice_UID);
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -2473,7 +2469,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyModelUID for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyModelUID for the device");
 		*((CFStringRef *)outData) = CFSTR(kDevice_ModelUID);
 		*outDataSize = sizeof(CFStringRef);
 		break;
@@ -2485,7 +2481,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyTransportType for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyTransportType for the device");
 		*((UInt32 *)outData) = kAudioDeviceTransportTypeVirtual;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2528,7 +2524,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyClockDomain for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyClockDomain for the device");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2540,7 +2536,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceIsAlive for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceIsAlive for the device");
 		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2551,7 +2547,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceIsRunning for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceIsRunning for the device");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		*((UInt32 *)outData) = ((gDevice_IOIsRunning > 0) > 0) ? 1 : 0;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
@@ -2566,7 +2562,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceCanBeDefaultDevice for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceCanBeDefaultDevice for the device");
 		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2579,7 +2575,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceCanBeDefaultSystemDevice for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceCanBeDefaultSystemDevice for the device");
 		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2590,7 +2586,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyLatency for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyLatency for the device");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2684,7 +2680,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertySafetyOffset for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertySafetyOffset for the device");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2695,7 +2691,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(Float64),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyNominalSampleRate for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyNominalSampleRate for the device");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		*((Float64 *)outData) = gDevice_SampleRate;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
@@ -2736,7 +2732,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyIsHidden for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyIsHidden for the device");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2747,7 +2743,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < (2 * sizeof(UInt32)),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyPreferredChannelsForStereo for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyPreferredChannelsForStereo for the device");
 		((UInt32 *)outData)[0] = 1;
 		((UInt32 *)outData)[1] = 2;
 		*outDataSize = 2 * sizeof(UInt32);
@@ -2766,7 +2762,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 				inDataSize < theACLSize,
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyPreferredChannelLayout for the device");
+				"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyPreferredChannelLayout for the device");
 			((AudioChannelLayout *)outData)->mChannelLayoutTag =
 				kAudioChannelLayoutTag_UseChannelDescriptions;
 			((AudioChannelLayout *)outData)->mChannelBitmap = 0;
@@ -2801,7 +2797,7 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyZeroTimeStampPeriod for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyZeroTimeStampPeriod for the device");
 		*((UInt32 *)outData) = kDevice_RingBufferSize;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -2811,19 +2807,19 @@ static OSStatus NullAudio_GetDevicePropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFURLRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceUID for the device");
+			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyDeviceUID for the device");
 		CFBundleRef theBundle = CFBundleGetBundleWithIdentifier(
 			CFSTR(kPlugIn_BundleID));
 		FailWithAction(
 			theBundle == NULL,
 			theAnswer = kAudioHardwareUnspecifiedError, Done,
-			"NullAudio_GetDevicePropertyData: could not get the plug-in bundle for kAudioDevicePropertyIcon");
+			"ODAC_GetDevicePropertyData: could not get the plug-in bundle for kAudioDevicePropertyIcon");
 		CFURLRef theURL = CFBundleCopyResourceURL(
 			theBundle, CFSTR("DeviceIcon.icns"), NULL, NULL);
 		FailWithAction(
 			theURL == NULL,
 			theAnswer = kAudioHardwareUnspecifiedError, Done,
-			"NullAudio_GetDevicePropertyData: could not get the URL for kAudioDevicePropertyIcon");
+			"ODAC_GetDevicePropertyData: could not get the URL for kAudioDevicePropertyIcon");
 		*((CFURLRef *)outData) = theURL;
 		*outDataSize = sizeof(CFURLRef);
 	} break;
@@ -2837,7 +2833,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetDevicePropertyData(
+static OSStatus ODAC_SetDevicePropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -2855,29 +2851,28 @@ static OSStatus NullAudio_SetDevicePropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetDevicePropertyData: bad driver reference");
+		       "ODAC_SetDevicePropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetDevicePropertyData: no address");
+		       "ODAC_SetDevicePropertyData: no address");
 	FailWithAction(
 		outNumberPropertiesChanged == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetDevicePropertyData: no place to return the number of properties that changed");
+		"ODAC_SetDevicePropertyData: no place to return the number of properties that changed");
 	FailWithAction(
 		outChangedAddresses == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetDevicePropertyData: no place to return the properties that changed");
-	FailWithAction(
-		inObjectID != kObjectID_Device,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_SetDevicePropertyData: not the device object");
+		"ODAC_SetDevicePropertyData: no place to return the properties that changed");
+	FailWithAction(inObjectID != kObjectID_Device,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_SetDevicePropertyData: not the device object");
 
 	//	initialize the returned number of changed properties
 	*outNumberPropertiesChanged = 0;
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetDevicePropertyData() method.
+	//	property in the ODAC_GetDevicePropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioDevicePropertyNominalSampleRate:
 		//	Changing the sample rate needs to be handled via the
@@ -2887,12 +2882,12 @@ static OSStatus NullAudio_SetDevicePropertyData(
 		FailWithAction(
 			inDataSize != sizeof(Float64),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetDevicePropertyData: wrong size for the data for kAudioDevicePropertyNominalSampleRate");
+			"ODAC_SetDevicePropertyData: wrong size for the data for kAudioDevicePropertyNominalSampleRate");
 		FailWithAction(
 			(*((const Float64 *)inData) != 44100.0) &&
 				(*((const Float64 *)inData) != 48000.0),
 			theAnswer = kAudioHardwareIllegalOperationError, Done,
-			"NullAudio_SetDevicePropertyData: unsupported value for kAudioDevicePropertyNominalSampleRate");
+			"ODAC_SetDevicePropertyData: unsupported value for kAudioDevicePropertyNominalSampleRate");
 
 		//	make sure that the new value is different than the old value
 		pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -2934,9 +2929,9 @@ Done:
 #pragma mark Stream Property Operations
 
 static Boolean
-NullAudio_HasStreamProperty(AudioServerPlugInDriverRef inDriver,
-			    AudioObjectID inObjectID, pid_t inClientProcessID,
-			    const AudioObjectPropertyAddress *inAddress)
+ODAC_HasStreamProperty(AudioServerPlugInDriverRef inDriver,
+		       AudioObjectID inObjectID, pid_t inClientProcessID,
+		       const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the given object has the given property.
 
@@ -2947,16 +2942,15 @@ NullAudio_HasStreamProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasStreamProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done,
-	       "NullAudio_HasStreamProperty: no address");
+	       "ODAC_HasStreamProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasStreamProperty: no address");
 	FailIf((inObjectID != kObjectID_Stream_Input) &&
 		       (inObjectID != kObjectID_Stream_Output),
-	       Done, "NullAudio_HasStreamProperty: not a stream object");
+	       Done, "ODAC_HasStreamProperty: not a stream object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetStreamPropertyData() method.
+	//	property in the ODAC_GetStreamPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -2980,10 +2974,11 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_IsStreamPropertySettable(
-	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
-	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
-	Boolean *outIsSettable)
+static OSStatus
+ODAC_IsStreamPropertySettable(AudioServerPlugInDriverRef inDriver,
+			      AudioObjectID inObjectID, pid_t inClientProcessID,
+			      const AudioObjectPropertyAddress *inAddress,
+			      Boolean *outIsSettable)
 {
 	//	This method returns whether or not the given property on the object can have its value
 	//	changed.
@@ -2994,26 +2989,24 @@ static OSStatus NullAudio_IsStreamPropertySettable(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsStreamPropertySettable: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsStreamPropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsStreamPropertySettable: no address");
+		       "ODAC_IsStreamPropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsStreamPropertySettable: no place to put the return value");
-	FailWithAction(
-		(inObjectID != kObjectID_Stream_Input) &&
-			(inObjectID != kObjectID_Stream_Output),
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsStreamPropertySettable: not a stream object");
+		"ODAC_IsStreamPropertySettable: no place to put the return value");
+	FailWithAction((inObjectID != kObjectID_Stream_Input) &&
+			       (inObjectID != kObjectID_Stream_Output),
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsStreamPropertySettable: not a stream object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetStreamPropertyData() method.
+	//	property in the ODAC_GetStreamPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 	case kAudioObjectPropertyClass:
@@ -3044,7 +3037,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetStreamPropertyDataSize(
+static OSStatus ODAC_GetStreamPropertyDataSize(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -3058,26 +3051,24 @@ static OSStatus NullAudio_GetStreamPropertyDataSize(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetStreamPropertyDataSize: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetStreamPropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetStreamPropertyDataSize: no address");
+		       "ODAC_GetStreamPropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetStreamPropertyDataSize: no place to put the return value");
-	FailWithAction(
-		(inObjectID != kObjectID_Stream_Input) &&
-			(inObjectID != kObjectID_Stream_Output),
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetStreamPropertyDataSize: not a stream object");
+		"ODAC_GetStreamPropertyDataSize: no place to put the return value");
+	FailWithAction((inObjectID != kObjectID_Stream_Input) &&
+			       (inObjectID != kObjectID_Stream_Output),
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetStreamPropertyDataSize: not a stream object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetStreamPropertyData() method.
+	//	property in the ODAC_GetStreamPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioObjectPropertyBaseClass:
 		*outDataSize = sizeof(AudioClassID);
@@ -3138,7 +3129,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetStreamPropertyData(
+static OSStatus ODAC_GetStreamPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -3153,22 +3144,22 @@ static OSStatus NullAudio_GetStreamPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetStreamPropertyData: bad driver reference");
+		       "ODAC_GetStreamPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetStreamPropertyData: no address");
+		       "ODAC_GetStreamPropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetStreamPropertyData: no place to put the return value size");
+		"ODAC_GetStreamPropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetStreamPropertyData: no place to put the return value");
+		"ODAC_GetStreamPropertyData: no place to put the return value");
 	FailWithAction((inObjectID != kObjectID_Stream_Input) &&
 			       (inObjectID != kObjectID_Stream_Output),
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetStreamPropertyData: not a stream object");
+		       "ODAC_GetStreamPropertyData: not a stream object");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -3181,7 +3172,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the stream");
 		*((AudioClassID *)outData) = kAudioObjectClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -3191,7 +3182,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioClassID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the stream");
 		*((AudioClassID *)outData) = kAudioStreamClassID;
 		*outDataSize = sizeof(AudioClassID);
 		break;
@@ -3201,7 +3192,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioObjectID),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the stream");
 		*((AudioObjectID *)outData) = kObjectID_Device;
 		*outDataSize = sizeof(AudioObjectID);
 		break;
@@ -3216,11 +3207,11 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(CFStringRef),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyName for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioObjectPropertyName for the stream");
 		*((CFStringRef *)outData) =
 			(inObjectID == kObjectID_Stream_Input)
-				? CFSTR("InputStreamName")
-				: CFSTR("OutputStreamName");
+				? CFSTR("OBS Desktop Audio Capture Input Stream")
+				: CFSTR("OBS Desktop Audio Capture Output Stream");
 		*outDataSize = sizeof(CFStringRef);
 		break;
 
@@ -3231,7 +3222,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyIsActive for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyIsActive for the stream");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		*((UInt32 *)outData) = (inObjectID == kObjectID_Stream_Input)
 					       ? gStream_Input_IsActive
@@ -3245,7 +3236,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyDirection for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyDirection for the stream");
 		*((UInt32 *)outData) =
 			(inObjectID == kObjectID_Stream_Input) ? 1 : 0;
 		*outDataSize = sizeof(UInt32);
@@ -3258,7 +3249,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyTerminalType for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyTerminalType for the stream");
 		*((UInt32 *)outData) =
 			(inObjectID == kObjectID_Stream_Input)
 				? kAudioStreamTerminalTypeMicrophone
@@ -3274,7 +3265,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyStartingChannel for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyStartingChannel for the stream");
 		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -3284,7 +3275,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyStartingChannel for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyStartingChannel for the stream");
 		*((UInt32 *)outData) = 0;
 		*outDataSize = sizeof(UInt32);
 		break;
@@ -3299,7 +3290,7 @@ static OSStatus NullAudio_GetStreamPropertyData(
 		FailWithAction(
 			inDataSize < sizeof(AudioStreamBasicDescription),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyVirtualFormat for the stream");
+			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyVirtualFormat for the stream");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		((AudioStreamBasicDescription *)outData)->mSampleRate =
 			gDevice_SampleRate;
@@ -3400,7 +3391,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetStreamPropertyData(
+static OSStatus ODAC_SetStreamPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -3418,29 +3409,29 @@ static OSStatus NullAudio_SetStreamPropertyData(
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetStreamPropertyData: bad driver reference");
+		       "ODAC_SetStreamPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetStreamPropertyData: no address");
+		       "ODAC_SetStreamPropertyData: no address");
 	FailWithAction(
 		outNumberPropertiesChanged == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetStreamPropertyData: no place to return the number of properties that changed");
+		"ODAC_SetStreamPropertyData: no place to return the number of properties that changed");
 	FailWithAction(
 		outChangedAddresses == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetStreamPropertyData: no place to return the properties that changed");
+		"ODAC_SetStreamPropertyData: no place to return the properties that changed");
 	FailWithAction((inObjectID != kObjectID_Stream_Input) &&
 			       (inObjectID != kObjectID_Stream_Output),
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_SetStreamPropertyData: not a stream object");
+		       "ODAC_SetStreamPropertyData: not a stream object");
 
 	//	initialize the returned number of changed properties
 	*outNumberPropertiesChanged = 0;
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetStreamPropertyData() method.
+	//	property in the ODAC_GetStreamPropertyData() method.
 	switch (inAddress->mSelector) {
 	case kAudioStreamPropertyIsActive:
 		//	Changing the active state of a stream doesn't affect IO or change the structure
@@ -3448,7 +3439,7 @@ static OSStatus NullAudio_SetStreamPropertyData(
 		FailWithAction(
 			inDataSize != sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetStreamPropertyData: wrong size for the data for kAudioDevicePropertyNominalSampleRate");
+			"ODAC_SetStreamPropertyData: wrong size for the data for kAudioDevicePropertyNominalSampleRate");
 		pthread_mutex_lock(&gPlugIn_StateMutex);
 		if (inObjectID == kObjectID_Stream_Input) {
 			if (gStream_Input_IsActive !=
@@ -3489,12 +3480,12 @@ static OSStatus NullAudio_SetStreamPropertyData(
 		FailWithAction(
 			inDataSize != sizeof(AudioStreamBasicDescription),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
-			"NullAudio_SetStreamPropertyData: wrong size for the data for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: wrong size for the data for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mFormatID != kAudioFormatLinearPCM,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported format ID for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported format ID for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mFormatFlags !=
@@ -3502,39 +3493,39 @@ static OSStatus NullAudio_SetStreamPropertyData(
 				 kAudioFormatFlagsNativeEndian |
 				 kAudioFormatFlagIsPacked),
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported format flags for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported format flags for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mBytesPerPacket != 8,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported bytes per packet for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported bytes per packet for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mFramesPerPacket != 1,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported frames per packet for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported frames per packet for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mBytesPerFrame != 8,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported bytes per frame for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported bytes per frame for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mChannelsPerFrame != 2,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported channels per frame for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported channels per frame for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
 					->mBitsPerChannel != 32,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported bits per channel for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported bits per channel for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			(((const AudioStreamBasicDescription *)inData)
 				 ->mSampleRate != 44100.0) &&
 				(((const AudioStreamBasicDescription *)inData)
 					 ->mSampleRate != 48000.0),
 			theAnswer = kAudioHardwareIllegalOperationError, Done,
-			"NullAudio_SetStreamPropertyData: unsupported sample rate for kAudioStreamPropertyPhysicalFormat");
+			"ODAC_SetStreamPropertyData: unsupported sample rate for kAudioStreamPropertyPhysicalFormat");
 
 		//	If we made it this far, the requested format is something we support, so make sure the sample rate is actually different
 		pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -3572,9 +3563,9 @@ Done:
 #pragma mark Control Property Operations
 
 static Boolean
-NullAudio_HasControlProperty(AudioServerPlugInDriverRef inDriver,
-			     AudioObjectID inObjectID, pid_t inClientProcessID,
-			     const AudioObjectPropertyAddress *inAddress)
+ODAC_HasControlProperty(AudioServerPlugInDriverRef inDriver,
+			AudioObjectID inObjectID, pid_t inClientProcessID,
+			const AudioObjectPropertyAddress *inAddress)
 {
 	//	This method returns whether or not the given object has the given property.
 
@@ -3585,13 +3576,12 @@ NullAudio_HasControlProperty(AudioServerPlugInDriverRef inDriver,
 
 	//	check the arguments
 	FailIf(inDriver != gAudioServerPlugInDriverRef, Done,
-	       "NullAudio_HasControlProperty: bad driver reference");
-	FailIf(inAddress == NULL, Done,
-	       "NullAudio_HasControlProperty: no address");
+	       "ODAC_HasControlProperty: bad driver reference");
+	FailIf(inAddress == NULL, Done, "ODAC_HasControlProperty: no address");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetControlPropertyData() method.
+	//	property in the ODAC_GetControlPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_Volume_Input_Master:
 	case kObjectID_Volume_Output_Master:
@@ -3650,7 +3640,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_IsControlPropertySettable(
+static OSStatus ODAC_IsControlPropertySettable(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	Boolean *outIsSettable)
@@ -3664,21 +3654,20 @@ static OSStatus NullAudio_IsControlPropertySettable(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_IsControlPropertySettable: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_IsControlPropertySettable: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_IsControlPropertySettable: no address");
+		       "ODAC_IsControlPropertySettable: no address");
 	FailWithAction(
 		outIsSettable == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_IsControlPropertySettable: no place to put the return value");
+		"ODAC_IsControlPropertySettable: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetControlPropertyData() method.
+	//	property in the ODAC_GetControlPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_Volume_Input_Master:
 	case kObjectID_Volume_Output_Master:
@@ -3762,7 +3751,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetControlPropertyDataSize(
+static OSStatus ODAC_GetControlPropertyDataSize(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -3776,21 +3765,20 @@ static OSStatus NullAudio_GetControlPropertyDataSize(
 	OSStatus theAnswer = 0;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetControlPropertyDataSize: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetControlPropertyDataSize: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetControlPropertyDataSize: no address");
+		       "ODAC_GetControlPropertyDataSize: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetControlPropertyDataSize: no place to put the return value");
+		"ODAC_GetControlPropertyDataSize: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetControlPropertyData() method.
+	//	property in the ODAC_GetControlPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_Volume_Input_Master:
 	case kObjectID_Volume_Output_Master:
@@ -3937,7 +3925,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetControlPropertyData(
+static OSStatus ODAC_GetControlPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -3951,21 +3939,20 @@ static OSStatus NullAudio_GetControlPropertyData(
 	UInt32 theItemIndex;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_GetControlPropertyData: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_GetControlPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_GetControlPropertyData: no address");
+		       "ODAC_GetControlPropertyData: no address");
 	FailWithAction(
 		outDataSize == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetControlPropertyData: no place to put the return value size");
+		"ODAC_GetControlPropertyData: no place to put the return value size");
 	FailWithAction(
 		outData == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_GetControlPropertyData: no place to put the return value");
+		"ODAC_GetControlPropertyData: no place to put the return value");
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required.
@@ -3982,7 +3969,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the volume control");
 			*((AudioClassID *)outData) = kAudioLevelControlClassID;
 			*outDataSize = sizeof(AudioClassID);
 			break;
@@ -3993,7 +3980,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the volume control");
 			*((AudioClassID *)outData) = kAudioVolumeControlClassID;
 			*outDataSize = sizeof(AudioClassID);
 			break;
@@ -4004,7 +3991,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the volume control");
 			*((AudioObjectID *)outData) = kObjectID_Device;
 			*outDataSize = sizeof(AudioObjectID);
 			break;
@@ -4020,7 +4007,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyScope),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the volume control");
 			*((AudioObjectPropertyScope *)outData) =
 				(inObjectID == kObjectID_Volume_Input_Master)
 					? kAudioObjectPropertyScopeInput
@@ -4034,7 +4021,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyElement),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the volume control");
 			*((AudioObjectPropertyElement *)outData) =
 				kAudioObjectPropertyElementMain;
 			*outDataSize = sizeof(AudioObjectPropertyElement);
@@ -4047,7 +4034,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyScalarValue for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyScalarValue for the volume control");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			*((Float32 *)outData) =
 				(inObjectID == kObjectID_Volume_Input_Master)
@@ -4064,7 +4051,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			*((Float32 *)outData) =
 				(inObjectID == kObjectID_Volume_Input_Master)
@@ -4090,7 +4077,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioValueRange),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelRange for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelRange for the volume control");
 			((AudioValueRange *)outData)->mMinimum = kVolume_MinDB;
 			((AudioValueRange *)outData)->mMaximum = kVolume_MaxDB;
 			*outDataSize = sizeof(AudioValueRange);
@@ -4102,7 +4089,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
 
 			//	clamp the value to be between 0 and 1
 			if (*((Float32 *)outData) < 0.0) {
@@ -4130,7 +4117,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioLevelControlPropertyDecibelValue for the volume control");
 
 			//	clamp the value to be between kVolume_MinDB and kVolume_MaxDB
 			if (*((Float32 *)outData) < kVolume_MinDB) {
@@ -4166,7 +4153,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the mute control");
 			*((AudioClassID *)outData) =
 				kAudioBooleanControlClassID;
 			*outDataSize = sizeof(AudioClassID);
@@ -4178,7 +4165,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the mute control");
 			*((AudioClassID *)outData) = kAudioMuteControlClassID;
 			*outDataSize = sizeof(AudioClassID);
 			break;
@@ -4189,7 +4176,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the mute control");
 			*((AudioObjectID *)outData) = kObjectID_Device;
 			*outDataSize = sizeof(AudioObjectID);
 			break;
@@ -4205,7 +4192,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyScope),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the mute control");
 			*((AudioObjectPropertyScope *)outData) =
 				(inObjectID == kObjectID_Mute_Input_Master)
 					? kAudioObjectPropertyScopeInput
@@ -4219,7 +4206,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyElement),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the mute control");
 			*((AudioObjectPropertyElement *)outData) =
 				kAudioObjectPropertyElementMain;
 			*outDataSize = sizeof(AudioObjectPropertyElement);
@@ -4233,7 +4220,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioBooleanControlPropertyValue for the mute control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioBooleanControlPropertyValue for the mute control");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			*((UInt32 *)outData) =
 				(inObjectID == kObjectID_Mute_Input_Master)
@@ -4259,7 +4246,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyBaseClass for the data source control");
 			*((AudioClassID *)outData) =
 				kAudioSelectorControlClassID;
 			*outDataSize = sizeof(AudioClassID);
@@ -4271,7 +4258,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioClassID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyClass for the data source control");
 			*((AudioClassID *)outData) =
 				kAudioDataSourceControlClassID;
 			switch (inObjectID) {
@@ -4295,7 +4282,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectID),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioObjectPropertyOwner for the data source control");
 			*((AudioObjectID *)outData) = kObjectID_Device;
 			*outDataSize = sizeof(AudioObjectID);
 			break;
@@ -4311,7 +4298,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyScope),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyScope for the data source control");
 			switch (inObjectID) {
 			case kObjectID_DataSource_Input_Master:
 				*((AudioObjectPropertyScope *)outData) =
@@ -4337,7 +4324,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(AudioObjectPropertyElement),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioControlPropertyElement for the data source control");
 			*((AudioObjectPropertyElement *)outData) =
 				kAudioObjectPropertyElementMain;
 			*outDataSize = sizeof(AudioObjectPropertyElement);
@@ -4350,7 +4337,7 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioSelectorControlPropertyCurrentItem for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioSelectorControlPropertyCurrentItem for the data source control");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			switch (inObjectID) {
 			case kObjectID_DataSource_Input_Master:
@@ -4403,18 +4390,18 @@ static OSStatus NullAudio_GetControlPropertyData(
 				inDataSize < sizeof(CFStringRef),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: not enough space for the return value of kAudioSelectorControlPropertyItemName for the data source control");
+				"ODAC_GetControlPropertyData: not enough space for the return value of kAudioSelectorControlPropertyItemName for the data source control");
 			FailWithAction(
 				inQualifierDataSize != sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_GetControlPropertyData: wrong size for the qualifier of kAudioSelectorControlPropertyItemName for the data source control");
+				"ODAC_GetControlPropertyData: wrong size for the qualifier of kAudioSelectorControlPropertyItemName for the data source control");
 			FailWithAction(
 				*((const UInt32 *)inQualifierData) >=
 					kDataSource_NumberItems,
 				theAnswer = kAudioHardwareIllegalOperationError,
 				Done,
-				"NullAudio_GetControlPropertyData: the item in the qualifier is not valid for kAudioSelectorControlPropertyItemName for the data source control");
+				"ODAC_GetControlPropertyData: the item in the qualifier is not valid for kAudioSelectorControlPropertyItemName for the data source control");
 			*((CFStringRef *)outData) = CFStringCreateWithFormat(
 				NULL, NULL, CFSTR(kDataSource_ItemNamePattern),
 				*((const UInt32 *)inQualifierData));
@@ -4436,7 +4423,7 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_SetControlPropertyData(
+static OSStatus ODAC_SetControlPropertyData(
 	AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID,
 	pid_t inClientProcessID, const AudioObjectPropertyAddress *inAddress,
 	UInt32 inQualifierDataSize, const void *inQualifierData,
@@ -4451,28 +4438,27 @@ static OSStatus NullAudio_SetControlPropertyData(
 	Float32 theNewVolume;
 
 	//	check the arguments
-	FailWithAction(
-		inDriver != gAudioServerPlugInDriverRef,
-		theAnswer = kAudioHardwareBadObjectError, Done,
-		"NullAudio_SetControlPropertyData: bad driver reference");
+	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
+		       theAnswer = kAudioHardwareBadObjectError, Done,
+		       "ODAC_SetControlPropertyData: bad driver reference");
 	FailWithAction(inAddress == NULL,
 		       theAnswer = kAudioHardwareIllegalOperationError, Done,
-		       "NullAudio_SetControlPropertyData: no address");
+		       "ODAC_SetControlPropertyData: no address");
 	FailWithAction(
 		outNumberPropertiesChanged == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetControlPropertyData: no place to return the number of properties that changed");
+		"ODAC_SetControlPropertyData: no place to return the number of properties that changed");
 	FailWithAction(
 		outChangedAddresses == NULL,
 		theAnswer = kAudioHardwareIllegalOperationError, Done,
-		"NullAudio_SetControlPropertyData: no place to return the properties that changed");
+		"ODAC_SetControlPropertyData: no place to return the properties that changed");
 
 	//	initialize the returned number of changed properties
 	*outNumberPropertiesChanged = 0;
 
 	//	Note that for each object, this driver implements all the required properties plus a few
 	//	extras that are useful but not required. There is more detailed commentary about each
-	//	property in the NullAudio_GetControlPropertyData() method.
+	//	property in the ODAC_GetControlPropertyData() method.
 	switch (inObjectID) {
 	case kObjectID_Volume_Input_Master:
 	case kObjectID_Volume_Output_Master:
@@ -4484,7 +4470,7 @@ static OSStatus NullAudio_SetControlPropertyData(
 				inDataSize != sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetControlPropertyData: wrong size for the data for kAudioLevelControlPropertyScalarValue");
+				"ODAC_SetControlPropertyData: wrong size for the data for kAudioLevelControlPropertyScalarValue");
 			theNewVolume = *((const Float32 *)inData);
 			if (theNewVolume < 0.0) {
 				theNewVolume = 0.0;
@@ -4542,7 +4528,7 @@ static OSStatus NullAudio_SetControlPropertyData(
 				inDataSize != sizeof(Float32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetControlPropertyData: wrong size for the data for kAudioLevelControlPropertyScalarValue");
+				"ODAC_SetControlPropertyData: wrong size for the data for kAudioLevelControlPropertyScalarValue");
 			theNewVolume = *((const Float32 *)inData);
 			if (theNewVolume < kVolume_MinDB) {
 				theNewVolume = kVolume_MinDB;
@@ -4611,7 +4597,7 @@ static OSStatus NullAudio_SetControlPropertyData(
 				inDataSize != sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetControlPropertyData: wrong size for the data for kAudioBooleanControlPropertyValue");
+				"ODAC_SetControlPropertyData: wrong size for the data for kAudioBooleanControlPropertyValue");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			if (inObjectID == kObjectID_Mute_Input_Master) {
 				if (gMute_Input_Master_Value !=
@@ -4660,13 +4646,13 @@ static OSStatus NullAudio_SetControlPropertyData(
 				inDataSize != sizeof(UInt32),
 				theAnswer = kAudioHardwareBadPropertySizeError,
 				Done,
-				"NullAudio_SetControlPropertyData: wrong size for the data for kAudioSelectorControlPropertyCurrentItem");
+				"ODAC_SetControlPropertyData: wrong size for the data for kAudioSelectorControlPropertyCurrentItem");
 			FailWithAction(
 				*((const UInt32 *)inData) >=
 					kDataSource_NumberItems,
 				theAnswer = kAudioHardwareIllegalOperationError,
 				Done,
-				"NullAudio_SetControlPropertyData: requested item not in available items list for kAudioSelectorControlPropertyCurrentItem");
+				"ODAC_SetControlPropertyData: requested item not in available items list for kAudioSelectorControlPropertyCurrentItem");
 			pthread_mutex_lock(&gPlugIn_StateMutex);
 			switch (inObjectID) {
 			case kObjectID_DataSource_Input_Master: {
@@ -4734,9 +4720,8 @@ Done:
 
 #pragma mark IO Operations
 
-static OSStatus NullAudio_StartIO(AudioServerPlugInDriverRef inDriver,
-				  AudioObjectID inDeviceObjectID,
-				  UInt32 inClientID)
+static OSStatus ODAC_StartIO(AudioServerPlugInDriverRef inDriver,
+			     AudioObjectID inDeviceObjectID, UInt32 inClientID)
 {
 	//	This call tells the device that IO is starting for the given client. When this routine
 	//	returns, the device's clock is running and it is ready to have data read/written. It is
@@ -4752,10 +4737,10 @@ static OSStatus NullAudio_StartIO(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_StartIO: bad driver reference");
+		       "ODAC_StartIO: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_StartIO: bad device ID");
+		       "ODAC_StartIO: bad device ID");
 
 	//	we need to hold the state lock
 	pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -4782,9 +4767,8 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_StopIO(AudioServerPlugInDriverRef inDriver,
-				 AudioObjectID inDeviceObjectID,
-				 UInt32 inClientID)
+static OSStatus ODAC_StopIO(AudioServerPlugInDriverRef inDriver,
+			    AudioObjectID inDeviceObjectID, UInt32 inClientID)
 {
 	//	This call tells the device that the client has stopped IO. The driver can stop the hardware
 	//	once all clients have stopped.
@@ -4797,10 +4781,10 @@ static OSStatus NullAudio_StopIO(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_StopIO: bad driver reference");
+		       "ODAC_StopIO: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_StopIO: bad device ID");
+		       "ODAC_StopIO: bad device ID");
 
 	//	we need to hold the state lock
 	pthread_mutex_lock(&gPlugIn_StateMutex);
@@ -4824,11 +4808,10 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_GetZeroTimeStamp(AudioServerPlugInDriverRef inDriver,
-					   AudioObjectID inDeviceObjectID,
-					   UInt32 inClientID,
-					   Float64 *outSampleTime,
-					   UInt64 *outHostTime, UInt64 *outSeed)
+static OSStatus ODAC_GetZeroTimeStamp(AudioServerPlugInDriverRef inDriver,
+				      AudioObjectID inDeviceObjectID,
+				      UInt32 inClientID, Float64 *outSampleTime,
+				      UInt64 *outHostTime, UInt64 *outSeed)
 {
 	//	This method returns the current zero time stamp for the device. The HAL models the timing of
 	//	a device as a series of time stamps that relate the sample time to a host time. The zero
@@ -4851,10 +4834,10 @@ static OSStatus NullAudio_GetZeroTimeStamp(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetZeroTimeStamp: bad driver reference");
+		       "ODAC_GetZeroTimeStamp: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_GetZeroTimeStamp: bad device ID");
+		       "ODAC_GetZeroTimeStamp: bad device ID");
 
 	//	we need to hold the locks
 	pthread_mutex_lock(&gDevice_IOMutex);
@@ -4888,12 +4871,11 @@ Done:
 	return theAnswer;
 }
 
-static OSStatus NullAudio_WillDoIOOperation(AudioServerPlugInDriverRef inDriver,
-					    AudioObjectID inDeviceObjectID,
-					    UInt32 inClientID,
-					    UInt32 inOperationID,
-					    Boolean *outWillDo,
-					    Boolean *outWillDoInPlace)
+static OSStatus ODAC_WillDoIOOperation(AudioServerPlugInDriverRef inDriver,
+				       AudioObjectID inDeviceObjectID,
+				       UInt32 inClientID, UInt32 inOperationID,
+				       Boolean *outWillDo,
+				       Boolean *outWillDoInPlace)
 {
 	//	This method returns whether or not the device will do a given IO operation. For this device,
 	//	we only support reading input data and writing output data.
@@ -4906,10 +4888,10 @@ static OSStatus NullAudio_WillDoIOOperation(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_WillDoIOOperation: bad driver reference");
+		       "ODAC_WillDoIOOperation: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_WillDoIOOperation: bad device ID");
+		       "ODAC_WillDoIOOperation: bad device ID");
 
 	//	figure out if we support the operation
 	bool willDo = false;
@@ -4939,10 +4921,10 @@ Done:
 }
 
 static OSStatus
-NullAudio_BeginIOOperation(AudioServerPlugInDriverRef inDriver,
-			   AudioObjectID inDeviceObjectID, UInt32 inClientID,
-			   UInt32 inOperationID, UInt32 inIOBufferFrameSize,
-			   const AudioServerPlugInIOCycleInfo *inIOCycleInfo)
+ODAC_BeginIOOperation(AudioServerPlugInDriverRef inDriver,
+		      AudioObjectID inDeviceObjectID, UInt32 inClientID,
+		      UInt32 inOperationID, UInt32 inIOBufferFrameSize,
+		      const AudioServerPlugInIOCycleInfo *inIOCycleInfo)
 {
 	//	This is called at the beginning of an IO operation. This device doesn't do anything, so just
 	//	check the arguments and return.
@@ -4955,22 +4937,22 @@ NullAudio_BeginIOOperation(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_BeginIOOperation: bad driver reference");
+		       "ODAC_BeginIOOperation: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_BeginIOOperation: bad device ID");
+		       "ODAC_BeginIOOperation: bad device ID");
 
 Done:
 	return theAnswer;
 }
 
 static OSStatus
-NullAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver,
-			AudioObjectID inDeviceObjectID,
-			AudioObjectID inStreamObjectID, UInt32 inClientID,
-			UInt32 inOperationID, UInt32 inIOBufferFrameSize,
-			const AudioServerPlugInIOCycleInfo *inIOCycleInfo,
-			void *ioMainBuffer, void *ioSecondaryBuffer)
+ODAC_DoIOOperation(AudioServerPlugInDriverRef inDriver,
+		   AudioObjectID inDeviceObjectID,
+		   AudioObjectID inStreamObjectID, UInt32 inClientID,
+		   UInt32 inOperationID, UInt32 inIOBufferFrameSize,
+		   const AudioServerPlugInIOCycleInfo *inIOCycleInfo,
+		   void *ioMainBuffer, void *ioSecondaryBuffer)
 {
 	//	This is called to actuall perform a given operation. For this device, all we need to do is
 	//	clear the buffer for the ReadInput operation.
@@ -4983,14 +4965,14 @@ NullAudio_DoIOOperation(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_DoIOOperation: bad driver reference");
+		       "ODAC_DoIOOperation: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_DoIOOperation: bad device ID");
+		       "ODAC_DoIOOperation: bad device ID");
 	FailWithAction((inStreamObjectID != kObjectID_Stream_Input) &&
 			       (inStreamObjectID != kObjectID_Stream_Output),
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_DoIOOperation: bad stream ID");
+		       "ODAC_DoIOOperation: bad stream ID");
 
 	//	clear the buffer if this iskAudioServerPlugInIOOperationReadInput
 	if (inOperationID == kAudioServerPlugInIOOperationReadInput) {
@@ -5003,10 +4985,10 @@ Done:
 }
 
 static OSStatus
-NullAudio_EndIOOperation(AudioServerPlugInDriverRef inDriver,
-			 AudioObjectID inDeviceObjectID, UInt32 inClientID,
-			 UInt32 inOperationID, UInt32 inIOBufferFrameSize,
-			 const AudioServerPlugInIOCycleInfo *inIOCycleInfo)
+ODAC_EndIOOperation(AudioServerPlugInDriverRef inDriver,
+		    AudioObjectID inDeviceObjectID, UInt32 inClientID,
+		    UInt32 inOperationID, UInt32 inIOBufferFrameSize,
+		    const AudioServerPlugInIOCycleInfo *inIOCycleInfo)
 {
 	//	This is called at the end of an IO operation. This device doesn't do anything, so just check
 	//	the arguments and return.
@@ -5019,10 +5001,10 @@ NullAudio_EndIOOperation(AudioServerPlugInDriverRef inDriver,
 	//	check the arguments
 	FailWithAction(inDriver != gAudioServerPlugInDriverRef,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_EndIOOperation: bad driver reference");
+		       "ODAC_EndIOOperation: bad driver reference");
 	FailWithAction(inDeviceObjectID != kObjectID_Device,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
-		       "NullAudio_EndIOOperation: bad device ID");
+		       "ODAC_EndIOOperation: bad device ID");
 
 Done:
 	return theAnswer;
