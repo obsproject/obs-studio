@@ -16,46 +16,54 @@
 //==================================================================================================
 
 #if TARGET_RT_BIG_ENDIAN
-	#define	FourCCToCString(the4CC)	{ ((char*)&the4CC)[0], ((char*)&the4CC)[1], ((char*)&the4CC)[2], ((char*)&the4CC)[3], 0 }
+#define FourCCToCString(the4CC)                                       \
+	{                                                             \
+		((char *)&the4CC)[0], ((char *)&the4CC)[1],           \
+			((char *)&the4CC)[2], ((char *)&the4CC)[3], 0 \
+	}
 #else
-	#define	FourCCToCString(the4CC)	{ ((char*)&the4CC)[3], ((char*)&the4CC)[2], ((char*)&the4CC)[1], ((char*)&the4CC)[0], 0 }
+#define FourCCToCString(the4CC)                                       \
+	{                                                             \
+		((char *)&the4CC)[3], ((char *)&the4CC)[2],           \
+			((char *)&the4CC)[1], ((char *)&the4CC)[0], 0 \
+	}
 #endif
 
 #if DEBUG
 
-	#define	DebugMsg(inFormat, ...)	printf(inFormat "\n", ## __VA_ARGS__)
+#define DebugMsg(inFormat, ...) printf(inFormat "\n", ##__VA_ARGS__)
 
-	#define	FailIf(inCondition, inHandler, inMessage)									\
-			if(inCondition)																\
-			{																			\
-				DebugMsg(inMessage);													\
-				goto inHandler;															\
-			}
+#define FailIf(inCondition, inHandler, inMessage) \
+	if (inCondition) {                        \
+		DebugMsg(inMessage);              \
+		goto inHandler;                   \
+	}
 
-	#define	FailWithAction(inCondition, inAction, inHandler, inMessage)					\
-			if(inCondition)																\
-			{																			\
-				DebugMsg(inMessage);													\
-				{ inAction; }															\
-				goto inHandler;															\
-			}
+#define FailWithAction(inCondition, inAction, inHandler, inMessage) \
+	if (inCondition) {                                          \
+		DebugMsg(inMessage);                                \
+		{                                                   \
+			inAction;                                   \
+		}                                                   \
+		goto inHandler;                                     \
+	}
 
 #else
 
-	#define	DebugMsg(inFormat, ...)
-	
-	#define	FailIf(inCondition, inHandler, inMessage)									\
-			if(inCondition)																\
-			{																			\
-				goto inHandler;															\
-			}
+#define DebugMsg(inFormat, ...)
 
-	#define	FailWithAction(inCondition, inAction, inHandler, inMessage)					\
-			if(inCondition)																\
-			{																			\
-				{ inAction; }															\
-				goto inHandler;															\
-			}
+#define FailIf(inCondition, inHandler, inMessage) \
+	if (inCondition) {                        \
+		goto inHandler;                   \
+	}
+
+#define FailWithAction(inCondition, inAction, inHandler, inMessage) \
+	if (inCondition) {                                          \
+		{                                                   \
+			inAction;                                   \
+		}                                                   \
+		goto inHandler;                                     \
+	}
 
 #endif
 
@@ -75,7 +83,7 @@
 //		- provides a rate scalar of 1.0 via hard coding
 //	- a single input stream
 //		- supports 2 channels of 32 bit float LPCM samples
-//		- always produces zeros 
+//		- always produces zeros
 //	- a single output stream
 //		- supports 2 channels of 32 bit float LPCM samples
 //		- data written to it is ignored
@@ -89,7 +97,7 @@
 //		- master play-through data destination
 //		- all are for illustration purposes only and do not actually manipulate data
 
-
+/* clang-format off */
 //	Declare the internal object ID numbers for all the objects this driver implements. Note that
 //	this driver has a fixed set of objects that never grows or shrinks. If this were not the case,
 //	the driver would need to have a means to dynamically allocate these IDs. It's important to
@@ -217,11 +225,11 @@ static OSStatus		NullAudio_IsControlPropertySettable(AudioServerPlugInDriverRef 
 static OSStatus		NullAudio_GetControlPropertyDataSize(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress* inAddress, UInt32 inQualifierDataSize, const void* inQualifierData, UInt32* outDataSize);
 static OSStatus		NullAudio_GetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress* inAddress, UInt32 inQualifierDataSize, const void* inQualifierData, UInt32 inDataSize, UInt32* outDataSize, void* outData);
 static OSStatus		NullAudio_SetControlPropertyData(AudioServerPlugInDriverRef inDriver, AudioObjectID inObjectID, pid_t inClientProcessID, const AudioObjectPropertyAddress* inAddress, UInt32 inQualifierDataSize, const void* inQualifierData, UInt32 inDataSize, const void* inData, UInt32* outNumberPropertiesChanged, AudioObjectPropertyAddress outChangedAddresses[2]);
+/* clang-format on */
 
 #pragma mark The Interface
 
-static AudioServerPlugInDriverInterface	gAudioServerPlugInDriverInterface =
-{
+static AudioServerPlugInDriverInterface gAudioServerPlugInDriverInterface = {
 	NULL,
 	NullAudio_QueryInterface,
 	NullAudio_AddRef,
@@ -244,7 +252,8 @@ static AudioServerPlugInDriverInterface	gAudioServerPlugInDriverInterface =
 	NullAudio_WillDoIOOperation,
 	NullAudio_BeginIOOperation,
 	NullAudio_DoIOOperation,
-	NullAudio_EndIOOperation
-};
-static AudioServerPlugInDriverInterface*	gAudioServerPlugInDriverInterfacePtr	= &gAudioServerPlugInDriverInterface;
-static AudioServerPlugInDriverRef			gAudioServerPlugInDriverRef				= &gAudioServerPlugInDriverInterfacePtr;
+	NullAudio_EndIOOperation};
+static AudioServerPlugInDriverInterface *gAudioServerPlugInDriverInterfacePtr =
+	&gAudioServerPlugInDriverInterface;
+static AudioServerPlugInDriverRef gAudioServerPlugInDriverRef =
+	&gAudioServerPlugInDriverInterfacePtr;
