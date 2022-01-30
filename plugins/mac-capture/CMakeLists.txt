@@ -26,3 +26,5 @@ target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT}
 set_target_properties(mac-capture PROPERTIES FOLDER "plugins" PREFIX "")
 
 setup_plugin_target(mac-capture)
+
+add_subdirectory(HAL)

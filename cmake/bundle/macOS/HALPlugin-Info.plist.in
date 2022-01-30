@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>${MACOSX_PLUGIN_GUI_IDENTIFIER}</string>
+	<key>CFBundleVersion</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_VERSION}</string>
+	<key>CFBundleShortVersionString</key>
+	<string>${MACOSX_PLUGIN_SHORT_VERSION_STRING}</string>
+	<key>CFBundleExecutable</key>
+	<string>OBSDesktopAudioCapture</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_TYPE}</string>
+	<key>CFPlugInFactories</key>
+	<dict>
+		<key>99A15A8B-DA3C-42C3-BD5D-D035A0C2377A</key>
+		<string>NullAudio_Create</string>
+	</dict>
+	<key>CFPlugInTypes</key>
+	<dict>
+		<key>443ABAB8-E7B3-491A-B985-BEB9187030DB</key>
+		<array>
+			<string>99A15A8B-DA3C-42C3-BD5D-D035A0C2377A</string>
+		</array>
+	</dict>
+</dict>
+</plist>
