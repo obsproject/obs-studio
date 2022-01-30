@@ -2018,7 +2018,7 @@ ODAC_HasDeviceProperty(AudioServerPlugInDriverRef inDriver,
 		break;
 
 	case kAudioObjectPropertyElementName:
-		theAnswer = inAddress->mElement <= 2;
+		theAnswer = inAddress->mElement <= 8;
 		break;
 	};
 
@@ -2256,7 +2256,7 @@ static OSStatus ODAC_GetDevicePropertyDataSize(
 	case kAudioDevicePropertyPreferredChannelLayout:
 		*outDataSize =
 			offsetof(AudioChannelLayout, mChannelDescriptions) +
-			(2 * sizeof(AudioChannelDescription));
+			(kNumberOfChannels * sizeof(AudioChannelDescription));
 		break;
 
 	case kAudioDevicePropertyZeroTimeStampPeriod:
@@ -2382,6 +2382,31 @@ static OSStatus ODAC_GetDevicePropertyData(
 
 		case 2:
 			*((CFStringRef *)outData) = CFSTR("Right");
+			break;
+
+		case 3:
+			*((CFStringRef *)outData) = CFSTR("Center");
+			break;
+
+		case 4:
+			*((CFStringRef *)outData) = CFSTR("Subwoofer");
+			break;
+
+		case 5:
+			*((CFStringRef *)outData) = CFSTR("Left Surround");
+			break;
+
+		case 6:
+			*((CFStringRef *)outData) = CFSTR("Right Surround");
+			break;
+
+		case 7:
+			*((CFStringRef *)outData) = CFSTR("Left Rear Surround");
+			break;
+
+		case 8:
+			*((CFStringRef *)outData) =
+				CFSTR("Right Rear Surround");
 			break;
 
 		default:
@@ -2681,7 +2706,7 @@ static OSStatus ODAC_GetDevicePropertyData(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
 			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertySafetyOffset for the device");
-		*((UInt32 *)outData) = 0;
+		*((UInt32 *)outData) = kLatencyFrameSize;
 		*outDataSize = sizeof(UInt32);
 		break;
 
@@ -2733,7 +2758,7 @@ static OSStatus ODAC_GetDevicePropertyData(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
 			"ODAC_GetDevicePropertyData: not enough space for the return value of kAudioDevicePropertyIsHidden for the device");
-		*((UInt32 *)outData) = 0;
+		*((UInt32 *)outData) = 1;
 		*outDataSize = sizeof(UInt32);
 		break;
 
@@ -2754,10 +2779,10 @@ static OSStatus ODAC_GetDevicePropertyData(
 		//	by default. For this device, we return a stereo ACL.
 		{
 			//	calcualte how big the
-			UInt32 theACLSize =
-				offsetof(AudioChannelLayout,
-					 mChannelDescriptions) +
-				(2 * sizeof(AudioChannelDescription));
+			UInt32 theACLSize = offsetof(AudioChannelLayout,
+						     mChannelDescriptions) +
+					    (kNumberOfChannels *
+					     sizeof(AudioChannelDescription));
 			FailWithAction(
 				inDataSize < theACLSize,
 				theAnswer = kAudioHardwareBadPropertySizeError,
@@ -2767,8 +2792,9 @@ static OSStatus ODAC_GetDevicePropertyData(
 				kAudioChannelLayoutTag_UseChannelDescriptions;
 			((AudioChannelLayout *)outData)->mChannelBitmap = 0;
 			((AudioChannelLayout *)outData)
-				->mNumberChannelDescriptions = 2;
-			for (theItemIndex = 0; theItemIndex < 2;
+				->mNumberChannelDescriptions =
+				kNumberOfChannels;
+			for (theItemIndex = 0; theItemIndex < kNumberOfChannels;
 			     ++theItemIndex) {
 				((AudioChannelLayout *)outData)
 					->mChannelDescriptions[theItemIndex]
@@ -3276,7 +3302,7 @@ static OSStatus ODAC_GetStreamPropertyData(
 			inDataSize < sizeof(UInt32),
 			theAnswer = kAudioHardwareBadPropertySizeError, Done,
 			"ODAC_GetStreamPropertyData: not enough space for the return value of kAudioStreamPropertyStartingChannel for the stream");
-		*((UInt32 *)outData) = 0;
+		*((UInt32 *)outData) = kLatencyFrameSize;
 		*outDataSize = sizeof(UInt32);
 		break;
 
@@ -3300,11 +3326,15 @@ static OSStatus ODAC_GetStreamPropertyData(
 			kAudioFormatFlagIsFloat |
 			kAudioFormatFlagsNativeEndian |
 			kAudioFormatFlagIsPacked;
-		((AudioStreamBasicDescription *)outData)->mBytesPerPacket = 8;
+		((AudioStreamBasicDescription *)outData)->mBytesPerPacket =
+			kBytesPerChannel * kNumberOfChannels;
 		((AudioStreamBasicDescription *)outData)->mFramesPerPacket = 1;
-		((AudioStreamBasicDescription *)outData)->mBytesPerFrame = 8;
-		((AudioStreamBasicDescription *)outData)->mChannelsPerFrame = 2;
-		((AudioStreamBasicDescription *)outData)->mBitsPerChannel = 32;
+		((AudioStreamBasicDescription *)outData)->mBytesPerFrame =
+			kBytesPerChannel * kNumberOfChannels;
+		((AudioStreamBasicDescription *)outData)->mChannelsPerFrame =
+			kNumberOfChannels;
+		((AudioStreamBasicDescription *)outData)->mBitsPerChannel =
+			kBitsPerChannel;
 		pthread_mutex_unlock(&gPlugIn_StateMutex);
 		*outDataSize = sizeof(AudioStreamBasicDescription);
 		break;
@@ -3337,15 +3367,15 @@ static OSStatus ODAC_GetStreamPropertyData(
 				kAudioFormatFlagsNativeEndian |
 				kAudioFormatFlagIsPacked;
 			((AudioStreamRangedDescription *)outData)[0]
-				.mFormat.mBytesPerPacket = 8;
+				.mFormat.mBytesPerPacket = kBytesPerFrame;
 			((AudioStreamRangedDescription *)outData)[0]
 				.mFormat.mFramesPerPacket = 1;
 			((AudioStreamRangedDescription *)outData)[0]
-				.mFormat.mBytesPerFrame = 8;
+				.mFormat.mBytesPerFrame = kBytesPerFrame;
 			((AudioStreamRangedDescription *)outData)[0]
-				.mFormat.mChannelsPerFrame = 2;
+				.mFormat.mChannelsPerFrame = kNumberOfChannels;
 			((AudioStreamRangedDescription *)outData)[0]
-				.mFormat.mBitsPerChannel = 32;
+				.mFormat.mBitsPerChannel = kBitsPerChannel;
 			((AudioStreamRangedDescription *)outData)[0]
 				.mSampleRateRange.mMinimum = 44100.0;
 			((AudioStreamRangedDescription *)outData)[0]
@@ -3362,15 +3392,15 @@ static OSStatus ODAC_GetStreamPropertyData(
 				kAudioFormatFlagsNativeEndian |
 				kAudioFormatFlagIsPacked;
 			((AudioStreamRangedDescription *)outData)[1]
-				.mFormat.mBytesPerPacket = 8;
+				.mFormat.mBytesPerPacket = kBytesPerFrame;
 			((AudioStreamRangedDescription *)outData)[1]
 				.mFormat.mFramesPerPacket = 1;
 			((AudioStreamRangedDescription *)outData)[1]
-				.mFormat.mBytesPerFrame = 8;
+				.mFormat.mBytesPerFrame = kBytesPerFrame;
 			((AudioStreamRangedDescription *)outData)[1]
-				.mFormat.mChannelsPerFrame = 2;
+				.mFormat.mChannelsPerFrame = kNumberOfChannels;
 			((AudioStreamRangedDescription *)outData)[1]
-				.mFormat.mBitsPerChannel = 32;
+				.mFormat.mBitsPerChannel = kBitsPerChannel;
 			((AudioStreamRangedDescription *)outData)[1]
 				.mSampleRateRange.mMinimum = 48000.0;
 			((AudioStreamRangedDescription *)outData)[1]
@@ -3496,7 +3526,7 @@ static OSStatus ODAC_SetStreamPropertyData(
 			"ODAC_SetStreamPropertyData: unsupported format flags for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
-					->mBytesPerPacket != 8,
+					->mBytesPerPacket != kBytesPerFrame,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
 			"ODAC_SetStreamPropertyData: unsupported bytes per packet for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
@@ -3506,17 +3536,18 @@ static OSStatus ODAC_SetStreamPropertyData(
 			"ODAC_SetStreamPropertyData: unsupported frames per packet for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
-					->mBytesPerFrame != 8,
+					->mBytesPerFrame != kBytesPerFrame,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
 			"ODAC_SetStreamPropertyData: unsupported bytes per frame for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
-					->mChannelsPerFrame != 2,
+					->mChannelsPerFrame !=
+				kNumberOfChannels,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
 			"ODAC_SetStreamPropertyData: unsupported channels per frame for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
 			((const AudioStreamBasicDescription *)inData)
-					->mBitsPerChannel != 32,
+					->mBitsPerChannel != kBitsPerChannel,
 			theAnswer = kAudioDeviceUnsupportedFormatError, Done,
 			"ODAC_SetStreamPropertyData: unsupported bits per channel for kAudioStreamPropertyPhysicalFormat");
 		FailWithAction(
@@ -4720,6 +4751,8 @@ Done:
 
 #pragma mark IO Operations
 
+static Float32 *ringBuffer;
+
 static OSStatus ODAC_StartIO(AudioServerPlugInDriverRef inDriver,
 			     AudioObjectID inDeviceObjectID, UInt32 inClientID)
 {
@@ -4755,6 +4788,11 @@ static OSStatus ODAC_StartIO(AudioServerPlugInDriverRef inDriver,
 		gDevice_NumberTimeStamps = 0;
 		gDevice_AnchorSampleTime = 0;
 		gDevice_AnchorHostTime = mach_absolute_time();
+
+		// Allocate ringBuffer
+		ringBuffer = (Float32 *)(calloc(kRingBufferFrameSize *
+							kNumberOfChannels,
+						sizeof(Float32)));
 	} else {
 		//	IO is already running, so just bump the counter
 		++gDevice_IOIsRunning;
@@ -4796,6 +4834,8 @@ static OSStatus ODAC_StopIO(AudioServerPlugInDriverRef inDriver,
 	} else if (gDevice_IOIsRunning == 1) {
 		//	We need to stop the hardware, which in this case means that there's nothing to do.
 		gDevice_IOIsRunning = 0;
+		// Free the ringBuffer
+		free(ringBuffer);
 	} else {
 		//	IO is still running, so just bump the counter
 		--gDevice_IOIsRunning;
@@ -4974,10 +5014,67 @@ ODAC_DoIOOperation(AudioServerPlugInDriverRef inDriver,
 		       theAnswer = kAudioHardwareBadObjectError, Done,
 		       "ODAC_DoIOOperation: bad stream ID");
 
-	//	clear the buffer if this iskAudioServerPlugInIOOperationReadInput
+	/* Write to ioMainBuffer from ringBuffer if we're outputting */
 	if (inOperationID == kAudioServerPlugInIOOperationReadInput) {
-		//	we are always dealing with a 2 channel 32 bit float buffer
-		memset(ioMainBuffer, 0, inIOBufferFrameSize * 8);
+		Float32 *buffer = (Float32 *)ioMainBuffer;
+		UInt32 mSampleTime = inIOCycleInfo->mInputTime.mSampleTime;
+
+		for (UInt32 frame = 0; frame < inIOBufferFrameSize; frame++) {
+			for (int channel = 0; channel < kNumberOfChannels;
+			     channel++) {
+				if (!gMute_Output_Master_Value) {
+					buffer[frame * kNumberOfChannels +
+					       channel] = ringBuffer
+						[((mSampleTime + frame) %
+						  kDevice_RingBufferSize) *
+							 kNumberOfChannels +
+						 channel];
+				} else {
+					buffer[frame * kNumberOfChannels +
+					       channel] = 0;
+				}
+				ringBuffer[((mSampleTime + frame - 16384) %
+					    kDevice_RingBufferSize) *
+						   kNumberOfChannels +
+					   channel] = 0;
+			}
+		}
+	}
+
+	/* Write to ringBuffer if we're receiving */
+	if (inOperationID == kAudioServerPlugInIOOperationWriteMix) {
+		Float32 *buffer = (Float32 *)ioMainBuffer;
+		UInt64 mSampleTime = inIOCycleInfo->mOutputTime.mSampleTime;
+
+		for (UInt32 frame = 0; frame < inIOBufferFrameSize; frame++) {
+			for (int channel = 0; channel < kNumberOfChannels;
+			     channel++) {
+				// don't do anything if muted
+				if (!gMute_Output_Master_Value) {
+					// write to internal ring buffer
+					ringBuffer[((mSampleTime + frame) %
+						    kDevice_RingBufferSize) *
+							   kNumberOfChannels +
+						   channel] +=
+						buffer[frame * kNumberOfChannels +
+						       channel] *
+						gVolume_Output_Master_Value;
+				} else {
+					buffer[frame * kNumberOfChannels +
+					       channel] = 0;
+				}
+				// clear ring buffer trailing by 16384 samples.
+				ringBuffer[((mSampleTime + frame + 8192) %
+					    kDevice_RingBufferSize) *
+						   kNumberOfChannels +
+					   channel] = 0;
+			}
+		}
+
+		/* clear the io buffer */
+		memset(ioMainBuffer, 0,
+		       inIOBufferFrameSize * kNumberOfChannels *
+			       sizeof(Float32));
 	}
 
 Done:

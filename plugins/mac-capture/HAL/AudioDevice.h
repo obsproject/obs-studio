@@ -136,17 +136,24 @@ static bool									gStream_Output_IsActive			= true;
 
 static const Float32						kVolume_MinDB					= -96.0;
 static const Float32						kVolume_MaxDB					= 6.0;
-static Float32								gVolume_Input_Master_Value		= 0.0;
-static Float32								gVolume_Output_Master_Value		= 0.0;
+static Float32								gVolume_Input_Master_Value		= 1.0;
+static Float32								gVolume_Output_Master_Value		= 1.0;
 
 static bool									gMute_Input_Master_Value		= false;
 static bool									gMute_Output_Master_Value		= false;
 
-static const UInt32							kDataSource_NumberItems			= 4;
+static const UInt32							kDataSource_NumberItems			= 1;
 #define										kDataSource_ItemNamePattern		"Data Source Item %d"
 static UInt32								gDataSource_Input_Master_Value	= 0;
 static UInt32								gDataSource_Output_Master_Value	= 0;
 static UInt32								gDataDestination_PlayThru_Master_Value	= 0;
+
+#define										kLatencyFrameSize				0
+#define										kNumberOfChannels				8
+#define										kBitsPerChannel					32
+#define										kBytesPerChannel				(kBitsPerChannel / 8)
+#define										kBytesPerFrame					(kNumberOfChannels * kBytesPerChannel)
+#define										kRingBufferFrameSize			((65536 + kLatencyFrameSize) * kNumberOfChannels)
 
 //==================================================================================================
 #pragma mark -
