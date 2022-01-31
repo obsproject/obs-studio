@@ -1605,7 +1605,7 @@
             "servers": [
                 {
                     "name": "younow.com",
-                    "url": "https://signaling-api.younow-prod.video.propsproject.com/api/v1/ingest/server/"
+                    "url": "https://api.younow.com/php/api/broadcast/ingest?id="
                 }
             ],
             "recommended": {
