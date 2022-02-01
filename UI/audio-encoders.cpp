@@ -13,15 +13,6 @@
 
 using namespace std;
 
-static const string encoders[] = {
-	"ffmpeg_aac",
-	"mf_aac",
-	"libfdk_aac",
-	"CoreAudio_AAC",
-};
-
-static const string &fallbackEncoder = encoders[0];
-
 static const char *NullToEmpty(const char *str)
 {
 	return str ? str : "";
@@ -33,7 +24,6 @@ static const char *EncoderName(const char *id)
 }
 
 static map<int, const char *> bitrateMap;
-static once_flag populateBitrateMap;
 
 static void HandleIntProperty(obs_property_t *prop, const char *id)
 {
@@ -142,10 +132,20 @@ static const char *GetCodec(const char *id)
 	return NullToEmpty(obs_get_encoder_codec(id));
 }
 
-static const string aac_ = "AAC";
 static void PopulateBitrateMap()
 {
-	call_once(populateBitrateMap, []() {
+	static once_flag once;
+
+	call_once(once, []() {
+		const string encoders[] = {
+			"ffmpeg_aac",
+			"mf_aac",
+			"libfdk_aac",
+			"CoreAudio_AAC",
+		};
+
+		const string fallbackEncoder = encoders[0];
+
 		struct obs_audio_info aoi;
 		obs_get_audio_info(&aoi);
 		uint32_t output_channels = get_audio_channels(aoi.speakers);
@@ -162,7 +162,7 @@ static void PopulateBitrateMap()
 			    end(encoders))
 				continue;
 
-			if (aac_ != GetCodec(id))
+			if (strcmp(GetCodec(id), "AAC") != 0)
 				continue;
 
 			HandleEncoderProperties(id);
@@ -172,11 +172,11 @@ static void PopulateBitrateMap()
 			if (encoder == fallbackEncoder)
 				continue;
 
-			if (aac_ != GetCodec(encoder.c_str()))
+			if (strcmp(GetCodec(encoder.c_str()), "AAC") != 0)
 				continue;
 
 			// disable mf_aac if audio output is not stereo nor mono
-			if ((output_channels >= 3) && (encoder == "mf_aac"))
+			if (output_channels >= 3 && encoder == "mf_aac")
 				continue;
 
 			HandleEncoderProperties(encoder.c_str());
