@@ -481,24 +481,24 @@ void AJAOutput::calculate_card_frame_indices(uint32_t numFrames,
 					     NTV2PixelFormat pf)
 {
 	ULWord channelIndex = GetIndexForNTV2Channel(channel);
-
 	ULWord totalCardFrames = NTV2DeviceGetNumberFrameBuffers(
 		id, GetNTV2FrameGeometryFromVideoFormat(vf), pf);
-
 	mFirstCardFrame = channelIndex * numFrames;
-
-	if (mFirstCardFrame < totalCardFrames &&
-	    (mFirstCardFrame + numFrames) < totalCardFrames) {
+	uint32_t lastFrame = mFirstCardFrame + (numFrames - 1);
+	if (totalCardFrames - mFirstCardFrame > 0 &&
+	    totalCardFrames - lastFrame > 0) {
 		// Reserve N framebuffers in card DRAM.
 		mNumCardFrames = numFrames;
 		mWriteCardFrame = mFirstCardFrame;
-		mLastCardFrame = mWriteCardFrame + numFrames;
+		mLastCardFrame = lastFrame;
 	} else {
 		// otherwise just grab 2 frames to ping-pong between
 		mNumCardFrames = 2;
 		mWriteCardFrame = channelIndex * 2;
-		mLastCardFrame = mWriteCardFrame + 2;
+		mLastCardFrame = mWriteCardFrame + (mNumCardFrames - 1);
 	}
+	blog(LOG_DEBUG, "AJA Output using %d card frame indices (%d-%d)",
+	     mNumCardFrames, mFirstCardFrame, mLastCardFrame);
 }
 
 uint32_t AJAOutput::get_frame_count()
