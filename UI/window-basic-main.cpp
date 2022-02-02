@@ -6834,6 +6834,12 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	// Reset broadcast button state/text
 	if (!broadcastActive)
 		SetBroadcastFlowEnabled(auth && auth->broadcastFlow());
+
+	if (opt_close_after_streaming) {
+		blog(LOG_INFO,
+		     "Closing application due to command line parameter and stopped stream");
+		close();
+	}
 }
 
 void OBSBasic::AutoRemux(QString input)
