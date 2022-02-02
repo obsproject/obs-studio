@@ -105,6 +105,7 @@ uint64_t opt_custom_vbitrate;
 uint64_t opt_custom_abitrate;
 
 bool restart = false;
+bool close_after_streaming = false;
 
 QPointer<OBSLogViewer> obsLogViewer;
 
@@ -2161,7 +2162,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		QProcess::startDetached(qApp->arguments()[0],
 					qApp->arguments());
 
-	if (opt_close_after_streaming) {
+	if (close_after_streaming) {
 		return EXIT_STOPPED_STREAM;
 	}
 

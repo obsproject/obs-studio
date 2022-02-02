@@ -6838,6 +6838,7 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 	if (opt_close_after_streaming) {
 		blog(LOG_INFO,
 		     "Closing application due to command line parameter and stopped stream");
+		close_after_streaming = true;
 		close();
 	}
 }
