@@ -170,4 +170,20 @@ public:
 	inline bool DeferUpdate() const { return deferUpdate; }
 
 	inline OBSObject GetObject() const { return OBSGetStrongRef(weakObj); }
+
+#define Def_IsObject(type)                                \
+	inline bool IsObject(obs_##type##_t *type) const  \
+	{                                                 \
+		OBSObject obj = OBSGetStrongRef(weakObj); \
+		return obj.Get() == (obs_object_t *)type; \
+	}
+
+	/* clang-format off */
+	Def_IsObject(source)
+	Def_IsObject(output)
+	Def_IsObject(encoder)
+	Def_IsObject(service)
+	/* clang-format off */
+
+#undef Def_IsObject
 };
