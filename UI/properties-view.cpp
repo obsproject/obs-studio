@@ -89,8 +89,10 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 
 void OBSPropertiesView::ReloadProperties()
 {
-	if (obj) {
-		properties.reset(reloadCallback(obj));
+	if (weakObj) {
+		OBSObject obj = GetObject();
+		if (obj)
+			properties.reset(reloadCallback(obj.Get()));
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
@@ -174,14 +176,14 @@ void OBSPropertiesView::GetScrollPos(int &h, int &v)
 		v = scroll->value();
 }
 
-OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj_,
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj,
 				     PropertiesReloadCallback reloadCallback,
 				     PropertiesUpdateCallback callback_,
 				     PropertiesVisualUpdateCb cb_, int minSize_)
 	: VScrollArea(nullptr),
 	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
-	  obj(obj_),
+	  weakObj(obs_object_get_weak_object((obs_object_t *)obj)),
 	  reloadCallback(reloadCallback),
 	  callback(callback_),
 	  cb(cb_),
@@ -1905,7 +1907,7 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (obs_property_button_clicked(property, view->obj)) {
+	if (obs_property_button_clicked(property, view->GetObject())) {
 		QMetaObject::invokeMethod(view, "RefreshProperties",
 					  Qt::QueuedConnection);
 	}
@@ -1981,9 +1983,10 @@ void WidgetInfo::ControlChanged()
 		update_timer = new QTimer;
 		connect(update_timer, &QTimer::timeout,
 			[this, &ru = recently_updated]() {
-				if (view->callback && !view->deferUpdate) {
-					view->callback(view->obj,
-						       old_settings_cache,
+				OBSObject obj = view->GetObject();
+				if (obj && view->callback &&
+				    !view->deferUpdate) {
+					view->callback(obj, old_settings_cache,
 						       view->settings);
 				}
 
@@ -2000,8 +2003,11 @@ void WidgetInfo::ControlChanged()
 		blog(LOG_DEBUG, "No update timer or no callback!");
 	}
 
-	if (view->cb && !view->deferUpdate)
-		view->cb(view->obj, view->settings);
+	if (view->cb && !view->deferUpdate) {
+		OBSObject obj = view->GetObject();
+		if (obj)
+			view->cb(obj, view->settings);
+	}
 
 	view->SignalChanged();
 

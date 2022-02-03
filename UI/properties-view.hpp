@@ -97,7 +97,7 @@ private:
 	QWidget *widget = nullptr;
 	properties_t properties;
 	OBSData settings;
-	void *obj = nullptr;
+	OBSWeakObjectAutoRelease weakObj;
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
@@ -163,6 +163,11 @@ public:
 
 	inline obs_data_t *GetSettings() const { return settings; }
 
-	inline void UpdateSettings() { callback(obj, nullptr, settings); }
+	inline void UpdateSettings()
+	{
+		callback(OBSGetStrongRef(weakObj), nullptr, settings);
+	}
 	inline bool DeferUpdate() const { return deferUpdate; }
+
+	inline OBSObject GetObject() const { return OBSGetStrongRef(weakObj); }
 };
