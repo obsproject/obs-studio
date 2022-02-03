@@ -253,26 +253,26 @@ inline OBSWeakService OBSGetWeakRef(obs_service_t *service)
 }
 
 /* objects that are not meant to be instanced */
-template<typename T, void destroy(T)> class OBSObj {
+template<typename T, void destroy(T)> class OBSPtr {
 	T obj;
 
 public:
-	inline OBSObj() : obj(nullptr) {}
-	inline OBSObj(T obj_) : obj(obj_) {}
-	inline OBSObj(const OBSObj &) = delete;
-	inline OBSObj(OBSObj &&other) : obj(other.obj) { other.obj = nullptr; }
+	inline OBSPtr() : obj(nullptr) {}
+	inline OBSPtr(T obj_) : obj(obj_) {}
+	inline OBSPtr(const OBSPtr &) = delete;
+	inline OBSPtr(OBSPtr &&other) : obj(other.obj) { other.obj = nullptr; }
 
-	inline ~OBSObj() { destroy(obj); }
+	inline ~OBSPtr() { destroy(obj); }
 
-	inline OBSObj &operator=(T obj_)
+	inline OBSPtr &operator=(T obj_)
 	{
 		if (obj_ != obj)
 			destroy(obj);
 		obj = obj_;
 		return *this;
 	}
-	inline OBSObj &operator=(const OBSObj &) = delete;
-	inline OBSObj &operator=(OBSObj &&other)
+	inline OBSPtr &operator=(const OBSPtr &) = delete;
+	inline OBSPtr &operator=(OBSPtr &&other)
 	{
 		if (obj)
 			destroy(obj);
@@ -287,8 +287,8 @@ public:
 	inline bool operator!=(T p) const { return obj != p; }
 };
 
-using OBSDisplay = OBSObj<obs_display_t *, obs_display_destroy>;
-using OBSView = OBSObj<obs_view_t *, obs_view_destroy>;
+using OBSDisplay = OBSPtr<obs_display_t *, obs_display_destroy>;
+using OBSView = OBSPtr<obs_view_t *, obs_view_destroy>;
 
 /* signal handler connection */
 class OBSSignal {

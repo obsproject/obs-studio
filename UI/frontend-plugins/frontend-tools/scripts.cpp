@@ -49,7 +49,7 @@
 
 /* ----------------------------------------------------------------- */
 
-using OBSScript = OBSObj<obs_script_t *, obs_script_destroy>;
+using OBSScript = OBSPtr<obs_script_t *, obs_script_destroy>;
 
 struct ScriptData {
 	std::vector<OBSScript> scripts;
