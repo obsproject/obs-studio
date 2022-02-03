@@ -84,6 +84,21 @@ file(GLOB FFMPEG_BIN_FILES
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/zlib*.dll"
 
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libSvtAv1Enc.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libSvtAv1Enc.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libSvtAv1Enc.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libSvtAv1Enc.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libaom.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libaom.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/libaom.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/libaom.dll"
+
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/librist.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/librist.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin/librist.dll"
+	"${FFMPEG_avcodec_INCLUDE_DIR}/bin/librist.dll"
+
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/libbz2*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/../bin${_bin_suffix}/zlib*.dll"
 	"${FFMPEG_avcodec_INCLUDE_DIR}/bin${_bin_suffix}/libbz2*.dll"
@@ -162,6 +177,7 @@ file(GLOB QT_DEBUG_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Svgd.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5WinExtrasd.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Xmld.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Networkd.dll"
 	"${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
@@ -183,6 +199,7 @@ file(GLOB QT_BIN_FILES
 	"${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Svg.dll"
+	"${Qt5Core_DIR}/../../../bin/Qt5WinExtras.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Xml.dll"
 	"${Qt5Core_DIR}/../../../bin/Qt5Network.dll"
 	"${Qt5Core_DIR}/../../../bin/libGLESv2.dll"

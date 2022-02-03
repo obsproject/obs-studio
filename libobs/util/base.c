@@ -62,14 +62,8 @@ static void def_log_handler(int log_level, const char *format, va_list args,
 	UNUSED_PARAMETER(param);
 }
 
-#ifdef _MSC_VER
-#define NORETURN __declspec(noreturn)
-#else
-#define NORETURN __attribute__((noreturn))
-#endif
-
-NORETURN static void def_crash_handler(const char *format, va_list args,
-				       void *param)
+OBS_NORETURN static void def_crash_handler(const char *format, va_list args,
+					   void *param)
 {
 	vfprintf(stderr, format, args);
 	exit(0);
@@ -104,7 +98,7 @@ void base_set_crash_handler(void (*handler)(const char *, va_list, void *),
 	crash_handler = handler;
 }
 
-void bcrash(const char *format, ...)
+OBS_NORETURN void bcrash(const char *format, ...)
 {
 	va_list args;
 

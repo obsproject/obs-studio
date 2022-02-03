@@ -133,8 +133,7 @@ static obs_source_t *get_transition(struct slideshow *ss)
 	obs_source_t *tr;
 
 	pthread_mutex_lock(&ss->mutex);
-	tr = ss->transition;
-	obs_source_addref(tr);
+	tr = obs_source_get_ref(ss->transition);
 	pthread_mutex_unlock(&ss->mutex);
 
 	return tr;
@@ -151,8 +150,7 @@ static obs_source_t *get_source(struct darray *array, const char *path)
 		const char *cur_path = files.array[i].path;
 
 		if (strcmp(path, cur_path) == 0) {
-			source = files.array[i].source;
-			obs_source_addref(source);
+			source = obs_source_get_ref(files.array[i].source);
 			break;
 		}
 	}

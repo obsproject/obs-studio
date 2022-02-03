@@ -76,6 +76,7 @@ enum gs_color_format {
 	GS_RGBA_UNORM,
 	GS_BGRX_UNORM,
 	GS_BGRA_UNORM,
+	GS_RG16,
 };
 
 enum gs_zstencil_format {
@@ -109,6 +110,14 @@ enum gs_blend_type {
 	GS_BLEND_DSTALPHA,
 	GS_BLEND_INVDSTALPHA,
 	GS_BLEND_SRCALPHASAT,
+};
+
+enum gs_blend_op_type {
+	GS_BLEND_OP_ADD,
+	GS_BLEND_OP_SUBTRACT,
+	GS_BLEND_OP_REVERSE_SUBTRACT,
+	GS_BLEND_OP_MIN,
+	GS_BLEND_OP_MAX
 };
 
 enum gs_depth_test {
@@ -728,6 +737,8 @@ EXPORT void gs_blend_function_separate(enum gs_blend_type src_c,
 				       enum gs_blend_type dest_c,
 				       enum gs_blend_type src_a,
 				       enum gs_blend_type dest_a);
+EXPORT void gs_blend_op(enum gs_blend_op_type op);
+
 EXPORT void gs_depth_function(enum gs_depth_test test);
 
 EXPORT void gs_stencil_function(enum gs_stencil_side side,
@@ -894,6 +905,7 @@ EXPORT void gs_texture_release_dc(gs_texture_t *gdi_tex);
 
 /** creates a windows shared texture from a texture handle */
 EXPORT gs_texture_t *gs_texture_open_shared(uint32_t handle);
+EXPORT gs_texture_t *gs_texture_open_nt_shared(uint32_t handle);
 
 #define GS_INVALID_HANDLE (uint32_t) - 1
 EXPORT uint32_t gs_texture_get_shared_handle(gs_texture_t *tex);
@@ -933,6 +945,19 @@ EXPORT gs_texture_t *gs_texture_create_from_dmabuf(
 	const uint32_t *strides, const uint32_t *offsets,
 	const uint64_t *modifiers);
 
+enum gs_dmabuf_flags {
+	GS_DMABUF_FLAG_NONE = 0,
+	GS_DMABUF_FLAG_IMPLICIT_MODIFIERS_SUPPORTED = (1 << 0),
+};
+
+EXPORT bool gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags,
+					 uint32_t **drm_formats,
+					 size_t *n_formats);
+
+EXPORT bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format,
+						 uint64_t **modifiers,
+						 size_t *n_modifiers);
+
 #endif
 
 /* SLOBS custom functions */
@@ -943,48 +968,34 @@ EXPORT void gs_rebuild_device();
 static inline uint32_t gs_get_format_bpp(enum gs_color_format format)
 {
 	switch (format) {
+	case GS_DXT1:
+		return 4;
 	case GS_A8:
-		return 8;
 	case GS_R8:
+	case GS_DXT3:
+	case GS_DXT5:
 		return 8;
+	case GS_R16:
+	case GS_R16F:
+	case GS_R8G8:
+		return 16;
 	case GS_RGBA:
-		return 32;
 	case GS_BGRX:
-		return 32;
 	case GS_BGRA:
-		return 32;
 	case GS_R10G10B10A2:
+	case GS_RG16F:
+	case GS_R32F:
+	case GS_RGBA_UNORM:
+	case GS_BGRX_UNORM:
+	case GS_BGRA_UNORM:
+	case GS_RG16:
 		return 32;
 	case GS_RGBA16:
-		return 64;
-	case GS_R16:
-		return 16;
 	case GS_RGBA16F:
+	case GS_RG32F:
 		return 64;
 	case GS_RGBA32F:
 		return 128;
-	case GS_RG16F:
-		return 32;
-	case GS_RG32F:
-		return 64;
-	case GS_R16F:
-		return 16;
-	case GS_R32F:
-		return 32;
-	case GS_DXT1:
-		return 4;
-	case GS_DXT3:
-		return 8;
-	case GS_DXT5:
-		return 8;
-	case GS_R8G8:
-		return 16;
-	case GS_RGBA_UNORM:
-		return 32;
-	case GS_BGRX_UNORM:
-		return 32;
-	case GS_BGRA_UNORM:
-		return 32;
 	case GS_UNKNOWN:
 		return 0;
 	}

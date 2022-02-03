@@ -29,6 +29,8 @@ extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
 extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_encoder_info svt_av1_encoder_info;
+extern struct obs_encoder_info aom_av1_encoder_info;
 
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(55, 27, 100)
 #define LIBAVUTIL_VAAPI_AVAILABLE
@@ -84,6 +86,7 @@ static const int blacklisted_adapters[] = {
 	0x1d13, // GP108M [GeForce MX250]
 	0x1d52, // GP108BM [GeForce MX250]
 	0x1c94, // GP107 [GeForce MX350]
+	0x1f97, // TU117 [GeForce MX450]
 	0x137b, // GM108GLM [Quadro M520 Mobile]
 	0x1d33, // GP108GLM [Quadro P500 Mobile]
 	0x137a, // GM108GLM [Quadro K620M / Quadro M500M]
@@ -188,7 +191,9 @@ static bool nvenc_supported(void)
 	bool success = false;
 
 	if (!nvenc) {
-		goto cleanup;
+		nvenc = avcodec_find_encoder_by_name("h264_nvenc");
+		if (!nvenc)
+			goto cleanup;
 	}
 
 #if defined(_WIN32)
@@ -237,6 +242,15 @@ extern void obs_ffmpeg_load_logging(void);
 extern void obs_ffmpeg_unload_logging(void);
 #endif
 
+static void register_encoder_if_available(struct obs_encoder_info *info,
+					  const char *id)
+{
+	AVCodec *c = avcodec_find_encoder_by_name(id);
+	if (c) {
+		obs_register_encoder(info);
+	}
+}
+
 bool obs_module_load(void)
 {
 	obs_register_source(&ffmpeg_source);
@@ -246,6 +260,8 @@ bool obs_module_load(void)
 	obs_register_output(&ffmpeg_hls_muxer);
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
+	register_encoder_if_available(&svt_av1_encoder_info, "libsvtav1");
+	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
 #ifndef __APPLE__
 	if (nvenc_supported()) {

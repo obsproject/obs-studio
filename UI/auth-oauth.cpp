@@ -314,7 +314,7 @@ void OAuthStreamKey::OnStreamConfig()
 	OBSBasic *main = OBSBasic::Get();
 	obs_service_t *service = main->GetService();
 
-	obs_data_t *settings = obs_service_get_settings(service);
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
 
 	bool bwtest = obs_data_get_bool(settings, "bwtest");
 
@@ -325,6 +325,4 @@ void OAuthStreamKey::OnStreamConfig()
 		obs_data_set_string(settings, "key", key_.c_str());
 
 	obs_service_update(service, settings);
-
-	obs_data_release(settings);
 }

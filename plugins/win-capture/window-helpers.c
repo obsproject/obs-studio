@@ -139,17 +139,29 @@ fail:
 
 void get_window_title(struct dstr *name, HWND hwnd)
 {
-	wchar_t *temp;
 	int len;
 
 	len = GetWindowTextLengthW(hwnd);
 	if (!len)
 		return;
 
-	temp = malloc(sizeof(wchar_t) * (len + 1));
-	if (GetWindowTextW(hwnd, temp, len + 1))
-		dstr_from_wcs(name, temp);
-	free(temp);
+	if (len > 1024) {
+		wchar_t *temp;
+
+		temp = malloc(sizeof(wchar_t) * (len + 1));
+		if (!temp)
+			return;
+
+		if (GetWindowTextW(hwnd, temp, len + 1))
+			dstr_from_wcs(name, temp);
+
+		free(temp);
+	} else {
+		wchar_t temp[1024 + 1];
+
+		if (GetWindowTextW(hwnd, temp, len + 1))
+			dstr_from_wcs(name, temp);
+	}
 }
 
 void get_window_class(struct dstr *class, HWND hwnd)
@@ -286,13 +298,22 @@ static void add_window(obs_property_t *p, HWND hwnd, add_window_cb callback)
 	dstr_free(&exe);
 }
 
+static inline bool IsWindowCloaked(HWND window)
+{
+	DWORD cloaked;
+	HRESULT hr = DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
+					   sizeof(cloaked));
+	return SUCCEEDED(hr) && cloaked;
+}
+
 static bool check_window_valid(HWND window, enum window_search_mode mode)
 {
 	DWORD styles, ex_styles;
 	RECT rect;
 
 	if (!IsWindowVisible(window) ||
-	    (mode == EXCLUDE_MINIMIZED && IsIconic(window)))
+	    (mode == EXCLUDE_MINIMIZED &&
+	     (IsIconic(window) || IsWindowCloaked(window))))
 		return false;
 
 	GetClientRect(window, &rect);
@@ -677,10 +698,7 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 	if (!check_window_valid(window, data->mode))
 		return TRUE;
 
-	int cloaked;
-	if (SUCCEEDED(DwmGetWindowAttribute(window, DWMWA_CLOAKED, &cloaked,
-					    sizeof(cloaked))) &&
-	    cloaked)
+	if (IsWindowCloaked(window))
 		return TRUE;
 
 	const int rating = window_rating(window, data->priority, data->class,

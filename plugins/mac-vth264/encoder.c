@@ -19,19 +19,6 @@
 #define VT_BLOG(level, format, ...) \
 	VT_LOG_ENCODER(enc->encoder, level, format, ##__VA_ARGS__)
 
-// Clipped from NSApplication as it is in a ObjC header
-extern const double NSAppKitVersionNumber;
-#define NSAppKitVersionNumber10_8 1187
-
-// Get around missing symbol on 10.8 during compilation
-enum { kCMFormatDescriptionBridgeError_InvalidParameter_ = -12712,
-};
-
-static bool is_appkit10_9_or_greater()
-{
-	return floor(NSAppKitVersionNumber) > NSAppKitVersionNumber10_8;
-}
-
 static DARRAY(struct vt_encoder {
 	const char *name;
 	const char *disp_name;
@@ -120,6 +107,16 @@ static CFStringRef obs_to_vt_colorspace(enum video_colorspace cs)
 #define SESSION_CHECK(x)           \
 	if ((code = (x)) != noErr) \
 		return code;
+
+static OSStatus session_set_prop_float(VTCompressionSessionRef session,
+				       CFStringRef key, float val)
+{
+	CFNumberRef n = CFNumberCreate(NULL, kCFNumberFloat32Type, &val);
+	OSStatus code = VTSessionSetProperty(session, key, n);
+	CFRelease(n);
+
+	return code;
+}
 
 static OSStatus session_set_prop_int(VTCompressionSessionRef session,
 				     CFStringRef key, int32_t val)
@@ -313,22 +310,22 @@ static bool create_encoder(struct vt_h264_encoder *enc)
 	STATUS_CHECK(session_set_prop_int(
 		s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
 		enc->keyint * ((float)enc->fps_num / enc->fps_den)));
-	STATUS_CHECK(session_set_prop_int(
+	STATUS_CHECK(session_set_prop_float(
 		s, kVTCompressionPropertyKey_ExpectedFrameRate,
-		ceil((float)enc->fps_num / enc->fps_den)));
+		(float)enc->fps_num / enc->fps_den));
 	STATUS_CHECK(session_set_prop(
 		s, kVTCompressionPropertyKey_AllowFrameReordering,
 		enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
 
 	// This can fail depending on hardware configuration
 	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime,
-				kCFBooleanTrue);
+				kCFBooleanFalse);
 	if (code != noErr)
-		log_osstatus(LOG_WARNING, enc,
-			     "setting "
-			     "kVTCompressionPropertyKey_RealTime, "
-			     "frame delay might be increased",
-			     code);
+		log_osstatus(
+			LOG_WARNING, enc,
+			"setting kVTCompressionPropertyKey_RealTime failed, "
+			"frame delay might be increased",
+			code);
 
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
 				      obs_to_vt_profile(enc->profile)));
@@ -615,7 +612,7 @@ static bool convert_sample_to_annexb(struct vt_h264_encoder *enc,
 		format_desc, 0, NULL, NULL, &param_count, &nal_length_bytes);
 	// it is not clear what errors this function can return
 	// so we check the two most reasonable
-	if (code == kCMFormatDescriptionBridgeError_InvalidParameter_ ||
+	if (code == kCMFormatDescriptionBridgeError_InvalidParameter ||
 	    code == kCMFormatDescriptionError_InvalidParameter) {
 		VT_BLOG(LOG_WARNING, "assuming 2 parameter sets "
 				     "and 4 byte NAL length header");
@@ -668,8 +665,10 @@ static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
 	dts = CMTimeMultiplyByFloat64(dts,
 				      ((Float64)enc->fps_num / enc->fps_den));
 
+	if (CMTIME_IS_INVALID(dts))
+		dts = pts;
 	// imitate x264's negative dts when bframes might have pts < dts
-	if (enc->bframes)
+	else if (enc->bframes)
 		dts = CMTimeSubtract(dts, off);
 
 	bool keyframe = is_sample_keyframe(buffer);
@@ -990,12 +989,6 @@ void register_encoders()
 
 bool obs_module_load(void)
 {
-	if (!is_appkit10_9_or_greater()) {
-		VT_LOG(LOG_WARNING, "Not adding VideoToolbox H264 encoder; "
-				    "AppKit must be version 10.9 or greater");
-		return false;
-	}
-
 	encoder_list_create();
 	register_encoders();
 

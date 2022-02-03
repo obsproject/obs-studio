@@ -73,6 +73,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
+	obs_data_set_bool(media_settings, "looping", false);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -119,6 +120,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 
 		obs_data_t *tm_media_settings = obs_data_create();
 		obs_data_set_string(tm_media_settings, "local_file", tm_path);
+		obs_data_set_bool(tm_media_settings, "looping", false);
 
 		s->matte_source = obs_source_create_private(
 			"ffmpeg_source", NULL, tm_media_settings);
@@ -577,8 +579,7 @@ static void stinger_enum_all_sources(void *data,
 		enum_callback(s->source, s->matte_source, param);
 }
 
-#define FILE_FILTER \
-	"Video Files (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
+#define FILE_FILTER " (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
 
 static bool transition_point_type_modified(obs_properties_t *ppts,
 					   obs_property_t *p, obs_data_t *s)
@@ -647,12 +648,18 @@ static bool track_matte_enabled_modified(obs_properties_t *ppts,
 static obs_properties_t *stinger_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
+	struct dstr filter = {0};
 
 	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
 
+	dstr_copy(&filter, obs_module_text("FileFilter.VideoFiles"));
+	dstr_cat(&filter, FILE_FILTER);
+	dstr_cat(&filter, obs_module_text("FileFilter.AllFiles"));
+	dstr_cat(&filter, " (*.*)");
+
 	// main stinger settings
 	obs_properties_add_path(ppts, "path", obs_module_text("VideoFile"),
-				OBS_PATH_FILE, FILE_FILTER, NULL);
+				OBS_PATH_FILE, filter.array, NULL);
 
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
@@ -708,7 +715,7 @@ static obs_properties_t *stinger_properties(void *data)
 
 		obs_properties_add_path(track_matte_group, "track_matte_path",
 					obs_module_text("TrackMatteVideoFile"),
-					OBS_PATH_FILE, FILE_FILTER, NULL);
+					OBS_PATH_FILE, filter.array, NULL);
 
 		obs_properties_add_bool(track_matte_group, "invert_matte",
 					obs_module_text("InvertTrackMatte"));
@@ -718,6 +725,7 @@ static obs_properties_t *stinger_properties(void *data)
 			obs_module_text("TrackMatteEnabled"),
 			OBS_GROUP_CHECKABLE, track_matte_group);
 	}
+	dstr_free(&filter);
 
 	// audio output settings
 	obs_property_t *monitor_list = obs_properties_add_list(

@@ -766,9 +766,16 @@ static int interrupt_callback(void *data)
 	return stop;
 }
 
+#define RIST_PROTO "rist"
+
 static bool init_avformat(mp_media_t *m)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVInputFormat *format = NULL;
+#else
+	const AVInputFormat *format = NULL;
+#endif
+
 	if (m->is_local_file) {
 		struct stat stats;
 		if (os_stat(m->path, &stats) != 0) {
@@ -779,6 +786,7 @@ static bool init_avformat(mp_media_t *m)
 			return false;
 		}
 	}
+
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
 		if (!format)
@@ -789,7 +797,8 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && !m->is_local_file)
+	bool is_rist = strncmp(m->path, RIST_PROTO, strlen(RIST_PROTO)) == 0;
+	if (m->buffering && !m->is_local_file && !is_rist)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	m->fmt = avformat_alloc_context();

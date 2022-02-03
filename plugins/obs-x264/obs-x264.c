@@ -22,7 +22,7 @@
 #include <util/darray.h>
 #include <util/platform.h>
 #include <obs-module.h>
-#include "obs-x264-options.h"
+#include <opts-parser.h>
 
 #ifndef _STDINT_H_INCLUDED
 #define _STDINT_H_INCLUDED
@@ -265,7 +265,7 @@ static const char *validate(struct obs_x264 *obsx264, const char *val,
 }
 
 static void override_base_param(struct obs_x264 *obsx264,
-				struct obs_x264_option option, char **preset,
+				struct obs_option option, char **preset,
 				char **profile, char **tune)
 {
 	const char *name = option.name;
@@ -297,7 +297,7 @@ static void override_base_param(struct obs_x264 *obsx264,
 }
 
 static inline void override_base_params(struct obs_x264 *obsx264,
-					const struct obs_x264_options *options,
+					const struct obs_options *options,
 					char **preset, char **profile,
 					char **tune)
 {
@@ -308,8 +308,7 @@ static inline void override_base_params(struct obs_x264 *obsx264,
 
 #define OPENCL_ALIAS "opencl_is_experimental_and_potentially_unstable"
 
-static inline void set_param(struct obs_x264 *obsx264,
-			     struct obs_x264_option option)
+static inline void set_param(struct obs_x264 *obsx264, struct obs_option option)
 {
 	const char *name = option.name;
 	const char *val = option.value;
@@ -384,7 +383,7 @@ enum rate_control {
 };
 
 static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
-			  const struct obs_x264_options *options, bool update)
+			  const struct obs_options *options, bool update)
 {
 	video_t *video = obs_encoder_video(obsx264->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -555,7 +554,7 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 }
 
 static void log_custom_options(struct obs_x264 *obsx264,
-			       const struct obs_x264_options *options)
+			       const struct obs_options *options)
 {
 	if (options->count == 0) {
 		return;
@@ -590,8 +589,8 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 	char *preset = bstrdup(obs_data_get_string(settings, "preset"));
 	char *profile = bstrdup(obs_data_get_string(settings, "profile"));
 	char *tune = bstrdup(obs_data_get_string(settings, "tune"));
-	struct obs_x264_options options = obs_x264_parse_options(
-		obs_data_get_string(settings, "x264opts"));
+	struct obs_options options =
+		obs_parse_options(obs_data_get_string(settings, "x264opts"));
 	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
 
 	bool success = true;
@@ -629,7 +628,7 @@ static bool update_settings(struct obs_x264 *obsx264, obs_data_t *settings,
 			apply_x264_profile(obsx264, profile);
 	}
 
-	obs_x264_free_options(options);
+	obs_free_options(options);
 	bfree(preset);
 	bfree(profile);
 	bfree(tune);

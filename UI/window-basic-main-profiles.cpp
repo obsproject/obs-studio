@@ -214,6 +214,36 @@ static bool CopyProfile(const char *fromPartial, const char *to)
 	return true;
 }
 
+static bool ProfileNeedsRestart(config_t *newConfig, QString &settings)
+{
+	OBSBasic *main = OBSBasic::Get();
+
+	const char *oldSpeakers =
+		config_get_string(main->Config(), "Audio", "ChannelSetup");
+	uint oldSampleRate =
+		config_get_uint(main->Config(), "Audio", "SampleRate");
+
+	const char *newSpeakers =
+		config_get_string(newConfig, "Audio", "ChannelSetup");
+	uint newSampleRate = config_get_uint(newConfig, "Audio", "SampleRate");
+
+	auto appendSetting = [&settings](const char *name) {
+		settings += QStringLiteral("\n") + QTStr(name);
+	};
+
+	bool result = false;
+	if (oldSpeakers != NULL && newSpeakers != NULL) {
+		result = strcmp(oldSpeakers, newSpeakers) != 0;
+		appendSetting("Basic.Settings.Audio.Channels");
+	}
+	if (oldSampleRate != 0 && newSampleRate != 0) {
+		result |= oldSampleRate != newSampleRate;
+		appendSetting("Basic.Settings.Audio.SampleRate");
+	}
+
+	return result;
+}
+
 bool OBSBasic::AddProfile(bool create_new, const char *title, const char *text,
 			  const char *init_text, bool rename)
 {
@@ -274,6 +304,9 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		     newDir.c_str());
 		return false;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
@@ -459,17 +492,17 @@ void OBSBasic::ResetProfileData()
 	CreateHotkeys();
 
 	/* load audio monitoring */
-#if defined(_WIN32) || defined(__APPLE__) || HAVE_PULSEAUDIO
-	const char *device_name =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceName");
-	const char *device_id =
-		config_get_string(basicConfig, "Audio", "MonitoringDeviceId");
+	if (obs_audio_monitoring_available()) {
+		const char *device_name = config_get_string(
+			basicConfig, "Audio", "MonitoringDeviceName");
+		const char *device_id = config_get_string(basicConfig, "Audio",
+							  "MonitoringDeviceId");
 
-	obs_set_audio_monitoring_device(device_name, device_id);
+		obs_set_audio_monitoring_device(device_name, device_id);
 
-	blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
-	     device_name, device_id);
-#endif
+		blog(LOG_INFO, "Audio monitoring device:\n\tname: %s\n\tid: %s",
+		     device_name, device_id);
+	}
 }
 
 void OBSBasic::on_actionNewProfile_triggered()
@@ -484,6 +517,9 @@ void OBSBasic::on_actionDupProfile_triggered()
 
 void OBSBasic::on_actionRenameProfile_triggered()
 {
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	std::string curDir =
 		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
 	std::string curName =
@@ -550,6 +586,9 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	newPath.resize(newPath_len);
 
 	const char *newDir = strrchr(newPath.c_str(), '/') + 1;
@@ -557,6 +596,10 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
 			  newName.c_str());
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
+
+	QString settingsRequiringRestart;
+	bool needsRestart =
+		ProfileNeedsRestart(config, settingsRequiringRestart);
 
 	Auth::Save();
 	auth.reset();
@@ -582,6 +625,18 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+	}
+
+	if (needsRestart) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart")
+				.arg(settingsRequiringRestart));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
 	}
 }
 
@@ -709,10 +764,17 @@ void OBSBasic::ChangeProfile()
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
+
 	path.resize(path_len);
 
 	const char *newName = config_get_string(config, "General", "Name");
 	const char *newDir = strrchr(path.c_str(), '/') + 1;
+
+	QString settingsRequiringRestart;
+	bool needsRestart =
+		ProfileNeedsRestart(config, settingsRequiringRestart);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile", newName);
 	config_set_string(App()->GlobalConfig(), "Basic", "ProfileDir", newDir);
@@ -738,6 +800,18 @@ void OBSBasic::ChangeProfile()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
+
+	if (needsRestart) {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, QTStr("Restart"),
+			QTStr("LoadProfileNeedsRestart")
+				.arg(settingsRequiringRestart));
+
+		if (button == QMessageBox::Yes) {
+			restart = true;
+			close();
+		}
+	}
 }
 
 void OBSBasic::CheckForSimpleModeX264Fallback()

@@ -20,9 +20,7 @@ struct audio_monitor {
 
 	struct circlebuf new_data;
 	audio_resampler_t *resampler;
-	size_t buffer_size;
 	size_t bytesRemaining;
-	size_t bytes_per_channel;
 
 	bool ignore;
 	pthread_mutex_t playback_mutex;
@@ -127,17 +125,26 @@ static pa_channel_map pulseaudio_channel_map(enum speaker_layout layout)
 
 static void process_byte(void *p, size_t frames, size_t channels, float vol)
 {
-	register char *cur = (char *)p;
-	register char *end = cur + frames * channels;
+	register uint8_t *cur = (uint8_t *)p;
+	register uint8_t *end = cur + frames * channels;
+
+	for (; cur < end; cur++)
+		*cur = ((int)*cur - 128) * vol + 128;
+}
+
+static void process_s16(void *p, size_t frames, size_t channels, float vol)
+{
+	register int16_t *cur = (int16_t *)p;
+	register int16_t *end = cur + frames * channels;
 
 	while (cur < end)
 		*(cur++) *= vol;
 }
 
-static void process_short(void *p, size_t frames, size_t channels, float vol)
+static void process_s32(void *p, size_t frames, size_t channels, float vol)
 {
-	register short *cur = (short *)p;
-	register short *end = cur + frames * channels;
+	register int32_t *cur = (int32_t *)p;
+	register int32_t *end = cur + frames * channels;
 
 	while (cur < end)
 		*(cur++) *= vol;
@@ -155,18 +162,25 @@ static void process_float(void *p, size_t frames, size_t channels, float vol)
 void process_volume(const struct audio_monitor *monitor, float vol,
 		    uint8_t *const *resample_data, uint32_t resample_frames)
 {
-	switch (monitor->bytes_per_channel) {
-	case 1:
+	switch (monitor->format) {
+	case PA_SAMPLE_U8:
 		process_byte(resample_data[0], resample_frames,
 			     monitor->channels, vol);
 		break;
-	case 2:
-		process_short(resample_data[0], resample_frames,
+	case PA_SAMPLE_S16LE:
+		process_s16(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_S32LE:
+		process_s32(resample_data[0], resample_frames,
+			    monitor->channels, vol);
+		break;
+	case PA_SAMPLE_FLOAT32LE:
+		process_float(resample_data[0], resample_frames,
 			      monitor->channels, vol);
 		break;
 	default:
-		process_float(resample_data[0], resample_frames,
-			      monitor->channels, vol);
+		// just ignore
 		break;
 	}
 }
@@ -176,21 +190,20 @@ static void do_stream_write(void *param)
 	PULSE_DATA(param);
 	uint8_t *buffer = NULL;
 
-	while (data->new_data.size >= data->buffer_size &&
-	       data->bytesRemaining > 0) {
-		size_t bytesToFill = data->buffer_size;
-
-		if (bytesToFill > data->bytesRemaining)
+	while (data->new_data.size > 0 && data->bytesRemaining > 0) {
+		size_t bytesToFill = data->new_data.size;
+		if (data->bytesRemaining < bytesToFill)
 			bytesToFill = data->bytesRemaining;
 
 		pulseaudio_lock();
-		pa_stream_begin_write(data->stream, (void **)&buffer,
-				      &bytesToFill);
-		pulseaudio_unlock();
+		if (pa_stream_begin_write(data->stream, (void **)&buffer,
+					  &bytesToFill)) {
+			pulseaudio_unlock();
+			return;
+		}
 
 		circlebuf_pop_front(&data->new_data, buffer, bytesToFill);
 
-		pulseaudio_lock();
 		pa_stream_write(data->stream, buffer, bytesToFill, NULL, 0LL,
 				PA_SEEK_RELATIVE);
 		pulseaudio_unlock();
@@ -262,12 +275,29 @@ static void pulseaudio_underflow(pa_stream *p, void *userdata)
 	UNUSED_PARAMETER(p);
 	PULSE_DATA(userdata);
 
-	pthread_mutex_lock(&data->playback_mutex);
-	if (obs_source_active(data->source))
-		data->attr.tlength = (data->attr.tlength * 3) / 2;
+	pa_sample_spec spec = {0};
+	spec.format = data->format;
+	spec.rate = (uint32_t)data->samples_per_sec;
+	spec.channels = data->channels;
+	uint64_t latency = pa_bytes_to_usec(data->attr.tlength, &spec);
 
-	pa_stream_set_buffer_attr(data->stream, &data->attr, NULL, NULL);
+	pthread_mutex_lock(&data->playback_mutex);
+	if (obs_source_active(data->source) && latency < 1000000) {
+		data->attr.fragsize = (uint32_t)-1;
+		data->attr.maxlength = (uint32_t)-1;
+		data->attr.prebuf = (uint32_t)-1;
+		data->attr.minreq = (uint32_t)-1;
+		data->attr.tlength = (data->attr.tlength * 3) / 2;
+		pa_stream_set_buffer_attr(data->stream, &data->attr, NULL,
+					  NULL);
+		data->bytesRemaining = data->attr.maxlength;
+	}
 	pthread_mutex_unlock(&data->playback_mutex);
+
+	if (latency >= 1000000) {
+		blog(LOG_WARNING, "source monitor reached max latency %ldms",
+		     latency / 1000);
+	}
 
 	pulseaudio_signal(0);
 }
@@ -440,8 +470,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		return false;
 	}
 
-	monitor->bytes_per_channel = get_audio_bytes_per_channel(
-		pulseaudio_to_obs_audio_format(monitor->format));
 	monitor->speakers = pulseaudio_channels_to_obs_speakers(spec.channels);
 	monitor->bytes_per_frame = pa_frame_size(&spec);
 
@@ -460,9 +488,6 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 	monitor->attr.prebuf = (uint32_t)-1;
 	monitor->attr.tlength = pa_usec_to_bytes(25000, &spec);
 
-	monitor->buffer_size =
-		monitor->bytes_per_frame * pa_usec_to_bytes(5000, &spec);
-
 	pa_stream_flags_t flags = PA_STREAM_INTERPOLATE_TIMING |
 				  PA_STREAM_AUTO_TIMING_UPDATE;
 
@@ -479,6 +504,8 @@ static bool audio_monitor_init(struct audio_monitor *monitor,
 		blog(LOG_ERROR, "Unable to connect to stream");
 		return false;
 	}
+
+	monitor->bytesRemaining = monitor->attr.maxlength;
 
 	blog(LOG_INFO, "Started Monitoring in '%s'", monitor->device);
 	return true;

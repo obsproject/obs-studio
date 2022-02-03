@@ -145,6 +145,8 @@ EXPORT void device_blend_function_separate(gs_device_t *device,
 					   enum gs_blend_type dest_c,
 					   enum gs_blend_type src_a,
 					   enum gs_blend_type dest_a);
+EXPORT void device_blend_op(gs_device_t *device, enum gs_blend_op_type op);
+
 EXPORT void device_depth_function(gs_device_t *device, enum gs_depth_test test);
 EXPORT void device_stencil_function(gs_device_t *device,
 				    enum gs_stencil_side side,
@@ -177,6 +179,16 @@ EXPORT gs_texture_t *device_texture_create_from_dmabuf(
 	uint32_t drm_format, enum gs_color_format color_format,
 	uint32_t n_planes, const int *fds, const uint32_t *strides,
 	const uint32_t *offsets, const uint64_t *modifiers);
+
+EXPORT bool
+device_query_dmabuf_capabilities(gs_device_t *device,
+				 enum gs_dmabuf_flags *gs_dmabuf_flags,
+				 uint32_t **drm_formats, size_t *n_formats);
+
+EXPORT bool device_query_dmabuf_modifiers_for_format(gs_device_t *device,
+						     uint32_t drm_format,
+						     uint64_t **modifiers,
+						     size_t *n_modifiers);
 
 #endif
 

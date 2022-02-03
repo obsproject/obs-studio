@@ -4,6 +4,7 @@
 #include <X11/extensions/Xcomposite.h>
 #include <pthread.h>
 
+#include <algorithm>
 #include <vector>
 
 #include <obs-module.h>
@@ -57,6 +58,13 @@ obs_properties_t *XCompcapMain::properties()
 		props, "capture_window", obs_module_text("Window"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
+	struct WindowInfo {
+		std::string lex_comparable;
+		std::string name;
+		std::string desc;
+	};
+
+	std::vector<WindowInfo> window_strings;
 	for (Window win : XCompcap::getTopLevelWindows()) {
 		std::string wname = XCompcap::getWindowName(win);
 		std::string cls = XCompcap::getWindowClass(win);
@@ -64,7 +72,28 @@ obs_properties_t *XCompcapMain::properties()
 		std::string desc =
 			(winid + WIN_STRING_DIV + wname + WIN_STRING_DIV + cls);
 
-		obs_property_list_add_string(wins, wname.c_str(), desc.c_str());
+		std::string wname_lowercase = wname;
+		std::transform(wname_lowercase.begin(), wname_lowercase.end(),
+			       wname_lowercase.begin(),
+			       [](unsigned char c) { return std::tolower(c); });
+
+		window_strings.push_back({.lex_comparable = wname_lowercase,
+					  .name = wname,
+					  .desc = desc});
+	}
+
+	std::sort(window_strings.begin(), window_strings.end(),
+		  [](const WindowInfo &a, const WindowInfo &b) -> bool {
+			  return std::lexicographical_compare(
+				  a.lex_comparable.begin(),
+				  a.lex_comparable.end(),
+				  b.lex_comparable.begin(),
+				  b.lex_comparable.end());
+		  });
+
+	for (auto s : window_strings) {
+		obs_property_list_add_string(wins, s.name.c_str(),
+					     s.desc.c_str());
 	}
 
 	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"), 0,
@@ -171,6 +200,12 @@ struct XCompcapMain_private {
 	bool show_cursor = true;
 	bool cursor_outside = false;
 	xcursor_t *cursor = nullptr;
+	bool tick_error_suppressed = false;
+	// Whether to rebind the GLX Pixmap on every tick. This is the correct
+	// mode of operation, according to GLX_EXT_texture_from_pixmap. However
+	// certain drivers exhibits poor performance when this is done, so
+	// setting this to false allows working around it.
+	bool strict_binding = true;
 };
 
 XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
@@ -179,6 +214,11 @@ XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
 	p->source = source;
 
 	obs_enter_graphics();
+	if (strcmp(reinterpret_cast<const char *>(glGetString(GL_VENDOR)),
+		   "NVIDIA Corporation") == 0) {
+		// Pixmap binds are extremely slow on NVIDIA cards (https://github.com/obsproject/obs-studio/issues/5685)
+		p->strict_binding = false;
+	}
 	p->cursor = xcursor_init(xdisp);
 	obs_leave_graphics();
 
@@ -272,7 +312,7 @@ static void xcc_cleanup(XCompcapMain_private *p)
 		glBindTexture(GL_TEXTURE_2D, gltex);
 		if (p->glxpixmap) {
 			glXReleaseTexImageEXT(xdisp, p->glxpixmap,
-					      GLX_FRONT_LEFT_EXT);
+					      GLX_FRONT_EXT);
 			if (xlock.gotError()) {
 				blog(LOG_ERROR,
 				     "cleanup glXReleaseTexImageEXT failed: %s",
@@ -368,6 +408,8 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	Window prevWin = p->win;
 
 	xcc_cleanup(p);
+
+	p->tick_error_suppressed = false;
 
 	if (settings) {
 		/* Settings initialized or changed */
@@ -525,7 +567,7 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
-	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_LEFT_EXT, NULL);
+	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
 	if (xlock.gotError()) {
 		blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
 		     xlock.getErrorText().c_str());
@@ -591,7 +633,7 @@ void XCompcapMain::tick(float seconds)
 		p->win = 0;
 	}
 
-	XDisplayLock xlock;
+	XErrorLock xlock;
 	XWindowAttributes attr;
 
 	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
@@ -622,6 +664,22 @@ void XCompcapMain::tick(float seconds)
 		XSync(xdisp, 0);
 	}
 
+	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(p->gltex));
+	if (p->strict_binding) {
+		glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
+		if (xlock.gotError() && !p->tick_error_suppressed) {
+			blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
+			     xlock.getErrorText().c_str());
+			p->tick_error_suppressed = true;
+		}
+		glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
+		if (xlock.gotError() && !p->tick_error_suppressed) {
+			blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
+			     xlock.getErrorText().c_str());
+			p->tick_error_suppressed = true;
+		}
+	}
+
 	if (p->include_border) {
 		gs_copy_texture_region(p->tex, 0, 0, p->gltex, p->cur_cut_left,
 				       p->cur_cut_top, width(), height());
@@ -631,6 +689,7 @@ void XCompcapMain::tick(float seconds)
 				       p->cur_cut_top + p->border, width(),
 				       height());
 	}
+	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (p->cursor && p->show_cursor) {
 		xcursor_tick(p->cursor);

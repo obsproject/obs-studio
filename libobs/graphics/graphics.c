@@ -28,8 +28,10 @@
 #include "effect-parser.h"
 #include "effect.h"
 
-#ifdef _MSC_VER
+#ifdef near
 #undef near
+#endif
+#ifdef far
 #undef far
 #endif
 
@@ -169,6 +171,10 @@ static bool graphics_init(struct graphics_subsystem *graphics)
 	graphics->cur_blend_state.dest_c = GS_BLEND_INVSRCALPHA;
 	graphics->cur_blend_state.src_a = GS_BLEND_ONE;
 	graphics->cur_blend_state.dest_a = GS_BLEND_INVSRCALPHA;
+
+	graphics->cur_blend_state.op = GS_BLEND_OP_ADD;
+	graphics->exports.device_blend_op(graphics->device,
+					  graphics->cur_blend_state.op);
 
 	graphics->exports.device_leave_context(graphics->device);
 
@@ -1239,6 +1245,7 @@ void gs_blend_state_pop(void)
 	gs_enable_blending(state->enabled);
 	gs_blend_function_separate(state->src_c, state->dest_c, state->src_a,
 				   state->dest_a);
+	gs_blend_op(state->op);
 
 	da_pop_back(graphics->blend_state_stack);
 }
@@ -1256,10 +1263,12 @@ void gs_reset_blend_state(void)
 	if (graphics->cur_blend_state.src_c != GS_BLEND_SRCALPHA ||
 	    graphics->cur_blend_state.dest_c != GS_BLEND_INVSRCALPHA ||
 	    graphics->cur_blend_state.src_a != GS_BLEND_ONE ||
-	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA)
+	    graphics->cur_blend_state.dest_a != GS_BLEND_INVSRCALPHA) {
 		gs_blend_function_separate(GS_BLEND_SRCALPHA,
 					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
 					   GS_BLEND_INVSRCALPHA);
+		gs_blend_op(GS_BLEND_OP_ADD);
+	}
 }
 
 /* ------------------------------------------------------------------------- */
@@ -1381,6 +1390,25 @@ gs_texture_t *gs_texture_create_from_dmabuf(
 	return graphics->exports.device_texture_create_from_dmabuf(
 		graphics->device, width, height, drm_format, color_format,
 		n_planes, fds, strides, offsets, modifiers);
+}
+
+bool gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags,
+				  uint32_t **drm_formats, size_t *n_formats)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_query_dmabuf_capabilities(
+		graphics->device, dmabuf_flags, drm_formats, n_formats);
+}
+
+bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format,
+					  uint64_t **modifiers,
+					  size_t *n_modifiers)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_query_dmabuf_modifiers_for_format(
+		graphics->device, drm_format, modifiers, n_modifiers);
 }
 
 #endif
@@ -1994,6 +2022,18 @@ void gs_blend_function_separate(enum gs_blend_type src_c,
 	graphics->cur_blend_state.dest_a = dest_a;
 	graphics->exports.device_blend_function_separate(
 		graphics->device, src_c, dest_c, src_a, dest_a);
+}
+
+void gs_blend_op(enum gs_blend_op_type op)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_blend_op"))
+		return;
+
+	graphics->cur_blend_state.op = op;
+	graphics->exports.device_blend_op(graphics->device,
+					  graphics->cur_blend_state.op);
 }
 
 void gs_depth_function(enum gs_depth_test test)
@@ -2989,6 +3029,18 @@ gs_texture_t *gs_texture_open_shared(uint32_t handle)
 
 	if (graphics->exports.device_texture_open_shared)
 		return graphics->exports.device_texture_open_shared(
+			graphics->device, handle);
+	return NULL;
+}
+
+gs_texture_t *gs_texture_open_nt_shared(uint32_t handle)
+{
+	graphics_t *graphics = thread_graphics;
+	if (!gs_valid("gs_texture_open_nt_shared"))
+		return NULL;
+
+	if (graphics->exports.device_texture_open_nt_shared)
+		return graphics->exports.device_texture_open_nt_shared(
 			graphics->device, handle);
 	return NULL;
 }

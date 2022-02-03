@@ -55,6 +55,9 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED,
 
 	OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED,
+	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING,
+	OBS_FRONTEND_EVENT_PROFILE_CHANGING,
+	OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -217,6 +220,9 @@ EXPORT void obs_frontend_reset_video(void);
 
 EXPORT void obs_frontend_open_source_properties(obs_source_t *source);
 EXPORT void obs_frontend_open_source_filters(obs_source_t *source);
+EXPORT void obs_frontend_open_source_interaction(obs_source_t *source);
+
+EXPORT char *obs_frontend_get_current_record_output_path(void);
 
 /* ------------------------------------------------------------------------- */
 

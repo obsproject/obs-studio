@@ -892,8 +892,9 @@ static void syphon_release(void *param)
 
 static inline obs_properties_t *syphon_properties_internal(syphon_t s)
 {
-	if (s)
-		obs_source_addref(s->source);
+	if (s && obs_source_get_ref(s->source) == NULL) {
+		s = NULL;
+	}
 
 	obs_properties_t *props =
 		obs_properties_create_param(s, syphon_release);

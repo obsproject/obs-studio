@@ -7,6 +7,10 @@ macro(fixLink target_arg)
 			POST_BUILD COMMAND "${CMAKE_INSTALL_NAME_TOOL}"
 			"-change" "@rpath/libobs.0.dylib" "@executable_path/../../libobs/libobs.0.dylib"
 			"$<TARGET_FILE:${target_arg}>" VERBATIM)
+		add_custom_command (TARGET ${target_arg}
+			POST_BUILD COMMAND "${CMAKE_INSTALL_NAME_TOOL}"
+			"-add_rpath" /tmp/obsdeps/lib
+			"$<TARGET_FILE:${target_arg}>" VERBATIM)
 	endif()
 endmacro()
 

@@ -29,6 +29,12 @@
 #include "audio-resampler.h"
 #include "obs-internal.h"
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#include <avrt.h>
+#endif
+
 extern profiler_name_store_t *obs_get_profiler_name_store(void);
 
 /* #define DEBUG_AUDIO */
@@ -267,14 +273,20 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 
 static void *audio_thread(void *param)
 {
+#ifdef _WIN32
+	DWORD unused = 0;
+	const HANDLE handle = AvSetMmThreadCharacteristics(L"Audio", &unused);
+#endif
+
 	struct audio_output *audio = param;
 	size_t rate = audio->info.samples_per_sec;
 	uint64_t samples = 0;
 	uint64_t start_time = os_gettime_ns();
 	uint64_t prev_time = start_time;
 	uint64_t audio_time = prev_time;
-	uint32_t audio_wait_time = (uint32_t)(
-		audio_frames_to_ns(rate, AUDIO_OUTPUT_FRAMES) / 1000000);
+	uint32_t audio_wait_time =
+		(uint32_t)(audio_frames_to_ns(rate, AUDIO_OUTPUT_FRAMES) /
+			   1000000);
 
 	os_set_thread_name("audio-io: audio thread");
 
@@ -304,6 +316,11 @@ static void *audio_thread(void *param)
 
 		profile_reenable_thread();
 	}
+
+#ifdef _WIN32
+	if (handle)
+		AvRevertMmThreadCharacteristics(handle);
+#endif
 
 	return NULL;
 }

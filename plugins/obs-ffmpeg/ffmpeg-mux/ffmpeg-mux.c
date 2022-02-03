@@ -27,7 +27,9 @@
 #include "ffmpeg-mux.h"
 
 #include <util/dstr.h>
+#include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
+#include <libavutil/channel_layout.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
 #define ANSI_COLOR_MAGENTA "\x1b[0;95m"
@@ -99,6 +101,7 @@ struct audio_params {
 	char *name;
 	int abitrate;
 	int sample_rate;
+	int frame_size;
 	int channels;
 };
 
@@ -107,10 +110,16 @@ struct header {
 	int size;
 };
 
+struct audio_info {
+	AVStream *stream;
+	AVCodecContext *ctx;
+};
+
 struct ffmpeg_mux {
 	AVFormatContext *output;
 	AVStream *video_stream;
-	AVStream **audio_streams;
+	AVCodecContext *video_ctx;
+	struct audio_info *audio_infos;
 	struct main_params params;
 	struct audio_params *audio;
 	struct header video_header;
@@ -128,6 +137,8 @@ static void header_free(struct header *header)
 static void free_avformat(struct ffmpeg_mux *ffm)
 {
 	if (ffm->output) {
+		avcodec_free_context(&ffm->video_ctx);
+
 		if ((ffm->output->oformat->flags & AVFMT_NOFILE) == 0)
 			avio_close(ffm->output->pb);
 
@@ -135,12 +146,14 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 		ffm->output = NULL;
 	}
 
-	if (ffm->audio_streams) {
-		free(ffm->audio_streams);
+	if (ffm->audio_infos) {
+		for (int i = 0; i < ffm->num_audio_streams; ++i)
+			avcodec_free_context(&ffm->audio_infos[i].ctx);
+		free(ffm->audio_infos);
 	}
 
 	ffm->video_stream = NULL;
-	ffm->audio_streams = NULL;
+	ffm->audio_infos = NULL;
 	ffm->num_audio_streams = 0;
 }
 
@@ -208,6 +221,8 @@ static bool get_audio_params(struct audio_params *audio, int *argc,
 	if (!get_opt_int(argc, argv, &audio->abitrate, "audio bitrate"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->sample_rate, "audio sample rate"))
+		return false;
+	if (!get_opt_int(argc, argv, &audio->frame_size, "audio frame size"))
 		return false;
 	if (!get_opt_int(argc, argv, &audio->channels, "audio channels"))
 		return false;
@@ -339,25 +354,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 }
 
 static bool new_stream(struct ffmpeg_mux *ffm, AVStream **stream,
-		       const char *name, enum AVCodecID *id)
+		       const char *name)
 {
-	const AVCodecDescriptor *desc = avcodec_descriptor_get_by_name(name);
-	AVCodec *codec;
-
-	if (!desc) {
-		fprintf(stderr, "Couldn't find encoder '%s'\n", name);
-		return false;
-	}
-
-	*id = desc->id;
-
-	codec = avcodec_find_encoder(desc->id);
-	if (!codec) {
-		fprintf(stderr, "Couldn't create encoder");
-		return false;
-	}
-
-	*stream = avformat_new_stream(ffm->output, codec);
+	*stream = avformat_new_stream(ffm->output, NULL);
 	if (!*stream) {
 		fprintf(stderr, "Couldn't create stream for encoder '%s'\n",
 			name);
@@ -372,9 +371,15 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 {
 	AVCodecContext *context;
 	void *extradata = NULL;
+	const char *name = ffm->params.vcodec;
 
-	if (!new_stream(ffm, &ffm->video_stream, ffm->params.vcodec,
-			&ffm->output->oformat->video_codec))
+	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	if (!codec) {
+		fprintf(stderr, "Couldn't find codec '%s'\n", name);
+		return;
+	}
+
+	if (!new_stream(ffm, &ffm->video_stream, name))
 		return;
 
 	if (ffm->video_header.size) {
@@ -382,8 +387,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 				      ffm->video_header.size);
 	}
 
-	context = ffm->video_stream->codec;
-	context->bit_rate = ffm->params.vbitrate * 1000;
+	context = avcodec_alloc_context3(NULL);
+	context->codec_type = codec->type;
+	context->codec_id = codec->id;
+	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
 	context->coded_width = ffm->params.width;
@@ -406,6 +413,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
+
+	avcodec_parameters_from_context(ffm->video_stream->codecpar, context);
+
+	ffm->video_ctx = context;
 }
 
 static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
@@ -413,12 +424,16 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	AVCodecContext *context;
 	AVStream *stream;
 	void *extradata = NULL;
+	const char *name = ffm->params.acodec;
 
-	if (!new_stream(ffm, &stream, ffm->params.acodec,
-			&ffm->output->oformat->audio_codec))
+	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
+	if (!codec) {
+		fprintf(stderr, "Couldn't find codec '%s'\n", name);
 		return;
+	}
 
-	ffm->audio_streams[idx] = stream;
+	if (!new_stream(ffm, &stream, name))
+		return;
 
 	av_dict_set(&stream->metadata, "title", ffm->audio[idx].name, 0);
 
@@ -429,25 +444,32 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 				      ffm->audio_header[idx].size);
 	}
 
-	context = stream->codec;
-	context->bit_rate = ffm->audio[idx].abitrate * 1000;
+	context = avcodec_alloc_context3(NULL);
+	context->codec_type = codec->type;
+	context->codec_id = codec->id;
+	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
 	context->channels = ffm->audio[idx].channels;
 	context->sample_rate = ffm->audio[idx].sample_rate;
+	context->frame_size = ffm->audio[idx].frame_size;
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
-	//AVlib default channel layout for 4 channels is 4.0 ; fix for quad
+	//avutil default channel layout for 4 channels is 4.0 ; fix for quad
 	if (context->channels == 4)
 		context->channel_layout = av_get_channel_layout("quad");
-	//AVlib default channel layout for 5 channels is 5.0 ; fix for 4.1
+	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (context->channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
 
+	avcodec_parameters_from_context(stream->codecpar, context);
+
+	ffm->audio_infos[ffm->num_audio_streams].stream = stream;
+	ffm->audio_infos[ffm->num_audio_streams].ctx = context;
 	ffm->num_audio_streams++;
 }
 
@@ -457,8 +479,8 @@ static bool init_streams(struct ffmpeg_mux *ffm)
 		create_video_stream(ffm);
 
 	if (ffm->params.tracks) {
-		ffm->audio_streams =
-			calloc(1, ffm->params.tracks * sizeof(void *));
+		ffm->audio_infos =
+			calloc(ffm->params.tracks, sizeof(*ffm->audio_infos));
 
 		for (int i = 0; i < ffm->params.tracks; i++)
 			create_audio_stream(ffm, i);
@@ -548,7 +570,11 @@ static inline bool ffmpeg_mux_get_extra_data(struct ffmpeg_mux *ffm)
 
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *format = ffm->output->oformat;
+#else
+	const AVOutputFormat *format = ffm->output->oformat;
+#endif
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
@@ -605,18 +631,24 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 #define UDP_PROTO "udp"
 #define TCP_PROTO "tcp"
 #define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
 
 static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
 {
 	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
 	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
 	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1);
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVOutputFormat *output_format;
+#else
+	const AVOutputFormat *output_format;
+#endif
 	int ret;
 	bool is_http = false;
 	is_http = (strncmp(ffm->params.file, HTTP_PROTO,
@@ -650,8 +682,10 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 		return FFM_ERROR;
 	}
 
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	ffm->output->oformat->video_codec = AV_CODEC_ID_NONE;
 	ffm->output->oformat->audio_codec = AV_CODEC_ID_NONE;
+#endif
 
 	if (!init_streams(ffm)) {
 		free_avformat(ffm);
@@ -713,7 +747,7 @@ static inline int get_index(struct ffmpeg_mux *ffm,
 		}
 	} else {
 		if ((int)info->index < ffm->num_audio_streams) {
-			return ffm->audio_streams[info->index]->id;
+			return ffm->audio_infos[info->index].stream->id;
 		}
 	}
 

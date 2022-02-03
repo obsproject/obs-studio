@@ -321,10 +321,25 @@ General Encoder Functions
 ---------------------
 
 .. function:: void obs_encoder_addref(obs_encoder_t *encoder)
-              void obs_encoder_release(obs_encoder_t *encoder)
 
-   Adds/releases a reference to an encoder.  When the last reference is
-   released, the encoder is destroyed.
+   Adds a reference to an encoder.
+
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_encoder_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
+
+---------------------
+
+.. function:: void obs_encoder_release(obs_encoder_t *encoder)
+
+   Releases a reference to an encoder.  When the last reference is released,
+   the encoder is destroyed.
 
 ---------------------
 
@@ -397,6 +412,12 @@ General Encoder Functions
 .. function:: uint32_t obs_encoder_get_sample_rate(const obs_encoder_t *encoder)
 
    :return: The sample rate of an audio encoder's audio data
+
+---------------------
+
+.. function:: size_t obs_encoder_get_frame_size(const obs_encoder_t *encoder)
+
+   :return: The frame size of the audio packet
 
 ---------------------
 

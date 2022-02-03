@@ -69,6 +69,7 @@ PY_EXTERN PyObject *(*Import_PyObject_Init)(PyObject *, PyTypeObject *);
 PY_EXTERN PyObject *(*Import_PyUnicode_FromFormat)(const char *format, ...);
 PY_EXTERN PyObject *(*Import_PyUnicode_Concat)(PyObject *left, PyObject *right);
 PY_EXTERN PyObject *(*Import_PyLong_FromVoidPtr)(void *);
+PY_EXTERN PyObject *(*Import_PyLong_FromLong)(long);
 PY_EXTERN PyObject *(*Import_PyBool_FromLong)(long);
 PY_EXTERN PyGILState_STATE (*Import_PyGILState_Ensure)(void);
 PY_EXTERN PyThreadState *(*Import_PyGILState_GetThisThreadState)(void);
@@ -169,6 +170,7 @@ extern bool import_python(const char *python_path);
 #define PyUnicode_FromFormat Import_PyUnicode_FromFormat
 #define PyUnicode_Concat Import_PyUnicode_Concat
 #define PyLong_FromVoidPtr Import_PyLong_FromVoidPtr
+#define PyLong_FromLong Import_PyLong_FromLong
 #define PyBool_FromLong Import_PyBool_FromLong
 #define PyGILState_Ensure Import_PyGILState_Ensure
 #define PyGILState_GetThisThreadState Import_PyGILState_GetThisThreadState

@@ -21,7 +21,6 @@
 
 #import <AppKit/AppKit.h>
 #import <mach/mach_time.h>
-#include <CoreMediaIO/CMIOSampleBuffer.h>
 
 #import "Logging.h"
 #import "CMSampleBufferUtils.h"

@@ -77,6 +77,8 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_BGRA;
 	case GS_BGRA_UNORM:
 		return GL_BGRA;
+	case GS_RG16:
+		return GL_RG;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -129,6 +131,8 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_RGB;
 	case GS_BGRA_UNORM:
 		return GL_RGBA;
+	case GS_RG16:
+		return GL_RG16;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -181,6 +185,8 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 		return GL_UNSIGNED_BYTE;
 	case GS_BGRA_UNORM:
 		return GL_UNSIGNED_BYTE;
+	case GS_RG16:
+		return GL_UNSIGNED_SHORT;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -294,6 +300,24 @@ static inline GLenum convert_gs_blend_type(enum gs_blend_type type)
 	return GL_ONE;
 }
 
+static inline GLenum convert_gs_blend_op_type(enum gs_blend_op_type type)
+{
+	switch (type) {
+	case GS_BLEND_OP_ADD:
+		return GL_FUNC_ADD;
+	case GS_BLEND_OP_SUBTRACT:
+		return GL_FUNC_SUBTRACT;
+	case GS_BLEND_OP_REVERSE_SUBTRACT:
+		return GL_FUNC_REVERSE_SUBTRACT;
+	case GS_BLEND_OP_MIN:
+		return GL_MIN;
+	case GS_BLEND_OP_MAX:
+		return GL_MAX;
+	}
+
+	return GL_FUNC_ADD;
+}
+
 static inline GLenum convert_shader_type(enum gs_shader_type type)
 {
 	switch (type) {
@@ -401,6 +425,7 @@ struct gs_sampler_state {
 	GLint address_v;
 	GLint address_w;
 	GLint max_anisotropy;
+	struct vec4 border_color;
 };
 
 static inline void samplerstate_addref(gs_samplerstate_t *ss)
