@@ -270,8 +270,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		return;
 	}
 
-	ui->propertiesFrame->setVisible(false);
-
 	if (view) {
 		updatePropertiesSignal.Disconnect();
 		ui->propertiesFrame->setVisible(false);
