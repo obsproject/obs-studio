@@ -31,6 +31,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#define get_weak(source) ((obs_weak_source_t *)source->context.control)
+
 static bool filter_compatible(obs_source_t *source, obs_source_t *filter);
 
 static inline bool data_valid(const struct obs_source *source, const char *f)
@@ -216,9 +218,10 @@ static bool obs_source_init(struct obs_source *source)
 			return false;
 	}
 
-	source->control = bzalloc(sizeof(obs_weak_source_t));
+	obs_context_init_control(&source->context, source,
+				 (obs_destroy_cb)obs_source_destroy);
+
 	source->deinterlace_top_first = true;
-	source->control->source = source;
 	source->audio_mixers = 0xFF;
 
 	source->private_settings = obs_data_create();
@@ -745,7 +748,7 @@ void obs_source_addref(obs_source_t *source)
 	if (!source)
 		return;
 
-	obs_ref_addref(&source->control->ref);
+	obs_ref_addref(&source->context.control->ref);
 }
 
 void obs_source_release(obs_source_t *source)
@@ -759,7 +762,7 @@ void obs_source_release(obs_source_t *source)
 	if (!source)
 		return;
 
-	obs_weak_source_t *control = source->control;
+	obs_weak_source_t *control = get_weak(source);
 	if (obs_ref_release(&control->ref)) {
 		obs_source_destroy(source);
 		obs_weak_source_release(control);
@@ -788,7 +791,7 @@ obs_source_t *obs_source_get_ref(obs_source_t *source)
 	if (!source)
 		return NULL;
 
-	return obs_weak_source_get_source(source->control);
+	return obs_weak_source_get_source(get_weak(source));
 }
 
 obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
@@ -796,7 +799,7 @@ obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
 	if (!source)
 		return NULL;
 
-	obs_weak_source_t *weak = source->control;
+	obs_weak_source_t *weak = get_weak(source);
 	obs_weak_source_addref(weak);
 	return weak;
 }

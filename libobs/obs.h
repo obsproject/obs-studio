@@ -39,6 +39,7 @@
 struct matrix4;
 
 /* opaque types */
+struct obs_context_data;
 struct obs_display;
 struct obs_view;
 struct obs_source;
@@ -51,6 +52,7 @@ struct obs_module;
 struct obs_fader;
 struct obs_volmeter;
 
+typedef struct obs_context_data obs_object_t;
 typedef struct obs_display obs_display_t;
 typedef struct obs_view obs_view_t;
 typedef struct obs_source obs_source_t;
@@ -63,6 +65,7 @@ typedef struct obs_module obs_module_t;
 typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
 
+typedef struct obs_weak_object obs_weak_object_t;
 typedef struct obs_weak_source obs_weak_source_t;
 typedef struct obs_weak_output obs_weak_output_t;
 typedef struct obs_weak_encoder obs_weak_encoder_t;
@@ -818,6 +821,17 @@ EXPORT bool obs_wait_for_destroy_queue(void);
 
 typedef void (*obs_task_handler_t)(obs_task_t task, void *param, bool wait);
 EXPORT void obs_set_ui_task_handler(obs_task_handler_t handler);
+
+EXPORT obs_object_t *obs_object_get_ref(obs_object_t *object);
+EXPORT void obs_object_release(obs_object_t *object);
+
+EXPORT void obs_weak_object_addref(obs_weak_object_t *weak);
+EXPORT void obs_weak_object_release(obs_weak_object_t *weak);
+EXPORT obs_weak_object_t *obs_object_get_weak_object(obs_object_t *object);
+EXPORT obs_object_t *obs_weak_object_get_object(obs_weak_object_t *weak);
+EXPORT bool obs_weak_object_expired(obs_weak_object_t *weak);
+EXPORT bool obs_weak_object_references_object(obs_weak_object_t *weak,
+					      obs_object_t *object);
 
 /* ------------------------------------------------------------------------- */
 /* View context */
