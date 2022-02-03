@@ -183,7 +183,7 @@ public:
 	Def_IsObject(output)
 	Def_IsObject(encoder)
 	Def_IsObject(service)
-	/* clang-format off */
+	/* clang-format on */
 
 #undef Def_IsObject
 };
