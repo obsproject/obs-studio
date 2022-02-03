@@ -62,7 +62,6 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
-	UpdateFilters();
 
 	ui->asyncFilters->setItemDelegate(
 		new VisibilityItemDelegate(ui->asyncFilters));
@@ -178,6 +177,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	renameAsync->setShortcut({Qt::Key_F2});
 	renameEffect->setShortcut({Qt::Key_F2});
 #endif
+
+	UpdateFilters();
 }
 
 OBSBasicFilters::~OBSBasicFilters()
