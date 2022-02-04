@@ -182,14 +182,55 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 		     (videoInfo.output_width * 2), frame->linesize[0]);
 	}
 
-	CGFloat width = videoInfo.output_width;
-	CGFloat height = videoInfo.output_height;
+	size_t width = videoInfo.output_width;
+	size_t height = videoInfo.output_height;
 
-	[sMachServer sendFrameWithSize:NSMakeSize(width, height)
-			     timestamp:frame->timestamp
-			  fpsNumerator:videoInfo.fps_num
-			fpsDenominator:videoInfo.fps_den
-			    frameBytes:outData];
+	NSDictionary *pbAttr = @{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}};
+	CVPixelBufferRef frameRef = NULL;
+	CVReturn status = CVPixelBufferCreate(NULL, width, height,
+					      kCVPixelFormatType_422YpCbCr8,
+					      (__bridge CFDictionaryRef)pbAttr,
+					      &frameRef);
+
+	if (status != kCVReturnSuccess) {
+		blog(LOG_ERROR, "unable to allocate pixel buffer (error %d)",
+		     status);
+		return;
+	}
+
+	// Copy memory into the pixel buffer
+	CVPixelBufferLockBaseAddress(frameRef, 0);
+	uint8_t *dest =
+		(uint8_t *)CVPixelBufferGetBaseAddressOfPlane(frameRef, 0);
+	uint8_t *src = outData;
+
+	size_t destBytesPerRow =
+		CVPixelBufferGetBytesPerRowOfPlane(frameRef, 0);
+	size_t srcBytesPerRow = frame->linesize[0];
+
+	// Sometimes CVPixelBufferCreate will create a pixelbuffer that's a different
+	// size than necessary to hold the frame (probably for some optimization reason).
+	// If that is the case this will do a row-by-row copy into the buffer.
+	if (destBytesPerRow == srcBytesPerRow) {
+		memcpy(dest, src, destBytesPerRow * height);
+	} else {
+		for (int line = 0; line < height; line++) {
+			memcpy(dest, src, srcBytesPerRow);
+			src += srcBytesPerRow;
+			dest += destBytesPerRow;
+		}
+	}
+	memcpy(dest, outData, srcBytesPerRow * height);
+
+	CVPixelBufferUnlockBaseAddress(frameRef, 0);
+
+	// Share pixel buffer with clients
+	[sMachServer sendPixelBuffer:frameRef
+			   timestamp:frame->timestamp
+			fpsNumerator:videoInfo.fps_num
+		      fpsDenominator:videoInfo.fps_den];
+
+	CVPixelBufferRelease(frameRef);
 }
 
 struct obs_output_info virtualcam_output_info = {

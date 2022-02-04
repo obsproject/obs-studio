@@ -18,6 +18,7 @@
 //  along with obs-mac-virtualcam. If not, see <http://www.gnu.org/licenses/>.
 
 #import "OBSDALObjectStore.h"
+#import <CoreVideo/CoreVideo.h>
 
 NS_ASSUME_NONNULL_BEGIN
 
@@ -35,11 +36,10 @@ NS_ASSUME_NONNULL_BEGIN
 
 - (void)stopServingDefaultFrames;
 
-- (void)queueFrameWithSize:(NSSize)size
-		 timestamp:(uint64_t)timestamp
-	      fpsNumerator:(uint32_t)fpsNumerator
-	    fpsDenominator:(uint32_t)fpsDenominator
-		 frameData:(NSData *)frameData;
+- (void)queuePixelBuffer:(CVPixelBufferRef)frame
+	       timestamp:(uint64_t)timestamp
+	    fpsNumerator:(uint32_t)fpsNumerator
+	  fpsDenominator:(uint32_t)fpsDenominator;
 
 @end
 

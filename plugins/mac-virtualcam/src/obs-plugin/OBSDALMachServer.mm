@@ -7,6 +7,7 @@
 
 #import "OBSDALMachServer.h"
 #include <obs-module.h>
+#include <CoreVideo/CoreVideo.h>
 #include "MachProtocol.h"
 #include "Defines.h"
 
@@ -121,23 +122,16 @@
 	[self.clientPorts minusSet:removedPorts];
 }
 
-- (void)sendFrameWithSize:(NSSize)size
-		timestamp:(uint64_t)timestamp
-	     fpsNumerator:(uint32_t)fpsNumerator
-	   fpsDenominator:(uint32_t)fpsDenominator
-	       frameBytes:(uint8_t *)frameBytes
+- (void)sendPixelBuffer:(CVPixelBufferRef)frame
+	      timestamp:(uint64_t)timestamp
+	   fpsNumerator:(uint32_t)fpsNumerator
+	 fpsDenominator:(uint32_t)fpsDenominator
 {
 	if ([self.clientPorts count] <= 0) {
 		return;
 	}
 
 	@autoreleasepool {
-		CGFloat width = size.width;
-		NSData *widthData = [NSData dataWithBytes:&width
-						   length:sizeof(width)];
-		CGFloat height = size.height;
-		NSData *heightData = [NSData dataWithBytes:&height
-						    length:sizeof(height)];
 		NSData *timestampData = [NSData
 			dataWithBytes:&timestamp
 			       length:sizeof(timestamp)];
@@ -148,19 +142,20 @@
 			dataWithBytes:&fpsDenominator
 			       length:sizeof(fpsDenominator)];
 
-		// NOTE: I'm not totally sure about the safety of dataWithBytesNoCopy in this context.
-		// Seems like there could potentially be an issue if the frameBuffer went away before the
-		// mach message finished sending. But it seems to be working and avoids a memory copy. Alternately
-		// we could do something like
-		// NSData *frameData = [NSData dataWithBytes:(void *)frameBytes length:size.width * size.height * 2];
-		NSData *frameData = [NSData
-			dataWithBytesNoCopy:(void *)frameBytes
-				     length:size.width * size.height * 2
-			       freeWhenDone:NO];
+		NSPort *framePort = [NSMachPort
+			portWithMachPort:IOSurfaceCreateMachPort(
+						 CVPixelBufferGetIOSurface(
+							 frame))];
+
+		if (!framePort) {
+			blog(LOG_ERROR,
+			     "unable to allocate mach port for pixel buffer");
+			return;
+		}
+
 		[self sendMessageToClientsWithMsgId:MachMsgIdFrame
 					 components:@[
-						 widthData, heightData,
-						 timestampData, frameData,
+						 framePort, timestampData,
 						 fpsNumeratorData,
 						 fpsDenominatorData
 					 ]];
