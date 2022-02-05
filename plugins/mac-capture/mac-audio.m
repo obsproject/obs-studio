@@ -1,5 +1,6 @@
 #include <AudioUnit/AudioUnit.h>
 #include <CoreFoundation/CFString.h>
+#include <Foundation/Foundation.h>
 #include <CoreAudio/CoreAudio.h>
 #include <unistd.h>
 #include <errno.h>
@@ -31,6 +32,13 @@
 #define TEXT_AUDIO_OUTPUT obs_module_text("CoreAudio.OutputCapture");
 #define TEXT_DEVICE obs_module_text("CoreAudio.Device")
 #define TEXT_DEVICE_DEFAULT obs_module_text("CoreAudio.Device.Default")
+#define TEXT_DEVICE_MAC_DESKTOP_CAPTURE \
+	obs_module_text("MacAudio.DeviceName.HAL")
+
+#define DESKTOP_CAPTURE_HAL_DEVICE_UID "ODACDevice_UID"
+#define DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_NAME \
+	obs_module_text("MacAudio.DeviceName.MultiOutput")
+#define DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_UID "OBSDesktopAudioMultioutput_UID"
 
 struct coreaudio_data {
 	char *device_name;
@@ -637,6 +645,217 @@ fail:
 	return false;
 }
 
+static NSString *halPluginFileName =
+	@"/Library/Audio/Plug-Ins/HAL/OBSDesktopAudioCapture.driver";
+
+static bool is_hal_device_updated()
+{
+	NSString *obsVersion = [[[NSBundle mainBundle] infoDictionary]
+		objectForKey:@"CFBundleShortVersionString"];
+	NSString *obsBuild = [[[NSBundle mainBundle] infoDictionary]
+		objectForKey:(NSString *)kCFBundleVersionKey];
+
+	// Can't use [NSBundle infoDictionary] here since that
+	// appears to be cached, which is unhelpful if you're
+	// trying to find out if something changed.
+	NSError *ignored;
+	NSURL *url = [NSURL
+		fileURLWithPath:
+			[NSString stringWithFormat:@"%@/Contents/Info.plist",
+						   halPluginFileName]];
+	NSDictionary *halPlist =
+		[NSDictionary dictionaryWithContentsOfURL:url error:&ignored];
+	NSString *halVersion =
+		[halPlist objectForKey:@"CFBundleShortVersionString"];
+	NSString *halBuild =
+		[halPlist objectForKey:(NSString *)kCFBundleVersionKey];
+
+	return [halVersion isEqualToString:obsVersion] &&
+	       [halBuild isEqualToString:obsBuild];
+}
+
+static bool is_hal_device_installed()
+{
+	AudioDeviceID deviceId;
+	coreaudio_get_device_id(CFSTR(DESKTOP_CAPTURE_HAL_DEVICE_UID),
+				&deviceId);
+	return deviceId != 0;
+}
+
+static bool modify_hal_plugin(bool reinstall)
+{
+	NSString *removeCmd = [NSString
+		stringWithFormat:@"rm -rf '%@' && ", halPluginFileName];
+	NSString *installCmd;
+	if (reinstall) {
+		NSString *halPluginSourcePath = [[NSBundle mainBundle]
+			pathForResource:@"OBSDesktopAudioCapture.driver"
+				 ofType:nil];
+		NSString *halPluginDestinationPath =
+			@"/Library/Audio/Plug-Ins/HAL/";
+
+		NSString *createPluginDirCmd =
+			(![[NSFileManager defaultManager]
+				fileExistsAtPath:halPluginDestinationPath])
+				? [NSString stringWithFormat:
+						    @"mkdir -p '%@' && ",
+						    halPluginDestinationPath]
+				: @"";
+
+		installCmd =
+			[NSString stringWithFormat:@"%@cp -R '%@' '%@' && ",
+						   createPluginDirCmd,
+						   halPluginSourcePath,
+						   halPluginDestinationPath];
+	} else {
+		installCmd = @"";
+	}
+	NSString *restartCmd =
+		@"launchctl kickstart -k system/com.apple.audio.coreaudiod";
+	NSString *appleScriptString = [NSString
+		stringWithFormat:
+			@"do shell script \"%@%@%@\" with administrator privileges",
+			removeCmd, installCmd, restartCmd];
+
+	NSAppleScript *appleScriptObject =
+		[[NSAppleScript alloc] initWithSource:appleScriptString];
+	NSDictionary *error;
+	NSAppleEventDescriptor *eventDescriptor =
+		[appleScriptObject executeAndReturnError:&error];
+	if (eventDescriptor == nil) {
+		const char *errorMessage = [[error
+			objectForKey:@"NSAppleScriptErrorMessage"] UTF8String];
+		blog(LOG_WARNING,
+		     "[mac-capture]: Failed to modify HAL plugin: %s",
+		     errorMessage);
+		return false;
+	}
+
+	// Hack to wait until CoreAudio has reloaded. I hate it too.
+	sleep(5);
+
+	return true;
+}
+
+static bool is_multioutput_device_installed()
+{
+	AudioDeviceID deviceId;
+	coreaudio_get_device_id(CFSTR(DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_UID),
+				&deviceId);
+	return deviceId != 0;
+}
+
+static bool delete_multioutput_device()
+{
+	AudioDeviceID deviceId;
+	coreaudio_get_device_id(CFSTR(DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_UID),
+				&deviceId);
+
+	if (deviceId) {
+		/* Delete device */
+		OSStatus status = AudioHardwareDestroyAggregateDevice(deviceId);
+		if (status != noErr) {
+			blog(LOG_INFO, "Deleting old device failed. Reason: %d",
+			     status);
+			return false;
+		}
+		return true;
+	}
+	return false;
+}
+
+static inline bool get_default_monitoring_output_device(CFStringRef *cf_uid)
+{
+	AudioObjectPropertyAddress addr = {
+		kAudioHardwarePropertyDefaultOutputDevice,
+		kAudioObjectPropertyScopeOutput,
+		kAudioObjectPropertyElementMaster};
+
+	AudioDeviceID id = 0;
+	UInt32 size = sizeof(id);
+	OSStatus stat = AudioObjectGetPropertyData(kAudioObjectSystemObject,
+						   &addr, 0, NULL, &size, &id);
+
+	if (stat != noErr)
+		return false;
+
+	size = sizeof(CFStringRef);
+	addr.mSelector = kAudioDevicePropertyDeviceUID;
+	stat = AudioObjectGetPropertyData(id, &addr, 0, NULL, &size, cf_uid);
+
+	return stat == noErr;
+}
+
+static bool create_multioutput_device()
+{
+	CFMutableDictionaryRef params =
+		CFDictionaryCreateMutable(kCFAllocatorDefault, 10, NULL, NULL);
+
+	CFDictionaryAddValue(params, CFSTR(kAudioAggregateDeviceUIDKey),
+			     CFSTR(DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_UID));
+	CFDictionaryAddValue(params, CFSTR(kAudioAggregateDeviceNameKey),
+			     CFStringCreateWithCString(
+				     kCFAllocatorDefault,
+				     DESKTOP_CAPTURE_MULTIOUTPUT_DEVICE_NAME,
+				     kTextEncodingDefaultFormat));
+
+	int stacked = 1;
+	CFNumberRef cfStacked =
+		CFNumberCreate(kCFAllocatorDefault, kCFNumberIntType, &stacked);
+	CFDictionaryAddValue(params, CFSTR(kAudioAggregateDeviceIsStackedKey),
+			     cfStacked);
+
+	/* Add subdevices to aggregate device */
+	{
+		CFMutableArrayRef subDevices =
+			CFArrayCreateMutable(kCFAllocatorDefault, 2, NULL);
+
+		/* Add OBS private cable */
+		CFMutableDictionaryRef virtualCableDevice =
+			CFDictionaryCreateMutable(kCFAllocatorDefault, 10, NULL,
+						  NULL);
+		CFDictionaryAddValue(virtualCableDevice,
+				     CFSTR(kAudioSubDeviceUIDKey),
+				     CFSTR(DESKTOP_CAPTURE_HAL_DEVICE_UID));
+		CFArrayAppendValue(subDevices, virtualCableDevice);
+
+		/* Add user-default output device */
+		CFStringRef userMainOutputDeviceUid;
+		if (!get_default_monitoring_output_device(
+			    &userMainOutputDeviceUid))
+			blog(LOG_WARNING,
+			     "[mac-capture]: Failed to find default output device.");
+		if (userMainOutputDeviceUid != NULL) {
+			CFMutableDictionaryRef mainDevice =
+				CFDictionaryCreateMutable(kCFAllocatorDefault,
+							  10, NULL, NULL);
+			CFDictionaryAddValue(mainDevice,
+					     CFSTR(kAudioSubDeviceUIDKey),
+					     userMainOutputDeviceUid);
+			CFArrayAppendValue(subDevices, mainDevice);
+		} else {
+			blog(LOG_WARNING,
+			     "[mac-capture]: No audio output device found. Not setting subDevice in aggregate.");
+		}
+
+		CFDictionaryAddValue(
+			params, CFSTR(kAudioAggregateDeviceSubDeviceListKey),
+			subDevices);
+	}
+
+	AudioDeviceID resulting_id = 0;
+	OSStatus result =
+		AudioHardwareCreateAggregateDevice(params, &resulting_id);
+
+	if (result != noErr) {
+		blog(LOG_WARNING,
+		     "[mac-capture]: Error while creating multi output audio device: %d",
+		     result);
+		return false;
+	}
+	return true;
+}
+
 static void coreaudio_try_init(struct coreaudio_data *ca)
 {
 	if (!coreaudio_init(ca)) {
@@ -789,6 +1008,11 @@ static obs_properties_t *coreaudio_properties(bool input)
 
 	coreaudio_enum_devices(&devices, input);
 
+	if (!input && is_hal_device_installed())
+		obs_property_list_add_string(property,
+					     TEXT_DEVICE_MAC_DESKTOP_CAPTURE,
+					     DESKTOP_CAPTURE_HAL_DEVICE_UID);
+
 	if (devices.items.num)
 		obs_property_list_add_string(property, TEXT_DEVICE_DEFAULT,
 					     "default");
@@ -843,3 +1067,54 @@ struct obs_source_info coreaudio_output_capture_info = {
 	.get_properties = coreaudio_output_properties,
 	.icon_type = OBS_ICON_TYPE_AUDIO_OUTPUT,
 };
+
+static void maccapture_macaudio(void *priv_data, calldata_t *data)
+{
+	UNUSED_PARAMETER(priv_data);
+	const char *name = calldata_string(data, "name");
+	bool ret_value;
+	if (strcmp(name, "is_hal_device_installed") == 0) {
+		ret_value = is_hal_device_installed();
+	} else if (strcmp(name, "is_multioutput_installed") == 0) {
+		ret_value = is_multioutput_device_installed();
+	} else if (strcmp(name, "is_hal_device_updated") == 0) {
+		ret_value = is_hal_device_updated();
+	} else if (strcmp(name, "install_all") == 0) {
+		if (is_multioutput_device_installed())
+			delete_multioutput_device();
+		if (create_multioutput_device()) {
+			ret_value = modify_hal_plugin(true);
+			if (!ret_value)
+				delete_multioutput_device();
+		} else {
+			ret_value = false;
+		}
+	} else if (strcmp(name, "uninstall_all") == 0) {
+		if (delete_multioutput_device()) {
+			ret_value = modify_hal_plugin(false);
+			if (!ret_value)
+				create_multioutput_device();
+		} else {
+			ret_value = false;
+		}
+	} else if (strcmp(name, "uninstall_broken") == 0) {
+		delete_multioutput_device();
+		ret_value = modify_hal_plugin(false);
+	} else if (strcmp(name, "update_hal_device") == 0) {
+		ret_value = modify_hal_plugin(true);
+	} else {
+		blog(LOG_WARNING, "[mac-capture]: Unknown procedure call: '%s'",
+		     name);
+		return;
+	}
+	calldata_set_bool(data, "value", ret_value);
+}
+
+void macaudio_add_proc()
+{
+	proc_handler_t *global = obs_get_proc_handler();
+	proc_handler_add(
+		global,
+		"void maccapture_macaudio(in string name, out bool value)",
+		maccapture_macaudio, NULL);
+}
