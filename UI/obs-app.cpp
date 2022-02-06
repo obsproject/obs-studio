@@ -2168,7 +2168,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 #endif
 
 #ifdef _WIN32
-		if (IsRunningOnWine() || true) {
+		if (IsRunningOnWine()) {
 			QMessageBox mb(QMessageBox::Question,
 				       QTStr("Wine.Title"), QTStr("Wine.Text"));
 			mb.setTextFormat(Qt::RichText);
