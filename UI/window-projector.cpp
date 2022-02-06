@@ -30,6 +30,10 @@ OBSProjector::OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
 	if (isAlwaysOnTop)
 		setWindowFlags(Qt::WindowStaysOnTopHint);
 
+	// Mark the window as a projector so SetDisplayAffinity
+	// can skip it
+	windowHandle()->setProperty("isOBSProjectorWindow", true);
+
 #if defined(__linux__) || defined(__FreeBSD__) || defined(__DragonFly__)
 	// Prevents resizing of projector windows
 	setAttribute(Qt::WA_PaintOnScreen, false);
@@ -623,7 +627,9 @@ void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
 
-	window->deleteLater();
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	main->DeleteProjector(window);
+	allProjectors.removeAll(window);
 
 	UNUSED_PARAMETER(params);
 }

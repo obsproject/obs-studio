@@ -27,7 +27,8 @@ AJASource::AJASource(obs_source_t *source)
 	  mTestPattern{},
 	  mCaptureThread{nullptr},
 	  mMutex{},
-	  mSource{source}
+	  mSource{source},
+	  mCrosspoints{}
 {
 }
 
@@ -458,6 +459,20 @@ SourceProps AJASource::GetSourceProps() const
 	return mSourceProps;
 }
 
+void AJASource::CacheConnections(const NTV2XptConnections &cnx)
+{
+	mCrosspoints.clear();
+	mCrosspoints = cnx;
+}
+
+void AJASource::ClearConnections()
+{
+	for (auto &&xpt : mCrosspoints) {
+		mCard->Connect(xpt.first, NTV2_XptBlack);
+	}
+	mCrosspoints.clear();
+}
+
 bool AJASource::ReadChannelVPIDs(NTV2Channel channel, VPIDData &vpids)
 {
 	ULWord vpid_a = 0;
@@ -650,7 +665,8 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	obs_property_list_clear(vid_fmt_list);
 	obs_property_list_add_int(vid_fmt_list, obs_module_text("Auto"),
 				  kAutoDetect);
-	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1);
+	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1,
+				   true);
 
 	obs_property_list_clear(pix_fmt_list);
 	obs_property_list_add_int(pix_fmt_list, obs_module_text("Auto"),
@@ -660,9 +676,7 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropInput.id));
 	obs_property_list_clear(sdi_trx_list);
-	obs_property_list_add_int(sdi_trx_list, obs_module_text("Auto"),
-				  kAutoDetect);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
+	populate_sdi_transport_list(sdi_trx_list, io_select, deviceID, true);
 
 	obs_property_list_clear(sdi_4k_list);
 	populate_sdi_4k_transport_list(sdi_4k_list);
@@ -678,6 +692,8 @@ bool aja_source_device_changed(void *data, obs_properties_t *props,
 	obs_property_set_visible(io_select_list, have_cards);
 	obs_property_set_visible(vid_fmt_list, have_cards);
 	obs_property_set_visible(pix_fmt_list, have_cards);
+	obs_property_set_visible(
+		sdi_trx_list, have_cards && aja::IsIOSelectionSDI(io_select));
 	obs_property_set_visible(
 		sdi_4k_list, have_cards && NTV2_IS_4K_VIDEO_FORMAT(curr_vf));
 
@@ -709,11 +725,13 @@ bool aja_io_selection_changed(void *data, obs_properties_t *props,
 		return false;
 	}
 
-	obs_property_t *io_select_list =
-		obs_properties_get(props, kUIPropInput.id);
-
 	filter_io_selection_input_list(cardID, ajaSource->GetName(),
-				       io_select_list);
+				       obs_properties_get(props,
+							  kUIPropInput.id));
+	obs_property_set_visible(
+		obs_properties_get(props, kUIPropSDITransport.id),
+		aja::IsIOSelectionSDI(static_cast<IOSelection>(
+			obs_data_get_int(settings, kUIPropInput.id))));
 
 	return true;
 }
@@ -948,19 +966,14 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	want_props.sdi4kTransport = sdi_t4k_select;
 	want_props.vpids.clear();
 	want_props.deactivateWhileNotShowing = deactivateWhileNotShowing;
-	want_props.autoDetect = ((int32_t)vf_select == kAutoDetect ||
-				 (int32_t)pf_select == kAutoDetect);
+	if (aja::IsIOSelectionSDI(io_select)) {
+		want_props.autoDetect = (int)sdi_trx_select == kAutoDetect;
+	} else {
+		want_props.autoDetect = ((int)vf_select == kAutoDetect ||
+					 (int)pf_select == kAutoDetect);
+	}
 	ajaSource->SetCardID(wantCardID);
 	ajaSource->SetDeviceIndex((UWord)cardEntry->GetCardIndex());
-
-	if (NTV2_IS_4K_VIDEO_FORMAT(want_props.videoFormat) &&
-	    want_props.sdi4kTransport == SDITransport4K::Squares) {
-		if (want_props.ioSelect == IOSelection::SDI1_2) {
-			want_props.ioSelect = IOSelection::SDI1_2_Squares;
-		} else if (want_props.ioSelect == IOSelection::SDI3_4) {
-			want_props.ioSelect = IOSelection::SDI3_4_Squares;
-		}
-	}
 
 	// Release Channels if IOSelection changes
 	if (want_props.ioSelect != curr_props.ioSelect) {
@@ -1023,8 +1036,11 @@ static void aja_source_update(void *data, obs_data_t *settings)
 
 	// Change capture format and restart capture thread
 	if (!initialized || want_props != ajaSource->GetSourceProps()) {
-		aja::Routing::ConfigureSourceRoute(want_props,
-						   NTV2_MODE_CAPTURE, card);
+		ajaSource->ClearConnections();
+		NTV2XptConnections xpt_cnx;
+		aja::Routing::ConfigureSourceRoute(
+			want_props, NTV2_MODE_CAPTURE, card, xpt_cnx);
+		ajaSource->CacheConnections(xpt_cnx);
 		ajaSource->Deactivate();
 		initialized = true;
 	}

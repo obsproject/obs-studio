@@ -368,6 +368,7 @@ private slots:
 	void on_disableOSXVSync_clicked();
 
 	void GeneralChanged();
+	void HideOBSWindowWarning(int state);
 	void AudioChanged();
 	void AudioChangedRestart();
 	void ReloadAudioSources();

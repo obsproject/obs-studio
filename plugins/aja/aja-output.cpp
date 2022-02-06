@@ -58,6 +58,27 @@ static void free_video_frame(struct video_data *frame)
 	memset(frame, 0, sizeof(*frame));
 }
 
+static void update_sdi_transport_and_sdi_transport_4k(obs_properties_t *props,
+						      NTV2DeviceID device_id,
+						      IOSelection io,
+						      NTV2VideoFormat vf)
+{
+	// Update SDI Transport and SDI 4K Transport selections
+	obs_property_t *sdi_trx_list =
+		obs_properties_get(props, kUIPropSDITransport.id);
+	obs_property_list_clear(sdi_trx_list);
+	populate_sdi_transport_list(sdi_trx_list, io, device_id);
+	obs_property_t *sdi_4k_trx_list =
+		obs_properties_get(props, kUIPropSDITransport4K.id);
+	obs_property_list_clear(sdi_4k_trx_list);
+	populate_sdi_4k_transport_list(sdi_4k_trx_list);
+
+	bool is_sdi = aja::IsIOSelectionSDI(io);
+	obs_property_set_visible(sdi_trx_list, is_sdi);
+	obs_property_set_visible(sdi_4k_trx_list,
+				 is_sdi && NTV2_IS_4K_VIDEO_FORMAT(vf));
+}
+
 AJAOutput::AJAOutput(CNTV2Card *card, const std::string &cardID,
 		     const std::string &outputID, UWord deviceIndex,
 		     const NTV2DeviceID deviceID)
@@ -106,7 +127,8 @@ AJAOutput::AJAOutput(CNTV2Card *card, const std::string &cardID,
 	  mRunThreadLock{},
 	  mVideoQueue{},
 	  mAudioQueue{},
-	  mOBSOutput{nullptr}
+	  mOBSOutput{nullptr},
+	  mCrosspoints{}
 {
 	mVideoQueue = std::make_unique<VideoQueue>();
 	mAudioQueue = std::make_unique<AudioQueue>();
@@ -171,6 +193,20 @@ void AJAOutput::SetOutputProps(const OutputProps &props)
 OutputProps AJAOutput::GetOutputProps() const
 {
 	return mOutputProps;
+}
+
+void AJAOutput::CacheConnections(const NTV2XptConnections &cnx)
+{
+	mCrosspoints.clear();
+	mCrosspoints = cnx;
+}
+
+void AJAOutput::ClearConnections()
+{
+	for (auto &&xpt : mCrosspoints) {
+		mCard->Connect(xpt.first, NTV2_XptBlack);
+	}
+	mCrosspoints.clear();
 }
 
 void AJAOutput::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
@@ -445,24 +481,24 @@ void AJAOutput::calculate_card_frame_indices(uint32_t numFrames,
 					     NTV2PixelFormat pf)
 {
 	ULWord channelIndex = GetIndexForNTV2Channel(channel);
-
 	ULWord totalCardFrames = NTV2DeviceGetNumberFrameBuffers(
 		id, GetNTV2FrameGeometryFromVideoFormat(vf), pf);
-
 	mFirstCardFrame = channelIndex * numFrames;
-
-	if (mFirstCardFrame < totalCardFrames &&
-	    (mFirstCardFrame + numFrames) < totalCardFrames) {
+	uint32_t lastFrame = mFirstCardFrame + (numFrames - 1);
+	if (totalCardFrames - mFirstCardFrame > 0 &&
+	    totalCardFrames - lastFrame > 0) {
 		// Reserve N framebuffers in card DRAM.
 		mNumCardFrames = numFrames;
 		mWriteCardFrame = mFirstCardFrame;
-		mLastCardFrame = mWriteCardFrame + numFrames;
+		mLastCardFrame = lastFrame;
 	} else {
 		// otherwise just grab 2 frames to ping-pong between
 		mNumCardFrames = 2;
 		mWriteCardFrame = channelIndex * 2;
-		mLastCardFrame = mWriteCardFrame + 2;
+		mLastCardFrame = mWriteCardFrame + (mNumCardFrames - 1);
 	}
+	blog(LOG_DEBUG, "AJA Output using %d card frame indices (%d-%d)",
+	     mNumCardFrames, mFirstCardFrame, mLastCardFrame);
 }
 
 uint32_t AJAOutput::get_frame_count()
@@ -812,18 +848,19 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 	}
 
 	obs_property_list_clear(vid_fmt_list);
-	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1);
+	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1,
+				   false);
 
 	obs_property_list_clear(pix_fmt_list);
 	populate_pixel_format_list(deviceID, pix_fmt_list);
 
 	IOSelection io_select = static_cast<IOSelection>(
 		obs_data_get_int(settings, kUIPropOutput.id));
-	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
 
-	obs_property_list_clear(sdi_4k_list);
-	populate_sdi_4k_transport_list(sdi_4k_list);
+	update_sdi_transport_and_sdi_transport_4k(
+		props, cardEntry->GetDeviceID(), io_select,
+		static_cast<NTV2VideoFormat>(obs_data_get_int(
+			settings, kUIPropVideoFormatSelect.id)));
 
 	return true;
 }
@@ -834,6 +871,19 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 	UNUSED_PARAMETER(props);
 
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
+
+	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
+	if (!cardID || !cardID[0])
+		return false;
+
+	auto &cardManager = aja::CardManager::Instance();
+	auto cardEntry = cardManager.GetCardEntry(cardID);
+	if (!cardEntry) {
+		blog(LOG_DEBUG,
+		     "aja_output_dest_changed: Card Entry not found for %s",
+		     cardID);
+		return false;
+	}
 
 	bool itemFound = false;
 	int dest = obs_data_get_int(settings, kUIPropOutput.id);
@@ -869,12 +919,10 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 		}
 	}
 
-	obs_property_t *sdi_trx_list =
-		obs_properties_get(props, kUIPropSDITransport.id);
-	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io_select);
-	obs_property_set_visible(sdi_trx_list,
-				 aja::IsIOSelectionSDI(io_select));
+	update_sdi_transport_and_sdi_transport_4k(
+		props, cardEntry->GetDeviceID(), io_select,
+		static_cast<NTV2VideoFormat>(obs_data_get_int(
+			settings, kUIPropVideoFormatSelect.id)));
 
 	return true;
 }
@@ -944,14 +992,6 @@ static void *aja_output_create(obs_data_t *settings, obs_output_t *output)
 	outputProps.audioNumChannels = kDefaultAudioChannels;
 	outputProps.audioSampleSize = kDefaultAudioSampleSize;
 	outputProps.audioSampleRate = kDefaultAudioSampleRate;
-	if (NTV2_IS_4K_VIDEO_FORMAT(outputProps.videoFormat) &&
-	    outputProps.sdi4kTransport == SDITransport4K::Squares) {
-		if (outputProps.ioSelect == IOSelection::SDI1_2) {
-			outputProps.ioSelect = IOSelection::SDI1_2_Squares;
-		} else if (outputProps.ioSelect == IOSelection::SDI3_4) {
-			outputProps.ioSelect = IOSelection::SDI3_4_Squares;
-		}
-	}
 
 	if (outputProps.ioSelect == IOSelection::Invalid) {
 		blog(LOG_DEBUG,
@@ -1076,13 +1116,15 @@ static bool aja_output_start(void *data)
 	}
 
 	// Configures crosspoint routing on AJA card
+	ajaOutput->ClearConnections();
+	NTV2XptConnections xpt_cnx;
 	if (!aja::Routing::ConfigureOutputRoute(outputProps, NTV2_MODE_DISPLAY,
-						card)) {
+						card, xpt_cnx)) {
 		blog(LOG_ERROR,
 		     "aja_output_start: Error configuring output route!");
 		return false;
 	}
-
+	ajaOutput->CacheConnections(xpt_cnx);
 	aja::Routing::ConfigureOutputAudio(outputProps, card);
 
 	const auto &formatDesc = outputProps.FormatDesc();
@@ -1151,14 +1193,15 @@ static void aja_output_stop(void *data, uint64_t ts)
 		     aja::IOSelectionToString(outputProps.ioSelect).c_str(),
 		     cardID.c_str());
 	}
+
 	ajaOutput->GenerateTestPattern(outputProps.videoFormat,
 				       outputProps.pixelFormat,
 				       NTV2_TestPatt_Black);
 
 	obs_output_end_data_capture(ajaOutput->GetOBSOutput());
-
 	auto audioSystem = outputProps.AudioSystem();
 	card->StopAudioOutput(audioSystem);
+	ajaOutput->ClearConnections();
 
 	blog(LOG_INFO, "AJA Output stopped.");
 }

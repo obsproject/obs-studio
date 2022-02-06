@@ -14,7 +14,6 @@ void filter_io_selection_input_list(const std::string &cardID,
 				    obs_property_t *list)
 {
 	auto &cardManager = aja::CardManager::Instance();
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -52,7 +51,6 @@ void filter_io_selection_output_list(const std::string &cardID,
 				     obs_property_t *list)
 {
 	auto &cardManager = aja::CardManager::Instance();
-
 	auto cardEntry = cardManager.GetCardEntry(cardID);
 	if (!cardEntry) {
 		blog(LOG_DEBUG,
@@ -90,7 +88,6 @@ void populate_io_selection_input_list(const std::string &cardID,
 				      obs_property_t *list)
 {
 	obs_property_list_clear(list);
-
 	obs_property_list_add_int(list,
 				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
@@ -98,10 +95,8 @@ void populate_io_selection_input_list(const std::string &cardID,
 	for (auto i = 0; i < static_cast<int32_t>(IOSelection::NumIOSelections);
 	     i++) {
 		auto ioSelect = static_cast<IOSelection>(i);
-		if (ioSelect == IOSelection::SDI1_2_Squares ||
-		    ioSelect == IOSelection::SDI3_4_Squares)
+		if (ioSelect == IOSelection::AnalogIn)
 			continue;
-
 		if (aja::DeviceCanDoIOSelectionIn(deviceID, ioSelect)) {
 			obs_property_list_add_int(
 				list,
@@ -119,7 +114,6 @@ void populate_io_selection_output_list(const std::string &cardID,
 				       obs_property_t *list)
 {
 	obs_property_list_clear(list);
-
 	obs_property_list_add_int(list,
 				  obs_module_text(kUIPropIOSelectNone.text),
 				  static_cast<long long>(IOSelection::Invalid));
@@ -133,10 +127,8 @@ void populate_io_selection_output_list(const std::string &cardID,
 		     i < static_cast<int32_t>(IOSelection::NumIOSelections);
 		     i++) {
 			auto ioSelect = static_cast<IOSelection>(i);
-
 			if (ioSelect == IOSelection::Invalid ||
-			    ioSelect == IOSelection::SDI1_2_Squares ||
-			    ioSelect == IOSelection::SDI3_4_Squares)
+			    ioSelect == IOSelection::AnalogOut)
 				continue;
 
 			if (aja::DeviceCanDoIOSelectionOut(deviceID,
@@ -154,7 +146,7 @@ void populate_io_selection_output_list(const std::string &cardID,
 }
 
 void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
-				NTV2VideoFormat genlockFormat)
+				NTV2VideoFormat genlockFormat, bool want4KHFR)
 {
 	VideoFormatList videoFormats = {};
 	VideoStandardList orderedStandards = {};
@@ -171,10 +163,12 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 	if (NTV2DeviceCanDo4KVideo(deviceID)) {
 		orderedStandards.push_back(NTV2_STANDARD_3840i);
 		orderedStandards.push_back(NTV2_STANDARD_3840x2160p);
-		orderedStandards.push_back(NTV2_STANDARD_3840HFR);
+		if (want4KHFR)
+			orderedStandards.push_back(NTV2_STANDARD_3840HFR);
 		orderedStandards.push_back(NTV2_STANDARD_4096i);
 		orderedStandards.push_back(NTV2_STANDARD_4096x2160p);
-		orderedStandards.push_back(NTV2_STANDARD_4096HFR);
+		if (want4KHFR)
+			orderedStandards.push_back(NTV2_STANDARD_4096HFR);
 	}
 
 	aja::GetSortedVideoFormats(deviceID, orderedStandards, videoFormats);
@@ -207,10 +201,23 @@ void populate_pixel_format_list(NTV2DeviceID deviceID, obs_property_t *list)
 	}
 }
 
-void populate_sdi_transport_list(obs_property_t *list, IOSelection io)
+void populate_sdi_transport_list(obs_property_t *list, IOSelection io,
+				 NTV2DeviceID deviceID, bool capture)
 {
+	if (capture) {
+		obs_property_list_add_int(list, obs_module_text("Auto"),
+					  kAutoDetect);
+	}
 	for (int i = 0; i < (int)SDITransport::Unknown; i++) {
 		SDITransport sdi_trx = static_cast<SDITransport>(i);
+		if (sdi_trx == SDITransport::SDI6G ||
+		    sdi_trx == SDITransport::SDI12G) {
+			if (!NTV2DeviceCanDo12GSDI(deviceID))
+				continue;
+		}
+		// Disabling 12G in Output plugin until AJA 4K HFR bug is fixed
+		if (!capture && sdi_trx == SDITransport::SDI12G)
+			continue;
 		obs_property_list_add_int(
 			list, aja::SDITransportToString(sdi_trx).c_str(),
 			static_cast<long long>(sdi_trx));
@@ -237,10 +244,8 @@ bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 
 	auto vid_fmt = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
-
 	size_t itemCount = obs_property_list_item_count(list);
 	bool itemFound = false;
-
 	for (size_t i = 0; i < itemCount; i++) {
 		int itemFormat = obs_property_list_item_int(list, i);
 		if (itemFormat == vid_fmt) {
@@ -630,14 +635,8 @@ std::string IOSelectionToString(IOSelection io)
 	case IOSelection::SDI1_2:
 		str = "SDI 1 & 2";
 		break;
-	case IOSelection::SDI1_2_Squares:
-		str = "SDI 1 & 2 (4K Squares)";
-		break;
 	case IOSelection::SDI3_4:
 		str = "SDI 3 & 4";
-		break;
-	case IOSelection::SDI3_4_Squares:
-		str = "SDI 3 & 4 (4K Squares)";
 		break;
 	case IOSelection::SDI5_6:
 		str = "SDI 5 & 6";
@@ -714,19 +713,7 @@ void IOSelectionToInputSources(IOSelection io, NTV2InputSourceSet &inputSources)
 		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
 		break;
-	case IOSelection::SDI1_2_Squares:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
-		break;
 	case IOSelection::SDI3_4:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
-		break;
-	case IOSelection::SDI3_4_Squares:
-		inputSources.insert(NTV2_INPUTSOURCE_SDI1);
-		inputSources.insert(NTV2_INPUTSOURCE_SDI2);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI3);
 		inputSources.insert(NTV2_INPUTSOURCE_SDI4);
 		break;
@@ -808,21 +795,7 @@ void IOSelectionToOutputDests(IOSelection io,
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
 		break;
-	// Requires 4x framestores and 2x SDI spigots
-	case IOSelection::SDI1_2_Squares:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
-		break;
 	case IOSelection::SDI3_4:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
-		break;
-	// Requires 4x framestores and 2x SDI spigots
-	case IOSelection::SDI3_4_Squares:
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI1);
-		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI2);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI3);
 		outputDests.insert(NTV2_OUTPUTDESTINATION_SDI4);
 		break;
@@ -868,6 +841,9 @@ bool DeviceCanDoIOSelectionIn(NTV2DeviceID id, IOSelection io)
 {
 	// Hide "HDMI1" list selection on devices which have a discrete "HDMI IN" port.
 	if (io == IOSelection::HDMI1 && CardCanDoHDMIMonitorInput(id)) {
+		return false;
+	}
+	if (io == IOSelection::HDMIMonitorIn && id == DEVICE_ID_KONAHDMI) {
 		return false;
 	}
 
@@ -934,9 +910,7 @@ bool IsSDITwoWireIOSelection(IOSelection io)
 	bool result = false;
 	switch (io) {
 	case IOSelection::SDI1_2:
-	case IOSelection::SDI1_2_Squares:
 	case IOSelection::SDI3_4:
-	case IOSelection::SDI3_4_Squares:
 	case IOSelection::SDI5_6:
 	case IOSelection::SDI7_8:
 		result = true;
@@ -978,10 +952,20 @@ bool IsIOSelectionSDI(IOSelection io)
 	    io == IOSelection::SDI3 || io == IOSelection::SDI4 ||
 	    io == IOSelection::SDI5 || io == IOSelection::SDI6 ||
 	    io == IOSelection::SDI7 || io == IOSelection::SDI8 ||
-	    io == IOSelection::SDI1_2 || io == IOSelection::SDI1_2_Squares ||
-	    io == IOSelection::SDI3_4 || io == IOSelection::SDI3_4_Squares ||
+	    io == IOSelection::SDI1_2 || io == IOSelection::SDI3_4 ||
 	    io == IOSelection::SDI5_6 || io == IOSelection::SDI7_8 ||
 	    io == IOSelection::SDI1__4 || io == IOSelection::SDI5__8) {
+		return true;
+	}
+	return false;
+}
+
+bool IsIOSelectionHDMI(IOSelection io)
+{
+	if (io == IOSelection::HDMI1 || io == IOSelection::HDMI2 ||
+	    io == IOSelection::HDMI3 || io == IOSelection::HDMI4 ||
+	    io == IOSelection::HDMIMonitorIn ||
+	    io == IOSelection::HDMIMonitorOut) {
 		return true;
 	}
 	return false;
@@ -1043,6 +1027,8 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 	auto rd = aja::DetermineRasterDefinition(vf);
 	auto standard = GetNTV2StandardFromVideoFormat(vf);
 	bool is_rgb = NTV2_IS_FBF_RGB(pf);
+	bool is_hfr =
+		NTV2_IS_HIGH_NTV2FrameRate(GetNTV2FrameRateFromVideoFormat(vf));
 	if (rd == RasterDefinition::SD) {
 		vpid = VPIDStandard_483_576;
 	} else if (rd == RasterDefinition::HD) {
@@ -1131,7 +1117,15 @@ VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
 					vpid = VPIDStandard_1080;
 				} else if (t4k ==
 					   SDITransport4K::TwoSampleInterleave) {
-					vpid = VPIDStandard_2160_DualLink;
+					if (is_hfr &&
+					    trx == SDITransport::SDI3Ga) {
+						vpid = VPIDStandard_2160_QuadLink_3Ga;
+					} else if (is_hfr &&
+						   trx == SDITransport::SDI3Gb) {
+						vpid = VPIDStandard_2160_QuadDualLink_3Gb;
+					} else {
+						vpid = VPIDStandard_2160_DualLink;
+					}
 				}
 			}
 		} else if (aja::IsSDIFourWireIOSelection(io)) {

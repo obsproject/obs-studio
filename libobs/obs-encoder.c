@@ -23,6 +23,8 @@
 #define set_encoder_active(encoder, val) \
 	os_atomic_set_bool(&encoder->active, val)
 
+#define get_weak(encoder) ((obs_weak_encoder_t *)encoder->context.control)
+
 struct obs_encoder_info *find_encoder(const char *id)
 {
 	for (size_t i = 0; i < obs->encoder_types.num; i++) {
@@ -105,9 +107,8 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 		return NULL;
 	}
 
-	encoder->control = bzalloc(sizeof(obs_weak_encoder_t));
-	encoder->control->encoder = encoder;
-
+	obs_context_init_control(&encoder->context, encoder,
+				 (obs_destroy_cb)obs_encoder_destroy);
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
@@ -1405,7 +1406,7 @@ void obs_encoder_addref(obs_encoder_t *encoder)
 	if (!encoder)
 		return;
 
-	obs_ref_addref(&encoder->control->ref);
+	obs_ref_addref(&encoder->context.control->ref);
 }
 
 void obs_encoder_release(obs_encoder_t *encoder)
@@ -1413,7 +1414,7 @@ void obs_encoder_release(obs_encoder_t *encoder)
 	if (!encoder)
 		return;
 
-	obs_weak_encoder_t *control = encoder->control;
+	obs_weak_encoder_t *control = get_weak(encoder);
 	if (obs_ref_release(&control->ref)) {
 		// The order of operations is important here since
 		// get_context_by_name in obs.c relies on weak refs
@@ -1445,7 +1446,7 @@ obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
 	if (!encoder)
 		return NULL;
 
-	return obs_weak_encoder_get_encoder(encoder->control);
+	return obs_weak_encoder_get_encoder(get_weak(encoder));
 }
 
 obs_weak_encoder_t *obs_encoder_get_weak_encoder(obs_encoder_t *encoder)
@@ -1453,7 +1454,7 @@ obs_weak_encoder_t *obs_encoder_get_weak_encoder(obs_encoder_t *encoder)
 	if (!encoder)
 		return NULL;
 
-	obs_weak_encoder_t *weak = encoder->control;
+	obs_weak_encoder_t *weak = get_weak(encoder);
 	obs_weak_encoder_addref(weak);
 	return weak;
 }

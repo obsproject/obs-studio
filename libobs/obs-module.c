@@ -291,7 +291,8 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 		return;
 	}
 
-	obs_init_module(module);
+	if (!obs_init_module(module))
+		free_module(module);
 
 	UNUSED_PARAMETER(param);
 }
@@ -498,6 +499,16 @@ void free_module(struct obs_module *mod)
 		 * and sometimes this can cause issues. */
 		/* os_dlclose(mod->module); */
 	}
+
+	for (obs_module_t *m = obs->first_module; !!m; m = m->next) {
+		if (m->next == mod) {
+			m->next = mod->next;
+			break;
+		}
+	}
+
+	if (obs->first_module == mod)
+		obs->first_module = mod->next;
 
 	bfree(mod->mod_name);
 	bfree(mod->bin_path);

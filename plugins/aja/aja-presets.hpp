@@ -39,7 +39,7 @@ public:
 	bool FindFirstPreset(ConnectionKind kind, NTV2DeviceID id,
 			     NTV2Mode mode, NTV2VideoFormat vf,
 			     NTV2PixelFormat pf, VPIDStandard standard,
-			     RoutingPreset &preset);
+			     HDMIWireFormat hwf, RoutingPreset &preset);
 
 private:
 	void build_preset_table();

@@ -31,6 +31,8 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#define get_weak(source) ((obs_weak_source_t *)source->context.control)
+
 static bool filter_compatible(obs_source_t *source, obs_source_t *filter);
 
 static inline bool data_valid(const struct obs_source *source, const char *f)
@@ -216,9 +218,10 @@ static bool obs_source_init(struct obs_source *source)
 			return false;
 	}
 
-	source->control = bzalloc(sizeof(obs_weak_source_t));
+	obs_context_init_control(&source->context, source,
+				 (obs_destroy_cb)obs_source_destroy);
+
 	source->deinterlace_top_first = true;
-	source->control->source = source;
 	source->audio_mixers = 0xFF;
 
 	source->private_settings = obs_data_create();
@@ -465,9 +468,12 @@ static void duplicate_filters(obs_source_t *dst, obs_source_t *src,
 	da_init(filters);
 
 	pthread_mutex_lock(&src->filter_mutex);
-	for (size_t i = 0; i < src->filters.num; i++)
-		obs_source_addref(src->filters.array[i]);
-	da_copy(filters, src->filters);
+	da_reserve(filters, src->filters.num);
+	for (size_t i = 0; i < src->filters.num; i++) {
+		obs_source_t *s = obs_source_get_ref(src->filters.array[i]);
+		if (s)
+			da_push_back(filters, &s);
+	}
 	pthread_mutex_unlock(&src->filter_mutex);
 
 	for (size_t i = filters.num; i > 0; i--) {
@@ -537,8 +543,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	if (source->info.type == OBS_SOURCE_TYPE_SCENE) {
 		obs_scene_t *scene = obs_scene_from_source(source);
 		if (scene && !create_private) {
-			obs_source_addref(source);
-			return source;
+			return obs_source_get_ref(source);
 		}
 		if (!scene)
 			scene = obs_group_from_source(source);
@@ -554,8 +559,7 @@ obs_source_t *obs_source_duplicate(obs_source_t *source, const char *new_name,
 	}
 
 	if ((source->info.output_flags & OBS_SOURCE_DO_NOT_DUPLICATE) != 0) {
-		obs_source_addref(source);
-		return source;
+		return obs_source_get_ref(source);
 	}
 
 	settings = obs_data_create();
@@ -619,7 +623,13 @@ void obs_source_destroy(struct obs_source *source)
 	if (!obs_source_valid(source, "obs_source_destroy"))
 		return;
 
-	os_atomic_set_long(&source->destroying, true);
+	if (os_atomic_set_long(&source->destroying, true) == true) {
+		blog(LOG_ERROR, "Double destroy just occurred. "
+				"Something called addref on a source "
+				"after it was already fully released, "
+				"I guess.");
+		return;
+	}
 
 	if (is_audio_source(source)) {
 		pthread_mutex_lock(&source->audio_cb_mutex);
@@ -738,7 +748,7 @@ void obs_source_addref(obs_source_t *source)
 	if (!source)
 		return;
 
-	obs_ref_addref(&source->control->ref);
+	obs_ref_addref(&source->context.control->ref);
 }
 
 void obs_source_release(obs_source_t *source)
@@ -752,7 +762,7 @@ void obs_source_release(obs_source_t *source)
 	if (!source)
 		return;
 
-	obs_weak_source_t *control = source->control;
+	obs_weak_source_t *control = get_weak(source);
 	if (obs_ref_release(&control->ref)) {
 		obs_source_destroy(source);
 		obs_weak_source_release(control);
@@ -781,7 +791,7 @@ obs_source_t *obs_source_get_ref(obs_source_t *source)
 	if (!source)
 		return NULL;
 
-	return obs_weak_source_get_source(source->control);
+	return obs_weak_source_get_source(get_weak(source));
 }
 
 obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
@@ -789,7 +799,7 @@ obs_weak_source_t *obs_source_get_weak_source(obs_source_t *source)
 	if (!source)
 		return NULL;
 
-	obs_weak_source_t *weak = source->control;
+	obs_weak_source_t *weak = get_weak(source);
 	obs_weak_source_addref(weak);
 	return weak;
 }
@@ -2259,8 +2269,7 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	obs_source_t *first_filter;
 
 	pthread_mutex_lock(&source->filter_mutex);
-	first_filter = source->filters.array[0];
-	obs_source_addref(first_filter);
+	first_filter = obs_source_get_ref(source->filters.array[0]);
 	pthread_mutex_unlock(&source->filter_mutex);
 
 	source->rendering_filter = true;
@@ -2380,9 +2389,11 @@ void obs_source_video_render(obs_source_t *source)
 	if (!obs_source_valid(source, "obs_source_video_render"))
 		return;
 
-	obs_source_addref(source);
-	render_video(source);
-	obs_source_release(source);
+	source = obs_source_get_ref(source);
+	if (source) {
+		render_video(source);
+		obs_source_release(source);
+	}
 }
 
 static inline uint32_t get_async_width(const obs_source_t *source)
@@ -2550,7 +2561,9 @@ void obs_source_filter_add(obs_source_t *source, obs_source_t *filter)
 		return;
 	}
 
-	obs_source_addref(filter);
+	filter = obs_source_get_ref(filter);
+	if (!obs_ptr_valid(filter, "obs_source_filter_add"))
+		return;
 
 	filter->filter_parent = source;
 	filter->filter_target = !source->filters.num ? source
@@ -4065,7 +4078,9 @@ void obs_source_enum_active_sources(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_active_sources"))
+		return;
 
 	if (is_transition)
 		obs_transition_enum_sources(source, enum_callback, param);
@@ -4090,7 +4105,9 @@ void obs_source_enum_active_tree(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_active_tree"))
+		return;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_enum_sources(
@@ -4143,7 +4160,9 @@ void obs_source_enum_full_tree(obs_source_t *source,
 	if (!is_transition && !source->info.enum_active_sources)
 		return;
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
+	if (!data_valid(source, "obs_source_enum_full_tree"))
+		return;
 
 	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION)
 		obs_transition_enum_sources(
@@ -4480,8 +4499,7 @@ obs_source_t *obs_source_get_filter_by_name(obs_source_t *source,
 	for (size_t i = 0; i < source->filters.num; i++) {
 		struct obs_source *cur_filter = source->filters.array[i];
 		if (strcmp(cur_filter->context.name, name) == 0) {
-			filter = cur_filter;
-			obs_source_addref(filter);
+			filter = obs_source_get_ref(cur_filter);
 			break;
 		}
 	}
@@ -5435,8 +5453,7 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 			obs_source_t *cur = cur_filters.array[j];
 			const char *cur_name = cur->context.name;
 			if (cur_name && strcmp(cur_name, name) == 0) {
-				filter = cur;
-				obs_source_addref(cur);
+				filter = obs_source_get_ref(cur);
 				break;
 			}
 		}

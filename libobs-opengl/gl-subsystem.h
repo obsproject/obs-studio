@@ -77,6 +77,8 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_BGRA;
 	case GS_BGRA_UNORM:
 		return GL_BGRA;
+	case GS_RG16:
+		return GL_RG;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -129,6 +131,8 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_RGB;
 	case GS_BGRA_UNORM:
 		return GL_RGBA;
+	case GS_RG16:
+		return GL_RG16;
 	case GS_UNKNOWN:
 		return 0;
 	}
@@ -181,6 +185,8 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 		return GL_UNSIGNED_BYTE;
 	case GS_BGRA_UNORM:
 		return GL_UNSIGNED_BYTE;
+	case GS_RG16:
+		return GL_UNSIGNED_SHORT;
 	case GS_UNKNOWN:
 		return 0;
 	}

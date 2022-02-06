@@ -4529,6 +4529,8 @@ void OBSBasic::ClearSceneData()
 {
 	disableSaving++;
 
+	setCursor(Qt::WaitCursor);
+
 	CloseDialogs();
 
 	ClearVolumeControls();
@@ -4572,6 +4574,8 @@ void OBSBasic::ClearSceneData()
 	do {
 		QApplication::sendPostedEvents(nullptr);
 	} while (obs_wait_for_destroy_queue());
+
+	unsetCursor();
 
 	disableSaving--;
 
@@ -7803,7 +7807,7 @@ void OBSBasic::UpdateEditMenu()
 
 	bool canTransform = false;
 	for (int i = 0; i < count; i++) {
-		OBSSceneItem item = ui->sources->Get(i);
+		OBSSceneItem item = ui->sources->Get(items.value(i).row());
 		if (!obs_sceneitem_locked(item))
 			canTransform = true;
 	}
@@ -8972,12 +8976,15 @@ void OBSBasic::SystemTrayInit()
 	AddProjectorMenuMonitors(studioProgramProjector, this,
 				 SLOT(OpenStudioProgramProjector()));
 	trayMenu->addAction(showHide);
+	trayMenu->addSeparator();
 	trayMenu->addMenu(previewProjector);
 	trayMenu->addMenu(studioProgramProjector);
+	trayMenu->addSeparator();
 	trayMenu->addAction(sysTrayStream);
 	trayMenu->addAction(sysTrayRecord);
 	trayMenu->addAction(sysTrayReplayBuffer);
 	trayMenu->addAction(sysTrayVirtualCam);
+	trayMenu->addSeparator();
 	trayMenu->addAction(exit);
 	trayIcon->setContextMenu(trayMenu);
 	trayIcon->show();
@@ -9946,4 +9953,35 @@ void OBSBasic::UpdatePreviewSafeAreas()
 {
 	drawSafeAreas = config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					"ShowSafeAreas");
+}
+
+void OBSBasic::SetDisplayAffinity(QWindow *window)
+{
+	if (!SetDisplayAffinitySupported())
+		return;
+
+	bool hideFromCapture = config_get_bool(App()->GlobalConfig(),
+					       "BasicWindow",
+					       "HideOBSWindowsFromCapture");
+
+	// Don't hide projectors, those are designed to be visible / captured
+	if (window->property("isOBSProjectorWindow") == true)
+		return;
+
+#ifdef _WIN32
+	HWND hwnd = (HWND)window->winId();
+
+	DWORD curAffinity;
+	if (GetWindowDisplayAffinity(hwnd, &curAffinity)) {
+		if (hideFromCapture && curAffinity != WDA_EXCLUDEFROMCAPTURE)
+			SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
+		else if (curAffinity != WDA_NONE)
+			SetWindowDisplayAffinity(hwnd, WDA_NONE);
+	}
+
+#else
+	// TODO: Implement for other platforms if possible. Don't forget to
+	// implement SetDisplayAffinitySupported too!
+	UNUSED_PARAMETER(hideFromCapture);
+#endif
 }

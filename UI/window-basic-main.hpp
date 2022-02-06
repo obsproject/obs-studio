@@ -943,6 +943,8 @@ public:
 
 	void UpdateEditMenu();
 
+	void SetDisplayAffinity(QWindow *window);
+
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
 	virtual void changeEvent(QEvent *event) override;

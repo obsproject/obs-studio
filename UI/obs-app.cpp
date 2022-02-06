@@ -1571,6 +1571,44 @@ bool OBSApp::TranslateString(const char *lookupVal, const char **out) const
 	return text_lookup_getstr(App()->GetTextLookup(), lookupVal, out);
 }
 
+// Global handler to receive all QEvent::Show events so we can apply
+// display affinity on any newly created windows and dialogs without
+// caring where they are coming from (e.g. plugins).
+bool OBSApp::notify(QObject *receiver, QEvent *e)
+{
+	QWidget *w;
+	QWindow *window;
+	int windowType;
+
+	if (!receiver->isWidgetType())
+		goto skip;
+
+	if (e->type() != QEvent::Show)
+		goto skip;
+
+	w = qobject_cast<QWidget *>(receiver);
+
+	if (!w->isWindow())
+		goto skip;
+
+	window = w->windowHandle();
+	if (!window)
+		goto skip;
+
+	windowType = window->flags() & Qt::WindowType::WindowType_Mask;
+
+	if (windowType == Qt::WindowType::Dialog ||
+	    windowType == Qt::WindowType::Window ||
+	    windowType == Qt::WindowType::Tool) {
+		OBSBasic *main = reinterpret_cast<OBSBasic *>(GetMainWindow());
+		if (main)
+			main->SetDisplayAffinity(window);
+	}
+
+skip:
+	return QApplication::notify(receiver, e);
+}
+
 QString OBSTranslator::translate(const char *context, const char *sourceText,
 				 const char *disambiguation, int n) const
 {

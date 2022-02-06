@@ -699,6 +699,8 @@ static void obs_free_data(void)
 	FREE_OBS_LINKED_LIST(display);
 	FREE_OBS_LINKED_LIST(service);
 
+	os_task_queue_wait(obs->destruction_task_thread);
+
 	pthread_mutex_destroy(&data->sources_mutex);
 	pthread_mutex_destroy(&data->audio_sources_mutex);
 	pthread_mutex_destroy(&data->displays_mutex);
@@ -1439,7 +1441,7 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 
 	pthread_mutex_lock(&view->channels_mutex);
 
-	obs_source_addref(source);
+	source = obs_source_get_ref(source);
 
 	prev_source = view->channels[channel];
 
@@ -2164,6 +2166,14 @@ void obs_context_data_free(struct obs_context_data *context)
 	memset(context, 0, sizeof(*context));
 }
 
+void obs_context_init_control(struct obs_context_data *context, void *object,
+			      obs_destroy_cb destroy)
+{
+	context->control = bzalloc(sizeof(obs_weak_object_t));
+	context->control->object = object;
+	context->destroy = destroy;
+}
+
 void obs_context_data_insert(struct obs_context_data *context,
 			     pthread_mutex_t *mutex, void *pfirst)
 {
@@ -2647,4 +2657,79 @@ void obs_set_ui_task_handler(obs_task_handler_t handler)
 {
 	obs->ui_task_handler = handler;
 	obs_queue_task(OBS_TASK_UI, set_ui_thread, NULL, false);
+}
+
+obs_object_t *obs_object_get_ref(obs_object_t *object)
+{
+	if (!object)
+		return NULL;
+
+	return obs_weak_object_get_object(object->control);
+}
+
+void obs_object_release(obs_object_t *object)
+{
+	if (!obs) {
+		blog(LOG_WARNING, "Tried to release an object when the OBS "
+				  "core is shut down!");
+		return;
+	}
+
+	if (!object)
+		return;
+
+	obs_weak_object_t *control = object->control;
+	if (obs_ref_release(&control->ref)) {
+		object->destroy(object);
+		obs_weak_object_release(control);
+	}
+}
+
+void obs_weak_object_addref(obs_weak_object_t *weak)
+{
+	if (!weak)
+		return;
+
+	obs_weak_ref_addref(&weak->ref);
+}
+
+void obs_weak_object_release(obs_weak_object_t *weak)
+{
+	if (!weak)
+		return;
+
+	if (obs_weak_ref_release(&weak->ref))
+		bfree(weak);
+}
+
+obs_weak_object_t *obs_object_get_weak_object(obs_object_t *object)
+{
+	if (!object)
+		return NULL;
+
+	obs_weak_object_t *weak = object->control;
+	obs_weak_object_addref(weak);
+	return weak;
+}
+
+obs_object_t *obs_weak_object_get_object(obs_weak_object_t *weak)
+{
+	if (!weak)
+		return NULL;
+
+	if (obs_weak_ref_get_ref(&weak->ref))
+		return weak->object;
+
+	return NULL;
+}
+
+bool obs_weak_object_expired(obs_weak_object_t *weak)
+{
+	return weak ? obs_weak_ref_expired(&weak->ref) : true;
+}
+
+bool obs_weak_object_references_object(obs_weak_object_t *weak,
+				       obs_object_t *object)
+{
+	return weak && object && weak->object == object;
 }
