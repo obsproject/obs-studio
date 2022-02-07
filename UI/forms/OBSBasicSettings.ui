@@ -4143,10 +4143,41 @@
                     </widget>
                    </item>
                    <item row="0" column="1">
-                    <widget class="QComboBox" name="desktopAudioDevice1">
-                     <property name="enabled">
-                      <bool>true</bool>
-                     </property>
+                    <widget class="QFrame" name="desktopAudioWrap">
+                     <layout class="QHBoxLayout" name="dekstopAudioWrapLayout">
+                      <property name="spacing">
+                       <number>-1</number>
+                      </property>
+                      <property name="leftMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="topMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="rightMargin">
+                       <number>0</number>
+                      </property>
+                      <property name="bottomMargin">
+                       <number>0</number>
+                      </property>
+                      <item>
+                       <widget class="QComboBox" name="desktopAudioDevice1">
+                        <property name="enabled">
+                         <bool>true</bool>
+                        </property>
+                       </widget>
+                      </item>
+                      <item>
+                       <widget class="QPushButton" name="setupMacAudio">
+                        <property name="maximumSize">
+                         <size>
+                          <width>300</width>
+                          <height>16777215</height>
+                         </size>
+                        </property>
+                       </widget>
+                      </item>
+                     </layout>
                     </widget>
                    </item>
                    <item row="1" column="0">

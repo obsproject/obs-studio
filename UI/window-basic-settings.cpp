@@ -671,8 +671,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #ifndef __APPLE__
 	delete ui->disableOSXVSync;
 	delete ui->resetOSXVSync;
+	delete ui->setupMacAudio;
 	ui->disableOSXVSync = nullptr;
 	ui->resetOSXVSync = nullptr;
+	ui->setupMacAudio = nullptr;
 #endif
 
 	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)), this,
@@ -2300,6 +2302,9 @@ static inline void LoadListValue(QComboBox *widget, const char *text,
 void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 				      int index)
 {
+	while (widget->count())
+		widget->removeItem(0);
+
 	size_t count = obs_property_list_item_count(prop);
 
 	OBSSourceAutoRelease source = obs_get_output_source(index);
@@ -2326,10 +2331,14 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 		if (idx != -1) {
 			widget->setCurrentIndex(idx);
 		} else {
-			widget->insertItem(0,
-					   QTStr("Basic.Settings.Audio."
-						 "UnknownAudioDevice"),
-					   var);
+			QString text =
+#ifdef __APPLE__
+				strcmp(deviceId, "ODACDevice_UID") == 0
+					? QTStr("Basic.Settings.Audio.MacAudio.NotInstalled")
+					:
+#endif
+					QTStr("Basic.Settings.Audio.UnknownAudioDevice");
+			widget->insertItem(0, text, var);
 			widget->setCurrentIndex(0);
 			HighlightGroupBoxLabel(ui->audioDevicesGroupBox, widget,
 					       "errorLabel");
@@ -2337,13 +2346,129 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 	}
 }
 
+#ifdef __APPLE__
+static bool MacAudioCaptureProc(const char *name)
+{
+	proc_handler_t *handler = obs_get_proc_handler();
+	calldata_t *cd = calldata_create();
+	calldata_set_string(cd, "name", name);
+	proc_handler_call(handler, "maccapture_macaudio", cd);
+	bool value = calldata_bool(cd, "value");
+	calldata_destroy(cd);
+	return value;
+}
+
+enum MacAudioButtonProperty : int {
+	INSTALL,
+	UPDATE,
+	UNINSTALL_NORMAL,
+	UNINSTALL_BROKEN
+};
+
+void OBSBasicSettings::UpdateMacAudioButton()
+{
+	bool halInstalled = MacAudioCaptureProc("is_hal_device_installed");
+	bool halUpdated = MacAudioCaptureProc("is_hal_device_updated");
+	bool multioutputInstalled =
+		MacAudioCaptureProc("is_multioutput_installed");
+
+	QVariant property;
+	if (!halInstalled && !multioutputInstalled) {
+		ui->setupMacAudio->setText(
+			QTStr("Basic.Settings.Audio.MacAudio.Install"));
+		property = INSTALL;
+	} else if (!halInstalled || !multioutputInstalled) {
+		ui->setupMacAudio->setText(
+			QTStr("Basic.Settings.Audio.MacAudio.Fix"));
+		property = UNINSTALL_BROKEN;
+	} else if (!halUpdated) {
+		ui->setupMacAudio->setText(
+			QTStr("Basic.Settings.Audio.MacAudio.Update"));
+		property = UPDATE;
+	} else {
+		ui->setupMacAudio->setText(
+			QTStr("Basic.Settings.Audio.MacAudio.Uninstall"));
+		property = UNINSTALL_NORMAL;
+	}
+	ui->setupMacAudio->setProperty("action", property);
+}
+
+inline void MacCaptureProcWithoutBlocking(OBSBasicSettings *window,
+					  const char *command,
+					  QString user_message,
+					  const char *error)
+{
+	ExecThreadedWithoutBlocking(
+		[window, command, error]() {
+			if (MacAudioCaptureProc(command))
+				QMetaObject::invokeMethod(
+					window, "LoadAudioOutputDevices");
+			else
+				blog(LOG_WARNING, "[mac-capture]: %s", error);
+		},
+		"", user_message);
+}
+
+void OBSBasicSettings::on_setupMacAudio_clicked()
+{
+	enum MacAudioButtonProperty action =
+		static_cast<MacAudioButtonProperty>(
+			ui->setupMacAudio->property("action").toInt());
+	switch (action) {
+	case INSTALL: {
+		QMessageBox::StandardButton button = OBSMessageBox::question(
+			this, "",
+			QTStr("Basic.Settings.Audio.MacAudio.ConfirmInstall"));
+		if (button == QMessageBox::Yes)
+			MacCaptureProcWithoutBlocking(
+				this, "install_all",
+				QTStr("Basic.Settings.Audio.MacAudio.Installing"),
+				"Installing failed");
+		break;
+	}
+	case UPDATE:
+		MacCaptureProcWithoutBlocking(
+			this, "update_hal_device",
+			QTStr("Basic.Settings.Audio.MacAudio.Updating"),
+			"Updating failed");
+		break;
+	case UNINSTALL_NORMAL:
+		MacCaptureProcWithoutBlocking(
+			this, "uninstall_all",
+			QTStr("Basic.Settings.Audio.MacAudio.Uninstalling"),
+			"Uninstalling failed");
+		break;
+	case UNINSTALL_BROKEN:
+		MacCaptureProcWithoutBlocking(
+			this, "uninstall_broken",
+			QTStr("Basic.Settings.Audio.MacAudio.Uninstalling"),
+			"Uninstalling failed");
+		break;
+	}
+}
+#endif
+
+/* Separated from LoadAudioDevices to be invokable separately */
+void OBSBasicSettings::LoadAudioOutputDevices()
+{
+	const char *output_id = App()->OutputAudioSource();
+	obs_properties_t *output_props = obs_get_source_properties(output_id);
+	if (output_props) {
+		obs_property_t *outputs =
+			obs_properties_get(output_props, "device_id");
+		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
+		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
+		obs_properties_destroy(output_props);
+#ifdef __APPLE__
+		UpdateMacAudioButton();
+#endif
+	}
+}
+
 void OBSBasicSettings::LoadAudioDevices()
 {
 	const char *input_id = App()->InputAudioSource();
-	const char *output_id = App()->OutputAudioSource();
-
 	obs_properties_t *input_props = obs_get_source_properties(input_id);
-	obs_properties_t *output_props = obs_get_source_properties(output_id);
 
 	if (input_props) {
 		obs_property_t *inputs =
@@ -2355,13 +2480,7 @@ void OBSBasicSettings::LoadAudioDevices()
 		obs_properties_destroy(input_props);
 	}
 
-	if (output_props) {
-		obs_property_t *outputs =
-			obs_properties_get(output_props, "device_id");
-		LoadListValues(ui->desktopAudioDevice1, outputs, 1);
-		LoadListValues(ui->desktopAudioDevice2, outputs, 2);
-		obs_properties_destroy(output_props);
-	}
+	LoadAudioOutputDevices();
 
 	if (obs_video_active()) {
 		ui->sampleRate->setEnabled(false);

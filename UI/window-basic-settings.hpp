@@ -269,6 +269,10 @@ private slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void on_useAuth_toggled();
+#ifdef __APPLE__
+	void on_setupMacAudio_clicked();
+	void UpdateMacAudioButton();
+#endif
 
 	void on_hotkeyFilterReset_clicked();
 	void on_hotkeyFilterSearch_textChanged(const QString text);
@@ -290,6 +294,7 @@ private:
 	/* audio */
 	void LoadListValues(QComboBox *widget, obs_property_t *prop, int index);
 	void LoadAudioDevices();
+	Q_INVOKABLE void LoadAudioOutputDevices();
 	void LoadAudioSources();
 
 	/* video */
