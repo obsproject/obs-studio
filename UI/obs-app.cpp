@@ -2156,16 +2156,33 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 #endif
 
+		if (!created_log) {
+			create_log_file(logFile);
+			created_log = true;
+		}
+
 #ifdef __APPLE__
 		bool rosettaTranslated = ProcessIsRosettaTranslated();
 		blog(LOG_INFO, "Rosetta translation used: %s",
 		     rosettaTranslated ? "true" : "false");
 #endif
 
-		if (!created_log) {
-			create_log_file(logFile);
-			created_log = true;
+#ifdef _WIN32
+		if (IsRunningOnWine()) {
+			QMessageBox mb(QMessageBox::Question,
+				       QTStr("Wine.Title"), QTStr("Wine.Text"));
+			mb.setTextFormat(Qt::RichText);
+			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
+				     QMessageBox::AcceptRole);
+			QPushButton *closeButton =
+				mb.addButton(QMessageBox::Close);
+			mb.setDefaultButton(closeButton);
+
+			mb.exec();
+			if (mb.clickedButton() == closeButton)
+				return 0;
 		}
+#endif
 
 		if (argc > 1) {
 			stringstream stor;

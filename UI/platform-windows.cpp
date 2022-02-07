@@ -449,3 +449,23 @@ QString GetMonitorName(const QString &id)
 
 	return QString::fromWCharArray(target.monitorFriendlyDeviceName);
 }
+
+/* Based on https://www.winehq.org/pipermail/wine-devel/2008-September/069387.html */
+typedef const char *(CDECL *WINEGETVERSION)(void);
+bool IsRunningOnWine()
+{
+	WINEGETVERSION func;
+	HMODULE nt;
+
+	nt = GetModuleHandleW(L"ntdll");
+	if (!nt)
+		return false;
+
+	func = (WINEGETVERSION)GetProcAddress(nt, "wine_get_version");
+	if (func) {
+		blog(LOG_WARNING, "Running on Wine version \"%s\"", func());
+		return true;
+	}
+
+	return false;
+}
