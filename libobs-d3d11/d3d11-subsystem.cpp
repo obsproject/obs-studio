@@ -66,21 +66,78 @@ gs_obj::~gs_obj()
 		next->prev_next = prev_next;
 }
 
-static inline void make_swap_desc(DXGI_SWAP_CHAIN_DESC &desc,
-				  const gs_init_data *data,
-				  DXGI_SWAP_EFFECT effect, UINT flags)
+static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 {
+	IDXGIFactory1 *factory1 = device->factory;
+	if (!factory1->IsCurrent()) {
+		device->InitFactory();
+		factory1 = device->factory;
+	}
+
+	ComPtr<IDXGIAdapter> adapter;
+	ComPtr<IDXGIOutput> output;
+	ComPtr<IDXGIOutput6> output6;
+	for (UINT adapterIndex = 0;
+	     SUCCEEDED(factory1->EnumAdapters(adapterIndex, &adapter));
+	     ++adapterIndex) {
+		for (UINT outputIndex = 0;
+		     SUCCEEDED(adapter->EnumOutputs(outputIndex, &output));
+		     ++outputIndex) {
+			if (SUCCEEDED(output->QueryInterface(&output6))) {
+				DXGI_OUTPUT_DESC1 desc1;
+				if (SUCCEEDED(output6->GetDesc1(&desc1)) &&
+				    desc1.Monitor == hMonitor) {
+					return desc1.ColorSpace ==
+					       DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+				}
+			}
+		}
+	}
+
+	return false;
+}
+
+static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd)
+{
+	enum gs_color_space next_space = GS_CS_SRGB;
+	const HMONITOR hMonitor =
+		MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+	if (hMonitor) {
+		if (screen_supports_hdr(device, hMonitor))
+			next_space = GS_CS_709_SCRGB;
+	}
+
+	return next_space;
+}
+
+static enum gs_color_format
+get_swap_format_from_space(gs_color_space space, gs_color_format sdr_format)
+{
+	return (space == GS_CS_709_SCRGB) ? GS_RGBA16F : sdr_format;
+}
+
+static inline enum gs_color_space
+make_swap_desc(gs_device *device, DXGI_SWAP_CHAIN_DESC &desc,
+	       const gs_init_data *data, DXGI_SWAP_EFFECT effect, UINT flags)
+{
+	const HWND hwnd = (HWND)data->window.hwnd;
+	const enum gs_color_space space = get_next_space(device, hwnd);
+	const gs_color_format format =
+		get_swap_format_from_space(space, data->format);
+
 	memset(&desc, 0, sizeof(desc));
 	desc.BufferDesc.Width = data->cx;
 	desc.BufferDesc.Height = data->cy;
-	desc.BufferDesc.Format = ConvertGSTextureFormatView(data->format);
+	desc.BufferDesc.Format = ConvertGSTextureFormatView(format);
 	desc.SampleDesc.Count = 1;
 	desc.BufferUsage = DXGI_USAGE_RENDER_TARGET_OUTPUT;
 	desc.BufferCount = data->num_backbuffers;
-	desc.OutputWindow = (HWND)data->window.hwnd;
+	desc.OutputWindow = hwnd;
 	desc.Windowed = TRUE;
 	desc.SwapEffect = effect;
 	desc.Flags = flags;
+
+	return space;
 }
 
 void gs_swap_chain::InitTarget(uint32_t cx, uint32_t cy)
@@ -128,7 +185,7 @@ void gs_swap_chain::InitZStencilBuffer(uint32_t cx, uint32_t cy)
 	}
 }
 
-void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
+void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
 {
 	RECT clientRect;
 	HRESULT hr;
@@ -150,25 +207,40 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy)
 			cy = clientRect.bottom;
 	}
 
-	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy,
-				 DXGI_FORMAT_UNKNOWN, swapDesc.Flags);
+	const DXGI_FORMAT dxgi_format = ConvertGSTextureFormatView(format);
+	hr = swap->ResizeBuffers(swapDesc.BufferCount, cx, cy, dxgi_format,
+				 swapDesc.Flags);
 	if (FAILED(hr))
 		throw HRError("Failed to resize swap buffers", hr);
+	ComQIPtr<IDXGISwapChain3> swap3 = swap;
+	if (swap3) {
+		const DXGI_COLOR_SPACE_TYPE dxgi_space =
+			(format == GS_RGBA16F)
+				? DXGI_COLOR_SPACE_RGB_FULL_G10_NONE_P709
+				: DXGI_COLOR_SPACE_RGB_FULL_G22_NONE_P709;
+		hr = swap3->SetColorSpace1(dxgi_space);
+		if (FAILED(hr))
+			throw HRError("Failed to set color space", hr);
+	}
 
+	target.dxgiFormatResource = ConvertGSTextureFormatResource(format);
+	target.dxgiFormatView = dxgi_format;
+	target.dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 	InitTarget(cx, cy);
 	InitZStencilBuffer(cx, cy);
 }
 
 void gs_swap_chain::Init()
 {
+	const gs_color_format format = get_swap_format_from_space(
+		get_next_space(device, hwnd), initData.format);
+
 	target.device = device;
 	target.isRenderTarget = true;
 	target.format = initData.format;
-	target.dxgiFormatResource =
-		ConvertGSTextureFormatResource(initData.format);
-	target.dxgiFormatView = ConvertGSTextureFormatView(initData.format);
-	target.dxgiFormatViewLinear =
-		ConvertGSTextureFormatViewLinear(initData.format);
+	target.dxgiFormatResource = ConvertGSTextureFormatResource(format);
+	target.dxgiFormatView = ConvertGSTextureFormatView(format);
+	target.dxgiFormatViewLinear = ConvertGSTextureFormatViewLinear(format);
 	InitTarget(initData.cx, initData.cy);
 
 	zs.device = device;
@@ -180,7 +252,8 @@ void gs_swap_chain::Init()
 gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	: gs_obj(device, gs_type::gs_swap_chain),
 	  hwnd((HWND)data->window.hwnd),
-	  initData(*data)
+	  initData(*data),
+	  space(GS_CS_SRGB)
 {
 	DXGI_SWAP_EFFECT effect = DXGI_SWAP_EFFECT_DISCARD;
 	UINT flags = 0;
@@ -203,7 +276,7 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 		}
 	}
 
-	make_swap_desc(swapDesc, &initData, effect, flags);
+	space = make_swap_desc(device, swapDesc, &initData, effect, flags);
 	HRESULT hr = device->factory->CreateSwapChain(device->device, &swapDesc,
 						      swap.Assign());
 	if (FAILED(hr))
@@ -1340,6 +1413,24 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 	return swap;
 }
 
+static void device_resize_internal(gs_device_t *device, uint32_t cx,
+				   uint32_t cy, gs_color_space space)
+{
+	try {
+		const gs_color_format format = get_swap_format_from_space(
+			space, device->curSwapChain->initData.format);
+
+		device->context->OMSetRenderTargets(0, NULL, NULL);
+		device->curSwapChain->Resize(cx, cy, format);
+		device->curSwapChain->space = space;
+		device->curFramebufferInvalidate = true;
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "device_resize_internal (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+}
+
 void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 {
 	if (!device->curSwapChain) {
@@ -1347,14 +1438,26 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 		return;
 	}
 
-	try {
-		device->context->OMSetRenderTargets(0, NULL, NULL);
-		device->curSwapChain->Resize(cx, cy);
-		device->curFramebufferInvalidate = true;
-	} catch (const HRError &error) {
-		blog(LOG_ERROR, "device_resize (D3D11): %s (%08lX)", error.str,
-		     error.hr);
-		LogD3D11ErrorDetails(error, device);
+	const enum gs_color_space next_space =
+		get_next_space(device, device->curSwapChain->hwnd);
+	device_resize_internal(device, cx, cy, next_space);
+}
+
+enum gs_color_space device_get_color_space(gs_device_t *device)
+{
+	return device->curColorSpace;
+}
+
+void device_update_color_space(gs_device_t *device)
+{
+	if (device->curSwapChain) {
+		const enum gs_color_space next_space =
+			get_next_space(device, device->curSwapChain->hwnd);
+		if (device->curSwapChain->space != next_space)
+			device_resize_internal(device, 0, 0, next_space);
+	} else {
+		blog(LOG_WARNING,
+		     "device_update_color_space (D3D11): No active swap");
 	}
 }
 
@@ -1874,8 +1977,10 @@ gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device)
 	return device->curZStencilBuffer;
 }
 
-void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
-			      gs_zstencil_t *zstencil)
+static void device_set_render_target_internal(gs_device_t *device,
+					      gs_texture_t *tex,
+					      gs_zstencil_t *zstencil,
+					      enum gs_color_space space)
 {
 	if (device->curSwapChain) {
 		if (!tex)
@@ -1885,12 +1990,13 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 	}
 
 	if (device->curRenderTarget == tex &&
-	    device->curZStencilBuffer == zstencil)
-		return;
+	    device->curZStencilBuffer == zstencil) {
+		device->curColorSpace = space;
+	}
 
 	if (tex && tex->type != GS_TEXTURE_2D) {
 		blog(LOG_ERROR,
-		     "device_set_render_target (D3D11): texture is not a 2D texture");
+		     "device_set_render_target_internal (D3D11): texture is not a 2D texture");
 		return;
 	}
 
@@ -1898,10 +2004,25 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 	if (device->curRenderTarget != tex2d || device->curRenderSide != 0 ||
 	    device->curZStencilBuffer != zstencil) {
 		device->curRenderTarget = tex2d;
-		device->curRenderSide = 0;
 		device->curZStencilBuffer = zstencil;
+		device->curRenderSide = 0;
+		device->curColorSpace = space;
 		device->curFramebufferInvalidate = true;
 	}
+}
+
+void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
+			      gs_zstencil_t *zstencil)
+{
+	device_set_render_target_internal(device, tex, zstencil, GS_CS_SRGB);
+}
+
+void device_set_render_target_with_color_space(gs_device_t *device,
+					       gs_texture_t *tex,
+					       gs_zstencil_t *zstencil,
+					       enum gs_color_space space)
+{
+	device_set_render_target_internal(device, tex, zstencil, space);
 }
 
 void device_set_cube_render_target(gs_device_t *device, gs_texture_t *tex,
@@ -1931,8 +2052,9 @@ void device_set_cube_render_target(gs_device_t *device, gs_texture_t *tex,
 	if (device->curRenderTarget != tex2d || device->curRenderSide != side ||
 	    device->curZStencilBuffer != zstencil) {
 		device->curRenderTarget = tex2d;
-		device->curRenderSide = side;
 		device->curZStencilBuffer = zstencil;
+		device->curRenderSide = side;
+		device->curColorSpace = GS_CS_SRGB;
 		device->curFramebufferInvalidate = true;
 	}
 }
@@ -2177,11 +2299,14 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
 
 	device->curSwapChain = swapchain;
 
-	if (is_cube)
+	if (is_cube) {
 		device_set_cube_render_target(device, target,
 					      device->curRenderSide, zs);
-	else
-		device_set_render_target(device, target, zs);
+	} else {
+		const enum gs_color_space space = swapchain ? swapchain->space
+							    : GS_CS_SRGB;
+		device_set_render_target_internal(device, target, zs, space);
+	}
 }
 
 void device_clear(gs_device_t *device, uint32_t clear_flags,

@@ -340,6 +340,17 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	gl_update(device);
 }
 
+enum gs_color_space device_get_color_space(gs_device_t *device)
+{
+	return device->cur_color_space;
+}
+
+void device_update_color_space(gs_device_t *device)
+{
+	if (!device->cur_swap)
+		blog(LOG_WARNING, "device_display_change (GL): No active swap");
+}
+
 void device_get_size(const gs_device_t *device, uint32_t *cx, uint32_t *cy)
 {
 	if (device->cur_swap) {
@@ -819,9 +830,9 @@ static bool attach_zstencil(struct fbo_info *fbo, gs_zstencil_t *zs)
 }
 
 static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
-		       gs_zstencil_t *zs)
+		       gs_zstencil_t *zs, enum gs_color_space space)
 {
-	struct fbo_info *fbo;
+	device->cur_color_space = space;
 
 	if (device->cur_render_target == tex &&
 	    device->cur_zstencil_buffer == zs &&
@@ -835,7 +846,7 @@ static bool set_target(gs_device_t *device, gs_texture_t *tex, int side,
 	if (!tex)
 		return set_current_fbo(device, NULL);
 
-	fbo = get_fbo_by_tex(tex);
+	struct fbo_info *const fbo = get_fbo_by_tex(tex);
 	if (!fbo)
 		return false;
 
@@ -864,13 +875,40 @@ void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 		}
 	}
 
-	if (!set_target(device, tex, 0, zstencil))
+	if (!set_target(device, tex, 0, zstencil, GS_CS_SRGB))
 		goto fail;
 
 	return;
 
 fail:
 	blog(LOG_ERROR, "device_set_render_target (GL) failed");
+}
+
+void device_set_render_target_with_color_space(gs_device_t *device,
+					       gs_texture_t *tex,
+					       gs_zstencil_t *zstencil,
+					       enum gs_color_space space)
+{
+	if (tex) {
+		if (tex->type != GS_TEXTURE_2D) {
+			blog(LOG_ERROR, "Texture is not a 2D texture");
+			goto fail;
+		}
+
+		if (!tex->is_render_target) {
+			blog(LOG_ERROR, "Texture is not a render target");
+			goto fail;
+		}
+	}
+
+	if (!set_target(device, tex, 0, zstencil, space))
+		goto fail;
+
+	return;
+
+fail:
+	blog(LOG_ERROR,
+	     "device_set_render_target_with_color_space (GL) failed");
 }
 
 void device_set_cube_render_target(gs_device_t *device, gs_texture_t *cubetex,
@@ -888,7 +926,7 @@ void device_set_cube_render_target(gs_device_t *device, gs_texture_t *cubetex,
 		}
 	}
 
-	if (!set_target(device, cubetex, side, zstencil))
+	if (!set_target(device, cubetex, side, zstencil, GS_CS_SRGB))
 		goto fail;
 
 	return;

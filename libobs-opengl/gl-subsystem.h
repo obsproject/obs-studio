@@ -653,6 +653,7 @@ struct gs_device {
 	gs_shader_t *cur_pixel_shader;
 	gs_swapchain_t *cur_swap;
 	struct gs_program *cur_program;
+	enum gs_color_space cur_color_space;
 
 	struct gs_program *first_program;
 

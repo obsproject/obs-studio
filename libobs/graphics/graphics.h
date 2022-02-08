@@ -79,6 +79,12 @@ enum gs_color_format {
 	GS_RG16,
 };
 
+enum gs_color_space {
+	GS_CS_SRGB,         /* SDR */
+	GS_CS_709_EXTENDED, /* Canvas, Mac EDR (HDR) */
+	GS_CS_709_SCRGB,    /* 1.0 = 80 nits, Windows/Linux HDR */
+};
+
 enum gs_zstencil_format {
 	GS_ZS_NONE,
 	GS_Z16,
@@ -461,6 +467,9 @@ EXPORT gs_texrender_t *gs_texrender_create(enum gs_color_format format,
 EXPORT void gs_texrender_destroy(gs_texrender_t *texrender);
 EXPORT bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx,
 			       uint32_t cy);
+EXPORT bool gs_texrender_begin_with_color_space(gs_texrender_t *texrender,
+						uint32_t cx, uint32_t cy,
+						enum gs_color_space space);
 EXPORT void gs_texrender_end(gs_texrender_t *texrender);
 EXPORT void gs_texrender_reset(gs_texrender_t *texrender);
 EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
@@ -634,6 +643,7 @@ EXPORT void gs_reset_blend_state(void);
 EXPORT gs_swapchain_t *gs_swapchain_create(const struct gs_init_data *data);
 
 EXPORT void gs_resize(uint32_t x, uint32_t y);
+EXPORT void gs_update_color_space(void);
 EXPORT void gs_get_size(uint32_t *x, uint32_t *y);
 EXPORT uint32_t gs_get_width(void);
 EXPORT uint32_t gs_get_height(void);
@@ -689,10 +699,14 @@ EXPORT void gs_load_default_samplerstate(bool b_3d, int unit);
 EXPORT gs_shader_t *gs_get_vertex_shader(void);
 EXPORT gs_shader_t *gs_get_pixel_shader(void);
 
+EXPORT enum gs_color_space gs_get_color_space(void);
 EXPORT gs_texture_t *gs_get_render_target(void);
 EXPORT gs_zstencil_t *gs_get_zstencil_target(void);
 
 EXPORT void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil);
+EXPORT void gs_set_render_target_with_color_space(gs_texture_t *tex,
+						  gs_zstencil_t *zstencil,
+						  enum gs_color_space space);
 EXPORT void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
 				      gs_zstencil_t *zstencil);
 
@@ -1037,6 +1051,20 @@ gs_generalize_format(enum gs_color_format format)
 	default:
 		return format;
 	}
+}
+
+static inline enum gs_color_format
+gs_get_format_from_space(enum gs_color_space space)
+{
+	switch (space) {
+	case GS_CS_SRGB:
+		break;
+	case GS_CS_709_EXTENDED:
+	case GS_CS_709_SCRGB:
+		return GS_RGBA16F;
+	}
+
+	return GS_RGBA;
 }
 
 static inline uint32_t gs_get_total_levels(uint32_t width, uint32_t height,
