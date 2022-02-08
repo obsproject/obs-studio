@@ -98,7 +98,7 @@ private:
 	properties_t properties;
 	OBSData settings;
 	OBSWeakObjectAutoRelease weakObj;
-	void *rawObj;
+	void *rawObj = nullptr;
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
