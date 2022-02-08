@@ -98,6 +98,7 @@ private:
 	properties_t properties;
 	OBSData settings;
 	OBSWeakObjectAutoRelease weakObj;
+	void *rawObj;
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
@@ -152,6 +153,11 @@ signals:
 	void PropertiesRefreshed();
 
 public:
+	OBSPropertiesView(OBSData settings, obs_object_t *obj,
+			  PropertiesReloadCallback reloadCallback,
+			  PropertiesUpdateCallback callback,
+			  PropertiesVisualUpdateCb cb = nullptr,
+			  int minSize = 0);
 	OBSPropertiesView(OBSData settings, void *obj,
 			  PropertiesReloadCallback reloadCallback,
 			  PropertiesUpdateCallback callback,
@@ -160,6 +166,23 @@ public:
 	OBSPropertiesView(OBSData settings, const char *type,
 			  PropertiesReloadCallback reloadCallback,
 			  int minSize = 0);
+
+#define obj_constructor(type)                                              \
+	inline OBSPropertiesView(OBSData settings, obs_##type##_t *type,   \
+				 PropertiesReloadCallback reloadCallback,  \
+				 PropertiesUpdateCallback callback,        \
+				 PropertiesVisualUpdateCb cb = nullptr,    \
+				 int minSize = 0)                          \
+		: OBSPropertiesView(settings, (obs_object_t *)type,        \
+				    reloadCallback, callback, cb, minSize) \
+	{                                                                  \
+	}
+
+	obj_constructor(source);
+	obj_constructor(output);
+	obj_constructor(encoder);
+	obj_constructor(service);
+#undef obj_constructor
 
 	inline obs_data_t *GetSettings() const { return settings; }
 
