@@ -3171,7 +3171,7 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->contextSourceIconSpacer->hide();
 		ui->contextSourceIcon->show();
 
-		const char *name = obs_source_get_name(source);
+		const char *name = obs_sceneitem_get_itemname(item);
 		ui->contextSourceLabel->setText(name);
 
 		ui->sourceFiltersButton->setEnabled(true);
