@@ -24,6 +24,7 @@
 struct AddSourceData {
 	obs_source_t *source;
 	bool visible;
+	bool existing;
 	obs_transform_info *transform = nullptr;
 	obs_sceneitem_crop *crop = nullptr;
 	obs_blending_type *blend = nullptr;
@@ -118,7 +119,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	AddSourceData *data = (AddSourceData *)_data;
 	obs_sceneitem_t *sceneitem;
 
-	sceneitem = obs_scene_add(scene, data->source);
+	sceneitem = obs_scene_add(scene, data->source, data->existing);
 
 	if (data->transform != nullptr)
 		obs_sceneitem_set_info(sceneitem, data->transform);
@@ -176,6 +177,7 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate,
 	data.transform = transform;
 	data.crop = crop;
 	data.blend = blend;
+	data.existing = true;
 
 	obs_enter_graphics();
 	obs_scene_atomic_update(scene, AddSource, &data);
