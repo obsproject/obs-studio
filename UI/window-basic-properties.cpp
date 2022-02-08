@@ -294,12 +294,12 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 	OBSSourceAutoRelease colorBG = obs_source_create_private(
 		"color_source", "background", settings);
 
-	obs_scene_add(obs_scene_from_source(scene), colorBG);
+	obs_scene_add(obs_scene_from_source(scene), colorBG, false);
 
 	OBSSourceAutoRelease label =
 		CreateLabel(text, obs_source_get_height(scene));
 	obs_sceneitem_t *item =
-		obs_scene_add(obs_scene_from_source(scene), label);
+		obs_scene_add(obs_scene_from_source(scene), label, false);
 
 	vec2 size;
 	vec2_set(&size, obs_source_get_width(scene),
