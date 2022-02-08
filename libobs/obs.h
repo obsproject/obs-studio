@@ -887,6 +887,9 @@ EXPORT void obs_display_destroy(obs_display_t *display);
 EXPORT void obs_display_resize(obs_display_t *display, uint32_t cx,
 			       uint32_t cy);
 
+/** Updates the color space of this display */
+EXPORT void obs_display_update_color_space(obs_display_t *display);
+
 /**
  * Adds a draw callback for this display context
  *

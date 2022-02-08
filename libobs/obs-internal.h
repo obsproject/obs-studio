@@ -204,6 +204,7 @@ extern void obs_view_free(struct obs_view *view);
 /* displays */
 
 struct obs_display {
+	bool update_color_space;
 	bool enabled;
 	uint32_t cx, cy;
 	uint32_t next_cx, next_cy;
