@@ -149,6 +149,8 @@ static const char *group_getname(void *unused)
 	return "Group";
 }
 
+const char *obs_sceneitem_get_itemname(const obs_sceneitem_t *);
+
 static void *scene_create(obs_data_t *settings, struct obs_source *source)
 {
 	struct obs_scene *scene = bzalloc(sizeof(struct obs_scene));
@@ -651,7 +653,7 @@ static bool are_texcoords_centered(struct matrix4 *m)
 static inline void render_item(struct obs_scene_item *item)
 {
 	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_ITEM, "Item: %s",
-				     obs_source_get_name(item->source));
+				     obs_sceneitem_get_itemname(item));
 
 	if (item->item_render) {
 		uint32_t width = obs_source_get_width(item->source);
@@ -885,7 +887,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 		return;
 	}
 
-	item = obs_scene_add(scene, source);
+	item = obs_scene_add(scene, source, false);
 	if (!item) {
 		blog(LOG_WARNING,
 		     "[scene_load_item] Could not add source '%s' "
@@ -1617,7 +1619,7 @@ obs_scene_t *obs_scene_duplicate(obs_scene_t *scene, const char *name,
 
 		if (source) {
 			struct obs_scene_item *new_item =
-				obs_scene_add(new_scene, source);
+				obs_scene_add(new_scene, source, false);
 
 			if (!new_item) {
 				obs_source_release(source);
@@ -1940,7 +1942,8 @@ static inline bool source_has_audio(obs_source_t *source)
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
 					       obs_sceneitem_t *insert_after,
-					       bool create_texture)
+					       bool create_texture,
+					       bool existing)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -2005,6 +2008,13 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		obs_leave_graphics();
 	}
 
+	if (existing) {
+		const char *name = obs_source_get_name(source);
+		char *new_name = obs_scene_get_new_itemname(scene, name);
+		obs_sceneitem_set_itemname(item, new_name);
+		bfree(new_name);
+	}
+
 	full_lock(scene);
 
 	if (insert_after) {
@@ -2030,7 +2040,7 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	full_unlock(scene);
 
 	if (!scene->source->context.private)
-		init_hotkeys(scene, item, obs_source_get_name(source));
+		init_hotkeys(scene, item, obs_sceneitem_get_itemname(item));
 
 	signal_handler_connect(obs_source_get_signal_handler(source), "rename",
 			       sceneitem_renamed, item);
@@ -2042,10 +2052,10 @@ release_source_and_fail:
 	return NULL;
 }
 
-obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
+obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source, bool existing)
 {
 	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, source, NULL, true);
+		obs_scene_add_internal(scene, source, NULL, true, existing);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -3157,7 +3167,7 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
 	obs_sceneitem_t *item = obs_scene_add_internal(scene, sub_scene->source,
-						       last_item, true);
+						       last_item, true, false);
 
 	obs_scene_release(sub_scene);
 
@@ -3269,7 +3279,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 
 		remove_group_transform(item, last);
 		dst = obs_scene_add_internal(scene, last->source, insert_after,
-					     false);
+					     false, false, false);
 		duplicate_item_data(dst, last, true, true, true);
 		apply_group_transform(last, item);
 
@@ -3565,6 +3575,51 @@ bool obs_source_is_scene(const obs_source_t *source)
 bool obs_scene_is_group(const obs_scene_t *scene)
 {
 	return scene ? scene->is_group : false;
+}
+
+const char* obs_sceneitem_get_itemname(const obs_sceneitem_t* item)
+{
+	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
+	const char *name = obs_data_get_string(privData, "item_name");
+	obs_data_release(privData);
+
+	if (name && *name)
+		return name;
+	return obs_source_get_name(item->source);
+}
+
+void obs_sceneitem_set_itemname(obs_sceneitem_t *item, const char *newName)
+{
+	obs_data_t *privData = obs_sceneitem_get_private_settings(item);
+	obs_data_set_string(privData, "item_name", newName);
+	obs_data_release(privData);
+}
+
+bool obs_scene_if_duplicated_itemname(const obs_scene_t *scene,
+				      const char *newName)
+{
+	obs_sceneitem_t *item = scene->first_item;
+	while (item) {
+		const char *name = obs_sceneitem_get_itemname(item);
+		if (strcmp(name, newName) == 0) {
+			return true;
+		}
+		item = item->next;
+	}
+	return false;
+}
+
+char* obs_scene_get_new_itemname(const obs_scene_t *scene, const char* name) {
+	struct dstr new_name = {0};
+	int inc = 0;
+	dstr_copy(&new_name, name);
+	for (;;) {
+		bool exists = obs_scene_if_duplicated_itemname(scene, new_name.array);
+		if (!exists)
+			break;
+		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
+	}
+	return new_name.array;
 }
 
 void obs_sceneitem_group_enum_items(obs_sceneitem_t *group,
