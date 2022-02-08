@@ -8,6 +8,8 @@ plugin modules.
 
 Plugins can implement sources, outputs, encoders, and services.
 
+Writing your first plugin? We provide `a basic template plugin <https://github.com/obsproject/obs-plugintemplate#obs-plugin-template>`_
+to get you started.
 
 Plugin Module Headers
 ---------------------
