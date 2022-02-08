@@ -1660,7 +1660,7 @@ obs_scene_reorder_items2(obs_scene_t *scene,
 EXPORT bool obs_source_is_scene(const obs_source_t *source);
 
 /** Adds/creates a new scene item for a source */
-EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source);
+EXPORT obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source, bool existing);
 
 typedef void (*obs_scene_atomic_update_func)(void *, obs_scene_t *scene);
 EXPORT void obs_scene_atomic_update(obs_scene_t *scene,
@@ -1690,6 +1690,14 @@ EXPORT obs_sceneitem_t *obs_scene_sceneitem_from_source(obs_scene_t *scene,
 EXPORT obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene,
 						   bool all_items);
 
+/** Check if new name alreadys exists. If so, return true.*/
+EXPORT bool obs_scene_if_duplicated_itemname(const obs_scene_t *scene,
+					     const char *newName);
+
+/* Gets unique name for a new scene item in a scene. Release it manually.*/
+EXPORT char *obs_scene_get_new_itemname(const obs_scene_t *scene,
+					const char *name);
+
 /** Load all the transform states of sceneitems in that scene */
 EXPORT void obs_scene_load_transform_states(const char *state);
 
@@ -1701,6 +1709,14 @@ EXPORT obs_scene_t *obs_sceneitem_get_scene(const obs_sceneitem_t *item);
 
 /** Gets the source of a scene item. */
 EXPORT obs_source_t *obs_sceneitem_get_source(const obs_sceneitem_t *item);
+
+/** Gets the name of a scene item.*/
+EXPORT const char *obs_sceneitem_get_itemname(const obs_sceneitem_t *item);
+
+/** Sets the name of a scene item.*/
+EXPORT void obs_sceneitem_set_itemname(obs_sceneitem_t *item,
+				       const char *newName);
+
 
 /* FIXME: The following functions should be deprecated and replaced with a way
  * to specify saveable private user data. -Jim */
