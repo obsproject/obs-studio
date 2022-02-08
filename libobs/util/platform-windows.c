@@ -1031,6 +1031,10 @@ static inline void rtl_get_ver(struct win_version_info *ver)
 static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf,
 			      const size_t size)
 {
+	if (!buf) {
+		return false;
+	}
+
 	DWORD dwsize = (DWORD)size;
 	LSTATUS status;
 
