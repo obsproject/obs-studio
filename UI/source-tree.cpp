@@ -39,7 +39,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	setMouseTracking(true);
 
 	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
-	const char *name = obs_source_get_name(source);
+	const char *name = obs_sceneitem_get_itemname(sceneitem);
 
 	OBSDataAutoRelease privData =
 		obs_sceneitem_get_private_settings(sceneitem);
@@ -434,8 +434,7 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	/* ----------------------------------------- */
 	/* Check for same name                       */
 
-	obs_source_t *source = obs_sceneitem_get_source(sceneitem);
-	if (newName == obs_source_get_name(source))
+	if (newName == obs_sceneitem_get_itemname(sceneitem))
 		return;
 
 	/* ----------------------------------------- */
@@ -452,16 +451,28 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	}
 
 	/* ----------------------------------------- */
+	/* check for existing scene item             */
+	exists = obs_scene_if_duplicated_itemname(scene, newName.c_str());
+	if (exists) {
+		OBSMessageBox::information(main, QTStr("NameExists.Title"),
+					   QTStr("NameExists.Text"));
+		return;
+	}
+
+	/* ----------------------------------------- */
 	/* rename                                    */
 
 	SignalBlocker sourcesSignalBlocker(this);
-	std::string prevName(obs_source_get_name(source));
+	std::string prevName(obs_sceneitem_get_itemname(sceneitem));
 	std::string scene_name =
 		obs_source_get_name(main->GetCurrentSceneSource());
-	auto undo = [scene_name, prevName, main](const std::string &data) {
-		OBSSourceAutoRelease source =
-			obs_get_source_by_name(data.c_str());
-		obs_source_set_name(source, prevName.c_str());
+	auto itemid = obs_sceneitem_get_id(sceneitem);
+	obs_sceneitem_t *item_ = sceneitem.Get();
+	auto label_ = label;
+	
+	auto undo = [scene_name, prevName, main, item_, label_](const std::string &data) {
+		obs_sceneitem_set_itemname(item_, prevName.c_str());
+		label_->setText(QT_UTF8(prevName.c_str()));
 
 		OBSSourceAutoRelease scene_source =
 			obs_get_source_by_name(scene_name.c_str());
@@ -470,10 +481,9 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 
 	std::string editedName = newName;
 
-	auto redo = [scene_name, main, editedName](const std::string &data) {
-		OBSSourceAutoRelease source =
-			obs_get_source_by_name(data.c_str());
-		obs_source_set_name(source, editedName.c_str());
+	auto redo = [scene_name, main, editedName, item_, label_](const std::string &data) {
+		obs_sceneitem_set_itemname(item_, editedName.c_str());
+		label_->setText(QT_UTF8(editedName.c_str()));
 
 		OBSSourceAutoRelease scene_source =
 			obs_get_source_by_name(scene_name.c_str());
@@ -483,7 +493,9 @@ void SourceTreeItem::ExitEditModeInternal(bool save)
 	main->undo_s.add_action(QTStr("Undo.Rename").arg(newName.c_str()), undo,
 				redo, newName, prevName);
 
-	obs_source_set_name(source, newName.c_str());
+	obs_sceneitem_set_itemname(sceneitem.Get(), newName.c_str());
+	main->UpdateContextBar();
+
 	label->setText(QT_UTF8(newName.c_str()));
 }
 
@@ -524,7 +536,7 @@ void SourceTreeItem::LockedChanged(bool locked)
 
 void SourceTreeItem::Renamed(const QString &name)
 {
-	label->setText(name);
+	 // label->setText(name);
 }
 
 void SourceTreeItem::Update(bool force)
@@ -873,8 +885,7 @@ QVariant SourceTreeModel::data(const QModelIndex &index, int role) const
 {
 	if (role == Qt::AccessibleTextRole) {
 		OBSSceneItem item = items[index.row()];
-		obs_source_t *source = obs_sceneitem_get_source(item);
-		return QVariant(QT_UTF8(obs_source_get_name(source)));
+		return QVariant(QT_UTF8(obs_sceneitem_get_itemname(item)));
 	}
 
 	return QVariant();
