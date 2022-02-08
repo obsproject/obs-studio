@@ -182,10 +182,16 @@ class WASAPISource {
 	void Start();
 	void Stop();
 
+	static ComPtr<IMMDevice> _InitDevice(IMMDeviceEnumerator *enumerator,
+					    bool isDefaultDevice,
+					    bool isInputDevice,
+					    string &device_id,
+					    string &device_name);
 	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator,
 					    bool isDefaultDevice,
 					    bool isInputDevice,
-					    const string device_id);
+					    string &device_id,
+					    string &device_name);
 	static ComPtr<IAudioClient> InitClient(IMMDevice *device,
 					       bool isInputDevice,
 					       enum speaker_layout &speakers,
@@ -469,10 +475,11 @@ void WASAPISource::Update(obs_data_t *settings)
 		SetEvent(restartSignal);
 }
 
-ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
+ComPtr<IMMDevice> WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator,
 					   bool isDefaultDevice,
 					   bool isInputDevice,
-					   const string device_id)
+					   string &device_id,
+					   string &device_name)
 {
 	ComPtr<IMMDevice> device;
 
@@ -496,6 +503,41 @@ ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 
 		if (FAILED(res))
 			throw HRError("Failed to enumerate device", res);
+	}
+
+	return device;
+}
+
+ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
+					   bool isDefaultDevice,
+					   bool isInputDevice,
+					   string &device_id,
+					   string &device_name)
+{
+	ComPtr<IMMDevice> device;
+	std::vector<AudioDeviceInfo> devices;
+	device = _InitDevice(enumerator, isDefaultDevice, isInputDevice, device_id, device_name);
+
+	if (device_name.empty())
+		device_name = GetDeviceName(device);
+
+	if (device)
+		return device;
+
+	if (!device_name.empty()) {
+		blog(LOG_INFO,
+			"[WASAPISource::InitDevice]: Failed to init device and device name not empty '%s'",
+		    device_name.c_str());
+		devices.clear();
+		GetWASAPIAudioDevices(devices, isInputDevice, device_name);
+		if (devices.size()) {
+			blog(LOG_INFO,
+				"[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices, name '%s'",
+			    device_name.c_str());
+
+			device = devices[0].device;
+			device_id = devices[0].id;
+		}
 	}
 
 	return device;
@@ -635,7 +677,7 @@ ComPtr<IAudioCaptureClient> WASAPISource::InitCapture(IAudioClient *client,
 void WASAPISource::Initialize()
 {
 	ComPtr<IMMDevice> device = InitDevice(enumerator, isDefaultDevice,
-					      isInputDevice, device_id);
+					      isInputDevice, device_id, device_name);
 
 	device_name = GetDeviceName(device);
 
