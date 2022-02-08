@@ -157,15 +157,24 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		av_opt_set_int(enc->context->priv_data, "row-mt", 1, 0);
 	}
 
+	if (enc->svtav1)
+		av_opt_set(enc->context->priv_data, "rc", "vbr", 0);
+
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
 		enc->context->global_quality = cqp;
+
+		if (enc->svtav1)
+			av_opt_set(enc->context->priv_data, "rc", "cqp", 0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		const int64_t rate = bitrate * INT64_C(1000);
 		enc->context->rc_max_rate = rate;
 		enc->context->rc_min_rate = rate;
 		cqp = 0;
+
+		if (enc->svtav1)
+			av_opt_set(enc->context->priv_data, "rc", "cvbr", 0);
 	}
 
 	const int rate = bitrate * 1000;

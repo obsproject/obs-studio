@@ -89,10 +89,11 @@ Q_DECLARE_METATYPE(media_frames_per_second);
 
 void OBSPropertiesView::ReloadProperties()
 {
-	if (weakObj) {
-		OBSObject obj = GetObject();
+	if (weakObj || rawObj) {
+		OBSObject strongObj = GetObject();
+		void *obj = strongObj ? strongObj.Get() : rawObj;
 		if (obj)
-			properties.reset(reloadCallback(obj.Get()));
+			properties.reset(reloadCallback(obj));
 	} else {
 		properties.reset(reloadCallback((void *)type.c_str()));
 		obs_properties_apply_settings(properties.get(), settings);
@@ -176,6 +177,24 @@ void OBSPropertiesView::GetScrollPos(int &h, int &v)
 		v = scroll->value();
 }
 
+OBSPropertiesView::OBSPropertiesView(OBSData settings_, obs_object_t *obj,
+				     PropertiesReloadCallback reloadCallback,
+				     PropertiesUpdateCallback callback_,
+				     PropertiesVisualUpdateCb cb_, int minSize_)
+	: VScrollArea(nullptr),
+	  properties(nullptr, obs_properties_destroy),
+	  settings(settings_),
+	  weakObj(obs_object_get_weak_object(obj)),
+	  reloadCallback(reloadCallback),
+	  callback(callback_),
+	  cb(cb_),
+	  minSize(minSize_)
+{
+	setFrameShape(QFrame::NoFrame);
+	QMetaObject::invokeMethod(this, "ReloadProperties",
+				  Qt::QueuedConnection);
+}
+
 OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj,
 				     PropertiesReloadCallback reloadCallback,
 				     PropertiesUpdateCallback callback_,
@@ -183,7 +202,7 @@ OBSPropertiesView::OBSPropertiesView(OBSData settings_, void *obj,
 	: VScrollArea(nullptr),
 	  properties(nullptr, obs_properties_destroy),
 	  settings(settings_),
-	  weakObj(obs_object_get_weak_object((obs_object_t *)obj)),
+	  rawObj(obj),
 	  reloadCallback(reloadCallback),
 	  callback(callback_),
 	  cb(cb_),
@@ -1907,9 +1926,13 @@ void WidgetInfo::ButtonClicked()
 		}
 		return;
 	}
-	if (obs_property_button_clicked(property, view->GetObject())) {
-		QMetaObject::invokeMethod(view, "RefreshProperties",
-					  Qt::QueuedConnection);
+	if (view->rawObj || view->weakObj) {
+		OBSObject strongObj = view->GetObject();
+		void *obj = strongObj ? strongObj.Get() : view->rawObj;
+		if (obs_property_button_clicked(property, obj)) {
+			QMetaObject::invokeMethod(view, "RefreshProperties",
+						  Qt::QueuedConnection);
+		}
 	}
 }
 
@@ -1983,7 +2006,9 @@ void WidgetInfo::ControlChanged()
 		update_timer = new QTimer;
 		connect(update_timer, &QTimer::timeout,
 			[this, &ru = recently_updated]() {
-				OBSObject obj = view->GetObject();
+				OBSObject strongObj = view->GetObject();
+				void *obj = strongObj ? strongObj.Get()
+						      : view->rawObj;
 				if (obj && view->callback &&
 				    !view->deferUpdate) {
 					view->callback(obj, old_settings_cache,
@@ -2004,7 +2029,8 @@ void WidgetInfo::ControlChanged()
 	}
 
 	if (view->cb && !view->deferUpdate) {
-		OBSObject obj = view->GetObject();
+		OBSObject strongObj = view->GetObject();
+		void *obj = strongObj ? strongObj.Get() : view->rawObj;
 		if (obj)
 			view->cb(obj, view->settings);
 	}
