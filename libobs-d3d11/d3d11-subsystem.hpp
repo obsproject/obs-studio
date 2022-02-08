@@ -820,6 +820,7 @@ struct gs_swap_chain : gs_obj {
 	HWND hwnd;
 	gs_init_data initData;
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
+	gs_color_space space;
 	UINT presentFlags = 0;
 
 	gs_texture_2d target;
@@ -829,7 +830,7 @@ struct gs_swap_chain : gs_obj {
 
 	void InitTarget(uint32_t cx, uint32_t cy);
 	void InitZStencilBuffer(uint32_t cx, uint32_t cy);
-	void Resize(uint32_t cx, uint32_t cy);
+	void Resize(uint32_t cx, uint32_t cy, gs_color_format format);
 	void Init();
 
 	void Rebuild(ID3D11Device *dev);
@@ -991,6 +992,7 @@ struct gs_device {
 	gs_texture_2d *curRenderTarget = nullptr;
 	gs_zstencil_buffer *curZStencilBuffer = nullptr;
 	int curRenderSide = 0;
+	enum gs_color_space curColorSpace = GS_CS_SRGB;
 	bool curFramebufferSrgb = false;
 	bool curFramebufferInvalidate = false;
 	gs_texture *curTextures[GS_MAX_TEXTURES];

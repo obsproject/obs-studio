@@ -47,6 +47,14 @@ Graphics Enumerations
    - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
    - GS_RG16        - RG, 16 bits per channel
 
+.. type:: enum gs_color_space
+
+   Color space.  Can be one of the following values:
+
+   - GS_CS_SRGB         - sRGB
+   - GS_CS_709_EXTENDED - Canvas, Mac EDR (HDR)
+   - GS_CS_709_SCRGB    - 1.0 = 80 nits, Windows/Linux HDR
+
 .. type:: enum gs_zstencil_format
 
    Z-Stencil buffer format.  Can be one of the following values:
@@ -542,6 +550,13 @@ Swap Chains
 
 ---------------------
 
+.. function:: void gs_update_color_space(void)
+
+   Updates the color space of the swap chain based on the HDR status of
+   the nearest monitor
+
+---------------------
+
 .. function:: void gs_get_size(uint32_t *cx, uint32_t *cy)
 
    Gets the size of the currently active swap chain
@@ -613,6 +628,12 @@ Resource Loading
 Draw Functions
 --------------
 
+.. function:: enum gs_color_space gs_get_color_space(void)
+
+   :return: The currently active color space
+
+---------------------
+
 .. function:: gs_texture_t  *gs_get_render_target(void)
 
    :return: The currently active render target
@@ -627,10 +648,20 @@ Draw Functions
 
 .. function:: void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 
-   Sets the active render target
+   Sets the active render target with implicit GS_CS_SRGB color space
 
    :param tex:      Texture to set as the active render target
    :param zstencil: Z-stencil to use as the active render target
+
+---------------------
+
+.. function:: void gs_set_render_target_with_color_space(gs_texture_t *tex, gs_zstencil_t *zstencil, enum gs_color_space space)
+
+   Sets the active render target along with color space
+
+   :param tex:      Texture to set as the active render target
+   :param zstencil: Z-stencil to use as the active render target
+   :param space:    Color space of the render target
 
 ---------------------
 

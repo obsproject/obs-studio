@@ -38,6 +38,8 @@ struct gs_exports {
 	gs_swapchain_t *(*device_swapchain_create)(
 		gs_device_t *device, const struct gs_init_data *data);
 	void (*device_resize)(gs_device_t *device, uint32_t x, uint32_t y);
+	enum gs_color_space (*device_get_color_space)(gs_device_t *device);
+	void (*device_update_color_space)(gs_device_t *device);
 	void (*device_get_size)(const gs_device_t *device, uint32_t *x,
 				uint32_t *y);
 	uint32_t (*device_get_width)(const gs_device_t *device);
@@ -103,6 +105,9 @@ struct gs_exports {
 	gs_zstencil_t *(*device_get_zstencil_target)(const gs_device_t *device);
 	void (*device_set_render_target)(gs_device_t *device, gs_texture_t *tex,
 					 gs_zstencil_t *zstencil);
+	void (*device_set_render_target_with_color_space)(
+		gs_device_t *device, gs_texture_t *tex, gs_zstencil_t *zstencil,
+		enum gs_color_space space);
 	void (*device_set_cube_render_target)(gs_device_t *device,
 					      gs_texture_t *cubetex, int side,
 					      gs_zstencil_t *zstencil);

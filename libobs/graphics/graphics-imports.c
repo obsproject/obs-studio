@@ -53,6 +53,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_device_obj);
 	GRAPHICS_IMPORT(device_swapchain_create);
 	GRAPHICS_IMPORT(device_resize);
+	GRAPHICS_IMPORT(device_get_color_space);
+	GRAPHICS_IMPORT(device_update_color_space);
 	GRAPHICS_IMPORT(device_get_size);
 	GRAPHICS_IMPORT(device_get_width);
 	GRAPHICS_IMPORT(device_get_height);
@@ -81,6 +83,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_render_target);
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
+	GRAPHICS_IMPORT(device_set_render_target_with_color_space);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
 	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
 	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);

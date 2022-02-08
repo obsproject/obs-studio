@@ -1308,6 +1308,16 @@ void gs_resize(uint32_t x, uint32_t y)
 	graphics->exports.device_resize(graphics->device, x, y);
 }
 
+void gs_update_color_space(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_update_color_space"))
+		return;
+
+	graphics->exports.device_update_color_space(graphics->device);
+}
+
 void gs_get_size(uint32_t *x, uint32_t *y)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1715,6 +1725,16 @@ gs_shader_t *gs_get_pixel_shader(void)
 	return graphics->exports.device_get_pixel_shader(graphics->device);
 }
 
+enum gs_color_space gs_get_color_space(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_color_space"))
+		return GS_CS_SRGB;
+
+	return graphics->exports.device_get_color_space(graphics->device);
+}
+
 gs_texture_t *gs_get_render_target(void)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1744,6 +1764,19 @@ void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 
 	graphics->exports.device_set_render_target(graphics->device, tex,
 						   zstencil);
+}
+
+void gs_set_render_target_with_color_space(gs_texture_t *tex,
+					   gs_zstencil_t *zstencil,
+					   enum gs_color_space space)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_render_target_with_color_space"))
+		return;
+
+	graphics->exports.device_set_render_target_with_color_space(
+		graphics->device, tex, zstencil, space);
 }
 
 void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
