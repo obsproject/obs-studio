@@ -176,7 +176,7 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 				   settings, nullptr);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
-		obs_scene_add(scene, source);
+		obs_scene_add(scene, source, false);
 	}
 }
 
