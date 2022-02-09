@@ -683,8 +683,13 @@ static void obs_source_destroy_defer(struct obs_source *source)
 		source->context.data = NULL;
 	}
 
+#ifdef WIN32
+	blog(LOG_DEBUG, "%ssource '%s' destroyed (0x%I64X) (Thread %d)",
+	     source->context.private ? "private " : "", source->context.name, (uintptr_t)source, pthread_getw32threadid_np(pthread_self()));
+#else
 	blog(LOG_DEBUG, "%ssource '%s' destroyed",
 	     source->context.private ? "private " : "", source->context.name);
+#endif
 
 	audio_monitor_destroy(source->monitor);
 

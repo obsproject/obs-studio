@@ -63,14 +63,12 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	struct obs_source *source = obs_source_get_ref(data->first_source);
 
 	while (source) {
-		obs_source_t *s = obs_source_get_ref(source);
+		struct obs_source *next_source = obs_source_get_ref((struct obs_source *)source->context.next);
 
-		if (s) {
-			obs_source_video_tick(s, seconds);
-			obs_source_release(s);
-		}
+		obs_source_video_tick(source, seconds);
+		obs_source_release(source);
 
-		source = (struct obs_source *)source->context.next;
+		source = next_source;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
