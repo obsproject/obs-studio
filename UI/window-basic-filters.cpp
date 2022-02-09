@@ -36,6 +36,11 @@
 #include <QMenu>
 #include <QVariant>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#endif
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSSource);
@@ -684,6 +689,32 @@ void OBSBasicFilters::closeEvent(QCloseEvent *event)
 					 OBSBasicFilters::DrawPreview, this);
 
 	main->SaveProject();
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, qintptr *)
+#else
+bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#endif
+
+	return false;
 }
 
 /* OBS Signals */
