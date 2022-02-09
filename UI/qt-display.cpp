@@ -8,6 +8,11 @@
 
 #include <obs-config.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN
+#include <Windows.h>
+#endif
+
 #ifdef ENABLE_WAYLAND
 #include <obs-nix-platform.h>
 
@@ -166,6 +171,37 @@ void OBSQTDisplay::CreateDisplay(bool force)
 	emit DisplayCreated(this);
 }
 
+void OBSQTDisplay::paintEvent(QPaintEvent *event)
+{
+	CreateDisplay();
+
+	QWidget::paintEvent(event);
+}
+
+void OBSQTDisplay::moveEvent(QMoveEvent *event)
+{
+	QWidget::moveEvent(event);
+
+	OnMove();
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, qintptr *)
+#else
+bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_DISPLAYCHANGE:
+		OnDisplayChange();
+	}
+#endif
+
+	return false;
+}
+
 void OBSQTDisplay::resizeEvent(QResizeEvent *event)
 {
 	QWidget::resizeEvent(event);
@@ -180,14 +216,11 @@ void OBSQTDisplay::resizeEvent(QResizeEvent *event)
 	emit DisplayResized();
 }
 
-void OBSQTDisplay::paintEvent(QPaintEvent *event)
-{
-	CreateDisplay();
-
-	QWidget::paintEvent(event);
-}
-
 QPaintEngine *OBSQTDisplay::paintEngine() const
 {
 	return nullptr;
 }
+
+void OBSQTDisplay::OnMove() {}
+
+void OBSQTDisplay::OnDisplayChange() {}

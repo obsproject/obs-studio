@@ -4680,6 +4680,32 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, qintptr *)
+#else
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#endif
+
+	return false;
+}
+
 void OBSBasic::changeEvent(QEvent *event)
 {
 	if (event->type() == QEvent::WindowStateChange) {
