@@ -35,6 +35,8 @@ struct vt_h264_encoder {
 	uint32_t keyint;
 	uint32_t fps_num;
 	uint32_t fps_den;
+	const char *rate_control;
+	uint32_t quality;
 	uint32_t bitrate;
 	bool limit_bitrate;
 	uint32_t rc_max_bitrate;
@@ -145,14 +147,26 @@ static OSStatus session_set_prop(VTCompressionSessionRef session,
 }
 
 static OSStatus session_set_bitrate(VTCompressionSessionRef session,
+				    const char *rate_control, int quality,
 				    int new_bitrate, bool limit_bitrate,
 				    int max_bitrate, float max_bitrate_window)
 {
 	OSStatus code;
 
-	SESSION_CHECK(session_set_prop_int(
-		session, kVTCompressionPropertyKey_AverageBitRate,
-		new_bitrate * 1000));
+	bool rc_constant_quality = astrcmpi(rate_control, "Constant quality") ==
+				   0;
+
+	if (rc_constant_quality) {
+		float quality_num = quality >= 100 ? 1.0 : (float)quality / 100;
+
+		SESSION_CHECK(session_set_prop_float(
+			session, kVTCompressionPropertyKey_Quality,
+			quality_num));
+	} else {
+		SESSION_CHECK(session_set_prop_int(
+			session, kVTCompressionPropertyKey_AverageBitRate,
+			new_bitrate * 1000));
+	}
 
 	if (limit_bitrate) {
 		int32_t cpb_size = max_bitrate * 125 * max_bitrate_window;
@@ -330,7 +344,8 @@ static bool create_encoder(struct vt_h264_encoder *enc)
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
 				      obs_to_vt_profile(enc->profile)));
 
-	STATUS_CHECK(session_set_bitrate(s, enc->bitrate, enc->limit_bitrate,
+	STATUS_CHECK(session_set_bitrate(s, enc->rate_control, enc->quality,
+					 enc->bitrate, enc->limit_bitrate,
 					 enc->rc_max_bitrate,
 					 enc->rc_max_bitrate_window));
 
@@ -371,6 +386,8 @@ static void dump_encoder_info(struct vt_h264_encoder *enc)
 	VT_BLOG(LOG_INFO,
 		"settings:\n"
 		"\tvt_encoder_id          %s\n"
+		"\trate_control           %s\n"
+		"\tquality                %d (1-100)\n"
 		"\tbitrate:               %d (kbps)\n"
 		"\tfps_num:               %d\n"
 		"\tfps_den:               %d\n"
@@ -382,10 +399,11 @@ static void dump_encoder_info(struct vt_h264_encoder *enc)
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
 		"\tprofile:               %s\n",
-		enc->vt_encoder_id, enc->bitrate, enc->fps_num, enc->fps_den,
-		enc->width, enc->height, enc->keyint,
-		enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
-		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off",
+		enc->vt_encoder_id, enc->rate_control, enc->quality,
+		enc->bitrate, enc->fps_num, enc->fps_den, enc->width,
+		enc->height, enc->keyint, enc->limit_bitrate ? "on" : "off",
+		enc->rc_max_bitrate, enc->rc_max_bitrate_window,
+		enc->hw_enc ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile
 								 : "default");
 }
@@ -435,6 +453,15 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 	enc->fps_num = voi->fps_num;
 	enc->fps_den = voi->fps_den;
 	enc->keyint = (uint32_t)obs_data_get_int(settings, "keyint_sec");
+
+#ifdef __aarch64__
+	enc->quality = (uint32_t)obs_data_get_int(settings, "quality");
+#else
+	obs_data_set_string(settings, "rate_control", "VBR");
+	enc->quality = 0;
+#endif
+
+	enc->rate_control = obs_data_get_string(settings, "rate_control");
 	enc->bitrate = (uint32_t)obs_data_get_int(settings, "bitrate");
 	enc->profile = obs_data_get_string(settings, "profile");
 	enc->limit_bitrate = obs_data_get_bool(settings, "limit_bitrate");
@@ -457,7 +484,8 @@ static bool vt_h264_update(void *data, obs_data_t *settings)
 	    old_limit_bitrate == enc->limit_bitrate)
 		return true;
 
-	OSStatus code = session_set_bitrate(enc->session, enc->bitrate,
+	OSStatus code = session_set_bitrate(enc->session, enc->rate_control,
+					    enc->quality, enc->bitrate,
 					    enc->limit_bitrate,
 					    enc->rc_max_bitrate,
 					    enc->rc_max_bitrate_window);
@@ -843,6 +871,10 @@ static const char *vt_h264_getname(void *data)
 }
 
 #define TEXT_VT_ENCODER obs_module_text("VTEncoder")
+#define TEXT_RATE_CONTROL obs_module_text("RateControl")
+#define TEXT_RC_VBR obs_module_text("RateControlVBR")
+#define TEXT_RC_QUALITY obs_module_text("RateControlQuality")
+#define TEXT_QUALITY obs_module_text("Quality")
 #define TEXT_BITRATE obs_module_text("Bitrate")
 #define TEXT_USE_MAX_BITRATE obs_module_text("UseMaxBitrate")
 #define TEXT_MAX_BITRATE obs_module_text("MaxBitrate")
@@ -852,6 +884,19 @@ static const char *vt_h264_getname(void *data)
 #define TEXT_NONE obs_module_text("None")
 #define TEXT_DEFAULT obs_module_text("DefaultEncoder")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
+
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
+				  obs_data_t *settings)
+{
+	const char *rc = obs_data_get_string(settings, "rate_control");
+	bool rc_constant_quality = astrcmpi(rc, "Constant quality") == 0;
+
+	p = obs_properties_get(ppts, "quality");
+	obs_property_set_visible(p, rc_constant_quality);
+	p = obs_properties_get(ppts, "bitrate");
+	obs_property_set_visible(p, !rc_constant_quality);
+	return true;
+}
 
 static bool limit_bitrate_modified(obs_properties_t *ppts, obs_property_t *p,
 				   obs_data_t *settings)
@@ -870,6 +915,18 @@ static obs_properties_t *vt_h264_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
+
+#ifdef __aarch64__
+	p = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+	obs_property_list_add_string(p, TEXT_RC_VBR, "VBR");
+	obs_property_list_add_string(p, TEXT_RC_QUALITY, "Constant quality");
+
+	obs_property_set_modified_callback(p, rate_control_modified);
+
+	p = obs_properties_add_int(props, "quality", TEXT_QUALITY, 1, 100, 1);
+#endif
 
 	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000,
 				   50);
@@ -903,6 +960,8 @@ static obs_properties_t *vt_h264_properties(void *unused)
 
 static void vt_h264_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_string(settings, "rate_control", "VBR");
+	obs_data_set_default_int(settings, "quality", 40);
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
