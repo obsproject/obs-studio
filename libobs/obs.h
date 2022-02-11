@@ -1103,6 +1103,11 @@ EXPORT bool obs_source_active(const obs_source_t *source);
  */
 EXPORT bool obs_source_showing(const obs_source_t *source);
 
+/**
+ * Returns a copy of value of count of refs of source.
+ */
+EXPORT long obs_source_get_cnt_refs(const obs_source_t *source);
+
 /** Unused flag */
 #define OBS_SOURCE_FLAG_UNUSED_1 (1 << 0)
 /** Specifies to force audio to mono */

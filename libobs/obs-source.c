@@ -4286,6 +4286,12 @@ bool obs_source_showing(const obs_source_t *source)
 		       : false;
 }
 
+long obs_source_get_cnt_refs(const obs_source_t *source)
+{
+	obs_weak_source_t *control = source ? get_weak(source) : NULL;
+	return control ? os_atomic_load_long(&(control->ref.refs)) : 0;
+}
+
 static inline void signal_flags_updated(obs_source_t *source)
 {
 	struct calldata data;

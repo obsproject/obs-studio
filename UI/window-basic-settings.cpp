@@ -2240,7 +2240,11 @@ void OBSBasicSettings::LoadListValues(QComboBox *widget, obs_property_t *prop,
 			deviceId = obs_data_get_string(settings, "device_id");
 	}
 
-	widget->addItem(QTStr("Basic.Settings.Audio.Disabled"), "disabled");
+	bool occupied = source && obs_source_get_cnt_refs(source) > 2;
+	if (!occupied) {
+		widget->addItem(QTStr("Basic.Settings.Audio.Disabled"),
+				"disabled");
+	}
 
 	for (size_t i = 0; i < count; i++) {
 		const char *name = obs_property_list_item_name(prop, i);
