@@ -494,7 +494,7 @@ jobs:
           path: './nightly/*.tar.gz'
   win64:
     name: 'Windows 64-bit'
-    runs-on: [windows-latest]
+    runs-on: [windows-2019]
     env:
       QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
@@ -604,7 +604,7 @@ jobs:
           path: build/*
   win32:
     name: 'Windows 32-bit'
-    runs-on: [windows-latest]
+    runs-on: [windows-2019]
     env:
       QT_VERSION: '5.15.2'
       CMAKE_GENERATOR: "Visual Studio 16 2019"
