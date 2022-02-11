@@ -25,7 +25,7 @@ cmake -DCMAKE_OSX_DEPLOYMENT_TARGET=10.11 \
 -DBROWSER_PANEL_SUPPORT=false \
 -DUSE_UI_LOOP=true \
 -DCHECK_FOR_SERVICE_UPDATES=true \
--DCEF_ROOT_DIR=$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64 ..
+-DCEF_ROOT_DIR=$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64 ..
 
 cd ..
 
@@ -36,25 +36,25 @@ cd $PACKED_BUILD
 mkdir Frameworks
 
 cp -R \
-$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework \
+$DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework \
 Frameworks/Chromium\ Embedded\ Framework.framework
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libEGL.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libEGL.dylib \
 ./obs-plugins/libEGL.dylib
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libGLESv2.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libGLESv2.dylib \
 ./obs-plugins/libGLESv2.dylib
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libEGL.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libEGL.dylib \
 ./obs-plugins/libswiftshader_libEGL.dylib
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libGLESv2.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libswiftshader_libGLESv2.dylib \
 ./obs-plugins/libswiftshader_libGLESv2.dylib
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libvk_swiftshader.dylib \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/libvk_swiftshader.dylib \
 ./obs-plugins/libvk_swiftshader.dylib
 
-cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macosx64/Release/Chromium\ Embedded\ Framework.framework/Libraries/vk_swiftshader_icd.json \
+cp $DEPS_DIR/cef_binary_${CEF_MAC_BUILD_VERSION}_macos_x86_64/Release/Chromium\ Embedded\ Framework.framework/Libraries/vk_swiftshader_icd.json \
 ./obs-plugins/vk_swiftshader_icd.json
 
 if ! [ "${CEF_MAC_BUILD_VERSION}" -le 3770 ]; then
