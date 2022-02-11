@@ -15,8 +15,7 @@ variables:
 
 jobs:
 - job: 'Windows64'
-  pool:
-    vmImage: 'windows-2019'
+  pool: 'Default'
   workspace:
     clean: all
   strategy:
