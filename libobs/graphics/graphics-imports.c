@@ -104,6 +104,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_enable_color);
 	GRAPHICS_IMPORT(device_blend_function);
 	GRAPHICS_IMPORT(device_blend_function_separate);
+	GRAPHICS_IMPORT(device_blend_op);
 	GRAPHICS_IMPORT(device_depth_function);
 	GRAPHICS_IMPORT(device_stencil_function);
 	GRAPHICS_IMPORT(device_stencil_op);
@@ -216,6 +217,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_get_dc);
 	GRAPHICS_IMPORT_OPTIONAL(gs_texture_release_dc);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_shared);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_open_nt_shared);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_get_shared_handle);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_wrap_obj);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
@@ -226,6 +228,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
 #elif __linux__
 	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
+	GRAPHICS_IMPORT(device_query_dmabuf_capabilities);
+	GRAPHICS_IMPORT(device_query_dmabuf_modifiers_for_format);
 #endif
 
 	/* SLOBS custom functions */

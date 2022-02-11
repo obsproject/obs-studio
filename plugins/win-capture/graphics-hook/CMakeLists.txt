@@ -17,14 +17,12 @@ set(graphics-hook_HEADERS
 	../graphics-hook-ver.h
 	../graphics-hook-info.h
 	../hook-helpers.h
-	../funchook.h
 	../obfuscate.h
 	gl-decs.h
 	d3d9-patches.hpp)
 
 set(graphics-hook_SOURCES
 	graphics-hook.c
-	../funchook.c
 	../obfuscate.c
 	gl-capture.c
 	d3d8-capture.cpp
@@ -57,7 +55,6 @@ target_include_directories(graphics-hook PUBLIC
 target_link_libraries(graphics-hook
 	dxguid
 	ipc-util
-	psapi
 	${DETOURS_LIBRARIES})
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)

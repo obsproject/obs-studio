@@ -460,8 +460,8 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 	enum audio_format new_audio_format;
 
 	new_audio_format = convert_vlc_audio_format(format);
-	if (*channels > 2)
-		*channels = 2;
+	if (*channels > 8)
+		*channels = 8;
 
 	/* don't free audio data if the data is the same format */
 	if (c->audio.format == new_audio_format &&
@@ -737,8 +737,9 @@ static void vlcs_stopped(const struct libvlc_event_t *event, void *data)
 	struct vlc_source *c = data;
 	if (!c->loop) {
 		obs_source_output_video(c->source, NULL);
-		obs_source_media_ended(c->source);
 	}
+
+	obs_source_media_ended(c->source);
 
 	UNUSED_PARAMETER(event);
 }

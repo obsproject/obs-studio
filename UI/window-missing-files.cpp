@@ -265,13 +265,11 @@ QVariant MissingFilesModel::data(const QModelIndex &index, int role) const
 		   index.column() == MissingFilesColumn::Source) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-		obs_source_t *source = obs_get_source_by_name(
+		OBSSourceAutoRelease source = obs_get_source_by_name(
 			files[index.row()].source.toStdString().c_str());
 
 		if (source) {
 			result = main->GetSourceIcon(obs_source_get_id(source));
-
-			obs_source_release(source);
 		}
 	} else if (role == Qt::FontRole &&
 		   index.column() == MissingFilesColumn::State) {

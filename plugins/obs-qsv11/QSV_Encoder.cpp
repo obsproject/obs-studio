@@ -79,7 +79,6 @@ bool prefer_igpu_enc(int *iGPUIndex)
 	int adapterIndex = 0;
 	bool hasIGPU = false;
 	bool hasDGPU = false;
-	bool isDG1Primary = false;
 
 	WCHAR system[MAX_PATH];
 	GetSystemDirectory(system, sizeof(system));
@@ -114,6 +113,7 @@ bool prefer_igpu_enc(int *iGPUIndex)
 		return false;
 	}
 
+	// Check for i+I cases (Intel discrete + Intel integrated graphics on the same system). Default will be integrated.
 	while (SUCCEEDED(pFactory->EnumAdapters(adapterIndex, &pAdapter))) {
 		DXGI_ADAPTER_DESC AdapterDesc = {};
 		if (SUCCEEDED(pAdapter->GetDesc(&AdapterDesc))) {
@@ -127,13 +127,6 @@ bool prefer_igpu_enc(int *iGPUIndex)
 				} else {
 					hasDGPU = true;
 				}
-				if ((AdapterDesc.DeviceId == 0x4905) ||
-				    (AdapterDesc.DeviceId == 0x4906) ||
-				    (AdapterDesc.DeviceId == 0x4907)) {
-					if (adapterIndex == 0) {
-						isDG1Primary = true;
-					}
-				}
 			}
 		}
 		adapterIndex++;
@@ -143,7 +136,7 @@ bool prefer_igpu_enc(int *iGPUIndex)
 	pFactory->Release();
 	FreeLibrary(hDXGI);
 
-	return hasIGPU && hasDGPU && isDG1Primary;
+	return hasIGPU && hasDGPU;
 }
 
 void qsv_encoder_version(unsigned short *major, unsigned short *minor)

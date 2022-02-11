@@ -24,6 +24,7 @@
 #include "util/threading.h"
 #include "util/platform.h"
 #include "util/profiler.h"
+#include "util/task.h"
 #include "callback/signal.h"
 #include "callback/proc.h"
 
@@ -279,8 +280,8 @@ struct obs_core_video {
 	gs_samplerstate_t *point_sampler;
 	gs_stagesurf_t *mapped_surfaces[NUM_CHANNELS];
 	int cur_texture;
-	long raw_active;
-	long gpu_encoder_active;
+	volatile long raw_active;
+	volatile long gpu_encoder_active;
 	pthread_mutex_t gpu_encoder_mutex;
 	struct obs_gpu_queues gpu_queues[NUM_RENDERING_MODES];
 	DARRAY(obs_encoder_t *) gpu_encoders;
@@ -344,10 +345,13 @@ struct obs_core_audio {
 
 	float user_volume;
 
-	DARRAY(struct audio_monitor*)   monitors;
-	char                            *monitoring_device_name;
-	char                            *monitoring_device_id;
-	pthread_mutex_t                 monitoring_mutex;
+	pthread_mutex_t monitoring_mutex;
+	DARRAY(struct audio_monitor *) monitors;
+	char *monitoring_device_name;
+	char *monitoring_device_id;
+
+	pthread_mutex_t task_mutex;
+	struct circlebuf tasks;
 };
 
 /* user sources, output channels, and displays */
@@ -447,6 +451,8 @@ struct obs_core {
 	enum obs_video_rendering_mode video_rendering_mode;
 	enum obs_audio_rendering_mode audio_rendering_mode;
 
+	os_task_queue_t *destruction_task_thread;
+
 	obs_task_handler_t ui_task_handler;
 };
 
@@ -530,6 +536,7 @@ extern void obs_context_data_free(struct obs_context_data *context);
 extern void obs_context_data_insert(struct obs_context_data *context,
 				    pthread_mutex_t *mutex, void *first);
 extern void obs_context_data_remove(struct obs_context_data *context);
+extern void obs_context_wait(struct obs_context_data *context);
 
 extern void obs_context_data_setname(struct obs_context_data *context,
 				     const char *name);
@@ -573,6 +580,12 @@ static inline bool obs_weak_ref_get_ref(struct obs_weak_ref *ref)
 	}
 
 	return false;
+}
+
+static inline bool obs_weak_ref_expired(struct obs_weak_ref *ref)
+{
+	long owners = os_atomic_load_long(&ref->refs);
+	return owners < 0;
 }
 
 /* ------------------------------------------------------------------------- */
@@ -636,6 +649,9 @@ struct obs_source {
 
 	/* ensures activate/deactivate are only called once */
 	volatile long activate_refs;
+
+	/* source is in the process of being destroyed */
+	volatile long destroying;
 
 	/* used to indicate that the source has been removed and all
 	 * references to it should be released (not exactly how I would prefer

@@ -1050,9 +1050,10 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
-	bool raw_active = obs->video.raw_active > 0;
+	bool raw_active = os_atomic_load_long(&obs->video.raw_active) > 0;
 #ifdef _WIN32
-	const bool gpu_active = obs->video.gpu_encoder_active > 0;
+	const bool gpu_active =
+		os_atomic_load_long(&obs->video.gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
 #else
 	const bool gpu_active = 0;
@@ -1083,8 +1084,6 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		tick_sources(obs->video.video_time, context->last_time);
 	profile_end(tick_sources_name);
 
-	execute_graphics_tasks();
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -1100,6 +1099,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);
+
+	execute_graphics_tasks();
 
 	frame_time_ns = os_gettime_ns() - frame_start;
 

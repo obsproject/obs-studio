@@ -74,9 +74,9 @@ private:
 	QString selectedBroadcast;
 	bool autostart, autostop;
 	bool valid = false;
-	bool broadcastReady = false;
 	YoutubeApiWrappers *apiYouTube;
-	WorkerThread *workerThread;
+	WorkerThread *workerThread = nullptr;
+	bool broadcastReady = false;
 	QString thumbnailFile;
 	QIcon thumbPlaceholder;
 };

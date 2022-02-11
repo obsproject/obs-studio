@@ -73,9 +73,8 @@ static bool v4l2_control_changed(void *data, obs_properties_t *props,
 	return ret;
 }
 
-static int_fast32_t v4l2_update_controls_menu(int_fast32_t dev,
-					      obs_properties_t *props,
-					      struct v4l2_queryctrl *qctrl)
+static bool v4l2_update_controls_menu(int_fast32_t dev, obs_properties_t *props,
+				      struct v4l2_queryctrl *qctrl)
 {
 	obs_property_t *prop;
 	struct v4l2_querymenu qmenu;
@@ -99,7 +98,12 @@ static int_fast32_t v4l2_update_controls_menu(int_fast32_t dev,
 		}
 	}
 
-	return 0;
+	if (obs_property_list_item_count(prop) == 0) {
+		obs_properties_remove_by_name(props, (char *)qctrl->name);
+		return false;
+	}
+
+	return true;
 }
 
 #define INVALID_CONTROL_FLAGS                                 \
@@ -141,11 +145,12 @@ static inline void add_control_property(obs_properties_t *props,
 		break;
 	case V4L2_CTRL_TYPE_MENU:
 	case V4L2_CTRL_TYPE_INTEGER_MENU:
-		v4l2_update_controls_menu(dev, props, qctrl);
-		obs_data_set_default_int(settings, (char *)qctrl->name,
-					 qctrl->default_value);
-		blog(LOG_INFO, "setting default for %s to %d",
-		     (char *)qctrl->name, qctrl->default_value);
+		if (v4l2_update_controls_menu(dev, props, qctrl)) {
+			obs_data_set_default_int(settings, (char *)qctrl->name,
+						 qctrl->default_value);
+			blog(LOG_INFO, "setting default for %s to %d",
+			     (char *)qctrl->name, qctrl->default_value);
+		}
 		break;
 	}
 }

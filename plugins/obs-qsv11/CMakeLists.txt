@@ -1,3 +1,10 @@
+option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
+
+if(NOT ENABLE_QSV11)
+	message(STATUS "NOT building Intel QSV11 Hardware Encoder.")
+	return()
+endif()
+
 project(obs-qsv11)
 
 include_directories(libmfx/include/msdk/include)

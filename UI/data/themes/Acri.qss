@@ -136,7 +136,7 @@ QMenuBar::item:selected {
 }
 
 /* Listbox item */
-QListWidget::item,
+QListView::item,
 SourceTree::item {
 	padding: 4px 2px;
 	margin-bottom: 2px;
@@ -144,7 +144,7 @@ SourceTree::item {
 	border: 1px solid transparent;
 }
 
-QListWidget QLineEdit {
+QListView QLineEdit {
 	 padding-top: 0px;
 	 padding-bottom: 0px;
 	 padding-right: 0;
@@ -195,7 +195,7 @@ QDockWidget::float-button {
 }
 
 
-QListWidget#scenes,
+QListView#scenes,
 SourceListWidget {
 	border: none;
 	border-bottom: 2px solid rgb(47,47,47);
@@ -235,14 +235,14 @@ SourceTree QLineEdit {
 }
 
 /* Listbox item selected, unfocused */
-QListWidget::item:hover,
+QListView::item:hover,
 SourceTree::item:hover {
 	background-color: rgb(33,33,33);
 	border: 1px solid rgb(51,51,54);
 }
 
 /* Listbox item selected */
-QListWidget::item:selected,
+QListView::item:selected,
 SourceTree::item:selected {
 	background-color: rgb(19,26,48);
 	border: 1px solid rgb(37,42,69);
@@ -968,7 +968,7 @@ OBSBasicSettings {
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
-OBSBasicSettings QListWidget::item {
+OBSBasicSettings QListView::item {
     padding-top: 5px;
     padding-bottom: 5px;
 }

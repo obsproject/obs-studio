@@ -233,8 +233,6 @@ static bool update_hook_file(bool b64)
 #ifndef _DEBUG
 	if (!get_dll_ver(dst, &ver_dst))
 		return false;
-	if (ver_dst.major == 1 && ver_dst.minor ==7 && ver_dst.build == 1)
-		ver_dst.major = ver_dst.minor = ver_dst.build = 0;
 #endif
 
 	/* if source is greater than dst, overwrite new file  */

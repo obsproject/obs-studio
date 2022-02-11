@@ -3,24 +3,18 @@ set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
 
 project(mac-dal-plugin)
 
-find_library(AVFOUNDATION AVFoundation)
-find_library(COCOA Cocoa)
+find_library(APPKIT AppKit)
 find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
 find_library(COREVIDEO CoreVideo)
-find_library(COCOA Cocoa)
+find_library(COREMEDIA CoreMedia)
 find_library(COREMEDIAIO CoreMediaIO)
-find_library(IOSURFACE IOSurface)
 find_library(IOKIT IOKit)
 
-# Possible we could remove osme of these
-include_directories(${AVFOUNDATION}
-					${COCOA}
+include_directories(${APPKIT}
 					${COREFOUNDATION}
-					${COREMEDIA}
 					${COREVIDEO}
+					${COREMEDIA}
 					${COREMEDIAIO}
-					${COCOA}
 					${IOSURFACE}
 					./
 					../common)
@@ -29,10 +23,10 @@ set(mac-dal-plugin_HEADERS
 	Defines.h
 	Logging.h
 	OBSDALPlugInInterface.h
-    OBSDALObjectStore.h
+	OBSDALObjectStore.h
 	OBSDALPlugIn.h
 	OBSDALDevice.h
-    OBSDALStream.h
+	OBSDALStream.h
 	CMSampleBufferUtils.h
 	OBSDALMachClient.h
 	../common/MachProtocol.h)
@@ -43,7 +37,7 @@ set(mac-dal-plugin_SOURCES
 	OBSDALObjectStore.mm
 	OBSDALPlugIn.mm
 	OBSDALDevice.mm
-    OBSDALStream.mm
+	OBSDALStream.mm
 	CMSampleBufferUtils.mm
 	OBSDALMachClient.mm)
 
@@ -64,13 +58,11 @@ else (XCODE)
 endif (XCODE)
 
 target_link_libraries(mac-dal-plugin
-	${AVFOUNDATION}
-	${COCOA}
+	${APPKIT}
 	${COREFOUNDATION}
-	${COREMEDIA}
 	${COREVIDEO}
+	${COREMEDIA}
 	${COREMEDIAIO}
-	${IOSURFACE}
 	${IOKIT})
 
 add_custom_command(TARGET mac-dal-plugin

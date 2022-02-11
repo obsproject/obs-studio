@@ -1,10 +1,5 @@
-#ifdef _MSC_VER
-#define WIN32_LEAN_AND_MEAN
-#endif
-
 #ifdef _WIN32
 #include "rtmp-stream.h"
-#include <winsock2.h>
 
 static void fatal_sock_shutdown(struct rtmp_stream *stream)
 {

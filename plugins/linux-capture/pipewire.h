@@ -35,6 +35,7 @@ void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
 
 void obs_pipewire_destroy(obs_pipewire_data *obs_pw);
 
+void obs_pipewire_save(obs_pipewire_data *obs_pw, obs_data_t *settings);
 void obs_pipewire_get_defaults(obs_data_t *settings);
 
 obs_properties_t *obs_pipewire_get_properties(obs_pipewire_data *obs_pw,

@@ -245,6 +245,16 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="4" column="1">
+                    <widget class="QCheckBox" name="hideOBSFromCapture">
+                     <property name="text">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
+                     </property>
+                     <property name="toolTip">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture.Tooltip</string>
+                     </property>
+                    </widget>
+                   </item>
                   </layout>
                  </widget>
                 </item>
@@ -473,6 +483,13 @@
                     <widget class="QCheckBox" name="saveProjectors">
                      <property name="text">
                       <string>Basic.Settings.General.SaveProjectors</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="closeProjectors">
+                     <property name="text">
+                      <string>Basic.Settings.General.CloseExistingProjectors</string>
                      </property>
                     </widget>
                    </item>
@@ -1303,7 +1320,7 @@
                <item>
                 <widget class="QPushButton" name="connectAccount2">
                  <property name="cursor">
-                  <cursorShape>PointingHandCursor</cursorShape>
+                  <cursorshape>PointingHandCursor</cursorshape>
                  </property>
                  <property name="text">
                   <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
@@ -4683,31 +4700,87 @@
          </item>
         </layout>
        </widget>
-       <widget class="QScrollArea" name="hotkeyPage">
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="hotkeyWidget">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>98</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <layout class="QFormLayout" name="hotkeyLayout">
-          <property name="fieldGrowthPolicy">
-           <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
-          </property>
-          <property name="labelAlignment">
-           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
-          </property>
-          <property name="verticalSpacing">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
+       <widget class="QWidget" name="hotkeyPage">
+        <layout class="QVBoxLayout" name="verticalLayout_25">
+         <item>
+          <layout class="QGridLayout" name="hotkeySearchLayout">
+           <item row="0" column="0">
+            <widget class="QLabel" name="hotkeySearchLabel">
+             <property name="text">
+              <string>Basic.Settings.Hotkeys.Filter</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="1">
+            <widget class="QLineEdit" name="hotkeyFilterSearch"/>
+           </item>
+           <item row="0" column="2">
+            <widget class="QLabel" name="hotkeyFilterLabel">
+             <property name="text">
+              <string>Basic.Settings.Hotkeys.FilterByHotkey</string>
+             </property>
+            </widget>
+           </item>
+           <item row="0" column="3">
+            <widget class="OBSHotkeyEdit" name="hotkeyFilterInput"/>
+           </item>
+           <item row="0" column="4">
+            <widget class="QPushButton" name="hotkeyFilterReset">
+             <property name="minimumSize">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+             <property name="baseSize">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+             <property name="toolTip">
+              <string>Clear</string>
+             </property>
+             <property name="flat">
+              <bool>true</bool>
+             </property>
+             <property name="themeID" stdset="0">
+              <string>trashIcon</string>
+             </property>
+             <property name="fixedSize" stdset="0">
+              <size>
+               <width>24</width>
+               <height>24</height>
+              </size>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </item>
+         <item>
+          <widget class="QScrollArea" name="hotkeyScrollArea">
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="hotkeyScrollContents">
+            <layout class="QFormLayout" name="hotkeyFormLayout">
+             <property name="labelAlignment">
+              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+             </property>
+             <property name="verticalSpacing">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+          </widget>
+         </item>
+        </layout>
        </widget>
        <widget class="QWidget" name="advancedPage">
         <layout class="QVBoxLayout" name="verticalLayout_16">
@@ -4799,6 +4872,13 @@
                       </size>
                      </property>
                     </spacer>
+                   </item>
+                   <item row="2" column="1">
+                     <widget class="QCheckBox" name="confirmOnExit">
+                       <property name="text">
+                         <string>Basic.Settings.Advanced.General.ConfirmOnExit</string>
+                       </property>
+                     </widget>
                    </item>
                   </layout>
                  </widget>
@@ -5558,6 +5638,11 @@
    <extends>QPushButton</extends>
    <header>url-push-button.hpp</header>
   </customwidget>
+  <customwidget>
+   <class>OBSHotkeyEdit</class>
+   <extends>QLineEdit</extends>
+   <header>hotkey-edit.hpp</header>
+  </customwidget>
  </customwidgets>
  <tabstops>
   <tabstop>listWidget</tabstop>
@@ -5722,6 +5807,7 @@
   <tabstop>fpsDenominator</tabstop>
   <tabstop>scrollArea</tabstop>
   <tabstop>processPriority</tabstop>
+  <tabstop>confirmOnExit</tabstop>
   <tabstop>renderer</tabstop>
   <tabstop>adapter</tabstop>
   <tabstop>colorFormat</tabstop>

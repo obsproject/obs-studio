@@ -73,6 +73,9 @@ find_package(Threads REQUIRED)
 find_package(Qt5Network ${FIND_MODE})
 find_package(Qt5Widgets ${FIND_MODE})
 find_package(Qt5Svg ${FIND_MODE})
+if(WIN32 AND (Qt5Widgets_VERSION VERSION_LESS 6.0.0))
+	find_package(Qt5WinExtras ${FIND_MODE})
+endif()
 find_package(Qt5Xml ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -102,8 +105,6 @@ include_directories(${LIBCURL_INCLUDE_DIRS})
 add_definitions(${LIBCURL_DEFINITIONS})
 
 if(WIN32)
-	add_definitions(-DNOMINMAX)
-
 	include_directories(${BLAKE2_INCLUDE_DIR})
 
 	set(obs_PLATFORM_SOURCES
@@ -147,6 +148,7 @@ elseif(APPLE)
 
 elseif(UNIX)
 	find_package(Qt5Gui REQUIRED)
+	find_package(PythonDeps QUIET)
 
 	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
@@ -158,6 +160,7 @@ elseif(UNIX)
 		Qt5::Gui
 		Qt5::GuiPrivate)
 
+
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 		list(APPEND obs_PLATFORM_LIBRARIES
 			procstat)
@@ -166,12 +169,10 @@ endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
-		obf.c
 		window-dock-browser.cpp
 		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
-		obf.h
 		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
@@ -264,6 +265,7 @@ set(obs_SOURCES
 	auth-base.cpp
 	auth-oauth.cpp
 	auth-listener.cpp
+	obf.c
 	source-tree.cpp
 	scene-tree.cpp
 	properties-view.cpp
@@ -330,6 +332,7 @@ set(obs_HEADERS
 	auth-base.hpp
 	auth-oauth.hpp
 	auth-listener.hpp
+	obf.h
 	source-tree.hpp
 	scene-tree.hpp
 	properties-view.hpp
@@ -449,6 +452,11 @@ if(WIN32)
 	set_target_properties(obs
 		PROPERTIES
 			OUTPUT_NAME "obs${_output_suffix}")
+
+	if(Qt5Widgets_VERSION VERSION_LESS 6.0.0)
+		target_link_libraries(obs
+				Qt5::WinExtras)		
+	endif()	
 endif()
 
 target_link_libraries(obs
@@ -473,6 +481,19 @@ install_obs_data_file(obs ../AUTHORS obs-studio/authors)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	add_subdirectory(xdg-data)
+endif()
+
+if (UNIX AND NOT APPLE)
+	# python symbols must be in the global symbol table
+	# so we link the main executable to python if we expect
+	# obs-scripting python support to be enabled.
+	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
+	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
+		target_link_libraries(obs ${PYTHON_LIBRARIES})
+		set_target_properties(obs PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
+		# Use this after cmake 3.13 aka we drop ubuntu 18.04.
+		# target_link_options(obs PRIVATE "LINKER:-no-as-needed")
+	endif()
 endif()
 
 add_subdirectory(frontend-plugins)

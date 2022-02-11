@@ -73,6 +73,22 @@ uint32_t portal_get_available_capture_types(void)
 	return available_source_types;
 }
 
+uint32_t portal_get_screencast_version(void)
+{
+	g_autoptr(GVariant) cached_version = NULL;
+	uint32_t version;
+
+	ensure_proxy();
+
+	if (!proxy)
+		return 0;
+
+	cached_version = g_dbus_proxy_get_cached_property(proxy, "version");
+	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
+
+	return version;
+}
+
 GDBusConnection *portal_get_dbus_connection(void)
 {
 	ensure_proxy();

@@ -90,9 +90,8 @@ OBSQTDisplay::OBSQTDisplay(QWidget *parent, Qt::WindowFlags flags)
 
 	auto windowVisible = [this](bool visible) {
 		if (!visible) {
-#ifdef ENABLE_WAYLAND
-			if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
-				display = nullptr;
+#if !defined(_WIN32) && !defined(__APPLE__)
+			display = nullptr;
 #endif
 			return;
 		}

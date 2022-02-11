@@ -22,6 +22,7 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <util/base.h>
+#include <util/platform.h>
 #include <media-io/video-io.h>
 #include <obs-module.h>
 #include <obs-avc.h>
@@ -34,6 +35,8 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavfilter/avfilter.h>
+
+#include <pci/pci.h>
 
 #include "obs-ffmpeg-formats.h"
 
@@ -538,6 +541,31 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
+static bool get_device_name_from_pci(struct pci_access *pacc, char *pci_slot,
+				     char *buf, int size)
+{
+	struct pci_filter filter;
+	struct pci_dev *dev;
+	char *name;
+
+	pci_filter_init(pacc, &filter);
+	if (pci_filter_parse_slot(&filter, pci_slot))
+		return false;
+
+	pci_scan_bus(pacc);
+	for (dev = pacc->devices; dev; dev = dev->next) {
+		if (pci_filter_match(&filter, dev)) {
+			pci_fill_info(dev, PCI_FILL_IDENT);
+			name = pci_lookup_name(pacc, buf, size,
+					       PCI_LOOKUP_DEVICE,
+					       dev->vendor_id, dev->device_id);
+			strcpy(buf, name);
+			return true;
+		}
+	}
+	return false;
+}
+
 static obs_properties_t *vaapi_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -549,15 +577,58 @@ static obs_properties_t *vaapi_properties(void *unused)
 				       obs_module_text("VAAPI.Device"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	char path[32] = "/dev/dri/renderD1";
-	for (int i = 28;; i++) {
-		sprintf(path, "/dev/dri/renderD1%d", i);
-		if (access(path, F_OK) == 0) {
-			char card[128] = "Card: ";
-			sprintf(card, "Card%d: %s", i - 28, path);
-			obs_property_list_add_string(list, card, path);
-		} else {
-			break;
+	if (os_file_exists("/dev/dri/by-path")) {
+		os_dir_t *by_path_dir = os_opendir("/dev/dri/by-path");
+		struct pci_access *pacc = pci_alloc();
+		struct os_dirent *file;
+		char namebuf[1024];
+		char pci_slot[13];
+		char *type;
+
+		pci_init(pacc);
+		while ((file = os_readdir(by_path_dir)) != NULL) {
+			// file_name pattern: pci-<pci_slot::12>-<type::{"card","render"}>
+			char *file_name = file->d_name;
+			if (strcmp(file_name, ".") == 0 ||
+			    strcmp(file_name, "..") == 0)
+				continue;
+
+			char path[64] = "\0";
+			sprintf(path, "/dev/dri/by-path/%s", file_name);
+			type = strrchr(file_name, '-');
+			if (type == NULL)
+				continue;
+			else
+				type++;
+
+			if (strcmp(type, "render") == 0) {
+				strncpy(pci_slot, file_name + 4, 12);
+				pci_slot[12] = 0;
+				bool name_found = get_device_name_from_pci(
+					pacc, pci_slot, namebuf,
+					sizeof(namebuf));
+				if (!name_found)
+					obs_property_list_add_string(list, path,
+								     path);
+				else
+					obs_property_list_add_string(
+						list, namebuf, path);
+			}
+		}
+		pci_cleanup(pacc);
+		os_closedir(by_path_dir);
+	}
+	if (obs_property_list_item_count(list) == 0) {
+		char path[32] = "/dev/dri/renderD1";
+		for (int i = 28;; i++) {
+			sprintf(path, "/dev/dri/renderD1%d", i);
+			if (access(path, F_OK) == 0) {
+				char card[128] = "Card: ";
+				sprintf(card, "Card%d: %s", i - 28, path);
+				obs_property_list_add_string(list, card, path);
+			} else {
+				break;
+			}
 		}
 	}
 

@@ -8,10 +8,11 @@ trigger:
 
 variables:
   InstallPath: packed_build
-  CEF_VERSION: 75.1.16_g16a67c4_chromium-75.0.3770.100
-  CEF_MAC_BUILD_VERSION: 4183
+  CEF_VERSION: 4638
+  CEF_MAC_BUILD_VERSION: 4638
   MACOS_DEPS_VERSION: 2021-03-25
   VLC_VERSION: 3.0.8
+  MIN_MACOS_VERSION: 10.13
 
 jobs:
 - job: 'Windows64'

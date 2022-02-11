@@ -37,8 +37,11 @@ std::vector<std::string> GetPreferredLocales();
 bool IsAlwaysOnTop(QWidget *window);
 void SetAlwaysOnTop(QWidget *window, bool enable);
 
+bool SetDisplayAffinitySupported(void);
+
 #ifdef _WIN32
 uint32_t GetWindowsVersion();
+uint32_t GetWindowsBuild();
 void SetAeroEnabled(bool enable);
 void SetProcessPriority(const char *priority);
 void SetWin32DropStyle(QWidget *window);
@@ -69,6 +72,7 @@ void EnableOSXDockIcon(bool enable);
 void InstallNSApplicationSubclass();
 void disableColorSpaceConversion(QWidget *window);
 void CheckAppWithSameBundleID(bool &already_running);
+bool ProcessIsRosettaTranslated();
 #endif
 #ifdef __linux__
 void RunningInstanceCheck(bool &already_running);
