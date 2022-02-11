@@ -23,7 +23,7 @@ if exist %OBS_VIRTUALCAM%.zip (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -z %O
 
 set CEFPATH=%CD%\CEF\%CefFileName%
 
-cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD"
+if "%CefBuildConfig%" == "Debug" (cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD" -DUSE_SANDBOX=false) else (cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD")
 cmake --build %CEFPATH%\build --config %CefBuildConfig% --target libcef_dll_wrapper -v
 
 cd ..
