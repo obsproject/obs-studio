@@ -433,10 +433,11 @@ obs_source_t *obs_source_create_private(const char *id, const char *name,
 obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name,
 					     obs_data_t *settings,
 					     obs_data_t *hotkey_data,
-					     uint32_t last_obs_ver)
+					     uint32_t last_obs_ver,
+					     bool is_private)
 {
 	return obs_source_create_internal(id, name, settings, hotkey_data,
-					  false, last_obs_ver);
+					  is_private, last_obs_ver);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
