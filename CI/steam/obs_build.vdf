@@ -1,0 +1,36 @@
+"AppBuild"
+{
+	"AppID" "1905180"
+	"Desc" "github_@@DESC@@"
+
+	"ContentRoot" "./"
+	"BuildOutput" "build/"
+	
+	"SetLive" "@@BRANCH@@"
+
+	"Depots"
+	{
+		"1905181" // Windows
+		{
+			"ContentRoot" "./steam-windows"
+			"InstallScript" "scripts/installscript.vdf"
+			"FileMapping"
+			{
+				"LocalPath" "*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+		}
+		
+		"1905182" // Mac
+	 	{
+			"ContentRoot" "./steam-macos"
+			"FileMapping"
+			{
+				"LocalPath" "*"
+				"DepotPath" "."
+				"recursive" "1"
+			}
+		}
+	}
+}
