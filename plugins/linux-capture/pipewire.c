@@ -298,8 +298,10 @@ static void destroy_session(obs_pipewire_data *obs_pw)
 	}
 
 	g_clear_pointer(&obs_pw->sender_name, bfree);
+	obs_enter_graphics();
 	g_clear_pointer(&obs_pw->cursor.texture, gs_texture_destroy);
 	g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
+	obs_leave_graphics();
 	g_cancellable_cancel(obs_pw->cancellable);
 	g_clear_object(&obs_pw->cancellable);
 }
