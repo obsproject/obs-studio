@@ -5486,3 +5486,18 @@ void obs_source_restore_filters(obs_source_t *source, obs_data_array_t *array)
 
 	da_free(cur_filters);
 }
+
+void obs_source_defer_saving(obs_source_t *source, bool defer)
+{
+	if (!obs_source_valid(source, "obs_source_defer_saving"))
+		return;
+
+	source->context.defer_save = defer;
+}
+
+bool obs_source_saving_deferred(const obs_source_t *source)
+{
+	return obs_source_valid(source, "obs_source_defer_saving")
+		       ? source->context.defer_save
+		       : false;
+}

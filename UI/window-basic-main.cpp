@@ -504,6 +504,9 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 		if (obs_source_is_group(source))
 			return false;
 
+		if (obs_source_saving_deferred(source))
+			return false;
+
 		return find(begin(audioSources), end(audioSources), source) ==
 		       end(audioSources);
 	};

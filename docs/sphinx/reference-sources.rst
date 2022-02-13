@@ -1566,6 +1566,12 @@ Functions used by transitions
    with the new transition, then call
    :c:func:`obs_transition_swap_begin()`.
 
+---------------------
+
+.. function:: void obs_source_defer_saving(obs_source_t *source, bool defer)
+
+   Prevents the source from being saved by the frontend.
+
 .. ---------------------------------------------------------------------------
 
 .. _libobs/obs-source.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-source.h

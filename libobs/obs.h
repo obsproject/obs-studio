@@ -1484,6 +1484,10 @@ EXPORT enum obs_media_state obs_source_media_get_state(obs_source_t *source);
 EXPORT void obs_source_media_started(obs_source_t *source);
 EXPORT void obs_source_media_ended(obs_source_t *source);
 
+/** Defer saving of a source */
+EXPORT void obs_source_defer_saving(obs_source_t *source, bool defer);
+EXPORT bool obs_source_saving_deferred(const obs_source_t *source);
+
 /* ------------------------------------------------------------------------- */
 /* Transition-specific functions */
 enum obs_transition_target {

@@ -519,6 +519,7 @@ struct obs_context_data {
 	struct obs_context_data **prev_next;
 
 	bool private;
+	bool defer_save;
 };
 
 extern bool obs_context_data_init(struct obs_context_data *context,
