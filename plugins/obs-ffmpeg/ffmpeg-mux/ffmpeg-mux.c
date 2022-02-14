@@ -326,7 +326,7 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_str(argc, argv, &params->acodec, "audio codec"))
 			return false;
 
-		audio = calloc(1, sizeof(*audio) * params->tracks);
+		audio = calloc(params->tracks, sizeof(*audio));
 
 		for (int i = 0; i < params->tracks; i++) {
 			if (!get_audio_params(&audio[i], argc, argv)) {
@@ -588,10 +588,6 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 		}
 	}
 
-	strncpy(ffm->output->filename, ffm->params.file,
-		sizeof(ffm->output->filename));
-	ffm->output->filename[sizeof(ffm->output->filename) - 1] = 0;
-
 	AVDictionary *dict = NULL;
 	if ((ret = av_dict_parse_string(&dict, ffm->params.muxer_settings, "=",
 					" ", 0))) {
@@ -675,7 +671,7 @@ static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
 	       output_format->long_name ? output_format->long_name : "unknown");
 
 	ret = avformat_alloc_output_context2(&ffm->output, output_format, NULL,
-					     NULL);
+					     ffm->params.file);
 	if (ret < 0) {
 		fprintf(stderr, "Couldn't initialize output context: %s\n",
 			av_err2str(ret));
@@ -711,7 +707,7 @@ static int ffmpeg_mux_init_internal(struct ffmpeg_mux *ffm, int argc,
 
 	if (ffm->params.tracks) {
 		ffm->audio_header =
-			calloc(1, sizeof(struct header) * ffm->params.tracks);
+			calloc(ffm->params.tracks, sizeof(*ffm->audio_header));
 	}
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
@@ -754,17 +750,35 @@ static inline int get_index(struct ffmpeg_mux *ffm,
 	return -1;
 }
 
+static AVCodecContext *get_codec_context(struct ffmpeg_mux *ffm,
+					 struct ffm_packet_info *info)
+{
+	if (info->type == FFM_PACKET_VIDEO) {
+		if (ffm->video_stream) {
+			return ffm->video_ctx;
+		}
+	} else {
+		if ((int)info->index < ffm->num_audio_streams) {
+			return ffm->audio_infos[info->index].ctx;
+		}
+	}
+
+	return NULL;
+}
+
 static inline AVStream *get_stream(struct ffmpeg_mux *ffm, int idx)
 {
 	return ffm->output->streams[idx];
 }
 
-static inline int64_t rescale_ts(struct ffmpeg_mux *ffm, int64_t val, int idx)
+static inline int64_t rescale_ts(struct ffmpeg_mux *ffm,
+				 AVRational codec_time_base, int64_t val,
+				 int idx)
 {
 	AVStream *stream = get_stream(ffm, idx);
 
-	return av_rescale_q_rnd(val / stream->codec->time_base.num,
-				stream->codec->time_base, stream->time_base,
+	return av_rescale_q_rnd(val / codec_time_base.num, codec_time_base,
+				stream->time_base,
 				AV_ROUND_NEAR_INF | AV_ROUND_PASS_MINMAX);
 }
 
@@ -779,13 +793,16 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 		return true;
 	}
 
+	const AVRational codec_time_base =
+		get_codec_context(ffm, info)->time_base;
+
 	av_init_packet(&packet);
 
 	packet.data = buf;
 	packet.size = (int)info->size;
 	packet.stream_index = idx;
-	packet.pts = rescale_ts(ffm, info->pts, idx);
-	packet.dts = rescale_ts(ffm, info->dts, idx);
+	packet.pts = rescale_ts(ffm, codec_time_base, info->pts, idx);
+	packet.dts = rescale_ts(ffm, codec_time_base, info->dts, idx);
 
 	if (info->keyframe)
 		packet.flags = AV_PKT_FLAG_KEY;
