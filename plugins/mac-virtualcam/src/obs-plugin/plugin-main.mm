@@ -195,18 +195,9 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 {
 	UNUSED_PARAMETER(data);
 
-	uint8_t *outData = frame->data[0];
-	if (frame->linesize[0] != (videoInfo.output_width * 2)) {
-		blog(LOG_ERROR,
-		     "unexpected frame->linesize (expected:%d actual:%d)",
-		     (videoInfo.output_width * 2), frame->linesize[0]);
-	}
-
-	size_t height = videoInfo.output_height;
-
 	CVPixelBufferRef frameRef = NULL;
-	CVReturn status =
-		CVPixelBufferPoolCreatePixelBuffer(NULL, pool, &frameRef);
+	CVReturn status = CVPixelBufferPoolCreatePixelBuffer(
+		kCFAllocatorDefault, pool, &frameRef);
 
 	if (status != kCVReturnSuccess) {
 		blog(LOG_ERROR, "unable to allocate pixel buffer (error %d)",
@@ -214,29 +205,63 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 		return;
 	}
 
-	// Copy memory into the pixel buffer
+	// Copy all planes into pixel buffer
+	size_t planeCount = CVPixelBufferGetPlaneCount(frameRef);
 	CVPixelBufferLockBaseAddress(frameRef, 0);
-	uint8_t *dest =
-		(uint8_t *)CVPixelBufferGetBaseAddressOfPlane(frameRef, 0);
-	uint8_t *src = outData;
 
-	size_t destBytesPerRow =
-		CVPixelBufferGetBytesPerRowOfPlane(frameRef, 0);
-	size_t srcBytesPerRow = frame->linesize[0];
+	if (planeCount == 0) {
+		uint8_t *src = frame->data[0];
+		uint8_t *dst = (uint8_t *)CVPixelBufferGetBaseAddress(frameRef);
 
-	// Sometimes CVPixelBufferCreate will create a pixelbuffer that's a different
-	// size than necessary to hold the frame (probably for some optimization reason).
-	// If that is the case this will do a row-by-row copy into the buffer.
-	if (destBytesPerRow == srcBytesPerRow) {
-		memcpy(dest, src, destBytesPerRow * height);
+		size_t destBytesPerRow = CVPixelBufferGetBytesPerRow(frameRef);
+		size_t srcBytesPerRow = frame->linesize[0];
+		size_t height = CVPixelBufferGetHeight(frameRef);
+
+		// Sometimes CVPixelBufferCreate will create a pixel buffer that's a different
+		// size than necessary to hold the frame (probably for some optimization reason).
+		// If that is the case this will do a row-by-row copy into the buffer.
+		if (destBytesPerRow == srcBytesPerRow) {
+			memcpy(dst, src, destBytesPerRow * height);
+		} else {
+			for (int line = 0; (size_t)line < height; line++) {
+				memcpy(dst, src, srcBytesPerRow);
+				src += srcBytesPerRow;
+				dst += destBytesPerRow;
+			}
+		}
 	} else {
-		for (int line = 0; (size_t)line < height; line++) {
-			memcpy(dest, src, srcBytesPerRow);
-			src += srcBytesPerRow;
-			dest += destBytesPerRow;
+		for (size_t plane = 0; plane < planeCount; plane++) {
+			uint8_t *src = frame->data[plane];
+
+			if (!src) {
+				blog(LOG_WARNING,
+				     "Video data from OBS contains less planes than CVPixelBuffer");
+				break;
+			}
+
+			uint8_t *dst =
+				(uint8_t *)CVPixelBufferGetBaseAddressOfPlane(
+					frameRef, plane);
+
+			size_t destBytesPerRow =
+				CVPixelBufferGetBytesPerRowOfPlane(frameRef,
+								   plane);
+			size_t srcBytesPerRow = frame->linesize[plane];
+			size_t height =
+				CVPixelBufferGetHeightOfPlane(frameRef, plane);
+
+			if (destBytesPerRow == srcBytesPerRow) {
+				memcpy(dst, src, destBytesPerRow * height);
+			} else {
+				for (int line = 0; (size_t)line < height;
+				     line++) {
+					memcpy(dst, src, srcBytesPerRow);
+					src += srcBytesPerRow;
+					dst += destBytesPerRow;
+				}
+			}
 		}
 	}
-	memcpy(dest, outData, srcBytesPerRow * height);
 
 	CVPixelBufferUnlockBaseAddress(frameRef, 0);
 
