@@ -12,6 +12,7 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 obs_output_t *outputRef;
 obs_video_info videoInfo;
+CVPixelBufferPoolRef pool;
 static OBSDALMachServer *sMachServer;
 
 static bool check_dal_plugin()
@@ -145,9 +146,26 @@ static bool virtualcam_output_start(void *data)
 
 	blog(LOG_DEBUG, "output_start");
 
-	[sMachServer run];
-
 	obs_get_video_info(&videoInfo);
+
+	NSDictionary *pAttr = @{};
+	NSDictionary *pbAttr = @{
+		(id)kCVPixelBufferPixelFormatTypeKey:
+			@(kCVPixelFormatType_422YpCbCr8),
+		(id)kCVPixelBufferWidthKey: @(videoInfo.output_width),
+		(id)kCVPixelBufferHeightKey: @(videoInfo.output_height),
+		(id)kCVPixelBufferIOSurfacePropertiesKey: @{}
+	};
+	CVReturn status = CVPixelBufferPoolCreate(
+		kCFAllocatorDefault, (__bridge CFDictionaryRef)pAttr,
+		(__bridge CFDictionaryRef)pbAttr, &pool);
+	if (status != kCVReturnSuccess) {
+		blog(LOG_ERROR,
+		     "unable to allocate pixel buffer pool (error %d)", status);
+		return false;
+	}
+
+	[sMachServer run];
 
 	struct video_scale_info conversion = {};
 	conversion.format = VIDEO_FORMAT_UYVY;
@@ -169,6 +187,8 @@ static void virtualcam_output_stop(void *data, uint64_t ts)
 	blog(LOG_DEBUG, "output_stop");
 	obs_output_end_data_capture(outputRef);
 	[sMachServer stop];
+
+	CVPixelBufferPoolRelease(pool);
 }
 
 static void virtualcam_output_raw_video(void *data, struct video_data *frame)
@@ -182,15 +202,11 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 		     (videoInfo.output_width * 2), frame->linesize[0]);
 	}
 
-	size_t width = videoInfo.output_width;
 	size_t height = videoInfo.output_height;
 
-	NSDictionary *pbAttr = @{(id)kCVPixelBufferIOSurfacePropertiesKey: @{}};
 	CVPixelBufferRef frameRef = NULL;
-	CVReturn status = CVPixelBufferCreate(NULL, width, height,
-					      kCVPixelFormatType_422YpCbCr8,
-					      (__bridge CFDictionaryRef)pbAttr,
-					      &frameRef);
+	CVReturn status =
+		CVPixelBufferPoolCreatePixelBuffer(NULL, pool, &frameRef);
 
 	if (status != kCVReturnSuccess) {
 		blog(LOG_ERROR, "unable to allocate pixel buffer (error %d)",
@@ -214,7 +230,7 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 	if (destBytesPerRow == srcBytesPerRow) {
 		memcpy(dest, src, destBytesPerRow * height);
 	} else {
-		for (int line = 0; line < height; line++) {
+		for (int line = 0; (size_t)line < height; line++) {
 			memcpy(dest, src, srcBytesPerRow);
 			src += srcBytesPerRow;
 			dest += destBytesPerRow;
