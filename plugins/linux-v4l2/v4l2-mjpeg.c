@@ -45,7 +45,6 @@ int v4l2_init_mjpeg(struct v4l2_mjpeg_decoder *decoder)
 	}
 
 	decoder->context->flags2 |= AV_CODEC_FLAG2_FAST;
-	decoder->context->pix_fmt = AV_PIX_FMT_YUVJ422P;
 
 	if (avcodec_open2(decoder->context, decoder->codec, NULL) < 0) {
 		blog(LOG_ERROR, "failed to open codec");
@@ -92,6 +91,21 @@ int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
 	for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i) {
 		out->data[i] = decoder->frame->data[i];
 		out->linesize[i] = decoder->frame->linesize[i];
+	}
+
+	switch (decoder->context->pix_fmt) {
+	case AV_PIX_FMT_YUVJ422P:
+	case AV_PIX_FMT_YUV422P:
+		out->format = VIDEO_FORMAT_I422;
+		break;
+	case AV_PIX_FMT_YUVJ420P:
+	case AV_PIX_FMT_YUV420P:
+		out->format = VIDEO_FORMAT_I420;
+		break;
+	case AV_PIX_FMT_YUVJ444P:
+	case AV_PIX_FMT_YUV444P:
+		out->format = VIDEO_FORMAT_I444;
+		break;
 	}
 
 	return 0;
