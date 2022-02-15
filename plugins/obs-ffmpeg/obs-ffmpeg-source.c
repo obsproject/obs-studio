@@ -386,6 +386,15 @@ static void ffmpeg_source_tick(void *data, float seconds)
 	}
 }
 
+#define SRT_PROTO "srt"
+#define RIST_PROTO "rist"
+
+static bool requires_mpegts(char *path)
+{
+	return !astrcmpi_n(path, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !astrcmpi_n(path, RIST_PROTO, sizeof(RIST_PROTO) - 1);
+}
+
 static void ffmpeg_source_update(void *data, obs_data_t *settings)
 {
 	struct ffmpeg_source *s = data;
@@ -406,6 +415,10 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = (char *)obs_data_get_string(settings, "input");
 		input_format =
 			(char *)obs_data_get_string(settings, "input_format");
+		if (requires_mpegts(input)) {
+			input_format = "mpegts";
+			obs_data_set_string(settings, "input_format", "mpegts");
+		}
 		s->reconnect_delay_sec =
 			(int)obs_data_get_int(settings, "reconnect_delay_sec");
 		s->reconnect_delay_sec = s->reconnect_delay_sec == 0
@@ -429,7 +442,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_clear_on_media_end =
 		obs_data_get_bool(settings, "clear_on_media_end");
 	s->restart_on_activate =
-		obs_data_get_bool(settings, "restart_on_activate");
+		!astrcmpi_n(input, RIST_PROTO, sizeof(RIST_PROTO) - 1)
+			? false
+			: obs_data_get_bool(settings, "restart_on_activate");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 							   "color_range");
 	s->is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
