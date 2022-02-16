@@ -413,7 +413,8 @@
 {
 	CMVideoFormatDescriptionRef formatDescription;
 	OSStatus err = CMVideoFormatDescriptionCreate(
-		kCFAllocatorDefault, kCMVideoCodecType_422YpCbCr8,
+		kCFAllocatorDefault,
+		kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange,
 		self.testCardSize.width, self.testCardSize.height, NULL,
 		&formatDescription);
 	if (err != noErr) {

@@ -106,6 +106,23 @@ static bool check_dal_plugin()
 	return true;
 }
 
+FourCharCode convert_video_format_to_mac(enum video_format format)
+{
+	switch (format) {
+	case VIDEO_FORMAT_I420:
+		return kCVPixelFormatType_420YpCbCr8Planar;
+	case VIDEO_FORMAT_NV12:
+		return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
+	case VIDEO_FORMAT_UYVY:
+		return kCVPixelFormatType_422YpCbCr8;
+	default:
+		// Zero indicates that the format is not supported on macOS
+		// Note that some formats do have an associated constant, but
+		// constructing such formats fails with kCVReturnInvalidPixelFormat.
+		return 0;
+	}
+}
+
 static const char *virtualcam_output_get_name(void *type_data)
 {
 	(void)type_data;
@@ -148,10 +165,27 @@ static bool virtualcam_output_start(void *data)
 
 	obs_get_video_info(&videoInfo);
 
+	FourCharCode video_format =
+		convert_video_format_to_mac(videoInfo.output_format);
+
+	if (!video_format) {
+		// Selected output format is not supported natively by CoreVideo, CPU conversion necessary
+		blog(LOG_WARNING,
+		     "Selected output format (%s) not supported by CoreVideo, enabling CPU transcoding...",
+		     get_video_format_name(videoInfo.output_format));
+
+		struct video_scale_info conversion = {};
+		conversion.format = VIDEO_FORMAT_NV12;
+		conversion.width = videoInfo.output_width;
+		conversion.height = videoInfo.output_height;
+		obs_output_set_video_conversion(outputRef, &conversion);
+
+		video_format = convert_video_format_to_mac(conversion.format);
+	}
+
 	NSDictionary *pAttr = @{};
 	NSDictionary *pbAttr = @{
-		(id)kCVPixelBufferPixelFormatTypeKey:
-			@(kCVPixelFormatType_422YpCbCr8),
+		(id)kCVPixelBufferPixelFormatTypeKey: @(video_format),
 		(id)kCVPixelBufferWidthKey: @(videoInfo.output_width),
 		(id)kCVPixelBufferHeightKey: @(videoInfo.output_height),
 		(id)kCVPixelBufferIOSurfacePropertiesKey: @{}
@@ -167,11 +201,6 @@ static bool virtualcam_output_start(void *data)
 
 	[sMachServer run];
 
-	struct video_scale_info conversion = {};
-	conversion.format = VIDEO_FORMAT_UYVY;
-	conversion.width = videoInfo.output_width;
-	conversion.height = videoInfo.output_height;
-	obs_output_set_video_conversion(outputRef, &conversion);
 	if (!obs_output_begin_data_capture(outputRef, 0)) {
 		return false;
 	}
