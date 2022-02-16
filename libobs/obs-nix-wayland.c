@@ -84,7 +84,7 @@ static void platform_keyboard_keymap(void *data, struct wl_keyboard *keyboard,
 	UNUSED_PARAMETER(format);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
-	char *keymap_shm = mmap(NULL, size, PROT_READ, MAP_SHARED, fd, 0);
+	char *keymap_shm = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
 	if (keymap_shm == MAP_FAILED) {
 		close(fd);
 		return;
