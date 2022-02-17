@@ -97,10 +97,7 @@ BrowserToolbar::BrowserToolbar(QWidget *parent, OBSSource source)
 	ui->setupUi(this);
 }
 
-BrowserToolbar::~BrowserToolbar()
-{
-	delete ui;
-}
+BrowserToolbar::~BrowserToolbar() {}
 
 void BrowserToolbar::on_refresh_clicked()
 {
@@ -121,10 +118,7 @@ ComboSelectToolbar::ComboSelectToolbar(QWidget *parent, OBSSource source)
 	ui->setupUi(this);
 }
 
-ComboSelectToolbar::~ComboSelectToolbar()
-{
-	delete ui;
-}
+ComboSelectToolbar::~ComboSelectToolbar() {}
 
 static int FillPropertyCombo(QComboBox *c, obs_property_t *p,
 			     const std::string &cur_id, bool is_int = false)
@@ -332,10 +326,7 @@ DeviceCaptureToolbar::DeviceCaptureToolbar(QWidget *parent, OBSSource source)
 	ui->activateButton->setText(active ? deactivateText : activateText);
 }
 
-DeviceCaptureToolbar::~DeviceCaptureToolbar()
-{
-	delete ui;
-}
+DeviceCaptureToolbar::~DeviceCaptureToolbar() {}
 
 void DeviceCaptureToolbar::on_activateButton_clicked()
 {
@@ -406,10 +397,7 @@ GameCaptureToolbar::GameCaptureToolbar(QWidget *parent, OBSSource source)
 	UpdateWindowVisibility();
 }
 
-GameCaptureToolbar::~GameCaptureToolbar()
-{
-	delete ui;
-}
+GameCaptureToolbar::~GameCaptureToolbar() {}
 
 void GameCaptureToolbar::UpdateWindowVisibility()
 {
@@ -469,10 +457,7 @@ ImageSourceToolbar::ImageSourceToolbar(QWidget *parent, OBSSource source)
 	ui->path->setText(file.c_str());
 }
 
-ImageSourceToolbar::~ImageSourceToolbar()
-{
-	delete ui;
-}
+ImageSourceToolbar::~ImageSourceToolbar() {}
 
 void ImageSourceToolbar::on_browse_clicked()
 {
@@ -530,10 +515,7 @@ ColorSourceToolbar::ColorSourceToolbar(QWidget *parent, OBSSource source)
 	UpdateColor();
 }
 
-ColorSourceToolbar::~ColorSourceToolbar()
-{
-	delete ui;
-}
+ColorSourceToolbar::~ColorSourceToolbar() {}
 
 void ColorSourceToolbar::UpdateColor()
 {
@@ -623,10 +605,7 @@ TextSourceToolbar::TextSourceToolbar(QWidget *parent, OBSSource source)
 		ui->text->setText(text);
 }
 
-TextSourceToolbar::~TextSourceToolbar()
-{
-	delete ui;
-}
+TextSourceToolbar::~TextSourceToolbar() {}
 
 void TextSourceToolbar::on_selectFont_clicked()
 {

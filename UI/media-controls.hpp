@@ -34,7 +34,7 @@ private:
 	static void OBSMediaPause(void *data, calldata_t *calldata);
 	static void OBSMediaStarted(void *data, calldata_t *calldata);
 
-	Ui_MediaControls *ui;
+	std::unique_ptr<Ui_MediaControls> ui;
 
 private slots:
 	void on_playPauseButton_clicked();

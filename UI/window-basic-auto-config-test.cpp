@@ -1175,8 +1175,6 @@ AutoConfigTestPage::AutoConfigTestPage(QWidget *parent)
 
 AutoConfigTestPage::~AutoConfigTestPage()
 {
-	delete ui;
-
 	if (testThread.joinable()) {
 		{
 			unique_lock<mutex> ul(m);
