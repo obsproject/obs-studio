@@ -292,10 +292,12 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			filter->target = make_clut_texture_png(
 				filter->image.format, filter->image.cx,
 				filter->image.cy, filter->image.texture_data);
-			const float clut_scale = (float)(LUT_WIDTH - 1);
+			const float width_i = 1.0f / (float)LUT_WIDTH;
+			const float clut_scale = 1.0f - width_i;
+			const float offset = 0.5f * width_i;
 			vec3_set(&filter->clut_scale, clut_scale, clut_scale,
 				 clut_scale);
-			vec3_set(&filter->clut_offset, 0.f, 0.f, 0.f);
+			vec3_set(&filter->clut_offset, offset, offset, offset);
 		} else if (filter->cube_data) {
 			const uint32_t width = filter->cube_width;
 			if (filter->clut_dim == CLUT_1D) {
@@ -324,16 +326,13 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			vec3_mul(&filter->clut_offset, &filter->clut_offset,
 				 &filter->clut_scale);
 
-			/* 1D shader wants normalized UVW */
-			if (filter->clut_dim == CLUT_1D) {
-				vec3_divf(&filter->clut_scale,
-					  &filter->clut_scale, (float)width);
-
-				vec3_addf(&filter->clut_offset,
-					  &filter->clut_offset, 0.5f);
-				vec3_divf(&filter->clut_offset,
-					  &filter->clut_offset, (float)width);
-			}
+			/* want normalized UVW */
+			vec3_divf(&filter->clut_scale, &filter->clut_scale,
+				  (float)width);
+			vec3_addf(&filter->clut_offset, &filter->clut_offset,
+				  0.5f);
+			vec3_divf(&filter->clut_offset, &filter->clut_offset,
+				  (float)width);
 		}
 	}
 
@@ -454,9 +453,6 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 
 	param = gs_effect_get_param_by_name(filter->effect, "domain_max");
 	gs_effect_set_vec3(param, &filter->domain_max);
-
-	param = gs_effect_get_param_by_name(filter->effect, "cube_width_i");
-	gs_effect_set_float(param, 1.0f / filter->cube_width);
 
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
