@@ -126,9 +126,12 @@ static void *load_1d_lut(FILE *const file, const uint32_t width, float red,
 			break;
 		}
 
-		values[offset++] = half_from_float(red);
-		values[offset++] = half_from_float(green);
-		values[offset++] = half_from_float(blue);
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(red));
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(green));
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(blue));
 		values[offset++] = half_from_bits(0x3c00); // 1.0
 
 		data_found = get_cube_entry(file, &red, &green, &blue);
@@ -155,9 +158,12 @@ static void *load_3d_lut(FILE *const file, const uint32_t width, float red,
 					break;
 				}
 
-				values[offset++] = half_from_float(red);
-				values[offset++] = half_from_float(green);
-				values[offset++] = half_from_float(blue);
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(red));
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(green));
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(blue));
 				values[offset++] =
 					half_from_bits(0x3c00); // 1.0
 
@@ -374,7 +380,7 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
 				OBS_PATH_FILE, filter_str.array, path.array);
 	obs_properties_add_float_slider(props, SETTING_CLUT_AMOUNT, TEXT_AMOUNT,
-					0, 1, 0.01);
+					0, 1, 0.0001);
 
 	dstr_free(&filter_str);
 	dstr_free(&path);
@@ -432,7 +438,7 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	}
 
 	param = gs_effect_get_param_by_name(filter->effect, clut_texture_name);
-	gs_effect_set_texture(param, filter->target);
+	gs_effect_set_texture_srgb(param, filter->target);
 
 	param = gs_effect_get_param_by_name(filter->effect, "clut_amount");
 	gs_effect_set_float(param, filter->clut_amount);

@@ -45,41 +45,30 @@ float3 srgb_linear_to_nonlinear(float3 v)
 	return float3(srgb_linear_to_nonlinear_channel(v.r), srgb_linear_to_nonlinear_channel(v.g), srgb_linear_to_nonlinear_channel(v.b));
 }
 
-float srgb_nonlinear_to_linear_channel(float u)
-{
-	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
-}
-
-float3 srgb_nonlinear_to_linear(float3 v)
-{
-	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
-}
-
 float4 LUT1D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
 	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
-	textureColor.rgb = srgb_linear_to_nonlinear(textureColor.rgb);
+	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
-	if (textureColor.r >= domain_min.r && textureColor.r <= domain_max.r) {
-		float u = textureColor.r * clut_scale.r + clut_offset.r;
+	if (nonlinear.r >= domain_min.r && nonlinear.r <= domain_max.r) {
+		float u = nonlinear.r * clut_scale.r + clut_offset.r;
 		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).r;
 		textureColor.r = lerp(textureColor.r, channel, clut_amount);
 	}
 
-	if (textureColor.g >= domain_min.g && textureColor.g <= domain_max.g) {
-		float u = textureColor.g * clut_scale.g + clut_offset.g;
+	if (nonlinear.g >= domain_min.g && nonlinear.g <= domain_max.g) {
+		float u = nonlinear.g * clut_scale.g + clut_offset.g;
 		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).g;
 		textureColor.g = lerp(textureColor.g, channel, clut_amount);
 	}
 
-	if (textureColor.b >= domain_min.b && textureColor.b <= domain_max.b) {
-		float u = textureColor.b * clut_scale.b + clut_offset.b;
+	if (nonlinear.b >= domain_min.b && nonlinear.b <= domain_max.b) {
+		float u = nonlinear.b * clut_scale.b + clut_offset.b;
 		float channel = clut_1d.Sample(textureSampler, float2(u, 0.5)).b;
 		textureColor.b = lerp(textureColor.b, channel, clut_amount);
 	}
 
-	textureColor.rgb = srgb_nonlinear_to_linear(textureColor.rgb);
 	return textureColor;
 }
 
@@ -87,15 +76,16 @@ float4 LUT3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
 	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
-	textureColor.rgb = srgb_linear_to_nonlinear(textureColor.rgb);
-	float r = textureColor.r;
-	float g = textureColor.g;
-	float b = textureColor.b;
+	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
+
+	float r = nonlinear.r;
+	float g = nonlinear.g;
+	float b = nonlinear.b;
 	if (r >= domain_min.r && r <= domain_max.r &&
 		g >= domain_min.g && g <= domain_max.g &&
 		b >= domain_min.b && b <= domain_max.b)
 	{
-		float3 clut_pos = textureColor.rgb * clut_scale + clut_offset;
+		float3 clut_pos = nonlinear * clut_scale + clut_offset;
 		float3 floor_pos = floor(clut_pos);
 
 		float3 fracRGB = clut_pos - floor_pos;
@@ -170,7 +160,6 @@ float4 LUT3D(VertDataOut v_in) : TARGET
 		textureColor.rgb = lerp(textureColor.rgb, luttedColor, clut_amount);
 	}
 
-	textureColor.rgb = srgb_nonlinear_to_linear(textureColor.rgb);
 	textureColor.rgb *= textureColor.a;
 	return textureColor;
 }
