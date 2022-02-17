@@ -89,6 +89,23 @@ set(obs-filters_SOURCES
 	expander-filter.c
 	luma-key-filter.c)
 
+set(obs-filters_data_EFFECTS
+	data/blend_add_filter.effect
+	data/blend_mul_filter.effect
+	data/blend_sub_filter.effect
+	data/chroma_key_filter.effect
+	data/chroma_key_filter_v2.effect
+	data/color_correction_filter.effect
+	data/color_grade_filter.effect
+	data/color_key_filter.effect
+	data/color_key_filter_v2.effect
+	data/crop_filter.effect
+	data/luma_key_filter.effect
+	data/luma_key_filter_v2.effect
+	data/mask_alpha_filter.effect
+	data/mask_color_filter.effect
+	data/sharpness.effect)
+
 if(WIN32)
 	set(MODULE_DESCRIPTION "OBS A/V Filters")
 	configure_file(${CMAKE_SOURCE_DIR}/cmake/winrc/obs-module.rc.in obs-filters.rc)
@@ -100,6 +117,7 @@ add_library(obs-filters MODULE
 	${rnnoise_SOURCES}
 	${obs-filters_SOURCES}
 	${obs-filters_config_HEADERS}
+	${obs-filters_data_EFFECTS}
 	${obs-filters_NOISEREDUCTION_SOURCES}
 	${obs-filters_NOISEREDUCTION_HEADERS})
 target_link_libraries(obs-filters
@@ -107,5 +125,7 @@ target_link_libraries(obs-filters
 	${obs-filters_PLATFORM_DEPS}
 	${obs-filters_NOISEREDUCTION_LIBRARIES})
 set_target_properties(obs-filters PROPERTIES FOLDER "plugins")
+
+source_group("data\\Effect Files" FILES ${obs-filters_data_EFFECTS})
 
 install_obs_plugin_with_data(obs-filters data)
