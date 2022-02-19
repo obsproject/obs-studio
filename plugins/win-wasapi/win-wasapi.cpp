@@ -7,6 +7,7 @@
 #include <util/windows/ComPtr.hpp>
 #include <util/windows/WinHandle.hpp>
 #include <util/windows/CoTaskMemPtr.hpp>
+#include <util/windows/win-version.h>
 #include <util/threading.h>
 #include <util/util_uint64.h>
 
@@ -324,7 +325,12 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 
 	/* OBS will already load DLL on startup if it exists */
 	const HMODULE rtwq_module = GetModuleHandle(L"RTWorkQ.dll");
-	rtwq_supported = rtwq_module != NULL;
+
+	// while RTWQ was introduced in Win 8.1, it silently fails
+	// to capture Desktop Audio for some reason. Disable for now.
+	if (get_win_ver_int() >= _WIN32_WINNT_WIN10)
+		rtwq_supported = rtwq_module != NULL;
+
 	if (rtwq_supported) {
 		rtwq_unlock_work_queue =
 			(PFN_RtwqUnlockWorkQueue)GetProcAddress(
