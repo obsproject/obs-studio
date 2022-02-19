@@ -74,6 +74,44 @@ float4 LUT1D(VertDataOut v_in) : TARGET
 float4 LUT3D(VertDataOut v_in) : TARGET
 {
 	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
+
+	float3 clut_uvw = nonlinear * clut_scale + clut_offset;
+	textureColor.rgb = clut_3d.Sample(textureSampler, clut_uvw).rgb;
+
+	return textureColor;
+}
+
+float4 LUTAlpha3D(VertDataOut v_in) : TARGET
+{
+	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
+
+	float3 clut_uvw = nonlinear * clut_scale + clut_offset;
+	textureColor.rgb = clut_3d.Sample(textureSampler, clut_uvw).rgb;
+
+	textureColor.rgb *= textureColor.a;
+	return textureColor;
+}
+
+float4 LUTAmount3D(VertDataOut v_in) : TARGET
+{
+	float4 textureColor = image.Sample(textureSampler, v_in.uv);
+	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
+	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
+
+	float3 clut_uvw = nonlinear * clut_scale + clut_offset;
+	float3 luttedColor = clut_3d.Sample(textureSampler, clut_uvw).rgb;
+	textureColor.rgb = lerp(textureColor.rgb, luttedColor, clut_amount);
+
+	textureColor.rgb *= textureColor.a;
+	return textureColor;
+}
+
+float4 LUTDomain3D(VertDataOut v_in) : TARGET
+{
+	float4 textureColor = image.Sample(textureSampler, v_in.uv);
 	textureColor.rgb = max(float3(0.0, 0.0, 0.0), textureColor.rgb / textureColor.a);
 	float3 nonlinear = srgb_linear_to_nonlinear(textureColor.rgb);
 
@@ -108,5 +146,32 @@ technique Draw3D
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader  = LUT3D(v_in);
+	}
+}
+
+technique DrawAlpha3D
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = LUTAlpha3D(v_in);
+	}
+}
+
+technique DrawAmount3D
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = LUTAmount3D(v_in);
+	}
+}
+
+technique DrawDomain3D
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = LUTDomain3D(v_in);
 	}
 }
