@@ -105,10 +105,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	connect(close, SIGNAL(clicked()), this, SLOT(close()));
 	close->setDefault(true);
 
-	ui->buttonBox->button(QDialogButtonBox::Reset)
-		->setText(QTStr("Defaults"));
-
-	connect(ui->buttonBox->button(QDialogButtonBox::Reset),
+	connect(ui->buttonBox->button(QDialogButtonBox::RestoreDefaults),
 		SIGNAL(clicked()), this, SLOT(ResetFilters()));
 
 	uint32_t caps = obs_source_get_output_flags(source);
