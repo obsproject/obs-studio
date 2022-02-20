@@ -461,6 +461,9 @@ EXPORT const char *obs_module_get_locale_text(const obs_module_t *mod,
 /** Logs loaded modules */
 EXPORT void obs_log_loaded_modules(void);
 
+/** Logs all obs item types */
+EXPORT void obs_log_all_item_types(void);
+
 /** Returns the module file name */
 EXPORT const char *obs_get_module_file_name(obs_module_t *module);
 

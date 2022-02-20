@@ -179,6 +179,73 @@ void obs_log_loaded_modules(void)
 		blog(LOG_INFO, "    %s", mod->file);
 }
 
+void obs_log_all_item_types(void)
+{
+    // 1. enum all obs_source: input, filter, transition, scene
+    size_t idx = 0;
+    const char *id = NULL;
+    const char *unversioned_id = NULL;
+    
+    blog(LOG_DEBUG, "  1. enum all obs_source: input, filter, transition, scene");
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    1.0. obs_enum_source_types()");
+    while(obs_enum_source_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_source_get_display_name(id));
+    }
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    1.1. obs_enum_input_types()");
+    while (obs_enum_input_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_source_get_display_name(id));
+    }
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    1.2. obs_enum_input_types2()");
+    while (obs_enum_input_types2(idx++,  &id, &unversioned_id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s, unversioned_id=%s", idx, id, obs_source_get_display_name(id), unversioned_id);
+    }
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    1.3. obs_enum_filter_types()");
+    while (obs_enum_filter_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_source_get_display_name(id));
+    }
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    1.4. obs_enum_transition_types()");
+    while (obs_enum_transition_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_source_get_display_name(id));
+    }
+    
+    // 2. enum all output
+    blog(LOG_DEBUG, "  2. enum all output");
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    2.0. obs_enum_output_types()");
+    while(obs_enum_output_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_output_get_display_name(id));
+    }
+    
+    // 3. enum all encoder
+    blog(LOG_DEBUG, "  3. enum all encoder");
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    3.0. obs_enum_encoder_types()");
+    while(obs_enum_encoder_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_encoder_get_display_name(id));
+    }
+    
+    // 4. enum all service
+    blog(LOG_DEBUG, "  4. enum all service");
+    
+    idx = 0;
+    blog(LOG_DEBUG, "    4.0. obs_enum_service_types()");
+    while(obs_enum_service_types(idx++,  &id)) {
+        blog(LOG_DEBUG, "      %02zd : id=%s, name=%s", idx, id, obs_service_get_display_name(id));
+    }
+}
+
 const char *obs_get_module_file_name(obs_module_t *module)
 {
 	return module ? module->file : NULL;

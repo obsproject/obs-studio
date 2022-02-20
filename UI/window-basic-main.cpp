@@ -1789,6 +1789,10 @@ void OBSBasic::OBSInit()
 	obs_load_all_modules();
 	blog(LOG_INFO, "---------------------------------");
 	obs_log_loaded_modules();
+#ifdef _DEBUG
+    blog(LOG_INFO, "---------------------------------");
+    obs_log_all_item_types();
+#endif
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
 
