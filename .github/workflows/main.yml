@@ -559,7 +559,7 @@ jobs:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-1
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-2
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -668,7 +668,7 @@ jobs:
           CACHE_NAME: 'cef-32-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-1
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-2
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
