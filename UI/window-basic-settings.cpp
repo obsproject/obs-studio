@@ -3008,6 +3008,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 				main->SetDisplayAffinity(window);
 			}
 		}
+
+		blog(LOG_INFO, "Hide OBS windows from screen capture: %s",
+		     hide_window ? "true" : "false");
 	}
 #endif
 	if (WidgetChanged(ui->openStatsOnStartup))
