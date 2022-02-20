@@ -1455,6 +1455,12 @@ bool OBSApp::OBSInit()
 	blog(LOG_INFO, "Browser Hardware Acceleration: %s",
 	     browserHWAccel ? "true" : "false");
 #endif
+#ifdef _WIN32
+	bool hideFromCapture = config_get_bool(globalConfig, "BasicWindow",
+					       "HideOBSWindowsFromCapture");
+	blog(LOG_INFO, "Hide OBS windows from screen capture: %s",
+	     hideFromCapture ? "true" : "false");
+#endif
 
 	blog(LOG_INFO, "Qt Version: %s (runtime), %s (compiled)", qVersion(),
 	     QT_VERSION_STR);
