@@ -38,7 +38,7 @@ protected:
 	bool allow10Bit;
 
 	OBSVideoFrame *convertFrame = nullptr;
-	IDeckLinkMutableVideoFrame *decklinkOutputFrame = nullptr;
+	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 
 	void FinalizeStream();
 	void SetupVideoFormat(DeckLinkDeviceMode *mode_);
