@@ -18,6 +18,9 @@
 #include "ffmpeg-decode.h"
 #include "obs-ffmpeg-compat.h"
 #include <obs-avc.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
 #define USE_NEW_HARDWARE_CODEC_METHOD
@@ -333,9 +336,17 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	packet->size = (int)size;
 	packet->pts = *ts;
 
-	if (decode->codec->id == AV_CODEC_ID_H264 &&
-	    obs_avc_keyframe(data, size))
-		packet->flags |= AV_PKT_FLAG_KEY;
+	switch (decode->codec->id) {
+	case AV_CODEC_ID_H264:
+		if (obs_avc_keyframe(data, size))
+			packet->flags |= AV_PKT_FLAG_KEY;
+#ifdef ENABLE_HEVC
+		break;
+	case AV_CODEC_ID_HEVC:
+		if (obs_hevc_keyframe(data, size))
+			packet->flags |= AV_PKT_FLAG_KEY;
+#endif
+	}
 
 	ret = avcodec_send_packet(decode->decoder, packet);
 	if (ret == 0) {
