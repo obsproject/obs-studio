@@ -107,7 +107,6 @@ obs_properties_t *XCompcapMain::properties()
 
 	obs_properties_add_bool(props, "swap_redblue",
 				obs_module_text("SwapRedBlue"));
-	obs_properties_add_bool(props, "lock_x", obs_module_text("LockX"));
 
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("CaptureCursor"));
@@ -129,7 +128,6 @@ void XCompcapMain::defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "cut_right", 0);
 	obs_data_set_default_int(settings, "cut_bot", 0);
 	obs_data_set_default_bool(settings, "swap_redblue", false);
-	obs_data_set_default_bool(settings, "lock_x", false);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "include_border", false);
 	obs_data_set_default_bool(settings, "exclude_alpha", false);
@@ -178,7 +176,6 @@ struct XCompcapMain_private {
 	int cut_bot, cur_cut_bot;
 	bool inverted;
 	bool swapRedBlue;
-	bool lockX;
 	bool include_border;
 	bool exclude_alpha;
 	bool draw_opaque;
@@ -200,7 +197,6 @@ struct XCompcapMain_private {
 	bool show_cursor = true;
 	bool cursor_outside = false;
 	xcursor_t *cursor = nullptr;
-	bool tick_error_suppressed = false;
 	// Whether to rebind the GLX Pixmap on every tick. This is the correct
 	// mode of operation, according to GLX_EXT_texture_from_pixmap. However
 	// certain drivers exhibits poor performance when this is done, so
@@ -225,20 +221,27 @@ XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
 	updateSettings(settings);
 }
 
-static void xcc_cleanup(XCompcapMain_private *p);
+static void cleanupPixmap(XCompcapMain_private *p);
 
 XCompcapMain::~XCompcapMain()
 {
-	ObsGsContextHolder obsctx;
+	obs_enter_graphics();
+	DEFER(obs_leave_graphics());
+
+	pthread_mutex_lock(&p->lock);
+	DEFER(pthread_mutex_unlock(&p->lock));
+
+	XLockDisplay(xdisp);
+	DEFER(XUnlockDisplay(xdisp));
 
 	XCompcap::unregisterSource(this);
+
+	cleanupPixmap(p);
 
 	if (p->tex) {
 		gs_texture_destroy(p->tex);
 		p->tex = 0;
 	}
-
-	xcc_cleanup(p);
 
 	if (p->cursor) {
 		xcursor_destroy(p->cursor);
@@ -250,7 +253,8 @@ XCompcapMain::~XCompcapMain()
 
 static Window getWindowFromString(std::string wstr)
 {
-	XErrorLock xlock;
+	XLockDisplay(xdisp);
+	DEFER(XUnlockDisplay(xdisp));
 
 	if (wstr == "") {
 		return XCompcap::getTopLevelWindows().front();
@@ -302,30 +306,18 @@ static Window getWindowFromString(std::string wstr)
 	return 0;
 }
 
-static void xcc_cleanup(XCompcapMain_private *p)
+static void cleanupPixmap(XCompcapMain_private *p)
 {
-	PLock lock(&p->lock);
-	XErrorLock xlock;
-
 	if (p->gltex) {
 		GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 		glBindTexture(GL_TEXTURE_2D, gltex);
 		if (p->glxpixmap) {
-			glXReleaseTexImageEXT(xdisp, p->glxpixmap,
-					      GLX_FRONT_EXT);
-			if (xlock.gotError()) {
-				blog(LOG_ERROR,
-				     "cleanup glXReleaseTexImageEXT failed: %s",
-				     xlock.getErrorText().c_str());
-				xlock.resetError();
+			if (p->strict_binding) {
+				glXReleaseTexImageEXT(xdisp, p->glxpixmap,
+						      GLX_FRONT_EXT);
 			}
+
 			glXDestroyPixmap(xdisp, p->glxpixmap);
-			if (xlock.gotError()) {
-				blog(LOG_ERROR,
-				     "cleanup glXDestroyPixmap failed: %s",
-				     xlock.getErrorText().c_str());
-				xlock.resetError();
-			}
 			p->glxpixmap = 0;
 		}
 		gs_texture_destroy(p->gltex);
@@ -334,21 +326,7 @@ static void xcc_cleanup(XCompcapMain_private *p)
 
 	if (p->pixmap) {
 		XFreePixmap(xdisp, p->pixmap);
-		if (xlock.gotError()) {
-			blog(LOG_ERROR, "cleanup glXDestroyPixmap failed: %s",
-			     xlock.getErrorText().c_str());
-			xlock.resetError();
-		}
 		p->pixmap = 0;
-	}
-
-	if (p->win) {
-		p->win = 0;
-	}
-
-	if (p->tex) {
-		gs_texture_destroy(p->tex);
-		p->tex = 0;
 	}
 }
 
@@ -398,50 +376,51 @@ struct gs_texture {
 
 void XCompcapMain::updateSettings(obs_data_t *settings)
 {
-	ObsGsContextHolder obsctx;
-	XErrorLock xlock;
+	obs_enter_graphics();
+	DEFER(obs_leave_graphics());
 
-	PLock lock(&p->lock);
+	pthread_mutex_lock(&p->lock);
+	DEFER(pthread_mutex_unlock(&p->lock));
+
+	XErrorLock xlock;
 
 	blog(LOG_DEBUG, "Settings updating");
 
-	Window prevWin = p->win;
+	/* Settings initialized or changed */
+	const char *windowName =
+		obs_data_get_string(settings, "capture_window");
 
-	xcc_cleanup(p);
+	p->windowName = windowName;
+	p->win = getWindowFromString(windowName);
+	XCompcap::registerSource(this, p->win);
 
-	p->tick_error_suppressed = false;
+	p->cut_top = obs_data_get_int(settings, "cut_top");
+	p->cut_left = obs_data_get_int(settings, "cut_left");
+	p->cut_right = obs_data_get_int(settings, "cut_right");
+	p->cut_bot = obs_data_get_int(settings, "cut_bot");
+	p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
+	p->show_cursor = obs_data_get_bool(settings, "show_cursor");
+	p->include_border = obs_data_get_bool(settings, "include_border");
+	p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
+	p->draw_opaque = false;
 
-	if (settings) {
-		/* Settings initialized or changed */
-		const char *windowName =
-			obs_data_get_string(settings, "capture_window");
+	updateTexture(&xlock);
 
-		p->windowName = windowName;
-		p->win = getWindowFromString(windowName);
-		XCompcap::registerSource(this, p->win);
-
-		p->cut_top = obs_data_get_int(settings, "cut_top");
-		p->cut_left = obs_data_get_int(settings, "cut_left");
-		p->cut_right = obs_data_get_int(settings, "cut_right");
-		p->cut_bot = obs_data_get_int(settings, "cut_bot");
-		p->lockX = obs_data_get_bool(settings, "lock_x");
-		p->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
-		p->show_cursor = obs_data_get_bool(settings, "show_cursor");
-		p->include_border =
-			obs_data_get_bool(settings, "include_border");
-		p->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
-		p->draw_opaque = false;
-	} else {
-		/* New Window found (stored in p->win), just re-initialize GL-Mapping  */
-		p->win = prevWin;
+	if (!p->windowName.empty()) {
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\ttitle: %s\n"
+		     "\tclass: %s\n",
+		     obs_source_get_name(p->source),
+		     XCompcap::getWindowName(p->win).c_str(),
+		     XCompcap::getWindowClass(p->win).c_str());
 	}
+}
 
-	if (xlock.gotError()) {
-		blog(LOG_ERROR, "registeringSource failed: %s",
-		     xlock.getErrorText().c_str());
-		return;
-	}
-	XSync(xdisp, 0);
+// must be on the graphics thread, call obs_enter_graphics beforehand.
+void XCompcapMain::updateTexture(XErrorLock *xlock)
+{
+	cleanupPixmap(p);
 
 	XWindowAttributes attr;
 	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
@@ -534,12 +513,12 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	}
 
 	// Precautionary since we dont error check every GLX call above.
-	xlock.resetError();
+	xlock->resetError();
 
 	p->pixmap = XCompositeNameWindowPixmap(xdisp, p->win);
-	if (xlock.gotError()) {
+	if (xlock->gotError()) {
 		blog(LOG_ERROR, "XCompositeNameWindowPixmap failed: %s",
-		     xlock.getErrorText().c_str());
+		     xlock->getErrorText().c_str());
 		p->pixmap = 0;
 		XFree(configs);
 		return;
@@ -551,9 +530,9 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 				    GLX_TEXTURE_FORMAT_RGBA_EXT, None};
 
 	p->glxpixmap = glXCreatePixmap(xdisp, config, p->pixmap, pixmap_attrs);
-	if (xlock.gotError()) {
+	if (xlock->gotError()) {
 		blog(LOG_ERROR, "glXCreatePixmap failed: %s",
-		     xlock.getErrorText().c_str());
+		     xlock->getErrorText().c_str());
 		XFreePixmap(xdisp, p->pixmap);
 		XFree(configs);
 		p->pixmap = 0;
@@ -563,14 +542,14 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 	XFree(configs);
 
 	// Build an OBS texture to bind the pixmap to.
-	p->gltex = gs_texture_create(p->width, p->height, GS_RGBA_UNORM, 1, 0,
+	p->gltex = gs_texture_create(width(), height(), GS_RGBA_UNORM, 1, 0,
 				     GS_GL_DUMMYTEX);
 	GLuint gltex = *(GLuint *)gs_texture_get_obj(p->gltex);
 	glBindTexture(GL_TEXTURE_2D, gltex);
 	glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
-	if (xlock.gotError()) {
+	if (xlock->gotError()) {
 		blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
-		     xlock.getErrorText().c_str());
+		     xlock->getErrorText().c_str());
 		XFreePixmap(xdisp, p->pixmap);
 		XFree(configs);
 		p->pixmap = 0;
@@ -598,19 +577,6 @@ void XCompcapMain::updateSettings(obs_data_t *settings)
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
-
-	if (!p->windowName.empty()) {
-		blog(LOG_INFO,
-		     "[window-capture: '%s'] update settings:\n"
-		     "\ttitle: %s\n"
-		     "\tclass: %s\n"
-		     "\tBit depth: %i\n"
-		     "\tFound proper GLXFBConfig (in %i): %s\n",
-		     obs_source_get_name(p->source),
-		     XCompcap::getWindowName(p->win).c_str(),
-		     XCompcap::getWindowClass(p->win).c_str(), attr.depth,
-		     nelem, found ? "yes" : "no");
-	}
 }
 
 void XCompcapMain::tick(float seconds)
@@ -619,12 +585,14 @@ void XCompcapMain::tick(float seconds)
 		return;
 
 	// Must be taken before xlock to prevent deadlock on shutdown
-	ObsGsContextHolder obsctx;
+	obs_enter_graphics();
+	DEFER(obs_leave_graphics());
 
-	PLock lock(&p->lock, true);
-
-	if (!lock.isLocked())
+	if (pthread_mutex_trylock(&p->lock) != 0)
 		return;
+	DEFER(pthread_mutex_unlock(&p->lock));
+
+	XErrorLock xlock;
 
 	XCompcap::processEvents();
 
@@ -633,9 +601,7 @@ void XCompcapMain::tick(float seconds)
 		p->win = 0;
 	}
 
-	XErrorLock xlock;
 	XWindowAttributes attr;
-
 	if (!p->win || !XGetWindowAttributes(xdisp, p->win, &attr)) {
 		p->window_check_time += (double)seconds;
 
@@ -649,7 +615,7 @@ void XCompcapMain::tick(float seconds)
 		if (newWin && XGetWindowAttributes(xdisp, newWin, &attr)) {
 			p->win = newWin;
 			XCompcap::registerSource(this, p->win);
-			updateSettings(0);
+			updateTexture(&xlock);
 		} else {
 			return;
 		}
@@ -658,26 +624,10 @@ void XCompcapMain::tick(float seconds)
 	if (!p->tex || !p->gltex)
 		return;
 
-	if (p->lockX) {
-		// XDisplayLock is still live so we should already be locked.
-		XLockDisplay(xdisp);
-		XSync(xdisp, 0);
-	}
-
 	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(p->gltex));
-	if (p->strict_binding) {
+	if (p->strict_binding && p->glxpixmap) {
 		glXReleaseTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT);
-		if (xlock.gotError() && !p->tick_error_suppressed) {
-			blog(LOG_ERROR, "glXReleaseTexImageEXT failed: %s",
-			     xlock.getErrorText().c_str());
-			p->tick_error_suppressed = true;
-		}
 		glXBindTexImageEXT(xdisp, p->glxpixmap, GLX_FRONT_EXT, nullptr);
-		if (xlock.gotError() && !p->tick_error_suppressed) {
-			blog(LOG_ERROR, "glXBindTexImageEXT failed: %s",
-			     xlock.getErrorText().c_str());
-			p->tick_error_suppressed = true;
-		}
 	}
 
 	if (p->include_border) {
@@ -700,9 +650,6 @@ void XCompcapMain::tick(float seconds)
 			p->cursor->x > int(p->width - p->cur_cut_right) ||
 			p->cursor->y > int(p->height - p->cur_cut_bot);
 	}
-
-	if (p->lockX)
-		XUnlockDisplay(xdisp);
 }
 
 void XCompcapMain::render(gs_effect_t *effect)
@@ -710,15 +657,17 @@ void XCompcapMain::render(gs_effect_t *effect)
 	if (!p->win)
 		return;
 
-	PLock lock(&p->lock, true);
+	if (pthread_mutex_trylock(&p->lock) != 0)
+		return;
+	DEFER(pthread_mutex_unlock(&p->lock));
+
+	if (!p->tex || !p->gltex)
+		return;
 
 	if (p->draw_opaque)
 		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 	else
 		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-
-	if (!lock.isLocked() || !p->tex)
-		return;
 
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, p->tex);

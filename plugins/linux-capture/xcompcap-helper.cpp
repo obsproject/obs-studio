@@ -172,7 +172,8 @@ static pthread_mutex_t changeLock = PTHREAD_MUTEX_INITIALIZER;
 
 void registerSource(XCompcapMain *source, Window win)
 {
-	PLock lock(&changeLock);
+	pthread_mutex_lock(&changeLock);
+	DEFER(pthread_mutex_unlock(&changeLock));
 
 	blog(LOG_DEBUG, "registerSource(source=%p, win=%ld)", source, win);
 
@@ -193,7 +194,8 @@ void registerSource(XCompcapMain *source, Window win)
 
 void unregisterSource(XCompcapMain *source)
 {
-	PLock lock(&changeLock);
+	pthread_mutex_lock(&changeLock);
+	DEFER(pthread_mutex_unlock(&changeLock));
 
 	blog(LOG_DEBUG, "unregisterSource(source=%p)", source);
 	{
@@ -235,9 +237,9 @@ void unregisterSource(XCompcapMain *source)
 
 void processEvents()
 {
-	PLock lock(&changeLock);
-
+	pthread_mutex_lock(&changeLock);
 	XLockDisplay(disp());
+	XSync(disp(), 0);
 
 	while (XEventsQueued(disp(), QueuedAfterReading) > 0) {
 		XEvent ev;
@@ -279,11 +281,13 @@ void processEvents()
 	}
 
 	XUnlockDisplay(disp());
+	pthread_mutex_unlock(&changeLock);
 }
 
 bool sourceWasReconfigured(XCompcapMain *source)
 {
-	PLock lock(&changeLock);
+	pthread_mutex_lock(&changeLock);
+	DEFER(pthread_mutex_unlock(&changeLock));
 
 	auto it = changedSources.find(source);
 
@@ -299,111 +303,46 @@ bool sourceWasReconfigured(XCompcapMain *source)
 
 }
 
-PLock::PLock(pthread_mutex_t *mtx, bool trylock) : m(mtx)
-{
-	if (trylock)
-		islock = mtx && pthread_mutex_trylock(mtx) == 0;
-	else
-		islock = mtx && pthread_mutex_lock(mtx) == 0;
-}
-
-PLock::~PLock()
-{
-	if (islock) {
-		pthread_mutex_unlock(m);
-	}
-}
-
-bool PLock::isLocked()
-{
-	return islock;
-}
-
-void PLock::unlock()
-{
-	if (islock) {
-		pthread_mutex_unlock(m);
-		islock = false;
-	}
-}
-
-void PLock::lock()
-{
-	if (!islock) {
-		pthread_mutex_lock(m);
-		islock = true;
-	}
-}
-
-static bool *curErrorTarget = 0;
-static char curErrorText[200];
+static XErrorLock *curLock = nullptr;
 static int xerrorlock_handler(Display *disp, XErrorEvent *err)
 {
+	if (!curLock)
+		return 0;
 
-	if (curErrorTarget)
-		*curErrorTarget = true;
+	if (curLock->prevHandler && curLock->prevHandler != xerrorlock_handler)
+		curLock->prevHandler(disp, err);
 
-	XGetErrorText(disp, err->error_code, curErrorText, 200);
+	XGetErrorText(disp, err->error_code, curLock->curErrorText, 200);
 
 	return 0;
 }
 
 XErrorLock::XErrorLock()
 {
-	goterr = false;
-	islock = false;
-	prevhandler = 0;
+	memset(curErrorText, 0, sizeof(curErrorText));
 
-	lock();
+	XLockDisplay(XCompcap::disp());
+	if (curLock != this && curLock != nullptr) {
+		assert("Recursive XErrorLocks are illegal" == 0);
+	}
+	curLock = this;
+	prevHandler = XSetErrorHandler(xerrorlock_handler);
 }
 
 XErrorLock::~XErrorLock()
 {
-	unlock();
-}
-
-bool XErrorLock::isLocked()
-{
-	return islock;
-}
-
-void XErrorLock::lock()
-{
-	if (!islock) {
-		XLockDisplay(XCompcap::disp());
-		XSync(XCompcap::disp(), 0);
-
-		curErrorTarget = &goterr;
-		curErrorText[0] = 0;
-		prevhandler = XSetErrorHandler(xerrorlock_handler);
-
-		islock = true;
-	}
-}
-
-void XErrorLock::unlock()
-{
-	if (islock) {
-		XSync(XCompcap::disp(), 0);
-
-		curErrorTarget = 0;
-		XSetErrorHandler(prevhandler);
-		prevhandler = 0;
-		XUnlockDisplay(XCompcap::disp());
-		islock = false;
-	}
+	XSetErrorHandler(prevHandler);
+	curLock = nullptr;
+	XUnlockDisplay(XCompcap::disp());
 }
 
 bool XErrorLock::gotError()
 {
-	if (!islock)
-		return false;
-
 	XSync(XCompcap::disp(), 0);
 
-	bool res = goterr;
-	goterr = false;
-	return res;
+	if (curErrorText[0] == 0)
+		return false;
+	return true;
 }
 
 std::string XErrorLock::getErrorText()
@@ -413,52 +352,5 @@ std::string XErrorLock::getErrorText()
 
 void XErrorLock::resetError()
 {
-	if (islock)
-		XSync(XCompcap::disp(), 0);
-
-	goterr = false;
-	curErrorText[0] = 0;
-}
-
-XDisplayLock::XDisplayLock()
-{
-	islock = false;
-	lock();
-}
-
-XDisplayLock::~XDisplayLock()
-{
-	unlock();
-}
-
-bool XDisplayLock::isLocked()
-{
-	return islock;
-}
-
-void XDisplayLock::lock()
-{
-	if (!islock) {
-		XLockDisplay(XCompcap::disp());
-		islock = true;
-	}
-}
-
-void XDisplayLock::unlock()
-{
-	if (islock) {
-		XSync(XCompcap::disp(), 0);
-		XUnlockDisplay(XCompcap::disp());
-		islock = false;
-	}
-}
-
-ObsGsContextHolder::ObsGsContextHolder()
-{
-	obs_enter_graphics();
-}
-
-ObsGsContextHolder::~ObsGsContextHolder()
-{
-	obs_leave_graphics();
+	memset(curErrorText, 0, sizeof(curErrorText));
 }

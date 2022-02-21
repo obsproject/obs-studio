@@ -1,5 +1,7 @@
 #pragma once
 
+#include "xcompcap-helper.hpp"
+
 struct XCompcapMain_private;
 
 class XCompcapMain {
@@ -22,5 +24,6 @@ public:
 	uint32_t height();
 
 private:
+	void updateTexture(XErrorLock *xlock);
 	XCompcapMain_private *p;
 };

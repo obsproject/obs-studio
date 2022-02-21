@@ -2,72 +2,24 @@
 
 #include <string>
 #include <list>
+#include <X11/Xlib.h>
 
 #define blog(level, msg, ...) blog(level, "xcompcap: " msg, ##__VA_ARGS__)
 
-class PLock {
-	pthread_mutex_t *m;
-	bool islock;
-
-public:
-	PLock(const PLock &) = delete;
-	PLock &operator=(const PLock &) = delete;
-
-	PLock(pthread_mutex_t *mtx, bool trylock = false);
-
-	~PLock();
-
-	bool isLocked();
-
-	void unlock();
-	void lock();
-};
-
 class XErrorLock {
-	bool islock;
-	bool goterr;
-	XErrorHandler prevhandler;
-
 public:
+	char curErrorText[200];
+	XErrorHandler prevHandler;
+
 	XErrorLock(const XErrorLock &) = delete;
 	XErrorLock &operator=(const XErrorLock &) = delete;
 
 	XErrorLock();
 	~XErrorLock();
 
-	bool isLocked();
-
-	void unlock();
-	void lock();
-
 	bool gotError();
 	std::string getErrorText();
 	void resetError();
-};
-
-class XDisplayLock {
-	bool islock;
-
-public:
-	XDisplayLock(const XDisplayLock &) = delete;
-	XDisplayLock &operator=(const XDisplayLock &) = delete;
-
-	XDisplayLock();
-	~XDisplayLock();
-
-	bool isLocked();
-
-	void unlock();
-	void lock();
-};
-
-class ObsGsContextHolder {
-public:
-	ObsGsContextHolder(const ObsGsContextHolder &) = delete;
-	ObsGsContextHolder &operator=(const ObsGsContextHolder &) = delete;
-
-	ObsGsContextHolder();
-	~ObsGsContextHolder();
 };
 
 class XCompcapMain;
@@ -96,3 +48,21 @@ void unregisterSource(XCompcapMain *source);
 void processEvents();
 bool sourceWasReconfigured(XCompcapMain *source);
 }
+
+// Defer implementation from http://the-witness.net/news/2012/11/scopeexit-in-c11/
+template<typename F> struct ScopeExit {
+	ScopeExit(F f) : f(f) {}
+	~ScopeExit() { f(); }
+	F f;
+};
+
+template<typename F> ScopeExit<F> MakeScopeExit(F f)
+{
+	return ScopeExit<F>(f);
+};
+
+#define STRING_JOIN2(arg1, arg2) DO_STRING_JOIN2(arg1, arg2)
+#define DO_STRING_JOIN2(arg1, arg2) arg1##arg2
+#define DEFER(code)                                \
+	auto STRING_JOIN2(scope_exit_, __LINE__) = \
+		MakeScopeExit([=]() { code; })
