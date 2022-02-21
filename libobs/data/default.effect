@@ -62,6 +62,14 @@ float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawSrgbDecompressMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
 float4 PSDrawMultiply(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
@@ -83,6 +91,23 @@ float4 PSDrawMultiplyTonemap(VertInOut vert_in) : TARGET
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
 	rgba.rgb *= multiplier;
 	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawPQ(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = st2084_to_linear(rgba.rgb) * multiplier;
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawTonemapPQ(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = st2084_to_linear(rgba.rgb) * multiplier;
 	rgba.rgb = reinhard(rgba.rgb);
 	rgba.rgb = rec2020_to_rec709(rgba.rgb);
 	return rgba;
@@ -133,6 +158,15 @@ technique DrawSrgbDecompress
 	}
 }
 
+technique DrawSrgbDecompressMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgbDecompressMultiply(vert_in);
+	}
+}
+
 technique DrawMultiply
 {
 	pass
@@ -157,5 +191,23 @@ technique DrawMultiplyTonemap
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawMultiplyTonemap(vert_in);
+	}
+}
+
+technique DrawPQ
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawPQ(vert_in);
+	}
+}
+
+technique DrawTonemapPQ
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawTonemapPQ(vert_in);
 	}
 }
