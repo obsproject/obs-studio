@@ -4989,35 +4989,15 @@
                      </item>
                     </widget>
                    </item>
-                   <item row="4" column="1">
-                    <layout class="QHBoxLayout" name="horizontalLayout_18">
-                     <property name="leftMargin">
-                      <number>0</number>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_33">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
                      </property>
-                     <property name="topMargin">
-                      <number>0</number>
+                     <property name="buddy">
+                      <cstring>colorSpace</cstring>
                      </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QCheckBox" name="disableOSXVSync">
-                       <property name="text">
-                        <string>DisableOSXVSync</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="resetOSXVSync">
-                       <property name="text">
-                        <string>ResetOSXVSyncOnExit</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
+                    </widget>
                    </item>
                    <item row="3" column="1">
                     <layout class="QHBoxLayout" name="horizontalLayout_20">
@@ -5073,17 +5053,73 @@
                      </item>
                     </layout>
                    </item>
-                   <item row="3" column="0">
-                    <widget class="QLabel" name="label_33">
+                   <item row="4" column="0">
+                    <widget class="QLabel" name="label_sdrWhiteLevel">
                      <property name="text">
-                      <string>Basic.Settings.Advanced.Video.ColorSpace</string>
+                      <string>Basic.Settings.Advanced.Video.SdrWhiteLevel</string>
                      </property>
                      <property name="buddy">
-                      <cstring>colorSpace</cstring>
+                      <cstring>sdrWhiteLevel</cstring>
                      </property>
                     </widget>
                    </item>
-                   <item row="4" column="0">
+                   <item row="4" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_sdrPaperWhite">
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <widget class="QSpinBox" name="sdrWhiteLevel">
+                       <property name="minimum">
+                        <number>80</number>
+                       </property>
+                       <property name="maximum">
+                        <number>480</number>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="5" column="1">
+                    <layout class="QHBoxLayout" name="horizontalLayout_18">
+                     <property name="leftMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="topMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="rightMargin">
+                      <number>0</number>
+                     </property>
+                     <property name="bottomMargin">
+                      <number>0</number>
+                     </property>
+                     <item>
+                      <widget class="QCheckBox" name="disableOSXVSync">
+                       <property name="text">
+                        <string>DisableOSXVSync</string>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QCheckBox" name="resetOSXVSync">
+                       <property name="text">
+                        <string>ResetOSXVSyncOnExit</string>
+                       </property>
+                      </widget>
+                     </item>
+                    </layout>
+                   </item>
+                   <item row="6" column="0">
                     <spacer name="horizontalSpacer_12">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>

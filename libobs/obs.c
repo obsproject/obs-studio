@@ -1301,6 +1301,20 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	return true;
 }
 
+float obs_get_video_sdr_white_level(void)
+{
+	struct obs_core_video *video = &obs->video;
+	return video->graphics ? video->sdr_white_level : 300.f;
+}
+
+void obs_set_video_sdr_white_level(float sdr_white_level)
+{
+	struct obs_core_video *video = &obs->video;
+	assert(video->graphics);
+
+	video->sdr_white_level = (uint32_t)sdr_white_level;
+}
+
 bool obs_get_audio_info(struct obs_audio_info *oai)
 {
 	struct obs_core_audio *audio = &obs->audio;

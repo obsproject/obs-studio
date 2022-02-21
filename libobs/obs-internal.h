@@ -321,6 +321,7 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
 	struct obs_video_info ovi;
+	uint32_t sdr_white_level;
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;

@@ -147,8 +147,22 @@ Initialization, Shutdown, and Information
 .. function:: bool obs_get_video_info(struct obs_video_info *ovi)
 
    Gets the current video settings.
-   
+
    :return: *false* if no video
+
+---------------------
+
+.. function:: float obs_get_video_sdr_white_level(void)
+
+   Gets the current SDR white level.
+
+   :return: SDR white level, 300.f if no video
+
+---------------------
+
+.. function:: void obs_set_video_sdr_white_level(float sdr_white_level)
+
+   Sets the current SDR white level.
 
 ---------------------
 
