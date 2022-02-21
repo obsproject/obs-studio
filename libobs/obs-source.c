@@ -1482,7 +1482,7 @@ static void source_output_audio_data(obs_source_t *source,
 
 	source->last_audio_ts = in.timestamp;
 	source->next_audio_ts_min =
-		in.timestamp + conv_frames_to_time(sample_rate, in.frames);
+		data->timestamp + conv_frames_to_time(sample_rate, in.frames);
 
 	in.timestamp += source->timing_adjust;
 
