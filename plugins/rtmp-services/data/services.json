@@ -854,7 +854,10 @@
         },
         {
             "name": "AfreecaTV",
-            "alt_names": ["아프리카TV", "Afreeca.TV"],
+            "alt_names": [
+                "아프리카TV",
+                "Afreeca.TV"
+            ],
             "servers": [
                 {
                     "name": "Asia : Korea",
@@ -1174,7 +1177,9 @@
         },
         {
             "name": "Switchboard Live",
-            "alt_names": ["Switchboard Live (Joicaster)"],
+            "alt_names": [
+                "Switchboard Live (Joicaster)"
+            ],
             "servers": [
                 {
                     "name": "Global Zone (geo based)",
@@ -1325,7 +1330,9 @@
         },
         {
             "name": "Trovo",
-            "alt_names": ["Madcat"],
+            "alt_names": [
+                "Madcat"
+            ],
             "stream_key_link": "https://studio.trovo.live/mychannel/stream",
             "servers": [
                 {
@@ -2334,7 +2341,7 @@
             "servers": [
                 {
                     "name": "BoxCast",
-                    "url":  "rtmp://rtmp.boxcast.com/live"
+                    "url": "rtmp://rtmp.boxcast.com/live"
                 }
             ]
         },
@@ -2343,7 +2350,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url":  "rtmp://rtmp.disciplemedia.com/b-fme"
+                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ]
         },
@@ -2398,7 +2405,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url":  "rtmp://live.autistici.org/ingest"
+                    "url": "rtmp://live.autistici.org/ingest"
                 }
             ],
             "recommended": {
@@ -2413,7 +2420,7 @@
             "servers": [
                 {
                     "name": "PhoneLiveStreaming",
-                    "url":  "rtmp://live.phonelivestreaming.com/live/"
+                    "url": "rtmp://live.phonelivestreaming.com/live/"
                 }
             ],
             "recommended": {
@@ -2514,6 +2521,73 @@
                 "max fps": 60,
                 "max video bitrate": 7200,
                 "max audio bitrate": 196
+            }
+        },
+        {
+            "name": "Shareplay.tv",
+            "common": true,
+            "stream_key_link": "https://shareplay.tv/",
+            "more_info_link": "https://shareplay.tv/",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://shareplay.tv:833/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "profile": "main",
+                "supported resolutions": [
+                    "1920x1080",
+                    "1280x720",
+                    "852x480",
+                    "640x360"
+                ],
+                "bitrate matrix": [
+                    {
+                        "res": "640x360",
+                        "fps": 30,
+                        "max bitrate": 1000
+                    },
+                    {
+                        "res": "640x360",
+                        "fps": 60,
+                        "max bitrate": 1500
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 30,
+                        "max bitrate": 2000
+                    },
+                    {
+                        "res": "852x480",
+                        "fps": 60,
+                        "max bitrate": 3000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 30,
+                        "max bitrate": 4000
+                    },
+                    {
+                        "res": "1280x720",
+                        "fps": 60,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 30,
+                        "max bitrate": 6000
+                    },
+                    {
+                        "res": "1920x1080",
+                        "fps": 60,
+                        "max bitrate": 9000
+                    }
+                ],
+                "max fps": 60,
+                "max video bitrate": 9000,
+                "max audio bitrate": 128
             }
         }
     ]
