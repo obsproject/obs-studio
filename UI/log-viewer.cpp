@@ -24,7 +24,7 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 	const QFont fixedFont =
 		QFontDatabase::systemFont(QFontDatabase::FixedFont);
 
-	textArea = new QTextEdit();
+	textArea = new QPlainTextEdit();
 	textArea->setReadOnly(true);
 	textArea->setFont(fixedFont);
 
@@ -106,13 +106,21 @@ void OBSLogViewer::InitLog()
 		in.setCodec("UTF-8");
 #endif
 
+		QTextDocument *doc = textArea->document();
+		QTextCursor cursor(doc);
+		cursor.movePosition(QTextCursor::End);
+		cursor.beginEditBlock();
 		while (!in.atEnd()) {
 			QString line = in.readLine();
-			AddLine(LOG_INFO, line);
+			cursor.insertHtml(line);
+			cursor.insertBlock();
 		}
+		cursor.endEditBlock();
 
 		file.close();
 	}
+	QScrollBar *scroll = textArea->verticalScrollBar();
+	scroll->setValue(scroll->maximum());
 
 	obsLogViewer = this;
 }
@@ -123,12 +131,10 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 
 	switch (type) {
 	case LOG_WARNING:
-		msg = QStringLiteral("<font color=\"#c08000\">") + msg +
-		      QStringLiteral("</font>");
+		msg = QString("<font color=\"#c08000\">%1</font>").arg(msg);
 		break;
 	case LOG_ERROR:
-		msg = QStringLiteral("<font color=\"#c00000\">") + msg +
-		      QStringLiteral("</font>");
+		msg = QString("<font color=\"#c00000\">%1</font>").arg(msg);
 		break;
 	}
 
@@ -138,11 +144,13 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 	if (bottomScrolled)
 		scroll->setValue(scroll->maximum());
 
-	QTextCursor newCursor = textArea->textCursor();
-	newCursor.movePosition(QTextCursor::End);
-	newCursor.insertHtml(
-		QStringLiteral("<pre style=\"white-space: pre-wrap\">") + msg +
-		QStringLiteral("<br></pre>"));
+	QTextDocument *doc = textArea->document();
+	QTextCursor cursor(doc);
+	cursor.movePosition(QTextCursor::End);
+	cursor.beginEditBlock();
+	cursor.insertHtml(msg);
+	cursor.insertBlock();
+	cursor.endEditBlock();
 
 	if (bottomScrolled)
 		scroll->setValue(scroll->maximum());
