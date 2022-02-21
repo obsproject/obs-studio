@@ -1,0 +1,1061 @@
+#include <obs-module.h>
+#include <glad/glad.h>
+#include <glad/glad_glx.h>
+#include <X11/Xlib-xcb.h>
+#include <xcb/xcb.h>
+#include <xcb/composite.h>
+#include <pthread.h>
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdint.h>
+#include <stdbool.h>
+#include <stdio.h>
+#include <ctype.h>
+
+#include "xhelpers.h"
+#include "xcursor-xcb.h"
+#include "xcomposite-input.h"
+#include <util/platform.h>
+#include <util/dstr.h>
+#include <util/darray.h>
+
+#define WIN_STRING_DIV "\r\n"
+#define FIND_WINDOW_INTERVAL 0.5
+
+static Display *disp = NULL;
+static xcb_connection_t *conn = NULL;
+// Atoms used throughout our plugin
+xcb_atom_t ATOM_UTF8_STRING;
+xcb_atom_t ATOM_STRING;
+xcb_atom_t ATOM_TEXT;
+xcb_atom_t ATOM_COMPOUND_TEXT;
+xcb_atom_t ATOM_WM_NAME;
+xcb_atom_t ATOM_WM_CLASS;
+xcb_atom_t ATOM__NET_WM_NAME;
+xcb_atom_t ATOM__NET_SUPPORTING_WM_CHECK;
+xcb_atom_t ATOM__NET_CLIENT_LIST;
+
+struct xcompcap {
+	obs_source_t *source;
+
+	const char *windowName;
+	xcb_window_t win;
+	int crop_top;
+	int crop_left;
+	int crop_right;
+	int crop_bot;
+	bool swapRedBlue;
+	bool include_border;
+	bool exclude_alpha;
+
+	float window_check_time;
+	bool window_changed;
+
+	uint32_t width;
+	uint32_t height;
+	uint32_t border;
+
+	Pixmap pixmap;
+	GLXPixmap glxpixmap;
+	gs_texture_t *tex;
+	gs_texture_t *gltex;
+
+	pthread_mutex_t lock;
+
+	bool show_cursor;
+	bool cursor_outside;
+	xcb_xcursor_t *cursor;
+	// strict_binding determines whether we rebind the GLX Pixmap on every
+	// tick. "Strict binding" is the correct mode of operation, according to
+	// GLX_EXT_texture_from_pixmap. However certain drivers exhibit poor
+	// performance when this is done, so setting this to false allows working
+	// around it.
+	bool strict_binding;
+};
+
+static void xcompcap_update(void *data, obs_data_t *settings);
+
+xcb_atom_t get_atom(xcb_connection_t *conn, const char *name)
+{
+	xcb_intern_atom_cookie_t atom_c =
+		xcb_intern_atom(conn, 1, strlen(name), name);
+	xcb_intern_atom_reply_t *atom_r =
+		xcb_intern_atom_reply(conn, atom_c, NULL);
+	xcb_atom_t a = atom_r->atom;
+	free(atom_r);
+	return a;
+}
+
+void xcomp_gather_atoms(xcb_connection_t *conn)
+{
+	ATOM_UTF8_STRING = get_atom(conn, "UTF8_STRING");
+	ATOM_STRING = get_atom(conn, "STRING");
+	ATOM_TEXT = get_atom(conn, "TEXT");
+	ATOM_COMPOUND_TEXT = get_atom(conn, "COMPOUND_TEXT");
+	ATOM_WM_NAME = get_atom(conn, "WM_NAME");
+	ATOM_WM_CLASS = get_atom(conn, "WM_CLASS");
+	ATOM__NET_WM_NAME = get_atom(conn, "_NET_WM_NAME");
+	ATOM__NET_SUPPORTING_WM_CHECK =
+		get_atom(conn, "_NET_SUPPORTING_WM_CHECK");
+	ATOM__NET_CLIENT_LIST = get_atom(conn, "_NET_CLIENT_LIST");
+}
+
+bool xcomp_window_exists(xcb_connection_t *conn, xcb_window_t win)
+{
+	xcb_generic_error_t *err = NULL;
+	xcb_get_window_attributes_cookie_t attr_cookie =
+		xcb_get_window_attributes(conn, win);
+	xcb_get_window_attributes_reply_t *attr =
+		xcb_get_window_attributes_reply(conn, attr_cookie, &err);
+
+	bool exists = err == NULL && attr->map_state == XCB_MAP_STATE_VIEWABLE;
+	free(attr);
+	return exists;
+}
+
+xcb_get_property_reply_t *xcomp_property_sync(xcb_connection_t *conn,
+					      xcb_window_t win, xcb_atom_t atom)
+{
+	if (atom == XCB_ATOM_NONE)
+		return NULL;
+
+	xcb_generic_error_t *err = NULL;
+	// Read properties up to 4096*4 bytes
+	xcb_get_property_cookie_t prop_cookie =
+		xcb_get_property(conn, 0, win, atom, 0, 0, 4096);
+	xcb_get_property_reply_t *prop =
+		xcb_get_property_reply(conn, prop_cookie, &err);
+	if (err != NULL || xcb_get_property_value_length(prop) == 0) {
+		free(prop);
+		return NULL;
+	}
+
+	return prop;
+}
+
+// See ICCCM https://www.x.org/releases/X11R7.6/doc/xorg-docs/specs/ICCCM/icccm.html#text_properties
+// for more info on the galactic brained string types used in Xorg.
+struct dstr xcomp_window_name(xcb_connection_t *conn, Display *disp,
+			      xcb_window_t win)
+{
+	struct dstr ret = {0};
+
+	xcb_get_property_reply_t *name =
+		xcomp_property_sync(conn, win, ATOM__NET_WM_NAME);
+	if (name) {
+		// Guaranteed to be UTF8_STRING.
+		const char *data = (const char *)xcb_get_property_value(name);
+		dstr_ncopy(&ret, data, xcb_get_property_value_length(name));
+		free(name);
+		return ret;
+	}
+
+	name = xcomp_property_sync(conn, win, ATOM_WM_NAME);
+	if (!name) {
+		goto fail;
+	}
+
+	char *data = (char *)xcb_get_property_value(name);
+	if (name->type == ATOM_UTF8_STRING) {
+		dstr_ncopy(&ret, data, xcb_get_property_value_length(name));
+		free(name);
+		return ret;
+	}
+	if (name->type == ATOM_STRING) { // Latin-1, safe enough
+		dstr_ncopy(&ret, data, xcb_get_property_value_length(name));
+		free(name);
+		return ret;
+	}
+	if (name->type == ATOM_TEXT) { // Default charset
+		char *utf8;
+		if (!os_mbs_to_utf8_ptr(
+			    data, xcb_get_property_value_length(name), &utf8)) {
+			free(name);
+			goto fail;
+		}
+		free(name);
+		dstr_init_move_array(&ret, utf8);
+		return ret;
+	}
+	if (name->type ==
+	    ATOM_COMPOUND_TEXT) { // LibX11 is the only decoder for these.
+		XTextProperty xname = {
+			(unsigned char *)data, name->type,
+			8, // 8 by definition.
+			1, // Only decode the first element of string arrays.
+		};
+		char **list;
+		int len = 0;
+		if (XmbTextPropertyToTextList(disp, &xname, &list, &len) <
+			    Success ||
+		    !list || len < 1) {
+			free(name);
+			goto fail;
+		}
+		char *utf8;
+		if (!os_mbs_to_utf8_ptr(list[0], 0, &utf8)) {
+			XFreeStringList(list);
+			free(name);
+			goto fail;
+		}
+		dstr_init_move_array(&ret, utf8);
+		XFreeStringList(list);
+		free(name);
+		return ret;
+	}
+
+fail:
+	dstr_copy(&ret, "unknown");
+	return ret;
+}
+
+struct dstr xcomp_window_class(xcb_connection_t *conn, xcb_window_t win)
+{
+	struct dstr ret = {0};
+	dstr_copy(&ret, "unknown");
+	xcb_get_property_reply_t *cls =
+		xcomp_property_sync(conn, win, ATOM_WM_CLASS);
+	if (!cls)
+		return ret;
+
+	// WM_CLASS is formatted differently from other strings, it's two null terminated strings.
+	// Since we want the first one, let's just let copy run strlen.
+	dstr_copy(&ret, (const char *)xcb_get_property_value(cls));
+	free(cls);
+	return ret;
+}
+
+// Specification for checking for ewmh support at
+// http://standards.freedesktop.org/wm-spec/wm-spec-latest.html#idm140200472693600
+bool xcomp_check_ewmh(xcb_connection_t *conn, xcb_window_t root)
+{
+	xcb_get_property_reply_t *check =
+		xcomp_property_sync(conn, root, ATOM__NET_SUPPORTING_WM_CHECK);
+	if (!check)
+		return false;
+
+	xcb_window_t ewmh_window =
+		((xcb_window_t *)xcb_get_property_value(check))[0];
+	free(check);
+
+	xcb_get_property_reply_t *check2 = xcomp_property_sync(
+		conn, ewmh_window, ATOM__NET_SUPPORTING_WM_CHECK);
+	if (!check2)
+		return false;
+	free(check2);
+
+	return true;
+}
+
+struct darray xcomp_top_level_windows(xcb_connection_t *conn)
+{
+	DARRAY(xcb_window_t) res = {0};
+
+	// EWMH top level window listing is not supported.
+	if (ATOM__NET_CLIENT_LIST == XCB_ATOM_NONE)
+		return res.da;
+
+	xcb_screen_iterator_t screen_iter =
+		xcb_setup_roots_iterator(xcb_get_setup(conn));
+	for (; screen_iter.rem > 0; xcb_screen_next(&screen_iter)) {
+		xcb_generic_error_t *err = NULL;
+		// Read properties up to 4096*4 bytes
+		xcb_get_property_cookie_t cl_list_cookie =
+			xcb_get_property(conn, 0, screen_iter.data->root,
+					 ATOM__NET_CLIENT_LIST, 0, 0, 4096);
+		xcb_get_property_reply_t *cl_list =
+			xcb_get_property_reply(conn, cl_list_cookie, &err);
+		if (err != NULL) {
+			goto done;
+		}
+
+		uint32_t len = xcb_get_property_value_length(cl_list) /
+			       sizeof(xcb_window_t);
+		for (uint32_t i = 0; i < len; i++)
+			da_push_back(res,
+				     &(((xcb_window_t *)xcb_get_property_value(
+					     cl_list))[i]));
+
+	done:
+		free(cl_list);
+	}
+
+	return res.da;
+}
+
+xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
+			       const char *str)
+{
+	xcb_window_t ret = 0;
+	DARRAY(xcb_window_t) tlw = {0};
+	tlw.da = xcomp_top_level_windows(conn);
+	if (!str || strlen(str) == 0) {
+		if (tlw.num > 0)
+			ret = *(xcb_window_t *)darray_item(sizeof(xcb_window_t),
+							   &tlw.da, 0);
+		goto cleanup1;
+	}
+
+	size_t markSize = strlen(WIN_STRING_DIV);
+
+	const char *firstMark = strstr(str, WIN_STRING_DIV);
+	const char *secondMark =
+		firstMark ? strstr(firstMark + markSize, WIN_STRING_DIV) : NULL;
+	const char *strEnd = str + strlen(str);
+
+	const char *secondStr = firstMark + markSize;
+	const char *thirdStr = secondMark + markSize;
+
+	// wstr only consists of the window-id
+	if (!firstMark)
+		return (xcb_window_t)atol(str);
+
+	// wstr also contains window-name and window-class
+	char *wname = bzalloc(secondMark - secondStr + 1);
+	char *wcls = bzalloc(strEnd - thirdStr + 1);
+	memcpy(wname, secondStr, secondMark - secondStr);
+	memcpy(wcls, thirdStr, strEnd - thirdStr);
+	xcb_window_t wid = (xcb_window_t)strtol(str, NULL, 10);
+
+	// first try to find a match by the window-id
+	if (da_find(tlw, &wid, 0) != DARRAY_INVALID) {
+		ret = wid;
+		goto cleanup2;
+	}
+
+	// then try to find a match by name & class
+	for (size_t i = 0; i < tlw.num; i++) {
+		xcb_window_t cwin = *(xcb_window_t *)darray_item(
+			sizeof(xcb_window_t), &tlw.da, i);
+
+		struct dstr cwname = xcomp_window_name(conn, disp, cwin);
+		struct dstr cwcls = xcomp_window_class(conn, cwin);
+		bool found = (strcmp(wname, cwname.array) == 0 &&
+			      strcmp(wcls, cwcls.array));
+
+		dstr_free(&cwname);
+		dstr_free(&cwcls);
+		if (found) {
+			ret = cwin;
+			goto cleanup2;
+		}
+	}
+
+	blog(LOG_DEBUG,
+	     "Did not find new window id for Name '%s' or Class '%s'", wname,
+	     wcls);
+
+cleanup2:
+	bfree(wname);
+	bfree(wcls);
+cleanup1:
+	da_free(tlw);
+	return wid;
+}
+
+void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
+{
+	if (s->gltex) {
+		GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
+		glBindTexture(GL_TEXTURE_2D, gltex);
+		if (s->glxpixmap) {
+			if (s->strict_binding) {
+				glXReleaseTexImageEXT(disp, s->glxpixmap,
+						      GLX_FRONT_EXT);
+			}
+			glXDestroyPixmap(disp, s->glxpixmap);
+			s->glxpixmap = 0;
+		}
+		gs_texture_destroy(s->gltex);
+		s->gltex = 0;
+	}
+
+	if (s->pixmap) {
+		XFreePixmap(disp, s->pixmap);
+		s->pixmap = 0;
+	}
+
+	if (s->tex) {
+		gs_texture_destroy(s->tex);
+		s->tex = 0;
+	}
+}
+
+static enum gs_color_format gs_format_from_tex()
+{
+	GLint iformat = 0;
+	// consider GL_ARB_internalformat_query
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_INTERNAL_FORMAT,
+				 &iformat);
+
+	// These formats are known to be wrong on Intel platforms. We intentionally
+	// use swapped internal formats here to preserve historic behavior which
+	// swapped colors accidentally and because D3D11 would not support a
+	// GS_RGBX format.
+	switch (iformat) {
+	case GL_RGB:
+		return GS_BGRX_UNORM;
+	case GL_RGBA:
+		return GS_RGBA_UNORM;
+	default:
+		return GS_RGBA_UNORM;
+	}
+}
+
+// These declarations are from libobs-opengl/gl-subsystem.h because we need to
+// handle GLX modifying textures outside libobs.
+struct fb_info;
+
+struct gs_texture {
+	gs_device_t *device;
+	enum gs_texture_type type;
+	enum gs_color_format format;
+	GLenum gl_format;
+	GLenum gl_target;
+	GLenum gl_internal_format;
+	GLenum gl_type;
+	GLuint texture;
+	uint32_t levels;
+	bool is_dynamic;
+	bool is_render_target;
+	bool is_dummy;
+	bool gen_mipmaps;
+
+	gs_samplerstate_t *cur_sampler;
+	struct fbo_info *fbo;
+};
+// End shitty hack.
+
+// XErrorHandler for glXCreatePixmap calls.
+static bool pixmap_err = false;
+static char pixmap_err_text[200];
+static int catch_pixmap_errors(Display *display, XErrorEvent *err)
+{
+	pixmap_err = true;
+	memset(pixmap_err_text, 0, 200);
+	XGetErrorText(display, err->error_code, pixmap_err_text, 200);
+	return 0;
+}
+
+void xcomp_create_pixmap(xcb_connection_t *conn, Display *disp,
+			 struct xcompcap *s, int log_level)
+{
+	if (!s->win)
+		return;
+
+	xcb_generic_error_t *err = NULL;
+	xcb_get_geometry_cookie_t geom_cookie = xcb_get_geometry(conn, s->win);
+	xcb_get_geometry_reply_t *geom =
+		xcb_get_geometry_reply(conn, geom_cookie, &err);
+	if (err != NULL) {
+		return;
+	}
+
+	s->border = s->include_border ? geom->border_width : 0;
+	s->width = geom->width;
+	s->height = geom->height;
+	// We don't have an alpha channel, but may have garbage in the texture.
+	int32_t depth = geom->depth;
+	if (depth != 32) {
+		s->exclude_alpha = true;
+	}
+	xcb_window_t root = geom->root;
+	free(geom);
+
+	uint32_t vert_borders = s->crop_top + s->crop_bot + 2 * s->border;
+	uint32_t hori_borders = s->crop_left + s->crop_right + 2 * s->border;
+	// Skip 0 sized textures.
+	if (vert_borders > s->height || hori_borders > s->width)
+		return;
+
+	s->pixmap = xcb_generate_id(conn);
+	xcb_void_cookie_t name_cookie =
+		xcb_composite_name_window_pixmap(conn, s->win, s->pixmap);
+	err = NULL;
+	if ((err = xcb_request_check(conn, name_cookie)) != NULL) {
+		blog(log_level, "xcb_composite_name_window_pixmap failed");
+		s->pixmap = 0;
+		return;
+	}
+
+	const int config_attrs[] = {GLX_BIND_TO_TEXTURE_RGBA_EXT,
+				    GL_TRUE,
+				    GLX_DRAWABLE_TYPE,
+				    GLX_PIXMAP_BIT,
+				    GLX_BIND_TO_TEXTURE_TARGETS_EXT,
+				    GLX_TEXTURE_2D_BIT_EXT,
+				    GLX_DOUBLEBUFFER,
+				    GL_FALSE,
+				    None};
+	int nelem = 0;
+	GLXFBConfig *configs =
+		glXChooseFBConfig(disp, xcb_get_screen_for_root(conn, root),
+				  config_attrs, &nelem);
+
+	bool found = false;
+	GLXFBConfig config;
+	for (int i = 0; i < nelem; i++) {
+		config = configs[i];
+		XVisualInfo *visual = glXGetVisualFromFBConfig(disp, config);
+		if (!visual)
+			continue;
+
+		found = depth == visual->depth;
+		XFree(visual);
+		if (found)
+			break;
+	}
+	XFree(configs);
+	if (!found) {
+		blog(log_level, "no matching fb config found");
+		s->pixmap = 0;
+		return;
+	}
+
+	// Should be consistent format with config we are using. Since we searched on RGBA let's use RGBA here.
+	const int pixmap_attrs[] = {GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
+				    GLX_TEXTURE_FORMAT_EXT,
+				    GLX_TEXTURE_FORMAT_RGBA_EXT, None};
+
+	// Try very hard to capture errors in glXCreatePixmap for NVIDIA drivers
+	// where only one pixmap can be bound in GLX at a time.
+	pixmap_err = false;
+	XErrorHandler prev = XSetErrorHandler(catch_pixmap_errors);
+	s->glxpixmap = glXCreatePixmap(disp, config, s->pixmap, pixmap_attrs);
+	XSync(disp, false);
+
+	s->gltex = gs_texture_create(s->width, s->height, GS_RGBA_UNORM, 1, 0,
+				     GS_GL_DUMMYTEX);
+	GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
+	glBindTexture(GL_TEXTURE_2D, gltex);
+	// Not respecting a captured glXCreatePixmap error will result in Xorg closing our connection.
+	if (!pixmap_err)
+		glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT, NULL);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+	// glxBindTexImageEXT might modify the textures format.
+	enum gs_color_format format = gs_format_from_tex();
+	// Check if texture is invalid... because X11 hates us.
+	int w;
+	int h;
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
+	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
+	glBindTexture(GL_TEXTURE_2D, 0);
+	// We must sync OBS texture format based on any glxBindTexImageEXT changes.
+	s->gltex->format = format;
+
+	XSync(disp, false);
+	if (pixmap_err || (uint32_t)w < s->width || (uint32_t)h < s->height) {
+		blog(log_level, "glXCreatePixmap failed: %s", pixmap_err_text);
+		glXDestroyPixmap(disp, s->glxpixmap);
+		XFreePixmap(disp, s->pixmap);
+		gs_texture_destroy(s->gltex);
+		s->pixmap = 0;
+		s->glxpixmap = 0;
+		s->gltex = 0;
+		XSetErrorHandler(prev);
+		return;
+	}
+	XSetErrorHandler(prev);
+
+	s->tex = gs_texture_create(
+		s->width - s->crop_left - s->crop_right - 2 * s->border,
+		s->height - s->crop_top - s->crop_bot - 2 * s->border, format,
+		1, 0, GS_GL_DUMMYTEX);
+	if (s->swapRedBlue) {
+		GLuint tex = *(GLuint *)gs_texture_get_obj(s->tex);
+		glBindTexture(GL_TEXTURE_2D, tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+}
+
+struct reg_item {
+	struct xcompcap *src;
+	xcb_window_t win;
+};
+static DARRAY(struct reg_item) watcher_registry = {0};
+static pthread_mutex_t watcher_lock = PTHREAD_MUTEX_INITIALIZER;
+
+void watcher_register(xcb_connection_t *conn, struct xcompcap *s)
+{
+	pthread_mutex_lock(&watcher_lock);
+
+	if (xcomp_window_exists(conn, s->win)) {
+		// Subscribe to Events
+		uint32_t vals[1] = {StructureNotifyMask | ExposureMask |
+				    VisibilityChangeMask};
+		xcb_change_window_attributes(conn, s->win, XCB_CW_EVENT_MASK,
+					     vals);
+		xcb_composite_redirect_window(conn, s->win,
+					      XCB_COMPOSITE_REDIRECT_AUTOMATIC);
+
+		da_push_back(watcher_registry, (&(struct reg_item){s, s->win}));
+	}
+
+	pthread_mutex_unlock(&watcher_lock);
+}
+
+void watcher_unregister(xcb_connection_t *conn, struct xcompcap *s)
+{
+	pthread_mutex_lock(&watcher_lock);
+	size_t idx = DARRAY_INVALID;
+	xcb_window_t win = 0;
+	for (size_t i = 0; i < watcher_registry.num; i++) {
+		struct reg_item *item = (struct reg_item *)darray_item(
+			sizeof(struct reg_item), &watcher_registry.da, i);
+
+		if (item->src == s) {
+			win = item->win;
+			break;
+		}
+	}
+
+	da_erase(watcher_registry, idx);
+
+	// Check if there are still sources listening for the same window.
+	bool windowInUse = false;
+	for (size_t i = 0; i < watcher_registry.num; i++) {
+		struct reg_item *item = (struct reg_item *)darray_item(
+			sizeof(struct reg_item), &watcher_registry.da, i);
+
+		if (item->win == win) {
+			windowInUse = true;
+			break;
+		}
+	}
+
+	if (!windowInUse && xcomp_window_exists(conn, s->win)) {
+		// Last source released, stop listening for events.
+		uint32_t vals[1] = {0};
+		xcb_change_window_attributes(conn, win, XCB_CW_EVENT_MASK,
+					     vals);
+	}
+
+	pthread_mutex_unlock(&watcher_lock);
+}
+
+void watcher_process(xcb_generic_event_t *ev)
+{
+	if (!ev)
+		return;
+
+	pthread_mutex_lock(&watcher_lock);
+	xcb_window_t win = 0;
+
+	switch (ev->response_type & ~0x80) {
+	case XCB_CONFIGURE_NOTIFY:
+		win = ((xcb_configure_notify_event_t *)ev)->event;
+		break;
+	case XCB_MAP_NOTIFY:
+		win = ((xcb_map_notify_event_t *)ev)->event;
+		break;
+	case XCB_EXPOSE:
+		win = ((xcb_expose_event_t *)ev)->window;
+		break;
+	case XCB_VISIBILITY_NOTIFY:
+		win = ((xcb_visibility_notify_event_t *)ev)->window;
+		break;
+	case XCB_DESTROY_NOTIFY:
+		win = ((xcb_destroy_notify_event_t *)ev)->event;
+		break;
+	};
+
+	if (win != 0) {
+		for (size_t i = 0; i < watcher_registry.num; i++) {
+			struct reg_item *item = (struct reg_item *)darray_item(
+				sizeof(struct reg_item), &watcher_registry.da,
+				i);
+			if (item->win == win) {
+				item->src->window_changed = true;
+			}
+		}
+	}
+
+	pthread_mutex_unlock(&watcher_lock);
+}
+
+void watcher_unload()
+{
+	da_free(watcher_registry);
+}
+
+static uint32_t xcompcap_get_width(void *data)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
+	if (!s->tex || !s->gltex)
+		return 0;
+
+	int32_t border = s->crop_left + s->crop_right + 2 * s->border;
+	int32_t width = s->width - border;
+	return width < 0 ? 0 : width;
+}
+
+static uint32_t xcompcap_get_height(void *data)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
+	if (!s->tex || !s->gltex)
+		return 0;
+
+	int32_t border = s->crop_bot + s->crop_top + 2 * s->border;
+	int32_t height = s->height - border;
+	return height < 0 ? 0 : height;
+}
+
+static void *xcompcap_create(obs_data_t *settings, obs_source_t *source)
+{
+	struct xcompcap *s =
+		(struct xcompcap *)bzalloc(sizeof(struct xcompcap));
+	pthread_mutex_init(&s->lock, NULL);
+	s->show_cursor = true;
+	s->strict_binding = true;
+	s->source = source;
+
+	obs_enter_graphics();
+	if (strcmp(glGetString(GL_VENDOR), "NVIDIA Corporation") == 0) {
+		// Pixmap binds are extremely slow on NVIDIA cards.
+		// See: https://github.com/obsproject/obs-studio/issues/5685
+		s->strict_binding = false;
+	}
+	s->cursor = xcb_xcursor_init(conn);
+	obs_leave_graphics();
+
+	xcompcap_update(s, settings);
+	return s;
+}
+
+static void xcompcap_destroy(void *data)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
+
+	obs_enter_graphics();
+	pthread_mutex_lock(&s->lock);
+
+	watcher_unregister(conn, s);
+	xcomp_cleanup_pixmap(disp, s);
+
+	if (s->tex)
+		gs_texture_destroy(s->tex);
+
+	if (s->cursor)
+		xcb_xcursor_destroy(s->cursor);
+
+	pthread_mutex_unlock(&s->lock);
+	obs_leave_graphics();
+
+	pthread_mutex_destroy(&s->lock);
+	bfree(s);
+}
+
+static void xcompcap_video_tick(void *data, float seconds)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
+
+	if (!obs_source_showing(s->source))
+		return;
+
+	obs_enter_graphics();
+	pthread_mutex_lock(&s->lock);
+
+	xcb_generic_event_t *event;
+	while ((event = xcb_poll_for_queued_event(conn)))
+		watcher_process(event);
+
+	// Reacquire window after interval or immediately if reconfigured.
+	s->window_check_time += seconds;
+	bool window_lost = !xcomp_window_exists(conn, s->win);
+	if ((window_lost && s->window_check_time > FIND_WINDOW_INTERVAL) ||
+	    s->window_changed) {
+		watcher_unregister(conn, s);
+
+		s->window_changed = false;
+		s->window_check_time = 0.0;
+		s->win = xcomp_find_window(conn, disp, s->windowName);
+
+		watcher_register(conn, s);
+		xcomp_cleanup_pixmap(disp, s);
+		// Avoid excessive logging. We expect this to fail while windows are
+		// minimized or on offscreen workspaces or already captured on NVIDIA.
+		xcomp_create_pixmap(conn, disp, s, LOG_DEBUG);
+		xcb_xcursor_offset_win(conn, s->cursor, s->win);
+		xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left,
+				   s->cursor->y_org + s->crop_top);
+	}
+
+	if (!s->tex || !s->gltex)
+		goto done;
+
+	if (xcompcap_get_height(s) == 0 || xcompcap_get_width(s) == 0)
+		goto done;
+
+	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(s->gltex));
+	if (s->strict_binding && s->glxpixmap) {
+		glXReleaseTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT);
+		glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT, NULL);
+	}
+	gs_copy_texture_region(s->tex, 0, 0, s->gltex, s->crop_left + s->border,
+			       s->crop_top + s->border, xcompcap_get_width(s),
+			       xcompcap_get_height(s));
+	glBindTexture(GL_TEXTURE_2D, 0);
+
+	if (s->show_cursor) {
+		xcb_xcursor_update(conn, s->cursor);
+
+		s->cursor_outside = s->cursor->x < 0 || s->cursor->y < 0 ||
+				    s->cursor->x > (int)xcompcap_get_width(s) ||
+				    s->cursor->y > (int)xcompcap_get_height(s);
+	}
+
+done:
+	pthread_mutex_unlock(&s->lock);
+	obs_leave_graphics();
+}
+
+static void xcompcap_video_render(void *data, gs_effect_t *effect)
+{
+	gs_eparam_t *image; // Placate C++ goto rules.
+	struct xcompcap *s = (struct xcompcap *)data;
+
+	pthread_mutex_lock(&s->lock);
+
+	if (!s->tex || !s->gltex)
+		goto done;
+
+	if (s->exclude_alpha)
+		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
+	else
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+	image = gs_effect_get_param_by_name(effect, "image");
+	gs_effect_set_texture(image, s->tex);
+
+	while (gs_effect_loop(effect, "Draw")) {
+		gs_draw_sprite(s->tex, 0, 0, 0);
+	}
+
+	if (s->gltex && s->show_cursor && !s->cursor_outside) {
+		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
+
+		while (gs_effect_loop(effect, "Draw")) {
+			xcb_xcursor_render(s->cursor);
+		}
+	}
+
+done:
+	pthread_mutex_unlock(&s->lock);
+}
+
+struct WindowInfo {
+	struct dstr name_lower;
+	struct dstr name;
+	struct dstr desc;
+};
+
+static int cmp_wi(const void *a, const void *b)
+{
+	struct WindowInfo *awi = (struct WindowInfo *)a;
+	struct WindowInfo *bwi = (struct WindowInfo *)b;
+	return strcmp(awi->name_lower.array, bwi->name_lower.array);
+}
+
+static obs_properties_t *xcompcap_props(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+
+	obs_properties_t *props = obs_properties_create();
+
+	obs_property_t *wins = obs_properties_add_list(
+		props, "capture_window", obs_module_text("Window"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	DARRAY(struct WindowInfo) window_strings = {0};
+	struct darray windows = xcomp_top_level_windows(conn);
+	for (size_t w = 0; w < windows.num; w++) {
+		xcb_window_t win = *(xcb_window_t *)darray_item(
+			sizeof(xcb_window_t), &windows, w);
+
+		struct dstr name = xcomp_window_name(conn, disp, win);
+		struct dstr cls = xcomp_window_class(conn, win);
+
+		struct dstr desc = {0};
+		dstr_printf(&desc, "%d" WIN_STRING_DIV "%s" WIN_STRING_DIV "%s",
+			    win, name.array, cls.array);
+		dstr_free(&cls);
+
+		struct dstr name_lower;
+		dstr_init_copy_dstr(&name_lower, &name);
+		dstr_to_lower(&name_lower);
+
+		da_push_back(window_strings,
+			     (&(struct WindowInfo){name_lower, name, desc}));
+	}
+	darray_free(&windows);
+
+	qsort(window_strings.array, window_strings.num,
+	      sizeof(struct WindowInfo), cmp_wi);
+
+	for (size_t i = 0; i < window_strings.num; i++) {
+		struct WindowInfo *s = (struct WindowInfo *)darray_item(
+			sizeof(struct WindowInfo), &window_strings.da, i);
+
+		obs_property_list_add_string(wins, s->name.array,
+					     s->desc.array);
+
+		dstr_free(&s->name_lower);
+		dstr_free(&s->name);
+		dstr_free(&s->desc);
+	}
+	da_free(window_strings);
+
+	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"), 0,
+			       4096, 1);
+	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
+			       0, 4096, 1);
+	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
+			       0, 4096, 1);
+	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
+			       0, 4096, 1);
+
+	obs_properties_add_bool(props, "swap_redblue",
+				obs_module_text("SwapRedBlue"));
+
+	obs_properties_add_bool(props, "show_cursor",
+				obs_module_text("CaptureCursor"));
+
+	obs_properties_add_bool(props, "include_border",
+				obs_module_text("IncludeXBorder"));
+
+	obs_properties_add_bool(props, "exclude_alpha",
+				obs_module_text("ExcludeAlpha"));
+
+	return props;
+}
+
+static void xcompcap_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "capture_window", "");
+	obs_data_set_default_int(settings, "cut_top", 0);
+	obs_data_set_default_int(settings, "cut_left", 0);
+	obs_data_set_default_int(settings, "cut_right", 0);
+	obs_data_set_default_int(settings, "cut_bot", 0);
+	obs_data_set_default_bool(settings, "swap_redblue", false);
+	obs_data_set_default_bool(settings, "show_cursor", true);
+	obs_data_set_default_bool(settings, "include_border", false);
+	obs_data_set_default_bool(settings, "exclude_alpha", false);
+}
+
+static void xcompcap_update(void *data, obs_data_t *settings)
+{
+	struct xcompcap *s = (struct xcompcap *)data;
+
+	obs_enter_graphics();
+	pthread_mutex_lock(&s->lock);
+
+	s->crop_top = obs_data_get_int(settings, "cut_top");
+	s->crop_left = obs_data_get_int(settings, "cut_left");
+	s->crop_right = obs_data_get_int(settings, "cut_right");
+	s->crop_bot = obs_data_get_int(settings, "cut_bot");
+	s->swapRedBlue = obs_data_get_bool(settings, "swap_redblue");
+	s->show_cursor = obs_data_get_bool(settings, "show_cursor");
+	s->include_border = obs_data_get_bool(settings, "include_border");
+	s->exclude_alpha = obs_data_get_bool(settings, "exclude_alpha");
+
+	s->windowName = obs_data_get_string(settings, "capture_window");
+	s->win = xcomp_find_window(conn, disp, s->windowName);
+	if (s->win && s->windowName) {
+		struct dstr wname = xcomp_window_name(conn, disp, s->win);
+		struct dstr wcls = xcomp_window_class(conn, s->win);
+		blog(LOG_INFO,
+		     "[window-capture: '%s'] update settings:\n"
+		     "\ttitle: %s\n"
+		     "\tclass: %s\n",
+		     obs_source_get_name(s->source), wname.array, wcls.array);
+		dstr_free(&wname);
+		dstr_free(&wcls);
+	}
+
+	watcher_register(conn, s);
+	xcomp_cleanup_pixmap(disp, s);
+	xcomp_create_pixmap(conn, disp, s, LOG_ERROR);
+	xcb_xcursor_offset_win(conn, s->cursor, s->win);
+	xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left,
+			   s->cursor->y_org + s->crop_top);
+
+	pthread_mutex_unlock(&s->lock);
+	obs_leave_graphics();
+}
+
+static const char *xcompcap_getname(void *data)
+{
+	UNUSED_PARAMETER(data);
+	return obs_module_text("XCCapture");
+}
+
+void xcomposite_load(void)
+{
+	disp = XOpenDisplay(NULL);
+	conn = XGetXCBConnection(disp);
+	if (xcb_connection_has_error(conn)) {
+		blog(LOG_ERROR, "failed opening display");
+		return;
+	}
+
+	const xcb_query_extension_reply_t *xcomp_ext =
+		xcb_get_extension_data(conn, &xcb_composite_id);
+	if (!xcomp_ext->present) {
+		blog(LOG_ERROR, "Xcomposite extension not supported");
+		return;
+	}
+
+	xcb_composite_query_version_cookie_t version_cookie =
+		xcb_composite_query_version(conn, 0, 2);
+	xcb_composite_query_version_reply_t *version =
+		xcb_composite_query_version_reply(conn, version_cookie, NULL);
+	if (version->major_version == 0 && version->minor_version < 2) {
+		blog(LOG_ERROR, "Xcomposite extension is too old: %d.%d < 0.2",
+		     version->major_version, version->minor_version);
+		free(version);
+		return;
+	}
+	free(version);
+
+	// Must be done before other helpers called.
+	xcomp_gather_atoms(conn);
+
+	xcb_screen_t *screen_default =
+		xcb_get_screen(conn, DefaultScreen(disp));
+	if (!screen_default || !xcomp_check_ewmh(conn, screen_default->root)) {
+		blog(LOG_ERROR,
+		     "window manager does not support Extended Window Manager Hints (EWMH).\nXComposite capture disabled.");
+		return;
+	}
+
+	struct obs_source_info sinfo = {
+		.id = "xcomposite_input",
+		.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
+				OBS_SOURCE_DO_NOT_DUPLICATE,
+		.get_name = xcompcap_getname,
+		.create = xcompcap_create,
+		.destroy = xcompcap_destroy,
+		.get_properties = xcompcap_props,
+		.get_defaults = xcompcap_defaults,
+		.update = xcompcap_update,
+		.video_tick = xcompcap_video_tick,
+		.video_render = xcompcap_video_render,
+		.get_width = xcompcap_get_width,
+		.get_height = xcompcap_get_height,
+		.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
+	};
+
+	obs_register_source(&sinfo);
+}
+
+void xcomposite_unload(void)
+{
+	XCloseDisplay(disp);
+	disp = NULL;
+	conn = NULL;
+	watcher_unload();
+}

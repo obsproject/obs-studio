@@ -481,18 +481,14 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	xcb_shm_get_image_cookie_t img_c;
 	xcb_shm_get_image_reply_t *img_r;
-	xcb_xfixes_get_cursor_image_cookie_t cur_c;
-	xcb_xfixes_get_cursor_image_reply_t *cur_r;
 
 	img_c = xcb_shm_get_image_unchecked(data->xcb, data->xcb_screen->root,
 					    data->adj_x_org, data->adj_y_org,
 					    data->adj_width, data->adj_height,
 					    ~0, XCB_IMAGE_FORMAT_Z_PIXMAP,
 					    data->xshm->seg, 0);
-	cur_c = xcb_xfixes_get_cursor_image_unchecked(data->xcb);
 
 	img_r = xcb_shm_get_image_reply(data->xcb, img_c, NULL);
-	cur_r = xcb_xfixes_get_cursor_image_reply(data->xcb, cur_c, NULL);
 
 	if (!img_r)
 		goto exit;
@@ -501,13 +497,12 @@ static void xshm_video_tick(void *vptr, float seconds)
 
 	gs_texture_set_image(data->texture, (void *)data->xshm->data,
 			     data->adj_width * 4, false);
-	xcb_xcursor_update(data->cursor, cur_r);
+	xcb_xcursor_update(data->xcb, data->cursor);
 
 	obs_leave_graphics();
 
 exit:
 	free(img_r);
-	free(cur_r);
 }
 
 /**
