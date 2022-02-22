@@ -215,6 +215,8 @@ jobs:
             rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
           fi
 
+          /bin/cp -cpR /tmp/obsdeps/lib/*.dylib ./OBS.app/Contents/Frameworks
+
           BUNDLE_PLUGINS=(
             ./OBS.app/Contents/PlugIns/coreaudio-encoder.so
             ./OBS.app/Contents/PlugIns/decklink-ouput-ui.so
