@@ -1156,6 +1156,12 @@ bool OBSApp::InitTheme()
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv), profilerNameStore(store)
 {
+	/* fix float handling */
+#if defined(Q_OS_UNIX)
+	if (!setlocale(LC_NUMERIC, "C"))
+		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
+#endif
+
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
 #ifdef __APPLE__
