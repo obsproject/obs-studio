@@ -471,6 +471,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	struct ts_info ts = {start_ts_in, end_ts_in};
 	size_t audio_size;
 	uint64_t min_ts;
+	bool audio_pending = false;
 
 	da_resize(audio->render_order, 0);
 	da_resize(audio->root_nodes, 0);
@@ -515,6 +516,9 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		obs_source_t *source = audio->render_order.array[i];
 		obs_source_audio_render(source, mixers, channels, sample_rate,
 					audio_size);
+
+		if (source->audio_pending && source->audio_ts)
+			audio_pending = true;
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
@@ -611,5 +615,5 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 	execute_audio_tasks();
 
 	UNUSED_PARAMETER(param);
-	return true;
+	return !audio_pending;
 }
