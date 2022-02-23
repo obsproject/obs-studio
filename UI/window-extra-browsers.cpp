@@ -440,10 +440,7 @@ OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent)
 		QAbstractItemView::EditTrigger::CurrentChanged);
 }
 
-OBSExtraBrowsers::~OBSExtraBrowsers()
-{
-	delete ui;
-}
+OBSExtraBrowsers::~OBSExtraBrowsers() {}
 
 void OBSExtraBrowsers::closeEvent(QCloseEvent *event)
 {

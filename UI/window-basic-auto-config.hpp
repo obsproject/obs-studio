@@ -129,7 +129,7 @@ class AutoConfigStartPage : public QWizardPage {
 
 	friend class AutoConfig;
 
-	Ui_AutoConfigStartPage *ui;
+	std::unique_ptr<Ui_AutoConfigStartPage> ui;
 
 public:
 	AutoConfigStartPage(QWidget *parent = nullptr);
@@ -148,7 +148,7 @@ class AutoConfigVideoPage : public QWizardPage {
 
 	friend class AutoConfig;
 
-	Ui_AutoConfigVideoPage *ui;
+	std::unique_ptr<Ui_AutoConfigVideoPage> ui;
 
 public:
 	AutoConfigVideoPage(QWidget *parent = nullptr);
@@ -170,7 +170,7 @@ class AutoConfigStreamPage : public QWizardPage {
 
 	std::shared_ptr<Auth> auth;
 
-	Ui_AutoConfigStreamPage *ui;
+	std::unique_ptr<Ui_AutoConfigStreamPage> ui;
 	QString lastService;
 	bool ready = false;
 
@@ -209,7 +209,7 @@ class AutoConfigTestPage : public QWizardPage {
 
 	QPointer<QFormLayout> results;
 
-	Ui_AutoConfigTestPage *ui;
+	std::unique_ptr<Ui_AutoConfigTestPage> ui;
 	std::thread testThread;
 	std::condition_variable cv;
 	std::mutex m;

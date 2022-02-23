@@ -918,15 +918,27 @@
             "name": "Picarto",
             "servers": [
                 {
-                    "name": "US East (Chicago, USA)",
-                    "url": "rtmp://live.us-east1.picarto.tv/golive"
+                    "name": "Autoselect closest server",
+                    "url": "rtmp://live.us.picarto.tv/golive"
                 },
                 {
-                    "name": "US West (Los Angeles, USA)",
-                    "url": "rtmp://live.us-west1.picarto.tv/golive"
+                    "name": "Los Angeles, USA",
+                    "url": "rtmp://live.us-losangeles.picarto.tv/golive"
                 },
                 {
-                    "name": "EU West (Düsseldorf, Germany)",
+                    "name": "Dallas, USA",
+                    "url": "rtmp://live.us-dallas.picarto.tv/golive"
+                },
+                {
+                    "name": "Miami, USA",
+                    "url": "rtmp://live.us-miami.picarto.tv/golive"
+                },
+                {
+                    "name": "New York, USA",
+                    "url": "rtmp://live.us-newyork.picarto.tv/golive"
+                },
+                {
+                    "name": "Europe",
                     "url": "rtmp://live.eu-west1.picarto.tv/golive"
                 }
             ],

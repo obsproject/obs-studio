@@ -62,7 +62,6 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	ui->setupUi(this);
-	UpdateFilters();
 
 	ui->asyncFilters->setItemDelegate(
 		new VisibilityItemDelegate(ui->asyncFilters));
@@ -178,6 +177,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	renameAsync->setShortcut({Qt::Key_F2});
 	renameEffect->setShortcut({Qt::Key_F2});
 #endif
+
+	UpdateFilters();
 }
 
 OBSBasicFilters::~OBSBasicFilters()
@@ -262,6 +263,13 @@ void FilterChangeUndoRedo(void *vp, obs_data_t *nd_old_settings,
 
 void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 {
+	OBSSource filter = GetFilter(row, async);
+	if (filter && view && view->IsObject(filter)) {
+		/* do not recreate properties view if already using a view
+		 * with the same object */
+		return;
+	}
+
 	if (view) {
 		updatePropertiesSignal.Disconnect();
 		ui->propertiesFrame->setVisible(false);
@@ -270,7 +278,6 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 		view = nullptr;
 	}
 
-	OBSSource filter = GetFilter(row, async);
 	if (!filter)
 		return;
 
