@@ -2517,8 +2517,8 @@
             }
         },
         {
-            "name": "Sharplay.tv",
-            "stream_key_link": "https://shareplay.tv/",
+            "name": "Shareplay.tv",
+            "stream_key_link": "https://shareplay.tv/no-stream",
             "more_info_link": "https://shareplay.tv/",
             "servers": [
                 {
@@ -2528,58 +2528,44 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
+                "profile": "high",
+                "bframes": 0,
+                "x264opts": "scenecut=0",
                 "supported resolutions": [
                     "1920x1080",
                     "1280x720",
-                    "852x480",
-                    "640x360"
+                    "852x480"
                 ],
                 "bitrate matrix": [
                     {
-                        "res": "640x360",
-                        "fps": 30,
-                        "max bitrate": 1000
-                    },
-                    {
-                        "res": "640x360",
-                        "fps": 60,
-                        "max bitrate": 1500
-                    },
-                    {
                         "res": "852x480",
                         "fps": 30,
-                        "max bitrate": 2000
-                    },
-                    {
-                        "res": "852x480",
-                        "fps": 60,
-                        "max bitrate": 3000
+                        "max bitrate": 1200
                     },
                     {
                         "res": "1280x720",
                         "fps": 30,
-                        "max bitrate": 4000
+                        "max bitrate": 3600
                     },
                     {
                         "res": "1280x720",
                         "fps": 60,
-                        "max bitrate": 6000
+                        "max bitrate": 4200
                     },
                     {
                         "res": "1920x1080",
                         "fps": 30,
-                        "max bitrate": 6000
+                        "max bitrate": 5000
                     },
                     {
                         "res": "1920x1080",
                         "fps": 60,
-                        "max bitrate": 9000
+                        "max bitrate": 7200
                     }
                 ],
                 "max fps": 60,
-                "max video bitrate": 9000,
-                "max audio bitrate": 128
+                "max video bitrate": 7200,
+                "max audio bitrate": 196
             }
         }
     ]
