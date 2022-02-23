@@ -294,11 +294,11 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 
 	stopSignal = CreateEvent(nullptr, true, false, nullptr);
 	if (!stopSignal.Valid())
-		throw "[WASAPISource] Could not create stop signal";
+		throw "Could not create stop signal";
 
 	receiveSignal = CreateEvent(nullptr, false, false, nullptr);
 	if (!receiveSignal.Valid())
-		throw "[WASAPISource] Could not create receive signal";
+		throw "Could not create receive signal";
 
 	restartSignal = CreateEvent(nullptr, true, false, nullptr);
 	if (!restartSignal.Valid())
@@ -432,7 +432,7 @@ void WASAPISource::Stop()
 
 	SetEvent(stopSignal);
 
-	blog(LOG_INFO, "WASAPI: Device '%s' Terminated", device_name.c_str());
+	blog(LOG_INFO, "[WASAPISource]: Device '%s' Terminated", device_name.c_str());
 
 	if (rtwq_supported)
 		SetEvent(receiveSignal);
@@ -705,7 +705,7 @@ void WASAPISource::Initialize()
 		if (FAILED(hr)) {
 			capture.Clear();
 			client.Clear();
-			throw HRError("RtwqPutWaitingWorkItem failed", hr);
+			throw HRError("RtwqPutWaitingWorkItem sampleReadyAsyncResult failed", hr);
 		}
 
 		hr = rtwq_put_waiting_work_item(restartSignal, 0,
@@ -713,11 +713,11 @@ void WASAPISource::Initialize()
 		if (FAILED(hr)) {
 			capture.Clear();
 			client.Clear();
-			throw HRError("RtwqPutWaitingWorkItem failed", hr);
+			throw HRError("RtwqPutWaitingWorkItem restartAsyncResult failed", hr);
 		}
 	}
 
-	blog(LOG_INFO, "WASAPI: Device '%s' [%" PRIu32 " Hz] initialized",
+	blog(LOG_INFO, "[WASAPISource]: Device '%s' [%" PRIu32 " Hz] initialized",
 	     device_name.c_str(), sampleRate);
 }
 
@@ -728,7 +728,7 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 		success = true;
 	} catch (HRError &error) {
-		if (!previouslyFailed) {
+		if (true) { // !previouslyFailed 
 			blog(LOG_WARNING,
 			     "[WASAPISource::TryInitialize]:[%s] %s: %lX",
 			     device_name.empty() ? device_id.c_str()
@@ -902,7 +902,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 						sigs = active_sigs;
 					} else {
 						blog(LOG_INFO,
-						     "WASAPI: Device '%s' failed to start",
+						     "[WASAPISource::CaptureThread] Device '%s' failed to start",
 						     source->device_id.c_str());
 						stop = true;
 						reconnect = true;
@@ -913,7 +913,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 					stop = !source->ProcessCaptureData();
 					if (stop) {
 						blog(LOG_INFO,
-						     "Device '%s' invalidated.  Retrying",
+						     "[WASAPISource::CaptureThread] Device '%s' invalidated.  Retrying",
 						     source->device_name
 							     .c_str());
 						stop = true;
@@ -947,7 +947,7 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 		if (idle) {
 			SetEvent(source->idleSignal);
 		} else if (reconnect) {
-			blog(LOG_INFO, "Device '%s' invalidated.  Retrying",
+			blog(LOG_INFO, "[WASAPISource::CaptureThread] Device '%s' invalidated.  Retrying",
 			     source->device_name.c_str());
 			SetEvent(source->reconnectSignal);
 		}
@@ -1001,7 +1001,7 @@ void WASAPISource::OnStartCapture()
 		assert(ret == WAIT_TIMEOUT);
 
 		if (!TryInitialize()) {
-			blog(LOG_INFO, "WASAPI: Device '%s' failed to start",
+			blog(LOG_INFO, "[WASAPISource::OnStartCapture] Device '%s' failed to start",
 			     device_id.c_str());
 			reconnectDuration = RECONNECT_INTERVAL;
 			SetEvent(reconnectSignal);
@@ -1040,7 +1040,7 @@ void WASAPISource::OnSampleReady()
 						      sampleReadyAsyncResult,
 						      nullptr))) {
 			blog(LOG_ERROR,
-			     "Could not requeue sample receive work");
+			     "[WASAPISource] Could not requeue sample receive work");
 			stop = true;
 			reconnect = true;
 			reconnectDuration = RECONNECT_INTERVAL;
@@ -1054,7 +1054,7 @@ void WASAPISource::OnSampleReady()
 		client.Clear();
 
 		if (reconnect) {
-			blog(LOG_INFO, "Device '%s' invalidated.  Retrying",
+			blog(LOG_INFO, "[WASAPISource] Device '%s' invalidated.  Retrying",
 			     device_name.c_str());
 			SetEvent(reconnectSignal);
 		} else {
