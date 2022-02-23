@@ -112,7 +112,8 @@ VCamFilter::VCamFilter()
 VCamFilter::~VCamFilter()
 {
 	SetEvent(thread_stop);
-	th.join();
+	if (th.joinable())
+		th.join();
 	video_queue_close(vq);
 
 	if (placeholder.scaled_data)
