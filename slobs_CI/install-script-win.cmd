@@ -1,4 +1,4 @@
-set DEPS=windows-deps-2022-01-01
+set DEPS=windows-deps-2022-01-31
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS%.zip
 set VLCURL=https://obsproject.com/downloads/vlc.zip
 set CEFURL=https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com

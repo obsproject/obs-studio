@@ -24,6 +24,8 @@
 #include <caption/caption.h>
 #include <caption/mpeg.h>
 
+#define get_weak(output) ((obs_weak_output_t *)output->context.control)
+
 static inline bool active(const struct obs_output *output)
 {
 	return os_atomic_load_bool(&output->active);
@@ -148,9 +150,8 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	output->reconnect_retry_max = 20;
 	output->valid = true;
 
-	output->control = bzalloc(sizeof(obs_weak_output_t));
-	output->control->output = output;
-
+	obs_context_init_control(&output->context, output,
+				 (obs_destroy_cb)obs_output_destroy);
 	obs_context_data_insert(&output->context, &obs->data.outputs_mutex,
 				&obs->data.first_output);
 
@@ -189,7 +190,7 @@ void obs_output_destroy(obs_output_t *output)
 {
 	if (output) {
 		obs_context_data_remove(&output->context);
-		os_atomic_set_long(&output->control->ref.refs, -0xFF);
+		os_atomic_set_long(&output->context.control->ref.refs, -0xFF);
 
 		blog(LOG_DEBUG, "output '%s' destroyed", output->context.name);
 
@@ -2495,7 +2496,7 @@ void obs_output_addref(obs_output_t *output)
 	if (!output)
 		return;
 
-	obs_ref_addref(&output->control->ref);
+	obs_ref_addref(&output->context.control->ref);
 }
 
 void obs_output_release(obs_output_t *output)
@@ -2503,7 +2504,7 @@ void obs_output_release(obs_output_t *output)
 	if (!output)
 		return;
 
-	obs_weak_output_t *control = output->control;
+	obs_weak_output_t *control = get_weak(output);
 	if (obs_ref_release(&control->ref)) {
 		// The order of operations is important here since
 		// get_context_by_name in obs.c relies on weak refs
@@ -2535,7 +2536,7 @@ obs_output_t *obs_output_get_ref(obs_output_t *output)
 	if (!output)
 		return NULL;
 
-	return obs_weak_output_get_output(output->control);
+	return obs_weak_output_get_output(get_weak(output));
 }
 
 obs_weak_output_t *obs_output_get_weak_output(obs_output_t *output)
@@ -2543,7 +2544,7 @@ obs_weak_output_t *obs_output_get_weak_output(obs_output_t *output)
 	if (!output)
 		return NULL;
 
-	obs_weak_output_t *weak = output->control;
+	obs_weak_output_t *weak = get_weak(output);
 	obs_weak_output_addref(weak);
 	return weak;
 }

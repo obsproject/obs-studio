@@ -8,9 +8,11 @@
 
 #define SETTING_IMAGE_PATH             "image_path"
 #define SETTING_CLUT_AMOUNT            "clut_amount"
+#define SETTING_PASSTHROUGH_ALPHA      "passthrough_alpha"
 
 #define TEXT_IMAGE_PATH                obs_module_text("Path")
 #define TEXT_AMOUNT                    obs_module_text("Amount")
+#define TEXT_PASSTHROUGH_ALPHA         obs_module_text("PassthroughAlpha")
 
 /* clang-format on */
 
@@ -33,11 +35,12 @@ struct lut_filter_data {
 
 	char *file;
 	float clut_amount;
-	enum clut_dimension clut_dim;
 	struct vec3 clut_scale;
 	struct vec3 clut_offset;
 	struct vec3 domain_min;
 	struct vec3 domain_max;
+	const char *clut_texture_name;
+	const char *tech_name;
 };
 
 static const char *color_grade_filter_get_name(void *unused)
@@ -126,9 +129,12 @@ static void *load_1d_lut(FILE *const file, const uint32_t width, float red,
 			break;
 		}
 
-		values[offset++] = half_from_float(red);
-		values[offset++] = half_from_float(green);
-		values[offset++] = half_from_float(blue);
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(red));
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(green));
+		values[offset++] =
+			half_from_float(gs_srgb_nonlinear_to_linear(blue));
 		values[offset++] = half_from_bits(0x3c00); // 1.0
 
 		data_found = get_cube_entry(file, &red, &green, &blue);
@@ -155,9 +161,12 @@ static void *load_3d_lut(FILE *const file, const uint32_t width, float red,
 					break;
 				}
 
-				values[offset++] = half_from_float(red);
-				values[offset++] = half_from_float(green);
-				values[offset++] = half_from_float(blue);
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(red));
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(green));
+				values[offset++] = half_from_float(
+					gs_srgb_nonlinear_to_linear(blue));
 				values[offset++] =
 					half_from_bits(0x3c00); // 1.0
 
@@ -247,6 +256,8 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 
 	const double clut_amount =
 		obs_data_get_double(settings, SETTING_CLUT_AMOUNT);
+	const bool passthrough_alpha =
+		obs_data_get_bool(settings, SETTING_PASSTHROUGH_ALPHA);
 
 	bfree(filter->file);
 	if (path)
@@ -263,6 +274,10 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 	filter->target = NULL;
 	obs_leave_graphics();
 
+	enum clut_dimension clut_dim = CLUT_3D;
+	const char *clut_texture_name = "clut_3d";
+	const char *tech_name = "Draw3D";
+
 	if (path) {
 		vec3_set(&filter->domain_min, 0.0f, 0.0f, 0.0f);
 		vec3_set(&filter->domain_max, 1.0f, 1.0f, 1.0f);
@@ -271,11 +286,26 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 		if (ext && astrcmpi(ext, ".cube") == 0) {
 			filter->cube_data = load_cube_file(
 				path, &filter->cube_width, &filter->domain_min,
-				&filter->domain_max, &filter->clut_dim);
+				&filter->domain_max, &clut_dim);
 		} else {
 			gs_image_file_init(&filter->image, path);
 			filter->cube_width = LUT_WIDTH;
-			filter->clut_dim = CLUT_3D;
+		}
+
+		if (clut_dim == CLUT_1D) {
+			clut_texture_name = "clut_1d";
+			tech_name = "Draw1D";
+		} else if ((filter->domain_min.x > 0.f) ||
+			   (filter->domain_min.y > 0.f) ||
+			   (filter->domain_min.z > 0.f) ||
+			   (filter->domain_max.x < 1.f) ||
+			   (filter->domain_max.y < 1.f) ||
+			   (filter->domain_max.z < 1.f)) {
+			tech_name = "DrawDomain3D";
+		} else if (clut_amount < 1.0) {
+			tech_name = "DrawAmount3D";
+		} else if (!passthrough_alpha) {
+			tech_name = "DrawAlpha3D";
 		}
 	}
 
@@ -286,13 +316,15 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			filter->target = make_clut_texture_png(
 				filter->image.format, filter->image.cx,
 				filter->image.cy, filter->image.texture_data);
-			const float clut_scale = (float)(LUT_WIDTH - 1);
+			const float width_i = 1.0f / (float)LUT_WIDTH;
+			const float clut_scale = 1.0f - width_i;
+			const float offset = 0.5f * width_i;
 			vec3_set(&filter->clut_scale, clut_scale, clut_scale,
 				 clut_scale);
-			vec3_set(&filter->clut_offset, 0.f, 0.f, 0.f);
+			vec3_set(&filter->clut_offset, offset, offset, offset);
 		} else if (filter->cube_data) {
 			const uint32_t width = filter->cube_width;
-			if (filter->clut_dim == CLUT_1D) {
+			if (clut_dim == CLUT_1D) {
 				filter->target = gs_texture_create(
 					width, 1, GS_RGBA16F, 1,
 					(const uint8_t **)&filter->cube_data,
@@ -318,20 +350,19 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 			vec3_mul(&filter->clut_offset, &filter->clut_offset,
 				 &filter->clut_scale);
 
-			/* 1D shader wants normalized UVW */
-			if (filter->clut_dim == CLUT_1D) {
-				vec3_divf(&filter->clut_scale,
-					  &filter->clut_scale, (float)width);
-
-				vec3_addf(&filter->clut_offset,
-					  &filter->clut_offset, 0.5f);
-				vec3_divf(&filter->clut_offset,
-					  &filter->clut_offset, (float)width);
-			}
+			/* want normalized UVW */
+			vec3_divf(&filter->clut_scale, &filter->clut_scale,
+				  (float)width);
+			vec3_addf(&filter->clut_offset, &filter->clut_offset,
+				  0.5f);
+			vec3_divf(&filter->clut_offset, &filter->clut_offset,
+				  (float)width);
 		}
 	}
 
 	filter->clut_amount = (float)clut_amount;
+	filter->clut_texture_name = clut_texture_name;
+	filter->tech_name = tech_name;
 
 	char *effect_path = obs_module_file("color_grade_filter.effect");
 	gs_effect_destroy(filter->effect);
@@ -343,7 +374,8 @@ static void color_grade_filter_update(void *data, obs_data_t *settings)
 
 static void color_grade_filter_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_double(settings, SETTING_CLUT_AMOUNT, 1);
+	obs_data_set_default_double(settings, SETTING_CLUT_AMOUNT, 1.0);
+	obs_data_set_default_bool(settings, SETTING_PASSTHROUGH_ALPHA, false);
 }
 
 static obs_properties_t *color_grade_filter_properties(void *data)
@@ -374,7 +406,9 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
 				OBS_PATH_FILE, filter_str.array, path.array);
 	obs_properties_add_float_slider(props, SETTING_CLUT_AMOUNT, TEXT_AMOUNT,
-					0, 1, 0.01);
+					0, 1, 0.0001);
+	obs_properties_add_bool(props, SETTING_PASSTHROUGH_ALPHA,
+				TEXT_PASSTHROUGH_ALPHA);
 
 	dstr_free(&filter_str);
 	dstr_free(&path);
@@ -421,18 +455,13 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	}
 
 	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING))
+					     OBS_ALLOW_DIRECT_RENDERING)) {
 		return;
-
-	const char *clut_texture_name = "clut_3d";
-	const char *tech_name = "Draw3D";
-	if (filter->clut_dim == CLUT_1D) {
-		clut_texture_name = "clut_1d";
-		tech_name = "Draw1D";
 	}
 
-	param = gs_effect_get_param_by_name(filter->effect, clut_texture_name);
-	gs_effect_set_texture(param, filter->target);
+	param = gs_effect_get_param_by_name(filter->effect,
+					    filter->clut_texture_name);
+	gs_effect_set_texture_srgb(param, filter->target);
 
 	param = gs_effect_get_param_by_name(filter->effect, "clut_amount");
 	gs_effect_set_float(param, filter->clut_amount);
@@ -449,14 +478,11 @@ static void color_grade_filter_render(void *data, gs_effect_t *effect)
 	param = gs_effect_get_param_by_name(filter->effect, "domain_max");
 	gs_effect_set_vec3(param, &filter->domain_max);
 
-	param = gs_effect_get_param_by_name(filter->effect, "cube_width_i");
-	gs_effect_set_float(param, 1.0f / filter->cube_width);
-
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
 	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
-					   0, tech_name);
+					   0, filter->tech_name);
 
 	gs_blend_state_pop();
 

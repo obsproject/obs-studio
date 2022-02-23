@@ -1,10 +1,10 @@
 {
 	"url": "https://slobs-cdn.streamlabs.com/rtmp-services",
-	"version": 190,
+	"version": 191,
 	"files": [
 		{
 			"name": "services.json",
-			"version": 190
+			"version": 191
 		}
 	]
 }

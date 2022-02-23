@@ -49,7 +49,7 @@
 
 /* ----------------------------------------------------------------- */
 
-using OBSScript = OBSObj<obs_script_t *, obs_script_destroy>;
+using OBSScript = OBSPtr<obs_script_t *, obs_script_destroy>;
 
 struct ScriptData {
 	std::vector<OBSScript> scripts;
@@ -218,8 +218,6 @@ ScriptsTool::~ScriptsTool()
 	config_t *global_config = obs_frontend_get_global_config();
 	config_set_int(global_config, "scripts-tool", "prevScriptRow",
 		       ui->scripts->currentRow());
-
-	delete ui;
 }
 
 void ScriptsTool::RemoveScript(const char *path)

@@ -1842,6 +1842,7 @@ void OBSBasic::OBSInit()
 	ui->contextContainer->setVisible(contextVisible);
 	if (contextVisible)
 		UpdateContextBar(true);
+	UpdateEditMenu();
 
 	{
 		ProfileScope("OBSBasic::Load");
@@ -5369,8 +5370,6 @@ ColorSelect::ColorSelect(QWidget *parent)
 
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
-	UpdateEditMenu();
-
 	QMenu popup(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
@@ -7823,11 +7822,6 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionCenterToScreen->setEnabled(canTransform);
 	ui->actionVerticalCenter->setEnabled(canTransform);
 	ui->actionHorizontalCenter->setEnabled(canTransform);
-}
-
-void OBSBasic::on_menuBasic_MainMenu_Edit_aboutToShow()
-{
-	UpdateEditMenu();
 }
 
 void OBSBasic::on_actionEditTransform_triggered()

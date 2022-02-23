@@ -161,6 +161,7 @@ void pipewire_capture_load(void)
 		.get_name = pipewire_window_capture_get_name,
 		.create = pipewire_window_capture_create,
 		.destroy = pipewire_capture_destroy,
+		.save = pipewire_capture_save,
 		.get_defaults = pipewire_capture_get_defaults,
 		.get_properties = pipewire_capture_get_properties,
 		.update = pipewire_capture_update,
