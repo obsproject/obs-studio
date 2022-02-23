@@ -2517,8 +2517,7 @@
             }
         },
         {
-            "name": "Shareplay.tv",            
-            "stream_key_link": "https://shareplay.tv/no-stream",
+            "name": "Shareplay.tv",                        
             "more_info_link": "https://shareplay.tv",
             "servers": [
                 {
