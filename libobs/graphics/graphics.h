@@ -936,7 +936,7 @@ EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
 EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);
 EXPORT void gs_unregister_loss_callbacks(void *data);
 
-#elif __linux__
+#elif defined(__linux__) || defined(__FreeBSD__)
 
 EXPORT gs_texture_t *gs_texture_create_from_dmabuf(
 	unsigned int width, unsigned int height, uint32_t drm_format,
