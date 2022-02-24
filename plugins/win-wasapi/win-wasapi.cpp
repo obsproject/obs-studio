@@ -347,46 +347,54 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 			(PFN_RtwqPutWaitingWorkItem)GetProcAddress(
 				rtwq_module, "RtwqPutWaitingWorkItem");
 
-		hr = rtwq_create_async_result(nullptr, &startCapture, nullptr,
-					      &startCaptureAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError(
-				"Could not create startCaptureAsyncResult", hr);
-		}
+		try {
+			hr = rtwq_create_async_result(nullptr, &startCapture,
+						      nullptr,
+						      &startCaptureAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create startCaptureAsyncResult",
+					hr);
+			}
 
-		hr = rtwq_create_async_result(nullptr, &sampleReady, nullptr,
-					      &sampleReadyAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("Could not create sampleReadyAsyncResult",
-				      hr);
-		}
+			hr = rtwq_create_async_result(nullptr, &sampleReady,
+						      nullptr,
+						      &sampleReadyAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create sampleReadyAsyncResult",
+					hr);
+			}
 
-		hr = rtwq_create_async_result(nullptr, &restart, nullptr,
-					      &restartAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("Could not create restartAsyncResult",
-				      hr);
-		}
+			hr = rtwq_create_async_result(nullptr, &restart,
+						      nullptr,
+						      &restartAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create restartAsyncResult",
+					hr);
+			}
 
-		DWORD taskId = 0;
-		DWORD id = 0;
-		hr = rtwq_lock_shared_work_queue(L"Capture", 0, &taskId, &id);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("RtwqLockSharedWorkQueue failed", hr);
-		}
+			DWORD taskId = 0;
+			DWORD id = 0;
+			hr = rtwq_lock_shared_work_queue(L"Capture", 0, &taskId,
+							 &id);
+			if (FAILED(hr)) {
+				throw HRError("RtwqLockSharedWorkQueue failed",
+					      hr);
+			}
 
-		startCapture.SetQueueId(id);
-		sampleReady.SetQueueId(id);
-		restart.SetQueueId(id);
-	} else {
+			startCapture.SetQueueId(id);
+			sampleReady.SetQueueId(id);
+			restart.SetQueueId(id);
+		} catch (HRError &err) {
+			blog(LOG_ERROR, "RTWQ setup failed: %s (0x%08X)",
+			     err.str, err.hr);
+			rtwq_supported = false;
+		}
+	}
+
+	if (!rtwq_supported) {
 		captureThread = CreateThread(nullptr, 0,
 					     WASAPISource::CaptureThread, this,
 					     0, nullptr);
