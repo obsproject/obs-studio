@@ -47,6 +47,7 @@ using namespace DShow;
 #define COLOR_RANGE       "color_range"
 #define DEACTIVATE_WNS    "deactivate_when_not_showing"
 #define AUTOROTATION      "autorotation"
+#define HW_DECODE         "hw_decode"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -66,6 +67,7 @@ using namespace DShow;
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
 #define TEXT_AUTOROTATION   obs_module_text("Autorotation")
+#define TEXT_HW_DECODE      obs_module_text("HardwareDecode")
 #define TEXT_AUDIO_MODE     obs_module_text("AudioOutputMode")
 #define TEXT_MODE_CAPTURE   obs_module_text("AudioOutputMode.Capture")
 #define TEXT_MODE_DSOUND    obs_module_text("AudioOutputMode.DirectSound")
@@ -184,6 +186,7 @@ struct DShowInput {
 	bool flip = false;
 	bool active = false;
 	bool autorotation = true;
+	bool hw_decode = false;
 
 	Decoder audio_decoder;
 	Decoder video_decoder;
@@ -478,25 +481,18 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 //#define LOG_ENCODED_VIDEO_TS 1
 //#define LOG_ENCODED_AUDIO_TS 1
 
-#define MAX_SW_RES_INT (1920 * 1080)
-
 void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 				    size_t size, long long ts)
 {
-	/* If format changes, free and allow it to recreate the decoder */
+	/* If format or hw decode changes, recreate the decoder */
 	if (ffmpeg_decode_valid(video_decoder) &&
-	    video_decoder->codec->id != id) {
+	    ((video_decoder->codec->id != id) ||
+	     (video_decoder->hw != hw_decode))) {
 		ffmpeg_decode_free(video_decoder);
 	}
 
 	if (!ffmpeg_decode_valid(video_decoder)) {
-		/* Only use MJPEG hardware decoding on resolutions higher
-		 * than 1920x1080.  The reason why is because we want to strike
-		 * a reasonable balance between hardware and CPU usage. */
-		bool useHW = videoConfig.format != VideoFormat::MJPEG ||
-			     (videoConfig.cx * videoConfig.cy_abs) >
-				     MAX_SW_RES_INT;
-		if (ffmpeg_decode_init(video_decoder, id, useHW) < 0) {
+		if (ffmpeg_decode_init(video_decoder, id, hw_decode) < 0) {
 			blog(LOG_WARNING, "Could not initialize video decoder");
 			return;
 		}
@@ -874,6 +870,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	deactivateWhenNotShowing = obs_data_get_bool(settings, DEACTIVATE_WNS);
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
 	autorotation = obs_data_get_bool(settings, AUTOROTATION);
+	hw_decode = obs_data_get_bool(settings, HW_DECODE);
 
 	DeviceId id;
 	if (!DecodeDeviceId(id, video_device_id.c_str())) {
@@ -1200,6 +1197,7 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, AUDIO_OUTPUT_MODE,
 				 (int)AudioMode::Capture);
 	obs_data_set_default_bool(settings, AUTOROTATION, true);
+	obs_data_set_default_bool(settings, HW_DECODE, false);
 }
 
 struct Resolution {
@@ -1950,6 +1948,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 
 	obs_properties_add_bool(ppts, AUTOROTATION, TEXT_AUTOROTATION);
+
+	obs_properties_add_bool(ppts, HW_DECODE, TEXT_HW_DECODE);
 
 	/* ------------------------------------- */
 	/* audio settings */
