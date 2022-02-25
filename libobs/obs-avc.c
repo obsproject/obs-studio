@@ -15,17 +15,18 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include "obs.h"
 #include "obs-avc.h"
+
+#include "obs.h"
+#include "obs-nal.h"
 #include "util/array-serializer.h"
 
 bool obs_avc_keyframe(const uint8_t *data, size_t size)
 {
 	const uint8_t *nal_start, *nal_end;
 	const uint8_t *end = data + size;
-	int type;
 
-	nal_start = obs_avc_find_startcode(data, end);
+	nal_start = obs_nal_find_startcode(data, end);
 	while (true) {
 		while (nal_start < end && !*(nal_start++))
 			;
@@ -33,65 +34,21 @@ bool obs_avc_keyframe(const uint8_t *data, size_t size)
 		if (nal_start == end)
 			break;
 
-		type = nal_start[0] & 0x1F;
+		const uint8_t type = nal_start[0] & 0x1F;
 
 		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE)
-			return (type == OBS_NAL_SLICE_IDR);
+			return type == OBS_NAL_SLICE_IDR;
 
-		nal_end = obs_avc_find_startcode(nal_start, end);
+		nal_end = obs_nal_find_startcode(nal_start, end);
 		nal_start = nal_end;
 	}
 
 	return false;
 }
 
-/* NOTE: I noticed that FFmpeg does some unusual special handling of certain
- * scenarios that I was unaware of, so instead of just searching for {0, 0, 1}
- * we'll just use the code from FFmpeg - http://www.ffmpeg.org/ */
-static const uint8_t *ff_avc_find_startcode_internal(const uint8_t *p,
-						     const uint8_t *end)
-{
-	const uint8_t *a = p + 4 - ((intptr_t)p & 3);
-
-	for (end -= 3; p < a && p < end; p++) {
-		if (p[0] == 0 && p[1] == 0 && p[2] == 1)
-			return p;
-	}
-
-	for (end -= 3; p < end; p += 4) {
-		uint32_t x = *(const uint32_t *)p;
-
-		if ((x - 0x01010101) & (~x) & 0x80808080) {
-			if (p[1] == 0) {
-				if (p[0] == 0 && p[2] == 1)
-					return p;
-				if (p[2] == 0 && p[3] == 1)
-					return p + 1;
-			}
-
-			if (p[3] == 0) {
-				if (p[2] == 0 && p[4] == 1)
-					return p + 2;
-				if (p[4] == 0 && p[5] == 1)
-					return p + 3;
-			}
-		}
-	}
-
-	for (end += 3; p < end; p++) {
-		if (p[0] == 0 && p[1] == 0 && p[2] == 1)
-			return p;
-	}
-
-	return end + 3;
-}
-
 const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 {
-	const uint8_t *out = ff_avc_find_startcode_internal(p, end);
-	if (p < out && out < end && !out[-1])
-		out--;
-	return out;
+	return obs_nal_find_startcode(p, end);
 }
 
 static inline int get_drop_priority(int priority)
@@ -233,7 +190,6 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 	DARRAY(uint8_t) sei;
 	const uint8_t *nal_start, *nal_end, *nal_codestart;
 	const uint8_t *end = packet + size;
-	int type;
 
 	da_init(new_packet);
 	da_init(header);
@@ -250,7 +206,7 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 		if (nal_start == end)
 			break;
 
-		type = nal_start[0] & 0x1F;
+		const uint8_t type = nal_start[0] & 0x1F;
 
 		nal_end = obs_avc_find_startcode(nal_start, end);
 		if (!nal_end)

@@ -31,11 +31,15 @@ target_sources(
           obs-encoder.c
           obs-encoder.h
           obs-ffmpeg-compat.h
+          obs-hevc.c
+          obs-hevc.h
           obs-hotkey.c
           obs-hotkey.h
           obs-hotkeys.h
           obs-missing-files.c
           obs-missing-files.h
+          obs-nal.c
+          obs-nal.h
           obs-hotkey-name-map.c
           obs-interaction.h
           obs-internal.h
