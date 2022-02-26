@@ -213,9 +213,21 @@ static bool add_connection(struct obs_encoder *encoder)
 
 		if (gpu_encode_available(encoder, &info)) {
 			start_gpu_encode(encoder);
-		} else {
+		} else if (encoder->info.encode) {
 			start_raw_video(encoder->media, &info, receive_video,
 					encoder);
+		} else {
+			const char *name =
+				obs_encoder_get_display_name(encoder->info.id);
+			struct dstr error_message = {0};
+			dstr_printf(
+				&error_message,
+				"Texture-only encoder %s not supported on this device",
+				name ? name : encoder->info.id);
+			obs_encoder_set_last_error(encoder,
+						   error_message.array);
+			dstr_free(&error_message);
+			return false;
 		}
 	}
 
