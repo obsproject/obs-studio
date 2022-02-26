@@ -199,7 +199,7 @@ static inline bool gpu_encode_available(const struct obs_encoder *encoder,
 						      info);
 }
 
-static void add_connection(struct obs_encoder *encoder)
+static bool add_connection(struct obs_encoder *encoder)
 {
 	if (encoder->info.type == OBS_ENCODER_AUDIO) {
 		struct audio_convert_info audio_info = {0};
@@ -220,6 +220,7 @@ static void add_connection(struct obs_encoder *encoder)
 	}
 
 	set_encoder_active(encoder, true);
+	return true;
 }
 
 static void remove_connection(struct obs_encoder *encoder, bool shutdown)
@@ -559,7 +560,7 @@ void pause_reset(struct pause_data *pause)
 	pthread_mutex_unlock(&pause->mutex);
 }
 
-static inline void obs_encoder_start_internal(
+static inline bool obs_encoder_start_internal(
 	obs_encoder_t *encoder,
 	void (*new_packet)(void *param, struct encoder_packet *packet),
 	void *param)
@@ -568,7 +569,7 @@ static inline void obs_encoder_start_internal(
 	bool first = false;
 
 	if (!encoder->context.data)
-		return;
+		return false;
 
 	pthread_mutex_lock(&encoder->callbacks_mutex);
 
@@ -585,23 +586,25 @@ static inline void obs_encoder_start_internal(
 		pause_reset(&encoder->pause);
 
 		encoder->cur_pts = 0;
-		add_connection(encoder);
+		return add_connection(encoder);
 	}
+	return true;
 }
 
-void obs_encoder_start(obs_encoder_t *encoder,
+bool obs_encoder_start(obs_encoder_t *encoder,
 		       void (*new_packet)(void *param,
 					  struct encoder_packet *packet),
 		       void *param)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_start"))
-		return;
+		return false;
 	if (!obs_ptr_valid(new_packet, "obs_encoder_start"))
-		return;
+		return false;
 
 	pthread_mutex_lock(&encoder->init_mutex);
-	obs_encoder_start_internal(encoder, new_packet, param);
+	bool success = obs_encoder_start_internal(encoder, new_packet, param);
 	pthread_mutex_unlock(&encoder->init_mutex);
+	return success;
 }
 
 static inline bool obs_encoder_stop_internal(

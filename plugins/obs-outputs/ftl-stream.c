@@ -592,7 +592,11 @@ static int init_send(struct ftl_stream *stream)
 
 	os_atomic_set_bool(&stream->active, true);
 
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!obs_output_begin_data_capture(stream->output, 0)) {
+		warn("Failed to begin data capture");
+		os_atomic_set_bool(&stream->active, false);
+		return OBS_OUTPUT_ERROR;
+	}
 
 	return OBS_OUTPUT_SUCCESS;
 }

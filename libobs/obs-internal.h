@@ -1204,7 +1204,7 @@ extern struct obs_encoder_info *find_encoder(const char *id);
 extern bool obs_encoder_initialize(obs_encoder_t *encoder);
 extern void obs_encoder_shutdown(obs_encoder_t *encoder);
 
-extern void obs_encoder_start(obs_encoder_t *encoder,
+extern bool obs_encoder_start(obs_encoder_t *encoder,
 			      void (*new_packet)(void *param,
 						 struct encoder_packet *packet),
 			      void *param);

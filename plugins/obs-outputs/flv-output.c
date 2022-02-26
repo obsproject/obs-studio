@@ -175,7 +175,13 @@ static bool flv_output_start(void *data)
 
 	/* write headers and start capture */
 	os_atomic_set_bool(&stream->active, true);
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!obs_output_begin_data_capture(stream->output, 0)) {
+		warn("Failed to begin data capture");
+		os_atomic_set_bool(&stream->active, false);
+		fclose(stream->file);
+		stream->file = NULL;
+		return false;
+	}
 
 	info("Writing FLV file '%s'...", stream->path.array);
 	return true;

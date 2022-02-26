@@ -961,8 +961,12 @@ static int init_send(struct rtmp_stream *stream)
 		return OBS_OUTPUT_DISCONNECTED;
 	}
 
-	if (!silently_reconnecting(stream))
-		obs_output_begin_data_capture(stream->output, 0);
+	if (!silently_reconnecting(stream)) {
+		if (!obs_output_begin_data_capture(stream->output, 0)) {
+			warn("Failed to begin data capture");
+			return OBS_OUTPUT_DISCONNECTED;
+		}
+	}
 
 	return OBS_OUTPUT_SUCCESS;
 }

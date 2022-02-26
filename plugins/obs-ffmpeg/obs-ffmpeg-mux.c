@@ -427,7 +427,12 @@ static bool ffmpeg_mux_start(void *data)
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!obs_output_begin_data_capture(stream->output, 0)) {
+		warn("Failed to begin data capture");
+		os_atomic_set_bool(&stream->capturing, false);
+		os_atomic_set_bool(&stream->active, false);
+		return false;
+	}
 
 	info("Writing file '%s'...", stream->path.array);
 	return true;
@@ -994,7 +999,12 @@ static bool replay_buffer_start(void *data)
 	os_atomic_set_bool(&stream->active, true);
 	os_atomic_set_bool(&stream->capturing, true);
 	stream->total_bytes = 0;
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!obs_output_begin_data_capture(stream->output, 0)) {
+		warn("Failed to begin data capture");
+		os_atomic_set_bool(&stream->capturing, false);
+		os_atomic_set_bool(&stream->active, false);
+		return false;
+	}
 
 	return true;
 }

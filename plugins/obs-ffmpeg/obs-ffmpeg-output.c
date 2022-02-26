@@ -1228,7 +1228,13 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	obs_output_set_video_conversion(output->output, NULL);
 	obs_output_set_audio_conversion(output->output, &aci);
-	obs_output_begin_data_capture(output->output, 0);
+	if (!obs_output_begin_data_capture(output->output, 0)) {
+		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
+				 "ffmpeg_output_start: Failed to begin data "
+				 "capture.");
+		ffmpeg_output_full_stop(output);
+		return false;
+	}
 	output->write_thread_active = true;
 	return true;
 }
