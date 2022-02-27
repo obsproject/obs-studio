@@ -27,6 +27,9 @@ OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
 	textArea = new QPlainTextEdit();
 	textArea->setReadOnly(true);
 	textArea->setFont(fixedFont);
+	// Fix display of tabs & multiple spaces
+	textArea->document()->setDefaultStyleSheet(
+		"font { white-space: pre; }");
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout();
 	QPushButton *clearButton = new QPushButton(QTStr("Clear"));
@@ -112,7 +115,7 @@ void OBSLogViewer::InitLog()
 		cursor.beginEditBlock();
 		while (!in.atEnd()) {
 			QString line = in.readLine();
-			cursor.insertHtml(line);
+			cursor.insertText(line);
 			cursor.insertBlock();
 		}
 		cursor.endEditBlock();
@@ -135,6 +138,9 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 		break;
 	case LOG_ERROR:
 		msg = QString("<font color=\"#c00000\">%1</font>").arg(msg);
+		break;
+	default:
+		msg = QString("<font>%1</font>").arg(msg);
 		break;
 	}
 
