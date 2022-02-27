@@ -213,7 +213,6 @@ string GetDefaultVideoSavePath()
 
 vector<string> GetPreferredLocales()
 {
-	setlocale(LC_ALL, "");
 	vector<string> matched;
 	string messages = setlocale(LC_MESSAGES, NULL);
 	if (!messages.size() || messages == "C" || messages == "POSIX")
