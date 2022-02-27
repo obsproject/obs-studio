@@ -118,7 +118,6 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	OBSDataAutoRelease settings = obs_data_create();
-	OBSSourceAutoRelease source = nullptr;
 	const char *type = nullptr;
 	std::vector<const char *> types;
 	QString name;
@@ -183,11 +182,36 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
-	source = obs_source_create(type,
-				   GenerateSourceName(QT_TO_UTF8(name)).c_str(),
-				   settings, nullptr);
+	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
+	OBSSourceAutoRelease source =
+		obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
+		const char *sceneName =
+			obs_source_get_name(obs_scene_get_source(scene));
+		auto undo = [sceneName, sourceName](const std::string &) {
+			OBSSourceAutoRelease source =
+				obs_get_source_by_name(sourceName.c_str());
+			obs_source_remove(source);
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_name(sceneName);
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+		};
+		auto redo = [sceneName, sourceName,
+			     type](const std::string &data) {
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_name(sceneName);
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+			OBSDataAutoRelease settings =
+				obs_data_create_from_json(data.c_str());
+			OBSSourceAutoRelease source = obs_source_create(
+				type, sourceName.c_str(), settings, nullptr);
+			obs_scene_add(obs_scene_from_source(scene),
+				      source.Get());
+		};
+		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()),
+				  undo, redo, "",
+				  std::string(obs_data_get_json(settings)));
 		obs_scene_add(scene, source);
 	}
 }
