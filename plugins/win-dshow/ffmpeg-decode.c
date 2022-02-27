@@ -64,6 +64,7 @@ static void init_hw_decoder(struct ffmpeg_decode *d)
 	}
 
 	if (hw_ctx) {
+		d->hw_device_ctx = hw_ctx;
 		d->decoder->hw_device_ctx = av_buffer_ref(hw_ctx);
 		d->hw = true;
 	}
@@ -117,6 +118,9 @@ void ffmpeg_decode_free(struct ffmpeg_decode *decode)
 
 	if (decode->frame)
 		av_frame_free(&decode->frame);
+
+	if (decode->hw_device_ctx)
+		av_buffer_unref(&decode->hw_device_ctx);
 
 	if (decode->packet_buffer)
 		bfree(decode->packet_buffer);
