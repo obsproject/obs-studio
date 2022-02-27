@@ -28,30 +28,6 @@
 #include <libavutil/channel_layout.h>
 #include <libavutil/mastering_display_metadata.h>
 
-struct ffmpeg_output {
-	obs_output_t *output;
-	volatile bool active;
-	struct ffmpeg_data ff_data;
-
-	bool connecting;
-	pthread_t start_thread;
-
-	uint64_t total_bytes;
-
-	uint64_t audio_start_ts;
-	uint64_t video_start_ts;
-	uint64_t stop_ts;
-	volatile bool stopping;
-
-	bool write_thread_active;
-	pthread_mutex_t write_mutex;
-	pthread_t write_thread;
-	os_sem_t *write_sem;
-	os_event_t *stop_event;
-
-	DARRAY(AVPacket *) packets;
-};
-
 /* ------------------------------------------------------------------------- */
 
 static void ffmpeg_output_set_last_error(struct ffmpeg_data *data,

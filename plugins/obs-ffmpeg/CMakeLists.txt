@@ -14,6 +14,9 @@ find_package(
 
 add_library(obs-ffmpeg MODULE)
 add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
+
+find_package(Librist QUIET)
+find_package(Libsrt QUIET)
 add_subdirectory(ffmpeg-mux)
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in
@@ -27,13 +30,17 @@ target_sources(
           obs-ffmpeg-av1.c
           obs-ffmpeg-nvenc.c
           obs-ffmpeg-output.c
+          obs-ffmpeg-mpegts.c
           obs-ffmpeg-mux.c
           obs-ffmpeg-mux.h
           obs-ffmpeg-hls-mux.c
           obs-ffmpeg-source.c
           obs-ffmpeg-compat.h
           obs-ffmpeg-formats.h
-          ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h)
+          ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h
+          obs-ffmpeg-srt.h
+          obs-ffmpeg-rist.h
+          obs-ffmpeg-url.h)
 
 target_include_directories(obs-ffmpeg PRIVATE ${CMAKE_BINARY_DIR}/config)
 
@@ -48,7 +55,9 @@ target_link_libraries(
           FFmpeg::avdevice
           FFmpeg::avutil
           FFmpeg::swscale
-          FFmpeg::swresample)
+          FFmpeg::swresample
+          Librist::Librist
+          Libsrt::Libsrt)
 
 if(ENABLE_FFMPEG_LOGGING)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-logging.c)
@@ -68,6 +77,7 @@ if(OS_WINDOWS)
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
+    target_link_libraries(obs-ffmpeg PRIVATE ws2_32.lib)
 
   set(MODULE_DESCRIPTION "OBS FFmpeg module")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
