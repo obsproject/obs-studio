@@ -981,12 +981,14 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	     "\tflip: %d\n"
 	     "\tfps: %0.2f (interval: %lld)\n"
 	     "\tformat: %s\n"
-	     "\tbuffering: %s",
+	     "\tbuffering: %s\n"
+	     "\thardware decode: %s",
 	     obs_source_get_name(source), (const char *)name_utf8,
 	     (const char *)path_utf8, videoConfig.cx, videoConfig.cy_abs,
 	     (int)videoConfig.cy_flip, fps, videoConfig.frameInterval,
 	     formatName->array,
-	     obs_source_async_unbuffered(source) ? "disabled" : "enabled");
+	     obs_source_async_unbuffered(source) ? "disabled" : "enabled",
+	     hw_decode ? "enabled" : "disabled");
 
 	return true;
 }
