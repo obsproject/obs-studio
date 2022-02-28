@@ -44,6 +44,7 @@ target_sources(
             libdshowcapture/source/dshowencode.cpp
             libdshowcapture/source/device.cpp
             libdshowcapture/source/device.hpp
+            libdshowcapture/source/device-vendor.cpp
             libdshowcapture/source/encoder.cpp
             libdshowcapture/source/encoder.hpp
             libdshowcapture/source/dshow-base.cpp
