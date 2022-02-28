@@ -26,6 +26,7 @@
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
+#include "util_uint64.h"
 #include "windows/win-registry.h"
 #include "windows/win-version.h"
 
@@ -332,9 +333,9 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 
 bool os_sleepto_ns(uint64_t time_target)
 {
-	const double freq = (double)get_clockfreq();
+	const uint64_t freq = get_clockfreq();
 	const LONGLONG count_target =
-		(LONGLONG)(round((double)time_target * freq / 1000000000.0));
+		util_mul_div64(time_target, freq, 1000000000);
 
 	LARGE_INTEGER count;
 	QueryPerformanceCounter(&count);
@@ -371,14 +372,9 @@ void os_sleep_ms(uint32_t duration)
 uint64_t os_gettime_ns(void)
 {
 	LARGE_INTEGER current_time;
-	double time_val;
-
 	QueryPerformanceCounter(&current_time);
-	time_val = (double)current_time.QuadPart;
-	time_val *= 1000000000.0;
-	time_val /= (double)get_clockfreq();
-
-	return (uint64_t)time_val;
+	return util_mul_div64(current_time.QuadPart, 1000000000,
+			      get_clockfreq());
 }
 
 /* returns [folder]\[name] on windows */
