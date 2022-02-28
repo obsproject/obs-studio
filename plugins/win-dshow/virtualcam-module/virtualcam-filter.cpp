@@ -50,7 +50,7 @@ VCamFilter::VCamFilter()
 	AddRef();
 }
 
-inline void VCamFilter::ActuallyStart()
+void VCamFilter::ActuallyStart()
 {
 	if (th.joinable()) {
 		return;
@@ -121,7 +121,7 @@ inline void VCamFilter::ActuallyStart()
 	SetEvent(thread_start);
 }
 
-inline void VCamFilter::ActuallyStop()
+void VCamFilter::ActuallyStop()
 {
 	if (!th.joinable()) {
 		return;
