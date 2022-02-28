@@ -52,8 +52,8 @@ class VCamFilter : public DShow::OutputFilter {
 	void UpdatePlaceholder(void);
 	const int GetOutputBufferSize(void);
 
-	inline void ActuallyStart();
-	inline void ActuallyStop();
+	void ActuallyStart();
+	void ActuallyStop();
 
 protected:
 	const wchar_t *FilterName() const override;
