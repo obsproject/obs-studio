@@ -20,6 +20,7 @@
 #include <shlobj.h>
 #include <intrin.h>
 #include <psapi.h>
+#include <math.h>
 
 #include "base.h"
 #include "platform.h"
@@ -333,7 +334,7 @@ bool os_sleepto_ns(uint64_t time_target)
 {
 	const double freq = (double)get_clockfreq();
 	const LONGLONG count_target =
-		(LONGLONG)((double)time_target * freq / 1000000000.0);
+		(LONGLONG)(round((double)time_target * freq / 1000000000.0));
 
 	LARGE_INTEGER count;
 	QueryPerformanceCounter(&count);
