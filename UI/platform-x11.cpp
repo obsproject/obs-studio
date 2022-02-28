@@ -53,7 +53,7 @@ using std::vector;
 using std::ostringstream;
 
 #ifdef __linux__
-void RunningInstanceCheck(bool &already_running)
+void CheckIfAlreadyRunning(bool &already_running)
 {
 	int uniq = socket(AF_LOCAL, SOCK_DGRAM | SOCK_CLOEXEC, 0);
 
@@ -133,7 +133,7 @@ struct RunOnce {
 } RO;
 const char *RunOnce::thr_name = "OBS runonce";
 
-void PIDFileCheck(bool &already_running)
+void CheckIfAlreadyRunning(bool &already_running)
 {
 	std::string tmpfile_name =
 		"/tmp/obs-studio.lock." + std::to_string(geteuid());

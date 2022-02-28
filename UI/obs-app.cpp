@@ -2099,15 +2099,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		bool cancel_launch = false;
 		bool already_running = false;
 
-#if defined(_WIN32)
-		RunOnceMutex rom = GetRunOnceMutex(already_running);
-#elif defined(__APPLE__)
-		CheckAppWithSameBundleID(already_running);
-#elif defined(__linux__)
-		RunningInstanceCheck(already_running);
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-		PIDFileCheck(already_running);
+#ifdef _WIN32
+		RunOnceMutex rom =
 #endif
+			CheckIfAlreadyRunning(already_running);
 
 		if (!already_running) {
 			goto run;
