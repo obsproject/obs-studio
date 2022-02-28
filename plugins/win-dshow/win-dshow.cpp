@@ -278,6 +278,7 @@ struct DShowInput {
 	void OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
 				size_t size, long long ts);
 
+	void OnReactivate();
 	void OnVideoData(const VideoConfig &config, unsigned char *data,
 			 size_t size, long long startTime, long long endTime,
 			 long rotation);
@@ -520,6 +521,11 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 #endif
 		obs_source_output_video2(source, &frame);
 	}
+}
+
+void DShowInput::OnReactivate()
+{
+	SetActive(true);
 }
 
 void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
@@ -958,6 +964,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 					 placeholders::_1, placeholders::_2,
 					 placeholders::_3, placeholders::_4,
 					 placeholders::_5, placeholders::_6);
+	videoConfig.reactivateCallback =
+		std::bind(&DShowInput::OnReactivate, this);
 
 	videoConfig.format = videoConfig.internalFormat;
 
