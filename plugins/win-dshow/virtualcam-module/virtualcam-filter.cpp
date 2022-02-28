@@ -46,6 +46,17 @@ VCamFilter::VCamFilter()
 	in_obs = !!wcsstr(file, obs_process);
 
 	/* ---------------------------------------- */
+
+	AddRef();
+}
+
+inline void VCamFilter::ActuallyStart()
+{
+	if (th.joinable()) {
+		return;
+	}
+
+	/* ---------------------------------------- */
 	/* add last/current obs res/interval        */
 
 	uint32_t new_cx = cx;
@@ -103,21 +114,32 @@ VCamFilter::VCamFilter()
 	}
 
 	/* ---------------------------------------- */
+	/* Actually start                           */
 
+	ResetEvent(thread_stop);
 	th = std::thread([this] { Thread(); });
+	SetEvent(thread_start);
+}
 
-	AddRef();
+inline void VCamFilter::ActuallyStop()
+{
+	if (!th.joinable()) {
+		return;
+	}
+
+	SetEvent(thread_stop);
+	th.join();
+	video_queue_close(vq);
+
+	if (placeholder.scaled_data) {
+		free(placeholder.scaled_data);
+		placeholder.scaled_data = nullptr;
+	}
 }
 
 VCamFilter::~VCamFilter()
 {
-	SetEvent(thread_stop);
-	if (th.joinable())
-		th.join();
-	video_queue_close(vq);
-
-	if (placeholder.scaled_data)
-		free(placeholder.scaled_data);
+	ActuallyStop();
 }
 
 const wchar_t *VCamFilter::FilterName() const
@@ -134,7 +156,29 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
-	SetEvent(thread_start);
+	ActuallyStart();
+	return S_OK;
+}
+
+STDMETHODIMP VCamFilter::Run(REFERENCE_TIME tStart)
+{
+	HRESULT hr = OutputFilter::Run(tStart);
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	ActuallyStart();
+	return S_OK;
+}
+
+STDMETHODIMP VCamFilter::Stop()
+{
+	HRESULT hr = OutputFilter::Stop();
+	if (FAILED(hr)) {
+		return hr;
+	}
+
+	ActuallyStop();
 	return S_OK;
 }
 
