@@ -202,9 +202,57 @@ void EnableOSXDockIcon(bool enable)
 				NSApplicationActivationPolicyProhibited];
 }
 
-// Not implemented yet
+@interface DockView : NSView {
+@private
+	QIcon icon;
+}
+@end
+
+@implementation DockView
+- (id)initWithIcon:(QIcon)icon
+{
+	self = [super init];
+	self->icon = icon;
+	return self;
+}
+- (void)drawRect:(NSRect)dirtyRect
+{
+	CGSize size = dirtyRect.size;
+
+	/* Draw regular app icon */
+	NSImage *appIcon = [[NSWorkspace sharedWorkspace]
+		iconForFile:[[NSBundle mainBundle] bundlePath]];
+	[appIcon drawInRect:CGRectMake(0, 0, size.width, size.height)];
+
+	/* Draw small icon on top */
+	float iconSize = 0.45;
+	CGImageRef image =
+		icon.pixmap(size.width, size.height).toImage().toCGImage();
+	CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
+	CGContextDrawImage(context,
+			   CGRectMake(size.width * (1 - iconSize), 0,
+				      size.width * iconSize,
+				      size.height * iconSize),
+			   image);
+	CGImageRelease(image);
+}
+@end
+
 void TaskbarOverlayInit() {}
-void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
+{
+	QIcon icon;
+	if (status == TaskbarOverlayStatusActive)
+		icon = QIcon::fromTheme("obs-active",
+					QIcon(":/res/images/active_mac.png"));
+	else if (status == TaskbarOverlayStatusPaused)
+		icon = QIcon::fromTheme("obs-paused",
+					QIcon(":/res/images/paused_mac.png"));
+
+	NSDockTile *tile = [NSApp dockTile];
+	[tile setContentView:[[DockView alloc] initWithIcon:icon]];
+	[tile display];
+}
 
 /*
  * This custom NSApplication subclass makes the app compatible with CEF. Qt
