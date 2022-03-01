@@ -466,6 +466,7 @@ void obs_find_modules(obs_find_module_callback_t callback, void *param)
 
 	for (size_t i = 0; i < obs->module_paths.num; i++) {
 		struct obs_module_path *omp = obs->module_paths.array + i;
+		blog(LOG_INFO, "finding modules in %s %s", omp->bin, omp->data);
 		find_modules_in_path(omp, callback, param);
 	}
 }
