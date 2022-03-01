@@ -4716,6 +4716,7 @@ void OBSBasic::changeEvent(QEvent *event)
 			if (trayIcon && trayIcon->isVisible() &&
 			    sysTrayMinimizeToTray()) {
 				ToggleShowHide();
+				return;
 			}
 
 			if (previewEnabled)
@@ -8902,9 +8903,10 @@ void OBSBasic::SetShowing(bool showing)
 
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Show"));
-		QTimer::singleShot(250, this, SLOT(hide()));
+		QTimer::singleShot(0, this, SLOT(hide()));
 
-		setVisible(false);
+		if (previewEnabled)
+			EnablePreviewDisplay(false);
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(false);
@@ -8913,9 +8915,10 @@ void OBSBasic::SetShowing(bool showing)
 	} else if (showing && !isVisible()) {
 		if (showHide)
 			showHide->setText(QTStr("Basic.SystemTray.Hide"));
-		QTimer::singleShot(250, this, SLOT(show()));
+		QTimer::singleShot(0, this, SLOT(show()));
 
-		setVisible(true);
+		if (previewEnabled)
+			EnablePreviewDisplay(true);
 
 #ifdef __APPLE__
 		EnableOSXDockIcon(true);
