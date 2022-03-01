@@ -317,3 +317,11 @@ plugin modules.
 
    :param  module: The module where to find library file.
    :return:        Pointer to module library.
+
+---------------------
+
+.. function:: void *obs_free_module(obs_module_t *module)
+
+   Frees specified module.
+
+   :param  module: The module to free.

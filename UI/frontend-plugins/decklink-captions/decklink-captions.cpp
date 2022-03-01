@@ -158,8 +158,10 @@ bool obs_module_load(void)
 
 void obs_module_post_load(void)
 {
-	if (!obs_get_module("decklink"))
+	if (!obs_get_module("decklink")) {
+		obs_free_module(obs_current_module());
 		return;
+	}
 
 	addOutputUI();
 }

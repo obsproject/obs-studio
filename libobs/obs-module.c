@@ -274,6 +274,11 @@ void obs_add_module_path(const char *bin, const char *data)
 	da_push_back(obs->module_paths, &omp);
 }
 
+void obs_free_module(obs_module_t *module)
+{
+	free_module(module);
+}
+
 static void load_all_callback(void *param, const struct obs_module_info *info)
 {
 	obs_module_t *module;
