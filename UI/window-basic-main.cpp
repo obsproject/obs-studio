@@ -3531,6 +3531,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	if (SourceMixerHidden(source))
 		return;
+	if (!obs_source_active(source))
+		return;
 	if (!obs_source_audio_active(source))
 		return;
 
