@@ -210,6 +210,11 @@ void VCamFilter::Thread()
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
 
+	if (placeholder.scaled_data) {
+		free(placeholder.scaled_data);
+		placeholder.scaled_data = nullptr;
+	}
+
 	if (initialize_placeholder()) {
 		placeholder.source_data = get_placeholder_ptr();
 		get_placeholder_size(&placeholder.cx, &placeholder.cy);
