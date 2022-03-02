@@ -16,6 +16,9 @@
 ******************************************************************************/
 
 #include <obs-avc.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 #include "obs-ffmpeg-video-encoders.h"
 
@@ -29,17 +32,28 @@
 
 struct nvenc_encoder {
 	struct ffmpeg_video_encoder ffve;
+#ifdef ENABLE_HEVC
+	bool hevc;
+#endif
 	DARRAY(uint8_t) header;
 	DARRAY(uint8_t) sei;
 };
 
-#define ENCODER_NAME "NVIDIA NVENC H.264"
-
-static const char *nvenc_getname(void *unused)
+#define ENCODER_NAME_H264 "NVIDIA NVENC H.264"
+static const char *h264_nvenc_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return ENCODER_NAME;
+	return ENCODER_NAME_H264;
 }
+
+#ifdef ENABLE_HEVC
+#define ENCODER_NAME_HEVC "NVIDIA NVENC HEVC"
+static const char *hevc_nvenc_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return ENCODER_NAME_HEVC;
+}
+#endif
 
 static inline bool valid_format(enum video_format format)
 {
@@ -232,21 +246,46 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 	struct nvenc_encoder *enc = data;
 
 	darray_free(da);
-	obs_extract_avc_headers(pkt->data, pkt->size, (uint8_t **)&da->array,
-				&da->num, &enc->header.array, &enc->header.num,
-				&enc->sei.array, &enc->sei.num);
+#ifdef ENABLE_HEVC
+	if (enc->hevc) {
+		obs_extract_hevc_headers(pkt->data, pkt->size,
+					 (uint8_t **)&da->array, &da->num,
+					 &enc->header.array, &enc->header.num,
+					 &enc->sei.array, &enc->sei.num);
+	} else
+#endif
+	{
+		obs_extract_avc_headers(pkt->data, pkt->size,
+					(uint8_t **)&da->array, &da->num,
+					&enc->header.array, &enc->header.num,
+					&enc->sei.array, &enc->sei.num);
+	}
 	da->capacity = da->num;
 }
 
 static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
-				   bool psycho_aq)
+				   bool psycho_aq, bool hevc)
 {
 	struct nvenc_encoder *enc = bzalloc(sizeof(*enc));
 
-	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings, encoder,
-				       "h264_nvenc", "nvenc_h264", ENCODER_NAME,
-				       on_init_error, on_first_packet))
-		goto fail;
+#ifdef ENABLE_HEVC
+	enc->hevc = hevc;
+	if (hevc) {
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings,
+					       encoder, "hevc_nvenc",
+					       "nvenc_hevc", ENCODER_NAME_HEVC,
+					       on_init_error, on_first_packet))
+			goto fail;
+	} else
+#endif
+	{
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings,
+					       encoder, "h264_nvenc",
+					       "nvenc_h264", ENCODER_NAME_H264,
+					       on_init_error, on_first_packet))
+			goto fail;
+	}
+
 	if (!nvenc_update(enc, settings, psycho_aq))
 		goto fail;
 
@@ -257,19 +296,35 @@ fail:
 	return NULL;
 }
 
-static void *nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
-	void *enc = nvenc_create_internal(settings, encoder, psycho_aq);
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false);
 	if ((enc == NULL) && psycho_aq) {
 		blog(LOG_WARNING,
 		     "[NVENC encoder] nvenc_create_internal failed, "
 		     "trying again without Psycho Visual Tuning");
-		enc = nvenc_create_internal(settings, encoder, false);
+		enc = nvenc_create_internal(settings, encoder, false, false);
 	}
 
 	return enc;
 }
+
+#ifdef ENABLE_HEVC
+static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
+	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, true);
+	if ((enc == NULL) && psycho_aq) {
+		blog(LOG_WARNING,
+		     "[NVENC encoder] nvenc_create_internal failed, "
+		     "trying again without Psycho Visual Tuning");
+		enc = nvenc_create_internal(settings, encoder, false, true);
+	}
+
+	return enc;
+}
+#endif
 
 static bool nvenc_encode(void *data, struct encoder_frame *frame,
 			 struct encoder_packet *packet, bool *received_packet)
@@ -278,7 +333,7 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 	return ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet);
 }
 
-void nvenc_defaults(obs_data_t *settings)
+void h264_nvenc_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 5000);
@@ -292,6 +347,23 @@ void nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "bf", 2);
 	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
+
+#ifdef ENABLE_HEVC
+void hevc_nvenc_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "max_bitrate", 5000);
+	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "cqp", 20);
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_string(settings, "preset", "hq");
+	obs_data_set_default_string(settings, "profile", "main");
+	obs_data_set_default_bool(settings, "psycho_aq", true);
+	obs_data_set_default_int(settings, "gpu", 0);
+	obs_data_set_default_int(settings, "bf", 2);
+	obs_data_set_default_bool(settings, "repeat_headers", false);
+}
+#endif
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 				  obs_data_t *settings)
@@ -320,7 +392,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-obs_properties_t *nvenc_properties_internal(bool ffmpeg)
+obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -374,9 +446,14 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
-	add_profile("high");
-	add_profile("main");
-	add_profile("baseline");
+	if (hevc) {
+		add_profile("main10");
+		add_profile("main");
+	} else {
+		add_profile("high");
+		add_profile("main");
+		add_profile("baseline");
+	}
 #undef add_profile
 
 	if (!ffmpeg) {
@@ -402,17 +479,33 @@ obs_properties_t *nvenc_properties_internal(bool ffmpeg)
 	return props;
 }
 
-obs_properties_t *nvenc_properties(void *unused)
+obs_properties_t *h264_nvenc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(false);
+	return nvenc_properties_internal(false, false);
 }
 
-obs_properties_t *nvenc_properties_ffmpeg(void *unused)
+#ifdef ENABLE_HEVC
+obs_properties_t *hevc_nvenc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(true);
+	return nvenc_properties_internal(true, false);
 }
+#endif
+
+obs_properties_t *h264_nvenc_properties_ffmpeg(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return nvenc_properties_internal(false, true);
+}
+
+#ifdef ENABLE_HEVC
+obs_properties_t *hevc_nvenc_properties_ffmpeg(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return nvenc_properties_internal(true, true);
+}
+#endif
 
 static bool nvenc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
@@ -432,17 +525,17 @@ static bool nvenc_sei_data(void *data, uint8_t **extra_data, size_t *size)
 	return true;
 }
 
-struct obs_encoder_info nvenc_encoder_info = {
+struct obs_encoder_info h264_nvenc_encoder_info = {
 	.id = "ffmpeg_nvenc",
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
-	.get_name = nvenc_getname,
-	.create = nvenc_create,
+	.get_name = h264_nvenc_getname,
+	.create = h264_nvenc_create,
 	.destroy = nvenc_destroy,
 	.encode = nvenc_encode,
 	.update = nvenc_reconfigure,
-	.get_defaults = nvenc_defaults,
-	.get_properties = nvenc_properties_ffmpeg,
+	.get_defaults = h264_nvenc_defaults,
+	.get_properties = h264_nvenc_properties_ffmpeg,
 	.get_extra_data = nvenc_extra_data,
 	.get_sei_data = nvenc_sei_data,
 	.get_video_info = nvenc_video_info,
@@ -452,3 +545,26 @@ struct obs_encoder_info nvenc_encoder_info = {
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
 #endif
 };
+
+#ifdef ENABLE_HEVC
+struct obs_encoder_info hevc_nvenc_encoder_info = {
+	.id = "ffmpeg_hevc_nvenc",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "hevc",
+	.get_name = hevc_nvenc_getname,
+	.create = hevc_nvenc_create,
+	.destroy = nvenc_destroy,
+	.encode = nvenc_encode,
+	.update = nvenc_reconfigure,
+	.get_defaults = hevc_nvenc_defaults,
+	.get_properties = hevc_nvenc_properties_ffmpeg,
+	.get_extra_data = nvenc_extra_data,
+	.get_sei_data = nvenc_sei_data,
+	.get_video_info = nvenc_video_info,
+#ifdef _WIN32
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
+#else
+	.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+#endif
+};
+#endif
