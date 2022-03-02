@@ -46,17 +46,6 @@ VCamFilter::VCamFilter()
 	in_obs = !!wcsstr(file, obs_process);
 
 	/* ---------------------------------------- */
-
-	AddRef();
-}
-
-void VCamFilter::ActuallyStart()
-{
-	if (th.joinable()) {
-		return;
-	}
-
-	/* ---------------------------------------- */
 	/* add last/current obs res/interval        */
 
 	uint32_t new_cx = cx;
@@ -114,7 +103,15 @@ void VCamFilter::ActuallyStart()
 	}
 
 	/* ---------------------------------------- */
-	/* Actually start                           */
+
+	AddRef();
+}
+
+void VCamFilter::ActuallyStart()
+{
+	if (th.joinable()) {
+		return;
+	}
 
 	ResetEvent(thread_stop);
 	th = std::thread([this] { Thread(); });
@@ -129,17 +126,18 @@ void VCamFilter::ActuallyStop()
 
 	SetEvent(thread_stop);
 	th.join();
+}
+
+VCamFilter::~VCamFilter()
+{
+	ActuallyStop();
+
 	video_queue_close(vq);
 
 	if (placeholder.scaled_data) {
 		free(placeholder.scaled_data);
 		placeholder.scaled_data = nullptr;
 	}
-}
-
-VCamFilter::~VCamFilter()
-{
-	ActuallyStop();
 }
 
 const wchar_t *VCamFilter::FilterName() const
