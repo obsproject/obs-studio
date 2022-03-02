@@ -140,3 +140,8 @@ gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender)
 {
 	return texrender ? texrender->target : NULL;
 }
+
+enum gs_color_format gs_texrender_get_format(const gs_texrender_t *texrender)
+{
+	return texrender->format;
+}
