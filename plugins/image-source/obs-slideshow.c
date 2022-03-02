@@ -629,7 +629,8 @@ static void ss_destroy(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (obs_scene_is_present(ss->transition) || obs_source_is_present(ss->transition))
+	// obs_scene_t is an undefined type here, can't check if OBS_SOURCE_TYPE_SCENE, but obs_scene_is_present has sanity check
+	if (obs_scene_is_present((obs_scene_t*)ss->transition) || obs_source_is_present(ss->transition))
 	{
 		obs_source_release(ss->transition);
 	}

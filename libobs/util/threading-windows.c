@@ -199,7 +199,7 @@ void os_set_thread_name(const char *name)
 
 	wchar_t *path;
 	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
-		return false;
+		return;
 
 	SetDllDirectory(path);
 	const HMODULE hModule = LoadLibrary(L"KernelBase.dll");

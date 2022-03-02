@@ -104,7 +104,7 @@ int os_stat(const char *file, struct stat *st)
 				st->st_uid = st_w32.st_uid;
 				st->st_gid = st_w32.st_gid;
 				st->st_rdev = st_w32.st_rdev;
-				st->st_size = st_w32.st_size;
+				st->st_size = (_off_t)st_w32.st_size;
 				st->st_atime = st_w32.st_atime;
 				st->st_mtime = st_w32.st_mtime;
 				st->st_ctime = st_w32.st_ctime;

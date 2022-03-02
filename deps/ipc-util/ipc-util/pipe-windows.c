@@ -211,7 +211,7 @@ static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
 	pipe->handle = CreateFileA(new_name, GENERIC_READ | GENERIC_WRITE, 0,
 				   NULL, OPEN_EXISTING, 0, NULL);
 	if (pipe->handle == INVALID_HANDLE_VALUE) {
-		lastError = pipe->handle;
+		lastError = (DWORD)((int64_t)INVALID_HANDLE_VALUE);
 		return false;
 	}
 

@@ -178,7 +178,7 @@ static void log_aero(void)
 
 	wchar_t *path;
 	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
-		return false;
+		return;
 
 	SetDllDirectory(path);
 	HMODULE dwm = LoadLibraryW(L"dwmapi");
@@ -358,7 +358,7 @@ static void log_security_products(void)
 
 	wchar_t *path;
 	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
-		return false;
+		return;
 
 	SetDllDirectory(path);
 	h_wsc = LoadLibraryW(L"wscapi.dll");
@@ -1194,7 +1194,7 @@ void reset_win32_symbol_paths(void)
 
 		wchar_t *path;
 		if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
-			return false;
+			return;
 
 		SetDllDirectory(path);
 		mod = LoadLibraryW(L"DbgHelp");

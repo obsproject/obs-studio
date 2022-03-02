@@ -459,7 +459,6 @@ static int obs_init_video(struct obs_video_info *ovi)
 static void stop_video(void)
 {
 	struct obs_core_video *video = &obs->video;
-	void *thread_retval;
 
 	if (video->video) {
 		video_output_stop(video->video);
@@ -1527,7 +1526,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
-void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
+void obs_enum_scenes(bool (*enum_proc)(void *, obs_scene_t *), void *param)
 {
 	obs_source_t *source;
 
@@ -1538,7 +1537,7 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 		obs_source_t *s = obs_source_get_ref(source);
 		if (s) {
 			if (source->info.type == OBS_SOURCE_TYPE_SCENE &&
-			    !source->context.private && !enum_proc(param, s)) {
+			    !source->context.private && !enum_proc(param, (obs_scene_t*)s)) {
 				obs_source_release(s);
 				break;
 			}
@@ -1574,6 +1573,9 @@ bool scene_ref_enum_callback(void *data, obs_scene_t *source)
 bool obs_scene_is_present(obs_scene_t * checking_scene)
 {
 	if (checking_scene == NULL)
+		return false;
+
+	if (((obs_source_t*)checking_scene)->info.type != OBS_SOURCE_TYPE_SCENE)
 		return false;
 
 	obs_enum_scenes(scene_ref_enum_callback, &checking_scene);

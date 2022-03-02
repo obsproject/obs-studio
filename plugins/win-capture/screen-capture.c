@@ -126,7 +126,7 @@ static void scs_update_window_mode_line(struct screen_capture *contex,
 							  executable);
 			if (hwnd != NULL) {
 				char mode_line[32] = {0};
-				sprintf(mode_line, "window:%d:0", hwnd);
+				sprintf(mode_line, "window:%lld:0", (int64_t)hwnd);
 				obs_data_set_string(settings,
 						    S_CAPTURE_SOURCE_LIST,
 						    mode_line);
@@ -235,16 +235,16 @@ static void scs_render_source(struct obs_source * source)
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
 
-	float source_height = obs_source_get_height(source);
-	float source_width = obs_source_get_width(source);
+	float source_height = (float)obs_source_get_height(source);
+	float source_width = (float)obs_source_get_width(source);
 
 	float scale_y = (float)ovi.base_height/source_height;
 	float scale_x = (float)ovi.base_width/source_width;
 	scale_x = min(scale_x, scale_y);
 	scale_y = min(scale_x, scale_y);
 
-	float translate_x = (ovi.base_width - source_width*scale_x)/2.0;
-	float translate_y = (ovi.base_height - source_height*scale_y)/2.0;
+	float translate_x = ((float)ovi.base_width - source_width*scale_x)/2.0f;
+	float translate_y = ((float)ovi.base_height - source_height*scale_y)/2.0f;
 
 	gs_matrix_push();
 	gs_matrix_translate3f(translate_x, translate_y, 0.0f);
@@ -436,7 +436,7 @@ static bool capture_source_update(struct screen_capture *context,
 	
 	DWORD mutex_ret = WaitForSingleObject(context->update_mutex, 0);
 	if (mutex_ret != WAIT_OBJECT_0) {
-		return;
+		return false;
 	}
 
 	if (dstr_cmp(&context->prev_line, capture_source_string) == 0) {
@@ -475,7 +475,7 @@ static bool capture_source_update(struct screen_capture *context,
 		context->capture_mode = CAPTURE_MODE_WINDOW;
 		context->game_mode = GAME_MODE_WINDOW;
 
-		HWND hwnd = atoi(option);
+		HWND hwnd = (HWND)atoll(option);
 		struct dstr window_line = {0};
 		get_captured_window_line(hwnd, &window_line);
 		blog(LOG_DEBUG, "[SCREEN_CAPTURE]: window mode %d %s", hwnd,

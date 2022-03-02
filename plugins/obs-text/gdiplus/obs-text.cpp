@@ -772,7 +772,7 @@ inline void TextSource::Update(obs_data_t *s)
 	opacity = new_opacity;
 	color2 = new_color2;
 	opacity2 = new_opacity2;
-	gradient_dir = new_grad_dir;
+	gradient_dir = (float)new_grad_dir;
 	vertical = new_vertical;
 
 	bk_color = new_bk_color;
@@ -1105,7 +1105,7 @@ void text_tick(void *data, float seconds)
 	source->Tick(seconds);
 }
 
-void text_render(void *data, gs_effect_t *effect)
+void text_render(void *data, gs_effect_t */*effect*/)
 {
 	reinterpret_cast<TextSource*>(data)->Render();
 }

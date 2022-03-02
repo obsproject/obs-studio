@@ -1504,11 +1504,11 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 		uint64_t t = os_gettime_ns();
 
 		pthread_mutex_lock(&stream->dbr_mutex);
-		if (buffer_duration_usec >= dbr_triggers[HIGH][1] && t >= stream->dbr_high_timeout) {
+		if (buffer_duration_usec > 0 && (uint64_t)buffer_duration_usec >= dbr_triggers[HIGH][1] && t >= stream->dbr_high_timeout) {
 			bitrate_changed = dbr_bitrate_lowered(stream, HIGH);
-		} else if (buffer_duration_usec >= dbr_triggers[NORMAL][1] && t >= stream->dbr_normal_timeout) {
+		} else if (buffer_duration_usec > 0 && (uint64_t)buffer_duration_usec >= dbr_triggers[NORMAL][1] && t >= stream->dbr_normal_timeout) {
 			bitrate_changed = dbr_bitrate_lowered(stream, NORMAL);
-		} else if (buffer_duration_usec >= dbr_triggers[LOW][1] && t >= stream->dbr_low_timeout) {
+		} else if (buffer_duration_usec > 0 && (uint64_t)buffer_duration_usec >= dbr_triggers[LOW][1] && t >= stream->dbr_low_timeout) {
 			bitrate_changed = dbr_bitrate_lowered(stream, LOW);
 		}
 		pthread_mutex_unlock(&stream->dbr_mutex);

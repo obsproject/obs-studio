@@ -658,7 +658,7 @@ static void load_placeholder_image(struct game_capture *gc)
 				font = CreateFontIndirect(&LogFont);
 				SelectObject(memDC, font);
 				
-				GetTextExtentPoint32(memDC, translated_string, len, &string_width);
+				GetTextExtentPoint32(memDC, translated_string, (int)len, &string_width);
 				if (string_width.cx < gc->placeholder_text_width) 
 					break;
 				
@@ -669,7 +669,7 @@ static void load_placeholder_image(struct game_capture *gc)
 			TextOut(memDC, 
 				(gc->placeholder_text_width-string_width.cx)/2, 
 				(gc->placeholder_text_height-LogFont.lfHeight)/2, 
-				translated_string, len); 
+				translated_string, (int)len); 
 
 			for (int i = 0; i <gc->placeholder_text_height*gc->placeholder_text_width; i++)	{
 				int pixel_offset = i*bytes_per_pixel;
@@ -2242,8 +2242,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 				struct obs_video_info ovi;	
 				obs_get_video_info(&ovi);
 
-				int passes = gs_technique_begin(tech);
-				for (int i = 0; i < passes; i++) {
+				size_t passes = gs_technique_begin(tech);
+				for (size_t i = 0; i < passes; i++) {
 					gs_technique_begin_pass(tech, i);
 					gs_draw_sprite(gc->placeholder_image.image.texture, 
 							0, ovi.base_width, ovi.base_height);
@@ -2262,13 +2262,13 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 					gs_matrix_push();
 					gs_matrix_translate3f(0.0f, (ovi.base_height - gc->placeholder_text_height/scale)/2.05f, 0.0f);
 
-					int passes = gs_technique_begin(tech);
-					for (int i = 0; i < passes; i++) {
+					size_t passes = gs_technique_begin(tech);
+					for (size_t i = 0; i < passes; i++) {
 						gs_technique_begin_pass(tech, i);
 						gs_draw_sprite( gc->placeholder_text_texture, 
 								0, 
-								gc->placeholder_text_width/scale, 
-								gc->placeholder_text_height/scale);
+								(uint32_t)((float)gc->placeholder_text_width/scale), 
+								(uint32_t)((float)gc->placeholder_text_height/scale));
 						gs_technique_end_pass(tech);
 					}
 

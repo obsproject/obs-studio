@@ -485,7 +485,7 @@ ComPtr<IMMDevice> WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator,
 					   bool isDefaultDevice,
 					   bool isInputDevice,
 					   string &device_id,
-					   string &device_name)
+					   string &/*device_name*/)
 {
 	ComPtr<IMMDevice> device;
 

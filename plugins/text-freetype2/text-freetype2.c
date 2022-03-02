@@ -454,7 +454,6 @@ static void ft2_source_update(void *data, obs_data_t *settings)
 	if (srcdata->font_face)
 		cache_standard_glyphs(srcdata);
 
-skip_font_load:
 	if (from_file) {
 		const char *tmp = obs_data_get_string(settings, "text_file");
 

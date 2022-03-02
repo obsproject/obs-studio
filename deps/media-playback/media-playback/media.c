@@ -317,9 +317,9 @@ static inline int64_t mp_media_get_next_min_pts(mp_media_t *m)
 		if (m->has_audio && m->audio.index_eof >= 0) {
 			if (mp_media_has_audio_frame_cached(m)) {
 				struct obs_source_audio *audio = m->audio.data.array[m->audio.index];
-				if (audio->timestamp < min_next_ns) {
+				if ((int64_t)audio->timestamp < min_next_ns) {
 					use_cached = true;
-					min_next_ns = audio->timestamp;
+					min_next_ns = (int64_t)audio->timestamp;
 				}
 			}
 		}
@@ -382,7 +382,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
 			if (f->data[i]) {
 				audio->data[i] = malloc(f->linesize[0]);
-				memcpy(audio->data[i], f->data[i], f->linesize[0]);
+				memcpy((void*)audio->data[i], f->data[i], f->linesize[0]);
 			} else {
 				audio->data[i] = NULL;
 			}
@@ -399,7 +399,7 @@ static void mp_media_next_audio(mp_media_t *m)
 		if (audio->format == AUDIO_FORMAT_UNKNOWN) {
 			for (size_t j = 0; j < MAX_AV_PLANES; j++) {
 				if(audio->data[j] != NULL)
-					free(audio->data[j]);
+					free((void*)audio->data[j]);
 			}
 			free(audio);
 			return;
@@ -429,7 +429,7 @@ static void mp_media_next_audio(mp_media_t *m)
 
 	if (!m->enable_caching) {
 		for (size_t i = 0; i < MAX_AV_PLANES; i++) {
-			free(audio->data[i]);
+			free((void*)audio->data[i]);
 		}
 		free(audio);
 	}
@@ -612,7 +612,7 @@ static inline void clear_cache(mp_media_t *m)
 	if (m->audio.data.num > 0) {
 		for (size_t i = 0; i < m->audio.data.num; i++) {
 			for (size_t j = 0; j < MAX_AV_PLANES; j++) {
-				free(((struct obs_source_audio*)m->audio.data.array[i])->data[j]);
+				free((void*)((struct obs_source_audio*)m->audio.data.array[i])->data[j]);
 			}
 		}
 	}
@@ -934,10 +934,10 @@ static inline bool mp_media_thread(mp_media_t *m)
 			}
 			else {
 				if (!m->has_video && m->audio.refresh_rate_ns > 0) {
-					os_sleep_ms(m->audio.refresh_rate_ns / 1000000);
+					os_sleep_ms((uint32_t)m->audio.refresh_rate_ns / 1000000);
 				}
 				else if (!m->has_audio && m->video.refresh_rate_ns > 0) {
-					os_sleep_ms(m->video.refresh_rate_ns / 1000000);
+					os_sleep_ms((uint32_t)m->video.refresh_rate_ns / 1000000);
 				}
 				else {
 					uint64_t time_now = os_gettime_ns();
@@ -955,19 +955,19 @@ static inline bool mp_media_thread(mp_media_t *m)
 
 					if (delta_audio >= delta_video - 1000000 && delta_audio <= delta_video + 1000000) {
 						if (delta_audio > 0)
-							os_sleep_ms(delta_audio/1000000);
+							os_sleep_ms((uint32_t)delta_audio/1000000);
 						m->video.last_processed_ns = os_gettime_ns();
 						m->audio.last_processed_ns = os_gettime_ns();
 					}
 					else if (delta_video < delta_audio) {
 						if (delta_video > 0)
-							os_sleep_ms(delta_video / 1000000);
+							os_sleep_ms((uint32_t)delta_video / 1000000);
 						m->process_audio = false;
 						m->video.last_processed_ns = os_gettime_ns();
 					}
 					else if (delta_video > delta_audio) {
 						if (delta_audio > 0)
-							os_sleep_ms(delta_audio/1000000);
+							os_sleep_ms((uint32_t)delta_audio/1000000);
 						m->process_video = false;
 						m->audio.last_processed_ns = os_gettime_ns();
 					}
