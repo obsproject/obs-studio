@@ -464,6 +464,8 @@ EXPORT bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx,
 EXPORT void gs_texrender_end(gs_texrender_t *texrender);
 EXPORT void gs_texrender_reset(gs_texrender_t *texrender);
 EXPORT gs_texture_t *gs_texrender_get_texture(const gs_texrender_t *texrender);
+EXPORT enum gs_color_format
+gs_texrender_get_format(const gs_texrender_t *texrender);
 
 /* ---------------------------------------------------
  * graphics subsystem
