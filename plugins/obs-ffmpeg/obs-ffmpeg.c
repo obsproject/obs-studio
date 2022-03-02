@@ -27,7 +27,10 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
-extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_encoder_info h264_nvenc_encoder_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_nvenc_encoder_info;
+#endif
 extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
 
@@ -223,51 +226,55 @@ static bool nvenc_device_available(void)
 extern bool load_nvenc_lib(void);
 #endif
 
-static bool nvenc_supported(void)
+static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
+	AVCodec *nvenc = avcodec_find_encoder_by_name(name);
+	if (!nvenc)
+		nvenc = avcodec_find_encoder_by_name(fallback);
+
+	return nvenc != NULL;
+}
+
+static bool nvenc_supported(bool *out_h264, bool *out_hevc)
+{
+	profile_start(nvenc_check_name);
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
 #endif
 
-	profile_start(nvenc_check_name);
-
-	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
-	void *lib = NULL;
-	bool success = false;
-
-	if (!nvenc) {
-		nvenc = avcodec_find_encoder_by_name("h264_nvenc");
-		if (!nvenc)
-			goto cleanup;
-	}
-
-#if defined(_WIN32)
-	if (!nvenc_device_available()) {
-		goto cleanup;
-	}
-	if (load_nvenc_lib()) {
-		success = true;
-		goto finish;
-	}
-#elif defined(__linux__)
-	if (!nvenc_device_available()) {
-		goto cleanup;
-	}
-	lib = os_dlopen("libnvidia-encode.so.1");
+	const bool h264 = nvenc_codec_exists("h264_nvenc", "nvenc_h264");
+#ifdef ENABLE_HEVC
+	const bool hevc = nvenc_codec_exists("hevc_nvenc", "nvenc_hevc");
 #else
-	lib = os_dlopen("libnvidia-encode.so.1");
+	const bool hevc = false;
 #endif
 
-	/* ------------------------------------------- */
-
-	success = !!lib;
-
-cleanup:
-	if (lib)
-		os_dlclose(lib);
+	bool success = h264 || hevc;
+	if (success) {
 #if defined(_WIN32)
-finish:
+		success = nvenc_device_available() && load_nvenc_lib();
+#elif defined(__linux__)
+		success = nvenc_device_available();
+		if (success) {
+			void *const lib = os_dlopen("libnvidia-encode.so.1");
+			success = lib != NULL;
+			if (success)
+				os_dlclose(lib);
+		}
+#else
+		void *const lib = os_dlopen("libnvidia-encode.so.1");
+		success = lib != NULL;
+		if (success)
+			os_dlclose(lib);
 #endif
+
+		if (success) {
+			*out_h264 = h264;
+			*out_hevc = hevc;
+		}
+	}
+
 	profile_end(nvenc_check_name);
 	return success;
 }
@@ -283,7 +290,7 @@ static bool vaapi_supported(void)
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(void);
+extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
 #endif
 
@@ -314,19 +321,35 @@ bool obs_module_load(void)
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
 #ifndef __APPLE__
-	if (nvenc_supported()) {
+	bool h264 = false;
+	bool hevc = false;
+	if (nvenc_supported(&h264, &hevc)) {
 		blog(LOG_INFO, "NVENC supported");
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load();
+			jim_nvenc_load(h264, hevc);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
 			// the old encoder directly
-			nvenc_encoder_info.caps &= ~OBS_ENCODER_CAP_INTERNAL;
+			if (h264) {
+				h264_nvenc_encoder_info.caps &=
+					~OBS_ENCODER_CAP_INTERNAL;
+			}
+#ifdef ENABLE_HEVC
+			if (hevc) {
+				hevc_nvenc_encoder_info.caps &=
+					~OBS_ENCODER_CAP_INTERNAL;
+			}
+#endif
 		}
 #endif
-		obs_register_encoder(&nvenc_encoder_info);
+		if (h264)
+			obs_register_encoder(&h264_nvenc_encoder_info);
+#ifdef ENABLE_HEVC
+		if (hevc)
+			obs_register_encoder(&hevc_nvenc_encoder_info);
+#endif
 	}
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
 	if (vaapi_supported()) {

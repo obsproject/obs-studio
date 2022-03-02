@@ -52,13 +52,10 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 
 bool load_nvenc_lib(void)
 {
-	if (sizeof(void *) == 8) {
-		nvenc_lib = os_dlopen("nvEncodeAPI64.dll");
-	} else {
-		nvenc_lib = os_dlopen("nvEncodeAPI.dll");
-	}
-
-	return !!nvenc_lib;
+	const char *const file = (sizeof(void *) == 8) ? "nvEncodeAPI64.dll"
+						       : "nvEncodeAPI.dll";
+	nvenc_lib = os_dlopen(file);
+	return nvenc_lib != NULL;
 }
 
 static void *load_nv_func(const char *func)
@@ -174,12 +171,20 @@ bool init_nvenc(obs_encoder_t *encoder)
 	return success;
 }
 
-extern struct obs_encoder_info nvenc_info;
+extern struct obs_encoder_info h264_nvenc_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_nvenc_info;
+#endif
 
-void jim_nvenc_load(void)
+void jim_nvenc_load(bool h264, bool hevc)
 {
 	pthread_mutex_init(&init_mutex, NULL);
-	obs_register_encoder(&nvenc_info);
+	if (h264)
+		obs_register_encoder(&h264_nvenc_info);
+#ifdef ENABLE_HEVC
+	if (hevc)
+		obs_register_encoder(&hevc_nvenc_info);
+#endif
 }
 
 void jim_nvenc_unload(void)
