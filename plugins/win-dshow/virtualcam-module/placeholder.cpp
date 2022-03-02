@@ -123,6 +123,9 @@ static bool load_placeholder_internal()
 
 bool initialize_placeholder()
 {
+	if (initialized)
+		return true;
+
 	GdiplusStartupInput si;
 	ULONG_PTR token;
 	GdiplusStartup(&token, &si, nullptr);
