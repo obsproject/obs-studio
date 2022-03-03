@@ -18,8 +18,7 @@ target_sources(
           d3d11-vertexbuffer.cpp
           d3d11-duplicator.cpp
           d3d11-rebuild.cpp
-          d3d11-zstencilbuffer.cpp
-          intel-nv12-support.hpp)
+          d3d11-zstencilbuffer.cpp)
 
 set(MODULE_DESCRIPTION "OBS Library D3D11 wrapper")
 configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
