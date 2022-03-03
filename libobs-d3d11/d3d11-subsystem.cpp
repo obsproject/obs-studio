@@ -375,7 +375,7 @@ try {
 	gs_vertex_shader nv12_vs(this, "", NV12_VS);
 	gs_pixel_shader nv12_y_ps(this, "", NV12_Y_PS);
 	gs_pixel_shader nv12_uv_ps(this, "", NV12_UV_PS);
-	gs_stage_surface nv12_stage(this, NV12_CX, NV12_CY);
+	gs_stage_surface nv12_stage(this, NV12_CX, NV12_CY, false);
 
 	gs_vb_data *vbd = gs_vbdata_create();
 	vbd->num = 4;
@@ -516,6 +516,16 @@ static bool set_priority(ID3D11Device *device)
 
 #endif
 
+static bool CheckFormat(ID3D11Device *device, DXGI_FORMAT format)
+{
+	constexpr UINT required = D3D11_FORMAT_SUPPORT_TEXTURE2D |
+				  D3D11_FORMAT_SUPPORT_RENDER_TARGET;
+
+	UINT support = 0;
+	return SUCCEEDED(device->CheckFormatSupport(format, &support)) &&
+	       ((support & required) == required);
+}
+
 void gs_device::InitDevice(uint32_t adapterIdx)
 {
 	wstring adapterName;
@@ -567,6 +577,7 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 	/* check for nv12 texture output support    */
 
 	nv12Supported = false;
+	p010Supported = false;
 
 	/* WARP NV12 support is suspected to be buggy on older Windows */
 	if (desc.VendorId == 0x1414 && desc.DeviceId == 0x8c) {
@@ -586,27 +597,9 @@ void gs_device::InitDevice(uint32_t adapterIdx)
 		return;
 	}
 
-	/* needs to support the actual format */
-	UINT support = 0;
-	hr = device->CheckFormatSupport(DXGI_FORMAT_NV12, &support);
-	if (FAILED(hr)) {
-		return;
-	}
-
-	if ((support & D3D11_FORMAT_SUPPORT_TEXTURE2D) == 0) {
-		return;
-	}
-
-	/* must be usable as a render target */
-	if ((support & D3D11_FORMAT_SUPPORT_RENDER_TARGET) == 0) {
-		return;
-	}
-
-	if (HasBadNV12Output()) {
-		return;
-	}
-
-	nv12Supported = true;
+	nv12Supported = CheckFormat(device, DXGI_FORMAT_NV12) &&
+			!HasBadNV12Output();
+	p010Supported = nv12Supported && CheckFormat(device, DXGI_FORMAT_P010);
 }
 
 static inline void ConvertStencilSide(D3D11_DEPTH_STENCILOP_DESC &desc,
@@ -2924,6 +2917,11 @@ extern "C" EXPORT bool device_nv12_available(gs_device_t *device)
 	return device->nv12Supported;
 }
 
+extern "C" EXPORT bool device_p010_available(gs_device_t *device)
+{
+	return device->p010Supported;
+}
+
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,
 						 const char *markername,
 						 const float color[4])
@@ -3143,8 +3141,47 @@ device_texture_create_nv12(gs_device_t *device, gs_texture_t **p_tex_y,
 		return false;
 	}
 
-	tex_y->pairedNV12texture = tex_uv;
-	tex_uv->pairedNV12texture = tex_y;
+	tex_y->pairedTexture = tex_uv;
+	tex_uv->pairedTexture = tex_y;
+
+	*p_tex_y = tex_y;
+	*p_tex_uv = tex_uv;
+	return true;
+}
+
+extern "C" EXPORT bool
+device_texture_create_p010(gs_device_t *device, gs_texture_t **p_tex_y,
+			   gs_texture_t **p_tex_uv, uint32_t width,
+			   uint32_t height, uint32_t flags)
+{
+	if (!device->p010Supported)
+		return false;
+
+	*p_tex_y = nullptr;
+	*p_tex_uv = nullptr;
+
+	gs_texture_2d *tex_y;
+	gs_texture_2d *tex_uv;
+
+	try {
+		tex_y = new gs_texture_2d(device, width, height, GS_R16, 1,
+					  nullptr, flags, GS_TEXTURE_2D, false,
+					  true);
+		tex_uv = new gs_texture_2d(device, tex_y->texture, flags);
+
+	} catch (const HRError &error) {
+		blog(LOG_ERROR, "gs_texture_create_p010 (D3D11): %s (%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+		return false;
+
+	} catch (const char *error) {
+		blog(LOG_ERROR, "gs_texture_create_p010 (D3D11): %s", error);
+		return false;
+	}
+
+	tex_y->pairedTexture = tex_uv;
+	tex_uv->pairedTexture = tex_y;
 
 	*p_tex_y = tex_y;
 	*p_tex_uv = tex_uv;
@@ -3157,7 +3194,25 @@ device_stagesurface_create_nv12(gs_device_t *device, uint32_t width,
 {
 	gs_stage_surface *surf = NULL;
 	try {
-		surf = new gs_stage_surface(device, width, height);
+		surf = new gs_stage_surface(device, width, height, false);
+	} catch (const HRError &error) {
+		blog(LOG_ERROR,
+		     "device_stagesurface_create (D3D11): %s "
+		     "(%08lX)",
+		     error.str, error.hr);
+		LogD3D11ErrorDetails(error, device);
+	}
+
+	return surf;
+}
+
+extern "C" EXPORT gs_stagesurf_t *
+device_stagesurface_create_p010(gs_device_t *device, uint32_t width,
+				uint32_t height)
+{
+	gs_stage_surface *surf = NULL;
+	try {
+		surf = new gs_stage_surface(device, width, height, true);
 	} catch (const HRError &error) {
 		blog(LOG_ERROR,
 		     "device_stagesurface_create (D3D11): %s "
