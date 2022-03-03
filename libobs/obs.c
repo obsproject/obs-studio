@@ -101,74 +101,99 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 	else
 		blog(LOG_INFO, "NV12 texture support not available");
 
+	video->convert_textures[0] = NULL;
+	video->convert_textures[1] = NULL;
+	video->convert_textures[2] = NULL;
 #ifdef _WIN32
+	video->convert_textures_encode[0] = NULL;
+	video->convert_textures_encode[1] = NULL;
+	video->convert_textures_encode[2] = NULL;
 	if (video->using_nv12_tex) {
-		gs_texture_create_nv12(&video->convert_textures[0],
-				       &video->convert_textures[1],
-				       ovi->output_width, ovi->output_height,
-				       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
-	} else {
-#endif
-		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
-					  GS_R8, 1, NULL, GS_RENDER_TARGET);
-
-		const struct video_output_info *info =
-			video_output_get_info(video->video);
-		switch (info->format) {
-		case VIDEO_FORMAT_I420:
-			video->convert_textures[1] = gs_texture_create(
-				ovi->output_width / 2, ovi->output_height / 2,
-				GS_R8, 1, NULL, GS_RENDER_TARGET);
-			video->convert_textures[2] = gs_texture_create(
-				ovi->output_width / 2, ovi->output_height / 2,
-				GS_R8, 1, NULL, GS_RENDER_TARGET);
-			if (!video->convert_textures[2])
-				return false;
-			break;
-		case VIDEO_FORMAT_NV12:
-			video->convert_textures[1] = gs_texture_create(
-				ovi->output_width / 2, ovi->output_height / 2,
-				GS_R8G8, 1, NULL, GS_RENDER_TARGET);
-			break;
-		case VIDEO_FORMAT_I444:
-			video->convert_textures[1] = gs_texture_create(
-				ovi->output_width, ovi->output_height, GS_R8, 1,
-				NULL, GS_RENDER_TARGET);
-			video->convert_textures[2] = gs_texture_create(
-				ovi->output_width, ovi->output_height, GS_R8, 1,
-				NULL, GS_RENDER_TARGET);
-			if (!video->convert_textures[2])
-				return false;
-			break;
-		default:
-			break;
+		if (!gs_texture_create_nv12(
+			    &video->convert_textures_encode[0],
+			    &video->convert_textures_encode[1],
+			    ovi->output_width, ovi->output_height,
+			    GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
+			return false;
 		}
-#ifdef _WIN32
 	}
 #endif
 
-	if (!video->convert_textures[0])
-		return false;
-	if (!video->convert_textures[1])
-		return false;
+	bool success = true;
 
-	return true;
+	const struct video_output_info *info =
+		video_output_get_info(video->video);
+	switch (info->format) {
+	case VIDEO_FORMAT_I420:
+		video->convert_textures[0] =
+			gs_texture_create(ovi->output_width, ovi->output_height,
+					  GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] = gs_texture_create(
+			ovi->output_width / 2, ovi->output_height / 2, GS_R8, 1,
+			NULL, GS_RENDER_TARGET);
+		video->convert_textures[2] = gs_texture_create(
+			ovi->output_width / 2, ovi->output_height / 2, GS_R8, 1,
+			NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] ||
+		    !video->convert_textures[1] || !video->convert_textures[2])
+			success = false;
+		break;
+	case VIDEO_FORMAT_NV12:
+		video->convert_textures[0] =
+			gs_texture_create(ovi->output_width, ovi->output_height,
+					  GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] = gs_texture_create(
+			ovi->output_width / 2, ovi->output_height / 2, GS_R8G8,
+			1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] || !video->convert_textures[1])
+			success = false;
+		break;
+	case VIDEO_FORMAT_I444:
+		video->convert_textures[0] =
+			gs_texture_create(ovi->output_width, ovi->output_height,
+					  GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[1] =
+			gs_texture_create(ovi->output_width, ovi->output_height,
+					  GS_R8, 1, NULL, GS_RENDER_TARGET);
+		video->convert_textures[2] =
+			gs_texture_create(ovi->output_width, ovi->output_height,
+					  GS_R8, 1, NULL, GS_RENDER_TARGET);
+		if (!video->convert_textures[0] ||
+		    !video->convert_textures[1] || !video->convert_textures[2])
+			success = false;
+	}
+
+	if (!success) {
+		for (size_t c = 0; c < NUM_CHANNELS; c++) {
+			if (video->convert_textures[c]) {
+				gs_texture_destroy(video->convert_textures[c]);
+				video->convert_textures[c] = NULL;
+			}
+#ifdef _WIN32
+			if (video->convert_textures_encode[c]) {
+				gs_texture_destroy(
+					video->convert_textures_encode[c]);
+				video->convert_textures_encode[c] = NULL;
+			}
+#endif
+		}
+	}
+
+	return success;
 }
 
 static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 {
 	struct obs_core_video *video = &obs->video;
 
-	video->copy_surfaces[i][0] = gs_stagesurface_create(
-		ovi->output_width, ovi->output_height, GS_R8);
-	if (!video->copy_surfaces[i][0])
-		return false;
-
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
 	switch (info->format) {
 	case VIDEO_FORMAT_I420:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
+		if (!video->copy_surfaces[i][0])
+			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width / 2, ovi->output_height / 2, GS_R8);
 		if (!video->copy_surfaces[i][1])
@@ -179,12 +204,20 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 			return false;
 		break;
 	case VIDEO_FORMAT_NV12:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
+		if (!video->copy_surfaces[i][0])
+			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width / 2, ovi->output_height / 2, GS_R8G8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
 	case VIDEO_FORMAT_I444:
+		video->copy_surfaces[i][0] = gs_stagesurface_create(
+			ovi->output_width, ovi->output_height, GS_R8);
+		if (!video->copy_surfaces[i][0])
+			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
 			ovi->output_width, ovi->output_height, GS_R8);
 		if (!video->copy_surfaces[i][1])
@@ -205,48 +238,78 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
 
+	bool success = true;
+
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
 		if (video->using_nv12_tex) {
-			video->copy_surfaces[i][0] =
+			video->copy_surfaces_encode[i] =
 				gs_stagesurface_create_nv12(ovi->output_width,
 							    ovi->output_height);
-			if (!video->copy_surfaces[i][0])
-				return false;
-
-		} else {
-#endif
-			if (video->gpu_conversion) {
-				if (!obs_init_gpu_copy_surfaces(ovi, i))
-					return false;
-			} else {
-				video->copy_surfaces[i][0] =
-					gs_stagesurface_create(
-						ovi->output_width,
-						ovi->output_height, GS_RGBA);
-				if (!video->copy_surfaces[i][0])
-					return false;
+			if (!video->copy_surfaces_encode[i]) {
+				success = false;
+				break;
 			}
-#ifdef _WIN32
 		}
 #endif
+
+		if (video->gpu_conversion) {
+			if (!obs_init_gpu_copy_surfaces(ovi, i)) {
+				success = false;
+				break;
+			}
+		} else {
+			video->copy_surfaces[i][0] = gs_stagesurface_create(
+				ovi->output_width, ovi->output_height, GS_RGBA);
+			if (!video->copy_surfaces[i][0]) {
+				success = false;
+				break;
+			}
+		}
 	}
 
 	video->render_texture = gs_texture_create(ovi->base_width,
 						  ovi->base_height, GS_RGBA, 1,
 						  NULL, GS_RENDER_TARGET);
-
 	if (!video->render_texture)
-		return false;
+		success = false;
 
 	video->output_texture = gs_texture_create(ovi->output_width,
 						  ovi->output_height, GS_RGBA,
 						  1, NULL, GS_RENDER_TARGET);
-
 	if (!video->output_texture)
-		return false;
+		success = false;
 
-	return true;
+	if (!success) {
+		for (size_t i = 0; i < NUM_TEXTURES; i++) {
+			for (size_t c = 0; c < NUM_CHANNELS; c++) {
+				if (video->copy_surfaces[i][c]) {
+					gs_stagesurface_destroy(
+						video->copy_surfaces[i][c]);
+					video->copy_surfaces[i][c] = NULL;
+				}
+			}
+#ifdef _WIN32
+			if (video->copy_surfaces_encode[i]) {
+				gs_stagesurface_destroy(
+					video->copy_surfaces_encode[i]);
+				video->copy_surfaces_encode[i] = NULL;
+			}
+#endif
+		}
+
+		if (video->render_texture) {
+			gs_texture_destroy(video->render_texture);
+			video->render_texture = NULL;
+		}
+
+		if (video->output_texture) {
+			gs_texture_destroy(video->output_texture);
+			video->output_texture = NULL;
+		}
+	}
+
+	return success;
 }
 
 gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file)
@@ -484,6 +547,13 @@ static void obs_free_video(void)
 					video->copy_surfaces[i][c] = NULL;
 				}
 			}
+#ifdef _WIN32
+			if (video->copy_surfaces_encode[i]) {
+				gs_stagesurface_destroy(
+					video->copy_surfaces_encode[i]);
+				video->copy_surfaces_encode[i] = NULL;
+			}
+#endif
 		}
 
 		gs_texture_destroy(video->render_texture);
@@ -493,16 +563,13 @@ static void obs_free_video(void)
 				gs_texture_destroy(video->convert_textures[c]);
 				video->convert_textures[c] = NULL;
 			}
-		}
-
-		for (size_t i = 0; i < NUM_TEXTURES; i++) {
-			for (size_t c = 0; c < NUM_CHANNELS; c++) {
-				if (video->copy_surfaces[i][c]) {
-					gs_stagesurface_destroy(
-						video->copy_surfaces[i][c]);
-					video->copy_surfaces[i][c] = NULL;
-				}
+#ifdef _WIN32
+			if (video->convert_textures_encode[c]) {
+				gs_texture_destroy(
+					video->convert_textures_encode[c]);
+				video->convert_textures_encode[c] = NULL;
 			}
+#endif
 		}
 
 		gs_texture_destroy(video->output_texture);
