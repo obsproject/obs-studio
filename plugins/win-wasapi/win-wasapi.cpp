@@ -16,6 +16,7 @@
 
 #include <avrt.h>
 #include <RTWorkQ.h>
+#include <psapi.h>
 
 using namespace std;
 
@@ -1102,6 +1103,117 @@ static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 	}
 
 	return nullptr;
+}
+
+typedef void(WINAPI *RtlGetVersion)(OSVERSIONINFOEXW *);
+bool isMediaCrashPatchNeeded()
+{
+	static bool first_attempt = true;
+	if (!first_attempt) {
+		return false;
+	}
+	first_attempt = false;
+
+	OSVERSIONINFOEXW osw = {0};
+	RtlGetVersion getVersion;
+	HMODULE ntdllmodule = LoadLibrary(TEXT("ntdll.dll"));
+	if (ntdllmodule) {
+		getVersion = (RtlGetVersion)GetProcAddress(ntdllmodule, "RtlGetVersion");
+		if (getVersion == 0) {
+			FreeLibrary(ntdllmodule);
+			return false;
+		}
+		osw.dwOSVersionInfoSize = sizeof(osw);
+		getVersion(&osw);
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] windows version %d %d %d %d ",
+		     osw.dwBuildNumber, osw.dwMinorVersion, osw.dwMajorVersion, osw.dwPlatformId);
+		if (osw.dwBuildNumber == 22000 && osw.dwMinorVersion == 0 && osw.dwMajorVersion == 10) {
+			return true;
+		}
+	}
+	return false;
+}
+
+void patchMediaCrash()
+{
+	if (!isMediaCrashPatchNeeded()) {
+		return;
+	}
+
+	static const uint8_t patterndata[] = {0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00, 0x00,
+				       0x00, 0x41, 0xB8, 0x01, 0x00, 0x00, 0x00,
+				       0X00, 0X00, 0X00, 0X00, 0x83, 0X00, 0X00,
+				       0X00, 0x44, 0X00, 0X00, 0X00, 0x0F, 0X00,
+				       0X00, 0X00, 0X00, 0X00, 0xC7};
+	static const uint8_t patternsten[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				       0X01, 0X01, 0X01, 0X01, 0x00, 0X01, 0X01,
+				       0X01, 0x00, 0X01, 0X01, 0X01, 0x00, 0X01,
+				       0X01, 0X01, 0X01, 0X01, 0x00};
+
+	static const uint8_t patchdata[] = {0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00, 0x00,
+				     0x00, 0x41, 0xB8, 0x01, 0x00, 0x00, 0x00,
+				     0X00, 0X00, 0X00, 0X00, 0x83, 0X00, 0X00,
+				     0X00, 0x44, 0X00, 0X00, 0X00, 0x90, 0x90,
+				     0x90, 0x90, 0x90, 0x90, 0xC7};
+	static const uint8_t patchsten[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+				     0X01, 0X01, 0X01, 0X01, 0x00, 0X01, 0X01,
+				     0X01, 0x00, 0X01, 0X01, 0X01, 0x00, 0x00,
+				     0x00, 0x00, 0x00, 0x00, 0x00};
+
+	MODULEINFO module_info = {0};
+	HMODULE media_module = LoadLibrary(L"Windows.Media.MediaControl.dll");
+	if (media_module) {
+		BOOL ret = GetModuleInformation(GetCurrentProcess(), media_module, &module_info, sizeof(module_info));
+		if (!ret) {
+			blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to get module info %d", GetLastError());
+			return;
+		}
+	} else {
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to get module %d", GetLastError());
+		return;
+	}
+	blog(LOG_DEBUG, "[MEDIADLLPATCH] MediaControl dll module info: start %d size %d", module_info.lpBaseOfDll, module_info.SizeOfImage);
+
+	uint8_t *found_memory = nullptr;
+	for (size_t offset = 0; offset < module_info.SizeOfImage - sizeof(patterndata); offset++) {
+
+		for (size_t pattern_offset = 0; pattern_offset < sizeof(patterndata); pattern_offset++) {
+
+			uint8_t memory_byte = *((uint8_t *)module_info.lpBaseOfDll + offset + pattern_offset);
+			uint8_t pattern_byte = *(patterndata + pattern_offset);
+			uint8_t pattern_stencil_byte = *(patternsten + pattern_offset);
+			if (pattern_stencil_byte || pattern_byte == memory_byte) {
+				found_memory = (uint8_t *)module_info.lpBaseOfDll + offset;
+				continue;
+			} else {
+				found_memory = nullptr;
+				break;
+			}
+		}
+		if (found_memory)
+			break;
+	}
+
+	if (found_memory != nullptr) {
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] memory pattern start %d", found_memory);
+		DWORD prev_flags = 0;
+		if (VirtualProtect(found_memory, sizeof(patchdata), PAGE_EXECUTE_READWRITE, &prev_flags)) {
+
+			for (size_t patch_offset = 0; patch_offset < sizeof(patchdata); patch_offset++) {
+				uint8_t *memory_offset = found_memory + patch_offset;
+				if (patchsten[patch_offset] == 0x00) {
+					*memory_offset = patchdata[patch_offset];
+				}
+			}
+			VirtualProtect(found_memory, sizeof(patchdata), prev_flags, nullptr);
+		} else {
+			blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to unlock memory");
+		}
+	} else {
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to found memory pattern");
+	}
 }
 
 static void *CreateWASAPIInput(obs_data_t *settings, obs_source_t *source)
