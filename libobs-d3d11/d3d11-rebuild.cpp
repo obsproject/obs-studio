@@ -122,9 +122,9 @@ void gs_texture_2d::Rebuild(ID3D11Device *dev)
 	}
 }
 
-void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
+void gs_texture_2d::RebuildPaired_Y(ID3D11Device *dev)
 {
-	gs_texture_2d *tex_uv = pairedNV12texture;
+	gs_texture_2d *tex_uv = pairedTexture;
 	HRESULT hr;
 
 	hr = dev->CreateTexture2D(&td, nullptr, &texture);
@@ -147,7 +147,7 @@ void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
 	if (isRenderTarget)
 		InitRenderTargets();
 
-	tex_uv->RebuildNV12_UV(dev);
+	tex_uv->RebuildPaired_UV(dev);
 
 	acquired = false;
 
@@ -159,9 +159,9 @@ void gs_texture_2d::RebuildNV12_Y(ID3D11Device *dev)
 	}
 }
 
-void gs_texture_2d::RebuildNV12_UV(ID3D11Device *dev)
+void gs_texture_2d::RebuildPaired_UV(ID3D11Device *dev)
 {
-	gs_texture_2d *tex_y = pairedNV12texture;
+	gs_texture_2d *tex_y = pairedTexture;
 	HRESULT hr;
 
 	texture = tex_y->texture;
@@ -501,10 +501,10 @@ try {
 			break;
 		case gs_type::gs_texture_2d: {
 			gs_texture_2d *tex = (gs_texture_2d *)obj;
-			if (!tex->nv12) {
+			if (!tex->pairedTexture) {
 				tex->Rebuild(dev);
 			} else if (!tex->chroma) {
-				tex->RebuildNV12_Y(dev);
+				tex->RebuildPaired_Y(dev);
 			}
 		} break;
 		case gs_type::gs_zstencil_buffer:

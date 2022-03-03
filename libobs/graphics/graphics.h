@@ -835,6 +835,7 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 				    uint64_t *frequency);
 
 EXPORT bool gs_nv12_available(void);
+EXPORT bool gs_p010_available(void);
 
 #define GS_USE_DEBUG_MARKERS 0
 #if GS_USE_DEBUG_MARKERS
@@ -931,8 +932,13 @@ EXPORT int gs_texture_release_sync(gs_texture_t *tex, uint64_t key);
 EXPORT bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
 				   uint32_t width, uint32_t height,
 				   uint32_t flags);
+EXPORT bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+				   uint32_t width, uint32_t height,
+				   uint32_t flags);
 
 EXPORT gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width,
+						   uint32_t height);
+EXPORT gs_stagesurf_t *gs_stagesurface_create_p010(uint32_t width,
 						   uint32_t height);
 
 EXPORT void gs_register_loss_callbacks(const struct gs_device_loss *callbacks);

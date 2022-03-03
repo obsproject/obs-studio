@@ -266,6 +266,7 @@ struct gs_exports {
 					   gs_samplerstate_t *sampler);
 
 	bool (*device_nv12_available)(gs_device_t *device);
+	bool (*device_p010_available)(gs_device_t *device);
 
 	void (*device_debug_marker_begin)(gs_device_t *device,
 					  const char *markername,
@@ -323,8 +324,16 @@ struct gs_exports {
 					   gs_texture_t **tex_uv,
 					   uint32_t width, uint32_t height,
 					   uint32_t flags);
+	bool (*device_texture_create_p010)(gs_device_t *device,
+					   gs_texture_t **tex_y,
+					   gs_texture_t **tex_uv,
+					   uint32_t width, uint32_t height,
+					   uint32_t flags);
 
 	gs_stagesurf_t *(*device_stagesurface_create_nv12)(gs_device_t *device,
+							   uint32_t width,
+							   uint32_t height);
+	gs_stagesurf_t *(*device_stagesurface_create_p010)(gs_device_t *device,
 							   uint32_t width,
 							   uint32_t height);
 	void (*device_register_loss_callbacks)(
