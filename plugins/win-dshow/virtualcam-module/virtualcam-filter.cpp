@@ -104,40 +104,20 @@ VCamFilter::VCamFilter()
 
 	/* ---------------------------------------- */
 
-	AddRef();
-}
-
-void VCamFilter::ActuallyStart()
-{
-	if (th.joinable()) {
-		return;
-	}
-
-	ResetEvent(thread_stop);
 	th = std::thread([this] { Thread(); });
-	SetEvent(thread_start);
-}
 
-void VCamFilter::ActuallyStop()
-{
-	if (!th.joinable()) {
-		return;
-	}
-
-	SetEvent(thread_stop);
-	th.join();
+	AddRef();
 }
 
 VCamFilter::~VCamFilter()
 {
-	ActuallyStop();
-
+	SetEvent(thread_stop);
+	if (th.joinable())
+		th.join();
 	video_queue_close(vq);
 
-	if (placeholder.scaled_data) {
+	if (placeholder.scaled_data)
 		free(placeholder.scaled_data);
-		placeholder.scaled_data = nullptr;
-	}
 }
 
 const wchar_t *VCamFilter::FilterName() const
@@ -154,29 +134,7 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
-	ActuallyStart();
-	return S_OK;
-}
-
-STDMETHODIMP VCamFilter::Run(REFERENCE_TIME tStart)
-{
-	HRESULT hr = OutputFilter::Run(tStart);
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	ActuallyStart();
-	return S_OK;
-}
-
-STDMETHODIMP VCamFilter::Stop()
-{
-	HRESULT hr = OutputFilter::Stop();
-	if (FAILED(hr)) {
-		return hr;
-	}
-
-	ActuallyStop();
+	SetEvent(thread_start);
 	return S_OK;
 }
 
@@ -209,11 +167,6 @@ void VCamFilter::Thread()
 
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
-
-	if (placeholder.scaled_data) {
-		free(placeholder.scaled_data);
-		placeholder.scaled_data = nullptr;
-	}
 
 	if (initialize_placeholder()) {
 		placeholder.source_data = get_placeholder_ptr();
