@@ -9680,6 +9680,9 @@ void OBSBasic::PauseRecording()
 
 		os_atomic_set_bool(&recording_paused, true);
 
+		if (replay)
+			replay->setEnabled(false);
+
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_PAUSED);
 
@@ -9723,6 +9726,9 @@ void OBSBasic::UnpauseRecording()
 		}
 
 		os_atomic_set_bool(&recording_paused, false);
+
+		if (replay)
+			replay->setEnabled(true);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
