@@ -13,6 +13,7 @@ endif()
 add_subdirectory(media-playback)
 add_subdirectory(file-updater)
 add_subdirectory(obs-scripting)
+add_subdirectory(opts-parser)
 
 if(WIN32)
 	add_subdirectory(blake2)

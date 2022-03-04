@@ -140,6 +140,7 @@ struct noise_suppress_data {
 
 #ifdef LIBNVAFX_ENABLED
 /* global mutex for nvafx load functions since they aren't thread-safe */
+bool nvafx_initializer_mutex_initialized;
 pthread_mutex_t nvafx_initializer_mutex;
 #endif
 
@@ -148,8 +149,10 @@ pthread_mutex_t nvafx_initializer_mutex;
 #define SUP_MIN -60
 #define SUP_MAX 0
 
+#ifdef LIBSPEEXDSP_ENABLED
 static const float c_32_to_16 = (float)INT16_MAX;
 static const float c_16_to_32 = ((float)INT16_MAX + 1.0f);
+#endif
 
 /* -------------------------------------------------------- */
 
@@ -235,7 +238,7 @@ static void *nvafx_initialize(void *data)
 	if (!ng->handle[0]) {
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 
-		for (int i = 0; i < ng->channels; i++) {
+		for (size_t i = 0; i < ng->channels; i++) {
 			err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER,
 						 &ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -249,7 +252,7 @@ static void *nvafx_initialize(void *data)
 					   ng->sample_rate);
 			if (err != NVAFX_STATUS_SUCCESS) {
 				do_log(LOG_ERROR,
-				       "NvAFX_SetU32(Sample Rate: %f) failed, error %i",
+				       "NvAFX_SetU32(Sample Rate: %u) failed, error %i",
 				       ng->sample_rate, err);
 				goto failure;
 			}
@@ -337,6 +340,8 @@ static inline void alloc_channel(struct noise_suppress_data *ng,
 #ifdef LIBSPEEXDSP_ENABLED
 	ng->spx_states[channel] =
 		speex_preprocess_state_init((int)frames, sample_rate);
+#else
+	UNUSED_PARAMETER(sample_rate);
 #endif
 #ifdef LIBRNNOISE_ENABLED
 	ng->rnn_states[channel] = rnnoise_create(NULL);
@@ -397,7 +402,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		pthread_mutex_lock(&ng->nvafx_mutex);
 		if (ng->nvafx_initialized) {
 			int err;
-			for (int i = 0; i < ng->channels; i++) {
+			for (size_t i = 0; i < ng->channels; i++) {
 				err = NvAFX_SetFloat(
 					ng->handle[i],
 					NVAFX_PARAM_DENOISER_INTENSITY_RATIO,
@@ -512,19 +517,20 @@ bool load_nvafx(void)
 #ifdef LIBNVAFX_ENABLED
 	if (!load_lib()) {
 		blog(LOG_INFO,
-		     "[noise suppress: Nvidia RTX denoiser disabled, redistributable not found]");
+		     "[noise suppress]: NVIDIA RTX denoiser disabled, redistributable not found");
 		return false;
 	}
 
-	pthread_mutex_init(&nvafx_initializer_mutex, PTHREAD_MUTEX_DEFAULT);
+	nvafx_initializer_mutex_initialized =
+		pthread_mutex_init(&nvafx_initializer_mutex, NULL) == 0;
 
-#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                   \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                 \
-		DWORD err = GetLastError();                                \
-		printf("[noise suppress: Couldn't load " #sym " from " dll \
-		       ": %lu (0x%lx)]",                                   \
-		       err, err);                                          \
-		goto unload_everything;                                    \
+#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                    \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                  \
+		DWORD err = GetLastError();                                 \
+		printf("[noise suppress]: Couldn't load " #sym " from " dll \
+		       ": %lu (0x%lx)",                                     \
+		       err, err);                                           \
+		goto unload_everything;                                     \
 	}
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_audiofx, "NVAudioEffects.dll")
@@ -548,10 +554,10 @@ bool load_nvafx(void)
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO,
-			     "[noise suppress: Nvidia RTX denoiser disabled: unsupported GPU]");
+			     "[noise suppress]: NVIDIA RTX denoiser disabled: unsupported GPU");
 		} else {
 			blog(LOG_ERROR,
-			     "[noise suppress: Nvidia RTX denoiser disabled: error %i",
+			     "[noise suppress]: NVIDIA RTX denoiser disabled: error %i",
 			     err);
 		}
 		goto unload_everything;
@@ -564,7 +570,7 @@ bool load_nvafx(void)
 	}
 
 	nvafx_loaded = true;
-	blog(LOG_INFO, "[noise suppress: Nvidia RTX denoiser enabled]");
+	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX denoiser enabled");
 	return true;
 
 unload_everything:
@@ -575,6 +581,18 @@ unload_everything:
 #ifdef _MSC_VER
 #pragma warning(pop)
 #endif
+
+void unload_nvafx(void)
+{
+#ifdef LIBNVAFX_ENABLED
+	release_lib();
+
+	if (nvafx_initializer_mutex_initialized) {
+		pthread_mutex_destroy(&nvafx_initializer_mutex);
+		nvafx_initializer_mutex_initialized = false;
+	}
+#endif
+}
 
 static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 {
@@ -601,7 +619,7 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
 
-		pthread_mutex_init(&ng->nvafx_mutex, PTHREAD_MUTEX_DEFAULT);
+		pthread_mutex_init(&ng->nvafx_mutex, NULL);
 
 		info("NVAFX SDK redist path was found here %s", sdk_path);
 	}
@@ -642,6 +660,8 @@ static inline void process_speexdsp(struct noise_suppress_data *ng)
 			ng->copy_buffers[i][j] =
 				(float)ng->spx_segment_buffers[i][j] /
 				c_16_to_32;
+#else
+	UNUSED_PARAMETER(ng);
 #endif
 }
 
@@ -1004,13 +1024,15 @@ static obs_properties_t *noise_suppress_properties(void *data)
 #endif
 
 #ifdef LIBNVAFX_ENABLED
-	obs_property_t *nvafx_slider = obs_properties_add_float_slider(
-		ppts, S_NVAFX_INTENSITY, TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
-		0.01f);
+	obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
+					TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
+					0.01f);
 
+#if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)
 	if (!nvafx_loaded) {
 		obs_property_list_item_disable(method, 2, true);
 	}
+#endif
 
 #endif
 	return ppts;

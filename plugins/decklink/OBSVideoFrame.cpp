@@ -11,6 +11,11 @@ OBSVideoFrame::OBSVideoFrame(long width, long height,
 	this->pixelFormat = pixelFormat;
 }
 
+OBSVideoFrame::~OBSVideoFrame()
+{
+	delete this->data;
+}
+
 HRESULT OBSVideoFrame::SetFlags(BMDFrameFlags newFlags)
 {
 	flags = newFlags;

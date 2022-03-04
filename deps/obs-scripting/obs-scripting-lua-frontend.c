@@ -113,6 +113,22 @@ static int set_current_transition(lua_State *script)
 	return 0;
 }
 
+static int get_transition_duration(lua_State *script)
+{
+	int duration = obs_frontend_get_transition_duration();
+	lua_pushinteger(script, duration);
+	return 1;
+}
+
+static int set_transition_duration(lua_State *script)
+{
+	if (lua_isnumber(script, 1)) {
+		int duration = (int)lua_tointeger(script, 1);
+		obs_frontend_set_transition_duration(duration);
+	}
+	return 0;
+}
+
 static int get_scene_collections(lua_State *script)
 {
 	char **names = obs_frontend_get_scene_collections();
@@ -190,7 +206,7 @@ static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_event_callback(frontend_event_callback, cb);
 		return;
 	}
@@ -238,7 +254,7 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_save_callback(frontend_save_callback, cb);
 		return;
 	}
@@ -299,6 +315,8 @@ void add_lua_frontend_funcs(lua_State *script)
 	add_func(get_transitions);
 	add_func(get_current_transition);
 	add_func(set_current_transition);
+	add_func(get_transition_duration);
+	add_func(set_transition_duration);
 	add_func(get_scene_collections);
 	add_func(get_current_scene_collection);
 	add_func(set_current_scene_collection);

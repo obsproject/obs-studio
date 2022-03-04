@@ -19,8 +19,6 @@
 
 #import "OBSDALPlugIn.h"
 
-#import <CoreMediaIO/CMIOHardwarePlugin.h>
-
 #import "Logging.h"
 
 typedef enum {

@@ -110,7 +110,7 @@ int obs_open_module(obs_module_t **module, const char *path,
 	/* HACK: Do not load obsolete obs-browser build on macOS; the
 	 * obs-browser plugin used to live in the Application Support
 	 * directory. */
-	if (astrstri(path, "Library/Application Support") != NULL &&
+	if (astrstri(path, "Library/Application Support/obs-studio") != NULL &&
 	    astrstri(path, "obs-browser") != NULL) {
 		blog(LOG_WARNING, "Ignoring old obs-browser.so version");
 		return MODULE_ERROR;
@@ -278,9 +278,11 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 {
 	obs_module_t *module;
 
-	if (!os_is_obs_plugin(info->bin_path))
+	if (!os_is_obs_plugin(info->bin_path)) {
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
 		     info->bin_path);
+		return;
+	}
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	if (code != MODULE_SUCCESS) {
@@ -289,7 +291,8 @@ static void load_all_callback(void *param, const struct obs_module_info *info)
 		return;
 	}
 
-	obs_init_module(module);
+	if (!obs_init_module(module))
+		free_module(module);
 
 	UNUSED_PARAMETER(param);
 }
@@ -497,6 +500,16 @@ void free_module(struct obs_module *mod)
 		/* os_dlclose(mod->module); */
 	}
 
+	for (obs_module_t *m = obs->first_module; !!m; m = m->next) {
+		if (m->next == mod) {
+			m->next = mod->next;
+			break;
+		}
+	}
+
+	if (obs->first_module == mod)
+		obs->first_module = mod->next;
+
 	bfree(mod->mod_name);
 	bfree(mod->bin_path);
 	bfree(mod->data_path);
@@ -594,8 +607,8 @@ cleanup:
 		memcpy(&data, info,                                        \
 		       sizeof(data) < size_var ? sizeof(data) : size_var); \
                                                                            \
-		if (info->type_data && info->free_type_data)               \
-			info->free_type_data(info->type_data);             \
+		if (data.type_data && data.free_type_data)                 \
+			data.free_type_data(data.type_data);               \
 	} while (false)
 
 #define source_warn(format, ...) \
@@ -628,6 +641,15 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		source_warn("Source '%s' already exists!  "
 			    "Duplicate library?",
 			    info->id);
+		goto error;
+	}
+
+	if (size > sizeof(data)) {
+		source_warn("Tried to register obs_source_info with size "
+			    "%llu which is more than libobs currently "
+			    "supports (%llu)",
+			    (long long unsigned)size,
+			    (long long unsigned)sizeof(data));
 		goto error;
 	}
 
@@ -683,15 +705,6 @@ void obs_register_source_s(const struct obs_source_info *info, size_t size)
 		CHECK_REQUIRED_VAL_(info, audio_render, obs_register_source);
 	}
 #undef CHECK_REQUIRED_VAL_
-
-	if (size > sizeof(data)) {
-		source_warn("Tried to register obs_source_info with size "
-			    "%llu which is more than libobs currently "
-			    "supports (%llu)",
-			    (long long unsigned)size,
-			    (long long unsigned)sizeof(data));
-		goto error;
-	}
 
 	/* version-related stuff */
 	data.unversioned_id = data.id;

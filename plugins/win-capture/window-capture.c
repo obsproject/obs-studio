@@ -37,8 +37,7 @@ typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
-typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture,
-					 gs_effect_t *effect);
+typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
 	const struct winrt_capture *capture);
@@ -61,6 +60,11 @@ enum window_capture_method {
 	METHOD_BITBLT,
 	METHOD_WGC,
 };
+
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(
+	DPI_AWARENESS_CONTEXT);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetThreadDpiAwarenessContext)(VOID);
+typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_GetWindowDpiAwarenessContext)(HWND);
 
 struct window_capture {
 	obs_source_t *source;
@@ -90,6 +94,10 @@ struct window_capture {
 
 	HWND window;
 	RECT last_rect;
+
+	PFN_SetThreadDpiAwarenessContext set_thread_dpi_awareness_context;
+	PFN_GetThreadDpiAwarenessContext get_thread_dpi_awareness_context;
+	PFN_GetWindowDpiAwarenessContext get_window_dpi_awareness_context;
 };
 
 static const char *wgc_partial_match_classes[] = {
@@ -252,6 +260,35 @@ static void *wc_create(obs_data_t *settings, obs_source_t *source)
 		if (wc->winrt_module) {
 			load_winrt_imports(&wc->exports, wc->winrt_module,
 					   module);
+		}
+	}
+
+	const HMODULE hModuleUser32 = GetModuleHandle(L"User32.dll");
+	if (hModuleUser32) {
+		PFN_SetThreadDpiAwarenessContext
+			set_thread_dpi_awareness_context =
+				(PFN_SetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"SetThreadDpiAwarenessContext");
+		PFN_GetThreadDpiAwarenessContext
+			get_thread_dpi_awareness_context =
+				(PFN_GetThreadDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetThreadDpiAwarenessContext");
+		PFN_GetWindowDpiAwarenessContext
+			get_window_dpi_awareness_context =
+				(PFN_GetWindowDpiAwarenessContext)GetProcAddress(
+					hModuleUser32,
+					"GetWindowDpiAwarenessContext");
+		if (set_thread_dpi_awareness_context &&
+		    get_thread_dpi_awareness_context &&
+		    get_window_dpi_awareness_context) {
+			wc->set_thread_dpi_awareness_context =
+				set_thread_dpi_awareness_context;
+			wc->get_thread_dpi_awareness_context =
+				get_thread_dpi_awareness_context;
+			wc->get_window_dpi_awareness_context =
+				get_window_dpi_awareness_context;
 		}
 	}
 
@@ -492,8 +529,8 @@ static void wc_tick(void *data, float seconds)
 		wc->previously_failed = false;
 		reset_capture = true;
 
-	} else if (IsIconic(wc->window)) {
-		return;
+	} else if (IsIconic(wc->window) || !IsWindowVisible(wc->window)) {
+		return; /* If HWND is invisible, WGC module can't be initialized successfully */
 	}
 
 	wc->cursor_check_time += seconds;
@@ -524,6 +561,15 @@ static void wc_tick(void *data, float seconds)
 	obs_enter_graphics();
 
 	if (wc->method == METHOD_BITBLT) {
+		DPI_AWARENESS_CONTEXT previous = NULL;
+		if (wc->get_window_dpi_awareness_context != NULL) {
+			const DPI_AWARENESS_CONTEXT context =
+				wc->get_window_dpi_awareness_context(
+					wc->window);
+			previous =
+				wc->set_thread_dpi_awareness_context(context);
+		}
+
 		GetClientRect(wc->window, &rect);
 
 		if (!reset_capture) {
@@ -553,6 +599,9 @@ static void wc_tick(void *data, float seconds)
 		}
 
 		dc_capture_capture(&wc->capture, wc->window);
+
+		if (previous)
+			wc->set_thread_dpi_awareness_context(previous);
 	} else if (wc->method == METHOD_WGC) {
 		if (wc->window && (wc->capture_winrt == NULL)) {
 			if (!wc->previously_failed) {
@@ -574,13 +623,12 @@ static void wc_tick(void *data, float seconds)
 static void wc_render(void *data, gs_effect_t *effect)
 {
 	struct window_capture *wc = data;
-	gs_effect_t *const opaque = obs_get_base_effect(OBS_EFFECT_OPAQUE);
 	if (wc->method == METHOD_WGC) {
 		if (wc->capture_winrt) {
 			if (wc->exports.winrt_capture_active(
 				    wc->capture_winrt)) {
 				wc->exports.winrt_capture_render(
-					wc->capture_winrt, opaque);
+					wc->capture_winrt);
 			} else {
 				wc->exports.winrt_capture_free(
 					wc->capture_winrt);
@@ -588,7 +636,9 @@ static void wc_render(void *data, gs_effect_t *effect)
 			}
 		}
 	} else {
-		dc_capture_render(&wc->capture, opaque);
+		dc_capture_render(
+			&wc->capture,
+			obs_source_get_texcoords_centered(wc->source));
 	}
 
 	UNUSED_PARAMETER(effect);

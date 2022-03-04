@@ -197,9 +197,24 @@ General Scene Functions
 ---------------------
 
 .. function:: void obs_scene_addref(obs_scene_t *scene)
-              void obs_scene_release(obs_scene_t *scene)
 
-   Adds/releases a reference to a scene.
+   Adds a reference to a scene.
+
+.. deprecated:: 27.2.0
+   Use :c:func:`obs_scene_get_ref()` instead.
+
+---------------------
+
+.. function:: obs_scene_t *obs_scene_get_ref(obs_scene_t *scene)
+
+   Returns an incremented reference if still valid, otherwise returns
+   *NULL*.
+
+---------------------
+
+.. function:: void obs_scene_release(obs_scene_t *scene)
+
+   Releases a reference to a scene.
 
 ---------------------
 
@@ -265,6 +280,12 @@ General Scene Functions
 
 ---------------------
 
+.. function:: void obs_scene_prune_sources(obs_scene_t *scene)
+
+   Releases all sources from a scene that have been marked as removed by obs_source_remove.
+
+---------------------
+
 
 .. _scene_item_reference:
 
@@ -315,8 +336,7 @@ Scene Item Functions
 
 .. function:: int64_t obs_sceneitem_get_id(const obs_sceneitem_t *item)
 
-   This is a dangerous function and should not
-   normally be used. It can cause errors within obs.
+   Gets the numeric identifier of the sceneitem.
 
    :return: Gets the unique numeric identifier of the scene item.
 
@@ -487,6 +507,22 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item, enum obs_blending_type type)
+              enum obs_blending_type obs_sceneitem_get_blending_mode(obs_sceneitem_t *item)
+
+   Sets/gets the blending mode used for the scene item.
+
+   :param type: | Can be one of the following values:
+                | OBS_BLEND_NORMAL
+                | OBS_BLEND_ADDITIVE
+                | OBS_BLEND_SUBTRACT
+                | OBS_BLEND_SCREEN
+                | OBS_BLEND_MULTIPLY
+                | OBS_BLEND_LIGHTEN
+                | OBS_BLEND_DARKEN
+
+---------------------
+
 .. function:: void obs_sceneitem_defer_update_begin(obs_sceneitem_t *item)
               void obs_sceneitem_defer_update_end(obs_sceneitem_t *item)
 
@@ -610,6 +646,14 @@ Scene Item Group Functions
 
    :return: The group context, or *NULL* if not a group.  Does not
             increase the reference
+
+---------------------
+
+.. function:: obs_scene_t *obs_group_or_scene_from_source(const obs_source_t *source)
+
+   :return: The context for the source, regardless of if it is a
+            group or a scene.  *NULL* if neither.  Does not increase
+            the reference
 
 ---------------------
 

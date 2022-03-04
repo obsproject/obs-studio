@@ -51,6 +51,11 @@ static void pipewire_capture_destroy(void *data)
 	obs_pipewire_destroy(data);
 }
 
+static void pipewire_capture_save(void *data, obs_data_t *settings)
+{
+	obs_pipewire_save(data, settings);
+}
+
 static void pipewire_capture_get_defaults(obs_data_t *settings)
 {
 	obs_pipewire_get_defaults(settings);
@@ -105,6 +110,8 @@ static void pipewire_capture_video_render(void *data, gs_effect_t *effect)
 	obs_pipewire_video_render(data, effect);
 }
 
+static bool initialized = false;
+
 void pipewire_capture_load(void)
 {
 	uint32_t available_capture_types = portal_get_available_capture_types();
@@ -132,6 +139,7 @@ void pipewire_capture_load(void)
 		.get_name = pipewire_desktop_capture_get_name,
 		.create = pipewire_desktop_capture_create,
 		.destroy = pipewire_capture_destroy,
+		.save = pipewire_capture_save,
 		.get_defaults = pipewire_capture_get_defaults,
 		.get_properties = pipewire_capture_get_properties,
 		.update = pipewire_capture_update,
@@ -153,6 +161,7 @@ void pipewire_capture_load(void)
 		.get_name = pipewire_window_capture_get_name,
 		.create = pipewire_window_capture_create,
 		.destroy = pipewire_capture_destroy,
+		.save = pipewire_capture_save,
 		.get_defaults = pipewire_capture_get_defaults,
 		.get_properties = pipewire_capture_get_properties,
 		.update = pipewire_capture_update,
@@ -167,9 +176,11 @@ void pipewire_capture_load(void)
 		obs_register_source(&pipewire_window_capture_info);
 
 	pw_init(NULL, NULL);
+	initialized = true;
 }
 
 void pipewire_capture_unload(void)
 {
-	pw_deinit();
+	if (initialized)
+		pw_deinit();
 }

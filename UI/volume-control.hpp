@@ -26,6 +26,32 @@ class VolumeMeter : public QWidget {
 			   WRITE setForegroundWarningColor DESIGNABLE true)
 	Q_PROPERTY(QColor foregroundErrorColor READ getForegroundErrorColor
 			   WRITE setForegroundErrorColor DESIGNABLE true)
+
+	Q_PROPERTY(QColor backgroundNominalColorDisabled READ
+			   getBackgroundNominalColorDisabled WRITE
+				   setBackgroundNominalColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(QColor backgroundWarningColorDisabled READ
+			   getBackgroundWarningColorDisabled WRITE
+				   setBackgroundWarningColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor backgroundErrorColorDisabled READ
+			getBackgroundErrorColorDisabled WRITE
+				setBackgroundErrorColorDisabled DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundNominalColorDisabled READ
+			   getForegroundNominalColorDisabled WRITE
+				   setForegroundNominalColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(QColor foregroundWarningColorDisabled READ
+			   getForegroundWarningColorDisabled WRITE
+				   setForegroundWarningColorDisabled
+					   DESIGNABLE true)
+	Q_PROPERTY(
+		QColor foregroundErrorColorDisabled READ
+			getForegroundErrorColorDisabled WRITE
+				setForegroundErrorColorDisabled DESIGNABLE true)
+
 	Q_PROPERTY(QColor clipColor READ getClipColor WRITE setClipColor
 			   DESIGNABLE true)
 	Q_PROPERTY(QColor magnitudeColor READ getMagnitudeColor WRITE
@@ -34,6 +60,10 @@ class VolumeMeter : public QWidget {
 			   setMajorTickColor DESIGNABLE true)
 	Q_PROPERTY(QColor minorTickColor READ getMinorTickColor WRITE
 			   setMinorTickColor DESIGNABLE true)
+	Q_PROPERTY(int meterThickness READ getMeterThickness WRITE
+			   setMeterThickness DESIGNABLE true)
+	Q_PROPERTY(qreal meterFontScaling READ getMeterFontScaling WRITE
+			   setMeterFontScaling DESIGNABLE true)
 
 	// Levels are denoted in dBFS.
 	Q_PROPERTY(qreal minimumLevel READ getMinimumLevel WRITE setMinimumLevel
@@ -62,6 +92,8 @@ class VolumeMeter : public QWidget {
 	Q_PROPERTY(qreal inputPeakHoldDuration READ getInputPeakHoldDuration
 			   WRITE setInputPeakHoldDuration DESIGNABLE true)
 
+	friend class VolControl;
+
 private slots:
 	void ClipEnding();
 
@@ -71,7 +103,7 @@ private:
 	QSharedPointer<VolumeMeterTimer> updateTimerRef;
 
 	inline void resetLevels();
-	inline void handleChannelCofigurationChange();
+	inline void doLayout();
 	inline bool detectIdle(uint64_t ts);
 	inline void calculateBallistics(uint64_t ts,
 					qreal timeSinceLastRedraw = 0.0);
@@ -82,20 +114,19 @@ private:
 			     int height, float peakHold);
 	void paintHMeter(QPainter &painter, int x, int y, int width, int height,
 			 float magnitude, float peak, float peakHold);
-	void paintHTicks(QPainter &painter, int x, int y, int width,
-			 int height);
+	void paintHTicks(QPainter &painter, int x, int y, int width);
 	void paintVMeter(QPainter &painter, int x, int y, int width, int height,
 			 float magnitude, float peak, float peakHold);
 	void paintVTicks(QPainter &painter, int x, int y, int height);
 
 	QMutex dataMutex;
 
+	bool recalculateLayout = true;
 	uint64_t currentLastUpdateTime = 0;
 	float currentMagnitude[MAX_AUDIO_CHANNELS];
 	float currentPeak[MAX_AUDIO_CHANNELS];
 	float currentInputPeak[MAX_AUDIO_CHANNELS];
 
-	QPixmap *tickPaintCache = nullptr;
 	int displayNrAudioChannels = 0;
 	float displayMagnitude[MAX_AUDIO_CHANNELS];
 	float displayPeak[MAX_AUDIO_CHANNELS];
@@ -111,10 +142,22 @@ private:
 	QColor foregroundNominalColor;
 	QColor foregroundWarningColor;
 	QColor foregroundErrorColor;
+
+	QColor backgroundNominalColorDisabled;
+	QColor backgroundWarningColorDisabled;
+	QColor backgroundErrorColorDisabled;
+	QColor foregroundNominalColorDisabled;
+	QColor foregroundWarningColorDisabled;
+	QColor foregroundErrorColorDisabled;
+
 	QColor clipColor;
 	QColor magnitudeColor;
 	QColor majorTickColor;
 	QColor minorTickColor;
+
+	int meterThickness;
+	qreal meterFontScaling;
+
 	qreal minimumLevel;
 	qreal warningLevel;
 	qreal errorLevel;
@@ -129,6 +172,7 @@ private:
 	int channels = 0;
 	bool clipping = false;
 	bool vertical;
+	bool muted = false;
 
 public:
 	explicit VolumeMeter(QWidget *parent = nullptr,
@@ -139,6 +183,8 @@ public:
 	void setLevels(const float magnitude[MAX_AUDIO_CHANNELS],
 		       const float peak[MAX_AUDIO_CHANNELS],
 		       const float inputPeak[MAX_AUDIO_CHANNELS]);
+	QRect getBarRect() const;
+	bool needLayoutChange();
 
 	QColor getBackgroundNominalColor() const;
 	void setBackgroundNominalColor(QColor c);
@@ -152,6 +198,20 @@ public:
 	void setForegroundWarningColor(QColor c);
 	QColor getForegroundErrorColor() const;
 	void setForegroundErrorColor(QColor c);
+
+	QColor getBackgroundNominalColorDisabled() const;
+	void setBackgroundNominalColorDisabled(QColor c);
+	QColor getBackgroundWarningColorDisabled() const;
+	void setBackgroundWarningColorDisabled(QColor c);
+	QColor getBackgroundErrorColorDisabled() const;
+	void setBackgroundErrorColorDisabled(QColor c);
+	QColor getForegroundNominalColorDisabled() const;
+	void setForegroundNominalColorDisabled(QColor c);
+	QColor getForegroundWarningColorDisabled() const;
+	void setForegroundWarningColorDisabled(QColor c);
+	QColor getForegroundErrorColorDisabled() const;
+	void setForegroundErrorColorDisabled(QColor c);
+
 	QColor getClipColor() const;
 	void setClipColor(QColor c);
 	QColor getMagnitudeColor() const;
@@ -160,6 +220,10 @@ public:
 	void setMajorTickColor(QColor c);
 	QColor getMinorTickColor() const;
 	void setMinorTickColor(QColor c);
+	int getMeterThickness() const;
+	void setMeterThickness(int v);
+	qreal getMeterFontScaling() const;
+	void setMeterFontScaling(qreal v);
 	qreal getMinimumLevel() const;
 	void setMinimumLevel(qreal v);
 	qreal getWarningLevel() const;
@@ -184,6 +248,7 @@ public:
 
 protected:
 	void paintEvent(QPaintEvent *event) override;
+	void changeEvent(QEvent *e) override;
 };
 
 class VolumeMeterTimer : public QTimer {

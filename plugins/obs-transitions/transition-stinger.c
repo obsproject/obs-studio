@@ -1,12 +1,16 @@
 #include <obs-module.h>
 #include <util/dstr.h>
+#include "util/platform.h"
 
 #define TIMING_TIME 0
 #define TIMING_FRAME 1
 
-#define MATTE_LAYOUT_HORIZONTAL 0
-#define MATTE_LAYOUT_VERTICAL 1
-#define MATTE_LAYOUT_SEPARATE_FILE 2
+enum matte_layout {
+	MATTE_LAYOUT_HORIZONTAL,
+	MATTE_LAYOUT_VERTICAL,
+	MATTE_LAYOUT_SEPARATE_FILE,
+	MATTE_LAYOUT_MASK,
+};
 
 enum fade_style { FADE_STYLE_FADE_OUT_FADE_IN, FADE_STYLE_CROSS_FADE };
 
@@ -34,6 +38,7 @@ struct stinger_info {
 	float matte_height_factor;
 	bool invert_matte;
 	bool do_texrender;
+	bool matte_rendered;
 
 	gs_effect_t *matte_effect;
 	gs_eparam_t *ep_a_tex;
@@ -68,6 +73,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
+	obs_data_set_bool(media_settings, "looping", false);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -100,7 +106,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 	s->invert_matte = obs_data_get_bool(settings, "invert_matte");
 
 	s->do_texrender = s->track_matte_enabled &&
-			  s->matte_layout != MATTE_LAYOUT_SEPARATE_FILE;
+			  s->matte_layout < MATTE_LAYOUT_SEPARATE_FILE;
 
 	if (s->matte_source) {
 		obs_source_release(s->matte_source);
@@ -114,6 +120,7 @@ static void stinger_update(void *data, obs_data_t *settings)
 
 		obs_data_t *tm_media_settings = obs_data_create();
 		obs_data_set_string(tm_media_settings, "local_file", tm_path);
+		obs_data_set_bool(tm_media_settings, "looping", false);
 
 		s->matte_source = obs_source_create_private(
 			"ffmpeg_source", NULL, tm_media_settings);
@@ -303,8 +310,25 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 {
 	struct stinger_info *s = data;
 
+	uint32_t media_cx = obs_source_get_width(s->media_source);
+	uint32_t media_cy = obs_source_get_height(s->media_source);
+
 	if (s->track_matte_enabled) {
-		obs_transition_video_render(s->source, stinger_matte_render);
+		bool ready = obs_source_active(s->media_source) && !!media_cx &&
+			     !!media_cy;
+		if (ready) {
+			if (!s->matte_rendered)
+				s->matte_rendered = true;
+			obs_transition_video_render(s->source,
+						    stinger_matte_render);
+		} else {
+			obs_transition_video_render_direct(
+				s->source, s->matte_rendered
+						   ? OBS_TRANSITION_SOURCE_B
+						   : OBS_TRANSITION_SOURCE_A);
+		}
+		if (s->matte_layout == MATTE_LAYOUT_MASK)
+			return;
 	} else {
 		float t = obs_transition_get_time(s->source);
 		bool use_a = t < s->transition_point;
@@ -324,9 +348,6 @@ static void stinger_video_render(void *data, gs_effect_t *effect)
 
 	float source_cxf = (float)source_cx;
 	float source_cyf = (float)source_cy;
-
-	uint32_t media_cx = obs_source_get_width(s->media_source);
-	uint32_t media_cy = obs_source_get_height(s->media_source);
 
 	if (!media_cx || !media_cy)
 		return;
@@ -464,6 +485,8 @@ static void stinger_transition_start(void *data)
 			return;
 		}
 
+		s->matte_rendered = false;
+
 		proc_handler_call(ph, "get_duration", &cd);
 		proc_handler_call(ph, "get_nb_frames", &cd);
 		s->duration_ns =
@@ -547,8 +570,7 @@ static void stinger_enum_all_sources(void *data,
 		enum_callback(s->source, s->matte_source, param);
 }
 
-#define FILE_FILTER \
-	"Video Files (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
+#define FILE_FILTER " (*.mp4 *.ts *.mov *.wmv *.flv *.mkv *.avi *.gif *.webm);;"
 
 static bool transition_point_type_modified(obs_properties_t *ppts,
 					   obs_property_t *p, obs_data_t *s)
@@ -610,12 +632,18 @@ static bool track_matte_enabled_modified(obs_properties_t *ppts,
 static obs_properties_t *stinger_properties(void *data)
 {
 	obs_properties_t *ppts = obs_properties_create();
+	struct dstr filter = {0};
 
 	obs_properties_set_flags(ppts, OBS_PROPERTIES_DEFER_UPDATE);
 
+	dstr_copy(&filter, obs_module_text("FileFilter.VideoFiles"));
+	dstr_cat(&filter, FILE_FILTER);
+	dstr_cat(&filter, obs_module_text("FileFilter.AllFiles"));
+	dstr_cat(&filter, " (*.*)");
+
 	// main stinger settings
 	obs_properties_add_path(ppts, "path", obs_module_text("VideoFile"),
-				OBS_PATH_FILE, FILE_FILTER, NULL);
+				OBS_PATH_FILE, filter.array, NULL);
 
 	obs_property_t *p = obs_properties_add_list(
 		ppts, "tp_type", obs_module_text("TransitionPointType"),
@@ -656,13 +684,16 @@ static obs_properties_t *stinger_properties(void *data)
 			p, obs_module_text("TrackMatteLayoutSeparateFile"),
 			MATTE_LAYOUT_SEPARATE_FILE);
 #endif
+		obs_property_list_add_int(
+			p, obs_module_text("TrackMatteLayoutMask"),
+			MATTE_LAYOUT_MASK);
 
 		obs_property_set_modified_callback(p,
 						   track_matte_layout_modified);
 
 		obs_properties_add_path(track_matte_group, "track_matte_path",
 					obs_module_text("TrackMatteVideoFile"),
-					OBS_PATH_FILE, FILE_FILTER, NULL);
+					OBS_PATH_FILE, filter.array, NULL);
 
 		obs_properties_add_bool(track_matte_group, "invert_matte",
 					obs_module_text("InvertTrackMatte"));
@@ -675,6 +706,7 @@ static obs_properties_t *stinger_properties(void *data)
 		obs_property_set_modified_callback(
 			p, track_matte_enabled_modified);
 	}
+	dstr_free(&filter);
 
 	// audio output settings
 	obs_property_t *monitor_list = obs_properties_add_list(
@@ -706,6 +738,60 @@ static obs_properties_t *stinger_properties(void *data)
 	return ppts;
 }
 
+static void missing_file_callback(void *src, const char *new_path, void *data)
+{
+	struct stinger_info *s = src;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+
+	const char *type = data;
+
+	if (strcmp(type, "media_source") == 0) {
+		obs_data_set_string(settings, "path", new_path);
+	} else if (strcmp(type, "matte_source") == 0) {
+		obs_data_set_string(settings, "track_matte_path", new_path);
+	}
+
+	obs_source_update(s->source, settings);
+	obs_data_release(settings);
+}
+
+static obs_missing_files_t *stinger_missing_files(void *data)
+{
+	struct stinger_info *s = data;
+	obs_data_t *settings = obs_source_get_settings(s->source);
+	obs_missing_files_t *files = obs_missing_files_create();
+
+	const char *path = obs_data_get_string(settings, "path");
+
+	if (strcmp(path, "") != 0) {
+		if (!os_file_exists(path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source,
+				(void *)"media_source");
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	const char *track_matte_path =
+		obs_data_get_string(settings, "track_matte_path");
+
+	if (strcmp(track_matte_path, "") != 0) {
+		if (!os_file_exists(track_matte_path)) {
+			obs_missing_file_t *file = obs_missing_file_create(
+				track_matte_path, missing_file_callback,
+				OBS_MISSING_FILE_SOURCE, s->source,
+				(void *)"matte_source");
+
+			obs_missing_files_add_file(files, file);
+		}
+	}
+
+	obs_data_release(settings);
+	return files;
+}
+
 struct obs_source_info stinger_transition = {
 	.id = "obs_stinger_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -717,6 +803,7 @@ struct obs_source_info stinger_transition = {
 	.video_render = stinger_video_render,
 	.video_tick = stinger_video_tick,
 	.audio_render = stinger_audio_render,
+	.missing_files = stinger_missing_files,
 	.get_properties = stinger_properties,
 	.enum_active_sources = stinger_enum_active_sources,
 	.enum_all_sources = stinger_enum_all_sources,

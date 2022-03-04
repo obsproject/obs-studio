@@ -24,8 +24,8 @@ struct obs_frontend_callbacks {
 	virtual int obs_frontend_get_transition_duration(void) = 0;
 	virtual void obs_frontend_set_transition_duration(int duration) = 0;
 	virtual void obs_frontend_release_tbar(void) = 0;
-	virtual void obs_frontend_set_tbar_position(int position) = 0;
 	virtual int obs_frontend_get_tbar_position(void) = 0;
+	virtual void obs_frontend_set_tbar_position(int position) = 0;
 
 	virtual void obs_frontend_get_scene_collections(
 		std::vector<std::string> &strings) = 0;
@@ -37,7 +37,11 @@ struct obs_frontend_callbacks {
 	virtual void
 	obs_frontend_get_profiles(std::vector<std::string> &strings) = 0;
 	virtual char *obs_frontend_get_current_profile(void) = 0;
+	virtual char *obs_frontend_get_current_profile_path(void) = 0;
 	virtual void obs_frontend_set_current_profile(const char *profile) = 0;
+	virtual void obs_frontend_create_profile(const char *name) = 0;
+	virtual void obs_frontend_duplicate_profile(const char *name) = 0;
+	virtual void obs_frontend_delete_profile(const char *profile) = 0;
 
 	virtual void obs_frontend_streaming_start(void) = 0;
 	virtual void obs_frontend_streaming_stop(void) = 0;
@@ -99,9 +103,9 @@ struct obs_frontend_callbacks {
 		obs_frontend_translate_ui_cb translate) = 0;
 	virtual void obs_frontend_pop_ui_translation(void) = 0;
 
+	virtual obs_service_t *obs_frontend_get_streaming_service(void) = 0;
 	virtual void
 	obs_frontend_set_streaming_service(obs_service_t *service) = 0;
-	virtual obs_service_t *obs_frontend_get_streaming_service(void) = 0;
 	virtual void obs_frontend_save_streaming_service() = 0;
 
 	virtual bool obs_frontend_preview_program_mode_active(void) = 0;
@@ -130,6 +134,14 @@ struct obs_frontend_callbacks {
 	virtual bool obs_frontend_virtualcam_active(void) = 0;
 
 	virtual void obs_frontend_reset_video(void) = 0;
+
+	virtual void
+	obs_frontend_open_source_properties(obs_source_t *source) = 0;
+	virtual void obs_frontend_open_source_filters(obs_source_t *source) = 0;
+	virtual void
+	obs_frontend_open_source_interaction(obs_source_t *source) = 0;
+
+	virtual char *obs_frontend_get_current_record_output_path(void) = 0;
 };
 
 EXPORT void

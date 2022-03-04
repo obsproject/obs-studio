@@ -541,12 +541,14 @@ static inline int sp_parse_param_assign_intfloat(struct shader_parser *sp,
 		float f = (float)os_strtod(sp->cfp.cur_token->str.array);
 		if (is_negative)
 			f = -f;
-		da_push_back_array(param->default_val, &f, sizeof(float));
+		da_push_back_array(param->default_val, (uint8_t *)&f,
+				   sizeof(float));
 	} else {
 		long l = strtol(sp->cfp.cur_token->str.array, NULL, 10);
 		if (is_negative)
 			l = -l;
-		da_push_back_array(param->default_val, &l, sizeof(long));
+		da_push_back_array(param->default_val, (uint8_t *)&l,
+				   sizeof(long));
 	}
 
 	return PARSE_SUCCESS;

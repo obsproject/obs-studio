@@ -50,26 +50,31 @@ void gs_texture_2d::InitSRD(vector<D3D11_SUBRESOURCE_DATA> &srd)
 
 void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 {
-	this->data.resize(levels);
-
-	uint32_t w = width;
-	uint32_t h = height;
+	uint32_t textures = type == GS_TEXTURE_CUBE ? 6 : 1;
 	uint32_t bbp = gs_get_format_bpp(format);
 
-	for (uint32_t i = 0; i < levels; i++) {
-		if (!data[i])
-			break;
+	this->data.resize(levels * textures);
 
-		uint32_t texSize = bbp * w * h / 8;
-		this->data[i].resize(texSize);
+	for (uint32_t t = 0; t < textures; t++) {
+		uint32_t w = width;
+		uint32_t h = height;
 
-		vector<uint8_t> &subData = this->data[i];
-		memcpy(&subData[0], data[i], texSize);
+		for (uint32_t lv = 0; lv < levels; lv++) {
+			uint32_t i = levels * t + lv;
+			if (!data[i])
+				break;
 
-		if (w > 1)
-			w /= 2;
-		if (h > 1)
-			h /= 2;
+			uint32_t texSize = bbp * w * h / 8;
+
+			vector<uint8_t> &subData = this->data[i];
+			subData.resize(texSize);
+			memcpy(&subData[0], data[i], texSize);
+
+			if (w > 1)
+				w /= 2;
+			if (h > 1)
+				h /= 2;
+		}
 	}
 }
 
@@ -313,15 +318,24 @@ gs_texture_2d::gs_texture_2d(gs_device_t *device, ID3D11Texture2D *nv12tex,
 		InitRenderTargets();
 }
 
-gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle)
+gs_texture_2d::gs_texture_2d(gs_device_t *device, uint32_t handle,
+			     bool ntHandle)
 	: gs_texture(device, gs_type::gs_texture_2d, GS_TEXTURE_2D),
 	  isShared(true),
 	  sharedHandle(handle)
 {
 	HRESULT hr;
-	hr = device->device->OpenSharedResource((HANDLE)(uintptr_t)handle,
-						__uuidof(ID3D11Texture2D),
-						(void **)texture.Assign());
+	if (ntHandle) {
+		ComQIPtr<ID3D11Device1> dev = device->device;
+		hr = dev->OpenSharedResource1((HANDLE)(uintptr_t)handle,
+					      __uuidof(ID3D11Texture2D),
+					      (void **)texture.Assign());
+	} else {
+		hr = device->device->OpenSharedResource(
+			(HANDLE)(uintptr_t)handle, __uuidof(ID3D11Texture2D),
+			(void **)texture.Assign());
+	}
+
 	if (FAILED(hr))
 		throw HRError("Failed to open shared 2D texture", hr);
 

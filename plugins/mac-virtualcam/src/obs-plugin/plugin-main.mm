@@ -1,11 +1,4 @@
 #include <obs-module.h>
-#include <obs.hpp>
-#include <pthread.h>
-#include <QMainWindow.h>
-#include <QAction.h>
-#include <obs-frontend-api.h>
-#include <obs.h>
-#include <CoreFoundation/CoreFoundation.h>
 #include <AppKit/AppKit.h>
 #include "OBSDALMachServer.h"
 #include "Defines.h"
@@ -58,7 +51,7 @@ static bool check_dal_plugin()
 		if ([app bundleIdentifier] != nil) {
 			NSURL *bundleURL = [app bundleURL];
 			NSString *pluginPath =
-				@"Contents/Resources/data/obs-mac-virtualcam.plugin";
+				@"Contents/Resources/data/obs-plugins/mac-virtualcam/obs-mac-virtualcam.plugin";
 
 			NSURL *pluginUrl = [bundleURL
 				URLByAppendingPathComponent:pluginPath];
@@ -66,7 +59,7 @@ static bool check_dal_plugin()
 		} else {
 			dalPluginSourcePath = [[[[app executableURL]
 				URLByAppendingPathComponent:
-					@"../data/obs-mac-virtualcam.plugin"]
+					@"../data/obs-plugins/mac-virtualcam/obs-mac-virtualcam.plugin"]
 				path]
 				stringByReplacingOccurrencesOfString:@"obs/"
 							  withString:@""];
@@ -218,8 +211,6 @@ struct obs_output_info virtualcam_output_info = {
 
 bool obs_module_load(void)
 {
-	blog(LOG_INFO, "version=%s", PLUGIN_VERSION);
-
 	obs_register_output(&virtualcam_output_info);
 
 	obs_data_t *obs_settings = obs_data_create();

@@ -24,6 +24,9 @@ Quick Links for Contributing
   Instead, use crowdin.  Read here for more information:
   https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
 
+- To add a new service to OBS Studio please see the service submission guidelines:
+  https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
+
 Coding Guidelines
 -----------------
 
@@ -67,3 +70,8 @@ Commit Guidelines
   Note: When modifying cmake modules, just prefix with "cmake".
 
 - If you still need examples, please view the commit history.
+
+Conduct Guidelines
+------------------
+
+- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst

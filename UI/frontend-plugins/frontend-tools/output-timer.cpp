@@ -250,7 +250,7 @@ void OutputTimer::EventStopRecording()
 static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {
-		obs_data_t *obj = obs_data_create();
+		OBSDataAutoRelease obj = obs_data_create();
 
 		obs_data_set_int(obj, "streamTimerHours",
 				 ot->ui->streamingTimerHours->value());
@@ -275,10 +275,9 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 				  ot->ui->pauseRecordTimer->isChecked());
 
 		obs_data_set_obj(save_data, "output-timer", obj);
-
-		obs_data_release(obj);
 	} else {
-		obs_data_t *obj = obs_data_get_obj(save_data, "output-timer");
+		OBSDataAutoRelease obj =
+			obs_data_get_obj(save_data, "output-timer");
 
 		if (!obj)
 			obj = obs_data_create();
@@ -304,8 +303,6 @@ static void SaveOutputTimer(obs_data_t *save_data, bool saving, void *)
 
 		ot->ui->pauseRecordTimer->setChecked(
 			obs_data_get_bool(obj, "pauseRecordTimer"));
-
-		obs_data_release(obj);
 	}
 }
 

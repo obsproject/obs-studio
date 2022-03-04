@@ -45,6 +45,7 @@ Graphics Enumerations
    - GS_RGBA_UNORM  - RGBA, 8 bits per channel, no SRGB aliasing
    - GS_BGRX_UNORM  - BGRX, 8 bits per channel, no SRGB aliasing
    - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
+   - GS_RG16        - RG, 16 bits per channel
 
 .. type:: enum gs_zstencil_format
 
@@ -768,21 +769,29 @@ Draw Functions
 
 .. function:: void gs_blend_function(enum gs_blend_type src, enum gs_blend_type dest)
 
-   Sets the blend function
+   Sets the blend function's source and destination factors
 
-   :param src:  Blend type for the source
-   :param dest: Blend type for the destination
+   :param src:  Blend type for the blending equation's source factors
+   :param dest: Blend type for the blending equation's destination factors
 
 ---------------------
 
 .. function:: void gs_blend_function_separate(enum gs_blend_type src_c, enum gs_blend_type dest_c, enum gs_blend_type src_a, enum gs_blend_type dest_a)
 
-   Sets the blend function for RGB and alpha separately
+   Sets the blend function's source and destination factors for RGB and alpha separately
 
-   :param src_c:  Blend type for the source RGB
-   :param dest_c: Blend type for the destination RGB
-   :param src_a:  Blend type for the source alpha
-   :param dest_a: Blend type for the destination alpha
+   :param src_c:  Blend type for the blending equation's source RGB factor
+   :param dest_c: Blend type for the blending equation's destination RGB factor
+   :param src_a:  Blend type for the blending equation's source alpha factor
+   :param dest_a: Blend type for the blending equation's destination alpha factor
+
+---------------------
+
+.. function:: void gs_blend_op(enum gs_blend_op_type op)
+
+   Sets the blend function's operation type
+
+   :param op: Operation type for the blending equation
 
 ---------------------
 
@@ -881,7 +890,7 @@ Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic
@@ -980,6 +989,9 @@ Texture Functions
    careful to always try and match the formats correctly, otherwise textures
    can fail to be created or rendered.
 
+   All modifiers passed in the modifiers array must be equal. Passing different
+   modifiers for each plane is unsupported.
+
    :param width:        Width of the texture
    :param height:       Height of the texture
    :param drm_format:   DRM format of the DMA-BUF buffer
@@ -991,6 +1003,50 @@ Texture Functions
    :param modifiers:    Array of size *n_planes* with the modifier of each plane
    :return:             A texture object on success, or *NULL* on failure
    :rtype:              gs_texture_t*
+
+---------------------
+
+.. type:: enum gs_dmabuf_flags
+
+   DMA-BUF capabilities:
+
+   - GS_DMABUF_FLAG_NONE
+   - GS_DMABUF_FLAG_SUPPORTS_IMPLICIT_MODIFIERS  - Renderer supports implicit modifiers
+
+---------------------
+
+.. function:: bool *gs_query_dmabuf_capabilities(enum gs_dmabuf_flags *dmabuf_flags, uint32_t **drm_formats, size_t *n_formats)
+
+   **Linux only:** Queries the capabilities for DMA-BUFs.
+
+   Graphics cards can optimize frame buffers by storing them in custom layouts,
+   depending on their hardware features. These layouts can make these frame
+   buffers unsuitable for linear processing. This function allows querying whether
+   the graphics card in use supports implicit modifiers, and the supported texture
+   formats.
+
+   The caller must free the `drm_formats` array with `bfree()` after use.
+
+   :param dmabuf_flags: Pointer to receive a capability bitmap
+   :param drm_formats:  Pointer to receive an array of DRM formats
+   :param n_formats:    Pointer to receive the number of formats
+   :rtype:              bool
+
+---------------------
+
+.. function:: bool *gs_query_dmabuf_modifiers_for_format(uint32_t drm_format, uint64_t **modifiers, size_t *n_modifiers)
+
+   **Linux only:** Queries the supported DMA-BUF modifiers for a given format.
+
+   This function queries all supported explicit modifiers for a format,
+   stores them as an array and returns the number of supported modifiers.
+
+   The caller must free the `modifiers` array with `bfree()` after use.
+
+   :param drm_format:   DRM format of the DMA-BUF buffer
+   :param modifiers:    Pointer to receive an array of modifiers
+   :param n_modifiers:  Pointer to receive the number of modifiers
+   :rtype:              bool
 
 ---------------------
 
@@ -1077,7 +1133,7 @@ Cube Texture Functions
    :param data:         Pointer to array of texture data pointers
    :param flags:        Can be 0 or a bitwise-OR combination of one or
                         more of the following value:
-                        
+
                         - GS_BUILD_MIPMAPS - Automatically builds
                           mipmaps (Note: not fully tested)
                         - GS_DYNAMIC - Dynamic

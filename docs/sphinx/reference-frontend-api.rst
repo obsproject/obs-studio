@@ -47,6 +47,14 @@ Structures/Enumerations
 
      Triggered when recording has fully stopped.
 
+   - **OBS_FRONTEND_EVENT_RECORDING_PAUSED**
+
+     Triggered when the recording has been paused.
+
+   - **OBS_FRONTEND_EVENT_RECORDING_UNPAUSED**
+
+     Triggered when the recording has been unpaused.
+
    - **OBS_FRONTEND_EVENT_SCENE_CHANGED**
 
      Triggered when the current scene has changed.
@@ -68,22 +76,49 @@ Structures/Enumerations
 
      Triggered when the user adds/removes transitions.
 
+   - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
+
+     Triggered when the transition duration has been changed by the
+	 user.
+
+   - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
+
+     Triggered when the transition bar is moved.
+
+   - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING**
+
+     Triggered when the current scene collection is about to change.
+
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGED**
 
-     Triggered when the user has changed the current scene collection.
+     Triggered when the current scene collection has changed.
 
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED**
 
-     Triggered when the user has added/removed/renamed scene
-     collections.
+     Triggered when a scene collection has been
+     added/removed/renamed.
+
+   - **OBS_FRONTEND_EVENT_PROFILE_CHANGING**
+
+     Triggered when the current profile is about to change.
 
    - **OBS_FRONTEND_EVENT_PROFILE_CHANGED**
 
-     Triggered when the user has changed the current profile.
+     Triggered when the current profile has changed.
 
    - **OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED**
 
-     Triggered when the user has added/removed/renamed profiles.
+     Triggered when a profile has been added/removed/renamed.
+
+   - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
+
+     Triggered when the program has finished loading.
+
+   - **OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN**
+
+     Triggered when scripts need to know that OBS is exiting.  The
+     **OBS_FRONTEND_EVENT_EXIT** event is normally called after scripts
+     have been destroyed.
 
    - **OBS_FRONTEND_EVENT_EXIT**
 
@@ -128,18 +163,6 @@ Structures/Enumerations
      the program is either about to load a new scene collection, or the
      program is about to exit.
 
-   - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
-
-     Triggered when the program has finished loading.
-
-   - **OBS_FRONTEND_EVENT_RECORDING_PAUSED**
-
-     Triggered when the recording has been paused.
-
-   - **OBS_FRONTEND_EVENT_RECORDING_UNPAUSED**
-
-     Triggered when the recording has been unpaused.
-
    - **OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED**
 
      Triggered when the virtual camera is started.
@@ -147,10 +170,6 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED**
 
      Triggered when the virtual camera is stopped.
-   
-   - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
-
-     Triggered when the transition bar is moved. 
 
 
 .. type:: struct obs_frontend_source_list
@@ -175,19 +194,19 @@ Structures/Enumerations
 
 .. type:: typedef void (*obs_frontend_cb)(void *private_data)
 
-   Frontend tool menu callback.
+   Frontend tool menu callback
 
 .. type:: typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data)
 
-   Frontend event callback.
+   Frontend event callback
 
 .. type:: typedef void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data)
 
-   Frontend save/load callback.
+   Frontend save/load callback
 
 .. type:: typedef bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out)
 
-   Translation callback.
+   Translation callback
 
 
 Functions
@@ -197,19 +216,19 @@ Functions
 
    Releases sources within a source list and frees the list.
 
-   :param source_list: Source list to free.
+   :param source_list: Source list to free
 
 ---------------------------------------
 
 .. function:: void *obs_frontend_get_main_window(void)
 
-   :return: The QMainWindow pointer to the OBS Studio window.
+   :return: The QMainWindow pointer to the OBS Studio window
 
 ---------------------------------------
 
 .. function:: void *obs_frontend_get_main_window_handle(void)
 
-   :return: The native window handle of the OBS Studio window.
+   :return: The native window handle of the OBS Studio window
 
 ---------------------------------------
 
@@ -227,19 +246,19 @@ Functions
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
                    structure to receive the list of
                    reference-incremented scenes.  Release with
-                   :c:func:`obs_frontend_source_list_free`.
+                   :c:func:`obs_frontend_source_list_free`
 
 ---------------------------------------
 
 .. function:: obs_source_t *obs_frontend_get_current_scene(void)
 
-   :return: A new reference to the currently active scene.
+   :return: A new reference to the currently active scene
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_scene(obs_source_t *scene)
 
-   :param scene: The scene to set as the current scene.
+   :param scene: The scene to set as the current scene
 
 ---------------------------------------
 
@@ -248,31 +267,53 @@ Functions
    :param sources: Pointer to a :c:type:`obs_frontend_source_list`
                    structure to receive the list of
                    reference-incremented transitions.  Release with
-                   :c:func:`obs_frontend_source_list_free`.
+                   :c:func:`obs_frontend_source_list_free`
 
 ---------------------------------------
 
 .. function:: obs_source_t *obs_frontend_get_current_transition(void)
 
-   :return: A new reference to the currently active transition.
+   :return: A new reference to the currently active transition
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_transition(obs_source_t *transition)
 
-   :param transition: The transition to set as the current transition.
+   :param transition: The transition to set as the current transition
 
 ---------------------------------------
 
 .. function:: int obs_frontend_get_transition_duration(void)
 
-   :return: The transition duration (in milliseconds) currently set in the UI.
+   :return: The transition duration (in milliseconds) currently set in the UI
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_transition_duration(int duration)
 
-   :param duration: Desired transition duration (in milliseconds)
+   :param duration: Desired transition duration, in milliseconds
+
+---------------------------------------
+
+.. function:: void obs_frontend_release_tbar(void)
+
+   Emulate a mouse button release on the transition bar and determine transition status.
+
+---------------------------------------
+
+.. function:: void obs_frontend_set_tbar_position(int position)
+
+   Set the value of the transition bar.
+
+   :param position: The position to set the T-bar to, with a range of 0-1023
+
+---------------------------------------
+
+.. function:: int obs_frontend_get_tbar_position(void)
+
+   Get the value of the transition bar.
+
+   :return: The value of the position of the T-bar to, with a range of 0-1023
 
 ---------------------------------------
 
@@ -288,13 +329,21 @@ Functions
 .. function:: char *obs_frontend_get_current_scene_collection(void)
 
    :return: A new pointer to the current scene collection name.  Free
-            with :c:func:`bfree()`.
+            with :c:func:`bfree()`
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_scene_collection(const char *collection)
 
-   :param profile: Name of the scene collection to activate.
+   :param profile: Name of the scene collection to activate
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_scene_collection(const char *name)
+
+   Add a new scene collection, then switch to it.
+
+   :param name: Name of the scene collection to add/create
 
 ---------------------------------------
 
@@ -310,13 +359,67 @@ Functions
 .. function:: char *obs_frontend_get_current_profile(void)
 
    :return: A new pointer to the current profile name.  Free with
-            :c:func:`bfree()`.
+            :c:func:`bfree()`
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_current_profile_path(void)
+
+   :return: A new pointer to the current profile's path on the
+            filesystem.  Free with :c:func:`bfree()`
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_profile(const char *profile)
 
-   :param profile: Name of the profile to activate.
+   :param profile: Name of the profile to activate
+
+---------------------------------------
+
+.. function:: bool obs_frontend_create_profile(const char *name)
+
+   :param name: Name of the new profile to create (must be unique)
+
+---------------------------------------
+
+.. function:: bool obs_frontend_duplicate_profile(const char *name)
+
+   :param name: Name of the duplicate profile to create (must be unique)
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_profile(const char *profile)
+
+   :param profile: Name of the profile to delete
+
+---------------------------------------
+
+.. function:: void *obs_frontend_add_tools_menu_qaction(const char *name)
+
+   Adds a QAction to the tools menu then returns it.
+
+   :param name: Name for the new menu item
+   :return: A pointer to the added QAction
+
+---------------------------------------
+
+.. function:: void obs_frontend_add_tools_menu_item(const char *name, obs_frontend_cb callback, void *private_data)
+
+   Adds a tools menu item and links the ::clicked signal to the
+   callback.
+
+   :param name: The name for the new menu item
+   :param callback: Callback to use when the menu item is clicked
+   :param private_data: Private data associated with the callback
+
+---------------------------------------
+
+.. function:: void* obs_frontend_add_dock(void *dock)
+
+   Adds a QDockWidget to the UI's Docks menu.
+
+   :param dock: QDockWidget to add/create
+   :return: A pointer to the added QAction
 
 ---------------------------------------
 
@@ -326,8 +429,8 @@ Functions
    See :c:type:`obs_frontend_event` on what sort of events can be
    triggered.
 
-   :param callback:     Callback to use when a frontend event occurs.
-   :param private_data: Private data associated with the callback.
+   :param callback:     Callback to use when a frontend event occurs
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
@@ -335,8 +438,8 @@ Functions
 
    Removes an event callback.
 
-   :param callback:     Callback to remove.
-   :param private_data: Private data associated with the callback.
+   :param callback:     Callback to remove
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
@@ -346,8 +449,8 @@ Functions
    is being saved/loaded.
 
    :param callback:     Callback to use when saving/loading a scene
-                        collection.
-   :param private_data: Private data associated with the callback.
+                        collection
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
@@ -355,18 +458,18 @@ Functions
 
    Removes a save/load callback.
 
-   :param callback:     Callback to remove.
-   :param private_data: Private data associated with the callback.
+   :param callback:     Callback to remove
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
 .. function:: void obs_frontend_add_preload_callback(obs_frontend_save_cb callback, void *private_data)
 
    Adds a callback that will be called right before a scene collection
-   is loaded.  Useful if you
+   is loaded.
 
-   :param callback:     Callback to use when pre-loading.
-   :param private_data: Private data associated with the callback.
+   :param callback:     Callback to use when pre-loading
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
@@ -374,8 +477,8 @@ Functions
 
    Removes a pre-load callback.
 
-   :param callback:     Callback to remove.
-   :param private_data: Private data associated with the callback.
+   :param callback:     Callback to remove
+   :param private_data: Private data associated with the callback
 
 ---------------------------------------
 
@@ -385,7 +488,7 @@ Functions
    intercept when Qt is automatically generating translating data.
    Typically this is just called with obs_module_get_string.
 
-   :param translate: The translation callback to use.
+   :param translate: The translation callback to use
 
 ---------------------------------------
 
@@ -409,7 +512,7 @@ Functions
 
 .. function:: bool obs_frontend_streaming_active(void)
 
-   :return: *true* if streaming active, *false* otherwise.
+   :return: *true* if streaming active, *false* otherwise
 
 ---------------------------------------
 
@@ -427,31 +530,31 @@ Functions
 
 .. function:: bool obs_frontend_recording_active(void)
 
-   :return: *true* if recording active, *false* otherwise.
+   :return: *true* if recording active, *false* otherwise
 
 ---------------------------------------
 
 .. function:: void obs_frontend_recording_pause(bool pause)
 
-   :pause: *true* to pause recording, *false* to unpause.
+   :pause: *true* to pause recording, *false* to unpause
 
 ---------------------------------------
 
 .. function:: bool obs_frontend_recording_paused(void)
 
-   :return: *true* if recording paused, *false* otherwise.
+   :return: *true* if recording paused, *false* otherwise
 
 ---------------------------------------
 
 .. function:: void obs_frontend_replay_buffer_start(void)
 
-   Starts replay buffer.
+   Starts the replay buffer.
 
 ---------------------------------------
 
 .. function:: void obs_frontend_replay_buffer_stop(void)
 
-   Stops replay buffer.
+   Stops the replay buffer.
 
 ---------------------------------------
 
@@ -463,16 +566,16 @@ Functions
 
 .. function:: bool obs_frontend_replay_buffer_active(void)
 
-   :return: *true* if replay buffer active, *false* otherwise.
+   :return: *true* if replay buffer active, *false* otherwise
 
 ---------------------------------------
 
 .. function:: void obs_frontend_open_projector(const char *type, int monitor, const char *geometry, const char *name)
 
-   :param type:     "Preview", "Source", "Scene", "StudioProgram", or "Multiview" (case insensitive).
-   :param monitor:  Monitor to open the projector on. If -1, opens a window.
-   :param geometry: If *monitor* is -1, size and position of the projector window. Encoded in Base64 using Qt's geometry encoding.
-   :param name:     If *type* is "Source" or "Scene", name of the source or scene to be displayed.
+   :param type:     "Preview", "Source", "Scene", "StudioProgram", or "Multiview" (case insensitive)
+   :param monitor:  Monitor to open the projector on.  If -1, this opens a window.
+   :param geometry: If *monitor* is -1, size and position of the projector window.  Encoded in Base64 using Qt's geometry encoding.
+   :param name:     If *type* is "Source" or "Scene", name of the source or scene to be displayed
 
 ---------------------------------------
 
@@ -484,19 +587,31 @@ Functions
 
 .. function:: obs_output_t *obs_frontend_get_streaming_output(void)
 
-   :return: A new reference to the current streaming output.
+   :return: A new reference to the current streaming output
 
 ---------------------------------------
 
 .. function:: obs_output_t *obs_frontend_get_recording_output(void)
 
-   :return: A new reference to the current srecording output.
+   :return: A new reference to the current srecording output
 
 ---------------------------------------
 
 .. function:: obs_output_t *obs_frontend_get_replay_buffer_output(void)
 
-   :return: A new reference to the current replay buffer output.
+   :return: A new reference to the current replay buffer output
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_profile_config(void)
+
+   :return: The config_t* associated with the current profile
+
+---------------------------------------
+
+.. function:: config_t *obs_frontend_get_global_config(void)
+
+   :return: The config_t* associated with the global config (global.ini)
 
 ---------------------------------------
 
@@ -504,13 +619,13 @@ Functions
 
    Sets the current streaming service to stream with.
 
-   :param service: The streaming service to set.
+   :param service: The streaming service to set
 
 ---------------------------------------
 
 .. function:: obs_service_t *obs_frontend_get_streaming_service(void)
 
-   :return: A new reference to the current streaming service object.
+   :return: A new reference to the current streaming service object
 
 ---------------------------------------
 
@@ -522,7 +637,7 @@ Functions
 
 .. function:: bool obs_frontend_preview_program_mode_active(void)
 
-   :return: *true* if studio mode is active, *false* otherwise.
+   :return: *true* if studio mode is active, *false* otherwise
 
 ---------------------------------------
 
@@ -531,7 +646,7 @@ Functions
    Activates/deactivates studio mode.
 
    :param enable: *true* to activate studio mode, *false* to deactivate
-                  studio mode.
+                  studio mode
 
 ---------------------------------------
 
@@ -544,17 +659,31 @@ Functions
 .. function:: obs_source_t *obs_frontend_get_current_preview_scene(void)
 
    :return: A new reference to the current preview scene if studio mode
-            is active, or the current scene if studio mode is not
-            active.
+            is active, or *NULL* if studio mode is not active.
 
 ---------------------------------------
 
 .. function:: void obs_frontend_set_current_preview_scene(obs_source_t *scene)
 
-   Sets the current preview scene in studio mode, or the currently
-   active scene if not in studio mode.
+   Sets the current preview scene in studio mode. Does nothing if studio
+   mode is disabled.
 
-   :param scene: The scene to set as the current preview.
+   :param scene: The scene to set as the current preview
+
+---------------------------------------
+
+.. function:: void obs_frontend_set_preview_enabled(bool enable)
+
+   Sets the enable state of the preview display.  Only relevant with
+   studio mode disabled.
+
+   :param enable: *true* to enable preview, *false* to disable preview
+
+---------------------------------------
+
+.. function:: bool obs_frontend_preview_enabled(void)
+
+   :return: *true* if the preview display is enabled, *false* otherwise
 
 ---------------------------------------
 
@@ -568,13 +697,13 @@ Functions
 
    Takes a screenshot of the specified source.
 
-   :param source: The source to take screenshot of.
+   :param source: The source to take screenshot of
 
 ---------------------------------------
 
 .. function:: obs_output_t *obs_frontend_get_virtualcam_output(void)
 
-   :return: A new reference to the current virtual camera output.
+   :return: A new reference to the current virtual camera output
 
 ---------------------------------------
 
@@ -592,34 +721,43 @@ Functions
 
 .. function:: bool obs_frontend_virtualcam_active(void)
 
-   :return: *true* if virtual camera is active, *false* otherwise.
+   :return: *true* if virtual camera is active, *false* otherwise
 
 ---------------------------------------
 
 .. function:: void obs_frontend_reset_video(void)
 
-   Reloads the UI canvas and resets libobs video with latest data from profile.
+   Reloads the UI canvas and resets libobs video with latest data from
+   the current profile.
 
 ---------------------------------------
 
-.. function:: void obs_frontend_release_tbar(void);
+.. function:: void *obs_frontend_open_source_properties(obs_source_t *source)
 
-   Emulate a mouse button release on the transition bar and determine transition status.
-   
----------------------------------------
+   Opens the properties window of the specified source.
 
-.. function:: void obs_frontend_set_tbar_position(int position)
-
-   Set the value of the transition bar.
-
-   :param position: The position to set the T-bar to, with a value in 0-1023.
-   :type position: int
+   :param source: The source to open the properties window of
 
 ---------------------------------------
 
-.. function:: int obs_frontend_get_tbar_position(void)
+.. function:: void *obs_frontend_open_source_filters(obs_source_t *source)
 
-   Get the value of the transition bar.
+   Opens the filters window of the specified source.
 
-   :return: The value of the position of the T-bar to, with a value in 0-1023.
-   :rtype: int
+   :param source: The source to open the filters window of
+
+---------------------------------------
+
+.. function:: void *obs_frontend_open_source_interaction(obs_source_t *source)
+
+   Opens the interact window of the specified source. Only call if
+   source has the *OBS_SOURCE_INTERACTION* output flag.
+
+   :param source: The source to open the interact window of
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_current_record_output_path(void)
+
+   :return: A new pointer to the current record output path.  Free
+            with :c:func:`bfree()`

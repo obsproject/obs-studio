@@ -14,18 +14,19 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
-#define PSAPI_VERSION 1
 #include <windows.h>
 #include <mmsystem.h>
 #include <shellapi.h>
 #include <shlobj.h>
 #include <intrin.h>
 #include <psapi.h>
+#include <math.h>
 
 #include "base.h"
 #include "platform.h"
 #include "darray.h"
 #include "dstr.h"
+#include "util_uint64.h"
 #include "windows/win-registry.h"
 #include "windows/win-version.h"
 
@@ -225,9 +226,10 @@ bool os_is_obs_plugin(const char *path)
 
 		/* get a pointer to the export directory */
 		PIMAGE_EXPORT_DIRECTORY export;
-		export = (PIMAGE_EXPORT_DIRECTORY)(
-			(byte *)base + data_dir->VirtualAddress -
-			section->VirtualAddress + section->PointerToRawData);
+		export = (PIMAGE_EXPORT_DIRECTORY)((byte *)base +
+						   data_dir->VirtualAddress -
+						   section->VirtualAddress +
+						   section->PointerToRawData);
 
 		if (export->NumberOfNames == 0)
 			goto cleanup;
@@ -331,27 +333,31 @@ void os_cpu_usage_info_destroy(os_cpu_usage_info_t *info)
 
 bool os_sleepto_ns(uint64_t time_target)
 {
-	uint64_t t = os_gettime_ns();
-	uint32_t milliseconds;
+	const uint64_t freq = get_clockfreq();
+	const LONGLONG count_target =
+		util_mul_div64(time_target, freq, 1000000000);
 
-	if (t >= time_target)
-		return false;
+	LARGE_INTEGER count;
+	QueryPerformanceCounter(&count);
 
-	milliseconds = (uint32_t)((time_target - t) / 1000000);
-	if (milliseconds > 1)
-		Sleep(milliseconds - 1);
+	const bool stall = count.QuadPart < count_target;
+	if (stall) {
+		const DWORD milliseconds =
+			(DWORD)(((count_target - count.QuadPart) * 1000.0) /
+				freq);
+		if (milliseconds > 1)
+			Sleep(milliseconds - 1);
 
-	for (;;) {
-		t = os_gettime_ns();
-		if (t >= time_target)
-			return true;
+		for (;;) {
+			QueryPerformanceCounter(&count);
+			if (count.QuadPart >= count_target)
+				break;
 
-#if 0
-		Sleep(1);
-#else
-		Sleep(0);
-#endif
+			YieldProcessor();
+		}
 	}
+
+	return stall;
 }
 
 void os_sleep_ms(uint32_t duration)
@@ -366,14 +372,9 @@ void os_sleep_ms(uint32_t duration)
 uint64_t os_gettime_ns(void)
 {
 	LARGE_INTEGER current_time;
-	double time_val;
-
 	QueryPerformanceCounter(&current_time);
-	time_val = (double)current_time.QuadPart;
-	time_val *= 1000000000.0;
-	time_val /= (double)get_clockfreq();
-
-	return (uint64_t)time_val;
+	return util_mul_div64(current_time.QuadPart, 1000000000,
+			      get_clockfreq());
 }
 
 /* returns [folder]\[name] on windows */
@@ -603,11 +604,13 @@ static void make_globent(struct os_globent *ent, WIN32_FIND_DATA *wfd,
 
 	dstr_from_wcs(&name, wfd->cFileName);
 	dstr_copy(&path, pattern);
-	slash = strrchr(path.array, '/');
-	if (slash)
-		dstr_resize(&path, slash + 1 - path.array);
-	else
-		dstr_free(&path);
+	if (path.array) {
+		slash = strrchr(path.array, '/');
+		if (slash)
+			dstr_resize(&path, slash + 1 - path.array);
+		else
+			dstr_free(&path);
+	}
 
 	dstr_cat_dstr(&path, &name);
 	ent->path = path.array;
@@ -844,7 +847,7 @@ char *os_getcwd(char *path, size_t size)
 	if (!len)
 		return NULL;
 
-	path_w = bmalloc((len + 1) * sizeof(wchar_t));
+	path_w = bmalloc(((size_t)len + 1) * sizeof(wchar_t));
 	GetCurrentDirectoryW(len + 1, path_w);
 	os_wcs_to_utf8(path_w, (size_t)len, path, size);
 	bfree(path_w);
@@ -1001,9 +1004,9 @@ void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 
 static inline void rtl_get_ver(struct win_version_info *ver)
 {
-	RTL_OSVERSIONINFOEXW osver = {0};
 	HMODULE ntdll = GetModuleHandleW(L"ntdll");
-	NTSTATUS s;
+	if (!ntdll)
+		return;
 
 	NTSTATUS(WINAPI * get_ver)
 	(RTL_OSVERSIONINFOEXW *) =
@@ -1012,8 +1015,9 @@ static inline void rtl_get_ver(struct win_version_info *ver)
 		return;
 	}
 
+	RTL_OSVERSIONINFOEXW osver = {0};
 	osver.dwOSVersionInfoSize = sizeof(osver);
-	s = get_ver(&osver);
+	NTSTATUS s = get_ver(&osver);
 	if (s < 0) {
 		return;
 	}
@@ -1025,13 +1029,10 @@ static inline void rtl_get_ver(struct win_version_info *ver)
 }
 
 static inline bool get_reg_sz(HKEY key, const wchar_t *val, wchar_t *buf,
-			      const size_t size)
+			      DWORD size)
 {
-	DWORD dwsize = (DWORD)size;
-	LSTATUS status;
-
-	status = RegQueryValueExW(key, val, NULL, NULL, (LPBYTE)buf, &dwsize);
-	buf[(size / sizeof(wchar_t)) - 1] = 0;
+	const LSTATUS status =
+		RegGetValueW(key, NULL, val, RRF_RT_REG_SZ, NULL, buf, &size);
 	return status == ERROR_SUCCESS;
 }
 
@@ -1218,23 +1219,27 @@ static void os_get_cores_internal(void)
 
 	info = malloc(len);
 
-	if (GetLogicalProcessorInformation(info, &len)) {
-		DWORD num = len / sizeof(*info);
-		temp = info;
+	if (info) {
+		if (GetLogicalProcessorInformation(info, &len)) {
+			DWORD num = len / sizeof(*info);
+			temp = info;
 
-		for (DWORD i = 0; i < num; i++) {
-			if (temp->Relationship == RelationProcessorCore) {
-				ULONG_PTR mask = temp->ProcessorMask;
+			for (DWORD i = 0; i < num; i++) {
+				if (temp->Relationship ==
+				    RelationProcessorCore) {
+					ULONG_PTR mask = temp->ProcessorMask;
 
-				physical_cores++;
-				logical_cores += num_logical_cores(mask);
+					physical_cores++;
+					logical_cores +=
+						num_logical_cores(mask);
+				}
+
+				temp++;
 			}
-
-			temp++;
 		}
-	}
 
-	free(info);
+		free(info);
+	}
 }
 
 int os_get_physical_cores(void)

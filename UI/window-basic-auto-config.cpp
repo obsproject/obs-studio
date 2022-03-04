@@ -15,7 +15,12 @@
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
+#endif
+
 #include "auth-oauth.hpp"
+#include "ui-config.h"
+#if YOUTUBE_ENABLED
+#include "youtube-api-wrappers.hpp"
 #endif
 
 struct QCef;
@@ -38,17 +43,15 @@ static OBSData OpenServiceSettings(std::string &type)
 	if (ret <= 0)
 		return OBSData();
 
-	OBSData data =
+	OBSDataAutoRelease data =
 		obs_data_create_from_json_file_safe(serviceJsonPath, "bak");
-	obs_data_release(data);
 
 	obs_data_set_default_string(data, "type", "rtmp_common");
 	type = obs_data_get_string(data, "type");
 
-	OBSData settings = obs_data_get_obj(data, "settings");
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
 
-	return settings;
+	return settings.Get();
 }
 
 static void GetServiceInfo(std::string &type, std::string &service,
@@ -83,10 +86,7 @@ AutoConfigStartPage::AutoConfigStartPage(QWidget *parent)
 	}
 }
 
-AutoConfigStartPage::~AutoConfigStartPage()
-{
-	delete ui;
-}
+AutoConfigStartPage::~AutoConfigStartPage() {}
 
 int AutoConfigStartPage::nextId() const
 {
@@ -188,10 +188,7 @@ AutoConfigVideoPage::AutoConfigVideoPage(QWidget *parent)
 	ui->canvasRes->setCurrentIndex(0);
 }
 
-AutoConfigVideoPage::~AutoConfigVideoPage()
-{
-	delete ui;
-}
+AutoConfigVideoPage::~AutoConfigVideoPage() {}
 
 int AutoConfigVideoPage::nextId() const
 {
@@ -257,6 +254,9 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
 
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+
 	int vertSpacing = ui->topLayout->verticalSpacing();
 
 	QMargins m = ui->topLayout->contentsMargins();
@@ -295,6 +295,9 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
 
+	connect(ui->useStreamKeyAdv, &QPushButton::clicked, this,
+		[&]() { ui->streamKeyWidget->setVisible(true); });
+
 	connect(ui->key, SIGNAL(textChanged(const QString &)), this,
 		SLOT(UpdateCompleted()));
 	connect(ui->regionUS, SIGNAL(toggled(bool)), this,
@@ -307,10 +310,7 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 		SLOT(UpdateCompleted()));
 }
 
-AutoConfigStreamPage::~AutoConfigStreamPage()
-{
-	delete ui;
-}
+AutoConfigStreamPage::~AutoConfigStreamPage() {}
 
 bool AutoConfigStreamPage::isComplete() const
 {
@@ -329,8 +329,7 @@ inline bool AutoConfigStreamPage::IsCustomService() const
 
 bool AutoConfigStreamPage::validatePage()
 {
-	OBSData service_settings = obs_data_create();
-	obs_data_release(service_settings);
+	OBSDataAutoRelease service_settings = obs_data_create();
 
 	wiz->customServer = IsCustomService();
 
@@ -342,23 +341,34 @@ bool AutoConfigStreamPage::validatePage()
 				    QT_TO_UTF8(ui->service->currentText()));
 	}
 
-	OBSService service = obs_service_create(serverType, "temp_service",
-						service_settings, nullptr);
-	obs_service_release(service);
+	OBSServiceAutoRelease service = obs_service_create(
+		serverType, "temp_service", service_settings, nullptr);
 
-	int bitrate = 10000;
+	int bitrate;
 	if (!ui->doBandwidthTest->isChecked()) {
 		bitrate = ui->bitrate->value();
 		wiz->idealBitrate = bitrate;
+	} else {
+		/* Default test target is 10 Mbps */
+		bitrate = 10000;
+#if YOUTUBE_ENABLED
+		if (IsYouTubeService(wiz->serviceName)) {
+			/* Adjust upper bound to YouTube limits
+			 * for resolutions above 1080p */
+			if (wiz->baseResolutionCY > 1440)
+				bitrate = 51000;
+			else if (wiz->baseResolutionCY > 1080)
+				bitrate = 18000;
+		}
+#endif
 	}
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_int(settings, "bitrate", bitrate);
 	obs_service_apply_encoder_settings(service, settings, nullptr);
 
 	if (wiz->customServer) {
-		QString server = ui->customServer->text();
+		QString server = ui->customServer->text().trimmed();
 		wiz->server = wiz->serverName = QT_TO_UTF8(server);
 	} else {
 		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
@@ -380,13 +390,19 @@ bool AutoConfigStreamPage::validatePage()
 	if (!wiz->customServer) {
 		if (wiz->serviceName == "Twitch")
 			wiz->service = AutoConfig::Service::Twitch;
+#if YOUTUBE_ENABLED
+		else if (IsYouTubeService(wiz->serviceName))
+			wiz->service = AutoConfig::Service::YouTube;
+#endif
 		else
 			wiz->service = AutoConfig::Service::Other;
 	} else {
 		wiz->service = AutoConfig::Service::Other;
 	}
 
-	if (wiz->service != AutoConfig::Service::Twitch && wiz->bandwidthTest) {
+	if (wiz->service != AutoConfig::Service::Twitch &&
+	    wiz->service != AutoConfig::Service::YouTube &&
+	    wiz->bandwidthTest) {
 		QMessageBox::StandardButton button;
 #define WARNING_TEXT(x) QTStr("Basic.AutoConfig.StreamPage.StreamWarning." x)
 		button = OBSMessageBox::question(this, WARNING_TEXT("Title"),
@@ -413,7 +429,6 @@ void AutoConfigStreamPage::on_show_clicked()
 
 void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 {
-#ifdef BROWSER_AVAILABLE
 	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
 
 	if (a) {
@@ -422,15 +437,47 @@ void AutoConfigStreamPage::OnOAuthStreamKeyConnected()
 		if (validKey)
 			ui->key->setText(QT_UTF8(a->key().c_str()));
 
-		ui->streamKeyWidget->setVisible(!validKey);
-		ui->streamKeyLabel->setVisible(!validKey);
-		ui->connectAccount2->setVisible(!validKey);
-		ui->disconnectAccount->setVisible(validKey);
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(false);
+		ui->disconnectAccount->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(false);
+
+		ui->connectedAccountLabel->setVisible(false);
+		ui->connectedAccountText->setVisible(false);
+
+#if YOUTUBE_ENABLED
+		if (IsYouTubeService(a->service())) {
+			ui->key->clear();
+
+			ui->connectedAccountLabel->setVisible(true);
+			ui->connectedAccountText->setVisible(true);
+
+			ui->connectedAccountText->setText(
+				QTStr("Auth.LoadingChannel.Title"));
+
+			YoutubeApiWrappers *ytAuth =
+				reinterpret_cast<YoutubeApiWrappers *>(a);
+			ChannelDescription cd;
+			if (ytAuth->GetChannelDescription(cd)) {
+				ui->connectedAccountText->setText(cd.title);
+
+				/* Create throwaway stream key for bandwidth test */
+				if (ui->doBandwidthTest->isChecked()) {
+					StreamDescription stream = {
+						"", "",
+						"OBS Studio Test Stream"};
+					if (ytAuth->InsertStream(stream)) {
+						ui->key->setText(stream.name);
+					}
+				}
+			}
+		}
+#endif
 	}
 
 	ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
 	UpdateCompleted();
-#endif
 }
 
 void AutoConfigStreamPage::OnAuthConnected()
@@ -438,22 +485,24 @@ void AutoConfigStreamPage::OnAuthConnected()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	Auth::Type type = Auth::AuthType(service);
 
-	if (type == Auth::Type::OAuth_StreamKey) {
+	if (type == Auth::Type::OAuth_StreamKey ||
+	    type == Auth::Type::OAuth_LinkedAccount) {
 		OnOAuthStreamKeyConnected();
 	}
 }
 
 void AutoConfigStreamPage::on_connectAccount_clicked()
 {
-#ifdef BROWSER_AVAILABLE
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 
 	OAuth::DeleteCookies(service);
 
 	auth = OAuthStreamKey::Login(this, service);
-	if (!!auth)
+	if (!!auth) {
 		OnAuthConnected();
-#endif
+
+		ui->useStreamKeyAdv->setVisible(false);
+	}
 }
 
 #define DISCONNECT_COMFIRM_TITLE \
@@ -483,11 +532,17 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	OAuth::DeleteCookies(service);
 #endif
 
+	reset_service_ui_fields(service);
+
 	ui->streamKeyWidget->setVisible(true);
 	ui->streamKeyLabel->setVisible(true);
-	ui->connectAccount2->setVisible(true);
-	ui->disconnectAccount->setVisible(false);
 	ui->key->setText("");
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+
+	/* Restore key link when disconnecting account */
+	UpdateKeyLink();
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -499,6 +554,55 @@ void AutoConfigStreamPage::on_useStreamKey_clicked()
 static inline bool is_auth_service(const std::string &service)
 {
 	return Auth::AuthType(service) != Auth::Type::None;
+}
+
+static inline bool is_external_oauth(const std::string &service)
+{
+	return Auth::External(service);
+}
+
+void AutoConfigStreamPage::reset_service_ui_fields(std::string &service)
+{
+#if YOUTUBE_ENABLED
+	// when account is already connected:
+	OAuthStreamKey *a = reinterpret_cast<OAuthStreamKey *>(auth.get());
+	if (a && service == a->service() && IsYouTubeService(a->service())) {
+		ui->connectedAccountLabel->setVisible(true);
+		ui->connectedAccountText->setVisible(true);
+		ui->connectAccount2->setVisible(false);
+		ui->disconnectAccount->setVisible(true);
+		return;
+	}
+#endif
+
+	bool external_oauth = is_external_oauth(service);
+	if (external_oauth) {
+		ui->streamKeyWidget->setVisible(false);
+		ui->streamKeyLabel->setVisible(false);
+		ui->connectAccount2->setVisible(true);
+		ui->useStreamKeyAdv->setVisible(true);
+
+		ui->stackedWidget->setCurrentIndex((int)Section::StreamKey);
+
+	} else if (cef) {
+		QString key = ui->key->text();
+		bool can_auth = is_auth_service(service);
+		int page = can_auth && key.isEmpty() ? (int)Section::Connect
+						     : (int)Section::StreamKey;
+
+		ui->stackedWidget->setCurrentIndex(page);
+		ui->streamKeyWidget->setVisible(true);
+		ui->streamKeyLabel->setVisible(true);
+		ui->connectAccount2->setVisible(can_auth);
+		ui->useStreamKeyAdv->setVisible(false);
+	} else {
+		ui->connectAccount2->setVisible(false);
+		ui->useStreamKeyAdv->setVisible(false);
+	}
+
+	ui->connectedAccountLabel->setVisible(false);
+	ui->connectedAccountText->setVisible(false);
+	ui->disconnectAccount->setVisible(false);
 }
 
 void AutoConfigStreamPage::ServiceChanged()
@@ -513,30 +617,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
 	bool custom = IsCustomService();
 
-	ui->disconnectAccount->setVisible(false);
-
-#ifdef BROWSER_AVAILABLE
-	if (cef) {
-		if (lastService != service.c_str()) {
-			bool can_auth = is_auth_service(service);
-			int page = can_auth ? (int)Section::Connect
-					    : (int)Section::StreamKey;
-
-			ui->stackedWidget->setCurrentIndex(page);
-			ui->streamKeyWidget->setVisible(true);
-			ui->streamKeyLabel->setVisible(true);
-			ui->connectAccount2->setVisible(can_auth);
-			auth.reset();
-
-			if (lastService.isEmpty())
-				lastService = service.c_str();
-		}
-	} else {
-		ui->connectAccount2->setVisible(false);
-	}
-#else
-	ui->connectAccount2->setVisible(false);
-#endif
+	reset_service_ui_fields(service);
 
 	/* Test three closest servers if "Auto" is available for Twitch */
 	if (service == "Twitch" && wiz->twitchAuto)
@@ -569,15 +650,24 @@ void AutoConfigStreamPage::ServiceChanged()
 	ui->bitrateLabel->setHidden(testBandwidth);
 	ui->bitrate->setHidden(testBandwidth);
 
-#ifdef BROWSER_AVAILABLE
 	OBSBasic *main = OBSBasic::Get();
 
-	if (!!main->auth &&
-	    service.find(main->auth->service()) != std::string::npos) {
-		auth = main->auth;
-		OnAuthConnected();
-	}
+	if (main->auth) {
+		auto system_auth_service = main->auth->service();
+		bool service_check = service.find(system_auth_service) !=
+				     std::string::npos;
+#if YOUTUBE_ENABLED
+		service_check =
+			service_check ? service_check
+				      : IsYouTubeService(system_auth_service) &&
+						IsYouTubeService(service);
 #endif
+		if (service_check) {
+			auth.reset();
+			auth = main->auth;
+			OnAuthConnected();
+		}
+	}
 
 	UpdateCompleted();
 }
@@ -593,8 +683,7 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -614,38 +703,22 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 void AutoConfigStreamPage::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text();
-	bool isYoutube = false;
+	QString customServer = ui->customServer->text().trimmed();
 	QString streamKeyLink;
 
-	if (serviceName == "Twitch") {
-		streamKeyLink = "https://dashboard.twitch.tv/settings/stream";
-	} else if (serviceName.startsWith("YouTube")) {
-		streamKeyLink = "https://www.youtube.com/live_dashboard";
-		isYoutube = true;
-	} else if (serviceName.startsWith("Restream.io")) {
-		streamKeyLink =
-			"https://restream.io/settings/streaming-setup?from=OBS";
-	} else if (serviceName == "Luzento.com - RTMP") {
-		streamKeyLink =
-			"https://cms.luzento.com/dashboard/stream-key?from=OBS";
-	} else if (serviceName == "Facebook Live" ||
-		   (customServer.contains("fbcdn.net") && IsCustomService())) {
+	obs_properties_t *props = obs_get_service_properties("rtmp_common");
+	obs_property_t *services = obs_properties_get(props, "service");
+
+	OBSDataAutoRelease settings = obs_data_create();
+
+	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
+	obs_property_modified(services, settings);
+
+	streamKeyLink = obs_data_get_string(settings, "stream_key_link");
+
+	if (customServer.contains("fbcdn.net") && IsCustomService()) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
-	} else if (serviceName.startsWith("Twitter")) {
-		streamKeyLink = "https://studio.twitter.com/producer/sources";
-	} else if (serviceName.startsWith("YouStreamer")) {
-		streamKeyLink = "https://www.app.youstreamer.com/stream/";
-	} else if (serviceName == "Trovo") {
-		streamKeyLink = "https://studio.trovo.live/mychannel/stream";
-	} else if (serviceName == "Glimesh") {
-		streamKeyLink = "https://glimesh.tv/users/settings/stream";
-	} else if (serviceName.startsWith("OPENREC.tv")) {
-		streamKeyLink =
-			"https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs";
-	} else if (serviceName == "Brime Live") {
-		streamKeyLink = "https://brimelive.com/obs-stream-key-link";
 	}
 
 	if (serviceName == "Dacast") {
@@ -656,27 +729,21 @@ void AutoConfigStreamPage::UpdateKeyLink()
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
 	}
 
-	if (QString(streamKeyLink).isNull()) {
+	if (QString(streamKeyLink).isNull() ||
+	    QString(streamKeyLink).isEmpty()) {
 		ui->streamKeyButton->hide();
 	} else {
 		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
 		ui->streamKeyButton->show();
 	}
-
-	if (isYoutube) {
-		ui->doBandwidthTest->setChecked(false);
-		ui->doBandwidthTest->setEnabled(false);
-	} else {
-		ui->doBandwidthTest->setEnabled(true);
-	}
+	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
 {
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_bool(settings, "show_all", showAll);
 
@@ -739,8 +806,7 @@ void AutoConfigStreamPage::UpdateServerList()
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
 	obs_property_modified(services, settings);
@@ -820,8 +886,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	/* ----------------------------------------- */
 	/* check to see if Twitch's "auto" available */
 
-	OBSData twitchSettings = obs_data_create();
-	obs_data_release(twitchSettings);
+	OBSDataAutoRelease twitchSettings = obs_data_create();
 
 	obs_data_set_string(twitchSettings, "service", "Twitch");
 
@@ -993,20 +1058,22 @@ void AutoConfig::SaveStreamSettings()
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
 	obs_service_t *oldService = main->GetService();
-	OBSData hotkeyData = obs_hotkeys_save_service(oldService);
-	obs_data_release(hotkeyData);
+	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 
 	if (!customServer)
 		obs_data_set_string(settings, "service", serviceName.c_str());
 	obs_data_set_string(settings, "server", server.c_str());
+#if YOUTUBE_ENABLED
+	if (!IsYouTubeService(serviceName))
+		obs_data_set_string(settings, "key", key.c_str());
+#else
 	obs_data_set_string(settings, "key", key.c_str());
+#endif
 
-	OBSService newService = obs_service_create(
+	OBSServiceAutoRelease newService = obs_service_create(
 		service_id, "default_service", settings, hotkeyData);
-	obs_service_release(newService);
 
 	if (!newService)
 		return;
@@ -1014,8 +1081,12 @@ void AutoConfig::SaveStreamSettings()
 	main->SetService(newService);
 	main->SaveService();
 	main->auth = streamPage->auth;
-	if (!!main->auth)
+	if (!!main->auth) {
 		main->auth->LoadUI();
+		main->SetBroadcastFlowEnabled(main->auth->broadcastFlow());
+	} else {
+		main->SetBroadcastFlowEnabled(false);
+	}
 
 	/* ---------------------------------- */
 	/* save stream settings               */

@@ -11,7 +11,7 @@
    </rect>
   </property>
   <property name="sizePolicy">
-   <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
+   <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
     <horstretch>0</horstretch>
     <verstretch>0</verstretch>
    </sizepolicy>
@@ -19,12 +19,6 @@
   <property name="minimumSize">
    <size>
     <width>0</width>
-    <height>22</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>16777215</width>
     <height>22</height>
    </size>
   </property>
@@ -49,12 +43,6 @@
      <property name="minimumSize">
       <size>
        <width>0</width>
-       <height>22</height>
-      </size>
-     </property>
-     <property name="maximumSize">
-      <size>
-       <width>16777215</width>
        <height>22</height>
       </size>
      </property>

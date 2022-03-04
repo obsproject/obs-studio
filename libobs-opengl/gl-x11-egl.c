@@ -159,7 +159,6 @@ static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
 		return 0;
 	}
 
-	free(error);
 	return reply;
 }
 
@@ -203,10 +202,11 @@ static EGLDisplay get_egl_display(struct gl_platform *plat)
 	egl_client_extensions = eglQueryString(EGL_NO_DISPLAY, EGL_EXTENSIONS);
 
 	PFNEGLGETPLATFORMDISPLAYEXTPROC eglGetPlatformDisplayEXT =
-		(PFNEGLGETPLATFORMDISPLAYEXTPROC)(
-			strstr(egl_client_extensions, "EGL_EXT_platform_base")
-				? eglGetProcAddress("eglGetPlatformDisplayEXT")
-				: NULL);
+		(PFNEGLGETPLATFORMDISPLAYEXTPROC)(strstr(egl_client_extensions,
+							 "EGL_EXT_platform_base")
+							  ? eglGetProcAddress(
+								    "eglGetPlatformDisplayEXT")
+							  : NULL);
 
 	if (eglGetPlatformDisplayEXT) {
 		edisplay = eglGetPlatformDisplayEXT(EGL_PLATFORM_X11_EXT,
@@ -370,8 +370,7 @@ static Display *open_windowless_display(Display *platform_display)
 	return display;
 
 error:
-	if (display)
-		XCloseDisplay(display);
+	XCloseDisplay(display);
 	return NULL;
 }
 
@@ -648,6 +647,26 @@ static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
 					  fds, strides, offsets, modifiers);
 }
 
+static bool gl_x11_egl_device_query_dmabuf_capabilities(
+	gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
+	uint32_t **drm_formats, size_t *n_formats)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_query_dmabuf_capabilities(plat->xdisplay, dmabuf_flags,
+						drm_formats, n_formats);
+}
+
+static bool gl_x11_egl_device_query_dmabuf_modifiers_for_format(
+	gs_device_t *device, uint32_t drm_format, uint64_t **modifiers,
+	size_t *n_modifiers)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_query_dmabuf_modifiers_for_format(
+		plat->xdisplay, drm_format, modifiers, n_modifiers);
+}
+
 static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.windowinfo_create = gl_x11_egl_windowinfo_create,
 	.windowinfo_destroy = gl_x11_egl_windowinfo_destroy,
@@ -665,6 +684,10 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 	.device_present = gl_x11_egl_device_present,
 	.device_texture_create_from_dmabuf =
 		gl_x11_egl_device_texture_create_from_dmabuf,
+	.device_query_dmabuf_capabilities =
+		gl_x11_egl_device_query_dmabuf_capabilities,
+	.device_query_dmabuf_modifiers_for_format =
+		gl_x11_egl_device_query_dmabuf_modifiers_for_format,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)

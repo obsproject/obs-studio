@@ -31,6 +31,11 @@
 #include <qpointer.h>
 #include <util/c99defs.h>
 
+#ifdef _WIN32
+#define WIN32_LEAN_AND_MEAN 1
+#include <Windows.h>
+#endif
+
 using namespace std;
 
 static void CreateTransitionScene(OBSSource scene, const char *text,
@@ -78,12 +83,8 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	/* The OBSData constructor increments the reference once */
 	obs_data_release(oldSettings);
 
-	OBSData nd_settings = obs_source_get_settings(source);
-	OBSData settings = obs_data_get_defaults(nd_settings);
-	obs_data_apply(settings, nd_settings);
-	obs_data_apply(oldSettings, settings);
-	obs_data_release(settings);
-	obs_data_release(nd_settings);
+	OBSDataAutoRelease nd_settings = obs_source_get_settings(source);
+	obs_data_apply(oldSettings, nd_settings);
 
 	auto handle_memory = [](void *vp, obs_data_t *old_settings,
 				obs_data_t *new_settings) {
@@ -96,7 +97,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	};
 
 	view = new OBSPropertiesView(
-		nd_settings, source,
+		nd_settings.Get(), source,
 		(PropertiesReloadCallback)obs_source_properties,
 		(PropertiesUpdateCallback)handle_memory,
 		(PropertiesVisualUpdateCb)obs_source_update);
@@ -119,7 +120,6 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	layout()->addWidget(windowSplitter);
 
 	if (type == OBS_SOURCE_TYPE_TRANSITION) {
-		AddPreviewButton();
 		connect(view, SIGNAL(PropertiesRefreshed()), this,
 			SLOT(AddPreviewButton()));
 	}
@@ -166,14 +166,11 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		sourceB =
 			obs_source_create_private("scene", "sourceB", nullptr);
 
-		obs_source_release(sourceA);
-		obs_source_release(sourceB);
-
 		uint32_t colorA = 0xFFB26F52;
 		uint32_t colorB = 0xFF6FB252;
 
-		CreateTransitionScene(sourceA, "A", colorA);
-		CreateTransitionScene(sourceB, "B", colorB);
+		CreateTransitionScene(sourceA.Get(), "A", colorA);
+		CreateTransitionScene(sourceB.Get(), "B", colorB);
 
 		/**
 		 * The cloned source is made from scratch, rather than using
@@ -181,26 +178,22 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 		 * play correctly otherwise.
 		 */
 
-		obs_data_t *settings = obs_source_get_settings(source);
+		OBSDataAutoRelease settings = obs_source_get_settings(source);
 
 		sourceClone = obs_source_create_private(
 			obs_source_get_id(source), "clone", settings);
-		obs_source_release(sourceClone);
 
 		obs_source_inc_active(sourceClone);
 		obs_transition_set(sourceClone, sourceA);
 
-		obs_data_release(settings);
-
 		auto updateCallback = [=]() {
-			obs_data_t *settings = obs_source_get_settings(source);
+			OBSDataAutoRelease settings =
+				obs_source_get_settings(source);
 			obs_source_update(sourceClone, settings);
 
 			obs_transition_clear(sourceClone);
 			obs_transition_set(sourceClone, sourceA);
 			obs_transition_force_stop(sourceClone);
-
-			obs_data_release(settings);
 
 			direction = true;
 		};
@@ -223,7 +216,7 @@ OBSBasicProperties::~OBSBasicProperties()
 	}
 	obs_source_dec_showing(source);
 	main->SaveProject();
-	main->UpdateContextBar();
+	main->UpdateContextBarDeferred(true);
 }
 
 void OBSBasicProperties::AddPreviewButton()
@@ -261,8 +254,8 @@ void OBSBasicProperties::AddPreviewButton()
 
 static obs_source_t *CreateLabel(const char *name, size_t h)
 {
-	obs_data_t *settings = obs_data_create();
-	obs_data_t *font = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
+	OBSDataAutoRelease font = obs_data_create();
 
 	std::string text;
 	text += " ";
@@ -292,26 +285,24 @@ static obs_source_t *CreateLabel(const char *name, size_t h)
 	obs_source_t *txtSource =
 		obs_source_create_private(text_source_id, name, settings);
 
-	obs_data_release(font);
-	obs_data_release(settings);
-
 	return txtSource;
 }
 
 static void CreateTransitionScene(OBSSource scene, const char *text,
 				  uint32_t color)
 {
-	obs_data_t *settings = obs_data_create();
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_int(settings, "width", obs_source_get_width(scene));
 	obs_data_set_int(settings, "height", obs_source_get_height(scene));
 	obs_data_set_int(settings, "color", color);
 
-	obs_source_t *colorBG = obs_source_create_private(
+	OBSSourceAutoRelease colorBG = obs_source_create_private(
 		"color_source", "background", settings);
 
 	obs_scene_add(obs_scene_from_source(scene), colorBG);
 
-	obs_source_t *label = CreateLabel(text, obs_source_get_height(scene));
+	OBSSourceAutoRelease label =
+		CreateLabel(text, obs_source_get_height(scene));
 	obs_sceneitem_t *item =
 		obs_scene_add(obs_scene_from_source(scene), label);
 
@@ -325,10 +316,6 @@ static void CreateTransitionScene(OBSSource scene, const char *text,
 
 	obs_sceneitem_set_bounds(item, &size);
 	obs_sceneitem_set_bounds_type(item, OBS_BOUNDS_SCALE_INNER);
-
-	obs_data_release(settings);
-	obs_source_release(colorBG);
-	obs_source_release(label);
 }
 
 void OBSBasicProperties::SourceRemoved(void *data, calldata_t *params)
@@ -364,27 +351,24 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			obs_source_get_name(main->GetCurrentSceneSource());
 
 		auto undo_redo = [scene_name](const std::string &data) {
-			obs_data_t *settings =
+			OBSDataAutoRelease settings =
 				obs_data_create_from_json(data.c_str());
-			obs_source_t *source = obs_get_source_by_name(
+			OBSSourceAutoRelease source = obs_get_source_by_name(
 				obs_data_get_string(settings, "undo_sname"));
 			obs_source_reset_settings(source, settings);
 
 			obs_source_update_properties(source);
 
-			obs_source_t *scene_source =
+			OBSSourceAutoRelease scene_source =
 				obs_get_source_by_name(scene_name.c_str());
 
-			OBSBasic::Get()->SetCurrentScene(source, true);
-
-			obs_source_release(scene_source);
-
-			obs_data_release(settings);
-			obs_source_release(source);
+			OBSBasic::Get()->SetCurrentScene(scene_source.Get(),
+							 true);
 		};
 
-		obs_data_t *new_settings = obs_data_create();
-		obs_data_t *curr_settings = obs_source_get_settings(source);
+		OBSDataAutoRelease new_settings = obs_data_create();
+		OBSDataAutoRelease curr_settings =
+			obs_source_get_settings(source);
 		obs_data_apply(new_settings, curr_settings);
 		obs_data_set_string(new_settings, "undo_sname",
 				    obs_source_get_name(source));
@@ -400,9 +384,6 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 					.arg(obs_source_get_name(source)),
 				undo_redo, undo_redo, undo_data, redo_data);
 
-		obs_data_release(new_settings);
-		obs_data_release(curr_settings);
-
 		acceptClicked = true;
 		close();
 
@@ -410,9 +391,8 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 			view->UpdateSettings();
 
 	} else if (val == QDialogButtonBox::RejectRole) {
-		obs_data_t *settings = obs_source_get_settings(source);
+		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
-		obs_data_release(settings);
 
 		if (view->DeferUpdate())
 			obs_data_apply(settings, oldSettings);
@@ -422,9 +402,8 @@ void OBSBasicProperties::on_buttonBox_clicked(QAbstractButton *button)
 		close();
 
 	} else if (val == QDialogButtonBox::ResetRole) {
-		obs_data_t *settings = obs_source_get_settings(source);
+		OBSDataAutoRelease settings = obs_source_get_settings(source);
 		obs_data_clear(settings);
-		obs_data_release(settings);
 
 		if (!view->DeferUpdate())
 			obs_source_update(source, nullptr);
@@ -538,6 +517,33 @@ void OBSBasicProperties::closeEvent(QCloseEvent *event)
 	Cleanup();
 }
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message,
+				     qintptr *)
+#else
+bool OBSBasicProperties::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#endif
+
+	return false;
+}
+
 void OBSBasicProperties::Init()
 {
 	show();
@@ -545,14 +551,11 @@ void OBSBasicProperties::Init()
 
 int OBSBasicProperties::CheckSettings()
 {
-	OBSData currentSettings = obs_source_get_settings(source);
+	OBSDataAutoRelease currentSettings = obs_source_get_settings(source);
 	const char *oldSettingsJson = obs_data_get_json(oldSettings);
 	const char *currentSettingsJson = obs_data_get_json(currentSettings);
 
-	int ret = strcmp(currentSettingsJson, oldSettingsJson);
-
-	obs_data_release(currentSettings);
-	return ret;
+	return strcmp(currentSettingsJson, oldSettingsJson);
 }
 
 bool OBSBasicProperties::ConfirmQuit()

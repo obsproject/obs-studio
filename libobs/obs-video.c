@@ -63,13 +63,14 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 
 	source = data->first_source;
 	while (source) {
-		struct obs_source *cur_source = obs_source_get_ref(source);
-		source = (struct obs_source *)source->context.next;
+		obs_source_t *s = obs_source_get_ref(source);
 
-		if (cur_source) {
-			obs_source_video_tick(cur_source, seconds);
-			obs_source_release(cur_source);
+		if (s) {
+			obs_source_video_tick(s, seconds);
+			obs_source_release(s);
 		}
+
+		source = (struct obs_source *)source->context.next;
 	}
 
 	pthread_mutex_unlock(&data->sources_mutex);
@@ -722,7 +723,12 @@ static inline void video_sleep(struct obs_core_video *video, bool raw_active,
 		*p_time = t;
 		count = 1;
 	} else {
-		count = (int)((os_gettime_ns() - cur_time) / interval_ns);
+		const uint64_t udiff = os_gettime_ns() - cur_time;
+		int64_t diff;
+		memcpy(&diff, &udiff, sizeof(diff));
+		const uint64_t clamped_diff =
+			(diff > (int64_t)interval_ns) ? diff : interval_ns;
+		count = (int)(clamped_diff / interval_ns);
 		*p_time = cur_time + interval_ns * count;
 	}
 
@@ -930,9 +936,10 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
-	bool raw_active = obs->video.raw_active > 0;
+	bool raw_active = os_atomic_load_long(&obs->video.raw_active) > 0;
 #ifdef _WIN32
-	const bool gpu_active = obs->video.gpu_encoder_active > 0;
+	const bool gpu_active =
+		os_atomic_load_long(&obs->video.gpu_encoder_active) > 0;
 	const bool active = raw_active || gpu_active;
 #else
 	const bool gpu_active = 0;
@@ -963,8 +970,6 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		tick_sources(obs->video.video_time, context->last_time);
 	profile_end(tick_sources_name);
 
-	execute_graphics_tasks();
-
 #ifdef _WIN32
 	MSG msg;
 	while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
@@ -980,6 +985,8 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 	profile_start(render_displays_name);
 	render_displays();
 	profile_end(render_displays_name);
+
+	execute_graphics_tasks();
 
 	frame_time_ns = os_gettime_ns() - frame_start;
 

@@ -53,7 +53,7 @@ void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
 		if (glob->gl_pathv[i].directory)
 			continue;
 
-		obs_data_t *data =
+		OBSDataAutoRelease data =
 			obs_data_create_from_json_file_safe(filePath, "bak");
 		std::string name = obs_data_get_string(data, "name");
 
@@ -63,8 +63,6 @@ void EnumSceneCollections(std::function<bool(const char *, const char *)> &&cb)
 			name = strrchr(filePath, '/') + 1;
 			name.resize(name.size() - 5);
 		}
-
-		obs_data_release(data);
 
 		if (!cb(name.c_str(), filePath))
 			break;
@@ -165,6 +163,9 @@ bool OBSBasic::AddSceneCollection(bool create_new, const QString &qname)
 		SaveProjectNow();
 		RefreshSceneCollections();
 	};
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	new_collection(file, name);
 
@@ -275,6 +276,9 @@ void OBSBasic::on_actionRenameSceneCollection_triggered()
 		return;
 	}
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
+
 	oldFile.insert(0, path);
 	oldFile += ".json";
 	os_unlink(oldFile.c_str());
@@ -335,6 +339,9 @@ void OBSBasic::on_actionRemoveSceneCollection_triggered()
 		blog(LOG_WARNING, "Failed to get scene collection config path");
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	oldFile.insert(0, path);
 	oldFile += ".json";
@@ -423,6 +430,9 @@ void OBSBasic::ChangeSceneCollection()
 		action->setChecked(true);
 		return;
 	}
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING);
 
 	SaveProjectNow();
 

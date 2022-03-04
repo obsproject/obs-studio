@@ -148,15 +148,15 @@ void obs_frontend_release_tbar(void)
 		c->obs_frontend_release_tbar();
 }
 
+int obs_frontend_get_tbar_position(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_tbar_position() : 0;
+}
+
 void obs_frontend_set_tbar_position(int position)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_tbar_position(position);
-}
-
-int obs_frontend_get_tbar_position(void)
-{
-	return !!callbacks_valid() ? c->obs_frontend_get_tbar_position() : 0;
 }
 
 char **obs_frontend_get_scene_collections(void)
@@ -204,10 +204,34 @@ char *obs_frontend_get_current_profile(void)
 				   : nullptr;
 }
 
+char *obs_frontend_get_current_profile_path(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_current_profile_path()
+				   : nullptr;
+}
+
 void obs_frontend_set_current_profile(const char *profile)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_current_profile(profile);
+}
+
+void obs_frontend_create_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_create_profile(name);
+}
+
+void obs_frontend_duplicate_profile(const char *name)
+{
+	if (callbacks_valid())
+		c->obs_frontend_duplicate_profile(name);
+}
+
+void obs_frontend_delete_profile(const char *profile)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_profile(profile);
 }
 
 void obs_frontend_streaming_start(void)
@@ -409,16 +433,16 @@ void obs_frontend_pop_ui_translation(void)
 		c->obs_frontend_pop_ui_translation();
 }
 
-void obs_frontend_set_streaming_service(obs_service_t *service)
-{
-	if (callbacks_valid())
-		c->obs_frontend_set_streaming_service(service);
-}
-
 obs_service_t *obs_frontend_get_streaming_service(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_streaming_service()
 				   : nullptr;
+}
+
+void obs_frontend_set_streaming_service(obs_service_t *service)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_streaming_service(service);
 }
 
 void obs_frontend_save_streaming_service(void)
@@ -446,15 +470,15 @@ void obs_frontend_preview_program_trigger_transition(void)
 		c->obs_frontend_preview_program_trigger_transition();
 }
 
+bool obs_frontend_preview_enabled(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_preview_enabled() : false;
+}
+
 void obs_frontend_set_preview_enabled(bool enable)
 {
 	if (callbacks_valid())
 		c->obs_frontend_set_preview_enabled(enable);
-}
-
-bool obs_frontend_preview_enabled(void)
-{
-	return !!callbacks_valid() ? c->obs_frontend_preview_enabled() : false;
 }
 
 obs_source_t *obs_frontend_get_current_preview_scene(void)
@@ -509,4 +533,29 @@ void obs_frontend_reset_video(void)
 {
 	if (callbacks_valid())
 		c->obs_frontend_reset_video();
+}
+
+void obs_frontend_open_source_properties(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_properties(source);
+}
+
+void obs_frontend_open_source_filters(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_filters(source);
+}
+
+void obs_frontend_open_source_interaction(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_open_source_interaction(source);
+}
+
+char *obs_frontend_get_current_record_output_path(void)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_get_current_record_output_path()
+		       : nullptr;
 }

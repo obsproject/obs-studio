@@ -40,3 +40,13 @@
 	                      OBS_RELEASE_CANDIDATE_MINOR, \
 	                      OBS_RELEASE_CANDIDATE_PATCH)
 #define OBS_RELEASE_CANDIDATE @OBS_RELEASE_CANDIDATE@
+
+/* Same thing for beta builds */
+#define OBS_BETA_MAJOR @OBS_BETA_MAJOR@
+#define OBS_BETA_MINOR @OBS_BETA_MINOR@
+#define OBS_BETA_PATCH @OBS_BETA_PATCH@
+#define OBS_BETA_VER \
+	MAKE_SEMANTIC_VERSION(OBS_BETA_MAJOR, \
+	                      OBS_BETA_MINOR, \
+	                      OBS_BETA_PATCH)
+#define OBS_BETA @OBS_BETA@

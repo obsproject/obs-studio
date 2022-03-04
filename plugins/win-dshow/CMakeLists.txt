@@ -130,8 +130,10 @@ add_library(win-dshow MODULE
 	${libdshowcapture_HEADERS})
 target_link_libraries(win-dshow
 	libobs
+	setupapi
 	strmiids
 	ksuser
+	winmm
 	wmcodecdspuuid
 	w32-pthreads
 	${FFMPEG_LIBRARIES})

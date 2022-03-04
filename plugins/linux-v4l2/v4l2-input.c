@@ -37,6 +37,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 
 #include "v4l2-controls.h"
 #include "v4l2-helpers.h"
+#include "v4l2-mjpeg.h"
 
 #if HAVE_UDEV
 #include "v4l2-udev.h"
@@ -80,6 +81,7 @@ struct v4l2_data {
 	obs_source_t *source;
 	pthread_t thread;
 	os_event_t *event;
+	struct v4l2_mjpeg_decoder mjpeg_decoder;
 
 	bool framerate_unchanged;
 	bool resolution_unchanged;
@@ -100,6 +102,8 @@ static void v4l2_update(void *vptr, obs_data_t *settings);
 
 /**
  * Prepare the output frame structure for obs and compute plane offsets
+ * For encoded formats (mjpeg) this clears the frame and plane offsets,
+ * which will be filled in after decoding.
  *
  * Basically all data apart from memory pointers and the timestamp is known
  * before the capture starts. This function prepares the obs_source_frame
@@ -108,6 +112,7 @@ static void v4l2_update(void *vptr, obs_data_t *settings);
  * v4l2 uses a continuous memory segment for all planes so we simply compute
  * offsets to add to the start address in order to give obs the correct data
  * pointers for the individual planes.
+ *
  */
 static void v4l2_prep_obs_frame(struct v4l2_data *data,
 				struct obs_source_frame *frame,
@@ -177,7 +182,8 @@ static void *v4l2_thread(void *vptr)
 	blog(LOG_DEBUG, "%s: framerate: %.2f fps", data->device_id, ffps);
 	/* Timeout set to 5 frame periods. */
 	timeout_usec = (1000000 * data->timeout_frames) / ffps;
-	blog(LOG_INFO, "%s: select timeout set to %ldus (%dx frame periods)",
+	blog(LOG_INFO,
+	     "%s: select timeout set to %" PRIu64 " (%dx frame periods)",
 	     data->device_id, timeout_usec, data->timeout_frames);
 
 	if (v4l2_start_capture(data->dev, &data->buffers) < 0)
@@ -257,8 +263,17 @@ static void *v4l2_thread(void *vptr)
 		out.timestamp -= first_ts;
 
 		start = (uint8_t *)data->buffers.info[buf.index].start;
-		for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
-			out.data[i] = start + plane_offsets[i];
+
+		if (data->pixfmt == V4L2_PIX_FMT_MJPEG) {
+			if (v4l2_decode_mjpeg(&out, start, buf.bytesused,
+					      &data->mjpeg_decoder) < 0) {
+				blog(LOG_ERROR, "failed to unpack jpeg");
+				break;
+			}
+		} else {
+			for (uint_fast32_t i = 0; i < MAX_AV_PLANES; ++i)
+				out.data[i] = start + plane_offsets[i];
+		}
 		obs_source_output_video(data->source, &out);
 
 		if (v4l2_ioctl(data->dev, VIDIOC_QBUF, &buf) < 0) {
@@ -457,7 +472,8 @@ static void v4l2_format_list(int dev, obs_property_t *prop)
 			dstr_cat(&buffer, " (Emulated)");
 
 		if (v4l2_to_obs_video_format(fmt.pixelformat) !=
-		    VIDEO_FORMAT_NONE) {
+			    VIDEO_FORMAT_NONE ||
+		    fmt.pixelformat == V4L2_PIX_FMT_MJPEG) {
 			obs_property_list_add_int(prop, buffer.array,
 						  fmt.pixelformat);
 			blog(LOG_INFO, "Pixelformat: %s (available)",
@@ -890,6 +906,7 @@ static void v4l2_terminate(struct v4l2_data *data)
 		data->thread = 0;
 	}
 
+	v4l2_destroy_mjpeg(&data->mjpeg_decoder);
 	v4l2_destroy_mmap(&data->buffers);
 
 	if (data->dev != -1) {
@@ -980,7 +997,8 @@ static void v4l2_init(struct v4l2_data *data)
 		blog(LOG_ERROR, "Unable to set format");
 		goto fail;
 	}
-	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE) {
+	if (v4l2_to_obs_video_format(data->pixfmt) == VIDEO_FORMAT_NONE &&
+	    data->pixfmt != V4L2_PIX_FMT_MJPEG) {
 		blog(LOG_ERROR, "Selected video format not supported");
 		goto fail;
 	}
@@ -1000,6 +1018,11 @@ static void v4l2_init(struct v4l2_data *data)
 	/* map buffers */
 	if (v4l2_create_mmap(data->dev, &data->buffers) < 0) {
 		blog(LOG_ERROR, "Failed to map buffers");
+		goto fail;
+	}
+
+	if (v4l2_init_mjpeg(&data->mjpeg_decoder) < 0) {
+		blog(LOG_ERROR, "Failed to initialize mjpeg decoder");
 		goto fail;
 	}
 

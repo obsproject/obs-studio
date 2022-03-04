@@ -53,9 +53,9 @@ public:
 	void pop_disabled();
 
 	void clear();
-	void add_action(const QString &name, undo_redo_cb undo,
-			undo_redo_cb redo, std::string undo_data,
-			std::string redo_data, bool repeatable = false);
+	void add_action(const QString &name, const undo_redo_cb &undo,
+			const undo_redo_cb &redo, const std::string &undo_data,
+			const std::string &redo_data, bool repeatable = false);
 	void undo();
 	void redo();
 };

@@ -30,7 +30,7 @@
     <number>0</number>
    </property>
    <item>
-    <widget class="QWidget" name="widget">
+    <widget class="QFrame" name="widget">
      <property name="sizePolicy">
       <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
        <horstretch>0</horstretch>
@@ -74,7 +74,7 @@
        </widget>
       </item>
       <item row="1" column="1">
-       <widget class="QWidget" name="serviceWidget">
+       <widget class="QFrame" name="serviceWidget">
         <layout class="QHBoxLayout" name="serviceWidgetLayout">
          <property name="leftMargin">
           <number>0</number>
@@ -286,7 +286,7 @@
         </widget>
        </item>
        <item row="1" column="1">
-        <widget class="QWidget" name="streamKeyWidget">
+        <widget class="QFrame" name="streamKeyWidget">
          <layout class="QHBoxLayout" name="horizontalLayout_4">
           <property name="leftMargin">
            <number>0</number>
@@ -349,7 +349,7 @@
           <number>500</number>
          </property>
          <property name="maximum">
-          <number>10000</number>
+          <number>51000</number>
          </property>
          <property name="value">
           <number>2500</number>
@@ -418,15 +418,11 @@
        </item>
        <item row="7" column="1">
         <widget class="QPushButton" name="connectAccount2">
+         <property name="cursor">
+          <cursorshape>PointingHandCursor</cursorshape>
+         </property>
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
-         </property>
-        </widget>
-       </item>
-       <item row="8" column="1">
-        <widget class="QPushButton" name="disconnectAccount">
-         <property name="text">
-          <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
          </property>
         </widget>
        </item>
@@ -442,6 +438,63 @@
           </size>
          </property>
         </spacer>
+       </item>
+       <item row="8" column="1">
+        <layout class="QHBoxLayout" name="horizontalLayout_6">
+         <property name="leftMargin">
+          <number>7</number>
+         </property>
+         <property name="rightMargin">
+          <number>7</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="connectedAccountText">
+           <property name="font">
+            <font>
+             <weight>75</weight>
+             <bold>true</bold>
+            </font>
+           </property>
+           <property name="text">
+            <string>Auth.LoadingChannel.Title</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QPushButton" name="disconnectAccount">
+           <property name="text">
+            <string>Basic.AutoConfig.StreamPage.DisconnectAccount</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="8" column="0">
+        <widget class="QLabel" name="connectedAccountLabel">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
+         </property>
+        </widget>
+       </item>
+       <item row="9" column="0">
+        <spacer name="horizontalSpacer">
+         <property name="orientation">
+          <enum>Qt::Horizontal</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>40</width>
+           <height>20</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="9" column="1">
+        <widget class="QPushButton" name="useStreamKeyAdv">
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.UseStreamKeyAdvanced</string>
+         </property>
+        </widget>
        </item>
       </layout>
      </widget>

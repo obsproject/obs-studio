@@ -146,7 +146,73 @@ void TranslateOSStudio(Json &res)
 	}
 
 	out["sources"] = sources;
+
 	res = out;
+}
+
+static string CheckPath(const string &path, const string &rootDir)
+{
+	char root[512];
+	*root = 0;
+	size_t rootLen = os_get_abs_path(rootDir.c_str(), root, sizeof(root));
+
+	char absPath[512];
+	*absPath = 0;
+	size_t len = os_get_abs_path((rootDir + path).c_str(), absPath,
+				     sizeof(absPath));
+
+	if (len == 0)
+		return path;
+
+	if (strstr(absPath, root) != absPath)
+		return path;
+
+	if (*(absPath + rootLen) != QDir::separator().toLatin1())
+		return path;
+
+	return absPath;
+}
+
+void TranslatePaths(Json &res, const string &rootDir)
+{
+	if (res.is_object()) {
+		Json::object out = res.object_items();
+
+		for (auto it = out.begin(); it != out.end(); it++) {
+			Json val = it->second;
+
+			if (val.is_string()) {
+				if (val.string_value().rfind("./", 0) != 0)
+					continue;
+
+				out[it->first] =
+					CheckPath(val.string_value(), rootDir);
+			} else if (val.is_array() || val.is_object()) {
+				TranslatePaths(val, rootDir);
+				out[it->first] = val;
+			}
+		}
+
+		res = out;
+	} else if (res.is_array()) {
+		Json::array out = res.array_items();
+
+		for (size_t i = 0; i != out.size(); i++) {
+			Json val = out[i];
+
+			if (val.is_string()) {
+				if (val.string_value().rfind("./", 0) != 0)
+					continue;
+
+				out[i] = CheckPath(val.string_value(), rootDir);
+			} else if (val.is_array() || val.is_object()) {
+				TranslatePaths(val, rootDir);
+				out[i] = val;
+			}
+		}
+
+		res = out;
+	}
 }
 
 bool StudioImporter::Check(const string &path)
@@ -200,7 +266,10 @@ int StudioImporter::ImportScenes(const string &path, string &name, Json &res)
 	if (err != "")
 		return IMPORTER_ERROR_DURING_CONVERSION;
 
+	QDir dir(path.c_str());
+
 	TranslateOSStudio(d);
+	TranslatePaths(d, QDir::cleanPath(dir.filePath("..")).toStdString());
 
 	Json::object obj = d.object_items();
 

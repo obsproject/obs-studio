@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <util/platform.h>
 
-#define NVAFX_API __declspec(dllexport)
+#define NVAFX_API
 
 #ifdef LIBNVAFX_ENABLED
 static HMODULE nv_audiofx = NULL;

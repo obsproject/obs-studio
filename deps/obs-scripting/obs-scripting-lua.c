@@ -55,10 +55,10 @@ package.path = package.path .. \";\" .. script_path() .. \"/?.lua\"\n";
 
 static char *startup_script = NULL;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_lua_script *first_tick_script = NULL;
 
-pthread_mutex_t lua_source_def_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t lua_source_def_mutex;
 
 #define ls_get_libobs_obj(type, lua_index, obs_obj)                      \
 	ls_get_libobs_obj_(script, #type " *", lua_index, obs_obj, NULL, \
@@ -242,7 +242,7 @@ struct lua_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct lua_obs_timer *first_timer = NULL;
 
 static inline void lua_obs_timer_init(struct lua_obs_timer *timer)
@@ -288,7 +288,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct lua_obs_callback *cb = (struct lua_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback();
@@ -329,7 +329,7 @@ static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_main_render_callback(obs_lua_main_render_callback,
 						cb);
 		return;
@@ -377,7 +377,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_lua_tick_callback, cb);
 		return;
 	}
@@ -423,7 +423,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -505,7 +505,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -663,7 +663,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 	struct lua_obs_callback *cb = p_cb;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback();
@@ -689,7 +689,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct lua_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -745,7 +745,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -801,7 +801,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -1078,7 +1078,7 @@ static void lua_tick(void *param, float seconds)
 		struct lua_obs_timer *next = timer->next;
 		struct lua_obs_callback *cb = lua_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			lua_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1119,12 +1119,9 @@ obs_script_t *obs_lua_script_create(const char *path, obs_data_t *settings)
 	data->base.type = OBS_SCRIPT_LANG_LUA;
 	data->tick = LUA_REFNIL;
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
 	pthread_mutex_init_value(&data->mutex);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
 
-	if (pthread_mutex_init(&data->mutex, &attr) != 0) {
+	if (pthread_mutex_init_recursive(&data->mutex) != 0) {
 		bfree(data);
 		return NULL;
 	}
@@ -1160,6 +1157,25 @@ void obs_lua_script_unload(obs_script_t *s)
 	lua_State *script = data->script;
 
 	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	pthread_mutex_lock(&data->mutex);
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct lua_obs_callback *cb =
+		(struct lua_obs_callback *)data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->base.removed, true);
+		cb = (struct lua_obs_callback *)cb->base.next;
+	}
+
+	pthread_mutex_unlock(&data->mutex);
+
+	/* ---------------------------- */
 	/* undefine source types        */
 
 	undef_lua_script_sources(data);
@@ -1192,8 +1208,7 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct lua_obs_callback *cb =
-		(struct lua_obs_callback *)data->first_callback;
+	cb = (struct lua_obs_callback *)data->first_callback;
 	while (cb) {
 		struct lua_obs_callback *next =
 			(struct lua_obs_callback *)cb->base.next;
@@ -1300,12 +1315,8 @@ void obs_lua_load(void)
 	struct dstr dep_paths = {0};
 	struct dstr tmp = {0};
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
 	pthread_mutex_init(&lua_source_def_mutex, NULL);
 
 	/* ---------------------------------------------- */

@@ -47,6 +47,7 @@ using namespace DShow;
 #define COLOR_RANGE       "color_range"
 #define DEACTIVATE_WNS    "deactivate_when_not_showing"
 #define AUTOROTATION      "autorotation"
+#define HW_DECODE         "hw_decode"
 
 #define TEXT_INPUT_NAME     obs_module_text("VideoCaptureDevice")
 #define TEXT_DEVICE         obs_module_text("Device")
@@ -66,6 +67,7 @@ using namespace DShow;
 #define TEXT_BUFFERING_OFF  obs_module_text("Buffering.Disable")
 #define TEXT_FLIP_IMAGE     obs_module_text("FlipVertically")
 #define TEXT_AUTOROTATION   obs_module_text("Autorotation")
+#define TEXT_HW_DECODE      obs_module_text("HardwareDecode")
 #define TEXT_AUDIO_MODE     obs_module_text("AudioOutputMode")
 #define TEXT_MODE_CAPTURE   obs_module_text("AudioOutputMode.Capture")
 #define TEXT_MODE_DSOUND    obs_module_text("AudioOutputMode.DirectSound")
@@ -184,6 +186,7 @@ struct DShowInput {
 	bool flip = false;
 	bool active = false;
 	bool autorotation = true;
+	bool hw_decode = false;
 
 	Decoder audio_decoder;
 	Decoder video_decoder;
@@ -478,25 +481,18 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 //#define LOG_ENCODED_VIDEO_TS 1
 //#define LOG_ENCODED_AUDIO_TS 1
 
-#define MAX_SW_RES_INT (1920 * 1080)
-
 void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 				    size_t size, long long ts)
 {
-	/* If format changes, free and allow it to recreate the decoder */
+	/* If format or hw decode changes, recreate the decoder */
 	if (ffmpeg_decode_valid(video_decoder) &&
-	    video_decoder->codec->id != id) {
+	    ((video_decoder->codec->id != id) ||
+	     (video_decoder->hw != hw_decode))) {
 		ffmpeg_decode_free(video_decoder);
 	}
 
 	if (!ffmpeg_decode_valid(video_decoder)) {
-		/* Only use MJPEG hardware decoding on resolutions higher
-		 * than 1920x1080.  The reason why is because we want to strike
-		 * a reasonable balance between hardware and CPU usage. */
-		bool useHW = videoConfig.format != VideoFormat::MJPEG ||
-			     (videoConfig.cx * videoConfig.cy_abs) >
-				     MAX_SW_RES_INT;
-		if (ffmpeg_decode_init(video_decoder, id, useHW) < 0) {
+		if (ffmpeg_decode_init(video_decoder, id, hw_decode) < 0) {
 			blog(LOG_WARNING, "Could not initialize video decoder");
 			return;
 		}
@@ -548,6 +544,7 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	frame.height = cy_abs;
 	frame.format = ConvertVideoFormat(config.format);
 	frame.flip = flip;
+	frame.flags = OBS_SOURCE_FRAME_LINEAR_ALPHA;
 
 	/* YUV DIBS are always top-down */
 	if (config.format == VideoFormat::XRGB ||
@@ -709,7 +706,7 @@ static inline bool FormatMatches(VideoFormat left, VideoFormat right)
 	       left == right;
 }
 
-static inline bool ResolutionValid(string res, int &cx, int &cy)
+static inline bool ResolutionValid(const string &res, int &cx, int &cy)
 {
 	if (!res.size())
 		return false;
@@ -816,7 +813,7 @@ static bool ResolutionAvailable(const VideoDevice &dev, int cx, int cy)
 }
 
 static bool DetermineResolution(int &cx, int &cy, obs_data_t *settings,
-				VideoDevice dev)
+				VideoDevice &dev)
 {
 	const char *res = obs_data_get_autoselect_string(settings, RESOLUTION);
 	if (obs_data_has_autoselect_value(settings, RESOLUTION) &&
@@ -839,7 +836,8 @@ static long long GetOBSFPS();
 static inline bool IsDelayedDevice(const VideoConfig &config)
 {
 	return config.format > VideoFormat::MJPEG ||
-	       wstrstri(config.name.c_str(), L"elgato") != NULL ||
+	       (wstrstri(config.name.c_str(), L"elgato") != NULL &&
+		wstrstri(config.name.c_str(), L"facecam") == NULL) ||
 	       wstrstri(config.name.c_str(), L"stream engine") != NULL;
 }
 
@@ -872,6 +870,7 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	deactivateWhenNotShowing = obs_data_get_bool(settings, DEACTIVATE_WNS);
 	flip = obs_data_get_bool(settings, FLIP_IMAGE);
 	autorotation = obs_data_get_bool(settings, AUTOROTATION);
+	hw_decode = obs_data_get_bool(settings, HW_DECODE);
 
 	DeviceId id;
 	if (!DecodeDeviceId(id, video_device_id.c_str())) {
@@ -932,8 +931,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 		interval = best_interval;
 	}
 
-	videoConfig.name = id.name.c_str();
-	videoConfig.path = id.path.c_str();
+	videoConfig.name = id.name;
+	videoConfig.path = id.path;
 	videoConfig.useDefaultConfig = resType == ResType_Preferred;
 	videoConfig.cx = cx;
 	videoConfig.cy_abs = abs(cy);
@@ -971,6 +970,8 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	os_wcs_to_utf8_ptr(videoConfig.path.c_str(), videoConfig.path.size(),
 			   &path_utf8);
 
+	SetupBuffering(settings);
+
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
 	     "[DShow Device: '%s'] settings updated: \n"
@@ -979,13 +980,15 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	     "\tresolution: %dx%d\n"
 	     "\tflip: %d\n"
 	     "\tfps: %0.2f (interval: %lld)\n"
-	     "\tformat: %s",
+	     "\tformat: %s\n"
+	     "\tbuffering: %s\n"
+	     "\thardware decode: %s",
 	     obs_source_get_name(source), (const char *)name_utf8,
 	     (const char *)path_utf8, videoConfig.cx, videoConfig.cy_abs,
 	     (int)videoConfig.cy_flip, fps, videoConfig.frameInterval,
-	     formatName->array);
-
-	SetupBuffering(settings);
+	     formatName->array,
+	     obs_source_async_unbuffered(source) ? "disabled" : "enabled",
+	     hw_decode ? "enabled" : "disabled");
 
 	return true;
 }
@@ -1000,8 +1003,8 @@ bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 		if (!DecodeDeviceId(id, audio_device_id.c_str()))
 			return false;
 
-		audioConfig.name = id.name.c_str();
-		audioConfig.path = id.path.c_str();
+		audioConfig.name = id.name;
+		audioConfig.path = id.path;
 
 	} else if (!deviceHasAudio) {
 		return true;
@@ -1196,6 +1199,7 @@ static void GetDShowDefaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, AUDIO_OUTPUT_MODE,
 				 (int)AudioMode::Capture);
 	obs_data_set_default_bool(settings, AUTOROTATION, true);
+	obs_data_set_default_bool(settings, HW_DECODE, false);
 }
 
 struct Resolution {
@@ -1274,7 +1278,7 @@ static const FPSFormat validFPSFormats[] = {
 static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
 				  obs_data_t *settings);
 
-static bool TryResolution(VideoDevice &dev, string res)
+static bool TryResolution(const VideoDevice &dev, const string &res)
 {
 	int cx, cy;
 	if (!ConvertRes(cx, cy, res.c_str()))
@@ -1284,7 +1288,7 @@ static bool TryResolution(VideoDevice &dev, string res)
 }
 
 static bool SetResolution(obs_properties_t *props, obs_data_t *settings,
-			  string res, bool autoselect = false)
+			  const string &res, bool autoselect = false)
 {
 	if (autoselect)
 		obs_data_set_autoselect_string(settings, RESOLUTION,
@@ -1946,6 +1950,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_properties_add_bool(ppts, FLIP_IMAGE, TEXT_FLIP_IMAGE);
 
 	obs_properties_add_bool(ppts, AUTOROTATION, TEXT_AUTOROTATION);
+
+	obs_properties_add_bool(ppts, HW_DECODE, TEXT_HW_DECODE);
 
 	/* ------------------------------------- */
 	/* audio settings */

@@ -1,26 +1,10 @@
 project(mac-virtualcam)
 
-find_library(AVFOUNDATION AVFoundation)
 find_library(APPKIT AppKit)
-find_library(COCOA Cocoa)
 find_library(COREFOUNDATION CoreFoundation)
-find_library(COREMEDIA CoreMedia)
-find_library(COREVIDEO CoreVideo)
-find_library(COCOA Cocoa)
-find_library(COREMEDIAIO CoreMediaIO)
-find_library(IOSURFACE IOSurface)
-find_library(IOKIT IOKit)
 
-include_directories(${AVFOUNDATION}
-					${APPKIT}
-					${COCOA}
+include_directories(${APPKIT}
 					${COREFOUNDATION}
-					${COREMEDIA}
-					${COREVIDEO}
-					${COREMEDIAIO}
-					${COCOA}
-					${IOSURFACE}
-					"${CMAKE_SOURCE_DIR}/UI/obs-frontend-api"
 					../common)
 
 set(mac-virtualcam_HEADERS
@@ -38,18 +22,8 @@ add_library(mac-virtualcam MODULE
 
 target_link_libraries(mac-virtualcam
 	libobs
-	obs-frontend-api
-	Qt5::Core
-	Qt5::Widgets
-	${AVFOUNDATION}
 	${APPKIT}
-	${COCOA}
-	${COREFOUNDATION}
-	${COREMEDIA}
-	${COREVIDEO}
-	${COREMEDIAIO}
-	${IOSURFACE}
-	${IOKIT})
+	${COREFOUNDATION})
 
 set_target_properties(mac-virtualcam PROPERTIES
 	FOLDER "plugins"

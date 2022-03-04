@@ -225,32 +225,27 @@ static inline void init_cache(struct video_output *video)
 int video_output_open(video_t **video, struct video_output_info *info)
 {
 	struct video_output *out;
-	pthread_mutexattr_t attr;
 
 	if (!valid_video_params(info))
 		return VIDEO_OUTPUT_INVALIDPARAM;
 
 	out = bzalloc(sizeof(struct video_output));
 	if (!out)
-		goto fail;
+		goto fail0;
 
 	memcpy(&out->info, info, sizeof(struct video_output_info));
 	out->frame_time =
 		util_mul_div64(1000000000ULL, info->fps_den, info->fps_num);
 	out->initialized = false;
 
-	if (pthread_mutexattr_init(&attr) != 0)
-		goto fail;
-	if (pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE) != 0)
-		goto fail;
-	if (pthread_mutex_init(&out->data_mutex, &attr) != 0)
-		goto fail;
-	if (pthread_mutex_init(&out->input_mutex, &attr) != 0)
-		goto fail;
+	if (pthread_mutex_init_recursive(&out->data_mutex) != 0)
+		goto fail0;
+	if (pthread_mutex_init_recursive(&out->input_mutex) != 0)
+		goto fail1;
 	if (os_sem_init(&out->update_semaphore, 0) != 0)
-		goto fail;
+		goto fail2;
 	if (pthread_create(&out->thread, NULL, video_thread, out) != 0)
-		goto fail;
+		goto fail3;
 
 	init_cache(out);
 
@@ -258,7 +253,13 @@ int video_output_open(video_t **video, struct video_output_info *info)
 	*video = out;
 	return VIDEO_OUTPUT_SUCCESS;
 
-fail:
+fail3:
+	os_sem_destroy(out->update_semaphore);
+fail2:
+	pthread_mutex_destroy(&out->input_mutex);
+fail1:
+	pthread_mutex_destroy(&out->data_mutex);
+fail0:
 	video_output_close(out);
 	return VIDEO_OUTPUT_FAIL;
 }
@@ -277,9 +278,6 @@ void video_output_close(video_t *video)
 	for (size_t i = 0; i < video->info.cache_size; i++)
 		video_frame_free((struct video_frame *)&video->cache[i]);
 
-	os_sem_destroy(video->update_semaphore);
-	pthread_mutex_destroy(&video->data_mutex);
-	pthread_mutex_destroy(&video->input_mutex);
 	bfree(video);
 }
 
@@ -510,6 +508,9 @@ void video_output_stop(video_t *video)
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		pthread_join(video->thread, &thread_ret);
+		os_sem_destroy(video->update_semaphore);
+		pthread_mutex_destroy(&video->data_mutex);
+		pthread_mutex_destroy(&video->input_mutex);
 	}
 }
 

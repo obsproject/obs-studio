@@ -32,7 +32,7 @@ set(updater_SOURCES
 	updater.manifest
 	)
 
-add_definitions(-DNOMINMAX -DUNICODE -D_UNICODE)
+add_definitions(-DNOMINMAX -DUNICODE -D_UNICODE -DPSAPI_VERSION=2)
 if(MSVC)
 	add_compile_options($<IF:$<CONFIG:Debug>,/MTd,/MT>)
 endif()
@@ -45,7 +45,6 @@ target_link_libraries(updater
 	${STATIC_ZLIB_PATH}
 	lzma
 	blake2
-	psapi
 	comctl32
 	shell32
 	winhttp

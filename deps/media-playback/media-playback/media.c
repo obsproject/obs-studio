@@ -302,9 +302,13 @@ static inline int64_t mp_media_get_base_pts(mp_media_t *m)
 	return base_ts;
 }
 
+/* maximum timestamp variance in nanoseconds */
+#define MAX_TS_VAR 2000000000LL
+
 static inline bool mp_media_can_play_frame(mp_media_t *m, struct mp_decode *d)
 {
-	return d->frame_ready && d->frame_pts <= m->next_pts_ns;
+	return d->frame_ready && (d->frame_pts <= m->next_pts_ns ||
+				  (d->frame_pts - m->next_pts_ns > MAX_TS_VAR));
 }
 
 static void mp_media_next_audio(mp_media_t *m)
@@ -502,14 +506,14 @@ static bool mp_media_reset(mp_media_t *m)
 	bool stopping;
 	bool active;
 
-	seek_to(m, m->fmt->start_time);
-
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
 
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
+
+	seek_to(m, m->fmt->start_time);
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
@@ -541,21 +545,22 @@ static bool mp_media_reset(mp_media_t *m)
 	return true;
 }
 
-static inline bool mp_media_sleepto(mp_media_t *m)
+static inline bool mp_media_sleep(mp_media_t *m)
 {
 	bool timeout = false;
 
 	if (!m->next_ns) {
 		m->next_ns = os_gettime_ns();
 	} else {
-		uint64_t t = os_gettime_ns();
-		const uint64_t timeout_ns = 200000000;
-
-		if (m->next_ns > t && (m->next_ns - t) > timeout_ns) {
-			os_sleepto_ns(t + timeout_ns);
-			timeout = true;
-		} else {
-			os_sleepto_ns(m->next_ns);
+		const uint64_t t = os_gettime_ns();
+		if (m->next_ns > t) {
+			const uint32_t delta_ms =
+				(uint32_t)((m->next_ns - t + 500000) / 1000000);
+			if (delta_ms > 0) {
+				static const uint32_t timeout_ms = 200;
+				timeout = delta_ms > timeout_ms;
+				os_sleep_ms(timeout ? timeout_ms : delta_ms);
+			}
 		}
 	}
 
@@ -634,9 +639,15 @@ static void set_ffmpeg_options(char **opt_tokens, AVDictionary *opts)
 	dstr_free(&key);
 }
 
+#define RIST_PROTO "rist"
+
 static bool init_avformat(mp_media_t *m)
 {
+#if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
 	AVInputFormat *format = NULL;
+#else
+	const AVInputFormat *format = NULL;
+#endif
 
 	if (m->format_name && *m->format_name) {
 		format = av_find_input_format(m->format_name);
@@ -648,7 +659,8 @@ static bool init_avformat(mp_media_t *m)
 	}
 
 	AVDictionary *opts = NULL;
-	if (m->buffering && !m->is_local_file)
+	bool is_rist = strncmp(m->path, RIST_PROTO, strlen(RIST_PROTO)) == 0;
+	if (m->buffering && !m->is_local_file && !is_rist)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
 
 	if (!m->is_local_file) {
@@ -738,7 +750,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 			if (pause)
 				reset_ts(m);
 		} else {
-			timeout = mp_media_sleepto(m);
+			timeout = mp_media_sleep(m);
 		}
 
 		pthread_mutex_lock(&m->mutex);

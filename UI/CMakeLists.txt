@@ -39,6 +39,28 @@ else()
 	set(RESTREAM_ENABLED TRUE)
 endif()
 
+if(DEFINED ENV{YOUTUBE_CLIENTID} AND NOT DEFINED YOUTUBE_CLIENTID)
+	set(YOUTUBE_CLIENTID "$ENV{YOUTUBE_CLIENTID}")
+endif()
+if(DEFINED ENV{YOUTUBE_CLIENTID_HASH} AND NOT DEFINED YOUTUBE_CLIENTID_HASH)
+	set(YOUTUBE_CLIENTID_HASH "$ENV{YOUTUBE_CLIENTID_HASH}")
+endif()
+if(DEFINED ENV{YOUTUBE_SECRET} AND NOT DEFINED YOUTUBE_SECRET)
+	set(YOUTUBE_SECRET "$ENV{YOUTUBE_SECRET}")
+endif()
+if(DEFINED ENV{YOUTUBE_SECRET_HASH} AND NOT DEFINED YOUTUBE_SECRET_HASH)
+	set(YOUTUBE_SECRET_HASH "$ENV{YOUTUBE_SECRET_HASH}")
+endif()
+
+if(NOT DEFINED YOUTUBE_CLIENTID OR "${YOUTUBE_CLIENTID}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_SECRET OR "${YOUTUBE_SECRET}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_CLIENTID_HASH OR "${YOUTUBE_CLIENTID_HASH}" STREQUAL "" OR
+   NOT DEFINED YOUTUBE_SECRET_HASH OR "${YOUTUBE_SECRET_HASH}" STREQUAL "")
+	set(YOUTUBE_ENABLED FALSE)
+else()
+	set(YOUTUBE_ENABLED TRUE)
+endif()
+
 configure_file(
 	"${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in"
 	"${CMAKE_CURRENT_BINARY_DIR}/ui-config.h")
@@ -46,8 +68,14 @@ configure_file(
 set(CMAKE_INCLUDE_CURRENT_DIR TRUE)
 set(CMAKE_AUTOMOC TRUE)
 
+find_package(Threads REQUIRED)
+
+find_package(Qt5Network ${FIND_MODE})
 find_package(Qt5Widgets ${FIND_MODE})
 find_package(Qt5Svg ${FIND_MODE})
+if(WIN32 AND (Qt5Widgets_VERSION VERSION_LESS 6.0.0))
+	find_package(Qt5WinExtras ${FIND_MODE})
+endif()
 find_package(Qt5Xml ${FIND_MODE})
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
@@ -120,6 +148,7 @@ elseif(APPLE)
 
 elseif(UNIX)
 	find_package(Qt5Gui REQUIRED)
+	find_package(PythonDeps QUIET)
 
 	include_directories(${Qt5Gui_PRIVATE_INCLUDE_DIRS})
 
@@ -131,6 +160,7 @@ elseif(UNIX)
 		Qt5::Gui
 		Qt5::GuiPrivate)
 
+
 	if("${CMAKE_SYSTEM_NAME}" MATCHES "FreeBSD")
 		list(APPEND obs_PLATFORM_LIBRARIES
 			procstat)
@@ -139,14 +169,10 @@ endif()
 
 if(BROWSER_AVAILABLE_INTERNAL)
 	list(APPEND obs_PLATFORM_SOURCES
-		obf.c
-		auth-oauth.cpp
 		window-dock-browser.cpp
 		window-extra-browsers.cpp
 		)
 	list(APPEND obs_PLATFORM_HEADERS
-		obf.h
-		auth-oauth.hpp
 		window-dock-browser.hpp
 		window-extra-browsers.hpp
 		)
@@ -168,6 +194,18 @@ if(BROWSER_AVAILABLE_INTERNAL)
 			auth-restream.hpp
 			)
 	endif()
+
+endif()
+
+if(YOUTUBE_ENABLED)
+	list(APPEND obs_PLATFORM_SOURCES
+		auth-youtube.cpp
+		youtube-api-wrappers.cpp
+		)
+	list(APPEND obs_PLATFORM_HEADERS
+		auth-youtube.hpp
+		youtube-api-wrappers.hpp
+		)
 endif()
 
 set(obs_libffutil_SOURCES
@@ -225,6 +263,9 @@ set(obs_SOURCES
 	window-remux.cpp
 	window-missing-files.cpp
 	auth-base.cpp
+	auth-oauth.cpp
+	auth-listener.cpp
+	obf.c
 	source-tree.cpp
 	scene-tree.cpp
 	properties-view.cpp
@@ -289,6 +330,9 @@ set(obs_HEADERS
 	window-remux.hpp
 	window-missing-files.hpp
 	auth-base.hpp
+	auth-oauth.hpp
+	auth-listener.hpp
+	obf.h
 	source-tree.hpp
 	scene-tree.hpp
 	properties-view.hpp
@@ -374,6 +418,18 @@ set(obs_UI
 set(obs_QRC
 	forms/obs.qrc)
 
+if(YOUTUBE_ENABLED)
+	list(APPEND obs_SOURCES
+		window-youtube-actions.cpp
+		)
+	list(APPEND obs_HEADERS
+		window-youtube-actions.hpp
+		)
+	list(APPEND obs_UI
+		forms/OBSYoutubeActions.ui
+		)
+endif()
+
 qt5_wrap_ui(obs_UI_HEADERS ${obs_UI})
 qt5_add_resources(obs_QRC_SOURCES ${obs_QRC})
 
@@ -396,10 +452,17 @@ if(WIN32)
 	set_target_properties(obs
 		PROPERTIES
 			OUTPUT_NAME "obs${_output_suffix}")
+
+	if(Qt5Widgets_VERSION VERSION_LESS 6.0.0)
+		target_link_libraries(obs
+				Qt5::WinExtras)		
+	endif()	
 endif()
 
 target_link_libraries(obs
 	libobs
+	Threads::Threads
+	Qt5::Network
 	Qt5::Widgets
 	Qt5::Svg
 	Qt5::Xml
@@ -418,6 +481,19 @@ install_obs_data_file(obs ../AUTHORS obs-studio/authors)
 
 if (UNIX AND UNIX_STRUCTURE AND NOT APPLE)
 	add_subdirectory(xdg-data)
+endif()
+
+if (UNIX AND NOT APPLE)
+	# python symbols must be in the global symbol table
+	# so we link the main executable to python if we expect
+	# obs-scripting python support to be enabled.
+	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
+	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
+		target_link_libraries(obs ${PYTHON_LIBRARIES})
+		set_target_properties(obs PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
+		# Use this after cmake 3.13 aka we drop ubuntu 18.04.
+		# target_link_options(obs PRIVATE "LINKER:-no-as-needed")
+	endif()
 endif()
 
 add_subdirectory(frontend-plugins)

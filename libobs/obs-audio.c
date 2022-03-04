@@ -101,9 +101,10 @@ static bool ignore_audio(obs_source_t *source, size_t channels,
 
 	if (num_floats) {
 		/* round up the number of samples to drop */
-		size_t drop = util_mul_div64(start_ts - source->audio_ts - 1,
-					     sample_rate, 1000000000ULL) +
-			      1;
+		size_t drop =
+			(size_t)util_mul_div64(start_ts - source->audio_ts - 1,
+					       sample_rate, 1000000000ULL) +
+			1;
 		if (drop > num_floats)
 			drop = num_floats;
 
@@ -344,7 +345,7 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 							AUDIO_OUTPUT_FRAMES);
 
 	while (ticks--) {
-		int cur_ticks = ++audio->buffering_wait_ticks;
+		const uint64_t cur_ticks = ++audio->buffering_wait_ticks;
 
 		new_ts.end = new_ts.start;
 		new_ts.start =
@@ -439,6 +440,23 @@ static inline void release_audio_sources(struct obs_core_audio *audio)
 {
 	for (size_t i = 0; i < audio->render_order.num; i++)
 		obs_source_release(audio->render_order.array[i]);
+}
+
+static inline void execute_audio_tasks(void)
+{
+	struct obs_core_audio *audio = &obs->audio;
+	bool tasks_remaining = true;
+
+	while (tasks_remaining) {
+		pthread_mutex_lock(&audio->task_mutex);
+		if (audio->tasks.size) {
+			struct obs_task_info info;
+			circlebuf_pop_front(&audio->tasks, &info, sizeof(info));
+			info.task(info.param);
+		}
+		tasks_remaining = !!audio->tasks.size;
+		pthread_mutex_unlock(&audio->task_mutex);
+	}
 }
 
 bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
@@ -589,6 +607,8 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 		audio->buffering_wait_ticks--;
 		return false;
 	}
+
+	execute_audio_tasks();
 
 	UNUSED_PARAMETER(param);
 	return true;

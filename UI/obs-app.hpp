@@ -74,6 +74,7 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 	std::string theme;
+	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
@@ -104,6 +105,8 @@ private:
 	void AddExtraThemeColor(QPalette &pal, int group, const char *name,
 				uint32_t color);
 
+	bool notify(QObject *receiver, QEvent *e) override;
+
 public:
 	OBSApp(int &argc, char **argv, profiler_name_store_t *store);
 	~OBSApp();
@@ -127,6 +130,7 @@ public:
 
 	inline const char *GetTheme() const { return theme.c_str(); }
 	bool SetTheme(std::string name, std::string path = "");
+	inline bool IsThemeDark() const { return themeDarkMode; };
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 
@@ -150,6 +154,7 @@ public:
 	std::string GetVersionString() const;
 	bool IsPortableMode();
 	bool IsUpdaterDisabled();
+	bool IsMissingFilesCheckDisabled();
 
 	const char *InputAudioSource() const;
 	const char *OutputAudioSource() const;

@@ -34,6 +34,7 @@
 
 #define DEPRECATED_START
 #define DEPRECATED_END
+#define OBS_EXTERNAL_DEPRECATED
 #define EXPORT
 
 %rename(blog) wrap_blog;

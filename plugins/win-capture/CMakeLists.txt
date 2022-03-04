@@ -30,7 +30,8 @@ set(win-capture_SOURCES
 	load-graphics-offsets.c
 	game-capture-file-init.c
 	duplicator-monitor-capture.c
-	plugin-main.c)
+	plugin-main.c
+	nt-stuff.c)
 
 add_library(win-capture MODULE
 	${win-capture_SOURCES}
@@ -39,8 +40,7 @@ target_link_libraries(win-capture
 	${win-capture_PLATFORM_DEPS}
 	libobs
 	Dwmapi
-	ipc-util
-	psapi)
+	ipc-util)
 set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 
 install_obs_plugin_with_data(win-capture data)

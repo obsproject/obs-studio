@@ -57,13 +57,13 @@ extern bool hook_gl(void);
 extern bool hook_vulkan(void);
 #endif
 
-extern void d3d10_capture(void *swap, void *backbuffer, bool capture_overlay);
+extern void d3d10_capture(void *swap, void *backbuffer);
 extern void d3d10_free(void);
-extern void d3d11_capture(void *swap, void *backbuffer, bool capture_overlay);
+extern void d3d11_capture(void *swap, void *backbuffer);
 extern void d3d11_free(void);
 
 #if COMPILE_D3D12_HOOK
-extern void d3d12_capture(void *swap, void *backbuffer, bool capture_overlay);
+extern void d3d12_capture(void *swap, void *backbuffer);
 extern void d3d12_free(void);
 #endif
 

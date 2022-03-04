@@ -53,8 +53,9 @@ static wchar_t home_path[1024] = {0};
 
 DARRAY(char *) python_paths;
 static bool python_loaded = false;
+static bool mutexes_loaded = false;
 
-static pthread_mutex_t tick_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t tick_mutex;
 static struct obs_python_script *first_tick_script = NULL;
 
 static PyObject *py_obspython = NULL;
@@ -378,7 +379,7 @@ struct python_obs_timer {
 	uint64_t interval;
 };
 
-static pthread_mutex_t timer_mutex = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t timer_mutex;
 static struct python_obs_timer *first_timer = NULL;
 
 static inline void python_obs_timer_init(struct python_obs_timer *timer)
@@ -430,7 +431,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct python_obs_callback *cb = (struct python_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback(cb);
@@ -475,7 +476,7 @@ static void obs_python_tick_callback(void *priv, float seconds)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_python_tick_callback, cb);
 		return;
 	}
@@ -545,7 +546,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -651,7 +652,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -766,7 +767,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 {
 	struct python_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback(cb);
@@ -802,7 +803,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct python_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -872,7 +873,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	struct python_obs_callback *cb = p_cb;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback(cb);
@@ -936,7 +937,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	struct python_obs_callback *cb = p_cb;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback(cb);
@@ -1333,6 +1334,24 @@ void obs_python_script_unload(obs_script_t *s)
 		return;
 
 	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	lock_python();
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct script_callback *cb = data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->removed, true);
+		cb = cb->next;
+	}
+
+	unlock_python();
+
+	/* ---------------------------- */
 	/* unhook tick function         */
 
 	if (data->p_prev_next_tick) {
@@ -1349,7 +1368,7 @@ void obs_python_script_unload(obs_script_t *s)
 		data->next_tick = NULL;
 	}
 
-	lock_python();
+	relock_python();
 
 	Py_XDECREF(data->tick);
 	Py_XDECREF(data->save);
@@ -1363,7 +1382,7 @@ void obs_python_script_unload(obs_script_t *s)
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct script_callback *cb = data->first_callback;
+	cb = data->first_callback;
 	while (cb) {
 		struct script_callback *next = cb->next;
 		remove_script_callback(cb);
@@ -1531,7 +1550,7 @@ static void python_tick(void *param, float seconds)
 		struct python_obs_timer *next = timer->next;
 		struct python_obs_callback *cb = python_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			python_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1570,12 +1589,10 @@ void obs_python_load(void)
 {
 	da_init(python_paths);
 
-	pthread_mutexattr_t attr;
-	pthread_mutexattr_init(&attr);
-	pthread_mutexattr_settype(&attr, PTHREAD_MUTEX_RECURSIVE);
-
 	pthread_mutex_init(&tick_mutex, NULL);
-	pthread_mutex_init(&timer_mutex, &attr);
+	pthread_mutex_init_recursive(&timer_mutex);
+
+	mutexes_loaded = true;
 }
 
 extern void add_python_frontend_funcs(PyObject *module);
@@ -1702,6 +1719,11 @@ out:
 
 void obs_python_unload(void)
 {
+	if (mutexes_loaded) {
+		pthread_mutex_destroy(&tick_mutex);
+		pthread_mutex_destroy(&timer_mutex);
+	}
+
 	if (!python_loaded_at_all)
 		return;
 
@@ -1720,8 +1742,6 @@ void obs_python_unload(void)
 		bfree(python_paths.array[i]);
 	da_free(python_paths);
 
-	pthread_mutex_destroy(&tick_mutex);
-	pthread_mutex_destroy(&timer_mutex);
 	dstr_free(&cur_py_log_chunk);
 
 	python_loaded_at_all = false;

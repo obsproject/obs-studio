@@ -46,13 +46,16 @@ set(linux-capture_LIBRARIES
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(ENABLE_PIPEWIRE)
-	find_package(PipeWire QUIET)
+	find_package(PipeWire 0.3.32 QUIET)
+	find_package(Libdrm QUIET) # we require libdrm/drm_fourcc.h to build
 	find_package(Gio QUIET)
 
 	if(NOT PIPEWIRE_FOUND)
 		message(FATAL_ERROR "PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF")
 	elseif(NOT GIO_FOUND)
 		message(FATAL_ERROR "Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF")
+	elseif(NOT LIBDRM_INCLUDE_DIRS)
+		message(FATAL_ERROR "libdrm headers not found! Please install libdrm or set ENABLE_PIPEWIRE=OFF")
 	endif()
 
 	add_definitions(-DENABLE_PIPEWIRE)
@@ -61,6 +64,7 @@ if(ENABLE_PIPEWIRE)
 		${linux-capture_INCLUDES}
 		${GIO_INCLUDE_DIRS}
 		${PIPEWIRE_INCLUDE_DIRS}
+		${DRM_INCLUDE_DIRS}
 	)
 
 	add_definitions(

@@ -17,6 +17,8 @@
 
 #include "obs-internal.h"
 
+#define get_weak(service) ((obs_weak_service_t *)service->context.control)
+
 const struct obs_service_info *find_service(const char *id)
 {
 	size_t i;
@@ -61,9 +63,8 @@ static obs_service_t *obs_service_create_internal(const char *id,
 	if (!service->context.data)
 		blog(LOG_ERROR, "Failed to create service '%s'!", name);
 
-	service->control = bzalloc(sizeof(obs_weak_service_t));
-	service->control->service = service;
-
+	obs_context_init_control(&service->context, service,
+				 (obs_destroy_cb)obs_service_destroy);
 	obs_context_data_insert(&service->context, &obs->data.services_mutex,
 				&obs->data.first_service);
 
@@ -325,7 +326,7 @@ void obs_service_addref(obs_service_t *service)
 	if (!service)
 		return;
 
-	obs_ref_addref(&service->control->ref);
+	obs_ref_addref(&service->context.control->ref);
 }
 
 void obs_service_release(obs_service_t *service)
@@ -333,7 +334,7 @@ void obs_service_release(obs_service_t *service)
 	if (!service)
 		return;
 
-	obs_weak_service_t *control = service->control;
+	obs_weak_service_t *control = get_weak(service);
 	if (obs_ref_release(&control->ref)) {
 		// The order of operations is important here since
 		// get_context_by_name in obs.c relies on weak refs
@@ -365,7 +366,7 @@ obs_service_t *obs_service_get_ref(obs_service_t *service)
 	if (!service)
 		return NULL;
 
-	return obs_weak_service_get_service(service->control);
+	return obs_weak_service_get_service(get_weak(service));
 }
 
 obs_weak_service_t *obs_service_get_weak_service(obs_service_t *service)
@@ -373,7 +374,7 @@ obs_weak_service_t *obs_service_get_weak_service(obs_service_t *service)
 	if (!service)
 		return NULL;
 
-	obs_weak_service_t *weak = service->control;
+	obs_weak_service_t *weak = get_weak(service);
 	obs_weak_service_addref(weak);
 	return weak;
 }

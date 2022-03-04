@@ -29,7 +29,7 @@
      <item>
       <widget class="QDialogButtonBox" name="buttonBox">
        <property name="standardButtons">
-        <set>QDialogButtonBox::Close|QDialogButtonBox::Open|QDialogButtonBox::Ok</set>
+        <set>QDialogButtonBox::Close|QDialogButtonBox::Ok|QDialogButtonBox::Open</set>
        </property>
       </widget>
      </item>
@@ -40,10 +40,10 @@
      <property name="selectionMode">
       <enum>QAbstractItemView::NoSelection</enum>
      </property>
-     <attribute name="horizontalHeaderDefaultSectionSize">
+     <attribute name="horizontalHeaderMinimumSectionSize">
       <number>23</number>
      </attribute>
-     <attribute name="horizontalHeaderMinimumSectionSize">
+     <attribute name="horizontalHeaderDefaultSectionSize">
       <number>23</number>
      </attribute>
      <attribute name="verticalHeaderVisible">

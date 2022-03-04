@@ -119,8 +119,7 @@ void AutoConfigTestPage::StartRecordingEncoderStage()
 
 void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 {
-	OBSData settings = obs_data_create();
-	obs_data_release(settings);
+	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "service", wiz->serviceName.c_str());
 
 	obs_properties_t *ppts = obs_get_service_properties("rtmp_common");
@@ -182,15 +181,12 @@ void AutoConfigTestPage::TestBandwidthThread()
 	const char *serverType = wiz->customServer ? "rtmp_custom"
 						   : "rtmp_common";
 
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac",
-						       nullptr, 0, nullptr);
-	OBSService service = obs_service_create(serverType, "test_service",
-						nullptr, nullptr);
-	obs_encoder_release(vencoder);
-	obs_encoder_release(aencoder);
-	obs_service_release(service);
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
+		"obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
+		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
+	OBSServiceAutoRelease service = obs_service_create(
+		serverType, "test_service", nullptr, nullptr);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
@@ -202,14 +198,10 @@ void AutoConfigTestPage::TestBandwidthThread()
 	// output: "bind_ip" via main config -> "Output", "BindIP"
 	//         obs_output_set_service
 
-	OBSData service_settings = obs_data_create();
-	OBSData vencoder_settings = obs_data_create();
-	OBSData aencoder_settings = obs_data_create();
-	OBSData output_settings = obs_data_create();
-	obs_data_release(service_settings);
-	obs_data_release(vencoder_settings);
-	obs_data_release(aencoder_settings);
-	obs_data_release(output_settings);
+	OBSDataAutoRelease service_settings = obs_data_create();
+	OBSDataAutoRelease vencoder_settings = obs_data_create();
+	OBSDataAutoRelease aencoder_settings = obs_data_create();
+	OBSDataAutoRelease output_settings = obs_data_create();
 
 	std::string key = wiz->key;
 	if (wiz->service == AutoConfig::Service::Twitch) {
@@ -262,6 +254,9 @@ void AutoConfigTestPage::TestBandwidthThread()
 		 * server */
 		servers.erase(servers.begin() + 1);
 		servers.resize(3);
+	} else if (wiz->service == AutoConfig::Service::YouTube) {
+		/* Only test first set of primary + backup servers */
+		servers.resize(2);
 	}
 
 	/* -----------------------------------*/
@@ -278,9 +273,8 @@ void AutoConfigTestPage::TestBandwidthThread()
 	if (!output_type)
 		output_type = "rtmp_output";
 
-	OBSOutput output =
+	OBSOutputAutoRelease output =
 		obs_output_create(output_type, "test_stream", nullptr, nullptr);
-	obs_output_release(output);
 	obs_output_update(output, output_settings);
 
 	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
@@ -289,7 +283,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 		const char *id = FindAudioEncoderFromCodec(audio_codec);
 		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
 						    0, nullptr);
-		obs_encoder_release(aencoder);
 	}
 
 	/* -----------------------------------*/
@@ -302,6 +295,7 @@ void AutoConfigTestPage::TestBandwidthThread()
 
 	obs_output_set_video_encoder(output, vencoder);
 	obs_output_set_audio_encoder(output, aencoder, 0);
+	obs_output_set_reconnect_settings(output, 0, 0);
 
 	obs_output_set_service(output, service);
 
@@ -527,23 +521,18 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 	/* -----------------------------------*/
 	/* create obs objects                 */
 
-	OBSEncoder vencoder = obs_video_encoder_create("obs_x264", "test_x264",
-						       nullptr, nullptr);
-	OBSEncoder aencoder = obs_audio_encoder_create("ffmpeg_aac", "test_aac",
-						       nullptr, 0, nullptr);
-	OBSOutput output =
+	OBSEncoderAutoRelease vencoder = obs_video_encoder_create(
+		"obs_x264", "test_x264", nullptr, nullptr);
+	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
+		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
+	OBSOutputAutoRelease output =
 		obs_output_create("null_output", "null", nullptr, nullptr);
-	obs_output_release(output);
-	obs_encoder_release(vencoder);
-	obs_encoder_release(aencoder);
 
 	/* -----------------------------------*/
 	/* configure settings                 */
 
-	OBSData aencoder_settings = obs_data_create();
-	OBSData vencoder_settings = obs_data_create();
-	obs_data_release(aencoder_settings);
-	obs_data_release(vencoder_settings);
+	OBSDataAutoRelease aencoder_settings = obs_data_create();
+	OBSDataAutoRelease vencoder_settings = obs_data_create();
 	obs_data_set_int(aencoder_settings, "bitrate", 32);
 
 	if (wiz->type != AutoConfig::Type::Recording) {
@@ -1016,14 +1005,11 @@ void AutoConfigTestPage::FinalizeResults()
 		const char *serverType = wiz->customServer ? "rtmp_custom"
 							   : "rtmp_common";
 
-		OBSService service = obs_service_create(
+		OBSServiceAutoRelease service = obs_service_create(
 			serverType, "temp_service", nullptr, nullptr);
-		obs_service_release(service);
 
-		OBSData service_settings = obs_data_create();
-		OBSData vencoder_settings = obs_data_create();
-		obs_data_release(service_settings);
-		obs_data_release(vencoder_settings);
+		OBSDataAutoRelease service_settings = obs_data_create();
+		OBSDataAutoRelease vencoder_settings = obs_data_create();
 
 		obs_data_set_int(vencoder_settings, "bitrate",
 				 wiz->idealBitrate);
@@ -1034,7 +1020,7 @@ void AutoConfigTestPage::FinalizeResults()
 		obs_service_apply_encoder_settings(service, vencoder_settings,
 						   nullptr);
 
-		struct obs_service_resolution *res_list;
+		BPtr<obs_service_resolution> res_list;
 		size_t res_count;
 		int maxFPS;
 		obs_service_get_supported_resolutions(service, &res_list,
@@ -1189,8 +1175,6 @@ AutoConfigTestPage::AutoConfigTestPage(QWidget *parent)
 
 AutoConfigTestPage::~AutoConfigTestPage()
 {
-	delete ui;
-
 	if (testThread.joinable()) {
 		{
 			unique_lock<mutex> ul(m);

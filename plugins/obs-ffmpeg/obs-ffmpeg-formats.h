@@ -1,5 +1,7 @@
 #pragma once
 
+#include <libavcodec/avcodec.h>
+
 static inline int64_t rescale_ts(int64_t val, AVCodecContext *context,
 				 AVRational new_base)
 {
