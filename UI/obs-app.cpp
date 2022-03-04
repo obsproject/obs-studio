@@ -2070,9 +2070,15 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	 * use other QPA platforms using this env var, or the -platform command
 	 * line option. */
 
+	/* NOTE 2: Some Wayland decoration can gave too big title bar to docks
+	 * like with QGnome decorations. So we force Qt default decoration (bradient).
+	 * It's still possible to use other decoration using this env var. */
+
 	const char *session_type = getenv("XDG_SESSION_TYPE");
-	if (session_type && strcmp(session_type, "wayland") == 0)
+	if (session_type && strcmp(session_type, "wayland") == 0) {
 		setenv("QT_QPA_PLATFORM", "wayland", false);
+		setenv("QT_WAYLAND_DECORATION", "bradient", false);
+	}
 #endif
 
 	OBSApp program(argc, argv, profilerNameStore.get());
