@@ -57,6 +57,14 @@ static bool cut_audio_render(void *data, uint64_t *ts_out,
 					   channels, sample_rate, mix_a, mix_b);
 }
 
+static enum gs_color_space
+cut_video_get_color_space(void *data, size_t count,
+			  const enum gs_color_space *preferred_spaces)
+{
+	struct cut_info *const cut = data;
+	return obs_transition_video_get_color_space(cut->source);
+}
+
 struct obs_source_info cut_transition = {
 	.id = "cut_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -65,4 +73,5 @@ struct obs_source_info cut_transition = {
 	.destroy = cut_destroy,
 	.video_render = cut_video_render,
 	.audio_render = cut_audio_render,
+	.video_get_color_space = cut_video_get_color_space,
 };

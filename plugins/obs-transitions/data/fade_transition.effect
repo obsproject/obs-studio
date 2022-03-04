@@ -10,15 +10,19 @@ sampler_state textureSampler {
 };
 
 struct VertData {
+	float2 uv  : TEXCOORD0;
 	float4 pos : POSITION;
+};
+
+struct FragData {
 	float2 uv  : TEXCOORD0;
 };
 
 VertData VSDefault(VertData v_in)
 {
 	VertData vert_out;
-	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 	vert_out.uv  = v_in.uv;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 	return vert_out;
 }
 
@@ -32,12 +36,32 @@ float3 srgb_nonlinear_to_linear(float3 v)
 	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
 }
 
-float4 PSFade(VertData v_in) : TARGET
+float4 Fade(FragData f_in)
 {
-	float4 a_val = tex_a.Sample(textureSampler, v_in.uv);
-	float4 b_val = tex_b.Sample(textureSampler, v_in.uv);
+	float4 a_val = tex_a.Sample(textureSampler, f_in.uv);
+	float4 b_val = tex_b.Sample(textureSampler, f_in.uv);
 	float4 rgba = lerp(a_val, b_val, fade_val);
 	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
+}
+
+float4 PSFade(FragData f_in) : TARGET
+{
+	float4 rgba = Fade(f_in);
+	return rgba;
+}
+
+float4 FadeLinear(FragData f_in)
+{
+	float4 a_val = tex_a.Sample(textureSampler, f_in.uv);
+	float4 b_val = tex_b.Sample(textureSampler, f_in.uv);
+	float4 rgba = lerp(a_val, b_val, fade_val);
+	return rgba;
+}
+
+float4 PSFadeLinear(FragData f_in) : TARGET
+{
+	float4 rgba = FadeLinear(f_in);
 	return rgba;
 }
 
@@ -46,6 +70,15 @@ technique Fade
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader = PSFade(v_in);
+		pixel_shader = PSFade(f_in);
+	}
+}
+
+technique FadeLinear
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSFadeLinear(f_in);
 	}
 }
