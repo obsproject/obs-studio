@@ -50,6 +50,10 @@
 #include <util/dstr.hpp>
 #include "ui-config.h"
 
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+#include <obs-nix-platform.h>
+#endif
+
 #define ENCODER_HIDE_FLAGS \
 	(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL)
 
@@ -1396,6 +1400,14 @@ void OBSBasicSettings::LoadGeneralSettings()
 
 	if (obs_video_active())
 		ui->language->setEnabled(false);
+
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+	prevThemeIndex = ui->theme->currentIndex();
+
+	if (obs_video_active())
+		ui->theme->setEnabled(obs_get_nix_platform() !=
+				      OBS_NIX_PLATFORM_WAYLAND);
+#endif
 
 	loading = false;
 }
@@ -2998,8 +3010,10 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (WidgetChanged(ui->theme)) {
 		config_set_string(GetGlobalConfig(), "General", "CurrentTheme2",
 				  QT_TO_UTF8(themeData));
-
-		App()->SetTheme(themeData.toUtf8().constData());
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+		if (obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND)
+#endif
+			App()->SetTheme(themeData.toUtf8().constData());
 	}
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -3766,6 +3780,13 @@ void OBSBasicSettings::SaveSettings()
 		restart = true;
 	else
 		restart = false;
+
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+	bool themeChanged = (ui->theme->currentIndex() != prevThemeIndex);
+
+	if (themeChanged && obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
+		restart = true;
+#endif
 }
 
 bool OBSBasicSettings::QueryChanges()
@@ -3782,7 +3803,12 @@ bool OBSBasicSettings::QueryChanges()
 	} else if (button == QMessageBox::Yes) {
 		SaveSettings();
 	} else {
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+		if (savedTheme != App()->GetTheme() &&
+		    obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND)
+#else
 		if (savedTheme != App()->GetTheme())
+#endif
 			App()->SetTheme(savedTheme);
 
 		LoadSettings(true);
@@ -3811,6 +3837,11 @@ void OBSBasicSettings::reject()
 
 void OBSBasicSettings::on_theme_activated(int idx)
 {
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_WAYLAND)
+		return;
+#endif
+
 	QString currT = ui->theme->itemText(idx);
 
 	QString defaultTheme;

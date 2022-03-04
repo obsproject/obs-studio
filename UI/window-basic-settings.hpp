@@ -251,6 +251,9 @@ private:
 	void OnAuthConnected();
 	QString lastService;
 	int prevLangIndex;
+#if !defined(_WIN32) && !defined(__APPLE__) && defined(ENABLE_WAYLAND)
+	int prevThemeIndex;
+#endif
 	bool prevBrowserAccel;
 private slots:
 	void UpdateServerList();
