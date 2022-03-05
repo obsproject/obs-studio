@@ -4631,6 +4631,9 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	if (!event->isAccepted())
 		return;
 
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_ABOUT_TO_EXIT);
+
 	blog(LOG_INFO, SHUTDOWN_SEPARATOR);
 
 	closing = true;

@@ -58,6 +58,7 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING,
 	OBS_FRONTEND_EVENT_PROFILE_CHANGING,
 	OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN,
+	OBS_FRONTEND_EVENT_ABOUT_TO_EXIT,
 };
 
 /* ------------------------------------------------------------------------- */

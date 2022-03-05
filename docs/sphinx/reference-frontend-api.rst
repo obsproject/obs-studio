@@ -120,9 +120,13 @@ Structures/Enumerations
      **OBS_FRONTEND_EVENT_EXIT** event is normally called after scripts
      have been destroyed.
 
+   - **OBS_FRONTEND_EVENT_ABOUT_TO_EXIT**
+
+     Triggered when the program is starting to exit, before anything is cleaned up.
+
    - **OBS_FRONTEND_EVENT_EXIT**
 
-     Triggered when the program is about to exit.
+     Triggered when the program is exiting.
 
    - **OBS_FRONTEND_EVENT_REPLAY_BUFFER_STARTING**
 
