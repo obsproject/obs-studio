@@ -265,6 +265,8 @@ obs_script_t *obs_script_create(const char *path, obs_data_t *settings)
 		blog(LOG_WARNING, "Unsupported/unknown script type: %s", path);
 	}
 
+	script->enabled = true;
+
 	return script;
 }
 
@@ -393,6 +395,8 @@ bool obs_script_reload(obs_script_t *script)
 		return false;
 	if (!ptr_valid(script))
 		return false;
+	if (!script->enabled)
+		return false;
 
 #if defined(LUAJIT_FOUND)
 	if (script->type == OBS_SCRIPT_LANG_LUA) {
@@ -464,3 +468,39 @@ void obs_scripting_python_version(char *version, size_t version_length)
 	version[0] = 0;
 }
 #endif
+
+void obs_script_set_enabled(obs_script_t *script, bool enable)
+{
+	if (!scripting_loaded)
+		return;
+	if (!ptr_valid(script))
+		return;
+
+#if defined(LUAJIT_FOUND)
+	if (script->type == OBS_SCRIPT_LANG_LUA) {
+		if (!enable) {
+			obs_lua_script_unload(script);
+			clear_call_queue();
+		} else if (enable) {
+			obs_lua_script_load(script);
+		}
+	}
+#endif
+#if defined(Python_FOUND)
+	if (script->type == OBS_SCRIPT_LANG_PYTHON) {
+		if (!enable) {
+			obs_python_script_unload(script);
+			clear_call_queue();
+		} else if (enable) {
+			obs_python_script_load(script);
+		}
+	}
+#endif
+
+	script->enabled = enable;
+}
+
+bool obs_script_enabled(const obs_script_t *script)
+{
+	return ptr_valid(script) ? script->enabled : false;
+}

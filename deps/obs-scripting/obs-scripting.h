@@ -66,6 +66,9 @@ EXPORT void obs_script_update(obs_script_t *script, obs_data_t *settings);
 EXPORT bool obs_script_loaded(const obs_script_t *script);
 EXPORT bool obs_script_reload(obs_script_t *script);
 
+EXPORT void obs_script_set_enabled(obs_script_t *script, bool enable);
+EXPORT bool obs_script_enabled(const obs_script_t *script);
+
 #ifdef __cplusplus
 }
 #endif

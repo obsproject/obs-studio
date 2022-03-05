@@ -51,6 +51,7 @@ public slots:
 	void on_editScript_clicked();
 	void on_scriptLog_clicked();
 	void on_defaults_clicked();
+	void on_enabledCheckBox_toggled(bool checked);
 
 	void OpenScriptParentDirectory();
 
