@@ -68,9 +68,7 @@ struct mp_decode {
 	bool eof;
 	bool hw;
 
-	AVPacket orig_pkt;
-	AVPacket pkt;
-	bool packet_pending;
+	AVPacket *pkt;
 	struct circlebuf packets;
 };
 

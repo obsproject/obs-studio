@@ -132,7 +132,7 @@ static inline enum video_range_type convert_color_range(enum AVColorRange r)
 }
 
 static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
-						   AVPacket *pkt)
+						   const AVPacket *pkt)
 {
 	if (media->has_audio && pkt->stream_index == media->a.stream->index)
 		return &media->a;
@@ -142,14 +142,24 @@ static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
 	return NULL;
 }
 
+void mp_media_free_packet(struct mp_media *media, AVPacket *pkt)
+{
+	av_packet_unref(pkt);
+	da_push_back(media->packet_pool, &pkt);
+}
+
 static int mp_media_next_packet(mp_media_t *media)
 {
-	AVPacket new_pkt;
-	AVPacket pkt;
-	av_init_packet(&pkt);
-	new_pkt = pkt;
+	AVPacket *pkt;
+	AVPacket **const cached = da_end(media->packet_pool);
+	if (cached) {
+		pkt = *cached;
+		da_pop_back(media->packet_pool);
+	} else {
+		pkt = av_packet_alloc();
+	}
 
-	int ret = av_read_frame(media->fmt, &pkt);
+	int ret = av_read_frame(media->fmt, pkt);
 	if (ret < 0) {
 		if (ret != AVERROR_EOF && ret != AVERROR_EXIT)
 			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
@@ -157,13 +167,13 @@ static int mp_media_next_packet(mp_media_t *media)
 		return ret;
 	}
 
-	struct mp_decode *d = get_packet_decoder(media, &pkt);
-	if (d && pkt.size) {
-		av_packet_ref(&new_pkt, &pkt);
-		mp_decode_push_packet(d, &new_pkt);
+	struct mp_decode *d = get_packet_decoder(media, pkt);
+	if (d && pkt->size) {
+		mp_decode_push_packet(d, pkt);
+	} else {
+		mp_media_free_packet(media, pkt);
 	}
 
-	av_packet_unref(&pkt);
 	return ret;
 }
 
@@ -385,7 +395,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	}
 
 	if (flip)
-		frame->data[0] -= frame->linesize[0] * (f->height - 1);
+		frame->data[0] -= frame->linesize[0] * ((size_t)f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
 	new_space = convert_color_space(f->colorspace, f->color_trc);
@@ -820,6 +830,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;
@@ -867,6 +878,9 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	for (size_t i = 0; i < media->packet_pool.num; i++)
+		av_packet_free(&media->packet_pool.array[i]);
+	da_free(media->packet_pool);
 	avformat_close_input(&media->fmt);
 	pthread_mutex_destroy(&media->mutex);
 	os_sem_destroy(media->sem);
