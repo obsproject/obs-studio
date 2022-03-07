@@ -1156,6 +1156,12 @@ bool OBSApp::InitTheme()
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
 	: QApplication(argc, argv), profilerNameStore(store)
 {
+	/* fix float handling */
+#if defined(Q_OS_UNIX)
+	if (!setlocale(LC_NUMERIC, "C"))
+		blog(LOG_WARNING, "Failed to set LC_NUMERIC to C locale");
+#endif
+
 	sleepInhibitor = os_inhibit_sleep_create("OBS Video/audio");
 
 #ifdef __APPLE__
@@ -2093,15 +2099,10 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		bool cancel_launch = false;
 		bool already_running = false;
 
-#if defined(_WIN32)
-		RunOnceMutex rom = GetRunOnceMutex(already_running);
-#elif defined(__APPLE__)
-		CheckAppWithSameBundleID(already_running);
-#elif defined(__linux__)
-		RunningInstanceCheck(already_running);
-#elif defined(__FreeBSD__) || defined(__DragonFly__)
-		PIDFileCheck(already_running);
+#ifdef _WIN32
+		RunOnceMutex rom =
 #endif
+			CheckIfAlreadyRunning(already_running);
 
 		if (!already_running) {
 			goto run;

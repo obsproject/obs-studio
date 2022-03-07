@@ -1675,6 +1675,9 @@
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.CopyTransform</string>
    </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+C</string>
+   </property>
   </action>
   <action name="actionPasteTransform">
    <property name="enabled">
@@ -1682,6 +1685,9 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.Edit.Transform.PasteTransform</string>
+   </property>
+   <property name="shortcut">
+    <string>Ctrl+Alt+V</string>
    </property>
   </action>
   <action name="actionRotate90CW">

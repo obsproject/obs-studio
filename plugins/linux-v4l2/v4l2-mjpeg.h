@@ -29,7 +29,7 @@ extern "C" {
  * Data structure for mjpeg decoding
  */
 struct v4l2_mjpeg_decoder {
-	AVCodec *codec;
+	const AVCodec *codec;
 	AVCodecContext *context;
 	AVPacket *packet;
 	AVFrame *frame;

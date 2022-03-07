@@ -195,6 +195,7 @@ static inline bool py_error_(const char *func, int line)
 #define py_error() py_error_(__FUNCTION__, __LINE__)
 
 #define lock_python() PyGILState_STATE gstate = PyGILState_Ensure()
+#define relock_python() gstate = PyGILState_Ensure()
 #define unlock_python() PyGILState_Release(gstate)
 
 struct py_source;

@@ -33,8 +33,13 @@ struct script_callback {
 	obs_script_t *script;
 	calldata_t extra;
 
-	bool removed;
+	volatile bool removed;
 };
+
+static inline bool script_callback_removed(struct script_callback *cb)
+{
+	return os_atomic_load_bool(&cb->removed);
+}
 
 static inline void *add_script_callback(struct script_callback **first,
 					obs_script_t *script, size_t extra_size)
@@ -54,7 +59,7 @@ static inline void *add_script_callback(struct script_callback **first,
 
 static inline void remove_script_callback(struct script_callback *cb)
 {
-	cb->removed = true;
+	os_atomic_set_bool(&cb->removed, true);
 
 	struct script_callback *next = cb->next;
 	if (next)
