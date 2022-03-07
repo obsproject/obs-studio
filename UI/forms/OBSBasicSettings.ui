@@ -1769,11 +1769,6 @@
                         <string notr="true">ts</string>
                        </property>
                       </item>
-                      <item>
-                       <property name="text">
-                        <string notr="true">m3u8</string>
-                       </property>
-                      </item>
                      </widget>
                     </item>
                     <item row="4" column="0">
