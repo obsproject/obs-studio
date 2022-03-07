@@ -3860,9 +3860,16 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		return false;
 	}
 
-	if (!filter->filter_texrender)
+	if (filter->filter_texrender &&
+	    (gs_texrender_get_format(filter->filter_texrender) != format)) {
+		gs_texrender_destroy(filter->filter_texrender);
+		filter->filter_texrender = NULL;
+	}
+
+	if (!filter->filter_texrender) {
 		filter->filter_texrender =
 			gs_texrender_create(format, GS_ZS_NONE);
+	}
 
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
 		gs_blend_state_push();
