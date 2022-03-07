@@ -19,9 +19,10 @@ ccache -s || echo "CCache is not available."
 
 # Fetch and untar prebuilt OBS deps that are compatible with older versions of OSX
 hr "Downloading OBS deps"
-wget --quiet --retry-connrefused --waitretry=1 https://obs-studio-deployment.s3-us-west-2.amazonaws.com/osx-deps-${MACOS_DEPS_VERSION}.tar.gz
-tar -xf ./osx-deps-${MACOS_DEPS_VERSION}.tar.gz  
-rm ./osx-deps-${MACOS_DEPS_VERSION}.tar.gz
+mkdir obsdeps
+wget --quiet --retry-connrefused --waitretry=1 https://obs-studio-deployment.s3-us-west-2.amazonaws.com/macos-deps-${MACOS_DEPS_VERSION}-x86_64.tar.xz
+tar -xf ./macos-deps-${MACOS_DEPS_VERSION}-x86_64.tar.xz -C ./obsdeps
+rm ./macos-deps-${MACOS_DEPS_VERSION}-x86_64.tar.xz
 
 # Fetch vlc codebase
 hr "Downloading VLC repo"

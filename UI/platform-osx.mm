@@ -88,7 +88,7 @@ bool InitApplicationBundle()
 #endif
 }
 
-void CheckAppWithSameBundleID(bool &already_running)
+void CheckIfAlreadyRunning(bool &already_running)
 {
 	try {
 		NSBundle *bundle = [NSBundle mainBundle];
@@ -107,7 +107,7 @@ void CheckAppWithSameBundleID(bool &already_running)
 		already_running = app_count > 1;
 
 	} catch (const char *error) {
-		blog(LOG_ERROR, "CheckAppWithSameBundleID: %s", error);
+		blog(LOG_ERROR, "CheckIfAlreadyRunning: %s", error);
 	}
 }
 

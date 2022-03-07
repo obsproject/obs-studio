@@ -185,7 +185,14 @@ static bool virtualcam_start(void *data)
 			return false;
 	}
 
-	n = scandir("/dev", &list, scanfilter, versionsort);
+	n = scandir("/dev", &list, scanfilter,
+#if defined(__linux__)
+		    versionsort
+#else
+		    alphasort
+#endif
+	);
+
 	if (n == -1)
 		return false;
 

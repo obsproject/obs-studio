@@ -153,7 +153,13 @@ void addOutputUI(void)
 
 bool obs_module_load(void)
 {
-	addOutputUI();
-
 	return true;
+}
+
+void obs_module_post_load(void)
+{
+	if (!obs_get_module("decklink"))
+		return;
+
+	addOutputUI();
 }

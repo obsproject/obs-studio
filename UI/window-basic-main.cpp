@@ -284,7 +284,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
 		"std::vector<std::shared_ptr<OBSSignal>>");
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
-	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
 #endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -354,6 +353,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
 	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
+	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #else
@@ -4678,6 +4678,32 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, qintptr *)
+#else
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#endif
+
+	return false;
 }
 
 void OBSBasic::changeEvent(QEvent *event)
