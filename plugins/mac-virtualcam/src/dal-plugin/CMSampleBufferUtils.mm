@@ -121,7 +121,7 @@ OSStatus CMSampleBufferCreateFromDataNoCopy(NSSize size,
 	CMBlockBufferRef dataBuffer;
 	createReadonlyBlockBuffer(&dataBuffer, data);
 
-	// Magic format properties snagged from https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cbf27ed33425a1a5bd9f495b2ccec8f20501/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/Sample/PlugIn/CMIO_DP_Sample_Stream.cpp#L830
+	// Magic format properties snagged from https://github.91chi.fun/https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cbf27ed33425a1a5bd9f495b2ccec8f20501/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/Sample/PlugIn/CMIO_DP_Sample_Stream.cpp#L830
 	NSDictionary *extensions = @{
 		@"com.apple.cmio.format_extension.video.only_has_i_frames":
 			@YES,

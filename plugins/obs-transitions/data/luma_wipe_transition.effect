@@ -1,5 +1,5 @@
 // Based rendermix wipe shader
-// https://github.com/rectalogic/rendermix-basic-effects/blob/master/assets/com/rendermix/Wipe/Wipe.frag
+// https://github.91chi.fun/https://github.com/rectalogic/rendermix-basic-effects/blob/master/assets/com/rendermix/Wipe/Wipe.frag
 
 uniform float4x4  ViewProj;
 uniform texture2d a_tex;

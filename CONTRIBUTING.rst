@@ -5,10 +5,10 @@ Quick Links for Contributing
 ----------------------------
 
 - Compiling and building OBS Studio:
-  https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+  https://github.91chi.fun/https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
 - Our bug tracker:
-  https://github.com/obsproject/obs-studio/issues
+  https://github.91chi.fun/https://github.com/obsproject/obs-studio/issues
 
 - Discord Server: https://obsproject.com/discord
 
@@ -25,14 +25,14 @@ Quick Links for Contributing
   https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
 
 - To add a new service to OBS Studio please see the service submission guidelines:
-  https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
+  https://github.91chi.fun/https://github.com/obsproject/obs-studio/wiki/Service-Submission-Guidelines
 
 Coding Guidelines
 -----------------
 
 - OBS Studio uses kernel normal form (linux variant), for more
   information, please read here:
-  https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst
+  https://github.91chi.fun/https://github.com/torvalds/linux/blob/master/Documentation/process/coding-style.rst
 
 - Avoid trailing spaces.  To view trailing spaces before making a
   commit, use "git diff" on your changes.  If colors are enabled for
@@ -74,4 +74,4 @@ Commit Guidelines
 Conduct Guidelines
 ------------------
 
-- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.com/obsproject/obs-studio/blob/master/COC.rst
+- Contributors to the OBS Project are expected to abide by the OBS Project Code of Conduct: https://github.91chi.fun/https://github.com/obsproject/obs-studio/blob/master/COC.rst

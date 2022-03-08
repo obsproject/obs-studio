@@ -30,7 +30,7 @@ name. Please note that the GitHub API is rate limited, so if you run
 the program too many times within a short period of time, the sever
 starts to respond with an error.
 
-.. _GitHub: https://github.com/
+.. _GitHub: https://github.91chi.fun/https://github.com/
 .. _GitHub API: http://developer.github.com/
 .. _libcurl: http://curl.haxx.se/
 

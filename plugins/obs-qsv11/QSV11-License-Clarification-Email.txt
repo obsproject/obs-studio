@@ -8,7 +8,7 @@ OBS with Intel QSV on a daily basis, I was wondering if the comments
 in the headers such as "INTEL CORPORATION PROPRIETARY INFORMATION" and
 the reference to the non-disclosure agreement were included in error?
 
-[1] https://github.com/obsproject/obs-studio/commit/3e4bcf06bce76e922b5ce2c034c89ef1fb4ededa#diff-65f259d111f0386b63ecff3639f642fbd96c336c03b8e76711ac66f6aa939efe
+[1] https://github.91chi.fun/https://github.com/obsproject/obs-studio/commit/3e4bcf06bce76e922b5ce2c034c89ef1fb4ededa#diff-65f259d111f0386b63ecff3639f642fbd96c336c03b8e76711ac66f6aa939efe
 
 --
 Aidan Delaney

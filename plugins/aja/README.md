@@ -20,7 +20,7 @@ https://www.aja.com/support
 
 The Linux verison of the AJA device driver can be built from the MIT-licensed AJA NTV2 SDK sources found here: 
 
-https://github.com/aja-video/ntv2
+https://github.91chi.fun/https://github.com/aja-video/ntv2
 
 - Clone the ntv2 repository.
 - `cd` into the `ntv2/ajadriver/linux` directory
@@ -42,7 +42,7 @@ The AJA NTV2 SDK is open-source and licensed under the MIT license. A copy of th
 
 To update the plugin's working copy of the AJA NTV2 SDK:
 
-1. Clone the AJA NTV2 SDK from https://github.com/aja-video/ntv2
+1. Clone the AJA NTV2 SDK from https://github.91chi.fun/https://github.com/aja-video/ntv2
 1. Place the contents of the ntv2 directory into `plugins/aja/sdk` within the cloned OBS repository.
 
 You should end up with a directory structure like:

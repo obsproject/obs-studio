@@ -27,14 +27,14 @@
  * an undefined macro being used (e.g., GCC with -Wundef).
  *
  * This was originally created for SIMDe
- * <https://github.com/simd-everywhere/simde> (hence the prefix), but this
+ * <https://github.91chi.fun/https://github.com/simd-everywhere/simde> (hence the prefix), but this
  * header has no dependencies and may be used anywhere.  It is
  * originally based on information from
  * <https://sourceforge.net/p/predef/wiki/Architectures/>, though it
  * has been enhanced with additional information.
  *
  * If you improve this file, or find a bug, please file the issue at
- * <https://github.com/simd-everywhere/simde/issues>.  If you copy this into
+ * <https://github.91chi.fun/https://github.com/simd-everywhere/simde/issues>.  If you copy this into
  * your project, even if you change the prefix, please keep the links
  * to SIMDe intact so others know where to report issues, submit
  * enhancements, and find the latest version. */

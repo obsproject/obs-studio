@@ -216,7 +216,7 @@ XCompcapMain::XCompcapMain(obs_data_t *settings, obs_source_t *source)
 	obs_enter_graphics();
 	if (strcmp(reinterpret_cast<const char *>(glGetString(GL_VENDOR)),
 		   "NVIDIA Corporation") == 0) {
-		// Pixmap binds are extremely slow on NVIDIA cards (https://github.com/obsproject/obs-studio/issues/5685)
+		// Pixmap binds are extremely slow on NVIDIA cards (https://github.91chi.fun/https://github.com/obsproject/obs-studio/issues/5685)
 		p->strict_binding = false;
 	}
 	p->cursor = xcursor_init(xdisp);

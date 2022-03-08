@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Original source https://github.com/Project-OSRM/osrm-backend/blob/master/scripts/format.sh
+# Original source https://github.91chi.fun/https://github.com/Project-OSRM/osrm-backend/blob/master/scripts/format.sh
 
 set +x
 set -o errexit

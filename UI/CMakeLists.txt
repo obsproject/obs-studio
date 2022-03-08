@@ -487,7 +487,7 @@ if (UNIX AND NOT APPLE)
 	# python symbols must be in the global symbol table
 	# so we link the main executable to python if we expect
 	# obs-scripting python support to be enabled.
-	# see: https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
+	# see: https://github.91chi.fun/https://github.com/obsproject/obs-studio/issues/2222 and https://bugs.python.org/issue36721
 	if(NOT DISABLE_PYTHON AND PYTHONLIBS_FOUND)
 		target_link_libraries(obs ${PYTHON_LIBRARIES})
 		set_target_properties(obs PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")

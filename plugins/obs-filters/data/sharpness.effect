@@ -1,4 +1,4 @@
-// Based on libretro shader https://github.com/libretro/common-shaders/blob/master/test/lab/misc/sharpness.cg
+// Based on libretro shader https://github.91chi.fun/https://github.com/libretro/common-shaders/blob/master/test/lab/misc/sharpness.cg
 // Converted to obs effect file by Nibbles
 
 uniform float4x4 ViewProj;

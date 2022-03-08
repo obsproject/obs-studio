@@ -16,7 +16,7 @@
 ;
 ; This script also requires OBSInstallerUtils for additional
 ; functions. You can find it at
-; https://github.com/notr1ch/OBSInstallerUtils
+; https://github.91chi.fun/https://github.com/notr1ch/OBSInstallerUtils
 
 Unicode true
 ManifestDPIAware true
@@ -68,7 +68,7 @@ RequestExecutionLevel admin
 !define MUI_FINISHPAGE_RUN
 !define MUI_FINISHPAGE_RUN_TEXT "Launch ${APPNAMEANDVERSION}"
 !define MUI_FINISHPAGE_RUN_FUNCTION "LaunchOBS"
-!define MUI_FINISHPAGE_SHOWREADME "https://github.com/obsproject/obs-studio/releases/${APPVERSION}"
+!define MUI_FINISHPAGE_SHOWREADME "https://github.91chi.fun/https://github.com/obsproject/obs-studio/releases/${APPVERSION}"
 !define MUI_FINISHPAGE_SHOWREADME_TEXT "View Release Notes"
 !define MUI_FINISHPAGE_SHOWREADME_NOTCHECKED
 !define MUI_FINISHPAGE_LINK "New to OBS? Check out our 4-step Quickstart Guide."

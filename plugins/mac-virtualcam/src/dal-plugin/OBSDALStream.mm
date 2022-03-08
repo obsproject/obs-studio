@@ -509,7 +509,7 @@
 		// the clock to be retained when returned. It's unclear why, and that seems inconsistent
 		// with other properties that don't have the same behavior. But this is what Apple's sample
 		// code does.
-		// https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cb/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/DP/Properties/CMIO_DP_Property_Clock.cpp#L75
+		// https://github.91chi.fun/https://github.com/lvsti/CoreMediaIO-DAL-Example/blob/0392cb/Sources/Extras/CoreMediaIO/DeviceAbstractionLayer/Devices/DP/Properties/CMIO_DP_Property_Clock.cpp#L75
 		CFRetain(*static_cast<CFTypeRef *>(data));
 		*dataUsed = sizeof(CFTypeRef);
 		break;

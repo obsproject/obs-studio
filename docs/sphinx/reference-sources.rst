@@ -1568,4 +1568,4 @@ Functions used by transitions
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-source.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-source.h
+.. _libobs/obs-source.h: https://github.91chi.fun/https://github.com/jp9000/obs-studio/blob/master/libobs/obs-source.h

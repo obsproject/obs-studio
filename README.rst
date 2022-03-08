@@ -1,9 +1,9 @@
 OBS Studio <https://obsproject.com>
 ===================================
 
-.. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
+.. image:: https://github.91chi.fun/https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
    :alt: OBS Studio Build Status - GitHub Actions
-   :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
+   :target: https://github.91chi.fun/https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
 
 .. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
@@ -27,17 +27,17 @@ Quick Links
 
 - Website: https://obsproject.com
 
-- Help/Documentation/Guides: https://github.com/obsproject/obs-studio/wiki
+- Help/Documentation/Guides: https://github.91chi.fun/https://github.com/obsproject/obs-studio/wiki
 
 - Forums: https://obsproject.com/forum/
 
-- Build Instructions: https://github.com/obsproject/obs-studio/wiki/Install-Instructions
+- Build Instructions: https://github.91chi.fun/https://github.com/obsproject/obs-studio/wiki/Install-Instructions
 
 - Developer/API Documentation: https://obsproject.com/docs
 
 - Donating/backing/sponsoring: https://obsproject.com/contribute
 
-- Bug Tracker: https://github.com/obsproject/obs-studio/issues
+- Bug Tracker: https://github.91chi.fun/https://github.com/obsproject/obs-studio/issues
 
 Contributing
 ------------
@@ -50,7 +50,7 @@ Contributing
 
 - If you wish to contribute code to the project, please make sure to
   read the coding and commit guidelines:
-  https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
+  https://github.91chi.fun/https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst
 
 - Developer/API documentation can be found here:
   https://obsproject.com/docs

@@ -853,4 +853,4 @@ Functions used by outputs
 
 .. ---------------------------------------------------------------------------
 
-.. _libobs/obs-output.h: https://github.com/jp9000/obs-studio/blob/master/libobs/obs-output.h
+.. _libobs/obs-output.h: https://github.91chi.fun/https://github.com/jp9000/obs-studio/blob/master/libobs/obs-output.h

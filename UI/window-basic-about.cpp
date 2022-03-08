@@ -40,7 +40,7 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	ui->donate->setOpenExternalLinks(true);
 
 	ui->getInvolved->setText(
-		"&nbsp;&nbsp;<a href='https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst'>" +
+		"&nbsp;&nbsp;<a href='https://github.91chi.fun/https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst'>" +
 		QTStr("About.GetInvolved") + "</a>");
 	ui->getInvolved->setTextInteractionFlags(Qt::TextBrowserInteraction);
 	ui->getInvolved->setOpenExternalLinks(true);
@@ -129,7 +129,7 @@ void OBSAbout::ShowAuthors()
 {
 	std::string path;
 	QString error = "Error! File could not be read.\n\n \
-		Go to: https://github.com/obsproject/obs-studio/blob/master/AUTHORS";
+		Go to: https://github.91chi.fun/https://github.com/obsproject/obs-studio/blob/master/AUTHORS";
 
 	if (!GetDataFilePath("authors/AUTHORS", path)) {
 		ui->textBrowser->setPlainText(error);
@@ -152,7 +152,7 @@ void OBSAbout::ShowLicense()
 {
 	std::string path;
 	QString error = "Error! File could not be read.\n\n \
-		Go to: https://github.com/obsproject/obs-studio/blob/master/COPYING";
+		Go to: https://github.91chi.fun/https://github.com/obsproject/obs-studio/blob/master/COPYING";
 
 	if (!GetDataFilePath("license/gplv2.txt", path)) {
 		ui->textBrowser->setPlainText(error);

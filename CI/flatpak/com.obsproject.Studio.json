@@ -116,7 +116,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://github.com/Haivision/srt.git",
+          "url": "https://github.91chi.fun/https://github.com/Haivision/srt.git",
           "tag": "v1.4.4",
           "commit": "8b32f3734ff6af7cc7b0fef272591cb80a2d1aae"
         }
@@ -140,7 +140,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://github.com/ARMmbed/mbedtls.git",
+          "url": "https://github.91chi.fun/https://github.com/ARMmbed/mbedtls.git",
           "commit": "f71e2878084126737cc39083e1e15afc459bd93d",
           "tag": "v2.27.0"
         }
@@ -249,7 +249,7 @@
         {
           "type": "git",
           "dest": "obs-deps",
-          "url": "https://github.com/obsproject/obs-deps.git",
+          "url": "https://github.91chi.fun/https://github.com/obsproject/obs-deps.git",
           "tag": "2022-01-01",
           "commit": "15072cd42722d87c6b3ed1636b22e98c08575f20"
         },
@@ -327,7 +327,7 @@
       "sources": [
         {
           "type": "archive",
-          "url": "https://github.com/jackaudio/jack2/releases/download/v1.9.14/v1.9.14.tar.gz",
+          "url": "https://github.91chi.fun/https://github.com/jackaudio/jack2/releases/download/v1.9.14/v1.9.14.tar.gz",
           "sha256": "a20a32366780c0061fd58fbb5f09e514ea9b7ce6e53b080a44b11a558a83217c"
         }
       ]
@@ -352,7 +352,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://github.com/pipewire/pipewire.git",
+          "url": "https://github.91chi.fun/https://github.com/pipewire/pipewire.git",
           "tag": "0.3.40",
           "commit": "7afd80052b7c49754a13c9ab49c368f95b60e0a7"
         }
@@ -372,7 +372,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://github.com/aja-video/ntv2.git",
+          "url": "https://github.91chi.fun/https://github.com/aja-video/ntv2.git",
           "commit": "abf17cc1e7aadd9f3e4972774a3aba2812c51b75"
         },
         {

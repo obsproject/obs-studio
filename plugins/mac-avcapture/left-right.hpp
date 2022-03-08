@@ -7,7 +7,7 @@
 #include <cinttypes>
 
 // left_right based on
-// https://github.com/pramalhe/ConcurrencyFreaks/blob/master/papers/left-right-2014.pdf
+// https://github.91chi.fun/https://github.com/pramalhe/ConcurrencyFreaks/blob/master/papers/left-right-2014.pdf
 // see concurrencyfreaks.com
 
 namespace left_right {

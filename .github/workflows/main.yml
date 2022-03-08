@@ -113,13 +113,13 @@ jobs:
         shell: bash
         run: |
           mkdir /tmp/obsdeps
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz
+          curl -L -O https://github.91chi.fun/https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz
           tar -xf ./macos-deps-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz -C "/tmp/obsdeps"
       - name: 'Install prerequisite: Pre-built dependency Qt'
         if: steps.deps-qt-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-qt-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz
+          curl -L -O https://github.91chi.fun/https://github.com/obsproject/obs-deps/releases/download/${{ env.MACOS_DEPS_VERSION }}/macos-deps-qt-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz
           tar -xf ./macos-deps-qt-${{ env.MACOS_DEPS_VERSION }}-${{ env.CURRENT_ARCH }}.tar.xz -C "/tmp/obsdeps"
           xattr -r -d com.apple.quarantine /tmp/obsdeps
       - name: 'Install prerequisite: VLC'
@@ -133,7 +133,7 @@ jobs:
         if: steps.sparkle-cache.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          curl -L -o sparkle.tar.bz2 https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
+          curl -L -o sparkle.tar.bz2 https://github.91chi.fun/https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.bz2
           mkdir ${{ github.workspace }}/cmbuild/sparkle
           tar -xf ./sparkle.tar.bz2 -C ${{ github.workspace }}/cmbuild/sparkle
       - name: 'Setup prerequisite: Sparkle'
@@ -570,7 +570,7 @@ jobs:
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          curl -L -O https://github.91chi.fun/https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
           7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'
@@ -679,7 +679,7 @@ jobs:
       - name: 'Install prerequisite: Pre-built dependencies'
         if: steps.deps-cache.outputs.cache-hit != 'true'
         run: |
-          curl -L -O https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
+          curl -L -O https://github.91chi.fun/https://github.com/obsproject/obs-deps/releases/download/win-${{ env.WINDOWS_DEPS_VERSION }}/windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip --retry 5 -C -
           7z x windows-deps-${{ env.WINDOWS_DEPS_VERSION }}.zip -o"${{ github.workspace }}/cmbuild/deps"
       - name: 'Install prerequisite: VLC'
         if: steps.vlc-cache.outputs.cache-hit != 'true'

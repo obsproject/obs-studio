@@ -164,10 +164,10 @@ static void escape_slashes()
     char *result;
 
     json = json_object();
-    json_object_set_new(json, "url", json_string("https://github.com/akheron/jansson"));
+    json_object_set_new(json, "url", json_string("https://github.91chi.fun/https://github.com/akheron/jansson"));
 
     result = json_dumps(json, 0);
-    if(!result || strcmp(result, "{\"url\": \"https://github.com/akheron/jansson\"}"))
+    if(!result || strcmp(result, "{\"url\": \"https://github.91chi.fun/https://github.com/akheron/jansson\"}"))
         fail("json_dumps failed to not escape slashes");
 
     free(result);

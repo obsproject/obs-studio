@@ -15,7 +15,7 @@
  * C and C++.
  *
  * It was originally developed for SIMD Everywhere
- * (<https://github.com/simd-everywhere/simde>), but since its only
+ * (<https://github.91chi.fun/https://github.com/simd-everywhere/simde>), but since its only
  * dependency is Hedley (<https://nemequ.github.io/hedley>, also CC0)
  * it can easily be used in other projects, so please feel free to do
  * so.

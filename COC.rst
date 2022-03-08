@@ -133,7 +133,7 @@ Feedback
 --------
 
 Suggestions for changes can be made by submitting a pull request on the
-`obsproject/obs-studio <https://github.com/obsproject/obs-studio>`__
+`obsproject/obs-studio <https://github.91chi.fun/https://github.com/obsproject/obs-studio>`__
 repo, or if you wish to privately discuss your concerns, you can instead
 email coc@obsproject.com.
 
