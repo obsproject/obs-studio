@@ -184,40 +184,24 @@ gs_swap_chain::gs_swap_chain(gs_device *device, const gs_init_data *data)
 	  hwnd((HWND)data->window.hwnd),
 	  initData(*data)
 {
-	struct win_version_info ver;
-	get_win_ver(&ver);
-
-	constexpr win_version_info minimum = [] {
-		win_version_info ver{};
-		ver.major = 10;
-		ver.minor = 0;
-		ver.build = 22000;
-		ver.revis = 0;
-		return ver;
-	}();
-
 	DXGI_SWAP_EFFECT effect = DXGI_SWAP_EFFECT_DISCARD;
 	UINT flags = 0;
 
-	if (win_version_compare(&ver, &minimum) >= 0) {
+	ComQIPtr<IDXGIFactory5> factory5 = device->factory;
+	if (factory5) {
 		initData.num_backbuffers = max(data->num_backbuffers, 2);
 
 		effect = DXGI_SWAP_EFFECT_FLIP_DISCARD;
 		flags |= DXGI_SWAP_CHAIN_FLAG_FRAME_LATENCY_WAITABLE_OBJECT;
 
-		ComPtr<IDXGIFactory5> factory5;
-		factory5 = ComQIPtr<IDXGIFactory5>(device->factory);
-		if (factory5) {
-			BOOL featureSupportData = FALSE;
-			const HRESULT hr = factory5->CheckFeatureSupport(
-				DXGI_FEATURE_PRESENT_ALLOW_TEARING,
-				&featureSupportData,
-				sizeof(featureSupportData));
-			if (SUCCEEDED(hr) && featureSupportData) {
-				presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
+		BOOL featureSupportData = FALSE;
+		const HRESULT hr = factory5->CheckFeatureSupport(
+			DXGI_FEATURE_PRESENT_ALLOW_TEARING, &featureSupportData,
+			sizeof(featureSupportData));
+		if (SUCCEEDED(hr) && featureSupportData) {
+			presentFlags |= DXGI_PRESENT_ALLOW_TEARING;
 
-				flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
-			}
+			flags |= DXGI_SWAP_CHAIN_FLAG_ALLOW_TEARING;
 		}
 	}
 
@@ -1378,8 +1362,7 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	}
 
 	try {
-		ID3D11RenderTargetView *renderView = NULL;
-		device->context->OMSetRenderTargets(1, &renderView, NULL);
+		device->context->OMSetRenderTargets(0, NULL, NULL);
 		device->curSwapChain->Resize(cx, cy);
 		device->curFramebufferInvalidate = true;
 	} catch (const HRError &error) {
