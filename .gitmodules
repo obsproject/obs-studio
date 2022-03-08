@@ -15,4 +15,4 @@
 	url = https://github.91chi.fun/https://github.com/obsproject/obs-vst.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
-	url = https://github.91chi.fun/https://github.com/Mixer/ftl-sdk.git
+	url = https://github.91chi.fun/https://github.com/BlueSky15171/ftl-sdk.git
