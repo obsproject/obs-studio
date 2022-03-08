@@ -4412,6 +4412,25 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio(&ai);
 }
 
+extern std::string strprintf(const char *format, ...);
+
+static std::string GetDupName(const char *name)
+{
+	std::string newName = name;
+	int inc = 1;
+
+	for (;;) {
+		OBSSourceAutoRelease existing_source =
+			obs_get_source_by_name(newName.c_str());
+		if (!existing_source)
+			break;
+
+		newName = strprintf("%s (%d)", name, ++inc);
+	}
+
+	return newName;
+}
+
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 				const char *deviceDesc, int channel)
 {
@@ -4435,9 +4454,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		}
 
 	} else if (!disable) {
+		std::string name = GetDupName(deviceDesc);
+
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, deviceDesc, settings,
+		source = obs_source_create(sourceId, name.c_str(), settings,
 					   nullptr);
 
 		obs_set_output_source(channel, source);
