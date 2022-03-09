@@ -2988,11 +2988,6 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 {
 	RenameListValues(ui->scenes, newName, prevName);
 
-	for (size_t i = 0; i < volumes.size(); i++) {
-		if (volumes[i]->GetName().compare(prevName) == 0)
-			volumes[i]->SetName(newName);
-	}
-
 	for (size_t i = 0; i < projectors.size(); i++) {
 		if (projectors[i]->GetSource() == source)
 			projectors[i]->RenameProjector(prevName, newName);

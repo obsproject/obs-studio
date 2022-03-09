@@ -273,7 +273,8 @@ class VolControl : public QWidget {
 	Q_OBJECT
 
 private:
-	OBSSource source;
+	OBSWeakSourceAutoRelease weakSource;
+	std::vector<OBSSignal> sigs;
 	QLabel *nameLabel;
 	QLabel *volLabel;
 	VolumeMeter *volMeter;
@@ -286,6 +287,7 @@ private:
 	obs_volmeter_t *obs_volmeter;
 	bool vertical;
 	QMenu *contextMenu;
+	bool showConfig = false;
 
 	static void OBSVolumeChanged(void *param, float db);
 	static void OBSVolumeLevel(void *data,
@@ -293,6 +295,7 @@ private:
 				   const float peak[MAX_AUDIO_CHANNELS],
 				   const float inputPeak[MAX_AUDIO_CHANNELS]);
 	static void OBSVolumeMuted(void *data, calldata_t *calldata);
+	static void OBSVolumeRenamed(void *data, calldata_t *calldata);
 
 	void EmitConfigClicked();
 
@@ -303,19 +306,23 @@ private slots:
 	void SetMuted(bool checked);
 	void SliderChanged(int vol);
 	void updateText();
+	void SetName(const QString &newName);
 
 signals:
 	void ConfigClicked();
 
 public:
-	explicit VolControl(OBSSource source, bool showConfig = false,
+	explicit VolControl(obs_source_t *source, bool showConfig_ = false,
 			    bool vertical = false);
 	~VolControl();
 
-	inline obs_source_t *GetSource() const { return source; }
+	inline obs_source_t *GetSource() const
+	{
+		return OBSGetStrongRef(weakSource);
+	}
+	void SetSource(obs_source_t *newSource);
 
 	QString GetName() const;
-	void SetName(const QString &newName);
 
 	void SetMeterDecayRate(qreal q);
 	void setPeakMeterType(enum obs_peak_meter_type peakMeterType);
