@@ -188,7 +188,10 @@ public:
 
 	inline void UpdateSettings()
 	{
-		callback(OBSGetStrongRef(weakObj), nullptr, settings);
+		if (callback)
+			callback(OBSGetStrongRef(weakObj), nullptr, settings);
+		else if (visUpdateCb)
+			visUpdateCb(OBSGetStrongRef(weakObj), settings);
 	}
 	inline bool DeferUpdate() const { return deferUpdate; }
 
