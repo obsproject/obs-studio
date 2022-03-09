@@ -102,7 +102,7 @@ private:
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
-	PropertiesVisualUpdateCb cb = nullptr;
+	PropertiesVisualUpdateCb visUpdateCb = nullptr;
 	int minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string lastFocused;
