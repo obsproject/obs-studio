@@ -665,11 +665,7 @@ void OBSProjector::OBSRender(void *data, uint32_t cx, uint32_t cy)
 void OBSProjector::OBSSourceRemoved(void *data, calldata_t *params)
 {
 	OBSProjector *window = reinterpret_cast<OBSProjector *>(data);
-
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	main->DeleteProjector(window);
-	allProjectors.removeAll(window);
-
+	QMetaObject::invokeMethod(window, "EscapeTriggered");
 	UNUSED_PARAMETER(params);
 }
 
