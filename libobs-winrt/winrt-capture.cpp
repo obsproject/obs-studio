@@ -109,10 +109,21 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 	return client_box_available;
 }
 
+static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor)
+{
+	if (window)
+		monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
+
+	return (monitor && gs_is_monitor_hdr(monitor))
+		       ? DXGI_FORMAT_R16G16B16A16_FLOAT
+		       : DXGI_FORMAT_B8G8R8A8_UNORM;
+}
+
 struct winrt_capture {
 	HWND window;
 	bool client_area;
 	HMONITOR monitor;
+	DXGI_FORMAT format;
 
 	bool capture_cursor;
 	BOOL cursor_visible;
@@ -151,8 +162,6 @@ struct winrt_capture {
 				      Direct3D11CaptureFramePool const &sender,
 			      winrt::Windows::Foundation::IInspectable const &)
 	{
-		obs_enter_graphics();
-
 		const winrt::Windows::Graphics::Capture::Direct3D11CaptureFrame
 			frame = sender.TryGetNextFrame();
 		const winrt::Windows::Graphics::SizeInt32 frame_content_size =
@@ -166,61 +175,78 @@ struct winrt_capture {
 		D3D11_TEXTURE2D_DESC desc;
 		frame_surface->GetDesc(&desc);
 
-		if (!client_area || get_client_box(window, desc.Width,
-						   desc.Height, &client_box)) {
-			if (client_area) {
-				texture_width =
-					client_box.right - client_box.left;
-				texture_height =
-					client_box.bottom - client_box.top;
-			} else {
-				texture_width = desc.Width;
-				texture_height = desc.Height;
-			}
+		obs_enter_graphics();
 
-			if (texture) {
-				if (texture_width !=
-					    gs_texture_get_width(texture) ||
-				    texture_height !=
-					    gs_texture_get_height(texture)) {
-					gs_texture_destroy(texture);
-					texture = nullptr;
+		if (desc.Format == get_pixel_format(window, monitor)) {
+			if (!client_area ||
+			    get_client_box(window, desc.Width, desc.Height,
+					   &client_box)) {
+				if (client_area) {
+					texture_width = client_box.right -
+							client_box.left;
+					texture_height = client_box.bottom -
+							 client_box.top;
+				} else {
+					texture_width = desc.Width;
+					texture_height = desc.Height;
 				}
+
+				if (texture) {
+					if (texture_width !=
+						    gs_texture_get_width(
+							    texture) ||
+					    texture_height !=
+						    gs_texture_get_height(
+							    texture)) {
+						gs_texture_destroy(texture);
+						texture = nullptr;
+					}
+				}
+
+				if (!texture) {
+					const gs_color_format color_format =
+						desc.Format == DXGI_FORMAT_R16G16B16A16_FLOAT
+							? GS_RGBA16F
+							: GS_BGRA;
+					texture = gs_texture_create(
+						texture_width, texture_height,
+						color_format, 1, NULL, 0);
+				}
+
+				if (client_area) {
+					context->CopySubresourceRegion(
+						(ID3D11Texture2D *)
+							gs_texture_get_obj(
+								texture),
+						0, 0, 0, 0, frame_surface.get(),
+						0, &client_box);
+				} else {
+					/* if they gave an SRV, we could avoid this copy */
+					context->CopyResource(
+						(ID3D11Texture2D *)
+							gs_texture_get_obj(
+								texture),
+						frame_surface.get());
+				}
+
+				texture_written = true;
 			}
 
-			if (!texture) {
-				texture = gs_texture_create(texture_width,
-							    texture_height,
-							    GS_BGRA, 1, NULL,
-							    0);
+			if (frame_content_size.Width != last_size.Width ||
+			    frame_content_size.Height != last_size.Height) {
+				format = desc.Format;
+				frame_pool.Recreate(
+					device,
+					static_cast<
+						winrt::Windows::Graphics::DirectX::
+							DirectXPixelFormat>(
+						format),
+					2, frame_content_size);
+
+				last_size = frame_content_size;
 			}
-
-			if (client_area) {
-				context->CopySubresourceRegion(
-					(ID3D11Texture2D *)gs_texture_get_obj(
-						texture),
-					0, 0, 0, 0, frame_surface.get(), 0,
-					&client_box);
-			} else {
-				/* if they gave an SRV, we could avoid this copy */
-				context->CopyResource(
-					(ID3D11Texture2D *)gs_texture_get_obj(
-						texture),
-					frame_surface.get());
-			}
-
-			texture_written = true;
-		}
-
-		if (frame_content_size.Width != last_size.Width ||
-		    frame_content_size.Height != last_size.Height) {
-			frame_pool.Recreate(
-				device,
-				winrt::Windows::Graphics::DirectX::
-					DirectXPixelFormat::B8G8R8A8UIntNormalized,
-				2, frame_content_size);
-
-			last_size = frame_content_size;
+		} else {
+			active = FALSE;
 		}
 
 		obs_leave_graphics();
@@ -358,8 +384,9 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 		frame_pool = winrt::Windows::Graphics::Capture::
 			Direct3D11CaptureFramePool::Create(
 				device,
-				winrt::Windows::Graphics::DirectX::
-					DirectXPixelFormat::B8G8R8A8UIntNormalized,
+				static_cast<winrt::Windows::Graphics::DirectX::
+						    DirectXPixelFormat>(
+					capture->format),
 				2, capture->last_size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
@@ -434,12 +461,13 @@ try {
 		device = inspectable.as<winrt::Windows::Graphics::DirectX::
 						Direct3D11::IDirect3DDevice>();
 	const winrt::Windows::Graphics::SizeInt32 size = item.Size();
+	const DXGI_FORMAT format = get_pixel_format(window, monitor);
 	const winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool
 		frame_pool = winrt::Windows::Graphics::Capture::
 			Direct3D11CaptureFramePool::Create(
 				device,
-				winrt::Windows::Graphics::DirectX::
-					DirectXPixelFormat::B8G8R8A8UIntNormalized,
+				static_cast<winrt::Windows::Graphics::DirectX::
+						    DirectXPixelFormat>(format),
 				2, size);
 	const winrt::Windows::Graphics::Capture::GraphicsCaptureSession session =
 		frame_pool.CreateCaptureSession(item);
@@ -463,6 +491,7 @@ try {
 	capture->window = window;
 	capture->client_area = client_area;
 	capture->monitor = monitor;
+	capture->format = format;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
 	capture->cursor_visible = cursor;
 	capture->item = item;
@@ -566,33 +595,6 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 	}
 }
 
-static void draw_texture(struct winrt_capture *capture)
-{
-	gs_effect_t *const effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
-	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
-
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(true);
-	gs_enable_blending(false);
-
-	gs_texture_t *const texture = capture->texture;
-	gs_effect_set_texture_srgb(image, texture);
-
-	const size_t passes = gs_technique_begin(tech);
-	for (size_t i = 0; i < passes; i++) {
-		if (gs_technique_begin_pass(tech, i)) {
-			gs_draw_sprite(texture, 0, 0, 0);
-
-			gs_technique_end_pass(tech);
-		}
-	}
-	gs_technique_end(tech);
-
-	gs_enable_blending(true);
-	gs_enable_framebuffer_srgb(previous);
-}
-
 extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)
 {
 	return capture->active;
@@ -626,10 +628,67 @@ extern "C" EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture,
 	return success;
 }
 
+extern "C" EXPORT enum gs_color_space
+winrt_capture_get_color_space(const struct winrt_capture *capture)
+{
+	return (capture->format == DXGI_FORMAT_R16G16B16A16_FLOAT)
+		       ? GS_CS_709_EXTENDED
+		       : GS_CS_SRGB;
+}
+
 extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture)
 {
-	if (capture->texture_written)
-		draw_texture(capture);
+	if (capture->texture_written) {
+		const char *tech_name = "Draw";
+		float multiplier = 1.f;
+		const gs_color_space current_space = gs_get_color_space();
+		if (capture->format == DXGI_FORMAT_R16G16B16A16_FLOAT) {
+			switch (current_space) {
+			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
+				tech_name = "DrawMultiplyTonemap";
+				multiplier =
+					80.f / obs_get_video_sdr_white_level();
+				break;
+			case GS_CS_709_EXTENDED:
+				tech_name = "DrawMultiply";
+				multiplier =
+					80.f / obs_get_video_sdr_white_level();
+			}
+		} else if (current_space == GS_CS_709_SCRGB) {
+			tech_name = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.f;
+		}
+
+		gs_effect_t *const effect =
+			obs_get_base_effect(OBS_EFFECT_OPAQUE);
+		gs_technique_t *tech =
+			gs_effect_get_technique(effect, tech_name);
+
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(true);
+		gs_enable_blending(false);
+
+		gs_texture_t *const texture = capture->texture;
+		gs_effect_set_texture_srgb(
+			gs_effect_get_param_by_name(effect, "image"), texture);
+		gs_effect_set_float(gs_effect_get_param_by_name(effect,
+								"multiplier"),
+				    multiplier);
+
+		const size_t passes = gs_technique_begin(tech);
+		for (size_t i = 0; i < passes; i++) {
+			if (gs_technique_begin_pass(tech, i)) {
+				gs_draw_sprite(texture, 0, 0, 0);
+
+				gs_technique_end_pass(tech);
+			}
+		}
+		gs_technique_end(tech);
+
+		gs_enable_blending(true);
+		gs_enable_framebuffer_srgb(previous);
+	}
 }
 
 extern "C" EXPORT uint32_t

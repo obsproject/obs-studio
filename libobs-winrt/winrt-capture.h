@@ -20,6 +20,8 @@ EXPORT void winrt_capture_free(struct winrt_capture *capture);
 EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture);
 EXPORT BOOL winrt_capture_show_cursor(struct winrt_capture *capture,
 				      BOOL visible);
+EXPORT enum gs_color_space
+winrt_capture_get_color_space(const struct winrt_capture *capture);
 EXPORT void winrt_capture_render(struct winrt_capture *capture);
 EXPORT uint32_t winrt_capture_width(const struct winrt_capture *capture);
 EXPORT uint32_t winrt_capture_height(const struct winrt_capture *capture);
