@@ -1506,6 +1506,14 @@ Display Duplicator (Windows Only)
 ---------------------
 
 
+Monitor Functions
+---------------------------------
+
+.. function:: bool gs_is_monitor_hdr(void *monitor)
+
+---------------------
+
+
 Render Helper Functions
 -----------------------
 

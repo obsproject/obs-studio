@@ -195,6 +195,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
 	GRAPHICS_IMPORT_OPTIONAL(device_p010_available);
 
+	GRAPHICS_IMPORT(device_is_monitor_hdr);
+
 	GRAPHICS_IMPORT(device_debug_marker_begin);
 	GRAPHICS_IMPORT(device_debug_marker_end);
 

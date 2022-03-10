@@ -598,6 +598,11 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 	}
 }
 
+EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	return false;
+}
+
 EXPORT bool device_gdi_texture_available(void)
 {
 	return false;

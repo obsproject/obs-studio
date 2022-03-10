@@ -3047,6 +3047,12 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 	return device->p010Supported;
 }
 
+extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	const HMONITOR hMonitor = static_cast<HMONITOR>(monitor);
+	return screen_supports_hdr(device, hMonitor);
+}
+
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,
 						 const char *markername,
 						 const float color[4])
