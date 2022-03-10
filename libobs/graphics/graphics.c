@@ -2840,6 +2840,15 @@ bool gs_p010_available(void)
 		thread_graphics->device);
 }
 
+bool gs_is_monitor_hdr(void *monitor)
+{
+	if (!gs_valid("gs_is_monitor_hdr"))
+		return false;
+
+	return thread_graphics->exports.device_is_monitor_hdr(
+		thread_graphics->device, monitor);
+}
+
 void gs_debug_marker_begin(const float color[4], const char *markername)
 {
 	if (!gs_valid("gs_debug_marker_begin"))

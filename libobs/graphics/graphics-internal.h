@@ -273,6 +273,8 @@ struct gs_exports {
 	bool (*device_nv12_available)(gs_device_t *device);
 	bool (*device_p010_available)(gs_device_t *device);
 
+	bool (*device_is_monitor_hdr)(gs_device_t *device, void *monitor);
+
 	void (*device_debug_marker_begin)(gs_device_t *device,
 					  const char *markername,
 					  const float color[4]);

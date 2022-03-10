@@ -851,6 +851,8 @@ EXPORT bool gs_timer_range_get_data(gs_timer_range_t *range, bool *disjoint,
 EXPORT bool gs_nv12_available(void);
 EXPORT bool gs_p010_available(void);
 
+EXPORT bool gs_is_monitor_hdr(void *monitor);
+
 #define GS_USE_DEBUG_MARKERS 0
 #if GS_USE_DEBUG_MARKERS
 static const float GS_DEBUG_COLOR_DEFAULT[] = {0.5f, 0.5f, 0.5f, 1.0f};
