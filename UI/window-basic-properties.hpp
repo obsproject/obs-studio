@@ -38,7 +38,7 @@ private:
 	std::unique_ptr<Ui::OBSBasicProperties> ui;
 	bool acceptClicked;
 
-	OBSSource source;
+	OBSWeakSourceAutoRelease weakSource;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	OBSSignal updatePropertiesSignal;
@@ -61,6 +61,8 @@ private:
 	bool ConfirmQuit();
 	int CheckSettings();
 	void Cleanup();
+
+	OBSSource GetSource();
 
 private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
