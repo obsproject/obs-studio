@@ -22,7 +22,7 @@ class OBSAdvAudioCtrl : public QObject {
 	Q_OBJECT
 
 private:
-	OBSSource source;
+	OBSWeakSourceAutoRelease weakSource;
 
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
@@ -71,7 +71,10 @@ public:
 	OBSAdvAudioCtrl(QGridLayout *layout, obs_source_t *source_);
 	virtual ~OBSAdvAudioCtrl();
 
-	inline obs_source_t *GetSource() const { return source; }
+	inline obs_source_t *GetSource() const
+	{
+		return OBSGetStrongRef(weakSource);
+	}
 	void ShowAudioControl(QGridLayout *layout);
 
 	void SetVolumeWidget(VolumeType type);

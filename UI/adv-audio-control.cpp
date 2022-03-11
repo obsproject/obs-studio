@@ -18,8 +18,10 @@
 #define MAX_DB 26.0
 
 OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
-	: source(source_)
+	: weakSource(OBSGetWeakRef(source_))
 {
+	OBSSource source = GetSource();
+
 	QHBoxLayout *hlayout;
 	signal_handler_t *handler = obs_source_get_signal_handler(source);
 	QString sourceName = QT_UTF8(obs_source_get_name(source));
@@ -432,6 +434,11 @@ void OBSAdvAudioCtrl::SourceMixersChanged(uint32_t mixers)
 
 void OBSAdvAudioCtrl::volumeChanged(double db)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	float prev = obs_source_get_volume(source);
 
 	if (db < MIN_DB) {
@@ -460,6 +467,11 @@ void OBSAdvAudioCtrl::volumeChanged(double db)
 
 void OBSAdvAudioCtrl::percentChanged(int percent)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	float prev = obs_source_get_volume(source);
 	float val = (float)percent / 100.0f;
 
@@ -491,6 +503,11 @@ static inline void set_mono(obs_source_t *source, bool mono)
 
 void OBSAdvAudioCtrl::downmixMonoChanged(bool val)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	uint32_t flags = obs_source_get_flags(source);
 	bool forceMonoActive = (flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0;
 
@@ -521,6 +538,11 @@ void OBSAdvAudioCtrl::downmixMonoChanged(bool val)
 
 void OBSAdvAudioCtrl::balanceChanged(int val)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	float prev = obs_source_get_balance_value(source);
 	float bal = (float)val / 100.0f;
 
@@ -554,6 +576,11 @@ void OBSAdvAudioCtrl::ResetBalance()
 
 void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	int64_t prev = obs_source_get_sync_offset(source);
 	int64_t val = int64_t(milliseconds) * NSEC_PER_MSEC;
 
@@ -578,6 +605,11 @@ void OBSAdvAudioCtrl::syncOffsetChanged(int milliseconds)
 
 void OBSAdvAudioCtrl::monitoringTypeChanged(int index)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return;
+
 	obs_monitoring_type prev = obs_source_get_monitoring_type(source);
 
 	obs_monitoring_type mt =
@@ -614,9 +646,14 @@ void OBSAdvAudioCtrl::monitoringTypeChanged(int index)
 		std::bind(undo_redo, std::placeholders::_1, mt), name, name);
 }
 
-static inline void setMixer(obs_source_t *source, const int mixerIdx,
+static inline void setMixer(obs_weak_source_t *weakSource, const int mixerIdx,
 			    const bool checked)
 {
+	OBSSource source = OBSGetStrongRef(weakSource);
+
+	if (!source)
+		return;
+
 	uint32_t mixers = obs_source_get_audio_mixers(source);
 	uint32_t new_mixers = mixers;
 
@@ -643,32 +680,32 @@ static inline void setMixer(obs_source_t *source, const int mixerIdx,
 
 void OBSAdvAudioCtrl::mixer1Changed(bool checked)
 {
-	setMixer(source, 0, checked);
+	setMixer(weakSource, 0, checked);
 }
 
 void OBSAdvAudioCtrl::mixer2Changed(bool checked)
 {
-	setMixer(source, 1, checked);
+	setMixer(weakSource, 1, checked);
 }
 
 void OBSAdvAudioCtrl::mixer3Changed(bool checked)
 {
-	setMixer(source, 2, checked);
+	setMixer(weakSource, 2, checked);
 }
 
 void OBSAdvAudioCtrl::mixer4Changed(bool checked)
 {
-	setMixer(source, 3, checked);
+	setMixer(weakSource, 3, checked);
 }
 
 void OBSAdvAudioCtrl::mixer5Changed(bool checked)
 {
-	setMixer(source, 4, checked);
+	setMixer(weakSource, 4, checked);
 }
 
 void OBSAdvAudioCtrl::mixer6Changed(bool checked)
 {
-	setMixer(source, 5, checked);
+	setMixer(weakSource, 5, checked);
 }
 
 void OBSAdvAudioCtrl::SetVolumeWidget(VolumeType type)
