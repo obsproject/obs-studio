@@ -37,13 +37,20 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	: QDialog(parent),
 	  main(qobject_cast<OBSBasic *>(parent)),
 	  ui(new Ui::OBSBasicInteraction),
-	  source(source_),
-	  removedSignal(obs_source_get_signal_handler(source), "remove",
-			OBSBasicInteraction::SourceRemoved, this),
-	  renamedSignal(obs_source_get_signal_handler(source), "rename",
-			OBSBasicInteraction::SourceRenamed, this),
+	  weakSource(OBSGetWeakRef(source_)),
 	  eventFilter(BuildEventFilter())
 {
+	OBSSource source = GetSource();
+
+	if (source) {
+		removedSignal.Connect(obs_source_get_signal_handler(source),
+				      "remove",
+				      OBSBasicInteraction::SourceRemoved, this);
+		renamedSignal.Connect(obs_source_get_signal_handler(source),
+				      "rename",
+				      OBSBasicInteraction::SourceRenamed, this);
+	}
+
 	int cx = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
 				     "cx");
 	int cy = (int)config_get_int(App()->GlobalConfig(), "InteractionWindow",
@@ -62,8 +69,11 @@ OBSBasicInteraction::OBSBasicInteraction(QWidget *parent, OBSSource source_)
 	if (cx > 400 && cy > 400)
 		resize(cx, cy);
 
-	const char *name = obs_source_get_name(source);
-	setWindowTitle(QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
+	if (source) {
+		const char *name = obs_source_get_name(source);
+		setWindowTitle(
+			QTStr("Basic.InteractionWindow").arg(QT_UTF8(name)));
+	}
 
 	auto addDrawCallback = [this]() {
 		obs_display_add_draw_callback(ui->preview->GetDisplay(),
@@ -79,6 +89,11 @@ OBSBasicInteraction::~OBSBasicInteraction()
 	// since QT fakes a mouse movement while destructing a widget
 	// remove our event filter
 	ui->preview->removeEventFilter(eventFilter.get());
+}
+
+OBSSource OBSBasicInteraction::GetSource()
+{
+	return OBSGetStrongRef(weakSource);
 }
 
 OBSEventFilter *OBSBasicInteraction::BuildEventFilter()
@@ -136,11 +151,13 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 {
 	OBSBasicInteraction *window = static_cast<OBSBasicInteraction *>(data);
 
-	if (!window->source)
+	OBSSource source = window->GetSource();
+
+	if (!source)
 		return;
 
-	uint32_t sourceCX = max(obs_source_get_width(window->source), 1u);
-	uint32_t sourceCY = max(obs_source_get_height(window->source), 1u);
+	uint32_t sourceCX = max(obs_source_get_width(source), 1u);
+	uint32_t sourceCY = max(obs_source_get_height(source), 1u);
 
 	int x, y;
 	int newCX, newCY;
@@ -157,7 +174,7 @@ void OBSBasicInteraction::DrawPreview(void *data, uint32_t cx, uint32_t cy)
 
 	gs_ortho(0.0f, float(sourceCX), 0.0f, float(sourceCY), -100.0f, 100.0f);
 	gs_set_viewport(x, y, newCX, newCY);
-	obs_source_video_render(window->source);
+	obs_source_video_render(source);
 
 	gs_set_linear_srgb(previous);
 	gs_projection_pop();
@@ -255,6 +272,11 @@ static int TranslateQtMouseEventModifiers(QMouseEvent *event)
 bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 					      int &relY)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	float pixelRatio = devicePixelRatioF();
 	int mouseXscaled = (int)roundf(mouseX * pixelRatio);
 	int mouseYscaled = (int)roundf(mouseY * pixelRatio);
@@ -289,6 +311,11 @@ bool OBSBasicInteraction::GetSourceRelativeXY(int mouseX, int mouseY, int &relX,
 
 bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	bool mouseUp = event->type() == QEvent::MouseButtonRelease;
 	int clickCount = 1;
 	if (event->type() == QEvent::MouseButtonDblClick)
@@ -332,6 +359,11 @@ bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 
 bool OBSBasicInteraction::HandleMouseMoveEvent(QMouseEvent *event)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	struct obs_mouse_event mouseEvent = {};
 
 	bool mouseLeave = event->type() == QEvent::Leave;
@@ -350,6 +382,11 @@ bool OBSBasicInteraction::HandleMouseMoveEvent(QMouseEvent *event)
 
 bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	struct obs_mouse_event mouseEvent = {};
 
 	mouseEvent.modifiers = TranslateQtKeyboardEventModifiers(event, true);
@@ -389,6 +426,11 @@ bool OBSBasicInteraction::HandleMouseWheelEvent(QWheelEvent *event)
 
 bool OBSBasicInteraction::HandleFocusEvent(QFocusEvent *event)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	bool focus = event->type() == QEvent::FocusIn;
 
 	obs_source_send_focus(source, focus);
@@ -398,6 +440,11 @@ bool OBSBasicInteraction::HandleFocusEvent(QFocusEvent *event)
 
 bool OBSBasicInteraction::HandleKeyEvent(QKeyEvent *event)
 {
+	OBSSource source = GetSource();
+
+	if (!source)
+		return false;
+
 	struct obs_key_event keyEvent;
 
 	QByteArray text = event->text().toUtf8();

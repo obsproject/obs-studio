@@ -38,7 +38,7 @@ private:
 	OBSBasic *main;
 
 	std::unique_ptr<Ui::OBSBasicInteraction> ui;
-	OBSSource source;
+	OBSWeakSourceAutoRelease weakSource;
 	OBSSignal removedSignal;
 	OBSSignal renamedSignal;
 	std::unique_ptr<OBSEventFilter> eventFilter;
@@ -56,6 +56,7 @@ private:
 	bool HandleKeyEvent(QKeyEvent *event);
 
 	OBSEventFilter *BuildEventFilter();
+	OBSSource GetSource();
 
 public:
 	OBSBasicInteraction(QWidget *parent, OBSSource source_);
