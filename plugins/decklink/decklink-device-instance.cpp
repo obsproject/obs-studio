@@ -142,14 +142,14 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	if (videoFrame == nullptr)
 		return;
 
-	IDeckLinkVideoFrameAncillaryPackets *packets;
+	ComPtr<IDeckLinkVideoFrameAncillaryPackets> packets;
 
 	if (videoFrame->QueryInterface(IID_IDeckLinkVideoFrameAncillaryPackets,
 				       (void **)&packets) == S_OK) {
-		IDeckLinkAncillaryPacketIterator *iterator;
+		ComPtr<IDeckLinkAncillaryPacketIterator> iterator;
 		packets->GetPacketIterator(&iterator);
 
-		IDeckLinkAncillaryPacket *packet;
+		ComPtr<IDeckLinkAncillaryPacket> packet;
 		iterator->Next(&packet);
 
 		if (packet) {
@@ -160,18 +160,13 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 			if (did == 0x61 && sdid == 0x01) {
 				this->HandleCaptionPacket(packet, timestamp);
 			}
-
-			packet->Release();
 		}
-
-		iterator->Release();
-		packets->Release();
 	}
 
-	IDeckLinkVideoFrame *frame;
+	ComPtr<IDeckLinkVideoFrame> frame;
 	if (videoFrame->GetPixelFormat() != convertFrame->GetPixelFormat()) {
-		IDeckLinkVideoConversion *frameConverter =
-			CreateVideoConversionInstance();
+		ComPtr<IDeckLinkVideoConversion> frameConverter;
+		frameConverter.Set(CreateVideoConversionInstance());
 
 		frameConverter->ConvertFrame(videoFrame, convertFrame);
 
@@ -373,7 +368,7 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 	if (!device->GetInput(&input))
 		return false;
 
-	IDeckLinkConfiguration *deckLinkConfiguration = NULL;
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
 	HRESULT result = input->QueryInterface(IID_IDeckLinkConfiguration,
 					       (void **)&deckLinkConfiguration);
 	if (result != S_OK) {
@@ -526,7 +521,7 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 
 	int keyerMode = device->GetKeyerMode();
 
-	IDeckLinkKeyer *deckLinkKeyer = nullptr;
+	ComPtr<IDeckLinkKeyer> deckLinkKeyer;
 	if (device->GetKeyer(&deckLinkKeyer)) {
 		if (keyerMode) {
 			deckLinkKeyer->Enable(keyerMode == 1);
@@ -574,10 +569,8 @@ bool DeckLinkDeviceInstance::StopOutput()
 	output->DisableVideoOutput();
 	output->DisableAudioOutput();
 
-	if (decklinkOutputFrame != nullptr) {
-		decklinkOutputFrame->Release();
+	if (decklinkOutputFrame != nullptr)
 		decklinkOutputFrame = nullptr;
-	}
 
 	return true;
 }

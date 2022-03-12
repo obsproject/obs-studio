@@ -328,7 +328,7 @@ RunOnceMutex &RunOnceMutex::operator=(RunOnceMutex &&rom)
 	return *this;
 }
 
-RunOnceMutex GetRunOnceMutex(bool &already_running)
+RunOnceMutex CheckIfAlreadyRunning(bool &already_running)
 {
 	string name;
 

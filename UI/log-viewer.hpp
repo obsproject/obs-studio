@@ -1,13 +1,13 @@
 #pragma once
 
 #include <QDialog>
-#include <QTextEdit>
+#include <QPlainTextEdit>
 #include "obs-app.hpp"
 
 class OBSLogViewer : public QDialog {
 	Q_OBJECT
 
-	QPointer<QTextEdit> textArea;
+	QPointer<QPlainTextEdit> textArea;
 
 	void InitLog();
 

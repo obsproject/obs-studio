@@ -34,7 +34,7 @@ jobs:
     runs-on: [macos-latest]
     env:
       MIN_MACOS_VERSION: '10.13'
-      MACOS_DEPS_VERSION: '2022-01-31'
+      MACOS_DEPS_VERSION: '2022-02-13'
       VLC_VERSION: '3.0.8'
       SPARKLE_VERSION: '1.23.0'
       QT_VERSION: '5.15.2'
@@ -214,6 +214,8 @@ jobs:
             mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
             rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
           fi
+
+          /bin/cp -cpR /tmp/obsdeps/lib/*.dylib ./OBS.app/Contents/Frameworks
 
           BUNDLE_PLUGINS=(
             ./OBS.app/Contents/PlugIns/coreaudio-encoder.so
@@ -559,7 +561,7 @@ jobs:
           CACHE_NAME: 'windows-cef-64-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-1
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-3
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |
@@ -668,7 +670,7 @@ jobs:
           CACHE_NAME: 'cef-32-cache'
         with:
           path: ${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-1
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.WINDOWS_CEF_BUILD_VERSION }}-3
       - name: 'Install prerequisite: QT'
         if: steps.qt-cache.outputs.cache-hit != 'true'
         run: |

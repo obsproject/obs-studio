@@ -40,6 +40,14 @@ void SetAlwaysOnTop(QWidget *window, bool enable);
 bool SetDisplayAffinitySupported(void);
 
 #ifdef _WIN32
+class RunOnceMutex;
+RunOnceMutex
+#else
+void
+#endif
+CheckIfAlreadyRunning(bool &already_running);
+
+#ifdef _WIN32
 uint32_t GetWindowsVersion();
 uint32_t GetWindowsBuild();
 void SetAeroEnabled(bool enable);
@@ -62,7 +70,6 @@ public:
 	RunOnceMutex &operator=(RunOnceMutex &&rom);
 };
 
-RunOnceMutex GetRunOnceMutex(bool &already_running);
 QString GetMonitorName(const QString &id);
 bool IsRunningOnWine();
 #endif
@@ -72,12 +79,5 @@ void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
 void InstallNSApplicationSubclass();
 void disableColorSpaceConversion(QWidget *window);
-void CheckAppWithSameBundleID(bool &already_running);
 bool ProcessIsRosettaTranslated();
-#endif
-#ifdef __linux__
-void RunningInstanceCheck(bool &already_running);
-#endif
-#if defined(__FreeBSD__) || defined(__DragonFly__)
-void PIDFileCheck(bool &already_running);
 #endif

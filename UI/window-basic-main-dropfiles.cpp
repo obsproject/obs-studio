@@ -5,6 +5,9 @@
 #include <QFileInfo>
 #include <QMimeData>
 #include <QUrlQuery>
+#ifdef _WIN32
+#include <QSettings>
+#endif
 #include <string>
 
 #include "window-basic-main.hpp"
@@ -58,6 +61,15 @@ static string GenerateSourceName(const char *base)
 	}
 }
 
+#ifdef _WIN32
+static QString ReadWindowsURLFile(const QString &file)
+{
+	QSettings iniFile(file, QSettings::IniFormat);
+	QVariant url = iniFile.value("InternetShortcut/URL");
+	return url.toString();
+}
+#endif
+
 void OBSBasic::AddDropURL(const char *url, QString &name, obs_data_t *settings,
 			  const obs_video_info &ovi)
 {
@@ -106,7 +118,6 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	OBSDataAutoRelease settings = obs_data_create();
-	OBSSourceAutoRelease source = nullptr;
 	const char *type = nullptr;
 	std::vector<const char *> types;
 	QString name;
@@ -171,11 +182,36 @@ void OBSBasic::AddDropSource(const char *data, DropType image)
 
 	if (name.isEmpty())
 		name = obs_source_get_display_name(type);
-	source = obs_source_create(type,
-				   GenerateSourceName(QT_TO_UTF8(name)).c_str(),
-				   settings, nullptr);
+	std::string sourceName = GenerateSourceName(QT_TO_UTF8(name));
+	OBSSourceAutoRelease source =
+		obs_source_create(type, sourceName.c_str(), settings, nullptr);
 	if (source) {
 		OBSScene scene = main->GetCurrentScene();
+		const char *sceneName =
+			obs_source_get_name(obs_scene_get_source(scene));
+		auto undo = [sceneName, sourceName](const std::string &) {
+			OBSSourceAutoRelease source =
+				obs_get_source_by_name(sourceName.c_str());
+			obs_source_remove(source);
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_name(sceneName);
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+		};
+		auto redo = [sceneName, sourceName,
+			     type](const std::string &data) {
+			OBSSourceAutoRelease scene =
+				obs_get_source_by_name(sceneName);
+			OBSBasic::Get()->SetCurrentScene(scene.Get(), true);
+			OBSDataAutoRelease settings =
+				obs_data_create_from_json(data.c_str());
+			OBSSourceAutoRelease source = obs_source_create(
+				type, sourceName.c_str(), settings, nullptr);
+			obs_scene_add(obs_scene_from_source(scene),
+				      source.Get());
+		};
+		undo_s.add_action(QTStr("Undo.Add").arg(sourceName.c_str()),
+				  undo, redo, "",
+				  std::string(obs_data_get_json(settings)));
 		obs_scene_add(scene, source);
 	}
 }
@@ -246,6 +282,23 @@ void OBSBasic::dropEvent(QDropEvent *event)
 				ConfirmDropUrl(url.url());
 				continue;
 			}
+
+#ifdef _WIN32
+			if (fileInfo.suffix().compare(
+				    "url", Qt::CaseInsensitive) == 0) {
+				QString urlTarget = ReadWindowsURLFile(file);
+				if (!urlTarget.isEmpty()) {
+					ConfirmDropUrl(urlTarget);
+				}
+				continue;
+			} else if (fileInfo.isShortcut()) {
+				file = fileInfo.symLinkTarget();
+				fileInfo = QFileInfo(file);
+				if (!fileInfo.exists()) {
+					continue;
+				}
+			}
+#endif
 
 			QString suffixQStr = fileInfo.suffix();
 			QByteArray suffixArray = suffixQStr.toUtf8();

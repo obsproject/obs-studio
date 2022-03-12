@@ -559,3 +559,9 @@ char *obs_frontend_get_current_record_output_path(void)
 		       ? c->obs_frontend_get_current_record_output_path()
 		       : nullptr;
 }
+
+const char *obs_frontend_get_locale_string(const char *string)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_locale_string(string)
+				   : nullptr;
+}

@@ -288,7 +288,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct lua_obs_callback *cb = (struct lua_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback();
@@ -329,7 +329,7 @@ static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_main_render_callback(obs_lua_main_render_callback,
 						cb);
 		return;
@@ -377,7 +377,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_lua_tick_callback, cb);
 		return;
 	}
@@ -423,7 +423,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -505,7 +505,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -663,7 +663,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 	struct lua_obs_callback *cb = p_cb;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback();
@@ -689,7 +689,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct lua_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -745,7 +745,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -801,7 +801,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -1078,7 +1078,7 @@ static void lua_tick(void *param, float seconds)
 		struct lua_obs_timer *next = timer->next;
 		struct lua_obs_callback *cb = lua_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			lua_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1157,6 +1157,25 @@ void obs_lua_script_unload(obs_script_t *s)
 	lua_State *script = data->script;
 
 	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	pthread_mutex_lock(&data->mutex);
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct lua_obs_callback *cb =
+		(struct lua_obs_callback *)data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->base.removed, true);
+		cb = (struct lua_obs_callback *)cb->base.next;
+	}
+
+	pthread_mutex_unlock(&data->mutex);
+
+	/* ---------------------------- */
 	/* undefine source types        */
 
 	undef_lua_script_sources(data);
@@ -1189,8 +1208,7 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct lua_obs_callback *cb =
-		(struct lua_obs_callback *)data->first_callback;
+	cb = (struct lua_obs_callback *)data->first_callback;
 	while (cb) {
 		struct lua_obs_callback *next =
 			(struct lua_obs_callback *)cb->base.next;

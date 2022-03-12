@@ -284,7 +284,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 	qRegisterMetaTypeStreamOperators<std::vector<std::shared_ptr<OBSSignal>>>(
 		"std::vector<std::shared_ptr<OBSSignal>>");
 	qRegisterMetaTypeStreamOperators<OBSScene>("OBSScene");
-	qRegisterMetaTypeStreamOperators<OBSSceneItem>("OBSSceneItem");
 #endif
 
 	ui->scenes->setAttribute(Qt::WA_MacShowFocusRect, false);
@@ -354,6 +353,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	ui->actionRemoveSource->setShortcuts({Qt::Key_Backspace});
 	ui->actionRemoveScene->setShortcuts({Qt::Key_Backspace});
 
+	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #else
@@ -1842,6 +1842,7 @@ void OBSBasic::OBSInit()
 	ui->contextContainer->setVisible(contextVisible);
 	if (contextVisible)
 		UpdateContextBar(true);
+	UpdateEditMenu();
 
 	{
 		ProfileScope("OBSBasic::Load");
@@ -3530,6 +3531,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	if (SourceMixerHidden(source))
 		return;
+	if (!obs_source_active(source))
+		return;
 	if (!obs_source_audio_active(source))
 		return;
 
@@ -4411,6 +4414,8 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio(&ai);
 }
 
+extern char *get_new_source_name(const char *name, const char *format);
+
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 				const char *deviceDesc, int channel)
 {
@@ -4434,10 +4439,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		}
 
 	} else if (!disable) {
+		BPtr<char> name = get_new_source_name(deviceDesc, "%s (%d)");
+
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, deviceDesc, settings,
-					   nullptr);
+		source = obs_source_create(sourceId, name, settings, nullptr);
 
 		obs_set_output_source(channel, source);
 	}
@@ -4677,6 +4683,32 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
 
 	QMetaObject::invokeMethod(App(), "quit", Qt::QueuedConnection);
+}
+
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, qintptr *)
+#else
+bool OBSBasic::nativeEvent(const QByteArray &, void *message, long *)
+#endif
+{
+#ifdef _WIN32
+	const MSG &msg = *static_cast<MSG *>(message);
+	switch (msg.message) {
+	case WM_MOVE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnMove();
+		}
+		break;
+	case WM_DISPLAYCHANGE:
+		for (OBSQTDisplay *const display :
+		     findChildren<OBSQTDisplay *>()) {
+			display->OnDisplayChange();
+		}
+	}
+#endif
+
+	return false;
 }
 
 void OBSBasic::changeEvent(QEvent *event)
@@ -5369,8 +5401,6 @@ ColorSelect::ColorSelect(QWidget *parent)
 
 void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 {
-	UpdateEditMenu();
-
 	QMenu popup(this);
 	delete previewProjectorSource;
 	delete sourceProjector;
@@ -7825,11 +7855,6 @@ void OBSBasic::UpdateEditMenu()
 	ui->actionHorizontalCenter->setEnabled(canTransform);
 }
 
-void OBSBasic::on_menuBasic_MainMenu_Edit_aboutToShow()
-{
-	UpdateEditMenu();
-}
-
 void OBSBasic::on_actionEditTransform_triggered()
 {
 	if (transformWindow)
@@ -9657,6 +9682,9 @@ void OBSBasic::PauseRecording()
 
 		os_atomic_set_bool(&recording_paused, true);
 
+		if (replay)
+			replay->setEnabled(false);
+
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_PAUSED);
 
@@ -9700,6 +9728,9 @@ void OBSBasic::UnpauseRecording()
 		}
 
 		os_atomic_set_bool(&recording_paused, false);
+
+		if (replay)
+			replay->setEnabled(true);
 
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_RECORDING_UNPAUSED);
@@ -9901,11 +9932,25 @@ void OBSBasic::on_customContextMenuRequested(const QPoint &pos)
 {
 	QWidget *widget = childAt(pos);
 	const char *className = nullptr;
-	if (widget != nullptr)
+	QString objName;
+	if (widget != nullptr) {
 		className = widget->metaObject()->className();
+		objName = widget->objectName();
+	}
 
-	if (!className || strstr(className, "Dock") != nullptr)
-		ui->menuDocks->exec(mapToGlobal(pos));
+	QPoint globalPos = mapToGlobal(pos);
+	if (className && strstr(className, "Dock") != nullptr &&
+	    !objName.isEmpty()) {
+		if (objName.compare("scenesDock") == 0) {
+			ui->scenes->customContextMenuRequested(globalPos);
+		} else if (objName.compare("sourcesDock") == 0) {
+			ui->sources->customContextMenuRequested(globalPos);
+		} else if (objName.compare("mixerDock") == 0) {
+			StackedMixerAreaContextMenuRequested();
+		}
+	} else if (!className) {
+		ui->menuDocks->exec(globalPos);
+	}
 }
 
 void OBSBasic::UpdateProjectorHideCursor()

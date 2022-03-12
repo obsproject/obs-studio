@@ -305,7 +305,7 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		return false;
 	}
 
-	if (api)
+	if (api && !rename)
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
 
 	config_set_string(App()->GlobalConfig(), "Basic", "Profile",
@@ -350,7 +350,7 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 		wizard.exec();
 	}
 
-	if (api) {
+	if (api && !rename) {
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
 		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
 	}
@@ -517,9 +517,6 @@ void OBSBasic::on_actionDupProfile_triggered()
 
 void OBSBasic::on_actionRenameProfile_triggered()
 {
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
-
 	std::string curDir =
 		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
 	std::string curName =
@@ -534,10 +531,8 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		RefreshProfiles();
 	}
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
-	}
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
 }
 
 void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)

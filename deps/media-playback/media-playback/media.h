@@ -62,6 +62,7 @@ struct mp_media {
 	int scale_linesizes[4];
 	uint8_t *scale_pic[4];
 
+	DARRAY(AVPacket *) packet_pool;
 	struct mp_decode v;
 	struct mp_decode a;
 	bool is_local_file;
@@ -136,10 +137,6 @@ extern int64_t mp_get_current_time(mp_media_t *m);
 extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
 
 /* #define DETAILED_DEBUG_INFO */
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-#define USE_NEW_FFMPEG_DECODE_API
-#endif
 
 #ifdef __cplusplus
 }

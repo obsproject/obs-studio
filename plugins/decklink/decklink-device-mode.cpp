@@ -18,11 +18,7 @@ DeckLinkDeviceMode::DeckLinkDeviceMode(const std::string &name, long long id)
 {
 }
 
-DeckLinkDeviceMode::~DeckLinkDeviceMode(void)
-{
-	if (mode != nullptr)
-		mode->Release();
-}
+DeckLinkDeviceMode::~DeckLinkDeviceMode(void) {}
 
 BMDDisplayMode DeckLinkDeviceMode::GetDisplayMode(void) const
 {
@@ -82,11 +78,5 @@ bool DeckLinkDeviceMode::IsEqualFrameRate(int64_t num, int64_t den)
 
 void DeckLinkDeviceMode::SetMode(IDeckLinkDisplayMode *mode_)
 {
-	IDeckLinkDisplayMode *old = mode;
-	if (old != nullptr)
-		old->Release();
-
 	mode = mode_;
-	if (mode != nullptr)
-		mode->AddRef();
 }

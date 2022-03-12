@@ -433,10 +433,11 @@ obs_source_t *obs_source_create_private(const char *id, const char *name,
 obs_source_t *obs_source_create_set_last_ver(const char *id, const char *name,
 					     obs_data_t *settings,
 					     obs_data_t *hotkey_data,
-					     uint32_t last_obs_ver)
+					     uint32_t last_obs_ver,
+					     bool is_private)
 {
 	return obs_source_create_internal(id, name, settings, hotkey_data,
-					  false, last_obs_ver);
+					  is_private, last_obs_ver);
 }
 
 static char *get_new_filter_name(obs_source_t *dst, const char *name)
@@ -3859,9 +3860,16 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 		return false;
 	}
 
-	if (!filter->filter_texrender)
+	if (filter->filter_texrender &&
+	    (gs_texrender_get_format(filter->filter_texrender) != format)) {
+		gs_texrender_destroy(filter->filter_texrender);
+		filter->filter_texrender = NULL;
+	}
+
+	if (!filter->filter_texrender) {
 		filter->filter_texrender =
 			gs_texrender_create(format, GS_ZS_NONE);
+	}
 
 	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
 		gs_blend_state_push();

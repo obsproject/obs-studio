@@ -95,8 +95,11 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_LIST_CHANGED**
 
-     Triggered when a scene collection has been
-     added/removed/renamed.
+     Triggered when a scene collection has been added or removed.
+
+   - **OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED**
+
+     Triggered when a scene collection has been renamed.
 
    - **OBS_FRONTEND_EVENT_PROFILE_CHANGING**
 
@@ -108,7 +111,11 @@ Structures/Enumerations
 
    - **OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED**
 
-     Triggered when a profile has been added/removed/renamed.
+     Triggered when a profile has been added or removed.
+
+   - **OBS_FRONTEND_EVENT_PROFILE_RENAMED**
+
+     Triggered when a profile has been renamed.
 
    - **OBS_FRONTEND_EVENT_FINISHED_LOADING**
 
@@ -761,3 +768,9 @@ Functions
 
    :return: A new pointer to the current record output path.  Free
             with :c:func:`bfree()`
+
+---------------------------------------
+
+.. function:: const char *obs_frontend_get_locale_string(const char *string)
+
+   :return: Gets the frontend translation of a given string.
