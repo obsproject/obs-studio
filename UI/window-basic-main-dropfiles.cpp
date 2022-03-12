@@ -18,7 +18,7 @@ using namespace std;
 static const char *textExtensions[] = {"txt", "log", nullptr};
 
 static const char *imageExtensions[] = {"bmp",  "tga", "png",  "jpg",
-					"jpeg", "gif", nullptr};
+					"jpeg", "gif", "webp", nullptr};
 
 static const char *htmlExtensions[] = {"htm", "html", nullptr};
 
