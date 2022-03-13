@@ -36,6 +36,14 @@ static const char *ffmpeg_mux_getname(void *type)
 	return obs_module_text("FFmpegMuxer");
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
+static const char *ffmpeg_mpegts_mux_getname(void *type)
+{
+	UNUSED_PARAMETER(type);
+	return obs_module_text("FFmpegMpegtsMuxer");
+}
+#endif
+
 static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
 	while (stream->packets.size > 0) {
@@ -892,6 +900,31 @@ static int connect_time(struct ffmpeg_muxer *stream)
 	return 0;
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
+static int ffmpeg_mpegts_mux_connect_time(void *data)
+{
+	struct ffmpeg_muxer *stream = data;
+	/* TODO */
+	return connect_time(stream);
+}
+
+struct obs_output_info ffmpeg_mpegts_muxer = {
+	.id = "ffmpeg_mpegts_muxer",
+	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
+		 OBS_OUTPUT_SERVICE,
+	.encoded_video_codecs = "h264;av1",
+	.encoded_audio_codecs = "aac",
+	.get_name = ffmpeg_mpegts_mux_getname,
+	.create = ffmpeg_mux_create,
+	.destroy = ffmpeg_mux_destroy,
+	.start = ffmpeg_mux_start,
+	.stop = ffmpeg_mux_stop,
+	.encoded_packet = ffmpeg_mux_data,
+	.get_total_bytes = ffmpeg_mux_total_bytes,
+	.get_properties = ffmpeg_mux_properties,
+	.get_connect_time_ms = ffmpeg_mpegts_mux_connect_time,
+};
+#endif
 /* ------------------------------------------------------------------------ */
 
 static const char *replay_buffer_getname(void *type)
