@@ -328,7 +328,14 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 
 	// while RTWQ was introduced in Win 8.1, it silently fails
 	// to capture Desktop Audio for some reason. Disable for now.
-	if (get_win_ver_int() >= _WIN32_WINNT_WIN10)
+	struct win_version_info win1703 = {};
+	win1703.major = 10;
+	win1703.minor = 0;
+	win1703.build = 15063;
+	win1703.revis = 0;
+	struct win_version_info ver;
+	get_win_ver(&ver);
+	if (win_version_compare(&ver, &win1703) >= 0)
 		rtwq_supported = rtwq_module != NULL;
 
 	if (rtwq_supported) {
