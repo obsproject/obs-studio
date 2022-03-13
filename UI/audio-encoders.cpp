@@ -18,12 +18,12 @@ static const char *NullToEmpty(const char *str)
 	return str ? str : "";
 }
 
-static const char *EncoderName(const char *id)
+static const char *EncoderName(const std::string &id)
 {
-	return NullToEmpty(obs_encoder_get_display_name(id));
+	return NullToEmpty(obs_encoder_get_display_name(id.c_str()));
 }
 
-static map<int, const char *> bitrateMap;
+static map<int, std::string> bitrateMap;
 
 static void HandleIntProperty(obs_property_t *prop, const char *id)
 {
@@ -199,7 +199,7 @@ static void PopulateBitrateMap()
 	});
 }
 
-const map<int, const char *> &GetAACEncoderBitrateMap()
+const map<int, std::string> &GetAACEncoderBitrateMap()
 {
 	PopulateBitrateMap();
 	return bitrateMap;
@@ -211,7 +211,7 @@ const char *GetAACEncoderForBitrate(int bitrate)
 	auto res = map_.find(bitrate);
 	if (res == end(map_))
 		return NULL;
-	return res->second;
+	return res->second.c_str();
 }
 
 #define INVALID_BITRATE 10000

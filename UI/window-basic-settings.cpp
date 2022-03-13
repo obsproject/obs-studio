@@ -277,8 +277,9 @@ static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 
 	vector<pair<QString, QString>> pairs;
 	for (auto &entry : bitrateMap)
-		pairs.emplace_back(QString::number(entry.first),
-				   obs_encoder_get_display_name(entry.second));
+		pairs.emplace_back(
+			QString::number(entry.first),
+			obs_encoder_get_display_name(entry.second.c_str()));
 
 	for (auto box : boxes) {
 		QString currentText = box->currentText();
