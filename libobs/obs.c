@@ -268,19 +268,24 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 		}
 	}
 
+	enum gs_color_format format = GS_RGBA;
+	enum gs_color_space space = GS_CS_SRGB;
+
 	video->render_texture = gs_texture_create(ovi->base_width,
-						  ovi->base_height, GS_RGBA, 1,
+						  ovi->base_height, format, 1,
 						  NULL, GS_RENDER_TARGET);
 	if (!video->render_texture)
 		success = false;
 
 	video->output_texture = gs_texture_create(ovi->output_width,
-						  ovi->output_height, GS_RGBA,
-						  1, NULL, GS_RENDER_TARGET);
+						  ovi->output_height, format, 1,
+						  NULL, GS_RENDER_TARGET);
 	if (!video->output_texture)
 		success = false;
 
-	if (!success) {
+	if (success) {
+		video->render_space = space;
+	} else {
 		for (size_t i = 0; i < NUM_TEXTURES; i++) {
 			for (size_t c = 0; c < NUM_CHANNELS; c++) {
 				if (video->copy_surfaces[i][c]) {
@@ -1807,18 +1812,37 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 	if (!video->texture_rendered)
 		return;
 
+	const enum gs_color_space source_space = video->render_space;
+	const enum gs_color_space current_space = gs_get_color_space();
+	const char *tech_name = "Draw";
+	float multiplier = 1.0f;
+	if ((current_space == GS_CS_SRGB) &&
+	    (source_space == GS_CS_709_EXTENDED)) {
+		tech_name = "DrawTonemap";
+	} else if (current_space == GS_CS_709_SCRGB) {
+		tech_name = "DrawMultiply";
+		multiplier = obs_get_video_sdr_white_level() / 80.0f;
+	}
+
+	const bool previous = gs_framebuffer_srgb_enabled();
+	gs_enable_framebuffer_srgb(true);
+
 	tex = video->render_texture;
 	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	param = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(param, tex);
+	gs_effect_set_texture_srgb(param, tex);
+	param = gs_effect_get_param_by_name(effect, "multiplier");
+	gs_effect_set_float(param, multiplier);
 
 	gs_blend_state_push();
 	gs_blend_function_separate(src_c, dest_c, src_a, dest_a);
 
-	while (gs_effect_loop(effect, "Draw"))
+	while (gs_effect_loop(effect, tech_name))
 		gs_draw_sprite(tex, 0, 0, 0);
 
 	gs_blend_state_pop();
+
+	gs_enable_framebuffer_srgb(previous);
 }
 
 void obs_render_main_texture(void)

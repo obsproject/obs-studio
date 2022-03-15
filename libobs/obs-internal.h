@@ -256,6 +256,7 @@ struct obs_core_video {
 #endif
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
+	enum gs_color_space render_space;
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;

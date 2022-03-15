@@ -1,5 +1,6 @@
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float multiplier;
 
 sampler_state def_sampler {
 	Filter   = Linear;
@@ -69,6 +70,48 @@ float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float3 rec709_to_rec2020(float3 v)
+{
+	float r = dot(v, float3(0.6274040f, 0.3292820f, 0.0433136f));
+	float g = dot(v, float3(0.0690970f, 0.9195400f, 0.0113612f));
+	float b = dot(v, float3(0.0163916f, 0.0880132f, 0.8955950f));
+	return float3(r, g, b);
+}
+
+float3 rec2020_to_rec709(float3 v)
+{
+	float r = dot(v, float3(1.6604910, -0.5876411, -0.0728499));
+	float g = dot(v, float3(-0.1245505, 1.1328999, -0.0083494));
+	float b = dot(v, float3(-0.0181508, -0.1005789, 1.1187297));
+	return float3(r, g, b);
+}
+
+float reinhard_channel(float x)
+{
+	return x / (x + 1.0);
+}
+
+float3 reinhard(float3 rgb)
+{
+	return float3(reinhard_channel(rgb.r), reinhard_channel(rgb.g), reinhard_channel(rgb.b));
+}
+
+float4 PSDrawTonemap(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
 technique Draw
 {
 	pass
@@ -102,5 +145,23 @@ technique DrawSrgbDecompress
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawSrgbDecompress(vert_in);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMultiply(vert_in);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawTonemap(vert_in);
 	}
 }
