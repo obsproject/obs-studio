@@ -1,6 +1,12 @@
 name: Clang Format Check
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
+  pull_request:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
 
 jobs:
   clang-format-check:
@@ -15,7 +21,7 @@ jobs:
         run: |
           sudo apt-get install -y clang-format-12
 
-      - name: Check the Formatting
+      - name: 'Run clang-format'
         run: |
-          ./formatcode.sh
           ./CI/check-format.sh
+          ./CI/check-changes.sh

@@ -16,38 +16,36 @@ if(OS_WINDOWS AND MSVC)
   endif()
 
   # Check for Win SDK version 10.0.20348 or above
-  if(MSVC_VERSION LESS 1920)
-    message(
-      INFO
-      "  + OBS-Studio - Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}"
-    )
-    string(REPLACE "." ";" WINAPI_VER
-                   "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+  message(
+    INFO
+    "  + OBS-Studio - Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}"
+  )
+  string(REPLACE "." ";" WINAPI_VER
+                 "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 
-    list(GET WINAPI_VER 0 WINAPI_VER_MAJOR)
-    list(GET WINAPI_VER 1 WINAPI_VER_MINOR)
-    list(GET WINAPI_VER 2 WINAPI_VER_BUILD)
+  list(GET WINAPI_VER 0 WINAPI_VER_MAJOR)
+  list(GET WINAPI_VER 1 WINAPI_VER_MINOR)
+  list(GET WINAPI_VER 2 WINAPI_VER_BUILD)
 
-    set(WINAPI_COMPATIBLE FALSE)
-    if(WINAPI_VER_MAJOR EQUAL 10)
-      if(WINAPI_VER_MINOR EQUAL 0)
-        if(WINAPI_VER_BUILD GREATER_EQUAL 20348)
-          set(WINAPI_COMPATIBLE TRUE)
-        endif()
-      else()
+  set(WINAPI_COMPATIBLE FALSE)
+  if(WINAPI_VER_MAJOR EQUAL 10)
+    if(WINAPI_VER_MINOR EQUAL 0)
+      if(WINAPI_VER_BUILD GREATER_EQUAL 20348)
         set(WINAPI_COMPATIBLE TRUE)
       endif()
-    elseif(WINAPI_VER_MAJOR GREATER 10)
+    else()
       set(WINAPI_COMPATIBLE TRUE)
     endif()
+  elseif(WINAPI_VER_MAJOR GREATER 10)
+    set(WINAPI_COMPATIBLE TRUE)
+  endif()
 
-    if(NOT WINAPI_COMPATIBLE)
-      message(
-        FATAL_ERROR
-          "OBS: OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
-          "     Please download the most recent Windows 10 SDK in order to compile (or update to Visual Studio 2019)."
-      )
-    endif()
+  if(NOT WINAPI_COMPATIBLE)
+    message(
+      FATAL_ERROR
+        "OBS: OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
+        "     Please download the most recent Windows 10 SDK in order to compile."
+    )
   endif()
 
   add_compile_options(
