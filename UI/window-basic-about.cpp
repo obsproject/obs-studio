@@ -131,7 +131,11 @@ void OBSAbout::ShowAuthors()
 	QString error = "Error! File could not be read.\n\n \
 		Go to: https://github.com/obsproject/obs-studio/blob/master/AUTHORS";
 
+#ifdef __APPLE__
+	if (!GetDataFilePath("AUTHORS", path)) {
+#else
 	if (!GetDataFilePath("authors/AUTHORS", path)) {
+#endif
 		ui->textBrowser->setPlainText(error);
 		return;
 	}

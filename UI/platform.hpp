@@ -28,7 +28,7 @@ class QWidget;
 bool GetDataFilePath(const char *data, std::string &path);
 
 /* Updates the working directory for OSX application bundles */
-bool InitApplicationBundle();
+bool OBS_DEPRECATED InitApplicationBundle();
 
 std::string GetDefaultVideoSavePath();
 
@@ -77,6 +77,7 @@ bool IsRunningOnWine();
 #ifdef __APPLE__
 void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
+bool isInBundle();
 void InstallNSApplicationSubclass();
 void disableColorSpaceConversion(QWidget *window);
 bool ProcessIsRosettaTranslated();
