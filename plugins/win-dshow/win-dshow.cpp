@@ -78,6 +78,9 @@ using namespace DShow;
 #define TEXT_DEACTIVATE     obs_module_text("Deactivate")
 #define TEXT_COLOR_SPACE    obs_module_text("ColorSpace")
 #define TEXT_COLOR_DEFAULT  obs_module_text("ColorSpace.Default")
+#define TEXT_COLOR_709      obs_module_text("ColorSpace.709")
+#define TEXT_COLOR_601      obs_module_text("ColorSpace.601")
+#define TEXT_COLOR_2020     obs_module_text("ColorSpace.2020")
 #define TEXT_COLOR_RANGE    obs_module_text("ColorRange")
 #define TEXT_RANGE_DEFAULT  obs_module_text("ColorRange.Default")
 #define TEXT_RANGE_PARTIAL  obs_module_text("ColorRange.Partial")
@@ -437,6 +440,8 @@ static inline video_format ConvertVideoFormat(VideoFormat format)
 		return VIDEO_FORMAT_UYVY;
 	case VideoFormat::HDYC:
 		return VIDEO_FORMAT_UYVY;
+	case VideoFormat::P010:
+		return VIDEO_FORMAT_P010;
 	default:
 		return VIDEO_FORMAT_NONE;
 	}
@@ -545,6 +550,7 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	frame.format = ConvertVideoFormat(config.format);
 	frame.flip = flip;
 	frame.flags = OBS_SOURCE_FRAME_LINEAR_ALPHA;
+	frame.trc = VIDEO_TRC_DEFAULT;
 
 	/* YUV DIBS are always top-down */
 	if (config.format == VideoFormat::XRGB ||
@@ -591,6 +597,12 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	} else if (videoConfig.format == VideoFormat::Y800) {
 		frame.data[0] = data;
 		frame.linesize[0] = cx;
+
+	} else if (videoConfig.format == VideoFormat::P010) {
+		frame.data[0] = data;
+		frame.data[1] = frame.data[0] + (cx * cy_abs) * 2;
+		frame.linesize[0] = cx * 2;
+		frame.linesize[1] = cx * 2;
 
 	} else {
 		/* TODO: other formats */
@@ -1083,6 +1095,9 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 	if (astrcmpi(space, "601") == 0)
 		return VIDEO_CS_601;
 
+	if (astrcmpi(space, "2020") == 0)
+		return VIDEO_CS_2020_PQ;
+
 	return VIDEO_CS_DEFAULT;
 }
 
@@ -1348,6 +1363,7 @@ static const VideoFormatName videoFormatNames[] = {
 	{VideoFormat::NV12, "NV12"},
 	{VideoFormat::YV12, "YV12"},
 	{VideoFormat::Y800, "Y800"},
+	{VideoFormat::P010, "P010"},
 
 	/* packed YUV formats */
 	{VideoFormat::YVYU, "YVYU"},
@@ -1357,7 +1373,8 @@ static const VideoFormatName videoFormatNames[] = {
 
 	/* encoded formats */
 	{VideoFormat::MJPEG, "MJPEG"},
-	{VideoFormat::H264, "H264"}};
+	{VideoFormat::H264, "H264"},
+};
 
 static bool ResTypeChanged(obs_properties_t *props, obs_property_t *p,
 			   obs_data_t *settings);
@@ -1925,8 +1942,9 @@ static obs_properties_t *GetDShowProperties(void *obj)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, TEXT_COLOR_DEFAULT, "default");
-	obs_property_list_add_string(p, "709", "709");
-	obs_property_list_add_string(p, "601", "601");
+	obs_property_list_add_string(p, TEXT_COLOR_709, "709");
+	obs_property_list_add_string(p, TEXT_COLOR_601, "601");
+	obs_property_list_add_string(p, TEXT_COLOR_2020, "2020");
 
 	p = obs_properties_add_list(ppts, COLOR_RANGE, TEXT_COLOR_RANGE,
 				    OBS_COMBO_TYPE_LIST,
