@@ -1017,6 +1017,11 @@ EXPORT uint32_t obs_source_get_width(obs_source_t *source);
 /** Gets the height of a source (if it has video) */
 EXPORT uint32_t obs_source_get_height(obs_source_t *source);
 
+/** Gets the color space of a source (if it has video) */
+EXPORT enum gs_color_space
+obs_source_get_color_space(obs_source_t *source, size_t count,
+			   const enum gs_color_space *preferred_spaces);
+
 /** Hints whether or not the source will blend texels */
 EXPORT bool obs_source_get_texcoords_centered(obs_source_t *source);
 
@@ -1386,6 +1391,10 @@ obs_source_process_filter_begin(obs_source_t *filter,
 				enum gs_color_format format,
 				enum obs_allow_direct_render allow_direct);
 
+EXPORT bool obs_source_process_filter_begin_with_color_space(
+	obs_source_t *filter, enum gs_color_format format,
+	enum gs_color_space space, enum obs_allow_direct_render allow_direct);
+
 /**
  * Draws the filter.
  *
@@ -1569,6 +1578,9 @@ EXPORT void obs_transition_force_stop(obs_source_t *transition);
 EXPORT void
 obs_transition_video_render(obs_source_t *transition,
 			    obs_transition_video_render_callback_t callback);
+
+EXPORT enum gs_color_space
+obs_transition_video_get_color_space(obs_source_t *transition);
 
 /** Directly renders its sub-source instead of to texture.  Returns false if no
  * longer transitioning */
