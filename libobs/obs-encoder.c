@@ -109,7 +109,7 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 
 	obs_context_init_control(&encoder->context, encoder,
 				 (obs_destroy_cb)obs_encoder_destroy);
-	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
+	obs_context_data_insert(&encoder->context, &obs->data.encoders_rwlock,
 				&obs->data.first_encoder);
 
 	blog(LOG_DEBUG, "encoder '%s' (%s) created", name, id);

@@ -354,11 +354,11 @@ struct obs_core_data {
 	struct obs_encoder *first_encoder;
 	struct obs_service *first_service;
 
-	pthread_mutex_t sources_mutex;
+	pthread_rwlock_t sources_rwlock;
 	pthread_mutex_t displays_mutex;
-	pthread_mutex_t outputs_mutex;
-	pthread_mutex_t encoders_mutex;
-	pthread_mutex_t services_mutex;
+	pthread_rwlock_t outputs_rwlock;
+	pthread_rwlock_t encoders_rwlock;
+	pthread_rwlock_t services_rwlock;
 	pthread_mutex_t audio_sources_mutex;
 	pthread_mutex_t draw_callbacks_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
@@ -514,7 +514,7 @@ struct obs_context_data {
 	DARRAY(char *) rename_cache;
 	pthread_mutex_t rename_cache_mutex;
 
-	pthread_mutex_t *mutex;
+	pthread_rwlock_t *rwlock;
 	struct obs_context_data *next;
 	struct obs_context_data **prev_next;
 
@@ -530,7 +530,7 @@ extern void obs_context_init_control(struct obs_context_data *context,
 extern void obs_context_data_free(struct obs_context_data *context);
 
 extern void obs_context_data_insert(struct obs_context_data *context,
-				    pthread_mutex_t *mutex, void *first);
+				    pthread_rwlock_t *rwlock, void *first);
 extern void obs_context_data_remove(struct obs_context_data *context);
 extern void obs_context_wait(struct obs_context_data *context);
 

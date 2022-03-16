@@ -149,7 +149,7 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 
 	obs_context_init_control(&output->context, output,
 				 (obs_destroy_cb)obs_output_destroy);
-	obs_context_data_insert(&output->context, &obs->data.outputs_mutex,
+	obs_context_data_insert(&output->context, &obs->data.outputs_rwlock,
 				&obs->data.first_output);
 
 	if (info)

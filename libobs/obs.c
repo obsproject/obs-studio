@@ -634,17 +634,17 @@ static bool obs_init_data(void)
 	pthread_mutex_init_value(&obs->data.displays_mutex);
 	pthread_mutex_init_value(&obs->data.draw_callbacks_mutex);
 
-	if (pthread_mutex_init_recursive(&data->sources_mutex) != 0)
+	if (pthread_rwlock_init(&data->sources_rwlock, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init_recursive(&data->audio_sources_mutex) != 0)
 		goto fail;
 	if (pthread_mutex_init_recursive(&data->displays_mutex) != 0)
 		goto fail;
-	if (pthread_mutex_init_recursive(&data->outputs_mutex) != 0)
+	if (pthread_rwlock_init(&data->outputs_rwlock, NULL) != 0)
 		goto fail;
-	if (pthread_mutex_init_recursive(&data->encoders_mutex) != 0)
+	if (pthread_rwlock_init(&data->encoders_rwlock, NULL) != 0)
 		goto fail;
-	if (pthread_mutex_init_recursive(&data->services_mutex) != 0)
+	if (pthread_rwlock_init(&data->services_rwlock, NULL) != 0)
 		goto fail;
 	if (pthread_mutex_init_recursive(&obs->data.draw_callbacks_mutex) != 0)
 		goto fail;
@@ -701,12 +701,12 @@ static void obs_free_data(void)
 
 	os_task_queue_wait(obs->destruction_task_thread);
 
-	pthread_mutex_destroy(&data->sources_mutex);
+	pthread_rwlock_destroy(&data->sources_rwlock);
 	pthread_mutex_destroy(&data->audio_sources_mutex);
 	pthread_mutex_destroy(&data->displays_mutex);
-	pthread_mutex_destroy(&data->outputs_mutex);
-	pthread_mutex_destroy(&data->encoders_mutex);
-	pthread_mutex_destroy(&data->services_mutex);
+	pthread_rwlock_destroy(&data->outputs_rwlock);
+	pthread_rwlock_destroy(&data->encoders_rwlock);
+	pthread_rwlock_destroy(&data->services_rwlock);
 	pthread_mutex_destroy(&data->draw_callbacks_mutex);
 	da_free(data->draw_callbacks);
 	da_free(data->tick_callbacks);
@@ -1469,7 +1469,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 {
 	obs_source_t *source;
 
-	pthread_mutex_lock(&obs->data.sources_mutex);
+	pthread_rwlock_rdlock(&obs->data.sources_rwlock);
 	source = obs->data.first_source;
 
 	while (source) {
@@ -1491,14 +1491,14 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 		source = (obs_source_t *)source->context.next;
 	}
 
-	pthread_mutex_unlock(&obs->data.sources_mutex);
+	pthread_rwlock_unlock(&obs->data.sources_rwlock);
 }
 
 void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 {
 	obs_source_t *source;
 
-	pthread_mutex_lock(&obs->data.sources_mutex);
+	pthread_rwlock_rdlock(&obs->data.sources_rwlock);
 	source = obs->data.first_source;
 
 	while (source) {
@@ -1515,20 +1515,20 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 		source = (obs_source_t *)source->context.next;
 	}
 
-	pthread_mutex_unlock(&obs->data.sources_mutex);
+	pthread_rwlock_unlock(&obs->data.sources_rwlock);
 }
 
-static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
+static inline void obs_enum(void *pstart, pthread_rwlock_t *rwlock, void *proc,
 			    void *param)
 {
 	struct obs_context_data **start = pstart, *context;
 	bool (*enum_proc)(void *, void *) = proc;
 
 	assert(start);
-	assert(mutex);
+	assert(rwlock);
 	assert(enum_proc);
 
-	pthread_mutex_lock(mutex);
+	pthread_rwlock_rdlock(rwlock);
 
 	context = *start;
 	while (context) {
@@ -1538,42 +1538,42 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 		context = context->next;
 	}
 
-	pthread_mutex_unlock(mutex);
+	pthread_rwlock_unlock(rwlock);
 }
 
 void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
 			  void *param)
 {
-	obs_enum(&obs->data.first_source, &obs->data.sources_mutex, enum_proc,
+	obs_enum(&obs->data.first_source, &obs->data.sources_rwlock, enum_proc,
 		 param);
 }
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
 {
-	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex, enum_proc,
+	obs_enum(&obs->data.first_output, &obs->data.outputs_rwlock, enum_proc,
 		 param);
 }
 
 void obs_enum_encoders(bool (*enum_proc)(void *, obs_encoder_t *), void *param)
 {
-	obs_enum(&obs->data.first_encoder, &obs->data.encoders_mutex, enum_proc,
+	obs_enum(&obs->data.first_encoder, &obs->data.encoders_rwlock, enum_proc,
 		 param);
 }
 
 void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *), void *param)
 {
-	obs_enum(&obs->data.first_service, &obs->data.services_mutex, enum_proc,
+	obs_enum(&obs->data.first_service, &obs->data.services_rwlock, enum_proc,
 		 param);
 }
 
 static inline void *get_context_by_name(void *vfirst, const char *name,
-					pthread_mutex_t *mutex,
+					pthread_rwlock_t *rwlock,
 					void *(*addref)(void *))
 {
 	struct obs_context_data **first = vfirst;
 	struct obs_context_data *context;
 
-	pthread_mutex_lock(mutex);
+	pthread_rwlock_rdlock(rwlock);
 
 	context = *first;
 	while (context) {
@@ -1584,7 +1584,7 @@ static inline void *get_context_by_name(void *vfirst, const char *name,
 		context = context->next;
 	}
 
-	pthread_mutex_unlock(mutex);
+	pthread_rwlock_unlock(rwlock);
 	return context;
 }
 
@@ -1616,7 +1616,7 @@ static inline void *obs_id_(void *data)
 obs_source_t *obs_get_source_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_source, name,
-				   &obs->data.sources_mutex,
+				   &obs->data.sources_rwlock,
 				   obs_source_addref_safe_);
 }
 
@@ -1625,7 +1625,7 @@ obs_source_t *obs_get_transition_by_name(const char *name)
 	struct obs_source **first = &obs->data.first_source;
 	struct obs_source *source;
 
-	pthread_mutex_lock(&obs->data.sources_mutex);
+	pthread_rwlock_rdlock(&obs->data.sources_rwlock);
 
 	source = *first;
 	while (source) {
@@ -1637,28 +1637,28 @@ obs_source_t *obs_get_transition_by_name(const char *name)
 		source = (void *)source->context.next;
 	}
 
-	pthread_mutex_unlock(&obs->data.sources_mutex);
+	pthread_rwlock_unlock(&obs->data.sources_rwlock);
 	return source;
 }
 
 obs_output_t *obs_get_output_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_output, name,
-				   &obs->data.outputs_mutex,
+				   &obs->data.outputs_rwlock,
 				   obs_output_addref_safe_);
 }
 
 obs_encoder_t *obs_get_encoder_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_encoder, name,
-				   &obs->data.encoders_mutex,
+				   &obs->data.encoders_rwlock,
 				   obs_encoder_addref_safe_);
 }
 
 obs_service_t *obs_get_service_by_name(const char *name)
 {
 	return get_context_by_name(&obs->data.first_service, name,
-				   &obs->data.services_mutex,
+				   &obs->data.services_rwlock,
 				   obs_service_addref_safe_);
 }
 
@@ -1935,8 +1935,6 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 	count = obs_data_array_count(array);
 	da_reserve(sources, count);
 
-	pthread_mutex_lock(&data->sources_mutex);
-
 	for (i = 0; i < count; i++) {
 		obs_data_t *source_data = obs_data_array_item(array, i);
 		obs_source_t *source = obs_load_source(source_data);
@@ -1962,8 +1960,6 @@ void obs_load_sources(obs_data_array_t *array, obs_load_source_cb cb,
 
 	for (i = 0; i < sources.num; i++)
 		obs_source_release(sources.array[i]);
-
-	pthread_mutex_unlock(&data->sources_mutex);
 
 	da_free(sources);
 }
@@ -2060,7 +2056,7 @@ obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 
 	array = obs_data_array_create();
 
-	pthread_mutex_lock(&data->sources_mutex);
+	pthread_rwlock_rdlock(&data->sources_rwlock);
 
 	source = data->first_source;
 
@@ -2077,7 +2073,7 @@ obs_data_array_t *obs_save_sources_filtered(obs_save_source_filter_cb cb,
 		source = (obs_source_t *)source->context.next;
 	}
 
-	pthread_mutex_unlock(&data->sources_mutex);
+	pthread_rwlock_unlock(&data->sources_rwlock);
 
 	return array;
 }
@@ -2181,41 +2177,41 @@ void obs_context_init_control(struct obs_context_data *context, void *object,
 }
 
 void obs_context_data_insert(struct obs_context_data *context,
-			     pthread_mutex_t *mutex, void *pfirst)
+			     pthread_rwlock_t *rwlock, void *pfirst)
 {
 	struct obs_context_data **first = pfirst;
 
 	assert(context);
-	assert(mutex);
+	assert(rwlock);
 	assert(first);
 
-	context->mutex = mutex;
+	context->rwlock = rwlock;
 
-	pthread_mutex_lock(mutex);
+	pthread_rwlock_wrlock(rwlock);
 	context->prev_next = first;
 	context->next = *first;
 	*first = context;
 	if (context->next)
 		context->next->prev_next = &context->next;
-	pthread_mutex_unlock(mutex);
+	pthread_rwlock_unlock(rwlock);
 }
 
 void obs_context_data_remove(struct obs_context_data *context)
 {
 	if (context && context->prev_next) {
-		pthread_mutex_lock(context->mutex);
+		pthread_rwlock_wrlock(context->rwlock);
 		*context->prev_next = context->next;
 		if (context->next)
 			context->next->prev_next = context->prev_next;
 		context->prev_next = NULL;
-		pthread_mutex_unlock(context->mutex);
+		pthread_rwlock_unlock(context->rwlock);
 	}
 }
 
 void obs_context_wait(struct obs_context_data *context)
 {
-	pthread_mutex_lock(context->mutex);
-	pthread_mutex_unlock(context->mutex);
+	pthread_rwlock_wrlock(context->rwlock);
+	pthread_rwlock_unlock(context->rwlock);
 }
 
 void obs_context_data_setname(struct obs_context_data *context,

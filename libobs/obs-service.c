@@ -65,7 +65,7 @@ static obs_service_t *obs_service_create_internal(const char *id,
 
 	obs_context_init_control(&service->context, service,
 				 (obs_destroy_cb)obs_service_destroy);
-	obs_context_data_insert(&service->context, &obs->data.services_mutex,
+	obs_context_data_insert(&service->context, &obs->data.services_rwlock,
 				&obs->data.first_service);
 
 	blog(LOG_DEBUG, "service '%s' (%s) created", name, id);

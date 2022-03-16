@@ -59,7 +59,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	/* ------------------------------------- */
 	/* call the tick function of each source */
 
-	pthread_mutex_lock(&data->sources_mutex);
+	pthread_rwlock_rdlock(&data->sources_rwlock);
 
 	source = data->first_source;
 	while (source) {
@@ -73,7 +73,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 		source = (struct obs_source *)source->context.next;
 	}
 
-	pthread_mutex_unlock(&data->sources_mutex);
+	pthread_rwlock_unlock(&data->sources_rwlock);
 
 	return cur_time;
 }

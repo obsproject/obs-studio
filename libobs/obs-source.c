@@ -243,7 +243,7 @@ static void obs_source_init_finalize(struct obs_source *source)
 		pthread_mutex_unlock(&obs->data.audio_sources_mutex);
 	}
 
-	obs_context_data_insert(&source->context, &obs->data.sources_mutex,
+	obs_context_data_insert(&source->context, &obs->data.sources_rwlock,
 				&obs->data.first_source);
 }
 
