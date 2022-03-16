@@ -1119,28 +1119,35 @@ static bool try_connect(struct ffmpeg_output *output)
 
 	config.color_range = voi->range == VIDEO_RANGE_FULL ? AVCOL_RANGE_JPEG
 							    : AVCOL_RANGE_MPEG;
+	config.colorspace = format_is_yuv(voi->format) ? AVCOL_SPC_BT709
+						       : AVCOL_SPC_RGB;
 	switch (voi->colorspace) {
 	case VIDEO_CS_601:
 		config.color_primaries = AVCOL_PRI_SMPTE170M;
 		config.color_trc = AVCOL_TRC_SMPTE170M;
+		config.colorspace = AVCOL_SPC_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
 		config.color_primaries = AVCOL_PRI_BT709;
 		config.color_trc = AVCOL_TRC_BT709;
+		config.colorspace = AVCOL_SPC_BT709;
 		break;
 	case VIDEO_CS_SRGB:
 		config.color_primaries = AVCOL_PRI_BT709;
 		config.color_trc = AVCOL_TRC_IEC61966_2_1;
+		config.colorspace = AVCOL_SPC_BT709;
 		break;
-	}
-
-	if (format_is_yuv(voi->format)) {
-		config.colorspace = (voi->colorspace == VIDEO_CS_601)
-					    ? AVCOL_SPC_SMPTE170M
-					    : AVCOL_SPC_BT709;
-	} else {
-		config.colorspace = AVCOL_SPC_RGB;
+	case VIDEO_CS_2020_PQ:
+		config.color_primaries = AVCOL_PRI_BT2020;
+		config.color_trc = AVCOL_TRC_SMPTE2084;
+		config.colorspace = AVCOL_SPC_BT2020_NCL;
+		break;
+	case VIDEO_CS_2020_HLG:
+		config.color_primaries = AVCOL_PRI_BT2020;
+		config.color_trc = AVCOL_TRC_ARIB_STD_B67;
+		config.colorspace = AVCOL_SPC_BT2020_NCL;
+		break;
 	}
 
 	if (config.format == AV_PIX_FMT_NONE) {
