@@ -270,6 +270,12 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 
 	enum gs_color_format format = GS_RGBA;
 	enum gs_color_space space = GS_CS_SRGB;
+	switch (ovi->colorspace) {
+	case VIDEO_CS_2020_PQ:
+	case VIDEO_CS_2020_HLG:
+		format = GS_RGBA16F;
+		space = GS_CS_709_EXTENDED;
+	}
 
 	video->render_texture = gs_texture_create(ovi->base_width,
 						  ovi->base_height, format, 1,
