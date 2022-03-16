@@ -70,6 +70,23 @@ static struct {
 	   0.000000f, 0.000000f, 0.000000f, 1.000000f}}
 #endif
 	},
+	{VIDEO_CS_2020_PQ,
+	 0.0593f,
+	 0.2627f,
+	 {64, 64, 64},
+	 {940, 960, 960},
+	 {{64, 512, 512}, {0, 512, 512}},
+#ifndef COMPUTE_MATRICES
+	 {64.0f / 1023.0f, 64.0f / 1023.0f, 64.0f / 1023.0f},
+	 {940.0f / 1023.0f, 960.0f / 1023.0f, 960.0f / 1023.0f},
+	 {{1.167808f, 0.000000f, 1.683611f, -0.915688f, 1.167808f, -0.187877f,
+	   -0.652337f, 0.347459f, 1.167808f, 2.148072f, 0.000000f, -1.148145f,
+	   0.000000f, 0.000000f, 0.000000f, 1.000000f},
+	  {1.000000f, 0.000000f, 1.476043f, -0.738743f, 1.000000f, -0.164714f,
+	   -0.571912f, 0.368673f, 1.000000f, 1.883241f, 0.000000f, -0.942541f,
+	   0.000000f, 0.000000f, 0.000000f, 1.000000f}}
+#endif
+	},
 };
 
 #define NUM_FORMATS (sizeof(format_info) / sizeof(format_info[0]))
@@ -88,8 +105,9 @@ static void log_matrix(float const matrix[16])
 }
 
 static void initialize_matrix(float const Kb, float const Kr,
-			      int const range_min[3], int const range_max[3],
-			      int const black_levels[3], float matrix[16])
+			      float bit_range_max, int const range_min[3],
+			      int const range_max[3], int const black_levels[3],
+			      float matrix[16])
 {
 	struct matrix3 color_matrix;
 
@@ -97,15 +115,18 @@ static void initialize_matrix(float const Kb, float const Kr,
 	int uvals = (range_max[1] - range_min[1]) / 2;
 	int vvals = (range_max[2] - range_min[2]) / 2;
 
-	vec3_set(&color_matrix.x, 255. / yvals, 0., 255. / vvals * (1. - Kr));
-	vec3_set(&color_matrix.y, 255. / yvals,
-		 255. / uvals * (Kb - 1.) * Kb / (1. - Kb - Kr),
-		 255. / vvals * (Kr - 1.) * Kr / (1. - Kb - Kr));
-	vec3_set(&color_matrix.z, 255. / yvals, 255. / uvals * (1. - Kb), 0.);
+	vec3_set(&color_matrix.x, bit_range_max / yvals, 0.,
+		 bit_range_max / vvals * (1.f - Kr));
+	vec3_set(&color_matrix.y, bit_range_max / yvals,
+		 bit_range_max / uvals * (Kb - 1.f) * Kb / (1.f - Kb - Kr),
+		 bit_range_max / vvals * (Kr - 1.f) * Kr / (1.f - Kb - Kr));
+	vec3_set(&color_matrix.z, bit_range_max / yvals,
+		 bit_range_max / uvals * (1.f - Kb), 0.);
 
 	struct vec3 offsets, multiplied;
-	vec3_set(&offsets, -black_levels[0] / 255., -black_levels[1] / 255.,
-		 -black_levels[2] / 255.);
+	vec3_set(&offsets, -black_levels[0] / bit_range_max,
+		 -black_levels[1] / bit_range_max,
+		 -black_levels[2] / bit_range_max);
 	vec3_rotate(&multiplied, &offsets, &color_matrix);
 
 	matrix[0] = color_matrix.x.x;
@@ -131,16 +152,22 @@ static void initialize_matrix(float const Kb, float const Kr,
 
 static void initialize_matrices()
 {
-	static int range_min[] = {0, 0, 0};
-	static int range_max[] = {255, 255, 255};
+	static const int range_min[] = {0, 0, 0};
+	static const int range_max_8bit[] = {255, 255, 255};
+	static const int range_max_10bit[] = {1023, 1023, 1023};
 
 	for (size_t i = 0; i < NUM_FORMATS; i++) {
-		initialize_matrix(format_info[i].Kb, format_info[i].Kr,
+		const int *range_max =
+			(format_info[i].color_space == VIDEO_CS_2020_PQ)
+				? range_max_10bit
+				: range_max_8bit;
+		float f_r_max = (float)range_max[0];
+		initialize_matrix(format_info[i].Kb, format_info[i].Kr, f_r_max,
 				  range_min, range_max,
 				  format_info[i].black_levels[1],
 				  format_info[i].matrix[1]);
 
-		initialize_matrix(format_info[i].Kb, format_info[i].Kr,
+		initialize_matrix(format_info[i].Kb, format_info[i].Kr, f_r_max,
 				  format_info[i].range_min,
 				  format_info[i].range_max,
 				  format_info[i].black_levels[0],
@@ -148,9 +175,9 @@ static void initialize_matrices()
 
 		for (int j = 0; j < 3; j++) {
 			format_info[i].float_range_min[j] =
-				format_info[i].range_min[j] / 255.;
+				format_info[i].range_min[j] / f_r_max;
 			format_info[i].float_range_max[j] =
-				format_info[i].range_max[j] / 255.;
+				format_info[i].range_max[j] / f_r_max;
 		}
 	}
 }
@@ -173,6 +200,8 @@ bool video_format_get_parameters(enum video_colorspace color_space,
 #endif
 	if ((color_space == VIDEO_CS_DEFAULT) || (color_space == VIDEO_CS_SRGB))
 		color_space = VIDEO_CS_709;
+	else if (color_space == VIDEO_CS_2020_HLG)
+		color_space = VIDEO_CS_2020_PQ;
 
 	for (size_t i = 0; i < NUM_FORMATS; i++) {
 		if (format_info[i].color_space != color_space)

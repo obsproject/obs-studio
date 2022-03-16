@@ -39,10 +39,12 @@ Video Handler
 
    YUV color space.  Can be one of the following values:
 
-   - VIDEO_CS_DEFAULT - Equivalent to VIDEO_CS_709
-   - VIDEO_CS_601     - 601 color space
-   - VIDEO_CS_709     - 709 color space
-   - VIDEO_CS_SRGB    - sRGB color space
+   - VIDEO_CS_DEFAULT  - Equivalent to VIDEO_CS_709
+   - VIDEO_CS_601      - Rec. 601 color space
+   - VIDEO_CS_709      - Rec. 709 color space
+   - VIDEO_CS_SRGB     - sRGB color space
+   - VIDEO_CS_2020_PQ  - Rec. 2020 color space, PQ transfer
+   - VIDEO_CS_2020_HLG - Rec. 2020 color space, HLG transfer
 
 ---------------------
 

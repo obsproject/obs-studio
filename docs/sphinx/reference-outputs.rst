@@ -695,6 +695,24 @@ Functions used by outputs
    
            /* planar 4:4:4 */
            VIDEO_FORMAT_I444,
+   
+           /* more packed uncompressed formats */
+           VIDEO_FORMAT_BGR3,
+   
+           /* planar 4:2:2 */
+           VIDEO_FORMAT_I422,
+   
+           /* planar 4:2:0 with alpha */
+           VIDEO_FORMAT_I40A,
+   
+           /* planar 4:2:2 with alpha */
+           VIDEO_FORMAT_I42A,
+   
+           /* planar 4:4:4 with alpha */
+           VIDEO_FORMAT_YUVA,
+   
+           /* packed 4:4:4 with alpha */
+           VIDEO_FORMAT_AYUV,
    };
    
    enum video_colorspace {
@@ -702,6 +720,8 @@ Functions used by outputs
            VIDEO_CS_601,
            VIDEO_CS_709,
            VIDEO_CS_SRGB,
+           VIDEO_CS_2020_PQ,
+           VIDEO_CS_2020_HLG,
    };
    
    enum video_range_type {
