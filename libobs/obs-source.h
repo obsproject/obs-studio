@@ -546,6 +546,11 @@ struct obs_source_info {
 
 	/** Missing files **/
 	obs_missing_files_t *(*missing_files)(void *data);
+
+	/** Get color space **/
+	enum gs_color_space (*video_get_color_space)(
+		void *data, size_t count,
+		const enum gs_color_space *preferred_spaces);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

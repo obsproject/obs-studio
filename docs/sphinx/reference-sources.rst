@@ -502,6 +502,19 @@ Source Definition Structure (obs_source_info)
    - **OBS_MEDIA_STATE_ENDED**     - Ended
    - **OBS_MEDIA_STATE_ERROR**     - Error
 
+.. member:: enum gs_color_space (*obs_source_info.video_get_color_space)(void *data, size_t count, const enum gs_color_space *preferred_spaces)
+
+   Returns the color space of the source. Assume GS_CS_SRGB if not
+   implemented.
+
+   There's an optimization an SDR source can do when rendering to HDR.
+   Check if the active space is GS_CS_709_EXTENDED, and return
+   GS_CS_709_EXTENDED instead of GS_CS_SRGB to avoid an redundant
+   conversion. This optimization can only be done if the pixel shader
+   outputs linear 709, which is why it's not performed by default.
+
+   :return: The color space of the video
+
 
 .. _source_signal_handler_reference:
 
@@ -870,6 +883,18 @@ General Source Functions
    height.
 
    :return: The width or height of the source
+
+---------------------
+
+.. function:: enum gs_color_space obs_source_get_color_space(obs_source_t *source, size_t count, const enum gs_color_space *preferred_spaces)
+
+   Calls the :c:member:`obs_source_info.video_get_color_space` of the
+   source to get its color space. Assumes GS_CS_SRGB if not implemented.
+
+   Disabled filters are skipped, and async video sources can figure out
+   the color space for themselves.
+
+   :return: The color space of the source
 
 ---------------------
 
@@ -1396,6 +1421,16 @@ Functions used by filters
 
 ---------------------
 
+.. function:: bool obs_source_process_filter_begin_with_color_space(obs_source_t *filter, enum gs_color_format format, enum gs_color_space space, enum obs_allow_direct_render allow_direct)
+
+   Similar to obs_source_process_filter_begin, but also set the active
+   color space.
+
+   :return: *true* if filtering should continue, *false* if the filter
+            is bypassed for whatever reason
+
+---------------------
+
 .. function:: void obs_source_process_filter_end(obs_source_t *filter, gs_effect_t *effect, uint32_t width, uint32_t height)
 
    Draws the filter using the effect's "Draw" technique.
@@ -1535,6 +1570,16 @@ Functions used by transitions
    typedef void (*obs_transition_video_render_callback_t)(void *data,
                    gs_texture_t *a, gs_texture_t *b, float t,
                    uint32_t cx, uint32_t cy);
+
+---------------------
+
+.. function:: enum gs_color_space obs_transition_video_get_color_space(obs_source_t *transition)
+
+   Figure out the color space that encompasses both child sources.
+
+   The wider space wins.
+
+   :return: The color space of the transition
 
 ---------------------
 

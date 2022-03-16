@@ -705,6 +705,8 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	}
 	if (source->filter_texrender)
 		gs_texrender_destroy(source->filter_texrender);
+	if (source->color_space_texrender)
+		gs_texrender_destroy(source->color_space_texrender);
 	gs_leave_context();
 
 	for (i = 0; i < MAX_AV_PLANES; i++)
@@ -2253,6 +2255,66 @@ static void rotate_async_video(obs_source_t *source, long rotation)
 static inline void obs_source_render_async_video(obs_source_t *source)
 {
 	if (source->async_textures[0] && source->async_active) {
+		gs_effect_t *const effect =
+			obs_get_base_effect(OBS_EFFECT_DEFAULT);
+		const char *tech_name = "Draw";
+		float multiplier = 1.0;
+		const enum gs_color_space source_space = GS_CS_SRGB;
+		const enum gs_color_space current_space = gs_get_color_space();
+		bool linear_srgb = gs_get_linear_srgb();
+		switch (source_space) {
+		case GS_CS_SRGB:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				if (linear_srgb &&
+				    !source->async_linear_alpha) {
+					tech_name = "DrawNonlinearAlpha";
+				}
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawMultiply";
+				multiplier =
+					obs_get_video_sdr_white_level() / 80.0f;
+				linear_srgb = true;
+			}
+			break;
+		case GS_CS_709_EXTENDED:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawTonemap";
+				linear_srgb = true;
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawMultiply";
+				multiplier =
+					obs_get_video_sdr_white_level() / 80.0f;
+			}
+			break;
+		case GS_CS_709_SCRGB:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawMultiplyTonemap";
+				multiplier =
+					80.0f / obs_get_video_sdr_white_level();
+				linear_srgb = true;
+				break;
+			case GS_CS_709_EXTENDED:
+				tech_name = "DrawMultiply";
+				multiplier =
+					80.0f / obs_get_video_sdr_white_level();
+			}
+		}
+
+		const bool previous = gs_set_linear_srgb(linear_srgb);
+
+		gs_technique_t *const tech =
+			gs_effect_get_technique(effect, tech_name);
+		gs_effect_set_float(gs_effect_get_param_by_name(effect,
+								"multiplier"),
+				    multiplier);
+		gs_technique_begin(tech);
+		gs_technique_begin_pass(tech, 0);
+
 		long rotation = source->async_rotation;
 		if (rotation) {
 			gs_matrix_push();
@@ -2262,6 +2324,11 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 		if (rotation) {
 			gs_matrix_pop();
 		}
+
+		gs_technique_end_pass(tech);
+		gs_technique_end(tech);
+
+		gs_set_linear_srgb(previous);
 	}
 }
 
@@ -2280,20 +2347,177 @@ static inline void obs_source_render_filters(obs_source_t *source)
 	obs_source_release(first_filter);
 }
 
+static inline uint32_t get_async_width(const obs_source_t *source)
+{
+	return ((source->async_rotation % 180) == 0) ? source->async_width
+						     : source->async_height;
+}
+
+static inline uint32_t get_async_height(const obs_source_t *source)
+{
+	return ((source->async_rotation % 180) == 0) ? source->async_height
+						     : source->async_width;
+}
+
+static uint32_t get_base_width(const obs_source_t *source)
+{
+	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_width;
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		return source->enabled ? source->transition_actual_cx : 0;
+
+	} else if (func_valid && (!is_filter || source->enabled)) {
+		return source->info.get_width(source->context.data);
+
+	} else if (is_filter) {
+		return get_base_width(source->filter_target);
+	}
+
+	return source->async_active ? get_async_width(source) : 0;
+}
+
+static uint32_t get_base_height(const obs_source_t *source)
+{
+	bool is_filter = !!source->filter_parent;
+	bool func_valid = source->context.data && source->info.get_height;
+
+	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
+		return source->enabled ? source->transition_actual_cy : 0;
+
+	} else if (func_valid && (!is_filter || source->enabled)) {
+		return source->info.get_height(source->context.data);
+
+	} else if (is_filter) {
+		return get_base_height(source->filter_target);
+	}
+
+	return source->async_active ? get_async_height(source) : 0;
+}
+
+static void source_render(obs_source_t *source, gs_effect_t *effect)
+{
+	void *const data = source->context.data;
+	const enum gs_color_space current_space = gs_get_color_space();
+	const enum gs_color_space source_space =
+		obs_source_get_color_space(source, 1, &current_space);
+
+	const char *convert_tech = NULL;
+	float multiplier = 1.0;
+	enum gs_color_format format = gs_get_format_from_space(source_space);
+	switch (source_space) {
+	case GS_CS_SRGB:
+		switch (current_space) {
+		case GS_CS_709_EXTENDED:
+			convert_tech = "Draw";
+			break;
+		case GS_CS_709_SCRGB:
+			convert_tech = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_EXTENDED:
+		switch (current_space) {
+		case GS_CS_SRGB:
+			convert_tech = "DrawTonemap";
+			break;
+		case GS_CS_709_SCRGB:
+			convert_tech = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+			convert_tech = "DrawMultiplyTonemap";
+			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_EXTENDED:
+			convert_tech = "DrawMultiply";
+			multiplier = 80.0f / obs_get_video_sdr_white_level();
+		}
+	}
+
+	if (convert_tech) {
+		if (source->color_space_texrender) {
+			if (gs_texrender_get_format(
+				    source->color_space_texrender) != format) {
+				gs_texrender_destroy(
+					source->color_space_texrender);
+				source->color_space_texrender = NULL;
+			}
+		}
+
+		if (!source->color_space_texrender) {
+			source->color_space_texrender =
+				gs_texrender_create(format, GS_ZS_NONE);
+		}
+
+		gs_texrender_reset(source->color_space_texrender);
+		const int cx = get_base_width(source);
+		const int cy = get_base_height(source);
+		if (gs_texrender_begin_with_color_space(
+			    source->color_space_texrender, cx, cy,
+			    source_space)) {
+			gs_enable_blending(false);
+
+			gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f,
+				 100.0f);
+
+			source->info.video_render(data, effect);
+
+			gs_enable_blending(true);
+
+			gs_texrender_end(source->color_space_texrender);
+
+			gs_effect_t *default_effect = obs->video.default_effect;
+			gs_technique_t *tech = gs_effect_get_technique(
+				default_effect, convert_tech);
+
+			const bool previous = gs_framebuffer_srgb_enabled();
+			gs_enable_framebuffer_srgb(true);
+
+			gs_texture_t *const tex = gs_texrender_get_texture(
+				source->color_space_texrender);
+			gs_effect_set_texture_srgb(
+				gs_effect_get_param_by_name(default_effect,
+							    "image"),
+				tex);
+			gs_effect_set_float(
+				gs_effect_get_param_by_name(default_effect,
+							    "multiplier"),
+				multiplier);
+
+			const size_t passes = gs_technique_begin(tech);
+			for (size_t i = 0; i < passes; i++) {
+				gs_technique_begin_pass(tech, i);
+				gs_draw_sprite(tex, 0, 0, 0);
+				gs_technique_end_pass(tech);
+			}
+			gs_technique_end(tech);
+
+			gs_enable_framebuffer_srgb(previous);
+		}
+	} else {
+		source->info.video_render(data, effect);
+	}
+}
+
 void obs_source_default_render(obs_source_t *source)
 {
-	gs_effect_t *effect = obs->video.default_effect;
-	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
-	size_t passes, i;
+	if (source->context.data) {
+		gs_effect_t *effect = obs->video.default_effect;
+		gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
+		size_t passes, i;
 
-	passes = gs_technique_begin(tech);
-	for (i = 0; i < passes; i++) {
-		gs_technique_begin_pass(tech, i);
-		if (source->context.data)
-			source->info.video_render(source->context.data, effect);
-		gs_technique_end_pass(tech);
+		passes = gs_technique_begin(tech);
+		for (i = 0; i < passes; i++) {
+			gs_technique_begin_pass(tech, i);
+			source_render(source, effect);
+			gs_technique_end_pass(tech);
+		}
+		gs_technique_end(tech);
 	}
-	gs_technique_end(tech);
 }
 
 static inline void obs_source_main_render(obs_source_t *source)
@@ -2310,11 +2534,11 @@ static inline void obs_source_main_render(obs_source_t *source)
 		gs_set_linear_srgb(false);
 	}
 
-	if (default_effect)
+	if (default_effect) {
 		obs_source_default_render(source);
-	else if (source->context.data)
-		source->info.video_render(source->context.data,
-					  custom_draw ? NULL : gs_get_effect());
+	} else if (source->context.data) {
+		source_render(source, custom_draw ? NULL : gs_get_effect());
+	}
 
 	if (!srgb_aware)
 		gs_set_linear_srgb(previous_srgb);
@@ -2397,54 +2621,6 @@ void obs_source_video_render(obs_source_t *source)
 	}
 }
 
-static inline uint32_t get_async_width(const obs_source_t *source)
-{
-	return ((source->async_rotation % 180) == 0) ? source->async_width
-						     : source->async_height;
-}
-
-static inline uint32_t get_async_height(const obs_source_t *source)
-{
-	return ((source->async_rotation % 180) == 0) ? source->async_height
-						     : source->async_width;
-}
-
-static uint32_t get_base_width(const obs_source_t *source)
-{
-	bool is_filter = !!source->filter_parent;
-	bool func_valid = source->context.data && source->info.get_width;
-
-	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
-		return source->enabled ? source->transition_actual_cx : 0;
-
-	} else if (func_valid && (!is_filter || source->enabled)) {
-		return source->info.get_width(source->context.data);
-
-	} else if (is_filter) {
-		return get_base_width(source->filter_target);
-	}
-
-	return source->async_active ? get_async_width(source) : 0;
-}
-
-static uint32_t get_base_height(const obs_source_t *source)
-{
-	bool is_filter = !!source->filter_parent;
-	bool func_valid = source->context.data && source->info.get_height;
-
-	if (source->info.type == OBS_SOURCE_TYPE_TRANSITION) {
-		return source->enabled ? source->transition_actual_cy : 0;
-
-	} else if (func_valid && (!is_filter || source->enabled)) {
-		return source->info.get_height(source->context.data);
-
-	} else if (is_filter) {
-		return get_base_height(source->filter_target);
-	}
-
-	return source->async_active ? get_async_height(source) : 0;
-}
-
 static uint32_t get_recurse_width(obs_source_t *source)
 {
 	uint32_t width;
@@ -2492,6 +2668,36 @@ uint32_t obs_source_get_height(obs_source_t *source)
 	return (source->info.type != OBS_SOURCE_TYPE_FILTER)
 		       ? get_recurse_height(source)
 		       : get_base_height(source);
+}
+
+enum gs_color_space
+obs_source_get_color_space(obs_source_t *source, size_t count,
+			   const enum gs_color_space *preferred_spaces)
+{
+	if (!data_valid(source, "obs_source_get_color_space"))
+		return GS_CS_SRGB;
+
+	if (source->info.type != OBS_SOURCE_TYPE_FILTER &&
+	    (source->info.output_flags & OBS_SOURCE_VIDEO) == 0) {
+		if (source->filter_parent)
+			return obs_source_get_color_space(
+				source->filter_parent, count, preferred_spaces);
+	}
+
+	if (!source->context.data || !source->enabled) {
+		if (source->filter_parent)
+			return obs_source_get_color_space(
+				source->filter_parent, count, preferred_spaces);
+	}
+
+	if (source->info.output_flags & OBS_SOURCE_ASYNC)
+		return GS_CS_SRGB;
+
+	assert(source->context.data);
+	return source->info.video_get_color_space
+		       ? source->info.video_get_color_space(
+				 source->context.data, count, preferred_spaces)
+		       : GS_CS_SRGB;
 }
 
 uint32_t obs_source_get_base_width(obs_source_t *source)
@@ -3804,26 +4010,39 @@ static inline void render_filter_tex(gs_texture_t *tex, gs_effect_t *effect,
 
 static inline bool can_bypass(obs_source_t *target, obs_source_t *parent,
 			      uint32_t filter_flags, uint32_t parent_flags,
-			      enum obs_allow_direct_render allow_direct)
+			      enum obs_allow_direct_render allow_direct,
+			      enum gs_color_space space)
 {
 	return (target == parent) &&
 	       (allow_direct == OBS_ALLOW_DIRECT_RENDERING) &&
 	       ((parent_flags & OBS_SOURCE_CUSTOM_DRAW) == 0) &&
 	       ((parent_flags & OBS_SOURCE_ASYNC) == 0) &&
 	       ((filter_flags & OBS_SOURCE_SRGB) ==
-		(parent_flags & OBS_SOURCE_SRGB));
+			(parent_flags & OBS_SOURCE_SRGB) &&
+		space == gs_get_color_space());
 }
 
 bool obs_source_process_filter_begin(obs_source_t *filter,
 				     enum gs_color_format format,
 				     enum obs_allow_direct_render allow_direct)
 {
+	return obs_source_process_filter_begin_with_color_space(
+		filter, format, GS_CS_SRGB, allow_direct);
+}
+
+bool obs_source_process_filter_begin_with_color_space(
+	obs_source_t *filter, enum gs_color_format format,
+	enum gs_color_space space, enum obs_allow_direct_render allow_direct)
+{
 	obs_source_t *target, *parent;
 	uint32_t filter_flags, parent_flags;
 	int cx, cy;
 
-	if (!obs_ptr_valid(filter, "obs_source_process_filter_begin"))
+	if (!obs_ptr_valid(filter,
+			   "obs_source_process_filter_begin_with_color_space"))
 		return false;
+
+	filter->filter_bypass_active = false;
 
 	target = obs_filter_get_target(filter);
 	parent = obs_filter_get_parent(filter);
@@ -3850,8 +4069,9 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 	 * filter in the chain for the parent, then render the parent directly
 	 * using the filter effect instead of rendering to texture to reduce
 	 * the total number of passes */
-	if (can_bypass(target, parent, filter_flags, parent_flags,
-		       allow_direct)) {
+	if (can_bypass(target, parent, filter_flags, parent_flags, allow_direct,
+		       space)) {
+		filter->filter_bypass_active = true;
 		return true;
 	}
 
@@ -3871,7 +4091,8 @@ bool obs_source_process_filter_begin(obs_source_t *filter,
 			gs_texrender_create(format, GS_ZS_NONE);
 	}
 
-	if (gs_texrender_begin(filter->filter_texrender, cx, cy)) {
+	if (gs_texrender_begin_with_color_space(filter->filter_texrender, cx,
+						cy, space)) {
 		gs_blend_state_push();
 		gs_blend_function_separate(GS_BLEND_SRCALPHA,
 					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
@@ -3903,10 +4124,13 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 {
 	obs_source_t *target, *parent;
 	gs_texture_t *texture;
-	uint32_t filter_flags, parent_flags;
+	uint32_t filter_flags;
 
 	if (!filter)
 		return;
+
+	const bool filter_bypass_active = filter->filter_bypass_active;
+	filter->filter_bypass_active = false;
 
 	target = obs_filter_get_target(filter);
 	parent = obs_filter_get_parent(filter);
@@ -3915,15 +4139,13 @@ void obs_source_process_filter_tech_end(obs_source_t *filter,
 		return;
 
 	filter_flags = filter->info.output_flags;
-	parent_flags = parent->info.output_flags;
 
 	const bool previous =
 		gs_set_linear_srgb((filter_flags & OBS_SOURCE_SRGB) != 0);
 
 	const char *tech = tech_name ? tech_name : "Draw";
 
-	if (can_bypass(target, parent, filter_flags, parent_flags,
-		       filter->allow_direct)) {
+	if (filter_bypass_active) {
 		render_filter_bypass(target, effect, tech);
 	} else {
 		texture = gs_texrender_get_texture(filter->filter_texrender);

@@ -506,18 +506,6 @@ static void update_item_transform(struct obs_scene_item *item, bool update_tex)
 	if (!update_tex)
 		return;
 
-	if (item->item_render && !item_texture_enabled(item)) {
-		obs_enter_graphics();
-		gs_texrender_destroy(item->item_render);
-		item->item_render = NULL;
-		obs_leave_graphics();
-
-	} else if (!item->item_render && item_texture_enabled(item)) {
-		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-		obs_leave_graphics();
-	}
-
 	os_atomic_set_bool(&item->update_transform, false);
 }
 
@@ -556,7 +544,9 @@ static inline bool item_texture_enabled(const struct obs_scene_item *item)
 	       (item_is_scene(item) && !item->is_group);
 }
 
-static void render_item_texture(struct obs_scene_item *item)
+static void render_item_texture(struct obs_scene_item *item,
+				enum gs_color_space current_space,
+				enum gs_color_space source_space)
 {
 	gs_texture_t *tex = gs_texrender_get_texture(item->item_render);
 	if (!tex) {
@@ -570,8 +560,8 @@ static void render_item_texture(struct obs_scene_item *item)
 	enum obs_scale_type type = item->scale_filter;
 	uint32_t cx = gs_texture_get_width(tex);
 	uint32_t cy = gs_texture_get_height(tex);
-	const char *tech = "Draw";
 
+	bool upscale = false;
 	if (type != OBS_SCALE_DISABLE) {
 		if (type == OBS_SCALE_POINT) {
 			gs_eparam_t *image =
@@ -581,9 +571,6 @@ static void render_item_texture(struct obs_scene_item *item)
 
 		} else if (!close_float(item->output_scale.x, 1.0f, EPSILON) ||
 			   !close_float(item->output_scale.y, 1.0f, EPSILON)) {
-			gs_eparam_t *scale_param;
-			gs_eparam_t *scale_i_param;
-
 			if (item->output_scale.x < 0.5f ||
 			    item->output_scale.y < 0.5f) {
 				effect = obs->video.bilinear_lowres_effect;
@@ -593,21 +580,22 @@ static void render_item_texture(struct obs_scene_item *item)
 				effect = obs->video.lanczos_effect;
 			} else if (type == OBS_SCALE_AREA) {
 				effect = obs->video.area_effect;
-				if ((item->output_scale.x >= 1.0f) &&
-				    (item->output_scale.y >= 1.0f))
-					tech = "DrawUpscale";
+				upscale = (item->output_scale.x >= 1.0f) &&
+					  (item->output_scale.y >= 1.0f);
 			}
 
-			scale_param = gs_effect_get_param_by_name(
-				effect, "base_dimension");
+			gs_eparam_t *const scale_param =
+				gs_effect_get_param_by_name(effect,
+							    "base_dimension");
 			if (scale_param) {
 				struct vec2 base_res = {(float)cx, (float)cy};
 
 				gs_effect_set_vec2(scale_param, &base_res);
 			}
 
-			scale_i_param = gs_effect_get_param_by_name(
-				effect, "base_dimension_i");
+			gs_eparam_t *const scale_i_param =
+				gs_effect_get_param_by_name(effect,
+							    "base_dimension_i");
 			if (scale_i_param) {
 				struct vec2 base_res_i = {1.0f / (float)cx,
 							  1.0f / (float)cy};
@@ -616,6 +604,87 @@ static void render_item_texture(struct obs_scene_item *item)
 			}
 		}
 	}
+
+	float multiplier = 1.f;
+
+	switch (current_space) {
+	case GS_CS_709_SCRGB:
+		switch (source_space) {
+		case GS_CS_SRGB:
+		case GS_CS_709_EXTENDED:
+			multiplier = obs_get_video_sdr_white_level() / 80.f;
+		}
+	}
+
+	switch (source_space) {
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_709_EXTENDED:
+			multiplier = 80.f / obs_get_video_sdr_white_level();
+		}
+	}
+
+	const char *tech_name = "Draw";
+	if (upscale) {
+		tech_name = "DrawUpscale";
+		switch (source_space) {
+		case GS_CS_SRGB:
+			switch (current_space) {
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawUpscaleMultiply";
+			}
+			break;
+		case GS_CS_709_EXTENDED:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawUpscaleTonemap";
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawUpscaleMultiply";
+			}
+			break;
+		case GS_CS_709_SCRGB:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawUpscaleMultiplyTonemap";
+				break;
+			case GS_CS_709_EXTENDED:
+				tech_name = "DrawUpscaleMultiply";
+			}
+		}
+	} else {
+		switch (source_space) {
+		case GS_CS_SRGB:
+			switch (current_space) {
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawMultiply";
+			}
+			break;
+		case GS_CS_709_EXTENDED:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawTonemap";
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "DrawMultiply";
+			}
+			break;
+		case GS_CS_709_SCRGB:
+			switch (current_space) {
+			case GS_CS_SRGB:
+				tech_name = "DrawMultiplyTonemap";
+				break;
+			case GS_CS_709_EXTENDED:
+				tech_name = "DrawMultiply";
+			}
+		}
+	}
+
+	gs_eparam_t *const multiplier_param =
+		gs_effect_get_param_by_name(effect, "multiplier");
+	if (multiplier_param)
+		gs_effect_set_float(multiplier_param, multiplier);
 
 	gs_blend_state_push();
 
@@ -626,7 +695,7 @@ static void render_item_texture(struct obs_scene_item *item)
 		obs_blend_mode_params[item->blend_type].dst_alpha);
 	gs_blend_op(obs_blend_mode_params[item->blend_type].op);
 
-	while (gs_effect_loop(effect, tech))
+	while (gs_effect_loop(effect, tech_name))
 		obs_source_draw(tex, 0, 0, 0, 0, 0);
 
 	gs_blend_state_pop();
@@ -653,6 +722,26 @@ static inline void render_item(struct obs_scene_item *item)
 	GS_DEBUG_MARKER_BEGIN_FORMAT(GS_DEBUG_COLOR_ITEM, "Item: %s",
 				     obs_source_get_name(item->source));
 
+	const bool use_texrender = item_texture_enabled(item);
+
+	obs_source_t *const source = item->source;
+	const enum gs_color_space current_space = gs_get_color_space();
+	const enum gs_color_space source_space =
+		obs_source_get_color_space(source, 1, &current_space);
+	const enum gs_color_format format =
+		gs_get_format_from_space(source_space);
+
+	if (item->item_render &&
+	    (!use_texrender ||
+	     (gs_texrender_get_format(item->item_render) != format))) {
+		gs_texrender_destroy(item->item_render);
+		item->item_render = NULL;
+	}
+
+	if (!item->item_render && use_texrender) {
+		item->item_render = gs_texrender_create(format, GS_ZS_NONE);
+	}
+
 	if (item->item_render) {
 		uint32_t width = obs_source_get_width(item->source);
 		uint32_t height = obs_source_get_height(item->source);
@@ -664,7 +753,9 @@ static inline void render_item(struct obs_scene_item *item)
 		uint32_t cx = calc_cx(item, width);
 		uint32_t cy = calc_cy(item, height);
 
-		if (cx && cy && gs_texrender_begin(item->item_render, cx, cy)) {
+		if (cx && cy &&
+		    gs_texrender_begin_with_color_space(item->item_render, cx,
+							cy, source_space)) {
 			float cx_scale = (float)width / (float)cx;
 			float cy_scale = (float)height / (float)cy;
 			struct vec4 clear_color;
@@ -712,7 +803,7 @@ static inline void render_item(struct obs_scene_item *item)
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
-		render_item_texture(item);
+		render_item_texture(item, current_space, source_space);
 	} else if (item->user_visible &&
 		   transition_active(item->show_transition)) {
 		const int cx = obs_source_get_width(item->source);
@@ -978,18 +1069,6 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	if (hide_data) {
 		obs_sceneitem_transition_load(item, hide_data, false);
 		obs_data_release(hide_data);
-	}
-
-	if (item->item_render && !item_texture_enabled(item)) {
-		obs_enter_graphics();
-		gs_texrender_destroy(item->item_render);
-		item->item_render = NULL;
-		obs_leave_graphics();
-
-	} else if (!item->item_render && item_texture_enabled(item)) {
-		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-		obs_leave_graphics();
 	}
 
 	obs_source_release(source);
@@ -1393,6 +1472,32 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	return true;
 }
 
+enum gs_color_space
+scene_video_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(data);
+
+	enum gs_color_space canvas_space = GS_CS_SRGB;
+	struct obs_video_info ovi;
+	if (obs_get_video_info(&ovi)) {
+		switch (ovi.colorspace) {
+		case VIDEO_CS_2020_PQ:
+		case VIDEO_CS_2020_HLG:
+			canvas_space = GS_CS_709_EXTENDED;
+		}
+	}
+
+	enum gs_color_space space = canvas_space;
+	for (size_t i = 0; i < count; ++i) {
+		space = preferred_spaces[i];
+		if (space == canvas_space)
+			break;
+	}
+
+	return space;
+}
+
 const struct obs_source_info scene_info = {
 	.id = "scene",
 	.type = OBS_SOURCE_TYPE_SCENE,
@@ -1410,7 +1515,9 @@ const struct obs_source_info scene_info = {
 	.load = scene_load,
 	.save = scene_save,
 	.enum_active_sources = scene_enum_active_sources,
-	.enum_all_sources = scene_enum_all_sources};
+	.enum_all_sources = scene_enum_all_sources,
+	.video_get_color_space = scene_video_get_color_space,
+};
 
 const struct obs_source_info group_info = {
 	.id = "group",
@@ -1428,7 +1535,9 @@ const struct obs_source_info group_info = {
 	.load = scene_load,
 	.save = scene_save,
 	.enum_active_sources = scene_enum_active_sources,
-	.enum_all_sources = scene_enum_all_sources};
+	.enum_all_sources = scene_enum_all_sources,
+	.video_get_color_space = scene_video_get_color_space,
+};
 
 static inline obs_scene_t *create_id(const char *id, const char *name)
 {
@@ -1552,13 +1661,6 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 
 	if (defer_texture_update) {
 		os_atomic_set_bool(&dst->update_transform, true);
-	} else {
-		if (!dst->item_render && item_texture_enabled(dst)) {
-			obs_enter_graphics();
-			dst->item_render =
-				gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-			obs_leave_graphics();
-		}
 	}
 
 	if (duplicate_private_data) {
@@ -1997,12 +2099,6 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 		da_push_back(item->audio_actions, &action);
 	} else {
 		item->visible = true;
-	}
-
-	if (create_texture && item_texture_enabled(item)) {
-		obs_enter_graphics();
-		item->item_render = gs_texrender_create(GS_RGBA, GS_ZS_NONE);
-		obs_leave_graphics();
 	}
 
 	full_lock(scene);

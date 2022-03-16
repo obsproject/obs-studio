@@ -762,6 +762,7 @@ struct obs_source {
 	gs_texrender_t *filter_texrender;
 	enum obs_allow_direct_render allow_direct;
 	bool rendering_filter;
+	bool filter_bypass_active;
 
 	/* sources specific hotkeys */
 	obs_hotkey_pair_id mute_unmute_key;
@@ -802,6 +803,9 @@ struct obs_source {
 	enum obs_transition_mode transition_mode;
 	enum obs_transition_scale_type transition_scale_type;
 	struct matrix4 transition_matrices[2];
+
+	/* color space */
+	gs_texrender_t *color_space_texrender;
 
 	struct audio_monitor *monitor;
 	enum obs_monitoring_type monitoring_type;
