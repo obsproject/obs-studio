@@ -12,14 +12,22 @@ on:
     branches: [master]
 
 env:
+  CACHE_REVISION: '004'
   CEF_BUILD_VERSION_MAC: '4638'
+  CEF_HASH_MAC_X86_64: '2fe4cc39b1373b85086e4030dedd2a250d5dbbed8c2f8780002d6cd6214b6bc2'
+  CEF_HASH_MAC_ARM64: '27809aac427b9c97b0dadcab04371c5f8211f36c6f3e1caa00822de89c5ed249'
   CEF_BUILD_VERSION_LINUX: '4638'
   CEF_BUILD_VERSION_WIN: '4638'
   QT_VERSION_MAC: '5.15.2'
+  QT_HASH_MAC_X86_64: '35a58fee8dfd70d3d2dcc0ae0b77132c04a451c6f041a02dc41b207b375fc74b'
+  QT_HASH_MAC_ARM64: 'e99146b9c7775c245a2d22f2ef24fc111fccd71bad0f03b64db707124ffb8707'
   QT_VERSION_WIN: '5.15.2'
   DEPS_VERSION_MAC: '2022-02-13'
-  DEPS_VERSION_WIN: '2022-01-31'
+  DEPS_HASH_MAC_X86_64: '1a8715d66e664b857942deaded0dc46c4f6cd22e88f01ed1188f3bd3fcf632c4'
+  DEPS_HASH_MAC_ARM64: '2cfcaf05765400c696908f242aea87b6e1848e1a48cd3edc2eb7f8cb249c9d48'
+  DEPS_VERSION_WIN: '2022-03-16'
   VLC_VERSION_MAC: '3.0.8'
+  VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
   VLC_VERSION_WIN: '3.0.0-git'
   TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
   TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
@@ -60,11 +68,12 @@ jobs:
     runs-on: [macos-11]
     strategy:
       matrix:
-        arch: ['x86_64']
+        arch: ['x86_64', 'arm64']
     if: always()
     needs: [clang_check]
     env:
-      MACOSX_DEPLOYMENT_TARGET: '10.13'
+      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.13'
+      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       SPARKLE_VERSION: '1.26.0'
       SPARKLE_HASH: '8312cbf7528297a49f1b97692c33cb8d33254c396dc51be394e9484e4b6833a0'
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
@@ -109,7 +118,7 @@ jobs:
           CACHE_NAME: 'cef-cache'
         with:
           path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_MAC }}_macos_${{ matrix.arch }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_MAC }}-${{ matrix.arch }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_MAC }}-${{ matrix.arch }}-${{ env.CACHE_REVISION }}
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
@@ -118,7 +127,7 @@ jobs:
           CACHE_NAME: 'vlc-cache'
         with:
           path: ${{ github.workspace }}/obs-build-dependencies/vlc-${{ env.VLC_VERSION_MAC }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_MAC }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_MAC }}-${{ env.CACHE_REVISION }}
 
       - name: 'Restore Sparkle dependency from cache'
         id: sparkle-cache
@@ -126,8 +135,8 @@ jobs:
         env:
           CACHE_NAME: 'sparkle-cache'
         with:
-          path: ${{ github.workspace }}/obs-build-dependencies/sparkle
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}
+          path: ${{ github.workspace }}/obs-build-dependencies/obs-deps/lib/Sparkle.framework
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}-${{ env.CACHE_REVISION }}
 
       - name: 'Setup build environment'
         run: |
@@ -166,13 +175,13 @@ jobs:
         run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
 
       - name: 'Run tests'
-        if: success()
+        if: ${{ success() && matrix.arch == 'x86_64' }}
         run: cmake --build build -t test
 
       - name: 'Create build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
-          CI/macos/03_package_obs.sh --codesign
+          CI/macos/03_package_obs.sh --codesign --architecture "${{ matrix.arch }}"
           ARTIFACT_NAME=$(basename $(/usr/bin/find build -type f -name "obs-studio-*.dmg" -depth 1 | head -1))
           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
 
@@ -232,7 +241,7 @@ jobs:
           CACHE_NAME: 'cef-cache'
         with:
           path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_LINUX }}_linux64
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_LINUX }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_LINUX }}-${{ env.CACHE_REVISION }}
 
       - name: 'Install dependencies'
         env:
@@ -300,7 +309,7 @@ jobs:
           CACHE_NAME: 'vlc-cache'
         with:
           path: ${{ github.workspace }}/obs-build-dependencies/vlc-${{ env.VLC_VERSION_WIN }}
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_WIN }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_WIN }}-${{ env.CACHE_REVISION }}
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
@@ -309,7 +318,7 @@ jobs:
           CACHE_NAME: 'cef-cache'
         with:
           path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_WIN }}_windows${{ matrix.arch }}_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}-${{ env.CACHE_REVISION }}
 
       - name: 'Install dependencies'
         env:
@@ -432,7 +441,7 @@ jobs:
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     strategy:
       matrix:
-        arch: ['x86_64']
+        arch: ['x86_64', 'arm64']
     defaults:
       run:
         shell: bash

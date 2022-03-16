@@ -21,7 +21,7 @@
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.13</string>
+	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
 	<key>LSAppNapIsDisabled</key>
 	<true/>
 	<key>NSCameraUsageDescription</key>

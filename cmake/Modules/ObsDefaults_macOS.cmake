@@ -103,7 +103,6 @@ macro(setup_obs_project)
   endif()
 
   if(BUILD_FOR_DISTRIBUTION OR DEFINED ENV{CI})
-    set_option(CMAKE_PREFIX_PATH "/tmp/obsdeps")
     set_option(ENABLE_SPARKLE_UPDATER ON)
     set_option(ENABLE_RTMPS ON)
   endif()

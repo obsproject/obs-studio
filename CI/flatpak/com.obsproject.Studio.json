@@ -416,7 +416,7 @@
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DENABLE_WAYLAND=ON",
-        "-DENABLE_BROWSER_SOURCE=ON",
+        "-DENABLE_BROWSER=ON",
         "-DCEF_ROOT_DIR=/app/cef",
         "-DUSE_XDG=ON",
         "-DENABLE_ALSA=OFF",

@@ -26,16 +26,18 @@ Function Install-obs-deps {
     Write-Status "Setup for pre-built Windows OBS dependencies v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    if (!(Test-Path "$DepsBuildDir/dependencies${Version}")) {
+    $ArchSuffix = "$(if ($BuildArch -eq "64-bit") { "x64" } else { "x86" })"
+
+    if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}")) {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { "SilentlyContinue" } else { "Continue" })
-        Invoke-WebRequest -Uri "https://cdn-fastly.obsproject.com/downloads/dependencies${Version}.zip" -UseBasicParsing -OutFile "dependencies${Version}.zip"
+        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/win-${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
 
-        Expand-Archive -Path "dependencies${Version}.zip"
+        Expand-Archive -Path "windows-deps-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}" -Force
     } else {
         Write-Step "Found existing pre-built dependencies..."
     }
@@ -50,18 +52,18 @@ function Install-qt-deps {
     Write-Status "Setup for pre-built dependency Qt v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    if (!(Test-Path "$DepsBuildDir/Qt_${Version}")) {
+    $ArchSuffix = "$(if ($BuildArch -eq "64-bit") { "x64" } else { "x86" })"
+
+    if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}/mkspecs")) {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
-        Invoke-WebRequest -Uri "https://cdn-fastly.obsproject.com/downloads/Qt_${Version}.7z" -UseBasicParsing -OutFile "Qt_${Version}.7z"
+        Invoke-WebRequest -Uri "https://cdn-fastly.obsproject.com/downloads/windows-deps-qt-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
         
         Write-Step "Unpack..."
 
-        # TODO: Replace with zip and properly package Qt to share directory with other deps
-        Invoke-Expression "7z x Qt_${Version}.7z"
-        Move-Item -Path "${Version}" -Destination "Qt_${Version}"
+        Expand-Archive -Path "windows-deps-qt-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}" -Force
     } else {
         Write-Step "Found existing pre-built Qt..."
     }
@@ -108,7 +110,7 @@ function Install-cef {
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
-        Invoke-Expression "7z x cef_binary_${Version}_windows_${ArchSuffix}.zip"
+        Expand-Archive -Path "cef_binary_${Version}_windows_${ArchSuffix}.zip" -Force
     } else {
         Write-Step "Found existing CEF framework and loader library..."
     }
@@ -119,13 +121,11 @@ function Install-Dependencies {
         [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" })
     )
 
-    if($Choco.isPresent) {
-        Install-Windows-Dependencies
-    }
+    Install-Windows-Dependencies
 
     $BuildDependencies = @(
         @('obs-deps', $WindowsDepsVersion),
-        @('qt-deps', $WindowsQtVersion),
+        @('qt-deps', $WindowsDepsVersion),
         @('vlc', $WindowsVlcVersion),
         @('cef', $WindowsCefVersion)
     )

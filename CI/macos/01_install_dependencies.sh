@@ -15,19 +15,22 @@ install_obs-deps() {
     status "Set up precompiled macOS OBS dependencies v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    ${CURLCMD:-curl} https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}.tar.gz
+    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-${1}-${ARCH:-x86_64}.tar.xz" "${2}"
+    mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-${1}.tar.gz" -C /tmp
+    /usr/bin/tar -xf "./macos-deps-${1}-${ARCH:-x86_64}.tar.xz" -C ./obs-deps
+    /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 
 install_qt-deps() {
     status "Set up precompiled dependency Qt v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    ${CURLCMD:-curl} https://github.com/obsproject/obs-deps/releases/download/${2}/macos-qt-${1}-${2}.tar.gz
+    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt-${1}-${ARCH:-x86_64}.tar.xz" "${2}"
+    mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf ./macos-qt-${1}-${2}.tar.gz -C /tmp
-    /usr/bin/xattr -r -d com.apple.quarantine /tmp/obsdeps
+    /usr/bin/tar -xf "./macos-deps-qt-${1}-${ARCH:-x86_64}.tar.xz" -C ./obs-deps
+    /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 
 install_vlc() {
@@ -58,16 +61,17 @@ install_sparkle() {
 
     if [ "${CI}" -a "${RESTORED_SPARKLE}" ]; then
         _SKIP=TRUE
-    elif [ -d "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework" -a -f "${DEPS_BUILD_DIR}/sparkle/Sparkle.framework/Sparkle" ]; then
+    elif [ -d "${DEPS_BUILD_DIR}/obs-deps/Frameworks/Sparkle.framework" -a -f "${DEPS_BUILD_DIR}/obs-deps/Frameworks/Sparkle.framework/Sparkle" ]; then
         _SKIP=TRUE
     fi
 
     if [ -z "${_SKIP}" ]; then
         step "Download..."
-        ${CURLCMD:-curl} https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.xz
+        check_and_fetch "https://github.com/sparkle-project/Sparkle/releases/download/${1}/Sparkle-${1}.tar.xz" "${2}"
         step "Unpack..."
         ensure_dir "${DEPS_BUILD_DIR}/sparkle"
         /usr/bin/tar -xf ../Sparkle-${1}.tar.xz
+        cp -cpR "${DEPS_BUILD_DIR}"/sparkle/Sparkle.framework "${DEPS_BUILD_DIR}"/obs-deps/lib/
     else
         step "Found existing Sparkle Framework..."
     fi
@@ -86,14 +90,14 @@ install_cef() {
 
     if [ -z "${_SKIP}" ]; then
         step "Download..."
-        ${CURLCMD:-curl} https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macos_${ARCH:-x86_64}.tar.xz
+        check_and_fetch "https://cdn-fastly.obsproject.com/downloads/cef_binary_${1}_macos_${ARCH:-x86_64}.tar.xz" "${2}"
         step "Unpack..."
         /usr/bin/tar -xf cef_binary_${1}_macos_${ARCH:-x86_64}.tar.xz
         cd cef_binary_${1}_macos_${ARCH:-x86_64}
         step "Fix tests..."
 
         /usr/bin/sed -i '.orig' '/add_subdirectory(tests\/ceftests)/d' ./CMakeLists.txt
-        /usr/bin/sed -E -i '' 's/"10.(9|10)"/"'${MACOSX_DEPLOYMENT_TARGET:-${CI_MACOSX_DEPLOYMENT_TARGET}}'"/' ./cmake/cef_variables.cmake
+        /usr/bin/sed -E -i '' 's/"10.(9|10|11)"/"'${MACOSX_DEPLOYMENT_TARGET:-${CI_MACOSX_DEPLOYMENT_TARGET}}'"/' ./cmake/cef_variables.cmake
 
         step "Run CMake..."
         check_ccache
@@ -120,11 +124,11 @@ install_dependencies() {
     trap "caught_error 'install_dependencies'" ERR
 
     BUILD_DEPS=(
-        "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
-        "qt-deps ${QT_VERSION:-${CI_QT_VERSION}} ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}}"
-        "cef ${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}"
-        "vlc ${VLC_VERSION:-${CI_VLC_VERSION}}"
-        "sparkle ${SPARKLE_VERSION:-${CI_SPARKLE_VERSION}}"
+        "obs-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}} ${MACOS_DEPS_HASH:-${CI_DEPS_HASH}}"
+        "qt-deps ${MACOS_DEPS_VERSION:-${CI_DEPS_VERSION}} ${QT_HASH:-${CI_QT_HASH}}"
+        "cef ${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}} ${CEF_HASH:-${CI_CEF_HASH}}"
+        "vlc ${VLC_VERSION:-${CI_VLC_VERSION}} ${VLC_HASH:-${CI_VLC_HASH}}"
+        "sparkle ${SPARKLE_VERSION:-${CI_SPARKLE_VERSION}} ${SPARKLE_HASH:-${CI_SPARKLE_HASH}}"
     )
 
     install_homebrew_deps
@@ -133,7 +137,7 @@ install_dependencies() {
         set -- ${DEPENDENCY}
         trap "caught_error ${DEPENDENCY}" ERR
         FUNC_NAME="install_${1}"
-        ${FUNC_NAME} ${2} ${3}
+        ${FUNC_NAME} ${2} ${3} ${4}
     done
 }
 

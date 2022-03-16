@@ -21,7 +21,9 @@
 		<string>MacOSX</string>
 	</array>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.13</string>
+	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
 	<key>CFPlugInFactories</key>
 	<dict>
 		<key>7E950B8C-5E49-4B9E-B7D0-B3608A08E8F6</key>

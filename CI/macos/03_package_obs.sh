@@ -116,8 +116,8 @@ package-obs-standalone() {
     source "${CHECKOUT_DIR}/CI/include/build_support.sh"
     source "${CHECKOUT_DIR}/CI/include/build_support_macos.sh"
 
-    check_macos_version
     check_archs
+    check_macos_version
 
     step "Fetch OBS tags..."
     /usr/bin/git fetch origin --tags
@@ -154,6 +154,7 @@ print_usage() {
             "-h, --help                     : Print this help\n" \
             "-q, --quiet                    : Suppress most build process output\n" \
             "-v, --verbose                  : Enable more verbose build process output\n" \
+            "-a, --architecture             : Specify build architecture (default: x86_64, alternative: arm64)\n" \
             "-c, --codesign                 : Codesign OBS and all libraries (default: ad-hoc only)\n" \
             "-n, --notarize                 : Notarize OBS (default: off)\n" \
             "--notarize-image [IMAGE]       : Specify existing OBS disk image for notarization\n" \
@@ -168,6 +169,7 @@ package-obs-main() {
                 -h | --help ) print_usage; exit 0 ;;
                 -q | --quiet ) export QUIET=TRUE; shift ;;
                 -v | --verbose ) export VERBOSE=TRUE; shift ;;
+                -a | --architecture ) ARCH="${2}"; shift 2 ;;
                 -c | --codesign ) CODESIGN=TRUE; shift ;;
                 -n | --notarize ) NOTARIZE=TRUE; CODESIGN=TRUE; shift ;;
                 --build-dir ) BUILD_DIR="${2}"; shift 2 ;;

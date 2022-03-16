@@ -21,7 +21,7 @@
 		<string>MacOSX</string>
 	</array>
 	<key>LSMinimumSystemVersion</key>
-	<string>10.13</string>
+	<string>${CMAKE_OSX_DEPLOYMENT_TARGET}</string>
 	<key>NSHumanReadableCopyright</key>
 	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
 </dict>

@@ -65,6 +65,7 @@ print_usage() {
             "-h, --help                     : Print this help\n" \
             "-q, --quiet                    : Suppress most build process output\n" \
             "-v, --verbose                  : Enable more verbose build process output\n" \
+            "-a, --architecture             : Specify build architecture (default: x86_64, alternative: arm64)\n" \
             "-d, --skip-dependency-checks   : Skip dependency checks (default: off)\n" \
             "-b, --bundle                   : Create relocatable application bundle (default: off)\n" \
             "-p, --package                  : Create distributable disk image (default: off)\n" \
@@ -94,6 +95,7 @@ obs-build-main() {
             -h | --help ) print_usage; exit 0 ;;
             -q | --quiet ) export QUIET=TRUE; shift ;;
             -v | --verbose ) export VERBOSE=TRUE; shift ;;
+            -a | --architecture ) ARCH="${2}"; shift 2 ;;
             -d | --skip-dependency-checks ) SKIP_DEP_CHECKS=TRUE; shift ;;
             -p | --package ) PACKAGE=TRUE; shift ;;
             -c | --codesign ) CODESIGN=TRUE; shift ;;

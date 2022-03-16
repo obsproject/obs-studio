@@ -27,6 +27,13 @@ function Build-OBS {
         [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" })
     )
 
+    $NumProcessors = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+
+    if ( $NumProcessors -gt 1 ) {
+        $env:UseMultiToolTask = $true
+        $env:EnforceProcessCountAcrossBuilds = $true
+    }
+
     Write-Status "Build OBS"
 
     Configure-OBS
@@ -41,11 +48,16 @@ function Configure-OBS {
     Ensure-Directory ${CheckoutDir}
     Write-Status "Configuration of OBS build system..."
 
+    $NumProcessors = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
+
+    if ( $NumProcessors -gt 1 ) {
+        $env:UseMultiToolTask = $true
+        $env:EnforceProcessCountAcrossBuilds = $true
+    }
+
     # TODO: Clean up archive and directory naming across dependencies
-    $QtDirectory = "${CheckoutDir}/../obs-build-dependencies/Qt_${WindowsQtVersion}/msvc2019$(if (${BuildArch} -eq "64-bit") { "_64" })"
-    $DepsDirectory = "${CheckoutDir}/../obs-build-dependencies/dependencies${WindowsDepsVersion}/win$(if (${BuildArch} -eq "64-bit") { "64" } else { "32" })"
-    $CefDirectory = "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_$(if (${BuildArch} -eq "64-bit") { "x64" } else { "x86" })"
-    $CmakePrefixPath = "${QtDirectory};${DepsDirectory}/bin;${DepsDirectory}"
+    $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-$(if (${BuildArch} -eq "64-bit") { "x64" } else { "x86" })"
+    $CefDirectory = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_$(if (${BuildArch} -eq "64-bit") { "x64" } else { "x86" })"
     $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "64-bit") { "64" } else { "32" })"
     $GeneratorPlatform = "$(if (${BuildArch} -eq "64-bit") { "x64" } else { "Win32" })"
 
@@ -54,9 +66,11 @@ function Configure-OBS {
         "-G `"${CmakeGenerator}`"",
         "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
         "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
-        "-DCMAKE_PREFIX_PATH=`"${CmakePrefixPath}`"",
-        "-DCEF_ROOT_DIR=`"${CefDirectory}`"",
-        "-DVLC_PATH=`"${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}`"",
+        "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
+        "-DCEF_ROOT_DIR:PATH=`"${CefDirectory}`"",
+        "-DENABLE_BROWSER=ON",
+        "-DVLC_PATH:PATH=`"${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}`"",
+        "-DENABLE_VLC=ON",
         "-DCMAKE_INSTALL_PREFIX=`"${BuildDirectoryActual}/install`"",
         "-DVIRTUALCAM_GUID=`"${Env:VIRTUALCAM-GUID}`"",
         "-DTWITCH_CLIENTID=`"${Env:TWITCH_CLIENTID}`"",
