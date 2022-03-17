@@ -17,3 +17,15 @@ indent_size = 8
 [plugins/obs-outputs/librtmp/*.{cpp,c,h}]
 indent_style = space
 indent_size = 4
+
+[CMakeLists.txt]
+indent_style = space
+indent_size = 2
+
+[**/CMakeLists.txt]
+indent_style = space
+indent_size = 2
+
+[cmake/**/*.cmake]
+indent_style = space
+indent_size = 2
