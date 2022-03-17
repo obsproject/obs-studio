@@ -19,6 +19,7 @@ jobs:
 
       - name: Install xmllint
         run: |
+          sudo apt-get -qq update
           sudo apt-get install --no-install-recommends -y libxml2-utils
 
       - name: Register Annotations
