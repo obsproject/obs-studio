@@ -316,7 +316,7 @@ void OAuthStreamKey::OnStreamConfig()
 		return;
 
 	OBSBasic *main = OBSBasic::Get();
-	obs_service_t *service = main->GetService();
+	obs_service_t *service = main->GetServices().front();
 
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
 

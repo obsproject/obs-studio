@@ -892,7 +892,7 @@ void AutoConfig::SaveStreamSettings()
 
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
-	obs_service_t *oldService = main->GetService();
+	obs_service_t *oldService = main->GetServices().front();
 	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
 	OBSDataAutoRelease settings = obs_data_create();

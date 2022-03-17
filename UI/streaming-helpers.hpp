@@ -1,6 +1,7 @@
 #pragma once
 
 #include "url-push-button.hpp"
+#include "obs.hpp"
 #include <QComboBox>
 #include <QLineEdit>
 #include <QLabel>
@@ -10,6 +11,12 @@
 extern json11::Json get_services_json();
 extern json11::Json get_service_from_json(const json11::Json &root,
 					  const char *name);
+extern OBSDataArrayAutoRelease
+backup_servers_to_data_array(const QJsonArray &array);
+extern std::vector<std::string> get_backup_servers(obs_data_t *settings);
+extern int find_server_index(const std::string &server,
+			     const std::vector<std::string> &backupServers,
+			     QComboBox *serversComboBox);
 
 enum class ListOpt : int {
 	ShowAll = 1,

@@ -1,5 +1,7 @@
 #include <QMessageBox>
 #include <QUrl>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include "window-basic-settings.hpp"
 #include "obs-frontend-api.h"
@@ -104,7 +106,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	bool ignoreRecommended =
 		config_get_bool(main->Config(), "Stream1", "IgnoreRecommended");
 
-	obs_service_t *service_obj = main->GetService();
+	obs_service_t *service_obj = main->GetServices().front();
 	const char *type = obs_service_get_type(service_obj);
 
 	loading = true;
@@ -112,12 +114,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
 
 	const char *service = obs_data_get_string(settings, "service");
-	const char *server = obs_data_get_string(settings, "server");
+	std::string server =
+		std::string(obs_data_get_string(settings, "server"));
 	const char *key = obs_data_get_string(settings, "key");
 
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
-		ui->customServer->setText(server);
+		ui->customServer->setText(server.c_str());
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
 		const char *username =
@@ -146,10 +149,16 @@ void OBSBasicSettings::LoadStream1Settings()
 	streamUi.UpdateServerList();
 
 	if (strcmp(type, "rtmp_common") == 0) {
-		int idx = ui->server->findData(server);
+		std::vector<std::string> backups = get_backup_servers(settings);
+		int idx = find_server_index(server, backups, ui->server);
+
 		if (idx == -1) {
-			if (server && *server)
-				ui->server->insertItem(0, server, server);
+			QJsonObject data;
+			data.insert("id", QString::fromStdString(server));
+			data.insert("server", QString::fromStdString(server));
+
+			if (!server.empty())
+				ui->server->insertItem(0, server.c_str(), data);
 			idx = 0;
 		}
 		ui->server->setCurrentIndex(idx);
@@ -181,7 +190,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	bool customServer = streamUi.IsCustomService();
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
-	obs_service_t *oldService = main->GetService();
+	obs_service_t *oldService = main->GetServices().front();
 	OBSDataAutoRelease hotkeyData = obs_hotkeys_save_service(oldService);
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -189,9 +198,16 @@ void OBSBasicSettings::SaveStream1Settings()
 	if (!customServer) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
+		QJsonObject data = ui->server->currentData().toJsonObject();
+
 		obs_data_set_string(
 			settings, "server",
-			QT_TO_UTF8(ui->server->currentData().toString()));
+			QT_TO_UTF8(data.value("server").toString()));
+
+		obs_data_set_array(
+			settings, "backup_servers",
+			backup_servers_to_data_array(
+				data.value("backup_servers").toArray()));
 	} else {
 		obs_data_set_string(
 			settings, "server",
@@ -400,9 +416,16 @@ OBSService OBSBasicSettings::SpawnTempService()
 	if (!custom) {
 		obs_data_set_string(settings, "service",
 				    QT_TO_UTF8(ui->service->currentText()));
+		QJsonObject data = ui->server->currentData().toJsonObject();
+
 		obs_data_set_string(
 			settings, "server",
-			QT_TO_UTF8(ui->server->currentData().toString()));
+			QT_TO_UTF8(data.value("server").toString()));
+
+		obs_data_set_array(
+			settings, "backup_servers",
+			backup_servers_to_data_array(
+				data.value("backup_servers").toArray()));
 	} else {
 		obs_data_set_string(
 			settings, "server",
@@ -635,7 +658,7 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 OBSService OBSBasicSettings::GetStream1Service()
 {
 	return stream1Changed ? SpawnTempService()
-			      : OBSService(main->GetService());
+			      : OBSService(main->GetServices().front());
 }
 
 void OBSBasicSettings::UpdateServiceRecommendations()

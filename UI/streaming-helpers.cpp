@@ -7,8 +7,14 @@
 #include <util/platform.h>
 #include <util/util.hpp>
 #include <obs.h>
+#include <QJsonObject>
+#include <QJsonArray>
+#include <sstream>
 
 using namespace json11;
+
+std::string create_server_id(const std::string &server,
+			     const std::vector<std::string> &backupServers);
 
 static Json open_json_file(const char *path)
 {
@@ -66,6 +72,63 @@ Json get_service_from_json(const Json &root, const char *name)
 	}
 
 	return Json();
+}
+
+std::vector<std::string> get_backup_servers(obs_data_t *settings)
+{
+	OBSDataArrayAutoRelease backup_servers =
+		obs_data_get_array(settings, "backup_servers");
+	size_t count = obs_data_array_count(backup_servers);
+
+	std::vector<std::string> result;
+	for (size_t i = 0; i < count; ++i) {
+		OBSDataAutoRelease array_obj =
+			obs_data_array_item(backup_servers, i);
+		result.push_back(
+			std::string(obs_data_get_string(array_obj, "server")));
+	}
+
+	return result;
+}
+
+OBSDataArrayAutoRelease backup_servers_to_data_array(const QJsonArray &array)
+{
+	OBSDataArrayAutoRelease data = obs_data_array_create();
+	for (auto item : array) {
+		OBSDataAutoRelease obj = obs_data_create();
+		obs_data_set_string(obj, "server",
+				    item.toString().toStdString().c_str());
+		obs_data_array_push_back(data, obj);
+	}
+	return data;
+}
+
+std::string create_server_id(const std::string &server,
+			     const std::vector<std::string> &backupServers)
+{
+	std::stringstream id;
+
+	id << server;
+	for (const auto &backup_server : backupServers)
+		id << "," << backup_server;
+
+	return id.str();
+}
+
+int find_server_index(const std::string &server,
+		      const std::vector<std::string> &backupServers,
+		      QComboBox *serversComboBox)
+{
+	std::string id = create_server_id(server, backupServers);
+	int idx = -1;
+	for (int i = 0; i < serversComboBox->count(); i++) {
+		QJsonObject data = serversComboBox->itemData(i).toJsonObject();
+		if (id == data.value("id").toString().toStdString()) {
+			idx = i;
+			break;
+		}
+	}
+	return idx;
 }
 
 bool StreamSettingsUI::IsServiceOutputHasNetworkFeatures()
@@ -199,7 +262,26 @@ void StreamSettingsUI::UpdateServerList()
 
 	auto &servers = service["servers"].array_items();
 	for (const Json &entry : servers) {
-		ui_server->addItem(entry["name"].string_value().c_str(),
-				   entry["url"].string_value().c_str());
+		QJsonObject data;
+		QJsonArray qbackup_servers;
+		const auto &urls = entry["backup_urls"].array_items();
+
+		for (auto &url : urls) {
+			qbackup_servers.append(
+				QString::fromStdString(url.string_value()));
+		}
+
+		std::vector<std::string> backup_servers;
+		for (auto &url : urls)
+			backup_servers.push_back(url.string_value());
+
+		// `id` is used to easily lookup items in `ui_server`.
+		data.insert("id", QString::fromStdString(create_server_id(
+					  entry["url"].string_value(),
+					  backup_servers)));
+		data.insert("server", QString::fromStdString(
+					      entry["url"].string_value()));
+		data.insert("backup_servers", qbackup_servers);
+		ui_server->addItem(entry["name"].string_value().c_str(), data);
 	}
 }

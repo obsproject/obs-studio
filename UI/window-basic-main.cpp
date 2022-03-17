@@ -1198,7 +1198,7 @@ retryScene:
 
 void OBSBasic::SaveService()
 {
-	if (!service)
+	if (services.empty())
 		return;
 
 	char serviceJsonPath[512];
@@ -1207,6 +1207,7 @@ void OBSBasic::SaveService()
 	if (ret <= 0)
 		return;
 
+	obs_service_t *service = GetServices().front();
 	OBSDataAutoRelease data = obs_data_create();
 	OBSDataAutoRelease settings = obs_service_get_settings(service);
 
@@ -1239,11 +1240,54 @@ bool OBSBasic::LoadService()
 	OBSDataAutoRelease settings = obs_data_get_obj(data, "settings");
 	OBSDataAutoRelease hotkey_data = obs_data_get_obj(data, "hotkeys");
 
-	service = obs_service_create(type, "default_service", settings,
-				     hotkey_data);
-	obs_service_release(service);
+	OBSServiceAutoRelease service = obs_service_create(
+		type, "default_service", settings, hotkey_data);
+	services = ExpandService(service);
 
-	return !!service;
+	return !services.empty();
+}
+
+std::vector<OBSService> OBSBasic::ExpandService(obs_service_t *service)
+{
+	std::vector<OBSService> services;
+	if (!service) {
+		return services;
+	}
+
+	services.push_back(service);
+
+	// If service contains no backup servers, return original service.
+	OBSDataAutoRelease settings = obs_service_get_settings(service);
+	const char *srv = obs_data_get_string(settings, "server");
+	OBSDataArrayAutoRelease backup_servers =
+		obs_data_get_array(settings, "backup_servers");
+	size_t backup_count = obs_data_array_count(backup_servers);
+
+	if (backup_count == 0) {
+		return services;
+	}
+
+	// If service contains one or more backup servers, expand it.
+	const char *name = obs_service_get_name(service);
+	const char *type = obs_service_get_type(service);
+	OBSDataAutoRelease hotkeys = obs_hotkeys_save_service(service);
+
+	for (size_t i = 0; i < backup_count; ++i) {
+		OBSDataAutoRelease array_obj =
+			obs_data_array_item(backup_servers, i);
+		const char *bk_server =
+			obs_data_get_string(array_obj, "server");
+
+		OBSDataAutoRelease settings_copy = obs_data_create();
+		obs_data_apply(settings_copy, settings);
+		obs_data_set_string(settings_copy, "server", bk_server);
+
+		OBSService expanded =
+			obs_service_create(type, name, settings_copy, hotkeys);
+		services.push_back(expanded);
+		obs_service_release(expanded);
+	}
+	return services;
 }
 
 bool OBSBasic::InitService()
@@ -1253,10 +1297,12 @@ bool OBSBasic::InitService()
 	if (LoadService())
 		return true;
 
-	service = obs_service_create("rtmp_common", "default_service", nullptr,
-				     nullptr);
+	OBSService service = obs_service_create(
+		"rtmp_common", "default_service", nullptr, nullptr);
 	if (!service)
 		return false;
+
+	services.push_back(service);
 	obs_service_release(service);
 
 	return true;
@@ -2617,7 +2663,7 @@ OBSBasic::~OBSBasic()
 	obs_hotkey_set_callback_routing_func(nullptr, nullptr);
 	ClearHotkeys();
 
-	service = nullptr;
+	services.clear();
 	outputHandler.reset();
 
 	if (interaction)
@@ -4225,20 +4271,21 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 
 /* Main class functions */
 
-obs_service_t *OBSBasic::GetService()
+std::vector<OBSService> OBSBasic::GetServices()
 {
-	if (!service) {
-		service =
+	if (services.empty()) {
+		OBSService service =
 			obs_service_create("rtmp_common", NULL, NULL, nullptr);
 		obs_service_release(service);
+		services.push_back(service);
 	}
-	return service;
+	return services;
 }
 
 void OBSBasic::SetService(obs_service_t *newService)
 {
 	if (newService) {
-		service = newService;
+		services = ExpandService(newService);
 	}
 }
 
@@ -6348,16 +6395,21 @@ void OBSBasic::YouTubeActionDialogOk(const QString &id, const QString &key,
 				     bool start_now)
 {
 	//blog(LOG_DEBUG, "Stream key: %s", QT_TO_UTF8(key));
-	obs_service_t *service_obj = GetService();
-	OBSDataAutoRelease settings = obs_service_get_settings(service_obj);
+	auto servs = GetServices();
+	for (auto &service : servs) {
+		obs_service_t *service_obj = service.Get();
+		OBSDataAutoRelease settings =
+			obs_service_get_settings(service_obj);
 
-	const std::string a_key = QT_TO_UTF8(key);
-	obs_data_set_string(settings, "key", a_key.c_str());
+		const std::string a_key = QT_TO_UTF8(key);
+		obs_data_set_string(settings, "key", a_key.c_str());
 
-	const std::string an_id = QT_TO_UTF8(id);
-	obs_data_set_string(settings, "stream_id", an_id.c_str());
+		const std::string an_id = QT_TO_UTF8(id);
+		obs_data_set_string(settings, "stream_id", an_id.c_str());
 
-	obs_service_update(service_obj, settings);
+		obs_service_update(service_obj, settings);
+	}
+
 	autoStartBroadcast = autostart;
 	autoStopBroadcast = autostop;
 	broadcastReady = true;
@@ -6480,7 +6532,7 @@ void OBSBasic::StartStreaming()
 		}
 	}
 
-	if (!outputHandler->SetupStreaming(service)) {
+	if (!outputHandler->SetupStreaming(services.front())) {
 		DisplayStreamStartError();
 		return;
 	}
@@ -6500,7 +6552,7 @@ void OBSBasic::StartStreaming()
 		sysTrayStream->setText(ui->streamButton->text());
 	}
 
-	if (!outputHandler->StartStreaming(service)) {
+	if (!outputHandler->StartStreaming(services.front())) {
 		DisplayStreamStartError();
 		return;
 	}
@@ -6910,7 +6962,9 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
-	ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	if (!outputHandler->streamOutput) {
+		ui->statusbar->StreamStarted(outputHandler->streamOutput);
+	}
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());
@@ -6920,7 +6974,7 @@ void OBSBasic::StreamingStart()
 #if YOUTUBE_ENABLED
 	if (!autoStartBroadcast) {
 		// get a current stream key
-		obs_service_t *service_obj = GetService();
+		obs_service_t *service_obj = GetServices().front();
 		OBSDataAutoRelease settings =
 			obs_service_get_settings(service_obj);
 		std::string key = obs_data_get_string(settings, "stream_id");
@@ -7545,6 +7599,7 @@ void OBSBasic::on_streamButton_clicked()
 		}
 
 		Auth *auth = GetAuth();
+		obs_service_t *service = GetServices().front();
 
 		auto action =
 			(auth && auth->external())

@@ -506,7 +506,7 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_service_t *obs_frontend_get_streaming_service(void) override
 	{
-		return main->GetService();
+		return main->GetServices().front();
 	}
 
 	void obs_frontend_save_streaming_service(void) override
