@@ -1250,9 +1250,8 @@ bool OBSBasic::LoadService()
 std::vector<OBSService> OBSBasic::ExpandService(obs_service_t *service)
 {
 	std::vector<OBSService> services;
-	if (!service) {
+	if (!service)
 		return services;
-	}
 
 	services.push_back(service);
 
@@ -1263,9 +1262,8 @@ std::vector<OBSService> OBSBasic::ExpandService(obs_service_t *service)
 		obs_data_get_array(settings, "backup_servers");
 	size_t backup_count = obs_data_array_count(backup_servers);
 
-	if (backup_count == 0) {
+	if (backup_count == 0)
 		return services;
-	}
 
 	// If service contains one or more backup servers, expand it.
 	const char *name = obs_service_get_name(service);
@@ -6532,7 +6530,7 @@ void OBSBasic::StartStreaming()
 		}
 	}
 
-	if (!outputHandler->SetupStreaming(services.front())) {
+	if (!outputHandler->SetupStreaming(services)) {
 		DisplayStreamStartError();
 		return;
 	}
@@ -6552,7 +6550,7 @@ void OBSBasic::StartStreaming()
 		sysTrayStream->setText(ui->streamButton->text());
 	}
 
-	if (!outputHandler->StartStreaming(services.front())) {
+	if (!outputHandler->StartStreaming(services)) {
 		DisplayStreamStartError();
 		return;
 	}
@@ -6962,9 +6960,8 @@ void OBSBasic::StreamingStart()
 	ui->streamButton->setText(QTStr("Basic.Main.StopStreaming"));
 	ui->streamButton->setEnabled(true);
 	ui->streamButton->setChecked(true);
-	if (!outputHandler->streamOutput) {
-		ui->statusbar->StreamStarted(outputHandler->streamOutput);
-	}
+	if (!outputHandler->streamOutputs.empty())
+		ui->statusbar->StreamStarted(outputHandler->streamOutputs[0]);
 
 	if (sysTrayStream) {
 		sysTrayStream->setText(ui->streamButton->text());

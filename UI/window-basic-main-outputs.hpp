@@ -6,7 +6,7 @@ class OBSBasic;
 
 struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
-	OBSOutputAutoRelease streamOutput;
+	std::vector<OBSOutputAutoRelease> streamOutputs;
 	OBSOutputAutoRelease replayBuffer;
 	OBSOutputAutoRelease virtualCam;
 	bool streamingActive = false;
@@ -40,8 +40,10 @@ struct BasicOutputHandler {
 
 	virtual ~BasicOutputHandler(){};
 
-	virtual bool SetupStreaming(obs_service_t *service) = 0;
-	virtual bool StartStreaming(obs_service_t *service) = 0;
+	virtual bool
+	SetupStreaming(const std::vector<OBSService> &services) = 0;
+	virtual bool
+	StartStreaming(const std::vector<OBSService> &services) = 0;
 	virtual bool StartRecording() = 0;
 	virtual bool StartReplayBuffer() { return false; }
 	virtual bool StartVirtualCam();

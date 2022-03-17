@@ -385,7 +385,10 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_streaming_output(void) override
 	{
-		OBSOutput output = main->outputHandler->streamOutput.Get();
+		if (main->outputHandler->streamOutputs.empty())
+			return nullptr;
+
+		OBSOutput output = main->outputHandler->streamOutputs[0].Get();
 		return obs_output_get_ref(output);
 	}
 

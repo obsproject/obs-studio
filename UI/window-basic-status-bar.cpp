@@ -461,7 +461,10 @@ void OBSBasicStatusBar::StreamDelayStarting(int sec)
 	if (!main || !main->outputHandler)
 		return;
 
-	streamOutput = main->outputHandler->streamOutput;
+	if (!main->outputHandler->streamOutputs.empty())
+		streamOutput = main->outputHandler->streamOutputs[0];
+	else
+		streamOutput = nullptr;
 
 	delaySecTotal = delaySecStarting = sec;
 	UpdateDelayMsg();
