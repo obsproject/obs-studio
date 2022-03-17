@@ -48,12 +48,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return !access(output.c_str(), R_OK);
 }
 
-#pragma deprecated(InitApplicationBundle)
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 void CheckIfAlreadyRunning(bool &already_running)
 {
 	try {

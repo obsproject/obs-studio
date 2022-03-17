@@ -27,9 +27,6 @@ class QWidget;
 /* Gets the path of obs-studio specific data files (such as locale) */
 bool GetDataFilePath(const char *data, std::string &path);
 
-/* Updates the working directory for OSX application bundles */
-bool OBS_DEPRECATED InitApplicationBundle();
-
 std::string GetDefaultVideoSavePath();
 
 std::vector<std::string> GetPreferredLocales();

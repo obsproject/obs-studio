@@ -201,11 +201,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return false;
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 string GetDefaultVideoSavePath()
 {
 	return string(getenv("HOME"));

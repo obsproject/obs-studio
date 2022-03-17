@@ -1281,8 +1281,6 @@ void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
 
-	if (!InitApplicationBundle())
-		throw "Failed to initialize application bundle";
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
 	if (!InitGlobalConfig())
