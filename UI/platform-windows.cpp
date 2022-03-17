@@ -59,11 +59,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return check_path(data, OBS_DATA_PATH "/obs-studio/", output);
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 string GetDefaultVideoSavePath()
 {
 	wchar_t path_utf16[MAX_PATH];
