@@ -16,16 +16,26 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include <obs-module.h>
+#include <linux/videodev2.h>
 
-#include "v4l2-mjpeg.h"
+#include "v4l2-decoder.h"
 
 #define blog(level, msg, ...) \
-	blog(level, "v4l2-input: mjpeg: " msg, ##__VA_ARGS__)
+	blog(level, "v4l2-input: decoder: " msg, ##__VA_ARGS__)
 
-int v4l2_init_mjpeg(struct v4l2_mjpeg_decoder *decoder)
+int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt)
 {
-	decoder->codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
+	if (pixfmt == V4L2_PIX_FMT_MJPEG) {
+		decoder->codec = avcodec_find_decoder(AV_CODEC_ID_MJPEG);
+	} else if (pixfmt == V4L2_PIX_FMT_H264) {
+		decoder->codec = avcodec_find_decoder(AV_CODEC_ID_H264);
+	}
 	if (!decoder->codec) {
+		if (pixfmt == V4L2_PIX_FMT_MJPEG) {
+			blog(LOG_ERROR, "failed to find MJPEG decoder");
+		} else if (pixfmt == V4L2_PIX_FMT_H264) {
+			blog(LOG_ERROR, "failed to find H264 decoder");
+		}
 		return -1;
 	}
 
@@ -56,7 +66,7 @@ int v4l2_init_mjpeg(struct v4l2_mjpeg_decoder *decoder)
 	return 0;
 }
 
-void v4l2_destroy_mjpeg(struct v4l2_mjpeg_decoder *decoder)
+void v4l2_destroy_decoder(struct v4l2_decoder *decoder)
 {
 	blog(LOG_DEBUG, "destroying avcodec");
 	if (decoder->frame) {
@@ -68,22 +78,23 @@ void v4l2_destroy_mjpeg(struct v4l2_mjpeg_decoder *decoder)
 	}
 
 	if (decoder->context) {
+		avcodec_close(decoder->context);
 		avcodec_free_context(&decoder->context);
 	}
 }
 
-int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
-		      size_t length, struct v4l2_mjpeg_decoder *decoder)
+int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
+		      size_t length, struct v4l2_decoder *decoder)
 {
 	decoder->packet->data = data;
 	decoder->packet->size = length;
 	if (avcodec_send_packet(decoder->context, decoder->packet) < 0) {
-		blog(LOG_ERROR, "failed to send jpeg to codec");
+		blog(LOG_ERROR, "failed to send frame to codec");
 		return -1;
 	}
 
 	if (avcodec_receive_frame(decoder->context, decoder->frame) < 0) {
-		blog(LOG_ERROR, "failed to recieve frame from codec");
+		blog(LOG_ERROR, "failed to receive frame from codec");
 		return -1;
 	}
 
@@ -104,8 +115,6 @@ int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
 	case AV_PIX_FMT_YUVJ444P:
 	case AV_PIX_FMT_YUV444P:
 		out->format = VIDEO_FORMAT_I444;
-		break;
-	default:
 		break;
 	}
 
