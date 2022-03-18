@@ -26,42 +26,43 @@ extern "C" {
 #include <libavutil/pixfmt.h>
 
 /**
- * Data structure for mjpeg decoding
+ * Data structure for decoder
  */
-struct v4l2_mjpeg_decoder {
-	const AVCodec *codec;
+struct v4l2_decoder {
+	AVCodec *codec;
 	AVCodecContext *context;
 	AVPacket *packet;
 	AVFrame *frame;
 };
 
 /**
- * Initialize the mjpeg decoder.
+ * Initialize the decoder.
  * The decoder must be destroyed on failure.
  *
- * @param props the decoder structure
+ * @param decoder the decoder structure
+ * @param pixfmt which codec is used
  * @return non-zero on failure
  */
-int v4l2_init_mjpeg(struct v4l2_mjpeg_decoder *decoder);
+int v4l2_init_decoder(struct v4l2_decoder *decoder, int pixfmt);
 
 /**
  * Free any data associated with the decoder.
  *
  * @param decoder the decoder structure
  */
-void v4l2_destroy_mjpeg(struct v4l2_mjpeg_decoder *decoder);
+void v4l2_destroy_decoder(struct v4l2_decoder *decoder);
 
 /**
- * Decode a jpeg into an obs frame
+ * Decode a jpeg or h264 frame into an obs frame
  *
  * @param out the obs frame to decode into
- * @param data the jpeg data
+ * @param data the codec data
  * @param length length of the data
- * @param decoder the decoder as initialized by v4l2_init_mjpeg
+ * @param decoder the decoder as initialized by v4l2_init_decoder
  * @return non-zero on failure
  */
-int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
-		      size_t length, struct v4l2_mjpeg_decoder *decoder);
+int v4l2_decode_frame(struct obs_source_frame *out, uint8_t *data,
+		      size_t length, struct v4l2_decoder *decoder);
 
 #ifdef __cplusplus
 }
