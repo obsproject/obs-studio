@@ -383,7 +383,7 @@ jobs:
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
-          bundle: obs-studio-${{ github.sha }}.flatpak
+          bundle: obs-studio-flatpak-${{ github.sha }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
           cache-key: flatpak-builder-${{ github.sha }}
 
