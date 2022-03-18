@@ -1037,7 +1037,7 @@ static void v4l2_init(struct v4l2_data *data)
 		goto fail;
 	return;
 fail:
-	blog(LOG_ERROR, "Initialization failed");
+	blog(LOG_ERROR, "Initialization failed, errno: %s", strerror(errno));
 	v4l2_terminate(data);
 }
 
@@ -1166,6 +1166,8 @@ static void *v4l2_create(obs_data_t *settings, obs_source_t *source)
 
 	signal_handler_connect(sh, "device_added", &device_added, data);
 	signal_handler_connect(sh, "device_removed", &device_removed, data);
+#else
+	blog(LOG_INFO, "Compiled without libudev, you can't reconnect devices");
 #endif
 
 	return data;
