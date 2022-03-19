@@ -1455,6 +1455,7 @@ bool OBSBasic::InitBasicConfigDefaults()
 				false);
 	config_set_default_bool(basicConfig, "Output", "LowLatencyEnable",
 				false);
+	config_set_default_bool(basicConfig, "Output", "DynamicBitrate", 0);
 
 	int i = 0;
 	uint32_t scale_cx = cx;

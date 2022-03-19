@@ -559,7 +559,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->enableLowLatencyMode, CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->hotkeyFocusType,      COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->autoRemux,            CHECK_CHANGED,  ADV_CHANGED);
-	HookWidget(ui->dynBitrate,           CHECK_CHANGED,  ADV_CHANGED);
+	HookWidget(ui->dbrPresets,           COMBO_CHANGED,  ADV_CHANGED);
 	/* clang-format on */
 
 #define ADD_HOTKEY_FOCUS_TYPE(s)      \
@@ -2557,8 +2557,9 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(
 		App()->GlobalConfig(), "General", "HotkeyFocusType");
-	bool dynBitrate =
-		config_get_bool(main->Config(), "Output", "DynamicBitrate");
+	int presetsDbr =
+		config_get_int(main->Config(), "Output", "DynamicBitrate");
+	ui->dbrPresets->setCurrentIndex(presetsDbr);
 
 	bool confirmOnExit =
 		config_get_bool(GetGlobalConfig(), "General", "ConfirmOnExit");
@@ -2590,7 +2591,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->streamDelayPreserve->setChecked(preserveDelay);
 	ui->streamDelayEnable->setChecked(enableDelay);
 	ui->autoRemux->setChecked(autoRemux);
-	ui->dynBitrate->setChecked(dynBitrate);
 
 	SetComboByName(ui->colorFormat, videoColorFormat);
 	SetComboByName(ui->colorSpace, videoColorSpace);
@@ -3334,7 +3334,8 @@ void OBSBasicSettings::SaveAdvancedSettings()
 	SaveSpinBox(ui->reconnectMaxRetries, "Output", "MaxRetries");
 	SaveComboData(ui->bindToIP, "Output", "BindIP");
 	SaveCheckBox(ui->autoRemux, "Video", "AutoRemux");
-	SaveCheckBox(ui->dynBitrate, "Output", "DynamicBitrate");
+	int dbrIdx = ui->dbrPresets->currentIndex();
+	config_set_int(main->Config(), "Output", "DynamicBitrate", dbrIdx);
 
 	if (obs_audio_monitoring_available()) {
 		QString newDevice =

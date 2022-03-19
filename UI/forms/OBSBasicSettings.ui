@@ -5499,24 +5499,7 @@
                    <item row="0" column="1">
                     <widget class="QComboBox" name="bindToIP"/>
                    </item>
-                   <item row="2" column="1">
-                    <widget class="QCheckBox" name="enableNewSocketLoop">
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Network.EnableNewSocketLoop</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="3" column="1">
-                    <widget class="QCheckBox" name="enableLowLatencyMode">
-                     <property name="enabled">
-                      <bool>false</bool>
-                     </property>
-                     <property name="text">
-                      <string>Basic.Settings.Advanced.Network.EnableLowLatencyMode</string>
-                     </property>
-                    </widget>
-                   </item>
-                   <item row="2" column="0">
+                   <item row="1" column="0">
                     <spacer name="horizontalSpacer_7">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -5530,13 +5513,58 @@
                     </spacer>
                    </item>
                    <item row="1" column="1">
-                    <widget class="QCheckBox" name="dynBitrate">
-                     <property name="toolTip">
-                      <string>Basic.Settings.Output.DynamicBitrate.TT</string>
+                    <widget class="QCheckBox" name="enableNewSocketLoop">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Network.EnableNewSocketLoop</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="enableLowLatencyMode">
+                     <property name="enabled">
+                      <bool>false</bool>
                      </property>
                      <property name="text">
-                      <string>Basic.Settings.Output.DynamicBitrate.Beta</string>
+                      <string>Basic.Settings.Advanced.Network.EnableLowLatencyMode</string>
                      </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="0">
+                    <widget class="QLabel" name="label_68">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Network.Dbr.Presets</string>
+                     </property>
+                     <property name="buddy">
+                      <cstring>dbrPresets</cstring>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QComboBox" name="dbrPresets">
+                     <property name="sizePolicy">
+                      <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+                       <horstretch>0</horstretch>
+                       <verstretch>0</verstretch>
+                      </sizepolicy>
+                     </property>
+                     <property name="toolTip">
+                      <string>Basic.Settings.Advanced.Network.Dbr.Presets.TT</string>
+                     </property>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Advanced.Network.Dbr.Presets.Disabled</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Advanced.Network.Dbr.Presets.Fast</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string>Basic.Settings.Advanced.Network.Dbr.Presets.Slow</string>
+                      </property>
+                     </item>
                     </widget>
                    </item>
                   </layout>
@@ -5871,9 +5899,9 @@
   <tabstop>reconnectRetryDelay</tabstop>
   <tabstop>reconnectMaxRetries</tabstop>
   <tabstop>bindToIP</tabstop>
-  <tabstop>dynBitrate</tabstop>
   <tabstop>enableNewSocketLoop</tabstop>
   <tabstop>enableLowLatencyMode</tabstop>
+  <tabstop>dbrPresets</tabstop>
   <tabstop>browserHWAccel</tabstop>
   <tabstop>hotkeyFocusType</tabstop>
  </tabstops>

@@ -1154,9 +1154,14 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->dbr_enabled = obs_data_get_int(settings, OPT_DYN_BITRATE) != 0;
 	stream->dbr_below_floor = false;
 	stream->dbr_preset = obs_data_get_int(settings, OPT_DYN_BITRATE);
-	stream->dbr_floor = stream->dbr_preset == OPT_DYN_PRESET_FASTER
-				    ? 0.3 * stream->dbr_orig_bitrate
-				    : 50;
+	switch (stream->dbr_preset) {
+	case OPT_DYN_PRESET_FASTER:
+		stream->dbr_floor = 0.3 * stream->dbr_orig_bitrate;
+	case OPT_DYN_PRESET_SLOWER:
+		stream->dbr_floor = 50;
+	case OPT_DYN_PRESET_DISABLED:
+		stream->dbr_floor = stream->dbr_orig_bitrate;
+	}
 
 	caps = obs_encoder_get_caps(venc);
 	if ((caps & OBS_ENCODER_CAP_DYN_BITRATE) == 0) {
