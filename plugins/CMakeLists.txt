@@ -12,14 +12,6 @@ function(check_obs_browser)
   endif()
 endfunction()
 
-function(check_obs_vst)
-  if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/obs-vst/CMakeLists.txt)
-    add_subdirectory(obs-vst)
-  else()
-    obs_status(FATAL_ERROR "obs-vst submodule not available.")
-  endif()
-endfunction()
-
 # APPLE/WIN32/UNIX are soft-deprecated:
 # https://discourse.cmake.org/t/platform-id-vs-win32-vs-cmake-system-name/1226/2
 if(OS_WINDOWS)
@@ -43,7 +35,6 @@ if(OS_WINDOWS)
   endif()
 
   check_obs_browser()
-  check_obs_vst()
 elseif(OS_MACOS)
   add_subdirectory(coreaudio-encoder)
   add_subdirectory(mac-avcapture)
@@ -56,7 +47,6 @@ elseif(OS_MACOS)
   add_subdirectory(linux-jack)
 
   check_obs_browser()
-  check_obs_vst()
 elseif(OS_LINUX)
   add_subdirectory(linux-capture)
   add_subdirectory(linux-pulseaudio)
@@ -69,7 +59,6 @@ elseif(OS_LINUX)
   add_subdirectory(sndio)
 
   check_obs_browser()
-  check_obs_vst()
 elseif(OS_FREEBSD)
   add_subdirectory(linux-capture)
   add_subdirectory(linux-pulseaudio)
