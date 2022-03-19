@@ -33,7 +33,8 @@
 #endif
 
 /* dynamic bitrate coefficients */
-#define DBR_INC_TIMER (30ULL * SEC_TO_NSEC)
+#define DBR_INC_TIMER_SLOW (15ULL * SEC_TO_NSEC)
+#define DBR_INC_TIMER_FAST (2ULL * SEC_TO_NSEC)
 #define DBR_TRIGGER_USEC (200ULL * MSEC_TO_USEC)
 #define MIN_ESTIMATE_DURATION_MS 1000
 #define MAX_ESTIMATE_DURATION_MS 2000
@@ -578,8 +579,9 @@ static void dbr_add_frame(struct rtmp_stream *stream, struct dbr_frame *back)
 
 	if (stream->dbr_est_bitrate) {
 		stream->dbr_est_bitrate -= stream->audio_bitrate;
-		if (stream->dbr_est_bitrate < 50)
-			stream->dbr_est_bitrate = 50;
+		if (stream->dbr_est_bitrate < stream->dbr_floor)
+			stream->dbr_est_bitrate = stream->dbr_floor;
+		stream->dbr_below_floor = true;
 	}
 }
 
@@ -1149,7 +1151,12 @@ static bool init_connect(struct rtmp_stream *stream)
 	stream->dbr_est_bitrate = 0;
 	stream->dbr_inc_bitrate = stream->dbr_orig_bitrate / 10;
 	stream->dbr_inc_timeout = 0;
-	stream->dbr_enabled = obs_data_get_bool(settings, OPT_DYN_BITRATE);
+	stream->dbr_enabled = obs_data_get_int(settings, OPT_DYN_BITRATE) != 0;
+	stream->dbr_below_floor = false;
+	stream->dbr_preset = obs_data_get_int(settings, OPT_DYN_BITRATE);
+	stream->dbr_floor = stream->dbr_preset == OPT_DYN_PRESET_FASTER
+				    ? 0.3 * stream->dbr_orig_bitrate
+				    : 50;
 
 	caps = obs_encoder_get_caps(venc);
 	if ((caps & OBS_ENCODER_CAP_DYN_BITRATE) == 0) {
@@ -1331,8 +1338,9 @@ static bool dbr_bitrate_lowered(struct rtmp_stream *stream)
 		circlebuf_pop_front(&stream->dbr_frames, NULL,
 				    stream->dbr_frames.size);
 		est_bitrate = stream->dbr_est_bitrate / 100 * 100;
-		if (est_bitrate < 50) {
-			est_bitrate = 50;
+		if (est_bitrate < stream->dbr_floor) {
+			est_bitrate = stream->dbr_floor;
+			stream->dbr_below_floor = true;
 		}
 	}
 
@@ -1377,7 +1385,10 @@ static bool dbr_bitrate_lowered(struct rtmp_stream *stream)
 
 	stream->dbr_prev_bitrate = 0;
 	stream->dbr_cur_bitrate = new_bitrate;
-	stream->dbr_inc_timeout = os_gettime_ns() + DBR_INC_TIMER;
+	uint64_t timeout = stream->dbr_preset == OPT_DYN_PRESET_FASTER
+				   ? DBR_INC_TIMER_FAST
+				   : DBR_INC_TIMER_SLOW;
+	stream->dbr_inc_timeout = os_gettime_ns() + timeout;
 	info("bitrate decreased to: %ld", stream->dbr_cur_bitrate);
 	return true;
 }
@@ -1397,13 +1408,17 @@ static void dbr_inc_bitrate(struct rtmp_stream *stream)
 {
 	stream->dbr_prev_bitrate = stream->dbr_cur_bitrate;
 	stream->dbr_cur_bitrate += stream->dbr_inc_bitrate;
+	stream->dbr_below_floor = false;
 
 	if (stream->dbr_cur_bitrate >= stream->dbr_orig_bitrate) {
 		stream->dbr_cur_bitrate = stream->dbr_orig_bitrate;
 		info("bitrate increased to: %ld, done",
 		     stream->dbr_cur_bitrate);
 	} else if (stream->dbr_cur_bitrate < stream->dbr_orig_bitrate) {
-		stream->dbr_inc_timeout = os_gettime_ns() + DBR_INC_TIMER;
+		uint64_t timeout = stream->dbr_preset == OPT_DYN_PRESET_FASTER
+					   ? DBR_INC_TIMER_FAST
+					   : DBR_INC_TIMER_SLOW;
+		stream->dbr_inc_timeout = os_gettime_ns() + timeout;
 		info("bitrate increased to: %ld, waiting",
 		     stream->dbr_cur_bitrate);
 	}
@@ -1472,7 +1487,8 @@ static void check_to_drop_frames(struct rtmp_stream *stream, bool pframes)
 			      buffer_duration_usec / 1000);
 			dbr_set_bitrate(stream);
 		}
-		return;
+		if (!stream->dbr_below_floor)
+			return;
 	}
 
 	if (buffer_duration_usec > drop_threshold) {
@@ -1550,6 +1566,8 @@ static void rtmp_stream_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, OPT_DROP_THRESHOLD, 700);
 	obs_data_set_default_int(defaults, OPT_PFRAME_DROP_THRESHOLD, 900);
+	obs_data_set_default_int(defaults, OPT_DYN_BITRATE,
+				 OPT_DYN_PRESET_FASTER);
 	obs_data_set_default_int(defaults, OPT_MAX_SHUTDOWN_TIME_SEC, 30);
 	obs_data_set_default_string(defaults, OPT_BIND_IP, "default");
 	obs_data_set_default_bool(defaults, OPT_NEWSOCKETLOOP_ENABLED, false);
@@ -1586,7 +1604,18 @@ static obs_properties_t *rtmp_stream_properties(void *unused)
 				obs_module_text("RTMPStream.NewSocketLoop"));
 	obs_properties_add_bool(props, OPT_LOWLATENCY_ENABLED,
 				obs_module_text("RTMPStream.LowLatencyMode"));
-
+	p = obs_properties_add_list(props, OPT_DYN_BITRATE,
+				    obs_module_text("RTMPStream.Presets"),
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(
+		p, obs_module_text("RTMPStream.Presets.Disabled"),
+		OPT_DYN_PRESET_DISABLED);
+	obs_property_list_add_int(p,
+				  obs_module_text("RTMPStream.Presets.Faster"),
+				  OPT_DYN_PRESET_FASTER);
+	obs_property_list_add_int(p,
+				  obs_module_text("RTMPStream.Presets.Slower"),
+				  OPT_DYN_PRESET_SLOWER);
 	return props;
 }
 

@@ -25,6 +25,9 @@
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
 #define OPT_DYN_BITRATE "dyn_bitrate"
+#define OPT_DYN_PRESET_DISABLED 0
+#define OPT_DYN_PRESET_FASTER 1
+#define OPT_DYN_PRESET_SLOWER 2
 #define OPT_DROP_THRESHOLD "drop_threshold_ms"
 #define OPT_PFRAME_DROP_THRESHOLD "pframe_drop_threshold_ms"
 #define OPT_MAX_SHUTDOWN_TIME_SEC "max_shutdown_time_sec"
@@ -113,6 +116,9 @@ struct rtmp_stream {
 	long dbr_cur_bitrate;
 	long dbr_inc_bitrate;
 	bool dbr_enabled;
+	long dbr_floor;
+	bool dbr_below_floor;
+	int dbr_preset;
 
 	RTMP rtmp;
 
