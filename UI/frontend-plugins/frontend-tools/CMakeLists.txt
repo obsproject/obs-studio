@@ -16,6 +16,10 @@ set_target_properties(
              AUTOUIC_SEARCH_PATHS "forms")
 
 target_sources(
+  frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui
+                         forms/output-timer.ui forms/scripts.ui)
+
+target_sources(
   frontend-tools
   PRIVATE frontend-tools.c
           auto-scene-switcher.hpp
@@ -102,5 +106,16 @@ elseif(OS_POSIX)
 
   target_sources(frontend-tools PRIVATE auto-scene-switcher-nix.cpp)
 endif()
+
+get_target_property(_SOURCES frontend-tools SOURCES)
+set(_UI ${_SOURCES})
+list(FILTER _UI INCLUDE REGEX ".*\\.ui?")
+
+source_group(
+  TREE "${CMAKE_CURRENT_SOURCE_DIR}/forms"
+  PREFIX "UI Files"
+  FILES ${_UI})
+unset(_SOURCES)
+unset(_UI)
 
 setup_plugin_target(frontend-tools)

@@ -4,40 +4,6 @@ if(NOT ENABLE_DECKLINK)
   return()
 endif()
 
-if(NOT COMMAND find_qt)
-  macro(find_qt)
-    set(oneValueArgs VERSION)
-    set(multiValueArgs COMPONENTS COMPONENTS_WIN COMPONENTS_MAC
-                       COMPONENTS_LINUX)
-    cmake_parse_arguments(FIND_QT "" "${oneValueArgs}" "${multiValueArgs}"
-                          ${ARGN})
-
-    if(OS_WINDOWS)
-      find_package(
-        Qt${FIND_QT_VERSION}
-        COMPONENTS ${FIND_QT_COMPONENTS} ${FIND_QT_COMPONENTS_WIN}
-        REQUIRED)
-    elseif(OS_MACOS)
-      find_package(
-        Qt${FIND_QT_VERSION}
-        COMPONENTS ${FIND_QT_COMPONENTS} ${FIND_QT_COMPONENTS_MAC}
-        REQUIRED)
-    else()
-      find_package(
-        Qt${FIND_QT_VERSION}
-        COMPONENTS ${FIND_QT_COMPONENTS} ${FIND_QT_COMPONENTS_LINUX}
-        REQUIRED)
-    endif()
-
-    foreach(_COMPONENT IN LISTS ${FIND_QT_COMPONENTS})
-      if(NOT TARGET Qt::${_COMPONENT} AND TARGET
-                                          Qt${FIND_QT_VERSION}::${_COMPONENT})
-        add_library(Qt::${_COMPONENT} ALIAS Qt${FIND_QT_VERSION}::${_COMPONENT})
-      endif()
-    endforeach()
-  endmacro()
-endif()
-
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
@@ -52,6 +18,8 @@ set_target_properties(
              AUTOUIC ON
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
+
+target_sources(decklink-output-ui PRIVATE forms/output.ui)
 
 target_sources(
   decklink-output-ui
@@ -100,5 +68,16 @@ elseif(OS_POSIX)
   target_link_libraries(decklink-output-ui PRIVATE X11::X11
                                                    Qt${QT_VERSION}::GuiPrivate)
 endif()
+
+get_target_property(_SOURCES decklink-output-ui SOURCES)
+set(_UI ${_SOURCES})
+list(FILTER _UI INCLUDE REGEX ".*\\.ui?")
+
+source_group(
+  TREE "${CMAKE_CURRENT_SOURCE_DIR}/forms"
+  PREFIX "UI Files"
+  FILES ${_UI})
+unset(_SOURCES)
+unset(_UI)
 
 setup_plugin_target(decklink-output-ui)

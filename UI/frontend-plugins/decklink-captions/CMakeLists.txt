@@ -20,6 +20,8 @@ set_target_properties(
 
 target_compile_features(decklink-captions PRIVATE cxx_std_17)
 
+target_sources(decklink-captions PRIVATE forms/captions.ui)
+
 target_sources(decklink-captions PRIVATE decklink-captions.cpp
                                          decklink-captions.h)
 
@@ -44,5 +46,16 @@ endif()
 
 set_target_properties(decklink-captions PROPERTIES FOLDER "plugins/decklink"
                                                    PREFIX "")
+
+get_target_property(_SOURCES decklink-captions SOURCES)
+set(_UI ${_SOURCES})
+list(FILTER _UI INCLUDE REGEX ".*\\.ui?")
+
+source_group(
+  TREE "${CMAKE_CURRENT_SOURCE_DIR}/forms"
+  PREFIX "UI Files"
+  FILES ${_UI})
+unset(_SOURCES)
+unset(_UI)
 
 setup_plugin_target(decklink-captions)

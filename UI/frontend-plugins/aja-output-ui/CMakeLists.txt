@@ -18,6 +18,8 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
+target_sources(aja-output-ui PRIVATE forms/output.ui)
+
 target_sources(
   aja-output-ui
   PRIVATE AJAOutputUI.h
@@ -81,5 +83,16 @@ else()
 endif()
 
 set_target_properties(aja-output-ui PROPERTIES FOLDER "frontend" PREFIX "")
+
+get_target_property(_SOURCES aja-output-ui SOURCES)
+set(_UI ${_SOURCES})
+list(FILTER _UI INCLUDE REGEX ".*\\.ui?")
+
+source_group(
+  TREE "${CMAKE_CURRENT_SOURCE_DIR}/forms"
+  PREFIX "UI Files"
+  FILES ${_UI})
+unset(_SOURCES)
+unset(_UI)
 
 setup_plugin_target(aja-output-ui)

@@ -91,6 +91,36 @@ target_include_directories(obs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
                                        ${CMAKE_CURRENT_BINARY_DIR})
 
 target_sources(obs PRIVATE forms/obs.qrc)
+target_sources(
+  obs
+  PRIVATE forms/AutoConfigFinishPage.ui
+          forms/AutoConfigStartPage.ui
+          forms/AutoConfigStartPage.ui
+          forms/AutoConfigStreamPage.ui
+          forms/AutoConfigTestPage.ui
+          forms/AutoConfigVideoPage.ui
+          forms/ColorSelect.ui
+          forms/OBSAbout.ui
+          forms/OBSBasic.ui
+          forms/OBSBasicFilters.ui
+          forms/OBSBasicInteraction.ui
+          forms/OBSBasicSettings.ui
+          forms/OBSBasicSourceSelect.ui
+          forms/OBSBasicTransform.ui
+          forms/OBSExtraBrowsers.ui
+          forms/OBSImporter.ui
+          forms/OBSLogReply.ui
+          forms/OBSMissingFiles.ui
+          forms/OBSRemux.ui
+          forms/OBSUpdate.ui
+          forms/OBSYoutubeActions.ui
+          forms/source-toolbar/browser-source-toolbar.ui
+          forms/source-toolbar/color-source-toolbar.ui
+          forms/source-toolbar/device-select-toolbar.ui
+          forms/source-toolbar/game-capture-toolbar.ui
+          forms/source-toolbar/image-source-toolbar.ui
+          forms/source-toolbar/media-controls.ui
+          forms/source-toolbar/text-source-toolbar.ui)
 
 target_sources(
   obs
@@ -405,6 +435,17 @@ elseif(OS_POSIX)
     target_link_libraries(obs PRIVATE procstat)
   endif()
 endif()
+
+get_target_property(_SOURCES obs SOURCES)
+set(_UI ${_SOURCES})
+list(FILTER _UI INCLUDE REGEX ".*\\.ui?")
+
+source_group(
+  TREE "${CMAKE_CURRENT_SOURCE_DIR}/forms"
+  PREFIX "UI Files"
+  FILES ${_UI})
+unset(_SOURCES)
+unset(_UI)
 
 define_graphic_modules(obs)
 setup_obs_app(obs)
