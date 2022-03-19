@@ -2200,11 +2200,17 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swapchain)
 void device_clear(gs_device_t *device, uint32_t clear_flags,
 		  const struct vec4 *color, float depth, uint8_t stencil)
 {
-	int side = device->curRenderSide;
-	if ((clear_flags & GS_CLEAR_COLOR) != 0 && device->curRenderTarget)
-		device->context->ClearRenderTargetView(
-			device->curRenderTarget->renderTarget[side],
-			color->ptr);
+	if (clear_flags & GS_CLEAR_COLOR) {
+		gs_texture_2d *const tex = device->curRenderTarget;
+		if (tex) {
+			const int side = device->curRenderSide;
+			ID3D11RenderTargetView *const rtv =
+				device->curFramebufferSrgb
+					? tex->renderTargetLinear[side]
+					: tex->renderTarget[side];
+			device->context->ClearRenderTargetView(rtv, color->ptr);
+		}
+	}
 
 	if (device->curZStencilBuffer) {
 		uint32_t flags = 0;
