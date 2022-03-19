@@ -247,11 +247,11 @@
                    </item>
                    <item row="4" column="1">
                     <widget class="QCheckBox" name="hideOBSFromCapture">
-                     <property name="text">
-                      <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
-                     </property>
                      <property name="toolTip">
                       <string>Basic.Settings.General.HideOBSWindowsFromCapture.Tooltip</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
                      </property>
                     </widget>
                    </item>
@@ -1320,7 +1320,7 @@
                <item>
                 <widget class="QPushButton" name="connectAccount2">
                  <property name="cursor">
-                  <cursorshape>PointingHandCursor</cursorshape>
+                  <cursorShape>PointingHandCursor</cursorShape>
                  </property>
                  <property name="text">
                   <string>Basic.AutoConfig.StreamPage.ConnectAccount</string>
@@ -4769,6 +4769,14 @@
             <bool>true</bool>
            </property>
            <widget class="QWidget" name="hotkeyScrollContents">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>98</width>
+              <height>28</height>
+             </rect>
+            </property>
             <layout class="QFormLayout" name="hotkeyFormLayout">
              <property name="labelAlignment">
               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
@@ -4874,11 +4882,11 @@
                     </spacer>
                    </item>
                    <item row="2" column="1">
-                     <widget class="QCheckBox" name="confirmOnExit">
-                       <property name="text">
-                         <string>Basic.Settings.Advanced.General.ConfirmOnExit</string>
-                       </property>
-                     </widget>
+                    <widget class="QCheckBox" name="confirmOnExit">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.General.ConfirmOnExit</string>
+                     </property>
+                    </widget>
                    </item>
                   </layout>
                  </widget>
