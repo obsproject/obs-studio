@@ -225,8 +225,10 @@ void ExtraBrowsersModel::Apply()
 		if (item.prevIdx != -1) {
 			UpdateItem(item);
 		} else {
-			main->AddExtraBrowserDock(item.title, item.url,
-						  item.uuid, true);
+			QString uuid = QUuid::createUuid().toString();
+			uuid.replace(QRegularExpression("[{}-]"), "");
+			main->AddExtraBrowserDock(item.title, item.url, uuid,
+						  true);
 		}
 	}
 

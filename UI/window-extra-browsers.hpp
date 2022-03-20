@@ -50,7 +50,6 @@ public:
 		int prevIdx;
 		QString title;
 		QString url;
-		QString uuid;
 	};
 
 	void TabSelection(bool forward);
