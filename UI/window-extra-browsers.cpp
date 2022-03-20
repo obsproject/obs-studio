@@ -179,7 +179,6 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 		main->extraBrowserDocks[idx].data());
 	dock->setWindowTitle(item.title);
 	dock->setObjectName(item.title + OBJ_NAME_SUFFIX);
-	dock->setProperty("uuid", item.uuid);
 	main->extraBrowserDockActions[idx]->setText(item.title);
 
 	if (main->extraBrowserDockTargets[idx] != item.url) {
