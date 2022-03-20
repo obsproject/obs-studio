@@ -491,11 +491,11 @@ void OBSBasic::SaveExtraBrowserDocks()
 {
 	Json::array array;
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
-		QAction *action = extraBrowserDockActions[i].data();
+		QDockWidget *dock = extraBrowserDocks[i].data();
 		QString url = extraBrowserDockTargets[i];
-		QString uuid = action->property("uuid").toString();
+		QString uuid = dock->property("uuid").toString();
 		Json::object obj{
-			{"title", QT_TO_UTF8(action->text())},
+			{"title", QT_TO_UTF8(dock->windowTitle())},
 			{"url", QT_TO_UTF8(url)},
 			{"uuid", QT_TO_UTF8(uuid)},
 		};
