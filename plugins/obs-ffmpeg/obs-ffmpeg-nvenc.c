@@ -356,10 +356,19 @@ static void nvenc_destroy(void *data)
 	bfree(enc);
 }
 
+extern bool check_driver_version(obs_encoder_t *encoder);
+
 static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 				   bool psycho_aq)
 {
 	struct nvenc_encoder *enc;
+
+	if(!check_driver_version(encoder)) {
+		blog(LOG_ERROR,"Driver does not support the required nvenc API version. Required: 11.1.");
+		blog(LOG_ERROR,"The minimum required Nvidia driver for nvenc is 471.41 or newer.");
+
+		return NULL;
+	}
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	avcodec_register_all();

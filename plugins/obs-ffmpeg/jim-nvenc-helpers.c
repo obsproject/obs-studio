@@ -61,7 +61,7 @@ bool load_nvenc_lib(void)
 	return !!nvenc_lib;
 }
 
-static void *load_nv_func(const char *func)
+void *load_nv_func(const char *func)
 {
 	void *func_ptr = os_dlsym(nvenc_lib, func);
 	if (!func_ptr) {
@@ -111,15 +111,8 @@ const char *nv_error_name(NVENCSTATUS err)
 	return "Unknown Error";
 }
 
-static inline bool init_nvenc_internal(obs_encoder_t *encoder)
+bool check_driver_version(obs_encoder_t *encoder)
 {
-	static bool initialized = false;
-	static bool success = false;
-
-	if (initialized)
-		return success;
-	initialized = true;
-
 	NV_MAX_VER_FUNC nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func(
 		"NvEncodeAPIGetMaxSupportedVersion");
 	if (!nv_max_ver) {
@@ -131,7 +124,9 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 	}
 
 	uint32_t ver = 0;
-	if (NV_FAILED(encoder, nv_max_ver(&ver))) {
+	NVENCSTATUS status = nv_max_ver(&ver);
+	if( nv_failed(encoder, status, __FUNCTION__, "nv_max_ver"))
+	{
 		return false;
 	}
 
@@ -140,11 +135,22 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 	if (cur_ver > ver) {
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.OutdatedDriver"));
-
-		error("Current driver version does not support this NVENC "
-		      "version, please upgrade your driver");
 		return false;
 	}
+	return true;
+}
+
+static inline bool init_nvenc_internal(obs_encoder_t *encoder)
+{
+	static bool initialized = false;
+	static bool success = false;
+
+	if (initialized)
+		return success;
+	initialized = true;
+
+	if (!check_driver_version(encoder))
+		return false;
 
 	nv_create_instance = (NV_CREATE_INSTANCE_FUNC)load_nv_func(
 		"NvEncodeAPICreateInstance");
