@@ -7,12 +7,12 @@ function(setup_binary_target target)
       TARGETS ${target}
       RUNTIME
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
       LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_LIBRARY_DESTINATION}
-              COMPONENT obs_rundir
+              COMPONENT obs_${target}
       PUBLIC_HEADER
         DESTINATION ${OBS_INCLUDE_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
 
     if(MSVC)
@@ -21,7 +21,7 @@ function(setup_binary_target target)
         CONFIGURATIONS "RelWithDebInfo" "Debug"
         DESTINATION
           $ENV{OBS_InstallerTempDir}/$<IF:$<STREQUAL:$<TARGET_PROPERTY:${target},TYPE>,EXECUTABLE>,${OBS_EXECUTABLE_DESTINATION},${OBS_LIBRARY_DESTINATION}>
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         OPTIONAL EXCLUDE_FROM_ALL)
     endif()
   endif()
@@ -40,7 +40,7 @@ function(setup_binary_target target)
       CONFIGURATIONS "RelWithDebInfo" "Debug"
       DESTINATION
         $<IF:$<STREQUAL:$<TARGET_PROPERTY:${target},TYPE>,EXECUTABLE>,${OBS_EXECUTABLE_DESTINATION},${OBS_LIBRARY_DESTINATION}>
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       OPTIONAL EXCLUDE_FROM_ALL)
   endif()
 
@@ -65,7 +65,7 @@ function(setup_plugin_target target)
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"
       DESTINATION ${OBS_PLUGIN_DESTINATION}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       OPTIONAL EXCLUDE_FROM_ALL)
   endif()
 
@@ -73,9 +73,9 @@ function(setup_plugin_target target)
     install(
       TARGETS ${target}
       RUNTIME DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_PLUGIN_DESTINATION}
-              COMPONENT obs_rundir
+              COMPONENT obs_${target}
       LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_PLUGIN_DESTINATION}
-              COMPONENT obs_rundir
+              COMPONENT obs_${target}
               EXCLUDE_FROM_ALL)
 
     if(MSVC)
@@ -83,7 +83,7 @@ function(setup_plugin_target target)
         FILES $<TARGET_PDB_FILE:${target}>
         CONFIGURATIONS "RelWithDebInfo" "Debug"
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_PLUGIN_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         OPTIONAL EXCLUDE_FROM_ALL)
     endif()
   endif()
@@ -98,7 +98,7 @@ function(setup_script_plugin_target target)
       FILES $<TARGET_PDB_FILE:${target}>
       CONFIGURATIONS "RelWithDebInfo" "Debug"
       DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       OPTIONAL EXCLUDE_FROM_ALL)
   endif()
 
@@ -107,10 +107,10 @@ function(setup_script_plugin_target target)
       TARGETS ${target}
       RUNTIME
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
       LIBRARY
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
 
     if(MSVC)
@@ -118,7 +118,7 @@ function(setup_script_plugin_target target)
         FILES $<TARGET_PDB_FILE:${target}>
         CONFIGURATIONS "RelWithDebInfo" "Debug"
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         OPTIONAL EXCLUDE_FROM_ALL)
     endif()
 
@@ -127,7 +127,7 @@ function(setup_script_plugin_target target)
         FILES
           "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.py"
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
     endif()
   endif()
@@ -145,7 +145,7 @@ function(setup_target_resources target destination)
         DESTINATION
           $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
         USE_SOURCE_PERMISSIONS
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
     endif()
   endif()
@@ -160,7 +160,7 @@ function(add_target_resource target resource destination)
       FILES ${resource}
       DESTINATION
         $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       EXCLUDE_FROM_ALL)
   endif()
 endfunction()

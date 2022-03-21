@@ -39,9 +39,19 @@ function(setup_binary_target target)
   # Set up installation paths for development rundir
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_rundir
-    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_rundir
+    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_${target}
+    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_${target}
     PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION} EXCLUDE_FROM_ALL)
+
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
+      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+    COMMENT "Installing OBS rundir"
+    VERBATIM)
 
 endfunction()
 
@@ -58,13 +68,23 @@ function(setup_plugin_target target)
 
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION ${OBS_PLUGIN_DESTINATION} COMPONENT obs_rundir
+    RUNTIME DESTINATION ${OBS_PLUGIN_DESTINATION} COMPONENT obs_${target}
     LIBRARY DESTINATION ${OBS_PLUGIN_DESTINATION}
-            COMPONENT obs_rundir
+            COMPONENT obs_${target}
             EXCLUDE_FROM_ALL)
 
   setup_target_resources("${target}" "obs-plugins/${target}")
   set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "${target}")
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
+      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+    COMMENT "Installing ${target} to OBS rundir"
+    VERBATIM)
+
   message(STATUS "OBS:   ENABLED   ${target}")
 endfunction()
 
@@ -81,7 +101,7 @@ function(setup_script_plugin_target target)
   install(
     TARGETS ${target}
     LIBRARY DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
-            COMPONENT obs_rundir
+            COMPONENT obs_${target}
             EXCLUDE_FROM_ALL)
 
   if(${target} STREQUAL "obspython")
@@ -93,10 +113,20 @@ function(setup_script_plugin_target target)
     install(
       FILES "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.py"
       DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       EXCLUDE_FROM_ALL)
   endif()
   set_property(GLOBAL APPEND PROPERTY OBS_SCRIPTING_MODULE_LIST "${target}")
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
+      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+    COMMENT "Installing ${target} to OBS rundir"
+    VERBATIM)
+
   message(STATUS "OBS:   ENABLED   ${target}")
 endfunction()
 
@@ -113,7 +143,7 @@ function(setup_target_resources target destination)
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data/
       DESTINATION ${OBS_DATA_DESTINATION}/${destination}
       USE_SOURCE_PERMISSIONS
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       EXCLUDE_FROM_ALL)
   endif()
 endfunction()
@@ -129,7 +159,7 @@ function(add_target_resource target resource destination)
     FILES ${resource}
     DESTINATION
       ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
-    COMPONENT obs_rundir
+    COMPONENT obs_${target}
     EXCLUDE_FROM_ALL)
 endfunction()
 
@@ -172,8 +202,10 @@ function(setup_obs_app target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-            ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_rundir
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_rundir >
+      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
     COMMENT "Installing OBS rundir"
     VERBATIM)
 endfunction()
@@ -382,7 +414,7 @@ function(_install_obs_plugin_with_data target source)
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${source}/
       DESTINATION
         ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/obs-plugins/${target}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       EXCLUDE_FROM_ALL)
 
     if(OS_WINDOWS AND DEFINED ENV{obsInstallerTempDir})
@@ -390,7 +422,7 @@ function(_install_obs_plugin_with_data target source)
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${source}/
         DESTINATION
           $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/obs-plugins/${target}
-        COMPONENT obs_rundir
+        COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
     endif()
   endif()
@@ -416,11 +448,11 @@ function(_install_obs_datatarget target destination)
     LIBRARY
       DESTINATION
         ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
     RUNTIME
       DESTINATION
         ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
-      COMPONENT obs_rundir
+      COMPONENT obs_${target}
       EXCLUDE_FROM_ALL)
 
   if(OS_WINDOWS)
@@ -438,7 +470,7 @@ function(_install_obs_datatarget target destination)
         LIBRARY
           DESTINATION
             $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}/$<TARGET_FILE_NAME:${target}>
-          COMPONENT obs_rundir
+          COMPONENT obs_${target}
           EXCLUDE_FROM_ALL)
     endif()
   endif()

@@ -222,7 +222,7 @@ function(setup_target_browser target)
         EXCLUDE_FROM_ALL)
 
       set(_COMMAND
-          "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/$<TARGET_FILE_NAME:OBS::browser-helper${_SUFFIX}>.app\\\""
+          "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/Frameworks/$<TARGET_FILE_NAME:OBS::browser-helper${_SUFFIX}>.app\\\" > /dev/null"
       )
 
       install(
@@ -235,8 +235,10 @@ function(setup_target_browser target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" --install . --config $<CONFIG> --prefix
-            $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_browser_dev
+    COMMAND
+      "${CMAKE_COMMAND}" --install . --config $<CONFIG> --prefix
+      $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_browser_dev >
+      /dev/null
     COMMENT "Installing Chromium Embedded Framework for development"
     VERBATIM)
 endfunction()
@@ -295,7 +297,7 @@ function(setup_obs_modules target)
       EXCLUDE_FROM_ALL)
 
     set(_COMMAND
-        "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/PlugIns/obspython.py\\\""
+        "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/PlugIns/obspython.py\\\" > /dev/null"
     )
 
     install(
@@ -318,7 +320,7 @@ function(setup_obs_modules target)
               EXCLUDE_FROM_ALL)
 
     set(_COMMAND
-        "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/MacOS/$<TARGET_FILE_NAME:obs-ffmpeg-mux>\\\""
+        "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/MacOS/$<TARGET_FILE_NAME:obs-ffmpeg-mux>\\\" > /dev/null"
     )
 
     install(
@@ -344,8 +346,10 @@ function(setup_obs_modules target)
   add_custom_command(
     TARGET ${target}
     POST_BUILD
-    COMMAND "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
-            $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_plugin_dev
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      $<TARGET_BUNDLE_CONTENT_DIR:${target}> --component obs_plugin_dev >
+      /dev/null
     COMMENT "Installing OBS plugins for development"
     VERBATIM)
 endfunction()
