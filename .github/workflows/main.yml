@@ -266,7 +266,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-linux-deb'
+          name: 'obs-linux-${{ matrix.ubuntu }}-deb'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   windows_build:
