@@ -32,7 +32,7 @@ jobs:
         branch: [stable, beta]
     steps:
       - name: Checkout
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
 

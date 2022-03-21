@@ -7,12 +7,12 @@ jobs:
     env:
       CROWDIN_PAT: ${{ secrets.CROWDIN_SYNC_CROWDIN_PAT }}
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v3
         with:
           submodules: recursive
           fetch-depth: 0
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
         with:
           node-version: 16
       - name: Download Script

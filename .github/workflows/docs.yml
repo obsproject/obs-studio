@@ -13,7 +13,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
       - name: Bump Version Number
         shell: bash
         if: github.event_name == 'push'
@@ -39,7 +39,7 @@ jobs:
       - uses: ammaraskar/sphinx-action@master
         with:
           docs-folder: "docs/sphinx/"
-      - uses: actions/upload-artifact@v1
+      - uses: actions/upload-artifact@v3
         with:
           name: OBS Studio Documentation (HTML)
           path: docs/sphinx/_build/html/

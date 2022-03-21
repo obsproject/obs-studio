@@ -44,7 +44,7 @@ jobs:
     runs-on: [ubuntu-latest]
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
 
@@ -85,7 +85,7 @@ jobs:
         working-directory: 'obs-studio'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
           path: 'obs-studio'
@@ -104,7 +104,7 @@ jobs:
 
       - name: 'Restore ccache from cache'
         id: ccache-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'ccache-cache'
         with:
@@ -113,7 +113,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -122,7 +122,7 @@ jobs:
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -131,7 +131,7 @@ jobs:
 
       - name: 'Restore Sparkle dependency from cache'
         id: sparkle-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'sparkle-cache'
         with:
@@ -187,7 +187,7 @@ jobs:
 
       - name: 'Upload build Artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'obs-macos-${{ matrix.arch }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
@@ -208,7 +208,7 @@ jobs:
       BUILD_FOR_DISTRIBUTION: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
           path: 'obs-studio'
@@ -227,7 +227,7 @@ jobs:
 
       - name: 'Restore ccache from cache'
         id: ccache-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'ccache-cache'
         with:
@@ -236,7 +236,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -264,7 +264,7 @@ jobs:
 
       - name: 'Upload build Artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'obs-linux-deb'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
@@ -287,14 +287,14 @@ jobs:
         working-directory: 'obs-studio'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
           path: 'obs-studio'
           fetch-depth: 0
 
       - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: 'Check for Github Labels'
         if: github.event_name == 'pull_request'
@@ -304,7 +304,7 @@ jobs:
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -313,7 +313,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.2
+        uses: actions/cache@v2.1.7
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -338,7 +338,7 @@ jobs:
 
       - name: 'Upload build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'obs-win${{ matrix.arch }}'
           path: '${{ env.FILE_NAME }}'
@@ -366,7 +366,7 @@ jobs:
           fi
 
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
           submodules: 'recursive'
@@ -396,18 +396,18 @@ jobs:
       BUILD_FOR_DISTRIBUTION: 'ON'
     steps:
       - name: 'Checkout'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
 
       - name: 'Add msbuild to PATH'
-        uses: microsoft/setup-msbuild@v1.0.2
+        uses: microsoft/setup-msbuild@v1.1
 
       - name: 'Download 64-bit artifact'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: 'obs-win64'
 
       - name: 'Download 32-bit artifact'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: 'obs-win32'
 
@@ -426,7 +426,7 @@ jobs:
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'obs-windows'
           path: '${{ env.FILE_NAME }}'
@@ -448,11 +448,11 @@ jobs:
     steps:
       - name: 'Checkout'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/checkout@v2.3.3
+        uses: actions/checkout@v3
 
       - name: 'Download artifact'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           name: 'obs-macos-${{ matrix.arch }}'
 
@@ -477,7 +477,7 @@ jobs:
 
       - name: 'Upload build Artifact'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
-        uses: actions/upload-artifact@v2
+        uses: actions/upload-artifact@v3
         with:
           name: 'obs-macos-${{ matrix.arch }}-notarized'
           path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
