@@ -520,6 +520,7 @@ void SourceTreeItem::VisibilityChanged(bool visible)
 void SourceTreeItem::LockedChanged(bool locked)
 {
 	lock->setChecked(locked);
+	OBSBasic::Get()->UpdateEditMenu();
 }
 
 void SourceTreeItem::Renamed(const QString &name)

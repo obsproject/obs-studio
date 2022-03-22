@@ -142,6 +142,8 @@ struct obs_frontend_callbacks {
 	obs_frontend_open_source_interaction(obs_source_t *source) = 0;
 
 	virtual char *obs_frontend_get_current_record_output_path(void) = 0;
+	virtual const char *
+	obs_frontend_get_locale_string(const char *string) = 0;
 };
 
 EXPORT void

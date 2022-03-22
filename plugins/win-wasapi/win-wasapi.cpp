@@ -328,7 +328,14 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 
 	// while RTWQ was introduced in Win 8.1, it silently fails
 	// to capture Desktop Audio for some reason. Disable for now.
-	if (get_win_ver_int() >= _WIN32_WINNT_WIN10)
+	struct win_version_info win1703 = {};
+	win1703.major = 10;
+	win1703.minor = 0;
+	win1703.build = 15063;
+	win1703.revis = 0;
+	struct win_version_info ver;
+	get_win_ver(&ver);
+	if (win_version_compare(&ver, &win1703) >= 0)
 		rtwq_supported = rtwq_module != NULL;
 
 	if (rtwq_supported) {
@@ -347,46 +354,54 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 			(PFN_RtwqPutWaitingWorkItem)GetProcAddress(
 				rtwq_module, "RtwqPutWaitingWorkItem");
 
-		hr = rtwq_create_async_result(nullptr, &startCapture, nullptr,
-					      &startCaptureAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError(
-				"Could not create startCaptureAsyncResult", hr);
-		}
+		try {
+			hr = rtwq_create_async_result(nullptr, &startCapture,
+						      nullptr,
+						      &startCaptureAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create startCaptureAsyncResult",
+					hr);
+			}
 
-		hr = rtwq_create_async_result(nullptr, &sampleReady, nullptr,
-					      &sampleReadyAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("Could not create sampleReadyAsyncResult",
-				      hr);
-		}
+			hr = rtwq_create_async_result(nullptr, &sampleReady,
+						      nullptr,
+						      &sampleReadyAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create sampleReadyAsyncResult",
+					hr);
+			}
 
-		hr = rtwq_create_async_result(nullptr, &restart, nullptr,
-					      &restartAsyncResult);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("Could not create restartAsyncResult",
-				      hr);
-		}
+			hr = rtwq_create_async_result(nullptr, &restart,
+						      nullptr,
+						      &restartAsyncResult);
+			if (FAILED(hr)) {
+				throw HRError(
+					"Could not create restartAsyncResult",
+					hr);
+			}
 
-		DWORD taskId = 0;
-		DWORD id = 0;
-		hr = rtwq_lock_shared_work_queue(L"Capture", 0, &taskId, &id);
-		if (FAILED(hr)) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
-			throw HRError("RtwqLockSharedWorkQueue failed", hr);
-		}
+			DWORD taskId = 0;
+			DWORD id = 0;
+			hr = rtwq_lock_shared_work_queue(L"Capture", 0, &taskId,
+							 &id);
+			if (FAILED(hr)) {
+				throw HRError("RtwqLockSharedWorkQueue failed",
+					      hr);
+			}
 
-		startCapture.SetQueueId(id);
-		sampleReady.SetQueueId(id);
-		restart.SetQueueId(id);
-	} else {
+			startCapture.SetQueueId(id);
+			sampleReady.SetQueueId(id);
+			restart.SetQueueId(id);
+		} catch (HRError &err) {
+			blog(LOG_ERROR, "RTWQ setup failed: %s (0x%08X)",
+			     err.str, err.hr);
+			rtwq_supported = false;
+		}
+	}
+
+	if (!rtwq_supported) {
 		captureThread = CreateThread(nullptr, 0,
 					     WASAPISource::CaptureThread, this,
 					     0, nullptr);

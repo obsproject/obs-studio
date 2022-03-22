@@ -340,10 +340,6 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 
 bool obs_module_load(void)
 {
-	addOutputUI();
-
-	obs_frontend_add_event_callback(OBSEvent, nullptr);
-
 	return true;
 }
 
@@ -356,4 +352,14 @@ void obs_module_unload(void)
 
 	if (main_output_running)
 		output_stop();
+}
+
+void obs_module_post_load(void)
+{
+	if (!obs_get_module("decklink"))
+		return;
+
+	addOutputUI();
+
+	obs_frontend_add_event_callback(OBSEvent, nullptr);
 }

@@ -717,6 +717,9 @@ EXPORT obs_data_t *obs_save_source(obs_source_t *source);
 /** Loads a source from settings data */
 EXPORT obs_source_t *obs_load_source(obs_data_t *data);
 
+/** Loads a private source from settings data */
+EXPORT obs_source_t *obs_load_private_source(obs_data_t *data);
+
 /** Send a save signal to sources */
 EXPORT void obs_source_save(obs_source_t *source);
 

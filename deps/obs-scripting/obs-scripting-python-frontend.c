@@ -280,7 +280,7 @@ static void frontend_save_callback(obs_data_t *save_data, bool saving,
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_save_callback(frontend_save_callback, cb);
 		return;
 	}
@@ -355,7 +355,7 @@ static void frontend_event_callback(enum obs_frontend_event event, void *priv)
 {
 	struct python_obs_callback *cb = priv;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_frontend_remove_event_callback(frontend_event_callback, cb);
 		return;
 	}

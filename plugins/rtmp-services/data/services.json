@@ -2226,59 +2226,75 @@
         },
         {
             "name": "Brime Live",
-            "stream_key_link": "https://brimelive.com/obs-stream-key-link",
+            "stream_key_link": "https://brime.tv/studio",
             "servers": [
                 {
                     "name": "North America - Ashburn, VA",
-                    "url": "rtmp://ingest-us-ashburn.brimelive.com/live"
+                    "url": "rtmp://ingest-us-ashburn.brime.tv/live"
                 },
                 {
                     "name": "North America - San Jose, CA",
-                    "url": "rtmp://ingest-us-sanjose.brimelive.com/live"
+                    "url": "rtmp://ingest-us-sanjose.brime.tv/live"
                 },
                 {
-                    "name": "North America - Atlanta, GA",
-                    "url": "rtmp://ingest-us-atlanta.brimelive.com/live"
-                },
-                {
-                    "name": "North America - Dallas, TX",
-                    "url": "rtmp://ingest-us-dallas.brimelive.com/live"
-                },
-                {
-                    "name": "North America - Chicago, IL",
-                    "url": "rtmp://ingest-us-chicago.brimelive.com/live"
+                    "name": "North America - Phoenix, AZ",
+                    "url": "rtmp://ingest-us-phoenix.brime.tv/live"
                 },
                 {
                     "name": "Canada Southeast - Montreal",
-                    "url": "rtmp://ingest-ca-montreal.brimelive.com/live"
+                    "url": "rtmp://ingest-ca-montreal.brime.tv/live"
                 },
                 {
                     "name": "Latin America - Brazil East (Sao Paulo)",
-                    "url": "rtmp://ingest-la-saopaulo.brimelive.com/live"
+                    "url": "rtmp://ingest-sa-saopaulo.brime.tv/live"
+                },
+                {
+                    "name": "Europe / EMEA - Netherlands (Amsterdam)",
+                    "url": "rtmp://ingest-eu-amsterdam.brime.tv/live"
                 },
                 {
                     "name": "Europe / EMEA - Germany (Frankfurt)",
-                    "url": "rtmp://ingest-eu-frankfurt.brimelive.com/live"
+                    "url": "rtmp://ingest-eu-frankfurt.brime.tv/live"
                 },
                 {
                     "name": "Europe / EMEA - UK South (London)",
-                    "url": "rtmp://ingest-eu-london.brimelive.com/live"
+                    "url": "rtmp://ingest-eu-london.brime.tv/live"
+                },
+                {
+                    "name": "Europe / EMEA - Switzerland (Zurich)",
+                    "url": "rtmp://ingest-eu-zurich.brime.tv/live"
                 },
                 {
                     "name": "Europe / EMEA - Russia (Moscow)",
-                    "url": "rtmp://ingest-eu-moscow.brimelive.com/live"
+                    "url": "rtmp://ingest-ru-moscow.brime.tv/live"
+                },
+                {
+                    "name": "Africa / EMEA - South Africa (Johannesburg)",
+                    "url": "rtmp://ingest-af-johannesburg.brime.tv/live"
+                },
+                {
+                    "name": "UAE - United Arab Emirates (Dubai)",
+                    "url": "rtmp://ingest-uae-dubai.brime.tv/live"
+                },
+                {
+                    "name": "APAC - India (Mumbai)",
+                    "url": "rtmp://ingest-apac-mumbai.brime.tv/live"
                 },
                 {
                     "name": "APAC - Japan East (Tokyo)",
-                    "url": "rtmp://ingest-apac-tokyo.brimelive.com/live"
+                    "url": "rtmp://ingest-apac-tokyo.brime.tv/live"
+                },
+                {
+                    "name": "APAC - South Korea (Seoul)",
+                    "url": "rtmp://ingest-apac-seoul.brime.tv/live"
                 },
                 {
                     "name": "APAC - Australia East (Sydney)",
-                    "url": "rtmp://ingest-apac-sydney.brimelive.com/live"
+                    "url": "rtmp://ingest-apac-sydney.brime.tv/live"
                 }
             ],
             "recommended": {
-                "max video bitrate": 20000,
+                "max video bitrate": 30000,
                 "max audio bitrate": 320,
                 "x264opts": "scenecut=0"
             }

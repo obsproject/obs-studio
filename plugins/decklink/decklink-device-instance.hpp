@@ -4,8 +4,8 @@
 	blog(level, "%s: " message, "decklink", ##__VA_ARGS__)
 
 #include <obs-module.h>
+#include <media-io/video-scaler.h>
 #include "decklink-device.hpp"
-#include "../../libobs/media-io/video-scaler.h"
 #include "OBSVideoFrame.h"
 
 class AudioRepacker;
@@ -38,7 +38,7 @@ protected:
 	bool allow10Bit;
 
 	OBSVideoFrame *convertFrame = nullptr;
-	IDeckLinkMutableVideoFrame *decklinkOutputFrame = nullptr;
+	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 
 	void FinalizeStream();
 	void SetupVideoFormat(DeckLinkDeviceMode *mode_);

@@ -707,6 +707,13 @@ VolumeMeter {
 	qproperty-majorTickColor: rgb(239,240,241); /* White */
 	qproperty-minorTickColor: rgb(118,121,124); /* Light Gray */
 	qproperty-peakDecayRate: 23.4; /* Override of the standard PPM Type I rate. */
+	qproperty-meterThickness: 3;
+
+	/* The meter scale numbers normally use your QWidget font, with size    */
+	/* multiplied by meterFontScaling to get a proportionally smaller font. */
+	/* To use a unique font for the numbers, specify font-family and/or     */
+	/* font-size here, and set meterFontScaling to 1.0.                     */
+	qproperty-meterFontScaling: 0.7;
 }
 
 
@@ -1260,7 +1267,7 @@ QCalendarWidget QToolButton:pressed {
 
 /* Month Dropdown Menu */
 QCalendarWidget QMenu {
-    
+
 }
 /* Year spinbox */
 QCalendarWidget QSpinBox {

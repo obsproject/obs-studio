@@ -723,7 +723,12 @@ static inline void video_sleep(struct obs_core_video *video, bool raw_active,
 		*p_time = t;
 		count = 1;
 	} else {
-		count = (int)((os_gettime_ns() - cur_time) / interval_ns);
+		const uint64_t udiff = os_gettime_ns() - cur_time;
+		int64_t diff;
+		memcpy(&diff, &udiff, sizeof(diff));
+		const uint64_t clamped_diff =
+			(diff > (int64_t)interval_ns) ? diff : interval_ns;
+		count = (int)(clamped_diff / interval_ns);
 		*p_time = cur_time + interval_ns * count;
 	}
 

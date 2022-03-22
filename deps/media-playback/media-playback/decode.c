@@ -195,17 +195,19 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 	return true;
 }
 
+extern void mp_media_free_packet(mp_media_t *m, AVPacket *pkt);
+
 void mp_decode_clear_packets(struct mp_decode *d)
 {
-	if (d->packet_pending) {
-		av_packet_unref(&d->orig_pkt);
-		d->packet_pending = false;
+	if (d->pkt) {
+		mp_media_free_packet(d->m, d->pkt);
+		d->pkt = NULL;
 	}
 
 	while (d->packets.size) {
-		AVPacket pkt;
+		AVPacket *pkt;
 		circlebuf_pop_front(&d->packets, &pkt, sizeof(pkt));
-		av_packet_unref(&pkt);
+		mp_media_free_packet(d->m, pkt);
 	}
 }
 
@@ -241,7 +243,7 @@ void mp_decode_free(struct mp_decode *d)
 
 void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 {
-	circlebuf_push_back(&decode->packets, packet, sizeof(*packet));
+	circlebuf_push_back(&decode->packets, &packet, sizeof(packet));
 }
 
 static inline int64_t get_estimated_duration(struct mp_decode *d,
@@ -269,7 +271,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	int ret;
 	*got_frame = 0;
 
-#ifdef USE_NEW_FFMPEG_DECODE_API
 	ret = avcodec_receive_frame(d->decoder, d->in_frame);
 	if (ret != 0 && ret != AVERROR(EAGAIN)) {
 		if (ret == AVERROR_EOF)
@@ -278,7 +279,10 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	}
 
 	if (ret != 0) {
-		ret = avcodec_send_packet(d->decoder, &d->pkt);
+		if (!d->pkt)
+			return 0;
+
+		ret = avcodec_send_packet(d->decoder, d->pkt);
 		if (ret != 0 && ret != AVERROR(EAGAIN)) {
 			if (ret == AVERROR_EOF)
 				ret = 0;
@@ -293,21 +297,11 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		}
 
 		*got_frame = (ret == 0);
-		ret = d->pkt.size;
+		ret = d->pkt->size;
 	} else {
 		ret = 0;
 		*got_frame = 1;
 	}
-
-#else
-	if (d->audio) {
-		ret = avcodec_decode_audio4(d->decoder, d->in_frame, got_frame,
-					    &d->pkt);
-	} else {
-		ret = avcodec_decode_video2(d->decoder, d->in_frame, got_frame,
-					    &d->pkt);
-	}
-#endif
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (*got_frame && d->hw) {
@@ -340,19 +334,13 @@ bool mp_decode_next(struct mp_decode *d)
 		return true;
 
 	while (!d->frame_ready) {
-		if (!d->packet_pending) {
+		if (!d->pkt) {
 			if (!d->packets.size) {
-				if (eof) {
-					d->pkt.data = NULL;
-					d->pkt.size = 0;
-				} else {
+				if (!eof)
 					return true;
-				}
 			} else {
-				circlebuf_pop_front(&d->packets, &d->orig_pkt,
-						    sizeof(d->orig_pkt));
-				d->pkt = d->orig_pkt;
-				d->packet_pending = true;
+				circlebuf_pop_front(&d->packets, &d->pkt,
+						    sizeof(d->pkt));
 			}
 		}
 
@@ -368,28 +356,24 @@ bool mp_decode_next(struct mp_decode *d)
 			     av_err2str(ret));
 #endif
 
-			if (d->packet_pending) {
-				av_packet_unref(&d->orig_pkt);
-				av_init_packet(&d->orig_pkt);
-				av_init_packet(&d->pkt);
-				d->packet_pending = false;
+			if (d->pkt) {
+				mp_media_free_packet(d->m, d->pkt);
+				d->pkt = NULL;
 			}
 			return true;
 		}
 
 		d->frame_ready = !!got_frame;
 
-		if (d->packet_pending) {
-			if (d->pkt.size) {
-				d->pkt.data += ret;
-				d->pkt.size -= ret;
+		if (d->pkt) {
+			if (d->pkt->size) {
+				d->pkt->data += ret;
+				d->pkt->size -= ret;
 			}
 
-			if (d->pkt.size <= 0) {
-				av_packet_unref(&d->orig_pkt);
-				av_init_packet(&d->orig_pkt);
-				av_init_packet(&d->pkt);
-				d->packet_pending = false;
+			if (d->pkt->size <= 0) {
+				mp_media_free_packet(d->m, d->pkt);
+				d->pkt = NULL;
 			}
 		}
 	}

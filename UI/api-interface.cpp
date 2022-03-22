@@ -620,6 +620,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return bstrdup(recordOutputPath);
 	}
 
+	const char *obs_frontend_get_locale_string(const char *string) override
+	{
+		return Str(string);
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

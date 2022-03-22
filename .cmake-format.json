@@ -1,0 +1,14 @@
+{
+    "additional_commands": {
+      "find_qt": {
+        "flags": [],
+        "kwargs": {
+          "VERSION": "+",
+          "COMPONENTS": "+",
+          "COMPONENTS_WIN": "+",
+          "COMPONENTS_MACOS": "+",
+          "COMPONENTS_LINUX": "+"
+        }
+      }
+    }
+}

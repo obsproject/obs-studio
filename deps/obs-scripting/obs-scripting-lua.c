@@ -32,19 +32,21 @@
 #endif
 
 #ifdef __APPLE__
-#define SO_EXT "dylib"
+#define SO_EXT "so"
 #elif _WIN32
+#include <windows.h>
 #define SO_EXT "dll"
 #else
 #define SO_EXT "so"
 #endif
 
-static const char *startup_script_template = "\
+static const char *startup_script_template =
+	"\
 for val in pairs(package.preload) do\n\
 	package.preload[val] = nil\n\
 end\n\
-package.cpath = package.cpath .. \";\" .. \"%s/Contents/MacOS/?.so\" .. \";\" .. \"%s\" .. \"/?." SO_EXT
-					     "\"\n\
+package.cpath = package.cpath .. \";\" .. \"%s/?." SO_EXT
+	"\" .. \";\" .. \"%s\" .. \"/?." SO_EXT "\"\n\
 require \"obslua\"\n";
 
 static const char *get_script_path_func = "\
@@ -288,7 +290,7 @@ static void timer_call(struct script_callback *p_cb)
 {
 	struct lua_obs_callback *cb = (struct lua_obs_callback *)p_cb;
 
-	if (p_cb->removed)
+	if (script_callback_removed(p_cb))
 		return;
 
 	lock_callback();
@@ -329,7 +331,7 @@ static void obs_lua_main_render_callback(void *priv, uint32_t cx, uint32_t cy)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_main_render_callback(obs_lua_main_render_callback,
 						cb);
 		return;
@@ -377,7 +379,7 @@ static void obs_lua_tick_callback(void *priv, float seconds)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		obs_remove_tick_callback(obs_lua_tick_callback, cb);
 		return;
 	}
@@ -423,7 +425,7 @@ static void calldata_signal_callback(void *priv, calldata_t *cd)
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -505,7 +507,7 @@ static void calldata_signal_callback_global(void *priv, const char *signal,
 	struct lua_obs_callback *cb = priv;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed) {
+	if (script_callback_removed(&cb->base)) {
 		signal_handler_remove_current();
 		return;
 	}
@@ -663,7 +665,7 @@ static void hotkey_pressed(void *p_cb, bool pressed)
 	struct lua_obs_callback *cb = p_cb;
 	lua_State *script = cb->script;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	lock_callback();
@@ -689,7 +691,7 @@ static void hotkey_callback(void *p_cb, obs_hotkey_id id, obs_hotkey_t *hotkey,
 {
 	struct lua_obs_callback *cb = p_cb;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return;
 
 	if (pressed)
@@ -745,7 +747,7 @@ static bool button_prop_clicked(obs_properties_t *props, obs_property_t *p,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -801,7 +803,7 @@ static bool modified_callback(void *p_cb, obs_properties_t *props,
 	lua_State *script = cb->script;
 	bool ret = false;
 
-	if (cb->base.removed)
+	if (script_callback_removed(&cb->base))
 		return false;
 
 	lock_callback();
@@ -1078,7 +1080,7 @@ static void lua_tick(void *param, float seconds)
 		struct lua_obs_timer *next = timer->next;
 		struct lua_obs_callback *cb = lua_obs_timer_cb(timer);
 
-		if (cb->base.removed) {
+		if (script_callback_removed(&cb->base)) {
 			lua_obs_timer_remove(timer);
 		} else {
 			uint64_t elapsed = ts - timer->last_ts;
@@ -1157,6 +1159,25 @@ void obs_lua_script_unload(obs_script_t *s)
 	lua_State *script = data->script;
 
 	/* ---------------------------- */
+	/* mark callbacks as removed    */
+
+	pthread_mutex_lock(&data->mutex);
+
+	/* XXX: scripts can potentially make callbacks when this happens, so
+	 * this probably still isn't ideal as we can't predict how the
+	 * processor or operating system is going to schedule things. a more
+	 * ideal method would be to reference count the script objects and
+	 * atomically share ownership with callbacks when they're called. */
+	struct lua_obs_callback *cb =
+		(struct lua_obs_callback *)data->first_callback;
+	while (cb) {
+		os_atomic_set_bool(&cb->base.removed, true);
+		cb = (struct lua_obs_callback *)cb->base.next;
+	}
+
+	pthread_mutex_unlock(&data->mutex);
+
+	/* ---------------------------- */
 	/* undefine source types        */
 
 	undef_lua_script_sources(data);
@@ -1189,8 +1210,7 @@ void obs_lua_script_unload(obs_script_t *s)
 	/* ---------------------------- */
 	/* remove all callbacks         */
 
-	struct lua_obs_callback *cb =
-		(struct lua_obs_callback *)data->first_callback;
+	cb = (struct lua_obs_callback *)data->first_callback;
 	while (cb) {
 		struct lua_obs_callback *next =
 			(struct lua_obs_callback *)cb->base.next;
@@ -1294,7 +1314,6 @@ void obs_lua_script_save(obs_script_t *s)
 
 void obs_lua_load(void)
 {
-	struct dstr dep_paths = {0};
 	struct dstr tmp = {0};
 
 	pthread_mutex_init(&tick_mutex, NULL);
@@ -1304,34 +1323,29 @@ void obs_lua_load(void)
 	/* ---------------------------------------------- */
 	/* Initialize Lua startup script                  */
 
-	char *bundlePath = "./";
-
-#ifdef __APPLE__
-	Class nsRunningApplication = objc_lookUpClass("NSRunningApplication");
-	SEL currentAppSel = sel_getUid("currentApplication");
-
-	typedef id (*running_app_func)(Class, SEL);
-	running_app_func operatingSystemName = (running_app_func)objc_msgSend;
-	id app = operatingSystemName(nsRunningApplication, currentAppSel);
-
-	typedef id (*bundle_url_func)(id, SEL);
-	bundle_url_func bundleURL = (bundle_url_func)objc_msgSend;
-	id url = bundleURL(app, sel_getUid("bundleURL"));
-
-	typedef id (*url_path_func)(id, SEL);
-	url_path_func urlPath = (url_path_func)objc_msgSend;
-
-	id path = urlPath(url, sel_getUid("path"));
-
-	typedef id (*string_func)(id, SEL);
-	string_func utf8String = (string_func)objc_msgSend;
-	bundlePath = (char *)utf8String(path, sel_registerName("UTF8String"));
+#if _WIN32
+#define PATH_MAX MAX_PATH
 #endif
 
-	dstr_printf(&tmp, startup_script_template, bundlePath, SCRIPT_DIR);
-	startup_script = tmp.array;
+    char import_path[PATH_MAX];
 
-	dstr_free(&dep_paths);
+#ifdef __APPLE__
+    struct dstr bundle_path;
+    
+    dstr_init_move_array(&bundle_path, os_get_executable_path_ptr(""));
+    dstr_cat(&bundle_path, "../PlugIns");
+    char *absolute_plugin_path = os_get_abs_path_ptr(bundle_path.array);
+    
+    if(absolute_plugin_path != NULL) {
+        strcpy(import_path, absolute_plugin_path);
+        bfree(absolute_plugin_path);
+    }
+    dstr_free(&bundle_path);
+#else
+    strcpy(import_path, "./");
+#endif
+	dstr_printf(&tmp, startup_script_template, import_path, SCRIPT_DIR);
+	startup_script = tmp.array;
 
 	obs_add_tick_callback(lua_tick, NULL);
 }

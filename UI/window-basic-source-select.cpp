@@ -130,7 +130,7 @@ static void AddSource(void *_data, obs_scene_t *scene)
 	obs_sceneitem_set_visible(sceneitem, data->visible);
 }
 
-static char *get_new_source_name(const char *name)
+char *get_new_source_name(const char *name, const char *format)
 {
 	struct dstr new_name = {0};
 	int inc = 0;
@@ -143,7 +143,7 @@ static char *get_new_source_name(const char *name)
 		if (!existing_source)
 			break;
 
-		dstr_printf(&new_name, "%s %d", name, ++inc + 1);
+		dstr_printf(&new_name, format, name, ++inc + 1);
 	}
 
 	return new_name.array;
@@ -160,8 +160,8 @@ static void AddExisting(OBSSource source, bool visible, bool duplicate,
 
 	if (duplicate) {
 		OBSSource from = source;
-		char *new_name =
-			get_new_source_name(obs_source_get_name(source));
+		char *new_name = get_new_source_name(
+			obs_source_get_name(source), "%s %d");
 		source = obs_source_duplicate(from, new_name, false);
 		obs_source_release(source);
 		bfree(new_name);

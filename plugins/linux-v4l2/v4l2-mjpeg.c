@@ -75,7 +75,6 @@ void v4l2_destroy_mjpeg(struct v4l2_mjpeg_decoder *decoder)
 int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
 		      size_t length, struct v4l2_mjpeg_decoder *decoder)
 {
-
 	decoder->packet->data = data;
 	decoder->packet->size = length;
 	if (avcodec_send_packet(decoder->context, decoder->packet) < 0) {
@@ -105,6 +104,8 @@ int v4l2_decode_mjpeg(struct obs_source_frame *out, uint8_t *data,
 	case AV_PIX_FMT_YUVJ444P:
 	case AV_PIX_FMT_YUV444P:
 		out->format = VIDEO_FORMAT_I444;
+		break;
+	default:
 		break;
 	}
 

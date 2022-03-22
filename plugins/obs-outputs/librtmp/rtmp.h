@@ -342,10 +342,6 @@ extern "C"
 
 #ifdef CRYPTO
 #define RTMP_SWF_HASHLEN	32
-        void *dh;			/* for encryption */
-        void *rc4keyIn;
-        void *rc4keyOut;
-
         uint32_t SWFSize;
         uint8_t SWFHash[RTMP_SWF_HASHLEN];
         char SWFVerificationResponse[RTMP_SWF_HASHLEN+10];

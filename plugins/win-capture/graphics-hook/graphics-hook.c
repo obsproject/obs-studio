@@ -319,7 +319,7 @@ static inline bool attempt_hook(void)
 	static bool d3d12_hooked = false;
 	static bool dxgi_hooked = false;
 	static bool gl_hooked = false;
-#if COMPILE_VULKAN_HOOK
+#ifdef COMPILE_VULKAN_HOOK
 	static bool vulkan_hooked = false;
 	if (!vulkan_hooked) {
 		vulkan_hooked = hook_vulkan();
@@ -329,7 +329,7 @@ static inline bool attempt_hook(void)
 	}
 #endif //COMPILE_VULKAN_HOOK
 
-#if COMPILE_D3D12_HOOK
+#ifdef COMPILE_D3D12_HOOK
 	if (!d3d12_hooked) {
 		d3d12_hooked = hook_d3d12();
 	}

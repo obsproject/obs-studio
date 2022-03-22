@@ -15,7 +15,8 @@ static inline bool device_is_input(char *device)
 	       astrstri(device, "ishowu") == NULL &&
 	       astrstri(device, "blackhole") == NULL &&
 	       astrstri(device, "loopback") == NULL &&
-	       astrstri(device, "groundcontrol") == NULL;
+	       astrstri(device, "groundcontrol") == NULL &&
+	       astrstri(device, "vbcable") == NULL;
 }
 
 static inline bool enum_success(OSStatus stat, const char *msg)

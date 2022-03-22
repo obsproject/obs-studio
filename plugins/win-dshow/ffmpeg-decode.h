@@ -37,6 +37,7 @@ extern "C" {
 #endif
 
 struct ffmpeg_decode {
+	AVBufferRef *hw_device_ctx;
 	AVCodecContext *decoder;
 	AVCodec *codec;
 

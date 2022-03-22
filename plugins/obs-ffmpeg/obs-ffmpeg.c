@@ -43,7 +43,7 @@ extern struct obs_encoder_info vaapi_encoder_info;
 
 static const char *nvenc_check_name = "nvenc_check";
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 static const int blacklisted_adapters[] = {
 	0x1298, // GK208M [GeForce GT 720M]
 	0x1140, // GF117M [GeForce 610M/710M/810M/820M / GT 620M/625M/630M/720M]
@@ -105,7 +105,9 @@ static bool is_blacklisted(const int device_id)
 
 	return false;
 }
+#endif
 
+#if defined(_WIN32)
 typedef HRESULT(WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
 
 static bool nvenc_device_available(void)
@@ -164,6 +166,59 @@ finish:
 }
 #endif
 
+#if defined(__linux__)
+static int get_id_from_sys(char *d_name, char *type)
+{
+	char file_name[1024];
+	char *c;
+	int id;
+
+	snprintf(file_name, sizeof(file_name), "/sys/bus/pci/devices/%s/%s",
+		 d_name, type);
+	if ((c = os_quick_read_utf8_file(file_name)) == NULL) {
+		return -1;
+	}
+	id = strtol(c, NULL, 16);
+	bfree(c);
+
+	return id;
+}
+
+static bool nvenc_device_available(void)
+{
+	os_dir_t *dir;
+	struct os_dirent *dirent;
+	bool available = false;
+
+	if ((dir = os_opendir("/sys/bus/pci/devices")) == NULL) {
+		return true;
+	}
+
+	while ((dirent = os_readdir(dir)) != NULL) {
+		int id;
+
+		if (get_id_from_sys(dirent->d_name, "class") !=
+		    0x030000) { // 0x030000 = VGA compatible controller
+			continue;
+		}
+
+		if (get_id_from_sys(dirent->d_name, "vendor") !=
+		    0x10de) { // 0x10de = NVIDIA Corporation
+			continue;
+		}
+
+		if ((id = get_id_from_sys(dirent->d_name, "device")) > 0 &&
+		    !is_blacklisted(id)) {
+			available = true;
+			break;
+		}
+	}
+
+	os_closedir(dir);
+	return available;
+}
+#endif
+
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
 #endif
@@ -194,6 +249,11 @@ static bool nvenc_supported(void)
 		success = true;
 		goto finish;
 	}
+#elif defined(__linux__)
+	if (!nvenc_device_available()) {
+		goto cleanup;
+	}
+	lib = os_dlopen("libnvidia-encode.so.1");
 #else
 	lib = os_dlopen("libnvidia-encode.so.1");
 #endif
