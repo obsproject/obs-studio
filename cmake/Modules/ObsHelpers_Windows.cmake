@@ -210,11 +210,11 @@ function(export_target target)
 
   if(MSVC)
     install(
-      DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/pdbs/"
+      FILES $<TARGET_PDB_FILE:${target}>
+      CONFIGURATIONS "RelWithDebInfo" "Debug"
       DESTINATION "${OBS_EXECUTABLE_EXPORT_DESTINATION}"
-      CONFIGURATIONS Debug RelWithDebInfo
       COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      OPTIONAL EXCLUDE_FROM_ALL)
   endif()
 
   include(GenerateExportHeader)
