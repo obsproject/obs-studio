@@ -15,3 +15,4 @@ extern NV_CREATE_INSTANCE_FUNC nv_create_instance;
 extern bool init_nvenc(obs_encoder_t *encoder);
 bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 	       const char *call);
+extern bool check_driver_version(obs_encoder_t *encoder);
