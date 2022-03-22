@@ -181,7 +181,8 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 
 		da_erase(s->async_frames, 0);
 
-		if (s->cur_async_frame->prev_frame) {
+		if ((s->async_frames.num > 0) &&
+		    s->cur_async_frame->prev_frame) {
 			s->prev_async_frame = s->cur_async_frame;
 			s->cur_async_frame = s->async_frames.array[0];
 
