@@ -421,9 +421,10 @@
         "-DUSE_XDG=ON",
         "-DENABLE_ALSA=OFF",
         "-DENABLE_PULSEAUDIO=ON",
+        "-DENABLE_JACK=ON",
         "-DENABLE_RTMPS=ON",
         "-DENABLE_VLC=OFF",
-        "-DENABLE_AJA=OFF"
+        "-DENABLE_AJA=ON"
       ],
       "secret-opts": [
         "-DRESTREAM_CLIENTID=$RESTREAM_CLIENTID",
