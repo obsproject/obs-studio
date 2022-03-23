@@ -1672,22 +1672,33 @@ bool obs_scripting_load_python(const char *python_path)
 	/* Load main interface module                     */
 
 #ifdef __APPLE__
-    struct dstr bundle_path;
-    
-    dstr_init_move_array(&bundle_path, os_get_executable_path_ptr(""));
-    dstr_cat(&bundle_path, "../PlugIns");
-    char *absolute_plugin_path = os_get_abs_path_ptr(bundle_path.array);
-    
-    if(absolute_plugin_path != NULL) {
-        add_to_python_path(absolute_plugin_path);
-        bfree(absolute_plugin_path);
-    }
-    dstr_free(&bundle_path);
-#endif
+	struct dstr plugin_path;
+	struct dstr resource_path;
 
+	dstr_init_move_array(&plugin_path, os_get_executable_path_ptr(""));
+	dstr_init_copy(&resource_path, plugin_path.array);
+	dstr_cat(&plugin_path, "../PlugIns");
+	dstr_cat(&resource_path, "../Resources");
+
+	char *absolute_plugin_path = os_get_abs_path_ptr(plugin_path.array);
+	char *absolute_resource_path = os_get_abs_path_ptr(resource_path.array);
+
+	if(absolute_plugin_path != NULL) {
+		add_to_python_path(absolute_plugin_path);
+		bfree(absolute_plugin_path);
+	}
+	dstr_free(&plugin_path);
+
+	if(absolute_resource_path != NULL) {
+		add_to_python_path(absolute_resource_path);
+		bfree(absolute_resource_path);
+	}
+	dstr_free(&resource_path);
+#else
 	char *absolute_script_path = os_get_abs_path_ptr(SCRIPT_DIR);
 	add_to_python_path(absolute_script_path);
 	bfree(absolute_script_path);
+#endif
 
 	py_obspython = PyImport_ImportModule("obspython");
 	bool success = !py_error();
