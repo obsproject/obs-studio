@@ -210,6 +210,7 @@ if(NOT OS_MACOS)
     PRIVATE data/area.effect
             data/bicubic_scale.effect
             data/bilinear_lowres_scale.effect
+            data/color.effect
             data/default.effect
             data/default_rect.effect
             data/deinterlace_base.effect

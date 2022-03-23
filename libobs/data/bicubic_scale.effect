@@ -4,11 +4,14 @@
  * there.
  */
 
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
 uniform float2 base_dimension;
 uniform float2 base_dimension_i;
 uniform float undistort_factor = 1.0;
+uniform float multiplier;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -134,6 +137,32 @@ float4 PSDrawBicubicRGBA(FragData f_in, bool undistort) : TARGET
 	return DrawBicubic(f_in, undistort);
 }
 
+float4 PSDrawBicubicRGBAMultiply(FragData f_in, bool undistort) : TARGET
+{
+	float4 rgba = DrawBicubic(f_in, undistort);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawBicubicRGBATonemap(FragData f_in, bool undistort) : TARGET
+{
+	float4 rgba = DrawBicubic(f_in, undistort);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawBicubicRGBAMultiplyTonemap(FragData f_in, bool undistort) : TARGET
+{
+	float4 rgba = DrawBicubic(f_in, undistort);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
 float4 PSDrawBicubicRGBADivide(FragData f_in) : TARGET
 {
 	float4 rgba = DrawBicubic(f_in, false);
@@ -148,6 +177,33 @@ technique Draw
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader = PSDrawBicubicRGBA(f_in, false);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAMultiply(f_in, false);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBATonemap(f_in, false);
+	}
+}
+
+technique DrawMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAMultiplyTonemap(f_in, false);
 	}
 }
 
@@ -166,5 +222,32 @@ technique DrawUndistort
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader = PSDrawBicubicRGBA(f_in, true);
+	}
+}
+
+technique DrawUndistortMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAMultiply(f_in, true);
+	}
+}
+
+technique DrawUndistortTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBATonemap(f_in, true);
+	}
+}
+
+technique DrawUndistortMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawBicubicRGBAMultiplyTonemap(f_in, true);
 	}
 }

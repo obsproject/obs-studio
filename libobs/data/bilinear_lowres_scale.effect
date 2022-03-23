@@ -3,8 +3,11 @@
  * low resolution image below half size
  */
 
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float multiplier;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -30,9 +33,9 @@ float4 pixel(float2 uv)
 	return image.Sample(textureSampler, uv);
 }
 
-float4 DrawLowresBilinear(VertData v_in)
+float4 DrawLowresBilinear(VertData f_in)
 {
-	float2 uv = v_in.uv;
+	float2 uv = f_in.uv;
 	float2 stepxy  = float2(ddx(uv.x), ddy(uv.y));
 	float2 stepxy1 = stepxy * 0.0625;
 	float2 stepxy3 = stepxy * 0.1875;
@@ -52,14 +55,40 @@ float4 DrawLowresBilinear(VertData v_in)
 	return out_color * 0.125;
 }
 
-float4 PSDrawLowresBilinearRGBA(VertData v_in) : TARGET
+float4 PSDrawLowresBilinearRGBA(VertData f_in) : TARGET
 {
-	return DrawLowresBilinear(v_in);
+	return DrawLowresBilinear(f_in);
 }
 
-float4 PSDrawLowresBilinearRGBADivide(VertData v_in) : TARGET
+float4 PSDrawLowresBilinearRGBAMultiply(VertData f_in) : TARGET
 {
-	float4 rgba = DrawLowresBilinear(v_in);
+	float4 rgba = DrawLowresBilinear(f_in);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawLowresBilinearRGBATonemap(VertData f_in) : TARGET
+{
+	float4 rgba = DrawLowresBilinear(f_in);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawLowresBilinearRGBAMultiplyTonemap(VertData f_in) : TARGET
+{
+	float4 rgba = DrawLowresBilinear(f_in);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawLowresBilinearRGBADivide(VertData f_in) : TARGET
+{
+	float4 rgba = DrawLowresBilinear(f_in);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
 	return float4(rgba.rgb * multiplier, alpha);
@@ -70,7 +99,34 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLowresBilinearRGBA(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBA(f_in);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBAMultiply(f_in);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBATonemap(f_in);
+	}
+}
+
+technique DrawMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBAMultiplyTonemap(f_in);
 	}
 }
 
@@ -79,7 +135,6 @@ technique DrawAlphaDivide
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSDrawLowresBilinearRGBADivide(v_in);
+		pixel_shader  = PSDrawLowresBilinearRGBADivide(f_in);
 	}
 }
-

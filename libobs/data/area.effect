@@ -1,7 +1,10 @@
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform float2 base_dimension;
 uniform float2 base_dimension_i;
 uniform texture2d image;
+uniform float multiplier;
 
 sampler_state textureSampler {
 	Filter    = Linear;
@@ -31,8 +34,9 @@ VertInOut VSDefault(VertData vert_in)
 	return vert_out;
 }
 
-float4 DrawArea(float2 uv)
+float4 DrawArea(FragData frag_in)
 {
+	float2 uv = frag_in.uv;
 	float2 uv_delta = float2(ddx(uv.x), ddy(uv.y));
 
 	// Handle potential OpenGL flip.
@@ -84,18 +88,44 @@ float4 DrawArea(float2 uv)
 
 float4 PSDrawAreaRGBA(FragData frag_in) : TARGET
 {
-	return DrawArea(frag_in.uv);
+	return DrawArea(frag_in);
+}
+
+float4 PSDrawAreaRGBAMultiply(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawArea(frag_in);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawAreaRGBATonemap(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawArea(frag_in);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawAreaRGBAMultiplyTonemap(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawArea(frag_in);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
 }
 
 float4 PSDrawAreaRGBADivide(FragData frag_in) : TARGET
 {
-	float4 rgba = DrawArea(frag_in.uv);
+	float4 rgba = DrawArea(frag_in);
 	float alpha = rgba.a;
 	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
 	return float4(rgba.rgb * multiplier, alpha);
 }
 
-float4 PSDrawAreaRGBAUpscale(FragData frag_in) : TARGET
+float4 DrawAreaUpscale(FragData frag_in)
 {
 	float2 uv = frag_in.uv;
 	float2 uv_delta = float2(ddx(uv.x), ddy(uv.y));
@@ -124,12 +154,70 @@ float4 PSDrawAreaRGBAUpscale(FragData frag_in) : TARGET
 	return image.Sample(textureSampler, uv);
 }
 
+float4 PSDrawAreaRGBAUpscale(FragData frag_in) : TARGET
+{
+	return DrawAreaUpscale(frag_in);
+}
+
+float4 PSDrawAreaRGBAUpscaleMultiply(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawAreaUpscale(frag_in);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawAreaRGBAUpscaleTonemap(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawAreaUpscale(frag_in);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawAreaRGBAUpscaleMultiplyTonemap(FragData frag_in) : TARGET
+{
+	float4 rgba = DrawAreaUpscale(frag_in);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
 technique Draw
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAreaRGBA(frag_in);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBAMultiply(frag_in);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBATonemap(frag_in);
+	}
+}
+
+technique DrawMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBAMultiplyTonemap(frag_in);
 	}
 }
 
@@ -148,5 +236,32 @@ technique DrawUpscale
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawAreaRGBAUpscale(frag_in);
+	}
+}
+
+technique DrawUpscaleMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBAUpscaleMultiply(frag_in);
+	}
+}
+
+technique DrawUpscaleTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBAUpscaleTonemap(frag_in);
+	}
+}
+
+technique DrawUpscaleMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawAreaRGBAUpscaleMultiplyTonemap(frag_in);
 	}
 }
