@@ -12,10 +12,4 @@ jobs:
           submodules: recursive
           fetch-depth: 0
           token: ${{ secrets.CROWDIN_SYNC_GITHUB_PAT }}
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - name: Download Script
-        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.2/dist/download.mjs
-      - name: Import latest translations from Crowdin
-        run: node ./other/download.mjs
+      - uses: obsproject/obs-crowdin-sync/download@0.2.0
