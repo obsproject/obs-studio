@@ -1,3 +1,5 @@
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture_rect image;
 
@@ -28,16 +30,6 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 float4 PSDrawOpaque(VertInOut vert_in) : TARGET
 {
 	return float4(image.Sample(def_sampler, vert_in.uv).rgb, 1.0);
-}
-
-float srgb_nonlinear_to_linear_channel(float u)
-{
-	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
-}
-
-float3 srgb_nonlinear_to_linear(float3 v)
-{
-	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
 }
 
 float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
