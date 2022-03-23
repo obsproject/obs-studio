@@ -292,16 +292,7 @@ function(setup_obs_modules target)
   if(TARGET obspython)
     install(
       FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
-      DESTINATION "PlugIns"
-      COMPONENT obs_plugin_dev
-      EXCLUDE_FROM_ALL)
-
-    set(_COMMAND
-        "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/PlugIns/obspython.py\\\" > /dev/null"
-    )
-
-    install(
-      CODE "execute_process(COMMAND /bin/sh -c \"${_COMMAND}\")"
+      DESTINATION "Resources"
       COMPONENT obs_plugin_dev
       EXCLUDE_FROM_ALL)
   endif()

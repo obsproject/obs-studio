@@ -86,12 +86,6 @@ if(EXISTS
 endif()
 
 if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/obspython.py")
-  list(APPEND _OTHER_BINARIES
-       "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/PlugIns/obspython.py")
-endif()
-
-if(EXISTS
    "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Resources/obs-mac-virtualcam.plugin"
 )
   list(
