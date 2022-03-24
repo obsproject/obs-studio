@@ -39,6 +39,8 @@ typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
+typedef enum gs_color_space (*PFN_winrt_capture_get_color_space)(
+	const struct winrt_capture *capture);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
@@ -51,6 +53,7 @@ struct winrt_exports {
 	PFN_winrt_capture_init_monitor winrt_capture_init_monitor;
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
+	PFN_winrt_capture_get_color_space winrt_capture_get_color_space;
 	PFN_winrt_capture_render winrt_capture_render;
 	PFN_winrt_capture_width winrt_capture_width;
 	PFN_winrt_capture_height winrt_capture_height;
@@ -299,6 +302,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_init_monitor);
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
+	WINRT_IMPORT(winrt_capture_get_color_space);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -541,13 +545,37 @@ static void duplicator_capture_render(void *data, gs_effect_t *unused)
 			gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD((float)rot));
 		}
 
+		const char *tech_name = "Draw";
+		float multiplier = 1.f;
+		const enum gs_color_space current_space = gs_get_color_space();
+		if (gs_texture_get_color_format(texture) == GS_RGBA16F) {
+			switch (current_space) {
+			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
+				tech_name = "DrawMultiplyTonemap";
+				multiplier =
+					80.f / obs_get_video_sdr_white_level();
+				break;
+			case GS_CS_709_EXTENDED:
+				tech_name = "DrawMultiply";
+				multiplier =
+					80.f / obs_get_video_sdr_white_level();
+			}
+		} else if (current_space == GS_CS_709_SCRGB) {
+			tech_name = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.f;
+		}
+
 		gs_effect_t *const opaque_effect =
 			obs_get_base_effect(OBS_EFFECT_OPAQUE);
-		while (gs_effect_loop(opaque_effect, "Draw")) {
-			gs_eparam_t *image = gs_effect_get_param_by_name(
-				opaque_effect, "image");
-			gs_effect_set_texture_srgb(image, texture);
+		gs_eparam_t *multiplier_param = gs_effect_get_param_by_name(
+			opaque_effect, "multiplier");
+		gs_effect_set_float(multiplier_param, multiplier);
+		gs_eparam_t *image_param =
+			gs_effect_get_param_by_name(opaque_effect, "image");
+		gs_effect_set_texture_srgb(image_param, texture);
 
+		while (gs_effect_loop(opaque_effect, tech_name)) {
 			gs_draw_sprite(texture, 0, 0, 0);
 		}
 
@@ -673,6 +701,43 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 	return props;
 }
 
+enum gs_color_space
+duplicator_capture_get_color_space(void *data, size_t count,
+				   const enum gs_color_space *preferred_spaces)
+{
+	enum gs_color_space capture_space = GS_CS_SRGB;
+
+	struct duplicator_capture *capture = data;
+	if (capture->method == METHOD_WGC) {
+		if (capture->capture_winrt) {
+			capture_space =
+				capture->exports.winrt_capture_get_color_space(
+					capture->capture_winrt);
+		}
+	} else {
+		if (capture->duplicator) {
+			gs_texture_t *const texture =
+				gs_duplicator_get_texture(capture->duplicator);
+			if (texture) {
+				capture_space = (gs_texture_get_color_format(
+							 texture) == GS_RGBA16F)
+							? GS_CS_709_EXTENDED
+							: GS_CS_SRGB;
+			}
+		}
+	}
+
+	enum gs_color_space space = capture_space;
+	for (size_t i = 0; i < count; ++i) {
+		const enum gs_color_space preferred_space = preferred_spaces[i];
+		space = preferred_space;
+		if (preferred_space == capture_space)
+			break;
+	}
+
+	return space;
+}
+
 struct obs_source_info duplicator_capture_info = {
 	.id = "monitor_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -689,4 +754,5 @@ struct obs_source_info duplicator_capture_info = {
 	.get_defaults = duplicator_capture_defaults,
 	.get_properties = duplicator_capture_properties,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	.video_get_color_space = duplicator_capture_get_color_space,
 };
