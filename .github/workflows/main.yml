@@ -581,7 +581,7 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64.zip -f --retry 5 -o cef.zip
-          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64"
       - name: 'Configure'
         run: |
           mkdir ./build
@@ -690,7 +690,7 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86.zip -f --retry 5 -o cef.zip
-          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86"
       - name: 'Configure'
         run: |
           mkdir ./build
