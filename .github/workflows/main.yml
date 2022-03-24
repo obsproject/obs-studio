@@ -14,6 +14,7 @@ on:
       - '**.md'
     branches:
       - master
+      - 'release/**'
 
 env:
   MACOS_CEF_BUILD_VERSION: '4638'
