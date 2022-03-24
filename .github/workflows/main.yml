@@ -139,6 +139,7 @@ jobs:
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.SPARKLE_VERSION }}-${{ env.CACHE_REVISION }}
 
       - name: 'Setup build environment'
+        id: setup
         run: |
           REMOVE_FORMULAS=""
           for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
@@ -150,6 +151,8 @@ jobs:
           if [ -n "${REMOVE_FORMULAS}" ]; then
             brew uninstall ${REMOVE_FORMULAS}
           fi
+
+          echo "::set-output name=commitHash::$(git rev-parse --short HEAD)"
 
       - name: 'Install dependencies'
         env:
@@ -189,7 +192,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}'
+          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   linux_build:
@@ -243,6 +246,11 @@ jobs:
           path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_LINUX }}_linux64
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_LINUX }}-${{ env.CACHE_REVISION }}
 
+      - name: 'Setup build environment'
+        id: setup
+        run: |
+          echo "::set-output name=commitHash::$(git rev-parse --short HEAD)"
+
       - name: 'Install dependencies'
         env:
           RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
@@ -266,7 +274,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-linux-${{ matrix.ubuntu }}-deb'
+          name: 'obs-linux-${{ matrix.ubuntu }}-deb-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   windows_build:
@@ -320,6 +328,12 @@ jobs:
           path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_WIN }}_windows${{ matrix.arch }}_minimal
           key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}-${{ env.CACHE_REVISION }}
 
+      - name: Setup Environment
+        id: setup
+        run: |
+          $CommitHash = git rev-parse --short HEAD
+          Write-Output "::set-output name=commitHash::${CommitHash}"
+
       - name: 'Install dependencies'
         env:
           RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
@@ -340,7 +354,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-win${{ matrix.arch }}'
+          name: 'obs-win${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ env.FILE_NAME }}'
 
   linux_package:
