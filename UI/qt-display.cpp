@@ -221,6 +221,14 @@ QPaintEngine *OBSQTDisplay::paintEngine() const
 	return nullptr;
 }
 
-void OBSQTDisplay::OnMove() {}
+void OBSQTDisplay::OnMove()
+{
+	if (display)
+		obs_display_update_color_space(display);
+}
 
-void OBSQTDisplay::OnDisplayChange() {}
+void OBSQTDisplay::OnDisplayChange()
+{
+	if (display)
+		obs_display_update_color_space(display);
+}

@@ -26,6 +26,7 @@
 struct gs_texture_render {
 	gs_texture_t *target, *prev_target;
 	gs_zstencil_t *zs, *prev_zs;
+	enum gs_color_space prev_space;
 
 	uint32_t cx, cy;
 
@@ -89,6 +90,13 @@ static bool texrender_resetbuffer(gs_texrender_t *texrender, uint32_t cx,
 
 bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 {
+	return gs_texrender_begin_with_color_space(texrender, cx, cy,
+						   GS_CS_SRGB);
+}
+
+bool gs_texrender_begin_with_color_space(gs_texrender_t *texrender, uint32_t cx,
+					 uint32_t cy, enum gs_color_space space)
+{
 	if (!texrender || texrender->rendered)
 		return false;
 
@@ -109,7 +117,9 @@ bool gs_texrender_begin(gs_texrender_t *texrender, uint32_t cx, uint32_t cy)
 
 	texrender->prev_target = gs_get_render_target();
 	texrender->prev_zs = gs_get_zstencil_target();
-	gs_set_render_target(texrender->target, texrender->zs);
+	texrender->prev_space = gs_get_color_space();
+	gs_set_render_target_with_color_space(texrender->target, texrender->zs,
+					      space);
 
 	gs_set_viewport(0, 0, texrender->cx, texrender->cy);
 
@@ -121,7 +131,9 @@ void gs_texrender_end(gs_texrender_t *texrender)
 	if (!texrender)
 		return;
 
-	gs_set_render_target(texrender->prev_target, texrender->prev_zs);
+	gs_set_render_target_with_color_space(texrender->prev_target,
+					      texrender->prev_zs,
+					      texrender->prev_space);
 
 	gs_matrix_pop();
 	gs_projection_pop();

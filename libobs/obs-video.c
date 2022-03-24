@@ -133,7 +133,8 @@ static inline void render_main_texture(struct obs_core_video *video)
 	struct vec4 clear_color;
 	vec4_set(&clear_color, 0.0f, 0.0f, 0.0f, 0.0f);
 
-	gs_set_render_target(video->render_texture, NULL);
+	gs_set_render_target_with_color_space(video->render_texture, NULL,
+					      video->render_space);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
 	set_render_size(video->base_width, video->base_height);

@@ -410,6 +410,12 @@ EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 
+/** Gets the SDR white level, returns 300.0 if no video */
+EXPORT float obs_get_video_sdr_white_level(void);
+
+/** Sets the SDR white level */
+EXPORT void obs_set_video_sdr_white_level(float sdr_white_level);
+
 /** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
 
@@ -880,6 +886,9 @@ EXPORT void obs_display_destroy(obs_display_t *display);
 /** Changes the size of this display */
 EXPORT void obs_display_resize(obs_display_t *display, uint32_t cx,
 			       uint32_t cy);
+
+/** Updates the color space of this display */
+EXPORT void obs_display_update_color_space(obs_display_t *display);
 
 /**
  * Adds a draw callback for this display context

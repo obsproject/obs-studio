@@ -204,6 +204,7 @@ extern void obs_view_free(struct obs_view *view);
 /* displays */
 
 struct obs_display {
+	bool update_color_space;
 	bool enabled;
 	uint32_t cx, cy;
 	uint32_t next_cx, next_cy;
@@ -255,6 +256,7 @@ struct obs_core_video {
 #endif
 	gs_texture_t *render_texture;
 	gs_texture_t *output_texture;
+	enum gs_color_space render_space;
 	bool texture_rendered;
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
@@ -321,6 +323,7 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
 	struct obs_video_info ovi;
+	uint32_t sdr_white_level;
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;

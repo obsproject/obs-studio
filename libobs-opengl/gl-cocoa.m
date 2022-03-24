@@ -310,6 +310,11 @@ void device_present(gs_device_t *device)
 	[device->plat->context makeCurrentContext];
 }
 
+bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	return false;
+}
+
 void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 		      uint32_t *height)
 {

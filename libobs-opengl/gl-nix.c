@@ -124,6 +124,11 @@ extern void device_present(gs_device_t *device)
 	gl_vtable->device_present(device);
 }
 
+extern bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	return false;
+}
+
 extern struct gs_texture *device_texture_create_from_dmabuf(
 	gs_device_t *device, unsigned int width, unsigned int height,
 	uint32_t drm_format, enum gs_color_format color_format,
