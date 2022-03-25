@@ -44,7 +44,6 @@ fi
 find . -type d \( \
     -path ./\*build -o \
     -path ./cmake -o \
-    -path ./deps -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \
     -path ./plugins/mac-syphon/syphon-framework -o \
