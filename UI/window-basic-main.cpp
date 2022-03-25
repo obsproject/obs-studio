@@ -912,8 +912,8 @@ static bool LogSceneItem(obs_scene_t *, obs_sceneitem_t *item, void *v_val)
 	obs_source_enum_filters(source, LogFilter,
 				(void *)(intptr_t)child_indent);
 
-	obs_source_t *show_tn = obs_sceneitem_get_show_transition(item);
-	obs_source_t *hide_tn = obs_sceneitem_get_hide_transition(item);
+	obs_source_t *show_tn = obs_sceneitem_get_transition(item, true);
+	obs_source_t *hide_tn = obs_sceneitem_get_transition(item, false);
 	if (show_tn)
 		blog(LOG_INFO, "    %s- show: '%s' (%s)", indent.c_str(),
 		     obs_source_get_name(show_tn), obs_source_get_id(show_tn));
