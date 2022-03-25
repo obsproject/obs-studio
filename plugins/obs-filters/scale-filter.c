@@ -50,6 +50,7 @@ struct scale_filter_data {
 	bool aspect_ratio_only;
 	bool target_valid;
 	bool valid;
+	bool can_undistort;
 	bool undistort;
 	bool upscale;
 	bool base_canvas_resolution;
@@ -111,7 +112,7 @@ static void scale_filter_update(void *data, obs_data_t *settings)
 		filter->sampling = OBS_SCALE_BICUBIC;
 	}
 
-	filter->undistort = obs_data_get_bool(settings, S_UNDISTORT);
+	filter->can_undistort = obs_data_get_bool(settings, S_UNDISTORT);
 }
 
 static void scale_filter_destroy(void *data)
@@ -207,12 +208,7 @@ static void scale_filter_tick(void *data, float seconds)
 	vec2_set(&filter->dimension, (float)cx, (float)cy);
 	vec2_set(&filter->dimension_i, 1.0f / (float)cx, 1.0f / (float)cy);
 
-	if (filter->undistort) {
-		filter->undistort_factor = new_aspect / old_aspect;
-	} else {
-		filter->undistort_factor = 1.0;
-	}
-
+	filter->undistort = filter->can_undistort;
 	filter->upscale = false;
 
 	/* ------------------------- */
@@ -221,6 +217,7 @@ static void scale_filter_tick(void *data, float seconds)
 
 	if (lower_than_2x && filter->sampling != OBS_SCALE_POINT) {
 		type = OBS_EFFECT_BILINEAR_LOWRES;
+		filter->undistort = false;
 	} else {
 		switch (filter->sampling) {
 		default:
@@ -241,6 +238,9 @@ static void scale_filter_tick(void *data, float seconds)
 			break;
 		}
 	}
+
+	filter->undistort_factor = filter->undistort ? (new_aspect / old_aspect)
+						     : 1.0;
 
 	filter->effect = obs_get_base_effect(type);
 	filter->image_param =
