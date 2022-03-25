@@ -25,17 +25,23 @@
 
 #ifdef _MSC_VER
 #define OBS_UNUSED
-#define OBS_DEPRECATED __declspec(deprecated)
+#define _OBS_DEPRECATED __declspec(deprecated)
 #define OBS_NORETURN __declspec(noreturn)
 #define FORCE_INLINE __forceinline
 #else
 #define OBS_UNUSED __attribute__((unused))
-#define OBS_DEPRECATED __attribute__((deprecated))
+#define _OBS_DEPRECATED __attribute__((deprecated))
 #define OBS_NORETURN __attribute__((noreturn))
 #define FORCE_INLINE inline __attribute__((always_inline))
 #endif
 
-#if defined(IS_LIBOBS) || defined(SWIG_TYPE_TABLE)
+#if defined(SWIG_TYPE_TABLE)
+#define OBS_DEPRECATED
+#else
+#define OBS_DEPRECATED _OBS_DEPRECATED
+#endif
+
+#if defined(IS_LIBOBS)
 #define OBS_EXTERNAL_DEPRECATED
 #else
 #define OBS_EXTERNAL_DEPRECATED OBS_DEPRECATED
