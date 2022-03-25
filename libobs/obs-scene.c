@@ -3768,6 +3768,8 @@ void obs_sceneitem_transition_load(struct obs_scene_item *item,
 		obs_sceneitem_set_transition(item, show, t);
 		obs_source_release(t);
 		obs_data_release(s);
+	} else {
+		obs_sceneitem_set_transition(item, show, NULL);
 	}
 	obs_sceneitem_set_transition_duration(
 		item, show, (uint32_t)obs_data_get_int(data, "duration"));
