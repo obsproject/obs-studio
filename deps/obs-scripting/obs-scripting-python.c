@@ -1683,13 +1683,13 @@ bool obs_scripting_load_python(const char *python_path)
 	char *absolute_plugin_path = os_get_abs_path_ptr(plugin_path.array);
 	char *absolute_resource_path = os_get_abs_path_ptr(resource_path.array);
 
-	if(absolute_plugin_path != NULL) {
+	if (absolute_plugin_path != NULL) {
 		add_to_python_path(absolute_plugin_path);
 		bfree(absolute_plugin_path);
 	}
 	dstr_free(&plugin_path);
 
-	if(absolute_resource_path != NULL) {
+	if (absolute_resource_path != NULL) {
 		add_to_python_path(absolute_resource_path);
 		bfree(absolute_resource_path);
 	}

@@ -1327,22 +1327,22 @@ void obs_lua_load(void)
 #define PATH_MAX MAX_PATH
 #endif
 
-    char import_path[PATH_MAX];
+	char import_path[PATH_MAX];
 
 #ifdef __APPLE__
-    struct dstr bundle_path;
-    
-    dstr_init_move_array(&bundle_path, os_get_executable_path_ptr(""));
-    dstr_cat(&bundle_path, "../PlugIns");
-    char *absolute_plugin_path = os_get_abs_path_ptr(bundle_path.array);
-    
-    if(absolute_plugin_path != NULL) {
-        strcpy(import_path, absolute_plugin_path);
-        bfree(absolute_plugin_path);
-    }
-    dstr_free(&bundle_path);
+	struct dstr bundle_path;
+
+	dstr_init_move_array(&bundle_path, os_get_executable_path_ptr(""));
+	dstr_cat(&bundle_path, "../PlugIns");
+	char *absolute_plugin_path = os_get_abs_path_ptr(bundle_path.array);
+
+	if (absolute_plugin_path != NULL) {
+		strcpy(import_path, absolute_plugin_path);
+		bfree(absolute_plugin_path);
+	}
+	dstr_free(&bundle_path);
 #else
-    strcpy(import_path, "./");
+	strcpy(import_path, "./");
 #endif
 	dstr_printf(&tmp, startup_script_template, import_path, SCRIPT_DIR);
 	startup_script = tmp.array;
