@@ -2,7 +2,7 @@ project(sndio)
 
 option(ENABLE_SNDIO "Build OBS with sndio support" OFF)
 if(NOT ENABLE_SNDIO)
-  message(STATUS "OBS:  DISABLED   sndio")
+  obs_status(DISABLED "sndio")
   return()
 endif()
 

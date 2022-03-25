@@ -1,7 +1,7 @@
 option(ENABLE_IVCAM "Enable building with Realsense camera support" OFF)
 
 if(NOT ENABLE_IVCAM)
-  message(STATUS "OBS:  DISABLED   Realsense camera plugin support")
+  obs_status(DISABLED "Realsense camera plugin support")
   return()
 endif()
 
@@ -10,7 +10,7 @@ project(win-ivcam)
 find_package(RSSDK REQUIRED)
 
 if(NOT TARGET RSS::SDK)
-  message(FATAL_ERROR "OBS:    -        RSSDK not found")
+  obs_status(FATAL_ERROR "win-ivcam -> RSSDK not found.")
 endif()
 
 include(IDLFileHelper)

@@ -3,7 +3,7 @@ project(linux-pulseaudio)
 option(ENABLE_PULSEAUDIO "Enable PulseAudio support" ON)
 
 if(NOT ENABLE_PULSEAUDIO)
-  message(STATUS "OBS:  DISABLED   linux-pulseaudio")
+  obs_status(DISABLED "linux-pulseaudio")
   return()
 endif()
 

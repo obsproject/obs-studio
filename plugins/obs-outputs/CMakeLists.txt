@@ -52,16 +52,13 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
   find_package(ZLIB)
   if(NOT MBEDTLS_FOUND OR NOT ZLIB_FOUND)
     if(ENABLE_RTMPS STREQUAL "ON")
-      message(
-        FATAL_ERROR
-          "OBS:    -        mbedTLS or zlib not found, but required for RTMPS support."
-      )
+      obs_status(FATAL_ERROR
+                 "mbedTLS or zlib not found, but required for RTMPS support.")
       return()
     else()
-      message(
+      obs_status(
         WARNING
-          "OBS:    -        mbedTLS or zlib was not found, RTMPS will be auto-disabled"
-      )
+        "mbedTLS or zlib was not found, RTMPS will be automatically disabled.")
       target_compile_definitions(obs-outputs PRIVATE NO_CRYPTO)
     endif()
   else()
@@ -115,7 +112,7 @@ endif()
 
 if(FTL_FOUND)
   find_package(CURL REQUIRED)
-  message(STATUS "OBS:  ENABLED    ftl outputs (system ftl-sdk)")
+  obs_status(ENABLED "ftl outputs (system ftl-sdk)")
 
   target_sources(obs-outputs PRIVATE ftl-stream.c)
 
@@ -129,7 +126,7 @@ if(FTL_FOUND)
 
 elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
   find_package(CURL REQUIRED)
-  message(STATUS "OBS:  ENABLED    ftl ouputs (bundled ftl-sdk)")
+  obs_status(ENABLED "ftl ouputs (bundled ftl-sdk)")
 
   target_compile_definitions(obs-outputs PRIVATE FTL_STATIC_COMPILE)
 

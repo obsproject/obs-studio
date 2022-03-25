@@ -2,13 +2,12 @@ project(aja)
 
 option(ENABLE_AJA "Build OBS with aja support" ON)
 if(NOT ENABLE_AJA)
-  message(STATUS "OBS:  DISABLED   aja")
+  obs_status(DISABLED "aja")
   return()
 endif()
 
 if(NOT OS_MACOS AND NOT CMAKE_SIZEOF_VOID_P EQUAL 8)
-  message(
-    STATUS "OBS:             aja support not enabled (32-bit not supported)")
+  obs_status(STATUS "aja support not enabled (32-bit not supported).")
   set(ENABLE_AJA
       OFF
       CACHE BOOL "Build OBS with aja support" FORCE)

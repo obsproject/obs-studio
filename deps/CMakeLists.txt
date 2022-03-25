@@ -18,10 +18,10 @@ add_subdirectory(libcaption)
 # Use bundled jansson version as fallback
 find_package(Jansson 2.5 QUIET)
 if(NOT TARGET Jansson::Jansson)
-  message(STATUS "OBS: Jansson >=2.5 not found, building bundled version")
+  obs_status(STATUS "Jansson >=2.5 not found, building bundled version.")
 
   add_subdirectory(jansson)
   add_library(Jansson::Jansson ALIAS jansson)
 else()
-  message(STATUS "OBS: OBS-Studio - Using system Jansson library")
+  obs_status(STATUS "Using system Jansson library.")
 endif()

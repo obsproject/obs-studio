@@ -3,7 +3,7 @@ project(obs-libfdk)
 option(ENABLE_LIBFDK "Enable FDK AAC support" OFF)
 
 if(NOT ENABLE_LIBFDK)
-  message(STATUS "OBS:  DISABLED   obs-libfdk")
+  obs_status(DISABLED "obs-libfdk")
   return()
 endif()
 

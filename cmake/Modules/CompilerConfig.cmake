@@ -16,10 +16,8 @@ if(OS_WINDOWS AND MSVC)
   endif()
 
   # Check for Win SDK version 10.0.20348 or above
-  message(
-    INFO
-    "  + OBS-Studio - Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}"
-  )
+  obs_status(
+    STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
   string(REPLACE "." ";" WINAPI_VER
                  "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
 
@@ -41,11 +39,10 @@ if(OS_WINDOWS AND MSVC)
   endif()
 
   if(NOT WINAPI_COMPATIBLE)
-    message(
+    obs_status(
       FATAL_ERROR
-        "OBS: OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
-        "     Please download the most recent Windows 10 SDK in order to compile."
-    )
+      "OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
+      "Please download the most recent Windows 10 SDK in order to compile.")
   endif()
 
   add_compile_options(

@@ -383,9 +383,9 @@ endfunction()
 function(generate_multiarch_installer)
   if(NOT DEFINED ENV{OBS_InstallerTempDir} AND NOT DEFINED
                                                ENV{obsInstallerTempDir})
-    message(
+    obs_status(
       FATAL_ERROR
-        "Function generate_multiarch_installer requires environment variable 'OBS_InstallerTempDir' to be set"
+      "Function generate_multiarch_installer requires environment variable 'OBS_InstallerTempDir' to be set"
     )
   endif()
 

@@ -2,10 +2,10 @@ project(vlc-video)
 
 option(ENABLE_VLC "Build OBS with VLC plugin support" ${OS_LINUX})
 if(NOT ENABLE_VLC)
-  message(STATUS "OBS:  DISABLED   vlc-video")
-  message(
+  obs_status(DISABLED "vlc-video")
+  obs_status(
     WARNING
-      "VLC plugin supported is not enabled by default - please switch ENABLE_VLC to ON to enable this functionality."
+    "VLC plugin supported is not enabled by default - please switch ENABLE_VLC to ON to enable this functionality."
   )
   return()
 endif()

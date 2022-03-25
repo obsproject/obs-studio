@@ -17,7 +17,7 @@ add_library(OBS::filters ALIAS obs-filters)
 set(HAS_NOISEREDUCTION OFF)
 
 if(NOT ENABLE_SPEEXDSP)
-  message(STATUS "OBS:  DISABLED   SpeexDSP")
+  obs_status(DISABLED "SpeexDSP")
 else()
   find_package(Libspeexdsp REQUIRED)
 
@@ -33,12 +33,12 @@ else()
 endif()
 
 if(NOT ENABLE_RNNOISE)
-  message(STATUS "OBS:  DISABLED   RNNoise")
+  obs_status(DISABLED "SpeexDSP")
 else()
   find_package(Librnnoise QUIET)
 
   if(NOT TARGET Librnnoise::Librnnoise)
-    message(STATUS "OBS:    -        using bundled RNNoise library")
+    obs_status(STATUS "obs-filters -> using bundled RNNoise library")
     add_library(obs-rnnoise INTERFACE)
     add_library(Librnnoise::Librnnoise ALIAS obs-rnnoise)
 
@@ -85,10 +85,10 @@ else()
 endif()
 
 if(NOT ENABLE_NVAFX)
-  message(STATUS "OBS:  DISABLED   NVidia Audio FX support")
+  obs_status(DISABLED "NVidia Audio FX support")
   set(LIBNVAFX_FOUND OFF)
 else()
-  message(STATUS "OBS:  ENABLED    NVidia Audio FX support")
+  obs_status(ENABLED "NVidia Audio FX support")
 
   target_compile_definitions(obs-filters PRIVATE LIBNVAFX_ENABLED)
 

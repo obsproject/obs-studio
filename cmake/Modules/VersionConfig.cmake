@@ -99,5 +99,5 @@ file(WRITE ${BUILD_NUMBER_CACHE} "${OBS_BUILD_NUMBER}")
 
 message(
   STATUS
-    "OBS: Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}"
+    "OBS:  Application Version: ${OBS_VERSION} - Build Number: ${OBS_BUILD_NUMBER}"
 )

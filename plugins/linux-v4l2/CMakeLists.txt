@@ -2,7 +2,7 @@ project(linux-v4l2)
 
 option(ENABLE_V4L2 "Build OBS with v4l2 support" ON)
 if(NOT ENABLE_V4L2)
-  message(STATUS "OBS:  DISABLED   linux-v4l2")
+  obs_status(DISABLED "linux-v4l2")
   return()
 endif()
 

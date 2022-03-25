@@ -3,7 +3,7 @@ project(oss-audio)
 option(ENABLE_OSS "Enable building with OSS audio support" ON)
 
 if(NOT ENABLE_OSS)
-  message(STATUS "OBS:  DISABLED   oss-audio")
+  obs_status(DISABLED "oss-audio")
   return()
 endif()
 

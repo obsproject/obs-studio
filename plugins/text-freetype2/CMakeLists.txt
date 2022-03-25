@@ -3,7 +3,7 @@ project(text-freetype2)
 option(ENABLE_FREETYPE "Enable FreeType text plugin" ON)
 
 if(NOT ENABLE_FREETYPE)
-  message(STATUS "OBS:  DISABLED   text-freetype2")
+  obs_status(DISABLED "text-freetype2")
   return()
 endif()
 

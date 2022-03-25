@@ -70,7 +70,7 @@ mark_as_advanced(CEFWRAPPER_LIBRARY CEFWRAPPER_LIBRARY_DEBUG)
 if(NOT CEF_LIBRARY)
   message(
     WARNING
-      "  Could NOT find Chromium Embedded Framework library (missing: CEF_LIBRARY)"
+      "Could NOT find Chromium Embedded Framework library (missing: CEF_LIBRARY)"
   )
   set(CEF_FOUND FALSE)
   return()
@@ -79,7 +79,7 @@ endif()
 if(NOT CEFWRAPPER_LIBRARY)
   message(
     WARNING
-      "  Could NOT find Chromium Embedded Framework wrapper library (missing: CEFWRAPPER_LIBRARY)"
+      "Could NOT find Chromium Embedded Framework wrapper library (missing: CEFWRAPPER_LIBRARY)"
   )
   set(CEF_FOUND FALSE)
   return()

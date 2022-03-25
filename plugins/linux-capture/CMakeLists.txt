@@ -2,8 +2,7 @@ project(linux-capture)
 
 find_package(X11 REQUIRED)
 if(NOT TARGET X11::Xcomposite)
-  message(
-    FATAL_ERROR "OBS:  DISABLED   linux-capture - Xcomposite library not found")
+  obs_status(FATAL_ERROR "linux-capture - Xcomposite library not found.")
 endif()
 find_package(XCB COMPONENTS XCB XFIXES RANDR SHM XINERAMA)
 

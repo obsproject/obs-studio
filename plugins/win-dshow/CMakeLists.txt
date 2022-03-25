@@ -1,7 +1,7 @@
 if(NOT EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/dshowcapture.hpp")
-  message(
+  obs_status(
     FATAL_ERROR
-      "OBS:             libdshowcapture submodule not found! Please fetch submodules. win-dshow plugin disabled."
+    "libdshowcapture submodule not found! Please fetch submodules. win-dshow plugin disabled."
   )
   return()
 endif()
@@ -9,7 +9,7 @@ endif()
 option(ENABLE_VIRTUALCAM "Enable building with Virtual Camera (Windows)" ON)
 
 if(NOT ENABLE_VIRTUALCAM)
-  message(STATUS "OBS:  DISABLED   Windows Virtual Camera")
+  obs_status(DISABLED "Windows Virtual Camera")
 endif()
 
 if(ENABLE_VIRTUALCAM AND NOT VIRTUALCAM_GUID)
@@ -78,9 +78,9 @@ target_compile_definitions(
 
 set(VIRTUALCAM_AVAILABLE OFF)
 if(VIRTUALCAM_GUID STREQUAL "")
-  message(
+  obs_status(
     WARNING
-      "OBS:  DISABLED   Windows Virtual Camera - GUID not set - specify as 'VIRTUALCAM_GUID' to enable."
+    "Windows Virtual Camera - GUID not set - specify as 'VIRTUALCAM_GUID' to enable."
   )
 else()
   set(INVALID_GUID ON)
@@ -126,8 +126,7 @@ else()
 endif()
 
 if(INVALID_GUID)
-  message(
-    WARNING "OBS:  DISABLED   Windows Virtual Camera - invalid GUID supplied")
+  obs_status(WARNING "Windows Virtual Camera - invalid GUID supplied")
 endif()
 
 target_link_libraries(

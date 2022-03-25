@@ -2,7 +2,7 @@ project(linux-jack)
 
 option(ENABLE_JACK "Build OBS with JACK support" OFF)
 if(NOT ENABLE_JACK)
-  message(STATUS "OBS:  DISABLED   linux-jack")
+  obs_status(DISABLED "linux-jack")
   return()
 endif()
 

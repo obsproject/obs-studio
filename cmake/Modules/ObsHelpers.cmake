@@ -85,7 +85,7 @@ function(setup_plugin_target target)
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 
-  message(STATUS "OBS:   ENABLED   ${target}")
+  obs_status(ENABLED "${target}")
 endfunction()
 
 # Helper function to set up OBS scripting plugin targets
@@ -127,7 +127,7 @@ function(setup_script_plugin_target target)
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 
-  message(STATUS "OBS:   ENABLED   ${target}")
+  obs_status(ENABLED "${target}")
 endfunction()
 
 # Helper function to set up target resources (e.g. L10N files)
@@ -384,6 +384,19 @@ macro(set_option option value)
       ${value}
       CACHE INTERNAL "")
 endmacro()
+
+function(obs_status status text)
+  set(_OBS_STATUS_DISABLED "OBS:  DISABLED   ")
+  set(_OBS_STATUS_ENABLED "OBS:  ENABLED    ")
+  set(_OBS_STATUS "OBS:  ")
+  if(status STREQUAL "DISABLED")
+    message(STATUS "${_OBS_STATUS_DISABLED}${text}")
+  elseif(status STREQUAL "ENABLED")
+    message(STATUS "${_OBS_STATUS_ENABLED}${text}")
+  else()
+    message(${status} "${_OBS_STATUS}${text}")
+  endif()
+endfunction()
 
 if(OS_WINDOWS)
   include(ObsHelpers_Windows)

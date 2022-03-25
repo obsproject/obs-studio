@@ -2,7 +2,7 @@ project(linux-pipewire)
 
 option(ENABLE_PIPEWIRE "Enable PipeWire support" ON)
 if(NOT ENABLE_PIPEWIRE)
-  message(STATUS "PipeWire support disabled, linux-pipewire plugin disabled")
+  obs_status(DISABLED "linux-pipewire")
   return()
 endif()
 
@@ -11,19 +11,19 @@ find_package(Gio QUIET)
 find_package(Libdrm QUIET) # we require libdrm/drm_fourcc.h to build
 
 if(NOT TARGET PipeWire::PipeWire)
-  message(
+  obs_status(
     FATAL_ERROR
-      "OBS:    -        PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF"
+    "PipeWire library not found! Please install PipeWire or set ENABLE_PIPEWIRE=OFF."
   )
 elseif(NOT TARGET GIO::GIO)
-  message(
+  obs_status(
     FATAL_ERROR
-      "OBS:    -        Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF"
+    "Gio library not found! Please install GLib2 (or Gio) or set ENABLE_PIPEWIRE=OFF."
   )
 elseif(NOT TARGET Libdrm::Libdrm)
-  message(
+  obs_status(
     FATAL_ERROR
-      "OBS:    -        libdrm headers not found! Please install libdrm or set ENABLE_PIPEWIRE=OFF"
+    "libdrm headers not found! Please install libdrm or set ENABLE_PIPEWIRE=OFF."
   )
 endif()
 

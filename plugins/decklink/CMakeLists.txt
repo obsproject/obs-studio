@@ -2,7 +2,7 @@ project(decklink)
 
 option(ENABLE_DECKLINK "Build OBS with Decklink support" ON)
 if(NOT ENABLE_DECKLINK)
-  message(STATUS "OBS:  DISABLED   decklink support")
+  obs_status(DISABLED "decklink")
   return()
 endif()
 
