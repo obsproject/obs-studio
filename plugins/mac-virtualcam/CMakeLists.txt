@@ -1,7 +1,7 @@
 option(ENABLE_VIRTUALCAM "Build OBS Virtualcam" ON)
 
 if(NOT ENABLE_VIRTUALCAM)
-  message(STATUS "OBS:  DISABLED   mac-virtualcam")
+  obs_status(DISABLED "mac-virtualcam")
   return()
 endif()
 

@@ -2,7 +2,7 @@ project(linux-alsa)
 
 option(ENABLE_ALSA "Build OBS with ALSA support" ON)
 if(NOT ENABLE_ALSA)
-  message(STATUS "OBS:  DISABLED   alsa")
+  obs_status(DISABLED "linux-alsa")
   return()
 endif()
 

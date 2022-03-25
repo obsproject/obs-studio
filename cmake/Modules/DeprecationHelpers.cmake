@@ -145,40 +145,40 @@ function(upgrade_cmake_vars)
 endfunction()
 
 function(install_obs_plugin_with_data)
-  message(
+  obs_status(
     DEPRECATION
-      "OBS: The install_obs_plugin_with_data command is deprecated and will be removed soon. Use 'setup_plugin_target' instead."
+    "The install_obs_plugin_with_data command is deprecated and will be removed soon. Use 'setup_plugin_target' instead."
   )
   _install_obs_plugin_with_data(${ARGV})
 endfunction()
 
 function(install_obs_plugin)
-  message(
+  obs_status(
     DEPRECATION
-      "OBS: The install_obs_plugin command is deprecated and will be removed soon. Use 'setup_plugin_target' instead."
+    "The install_obs_plugin command is deprecated and will be removed soon. Use 'setup_plugin_target' instead."
   )
   _install_obs_plugin(${ARGV})
 endfunction()
 
 function(install_obs_datatarget)
-  message(
+  obs_status(
     DEPRECATION
-      "OBS: The install_obs_datatarget function is deprecated and will be removed soon. Use 'setup_target_resources' instead."
+    "The install_obs_datatarget function is deprecated and will be removed soon. Use 'setup_target_resources' instead."
   )
   _install_obs_datatarget(${ARGV})
 endfunction()
 
 function(__deprecated_var VAR ACCESS)
   if(ACCESS STREQUAL "READ_ACCESS")
-    message(DEPRECATION "OBS: The variable '${VAR}' is deprecated!")
+    obs_status(DEPRECATION "The variable '${VAR}' is deprecated!")
   endif()
 endfunction()
 
 function(__deprecated_feature VAR ACCESS)
   if(ACCESS STREQUAL "UNKNOWN_READ_ACCESS")
-    message(
+    obs_status(
       DEPRECATION
-        "OBS: The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS."
+      "The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS."
     )
   endif()
 endfunction()

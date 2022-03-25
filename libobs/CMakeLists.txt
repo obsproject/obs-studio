@@ -385,7 +385,7 @@ elseif(OS_POSIX)
 
   if(ENABLE_PULSEAUDIO)
     find_package(PulseAudio REQUIRED)
-    message(STATUS "OBS: PulseAudio found - audio monitoring enabled")
+    obs_status(STATUS "-> PulseAudio found - audio monitoring enabled")
     target_sources(
       libobs
       PRIVATE audio-monitoring/pulse/pulseaudio-output.c

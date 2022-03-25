@@ -2,7 +2,7 @@ add_subdirectory(obs-frontend-api)
 
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
 if(NOT ENABLE_UI)
-  message(STATUS "OBS:  DISABLED   OBS UI")
+  obs_status(DISABLED "OBS UI")
   return()
 endif()
 

@@ -1,7 +1,7 @@
 option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
 
 if(NOT ENABLE_QSV11)
-  message(STATUS "OBS:  DISABLED   obs-qsv11")
+  obs_status(DISABLED "obs-qsv11")
   return()
 endif()
 

@@ -1,10 +1,10 @@
 project(coreaudio-encoder)
 
-if(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
+if(OS_WINDOWS)
   option(ENABLE_COREAUDIO_ENCODER
          "Enable building with CoreAudio encoder (Windows)" ON)
   if(NOT ENABLE_COREAUDIO_ENCODER)
-    message(STATUS "OBS:  DISABLED   coreaudio-encoder")
+    obs_status(DISABLED "coreaudio-encoder")
     return()
   endif()
 endif()

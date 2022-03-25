@@ -280,31 +280,32 @@ foreach(
   endif()
 endforeach()
 
-message(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
-message(STATUS "x264 files: ${X264_BIN_FILES}")
-message(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")
-message(STATUS "Freetype files: ${FREETYPE_BIN_FILES}")
-message(STATUS "rnnoise files: ${RNNOISE_BIN_FILES}")
-message(STATUS "curl files: ${CURL_BIN_FILES}")
-message(STATUS "lua files: ${LUA_BIN_FILES}")
-message(STATUS "ssl files: ${SSL_BIN_FILES}")
-message(STATUS "zlib files: ${ZLIB_BIN_FILES}")
-message(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
-message(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
-message(STATUS "QT Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
-message(STATUS "QT Debug Iconengine files: ${QT_DEBUG_ICONENGINE_BIN_FILES}")
-message(STATUS "QT Debug Imageformat files: ${QT_DEBUG_IMAGEFORMATS_BIN_FILES}")
-message(STATUS "QT Release files: ${QT_BIN_FILES}")
-message(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
-message(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
-message(STATUS "QT Release Iconengine files: ${QT_ICONENGINE_BIN_FILES}")
-message(STATUS "QT Release Imageformat files: ${QT_IMAGEFORMATS_BIN_FILES}")
-message(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
+obs_status(STATUS "FFmpeg files: ${FFMPEG_BIN_FILES}")
+obs_status(STATUS "x264 files: ${X264_BIN_FILES}")
+obs_status(STATUS "Libfdk files: ${LIBFDK_BIN_FILES}")
+obs_status(STATUS "Freetype files: ${FREETYPE_BIN_FILES}")
+obs_status(STATUS "rnnoise files: ${RNNOISE_BIN_FILES}")
+obs_status(STATUS "curl files: ${CURL_BIN_FILES}")
+obs_status(STATUS "lua files: ${LUA_BIN_FILES}")
+obs_status(STATUS "ssl files: ${SSL_BIN_FILES}")
+obs_status(STATUS "zlib files: ${ZLIB_BIN_FILES}")
+obs_status(STATUS "QT Debug files: ${QT_DEBUG_BIN_FILES}")
+obs_status(STATUS "QT Debug Platform files: ${QT_DEBUG_PLAT_BIN_FILES}")
+obs_status(STATUS "QT Debug Styles files: ${QT_DEBUG_STYLES_BIN_FILES}")
+obs_status(STATUS "QT Debug Iconengine files: ${QT_DEBUG_ICONENGINE_BIN_FILES}")
+obs_status(STATUS
+           "QT Debug Imageformat files: ${QT_DEBUG_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS "QT Release files: ${QT_BIN_FILES}")
+obs_status(STATUS "QT Release Platform files: ${QT_PLAT_BIN_FILES}")
+obs_status(STATUS "QT Release Styles files: ${QT_STYLES_BIN_FILES}")
+obs_status(STATUS "QT Release Iconengine files: ${QT_ICONENGINE_BIN_FILES}")
+obs_status(STATUS "QT Release Imageformat files: ${QT_IMAGEFORMATS_BIN_FILES}")
+obs_status(STATUS "QT ICU files: ${QT_ICU_BIN_FILES}")
 
 foreach(BinFile ${ALL_BASE_BIN_FILES})
-  message(
+  obs_status(
     STATUS
-      "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}"
+    "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}"
   )
   file(
     COPY "${BinFile}"
@@ -313,9 +314,9 @@ foreach(BinFile ${ALL_BASE_BIN_FILES})
 endforeach()
 
 foreach(BinFile ${ALL_REL_BIN_FILES})
-  message(
+  obs_status(
     STATUS
-      "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r"
+    "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}r"
   )
   file(
     COPY "${BinFile}"
@@ -324,9 +325,9 @@ foreach(BinFile ${ALL_REL_BIN_FILES})
 endforeach()
 
 foreach(BinFile ${ALL_DBG_BIN_FILES})
-  message(
+  obs_status(
     STATUS
-      "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d"
+    "copying ${BinFile} to ${CMAKE_SOURCE_DIR}/additional_install_files/exec${_bin_suffix}d"
   )
   file(
     COPY "${BinFile}"

@@ -95,7 +95,7 @@ function(setup_plugin_target target)
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
   set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "${target}")
-  message(STATUS "OBS:  ENABLED    ${target}")
+  obs_status(ENABLED "${target}")
 
   install_bundle_resources(${target})
 endfunction()
@@ -112,7 +112,7 @@ function(setup_script_plugin_target target)
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
 
   set_property(GLOBAL APPEND PROPERTY OBS_SCRIPTING_MODULE_LIST "${target}")
-  message(STATUS "OBS:  ENABLED    ${target}")
+  obs_status(ENABLED "${target}")
 endfunction()
 
 # Helper function to set up target resources (e.g. L10N files)
