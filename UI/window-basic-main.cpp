@@ -257,7 +257,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->setupUi(this);
 	ui->previewDisabledWidget->setVisible(false);
-	ui->contextContainer->setStyle(new OBSProxyStyle);
+	ui->contextContainer->setStyle(new OBSContextBarProxyStyle);
 	ui->broadcastButton->setVisible(false);
 
 	startingDockLayout = saveState();

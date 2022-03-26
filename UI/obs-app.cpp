@@ -39,6 +39,7 @@
 
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
+#include "obs-proxy-style.hpp"
 #include "log-viewer.hpp"
 #include "slider-ignorewheel.hpp"
 #include "window-basic-main.hpp"
@@ -1116,6 +1117,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	QString mpath = QString("file:///") + path.c_str();
 	setPalette(defaultPalette);
 	ParseExtraThemeData(path.c_str());
+	setStyle(new OBSIgnoreWheelProxyStyle);
 	setStyleSheet(mpath);
 	QColor color = palette().text().color();
 	themeDarkMode = !(color.redF() < 0.5);
