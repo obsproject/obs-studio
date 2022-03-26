@@ -557,6 +557,8 @@ static void obs_free_video(void)
 						video->copy_surfaces[i][c]);
 					video->copy_surfaces[i][c] = NULL;
 				}
+
+				video->active_copy_surfaces[i][c] = NULL;
 			}
 #ifdef _WIN32
 			if (video->copy_surfaces_encode[i]) {
