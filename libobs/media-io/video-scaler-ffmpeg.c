@@ -91,8 +91,23 @@ static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 
 static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 {
-	const int colorspace = (cs == VIDEO_CS_601) ? SWS_CS_ITU601
-						    : SWS_CS_ITU709;
+	int colorspace = SWS_CS_ITU709;
+
+	switch (cs) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_709:
+	case VIDEO_CS_SRGB:
+	default:
+		colorspace = SWS_CS_ITU709;
+		break;
+	case VIDEO_CS_601:
+		colorspace = SWS_CS_ITU601;
+		break;
+	case VIDEO_CS_2020_PQ:
+	case VIDEO_CS_2020_HLG:
+		colorspace = SWS_CS_BT2020;
+	}
+
 	return sws_getCoefficients(colorspace);
 }
 
