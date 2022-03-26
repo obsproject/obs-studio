@@ -33,7 +33,6 @@
 
 #include <QFile>
 #include <QGuiApplication>
-#include <QProxyStyle>
 #include <QScreen>
 #include <QProcess>
 #include <QAccessible>
