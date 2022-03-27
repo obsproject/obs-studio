@@ -281,25 +281,28 @@ function(setup_obs_modules target)
 
   get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL
                PROPERTY OBS_SCRIPTING_MODULE_LIST)
-  add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
+  if("${OBS_SCRIPTING_MODULE_LIST}")
+    add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
 
-  install(
-    TARGETS ${OBS_SCRIPTING_MODULE_LIST}
-    LIBRARY DESTINATION "PlugIns"
-            COMPONENT obs_plugin_dev
-            EXCLUDE_FROM_ALL)
-
-  if(TARGET obspython)
     install(
-      FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
-      DESTINATION "Resources"
-      COMPONENT obs_plugin_dev
-      EXCLUDE_FROM_ALL)
-  endif()
+      TARGETS ${OBS_SCRIPTING_MODULE_LIST}
+      LIBRARY DESTINATION "PlugIns"
+              COMPONENT obs_plugin_dev
+              EXCLUDE_FROM_ALL)
 
-  install(TARGETS ${OBS_SCRIPTING_MODULE_LIST}
-          LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
-                  COMPONENT obs_scripting_plugins)
+    if(TARGET obspython)
+      install(
+        FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
+        DESTINATION "Resources"
+        COMPONENT obs_plugin_dev
+        EXCLUDE_FROM_ALL)
+    endif()
+
+    install(
+      TARGETS ${OBS_SCRIPTING_MODULE_LIST}
+      LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
+              COMPONENT obs_scripting_plugins)
+  endif()
 
   if(TARGET obs-ffmpeg-mux)
     add_dependencies(${target} obs-ffmpeg-mux)
