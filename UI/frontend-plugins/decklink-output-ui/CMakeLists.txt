@@ -27,8 +27,6 @@ target_sources(
           DecklinkOutputUI.h
           decklink-ui-main.cpp
           decklink-ui-main.h
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp

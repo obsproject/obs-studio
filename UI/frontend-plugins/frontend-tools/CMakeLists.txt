@@ -27,8 +27,6 @@ target_sources(
           output-timer.hpp
           tool-helpers.hpp
           output-timer.cpp
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
           ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.cpp
