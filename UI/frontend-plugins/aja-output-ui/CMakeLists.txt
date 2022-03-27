@@ -42,8 +42,6 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-vpid-data.hpp
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.cpp
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.cpp
-          ${CMAKE_SOURCE_DIR}/UI/combobox-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
