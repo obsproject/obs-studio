@@ -509,3 +509,44 @@ jobs:
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
           path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
+
+  make_release:
+    name: 'Create and upload release'
+    runs-on: [ubuntu-latest]
+    if: github.event_name == 'push' && contains(github.ref, 'refs/tags/')
+    needs: [macos_release, linux_build, linux_package, windows_package]
+    steps:
+      - name: Get Metadata
+        id: metadata
+        run: |
+          echo "::set-output name=version::${GITHUB_REF/refs\/tags\//}"
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v3
+
+      - name: Rename flatpak
+        run: |
+          mkdir ${{ github.workspace }}/flatpak
+          mv ${{ github.workspace }}/**/*.flatpak ${{ github.workspace }}/flatpak/obs-studio-${{ steps.metadata.outputs.version }}-linux.flatpak
+
+      - name: Generate Checksums
+        run: |
+          shopt -s extglob
+          echo "### Checksums" > ${{ github.workspace }}/CHECKSUMS.txt
+          for file in ${{ github.workspace }}/**/@(*.dmg|*.deb|*.flatpak); do
+            echo "    ${file##*/}: $(sha256sum "${file}" | cut -d " " -f 1)" >> ${{ github.workspace }}/CHECKSUMS.txt
+          done
+
+      - name: 'Create Release'
+        id: create_release
+        uses: softprops/action-gh-release@1e07f4398721186383de40550babbdf2b84acfc5
+        with:
+          draft: true
+          prerelease: ${{ contains(steps.metadata.outputs.version, 'rc') || contains(steps.metadata.outputs.version, 'beta') }}
+          tag_name: ${{ steps.metadata.outputs.version }}
+          name: "OBS Studio ${{ steps.metadata.outputs.version }}"
+          body_path: ${{ github.workspace }}/CHECKSUMS.txt
+          files: |
+            ${{ github.workspace }}/**/*.dmg
+            ${{ github.workspace }}/**/*.deb
+            ${{ github.workspace }}/**/*.flatpak
