@@ -336,6 +336,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item =
 		winrt_capture_create_item(interop_factory.get(),
 					  capture->window, capture->monitor);
+	if (!item)
+		return;
 
 	ID3D11Device *const d3d_device = (ID3D11Device *)device_void;
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -643,7 +645,12 @@ extern "C" EXPORT void winrt_capture_thread_start()
 	struct winrt_capture *capture = capture_list;
 	void *const device = gs_get_device_obj();
 	while (capture) {
-		winrt_capture_device_loss_rebuild(device, capture);
+		try {
+			winrt_capture_device_loss_rebuild(device, capture);
+		} 
+		catch (...) {
+			blog(LOG_ERROR, "Failed to rebuild capture device", winrt::to_hresult().value);
+		}
 		capture = capture->next;
 	}
 }
