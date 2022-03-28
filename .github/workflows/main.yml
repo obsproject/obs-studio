@@ -284,7 +284,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        arch: [64, 32]
+        arch: [x64, x86]
     env:
       CMAKE_GENERATOR: 'Visual Studio 16 2019'
       CMAKE_SYSTEM_VERSION: '10.0.18363.657'
@@ -325,8 +325,8 @@ jobs:
         env:
           CACHE_NAME: 'cef-cache'
         with:
-          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_WIN }}_windows${{ matrix.arch }}_minimal
-          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}-${{ env.CACHE_REVISION }}
+          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_WIN }}_windows_${{ matrix.arch }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}-${{ matrix.arch }}-${{ env.CACHE_REVISION }}
 
       - name: Setup Environment
         id: setup
@@ -338,23 +338,23 @@ jobs:
         env:
           RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
           RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
-        run: CI/windows/01_install_dependencies.ps1 -BuildArch ${{ matrix.arch }}-bit
+        run: CI/windows/01_install_dependencies.ps1 -BuildArch ${{ matrix.arch }}
 
       - name: 'Build OBS'
-        run: CI/windows/02_build_obs.ps1 -BuildArch ${{ matrix.arch }}-bit
+        run: CI/windows/02_build_obs.ps1 -BuildArch ${{ matrix.arch }}
 
       - name: 'Create build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
-          CI/windows/03_package_obs.ps1 -BuildArch ${{ matrix.arch }}-bit -Package
-          $ArtifactName = Get-ChildItem -filter "OBS-Studio-*-Win${{ matrix.arch }}.zip" -File
+          CI/windows/03_package_obs.ps1 -BuildArch ${{ matrix.arch }} -Package
+          $ArtifactName = Get-ChildItem -filter "OBS-Studio-*-Win-${{ matrix.arch }}.zip" -File
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-win${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-win-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ env.FILE_NAME }}'
 
   linux_package:
@@ -431,12 +431,12 @@ jobs:
             $null = New-Item -ItemType Directory -Force -Path install_temp
           }
 
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win32.zip" -File)" -DestinationPath install_temp
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win64.zip" -File)" -Force -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x86.zip" -File)" -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x64.zip" -File)" -Force -DestinationPath install_temp
 
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
-          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Windows.zip" -File).Name
+          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Win-x64+x86.zip" -File).Name
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'

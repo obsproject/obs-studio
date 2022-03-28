@@ -3,8 +3,8 @@ Param(
     [Switch]$Quiet = $(if (Test-Path variable:Quiet) { $Quiet }),
     [Switch]$Verbose = $(if (Test-Path variable:Verbose) { $Verbose }),
     [String]$BuildDirectory = $(if (Test-Path variable:BuildDirectory) { "${BuildDirectory}" } else { "build" }),
-    [ValidateSet("32-bit", "64-bit")]
-    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { (Get-CimInstance CIM_OperatingSystem).OSArchitecture }),
+    [ValidateSet('x86', 'x64')]
+    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] }),
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
     [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" })
 )
@@ -41,7 +41,7 @@ function Build-OBS {
     Ensure-Directory ${CheckoutDir}
     Write-Step "Build OBS targets..."
 
-    Invoke-Expression "cmake --build $(if($BuildArch -eq "64-bit") { "build64" } else { "build32" }) --config ${BuildConfiguration}"
+    Invoke-Expression "cmake --build $(if($BuildArch -eq "x64") { "build64" } else { "build32" }) --config ${BuildConfiguration}"
 }
 
 function Configure-OBS {
@@ -56,10 +56,10 @@ function Configure-OBS {
     }
 
     # TODO: Clean up archive and directory naming across dependencies
-    $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-$(if (${BuildArch} -eq "64-bit") { "x64" } else { "x86" })"
-    $CefDirectory = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_$(if (${BuildArch} -eq "64-bit") { "x64" } else { "x86" })"
-    $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "64-bit") { "64" } else { "32" })"
-    $GeneratorPlatform = "$(if (${BuildArch} -eq "64-bit") { "x64" } else { "Win32" })"
+    $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-${BuildArch}"
+    $CefDirectory = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_${BuildArch}"
+    $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
+    $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
 
     $CmakeCommand = @(
         "-S . -B `"${BuildDirectoryActual}`"",
@@ -112,7 +112,7 @@ function Print-Usage {
         "-Quiet                   : Suppress most build process output",
         "-Verbose                 : Enable more verbose build process output",
         "-BuildDirectory          : Directory to use for builds - Default: build64 on 64-bit systems, build32 on 32-bit systems",
-        "-BuildArch               : Build architecture to use (32-bit or 64-bit) - Default: local architecture",
+        "-BuildArch               : Build architecture to use (x86 or x64) - Default: local architecture",
         "-BuildConfiguration      : Build configuration to use - Default: RelWithDebInfo"
     )
 
