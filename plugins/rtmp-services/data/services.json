@@ -985,7 +985,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.stripst.com/ext"
+                    "url": "rtmp://s-sd.doppiocdn.com/ext"
                 }
             ],
             "recommended": {
