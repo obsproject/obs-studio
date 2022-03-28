@@ -304,11 +304,15 @@ function(setup_obs_modules target)
   if(TARGET obs-ffmpeg-mux)
     add_dependencies(${target} obs-ffmpeg-mux)
 
+    install(TARGETS obs-ffmpeg-mux
+            RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
+                    COMPONENT obs_plugins)
+
     install(
-      TARGETS obs-ffmpeg-mux
-      RUNTIME DESTINATION "MacOS"
-              COMPONENT obs_plugin_dev
-              EXCLUDE_FROM_ALL)
+      PROGRAMS $<TARGET_FILE:obs-ffmpeg-mux>
+      DESTINATION "MacOS"
+      COMPONENT obs_plugin_dev
+      EXCLUDE_FROM_ALL)
 
     set(_COMMAND
         "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/MacOS/$<TARGET_FILE_NAME:obs-ffmpeg-mux>\\\" > /dev/null"
@@ -319,9 +323,6 @@ function(setup_obs_modules target)
       COMPONENT obs_plugin_dev
       EXCLUDE_FROM_ALL)
 
-    install(TARGETS obs-ffmpeg-mux
-            RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
-                    COMPONENT obs_plugins)
   endif()
 
   if(TARGET mac-dal-plugin)
