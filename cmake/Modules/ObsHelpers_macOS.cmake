@@ -265,19 +265,22 @@ endfunction()
 function(setup_obs_modules target)
 
   get_property(OBS_MODULE_LIST GLOBAL PROPERTY OBS_MODULE_LIST)
-  add_dependencies(${target} ${OBS_MODULE_LIST})
+  if("${OBS_MODULE_LIST}")
+    add_dependencies(${target} ${OBS_MODULE_LIST})
 
-  install(
-    TARGETS ${OBS_MODULE_LIST}
-    LIBRARY DESTINATION "PlugIns"
-            COMPONENT obs_plugin_dev
-            EXCLUDE_FROM_ALL)
+    install(
+      TARGETS ${OBS_MODULE_LIST}
+      LIBRARY DESTINATION "PlugIns"
+              COMPONENT obs_plugin_dev
+              EXCLUDE_FROM_ALL)
 
-  install(
-    TARGETS ${OBS_MODULE_LIST}
-    LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
-            COMPONENT obs_plugins
-            NAMELINK_COMPONENT ${target}_Development)
+    install(
+      TARGETS ${OBS_MODULE_LIST}
+      LIBRARY
+        DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
+        COMPONENT obs_plugins
+        NAMELINK_COMPONENT ${target}_Development)
+  endif()
 
   get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL
                PROPERTY OBS_SCRIPTING_MODULE_LIST)
