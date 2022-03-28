@@ -16,18 +16,6 @@
     <verstretch>0</verstretch>
    </sizepolicy>
   </property>
-  <property name="minimumSize">
-   <size>
-    <width>0</width>
-    <height>0</height>
-   </size>
-  </property>
-  <property name="maximumSize">
-   <size>
-    <width>720</width>
-    <height>880</height>
-   </size>
-  </property>
   <property name="windowTitle">
    <string>YouTube.Actions.WindowTitle</string>
   </property>
