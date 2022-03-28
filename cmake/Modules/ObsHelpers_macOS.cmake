@@ -352,7 +352,7 @@ function(setup_obs_bundle target)
     set(_DEPENDENCY_PREFIX \"${CMAKE_PREFIX_PATH}\")
     set(_BUILD_FOR_DISTRIBUTION \"${BUILD_FOR_DISTRIBUTION}\")
     set(_BUNDLENAME \"$<TARGET_FILE_BASE_NAME:${target}>.app\")
-    set(_BUNDLER_COMMAND \"${CMAKE_SOURCE_DIR}/cmake/bundle/macos/dylibbundler\")
+    set(_BUNDLER_COMMAND \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/dylibbundler\")
     set(_CODESIGN_IDENTITY \"${OBS_BUNDLE_CODESIGN_IDENTITY}\")
     set(_CODESIGN_ENTITLEMENTS \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS\")"
     COMPONENT obs_resources)
