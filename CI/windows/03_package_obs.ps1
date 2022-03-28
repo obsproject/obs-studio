@@ -5,8 +5,8 @@ Param(
     [Switch]$BuildInstaller = $(if ($BuildInstaller.isPresent) { $BuildInstaller }),
     [Switch]$CombinedArchs = $(if ($CombinedArchs.isPresent) { $CombinedArchs }),
     [String]$BuildDirectory = $(if (Test-Path variable:BuildDirectory) { "${BuildDirectory}" } else { "build" }),
-    [ValidateSet("32-bit", "64-bit")]
-    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { (Get-CimInstance CIM_OperatingSystem).OSArchitecture }),
+    [ValidateSet('x86', 'x64')]
+    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] }),
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
     [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" })
 )
@@ -57,7 +57,7 @@ function Package-OBS {
         $CompressVars = @{
             Path = "${CheckoutDir}/build/install/*"
             CompressionLevel = "Optimal"
-            DestinationPath = "${FileName}-Windows.zip"
+            DestinationPath = "${FileName}-Win-x86+x64.zip"
         }
 
         Write-Step "Creating zip archive..."
@@ -66,14 +66,14 @@ function Package-OBS {
         Compress-Archive -Force @CompressVars
         $ProgressPreference = 'Continue'
 
-    } elseif ($BuildArch -eq "64-bit") {
+    } elseif ($BuildArch -eq "x64") {
         Write-Step "Install 64-bit OBS..."
         Invoke-Expression "cmake --build `"${BuildDirectory}64`" --config ${BuildConfiguration} -t install"
 
         $CompressVars = @{
             Path = "${CheckoutDir}/build64/install/bin", "${CheckoutDir}/build64/install/data", "${CheckoutDir}/build64/install/obs-plugins"
             CompressionLevel = "Optimal"
-            DestinationPath = "${FileName}-Win64.zip"
+            DestinationPath = "${FileName}-Win-x64.zip"
         }
 
         Write-Step "Creating zip archive..."
@@ -82,14 +82,14 @@ function Package-OBS {
         Compress-Archive -Force @CompressVars
         $ProgressPreference = 'Continue'
 
-    } elseif ($BuildArch -eq "32-bit") {
+    } elseif ($BuildArch -eq "x86") {
         Write-Step "Install 32-bit OBS..."
         Invoke-Expression "cmake --build `"${BuildDirectory}32`" --config ${BuildConfiguration} -t install"
 
         $CompressVars = @{
             Path = "${CheckoutDir}/build32/install/bin", "${CheckoutDir}/build32/install/data", "${CheckoutDir}/build32/install/obs-plugins"
             CompressionLevel = "Optimal"
-            DestinationPath = "${FileName}-Win32.zip"
+            DestinationPath = "${FileName}-Win-x86.zip"
         }
 
         Write-Step "Creating zip archive..."
@@ -136,7 +136,7 @@ function Print-Usage {
         "-Verbose                 : Enable more verbose build process output",
         "-CombinedArchs           : Create combined architecture package",
         "-BuildDirectory          : Directory to use for builds - Default: build64 on 64-bit systems, build32 on 32-bit systems",
-        "-BuildArch               : Build architecture to use (32-bit or 64-bit) - Default: local architecture",
+        "-BuildArch               : Build architecture to use (x86 or x64) - Default: local architecture",
         "-BuildConfiguration      : Build configuration to use - Default: RelWithDebInfo"
     )
 
