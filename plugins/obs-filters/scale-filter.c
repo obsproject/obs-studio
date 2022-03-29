@@ -208,7 +208,7 @@ static void scale_filter_tick(void *data, float seconds)
 	vec2_set(&filter->dimension, (float)cx, (float)cy);
 	vec2_set(&filter->dimension_i, 1.0f / (float)cx, 1.0f / (float)cy);
 
-	filter->undistort = filter->can_undistort;
+	filter->undistort = false;
 	filter->upscale = false;
 
 	/* ------------------------- */
@@ -217,7 +217,6 @@ static void scale_filter_tick(void *data, float seconds)
 
 	if (lower_than_2x && filter->sampling != OBS_SCALE_POINT) {
 		type = OBS_EFFECT_BILINEAR_LOWRES;
-		filter->undistort = false;
 	} else {
 		switch (filter->sampling) {
 		default:
@@ -227,9 +226,11 @@ static void scale_filter_tick(void *data, float seconds)
 			break;
 		case OBS_SCALE_BICUBIC:
 			type = OBS_EFFECT_BICUBIC;
+			filter->undistort = filter->can_undistort;
 			break;
 		case OBS_SCALE_LANCZOS:
 			type = OBS_EFFECT_LANCZOS;
+			filter->undistort = filter->can_undistort;
 			break;
 		case OBS_SCALE_AREA:
 			type = OBS_EFFECT_AREA;
