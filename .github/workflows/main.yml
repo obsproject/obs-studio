@@ -193,7 +193,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   linux_build:
@@ -275,7 +275,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-linux-${{ matrix.ubuntu }}-deb-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   windows_build:
@@ -348,14 +348,14 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
           CI/windows/03_package_obs.ps1 -BuildArch ${{ matrix.arch }} -Package
-          $ArtifactName = Get-ChildItem -filter "OBS-Studio-*-Win-${{ matrix.arch }}.zip" -File
+          $ArtifactName = Get-ChildItem -filter "obs-studio-*-windows-${{ matrix.arch }}.zip" -File
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-win-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ env.FILE_NAME }}'
 
   linux_package:
@@ -426,12 +426,12 @@ jobs:
       - name: 'Download 64-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win-x64-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Download 32-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win-x86-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-x86-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Unpack Windows build artifacts'
         id: unpack
@@ -440,18 +440,18 @@ jobs:
             $null = New-Item -ItemType Directory -Force -Path install_temp
           }
 
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x86.zip" -File)" -DestinationPath install_temp
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x64.zip" -File)" -Force -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x86.zip" -File)" -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x64.zip" -File)" -Force -DestinationPath install_temp
 
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
-          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Win-x86+x64.zip" -File).Name
+          $ArtifactName = (Get-ChildItem -filter "obs-studio-*-windows-x86+x64.zip" -File).Name
           Write-Output "::set-output name=filename::${ArtifactName}"
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-windows'
+          name: 'obs-studio-windows-installer'
           path: '${{ steps.unpack.outputs.filename }}'
 
   macos_release:
@@ -482,7 +482,7 @@ jobs:
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Install Apple Developer Certificate'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
@@ -507,5 +507,5 @@ jobs:
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-notarized'
+          name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
           path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
