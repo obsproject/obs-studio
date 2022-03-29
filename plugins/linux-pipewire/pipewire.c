@@ -291,6 +291,24 @@ static const struct {
 		true,
 		"XBGR8888",
 	},
+#if PW_CHECK_VERSION(0, 3, 41)
+	{
+		SPA_VIDEO_FORMAT_ABGR_210LE,
+		DRM_FORMAT_ABGR2101010,
+		GS_R10G10B10A2,
+		false,
+		"ABGR2101010",
+
+	},
+	{
+		SPA_VIDEO_FORMAT_xBGR_210LE,
+		DRM_FORMAT_XBGR2101010,
+		GS_R10G10B10A2,
+		false,
+		"XBGR2101010",
+
+	},
+#endif
 };
 
 #define N_SUPPORTED_FORMATS \
@@ -526,7 +544,7 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
-	uint8_t params_buffer[2048];
+	uint8_t params_buffer[4096];
 	struct spa_pod_builder pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
 	uint32_t n_params;
@@ -980,7 +998,7 @@ void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
 	uint32_t n_params;
-	uint8_t params_buffer[2048];
+	uint8_t params_buffer[4096];
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
