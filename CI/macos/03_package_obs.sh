@@ -114,11 +114,11 @@ package-obs-standalone() {
 
     if [ -z "${NOTARIZE_IMAGE}" -a -z "${NOTARIZE_BUNDLE}" ]; then
         if [ "${ARCH}" = "arm64" ]; then
-            FILE_NAME="obs-studio-${VERSION_STRING}-macOS-Apple.dmg"
+            FILE_NAME="obs-studio-${VERSION_STRING}-macos-arm64.dmg"
         elif [ "${ARCH}" = "universal" ]; then
-            FILE_NAME="obs-studio-${VERSION_STRING}-macOS.dmg"
+            FILE_NAME="obs-studio-${VERSION_STRING}-macos.dmg"
         else
-            FILE_NAME="obs-studio-${VERSION_STRING}-macOS-Intel.dmg"
+            FILE_NAME="obs-studio-${VERSION_STRING}-macos-x86_64.dmg"
         fi
 
         package_obs
