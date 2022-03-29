@@ -157,7 +157,10 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 	obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
 	obsFrame.data[0] = mTestPattern.data();
 	obsFrame.linesize[0] = fd.GetBytesPerRow();
-	video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_FULL,
+	video_colorspace colorspace = VIDEO_CS_709;
+	if (NTV2_IS_SD_VIDEO_FORMAT(vid_fmt))
+		colorspace = VIDEO_CS_601;
+	video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
 				    obsFrame.color_matrix,
 				    obsFrame.color_range_min,
 				    obsFrame.color_range_max);
@@ -362,8 +365,10 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		obsFrame.data[0] = reinterpret_cast<uint8_t *>(
 			(ULWord *)ajaSource->mVideoBuffer.GetHostPointer());
 		obsFrame.linesize[0] = fd.GetBytesPerRow();
-
-		video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_FULL,
+		video_colorspace colorspace = VIDEO_CS_709;
+		if (NTV2_IS_SD_VIDEO_FORMAT(actualVideoFormat))
+			colorspace = VIDEO_CS_601;
+		video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
 					    obsFrame.color_matrix,
 					    obsFrame.color_range_min,
 					    obsFrame.color_range_max);
