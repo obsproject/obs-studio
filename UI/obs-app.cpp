@@ -389,20 +389,23 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 			OutputDebugStringW(wide_buf.c_str());
 		}
 	}
-#else
-	def_log_handler(log_level, msg, args2, nullptr);
-	va_end(args2);
 #endif
 
 	if (log_level <= LOG_INFO || log_verbose) {
-		if (too_many_repeated_entries(logFile, msg, str))
-			return;
-		LogStringChunk(logFile, str, log_level);
+#ifndef _WIN32
+		def_log_handler(log_level, msg, args2, nullptr);
+#endif
+		if (!too_many_repeated_entries(logFile, msg, str))
+			LogStringChunk(logFile, str, log_level);
 	}
 
 #if defined(_WIN32) && defined(OBS_DEBUGBREAK_ON_ERROR)
 	if (log_level <= LOG_ERROR && IsDebuggerPresent())
 		__debugbreak();
+#endif
+
+#ifndef _WIN32
+	va_end(args2);
 #endif
 }
 
