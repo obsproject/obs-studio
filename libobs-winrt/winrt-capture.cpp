@@ -333,8 +333,6 @@ extern "C" EXPORT BOOL winrt_capture_active(const struct winrt_capture *capture)
 static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 {
 	winrt_capture *capture = static_cast<winrt_capture *>(data);
-	if (!winrt_capture_active(capture))
-		return;
 
 	auto activation_factory = winrt::get_activation_factory<
 		winrt::Windows::Graphics::Capture::GraphicsCaptureItem>();
