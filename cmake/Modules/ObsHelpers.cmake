@@ -157,8 +157,7 @@ function(add_target_resource target resource destination)
 
   install(
     FILES ${resource}
-    DESTINATION
-      ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
+    DESTINATION ${OBS_DATA_DESTINATION}/${destination}
     COMPONENT obs_${target}
     EXCLUDE_FROM_ALL)
 endfunction()
@@ -458,20 +457,16 @@ function(_install_obs_datatarget target destination)
 
   install(
     TARGETS ${target}
-    LIBRARY
-      DESTINATION
-        ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
-      COMPONENT obs_${target}
-    RUNTIME
-      DESTINATION
-        ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/${destination}
-      COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+    LIBRARY DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+            COMPONENT obs_${target}
+    RUNTIME DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+            COMPONENT obs_${target}
+            EXCLUDE_FROM_ALL)
 
   if(OS_WINDOWS)
     if(MSVC)
       add_target_resource(${target} "$<TARGET_PDB_FILE:${target}>"
-                          "${destination}")
+                          "${destination}" OPTIONAL)
     endif()
 
     if(DEFINED ENV{obsInstallerTempDir})
@@ -487,4 +482,14 @@ function(_install_obs_datatarget target destination)
           EXCLUDE_FROM_ALL)
     endif()
   endif()
+
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      "${CMAKE_COMMAND}" --install .. --config $<CONFIG> --prefix
+      ${OBS_OUTPUT_DIR}/$<CONFIG> --component obs_${target} >
+      "$<IF:$<PLATFORM_ID:Windows>,nul,/dev/null>"
+    COMMENT "Installing ${target} to OBS rundir"
+    VERBATIM)
 endfunction()

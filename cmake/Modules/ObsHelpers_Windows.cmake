@@ -152,8 +152,27 @@ function(setup_target_resources target destination)
 endfunction()
 
 # Helper function to set up specific resource files for targets
-function(add_target_resource target resource destination)
-  _add_target_resource(${ARGV})
+function(add_target_resource)
+  set(target ${ARGV0})
+  set(resource ${ARGV1})
+  set(destination ${ARGV2})
+  if(${ARGC} EQUAL 4)
+    set(optional ${ARGV3})
+  else()
+    set(optional "")
+  endif()
+
+  install(
+    FILES ${resource}
+    DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+    COMPONENT ${target}_Runtime
+    ${optional})
+
+  install(
+    FILES ${resource}
+    DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+    COMPONENT obs_${target}
+    ${optional} EXCLUDE_FROM_ALL)
 
   if(DEFINED ENV{OBS_InstallerTempDir})
     install(
@@ -161,7 +180,7 @@ function(add_target_resource target resource destination)
       DESTINATION
         $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
       COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+      ${optional} EXCLUDE_FROM_ALL)
   endif()
 endfunction()
 
