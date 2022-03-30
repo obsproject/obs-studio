@@ -582,7 +582,7 @@ static void renegotiate_format(void *data, uint64_t expirations)
 	obs_pipewire_data *obs_pw = (obs_pipewire_data *)data;
 	const struct spa_pod **params = NULL;
 
-	blog(LOG_DEBUG, "[pipewire] Renegotiating stream ...");
+	blog(LOG_INFO, "[pipewire] Renegotiating stream ...");
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
@@ -806,18 +806,18 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	if (has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24))
 		buffer_types |= 1 << SPA_DATA_DmaBuf;
 
-	blog(LOG_DEBUG, "[pipewire] Negotiated format:");
+	blog(LOG_INFO, "[pipewire] Negotiated format:");
 
-	blog(LOG_DEBUG, "[pipewire]     Format: %d (%s)",
+	blog(LOG_INFO, "[pipewire]     Format: %d (%s)",
 	     obs_pw->format.info.raw.format,
 	     spa_debug_type_find_name(spa_type_video_format,
 				      obs_pw->format.info.raw.format));
 
-	blog(LOG_DEBUG, "[pipewire]     Size: %dx%d",
+	blog(LOG_INFO, "[pipewire]     Size: %dx%d",
 	     obs_pw->format.info.raw.size.width,
 	     obs_pw->format.info.raw.size.height);
 
-	blog(LOG_DEBUG, "[pipewire]     Framerate: %d/%d",
+	blog(LOG_INFO, "[pipewire]     Framerate: %d/%d",
 	     obs_pw->format.info.raw.framerate.num,
 	     obs_pw->format.info.raw.framerate.denom);
 
@@ -857,7 +857,7 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 
 	obs_pipewire_data *obs_pw = user_data;
 
-	blog(LOG_DEBUG, "[pipewire] stream %p state: \"%s\" (error: %s)",
+	blog(LOG_INFO, "[pipewire] stream %p state: \"%s\" (error: %s)",
 	     obs_pw->stream, pw_stream_state_as_string(state),
 	     error ? error : "none");
 }
@@ -973,7 +973,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
 		n_params);
 
-	blog(LOG_INFO, "[pipewire] playing stream…");
+	blog(LOG_INFO, "[pipewire] playing stream %p…", obs_pw->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
