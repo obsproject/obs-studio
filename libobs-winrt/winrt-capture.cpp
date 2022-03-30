@@ -1,3 +1,5 @@
+#include "winrt-capture.h"
+
 extern "C" {
 HRESULT __stdcall CreateDirect3D11DeviceFromDXGIDevice(
 	::IDXGIDevice *dxgiDevice, ::IInspectable **graphicsDevice);
@@ -336,6 +338,8 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	winrt::Windows::Graphics::Capture::GraphicsCaptureItem item =
 		winrt_capture_create_item(interop_factory.get(),
 					  capture->window, capture->monitor);
+	if (!item)
+		return;
 
 	ID3D11Device *const d3d_device = (ID3D11Device *)device_void;
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -533,7 +537,8 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		capture->closed.revoke();
 
 		try {
-			capture->frame_pool.Close();
+			if (capture->frame_pool)
+				capture->frame_pool.Close();
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR,
 			     "Direct3D11CaptureFramePool::Close (0x%08X): %ls",
@@ -545,7 +550,8 @@ extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
 		}
 
 		try {
-			capture->session.Close();
+			if (capture->session)
+				capture->session.Close();
 		} catch (winrt::hresult_error &err) {
 			blog(LOG_ERROR,
 			     "GraphicsCaptureSession::Close (0x%08X): %ls",
