@@ -24,6 +24,7 @@
 #include <gio/gio.h>
 
 uint32_t portal_get_available_capture_types(void);
+uint32_t portal_get_available_cursor_modes(void);
 uint32_t portal_get_screencast_version(void);
 
 GDBusConnection *portal_get_dbus_connection(void);
