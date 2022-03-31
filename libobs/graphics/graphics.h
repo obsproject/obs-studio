@@ -81,6 +81,7 @@ enum gs_color_format {
 
 enum gs_color_space {
 	GS_CS_SRGB,         /* SDR */
+	GS_CS_SRGB_16F,     /* High-precision SDR */
 	GS_CS_709_EXTENDED, /* Canvas, Mac EDR (HDR) */
 	GS_CS_709_SCRGB,    /* 1.0 = 80 nits, Windows/Linux HDR */
 };
@@ -1061,6 +1062,7 @@ gs_get_format_from_space(enum gs_color_space space)
 	switch (space) {
 	case GS_CS_SRGB:
 		break;
+	case GS_CS_SRGB_16F:
 	case GS_CS_709_EXTENDED:
 	case GS_CS_709_SCRGB:
 		return GS_RGBA16F;

@@ -45,6 +45,16 @@ float4 PSDrawNonlinearAlpha(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawNonlinearAlphaMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	rgba.rgb *= rgba.a;
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
 float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
@@ -102,6 +112,15 @@ technique DrawNonlinearAlpha
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawNonlinearAlpha(vert_in);
+	}
+}
+
+technique DrawNonlinearAlphaMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawNonlinearAlphaMultiply(vert_in);
 	}
 }
 

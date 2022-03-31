@@ -393,9 +393,13 @@ void deinterlace_render(obs_source_t *s)
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
 
-	const enum gs_color_space source_space =
-		(s->async_color_format == GS_RGBA16F) ? GS_CS_709_EXTENDED
-						      : GS_CS_SRGB;
+	enum gs_color_space source_space = GS_CS_SRGB;
+	if (s->async_color_format == GS_RGBA16F) {
+		source_space = (s->async_trc == VIDEO_TRC_SRGB)
+				       ? GS_CS_SRGB_16F
+				       : GS_CS_709_EXTENDED;
+	}
+
 	const bool linear_srgb =
 		(source_space != GS_CS_SRGB) || gs_get_linear_srgb() ||
 		deinterlace_linear_required(s->deinterlace_mode);
@@ -405,6 +409,7 @@ void deinterlace_render(obs_source_t *s)
 	float multiplier = 1.0;
 	switch (source_space) {
 	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
 		switch (current_space) {
 		case GS_CS_709_SCRGB:
 			tech_name = "DrawMultiply";
@@ -414,6 +419,7 @@ void deinterlace_render(obs_source_t *s)
 	case GS_CS_709_EXTENDED:
 		switch (current_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			tech_name = "DrawTonemap";
 			break;
 		case GS_CS_709_SCRGB:
@@ -424,6 +430,7 @@ void deinterlace_render(obs_source_t *s)
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			tech_name = "DrawMultiplyTonemap";
 			multiplier = 80.0f / obs_get_video_sdr_white_level();
 			break;

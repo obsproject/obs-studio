@@ -80,28 +80,35 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		video->conversion_needed = true;
 		video->conversion_width_i = 1.f / (float)ovi->output_width;
 		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2020_HLG) {
+		if (ovi->colorspace == VIDEO_CS_2020_PQ) {
+			video->conversion_techs[0] = "I010_PQ_Y";
+			video->conversion_techs[1] = "I010_PQ_U";
+			video->conversion_techs[2] = "I010_PQ_V";
+		} else if (ovi->colorspace == VIDEO_CS_2020_HLG) {
 			video->conversion_techs[0] = "I010_HLG_Y";
 			video->conversion_techs[1] = "I010_HLG_U";
 			video->conversion_techs[2] = "I010_HLG_V";
 			video->maximum_nits = 1000.f;
 		} else {
-			video->conversion_techs[0] = "I010_PQ_Y";
-			video->conversion_techs[1] = "I010_PQ_U";
-			video->conversion_techs[2] = "I010_PQ_V";
+			video->conversion_techs[0] = "I010_SRGB_Y";
+			video->conversion_techs[1] = "I010_SRGB_U";
+			video->conversion_techs[2] = "I010_SRGB_V";
 		}
 		break;
 	case VIDEO_FORMAT_P010:
 		video->conversion_needed = true;
 		video->conversion_width_i = 1.f / (float)ovi->output_width;
 		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2020_HLG) {
+		if (ovi->colorspace == VIDEO_CS_2020_PQ) {
+			video->conversion_techs[0] = "P010_PQ_Y";
+			video->conversion_techs[1] = "P010_PQ_UV";
+		} else if (ovi->colorspace == VIDEO_CS_2020_HLG) {
 			video->conversion_techs[0] = "P010_HLG_Y";
 			video->conversion_techs[1] = "P010_HLG_UV";
 			video->maximum_nits = 1000.f;
 		} else {
-			video->conversion_techs[0] = "P010_PQ_Y";
-			video->conversion_techs[1] = "P010_PQ_UV";
+			video->conversion_techs[0] = "P010_SRGB_Y";
+			video->conversion_techs[1] = "P010_SRGB_UV";
 		}
 	}
 }
@@ -372,12 +379,24 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	}
 
 	enum gs_color_format format = GS_RGBA;
+	switch (ovi->output_format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		format = GS_RGBA16F;
+	}
+
 	enum gs_color_space space = GS_CS_SRGB;
 	switch (ovi->colorspace) {
 	case VIDEO_CS_2020_PQ:
 	case VIDEO_CS_2020_HLG:
-		format = GS_RGBA16F;
 		space = GS_CS_709_EXTENDED;
+		break;
+	default:
+		switch (ovi->output_format) {
+		case VIDEO_FORMAT_I010:
+		case VIDEO_FORMAT_P010:
+			space = GS_CS_SRGB_16F;
+		}
 	}
 
 	video->render_texture = gs_texture_create(ovi->base_width,
@@ -1927,13 +1946,16 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 	const enum gs_color_space source_space = video->render_space;
 	const enum gs_color_space current_space = gs_get_color_space();
 	const char *tech_name = "Draw";
-	float multiplier = 1.0f;
-	if ((current_space == GS_CS_SRGB) &&
-	    (source_space == GS_CS_709_EXTENDED)) {
-		tech_name = "DrawTonemap";
-	} else if (current_space == GS_CS_709_SCRGB) {
+	float multiplier = 1.f;
+	switch (current_space) {
+	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
+		if (source_space == GS_CS_709_EXTENDED)
+			tech_name = "DrawTonemap";
+		break;
+	case GS_CS_709_SCRGB:
 		tech_name = "DrawMultiply";
-		multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		multiplier = obs_get_video_sdr_white_level() / 80.f;
 	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();

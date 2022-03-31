@@ -52,6 +52,7 @@ Graphics Enumerations
    Color space.  Can be one of the following values:
 
    - GS_CS_SRGB         - sRGB
+   - GS_CS_SRGB_16F     - High-precision SDR
    - GS_CS_709_EXTENDED - Canvas, Mac EDR (HDR)
    - GS_CS_709_SCRGB    - 1.0 = 80 nits, Windows/Linux HDR
 
