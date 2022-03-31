@@ -612,6 +612,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	case GS_CS_709_SCRGB:
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = obs_get_video_sdr_white_level() / 80.f;
 		}
@@ -621,6 +622,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = 80.f / obs_get_video_sdr_white_level();
 		}
@@ -631,6 +633,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		tech_name = "DrawUpscale";
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			switch (current_space) {
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUpscaleMultiply";
@@ -639,6 +642,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawUpscaleTonemap";
 				break;
 			case GS_CS_709_SCRGB:
@@ -648,6 +652,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_SCRGB:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawUpscaleMultiplyTonemap";
 				break;
 			case GS_CS_709_EXTENDED:
@@ -657,6 +662,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	} else {
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			switch (current_space) {
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawMultiply";
@@ -665,6 +671,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawTonemap";
 				break;
 			case GS_CS_709_SCRGB:
@@ -674,6 +681,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_SCRGB:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawMultiplyTonemap";
 				break;
 			case GS_CS_709_EXTENDED:

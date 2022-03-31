@@ -898,14 +898,14 @@ convert_video_format(enum video_format format)
 }
 
 static inline enum gs_color_space
-convert_video_space(enum video_format format, size_t count,
+convert_video_space(enum video_format format, enum video_trc trc,
+		    enum gs_color_format color_format, size_t count,
 		    const enum gs_color_space *preferred_spaces)
 {
 	enum gs_color_space video_space = GS_CS_SRGB;
-	switch (format) {
-	case VIDEO_FORMAT_I010:
-	case VIDEO_FORMAT_P010:
-		video_space = GS_CS_709_EXTENDED;
+	if (color_format == GS_RGBA16F) {
+		video_space = (trc == VIDEO_TRC_SRGB) ? GS_CS_SRGB_16F
+						      : GS_CS_709_EXTENDED;
 	}
 
 	enum gs_color_space space = video_space;
