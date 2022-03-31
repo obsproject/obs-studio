@@ -386,7 +386,23 @@
          </property>
         </widget>
        </item>
-       <item row="6" column="1">
+       <item row="5" column="1">
+        <widget class="QCheckBox" name="allowRedundantStreams">
+         <property name="toolTip">
+          <string>Basic.AutoConfig.StreamPage.AllowRedundantStreamsTooltip</string>
+         </property>
+         <property name="text">
+          <string>Basic.AutoConfig.StreamPage.AllowRedundantStreams</string>
+         </property>
+         <property name="checked">
+          <bool>false</bool>
+         </property>
+         <property name="visible">
+          <bool>false</bool>
+         </property>
+        </widget>
+       </item>
+       <item row="7" column="1">
         <widget class="QGroupBox" name="region">
          <property name="title">
           <string>BandwidthTest.Region</string>
@@ -423,7 +439,7 @@
          </layout>
         </widget>
        </item>
-       <item row="7" column="1">
+       <item row="8" column="1">
         <widget class="QPushButton" name="connectAccount2">
          <property name="cursor">
           <cursorShape>PointingHandCursor</cursorShape>
@@ -433,7 +449,7 @@
          </property>
         </widget>
        </item>
-       <item row="5" column="1">
+       <item row="6" column="1">
         <spacer name="verticalSpacer_2">
          <property name="orientation">
           <enum>Qt::Vertical</enum>
@@ -446,7 +462,7 @@
          </property>
         </spacer>
        </item>
-       <item row="8" column="1">
+       <item row="9" column="1">
         <layout class="QHBoxLayout" name="horizontalLayout_6">
          <property name="leftMargin">
           <number>7</number>
@@ -475,14 +491,14 @@
          </item>
         </layout>
        </item>
-       <item row="8" column="0">
+       <item row="9" column="0">
         <widget class="QLabel" name="connectedAccountLabel">
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.ConnectedAccount</string>
          </property>
         </widget>
        </item>
-       <item row="9" column="0">
+       <item row="10" column="0">
         <spacer name="horizontalSpacer">
          <property name="orientation">
           <enum>Qt::Horizontal</enum>
@@ -495,7 +511,7 @@
          </property>
         </spacer>
        </item>
-       <item row="9" column="1">
+       <item row="10" column="1">
         <widget class="QPushButton" name="useStreamKeyAdv">
          <property name="text">
           <string>Basic.AutoConfig.StreamPage.UseStreamKeyAdvanced</string>

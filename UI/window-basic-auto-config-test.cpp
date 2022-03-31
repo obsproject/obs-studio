@@ -127,9 +127,14 @@ void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 	for (const Json &server : json_services) {
 		const std::string &name = server["name"].string_value();
 		const std::string &url = server["url"].string_value();
+		const vector<Json> &urls = server["backup_urls"].array_items();
+
+		std::vector<std::string> backup_servers;
+		for (auto &url : urls)
+			backup_servers.push_back(url.string_value());
 
 		if (wiz->CanTestServer(name.c_str())) {
-			ServerInfo info(name, url);
+			ServerInfo info(name, url, backup_servers);
 			servers.push_back(info);
 		}
 	}
@@ -150,9 +155,6 @@ const char *FindAudioEncoderFromCodec(const char *type);
 
 void AutoConfigTestPage::TestBandwidthThread()
 {
-	bool connected = false;
-	bool stopped = false;
-
 	TestMode testMode;
 	testMode.SetVideo(128, 128, 60, 1);
 
@@ -168,6 +170,16 @@ void AutoConfigTestPage::TestBandwidthThread()
 				  Q_ARG(QString, QStringLiteral("")));
 
 	/* -----------------------------------*/
+	/* determine which servers to test    */
+
+	std::vector<ServerInfo> servers;
+	if (wiz->customServer)
+		servers.emplace_back(wiz->server.c_str(), wiz->server.c_str(),
+				     wiz->backupServers);
+	else
+		GetServers(servers);
+
+	/* -----------------------------------*/
 	/* create obs objects                 */
 
 	const char *serverType = wiz->customServer ? "rtmp_custom"
@@ -177,8 +189,24 @@ void AutoConfigTestPage::TestBandwidthThread()
 		"obs_x264", "test_x264", nullptr, nullptr);
 	OBSEncoderAutoRelease aencoder = obs_audio_encoder_create(
 		"ffmpeg_aac", "test_aac", nullptr, 0, nullptr);
-	OBSServiceAutoRelease service = obs_service_create(
-		serverType, "test_service", nullptr, nullptr);
+	std::vector<OBSServiceAutoRelease> services;
+
+	/* -----------------------------------*/
+	/* initialize services                */
+
+	size_t max_url_count = 0;
+	for (auto &server : servers) {
+		max_url_count = std::max(max_url_count,
+					 1 + server.backup_servers.size());
+	}
+
+	for (size_t i = 0; i < max_url_count; i++) {
+		// Make a new service per url.
+		const string name =
+			QString("test_service#%1").arg(i).toStdString();
+		services.emplace_back(obs_service_create(
+			serverType, name.c_str(), nullptr, nullptr));
+	}
 
 	/* -----------------------------------*/
 	/* configure settings                 */
@@ -224,15 +252,6 @@ void AutoConfigTestPage::TestBandwidthThread()
 		config_get_string(main->Config(), "Output", "BindIP");
 	obs_data_set_string(output_settings, "bind_ip", bind_ip);
 
-	/* -----------------------------------*/
-	/* determine which servers to test    */
-
-	std::vector<ServerInfo> servers;
-	if (wiz->customServer)
-		servers.emplace_back(wiz->server.c_str(), wiz->server.c_str());
-	else
-		GetServers(servers);
-
 	/* just use the first server if it only has one alternate server,
 	 * or if using Restream or Nimo TV due to their "auto" servers */
 	if (servers.size() < 3 ||
@@ -254,89 +273,133 @@ void AutoConfigTestPage::TestBandwidthThread()
 	/* -----------------------------------*/
 	/* apply service settings             */
 
-	obs_service_update(service, service_settings);
-	obs_service_apply_encoder_settings(service, vencoder_settings,
-					   aencoder_settings);
+	for (auto &service : services) {
+		obs_service_update(service, service_settings);
+		obs_service_apply_encoder_settings(service, vencoder_settings,
+						   aencoder_settings);
+	}
 
 	/* -----------------------------------*/
 	/* create output                      */
 
-	const char *output_type = obs_service_get_output_type(service);
+	const char *output_type = obs_service_get_output_type(services.front());
 	if (!output_type)
 		output_type = "rtmp_output";
 
-	OBSOutputAutoRelease output =
-		obs_output_create(output_type, "test_stream", nullptr, nullptr);
-	obs_output_update(output, output_settings);
+	std::vector<OutputWrapper> outputs;
+	bool encoder_updated = false;
 
-	const char *audio_codec = obs_output_get_supported_audio_codecs(output);
+	for (auto &service : services) {
+		OBSOutputAutoRelease output = obs_output_create(
+			output_type, "test_stream", nullptr, nullptr);
+		obs_output_update(output, output_settings);
 
-	if (strcmp(audio_codec, "aac") != 0) {
-		const char *id = FindAudioEncoderFromCodec(audio_codec);
-		aencoder = obs_audio_encoder_create(id, "test_audio", nullptr,
-						    0, nullptr);
+		if (!encoder_updated) {
+			const char *audio_codec =
+				obs_output_get_supported_audio_codecs(output);
+
+			if (strcmp(audio_codec, "aac") != 0) {
+				const char *id =
+					FindAudioEncoderFromCodec(audio_codec);
+				aencoder = obs_audio_encoder_create(
+					id, "test_audio", nullptr, 0, nullptr);
+			}
+
+			/* -----------------------------------*/
+			/* connect encoders/services/outputs  */
+
+			obs_encoder_update(vencoder, vencoder_settings);
+			obs_encoder_update(aencoder, aencoder_settings);
+			obs_encoder_set_video(vencoder, obs_get_video());
+			obs_encoder_set_audio(aencoder, obs_get_audio());
+			encoder_updated = true;
+		}
+
+		obs_output_set_video_encoder(output, vencoder);
+		obs_output_set_audio_encoder(output, aencoder, 0);
+		obs_output_set_reconnect_settings(output, 0, 0);
+
+		obs_output_set_service(output, service);
+
+		outputs.emplace_back(OutputWrapper{std::move(output)});
 	}
-
-	/* -----------------------------------*/
-	/* connect encoders/services/outputs  */
-
-	obs_encoder_update(vencoder, vencoder_settings);
-	obs_encoder_update(aencoder, aencoder_settings);
-	obs_encoder_set_video(vencoder, obs_get_video());
-	obs_encoder_set_audio(aencoder, obs_get_audio());
-
-	obs_output_set_video_encoder(output, vencoder);
-	obs_output_set_audio_encoder(output, aencoder, 0);
-	obs_output_set_reconnect_settings(output, 0, 0);
-
-	obs_output_set_service(output, service);
 
 	/* -----------------------------------*/
 	/* connect signals                    */
 
-	auto on_started = [&]() {
-		unique_lock<mutex> lock(m);
-		connected = true;
-		stopped = false;
-		cv.notify_one();
-	};
+	function<void(struct OutputWrapper &)> on_started =
+		[&](struct OutputWrapper &wrapper) {
+			unique_lock<mutex> lock(m);
+			wrapper.state = OutputWrapper::OutputState::Started;
+			cv.notify_one();
+		};
 
-	auto on_stopped = [&]() {
-		unique_lock<mutex> lock(m);
-		connected = false;
-		stopped = true;
-		cv.notify_one();
-	};
+	function<void(struct OutputWrapper &)> on_stopped =
+		[&](OutputWrapper &wrapper) {
+			unique_lock<mutex> lock(m);
+			wrapper.state = OutputWrapper::OutputState::Stopped;
+			cv.notify_one();
+		};
 
-	using on_started_t = decltype(on_started);
-	using on_stopped_t = decltype(on_stopped);
+	for (OutputWrapper &wrapper : outputs) {
+		wrapper.start_callback = &on_started;
+		wrapper.stop_callback = &on_stopped;
+	}
 
 	auto pre_on_started = [](void *data, calldata_t *) {
-		on_started_t &on_started =
-			*reinterpret_cast<on_started_t *>(data);
-		on_started();
+		auto &wrapper = *reinterpret_cast<OutputWrapper *>(data);
+		(*wrapper.start_callback)(wrapper);
 	};
 
 	auto pre_on_stopped = [](void *data, calldata_t *) {
-		on_stopped_t &on_stopped =
-			*reinterpret_cast<on_stopped_t *>(data);
-		on_stopped();
+		auto &wrapper = *reinterpret_cast<OutputWrapper *>(data);
+		(*wrapper.stop_callback)(wrapper);
 	};
 
-	signal_handler *sh = obs_output_get_signal_handler(output);
-	signal_handler_connect(sh, "start", pre_on_started, &on_started);
-	signal_handler_connect(sh, "stop", pre_on_stopped, &on_stopped);
+	for (auto &wrapper : outputs) {
+		signal_handler *sh =
+			obs_output_get_signal_handler(wrapper.output);
+		signal_handler_connect(sh, "start", pre_on_started, &wrapper);
+		signal_handler_connect(sh, "stop", pre_on_stopped, &wrapper);
+	}
+
+	auto not_started = [&](std::vector<std::string> &urls) {
+		for (size_t j = 0; j < urls.size(); j++) {
+			if (outputs[j].state !=
+			    OutputWrapper::OutputState::Started) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	auto not_stopped = [&](std::vector<std::string> &urls) {
+		for (size_t j = 0; j < urls.size(); j++) {
+			if (outputs[j].state ==
+			    OutputWrapper::OutputState::Started) {
+				return true;
+			}
+		}
+		return false;
+	};
+
+	auto force_stop_all = [&]() {
+		for (auto &wrapper : outputs) {
+			if (wrapper.state ==
+			    OutputWrapper::OutputState::Started)
+				obs_output_force_stop(wrapper.output);
+		}
+	};
 
 	/* -----------------------------------*/
 	/* test servers                       */
 
 	bool success = false;
-
 	for (size_t i = 0; i < servers.size(); i++) {
 		auto &server = servers[i];
 
-		connected = false;
-		stopped = false;
+		for (auto &wrapper : outputs)
+			wrapper.state = OutputWrapper::OutputState::Default;
 
 		int per = int((i + 1) * 100 / servers.size());
 		QMetaObject::invokeMethod(this, "Progress", Q_ARG(int, per));
@@ -345,28 +408,67 @@ void AutoConfigTestPage::TestBandwidthThread()
 			Q_ARG(QString, QTStr(TEST_BW_CONNECTING)
 					       .arg(server.name.c_str())));
 
-		obs_data_set_string(service_settings, "server",
-				    server.address.c_str());
-		obs_service_update(service, service_settings);
+		std::vector<std::string> urls{server.address};
+		urls.insert(urls.end(), server.backup_servers.begin(),
+			    server.backup_servers.end());
 
-		if (!obs_output_start(output))
+		if (!wiz->allowRedundantStreams && urls.size() > 1) {
 			continue;
+		}
+
+		// Setup services for each url.
+		for (size_t j = 0; j < urls.size(); j++) {
+			obs_data_set_string(service_settings, "server",
+					    urls[j].c_str());
+			obs_service_update(services[j], service_settings);
+		}
+
+		bool start_failed = false;
+
+		for (size_t j = 0; j < urls.size(); j++)
+			start_failed |= !obs_output_start(outputs[j].output);
 
 		unique_lock<mutex> ul(m);
-		if (cancel) {
+
+		if (start_failed) {
 			ul.unlock();
-			obs_output_force_stop(output);
-			return;
-		}
-		if (!stopped && !connected)
-			cv.wait(ul);
-		if (cancel) {
-			ul.unlock();
-			obs_output_force_stop(output);
-			return;
-		}
-		if (!connected)
+			force_stop_all();
 			continue;
+		}
+
+		if (cancel) {
+			ul.unlock();
+			force_stop_all();
+			return;
+		}
+
+		do {
+			// Wait until all outputs are started or stopped.
+			cv.wait(ul);
+			bool start_attempted = true;
+			for (size_t j = 0; j < urls.size(); j++) {
+				if (outputs[j].state ==
+				    OutputWrapper::OutputState::Default) {
+					start_attempted = false;
+					break;
+				}
+			}
+			if (start_attempted) {
+				break;
+			}
+		} while (true);
+
+		if (cancel) {
+			ul.unlock();
+			force_stop_all();
+			return;
+		}
+
+		if (not_started(urls)) {
+			ul.unlock();
+			force_stop_all();
+			continue;
+		}
 
 		QMetaObject::invokeMethod(
 			this, "UpdateMessage",
@@ -376,47 +478,89 @@ void AutoConfigTestPage::TestBandwidthThread()
 		/* ignore first 2.5 seconds due to possible buffering skewing
 		 * the result */
 		cv.wait_for(ul, chrono::milliseconds(2500));
-		if (stopped)
+
+		if (not_started(urls)) {
+			ul.unlock();
+			force_stop_all();
 			continue;
+		}
+
 		if (cancel) {
 			ul.unlock();
-			obs_output_force_stop(output);
+			force_stop_all();
 			return;
 		}
 
 		/* continue test */
-		int start_bytes = (int)obs_output_get_total_bytes(output);
+		std::vector<int> start_bytes(urls.size());
+		for (size_t j = 0; j < urls.size(); j++) {
+			start_bytes[j] = (int)obs_output_get_total_bytes(
+				outputs[j].output);
+		}
+
 		uint64_t t_start = os_gettime_ns();
 
 		cv.wait_for(ul, chrono::seconds(10));
-		if (stopped)
+
+		if (not_started(urls)) {
+			ul.unlock();
+			force_stop_all();
 			continue;
+		}
+
 		if (cancel) {
 			ul.unlock();
-			obs_output_force_stop(output);
+			force_stop_all();
 			return;
 		}
 
-		obs_output_stop(output);
-		cv.wait(ul);
+		// Stop all outputs and wait for all to stop.
+		for (size_t j = 0; j < urls.size(); j++) {
+			if (outputs[j].state ==
+			    OutputWrapper::OutputState::Started) {
+				obs_output_stop(outputs[j].output);
+			}
+		}
+
+		while (not_stopped(urls))
+			cv.wait(ul);
 
 		uint64_t total_time = os_gettime_ns() - t_start;
 		if (total_time == 0)
 			total_time = 1;
 
-		int total_bytes =
-			(int)obs_output_get_total_bytes(output) - start_bytes;
+		uint64_t total_bytes = 0;
+		int frames_dropped = 0;
+
+		for (size_t j = 0; j < urls.size(); j++) {
+			total_bytes += (int)obs_output_get_total_bytes(
+					       outputs[j].output) -
+				       start_bytes[j];
+			frames_dropped += obs_output_get_frames_dropped(
+				outputs[j].output);
+		}
+
 		uint64_t bitrate = util_mul_div64(
 			total_bytes, 8ULL * 1000000000ULL / 1000ULL,
 			total_time);
-		if (obs_output_get_frames_dropped(output) ||
-		    (int)bitrate < (wiz->startingBitrate * 75 / 100)) {
-			server.bitrate = (int)bitrate * 70 / 100;
+		const int avg_bitrate = (int)bitrate / urls.size();
+
+		if (frames_dropped ||
+		    (int)avg_bitrate < (wiz->startingBitrate * 75 / 100)) {
+			server.bitrate = (int)avg_bitrate * 70 / 100;
+			server.preferred = false;
 		} else {
 			server.bitrate = wiz->startingBitrate;
+			server.preferred = wiz->allowRedundantStreams &&
+					   urls.size() > 1;
 		}
 
-		server.ms = obs_output_get_connect_time_ms(output);
+		for (size_t j = 0; j < urls.size(); j++) {
+			server.ms = std::max(server.ms,
+					     obs_output_get_connect_time_ms(
+						     outputs[j].output));
+		}
+
 		success = true;
 	}
 
@@ -431,20 +575,26 @@ void AutoConfigTestPage::TestBandwidthThread()
 	int bestMS = 0x7FFFFFFF;
 	string bestServer;
 	string bestServerName;
+	std::vector<std::string> bestBackupServers;
+	bool isBestPreferred = false;
 
 	for (auto &server : servers) {
 		bool close = abs(server.bitrate - bestBitrate) < 400;
 
 		if ((!close && server.bitrate > bestBitrate) ||
-		    (close && server.ms < bestMS)) {
+		    (close && !isBestPreferred && server.ms < bestMS) ||
+		    (close && !isBestPreferred && server.preferred)) {
 			bestServer = server.address;
 			bestServerName = server.name;
+			bestBackupServers = server.backup_servers;
 			bestBitrate = server.bitrate;
 			bestMS = server.ms;
+			isBestPreferred = server.preferred;
 		}
 	}
 
 	wiz->server = std::move(bestServer);
+	wiz->backupServers = std::move(bestBackupServers);
 	wiz->serverName = std::move(bestServerName);
 	wiz->idealBitrate = bestBitrate;
 

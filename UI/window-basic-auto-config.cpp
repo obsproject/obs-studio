@@ -2,6 +2,8 @@
 #include <QScreen>
 
 #include <obs.hpp>
+#include <QJsonObject>
+#include <QJsonArray>
 
 #include "window-basic-auto-config.hpp"
 #include "window-basic-main.hpp"
@@ -57,13 +59,16 @@ static OBSData OpenServiceSettings(std::string &type)
 }
 
 static void GetServiceInfo(std::string &type, std::string &service,
-			   std::string &server, std::string &key)
+			   std::string &server,
+			   std::vector<std::string> &backupServers,
+			   std::string &key)
 {
 	OBSData settings = OpenServiceSettings(type);
 
 	service = obs_data_get_string(settings, "service");
 	server = obs_data_get_string(settings, "server");
 	key = obs_data_get_string(settings, "key");
+	backupServers = get_backup_servers(settings);
 }
 
 /* ------------------------------------------------------------------------- */
@@ -366,12 +371,23 @@ bool AutoConfigStreamPage::validatePage()
 	if (wiz->customServer) {
 		QString server = ui->customServer->text().trimmed();
 		wiz->server = wiz->serverName = QT_TO_UTF8(server);
+		wiz->backupServers.clear();
 	} else {
 		wiz->serverName = QT_TO_UTF8(ui->server->currentText());
 		wiz->server = QT_TO_UTF8(ui->server->currentData().toString());
+		wiz->backupServers.clear();
+
+		QJsonObject data = ui->server->currentData().toJsonObject();
+		QJsonArray servers = data.value("backup_servers").toArray();
+
+		for (auto srv : servers) {
+			wiz->backupServers.push_back(
+				srv.toString().toStdString());
+		}
 	}
 
 	wiz->bandwidthTest = ui->doBandwidthTest->isChecked();
+	wiz->allowRedundantStreams = ui->allowRedundantStreams->isChecked();
 	wiz->startingBitrate = (int)obs_data_get_int(settings, "bitrate");
 	wiz->idealBitrate = wiz->startingBitrate;
 	wiz->regionUS = ui->regionUS->isChecked();
@@ -641,6 +657,10 @@ void AutoConfigStreamPage::ServiceChanged()
 		ui->serverLabel->setHidden(testBandwidth);
 	}
 
+	const bool isYouTube = (service.rfind("YouTube", 0) == 0);
+	ui->allowRedundantStreams->setVisible(isYouTube &&
+					      ui->doBandwidthTest->isChecked());
+
 	wiz->testRegions = regionBased && testBandwidth;
 
 	ui->bitrateLabel->setHidden(testBandwidth);
@@ -707,7 +727,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	installEventFilter(CreateShortcutFilter());
 
 	std::string serviceType;
-	GetServiceInfo(serviceType, serviceName, server, key);
+	GetServiceInfo(serviceType, serviceName, server, backupServers, key);
 #if defined(_WIN32) || defined(__APPLE__)
 	setWizardStyle(QWizard::ModernStyle);
 #endif
@@ -772,7 +792,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;
-		int idx = serverList->findData(QString(server.c_str()));
+		int idx = find_server_index(server, backupServers, serverList);
 		if (idx == -1)
 			idx = 0;
 
@@ -900,6 +920,14 @@ void AutoConfig::SaveStreamSettings()
 	if (!customServer)
 		obs_data_set_string(settings, "service", serviceName.c_str());
 	obs_data_set_string(settings, "server", server.c_str());
+
+	QJsonArray qBackupServers;
+	for (size_t i = 0; i < backupServers.size(); i++)
+		qBackupServers.append(QString::fromStdString(backupServers[i]));
+
+	obs_data_set_array(settings, "backup_servers",
+			   backup_servers_to_data_array(qBackupServers));
+
 #if YOUTUBE_ENABLED
 	if (!IsYouTubeService(serviceName))
 		obs_data_set_string(settings, "key", key.c_str());

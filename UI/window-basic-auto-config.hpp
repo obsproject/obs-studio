@@ -87,6 +87,7 @@ class AutoConfig : public QWizard {
 	std::string serviceName;
 	std::string serverName;
 	std::string server;
+	std::vector<std::string> backupServers;
 	std::string key;
 
 	bool hardwareEncodingAvailable = false;
@@ -97,6 +98,7 @@ class AutoConfig : public QWizard {
 	int startingBitrate = 2500;
 	bool customServer = false;
 	bool bandwidthTest = false;
+	bool allowRedundantStreams = false;
 	bool testRegions = true;
 	bool twitchAuto = false;
 	bool regionUS = true;
@@ -242,16 +244,33 @@ class AutoConfigTestPage : public QWizardPage {
 	struct ServerInfo {
 		std::string name;
 		std::string address;
+		std::vector<std::string> backup_servers;
 		int bitrate = 0;
 		int ms = -1;
+		bool preferred = false; // prefer server in bandwidth test.
 
 		inline ServerInfo() {}
 
-		inline ServerInfo(const std::string &name_,
-				  const std::string &address_)
-			: name(name_), address(address_)
+		inline ServerInfo(
+			const std::string &name_, const std::string &address_,
+			const std::vector<std::string> &backup_servers_)
+			: name(name_),
+			  address(address_),
+			  backup_servers(backup_servers_)
 		{
 		}
+	};
+
+	struct OutputWrapper {
+		OBSOutputAutoRelease output;
+		enum class OutputState {
+			Default,
+			Started,
+			Stopped,
+		};
+		OutputState state = OutputState::Default;
+		std::function<void(OutputWrapper &)> *start_callback;
+		std::function<void(OutputWrapper &)> *stop_callback;
 	};
 
 	void GetServers(std::vector<ServerInfo> &servers);
