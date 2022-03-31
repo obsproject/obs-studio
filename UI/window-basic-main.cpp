@@ -10037,7 +10037,7 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	if (GetWindowDisplayAffinity(hwnd, &curAffinity)) {
 		if (hideFromCapture && curAffinity != WDA_EXCLUDEFROMCAPTURE)
 			SetWindowDisplayAffinity(hwnd, WDA_EXCLUDEFROMCAPTURE);
-		else if (curAffinity != WDA_NONE)
+		else if (!hideFromCapture && curAffinity != WDA_NONE)
 			SetWindowDisplayAffinity(hwnd, WDA_NONE);
 	}
 
