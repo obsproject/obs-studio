@@ -21,6 +21,9 @@
 #include <libavutil/avutil.h>
 #include <libavformat/avformat.h>
 #include <libswresample/swresample.h>
+#include "lag_lead_filter.h"
+
+// #define DEBUG_COMPENSATION
 
 struct audio_resampler {
 	struct SwrContext *context;
@@ -41,6 +44,9 @@ struct audio_resampler {
 	AVChannelLayout input_ch_layout;
 	AVChannelLayout output_ch_layout;
 #endif
+
+	struct lag_lead_filter compensation_filter;
+	bool compensation_filter_configured;
 };
 
 static inline enum AVSampleFormat convert_audio_format(enum audio_format format)
@@ -178,6 +184,27 @@ void audio_resampler_destroy(audio_resampler_t *rs)
 	}
 }
 
+void audio_resampler_set_compensation_error(audio_resampler_t *rs, int error_ns)
+{
+	if (!rs->compensation_filter_configured) {
+		// Parameters are determined experimentally by SPICE simulation
+		// to have these characteristics.
+		// - Unity gain frequency: 1/180 Hz (inverse of 3 minutes)
+		// - Phase margin: 60 degrees
+		lag_lead_filter_set_parameters(&rs->compensation_filter, 3.756e-2, 8.250, 107.1);
+		lag_lead_filter_reset(&rs->compensation_filter);
+		rs->compensation_filter_configured = true;
+	}
+
+	lag_lead_filter_set_error_ns(&rs->compensation_filter, error_ns);
+}
+
+void audio_resampler_disable_compensation(audio_resampler_t *rs)
+{
+	rs->compensation_filter_configured = false;
+	swr_set_compensation(rs->context, 0, 0);
+}
+
 bool audio_resampler_resample(audio_resampler_t *rs, uint8_t *output[], uint32_t *out_frames, uint64_t *ts_offset,
 			      const uint8_t *const input[], uint32_t in_frames)
 {
@@ -186,6 +213,17 @@ bool audio_resampler_resample(audio_resampler_t *rs, uint8_t *output[], uint32_t
 
 	struct SwrContext *context = rs->context;
 	int ret;
+
+	if (rs->compensation_filter_configured) {
+		lag_lead_filter_tick(&rs->compensation_filter, rs->input_freq, in_frames);
+		double drift = lag_lead_filter_get_drift(&rs->compensation_filter);
+
+		ret = swr_set_compensation(rs->context, -(int)(drift * 65536 / rs->input_freq), 65536);
+		if (ret < 0) {
+			blog(LOG_ERROR, "swr_set_compensation failed: %d", ret);
+			return false;
+		}
+	}
 
 	int64_t delay = swr_get_delay(context, rs->input_freq);
 	int estimated = (int)av_rescale_rnd(delay + (int64_t)in_frames, (int64_t)rs->output_freq,
@@ -209,6 +247,14 @@ bool audio_resampler_resample(audio_resampler_t *rs, uint8_t *output[], uint32_t
 		blog(LOG_ERROR, "swr_convert failed: %d", ret);
 		return false;
 	}
+
+#ifdef DEBUG_COMPENSATION
+	if (rs->compensation_filter_configured)
+		blog(LOG_INFO,
+		     "async-compensation in_frames=%d out_frames=%d error_ns=%" PRIi64 " internal-condition=(%f %f)",
+		     in_frames, ret, rs->compensation_filter.error_ns, rs->compensation_filter.vc1,
+		     rs->compensation_filter.vc2);
+#endif
 
 	for (uint32_t i = 0; i < rs->output_planes; i++)
 		output[i] = rs->output_buffer[i];
