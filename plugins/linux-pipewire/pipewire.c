@@ -143,10 +143,10 @@ static bool check_pw_version(const struct obs_pw_version *pw_version, int major,
 
 static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
 {
-	blog(LOG_INFO, "[pipewire] server version: %s", version);
-	blog(LOG_INFO, "[pipewire] library version: %s",
+	blog(LOG_INFO, "[pipewire] Server version: %s", version);
+	blog(LOG_INFO, "[pipewire] Library version: %s",
 	     pw_get_library_version());
-	blog(LOG_INFO, "[pipewire] header version: %s",
+	blog(LOG_INFO, "[pipewire] Header version: %s",
 	     pw_get_headers_version());
 
 	if (!parse_pw_version(&obs_pw->server_version, version))
@@ -216,7 +216,7 @@ static void on_cancelled_cb(GCancellable *cancellable, void *data)
 
 	struct dbus_call_data *call = data;
 
-	blog(LOG_INFO, "[pipewire] screencast session cancelled");
+	blog(LOG_INFO, "[pipewire] Screencast session cancelled");
 
 	g_dbus_connection_call(
 		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
@@ -857,7 +857,7 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 
 	obs_pipewire_data *obs_pw = user_data;
 
-	blog(LOG_INFO, "[pipewire] stream %p state: \"%s\" (error: %s)",
+	blog(LOG_INFO, "[pipewire] Stream %p state: \"%s\" (error: %s)",
 	     obs_pw->stream, pw_stream_state_as_string(state),
 	     error ? error : "none");
 }
@@ -954,7 +954,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
 	pw_stream_add_listener(obs_pw->stream, &obs_pw->stream_listener,
 			       &stream_events, obs_pw);
-	blog(LOG_INFO, "[pipewire] created stream %p", obs_pw->stream);
+	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw->stream);
 
 	/* Stream parameters */
 	pod_builder =
@@ -973,7 +973,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
 		n_params);
 
-	blog(LOG_INFO, "[pipewire] playing stream %p…", obs_pw->stream);
+	blog(LOG_INFO, "[pipewire] Playing stream %p…", obs_pw->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
@@ -1136,7 +1136,7 @@ static void start(obs_pipewire_data *obs_pw)
 
 	new_request_path(obs_pw, &request_path, &request_token);
 
-	blog(LOG_INFO, "[pipewire] asking for %s…",
+	blog(LOG_INFO, "[pipewire] Asking for %s…",
 	     capture_type_to_string(obs_pw->capture_type));
 
 	call = subscribe_to_signal(obs_pw, request_path,
@@ -1286,7 +1286,7 @@ static void on_create_session_response_received_cb(
 		return;
 	}
 
-	blog(LOG_INFO, "[pipewire] screencast session created");
+	blog(LOG_INFO, "[pipewire] Screencast session created");
 
 	session_handle_variant =
 		g_variant_lookup_value(result, "session_handle", NULL);
@@ -1360,7 +1360,7 @@ static void update_available_cursor_modes(obs_pipewire_data *obs_pw,
 
 	obs_pw->available_cursor_modes = available_cursor_modes;
 
-	blog(LOG_INFO, "[pipewire] available cursor modes:");
+	blog(LOG_INFO, "[pipewire] Available cursor modes:");
 	if (available_cursor_modes & 4)
 		blog(LOG_INFO, "[pipewire]     - Metadata");
 	if (available_cursor_modes & 2)
