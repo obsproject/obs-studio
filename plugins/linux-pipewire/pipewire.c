@@ -71,8 +71,6 @@ struct _obs_pipewire_data {
 	uint32_t pipewire_node;
 	int pipewire_fd;
 
-	uint32_t available_cursor_modes;
-
 	obs_source_t *source;
 	obs_data_t *settings;
 
@@ -1211,6 +1209,7 @@ static void select_source(obs_pipewire_data *obs_pw)
 {
 	struct dbus_call_data *call;
 	GVariantBuilder builder;
+	uint32_t available_cursor_modes;
 	char *request_token;
 	char *request_path;
 
@@ -1227,10 +1226,12 @@ static void select_source(obs_pipewire_data *obs_pw)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
-	if (obs_pw->available_cursor_modes & 4)
+	available_cursor_modes = portal_get_available_cursor_modes();
+
+	if (available_cursor_modes & 4)
 		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
 				      g_variant_new_uint32(4));
-	else if ((obs_pw->available_cursor_modes & 2) && obs_pw->cursor.visible)
+	else if ((available_cursor_modes & 2) && obs_pw->cursor.visible)
 		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
 				      g_variant_new_uint32(2));
 	else
@@ -1346,31 +1347,6 @@ static void create_session(obs_pipewire_data *obs_pw)
 
 /* ------------------------------------------------- */
 
-static void update_available_cursor_modes(obs_pipewire_data *obs_pw,
-					  GDBusProxy *proxy)
-{
-	g_autoptr(GVariant) cached_cursor_modes = NULL;
-	uint32_t available_cursor_modes;
-
-	cached_cursor_modes =
-		g_dbus_proxy_get_cached_property(proxy, "AvailableCursorModes");
-	available_cursor_modes =
-		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
-				    : 0;
-
-	obs_pw->available_cursor_modes = available_cursor_modes;
-
-	blog(LOG_INFO, "[pipewire] Available cursor modes:");
-	if (available_cursor_modes & 4)
-		blog(LOG_INFO, "[pipewire]     - Metadata");
-	if (available_cursor_modes & 2)
-		blog(LOG_INFO, "[pipewire]     - Always visible");
-	if (available_cursor_modes & 1)
-		blog(LOG_INFO, "[pipewire]     - Hidden");
-}
-
-/* ------------------------------------------------- */
-
 static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 {
 	GDBusConnection *connection;
@@ -1384,8 +1360,6 @@ static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 	proxy = portal_get_dbus_proxy();
 	if (!proxy)
 		return FALSE;
-
-	update_available_cursor_modes(obs_pw, proxy);
 
 	obs_pw->sender_name =
 		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);

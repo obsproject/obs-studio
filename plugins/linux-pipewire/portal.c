@@ -73,6 +73,25 @@ uint32_t portal_get_available_capture_types(void)
 	return available_source_types;
 }
 
+uint32_t portal_get_available_cursor_modes(void)
+{
+	g_autoptr(GVariant) cached_cursor_modes = NULL;
+	uint32_t available_cursor_modes;
+
+	ensure_proxy();
+
+	if (!proxy)
+		return 0;
+
+	cached_cursor_modes =
+		g_dbus_proxy_get_cached_property(proxy, "AvailableCursorModes");
+	available_cursor_modes =
+		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
+				    : 0;
+
+	return available_cursor_modes;
+}
+
 uint32_t portal_get_screencast_version(void)
 {
 	g_autoptr(GVariant) cached_version = NULL;
