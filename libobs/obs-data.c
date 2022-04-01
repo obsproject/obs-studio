@@ -30,6 +30,7 @@
 
 struct obs_data_item {
 	volatile long ref;
+	const char *name;
 	struct obs_data *parent;
 	struct obs_data_item *next;
 	enum obs_data_type type;
@@ -295,7 +296,10 @@ static struct obs_data_item *obs_data_item_create(const char *name,
 		item->data_size = size;
 	}
 
-	strcpy(get_item_name(item), name);
+	char *name_ptr = get_item_name(item);
+	item->name = name_ptr;
+
+	strcpy(name_ptr, name);
 	memcpy(get_item_data(item), data, size);
 
 	item_data_addref(item);
@@ -354,6 +358,7 @@ obs_data_item_ensure_capacity(struct obs_data_item *item)
 
 	new_item = brealloc(item, new_size);
 	new_item->capacity = new_size;
+	new_item->name = get_item_name(new_item);
 
 	obs_data_item_reattach(item, new_item);
 	return new_item;
@@ -1671,7 +1676,7 @@ const char *obs_data_item_get_name(obs_data_item_t *item)
 	if (!item)
 		return NULL;
 
-	return get_item_name(item);
+	return item->name;
 }
 
 void obs_data_item_set_string(obs_data_item_t **item, const char *val)
