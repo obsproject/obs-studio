@@ -124,6 +124,11 @@ enum obs_scale_type {
 	OBS_SCALE_AREA,
 };
 
+enum obs_blending_method {
+	OBS_BLEND_METHOD_DEFAULT,
+	OBS_BLEND_METHOD_SRGB_OFF,
+};
+
 enum obs_blending_type {
 	OBS_BLEND_NORMAL,
 	OBS_BLEND_ADDITIVE,
@@ -1798,6 +1803,11 @@ EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 					   enum obs_scale_type filter);
 EXPORT enum obs_scale_type
 obs_sceneitem_get_scale_filter(obs_sceneitem_t *item);
+
+EXPORT void obs_sceneitem_set_blending_method(obs_sceneitem_t *item,
+					      enum obs_blending_method method);
+EXPORT enum obs_blending_method
+obs_sceneitem_get_blending_method(obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
 					    enum obs_blending_type type);
