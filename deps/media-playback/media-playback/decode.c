@@ -113,7 +113,8 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 	return ret;
 
 fail:
-	avcodec_close(c);
+	avcodec_free_context(&c);
+
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	av_free(d->decoder);
 #endif
@@ -220,13 +221,10 @@ void mp_decode_free(struct mp_decode *d)
 		av_frame_unref(d->hw_frame);
 		av_free(d->hw_frame);
 	}
-	if (d->decoder) {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+
+	if (d->decoder)
 		avcodec_free_context(&d->decoder);
-#else
-		avcodec_close(d->decoder);
-#endif
-	}
+
 	if (d->sw_frame) {
 		av_frame_unref(d->sw_frame);
 		av_free(d->sw_frame);

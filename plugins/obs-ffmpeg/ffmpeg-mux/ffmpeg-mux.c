@@ -150,6 +150,7 @@ static void free_avformat(struct ffmpeg_mux *ffm)
 	if (ffm->audio_infos) {
 		for (int i = 0; i < ffm->num_audio_streams; ++i)
 			avcodec_free_context(&ffm->audio_infos[i].ctx);
+
 		free(ffm->audio_infos);
 	}
 

@@ -72,11 +72,7 @@ static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 
 static void ffmpeg_image_free(struct ffmpeg_image *info)
 {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_free_context(&info->decoder_ctx);
-#else
-	avcodec_close(info->decoder_ctx);
-#endif
 	avformat_close_input(&info->fmt_ctx);
 }
 
