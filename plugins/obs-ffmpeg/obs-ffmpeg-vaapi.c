@@ -329,7 +329,7 @@ static void vaapi_destroy(void *data)
 		flush_remaining_packets(enc);
 
 	av_packet_free(&enc->packet);
-	avcodec_close(enc->context);
+	avcodec_free_context(&enc->context);
 	av_frame_unref(enc->vframe);
 	av_frame_free(&enc->vframe);
 	av_buffer_unref(&enc->vaframes_ref);

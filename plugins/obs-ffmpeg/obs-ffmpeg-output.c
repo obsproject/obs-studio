@@ -457,11 +457,7 @@ static inline bool open_output_file(struct ffmpeg_data *data)
 
 static void close_video(struct ffmpeg_data *data)
 {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	avcodec_free_context(&data->video_ctx);
-#else
-	avcodec_close(data->video->codec);
-#endif
 	av_frame_unref(data->vframe);
 
 	// This format for some reason derefs video frame
@@ -481,13 +477,8 @@ static void close_audio(struct ffmpeg_data *data)
 
 		if (data->samples[idx][0])
 			av_freep(&data->samples[idx][0]);
-		if (data->audio_infos[idx].ctx) {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+		if (data->audio_infos[idx].ctx)
 			avcodec_free_context(&data->audio_infos[idx].ctx);
-#else
-			avcodec_close(data->audio_infos[idx].stream->codec);
-#endif
-		}
 		if (data->aframe[idx])
 			av_frame_free(&data->aframe[idx]);
 	}

@@ -124,8 +124,10 @@ static void enc_destroy(void *data)
 
 	if (enc->samples[0])
 		av_freep(&enc->samples[0]);
+
 	if (enc->context)
-		avcodec_close(enc->context);
+		avcodec_free_context(&enc->context);
+
 	if (enc->aframe)
 		av_frame_free(&enc->aframe);
 
