@@ -507,6 +507,17 @@ Scene Item Functions
 
 ---------------------
 
+.. function:: void obs_sceneitem_set_blending_method(obs_sceneitem_t *item, enum obs_blending_method method)
+              enum obs_blending_method obs_sceneitem_get_blending_method(obs_sceneitem_t *item)
+
+   Sets/gets the blending method used for the scene item.
+
+   :param method: | Can be one of the following values:
+                  | OBS_BLEND_METHOD_DEFAULT
+                  | OBS_BLEND_METHOD_SRGB_OFF
+
+---------------------
+
 .. function:: void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item, enum obs_blending_type type)
               enum obs_blending_type obs_sceneitem_get_blending_mode(obs_sceneitem_t *item)
 
