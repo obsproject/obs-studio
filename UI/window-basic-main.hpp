@@ -94,7 +94,8 @@ struct SourceCopyInfo {
 	bool visible;
 	obs_sceneitem_crop crop;
 	obs_transform_info transform;
-	obs_blending_type blend;
+	obs_blending_method blend_method;
+	obs_blending_type blend_mode;
 };
 
 struct QuickTransition {
@@ -313,6 +314,7 @@ private:
 	QPointer<QMenu> sceneProjectorMenu;
 	QPointer<QMenu> sourceProjector;
 	QPointer<QMenu> scaleFilteringMenu;
+	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;
 	QPointer<QWidgetAction> colorWidgetAction;
@@ -715,6 +717,7 @@ private slots:
 
 	void SetScaleFilter();
 
+	void SetBlendingMethod();
 	void SetBlendingMode();
 
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -890,6 +893,7 @@ public:
 
 	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
 	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
+	QMenu *AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
 				      ColorSelect *select,
