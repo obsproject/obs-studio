@@ -33,8 +33,6 @@ add_library(OBS::pipewire ALIAS linux-pipewire)
 target_sources(
   linux-pipewire
   PRIVATE linux-pipewire.c
-          pipewire-common.c
-          pipewire-common.h
           pipewire.c
           pipewire.h
           pipewire-capture.c
