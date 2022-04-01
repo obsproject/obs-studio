@@ -20,6 +20,7 @@
 
 #include "pipewire.h"
 
+#include "parent_window.h"
 #include "portal.h"
 
 #include <util/darray.h>
@@ -1146,12 +1147,13 @@ static void start(obs_pipewire_data *obs_pw)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
+	struct dstr parent_window = parent_window_string();
 	g_dbus_proxy_call(portal_get_dbus_proxy(), "Start",
-			  g_variant_new("(osa{sv})", obs_pw->session_handle, "",
-					&builder),
+			  g_variant_new("(osa{sv})", obs_pw->session_handle,
+					parent_window.array, &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, obs_pw->cancellable,
 			  on_started_cb, call);
-
+	dstr_free(&parent_window);
 	bfree(request_token);
 	bfree(request_path);
 }
