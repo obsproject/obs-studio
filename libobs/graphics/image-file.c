@@ -18,6 +18,7 @@
 #include "image-file.h"
 #include "../util/base.h"
 #include "../util/platform.h"
+#include "../util/dstr.h"
 #include "vec4.h"
 
 #define blog(level, format, ...) \
@@ -206,7 +207,7 @@ static void gs_image_file_init_internal(gs_image_file_t *image,
 
 	len = strlen(file);
 
-	if (len > 4 && strcmp(file + len - 4, ".gif") == 0) {
+	if (len > 4 && astrcmpi(file + len - 4, ".gif") == 0) {
 		if (init_animated_gif(image, file, mem_usage, alpha_mode)) {
 			return;
 		}
