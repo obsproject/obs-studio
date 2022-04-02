@@ -1228,15 +1228,19 @@ static void select_source(obs_pipewire_data *obs_pw)
 
 	available_cursor_modes = portal_get_available_cursor_modes();
 
-	if (available_cursor_modes & 4)
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(4));
-	else if ((available_cursor_modes & 2) && obs_pw->cursor.visible)
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(2));
+	if (available_cursor_modes & PORTAL_CURSOR_MODE_METADATA)
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_METADATA));
+	else if ((available_cursor_modes & PORTAL_CURSOR_MODE_EMBEDDED) &&
+		 obs_pw->cursor.visible)
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_EMBEDDED));
 	else
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(1));
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_HIDDEN));
 
 	if (portal_get_screencast_version() >= 4) {
 		g_variant_builder_add(&builder, "{sv}", "persist_mode",
