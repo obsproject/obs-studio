@@ -582,7 +582,7 @@ static void renegotiate_format(void *data, uint64_t expirations)
 	obs_pipewire_data *obs_pw = (obs_pipewire_data *)data;
 	const struct spa_pod **params = NULL;
 
-	blog(LOG_INFO, "[pipewire] Renegotiating stream ...");
+	blog(LOG_INFO, "[pipewire] Renegotiating stream");
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
@@ -973,7 +973,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
 		n_params);
 
-	blog(LOG_INFO, "[pipewire] Playing stream %p…", obs_pw->stream);
+	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
@@ -1136,7 +1136,7 @@ static void start(obs_pipewire_data *obs_pw)
 
 	new_request_path(obs_pw, &request_path, &request_token);
 
-	blog(LOG_INFO, "[pipewire] Asking for %s…",
+	blog(LOG_INFO, "[pipewire] Asking for %s",
 	     capture_type_to_string(obs_pw->capture_type));
 
 	call = subscribe_to_signal(obs_pw, request_path,
