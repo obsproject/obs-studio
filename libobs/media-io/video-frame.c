@@ -211,6 +211,41 @@ void video_frame_init(struct video_frame *frame, enum video_format format,
 		frame->linesize[2] = width;
 		frame->linesize[3] = width;
 		break;
+
+	case VIDEO_FORMAT_I010: {
+		size = width * height * 2;
+		ALIGN_SIZE(size, alignment);
+		offsets[0] = size;
+		const uint32_t half_width = (width + 1) / 2;
+		const uint32_t half_height = (height + 1) / 2;
+		const uint32_t quarter_area = half_width * half_height;
+		size += quarter_area * 2;
+		ALIGN_SIZE(size, alignment);
+		offsets[1] = size;
+		size += quarter_area * 2;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
+		frame->data[2] = (uint8_t *)frame->data[0] + offsets[1];
+		frame->linesize[0] = width * 2;
+		frame->linesize[1] = half_width * 2;
+		frame->linesize[2] = half_width * 2;
+		break;
+	}
+
+	case VIDEO_FORMAT_P010: {
+		size = width * height * 2;
+		ALIGN_SIZE(size, alignment);
+		offsets[0] = size;
+		const uint32_t cbcr_width = (width + 1) & (UINT32_MAX - 1);
+		size += cbcr_width * ((height + 1) / 2) * 2;
+		ALIGN_SIZE(size, alignment);
+		frame->data[0] = bmalloc(size);
+		frame->data[1] = (uint8_t *)frame->data[0] + offsets[0];
+		frame->linesize[0] = width * 2;
+		frame->linesize[1] = cbcr_width * 2;
+		break;
+	}
 	}
 }
 
@@ -222,12 +257,14 @@ void video_frame_copy(struct video_frame *dst, const struct video_frame *src,
 		return;
 
 	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_I010:
 		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
 		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
 		memcpy(dst->data[2], src->data[2], src->linesize[2] * cy / 2);
 		break;
 
 	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_P010:
 		memcpy(dst->data[0], src->data[0], src->linesize[0] * cy);
 		memcpy(dst->data[1], src->data[1], src->linesize[1] * cy / 2);
 		break;

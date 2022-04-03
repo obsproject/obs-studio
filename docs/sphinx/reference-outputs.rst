@@ -678,11 +678,11 @@ Functions used by outputs
    enum video_format {
            VIDEO_FORMAT_NONE,
    
-           /* planar 420 format */
+           /* planar 4:2:0 formats */
            VIDEO_FORMAT_I420, /* three-plane */
            VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
    
-           /* packed 422 formats */
+           /* packed 4:2:2 formats */
            VIDEO_FORMAT_YVYU,
            VIDEO_FORMAT_YUY2, /* YUYV */
            VIDEO_FORMAT_UYVY,
@@ -713,6 +713,10 @@ Functions used by outputs
    
            /* packed 4:4:4 with alpha */
            VIDEO_FORMAT_AYUV,
+   
+           /* planar 4:2:0 format, 10 bpp */
+           VIDEO_FORMAT_I010, /* three-plane */
+           VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
    };
    
    enum video_colorspace {

@@ -261,6 +261,7 @@ struct obs_core_video {
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
 	bool using_nv12_tex;
+	bool using_p010_tex;
 	struct circlebuf vframe_info_buffer;
 	struct circlebuf vframe_info_buffer_gpu;
 	gs_effect_t *default_effect;
@@ -303,6 +304,8 @@ struct obs_core_video {
 	const char *conversion_techs[NUM_CHANNELS];
 	bool conversion_needed;
 	float conversion_width_i;
+	float conversion_height_i;
+	float maximum_nits;
 
 	uint32_t output_width;
 	uint32_t output_height;
@@ -717,8 +720,11 @@ struct obs_source {
 	bool async_gpu_conversion;
 	enum video_format async_format;
 	bool async_full_range;
+	uint8_t async_trc;
+	enum gs_color_format async_color_format;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
+	uint8_t async_cache_trc;
 	enum gs_color_format async_texture_formats[MAX_AV_PLANES];
 	int async_channel_count;
 	long async_rotation;
@@ -883,9 +889,33 @@ convert_video_format(enum video_format format)
 	case VIDEO_FORMAT_YUVA:
 	case VIDEO_FORMAT_AYUV:
 		return GS_BGRA;
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		return GS_RGBA16F;
 	default:
 		return GS_BGRX;
 	}
+}
+
+static inline enum gs_color_space
+convert_video_space(enum video_format format, size_t count,
+		    const enum gs_color_space *preferred_spaces)
+{
+	enum gs_color_space video_space = GS_CS_SRGB;
+	switch (format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		video_space = GS_CS_709_EXTENDED;
+	}
+
+	enum gs_color_space space = video_space;
+	for (size_t i = 0; i < count; ++i) {
+		space = preferred_spaces[i];
+		if (space == video_space)
+			break;
+	}
+
+	return space;
 }
 
 extern void obs_source_set_texcoords_centered(obs_source_t *source,

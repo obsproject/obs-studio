@@ -1550,10 +1550,14 @@ enum convert_type {
 	CONVERT_800,
 	CONVERT_RGB_LIMITED,
 	CONVERT_BGR3,
+	CONVERT_I010_PQ_2020_709,
+	CONVERT_I010_HLG_2020_709,
+	CONVERT_P010_PQ_2020_709,
+	CONVERT_P010_HLG_2020_709,
 };
 
 static inline enum convert_type get_convert_type(enum video_format format,
-						 bool full_range)
+						 bool full_range, uint8_t trc)
 {
 	switch (format) {
 	case VIDEO_FORMAT_I420:
@@ -1593,6 +1597,18 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_AYUV:
 		return CONVERT_444_A_PACK;
+
+	case VIDEO_FORMAT_I010: {
+		const bool hlg = trc == VIDEO_TRC_HLG;
+		return hlg ? CONVERT_I010_HLG_2020_709
+			   : CONVERT_I010_PQ_2020_709;
+	}
+
+	case VIDEO_FORMAT_P010: {
+		const bool hlg = trc == VIDEO_TRC_HLG;
+		return hlg ? CONVERT_P010_HLG_2020_709
+			   : CONVERT_P010_PQ_2020_709;
+	}
 	}
 
 	return CONVERT_NONE;
@@ -1791,10 +1807,48 @@ static inline bool set_bgr3_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_i010_sizes(struct obs_source *source,
+				  const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t half_width = (width + 1) / 2;
+	const uint32_t half_height = (height + 1) / 2;
+	source->async_convert_width[0] = width;
+	source->async_convert_width[1] = half_width;
+	source->async_convert_width[2] = half_width;
+	source->async_convert_height[0] = height;
+	source->async_convert_height[1] = half_height;
+	source->async_convert_height[2] = half_height;
+	source->async_texture_formats[0] = GS_R16;
+	source->async_texture_formats[1] = GS_R16;
+	source->async_texture_formats[2] = GS_R16;
+	source->async_channel_count = 3;
+	return true;
+}
+
+static inline bool set_p010_sizes(struct obs_source *source,
+				  const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t half_width = (width + 1) / 2;
+	const uint32_t half_height = (height + 1) / 2;
+	source->async_convert_width[0] = width;
+	source->async_convert_width[1] = half_width;
+	source->async_convert_height[0] = height;
+	source->async_convert_height[1] = half_height;
+	source->async_texture_formats[0] = GS_R16;
+	source->async_texture_formats[1] = GS_RG16;
+	source->async_channel_count = 2;
+	return true;
+}
+
 static inline bool init_gpu_conversion(struct obs_source *source,
 				       const struct obs_source_frame *frame)
 {
-	switch (get_convert_type(frame->format, frame->full_range)) {
+	switch (get_convert_type(frame->format, frame->full_range,
+				 frame->trc)) {
 	case CONVERT_422_PACK:
 		return set_packed422_sizes(source, frame);
 
@@ -1831,6 +1885,14 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 	case CONVERT_444_A_PACK:
 		return set_packed444_alpha_sizes(source, frame);
 
+	case CONVERT_I010_PQ_2020_709:
+	case CONVERT_I010_HLG_2020_709:
+		return set_i010_sizes(source, frame);
+
+	case CONVERT_P010_PQ_2020_709:
+	case CONVERT_P010_HLG_2020_709:
+		return set_p010_sizes(source, frame);
+
 	case CONVERT_NONE:
 		assert(false && "No conversion requested");
 		break;
@@ -1842,18 +1904,22 @@ bool set_async_texture_size(struct obs_source *source,
 			    const struct obs_source_frame *frame)
 {
 	enum convert_type cur =
-		get_convert_type(frame->format, frame->full_range);
+		get_convert_type(frame->format, frame->full_range, frame->trc);
 
+	const enum gs_color_format format = convert_video_format(frame->format);
 	if (source->async_width == frame->width &&
 	    source->async_height == frame->height &&
 	    source->async_format == frame->format &&
-	    source->async_full_range == frame->full_range)
+	    source->async_full_range == frame->full_range &&
+	    source->async_trc == frame->trc &&
+	    source->async_color_format == format)
 		return true;
 
 	source->async_width = frame->width;
 	source->async_height = frame->height;
 	source->async_format = frame->format;
 	source->async_full_range = frame->full_range;
+	source->async_trc = frame->trc;
 
 	gs_enter_context(obs->video.graphics);
 
@@ -1869,7 +1935,7 @@ bool set_async_texture_size(struct obs_source *source,
 	source->async_texrender = NULL;
 	source->async_prev_texrender = NULL;
 
-	const enum gs_color_format format = convert_video_format(frame->format);
+	source->async_color_format = format;
 	const bool async_gpu_conversion = (cur != CONVERT_NONE) &&
 					  init_gpu_conversion(source, frame);
 	source->async_gpu_conversion = async_gpu_conversion;
@@ -1900,7 +1966,8 @@ bool set_async_texture_size(struct obs_source *source,
 static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 			     const struct obs_source_frame *frame)
 {
-	switch (get_convert_type(frame->format, frame->full_range)) {
+	switch (get_convert_type(frame->format, frame->full_range,
+				 frame->trc)) {
 	case CONVERT_422_PACK:
 	case CONVERT_800:
 	case CONVERT_RGB_LIMITED:
@@ -1913,6 +1980,10 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_422_A:
 	case CONVERT_444_A:
 	case CONVERT_444_A_PACK:
+	case CONVERT_I010_PQ_2020_709:
+	case CONVERT_I010_HLG_2020_709:
+	case CONVERT_P010_PQ_2020_709:
+	case CONVERT_P010_HLG_2020_709:
 		for (size_t c = 0; c < MAX_AV_PLANES; c++) {
 			if (tex[c])
 				gs_texture_set_image(tex[c], frame->data[c],
@@ -1927,7 +1998,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 }
 
 static const char *select_conversion_technique(enum video_format format,
-					       bool full_range)
+					       bool full_range, uint8_t trc)
 {
 	switch (format) {
 	case VIDEO_FORMAT_UYVY:
@@ -1969,6 +2040,18 @@ static const char *select_conversion_technique(enum video_format format,
 	case VIDEO_FORMAT_AYUV:
 		return "AYUV_Reverse";
 
+	case VIDEO_FORMAT_I010: {
+		const bool hlg = trc == VIDEO_TRC_HLG;
+		return hlg ? "I010_HLG_2020_709_Reverse"
+			   : "I010_PQ_2020_709_Reverse";
+	}
+
+	case VIDEO_FORMAT_P010: {
+		const bool hlg = trc == VIDEO_TRC_HLG;
+		return hlg ? "P010_HLG_2020_709_Reverse"
+			   : "P010_PQ_2020_709_Reverse";
+	}
+
 	case VIDEO_FORMAT_BGRA:
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_RGBA:
@@ -1980,6 +2063,11 @@ static const char *select_conversion_technique(enum video_format format,
 		break;
 	}
 	return NULL;
+}
+
+static bool need_linear_output(enum video_format format)
+{
+	return (format == VIDEO_FORMAT_I010) || (format == VIDEO_FORMAT_P010);
 }
 
 static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
@@ -2008,14 +2096,18 @@ static bool update_async_texrender(struct obs_source *source,
 	uint32_t cx = source->async_width;
 	uint32_t cy = source->async_height;
 
+	const char *tech_name = select_conversion_technique(
+		frame->format, frame->full_range, frame->trc);
 	gs_effect_t *conv = obs->video.conversion_effect;
-	const char *tech_name =
-		select_conversion_technique(frame->format, frame->full_range);
 	gs_technique_t *tech = gs_effect_get_technique(conv, tech_name);
+	const bool linear = need_linear_output(frame->format);
 
 	const bool success = gs_texrender_begin(texrender, cx, cy);
 
 	if (success) {
+		const bool previous = gs_framebuffer_srgb_enabled();
+		gs_enable_framebuffer_srgb(linear);
+
 		gs_enable_blending(false);
 
 		gs_technique_begin(tech);
@@ -2042,6 +2134,11 @@ static bool update_async_texrender(struct obs_source *source,
 		set_eparam(conv, "width_d2", (float)cx * 0.5f);
 		set_eparam(conv, "height_d2", (float)cy * 0.5f);
 		set_eparam(conv, "width_x2_i", 0.5f / (float)cx);
+
+		const float maximum_nits =
+			(frame->trc == VIDEO_TRC_HLG) ? 1000.f : 10000.f;
+		set_eparam(conv, "maximum_over_sdr_white_nits",
+			   maximum_nits / obs_get_video_sdr_white_level());
 
 		struct vec4 vec0, vec1, vec2;
 		vec4_set(&vec0, frame->color_matrix[0], frame->color_matrix[1],
@@ -2074,6 +2171,8 @@ static bool update_async_texrender(struct obs_source *source,
 
 		gs_enable_blending(true);
 
+		gs_enable_framebuffer_srgb(previous);
+
 		gs_texrender_end(texrender);
 	}
 
@@ -2104,7 +2203,7 @@ bool update_async_textures(struct obs_source *source,
 	if (source->async_gpu_conversion && texrender)
 		return update_async_texrender(source, frame, tex, texrender);
 
-	type = get_convert_type(frame->format, frame->full_range);
+	type = get_convert_type(frame->format, frame->full_range, frame->trc);
 	if (type == CONVERT_NONE) {
 		gs_texture_set_image(tex[0], frame->data[0], frame->linesize[0],
 				     false);
@@ -2259,7 +2358,10 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 			obs_get_base_effect(OBS_EFFECT_DEFAULT);
 		const char *tech_name = "Draw";
 		float multiplier = 1.0;
-		const enum gs_color_space source_space = GS_CS_SRGB;
+		const enum gs_color_space source_space =
+			(source->async_color_format == GS_RGBA16F)
+				? GS_CS_709_EXTENDED
+				: GS_CS_SRGB;
 		const enum gs_color_space current_space = gs_get_color_space();
 		bool linear_srgb = gs_get_linear_srgb();
 		switch (source_space) {
@@ -2690,8 +2792,10 @@ obs_source_get_color_space(obs_source_t *source, size_t count,
 				source->filter_parent, count, preferred_spaces);
 	}
 
-	if (source->info.output_flags & OBS_SOURCE_ASYNC)
-		return GS_CS_SRGB;
+	if (source->info.output_flags & OBS_SOURCE_ASYNC) {
+		return convert_video_space(source->async_format, count,
+					   preferred_spaces);
+	}
 
 	assert(source->context.data);
 	return source->info.video_get_color_space
@@ -3011,6 +3115,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 {
 	dst->flip = src->flip;
 	dst->flags = src->flags;
+	dst->trc = src->trc;
 	dst->full_range = src->full_range;
 	dst->timestamp = src->timestamp;
 	memcpy(dst->color_matrix, src->color_matrix, sizeof(float) * 16);
@@ -3021,7 +3126,8 @@ static void copy_frame_data(struct obs_source_frame *dst,
 	}
 
 	switch (src->format) {
-	case VIDEO_FORMAT_I420: {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_I010: {
 		const uint32_t height = dst->height;
 		const uint32_t half_height = (height + 1) / 2;
 		copy_frame_data_plane(dst, src, 0, height);
@@ -3030,7 +3136,8 @@ static void copy_frame_data(struct obs_source_frame *dst,
 		break;
 	}
 
-	case VIDEO_FORMAT_NV12: {
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_P010: {
 		const uint32_t height = dst->height;
 		const uint32_t half_height = (height + 1) / 2;
 		copy_frame_data_plane(dst, src, 0, height);
@@ -3089,8 +3196,9 @@ static inline bool async_texture_changed(struct obs_source *source,
 {
 	enum convert_type prev, cur;
 	prev = get_convert_type(source->async_cache_format,
-				source->async_cache_full_range);
-	cur = get_convert_type(frame->format, frame->full_range);
+				source->async_cache_full_range,
+				source->async_cache_trc);
+	cur = get_convert_type(frame->format, frame->full_range, frame->trc);
 
 	return source->async_cache_width != frame->width ||
 	       source->async_cache_height != frame->height || prev != cur;
@@ -3149,6 +3257,7 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 	const enum video_format format = frame->format;
 	source->async_cache_format = format;
 	source->async_cache_full_range = frame->full_range;
+	source->async_cache_trc = frame->trc;
 
 	for (size_t i = 0; i < source->async_cache.num; i++) {
 		struct async_frame *af = &source->async_cache.array[i];
@@ -3260,6 +3369,7 @@ void obs_source_output_video2(obs_source_t *source,
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
+	new_frame.trc = frame->trc;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));
@@ -3400,6 +3510,7 @@ void obs_source_preload_video2(obs_source_t *source,
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
+	new_frame.trc = frame->trc;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));
@@ -3510,6 +3621,7 @@ void obs_source_set_video_frame2(obs_source_t *source,
 	new_frame.full_range = range == VIDEO_RANGE_FULL;
 	new_frame.flip = frame->flip;
 	new_frame.flags = frame->flags;
+	new_frame.trc = frame->trc;
 
 	memcpy(&new_frame.color_matrix, &frame->color_matrix,
 	       sizeof(frame->color_matrix));
