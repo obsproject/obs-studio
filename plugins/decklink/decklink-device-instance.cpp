@@ -305,7 +305,8 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	if (mode_ == nullptr)
 		return;
 
-	currentFrame.format = ConvertPixelFormat(pixelFormat);
+	const enum video_format format = ConvertPixelFormat(pixelFormat);
+	currentFrame.format = format;
 
 	colorSpace = static_cast<DeckLinkInput *>(decklink)->GetColorSpace();
 	if (colorSpace == VIDEO_CS_DEFAULT) {
@@ -323,10 +324,9 @@ void DeckLinkDeviceInstance::SetupVideoFormat(DeckLinkDeviceMode *mode_)
 	colorRange = static_cast<DeckLinkInput *>(decklink)->GetColorRange();
 	currentFrame.range = colorRange;
 
-	video_format_get_parameters(activeColorSpace, colorRange,
-				    currentFrame.color_matrix,
-				    currentFrame.color_range_min,
-				    currentFrame.color_range_max);
+	video_format_get_parameters_for_format(
+		activeColorSpace, colorRange, format, currentFrame.color_matrix,
+		currentFrame.color_range_min, currentFrame.color_range_max);
 
 	delete convertFrame;
 

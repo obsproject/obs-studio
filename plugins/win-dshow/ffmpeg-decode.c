@@ -368,7 +368,9 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 		frame->linesize[i] = decode->frame->linesize[i];
 	}
 
-	frame->format = convert_pixel_format(decode->frame->format);
+	const enum video_format format =
+		convert_pixel_format(decode->frame->format);
+	frame->format = format;
 
 	if (range == VIDEO_RANGE_DEFAULT) {
 		range = (decode->frame->color_range == AVCOL_RANGE_JPEG)
@@ -379,8 +381,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	const enum video_colorspace cs = convert_color_space(
 		decode->frame->colorspace, decode->frame->color_trc);
 
-	const bool success = video_format_get_parameters(
-		cs, range, frame->color_matrix, frame->color_range_min,
+	const bool success = video_format_get_parameters_for_format(
+		cs, range, format, frame->color_matrix, frame->color_range_min,
 		frame->color_range_max);
 	if (!success) {
 		blog(LOG_ERROR,

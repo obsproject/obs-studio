@@ -121,12 +121,16 @@ static void v4l2_prep_obs_frame(struct v4l2_data *data,
 	memset(frame, 0, sizeof(struct obs_source_frame));
 	memset(plane_offsets, 0, sizeof(size_t) * MAX_AV_PLANES);
 
+	const enum video_format format = v4l2_to_obs_video_format(data->pixfmt);
+
 	frame->width = data->width;
 	frame->height = data->height;
-	frame->format = v4l2_to_obs_video_format(data->pixfmt);
-	video_format_get_parameters(VIDEO_CS_DEFAULT, data->color_range,
-				    frame->color_matrix, frame->color_range_min,
-				    frame->color_range_max);
+	frame->format = format;
+	video_format_get_parameters_for_format(VIDEO_CS_DEFAULT,
+					       data->color_range, format,
+					       frame->color_matrix,
+					       frame->color_range_min,
+					       frame->color_range_max);
 
 	switch (data->pixfmt) {
 	case V4L2_PIX_FMT_NV12:

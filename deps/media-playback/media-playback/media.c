@@ -419,10 +419,9 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->format = new_format;
 		frame->full_range = new_range == VIDEO_RANGE_FULL;
 
-		success = video_format_get_parameters(new_space, new_range,
-						      frame->color_matrix,
-						      frame->color_range_min,
-						      frame->color_range_max);
+		success = video_format_get_parameters_for_format(
+			new_space, new_range, new_format, frame->color_matrix,
+			frame->color_range_min, frame->color_range_max);
 
 		frame->format = new_format;
 		m->cur_space = new_space;
