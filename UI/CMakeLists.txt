@@ -26,6 +26,12 @@ if(TARGET obs-browser
     obs-browser-panels INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
 endif()
 
+set(OAUTH_BASE_URL
+    "https://auth.obsproject.com/"
+    CACHE STRING "Default OAuth base URL")
+
+mark_as_advanced(OAUTH_BASE_URL)
+
 if(NOT DEFINED TWITCH_CLIENTID
    OR "${TWITCH_CLIENTID}" STREQUAL ""
    OR NOT DEFINED TWITCH_HASH
