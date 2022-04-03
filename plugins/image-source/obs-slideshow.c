@@ -27,6 +27,7 @@
 #define S_MODE                         "slide_mode"
 #define S_MODE_AUTO                    "mode_auto"
 #define S_MODE_MANUAL                  "mode_manual"
+#define S_MAX_MEMORY_USAGE             "max_memory_usage"
 
 #define TR_CUT                         "cut"
 #define TR_FADE                        "fade"
@@ -50,6 +51,7 @@
 #define T_MODE                         T_("SlideMode")
 #define T_MODE_AUTO                    T_("SlideMode.Auto")
 #define T_MODE_MANUAL                  T_("SlideMode.Manual")
+#define T_MAX_MEMORY_USAGE             T_("MaxMemoryUsage")
 
 #define T_TR_(text) obs_module_text("SlideShow.Transition." text)
 #define T_TR_CUT                       T_TR_("Cut")
@@ -64,7 +66,6 @@
 extern uint64_t image_source_get_memory_usage(void *data);
 
 #define BYTES_TO_MBYTES (1024 * 1024)
-#define MAX_MEM_USAGE (400 * BYTES_TO_MBYTES)
 
 struct image_file_data {
 	char *path;
@@ -287,6 +288,7 @@ static void ss_update(void *data, obs_data_t *settings)
 	size_t count;
 	const char *behavior;
 	const char *mode;
+	uint32_t max_memory_usage;
 
 	/* ------------------------------------- */
 	/* get settings data */
@@ -329,6 +331,10 @@ static void ss_update(void *data, obs_data_t *settings)
 	array = obs_data_get_array(settings, S_FILES);
 	count = obs_data_array_count(array);
 
+	max_memory_usage =
+		(uint32_t)obs_data_get_int(settings, S_MAX_MEMORY_USAGE) *
+		BYTES_TO_MBYTES;
+
 	/* ------------------------------------- */
 	/* create new list of sources */
 
@@ -362,7 +368,7 @@ static void ss_update(void *data, obs_data_t *settings)
 				add_file(ss, &new_files.da, dir_path.array, &cx,
 					 &cy);
 
-				if (ss->mem_usage >= MAX_MEM_USAGE)
+				if (ss->mem_usage >= max_memory_usage)
 					break;
 			}
 
@@ -374,7 +380,7 @@ static void ss_update(void *data, obs_data_t *settings)
 
 		obs_data_release(item);
 
-		if (ss->mem_usage >= MAX_MEM_USAGE)
+		if (ss->mem_usage >= max_memory_usage)
 			break;
 	}
 
@@ -843,6 +849,7 @@ static void ss_defaults(obs_data_t *settings)
 				    S_BEHAVIOR_ALWAYS_PLAY);
 	obs_data_set_default_string(settings, S_MODE, S_MODE_AUTO);
 	obs_data_set_default_bool(settings, S_LOOP, true);
+	obs_data_set_default_int(settings, S_MAX_MEMORY_USAGE, 400);
 }
 
 static const char *file_filter =
@@ -932,6 +939,10 @@ static obs_properties_t *ss_properties(void *data)
 					 OBS_EDITABLE_LIST_TYPE_FILES,
 					 file_filter, path.array);
 	dstr_free(&path);
+
+	p = obs_properties_add_int(ppts, S_MAX_MEMORY_USAGE, T_MAX_MEMORY_USAGE,
+				   0, 32768, 1);
+	obs_property_int_set_suffix(p, " MB");
 
 	return ppts;
 }
