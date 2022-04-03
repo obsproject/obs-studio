@@ -22,8 +22,8 @@ using namespace json11;
 
 /* ------------------------------------------------------------------------- */
 
-#define TWITCH_AUTH_URL "https://obsproject.com/app-auth/twitch?action=redirect"
-#define TWITCH_TOKEN_URL "https://obsproject.com/app-auth/twitch-token"
+#define TWITCH_AUTH_URL OAUTH_BASE_URL "v1/twitch/redirect"
+#define TWITCH_TOKEN_URL OAUTH_BASE_URL "v1/twitch/token"
 
 #define TWITCH_SCOPE_VERSION 1
 
