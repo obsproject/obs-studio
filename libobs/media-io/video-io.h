@@ -250,6 +250,10 @@ EXPORT bool video_format_get_parameters(enum video_colorspace color_space,
 					enum video_range_type range,
 					float matrix[16], float min_range[3],
 					float max_range[3]);
+EXPORT bool video_format_get_parameters_for_format(
+	enum video_colorspace color_space, enum video_range_type range,
+	enum video_format format, float matrix[16], float min_range[3],
+	float max_range[3]);
 
 #define VIDEO_OUTPUT_SUCCESS 0
 #define VIDEO_OUTPUT_INVALIDPARAM -1
