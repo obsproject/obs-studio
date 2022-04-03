@@ -131,6 +131,19 @@ Video Handler
 
 ---------------------
 
+.. function:: bool video_format_get_parameters_for_format(enum video_colorspace color_space, enum video_range_type range, enum video_format format, float matrix[16], float min_range[3], float max_range[3])
+
+   Converts a color space/range to matrix/min/max values for a given video format.
+
+   :param color_space: Color space to convert
+   :param range:       Color range to convert
+   :param format:      Video format
+   :param matrix:      Pointer to the matrix
+   :param min_range:   Pointer to get the minimum range value
+   :param max_range:   Pointer to get the maximum range value
+
+---------------------
+
 .. function:: bool video_output_connect(video_t *video, const struct video_scale_info *conversion, void (*callback)(void *param, struct video_data *frame), void *param)
 
    Connects a raw video callback to the video output handler.
