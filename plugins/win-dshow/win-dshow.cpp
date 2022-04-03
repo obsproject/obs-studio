@@ -1140,10 +1140,10 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	range = GetColorRange(settings);
 	frame.range = range;
 
-	bool success = video_format_get_parameters(cs, range,
-						   frame.color_matrix,
-						   frame.color_range_min,
-						   frame.color_range_max);
+	bool success = video_format_get_parameters_for_format(
+		cs, range, ConvertVideoFormat(videoConfig.format),
+		frame.color_matrix, frame.color_range_min,
+		frame.color_range_max);
 	if (!success) {
 		blog(LOG_ERROR,
 		     "Failed to get video format parameters for "

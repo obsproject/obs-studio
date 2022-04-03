@@ -546,8 +546,9 @@ static inline void set_video_matrix(struct obs_core_video *video,
 	struct vec4 r_row;
 
 	if (format_is_yuv(ovi->output_format)) {
-		video_format_get_parameters(ovi->colorspace, ovi->range,
-					    (float *)&mat, NULL, NULL);
+		video_format_get_parameters_for_format(
+			ovi->colorspace, ovi->range, ovi->output_format,
+			(float *)&mat, NULL, NULL);
 		matrix4_inv(&mat, &mat);
 
 		/* swap R and G */

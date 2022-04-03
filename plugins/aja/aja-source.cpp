@@ -149,21 +149,25 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 		return;
 	}
 
+	const enum video_format obs_vid_fmt =
+		aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
+
 	struct obs_source_frame2 obsFrame;
 	obsFrame.flip = false;
 	obsFrame.timestamp = os_gettime_ns();
 	obsFrame.width = fd.GetRasterWidth();
 	obsFrame.height = fd.GetRasterHeight();
-	obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
+	obsFrame.format = obs_vid_fmt;
 	obsFrame.data[0] = mTestPattern.data();
 	obsFrame.linesize[0] = fd.GetBytesPerRow();
 	video_colorspace colorspace = VIDEO_CS_709;
 	if (NTV2_IS_SD_VIDEO_FORMAT(vid_fmt))
 		colorspace = VIDEO_CS_601;
-	video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
-				    obsFrame.color_matrix,
-				    obsFrame.color_range_min,
-				    obsFrame.color_range_max);
+	video_format_get_parameters_for_format(colorspace, VIDEO_RANGE_PARTIAL,
+					       obs_vid_fmt,
+					       obsFrame.color_matrix,
+					       obsFrame.color_range_min,
+					       obsFrame.color_range_max);
 	obs_source_output_video2(mSource, &obsFrame);
 	blog(LOG_DEBUG, "AJASource::GenerateTestPattern: Black");
 }
@@ -354,24 +358,27 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			actualVideoFormat = aja::GetLevelAFormatForLevelBFormat(
 				videoFormat);
 
+		const enum video_format obs_vid_fmt =
+			aja::AJAPixelFormatToOBSVideoFormat(
+				sourceProps.pixelFormat);
+
 		NTV2FormatDesc fd(actualVideoFormat, pixelFormat);
 		struct obs_source_frame2 obsFrame;
 		obsFrame.flip = false;
 		obsFrame.timestamp = os_gettime_ns();
 		obsFrame.width = fd.GetRasterWidth();
 		obsFrame.height = fd.GetRasterHeight();
-		obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(
-			sourceProps.pixelFormat);
+		obsFrame.format = obs_vid_fmt;
 		obsFrame.data[0] = reinterpret_cast<uint8_t *>(
 			(ULWord *)ajaSource->mVideoBuffer.GetHostPointer());
 		obsFrame.linesize[0] = fd.GetBytesPerRow();
 		video_colorspace colorspace = VIDEO_CS_709;
 		if (NTV2_IS_SD_VIDEO_FORMAT(actualVideoFormat))
 			colorspace = VIDEO_CS_601;
-		video_format_get_parameters(colorspace, VIDEO_RANGE_PARTIAL,
-					    obsFrame.color_matrix,
-					    obsFrame.color_range_min,
-					    obsFrame.color_range_max);
+		video_format_get_parameters_for_format(
+			colorspace, VIDEO_RANGE_PARTIAL, obs_vid_fmt,
+			obsFrame.color_matrix, obsFrame.color_range_min,
+			obsFrame.color_range_max);
 
 		obs_source_output_video2(ajaSource->mSource, &obsFrame);
 

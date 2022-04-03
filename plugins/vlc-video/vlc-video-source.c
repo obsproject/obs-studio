@@ -420,10 +420,10 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 		c->frame.full_range = new_range;
 		range = c->frame.full_range ? VIDEO_RANGE_FULL
 					    : VIDEO_RANGE_PARTIAL;
-		video_format_get_parameters(VIDEO_CS_DEFAULT, range,
-					    c->frame.color_matrix,
-					    c->frame.color_range_min,
-					    c->frame.color_range_max);
+		video_format_get_parameters_for_format(
+			VIDEO_CS_DEFAULT, range, new_format,
+			c->frame.color_matrix, c->frame.color_range_min,
+			c->frame.color_range_max);
 	}
 
 	while (c->frame.data[i]) {
