@@ -794,6 +794,7 @@ static inline bool obs_init_hotkeys(void)
 {
 	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
 	bool success = false;
+	const bool use_thread = false;
 
 	assert(hotkeys != NULL);
 
@@ -815,11 +816,13 @@ static inline bool obs_init_hotkeys(void)
 
 	if (os_event_init(&hotkeys->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
-	if (pthread_create(&hotkeys->hotkey_thread, NULL, obs_hotkey_thread,
+	if (use_thread) {
+		if (pthread_create(&hotkeys->hotkey_thread, NULL, obs_hotkey_thread,
 			   NULL))
-		goto fail;
+			goto fail;
 
-	hotkeys->hotkey_thread_initialized = true;
+		hotkeys->hotkey_thread_initialized = true;
+	}
 
 	success = true;
 
@@ -900,6 +903,8 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	if (!obs_init_data())
 		return false;
 	if (!obs_init_handlers())
+		return false;
+	if (!obs_init_hotkeys())
 		return false;
 
 	obs->destruction_task_thread = os_task_queue_create();
@@ -1079,7 +1084,7 @@ void obs_shutdown(void)
 	obs_free_data();
 	obs_free_audio();
 	obs_free_video();
-	// obs_free_hotkeys();
+	obs_free_hotkeys();
 	obs_free_graphics();
 	proc_handler_destroy(obs->procs);
 	signal_handler_destroy(obs->signals);
