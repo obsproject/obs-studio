@@ -672,6 +672,8 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 		RemuxEntryColumn::State, QHeaderView::ResizeMode::Fixed);
 	ui->tableView->setEditTriggers(
 		QAbstractItemView::EditTrigger::CurrentChanged);
+	ui->tableView->setTextElideMode(Qt::ElideMiddle);
+	ui->tableView->setWordWrap(false);
 
 	installEventFilter(CreateShortcutFilter());
 
