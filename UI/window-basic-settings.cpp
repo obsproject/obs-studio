@@ -2533,7 +2533,9 @@ void OBSBasicSettings::LoadAudioSettings()
 void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 {
 	const QString text = ui->colorFormat->currentText();
-	if (ui->colorSpace->currentIndex() >= 3) {
+	switch (ui->colorSpace->currentIndex()) {
+	case 3: /* Rec.2020 (PQ) */
+	case 4: /* Rec.2020 (HLG) */
 		if (text == "P010") {
 			ui->advancedMsg2->clear();
 		} else if (text == "I010") {
@@ -2543,15 +2545,13 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 			ui->advancedMsg2->setText(QTStr(
 				"Basic.Settings.Advanced.FormatWarning2020"));
 		}
-	} else {
+		break;
+	default:
 		if (text == "NV12") {
 			ui->advancedMsg2->clear();
-		} else if (text == "I010") {
+		} else if ((text == "I010") || (text == "P010")) {
 			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarningI010"));
-		} else if (text == "P010") {
-			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarningP010"));
+				"Basic.Settings.Advanced.FormatWarning10BitSdr"));
 		} else {
 			ui->advancedMsg2->setText(
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
