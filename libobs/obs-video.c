@@ -378,7 +378,7 @@ stage_output_texture(struct obs_core_video *video, int cur_texture,
 
 		video->textures_copied[cur_texture] = true;
 	} else if (video->texture_converted) {
-		for (int i = 0; i < channel_count; i++) {
+		for (size_t i = 0; i < channel_count; i++) {
 			gs_stagesurf_t *copy = copy_surfaces[i];
 			if (copy) {
 				gs_stage_texture(copy, convert_textures[i]);
