@@ -34,8 +34,6 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NONE;
 	case AV_PIX_FMT_YUV420P:
 		return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:
-		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_YUYV422:
 		return VIDEO_FORMAT_YUY2;
 	case AV_PIX_FMT_YUV422P:
@@ -44,18 +42,24 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_I444;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:
 		return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:
-		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_YUVA420P:
 		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUV420P10LE:
+		return VIDEO_FORMAT_I010;
 	case AV_PIX_FMT_YUVA422P:
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_P010LE:
+		return VIDEO_FORMAT_P010;
 	default:;
 	}
 
@@ -123,6 +127,9 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
+	case AVCOL_SPC_BT2020_NCL:
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2020_HLG
+						       : VIDEO_CS_2020_PQ;
 	default:
 		return VIDEO_CS_DEFAULT;
 	}
@@ -437,6 +444,9 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
+	frame->trc = (f->color_trc == AVCOL_TRC_ARIB_STD_B67)
+			     ? VIDEO_TRC_HLG
+			     : VIDEO_TRC_DEFAULT;
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
 		if (!f->key_frame)

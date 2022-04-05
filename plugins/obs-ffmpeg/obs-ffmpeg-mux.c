@@ -144,6 +144,15 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 		trc = AVCOL_TRC_IEC61966_2_1;
 		spc = AVCOL_SPC_BT709;
 		break;
+	case VIDEO_CS_2020_PQ:
+		pri = AVCOL_PRI_BT2020;
+		trc = AVCOL_TRC_SMPTE2084;
+		spc = AVCOL_SPC_BT2020_NCL;
+		break;
+	case VIDEO_CS_2020_HLG:
+		pri = AVCOL_PRI_BT2020;
+		trc = AVCOL_TRC_ARIB_STD_B67;
+		spc = AVCOL_SPC_BT2020_NCL;
 	}
 
 	const enum AVColorRange range = (info->range == VIDEO_RANGE_FULL)

@@ -187,8 +187,9 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 
 static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 {
+	struct obs_core_video *const video = &obs->video;
 	return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
-	       obs->video.using_nv12_tex;
+	       (video->using_p010_tex || video->using_nv12_tex);
 }
 
 static void add_connection(struct obs_encoder *encoder)

@@ -72,7 +72,15 @@ static const char *svt_av1_getname(void *unused)
 static void av1_video_info(void *data, struct video_scale_info *info)
 {
 	UNUSED_PARAMETER(data);
-	info->format = VIDEO_FORMAT_I420;
+
+	switch (info->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		info->format = VIDEO_FORMAT_I010;
+		break;
+	default:
+		info->format = VIDEO_FORMAT_I420;
+	}
 }
 
 static bool av1_init_codec(struct av1_encoder *enc)
@@ -190,21 +198,30 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 
 	switch (info.colorspace) {
 	case VIDEO_CS_601:
-		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
 		enc->context->color_primaries = AVCOL_PRI_SMPTE170M;
+		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
 		enc->context->colorspace = AVCOL_SPC_SMPTE170M;
 		break;
 	case VIDEO_CS_DEFAULT:
 	case VIDEO_CS_709:
-		enc->context->color_trc = AVCOL_TRC_BT709;
 		enc->context->color_primaries = AVCOL_PRI_BT709;
+		enc->context->color_trc = AVCOL_TRC_BT709;
 		enc->context->colorspace = AVCOL_SPC_BT709;
 		break;
 	case VIDEO_CS_SRGB:
-		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
 		enc->context->color_primaries = AVCOL_PRI_BT709;
+		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
 		enc->context->colorspace = AVCOL_SPC_BT709;
 		break;
+	case VIDEO_CS_2020_PQ:
+		enc->context->color_primaries = AVCOL_PRI_BT2020;
+		enc->context->color_trc = AVCOL_TRC_SMPTE2084;
+		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
+		break;
+	case VIDEO_CS_2020_HLG:
+		enc->context->color_primaries = AVCOL_PRI_BT2020;
+		enc->context->color_trc = AVCOL_TRC_ARIB_STD_B67;
+		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
 	}
 
 	if (keyint_sec)

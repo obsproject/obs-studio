@@ -266,6 +266,7 @@ struct obs_source_frame {
 	float color_range_max[3];
 	bool flip;
 	uint8_t flags;
+	uint8_t trc; /* enum video_trc */
 
 	/* used internally by libobs */
 	volatile long refs;
@@ -286,6 +287,7 @@ struct obs_source_frame2 {
 	float color_range_max[3];
 	bool flip;
 	uint8_t flags;
+	uint8_t trc; /* enum video_trc */
 };
 
 /** Access to the argc/argv used to start OBS. What you see is what you get. */
@@ -813,6 +815,7 @@ EXPORT uint32_t obs_get_total_frames(void);
 EXPORT uint32_t obs_get_lagged_frames(void);
 
 EXPORT bool obs_nv12_tex_active(void);
+EXPORT bool obs_p010_tex_active(void);
 
 EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);

@@ -313,6 +313,9 @@ static void render_convert_texture(struct obs_core_video *video,
 		gs_effect_get_param_by_name(effect, "color_vec2");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *width_i = gs_effect_get_param_by_name(effect, "width_i");
+	gs_eparam_t *height_i = gs_effect_get_param_by_name(effect, "height_i");
+	gs_eparam_t *sdr_white_nits_over_maximum = gs_effect_get_param_by_name(
+		effect, "sdr_white_nits_over_maximum");
 
 	struct vec4 vec0, vec1, vec2;
 	vec4_set(&vec0, video->color_matrix[4], video->color_matrix[5],
@@ -325,8 +328,11 @@ static void render_convert_texture(struct obs_core_video *video,
 	gs_enable_blending(false);
 
 	if (convert_textures[0]) {
+		const float multiplier =
+			obs_get_video_sdr_white_level() / video->maximum_nits;
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
+		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
 		render_convert_plane(effect, convert_textures[0],
 				     video->conversion_techs[0]);
 
@@ -336,6 +342,10 @@ static void render_convert_texture(struct obs_core_video *video,
 			if (!convert_textures[2])
 				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
+			gs_effect_set_float(height_i,
+					    video->conversion_height_i);
+			gs_effect_set_float(sdr_white_nits_over_maximum,
+					    multiplier);
 			render_convert_plane(effect, convert_textures[1],
 					     video->conversion_techs[1]);
 
@@ -344,6 +354,10 @@ static void render_convert_texture(struct obs_core_video *video,
 				gs_effect_set_vec4(color_vec2, &vec2);
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
+				gs_effect_set_float(height_i,
+						    video->conversion_height_i);
+				gs_effect_set_float(sdr_white_nits_over_maximum,
+						    multiplier);
 				render_convert_plane(
 					effect, convert_textures[2],
 					video->conversion_techs[2]);
@@ -645,6 +659,54 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 		set_gpu_converted_plane(width, height, input->linesize[2],
 					output->linesize[2], input->data[2],
 					output->data[2]);
+
+		break;
+	}
+	case VIDEO_FORMAT_I010: {
+		const uint32_t width = info->width;
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(width * 2, height, input->linesize[0],
+					output->linesize[0], input->data[0],
+					output->data[0]);
+
+		const uint32_t height_d2 = height / 2;
+
+		set_gpu_converted_plane(width, height_d2, input->linesize[1],
+					output->linesize[1], input->data[1],
+					output->data[1]);
+
+		set_gpu_converted_plane(width, height_d2, input->linesize[2],
+					output->linesize[2], input->data[2],
+					output->data[2]);
+
+		break;
+	}
+	case VIDEO_FORMAT_P010: {
+		const uint32_t width_x2 = info->width * 2;
+		const uint32_t height = info->height;
+		const uint32_t height_d2 = height / 2;
+		if (input->linesize[1]) {
+			set_gpu_converted_plane(width_x2, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+			set_gpu_converted_plane(width_x2, height_d2,
+						input->linesize[1],
+						output->linesize[1],
+						input->data[1],
+						output->data[1]);
+		} else {
+			const uint8_t *const in_uv = set_gpu_converted_plane(
+				width_x2, height, input->linesize[0],
+				output->linesize[0], input->data[0],
+				output->data[0]);
+			set_gpu_converted_plane(width_x2, height_d2,
+						input->linesize[0],
+						output->linesize[1], in_uv,
+						output->data[1]);
+		}
 
 		break;
 	}

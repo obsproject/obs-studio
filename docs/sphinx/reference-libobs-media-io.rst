@@ -33,6 +33,32 @@ Video Handler
 
    - VIDEO_FORMAT_I444
 
+   - VIDEO_FORMAT_BGR3
+
+   - VIDEO_FORMAT_I422
+
+   - VIDEO_FORMAT_I40A
+
+   - VIDEO_FORMAT_I42A
+
+   - VIDEO_FORMAT_YUVA
+
+   - VIDEO_FORMAT_AYUV
+
+   - VIDEO_FORMAT_I010
+   - VIDEO_FORMAT_P010
+
+---------------------
+
+.. type:: enum video_trc
+
+   Transfer characteristics.  Can be one of the following values:
+
+   - VIDEO_TRC_DEFAULT - sRGB TRC for SDR, PQ TRC for HDR
+   - VIDEO_TRC_SRGB    - sRGB TRC
+   - VIDEO_TRC_PQ      - PQ
+   - VIDEO_TRC_HLG     - HLG
+
 ---------------------
 
 .. type:: enum video_colorspace
