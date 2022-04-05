@@ -419,7 +419,7 @@ prepare_macos_bundle() {
     if [ -d ./OBS.app/Contents/Resources/data/obs-scripting ]; then
         /bin/mv ./OBS.app/Contents/Resources/data/obs-scripting/obslua.so ./OBS.app/Contents/MacOS/
         /bin/mv ./OBS.app/Contents/Resources/data/obs-scripting/_obspython.so ./OBS.app/Contents/MacOS/
-        /bin/mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
+        /bin/mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/Resources/
         /bin/rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
     fi
     # dylibbundler will only copy actually linked files into bundle, but not symlinks

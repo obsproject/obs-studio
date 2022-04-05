@@ -14,6 +14,7 @@ on:
       - '**.md'
     branches:
       - master
+      - 'release/**'
 
 env:
   MACOS_CEF_BUILD_VERSION: '4638'
@@ -211,7 +212,7 @@ jobs:
           if [ -d ./OBS.app/Contents/Resources/data/obs-scripting ]; then
             mv ./OBS.app/Contents/Resources/data/obs-scripting/obslua.so ./OBS.app/Contents/MacOS/
             mv ./OBS.app/Contents/Resources/data/obs-scripting/_obspython.so ./OBS.app/Contents/MacOS/
-            mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/MacOS/
+            mv ./OBS.app/Contents/Resources/data/obs-scripting/obspython.py ./OBS.app/Contents/Resources/
             rm -rf ./OBS.app/Contents/Resources/data/obs-scripting/
           fi
 
@@ -581,7 +582,7 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64.zip -f --retry 5 -o cef.zip
-          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x64"
       - name: 'Configure'
         run: |
           mkdir ./build
@@ -690,7 +691,7 @@ jobs:
         if: steps.cef-cache.outputs.cache-hit != 'true'
         run: |
           curl -kL https://cdn-fastly.obsproject.com/downloads/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86.zip -f --retry 5 -o cef.zip
-          7z x cef.zip -o"${{ github.workspace }}/cmbuild"
+          7z x cef.zip -o"${{ github.workspace }}/cmbuild/cef_binary_${{ env.WINDOWS_CEF_BUILD_VERSION }}_windows_x86"
       - name: 'Configure'
         run: |
           mkdir ./build

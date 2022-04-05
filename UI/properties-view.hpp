@@ -102,7 +102,7 @@ private:
 	std::string type;
 	PropertiesReloadCallback reloadCallback;
 	PropertiesUpdateCallback callback = nullptr;
-	PropertiesVisualUpdateCb cb = nullptr;
+	PropertiesVisualUpdateCb visUpdateCb = nullptr;
 	int minSize;
 	std::vector<std::unique_ptr<WidgetInfo>> children;
 	std::string lastFocused;
@@ -188,7 +188,10 @@ public:
 
 	inline void UpdateSettings()
 	{
-		callback(OBSGetStrongRef(weakObj), nullptr, settings);
+		if (callback)
+			callback(OBSGetStrongRef(weakObj), nullptr, settings);
+		else if (visUpdateCb)
+			visUpdateCb(OBSGetStrongRef(weakObj), settings);
 	}
 	inline bool DeferUpdate() const { return deferUpdate; }
 

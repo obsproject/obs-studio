@@ -122,6 +122,7 @@ static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
 	    strncmp(service->server, RTMP_PROTOCOL, strlen(RTMP_PROTOCOL)) !=
 		    0) {
 		obs_data_set_bool(video_settings, "repeat_headers", true);
+		obs_data_set_bool(audio_settings, "set_to_ADTS", true);
 	}
 }
 
