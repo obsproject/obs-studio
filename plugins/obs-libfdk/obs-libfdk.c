@@ -96,6 +96,8 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 	int bitrate = (int)obs_data_get_int(settings, "bitrate") * 1000;
 	int afterburner = obs_data_get_bool(settings, "afterburner") ? 1 : 0;
 	audio_t *audio = obs_encoder_audio(encoder);
+	bool set_to_ADTS = obs_data_get_bool(settings, "set_to_ADTS");
+	int transmux = set_to_ADTS ? 2 : 0;
 	int mode = 0;
 	AACENC_ERROR err;
 
@@ -159,7 +161,9 @@ static void *libfdk_create(obs_data_t *settings, obs_encoder_t *encoder)
 		aacEncoder_SetParam(enc->fdkhandle, AACENC_BITRATEMODE, 0));
 	CHECK_LIBFDK(
 		aacEncoder_SetParam(enc->fdkhandle, AACENC_BITRATE, bitrate));
-	CHECK_LIBFDK(aacEncoder_SetParam(enc->fdkhandle, AACENC_TRANSMUX, 0));
+
+	CHECK_LIBFDK(
+		aacEncoder_SetParam(enc->fdkhandle, AACENC_TRANSMUX, transmux));
 	CHECK_LIBFDK(aacEncoder_SetParam(enc->fdkhandle, AACENC_AFTERBURNER,
 					 afterburner));
 

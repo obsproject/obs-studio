@@ -86,20 +86,10 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	OBSDataAutoRelease nd_settings = obs_source_get_settings(source);
 	obs_data_apply(oldSettings, nd_settings);
 
-	auto handle_memory = [](void *vp, obs_data_t *old_settings,
-				obs_data_t *new_settings) {
-		obs_source_t *source = reinterpret_cast<obs_source_t *>(vp);
-
-		obs_source_update(source, new_settings);
-
-		UNUSED_PARAMETER(old_settings);
-		UNUSED_PARAMETER(vp);
-	};
-
 	view = new OBSPropertiesView(
 		nd_settings.Get(), source,
 		(PropertiesReloadCallback)obs_source_properties,
-		(PropertiesUpdateCallback)handle_memory,
+		(PropertiesUpdateCallback) nullptr, // No special handling required for undo/redo
 		(PropertiesVisualUpdateCb)obs_source_update);
 	view->setMinimumHeight(150);
 

@@ -3531,6 +3531,8 @@ void OBSBasic::ActivateAudioSource(OBSSource source)
 {
 	if (SourceMixerHidden(source))
 		return;
+	if (!obs_source_active(source))
+		return;
 	if (!obs_source_audio_active(source))
 		return;
 
@@ -4412,6 +4414,8 @@ bool OBSBasic::ResetAudio()
 	return obs_reset_audio(&ai);
 }
 
+extern char *get_new_source_name(const char *name, const char *format);
+
 void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 				const char *deviceDesc, int channel)
 {
@@ -4435,10 +4439,11 @@ void OBSBasic::ResetAudioDevice(const char *sourceId, const char *deviceId,
 		}
 
 	} else if (!disable) {
+		BPtr<char> name = get_new_source_name(deviceDesc, "%s (%d)");
+
 		settings = obs_data_create();
 		obs_data_set_string(settings, "device_id", deviceId);
-		source = obs_source_create(sourceId, deviceDesc, settings,
-					   nullptr);
+		source = obs_source_create(sourceId, name, settings, nullptr);
 
 		obs_set_output_source(channel, source);
 	}
