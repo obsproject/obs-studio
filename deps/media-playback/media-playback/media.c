@@ -443,9 +443,21 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
-	frame->trc = (f->color_trc == AVCOL_TRC_ARIB_STD_B67)
-			     ? VIDEO_TRC_HLG
-			     : VIDEO_TRC_DEFAULT;
+	switch (f->color_trc) {
+	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_IEC61966_2_1:
+		frame->trc = VIDEO_TRC_SRGB;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		frame->trc = VIDEO_TRC_PQ;
+		break;
+	case AVCOL_TRC_ARIB_STD_B67:
+		frame->trc = VIDEO_TRC_HLG;
+		break;
+	default:
+		frame->trc = VIDEO_TRC_DEFAULT;
+	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
 		if (!f->key_frame)
