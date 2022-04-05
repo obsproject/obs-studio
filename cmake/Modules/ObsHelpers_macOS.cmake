@@ -265,7 +265,8 @@ endfunction()
 function(setup_obs_modules target)
 
   get_property(OBS_MODULE_LIST GLOBAL PROPERTY OBS_MODULE_LIST)
-  if("${OBS_MODULE_LIST}")
+  list(LENGTH OBS_MODULE_LIST _LEN)
+  if(_LEN GREATER 0)
     add_dependencies(${target} ${OBS_MODULE_LIST})
 
     install(
@@ -284,7 +285,8 @@ function(setup_obs_modules target)
 
   get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL
                PROPERTY OBS_SCRIPTING_MODULE_LIST)
-  if("${OBS_SCRIPTING_MODULE_LIST}")
+  list(LENGTH OBS_SCRIPTING_MODULE_LIST _LEN)
+  if(_LEN GREATER 0)
     add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
 
     install(
