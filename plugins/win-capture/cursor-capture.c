@@ -228,14 +228,14 @@ void cursor_draw(struct cursor_data *data, long x_offset, long y_offset,
 
 	if (data->visible && !!data->texture) {
 		gs_blend_state_push();
-		gs_blend_function(GS_BLEND_SRCALPHA, GS_BLEND_INVSRCALPHA);
-		gs_enable_color(true, true, true, false);
+		gs_blend_function_separate(GS_BLEND_SRCALPHA,
+					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
+					   GS_BLEND_INVSRCALPHA);
 
 		gs_matrix_push();
 		obs_source_draw(data->texture, x_draw, y_draw, 0, 0, false);
 		gs_matrix_pop();
 
-		gs_enable_color(true, true, true, true);
 		gs_blend_state_pop();
 	}
 }
