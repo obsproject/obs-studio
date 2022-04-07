@@ -23,6 +23,12 @@
 #include <stdint.h>
 #include <gio/gio.h>
 
+enum portal_capture_type {
+	PORTAL_CAPTURE_TYPE_MONITOR = 1 << 0,
+	PORTAL_CAPTURE_TYPE_WINDOW = 1 << 1,
+	PORTAL_CAPTURE_TYPE_VIRTUAL = 1 << 2,
+};
+
 enum portal_cursor_mode {
 	PORTAL_CURSOR_MODE_HIDDEN = 1 << 0,
 	PORTAL_CURSOR_MODE_EMBEDDED = 1 << 1,
