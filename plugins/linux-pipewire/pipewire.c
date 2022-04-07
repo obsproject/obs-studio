@@ -1434,8 +1434,10 @@ void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
 	obs_pw->restore_token =
 		bstrdup(obs_data_get_string(settings, "RestoreToken"));
 
-	if (!init_obs_pipewire(obs_pw))
+	if (!init_obs_pipewire(obs_pw)) {
 		g_clear_pointer(&obs_pw, bfree);
+		return NULL;
+	}
 
 	init_format_info(obs_pw);
 
