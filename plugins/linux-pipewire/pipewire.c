@@ -106,7 +106,7 @@ struct _obs_pipewire_data {
 		gs_texture_t *texture;
 	} cursor;
 
-	enum obs_pw_capture_type capture_type;
+	enum portal_capture_type capture_type;
 	struct obs_video_info video_info;
 	bool negotiated;
 
@@ -151,13 +151,16 @@ static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
 		blog(LOG_WARNING, "[pipewire] failed to parse server version");
 }
 
-static const char *capture_type_to_string(enum obs_pw_capture_type capture_type)
+static const char *capture_type_to_string(enum portal_capture_type capture_type)
 {
 	switch (capture_type) {
-	case DESKTOP_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_MONITOR:
 		return "desktop";
-	case WINDOW_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_WINDOW:
 		return "window";
+	case PORTAL_CAPTURE_TYPE_VIRTUAL:
+	default:
+		return "unknown";
 	}
 	return "unknown";
 }
@@ -1400,7 +1403,7 @@ static bool reload_session_cb(obs_properties_t *properties,
 
 /* obs_source_info methods */
 
-void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
+void *obs_pipewire_create(enum portal_capture_type capture_type,
 			  obs_data_t *settings, obs_source_t *source)
 {
 	obs_pipewire_data *obs_pw = bzalloc(sizeof(obs_pipewire_data));
@@ -1535,7 +1538,7 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 	}
 }
 
-enum obs_pw_capture_type
+enum portal_capture_type
 obs_pipewire_get_capture_type(obs_pipewire_data *obs_pw)
 {
 	return obs_pw->capture_type;
