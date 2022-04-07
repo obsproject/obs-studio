@@ -65,6 +65,19 @@ float4 PSFadeLinear(FragData f_in) : TARGET
 	return rgba;
 }
 
+float4 FadeSingle(FragData f_in)
+{
+	float4 a_val = tex_a.Sample(textureSampler, f_in.uv);
+	float4 rgba = a_val * fade_val;
+	return rgba;
+}
+
+float4 PSFadeSingle(FragData f_in) : TARGET
+{
+	float4 rgba = FadeSingle(f_in);
+	return rgba;
+}
+
 technique Fade
 {
 	pass
@@ -80,5 +93,14 @@ technique FadeLinear
 	{
 		vertex_shader = VSDefault(v_in);
 		pixel_shader = PSFadeLinear(f_in);
+	}
+}
+
+technique FadeSingle
+{
+	pass
+	{
+		vertex_shader = VSDefault(v_in);
+		pixel_shader = PSFadeSingle(f_in);
 	}
 }
