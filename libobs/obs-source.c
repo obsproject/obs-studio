@@ -2563,6 +2563,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 			    source_space)) {
 			gs_enable_blending(false);
 
+			struct vec4 clear_color;
+			vec4_zero(&clear_color);
+			gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
 			gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f,
 				 100.0f);
 
