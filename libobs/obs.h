@@ -1587,6 +1587,11 @@ EXPORT void
 obs_transition_video_render(obs_source_t *transition,
 			    obs_transition_video_render_callback_t callback);
 
+EXPORT void
+obs_transition_video_render2(obs_source_t *transition,
+			     obs_transition_video_render_callback_t callback,
+			     gs_texture_t *placeholder_texture);
+
 EXPORT enum gs_color_space
 obs_transition_video_get_color_space(obs_source_t *transition);
 
