@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QLabel>
+#include <QKeyEvent>
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
@@ -142,6 +143,24 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 		role = QPalette::WindowText;
 
 	widget->SetColor(palette.color(group, role), active, selected);
+}
+
+bool VisibilityItemDelegate::eventFilter(QObject *object, QEvent *event)
+{
+	QWidget *editor = qobject_cast<QWidget *>(object);
+	if (!editor)
+		return false;
+
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+
+		if (keyEvent->key() == Qt::Key_Tab ||
+		    keyEvent->key() == Qt::Key_Backtab) {
+			return false;
+		}
+	}
+
+	return QStyledItemDelegate::eventFilter(object, event);
 }
 
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
