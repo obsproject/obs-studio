@@ -80,7 +80,7 @@ using namespace DShow;
 #define TEXT_COLOR_DEFAULT  obs_module_text("ColorSpace.Default")
 #define TEXT_COLOR_709      obs_module_text("ColorSpace.709")
 #define TEXT_COLOR_601      obs_module_text("ColorSpace.601")
-#define TEXT_COLOR_2020     obs_module_text("ColorSpace.2020")
+#define TEXT_COLOR_2100     obs_module_text("ColorSpace.2100")
 #define TEXT_COLOR_RANGE    obs_module_text("ColorRange")
 #define TEXT_RANGE_DEFAULT  obs_module_text("ColorRange.Default")
 #define TEXT_RANGE_PARTIAL  obs_module_text("ColorRange.Partial")
@@ -1095,8 +1095,8 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 	if (astrcmpi(space, "601") == 0)
 		return VIDEO_CS_601;
 
-	if (astrcmpi(space, "2020") == 0)
-		return VIDEO_CS_2020_PQ;
+	if (astrcmpi(space, "2100") == 0)
+		return VIDEO_CS_2100_PQ;
 
 	return VIDEO_CS_DEFAULT;
 }
@@ -1944,7 +1944,7 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_property_list_add_string(p, TEXT_COLOR_DEFAULT, "default");
 	obs_property_list_add_string(p, TEXT_COLOR_709, "709");
 	obs_property_list_add_string(p, TEXT_COLOR_601, "601");
-	obs_property_list_add_string(p, TEXT_COLOR_2020, "2020");
+	obs_property_list_add_string(p, TEXT_COLOR_2100, "2100");
 
 	p = obs_properties_add_list(ppts, COLOR_RANGE, TEXT_COLOR_RANGE,
 				    OBS_COMBO_TYPE_LIST,

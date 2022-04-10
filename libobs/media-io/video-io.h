@@ -87,8 +87,8 @@ enum video_colorspace {
 	VIDEO_CS_601,
 	VIDEO_CS_709,
 	VIDEO_CS_SRGB,
-	VIDEO_CS_2020_PQ,
-	VIDEO_CS_2020_HLG,
+	VIDEO_CS_2100_PQ,
+	VIDEO_CS_2100_HLG,
 };
 
 enum video_range_type {
@@ -201,10 +201,10 @@ static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 		return "sRGB";
 	case VIDEO_CS_601:
 		return "Rec. 601";
-	case VIDEO_CS_2020_PQ:
-		return "Rec. 2020 (PQ)";
-	case VIDEO_CS_2020_HLG:
-		return "Rec. 2020 (HLG)";
+	case VIDEO_CS_2100_PQ:
+		return "Rec. 2100 (PQ)";
+	case VIDEO_CS_2100_HLG:
+		return "Rec. 2100 (HLG)";
 	}
 
 	return "Unknown";

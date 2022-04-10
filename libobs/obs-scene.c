@@ -1511,8 +1511,8 @@ scene_video_get_color_space(void *data, size_t count,
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
 		switch (ovi.colorspace) {
-		case VIDEO_CS_2020_PQ:
-		case VIDEO_CS_2020_HLG:
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
 			canvas_space = GS_CS_709_EXTENDED;
 		}
 	}

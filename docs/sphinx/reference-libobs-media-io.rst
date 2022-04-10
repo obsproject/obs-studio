@@ -69,8 +69,8 @@ Video Handler
    - VIDEO_CS_601      - Rec. 601 color space
    - VIDEO_CS_709      - Rec. 709 color space
    - VIDEO_CS_SRGB     - sRGB color space
-   - VIDEO_CS_2020_PQ  - Rec. 2020 color space, PQ transfer
-   - VIDEO_CS_2020_HLG - Rec. 2020 color space, HLG transfer
+   - VIDEO_CS_2100_PQ  - Rec. 2100 color space, PQ transfer
+   - VIDEO_CS_2100_HLG - Rec. 2100 color space, HLG transfer
 
 ---------------------
 

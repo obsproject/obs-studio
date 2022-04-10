@@ -80,11 +80,11 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		video->conversion_needed = true;
 		video->conversion_width_i = 1.f / (float)ovi->output_width;
 		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2020_PQ) {
+		if (ovi->colorspace == VIDEO_CS_2100_PQ) {
 			video->conversion_techs[0] = "I010_PQ_Y";
 			video->conversion_techs[1] = "I010_PQ_U";
 			video->conversion_techs[2] = "I010_PQ_V";
-		} else if (ovi->colorspace == VIDEO_CS_2020_HLG) {
+		} else if (ovi->colorspace == VIDEO_CS_2100_HLG) {
 			video->conversion_techs[0] = "I010_HLG_Y";
 			video->conversion_techs[1] = "I010_HLG_U";
 			video->conversion_techs[2] = "I010_HLG_V";
@@ -99,10 +99,10 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		video->conversion_needed = true;
 		video->conversion_width_i = 1.f / (float)ovi->output_width;
 		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2020_PQ) {
+		if (ovi->colorspace == VIDEO_CS_2100_PQ) {
 			video->conversion_techs[0] = "P010_PQ_Y";
 			video->conversion_techs[1] = "P010_PQ_UV";
-		} else if (ovi->colorspace == VIDEO_CS_2020_HLG) {
+		} else if (ovi->colorspace == VIDEO_CS_2100_HLG) {
 			video->conversion_techs[0] = "P010_HLG_Y";
 			video->conversion_techs[1] = "P010_HLG_UV";
 			video->maximum_nits = 1000.f;
@@ -387,8 +387,8 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 
 	enum gs_color_space space = GS_CS_SRGB;
 	switch (ovi->colorspace) {
-	case VIDEO_CS_2020_PQ:
-	case VIDEO_CS_2020_HLG:
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
 		space = GS_CS_709_EXTENDED;
 		break;
 	default:

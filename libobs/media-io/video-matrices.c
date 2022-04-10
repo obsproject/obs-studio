@@ -49,7 +49,7 @@ static struct {
 		0.2126f,
 	},
 	{
-		VIDEO_CS_2020_PQ,
+		VIDEO_CS_2100_PQ,
 		0.0593f,
 		0.2627f,
 	},
@@ -193,8 +193,8 @@ static bool video_format_get_parameters_for_bpc(
 
 	if ((color_space == VIDEO_CS_DEFAULT) || (color_space == VIDEO_CS_SRGB))
 		color_space = VIDEO_CS_709;
-	else if (color_space == VIDEO_CS_2020_HLG)
-		color_space = VIDEO_CS_2020_PQ;
+	else if (color_space == VIDEO_CS_2100_HLG)
+		color_space = VIDEO_CS_2100_PQ;
 
 	if (bpc < 8)
 		bpc = 8;
@@ -244,8 +244,8 @@ bool video_format_get_parameters(enum video_colorspace color_space,
 {
 	uint32_t bpc = 8;
 	switch (color_space) {
-	case VIDEO_CS_2020_PQ:
-	case VIDEO_CS_2020_HLG:
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
 		bpc = 10;
 	}
 

@@ -4302,10 +4302,10 @@ static inline enum video_colorspace GetVideoColorSpaceFromName(const char *name)
 		colorspace = VIDEO_CS_601;
 	else if (strcmp(name, "709") == 0)
 		colorspace = VIDEO_CS_709;
-	else if (strcmp(name, "2020PQ") == 0)
-		colorspace = VIDEO_CS_2020_PQ;
-	else if (strcmp(name, "2020HLG") == 0)
-		colorspace = VIDEO_CS_2020_HLG;
+	else if (strcmp(name, "2100PQ") == 0)
+		colorspace = VIDEO_CS_2100_PQ;
+	else if (strcmp(name, "2100HLG") == 0)
+		colorspace = VIDEO_CS_2100_HLG;
 
 	return colorspace;
 }

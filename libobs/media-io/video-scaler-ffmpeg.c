@@ -107,8 +107,8 @@ static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 	case VIDEO_CS_601:
 		colorspace = SWS_CS_ITU601;
 		break;
-	case VIDEO_CS_2020_PQ:
-	case VIDEO_CS_2020_HLG:
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
 		colorspace = SWS_CS_BT2020;
 	}
 
