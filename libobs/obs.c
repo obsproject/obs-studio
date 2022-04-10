@@ -54,7 +54,6 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 	video->conversion_techs[2] = NULL;
 	video->conversion_width_i = 0.f;
 	video->conversion_height_i = 0.f;
-	video->maximum_nits = 10000.f;
 
 	switch ((uint32_t)ovi->output_format) {
 	case VIDEO_FORMAT_I420:
@@ -88,7 +87,6 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 			video->conversion_techs[0] = "I010_HLG_Y";
 			video->conversion_techs[1] = "I010_HLG_U";
 			video->conversion_techs[2] = "I010_HLG_V";
-			video->maximum_nits = 1000.f;
 		} else {
 			video->conversion_techs[0] = "I010_SRGB_Y";
 			video->conversion_techs[1] = "I010_SRGB_U";
@@ -105,7 +103,6 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		} else if (ovi->colorspace == VIDEO_CS_2100_HLG) {
 			video->conversion_techs[0] = "P010_HLG_Y";
 			video->conversion_techs[1] = "P010_HLG_UV";
-			video->maximum_nits = 1000.f;
 		} else {
 			video->conversion_techs[0] = "P010_SRGB_Y";
 			video->conversion_techs[1] = "P010_SRGB_UV";
@@ -1443,12 +1440,19 @@ float obs_get_video_sdr_white_level(void)
 	return video->graphics ? video->sdr_white_level : 300.f;
 }
 
-void obs_set_video_sdr_white_level(float sdr_white_level)
+float obs_get_video_hdr_nominal_peak_level(void)
+{
+	struct obs_core_video *video = &obs->video;
+	return video->graphics ? video->hdr_nominal_peak_level : 1000.f;
+}
+
+void obs_set_video_levels(float sdr_white_level, float hdr_nominal_peak_level)
 {
 	struct obs_core_video *video = &obs->video;
 	assert(video->graphics);
 
-	video->sdr_white_level = (uint32_t)sdr_white_level;
+	video->sdr_white_level = sdr_white_level;
+	video->hdr_nominal_peak_level = hdr_nominal_peak_level;
 }
 
 bool obs_get_audio_info(struct obs_audio_info *oai)

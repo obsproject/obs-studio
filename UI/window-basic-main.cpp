@@ -1497,6 +1497,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_string(basicConfig, "Video", "ColorRange",
 				  "Partial");
 	config_set_default_uint(basicConfig, "Video", "SdrWhiteLevel", 300);
+	config_set_default_uint(basicConfig, "Video", "HdrNominalPeakLevel",
+				1000);
 
 	config_set_default_string(basicConfig, "Audio", "MonitoringDeviceId",
 				  "default");
@@ -4414,8 +4416,11 @@ int OBSBasic::ResetVideo()
 	}
 
 	if (ret == OBS_VIDEO_SUCCESS) {
-		obs_set_video_sdr_white_level((float)config_get_uint(
-			basicConfig, "Video", "SdrWhiteLevel"));
+		const float sdr_white_level = (float)config_get_uint(
+			basicConfig, "Video", "SdrWhiteLevel");
+		const float hdr_nominal_peak_level = (float)config_get_uint(
+			basicConfig, "Video", "HdrNominalPeakLevel");
+		obs_set_video_levels(sdr_white_level, hdr_nominal_peak_level);
 		OBSBasicStats::InitializeValues();
 		OBSProjector::UpdateMultiviewProjectors();
 	}

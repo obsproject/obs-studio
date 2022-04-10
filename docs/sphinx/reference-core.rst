@@ -160,9 +160,17 @@ Initialization, Shutdown, and Information
 
 ---------------------
 
-.. function:: void obs_set_video_sdr_white_level(float sdr_white_level)
+.. function:: float obs_get_video_hdr_nominal_peak_level(void)
 
-   Sets the current SDR white level.
+   Gets the current HDR nominal peak level.
+
+   :return: HDR nominal peak level, 1000.f if no video
+
+---------------------
+
+.. function:: void obs_set_video_sdr_white_level(float sdr_white_level, float hdr_nominal_peak_level)
+
+   Sets the current video levels.
 
 ---------------------
 
