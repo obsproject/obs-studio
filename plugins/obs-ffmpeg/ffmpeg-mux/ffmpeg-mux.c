@@ -825,6 +825,35 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 	return ret >= 0;
 }
 
+static inline bool read_change_file(struct ffmpeg_mux *ffm, uint32_t size,
+				    struct resize_buf *filename, int argc,
+				    char **argv)
+{
+	resize_buf_resize(filename, size + 1);
+	if (safe_read(filename->buf, size) != size) {
+		return false;
+	}
+	filename->buf[size] = 0;
+
+	fprintf(stderr, "info: New output file name: %s\n", filename->buf);
+
+	int ret;
+	char *argv1_backup = argv[1];
+	argv[1] = (char *)filename->buf;
+
+	ffmpeg_mux_free(ffm);
+
+	ret = ffmpeg_mux_init(ffm, argc, argv);
+	if (ret != FFM_SUCCESS) {
+		fprintf(stderr, "Couldn't initialize muxer\n");
+		return false;
+	}
+
+	argv[1] = argv1_backup;
+
+	return true;
+}
+
 /* ------------------------------------------------------------------------- */
 
 #ifdef _WIN32
@@ -836,6 +865,7 @@ int main(int argc, char *argv[])
 	struct ffm_packet_info info = {0};
 	struct ffmpeg_mux ffm = {0};
 	struct resize_buf rb = {0};
+	struct resize_buf rb_filename = {0};
 	bool fail = false;
 	int ret;
 
@@ -868,6 +898,12 @@ int main(int argc, char *argv[])
 	}
 
 	while (!fail && safe_read(&info, sizeof(info)) == sizeof(info)) {
+		if (info.type == FFM_PACKET_CHANGE_FILE) {
+			fail = !read_change_file(&ffm, info.size, &rb_filename,
+						 argc, argv);
+			continue;
+		}
+
 		resize_buf_resize(&rb, info.size);
 
 		if (safe_read(rb.buf, info.size) == info.size) {
@@ -879,6 +915,7 @@ int main(int argc, char *argv[])
 
 	ffmpeg_mux_free(&ffm);
 	resize_buf_free(&rb);
+	resize_buf_free(&rb_filename);
 
 #ifdef _WIN32
 	for (int i = 0; i < argc; i++)

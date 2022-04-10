@@ -639,6 +639,7 @@ public slots:
 	void RecordingStart();
 	void RecordStopping();
 	void RecordingStop(int code, QString last_error);
+	void RecordingFileChanged(QString lastRecordingPath);
 
 	void ShowReplayBufferPauseWarning();
 	void StartReplayBuffer();
@@ -807,7 +808,7 @@ private:
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
-	void AutoRemux(QString input);
+	void AutoRemux(QString input, bool no_show = false);
 
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
