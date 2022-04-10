@@ -207,15 +207,19 @@ static inline int get_sws_colorspace(enum AVColorSpace cs)
 		return SWS_CS_ITU709;
 	case AVCOL_SPC_FCC:
 		return SWS_CS_FCC;
+	case AVCOL_SPC_BT470BG:
+		return SWS_CS_ITU624;
 	case AVCOL_SPC_SMPTE170M:
 		return SWS_CS_SMPTE170M;
 	case AVCOL_SPC_SMPTE240M:
 		return SWS_CS_SMPTE240M;
+	case AVCOL_SPC_BT2020_NCL:
+		return SWS_CS_BT2020;
 	default:
 		break;
 	}
 
-	return SWS_CS_ITU601;
+	return SWS_CS_ITU709;
 }
 
 static inline int get_sws_range(enum AVColorRange r)
@@ -445,7 +449,10 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
 	switch (f->color_trc) {
 	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_GAMMA22:
+	case AVCOL_TRC_GAMMA28:
 	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_SMPTE240M:
 	case AVCOL_TRC_IEC61966_2_1:
 		frame->trc = VIDEO_TRC_SRGB;
 		break;
