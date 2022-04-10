@@ -71,15 +71,61 @@ float linear_to_hlg_channel(float u)
     return (u <= (1.0 /12.0)) ? sqrt(3.0 * u) : ((log2((12.0 * u) - 0.28466892) * m) + 0.55991073);
 }
 
-float3 linear_to_hlg(float3 rgb)
+float eetf_0_1000(float Lw, float maxRGB1_pq)
+{
+	float Lw_pq = linear_to_st2084_channel(Lw / 10000.);
+	float E1 = maxRGB1_pq / Lw_pq;
+	float maxLum = linear_to_st2084_channel(.1) / Lw_pq;
+	float KS = (1.5 * maxLum) - 0.5;
+	float E2 = E1;
+	if (E1 > KS)
+	{
+		float T = (E1 - KS) / (1. - KS);
+		float Tsquared = T * T;
+		float Tcubed = Tsquared * T;
+		float P = (2. * Tcubed - 3. * Tsquared + 1.) * KS + (Tcubed - 2. * Tsquared + T) * (1. - KS) + (-2. * Tcubed + 3. * Tsquared) * maxLum;
+		E2 = P;
+	}
+	float E3 = E2;
+	float E4 = E3 * Lw_pq;
+	return E4;
+}
+
+float3 maxRGB_eetf(float3 rgb, float Lw, float Lmax)
+{
+	float maxRGB_linear = max(max(rgb.r, rgb.g), rgb.b);
+	float maxRGB1_pq = linear_to_st2084_channel(maxRGB_linear);
+	float maxRGB2_pq = eetf_0_1000(Lw, maxRGB1_pq);
+	float maxRGB2_linear = st2084_to_linear_channel(maxRGB2_pq);
+	float scaling_ratio = maxRGB2_linear / maxRGB_linear;
+
+	// scaling_ratio could be NaN
+	scaling_ratio = max(0., scaling_ratio);
+
+	rgb *= scaling_ratio;
+	return rgb;
+}
+
+float3 linear_to_hlg(float3 rgb, float Lw)
 {
 	rgb = saturate(rgb);
-	float yd = (0.2627 * rgb.r) + (0.678 * rgb.g) + (0.0593 * rgb.b);
 
-	// pow(0, exponent) can lead to NaN, use smallest positive normal number
-	yd = max(6.10352e-5, yd);
+	if (Lw > 1000.)
+	{
+		rgb = maxRGB_eetf(rgb, Lw, 1000.);
+		rgb *= 10000. / Lw;
+	}
+	else
+	{
+		rgb *= 10.;
+	}
 
-	rgb *= pow(yd, -1.0 / 6.0);
+	float Yd = dot(rgb, float3(0.2627, 0.678, 0.0593));
+
+	// pow(0., exponent) can lead to NaN, use smallest positive normal number
+	Yd = max(6.10352e-5, Yd);
+
+	rgb *= pow(Yd, -1. / 6.);
 	return float3(linear_to_hlg_channel(rgb.r), linear_to_hlg_channel(rgb.g), linear_to_hlg_channel(rgb.b));
 }
 
@@ -91,10 +137,10 @@ float hlg_to_linear_channel(float u)
 	return (u <= 0.5) ? ((u * u) / 3.0) : ((exp2(u * m + a) + 0.28466892) / 12.0);
 }
 
-float3 hlg_to_linear(float3 v)
+float3 hlg_to_linear(float3 v, float exponent)
 {
 	float3 rgb = float3(hlg_to_linear_channel(v.r), hlg_to_linear_channel(v.g), hlg_to_linear_channel(v.b));
-	float ys = dot(rgb, float3(0.2627, 0.678, 0.0593));
-	rgb *= pow(ys, 0.2);
+	float Ys = dot(rgb, float3(0.2627, 0.678, 0.0593));
+	rgb *= pow(Ys, exponent);
 	return rgb;
 }

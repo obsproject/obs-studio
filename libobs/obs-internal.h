@@ -305,7 +305,6 @@ struct obs_core_video {
 	bool conversion_needed;
 	float conversion_width_i;
 	float conversion_height_i;
-	float maximum_nits;
 
 	uint32_t output_width;
 	uint32_t output_height;
@@ -326,7 +325,8 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
 	struct obs_video_info ovi;
-	uint32_t sdr_white_level;
+	float sdr_white_level;
+	float hdr_nominal_peak_level;
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;

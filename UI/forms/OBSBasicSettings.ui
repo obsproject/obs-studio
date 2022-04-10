@@ -5170,6 +5170,32 @@
                        </property>
                       </widget>
                      </item>
+                     <item>
+                      <widget class="QLabel" name="label_hdrNominalPeakLevel">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Basic.Settings.Advanced.Video.HdrNominalPeakLevel</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>hdrNominalPeakLevel</cstring>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QSpinBox" name="hdrNominalPeakLevel">
+                       <property name="minimum">
+                        <number>400</number>
+                       </property>
+                       <property name="maximum">
+                        <number>10000</number>
+                       </property>
+                      </widget>
+                     </item>
                     </layout>
                    </item>
                    <item row="5" column="1">
