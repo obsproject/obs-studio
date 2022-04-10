@@ -80,7 +80,8 @@ using namespace DShow;
 #define TEXT_COLOR_DEFAULT  obs_module_text("ColorSpace.Default")
 #define TEXT_COLOR_709      obs_module_text("ColorSpace.709")
 #define TEXT_COLOR_601      obs_module_text("ColorSpace.601")
-#define TEXT_COLOR_2100     obs_module_text("ColorSpace.2100")
+#define TEXT_COLOR_2100PQ   obs_module_text("ColorSpace.2100PQ")
+#define TEXT_COLOR_2100HLG  obs_module_text("ColorSpace.2100HLG")
 #define TEXT_COLOR_RANGE    obs_module_text("ColorRange")
 #define TEXT_RANGE_DEFAULT  obs_module_text("ColorRange.Default")
 #define TEXT_RANGE_PARTIAL  obs_module_text("ColorRange.Partial")
@@ -197,7 +198,6 @@ struct DShowInput {
 	VideoConfig videoConfig;
 	AudioConfig audioConfig;
 
-	video_range_type range;
 	obs_source_frame2 frame;
 	obs_source_audio audio;
 	long lastRotation = 0;
@@ -505,7 +505,7 @@ void DShowInput::OnEncodedVideoData(enum AVCodecID id, unsigned char *data,
 
 	bool got_output;
 	bool success = ffmpeg_decode_video(video_decoder, data, size, &ts,
-					   range, &frame, &got_output);
+					   frame.range, &frame, &got_output);
 	if (!success) {
 		blog(LOG_WARNING, "Error decoding video");
 		return;
@@ -550,7 +550,6 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	frame.format = ConvertVideoFormat(config.format);
 	frame.flip = flip;
 	frame.flags = OBS_SOURCE_FRAME_LINEAR_ALPHA;
-	frame.trc = VIDEO_TRC_DEFAULT;
 
 	/* YUV DIBS are always top-down */
 	if (config.format == VideoFormat::XRGB ||
@@ -1095,8 +1094,11 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 	if (astrcmpi(space, "601") == 0)
 		return VIDEO_CS_601;
 
-	if (astrcmpi(space, "2100") == 0)
+	if (astrcmpi(space, "2100PQ") == 0)
 		return VIDEO_CS_2100_PQ;
+
+	if (astrcmpi(space, "2100HLG") == 0)
+		return VIDEO_CS_2100_HLG;
 
 	return VIDEO_CS_DEFAULT;
 }
@@ -1136,9 +1138,26 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	if (device.Start() != Result::Success)
 		return false;
 
-	enum video_colorspace cs = GetColorSpace(settings);
-	range = GetColorRange(settings);
+	const enum video_colorspace cs = GetColorSpace(settings);
+	const enum video_range_type range = GetColorRange(settings);
+
+	enum video_trc trc = VIDEO_TRC_DEFAULT;
+	switch (cs) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_601:
+	case VIDEO_CS_709:
+	case VIDEO_CS_SRGB:
+		trc = VIDEO_TRC_SRGB;
+		break;
+	case VIDEO_CS_2100_PQ:
+		trc = VIDEO_TRC_PQ;
+		break;
+	case VIDEO_CS_2100_HLG:
+		trc = VIDEO_TRC_HLG;
+	}
+
 	frame.range = range;
+	frame.trc = trc;
 
 	bool success = video_format_get_parameters_for_format(
 		cs, range, ConvertVideoFormat(videoConfig.format),
@@ -1944,7 +1963,8 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_property_list_add_string(p, TEXT_COLOR_DEFAULT, "default");
 	obs_property_list_add_string(p, TEXT_COLOR_709, "709");
 	obs_property_list_add_string(p, TEXT_COLOR_601, "601");
-	obs_property_list_add_string(p, TEXT_COLOR_2100, "2100");
+	obs_property_list_add_string(p, TEXT_COLOR_2100PQ, "2100PQ");
+	obs_property_list_add_string(p, TEXT_COLOR_2100HLG, "2100HLG");
 
 	p = obs_properties_add_list(ppts, COLOR_RANGE, TEXT_COLOR_RANGE,
 				    OBS_COMBO_TYPE_LIST,
