@@ -199,17 +199,23 @@ gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 		return NULL;
 	}
 
-	texture = gs_texture_create(width, height, color_format, 1, NULL,
-				    GS_DYNAMIC);
+	if ((texture = gs_texture_create(width, height, color_format, 1, NULL,
+					 GS_DYNAMIC)) == NULL) {
+		return NULL;
+	}
 	const GLuint gltex = *(GLuint *)gs_texture_get_obj(texture);
 
-	glBindTexture(GL_TEXTURE_2D, gltex);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	gl_bind_texture(GL_TEXTURE_2D, gltex);
+	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
 	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, egl_image);
+	if (!gl_success("glEGLImageTargetTexture2DOES")) {
+		gs_texture_destroy(texture);
+		texture = NULL;
+	}
 
-	glBindTexture(GL_TEXTURE_2D, 0);
+	gl_bind_texture(GL_TEXTURE_2D, 0);
 	eglDestroyImage(egl_display, egl_image);
 
 	return texture;
