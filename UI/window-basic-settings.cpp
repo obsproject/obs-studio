@@ -1033,16 +1033,16 @@ void OBSBasicSettings::LoadColorRanges()
 #define CS_SRGB_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.sRGB")
 #define CS_709_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.709")
 #define CS_601_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.601")
-#define CS_2020PQ_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2020PQ")
-#define CS_2020HLG_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2020HLG")
+#define CS_2100PQ_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2100PQ")
+#define CS_2100HLG_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2100HLG")
 
 void OBSBasicSettings::LoadColorSpaces()
 {
 	ui->colorSpace->addItem(CS_SRGB_STR, "sRGB");
 	ui->colorSpace->addItem(CS_709_STR, "709");
 	ui->colorSpace->addItem(CS_601_STR, "601");
-	ui->colorSpace->addItem(CS_2020PQ_STR, "2020PQ");
-	ui->colorSpace->addItem(CS_2020HLG_STR, "2020HLG");
+	ui->colorSpace->addItem(CS_2100PQ_STR, "2100PQ");
+	ui->colorSpace->addItem(CS_2100HLG_STR, "2100HLG");
 }
 
 #define AV_FORMAT_DEFAULT_STR \
@@ -2534,8 +2534,8 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 {
 	const QString text = ui->colorFormat->currentText();
 	switch (ui->colorSpace->currentIndex()) {
-	case 3: /* Rec.2020 (PQ) */
-	case 4: /* Rec.2020 (HLG) */
+	case 3: /* Rec.2100 (PQ) */
+	case 4: /* Rec.2100 (HLG) */
 		if (text == "P010") {
 			ui->advancedMsg2->clear();
 		} else if (text == "I010") {
@@ -2543,7 +2543,7 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
 		} else {
 			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarning2020"));
+				"Basic.Settings.Advanced.FormatWarning2100"));
 		}
 		break;
 	default:

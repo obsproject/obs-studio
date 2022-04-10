@@ -128,8 +128,8 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
 	case AVCOL_SPC_BT2020_NCL:
-		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2020_HLG
-						       : VIDEO_CS_2020_PQ;
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
+						       : VIDEO_CS_2100_PQ;
 	default:
 		return VIDEO_CS_DEFAULT;
 	}

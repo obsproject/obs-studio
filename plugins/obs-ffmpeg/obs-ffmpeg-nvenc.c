@@ -273,12 +273,12 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
 		enc->context->colorspace = AVCOL_SPC_BT709;
 		break;
-	case VIDEO_CS_2020_PQ:
+	case VIDEO_CS_2100_PQ:
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_SMPTE2084;
 		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
 		break;
-	case VIDEO_CS_2020_HLG:
+	case VIDEO_CS_2100_HLG:
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_ARIB_STD_B67;
 		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;

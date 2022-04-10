@@ -1129,12 +1129,12 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.color_trc = AVCOL_TRC_IEC61966_2_1;
 		config.colorspace = AVCOL_SPC_BT709;
 		break;
-	case VIDEO_CS_2020_PQ:
+	case VIDEO_CS_2100_PQ:
 		config.color_primaries = AVCOL_PRI_BT2020;
 		config.color_trc = AVCOL_TRC_SMPTE2084;
 		config.colorspace = AVCOL_SPC_BT2020_NCL;
 		break;
-	case VIDEO_CS_2020_HLG:
+	case VIDEO_CS_2100_HLG:
 		config.color_primaries = AVCOL_PRI_BT2020;
 		config.color_trc = AVCOL_TRC_ARIB_STD_B67;
 		config.colorspace = AVCOL_SPC_BT2020_NCL;

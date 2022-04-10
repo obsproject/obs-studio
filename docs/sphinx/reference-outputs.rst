@@ -724,8 +724,8 @@ Functions used by outputs
            VIDEO_CS_601,
            VIDEO_CS_709,
            VIDEO_CS_SRGB,
-           VIDEO_CS_2020_PQ,
-           VIDEO_CS_2020_HLG,
+           VIDEO_CS_2100_PQ,
+           VIDEO_CS_2100_HLG,
    };
    
    enum video_range_type {
