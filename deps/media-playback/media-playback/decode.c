@@ -114,10 +114,8 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 
 fail:
 	avcodec_free_context(&c);
+	avcodec_free_context(&d->decoder);
 
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-	av_free(d->decoder);
-#endif
 	return ret;
 }
 
