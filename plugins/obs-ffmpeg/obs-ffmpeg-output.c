@@ -26,6 +26,7 @@
 #include "obs-ffmpeg-formats.h"
 #include "obs-ffmpeg-compat.h"
 #include <libavutil/channel_layout.h>
+#include <libavutil/mastering_display_metadata.h>
 
 struct ffmpeg_output {
 	obs_output_t *output;
@@ -221,6 +222,18 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->output->oformat->video_codec,
 			data->config.video_encoder))
 		return false;
+
+	if (data->config.color_trc == AVCOL_TRC_SMPTE2084) {
+		AVMasteringDisplayMetadata *const mastering =
+			av_mastering_display_metadata_alloc();
+		mastering->max_luminance = av_make_q(
+			(int)obs_get_video_hdr_nominal_peak_level(), 1);
+		mastering->has_luminance = 1;
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+					(uint8_t *)mastering,
+					sizeof(*mastering));
+	}
 
 	closest_format = data->config.format;
 	if (data->vcodec->pix_fmts) {

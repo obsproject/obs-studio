@@ -162,11 +162,17 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 						? AVCOL_RANGE_JPEG
 						: AVCOL_RANGE_MPEG;
 
-	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d ",
+	const int max_luminance =
+		(trc == AVCOL_TRC_SMPTE2084)
+			? (int)obs_get_video_hdr_nominal_peak_level()
+			: 0;
+
+	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d ",
 		  obs_encoder_get_codec(vencoder), bitrate,
 		  obs_output_get_width(stream->output),
 		  obs_output_get_height(stream->output), (int)pri, (int)trc,
-		  (int)spc, (int)range, (int)info->fps_num, (int)info->fps_den);
+		  (int)spc, (int)range, max_luminance, (int)info->fps_num,
+		  (int)info->fps_den);
 }
 
 static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
