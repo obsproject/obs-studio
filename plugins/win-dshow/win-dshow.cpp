@@ -1100,6 +1100,9 @@ DShowInput::GetColorSpace(obs_data_t *settings) const
 	if (astrcmpi(space, "2100HLG") == 0)
 		return VIDEO_CS_2100_HLG;
 
+	if (videoConfig.format == VideoFormat::P010)
+		return VIDEO_CS_2100_PQ;
+
 	return VIDEO_CS_DEFAULT;
 }
 
