@@ -30,6 +30,7 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libavutil/channel_layout.h>
+#include <libavutil/mastering_display_metadata.h>
 
 #define ANSI_COLOR_RED "\x1b[0;91m"
 #define ANSI_COLOR_MAGENTA "\x1b[0;95m"
@@ -93,6 +94,7 @@ struct main_params {
 	int color_trc;
 	int colorspace;
 	int color_range;
+	int max_luminance;
 	char *acodec;
 	char *muxer_settings;
 };
@@ -320,6 +322,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_int(argc, argv, &params->color_range,
 				 "video color range"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->max_luminance,
+				 "video max luminance"))
+			return false;
 		if (!get_opt_int(argc, argv, &params->fps_num, "video fps num"))
 			return false;
 		if (!get_opt_int(argc, argv, &params->fps_den, "video fps den"))
@@ -414,6 +419,18 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	ffm->video_stream->codec->time_base = context->time_base;
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
+
+	if (ffm->params.max_luminance > 0) {
+		AVMasteringDisplayMetadata *const mastering =
+			av_mastering_display_metadata_alloc();
+		mastering->max_luminance =
+			av_make_q(ffm->params.max_luminance, 1);
+		mastering->has_luminance = 1;
+		av_stream_add_side_data(ffm->video_stream,
+					AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+					(uint8_t *)mastering,
+					sizeof(*mastering));
+	}
 
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
