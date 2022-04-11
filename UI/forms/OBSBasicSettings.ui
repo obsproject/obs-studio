@@ -2461,16 +2461,16 @@
                             <item row="8" column="1">
                              <widget class="QSpinBox" name="advOutSplitFileTime">
                               <property name="suffix">
-                               <string> s</string>
+                               <string> min</string>
                               </property>
                               <property name="minimum">
-                               <number>5</number>
+                               <number>1</number>
                               </property>
                               <property name="maximum">
-                               <number>21600</number>
+                               <number>360</number>
                               </property>
                               <property name="value">
-                               <number>900</number>
+                               <number>15</number>
                               </property>
                              </widget>
                             </item>

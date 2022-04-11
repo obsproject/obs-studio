@@ -1910,7 +1910,7 @@ bool AdvancedOutput::StartRecording()
 			obs_data_set_bool(settings, "allow_overwrite",
 					  overwriteIfExists);
 			obs_data_set_int(settings, "max_time_sec",
-					 splitFileTime);
+					 splitFileTime * 60);
 			obs_data_set_int(settings, "max_size_mb",
 					 splitFileSize);
 			obs_data_set_bool(settings, "reset_timestamps",
