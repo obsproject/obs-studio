@@ -41,7 +41,7 @@ package-obs-standalone() {
     git fetch origin --tags
 
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-    GIT_HASH=$(git rev-parse --short HEAD)
+    GIT_HASH=$(git rev-parse --short=9 HEAD)
     GIT_TAG=$(git describe --tags --abbrev=0)
 
     if [ "${BUILD_FOR_DISTRIBUTION}" ]; then

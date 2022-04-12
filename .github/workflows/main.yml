@@ -152,7 +152,7 @@ jobs:
             brew uninstall ${REMOVE_FORMULAS}
           fi
 
-          echo "::set-output name=commitHash::$(git rev-parse --short HEAD)"
+          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
       - name: 'Install dependencies'
         env:
@@ -249,7 +249,7 @@ jobs:
       - name: 'Setup build environment'
         id: setup
         run: |
-          echo "::set-output name=commitHash::$(git rev-parse --short HEAD)"
+          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
       - name: 'Install dependencies'
         env:
@@ -331,7 +331,7 @@ jobs:
       - name: Setup Environment
         id: setup
         run: |
-          $CommitHash = git rev-parse --short HEAD
+          $CommitHash = git rev-parse --short=9 HEAD
           Write-Output "::set-output name=commitHash::${CommitHash}"
 
       - name: 'Install dependencies'
@@ -390,14 +390,14 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
           echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
-          echo "OBS_GIT_HASH=$(git rev-parse --short HEAD)" >> $GITHUB_ENV
+          echo "OBS_GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
           echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
       - name: Build Flatpak Manifest
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
-          bundle: obs-studio-flatpak-${{ github.sha }}.flatpak
+          bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
           cache-key: flatpak-builder-${{ github.sha }}
 
@@ -412,20 +412,27 @@ jobs:
       - name: 'Checkout'
         uses: actions/checkout@v3
 
+      - name: Setup Environment
+        id: setup
+        run: |
+          $CommitHash = git rev-parse --short=9 HEAD
+          Write-Output "::set-output name=commitHash::${CommitHash}"
+
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1.1
 
       - name: 'Download 64-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win64'
+          name: 'obs-win-x64-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Download 32-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win32'
+          name: 'obs-win-x86-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Unpack Windows build artifacts'
+        id: unpack
         run: |
           if (!(Test-Path install_temp)) {
             $null = New-Item -ItemType Directory -Force -Path install_temp
@@ -436,14 +443,14 @@ jobs:
 
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
-          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Win-x64+x86.zip" -File).Name
-          Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
+          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Win-x86+x64.zip" -File).Name
+          Write-Output "::set-output name=filename::${ArtifactName}"
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
         with:
           name: 'obs-windows'
-          path: '${{ env.FILE_NAME }}'
+          path: '${{ steps.unpack.outputs.filename }}'
 
   macos_release:
     name: '03 - macOS notarized image'
@@ -464,11 +471,16 @@ jobs:
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/checkout@v3
 
+      - name: 'Setup build environment'
+        id: setup
+        run: |
+          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+
       - name: 'Download artifact'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}'
+          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Install Apple Developer Certificate'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'

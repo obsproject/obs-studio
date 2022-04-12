@@ -112,7 +112,7 @@ function Package-OBS-Standalone {
 
     Ensure-Directory ${CheckoutDir}
     $GitBranch = git rev-parse --abbrev-ref HEAD
-    $GitHash = git rev-parse --short HEAD
+    $GitHash = git rev-parse --short=9 HEAD
     $ErrorActionPreference = "SilentlyContinue"
     $GitTag = git describe --tags --abbrev=0
     $ErrorActionPreference = "Stop"
