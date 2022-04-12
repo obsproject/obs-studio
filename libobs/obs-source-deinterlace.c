@@ -233,9 +233,12 @@ void deinterlace_process_last_frame(obs_source_t *s, uint64_t sys_time)
 
 void set_deinterlace_texture_size(obs_source_t *source)
 {
+	const enum gs_color_format format =
+		convert_video_format(source->async_format);
+
 	if (source->async_gpu_conversion) {
-		source->async_prev_texrender = gs_texrender_create(
-			source->async_color_format, GS_ZS_NONE);
+		source->async_prev_texrender =
+			gs_texrender_create(format, GS_ZS_NONE);
 
 		for (int c = 0; c < source->async_channel_count; c++)
 			source->async_prev_textures[c] = gs_texture_create(
@@ -243,11 +246,7 @@ void set_deinterlace_texture_size(obs_source_t *source)
 				source->async_convert_height[c],
 				source->async_texture_formats[c], 1, NULL,
 				GS_DYNAMIC);
-
 	} else {
-		enum gs_color_format format =
-			convert_video_format(source->async_format);
-
 		source->async_prev_textures[0] = gs_texture_create(
 			source->async_width, source->async_height, format, 1,
 			NULL, GS_DYNAMIC);
@@ -393,12 +392,8 @@ void deinterlace_render(obs_source_t *s)
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
 
-	enum gs_color_space source_space = GS_CS_SRGB;
-	if (s->async_color_format == GS_RGBA16F) {
-		source_space = (s->async_trc == VIDEO_TRC_SRGB)
-				       ? GS_CS_SRGB_16F
-				       : GS_CS_709_EXTENDED;
-	}
+	const enum gs_color_space source_space =
+		convert_video_space(s->async_format, s->async_trc);
 
 	const bool linear_srgb =
 		(source_space != GS_CS_SRGB) || gs_get_linear_srgb() ||

@@ -1920,13 +1920,11 @@ bool set_async_texture_size(struct obs_source *source,
 	enum convert_type cur =
 		get_convert_type(frame->format, frame->full_range, frame->trc);
 
-	const enum gs_color_format format = convert_video_format(frame->format);
 	if (source->async_width == frame->width &&
 	    source->async_height == frame->height &&
 	    source->async_format == frame->format &&
 	    source->async_full_range == frame->full_range &&
-	    source->async_trc == frame->trc &&
-	    source->async_color_format == format)
+	    source->async_trc == frame->trc)
 		return true;
 
 	source->async_width = frame->width;
@@ -1949,7 +1947,7 @@ bool set_async_texture_size(struct obs_source *source,
 	source->async_texrender = NULL;
 	source->async_prev_texrender = NULL;
 
-	source->async_color_format = format;
+	const enum gs_color_format format = convert_video_format(frame->format);
 	const bool async_gpu_conversion = (cur != CONVERT_NONE) &&
 					  init_gpu_conversion(source, frame);
 	source->async_gpu_conversion = async_gpu_conversion;
@@ -2344,12 +2342,8 @@ static void rotate_async_video(obs_source_t *source, long rotation)
 static inline void obs_source_render_async_video(obs_source_t *source)
 {
 	if (source->async_textures[0] && source->async_active) {
-		enum gs_color_space source_space = GS_CS_SRGB;
-		if (source->async_color_format == GS_RGBA16F) {
-			source_space = (source->async_trc == VIDEO_TRC_SRGB)
-					       ? GS_CS_SRGB_16F
-					       : GS_CS_709_EXTENDED;
-		}
+		const enum gs_color_space source_space = convert_video_space(
+			source->async_format, source->async_trc);
 
 		gs_effect_t *const effect =
 			obs_get_base_effect(OBS_EFFECT_DEFAULT);
@@ -2816,10 +2810,17 @@ obs_source_get_color_space(obs_source_t *source, size_t count,
 	}
 
 	if (source->info.output_flags & OBS_SOURCE_ASYNC) {
-		return convert_video_space(source->async_format,
-					   source->async_trc,
-					   source->async_color_format, count,
-					   preferred_spaces);
+		const enum gs_color_space video_space = convert_video_space(
+			source->async_format, source->async_trc);
+
+		enum gs_color_space space = video_space;
+		for (size_t i = 0; i < count; ++i) {
+			space = preferred_spaces[i];
+			if (space == video_space)
+				break;
+		}
+
+		return space;
 	}
 
 	assert(source->context.data);

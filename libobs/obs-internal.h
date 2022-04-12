@@ -721,7 +721,6 @@ struct obs_source {
 	enum video_format async_format;
 	bool async_full_range;
 	uint8_t async_trc;
-	enum gs_color_format async_color_format;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
 	uint8_t async_cache_trc;
@@ -897,22 +896,13 @@ convert_video_format(enum video_format format)
 	}
 }
 
-static inline enum gs_color_space
-convert_video_space(enum video_format format, enum video_trc trc,
-		    enum gs_color_format color_format, size_t count,
-		    const enum gs_color_space *preferred_spaces)
+static inline enum gs_color_space convert_video_space(enum video_format format,
+						      enum video_trc trc)
 {
-	enum gs_color_space video_space = GS_CS_SRGB;
-	if (color_format == GS_RGBA16F) {
-		video_space = (trc == VIDEO_TRC_SRGB) ? GS_CS_SRGB_16F
-						      : GS_CS_709_EXTENDED;
-	}
-
-	enum gs_color_space space = video_space;
-	for (size_t i = 0; i < count; ++i) {
-		space = preferred_spaces[i];
-		if (space == video_space)
-			break;
+	enum gs_color_space space = GS_CS_SRGB;
+	if (convert_video_format(format) == GS_RGBA16F) {
+		space = (trc == VIDEO_TRC_SRGB) ? GS_CS_SRGB_16F
+						: GS_CS_709_EXTENDED;
 	}
 
 	return space;
