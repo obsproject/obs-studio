@@ -523,6 +523,7 @@
     <addaction name="menuLogFiles"/>
     <addaction name="menuCrashLogs"/>
     <addaction name="separator"/>
+    <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
     <addaction name="actionShowAbout"/>
     <addaction name="separator"/>
@@ -1792,6 +1793,11 @@
   <action name="actionCheckForUpdates">
    <property name="text">
     <string>Basic.MainMenu.Help.CheckForUpdates</string>
+   </property>
+  </action>
+  <action name="actionRepair">
+   <property name="text">
+    <string>Basic.MainMenu.Help.Repair</string>
    </property>
   </action>
   <action name="actionInteract">
