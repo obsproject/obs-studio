@@ -117,9 +117,9 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 }
 
 static const char *media_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
+	" (*.mp4 *.ts *.mov *.mxf *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
 static const char *video_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
+	" (*.mp4 *.ts *.mov *.mxf *.flv *.mkv *.avi *.gif *.webm);;";
 static const char *audio_filter = " (*.mp3 *.aac *.ogg *.wav);;";
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
