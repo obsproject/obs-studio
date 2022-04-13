@@ -282,6 +282,12 @@ struct TextSource {
 			gs_texture_destroy(tex);
 			obs_leave_graphics();
 		}
+
+		if (hdc)
+			DeleteDC(hdc);
+
+		if (hfont)
+			DeleteObject(hfont);
 	}
 
 	void UpdateFont();
@@ -313,7 +319,10 @@ static time_t get_modified_timestamp(const char *filename)
 
 void TextSource::UpdateFont()
 {
-	hfont = nullptr;
+	if (hfont) {
+		DeleteObject(hfont);
+		hfont = nullptr;
+	}
 	font.reset(nullptr);
 
 	LOGFONT lf = {};
