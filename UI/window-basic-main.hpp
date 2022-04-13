@@ -1120,6 +1120,10 @@ private slots:
 	void NudgeDown();
 	void NudgeLeft();
 	void NudgeRight();
+	void NudgeUpFar();
+	void NudgeDownFar();
+	void NudgeLeftFar();
+	void NudgeRightFar();
 
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();

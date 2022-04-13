@@ -391,6 +391,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
+	addNudge(Qt::SHIFT + Qt::Key_Up, SLOT(NudgeUpFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Down, SLOT(NudgeDownFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Left, SLOT(NudgeLeftFar()));
+	addNudge(Qt::SHIFT + Qt::Key_Right, SLOT(NudgeRightFar()));
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
@@ -8563,6 +8567,22 @@ void OBSBasic::NudgeLeft()
 void OBSBasic::NudgeRight()
 {
 	Nudge(1, MoveDir::Right);
+}
+void OBSBasic::NudgeUpFar()
+{
+	Nudge(10, MoveDir::Up);
+}
+void OBSBasic::NudgeDownFar()
+{
+	Nudge(10, MoveDir::Down);
+}
+void OBSBasic::NudgeLeftFar()
+{
+	Nudge(10, MoveDir::Left);
+}
+void OBSBasic::NudgeRightFar()
+{
+	Nudge(10, MoveDir::Right);
 }
 
 void OBSBasic::DeleteProjector(OBSProjector *projector)
