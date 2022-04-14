@@ -1036,6 +1036,8 @@ struct gs_device {
 	vector<gs_device_loss> loss_callbacks;
 	gs_obj *first_obj = nullptr;
 
+	vector<std::pair<HMONITOR, bool>> monitor_to_hdr;
+
 	void InitCompiler();
 	void InitFactory();
 	void ReorderAdapters(uint32_t &adapterIdx);
