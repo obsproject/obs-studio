@@ -10,8 +10,8 @@
 # be passed to target_link_libraries() instead of the ``PipeWire::PipeWire``
 # target ``PIPEWIRE_INCLUDE_DIRS`` This should be passed to
 # target_include_directories() if the target is not used for linking
-# ``PIPEWIRE_DEFINITIONS`` This should be passed to target_compile_options() if
-# the target is not used for linking
+# ``PIPEWIRE_COMPILE_FLAGS`` This should be passed to target_compile_options()
+# if the target is not used for linking
 #
 # If ``PIPEWIRE_FOUND`` is TRUE, it will also define the following imported
 # target:
@@ -56,7 +56,7 @@ find_package(PkgConfig QUIET)
 pkg_search_module(PKG_PIPEWIRE QUIET libpipewire-0.3)
 pkg_search_module(PKG_SPA QUIET libspa-0.2)
 
-set(PIPEWIRE_DEFINITIONS "${PKG_PIPEWIRE_CFLAGS}" "${PKG_SPA_CFLAGS}")
+set(PIPEWIRE_COMPILE_FLAGS "${PKG_PIPEWIRE_CFLAGS}" "${PKG_SPA_CFLAGS}")
 set(PIPEWIRE_VERSION "${PKG_PIPEWIRE_VERSION}")
 
 find_path(
@@ -86,7 +86,7 @@ if(PIPEWIRE_FOUND AND NOT TARGET PipeWire::PipeWire)
   set_target_properties(
     PipeWire::PipeWire
     PROPERTIES IMPORTED_LOCATION "${PIPEWIRE_LIBRARIES}"
-               INTERFACE_COMPILE_OPTIONS "${PIPEWIRE_DEFINITIONS}"
+               INTERFACE_COMPILE_OPTIONS "${PIPEWIRE_COMPILE_FLAGS}"
                INTERFACE_INCLUDE_DIRECTORIES
                "${PIPEWIRE_INCLUDE_DIRS};${SPA_INCLUDE_DIRS}")
 endif()
