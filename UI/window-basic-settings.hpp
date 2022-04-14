@@ -41,6 +41,8 @@ class OBSHotkeyWidget;
 
 #include "ui_OBSBasicSettings.h"
 
+#include <json11.hpp>
+
 #define VOLUME_METER_DECAY_FAST 23.53
 #define VOLUME_METER_DECAY_MEDIUM 11.76
 #define VOLUME_METER_DECAY_SLOW 8.57
@@ -106,6 +108,10 @@ private:
 	std::unique_ptr<Ui::OBSBasicSettings> ui;
 
 	std::shared_ptr<Auth> auth;
+
+	inline void GetServicesJson();
+	json11::Json servicesRoot;
+	bool servicesLoaded = false;
 
 	bool generalChanged = false;
 	bool stream1Changed = false;

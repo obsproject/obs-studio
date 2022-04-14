@@ -140,6 +140,8 @@ target_sources(
           crash-report.cpp
           crash-report.hpp
           display-helpers.hpp
+          streaming-helpers.cpp
+          streaming-helpers.hpp
           platform.hpp
           qt-display.cpp
           qt-display.hpp

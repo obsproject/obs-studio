@@ -8,6 +8,7 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "url-push-button.hpp"
+#include "streaming-helpers.hpp"
 
 #include "ui_AutoConfigStartPage.h"
 #include "ui_AutoConfigVideoPage.h"
@@ -22,6 +23,8 @@
 #if YOUTUBE_ENABLED
 #include "youtube-api-wrappers.hpp"
 #endif
+
+using namespace json11;
 
 struct QCef;
 struct QCefCookieManager;
@@ -672,6 +675,14 @@ void AutoConfigStreamPage::ServiceChanged()
 	UpdateCompleted();
 }
 
+inline void AutoConfigStreamPage::GetServicesJson()
+{
+	if (!servicesLoaded && servicesRoot.is_null()) {
+		servicesRoot = get_services_json();
+		servicesLoaded = true;
+	}
+}
+
 void AutoConfigStreamPage::UpdateMoreInfoLink()
 {
 	if (IsCustomService()) {
@@ -680,42 +691,32 @@ void AutoConfigStreamPage::UpdateMoreInfoLink()
 	}
 
 	QString serviceName = ui->service->currentText();
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
 
-	OBSDataAutoRelease settings = obs_data_create();
+	GetServicesJson();
+	Json service =
+		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
 
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
+	const std::string &more_info_link =
+		service["more_info_link"].string_value();
 
-	const char *more_info_link =
-		obs_data_get_string(settings, "more_info_link");
-
-	if (!more_info_link || (*more_info_link == '\0')) {
+	if (more_info_link.empty()) {
 		ui->moreInfoButton->hide();
 	} else {
-		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link));
+		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link.c_str()));
 		ui->moreInfoButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateKeyLink()
 {
 	QString serviceName = ui->service->currentText();
 	QString customServer = ui->customServer->text().trimmed();
-	QString streamKeyLink;
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
+	GetServicesJson();
+	Json service =
+		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
 
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
-
-	streamKeyLink = obs_data_get_string(settings, "stream_key_link");
-
+	std::string streamKeyLink = service["stream_key_link"].string_value();
 	if (customServer.contains("fbcdn.net") && IsCustomService()) {
 		streamKeyLink =
 			"https://www.facebook.com/live/producer?ref=OBS";
@@ -729,37 +730,28 @@ void AutoConfigStreamPage::UpdateKeyLink()
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
 	}
 
-	if (QString(streamKeyLink).isNull() ||
-	    QString(streamKeyLink).isEmpty()) {
+	if (streamKeyLink.empty()) {
 		ui->streamKeyButton->hide();
 	} else {
-		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink));
+		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink.c_str()));
 		ui->streamKeyButton->show();
 	}
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::LoadServices(bool showAll)
 {
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_bool(settings, "show_all", showAll);
-
-	obs_property_t *prop = obs_properties_get(props, "show_all");
-	obs_property_modified(prop, settings);
+	GetServicesJson();
+	auto &services = servicesRoot["services"].array_items();
 
 	ui->service->blockSignals(true);
 	ui->service->clear();
 
 	QStringList names;
 
-	obs_property_t *services = obs_properties_get(props, "service");
-	size_t services_count = obs_property_list_item_count(services);
-	for (size_t i = 0; i < services_count; i++) {
-		const char *name = obs_property_list_item_string(services, i);
-		names.push_back(name);
+	for (const Json &service : services) {
+		if (!showAll && !service["common"].bool_value())
+			continue;
+		names.push_back(service["name"].string_value().c_str());
 	}
 
 	if (showAll)
@@ -784,8 +776,6 @@ void AutoConfigStreamPage::LoadServices(bool showAll)
 			ui->service->setCurrentIndex(idx);
 	}
 
-	obs_properties_destroy(props);
-
 	ui->service->blockSignals(false);
 }
 
@@ -803,26 +793,17 @@ void AutoConfigStreamPage::UpdateServerList()
 		lastService = serviceName;
 	}
 
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_property_t *services = obs_properties_get(props, "service");
-
-	OBSDataAutoRelease settings = obs_data_create();
-
-	obs_data_set_string(settings, "service", QT_TO_UTF8(serviceName));
-	obs_property_modified(services, settings);
-
-	obs_property_t *servers = obs_properties_get(props, "server");
+	GetServicesJson();
+	Json service =
+		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
 
 	ui->server->clear();
 
-	size_t servers_count = obs_property_list_item_count(servers);
-	for (size_t i = 0; i < servers_count; i++) {
-		const char *name = obs_property_list_item_name(servers, i);
-		const char *server = obs_property_list_item_string(servers, i);
-		ui->server->addItem(name, server);
+	auto &servers = service["servers"].array_items();
+	for (const Json &server : servers) {
+		ui->server->addItem(server["name"].string_value().c_str(),
+				    server["url"].string_value().c_str());
 	}
-
-	obs_properties_destroy(props);
 }
 
 void AutoConfigStreamPage::UpdateCompleted()
@@ -886,18 +867,10 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 	/* ----------------------------------------- */
 	/* check to see if Twitch's "auto" available */
 
-	OBSDataAutoRelease twitchSettings = obs_data_create();
-
-	obs_data_set_string(twitchSettings, "service", "Twitch");
-
-	obs_properties_t *props = obs_get_service_properties("rtmp_common");
-	obs_properties_apply_settings(props, twitchSettings);
-
-	obs_property_t *p = obs_properties_get(props, "server");
-	const char *first = obs_property_list_item_string(p, 0);
-	twitchAuto = strcmp(first, "auto") == 0;
-
-	obs_properties_destroy(props);
+	Json servicesRoot = get_services_json();
+	Json serviceJson = get_service_from_json(servicesRoot, "Twitch");
+	Json servers = serviceJson["servers"];
+	twitchAuto = servers[0]["url"].string_value() == "auto";
 
 	/* ----------------------------------------- */
 	/* load service/servers                      */

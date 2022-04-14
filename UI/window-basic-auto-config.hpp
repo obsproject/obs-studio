@@ -13,6 +13,8 @@
 #include <string>
 #include <mutex>
 
+#include <json11.hpp>
+
 class Ui_AutoConfigStartPage;
 class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
@@ -174,6 +176,10 @@ class AutoConfigStreamPage : public QWizardPage {
 	QString lastService;
 	bool ready = false;
 
+	inline void GetServicesJson();
+	json11::Json servicesRoot;
+	bool servicesLoaded = false;
+
 	void LoadServices(bool showAll);
 	inline bool IsCustomService() const;
 
@@ -248,7 +254,8 @@ class AutoConfigTestPage : public QWizardPage {
 
 		inline ServerInfo() {}
 
-		inline ServerInfo(const char *name_, const char *address_)
+		inline ServerInfo(const std::string &name_,
+				  const std::string &address_)
 			: name(name_), address(address_)
 		{
 		}
