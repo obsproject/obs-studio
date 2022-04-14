@@ -57,9 +57,8 @@ target_compile_definitions(
 if(MSVC)
   target_compile_options(obs-virtualcam-module
                          PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-  add_target_resource(
-    obs-virtualcam-module "$<TARGET_PDB_FILE:obs-virtualcam-module>"
-    "obs-plugins/win-dshow/")
+  add_target_resource(win-dshow "$<TARGET_PDB_FILE:obs-virtualcam-module>"
+                      "obs-plugins/win-dshow/" OPTIONAL)
 
 endif()
 
@@ -83,6 +82,5 @@ set_target_properties(
   obs-virtualcam-module PROPERTIES OUTPUT_NAME
                                    "obs-virtualcam-module${_output_suffix}")
 
-add_target_resource(
-  obs-virtualcam-module "$<TARGET_FILE:obs-virtualcam-module>"
-  "obs-plugins/win-dshow/")
+add_target_resource(win-dshow "$<TARGET_FILE:obs-virtualcam-module>"
+                    "obs-plugins/win-dshow/")
