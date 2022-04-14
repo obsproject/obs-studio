@@ -4,7 +4,7 @@
 #
 # WAYLAND_FOUND        - True if Wayland is found WAYLAND_LIBRARIES    - Link
 # these to use Wayland WAYLAND_INCLUDE_DIRS - Include directory for Wayland
-# WAYLAND_DEFINITIONS  - Compiler flags for using Wayland
+# WAYLAND_COMPILE_FLAGS  - Compiler flags for using Wayland
 #
 # In addition the following more fine grained variables will be defined:
 #
@@ -25,7 +25,7 @@ find_package(PkgConfig)
 pkg_check_modules(PKG_WAYLAND QUIET wayland-client wayland-server wayland-egl
                   wayland-cursor)
 
-set(WAYLAND_DEFINITIONS ${PKG_WAYLAND_CFLAGS})
+set(WAYLAND_COMPILE_FLAGS ${PKG_WAYLAND_CFLAGS})
 
 find_path(
   WAYLAND_CLIENT_INCLUDE_DIRS
@@ -125,8 +125,8 @@ foreach(component "Client" "Server" "EGL" "Cursor")
                    "${WAYLAND_${component_u}_INCLUDE_DIRS}")
 
       set_target_properties(
-        Wayland::${component} PROPERTIES INTERFACE_COMPILE_DEFINITIONS
-                                         "${WAYLAND_DEFINITIONS}")
+        Wayland::${component} PROPERTIES INTERFACE_COMPILE_OPTIONS
+                                         "${WAYLAND_COMPILE_FLAGS}")
     endif()
   endif()
 endforeach()
