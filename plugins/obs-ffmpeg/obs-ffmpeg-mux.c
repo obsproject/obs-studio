@@ -163,7 +163,8 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 						: AVCOL_RANGE_MPEG;
 
 	const int max_luminance =
-		(trc == AVCOL_TRC_SMPTE2084)
+		((trc == AVCOL_TRC_SMPTE2084) ||
+		 (trc == AVCOL_TRC_ARIB_STD_B67))
 			? (int)obs_get_video_hdr_nominal_peak_level()
 			: 0;
 
