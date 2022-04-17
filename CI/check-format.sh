@@ -53,7 +53,7 @@ find . -type d \( \
     -name '*.h' -or \
     -name '*.hpp' -or \
     -name '*.m' -or \
-    -name '*.m,' -or \
+    -name '*.mm' -or \
     -name '*.c' -or \
     -name '*.cpp' \
  | xargs -L100 -P ${NPROC} ${CLANG_FORMAT} ${VERBOSITY} -i -style=file -fallback-style=none
