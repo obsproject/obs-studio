@@ -28,6 +28,7 @@
 
 #include <obs.hpp>
 
+#include "streaming-helpers.hpp"
 #include "auth-base.hpp"
 
 class OBSBasic;
@@ -109,10 +110,6 @@ private:
 
 	std::shared_ptr<Auth> auth;
 
-	inline void GetServicesJson();
-	json11::Json servicesRoot;
-	bool servicesLoaded = false;
-
 	bool generalChanged = false;
 	bool stream1Changed = false;
 	bool outputsChanged = false;
@@ -164,6 +161,8 @@ private:
 
 	uint32_t outputCX = 0;
 	uint32_t outputCY = 0;
+
+	StreamSettingsUI streamUi;
 
 	QPointer<QCheckBox> simpleVodTrack;
 
@@ -254,21 +253,15 @@ private:
 
 	/* stream */
 	void InitStreamPage();
-	inline bool IsCustomService() const;
-	void LoadServices(bool showAll);
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
-	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
 private slots:
-	void UpdateServerList();
-	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
 	void RecreateOutputResolutionWidget();
 	void UpdateResFPSLimits();
-	void UpdateMoreInfoLink();
 	void DisplayEnforceWarning(bool checked);
 	void on_show_clicked();
 	void on_authPwShow_clicked();

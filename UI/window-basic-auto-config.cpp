@@ -8,7 +8,6 @@
 #include "qt-wrappers.hpp"
 #include "obs-app.hpp"
 #include "url-push-button.hpp"
-#include "streaming-helpers.hpp"
 
 #include "ui_AutoConfigStartPage.h"
 #include "ui_AutoConfigVideoPage.h"
@@ -243,11 +242,6 @@ bool AutoConfigVideoPage::validatePage()
 
 /* ------------------------------------------------------------------------- */
 
-enum class ListOpt : int {
-	ShowAll = 1,
-	Custom,
-};
-
 AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	: QWizardPage(parent), ui(new Ui_AutoConfigStreamPage)
 {
@@ -256,6 +250,10 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	ui->bitrate->setVisible(false);
 	ui->connectAccount2->setVisible(false);
 	ui->disconnectAccount->setVisible(false);
+
+	streamUi.Setup(ui->streamKeyLabel, ui->service, ui->server,
+		       ui->customServer, ui->moreInfoButton,
+		       ui->streamKeyButton);
 
 	ui->connectedAccountLabel->setVisible(false);
 	ui->connectedAccountText->setVisible(false);
@@ -277,25 +275,25 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 	setTitle(QTStr("Basic.AutoConfig.StreamPage"));
 	setSubTitle(QTStr("Basic.AutoConfig.StreamPage.SubTitle"));
 
-	LoadServices(false);
+	streamUi.LoadServices(false);
 
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(ServiceChanged()));
 	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
 		SLOT(ServiceChanged()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->customServer, SIGNAL(editingFinished()), this,
+	connect(ui->customServer, SIGNAL(textChanged(const QString &)),
+		&streamUi, SLOT(UpdateKeyLink()));
+	connect(ui->customServer, SIGNAL(editingFinished()), &streamUi,
 		SLOT(UpdateKeyLink()));
 	connect(ui->doBandwidthTest, SIGNAL(toggled(bool)), this,
 		SLOT(ServiceChanged()));
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateServerList()));
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateMoreInfoLink()));
 
 	connect(ui->useStreamKeyAdv, &QPushButton::clicked, this,
@@ -325,16 +323,11 @@ int AutoConfigStreamPage::nextId() const
 	return AutoConfig::TestPage;
 }
 
-inline bool AutoConfigStreamPage::IsCustomService() const
-{
-	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
-}
-
 bool AutoConfigStreamPage::validatePage()
 {
 	OBSDataAutoRelease service_settings = obs_data_create();
 
-	wiz->customServer = IsCustomService();
+	wiz->customServer = streamUi.IsCustomService();
 
 	const char *serverType = wiz->customServer ? "rtmp_custom"
 						   : "rtmp_common";
@@ -545,7 +538,7 @@ void AutoConfigStreamPage::on_disconnectAccount_clicked()
 	ui->connectedAccountText->setVisible(false);
 
 	/* Restore key link when disconnecting account */
-	UpdateKeyLink();
+	streamUi.UpdateKeyLink();
 }
 
 void AutoConfigStreamPage::on_useStreamKey_clicked()
@@ -618,7 +611,7 @@ void AutoConfigStreamPage::ServiceChanged()
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool regionBased = service == "Twitch";
 	bool testBandwidth = ui->doBandwidthTest->isChecked();
-	bool custom = IsCustomService();
+	bool custom = streamUi.IsCustomService();
 
 	reset_service_ui_fields(service);
 
@@ -675,144 +668,13 @@ void AutoConfigStreamPage::ServiceChanged()
 	UpdateCompleted();
 }
 
-inline void AutoConfigStreamPage::GetServicesJson()
-{
-	if (!servicesLoaded && servicesRoot.is_null()) {
-		servicesRoot = get_services_json();
-		servicesLoaded = true;
-	}
-}
-
-void AutoConfigStreamPage::UpdateMoreInfoLink()
-{
-	if (IsCustomService()) {
-		ui->moreInfoButton->hide();
-		return;
-	}
-
-	QString serviceName = ui->service->currentText();
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	const std::string &more_info_link =
-		service["more_info_link"].string_value();
-
-	if (more_info_link.empty()) {
-		ui->moreInfoButton->hide();
-	} else {
-		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link.c_str()));
-		ui->moreInfoButton->show();
-	}
-}
-
-void AutoConfigStreamPage::UpdateKeyLink()
-{
-	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text().trimmed();
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	std::string streamKeyLink = service["stream_key_link"].string_value();
-	if (customServer.contains("fbcdn.net") && IsCustomService()) {
-		streamKeyLink =
-			"https://www.facebook.com/live/producer?ref=OBS";
-	}
-
-	if (serviceName == "Dacast") {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
-	} else {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
-	}
-
-	if (streamKeyLink.empty()) {
-		ui->streamKeyButton->hide();
-	} else {
-		ui->streamKeyButton->setTargetUrl(QUrl(streamKeyLink.c_str()));
-		ui->streamKeyButton->show();
-	}
-}
-
-void AutoConfigStreamPage::LoadServices(bool showAll)
-{
-	GetServicesJson();
-	auto &services = servicesRoot["services"].array_items();
-
-	ui->service->blockSignals(true);
-	ui->service->clear();
-
-	QStringList names;
-
-	for (const Json &service : services) {
-		if (!showAll && !service["common"].bool_value())
-			continue;
-		names.push_back(service["name"].string_value().c_str());
-	}
-
-	if (showAll)
-		names.sort(Qt::CaseInsensitive);
-
-	for (QString &name : names)
-		ui->service->addItem(name);
-
-	if (!showAll) {
-		ui->service->addItem(
-			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
-			QVariant((int)ListOpt::ShowAll));
-	}
-
-	ui->service->insertItem(
-		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
-		QVariant((int)ListOpt::Custom));
-
-	if (!lastService.isEmpty()) {
-		int idx = ui->service->findText(lastService);
-		if (idx != -1)
-			ui->service->setCurrentIndex(idx);
-	}
-
-	ui->service->blockSignals(false);
-}
-
-void AutoConfigStreamPage::UpdateServerList()
-{
-	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-
-	if (showMore) {
-		LoadServices(true);
-		ui->service->showPopup();
-		return;
-	} else {
-		lastService = serviceName;
-	}
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	ui->server->clear();
-
-	auto &servers = service["servers"].array_items();
-	for (const Json &server : servers) {
-		ui->server->addItem(server["name"].string_value().c_str(),
-				    server["url"].string_value().c_str());
-	}
-}
-
 void AutoConfigStreamPage::UpdateCompleted()
 {
 	if (ui->stackedWidget->currentIndex() == (int)Section::Connect ||
 	    (ui->key->text().isEmpty() && !auth)) {
 		ready = false;
 	} else {
-		bool custom = IsCustomService();
+		bool custom = streamUi.IsCustomService();
 		if (custom) {
 			ready = !ui->customServer->text().isEmpty();
 		} else {
@@ -903,10 +765,10 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		serviceList->blockSignals(false);
 	}
 
-	streamPage->UpdateServerList();
-	streamPage->UpdateKeyLink();
-	streamPage->UpdateMoreInfoLink();
-	streamPage->lastService.clear();
+	streamPage->streamUi.UpdateServerList();
+	streamPage->streamUi.UpdateKeyLink();
+	streamPage->streamUi.UpdateMoreInfoLink();
+	streamPage->streamUi.ClearLastService();
 
 	if (!customServer) {
 		QComboBox *serverList = streamPage->ui->server;

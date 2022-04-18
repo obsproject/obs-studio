@@ -2,7 +2,6 @@
 #include <QUrl>
 
 #include "window-basic-settings.hpp"
-#include "streaming-helpers.hpp"
 #include "obs-frontend-api.h"
 #include "obs-app.hpp"
 #include "window-basic-main.hpp"
@@ -29,20 +28,10 @@ struct QCefCookieManager;
 extern QCef *cef;
 extern QCefCookieManager *panel_cookies;
 
-enum class ListOpt : int {
-	ShowAll = 1,
-	Custom,
-};
-
 enum class Section : int {
 	Connect,
 	StreamKey,
 };
-
-inline bool OBSBasicSettings::IsCustomService() const
-{
-	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
-}
 
 void OBSBasicSettings::InitStreamPage()
 {
@@ -70,7 +59,11 @@ void OBSBasicSettings::InitStreamPage()
 	m.setTop(vertSpacing / 2);
 	ui->streamkeyPageLayout->setContentsMargins(m);
 
-	LoadServices(false);
+	streamUi.Setup(ui->streamKeyLabel, ui->service, ui->server,
+		       ui->customServer, ui->moreInfoButton,
+		       ui->getStreamKeyButton);
+
+	streamUi.LoadServices(false);
 
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.None"));
@@ -81,9 +74,9 @@ void OBSBasicSettings::InitStreamPage()
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateServerList()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateKeyLink()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateVodTrackSetting()));
@@ -91,13 +84,13 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateServiceRecommendations()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
+	connect(ui->customServer, SIGNAL(textChanged(const QString &)),
+		&streamUi, SLOT(UpdateKeyLink()));
 	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
 		SLOT(DisplayEnforceWarning(bool)));
 	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
 		SLOT(UpdateResFPSLimits()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateMoreInfoLink()));
 }
 
@@ -145,7 +138,7 @@ void OBSBasicSettings::LoadStream1Settings()
 		ui->twitchAddonDropdown->setCurrentIndex(idx);
 	}
 
-	UpdateServerList();
+	streamUi.UpdateServerList();
 
 	if (strcmp(type, "rtmp_common") == 0) {
 		int idx = ui->server->findData(server);
@@ -159,11 +152,11 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	ui->key->setText(key);
 
-	lastService.clear();
+	streamUi.ClearLastService();
 	on_service_currentIndexChanged(0);
 
-	UpdateKeyLink();
-	UpdateMoreInfoLink();
+	streamUi.UpdateKeyLink();
+	streamUi.UpdateMoreInfoLink();
 	UpdateVodTrackSetting();
 	UpdateServiceRecommendations();
 
@@ -180,7 +173,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 void OBSBasicSettings::SaveStream1Settings()
 {
-	bool customServer = IsCustomService();
+	bool customServer = streamUi.IsCustomService();
 	const char *service_id = customServer ? "rtmp_custom" : "rtmp_common";
 
 	obs_service_t *oldService = main->GetService();
@@ -247,111 +240,6 @@ void OBSBasicSettings::SaveStream1Settings()
 	}
 
 	SaveCheckBox(ui->ignoreRecommended, "Stream1", "IgnoreRecommended");
-}
-
-inline void OBSBasicSettings::GetServicesJson()
-{
-	if (!servicesLoaded && servicesRoot.is_null()) {
-		servicesRoot = get_services_json();
-		servicesLoaded = true;
-	}
-}
-
-void OBSBasicSettings::UpdateMoreInfoLink()
-{
-	if (IsCustomService()) {
-		ui->moreInfoButton->hide();
-		return;
-	}
-
-	QString serviceName = ui->service->currentText();
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	const std::string &more_info_link =
-		service["more_info_link"].string_value();
-
-	if (more_info_link.empty()) {
-		ui->moreInfoButton->hide();
-	} else {
-		ui->moreInfoButton->setTargetUrl(QUrl(more_info_link.c_str()));
-		ui->moreInfoButton->show();
-	}
-}
-
-void OBSBasicSettings::UpdateKeyLink()
-{
-	QString serviceName = ui->service->currentText();
-	QString customServer = ui->customServer->text().trimmed();
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	std::string streamKeyLink = service["stream_key_link"].string_value();
-	if (customServer.contains("fbcdn.net") && IsCustomService()) {
-		streamKeyLink =
-			"https://www.facebook.com/live/producer?ref=OBS";
-	}
-
-	if (serviceName == "Dacast") {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
-	} else {
-		ui->streamKeyLabel->setText(
-			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
-	}
-
-	if (streamKeyLink.empty()) {
-		ui->getStreamKeyButton->hide();
-	} else {
-		ui->getStreamKeyButton->setTargetUrl(
-			QUrl(streamKeyLink.c_str()));
-		ui->getStreamKeyButton->show();
-	}
-}
-
-void OBSBasicSettings::LoadServices(bool showAll)
-{
-	GetServicesJson();
-	auto &services = servicesRoot["services"].array_items();
-
-	ui->service->blockSignals(true);
-	ui->service->clear();
-
-	QStringList names;
-
-	for (const Json &service : services) {
-		if (!showAll && !service["common"].bool_value())
-			continue;
-		names.push_back(service["name"].string_value().c_str());
-	}
-
-	if (showAll)
-		names.sort(Qt::CaseInsensitive);
-
-	for (QString &name : names)
-		ui->service->addItem(name);
-
-	if (!showAll) {
-		ui->service->addItem(
-			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
-			QVariant((int)ListOpt::ShowAll));
-	}
-
-	ui->service->insertItem(
-		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
-		QVariant((int)ListOpt::Custom));
-
-	if (!lastService.isEmpty()) {
-		int idx = ui->service->findText(lastService);
-		if (idx != -1)
-			ui->service->setCurrentIndex(idx);
-	}
-
-	ui->service->blockSignals(false);
 }
 
 static inline bool is_auth_service(const std::string &service)
@@ -426,14 +314,14 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 		return;
 
 	std::string service = QT_TO_UTF8(ui->service->currentText());
-	bool custom = IsCustomService();
+	bool custom = streamUi.IsCustomService();
 
 	ui->disconnectAccount->setVisible(false);
 	ui->bandwidthTestEnable->setVisible(false);
 	ui->twitchAddonDropdown->setVisible(false);
 	ui->twitchAddonLabel->setVisible(false);
 
-	if (lastService != service.c_str()) {
+	if (streamUi.LastService() != service.c_str()) {
 		reset_service_ui_fields(ui.get(), service, loading);
 	}
 
@@ -475,33 +363,6 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 	}
 }
 
-void OBSBasicSettings::UpdateServerList()
-{
-	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-
-	if (showMore) {
-		LoadServices(true);
-		ui->service->showPopup();
-		return;
-	} else {
-		lastService = serviceName;
-	}
-
-	GetServicesJson();
-	Json service =
-		get_service_from_json(servicesRoot, QT_TO_UTF8(serviceName));
-
-	ui->server->clear();
-
-	auto &servers = service["servers"].array_items();
-	for (const Json &server : servers) {
-		ui->server->addItem(server["name"].string_value().c_str(),
-				    server["url"].string_value().c_str());
-	}
-}
-
 void OBSBasicSettings::on_show_clicked()
 {
 	if (ui->key->echoMode() == QLineEdit::Password) {
@@ -526,7 +387,7 @@ void OBSBasicSettings::on_authPwShow_clicked()
 
 OBSService OBSBasicSettings::SpawnTempService()
 {
-	bool custom = IsCustomService();
+	bool custom = streamUi.IsCustomService();
 	const char *service_id = custom ? "rtmp_custom" : "rtmp_common";
 
 	OBSDataAutoRelease settings = obs_data_create();
@@ -669,7 +530,7 @@ void OBSBasicSettings::on_useStreamKey_clicked()
 
 void OBSBasicSettings::on_useAuth_toggled()
 {
-	if (!IsCustomService())
+	if (!streamUi.IsCustomService())
 		return;
 
 	bool use_auth = ui->useAuth->isChecked();
@@ -687,7 +548,7 @@ void OBSBasicSettings::UpdateVodTrackSetting()
 	bool enableVodTrack = ui->service->currentText() == "Twitch";
 	bool wasEnabled = !!vodTrackCheckbox;
 
-	if (enableForCustomServer && IsCustomService())
+	if (enableForCustomServer && streamUi.IsCustomService())
 		enableVodTrack = true;
 
 	if (enableVodTrack == wasEnabled)
@@ -774,7 +635,7 @@ OBSService OBSBasicSettings::GetStream1Service()
 
 void OBSBasicSettings::UpdateServiceRecommendations()
 {
-	bool customServer = IsCustomService();
+	bool customServer = streamUi.IsCustomService();
 	ui->ignoreRecommended->setVisible(!customServer);
 	ui->enforceSettingsLabel->setVisible(!customServer);
 
@@ -848,7 +709,7 @@ void OBSBasicSettings::UpdateServiceRecommendations()
 
 void OBSBasicSettings::DisplayEnforceWarning(bool checked)
 {
-	if (IsCustomService())
+	if (streamUi.IsCustomService())
 		return;
 
 	if (!checked) {
@@ -950,7 +811,7 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	size_t res_count = 0;
 	int max_fps = 0;
 
-	if (!IsCustomService() && !ignoreRecommended) {
+	if (!streamUi.IsCustomService() && !ignoreRecommended) {
 		OBSService service = GetStream1Service();
 		obs_service_get_supported_resolutions(service, &res_list,
 						      &res_count);

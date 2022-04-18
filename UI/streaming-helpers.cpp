@@ -1,4 +1,6 @@
 #include "streaming-helpers.hpp"
+#include "qt-wrappers.hpp"
+#include "obs-app.hpp"
 
 #include "../plugins/rtmp-services/rtmp-format-ver.h"
 
@@ -64,4 +66,122 @@ Json get_service_from_json(Json &root, const char *name)
 	}
 
 	return Json();
+}
+
+void StreamSettingsUI::UpdateMoreInfoLink()
+{
+	if (IsCustomService()) {
+		ui_moreInfoButton->hide();
+		return;
+	}
+
+	QString serviceName = ui_service->currentText();
+	Json service = get_service_from_json(GetServicesJson(),
+					     QT_TO_UTF8(serviceName));
+
+	const std::string &more_info_link =
+		service["more_info_link"].string_value();
+
+	if (more_info_link.empty()) {
+		ui_moreInfoButton->hide();
+	} else {
+		ui_moreInfoButton->setTargetUrl(QUrl(more_info_link.c_str()));
+		ui_moreInfoButton->show();
+	}
+}
+
+void StreamSettingsUI::UpdateKeyLink()
+{
+	QString serviceName = ui_service->currentText();
+	QString customServer = ui_customServer->text().trimmed();
+
+	Json service = get_service_from_json(GetServicesJson(),
+					     QT_TO_UTF8(serviceName));
+
+	std::string streamKeyLink = service["stream_key_link"].string_value();
+	if (customServer.contains("fbcdn.net") && IsCustomService()) {
+		streamKeyLink =
+			"https://www.facebook.com/live/producer?ref=OBS";
+	}
+
+	if (serviceName == "Dacast") {
+		ui_streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+	} else {
+		ui_streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
+	}
+
+	if (streamKeyLink.empty()) {
+		ui_streamKeyButton->hide();
+	} else {
+		ui_streamKeyButton->setTargetUrl(QUrl(streamKeyLink.c_str()));
+		ui_streamKeyButton->show();
+	}
+}
+
+void StreamSettingsUI::LoadServices(bool showAll)
+{
+	auto &services = GetServicesJson()["services"].array_items();
+
+	ui_service->blockSignals(true);
+	ui_service->clear();
+
+	QStringList names;
+
+	for (const Json &service : services) {
+		if (!showAll && !service["common"].bool_value())
+			continue;
+		names.push_back(service["name"].string_value().c_str());
+	}
+
+	if (showAll)
+		names.sort(Qt::CaseInsensitive);
+
+	for (QString &name : names)
+		ui_service->addItem(name);
+
+	if (!showAll) {
+		ui_service->addItem(
+			QTStr("Basic.AutoConfig.StreamPage.Service.ShowAll"),
+			QVariant((int)ListOpt::ShowAll));
+	}
+
+	ui_service->insertItem(
+		0, QTStr("Basic.AutoConfig.StreamPage.Service.Custom"),
+		QVariant((int)ListOpt::Custom));
+
+	if (!lastService.isEmpty()) {
+		int idx = ui_service->findText(lastService);
+		if (idx != -1)
+			ui_service->setCurrentIndex(idx);
+	}
+
+	ui_service->blockSignals(false);
+}
+
+void StreamSettingsUI::UpdateServerList()
+{
+	QString serviceName = ui_service->currentText();
+	bool showMore = ui_service->currentData().toInt() ==
+			(int)ListOpt::ShowAll;
+
+	if (showMore) {
+		LoadServices(true);
+		ui_service->showPopup();
+		return;
+	} else {
+		lastService = serviceName;
+	}
+
+	Json service = get_service_from_json(GetServicesJson(),
+					     QT_TO_UTF8(serviceName));
+
+	ui_server->clear();
+
+	auto &servers = service["servers"].array_items();
+	for (const Json &entry : servers) {
+		ui_server->addItem(entry["name"].string_value().c_str(),
+				   entry["url"].string_value().c_str());
+	}
 }
