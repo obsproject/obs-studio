@@ -95,6 +95,9 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 #endif
 		return AV_PIX_FMT_YUVA444P;
 
+	case AV_PIX_FMT_P010LE:
+		return AV_PIX_FMT_P010LE;
+
 	case AV_PIX_FMT_RGBA:
 	case AV_PIX_FMT_BGRA:
 	case AV_PIX_FMT_BGR0:
