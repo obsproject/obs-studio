@@ -1004,6 +1004,8 @@ EXPORT void obs_source_replace_missing_file(obs_missing_file_cb cb,
 					    obs_source_t *source,
 					    const char *new_path, void *data);
 
+EXPORT double obs_source_get_active_fps(const obs_source_t *source);
+
 /** Returns whether the source has custom properties or not */
 EXPORT bool obs_is_source_configurable(const char *id);
 

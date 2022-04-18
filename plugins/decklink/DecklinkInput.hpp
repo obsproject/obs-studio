@@ -53,4 +53,14 @@ public:
 	bool allow10Bit = false;
 	BMDVideoConnection videoConnection;
 	BMDAudioConnection audioConnection;
+
+    uint64_t last_timestamp;
+    uint32_t active_frame_count;
+	double_t active_fps;
+	void ResetActiveFpsContextData()
+	{
+		last_timestamp = 0;
+		active_frame_count = 0;
+		active_fps = 0.0;
+	}
 };

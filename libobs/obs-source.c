@@ -913,6 +913,21 @@ void obs_source_replace_missing_file(obs_missing_file_cb cb,
 	cb(source->context.data, new_path, data);
 }
 
+double obs_source_get_active_fps(const obs_source_t *source)
+{
+	if (!data_valid(source, "obs_source_get_active_fps"))
+		return 0.0;
+	if (OBS_SOURCE_TYPE_INPUT != obs_source_get_type(source))
+		return 0.0;
+	if (OBS_SOURCE_ASYNC_VIDEO != (obs_source_get_output_flags(source) & OBS_SOURCE_ASYNC_VIDEO))
+		return 0.0;
+	if (source->info.get_active_fps) {
+		return source->info.get_active_fps(source->context.data);
+	} else {
+		return 0.0;
+	}
+}
+
 bool obs_is_source_configurable(const char *id)
 {
 	const struct obs_source_info *info = get_source_info(id);

@@ -141,6 +141,15 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 {
 	if (videoFrame == nullptr)
 		return;
+    
+    DeckLinkInput *input = static_cast<DeckLinkInput *>(decklink);
+    long long delta_time = timestamp - input->last_timestamp;
+    if (delta_time >= 1000000000) {
+        input->active_fps = input->active_frame_count * 1000000000.0 / delta_time;
+        input->last_timestamp = timestamp;
+        input->active_frame_count = 0;
+    }
+    input->active_frame_count++;
 
 	ComPtr<IDeckLinkVideoFrameAncillaryPackets> packets;
 

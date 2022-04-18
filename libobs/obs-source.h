@@ -551,6 +551,9 @@ struct obs_source_info {
 	enum gs_color_space (*video_get_color_space)(
 		void *data, size_t count,
 		const enum gs_color_space *preferred_spaces);
+
+	/** Get active fps **/
+	double (*get_active_fps)(void *data);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

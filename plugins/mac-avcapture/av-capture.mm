@@ -143,7 +143,25 @@ struct av_capture {
 	obs_source_t *source;
 
 	obs_source_frame frame;
+
+	uint64_t last_timestamp;
+	uint32_t active_frame_count;
+	double_t active_fps;
+
 };
+
+static inline void av_capture_reset_active_fps_context_data(struct av_capture *capture)
+{
+	capture->last_timestamp = 0;
+	capture->active_frame_count = 0;
+	capture->active_fps = 0.0;
+}
+
+static double av_get_active_fps(void *data)
+{
+	auto capture = static_cast<av_capture *>(data);
+	return capture->active_fps;
+}
 
 static NSString *get_string(obs_data_t *data, char const *name)
 {
@@ -622,6 +640,14 @@ static inline bool update_frame(av_capture *capture, obs_source_frame *frame,
 		target_pts, NANO_TIMESCALE, kCMTimeRoundingMethod_Default);
 	frame->timestamp = target_pts_nano.value;
 
+	long long delta_time = frame->timestamp - capture->last_timestamp;
+	if (delta_time >= 1000000000) {
+		capture->active_fps = capture->active_frame_count * 1000000000.0 / delta_time;
+		capture->last_timestamp = frame->timestamp;
+		capture->active_frame_count = 0;
+	}
+	capture->active_frame_count++;
+
 	if (!update_frame(capture, frame, sampleBuffer)) {
 		obs_source_output_video(capture->source, nullptr);
 		return;
@@ -685,6 +711,7 @@ static void av_capture_destroy(void *data)
 {
 	auto capture = static_cast<av_capture *>(data);
 
+	av_capture_reset_active_fps_context_data(capture);
 	delete capture;
 }
 
@@ -1223,6 +1250,8 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	av_capture_enable_buffering(capture.get(),
 				    obs_data_get_bool(settings, "buffering"));
+
+	av_capture_reset_active_fps_context_data(capture.get());
 
 	return capture.release();
 }
@@ -2184,6 +2213,8 @@ static void av_capture_update(void *data, obs_data_t *settings)
 {
 	auto capture = static_cast<av_capture *>(data);
 
+	av_capture_reset_active_fps_context_data(capture);
+
 	NSString *uid = get_string(settings, "device");
 
 	if (!capture->device || ![capture->device.uniqueID isEqualToString:uid])
@@ -2233,6 +2264,7 @@ bool obs_module_load(void)
 		.get_properties = av_capture_properties,
 		.update = av_capture_update,
 		.icon_type = OBS_ICON_TYPE_CAMERA,
+		.get_active_fps = av_get_active_fps,
 	};
 
 	obs_register_source(&av_capture_info);

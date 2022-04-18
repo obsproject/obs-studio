@@ -192,6 +192,10 @@ struct DShowInput {
 	bool autorotation = true;
 	bool hw_decode = false;
 
+	uint64_t last_timestamp;
+	uint32_t active_frame_count;
+	double_t active_fps;
+
 	Decoder audio_decoder;
 	Decoder video_decoder;
 
@@ -207,6 +211,13 @@ struct DShowInput {
 	WinHandle thread;
 	CriticalSection mutex;
 	vector<Action> actions;
+
+	inline void ResetActiveFpsContextData()
+	{
+		last_timestamp = 0;
+		active_frame_count = 0;
+		active_fps = 0.0;
+	}
 
 	inline void QueueAction(Action action)
 	{
@@ -532,6 +543,14 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 			     size_t size, long long startTime,
 			     long long endTime, long rotation)
 {
+	long long delta_time = startTime - last_timestamp;
+	if (delta_time >= 10000000) {
+		active_fps = active_frame_count * 10000000.0 / delta_time;
+		last_timestamp = startTime;
+		active_frame_count = 0;
+	}
+	active_frame_count++;
+
 	if (autorotation && rotation != lastRotation) {
 		lastRotation = rotation;
 		obs_source_set_async_rotation(source, rotation);
@@ -1210,6 +1229,7 @@ static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 
 	try {
 		dshow = new DShowInput(source, settings);
+		dshow->ResetActiveFpsContextData();
 		proc_handler_t *ph = obs_source_get_proc_handler(source);
 		proc_handler_add(ph, "void activate(bool active)",
 				 proc_activate, dshow);
@@ -1223,12 +1243,15 @@ static void *CreateDShowInput(obs_data_t *settings, obs_source_t *source)
 
 static void DestroyDShowInput(void *data)
 {
-	delete reinterpret_cast<DShowInput *>(data);
+	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	input->ResetActiveFpsContextData();
+	delete input;
 }
 
 static void UpdateDShowInput(void *data, obs_data_t *settings)
 {
 	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	input->ResetActiveFpsContextData();
 	if (input->active)
 		input->QueueActivate(settings);
 }
@@ -2063,6 +2086,7 @@ void DShowModuleLogCallback(LogType type, const wchar_t *msg, void *param)
 static void HideDShowInput(void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	input->ResetActiveFpsContextData();
 
 	if (input->deactivateWhenNotShowing && input->active)
 		input->QueueAction(Action::Deactivate);
@@ -2071,9 +2095,16 @@ static void HideDShowInput(void *data)
 static void ShowDShowInput(void *data)
 {
 	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	input->ResetActiveFpsContextData();
 
 	if (input->deactivateWhenNotShowing && input->active)
 		input->QueueAction(Action::Activate);
+}
+
+static double GetActiveFps(void *data)
+{
+	DShowInput *input = reinterpret_cast<DShowInput *>(data);
+	return input->active_fps;
 }
 
 void RegisterDShowSource()
@@ -2094,5 +2125,6 @@ void RegisterDShowSource()
 	info.get_defaults = GetDShowDefaults;
 	info.get_properties = GetDShowProperties;
 	info.icon_type = OBS_ICON_TYPE_CAMERA;
+	info.get_active_fps = GetActiveFps;
 	obs_register_source(&info);
 }

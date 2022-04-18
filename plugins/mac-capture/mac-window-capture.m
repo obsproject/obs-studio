@@ -24,7 +24,24 @@ struct window_capture {
 	pthread_t capture_thread;
 	os_event_t *capture_event;
 	os_event_t *stop_event;
+
+	uint64_t last_timestamp;
+	uint32_t active_frame_count;
+	double_t active_fps;
 };
+
+static inline void window_capture_reset_active_fps_context_data(struct window_capture *wc)
+{
+	wc->last_timestamp = 0;
+	wc->active_frame_count = 0;
+	wc->active_fps = 0.0;
+}
+
+static double window_capture_get_active_fps(void *data)
+{
+	struct window_capture *wc = data;
+	return wc->active_fps;
+}
 
 static CGImageRef get_image(struct window_capture *wc)
 {
@@ -46,6 +63,14 @@ static inline void capture_frame(struct window_capture *wc)
 	CGImageRef img = get_image(wc);
 	if (!img)
 		return;
+
+	long long delta_time = ts - wc->last_timestamp;
+	if (delta_time >= 1000000000) {
+		wc->active_fps = wc->active_frame_count * 1000000000.0 / delta_time;
+		wc->last_timestamp = ts;
+		wc->active_frame_count = 0;
+	}
+	wc->active_frame_count++;
 
 	size_t width = CGImageGetWidth(img);
 	size_t height = CGImageGetHeight(img);
@@ -95,6 +120,8 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 						   obs_source_t *source)
 {
 	struct window_capture *wc = bzalloc(sizeof(struct window_capture));
+    
+	window_capture_reset_active_fps_context_data(wc);
 
 	wc->source = source;
 
@@ -126,6 +153,8 @@ static void *window_capture_create(obs_data_t *settings, obs_source_t *source)
 static void window_capture_destroy(void *data)
 {
 	struct window_capture *cap = data;
+
+	window_capture_reset_active_fps_context_data(cap);
 
 	os_event_signal(cap->stop_event);
 	os_event_signal(cap->capture_event);
@@ -172,6 +201,8 @@ static inline void window_capture_update_internal(struct window_capture *wc,
 				   : kCGWindowImageBoundsIgnoreFraming;
 
 	update_window(&wc->window, settings);
+    
+	window_capture_reset_active_fps_context_data(wc);
 
 	if (wc->window.window_name.length) {
 		blog(LOG_INFO,
@@ -231,4 +262,5 @@ struct obs_source_info window_capture_info = {
 	.get_properties = window_capture_properties,
 	.update = window_capture_update,
 	.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
+	.get_active_fps = window_capture_get_active_fps,
 };

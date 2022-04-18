@@ -24,6 +24,7 @@ static void decklink_deactivate_when_not_showing(DeckLinkInput *decklink,
 static void *decklink_create(obs_data_t *settings, obs_source_t *source)
 {
 	DeckLinkInput *decklink = new DeckLinkInput(source, deviceEnum);
+	decklink->ResetActiveFpsContextData();
 
 	obs_source_set_async_decoupled(source, true);
 	decklink_enable_buffering(decklink,
@@ -36,12 +37,14 @@ static void *decklink_create(obs_data_t *settings, obs_source_t *source)
 static void decklink_destroy(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
+	decklink->ResetActiveFpsContextData();
 	delete decklink;
 }
 
 static void decklink_update(void *data, obs_data_t *settings)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
+	decklink->ResetActiveFpsContextData();
 	const char *hash = obs_data_get_string(settings, DEVICE_HASH);
 	long long id = obs_data_get_int(settings, MODE_ID);
 	BMDVideoConnection videoConnection =
@@ -88,6 +91,7 @@ static void decklink_show(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
 
+	decklink->ResetActiveFpsContextData();
 	if (decklink->dwns && !decklink->Capturing()) {
 		ComPtr<DeckLinkDevice> device;
 		device.Set(deviceEnum->FindByHash(decklink->hash.c_str()));
@@ -100,6 +104,7 @@ static void decklink_hide(void *data)
 {
 	DeckLinkInput *decklink = (DeckLinkInput *)data;
 
+	decklink->ResetActiveFpsContextData();
 	if (decklink->dwns && decklink->Capturing())
 		decklink->Deactivate();
 }
@@ -331,6 +336,12 @@ static obs_properties_t *decklink_get_properties(void *data)
 	return props;
 }
 
+static double decklink_source_get_active_fps(void *data)
+{
+	DeckLinkInput *decklink = (DeckLinkInput *)data;
+	return decklink->active_fps;
+}
+
 struct obs_source_info create_decklink_source_info()
 {
 	struct obs_source_info decklink_source_info = {};
@@ -348,6 +359,7 @@ struct obs_source_info create_decklink_source_info()
 	decklink_source_info.show = decklink_show;
 	decklink_source_info.hide = decklink_hide;
 	decklink_source_info.icon_type = OBS_ICON_TYPE_CAMERA;
+	decklink_source_info.get_active_fps = decklink_source_get_active_fps;
 
 	return decklink_source_info;
 }

@@ -73,7 +73,24 @@ struct vlc_source {
 	obs_hotkey_id stop_hotkey;
 	obs_hotkey_id playlist_next_hotkey;
 	obs_hotkey_id playlist_prev_hotkey;
+
+	uint64_t last_timestamp;
+	uint32_t active_frame_count;
+	double_t active_fps;
 };
+
+static inline void vlc_reset_active_fps_context_data(struct vlc_source *vlcs)
+{
+	vlcs->last_timestamp = 0;
+	vlcs->active_frame_count = 0;
+	vlcs->active_fps = 0.0;
+}
+
+static double vlc_get_active_fps(void *data)
+{
+	struct vlc_source *vlcs = data;
+	return vlcs->active_fps;
+}
 
 static libvlc_media_t *get_media(struct darray *array, const char *path)
 {
@@ -348,6 +365,7 @@ static const char *vlcs_get_name(void *unused)
 static void vlcs_destroy(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	if (c->media_list_player) {
 		libvlc_media_list_player_stop_(c->media_list_player);
@@ -377,6 +395,13 @@ static void vlcs_video_display(void *data, void *picture)
 {
 	struct vlc_source *c = data;
 	c->frame.timestamp = (uint64_t)libvlc_clock_() * 1000ULL - time_start;
+    long long delta_time = c->frame.timestamp - c->last_timestamp;
+    if (delta_time >= 1000000000) {
+        c->active_fps = c->active_frame_count * 1000000000.0 / delta_time;
+        c->last_timestamp = c->frame.timestamp;
+        c->active_frame_count = 0;
+    }
+    c->active_frame_count++;
 	obs_source_output_video(c->source, &c->frame);
 
 	UNUSED_PARAMETER(picture);
@@ -578,6 +603,7 @@ static void vlcs_update(void *data, obs_data_t *settings)
 	DARRAY(struct media_file_data) old_files;
 	libvlc_media_list_t *media_list;
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 	obs_data_array_t *array;
 	const char *behavior;
 	size_t count;
@@ -775,6 +801,7 @@ static enum obs_media_state vlcs_get_state(void *data)
 static void vlcs_play_pause(void *data, bool pause)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	if (pause)
 		libvlc_media_list_player_pause_(c->media_list_player);
@@ -785,6 +812,7 @@ static void vlcs_play_pause(void *data, bool pause)
 static void vlcs_restart(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	libvlc_media_list_player_stop_(c->media_list_player);
 	libvlc_media_list_player_play_(c->media_list_player);
@@ -793,6 +821,7 @@ static void vlcs_restart(void *data)
 static void vlcs_stop(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	libvlc_media_list_player_stop_(c->media_list_player);
 	obs_source_output_video(c->source, NULL);
@@ -801,6 +830,7 @@ static void vlcs_stop(void *data)
 static void vlcs_playlist_next(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	libvlc_media_list_player_next_(c->media_list_player);
 }
@@ -808,6 +838,7 @@ static void vlcs_playlist_next(void *data)
 static void vlcs_playlist_prev(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	libvlc_media_list_player_previous_(c->media_list_player);
 }
@@ -902,6 +933,7 @@ static void vlcs_playlist_prev_hotkey(void *data, obs_hotkey_id id,
 static void *vlcs_create(obs_data_t *settings, obs_source_t *source)
 {
 	struct vlc_source *c = bzalloc(sizeof(*c));
+	vlc_reset_active_fps_context_data(c);
 	c->source = source;
 
 	c->play_pause_hotkey = obs_hotkey_register_source(
@@ -977,6 +1009,7 @@ error:
 static void vlcs_activate(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	if (c->behavior == BEHAVIOR_STOP_RESTART) {
 		libvlc_media_list_player_play_(c->media_list_player);
@@ -989,6 +1022,7 @@ static void vlcs_activate(void *data)
 static void vlcs_deactivate(void *data)
 {
 	struct vlc_source *c = data;
+	vlc_reset_active_fps_context_data(c);
 
 	if (c->behavior == BEHAVIOR_STOP_RESTART) {
 		libvlc_media_list_player_stop_(c->media_list_player);
@@ -1178,4 +1212,5 @@ struct obs_source_info vlc_source_info = {
 	.media_get_time = vlcs_get_time,
 	.media_set_time = vlcs_set_time,
 	.media_get_state = vlcs_get_state,
+	.get_active_fps = vlc_get_active_fps,
 };
