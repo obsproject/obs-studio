@@ -91,8 +91,8 @@ static void swipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(swipe->a_param, swipe->swipe_in ? b : a);
-	gs_effect_set_texture(swipe->b_param, swipe->swipe_in ? a : b);
+	gs_effect_set_texture_srgb(swipe->a_param, swipe->swipe_in ? b : a);
+	gs_effect_set_texture_srgb(swipe->b_param, swipe->swipe_in ? a : b);
 	gs_effect_set_vec2(swipe->swipe_param, &swipe_val);
 
 	while (gs_effect_loop(swipe->effect, "Swipe"))
@@ -153,6 +153,14 @@ static obs_properties_t *swipe_properties(void *data)
 	return ppts;
 }
 
+static enum gs_color_space
+swipe_video_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
+{
+	struct swipe_info *const swipe = data;
+	return obs_transition_video_get_color_space(swipe->source);
+}
+
 struct obs_source_info swipe_transition = {
 	.id = "swipe_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -163,4 +171,5 @@ struct obs_source_info swipe_transition = {
 	.video_render = swipe_video_render,
 	.audio_render = swipe_audio_render,
 	.get_properties = swipe_properties,
+	.video_get_color_space = swipe_video_get_color_space,
 };

@@ -42,7 +42,6 @@ float4 PSSwipe(VertData v_in) : TARGET
 		   ? tex_b.Sample(textureSampler, v_in.uv)
 		   : tex_a.Sample(textureSampler, swipe_uv);
 
-	outc.rgb = srgb_nonlinear_to_linear(outc.rgb);
 	return outc;
 }
 

@@ -96,8 +96,8 @@ static void slide_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(slide->a_param, a);
-	gs_effect_set_texture(slide->b_param, b);
+	gs_effect_set_texture_srgb(slide->a_param, a);
+	gs_effect_set_texture_srgb(slide->b_param, b);
 
 	gs_effect_set_vec2(slide->tex_a_dir_param, &tex_a_dir);
 	gs_effect_set_vec2(slide->tex_b_dir_param, &tex_b_dir);
@@ -157,6 +157,14 @@ static obs_properties_t *slide_properties(void *data)
 	return ppts;
 }
 
+static enum gs_color_space
+slide_video_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
+{
+	struct slide_info *const slide = data;
+	return obs_transition_video_get_color_space(slide->source);
+}
+
 struct obs_source_info slide_transition = {
 	.id = "slide_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -167,4 +175,5 @@ struct obs_source_info slide_transition = {
 	.video_render = slide_video_render,
 	.audio_render = slide_audio_render,
 	.get_properties = slide_properties,
+	.video_get_color_space = slide_video_get_color_space,
 };
