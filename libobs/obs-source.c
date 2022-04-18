@@ -2615,6 +2615,9 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 							    "multiplier"),
 				multiplier);
 
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
 			const size_t passes = gs_technique_begin(tech);
 			for (size_t i = 0; i < passes; i++) {
 				gs_technique_begin_pass(tech, i);
@@ -2622,6 +2625,8 @@ static void source_render(obs_source_t *source, gs_effect_t *effect)
 				gs_technique_end_pass(tech);
 			}
 			gs_technique_end(tech);
+
+			gs_blend_state_pop();
 
 			gs_enable_framebuffer_srgb(previous);
 		}
