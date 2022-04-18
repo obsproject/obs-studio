@@ -4326,14 +4326,19 @@ void OBSBasic::ResetUI()
 {
 	bool studioPortraitLayout = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
-
+	bool studioSwitchOrientation = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "StudioSwitchOrientation");
 	bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
 				      "StudioModeLabels");
 
 	if (studioPortraitLayout)
-		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
+		ui->previewLayout->setDirection(
+			studioSwitchOrientation ? QBoxLayout::BottomToTop
+						: QBoxLayout::TopToBottom);
 	else
-		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
+		ui->previewLayout->setDirection(
+			studioSwitchOrientation ? QBoxLayout::RightToLeft
+						: QBoxLayout::LeftToRight);
 
 	if (previewProgramMode)
 		ui->previewLabel->setHidden(!labels);
