@@ -60,7 +60,6 @@ float4 PSLumaWipe(VertData v_in) : TARGET
 		rgba = lerp(a_color, b_color, alpha);
 	}
 
-	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
 	return rgba;
 }
 
