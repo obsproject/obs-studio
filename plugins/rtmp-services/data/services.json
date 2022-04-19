@@ -1,4 +1,5 @@
 {
+    "$schema": "schema/service-schema-v3.json",
     "format_version": 3,
     "services": [
         {
