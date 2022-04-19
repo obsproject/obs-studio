@@ -379,6 +379,9 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	switch (ovi->output_format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
+	case VIDEO_FORMAT_YA2L:
 		format = GS_RGBA16F;
 	}
 

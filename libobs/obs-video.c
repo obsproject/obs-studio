@@ -727,10 +727,13 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_BGR3:
+	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_I40A:
 	case VIDEO_FORMAT_I42A:
 	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
 		/* unimplemented */
 		;
