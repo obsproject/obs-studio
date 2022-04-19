@@ -1,0 +1,40 @@
+name: Services Validator
+
+on:
+  push:
+    paths:
+      - "plugins/rtmp-services/data/services.json"
+      - "plugins/rtmp-services/data/package.json"
+  pull_request:
+    paths:
+      - "plugins/rtmp-services/data/services.json"
+      - "plugins/rtmp-services/data/package.json"
+
+jobs:
+  schema:
+    name: Schema
+    runs-on: [ubuntu-latest]
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Install & Configure Python
+        run: |
+          sudo apt install python3.9-dev
+          python3.9 -m pip install jsonschema json_source_map
+
+      - name: Validate Service JSON Schema
+        run: |
+          JSON_FILES=(
+            plugins/rtmp-services/data/services.json
+            plugins/rtmp-services/data/package.json
+          )
+          python3.9 CI/check-jsonschema.py "${JSON_FILES[@]}"
+
+      - name: Annotate Errors
+        if: failure()
+        uses: yuzutech/annotations-action@v0.4.0
+        with:
+          repo-token: "${{ secrets.GITHUB_TOKEN }}"
+          title: "Service JSON Errors"
+          input: "./validation_errors.json"
