@@ -709,6 +709,8 @@ bool OBSBasicFilters::nativeEvent(const QByteArray &, void *message, long *)
 			display->OnDisplayChange();
 		}
 	}
+#else
+	UNUSED_PARAMETER(message);
 #endif
 
 	return false;
