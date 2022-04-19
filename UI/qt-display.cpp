@@ -197,6 +197,8 @@ bool OBSQTDisplay::nativeEvent(const QByteArray &, void *message, long *)
 	case WM_DISPLAYCHANGE:
 		OnDisplayChange();
 	}
+#else
+	UNUSED_PARAMETER(message);
 #endif
 
 	return false;
