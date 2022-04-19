@@ -3021,7 +3021,7 @@ obs_sceneitem_get_blending_method(obs_sceneitem_t *item)
 {
 	return obs_ptr_valid(item, "obs_sceneitem_get_blending_method")
 		       ? item->blend_method
-		       : OBS_BLEND_NORMAL;
+		       : OBS_BLEND_METHOD_DEFAULT;
 }
 
 void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
