@@ -38,8 +38,12 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_YUY2;
 	case AV_PIX_FMT_YUV422P:
 		return VIDEO_FORMAT_I422;
+	case AV_PIX_FMT_YUV422P10LE:
+		return VIDEO_FORMAT_I210;
 	case AV_PIX_FMT_YUV444P:
 		return VIDEO_FORMAT_I444;
+	case AV_PIX_FMT_YUV444P12LE:
+		return VIDEO_FORMAT_I412;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
 	case AV_PIX_FMT_NV12:
@@ -56,6 +60,10 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case AV_PIX_FMT_YUVA444P12LE:
+		return VIDEO_FORMAT_YA2L;
+#endif
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_P010LE:

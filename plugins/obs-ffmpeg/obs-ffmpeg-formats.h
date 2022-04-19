@@ -15,6 +15,8 @@ obs_to_ffmpeg_video_format(enum video_format format)
 	switch (format) {
 	case VIDEO_FORMAT_I444:
 		return AV_PIX_FMT_YUV444P;
+	case VIDEO_FORMAT_I412:
+		return AV_PIX_FMT_YUV444P12LE;
 	case VIDEO_FORMAT_I420:
 		return AV_PIX_FMT_YUV420P;
 	case VIDEO_FORMAT_NV12:
@@ -35,12 +37,20 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_BGR24;
 	case VIDEO_FORMAT_I422:
 		return AV_PIX_FMT_YUV422P;
+	case VIDEO_FORMAT_I210:
+		return AV_PIX_FMT_YUV422P10LE;
 	case VIDEO_FORMAT_I40A:
 		return AV_PIX_FMT_YUVA420P;
 	case VIDEO_FORMAT_I42A:
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
+	case VIDEO_FORMAT_YA2L:
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+		return AV_PIX_FMT_YUVA444P12LE;
+#else
+		return AV_PIX_FMT_NONE;
+#endif
 	case VIDEO_FORMAT_I010:
 		return AV_PIX_FMT_YUV420P10LE;
 	case VIDEO_FORMAT_P010:

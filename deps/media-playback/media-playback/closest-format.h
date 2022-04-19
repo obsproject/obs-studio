@@ -22,6 +22,9 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 	case AV_PIX_FMT_YUYV422:
 		return AV_PIX_FMT_YUYV422;
 
+	case AV_PIX_FMT_YUV444P12LE:
+		return AV_PIX_FMT_YUV444P12LE;
+
 	case AV_PIX_FMT_YUV444P:
 	case AV_PIX_FMT_YUV444P16LE:
 	case AV_PIX_FMT_YUV444P16BE:
@@ -30,7 +33,6 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 	case AV_PIX_FMT_YUV444P10BE:
 	case AV_PIX_FMT_YUV444P10LE:
 	case AV_PIX_FMT_YUV444P12BE:
-	case AV_PIX_FMT_YUV444P12LE:
 	case AV_PIX_FMT_YUV444P14BE:
 	case AV_PIX_FMT_YUV444P14LE:
 		return AV_PIX_FMT_YUV444P;
@@ -38,12 +40,14 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 	case AV_PIX_FMT_YUV422P:
 		return AV_PIX_FMT_YUV422P;
 
+	case AV_PIX_FMT_YUV422P10LE:
+		return AV_PIX_FMT_YUV422P10LE;
+
 	case AV_PIX_FMT_YUVJ422P:
 	case AV_PIX_FMT_UYVY422:
 	case AV_PIX_FMT_YUV422P16LE:
 	case AV_PIX_FMT_YUV422P16BE:
 	case AV_PIX_FMT_YUV422P10BE:
-	case AV_PIX_FMT_YUV422P10LE:
 	case AV_PIX_FMT_YUV422P9BE:
 	case AV_PIX_FMT_YUV422P9LE:
 	case AV_PIX_FMT_YVYU422:
@@ -91,9 +95,13 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 	case AV_PIX_FMT_YUVA444P16LE:
 #if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
 	case AV_PIX_FMT_YUVA444P12BE:
-	case AV_PIX_FMT_YUVA444P12LE:
 #endif
 		return AV_PIX_FMT_YUVA444P;
+
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case AV_PIX_FMT_YUVA444P12LE:
+		return AV_PIX_FMT_YUVA444P12LE;
+#endif
 
 	case AV_PIX_FMT_P010LE:
 		return AV_PIX_FMT_P010LE;
