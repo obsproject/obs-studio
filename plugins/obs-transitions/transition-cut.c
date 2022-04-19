@@ -61,6 +61,9 @@ static enum gs_color_space
 cut_video_get_color_space(void *data, size_t count,
 			  const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	struct cut_info *const cut = data;
 	return obs_transition_video_get_color_space(cut->source);
 }

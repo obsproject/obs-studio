@@ -214,6 +214,9 @@ static enum gs_color_space
 luma_wipe_video_get_color_space(void *data, size_t count,
 				const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	struct luma_wipe_info *const lwipe = data;
 	return obs_transition_video_get_color_space(lwipe->source);
 }
