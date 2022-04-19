@@ -702,7 +702,7 @@ static inline bool should_split(struct ffmpeg_muxer *stream,
 static bool send_new_filename(struct ffmpeg_muxer *stream, const char *filename)
 {
 	size_t ret;
-	uint32_t size = strlen(filename);
+	uint32_t size = (uint32_t)strlen(filename);
 	struct ffm_packet_info info = {.type = FFM_PACKET_CHANGE_FILE,
 				       .size = size};
 
