@@ -46,6 +46,8 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_I412;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_YVYU422:
+		return VIDEO_FORMAT_YVYU;
 	case AV_PIX_FMT_NV12:
 		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:

@@ -25,6 +25,8 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUYV422;
 	case VIDEO_FORMAT_UYVY:
 		return AV_PIX_FMT_UYVY422;
+	case VIDEO_FORMAT_YVYU:
+		return AV_PIX_FMT_YVYU422;
 	case VIDEO_FORMAT_RGBA:
 		return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA:
@@ -56,7 +58,6 @@ obs_to_ffmpeg_video_format(enum video_format format)
 	case VIDEO_FORMAT_P010:
 		return AV_PIX_FMT_P010LE;
 	case VIDEO_FORMAT_NONE:
-	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_AYUV:
 		/* not supported by FFmpeg */
 		return AV_PIX_FMT_NONE;

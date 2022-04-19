@@ -54,8 +54,10 @@ static enum AVPixelFormat closest_format(enum AVPixelFormat fmt)
 		return AV_PIX_FMT_YUV422P10LE;
 
 	case AV_PIX_FMT_UYVY422:
-	case AV_PIX_FMT_YVYU422:
 		return AV_PIX_FMT_UYVY422;
+
+	case AV_PIX_FMT_YVYU422:
+		return AV_PIX_FMT_YVYU422;
 
 	case AV_PIX_FMT_NV12:
 	case AV_PIX_FMT_NV21:
