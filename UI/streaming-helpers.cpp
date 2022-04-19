@@ -56,7 +56,7 @@ Json get_services_json()
 	return root;
 }
 
-Json get_service_from_json(Json &root, const char *name)
+Json get_service_from_json(const Json &root, const char *name)
 {
 	auto &services = root["services"].array_items();
 	for (const Json &service : services) {
