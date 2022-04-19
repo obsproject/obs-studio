@@ -1064,9 +1064,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->blend_type = OBS_BLEND_NORMAL;
 
 	if (blend_str) {
-		if (astrcmpi(blend_str, "normal") == 0)
-			item->blend_type = OBS_BLEND_NORMAL;
-		else if (astrcmpi(blend_str, "additive") == 0)
+		if (astrcmpi(blend_str, "additive") == 0)
 			item->blend_type = OBS_BLEND_ADDITIVE;
 		else if (astrcmpi(blend_str, "subtract") == 0)
 			item->blend_type = OBS_BLEND_SUBTRACT;
