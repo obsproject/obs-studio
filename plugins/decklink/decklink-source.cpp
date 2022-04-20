@@ -71,6 +71,8 @@ static void decklink_update(void *data, obs_data_t *settings)
 	decklink->swap = obs_data_get_bool(settings, SWAP);
 	decklink->allow10Bit = obs_data_get_bool(settings, ALLOW_10_BIT);
 	decklink->Activate(device, id, videoConnection, audioConnection);
+
+	obs_source_set_async_compensation(decklink->GetSource(), obs_data_get_bool(settings, ASYNC_COMPENSATION));
 }
 
 static void decklink_show(void *data)
@@ -99,6 +101,7 @@ static void decklink_get_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, COLOR_RANGE, VIDEO_RANGE_DEFAULT);
 	obs_data_set_default_int(settings, CHANNEL_FORMAT, SPEAKERS_STEREO);
 	obs_data_set_default_bool(settings, SWAP, false);
+	obs_data_set_default_bool(settings, ASYNC_COMPENSATION, true);
 }
 
 static const char *decklink_get_name(void *)
@@ -260,6 +263,8 @@ static obs_properties_t *decklink_get_properties(void *data)
 	obs_properties_add_bool(props, DEACTIVATE_WNS, TEXT_DWNS);
 
 	obs_properties_add_bool(props, ALLOW_10_BIT, TEXT_ALLOW_10_BIT);
+
+	obs_properties_add_bool(props, ASYNC_COMPENSATION, TEXT_ASYNC_COMPENSATION);
 
 	UNUSED_PARAMETER(data);
 	return props;
