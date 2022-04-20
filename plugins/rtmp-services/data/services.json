@@ -855,7 +855,10 @@
         },
         {
             "name": "AfreecaTV",
-            "alt_names": ["아프리카TV", "Afreeca.TV"],
+            "alt_names": [
+                "아프리카TV",
+                "Afreeca.TV"
+            ],
             "servers": [
                 {
                     "name": "Asia : Korea",
@@ -1179,7 +1182,9 @@
         },
         {
             "name": "Switchboard Live",
-            "alt_names": ["Switchboard Live (Joicaster)"],
+            "alt_names": [
+                "Switchboard Live (Joicaster)"
+            ],
             "servers": [
                 {
                     "name": "Global Zone (geo based)",
@@ -1330,7 +1335,9 @@
         },
         {
             "name": "Trovo",
-            "alt_names": ["Madcat"],
+            "alt_names": [
+                "Madcat"
+            ],
             "stream_key_link": "https://studio.trovo.live/mychannel/stream",
             "servers": [
                 {
@@ -2355,7 +2362,7 @@
             "servers": [
                 {
                     "name": "BoxCast",
-                    "url":  "rtmp://rtmp.boxcast.com/live"
+                    "url": "rtmp://rtmp.boxcast.com/live"
                 }
             ]
         },
@@ -2364,7 +2371,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url":  "rtmp://rtmp.disciplemedia.com/b-fme"
+                    "url": "rtmp://rtmp.disciplemedia.com/b-fme"
                 }
             ]
         },
@@ -2419,7 +2426,7 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url":  "rtmp://live.autistici.org/ingest"
+                    "url": "rtmp://live.autistici.org/ingest"
                 }
             ],
             "recommended": {
@@ -2434,7 +2441,7 @@
             "servers": [
                 {
                     "name": "PhoneLiveStreaming",
-                    "url":  "rtmp://live.phonelivestreaming.com/live/"
+                    "url": "rtmp://live.phonelivestreaming.com/live/"
                 }
             ],
             "recommended": {
