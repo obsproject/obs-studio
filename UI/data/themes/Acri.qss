@@ -154,10 +154,6 @@ QListView QLineEdit {
 }
 
 /* Dock stuff */
-QDockWidget {
-	titlebar-close-icon: url('./Dark/close.svg');
-	titlebar-normal-icon: url('./Dark/popout.svg');
-}
 
 QDockWidget {
 	background: palette(window);
@@ -167,7 +163,7 @@ QDockWidget {
 	border-bottom: 2px solid rgb(47,47,47);
 }
 
-QDockWidget::title {
+QFrame#dockTitleBar {
 	border-bottom: 2px solid rgb(47,47,47);
 	margin-left: 5px;
 	margin-right: 5px;
@@ -181,19 +177,15 @@ QDockWidget::title {
 	background-repeat: none;
 }
 
-QDockWidget::close-button,
-QDockWidget::float-button {
-	icon-size: 20px;
-	subcontrol-position: top right;
-	subcontrol-origin: padding;
-	right: 0px;
-	margin: 0px;
+QFrame#dockTitleBar > QLabel {
+    font-weight: bold;
+	font-size: 12px;
+	background: transparent;
 }
 
-QDockWidget::float-button {
-	right: 20px;
+* [themeID="dotsIcon"] {
+    qproperty-icon: url(./Dark/dots.svg);
 }
-
 
 QListView#scenes,
 SourceListWidget {

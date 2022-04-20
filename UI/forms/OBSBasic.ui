@@ -667,7 +667,6 @@
     </action>
     <addaction name="actionFullscreenInterface"/>
     <addaction name="separator"/>
-    <addaction name="toggleListboxToolbars"/>
     <addaction name="toggleContextBar"/>
     <addaction name="toggleSourceIcons"/>
     <addaction name="toggleStatusBar"/>
@@ -801,24 +800,6 @@
          </widget>
         </item>
         <item>
-         <widget class="QToolBar" name="scenesToolbar">
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="floatable">
-           <bool>false</bool>
-          </property>
-          <addaction name="actionAddScene"/>
-          <addaction name="actionRemoveScene"/>
-          <addaction name="separator"/>
-          <addaction name="actionSceneUp"/>
-          <addaction name="actionSceneDown"/>
-         </widget>
-        </item>
-        <item>
          <spacer name="scenesFixedSizeHSpacer">
           <property name="orientation">
            <enum>Qt::Horizontal</enum>
@@ -933,25 +914,6 @@
            <enum>QAbstractItemView::ExtendedSelection</enum>
           </property>
           <addaction name="actionRemoveSource"/>
-         </widget>
-        </item>
-        <item>
-         <widget class="QToolBar" name="sourcesToolbar">
-          <property name="iconSize">
-           <size>
-            <width>16</width>
-            <height>16</height>
-           </size>
-          </property>
-          <property name="floatable">
-           <bool>false</bool>
-          </property>
-          <addaction name="actionAddSource"/>
-          <addaction name="actionRemoveSource"/>
-          <addaction name="actionSourceProperties"/>
-          <addaction name="separator"/>
-          <addaction name="actionSourceUp"/>
-          <addaction name="actionSourceDown"/>
          </widget>
         </item>
         <item>

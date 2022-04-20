@@ -267,13 +267,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 	statsDock->setFeatures(QDockWidget::DockWidgetClosable |
 			       QDockWidget::DockWidgetMovable |
 			       QDockWidget::DockWidgetFloatable);
-	statsDock->setWindowTitle(QTStr("Basic.Stats"));
+	statsDock->SetTitle(QTStr("Basic.Stats"));
 	addDockWidget(Qt::BottomDockWidgetArea, statsDock);
 	statsDock->setVisible(false);
 	statsDock->setFloating(true);
 	statsDock->resize(700, 200);
-
-	copyActionsDynamicProperties();
 
 	char styleSheetPath[512];
 	int ret = GetProfilePath(styleSheetPath, sizeof(styleSheetPath),
@@ -571,26 +569,6 @@ static obs_data_t *GenerateSaveData(obs_data_array_t *sceneOrder,
 	obs_data_set_int(saveData, "transition_duration", transitionDuration);
 
 	return saveData;
-}
-
-void OBSBasic::copyActionsDynamicProperties()
-{
-	// Themes need the QAction dynamic properties
-	for (QAction *x : ui->scenesToolbar->actions()) {
-		QWidget *temp = ui->scenesToolbar->widgetForAction(x);
-
-		for (QByteArray &y : x->dynamicPropertyNames()) {
-			temp->setProperty(y, x->property(y));
-		}
-	}
-
-	for (QAction *x : ui->sourcesToolbar->actions()) {
-		QWidget *temp = ui->sourcesToolbar->widgetForAction(x);
-
-		for (QByteArray &y : x->dynamicPropertyNames()) {
-			temp->setProperty(y, x->property(y));
-		}
-	}
 }
 
 void OBSBasic::UpdateVolumeControlsDecayRate()
@@ -1922,6 +1900,8 @@ void OBSBasic::OBSInit()
 	bool hideWindowOnStart = QSystemTrayIcon::isSystemTrayAvailable() &&
 				 sysTrayEnabled &&
 				 (opt_minimize_tray || sysTrayWhenStarted);
+
+	SetupDockTitleBars();
 
 #ifdef _WIN32
 	SetWin32DropStyle(this);
@@ -8892,15 +8872,9 @@ void OBSBasic::on_lockUI_toggled(bool lock)
 			extraDocks[i]->setFeatures(features);
 		}
 	}
-}
 
-void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)
-{
-	ui->sourcesToolbar->setVisible(visible);
-	ui->scenesToolbar->setVisible(visible);
-
-	config_set_bool(App()->GlobalConfig(), "BasicWindow",
-			"ShowListboxToolbars", visible);
+	QList<OBSDock *> list = findChildren<OBSDock *>();
+	foreach(OBSDock * dock, list) { dock->EnableControlMenu(lock); }
 }
 
 void OBSBasic::ShowContextBar()
@@ -10139,4 +10113,38 @@ void OBSBasic::SetDisplayAffinity(QWindow *window)
 	// implement SetDisplayAffinitySupported too!
 	UNUSED_PARAMETER(hideFromCapture);
 #endif
+}
+
+void OBSBasic::SetupDockTitleBars()
+{
+	ui->scenesDock->SetTitle(QTStr("Basic.Main.Scenes"));
+	ui->scenesDock->AddButton("addIconSmall", QTStr("Add"), this,
+				  SLOT(on_actionAddScene_triggered()));
+	ui->scenesDock->AddButton("removeIconSmall", QTStr("Remove"), this,
+				  SLOT(on_actionRemoveScene_triggered()));
+	ui->scenesDock->AddSeparator();
+	ui->scenesDock->AddButton("upArrowIconSmall", QTStr("MoveUp"), this,
+				  SLOT(on_actionSceneUp_triggered()));
+	ui->scenesDock->AddButton("downArrowIconSmall", QTStr("MoveDown"), this,
+				  SLOT(on_actionSceneDown_triggered()));
+
+	ui->sourcesDock->SetTitle(QTStr("Basic.Main.Sources"));
+	ui->sourcesDock->AddButton("addIconSmall", QTStr("Add"), this,
+				   SLOT(on_actionAddSource_triggered()));
+	ui->sourcesDock->AddButton("removeIconSmall", QTStr("Remove"), this,
+				   SLOT(on_actionRemoveSource_triggered()));
+	ui->sourcesDock->AddButton("configIconSmall", QTStr("Properties"), this,
+				   SLOT(on_actionSourceProperties_triggered()));
+	ui->sourcesDock->AddSeparator();
+	ui->sourcesDock->AddButton("upArrowIconSmall", QTStr("MoveUp"), this,
+				   SLOT(on_actionSourceUp_triggered()));
+	ui->sourcesDock->AddButton("downArrowIconSmall", QTStr("MoveDown"),
+				   this, SLOT(on_actionSourceDown_triggered()));
+
+	ui->mixerDock->SetTitle(QTStr("Mixer"));
+	ui->transitionsDock->SetTitle(QTStr("Basic.SceneTransitions"));
+	ui->controlsDock->SetTitle(QTStr("Basic.Main.Controls"));
+
+	QList<OBSDock *> list = findChildren<OBSDock *>();
+	foreach(OBSDock * dock, list) { dock->AddControlMenu(); }
 }

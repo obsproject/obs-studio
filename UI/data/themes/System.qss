@@ -358,3 +358,14 @@ QCalendarWidget #qt_calendar_nextmonth {
     qproperty-icon: url(./Dark/expand.svg);
     icon-size: 16px, 16px;
 }
+
+/* Dock Title Bar */
+#dockTitleBar > QLabel {
+    font-weight: bold;
+    font-size: 12px;
+    background: transparent;
+}
+
+* [themeID="dotsIcon"] {
+    qproperty-icon: url(:/res/images/dots.svg);
+}

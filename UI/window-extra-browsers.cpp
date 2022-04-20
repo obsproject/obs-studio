@@ -534,7 +534,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setObjectName(title + OBJ_NAME_SUFFIX);
 	dock->resize(460, 600);
 	dock->setMinimumSize(80, 80);
-	dock->setWindowTitle(title);
+	dock->SetTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
 	QCefWidget *browser =

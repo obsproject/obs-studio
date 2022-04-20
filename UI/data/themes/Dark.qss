@@ -119,28 +119,34 @@ SourceTree QLineEdit {
 
 /* Dock Widget */
 
-QDockWidget {
-	titlebar-close-icon: url('./Dark/close.svg');
-	titlebar-normal-icon: url('./Dark/popout.svg');
-}
-
-QDockWidget::title {
-    text-align: center;
+QFrame#dockTitleBar {
     background-color: rgb(70,69,70);
 }
 
-QDockWidget::close-button, QDockWidget::float-button {
-    border: 1px solid transparent;
-    background: transparent;
-    padding: 0px;
-}
-
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {
+QFrame#dockTitleBar > QLabel {
+    font-weight: bold;
+    font-size: 12px;
     background: transparent;
 }
 
-QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
-    padding: 1px -1px -1px 1px;
+QPushButton#dockTitleBarButton::flat {
+    background-color: rgb(70,69,70);
+}
+
+QPushButton#dockTitleBarButton::flat:hover {
+    background-color: rgb(122,121,122); /* light */
+}
+
+QPushButton#dockTitleBarButton::flat:pressed {
+    background-color: palette(base);
+}
+
+QPushButton#dockTitleBarButton::flat:disabled {
+    background-color: rgb(46,45,46);
+}
+
+* [themeID="dotsIcon"] {
+    qproperty-icon: url(./Dark/dots.svg);
 }
 
 /* Group Box */

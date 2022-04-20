@@ -185,6 +185,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSYoutubeActions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
+	friend class OBSDock;
 
 	enum class MoveDir { Up, Down, Left, Right };
 
@@ -240,7 +241,7 @@ private:
 	QPointer<OBSBasicTransform> transformWindow;
 	QPointer<OBSBasicAdvAudio> advAudioWindow;
 	QPointer<OBSBasicFilters> filters;
-	QPointer<QDockWidget> statsDock;
+	QPointer<OBSDock> statsDock;
 	QPointer<OBSAbout> about;
 	QPointer<OBSMissingFiles> missDialog;
 	QPointer<OBSLogViewer> logView;
@@ -538,6 +539,8 @@ private:
 	void ReceivedIntroJson(const QString &text);
 	void ShowWhatsNew(const QString &url);
 
+	void SetupDockTitleBars();
+
 #ifdef BROWSER_AVAILABLE
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
 	QList<QSharedPointer<QAction>> extraBrowserDockActions;
@@ -804,7 +807,6 @@ private:
 	void AddSource(const char *id);
 	QMenu *CreateAddSourcePopupMenu();
 	void AddSourcePopupMenu(const QPoint &pos);
-	void copyActionsDynamicProperties();
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
@@ -1062,7 +1064,6 @@ private slots:
 
 	void on_actionAlwaysOnTop_triggered();
 
-	void on_toggleListboxToolbars_toggled(bool visible);
 	void on_toggleContextBar_toggled(bool visible);
 	void on_toggleStatusBar_toggled(bool visible);
 	void on_toggleSourceIcons_toggled(bool visible);

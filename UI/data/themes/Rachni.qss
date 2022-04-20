@@ -189,37 +189,44 @@ QListView::item:hover:!active {
 /***********************/
 
 QDockWidget {
-	titlebar-close-icon: url('./Dark/close.svg');
-	titlebar-normal-icon: url('./Dark/popout.svg');
-}
-
-QDockWidget {
 	background: palette(window);
 	border: 1px solid rgb(58, 64, 69); /* Light Blue-gray */
 }
 
-QDockWidget::title {
-	text-align: left;
+QFrame#dockTitleBar {
 	background: palette(shadow);
 	padding-left: 5px;
 }
 
-
-QDockWidget::close-button, QDockWidget::float-button {
-	border: 1px solid transparent;
-	border-radius: 2px;
+QFrame#dockTitleBar > QLabel {
+	font-weight: bold;
+	font-size: 12px;
 	background: transparent;
 }
 
-QDockWidget::close-button:hover, QDockWidget::float-button:hover {
-	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+QPushButton#dockTitleBarButton::flat {
+	background-color: palette(shadow);
+	border: none;
+	outline: none;
 }
 
-QDockWidget::close-button:pressed, QDockWidget::float-button:pressed {
-	padding: 1px -1px -1px 1px;
-	background: rgba(255, 148, 194, 0.25); /* Light Pink (Secondary Light) */
+QPushButton#dockTitleBarButton::flat:hover {
+	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
+	margin: 0;
+	padding: 0;
+	border-radius: 2px;
+	border: none;
+	outline: none;
 }
 
+QPushButton#dockTitleBarButton::flat:pressed {
+	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
+	border: 1px solid rgb(240, 98, 146); /* Pink (Secondary) */
+}
+
+* [themeID="dotsIcon"] {
+	qproperty-icon: url(./Dark/dots.svg);
+}
 
 /***********************/
 /* --- Group Boxes --- */
