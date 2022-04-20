@@ -26,12 +26,13 @@ enum class MultiviewLayout : uint8_t {
 	SCENES_ONLY_25_SCENES = 9,
 };
 
-class OBSProjector : public OBSQTDisplay {
+class OBSProjector : public QWidget {
 	Q_OBJECT
 
 private:
 	OBSSource source;
 	OBSSignal removedSignal;
+	OBSQTDisplay display;
 
 	static void OBSRenderMultiview(void *data, uint32_t cx, uint32_t cy);
 	static void OBSRender(void *data, uint32_t cx, uint32_t cy);
@@ -40,6 +41,13 @@ private:
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	virtual bool nativeEvent(const QByteArray &eventType, void *message,
+				 qintptr *result) override;
+#else
+	virtual bool nativeEvent(const QByteArray &eventType, void *message,
+				 long *result) override;
+#endif
 
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
