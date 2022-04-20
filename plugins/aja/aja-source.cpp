@@ -7,11 +7,13 @@
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/dstr.h>
+#include <util/util_uint64.h>
 #include <obs-module.h>
 
 #include <ajantv2/includes/ntv2card.h>
 #include <ajantv2/includes/ntv2utils.h>
 
+#define NSEC_PER_SEC 1000000000LL
 #define NTV2_AUDIOSIZE_MAX (401 * 1024)
 
 AJASource::AJASource(obs_source_t *source)
@@ -170,6 +172,16 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 					       obsFrame.color_range_max);
 	obs_source_output_video2(mSource, &obsFrame);
 	blog(LOG_DEBUG, "AJASource::GenerateTestPattern: Black");
+}
+
+static inline uint64_t samples_to_ns(size_t frames, uint_fast32_t rate)
+{
+	return util_mul_div64(frames, NSEC_PER_SEC, rate);
+}
+
+static inline uint64_t get_sample_time(size_t frames, uint_fast32_t rate)
+{
+	return os_gettime_ns() - samples_to_ns(frames, rate);
 }
 
 void AJASource::CaptureThread(AJAThread *thread, void *data)
@@ -337,7 +349,8 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			audioPacket.format = AUDIO_FORMAT_32BIT;
 			audioPacket.speakers = SPEAKERS_7POINT1;
 			audioPacket.frames = offsets.bytesRead / 32;
-			audioPacket.timestamp = os_gettime_ns();
+			audioPacket.timestamp =
+				get_sample_time(audioPacket.frames, 48000);
 			audioPacket.data[0] = (uint8_t *)ajaSource->mAudioBuffer
 						      .GetHostPointer();
 			obs_source_output_audio(ajaSource->mSource,
