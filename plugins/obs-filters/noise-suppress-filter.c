@@ -536,28 +536,40 @@ bool load_nvafx(void)
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_audiofx, "NVAudioEffects.dll")
 	LOAD_SYM(NvAFX_GetEffectList);
 	LOAD_SYM(NvAFX_CreateEffect);
+	LOAD_SYM(NvAFX_CreateChainedEffect);
 	LOAD_SYM(NvAFX_DestroyEffect);
 	LOAD_SYM(NvAFX_SetU32);
+	LOAD_SYM(NvAFX_SetU32List);
 	LOAD_SYM(NvAFX_SetString);
+	LOAD_SYM(NvAFX_SetStringList);
 	LOAD_SYM(NvAFX_SetFloat);
+	LOAD_SYM(NvAFX_SetFloatList);
 	LOAD_SYM(NvAFX_GetU32);
 	LOAD_SYM(NvAFX_GetString);
+	LOAD_SYM(NvAFX_GetStringList);
 	LOAD_SYM(NvAFX_GetFloat);
+	LOAD_SYM(NvAFX_GetFloatList);
 	LOAD_SYM(NvAFX_Load);
+	LOAD_SYM(NvAFX_GetSupportedDevices);
 	LOAD_SYM(NvAFX_Run);
+	LOAD_SYM(NvAFX_Reset);
 #undef LOAD_SYM
-
-	int err;
+#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cuda, "nvcuda.dll")
+	LOAD_SYM(cuCtxGetCurrent);
+	LOAD_SYM(cuCtxPopCurrent);
+	LOAD_SYM(cuInit);
+#undef LOAD_SYM
+	NvAFX_Status err;
 	NvAFX_Handle h = NULL;
 
 	err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER, &h);
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO,
-			     "[noise suppress]: NVIDIA RTX denoiser disabled: unsupported GPU");
+			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled: unsupported GPU");
 		} else {
 			blog(LOG_ERROR,
-			     "[noise suppress]: NVIDIA RTX denoiser disabled: error %i",
+			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled: error %i",
 			     err);
 		}
 		goto unload_everything;
@@ -570,7 +582,7 @@ bool load_nvafx(void)
 	}
 
 	nvafx_loaded = true;
-	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX denoiser enabled");
+	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX AUDIO FX enabled");
 	return true;
 
 unload_everything:
