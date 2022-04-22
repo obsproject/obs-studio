@@ -22,6 +22,7 @@ configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in
 target_sources(
   obs-ffmpeg
   PRIVATE obs-ffmpeg.c
+          obs-ffmpeg-video-encoders.c
           obs-ffmpeg-audio-encoders.c
           obs-ffmpeg-av1.c
           obs-ffmpeg-nvenc.c

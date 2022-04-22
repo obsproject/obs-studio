@@ -1,5 +1,5 @@
 /******************************************************************************
-    Copyright (C) 2016 by Hugh Bailey <obs.jim@gmail.com>
+    Copyright (C) 2022 by Hugh Bailey <obs.jim@gmail.com>
 
     This program is free software: you can redistribute it and/or modify
     it under the terms of the GNU General Public License as published by
@@ -15,23 +15,11 @@
     along with this program.  If not, see <http://www.gnu.org/licenses/>.
 ******************************************************************************/
 
-#include <util/platform.h>
-#include <util/darray.h>
-#include <util/dstr.h>
-#include <util/base.h>
-#include <media-io/video-io.h>
-#include <opts-parser.h>
-#include <obs-module.h>
-
-#include <libavutil/opt.h>
-#include <libavutil/pixdesc.h>
-#include <libavformat/avformat.h>
-
-#include "obs-ffmpeg-formats.h"
+#include "obs-ffmpeg-video-encoders.h"
 
 #define do_log(level, format, ...)                 \
 	blog(level, "[AV1 encoder: '%s'] " format, \
-	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
+	     obs_encoder_get_name(enc->ffve.encoder), ##__VA_ARGS__)
 
 #define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -39,22 +27,10 @@
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
 struct av1_encoder {
-	obs_encoder_t *encoder;
-	const char *enc_name;
+	struct ffmpeg_video_encoder ffve;
 	bool svtav1;
 
-	AVCodec *avcodec;
-	AVCodecContext *context;
-	int64_t start_ts;
-	bool first_packet;
-
-	AVFrame *vframe;
-
-	DARRAY(uint8_t) buffer;
 	DARRAY(uint8_t) header;
-
-	int height;
-	bool initialized;
 };
 
 static const char *aom_av1_getname(void *unused)
@@ -83,55 +59,6 @@ static void av1_video_info(void *data, struct video_scale_info *info)
 	}
 }
 
-static bool av1_init_codec(struct av1_encoder *enc)
-{
-	int ret;
-
-	enc->context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
-
-	ret = avcodec_open2(enc->context, enc->avcodec, NULL);
-	if (ret < 0) {
-		if (!obs_encoder_get_last_error(enc->encoder)) {
-			struct dstr error_message = {0};
-
-			dstr_copy(&error_message,
-				  obs_module_text("Encoder.Error"));
-			dstr_replace(&error_message, "%1", enc->enc_name);
-			dstr_replace(&error_message, "%2", av_err2str(ret));
-			dstr_cat(&error_message, "\r\n\r\n");
-
-			obs_encoder_set_last_error(enc->encoder,
-						   error_message.array);
-			dstr_free(&error_message);
-		}
-		warn("Failed to open %s: %s", enc->enc_name, av_err2str(ret));
-		return false;
-	}
-
-	enc->vframe = av_frame_alloc();
-	if (!enc->vframe) {
-		warn("Failed to allocate video frame");
-		return false;
-	}
-
-	enc->vframe->format = enc->context->pix_fmt;
-	enc->vframe->width = enc->context->width;
-	enc->vframe->height = enc->context->height;
-	enc->vframe->colorspace = enc->context->colorspace;
-	enc->vframe->color_range = enc->context->color_range;
-
-	ret = av_frame_get_buffer(enc->vframe, base_get_alignment());
-	if (ret < 0) {
-		warn("Failed to allocate vframe: %s", av_err2str(ret));
-		return false;
-	}
-
-	enc->initialized = true;
-	return true;
-}
-
-enum RC_MODE { RC_MODE_CBR, RC_MODE_VBR, RC_MODE_CQP, RC_MODE_LOSSLESS };
-
 static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
@@ -140,7 +67,7 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	int preset = (int)obs_data_get_int(settings, "preset");
 
-	video_t *video = obs_encoder_video(enc->encoder);
+	video_t *video = obs_encoder_video(enc->ffve.encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	struct video_scale_info info;
 
@@ -148,97 +75,50 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 	info.colorspace = voi->colorspace;
 	info.range = voi->range;
 
-	enc->context->thread_count = 0;
+	enc->ffve.context->thread_count = 0;
 
 	av1_video_info(enc, &info);
-	av_opt_set_int(enc->context->priv_data,
+	av_opt_set_int(enc->ffve.context->priv_data,
 		       enc->svtav1 ? "preset" : "cpu-used", preset, 0);
 	if (!enc->svtav1) {
-		av_opt_set(enc->context->priv_data, "usage", "realtime", 0);
+		av_opt_set(enc->ffve.context->priv_data, "usage", "realtime",
+			   0);
 #if 0
-		av_opt_set_int(enc->context->priv_data, "tile-columns", 4, 0);
-		//av_opt_set_int(enc->context->priv_data, "tile-rows", 4, 0);
+		av_opt_set_int(enc->ffve.context->priv_data, "tile-columns", 4, 0);
+		//av_opt_set_int(enc->ffve.context->priv_data, "tile-rows", 4, 0);
 #else
-		av_opt_set_int(enc->context->priv_data, "tile-columns", 2, 0);
-		av_opt_set_int(enc->context->priv_data, "tile-rows", 2, 0);
+		av_opt_set_int(enc->ffve.context->priv_data, "tile-columns", 2,
+			       0);
+		av_opt_set_int(enc->ffve.context->priv_data, "tile-rows", 2, 0);
 #endif
-		av_opt_set_int(enc->context->priv_data, "row-mt", 1, 0);
+		av_opt_set_int(enc->ffve.context->priv_data, "row-mt", 1, 0);
 	}
 
 	if (enc->svtav1)
-		av_opt_set(enc->context->priv_data, "rc", "vbr", 0);
+		av_opt_set(enc->ffve.context->priv_data, "rc", "vbr", 0);
 
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
-		enc->context->global_quality = cqp;
+		enc->ffve.context->global_quality = cqp;
 
 		if (enc->svtav1)
-			av_opt_set(enc->context->priv_data, "rc", "cqp", 0);
+			av_opt_set(enc->ffve.context->priv_data, "rc", "cqp",
+				   0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		const int64_t rate = bitrate * INT64_C(1000);
-		enc->context->rc_max_rate = rate;
-		enc->context->rc_min_rate = rate;
+		enc->ffve.context->rc_max_rate = rate;
+		enc->ffve.context->rc_min_rate = rate;
 		cqp = 0;
 
 		if (enc->svtav1)
-			av_opt_set(enc->context->priv_data, "rc", "cvbr", 0);
+			av_opt_set(enc->ffve.context->priv_data, "rc", "cvbr",
+				   0);
 	}
-
-	const int rate = bitrate * 1000;
-	enc->context->bit_rate = rate;
-	enc->context->rc_buffer_size = rate;
-	enc->context->width = obs_encoder_get_width(enc->encoder);
-	enc->context->height = obs_encoder_get_height(enc->encoder);
-	enc->context->time_base = (AVRational){voi->fps_den, voi->fps_num};
-	enc->context->pix_fmt = obs_to_ffmpeg_video_format(info.format);
-	enc->context->color_range = info.range == VIDEO_RANGE_FULL
-					    ? AVCOL_RANGE_JPEG
-					    : AVCOL_RANGE_MPEG;
-
-	switch (info.colorspace) {
-	case VIDEO_CS_601:
-		enc->context->color_primaries = AVCOL_PRI_SMPTE170M;
-		enc->context->color_trc = AVCOL_TRC_SMPTE170M;
-		enc->context->colorspace = AVCOL_SPC_SMPTE170M;
-		break;
-	case VIDEO_CS_DEFAULT:
-	case VIDEO_CS_709:
-		enc->context->color_primaries = AVCOL_PRI_BT709;
-		enc->context->color_trc = AVCOL_TRC_BT709;
-		enc->context->colorspace = AVCOL_SPC_BT709;
-		break;
-	case VIDEO_CS_SRGB:
-		enc->context->color_primaries = AVCOL_PRI_BT709;
-		enc->context->color_trc = AVCOL_TRC_IEC61966_2_1;
-		enc->context->colorspace = AVCOL_SPC_BT709;
-		break;
-	case VIDEO_CS_2100_PQ:
-		enc->context->color_primaries = AVCOL_PRI_BT2020;
-		enc->context->color_trc = AVCOL_TRC_SMPTE2084;
-		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
-		break;
-	case VIDEO_CS_2100_HLG:
-		enc->context->color_primaries = AVCOL_PRI_BT2020;
-		enc->context->color_trc = AVCOL_TRC_ARIB_STD_B67;
-		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
-	}
-
-	if (keyint_sec)
-		enc->context->gop_size =
-			keyint_sec * voi->fps_num / voi->fps_den;
-
-	enc->height = enc->context->height;
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
-	struct obs_options opts = obs_parse_options(ffmpeg_opts);
-
-	for (size_t i = 0; i < opts.count; i++) {
-		struct obs_option *opt = &opts.options[i];
-		av_opt_set(enc->context->priv_data, opt->name, opt->value, 0);
-	}
-
-	obs_free_options(opts);
+	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info,
+				    ffmpeg_opts);
 
 	info("settings:\n"
 	     "\tencoder:      %s\n"
@@ -250,69 +130,55 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tffmpeg opts:  %s\n",
-	     enc->enc_name, rc, bitrate, cqp, enc->context->gop_size, preset,
-	     enc->context->width, enc->context->height, ffmpeg_opts);
+	     enc->ffve.enc_name, rc, bitrate, cqp, enc->ffve.context->gop_size,
+	     preset, enc->ffve.context->width, enc->ffve.height, ffmpeg_opts);
 
-	return av1_init_codec(enc);
+	enc->ffve.context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
+	return ffmpeg_video_encoder_init_codec(&enc->ffve);
 }
 
 static void av1_destroy(void *data)
 {
 	struct av1_encoder *enc = data;
 
-	if (enc->initialized) {
-		AVPacket pkt = {0};
-		int r_pkt = 1;
+	ffmpeg_video_encoder_free(&enc->ffve);
+	da_free(enc->header);
+	bfree(enc);
+}
 
-		/* flush remaining data */
-		avcodec_send_frame(enc->context, NULL);
+static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
+{
+	struct av1_encoder *enc = data;
 
-		while (r_pkt) {
-			if (avcodec_receive_packet(enc->context, &pkt) < 0)
+	if (enc->svtav1) {
+		da_copy_array(enc->header, enc->ffve.context->extradata,
+			      enc->ffve.context->extradata_size);
+	} else {
+		for (int i = 0; i < pkt->side_data_elems; i++) {
+			AVPacketSideData *side_data = pkt->side_data + i;
+			if (side_data->type == AV_PKT_DATA_NEW_EXTRADATA) {
+				da_copy_array(enc->header, side_data->data,
+					      side_data->size);
 				break;
-
-			if (r_pkt)
-				av_packet_unref(&pkt);
+			}
 		}
 	}
 
-	avcodec_free_context(&enc->context);
-	av_frame_unref(enc->vframe);
-	av_frame_free(&enc->vframe);
-	da_free(enc->buffer);
-	da_free(enc->header);
-
-	bfree(enc);
+	darray_copy_array(1, da, pkt->data, pkt->size);
 }
 
 static void *av1_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 				 const char *enc_lib, const char *enc_name)
 {
-	struct av1_encoder *enc;
+	struct av1_encoder *enc = bzalloc(sizeof(*enc));
 
-	enc = bzalloc(sizeof(*enc));
-	enc->encoder = encoder;
-	enc->avcodec = avcodec_find_encoder_by_name(enc_lib);
-	enc->enc_name = enc_name;
 	if (strcmp(enc_lib, "libsvtav1") == 0)
 		enc->svtav1 = true;
-	enc->first_packet = true;
 
-	blog(LOG_INFO, "---------------------------------");
-
-	if (!enc->avcodec) {
-		obs_encoder_set_last_error(encoder,
-					   "Couldn't find AV1 encoder");
-		warn("Couldn't find AV1 encoder");
+	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings, encoder,
+				       enc_lib, NULL, enc_name, NULL,
+				       on_first_packet))
 		goto fail;
-	}
-
-	enc->context = avcodec_alloc_context3(enc->avcodec);
-	if (!enc->context) {
-		warn("Failed to create codec context");
-		goto fail;
-	}
-
 	if (!av1_update(enc, settings))
 		goto fail;
 
@@ -333,132 +199,11 @@ static void *aom_av1_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return av1_create_internal(settings, encoder, "libaom-av1", "AOM AV1");
 }
 
-static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
-			     int height, enum AVPixelFormat format)
-{
-	int h_chroma_shift, v_chroma_shift;
-	av_pix_fmt_get_chroma_sub_sample(format, &h_chroma_shift,
-					 &v_chroma_shift);
-	for (int plane = 0; plane < MAX_AV_PLANES; plane++) {
-		if (!frame->data[plane])
-			continue;
-
-		int frame_rowsize = (int)frame->linesize[plane];
-		int pic_rowsize = pic->linesize[plane];
-		int bytes = frame_rowsize < pic_rowsize ? frame_rowsize
-							: pic_rowsize;
-		int plane_height = height >> (plane ? v_chroma_shift : 0);
-
-		for (int y = 0; y < plane_height; y++) {
-			int pos_frame = y * frame_rowsize;
-			int pos_pic = y * pic_rowsize;
-
-			memcpy(pic->data[plane] + pos_pic,
-			       frame->data[plane] + pos_frame, bytes);
-		}
-	}
-}
-
-#define SEC_TO_NSEC 1000000000LL
-#define TIMEOUT_MAX_SEC 5
-#define TIMEOUT_MAX_NSEC (TIMEOUT_MAX_SEC * SEC_TO_NSEC)
-
 static bool av1_encode(void *data, struct encoder_frame *frame,
 		       struct encoder_packet *packet, bool *received_packet)
 {
 	struct av1_encoder *enc = data;
-	AVPacket av_pkt = {0};
-	bool timeout = false;
-	int64_t cur_ts = (int64_t)os_gettime_ns();
-	int got_packet;
-	int ret;
-
-	if (!enc->start_ts)
-		enc->start_ts = cur_ts;
-
-	copy_data(enc->vframe, frame, enc->height, enc->context->pix_fmt);
-
-	enc->vframe->pts = frame->pts;
-	ret = avcodec_send_frame(enc->context, enc->vframe);
-	if (ret == 0)
-		ret = avcodec_receive_packet(enc->context, &av_pkt);
-
-	got_packet = (ret == 0);
-
-	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
-		ret = 0;
-	if (ret < 0) {
-		warn("av1_encode: Error encoding: %s", av_err2str(ret));
-		return false;
-	}
-
-	if (got_packet && av_pkt.size) {
-		if (enc->first_packet) {
-			if (enc->svtav1) {
-				da_copy_array(enc->header,
-					      enc->context->extradata,
-					      enc->context->extradata_size);
-			} else {
-				for (int i = 0; i < av_pkt.side_data_elems;
-				     i++) {
-					AVPacketSideData *side_data =
-						av_pkt.side_data + i;
-					if (side_data->type ==
-					    AV_PKT_DATA_NEW_EXTRADATA) {
-						da_copy_array(enc->header,
-							      side_data->data,
-							      side_data->size);
-						break;
-					}
-				}
-			}
-			enc->first_packet = false;
-		}
-		da_copy_array(enc->buffer, av_pkt.data, av_pkt.size);
-
-		packet->pts = av_pkt.pts;
-		packet->dts = av_pkt.dts;
-		packet->data = enc->buffer.array;
-		packet->size = enc->buffer.num;
-		packet->type = OBS_ENCODER_VIDEO;
-		packet->keyframe = !!(av_pkt.flags & AV_PKT_FLAG_KEY);
-		*received_packet = true;
-
-		uint64_t recv_ts_nsec =
-			util_mul_div64((uint64_t)av_pkt.dts,
-				       (uint64_t)SEC_TO_NSEC,
-				       (uint64_t)enc->context->time_base.den) +
-			enc->start_ts;
-
-#if 0
-		debug("cur: %lld, packet: %lld, diff: %lld", cur_ts,
-		      recv_ts_nsec, cur_ts - recv_ts_nsec);
-#endif
-		if (llabs(cur_ts - recv_ts_nsec) > TIMEOUT_MAX_NSEC) {
-			char timeout_str[16];
-			snprintf(timeout_str, sizeof(timeout_str), "%d",
-				 TIMEOUT_MAX_SEC);
-
-			struct dstr error_text = {0};
-			dstr_copy(&error_text,
-				  obs_module_text("Encoder.Timeout"));
-			dstr_replace(&error_text, "%1", enc->enc_name);
-			dstr_replace(&error_text, "%2", timeout_str);
-			obs_encoder_set_last_error(enc->encoder,
-						   error_text.array);
-			dstr_free(&error_text);
-
-			error("Encoding queue duration surpassed %d "
-			      "seconds, terminating encoder",
-			      TIMEOUT_MAX_SEC);
-			timeout = true;
-		}
-	} else {
-		*received_packet = false;
-	}
-
-	av_packet_unref(&av_pkt);
-	return !timeout;
+	return ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet);
 }
 
 void av1_defaults(obs_data_t *settings)
