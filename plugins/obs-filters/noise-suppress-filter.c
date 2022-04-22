@@ -239,6 +239,12 @@ static void *nvafx_initialize(void *data)
 		ng->sample_rate = NVAFX_SAMPLE_RATE;
 
 		for (size_t i = 0; i < ng->channels; i++) {
+			CUcontext old = {0};
+			CUcontext curr = {0};
+
+			if (cuCtxGetCurrent(&old) != CUDA_SUCCESS)
+				goto failure;
+
 			err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER,
 						 &ng->handle[i]);
 			if (err != NVAFX_STATUS_SUCCESS) {
@@ -247,6 +253,14 @@ static void *nvafx_initialize(void *data)
 				       err);
 				goto failure;
 			}
+			if (cuCtxGetCurrent(&curr) != CUDA_SUCCESS)
+				goto failure;
+
+			if (curr != old) {
+
+				cuCtxPopCurrent(NULL);
+			}
+
 			err = NvAFX_SetU32(ng->handle[i],
 					   NVAFX_PARAM_DENOISER_SAMPLE_RATE,
 					   ng->sample_rate);
@@ -559,10 +573,35 @@ bool load_nvafx(void)
 	LOAD_SYM(cuCtxPopCurrent);
 	LOAD_SYM(cuInit);
 #undef LOAD_SYM
+
 	NvAFX_Status err;
+	CUresult cudaerr;
+
 	NvAFX_Handle h = NULL;
 
+	cudaerr = cuInit(0);
+	if (cudaerr != CUDA_SUCCESS) {
+		goto cuda_errors;
+	}
+	CUcontext old = {0};
+	CUcontext curr = {0};
+	cudaerr = cuCtxGetCurrent(&old);
+	if (cudaerr != CUDA_SUCCESS) {
+		goto cuda_errors;
+	}
+
 	err = NvAFX_CreateEffect(NVAFX_EFFECT_DENOISER, &h);
+	cudaerr = cuCtxGetCurrent(&curr);
+	if (cudaerr != CUDA_SUCCESS) {
+		goto cuda_errors;
+	}
+
+	if (curr != old) {
+		cudaerr = cuCtxPopCurrent(NULL);
+		if (cudaerr != CUDA_SUCCESS)
+			goto cuda_errors;
+	}
+
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO,
@@ -577,7 +616,9 @@ bool load_nvafx(void)
 
 	err = NvAFX_DestroyEffect(h);
 	if (err != NVAFX_STATUS_SUCCESS) {
-		blog(LOG_ERROR, "NvAFX_DestroyEffect() failed, error %i", err);
+		blog(LOG_ERROR,
+		     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, error %i",
+		     err);
 		goto unload_everything;
 	}
 
@@ -585,6 +626,10 @@ bool load_nvafx(void)
 	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX AUDIO FX enabled");
 	return true;
 
+cuda_errors:
+	blog(LOG_ERROR,
+	     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, CUDA error %i",
+	     cudaerr);
 unload_everything:
 	release_lib();
 #endif
@@ -594,17 +639,17 @@ unload_everything:
 #pragma warning(pop)
 #endif
 
+#ifdef LIBNVAFX_ENABLED
 void unload_nvafx(void)
 {
-#ifdef LIBNVAFX_ENABLED
 	release_lib();
 
 	if (nvafx_initializer_mutex_initialized) {
 		pthread_mutex_destroy(&nvafx_initializer_mutex);
 		nvafx_initializer_mutex_initialized = false;
 	}
-#endif
 }
+#endif
 
 static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 {
