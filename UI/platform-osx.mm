@@ -215,6 +215,10 @@ bool ProcessIsRosettaTranslated()
 #endif
 }
 
+// Not implemented yet
+void TaskbarOverlayInit() {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
+
 /*
  * This custom NSApplication subclass makes the app compatible with CEF. Qt
  * also has an NSApplication subclass, but it doesn't conflict thanks to Qt

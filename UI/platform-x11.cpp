@@ -251,3 +251,7 @@ bool SetDisplayAffinitySupported(void)
 	// Not implemented yet
 	return false;
 }
+
+// Not implemented yet
+void TaskbarOverlayInit() {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}

@@ -36,6 +36,14 @@ void SetAlwaysOnTop(QWidget *window, bool enable);
 
 bool SetDisplayAffinitySupported(void);
 
+enum TaskbarOverlayStatus {
+	TaskbarOverlayStatusInactive,
+	TaskbarOverlayStatusActive,
+	TaskbarOverlayStatusPaused,
+};
+void TaskbarOverlayInit();
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status);
+
 #ifdef _WIN32
 class RunOnceMutex;
 RunOnceMutex
