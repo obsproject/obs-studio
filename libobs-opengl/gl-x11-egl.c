@@ -628,6 +628,9 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 		free(xcb_event);
 	}
 
+	if (eglSwapInterval(device->plat->edisplay, 0) == EGL_FALSE) {
+		blog(LOG_ERROR, "eglSwapInterval failed");
+	}
 	if (!eglSwapBuffers(device->plat->edisplay,
 			    device->cur_swap->wi->surface))
 		blog(LOG_ERROR, "Cannot swap EGL buffers: %s",
