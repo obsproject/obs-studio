@@ -294,6 +294,8 @@ static bool vaapi_supported(void)
 #ifdef _WIN32
 extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
+extern void amf_load(void);
+extern void amf_unload(void);
 #endif
 
 #if ENABLE_FFMPEG_LOGGING
@@ -353,6 +355,11 @@ bool obs_module_load(void)
 			obs_register_encoder(&hevc_nvenc_encoder_info);
 #endif
 	}
+
+#ifdef _WIN32
+	amf_load();
+#endif
+
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
 	if (vaapi_supported()) {
 		blog(LOG_INFO, "FFMPEG VAAPI supported");
@@ -374,6 +381,7 @@ void obs_module_unload(void)
 #endif
 
 #ifdef _WIN32
+	amf_unload();
 	jim_nvenc_unload();
 #endif
 }
