@@ -63,6 +63,8 @@ target_compile_options(
 )
 
 if(OS_WINDOWS)
+  add_subdirectory(obs-amf-test)
+
   if(MSVC)
     target_link_libraries(obs-ffmpeg PRIVATE OBS::w32-pthreads)
   endif()
@@ -71,8 +73,9 @@ if(OS_WINDOWS)
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
                  obs-ffmpeg.rc)
 
-  target_sources(obs-ffmpeg PRIVATE jim-nvenc.c jim-nvenc.h jim-nvenc-helpers.c
-                                    obs-ffmpeg.rc)
+  target_sources(
+    obs-ffmpeg PRIVATE texture-amf.cpp texture-amf-opts.hpp jim-nvenc.c
+                       jim-nvenc.h jim-nvenc-helpers.c obs-ffmpeg.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(Libpci REQUIRED)
