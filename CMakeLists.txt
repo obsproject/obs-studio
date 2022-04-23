@@ -32,6 +32,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Global project options
+option(ENABLE_HEVC "Enable HEVC encoders" OFF)
 option(BUILD_FOR_DISTRIBUTION "Build for distribution (enables optimisations)"
        OFF)
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
