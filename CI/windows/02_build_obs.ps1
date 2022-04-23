@@ -41,7 +41,9 @@ function Build-OBS {
     Ensure-Directory ${CheckoutDir}
     Write-Step "Build OBS targets..."
 
-    Invoke-Expression "cmake --build $(if($BuildArch -eq "x64") { "build64" } else { "build32" }) --config ${BuildConfiguration}"
+    $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
+
+    Invoke-Expression "cmake --build ${BuildDirectoryActual} --config ${BuildConfiguration}"
 }
 
 function Configure-OBS {
