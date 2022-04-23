@@ -216,9 +216,8 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 			da_push_back_array(header, nal_codestart,
 					   nal_end - nal_codestart);
 		} else if (type == OBS_NAL_SEI) {
-			if (sei_data)
-				da_push_back_array(sei, nal_codestart,
-						   nal_end - nal_codestart);
+			da_push_back_array(sei, nal_codestart,
+					   nal_end - nal_codestart);
 
 		} else {
 			da_push_back_array(new_packet, nal_codestart,
@@ -232,8 +231,6 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 	*new_packet_size = new_packet.num;
 	*header_data = header.array;
 	*header_size = header.num;
-	if (sei_data) {
-		*sei_data = sei.array;
-		*sei_size = sei.num;
-	}
+	*sei_data = sei.array;
+	*sei_size = sei.num;
 }
