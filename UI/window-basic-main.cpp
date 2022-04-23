@@ -4280,6 +4280,15 @@ std::vector<OBSService> OBSBasic::GetServices()
 	return services;
 }
 
+std::vector<OBSOutput> OBSBasic::GetStreamingOutputs()
+{
+	std::vector<OBSOutput> outputs;
+	for (OBSOutputAutoRelease &output : outputHandler->streamOutputs)
+		outputs.push_back(output.Get());
+
+	return std::move(outputs);
+}
+
 void OBSBasic::SetService(obs_service_t *newService)
 {
 	if (newService) {

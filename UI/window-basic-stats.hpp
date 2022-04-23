@@ -8,6 +8,7 @@
 #include <QTimer>
 #include <QLabel>
 #include <QList>
+#include "window-basic-main.hpp"
 
 class QGridLayout;
 class QCloseEvent;
@@ -57,9 +58,10 @@ class OBSBasicStats : public QWidget {
 
 	void AddOutputLabels(QString name);
 	void Update();
+	void CreateOutputLabels(OBSBasic *main);
 
 	virtual void closeEvent(QCloseEvent *event) override;
-
+	void deleteLabel(OutputLabels label);
 	static void OBSFrontendEvent(enum obs_frontend_event event, void *ptr);
 
 public:

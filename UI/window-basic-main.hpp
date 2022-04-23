@@ -830,6 +830,7 @@ public:
 	}
 
 	std::vector<OBSService> GetServices();
+	std::vector<OBSOutput> GetStreamingOutputs();
 
 	void SetService(obs_service_t *service);
 

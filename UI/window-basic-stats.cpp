@@ -1,7 +1,6 @@
 #include "obs-frontend-api/obs-frontend-api.h"
 
 #include "window-basic-stats.hpp"
-#include "window-basic-main.hpp"
 #include "platform.hpp"
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
@@ -133,10 +132,8 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 	addOutputCol("Basic.Stats.Bitrate");
 
 	/* --------------------------------------------- */
-
-	AddOutputLabels(QTStr("Basic.Stats.Output.Stream"));
-	AddOutputLabels(QTStr("Basic.Stats.Output.Recording"));
-
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	CreateOutputLabels(main);
 	/* --------------------------------------------- */
 
 	QVBoxLayout *outputContainerLayout = new QVBoxLayout();
@@ -193,8 +190,6 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 			 &OBSBasicStats::RecordingTimeLeft);
 	recTimeLeft.setInterval(REC_TIME_LEFT_INTERVAL);
 
-	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-
 	const char *geometry =
 		config_get_string(main->Config(), "Stats", "geometry");
 	if (geometry != NULL) {
@@ -216,6 +211,26 @@ OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
 
 	if (obs_frontend_recording_active())
 		StartRecTimeLeft();
+}
+
+void OBSBasicStats::deleteLabel(OutputLabels label)
+{
+	label.name->deleteLater();
+	label.status->deleteLater();
+	label.droppedFrames->deleteLater();
+	label.megabytesSent->deleteLater();
+	label.bitrate->deleteLater();
+}
+
+void OBSBasicStats::CreateOutputLabels(OBSBasic *main)
+{
+	foreach(OutputLabels label, outputLabels) deleteLabel(label);
+	outputLabels.clear();
+	int servicesCount = main->GetServices().size();
+	for (int i = 0; i < servicesCount; i++)
+		AddOutputLabels(QTStr("Basic.Stats.Output.Stream"));
+
+	AddOutputLabels(QTStr("Basic.Stats.Output.Recording"));
 }
 
 void OBSBasicStats::closeEvent(QCloseEvent *event)
@@ -287,10 +302,10 @@ void OBSBasicStats::Update()
 	struct obs_video_info ovi = {};
 	obs_get_video_info(&ovi);
 
-	OBSOutputAutoRelease strOutput = obs_frontend_get_streaming_output();
+	auto streamingOutputs = main->GetStreamingOutputs();
 	OBSOutputAutoRelease recOutput = obs_frontend_get_recording_output();
 
-	if (!strOutput && !recOutput)
+	if (streamingOutputs.empty() && !recOutput)
 		return;
 
 	/* ------------------------------------------- */
@@ -429,12 +444,16 @@ void OBSBasicStats::Update()
 
 	/* ------------------------------------------- */
 	/* recording/streaming stats                   */
+	int recordingIndex = (int)outputLabels.size() - 1;
+	int numOutputs = (int)streamingOutputs.size();
 
-	outputLabels[0].Update(strOutput, false);
-	outputLabels[1].Update(recOutput, true);
+	for (int i = 0; i < recordingIndex && i < numOutputs; i++)
+		outputLabels[i].Update(streamingOutputs[i], false);
+
+	outputLabels[recordingIndex].Update(recOutput, true);
 
 	if (obs_output_active(recOutput)) {
-		long double kbps = outputLabels[1].kbps;
+		long double kbps = outputLabels[recordingIndex].kbps;
 		bitrates.push_back(kbps);
 	}
 }
@@ -485,11 +504,21 @@ void OBSBasicStats::Reset()
 	first_rendered = 0xFFFFFFFF;
 	first_lagged = 0xFFFFFFFF;
 
-	OBSOutputAutoRelease strOutput = obs_frontend_get_streaming_output();
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	CreateOutputLabels(main);
+
+	auto streamingOutputs = main->GetStreamingOutputs();
+
 	OBSOutputAutoRelease recOutput = obs_frontend_get_recording_output();
 
-	outputLabels[0].Reset(strOutput);
-	outputLabels[1].Reset(recOutput);
+	int recordingIndex = (int)outputLabels.size() - 1;
+	int numOutputs = (int)streamingOutputs.size();
+
+	for (int i = 0; i < recordingIndex && i < numOutputs; i++)
+		outputLabels[i].Reset(streamingOutputs[i]);
+
+	outputLabels[recordingIndex].Reset(recOutput);
+
 	Update();
 }
 

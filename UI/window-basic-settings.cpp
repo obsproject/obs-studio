@@ -916,6 +916,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->buttonBox->button(QDialogButtonBox::Ok)->setIcon(QIcon());
 	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
+	connect(ui->buttonBox->button(QDialogButtonBox::Apply),
+		SIGNAL(clicked()), main, SLOT(ResetStatsHotkey()));
+	connect(ui->buttonBox->button(QDialogButtonBox::Ok), SIGNAL(clicked()),
+		main, SLOT(ResetStatsHotkey()));
+
 	SimpleRecordingQualityChanged();
 	AdvOutSplitFileChanged();
 
