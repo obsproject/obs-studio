@@ -400,6 +400,25 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	frame->height = decode->frame->height;
 	frame->flip = false;
 
+	switch (decode->frame->color_trc) {
+	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_GAMMA22:
+	case AVCOL_TRC_GAMMA28:
+	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_SMPTE240M:
+	case AVCOL_TRC_IEC61966_2_1:
+		frame->trc = VIDEO_TRC_SRGB;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		frame->trc = VIDEO_TRC_PQ;
+		break;
+	case AVCOL_TRC_ARIB_STD_B67:
+		frame->trc = VIDEO_TRC_HLG;
+		break;
+	default:
+		frame->trc = VIDEO_TRC_DEFAULT;
+	}
+
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return false;
 
