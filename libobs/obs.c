@@ -1395,17 +1395,36 @@ int obs_reset_video(struct obs_video_info *ovi)
 	return obs_init_video(ovi);
 }
 
-bool obs_reset_audio(const struct obs_audio_info *oai)
+#ifndef SEC_TO_MSEC
+#define SEC_TO_MSEC 1000
+#endif
+
+bool obs_reset_audio2(const struct obs_audio_info2 *oai)
 {
+	struct obs_core_audio *audio = &obs->audio;
 	struct audio_output_info ai;
 
 	/* don't allow changing of audio settings if active. */
-	if (obs->audio.audio && audio_output_active(obs->audio.audio))
+	if (!obs || (audio->audio && audio_output_active(audio->audio)))
 		return false;
 
 	obs_free_audio();
 	if (!oai)
 		return true;
+
+	if (oai->max_buffering_ms) {
+		uint32_t max_frames = oai->max_buffering_ms *
+				      oai->samples_per_sec / SEC_TO_MSEC;
+		max_frames += (AUDIO_OUTPUT_FRAMES - 1);
+		audio->max_buffering_ticks = max_frames / AUDIO_OUTPUT_FRAMES;
+	} else {
+		audio->max_buffering_ticks = 45;
+	}
+	audio->fixed_buffer = oai->fixed_buffering;
+
+	int max_buffering_ms = audio->max_buffering_ticks *
+			       AUDIO_OUTPUT_FRAMES * SEC_TO_MSEC /
+			       (int)oai->samples_per_sec;
 
 	ai.name = "Audio";
 	ai.samples_per_sec = oai->samples_per_sec;
@@ -1417,10 +1436,23 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	blog(LOG_INFO,
 	     "audio settings reset:\n"
 	     "\tsamples per sec: %d\n"
-	     "\tspeakers:        %d",
-	     (int)ai.samples_per_sec, (int)ai.speakers);
+	     "\tspeakers:        %d\n"
+	     "\tmax buffering:   %d milliseconds\n"
+	     "\tbuffering type:  %s",
+	     (int)ai.samples_per_sec, (int)ai.speakers, max_buffering_ms,
+	     oai->fixed_buffering ? "fixed" : "dynamically increasing");
 
 	return obs_init_audio(&ai);
+}
+
+bool obs_reset_audio(const struct obs_audio_info *oai)
+{
+	struct obs_audio_info2 oai2 = {
+		.samples_per_sec = oai->samples_per_sec,
+		.speakers = oai->speakers,
+	};
+
+	return obs_reset_audio2(&oai2);
 }
 
 bool obs_get_video_info(struct obs_video_info *ovi)

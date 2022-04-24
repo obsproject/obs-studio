@@ -206,6 +206,14 @@ struct obs_audio_info {
 	enum speaker_layout speakers;
 };
 
+struct obs_audio_info2 {
+	uint32_t samples_per_sec;
+	enum speaker_layout speakers;
+
+	uint32_t max_buffering_ms;
+	bool fixed_buffering;
+};
+
 /**
  * Sent to source filters via the filter_audio callback to allow filtering of
  * audio data
@@ -413,6 +421,7 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  * @note Cannot reset base audio if an output is currently active.
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
+EXPORT bool obs_reset_audio2(const struct obs_audio_info2 *oai);
 
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);

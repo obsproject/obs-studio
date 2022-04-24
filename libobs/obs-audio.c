@@ -26,7 +26,6 @@ struct ts_info {
 
 #define DEBUG_AUDIO 0
 #define DEBUG_LAGGED_AUDIO 0
-#define MAX_BUFFERING_TICKS 45
 
 static void push_audio_tree(obs_source_t *parent, obs_source_t *source, void *p)
 {
@@ -241,7 +240,8 @@ static inline void discard_audio(struct obs_core_audio *audio,
 
 		/* ignore_audio should have already run and marked this source
 		 * pending, unless we *just* added buffering */
-		assert(audio->total_buffering_ticks < MAX_BUFFERING_TICKS ||
+		assert(audio->total_buffering_ticks <
+			       audio->max_buffering_ticks ||
 		       source->audio_pending || !source->audio_ts ||
 		       audio->buffering_wait_ticks);
 #endif
@@ -294,7 +294,7 @@ static inline void discard_audio(struct obs_core_audio *audio,
 
 static inline bool audio_buffering_maxed(struct obs_core_audio *audio)
 {
-	return audio->total_buffering_ticks == MAX_BUFFERING_TICKS;
+	return audio->total_buffering_ticks == audio->max_buffering_ticks;
 }
 
 static void set_fixed_audio_buffering(struct obs_core_audio *audio,
@@ -311,7 +311,7 @@ static void set_fixed_audio_buffering(struct obs_core_audio *audio,
 	if (!audio->buffering_wait_ticks)
 		audio->buffered_ts = ts->start;
 
-	ticks = MAX_BUFFERING_TICKS - audio->total_buffering_ticks;
+	ticks = audio->max_buffering_ticks - audio->total_buffering_ticks;
 	audio->total_buffering_ticks += ticks;
 
 	ms = ticks * AUDIO_OUTPUT_FRAMES * 1000 / sample_rate;
@@ -374,9 +374,10 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 
 	audio->total_buffering_ticks += ticks;
 
-	if (audio->total_buffering_ticks >= MAX_BUFFERING_TICKS) {
-		ticks -= audio->total_buffering_ticks - MAX_BUFFERING_TICKS;
-		audio->total_buffering_ticks = MAX_BUFFERING_TICKS;
+	if (audio->total_buffering_ticks >= audio->max_buffering_ticks) {
+		ticks -= audio->total_buffering_ticks -
+			 audio->max_buffering_ticks;
+		audio->total_buffering_ticks = audio->max_buffering_ticks;
 		blog(LOG_WARNING, "Max audio buffering reached!");
 	}
 

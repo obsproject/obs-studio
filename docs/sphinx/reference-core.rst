@@ -144,6 +144,36 @@ Initialization, Shutdown, and Information
 
 ---------------------
 
+.. function:: bool obs_reset_audio2(const struct obs_audio_info2 *oai)
+
+   Sets base audio output format/channels/samples/etc. Also allows the
+   ability to set the maximum audio latency of OBS, and set whether the
+   audio buffering is fixed or dynamically increasing.
+
+   When using fixed audio buffering, OBS will automatically buffer to
+   the maximum audio latency on startup.
+
+   Maximum audio latency will clamp to the closest multiple of the audio
+   output frames (which is typically 1024 audio frames).
+
+   Note: Cannot reset base audio if an output is currently active.
+
+   :return: *true* if successful, *false* otherwise
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   struct obs_audio_info2 {
+           uint32_t            samples_per_sec;
+           enum speaker_layout speakers;
+
+           uint32_t max_buffering_ms;
+           bool fixed_buffering;
+   };
+
+---------------------
+
 .. function:: bool obs_get_video_info(struct obs_video_info *ovi)
 
    Gets the current video settings.
