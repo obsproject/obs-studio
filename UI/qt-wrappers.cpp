@@ -121,7 +121,6 @@ bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 	gswindow.view = (id)window->winId();
 #else
 	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_GLX:
 	case OBS_NIX_PLATFORM_X11_EGL:
 		gswindow.id = window->winId();
 		gswindow.display = obs_get_nix_platform_display();

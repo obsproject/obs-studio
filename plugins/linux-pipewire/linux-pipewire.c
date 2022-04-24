@@ -44,8 +44,6 @@ bool obs_module_load(void)
 	case OBS_NIX_PLATFORM_X11_EGL:
 		pipewire_capture_load();
 		break;
-	case OBS_NIX_PLATFORM_X11_GLX:
-		break;
 	}
 
 	return true;
