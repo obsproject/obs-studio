@@ -30,11 +30,6 @@ if(OS_WINDOWS)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(OpenGL REQUIRED)
-  find_package(X11 REQUIRED)
-
-  target_link_libraries(glad PRIVATE X11::X11)
-
-  target_sources(glad PRIVATE src/glad_glx.c include/glad/glad_glx.h)
 
   if(TARGET OpenGL::EGL)
     target_sources(glad PRIVATE src/glad_egl.c include/EGL/eglplatform.h
