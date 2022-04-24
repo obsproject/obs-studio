@@ -344,6 +344,7 @@ struct obs_core_audio {
 	struct circlebuf buffered_timestamps;
 	uint64_t buffering_wait_ticks;
 	int total_buffering_ticks;
+	bool fixed_buffer;
 
 	float user_volume;
 
