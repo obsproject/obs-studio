@@ -577,7 +577,7 @@ bool audio_callback(void *param, uint64_t start_ts_in, uint64_t end_ts_in,
 
 		/* if a source has gone backward in time and we can no
 		 * longer buffer, drop some or all of its audio */
-		if (audio_buffering_maxed(audio) &&
+		if (audio_buffering_maxed(audio) && source->audio_ts != 0 &&
 		    source->audio_ts < ts.start) {
 			if (source->info.audio_render) {
 				blog(LOG_DEBUG,
