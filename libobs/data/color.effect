@@ -1,6 +1,6 @@
 float srgb_linear_to_nonlinear_channel(float u)
 {
-	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
+	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1. / 2.4)) - 0.055);
 }
 
 float3 srgb_linear_to_nonlinear(float3 v)
@@ -36,7 +36,7 @@ float3 rec2020_to_rec709(float3 v)
 
 float reinhard_channel(float x)
 {
-	return x / (x + 1.0);
+	return x / (x + 1.);
 }
 
 float3 reinhard(float3 rgb)
@@ -46,7 +46,7 @@ float3 reinhard(float3 rgb)
 
 float linear_to_st2084_channel(float x)
 {
-	return pow((0.8359375 + 18.8515625 * pow(abs(x), 0.1593017578)) / (1.0 + 18.6875 * pow(abs(x), 0.1593017578)), 78.84375);
+	return pow((0.8359375 + 18.8515625 * pow(abs(x), 0.1593017578)) / (1. + 18.6875 * pow(abs(x), 0.1593017578)), 78.84375);
 }
 
 float3 linear_to_st2084(float3 rgb)
@@ -56,7 +56,7 @@ float3 linear_to_st2084(float3 rgb)
 
 float st2084_to_linear_channel(float u)
 {
-	return pow(abs(max(pow(abs(u), 1.0 / 78.84375) - 0.8359375, 0.0) / (18.8515625 - 18.6875 * pow(abs(u), 1.0 / 78.84375))), 1.0 / 0.1593017578);
+	return pow(abs(max(pow(abs(u), 1. / 78.84375) - 0.8359375, 0.) / (18.8515625 - 18.6875 * pow(abs(u), 1. / 78.84375))), 1. / 0.1593017578);
 }
 
 float3 st2084_to_linear(float3 v)
@@ -66,9 +66,9 @@ float3 st2084_to_linear(float3 v)
 
 float linear_to_hlg_channel(float u)
 {
-	float ln2_i = 1.0 / log(2.0);
+	float ln2_i = 1. / log(2.);
 	float m = 0.17883277 / ln2_i;
-    return (u <= (1.0 /12.0)) ? sqrt(3.0 * u) : ((log2((12.0 * u) - 0.28466892) * m) + 0.55991073);
+	return (u <= (1. / 12.)) ? sqrt(3. * u) : ((log2((12. * u) - 0.28466892) * m) + 0.55991073);
 }
 
 float eetf_0_1000(float Lw, float maxRGB1_pq)
@@ -131,10 +131,10 @@ float3 linear_to_hlg(float3 rgb, float Lw)
 
 float hlg_to_linear_channel(float u)
 {
-	float ln2_i = 1.0 / log(2.0);
+	float ln2_i = 1. / log(2.);
 	float m = ln2_i / 0.17883277;
 	float a = -ln2_i * 0.55991073 / 0.17883277;
-	return (u <= 0.5) ? ((u * u) / 3.0) : ((exp2(u * m + a) + 0.28466892) / 12.0);
+	return (u <= 0.5) ? ((u * u) / 3.) : ((exp2(u * m + a) + 0.28466892) / 12.);
 }
 
 float3 hlg_to_linear(float3 v, float exponent)
