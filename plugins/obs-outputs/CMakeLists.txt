@@ -96,9 +96,11 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
       target_link_libraries(obs-outputs PRIVATE ${FOUNDATION_FRAMEWORK}
                                                 ${SECURITY_FRAMEWORK})
       set_target_properties(obs-outputs PROPERTIES CXX_VISIBILITY_PRESET hidden)
+      set_target_properties(obs-outputs PROPERTIES C_VISIBILITY_PRESET hidden)
 
     elseif(OS_POSIX)
       set_target_properties(obs-outputs PROPERTIES CXX_VISIBILITY_PRESET hidden)
+      set_target_properties(obs-outputs PROPERTIES C_VISIBILITY_PRESET hidden)
     endif()
   endif()
 else()
