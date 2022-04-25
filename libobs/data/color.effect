@@ -97,12 +97,11 @@ float3 maxRGB_eetf(float3 rgb, float Lw, float Lmax)
 	float maxRGB1_pq = linear_to_st2084_channel(maxRGB_linear);
 	float maxRGB2_pq = eetf_0_1000(Lw, maxRGB1_pq);
 	float maxRGB2_linear = st2084_to_linear_channel(maxRGB2_pq);
-	float scaling_ratio = maxRGB2_linear / maxRGB_linear;
 
-	// scaling_ratio could be NaN
-	scaling_ratio = max(0., scaling_ratio);
+	// avoid divide-by-zero possibility
+	maxRGB_linear = max(6.10352e-5, maxRGB_linear);
 
-	rgb *= scaling_ratio;
+	rgb *= maxRGB2_linear / maxRGB_linear;
 	return rgb;
 }
 
