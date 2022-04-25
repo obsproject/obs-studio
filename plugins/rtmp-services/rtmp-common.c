@@ -208,6 +208,35 @@ static inline bool get_bool_val(json_t *service, const char *key)
 	return json_is_true(bool_val);
 }
 
+#define RTMP_PREFIX "rtmp://"
+#define RTMPS_PREFIX "rtmps://"
+
+static bool is_protocol_available(json_t *service)
+{
+	const char *protocol = get_string_val(service, "protocol");
+	if (protocol)
+		return obs_is_output_protocol_registered(protocol);
+
+	/* Test RTMP and RTMPS if no protocol found */
+	json_t *servers;
+	size_t index;
+	json_t *server;
+	const char *url;
+	bool ret = false;
+
+	servers = json_object_get(service, "servers");
+	json_array_foreach (servers, index, server) {
+		url = get_string_val(server, "url");
+
+		if (strncmp(url, RTMP_PREFIX, strlen(RTMP_PREFIX)) == 0)
+			ret |= obs_is_output_protocol_registered("RTMP");
+		else if (strncmp(url, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0)
+			ret |= obs_is_output_protocol_registered("RTMPS");
+	}
+
+	return ret;
+}
+
 static void add_service(obs_property_t *list, json_t *service, bool show_all,
 			const char *cur_service)
 {
@@ -258,6 +287,9 @@ static void add_services(obs_property_t *list, json_t *root, bool show_all,
 	}
 
 	json_array_foreach (root, index, service) {
+		/* Skip service with non-available protocol */
+		if (!is_protocol_available(service))
+			continue;
 		add_service(list, service, show_all, cur_service);
 	}
 
@@ -399,11 +431,13 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		return;
 	}
 
+	/* Assumption: Twitch should be RTMP only, so no RTMPS check */
 	if (strcmp(name, "Twitch") == 0) {
 		if (fill_twitch_servers(servers_prop))
 			return;
 	}
 
+	/* Assumption:  Nimo TV should be RTMP only, so no RTMPS check in the ingest */
 	if (strcmp(name, "Nimo TV") == 0) {
 		obs_property_list_add_string(
 			servers_prop, obs_module_text("Server.Auto"), "auto");
@@ -414,6 +448,11 @@ static void fill_servers(obs_property_t *servers_prop, json_t *service,
 		const char *url = get_string_val(server, "url");
 
 		if (!server_name || !url)
+			continue;
+
+		/* Skip RTMPS server if protocol not registered */
+		if ((!obs_is_output_protocol_registered("RTMPS")) &&
+		    (strncmp(url, "rtmps://", 8) == 0))
 			continue;
 
 		obs_property_list_add_string(servers_prop, server_name, url);
@@ -449,6 +488,10 @@ static inline json_t *find_service(json_t *root, const char *name,
 		*p_new_name = NULL;
 
 	json_array_foreach (root, index, service) {
+		/* skip service with non-available protocol */
+		if (!is_protocol_available(service))
+			continue;
+
 		const char *cur_name = get_string_val(service, "name");
 
 		if (strcmp(name, cur_name) == 0)
