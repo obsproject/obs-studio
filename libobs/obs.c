@@ -26,6 +26,7 @@
 struct obs_core *obs = NULL;
 
 static THREAD_LOCAL bool is_ui_thread = false;
+const bool key_processing_enabled = false;
 
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
@@ -794,7 +795,6 @@ static inline bool obs_init_hotkeys(void)
 {
 	struct obs_core_hotkeys *hotkeys = &obs->hotkeys;
 	bool success = false;
-	const bool use_thread = false;
 
 	assert(hotkeys != NULL);
 
@@ -808,15 +808,16 @@ static inline bool obs_init_hotkeys(void)
 	hotkeys->sceneitem_show = bstrdup("Show '%1'");
 	hotkeys->sceneitem_hide = bstrdup("Hide '%1'");
 
-	if (!obs_hotkeys_platform_init(hotkeys))
-		return false;
+	if (key_processing_enabled)
+		if (!obs_hotkeys_platform_init(hotkeys))
+			return false;
 
 	if (pthread_mutex_init_recursive(&hotkeys->mutex) != 0)
 		goto fail;
 
 	if (os_event_init(&hotkeys->stop_event, OS_EVENT_TYPE_MANUAL) != 0)
 		goto fail;
-	if (use_thread) {
+	if (key_processing_enabled) {
 		if (pthread_create(&hotkeys->hotkey_thread, NULL, obs_hotkey_thread,
 			   NULL))
 			goto fail;
@@ -858,7 +859,9 @@ static inline void obs_free_hotkeys(void)
 
 	obs_hotkey_name_map_free();
 
-	obs_hotkeys_platform_free(hotkeys);
+	if (key_processing_enabled)
+		obs_hotkeys_platform_free(hotkeys);
+
 	pthread_mutex_destroy(&hotkeys->mutex);
 }
 
