@@ -47,6 +47,9 @@ struct audio_resampler {
 
 	struct lag_lead_filter compensation_filter;
 	bool compensation_filter_configured;
+
+	uint64_t total_input_samples;
+	uint64_t total_output_samples;
 };
 
 static inline enum AVSampleFormat convert_audio_format(enum audio_format format)
@@ -175,6 +178,14 @@ audio_resampler_t *audio_resampler_create(const struct resample_info *dst, const
 void audio_resampler_destroy(audio_resampler_t *rs)
 {
 	if (rs) {
+		uint64_t total_output_samples = rs->total_output_samples + swr_get_delay(rs->context, rs->output_freq);
+		if (rs->compensation_filter_configured)
+			blog(LOG_INFO,
+			     "audio_resampler (asynchronous compensation): input %" PRIu64 " samples, "
+			     "output %" PRIu64 " samples, estimated input frequency %f Hz",
+			     rs->total_input_samples, rs->total_output_samples,
+			     (double)rs->total_input_samples / total_output_samples * rs->output_freq);
+
 		if (rs->context)
 			swr_free(&rs->context);
 		if (rs->output_buffer[0])
@@ -258,6 +269,9 @@ bool audio_resampler_resample(audio_resampler_t *rs, uint8_t *output[], uint32_t
 
 	for (uint32_t i = 0; i < rs->output_planes; i++)
 		output[i] = rs->output_buffer[i];
+
+	rs->total_input_samples += in_frames;
+	rs->total_output_samples += ret;
 
 	*out_frames = (uint32_t)ret;
 	return true;
