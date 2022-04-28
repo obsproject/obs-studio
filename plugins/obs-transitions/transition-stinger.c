@@ -69,11 +69,13 @@ static void stinger_update(void *data, obs_data_t *settings)
 	struct stinger_info *s = data;
 	const char *path = obs_data_get_string(settings, "path");
 	bool hw_decode = obs_data_get_bool(settings, "hw_decode");
+	int volume = obs_data_get_int(settings, "volume");
 
 	obs_data_t *media_settings = obs_data_create();
 	obs_data_set_string(media_settings, "local_file", path);
 	obs_data_set_bool(media_settings, "hw_decode", hw_decode);
 	obs_data_set_bool(media_settings, "looping", false);
+	obs_data_set_int(media_settings, "volume", volume);
 
 	obs_source_release(s->media_source);
 	struct dstr name;
@@ -225,6 +227,7 @@ static void stinger_destroy(void *data)
 static void stinger_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "hw_decode", true);
+	obs_data_set_default_int(settings, "volume", 100);
 }
 
 static void stinger_matte_render(void *data, gs_texture_t *a, gs_texture_t *b,
@@ -656,6 +659,8 @@ static obs_properties_t *stinger_properties(void *data)
 	dstr_cat(&filter, FILE_FILTER);
 	dstr_cat(&filter, obs_module_text("FileFilter.AllFiles"));
 	dstr_cat(&filter, " (*.*)");
+
+	obs_properties_add_int_slider(ppts, "volume", "Volume", 0, 100, 1);
 
 	// main stinger settings
 	obs_properties_add_path(ppts, "path", obs_module_text("VideoFile"),

@@ -120,6 +120,7 @@ struct mp_media {
 	bool seek;
 	bool seek_next_ts;
 	int64_t seek_pos;
+	int volume;
 };
 
 typedef struct mp_media mp_media_t;
@@ -144,6 +145,7 @@ struct mp_media_info {
 	bool is_local_file;
 	bool enable_caching;
 	bool reconnecting;
+	int volume;
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
