@@ -80,6 +80,13 @@ static void ffmpeg_mux_destroy(void *data)
 	bfree(stream);
 }
 
+static void get_last_file(void *data, calldata_t *cd)
+{
+	struct ffmpeg_muxer *stream = data;
+	if (!os_atomic_load_bool(&stream->muxing))
+		calldata_set_string(cd, "path", stream->path.array);
+}
+
 static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
@@ -87,6 +94,10 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 
 	if (obs_output_get_flags(output) & OBS_OUTPUT_SERVICE)
 		stream->is_network = true;
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void get_last_file(out string path)",
+			 get_last_file, stream);
 
 	UNUSED_PARAMETER(settings);
 	return stream;
@@ -411,6 +422,9 @@ int deactivate(struct ffmpeg_muxer *stream, int code)
 	}
 
 	os_atomic_set_bool(&stream->stopping, false);
+
+	if (strcmp(stream->output->info.id, "ffmpeg_muxer") == 0)
+		do_output_signal(stream->output, "wrote");
 	return ret;
 }
 
@@ -672,13 +686,6 @@ static void save_replay_proc(void *data, calldata_t *cd)
 	UNUSED_PARAMETER(cd);
 }
 
-static void get_last_replay(void *data, calldata_t *cd)
-{
-	struct ffmpeg_muxer *stream = data;
-	if (!os_atomic_load_bool(&stream->muxing))
-		calldata_set_string(cd, "path", stream->path.array);
-}
-
 static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 {
 	UNUSED_PARAMETER(settings);
@@ -692,8 +699,8 @@ static void *replay_buffer_create(obs_data_t *settings, obs_output_t *output)
 
 	proc_handler_t *ph = obs_output_get_proc_handler(output);
 	proc_handler_add(ph, "void save()", save_replay_proc, stream);
-	proc_handler_add(ph, "void get_last_replay(out string path)",
-			 get_last_replay, stream);
+	proc_handler_add(ph, "void get_last_file(out string path)",
+			 get_last_file, stream);
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
 	signal_handler_add(sh, "void saved()");
