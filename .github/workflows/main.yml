@@ -65,7 +65,7 @@ jobs:
 
   macos_build:
     name: '02 - macOS'
-    runs-on: [macos-11]
+    runs-on: [macos-12]
     strategy:
       matrix:
         arch: ['x86_64', 'arm64']
@@ -454,7 +454,7 @@ jobs:
 
   macos_release:
     name: '03 - macOS notarized image'
-    runs-on: [macos-11]
+    runs-on: [macos-12]
     needs: [macos_build]
     env:
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
