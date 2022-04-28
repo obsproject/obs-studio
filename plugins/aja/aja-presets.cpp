@@ -33,8 +33,8 @@ void RoutingConfigurator::build_preset_table()
 {
 	static const RoutingPresetMap kRoutingPresets = {
 		/*
-        * HDMI RGB Capture
-        */
+		 * HDMI RGB Capture
+		 */
 		{"HDMI_HD_RGB_LFR_RGB_Capture",
 		 {"HDMI_HD_RGB_LFR_RGB_Capture",
 		  ConnectionKind::HDMI,
@@ -85,8 +85,8 @@ void RoutingConfigurator::build_preset_table()
 		  true,
 		  false}},
 		/*
-        * HDMI RGB Display
-        */
+		 * HDMI RGB Display
+		 */
 		{"HDMI_HD_RGB_LFR_RGB_Display",
 		 {"HDMI_HD_RGB_LFR_RGB_Display",
 		  ConnectionKind::HDMI,
@@ -150,8 +150,8 @@ void RoutingConfigurator::build_preset_table()
 		  true,
 		  false}},
 		/*
-        * HDMI YCbCr Capture
-        */
+		 * HDMI YCbCr Capture
+		 */
 		{"HDMI_HD_LFR_YCbCr_Capture",
 		 {"HDMI_HD_LFR_YCbCr_Capture",
 		  ConnectionKind::HDMI,
@@ -188,8 +188,8 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 		/*
-        * HDMI YCbCr Display
-        */
+		 * HDMI YCbCr Display
+		 */
 		{"HDMI_HD_LFR_YCbCr_Display",
 		 {"HDMI_HD_LFR_YCbCr_Display",
 		  ConnectionKind::HDMI,
@@ -286,8 +286,8 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 		/*
-        * SDI RGB Capture
-        */
+		 * SDI RGB Capture
+		 */
 		{"HD_720p_ST292_RGB_Capture",
 		 {"HD_720p_ST292_RGB_Capture",
 		  ConnectionKind::SDI,
@@ -660,8 +660,8 @@ void RoutingConfigurator::build_preset_table()
 		  true}},
 		/////////////////////////////////
 		/*
-        * SDI RGB Display
-        */
+		 * SDI RGB Display
+		 */
 		{"HD_720p_ST292_RGB_Display",
 		 {"HD_720p_ST292_RGB_Display",
 		  ConnectionKind::SDI,
@@ -1369,8 +1369,8 @@ void RoutingConfigurator::build_preset_table()
 		  false,
 		  false}},
 		/*
-        * SDI YCbCr Display
-        */
+		 * SDI YCbCr Display
+		 */
 		{"SD_ST352_YCbCr_Display",
 		 {"SD_ST352_YCbCr_Display",
 		  ConnectionKind::SDI,
