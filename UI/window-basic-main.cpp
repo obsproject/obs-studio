@@ -5889,7 +5889,7 @@ void OBSBasic::CreateSceneUndoRedoAction(const QString &action_name,
 			sources.push_back(source.Get());
 
 			/* update scene/group settings to restore their
-			* contents to their saved settings */
+			 * contents to their saved settings */
 			obs_scene_t *scene =
 				obs_group_or_scene_from_source(source);
 			if (scene) {

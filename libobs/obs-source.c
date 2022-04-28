@@ -1505,13 +1505,13 @@ static void source_output_audio_data(obs_source_t *source,
 		if (diff < TS_SMOOTHING_THRESHOLD) {
 			push_back = true;
 
-			/* This typically only happens if used with async video when
-		 * audio/video start transitioning in to a timestamp jump.
-		 * Audio will typically have a timestamp jump, and then video
-		 * will have a timestamp jump.  If that case is encountered,
-		 * just clear the audio data in that small window and force a
-		 * resync.  This handles all cases rather than just looping. */
 		} else if (diff > MAX_TS_VAR) {
+			/* This typically only happens if used with async video when
+			 * audio/video start transitioning in to a timestamp jump.
+			 * Audio will typically have a timestamp jump, and then video
+			 * will have a timestamp jump.  If that case is encountered,
+			 * just clear the audio data in that small window and force a
+			 * resync.  This handles all cases rather than just looping. */
 			reset_audio_timing(source, data->timestamp, os_time);
 			in.timestamp = data->timestamp + source->timing_adjust;
 		}
