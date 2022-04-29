@@ -420,7 +420,17 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 #endif
 	ffm->video_stream->avg_frame_rate = av_inv_q(context->time_base);
 
-	if (ffm->params.max_luminance > 0) {
+	const int max_luminance = ffm->params.max_luminance;
+	if (max_luminance > 0) {
+		size_t content_size;
+		AVContentLightMetadata *const content =
+			av_content_light_metadata_alloc(&content_size);
+		content->MaxCLL = max_luminance;
+		content->MaxFALL = max_luminance;
+		av_stream_add_side_data(ffm->video_stream,
+					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+					(uint8_t *)content, content_size);
+
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
 		mastering->display_primaries[0][0] = av_make_q(17, 25);
@@ -432,8 +442,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 		mastering->white_point[0] = av_make_q(3127, 10000);
 		mastering->white_point[1] = av_make_q(329, 1000);
 		mastering->min_luminance = av_make_q(0, 1);
-		mastering->max_luminance =
-			av_make_q(ffm->params.max_luminance, 1);
+		mastering->max_luminance = av_make_q(max_luminance, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
 		av_stream_add_side_data(ffm->video_stream,
