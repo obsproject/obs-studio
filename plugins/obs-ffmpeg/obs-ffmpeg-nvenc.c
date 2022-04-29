@@ -57,8 +57,16 @@ static const char *hevc_nvenc_getname(void *unused)
 
 static inline bool valid_format(enum video_format format)
 {
-	return format == VIDEO_FORMAT_I420 || format == VIDEO_FORMAT_NV12 ||
-	       format == VIDEO_FORMAT_I444;
+	switch (format) {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		return true;
+	default:
+		return false;
+	}
 }
 
 static void nvenc_video_info(void *data, struct video_scale_info *info)
