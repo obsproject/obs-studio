@@ -2347,13 +2347,10 @@ static void load_debug_privilege(void)
 
 #define CONFIG_PATH BASE_PATH "/config"
 
-#ifndef LINUX_PORTABLE
-#define LINUX_PORTABLE 0
-#endif
-
 int GetConfigPath(char *path, size_t size, const char *name)
 {
-	if (LINUX_PORTABLE && portable_mode) {
+#ifdef LINUX_PORTABLE
+	if (portable_mode) {
 		if (name && *name) {
 			return snprintf(path, size, CONFIG_PATH "/%s", name);
 		} else {
@@ -2362,11 +2359,15 @@ int GetConfigPath(char *path, size_t size, const char *name)
 	} else {
 		return os_get_config_path(path, size, name);
 	}
+#else
+	return os_get_config_path(path, size, name);
+#endif
 }
 
 char *GetConfigPathPtr(const char *name)
 {
-	if (LINUX_PORTABLE && portable_mode) {
+#ifdef LINUX_PORTABLE
+	if (portable_mode) {
 		char path[512];
 
 		if (snprintf(path, sizeof(path), CONFIG_PATH "/%s", name) > 0) {
@@ -2377,6 +2378,9 @@ char *GetConfigPathPtr(const char *name)
 	} else {
 		return os_get_config_path_ptr(name);
 	}
+#else
+	return os_get_config_path_ptr(name);
+#endif
 }
 
 int GetProgramDataPath(char *path, size_t size, const char *name)
