@@ -547,9 +547,16 @@ void SimpleOutput::Update()
 	video_t *video = obs_get_video();
 	enum video_format format = video_output_get_format(video);
 
-	if (format != VIDEO_FORMAT_NV12 && format != VIDEO_FORMAT_I420)
+	switch (format) {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
 		obs_encoder_set_preferred_video_format(h264Streaming,
 						       VIDEO_FORMAT_NV12);
+	}
 
 	obs_encoder_update(h264Streaming, h264Settings);
 	obs_encoder_update(aacStreaming, aacSettings);
@@ -1352,9 +1359,16 @@ void AdvancedOutput::UpdateStreamSettings()
 	video_t *video = obs_get_video();
 	enum video_format format = video_output_get_format(video);
 
-	if (format != VIDEO_FORMAT_NV12 && format != VIDEO_FORMAT_I420)
+	switch (format) {
+	case VIDEO_FORMAT_I420:
+	case VIDEO_FORMAT_NV12:
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
 		obs_encoder_set_preferred_video_format(h264Streaming,
 						       VIDEO_FORMAT_NV12);
+	}
 
 	obs_encoder_update(h264Streaming, settings);
 }
