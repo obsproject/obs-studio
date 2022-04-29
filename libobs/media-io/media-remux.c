@@ -96,6 +96,41 @@ static inline bool init_output(media_remux_job_t job, const char *out_filename)
 			return false;
 		}
 
+#if FF_API_BUFFER_SIZE_T
+		int content_size;
+#else
+		size_t content_size;
+#endif
+		const uint8_t *const content_src = av_stream_get_side_data(
+			in_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+			&content_size);
+		if (content_src) {
+			uint8_t *const content_dst = av_stream_new_side_data(
+				out_stream, AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+				content_size);
+			if (content_dst)
+				memcpy(content_dst, content_src, content_size);
+		}
+
+#if FF_API_BUFFER_SIZE_T
+		int mastering_size;
+#else
+		size_t mastering_size;
+#endif
+		const uint8_t *const mastering_src = av_stream_get_side_data(
+			in_stream, AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+			&mastering_size);
+		if (mastering_src) {
+			uint8_t *const mastering_dst = av_stream_new_side_data(
+				out_stream,
+				AV_PKT_DATA_MASTERING_DISPLAY_METADATA,
+				mastering_size);
+			if (mastering_dst) {
+				memcpy(mastering_dst, mastering_src,
+				       mastering_size);
+			}
+		}
+
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 		ret = avcodec_parameters_copy(out_stream->codecpar,
 					      in_stream->codecpar);
