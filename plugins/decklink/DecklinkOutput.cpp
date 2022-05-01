@@ -62,6 +62,10 @@ bool DeckLinkOutput::Activate(DeckLinkDevice *device, long long modeId)
 		return false;
 	}
 
+	card_start = 0;
+	system_start = 0;
+	compensated_drift = 0;
+
 	os_atomic_inc_long(&activateRefs);
 	return true;
 }
@@ -106,4 +110,14 @@ int DeckLinkOutput::GetWidth()
 int DeckLinkOutput::GetHeight()
 {
 	return height;
+}
+
+uint64_t DeckLinkOutput::GetHardwareClock()
+{
+	return instance->GetHardwareClock();
+}
+
+uint32_t DeckLinkOutput::GetBufferedAudioSamples()
+{
+	return instance->GetBufferedAudioSamples();
 }

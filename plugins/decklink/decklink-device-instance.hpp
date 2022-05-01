@@ -110,4 +110,7 @@ public:
 	void WriteAudio(audio_data *frames);
 	void HandleCaptionPacket(IDeckLinkAncillaryPacket *packet,
 				 const uint64_t timestamp);
+
+	uint64_t GetHardwareClock(void);
+	uint32_t GetBufferedAudioSamples(void);
 };

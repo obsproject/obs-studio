@@ -729,3 +729,22 @@ ULONG STDMETHODCALLTYPE DeckLinkDeviceInstance::Release(void)
 
 	return newRefCount;
 }
+
+uint64_t DeckLinkDeviceInstance::GetHardwareClock(void)
+{
+	BMDTimeValue hardwareTime;
+	BMDTimeValue timeInFrame;
+	BMDTimeValue ticksPerFrame;
+
+	HRESULT ret = output->GetHardwareReferenceClock(1000000000, &hardwareTime, &timeInFrame, &ticksPerFrame);
+
+	return hardwareTime;
+}
+
+uint32_t DeckLinkDeviceInstance::GetBufferedAudioSamples(void)
+{
+	uint32_t buffered = 0;
+	output->GetBufferedAudioSampleFrameCount(&buffered);
+
+	return buffered;
+}

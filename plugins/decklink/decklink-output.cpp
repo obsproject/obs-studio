@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <util/platform.h>
 #include <obs-avc.h>
 
 #include "const.h"
@@ -129,35 +130,21 @@ static void decklink_output_raw_video(void *data, struct video_data *frame)
 	decklink->DisplayVideoFrame(frame);
 }
 
-static bool prepare_audio(DeckLinkOutput *decklink,
-			  const struct audio_data *frame,
-			  struct audio_data *output)
+#define TIME_BASE 1000000000
+#define MS_TO_NS 1000000
+#define MAX_CLOCK_DRIFT 2 // 2ms max drift
+
+static void drop_samples(DeckLinkOutput *decklink, const struct audio_data *frames, struct audio_data *out, uint32_t drop_samples)
 {
-	*output = *frame;
+	*out = *frames;
 
-	if (frame->timestamp < decklink->start_timestamp) {
-		uint64_t duration = util_mul_div64(frame->frames, 1000000000ULL,
-						   decklink->audio_samplerate);
-		uint64_t end_ts = frame->timestamp + duration;
-		uint64_t cutoff;
-
-		if (end_ts <= decklink->start_timestamp)
-			return false;
-
-		cutoff = decklink->start_timestamp - frame->timestamp;
-		output->timestamp += cutoff;
-
-		cutoff = util_mul_div64(cutoff, decklink->audio_samplerate,
-					1000000000ULL);
-
+	if (drop_samples) {
 		for (size_t i = 0; i < decklink->audio_planes; i++)
-			output->data[i] +=
-				decklink->audio_size * (uint32_t)cutoff;
+			out->data[i] += decklink->audio_size * drop_samples;
+		out->frames -= drop_samples;
 
-		output->frames -= (uint32_t)cutoff;
+		blog(LOG_INFO, "Dropped %d audio samples", drop_samples);
 	}
-
-	return true;
 }
 
 static void decklink_output_raw_audio(void *data, struct audio_data *frames)
@@ -165,11 +152,34 @@ static void decklink_output_raw_audio(void *data, struct audio_data *frames)
 	auto *decklink = (DeckLinkOutput *)data;
 	struct audio_data in;
 
-	if (!decklink->start_timestamp)
-		return;
+	uint32_t bufferedAudioFrames = decklink->GetBufferedAudioSamples();
+	uint64_t cardTime = decklink->GetHardwareClock();
+	uint64_t systemTime = os_gettime_ns();
 
-	if (!prepare_audio(decklink, frames, &in))
-		return;
+	if (!decklink->card_start) {
+		decklink->card_start = cardTime;
+		decklink->system_start = systemTime;
+	}
+
+	int64_t cardDuration = cardTime - decklink->card_start;
+	int64_t systemDuration = systemTime - decklink->system_start;
+
+	int64_t drift = systemDuration - cardDuration - decklink->compensated_drift;
+
+	uint32_t dropSamples = 0;
+	if (drift > MS_TO_NS * MAX_CLOCK_DRIFT) {
+		dropSamples = util_mul_div64(MAX_CLOCK_DRIFT, decklink->audio_samplerate, 1000);
+
+		int64_t adjustedDrift = util_mul_div64(dropSamples, TIME_BASE, decklink->audio_samplerate);
+
+		decklink->compensated_drift += adjustedDrift;
+
+		blog(LOG_INFO, "Drift adjusted by %ldms. Total drift offset now at %ldms.", adjustedDrift ? (adjustedDrift / MS_TO_NS) : 0, decklink->compensated_drift ? (decklink->compensated_drift / MS_TO_NS) : 0);
+	}
+
+	drop_samples(decklink, frames, &in, dropSamples);
+
+	//blog(LOG_INFO, "Drift: %ldms | Buffered samples: %d | Card time: %ldms | System time: %ldms", drift ? (drift / 1000000) : 0, bufferedAudioFrames, cardTime / 1000000, systemTime / 1000000);
 
 	decklink->WriteAudio(&in);
 }

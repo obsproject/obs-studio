@@ -33,4 +33,11 @@ public:
 	void SetSize(int width, int height);
 	int GetWidth();
 	int GetHeight();
+
+	uint64_t GetHardwareClock();
+	uint32_t GetBufferedAudioSamples();
+
+	uint64_t card_start;
+	uint64_t system_start;
+	uint64_t compensated_drift;
 };
