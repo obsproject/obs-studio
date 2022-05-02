@@ -447,6 +447,12 @@ Other Functions
 
 ---------------------
 
+.. function:: uint64_t os_get_sys_total_size(void)
+
+   Returns the amount of memory installed.
+
+---------------------
+
 .. struct:: os_proc_memory_usage
 
    Memory usage structure.
