@@ -4976,6 +4976,8 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 }
 
 #define ESTIMATE_STR "Basic.Settings.Output.ReplayBuffer.Estimate"
+#define ESTIMATE_TOO_LARGE_STR \
+	"Basic.Settings.Output.ReplayBuffer.EstimateTooLarge"
 #define ESTIMATE_UNKNOWN_STR \
 	"Basic.Settings.Output.ReplayBuffer.EstimateUnknown"
 
@@ -5013,17 +5015,33 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	int abitrate = ui->simpleOutputABitrate->currentText().toInt();
 	int seconds = ui->simpleRBSecMax->value();
 
+	// Set maximum to 75% of installed memory
+	uint64_t memTotal = os_get_sys_total_size();
+	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 /
 			8 / 1024 / 1024;
 	if (memMB < 1)
 		memMB = 1;
 
-	if (streamQuality)
-		ui->simpleRBEstimate->setText(
-			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
-	else
+	ui->simpleRBEstimate->setObjectName("");
+	if (streamQuality) {
+		if (memMB <= memMaxMB) {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_STR)
+					.arg(QString::number(int(memMB))));
+		} else {
+			ui->simpleRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)),
+					     QString::number(int(memMaxMB))));
+			ui->simpleRBEstimate->setObjectName("warningLabel");
+		}
+	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+	}
 
+	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
 	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
 	ui->simpleReplayBuf->setVisible(!lossless);
 
@@ -5089,6 +5107,10 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 
 	int seconds = ui->advRBSecMax->value();
 
+	// Set maximum to 75% of installed memory
+	uint64_t memTotal = os_get_sys_total_size();
+	int64_t memMaxMB = memTotal ? memTotal * 3 / 4 / 1024 / 1024 : 8192;
+
 	int64_t memMB = int64_t(seconds) * int64_t(vbitrate + abitrate) * 1000 /
 			8 / 1024 / 1024;
 	if (memMB < 1)
@@ -5100,16 +5122,31 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	if (vbitrate == 0)
 		varRateControl = false;
 
-	ui->advRBMegsMax->setVisible(!varRateControl);
-	ui->advRBMegsMaxLabel->setVisible(!varRateControl);
+	ui->advRBEstimate->setObjectName("");
+	if (varRateControl) {
+		ui->advRBMegsMax->setVisible(false);
+		ui->advRBMegsMaxLabel->setVisible(false);
 
-	if (varRateControl)
-		ui->advRBEstimate->setText(
-			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
-	else
+		if (memMB <= memMaxMB) {
+			ui->advRBEstimate->setText(
+				QTStr(ESTIMATE_STR)
+					.arg(QString::number(int(memMB))));
+		} else {
+			ui->advRBEstimate->setText(
+				QTStr(ESTIMATE_TOO_LARGE_STR)
+					.arg(QString::number(int(memMB)),
+					     QString::number(int(memMaxMB))));
+			ui->advRBEstimate->setObjectName("warningLabel");
+		}
+	} else {
+		ui->advRBMegsMax->setVisible(true);
+		ui->advRBMegsMaxLabel->setVisible(true);
+		ui->advRBMegsMax->setMaximum(memMaxMB);
 		ui->advRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
+	}
 
 	ui->advReplayBufferFrame->setEnabled(!lossless && replayBufferEnabled);
+	ui->advRBEstimate->style()->polish(ui->advRBEstimate);
 	ui->advReplayBuf->setEnabled(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
