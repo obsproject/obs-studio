@@ -110,6 +110,14 @@ bool DeckLinkDevice::Init()
 	attributes->GetFlag(BMDDeckLinkSupportsInternalKeying,
 			    &supportsInternalKeyer);
 
+	// get clock adjustment support
+	attributes->GetFlag(BMDDeckLinkSupportsClockTimingAdjustment,
+				&supportsClockAdjustment);
+
+	// get minimum preroll frames
+	attributes->GetInt(BMDDeckLinkMinimumPrerollFrames,
+				&minimumPrerollFrames);
+
 	// Sub Device Counts
 	attributes->GetInt(BMDDeckLinkSubDeviceIndex, &subDeviceIndex);
 	attributes->GetInt(BMDDeckLinkNumberOfSubDevices, &numSubDevices);
@@ -243,6 +251,16 @@ bool DeckLinkDevice::GetSupportsExternalKeyer(void) const
 bool DeckLinkDevice::GetSupportsInternalKeyer(void) const
 {
 	return supportsInternalKeyer;
+}
+
+bool DeckLinkDevice::GetSupportsClockAdjustment(void) const
+{
+	return supportsClockAdjustment;
+}
+
+int64_t DeckLinkDevice::GetMinimumPrerollFrames(void) const
+{
+	return minimumPrerollFrames;
 }
 
 int64_t DeckLinkDevice::GetSubDeviceCount()

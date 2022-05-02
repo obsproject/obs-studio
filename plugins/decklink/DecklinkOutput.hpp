@@ -16,7 +16,6 @@ protected:
 public:
 	const char *deviceHash;
 	long long modeID;
-	uint64_t start_timestamp;
 	uint32_t audio_samplerate;
 	size_t audio_planes;
 	size_t audio_size;

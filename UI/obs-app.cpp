@@ -397,7 +397,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 #ifndef _WIN32
 		def_log_handler(log_level, msg, args2, nullptr);
 #endif
-		if (!too_many_repeated_entries(logFile, msg, str))
+		//if (!too_many_repeated_entries(logFile, msg, str))
 			LogStringChunk(logFile, str, log_level);
 	}
 

@@ -4419,6 +4419,7 @@ bool OBSBasic::ResetAudio()
 	ProfileScope("OBSBasic::ResetAudio");
 
 	struct obs_audio_info2 ai = {};
+
 	ai.samples_per_sec =
 		config_get_uint(basicConfig, "Audio", "SampleRate");
 

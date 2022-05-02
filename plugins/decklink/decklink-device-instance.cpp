@@ -536,6 +536,12 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		}
 	}
 
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	LOG(LOG_INFO, "Clock timing supported: %d", clockAdjustmentSupported);
+
+	int minimumPrerollFrames = device->GetMinimumPrerollFrames();
+	LOG(LOG_INFO, "Minimum preroll frames: %d", minimumPrerollFrames);
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return false;
@@ -561,11 +567,21 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 
 	output->SetScheduledFrameCompletionCallback(this);
-	mode_->GetFrameRate(&outputFrameDuration, &outputTimeScale);
 
-	outputDriftOffset = 0;
+	playbackStarted = false;
+	BMDTimeValue frameDuration, timeScale;
+	mode_->GetFrameRate(&frameDuration, &timeScale);
+	frameLength = util_mul_div64(frameDuration, TIME_BASE, timeScale);
 
-	output->StartScheduledPlayback(os_gettime_ns(), TIME_BASE, 1.0);
+	hardwareStartTime = 0;
+	systemStartTime = 0;
+	driftAverage = RollingAverage(DRIFT_AVERAGE_SAMPLES);
+
+	clockAdjustment = GetClockTimingAdjustment();
+	timestampOffset = 0;
+	audioTimestampOffset = 0;
+
+	framesSinceDriftCalc = 0; // debug only
 
 	return true;
 }
@@ -578,6 +594,9 @@ bool DeckLinkDeviceInstance::StopOutput()
 	LOG(LOG_INFO, "Stopping output of '%s'...",
 	    GetDevice()->GetDisplayName().c_str());
 
+	// Reset clock timing, to allow the card to genlock in other programs
+	SetClockTimingAdjustment(0);
+
 	output->DisableVideoOutput();
 	output->DisableAudioOutput();
 
@@ -587,11 +606,143 @@ bool DeckLinkDeviceInstance::StopOutput()
 	return true;
 }
 
+int64_t DeckLinkDeviceInstance::GetClockTimingAdjustment()
+{
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	if (!clockAdjustmentSupported)
+		return 0;
+
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
+	HRESULT configResult = output->QueryInterface(IID_IDeckLinkConfiguration, (void **)&deckLinkConfiguration);
+	if (configResult != S_OK) {
+		LOG(LOG_ERROR, "Could not obtain the IDeckLinkConfiguration interface: %08x\n", configResult);
+		return 0;
+	}
+
+	int64_t ret;
+	HRESULT getResult = deckLinkConfiguration->GetInt(bmdDeckLinkConfigClockTimingAdjustment, &ret);
+	if (getResult != S_OK) {
+		LOG(LOG_WARNING, "Getting clock adjustment failed: %08x", getResult);
+		return 0;
+	}
+
+	return ret;
+}
+
+void DeckLinkDeviceInstance::SetClockTimingAdjustment(int64_t adj)
+{
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	if (!clockAdjustmentSupported)
+		return;
+
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
+	HRESULT configResult = output->QueryInterface(IID_IDeckLinkConfiguration, (void **)&deckLinkConfiguration);
+	if (configResult != S_OK) {
+		LOG(LOG_ERROR, "Could not obtain the IDeckLinkConfiguration interface: %08x\n", configResult);
+	} else {
+		int64_t value = std::clamp(adj, (int64_t)-127, (int64_t)127);
+
+		HRESULT setResult = deckLinkConfiguration->SetInt(bmdDeckLinkConfigClockTimingAdjustment, value);
+		if (setResult != S_OK)
+			LOG(LOG_WARNING, "Setting clock adjustment with value %ld failed: %08x", adj, setResult);
+	}
+}
+
+void DeckLinkDeviceInstance::SetStartTimes()
+{
+	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
+	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
+	uint64_t systemTime = os_gettime_ns();
+
+	hardwareStartTime = hardwareTime;
+	systemStartTime = systemTime;
+}
+
+void DeckLinkDeviceInstance::TickDriftTracker()
+{
+	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
+	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
+	//output->GetScheduledStreamTime(TIME_BASE, &hardwareTime, NULL);
+	uint64_t systemTime = os_gettime_ns();
+
+	if (!hardwareStartTime) {
+		hardwareStartTime = hardwareTime;
+		systemStartTime = systemTime;
+	}
+
+	uint64_t hardwareDuration = hardwareTime - hardwareStartTime;
+	uint64_t systemDuration = systemTime - systemStartTime;
+	int64_t offset = hardwareDuration - systemDuration;
+
+	driftAverage.SubmitSample(offset);
+}
+
+void DeckLinkDeviceInstance::CorrectDrift()
+{
+	BMDReferenceStatus referenceStatus;
+	output->GetReferenceStatus(&referenceStatus);
+	bool genlocked = referenceStatus == bmdReferenceLocked;
+
+	int64_t average = driftAverage.GetAverage();
+
+	if (genlocked && !lastGenlockMode) {
+		// 
+		//hardwareStartTime -= frameLength;
+		//audioTimestampOffset += frameLength;
+		LOG(LOG_INFO, "Genlock status: Acquired");
+	} else if (!genlocked && lastGenlockMode) {
+		LOG(LOG_INFO, "Genlock status: Lost");
+	}
+
+	int64_t clockAdjustment_next = -average / CLOCK_ADJUST_DIVISOR;
+
+	if (average - timestampOffset < -((int64_t)(frameLength / 2))) {
+		timestampOffset -= frameLength;
+		LOG(LOG_INFO, "Dropping frame to compensate drift");
+	} else if (enableHardwareClockAdjust && std::abs(clockAdjustment_next - clockAdjustment) > CLOCK_ADJUST_HYSTERESIS) {
+		clockAdjustment += (clockAdjustment_next > clockAdjustment) ? 1 : -1;
+
+		SetClockTimingAdjustment(clockAdjustment);
+
+		LOG(LOG_INFO, "Clock adjustment is at %ld | Drift: %ldus", clockAdjustment, average / 1000);
+	}
+
+	lastGenlockMode = genlocked;
+
+	// DEBUG BELOW IGNORE ================================
+
+	// Only operate every 300 frames
+	if (framesSinceDriftCalc > 300)
+		framesSinceDriftCalc = 0;
+	else
+		return;
+
+	uint32_t bufferedAudioFrames;
+	output->GetBufferedAudioSampleFrameCount(&bufferedAudioFrames);
+
+	uint32_t bufferedVideoFrames;
+	output->GetBufferedVideoFrameCount(&bufferedVideoFrames);
+
+	//if (bufferedAudioFrames == 0)
+	//	audioTimestampOffset += frameLength;
+
+	LOG(LOG_INFO, "Average drift is now at %ldus (After compensation: %ldus) | Buffered video frames: %d | Buffered audio frames: %d", average / 1000, (average - timestampOffset) / 1000, bufferedVideoFrames, bufferedAudioFrames);
+}
+
 void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 {
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return;
+
+	if (!playbackStarted) {
+		int64_t minimumPrerollFrames = device->GetMinimumPrerollFrames();
+
+		uint64_t bufferSize = ((minimumPrerollFrames + DECKLINK_EXTRA_PREROLL_FRAMES) * frameLength);
+
+		output->StartScheduledPlayback (frame->timestamp - bufferSize, TIME_BASE, 1.0);
+		playbackStarted = true;
+	}
 
 	uint8_t *destData;
 	decklinkOutputFrame->GetBytes((void **)&destData);
@@ -606,36 +757,30 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
 		  destData);
 
-	int64_t length = (outputFrameDuration * TIME_BASE) / outputTimeScale;
-	int64_t timestamp = frame->timestamp;
+	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp + timestampOffset, frameLength, TIME_BASE);
 
-	output->ScheduleVideoFrame(decklinkOutputFrame,
-				   timestamp + outputInitialScheduleOffset -
-					   outputDriftOffset,
-				   length, TIME_BASE);
-
-	// deal with clock drift
-	BMDTimeValue stream_frame_time;
-	double playback_speed;
-	output->GetScheduledStreamTime(TIME_BASE, &stream_frame_time,
-				       &playback_speed);
-
-	if (timestamp - outputDriftOffset - stream_frame_time > 4000000) {
-		outputDriftOffset += 500000;
-	}
+	framesSinceDriftCalc++;
 }
 
-HRESULT DeckLinkDeviceInstance::ScheduledFrameCompleted(
-	IDeckLinkVideoFrame *completedFrame,
-	BMDOutputFrameCompletionResult result)
+HRESULT	DeckLinkDeviceInstance::ScheduledFrameCompleted (
+		IDeckLinkVideoFrame* completedFrame,
+		BMDOutputFrameCompletionResult result)
 {
-	if (result == bmdOutputFrameDropped) {
-		blog(LOG_ERROR, "Dropped Frame");
-	}
+	if (result == bmdOutputFrameDropped)
+		LOG(LOG_WARNING, "Dropped Frame");
 
 	if (result == bmdOutputFrameDisplayedLate) {
-		blog(LOG_ERROR, "Late Frame");
+		uint32_t bufferedVideoFrames;
+		output->GetBufferedVideoFrameCount(&bufferedVideoFrames);
+
+		// Rough method of adding only 500us of timestamp offset total regardless of how many frames are queued
+		// This fixes decklink complaining of late frames, which can cause weird playback issues.
+		// The SDK reports frames as "late" when they are more than 20,000ns late from what it thinks is the target.
+		timestampOffset += 500000 / bufferedVideoFrames;
+
+		LOG(LOG_WARNING, "Late Frame");
 	}
+
 	return S_OK;
 }
 
@@ -646,17 +791,22 @@ HRESULT DeckLinkDeviceInstance::ScheduledPlaybackHasStopped()
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
 {
+	TickDriftTracker();
+
+	CorrectDrift();
+
 	uint32_t sampleFramesWritten;
-	output->ScheduleAudioSamples(frames->data[0], frames->frames,
-				     frames->timestamp +
-					     outputInitialScheduleOffset -
-					     outputDriftOffset,
-				     TIME_BASE, &sampleFramesWritten);
+	output->ScheduleAudioSamples(frames->data[0],
+			frames->frames,
+			frames->timestamp + timestampOffset + audioTimestampOffset,
+			TIME_BASE,
+			&sampleFramesWritten);
 
 	if (sampleFramesWritten < frames->frames) {
 		blog(LOG_ERROR,
-		     "Didn't write enough audio samples. Sent: %d, Written: %d",
-		     frames->frames, sampleFramesWritten);
+				"Didn't write enough audio samples. Sent: %d, Written: %d",
+				frames->frames,
+				sampleFramesWritten);
 	}
 }
 

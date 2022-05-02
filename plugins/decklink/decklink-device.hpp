@@ -19,6 +19,8 @@ class DeckLinkDevice {
 	int32_t maxChannel = 0;
 	decklink_bool_t supportsExternalKeyer = false;
 	decklink_bool_t supportsInternalKeyer = false;
+	decklink_bool_t supportsClockAdjustment = false;
+	int64_t minimumPrerollFrames = 0;
 	int64_t subDeviceIndex = 0;
 	int64_t numSubDevices = 0;
 	int64_t supportedVideoInputConnections = -1;
@@ -47,6 +49,8 @@ public:
 	int64_t GetAudioInputConnections();
 	bool GetSupportsExternalKeyer(void) const;
 	bool GetSupportsInternalKeyer(void) const;
+	bool GetSupportsClockAdjustment(void) const;
+	int64_t GetMinimumPrerollFrames(void) const;
 	int64_t GetSubDeviceCount();
 	int64_t GetSubDeviceIndex();
 	int GetKeyerMode(void);
