@@ -125,10 +125,8 @@ if(NOT TARGET CEF::Wrapper)
                                                   ${CEF_LIBRARY})
 
     if(DEFINED CEFWRAPPER_LIBRARY_DEBUG)
-      add_library(CEF::Wrapper_Debug UNKNOWN IMPORTED)
-      set_target_properties(
-        CEF::Wrapper_Debug PROPERTIES IMPORTED_LOCATION
-                                      ${CEFWRAPPER_LIBRARY_DEBUG})
+      set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LOCATION_DEBUG
+                                                    ${CEFWRAPPER_LIBRARY_DEBUG})
     endif()
   else()
     add_library(CEF::Wrapper INTERFACE IMPORTED)
@@ -141,10 +139,8 @@ if(NOT TARGET CEF::Wrapper)
                                                   ${CEF_LIBRARY})
 
     if(DEFINED CEFWRAPPER_LIBRARY_DEBUG)
-      add_library(CEF::Wrapper_Debug INTERFACE IMPORTED)
-      set_target_properties(
-        CEF::Wrapper_Debug PROPERTIES IMPORTED_LIBNAME
-                                      ${CEFWRAPPER_LIBRARY_DEBUG})
+      set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LIBNAME_DEBUG
+                                                    ${CEFWRAPPER_LIBRARY_DEBUG})
     endif()
   endif()
 
@@ -153,10 +149,4 @@ if(NOT TARGET CEF::Wrapper)
 
   set_target_properties(CEF::Library PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
                                                 "${CEF_INCLUDE_DIR}")
-
-  if(DEFINED CEFWRAPPER_LIBRARY_DEBUG)
-    set_target_properties(
-      CEF::Wrapper_Debug PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                    "${CEF_INCLUDE_DIR}")
-  endif()
 endif()
