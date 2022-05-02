@@ -386,6 +386,28 @@ uint64_t os_get_sys_free_size(void)
 	return vmstat.free_count * vm_page_size;
 }
 
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+	size_t size;
+	int ret;
+
+	size = sizeof(total_memory);
+	ret = sysctlbyname("hw.memsize", &total_memory, &size, NULL, 0);
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
+}
+
 #ifndef MACH_TASK_BASIC_INFO
 typedef task_basic_info_data_t mach_task_basic_info_data_t;
 #endif

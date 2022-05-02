@@ -1390,6 +1390,28 @@ uint64_t os_get_sys_free_size(void)
 	return msex.ullAvailPhys;
 }
 
+static uint64_t total_memory = 0;
+static bool total_memory_initialized = false;
+
+static void os_get_sys_total_size_internal()
+{
+	total_memory_initialized = true;
+
+	MEMORYSTATUSEX msex = {sizeof(MEMORYSTATUSEX)};
+	if (!os_get_sys_memory_usage_internal(&msex))
+		return;
+
+	total_memory = msex.ullTotalPhys;
+}
+
+uint64_t os_get_sys_total_size(void)
+{
+	if (!total_memory_initialized)
+		os_get_sys_total_size_internal();
+
+	return total_memory;
+}
+
 static inline bool
 os_get_proc_memory_usage_internal(PROCESS_MEMORY_COUNTERS *pmc)
 {
