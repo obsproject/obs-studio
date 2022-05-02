@@ -558,11 +558,17 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	}
 
 	output->SetScheduledFrameCompletionCallback(this);
-	mode_->GetFrameRate(&outputFrameDuration, &outputTimeScale);
 
-	outputDriftOffset = 0;
+	BMDTimeValue frameDuration, timeScale;
+	mode_->GetFrameRate(&frameDuration, &timeScale);
 
-	output->StartScheduledPlayback(os_gettime_ns(), TIME_BASE, 1.0);
+	frameLength = util_mul_div64(frameDuration, TIME_BASE, timeScale);
+	hardwareStartTime = 0;
+	systemStartTime = 0;
+	timestampOffset = 0;
+	maxSamples = 0;
+
+	output->StartScheduledPlayback (os_gettime_ns(), TIME_BASE, 1.0);
 
 	return true;
 }
@@ -603,28 +609,12 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
 		  destData);
 
-	int64_t length = (outputFrameDuration * TIME_BASE) / outputTimeScale;
-	int64_t timestamp = frame->timestamp;
-
-	output->ScheduleVideoFrame(decklinkOutputFrame,
-				   timestamp + outputInitialScheduleOffset -
-					   outputDriftOffset,
-				   length, TIME_BASE);
-
-	// deal with clock drift
-	BMDTimeValue stream_frame_time;
-	double playback_speed;
-	output->GetScheduledStreamTime(TIME_BASE, &stream_frame_time,
-				       &playback_speed);
-
-	if (timestamp - outputDriftOffset - stream_frame_time > 4000000) {
-		outputDriftOffset += 500000;
-	}
+	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp + timestampOffset + bufferSize, frameLength, TIME_BASE);
 }
 
-HRESULT DeckLinkDeviceInstance::ScheduledFrameCompleted(
-	IDeckLinkVideoFrame *completedFrame,
-	BMDOutputFrameCompletionResult result)
+HRESULT	DeckLinkDeviceInstance::ScheduledFrameCompleted (
+		IDeckLinkVideoFrame* completedFrame,
+		BMDOutputFrameCompletionResult result)
 {
 	if (result == bmdOutputFrameDropped) {
 		blog(LOG_ERROR, "Dropped Frame");
@@ -643,17 +633,48 @@ HRESULT DeckLinkDeviceInstance::ScheduledPlaybackHasStopped()
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
 {
+	// Clock drift logic start
+
+	uint32_t bufferedAudioFrames;
+	output->GetBufferedAudioSampleFrameCount(&bufferedAudioFrames);
+
+	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
+	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
+
+	uint64_t systemTime = os_gettime_ns();
+
+	if (!hardwareStartTime) {
+		hardwareStartTime = hardwareTime;
+		systemStartTime = systemTime;
+	}
+
+	uint64_t hardwareDuration = hardwareTime - hardwareStartTime;
+	uint64_t systemDuration = systemTime - systemStartTime;
+
+	//timestampOffset = hardwareDuration - systemDuration;
+	timestampOffset = 0;
+
+	if (bufferedAudioFrames > maxSamples) {
+		blog(LOG_INFO, "Max audio found samples now at %d", bufferedAudioFrames);
+		maxSamples = bufferedAudioFrames;
+	}
+
+	//blog(LOG_INFO, "Drift is now at %ldus | Buffered samples: %d", timestampOffset ? (timestampOffset / 1000) : 0, bufferedAudioFrames);
+
+	// Clock drift logic stop
+
 	uint32_t sampleFramesWritten;
-	output->ScheduleAudioSamples(frames->data[0], frames->frames,
-				     frames->timestamp +
-					     outputInitialScheduleOffset -
-					     outputDriftOffset,
-				     TIME_BASE, &sampleFramesWritten);
+	output->ScheduleAudioSamples(frames->data[0],
+			frames->frames,
+			frames->timestamp + timestampOffset + bufferSize,
+			TIME_BASE,
+			&sampleFramesWritten);
 
 	if (sampleFramesWritten < frames->frames) {
 		blog(LOG_ERROR,
-		     "Didn't write enough audio samples. Sent: %d, Written: %d",
-		     frames->frames, sampleFramesWritten);
+				"Didn't write enough audio samples. Sent: %d, Written: %d",
+				frames->frames,
+				sampleFramesWritten);
 	}
 }
 
