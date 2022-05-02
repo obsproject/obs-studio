@@ -131,6 +131,11 @@ file(
   "${SSL_INCLUDE_DIR}/bin/ssleay32*.dll"
   "${SSL_INCLUDE_DIR}/bin/libeay32*.dll")
 
+if(NOT DEFINED CURL_INCLUDE_DIR AND TARGET CURL::libcurl)
+  get_target_property(CURL_INCLUDE_DIR CURL::libcurl
+                      INTERFACE_INCLUDE_DIRECTORIES)
+endif()
+
 file(
   GLOB
   CURL_BIN_FILES
