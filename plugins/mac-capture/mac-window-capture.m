@@ -50,28 +50,28 @@ static inline void capture_frame(struct window_capture *wc)
 	size_t width = CGImageGetWidth(img);
 	size_t height = CGImageGetHeight(img);
 
-	CGRect rect = {{0, 0}, {width, height}};
-	da_resize(wc->buffer, width * height * 4);
-	uint8_t *data = wc->buffer.array;
+	if (!width || !height || CGImageGetBitsPerPixel(img) != 32 ||
+	    CGImageGetBitsPerComponent(img) != 8) {
+		CGImageRelease(img);
+		return;
+	}
 
-	CGContextRef cg_context = CGBitmapContextCreate(
-		data, width, height, 8, width * 4, wc->color_space,
-		kCGBitmapByteOrder32Host | kCGImageAlphaPremultipliedFirst);
-	CGContextSetBlendMode(cg_context, kCGBlendModeCopy);
-	CGContextDrawImage(cg_context, rect, img);
-	CGContextRelease(cg_context);
-	CGImageRelease(img);
+	CGDataProviderRef provider = CGImageGetDataProvider(img);
+	CFDataRef data = CGDataProviderCopyData(provider);
 
 	struct obs_source_frame frame = {
 		.format = VIDEO_FORMAT_BGRA,
 		.width = width,
 		.height = height,
-		.data[0] = data,
-		.linesize[0] = width * 4,
+		.data[0] = (uint8_t *)CFDataGetBytePtr(data),
+		.linesize[0] = CGImageGetBytesPerRow(img),
 		.timestamp = ts,
 	};
 
 	obs_source_output_video(wc->source, &frame);
+
+	CGImageRelease(img);
+	CFRelease(data);
 }
 
 static void *capture_thread(void *data)
