@@ -180,6 +180,23 @@ bool os_sleepto_ns(uint64_t time_target)
 	return true;
 }
 
+bool os_sleepto_ns_fast(uint64_t time_target)
+{
+	uint64_t current = os_gettime_ns();
+	if (time_target < current)
+		return false;
+
+	do {
+		uint64_t remain_us = (time_target - current + 999) / 1000;
+		useconds_t us = remain_us >= 1000000 ? 999999 : remain_us;
+		usleep(us);
+
+		current = os_gettime_ns();
+	} while (time_target > current);
+
+	return true;
+}
+
 void os_sleep_ms(uint32_t duration)
 {
 	usleep(duration * 1000);

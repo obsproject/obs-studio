@@ -103,6 +103,7 @@ EXPORT void os_end_high_performance(os_performance_token_t *);
  * Returns false if already at or past target time.
  */
 EXPORT bool os_sleepto_ns(uint64_t time_target);
+EXPORT bool os_sleepto_ns_fast(uint64_t time_target);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);

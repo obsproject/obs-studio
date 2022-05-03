@@ -194,6 +194,13 @@ Sleep/Time Functions
 
 ---------------------
 
+.. function:: bool os_sleepto_ns_fast(uint64_t time_target)
+
+   Sleeps to a specific time without high precision, in nanoseconds.
+   The function won't return until reaching the specific time.
+
+---------------------
+
 .. function:: void os_sleep_ms(uint32_t duration)
 
    Sleeps for a specific number of milliseconds.

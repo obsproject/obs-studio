@@ -360,6 +360,24 @@ bool os_sleepto_ns(uint64_t time_target)
 	return stall;
 }
 
+bool os_sleepto_ns_fast(uint64_t time_target)
+{
+	uint64_t current = os_gettime_ns();
+	if (time_target < current)
+		return false;
+
+	do {
+		uint64_t remain_ms = (time_target - current) / 1000000;
+		if (!remain_ms)
+			remain_ms = 1;
+		Sleep((DWORD)remain_ms);
+
+		current = os_gettime_ns();
+	} while (time_target > current);
+
+	return true;
+}
+
 void os_sleep_ms(uint32_t duration)
 {
 	/* windows 8+ appears to have decreased sleep precision */
