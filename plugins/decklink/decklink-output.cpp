@@ -55,8 +55,6 @@ static bool decklink_output_start(void *data)
 	decklink->audio_size =
 		get_audio_size(AUDIO_FORMAT_16BIT, aoi.speakers, 1);
 
-	decklink->start_timestamp = 0;
-
 	ComPtr<DeckLinkDevice> device;
 
 	device.Set(deviceEnum->FindByHash(decklink->deviceHash));
@@ -123,15 +121,13 @@ static void decklink_output_raw_video(void *data, struct video_data *frame)
 {
 	auto *decklink = (DeckLinkOutput *)data;
 
-	if (!decklink->start_timestamp)
-		decklink->start_timestamp = frame->timestamp;
-
 	decklink->DisplayVideoFrame(frame);
 }
 
 static void decklink_output_raw_audio(void *data, struct audio_data *frames)
 {
 	auto *decklink = (DeckLinkOutput *)data;
+
 	decklink->WriteAudio(frames);
 }
 

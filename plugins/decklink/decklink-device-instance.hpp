@@ -10,6 +10,13 @@
 #include "decklink-device.hpp"
 #include "OBSVideoFrame.h"
 
+#include "util.hpp"
+
+#define MS_TO_NS(ms) (ms * 1000000)
+#define DECKLINK_BUFFER_SIZE MS_TO_NS(100)
+
+#define DRIFT_AVERAGE_SAMPLES 280
+
 class AudioRepacker;
 class DecklinkBase;
 
@@ -39,13 +46,15 @@ protected:
 	bool swap;
 	bool allow10Bit;
 
+	// Output
 	uint64_t frameLength = 0;
-	std::atomic<uint64_t> hardwareStartTime = 0;
-	std::atomic<uint64_t> systemStartTime = 0;
-	std::atomic<uint64_t> bufferSize = 100000000;
-	std::atomic<int64_t> timestampOffset = 0;
+	uint64_t hardwareStartTime = 0;
+	uint64_t systemStartTime = 0;
 
-	uint32_t maxSamples = 0;
+	size_t framesSinceDriftCalc = 0;
+	RollingAverage driftAverage;
+	int64_t lastAverage = 0;
+	int64_t clockAdjustment = 0;
 
 	OBSVideoFrame *convertFrame = nullptr;
 	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
@@ -118,6 +127,11 @@ public:
 	ULONG STDMETHODCALLTYPE AddRef(void);
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
 	ULONG STDMETHODCALLTYPE Release(void);
+
+	int64_t GetClockTimingAdjustment(void);
+	void SetClockTimingAdjustment(int64_t adj);
+
+	void CalculateAndCorrectDrift(void);
 
 	void DisplayVideoFrame(video_data *frame);
 	void WriteAudio(audio_data *frames);

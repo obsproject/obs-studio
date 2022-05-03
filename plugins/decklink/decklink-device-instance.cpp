@@ -533,6 +533,9 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 		}
 	}
 
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	LOG(LOG_INFO, "Clock timing supported: %d", clockAdjustmentSupported);
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return false;
@@ -565,8 +568,14 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	frameLength = util_mul_div64(frameDuration, TIME_BASE, timeScale);
 	hardwareStartTime = 0;
 	systemStartTime = 0;
-	timestampOffset = 0;
-	maxSamples = 0;
+
+	framesSinceDriftCalc = 0;
+	driftAverage = RollingAverage(DRIFT_AVERAGE_SAMPLES);
+	lastAverage = 0;
+
+	SetClockTimingAdjustment(0); // only for debug
+
+	clockAdjustment = GetClockTimingAdjustment();
 
 	output->StartScheduledPlayback (os_gettime_ns(), TIME_BASE, 1.0);
 
@@ -590,8 +599,104 @@ bool DeckLinkDeviceInstance::StopOutput()
 	return true;
 }
 
+int64_t DeckLinkDeviceInstance::GetClockTimingAdjustment()
+{
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	if (!clockAdjustmentSupported)
+		return 0;
+
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
+	HRESULT configResult = output->QueryInterface(IID_IDeckLinkConfiguration, (void **)&deckLinkConfiguration);
+	if (configResult != S_OK) {
+		LOG(LOG_ERROR, "Could not obtain the IDeckLinkConfiguration interface: %08x\n", configResult);
+		return 0;
+	}
+
+	int64_t ret;
+	HRESULT getResult = deckLinkConfiguration->GetInt(bmdDeckLinkConfigClockTimingAdjustment, &ret);
+	if (getResult != S_OK) {
+		LOG(LOG_WARNING, "Getting clock adjustment failed: %08x", getResult);
+		return 0;
+	}
+
+	return ret;
+}
+
+void DeckLinkDeviceInstance::SetClockTimingAdjustment(int64_t adj)
+{
+	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
+	if (!clockAdjustmentSupported)
+		return;
+
+	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
+	HRESULT configResult = output->QueryInterface(IID_IDeckLinkConfiguration, (void **)&deckLinkConfiguration);
+	if (configResult != S_OK) {
+		LOG(LOG_ERROR, "Could not obtain the IDeckLinkConfiguration interface: %08x\n", configResult);
+	} else {
+		int64_t value = std::clamp(adj, (int64_t)-127, (int64_t)127);
+
+		HRESULT setResult = deckLinkConfiguration->SetInt(bmdDeckLinkConfigClockTimingAdjustment, value);
+		if (setResult != S_OK)
+			LOG(LOG_WARNING, "Setting clock adjustment with value %ld failed: %08x", adj, setResult);
+	}
+}
+
+void DeckLinkDeviceInstance::CalculateAndCorrectDrift()
+{
+	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
+	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
+	uint64_t systemTime = os_gettime_ns();
+
+	if (!hardwareStartTime) {
+		hardwareStartTime = hardwareTime;
+		systemStartTime = systemTime;
+	}
+
+	uint64_t hardwareDuration = hardwareTime - hardwareStartTime;
+	uint64_t systemDuration = systemTime - systemStartTime;
+	int64_t timestampOffset = hardwareDuration - systemDuration;
+
+	driftAverage.SubmitSample(timestampOffset);
+
+	// Only operate every 300 frames
+	if (framesSinceDriftCalc > 300)
+		framesSinceDriftCalc = 0;
+	else
+		return;
+
+	int64_t average = driftAverage.GetAverage();
+
+	// If deviation between clocks is >60us, apply corrective actions
+	if (std::abs(average) > 60000) {
+		// Random note about isCorrecting. If one value is positive and the other is negative, this calc doesn't work.
+		// But because we're only correcting when we're far from 0 anyway, it doesn't really matter that it isn't perfect.
+		bool isCorrecting = (std::abs(lastAverage) - std::abs(average)) >= 0;
+
+		if (!isCorrecting)
+			clockAdjustment += (average < 0 ? 1 : -1); // If average is negative (system faster than hardware), then speed up hardware to match
+
+		SetClockTimingAdjustment(clockAdjustment);
+
+		blog(LOG_INFO, "Clock adjustment is at %ld | Drift: %ldus", clockAdjustment, average / 1000000);
+	}
+
+	lastAverage = average;
+
+	// DEBUG BELOW IGNORE ================================
+
+	uint32_t bufferedAudioFrames;
+	output->GetBufferedAudioSampleFrameCount(&bufferedAudioFrames);
+
+	uint32_t bufferedVideoFrames;
+	output->GetBufferedVideoFrameCount(&bufferedVideoFrames);
+
+	blog(LOG_INFO, "Drift is now at %ldus | Buffered video frames: %d | Buffered audio frames: %d", timestampOffset ? (timestampOffset / 1000) : 0, bufferedVideoFrames, bufferedAudioFrames);
+}
+
 void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 {
+	CalculateAndCorrectDrift();
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return;
@@ -609,7 +714,9 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
 		  destData);
 
-	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp + timestampOffset + bufferSize, frameLength, TIME_BASE);
+	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp + DECKLINK_BUFFER_SIZE, frameLength, TIME_BASE);
+
+	framesSinceDriftCalc++;
 }
 
 HRESULT	DeckLinkDeviceInstance::ScheduledFrameCompleted (
@@ -633,40 +740,10 @@ HRESULT DeckLinkDeviceInstance::ScheduledPlaybackHasStopped()
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
 {
-	// Clock drift logic start
-
-	uint32_t bufferedAudioFrames;
-	output->GetBufferedAudioSampleFrameCount(&bufferedAudioFrames);
-
-	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
-	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
-
-	uint64_t systemTime = os_gettime_ns();
-
-	if (!hardwareStartTime) {
-		hardwareStartTime = hardwareTime;
-		systemStartTime = systemTime;
-	}
-
-	uint64_t hardwareDuration = hardwareTime - hardwareStartTime;
-	uint64_t systemDuration = systemTime - systemStartTime;
-
-	//timestampOffset = hardwareDuration - systemDuration;
-	timestampOffset = 0;
-
-	if (bufferedAudioFrames > maxSamples) {
-		blog(LOG_INFO, "Max audio found samples now at %d", bufferedAudioFrames);
-		maxSamples = bufferedAudioFrames;
-	}
-
-	//blog(LOG_INFO, "Drift is now at %ldus | Buffered samples: %d", timestampOffset ? (timestampOffset / 1000) : 0, bufferedAudioFrames);
-
-	// Clock drift logic stop
-
 	uint32_t sampleFramesWritten;
 	output->ScheduleAudioSamples(frames->data[0],
 			frames->frames,
-			frames->timestamp + timestampOffset + bufferSize,
+			frames->timestamp + DECKLINK_BUFFER_SIZE,
 			TIME_BASE,
 			&sampleFramesWritten);
 
