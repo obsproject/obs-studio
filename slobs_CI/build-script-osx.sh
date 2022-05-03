@@ -1,5 +1,6 @@
 export PATH=/usr/local/opt/ccache/libexec:$PATH
-
+set -e
+set -v
 git fetch --tags
 DEPS_DIR=$PWD/build/deps
 mkdir packed_build
@@ -70,14 +71,7 @@ sudo install_name_tool -change \
     @rpath/Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
     $PACKED_BUILD/obs-plugins/obs-browser.so
 
-sudo install_name_tool -change \
-    @executable_path/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
-    @rpath/../Frameworks/Chromium\ Embedded\ Framework.framework/Chromium\ Embedded\ Framework \
-    $PACKED_BUILD/obs-plugins/obs-browser-page
-
 # Install obs dependencies
-cp -R $DEPS_DIR/obsdeps/bin/. $PACKED_BUILD/bin/
-
 cp -R $DEPS_DIR/obsdeps/lib/. $PACKED_BUILD/bin/
 
 # Change load path
@@ -152,10 +146,10 @@ sudo install_name_tool -change /tmp/obsdeps/lib/libmbedtls.2.24.0.dylib @executa
 sudo install_name_tool -change /tmp/obsdeps/lib/libmbedx509.2.24.0.dylib @executable_path/libmbedx509.2.24.0.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
 sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.2.24.0.dylib @executable_path/libmbedcrypto.2.24.0.dylib $PACKED_BUILD/bin/libavdevice.58.dylib
 
-cp /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
+cp /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
 cp /usr/local/opt/curl/lib/libcurl.4.dylib $PACKED_BUILD/bin/libcurl.4.dylib
-cp /usr/local/Cellar/berkeley-db/18.1.32_1/lib/libdb-18.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
-cp /usr/local/Cellar/fdk-aac/2.0.1/lib/libfdk-aac.2.dylib $PACKED_BUILD/bin/libfdk-aac.2.dylib
+cp /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
+cp /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib $PACKED_BUILD/bin/libfdk-aac.2.dylib
 cp /usr/local/opt/freetype/lib/libfreetype.6.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
 cp /usr/local/opt/jack/lib/libjack.0.dylib $PACKED_BUILD/bin/libjack.0.dylib
 cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PACKED_BUILD/bin/libpng16.16.dylib
