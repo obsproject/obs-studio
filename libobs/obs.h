@@ -284,6 +284,7 @@ struct obs_source_frame {
 	/* used internally by libobs */
 	volatile long refs;
 	bool prev_frame;
+	bool in_use;
 };
 
 struct obs_source_frame2 {

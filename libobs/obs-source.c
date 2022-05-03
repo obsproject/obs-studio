@@ -700,8 +700,11 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	obs_hotkey_unregister(source->push_to_mute_key);
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
 
-	for (i = 0; i < source->async_cache.num; i++)
-		obs_source_frame_decref(source->async_cache.array[i].frame);
+	for (i = 0; i < source->async_cache.num; i++) {
+		struct obs_source_frame *frame = source->async_cache.array[i].frame;
+		if (frame && !frame->in_use)
+			obs_source_frame_decref(frame);
+	}
 
 	gs_enter_context(obs->video.graphics);
 	if (source->async_texrender)
@@ -2927,8 +2930,11 @@ static inline bool async_texture_changed(struct obs_source *source,
 
 static inline void free_async_cache(struct obs_source *source)
 {
-	for (size_t i = 0; i < source->async_cache.num; i++)
-		obs_source_frame_decref(source->async_cache.array[i].frame);
+	for (size_t i = 0; i < source->async_cache.num; i++) {
+		struct obs_source_frame *frame = source->async_cache.array[i].frame;
+		if (frame && !frame->in_use)
+			obs_source_frame_decref(frame);
+	}
 
 	da_resize(source->async_cache, 0);
 	da_resize(source->async_frames, 0);
@@ -3007,9 +3013,13 @@ cache_video(struct obs_source *source, const struct obs_source_frame *frame)
 
 	os_atomic_inc_long(&new_frame->refs);
 
+	new_frame->in_use = true;
+
 	pthread_mutex_unlock(&source->async_mutex);
 
 	copy_frame_data(new_frame, frame);
+
+	new_frame->in_use = false;
 
 	return new_frame;
 }
