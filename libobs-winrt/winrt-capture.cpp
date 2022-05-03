@@ -661,13 +661,15 @@ extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture)
 		}
 
 		gs_effect_t *const effect =
-			obs_get_base_effect(OBS_EFFECT_OPAQUE);
+			obs_get_base_effect(OBS_EFFECT_DEFAULT);
 		gs_technique_t *tech =
 			gs_effect_get_technique(effect, tech_name);
 
 		const bool previous = gs_framebuffer_srgb_enabled();
 		gs_enable_framebuffer_srgb(true);
-		gs_enable_blending(false);
+
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
 		gs_texture_t *const texture = capture->texture;
 		gs_effect_set_texture_srgb(
@@ -686,7 +688,8 @@ extern "C" EXPORT void winrt_capture_render(struct winrt_capture *capture)
 		}
 		gs_technique_end(tech);
 
-		gs_enable_blending(true);
+		gs_blend_state_pop();
+
 		gs_enable_framebuffer_srgb(previous);
 	}
 }
