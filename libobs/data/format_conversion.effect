@@ -501,6 +501,19 @@ float3 PSPlanar422_Reverse(FragPosWide frag_in) : TARGET
 	return rgb;
 }
 
+float4 PSPlanar422_10LE_Reverse(FragPosWide frag_in) : TARGET
+{
+    float y = image.Load(int3(frag_in.pos_wide.xz, 0)).x;
+    int3 xy0_chroma = int3(frag_in.pos_wide.yz, 0);
+    float cb = image1.Load(xy0_chroma).x;
+    float cr = image2.Load(xy0_chroma).x;
+    float3 yuv = float3(y, cb, cr);
+    yuv *= 65535. / 1023.;
+    float3 rgb = YUV_to_RGB(yuv);
+    rgb = srgb_nonlinear_to_linear(rgb);
+    return float4(rgb, 1.0);
+}
+
 float4 PSPlanar422A_Reverse(FragPosWide frag_in) : TARGET
 {
 	int3 xy0_luma = int3(frag_in.pos_wide.xz, 0);
@@ -525,6 +538,19 @@ float3 PSPlanar444_Reverse(FragPos frag_in) : TARGET
 	return rgb;
 }
 
+float4 PSPlanar444_12LE_Reverse(FragPos frag_in) : TARGET
+{
+    int3 xy0 = int3(frag_in.pos.xy, 0);
+    float y = image.Load(xy0).x;
+    float cb = image1.Load(xy0).x;
+    float cr = image2.Load(xy0).x;
+    float3 yuv = float3(y, cb, cr);
+    yuv *= 65535. / 4095.;
+    float3 rgb = YUV_to_RGB(yuv);
+    rgb = srgb_nonlinear_to_linear(rgb);
+    return float4(rgb, 1.0);
+}
+
 float4 PSPlanar444A_Reverse(FragPos frag_in) : TARGET
 {
 	int3 xy0 = int3(frag_in.pos.xy, 0);
@@ -535,6 +561,20 @@ float4 PSPlanar444A_Reverse(FragPos frag_in) : TARGET
 	float3 yuv = float3(y, cb, cr);
 	float4 rgba = float4(YUV_to_RGB(yuv), alpha);
 	return rgba;
+}
+
+float4 PSPlanar444A_12LE_Reverse(FragPos frag_in) : TARGET
+{
+    int3 xy0 = int3(frag_in.pos.xy, 0);
+    float y = image.Load(xy0).x;
+    float cb = image1.Load(xy0).x;
+    float cr = image2.Load(xy0).x;
+    float alpha = image3.Load(xy0).x * 16.;
+    float3 yuv = float3(y, cb, cr);
+    yuv *= 65535. / 4095.;
+    float3 rgb = YUV_to_RGB(yuv);
+    rgb = srgb_nonlinear_to_linear(rgb);
+    return float4(rgb, alpha);
 }
 
 float4 PSAYUV_Reverse(FragPos frag_in) : TARGET
@@ -921,6 +961,15 @@ technique I422_Reverse
 	}
 }
 
+technique I210_Reverse
+{
+    pass
+    {
+        vertex_shader = VSPosWide_Reverse(id);
+        pixel_shader  = PSPlanar422_10LE_Reverse(frag_in);
+    }
+}
+
 technique I42A_Reverse
 {
 	pass
@@ -939,6 +988,15 @@ technique I444_Reverse
 	}
 }
 
+technique I412_Reverse
+{
+    pass
+    {
+        vertex_shader = VSPos(id);
+        pixel_shader  = PSPlanar444_12LE_Reverse(frag_in);
+    }
+}
+
 technique YUVA_Reverse
 {
 	pass
@@ -946,6 +1004,15 @@ technique YUVA_Reverse
 		vertex_shader = VSPos(id);
 		pixel_shader  = PSPlanar444A_Reverse(frag_in);
 	}
+}
+
+technique YA2L_Reverse
+{
+    pass
+    {
+        vertex_shader = VSPos(id);
+        pixel_shader  = PSPlanar444A_12LE_Reverse(frag_in);
+    }
 }
 
 technique AYUV_Reverse

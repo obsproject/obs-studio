@@ -73,6 +73,15 @@ enum video_format {
 	/* planar 4:2:0 format, 10 bpp */
 	VIDEO_FORMAT_I010, /* three-plane */
 	VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+	/* planar 4:2:2 10 bits */
+	VIDEO_FORMAT_I210, // Little Endian
+
+	/* planar 4:4:4 12 bits */
+	VIDEO_FORMAT_I412, // Little Endian
+
+	/* planar 4:4:4 12 bits with alpha */
+	VIDEO_FORMAT_YA2L, // Little Endian
 };
 
 enum video_trc {
@@ -123,13 +132,16 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_I420:
 	case VIDEO_FORMAT_NV12:
 	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_I40A:
 	case VIDEO_FORMAT_I42A:
 	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
@@ -155,6 +167,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "NV12";
 	case VIDEO_FORMAT_I422:
 		return "I422";
+	case VIDEO_FORMAT_I210:
+		return "I210";
 	case VIDEO_FORMAT_YVYU:
 		return "YVYU";
 	case VIDEO_FORMAT_YUY2:
@@ -169,6 +183,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "BGRX";
 	case VIDEO_FORMAT_I444:
 		return "I444";
+	case VIDEO_FORMAT_I412:
+		return "I412";
 	case VIDEO_FORMAT_Y800:
 		return "Y800";
 	case VIDEO_FORMAT_BGR3:
@@ -179,6 +195,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "I42A";
 	case VIDEO_FORMAT_YUVA:
 		return "YUVA";
+	case VIDEO_FORMAT_YA2L:
+		return "YA2L";
 	case VIDEO_FORMAT_AYUV:
 		return "AYUV";
 	case VIDEO_FORMAT_I010:

@@ -892,6 +892,9 @@ convert_video_format(enum video_format format)
 		return GS_BGRA;
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
+	case VIDEO_FORMAT_YA2L:
 		return GS_RGBA16F;
 	default:
 		return GS_BGRX;

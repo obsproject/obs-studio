@@ -1548,10 +1548,13 @@ enum convert_type {
 	CONVERT_420,
 	CONVERT_420_A,
 	CONVERT_422,
+	CONVERT_422P10LE,
 	CONVERT_422_A,
 	CONVERT_422_PACK,
 	CONVERT_444,
+	CONVERT_444P12LE,
 	CONVERT_444_A,
+	CONVERT_444P12LE_A,
 	CONVERT_444_A_PACK,
 	CONVERT_800,
 	CONVERT_RGB_LIMITED,
@@ -1574,8 +1577,12 @@ static inline enum convert_type get_convert_type(enum video_format format,
 		return CONVERT_NV12;
 	case VIDEO_FORMAT_I444:
 		return CONVERT_444;
+	case VIDEO_FORMAT_I412:
+		return CONVERT_444P12LE;
 	case VIDEO_FORMAT_I422:
 		return CONVERT_422;
+	case VIDEO_FORMAT_I210:
+		return CONVERT_422P10LE;
 
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
@@ -1602,6 +1609,9 @@ static inline enum convert_type get_convert_type(enum video_format format,
 
 	case VIDEO_FORMAT_YUVA:
 		return CONVERT_444_A;
+
+	case VIDEO_FORMAT_YA2L:
+		return CONVERT_444P12LE_A;
 
 	case VIDEO_FORMAT_AYUV:
 		return CONVERT_444_A_PACK;
@@ -1672,6 +1682,22 @@ static inline bool set_planar444_sizes(struct obs_source *source,
 	return true;
 }
 
+static inline bool set_planar444_16_sizes(struct obs_source *source,
+					  const struct obs_source_frame *frame)
+{
+	source->async_convert_width[0] = frame->width;
+	source->async_convert_width[1] = frame->width;
+	source->async_convert_width[2] = frame->width;
+	source->async_convert_height[0] = frame->height;
+	source->async_convert_height[1] = frame->height;
+	source->async_convert_height[2] = frame->height;
+	source->async_texture_formats[0] = GS_R16;
+	source->async_texture_formats[1] = GS_R16;
+	source->async_texture_formats[2] = GS_R16;
+	source->async_channel_count = 3;
+	return true;
+}
+
 static inline bool
 set_planar444_alpha_sizes(struct obs_source *source,
 			  const struct obs_source_frame *frame)
@@ -1688,6 +1714,26 @@ set_planar444_alpha_sizes(struct obs_source *source,
 	source->async_texture_formats[1] = GS_R8;
 	source->async_texture_formats[2] = GS_R8;
 	source->async_texture_formats[3] = GS_R8;
+	source->async_channel_count = 4;
+	return true;
+}
+
+static inline bool
+set_planar444_16_alpha_sizes(struct obs_source *source,
+			     const struct obs_source_frame *frame)
+{
+	source->async_convert_width[0] = frame->width;
+	source->async_convert_width[1] = frame->width;
+	source->async_convert_width[2] = frame->width;
+	source->async_convert_width[3] = frame->width;
+	source->async_convert_height[0] = frame->height;
+	source->async_convert_height[1] = frame->height;
+	source->async_convert_height[2] = frame->height;
+	source->async_convert_height[3] = frame->height;
+	source->async_texture_formats[0] = GS_R16;
+	source->async_texture_formats[1] = GS_R16;
+	source->async_texture_formats[2] = GS_R16;
+	source->async_texture_formats[3] = GS_R16;
 	source->async_channel_count = 4;
 	return true;
 }
@@ -1751,6 +1797,24 @@ static inline bool set_planar422_sizes(struct obs_source *source,
 	source->async_texture_formats[0] = GS_R8;
 	source->async_texture_formats[1] = GS_R8;
 	source->async_texture_formats[2] = GS_R8;
+	source->async_channel_count = 3;
+	return true;
+}
+static inline bool set_planar422_16_sizes(struct obs_source *source,
+					  const struct obs_source_frame *frame)
+{
+	const uint32_t width = frame->width;
+	const uint32_t height = frame->height;
+	const uint32_t half_width = (width + 1) / 2;
+	source->async_convert_width[0] = width;
+	source->async_convert_width[1] = half_width;
+	source->async_convert_width[2] = half_width;
+	source->async_convert_height[0] = height;
+	source->async_convert_height[1] = height;
+	source->async_convert_height[2] = height;
+	source->async_texture_formats[0] = GS_R16;
+	source->async_texture_formats[1] = GS_R16;
+	source->async_texture_formats[2] = GS_R16;
 	source->async_channel_count = 3;
 	return true;
 }
@@ -1876,11 +1940,17 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 	case CONVERT_422:
 		return set_planar422_sizes(source, frame);
 
+	case CONVERT_422P10LE:
+		return set_planar422_16_sizes(source, frame);
+
 	case CONVERT_NV12:
 		return set_nv12_sizes(source, frame);
 
 	case CONVERT_444:
 		return set_planar444_sizes(source, frame);
+
+	case CONVERT_444P12LE:
+		return set_planar444_16_sizes(source, frame);
 
 	case CONVERT_800:
 		return set_y800_sizes(source, frame);
@@ -1899,6 +1969,9 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 
 	case CONVERT_444_A:
 		return set_planar444_alpha_sizes(source, frame);
+
+	case CONVERT_444P12LE_A:
+		return set_planar444_16_alpha_sizes(source, frame);
 
 	case CONVERT_444_A_PACK:
 		return set_packed444_alpha_sizes(source, frame);
@@ -1992,11 +2065,14 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_BGR3:
 	case CONVERT_420:
 	case CONVERT_422:
+	case CONVERT_422P10LE:
 	case CONVERT_NV12:
 	case CONVERT_444:
+	case CONVERT_444P12LE:
 	case CONVERT_420_A:
 	case CONVERT_422_A:
 	case CONVERT_444_A:
+	case CONVERT_444P12LE_A:
 	case CONVERT_444_A_PACK:
 	case CONVERT_I010_SRGB:
 	case CONVERT_I010_PQ_2020_709:
@@ -2039,6 +2115,9 @@ static const char *select_conversion_technique(enum video_format format,
 	case VIDEO_FORMAT_I444:
 		return "I444_Reverse";
 
+	case VIDEO_FORMAT_I412:
+		return "I412_Reverse";
+
 	case VIDEO_FORMAT_Y800:
 		return full_range ? "Y800_Full" : "Y800_Limited";
 
@@ -2048,6 +2127,9 @@ static const char *select_conversion_technique(enum video_format format,
 	case VIDEO_FORMAT_I422:
 		return "I422_Reverse";
 
+	case VIDEO_FORMAT_I210:
+		return "I210_Reverse";
+
 	case VIDEO_FORMAT_I40A:
 		return "I40A_Reverse";
 
@@ -2056,6 +2138,9 @@ static const char *select_conversion_technique(enum video_format format,
 
 	case VIDEO_FORMAT_YUVA:
 		return "YUVA_Reverse";
+
+	case VIDEO_FORMAT_YA2L:
+		return "YA2L_Reverse";
 
 	case VIDEO_FORMAT_AYUV:
 		return "AYUV_Reverse";
@@ -2097,7 +2182,9 @@ static const char *select_conversion_technique(enum video_format format,
 
 static bool need_linear_output(enum video_format format)
 {
-	return (format == VIDEO_FORMAT_I010) || (format == VIDEO_FORMAT_P010);
+	return (format == VIDEO_FORMAT_I010) || (format == VIDEO_FORMAT_P010) ||
+	       (format == VIDEO_FORMAT_I210) || (format == VIDEO_FORMAT_I412) ||
+	       (format == VIDEO_FORMAT_YA2L);
 }
 
 static inline void set_eparam(gs_effect_t *effect, const char *name, float val)
@@ -3192,6 +3279,8 @@ static void copy_frame_data(struct obs_source_frame *dst,
 
 	case VIDEO_FORMAT_I444:
 	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height);
 		copy_frame_data_plane(dst, src, 2, dst->height);
@@ -3222,6 +3311,7 @@ static void copy_frame_data(struct obs_source_frame *dst,
 
 	case VIDEO_FORMAT_I42A:
 	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
 		copy_frame_data_plane(dst, src, 0, dst->height);
 		copy_frame_data_plane(dst, src, 1, dst->height);
 		copy_frame_data_plane(dst, src, 2, dst->height);

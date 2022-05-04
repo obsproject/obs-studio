@@ -264,7 +264,13 @@ bool video_format_get_parameters_for_format(enum video_colorspace color_space,
 	switch (format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_I210:
 		bpc = 10;
+		break;
+	case VIDEO_FORMAT_I412:
+	case VIDEO_FORMAT_YA2L:
+		bpc = 12;
+		break;
 	}
 
 	return video_format_get_parameters_for_bpc(color_space, range, matrix,
