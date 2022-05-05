@@ -458,10 +458,13 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 {
 	struct vlc_source *c = *p_data;
 	enum audio_format new_audio_format;
+	struct obs_audio_info aoi;
+	obs_get_audio_info(&aoi);
+	int out_channels = (int)get_audio_channels(aoi.speakers);
 
 	new_audio_format = convert_vlc_audio_format(format);
-	if (*channels > 8)
-		*channels = 8;
+	if (*channels > out_channels)
+		*channels = out_channels;
 
 	/* don't free audio data if the data is the same format */
 	if (c->audio.format == new_audio_format &&
