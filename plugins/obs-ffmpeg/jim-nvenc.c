@@ -1024,7 +1024,12 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 	}
 
 reroute:
-	return obs_encoder_create_rerouted(encoder, "ffmpeg_nvenc");
+	const char *fallback_name = "ffmpeg_nvenc";
+#ifdef ENABLE_HEVC
+	if (hevc)
+		fallback_name = "ffmpeg_hevc_nvenc";
+#endif
+	return obs_encoder_create_rerouted(encoder, fallback_name);
 }
 
 static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
