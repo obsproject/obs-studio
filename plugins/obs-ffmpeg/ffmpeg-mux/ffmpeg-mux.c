@@ -498,9 +498,6 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
-	//avutil default channel layout for 4 channels is 4.0 ; fix for quad
-	if (context->channels == 4)
-		context->channel_layout = av_get_channel_layout("quad");
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (context->channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
