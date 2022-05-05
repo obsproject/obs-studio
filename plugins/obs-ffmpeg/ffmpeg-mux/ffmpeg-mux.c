@@ -495,6 +495,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->time_base = stream->time_base;
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
 	//avutil default channel layout for 4 channels is 4.0 ; fix for quad
@@ -503,6 +504,12 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (context->channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
+#else
+	av_channel_layout_default(&context->ch_layout, context->channels);
+	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
+	if (context->channels == 5)
+		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+#endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
 		context->flags |= CODEC_FLAG_GLOBAL_H;
 
