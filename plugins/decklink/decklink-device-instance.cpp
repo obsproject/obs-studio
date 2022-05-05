@@ -536,6 +536,9 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	bool clockAdjustmentSupported = device->GetSupportsClockAdjustment();
 	LOG(LOG_INFO, "Clock timing supported: %d", clockAdjustmentSupported);
 
+	int minimumPrerollFrames = device->GetMinimumPrerollFrames();
+	LOG(LOG_INFO, "Minimum preroll frames: %d", minimumPrerollFrames);
+
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return false;
@@ -569,15 +572,14 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	hardwareStartTime = 0;
 	systemStartTime = 0;
 
-	framesSinceDriftCalc = 0;
 	driftAverage = RollingAverage(DRIFT_AVERAGE_SAMPLES);
-	lastAverage = 0;
 
-	SetClockTimingAdjustment(0); // only for debug
+	framesSinceDriftCalc = 0; // debug only
+	SetClockTimingAdjustment(0); // debug only
 
 	clockAdjustment = GetClockTimingAdjustment();
 
-	output->StartScheduledPlayback (os_gettime_ns(), TIME_BASE, 1.0);
+	playbackStarted = false;
 
 	return true;
 }
@@ -641,7 +643,7 @@ void DeckLinkDeviceInstance::SetClockTimingAdjustment(int64_t adj)
 	}
 }
 
-void DeckLinkDeviceInstance::CalculateAndCorrectDrift()
+void DeckLinkDeviceInstance::TickDriftTracker()
 {
 	BMDTimeValue hardwareTime, timeInFrame, ticksPerFrame;
 	output->GetHardwareReferenceClock(TIME_BASE, &hardwareTime, &timeInFrame, &ticksPerFrame);
@@ -658,31 +660,13 @@ void DeckLinkDeviceInstance::CalculateAndCorrectDrift()
 
 	driftAverage.SubmitSample(timestampOffset);
 
+	// DEBUG BELOW IGNORE ================================
+
 	// Only operate every 300 frames
 	if (framesSinceDriftCalc > 300)
 		framesSinceDriftCalc = 0;
 	else
 		return;
-
-	int64_t average = driftAverage.GetAverage();
-
-	// If deviation between clocks is >60us, apply corrective actions
-	if (std::abs(average) > 60000) {
-		// Random note about isCorrecting. If one value is positive and the other is negative, this calc doesn't work.
-		// But because we're only correcting when we're far from 0 anyway, it doesn't really matter that it isn't perfect.
-		bool isCorrecting = (std::abs(lastAverage) - std::abs(average)) >= 0;
-
-		if (!isCorrecting)
-			clockAdjustment += (average < 0 ? 1 : -1); // If average is negative (system faster than hardware), then speed up hardware to match
-
-		SetClockTimingAdjustment(clockAdjustment);
-
-		blog(LOG_INFO, "Clock adjustment is at %ld | Drift: %ldus", clockAdjustment, average / 1000000);
-	}
-
-	lastAverage = average;
-
-	// DEBUG BELOW IGNORE ================================
 
 	uint32_t bufferedAudioFrames;
 	output->GetBufferedAudioSampleFrameCount(&bufferedAudioFrames);
@@ -693,13 +677,35 @@ void DeckLinkDeviceInstance::CalculateAndCorrectDrift()
 	blog(LOG_INFO, "Drift is now at %ldus | Buffered video frames: %d | Buffered audio frames: %d", timestampOffset ? (timestampOffset / 1000) : 0, bufferedVideoFrames, bufferedAudioFrames);
 }
 
+void DeckLinkDeviceInstance::CorrectDrift()
+{
+	int64_t average = driftAverage.GetAverage();
+
+	int64_t clockAdjustment_next = -average / CLOCK_ADJUST_DIVISOR;
+
+	if (std::abs(clockAdjustment_next - clockAdjustment) > CLOCK_ADJUST_HYSTERESIS) {
+		clockAdjustment += (clockAdjustment_next > clockAdjustment) ? 1 : -1;
+
+		SetClockTimingAdjustment(clockAdjustment);
+
+		blog(LOG_INFO, "Clock adjustment is at %ld | Drift: %ldus", clockAdjustment, average / 1000);
+	}
+}
+
 void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 {
-	CalculateAndCorrectDrift();
-
 	auto decklinkOutput = dynamic_cast<DeckLinkOutput *>(decklink);
 	if (decklinkOutput == nullptr)
 		return;
+
+	if (!playbackStarted) {
+		int64_t minimumPrerollFrames = device->GetMinimumPrerollFrames();
+
+		uint64_t bufferSize = (minimumPrerollFrames * frameLength) + (frameLength / 2); // Add half a frame of delay to prevent decklink saying late frame
+
+		output->StartScheduledPlayback (frame->timestamp - bufferSize, TIME_BASE, 1.0);
+		playbackStarted = true;
+	}
 
 	uint8_t *destData;
 	decklinkOutputFrame->GetBytes((void **)&destData);
@@ -714,7 +720,7 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
 		  destData);
 
-	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp + DECKLINK_BUFFER_SIZE, frameLength, TIME_BASE);
+	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp, frameLength, TIME_BASE);
 
 	framesSinceDriftCalc++;
 }
@@ -723,13 +729,12 @@ HRESULT	DeckLinkDeviceInstance::ScheduledFrameCompleted (
 		IDeckLinkVideoFrame* completedFrame,
 		BMDOutputFrameCompletionResult result)
 {
-	if (result == bmdOutputFrameDropped) {
+	if (result == bmdOutputFrameDropped)
 		blog(LOG_ERROR, "Dropped Frame");
-	}
 
-	if (result == bmdOutputFrameDisplayedLate) {
+	if (result == bmdOutputFrameDisplayedLate)
 		blog(LOG_ERROR, "Late Frame");
-	}
+
 	return S_OK;
 }
 
@@ -740,10 +745,14 @@ HRESULT DeckLinkDeviceInstance::ScheduledPlaybackHasStopped()
 
 void DeckLinkDeviceInstance::WriteAudio(audio_data *frames)
 {
+	TickDriftTracker();
+
+	CorrectDrift();
+
 	uint32_t sampleFramesWritten;
 	output->ScheduleAudioSamples(frames->data[0],
 			frames->frames,
-			frames->timestamp + DECKLINK_BUFFER_SIZE,
+			frames->timestamp,
 			TIME_BASE,
 			&sampleFramesWritten);
 

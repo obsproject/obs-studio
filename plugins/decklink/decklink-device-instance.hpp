@@ -12,10 +12,11 @@
 
 #include "util.hpp"
 
-#define MS_TO_NS(ms) (ms * 1000000)
-#define DECKLINK_BUFFER_SIZE MS_TO_NS(100)
+#define DECKLINK_EXTRA_PREROLL_FRAMES 0
 
 #define DRIFT_AVERAGE_SAMPLES 280
+#define CLOCK_ADJUST_DIVISOR 8192
+#define CLOCK_ADJUST_HYSTERESIS 1
 
 class AudioRepacker;
 class DecklinkBase;
@@ -47,14 +48,15 @@ protected:
 	bool allow10Bit;
 
 	// Output
+	bool playbackStarted = false;
 	uint64_t frameLength = 0;
 	uint64_t hardwareStartTime = 0;
 	uint64_t systemStartTime = 0;
 
-	size_t framesSinceDriftCalc = 0;
 	RollingAverage driftAverage;
-	int64_t lastAverage = 0;
 	int64_t clockAdjustment = 0;
+
+	size_t framesSinceDriftCalc = 0; // debug only
 
 	OBSVideoFrame *convertFrame = nullptr;
 	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
@@ -131,7 +133,9 @@ public:
 	int64_t GetClockTimingAdjustment(void);
 	void SetClockTimingAdjustment(int64_t adj);
 
-	void CalculateAndCorrectDrift(void);
+	void TickDriftTracker(void);
+
+	void CorrectDrift(void);
 
 	void DisplayVideoFrame(video_data *frame);
 	void WriteAudio(audio_data *frames);
