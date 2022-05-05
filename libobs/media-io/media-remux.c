@@ -22,7 +22,9 @@
 #include "../util/platform.h"
 
 #include <libavformat/avformat.h>
-
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(59, 20, 100)
+#include <libavcodec/version.h>
+#endif
 #include <sys/types.h>
 #include <sys/stat.h>
 
