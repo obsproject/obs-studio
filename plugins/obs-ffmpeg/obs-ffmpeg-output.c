@@ -321,9 +321,12 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 
 	data->aframe[idx]->format = context->sample_fmt;
 	data->aframe[idx]->channels = context->channels;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	data->aframe[idx]->channel_layout = context->channel_layout;
+#else
+	data->aframe[idx]->ch_layout = context->ch_layout;
+#endif
 	data->aframe[idx]->sample_rate = context->sample_rate;
-
 	context->strict_std_compliance = -2;
 
 	ret = avcodec_open2(context, data->acodec, NULL);
@@ -378,13 +381,18 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	context->channels = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
 
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
-
+#else
+	av_channel_layout_default(&context->ch_layout, context->channels);
+	if (aoi.speakers == SPEAKERS_4POINT1)
+		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+#endif
 	context->sample_fmt = data->acodec->sample_fmts
 				      ? data->acodec->sample_fmts[0]
 				      : AV_SAMPLE_FMT_FLTP;
