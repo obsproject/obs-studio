@@ -4762,14 +4762,17 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 	ui->simpleOutRecEncoder->addItem(ENCODER_STR("SoftwareLowCPU"),
 					 QString(SIMPLE_ENCODER_X264_LOWCPU));
 	if (EncoderAvailable("obs_qsv11"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.QSV"),
-						 QString(SIMPLE_ENCODER_QSV));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
 	if (EncoderAvailable("ffmpeg_nvenc"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.NVENC"),
-						 QString(SIMPLE_ENCODER_NVENC));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
 	if (EncoderAvailable("amd_amf_h264"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.AMD"),
-						 QString(SIMPLE_ENCODER_AMD));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
 #undef ADD_QUALITY
 }
 
@@ -4778,14 +4781,17 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
 					 QString(SIMPLE_ENCODER_X264));
 	if (EncoderAvailable("obs_qsv11"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.QSV"),
-						 QString(SIMPLE_ENCODER_QSV));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
 	if (EncoderAvailable("ffmpeg_nvenc"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.NVENC"),
-						 QString(SIMPLE_ENCODER_NVENC));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
 	if (EncoderAvailable("amd_amf_h264"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.AMD"),
-						 QString(SIMPLE_ENCODER_AMD));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
 #undef ENCODER_STR
 }
 

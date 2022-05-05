@@ -937,9 +937,9 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
 #define ENCODER_SOFTWARE ENCODER_TEXT("Software")
-#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC")
-#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV")
-#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD")
+#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
+#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
+#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
 
 #define QUALITY_SAME "Basic.Settings.Output.Simple.RecordingQuality.Stream"
 #define QUALITY_HIGH "Basic.Settings.Output.Simple.RecordingQuality.Small"
