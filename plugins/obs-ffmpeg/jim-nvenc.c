@@ -3,12 +3,14 @@
 #include <util/darray.h>
 #include <util/dstr.h>
 #include <obs-avc.h>
-#include <obs-hevc.h>
 #include <libavutil/rational.h>
 #define INITGUID
 #include <dxgi.h>
 #include <d3d11.h>
 #include <d3d11_1.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 /* ========================================================================= */
 
