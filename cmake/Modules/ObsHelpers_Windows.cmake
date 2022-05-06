@@ -417,3 +417,40 @@ function(generate_multiarch_installer)
     DESTINATION "."
     USE_SOURCE_PERMISSIONS)
 endfunction()
+
+# Helper function to install header files
+function(install_headers target)
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+    DESTINATION ${OBS_INCLUDE_DESTINATION}
+    COMPONENT obs_libraries
+    EXCLUDE_FROM_ALL FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN "obs-hevc.h" EXCLUDE
+    PATTERN "obs-nix-*.h" EXCLUDE
+    PATTERN "*-posix.h" EXCLUDE
+    PATTERN "audio-monitoring/null" EXCLUDE
+    PATTERN "audio-monitoring/osx" EXCLUDE
+    PATTERN "audio-monitoring/pulse" EXCLUDE
+    PATTERN "util/apple" EXCLUDE
+    PATTERN "cmake" EXCLUDE
+    PATTERN "pkgconfig" EXCLUDE
+    PATTERN "data" EXCLUDE)
+
+  if(ENABLE_HEVC)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
+
+  if(NOT EXISTS "${OBS_INCLUDE_DESTINATION}/obsconfig.h")
+    install(
+      FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
+endfunction()

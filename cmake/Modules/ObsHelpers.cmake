@@ -295,28 +295,6 @@ function(export_target target)
     EXCLUDE_FROM_ALL)
 endfunction()
 
-# Helper function to install header files
-function(install_headers target)
-  install(
-    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
-    DESTINATION ${OBS_INCLUDE_DESTINATION}
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL FILES_MATCHING
-    PATTERN "*.h"
-    PATTERN "*.hpp"
-    PATTERN "cmake" EXCLUDE
-    PATTERN "pkgconfig" EXCLUDE
-    PATTERN "data" EXCLUDE)
-
-  if(NOT EXISTS "${OBS_INCLUDE_DESTINATION}/obsconfig.h")
-    install(
-      FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
-      DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
-  endif()
-endfunction()
-
 # Helper function to define available graphics modules for targets
 function(define_graphic_modules target)
   foreach(_GRAPHICS_API metal d3d11 opengl d3d9)

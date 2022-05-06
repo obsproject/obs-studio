@@ -480,9 +480,26 @@ function(install_headers target)
     EXCLUDE_FROM_ALL FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
+    PATTERN "obs-hevc.h" EXCLUDE
+    PATTERN "*-windows.h" EXCLUDE
+    PATTERN "*-x11.h" EXCLUDE
+    PATTERN "*-wayland.h" EXCLUDE
+    PATTERN "audio-monitoring/null" EXCLUDE
+    PATTERN "audio-monitoring/win32" EXCLUDE
+    PATTERN "audio-monitoring/pulse" EXCLUDE
+    PATTERN "util/windows" EXCLUDE
     PATTERN "cmake" EXCLUDE
     PATTERN "pkgconfig" EXCLUDE
     PATTERN "data" EXCLUDE)
+
+  if(ENABLE_HEVC)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
+      DESTINATION
+        $<IF:$<BOOL:$<TARGET_PROPERTY:${target},FRAMEWORK>>,Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers,${OBS_INCLUDE_DESTINATION}>
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
 
   install(
     FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
