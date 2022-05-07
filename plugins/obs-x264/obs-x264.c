@@ -30,10 +30,15 @@
 
 #include <x264.h>
 
+#define do_log_enc(level, encoder, format, ...)     \
+	blog(level, "[x264 encoder: '%s'] " format, \
+	     obs_encoder_get_name(encoder), ##__VA_ARGS__)
 #define do_log(level, format, ...) \
-	blog(level, "[x264 encoder] " format, ##__VA_ARGS__)
+	do_log_enc(level, obsx264->encoder, format, ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
+#define warn_enc(encoder, format, ...) \
+	do_log_enc(LOG_WARNING, encoder, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
@@ -696,7 +701,8 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 	switch (voi->colorspace) {
 	case VIDEO_CS_2100_PQ:
 	case VIDEO_CS_2100_HLG:
-		warn("OBS does not support using x264 with Rec. 2100");
+		warn_enc(encoder,
+			 "OBS does not support using x264 with Rec. 2100");
 		return NULL;
 	}
 
