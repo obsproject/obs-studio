@@ -163,6 +163,8 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 
 	set_psycho_aq(enc, psycho_aq);
 
+	enc->ffve.context->max_b_frames = bf;
+
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
 	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info,
 				    ffmpeg_opts);
