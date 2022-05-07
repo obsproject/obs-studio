@@ -373,7 +373,7 @@ void hevc_nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
-	obs_data_set_default_int(settings, "bf", 2);
+	obs_data_set_default_int(settings, "bf", 0);
 	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 #endif
