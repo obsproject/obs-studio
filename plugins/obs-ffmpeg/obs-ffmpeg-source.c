@@ -49,6 +49,7 @@ struct ffmpeg_source {
 
 	char *input;
 	char *input_format;
+	char *ffmpeg_options;
 	int buffering_mb;
 	int speed_percent;
 	bool is_looping;
@@ -221,6 +222,12 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
+	prop = obs_properties_add_text(props, "ffmpeg_options",
+				       obs_module_text("FFmpeg.Options"),
+				       OBS_TEXT_DEFAULT);
+	obs_property_set_long_description(
+		prop, obs_module_text("FFmpeg.Options.Tooltip"));
+
 	return props;
 }
 
@@ -237,14 +244,15 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tis_hw_decoding:          %s\n"
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
-		"\tclose_when_inactive:     %s",
+		"\tclose_when_inactive:     %s\n"
+		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
 		s->is_looping ? "yes" : "no", s->is_linear_alpha ? "yes" : "no",
 		s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
-		s->close_when_inactive ? "yes" : "no");
+		s->close_when_inactive ? "yes" : "no", s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -312,6 +320,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.force_range = s->range,
 			.is_linear_alpha = s->is_linear_alpha,
 			.hardware_decoding = s->is_hw_decoding,
+			.ffmpeg_options = s->ffmpeg_options,
 			.is_local_file = s->is_local_file || s->seekable,
 			.reconnecting = s->reconnecting,
 		};
@@ -403,9 +412,11 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	const char *input;
 	const char *input_format;
+	const char *ffmpeg_options;
 
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->ffmpeg_options);
 
 	if (is_local_file) {
 		input = obs_data_get_string(settings, "local_file");
@@ -432,6 +443,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		}
 	}
 
+	ffmpeg_options = obs_data_get_string(settings, "ffmpeg_options");
+
 	s->close_when_inactive =
 		obs_data_get_bool(settings, "close_when_inactive");
 
@@ -451,6 +464,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
+	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
 
 	if (s->speed_percent < 1 || s->speed_percent > 200)
 		s->speed_percent = 100;
