@@ -1546,6 +1546,7 @@ enum convert_type {
 	CONVERT_NONE,
 	CONVERT_NV12,
 	CONVERT_420,
+	CONVERT_420_PQ,
 	CONVERT_420_A,
 	CONVERT_422,
 	CONVERT_422P10LE,
@@ -1572,7 +1573,7 @@ static inline enum convert_type get_convert_type(enum video_format format,
 {
 	switch (format) {
 	case VIDEO_FORMAT_I420:
-		return CONVERT_420;
+		return (trc == VIDEO_TRC_PQ) ? CONVERT_420_PQ : CONVERT_420;
 	case VIDEO_FORMAT_NV12:
 		return CONVERT_NV12;
 	case VIDEO_FORMAT_I444:
@@ -1874,7 +1875,8 @@ static inline bool set_rgb_limited_sizes(struct obs_source *source,
 {
 	source->async_convert_width[0] = frame->width;
 	source->async_convert_height[0] = frame->height;
-	source->async_texture_formats[0] = convert_video_format(frame->format);
+	source->async_texture_formats[0] =
+		convert_video_format(frame->format, frame->trc);
 	source->async_channel_count = 1;
 	return true;
 }
@@ -1935,6 +1937,7 @@ static inline bool init_gpu_conversion(struct obs_source *source,
 		return set_packed422_sizes(source, frame);
 
 	case CONVERT_420:
+	case CONVERT_420_PQ:
 		return set_planar420_sizes(source, frame);
 
 	case CONVERT_422:
@@ -2026,7 +2029,8 @@ bool set_async_texture_size(struct obs_source *source,
 	source->async_texrender = NULL;
 	source->async_prev_texrender = NULL;
 
-	const enum gs_color_format format = convert_video_format(frame->format);
+	const enum gs_color_format format =
+		convert_video_format(frame->format, frame->trc);
 	const bool async_gpu_conversion = (cur != CONVERT_NONE) &&
 					  init_gpu_conversion(source, frame);
 	source->async_gpu_conversion = async_gpu_conversion;
@@ -2064,6 +2068,7 @@ static void upload_raw_frame(gs_texture_t *tex[MAX_AV_PLANES],
 	case CONVERT_RGB_LIMITED:
 	case CONVERT_BGR3:
 	case CONVERT_420:
+	case CONVERT_420_PQ:
 	case CONVERT_422:
 	case CONVERT_422P10LE:
 	case CONVERT_NV12:
@@ -2107,7 +2112,8 @@ static const char *select_conversion_technique(enum video_format format,
 		return "YVYU_Reverse";
 
 	case VIDEO_FORMAT_I420:
-		return "I420_Reverse";
+		return (trc == VIDEO_TRC_PQ) ? "I420_PQ_Reverse"
+					     : "I420_Reverse";
 
 	case VIDEO_FORMAT_NV12:
 		return "NV12_Reverse";

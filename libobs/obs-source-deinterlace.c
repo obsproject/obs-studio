@@ -234,7 +234,7 @@ void deinterlace_process_last_frame(obs_source_t *s, uint64_t sys_time)
 void set_deinterlace_texture_size(obs_source_t *source)
 {
 	const enum gs_color_format format =
-		convert_video_format(source->async_format);
+		convert_video_format(source->async_format, source->async_trc);
 
 	if (source->async_gpu_conversion) {
 		source->async_prev_texrender =
