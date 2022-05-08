@@ -832,12 +832,8 @@ void obs_transition_video_render2(
 static enum gs_color_space mix_spaces(enum gs_color_space a,
 				      enum gs_color_space b)
 {
-	assert((a == GS_CS_SRGB) || (a == GS_CS_SRGB_16F) ||
-	       (a == GS_CS_709_EXTENDED));
-	assert((b == GS_CS_SRGB) || (b == GS_CS_SRGB_16F) ||
-	       (b == GS_CS_709_EXTENDED));
-
-	if ((a == GS_CS_709_EXTENDED) || (b == GS_CS_709_EXTENDED))
+	if ((a == GS_CS_709_EXTENDED) || (a == GS_CS_709_SCRGB) ||
+	    (b == GS_CS_709_EXTENDED) || (b == GS_CS_709_SCRGB))
 		return GS_CS_709_EXTENDED;
 	if ((a == GS_CS_SRGB_16F) || (b == GS_CS_SRGB_16F))
 		return GS_CS_SRGB_16F;
