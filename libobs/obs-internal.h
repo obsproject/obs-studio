@@ -879,25 +879,31 @@ static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 }
 
 static inline enum gs_color_format
-convert_video_format(enum video_format format)
+convert_video_format(enum video_format format, enum video_trc trc)
 {
-	switch (format) {
-	case VIDEO_FORMAT_RGBA:
-		return GS_RGBA;
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_I40A:
-	case VIDEO_FORMAT_I42A:
-	case VIDEO_FORMAT_YUVA:
-	case VIDEO_FORMAT_AYUV:
-		return GS_BGRA;
-	case VIDEO_FORMAT_I010:
-	case VIDEO_FORMAT_P010:
-	case VIDEO_FORMAT_I210:
-	case VIDEO_FORMAT_I412:
-	case VIDEO_FORMAT_YA2L:
+	switch (trc) {
+	case VIDEO_TRC_PQ:
+	case VIDEO_TRC_HLG:
 		return GS_RGBA16F;
 	default:
-		return GS_BGRX;
+		switch (format) {
+		case VIDEO_FORMAT_RGBA:
+			return GS_RGBA;
+		case VIDEO_FORMAT_BGRA:
+		case VIDEO_FORMAT_I40A:
+		case VIDEO_FORMAT_I42A:
+		case VIDEO_FORMAT_YUVA:
+		case VIDEO_FORMAT_AYUV:
+			return GS_BGRA;
+		case VIDEO_FORMAT_I010:
+		case VIDEO_FORMAT_P010:
+		case VIDEO_FORMAT_I210:
+		case VIDEO_FORMAT_I412:
+		case VIDEO_FORMAT_YA2L:
+			return GS_RGBA16F;
+		default:
+			return GS_BGRX;
+		}
 	}
 }
 
@@ -905,7 +911,7 @@ static inline enum gs_color_space convert_video_space(enum video_format format,
 						      enum video_trc trc)
 {
 	enum gs_color_space space = GS_CS_SRGB;
-	if (convert_video_format(format) == GS_RGBA16F) {
+	if (convert_video_format(format, trc) == GS_RGBA16F) {
 		space = (trc == VIDEO_TRC_SRGB) ? GS_CS_SRGB_16F
 						: GS_CS_709_EXTENDED;
 	}
