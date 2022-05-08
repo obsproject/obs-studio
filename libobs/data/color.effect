@@ -46,7 +46,8 @@ float3 reinhard(float3 rgb)
 
 float linear_to_st2084_channel(float x)
 {
-	return pow((0.8359375 + 18.8515625 * pow(abs(x), 0.1593017578)) / (1. + 18.6875 * pow(abs(x), 0.1593017578)), 78.84375);
+	float common = pow(abs(x), 0.1593017578);
+	return pow((0.8359375 + 18.8515625 * common) / (1. + 18.6875 * common), 78.84375);
 }
 
 float3 linear_to_st2084(float3 rgb)
@@ -56,7 +57,8 @@ float3 linear_to_st2084(float3 rgb)
 
 float st2084_to_linear_channel(float u)
 {
-	return pow(abs(max(pow(abs(u), 1. / 78.84375) - 0.8359375, 0.) / (18.8515625 - 18.6875 * pow(abs(u), 1. / 78.84375))), 1. / 0.1593017578);
+	float common = pow(abs(u), 1. / 78.84375);
+	return pow(abs(max(common - 0.8359375, 0.) / (18.8515625 - 18.6875 * common)), 1. / 0.1593017578);
 }
 
 float3 st2084_to_linear(float3 v)
