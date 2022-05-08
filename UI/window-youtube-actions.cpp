@@ -503,10 +503,13 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
 			return false;
 		}
 
-		if (broadcast.privacy != "private")
-			apiYouTube->SetChatId(broadcast.id);
-		else
+		if (broadcast.privacy != "private") {
+			const std::string apiLiveChatId =
+				json["snippet"]["liveChatId"].string_value();
+			apiYouTube->SetChatId(broadcast.id, apiLiveChatId);
+		} else {
 			apiYouTube->ResetChat();
+		}
 	}
 
 	return true;
@@ -530,6 +533,10 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 	std::string broadcastPrivacy =
 		json["items"]
 			.array_items()[0]["status"]["privacyStatus"]
+			.string_value();
+	std::string apiLiveChatId =
+		json["items"]
+			.array_items()[0]["snippet"]["liveChatId"]
 			.string_value();
 
 	stream.id = boundStreamId.c_str();
@@ -556,7 +563,7 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 	}
 
 	if (broadcastPrivacy != "private")
-		apiYouTube->SetChatId(selectedBroadcast);
+		apiYouTube->SetChatId(selectedBroadcast, apiLiveChatId);
 	else
 		apiYouTube->ResetChat();
 
