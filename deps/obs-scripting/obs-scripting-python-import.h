@@ -100,6 +100,10 @@ PY_EXTERN int (*Import_PyDict_SetItemString)(PyObject *dp, const char *key,
 					     PyObject *item);
 PY_EXTERN PyObject *(*Import_PyCFunction_NewEx)(PyMethodDef *, PyObject *,
 						PyObject *);
+#if PY_VERSION_HEX > 0x030900b0
+PY_EXTERN PyObject *(*Import_PyCMethod_New)(PyMethodDef *, PyObject *,
+					    PyObject *, PyTypeObject *);
+#endif
 PY_EXTERN PyObject *(*Import_PyModule_GetDict)(PyObject *);
 PY_EXTERN PyObject *(*Import_PyModule_GetNameObject)(PyObject *);
 PY_EXTERN int (*Import_PyModule_AddObject)(PyObject *, const char *,
@@ -193,7 +197,11 @@ extern bool import_python(const char *python_path);
 #define PyDict_New Import_PyDict_New
 #define PyDict_GetItemString Import_PyDict_GetItemString
 #define PyDict_SetItemString Import_PyDict_SetItemString
+#if PY_VERSION_HEX < 0x030900b0
 #define PyCFunction_NewEx Import_PyCFunction_NewEx
+#else
+#define PyCMethod_New Import_PyCMethod_New
+#endif
 #define PyModule_GetDict Import_PyModule_GetDict
 #define PyModule_GetNameObject Import_PyModule_GetNameObject
 #define PyModule_AddObject Import_PyModule_AddObject

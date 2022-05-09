@@ -113,6 +113,9 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyDict_GetItemString);
 	IMPORT_FUNC(PyDict_SetItemString);
 	IMPORT_FUNC(PyCFunction_NewEx);
+#if PY_VERSION_HEX > 0x030900b0
+	IMPORT_FUNC(PyCMethod_New);
+#endif
 	IMPORT_FUNC(PyModule_GetDict);
 	IMPORT_FUNC(PyModule_GetNameObject);
 	IMPORT_FUNC(PyModule_AddObject);
