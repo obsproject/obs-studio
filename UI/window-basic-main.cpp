@@ -4331,7 +4331,7 @@ void OBSBasic::ResetUI()
 				      "StudioModeLabels");
 
 	if (studioPortraitLayout)
-		ui->previewLayout->setDirection(QBoxLayout::TopToBottom);
+		ui->previewLayout->setDirection(QBoxLayout::BottomToTop);
 	else
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
 
