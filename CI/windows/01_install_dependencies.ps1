@@ -2,8 +2,8 @@ Param(
     [Switch]$Help = $(if (Test-Path variable:Help) { $Help }),
     [Switch]$Quiet = $(if (Test-Path variable:Quiet) { $Quiet }),
     [Switch]$Verbose = $(if (Test-Path variable:Verbose) { $Verbose }),
-    [ValidateSet("32-bit", "64-bit")]
-    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { (Get-CimInstance CIM_OperatingSystem).OSArchitecture })
+    [ValidateSet('x86', 'x64')]
+    [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] })
 )
 
 ##############################################################################
@@ -26,7 +26,7 @@ Function Install-obs-deps {
     Write-Status "Setup for pre-built Windows OBS dependencies v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    $ArchSuffix = "$(if ($BuildArch -eq "64-bit") { "x64" } else { "x86" })"
+    $ArchSuffix = $BuildArch
 
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}")) {
 
@@ -52,7 +52,7 @@ function Install-qt-deps {
     Write-Status "Setup for pre-built dependency Qt v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    $ArchSuffix = "$(if ($BuildArch -eq "64-bit") { "x64" } else { "x86" })"
+    $ArchSuffix = $BuildArch
 
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}/mkspecs")) {
 
@@ -101,7 +101,7 @@ function Install-cef {
     Write-Status "Setup for dependency CEF v${Version} - ${BuildArch}"
 
     Ensure-Directory $DepsBuildDir
-    $ArchSuffix = "$(if ($BuildArch -eq "64-bit") { "x64" } else { "x86" })"
+    $ArchSuffix = $BuildArch
 
     if (!((Test-Path "${DepsBuildDir}/cef_binary_${Version}_windows_${ArchSuffix}") -and (Test-Path "${DepsBuildDir}/cef_binary_${Version}_windows_${ArchSuffix}/build/libcef_dll_wrapper/Release/libcef_dll_wrapper.lib"))) {
         Write-Step "Download..."
@@ -160,7 +160,7 @@ function Print-Usage {
         "-Quiet                   : Suppress most build process output",
         "-Verbose                 : Enable more verbose build process output",
         "-Choco                   : Enable automatic dependency installation via Chocolatey - Default: off"
-        "-BuildArch               : Build architecture to use (32-bit or 64-bit) - Default: local architecture"
+        "-BuildArch               : Build architecture to use (x86 or x64) - Default: local architecture"
     )
 
     $Lines | Write-Host

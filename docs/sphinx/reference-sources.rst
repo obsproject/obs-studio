@@ -1266,11 +1266,11 @@ Functions used by sources
    enum video_format {
            VIDEO_FORMAT_NONE,
 
-           /* planar 420 format */
+           /* planar 4:2:0 formats */
            VIDEO_FORMAT_I420, /* three-plane */
            VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
 
-           /* packed 422 formats */
+           /* packed 4:2:2 formats */
            VIDEO_FORMAT_YVYU,
            VIDEO_FORMAT_YUY2, /* YUYV */
            VIDEO_FORMAT_UYVY,
@@ -1283,6 +1283,28 @@ Functions used by sources
 
            /* planar 4:4:4 */
            VIDEO_FORMAT_I444,
+
+           /* more packed uncompressed formats */
+           VIDEO_FORMAT_BGR3,
+
+           /* planar 4:2:2 */
+           VIDEO_FORMAT_I422,
+
+           /* planar 4:2:0 with alpha */
+           VIDEO_FORMAT_I40A,
+
+           /* planar 4:2:2 with alpha */
+           VIDEO_FORMAT_I42A,
+
+           /* planar 4:4:4 with alpha */
+           VIDEO_FORMAT_YUVA,
+
+           /* packed 4:4:4 with alpha */
+           VIDEO_FORMAT_AYUV,
+
+           /* planar 4:2:0 format, 10 bpp */
+           VIDEO_FORMAT_I010, /* three-plane */
+           VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
    };
 
    struct obs_source_frame {
@@ -1298,6 +1320,8 @@ Functions used by sources
            float               color_range_min[3];
            float               color_range_max[3];
            bool                flip;
+           uint8_t             flags;
+           uint8_t             trc; /* enum video_trc */
    };
 
 ---------------------
@@ -1552,6 +1576,7 @@ Functions used by transitions
 ---------------------
 
 .. function:: void obs_transition_video_render(obs_source_t *transition, obs_transition_video_render_callback_t callback)
+              void obs_transition_video_render2(obs_source_t *transition, obs_transition_video_render_callback_t callback, gs_texture_t *placeholder_texture)
 
    Helper function used for rendering transitions.  This function will
    render two distinct textures for source A and source B of the
@@ -1562,6 +1587,10 @@ Functions used by transitions
    textures of source A and source B, *t* is the time value
    (0.0f..1.0f), *cx* and *cy* are the current dimensions of the
    transition, and *data* is the implementation's private data.
+
+   The *placeholder_texture* parameter allows a callback to receive
+   a replacement that isn't the default transparent texture, including
+   NULL if the caller desires.
 
    Relevant data types used with this function:
 

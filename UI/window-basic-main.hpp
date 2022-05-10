@@ -94,7 +94,8 @@ struct SourceCopyInfo {
 	bool visible;
 	obs_sceneitem_crop crop;
 	obs_transform_info transform;
-	obs_blending_type blend;
+	obs_blending_method blend_method;
+	obs_blending_type blend_mode;
 };
 
 struct QuickTransition {
@@ -313,6 +314,7 @@ private:
 	QPointer<QMenu> sceneProjectorMenu;
 	QPointer<QMenu> sourceProjector;
 	QPointer<QMenu> scaleFilteringMenu;
+	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;
 	QPointer<QWidgetAction> colorWidgetAction;
@@ -637,6 +639,7 @@ public slots:
 	void RecordingStart();
 	void RecordStopping();
 	void RecordingStop(int code, QString last_error);
+	void RecordingFileChanged(QString lastRecordingPath);
 
 	void ShowReplayBufferPauseWarning();
 	void StartReplayBuffer();
@@ -715,6 +718,7 @@ private slots:
 
 	void SetScaleFilter();
 
+	void SetBlendingMethod();
 	void SetBlendingMode();
 
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -804,7 +808,7 @@ private:
 
 	static void HotkeyTriggered(void *data, obs_hotkey_id id, bool pressed);
 
-	void AutoRemux(QString input);
+	void AutoRemux(QString input, bool no_show = false);
 
 	void UpdatePause(bool activate = true);
 	void UpdateReplayBuffer(bool activate = true);
@@ -890,6 +894,7 @@ public:
 
 	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
 	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
+	QMenu *AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
 				      ColorSelect *select,
@@ -1115,6 +1120,10 @@ private slots:
 	void NudgeDown();
 	void NudgeLeft();
 	void NudgeRight();
+	void NudgeUpFar();
+	void NudgeDownFar();
+	void NudgeLeftFar();
+	void NudgeRightFar();
 
 	void OpenStudioProgramProjector();
 	void OpenPreviewProjector();

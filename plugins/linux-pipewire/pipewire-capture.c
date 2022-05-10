@@ -38,12 +38,14 @@ static const char *pipewire_window_capture_get_name(void *data)
 static void *pipewire_desktop_capture_create(obs_data_t *settings,
 					     obs_source_t *source)
 {
-	return obs_pipewire_create(DESKTOP_CAPTURE, settings, source);
+	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_MONITOR, settings,
+				   source);
 }
 static void *pipewire_window_capture_create(obs_data_t *settings,
 					    obs_source_t *source)
 {
-	return obs_pipewire_create(WINDOW_CAPTURE, settings, source);
+	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_WINDOW, settings,
+				   source);
 }
 
 static void pipewire_capture_destroy(void *data)
@@ -63,18 +65,19 @@ static void pipewire_capture_get_defaults(obs_data_t *settings)
 
 static obs_properties_t *pipewire_capture_get_properties(void *data)
 {
-	enum obs_pw_capture_type capture_type;
+	enum portal_capture_type capture_type;
 	obs_pipewire_data *obs_pw = data;
 
 	capture_type = obs_pipewire_get_capture_type(obs_pw);
 
 	switch (capture_type) {
-	case DESKTOP_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_MONITOR:
 		return obs_pipewire_get_properties(data,
 						   "PipeWireSelectMonitor");
-	case WINDOW_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_WINDOW:
 		return obs_pipewire_get_properties(data,
 						   "PipeWireSelectWindow");
+	case PORTAL_CAPTURE_TYPE_VIRTUAL:
 	default:
 		return NULL;
 	}
@@ -116,9 +119,9 @@ void pipewire_capture_load(void)
 {
 	uint32_t available_capture_types = portal_get_available_capture_types();
 	bool desktop_capture_available =
-		(available_capture_types & DESKTOP_CAPTURE) != 0;
+		(available_capture_types & PORTAL_CAPTURE_TYPE_MONITOR) != 0;
 	bool window_capture_available =
-		(available_capture_types & WINDOW_CAPTURE) != 0;
+		(available_capture_types & PORTAL_CAPTURE_TYPE_WINDOW) != 0;
 
 	if (available_capture_types == 0) {
 		blog(LOG_INFO, "[pipewire] No captures available");

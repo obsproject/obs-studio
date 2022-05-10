@@ -12,9 +12,10 @@ static inline uint qt_intensity(uint r, uint g, uint b)
  *
  * https://code.woboq.org/qt5/qtbase/src/widgets/styles/qcommonstyle.cpp.html#6429
  */
-QPixmap OBSProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
-					   const QPixmap &pixmap,
-					   const QStyleOption *option) const
+QPixmap
+OBSContextBarProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
+					     const QPixmap &pixmap,
+					     const QStyleOption *option) const
 {
 	if (iconMode == QIcon::Disabled) {
 		QImage im =
@@ -74,4 +75,17 @@ QPixmap OBSProxyStyle::generatedIconPixmap(QIcon::Mode iconMode,
 	}
 
 	return QProxyStyle::generatedIconPixmap(iconMode, pixmap, option);
+}
+
+int OBSIgnoreWheelProxyStyle::styleHint(StyleHint hint,
+					const QStyleOption *option,
+					const QWidget *widget,
+					QStyleHintReturn *returnData) const
+{
+#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
+	if (hint == SH_ComboBox_AllowWheelScrolling)
+		return false;
+#endif
+
+	return QProxyStyle::styleHint(hint, option, widget, returnData);
 }

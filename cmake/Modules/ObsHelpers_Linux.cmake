@@ -61,3 +61,44 @@ function(export_target_pkgconf target)
   install(FILES "${CMAKE_CURRENT_BINARY_DIR}/${target}.pc"
           DESTINATION "${CMAKE_INSTALL_LIBDIR}/pkgconfig")
 endfunction()
+
+# Helper function to install header files
+function(install_headers target)
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+    DESTINATION ${OBS_INCLUDE_DESTINATION}
+    COMPONENT obs_libraries
+    FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN "obs-hevc.h" EXCLUDE
+    PATTERN "*-windows.h" EXCLUDE
+    PATTERN "audio-monitoring" EXCLUDE
+    PATTERN "util/apple" EXCLUDE
+    PATTERN "util/windows" EXCLUDE
+    PATTERN "cmake" EXCLUDE
+    PATTERN "pkgconfig" EXCLUDE
+    PATTERN "data" EXCLUDE)
+
+  if(ENABLE_PULSEAUDIO)
+    install(
+      FILES
+        "${CMAKE_CURRENT_SOURCE_DIR}/audio-monitoring/pulse/pulseaudio-wrapper.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}/audio-monitoring/pulse/"
+      COMPONENT obs_libraries)
+  endif()
+
+  if(ENABLE_HEVC)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries)
+  endif()
+
+  if(NOT EXISTS "${OBS_INCLUDE_DESTINATION}/obsconfig.h")
+    install(
+      FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries)
+  endif()
+endfunction()

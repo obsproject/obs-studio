@@ -71,8 +71,6 @@ struct _obs_pipewire_data {
 	uint32_t pipewire_node;
 	int pipewire_fd;
 
-	uint32_t available_cursor_modes;
-
 	obs_source_t *source;
 	obs_data_t *settings;
 
@@ -108,7 +106,7 @@ struct _obs_pipewire_data {
 		gs_texture_t *texture;
 	} cursor;
 
-	enum obs_pw_capture_type capture_type;
+	enum portal_capture_type capture_type;
 	struct obs_video_info video_info;
 	bool negotiated;
 
@@ -143,23 +141,26 @@ static bool check_pw_version(const struct obs_pw_version *pw_version, int major,
 
 static void update_pw_versions(obs_pipewire_data *obs_pw, const char *version)
 {
-	blog(LOG_INFO, "[pipewire] server version: %s", version);
-	blog(LOG_INFO, "[pipewire] library version: %s",
+	blog(LOG_INFO, "[pipewire] Server version: %s", version);
+	blog(LOG_INFO, "[pipewire] Library version: %s",
 	     pw_get_library_version());
-	blog(LOG_INFO, "[pipewire] header version: %s",
+	blog(LOG_INFO, "[pipewire] Header version: %s",
 	     pw_get_headers_version());
 
 	if (!parse_pw_version(&obs_pw->server_version, version))
 		blog(LOG_WARNING, "[pipewire] failed to parse server version");
 }
 
-static const char *capture_type_to_string(enum obs_pw_capture_type capture_type)
+static const char *capture_type_to_string(enum portal_capture_type capture_type)
 {
 	switch (capture_type) {
-	case DESKTOP_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_MONITOR:
 		return "desktop";
-	case WINDOW_CAPTURE:
+	case PORTAL_CAPTURE_TYPE_WINDOW:
 		return "window";
+	case PORTAL_CAPTURE_TYPE_VIRTUAL:
+	default:
+		return "unknown";
 	}
 	return "unknown";
 }
@@ -216,7 +217,7 @@ static void on_cancelled_cb(GCancellable *cancellable, void *data)
 
 	struct dbus_call_data *call = data;
 
-	blog(LOG_INFO, "[pipewire] screencast session cancelled");
+	blog(LOG_INFO, "[pipewire] Screencast session cancelled");
 
 	g_dbus_connection_call(
 		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
@@ -582,7 +583,7 @@ static void renegotiate_format(void *data, uint64_t expirations)
 	obs_pipewire_data *obs_pw = (obs_pipewire_data *)data;
 	const struct spa_pod **params = NULL;
 
-	blog(LOG_DEBUG, "[pipewire] Renegotiating stream ...");
+	blog(LOG_INFO, "[pipewire] Renegotiating stream");
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
@@ -806,18 +807,18 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	if (has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24))
 		buffer_types |= 1 << SPA_DATA_DmaBuf;
 
-	blog(LOG_DEBUG, "[pipewire] Negotiated format:");
+	blog(LOG_INFO, "[pipewire] Negotiated format:");
 
-	blog(LOG_DEBUG, "[pipewire]     Format: %d (%s)",
+	blog(LOG_INFO, "[pipewire]     Format: %d (%s)",
 	     obs_pw->format.info.raw.format,
 	     spa_debug_type_find_name(spa_type_video_format,
 				      obs_pw->format.info.raw.format));
 
-	blog(LOG_DEBUG, "[pipewire]     Size: %dx%d",
+	blog(LOG_INFO, "[pipewire]     Size: %dx%d",
 	     obs_pw->format.info.raw.size.width,
 	     obs_pw->format.info.raw.size.height);
 
-	blog(LOG_DEBUG, "[pipewire]     Framerate: %d/%d",
+	blog(LOG_INFO, "[pipewire]     Framerate: %d/%d",
 	     obs_pw->format.info.raw.framerate.num,
 	     obs_pw->format.info.raw.framerate.denom);
 
@@ -857,7 +858,7 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 
 	obs_pipewire_data *obs_pw = user_data;
 
-	blog(LOG_DEBUG, "[pipewire] stream %p state: \"%s\" (error: %s)",
+	blog(LOG_INFO, "[pipewire] Stream %p state: \"%s\" (error: %s)",
 	     obs_pw->stream, pw_stream_state_as_string(state),
 	     error ? error : "none");
 }
@@ -954,7 +955,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
 	pw_stream_add_listener(obs_pw->stream, &obs_pw->stream_listener,
 			       &stream_events, obs_pw);
-	blog(LOG_INFO, "[pipewire] created stream %p", obs_pw->stream);
+	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw->stream);
 
 	/* Stream parameters */
 	pod_builder =
@@ -973,7 +974,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
 		n_params);
 
-	blog(LOG_INFO, "[pipewire] playing stream…");
+	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
@@ -1136,7 +1137,7 @@ static void start(obs_pipewire_data *obs_pw)
 
 	new_request_path(obs_pw, &request_path, &request_token);
 
-	blog(LOG_INFO, "[pipewire] asking for %s…",
+	blog(LOG_INFO, "[pipewire] Asking for %s",
 	     capture_type_to_string(obs_pw->capture_type));
 
 	call = subscribe_to_signal(obs_pw, request_path,
@@ -1211,6 +1212,7 @@ static void select_source(obs_pipewire_data *obs_pw)
 {
 	struct dbus_call_data *call;
 	GVariantBuilder builder;
+	uint32_t available_cursor_modes;
 	char *request_token;
 	char *request_path;
 
@@ -1227,15 +1229,21 @@ static void select_source(obs_pipewire_data *obs_pw)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
-	if (obs_pw->available_cursor_modes & 4)
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(4));
-	else if ((obs_pw->available_cursor_modes & 2) && obs_pw->cursor.visible)
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(2));
+	available_cursor_modes = portal_get_available_cursor_modes();
+
+	if (available_cursor_modes & PORTAL_CURSOR_MODE_METADATA)
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_METADATA));
+	else if ((available_cursor_modes & PORTAL_CURSOR_MODE_EMBEDDED) &&
+		 obs_pw->cursor.visible)
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_EMBEDDED));
 	else
-		g_variant_builder_add(&builder, "{sv}", "cursor_mode",
-				      g_variant_new_uint32(1));
+		g_variant_builder_add(
+			&builder, "{sv}", "cursor_mode",
+			g_variant_new_uint32(PORTAL_CURSOR_MODE_HIDDEN));
 
 	if (portal_get_screencast_version() >= 4) {
 		g_variant_builder_add(&builder, "{sv}", "persist_mode",
@@ -1286,7 +1294,7 @@ static void on_create_session_response_received_cb(
 		return;
 	}
 
-	blog(LOG_INFO, "[pipewire] screencast session created");
+	blog(LOG_INFO, "[pipewire] Screencast session created");
 
 	session_handle_variant =
 		g_variant_lookup_value(result, "session_handle", NULL);
@@ -1346,31 +1354,6 @@ static void create_session(obs_pipewire_data *obs_pw)
 
 /* ------------------------------------------------- */
 
-static void update_available_cursor_modes(obs_pipewire_data *obs_pw,
-					  GDBusProxy *proxy)
-{
-	g_autoptr(GVariant) cached_cursor_modes = NULL;
-	uint32_t available_cursor_modes;
-
-	cached_cursor_modes =
-		g_dbus_proxy_get_cached_property(proxy, "AvailableCursorModes");
-	available_cursor_modes =
-		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
-				    : 0;
-
-	obs_pw->available_cursor_modes = available_cursor_modes;
-
-	blog(LOG_INFO, "[pipewire] available cursor modes:");
-	if (available_cursor_modes & 4)
-		blog(LOG_INFO, "[pipewire]     - Metadata");
-	if (available_cursor_modes & 2)
-		blog(LOG_INFO, "[pipewire]     - Always visible");
-	if (available_cursor_modes & 1)
-		blog(LOG_INFO, "[pipewire]     - Hidden");
-}
-
-/* ------------------------------------------------- */
-
 static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 {
 	GDBusConnection *connection;
@@ -1384,8 +1367,6 @@ static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 	proxy = portal_get_dbus_proxy();
 	if (!proxy)
 		return FALSE;
-
-	update_available_cursor_modes(obs_pw, proxy);
 
 	obs_pw->sender_name =
 		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);
@@ -1422,7 +1403,7 @@ static bool reload_session_cb(obs_properties_t *properties,
 
 /* obs_source_info methods */
 
-void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
+void *obs_pipewire_create(enum portal_capture_type capture_type,
 			  obs_data_t *settings, obs_source_t *source)
 {
 	obs_pipewire_data *obs_pw = bzalloc(sizeof(obs_pipewire_data));
@@ -1434,8 +1415,10 @@ void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
 	obs_pw->restore_token =
 		bstrdup(obs_data_get_string(settings, "RestoreToken"));
 
-	if (!init_obs_pipewire(obs_pw))
+	if (!init_obs_pipewire(obs_pw)) {
 		g_clear_pointer(&obs_pw, bfree);
+		return NULL;
+	}
 
 	init_format_info(obs_pw);
 
@@ -1555,7 +1538,7 @@ void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect)
 	}
 }
 
-enum obs_pw_capture_type
+enum portal_capture_type
 obs_pipewire_get_capture_type(obs_pipewire_data *obs_pw)
 {
 	return obs_pw->capture_type;

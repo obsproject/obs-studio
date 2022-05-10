@@ -31,8 +31,6 @@ target_sources(
           obs-encoder.c
           obs-encoder.h
           obs-ffmpeg-compat.h
-          obs-hevc.c
-          obs-hevc.h
           obs-hotkey.c
           obs-hotkey.h
           obs-hotkeys.h
@@ -202,6 +200,10 @@ target_sources(
           util/curl/curl-helper.h
           util/darray.h
           util/util.hpp)
+
+if(ENABLE_HEVC)
+  target_sources(libobs PRIVATE obs-hevc.c obs-hevc.h)
+endif()
 
 # Contents of "data" dir already automatically added to bundles on macOS
 if(NOT OS_MACOS)

@@ -313,6 +313,10 @@ static void render_convert_texture(struct obs_core_video *video,
 		gs_effect_get_param_by_name(effect, "color_vec2");
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *width_i = gs_effect_get_param_by_name(effect, "width_i");
+	gs_eparam_t *height_i = gs_effect_get_param_by_name(effect, "height_i");
+	gs_eparam_t *sdr_white_nits_over_maximum = gs_effect_get_param_by_name(
+		effect, "sdr_white_nits_over_maximum");
+	gs_eparam_t *hlg_lw = gs_effect_get_param_by_name(effect, "hlg_lw");
 
 	struct vec4 vec0, vec1, vec2;
 	vec4_set(&vec0, video->color_matrix[4], video->color_matrix[5],
@@ -325,8 +329,14 @@ static void render_convert_texture(struct obs_core_video *video,
 	gs_enable_blending(false);
 
 	if (convert_textures[0]) {
+		const float hdr_nominal_peak_level =
+			video->hdr_nominal_peak_level;
+		const float multiplier =
+			obs_get_video_sdr_white_level() / 10000.f;
 		gs_effect_set_texture(image, texture);
 		gs_effect_set_vec4(color_vec0, &vec0);
+		gs_effect_set_float(sdr_white_nits_over_maximum, multiplier);
+		gs_effect_set_float(hlg_lw, hdr_nominal_peak_level);
 		render_convert_plane(effect, convert_textures[0],
 				     video->conversion_techs[0]);
 
@@ -336,6 +346,11 @@ static void render_convert_texture(struct obs_core_video *video,
 			if (!convert_textures[2])
 				gs_effect_set_vec4(color_vec2, &vec2);
 			gs_effect_set_float(width_i, video->conversion_width_i);
+			gs_effect_set_float(height_i,
+					    video->conversion_height_i);
+			gs_effect_set_float(sdr_white_nits_over_maximum,
+					    multiplier);
+			gs_effect_set_float(hlg_lw, hdr_nominal_peak_level);
 			render_convert_plane(effect, convert_textures[1],
 					     video->conversion_techs[1]);
 
@@ -344,6 +359,12 @@ static void render_convert_texture(struct obs_core_video *video,
 				gs_effect_set_vec4(color_vec2, &vec2);
 				gs_effect_set_float(width_i,
 						    video->conversion_width_i);
+				gs_effect_set_float(height_i,
+						    video->conversion_height_i);
+				gs_effect_set_float(sdr_white_nits_over_maximum,
+						    multiplier);
+				gs_effect_set_float(hlg_lw,
+						    hdr_nominal_peak_level);
 				render_convert_plane(
 					effect, convert_textures[2],
 					video->conversion_techs[2]);
@@ -378,7 +399,7 @@ stage_output_texture(struct obs_core_video *video, int cur_texture,
 
 		video->textures_copied[cur_texture] = true;
 	} else if (video->texture_converted) {
-		for (int i = 0; i < channel_count; i++) {
+		for (size_t i = 0; i < channel_count; i++) {
 			gs_stagesurf_t *copy = copy_surfaces[i];
 			if (copy) {
 				gs_stage_texture(copy, convert_textures[i]);
@@ -648,6 +669,54 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 
 		break;
 	}
+	case VIDEO_FORMAT_I010: {
+		const uint32_t width = info->width;
+		const uint32_t height = info->height;
+
+		set_gpu_converted_plane(width * 2, height, input->linesize[0],
+					output->linesize[0], input->data[0],
+					output->data[0]);
+
+		const uint32_t height_d2 = height / 2;
+
+		set_gpu_converted_plane(width, height_d2, input->linesize[1],
+					output->linesize[1], input->data[1],
+					output->data[1]);
+
+		set_gpu_converted_plane(width, height_d2, input->linesize[2],
+					output->linesize[2], input->data[2],
+					output->data[2]);
+
+		break;
+	}
+	case VIDEO_FORMAT_P010: {
+		const uint32_t width_x2 = info->width * 2;
+		const uint32_t height = info->height;
+		const uint32_t height_d2 = height / 2;
+		if (input->linesize[1]) {
+			set_gpu_converted_plane(width_x2, height,
+						input->linesize[0],
+						output->linesize[0],
+						input->data[0],
+						output->data[0]);
+			set_gpu_converted_plane(width_x2, height_d2,
+						input->linesize[1],
+						output->linesize[1],
+						input->data[1],
+						output->data[1]);
+		} else {
+			const uint8_t *const in_uv = set_gpu_converted_plane(
+				width_x2, height, input->linesize[0],
+				output->linesize[0], input->data[0],
+				output->data[0]);
+			set_gpu_converted_plane(width_x2, height_d2,
+						input->linesize[0],
+						output->linesize[1], in_uv,
+						output->data[1]);
+		}
+
+		break;
+	}
 
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_YVYU:
@@ -658,10 +727,13 @@ static void set_gpu_converted_data(struct obs_core_video *video,
 	case VIDEO_FORMAT_BGRX:
 	case VIDEO_FORMAT_Y800:
 	case VIDEO_FORMAT_BGR3:
+	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_I40A:
 	case VIDEO_FORMAT_I42A:
 	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
 		/* unimplemented */
 		;
@@ -728,8 +800,9 @@ static inline void video_sleep(struct obs_core_video *video, bool raw_active,
 		const uint64_t udiff = os_gettime_ns() - cur_time;
 		int64_t diff;
 		memcpy(&diff, &udiff, sizeof(diff));
-		const uint64_t clamped_diff =
-			(diff > (int64_t)interval_ns) ? diff : interval_ns;
+		const uint64_t clamped_diff = (diff > (int64_t)interval_ns)
+						      ? (uint64_t)diff
+						      : interval_ns;
 		count = (int)(clamped_diff / interval_ns);
 		*p_time = cur_time + interval_ns * count;
 	}

@@ -229,11 +229,11 @@ static void color_correction_filter_update_v1(void *data, obs_data_t *settings)
 	vec4_from_rgba(&color_v4, color);
 
 	/*
-	* Now let's build our Color 'overlay' matrix.
-	* Earlier (in the function color_correction_filter_create) we set
-	* this matrix to the identity matrix, so now we only need
-	* to set the 6 variables that have changed.
-	*/
+	 * Now let's build our Color 'overlay' matrix.
+	 * Earlier (in the function color_correction_filter_create) we set
+	 * this matrix to the identity matrix, so now we only need
+	 * to set the 6 variables that have changed.
+	 */
 	filter->color_matrix.x.x = color_v4.x;
 	filter->color_matrix.y.y = color_v4.y;
 	filter->color_matrix.z.z = color_v4.z;
@@ -385,11 +385,11 @@ static void color_correction_filter_update_v2(void *data, obs_data_t *settings)
 	vec4_from_rgba_srgb(&color_add_v4, color_add);
 
 	/*
-	* Now let's build our Color 'overlay' matrix.
-	* Earlier (in the function color_correction_filter_create) we set
-	* this matrix to the identity matrix, so now we only need
-	* to set the 6 variables that have changed.
-	*/
+	 * Now let's build our Color 'overlay' matrix.
+	 * Earlier (in the function color_correction_filter_create) we set
+	 * this matrix to the identity matrix, so now we only need
+	 * to set the 6 variables that have changed.
+	 */
 	filter->color_matrix.x.x = color_multiply_v4.x;
 	filter->color_matrix.y.y = color_multiply_v4.y;
 	filter->color_matrix.z.z = color_multiply_v4.z;
@@ -453,11 +453,11 @@ static void *color_correction_filter_create_v1(obs_data_t *settings,
 					       obs_source_t *context)
 {
 	/*
-	* Because of limitations of pre-c99 compilers, you can't create an
-	* array that doesn't have a known size at compile time. The below
-	* function calculates the size needed and allocates memory to
-	* handle the source.
-	*/
+	 * Because of limitations of pre-c99 compilers, you can't create an
+	 * array that doesn't have a known size at compile time. The below
+	 * function calculates the size needed and allocates memory to
+	 * handle the source.
+	 */
 	struct color_correction_filter_data *filter =
 		bzalloc(sizeof(struct color_correction_filter_data));
 
@@ -515,11 +515,11 @@ static void *color_correction_filter_create_v2(obs_data_t *settings,
 					       obs_source_t *context)
 {
 	/*
-	* Because of limitations of pre-c99 compilers, you can't create an
-	* array that doesn't have a known size at compile time. The below
-	* function calculates the size needed and allocates memory to
-	* handle the source.
-	*/
+	 * Because of limitations of pre-c99 compilers, you can't create an
+	 * array that doesn't have a known size at compile time. The below
+	 * function calculates the size needed and allocates memory to
+	 * handle the source.
+	 */
 	struct color_correction_filter_data_v2 *filter =
 		bzalloc(sizeof(struct color_correction_filter_data_v2));
 

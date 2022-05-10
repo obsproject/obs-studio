@@ -484,7 +484,8 @@ RTMP_Reset(RTMP *r)
     r->m_fVideoCodecs = 252.0;
     r->Link.curStreamIdx = 0;
     r->Link.nStreams = 0;
-    r->Link.timeout = 30;
+    r->Link.receiveTimeout = 30;
+    r->Link.sendTimeout = 6;
     r->Link.swfAge = 30;
 }
 
@@ -928,12 +929,20 @@ RTMP_Connect0(RTMP *r, struct sockaddr * service, socklen_t addrlen)
 
     /* set timeout */
     {
-        SET_RCVTIMEO(tv, r->Link.timeout);
+        SET_RCVTIMEO(tvr, r->Link.receiveTimeout);
         if (setsockopt
-                (r->m_sb.sb_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tv, sizeof(tv)))
+                (r->m_sb.sb_socket, SOL_SOCKET, SO_RCVTIMEO, (char *)&tvr, sizeof(tvr)))
         {
-            RTMP_Log(RTMP_LOGERROR, "%s, Setting socket timeout to %ds failed!",
-                     __FUNCTION__, r->Link.timeout);
+            RTMP_Log(RTMP_LOGERROR, "%s, Setting socket receive timeout to %ds failed!",
+                     __FUNCTION__, r->Link.receiveTimeout);
+        }
+
+        SET_RCVTIMEO(tvs, r->Link.sendTimeout);
+        if (setsockopt
+                (r->m_sb.sb_socket, SOL_SOCKET, SO_SNDTIMEO, (char *)&tvs, sizeof(tvs)))
+        {
+                RTMP_Log(RTMP_LOGERROR, "%s, Setting socket send timeout to %ds failed!",
+                     __FUNCTION__, r->Link.sendTimeout);
         }
     }
 

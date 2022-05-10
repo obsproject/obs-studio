@@ -285,7 +285,7 @@ struct gs_exports {
 	gs_texture_t *(*device_texture_create_from_iosurface)(gs_device_t *dev,
 							      void *iosurf);
 	gs_texture_t *(*device_texture_open_shared)(gs_device_t *dev,
-						    uint32_t *handle);
+						    uint32_t handle);
 	bool (*gs_texture_rebind_iosurface)(gs_texture_t *texture,
 					    void *iosurf);
 	bool (*device_shared_texture_available)(void);

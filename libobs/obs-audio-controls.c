@@ -897,7 +897,7 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 		source_nr_audio_channels = get_audio_channels(
 			volmeter->source->sample_info.speakers);
 	} else {
-		source_nr_audio_channels = 1;
+		source_nr_audio_channels = 0;
 	}
 
 	struct obs_audio_info audio_info;
@@ -907,7 +907,7 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 		obs_nr_audio_channels = 2;
 	}
 
-	return CLAMP(source_nr_audio_channels, 1, obs_nr_audio_channels);
+	return CLAMP(source_nr_audio_channels, 0, obs_nr_audio_channels);
 }
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter,

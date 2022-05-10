@@ -329,7 +329,7 @@ static void vaapi_destroy(void *data)
 		flush_remaining_packets(enc);
 
 	av_packet_free(&enc->packet);
-	avcodec_close(enc->context);
+	avcodec_free_context(&enc->context);
 	av_frame_unref(enc->vframe);
 	av_frame_free(&enc->vframe);
 	av_buffer_unref(&enc->vaframes_ref);
@@ -600,8 +600,16 @@ static obs_properties_t *vaapi_properties(void *unused)
 			    strcmp(file_name, "..") == 0)
 				continue;
 
-			char path[64] = "\0";
-			sprintf(path, "/dev/dri/by-path/%s", file_name);
+			char path[64] = {0};
+
+			// Use the return value of snprintf to prevent truncation warning.
+			int written = snprintf(path, 64, "/dev/dri/by-path/%s",
+					       file_name);
+			if (written >= 64)
+				blog(LOG_DEBUG,
+				     "obs-ffmpeg-vaapi: A format truncation may have occurred."
+				     " This can be ignored since it is quite improbable.");
+
 			type = strrchr(file_name, '-');
 			if (type == NULL)
 				continue;

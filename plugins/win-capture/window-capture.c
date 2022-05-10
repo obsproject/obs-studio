@@ -37,6 +37,8 @@ typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
+typedef enum gs_color_space (*PFN_winrt_capture_get_color_space)(
+	const struct winrt_capture *capture);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
@@ -50,6 +52,7 @@ struct winrt_exports {
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
 	PFN_winrt_capture_show_cursor winrt_capture_show_cursor;
+	PFN_winrt_capture_get_color_space winrt_capture_get_color_space;
 	PFN_winrt_capture_render winrt_capture_render;
 	PFN_winrt_capture_width winrt_capture_width;
 	PFN_winrt_capture_height winrt_capture_height;
@@ -238,6 +241,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
 	WINRT_IMPORT(winrt_capture_show_cursor);
+	WINRT_IMPORT(winrt_capture_get_color_space);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -644,6 +648,30 @@ static void wc_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
+enum gs_color_space
+wc_get_color_space(void *data, size_t count,
+		   const enum gs_color_space *preferred_spaces)
+{
+	struct window_capture *wc = data;
+
+	enum gs_color_space capture_space = GS_CS_SRGB;
+
+	if ((wc->method == METHOD_WGC) && wc->capture_winrt) {
+		capture_space = wc->exports.winrt_capture_get_color_space(
+			wc->capture_winrt);
+	}
+
+	enum gs_color_space space = capture_space;
+	for (size_t i = 0; i < count; ++i) {
+		const enum gs_color_space preferred_space = preferred_spaces[i];
+		space = preferred_space;
+		if (preferred_space == capture_space)
+			break;
+	}
+
+	return space;
+}
+
 struct obs_source_info window_capture_info = {
 	.id = "window_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -661,4 +689,5 @@ struct obs_source_info window_capture_info = {
 	.get_defaults = wc_defaults,
 	.get_properties = wc_properties,
 	.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
+	.video_get_color_space = wc_get_color_space,
 };

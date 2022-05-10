@@ -97,6 +97,12 @@ public:
 		config = newConfig;
 	}
 
+	inline int OpenString(const char *str)
+	{
+		Close();
+		return config_open_string(&config, str);
+	}
+
 	inline int Open(const char *file, config_open_type openType)
 	{
 		Close();

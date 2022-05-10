@@ -7,11 +7,13 @@
 #include <util/threading.h>
 #include <util/platform.h>
 #include <util/dstr.h>
+#include <util/util_uint64.h>
 #include <obs-module.h>
 
 #include <ajantv2/includes/ntv2card.h>
 #include <ajantv2/includes/ntv2utils.h>
 
+#define NSEC_PER_SEC 1000000000LL
 #define NTV2_AUDIOSIZE_MAX (401 * 1024)
 
 AJASource::AJASource(obs_source_t *source)
@@ -149,20 +151,37 @@ void AJASource::GenerateTestPattern(NTV2VideoFormat vf, NTV2PixelFormat pf,
 		return;
 	}
 
+	const enum video_format obs_vid_fmt =
+		aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
+
 	struct obs_source_frame2 obsFrame;
 	obsFrame.flip = false;
 	obsFrame.timestamp = os_gettime_ns();
 	obsFrame.width = fd.GetRasterWidth();
 	obsFrame.height = fd.GetRasterHeight();
-	obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(pix_fmt);
+	obsFrame.format = obs_vid_fmt;
 	obsFrame.data[0] = mTestPattern.data();
 	obsFrame.linesize[0] = fd.GetBytesPerRow();
-	video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_FULL,
-				    obsFrame.color_matrix,
-				    obsFrame.color_range_min,
-				    obsFrame.color_range_max);
+	video_colorspace colorspace = VIDEO_CS_709;
+	if (NTV2_IS_SD_VIDEO_FORMAT(vid_fmt))
+		colorspace = VIDEO_CS_601;
+	video_format_get_parameters_for_format(colorspace, VIDEO_RANGE_PARTIAL,
+					       obs_vid_fmt,
+					       obsFrame.color_matrix,
+					       obsFrame.color_range_min,
+					       obsFrame.color_range_max);
 	obs_source_output_video2(mSource, &obsFrame);
 	blog(LOG_DEBUG, "AJASource::GenerateTestPattern: Black");
+}
+
+static inline uint64_t samples_to_ns(size_t frames, uint_fast32_t rate)
+{
+	return util_mul_div64(frames, NSEC_PER_SEC, rate);
+}
+
+static inline uint64_t get_sample_time(size_t frames, uint_fast32_t rate)
+{
+	return os_gettime_ns() - samples_to_ns(frames, rate);
 }
 
 void AJASource::CaptureThread(AJAThread *thread, void *data)
@@ -330,7 +349,8 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			audioPacket.format = AUDIO_FORMAT_32BIT;
 			audioPacket.speakers = SPEAKERS_7POINT1;
 			audioPacket.frames = offsets.bytesRead / 32;
-			audioPacket.timestamp = os_gettime_ns();
+			audioPacket.timestamp =
+				get_sample_time(audioPacket.frames, 48000);
 			audioPacket.data[0] = (uint8_t *)ajaSource->mAudioBuffer
 						      .GetHostPointer();
 			obs_source_output_audio(ajaSource->mSource,
@@ -351,22 +371,27 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 			actualVideoFormat = aja::GetLevelAFormatForLevelBFormat(
 				videoFormat);
 
+		const enum video_format obs_vid_fmt =
+			aja::AJAPixelFormatToOBSVideoFormat(
+				sourceProps.pixelFormat);
+
 		NTV2FormatDesc fd(actualVideoFormat, pixelFormat);
 		struct obs_source_frame2 obsFrame;
 		obsFrame.flip = false;
 		obsFrame.timestamp = os_gettime_ns();
 		obsFrame.width = fd.GetRasterWidth();
 		obsFrame.height = fd.GetRasterHeight();
-		obsFrame.format = aja::AJAPixelFormatToOBSVideoFormat(
-			sourceProps.pixelFormat);
+		obsFrame.format = obs_vid_fmt;
 		obsFrame.data[0] = reinterpret_cast<uint8_t *>(
 			(ULWord *)ajaSource->mVideoBuffer.GetHostPointer());
 		obsFrame.linesize[0] = fd.GetBytesPerRow();
-
-		video_format_get_parameters(VIDEO_CS_DEFAULT, VIDEO_RANGE_FULL,
-					    obsFrame.color_matrix,
-					    obsFrame.color_range_min,
-					    obsFrame.color_range_max);
+		video_colorspace colorspace = VIDEO_CS_709;
+		if (NTV2_IS_SD_VIDEO_FORMAT(actualVideoFormat))
+			colorspace = VIDEO_CS_601;
+		video_format_get_parameters_for_format(
+			colorspace, VIDEO_RANGE_PARTIAL, obs_vid_fmt,
+			obsFrame.color_matrix, obsFrame.color_range_min,
+			obsFrame.color_range_max);
 
 		obs_source_output_video2(ajaSource->mSource, &obsFrame);
 

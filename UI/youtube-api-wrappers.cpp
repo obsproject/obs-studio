@@ -319,14 +319,14 @@ bool YoutubeApiWrappers::GetVideoCategoriesList(
 		"&regionCode=%1"
 		"&hl=%2";
 	/*
-	* All OBS locale regions aside from "US" are missing category id 29
-	* ("Nonprofits & Activism"), but it is still available to channels
-	* set to those regions via the YouTube Studio website.
-	* To work around this inconsistency with the API all locales will
-	* use the "US" region and only set the language part for localisation.
-	* It is worth noting that none of the regions available on YouTube
-	* feature any category not also available to the "US" region.
-	*/
+	 * All OBS locale regions aside from "US" are missing category id 29
+	 * ("Nonprofits & Activism"), but it is still available to channels
+	 * set to those regions via the YouTube Studio website.
+	 * To work around this inconsistency with the API all locales will
+	 * use the "US" region and only set the language part for localisation.
+	 * It is worth noting that none of the regions available on YouTube
+	 * feature any category not also available to the "US" region.
+	 */
 	QString url = url_template.arg("US", QLocale().name());
 
 	Json json_out;

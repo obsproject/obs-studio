@@ -124,6 +124,11 @@ enum obs_scale_type {
 	OBS_SCALE_AREA,
 };
 
+enum obs_blending_method {
+	OBS_BLEND_METHOD_DEFAULT,
+	OBS_BLEND_METHOD_SRGB_OFF,
+};
+
 enum obs_blending_type {
 	OBS_BLEND_NORMAL,
 	OBS_BLEND_ADDITIVE,
@@ -201,6 +206,14 @@ struct obs_audio_info {
 	enum speaker_layout speakers;
 };
 
+struct obs_audio_info2 {
+	uint32_t samples_per_sec;
+	enum speaker_layout speakers;
+
+	uint32_t max_buffering_ms;
+	bool fixed_buffering;
+};
+
 /**
  * Sent to source filters via the filter_audio callback to allow filtering of
  * audio data
@@ -261,6 +274,7 @@ struct obs_source_frame {
 	float color_range_max[3];
 	bool flip;
 	uint8_t flags;
+	uint8_t trc; /* enum video_trc */
 
 	/* used internally by libobs */
 	volatile long refs;
@@ -281,6 +295,7 @@ struct obs_source_frame2 {
 	float color_range_max[3];
 	bool flip;
 	uint8_t flags;
+	uint8_t trc; /* enum video_trc */
 };
 
 /** Access to the argc/argv used to start OBS. What you see is what you get. */
@@ -406,15 +421,20 @@ EXPORT int obs_reset_video(struct obs_video_info *ovi);
  * @note Cannot reset base audio if an output is currently active.
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
+EXPORT bool obs_reset_audio2(const struct obs_audio_info2 *oai);
 
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 
-/** Gets the SDR white level, returns 300.0 if no video */
+/** Gets the SDR white level, returns 300.f if no video */
 EXPORT float obs_get_video_sdr_white_level(void);
 
-/** Sets the SDR white level */
-EXPORT void obs_set_video_sdr_white_level(float sdr_white_level);
+/** Gets the HDR nominal peak level, returns 1000.f if no video */
+EXPORT float obs_get_video_hdr_nominal_peak_level(void);
+
+/** Sets the video levels */
+EXPORT void obs_set_video_levels(float sdr_white_level,
+				 float hdr_nominal_peak_level);
 
 /** Gets the current audio settings, returns false if no audio */
 EXPORT bool obs_get_audio_info(struct obs_audio_info *oai);
@@ -808,6 +828,7 @@ EXPORT uint32_t obs_get_total_frames(void);
 EXPORT uint32_t obs_get_lagged_frames(void);
 
 EXPORT bool obs_nv12_tex_active(void);
+EXPORT bool obs_p010_tex_active(void);
 
 EXPORT void obs_apply_private_data(obs_data_t *settings);
 EXPORT void obs_set_private_data(obs_data_t *settings);
@@ -1579,6 +1600,11 @@ EXPORT void
 obs_transition_video_render(obs_source_t *transition,
 			    obs_transition_video_render_callback_t callback);
 
+EXPORT void
+obs_transition_video_render2(obs_source_t *transition,
+			     obs_transition_video_render_callback_t callback,
+			     gs_texture_t *placeholder_texture);
+
 EXPORT enum gs_color_space
 obs_transition_video_get_color_space(obs_source_t *transition);
 
@@ -1798,6 +1824,11 @@ EXPORT void obs_sceneitem_set_scale_filter(obs_sceneitem_t *item,
 					   enum obs_scale_type filter);
 EXPORT enum obs_scale_type
 obs_sceneitem_get_scale_filter(obs_sceneitem_t *item);
+
+EXPORT void obs_sceneitem_set_blending_method(obs_sceneitem_t *item,
+					      enum obs_blending_method method);
+EXPORT enum obs_blending_method
+obs_sceneitem_get_blending_method(obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
 					    enum obs_blending_type type);

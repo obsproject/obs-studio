@@ -96,7 +96,6 @@ typedef enum {
 
 - (void)startStream
 {
-	DLogFunc(@"");
 	dispatch_async(_stateQueue, ^{
 		if (_state == PlugInStateNotStarted) {
 			dispatch_resume(_machConnectTimer);
@@ -108,7 +107,6 @@ typedef enum {
 
 - (void)stopStream
 {
-	DLogFunc(@"");
 	dispatch_async(_stateQueue, ^{
 		if (_state == PlugInStateWaitingForServer) {
 			dispatch_suspend(_machConnectTimer);

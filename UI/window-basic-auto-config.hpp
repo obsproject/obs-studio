@@ -13,6 +13,10 @@
 #include <string>
 #include <mutex>
 
+#include <json11.hpp>
+
+#include "streaming-helpers.hpp"
+
 class Ui_AutoConfigStartPage;
 class Ui_AutoConfigVideoPage;
 class Ui_AutoConfigStreamPage;
@@ -171,11 +175,9 @@ class AutoConfigStreamPage : public QWizardPage {
 	std::shared_ptr<Auth> auth;
 
 	std::unique_ptr<Ui_AutoConfigStreamPage> ui;
-	QString lastService;
 	bool ready = false;
 
-	void LoadServices(bool showAll);
-	inline bool IsCustomService() const;
+	StreamSettingsUI streamUi;
 
 public:
 	AutoConfigStreamPage(QWidget *parent = nullptr);
@@ -194,9 +196,6 @@ public slots:
 	void on_disconnectAccount_clicked();
 	void on_useStreamKey_clicked();
 	void ServiceChanged();
-	void UpdateKeyLink();
-	void UpdateMoreInfoLink();
-	void UpdateServerList();
 	void UpdateCompleted();
 
 	void reset_service_ui_fields(std::string &service);
@@ -248,7 +247,8 @@ class AutoConfigTestPage : public QWizardPage {
 
 		inline ServerInfo() {}
 
-		inline ServerInfo(const char *name_, const char *address_)
+		inline ServerInfo(const std::string &name_,
+				  const std::string &address_)
 			: name(name_), address(address_)
 		{
 		}

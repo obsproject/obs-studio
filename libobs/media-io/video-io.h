@@ -18,6 +18,7 @@
 #pragma once
 
 #include "media-io-defs.h"
+#include "../util/c99defs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,11 +34,11 @@ typedef struct video_output video_t;
 enum video_format {
 	VIDEO_FORMAT_NONE,
 
-	/* planar 420 format */
+	/* planar 4:2:0 formats */
 	VIDEO_FORMAT_I420, /* three-plane */
 	VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
 
-	/* packed 422 formats */
+	/* packed 4:2:2 formats */
 	VIDEO_FORMAT_YVYU,
 	VIDEO_FORMAT_YUY2, /* YUYV */
 	VIDEO_FORMAT_UYVY,
@@ -68,6 +69,26 @@ enum video_format {
 
 	/* packed 4:4:4 with alpha */
 	VIDEO_FORMAT_AYUV,
+
+	/* planar 4:2:0 format, 10 bpp */
+	VIDEO_FORMAT_I010, /* three-plane */
+	VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+	/* planar 4:2:2 10 bits */
+	VIDEO_FORMAT_I210, // Little Endian
+
+	/* planar 4:4:4 12 bits */
+	VIDEO_FORMAT_I412, // Little Endian
+
+	/* planar 4:4:4 12 bits with alpha */
+	VIDEO_FORMAT_YA2L, // Little Endian
+};
+
+enum video_trc {
+	VIDEO_TRC_DEFAULT,
+	VIDEO_TRC_SRGB,
+	VIDEO_TRC_PQ,
+	VIDEO_TRC_HLG,
 };
 
 enum video_colorspace {
@@ -75,8 +96,8 @@ enum video_colorspace {
 	VIDEO_CS_601,
 	VIDEO_CS_709,
 	VIDEO_CS_SRGB,
-	VIDEO_CS_2020_PQ,
-	VIDEO_CS_2020_HLG,
+	VIDEO_CS_2100_PQ,
+	VIDEO_CS_2100_HLG,
 };
 
 enum video_range_type {
@@ -111,14 +132,19 @@ static inline bool format_is_yuv(enum video_format format)
 	case VIDEO_FORMAT_I420:
 	case VIDEO_FORMAT_NV12:
 	case VIDEO_FORMAT_I422:
+	case VIDEO_FORMAT_I210:
 	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_YUY2:
 	case VIDEO_FORMAT_UYVY:
 	case VIDEO_FORMAT_I444:
+	case VIDEO_FORMAT_I412:
 	case VIDEO_FORMAT_I40A:
 	case VIDEO_FORMAT_I42A:
 	case VIDEO_FORMAT_YUVA:
+	case VIDEO_FORMAT_YA2L:
 	case VIDEO_FORMAT_AYUV:
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
 		return true;
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_RGBA:
@@ -141,6 +167,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "NV12";
 	case VIDEO_FORMAT_I422:
 		return "I422";
+	case VIDEO_FORMAT_I210:
+		return "I210";
 	case VIDEO_FORMAT_YVYU:
 		return "YVYU";
 	case VIDEO_FORMAT_YUY2:
@@ -155,6 +183,8 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "BGRX";
 	case VIDEO_FORMAT_I444:
 		return "I444";
+	case VIDEO_FORMAT_I412:
+		return "I412";
 	case VIDEO_FORMAT_Y800:
 		return "Y800";
 	case VIDEO_FORMAT_BGR3:
@@ -165,8 +195,14 @@ static inline const char *get_video_format_name(enum video_format format)
 		return "I42A";
 	case VIDEO_FORMAT_YUVA:
 		return "YUVA";
+	case VIDEO_FORMAT_YA2L:
+		return "YA2L";
 	case VIDEO_FORMAT_AYUV:
 		return "AYUV";
+	case VIDEO_FORMAT_I010:
+		return "I010";
+	case VIDEO_FORMAT_P010:
+		return "P010";
 	case VIDEO_FORMAT_NONE:;
 	}
 
@@ -183,10 +219,10 @@ static inline const char *get_video_colorspace_name(enum video_colorspace cs)
 		return "sRGB";
 	case VIDEO_CS_601:
 		return "Rec. 601";
-	case VIDEO_CS_2020_PQ:
-		return "Rec. 2020 (PQ)";
-	case VIDEO_CS_2020_HLG:
-		return "Rec. 2020 (HLG)";
+	case VIDEO_CS_2100_PQ:
+		return "Rec. 2100 (PQ)";
+	case VIDEO_CS_2100_HLG:
+		return "Rec. 2100 (HLG)";
 	}
 
 	return "Unknown";
@@ -232,6 +268,10 @@ EXPORT bool video_format_get_parameters(enum video_colorspace color_space,
 					enum video_range_type range,
 					float matrix[16], float min_range[3],
 					float max_range[3]);
+EXPORT bool video_format_get_parameters_for_format(
+	enum video_colorspace color_space, enum video_range_type range,
+	enum video_format format, float matrix[16], float min_range[3],
+	float max_range[3]);
 
 #define VIDEO_OUTPUT_SUCCESS 0
 #define VIDEO_OUTPUT_INVALIDPARAM -1

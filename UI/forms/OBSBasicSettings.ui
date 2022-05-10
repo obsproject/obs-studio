@@ -2418,6 +2418,95 @@
                             <item row="6" column="1">
                              <widget class="QLineEdit" name="advOutMuxCustom"/>
                             </item>
+                            <item row="7" column="0">
+                             <widget class="QCheckBox" name="advOutSplitFile">
+                              <property name="sizePolicy">
+                               <sizepolicy hsizetype="Minimum" vsizetype="Expanding">
+                                <horstretch>0</horstretch>
+                                <verstretch>0</verstretch>
+                               </sizepolicy>
+                              </property>
+                              <property name="layoutDirection">
+                               <enum>Qt::RightToLeft</enum>
+                              </property>
+                              <property name="text">
+                               <string>Basic.Settings.Output.EnableSplitFile</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="7" column="1">
+                             <widget class="QComboBox" name="advOutSplitFileType">
+                              <property name="enabled">
+                               <bool>false</bool>
+                              </property>
+                              <item>
+                               <property name="text">
+                                <string>Basic.Settings.Output.SplitFile.TypeTime</string>
+                               </property>
+                              </item>
+                              <item>
+                               <property name="text">
+                                <string>Basic.Settings.Output.SplitFile.TypeSize</string>
+                               </property>
+                              </item>
+                             </widget>
+                            </item>
+                            <item row="8" column="0">
+                             <widget class="QLabel" name="advOutSplitFileTimeLabel">
+                              <property name="text">
+                               <string>Basic.Settings.Output.SplitFile.Time</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="8" column="1">
+                             <widget class="QSpinBox" name="advOutSplitFileTime">
+                              <property name="suffix">
+                               <string> min</string>
+                              </property>
+                              <property name="minimum">
+                               <number>1</number>
+                              </property>
+                              <property name="maximum">
+                               <number>360</number>
+                              </property>
+                              <property name="value">
+                               <number>15</number>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="9" column="0">
+                             <widget class="QLabel" name="advOutSplitFileSizeLabel">
+                              <property name="text">
+                               <string>Basic.Settings.Output.SplitFile.Size</string>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="9" column="1">
+                             <widget class="QSpinBox" name="advOutSplitFileSize">
+                              <property name="suffix">
+                               <string> MB</string>
+                              </property>
+                              <property name="minimum">
+                               <number>20</number>
+                              </property>
+                              <property name="maximum">
+                               <number>8192</number>
+                              </property>
+                              <property name="value">
+                               <number>2048</number>
+                              </property>
+                             </widget>
+                            </item>
+                            <item row="10" column="1">
+                             <widget class="QCheckBox" name="advOutSplitFileRstTS">
+                              <property name="text">
+                               <string>Basic.Settings.Output.SplitFile.ResetTimestamps</string>
+                              </property>
+                              <property name="checked">
+                               <bool>true</bool>
+                              </property>
+                             </widget>
+                            </item>
                             <item row="3" column="1">
                              <widget class="QStackedWidget" name="advRecTrackWidget">
                               <property name="sizePolicy">
@@ -4979,7 +5068,17 @@
                      </item>
                      <item>
                       <property name="text">
-                       <string>I444</string>
+                       <string notr="true">I444</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">P010</string>
+                      </property>
+                     </item>
+                     <item>
+                      <property name="text">
+                       <string notr="true">I010</string>
                       </property>
                      </item>
                      <item>
@@ -5014,23 +5113,7 @@
                       <number>0</number>
                      </property>
                      <item>
-                      <widget class="QComboBox" name="colorSpace">
-                       <item>
-                        <property name="text">
-                         <string notr="true">sRGB</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string notr="true">709</string>
-                        </property>
-                       </item>
-                       <item>
-                        <property name="text">
-                         <string notr="true">601</string>
-                        </property>
-                       </item>
-                      </widget>
+                      <widget class="QComboBox" name="colorSpace"/>
                      </item>
                      <item>
                       <widget class="QLabel" name="label_34">
@@ -5084,6 +5167,32 @@
                        </property>
                        <property name="maximum">
                         <number>480</number>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QLabel" name="label_hdrNominalPeakLevel">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="text">
+                        <string>Basic.Settings.Advanced.Video.HdrNominalPeakLevel</string>
+                       </property>
+                       <property name="buddy">
+                        <cstring>hdrNominalPeakLevel</cstring>
+                       </property>
+                      </widget>
+                     </item>
+                     <item>
+                      <widget class="QSpinBox" name="hdrNominalPeakLevel">
+                       <property name="minimum">
+                        <number>400</number>
+                       </property>
+                       <property name="maximum">
+                        <number>10000</number>
                        </property>
                       </widget>
                      </item>
@@ -5790,6 +5899,11 @@
   <tabstop>advOutRecUseRescale</tabstop>
   <tabstop>advOutRecRescale</tabstop>
   <tabstop>advOutMuxCustom</tabstop>
+  <tabstop>advOutSplitFile</tabstop>
+  <tabstop>advOutSplitFileType</tabstop>
+  <tabstop>advOutSplitFileTime</tabstop>
+  <tabstop>advOutSplitFileSize</tabstop>
+  <tabstop>advOutSplitFileRstTS</tabstop>
   <tabstop>advOutFFType</tabstop>
   <tabstop>advOutFFRecPath</tabstop>
   <tabstop>advOutFFPathBrowse</tabstop>
@@ -6310,6 +6424,22 @@
     <hint type="destinationlabel">
      <x>454</x>
      <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutSplitFile</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutSplitFileType</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>327</x>
+     <y>355</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>701</x>
+     <y>355</y>
     </hint>
    </hints>
   </connection>

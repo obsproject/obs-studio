@@ -161,9 +161,17 @@ bool init_gpu_encoding(struct obs_core_video *video)
 		gs_texture_t *tex;
 		gs_texture_t *tex_uv;
 
-		gs_texture_create_nv12(&tex, &tex_uv, ovi->output_width,
-				       ovi->output_height,
-				       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		if (ovi->output_format == VIDEO_FORMAT_P010) {
+			gs_texture_create_p010(&tex, &tex_uv, ovi->output_width,
+					       ovi->output_height,
+					       GS_RENDER_TARGET |
+						       GS_SHARED_KM_TEX);
+		} else {
+			gs_texture_create_nv12(&tex, &tex_uv, ovi->output_width,
+					       ovi->output_height,
+					       GS_RENDER_TARGET |
+						       GS_SHARED_KM_TEX);
+		}
 		if (!tex) {
 			return false;
 		}

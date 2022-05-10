@@ -23,14 +23,11 @@
 #include <obs-module.h>
 #include <pipewire/pipewire.h>
 
+#include "portal.h"
+
 typedef struct _obs_pipewire_data obs_pipewire_data;
 
-enum obs_pw_capture_type {
-	DESKTOP_CAPTURE = 1,
-	WINDOW_CAPTURE = 2,
-};
-
-void *obs_pipewire_create(enum obs_pw_capture_type capture_type,
+void *obs_pipewire_create(enum portal_capture_type capture_type,
 			  obs_data_t *settings, obs_source_t *source);
 
 void obs_pipewire_destroy(obs_pipewire_data *obs_pw);
@@ -50,5 +47,5 @@ uint32_t obs_pipewire_get_width(obs_pipewire_data *obs_pw);
 uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw);
 void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect);
 
-enum obs_pw_capture_type
+enum portal_capture_type
 obs_pipewire_get_capture_type(obs_pipewire_data *obs_pw);

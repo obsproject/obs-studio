@@ -726,6 +726,15 @@ void obs_transition_force_stop(obs_source_t *transition)
 void obs_transition_video_render(obs_source_t *transition,
 				 obs_transition_video_render_callback_t callback)
 {
+	obs_transition_video_render2(transition, callback,
+				     obs->video.transparent_texture);
+}
+
+void obs_transition_video_render2(
+	obs_source_t *transition,
+	obs_transition_video_render_callback_t callback,
+	gs_texture_t *placeholder_texture)
+{
 	struct transition_state state;
 	struct matrix4 matrices[2];
 	bool locked = false;
@@ -773,9 +782,9 @@ void obs_transition_video_render(obs_source_t *transition,
 					     source_space);
 				tex[i] = get_texture(transition, i);
 				if (!tex[i])
-					tex[i] = obs->video.transparent_texture;
+					tex[i] = placeholder_texture;
 			} else {
-				tex[i] = obs->video.transparent_texture;
+				tex[i] = placeholder_texture;
 			}
 		}
 
@@ -823,12 +832,16 @@ void obs_transition_video_render(obs_source_t *transition,
 static enum gs_color_space mix_spaces(enum gs_color_space a,
 				      enum gs_color_space b)
 {
-	assert((a == GS_CS_SRGB) || (a == GS_CS_709_EXTENDED));
-	assert((b == GS_CS_SRGB) || (b == GS_CS_709_EXTENDED));
+	assert((a == GS_CS_SRGB) || (a == GS_CS_SRGB_16F) ||
+	       (a == GS_CS_709_EXTENDED));
+	assert((b == GS_CS_SRGB) || (b == GS_CS_SRGB_16F) ||
+	       (b == GS_CS_709_EXTENDED));
 
-	return ((a == GS_CS_709_EXTENDED) || (b == GS_CS_709_EXTENDED))
-		       ? GS_CS_709_EXTENDED
-		       : GS_CS_SRGB;
+	if ((a == GS_CS_709_EXTENDED) || (b == GS_CS_709_EXTENDED))
+		return GS_CS_709_EXTENDED;
+	if ((a == GS_CS_SRGB_16F) || (b == GS_CS_SRGB_16F))
+		return GS_CS_SRGB_16F;
+	return GS_CS_SRGB;
 }
 
 enum gs_color_space
@@ -837,25 +850,26 @@ obs_transition_video_get_color_space(obs_source_t *transition)
 	obs_source_t *source0 = transition->transition_sources[0];
 	obs_source_t *source1 = transition->transition_sources[1];
 
-	const enum gs_color_space dual_spaces[] = {
+	const enum gs_color_space preferred_spaces[] = {
 		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
 		GS_CS_709_EXTENDED,
 	};
 
 	enum gs_color_space space = GS_CS_SRGB;
 
 	if (source0) {
-		space = mix_spaces(space,
-				   obs_source_get_color_space(
-					   source0, OBS_COUNTOF(dual_spaces),
-					   dual_spaces));
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source0,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
 	}
 
 	if (source1) {
-		space = mix_spaces(space,
-				   obs_source_get_color_space(
-					   source1, OBS_COUNTOF(dual_spaces),
-					   dual_spaces));
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source1,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
 	}
 
 	return space;

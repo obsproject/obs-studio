@@ -261,6 +261,7 @@ struct obs_core_video {
 	bool textures_copied[NUM_TEXTURES];
 	bool texture_converted;
 	bool using_nv12_tex;
+	bool using_p010_tex;
 	struct circlebuf vframe_info_buffer;
 	struct circlebuf vframe_info_buffer_gpu;
 	gs_effect_t *default_effect;
@@ -303,6 +304,7 @@ struct obs_core_video {
 	const char *conversion_techs[NUM_CHANNELS];
 	bool conversion_needed;
 	float conversion_width_i;
+	float conversion_height_i;
 
 	uint32_t output_width;
 	uint32_t output_height;
@@ -323,7 +325,8 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
 	struct obs_video_info ovi;
-	uint32_t sdr_white_level;
+	float sdr_white_level;
+	float hdr_nominal_peak_level;
 
 	pthread_mutex_t task_mutex;
 	struct circlebuf tasks;
@@ -341,6 +344,8 @@ struct obs_core_audio {
 	struct circlebuf buffered_timestamps;
 	uint64_t buffering_wait_ticks;
 	int total_buffering_ticks;
+	int max_buffering_ticks;
+	bool fixed_buffer;
 
 	float user_volume;
 
@@ -717,8 +722,10 @@ struct obs_source {
 	bool async_gpu_conversion;
 	enum video_format async_format;
 	bool async_full_range;
+	uint8_t async_trc;
 	enum video_format async_cache_format;
 	bool async_cache_full_range;
+	uint8_t async_cache_trc;
 	enum gs_color_format async_texture_formats[MAX_AV_PLANES];
 	int async_channel_count;
 	long async_rotation;
@@ -872,20 +879,44 @@ static inline bool frame_out_of_bounds(const obs_source_t *source, uint64_t ts)
 }
 
 static inline enum gs_color_format
-convert_video_format(enum video_format format)
+convert_video_format(enum video_format format, enum video_trc trc)
 {
-	switch (format) {
-	case VIDEO_FORMAT_RGBA:
-		return GS_RGBA;
-	case VIDEO_FORMAT_BGRA:
-	case VIDEO_FORMAT_I40A:
-	case VIDEO_FORMAT_I42A:
-	case VIDEO_FORMAT_YUVA:
-	case VIDEO_FORMAT_AYUV:
-		return GS_BGRA;
+	switch (trc) {
+	case VIDEO_TRC_PQ:
+	case VIDEO_TRC_HLG:
+		return GS_RGBA16F;
 	default:
-		return GS_BGRX;
+		switch (format) {
+		case VIDEO_FORMAT_RGBA:
+			return GS_RGBA;
+		case VIDEO_FORMAT_BGRA:
+		case VIDEO_FORMAT_I40A:
+		case VIDEO_FORMAT_I42A:
+		case VIDEO_FORMAT_YUVA:
+		case VIDEO_FORMAT_AYUV:
+			return GS_BGRA;
+		case VIDEO_FORMAT_I010:
+		case VIDEO_FORMAT_P010:
+		case VIDEO_FORMAT_I210:
+		case VIDEO_FORMAT_I412:
+		case VIDEO_FORMAT_YA2L:
+			return GS_RGBA16F;
+		default:
+			return GS_BGRX;
+		}
 	}
+}
+
+static inline enum gs_color_space convert_video_space(enum video_format format,
+						      enum video_trc trc)
+{
+	enum gs_color_space space = GS_CS_SRGB;
+	if (convert_video_format(format, trc) == GS_RGBA16F) {
+		space = (trc == VIDEO_TRC_SRGB) ? GS_CS_SRGB_16F
+						: GS_CS_709_EXTENDED;
+	}
+
+	return space;
 }
 
 extern void obs_source_set_texcoords_centered(obs_source_t *source,

@@ -94,32 +94,32 @@ static const uint8_t mask[][MAX_CMP_SIZE] = {
 
 static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
 	/*
-	* Windows 7
-	* 48 8B 83 B8 3D 00 00                    mov     rax, [rbx+3DB8h]
-	* 44 39 B8 68 50 00 00                    cmp     [rax+5068h], r15d
-	* 75 12                                   jnz     short loc_7FF7AA90530
-	* 41 B8 F9 19 00 00                       mov     r8d, 19F9h
-	*/
+	 * Windows 7
+	 * 48 8B 83 B8 3D 00 00                    mov     rax, [rbx+3DB8h]
+	 * 44 39 B8 68 50 00 00                    cmp     [rax+5068h], r15d
+	 * 75 12                                   jnz     short loc_7FF7AA90530
+	 * 41 B8 F9 19 00 00                       mov     r8d, 19F9h
+	 */
 	{0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x44, 0x39, 0x00, 0x00,
 	 0x00, 0x00, 0x00, 0x75, 0x00, 0x40, 0xB8, 0x00, 0x00, 0x00, 0x00},
 	/*
-	* Windows ???+
-	* 49 8B 87 78 41 00 00                    mov     rax, [r15+4178h]
-	* 39 98 E0 51 00 00                       cmp     [rax+51E0h], ebx
-	* 75 12                                   jnz     short loc_1800AEC9C
-	* 41 B9 C3 1A 00 00                       mov     r9d, 1AC3h
-	*/
+	 * Windows ???+
+	 * 49 8B 87 78 41 00 00                    mov     rax, [r15+4178h]
+	 * 39 98 E0 51 00 00                       cmp     [rax+51E0h], ebx
+	 * 75 12                                   jnz     short loc_1800AEC9C
+	 * 41 B9 C3 1A 00 00                       mov     r9d, 1AC3h
+	 */
 	{0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x39, 0x80, 0x00, 0x00,
 	 0x00, 0x00, 0x75, 0x00, 0x40, 0xB8, 0x00, 0x00, 0x00, 0x00},
 	/*
-	* Windows 10 April 2018
-	* 49 8B 87 58 40 00 00                 mov     rax, [r15+4058h]
-	* 39 98 C0 53 00 00                    cmp     [rax+53C0h], ebx
-	* 75 12                                jnz     short loc_1800A7FEC
-	* 48 8D 15 7F B6 09 00                 lea     rdx, addrErrorMsg
-	*
-	* Note: different instructions, last byte skipped due to MAX_CMP_SIZE
-	*/
+	 * Windows 10 April 2018
+	 * 49 8B 87 58 40 00 00                 mov     rax, [r15+4058h]
+	 * 39 98 C0 53 00 00                    cmp     [rax+53C0h], ebx
+	 * 75 12                                jnz     short loc_1800A7FEC
+	 * 48 8D 15 7F B6 09 00                 lea     rdx, addrErrorMsg
+	 *
+	 * Note: different instructions, last byte skipped due to MAX_CMP_SIZE
+	 */
 	{0x48, 0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x39, 0x80, 0x00, 0x00,
 	 0x00, 0x00, 0x75, 0x00, 0x48, 0x8D, 0x00, 0x00, 0x00, 0x00}};
 
@@ -144,31 +144,31 @@ static const uint8_t mask[][MAX_CMP_SIZE] = {
 
 static const uint8_t mask_cmp[][MAX_CMP_SIZE] = {
 	/*
-	* Windows 7+
-	* 8B 83 E8 29 00 00      mov     eax, [ebx+29E8h]
-	* 39 B0 80 4B 00 00      cmp     [eax+4B80h], esi
-	* 75 14                  jnz     short loc_754CD9E1
-	* 68 F9 19 00 00         push    19F9h
-	*/
+	 * Windows 7+
+	 * 8B 83 E8 29 00 00      mov     eax, [ebx+29E8h]
+	 * 39 B0 80 4B 00 00      cmp     [eax+4B80h], esi
+	 * 75 14                  jnz     short loc_754CD9E1
+	 * 68 F9 19 00 00         push    19F9h
+	 */
 	{0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x39, 0x80, 0x00, 0x00, 0x00, 0x00,
 	 0x75, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00},
 
 	/* Windows 10 Creator's Update+
-	* 8B 86 F8 2B 00 00      mov     eax, [esi+2BF8h]
-	* 83 B8 00 4D 00 00 00   cmp     dword ptr [eax+4D00h], 0
-	* 75 0F                  jnz     short loc_100D793C
-	* 68 C3 1A 00 00         push    1AC3h
-	*/
+	 * 8B 86 F8 2B 00 00      mov     eax, [esi+2BF8h]
+	 * 83 B8 00 4D 00 00 00   cmp     dword ptr [eax+4D00h], 0
+	 * 75 0F                  jnz     short loc_100D793C
+	 * 68 C3 1A 00 00         push    1AC3h
+	 */
 	{0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x83, 0x80, 0x00, 0x00,
 	 0x00, 0x00, 0x00, 0x75, 0x00, 0x68, 0x00, 0x00, 0x00, 0x00},
 
 	/*
-	* Windows 10 April 2018 Update
-	* 8B 86 68 2B 00 00         mov     eax, [esi+2B68h]
-	* 83 B8 F4 4D 00 00 00      cmp     dword ptr [eax+4DF4h], 0
-	* 75 0F                     jnz     short loc_100D9A9C
-	* BA 08 71 01 10            mov     edx, offset errMsg
-	*/
+	 * Windows 10 April 2018 Update
+	 * 8B 86 68 2B 00 00         mov     eax, [esi+2B68h]
+	 * 83 B8 F4 4D 00 00 00      cmp     dword ptr [eax+4DF4h], 0
+	 * 75 0F                     jnz     short loc_100D9A9C
+	 * BA 08 71 01 10            mov     edx, offset errMsg
+	 */
 	{0x8B, 0x80, 0x00, 0x00, 0x00, 0x00, 0x83, 0x80, 0x00, 0x00,
 	 0x00, 0x00, 0x00, 0x75, 0x00, 0xBA, 0x00, 0x00, 0x00, 0x00}};
 
@@ -228,9 +228,9 @@ void get_d3d9_offsets(struct d3d9_offsets *offsets)
 				if (off1 > 0xFFFF || off2 > 0xFFFF)
 					break;
 
-					/* check to make sure offsets actually point
-				 * toward expected data */
 #ifdef _MSC_VER
+				/* check to make sure offsets actually point
+				 * toward expected data */
 				__try {
 					uint8_t *ptr = (uint8_t *)(info.device);
 

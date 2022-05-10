@@ -151,6 +151,8 @@ target_sources(
           crash-report.cpp
           crash-report.hpp
           display-helpers.hpp
+          streaming-helpers.cpp
+          streaming-helpers.hpp
           platform.hpp
           qt-display.cpp
           qt-display.hpp
@@ -171,8 +173,6 @@ target_sources(
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
-          combobox-ignorewheel.cpp
-          combobox-ignorewheel.hpp
           clickable-label.hpp
           double-slider.cpp
           double-slider.hpp

@@ -869,6 +869,10 @@
                     "url": "rtmp://rtmp-wsu.afreecatv.com/app"
                 },
                 {
+                    "name": "South America : Brazil",
+                    "url": "rtmp://rtmp-brz.afreecatv.com/app"
+                },
+                {
                     "name": "Europe : UK",
                     "url": "rtmp://rtmp-uk.afreecatv.com/app"
                 },
@@ -985,7 +989,7 @@
             "servers": [
                 {
                     "name": "Auto",
-                    "url": "rtmp://s-sd.stripst.com/ext"
+                    "url": "rtmp://s-sd.doppiocdn.com/ext"
                 }
             ],
             "recommended": {
@@ -2300,16 +2304,16 @@
             }
         },
         {
-            "name": "Bilibili Live",
+            "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
+            "more_info_link": "https://link.bilibili.com/p/help/index#/tools-tutorial?id=9",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
+            "alt_names": [
+                "Bilibili Live"
+            ],
             "servers": [
                 {
-                    "name": "Default",
+                    "name": "Default | 默认",
                     "url": "rtmp://live-push.bilivideo.com/live-bvc/"
-                },
-                {
-                    "name": "Tencent Cloud",
-                    "url": "rtmp://txy.live-push.bilivideo.com/live-bvc/"
                 }
             ]
         },

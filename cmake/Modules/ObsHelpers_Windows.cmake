@@ -152,8 +152,27 @@ function(setup_target_resources target destination)
 endfunction()
 
 # Helper function to set up specific resource files for targets
-function(add_target_resource target resource destination)
-  _add_target_resource(${ARGV})
+function(add_target_resource)
+  set(target ${ARGV0})
+  set(resource ${ARGV1})
+  set(destination ${ARGV2})
+  if(${ARGC} EQUAL 4)
+    set(optional ${ARGV3})
+  else()
+    set(optional "")
+  endif()
+
+  install(
+    FILES ${resource}
+    DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+    COMPONENT ${target}_Runtime
+    ${optional})
+
+  install(
+    FILES ${resource}
+    DESTINATION ${OBS_DATA_DESTINATION}/${destination}
+    COMPONENT obs_${target}
+    ${optional} EXCLUDE_FROM_ALL)
 
   if(DEFINED ENV{OBS_InstallerTempDir})
     install(
@@ -161,7 +180,7 @@ function(add_target_resource target resource destination)
       DESTINATION
         $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
       COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+      ${optional} EXCLUDE_FROM_ALL)
   endif()
 endfunction()
 
@@ -397,4 +416,41 @@ function(generate_multiarch_installer)
     DIRECTORY "$ENV{OBS_InstallerTempDir}/"
     DESTINATION "."
     USE_SOURCE_PERMISSIONS)
+endfunction()
+
+# Helper function to install header files
+function(install_headers target)
+  install(
+    DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}/"
+    DESTINATION ${OBS_INCLUDE_DESTINATION}
+    COMPONENT obs_libraries
+    EXCLUDE_FROM_ALL FILES_MATCHING
+    PATTERN "*.h"
+    PATTERN "*.hpp"
+    PATTERN "obs-hevc.h" EXCLUDE
+    PATTERN "obs-nix-*.h" EXCLUDE
+    PATTERN "*-posix.h" EXCLUDE
+    PATTERN "audio-monitoring/null" EXCLUDE
+    PATTERN "audio-monitoring/osx" EXCLUDE
+    PATTERN "audio-monitoring/pulse" EXCLUDE
+    PATTERN "util/apple" EXCLUDE
+    PATTERN "cmake" EXCLUDE
+    PATTERN "pkgconfig" EXCLUDE
+    PATTERN "data" EXCLUDE)
+
+  if(ENABLE_HEVC)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
+
+  if(NOT EXISTS "${OBS_INCLUDE_DESTINATION}/obsconfig.h")
+    install(
+      FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
 endfunction()

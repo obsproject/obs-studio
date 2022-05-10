@@ -33,8 +33,8 @@ target_link_libraries(graphics-hook PRIVATE OBS::ipc-util Detours::Detours
 
 if(MSVC)
   target_compile_options(graphics-hook PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-  add_target_resource(graphics-hook "$<TARGET_PDB_FILE:graphics-hook>"
-                      "obs-plugins/win-capture/")
+  add_target_resource(win-capture "$<TARGET_PDB_FILE:graphics-hook>"
+                      "obs-plugins/win-capture/" OPTIONAL)
 endif()
 
 set_target_properties(
@@ -53,22 +53,14 @@ if(TARGET Vulkan::Vulkan)
   target_compile_definitions(graphics-hook PRIVATE COMPILE_VULKAN_HOOK)
 
   add_target_resource(
-    graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json"
+    win-capture "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json"
     "obs-plugins/win-capture/")
   add_target_resource(
-    graphics-hook "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json"
+    win-capture "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json"
     "obs-plugins/win-capture/")
-  add_custom_command(
-    TARGET graphics-hook
-    POST_BUILD
-    COMMAND
-      "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan64.json"
-      "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-plugins/win-capture/obs-vulkan64.json"
-    COMMAND
-      "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_SOURCE_DIR}/obs-vulkan32.json"
-      "${OBS_OUTPUT_DIR}/$<CONFIGURATION>/data/obs-plugins/win-capture/obs-vulkan32.json"
-    VERBATIM)
 endif()
 
-add_target_resource(graphics-hook "$<TARGET_FILE:graphics-hook>"
+add_target_resource(win-capture "$<TARGET_FILE:graphics-hook>"
                     "obs-plugins/win-capture/")
+
+add_dependencies(win-capture graphics-hook)

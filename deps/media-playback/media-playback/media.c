@@ -34,28 +34,42 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NONE;
 	case AV_PIX_FMT_YUV420P:
 		return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:
-		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_YUYV422:
 		return VIDEO_FORMAT_YUY2;
 	case AV_PIX_FMT_YUV422P:
 		return VIDEO_FORMAT_I422;
+	case AV_PIX_FMT_YUV422P10LE:
+		return VIDEO_FORMAT_I210;
 	case AV_PIX_FMT_YUV444P:
 		return VIDEO_FORMAT_I444;
+	case AV_PIX_FMT_YUV444P12LE:
+		return VIDEO_FORMAT_I412;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_YVYU422:
+		return VIDEO_FORMAT_YVYU;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:
 		return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:
-		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_YUVA420P:
 		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUV420P10LE:
+		return VIDEO_FORMAT_I010;
 	case AV_PIX_FMT_YUVA422P:
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case AV_PIX_FMT_YUVA444P12LE:
+		return VIDEO_FORMAT_YA2L;
+#endif
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_P010LE:
+		return VIDEO_FORMAT_P010;
 	default:;
 	}
 
@@ -123,6 +137,9 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
+	case AVCOL_SPC_BT2020_NCL:
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
+						       : VIDEO_CS_2100_PQ;
 	default:
 		return VIDEO_CS_DEFAULT;
 	}
@@ -200,15 +217,19 @@ static inline int get_sws_colorspace(enum AVColorSpace cs)
 		return SWS_CS_ITU709;
 	case AVCOL_SPC_FCC:
 		return SWS_CS_FCC;
+	case AVCOL_SPC_BT470BG:
+		return SWS_CS_ITU624;
 	case AVCOL_SPC_SMPTE170M:
 		return SWS_CS_SMPTE170M;
 	case AVCOL_SPC_SMPTE240M:
 		return SWS_CS_SMPTE240M;
+	case AVCOL_SPC_BT2020_NCL:
+		return SWS_CS_BT2020;
 	default:
 		break;
 	}
 
-	return SWS_CS_ITU601;
+	return SWS_CS_ITU709;
 }
 
 static inline int get_sws_range(enum AVColorRange r)
@@ -412,10 +433,9 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->format = new_format;
 		frame->full_range = new_range == VIDEO_RANGE_FULL;
 
-		success = video_format_get_parameters(new_space, new_range,
-						      frame->color_matrix,
-						      frame->color_range_min,
-						      frame->color_range_max);
+		success = video_format_get_parameters_for_format(
+			new_space, new_range, new_format, frame->color_matrix,
+			frame->color_range_min, frame->color_range_max);
 
 		frame->format = new_format;
 		m->cur_space = new_space;
@@ -437,6 +457,24 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 	frame->height = f->height;
 	frame->flip = flip;
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
+	switch (f->color_trc) {
+	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_GAMMA22:
+	case AVCOL_TRC_GAMMA28:
+	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_SMPTE240M:
+	case AVCOL_TRC_IEC61966_2_1:
+		frame->trc = VIDEO_TRC_SRGB;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		frame->trc = VIDEO_TRC_PQ;
+		break;
+	case AVCOL_TRC_ARIB_STD_B67:
+		frame->trc = VIDEO_TRC_HLG;
+		break;
+	default:
+		frame->trc = VIDEO_TRC_DEFAULT;
+	}
 
 	if (!m->is_local_file && !d->got_first_keyframe) {
 		if (!f->key_frame)

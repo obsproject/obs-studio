@@ -19,6 +19,7 @@
 #define wiz reinterpret_cast<AutoConfig *>(wizard())
 
 using namespace std;
+using namespace json11;
 
 /* ------------------------------------------------------------------------- */
 
@@ -119,28 +120,19 @@ void AutoConfigTestPage::StartRecordingEncoderStage()
 
 void AutoConfigTestPage::GetServers(std::vector<ServerInfo> &servers)
 {
-	OBSDataAutoRelease settings = obs_data_create();
-	obs_data_set_string(settings, "service", wiz->serviceName.c_str());
+	Json root = get_services_json();
+	Json service = get_service_from_json(root, wiz->serviceName.c_str());
 
-	obs_properties_t *ppts = obs_get_service_properties("rtmp_common");
-	obs_property_t *p = obs_properties_get(ppts, "service");
-	obs_property_modified(p, settings);
+	auto &json_services = service["servers"].array_items();
+	for (const Json &server : json_services) {
+		const std::string &name = server["name"].string_value();
+		const std::string &url = server["url"].string_value();
 
-	p = obs_properties_get(ppts, "server");
-	size_t count = obs_property_list_item_count(p);
-	servers.reserve(count);
-
-	for (size_t i = 0; i < count; i++) {
-		const char *name = obs_property_list_item_name(p, i);
-		const char *server = obs_property_list_item_string(p, i);
-
-		if (wiz->CanTestServer(name)) {
-			ServerInfo info(name, server);
+		if (wiz->CanTestServer(name.c_str())) {
+			ServerInfo info(name, url);
 			servers.push_back(info);
 		}
 	}
-
-	obs_properties_destroy(ppts);
 }
 
 static inline void string_depad_key(string &key)
@@ -945,9 +937,9 @@ void AutoConfigTestPage::TestRecordingEncoderThread()
 
 #define ENCODER_TEXT(x) "Basic.Settings.Output.Simple.Encoder." x
 #define ENCODER_SOFTWARE ENCODER_TEXT("Software")
-#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC")
-#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV")
-#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD")
+#define ENCODER_NVENC ENCODER_TEXT("Hardware.NVENC.H264")
+#define ENCODER_QSV ENCODER_TEXT("Hardware.QSV.H264")
+#define ENCODER_AMD ENCODER_TEXT("Hardware.AMD.H264")
 
 #define QUALITY_SAME "Basic.Settings.Output.Simple.RecordingQuality.Stream"
 #define QUALITY_HIGH "Basic.Settings.Output.Simple.RecordingQuality.Small"

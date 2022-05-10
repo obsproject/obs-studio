@@ -18,6 +18,10 @@
 
 #include "c99defs.h"
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 struct os_process_pipe;
 typedef struct os_process_pipe os_process_pipe_t;
 
@@ -31,3 +35,7 @@ EXPORT size_t os_process_pipe_read_err(os_process_pipe_t *pp, uint8_t *data,
 				       size_t len);
 EXPORT size_t os_process_pipe_write(os_process_pipe_t *pp, const uint8_t *data,
 				    size_t len);
+
+#ifdef __cplusplus
+}
+#endif

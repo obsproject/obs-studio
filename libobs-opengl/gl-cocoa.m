@@ -312,6 +312,9 @@ void device_present(gs_device_t *device)
 
 bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(monitor);
+
 	return false;
 }
 

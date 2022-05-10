@@ -27,13 +27,15 @@
 class OBSPropertiesView;
 class OBSBasic;
 
+#include "ui_OBSBasicProperties.h"
+
 class OBSBasicProperties : public QDialog {
 	Q_OBJECT
 
 private:
-	QPointer<OBSQTDisplay> preview;
-
 	OBSBasic *main;
+
+	std::unique_ptr<Ui::OBSBasicProperties> ui;
 	bool acceptClicked;
 
 	OBSSource source;

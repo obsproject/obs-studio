@@ -17,10 +17,4 @@ jobs:
         with:
           submodules: recursive
           fetch-depth: 100
-      - uses: actions/setup-node@v3
-        with:
-          node-version: 16
-      - name: Download Script
-        run: wget -P ./other/ https://raw.githubusercontent.com/obsproject/crowdin-synchronization/0.1.2/dist/upload.mjs
-      - name: Upload English strings to Crowdin
-        run: node ./other/upload.mjs
+      - uses: obsproject/obs-crowdin-sync/upload@0.2.0

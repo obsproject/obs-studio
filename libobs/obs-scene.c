@@ -540,6 +540,7 @@ static inline bool item_is_scene(const struct obs_scene_item *item)
 static inline bool item_texture_enabled(const struct obs_scene_item *item)
 {
 	return crop_enabled(&item->crop) || scale_filter_enabled(item) ||
+	       (item->blend_method == OBS_BLEND_METHOD_SRGB_OFF) ||
 	       !default_blending_enabled(item) ||
 	       (item_is_scene(item) && !item->is_group);
 }
@@ -611,6 +612,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	case GS_CS_709_SCRGB:
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = obs_get_video_sdr_white_level() / 80.f;
 		}
@@ -620,6 +622,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	case GS_CS_709_SCRGB:
 		switch (current_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = 80.f / obs_get_video_sdr_white_level();
 		}
@@ -630,6 +633,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		tech_name = "DrawUpscale";
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			switch (current_space) {
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawUpscaleMultiply";
@@ -638,6 +642,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawUpscaleTonemap";
 				break;
 			case GS_CS_709_SCRGB:
@@ -647,6 +652,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_SCRGB:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawUpscaleMultiplyTonemap";
 				break;
 			case GS_CS_709_EXTENDED:
@@ -656,6 +662,7 @@ static void render_item_texture(struct obs_scene_item *item,
 	} else {
 		switch (source_space) {
 		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
 			switch (current_space) {
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawMultiply";
@@ -664,6 +671,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawTonemap";
 				break;
 			case GS_CS_709_SCRGB:
@@ -673,6 +681,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_709_SCRGB:
 			switch (current_space) {
 			case GS_CS_SRGB:
+			case GS_CS_SRGB_16F:
 				tech_name = "DrawMultiplyTonemap";
 				break;
 			case GS_CS_709_EXTENDED:
@@ -799,7 +808,10 @@ static inline void render_item(struct obs_scene_item *item)
 		}
 	}
 
-	const bool previous = gs_set_linear_srgb(true);
+	const bool linear_srgb =
+		!item->item_render ||
+		(item->blend_method != OBS_BLEND_METHOD_SRGB_OFF);
+	const bool previous = gs_set_linear_srgb(linear_srgb);
 	gs_matrix_push();
 	gs_matrix_mul(&item->draw_transform);
 	if (item->item_render) {
@@ -959,6 +971,7 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	const char *name = obs_data_get_string(item_data, "name");
 	obs_source_t *source;
 	const char *scale_filter_str;
+	const char *blend_method_str;
 	const char *blend_str;
 	struct obs_scene_item *item;
 	bool visible;
@@ -1039,13 +1052,19 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 			item->scale_filter = OBS_SCALE_AREA;
 	}
 
+	blend_method_str = obs_data_get_string(item_data, "blend_method");
+	item->blend_method = OBS_BLEND_METHOD_DEFAULT;
+
+	if (blend_method_str) {
+		if (astrcmpi(blend_method_str, "srgb_off") == 0)
+			item->blend_method = OBS_BLEND_METHOD_SRGB_OFF;
+	}
+
 	blend_str = obs_data_get_string(item_data, "blend_type");
 	item->blend_type = OBS_BLEND_NORMAL;
 
 	if (blend_str) {
-		if (astrcmpi(blend_str, "normal") == 0)
-			item->blend_type = OBS_BLEND_NORMAL;
-		else if (astrcmpi(blend_str, "additive") == 0)
+		if (astrcmpi(blend_str, "additive") == 0)
 			item->blend_type = OBS_BLEND_ADDITIVE;
 		else if (astrcmpi(blend_str, "subtract") == 0)
 			item->blend_type = OBS_BLEND_SUBTRACT;
@@ -1116,6 +1135,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_t *item_data = obs_data_create();
 	const char *name = obs_source_get_name(item->source);
 	const char *scale_filter;
+	const char *blend_method;
 	const char *blend_type;
 	struct vec2 pos = item->pos;
 	struct vec2 scale = item->scale;
@@ -1174,6 +1194,13 @@ static void scene_save_item(obs_data_array_t *array,
 		scale_filter = "disable";
 
 	obs_data_set_string(item_data, "scale_filter", scale_filter);
+
+	if (item->blend_method == OBS_BLEND_METHOD_SRGB_OFF)
+		blend_method = "srgb_off";
+	else
+		blend_method = "default";
+
+	obs_data_set_string(item_data, "blend_method", blend_method);
 
 	if (item->blend_type == OBS_BLEND_NORMAL)
 		blend_type = "normal";
@@ -1482,8 +1509,8 @@ scene_video_get_color_space(void *data, size_t count,
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
 		switch (ovi.colorspace) {
-		case VIDEO_CS_2020_PQ:
-		case VIDEO_CS_2020_HLG:
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
 			canvas_space = GS_CS_709_EXTENDED;
 		}
 	}
@@ -2978,6 +3005,23 @@ enum obs_scale_type obs_sceneitem_get_scale_filter(obs_sceneitem_t *item)
 		       : OBS_SCALE_DISABLE;
 }
 
+void obs_sceneitem_set_blending_method(obs_sceneitem_t *item,
+				       enum obs_blending_method method)
+{
+	if (!obs_ptr_valid(item, "obs_sceneitem_set_blending_method"))
+		return;
+
+	item->blend_method = method;
+}
+
+enum obs_blending_method
+obs_sceneitem_get_blending_method(obs_sceneitem_t *item)
+{
+	return obs_ptr_valid(item, "obs_sceneitem_get_blending_method")
+		       ? item->blend_method
+		       : OBS_BLEND_METHOD_DEFAULT;
+}
+
 void obs_sceneitem_set_blending_mode(obs_sceneitem_t *item,
 				     enum obs_blending_type type)
 {
@@ -3288,6 +3332,15 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	full_unlock(sub_scene);
 	full_unlock(scene);
 
+	struct calldata params;
+	uint8_t stack[128];
+
+	calldata_init_fixed(&params, stack, sizeof(stack));
+	calldata_set_ptr(&params, "scene", scene);
+	calldata_set_ptr(&params, "item", item);
+	signal_handler_signal(scene->source->context.signals, "item_add",
+			      &params);
+
 	/* ------------------------- */
 
 	return item;
@@ -3352,6 +3405,8 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 	obs_sceneitem_t *insert_after = item;
 	obs_sceneitem_t *first;
 	obs_sceneitem_t *last;
+
+	signal_item_remove(item);
 
 	full_lock(scene);
 

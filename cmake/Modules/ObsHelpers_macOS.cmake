@@ -265,50 +265,62 @@ endfunction()
 function(setup_obs_modules target)
 
   get_property(OBS_MODULE_LIST GLOBAL PROPERTY OBS_MODULE_LIST)
-  add_dependencies(${target} ${OBS_MODULE_LIST})
+  list(LENGTH OBS_MODULE_LIST _LEN)
+  if(_LEN GREATER 0)
+    add_dependencies(${target} ${OBS_MODULE_LIST})
 
-  install(
-    TARGETS ${OBS_MODULE_LIST}
-    LIBRARY DESTINATION "PlugIns"
-            COMPONENT obs_plugin_dev
-            EXCLUDE_FROM_ALL)
+    install(
+      TARGETS ${OBS_MODULE_LIST}
+      LIBRARY DESTINATION "PlugIns"
+              COMPONENT obs_plugin_dev
+              EXCLUDE_FROM_ALL)
 
-  install(
-    TARGETS ${OBS_MODULE_LIST}
-    LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
-            COMPONENT obs_plugins
-            NAMELINK_COMPONENT ${target}_Development)
+    install(
+      TARGETS ${OBS_MODULE_LIST}
+      LIBRARY
+        DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/PlugIns
+        COMPONENT obs_plugins
+        NAMELINK_COMPONENT ${target}_Development)
+  endif()
 
   get_property(OBS_SCRIPTING_MODULE_LIST GLOBAL
                PROPERTY OBS_SCRIPTING_MODULE_LIST)
-  add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
+  list(LENGTH OBS_SCRIPTING_MODULE_LIST _LEN)
+  if(_LEN GREATER 0)
+    add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
 
-  install(
-    TARGETS ${OBS_SCRIPTING_MODULE_LIST}
-    LIBRARY DESTINATION "PlugIns"
-            COMPONENT obs_plugin_dev
-            EXCLUDE_FROM_ALL)
-
-  if(TARGET obspython)
     install(
-      FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
-      DESTINATION "Resources"
-      COMPONENT obs_plugin_dev
-      EXCLUDE_FROM_ALL)
-  endif()
+      TARGETS ${OBS_SCRIPTING_MODULE_LIST}
+      LIBRARY DESTINATION "PlugIns"
+              COMPONENT obs_plugin_dev
+              EXCLUDE_FROM_ALL)
 
-  install(TARGETS ${OBS_SCRIPTING_MODULE_LIST}
-          LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
-                  COMPONENT obs_scripting_plugins)
+    if(TARGET obspython)
+      install(
+        FILES "$<TARGET_FILE_DIR:obspython>/obspython.py"
+        DESTINATION "Resources"
+        COMPONENT obs_plugin_dev
+        EXCLUDE_FROM_ALL)
+    endif()
+
+    install(
+      TARGETS ${OBS_SCRIPTING_MODULE_LIST}
+      LIBRARY DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/PlugIns
+              COMPONENT obs_scripting_plugins)
+  endif()
 
   if(TARGET obs-ffmpeg-mux)
     add_dependencies(${target} obs-ffmpeg-mux)
 
+    install(TARGETS obs-ffmpeg-mux
+            RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
+                    COMPONENT obs_plugins)
+
     install(
-      TARGETS obs-ffmpeg-mux
-      RUNTIME DESTINATION "MacOS"
-              COMPONENT obs_plugin_dev
-              EXCLUDE_FROM_ALL)
+      PROGRAMS $<TARGET_FILE:obs-ffmpeg-mux>
+      DESTINATION "MacOS"
+      COMPONENT obs_plugin_dev
+      EXCLUDE_FROM_ALL)
 
     set(_COMMAND
         "/usr/bin/codesign --force --sign \\\"${OBS_BUNDLE_CODESIGN_IDENTITY}\\\" $<$<BOOL:${OBS_CODESIGN_LINKER}>:--options linker-signed > \\\"\${CMAKE_INSTALL_PREFIX}/MacOS/$<TARGET_FILE_NAME:obs-ffmpeg-mux>\\\" > /dev/null"
@@ -319,9 +331,6 @@ function(setup_obs_modules target)
       COMPONENT obs_plugin_dev
       EXCLUDE_FROM_ALL)
 
-    install(TARGETS obs-ffmpeg-mux
-            RUNTIME DESTINATION $<TARGET_FILE_BASE_NAME:obs>.app/Contents/MacOS
-                    COMPONENT obs_plugins)
   endif()
 
   if(TARGET mac-dal-plugin)
@@ -352,7 +361,7 @@ function(setup_obs_bundle target)
     set(_DEPENDENCY_PREFIX \"${CMAKE_PREFIX_PATH}\")
     set(_BUILD_FOR_DISTRIBUTION \"${BUILD_FOR_DISTRIBUTION}\")
     set(_BUNDLENAME \"$<TARGET_FILE_BASE_NAME:${target}>.app\")
-    set(_BUNDLER_COMMAND \"${CMAKE_SOURCE_DIR}/cmake/bundle/macos/dylibbundler\")
+    set(_BUNDLER_COMMAND \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/dylibbundler\")
     set(_CODESIGN_IDENTITY \"${OBS_BUNDLE_CODESIGN_IDENTITY}\")
     set(_CODESIGN_ENTITLEMENTS \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS\")"
     COMPONENT obs_resources)
@@ -471,9 +480,26 @@ function(install_headers target)
     EXCLUDE_FROM_ALL FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
+    PATTERN "obs-hevc.h" EXCLUDE
+    PATTERN "*-windows.h" EXCLUDE
+    PATTERN "*-x11.h" EXCLUDE
+    PATTERN "*-wayland.h" EXCLUDE
+    PATTERN "audio-monitoring/null" EXCLUDE
+    PATTERN "audio-monitoring/win32" EXCLUDE
+    PATTERN "audio-monitoring/pulse" EXCLUDE
+    PATTERN "util/windows" EXCLUDE
     PATTERN "cmake" EXCLUDE
     PATTERN "pkgconfig" EXCLUDE
     PATTERN "data" EXCLUDE)
+
+  if(ENABLE_HEVC)
+    install(
+      FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
+      DESTINATION
+        $<IF:$<BOOL:$<TARGET_PROPERTY:${target},FRAMEWORK>>,Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers,${OBS_INCLUDE_DESTINATION}>
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
+  endif()
 
   install(
     FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"

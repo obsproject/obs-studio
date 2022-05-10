@@ -23,7 +23,20 @@
 #include <stdint.h>
 #include <gio/gio.h>
 
+enum portal_capture_type {
+	PORTAL_CAPTURE_TYPE_MONITOR = 1 << 0,
+	PORTAL_CAPTURE_TYPE_WINDOW = 1 << 1,
+	PORTAL_CAPTURE_TYPE_VIRTUAL = 1 << 2,
+};
+
+enum portal_cursor_mode {
+	PORTAL_CURSOR_MODE_HIDDEN = 1 << 0,
+	PORTAL_CURSOR_MODE_EMBEDDED = 1 << 1,
+	PORTAL_CURSOR_MODE_METADATA = 1 << 2,
+};
+
 uint32_t portal_get_available_capture_types(void);
+uint32_t portal_get_available_cursor_modes(void);
 uint32_t portal_get_screencast_version(void);
 
 GDBusConnection *portal_get_dbus_connection(void);

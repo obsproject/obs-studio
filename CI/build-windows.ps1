@@ -7,8 +7,8 @@ Param(
     [Switch]$BuildInstaller,
     [Switch]$CombinedArchs,
     [String]$BuildDirectory = "build",
-    [ValidateSet("32-bit", "64-bit")]
-    [String]$BuildArch = (Get-CimInstance CIM_OperatingSystem).OSArchitecture,
+    [ValidateSet('x86', 'x64')]
+    [String]$BuildArch = ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem],
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
     [String]$BuildConfiguration = "RelWithDebInfo"
 )
@@ -30,11 +30,11 @@ Param(
 #   -BuildDirectory         : Directory to use for builds
 #                             Default: build64 on 64-bit systems
 #                                      build32 on 32-bit systems
-#   -BuildArch              : Build architecture to use ("32-bit" or "64-bit")
+#   -BuildArch              : Build architecture to use (x86 or x64)
 #   -BuildConfiguration     : Build configuration to use
 #                             Default: RelWithDebInfo
 #   -CombinedArchs          : Create combined packages and installer
-#                             (64-bit and 32-bit) - Default: off
+#                             (x86 and x64) - Default: off
 #   -Package                : Prepare folder structure for installer creation
 #
 # Environment Variables (optional):
@@ -87,16 +87,16 @@ function Build-OBS-Main {
         }
 
         if(!($SkipDependencyChecks.isPresent)) {
-            Install-Dependencies -BuildArch 64-bit
+            Install-Dependencies -BuildArch x64
         }
 
-        Build-OBS -BuildArch 64-bit
+        Build-OBS -BuildArch x64
 
         if(!($SkipDependencyChecks.isPresent)) {
-            Install-Dependencies -BuildArch 32-bit
+            Install-Dependencies -BuildArch x86
         }
 
-        Build-OBS -BuildArch 32-bit
+        Build-OBS -BuildArch x86
     } else {
         if(!($SkipDependencyChecks.isPresent)) {
             Install-Dependencies
@@ -120,7 +120,7 @@ function Print-Usage {
         "-Verbose                 : Enable more verbose build process output"
         "-SkipDependencyChecks    : Skip dependency checks - Default: off",
         "-BuildDirectory          : Directory to use for builds - Default: build64 on 64-bit systems, build32 on 32-bit systems",
-        "-BuildArch               : Build architecture to use ('32-bit' or '64-bit') - Default: local architecture",
+        "-BuildArch               : Build architecture to use (x86 or x64) - Default: local architecture",
         "-BuildConfiguration      : Build configuration to use - Default: RelWithDebInfo",
         "-CombinedArchs           : Create combined packages and installer (64-bit and 32-bit) - Default: off"
         "-Package                 : Prepare folder structure for installer creation"

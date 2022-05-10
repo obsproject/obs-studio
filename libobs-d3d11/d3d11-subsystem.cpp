@@ -72,6 +72,12 @@ static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 	if (!factory1->IsCurrent()) {
 		device->InitFactory();
 		factory1 = device->factory;
+		device->monitor_to_hdr.clear();
+	}
+
+	for (const std::pair<HMONITOR, bool> &pair : device->monitor_to_hdr) {
+		if (pair.first == hMonitor)
+			return pair.second;
 	}
 
 	ComPtr<IDXGIAdapter> adapter;
@@ -86,9 +92,13 @@ static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 			if (SUCCEEDED(output->QueryInterface(&output6))) {
 				DXGI_OUTPUT_DESC1 desc1;
 				if (SUCCEEDED(output6->GetDesc1(&desc1)) &&
-				    desc1.Monitor == hMonitor) {
-					return desc1.ColorSpace ==
-					       DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+				    (desc1.Monitor == hMonitor)) {
+					const bool hdr =
+						desc1.ColorSpace ==
+						DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
+					device->monitor_to_hdr.emplace_back(
+						hMonitor, hdr);
+					return hdr;
 				}
 			}
 		}

@@ -30,30 +30,23 @@
 
 static UInt32 sRefCount = 0;
 
-ULONG HardwarePlugIn_AddRef(CMIOHardwarePlugInRef self)
+ULONG HardwarePlugIn_AddRef(CMIOHardwarePlugInRef)
 {
-	UNUSED_PARAMETER(self);
-
 	sRefCount += 1;
 	DLogFunc(@"sRefCount now = %d", sRefCount);
 	return sRefCount;
 }
 
-ULONG HardwarePlugIn_Release(CMIOHardwarePlugInRef self)
+ULONG HardwarePlugIn_Release(CMIOHardwarePlugInRef)
 {
-	UNUSED_PARAMETER(self);
-
 	sRefCount -= 1;
 	DLogFunc(@"sRefCount now = %d", sRefCount);
 	return sRefCount;
 }
 
-HRESULT HardwarePlugIn_QueryInterface(CMIOHardwarePlugInRef self, REFIID uuid,
+HRESULT HardwarePlugIn_QueryInterface(CMIOHardwarePlugInRef, REFIID uuid,
 				      LPVOID *interface)
 {
-	UNUSED_PARAMETER(self);
-	DLogFunc(@"");
-
 	if (!interface) {
 		DLogFunc(@"Received an empty interface");
 		return E_POINTER;
@@ -85,7 +78,8 @@ HRESULT HardwarePlugIn_QueryInterface(CMIOHardwarePlugInRef self, REFIID uuid,
 }
 
 // I think this is deprecated, seems that HardwarePlugIn_InitializeWithObjectID gets called instead
-OSStatus HardwarePlugIn_Initialize(CMIOHardwarePlugInRef self)
+OSStatus HardwarePlugIn_Initialize(CMIOHardwarePlugInRef self
+				   __attribute__((unused)))
 {
 	DLogFunc(@"ERR self=%p", self);
 	return kCMIOHardwareUnspecifiedError;
@@ -165,20 +159,15 @@ OSStatus HardwarePlugIn_Teardown(CMIOHardwarePlugInRef self)
 
 #pragma mark CMIOObject Operations
 
-void HardwarePlugIn_ObjectShow(CMIOHardwarePlugInRef self,
-			       CMIOObjectID objectID)
+void HardwarePlugIn_ObjectShow(CMIOHardwarePlugInRef self, CMIOObjectID)
 {
-	UNUSED_PARAMETER(objectID);
 	DLogFunc(@"self=%p", self);
 }
 
 Boolean
-HardwarePlugIn_ObjectHasProperty(CMIOHardwarePlugInRef self,
-				 CMIOObjectID objectID,
+HardwarePlugIn_ObjectHasProperty(CMIOHardwarePlugInRef, CMIOObjectID objectID,
 				 const CMIOObjectPropertyAddress *address)
 {
-	UNUSED_PARAMETER(self);
-
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
 
@@ -188,9 +177,6 @@ HardwarePlugIn_ObjectHasProperty(CMIOHardwarePlugInRef self,
 	}
 
 	Boolean answer = [object hasPropertyWithAddress:*address];
-
-	// Disabling Noisy logs
-	// DLogFunc(@"%@(%d) %@ self=%p hasProperty=%d", NSStringFromClass([object class]), objectID, [ObjectStore StringFromPropertySelector:address->mSelector], self, answer);
 
 	return answer;
 }
@@ -220,12 +206,10 @@ OSStatus HardwarePlugIn_ObjectIsPropertySettable(
 }
 
 OSStatus HardwarePlugIn_ObjectGetPropertyDataSize(
-	CMIOHardwarePlugInRef self, CMIOObjectID objectID,
+	CMIOHardwarePlugInRef, CMIOObjectID objectID,
 	const CMIOObjectPropertyAddress *address, UInt32 qualifierDataSize,
 	const void *qualifierData, UInt32 *dataSize)
 {
-	UNUSED_PARAMETER(self);
-
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
 
@@ -238,20 +222,15 @@ OSStatus HardwarePlugIn_ObjectGetPropertyDataSize(
 					 qualifierDataSize:qualifierDataSize
 					     qualifierData:qualifierData];
 
-	// Disabling Noisy logs
-	// DLogFunc(@"%@(%d) %@ self=%p size=%d", NSStringFromClass([object class]), objectID, [ObjectStore StringFromPropertySelector:address->mSelector], self, *dataSize);
-
 	return kCMIOHardwareNoError;
 }
 
 OSStatus HardwarePlugIn_ObjectGetPropertyData(
-	CMIOHardwarePlugInRef self, CMIOObjectID objectID,
+	CMIOHardwarePlugInRef, CMIOObjectID objectID,
 	const CMIOObjectPropertyAddress *address, UInt32 qualifierDataSize,
 	const void *qualifierData, UInt32 dataSize, UInt32 *dataUsed,
 	void *data)
 {
-	UNUSED_PARAMETER(self);
-
 	NSObject<CMIOObject> *object =
 		[OBSDALObjectStore GetObjectWithId:objectID];
 
@@ -266,15 +245,6 @@ OSStatus HardwarePlugIn_ObjectGetPropertyData(
 				  dataSize:dataSize
 				  dataUsed:dataUsed
 				      data:data];
-
-	// Disabling Noisy logs
-	// if ([ObjectStore IsBridgedTypeForSelector:address->mSelector]) {
-	//     id dataObj = (__bridge NSObject *)*static_cast<CFTypeRef*>(data);
-	//     DLogFunc(@"%@(%d) %@ self=%p data(id)=%@", NSStringFromClass([object class]), objectID, [ObjectStore StringFromPropertySelector:address->mSelector], self, dataObj);
-	// } else {
-	//     UInt32 *dataInt = (UInt32 *)data;
-	//     DLogFunc(@"%@(%d) %@ self=%p data(int)=%d", NSStringFromClass([object class]), objectID, [ObjectStore StringFromPropertySelector:address->mSelector], self, *dataInt);
-	// }
 
 	return kCMIOHardwareNoError;
 }
@@ -353,20 +323,14 @@ OSStatus HardwarePlugIn_DeviceStartStream(CMIOHardwarePlugInRef self,
 	return kCMIOHardwareNoError;
 }
 
-OSStatus HardwarePlugIn_DeviceSuspend(CMIOHardwarePlugInRef self,
-				      CMIODeviceID deviceID)
+OSStatus HardwarePlugIn_DeviceSuspend(CMIOHardwarePlugInRef self, CMIODeviceID)
 {
-	UNUSED_PARAMETER(deviceID);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
 
-OSStatus HardwarePlugIn_DeviceResume(CMIOHardwarePlugInRef self,
-				     CMIODeviceID deviceID)
+OSStatus HardwarePlugIn_DeviceResume(CMIOHardwarePlugInRef self, CMIODeviceID)
 {
-	UNUSED_PARAMETER(deviceID);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
@@ -390,67 +354,44 @@ OSStatus HardwarePlugIn_DeviceStopStream(CMIOHardwarePlugInRef self,
 	return kCMIOHardwareNoError;
 }
 
-OSStatus
-HardwarePlugIn_DeviceProcessAVCCommand(CMIOHardwarePlugInRef self,
-				       CMIODeviceID deviceID,
-				       CMIODeviceAVCCommand *ioAVCCommand)
+OSStatus HardwarePlugIn_DeviceProcessAVCCommand(CMIOHardwarePlugInRef self,
+						CMIODeviceID,
+						CMIODeviceAVCCommand *)
 {
-	UNUSED_PARAMETER(deviceID);
-	UNUSED_PARAMETER(ioAVCCommand);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
 
-OSStatus
-HardwarePlugIn_DeviceProcessRS422Command(CMIOHardwarePlugInRef self,
-					 CMIODeviceID deviceID,
-					 CMIODeviceRS422Command *ioRS422Command)
+OSStatus HardwarePlugIn_DeviceProcessRS422Command(CMIOHardwarePlugInRef self,
+						  CMIODeviceID,
+						  CMIODeviceRS422Command *)
 {
-	UNUSED_PARAMETER(deviceID);
-	UNUSED_PARAMETER(ioRS422Command);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareNoError;
 }
 
-OSStatus HardwarePlugIn_StreamDeckPlay(CMIOHardwarePlugInRef self,
-				       CMIOStreamID streamID)
+OSStatus HardwarePlugIn_StreamDeckPlay(CMIOHardwarePlugInRef self, CMIOStreamID)
 {
-	UNUSED_PARAMETER(streamID);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
 
-OSStatus HardwarePlugIn_StreamDeckStop(CMIOHardwarePlugInRef self,
-				       CMIOStreamID streamID)
+OSStatus HardwarePlugIn_StreamDeckStop(CMIOHardwarePlugInRef self, CMIOStreamID)
 {
-	UNUSED_PARAMETER(streamID);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
 
-OSStatus HardwarePlugIn_StreamDeckJog(CMIOHardwarePlugInRef self,
-				      CMIOStreamID streamID, SInt32 speed)
+OSStatus HardwarePlugIn_StreamDeckJog(CMIOHardwarePlugInRef self, CMIOStreamID,
+				      SInt32)
 {
-	UNUSED_PARAMETER(streamID);
-	UNUSED_PARAMETER(speed);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }
 
 OSStatus HardwarePlugIn_StreamDeckCueTo(CMIOHardwarePlugInRef self,
-					CMIOStreamID streamID,
-					Float64 requestedTimecode,
-					Boolean playOnCue)
+					CMIOStreamID, Float64, Boolean)
 {
-	UNUSED_PARAMETER(streamID);
-	UNUSED_PARAMETER(requestedTimecode);
-	UNUSED_PARAMETER(playOnCue);
-
 	DLogFunc(@"self=%p", self);
 	return kCMIOHardwareIllegalOperationError;
 }

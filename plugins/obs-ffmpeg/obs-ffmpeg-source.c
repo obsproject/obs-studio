@@ -117,9 +117,9 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 }
 
 static const char *media_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
+	" (*.mp4 *.ts *.mov *.mxf *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
 static const char *video_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
+	" (*.mp4 *.ts *.mov *.mxf *.flv *.mkv *.avi *.gif *.webm);;";
 static const char *audio_filter = " (*.mp3 *.aac *.ogg *.wav);;";
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
@@ -389,7 +389,7 @@ static void ffmpeg_source_tick(void *data, float seconds)
 #define SRT_PROTO "srt"
 #define RIST_PROTO "rist"
 
-static bool requires_mpegts(char *path)
+static bool requires_mpegts(const char *path)
 {
 	return !astrcmpi_n(path, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
 	       !astrcmpi_n(path, RIST_PROTO, sizeof(RIST_PROTO) - 1);
@@ -401,20 +401,19 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
 
-	char *input;
-	char *input_format;
+	const char *input;
+	const char *input_format;
 
 	bfree(s->input);
 	bfree(s->input_format);
 
 	if (is_local_file) {
-		input = (char *)obs_data_get_string(settings, "local_file");
+		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
 	} else {
-		input = (char *)obs_data_get_string(settings, "input");
-		input_format =
-			(char *)obs_data_get_string(settings, "input_format");
+		input = obs_data_get_string(settings, "input");
+		input_format = obs_data_get_string(settings, "input_format");
 		if (requires_mpegts(input)) {
 			input_format = "mpegts";
 			obs_data_set_string(settings, "input_format", "mpegts");

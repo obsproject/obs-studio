@@ -493,9 +493,9 @@ static inline bool update_colorspace(av_capture *capture,
 
 	frame->full_range = full_range;
 
-	if (!video_format_get_parameters(colorspace, range, frame->color_matrix,
-					 frame->color_range_min,
-					 frame->color_range_max)) {
+	if (!video_format_get_parameters_for_format(
+		    colorspace, range, frame->format, frame->color_matrix,
+		    frame->color_range_min, frame->color_range_max)) {
 		AVLOG(LOG_ERROR,
 		      "Failed to get colorspace parameters for "
 		      "colorspace %u range %u",

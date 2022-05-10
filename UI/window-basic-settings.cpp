@@ -459,6 +459,11 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFile,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileType,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileTime,  SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileSize,  SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advOutSplitFileRstTS, CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack1,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack2,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecTrack3,      CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -532,6 +537,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorSpace,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->sdrWhiteLevel,        SCROLL_CHANGED, ADV_CHANGED);
+	HookWidget(ui->hdrNominalPeakLevel,  SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
 	if (obs_audio_monitoring_available())
@@ -700,6 +706,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	LoadEncoderTypes();
 	LoadColorRanges();
+	LoadColorSpaces();
 	LoadFormats();
 
 	auto ReloadAudioSources = [](void *data, calldata_t *param) {
@@ -780,6 +787,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		this, SLOT(SimpleReplayBufferChanged()));
 	connect(ui->simpleRBSecMax, SIGNAL(valueChanged(int)), this,
 		SLOT(SimpleReplayBufferChanged()));
+	connect(ui->advOutSplitFile, SIGNAL(stateChanged(int)), this,
+		SLOT(AdvOutSplitFileChanged()));
+	connect(ui->advOutSplitFileType, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvOutSplitFileChanged()));
 	connect(ui->advReplayBuf, SIGNAL(toggled(bool)), this,
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advOutRecTrack1, SIGNAL(toggled(bool)), this,
@@ -906,6 +917,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->buttonBox->button(QDialogButtonBox::Cancel)->setIcon(QIcon());
 
 	SimpleRecordingQualityChanged();
+	AdvOutSplitFileChanged();
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
@@ -999,7 +1011,9 @@ void OBSBasicSettings::LoadEncoderTypes()
 
 		const char *streaming_codecs[] = {
 			"h264",
-			//"hevc",
+#ifdef ENABLE_HEVC
+			"hevc",
+#endif
 		};
 		bool is_streaming_codec = false;
 		for (const char *test_codec : streaming_codecs) {
@@ -1027,6 +1041,21 @@ void OBSBasicSettings::LoadColorRanges()
 {
 	ui->colorRange->addItem(CS_PARTIAL_STR, "Partial");
 	ui->colorRange->addItem(CS_FULL_STR, "Full");
+}
+
+#define CS_SRGB_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.sRGB")
+#define CS_709_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.709")
+#define CS_601_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.601")
+#define CS_2100PQ_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2100PQ")
+#define CS_2100HLG_STR QTStr("Basic.Settings.Advanced.Video.ColorSpace.2100HLG")
+
+void OBSBasicSettings::LoadColorSpaces()
+{
+	ui->colorSpace->addItem(CS_SRGB_STR, "sRGB");
+	ui->colorSpace->addItem(CS_709_STR, "709");
+	ui->colorSpace->addItem(CS_601_STR, "601");
+	ui->colorSpace->addItem(CS_2100PQ_STR, "2100PQ");
+	ui->colorSpace->addItem(CS_2100HLG_STR, "2100HLG");
 }
 
 #define AV_FORMAT_DEFAULT_STR \
@@ -1948,6 +1977,16 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 		config_get_string(main->Config(), "AdvOut", "RecMuxerCustom");
 	int tracks = config_get_int(main->Config(), "AdvOut", "RecTracks");
 	int flvTrack = config_get_int(main->Config(), "AdvOut", "FLVTrack");
+	bool splitFile =
+		config_get_bool(main->Config(), "AdvOut", "RecSplitFile");
+	const char *splitFileType =
+		config_get_string(main->Config(), "AdvOut", "RecSplitFileType");
+	int splitFileTime =
+		config_get_int(main->Config(), "AdvOut", "RecSplitFileTime");
+	int splitFileSize =
+		config_get_int(main->Config(), "AdvOut", "RecSplitFileSize");
+	bool splitFileResetTimestamps = config_get_bool(
+		main->Config(), "AdvOut", "RecSplitFileResetTimestamps");
 
 	int typeIndex = (astrcmpi(type, "FFmpeg") == 0) ? 1 : 0;
 	ui->advOutRecType->setCurrentIndex(typeIndex);
@@ -1966,6 +2005,13 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecTrack4->setChecked(tracks & (1 << 3));
 	ui->advOutRecTrack5->setChecked(tracks & (1 << 4));
 	ui->advOutRecTrack6->setChecked(tracks & (1 << 5));
+
+	idx = (astrcmpi(splitFileType, "Size") == 0) ? 1 : 0;
+	ui->advOutSplitFile->setChecked(splitFile);
+	ui->advOutSplitFileType->setCurrentIndex(idx);
+	ui->advOutSplitFileTime->setValue(splitFileTime);
+	ui->advOutSplitFileSize->setValue(splitFileSize);
+	ui->advOutSplitFileRstTS->setChecked(splitFileResetTimestamps);
 
 	switch (flvTrack) {
 	case 1:
@@ -2514,6 +2560,35 @@ void OBSBasicSettings::LoadAudioSettings()
 	loading = false;
 }
 
+void OBSBasicSettings::UpdateColorFormatSpaceWarning()
+{
+	const QString text = ui->colorFormat->currentText();
+	switch (ui->colorSpace->currentIndex()) {
+	case 3: /* Rec.2100 (PQ) */
+	case 4: /* Rec.2100 (HLG) */
+		if (text == "P010") {
+			ui->advancedMsg2->clear();
+		} else if (text == "I010") {
+			ui->advancedMsg2->setText(
+				QTStr("Basic.Settings.Advanced.FormatWarning"));
+		} else {
+			ui->advancedMsg2->setText(QTStr(
+				"Basic.Settings.Advanced.FormatWarning2100"));
+		}
+		break;
+	default:
+		if (text == "NV12") {
+			ui->advancedMsg2->clear();
+		} else if ((text == "I010") || (text == "P010")) {
+			ui->advancedMsg2->setText(QTStr(
+				"Basic.Settings.Advanced.FormatWarning10BitSdr"));
+		} else {
+			ui->advancedMsg2->setText(
+				QTStr("Basic.Settings.Advanced.FormatWarning"));
+		}
+	}
+}
+
 void OBSBasicSettings::LoadAdvancedSettings()
 {
 	const char *videoColorFormat =
@@ -2524,6 +2599,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 		config_get_string(main->Config(), "Video", "ColorRange");
 	uint32_t sdrWhiteLevel = (uint32_t)config_get_uint(
 		main->Config(), "Video", "SdrWhiteLevel");
+	uint32_t hdrNominalPeakLevel = (uint32_t)config_get_uint(
+		main->Config(), "Video", "HdrNominalPeakLevel");
 
 	QString monDevName;
 	QString monDevId;
@@ -2592,10 +2669,13 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->autoRemux->setChecked(autoRemux);
 	ui->dynBitrate->setChecked(dynBitrate);
 
+	UpdateColorFormatSpaceWarning();
+
 	SetComboByName(ui->colorFormat, videoColorFormat);
-	SetComboByName(ui->colorSpace, videoColorSpace);
+	SetComboByValue(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
 	ui->sdrWhiteLevel->setValue(sdrWhiteLevel);
+	ui->hdrNominalPeakLevel->setValue(hdrNominalPeakLevel);
 
 	if (!SetComboByValue(ui->bindToIP, bindIP))
 		SetInvalidValue(ui->bindToIP, bindIP, bindIP);
@@ -3299,9 +3379,10 @@ void OBSBasicSettings::SaveAdvancedSettings()
 #endif
 
 	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
-	SaveCombo(ui->colorSpace, "Video", "ColorSpace");
+	SaveComboData(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
 	SaveSpinBox(ui->sdrWhiteLevel, "Video", "SdrWhiteLevel");
+	SaveSpinBox(ui->hdrNominalPeakLevel, "Video", "HdrNominalPeakLevel");
 	if (obs_audio_monitoring_available()) {
 		SaveCombo(ui->monitoringDevice, "Audio",
 			  "MonitoringDeviceName");
@@ -3367,6 +3448,14 @@ static inline const char *RecTypeFromIdx(int idx)
 		return "FFmpeg";
 	else
 		return "Standard";
+}
+
+static inline const char *SplitFileTypeFromIdx(int idx)
+{
+	if (idx == 1)
+		return "Size";
+	else
+		return "Time";
 }
 
 static void WriteJsonData(OBSPropertiesView *view, const char *path)
@@ -3504,6 +3593,14 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
+	SaveCheckBox(ui->advOutSplitFile, "AdvOut", "RecSplitFile");
+	config_set_string(
+		main->Config(), "AdvOut", "RecSplitFileType",
+		SplitFileTypeFromIdx(ui->advOutSplitFileType->currentIndex()));
+	SaveSpinBox(ui->advOutSplitFileTime, "AdvOut", "RecSplitFileTime");
+	SaveSpinBox(ui->advOutSplitFileSize, "AdvOut", "RecSplitFileSize");
+	SaveCheckBox(ui->advOutSplitFileRstTS, "AdvOut",
+		     "RecSplitFileResetTimestamps");
 
 	config_set_int(
 		main->Config(), "AdvOut", "RecTracks",
@@ -4026,15 +4123,14 @@ void OBSBasicSettings::on_advOutFFType_currentIndexChanged(int idx)
 	ui->advOutFFNoSpace->setHidden(idx != 0);
 }
 
-void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &text)
+void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &)
 {
-	bool usingNV12 = text == "NV12";
+	UpdateColorFormatSpaceWarning();
+}
 
-	if (usingNV12)
-		ui->advancedMsg2->setText(QString());
-	else
-		ui->advancedMsg2->setText(
-			QTStr("Basic.Settings.Advanced.FormatWarning"));
+void OBSBasicSettings::on_colorSpace_currentIndexChanged(const QString &)
+{
+	UpdateColorFormatSpaceWarning();
 }
 
 #define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"
@@ -4498,6 +4594,20 @@ void OBSBasicSettings::AdvancedChanged()
 	}
 }
 
+void OBSBasicSettings::AdvOutSplitFileChanged()
+{
+	bool splitFile = ui->advOutSplitFile->isChecked();
+	int splitFileType = splitFile ? ui->advOutSplitFileType->currentIndex()
+				      : -1;
+
+	ui->advOutSplitFileType->setEnabled(splitFile);
+	ui->advOutSplitFileTimeLabel->setVisible(splitFileType == 0);
+	ui->advOutSplitFileTime->setVisible(splitFileType == 0);
+	ui->advOutSplitFileSizeLabel->setVisible(splitFileType == 1);
+	ui->advOutSplitFileSize->setVisible(splitFileType == 1);
+	ui->advOutSplitFileRstTS->setVisible(splitFile);
+}
+
 void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
 	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
@@ -4652,14 +4762,17 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 	ui->simpleOutRecEncoder->addItem(ENCODER_STR("SoftwareLowCPU"),
 					 QString(SIMPLE_ENCODER_X264_LOWCPU));
 	if (EncoderAvailable("obs_qsv11"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.QSV"),
-						 QString(SIMPLE_ENCODER_QSV));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
 	if (EncoderAvailable("ffmpeg_nvenc"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.NVENC"),
-						 QString(SIMPLE_ENCODER_NVENC));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
 	if (EncoderAvailable("amd_amf_h264"))
-		ui->simpleOutRecEncoder->addItem(ENCODER_STR("Hardware.AMD"),
-						 QString(SIMPLE_ENCODER_AMD));
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
 #undef ADD_QUALITY
 }
 
@@ -4668,14 +4781,17 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
 					 QString(SIMPLE_ENCODER_X264));
 	if (EncoderAvailable("obs_qsv11"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.QSV"),
-						 QString(SIMPLE_ENCODER_QSV));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
 	if (EncoderAvailable("ffmpeg_nvenc"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.NVENC"),
-						 QString(SIMPLE_ENCODER_NVENC));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
 	if (EncoderAvailable("amd_amf_h264"))
-		ui->simpleOutStrEncoder->addItem(ENCODER_STR("Hardware.AMD"),
-						 QString(SIMPLE_ENCODER_AMD));
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
 #undef ENCODER_STR
 }
 

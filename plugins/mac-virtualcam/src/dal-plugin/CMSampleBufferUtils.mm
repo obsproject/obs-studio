@@ -81,11 +81,8 @@ OSStatus CMSampleBufferCreateFromData(NSSize size,
 	return noErr;
 }
 
-static void releaseNSData(void *o, void *block, size_t size)
+static void releaseNSData(void *o, void *, size_t)
 {
-	UNUSED_PARAMETER(block);
-	UNUSED_PARAMETER(size);
-
 	NSData *data = (__bridge_transfer NSData *)o;
 	data = nil; // Assuming ARC is enabled
 }

@@ -18,6 +18,9 @@
 #include "ffmpeg-decode.h"
 #include "obs-ffmpeg-compat.h"
 #include <obs-avc.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
 #define USE_NEW_HARDWARE_CODEC_METHOD
@@ -140,6 +143,8 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_YUYV422:
 		return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_YVYU422:
+		return VIDEO_FORMAT_YVYU;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
 	case AV_PIX_FMT_YUV422P:
@@ -149,8 +154,12 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
+	case AV_PIX_FMT_YUV420P10LE:
+		return VIDEO_FORMAT_I010;
 	case AV_PIX_FMT_BGR0:
 		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_P010LE:
+		return VIDEO_FORMAT_P010;
 	default:;
 	}
 
@@ -289,6 +298,9 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
+	case AVCOL_SPC_BT2020_NCL:
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
+						       : VIDEO_CS_2100_PQ;
 	default:
 		return VIDEO_CS_DEFAULT;
 	}
@@ -326,9 +338,17 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	packet->size = (int)size;
 	packet->pts = *ts;
 
-	if (decode->codec->id == AV_CODEC_ID_H264 &&
-	    obs_avc_keyframe(data, size))
-		packet->flags |= AV_PKT_FLAG_KEY;
+	switch (decode->codec->id) {
+	case AV_CODEC_ID_H264:
+		if (obs_avc_keyframe(data, size))
+			packet->flags |= AV_PKT_FLAG_KEY;
+#ifdef ENABLE_HEVC
+		break;
+	case AV_CODEC_ID_HEVC:
+		if (obs_hevc_keyframe(data, size))
+			packet->flags |= AV_PKT_FLAG_KEY;
+#endif
+	}
 
 	ret = avcodec_send_packet(decode->decoder, packet);
 	if (ret == 0) {
@@ -361,7 +381,9 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 		frame->linesize[i] = decode->frame->linesize[i];
 	}
 
-	frame->format = convert_pixel_format(decode->frame->format);
+	const enum video_format format =
+		convert_pixel_format(decode->frame->format);
+	frame->format = format;
 
 	if (range == VIDEO_RANGE_DEFAULT) {
 		range = (decode->frame->color_range == AVCOL_RANGE_JPEG)
@@ -372,8 +394,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	const enum video_colorspace cs = convert_color_space(
 		decode->frame->colorspace, decode->frame->color_trc);
 
-	const bool success = video_format_get_parameters(
-		cs, range, frame->color_matrix, frame->color_range_min,
+	const bool success = video_format_get_parameters_for_format(
+		cs, range, format, frame->color_matrix, frame->color_range_min,
 		frame->color_range_max);
 	if (!success) {
 		blog(LOG_ERROR,
@@ -390,6 +412,25 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	frame->width = decode->frame->width;
 	frame->height = decode->frame->height;
 	frame->flip = false;
+
+	switch (decode->frame->color_trc) {
+	case AVCOL_TRC_BT709:
+	case AVCOL_TRC_GAMMA22:
+	case AVCOL_TRC_GAMMA28:
+	case AVCOL_TRC_SMPTE170M:
+	case AVCOL_TRC_SMPTE240M:
+	case AVCOL_TRC_IEC61966_2_1:
+		frame->trc = VIDEO_TRC_SRGB;
+		break;
+	case AVCOL_TRC_SMPTE2084:
+		frame->trc = VIDEO_TRC_PQ;
+		break;
+	case AVCOL_TRC_ARIB_STD_B67:
+		frame->trc = VIDEO_TRC_HLG;
+		break;
+	default:
+		frame->trc = VIDEO_TRC_DEFAULT;
+	}
 
 	if (frame->format == VIDEO_FORMAT_NONE)
 		return false;

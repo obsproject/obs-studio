@@ -33,6 +33,32 @@ Video Handler
 
    - VIDEO_FORMAT_I444
 
+   - VIDEO_FORMAT_BGR3
+
+   - VIDEO_FORMAT_I422
+
+   - VIDEO_FORMAT_I40A
+
+   - VIDEO_FORMAT_I42A
+
+   - VIDEO_FORMAT_YUVA
+
+   - VIDEO_FORMAT_AYUV
+
+   - VIDEO_FORMAT_I010
+   - VIDEO_FORMAT_P010
+
+---------------------
+
+.. type:: enum video_trc
+
+   Transfer characteristics.  Can be one of the following values:
+
+   - VIDEO_TRC_DEFAULT - sRGB TRC for SDR, PQ TRC for HDR
+   - VIDEO_TRC_SRGB    - sRGB TRC
+   - VIDEO_TRC_PQ      - PQ
+   - VIDEO_TRC_HLG     - HLG
+
 ---------------------
 
 .. type:: enum video_colorspace
@@ -43,8 +69,8 @@ Video Handler
    - VIDEO_CS_601      - Rec. 601 color space
    - VIDEO_CS_709      - Rec. 709 color space
    - VIDEO_CS_SRGB     - sRGB color space
-   - VIDEO_CS_2020_PQ  - Rec. 2020 color space, PQ transfer
-   - VIDEO_CS_2020_HLG - Rec. 2020 color space, HLG transfer
+   - VIDEO_CS_2100_PQ  - Rec. 2100 color space, PQ transfer
+   - VIDEO_CS_2100_HLG - Rec. 2100 color space, HLG transfer
 
 ---------------------
 
@@ -99,6 +125,19 @@ Video Handler
 
    :param color_space: Color space to convert
    :param range:       Color range to convert
+   :param matrix:      Pointer to the matrix
+   :param min_range:   Pointer to get the minimum range value
+   :param max_range:   Pointer to get the maximum range value
+
+---------------------
+
+.. function:: bool video_format_get_parameters_for_format(enum video_colorspace color_space, enum video_range_type range, enum video_format format, float matrix[16], float min_range[3], float max_range[3])
+
+   Converts a color space/range to matrix/min/max values for a given video format.
+
+   :param color_space: Color space to convert
+   :param range:       Color range to convert
+   :param format:      Video format
    :param matrix:      Pointer to the matrix
    :param min_range:   Pointer to get the minimum range value
    :param max_range:   Pointer to get the maximum range value

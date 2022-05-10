@@ -750,6 +750,14 @@ inline void VolumeMeter::resetLevels()
 bool VolumeMeter::needLayoutChange()
 {
 	int currentNrAudioChannels = obs_volmeter_get_nr_channels(obs_volmeter);
+
+	if (!currentNrAudioChannels) {
+		struct obs_audio_info oai;
+		obs_get_audio_info(&oai);
+		currentNrAudioChannels = (oai.speakers == SPEAKERS_MONO) ? 1
+									 : 2;
+	}
+
 	if (displayNrAudioChannels != currentNrAudioChannels) {
 		displayNrAudioChannels = currentNrAudioChannels;
 		recalculateLayout = true;
@@ -758,8 +766,9 @@ bool VolumeMeter::needLayoutChange()
 	return recalculateLayout;
 }
 
-// When this is called from the constructor, obs_volmeter_get_nr_channels returns 1
-// and Q_PROPERTY settings have not yet been read from the stylesheet.
+// When this is called from the constructor, obs_volmeter_get_nr_channels has not
+// yet been called and Q_PROPERTY settings have not yet been read from the
+// stylesheet.
 inline void VolumeMeter::doLayout()
 {
 	QMutexLocker locker(&dataMutex);

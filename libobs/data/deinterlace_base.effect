@@ -16,8 +16,11 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float multiplier;
 
 uniform texture2d previous_image;
 uniform float2 dimensions;
@@ -264,12 +267,59 @@ VertData VSDefault(VertData v_in)
 	return vert_out;
 }
 
-#define TECHNIQUE(rgba_ps) \
+#define TECHNIQUE(rgba_ps, rgba_ps_multiply, rgba_ps_tonemap, rgba_ps_multiply_tonemap) \
+float4 rgba_ps_multiply(VertData v_in) : TARGET \
+{ \
+	float4 rgba = rgba_ps(v_in); \
+	rgba.rgb *= multiplier; \
+	return rgba; \
+} \
+float4 rgba_ps_tonemap(VertData v_in) : TARGET \
+{ \
+	float4 rgba = rgba_ps(v_in); \
+	rgba.rgb = rec709_to_rec2020(rgba.rgb); \
+	rgba.rgb = reinhard(rgba.rgb); \
+	rgba.rgb = rec2020_to_rec709(rgba.rgb); \
+	return rgba; \
+} \
+float4 rgba_ps_multiply_tonemap(VertData v_in) : TARGET \
+{ \
+	float4 rgba = rgba_ps(v_in); \
+	rgba.rgb *= multiplier; \
+	rgba.rgb = rec709_to_rec2020(rgba.rgb); \
+	rgba.rgb = reinhard(rgba.rgb); \
+	rgba.rgb = rec2020_to_rec709(rgba.rgb); \
+	return rgba; \
+} \
 technique Draw \
 { \
 	pass \
 	{ \
 		vertex_shader = VSDefault(v_in); \
 		pixel_shader  = rgba_ps(v_in); \
+	} \
+} \
+technique DrawMultiply \
+{ \
+	pass \
+	{ \
+		vertex_shader = VSDefault(v_in); \
+		pixel_shader  = rgba_ps_multiply(v_in); \
+	} \
+} \
+technique DrawTonemap \
+{ \
+	pass \
+	{ \
+		vertex_shader = VSDefault(v_in); \
+		pixel_shader  = rgba_ps_tonemap(v_in); \
+	} \
+} \
+technique DrawMultiplyTonemap \
+{ \
+	pass \
+	{ \
+		vertex_shader = VSDefault(v_in); \
+		pixel_shader  = rgba_ps_multiply_tonemap(v_in); \
 	} \
 }

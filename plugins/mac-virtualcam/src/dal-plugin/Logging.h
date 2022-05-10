@@ -27,8 +27,8 @@
 #define DLogFunc(fmt, ...) \
 	NSLog((PLUGIN_NAME @"(DAL): %s " fmt), __FUNCTION__, ##__VA_ARGS__)
 #else
-#define DLog(fmt, ...) (void)(fmt, ##__VA_ARGS__)
-#define DLogFunc(fmt, ...) (void)(fmt, __FUNCTION__, ##__VA_ARGS__)
+#define DLog(...) (void)sizeof(__VA_ARGS__)
+#define DLogFunc(...) (void)sizeof(__VA_ARGS__)
 #endif
 
 #define VLog(fmt, ...)

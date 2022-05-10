@@ -27,6 +27,7 @@ struct ffmpeg_cfg {
 	enum AVColorPrimaries color_primaries;
 	enum AVColorTransferCharacteristic color_trc;
 	enum AVColorSpace colorspace;
+	int max_luminance;
 	int scale_width;
 	int scale_height;
 	int width;
