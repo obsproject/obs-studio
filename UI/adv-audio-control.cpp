@@ -639,8 +639,7 @@ static inline void setMixer(obs_source_t *source, const int mixerIdx,
 	OBSBasic::Get()->undo_s.add_action(
 		QTStr("Undo.Mixers.Change").arg(name),
 		std::bind(undo_redo, std::placeholders::_1, mixers),
-		std::bind(undo_redo, std::placeholders::_1, new_mixers), name,
-		name);
+		std::bind(undo_redo, std::placeholders::_1, new_mixers), name,name);
 }
 
 void OBSAdvAudioCtrl::mixer1Changed(bool checked)
