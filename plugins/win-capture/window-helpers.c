@@ -509,8 +509,10 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 	if (IsWindowCloaked(window))
 		return TRUE;
 
-	const int rating = window_rating(window, data->priority, data->class,
-					 data->title, data->exe,
+	HWND check_rate = is_uwp_window(window) ? get_uwp_actual_window(window)
+						: window;
+	const int rating = window_rating(check_rate, data->priority,
+					 data->class, data->title, data->exe,
 					 data->generic_class);
 	if (rating < data->best_rating) {
 		data->best_rating = rating;
