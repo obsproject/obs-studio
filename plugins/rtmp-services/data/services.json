@@ -2600,6 +2600,20 @@
                 "max video bitrate": 9000,
                 "max audio bitrate": 128
             }
+        },
+        {
+            "name": "Sympla",
+            "servers": [
+                {
+                    "name": "Sympla RTMP",
+                    "url": "rtmp://rtmp.sympla.com.br:5222/app"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 5000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
