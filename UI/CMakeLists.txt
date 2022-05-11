@@ -188,6 +188,8 @@ target_sources(
           focus-list.hpp
           hotkey-edit.cpp
           hotkey-edit.hpp
+          lineedit-autoresize.cpp
+          lineedit-autoresize.hpp
           locked-checkbox.cpp
           locked-checkbox.hpp
           log-viewer.cpp
