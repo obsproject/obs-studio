@@ -25,6 +25,7 @@
 
 #include <sys/types.h>
 #include <sys/stat.h>
+#include "../obs-ffmpeg-compat.h"
 
 #if LIBAVCODEC_VERSION_MAJOR >= 58
 #define CODEC_FLAG_GLOBAL_H AV_CODEC_FLAG_GLOBAL_HEADER
