@@ -153,7 +153,7 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 	}
 }
 
-static void input_and_output(struct audio_output *audio, uint64_t audio_time,
+static bool input_and_output(struct audio_output *audio, uint64_t audio_time,
 			     uint64_t prev_time)
 {
 	size_t bytes = AUDIO_OUTPUT_FRAMES * audio->block_size;
@@ -191,7 +191,7 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	success = audio->input_cb(audio->input_param, prev_time, audio_time,
 				  &new_ts, active_mixes, data);
 	if (!success)
-		return;
+		return false;
 
 	/* clamps audio data to -1.0..1.0 */
 	clamp_audio_output(audio, bytes);
@@ -199,6 +199,8 @@ static void input_and_output(struct audio_output *audio, uint64_t audio_time,
 	/* output */
 	for (size_t i = 0; i < MAX_AUDIO_MIXES; i++)
 		do_audio_output(audio, i, new_ts, AUDIO_OUTPUT_FRAMES);
+
+	return true;
 }
 
 static void *audio_thread(void *param)
@@ -217,6 +219,7 @@ static void *audio_thread(void *param)
 	uint32_t audio_wait_time =
 		(uint32_t)(audio_frames_to_ns(rate, AUDIO_OUTPUT_FRAMES) /
 			   1000000);
+	int wait_cycles = 0;
 
 	os_set_thread_name("audio-io: audio thread");
 
@@ -227,18 +230,31 @@ static void *audio_thread(void *param)
 	while (os_event_try(audio->stop_event) == EAGAIN) {
 		uint64_t cur_time;
 
-		os_sleep_ms(audio_wait_time);
+		if (wait_cycles > 0) {
+			os_sleep_ms(audio_wait_time / 2);
+			wait_cycles--;
+		} else {
+			os_sleep_ms(audio_wait_time);
+		}
 
 		profile_start(audio_thread_name);
 
 		cur_time = os_gettime_ns();
 		while (audio_time <= cur_time) {
-			samples += AUDIO_OUTPUT_FRAMES;
-			audio_time =
-				start_time + audio_frames_to_ns(rate, samples);
+			uint64_t new_samples = samples + AUDIO_OUTPUT_FRAMES;
+			uint64_t new_audio_time =
+				start_time +
+				audio_frames_to_ns(rate, new_samples);
 
-			input_and_output(audio, audio_time, prev_time);
-			prev_time = audio_time;
+			if (input_and_output(audio, new_audio_time,
+					     prev_time)) {
+				samples = new_samples;
+				audio_time = new_audio_time;
+				prev_time = audio_time;
+			} else {
+				os_sleep_ms(audio_wait_time / 2);
+				wait_cycles++;
+			}
 		}
 
 		profile_end(audio_thread_name);
