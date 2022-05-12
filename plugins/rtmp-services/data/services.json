@@ -211,6 +211,13 @@
                 {
                     "name": "Backup YouTube ingest server",
                     "url": "https://b.upload.youtube.com/http_upload_hls?cid={stream_key}&copy=1&file=out.m3u8"
+                },
+                {
+                    "name": "Both Primary and Backup YouTube ingest servers",
+                    "url": "https://a.upload.youtube.com/http_upload_hls?cid={stream_key}&copy=0&file=out.m3u8",
+                    "backup_urls": [
+                        "https://b.upload.youtube.com/http_upload_hls?cid={stream_key}&copy=1&file=out.m3u8"
+                    ]
                 }
             ],
             "recommended": {
@@ -237,6 +244,13 @@
                 {
                     "name": "Backup YouTube ingest server",
                     "url": "rtmps://b.rtmps.youtube.com:443/live2?backup=1"
+                },
+                {
+                    "name": "Both Primary & Backup YouTube ingest servers",
+                    "url": "rtmps://a.rtmps.youtube.com:443/live2",
+                    "backup_urls": [
+                        "rtmps://b.rtmps.youtube.com:443/live2?backup=1"
+                    ]
                 },
                 {
                     "name": "Primary YouTube ingest server (legacy RTMP)",
