@@ -56,9 +56,15 @@ struct gs_image_file3 {
 	enum gs_image_alpha_mode alpha_mode;
 };
 
+struct gs_image_file4 {
+	struct gs_image_file3 image3;
+	enum gs_color_space space;
+};
+
 typedef struct gs_image_file gs_image_file_t;
 typedef struct gs_image_file2 gs_image_file2_t;
 typedef struct gs_image_file3 gs_image_file3_t;
+typedef struct gs_image_file4 gs_image_file4_t;
 
 EXPORT void gs_image_file_init(gs_image_file_t *image, const char *file);
 EXPORT void gs_image_file_free(gs_image_file_t *image);
@@ -81,6 +87,13 @@ EXPORT bool gs_image_file3_tick(gs_image_file3_t *if3,
 				uint64_t elapsed_time_ns);
 EXPORT void gs_image_file3_update_texture(gs_image_file3_t *if3);
 
+EXPORT void gs_image_file4_init(gs_image_file4_t *if4, const char *file,
+				enum gs_image_alpha_mode alpha_mode);
+
+EXPORT bool gs_image_file4_tick(gs_image_file4_t *if4,
+				uint64_t elapsed_time_ns);
+EXPORT void gs_image_file4_update_texture(gs_image_file4_t *if4);
+
 static void gs_image_file2_free(gs_image_file2_t *if2)
 {
 	gs_image_file_free(&if2->image);
@@ -100,6 +113,16 @@ static void gs_image_file3_free(gs_image_file3_t *if3)
 static void gs_image_file3_init_texture(gs_image_file3_t *if3)
 {
 	gs_image_file2_init_texture(&if3->image2);
+}
+
+static void gs_image_file4_free(gs_image_file4_t *if4)
+{
+	gs_image_file3_free(&if4->image3);
+}
+
+static void gs_image_file4_init_texture(gs_image_file4_t *if4)
+{
+	gs_image_file3_init_texture(&if4->image3);
 }
 
 #ifdef __cplusplus
