@@ -1505,21 +1505,14 @@ scene_video_get_color_space(void *data, size_t count,
 {
 	UNUSED_PARAMETER(data);
 
-	enum gs_color_space canvas_space = GS_CS_SRGB;
+	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
 		switch (ovi.colorspace) {
 		case VIDEO_CS_2100_PQ:
 		case VIDEO_CS_2100_HLG:
-			canvas_space = GS_CS_709_EXTENDED;
+			space = GS_CS_709_EXTENDED;
 		}
-	}
-
-	enum gs_color_space space = canvas_space;
-	for (size_t i = 0; i < count; ++i) {
-		space = preferred_spaces[i];
-		if (space == canvas_space)
-			break;
 	}
 
 	return space;
