@@ -39,6 +39,7 @@ bool obs_module_load(void)
 
 	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_register_source(&xshm_input);
+		xcomposite_load();
 		break;
 
 #ifdef ENABLE_WAYLAND
@@ -52,6 +53,7 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_GLX)
+	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_GLX ||
+	    obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
 		xcomposite_unload();
 }
