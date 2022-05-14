@@ -650,6 +650,17 @@ static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
 					  fds, strides, offsets, modifiers);
 }
 
+static struct gs_texture *gl_x11_egl_device_texture_create_from_pixmap(
+	gs_device_t *device, uint32_t width, uint32_t height,
+	enum gs_color_format color_format, uint32_t target, void *pixmap)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_texture_from_pixmap(plat->edisplay, width, height,
+						 color_format, target,
+						 (EGLClientBuffer)pixmap);
+}
+
 static bool gl_x11_egl_device_query_dmabuf_capabilities(
 	gs_device_t *device, enum gs_dmabuf_flags *dmabuf_flags,
 	uint32_t **drm_formats, size_t *n_formats)
@@ -691,6 +702,8 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 		gl_x11_egl_device_query_dmabuf_capabilities,
 	.device_query_dmabuf_modifiers_for_format =
 		gl_x11_egl_device_query_dmabuf_modifiers_for_format,
+	.device_texture_create_from_pixmap =
+		gl_x11_egl_device_texture_create_from_pixmap,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)

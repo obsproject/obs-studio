@@ -177,6 +177,31 @@ create_dmabuf_egl_image(EGLDisplay egl_display, unsigned int width,
 			      EGL_LINUX_DMA_BUF_EXT, 0, attribs);
 }
 
+struct gs_texture *gl_egl_create_texture_from_eglimage(
+	EGLDisplay egl_display, uint32_t width, uint32_t height,
+	enum gs_color_format color_format, EGLint target, EGLImage image)
+{
+	UNUSED_PARAMETER(target);
+	struct gs_texture *texture = NULL;
+	texture = gs_texture_create(width, height, color_format, 1, NULL,
+				    GS_DYNAMIC);
+	const GLuint gltex = *(GLuint *)gs_texture_get_obj(texture);
+
+	gl_bind_texture(GL_TEXTURE_2D, gltex);
+	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, image);
+	if (!gl_success("glEGLImageTargetTexture2DOES")) {
+		gs_texture_destroy(texture);
+		texture = NULL;
+	}
+
+	gl_bind_texture(GL_TEXTURE_2D, 0);
+
+	return texture;
+}
+
 struct gs_texture *
 gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 			   unsigned int height, uint32_t drm_format,
@@ -199,24 +224,42 @@ gl_egl_create_dmabuf_image(EGLDisplay egl_display, unsigned int width,
 		return NULL;
 	}
 
-	if ((texture = gs_texture_create(width, height, color_format, 1, NULL,
-					 GS_DYNAMIC)) == NULL) {
+	texture = gl_egl_create_texture_from_eglimage(egl_display, width,
+						      height, color_format,
+						      GL_TEXTURE_2D, egl_image);
+	if (texture)
+		eglDestroyImage(egl_display, egl_image);
+
+	return texture;
+}
+
+struct gs_texture *
+gl_egl_create_texture_from_pixmap(EGLDisplay egl_display, uint32_t width,
+				  uint32_t height,
+				  enum gs_color_format color_format,
+				  EGLint target, EGLClientBuffer pixmap)
+{
+	if (!init_egl_image_target_texture_2d_ext())
+		return NULL;
+
+	const EGLAttrib pixmap_attrs[] = {
+		EGL_IMAGE_PRESERVED_KHR,
+		EGL_TRUE,
+		EGL_NONE,
+	};
+
+	EGLImage image = eglCreateImage(egl_display, EGL_NO_CONTEXT,
+					EGL_NATIVE_PIXMAP_KHR, pixmap,
+					pixmap_attrs);
+	if (image == EGL_NO_IMAGE) {
+		blog(LOG_ERROR, "Cannot create EGLImage: %s",
+		     gl_egl_error_to_string(eglGetError()));
 		return NULL;
 	}
-	const GLuint gltex = *(GLuint *)gs_texture_get_obj(texture);
 
-	gl_bind_texture(GL_TEXTURE_2D, gltex);
-	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
-	gl_tex_param_i(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-
-	glEGLImageTargetTexture2DOES(GL_TEXTURE_2D, egl_image);
-	if (!gl_success("glEGLImageTargetTexture2DOES")) {
-		gs_texture_destroy(texture);
-		texture = NULL;
-	}
-
-	gl_bind_texture(GL_TEXTURE_2D, 0);
-	eglDestroyImage(egl_display, egl_image);
+	struct gs_texture *texture = gl_egl_create_texture_from_eglimage(
+		egl_display, width, height, color_format, target, image);
+	eglDestroyImage(egl_display, image);
 
 	return texture;
 }
