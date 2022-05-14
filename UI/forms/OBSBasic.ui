@@ -355,7 +355,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Properties</string>
+             <string>SourceProperties</string>
             </property>
             <property name="text">
              <string>Properties</string>
@@ -381,7 +381,7 @@
              </size>
             </property>
             <property name="toolTip">
-             <string>Filters</string>
+             <string>SourceFilters</string>
             </property>
             <property name="text">
              <string>Filters</string>
@@ -1560,6 +1560,9 @@
    <property name="text">
     <string>Add</string>
    </property>
+   <property name="toolTip">
+    <string>Basic.Main.AddSceneDlg.Title</string>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">addIconSmall</string>
    </property>
@@ -1572,6 +1575,9 @@
    <property name="text">
     <string>Add</string>
    </property>
+   <property name="toolTip">
+    <string>AddSource</string>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">addIconSmall</string>
    </property>
@@ -1583,6 +1589,9 @@
    </property>
    <property name="text">
     <string>Remove</string>
+   </property>
+   <property name="toolTip">
+    <string>RemoveScene</string>
    </property>
    <property name="shortcut">
     <string>Del</string>
@@ -1601,6 +1610,9 @@
    </property>
    <property name="text">
     <string>Remove</string>
+   </property>
+   <property name="toolTip">
+    <string>RemoveSource</string>
    </property>
    <property name="shortcut">
     <string>Del</string>
@@ -1623,6 +1635,9 @@
    <property name="text">
     <string>Properties</string>
    </property>
+   <property name="toolTip">
+    <string>SourceProperties</string>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">propertiesIconSmall</string>
    </property>
@@ -1634,6 +1649,9 @@
    </property>
    <property name="text">
     <string>MoveUp</string>
+   </property>
+   <property name="toolTip">
+    <string>MoveSceneUp</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">upArrowIconSmall</string>
@@ -1650,6 +1668,9 @@
    <property name="text">
     <string>MoveUp</string>
    </property>
+   <property name="toolTip">
+    <string>MoveSourceUp</string>
+   </property>
    <property name="themeID" stdset="0">
     <string notr="true">upArrowIconSmall</string>
    </property>
@@ -1661,6 +1682,9 @@
    </property>
    <property name="text">
     <string>MoveDown</string>
+   </property>
+   <property name="toolTip">
+    <string>MoveSceneDown</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">downArrowIconSmall</string>
@@ -1676,6 +1700,9 @@
    </property>
    <property name="text">
     <string>MoveDown</string>
+   </property>
+   <property name="toolTip">
+    <string>MoveSourceDown</string>
    </property>
    <property name="themeID" stdset="0">
     <string notr="true">downArrowIconSmall</string>
