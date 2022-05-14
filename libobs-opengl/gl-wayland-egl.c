@@ -383,6 +383,13 @@ static bool gl_wayland_egl_device_query_dmabuf_modifiers_for_format(
 		plat->display, drm_format, modifiers, n_modifiers);
 }
 
+static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(
+	gs_device_t *device, uint32_t width, uint32_t height,
+	enum gs_color_format color_format, uint32_t target, void *pixmap)
+{
+	return NULL;
+}
+
 static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 	.windowinfo_create = gl_wayland_egl_windowinfo_create,
 	.windowinfo_destroy = gl_wayland_egl_windowinfo_destroy,
@@ -404,6 +411,8 @@ static const struct gl_winsys_vtable egl_wayland_winsys_vtable = {
 		gl_wayland_egl_device_query_dmabuf_capabilities,
 	.device_query_dmabuf_modifiers_for_format =
 		gl_wayland_egl_device_query_dmabuf_modifiers_for_format,
+	.device_texture_create_from_pixmap =
+		gl_wayland_egl_device_texture_create_from_pixmap,
 };
 
 const struct gl_winsys_vtable *gl_wayland_egl_get_winsys_vtable(void)

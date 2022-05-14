@@ -360,6 +360,10 @@ struct gs_exports {
 							 uint32_t drm_format,
 							 uint64_t **modifiers,
 							 size_t *n_modifiers);
+	struct gs_texture *(*device_texture_create_from_pixmap)(
+		gs_device_t *device, uint32_t width, uint32_t height,
+		enum gs_color_format color_format, uint32_t target,
+		void *pixmap);
 #endif
 };
 
