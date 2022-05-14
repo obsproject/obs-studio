@@ -13,3 +13,6 @@
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
+[submodule "plugins/obs-websocket"]
+	path = plugins/obs-websocket
+	url = https://github.com/obsproject/obs-websocket.git

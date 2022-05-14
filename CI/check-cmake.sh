@@ -44,7 +44,8 @@ find . -type d \( \
     -path ./plugins/obs-outputs/ftl-sdk -o \
     -path ./plugins/obs-vst -o \
     -path ./plugins/obs-browser -o \
-    -path ./plugins/win-dshow/libdshowcapture \
+    -path ./plugins/win-dshow/libdshowcapture -o \
+    -path ./plugins/obs-websocket/deps \
 \) -prune -false -type f -o \
     -name 'CMakeLists.txt' -or \
     -name '*.cmake' \
