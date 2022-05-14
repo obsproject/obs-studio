@@ -1,4 +1,5 @@
 #include <obs-module.h>
+#include <obs-nix-platform.h>
 #include <glad/glad.h>
 #include <glad/glad_glx.h>
 #include <X11/Xlib-xcb.h>
@@ -58,7 +59,6 @@ struct xcompcap {
 
 	Pixmap pixmap;
 	GLXPixmap glxpixmap;
-	gs_texture_t *tex;
 	gs_texture_t *gltex;
 
 	pthread_mutex_t lock;
@@ -72,6 +72,7 @@ struct xcompcap {
 	// performance when this is done, so setting this to false allows working
 	// around it.
 	bool strict_binding;
+	bool egl;
 };
 
 static void xcompcap_update(void *data, obs_data_t *settings);
@@ -375,11 +376,6 @@ void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
 		XFreePixmap(disp, s->pixmap);
 		s->pixmap = 0;
 	}
-
-	if (s->tex) {
-		gs_texture_destroy(s->tex);
-		s->tex = 0;
-	}
 }
 
 static enum gs_color_format gs_format_from_tex()
@@ -479,96 +475,102 @@ void xcomp_create_pixmap(xcb_connection_t *conn, Display *disp,
 		return;
 	}
 
-	const int config_attrs[] = {GLX_BIND_TO_TEXTURE_RGBA_EXT,
-				    GL_TRUE,
-				    GLX_DRAWABLE_TYPE,
-				    GLX_PIXMAP_BIT,
-				    GLX_BIND_TO_TEXTURE_TARGETS_EXT,
-				    GLX_TEXTURE_2D_BIT_EXT,
-				    GLX_DOUBLEBUFFER,
-				    GL_FALSE,
-				    None};
-	int nelem = 0;
-	GLXFBConfig *configs =
-		glXChooseFBConfig(disp, xcb_get_screen_for_root(conn, root),
-				  config_attrs, &nelem);
+	if (s->egl) {
+		s->gltex = gs_texture_create_from_pixmap(s->width, s->height,
+							 GS_BGRA_UNORM,
+							 GL_TEXTURE_2D,
+							 (void *)s->pixmap);
 
-	bool found = false;
-	GLXFBConfig config;
-	for (int i = 0; i < nelem; i++) {
-		config = configs[i];
-		XVisualInfo *visual = glXGetVisualFromFBConfig(disp, config);
-		if (!visual)
-			continue;
+	} else {
+		const int config_attrs[] = {GLX_BIND_TO_TEXTURE_RGBA_EXT,
+					    GL_TRUE,
+					    GLX_DRAWABLE_TYPE,
+					    GLX_PIXMAP_BIT,
+					    GLX_BIND_TO_TEXTURE_TARGETS_EXT,
+					    GLX_TEXTURE_2D_BIT_EXT,
+					    GLX_DOUBLEBUFFER,
+					    GL_FALSE,
+					    None};
+		int nelem = 0;
+		GLXFBConfig *configs = glXChooseFBConfig(
+			disp, xcb_get_screen_for_root(conn, root), config_attrs,
+			&nelem);
 
-		found = depth == visual->depth;
-		XFree(visual);
-		if (found)
-			break;
-	}
-	XFree(configs);
-	if (!found) {
-		blog(log_level, "no matching fb config found");
-		s->pixmap = 0;
-		return;
-	}
+		bool found = false;
+		GLXFBConfig config;
+		for (int i = 0; i < nelem; i++) {
+			config = configs[i];
+			XVisualInfo *visual =
+				glXGetVisualFromFBConfig(disp, config);
+			if (!visual)
+				continue;
 
-	// Should be consistent format with config we are using. Since we searched on RGBA let's use RGBA here.
-	const int pixmap_attrs[] = {GLX_TEXTURE_TARGET_EXT, GLX_TEXTURE_2D_EXT,
-				    GLX_TEXTURE_FORMAT_EXT,
-				    GLX_TEXTURE_FORMAT_RGBA_EXT, None};
+			found = depth == visual->depth;
+			XFree(visual);
+			if (found)
+				break;
+		}
+		XFree(configs);
+		if (!found) {
+			blog(log_level, "no matching fb config found");
+			s->pixmap = 0;
+			return;
+		}
 
-	// Try very hard to capture errors in glXCreatePixmap for NVIDIA drivers
-	// where only one pixmap can be bound in GLX at a time.
-	pixmap_err = false;
-	XErrorHandler prev = XSetErrorHandler(catch_pixmap_errors);
-	s->glxpixmap = glXCreatePixmap(disp, config, s->pixmap, pixmap_attrs);
-	XSync(disp, false);
+		// Should be consistent format with config we are using. Since we searched on RGBA let's use RGBA here.
+		const int pixmap_attrs[] = {GLX_TEXTURE_TARGET_EXT,
+					    GLX_TEXTURE_2D_EXT,
+					    GLX_TEXTURE_FORMAT_EXT,
+					    GLX_TEXTURE_FORMAT_RGBA_EXT, None};
 
-	s->gltex = gs_texture_create(s->width, s->height, GS_RGBA_UNORM, 1, 0,
-				     GS_GL_DUMMYTEX);
-	GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
-	glBindTexture(GL_TEXTURE_2D, gltex);
-	// Not respecting a captured glXCreatePixmap error will result in Xorg closing our connection.
-	if (!pixmap_err)
-		glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT, NULL);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-	glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-	// glxBindTexImageEXT might modify the textures format.
-	enum gs_color_format format = gs_format_from_tex();
-	// Check if texture is invalid... because X11 hates us.
-	int w;
-	int h;
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &w);
-	glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &h);
-	glBindTexture(GL_TEXTURE_2D, 0);
-	// We must sync OBS texture format based on any glxBindTexImageEXT changes.
-	s->gltex->format = format;
+		// Try very hard to capture errors in glXCreatePixmap for NVIDIA drivers
+		// where only one pixmap can be bound in GLX at a time.
+		pixmap_err = false;
+		XErrorHandler prev = XSetErrorHandler(catch_pixmap_errors);
+		s->glxpixmap =
+			glXCreatePixmap(disp, config, s->pixmap, pixmap_attrs);
+		XSync(disp, false);
 
-	XSync(disp, false);
-	if (pixmap_err || (uint32_t)w < s->width || (uint32_t)h < s->height) {
-		blog(log_level, "glXCreatePixmap failed: %s", pixmap_err_text);
-		glXDestroyPixmap(disp, s->glxpixmap);
-		XFreePixmap(disp, s->pixmap);
-		gs_texture_destroy(s->gltex);
-		s->pixmap = 0;
-		s->glxpixmap = 0;
-		s->gltex = 0;
-		XSetErrorHandler(prev);
-		return;
-	}
-	XSetErrorHandler(prev);
-
-	s->tex = gs_texture_create(
-		s->width - s->crop_left - s->crop_right - 2 * s->border,
-		s->height - s->crop_top - s->crop_bot - 2 * s->border, format,
-		1, 0, GS_GL_DUMMYTEX);
-	if (s->swapRedBlue) {
-		GLuint tex = *(GLuint *)gs_texture_get_obj(s->tex);
-		glBindTexture(GL_TEXTURE_2D, tex);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_B, GL_RED);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_SWIZZLE_R, GL_BLUE);
+		s->gltex = gs_texture_create(s->width, s->height, GS_RGBA_UNORM,
+					     1, 0, GS_GL_DUMMYTEX);
+		GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
+		glBindTexture(GL_TEXTURE_2D, gltex);
+		// Not respecting a captured glXCreatePixmap error will result in Xorg closing our connection.
+		if (!pixmap_err)
+			glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT,
+					   NULL);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
+				GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
+				GL_LINEAR);
+		// glxBindTexImageEXT might modify the textures format.
+		enum gs_color_format format = gs_format_from_tex();
+		// Check if texture is invalid... because X11 hates us.
+		int w;
+		int h;
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH,
+					 &w);
+		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT,
+					 &h);
 		glBindTexture(GL_TEXTURE_2D, 0);
+		// We must sync OBS texture format based on any glxBindTexImageEXT changes.
+		s->gltex->format = format;
+
+		XSync(disp, false);
+		if (pixmap_err || (uint32_t)w < s->width ||
+		    (uint32_t)h < s->height) {
+			blog(log_level, "glXCreatePixmap failed: %s",
+			     pixmap_err_text);
+			glXDestroyPixmap(disp, s->glxpixmap);
+			XFreePixmap(disp, s->pixmap);
+			gs_texture_destroy(s->gltex);
+			s->pixmap = 0;
+			s->glxpixmap = 0;
+			s->gltex = 0;
+			XSetErrorHandler(prev);
+			return;
+		}
+		XSetErrorHandler(prev);
 	}
 }
 
@@ -685,7 +687,7 @@ void watcher_unload()
 static uint32_t xcompcap_get_width(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
-	if (!s->tex || !s->gltex)
+	if (!s->gltex)
 		return 0;
 
 	int32_t border = s->crop_left + s->crop_right + 2 * s->border;
@@ -696,7 +698,7 @@ static uint32_t xcompcap_get_width(void *data)
 static uint32_t xcompcap_get_height(void *data)
 {
 	struct xcompcap *s = (struct xcompcap *)data;
-	if (!s->tex || !s->gltex)
+	if (!s->gltex)
 		return 0;
 
 	int32_t border = s->crop_bot + s->crop_top + 2 * s->border;
@@ -712,6 +714,10 @@ static void *xcompcap_create(obs_data_t *settings, obs_source_t *source)
 	s->show_cursor = true;
 	s->strict_binding = true;
 	s->source = source;
+	enum obs_nix_platform_type platform = obs_get_nix_platform();
+	s->egl = platform == OBS_NIX_PLATFORM_X11_EGL;
+	if (s->egl)
+		s->strict_binding = false;
 
 	obs_enter_graphics();
 	if (strcmp(glGetString(GL_VENDOR), "NVIDIA Corporation") == 0) {
@@ -735,9 +741,6 @@ static void xcompcap_destroy(void *data)
 
 	watcher_unregister(conn, s);
 	xcomp_cleanup_pixmap(disp, s);
-
-	if (s->tex)
-		gs_texture_destroy(s->tex);
 
 	if (s->cursor)
 		xcb_xcursor_destroy(s->cursor);
@@ -784,7 +787,7 @@ static void xcompcap_video_tick(void *data, float seconds)
 				   s->cursor->y_org + s->crop_top);
 	}
 
-	if (!s->tex || !s->gltex)
+	if (!s->gltex)
 		goto done;
 
 	if (xcompcap_get_height(s) == 0 || xcompcap_get_width(s) == 0)
@@ -795,9 +798,6 @@ static void xcompcap_video_tick(void *data, float seconds)
 		glXReleaseTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT);
 		glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT, NULL);
 	}
-	gs_copy_texture_region(s->tex, 0, 0, s->gltex, s->crop_left + s->border,
-			       s->crop_top + s->border, xcompcap_get_width(s),
-			       xcompcap_get_height(s));
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (s->show_cursor) {
@@ -820,19 +820,20 @@ static void xcompcap_video_render(void *data, gs_effect_t *effect)
 
 	pthread_mutex_lock(&s->lock);
 
-	if (!s->tex || !s->gltex)
+	if (!s->gltex)
 		goto done;
 
+	effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 	if (s->exclude_alpha)
 		effect = obs_get_base_effect(OBS_EFFECT_OPAQUE);
-	else
-		effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 
 	image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, s->tex);
+	gs_effect_set_texture(image, s->gltex);
 
 	while (gs_effect_loop(effect, "Draw")) {
-		gs_draw_sprite(s->tex, 0, 0, 0);
+		gs_draw_sprite_subregion(s->gltex, 0, s->crop_left, s->crop_top,
+					 xcompcap_get_width(s),
+					 xcompcap_get_height(s));
 	}
 
 	if (s->gltex && s->show_cursor && !s->cursor_outside) {
