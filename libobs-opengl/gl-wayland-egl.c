@@ -187,9 +187,6 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
 
 	plat->wl_display = obs_get_nix_platform_display();
-
-	device->plat = plat;
-
 	plat->display = eglGetDisplay(plat->wl_display);
 	if (plat->display == EGL_NO_DISPLAY) {
 		blog(LOG_ERROR, "eglGetDisplay failed");

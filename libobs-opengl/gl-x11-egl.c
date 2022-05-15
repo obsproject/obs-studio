@@ -337,8 +337,6 @@ static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
 	XSetErrorHandler(x_error_handler);
 
 	/* We assume later that cur_swap is already set. */
-	device->plat = plat;
-
 	plat->xdisplay = display;
 
 	if (!gl_context_create(plat)) {
