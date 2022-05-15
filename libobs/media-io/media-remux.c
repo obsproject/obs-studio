@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include "media-remux.h"
+#include "../obs-ffmpeg-compat.h"
 
 #include "../util/base.h"
 #include "../util/bmem.h"
