@@ -223,10 +223,13 @@ static bool create_video_stream(struct ffmpeg_data *data)
 			data->config.video_encoder))
 		return false;
 
-	if ((data->config.color_trc == AVCOL_TRC_SMPTE2084) ||
-	    (data->config.color_trc == AVCOL_TRC_ARIB_STD_B67)) {
+	const enum AVColorTransferCharacteristic trc = data->config.color_trc;
+	const bool pq = trc == AVCOL_TRC_SMPTE2084;
+	const bool hlg = trc == AVCOL_TRC_ARIB_STD_B67;
+	if (pq || hlg) {
 		const int hdr_nominal_peak_level =
-			(int)obs_get_video_hdr_nominal_peak_level();
+			pq ? (int)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
 
 		size_t content_size;
 		AVContentLightMetadata *const content =
