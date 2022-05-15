@@ -389,6 +389,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->warnBeforeStreamStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->warnBeforeRecordStop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideProjectorCursor,  CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->hideProjectorFrame,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->projectorAlwaysOnTop, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->recordWhenStreaming,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->keepRecordStreamStops,CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1351,6 +1352,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool hideProjectorCursor = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "HideProjectorCursor");
 	ui->hideProjectorCursor->setChecked(hideProjectorCursor);
+
+	bool hideProjectorFrame = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "HideProjectorFrame");
+	ui->hideProjectorFrame->setChecked(hideProjectorFrame);
 
 	bool projectorAlwaysOnTop = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "ProjectorAlwaysOnTop");
@@ -3186,6 +3191,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"HideProjectorCursor",
 				ui->hideProjectorCursor->isChecked());
 		main->UpdateProjectorHideCursor();
+	}
+
+	if (WidgetChanged(ui->hideProjectorFrame)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"HideProjectorFrame",
+				ui->hideProjectorFrame->isChecked());
+		main->UpdateProjectorHideFrame(
+			ui->hideProjectorFrame->isChecked());
 	}
 
 	if (WidgetChanged(ui->projectorAlwaysOnTop)) {

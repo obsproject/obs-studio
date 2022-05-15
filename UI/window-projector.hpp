@@ -41,6 +41,7 @@ private:
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
 
+	bool hideFrame;
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
 	int savedMonitor = -1;
@@ -84,8 +85,6 @@ private slots:
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen_);
-	void AddWindowBorder();
-	void RemoveWindowBorder();
 
 public:
 	OBSProjector(QWidget *widget, obs_source_t *source_, int monitor,
@@ -101,5 +100,6 @@ public:
 
 	bool IsAlwaysOnTop() const;
 	bool IsAlwaysOnTopOverridden() const;
+	void SetHideFrame(bool hideFrame);
 	void SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden);
 };
