@@ -230,7 +230,7 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO, "Initializing OpenGL...");
 
-	device->plat = gl_platform_create(device, adapter);
+	device->plat = gl_platform_create(adapter);
 	if (!device->plat)
 		goto fail;
 

@@ -319,8 +319,7 @@ static int x_error_handler(Display *display, XErrorEvent *error)
 	return 0;
 }
 
-static struct gl_platform *gl_x11_egl_platform_create(gs_device_t *device,
-						      uint32_t adapter)
+static struct gl_platform *gl_x11_egl_platform_create(uint32_t adapter)
 {
 	/* There's some trickery here... we're mixing libX11, xcb, and EGL
 	   For an explanation see here: http://xcb.freedesktop.org/MixingCalls/

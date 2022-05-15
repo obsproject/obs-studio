@@ -181,8 +181,7 @@ static bool extension_supported(const char *extensions, const char *search)
 	       (result[len] == ' ' || result[len] == '\0');
 }
 
-static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
-							  uint32_t adapter)
+static struct gl_platform *gl_wayland_egl_platform_create(uint32_t adapter)
 {
 	struct gl_platform *plat = bmalloc(sizeof(struct gl_platform));
 

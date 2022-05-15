@@ -78,9 +78,8 @@ static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 	return context;
 }
 
-struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
+struct gl_platform *gl_platform_create(uint32_t adapter)
 {
-	UNUSED_PARAMETER(device);
 	UNUSED_PARAMETER(adapter);
 
 	NSOpenGLContext *context = gl_context_create(nil);
