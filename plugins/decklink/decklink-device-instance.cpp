@@ -572,6 +572,13 @@ bool DeckLinkDeviceInstance::StartOutput(DeckLinkDeviceMode *mode_)
 	hardwareStartTime = 0;
 	systemStartTime = 0;
 
+	struct obs_video_info ovi;
+	if (obs_get_video_info(&ovi)) {
+		uint64_t num = ovi.fps_den * timeScale;
+		uint64_t den = ovi.fps_num * frameDuration;
+		frameDuplication = (uint32_t)((num + den - 1) / den);
+	}
+
 	driftAverage = RollingAverage(DRIFT_AVERAGE_SAMPLES);
 
 	framesSinceDriftCalc = 0; // debug only
@@ -704,6 +711,7 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 		uint64_t bufferSize = (minimumPrerollFrames * frameLength) + (frameLength / 2); // Add half a frame of delay to prevent decklink saying late frame
 
 		output->StartScheduledPlayback (frame->timestamp - bufferSize, TIME_BASE, 1.0);
+		nextVideoTime = frame->timestamp;
 		playbackStarted = true;
 	}
 
@@ -720,7 +728,15 @@ void DeckLinkDeviceInstance::DisplayVideoFrame(video_data *frame)
 	std::copy(outData, outData + (decklinkOutput->GetHeight() * rowBytes),
 		  destData);
 
-	output->ScheduleVideoFrame(decklinkOutputFrame, frame->timestamp, frameLength, TIME_BASE);
+	uint32_t nFrame = frameDuplication;
+
+	if (nFrame > 0 && nextVideoTime + (nFrame - 1) * frameLength > frame->timestamp)
+		nFrame --;
+
+	for (uint32_t i = 0; i < nFrame; i++) {
+		output->ScheduleVideoFrame(decklinkOutputFrame, nextVideoTime, frameLength, TIME_BASE);
+		nextVideoTime += frameLength;
+	}
 
 	framesSinceDriftCalc++;
 }
