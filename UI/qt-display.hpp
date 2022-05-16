@@ -43,6 +43,7 @@ public:
 	void SetDisplayBackgroundColor(const QColor &color);
 	void UpdateDisplayBackgroundColor();
 	void CreateDisplay(bool force = false);
+	void DestroyDisplay() { display = nullptr; };
 
 	void OnMove();
 	void OnDisplayChange();

@@ -42,6 +42,9 @@ protected:
 			else
 				mTimerId = startTimer(67); // Arbitrary
 			break;
+		case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
+			display->DestroyDisplay();
+			break;
 		case QEvent::Expose:
 			createOBSDisplay();
 			break;
@@ -52,7 +55,10 @@ protected:
 		return result;
 	}
 
-	void timerEvent(QTimerEvent *) { createOBSDisplay(true); }
+	void timerEvent(QTimerEvent *)
+	{
+		createOBSDisplay(display->isVisible());
+	}
 
 private:
 	void createOBSDisplay(bool force = false)
