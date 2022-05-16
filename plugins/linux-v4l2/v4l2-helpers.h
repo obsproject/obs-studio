@@ -319,6 +319,15 @@ int_fast32_t v4l2_enum_dv_timing(int_fast32_t dev, struct v4l2_dv_timings *dvt,
  */
 int_fast32_t v4l2_set_dv_timing(int_fast32_t dev, int *timing);
 
+/**
+ * Resolves link_path into real_path or returns link_path if not a link.
+ *
+ * @param link_path path to link
+ *
+ * @return characters allocated using bstrdup. Has to freed with bfree
+ */
+char *brealpath(const char *link_path);
+
 #ifdef __cplusplus
 }
 #endif

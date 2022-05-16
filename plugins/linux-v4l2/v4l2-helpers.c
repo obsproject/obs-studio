@@ -318,3 +318,15 @@ int_fast32_t v4l2_set_dv_timing(int_fast32_t dev, int *timing)
 
 	return 0;
 }
+
+char *brealpath(const char *link_path)
+{
+	char *tmp_real_path = realpath(link_path, NULL);
+	if (NULL != tmp_real_path) {
+		char *real_path = bstrdup(tmp_real_path);
+		free(tmp_real_path);
+		return real_path;
+	} else {
+		return bstrdup(link_path);
+	}
+}
