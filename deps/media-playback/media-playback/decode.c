@@ -193,6 +193,10 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 
 	if (d->codec->capabilities & CODEC_CAP_TRUNC)
 		d->decoder->flags |= CODEC_FLAG_TRUNC;
+
+	d->orig_pkt = av_packet_alloc();
+	d->pkt = av_packet_alloc();
+
 	return true;
 }
 
@@ -200,9 +204,9 @@ extern void mp_media_free_packet(mp_media_t *m, AVPacket *pkt);
 
 void mp_decode_clear_packets(struct mp_decode *d)
 {
-	if (d->pkt) {
-		mp_media_free_packet(d->m, d->pkt);
-		d->pkt = NULL;
+	if (d->packet_pending) {
+		av_packet_unref(d->orig_pkt);
+		d->packet_pending = false;
 	}
 
 	while (d->packets.size) {
@@ -214,6 +218,9 @@ void mp_decode_clear_packets(struct mp_decode *d)
 
 void mp_decode_free(struct mp_decode *d)
 {
+	av_packet_free(&d->pkt);
+	av_packet_free(&d->orig_pkt);
+
 	mp_decode_clear_packets(d);
 	circlebuf_free(&d->packets);
 
@@ -277,9 +284,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	}
 
 	if (ret != 0) {
-		if (!d->pkt)
-			return 0;
-
 		ret = avcodec_send_packet(d->decoder, d->pkt);
 		if (ret != 0 && ret != AVERROR(EAGAIN)) {
 			if (ret == AVERROR_EOF)
@@ -332,13 +336,20 @@ bool mp_decode_next(struct mp_decode *d)
 		return true;
 
 	while (!d->frame_ready) {
-		if (!d->pkt) {
+		if (!d->packet_pending) {
 			if (!d->packets.size) {
-				if (!eof)
+				if (eof) {
+					d->pkt->data = NULL;
+					d->pkt->size = 0;
+				} else {
 					return true;
+				}
 			} else {
-				circlebuf_pop_front(&d->packets, &d->pkt,
-						    sizeof(d->pkt));
+				mp_media_free_packet(d->m, d->orig_pkt);
+				circlebuf_pop_front(&d->packets, &d->orig_pkt,
+						    sizeof(d->orig_pkt));
+				av_packet_ref(d->pkt, d->orig_pkt);
+				d->packet_pending = true;
 			}
 		}
 
@@ -354,24 +365,26 @@ bool mp_decode_next(struct mp_decode *d)
 			     av_err2str(ret));
 #endif
 
-			if (d->pkt) {
-				mp_media_free_packet(d->m, d->pkt);
-				d->pkt = NULL;
+			if (d->packet_pending) {
+				av_packet_unref(d->orig_pkt);
+				av_packet_unref(d->pkt);
+				d->packet_pending = false;
 			}
 			return true;
 		}
 
 		d->frame_ready = !!got_frame;
 
-		if (d->pkt) {
+		if (d->packet_pending) {
 			if (d->pkt->size) {
 				d->pkt->data += ret;
 				d->pkt->size -= ret;
 			}
 
 			if (d->pkt->size <= 0) {
-				mp_media_free_packet(d->m, d->pkt);
-				d->pkt = NULL;
+				av_packet_unref(d->orig_pkt);
+				av_packet_unref(d->pkt);
+				d->packet_pending = false;
 			}
 		}
 	}
