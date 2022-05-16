@@ -179,57 +179,59 @@ file(GLOB RNNOISE_BIN_FILES
      "${RNNOISE_INCLUDE_DIR}/../bin${_bin_suffix}/rnnoise*.dll"
      "${RNNOISE_INCLUDE_DIR}/../bin/rnnoise*.dll")
 
+set(QtCore_DIR "${Qt${QT_VERSION}Core_DIR}")
+
 file(
   GLOB
   QT_DEBUG_BIN_FILES
-  "${Qt5Core_DIR}/../../../bin/Qt5Cored.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Guid.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Widgetsd.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5WinExtrasd.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Svgd.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Xmld.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Networkd.dll"
-  "${Qt5Core_DIR}/../../../bin/libGLESv2d.dll"
-  "${Qt5Core_DIR}/../../../bin/libEGLd.dll")
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Cored.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Guid.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Widgetsd.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}WinExtrasd.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Svgd.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Xmld.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Networkd.dll"
+  "${QtCore_DIR}/../../../bin/libGLESv2d.dll"
+  "${QtCore_DIR}/../../../bin/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/platforms/qwindowsd.dll")
+     "${QtCore_DIR}/../../../plugins/platforms/qwindowsd.dll")
 file(GLOB QT_DEBUG_STYLES_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/styles/qwindowsvistastyled.dll")
+     "${QtCore_DIR}/../../../plugins/styles/qwindowsvistastyled.dll")
 file(GLOB QT_DEBUG_ICONENGINE_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/iconengines/qsvgicond.dll")
+     "${QtCore_DIR}/../../../plugins/iconengines/qsvgicond.dll")
 file(
   GLOB
   QT_DEBUG_IMAGEFORMATS_BIN_FILES
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qsvgd.dll"
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qgifd.dll"
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qjpegd.dll")
+  "${QtCore_DIR}/../../../plugins/imageformats/qsvgd.dll"
+  "${QtCore_DIR}/../../../plugins/imageformats/qgifd.dll"
+  "${QtCore_DIR}/../../../plugins/imageformats/qjpegd.dll")
 
 file(
   GLOB
   QT_BIN_FILES
-  "${Qt5Core_DIR}/../../../bin/Qt5Core.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Gui.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Widgets.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5WinExtras.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Svg.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Xml.dll"
-  "${Qt5Core_DIR}/../../../bin/Qt5Network.dll"
-  "${Qt5Core_DIR}/../../../bin/libGLESv2.dll"
-  "${Qt5Core_DIR}/../../../bin/libEGL.dll")
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Core.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Gui.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Widgets.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}WinExtras.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Svg.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Xml.dll"
+  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Network.dll"
+  "${QtCore_DIR}/../../../bin/libGLESv2.dll"
+  "${QtCore_DIR}/../../../bin/libEGL.dll")
 file(GLOB QT_PLAT_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/platforms/qwindows.dll")
+     "${QtCore_DIR}/../../../plugins/platforms/qwindows.dll")
 file(GLOB QT_STYLES_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/styles/qwindowsvistastyle.dll")
+     "${QtCore_DIR}/../../../plugins/styles/qwindowsvistastyle.dll")
 file(GLOB QT_ICONENGINE_BIN_FILES
-     "${Qt5Core_DIR}/../../../plugins/iconengines/qsvgicon.dll")
+     "${QtCore_DIR}/../../../plugins/iconengines/qsvgicon.dll")
 file(
   GLOB
   QT_IMAGEFORMATS_BIN_FILES
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qsvg.dll"
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qgif.dll"
-  "${Qt5Core_DIR}/../../../plugins/imageformats/qjpeg.dll")
+  "${QtCore_DIR}/../../../plugins/imageformats/qsvg.dll"
+  "${QtCore_DIR}/../../../plugins/imageformats/qgif.dll"
+  "${QtCore_DIR}/../../../plugins/imageformats/qjpeg.dll")
 
-file(GLOB QT_ICU_BIN_FILES "${Qt5Core_DIR}/../../../bin/icu*.dll")
+file(GLOB QT_ICU_BIN_FILES "${QtCore_DIR}/../../../bin/icu*.dll")
 
 set(ALL_BASE_BIN_FILES
     ${FFMPEG_BIN_FILES}
