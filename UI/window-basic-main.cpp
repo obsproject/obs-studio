@@ -4707,6 +4707,10 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 
 	delete extraBrowsers;
 
+	ui->preview->DestroyDisplay();
+	if (program)
+		program->DestroyDisplay();
+
 	config_set_string(App()->GlobalConfig(), "BasicWindow", "DockState",
 			  saveState().toBase64().constData());
 
