@@ -6668,12 +6668,10 @@ void OBSBasic::SetupBroadcast()
 #if YOUTUBE_ENABLED
 	Auth *const auth = GetAuth();
 	if (IsYouTubeService(auth->service())) {
-		OBSYoutubeActions *dialog;
-		dialog = new OBSYoutubeActions(this, auth, broadcastReady);
-		connect(dialog, &OBSYoutubeActions::ok, this,
+		OBSYoutubeActions dialog(this, auth, broadcastReady);
+		connect(&dialog, &OBSYoutubeActions::ok, this,
 			&OBSBasic::YouTubeActionDialogOk);
-		int result = dialog->Valid() ? dialog->exec()
-					     : QDialog::Rejected;
+		int result = dialog.Valid() ? dialog.exec() : QDialog::Rejected;
 		if (result != QDialog::Accepted) {
 			if (!broadcastReady)
 				ui->broadcastButton->setChecked(false);
