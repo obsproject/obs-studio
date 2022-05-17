@@ -126,6 +126,8 @@ bool QTToGSWindow(QWindow *window, gs_window &gswindow)
 		gswindow.id = window->winId();
 		gswindow.display = obs_get_nix_platform_display();
 		break;
+	case OBS_NIX_PLATFORM_DRM:
+		break;
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND:
 		QPlatformNativeInterface *native =

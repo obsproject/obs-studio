@@ -49,10 +49,20 @@ elseif(OS_POSIX)
   find_package(X11 REQUIRED)
   find_package(XCB COMPONENTS XCB)
   find_package(X11_XCB REQUIRED)
+  find_package(GBM REQUIRED)
+  find_package(Libdrm REQUIRED)
 
-  target_sources(libobs-opengl PRIVATE gl-egl-common.c gl-nix.c gl-x11-egl.c)
+  target_sources(libobs-opengl
+                 PRIVATE gl-drm.c
+                         gl-egl-common.c
+                         gl-nix.c
+                         gl-x11-egl.c)
 
-  target_link_libraries(libobs-opengl PRIVATE XCB::XCB X11::X11_xcb)
+  target_link_libraries(libobs-opengl
+                        PRIVATE XCB::XCB
+                                X11::X11_xcb
+                                GBM::GBM
+                                Libdrm::Libdrm)
 
   set_target_properties(libobs-opengl PROPERTIES PREFIX "")
 

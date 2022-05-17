@@ -433,6 +433,7 @@ elseif(OS_POSIX)
   endif()
 
   if(OS_LINUX)
+    target_sources(libobs PRIVATE obs-nix-drm.c)
     target_link_libraries(glad PRIVATE ${CMAKE_DL_LIBS})
   endif()
 

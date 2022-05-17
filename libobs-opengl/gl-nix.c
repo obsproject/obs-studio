@@ -16,6 +16,8 @@
 ******************************************************************************/
 
 #include "gl-nix.h"
+
+#include "gl-drm.h"
 #include "gl-x11-egl.h"
 
 #ifdef ENABLE_WAYLAND
@@ -38,6 +40,10 @@ static void init_winsys(void)
 		blog(LOG_INFO, "Using EGL/Wayland");
 		break;
 #endif
+	case OBS_NIX_PLATFORM_DRM:
+		gl_vtable = gl_drm_get_winsys_vtable();
+		blog(LOG_INFO, "Using DRM");
+		break;
 	}
 
 	assert(gl_vtable != NULL);

@@ -29,7 +29,7 @@ enum obs_nix_platform_type {
 #ifdef ENABLE_WAYLAND
 	OBS_NIX_PLATFORM_WAYLAND,
 #endif
-
+	OBS_NIX_PLATFORM_DRM,
 };
 
 /**

@@ -20,6 +20,7 @@
 #include "obs-nix.h"
 #include "obs-nix-platform.h"
 #include "obs-nix-x11.h"
+#include "obs-nix-drm.h"
 
 #ifdef ENABLE_WAYLAND
 #include "obs-nix-wayland.h"
@@ -334,6 +335,9 @@ void log_system_info(void)
 	case OBS_NIX_PLATFORM_WAYLAND:
 		break;
 #endif
+	case OBS_NIX_PLATFORM_DRM:
+		obs_nix_drm_log_info();
+		break;
 	}
 }
 
@@ -348,6 +352,9 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 		hotkeys_vtable = obs_nix_wayland_get_hotkeys_vtable();
 		break;
 #endif
+	case OBS_NIX_PLATFORM_DRM:
+		hotkeys_vtable = obs_nix_drm_get_hotkeys_vtable();
+		break;
 	}
 
 	return hotkeys_vtable->init(hotkeys);

@@ -30,8 +30,9 @@ if(LIBDRM_FOUND)
 
   if(NOT TARGET Libdrm::Libdrm)
     add_library(Libdrm::Libdrm INTERFACE IMPORTED)
-    set_target_properties(
-      Libdrm::Libdrm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                "${LIBDRM_INCLUDE_DIRS}")
+    set_target_properties(Libdrm::Libdrm PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                    "${_LIBDRM_INCLUDE_DIRS}")
+    target_link_libraries(Libdrm::Libdrm INTERFACE ${_LIBDRM_LIBRARIES})
+    target_compile_options(Libdrm::Libdrm INTERFACE ${_LIBDRM_CFLAGS})
   endif()
 endif()
