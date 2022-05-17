@@ -756,7 +756,7 @@ void obs_source_addref(obs_source_t *source)
 
 void obs_source_release(obs_source_t *source)
 {
-	if (!obs) {
+	if (!obs && source) {
 		blog(LOG_WARNING, "Tried to release a source when the OBS "
 				  "core is shut down!");
 		return;
