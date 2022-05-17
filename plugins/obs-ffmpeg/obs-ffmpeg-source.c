@@ -660,6 +660,7 @@ static void ffmpeg_source_destroy(void *data)
 	bfree(s->sws_data);
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->ffmpeg_options);
 	bfree(s);
 }
 
