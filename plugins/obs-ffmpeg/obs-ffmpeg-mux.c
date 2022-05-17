@@ -679,6 +679,12 @@ bool send_headers(struct ffmpeg_muxer *stream)
 static inline bool should_split(struct ffmpeg_muxer *stream,
 				struct encoder_packet *packet)
 {
+	if (packet->type == OBS_ENCODER_AUDIO) {
+		stream->last_audio_pts = packet->pts;
+		stream->last_audio_den = packet->timebase_den;
+		return false;
+	}
+
 	/* split at video frame */
 	if (packet->type != OBS_ENCODER_VIDEO)
 		return false;
@@ -686,6 +692,26 @@ static inline bool should_split(struct ffmpeg_muxer *stream,
 	/* don't split group of pictures */
 	if (!packet->keyframe)
 		return false;
+
+	obs_encoder_t *audio_enc =
+		obs_output_get_audio_encoder(stream->output, 0);
+	if (stream->last_audio_pts && audio_enc) {
+		size_t audio_frame_size = obs_encoder_get_frame_size(audio_enc);
+		int64_t video_pts_in_audio =
+			util_mul_div64(packet->pts, stream->last_audio_den,
+				       packet->timebase_den);
+		size_t rem = (video_pts_in_audio - stream->last_audio_pts) %
+			     audio_frame_size;
+
+		// TODO: Also consider base-profile (no B-frame) and audio-frame > video-frame such as 30-fps.
+		if (video_pts_in_audio <
+		    stream->last_audio_pts + (int64_t)audio_frame_size)
+			return false;
+
+		/* allow rem=0 and rem=1 as a grace */
+		if (rem > 1)
+			return false;
+	}
 
 	/* reached maximum file size */
 	if (stream->max_size > 0 &&
