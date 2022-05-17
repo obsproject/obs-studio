@@ -651,7 +651,9 @@ float4 PSP010_SRGB_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
-	float3 yuv = float3(y, cbcr);
+	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
+	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
+	float3 yuv = yuv_1023 / 1023.;
 	float3 rgb = YUV_to_RGB(yuv);
 	rgb = srgb_nonlinear_to_linear(rgb);
 	return float4(rgb, 1.);
@@ -661,7 +663,9 @@ float4 PSP010_PQ_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
-	float3 yuv = float3(y, cbcr);
+	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
+	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
+	float3 yuv = yuv_1023 / 1023.;
 	float3 pq = YUV_to_RGB(yuv);
 	float3 hdr2020 = st2084_to_linear(pq) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
@@ -672,7 +676,9 @@ float4 PSP010_HLG_2020_709_Reverse(VertTexPos frag_in) : TARGET
 {
 	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
 	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
-	float3 yuv = float3(y, cbcr);
+	float3 yuv_65535 = floor(float3(y, cbcr) * 65535. + 0.5);
+	float3 yuv_1023 = floor(yuv_65535 * 0.015625);
+	float3 yuv = yuv_1023 / 1023.;
 	float3 hlg = YUV_to_RGB(yuv);
 	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
 	float3 rgb = rec2020_to_rec709(hdr2020);
