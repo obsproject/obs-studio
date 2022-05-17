@@ -171,6 +171,20 @@ try {
 	return false;
 }
 
+static void MyDeleteFile(const wstring &filename)
+{
+	/* Try straightforward delete first */
+	if (DeleteFile(filename.c_str()))
+		return;
+
+	DWORD err = GetLastError();
+	if (err == ERROR_FILE_NOT_FOUND)
+		return;
+
+	/* If all else fails, schedule the file to be deleted on reboot */
+	MoveFileEx(filename.c_str(), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
+}
+
 static bool IsSafeFilename(const wchar_t *path)
 {
 	const wchar_t *p = path;
@@ -326,13 +340,29 @@ struct update_t {
 	}
 };
 
+struct deletion_t {
+	wstring originalFilename;
+	wstring deleteMeFilename;
+
+	void UndoRename()
+	{
+		if (!deleteMeFilename.empty())
+			MoveFile(deleteMeFilename.c_str(),
+				 originalFilename.c_str());
+	}
+};
+
 static vector<update_t> updates;
+static vector<deletion_t> deletions;
 static mutex updateMutex;
 
 static inline void CleanupPartialUpdates()
 {
 	for (update_t &update : updates)
 		update.CleanPartialUpdate();
+
+	for (deletion_t &deletion : deletions)
+		deletion.UndoRename();
 }
 
 /* ----------------------------------------------------------------------- */
@@ -743,6 +773,67 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 	}
 
 	return true;
+}
+
+static void AddPackageRemovedFiles(const Json &package)
+{
+	const Json &removed_files = package["removed_files"];
+	if (!removed_files.is_array())
+		return;
+
+	for (auto &item : removed_files.array_items()) {
+		if (!item.is_string())
+			continue;
+
+		wchar_t removedFileName[MAX_PATH];
+		if (!UTF8ToWideBuf(removedFileName,
+				   item.string_value().c_str()))
+			continue;
+
+		/* Ensure paths are safe, also check if file exists */
+		if (!IsSafeFilename(removedFileName))
+			continue;
+		/* Technically GetFileAttributes can fail for other reasons,
+		 * so double-check by also checking the last error */
+		if (GetFileAttributesW(removedFileName) ==
+			    INVALID_FILE_ATTRIBUTES &&
+		    GetLastError() == ERROR_FILE_NOT_FOUND)
+			continue;
+
+		deletion_t deletion;
+		deletion.originalFilename = removedFileName;
+
+		deletions.push_back(deletion);
+	}
+}
+
+static bool RenameRemovedFile(deletion_t &deletion)
+{
+	_TCHAR deleteMeName[MAX_PATH];
+	_TCHAR randomStr[MAX_PATH];
+
+	BYTE junk[40];
+	BYTE hash[BLAKE2_HASH_LENGTH];
+
+	CryptGenRandom(hProvider, sizeof(junk), junk);
+	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, randomStr);
+	randomStr[8] = 0;
+
+	StringCbCopy(deleteMeName, sizeof(deleteMeName),
+		     deletion.originalFilename.c_str());
+
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
+	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".deleteme");
+
+	if (MoveFile(deletion.originalFilename.c_str(), deleteMeName)) {
+		/* Only set this if the file was successfully renamed */
+		deletion.deleteMeFilename = deleteMeName;
+		return true;
+	}
+
+	return false;
 }
 
 static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
@@ -1295,6 +1386,9 @@ static bool Update(wchar_t *cmdLine)
 			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
+
+		/* Add removed files to deletion queue (if any) */
+		AddPackageRemovedFiles(packages[i]);
 	}
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETMARQUEE, 0, 0);
@@ -1476,6 +1570,10 @@ static bool Update(wchar_t *cmdLine)
 		}
 	}
 
+	for (deletion_t &deletion : deletions)
+		if (!RenameRemovedFile(deletion))
+			return false;
+
 	/* ------------------------------------- *
 	 * Install virtual camera                */
 
@@ -1545,6 +1643,10 @@ static bool Update(wchar_t *cmdLine)
 		if (!update.tempPath.empty())
 			DeleteFile(update.tempPath.c_str());
 	}
+
+	/* Delete all removed files mentioned in the manifest */
+	for (deletion_t &deletion : deletions)
+		MyDeleteFile(deletion.deleteMeFilename);
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 100, 0);
 
