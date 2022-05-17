@@ -871,8 +871,10 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 						sigs = active_sigs;
 					} else {
 						blog(LOG_INFO,
-						     "WASAPI: Device '%s' failed to start",
-						     source->device_id.c_str());
+						     "WASAPI: Device '%s' failed to start (source: %s)",
+						     source->device_id.c_str(),
+						     obs_source_get_name(
+							     source->source));
 						stop = true;
 						reconnect = true;
 						source->reconnectDuration =
@@ -882,9 +884,10 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 					stop = !source->ProcessCaptureData();
 					if (stop) {
 						blog(LOG_INFO,
-						     "Device '%s' invalidated.  Retrying",
-						     source->device_name
-							     .c_str());
+						     "Device '%s' invalidated.  Retrying (source: %s)",
+						     source->device_name.c_str(),
+						     obs_source_get_name(
+							     source->source));
 						stop = true;
 						reconnect = true;
 						source->reconnectDuration =
@@ -916,8 +919,10 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 		if (idle) {
 			SetEvent(source->idleSignal);
 		} else if (reconnect) {
-			blog(LOG_INFO, "Device '%s' invalidated.  Retrying",
-			     source->device_name.c_str());
+			blog(LOG_INFO,
+			     "Device '%s' invalidated.  Retrying (source: %s)",
+			     source->device_name.c_str(),
+			     obs_source_get_name(source->source));
 			SetEvent(source->reconnectSignal);
 		}
 	}
@@ -969,8 +974,9 @@ void WASAPISource::OnStartCapture()
 		assert(ret == WAIT_TIMEOUT);
 
 		if (!TryInitialize()) {
-			blog(LOG_INFO, "WASAPI: Device '%s' failed to start",
-			     device_id.c_str());
+			blog(LOG_INFO,
+			     "WASAPI: Device '%s' failed to start (source: %s)",
+			     device_id.c_str(), obs_source_get_name(source));
 			reconnectDuration = RECONNECT_INTERVAL;
 			SetEvent(reconnectSignal);
 		}
@@ -1022,8 +1028,9 @@ void WASAPISource::OnSampleReady()
 		client.Clear();
 
 		if (reconnect) {
-			blog(LOG_INFO, "Device '%s' invalidated.  Retrying",
-			     device_name.c_str());
+			blog(LOG_INFO,
+			     "Device '%s' invalidated.  Retrying (source: %s)",
+			     device_name.c_str(), obs_source_get_name(source));
 			SetEvent(reconnectSignal);
 		} else {
 			SetEvent(idleSignal);
