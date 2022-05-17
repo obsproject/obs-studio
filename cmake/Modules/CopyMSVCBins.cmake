@@ -180,58 +180,60 @@ file(GLOB RNNOISE_BIN_FILES
      "${RNNOISE_INCLUDE_DIR}/../bin/rnnoise*.dll")
 
 set(QtCore_DIR "${Qt${QT_VERSION}Core_DIR}")
+cmake_path(SET QtCore_DIR_NORM NORMALIZE "${QtCore_DIR}/../../..")
+set(QtCore_BIN_DIR "${QtCore_DIR_NORM}bin")
+set(QtCore_PLUGIN_DIR "${QtCore_DIR_NORM}plugins")
+obs_status(STATUS "QtCore_BIN_DIR: ${QtCore_BIN_DIR}")
+obs_status(STATUS "QtCore_PLUGIN_DIR: ${QtCore_PLUGIN_DIR}")
 
 file(
   GLOB
   QT_DEBUG_BIN_FILES
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Cored.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Guid.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Widgetsd.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}WinExtrasd.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Svgd.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Xmld.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Networkd.dll"
-  "${QtCore_DIR}/../../../bin/libGLESv2d.dll"
-  "${QtCore_DIR}/../../../bin/libEGLd.dll")
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Cored.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Guid.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Widgetsd.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}WinExtrasd.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Svgd.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Xmld.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Networkd.dll"
+  "${QtCore_BIN_DIR}/libGLESv2d.dll"
+  "${QtCore_BIN_DIR}/libEGLd.dll")
 file(GLOB QT_DEBUG_PLAT_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/platforms/qwindowsd.dll")
+     "${QtCore_PLUGIN_DIR}/platforms/qwindowsd.dll")
 file(GLOB QT_DEBUG_STYLES_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/styles/qwindowsvistastyled.dll")
+     "${QtCore_PLUGIN_DIR}/styles/qwindowsvistastyled.dll")
 file(GLOB QT_DEBUG_ICONENGINE_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/iconengines/qsvgicond.dll")
+     "${QtCore_PLUGIN_DIR}/iconengines/qsvgicond.dll")
 file(
   GLOB
   QT_DEBUG_IMAGEFORMATS_BIN_FILES
-  "${QtCore_DIR}/../../../plugins/imageformats/qsvgd.dll"
-  "${QtCore_DIR}/../../../plugins/imageformats/qgifd.dll"
-  "${QtCore_DIR}/../../../plugins/imageformats/qjpegd.dll")
+  "${QtCore_PLUGIN_DIR}/imageformats/qsvgd.dll"
+  "${QtCore_PLUGIN_DIR}/imageformats/qgifd.dll"
+  "${QtCore_PLUGIN_DIR}/imageformats/qjpegd.dll")
 
 file(
   GLOB
   QT_BIN_FILES
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Core.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Gui.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Widgets.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}WinExtras.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Svg.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Xml.dll"
-  "${QtCore_DIR}/../../../bin/Qt${QT_VERSION}Network.dll"
-  "${QtCore_DIR}/../../../bin/libGLESv2.dll"
-  "${QtCore_DIR}/../../../bin/libEGL.dll")
-file(GLOB QT_PLAT_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/platforms/qwindows.dll")
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Core.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Gui.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Widgets.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}WinExtras.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Svg.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Xml.dll"
+  "${QtCore_BIN_DIR}/Qt${QT_VERSION}Network.dll"
+  "${QtCore_BIN_DIR}/libGLESv2.dll"
+  "${QtCore_BIN_DIR}/libEGL.dll")
+file(GLOB QT_PLAT_BIN_FILES "${QtCore_PLUGIN_DIR}/platforms/qwindows.dll")
 file(GLOB QT_STYLES_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/styles/qwindowsvistastyle.dll")
+     "${QtCore_PLUGIN_DIR}/styles/qwindowsvistastyle.dll")
 file(GLOB QT_ICONENGINE_BIN_FILES
-     "${QtCore_DIR}/../../../plugins/iconengines/qsvgicon.dll")
+     "${QtCore_PLUGIN_DIR}/iconengines/qsvgicon.dll")
 file(
-  GLOB
-  QT_IMAGEFORMATS_BIN_FILES
-  "${QtCore_DIR}/../../../plugins/imageformats/qsvg.dll"
-  "${QtCore_DIR}/../../../plugins/imageformats/qgif.dll"
-  "${QtCore_DIR}/../../../plugins/imageformats/qjpeg.dll")
+  GLOB QT_IMAGEFORMATS_BIN_FILES "${QtCore_PLUGIN_DIR}/imageformats/qsvg.dll"
+  "${QtCore_PLUGIN_DIR}/imageformats/qgif.dll"
+  "${QtCore_PLUGIN_DIR}/imageformats/qjpeg.dll")
 
-file(GLOB QT_ICU_BIN_FILES "${QtCore_DIR}/../../../bin/icu*.dll")
+file(GLOB QT_ICU_BIN_FILES "${QtCore_BIN_DIR}/icu*.dll")
 
 set(ALL_BASE_BIN_FILES
     ${FFMPEG_BIN_FILES}
