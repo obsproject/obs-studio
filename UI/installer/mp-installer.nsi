@@ -187,6 +187,23 @@ Function PreReqCheck
 	dxOK:
 	ClearErrors
 
+	; Media Foundation (win N) Check
+	ClearErrors
+	GetDLLVersion "mfplat.dll" $R0 $R1
+	IfErrors mfMissing mfOK
+	mfMissing:
+	IfSilent +1 +3
+		SetErrorLevel 4
+		Quit
+	MessageBox MB_YESNO|MB_ICONEXCLAMATION "Your system is missing Media Foundation components that ${APPNAME} requires. Would you like to install it?" IDYES mftrue IDNO mffalse
+	mftrue:
+	ExecWait 'powershell -ExecutionPolicy bypass -Command ""add-windowsCapability -Online -Name Media.MediaFeaturePack~~~~0.0.1.0"" '
+	MessageBox MB_OK|MB_ICONEXCLAMATION "Media Foundation installation requires you to reboot the computer. Please do so, and run the installer again"
+	mffalse:
+	Quit
+	mfOK:
+	ClearErrors
+
 	; Check previous instance
 	check32BitRunning:
 	OBSInstallerUtils::IsProcessRunning "obs32.exe"
