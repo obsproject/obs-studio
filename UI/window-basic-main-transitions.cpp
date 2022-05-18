@@ -359,13 +359,14 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 			lastProgramScene = programScene;
 		programScene = OBSGetWeakRef(source);
 
-		if (swapScenesMode && !force && !black) {
-			OBSSource newScene = OBSGetStrongRef(lastProgramScene);
+		if (!force && !black) {
+			OBSSource lastScene = OBSGetStrongRef(lastProgramScene);
 
-			if (!sceneDuplicationMode && newScene == source)
+			if (!sceneDuplicationMode && lastScene == source)
 				return;
 
-			if (newScene && newScene != GetCurrentSceneSource())
+			if (swapScenesMode && lastScene &&
+			    lastScene != GetCurrentSceneSource())
 				swapScene = lastProgramScene;
 		}
 	}
