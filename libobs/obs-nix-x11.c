@@ -694,6 +694,15 @@ static obs_key_t key_from_base_keysym(obs_hotkeys_platform_t *context,
 		}
 	}
 
+	switch (code) {
+	case XK_Shift_R:
+		return OBS_KEY_SHIFT;
+	case XK_Control_R:
+		return OBS_KEY_CONTROL;
+	case XK_Alt_R:
+		return OBS_KEY_ALT;
+	}
+
 	return OBS_KEY_NONE;
 }
 
