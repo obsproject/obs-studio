@@ -556,7 +556,7 @@ void OBSBasic::AddTransition(QString id)
 	}
 }
 
-void OBSBasic::RemoveTransitionClicked()
+void OBSBasic::on_transitionRemove_clicked()
 {
 	OBSSource tr = GetCurrentTransition();
 
@@ -660,7 +660,7 @@ void OBSBasic::on_transitionProps_clicked()
 
 	action = new QAction(QTStr("Remove"), &menu);
 	connect(action, SIGNAL(triggered()), this,
-		SLOT(RemoveTransitionClicked()));
+		SLOT(on_transitionRemove_clicked()));
 	menu.addAction(action);
 
 	action = new QAction(QTStr("Properties"), &menu);
