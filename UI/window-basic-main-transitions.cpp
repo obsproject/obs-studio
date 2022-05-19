@@ -101,9 +101,11 @@ void OBSBasic::InitDefaultTransitions()
 	ui->transitions->blockSignals(false);
 }
 
-int OBSBasic::TransitionCount()
+int OBSBasic::AddTransitionBeforeSeparator(const QString &name,
+					   obs_source_t *source)
 {
-	int idx = 0;
+	int idx = -1;
+
 	for (int i = 0; i < ui->transitions->count(); i++) {
 		QVariant v = ui->transitions->itemData(i);
 		if (!v.toString().isEmpty()) {
@@ -112,21 +114,11 @@ int OBSBasic::TransitionCount()
 		}
 	}
 
-	/* should always have at least fade and cut due to them being
-	 * defaults */
-	assert(idx != 0);
-	return idx - 1; /* remove separator from equation */
-}
-
-int OBSBasic::AddTransitionBeforeSeparator(const QString &name,
-					   obs_source_t *source)
-{
-	int idx = TransitionCount();
 	ui->transitions->blockSignals(true);
-	ui->transitions->insertItem(idx, name,
+	ui->transitions->insertItem(idx - 1, name,
 				    QVariant::fromValue(OBSSource(source)));
 	ui->transitions->blockSignals(false);
-	return idx;
+	return idx - 1;
 }
 
 void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
@@ -578,15 +570,7 @@ void OBSBasic::on_transitionRemove_clicked()
 		}
 	}
 
-	ui->transitions->blockSignals(true);
 	ui->transitions->removeItem(idx);
-	ui->transitions->setCurrentIndex(-1);
-	ui->transitions->blockSignals(false);
-
-	int bottomIdx = TransitionCount() - 1;
-	if (idx > bottomIdx)
-		idx = bottomIdx;
-	ui->transitions->setCurrentIndex(idx);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_LIST_CHANGED);
