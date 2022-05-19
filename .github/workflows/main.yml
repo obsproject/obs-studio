@@ -104,7 +104,7 @@ jobs:
 
       - name: 'Restore ccache from cache'
         id: ccache-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'ccache-cache'
         with:
@@ -113,7 +113,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -122,7 +122,7 @@ jobs:
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -131,7 +131,7 @@ jobs:
 
       - name: 'Restore Sparkle dependency from cache'
         id: sparkle-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'sparkle-cache'
         with:
@@ -230,7 +230,7 @@ jobs:
 
       - name: 'Restore ccache from cache'
         id: ccache-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'ccache-cache'
         with:
@@ -239,7 +239,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'cef-cache'
         with:
@@ -312,7 +312,7 @@ jobs:
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'vlc-cache'
         with:
@@ -321,7 +321,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
-        uses: actions/cache@v2.1.7
+        uses: actions/cache@v3
         env:
           CACHE_NAME: 'cef-cache'
         with:
