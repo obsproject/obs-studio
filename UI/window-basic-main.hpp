@@ -1135,8 +1135,6 @@ private slots:
 
 	void StackedMixerAreaContextMenuRequested();
 
-	void ResizeOutputSizeOfSource();
-
 public slots:
 	void on_actionResetTransform_triggered();
 
