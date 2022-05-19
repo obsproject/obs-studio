@@ -446,8 +446,6 @@ private:
 
 	void CreateProgramDisplay();
 	void CreateProgramOptions();
-	int AddTransitionBeforeSeparator(const QString &name,
-					 obs_source_t *source);
 	void AddQuickTransitionId(int id);
 	void AddQuickTransition();
 	void AddQuickTransitionHotkey(QuickTransition *qt);
