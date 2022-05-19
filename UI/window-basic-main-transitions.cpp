@@ -72,11 +72,8 @@ void OBSBasic::InitDefaultTransitions()
 			else if (strcmp(id, "cut_transition") == 0)
 				cutTransition = tr;
 		} else {
-			QString addString = QTStr("Add") +
-					    QStringLiteral(": ") +
-					    QT_UTF8(name);
 			ui->transitions->addItem(
-				addString,
+				QTStr("Add ") + QT_UTF8(name),
 				QVariant::fromValue(QString(QT_UTF8(id))));
 		}
 	}
