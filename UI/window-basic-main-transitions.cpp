@@ -101,26 +101,6 @@ void OBSBasic::InitDefaultTransitions()
 	ui->transitions->blockSignals(false);
 }
 
-int OBSBasic::AddTransitionBeforeSeparator(const QString &name,
-					   obs_source_t *source)
-{
-	int idx = -1;
-
-	for (int i = 0; i < ui->transitions->count(); i++) {
-		QVariant v = ui->transitions->itemData(i);
-		if (!v.toString().isEmpty()) {
-			idx = i;
-			break;
-		}
-	}
-
-	ui->transitions->blockSignals(true);
-	ui->transitions->insertItem(idx - 1, name,
-				    QVariant::fromValue(OBSSource(source)));
-	ui->transitions->blockSignals(false);
-	return idx - 1;
-}
-
 void OBSBasic::AddQuickTransitionHotkey(QuickTransition *qt)
 {
 	DStr hotkeyId;
@@ -530,9 +510,10 @@ void OBSBasic::AddTransition(QString id)
 		source = obs_source_create_private(QT_TO_UTF8(id), name.c_str(),
 						   NULL);
 		InitTransition(source);
-		int idx = AddTransitionBeforeSeparator(QT_UTF8(name.c_str()),
-						       source);
-		ui->transitions->setCurrentIndex(idx);
+		ui->transitions->addItem(
+			QT_UTF8(name.c_str()),
+			QVariant::fromValue(OBSSource(source)));
+		ui->transitions->setCurrentIndex(ui->transitions->count() - 1);
 		CreatePropertiesWindow(source);
 		obs_source_release(source);
 
@@ -1817,9 +1798,10 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
 			obs_source_create_private(id, name, settings);
 		if (!obs_obj_invalid(source)) {
 			InitTransition(source);
-			AddTransitionBeforeSeparator(QT_UTF8(name), source);
-			if (cb)
-				cb(private_data, source);
+
+			ui->transitions->addItem(
+				QT_UTF8(name),
+				QVariant::fromValue(OBSSource(source)));
 		}
 	}
 }
