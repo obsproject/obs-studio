@@ -5566,7 +5566,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
 				    OBS_SOURCE_ASYNC_VIDEO;
 		bool hasAudio = (flags & OBS_SOURCE_AUDIO) == OBS_SOURCE_AUDIO;
-		QAction *action;
 
 		colorMenu = new QMenu(QTStr("ChangeBG"));
 		colorWidgetAction = new QWidgetAction(colorMenu);
@@ -5630,14 +5629,12 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addMenu(CreateVisibilityTransitionMenu(false));
 		popup.addSeparator();
 
-		action = popup.addAction(QTStr("Interact"), this,
-					 SLOT(on_actionInteract_triggered()));
-
-		action->setEnabled(obs_source_get_output_flags(source) &
-				   OBS_SOURCE_INTERACTION);
+		if (flags & OBS_SOURCE_INTERACTION)
+			popup.addAction(QTStr("Interact"), this,
+					SLOT(on_actionInteract_triggered()));
 
 		popup.addAction(QTStr("Filters"), this, SLOT(OpenFilters()));
-		action = popup.addAction(
+		QAction *action = popup.addAction(
 			QTStr("Properties"), this,
 			SLOT(on_actionSourceProperties_triggered()));
 		action->setEnabled(obs_source_configurable(source));
