@@ -210,7 +210,7 @@ jobs:
 
     - name: Upload Steam build logs
       if: steps.should-run.outputs.result == 'true'
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: steam-build-logs
         path: ${{ github.workspace }}/steam/build/*.log
