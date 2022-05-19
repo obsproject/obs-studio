@@ -223,10 +223,10 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
 	prop = obs_properties_add_text(props, "ffmpeg_options",
-				       obs_module_text("FFmpeg.Options"),
+				       obs_module_text("FFmpegOpts"),
 				       OBS_TEXT_DEFAULT);
 	obs_property_set_long_description(
-		prop, obs_module_text("FFmpeg.Options.Tooltip"));
+		prop, obs_module_text("FFmpegOpts.ToolTip.Source"));
 
 	return props;
 }
