@@ -59,7 +59,7 @@ jobs:
                 ASSETS_URL='${{ github.event.release.assets_url }}'
             else
                 RELEASE="$(curl -s '${{ github.api_url }}/repos/obsproject/obs-studio/releases/tags/${{ github.event.inputs.tag }}')"
-                
+
                 DESC="$(jq -r '.tag_name' <<< ${RELEASE})"
                 if [[ "$(jq -r '.prerelease' <<< ${RELEASE})" == 'true' ]]; then
                   BRANCH='${{ env.STEAM_BETA_BRANCH }}'
@@ -90,7 +90,7 @@ jobs:
             if [[ -n '${{ github.event.inputs.win_url_override }}' ]]; then
                 WIN_ASSET_URL='${{ github.event.inputs.win_url_override }}'
             fi
-            
+
             if [[ -n '${{ github.event.inputs.mac_url_override }}' ]]; then
                 MAC_ASSET_URL='${{ github.event.inputs.mac_url_override }}'
             fi
@@ -141,7 +141,7 @@ jobs:
             curl -L '${{ steps.build-info.outputs.win_url }}' -o windows.zip
         fi
         echo "::endgroup::"
-      
+
         echo "::group::Download Mac build"
         if [[ '${{ steps.build-info.outputs.mac_intel_url }}' == *'api.github.com'* ]]; then
             curl -L -H 'Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}' '${{ steps.build-info.outputs.mac_intel_url }}' -o mac_x86.dmg.zip
@@ -151,7 +151,7 @@ jobs:
         echo "::endgroup::"
 
         mkdir -p steam && cd steam
-  
+
         echo "::group::Extract and prepare Win64"
         mkdir steam-windows
         (
@@ -179,7 +179,7 @@ jobs:
         else
             7zz x ../mac_x86.dmg -otmp || true
         fi
-          
+
         mv tmp/*/OBS.app steam-macos
         echo "::endgroup::"
 
