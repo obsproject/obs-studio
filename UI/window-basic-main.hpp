@@ -1066,7 +1066,7 @@ private slots:
 	void on_toggleSourceIcons_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
-	void RemoveTransitionClicked();
+	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
