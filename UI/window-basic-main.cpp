@@ -5577,18 +5577,9 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 		popup.addAction(QTStr("Remove"), this,
 				SLOT(on_actionRemoveSource_triggered()));
 		popup.addSeparator();
+
 		popup.addMenu(ui->orderMenu);
-
 		popup.addMenu(ui->transformMenu);
-
-		sourceProjector = new QMenu(QTStr("SourceProjector"));
-		AddProjectorMenuMonitors(sourceProjector, this,
-					 SLOT(OpenSourceProjector()));
-
-		QAction *sourceWindow = popup.addAction(
-			QTStr("SourceWindow"), this, SLOT(OpenSourceWindow()));
-
-		popup.addAction(sourceWindow);
 
 		popup.addSeparator();
 
@@ -5598,35 +5589,36 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 						SLOT(ToggleHideMixer()));
 			actionHideMixer->setCheckable(true);
 			actionHideMixer->setChecked(SourceMixerHidden(source));
-		}
-
-		if (isAsyncVideo) {
-			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
-			popup.addMenu(
-				AddDeinterlacingMenu(deinterlaceMenu, source));
 			popup.addSeparator();
 		}
 
 		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
 		popup.addMenu(
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
-		popup.addSeparator();
-
+		blendingModeMenu = new QMenu(QTStr("BlendingMode"));
+		popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
 		blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
 		popup.addMenu(
 			AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
-		blendingModeMenu = new QMenu(QTStr("BlendingMode"));
-		popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
-		popup.addSeparator();
-
-		popup.addMenu(sourceProjector);
-		popup.addAction(sourceWindow);
-		popup.addAction(QTStr("Screenshot.Source"), this,
-				SLOT(ScreenshotSelectedSource()));
+		if (isAsyncVideo) {
+			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
+			popup.addMenu(
+				AddDeinterlacingMenu(deinterlaceMenu, source));
+		}
 		popup.addSeparator();
 
 		popup.addMenu(CreateVisibilityTransitionMenu(true));
 		popup.addMenu(CreateVisibilityTransitionMenu(false));
+		popup.addSeparator();
+
+		sourceProjector = new QMenu(QTStr("SourceProjector"));
+		AddProjectorMenuMonitors(sourceProjector, this,
+					 SLOT(OpenSourceProjector()));
+		popup.addMenu(sourceProjector);
+		popup.addAction(QTStr("SourceWindow"), this,
+				SLOT(OpenSourceWindow()));
+		popup.addAction(QTStr("Screenshot.Source"), this,
+				SLOT(ScreenshotSelectedSource()));
 		popup.addSeparator();
 
 		if (flags & OBS_SOURCE_INTERACTION)
