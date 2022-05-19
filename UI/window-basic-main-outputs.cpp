@@ -285,6 +285,9 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
 	void UpdateRecordingSettings_nvenc(int cqp);
+#ifdef ENABLE_HEVC
+	void UpdateRecordingSettings_nvenc_hevc(int cqp);
+#endif
 	void UpdateRecordingSettings_amd_cqp(int cqp);
 	void UpdateRecordingSettings();
 	void UpdateRecordingAudioSettings();
@@ -392,6 +395,13 @@ void SimpleOutput::LoadRecordingPreset()
 						 ? "jim_nvenc"
 						 : "ffmpeg_nvenc";
 			LoadRecordingPreset_Lossy(id);
+#ifdef ENABLE_HEVC
+		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+			const char *id = EncoderAvailable("jim_hevc_nvenc")
+						 ? "jim_hevc_nvenc"
+						 : "ffmpeg_hevc_nvenc";
+			LoadRecordingPreset_Lossy(id);
+#endif
 		}
 		usingRecordingPreset = true;
 
@@ -419,6 +429,14 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 		const char *id = EncoderAvailable("jim_nvenc") ? "jim_nvenc"
 							       : "ffmpeg_nvenc";
 		LoadStreamingPreset_Lossy(id);
+
+#ifdef ENABLE_HEVC
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+		const char *id = EncoderAvailable("jim_hevc_nvenc")
+					 ? "jim_hevc_nvenc"
+					 : "ffmpeg_hevc_nvenc";
+		LoadStreamingPreset_Lossy(id);
+#endif
 
 	} else {
 		LoadStreamingPreset_Lossy("obs_x264");
@@ -518,6 +536,11 @@ void SimpleOutput::Update()
 
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
 		presetType = "NVENCPreset";
+
+#ifdef ENABLE_HEVC
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+		presetType = "NVENCPreset";
+#endif
 
 	} else {
 		presetType = "Preset";
@@ -655,6 +678,19 @@ void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 	obs_encoder_update(videoRecording, settings);
 }
 
+#ifdef ENABLE_HEVC
+void SimpleOutput::UpdateRecordingSettings_nvenc_hevc(int cqp)
+{
+	OBSDataAutoRelease settings = obs_data_create();
+	obs_data_set_string(settings, "rate_control", "CQP");
+	obs_data_set_string(settings, "profile", "main");
+	obs_data_set_string(settings, "preset", "hq");
+	obs_data_set_int(settings, "cqp", cqp);
+
+	obs_encoder_update(videoRecording, settings);
+}
+#endif
+
 void SimpleOutput::UpdateStreamingSettings_amd(obs_data_t *settings,
 					       int bitrate)
 {
@@ -714,6 +750,11 @@ void SimpleOutput::UpdateRecordingSettings()
 
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC) {
 		UpdateRecordingSettings_nvenc(crf);
+
+#ifdef ENABLE_HEVC
+	} else if (videoEncoder == SIMPLE_ENCODER_NVENC_HEVC) {
+		UpdateRecordingSettings_nvenc_hevc(crf);
+#endif
 	}
 	UpdateRecordingAudioSettings();
 }

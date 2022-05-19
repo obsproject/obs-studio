@@ -3551,6 +3551,10 @@ void OBSBasicSettings::SaveOutputSettings()
 		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
 		presetType = "NVENCPreset";
+#ifdef ENABLE_HEVC
+	else if (encoder == SIMPLE_ENCODER_NVENC_HEVC)
+		presetType = "NVENCPreset";
+#endif
 	else if (encoder == SIMPLE_ENCODER_AMD)
 		presetType = "AMDPreset";
 	else
@@ -4769,6 +4773,12 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
+#ifdef ENABLE_HEVC
+	if (EncoderAvailable("ffmpeg_hevc_nvenc"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.HEVC"),
+			QString(SIMPLE_ENCODER_NVENC_HEVC));
+#endif
 	if (EncoderAvailable("amd_amf_h264"))
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.AMD.H264"),
@@ -4788,6 +4798,12 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
+#ifdef ENABLE_HEVC
+	if (EncoderAvailable("ffmpeg_hevc_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.HEVC"),
+			QString(SIMPLE_ENCODER_NVENC_HEVC));
+#endif
 	if (EncoderAvailable("amd_amf_h264"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.AMD.H264"),
@@ -4869,6 +4885,34 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "default";
 		preset = curNVENCPreset;
+
+#ifdef ENABLE_HEVC
+	} else if (encoder == SIMPLE_ENCODER_NVENC_HEVC) {
+		obs_properties_t *props =
+			obs_get_encoder_properties("ffmpeg_hevc_nvenc");
+
+		obs_property_t *p = obs_properties_get(props, "preset");
+		size_t num = obs_property_list_item_count(p);
+		for (size_t i = 0; i < num; i++) {
+			const char *name = obs_property_list_item_name(p, i);
+			const char *val = obs_property_list_item_string(p, i);
+
+			/* bluray is for ideal bluray disc recording settings,
+			 * not streaming */
+			if (strcmp(val, "bd") == 0)
+				continue;
+			/* lossless should of course not be used to stream */
+			if (astrcmp_n(val, "lossless", 8) == 0)
+				continue;
+
+			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
+		}
+
+		obs_properties_destroy(props);
+
+		defaultPreset = "default";
+		preset = curNVENCPreset;
+#endif
 
 	} else if (encoder == SIMPLE_ENCODER_AMD) {
 		ui->simpleOutPreset->addItem("Speed", "speed");
