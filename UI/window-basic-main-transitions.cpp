@@ -51,14 +51,8 @@ static inline QString MakeQuickTransitionText(QuickTransition *qt)
 
 void OBSBasic::InitDefaultTransitions()
 {
-	struct AddTransitionVal {
-		QString id;
-		QString name;
-	};
-
 	ui->transitions->blockSignals(true);
 	std::vector<OBSSource> transitions;
-	std::vector<AddTransitionVal> addables;
 	size_t idx = 0;
 	const char *id;
 
@@ -78,26 +72,22 @@ void OBSBasic::InitDefaultTransitions()
 			else if (strcmp(id, "cut_transition") == 0)
 				cutTransition = tr;
 		} else {
-			AddTransitionVal val;
-			val.name = QTStr("Add") + QStringLiteral(": ") +
-				   QT_UTF8(name);
-			val.id = QT_UTF8(id);
-			addables.push_back(val);
+			QString addString = QTStr("Add") +
+					    QStringLiteral(": ") +
+					    QT_UTF8(name);
+			ui->transitions->addItem(
+				addString,
+				QVariant::fromValue(QString(QT_UTF8(id))));
 		}
 	}
+
+	if (ui->transitions->count())
+		ui->transitions->insertSeparator(ui->transitions->count());
 
 	for (OBSSource &tr : transitions) {
 		ui->transitions->addItem(QT_UTF8(obs_source_get_name(tr)),
 					 QVariant::fromValue(OBSSource(tr)));
 	}
-
-	if (addables.size())
-		ui->transitions->insertSeparator(ui->transitions->count());
-
-	for (AddTransitionVal &val : addables) {
-		ui->transitions->addItem(val.name, QVariant::fromValue(val.id));
-	}
-
 	ui->transitions->blockSignals(false);
 }
 
