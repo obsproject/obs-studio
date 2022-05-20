@@ -145,6 +145,7 @@ static inline void clamp_audio_output(struct audio_output *audio, size_t bytes)
 
 			while (mix_data < mix_end) {
 				float val = *mix_data;
+				val = (val == val) ? val : 0.0f;
 				val = (val > 1.0f) ? 1.0f : val;
 				val = (val < -1.0f) ? -1.0f : val;
 				*(mix_data++) = val;
