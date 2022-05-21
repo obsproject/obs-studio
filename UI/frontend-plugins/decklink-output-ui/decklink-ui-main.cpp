@@ -124,7 +124,6 @@ void preview_output_stop()
 {
 	obs_output_stop(context.output);
 	obs_output_release(context.output);
-	video_output_stop(context.video_queue);
 
 	obs_remove_main_render_callback(render_preview_source, &context);
 	obs_frontend_remove_event_callback(on_preview_scene_changed, &context);
