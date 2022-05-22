@@ -61,23 +61,16 @@ float st2084_to_linear_channel(float u)
 	return pow(abs(max(c - 0.8359375, 0.) / (18.8515625 - 18.6875 * c)), 1. / 0.1593017578);
 }
 
-float3 st2084_to_linear(float3 v)
+float3 st2084_to_linear(float3 rgb)
 {
-	return float3(st2084_to_linear_channel(v.r), st2084_to_linear_channel(v.g), st2084_to_linear_channel(v.b));
+	return float3(st2084_to_linear_channel(rgb.r), st2084_to_linear_channel(rgb.g), st2084_to_linear_channel(rgb.b));
 }
 
-float linear_to_hlg_channel(float u)
-{
-	float ln2_i = 1. / log(2.);
-	float m = 0.17883277 / ln2_i;
-	return (u <= (1. / 12.)) ? sqrt(3. * u) : ((log2((12. * u) - 0.28466892) * m) + 0.55991073);
-}
-
-float eetf_0_1000(float Lw, float maxRGB1_pq)
+float eetf_0_Lmax(float maxRGB1_pq, float Lw, float Lmax)
 {
 	float Lw_pq = linear_to_st2084_channel(Lw / 10000.);
-	float E1 = maxRGB1_pq / Lw_pq;
-	float maxLum = linear_to_st2084_channel(.1) / Lw_pq;
+	float E1 = saturate(maxRGB1_pq / Lw_pq); // Ensure normalization in case Lw is a lie
+	float maxLum = linear_to_st2084_channel(Lmax / 10000.) / Lw_pq;
 	float KS = (1.5 * maxLum) - 0.5;
 	float E2 = E1;
 	if (E1 > KS)
@@ -93,18 +86,43 @@ float eetf_0_1000(float Lw, float maxRGB1_pq)
 	return E4;
 }
 
-float3 maxRGB_eetf(float3 rgb, float Lw, float Lmax)
+float3 maxRGB_eetf_internal(float3 rgb_linear, float maxRGB1_linear, float maxRGB1_pq, float Lw, float Lmax)
 {
-	float maxRGB_linear = max(max(rgb.r, rgb.g), rgb.b);
-	float maxRGB1_pq = linear_to_st2084_channel(maxRGB_linear);
-	float maxRGB2_pq = eetf_0_1000(Lw, maxRGB1_pq);
+	float maxRGB2_pq = eetf_0_Lmax(maxRGB1_pq, Lw, Lmax);
 	float maxRGB2_linear = st2084_to_linear_channel(maxRGB2_pq);
 
 	// avoid divide-by-zero possibility
-	maxRGB_linear = max(6.10352e-5, maxRGB_linear);
+	maxRGB1_linear = max(6.10352e-5, maxRGB1_linear);
 
-	rgb *= maxRGB2_linear / maxRGB_linear;
-	return rgb;
+	rgb_linear *= maxRGB2_linear / maxRGB1_linear;
+	return rgb_linear;
+}
+
+float3 maxRGB_eetf_pq_to_linear(float3 rgb_pq, float Lw, float Lmax)
+{
+	float3 rgb_linear = st2084_to_linear(rgb_pq);
+	float maxRGB1_linear = max(max(rgb_linear.r, rgb_linear.g), rgb_linear.b);
+	float maxRGB1_pq = max(max(rgb_pq.r, rgb_pq.g), rgb_pq.b);
+	return maxRGB_eetf_internal(rgb_linear, maxRGB1_linear, maxRGB1_pq, Lw, Lmax);
+}
+
+float3 maxRGB_eetf_linear_to_linear(float3 rgb_linear, float Lw, float Lmax)
+{
+	float maxRGB1_linear = max(max(rgb_linear.r, rgb_linear.g), rgb_linear.b);
+	float maxRGB1_pq = linear_to_st2084_channel(maxRGB1_linear);
+	return maxRGB_eetf_internal(rgb_linear, maxRGB1_linear, maxRGB1_pq, Lw, Lmax);
+}
+
+float3 st2084_to_linear_eetf(float3 rgb, float Lw, float Lmax)
+{
+	return (Lw > Lmax) ? maxRGB_eetf_pq_to_linear(rgb, Lw, Lmax) : st2084_to_linear(rgb);
+}
+
+float linear_to_hlg_channel(float u)
+{
+	float ln2_i = 1. / log(2.);
+	float m = 0.17883277 / ln2_i;
+	return (u <= (1. / 12.)) ? sqrt(3. * u) : ((log2((12. * u) - 0.28466892) * m) + 0.55991073);
 }
 
 float3 linear_to_hlg(float3 rgb, float Lw)
@@ -113,7 +131,7 @@ float3 linear_to_hlg(float3 rgb, float Lw)
 
 	if (Lw > 1000.)
 	{
-		rgb = maxRGB_eetf(rgb, Lw, 1000.);
+		rgb = maxRGB_eetf_linear_to_linear(rgb, Lw, 1000.);
 		rgb *= 10000. / Lw;
 	}
 	else
