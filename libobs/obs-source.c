@@ -2329,6 +2329,9 @@ static inline void obs_source_draw_texture(struct obs_source *source,
 	if (source->async_texrender)
 		tex = gs_texrender_get_texture(source->async_texrender);
 
+	if (!tex)
+		return;
+
 	param = gs_effect_get_param_by_name(effect, "image");
 
 	const bool linear_srgb = gs_get_linear_srgb();
