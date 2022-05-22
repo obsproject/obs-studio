@@ -1317,6 +1317,7 @@ Functions used by sources
            enum video_format   format;
            float               color_matrix[16];
            bool                full_range;
+           uint16_t            max_luminance;
            float               color_range_min[3];
            float               color_range_max[3];
            bool                flip;
