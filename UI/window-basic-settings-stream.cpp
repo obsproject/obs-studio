@@ -92,6 +92,11 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateResFPSLimits()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateMoreInfoLink()));
+
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateAdvNetworkGroup()));
+	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
+		SLOT(UpdateAdvNetworkGroup()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()

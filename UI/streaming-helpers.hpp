@@ -63,6 +63,8 @@ public:
 
 	inline const QString &LastService() const { return lastService; }
 
+	bool IsServiceOutputHasNetworkFeatures();
+
 public slots:
 	void UpdateMoreInfoLink();
 	void UpdateKeyLink();
