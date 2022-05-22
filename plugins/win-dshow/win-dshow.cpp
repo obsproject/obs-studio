@@ -624,7 +624,6 @@ void DShowInput::OnVideoData(const VideoConfig &config, unsigned char *data,
 	obs_source_output_video2(source, &frame);
 
 	UNUSED_PARAMETER(endTime); /* it's the enndd tiimmes! */
-	UNUSED_PARAMETER(size);
 }
 
 void DShowInput::OnEncodedAudioData(enum AVCodecID id, unsigned char *data,
