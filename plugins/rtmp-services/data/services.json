@@ -2622,6 +2622,20 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
-        }
+        },
+        {
+            "name": "Modern Stream",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmps://ingest.modern-stream.com:443/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "x264opts": "tune=zerolatency",
+				"max fps": 30
+            }
+		}
     ]
 }
