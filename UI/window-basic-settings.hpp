@@ -390,6 +390,8 @@ private slots:
 
 	void UpdateStreamDelayEstimate();
 
+	void UpdateAdvNetworkGroup();
+
 	void UpdateAutomaticReplayBufferCheckboxes();
 
 	void AdvOutSplitFileChanged();

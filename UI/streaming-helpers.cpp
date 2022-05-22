@@ -68,6 +68,24 @@ Json get_service_from_json(const Json &root, const char *name)
 	return Json();
 }
 
+bool StreamSettingsUI::IsServiceOutputHasNetworkFeatures()
+{
+	if (IsCustomService())
+		return ui_customServer->text().startsWith("rtmp");
+
+	Json service = get_service_from_json(
+		GetServicesJson(), QT_TO_UTF8(ui_service->currentText()));
+
+	if (!service["recommended"]["output"].is_string())
+		return true;
+
+	if (service["recommended"]["output"].string_value().compare(
+		    "rtmp_output") == 0)
+		return true;
+
+	return false;
+}
+
 void StreamSettingsUI::UpdateMoreInfoLink()
 {
 	if (IsCustomService()) {
