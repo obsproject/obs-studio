@@ -18,6 +18,37 @@ SERVICES_FILE = 'plugins/rtmp-services/data/services.json'
 PACKAGE_FILE = 'plugins/rtmp-services/data/package.json'
 CACHE_FILE = 'other/timestamps.json'
 
+DO_NOT_PING = {'jp9000'}
+PR_MESSAGE = '''Automatic PR to remove dead servers
+Created by workflow run: https://github.com/{repository}/actions/runs/{run_id}
+
+Authors who have modified the affected services: {authors}'''
+
+# GQL is great isn't it
+GQL_QUERY = '''{
+  repositoryOwner(login: "obsproject") {
+    repository(name: "obs-studio") {
+      object(expression: "master") {
+        ... on Commit {
+          blame(path: "plugins/rtmp-services/data/services.json") {
+            ranges {
+              startingLine
+              endingLine
+              commit {
+                author {
+                  user {
+                    login
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}'''
+
 context = ssl.create_default_context()
 
 
@@ -123,10 +154,41 @@ def get_last_artifact():
                 return json.loads(zip_ref.read(info.filename))
 
 
+def find_people_to_blame(raw_services: str, servers: list) -> list:
+    if not servers:
+        return []
+
+    # Fetch Blame data from github
+    s = requests.session()
+    s.headers['Authorization'] = f'Bearer {os.environ["GITHUB_TOKEN"]}'
+
+    r = s.post('https://api.github.com/graphql', json=dict(query=GQL_QUERY, variables=dict()))
+    r.raise_for_status()
+    j = r.json()
+
+    # The file is only ~2600 lines so this isn't too crazy and makes the lookup very easy
+    line_author = dict()
+    for blame in j['data']['repositoryOwner']['repository']['object']['blame']['ranges']:
+        for i in range(blame['startingLine'] - 1, blame['endingLine']):
+            if user := blame['commit']['author']['user']:
+                line_author[i] = user['login']
+
+    authors = set()
+    for i, line in enumerate(raw_services.splitlines()):
+        if '"url":' not in line:
+            continue
+        for server in servers:
+            if server in line and (author := line_author.get(i)) is not None:
+                authors.add(author)
+
+    return sorted(authors ^ DO_NOT_PING)
+
+
 def main():
     try:
         with open(SERVICES_FILE, encoding='utf-8') as services_file:
-            services = json.load(services_file)
+            raw_services = services_file.read()
+            services = json.loads(raw_services)
         with open(PACKAGE_FILE, encoding='utf-8') as package_file:
             package = json.load(package_file)
     except OSError as e:
@@ -152,6 +214,7 @@ def main():
         print('Successfully loaded cache file:', CACHE_FILE)
 
     start_time = int(time.time())
+    removed_servers = list()
     removed_something = False
 
     # create temporary new list
@@ -190,6 +253,7 @@ def main():
                             f'🗑️ Purging server "{server["url"]}", it has been '
                             f'unresponsive for {round(delta/60/60/24)} days.'
                         )
+                        removed_servers.append(server['url'])
                         # continuing here means not adding it to the new list, thus dropping it
                         continue
                 else:
@@ -242,6 +306,24 @@ def main():
             return 1
         else:
             print(f'Successfully wrote services/package files:\n- {SERVICES_FILE}\n- {PACKAGE_FILE}')
+
+        # try to find authors to ping, this is optional and is allowed to fail
+        try:
+            authors = find_people_to_blame(raw_services, removed_servers)
+        except Exception as e:
+            print(f'⚠ Could not fetch blame for some reason: {e}')
+            authors = []
+
+        # set github outputs
+        print(f'::set-output name=make_pr::true')
+        msg = PR_MESSAGE.format(
+            repository=os.environ['REPOSITORY'],
+            run_id=os.environ['WORKFLOW_RUN_ID'],
+            authors=', '.join(f'@{author}' for author in authors),
+        )
+        print(f'::set-output name=pr_message::{json.dumps(msg)}')
+    else:
+        print(f'::set-output name=make_pr::false')
 
 
 if __name__ == '__main__':

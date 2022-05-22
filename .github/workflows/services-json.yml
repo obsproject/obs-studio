@@ -67,14 +67,7 @@ jobs:
 
       - name: Check Services
         id: check
-        run: |
-           python3.9 -u CI/check-services.py
-           # if there are changes, run the PR step
-           if ! git diff --quiet; then
-             echo "::set-output name=make_pr::true"
-           else
-             echo "::set-output name=make_pr::false"
-           fi
+        run: python3.9 -u CI/check-services.py
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           WORKFLOW_RUN_ID: ${{ github.run_id }}
@@ -93,5 +86,5 @@ jobs:
           commit-message: "rtmp-services: Remove defunct servers/services"
           title: "rtmp-services: Remove defunct servers/services"
           branch: "automated/clean-services"
-          body: "Automatic PR to remove dead servers\nCreated by workflow run: https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          body: ${{ fromJSON(steps.check.outputs.pr_message) }}
           delete-branch: true
