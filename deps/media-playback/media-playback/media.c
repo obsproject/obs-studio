@@ -455,6 +455,7 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 	frame->width = f->width;
 	frame->height = f->height;
+	frame->max_luminance = d->max_luminance;
 	frame->flip = flip;
 	frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
 	switch (f->color_trc) {

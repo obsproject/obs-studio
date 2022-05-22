@@ -15,7 +15,9 @@
  */
 
 #include "decode.h"
+
 #include "media.h"
+#include <libavutil/mastering_display_metadata.h>
 
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
 #define USE_NEW_HARDWARE_CODEC_METHOD
@@ -121,6 +123,34 @@ fail:
 	return ret;
 }
 
+static uint16_t get_max_luminance(const AVStream *stream)
+{
+	uint32_t max_luminance = 0;
+
+	for (int i = 0; i < stream->nb_side_data; i++) {
+		const AVPacketSideData *const sd = &stream->side_data[i];
+		switch (sd->type) {
+		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
+			const AVMasteringDisplayMetadata *mastering =
+				(AVMasteringDisplayMetadata *)sd->data;
+			if (mastering->has_luminance) {
+				max_luminance =
+					(uint32_t)(av_q2d(mastering
+								  ->max_luminance) +
+						   0.5);
+			}
+
+			break;
+		}
+		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL:
+			return (uint16_t)((AVContentLightMetadata *)sd->data)
+				->MaxCLL;
+		}
+	}
+
+	return max_luminance;
+}
+
 bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 {
 	struct mp_decode *d = type == AVMEDIA_TYPE_VIDEO ? &m->v : &m->a;
@@ -142,6 +172,9 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 #else
 	id = stream->codec->codec_id;
 #endif
+
+	if (type == AVMEDIA_TYPE_VIDEO)
+		d->max_luminance = get_max_luminance(stream);
 
 	if (id == AV_CODEC_ID_VP8 || id == AV_CODEC_ID_VP9) {
 		AVDictionaryEntry *tag = NULL;
