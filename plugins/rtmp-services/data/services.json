@@ -2633,9 +2633,8 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "x264opts": "tune=zerolatency",
-				"max fps": 30
+                "max fps": 30
             }
-		}
+        }
     ]
 }
