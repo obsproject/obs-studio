@@ -610,10 +610,13 @@ void watcher_unregister(xcb_connection_t *conn, struct xcompcap *s)
 			sizeof(struct reg_item), &watcher_registry.da, i);
 
 		if (item->src == s) {
+			idx = i;
 			win = item->win;
 			break;
 		}
 	}
+	if (idx == DARRAY_INVALID)
+		goto done;
 
 	da_erase(watcher_registry, idx);
 
@@ -636,6 +639,7 @@ void watcher_unregister(xcb_connection_t *conn, struct xcompcap *s)
 					     vals);
 	}
 
+done:
 	pthread_mutex_unlock(&watcher_lock);
 }
 
