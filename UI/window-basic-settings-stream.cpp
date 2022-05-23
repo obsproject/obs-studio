@@ -7,6 +7,7 @@
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
 #include "url-push-button.hpp"
+#include "../plugins/rtmp-services/service-specific/bitmovin-constants.h"
 
 #ifdef BROWSER_AVAILABLE
 #include <browser-panel.hpp>
@@ -61,7 +62,7 @@ void OBSBasicSettings::InitStreamPage()
 
 	streamUi.Setup(ui->streamKeyLabel, ui->service, ui->server,
 		       ui->customServer, ui->moreInfoButton,
-		       ui->getStreamKeyButton);
+		       ui->getStreamKeyButton, ui->serverLabel);
 
 	streamUi.LoadServices(false);
 
@@ -92,6 +93,8 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateResFPSLimits()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), &streamUi,
 		SLOT(UpdateMoreInfoLink()));
+	connect(ui->key, SIGNAL(textChanged(QString)), &streamUi,
+		SLOT(UpdateKey(QString)));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -139,18 +142,19 @@ void OBSBasicSettings::LoadStream1Settings()
 	}
 
 	streamUi.UpdateServerList();
+	ui->key->setText(key);
 
 	if (strcmp(type, "rtmp_common") == 0) {
 		int idx = ui->server->findData(server);
 		if (idx == -1) {
-			if (server && *server)
+			if (server && *server &&
+			    strcmp(service, BITMOVIN_SERVICE_NAME) != 0) {
 				ui->server->insertItem(0, server, server);
+			}
 			idx = 0;
 		}
 		ui->server->setCurrentIndex(idx);
 	}
-
-	ui->key->setText(key);
 
 	streamUi.ClearLastService();
 	on_service_currentIndexChanged(0);

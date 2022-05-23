@@ -26,6 +26,9 @@ target_sources(
           service-specific/showroom.h
           service-specific/dacast.c
           service-specific/dacast.h
+          service-specific/bitmovin.c
+          service-specific/bitmovin.h
+          service-specific/bitmovin-constants.h
           rtmp-common.c
           rtmp-custom.c
           rtmp-services-main.c

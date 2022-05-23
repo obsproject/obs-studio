@@ -2337,6 +2337,20 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Bitmovin",
+            "more_info_link": "https://bitmovin.com/docs/encoding/tutorials/contribution-encoder-obs-studio-example",
+            "stream_key_link": "https://bitmovin.com/dashboard/account",
+            "servers": [
+                {
+                    "name": "dummy",
+                    "url": "rtmp://"
+                }
+            ],  
+            "recommended": {
+                "keyint": 2
+            }
         }
     ]
 }

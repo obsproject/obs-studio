@@ -20,6 +20,7 @@ class StreamSettingsUI : public QObject {
 	Q_OBJECT
 
 	QLabel *ui_streamKeyLabel;
+	QLabel *ui_serverLabel;
 	QComboBox *ui_service;
 	QComboBox *ui_server;
 	QLineEdit *ui_customServer;
@@ -34,9 +35,10 @@ public:
 	inline void Setup(QLabel *streamKeyLabel, QComboBox *service,
 			  QComboBox *server, QLineEdit *customServer,
 			  UrlPushButton *moreInfoButton,
-			  UrlPushButton *streamKeyButton)
+			  UrlPushButton *streamKeyButton, QLabel *serverLabel)
 	{
 		ui_streamKeyLabel = streamKeyLabel;
+		ui_serverLabel = serverLabel;
 		ui_service = service;
 		ui_server = server;
 		ui_customServer = customServer;
@@ -63,8 +65,11 @@ public:
 
 	inline const QString &LastService() const { return lastService; }
 
+	void BitmovinFillLiveStreamList();
+
 public slots:
 	void UpdateMoreInfoLink();
+	void UpdateKey(const QString &key);
 	void UpdateKeyLink();
 	void LoadServices(bool showAll);
 	void UpdateServerList();

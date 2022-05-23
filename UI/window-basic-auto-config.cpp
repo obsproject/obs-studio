@@ -253,7 +253,7 @@ AutoConfigStreamPage::AutoConfigStreamPage(QWidget *parent)
 
 	streamUi.Setup(ui->streamKeyLabel, ui->service, ui->server,
 		       ui->customServer, ui->moreInfoButton,
-		       ui->streamKeyButton);
+		       ui->streamKeyButton, ui->serverLabel);
 
 	ui->connectedAccountLabel->setVisible(false);
 	ui->connectedAccountText->setVisible(false);

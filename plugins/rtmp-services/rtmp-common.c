@@ -10,6 +10,7 @@
 #include "service-specific/nimotv.h"
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"
+#include "service-specific/bitmovin.h"
 
 struct rtmp_common {
 	char *service;
@@ -50,6 +51,8 @@ static void ensure_valid_url(struct rtmp_common *service, json_t *json,
 	if (!service->server || !servers || !json_is_array(servers))
 		return;
 	if (astrstri(service->service, "Facebook") == NULL)
+		return;
+	if (astrstri(service->service, BITMOVIN_SERVICE_NAME) == NULL)
 		return;
 
 	json_array_foreach (servers, index, server) {
@@ -150,6 +153,10 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 		}
 	}
 	json_decref(root);
+	if (service->service &&
+	    strcmp(service->service, BITMOVIN_SERVICE_NAME) == 0) {
+		bitmovin_update(service->key);
+	}
 
 	if (!service->output)
 		service->output = bstrdup("rtmp_output");
@@ -518,9 +525,9 @@ static bool show_all_services_toggled(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *rtmp_common_properties(void *unused)
+static obs_properties_t *rtmp_common_properties(void *data)
 {
-	UNUSED_PARAMETER(unused);
+	struct rtmp_common *service = data;
 
 	obs_properties_t *ppts = obs_properties_create();
 	obs_property_t *p;
@@ -546,6 +553,11 @@ static obs_properties_t *rtmp_common_properties(void *unused)
 
 	obs_properties_add_text(ppts, "key", obs_module_text("StreamKey"),
 				OBS_TEXT_PASSWORD);
+
+	if (strcmp(service->service, BITMOVIN_SERVICE_NAME) == 0) {
+		bitmovin_get_obs_properties(ppts);
+	}
+
 	return ppts;
 }
 
@@ -716,6 +728,11 @@ static const char *rtmp_common_url(void *data)
 			return ingest->url;
 		}
 	}
+
+	if (service->service &&
+	    strcmp(service->service, BITMOVIN_SERVICE_NAME) == 0) {
+		return bitmovin_get_ingest(service->key, service->server);
+	}
 	return service->server;
 }
 
@@ -737,6 +754,11 @@ static const char *rtmp_common_key(void *data)
 			ingest = dacast_ingest(service->key);
 			return ingest->streamkey;
 		}
+	}
+
+	if (service->service &&
+	    strcmp(service->service, BITMOVIN_SERVICE_NAME) == 0) {
+		return bitmovin_get_stream_key();
 	}
 	return service->key;
 }

@@ -3,6 +3,7 @@
 #include "obs-app.hpp"
 
 #include "../plugins/rtmp-services/rtmp-format-ver.h"
+#include "../plugins/rtmp-services/service-specific/bitmovin-constants.h"
 
 #include <util/platform.h>
 #include <util/util.hpp>
@@ -90,6 +91,40 @@ void StreamSettingsUI::UpdateMoreInfoLink()
 	}
 }
 
+void StreamSettingsUI::UpdateKey(const QString &key)
+{
+	QString serviceName = ui_service->currentText();
+	if (serviceName == BITMOVIN_SERVICE_NAME) {
+		obs_service_t *service = obs_frontend_get_streaming_service();
+		obs_data_t *settings = obs_service_get_settings(service);
+		obs_data_set_string(settings, "key", QT_TO_UTF8(key));
+		obs_service_update(service, settings);
+
+		BitmovinFillLiveStreamList();
+	}
+}
+
+void StreamSettingsUI::BitmovinFillLiveStreamList()
+{
+	obs_service_t *service = obs_frontend_get_streaming_service();
+	obs_properties_t *props = obs_service_properties(service);
+	obs_property_t *bitmovin_prop = obs_properties_get(
+		props, BITMOVIN_RUNNING_LIVE_STREAMS_LIST_PROPERTY_NAME);
+
+	ui_server->clear();
+	auto count = obs_property_list_item_count(bitmovin_prop);
+	if (count <= 0) {
+		ui_server->addItem(QTStr("Basic.AutoConfig.StreamPage.None"));
+		return;
+	}
+
+	for (size_t i = 0; i < count; i++) {
+		ui_server->addItem(
+			obs_property_list_item_name(bitmovin_prop, i),
+			obs_property_list_item_string(bitmovin_prop, i));
+	}
+}
+
 void StreamSettingsUI::UpdateKeyLink()
 {
 	QString serviceName = ui_service->currentText();
@@ -107,6 +142,9 @@ void StreamSettingsUI::UpdateKeyLink()
 	if (serviceName == "Dacast") {
 		ui_streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.EncoderKey"));
+	} else if (serviceName == BITMOVIN_SERVICE_NAME) {
+		ui_streamKeyLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.ApiKey"));
 	} else {
 		ui_streamKeyLabel->setText(
 			QTStr("Basic.AutoConfig.StreamPage.StreamKey"));
@@ -116,6 +154,10 @@ void StreamSettingsUI::UpdateKeyLink()
 		ui_streamKeyButton->hide();
 	} else {
 		ui_streamKeyButton->setTargetUrl(QUrl(streamKeyLink.c_str()));
+		if (serviceName == BITMOVIN_SERVICE_NAME) {
+			ui_streamKeyButton->setText(
+				QTStr("Basic.AutoConfig.StreamPage.GetApiKey"));
+		}
 		ui_streamKeyButton->show();
 	}
 }
@@ -178,6 +220,23 @@ void StreamSettingsUI::UpdateServerList()
 					     QT_TO_UTF8(serviceName));
 
 	ui_server->clear();
+
+	if (serviceName == BITMOVIN_SERVICE_NAME) {
+		ui_serverLabel->setText(
+			QTStr("Basic.AutoConfig.StreamPage.RunningStream"));
+
+		obs_service_t *streaming_service =
+			obs_frontend_get_streaming_service();
+		obs_data_t *settings =
+			obs_service_get_settings(streaming_service);
+		obs_data_set_string(settings, "service", BITMOVIN_SERVICE_NAME);
+		obs_service_update(streaming_service, settings);
+
+		BitmovinFillLiveStreamList();
+		return;
+	}
+
+	ui_serverLabel->setText(QTStr("Basic.AutoConfig.StreamPage.Server"));
 
 	auto &servers = service["servers"].array_items();
 	for (const Json &entry : servers) {

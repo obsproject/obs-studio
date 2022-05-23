@@ -10,6 +10,7 @@
 
 #include "service-specific/showroom.h"
 #include "service-specific/dacast.h"
+#include "service-specific/bitmovin.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("rtmp-services", "en-US")
@@ -75,6 +76,7 @@ bool obs_module_load(void)
 {
 	init_twitch_data();
 	init_dacast_data();
+	init_bitmovin_data();
 
 	dstr_copy(&module_name, "rtmp-services plugin (libobs ");
 	dstr_cat(&module_name, obs_get_version_string());
@@ -115,5 +117,6 @@ void obs_module_unload(void)
 	unload_twitch_data();
 	free_showroom_data();
 	unload_dacast_data();
+	unload_bitmovin_data();
 	dstr_free(&module_name);
 }
