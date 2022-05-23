@@ -1,5 +1,3 @@
-add_subdirectory(obs-frontend-api)
-
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
 if(NOT ENABLE_UI)
   obs_status(DISABLED "OBS UI")
@@ -12,6 +10,8 @@ if(NOT QT_VERSION)
       CACHE STRING "OBS Qt version [5, 6]" FORCE)
   set_property(CACHE QT_VERSION PROPERTY STRINGS 5 6)
 endif()
+
+add_subdirectory(obs-frontend-api)
 
 project(obs)
 
