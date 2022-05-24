@@ -1,7 +1,3 @@
-# Build DAL plugin universal to ensure compatibility with Rosetta-translated
-# apps on arm64 hosts
-set(CMAKE_OSX_ARCHITECTURES "x86_64;arm64")
-
 project(mac-dal-plugin)
 
 find_library(COCOA Cocoa)
@@ -58,6 +54,10 @@ set_target_properties(
              FOLDER "plugins"
              VERSION "0"
              SOVERSION "0"
+             # Force the DAL plugin to be built for arm64e as well. Note that
+             # we cannot build OBS for arm64e, since its libraries are not
+             # built for this architecture at the moment.
+             OSX_ARCHITECTURES "x86_64;arm64;arm64e"
              LIBRARY_OUTPUT_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/../../"
              MACOSX_BUNDLE_INFO_PLIST
              "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Virtualcam-Info.plist.in")
