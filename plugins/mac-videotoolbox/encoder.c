@@ -19,14 +19,14 @@
 #define VT_BLOG(level, format, ...) \
 	VT_LOG_ENCODER(enc->encoder, level, format, ##__VA_ARGS__)
 
-static DARRAY(struct vt_encoder {
+static DARRAY(struct vt_encoder_list_item {
 	const char *name;
 	const char *disp_name;
 	const char *id;
 	const char *codec_name;
-}) vt_encoders;
+}) vt_encoder_list;
 
-struct vt_h264_encoder {
+struct vt_encoder {
 	obs_encoder_t *encoder;
 
 	const char *vt_encoder_id;
@@ -54,7 +54,7 @@ struct vt_h264_encoder {
 	DARRAY(uint8_t) extra_data;
 };
 
-static void log_osstatus(int log_level, struct vt_h264_encoder *enc,
+static void log_osstatus(int log_level, struct vt_encoder *enc,
 			 const char *context, OSStatus code)
 {
 	char *c_str = NULL;
@@ -250,8 +250,7 @@ create_encoder_spec(const char *vt_encoder_id)
 #undef REQUIRE_HW_ACCEL
 #undef ENABLE_HW_ACCEL
 
-static inline CFMutableDictionaryRef
-create_pixbuf_spec(struct vt_h264_encoder *enc)
+static inline CFMutableDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 {
 	CFMutableDictionaryRef pixbuf_spec = CFDictionaryCreateMutable(
 		kCFAllocatorDefault, 3, &kCFTypeDictionaryKeyCallBacks,
@@ -273,7 +272,7 @@ create_pixbuf_spec(struct vt_h264_encoder *enc)
 	return pixbuf_spec;
 }
 
-static bool create_encoder(struct vt_h264_encoder *enc)
+static bool create_encoder(struct vt_encoder *enc)
 {
 	OSStatus code;
 
@@ -351,9 +350,9 @@ fail:
 	return false;
 }
 
-static void vt_h264_destroy(void *data)
+static void vt_destroy(void *data)
 {
-	struct vt_h264_encoder *enc = data;
+	struct vt_encoder *enc = data;
 
 	if (enc) {
 		if (enc->session != NULL) {
@@ -366,7 +365,7 @@ static void vt_h264_destroy(void *data)
 	}
 }
 
-static void dump_encoder_info(struct vt_h264_encoder *enc)
+static void dump_encoder_info(struct vt_encoder *enc)
 {
 	VT_BLOG(LOG_INFO,
 		"settings:\n"
@@ -390,9 +389,9 @@ static void dump_encoder_info(struct vt_h264_encoder *enc)
 								 : "default");
 }
 
-static void vt_h264_video_info(void *data, struct video_scale_info *info)
+static void vt_video_info(void *data, struct video_scale_info *info)
 {
-	struct vt_h264_encoder *enc = data;
+	struct vt_encoder *enc = data;
 
 	if (info->format == VIDEO_FORMAT_I420) {
 		enc->obs_pix_fmt = info->format;
@@ -416,7 +415,7 @@ static void vt_h264_video_info(void *data, struct video_scale_info *info)
 	info->format = enc->obs_pix_fmt;
 }
 
-static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
+static void update_params(struct vt_encoder *enc, obs_data_t *settings)
 {
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -426,7 +425,7 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
 
 	// also sets the enc->vt_pix_fmt
-	vt_h264_video_info(enc, &info);
+	vt_video_info(enc, &info);
 
 	enc->colorspace = voi->colorspace;
 
@@ -444,9 +443,9 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 	enc->bframes = obs_data_get_bool(settings, "bframes");
 }
 
-static bool vt_h264_update(void *data, obs_data_t *settings)
+static bool vt_update(void *data, obs_data_t *settings)
 {
-	struct vt_h264_encoder *enc = data;
+	struct vt_encoder *enc = data;
 
 	uint32_t old_bitrate = enc->bitrate;
 	bool old_limit_bitrate = enc->limit_bitrate;
@@ -484,9 +483,9 @@ static bool vt_h264_update(void *data, obs_data_t *settings)
 	return true;
 }
 
-static void *vt_h264_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	struct vt_h264_encoder *enc = bzalloc(sizeof(struct vt_h264_encoder));
+	struct vt_encoder *enc = bzalloc(sizeof(struct vt_encoder));
 
 	OSStatus code;
 
@@ -505,7 +504,7 @@ static void *vt_h264_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return enc;
 
 fail:
-	vt_h264_destroy(enc);
+	vt_destroy(enc);
 	return NULL;
 }
 
@@ -523,7 +522,7 @@ static void packet_put_startcode(struct darray *packet, int size)
 	packet_put(packet, &annexb_startcode[4 - size], size);
 }
 
-static void convert_block_nals_to_annexb(struct vt_h264_encoder *enc,
+static void convert_block_nals_to_annexb(struct vt_encoder *enc,
 					 struct darray *packet,
 					 CMBlockBufferRef block,
 					 int nal_length_bytes)
@@ -565,7 +564,7 @@ static void convert_block_nals_to_annexb(struct vt_h264_encoder *enc,
 	}
 }
 
-static bool handle_keyframe(struct vt_h264_encoder *enc,
+static bool handle_keyframe(struct vt_encoder *enc,
 			    CMFormatDescriptionRef format_desc,
 			    size_t param_count, struct darray *packet,
 			    struct darray *extra_data)
@@ -597,7 +596,7 @@ static bool handle_keyframe(struct vt_h264_encoder *enc,
 	return true;
 }
 
-static bool convert_sample_to_annexb(struct vt_h264_encoder *enc,
+static bool convert_sample_to_annexb(struct vt_encoder *enc,
 				     struct darray *packet,
 				     struct darray *extra_data,
 				     CMSampleBufferRef buffer, bool keyframe)
@@ -652,7 +651,7 @@ static bool is_sample_keyframe(CMSampleBufferRef buffer)
 	return false;
 }
 
-static bool parse_sample(struct vt_h264_encoder *enc, CMSampleBufferRef buffer,
+static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 			 struct encoder_packet *packet, CMTime off)
 {
 	int type;
@@ -728,7 +727,7 @@ fail:
 	return false;
 }
 
-bool get_cached_pixel_buffer(struct vt_h264_encoder *enc, CVPixelBufferRef *buf)
+bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 {
 	OSStatus code;
 	CVPixelBufferPoolRef pool =
@@ -761,10 +760,10 @@ fail:
 	return false;
 }
 
-static bool vt_h264_encode(void *data, struct encoder_frame *frame,
-			   struct encoder_packet *packet, bool *received_packet)
+static bool vt_encode(void *data, struct encoder_frame *frame,
+		      struct encoder_packet *packet, bool *received_packet)
 {
-	struct vt_h264_encoder *enc = data;
+	struct vt_encoder *enc = data;
 
 	OSStatus code;
 
@@ -820,18 +819,19 @@ fail:
 #undef STATUS_CHECK
 #undef CFNUM_INT
 
-static bool vt_h264_extra_data(void *data, uint8_t **extra_data, size_t *size)
+static bool vt_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
-	struct vt_h264_encoder *enc = (struct vt_h264_encoder *)data;
+	struct vt_encoder *enc = (struct vt_encoder *)data;
 	*extra_data = enc->extra_data.array;
 	*size = enc->extra_data.num;
 	return true;
 }
 
-static const char *vt_h264_getname(void *data)
+static const char *vt_getname(void *data)
 {
 	uintptr_t encoder_id = (uintptr_t)data;
-	const char *disp_name = vt_encoders.array[(int)encoder_id].disp_name;
+	const char *disp_name =
+		vt_encoder_list.array[(int)encoder_id].disp_name;
 
 	if (strcmp("Apple H.264 (HW)", disp_name) == 0) {
 		return obs_module_text("VTH264EncHW");
@@ -863,7 +863,7 @@ static bool limit_bitrate_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-static obs_properties_t *vt_h264_properties(void *unused)
+static obs_properties_t *vt_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
@@ -900,7 +900,7 @@ static obs_properties_t *vt_h264_properties(void *unused)
 	return props;
 }
 
-static void vt_h264_defaults(obs_data_t *settings)
+static void vt_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
@@ -912,7 +912,7 @@ static void vt_h264_defaults(obs_data_t *settings)
 }
 
 OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("mac-h264", "en-US")
+OBS_MODULE_USE_DEFAULT_LOCALE("mac-videotoolbox", "en-US")
 
 void encoder_list_create()
 {
@@ -938,13 +938,13 @@ void encoder_list_create()
 		VT_DICTSTR(kVTVideoEncoderList_EncoderName, name);
 		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
 		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
-		struct vt_encoder enc = {
+		struct vt_encoder_list_item enc = {
 			.name = name,
 			.id = id,
 			.disp_name = disp_name,
 			.codec_name = codec_name,
 		};
-		da_push_back(vt_encoders, &enc);
+		da_push_back(vt_encoder_list, &enc);
 #undef VT_DICTSTR
 	}
 
@@ -953,13 +953,13 @@ void encoder_list_create()
 
 void encoder_list_destroy()
 {
-	for (size_t i = 0; i < vt_encoders.num; i++) {
-		bfree((char *)vt_encoders.array[i].name);
-		bfree((char *)vt_encoders.array[i].id);
-		bfree((char *)vt_encoders.array[i].codec_name);
-		bfree((char *)vt_encoders.array[i].disp_name);
+	for (size_t i = 0; i < vt_encoder_list.num; i++) {
+		bfree((char *)vt_encoder_list.array[i].name);
+		bfree((char *)vt_encoder_list.array[i].id);
+		bfree((char *)vt_encoder_list.array[i].codec_name);
+		bfree((char *)vt_encoder_list.array[i].disp_name);
 	}
-	da_free(vt_encoders);
+	da_free(vt_encoder_list);
 }
 
 void register_encoders()
@@ -967,21 +967,21 @@ void register_encoders()
 	struct obs_encoder_info info = {
 		.type = OBS_ENCODER_VIDEO,
 		.codec = "h264",
-		.destroy = vt_h264_destroy,
-		.encode = vt_h264_encode,
-		.update = vt_h264_update,
-		.get_properties = vt_h264_properties,
-		.get_defaults = vt_h264_defaults,
-		.get_video_info = vt_h264_video_info,
-		.get_extra_data = vt_h264_extra_data,
+		.get_name = vt_getname,
+		.create = vt_create,
+		.destroy = vt_destroy,
+		.encode = vt_encode,
+		.update = vt_update,
+		.get_properties = vt_properties,
+		.get_defaults = vt_defaults,
+		.get_video_info = vt_video_info,
+		.get_extra_data = vt_extra_data,
 		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
 	};
 
-	for (size_t i = 0; i < vt_encoders.num; i++) {
-		info.id = vt_encoders.array[i].id;
+	for (size_t i = 0; i < vt_encoder_list.num; i++) {
+		info.id = vt_encoder_list.array[i].id;
 		info.type_data = (void *)i;
-		info.get_name = vt_h264_getname;
-		info.create = vt_h264_create;
 		obs_register_encoder(&info);
 	}
 }
@@ -991,7 +991,7 @@ bool obs_module_load(void)
 	encoder_list_create();
 	register_encoders();
 
-	VT_LOG(LOG_INFO, "Adding VideoToolbox H264 encoders");
+	VT_LOG(LOG_INFO, "Adding VideoToolbox encoders");
 
 	return true;
 }
