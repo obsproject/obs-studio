@@ -79,6 +79,9 @@
           <property name="accessibleName">
            <string>Basic.TransformWindow.PositionX</string>
           </property>
+          <property name="suffix">
+           <string> px</string>
+          </property>
           <property name="decimals">
            <number>4</number>
           </property>
@@ -100,6 +103,9 @@
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.PositionY</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -141,6 +147,9 @@
        </property>
        <property name="accessibleName">
         <string>Basic.TransformWindow.Rotation</string>
+       </property>
+       <property name="suffix">
+        <string>°</string>
        </property>
        <property name="minimum">
         <double>-360.000000000000000</double>
@@ -195,6 +204,9 @@
           <property name="accessibleName">
            <string>Basic.TransformWindow.Width</string>
           </property>
+          <property name="suffix">
+           <string> px</string>
+          </property>
           <property name="decimals">
            <number>4</number>
           </property>
@@ -219,6 +231,9 @@
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.Height</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -480,6 +495,9 @@
           <property name="accessibleName">
            <string>Basic.TransformWindow.BoundsWidth</string>
           </property>
+          <property name="suffix">
+           <string> px</string>
+          </property>
           <property name="decimals">
            <number>4</number>
           </property>
@@ -504,6 +522,9 @@
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.BoundsHeight</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -561,6 +582,9 @@
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropLeft</string>
          </property>
+         <property name="suffix">
+          <string> px</string>
+         </property>
          <property name="maximum">
           <number>100000</number>
          </property>
@@ -582,6 +606,9 @@
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropRight</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>
@@ -631,6 +658,9 @@
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropTop</string>
          </property>
+         <property name="suffix">
+          <string> px</string>
+         </property>
          <property name="maximum">
           <number>100000</number>
          </property>
@@ -652,6 +682,9 @@
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropBottom</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>
