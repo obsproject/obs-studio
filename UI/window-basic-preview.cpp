@@ -639,13 +639,10 @@ void OBSBasicPreview::ProcessClick(const vec2 &pos)
 
 void OBSBasicPreview::mouseReleaseEvent(QMouseEvent *event)
 {
+	OBSQTDisplay::mouseReleaseEvent(event);
+
 	if (scrollMode)
 		setCursor(Qt::OpenHandCursor);
-
-	if (locked) {
-		OBSQTDisplay::mouseReleaseEvent(event);
-		return;
-	}
 
 	if (mouseDown) {
 		vec2 pos = GetMouseEventPos(event);
