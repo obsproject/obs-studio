@@ -81,6 +81,33 @@ static int set_current_scene(lua_State *script)
 	return 0;
 }
 
+static int get_current_preview_scene(lua_State *script)
+{
+	obs_source_t *source = obs_frontend_get_current_preview_scene();
+	ls_push_libobs_obj(obs_source_t, source, false);
+	return 1;
+}
+
+static int set_current_preview_scene(lua_State *script)
+{
+	obs_source_t *source = NULL;
+	ls_get_libobs_obj(obs_source_t, 1, &source);
+	obs_frontend_set_current_preview_scene(source);
+	return 0;
+}
+
+static int preview_program_mode_active(lua_State *script)
+{
+	lua_pushboolean(script, obs_frontend_preview_program_mode_active());
+	return 1;
+}
+
+static int set_preview_program_mode(lua_State *script)
+{
+	obs_frontend_set_preview_program_mode(lua_toboolean(script, 1) != 0);
+	return 0;
+}
+
 static int get_transitions(lua_State *script)
 {
 	struct obs_frontend_source_list list = {0};
@@ -312,6 +339,10 @@ void add_lua_frontend_funcs(lua_State *script)
 	add_func(get_scenes);
 	add_func(get_current_scene);
 	add_func(set_current_scene);
+	add_func(get_current_preview_scene);
+	add_func(set_current_preview_scene);
+	add_func(preview_program_mode_active);
+	add_func(set_preview_program_mode);
 	add_func(get_transitions);
 	add_func(get_current_transition);
 	add_func(set_current_transition);

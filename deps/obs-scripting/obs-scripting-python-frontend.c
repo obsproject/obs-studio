@@ -106,6 +106,58 @@ static PyObject *set_current_scene(PyObject *self, PyObject *args)
 	return python_none();
 }
 
+static PyObject *get_current_preview_scene(PyObject *self, PyObject *args)
+{
+	obs_source_t *source = obs_frontend_get_current_preview_scene();
+
+	PyObject *py_source;
+	if (!libobs_to_py(obs_source_t, source, false, &py_source)) {
+		obs_source_release(source);
+		return python_none();
+	}
+
+	UNUSED_PARAMETER(self);
+	UNUSED_PARAMETER(args);
+	return py_source;
+}
+
+static PyObject *set_current_preview_scene(PyObject *self, PyObject *args)
+{
+	PyObject *py_source;
+	obs_source_t *source = NULL;
+
+	if (!parse_args(args, "O", &py_source))
+		return python_none();
+	if (!py_to_libobs(obs_source_t, py_source, &source))
+		return python_none();
+
+	UNUSED_PARAMETER(self);
+
+	obs_frontend_set_current_preview_scene(source);
+	return python_none();
+}
+
+static PyObject *preview_program_mode_active(PyObject *self, PyObject *args)
+{
+	if (obs_frontend_preview_program_mode_active()) {
+		Py_RETURN_TRUE;
+	}
+	UNUSED_PARAMETER(self);
+	UNUSED_PARAMETER(args);
+	Py_RETURN_FALSE;
+}
+
+static PyObject *set_preview_program_mode(PyObject *self, PyObject *args)
+{
+	UNUSED_PARAMETER(self);
+	int enabled;
+	if (!parse_args(args, "i", &enabled))
+		return python_none();
+
+	obs_frontend_set_preview_program_mode(enabled != 0);
+	return python_none();
+}
+
 static PyObject *get_transitions(PyObject *self, PyObject *args)
 {
 	struct obs_frontend_source_list list = {0};
@@ -432,6 +484,10 @@ void add_python_frontend_funcs(PyObject *module)
 		DEF_FUNC(get_scenes),
 		DEF_FUNC(get_current_scene),
 		DEF_FUNC(set_current_scene),
+		DEF_FUNC(get_current_preview_scene),
+		DEF_FUNC(set_current_preview_scene),
+		DEF_FUNC(preview_program_mode_active),
+		DEF_FUNC(set_preview_program_mode),
 		DEF_FUNC(get_transitions),
 		DEF_FUNC(get_current_transition),
 		DEF_FUNC(set_current_transition),
