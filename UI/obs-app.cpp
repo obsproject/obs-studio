@@ -113,7 +113,7 @@ QObject *CreateShortcutFilter()
 			    event.button() != Qt::LeftButton)
 				return true;
 
-			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
+			obs_key_t hotkey = OBS_KEY_NONE;
 			bool pressed = event.type() == QEvent::MouseButtonPress;
 
 			switch (event.button()) {
@@ -125,12 +125,12 @@ QObject *CreateShortcutFilter()
 				return false;
 
 			case Qt::MiddleButton:
-				hotkey.key = OBS_KEY_MOUSE3;
+				hotkey = OBS_KEY_MOUSE3;
 				break;
 
-#define MAP_BUTTON(i, j)                       \
-	case Qt::ExtraButton##i:               \
-		hotkey.key = OBS_KEY_MOUSE##j; \
+#define MAP_BUTTON(i, j)                   \
+	case Qt::ExtraButton##i:           \
+		hotkey = OBS_KEY_MOUSE##j; \
 		break;
 				MAP_BUTTON(1, 4);
 				MAP_BUTTON(2, 5);
@@ -159,10 +159,7 @@ QObject *CreateShortcutFilter()
 #undef MAP_BUTTON
 			}
 
-			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
-				event.modifiers());
-
-			obs_hotkey_inject_event(hotkey, pressed);
+			obs_hotkey_external_set_pressed(hotkey, pressed);
 			return true;
 		};
 
@@ -176,20 +173,14 @@ QObject *CreateShortcutFilter()
 
 			QDialog *dialog = qobject_cast<QDialog *>(obj);
 
-			obs_key_combination_t hotkey = {0, OBS_KEY_NONE};
+			obs_key_t hotkey = OBS_KEY_NONE;
 			bool pressed = event->type() == QEvent::KeyPress;
 
 			switch (key) {
-			case Qt::Key_Shift:
-			case Qt::Key_Control:
-			case Qt::Key_Alt:
-			case Qt::Key_Meta:
-				break;
-
 #ifdef __APPLE__
 			case Qt::Key_CapsLock:
 				// kVK_CapsLock == 57
-				hotkey.key = obs_key_from_virtual_key(57);
+				hotkey = obs_key_from_virtual_key(57);
 				pressed = true;
 				break;
 #endif
@@ -203,17 +194,15 @@ QObject *CreateShortcutFilter()
 					return true;
 				/* Falls through. */
 			default:
-				hotkey.key = obs_key_from_virtual_key(
+				hotkey = obs_key_from_virtual_key(
 					event->nativeVirtualKey());
 			}
 
 			if (event->isAutoRepeat())
 				return true;
 
-			hotkey.modifiers = TranslateQtKeyboardEventModifiers(
-				event->modifiers());
+			obs_hotkey_external_set_pressed(hotkey, pressed);
 
-			obs_hotkey_inject_event(hotkey, pressed);
 			return true;
 		};
 
@@ -227,6 +216,9 @@ QObject *CreateShortcutFilter()
 		case QEvent::KeyPress:
 		case QEvent::KeyRelease:
 			return key_event(static_cast<QKeyEvent *>(event));
+
+		case QEvent::WindowDeactivate:
+			obs_hotkey_external_release_all();
 
 		default:
 			return false;
