@@ -169,6 +169,7 @@ bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys);
 void obs_hotkeys_platform_free(struct obs_core_hotkeys *hotkeys);
 bool obs_hotkeys_platform_is_pressed(obs_hotkeys_platform_t *context,
 				     obs_key_t key);
+bool obs_hotkeys_external_is_pressed(obs_key_t key);
 
 const char *obs_get_hotkey_translation(obs_key_t key, const char *def);
 
@@ -400,6 +401,7 @@ struct obs_core_hotkeys {
 	bool thread_disable_press;
 	bool strict_modifiers;
 	bool reroute_hotkeys;
+	DARRAY(obs_key_t) external_keys;
 	DARRAY(obs_hotkey_binding_t) bindings;
 
 	obs_hotkey_callback_router_func router_func;

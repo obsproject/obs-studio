@@ -273,7 +273,12 @@ EXPORT void obs_enum_hotkey_bindings(obs_hotkey_binding_enum_func func,
 
 /* hotkey event control */
 
-EXPORT void obs_hotkey_inject_event(obs_key_combination_t hotkey, bool pressed);
+OBS_DEPRECATED EXPORT void obs_hotkey_inject_event(obs_key_combination_t hotkey,
+						   bool pressed);
+/* Use for manually triggering hotkeys when the platform hotkeys aren't used,
+ * like when focused on a frontend */
+EXPORT void obs_hotkey_external_set_pressed(obs_key_t key, bool pressed);
+EXPORT void obs_hotkey_external_release_all();
 
 EXPORT void obs_hotkey_enable_background_press(bool enable);
 

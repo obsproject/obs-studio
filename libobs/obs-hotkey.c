@@ -1149,6 +1149,7 @@ void obs_hotkeys_free(void)
 	da_free(obs->hotkeys.bindings);
 	da_free(obs->hotkeys.hotkeys);
 	da_free(obs->hotkeys.hotkey_pairs);
+	da_free(obs->hotkeys.external_keys);
 
 	for (size_t i = 0; i < OBS_KEY_LAST_VALUE; i++) {
 		if (obs->hotkeys.translations[i]) {
@@ -1202,7 +1203,8 @@ static inline bool modifiers_match(obs_hotkey_binding_t *binding,
 static inline bool is_pressed(obs_key_t key)
 {
 	return obs_hotkeys_platform_is_pressed(obs->hotkeys.platform_context,
-					       key);
+					       key) ||
+	       obs_hotkeys_external_is_pressed(key);
 }
 
 static inline void press_released_binding(obs_hotkey_binding_t *binding)
@@ -1328,6 +1330,30 @@ void obs_hotkey_enable_strict_modifiers(bool enable)
 	unlock();
 }
 
+void obs_hotkey_external_set_pressed(obs_key_t key, bool pressed)
+{
+	if (key == OBS_KEY_NONE)
+		return;
+
+	if (pressed)
+		da_push_back(obs->hotkeys.external_keys, &key);
+	else
+		da_erase_item(obs->hotkeys.external_keys, &key);
+}
+
+void obs_hotkey_external_release_all()
+{
+	if (obs->hotkeys.external_keys.num)
+		da_erase_range(obs->hotkeys.external_keys, 0,
+			       obs->hotkeys.external_keys.num);
+}
+
+bool obs_hotkeys_external_is_pressed(obs_key_t key)
+{
+	size_t idx = da_find(obs->hotkeys.external_keys, &key, 0);
+	return idx != DARRAY_INVALID;
+}
+
 struct obs_query_hotkeys_helper {
 	uint32_t modifiers;
 	bool no_press;
@@ -1365,6 +1391,23 @@ static inline void query_hotkeys()
 		obs->hotkeys.strict_modifiers,
 	};
 	enum_bindings(query_hotkey, &param);
+#ifdef __APPLE__
+	/* Stupid hack to reset the capslock key after keys have been queried
+	 because when releasing capslock, *unlike on any other key* release events
+	 are not triggered. They are only triggered once a person presses the
+	 physical key again to disable capslock. It's quite logical honestly. It
+	 means that we shouldn't expect callers to external_set_pressed to reset the
+	 capslock key again, and also since it's the least ugly hack I could come up
+	 with that doesn't have any major flaws.
+	 This behaviour appears to have historic reasons: The capslock key on Apple
+	 keyboards used to mechanically lock into place, at least according to the
+	 computer magazine "InfoWorld" from 1993 I found on Google Books. And it
+	 would be unfair to Apple to claim that this is something they would've been
+	 able to change since then, it's only been 29 years and Apple has such a
+	 good track record of always maintaining backwards compatiblity for
+	 everything everywhere. */
+	obs_hotkey_external_set_pressed(OBS_KEY_CAPSLOCK, false);
+#endif
 }
 
 #define NBSP "\xC2\xA0"
