@@ -1,7 +1,5 @@
 project(linux-pulseaudio)
 
-option(ENABLE_PULSEAUDIO "Enable PulseAudio support" ON)
-
 if(NOT ENABLE_PULSEAUDIO)
   obs_status(DISABLED "linux-pulseaudio")
   return()
