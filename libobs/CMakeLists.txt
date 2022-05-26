@@ -399,6 +399,7 @@ elseif(OS_POSIX)
 
     target_link_libraries(libobs PRIVATE ${PULSEAUDIO_LIBRARY})
   else()
+    obs_status(WARNING "-> No audio backend found - audio monitoring disabled")
     target_sources(libobs PRIVATE audio-monitoring/null/null-audio-monitoring.c)
   endif()
 
