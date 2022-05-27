@@ -71,7 +71,7 @@
 #define TEXT_HOOK_RATE_FASTEST     obs_module_text("GameCapture.HookRate.Fastest")
 #define TEXT_RGBA10A2_SPACE        obs_module_text("GameCapture.Rgb10a2Space")
 #define TEXT_RGBA10A2_SPACE_SRGB   obs_module_text("GameCapture.Rgb10a2Space.Srgb")
-#define TEXT_RGBA10A2_SPACE_2020PQ obs_module_text("GameCapture.Rgb10a2Space.2020PQ")
+#define TEXT_RGBA10A2_SPACE_2100PQ obs_module_text("GameCapture.Rgb10a2Space.2100PQ")
 
 #define TEXT_MODE_ANY            TEXT_ANY_FULLSCREEN
 #define TEXT_MODE_WINDOW         obs_module_text("GameCapture.CaptureWindow")
@@ -99,7 +99,7 @@ enum hook_rate {
 };
 
 #define RGBA10A2_SPACE_SRGB "srgb"
-#define RGBA10A2_SPACE_2020PQ "2020pq"
+#define RGBA10A2_SPACE_2100PQ "2100pq"
 
 struct game_capture_config {
 	char *title;
@@ -114,7 +114,7 @@ struct game_capture_config {
 	bool capture_overlays;
 	bool anticheat_hook;
 	enum hook_rate hook_rate;
-	bool is_10a2_2020pq;
+	bool is_10a2_2100pq;
 };
 
 typedef DPI_AWARENESS_CONTEXT(WINAPI *PFN_SetThreadDpiAwarenessContext)(
@@ -164,7 +164,7 @@ struct game_capture {
 	gs_texture_t *texture;
 	gs_texture_t *extra_texture;
 	gs_texrender_t *extra_texrender;
-	bool is_10a2_2020pq;
+	bool is_10a2_2100pq;
 	bool linear_sample;
 	struct hook_info *global_hook_info;
 	HANDLE keepalive_mutex;
@@ -442,9 +442,9 @@ static inline void get_config(struct game_capture_config *cfg,
 		obs_data_get_bool(settings, SETTING_ANTI_CHEAT_HOOK);
 	cfg->hook_rate =
 		(enum hook_rate)obs_data_get_int(settings, SETTING_HOOK_RATE);
-	cfg->is_10a2_2020pq =
+	cfg->is_10a2_2100pq =
 		strcmp(obs_data_get_string(settings, SETTING_RGBA10A2_SPACE),
-		       "2020pq") == 0;
+		       "2100pq") == 0;
 }
 
 static inline int s_cmp(const char *str1, const char *str2)
@@ -541,7 +541,7 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	gc->retry_interval = DEFAULT_RETRY_INTERVAL *
 			     hook_rate_to_float(gc->config.hook_rate);
 	gc->wait_for_target_startup = false;
-	gc->is_10a2_2020pq = gc->config.is_10a2_2020pq;
+	gc->is_10a2_2100pq = gc->config.is_10a2_2100pq;
 
 	dstr_free(&gc->title);
 	dstr_free(&gc->class);
@@ -1962,7 +1962,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	bool is_10a2_compressed = false;
 	if (gs_texture_get_color_format(texture) == GS_R10G10B10A2) {
 		is_10a2_compressed = true;
-		source_space = gc->is_10a2_2020pq ? GS_CS_709_EXTENDED
+		source_space = gc->is_10a2_2100pq ? GS_CS_709_EXTENDED
 						  : GS_CS_SRGB_16F;
 	} else if (gs_texture_get_color_format(texture) == GS_RGBA16F) {
 		source_space = GS_CS_709_SCRGB;
@@ -1990,7 +1990,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 				gs_effect_set_texture(image, texture);
 
 				const char *tech_name = "DrawSrgbDecompress";
-				if (gc->is_10a2_2020pq) {
+				if (gc->is_10a2_2100pq) {
 					tech_name = "DrawPQ";
 
 					const float multiplier =
@@ -2417,8 +2417,8 @@ static obs_properties_t *game_capture_properties(void *data)
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, TEXT_RGBA10A2_SPACE_SRGB,
 				     RGBA10A2_SPACE_SRGB);
-	obs_property_list_add_string(p, TEXT_RGBA10A2_SPACE_2020PQ,
-				     RGBA10A2_SPACE_2020PQ);
+	obs_property_list_add_string(p, TEXT_RGBA10A2_SPACE_2100PQ,
+				     RGBA10A2_SPACE_2100PQ);
 
 	UNUSED_PARAMETER(data);
 	return ppts;
@@ -2434,7 +2434,7 @@ game_capture_get_color_space(void *data, size_t count,
 	if (gc->texture) {
 		const enum gs_color_format format =
 			gs_texture_get_color_format(gc->texture);
-		if (((format == GS_R10G10B10A2) && gc->is_10a2_2020pq) ||
+		if (((format == GS_R10G10B10A2) && gc->is_10a2_2100pq) ||
 		    (format == GS_RGBA16F)) {
 			for (size_t i = 0; i < count; ++i) {
 				if (preferred_spaces[i] == GS_CS_709_SCRGB)
