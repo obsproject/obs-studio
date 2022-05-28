@@ -30,9 +30,8 @@ swig_add_library(
 
 target_link_libraries(obslua PRIVATE OBS::scripting OBS::libobs Luajit::Luajit)
 
-set_target_properties(
-  obslua PROPERTIES SWIG_COMPILE_DEFINITIONS
-                    "SWIG_TYPE_TABLE=obslua;SWIG_LUA_INTERPRETER_NO_DEBUG")
+list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obslua"
+     "SWIG_LUA_INTERPRETER_NO_DEBUG")
 
 set_target_properties(
   obslua
@@ -44,10 +43,14 @@ target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua
                                           SWIG_LUA_INTERPRETER_NO_DEBUG)
 
 if(ENABLE_UI)
+  list(APPEND _SWIG_DEFINITIONS "ENABLE_UI")
   target_link_libraries(obslua PRIVATE OBS::frontend-api)
 
   target_compile_definitions(obslua PRIVATE ENABLE_UI)
 endif()
+
+set_target_properties(obslua PROPERTIES SWIG_COMPILE_DEFINITIONS
+                                        "${_SWIG_DEFINITIONS}")
 
 if(OS_WINDOWS)
   if(MSVC)
