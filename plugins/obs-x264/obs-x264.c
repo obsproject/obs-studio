@@ -701,6 +701,8 @@ static void *obs_x264_create(obs_data_t *settings, obs_encoder_t *encoder)
 	switch (voi->colorspace) {
 	case VIDEO_CS_2100_PQ:
 	case VIDEO_CS_2100_HLG:
+		obs_encoder_set_last_error(encoder,
+					   obs_module_text("HdrUnsupported"));
 		warn_enc(encoder,
 			 "OBS does not support using x264 with Rec. 2100");
 		return NULL;
