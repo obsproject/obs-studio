@@ -972,13 +972,12 @@ static bool init_encoder(struct nvenc_data *enc, bool hevc,
 #endif
 
 	if (obs_p010_tex_active() && !support_10bit) {
-		NV_FAIL("Cannot perform 10-bit encode on this encoder");
+		NV_FAIL(obs_module_text("NVENC.10bitUnsupported"));
 		return false;
 	}
 
 	if (bf > bf_max) {
-		NV_FAIL("Max B-frames setting (%d) is more than encoder supports (%d)",
-			bf, bf_max);
+		NV_FAIL(obs_module_text("NVENC.TooManyBFrames"), bf, bf_max);
 		return false;
 	}
 
