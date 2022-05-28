@@ -89,6 +89,7 @@ struct nv_bitstream {
 	HANDLE event;
 };
 
+#define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
 #define NV_FAILED(x) nv_failed(enc->encoder, x, __FUNCTION__, #x)
 
 static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
@@ -353,7 +354,7 @@ static bool init_session(struct nvenc_data *enc)
 }
 
 static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
-			      bool psycho_aq)
+			      int bf, bool psycho_aq)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -363,16 +364,8 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
-	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
-
-	const int bf_max = nv_get_cap_h264(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
-	if (bf > bf_max) {
-		error("Max B-frames setting (%d) is more than GPU supports (%d)",
-		      bf, bf_max);
-		return false;
-	}
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -633,7 +626,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 
 #ifdef ENABLE_HEVC
 static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
-			      bool psycho_aq)
+			      int bf, bool psycho_aq)
 {
 	const char *rc = obs_data_get_string(settings, "rate_control");
 	int bitrate = (int)obs_data_get_int(settings, "bitrate");
@@ -643,16 +636,8 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
-	int bf = (int)obs_data_get_int(settings, "bf");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	NVENCSTATUS err;
-
-	const int bf_max = nv_get_cap_hevc(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
-	if (bf > bf_max) {
-		error("Max B-frames setting (%d) is more than GPU supports (%d)",
-		      bf, bf_max);
-		return false;
-	}
 
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -954,8 +939,67 @@ static bool init_textures(struct nvenc_data *enc)
 
 static void nvenc_destroy(void *data);
 
+static bool init_specific_encoder(struct nvenc_data *enc, bool hevc,
+				  obs_data_t *settings, obs_encoder_t *encoder,
+				  int bf, bool psycho_aq)
+{
+	bool init = false;
+
+#ifdef ENABLE_HEVC
+	if (hevc)
+		return init_encoder_hevc(enc, settings, bf, psycho_aq);
+#endif
+
+	return init_encoder_h264(enc, settings, bf, psycho_aq);
+}
+
+static bool init_encoder(struct nvenc_data *enc, bool hevc,
+			 obs_data_t *settings, obs_encoder_t *encoder)
+{
+	const int bf = (int)obs_data_get_int(settings, "bf");
+	const bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
+#ifdef ENABLE_HEVC
+	const bool support_10bit =
+		hevc ? nv_get_cap_hevc(enc, NV_ENC_CAPS_SUPPORT_10BIT_ENCODE)
+		     : nv_get_cap_h264(enc, NV_ENC_CAPS_SUPPORT_10BIT_ENCODE);
+	const int bf_max =
+		hevc ? nv_get_cap_hevc(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES)
+		     : nv_get_cap_h264(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
+#else
+	const bool support_10bit =
+		nv_get_cap_h264(enc, NV_ENC_CAPS_SUPPORT_10BIT_ENCODE);
+	const int bf_max = nv_get_cap_h264(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
+#endif
+
+	if (obs_p010_tex_active() && !support_10bit) {
+		NV_FAIL("Cannot perform 10-bit encode on this encoder");
+		return false;
+	}
+
+	if (bf > bf_max) {
+		NV_FAIL("Max B-frames setting (%d) is more than encoder supports (%d)",
+			bf, bf_max);
+		return false;
+	}
+
+	if (!init_specific_encoder(enc, hevc, settings, encoder, bf,
+				   psycho_aq)) {
+		if (!psycho_aq)
+			return false;
+
+		blog(LOG_WARNING, "[jim-nvenc] init_specific_encoder failed, "
+				  "trying again without Psycho Visual Tuning");
+		if (!init_specific_encoder(enc, hevc, settings, encoder, bf,
+					   psycho_aq)) {
+			return false;
+		}
+	}
+
+	return true;
+}
+
 static void *nvenc_create_internal(bool hevc, obs_data_t *settings,
-				   obs_encoder_t *encoder, bool psycho_aq)
+				   obs_encoder_t *encoder)
 {
 	NV_ENCODE_API_FUNCTION_LIST init = {NV_ENCODE_API_FUNCTION_LIST_VER};
 	struct nvenc_data *enc = bzalloc(sizeof(*enc));
@@ -974,17 +1018,8 @@ static void *nvenc_create_internal(bool hevc, obs_data_t *settings,
 	if (!init_session(enc)) {
 		goto fail;
 	}
-#ifdef ENABLE_HEVC
-	if (hevc) {
-		if (!init_encoder_hevc(enc, settings, psycho_aq)) {
-			goto fail;
-		}
-	} else
-#endif
-	{
-		if (!init_encoder_h264(enc, settings, psycho_aq)) {
-			goto fail;
-		}
+	if (!init_encoder(enc, hevc, settings, encoder)) {
+		goto fail;
 	}
 	if (!init_bitstreams(enc)) {
 		goto fail;
@@ -1027,14 +1062,7 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 		goto reroute;
 	}
 
-	const bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
-	struct nvenc_data *enc =
-		nvenc_create_internal(hevc, settings, encoder, psycho_aq);
-	if ((enc == NULL) && psycho_aq) {
-		blog(LOG_WARNING, "[jim-nvenc] nvenc_create_internal failed, "
-				  "trying again without Psycho Visual Tuning");
-		enc = nvenc_create_internal(hevc, settings, encoder, false);
-	}
+	struct nvenc_data *enc = nvenc_create_internal(hevc, settings, encoder);
 
 	if (enc) {
 		return enc;
