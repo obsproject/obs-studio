@@ -32,12 +32,8 @@ swig_add_library(
 
 target_link_libraries(obspython PRIVATE OBS::scripting OBS::libobs)
 
-set_target_properties(
-  obspython
-  PROPERTIES
-    SWIG_COMPILE_DEFINITIONS
-    "SWIG_TYPE_TABLE=obspython;Py_ENABLE_SHARED=1;SWIG_PYTHON_INTERPRETER_NO_DEBUG"
-)
+list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obspython" "Py_ENABLE_SHARED=1"
+     "SWIG_PYTHON_INTERPRETER_NO_DEBUG")
 
 target_compile_features(obspython PRIVATE cxx_auto_type c_std_11)
 
@@ -46,10 +42,14 @@ target_compile_definitions(
                     SWIG_PYTHON_INTERPRETER_NO_DEBUG)
 
 if(ENABLE_UI)
+  list(APPEND _SWIG_DEFINITIONS "ENABLE_UI")
   target_link_libraries(obspython PRIVATE OBS::frontend-api)
 
   target_compile_definitions(obspython PRIVATE ENABLE_UI)
 endif()
+
+set_target_properties(obspython PROPERTIES SWIG_COMPILE_DEFINITIONS
+                                           "${_SWIG_DEFINITIONS}")
 
 if(OS_WINDOWS)
   set_target_properties(
