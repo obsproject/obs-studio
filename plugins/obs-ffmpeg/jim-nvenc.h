@@ -13,5 +13,6 @@ extern const char *nv_error_name(NVENCSTATUS err);
 extern NV_ENCODE_API_FUNCTION_LIST nv;
 extern NV_CREATE_INSTANCE_FUNC nv_create_instance;
 extern bool init_nvenc(obs_encoder_t *encoder);
+bool nv_fail(obs_encoder_t *encoder, const char *format, ...);
 bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 	       const char *call);

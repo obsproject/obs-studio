@@ -10,6 +10,26 @@ NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
 #define error(format, ...) blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
 
+bool nv_fail(obs_encoder_t *encoder, const char *format, ...)
+{
+	struct dstr message = {0};
+	struct dstr error_message = {0};
+
+	va_list args;
+	va_start(args, format);
+	dstr_vprintf(&message, format, args);
+	va_end(args);
+
+	dstr_printf(&error_message, "NVENC Error: %s", message.array);
+	obs_encoder_set_last_error(encoder, error_message.array);
+	error("%s", error_message.array);
+
+	dstr_free(&error_message);
+	dstr_free(&message);
+
+	return true;
+}
+
 bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 	       const char *call)
 {
