@@ -50,8 +50,7 @@ elseif(OS_POSIX)
   find_package(XCB COMPONENTS XCB)
   find_package(X11_XCB REQUIRED)
 
-  target_sources(libobs-opengl PRIVATE gl-egl-common.c gl-nix.c gl-x11-egl.c
-                                       gl-x11-glx.c)
+  target_sources(libobs-opengl PRIVATE gl-egl-common.c gl-nix.c gl-x11-egl.c)
 
   target_link_libraries(libobs-opengl PRIVATE XCB::XCB X11::X11_xcb)
 

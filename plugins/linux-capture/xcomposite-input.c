@@ -1,7 +1,7 @@
 #include <obs-module.h>
 #include <obs-nix-platform.h>
 #include <glad/glad.h>
-#include <glad/glad_glx.h>
+#include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <xcb/xcb.h>
 #include <xcb/composite.h>
@@ -58,7 +58,6 @@ struct xcompcap {
 	uint32_t border;
 
 	Pixmap pixmap;
-	GLXPixmap glxpixmap;
 	gs_texture_t *gltex;
 
 	pthread_mutex_t lock;
@@ -66,13 +65,6 @@ struct xcompcap {
 	bool show_cursor;
 	bool cursor_outside;
 	xcb_xcursor_t *cursor;
-	// strict_binding determines whether we rebind the GLX Pixmap on every
-	// tick. "Strict binding" is the correct mode of operation, according to
-	// GLX_EXT_texture_from_pixmap. However certain drivers exhibit poor
-	// performance when this is done, so setting this to false allows working
-	// around it.
-	bool strict_binding;
-	bool egl;
 };
 
 static void xcompcap_update(void *data, obs_data_t *settings);
@@ -358,16 +350,6 @@ cleanup1:
 void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
 {
 	if (s->gltex) {
-		GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
-		glBindTexture(GL_TEXTURE_2D, gltex);
-		if (s->glxpixmap) {
-			if (s->strict_binding) {
-				glXReleaseTexImageEXT(disp, s->glxpixmap,
-						      GLX_FRONT_EXT);
-			}
-			glXDestroyPixmap(disp, s->glxpixmap);
-			s->glxpixmap = 0;
-		}
 		gs_texture_destroy(s->gltex);
 		s->gltex = 0;
 	}
@@ -399,43 +381,8 @@ static enum gs_color_format gs_format_from_tex()
 	}
 }
 
-// These declarations are from libobs-opengl/gl-subsystem.h because we need to
-// handle GLX modifying textures outside libobs.
-struct fb_info;
-
-struct gs_texture {
-	gs_device_t *device;
-	enum gs_texture_type type;
-	enum gs_color_format format;
-	GLenum gl_format;
-	GLenum gl_target;
-	GLenum gl_internal_format;
-	GLenum gl_type;
-	GLuint texture;
-	uint32_t levels;
-	bool is_dynamic;
-	bool is_render_target;
-	bool is_dummy;
-	bool gen_mipmaps;
-
-	gs_samplerstate_t *cur_sampler;
-	struct fbo_info *fbo;
-};
-// End shitty hack.
-
-// XErrorHandler for glXCreatePixmap calls.
-static bool pixmap_err = false;
-static char pixmap_err_text[200];
-static int catch_pixmap_errors(Display *display, XErrorEvent *err)
-{
-	pixmap_err = true;
-	memset(pixmap_err_text, 0, 200);
-	XGetErrorText(display, err->error_code, pixmap_err_text, 200);
-	return 0;
-}
-
-void xcomp_create_pixmap(xcb_connection_t *conn, Display *disp,
-			 struct xcompcap *s, int log_level)
+void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
+			 int log_level)
 {
 	if (!s->win)
 		return;
@@ -475,103 +422,9 @@ void xcomp_create_pixmap(xcb_connection_t *conn, Display *disp,
 		return;
 	}
 
-	if (s->egl) {
-		s->gltex = gs_texture_create_from_pixmap(s->width, s->height,
-							 GS_BGRA_UNORM,
-							 GL_TEXTURE_2D,
-							 (void *)s->pixmap);
-
-	} else {
-		const int config_attrs[] = {GLX_BIND_TO_TEXTURE_RGBA_EXT,
-					    GL_TRUE,
-					    GLX_DRAWABLE_TYPE,
-					    GLX_PIXMAP_BIT,
-					    GLX_BIND_TO_TEXTURE_TARGETS_EXT,
-					    GLX_TEXTURE_2D_BIT_EXT,
-					    GLX_DOUBLEBUFFER,
-					    GL_FALSE,
-					    None};
-		int nelem = 0;
-		GLXFBConfig *configs = glXChooseFBConfig(
-			disp, xcb_get_screen_for_root(conn, root), config_attrs,
-			&nelem);
-
-		bool found = false;
-		GLXFBConfig config;
-		for (int i = 0; i < nelem; i++) {
-			config = configs[i];
-			XVisualInfo *visual =
-				glXGetVisualFromFBConfig(disp, config);
-			if (!visual)
-				continue;
-
-			found = depth == visual->depth;
-			XFree(visual);
-			if (found)
-				break;
-		}
-		XFree(configs);
-		if (!found) {
-			blog(log_level, "no matching fb config found");
-			s->pixmap = 0;
-			return;
-		}
-
-		// Should be consistent format with config we are using. Since we searched on RGBA let's use RGBA here.
-		const int pixmap_attrs[] = {GLX_TEXTURE_TARGET_EXT,
-					    GLX_TEXTURE_2D_EXT,
-					    GLX_TEXTURE_FORMAT_EXT,
-					    GLX_TEXTURE_FORMAT_RGBA_EXT, None};
-
-		// Try very hard to capture errors in glXCreatePixmap for NVIDIA drivers
-		// where only one pixmap can be bound in GLX at a time.
-		pixmap_err = false;
-		XErrorHandler prev = XSetErrorHandler(catch_pixmap_errors);
-		s->glxpixmap =
-			glXCreatePixmap(disp, config, s->pixmap, pixmap_attrs);
-		XSync(disp, false);
-
-		s->gltex = gs_texture_create(s->width, s->height, GS_RGBA_UNORM,
-					     1, 0, GS_GL_DUMMYTEX);
-		GLuint gltex = *(GLuint *)gs_texture_get_obj(s->gltex);
-		glBindTexture(GL_TEXTURE_2D, gltex);
-		// Not respecting a captured glXCreatePixmap error will result in Xorg closing our connection.
-		if (!pixmap_err)
-			glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT,
-					   NULL);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER,
-				GL_LINEAR);
-		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER,
-				GL_LINEAR);
-		// glxBindTexImageEXT might modify the textures format.
-		enum gs_color_format format = gs_format_from_tex();
-		// Check if texture is invalid... because X11 hates us.
-		int w;
-		int h;
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH,
-					 &w);
-		glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT,
-					 &h);
-		glBindTexture(GL_TEXTURE_2D, 0);
-		// We must sync OBS texture format based on any glxBindTexImageEXT changes.
-		s->gltex->format = format;
-
-		XSync(disp, false);
-		if (pixmap_err || (uint32_t)w < s->width ||
-		    (uint32_t)h < s->height) {
-			blog(log_level, "glXCreatePixmap failed: %s",
-			     pixmap_err_text);
-			glXDestroyPixmap(disp, s->glxpixmap);
-			XFreePixmap(disp, s->pixmap);
-			gs_texture_destroy(s->gltex);
-			s->pixmap = 0;
-			s->glxpixmap = 0;
-			s->gltex = 0;
-			XSetErrorHandler(prev);
-			return;
-		}
-		XSetErrorHandler(prev);
-	}
+	s->gltex = gs_texture_create_from_pixmap(s->width, s->height,
+						 GS_BGRA_UNORM, GL_TEXTURE_2D,
+						 (void *)s->pixmap);
 }
 
 struct reg_item {
@@ -716,19 +569,9 @@ static void *xcompcap_create(obs_data_t *settings, obs_source_t *source)
 		(struct xcompcap *)bzalloc(sizeof(struct xcompcap));
 	pthread_mutex_init(&s->lock, NULL);
 	s->show_cursor = true;
-	s->strict_binding = true;
 	s->source = source;
-	enum obs_nix_platform_type platform = obs_get_nix_platform();
-	s->egl = platform == OBS_NIX_PLATFORM_X11_EGL;
-	if (s->egl)
-		s->strict_binding = false;
 
 	obs_enter_graphics();
-	if (strcmp(glGetString(GL_VENDOR), "NVIDIA Corporation") == 0) {
-		// Pixmap binds are extremely slow on NVIDIA cards.
-		// See: https://github.com/obsproject/obs-studio/issues/5685
-		s->strict_binding = false;
-	}
 	s->cursor = xcb_xcursor_init(conn);
 	obs_leave_graphics();
 
@@ -785,7 +628,7 @@ static void xcompcap_video_tick(void *data, float seconds)
 		xcomp_cleanup_pixmap(disp, s);
 		// Avoid excessive logging. We expect this to fail while windows are
 		// minimized or on offscreen workspaces or already captured on NVIDIA.
-		xcomp_create_pixmap(conn, disp, s, LOG_DEBUG);
+		xcomp_create_pixmap(conn, s, LOG_DEBUG);
 		xcb_xcursor_offset_win(conn, s->cursor, s->win);
 		xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left,
 				   s->cursor->y_org + s->crop_top);
@@ -796,13 +639,6 @@ static void xcompcap_video_tick(void *data, float seconds)
 
 	if (xcompcap_get_height(s) == 0 || xcompcap_get_width(s) == 0)
 		goto done;
-
-	glBindTexture(GL_TEXTURE_2D, *(GLuint *)gs_texture_get_obj(s->gltex));
-	if (s->strict_binding && s->glxpixmap) {
-		glXReleaseTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT);
-		glXBindTexImageEXT(disp, s->glxpixmap, GLX_FRONT_EXT, NULL);
-	}
-	glBindTexture(GL_TEXTURE_2D, 0);
 
 	if (s->show_cursor) {
 		xcb_xcursor_update(conn, s->cursor);
@@ -983,7 +819,7 @@ static void xcompcap_update(void *data, obs_data_t *settings)
 
 	watcher_register(conn, s);
 	xcomp_cleanup_pixmap(disp, s);
-	xcomp_create_pixmap(conn, disp, s, LOG_ERROR);
+	xcomp_create_pixmap(conn, s, LOG_ERROR);
 	xcb_xcursor_offset_win(conn, s->cursor, s->win);
 	xcb_xcursor_offset(s->cursor, s->cursor->x_org + s->crop_left,
 			   s->cursor->y_org + s->crop_top);

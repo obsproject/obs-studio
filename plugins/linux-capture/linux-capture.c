@@ -32,11 +32,6 @@ bool obs_module_load(void)
 	enum obs_nix_platform_type platform = obs_get_nix_platform();
 
 	switch (platform) {
-	case OBS_NIX_PLATFORM_X11_GLX:
-		obs_register_source(&xshm_input);
-		xcomposite_load();
-		break;
-
 	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_register_source(&xshm_input);
 		xcomposite_load();
@@ -53,7 +48,6 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
-	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_GLX ||
-	    obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
+	if (obs_get_nix_platform() == OBS_NIX_PLATFORM_X11_EGL)
 		xcomposite_unload();
 }
