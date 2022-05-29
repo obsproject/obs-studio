@@ -68,17 +68,12 @@ static const EGLint ctx_config_attribs[] = {EGL_STENCIL_SIZE,
 					    EGL_NONE};
 
 struct gl_windowinfo {
-	EGLConfig config;
-
 	/* Windows in X11 are defined with integers (XID).
 	 * xcb_window_t is a define for this... they are
 	 * compatible with Xlib as well.
 	 */
 	xcb_window_t window;
 	EGLSurface surface;
-
-	/* We can't fetch screen without a request so we cache it. */
-	int screen;
 };
 
 struct gl_platform {
@@ -188,6 +183,7 @@ static const char *get_egl_error_string2(const EGLint error)
 		return "Unknown";
 	}
 }
+
 static const char *get_egl_error_string()
 {
 	return get_egl_error_string2(eglGetError());
@@ -506,10 +502,8 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 		goto fail_window_surface;
 	}
 
-	swap->wi->config = plat->config;
 	swap->wi->window = wid;
 	swap->wi->surface = surface;
-	swap->wi->screen = screen_num;
 
 	xcb_map_window(xcb_conn, wid);
 
@@ -610,13 +604,6 @@ static void gl_x11_egl_device_load_swapchain(gs_device_t *device,
 
 	device_enter_context(device);
 }
-
-enum swap_type {
-	SWAP_TYPE_NORMAL,
-	SWAP_TYPE_EXT,
-	SWAP_TYPE_MESA,
-	SWAP_TYPE_SGI,
-};
 
 static void gl_x11_egl_device_present(gs_device_t *device)
 {
