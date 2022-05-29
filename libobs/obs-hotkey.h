@@ -277,7 +277,7 @@ EXPORT void obs_hotkey_inject_event(obs_key_combination_t hotkey, bool pressed);
 
 EXPORT void obs_hotkey_enable_background_press(bool enable);
 
-EXPORT void obs_hotkey_enable_strict_modifiers(bool enable);
+OBS_DEPRECATED EXPORT void obs_hotkey_enable_strict_modifiers(bool enable);
 
 /* hotkey callback routing (trigger callbacks through e.g. a UI thread) */
 
