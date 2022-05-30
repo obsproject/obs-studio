@@ -474,6 +474,8 @@ private:
 	void ResizeProgram(uint32_t cx, uint32_t cy);
 	void SetCurrentScene(obs_scene_t *scene, bool force = false);
 	static void RenderProgram(void *data, uint32_t cx, uint32_t cy);
+	void SetPreviewLabel(const char *reason, obs_source_t *scene_source);
+	void SetProgramLabel(const char *reason, obs_source_t *scene_source);
 
 	std::vector<QuickTransition> quickTransitions;
 	QPointer<QWidget> programOptions;

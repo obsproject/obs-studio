@@ -4589,6 +4589,7 @@ void OBSBasic::ClearSceneData()
 	ui->sources->Clear();
 	ClearQuickTransitions();
 	ui->transitions->clear();
+	SetProgramLabel("ClearSceneData", nullptr);
 
 	ClearProjectors();
 

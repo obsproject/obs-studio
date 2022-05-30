@@ -321,6 +321,7 @@ void OBSBasic::TransitionStopped()
 		api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
 	}
 
+	SetProgramLabel("TransitionStopped", GetProgramSource());
 	swapScene = nullptr;
 }
 
@@ -397,6 +398,8 @@ void OBSBasic::TransitionToScene(OBSSource source, bool force,
 		obs_transition_set(transition, source);
 		if (api)
 			api->on_event(OBS_FRONTEND_EVENT_SCENE_CHANGED);
+
+		SetProgramLabel("TransitionToScene", source);
 	} else {
 		int duration = ui->transitionDuration->value();
 
@@ -752,6 +755,8 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 		blog(LOG_INFO, "%s to scene '%s'",
 		     userSwitched ? "User switched" : "Switched",
 		     obs_source_get_name(scene));
+
+		SetPreviewLabel("SetCurrentScene", scene);
 	}
 }
 
@@ -1669,6 +1674,7 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 					    QSizePolicy::Preferred);
 		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
 		programLabel->setProperty("themeID", "previewProgramLabels");
+		SetProgramLabel("SetPreviewProgramMode", GetProgramSource());
 
 		programWidget = new QWidget();
 		programLayout = new QVBoxLayout();
@@ -1865,4 +1871,34 @@ int OBSBasic::GetOverrideTransitionDuration(OBSSource source)
 	obs_data_set_default_int(data, "transition_duration", 300);
 
 	return (int)obs_data_get_int(data, "transition_duration");
+}
+
+void OBSBasic::SetPreviewLabel(const char *reason, obs_source_t *scene_source)
+{
+	if (ui->previewLabel) {
+		QString title = (scene_source)
+					? QTStr("StudioMode.Preview.Label")
+						  .arg(obs_source_get_name(
+							  scene_source))
+					: QTStr("StudioMode.Preview");
+		blog(LOG_INFO, "JLH: %s with '%s'", reason,
+		     title.toStdString().c_str());
+		ui->previewLabel->setText(title);
+	}
+}
+
+void OBSBasic::SetProgramLabel(const char *reason, obs_source_t *scene_source)
+{
+	if (programLabel) {
+		QString title = (scene_source)
+					? QTStr("StudioMode.Program.Label")
+						  .arg(obs_source_get_name(
+							  scene_source))
+					: QTStr("StudioMode.Program");
+
+		blog(LOG_INFO, "JLH: %s with '%s'", reason,
+		     title.toStdString().c_str());
+
+		programLabel->setText(title);
+	}
 }
