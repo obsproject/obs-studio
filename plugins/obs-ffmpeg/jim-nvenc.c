@@ -1117,7 +1117,7 @@ static void *nvenc_create_h264_hevc(bool hevc, obs_data_t *settings,
 		return enc;
 	}
 
-reroute:
+reroute:;
 	const char *fallback_name = "ffmpeg_nvenc";
 #ifdef ENABLE_HEVC
 	if (hevc)
