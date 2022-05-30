@@ -1,5 +1,4 @@
 #include <obs-module.h>
-#include <AppKit/AppKit.h>
 #include "OBSDALMachServer.h"
 #include "Defines.h"
 
@@ -10,10 +9,12 @@ MODULE_EXPORT const char *obs_module_description(void)
 	return "macOS virtual webcam output";
 }
 
-obs_output_t *outputRef;
-obs_video_info videoInfo;
-CVPixelBufferPoolRef pool;
-static OBSDALMachServer *sMachServer;
+struct virtualcam_data {
+	obs_output_t *output;
+	obs_video_info videoInfo;
+	CVPixelBufferPoolRef pool;
+	OBSDALMachServer *machServer;
+};
 
 static bool check_dal_plugin()
 {
@@ -129,31 +130,29 @@ static const char *virtualcam_output_get_name(void *type_data)
 	return obs_module_text("Plugin_Name");
 }
 
-// This is a dummy pointer so we have something to return from virtualcam_output_create
-static void *data = &data;
-
 static void *virtualcam_output_create(obs_data_t *settings,
 				      obs_output_t *output)
 {
 	UNUSED_PARAMETER(settings);
 
-	outputRef = output;
+	struct virtualcam_data *vcam =
+		(struct virtualcam_data *)bzalloc(sizeof(*vcam));
 
-	blog(LOG_DEBUG, "output_create");
-	sMachServer = [[OBSDALMachServer alloc] init];
-	return data;
+	vcam->output = output;
+	vcam->machServer = [[OBSDALMachServer alloc] init];
+	return vcam;
 }
 
 static void virtualcam_output_destroy(void *data)
 {
-	UNUSED_PARAMETER(data);
-	blog(LOG_DEBUG, "output_destroy");
-	sMachServer = nil;
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
+
+	vcam->machServer = nil;
 }
 
 static bool virtualcam_output_start(void *data)
 {
-	UNUSED_PARAMETER(data);
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 
 	bool hasDalPlugin = check_dal_plugin();
 
@@ -161,24 +160,22 @@ static bool virtualcam_output_start(void *data)
 		return false;
 	}
 
-	blog(LOG_DEBUG, "output_start");
-
-	obs_get_video_info(&videoInfo);
+	obs_get_video_info(&vcam->videoInfo);
 
 	FourCharCode video_format =
-		convert_video_format_to_mac(videoInfo.output_format);
+		convert_video_format_to_mac(vcam->videoInfo.output_format);
 
 	if (!video_format) {
 		// Selected output format is not supported natively by CoreVideo, CPU conversion necessary
 		blog(LOG_WARNING,
 		     "Selected output format (%s) not supported by CoreVideo, enabling CPU transcoding...",
-		     get_video_format_name(videoInfo.output_format));
+		     get_video_format_name(vcam->videoInfo.output_format));
 
 		struct video_scale_info conversion = {};
 		conversion.format = VIDEO_FORMAT_NV12;
-		conversion.width = videoInfo.output_width;
-		conversion.height = videoInfo.output_height;
-		obs_output_set_video_conversion(outputRef, &conversion);
+		conversion.width = vcam->videoInfo.output_width;
+		conversion.height = vcam->videoInfo.output_height;
+		obs_output_set_video_conversion(vcam->output, &conversion);
 
 		video_format = convert_video_format_to_mac(conversion.format);
 	}
@@ -186,22 +183,22 @@ static bool virtualcam_output_start(void *data)
 	NSDictionary *pAttr = @{};
 	NSDictionary *pbAttr = @{
 		(id)kCVPixelBufferPixelFormatTypeKey: @(video_format),
-		(id)kCVPixelBufferWidthKey: @(videoInfo.output_width),
-		(id)kCVPixelBufferHeightKey: @(videoInfo.output_height),
+		(id)kCVPixelBufferWidthKey: @(vcam->videoInfo.output_width),
+		(id)kCVPixelBufferHeightKey: @(vcam->videoInfo.output_height),
 		(id)kCVPixelBufferIOSurfacePropertiesKey: @{}
 	};
 	CVReturn status = CVPixelBufferPoolCreate(
 		kCFAllocatorDefault, (__bridge CFDictionaryRef)pAttr,
-		(__bridge CFDictionaryRef)pbAttr, &pool);
+		(__bridge CFDictionaryRef)pbAttr, &vcam->pool);
 	if (status != kCVReturnSuccess) {
 		blog(LOG_ERROR,
 		     "unable to allocate pixel buffer pool (error %d)", status);
 		return false;
 	}
 
-	[sMachServer run];
+	[vcam->machServer run];
 
-	if (!obs_output_begin_data_capture(outputRef, 0)) {
+	if (!obs_output_begin_data_capture(vcam->output, 0)) {
 		return false;
 	}
 
@@ -210,23 +207,23 @@ static bool virtualcam_output_start(void *data)
 
 static void virtualcam_output_stop(void *data, uint64_t ts)
 {
-	UNUSED_PARAMETER(data);
 	UNUSED_PARAMETER(ts);
 
-	blog(LOG_DEBUG, "output_stop");
-	obs_output_end_data_capture(outputRef);
-	[sMachServer stop];
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 
-	CVPixelBufferPoolRelease(pool);
+	obs_output_end_data_capture(vcam->output);
+	[vcam->machServer stop];
+
+	CVPixelBufferPoolRelease(vcam->pool);
 }
 
 static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 {
-	UNUSED_PARAMETER(data);
+	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 
-	CVPixelBufferRef frameRef = NULL;
+	CVPixelBufferRef frameRef = nil;
 	CVReturn status = CVPixelBufferPoolCreatePixelBuffer(
-		kCFAllocatorDefault, pool, &frameRef);
+		kCFAllocatorDefault, vcam->pool, &frameRef);
 
 	if (status != kCVReturnSuccess) {
 		blog(LOG_ERROR, "unable to allocate pixel buffer (error %d)",
@@ -295,10 +292,10 @@ static void virtualcam_output_raw_video(void *data, struct video_data *frame)
 	CVPixelBufferUnlockBaseAddress(frameRef, 0);
 
 	// Share pixel buffer with clients
-	[sMachServer sendPixelBuffer:frameRef
-			   timestamp:frame->timestamp
-			fpsNumerator:videoInfo.fps_num
-		      fpsDenominator:videoInfo.fps_den];
+	[vcam->machServer sendPixelBuffer:frameRef
+				timestamp:frame->timestamp
+			     fpsNumerator:vcam->videoInfo.fps_num
+			   fpsDenominator:vcam->videoInfo.fps_den];
 
 	CVPixelBufferRelease(frameRef);
 }
