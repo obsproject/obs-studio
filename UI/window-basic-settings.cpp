@@ -2728,8 +2728,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	loading = false;
 }
 
-#define TRUNCATE_TEXT_LENGTH 80
-
 template<typename Func>
 static inline void
 LayoutHotkey(OBSBasicSettings *settings, obs_hotkey_id id, obs_hotkey_t *key,
@@ -2740,13 +2738,7 @@ LayoutHotkey(OBSBasicSettings *settings, obs_hotkey_id id, obs_hotkey_t *key,
 	QString text = QT_UTF8(obs_hotkey_get_description(key));
 
 	label->setProperty("fullName", text);
-
-	if (text.length() > TRUNCATE_TEXT_LENGTH) {
-		text = text.left(TRUNCATE_TEXT_LENGTH);
-		text += "...'";
-	}
-
-	label->setText(text);
+	TruncateLabel(label, text);
 
 	OBSHotkeyWidget *hw = nullptr;
 
@@ -2778,14 +2770,7 @@ static QLabel *makeLabel(const OBSSource &source, Func &&)
 	OBSSourceLabel *label = new OBSSourceLabel(source);
 	label->setStyleSheet("font-weight: bold;");
 	QString name = QT_UTF8(obs_source_get_name(source));
-
-	if (name.length() > TRUNCATE_TEXT_LENGTH) {
-		label->setToolTip(name);
-		name = name.left(TRUNCATE_TEXT_LENGTH);
-		name += "...";
-	}
-
-	label->setText(name);
+	TruncateLabel(label, name);
 
 	return label;
 }
