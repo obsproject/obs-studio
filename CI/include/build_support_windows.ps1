@@ -2,7 +2,7 @@ $CIWorkflow = "${CheckoutDir}/.github/workflows/main.yml"
 $WorkflowContent = Get-Content ${CIWorkflow}
 
 $CIDepsVersion = ${WorkflowContent} | Select-String "[ ]+DEPS_VERSION_WIN: '([0-9\-]+)'" | ForEach-Object{$_.Matches.Groups[1].Value}
-$CIQtVersion = ${WorkflowContent} | Select-String "[ ]+QT_VERSION_WIN: '([0-9\.]+)'" | ForEach-Object{$_.Matches.Groups[1].Value}
+$CIQtVersion = ${WorkflowContent} | Select-String "[ ]+QT_VERSION_WIN: '([0-9\.\-]+)'" | ForEach-Object{$_.Matches.Groups[1].Value}
 $CIVlcVersion = ${WorkflowContent} | Select-String "[ ]+VLC_VERSION_WIN: '(.+)'" | ForEach-Object{$_.Matches.Groups[1].Value}
 $CICefVersion = ${WorkflowContent} | Select-String "[ ]+CEF_BUILD_VERSION_WIN: '([0-9\.]+)'" | ForEach-Object{$_.Matches.Groups[1].Value}
 $CIGenerator = ${WorkflowContent} | Select-String "[ ]+CMAKE_GENERATOR: '(.+)'" | ForEach-Object{$_.Matches.Groups[1].Value}

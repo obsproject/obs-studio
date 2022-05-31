@@ -58,7 +58,13 @@ function Configure-OBS {
     }
 
     # TODO: Clean up archive and directory naming across dependencies
-    $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-${BuildArch}"
+    if ("${WindowsDepsVersion}" -ne "${WindowsQtVersion}" ) {
+        $DepsPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-${BuildArch}"
+        $QtPath =   Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsQtVersion}-${BuildArch}"
+        $CmakePrefixPath = "${DepsPath};${QtPath}"
+    } else {
+        $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-${BuildArch}"
+    }
     $CefDirectory = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_${BuildArch}"
     $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
     $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
