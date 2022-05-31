@@ -2479,6 +2479,7 @@ void OBSBasicSettings::LoadAudioSources()
 					  pttCB, pttSB);
 
 		auto label = new OBSSourceLabel(source);
+		TruncateLabel(label, label->text());
 		label->setMinimumSize(QSize(170, 0));
 		label->setAlignment(Qt::AlignRight | Qt::AlignTrailing |
 				    Qt::AlignVCenter);
