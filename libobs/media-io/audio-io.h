@@ -203,6 +203,8 @@ static inline uint64_t ns_to_audio_frames(size_t sample_rate, uint64_t frames)
 	return util_mul_div64(frames, sample_rate, 1000000000ULL);
 }
 
+void stop_audio_thread(audio_t *audio);
+
 #define AUDIO_OUTPUT_SUCCESS 0
 #define AUDIO_OUTPUT_INVALIDPARAM -1
 #define AUDIO_OUTPUT_FAIL -2

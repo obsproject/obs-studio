@@ -803,8 +803,8 @@ static void stop_audio(void)
 	struct obs_core_audio *audio = &obs->audio;
 
 	if (audio->audio) {
-		audio_output_close(audio->audio);
-		audio->audio = NULL;
+		/* Here we just exit audio_thread, and won't free related memory because there are alive channel sources */
+		stop_audio_thread(audio->audio);
 	}
 }
 

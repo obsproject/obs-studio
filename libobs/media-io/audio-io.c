@@ -400,19 +400,22 @@ fail0:
 	return AUDIO_OUTPUT_FAIL;
 }
 
+void stop_audio_thread(audio_t *audio)
+{
+	if (audio->initialized) {
+		audio->initialized = false;
+
+		os_event_signal(audio->stop_event);
+		pthread_join(audio->thread, NULL);
+	}
+}
+
 void audio_output_close(audio_t *audio)
 {
-	void *thread_ret;
-
 	if (!audio)
 		return;
 
-	if (audio->initialized) {
-		os_event_signal(audio->stop_event);
-		pthread_join(audio->thread, &thread_ret);
-		os_event_destroy(audio->stop_event);
-		pthread_mutex_destroy(&audio->input_mutex);
-	}
+	stop_audio_thread(audio);
 
 	for (size_t mix_idx = 0; mix_idx < MAX_AUDIO_MIXES; mix_idx++) {
 		struct audio_mix *mix = &audio->mixes[mix_idx];
@@ -422,6 +425,9 @@ void audio_output_close(audio_t *audio)
 
 		da_free(mix->inputs);
 	}
+
+	os_event_destroy(audio->stop_event);
+	pthread_mutex_destroy(&audio->input_mutex);
 	bfree(audio);
 }
 
