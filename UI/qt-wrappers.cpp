@@ -385,7 +385,7 @@ static void SetLabelText(QLabel *label, const QString &newText)
 		label->setText(newText);
 }
 
-void TruncateLabel(QLabel *label, QString &newText, int length)
+void TruncateLabel(QLabel *label, QString newText, int length)
 {
 	if (newText.length() < length) {
 		label->setToolTip(QString());

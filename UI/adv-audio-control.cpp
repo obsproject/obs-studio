@@ -366,7 +366,7 @@ void OBSAdvAudioCtrl::OBSSourceRenamed(void *param, calldata_t *calldata)
 	QString newName = QT_UTF8(calldata_string(calldata, "new_name"));
 
 	QMetaObject::invokeMethod(reinterpret_cast<OBSAdvAudioCtrl *>(param),
-				  "SetSourceName", Q_ARG(QString &, newName));
+				  "SetSourceName", Q_ARG(QString, newName));
 }
 
 /* ------------------------------------------------------------------------- */
@@ -699,7 +699,7 @@ void OBSAdvAudioCtrl::SetIconVisible(bool visible)
 	visible ? iconLabel->show() : iconLabel->hide();
 }
 
-void OBSAdvAudioCtrl::SetSourceName(QString &newName)
+void OBSAdvAudioCtrl::SetSourceName(QString newName)
 {
 	TruncateLabel(nameLabel, newName);
 }
