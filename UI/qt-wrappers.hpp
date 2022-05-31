@@ -120,5 +120,5 @@ QString OpenFile(QWidget *parent, QString title, QString path,
 QStringList OpenFiles(QWidget *parent, QString title, QString path,
 		      QString extensions);
 
-void TruncateLabel(QLabel *label, QString &newText,
+void TruncateLabel(QLabel *label, QString newText,
 		   int length = MAX_LABEL_LENGTH);
