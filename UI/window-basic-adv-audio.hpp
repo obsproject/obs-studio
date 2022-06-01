@@ -3,11 +3,10 @@
 #include <obs.hpp>
 #include <QDialog>
 #include <vector>
-#include <QCheckBox>
-#include <QPointer>
+#include <memory>
 
 class OBSAdvAudioCtrl;
-class QGridLayout;
+class Ui_OBSAdvAudio;
 
 // "Basic advanced audio"?  ...
 
@@ -15,10 +14,6 @@ class OBSBasicAdvAudio : public QDialog {
 	Q_OBJECT
 
 private:
-	QWidget *controlArea;
-	QGridLayout *mainLayout;
-	QPointer<QCheckBox> activeOnly;
-	QPointer<QCheckBox> usePercent;
 	OBSSignal sourceAddedSignal;
 	OBSSignal sourceRemovedSignal;
 	bool showInactive;
@@ -33,12 +28,14 @@ private:
 	static void OBSSourceAdded(void *param, calldata_t *calldata);
 	static void OBSSourceRemoved(void *param, calldata_t *calldata);
 
+	std::unique_ptr<Ui_OBSAdvAudio> ui;
+
 public slots:
 	void SourceAdded(OBSSource source);
 	void SourceRemoved(OBSSource source);
 
-	void SetVolumeType(bool percent);
-	void ActiveOnlyChanged(bool checked);
+	void on_usePercent_toggled(bool checked);
+	void on_activeOnly_toggled(bool checked);
 
 public:
 	OBSBasicAdvAudio(QWidget *parent);

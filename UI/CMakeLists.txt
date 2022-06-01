@@ -112,6 +112,7 @@ target_sources(
           forms/AutoConfigVideoPage.ui
           forms/ColorSelect.ui
           forms/OBSAbout.ui
+          forms/OBSAdvAudio.ui
           forms/OBSBasic.ui
           forms/OBSBasicFilters.ui
           forms/OBSBasicInteraction.ui
