@@ -1266,21 +1266,6 @@
             }
         },
         {
-            "name": "Eventials",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://live.eventials.com/eventialsLiveOrigin"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "baseline",
-                "max video bitrate": 900,
-                "max audio bitrate": 192
-            }
-        },
-        {
             "name": "EventLive.pro",
             "servers": [
                 {
@@ -2621,6 +2606,21 @@
                 "keyint": 2,
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "Eventials",
+            "servers": [
+            {
+                "name": "Wowza",
+                "url": "rtmp://transmission.eventials.com/eventialsLiveOrigin"
+            }
+            ],
+            "recommended": {
+                "keyint": 1,
+                "profile": "baseline",
+                "max video bitrate": 900,
+                "max audio bitrate": 96
             }
         }
     ]
