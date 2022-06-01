@@ -1293,7 +1293,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 				: SLOT(on_actionHideTransitionProperties_triggered()));
 	}
 
-	auto copyTransition = [this](QAction *action, bool visible) {
+	auto copyTransition = [this](QAction *, bool visible) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSceneItem item = main->GetCurrentSceneItem();
@@ -1306,7 +1306,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	connect(action, &QAction::triggered,
 		std::bind(copyTransition, action, visible));
 
-	auto pasteTransition = [this](QAction *action, bool show) {
+	auto pasteTransition = [this](QAction *, bool show) {
 		OBSBasic *main =
 			reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 		OBSSource tr = OBSGetStrongRef(main->copySourceTransition);
