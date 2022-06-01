@@ -1270,14 +1270,14 @@
             "servers": [
                 {
                     "name": "Default",
-                    "url": "rtmp://live.eventials.com/eventialsLiveOrigin"
+                    "url": "rtmp://transmission.eventials.com/eventialsLiveOrigin"
                 }
             ],
             "recommended": {
                 "keyint": 1,
                 "profile": "baseline",
                 "max video bitrate": 900,
-                "max audio bitrate": 192
+                "max audio bitrate": 96
             }
         },
         {
