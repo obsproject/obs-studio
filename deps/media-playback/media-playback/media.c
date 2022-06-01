@@ -1004,3 +1004,13 @@ void mp_media_seek_to(mp_media_t *m, int64_t pos)
 
 	os_sem_post(m->sem);
 }
+
+uint32_t mp_media_get_width(mp_media_t *m)
+{
+	return m->v.decoder ? (uint32_t)m->v.decoder->width : 0;
+}
+
+uint32_t mp_media_get_height(mp_media_t *m)
+{
+	return m->v.decoder ? (uint32_t)m->v.decoder->height : 0;
+}

@@ -138,6 +138,9 @@ extern void mp_media_play_pause(mp_media_t *media, bool pause);
 extern int64_t mp_get_current_time(mp_media_t *m);
 extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
 
+extern uint32_t mp_media_get_width(mp_media_t *m);
+extern uint32_t mp_media_get_height(mp_media_t *m);
+
 /* #define DETAILED_DEBUG_INFO */
 
 #ifdef __cplusplus

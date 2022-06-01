@@ -795,6 +795,18 @@ static obs_missing_files_t *ffmpeg_source_missingfiles(void *data)
 	return files;
 }
 
+static uint32_t ffmpeg_source_get_width(void *data)
+{
+	struct ffmpeg_source *s = data;
+	return mp_media_get_width(&s->media);
+}
+
+static uint32_t ffmpeg_source_get_height(void *data)
+{
+	struct ffmpeg_source *s = data;
+	return mp_media_get_height(&s->media);
+}
+
 struct obs_source_info ffmpeg_source = {
 	.id = "ffmpeg_source",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -819,4 +831,6 @@ struct obs_source_info ffmpeg_source = {
 	.media_get_time = ffmpeg_source_get_time,
 	.media_set_time = ffmpeg_source_set_time,
 	.media_get_state = ffmpeg_source_get_state,
+	.get_width = ffmpeg_source_get_width,
+	.get_height = ffmpeg_source_get_height,
 };
