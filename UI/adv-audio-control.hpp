@@ -24,8 +24,6 @@ class OBSAdvAudioCtrl : public QObject {
 private:
 	OBSSource source;
 
-	QPointer<QWidget> activeContainer;
-	QPointer<QWidget> forceMonoContainer;
 	QPointer<QWidget> mixerContainer;
 	QPointer<QWidget> balanceContainer;
 

@@ -27,8 +27,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	uint32_t flags = obs_source_get_flags(source);
 	uint32_t mixers = obs_source_get_audio_mixers(source);
 
-	activeContainer = new QWidget();
-	forceMonoContainer = new QWidget();
 	mixerContainer = new QWidget();
 	balanceContainer = new QWidget();
 	labelL = new QLabel();
@@ -72,12 +70,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
-	activeContainer->setLayout(hlayout);
-	hlayout = new QHBoxLayout();
-	hlayout->setContentsMargins(0, 0, 0, 0);
-	forceMonoContainer->setLayout(hlayout);
-	hlayout = new QHBoxLayout();
-	hlayout->setContentsMargins(0, 0, 0, 0);
 	mixerContainer->setLayout(hlayout);
 	hlayout = new QHBoxLayout();
 	hlayout->setContentsMargins(0, 0, 0, 0);
@@ -85,7 +77,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	balanceContainer->setFixedWidth(150);
 
 	labelL->setText("L");
-
 	labelR->setText("R");
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
@@ -104,9 +95,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 				 : QTStr("Basic.Stats.Status.Inactive"));
 	if (isActive)
 		setThemeID(active, "error");
-	activeContainer->layout()->addWidget(active);
-	activeContainer->layout()->setAlignment(active, Qt::AlignVCenter);
-	activeContainer->setFixedWidth(120);
+	active->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
 	volume->setMinimum(MIN_DB - 0.1);
 	volume->setMaximum(MAX_DB);
@@ -114,7 +103,6 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	volume->setDecimals(1);
 	volume->setSuffix(" dB");
 	volume->setValue(obs_mul_to_db(vol));
-	volume->setFixedWidth(100);
 	volume->setAccessibleName(
 		QTStr("Basic.AdvAudio.VolumeSource").arg(sourceName));
 
@@ -127,10 +115,11 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	percent->setMaximum(2000);
 	percent->setSuffix("%");
 	percent->setValue((int)(obs_source_get_volume(source) * 100.0f));
-	percent->setFixedWidth(100);
 	percent->setAccessibleName(
 		QTStr("Basic.AdvAudio.VolumeSource").arg(sourceName));
 
+	stackedWidget->setSizePolicy(QSizePolicy::Minimum, QSizePolicy::Fixed);
+	stackedWidget->setFixedWidth(100);
 	stackedWidget->addWidget(volume);
 	stackedWidget->addWidget(percent);
 
@@ -139,13 +128,10 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 
 	SetVolumeWidget(volType);
 
+	forceMono->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 	forceMono->setChecked((flags & OBS_SOURCE_FLAG_FORCE_MONO) != 0);
 	forceMono->setAccessibleName(
 		QTStr("Basic.AdvAudio.MonoSource").arg(sourceName));
-
-	forceMonoContainer->layout()->addWidget(forceMono);
-	forceMonoContainer->layout()->setAlignment(forceMono, Qt::AlignVCenter);
-	forceMonoContainer->setFixedWidth(50);
 
 	balance->setOrientation(Qt::Horizontal);
 	balance->setMinimum(0);
@@ -191,6 +177,8 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 		monitoringType->setAccessibleName(
 			QTStr("Basic.AdvAudio.MonitoringSource")
 				.arg(sourceName));
+		monitoringType->setSizePolicy(QSizePolicy::Maximum,
+					      QSizePolicy::Fixed);
 	}
 
 	mixer1->setText("1");
@@ -218,14 +206,14 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixer6->setAccessibleName(
 		QTStr("Basic.Settings.Output.Adv.Audio.Track6"));
 
+	balanceContainer->layout()->addWidget(labelL);
+	balanceContainer->layout()->addWidget(balance);
+	balanceContainer->layout()->addWidget(labelR);
+
 	speaker_layout sl = obs_source_get_speaker_layout(source);
 
-	if (sl == SPEAKERS_STEREO) {
-		balanceContainer->layout()->addWidget(labelL);
-		balanceContainer->layout()->addWidget(balance);
-		balanceContainer->layout()->addWidget(labelR);
-		balanceContainer->setMaximumWidth(170);
-	}
+	if (sl != SPEAKERS_STEREO)
+		balanceContainer->setEnabled(false);
 
 	mixerContainer->layout()->addWidget(mixer1);
 	mixerContainer->layout()->addWidget(mixer2);
@@ -233,6 +221,7 @@ OBSAdvAudioCtrl::OBSAdvAudioCtrl(QGridLayout *, obs_source_t *source_)
 	mixerContainer->layout()->addWidget(mixer4);
 	mixerContainer->layout()->addWidget(mixer5);
 	mixerContainer->layout()->addWidget(mixer6);
+	mixerContainer->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Fixed);
 
 	QWidget::connect(volume, SIGNAL(valueChanged(double)), this,
 			 SLOT(volumeChanged(double)));
@@ -270,9 +259,9 @@ OBSAdvAudioCtrl::~OBSAdvAudioCtrl()
 {
 	iconLabel->deleteLater();
 	nameLabel->deleteLater();
-	activeContainer->deleteLater();
+	active->deleteLater();
 	stackedWidget->deleteLater();
-	forceMonoContainer->deleteLater();
+	forceMono->deleteLater();
 	balanceContainer->deleteLater();
 	syncOffset->deleteLater();
 	if (obs_audio_monitoring_available())
@@ -287,9 +276,9 @@ void OBSAdvAudioCtrl::ShowAudioControl(QGridLayout *layout)
 
 	layout->addWidget(iconLabel, lastRow, idx++);
 	layout->addWidget(nameLabel, lastRow, idx++);
-	layout->addWidget(activeContainer, lastRow, idx++);
+	layout->addWidget(active, lastRow, idx++);
 	layout->addWidget(stackedWidget, lastRow, idx++);
-	layout->addWidget(forceMonoContainer, lastRow, idx++);
+	layout->addWidget(forceMono, lastRow, idx++);
 	layout->addWidget(balanceContainer, lastRow, idx++);
 	layout->addWidget(syncOffset, lastRow, idx++);
 	if (obs_audio_monitoring_available())
