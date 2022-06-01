@@ -148,7 +148,6 @@ static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 static inline void deinterlace_get_closest_frames(obs_source_t *s,
 						  uint64_t sys_time)
 {
-	const struct video_output_info *info;
 	uint64_t half_interval;
 
 	if (s->async_unbuffered && s->deinterlace_offset) {
@@ -169,9 +168,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 	if (!s->async_frames.num)
 		return;
 
-	info = video_output_get_info(obs->video.video);
-	half_interval = (uint64_t)info->fps_den * 500000000ULL /
-			(uint64_t)info->fps_num;
+	half_interval = obs->video.video_half_frame_interval_ns;
 
 	if (first_frame(s) || ready_deinterlace_frames(s, sys_time)) {
 		uint64_t offset;

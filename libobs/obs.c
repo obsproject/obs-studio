@@ -44,9 +44,9 @@ static inline void make_video_info(struct video_output_info *vi,
 	vi->cache_size = 6;
 }
 
-static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
+static inline void calc_gpu_conversion_sizes(struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
+	const struct video_output_info *info = video_output_get_info(video->video);
 
 	video->conversion_needed = false;
 	video->conversion_techs[0] = NULL;
@@ -55,19 +55,19 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 	video->conversion_width_i = 0.f;
 	video->conversion_height_i = 0.f;
 
-	switch ((uint32_t)ovi->output_format) {
+	switch ((uint32_t)info->format) {
 	case VIDEO_FORMAT_I420:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "Planar_Y";
 		video->conversion_techs[1] = "Planar_U_Left";
 		video->conversion_techs[2] = "Planar_V_Left";
-		video->conversion_width_i = 1.f / (float)ovi->output_width;
+		video->conversion_width_i = 1.f / (float)info->width;
 		break;
 	case VIDEO_FORMAT_NV12:
 		video->conversion_needed = true;
 		video->conversion_techs[0] = "NV12_Y";
 		video->conversion_techs[1] = "NV12_UV";
-		video->conversion_width_i = 1.f / (float)ovi->output_width;
+		video->conversion_width_i = 1.f / (float)info->width;
 		break;
 	case VIDEO_FORMAT_I444:
 		video->conversion_needed = true;
@@ -77,13 +77,13 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		break;
 	case VIDEO_FORMAT_I010:
 		video->conversion_needed = true;
-		video->conversion_width_i = 1.f / (float)ovi->output_width;
-		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2100_PQ) {
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
 			video->conversion_techs[0] = "I010_PQ_Y";
 			video->conversion_techs[1] = "I010_PQ_U";
 			video->conversion_techs[2] = "I010_PQ_V";
-		} else if (ovi->colorspace == VIDEO_CS_2100_HLG) {
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
 			video->conversion_techs[0] = "I010_HLG_Y";
 			video->conversion_techs[1] = "I010_HLG_U";
 			video->conversion_techs[2] = "I010_HLG_V";
@@ -95,12 +95,12 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 		break;
 	case VIDEO_FORMAT_P010:
 		video->conversion_needed = true;
-		video->conversion_width_i = 1.f / (float)ovi->output_width;
-		video->conversion_height_i = 1.f / (float)ovi->output_height;
-		if (ovi->colorspace == VIDEO_CS_2100_PQ) {
+		video->conversion_width_i = 1.f / (float)info->width;
+		video->conversion_height_i = 1.f / (float)info->height;
+		if (info->colorspace == VIDEO_CS_2100_PQ) {
 			video->conversion_techs[0] = "P010_PQ_Y";
 			video->conversion_techs[1] = "P010_PQ_UV";
-		} else if (ovi->colorspace == VIDEO_CS_2100_HLG) {
+		} else if (info->colorspace == VIDEO_CS_2100_HLG) {
 			video->conversion_techs[0] = "P010_HLG_Y";
 			video->conversion_techs[1] = "P010_HLG_UV";
 		} else {
@@ -110,22 +110,23 @@ static inline void calc_gpu_conversion_sizes(const struct obs_video_info *ovi)
 	}
 }
 
-static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
+static bool obs_init_gpu_conversion(struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
+	const struct video_output_info *info =
+		video_output_get_info(video->video);
 
-	calc_gpu_conversion_sizes(ovi);
+	calc_gpu_conversion_sizes(video);
 
-	video->using_nv12_tex = ovi->output_format == VIDEO_FORMAT_NV12
+	video->using_nv12_tex = info->format == VIDEO_FORMAT_NV12
 					? gs_nv12_available()
 					: false;
-	video->using_p010_tex = ovi->output_format == VIDEO_FORMAT_P010
+	video->using_p010_tex = info->format == VIDEO_FORMAT_P010
 					? gs_p010_available()
 					: false;
 
 	if (!video->conversion_needed) {
 		blog(LOG_INFO, "GPU conversion not available for format: %u",
-		     (unsigned int)ovi->output_format);
+		     (unsigned int)info->format);
 		video->gpu_conversion = false;
 		video->using_nv12_tex = false;
 		video->using_p010_tex = false;
@@ -154,7 +155,7 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		if (!gs_texture_create_nv12(
 			    &video->convert_textures_encode[0],
 			    &video->convert_textures_encode[1],
-			    ovi->output_width, ovi->output_height,
+			    info->width, info->height,
 			    GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
 		}
@@ -162,7 +163,7 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		if (!gs_texture_create_p010(
 			    &video->convert_textures_encode[0],
 			    &video->convert_textures_encode[1],
-			    ovi->output_width, ovi->output_height,
+			    info->width, info->height,
 			    GS_RENDER_TARGET | GS_SHARED_KM_TEX)) {
 			return false;
 		}
@@ -171,18 +172,16 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 
 	bool success = true;
 
-	const struct video_output_info *info =
-		video_output_get_info(video->video);
 	switch (info->format) {
 	case VIDEO_FORMAT_I420:
 		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R8, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[1] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8, 1,
+			info->width / 2, info->height / 2, GS_R8, 1,
 			NULL, GS_RENDER_TARGET);
 		video->convert_textures[2] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8, 1,
+			info->width / 2, info->height / 2, GS_R8, 1,
 			NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] ||
 		    !video->convert_textures[1] || !video->convert_textures[2])
@@ -190,23 +189,23 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		break;
 	case VIDEO_FORMAT_NV12:
 		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R8, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[1] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8G8,
+			info->width / 2, info->height / 2, GS_R8G8,
 			1, NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
 		break;
 	case VIDEO_FORMAT_I444:
 		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R8, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[1] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R8, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[2] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R8, 1, NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] ||
 		    !video->convert_textures[1] || !video->convert_textures[2])
@@ -214,13 +213,13 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		break;
 	case VIDEO_FORMAT_I010:
 		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R16, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[1] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R16,
+			info->width / 2, info->height / 2, GS_R16,
 			1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[2] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R16,
+			info->width / 2, info->height / 2, GS_R16,
 			1, NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] ||
 		    !video->convert_textures[1] || !video->convert_textures[2])
@@ -228,10 +227,10 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 		break;
 	case VIDEO_FORMAT_P010:
 		video->convert_textures[0] =
-			gs_texture_create(ovi->output_width, ovi->output_height,
+			gs_texture_create(info->width, info->height,
 					  GS_R16, 1, NULL, GS_RENDER_TARGET);
 		video->convert_textures[1] = gs_texture_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_RG16,
+			info->width / 2, info->height / 2, GS_RG16,
 			1, NULL, GS_RENDER_TARGET);
 		if (!video->convert_textures[0] || !video->convert_textures[1])
 			success = false;
@@ -257,72 +256,70 @@ static bool obs_init_gpu_conversion(struct obs_video_info *ovi)
 	return success;
 }
 
-static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
+static bool obs_init_gpu_copy_surfaces(struct obs_core_video_mix *video, size_t i)
 {
-	struct obs_core_video *video = &obs->video;
-
 	const struct video_output_info *info =
 		video_output_get_info(video->video);
 	switch (info->format) {
 	case VIDEO_FORMAT_I420:
 		video->copy_surfaces[i][0] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R8);
+			info->width, info->height, GS_R8);
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8);
+			info->width / 2, info->height / 2, GS_R8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		video->copy_surfaces[i][2] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8);
+			info->width / 2, info->height / 2, GS_R8);
 		if (!video->copy_surfaces[i][2])
 			return false;
 		break;
 	case VIDEO_FORMAT_NV12:
 		video->copy_surfaces[i][0] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R8);
+			info->width, info->height, GS_R8);
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R8G8);
+			info->width / 2, info->height / 2, GS_R8G8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
 	case VIDEO_FORMAT_I444:
 		video->copy_surfaces[i][0] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R8);
+			info->width, info->height, GS_R8);
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R8);
+			info->width, info->height, GS_R8);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		video->copy_surfaces[i][2] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R8);
+			info->width, info->height, GS_R8);
 		if (!video->copy_surfaces[i][2])
 			return false;
 		break;
 	case VIDEO_FORMAT_I010:
 		video->copy_surfaces[i][0] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R16);
+			info->width, info->height, GS_R16);
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R16);
+			info->width / 2, info->height / 2, GS_R16);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		video->copy_surfaces[i][2] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_R16);
+			info->width / 2, info->height / 2, GS_R16);
 		if (!video->copy_surfaces[i][2])
 			return false;
 		break;
 	case VIDEO_FORMAT_P010:
 		video->copy_surfaces[i][0] = gs_stagesurface_create(
-			ovi->output_width, ovi->output_height, GS_R16);
+			info->width, info->height, GS_R16);
 		if (!video->copy_surfaces[i][0])
 			return false;
 		video->copy_surfaces[i][1] = gs_stagesurface_create(
-			ovi->output_width / 2, ovi->output_height / 2, GS_RG16);
+			info->width / 2, info->height / 2, GS_RG16);
 		if (!video->copy_surfaces[i][1])
 			return false;
 		break;
@@ -333,9 +330,9 @@ static bool obs_init_gpu_copy_surfaces(struct obs_video_info *ovi, size_t i)
 	return true;
 }
 
-static bool obs_init_textures(struct obs_video_info *ovi)
+static bool obs_init_textures(struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
+	const struct video_output_info *info = video_output_get_info(video->video);
 
 	bool success = true;
 
@@ -343,16 +340,16 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 #ifdef _WIN32
 		if (video->using_nv12_tex) {
 			video->copy_surfaces_encode[i] =
-				gs_stagesurface_create_nv12(ovi->output_width,
-							    ovi->output_height);
+				gs_stagesurface_create_nv12(info->width,
+							    info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
 				break;
 			}
 		} else if (video->using_p010_tex) {
 			video->copy_surfaces_encode[i] =
-				gs_stagesurface_create_p010(ovi->output_width,
-							    ovi->output_height);
+				gs_stagesurface_create_p010(info->width,
+							    info->height);
 			if (!video->copy_surfaces_encode[i]) {
 				success = false;
 				break;
@@ -361,13 +358,13 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 #endif
 
 		if (video->gpu_conversion) {
-			if (!obs_init_gpu_copy_surfaces(ovi, i)) {
+			if (!obs_init_gpu_copy_surfaces(video, i)) {
 				success = false;
 				break;
 			}
 		} else {
 			video->copy_surfaces[i][0] = gs_stagesurface_create(
-				ovi->output_width, ovi->output_height, GS_RGBA);
+				info->width, info->height, GS_RGBA);
 			if (!video->copy_surfaces[i][0]) {
 				success = false;
 				break;
@@ -376,7 +373,7 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	}
 
 	enum gs_color_format format = GS_RGBA;
-	switch (ovi->output_format) {
+	switch (info->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
 	case VIDEO_FORMAT_I210:
@@ -386,27 +383,27 @@ static bool obs_init_textures(struct obs_video_info *ovi)
 	}
 
 	enum gs_color_space space = GS_CS_SRGB;
-	switch (ovi->colorspace) {
+	switch (info->colorspace) {
 	case VIDEO_CS_2100_PQ:
 	case VIDEO_CS_2100_HLG:
 		space = GS_CS_709_EXTENDED;
 		break;
 	default:
-		switch (ovi->output_format) {
+		switch (info->format) {
 		case VIDEO_FORMAT_I010:
 		case VIDEO_FORMAT_P010:
 			space = GS_CS_SRGB_16F;
 		}
 	}
 
-	video->render_texture = gs_texture_create(ovi->base_width,
-						  ovi->base_height, format, 1,
+	video->render_texture = gs_texture_create(obs->video.base_width,
+						  obs->video.base_height, format, 1,
 						  NULL, GS_RENDER_TARGET);
 	if (!video->render_texture)
 		success = false;
 
-	video->output_texture = gs_texture_create(ovi->output_width,
-						  ovi->output_height, format, 1,
+	video->output_texture = gs_texture_create(info->width,
+						  info->height, format, 1,
 						  NULL, GS_RENDER_TARGET);
 	if (!video->output_texture)
 		success = false;
@@ -558,15 +555,15 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	return success ? OBS_VIDEO_SUCCESS : OBS_VIDEO_FAIL;
 }
 
-static inline void set_video_matrix(struct obs_core_video *video,
-				    struct obs_video_info *ovi)
+static inline void set_video_matrix(struct obs_core_video_mix *video,
+				    struct video_output_info *info)
 {
 	struct matrix4 mat;
 	struct vec4 r_row;
 
-	if (format_is_yuv(ovi->output_format)) {
+	if (format_is_yuv(info->format)) {
 		video_format_get_parameters_for_format(
-			ovi->colorspace, ovi->range, ovi->output_format,
+			info->colorspace, info->range, info->format,
 			(float *)&mat, NULL, NULL);
 		matrix4_inv(&mat, &mat);
 
@@ -581,24 +578,23 @@ static inline void set_video_matrix(struct obs_core_video *video,
 	memcpy(video->color_matrix, &mat, sizeof(float) * 16);
 }
 
-static int obs_init_video(struct obs_video_info *ovi)
+int obs_init_video_mix(struct obs_video_info *ovi,
+		       struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
 	struct video_output_info vi;
-	int errorcode;
+
+	pthread_mutex_init_value(&video->gpu_encoder_mutex);
 
 	make_video_info(&vi, ovi);
-	video->base_width = ovi->base_width;
-	video->base_height = ovi->base_height;
-	video->output_width = ovi->output_width;
-	video->output_height = ovi->output_height;
 	video->gpu_conversion = ovi->gpu_conversion;
 	video->scale_type = ovi->scale_type;
+	video->gpu_was_active = false;
+	video->raw_was_active = false;
+	video->was_active = false;
 
-	set_video_matrix(video, ovi);
+	set_video_matrix(video, &vi);
 
-	errorcode = video_output_open(&video->video, &vi);
-
+	int errorcode = video_output_open(&video->video, &vi);
 	if (errorcode != VIDEO_OUTPUT_SUCCESS) {
 		if (errorcode == VIDEO_OUTPUT_INVALIDPARAM) {
 			blog(LOG_ERROR, "Invalid video parameters specified");
@@ -609,20 +605,35 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 	}
 
-	gs_enter_context(video->graphics);
-
-	if (ovi->gpu_conversion && !obs_init_gpu_conversion(ovi))
+	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
-	if (!obs_init_textures(ovi))
+
+	gs_enter_context(obs->video.graphics);
+
+	if (video->gpu_conversion && !obs_init_gpu_conversion(video))
+		return OBS_VIDEO_FAIL;
+	if (!obs_init_textures(video))
 		return OBS_VIDEO_FAIL;
 
 	gs_leave_context();
 
-	if (pthread_mutex_init(&video->gpu_encoder_mutex, NULL) < 0)
-		return OBS_VIDEO_FAIL;
+	return OBS_VIDEO_SUCCESS;
+}
+
+static int obs_init_video(struct obs_video_info *ovi)
+{
+	struct obs_core_video *video = &obs->video;
+	video->base_width = ovi->base_width;
+	video->base_height = ovi->base_height;
+	video->video_frame_interval_ns = util_mul_div64(1000000000ULL, ovi->fps_den, ovi->fps_num);
+	video->video_half_frame_interval_ns = util_mul_div64(500000000ULL, ovi->fps_den, ovi->fps_num);
+
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 
+	int errorcode;
 #ifdef __APPLE__
 	errorcode = pthread_create(&video->video_thread, NULL,
 				   obs_graphics_thread_autorelease, obs);
@@ -635,35 +646,35 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	video->thread_initialized = true;
 	video->ovi = *ovi;
+
+	if (!obs_view_add(&obs->data.main_view))
+		return OBS_VIDEO_FAIL;
+
 	return OBS_VIDEO_SUCCESS;
 }
 
 static void stop_video(void)
 {
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++)
+		video_output_stop(obs->video.mixes.array[i].video);
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
 	struct obs_core_video *video = &obs->video;
 	void *thread_retval;
 
-	if (video->video) {
-		video_output_stop(video->video);
 		if (video->thread_initialized) {
 			pthread_join(video->video_thread, &thread_retval);
 			video->thread_initialized = false;
 		}
-	}
 }
 
-static void obs_free_video(void)
+static void obs_free_render_textures(struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
-
-	if (video->video) {
-		video_output_close(video->video);
-		video->video = NULL;
-
-		if (!video->graphics)
+		if (!obs->video.graphics)
 			return;
 
-		gs_enter_context(video->graphics);
+		gs_enter_context(obs->video.graphics);
 
 		for (size_t c = 0; c < NUM_CHANNELS; c++) {
 			if (video->mapped_surfaces[c]) {
@@ -713,6 +724,15 @@ static void obs_free_video(void)
 		video->output_texture = NULL;
 
 		gs_leave_context();
+}
+
+void obs_free_video_mix(struct obs_core_video_mix *video)
+{
+	if (video->video) {
+		video_output_close(video->video);
+		video->video = NULL;
+
+		obs_free_render_textures(video);
 
 		circlebuf_free(&video->vframe_info_buffer);
 		circlebuf_free(&video->vframe_info_buffer_gpu);
@@ -726,13 +746,28 @@ static void obs_free_video(void)
 		pthread_mutex_init_value(&video->gpu_encoder_mutex);
 		da_free(video->gpu_encoders);
 
-		pthread_mutex_destroy(&video->task_mutex);
-		pthread_mutex_init_value(&video->task_mutex);
-		circlebuf_free(&video->tasks);
-
 		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
 	}
+}
+
+static void obs_free_video(void)
+{
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	size_t num = obs->video.mixes.num;
+	if (num)
+		blog(LOG_WARNING, "%d views remain at shutdown", num);
+	for (size_t i = 0; i < num; i++)
+		obs_free_video_mix(obs->video.mixes.array + i);
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	pthread_mutex_destroy(&obs->video.mixes_mutex);
+	pthread_mutex_init_value(&obs->video.mixes_mutex);
+	da_free(obs->video.mixes);
+
+	pthread_mutex_destroy(&obs->video.task_mutex);
+	pthread_mutex_init_value(&obs->video.task_mutex);
+	circlebuf_free(&obs->video.tasks);
 }
 
 static void obs_free_graphics(void)
@@ -892,6 +927,7 @@ static void obs_free_data(void)
 
 	data->valid = false;
 
+	obs_view_remove(&data->main_view);
 	obs_main_view_free(&data->main_view);
 
 	blog(LOG_INFO, "Freeing OBS context data");
@@ -1057,8 +1093,8 @@ static bool obs_init(const char *locale, const char *module_config_path,
 
 	pthread_mutex_init_value(&obs->audio.monitoring_mutex);
 	pthread_mutex_init_value(&obs->audio.task_mutex);
-	pthread_mutex_init_value(&obs->video.gpu_encoder_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
+	pthread_mutex_init_value(&obs->video.mixes_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -1331,14 +1367,12 @@ int obs_reset_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 
 	/* don't allow changing of video settings if active. */
-	if (obs->video.video && obs_video_active())
+	if (obs_video_active())
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
 
 	if (!size_valid(ovi->output_width, ovi->output_height) ||
 	    !size_valid(ovi->base_width, ovi->base_height))
 		return OBS_VIDEO_INVALID_PARAM;
-
-	struct obs_core_video *video = &obs->video;
 
 	stop_video();
 	obs_free_video();
@@ -1347,7 +1381,7 @@ int obs_reset_video(struct obs_video_info *ovi)
 	ovi->output_width &= 0xFFFFFFFC;
 	ovi->output_height &= 0xFFFFFFFE;
 
-	if (!video->graphics) {
+	if (!obs->video.graphics) {
 		int errorcode = obs_init_graphics(ovi);
 		if (errorcode != OBS_VIDEO_SUCCESS) {
 			obs_free_graphics();
@@ -1461,12 +1495,10 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	struct obs_core_video *video = &obs->video;
-
-	if (!video->graphics)
+	if (!obs->video.graphics)
 		return false;
 
-	*ovi = video->ovi;
+	*ovi = obs->video.ovi;
 	return true;
 }
 
@@ -1617,7 +1649,7 @@ audio_t *obs_get_audio(void)
 
 video_t *obs_get_video(void)
 {
-	return obs->video.video;
+	return obs->video.main_mix->video;
 }
 
 /* TODO: optimize this later so it's not just O(N) string lookups */
@@ -1974,12 +2006,12 @@ static void obs_render_main_texture_internal(enum gs_blend_type src_c,
 					     enum gs_blend_type src_a,
 					     enum gs_blend_type dest_a)
 {
-	struct obs_core_video *video;
+	struct obs_core_video_mix *video;
 	gs_texture_t *tex;
 	gs_effect_t *effect;
 	gs_eparam_t *param;
 
-	video = &obs->video;
+	video = obs->video.main_mix;
 	if (!video->texture_rendered)
 		return;
 
@@ -2033,9 +2065,9 @@ void obs_render_main_texture_src_color_only(void)
 
 gs_texture_t *obs_get_main_texture(void)
 {
-	struct obs_core_video *video;
+	struct obs_core_video_mix *video;
 
-	video = &obs->video;
+	video = obs->video.main_mix;
 	if (!video->texture_rendered)
 		return NULL;
 
@@ -2678,12 +2710,31 @@ uint32_t obs_get_lagged_frames(void)
 	return obs->video.lagged_frames;
 }
 
+struct obs_core_video_mix *get_mix_for_video(video_t *v)
+{
+	struct obs_core_video_mix *result = NULL;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
+		struct obs_core_video_mix *mix = obs->video.mixes.array + i;
+
+		if (v == mix->video) {
+			result = mix;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return result;
+}
+
 void start_raw_video(video_t *v, const struct video_scale_info *conversion,
 		     void (*callback)(void *param, struct video_data *frame),
 		     void *param)
 {
-	struct obs_core_video *video = &obs->video;
-	os_atomic_inc_long(&video->raw_active);
+	struct obs_core_video_mix *video = get_mix_for_video(v);
+	if (video)
+		os_atomic_inc_long(&video->raw_active);
 	video_output_connect(v, conversion, callback, param);
 }
 
@@ -2691,8 +2742,9 @@ void stop_raw_video(video_t *v,
 		    void (*callback)(void *param, struct video_data *frame),
 		    void *param)
 {
-	struct obs_core_video *video = &obs->video;
-	os_atomic_dec_long(&video->raw_active);
+	struct obs_core_video_mix *video = get_mix_for_video(v);
+	if (video)
+		os_atomic_dec_long(&video->raw_active);
 	video_output_disconnect(v, callback, param);
 }
 
@@ -2701,7 +2753,7 @@ void obs_add_raw_video_callback(const struct video_scale_info *conversion,
 						 struct video_data *frame),
 				void *param)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	start_raw_video(video->video, conversion, callback, param);
 }
 
@@ -2709,7 +2761,7 @@ void obs_remove_raw_video_callback(void (*callback)(void *param,
 						    struct video_data *frame),
 				   void *param)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	stop_raw_video(video->video, callback, param);
 }
 
@@ -2752,13 +2804,13 @@ obs_data_t *obs_get_private_data(void)
 	return private_data;
 }
 
-extern bool init_gpu_encoding(struct obs_core_video *video);
-extern void stop_gpu_encoding_thread(struct obs_core_video *video);
-extern void free_gpu_encoding(struct obs_core_video *video);
+extern bool init_gpu_encoding(struct obs_core_video_mix *video);
+extern void stop_gpu_encoding_thread(struct obs_core_video_mix *video);
+extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	bool success = true;
 
 	obs_enter_graphics();
@@ -2784,7 +2836,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);
@@ -2811,21 +2863,32 @@ void stop_gpu_encode(obs_encoder_t *encoder)
 
 bool obs_video_active(void)
 {
-	struct obs_core_video *video = &obs->video;
+	bool result = false;
 
-	return os_atomic_load_long(&video->raw_active) > 0 ||
-	       os_atomic_load_long(&video->gpu_encoder_active) > 0;
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
+		struct obs_core_video_mix *video = obs->video.mixes.array + i;
+
+		if (os_atomic_load_long(&video->raw_active) > 0 ||
+		    os_atomic_load_long(&video->gpu_encoder_active) > 0) {
+			result = true;
+			break;
+		}
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return result;
 }
 
 bool obs_nv12_tex_active(void)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	return video->using_nv12_tex;
 }
 
 bool obs_p010_tex_active(void)
 {
-	struct obs_core_video *video = &obs->video;
+	struct obs_core_video_mix *video = obs->video.main_mix;
 	return video->using_p010_tex;
 }
 
