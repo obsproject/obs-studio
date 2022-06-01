@@ -40,7 +40,7 @@ signals:
 		bool autostop, bool start_now);
 
 protected:
-	void showEvent(QShowEvent *event);
+	void showEvent(QShowEvent *event) override;
 	void UpdateOkButtonStatus();
 
 	bool CreateEventAction(YoutubeApiWrappers *api,
