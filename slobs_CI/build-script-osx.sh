@@ -157,22 +157,18 @@ cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PACKED_BUILD/bin/li
 cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
 cp /usr/local/opt/xz/lib/liblzma.5.dylib $PACKED_BUILD/bin/liblzma.5.dylib
 
-chmod u+w $PACKED_BUILD/bin/libspeexdsp.1.dylib
-chmod u+w $PACKED_BUILD/bin/libssl.1.1.dylib
-chmod u+w $PACKED_BUILD/bin/libfdk-aac.2.dylib
-chmod u+w $PACKED_BUILD/bin/libcurl.4.dylib
-chmod u+w $PACKED_BUILD/bin/liblzma.5.dylib
+chmod u+w $PACKED_BUILD/bin/lib*.dylib
 
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib @executable_path/libssl.1.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
 sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
 
-sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
+sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
 
 sudo install_name_tool -change /usr/local/opt/libpng/lib/libpng16.16.dylib @executable_path/libpng16.16.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
 
 sudo install_name_tool -change /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib @executable_path/libdb-18.1.dylib $PACKED_BUILD/bin/libjack.0.dylib
 
-sudo install_name_tool -change /usr/local/Cellar/openssl@1.1/1.1.1d/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
+sudo install_name_tool -change /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib @executable_path/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
 
 sudo install_name_tool -change /usr/local/opt/curl/lib/libcurl.4.dylib @executable_path/libcurl.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
 sudo install_name_tool -change /tmp/obsdeps/lib/libjansson.4.dylib @executable_path/libjansson.4.dylib $PACKED_BUILD/obs-plugins/obs-outputs.so
