@@ -96,8 +96,8 @@
         {
           "type": "git",
           "url": "https://git.videolan.org/git/ffmpeg/nv-codec-headers.git",
-          "tag": "n11.1.5.0",
-          "commit": "b641a195edbe3ac9788e681e22c2e2fad8aacddb"
+          "tag": "n11.1.5.1",
+          "commit": "84483da70d903239d4536763fde8c7e6c4e80784"
         }
       ]
     },
@@ -281,7 +281,7 @@
         {
           "type": "git",
           "url": "https://luajit.org/git/luajit-2.0.git",
-          "commit": "ec6edc5c39c25e4eb3fca51b753f9995e97215da",
+          "commit": "a91d0d9d3bba1a936669cfac3244509a0f2ac0e3",
           "disable-shallow-clone": true
         },
         {
@@ -371,7 +371,9 @@
       "builddir": true,
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
-        "-DAJA_BUILD_OPENSOURCE=ON"
+        "-DAJA_BUILD_OPENSOURCE=ON",
+        "-DAJA_BUILD_APPS=OFF",
+        "-DAJA_INSTALL_HEADERS=ON"
       ],
       "cleanup": [
         "/include"
@@ -380,14 +382,8 @@
         {
           "type": "git",
           "url": "https://github.com/aja-video/ntv2.git",
-          "commit": "abf17cc1e7aadd9f3e4972774a3aba2812c51b75"
-        },
-        {
-          "type": "shell",
-          "commands": [
-            "sed -i 's/Clang|GNU/GNU/g' cmake/CommonFlags.cmake",
-            "sed -i 's/Linux|Darwin/Linux/g' cmake/CommonFlags.cmake"
-          ]
+          "tag": "v16.2-bugfix5",
+          "commit": "0acbac70a0b5e6509cca78cfbf69974c73c10db9"
         }
       ]
     },
