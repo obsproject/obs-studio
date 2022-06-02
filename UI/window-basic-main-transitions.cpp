@@ -1739,7 +1739,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	}
 
 	ResetUI();
-	UpdateTitleBar();
 }
 
 void OBSBasic::RenderProgram(void *data, uint32_t cx, uint32_t cy)
