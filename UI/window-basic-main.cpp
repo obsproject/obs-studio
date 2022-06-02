@@ -1980,12 +1980,12 @@ void OBSBasic::OBSInit()
 		App()->GlobalConfig(), "BasicWindow", "DockState");
 
 	if (!dockStateStr) {
-		on_resetDocks_triggered();
+		on_resetDocks_triggered(true);
 	} else {
 		QByteArray dockState =
 			QByteArray::fromBase64(QByteArray(dockStateStr));
 		if (!restoreState(dockState))
-			on_resetDocks_triggered();
+			on_resetDocks_triggered(true);
 	}
 
 	bool pre23Defaults = config_get_bool(App()->GlobalConfig(), "General",
@@ -8781,7 +8781,7 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 	return snprintf(path, size, "%s/%s/%s", profiles_path, profile, file);
 }
 
-void OBSBasic::on_resetDocks_triggered()
+void OBSBasic::on_resetDocks_triggered(bool force)
 {
 	/* prune deleted extra docks */
 	for (int i = extraDocks.size() - 1; i >= 0; i--) {
@@ -8790,7 +8790,7 @@ void OBSBasic::on_resetDocks_triggered()
 		}
 	}
 
-	if (extraDocks.size()) {
+	if (extraDocks.size() && !force) {
 		QMessageBox::StandardButton button = QMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
