@@ -3110,6 +3110,15 @@ void OBSBasic::UpdateContextBar(bool force)
 				c->Init();
 				ui->emptySpace->layout()->addWidget(c);
 
+			} else if (strcmp(id,
+					  "wasapi_process_output_capture") ==
+				   0) {
+				ApplicationAudioCaptureToolbar *c =
+					new ApplicationAudioCaptureToolbar(
+						ui->emptySpace, source);
+				c->Init();
+				ui->emptySpace->layout()->addWidget(c);
+
 			} else if (strcmp(id, "window_capture") == 0 ||
 				   strcmp(id, "xcomposite_input") == 0) {
 				WindowCaptureToolbar *c =
