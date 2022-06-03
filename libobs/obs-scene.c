@@ -1036,6 +1036,11 @@ static void scene_load_item(struct obs_scene *scene, obs_data_t *item_data)
 	item->crop.bottom =
 		(uint32_t)obs_data_get_int(item_data, "crop_bottom");
 
+	item->lock_size_aspect =
+		obs_data_get_bool(item_data, "lock_size_aspect");
+	item->lock_bounds_aspect =
+		obs_data_get_bool(item_data, "lock_bounds_aspect");
+
 	scale_filter_str = obs_data_get_string(item_data, "scale_filter");
 	item->scale_filter = OBS_SCALE_DISABLE;
 
@@ -1161,6 +1166,10 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_int(item_data, "crop_bottom", (int)item->crop.bottom);
 	obs_data_set_int(item_data, "id", item->id);
 	obs_data_set_bool(item_data, "group_item_backup", !!backup_group);
+	obs_data_set_bool(item_data, "lock_size_aspect",
+			  item->lock_size_aspect);
+	obs_data_set_bool(item_data, "lock_bounds_aspect",
+			  item->lock_bounds_aspect);
 
 	if (item->is_group) {
 		obs_scene_t *group_scene = item->source->context.data;
@@ -2109,6 +2118,8 @@ static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 	item->is_group = strcmp(source->info.id, group_info.id) == 0;
 	item->private_settings = obs_data_create();
 	item->toggle_visibility = OBS_INVALID_HOTKEY_PAIR_ID;
+	item->lock_size_aspect = false;
+	item->lock_bounds_aspect = false;
 	os_atomic_set_long(&item->active_refs, 1);
 	vec2_set(&item->scale, 1.0f, 1.0f);
 	matrix4_identity(&item->draw_transform);
@@ -2323,6 +2334,10 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_set_int(temp, "bottom", crop.bottom);
 		obs_data_set_int(temp, "left", crop.left);
 		obs_data_set_int(temp, "right", crop.right);
+		obs_data_set_bool(temp, "lock_size_aspect",
+				  info.lock_size_aspect);
+		obs_data_set_bool(temp, "lock_bounds_aspect",
+				  info.lock_bounds_aspect);
 
 		obs_data_array_push_back(item_ids, temp);
 
@@ -2408,6 +2423,8 @@ void load_transform_states(obs_data_t *temp, void *vp_scene)
 	crop.bottom = (int)obs_data_get_int(temp, "bottom");
 	crop.left = (int)obs_data_get_int(temp, "left");
 	crop.right = (int)obs_data_get_int(temp, "right");
+	info.lock_size_aspect = obs_data_get_bool(temp, "lock_size_aspect");
+	info.lock_bounds_aspect = obs_data_get_bool(temp, "lock_bounds_aspect");
 
 	obs_sceneitem_defer_update_begin(item);
 
@@ -2716,6 +2733,8 @@ void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 		info->bounds_type = item->bounds_type;
 		info->bounds_alignment = item->bounds_align;
 		info->bounds = item->bounds;
+		info->lock_size_aspect = item->lock_size_aspect;
+		info->lock_bounds_aspect = item->lock_bounds_aspect;
 	}
 }
 
@@ -2730,6 +2749,8 @@ void obs_sceneitem_set_info(obs_sceneitem_t *item,
 		item->bounds_type = info->bounds_type;
 		item->bounds_align = info->bounds_alignment;
 		item->bounds = info->bounds;
+		item->lock_size_aspect = info->lock_size_aspect;
+		item->lock_bounds_aspect = info->lock_bounds_aspect;
 		do_update_transform(item);
 	}
 }
@@ -3955,4 +3976,14 @@ void obs_scene_prune_sources(obs_scene_t *scene)
 		obs_sceneitem_release(remove_items.array[i]);
 
 	da_free(remove_items);
+}
+
+bool obs_sceneitem_size_aspect_ratio_locked(const obs_sceneitem_t *item)
+{
+	return item ? item->lock_size_aspect : false;
+}
+
+bool obs_sceneitem_bounding_box_aspect_ratio_locked(const obs_sceneitem_t *item)
+{
+	return item ? item->lock_bounds_aspect : false;
 }

@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>564</width>
-    <height>313</height>
+    <width>778</width>
+    <height>378</height>
    </rect>
   </property>
   <property name="windowTitle">
@@ -246,6 +246,25 @@
           </property>
           <property name="singleStep">
            <double>1.000000000000000</double>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="LockedCheckBox" name="sizeLockAspect">
+          <property name="sizePolicy">
+           <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+            <horstretch>0</horstretch>
+            <verstretch>0</verstretch>
+           </sizepolicy>
+          </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.LockAspectRatio</string>
+          </property>
+          <property name="text">
+           <string>Basic.TransformWindow.LockAspectRatio</string>
+          </property>
+          <property name="checked">
+           <bool>false</bool>
           </property>
          </widget>
         </item>
@@ -537,6 +556,19 @@
           </property>
          </widget>
         </item>
+        <item>
+         <widget class="LockedCheckBox" name="boundsLockAspect">
+          <property name="enabled">
+           <bool>false</bool>
+          </property>
+          <property name="accessibleName">
+           <string>Basic.TransformWindow.LockAspectRatio</string>
+          </property>
+          <property name="text">
+           <string>Basic.TransformWindow.LockAspectRatio</string>
+          </property>
+         </widget>
+        </item>
        </layout>
       </widget>
      </item>
@@ -756,6 +788,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>LockedCheckBox</class>
+   <extends>QCheckBox</extends>
+   <header>locked-checkbox.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources/>
  <connections>
   <connection>

@@ -39,6 +39,7 @@ void OBSBasicTransform::HookWidget(QWidget *widget, const char *signal,
 #define COMBO_CHANGED SIGNAL(currentIndexChanged(int))
 #define ISCROLL_CHANGED SIGNAL(valueChanged(int))
 #define DSCROLL_CHANGED SIGNAL(valueChanged(double))
+#define CHECK_CHANGED SIGNAL(toggled(bool))
 
 OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	: QDialog(parent), ui(new Ui::OBSBasicTransform), main(parent)
@@ -50,17 +51,16 @@ OBSBasicTransform::OBSBasicTransform(OBSBasic *parent)
 	HookWidget(ui->positionX, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->positionY, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->rotation, DSCROLL_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->sizeX, DSCROLL_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->sizeY, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->align, COMBO_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->boundsType, COMBO_CHANGED, SLOT(OnBoundsType(int)));
 	HookWidget(ui->boundsAlign, COMBO_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->boundsWidth, DSCROLL_CHANGED, SLOT(OnControlChanged()));
-	HookWidget(ui->boundsHeight, DSCROLL_CHANGED, SLOT(OnControlChanged()));
 	HookWidget(ui->cropLeft, ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropRight, ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropTop, ISCROLL_CHANGED, SLOT(OnCropChanged()));
 	HookWidget(ui->cropBottom, ISCROLL_CHANGED, SLOT(OnCropChanged()));
+	HookWidget(ui->sizeLockAspect, CHECK_CHANGED, SLOT(OnControlChanged()));
+	HookWidget(ui->boundsLockAspect, CHECK_CHANGED,
+		   SLOT(OnControlChanged()));
 
 	ui->buttonBox->button(QDialogButtonBox::Close)->setDefault(true);
 
@@ -267,6 +267,12 @@ void OBSBasicTransform::RefreshControls()
 	ui->cropRight->setValue(int(crop.right));
 	ui->cropTop->setValue(int(crop.top));
 	ui->cropBottom->setValue(int(crop.bottom));
+
+	sizeAspect = ui->sizeX->value() / ui->sizeY->value();
+	boundsAspect = ui->boundsWidth->value() / ui->boundsHeight->value();
+
+	ui->sizeLockAspect->setChecked(osi.lock_size_aspect);
+	ui->boundsLockAspect->setChecked(osi.lock_bounds_aspect);
 	ignoreItemChange = false;
 
 	std::string name = obs_source_get_name(source);
@@ -284,6 +290,7 @@ void OBSBasicTransform::OnBoundsType(int index)
 	ui->boundsAlign->setEnabled(enable);
 	ui->boundsWidth->setEnabled(enable);
 	ui->boundsHeight->setEnabled(enable);
+	ui->boundsLockAspect->setEnabled(enable);
 
 	if (!ignoreItemChange) {
 		obs_bounds_type lastType = obs_sceneitem_get_bounds_type(item);
@@ -309,6 +316,9 @@ void OBSBasicTransform::OnControlChanged()
 	double width = double(obs_source_get_width(source));
 	double height = double(obs_source_get_height(source));
 
+	sizeAspect = ui->sizeX->value() / ui->sizeY->value();
+	boundsAspect = ui->boundsWidth->value() / ui->boundsHeight->value();
+
 	obs_transform_info oti;
 	oti.pos.x = float(ui->positionX->value());
 	oti.pos.y = float(ui->positionY->value());
@@ -321,6 +331,9 @@ void OBSBasicTransform::OnControlChanged()
 	oti.bounds_alignment = listToAlign[ui->boundsAlign->currentIndex()];
 	oti.bounds.x = float(ui->boundsWidth->value());
 	oti.bounds.y = float(ui->boundsHeight->value());
+
+	oti.lock_size_aspect = ui->sizeLockAspect->isChecked();
+	oti.lock_bounds_aspect = ui->boundsLockAspect->isChecked();
 
 	ignoreTransformSignal = true;
 	obs_sceneitem_set_info(item, &oti);
@@ -345,7 +358,9 @@ void OBSBasicTransform::OnCropChanged()
 
 void OBSBasicTransform::on_resetButton_clicked()
 {
+	ignoreItemChange = true;
 	main->on_actionResetTransform_triggered();
+	ignoreItemChange = false;
 }
 
 template<typename T> static T GetOBSRef(QListWidgetItem *item)
@@ -361,4 +376,68 @@ void OBSBasicTransform::OnSceneChanged(QListWidgetItem *current,
 
 	obs_scene_t *scene = GetOBSRef<OBSScene>(current);
 	this->SetScene(scene);
+}
+
+void OBSBasicTransform::on_sizeX_valueChanged(double value)
+{
+	if (ignoreItemChange)
+		return;
+
+	if (ui->sizeLockAspect->isChecked()) {
+		double newSizeY = value / sizeAspect;
+
+		ui->sizeY->blockSignals(true);
+		ui->sizeY->setValue(newSizeY);
+		ui->sizeY->blockSignals(false);
+	}
+
+	OnControlChanged();
+}
+
+void OBSBasicTransform::on_sizeY_valueChanged(double value)
+{
+	if (ignoreItemChange)
+		return;
+
+	if (ui->sizeLockAspect->isChecked()) {
+		double newSizeX = value * sizeAspect;
+
+		ui->sizeX->blockSignals(true);
+		ui->sizeX->setValue(newSizeX);
+		ui->sizeX->blockSignals(false);
+	}
+
+	OnControlChanged();
+}
+
+void OBSBasicTransform::on_boundsWidth_valueChanged(double value)
+{
+	if (ignoreItemChange)
+		return;
+
+	if (ui->boundsLockAspect->isChecked()) {
+		double newBoundsHeight = value / boundsAspect;
+
+		ui->boundsHeight->blockSignals(true);
+		ui->boundsHeight->setValue(newBoundsHeight);
+		ui->boundsHeight->blockSignals(false);
+	}
+
+	OnControlChanged();
+}
+
+void OBSBasicTransform::on_boundsHeight_valueChanged(double value)
+{
+	if (ignoreItemChange)
+		return;
+
+	if (ui->boundsLockAspect->isChecked()) {
+		double newBoundsWidth = value * boundsAspect;
+
+		ui->boundsWidth->blockSignals(true);
+		ui->boundsWidth->setValue(newBoundsWidth);
+		ui->boundsWidth->blockSignals(false);
+	}
+
+	OnControlChanged();
 }

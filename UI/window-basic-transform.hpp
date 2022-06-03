@@ -39,6 +39,9 @@ private:
 	static void OBSSceneItemSelect(void *param, calldata_t *data);
 	static void OBSSceneItemDeselect(void *param, calldata_t *data);
 
+	double sizeAspect = 1.0;
+	double boundsAspect = 1.0;
+
 private slots:
 	void RefreshControls();
 	void SetItemQt(OBSSceneItem newItem);
@@ -46,6 +49,11 @@ private slots:
 	void OnControlChanged();
 	void OnCropChanged();
 	void on_resetButton_clicked();
+
+	void on_sizeX_valueChanged(double value);
+	void on_sizeY_valueChanged(double value);
+	void on_boundsWidth_valueChanged(double value);
+	void on_boundsHeight_valueChanged(double value);
 
 public:
 	OBSBasicTransform(OBSBasic *parent);

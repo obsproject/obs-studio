@@ -1209,9 +1209,6 @@ void OBSBasicPreview::ClampAspect(vec3 &tl, vec3 &br, vec2 &size,
 			size.y = size.x / baseAspect * -1.0f;
 	}
 
-	size.x = std::round(size.x);
-	size.y = std::round(size.y);
-
 	if (stretchFlags & ITEM_LEFT)
 		tl.x = br.x - size.x;
 	else if (stretchFlags & ITEM_RIGHT)
@@ -1422,7 +1419,8 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 	vec2_set(&size, br.x - tl.x, br.y - tl.y);
 
 	if (boundsType != OBS_BOUNDS_NONE) {
-		if (shiftDown)
+		if (shiftDown ||
+		    obs_sceneitem_bounding_box_aspect_ratio_locked(stretchItem))
 			ClampAspect(tl, br, size, baseSize);
 
 		if (tl.x > br.x)
@@ -1440,7 +1438,8 @@ void OBSBasicPreview::StretchItem(const vec2 &pos)
 		baseSize.x -= float(crop.left + crop.right);
 		baseSize.y -= float(crop.top + crop.bottom);
 
-		if (!shiftDown)
+		if (!shiftDown ||
+		    obs_sceneitem_size_aspect_ratio_locked(stretchItem))
 			ClampAspect(tl, br, size, baseSize);
 
 		vec2_div(&size, &size, &baseSize);

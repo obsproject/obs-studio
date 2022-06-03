@@ -7946,6 +7946,8 @@ void OBSBasic::on_actionEditTransform_triggered()
 	transformWindow = new OBSBasicTransform(this);
 	connect(ui->scenes, &QListWidget::currentItemChanged, transformWindow,
 		&OBSBasicTransform::OnSceneChanged);
+	transformWindow->adjustSize();
+
 	transformWindow->show();
 	transformWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 }
@@ -8021,6 +8023,8 @@ static bool reset_tr(obs_scene_t *scene, obs_sceneitem_t *item, void *param)
 	info.alignment = OBS_ALIGN_TOP | OBS_ALIGN_LEFT;
 	info.bounds_type = OBS_BOUNDS_NONE;
 	info.bounds_alignment = OBS_ALIGN_CENTER;
+	info.lock_size_aspect = false;
+	info.lock_bounds_aspect = false;
 	vec2_set(&info.bounds, 0.0f, 0.0f);
 	obs_sceneitem_set_info(item, &info);
 

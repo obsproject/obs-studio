@@ -54,6 +54,8 @@ struct obs_scene_item {
 	struct vec2 scale;
 	float rot;
 	uint32_t align;
+	bool lock_size_aspect;
+	bool lock_bounds_aspect;
 
 	/* last width/height of the source, this is used to check whether
 	 * the transform needs updating */

@@ -163,6 +163,9 @@ struct obs_transform_info {
 	enum obs_bounds_type bounds_type;
 	uint32_t bounds_alignment;
 	struct vec2 bounds;
+
+	bool lock_size_aspect;
+	bool lock_bounds_aspect;
 };
 
 /**
@@ -1793,6 +1796,10 @@ obs_sceneitem_get_bounds_type(const obs_sceneitem_t *item);
 EXPORT uint32_t obs_sceneitem_get_bounds_alignment(const obs_sceneitem_t *item);
 EXPORT void obs_sceneitem_get_bounds(const obs_sceneitem_t *item,
 				     struct vec2 *bounds);
+
+EXPORT bool obs_sceneitem_size_aspect_ratio_locked(const obs_sceneitem_t *item);
+EXPORT bool
+obs_sceneitem_bounding_box_aspect_ratio_locked(const obs_sceneitem_t *item);
 
 EXPORT void obs_sceneitem_get_info(const obs_sceneitem_t *item,
 				   struct obs_transform_info *info);
