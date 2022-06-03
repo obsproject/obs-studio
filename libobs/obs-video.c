@@ -392,21 +392,24 @@ stage_output_texture(struct obs_core_video *video, int cur_texture,
 
 	if (!video->gpu_conversion) {
 		gs_stagesurf_t *copy = copy_surfaces[0];
-		if (copy) {
+		if (copy)
 			gs_stage_texture(copy, video->output_texture);
-			video->active_copy_surfaces[cur_texture][0] = copy;
-		}
+		video->active_copy_surfaces[cur_texture][0] = copy;
+
+		for (size_t i = 1; i < NUM_CHANNELS; ++i)
+			video->active_copy_surfaces[cur_texture][i] = NULL;
 
 		video->textures_copied[cur_texture] = true;
 	} else if (video->texture_converted) {
 		for (size_t i = 0; i < channel_count; i++) {
 			gs_stagesurf_t *copy = copy_surfaces[i];
-			if (copy) {
+			if (copy)
 				gs_stage_texture(copy, convert_textures[i]);
-				video->active_copy_surfaces[cur_texture][i] =
-					copy;
-			}
+			video->active_copy_surfaces[cur_texture][i] = copy;
 		}
+
+		for (size_t i = channel_count; i < NUM_CHANNELS; ++i)
+			video->active_copy_surfaces[cur_texture][i] = NULL;
 
 		video->textures_copied[cur_texture] = true;
 	}
