@@ -435,7 +435,7 @@ void ms_fill_window_list(obs_property_t *p, enum window_search_mode mode,
 
 static int window_rating(HWND window, enum window_priority priority,
 			 const char *class, const char *title, const char *exe,
-			 bool generic_class)
+			 bool uwp_window, bool generic_class)
 {
 	struct dstr cur_class = {0};
 	struct dstr cur_title = {0};
@@ -451,8 +451,11 @@ static int window_rating(HWND window, enum window_priority priority,
 	bool exe_matches = dstr_cmpi(&cur_exe, exe) == 0;
 	int title_val = abs(dstr_cmpi(&cur_title, title));
 
-	/* always match by name if class is generic */
-	if (generic_class) {
+	if (generic_class && (priority == WINDOW_PRIORITY_CLASS))
+		priority = WINDOW_PRIORITY_TITLE;
+
+	/* always match by name with UWP windows */
+	if (uwp_window) {
 		if (priority == WINDOW_PRIORITY_EXE && !exe_matches)
 			val = 0x7FFFFFFF;
 		else
@@ -482,11 +485,6 @@ static const char *generic_class_substrings[] = {
 	NULL,
 };
 
-static const char *generic_classes[] = {
-	"Windows.UI.Core.CoreWindow",
-	NULL,
-};
-
 static bool is_generic_class(const char *current_class)
 {
 	const char **class = generic_class_substrings;
@@ -497,15 +495,12 @@ static bool is_generic_class(const char *current_class)
 		class ++;
 	}
 
-	class = generic_classes;
-	while (*class) {
-		if (astrcmpi(current_class, *class) == 0) {
-			return true;
-		}
-		class ++;
-	}
-
 	return false;
+}
+
+static bool is_uwp_class(const char *window_class)
+{
+	return strcmp(window_class, "Windows.UI.Core.CoreWindow") == 0;
 }
 
 HWND ms_find_window(enum window_search_mode mode, enum window_priority priority,
@@ -521,11 +516,12 @@ HWND ms_find_window(enum window_search_mode mode, enum window_priority priority,
 	if (!class)
 		return NULL;
 
-	bool generic_class = is_generic_class(class);
+	const bool uwp_window = is_uwp_class(class);
+	const bool generic_class = is_generic_class(class);
 
 	while (window) {
 		int rating = window_rating(window, priority, class, title, exe,
-					   generic_class);
+					   uwp_window, generic_class);
 		if (rating < best_rating) {
 			best_rating = rating;
 			best_window = window;
@@ -545,6 +541,7 @@ struct top_level_enum_data {
 	const char *class;
 	const char *title;
 	const char *exe;
+	bool uwp_window;
 	bool generic_class;
 	HWND best_window;
 	int best_rating;
@@ -562,7 +559,7 @@ BOOL CALLBACK enum_windows_proc(HWND window, LPARAM lParam)
 
 	const int rating = window_rating(window, data->priority, data->class,
 					 data->title, data->exe,
-					 data->generic_class);
+					 data->uwp_window, data->generic_class);
 	if (rating < data->best_rating) {
 		data->best_rating = rating;
 		data->best_window = window;
@@ -584,6 +581,7 @@ HWND ms_find_window_top_level(enum window_search_mode mode,
 	data.class = class;
 	data.title = title;
 	data.exe = exe;
+	data.uwp_window = is_uwp_class(class);
 	data.generic_class = is_generic_class(class);
 	data.best_window = NULL;
 	data.best_rating = 0x7FFFFFFF;
