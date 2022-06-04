@@ -2622,6 +2622,20 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
-        }
+        },
+        {
+          "name": "Superpeer",
+          "servers": [
+              {
+                  "name": "Default",
+                  "url": "rtmp://endor.superpeer.com:5222/app"
+              }
+          ],
+          "recommended": {
+              "keyint": 2,
+              "max video bitrate": 6000,
+              "max audio bitrate": 160
+          }
+      }
     ]
 }
