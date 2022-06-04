@@ -666,81 +666,6 @@
             }
         },
         {
-            "name": "Nood",
-            "servers": [
-                {
-                    "name": "Global: Fastest (Recommended)",
-                    "url": "rtmp://stream.nood.tv/live_source"
-                },
-                {
-                    "name": "NA East: Ashburn, VA, USA",
-                    "url": "rtmp://us-east-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "NA East: Columbus, OH, USA",
-                    "url": "rtmp://us-east-2.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "NA East: Montreal, QC, CAN",
-                    "url": "rtmp://ca-central-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "NA West: San Francisco, CA, USA",
-                    "url": "rtmp://us-west-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "NA West: Portland, OR, USA",
-                    "url": "rtmp://us-west-2.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "SA East: Sao Paulo, BRA",
-                    "url": "rtmp://sa-east-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "EU West: Dublin, IRL",
-                    "url": "rtmp://eu-west-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "EU West: London, GBR",
-                    "url": "rtmp://eu-west-2.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "EU West: Paris, FRA",
-                    "url": "rtmp://eu-west-3.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "EU West: Frankfurt, DEU",
-                    "url": "rtmp://eu-central-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "Asia North-East: Tokyo, JPN",
-                    "url": "rtmp://ap-northeast-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "Asia North-East: Seoul, KOR",
-                    "url": "rtmp://ap-northeast-2.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "Asia South-East: Singapore, SGP",
-                    "url": "rtmp://ap-southeast-1.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "Asia South-East: Sydney, AUS",
-                    "url": "rtmp://ap-southeast-2.stream.nood.tv/live_source"
-                },
-                {
-                    "name": "Asia South: Mumbai, IND",
-                    "url": "rtmp://ap-south-1.stream.nood.tv/live_source"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 25000,
-                "max audio bitrate": 192,
-                "x264opts": "scenecut=0"
-            }
-        },
-        {
             "name": "Castr.io",
             "servers": [
                 {
@@ -955,15 +880,6 @@
                 "profile": "main",
                 "max video bitrate": 3500
             }
-        },
-        {
-            "name": "Pandora TV Korea",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://plive.pandora.tv:80/mediaHub"
-                }
-            ]
         },
         {
             "name": "Livestream",
@@ -1414,27 +1330,6 @@
             }
         },
         {
-            "name": "GameTips.TV",
-            "servers": [
-                {
-                    "name": "Iran - Tehran | AsiaTech",
-                    "url": "rtmp://rtmp.s2.gametips.tv:1935/live"
-                },
-                {
-                    "name": "Netherlands - Amsterdam | Serverius",
-                    "url": "rtmp://rtmp.s3.gametips.tv:1935/live"
-                },
-                {
-                    "name": "Iran - Tehran | ParsOnline",
-                    "url": "rtmp://rtmp.s4.gametips.tv:1935/live"
-                },
-                {
-                    "name": "Iran - Tehran | AfraNet",
-                    "url": "rtmp://rtmp.s5.gametips.tv:1935/live"
-                }
-            ]
-        },
-        {
             "name": "KakaoTV",
             "servers": [
                 {
@@ -1558,25 +1453,8 @@
             }
         },
         {
-            "name": "show-it.tv",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream-1.show-it.tv:1935/live"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 6000,
-                "max audio bitrate": 192
-            }
-        },
-        {
             "name": "Chathostess",
             "servers": [
-                {
-                    "name": "Chathostess - Default",
-                    "url": "rtmp://wowza01.foobarweb.com/cmschatsys_video"
-                },
                 {
                     "name": "Chathostess - Backup",
                     "url": "rtmp://wowza05.foobarweb.com/cmschatsys_video"
@@ -1585,20 +1463,6 @@
             "recommended": {
                 "keyint": 2,
                 "max video bitrate": 3600,
-                "max audio bitrate": 128
-            }
-        },
-        {
-            "name": "Camplace",
-            "servers": [
-                {
-                    "name": "Camplace - Default",
-                    "url": "rtmp://rtmp.camplace.com"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "max video bitrate": 3000,
                 "max audio bitrate": 128
             }
         },
@@ -1658,23 +1522,6 @@
             }
         },
         {
-            "name": "Stars.AVN.com",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://alpha.gateway.stars.avn.com/live"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 2500,
-                "max audio bitrate": 192,
-                "bframes": 0,
-                "x264opts": "tune=zerolatency"
-            }
-        },
-        {
             "name": "Konduit.live",
             "servers": [
                 {
@@ -1686,54 +1533,6 @@
                 "keyint": 2,
                 "x264opts": "scenecut=0"
             }
-        },
-        {
-            "name": "Uncanny.gg",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://stream.uncanny.gg/fortnite"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 10000,
-                "max audio bitrate": 192
-            }
-        },
-        {
-            "name": "Whalebone.tv",
-            "servers": [
-                {
-                    "name": "Automatic",
-                    "url": "rtmp://live.whalebone.tv/live"
-                },
-                {
-                    "name": "Tokyo, Japan",
-                    "url": "rtmp://ap-northeast.live.whalebone.tv/live"
-                },
-                {
-                    "name": "Frankfurt, Germany",
-                    "url": "rtmp://eu-central.live.whalebone.tv/live"
-                },
-                {
-                    "name": "London, United Kingdom",
-                    "url": "rtmp://eu-west.live.whalebone.tv/live"
-                },
-                {
-                    "name": "São Paulo, Brazil",
-                    "url": "rtmp://sa-east.live.whalebone.tv/live"
-                },
-                {
-                    "name": "North Virgina, United States",
-                    "url": "rtmp://us-east.live.whalebone.tv/live"
-                },
-                {
-                    "name": "Oregon, United States",
-                    "url": "rtmp://us-west.live.whalebone.tv/live"
-                }
-            ]
         },
         {
             "name": "LOCO",
@@ -1804,15 +1603,6 @@
                 "max video bitrate": 10000,
                 "max audio bitrate": 192
             }
-        },
-        {
-            "name": "VirtWish",
-            "servers": [
-                {
-                    "name": "Default",
-                    "url": "rtmp://rtmp.virtwish.com/live"
-                }
-            ]
         },
         {
             "name": "Nimo TV",
@@ -1921,21 +1711,6 @@
                 "profile": "high",
                 "max video bitrate": 3500,
                 "max audio bitrate": 160
-            }
-        },
-        {
-            "name": "Taryana - Apachat | تاریانا - آپاچت",
-            "servers": [
-                {
-                    "name": "Global: Fastest (Recommended)",
-                    "url": "rtmp://cdn.apachat.com:443/multistream"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 4000,
-                "max audio bitrate": 192
             }
         },
         {
@@ -2249,60 +2024,8 @@
                     "url": "rtmp://ingest-us-sanjose.brime.tv/live"
                 },
                 {
-                    "name": "North America - Phoenix, AZ",
-                    "url": "rtmp://ingest-us-phoenix.brime.tv/live"
-                },
-                {
-                    "name": "Canada Southeast - Montreal",
-                    "url": "rtmp://ingest-ca-montreal.brime.tv/live"
-                },
-                {
-                    "name": "Latin America - Brazil East (Sao Paulo)",
-                    "url": "rtmp://ingest-sa-saopaulo.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - Netherlands (Amsterdam)",
-                    "url": "rtmp://ingest-eu-amsterdam.brime.tv/live"
-                },
-                {
                     "name": "Europe / EMEA - Germany (Frankfurt)",
                     "url": "rtmp://ingest-eu-frankfurt.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - UK South (London)",
-                    "url": "rtmp://ingest-eu-london.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - Switzerland (Zurich)",
-                    "url": "rtmp://ingest-eu-zurich.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - Russia (Moscow)",
-                    "url": "rtmp://ingest-ru-moscow.brime.tv/live"
-                },
-                {
-                    "name": "Africa / EMEA - South Africa (Johannesburg)",
-                    "url": "rtmp://ingest-af-johannesburg.brime.tv/live"
-                },
-                {
-                    "name": "UAE - United Arab Emirates (Dubai)",
-                    "url": "rtmp://ingest-uae-dubai.brime.tv/live"
-                },
-                {
-                    "name": "APAC - India (Mumbai)",
-                    "url": "rtmp://ingest-apac-mumbai.brime.tv/live"
-                },
-                {
-                    "name": "APAC - Japan East (Tokyo)",
-                    "url": "rtmp://ingest-apac-tokyo.brime.tv/live"
-                },
-                {
-                    "name": "APAC - South Korea (Seoul)",
-                    "url": "rtmp://ingest-apac-seoul.brime.tv/live"
-                },
-                {
-                    "name": "APAC - Australia East (Sydney)",
-                    "url": "rtmp://ingest-apac-sydney.brime.tv/live"
                 }
             ],
             "recommended": {
@@ -2332,14 +2055,6 @@
                 {
                     "name": "Default - Recommended",
                     "url": "rtmp://live.volume.com/live-origin"
-                },
-                {
-                    "name": "EU - Amsterdam",
-                    "url": "rtmp://live-ams.volume.com/live-origin"
-                },
-                {
-                    "name": "EU - Frankfurt",
-                    "url": "rtmp://live-fra.volume.com/live-origin"
                 },
                 {
                     "name": "US - West",
