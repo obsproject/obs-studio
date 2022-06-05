@@ -1,0 +1,13 @@
+/* Override "references as links" style to match standard links.
+   Example code: :c:func:`OBS_DECLARE_MODULE()` */
+a.reference > code.xref > span.pre {
+    color: #2980b9;
+}
+
+a.reference:hover > code.xref > span.pre {
+    color: #3091d1;
+}
+
+a.reference:visited > code.xref > span.pre {
+    color: #9b59b6;
+}
