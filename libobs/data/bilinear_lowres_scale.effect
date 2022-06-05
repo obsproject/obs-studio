@@ -89,9 +89,8 @@ float4 PSDrawLowresBilinearRGBAMultiplyTonemap(VertData f_in) : TARGET
 float4 PSDrawLowresBilinearRGBADivide(VertData f_in) : TARGET
 {
 	float4 rgba = DrawLowresBilinear(f_in);
-	float alpha = rgba.a;
-	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
-	return float4(rgba.rgb * multiplier, alpha);
+	rgba.rgb *= max(1. / rgba.a, 0.);
+	return rgba;
 }
 
 technique Draw
