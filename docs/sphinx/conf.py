@@ -38,6 +38,7 @@ extensions = [
     "sphinx_rtd_theme",
     "sphinxcontrib.napoleon",
     "sphinx.ext.autosectionlabel",
+    "sphinx.ext.extlinks"
 ]
 
 # Add any paths that contain templates here, relative to this directory.
@@ -195,5 +196,9 @@ texinfo_documents = [
      'Miscellaneous'),
 ]
 
-
+extlinks = {
+    'source': ('https://github.com/OBSProject/obs-studio/blob/master/%s', '%s'),
+    'wiki': ('https://obsproject.com/wiki/%s', 'wiki/%s')
+}
+extlinks_detect_hardcoded_links = True
 
