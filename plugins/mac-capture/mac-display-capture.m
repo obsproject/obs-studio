@@ -614,7 +614,7 @@ static obs_properties_t *display_capture_properties(void *unused)
 		sprintf(dimension_buffer[3], "%d",
 			(int32_t)[screen frame].origin.y);
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_15
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500 // __MAC_10_15
 		if (__builtin_available(macOS 10.15, *)) {
 			sprintf(name_buffer,
 				"%.200s: %.12sx%.12s @ %.12s,%.12s",
