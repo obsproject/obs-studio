@@ -15,7 +15,7 @@ Video Handler
 
 ---------------------
 
-.. type:: enum video_format
+.. enum:: video_format
 
    Video format.  Can be one of the following values:
 
@@ -50,7 +50,7 @@ Video Handler
 
 ---------------------
 
-.. type:: enum video_trc
+.. enum:: video_trc
 
    Transfer characteristics.  Can be one of the following values:
 
@@ -61,7 +61,7 @@ Video Handler
 
 ---------------------
 
-.. type:: enum video_colorspace
+.. enum:: video_colorspace
 
    YUV color space.  Can be one of the following values:
 
@@ -74,7 +74,7 @@ Video Handler
 
 ---------------------
 
-.. type:: enum video_range_type
+.. enum:: video_range_type
 
    YUV color range.
 
@@ -84,7 +84,7 @@ Video Handler
 
 ---------------------
 
-.. type:: struct video_data
+.. struct:: video_data
 
    Video frame structure.
 
@@ -94,7 +94,7 @@ Video Handler
 
 ---------------------
 
-.. type:: struct video_output_info
+.. struct:: video_output_info
 
    Video output handler information
 
@@ -237,7 +237,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: enum audio_format
+.. enum:: audio_format
 
    Audio format.  Can be one of the following values:
 
@@ -253,7 +253,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: enum speaker_layout
+.. enum:: speaker_layout
 
    Speaker layout.  Can be one of the following values:
 
@@ -268,7 +268,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: struct audio_data
+.. struct:: audio_data
 
    Audio data structure.
 
@@ -278,12 +278,12 @@ Audio Handler
 
 ---------------------
 
-.. type:: struct audio_output_data
+.. struct:: audio_output_data
 .. member:: float               *audio_output_data.data[MAX_AUDIO_CHANNELS]
 
 ---------------------
 
-.. type:: struct audio_output_info
+.. struct:: audio_output_info
 .. member:: const char             *audio_output_info.name
 .. member:: uint32_t               audio_output_info.samples_per_sec
 .. member:: enum audio_format      audio_output_info.format
@@ -293,14 +293,14 @@ Audio Handler
 
 ---------------------
 
-.. type:: struct audio_convert_info
+.. struct:: audio_convert_info
 .. member:: uint32_t            audio_convert_info.samples_per_sec
 .. member:: enum audio_format   audio_convert_info.format
 .. member:: enum speaker_layout audio_convert_info.speakers
 
 ---------------------
 
-.. type:: typedef bool (*audio_input_callback_t)(void *param, uint64_t start_ts, uint64_t end_ts, uint64_t *new_ts, uint32_t active_mixers, struct audio_output_data *mixes)
+.. type:: bool (*audio_input_callback_t)(void *param, uint64_t start_ts, uint64_t end_ts, uint64_t *new_ts, uint32_t active_mixers, struct audio_output_data *mixes)
 
    Audio input callback (typically used internally).
 
@@ -378,7 +378,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: typedef void (*audio_output_callback_t)(void *param, size_t mix_idx, struct audio_data *data)
+.. type:: void (*audio_output_callback_t)(void *param, size_t mix_idx, struct audio_data *data)
 
    Audio output callback.  Typically used internally.
 
@@ -460,11 +460,11 @@ Resampler
 
 FFmpeg wrapper to resample audio.
 
-.. type:: typedef struct audio_resampler audio_resampler_t
+.. type:: struct audio_resampler audio_resampler_t
 
 ---------------------
 
-.. type:: struct resample_info
+.. struct:: resample_info
 .. member:: uint32_t            resample_info.samples_per_sec
 .. member:: enum audio_format   resample_info.format
 .. member:: enum speaker_layout resample_info.speakers
@@ -498,5 +498,5 @@ FFmpeg wrapper to resample audio.
    :param out_frames:  Pointer to receive converted audio frame count
    :param ts_offset:   Pointer to receive timestamp offset (in
                        nanoseconds)
-   :param const input: Input frames to convert
+   :param input: Input frames to convert
    :param in_frames:   Input frame count

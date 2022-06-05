@@ -249,11 +249,11 @@ Other Path/File Functions
 
 ---------------------
 
-.. type:: typedef struct os_dir os_dir_t
+.. type:: struct os_dir os_dir_t
 
    A directory object.
 
-.. type:: struct os_dirent
+.. struct:: os_dirent
 
    A directory entry record.
 
@@ -285,10 +285,10 @@ Other Path/File Functions
 
 ---------------------
 
-.. type:: struct os_globent
+.. struct:: os_globent
 
    A glob entry.
-   
+
 .. member:: char *os_globent.path
 
    The full path to the glob entry.
@@ -297,7 +297,7 @@ Other Path/File Functions
 
    *true* if the glob entry is a directory, *false* otherwise.
 
-.. type:: struct os_glob_info
+.. struct:: os_glob_info
 
    A glob object.
 
@@ -309,7 +309,7 @@ Other Path/File Functions
 
    Array of glob entries.
 
-.. type:: typedef struct os_glob_info os_glob_t
+.. type:: struct os_glob_info os_glob_t
 
 ---------------------
 
@@ -394,8 +394,8 @@ Sleep-Inhibition Functions
 These functions/types are used to inhibit the computer from going to
 sleep.
 
-.. type:: struct os_inhibit_info
-.. type:: typedef struct os_inhibit_info os_inhibit_t
+.. struct:: os_inhibit_info
+.. type:: struct os_inhibit_info os_inhibit_t
 
 ---------------------
 
@@ -447,7 +447,7 @@ Other Functions
 
 ---------------------
 
-.. type:: struct os_proc_memory_usage
+.. struct:: os_proc_memory_usage
 
    Memory usage structure.
 
@@ -459,7 +459,7 @@ Other Functions
 
    Virtual size.
 
-.. type:: typedef struct os_proc_memory_usage os_proc_memory_usage_t
+.. type:: struct os_proc_memory_usage os_proc_memory_usage_t
 
 ---------------------
 
