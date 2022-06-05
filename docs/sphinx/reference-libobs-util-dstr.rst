@@ -12,7 +12,7 @@ std::string).
 Dynamic String Structure (struct dstr)
 --------------------------------------
 
-.. type:: struct dstr
+.. struct:: dstr
 .. member:: char *dstr.array
 .. member:: size_t dstr.len
 .. member:: size_t dstr.capacity

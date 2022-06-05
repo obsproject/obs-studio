@@ -36,10 +36,15 @@ jobs:
           SCOPY="copyright = '([A-Za-z0-9, ]+)'"
           RCOPY="copyright = '2017-$(date +"%Y"), Hugh Bailey'"
           sed -i -E -e "s/${SVER}/${RVER}/g" -e "s/${SREL}/${RREL}/g" -e "s/${SCOPY}/${RCOPY}/g" docs/sphinx/conf.py
-      - uses: ammaraskar/sphinx-action@master
+      - uses: totaldebug/sphinx-publish-action@1.2.0
         with:
-          docs-folder: "docs/sphinx/"
+          sphinx_src: 'docs/sphinx'
+          build_only: True
+          target_branch: 'master'
+          target_path: '../home/_build'
       - uses: actions/upload-artifact@v3
         with:
           name: OBS Studio Documentation (HTML)
-          path: docs/sphinx/_build/html/
+          path: |
+            ${{ runner.temp }}/_github_home/_build
+            !${{ runner.temp }}/_github_home/_build/.doctrees

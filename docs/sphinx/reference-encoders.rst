@@ -22,7 +22,7 @@ is the dedicated header for implementing encoders
 Encoder Definition Structure (obs_encoder_info)
 -----------------------------------------------
 
-.. type:: struct obs_encoder_info
+.. struct:: obs_encoder_info
 
    Encoder definition structure.
 
@@ -163,7 +163,7 @@ Encoder Definition Structure (obs_encoder_info)
 Encoder Packet Structure (encoder_packet)
 -----------------------------------------
 
-.. type:: struct encoder_packet
+.. struct:: encoder_packet
 
    Encoder packet structure.
 
@@ -239,7 +239,7 @@ Encoder Packet Structure (encoder_packet)
 Raw Frame Data Structure (encoder_frame)
 ----------------------------------------
 
-.. type:: struct encoder_frame
+.. struct:: encoder_frame
 
    Raw frame data structure.
 
@@ -283,7 +283,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_video_encoder_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates a video encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    obs_encoder_release to release it.
 
@@ -302,7 +302,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name, obs_data_t *settings, size_t mixer_idx, obs_data_t *hotkey_data)
 
    Creates an audio encoder with the specified settings.
-  
+
    The "encoder" context is used for encoding video/audio data.  Use
    :c:func:`obs_encoder_release()` to release it.
 
@@ -428,7 +428,7 @@ General Encoder Functions
    Sets the preferred video format for a video encoder.  If the encoder can use
    the format specified, it will force a conversion to that format if the
    obs output format does not match the preferred format.
-  
+
    If the format is set to VIDEO_FORMAT_NONE, will revert to the default
    functionality of converting only when absolutely necessary.
 

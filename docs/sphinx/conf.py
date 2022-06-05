@@ -202,3 +202,4 @@ extlinks = {
 }
 extlinks_detect_hardcoded_links = True
 
+autosectionlabel_prefix_document = True

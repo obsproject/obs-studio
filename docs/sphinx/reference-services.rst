@@ -26,7 +26,7 @@ is the dedicated header for implementing services.
 Service Definition Structure
 ----------------------------
 
-.. type:: struct obs_service_info
+.. struct:: obs_service_info
 
    Service definition structure.
 
@@ -172,7 +172,7 @@ General Service Functions
 .. function:: obs_service_t *obs_service_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates a service with the specified settings.
-  
+
    The "service" context is used for encoding video/audio data.  Use
    obs_service_release to release it.
 
@@ -291,7 +291,7 @@ General Service Functions
 .. function:: void obs_service_apply_encoder_settings(obs_service_t *service, obs_data_t *video_encoder_settings, obs_data_t *audio_encoder_settings)
 
    Applies service-specific video encoder settings.
-  
+
    :param  video_encoder_settings: Video encoder settings.  Can be *NULL*
    :param  audio_encoder_settings: Audio encoder settings.  Can be *NULL*
 

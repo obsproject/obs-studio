@@ -32,7 +32,7 @@ for:
   Twitch, and another for YouTube to allow the ability to log in and use
   their APIs to do things such as get the RTMP servers or control the
   channel.
-  
+
 *(Author's note: the service API is incomplete as of this writing)*
 
 

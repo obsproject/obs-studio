@@ -23,7 +23,7 @@ for implementing outputs
 Output Definition Structure (obs_output_info)
 ---------------------------------------------
 
-.. type:: struct obs_output_info
+.. struct:: obs_output_info
 
    Output definition structure.
 
@@ -316,7 +316,7 @@ General Output Functions
 .. function:: obs_output_t *obs_output_create(const char *id, const char *name, obs_data_t *settings, obs_data_t *hotkey_data)
 
    Creates an output with the specified settings.
-  
+
    The "output" context is used for anything related to outputting the
    final video/audio mix (E.g. streaming or recording).  Use
    obs_output_release to release it.
@@ -403,7 +403,7 @@ General Output Functions
 .. function:: void obs_output_set_delay(obs_output_t *output, uint32_t delay_sec, uint32_t flags)
 
    Sets the current output delay, in seconds (if the output supports delay)
-  
+
    If delay is currently active, it will set the delay value, but will not
    affect the current delay, it will only affect the next time the output is
    activated.
@@ -603,7 +603,7 @@ General Output Functions
 
    Sets the preferred scaled resolution for this output.  Set width and height
    to 0 to disable scaling.
-  
+
    If this output uses an encoder, it will call obs_encoder_set_scaled_size on
    the encoder before the stream is started.  If the encoder is already active,
    then this function will trigger a warning and do nothing.
@@ -677,48 +677,48 @@ Functions used by outputs
 
    enum video_format {
            VIDEO_FORMAT_NONE,
-   
+
            /* planar 4:2:0 formats */
            VIDEO_FORMAT_I420, /* three-plane */
            VIDEO_FORMAT_NV12, /* two-plane, luma and packed chroma */
-   
+
            /* packed 4:2:2 formats */
            VIDEO_FORMAT_YVYU,
            VIDEO_FORMAT_YUY2, /* YUYV */
            VIDEO_FORMAT_UYVY,
-   
+
            /* packed uncompressed formats */
            VIDEO_FORMAT_RGBA,
            VIDEO_FORMAT_BGRA,
            VIDEO_FORMAT_BGRX,
            VIDEO_FORMAT_Y800, /* grayscale */
-   
+
            /* planar 4:4:4 */
            VIDEO_FORMAT_I444,
-   
+
            /* more packed uncompressed formats */
            VIDEO_FORMAT_BGR3,
-   
+
            /* planar 4:2:2 */
            VIDEO_FORMAT_I422,
-   
+
            /* planar 4:2:0 with alpha */
            VIDEO_FORMAT_I40A,
-   
+
            /* planar 4:2:2 with alpha */
            VIDEO_FORMAT_I42A,
-   
+
            /* planar 4:4:4 with alpha */
            VIDEO_FORMAT_YUVA,
-   
+
            /* packed 4:4:4 with alpha */
            VIDEO_FORMAT_AYUV,
-   
+
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
    };
-   
+
    enum video_colorspace {
            VIDEO_CS_DEFAULT,
            VIDEO_CS_601,
@@ -727,13 +727,13 @@ Functions used by outputs
            VIDEO_CS_2100_PQ,
            VIDEO_CS_2100_HLG,
    };
-   
+
    enum video_range_type {
            VIDEO_RANGE_DEFAULT,
            VIDEO_RANGE_PARTIAL,
            VIDEO_RANGE_FULL
    };
-   
+
    struct video_scale_info {
            enum video_format     format;
            uint32_t              width;
@@ -755,18 +755,18 @@ Functions used by outputs
 
    enum audio_format {
            AUDIO_FORMAT_UNKNOWN,
-   
+
            AUDIO_FORMAT_U8BIT,
            AUDIO_FORMAT_16BIT,
            AUDIO_FORMAT_32BIT,
            AUDIO_FORMAT_FLOAT,
-   
+
            AUDIO_FORMAT_U8BIT_PLANAR,
            AUDIO_FORMAT_16BIT_PLANAR,
            AUDIO_FORMAT_32BIT_PLANAR,
            AUDIO_FORMAT_FLOAT_PLANAR,
    };
-   
+
    enum speaker_layout {
            SPEAKERS_UNKNOWN,
            SPEAKERS_MONO,
@@ -780,7 +780,7 @@ Functions used by outputs
            SPEAKERS_7POINT1_SURROUND,
            SPEAKERS_SURROUND,
    };
-   
+
    struct audio_convert_info {
            uint32_t            samples_per_sec;
            enum audio_format   format;

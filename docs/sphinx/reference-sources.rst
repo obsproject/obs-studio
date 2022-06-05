@@ -23,7 +23,7 @@ dedicated header for implementing sources.
 Source Definition Structure (obs_source_info)
 ---------------------------------------------
 
-.. type:: struct obs_source_info
+.. struct:: obs_source_info
 
    Source definition structure.
 
