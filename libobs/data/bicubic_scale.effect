@@ -166,9 +166,8 @@ float4 PSDrawBicubicRGBAMultiplyTonemap(FragData f_in, bool undistort) : TARGET
 float4 PSDrawBicubicRGBADivide(FragData f_in) : TARGET
 {
 	float4 rgba = DrawBicubic(f_in, false);
-	float alpha = rgba.a;
-	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
-	return float4(rgba.rgb * multiplier, alpha);
+	rgba.rgb *= max(1. / rgba.a, 0.);
+	return rgba;
 }
 
 technique Draw
