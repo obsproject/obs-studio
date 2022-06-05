@@ -419,9 +419,8 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
 		     pf >> 24, pf >> 16, pf >> 8, pf);
 
-	if (tex->width != IOSurfaceGetWidth(ref) ||
-	    tex->height != IOSurfaceGetHeight(ref))
-		return false;
+	tex->width = IOSurfaceGetWidth(ref);
+	tex->height = IOSurfaceGetHeight(ref);
 
 	if (!gl_bind_texture(tex->base.gl_target, tex->base.texture))
 		return false;
