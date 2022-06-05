@@ -77,7 +77,7 @@ struct vaapi_encoder {
 static const char *vaapi_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "FFMPEG VAAPI";
+	return "FFMPEG VAAPI H.264";
 }
 
 static inline bool valid_format(enum video_format format)
@@ -351,11 +351,7 @@ static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
 
-	int vaapi_codec = (int)obs_data_get_int(settings, "vaapi_codec");
-
-	if (vaapi_codec == AV_CODEC_ID_H264) {
-		enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
-	}
+	enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
 
 	enc->first_packet = true;
 
@@ -517,7 +513,6 @@ static void vaapi_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "vaapi_device",
 				    "/dev/dri/renderD128");
-	obs_data_set_default_int(settings, "vaapi_codec", AV_CODEC_ID_H264);
 	obs_data_set_default_int(settings, "profile",
 				 FF_PROFILE_H264_CONSTRAINED_BASELINE);
 	obs_data_set_default_int(settings, "level", 40);
@@ -646,13 +641,6 @@ static obs_properties_t *vaapi_properties(void *unused)
 			}
 		}
 	}
-
-	list = obs_properties_add_list(props, "vaapi_codec",
-				       obs_module_text("VAAPI.Codec"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_INT);
-
-	obs_property_list_add_int(list, "H.264 (default)", AV_CODEC_ID_H264);
 
 	list = obs_properties_add_list(props, "profile",
 				       obs_module_text("Profile"),
