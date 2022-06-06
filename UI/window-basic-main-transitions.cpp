@@ -735,6 +735,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 
 			if (source == scene) {
 				ui->scenes->blockSignals(true);
+				currentScene = itemScene.Get();
 				ui->scenes->setCurrentItem(item);
 				ui->scenes->blockSignals(false);
 				if (api)
