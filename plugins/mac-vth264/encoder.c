@@ -26,6 +26,8 @@ static DARRAY(struct vt_encoder {
 	const char *codec_name;
 }) vt_encoders;
 
+enum H264RateControl { H264RateControlCBR, H264RateControlABR };
+
 struct vt_h264_encoder {
 	obs_encoder_t *encoder;
 
@@ -41,6 +43,7 @@ struct vt_h264_encoder {
 	float rc_max_bitrate_window;
 	const char *profile;
 	bool bframes;
+	enum H264RateControl rate_control;
 
 	enum video_format obs_pix_fmt;
 	int vt_pix_fmt;
@@ -145,16 +148,45 @@ static OSStatus session_set_prop(VTCompressionSessionRef session,
 }
 
 static OSStatus session_set_bitrate(VTCompressionSessionRef session,
+				    enum H264RateControl rate_control,
 				    int new_bitrate, bool limit_bitrate,
 				    int max_bitrate, float max_bitrate_window)
 {
 	OSStatus code;
 
-	SESSION_CHECK(session_set_prop_int(
-		session, kVTCompressionPropertyKey_AverageBitRate,
-		new_bitrate * 1000));
+	switch (rate_control) {
 
-	if (limit_bitrate) {
+	case H264RateControlCBR:
+		if (__builtin_available(macOS 13.0, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+			VT_LOG(LOG_INFO, "using CBR");
+			SESSION_CHECK(session_set_prop_int(
+				session,
+				kVTCompressionPropertyKey_ConstantBitRate,
+				new_bitrate * 1000));
+#else
+			VT_LOG(LOG_ERROR,
+			       "OBS was compiled without CBR support.");
+#endif
+		} else {
+			VT_LOG(LOG_ERROR,
+			       "CBR with this encoder isn't supported on this version of macOS.");
+		}
+		break;
+
+	case H264RateControlABR:
+		VT_LOG(LOG_INFO, "using ABR");
+		SESSION_CHECK(session_set_prop_int(
+			session, kVTCompressionPropertyKey_AverageBitRate,
+			new_bitrate * 1000));
+		break;
+
+	default:
+		VT_LOG(LOG_ERROR, "selected rate control is not supported: %d",
+		       rate_control);
+	}
+
+	if (limit_bitrate && (rate_control == H264RateControlABR)) {
 		int32_t cpb_size = max_bitrate * 125 * max_bitrate_window;
 
 		CFNumberRef cf_cpb_size =
@@ -330,9 +362,9 @@ static bool create_encoder(struct vt_h264_encoder *enc)
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
 				      obs_to_vt_profile(enc->profile)));
 
-	STATUS_CHECK(session_set_bitrate(s, enc->bitrate, enc->limit_bitrate,
-					 enc->rc_max_bitrate,
-					 enc->rc_max_bitrate_window));
+	STATUS_CHECK(session_set_bitrate(
+		s, enc->rate_control, enc->bitrate, enc->limit_bitrate,
+		enc->rc_max_bitrate, enc->rc_max_bitrate_window));
 
 	STATUS_CHECK(session_set_colorspace(s, enc->colorspace));
 
@@ -372,6 +404,7 @@ static void dump_encoder_info(struct vt_h264_encoder *enc)
 		"settings:\n"
 		"\tvt_encoder_id          %s\n"
 		"\tbitrate:               %d (kbps)\n"
+		"\trate_control:          %d\n"
 		"\tfps_num:               %d\n"
 		"\tfps_den:               %d\n"
 		"\twidth:                 %d\n"
@@ -382,10 +415,11 @@ static void dump_encoder_info(struct vt_h264_encoder *enc)
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
 		"\tprofile:               %s\n",
-		enc->vt_encoder_id, enc->bitrate, enc->fps_num, enc->fps_den,
-		enc->width, enc->height, enc->keyint,
-		enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
-		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off",
+		enc->vt_encoder_id, enc->bitrate, enc->rate_control,
+		enc->fps_num, enc->fps_den, enc->width, enc->height,
+		enc->keyint, enc->limit_bitrate ? "on" : "off",
+		enc->rc_max_bitrate, enc->rc_max_bitrate_window,
+		enc->hw_enc ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile
 								 : "default");
 }
@@ -435,6 +469,8 @@ static void update_params(struct vt_h264_encoder *enc, obs_data_t *settings)
 	enc->fps_num = voi->fps_num;
 	enc->fps_den = voi->fps_den;
 	enc->keyint = (uint32_t)obs_data_get_int(settings, "keyint_sec");
+	enc->rate_control = (enum H264RateControl)obs_data_get_int(
+		settings, "rate_control");
 	enc->bitrate = (uint32_t)obs_data_get_int(settings, "bitrate");
 	enc->profile = obs_data_get_string(settings, "profile");
 	enc->limit_bitrate = obs_data_get_bool(settings, "limit_bitrate");
@@ -457,17 +493,43 @@ static bool vt_h264_update(void *data, obs_data_t *settings)
 	    old_limit_bitrate == enc->limit_bitrate)
 		return true;
 
-	OSStatus code = session_set_bitrate(enc->session, enc->bitrate,
-					    enc->limit_bitrate,
+	OSStatus code = session_set_bitrate(enc->session, enc->rate_control,
+					    enc->bitrate, enc->limit_bitrate,
 					    enc->rc_max_bitrate,
 					    enc->rc_max_bitrate_window);
 	if (code != noErr)
 		VT_BLOG(LOG_WARNING, "failed to set bitrate to session");
 
 	CFNumberRef n;
-	VTSessionCopyProperty(enc->session,
-			      kVTCompressionPropertyKey_AverageBitRate, NULL,
-			      &n);
+	switch (enc->rate_control) {
+
+	case H264RateControlCBR:
+		if (__builtin_available(macOS 13.0, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+			VTSessionCopyProperty(
+				enc->session,
+				kVTCompressionPropertyKey_ConstantBitRate, NULL,
+				&n);
+#else
+			VT_LOG(LOG_ERROR,
+			       "OBS was compiled without CBR support.");
+#endif
+		} else {
+			VT_LOG(LOG_ERROR,
+			       "CBR with this encoder isn't supported on this version of macOS.");
+		}
+		break;
+
+	case H264RateControlABR:
+		VTSessionCopyProperty(enc->session,
+				      kVTCompressionPropertyKey_AverageBitRate,
+				      NULL, &n);
+		break;
+
+	default:
+		VT_LOG(LOG_ERROR, "selected rate control is not supported: %d",
+		       enc->rate_control);
+	}
 
 	uint32_t session_bitrate;
 	CFNumberGetValue(n, kCFNumberIntType, &session_bitrate);
@@ -853,6 +915,35 @@ static const char *vt_h264_getname(void *data)
 #define TEXT_NONE obs_module_text("None")
 #define TEXT_DEFAULT obs_module_text("DefaultEncoder")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
+#define TEXT_RATE_CONTROL obs_module_text("RateControl")
+#define TEXT_CBR obs_module_text("CBR")
+#define TEXT_ABR obs_module_text("ABR")
+
+static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
+				  obs_data_t *settings)
+{
+	bool can_limit_bitrate = true;
+	enum H264RateControl rate_control =
+		(enum H264RateControl)obs_data_get_int(settings,
+						       "rate_control");
+
+	switch (rate_control) {
+	case H264RateControlCBR:
+		can_limit_bitrate = false;
+		break;
+	case H264RateControlABR:
+	default:
+		can_limit_bitrate = true;
+	}
+
+	p = obs_properties_get(ppts, "limit_bitrate");
+	obs_property_set_visible(p, can_limit_bitrate);
+	p = obs_properties_get(ppts, "max_bitrate");
+	obs_property_set_visible(p, can_limit_bitrate);
+	p = obs_properties_get(ppts, "max_bitrate_window");
+	obs_property_set_visible(p, can_limit_bitrate);
+	return true;
+}
 
 static bool limit_bitrate_modified(obs_properties_t *ppts, obs_property_t *p,
 				   obs_data_t *settings)
@@ -871,6 +962,17 @@ static obs_properties_t *vt_h264_properties(void *unused)
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
+
+	p = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+#if defined(__aarch64__)
+	if (__builtin_available(macOS 13.0, *)) {
+		obs_property_list_add_int(p, TEXT_CBR, H264RateControlCBR);
+	}
+#endif
+	obs_property_list_add_int(p, TEXT_ABR, H264RateControlABR);
+	obs_property_set_modified_callback(p, rate_control_modified);
 
 	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000,
 				   50);
@@ -904,6 +1006,16 @@ static obs_properties_t *vt_h264_properties(void *unused)
 
 static void vt_h264_defaults(obs_data_t *settings)
 {
+#if defined(__aarch64__)
+	if (__builtin_available(macOS 13.0, *)) {
+		obs_data_set_default_int(settings, "rate_control",
+					 H264RateControlCBR);
+	} else
+#endif
+	{
+		obs_data_set_default_int(settings, "rate_control",
+					 H264RateControlABR);
+	}
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
