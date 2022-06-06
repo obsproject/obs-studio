@@ -332,6 +332,8 @@ private:
 	QScopedPointer<QThread> patronJsonThread;
 	std::string patronJson;
 
+	std::atomic<obs_scene_t *> currentScene = nullptr;
+
 	void UpdateMultiviewProjectorMenu();
 
 	void DrawBackdrop(float cx, float cy);
