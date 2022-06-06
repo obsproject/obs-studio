@@ -152,8 +152,8 @@ static void screen_capture_destroy(void *data)
 	bfree(sc);
 }
 
-static inline void screen_stream_update(struct screen_capture *sc,
-					CMSampleBufferRef sample_buffer)
+static inline void screen_stream_video_update(struct screen_capture *sc,
+					      CMSampleBufferRef sample_buffer)
 {
 	bool frame_detail_errored = false;
 	float scale_factor = 1.0f;
@@ -290,6 +290,48 @@ static inline void screen_stream_update(struct screen_capture *sc,
 	}
 }
 
+static inline void screen_stream_audio_update(struct screen_capture *sc,
+					      CMSampleBufferRef sample_buffer)
+{
+	CMFormatDescriptionRef format_description =
+		CMSampleBufferGetFormatDescription(sample_buffer);
+	const AudioStreamBasicDescription *audio_description =
+		CMAudioFormatDescriptionGetStreamBasicDescription(
+			format_description);
+
+	char *_Nullable bytes = NULL;
+	CMBlockBufferRef data_buffer =
+		CMSampleBufferGetDataBuffer(sample_buffer);
+	size_t data_buffer_length = CMBlockBufferGetDataLength(data_buffer);
+	CMBlockBufferGetDataPointer(data_buffer, 0, &data_buffer_length, NULL,
+				    &bytes);
+
+	CMTime presentation_time =
+		CMSampleBufferGetOutputPresentationTimeStamp(sample_buffer);
+
+	struct obs_source_audio audio_data = {};
+
+	for (uint32_t channel_idx = 0;
+	     channel_idx < audio_description->mChannelsPerFrame;
+	     ++channel_idx) {
+		uint32_t offset =
+			(uint32_t)(data_buffer_length /
+				   audio_description->mChannelsPerFrame) *
+			channel_idx;
+		audio_data.data[channel_idx] = (uint8_t *)bytes + offset;
+	}
+
+	audio_data.frames = (uint32_t)(data_buffer_length /
+				       audio_description->mBytesPerFrame /
+				       audio_description->mChannelsPerFrame);
+	audio_data.speakers = audio_description->mChannelsPerFrame;
+	audio_data.samples_per_sec = audio_description->mSampleRate;
+	audio_data.timestamp =
+		CMTimeGetSeconds(presentation_time) * NSEC_PER_SEC;
+	audio_data.format = AUDIO_FORMAT_FLOAT_PLANAR;
+	obs_source_output_audio(sc->source, &audio_data);
+}
+
 static bool init_screen_stream(struct screen_capture *sc)
 {
 	SCContentFilter *content_filter;
@@ -370,6 +412,16 @@ static bool init_screen_stream(struct screen_capture *sc)
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
 	[sc->stream_properties setPixelFormat:'BGRA'];
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+	if (@available(macOS 13.0, *)) {
+		[sc->stream_properties setCapturesAudio:TRUE];
+		[sc->stream_properties setExcludesCurrentProcessAudio:TRUE];
+		[sc->stream_properties setChannelCount:2];
+	}
+#endif
+	sc->disp = [[SCStream alloc] initWithFilter:content_filter
+				      configuration:sc->stream_properties
+					   delegate:nil];
 
 	switch (sc->capture_type) {
 	case ScreenCaptureDisplayStream:
@@ -415,6 +467,24 @@ static bool init_screen_stream(struct screen_capture *sc)
 		return !did_add_output;
 	}
 
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+	if (__builtin_available(macOS 13.0, *)) {
+		did_add_output = [sc->disp
+			   addStreamOutput:sc->capture_delegate
+				      type:SCStreamOutputTypeAudio
+			sampleHandlerQueue:nil
+				     error:&error];
+		if (!did_add_output) {
+			MACCAP_ERR(
+				"init_screen_stream: Failed to add audio stream output with error %s\n",
+				[[error localizedFailureReason]
+					cStringUsingEncoding:
+						NSUTF8StringEncoding]);
+			[error release];
+			return !did_add_output;
+		}
+	}
+#endif
 	os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
 	os_event_init(&sc->stream_start_completed, OS_EVENT_TYPE_MANUAL);
 
@@ -946,7 +1016,8 @@ struct obs_source_info screen_capture_info = {
 	.destroy = screen_capture_destroy,
 
 	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |
-			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB,
+			OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_SRGB |
+			OBS_SOURCE_AUDIO,
 	.video_tick = screen_capture_video_tick,
 	.video_render = screen_capture_video_render,
 
@@ -966,7 +1037,17 @@ struct obs_source_info screen_capture_info = {
 		       ofType:(SCStreamOutputType)type
 {
 	if (self.sc != NULL) {
-		screen_stream_update(self.sc, sampleBuffer);
+		if (type == SCStreamOutputTypeScreen) {
+			screen_stream_video_update(self.sc, sampleBuffer);
+		}
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+		else if (@available(macOS 13.0, *)) {
+			if (type == SCStreamOutputTypeAudio) {
+				screen_stream_audio_update(self.sc,
+							   sampleBuffer);
+			}
+		}
+#endif
 	}
 }
 
