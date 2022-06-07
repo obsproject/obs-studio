@@ -1215,7 +1215,7 @@ void OBSBasicSettings::LoadThemeList()
 				QDir::Files);
 		while (it.hasNext()) {
 			it.next();
-			QString name = it.fileName().section(".", 0, 0);
+			QString name = it.fileInfo().completeBaseName();
 			ui->theme->addItem(name);
 			uniqueSet.insert(name);
 		}
@@ -1231,7 +1231,7 @@ void OBSBasicSettings::LoadThemeList()
 			 QDir::Files);
 	while (uIt.hasNext()) {
 		uIt.next();
-		QString name = uIt.fileName().section(".", 0, 0);
+		QString name = uIt.fileInfo().completeBaseName();
 
 		if (name == DEFAULT_THEME)
 			name = defaultTheme;
