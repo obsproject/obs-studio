@@ -76,6 +76,12 @@
             <height>0</height>
            </size>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.PositionX</string>
           </property>
@@ -99,6 +105,12 @@
            <size>
             <width>100</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
@@ -143,6 +155,12 @@
         <size>
          <width>100</width>
          <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>16777215</height>
         </size>
        </property>
        <property name="accessibleName">
@@ -201,6 +219,12 @@
             <height>0</height>
            </size>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.Width</string>
           </property>
@@ -227,6 +251,12 @@
            <size>
             <width>100</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
@@ -492,6 +522,12 @@
             <height>0</height>
            </size>
           </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
+           </size>
+          </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.BoundsWidth</string>
           </property>
@@ -518,6 +554,12 @@
            <size>
             <width>100</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
@@ -575,8 +617,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
@@ -600,8 +648,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
@@ -651,8 +705,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
@@ -676,8 +736,14 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
