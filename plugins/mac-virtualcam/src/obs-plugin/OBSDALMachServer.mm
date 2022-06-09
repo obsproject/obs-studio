@@ -101,19 +101,24 @@
 				     receivePort:nil
 				      components:components];
 			message.msgid = msgId;
-			if (![message
+			if (![port isValid] ||
+			    ![message
 				    sendBeforeDate:
 					    [NSDate dateWithTimeIntervalSinceNow:
 							    1.0]]) {
 				blog(LOG_DEBUG,
 				     "failed to send message to %d, removing it from the clients!",
 				     ((NSMachPort *)port).machPort);
+
+				[port invalidate];
 				[removedPorts addObject:port];
 			}
 		} @catch (NSException *exception) {
 			blog(LOG_DEBUG,
 			     "failed to send message (exception) to %d, removing it from the clients!",
 			     ((NSMachPort *)port).machPort);
+
+			[port invalidate];
 			[removedPorts addObject:port];
 		}
 	}
