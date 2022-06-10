@@ -576,7 +576,14 @@
 
 - (BOOL)isPropertySettableWithAddress:(CMIOObjectPropertyAddress)address
 {
-	return false;
+	switch (address.mSelector) {
+	case kCMIOStreamPropertyFormatDescription:
+	case kCMIOStreamPropertyFrameRate:
+		// Suppress error logs complaining about the application not being able to set the desired format or frame rate.
+		return true;
+	default:
+		return false;
+	}
 }
 
 - (void)setPropertyDataWithAddress:(CMIOObjectPropertyAddress)address
