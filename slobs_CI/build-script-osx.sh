@@ -150,7 +150,6 @@ sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.2.24.0.dylib @exec
 cp /usr/local/opt/openssl@1.1/lib/libcrypto.1.1.dylib $PACKED_BUILD/bin/libcrypto.1.1.dylib
 cp /usr/local/opt/curl/lib/libcurl.4.dylib $PACKED_BUILD/bin/libcurl.4.dylib
 cp /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib $PACKED_BUILD/bin/libdb-18.1.dylib
-cp /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib $PACKED_BUILD/bin/libfdk-aac.2.dylib
 cp /usr/local/opt/freetype/lib/libfreetype.6.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
 cp /usr/local/opt/jack/lib/libjack.0.dylib $PACKED_BUILD/bin/libjack.0.dylib
 cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PACKED_BUILD/bin/libpng16.16.dylib
@@ -218,8 +217,6 @@ sudo install_name_tool -change /tmp/obsdeps/lib/libmbedcrypto.5.dylib @executabl
 sudo install_name_tool -change /tmp/obsdeps/lib/libx264.161.dylib @executable_path/libx264.161.dylib $PACKED_BUILD/obs-plugins/obs-x264.so
 
 sudo install_name_tool -change $DEPS_DIR/obsdeps/lib/libfreetype.6.dylib @executable_path/libfreetype.6.dylib $PACKED_BUILD/obs-plugins/text-freetype2.so
-
-sudo install_name_tool -change /usr/local/opt/fdk-aac/lib/libfdk-aac.2.dylib @executable_path/libfdk-aac.2.dylib $PACKED_BUILD/obs-plugins/obs-libfdk.so
 
 sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavcodec.58.dylib
 sudo install_name_tool -change /usr/local/opt/xz/lib/liblzma.5.dylib @executable_path/liblzma.5.dylib $PACKED_BUILD/bin/libavformat.58.dylib
