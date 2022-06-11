@@ -187,6 +187,9 @@ void DeckLinkDeviceInstance::HandleVideoFrame(
 	currentFrame.height = (uint32_t)frame->GetHeight();
 	currentFrame.timestamp = timestamp;
 
+	if (currentFrame.width == 0 || currentFrame.height == 0)
+		return;
+
 	obs_source_output_video2(
 		static_cast<DeckLinkInput *>(decklink)->GetSource(),
 		&currentFrame);
