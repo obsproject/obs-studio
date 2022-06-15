@@ -346,9 +346,15 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		}
 
 		int err = av_hwframe_transfer_data(d->sw_frame, d->hw_frame, 0);
-		if (err != 0) {
+		if (err) {
 			ret = 0;
 			*got_frame = false;
+		} else {
+			d->sw_frame->color_range = d->hw_frame->color_range;
+			d->sw_frame->color_primaries =
+				d->hw_frame->color_primaries;
+			d->sw_frame->color_trc = d->hw_frame->color_trc;
+			d->sw_frame->colorspace = d->hw_frame->colorspace;
 		}
 	}
 #endif
