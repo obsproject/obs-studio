@@ -510,6 +510,7 @@ extern "C"
     void RTMP_Reset(RTMP *r);
     void RTMP_Close(RTMP *r);
     RTMP *RTMP_Alloc(void);
+    void RTMP_TLS_Init(RTMP *r);
     void RTMP_TLS_Free(RTMP *r);
     void RTMP_Free(RTMP *r);
     void RTMP_EnableWrite(RTMP *r);
