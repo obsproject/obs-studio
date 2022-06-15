@@ -37,8 +37,7 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	float seconds;
 
 	if (!last_time)
-		last_time = cur_time -
-			    obs->video.video_frame_interval_ns;
+		last_time = cur_time - obs->video.video_frame_interval_ns;
 
 	delta_time = cur_time - last_time;
 	seconds = (float)((double)delta_time / 1000000000.0);
@@ -148,8 +147,7 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 		struct draw_callback *callback;
 		callback = obs->data.draw_callbacks.array + (i - 1);
 
-		callback->draw(callback->param, base_width,
-			       base_height);
+		callback->draw(callback->param, base_width, base_height);
 	}
 
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
@@ -166,7 +164,8 @@ static inline gs_effect_t *
 get_scale_effect_internal(struct obs_core_video_mix *mix)
 {
 	struct obs_core_video *video = &obs->video;
-	const struct video_output_info *info = video_output_get_info(mix->video);
+	const struct video_output_info *info =
+		video_output_get_info(mix->video);
 
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
@@ -219,7 +218,8 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video_mix *mix,
 }
 
 static const char *render_output_texture_name = "render_output_texture";
-static inline gs_texture_t *render_output_texture(struct obs_core_video_mix *mix)
+static inline gs_texture_t *
+render_output_texture(struct obs_core_video_mix *mix)
 {
 	struct obs_core_video *video = &obs->video;
 	gs_texture_t *texture = mix->render_texture;
@@ -427,7 +427,8 @@ stage_output_texture(struct obs_core_video_mix *video, int cur_texture,
 }
 
 #ifdef _WIN32
-static inline bool queue_frame(struct obs_core_video_mix *video, bool raw_active,
+static inline bool queue_frame(struct obs_core_video_mix *video,
+			       bool raw_active,
 			       struct obs_vframe_info *vframe_info)
 {
 	bool duplicate =
@@ -497,7 +498,8 @@ static inline void encode_gpu(struct obs_core_video_mix *video, bool raw_active,
 }
 
 static const char *output_gpu_encoders_name = "output_gpu_encoders";
-static void output_gpu_encoders(struct obs_core_video_mix *video, bool raw_active)
+static void output_gpu_encoders(struct obs_core_video_mix *video,
+				bool raw_active)
 {
 	profile_start(output_gpu_encoders_name);
 
@@ -519,8 +521,9 @@ end:
 }
 #endif
 
-static inline void render_video(struct obs_core_video_mix *video, bool raw_active,
-				const bool gpu_active, int cur_texture)
+static inline void render_video(struct obs_core_video_mix *video,
+				bool raw_active, const bool gpu_active,
+				int cur_texture)
 {
 	gs_begin_scene();
 
@@ -795,8 +798,7 @@ static inline void output_video_data(struct obs_core_video_mix *video,
 	}
 }
 
-static inline void video_sleep(struct obs_core_video *video,
-			       uint64_t *p_time,
+static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 			       uint64_t interval_ns)
 {
 	struct obs_vframe_info vframe_info;
@@ -830,12 +832,12 @@ static inline void video_sleep(struct obs_core_video *video,
 		bool raw_active = video->raw_was_active;
 		bool gpu_active = video->gpu_was_active;
 
-	if (raw_active)
-		circlebuf_push_back(&video->vframe_info_buffer, &vframe_info,
-				    sizeof(vframe_info));
-	if (gpu_active)
-		circlebuf_push_back(&video->vframe_info_buffer_gpu,
-				    &vframe_info, sizeof(vframe_info));
+		if (raw_active)
+			circlebuf_push_back(&video->vframe_info_buffer,
+					    &vframe_info, sizeof(vframe_info));
+		if (gpu_active)
+			circlebuf_push_back(&video->vframe_info_buffer_gpu,
+					    &vframe_info, sizeof(vframe_info));
 	}
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 }
@@ -1132,8 +1134,7 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 
 	profile_reenable_thread();
 
-	video_sleep(&obs->video, &obs->video.video_time,
-		    context->interval);
+	video_sleep(&obs->video, &obs->video.video_time, context->interval);
 
 	context->frame_time_total_ns += frame_time_ns;
 	context->fps_total_ns += (obs->video.video_time - context->last_time);

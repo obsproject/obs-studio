@@ -150,7 +150,8 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 bool init_gpu_encoding(struct obs_core_video_mix *video)
 {
 #ifdef _WIN32
-	const struct video_output_info *info = video_output_get_info(video->video);
+	const struct video_output_info *info =
+		video_output_get_info(video->video);
 
 	video->gpu_encode_stop = false;
 
@@ -160,15 +161,13 @@ bool init_gpu_encoding(struct obs_core_video_mix *video)
 		gs_texture_t *tex_uv;
 
 		if (info->format == VIDEO_FORMAT_P010) {
-			gs_texture_create_p010(&tex, &tex_uv, info->width,
-					       info->height,
-					       GS_RENDER_TARGET |
-						       GS_SHARED_KM_TEX);
+			gs_texture_create_p010(
+				&tex, &tex_uv, info->width, info->height,
+				GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		} else {
-			gs_texture_create_nv12(&tex, &tex_uv, info->width,
-					       info->height,
-					       GS_RENDER_TARGET |
-						       GS_SHARED_KM_TEX);
+			gs_texture_create_nv12(
+				&tex, &tex_uv, info->width, info->height,
+				GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		}
 		if (!tex) {
 			return false;
