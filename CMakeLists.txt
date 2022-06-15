@@ -32,7 +32,7 @@ if(NOT CMAKE_BUILD_TYPE)
 endif()
 
 # Global project options
-option(ENABLE_HEVC "Enable HEVC encoders" OFF)
+option(ENABLE_HEVC "Enable HEVC encoders" ON)
 if(ENABLE_HEVC)
   add_compile_definitions(ENABLE_HEVC)
 endif()
