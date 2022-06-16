@@ -10,7 +10,8 @@ Param(
     [ValidateSet('x86', 'x64')]
     [String]$BuildArch = ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem],
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
-    [String]$BuildConfiguration = "RelWithDebInfo"
+    [String]$BuildConfiguration = "RelWithDebInfo",
+    [String]$CMakeArgs = "CMakeArgs"
 )
 
 ##############################################################################
@@ -36,6 +37,7 @@ Param(
 #   -CombinedArchs          : Create combined packages and installer
 #                             (x86 and x64) - Default: off
 #   -Package                : Prepare folder structure for installer creation
+#   -CMakeArgs              : Additional arguments to CMake
 #
 # Environment Variables (optional):
 #  WindowsDepsVersion       : Pre-compiled Windows dependencies version

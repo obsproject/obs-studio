@@ -6,7 +6,8 @@ Param(
     [ValidateSet('x86', 'x64')]
     [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] }),
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
-    [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" })
+    [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" }),
+    [String]$CMakeArgs = $(if (Test-Path variable:CMakeArgs) { "${CMakeArgs}" } else { "" })
 )
 
 ##############################################################################
@@ -24,7 +25,8 @@ function Build-OBS {
     Param(
         [String]$BuildDirectory = $(if (Test-Path variable:BuildDirectory) { "${BuildDirectory}" }),
         [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" }),
-        [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" })
+        [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" }),
+        [String]$CMakeArgs = $(if (Test-Path variable:CMakeArgs) { "${CMakeArgs}" })
     )
 
     $NumProcessors = (Get-CimInstance Win32_ComputerSystem).NumberOfLogicalProcessors
@@ -87,7 +89,8 @@ function Configure-OBS {
         "-DCOPY_DEPENDENCIES=ON",
         "-DBUILD_FOR_DISTRIBUTION=`"$(if (Test-Path Env:BUILD_FOR_DISTRIBUTION) { "ON" } else { "OFF" })`"",
         "$(if (Test-Path Env:CI) { "-DOBS_BUILD_NUMBER=${Env:GITHUB_RUN_ID}" })",
-        "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
+        "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })",
+        "${CMakeArgs}"
     )
 
     Invoke-Expression "cmake ${CmakeCommand}"
@@ -115,7 +118,8 @@ function Print-Usage {
         "-Verbose                 : Enable more verbose build process output",
         "-BuildDirectory          : Directory to use for builds - Default: build64 on 64-bit systems, build32 on 32-bit systems",
         "-BuildArch               : Build architecture to use (x86 or x64) - Default: local architecture",
-        "-BuildConfiguration      : Build configuration to use - Default: RelWithDebInfo"
+        "-BuildConfiguration      : Build configuration to use - Default: RelWithDebInfo",
+        "-CMakeArgs               : Additional arguments to CMake"
     )
 
     $Lines | Write-Host
