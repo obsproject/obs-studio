@@ -148,6 +148,7 @@ static void virtualcam_output_destroy(void *data)
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
 
 	vcam->machServer = nil;
+	bfree(vcam);
 }
 
 static bool virtualcam_output_start(void *data)
