@@ -276,7 +276,7 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 		}
 
 		card->ReadAudioLastIn(offsets.currentAddress, audioSystem);
-		offsets.currentAddress &= ~0x3; // Force DWORD alignment
+		offsets.currentAddress += 1;
 		offsets.currentAddress += offsets.readOffset;
 		if (offsets.currentAddress < offsets.lastAddress) {
 			offsets.bytesRead =
