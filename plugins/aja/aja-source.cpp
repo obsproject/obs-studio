@@ -913,6 +913,10 @@ static void aja_source_update(void *data, obs_data_t *settings)
 	const std::string &wantCardID =
 		obs_data_get_string(settings, kUIPropDevice.id);
 
+	obs_source_set_async_unbuffered(
+		ajaSource->GetOBSSource(),
+		!obs_data_get_bool(settings, kUIPropBuffering.id));
+
 	const std::string &currentCardID = ajaSource->CardID();
 	if (wantCardID != currentCardID) {
 		initialized = false;
@@ -1102,6 +1106,8 @@ static obs_properties_t *aja_source_get_properties(void *data)
 	obs_properties_add_bool(
 		props, kUIPropDeactivateWhenNotShowing.id,
 		obs_module_text(kUIPropDeactivateWhenNotShowing.text));
+	obs_properties_add_bool(props, kUIPropBuffering.id,
+				obs_module_text(kUIPropBuffering.text));
 
 	obs_property_set_modified_callback(vid_fmt_list,
 					   aja_video_format_changed);
@@ -1128,6 +1134,7 @@ void aja_source_get_defaults(obs_data_t *settings)
 		static_cast<long long>(SDITransport4K::TwoSampleInterleave));
 	obs_data_set_default_bool(settings, kUIPropDeactivateWhenNotShowing.id,
 				  false);
+	obs_data_set_default_bool(settings, kUIPropBuffering.id, false);
 }
 
 void aja_source_save(void *data, obs_data_t *settings)
