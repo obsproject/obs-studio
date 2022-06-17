@@ -319,6 +319,21 @@ static int physical_cores = 0;
 static int logical_cores = 0;
 static bool core_count_initialized = false;
 
+bool os_get_emulation_status(void)
+{
+#ifdef __aarch64__
+	return false;
+#else
+	int rosettaTranslated = 0;
+	size_t size = sizeof(rosettaTranslated);
+	if (sysctlbyname("sysctl.proc_translated", &rosettaTranslated, &size,
+			 NULL, 0) == -1)
+		return false;
+
+	return rosettaTranslated == 1;
+#endif
+}
+
 static void os_get_cores_internal(void)
 {
 	if (core_count_initialized)
