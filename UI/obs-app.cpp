@@ -2173,7 +2173,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 #ifdef __APPLE__
-		bool rosettaTranslated = ProcessIsRosettaTranslated();
+		bool rosettaTranslated = os_get_emulation_status();
 		blog(LOG_INFO, "Rosetta translation used: %s",
 		     rosettaTranslated ? "true" : "false");
 #endif
