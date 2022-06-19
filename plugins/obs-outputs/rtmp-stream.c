@@ -708,6 +708,15 @@ static void *send_thread(void *data)
 	}
 
 	set_output_error(stream);
+
+	if (silently_reconnecting(stream)) {
+		/* manually close the socket to prevent librtmp from sending
+		 * unpublish / deletestream messages when we call RTMP_Close,
+		 * since we want to re-use this stream when we reconnect */
+		RTMPSockBuf_Close(&stream->rtmp.m_sb);
+		stream->rtmp.m_sb.sb_socket = -1;
+	}
+
 	RTMP_Close(&stream->rtmp);
 
 	/* reset bitrate on stop */
