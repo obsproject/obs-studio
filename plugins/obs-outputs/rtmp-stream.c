@@ -804,7 +804,8 @@ static bool send_audio_header(struct rtmp_stream *stream, size_t idx,
 		return true;
 	}
 
-	obs_encoder_get_extra_data(aencoder, &header, &packet.size);
+	if (!obs_encoder_get_extra_data(aencoder, &header, &packet.size))
+		return false;
 	packet.data = bmemdup(header, packet.size);
 	return send_packet(stream, &packet, true, idx) >= 0;
 }
@@ -819,7 +820,8 @@ static bool send_video_header(struct rtmp_stream *stream)
 	struct encoder_packet packet = {
 		.type = OBS_ENCODER_VIDEO, .timebase_den = 1, .keyframe = true};
 
-	obs_encoder_get_extra_data(vencoder, &header, &size);
+	if (!obs_encoder_get_extra_data(vencoder, &header, &size))
+		return false;
 	packet.size = obs_parse_avc_header(&packet.data, header, size);
 	return send_packet(stream, &packet, true, 0) >= 0;
 }
