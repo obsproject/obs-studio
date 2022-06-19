@@ -401,6 +401,11 @@ char *os_get_executable_path_ptr(const char *name)
 	return path.array;
 }
 
+bool os_get_emulation_status(void)
+{
+	return false;
+}
+
 #endif
 
 bool os_file_exists(const char *path)

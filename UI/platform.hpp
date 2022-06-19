@@ -85,5 +85,4 @@ void EnableOSXDockIcon(bool enable);
 bool isInBundle();
 void InstallNSApplicationSubclass();
 void disableColorSpaceConversion(QWidget *window);
-bool ProcessIsRosettaTranslated();
 #endif

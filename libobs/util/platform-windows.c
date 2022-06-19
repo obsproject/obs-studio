@@ -992,6 +992,11 @@ bool is_64_bit_windows(void)
 #endif
 }
 
+bool os_get_emulation_status(void)
+{
+	return false;
+}
+
 void get_reg_dword(HKEY hkey, LPCWSTR sub_key, LPCWSTR value_name,
 		   struct reg_dword *info)
 {
