@@ -1415,19 +1415,24 @@ static NSString *preset_names(NSString *preset)
 	return [NSString stringWithFormat:@"Unknown (%@)", preset];
 }
 
-inline static void av_capture_defaults(obs_data_t *settings, bool enable_audio)
+inline static void av_capture_defaults(obs_data_t *settings,
+				       bool enable_audio_and_high_preset)
 {
 	obs_data_set_default_string(settings, "uid", "");
 	obs_data_set_default_bool(settings, "use_preset", true);
 
-	obs_data_set_default_string(settings, "preset",
-				    AVCaptureSessionPreset1280x720.UTF8String);
+	obs_data_set_default_string(
+		settings, "preset",
+		enable_audio_and_high_preset
+			? AVCaptureSessionPresetHigh.UTF8String
+			: AVCaptureSessionPreset1280x720.UTF8String);
 
 	obs_data_set_default_int(settings, "input_format", INPUT_FORMAT_AUTO);
 	obs_data_set_default_int(settings, "color_space", COLOR_SPACE_AUTO);
 	obs_data_set_default_int(settings, "video_range", VIDEO_RANGE_AUTO);
 
-	obs_data_set_default_bool(settings, "enable_audio", enable_audio);
+	obs_data_set_default_bool(settings, "enable_audio",
+				  enable_audio_and_high_preset);
 }
 
 static void av_capture_defaults_v1(obs_data_t *settings)
