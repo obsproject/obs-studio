@@ -290,6 +290,8 @@ static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 					       on_init_error, on_first_packet))
 			goto fail;
 	} else
+#else
+	UNUSED_PARAMETER(hevc);
 #endif
 	{
 		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings,
