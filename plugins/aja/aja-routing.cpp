@@ -152,7 +152,7 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 		audioSys, NTV2InputSourceToAudioSource(inputSrc),
 		NTV2InputSourceToEmbeddedAudioInput(inputSrc));
 
-	card->SetNumberAudioChannels(props.audioNumChannels, audioSys);
+	card->SetNumberAudioChannels(kDefaultAudioChannels, audioSys);
 	card->SetAudioRate(props.AudioRate(), audioSys);
 	card->SetAudioBufferSize(NTV2_AUDIO_BUFFER_BIG, audioSys);
 
@@ -188,7 +188,7 @@ void Routing::StartSourceAudio(const SourceProps &props, CNTV2Card *card)
 
 	for (int a = 0; a < NTV2DeviceGetNumAudioSystems(card->GetDeviceID());
 	     a++) {
-		card->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_OFF,
+		card->SetAudioLoopBack(NTV2_AUDIO_LOOPBACK_ON,
 				       NTV2AudioSystem(a));
 	}
 
