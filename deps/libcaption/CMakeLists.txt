@@ -25,7 +25,13 @@ target_sources(
 
 target_compile_definitions(
   caption PRIVATE __STDC_CONSTANT_MACROS
-                  "$<$<BOOL:${OS_WINDOWS}>:_CRT_SECURE_NO_WARNINGS>")
+                  $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
+
+target_compile_options(
+  caption
+  PRIVATE
+    $<$<OR:$<CXX_COMPILER_ID:Clang>,$<CXX_COMPILER_ID:AppleClang>,$<CXX_COMPILER_ID:GNU>>:-Wno-unused-but-set-parameter>
+)
 
 target_include_directories(
   caption
