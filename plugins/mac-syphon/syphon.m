@@ -2,6 +2,7 @@
 #import <ScriptingBridge/ScriptingBridge.h>
 #import "syphon-framework/Syphon.h"
 #include <obs-module.h>
+#include <AvailabilityMacros.h>
 
 #define LOG(level, message, ...)                                    \
 	blog(level, "%s: " message, obs_source_get_name(s->source), \
@@ -621,7 +622,19 @@ static inline NSString *get_inject_application_path()
 {
 	static NSString *ident = @"zakk.lol.SyphonInject";
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
+	if (@available(macOS 11.0, *)) {
+		NSURL *url = [ws URLForApplicationWithBundleIdentifier:ident];
+		return [url absoluteString];
+	} else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		return [ws absolutePathForAppBundleWithIdentifier:ident];
+#pragma clang diagnostic pop
+	}
+#else
 	return [ws absolutePathForAppBundleWithIdentifier:ident];
+#endif
 }
 
 static inline bool is_inject_available_in_lib_dir(NSFileManager *fm, NSURL *url)
@@ -865,7 +878,24 @@ static void show_syphon_license_internal(void)
 		return;
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
+
+#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
+	if (@available(macOS 11.0, *)) {
+		NSURL *url = [NSURL
+			URLWithString:
+				[NSString
+					stringWithCString:path
+						 encoding:NSUTF8StringEncoding]];
+		[ws openURL:url];
+	} else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		[ws openFile:@(path)];
+#pragma clang diagnostic pop
+	}
+#else
 	[ws openFile:@(path)];
+#endif
 	bfree(path);
 }
 
