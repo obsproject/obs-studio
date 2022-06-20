@@ -599,7 +599,7 @@ static const uint8_t *set_gpu_converted_plane(uint32_t width, uint32_t height,
 	return in;
 }
 
-static void set_gpu_converted_data(struct obs_core_video *video,
+static void set_gpu_converted_data(struct obs_core_video *video OBS_UNUSED,
 				   struct video_frame *output,
 				   const struct video_data *input,
 				   const struct video_output_info *info)

@@ -1499,12 +1499,10 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	return true;
 }
 
-enum gs_color_space
-scene_video_get_color_space(void *data, size_t count,
-			    const enum gs_color_space *preferred_spaces)
+enum gs_color_space scene_video_get_color_space(
+	void *data OBS_UNUSED, size_t count OBS_UNUSED,
+	const enum gs_color_space *preferred_spaces OBS_UNUSED)
 {
-	UNUSED_PARAMETER(data);
-
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
@@ -2062,7 +2060,7 @@ static inline bool source_has_audio(obs_source_t *source)
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
 					       obs_sceneitem_t *insert_after,
-					       bool create_texture)
+					       bool create_texture OBS_UNUSED)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
