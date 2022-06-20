@@ -152,7 +152,7 @@ static void *ffmpeg_image_copy_data_straight(struct ffmpeg_image *info,
 	return data;
 }
 
-static inline size_t get_dst_position(size_t src, const size_t w,
+static inline size_t get_dst_position(size_t src OBS_UNUSED, const size_t w,
 				      const size_t h, const size_t x,
 				      const size_t y, int orient)
 {
