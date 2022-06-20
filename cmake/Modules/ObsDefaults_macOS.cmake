@@ -14,17 +14,30 @@ if(POLICY CMP0025)
 endif()
 
 # Build options
-set(CMAKE_OSX_ARCHITECTURES
-    "x86_64"
-    CACHE STRING "OBS build architecture for macOS - x86_64 required at least")
+if(NOT DEFINED CMAKE_OSX_ARCHITECTURES OR CMAKE_OSX_ARCHITECTURES STREQUAL "")
+  set(CMAKE_OSX_ARCHITECTURES
+      "${CMAKE_HOST_SYSTEM_PROCESSOR}"
+      CACHE STRING
+            "OBS build architecture for macOS - x86_64 required at least" FORCE)
+endif()
 set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS x86_64 arm64
                                                     "x86_64;arm64")
 
-set(CMAKE_OSX_DEPLOYMENT_TARGET
-    "10.13"
-    CACHE STRING "OBS deployment target for macOS - 10.13+ required")
+if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET
+                                              STREQUAL "")
+  if("${CMAKE_OSX_ARCHITECTURES}" MATCHES ".*arm64.*")
+    set(_MACOS_DEPLOYMENT_TARGET "11.0")
+  else()
+    set(_MACOS_DEPLOYMENT_TARGET "10.13")
+  endif()
+
+  set(CMAKE_OSX_DEPLOYMENT_TARGET
+      "${_MACOS_DEPLOYMENT_TARGET}"
+      CACHE STRING "OBS deployment target for macOS - 10.13+ required" FORCE)
+  unset(_MACOS_DEPLOYMENT_TARGET)
+endif()
 set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 10.13 10.14
-                                                        10.15 11 12)
+                                                        10.15 11.0 12.0)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX
@@ -57,9 +70,12 @@ endif()
 
 macro(setup_obs_project)
   # Set code signing options
-  set(OBS_BUNDLE_CODESIGN_IDENTITY
-      "-"
-      CACHE STRING "OBS code signing identity for macOS")
+  if(NOT DEFINED OBS_BUNDLE_CODESIGN_IDENTITY OR OBS_BUNDLE_CODESIGN_IDENTITY
+                                                 STREQUAL "")
+    set(OBS_BUNDLE_CODESIGN_IDENTITY
+        "-"
+        CACHE STRING "OBS code signing identity for macOS")
+  endif()
   set(OBS_CODESIGN_ENTITLEMENTS
       "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
       CACHE INTERNAL "Path to codesign entitlements plist")
