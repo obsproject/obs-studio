@@ -229,9 +229,8 @@ void AudioCaptureToolbar::Init()
 
 	obs_module_t *mod =
 		get_os_module("win-wasapi", "mac-capture", "linux-pulseaudio");
-	if (!mod) {
+	if (!mod)
 		return;
-	}
 
 	const char *device_str =
 		get_os_text(mod, "Device", "CoreAudio.Device", "Device");
@@ -254,6 +253,9 @@ void WindowCaptureToolbar::Init()
 
 	obs_module_t *mod =
 		get_os_module("win-capture", "mac-capture", "linux-capture");
+	if (!mod)
+		return;
+
 	const char *device_str = get_os_text(mod, "WindowCapture.Window",
 					     "WindowUtils.Window", "Window");
 	ui->deviceLabel->setText(device_str);
@@ -283,6 +285,9 @@ void DisplayCaptureToolbar::Init()
 
 	obs_module_t *mod =
 		get_os_module("win-capture", "mac-capture", "linux-capture");
+	if (!mod)
+		return;
+
 	const char *device_str =
 		get_os_text(mod, "Monitor", "DisplayCapture.Display", "Screen");
 	ui->deviceLabel->setText(device_str);
