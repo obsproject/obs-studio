@@ -41,7 +41,10 @@ target_sources(
           aja-widget-io.cpp
           aja-widget-io.hpp
           aja-card-manager.hpp
-          aja-ui-props.hpp)
+          aja-ui-props.hpp
+          audio-repack.c
+          audio-repack.h
+          audio-repack.hpp)
 
 target_link_libraries(aja PRIVATE OBS::libobs AJA::LibAJANTV2)
 
