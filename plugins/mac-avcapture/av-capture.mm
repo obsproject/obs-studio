@@ -3,6 +3,7 @@
 #import <CoreMedia/CoreMedia.h>
 #import <CoreVideo/CoreVideo.h>
 #import <CoreMediaIO/CMIOHardware.h>
+#include <AvailabilityMacros.h>
 
 #include <obs-module.h>
 #include <obs.hpp>
@@ -2241,7 +2242,41 @@ static obs_properties_t *av_capture_properties(void *data)
 		OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(dev_list, "", "");
 
-	for (AVCaptureDevice *dev in [AVCaptureDevice devices]) {
+	NSArray *devices = nil;
+#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15)
+	if (@available(macOS 10.15, *)) {
+		AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession =
+			[AVCaptureDeviceDiscoverySession
+				discoverySessionWithDeviceTypes:@[
+					AVCaptureDeviceTypeBuiltInWideAngleCamera,
+					AVCaptureDeviceTypeExternalUnknown
+				]
+						      mediaType:AVMediaTypeVideo
+						       position:AVCaptureDevicePositionUnspecified];
+		NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
+
+		AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession =
+			[AVCaptureDeviceDiscoverySession
+				discoverySessionWithDeviceTypes:@[
+					AVCaptureDeviceTypeExternalUnknown
+				]
+						      mediaType:AVMediaTypeMuxed
+						       position:AVCaptureDevicePositionUnspecified];
+		NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
+
+		devices = [mediaDevices
+			arrayByAddingObjectsFromArray:muxedDevices];
+	} else {
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
+		devices = [AVCaptureDevice devices];
+#pragma clang diagnostic pop
+	}
+#else
+	devices = [AVCaptureDevice devices];
+#endif
+
+	for (AVCaptureDevice *dev in devices) {
 		if ([dev hasMediaType:AVMediaTypeVideo] ||
 		    [dev hasMediaType:AVMediaTypeMuxed]) {
 			obs_property_list_add_string(
