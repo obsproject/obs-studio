@@ -200,8 +200,10 @@ static bool nvenc_device_available(void)
 	while ((dirent = os_readdir(dir)) != NULL) {
 		int id;
 
-		if (get_id_from_sys(dirent->d_name, "class") !=
-		    0x030000) { // 0x030000 = VGA compatible controller
+		if (get_id_from_sys(dirent->d_name, "class") != 0x030000 &&
+		    get_id_from_sys(dirent->d_name, "class") !=
+			    0x030200) { // 0x030000 = VGA compatible controller
+					// 0x030200 = 3D controller
 			continue;
 		}
 
