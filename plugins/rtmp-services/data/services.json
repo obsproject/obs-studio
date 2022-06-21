@@ -2337,6 +2337,46 @@
                 "max video bitrate": 5000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "Mildom",
+            "more_info_link": "https://www.mildom.com/course/pc",
+            "stream_key_link": "https://www.mildom.com/creator/live",
+            "servers": [
+                {
+                    "name": "Asia: Tokyo, Japan",
+                    "url": "rtmp://live-tyo-tct.mildom.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
+        },
+        {
+            "name": "Nonolive",
+            "more_info_link": "https://wia.nonolive.com/views/obs_assistant_tutorial.html",
+            "stream_key_link": "https://www.nonolive.com/room_setting",
+            "servers": [
+                {
+                    "name": "Asia: Hong Kong, China",
+                    "url": "rtmp://live-hk-zl.nonolive.tv/live"
+                },
+                {
+                    "name": "Asia: Jakarta, Indonesia",
+                    "url": "rtmp://live-jkt-zl.nonolive.tv/live"
+                },
+                {
+                    "name": "EU: Frankfurt, DE",
+                    "url": "rtmp://live-fra-zl.nonolive.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
