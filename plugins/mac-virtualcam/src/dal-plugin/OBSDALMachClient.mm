@@ -101,14 +101,30 @@
 		break;
 	case MachMsgIdFrame:
 		VLog(@"Received frame message");
-		if (components.count >= 4) {
+
+		if (components.count < 4)
+			return;
+
+		@autoreleasepool {
 			NSMachPort *framePort = (NSMachPort *)components[0];
+
+			if (!framePort)
+				return;
+
 			IOSurfaceRef surface = IOSurfaceLookupFromMachPort(
 				[framePort machPort]);
+			mach_port_deallocate(mach_task_self(),
+					     [framePort machPort]);
+
+			if (!surface) {
+				ELog(@"Failed to obtain IOSurface from Mach port");
+				return;
+			}
 
 			CVPixelBufferRef frame;
 			CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault,
 							 surface, NULL, &frame);
+			CFRelease(surface);
 
 			uint64_t timestamp;
 			[components[1] getBytes:&timestamp
@@ -131,7 +147,6 @@
 					    fpsDenominator:fpsDenominator];
 
 			CVPixelBufferRelease(frame);
-			CFRelease(surface);
 		}
 		break;
 	case MachMsgIdStop:

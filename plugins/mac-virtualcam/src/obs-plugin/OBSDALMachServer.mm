@@ -147,23 +147,33 @@
 			dataWithBytes:&fpsDenominator
 			       length:sizeof(fpsDenominator)];
 
-		NSPort *framePort = [NSMachPort
-			portWithMachPort:IOSurfaceCreateMachPort(
-						 CVPixelBufferGetIOSurface(
-							 frame))];
+		IOSurfaceRef surface = CVPixelBufferGetIOSurface(frame);
+
+		if (!surface) {
+			blog(LOG_ERROR,
+			     "unable to access IOSurface associated with CVPixelBuffer");
+			return;
+		}
+
+		mach_port_t framePort = IOSurfaceCreateMachPort(surface);
 
 		if (!framePort) {
 			blog(LOG_ERROR,
-			     "unable to allocate mach port for pixel buffer");
+			     "unable to allocate mach port for IOSurface");
 			return;
 		}
 
 		[self sendMessageToClientsWithMsgId:MachMsgIdFrame
 					 components:@[
-						 framePort, timestampData,
+						 [NSMachPort
+							 portWithMachPort:framePort
+								  options:NSMachPortDeallocateNone],
+						 timestampData,
 						 fpsNumeratorData,
 						 fpsDenominatorData
 					 ]];
+
+		mach_port_deallocate(mach_task_self(), framePort);
 	}
 }
 
