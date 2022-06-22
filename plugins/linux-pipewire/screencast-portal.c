@@ -21,6 +21,10 @@
 #include "pipewire.h"
 #include "portal.h"
 
+struct screencast_portal_capture {
+	obs_pipewire_data *obs_pw;
+};
+
 /* obs_source_info methods */
 
 static const char *screencast_portal_desktop_capture_get_name(void *data)
@@ -38,24 +42,42 @@ static const char *screencast_portal_window_capture_get_name(void *data)
 static void *screencast_portal_desktop_capture_create(obs_data_t *settings,
 						      obs_source_t *source)
 {
-	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_MONITOR, settings,
-				   source);
+	struct screencast_portal_capture *capture;
+
+	capture = bzalloc(sizeof(struct screencast_portal_capture));
+	capture->obs_pw = obs_pipewire_create(PORTAL_CAPTURE_TYPE_MONITOR,
+					      settings, source);
+
+	return capture;
 }
 static void *screencast_portal_window_capture_create(obs_data_t *settings,
 						     obs_source_t *source)
 {
-	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_WINDOW, settings,
-				   source);
+	struct screencast_portal_capture *capture;
+
+	capture = bzalloc(sizeof(struct screencast_portal_capture));
+	capture->obs_pw = obs_pipewire_create(PORTAL_CAPTURE_TYPE_WINDOW,
+					      settings, source);
+
+	return capture;
 }
 
 static void screencast_portal_capture_destroy(void *data)
 {
-	obs_pipewire_destroy(data);
+	struct screencast_portal_capture *capture = data;
+
+	if (!capture)
+		return;
+
+	obs_pipewire_destroy(capture->obs_pw);
+	bfree(capture);
 }
 
 static void screencast_portal_capture_save(void *data, obs_data_t *settings)
 {
-	obs_pipewire_save(data, settings);
+	struct screencast_portal_capture *capture = data;
+
+	obs_pipewire_save(capture->obs_pw, settings);
 }
 
 static void screencast_portal_capture_get_defaults(obs_data_t *settings)
@@ -65,17 +87,17 @@ static void screencast_portal_capture_get_defaults(obs_data_t *settings)
 
 static obs_properties_t *screencast_portal_capture_get_properties(void *data)
 {
+	struct screencast_portal_capture *capture = data;
 	enum portal_capture_type capture_type;
-	obs_pipewire_data *obs_pw = data;
 
-	capture_type = obs_pipewire_get_capture_type(obs_pw);
+	capture_type = obs_pipewire_get_capture_type(capture->obs_pw);
 
 	switch (capture_type) {
 	case PORTAL_CAPTURE_TYPE_MONITOR:
-		return obs_pipewire_get_properties(data,
+		return obs_pipewire_get_properties(capture->obs_pw,
 						   "PipeWireSelectMonitor");
 	case PORTAL_CAPTURE_TYPE_WINDOW:
-		return obs_pipewire_get_properties(data,
+		return obs_pipewire_get_properties(capture->obs_pw,
 						   "PipeWireSelectWindow");
 	case PORTAL_CAPTURE_TYPE_VIRTUAL:
 	default:
@@ -85,33 +107,45 @@ static obs_properties_t *screencast_portal_capture_get_properties(void *data)
 
 static void screencast_portal_capture_update(void *data, obs_data_t *settings)
 {
-	obs_pipewire_update(data, settings);
+	struct screencast_portal_capture *capture = data;
+
+	obs_pipewire_update(capture->obs_pw, settings);
 }
 
 static void screencast_portal_capture_show(void *data)
 {
-	obs_pipewire_show(data);
+	struct screencast_portal_capture *capture = data;
+
+	obs_pipewire_show(capture->obs_pw);
 }
 
 static void screencast_portal_capture_hide(void *data)
 {
-	obs_pipewire_hide(data);
+	struct screencast_portal_capture *capture = data;
+
+	obs_pipewire_hide(capture->obs_pw);
 }
 
 static uint32_t screencast_portal_capture_get_width(void *data)
 {
-	return obs_pipewire_get_width(data);
+	struct screencast_portal_capture *capture = data;
+
+	return obs_pipewire_get_width(capture->obs_pw);
 }
 
 static uint32_t screencast_portal_capture_get_height(void *data)
 {
-	return obs_pipewire_get_height(data);
+	struct screencast_portal_capture *capture = data;
+
+	return obs_pipewire_get_height(capture->obs_pw);
 }
 
 static void screencast_portal_capture_video_render(void *data,
 						   gs_effect_t *effect)
 {
-	obs_pipewire_video_render(data, effect);
+	struct screencast_portal_capture *capture = data;
+
+	obs_pipewire_video_render(capture->obs_pw, effect);
 }
 
 void screencast_portal_load(void)
