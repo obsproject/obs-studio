@@ -461,23 +461,7 @@ static bool vt_update(void *data, obs_data_t *settings)
 					    enc->rc_max_bitrate,
 					    enc->rc_max_bitrate_window);
 	if (code != noErr)
-		VT_BLOG(LOG_WARNING, "failed to set bitrate to session");
-
-	CFNumberRef n;
-	VTSessionCopyProperty(enc->session,
-			      kVTCompressionPropertyKey_AverageBitRate, NULL,
-			      &n);
-
-	uint32_t session_bitrate;
-	CFNumberGetValue(n, kCFNumberIntType, &session_bitrate);
-	CFRelease(n);
-
-	if (session_bitrate == old_bitrate) {
-		VT_BLOG(LOG_WARNING,
-			"failed to update current session "
-			" bitrate from %d->%d",
-			old_bitrate, enc->bitrate);
-	}
+		VT_BLOG(LOG_WARNING, "Failed to set bitrate to session");
 
 	dump_encoder_info(enc);
 	return true;
