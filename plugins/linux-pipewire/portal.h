@@ -41,3 +41,6 @@ uint32_t portal_get_screencast_version(void);
 
 GDBusConnection *portal_get_dbus_connection(void);
 GDBusProxy *portal_get_dbus_proxy(void);
+
+void portal_create_request_path(char **out_path, char **out_token);
+void portal_create_session_path(char **out_path, char **out_token);

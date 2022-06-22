@@ -21,6 +21,11 @@
 #include "portal.h"
 #include "pipewire.h"
 
+#include <util/dstr.h>
+
+#define REQUEST_PATH "/org/freedesktop/portal/desktop/request/%s/obs%u"
+#define SESSION_PATH "/org/freedesktop/portal/desktop/session/%s/obs%u"
+
 static GDBusConnection *connection = NULL;
 static GDBusProxy *proxy = NULL;
 
@@ -52,6 +57,23 @@ static void ensure_proxy(void)
 			return;
 		}
 	}
+}
+
+char *get_sender_name(void)
+{
+	char *sender_name;
+	char *aux;
+
+	ensure_proxy();
+
+	sender_name =
+		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);
+
+	/* Replace dots by underscores */
+	while ((aux = strstr(sender_name, ".")) != NULL)
+		*aux = '_';
+
+	return sender_name;
 }
 
 uint32_t portal_get_available_capture_types(void)
@@ -118,4 +140,60 @@ GDBusProxy *portal_get_dbus_proxy(void)
 {
 	ensure_proxy();
 	return proxy;
+}
+
+void portal_create_request_path(char **out_path, char **out_token)
+{
+	static uint32_t request_token_count = 0;
+
+	request_token_count++;
+
+	if (out_token) {
+		struct dstr str;
+		dstr_init(&str);
+		dstr_printf(&str, "obs%u", request_token_count);
+		*out_token = str.array;
+	}
+
+	if (out_path) {
+		char *sender_name;
+		struct dstr str;
+
+		sender_name = get_sender_name();
+
+		dstr_init(&str);
+		dstr_printf(&str, REQUEST_PATH, sender_name,
+			    request_token_count);
+		*out_path = str.array;
+
+		bfree(sender_name);
+	}
+}
+
+void portal_create_session_path(char **out_path, char **out_token)
+{
+	static uint32_t session_token_count = 0;
+
+	session_token_count++;
+
+	if (out_token) {
+		struct dstr str;
+		dstr_init(&str);
+		dstr_printf(&str, "obs%u", session_token_count);
+		*out_token = str.array;
+	}
+
+	if (out_path) {
+		char *sender_name;
+		struct dstr str;
+
+		sender_name = get_sender_name();
+
+		dstr_init(&str);
+		dstr_printf(&str, SESSION_PATH, sender_name,
+			    session_token_count);
+		*out_path = str.array;
+
+		bfree(sender_name);
+	}
 }

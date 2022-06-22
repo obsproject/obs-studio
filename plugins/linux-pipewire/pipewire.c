@@ -42,9 +42,6 @@
 #define SPA_POD_PROP_FLAG_DONT_FIXATE (1 << 4)
 #endif
 
-#define REQUEST_PATH "/org/freedesktop/portal/desktop/request/%s/obs%u"
-#define SESSION_PATH "/org/freedesktop/portal/desktop/session/%s/obs%u"
-
 #define CURSOR_META_SIZE(width, height)                                    \
 	(sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) + \
 	 width * height * 4)
@@ -64,7 +61,6 @@ struct format_info {
 struct _obs_pipewire_data {
 	GCancellable *cancellable;
 
-	char *sender_name;
 	char *session_handle;
 	char *restore_token;
 
@@ -165,52 +161,6 @@ static const char *capture_type_to_string(enum portal_capture_type capture_type)
 	return "unknown";
 }
 
-static void new_request_path(obs_pipewire_data *data, char **out_path,
-			     char **out_token)
-{
-	static uint32_t request_token_count = 0;
-
-	request_token_count++;
-
-	if (out_token) {
-		struct dstr str;
-		dstr_init(&str);
-		dstr_printf(&str, "obs%u", request_token_count);
-		*out_token = str.array;
-	}
-
-	if (out_path) {
-		struct dstr str;
-		dstr_init(&str);
-		dstr_printf(&str, REQUEST_PATH, data->sender_name,
-			    request_token_count);
-		*out_path = str.array;
-	}
-}
-
-static void new_session_path(obs_pipewire_data *data, char **out_path,
-			     char **out_token)
-{
-	static uint32_t session_token_count = 0;
-
-	session_token_count++;
-
-	if (out_token) {
-		struct dstr str;
-		dstr_init(&str);
-		dstr_printf(&str, "obs%u", session_token_count);
-		*out_token = str.array;
-	}
-
-	if (out_path) {
-		struct dstr str;
-		dstr_init(&str);
-		dstr_printf(&str, SESSION_PATH, data->sender_name,
-			    session_token_count);
-		*out_path = str.array;
-	}
-}
-
 static void on_cancelled_cb(GCancellable *cancellable, void *data)
 {
 	UNUSED_PARAMETER(cancellable);
@@ -298,7 +248,6 @@ static void destroy_session(obs_pipewire_data *obs_pw)
 		g_clear_pointer(&obs_pw->session_handle, g_free);
 	}
 
-	g_clear_pointer(&obs_pw->sender_name, bfree);
 	obs_enter_graphics();
 	g_clear_pointer(&obs_pw->cursor.texture, gs_texture_destroy);
 	g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
@@ -1135,7 +1084,7 @@ static void start(obs_pipewire_data *obs_pw)
 	char *request_token;
 	char *request_path;
 
-	new_request_path(obs_pw, &request_path, &request_token);
+	portal_create_request_path(&request_path, &request_token);
 
 	blog(LOG_INFO, "[pipewire] Asking for %s",
 	     capture_type_to_string(obs_pw->capture_type));
@@ -1216,7 +1165,7 @@ static void select_source(obs_pipewire_data *obs_pw)
 	char *request_token;
 	char *request_path;
 
-	new_request_path(obs_pw, &request_path, &request_token);
+	portal_create_request_path(&request_path, &request_token);
 
 	call = subscribe_to_signal(obs_pw, request_path,
 				   on_select_source_response_received_cb);
@@ -1330,8 +1279,8 @@ static void create_session(obs_pipewire_data *obs_pw)
 	char *request_token;
 	char *request_path;
 
-	new_request_path(obs_pw, &request_path, &request_token);
-	new_session_path(obs_pw, NULL, &session_token);
+	portal_create_request_path(&request_path, &request_token);
+	portal_create_session_path(NULL, &session_token);
 
 	call = subscribe_to_signal(obs_pw, request_path,
 				   on_create_session_response_received_cb);
@@ -1368,15 +1317,7 @@ static gboolean init_obs_pipewire(obs_pipewire_data *obs_pw)
 	if (!proxy)
 		return FALSE;
 
-	obs_pw->sender_name =
-		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);
-
-	/* Replace dots by underscores */
-	while ((aux = strstr(obs_pw->sender_name, ".")) != NULL)
-		*aux = '_';
-
-	blog(LOG_INFO, "PipeWire initialized (sender name: %s)",
-	     obs_pw->sender_name);
+	blog(LOG_INFO, "PipeWire initialized");
 
 	create_session(obs_pw);
 
