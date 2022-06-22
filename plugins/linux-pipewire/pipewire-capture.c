@@ -113,8 +113,6 @@ static void pipewire_capture_video_render(void *data, gs_effect_t *effect)
 	obs_pipewire_video_render(data, effect);
 }
 
-static bool initialized = false;
-
 void pipewire_capture_load(void)
 {
 	uint32_t available_capture_types = portal_get_available_capture_types();
