@@ -1,5 +1,6 @@
 #include <obs-module.h>
 #include <util/darray.h>
+#include <util/platform.h>
 #include <obs-avc.h>
 
 #include <CoreFoundation/CoreFoundation.h>
@@ -34,6 +35,7 @@ struct vt_encoder {
 	uint32_t keyint;
 	uint32_t fps_num;
 	uint32_t fps_den;
+	const char *rate_control;
 	uint32_t bitrate;
 	bool limit_bitrate;
 	uint32_t rc_max_bitrate;
@@ -144,16 +146,41 @@ static OSStatus session_set_prop(VTCompressionSessionRef session,
 }
 
 static OSStatus session_set_bitrate(VTCompressionSessionRef session,
-				    int new_bitrate, bool limit_bitrate,
-				    int max_bitrate, float max_bitrate_window)
+				    const char *rate_control, int new_bitrate,
+				    bool limit_bitrate, int max_bitrate,
+				    float max_bitrate_window)
 {
 	OSStatus code;
 
-	SESSION_CHECK(session_set_prop_int(
-		session, kVTCompressionPropertyKey_AverageBitRate,
-		new_bitrate * 1000));
+	bool can_limit_bitrate;
+	if (strcmp(rate_control, "CBR") == 0) {
+		if (__builtin_available(macOS 13.0, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+			SESSION_CHECK(session_set_prop_int(
+				session,
+				kVTCompressionPropertyKey_ConstantBitRate,
+				new_bitrate * 1000));
+			can_limit_bitrate = false;
+#else
+			VT_LOG(LOG_ERROR,
+			       "OBS was compiled without CBR support.");
+#endif
+		} else {
+			VT_LOG(LOG_ERROR,
+			       "CBR is only available on macOS 13 or newer.");
+		}
+	} else if (strcmp(rate_control, "ABR") == 0) {
+		SESSION_CHECK(session_set_prop_int(
+			session, kVTCompressionPropertyKey_AverageBitRate,
+			new_bitrate * 1000));
+		can_limit_bitrate = true;
+	} else {
+		VT_LOG(LOG_ERROR,
+		       "Selected rate control method is not supported: %s",
+		       rate_control);
+	}
 
-	if (limit_bitrate) {
+	if (limit_bitrate && can_limit_bitrate) {
 		int32_t cpb_size = max_bitrate * 125 * max_bitrate_window;
 
 		CFNumberRef cf_cpb_size =
@@ -328,9 +355,9 @@ static bool create_encoder(struct vt_encoder *enc)
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
 				      obs_to_vt_profile(enc->profile)));
 
-	STATUS_CHECK(session_set_bitrate(s, enc->bitrate, enc->limit_bitrate,
-					 enc->rc_max_bitrate,
-					 enc->rc_max_bitrate_window));
+	STATUS_CHECK(session_set_bitrate(
+		s, enc->rate_control, enc->bitrate, enc->limit_bitrate,
+		enc->rc_max_bitrate, enc->rc_max_bitrate_window));
 
 	STATUS_CHECK(session_set_colorspace(s, enc->colorspace));
 
@@ -369,6 +396,7 @@ static void dump_encoder_info(struct vt_encoder *enc)
 	VT_BLOG(LOG_INFO,
 		"settings:\n"
 		"\tvt_encoder_id          %s\n"
+		"\trate_control:          %s\n"
 		"\tbitrate:               %d (kbps)\n"
 		"\tfps_num:               %d\n"
 		"\tfps_den:               %d\n"
@@ -380,10 +408,11 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
 		"\tprofile:               %s\n",
-		enc->vt_encoder_id, enc->bitrate, enc->fps_num, enc->fps_den,
-		enc->width, enc->height, enc->keyint,
-		enc->limit_bitrate ? "on" : "off", enc->rc_max_bitrate,
-		enc->rc_max_bitrate_window, enc->hw_enc ? "on" : "off",
+		enc->vt_encoder_id, enc->rate_control, enc->bitrate,
+		enc->fps_num, enc->fps_den, enc->width, enc->height,
+		enc->keyint, enc->limit_bitrate ? "on" : "off",
+		enc->rc_max_bitrate, enc->rc_max_bitrate_window,
+		enc->hw_enc ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile
 								 : "default");
 }
@@ -433,6 +462,7 @@ static void update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->fps_num = voi->fps_num;
 	enc->fps_den = voi->fps_den;
 	enc->keyint = (uint32_t)obs_data_get_int(settings, "keyint_sec");
+	enc->rate_control = obs_data_get_string(settings, "rate_control");
 	enc->bitrate = (uint32_t)obs_data_get_int(settings, "bitrate");
 	enc->profile = obs_data_get_string(settings, "profile");
 	enc->limit_bitrate = obs_data_get_bool(settings, "limit_bitrate");
@@ -455,8 +485,8 @@ static bool vt_update(void *data, obs_data_t *settings)
 	    old_limit_bitrate == enc->limit_bitrate)
 		return true;
 
-	OSStatus code = session_set_bitrate(enc->session, enc->bitrate,
-					    enc->limit_bitrate,
+	OSStatus code = session_set_bitrate(enc->session, enc->rate_control,
+					    enc->bitrate, enc->limit_bitrate,
 					    enc->rc_max_bitrate,
 					    enc->rc_max_bitrate_window);
 	if (code != noErr)
@@ -832,15 +862,28 @@ static const char *vt_getname(void *data)
 #define TEXT_NONE obs_module_text("None")
 #define TEXT_DEFAULT obs_module_text("DefaultEncoder")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
+#define TEXT_RATE_CONTROL obs_module_text("RateControl")
 
-static bool limit_bitrate_modified(obs_properties_t *ppts, obs_property_t *p,
-				   obs_data_t *settings)
+static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
+						obs_property_t *p,
+						obs_data_t *settings)
 {
-	bool use_max_bitrate = obs_data_get_bool(settings, "limit_bitrate");
+	bool can_limit_bitrate = true;
+	bool use_limit_bitrate = obs_data_get_bool(settings, "limit_bitrate");
+	const char *rate_control =
+		obs_data_get_string(settings, "rate_control");
+
+	if (strcmp(rate_control, "CBR") == 0)
+		can_limit_bitrate = false;
+	else if (strcmp(rate_control, "ABR") == 0)
+		can_limit_bitrate = true;
+
+	p = obs_properties_get(ppts, "limit_bitrate");
+	obs_property_set_visible(p, can_limit_bitrate);
 	p = obs_properties_get(ppts, "max_bitrate");
-	obs_property_set_visible(p, use_max_bitrate);
+	obs_property_set_visible(p, can_limit_bitrate && use_limit_bitrate);
 	p = obs_properties_get(ppts, "max_bitrate_window");
-	obs_property_set_visible(p, use_max_bitrate);
+	obs_property_set_visible(p, can_limit_bitrate && use_limit_bitrate);
 	return true;
 }
 
@@ -851,13 +894,27 @@ static obs_properties_t *vt_properties(void *unused)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
+	p = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+	if (__builtin_available(macOS 13.0, *))
+#ifndef __aarch64__
+		if (os_get_emulation_status() == true)
+#endif
+			obs_property_list_add_string(p, "CBR", "CBR");
+	obs_property_list_add_string(p, "ABR", "ABR");
+	obs_property_set_modified_callback(p,
+					   rate_control_limit_bitrate_modified);
+
 	p = obs_properties_add_int(props, "bitrate", TEXT_BITRATE, 50, 10000000,
 				   50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	p = obs_properties_add_bool(props, "limit_bitrate",
 				    TEXT_USE_MAX_BITRATE);
-	obs_property_set_modified_callback(p, limit_bitrate_modified);
+	obs_property_set_modified_callback(p,
+					   rate_control_limit_bitrate_modified);
 
 	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
 				   10000000, 50);
@@ -883,6 +940,13 @@ static obs_properties_t *vt_properties(void *unused)
 
 static void vt_defaults(obs_data_t *settings)
 {
+	obs_data_set_default_string(settings, "rate_control", "ABR");
+	if (__builtin_available(macOS 13.0, *))
+#ifndef __aarch64__
+		if (os_get_emulation_status() == true)
+#endif
+			obs_data_set_default_string(settings, "rate_control",
+						    "CBR");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_bool(settings, "limit_bitrate", false);
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
