@@ -23,6 +23,18 @@
 
 #include <gio/gunixfdlist.h>
 
+enum portal_capture_type {
+	PORTAL_CAPTURE_TYPE_MONITOR = 1 << 0,
+	PORTAL_CAPTURE_TYPE_WINDOW = 1 << 1,
+	PORTAL_CAPTURE_TYPE_VIRTUAL = 1 << 2,
+};
+
+enum portal_cursor_mode {
+	PORTAL_CURSOR_MODE_HIDDEN = 1 << 0,
+	PORTAL_CURSOR_MODE_EMBEDDED = 1 << 1,
+	PORTAL_CURSOR_MODE_METADATA = 1 << 2,
+};
+
 struct screencast_portal_capture {
 	enum portal_capture_type capture_type;
 
@@ -39,6 +51,90 @@ struct screencast_portal_capture {
 
 	obs_pipewire_data *obs_pw;
 };
+
+/* ------------------------------------------------- */
+
+static GDBusProxy *screencast_proxy = NULL;
+
+static void ensure_screencast_portal_proxy(void)
+{
+	g_autoptr(GError) error = NULL;
+	if (!screencast_proxy) {
+		screencast_proxy = g_dbus_proxy_new_sync(
+			portal_get_dbus_connection(), G_DBUS_PROXY_FLAGS_NONE,
+			NULL, "org.freedesktop.portal.Desktop",
+			"/org/freedesktop/portal/desktop",
+			"org.freedesktop.portal.ScreenCast", NULL, &error);
+
+		if (error) {
+			blog(LOG_WARNING,
+			     "[portals] Error retrieving D-Bus proxy: %s",
+			     error->message);
+			return;
+		}
+	}
+}
+
+static GDBusProxy *get_screencast_portal_proxy(void)
+{
+	ensure_screencast_portal_proxy();
+	return screencast_proxy;
+}
+
+static uint32_t get_available_capture_types(void)
+{
+	g_autoptr(GVariant) cached_source_types = NULL;
+	uint32_t available_source_types;
+
+	ensure_screencast_portal_proxy();
+
+	if (!screencast_proxy)
+		return 0;
+
+	cached_source_types = g_dbus_proxy_get_cached_property(
+		screencast_proxy, "AvailableSourceTypes");
+	available_source_types =
+		cached_source_types ? g_variant_get_uint32(cached_source_types)
+				    : 0;
+
+	return available_source_types;
+}
+
+static uint32_t get_available_cursor_modes(void)
+{
+	g_autoptr(GVariant) cached_cursor_modes = NULL;
+	uint32_t available_cursor_modes;
+
+	ensure_screencast_portal_proxy();
+
+	if (!screencast_proxy)
+		return 0;
+
+	cached_cursor_modes = g_dbus_proxy_get_cached_property(
+		screencast_proxy, "AvailableCursorModes");
+	available_cursor_modes =
+		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
+				    : 0;
+
+	return available_cursor_modes;
+}
+
+static uint32_t get_screencast_version(void)
+{
+	g_autoptr(GVariant) cached_version = NULL;
+	uint32_t version;
+
+	ensure_screencast_portal_proxy();
+
+	if (!screencast_proxy)
+		return 0;
+
+	cached_version =
+		g_dbus_proxy_get_cached_property(screencast_proxy, "version");
+	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
+
+	return version;
+}
 
 /* ------------------------------------------------- */
 
@@ -162,7 +258,7 @@ static void open_pipewire_remote(struct screencast_portal_capture *capture)
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 
 	g_dbus_proxy_call_with_unix_fd_list(
-		portal_get_dbus_proxy(), "OpenPipeWireRemote",
+		get_screencast_portal_proxy(), "OpenPipeWireRemote",
 		g_variant_new("(oa{sv})", capture->session_handle, &builder),
 		G_DBUS_CALL_FLAGS_NONE, -1, NULL, capture->cancellable,
 		on_pipewire_remote_opened_cb, capture);
@@ -232,7 +328,7 @@ static void on_start_response_received_cb(GDBusConnection *connection,
 	g_variant_iter_loop(&iter, "(u@a{sv})", &capture->pipewire_node,
 			    &stream_properties);
 
-	if (portal_get_screencast_version() >= 4) {
+	if (get_screencast_version() >= 4) {
 		g_autoptr(GVariant) restore_token = NULL;
 
 		g_clear_pointer(&capture->restore_token, bfree);
@@ -288,7 +384,7 @@ static void start(struct screencast_portal_capture *capture)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
-	g_dbus_proxy_call(portal_get_dbus_proxy(), "Start",
+	g_dbus_proxy_call(get_screencast_portal_proxy(), "Start",
 			  g_variant_new("(osa{sv})", capture->session_handle,
 					"", &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
@@ -372,7 +468,7 @@ static void select_source(struct screencast_portal_capture *capture)
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
 			      g_variant_new_string(request_token));
 
-	available_cursor_modes = portal_get_available_cursor_modes();
+	available_cursor_modes = get_available_cursor_modes();
 
 	if (available_cursor_modes & PORTAL_CURSOR_MODE_METADATA)
 		g_variant_builder_add(
@@ -388,7 +484,7 @@ static void select_source(struct screencast_portal_capture *capture)
 			&builder, "{sv}", "cursor_mode",
 			g_variant_new_uint32(PORTAL_CURSOR_MODE_HIDDEN));
 
-	if (portal_get_screencast_version() >= 4) {
+	if (get_screencast_version() >= 4) {
 		g_variant_builder_add(&builder, "{sv}", "persist_mode",
 				      g_variant_new_uint32(2));
 		if (capture->restore_token && *capture->restore_token) {
@@ -398,7 +494,7 @@ static void select_source(struct screencast_portal_capture *capture)
 		}
 	}
 
-	g_dbus_proxy_call(portal_get_dbus_proxy(), "SelectSources",
+	g_dbus_proxy_call(get_screencast_portal_proxy(), "SelectSources",
 			  g_variant_new("(oa{sv})", capture->session_handle,
 					&builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
@@ -487,7 +583,7 @@ static void create_session(struct screencast_portal_capture *capture)
 	g_variant_builder_add(&builder, "{sv}", "session_handle_token",
 			      g_variant_new_string(session_token));
 
-	g_dbus_proxy_call(portal_get_dbus_proxy(), "CreateSession",
+	g_dbus_proxy_call(get_screencast_portal_proxy(), "CreateSession",
 			  g_variant_new("(a{sv})", &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
 			  on_session_created_cb, call);
@@ -510,7 +606,7 @@ init_screencast_capture(struct screencast_portal_capture *capture)
 	connection = portal_get_dbus_connection();
 	if (!connection)
 		return FALSE;
-	proxy = portal_get_dbus_proxy();
+	proxy = get_screencast_portal_proxy();
 	if (!proxy)
 		return FALSE;
 
@@ -710,7 +806,7 @@ static void screencast_portal_capture_video_render(void *data,
 
 void screencast_portal_load(void)
 {
-	uint32_t available_capture_types = portal_get_available_capture_types();
+	uint32_t available_capture_types = get_available_capture_types();
 	bool desktop_capture_available =
 		(available_capture_types & PORTAL_CAPTURE_TYPE_MONITOR) != 0;
 	bool window_capture_available =
