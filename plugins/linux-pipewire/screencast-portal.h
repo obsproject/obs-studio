@@ -1,6 +1,6 @@
-/* pipewire-capture.h
+/* screencast-portal.h
  *
- * Copyright 2020 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+ * Copyright 2022 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,4 +20,4 @@
 
 #pragma once
 
-void pipewire_capture_load(void);
+void screencast_portal_load(void);

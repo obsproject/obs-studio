@@ -23,7 +23,7 @@
 #include <obs-nix-platform.h>
 
 #include <pipewire/pipewire.h>
-#include "pipewire-capture.h"
+#include "screencast-portal.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("linux-pipewire", "en-US")
@@ -36,7 +36,7 @@ bool obs_module_load(void)
 {
 	pw_init(NULL, NULL);
 
-	pipewire_capture_load();
+	screencast_portal_load();
 
 	return true;
 }

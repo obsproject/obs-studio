@@ -1,6 +1,6 @@
-/* pipewire-capture.c
+/* screencast-portal.c
  *
- * Copyright 2020 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+ * Copyright 2022 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -23,47 +23,47 @@
 
 /* obs_source_info methods */
 
-static const char *pipewire_desktop_capture_get_name(void *data)
+static const char *screencast_portal_desktop_capture_get_name(void *data)
 {
 	UNUSED_PARAMETER(data);
 	return obs_module_text("PipeWireDesktopCapture");
 }
 
-static const char *pipewire_window_capture_get_name(void *data)
+static const char *screencast_portal_window_capture_get_name(void *data)
 {
 	UNUSED_PARAMETER(data);
 	return obs_module_text("PipeWireWindowCapture");
 }
 
-static void *pipewire_desktop_capture_create(obs_data_t *settings,
-					     obs_source_t *source)
+static void *screencast_portal_desktop_capture_create(obs_data_t *settings,
+						      obs_source_t *source)
 {
 	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_MONITOR, settings,
 				   source);
 }
-static void *pipewire_window_capture_create(obs_data_t *settings,
-					    obs_source_t *source)
+static void *screencast_portal_window_capture_create(obs_data_t *settings,
+						     obs_source_t *source)
 {
 	return obs_pipewire_create(PORTAL_CAPTURE_TYPE_WINDOW, settings,
 				   source);
 }
 
-static void pipewire_capture_destroy(void *data)
+static void screencast_portal_capture_destroy(void *data)
 {
 	obs_pipewire_destroy(data);
 }
 
-static void pipewire_capture_save(void *data, obs_data_t *settings)
+static void screencast_portal_capture_save(void *data, obs_data_t *settings)
 {
 	obs_pipewire_save(data, settings);
 }
 
-static void pipewire_capture_get_defaults(obs_data_t *settings)
+static void screencast_portal_capture_get_defaults(obs_data_t *settings)
 {
 	obs_pipewire_get_defaults(settings);
 }
 
-static obs_properties_t *pipewire_capture_get_properties(void *data)
+static obs_properties_t *screencast_portal_capture_get_properties(void *data)
 {
 	enum portal_capture_type capture_type;
 	obs_pipewire_data *obs_pw = data;
@@ -83,37 +83,38 @@ static obs_properties_t *pipewire_capture_get_properties(void *data)
 	}
 }
 
-static void pipewire_capture_update(void *data, obs_data_t *settings)
+static void screencast_portal_capture_update(void *data, obs_data_t *settings)
 {
 	obs_pipewire_update(data, settings);
 }
 
-static void pipewire_capture_show(void *data)
+static void screencast_portal_capture_show(void *data)
 {
 	obs_pipewire_show(data);
 }
 
-static void pipewire_capture_hide(void *data)
+static void screencast_portal_capture_hide(void *data)
 {
 	obs_pipewire_hide(data);
 }
 
-static uint32_t pipewire_capture_get_width(void *data)
+static uint32_t screencast_portal_capture_get_width(void *data)
 {
 	return obs_pipewire_get_width(data);
 }
 
-static uint32_t pipewire_capture_get_height(void *data)
+static uint32_t screencast_portal_capture_get_height(void *data)
 {
 	return obs_pipewire_get_height(data);
 }
 
-static void pipewire_capture_video_render(void *data, gs_effect_t *effect)
+static void screencast_portal_capture_video_render(void *data,
+						   gs_effect_t *effect)
 {
 	obs_pipewire_video_render(data, effect);
 }
 
-void pipewire_capture_load(void)
+void screencast_portal_load(void)
 {
 	uint32_t available_capture_types = portal_get_available_capture_types();
 	bool desktop_capture_available =
@@ -133,46 +134,46 @@ void pipewire_capture_load(void)
 		blog(LOG_INFO, "[pipewire]     - Window capture");
 
 	// Desktop capture
-	const struct obs_source_info pipewire_desktop_capture_info = {
+	const struct obs_source_info screencast_portal_desktop_capture_info = {
 		.id = "pipewire-desktop-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
 		.output_flags = OBS_SOURCE_VIDEO,
-		.get_name = pipewire_desktop_capture_get_name,
-		.create = pipewire_desktop_capture_create,
-		.destroy = pipewire_capture_destroy,
-		.save = pipewire_capture_save,
-		.get_defaults = pipewire_capture_get_defaults,
-		.get_properties = pipewire_capture_get_properties,
-		.update = pipewire_capture_update,
-		.show = pipewire_capture_show,
-		.hide = pipewire_capture_hide,
-		.get_width = pipewire_capture_get_width,
-		.get_height = pipewire_capture_get_height,
-		.video_render = pipewire_capture_video_render,
+		.get_name = screencast_portal_desktop_capture_get_name,
+		.create = screencast_portal_desktop_capture_create,
+		.destroy = screencast_portal_capture_destroy,
+		.save = screencast_portal_capture_save,
+		.get_defaults = screencast_portal_capture_get_defaults,
+		.get_properties = screencast_portal_capture_get_properties,
+		.update = screencast_portal_capture_update,
+		.show = screencast_portal_capture_show,
+		.hide = screencast_portal_capture_hide,
+		.get_width = screencast_portal_capture_get_width,
+		.get_height = screencast_portal_capture_get_height,
+		.video_render = screencast_portal_capture_video_render,
 		.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 	};
 	if (desktop_capture_available)
-		obs_register_source(&pipewire_desktop_capture_info);
+		obs_register_source(&screencast_portal_desktop_capture_info);
 
 	// Window capture
-	const struct obs_source_info pipewire_window_capture_info = {
+	const struct obs_source_info screencast_portal_window_capture_info = {
 		.id = "pipewire-window-capture-source",
 		.type = OBS_SOURCE_TYPE_INPUT,
 		.output_flags = OBS_SOURCE_VIDEO,
-		.get_name = pipewire_window_capture_get_name,
-		.create = pipewire_window_capture_create,
-		.destroy = pipewire_capture_destroy,
-		.save = pipewire_capture_save,
-		.get_defaults = pipewire_capture_get_defaults,
-		.get_properties = pipewire_capture_get_properties,
-		.update = pipewire_capture_update,
-		.show = pipewire_capture_show,
-		.hide = pipewire_capture_hide,
-		.get_width = pipewire_capture_get_width,
-		.get_height = pipewire_capture_get_height,
-		.video_render = pipewire_capture_video_render,
+		.get_name = screencast_portal_window_capture_get_name,
+		.create = screencast_portal_window_capture_create,
+		.destroy = screencast_portal_capture_destroy,
+		.save = screencast_portal_capture_save,
+		.get_defaults = screencast_portal_capture_get_defaults,
+		.get_properties = screencast_portal_capture_get_properties,
+		.update = screencast_portal_capture_update,
+		.show = screencast_portal_capture_show,
+		.hide = screencast_portal_capture_hide,
+		.get_width = screencast_portal_capture_get_width,
+		.get_height = screencast_portal_capture_get_height,
+		.video_render = screencast_portal_capture_video_render,
 		.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
 	};
 	if (window_capture_available)
-		obs_register_source(&pipewire_window_capture_info);
+		obs_register_source(&screencast_portal_window_capture_info);
 }
