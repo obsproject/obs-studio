@@ -397,7 +397,10 @@
 	}
 
 	err = CMSimpleQueueEnqueue(self.queue, sampleBuffer);
+
 	if (err != noErr) {
+		CFRelease(sampleBuffer);
+
 		DLog(@"CMSimpleQueueEnqueue err %d", err);
 		return;
 	}
