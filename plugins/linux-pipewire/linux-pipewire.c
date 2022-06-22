@@ -36,15 +36,7 @@ bool obs_module_load(void)
 {
 	pw_init(NULL, NULL);
 
-	// OBS PipeWire Screen Capture
-	switch (obs_get_nix_platform()) {
-#ifdef ENABLE_WAYLAND
-	case OBS_NIX_PLATFORM_WAYLAND:
-#endif
-	case OBS_NIX_PLATFORM_X11_EGL:
-		pipewire_capture_load();
-		break;
-	}
+	pipewire_capture_load();
 
 	return true;
 }
