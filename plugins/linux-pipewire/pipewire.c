@@ -20,10 +20,7 @@
 
 #include "pipewire.h"
 
-#include "portal.h"
-
 #include <util/darray.h>
-#include <util/dstr.h>
 
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
@@ -32,6 +29,7 @@
 #include <glad/glad.h>
 #include <linux/dma-buf.h>
 #include <libdrm/drm_fourcc.h>
+#include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>

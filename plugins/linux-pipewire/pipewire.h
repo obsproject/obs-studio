@@ -21,9 +21,6 @@
 #pragma once
 
 #include <obs-module.h>
-#include <pipewire/pipewire.h>
-
-#include "portal.h"
 
 typedef struct _obs_pipewire_data obs_pipewire_data;
 
