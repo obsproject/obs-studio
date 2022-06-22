@@ -27,25 +27,14 @@
 
 typedef struct _obs_pipewire_data obs_pipewire_data;
 
-void *obs_pipewire_create(enum portal_capture_type capture_type,
-			  obs_data_t *settings, obs_source_t *source);
-
+void *obs_pipewire_create(int pipewire_fd, int pipewire_node);
 void obs_pipewire_destroy(obs_pipewire_data *obs_pw);
 
-void obs_pipewire_save(obs_pipewire_data *obs_pw, obs_data_t *settings);
-void obs_pipewire_get_defaults(obs_data_t *settings);
-
-obs_properties_t *obs_pipewire_get_properties(obs_pipewire_data *obs_pw,
-					      const char *reload_string_id);
-
-void obs_pipewire_update(obs_pipewire_data *obs_pw, obs_data_t *settings);
-
 void obs_pipewire_show(obs_pipewire_data *obs_pw);
-
 void obs_pipewire_hide(obs_pipewire_data *obs_pw);
 uint32_t obs_pipewire_get_width(obs_pipewire_data *obs_pw);
 uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw);
 void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect);
 
-enum portal_capture_type
-obs_pipewire_get_capture_type(obs_pipewire_data *obs_pw);
+void obs_pipewire_set_cursor_visible(obs_pipewire_data *obs_pw,
+				     bool cursor_visible);
