@@ -1610,7 +1610,7 @@
                      <widget class="QComboBox" name="simpleOutStrEncoder"/>
                     </item>
                     <item row="3" column="0">
-                     <widget class="QLabel" name="label_24">
+                     <widget class="QLabel" name="simpleOutPresetLabel">
                       <property name="enabled">
                        <bool>true</bool>
                       </property>
