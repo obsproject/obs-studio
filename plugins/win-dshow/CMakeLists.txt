@@ -30,8 +30,19 @@ target_sources(
   win-dshow PRIVATE encode-dstr.hpp win-dshow.cpp win-dshow-encoder.cpp
                     dshow-plugin.cpp ffmpeg-decode.c ffmpeg-decode.h)
 
+add_library(libdshowcapture-external INTERFACE)
 add_library(libdshowcapture INTERFACE)
+add_library(OBS::libdshowcapture-external ALIAS libdshowcapture-external)
 add_library(OBS::libdshowcapture ALIAS libdshowcapture)
+
+target_sources(
+  libdshowcapture-external
+  INTERFACE
+    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
+    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
+)
 
 target_sources(
   libdshowcapture
@@ -64,7 +75,15 @@ target_sources(
             libdshowcapture/source/external/IVideoCaptureFilter.h)
 
 target_include_directories(
-  libdshowcapture INTERFACE ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture)
+  libdshowcapture
+  INTERFACE
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture
+    ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/external/capture-device-support/Library
+)
+
+target_compile_definitions(libdshowcapture-external INTERFACE _UP_WINDOWS=1)
+target_compile_definitions(libdshowcapture INTERFACE _UP_WINDOWS=1)
+target_compile_options(libdshowcapture-external INTERFACE /wd4018)
 
 set(MODULE_DESCRIPTION "OBS DirectShow module")
 
@@ -136,6 +155,7 @@ target_link_libraries(
   win-dshow
   PRIVATE OBS::libobs
           OBS::w32-pthreads
+          OBS::libdshowcapture-external
           OBS::libdshowcapture
           setupapi
           strmiids
@@ -145,13 +165,45 @@ target_link_libraries(
           FFmpeg::avcodec
           FFmpeg::avutil)
 
-file(GLOB _LIBOBS_SOURCE_FILES ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/*.c
-     ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/*.cpp)
-file(GLOB _LIBOBS_HEADER_FILES ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/*.h
-     ${CMAKE_CURRENT_SOURCE_DIR}/libdshowcapture/*.hpp)
-
-source_group("libdshowcapture\\Source Files" FILES ${_LIBOBS_SOURCE_FILES})
-source_group("libdshowcapture\\Header Files" FILES ${_LIBOBS_HEADER_FILES})
+source_group(
+  "libdshowcapture-external\\Source Files"
+  FILES
+    libdshowcapture/external/capture-device-support/Library/EGAVResult.cpp
+    libdshowcapture/external/capture-device-support/Library/ElgatoUVCDevice.cpp
+    libdshowcapture/external/capture-device-support/Library/win/EGAVHIDImplementation.cpp
+    libdshowcapture/external/capture-device-support/SampleCode/DriverInterface.cpp
+)
+source_group(
+  "libdshowcapture\\Source Files"
+  FILES libdshowcapture/source/capture-filter.cpp
+        libdshowcapture/source/output-filter.cpp
+        libdshowcapture/source/dshowcapture.cpp
+        libdshowcapture/source/dshowencode.cpp
+        libdshowcapture/source/device.cpp
+        libdshowcapture/source/device-vendor.cpp
+        libdshowcapture/source/encoder.cpp
+        libdshowcapture/source/dshow-base.cpp
+        libdshowcapture/source/dshow-demux.cpp
+        libdshowcapture/source/dshow-enum.cpp
+        libdshowcapture/source/dshow-formats.cpp
+        libdshowcapture/source/dshow-media-type.cpp
+        libdshowcapture/source/dshow-encoded-device.cpp
+        libdshowcapture/source/log.cpp)
+source_group(
+  "libdshowcapture\\Header Files"
+  FILES libdshowcapture/dshowcapture.hpp
+        libdshowcapture/source/capture-filter.hpp
+        libdshowcapture/source/output-filter.hpp
+        libdshowcapture/source/device.hpp
+        libdshowcapture/source/encoder.hpp
+        libdshowcapture/source/dshow-base.hpp
+        libdshowcapture/source/dshow-demux.hpp
+        libdshowcapture/source/dshow-device-defs.hpp
+        libdshowcapture/source/dshow-enum.hpp
+        libdshowcapture/source/dshow-formats.hpp
+        libdshowcapture/source/dshow-media-type.hpp
+        libdshowcapture/source/log.hpp
+        libdshowcapture/source/external/IVideoCaptureFilter.h)
 
 set_target_properties(win-dshow PROPERTIES FOLDER "plugins/win-dshow")
 
