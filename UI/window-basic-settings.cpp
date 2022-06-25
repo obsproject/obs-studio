@@ -4922,14 +4922,30 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		defaultPreset = "balanced";
 		preset = curAMDPreset;
 	} else {
-		ui->simpleOutPreset->addItem("ultrafast", "ultrafast");
+
+#define PRESET_STR(val) \
+	QString(Str("Basic.Settings.Output.EncoderPreset." val)).arg(val)
+		ui->simpleOutPreset->addItem(PRESET_STR("ultrafast"),
+					     "ultrafast");
 		ui->simpleOutPreset->addItem("superfast", "superfast");
-		ui->simpleOutPreset->addItem("veryfast", "veryfast");
+		ui->simpleOutPreset->addItem(PRESET_STR("veryfast"),
+					     "veryfast");
 		ui->simpleOutPreset->addItem("faster", "faster");
-		ui->simpleOutPreset->addItem("fast", "fast");
-		ui->simpleOutPreset->addItem("medium", "medium");
-		ui->simpleOutPreset->addItem("slow", "slow");
-		ui->simpleOutPreset->addItem("slower", "slower");
+		ui->simpleOutPreset->addItem(PRESET_STR("fast"), "fast");
+#undef PRESET_STR
+
+		/* Users might have previously selected a preset which is no
+		 * longer available in simple mode. Make sure we don't mess
+		 * with their setups without them knowing. */
+		if (ui->simpleOutPreset->findData(curPreset) == -1) {
+			ui->simpleOutPreset->addItem(curPreset, curPreset);
+			QStandardItemModel *model =
+				qobject_cast<QStandardItemModel *>(
+					ui->simpleOutPreset->model());
+			QStandardItem *item =
+				model->item(model->rowCount() - 1);
+			item->setEnabled(false);
+		}
 
 		defaultPreset = "veryfast";
 		preset = curPreset;
