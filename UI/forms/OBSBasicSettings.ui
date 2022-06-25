@@ -1609,17 +1609,7 @@
                     <item row="2" column="1">
                      <widget class="QComboBox" name="simpleOutStrEncoder"/>
                     </item>
-                    <item row="3" column="1">
-                     <widget class="QCheckBox" name="simpleOutAdvanced">
-                      <property name="text">
-                       <string>Basic.Settings.Output.Advanced</string>
-                      </property>
-                      <property name="checked">
-                       <bool>true</bool>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="4" column="0">
+                    <item row="3" column="0">
                      <widget class="QLabel" name="label_24">
                       <property name="enabled">
                        <bool>true</bool>
@@ -1632,8 +1622,18 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="4" column="1">
+                    <item row="3" column="1">
                      <widget class="QComboBox" name="simpleOutPreset"/>
+                    </item>
+                    <item row="4" column="1">
+                     <widget class="QCheckBox" name="simpleOutAdvanced">
+                      <property name="text">
+                       <string>Basic.Settings.Output.Advanced</string>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
+                     </widget>
                     </item>
                     <item row="5" column="0">
                      <widget class="QLabel" name="label_23">
@@ -5850,8 +5850,8 @@
   <tabstop>simpleOutputVBitrate</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
   <tabstop>simpleOutStrEncoder</tabstop>
-  <tabstop>simpleOutAdvanced</tabstop>
   <tabstop>simpleOutPreset</tabstop>
+  <tabstop>simpleOutAdvanced</tabstop>
   <tabstop>simpleOutCustom</tabstop>
   <tabstop>simpleOutputPath</tabstop>
   <tabstop>simpleOutputBrowse</tabstop>
@@ -6034,38 +6034,6 @@
     </hint>
     <hint type="destinationlabel">
      <x>401</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>simpleOutPreset</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>simpleOutAdvanced</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_24</receiver>
-   <slot>setVisible(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>251</x>
      <y>64</y>
     </hint>
    </hints>
