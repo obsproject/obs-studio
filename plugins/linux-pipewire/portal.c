@@ -21,10 +21,14 @@
 #include "portal.h"
 #include "pipewire.h"
 
-static GDBusConnection *connection = NULL;
-static GDBusProxy *proxy = NULL;
+#include <util/dstr.h>
 
-static void ensure_proxy(void)
+#define REQUEST_PATH "/org/freedesktop/portal/desktop/request/%s/obs%u"
+#define SESSION_PATH "/org/freedesktop/portal/desktop/session/%s/obs%u"
+
+static GDBusConnection *connection = NULL;
+
+static void ensure_connection(void)
 {
 	g_autoptr(GError) error = NULL;
 	if (!connection) {
@@ -37,85 +41,83 @@ static void ensure_proxy(void)
 			return;
 		}
 	}
-
-	if (!proxy) {
-		proxy = g_dbus_proxy_new_sync(
-			connection, G_DBUS_PROXY_FLAGS_NONE, NULL,
-			"org.freedesktop.portal.Desktop",
-			"/org/freedesktop/portal/desktop",
-			"org.freedesktop.portal.ScreenCast", NULL, &error);
-
-		if (error) {
-			blog(LOG_WARNING,
-			     "[portals] Error retrieving D-Bus proxy: %s",
-			     error->message);
-			return;
-		}
-	}
 }
 
-uint32_t portal_get_available_capture_types(void)
+char *get_sender_name(void)
 {
-	g_autoptr(GVariant) cached_source_types = NULL;
-	uint32_t available_source_types;
+	char *sender_name;
+	char *aux;
 
-	ensure_proxy();
+	ensure_connection();
 
-	if (!proxy)
-		return 0;
+	sender_name =
+		bstrdup(g_dbus_connection_get_unique_name(connection) + 1);
 
-	cached_source_types =
-		g_dbus_proxy_get_cached_property(proxy, "AvailableSourceTypes");
-	available_source_types =
-		cached_source_types ? g_variant_get_uint32(cached_source_types)
-				    : 0;
+	/* Replace dots by underscores */
+	while ((aux = strstr(sender_name, ".")) != NULL)
+		*aux = '_';
 
-	return available_source_types;
-}
-
-uint32_t portal_get_available_cursor_modes(void)
-{
-	g_autoptr(GVariant) cached_cursor_modes = NULL;
-	uint32_t available_cursor_modes;
-
-	ensure_proxy();
-
-	if (!proxy)
-		return 0;
-
-	cached_cursor_modes =
-		g_dbus_proxy_get_cached_property(proxy, "AvailableCursorModes");
-	available_cursor_modes =
-		cached_cursor_modes ? g_variant_get_uint32(cached_cursor_modes)
-				    : 0;
-
-	return available_cursor_modes;
-}
-
-uint32_t portal_get_screencast_version(void)
-{
-	g_autoptr(GVariant) cached_version = NULL;
-	uint32_t version;
-
-	ensure_proxy();
-
-	if (!proxy)
-		return 0;
-
-	cached_version = g_dbus_proxy_get_cached_property(proxy, "version");
-	version = cached_version ? g_variant_get_uint32(cached_version) : 0;
-
-	return version;
+	return sender_name;
 }
 
 GDBusConnection *portal_get_dbus_connection(void)
 {
-	ensure_proxy();
+	ensure_connection();
 	return connection;
 }
 
-GDBusProxy *portal_get_dbus_proxy(void)
+void portal_create_request_path(char **out_path, char **out_token)
 {
-	ensure_proxy();
-	return proxy;
+	static uint32_t request_token_count = 0;
+
+	request_token_count++;
+
+	if (out_token) {
+		struct dstr str;
+		dstr_init(&str);
+		dstr_printf(&str, "obs%u", request_token_count);
+		*out_token = str.array;
+	}
+
+	if (out_path) {
+		char *sender_name;
+		struct dstr str;
+
+		sender_name = get_sender_name();
+
+		dstr_init(&str);
+		dstr_printf(&str, REQUEST_PATH, sender_name,
+			    request_token_count);
+		*out_path = str.array;
+
+		bfree(sender_name);
+	}
+}
+
+void portal_create_session_path(char **out_path, char **out_token)
+{
+	static uint32_t session_token_count = 0;
+
+	session_token_count++;
+
+	if (out_token) {
+		struct dstr str;
+		dstr_init(&str);
+		dstr_printf(&str, "obs%u", session_token_count);
+		*out_token = str.array;
+	}
+
+	if (out_path) {
+		char *sender_name;
+		struct dstr str;
+
+		sender_name = get_sender_name();
+
+		dstr_init(&str);
+		dstr_printf(&str, SESSION_PATH, sender_name,
+			    session_token_count);
+		*out_path = str.array;
+
+		bfree(sender_name);
+	}
 }
