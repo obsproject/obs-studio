@@ -154,7 +154,6 @@ static void *rtmp_stream_create(obs_data_t *settings, obs_output_t *output)
 	pthread_mutex_init_value(&stream->packets_mutex);
 
 	RTMP_LogSetCallback(log_rtmp);
-	RTMP_Init(&stream->rtmp);
 	RTMP_LogSetLevel(RTMP_LOGWARNING);
 
 	if (pthread_mutex_init(&stream->packets_mutex, NULL) != 0)
@@ -1050,19 +1049,10 @@ static int try_connect(struct rtmp_stream *stream)
 
 	info("Connecting to RTMP URL %s...", stream->path.array);
 
-	// on reconnect we need to reset the internal variables of librtmp
-	// otherwise the data sent/received will not parse correctly on the other end
-	RTMP_Reset(&stream->rtmp);
-
-	// apparently TLS will not properly persist through connections
+	// free any existing RTMP TLS context
 	RTMP_TLS_Free(&stream->rtmp);
-	RTMP_TLS_Init(&stream->rtmp);
 
-	// since we don't call RTMP_Init above, there's no other good place
-	// to reset this as doing it in RTMP_Close breaks the ugly RTMP
-	// authentication system
-	memset(&stream->rtmp.Link, 0, sizeof(stream->rtmp.Link));
-	stream->rtmp.last_error_code = 0;
+	RTMP_Init(&stream->rtmp);
 
 	if (!RTMP_SetupURL(&stream->rtmp, stream->path.array))
 		return OBS_OUTPUT_BAD_PATH;
