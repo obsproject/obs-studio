@@ -24,6 +24,7 @@ env:
   STEAM_NIGHTLY_BRANCH: nightly
   STEAM_STABLE_BRANCH: staging
   STEAM_BETA_BRANCH: beta_staging
+  SEVENZIP_HASH: 5290409e7bbe2f133d0bd7e7482548678157ea2be276b0f9cb440600f4be9a2d
 
 jobs:
   upload:
@@ -37,12 +38,19 @@ jobs:
       with:
         path: source
 
-    - name: Setup 7-Zip (PPA)
       # The 7-Zip version available in the default ubuntu repos (p7zip) is wildly out-of-date and does not properly support DMG files.
+    - name: Setup 7-Zip
       run: |
-        sudo add-apt-repository -y ppa:spvkgn/sevenzip
-        sudo apt update -y
-        sudo apt install -y 7-zip
+        mkdir 7z && cd 7z
+        curl -s https://www.7-zip.org/a/7z2200-linux-x64.tar.xz -o 7z.tar.xz
+        
+        if [[ '${{ env.SEVENZIP_HASH }}' != "$(sha256sum 7z.tar.xz | cut -d " " -f 1)" ]]; then
+            echo "7-Zip Download hash does not match!"
+            exit 1
+        fi
+        
+        tar -xJf 7z.tar.xz
+        echo "$(pwd)" >> $GITHUB_PATH
 
     - name: Get build information
       id: build-info
@@ -175,9 +183,9 @@ jobs:
             unzip ../mac_x86.dmg.zip
             # 7-Zip will have an exit code of 2 due to the "unsafe" 'Applications' symlink.
             # GitHub treats this as a failure so ignore non-zero exit codes here.
-            7zz x *.dmg -otmp || true
+            7zzs x *.dmg -otmp || true
         else
-            7zz x ../mac_x86.dmg -otmp || true
+            7zzs x ../mac_x86.dmg -otmp || true
         fi
 
         mv tmp/*/OBS.app steam-macos
