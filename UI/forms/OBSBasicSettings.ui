@@ -1525,19 +1525,6 @@
                      </widget>
                     </item>
                     <item row="1" column="0">
-                     <widget class="QLabel" name="simpleOutStrEncoderLabel">
-                      <property name="text">
-                       <string>Basic.Settings.Output.Encoder</string>
-                      </property>
-                      <property name="buddy">
-                       <cstring>simpleOutRecEncoder</cstring>
-                      </property>
-                     </widget>
-                    </item>
-                    <item row="1" column="1">
-                     <widget class="QComboBox" name="simpleOutStrEncoder"/>
-                    </item>
-                    <item row="2" column="0">
                      <widget class="QLabel" name="label_20">
                       <property name="text">
                        <string>Basic.Settings.Output.AudioBitrate</string>
@@ -1547,7 +1534,7 @@
                       </property>
                      </widget>
                     </item>
-                    <item row="2" column="1">
+                    <item row="1" column="1">
                      <widget class="QComboBox" name="simpleOutputABitrate">
                       <property name="currentIndex">
                        <number>8</number>
@@ -1608,6 +1595,19 @@
                        </property>
                       </item>
                      </widget>
+                    </item>
+                    <item row="2" column="0">
+                     <widget class="QLabel" name="simpleOutStrEncoderLabel">
+                      <property name="text">
+                       <string>Basic.Settings.Output.Encoder</string>
+                      </property>
+                      <property name="buddy">
+                       <cstring>simpleOutRecEncoder</cstring>
+                      </property>
+                     </widget>
+                    </item>
+                    <item row="2" column="1">
+                     <widget class="QComboBox" name="simpleOutStrEncoder"/>
                     </item>
                     <item row="3" column="1">
                      <widget class="QCheckBox" name="simpleOutAdvanced">
@@ -5848,8 +5848,8 @@
   <tabstop>scrollArea_3</tabstop>
   <tabstop>outputMode</tabstop>
   <tabstop>simpleOutputVBitrate</tabstop>
-  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutputABitrate</tabstop>
+  <tabstop>simpleOutStrEncoder</tabstop>
   <tabstop>simpleOutAdvanced</tabstop>
   <tabstop>simpleOutPreset</tabstop>
   <tabstop>simpleOutCustom</tabstop>
