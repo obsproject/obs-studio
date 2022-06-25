@@ -547,14 +547,13 @@ void SimpleOutput::Update()
 	}
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
+	obs_data_set_string(videoSettings, "preset", preset);
 
 	obs_data_set_string(videoSettings, "rate_control", "CBR");
 	obs_data_set_int(videoSettings, "bitrate", videoBitrate);
 
-	if (advanced) {
-		obs_data_set_string(videoSettings, "preset", preset);
+	if (advanced)
 		obs_data_set_string(videoSettings, "x264opts", custom);
-	}
 
 	obs_data_set_string(aacSettings, "rate_control", "CBR");
 	obs_data_set_int(aacSettings, "bitrate", audioBitrate);
