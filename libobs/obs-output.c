@@ -18,6 +18,7 @@
 #include <inttypes.h>
 #include "util/platform.h"
 #include "util/util_uint64.h"
+#include "graphics/math-extra.h"
 #include "obs.h"
 #include "obs-internal.h"
 
@@ -25,6 +26,9 @@
 #include <caption/mpeg.h>
 
 #define get_weak(output) ((obs_weak_output_t *)output->context.control)
+
+#define RECONNECT_RETRY_MAX_MSEC (15 * 60 * 1000)
+#define RECONNECT_RETRY_BASE_EXP 1.5
 
 static inline bool active(const struct obs_output *output)
 {
@@ -145,6 +149,8 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 
 	output->reconnect_retry_sec = 2;
 	output->reconnect_retry_max = 20;
+	output->reconnect_retry_exp =
+		RECONNECT_RETRY_BASE_EXP + (rand_float(0) * 0.05);
 	output->valid = true;
 
 	obs_context_init_control(&output->context, output,
@@ -1968,7 +1974,7 @@ static inline void signal_reconnect(struct obs_output *output)
 
 	calldata_init_fixed(&params, stack, sizeof(stack));
 	calldata_set_int(&params, "timeout_sec",
-			 output->reconnect_retry_cur_sec);
+			 output->reconnect_retry_cur_msec / 1000);
 	calldata_set_ptr(&params, "output", output);
 	signal_handler_signal(output->context.signals, "reconnect", &params);
 }
@@ -2351,11 +2357,11 @@ void obs_output_end_data_capture(obs_output_t *output)
 static void *reconnect_thread(void *param)
 {
 	struct obs_output *output = param;
-	unsigned long ms = output->reconnect_retry_cur_sec * 1000;
 
 	output->reconnect_thread_active = true;
 
-	if (os_event_timedwait(output->reconnect_stop_event, ms) == ETIMEDOUT)
+	if (os_event_timedwait(output->reconnect_stop_event,
+			       output->reconnect_retry_cur_msec) == ETIMEDOUT)
 		obs_output_actual_start(output);
 
 	if (os_event_try(output->reconnect_stop_event) == EAGAIN)
@@ -2367,14 +2373,13 @@ static void *reconnect_thread(void *param)
 	return NULL;
 }
 
-#define MAX_RETRY_SEC (15 * 60)
-
 static void output_reconnect(struct obs_output *output)
 {
 	int ret;
 
 	if (!reconnecting(output)) {
-		output->reconnect_retry_cur_sec = output->reconnect_retry_sec;
+		output->reconnect_retry_cur_msec =
+			output->reconnect_retry_sec * 1000;
 		output->reconnect_retries = 0;
 	}
 
@@ -2393,9 +2398,10 @@ static void output_reconnect(struct obs_output *output)
 	}
 
 	if (output->reconnect_retries) {
-		output->reconnect_retry_cur_sec *= 2;
-		if (output->reconnect_retry_cur_sec > MAX_RETRY_SEC)
-			output->reconnect_retry_cur_sec = MAX_RETRY_SEC;
+		output->reconnect_retry_cur_msec *= output->reconnect_retry_exp;
+		if (output->reconnect_retry_cur_msec > RECONNECT_RETRY_MAX_MSEC)
+			output->reconnect_retry_cur_msec =
+				RECONNECT_RETRY_MAX_MSEC;
 	}
 
 	output->reconnect_retries++;
@@ -2407,8 +2413,9 @@ static void output_reconnect(struct obs_output *output)
 		blog(LOG_WARNING, "Failed to create reconnect thread");
 		os_atomic_set_bool(&output->reconnecting, false);
 	} else {
-		blog(LOG_INFO, "Output '%s':  Reconnecting in %d seconds..",
-		     output->context.name, output->reconnect_retry_sec);
+		blog(LOG_INFO, "Output '%s':  Reconnecting in %.02f seconds..",
+		     output->context.name,
+		     (float)(output->reconnect_retry_cur_msec / 1000.0));
 
 		signal_reconnect(output);
 	}
