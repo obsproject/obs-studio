@@ -420,7 +420,7 @@ RTMP_TLS_Init(RTMP *r)
 
 void
 RTMP_TLS_Free(RTMP *r) {
-#ifdef USE_MBEDTLS
+#if defined(CRYPTO) && defined(USE_MBEDTLS)
 
     if (!r->RTMP_TLS_ctx)
         return;
@@ -451,9 +451,7 @@ RTMP_Alloc()
 void
 RTMP_Free(RTMP *r)
 {
-#if defined(CRYPTO) && defined(USE_MBEDTLS)
     RTMP_TLS_Free(r);
-#endif
     free(r);
 }
 
@@ -463,11 +461,7 @@ RTMP_Init(RTMP *r)
     memset(r, 0, sizeof(RTMP));
     r->m_sb.sb_socket = -1;
     RTMP_Reset(r);
-
-#ifdef CRYPTO
     RTMP_TLS_Init(r);
-#endif
-
 }
 
 void
