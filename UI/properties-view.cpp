@@ -1501,8 +1501,7 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		widget->setEnabled(false);
 
 	if (obs_property_long_description(property)) {
-		bool lightTheme = palette().text().color().redF() < 0.5;
-		QString file = lightTheme ? ":/res/images/help.svg"
+		QString file = !App()->IsThemeDark() ? ":/res/images/help.svg"
 					  : ":/res/images/help_light.svg";
 		if (label) {
 			QString lStr = "<html>%1 <img src='%2' style=' \

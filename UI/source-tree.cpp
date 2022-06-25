@@ -1694,9 +1694,7 @@ void SourceTree::UpdateNoSourcesMessage()
 	std::string darkPath;
 	GetDataFilePath("themes/Dark/no_sources.svg", darkPath);
 
-	QColor color = palette().text().color();
-	bool lightTheme = (color.redF() < 0.5);
-	QString file = lightTheme ? ":res/images/no_sources.svg"
+	QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg"
 				  : darkPath.c_str();
 	iconNoSources.load(file);
 
