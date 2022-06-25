@@ -68,6 +68,8 @@ void OBSBasic::InitDefaultTransitions()
 
 			if (strcmp(id, "fade_transition") == 0)
 				fadeTransition = tr;
+			else if (strcmp(id, "cut_transition") == 0)
+				cutTransition = tr;
 		}
 	}
 
