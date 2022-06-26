@@ -289,8 +289,8 @@ void AJAOutput::QueueAudioFrames(struct audio_data *frames, size_t size)
 	copy_audio_data(frames, &af.frames, size);
 
 	mAudioQueue->push_back(af);
-	mAudioQueueSamples +=
-		size / (kDefaultAudioChannels * kDefaultAudioSampleSize);
+	mAudioQueueSamples += size / ((uint64_t)kDefaultAudioChannels *
+				      kDefaultAudioSampleSize);
 }
 
 void AJAOutput::ClearVideoQueue()
@@ -399,8 +399,8 @@ void AJAOutput::DMAAudioFromQueue(NTV2AudioSystem audioSys)
 				af.offset += sizeLeft;
 				sizeLeft = 0;
 				adjustSamples -= samples;
-				mAudioAdjust =
-					adjustSamples * 1000000 / mAudioRate;
+				mAudioAdjust = (int64_t)adjustSamples *
+					       1000000 / mAudioRate;
 				blog(LOG_DEBUG,
 				     "AJAOutput::DMAAudioFromQueue: Drop %d audio samples",
 				     samples);
@@ -537,8 +537,8 @@ void AJAOutput::dma_audio_samples(NTV2AudioSystem audioSys, uint32_t *data,
 {
 	bool result = false;
 
-	mAudioWriteSamples +=
-		size / (kDefaultAudioChannels * kDefaultAudioSampleSize);
+	mAudioWriteSamples += size / ((uint64_t)kDefaultAudioChannels *
+				      kDefaultAudioSampleSize);
 
 	if ((mAudioWriteCursor + size) > mAudioWrapAddress) {
 		const uint32_t remainingBuffer =
@@ -886,10 +886,10 @@ bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 	}
 
 	bool itemFound = false;
-	int dest = obs_data_get_int(settings, kUIPropOutput.id);
-	size_t itemCount = obs_property_list_item_count(list);
+	const long long dest = obs_data_get_int(settings, kUIPropOutput.id);
+	const size_t itemCount = obs_property_list_item_count(list);
 	for (size_t i = 0; i < itemCount; i++) {
-		int itemDest = obs_property_list_item_int(list, i);
+		const long long itemDest = obs_property_list_item_int(list, i);
 		if (dest == itemDest) {
 			itemFound = true;
 			break;

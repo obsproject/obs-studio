@@ -248,7 +248,8 @@ bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 	size_t itemCount = obs_property_list_item_count(list);
 	bool itemFound = false;
 	for (size_t i = 0; i < itemCount; i++) {
-		int itemFormat = obs_property_list_item_int(list, i);
+		auto itemFormat = static_cast<NTV2VideoFormat>(
+			obs_property_list_item_int(list, i));
 		if (itemFormat == vid_fmt) {
 			itemFound = true;
 			break;
