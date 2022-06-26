@@ -87,20 +87,73 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *input_format =
 		obs_properties_get(props, "input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
-	obs_property_t *looping = obs_properties_get(props, "looping");
+	obs_property_t *end_playback =
+		obs_properties_get(props, "end_playback");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
+	obs_property_t *clear_on_media_end =
+		obs_properties_get(props, "clear_on_media_end");
 	obs_property_set_visible(input, !enabled);
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(local_file, enabled);
-	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(end_playback, enabled);
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
+	obs_property_set_visible(clear_on_media_end, !enabled);
+
+	return true;
+}
+
+static bool is_end_playback_modified(obs_properties_t *props,
+				     obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(props);
+	int end_playback = obs_data_get_int(settings, "end_playback");
+	bool looping = false;
+	bool clear_on_media_end = true;
+
+	if (end_playback == 1) { // End action : Hide
+		clear_on_media_end = false;
+	} else if (end_playback == 2) { // End action : Loop
+		clear_on_media_end = false;
+		looping = true;
+	}
+	obs_data_set_bool(settings, "looping", looping);
+	obs_data_set_bool(settings, "clear_on_media_end", clear_on_media_end);
+
+	return true;
+}
+
+static void update_end_playback_property_list(obs_data_t *settings)
+{
+	bool clear_on_media_end =
+		obs_data_get_bool(settings, "clear_on_media_end");
+	bool looping = obs_data_get_bool(settings, "looping");
+	int end_playback = 0;
+
+	if (looping == true) {
+		end_playback = 2;
+	} else if (clear_on_media_end == false) {
+		end_playback = 1;
+	}
+
+	obs_data_set_int(settings, "end_playback", end_playback);
+}
+
+static bool is_clear_on_media_end_modified(obs_properties_t *props,
+					   obs_property_t *prop,
+					   obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(props);
+
+	update_end_playback_property_list(settings);
 
 	return true;
 }
@@ -109,6 +162,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "is_local_file", true);
 	obs_data_set_default_bool(settings, "looping", false);
+	obs_data_set_default_int(settings, "end_playback", 0);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
@@ -166,7 +220,23 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_free(&filter);
 	dstr_free(&path);
 
-	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
+	prop = obs_properties_add_bool(props, "looping",
+				       obs_module_text("Looping"));
+	obs_property_set_visible(prop, false);
+
+	prop = obs_properties_add_list(props, "end_playback",
+				       obs_module_text("EndPlayback"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(
+		prop, obs_module_text("EndPlayback.ShowNothing"), 0);
+
+	obs_property_list_add_int(prop, obs_module_text("EndPlayback.Freeze"),
+				  1);
+
+	obs_property_list_add_int(prop, obs_module_text("EndPlayback.Loop"), 2);
+
+	obs_property_set_modified_callback(prop, is_end_playback_modified);
 
 	obs_properties_add_bool(props, "restart_on_activate",
 				obs_module_text("RestartWhenActivated"));
@@ -191,8 +261,11 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	obs_properties_add_bool(props, "hw_decode",
 				obs_module_text("HardwareDecode"));
 
-	obs_properties_add_bool(props, "clear_on_media_end",
-				obs_module_text("ClearOnMediaEnd"));
+	prop = obs_properties_add_bool(props, "clear_on_media_end",
+				       obs_module_text("ClearOnMediaEnd"));
+
+	obs_property_set_modified_callback(prop,
+					   is_clear_on_media_end_modified);
 
 	prop = obs_properties_add_bool(
 		props, "close_when_inactive",
@@ -422,6 +495,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
+		update_end_playback_property_list(settings);
 	} else {
 		input = obs_data_get_string(settings, "input");
 		input_format = obs_data_get_string(settings, "input_format");
