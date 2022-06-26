@@ -39,6 +39,7 @@ jobs:
       - name: 'Setup build environment'
         id: setup
         run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
       - name: Build Flatpak Manifest
