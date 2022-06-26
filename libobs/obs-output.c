@@ -28,7 +28,7 @@
 #define get_weak(output) ((obs_weak_output_t *)output->context.control)
 
 #define RECONNECT_RETRY_MAX_MSEC (15 * 60 * 1000)
-#define RECONNECT_RETRY_BASE_EXP 1.5
+#define RECONNECT_RETRY_BASE_EXP 1.5f
 
 static inline bool active(const struct obs_output *output)
 {
@@ -150,7 +150,7 @@ obs_output_t *obs_output_create(const char *id, const char *name,
 	output->reconnect_retry_sec = 2;
 	output->reconnect_retry_max = 20;
 	output->reconnect_retry_exp =
-		RECONNECT_RETRY_BASE_EXP + (rand_float(0) * 0.05);
+		RECONNECT_RETRY_BASE_EXP + (rand_float(0) * 0.05f);
 	output->valid = true;
 
 	obs_context_init_control(&output->context, output,
@@ -2398,10 +2398,14 @@ static void output_reconnect(struct obs_output *output)
 	}
 
 	if (output->reconnect_retries) {
-		output->reconnect_retry_cur_msec *= output->reconnect_retry_exp;
-		if (output->reconnect_retry_cur_msec > RECONNECT_RETRY_MAX_MSEC)
+		output->reconnect_retry_cur_msec =
+			(uint32_t)(output->reconnect_retry_cur_msec *
+				   output->reconnect_retry_exp);
+		if (output->reconnect_retry_cur_msec >
+		    RECONNECT_RETRY_MAX_MSEC) {
 			output->reconnect_retry_cur_msec =
 				RECONNECT_RETRY_MAX_MSEC;
+		}
 	}
 
 	output->reconnect_retries++;
