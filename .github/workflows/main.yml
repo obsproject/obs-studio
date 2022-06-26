@@ -389,6 +389,7 @@ jobs:
       - name: 'Setup build environment'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
+          git config --global --add safe.directory $GITHUB_WORKSPACE
           echo "OBS_GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)" >> $GITHUB_ENV
           echo "OBS_GIT_HASH=$(git rev-parse --short=9 HEAD)" >> $GITHUB_ENV
           echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
