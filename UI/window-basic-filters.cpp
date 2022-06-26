@@ -799,8 +799,7 @@ static bool QueryRemove(QWidget *parent, obs_source_t *source)
 {
 	const char *name = obs_source_get_name(source);
 
-	QString text = QTStr("ConfirmRemove.Text");
-	text.replace("$1", QT_UTF8(name));
+	QString text = QTStr("ConfirmRemove.Text").arg(QT_UTF8(name));
 
 	QMessageBox remove_source(parent);
 	remove_source.setText(text);

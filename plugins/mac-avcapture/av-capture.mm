@@ -1940,7 +1940,7 @@ static bool update_int_list_property(obs_property_t *p, const int *val,
 	DStr buf, label;
 	dstr_printf(buf, "%d", *val);
 	dstr_init_copy(label, obs_module_text(localization_name));
-	dstr_replace(label, "$1", buf->array);
+	dstr_replace(label, "%1", buf->array);
 	size_t idx = obs_property_list_add_int(p, label->array, *val);
 	obs_property_list_item_disable(p, idx, true);
 

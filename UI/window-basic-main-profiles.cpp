@@ -563,8 +563,8 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		return;
 
 	if (!skipConfirmation) {
-		QString text = QTStr("ConfirmRemove.Text");
-		text.replace("$1", QT_UTF8(oldName.c_str()));
+		QString text = QTStr("ConfirmRemove.Text")
+				       .arg(QT_UTF8(oldName.c_str()));
 
 		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("ConfirmRemove.Title"), text);
