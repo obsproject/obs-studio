@@ -498,7 +498,60 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 	taskBtn->setOverlayIcon(icon);
 }
 #else
-// Needs to be re-implemented for Qt6, perhaps natively without Qt
-void TaskbarOverlayInit() {}
-void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}
+
+HWND hwnd;
+void TaskbarOverlayInit()
+{
+	hwnd = (HWND)App()->GetMainWindow()->winId();
+}
+
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
+{
+	ITaskbarList4 *taskbarIcon;
+	auto hr = CoCreateInstance(CLSID_TaskbarList, NULL,
+				   CLSCTX_INPROC_SERVER,
+				   IID_PPV_ARGS(&taskbarIcon));
+
+	if (FAILED(hr)) {
+		taskbarIcon->Release();
+		return;
+	}
+
+	hr = taskbarIcon->HrInit();
+
+	if (FAILED(hr)) {
+		taskbarIcon->Release();
+		return;
+	}
+
+	if (status != TaskbarOverlayStatusInactive) {
+		QIcon qicon;
+		switch (status) {
+		case TaskbarOverlayStatusActive:
+			qicon = QIcon::fromTheme(
+				"obs-active", QIcon(":/res/images/active.png"));
+			break;
+		case TaskbarOverlayStatusPaused:
+			qicon = QIcon::fromTheme(
+				"obs-paused", QIcon(":/res/images/paused.png"));
+			break;
+		}
+
+		HICON hicon = nullptr;
+		if (!qicon.isNull()) {
+			Q_GUI_EXPORT HICON qt_pixmapToWinHICON(
+				const QPixmap &p);
+			hicon = qt_pixmapToWinHICON(
+				qicon.pixmap(GetSystemMetrics(SM_CXSMICON)));
+			if (!hicon)
+				return;
+		}
+
+		taskbarIcon->SetOverlayIcon(hwnd, hicon, nullptr);
+		DestroyIcon(hicon);
+	} else {
+		taskbarIcon->SetOverlayIcon(hwnd, nullptr, nullptr);
+	}
+	taskbarIcon->Release();
+}
 #endif
