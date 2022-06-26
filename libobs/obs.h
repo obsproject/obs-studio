@@ -832,6 +832,8 @@ typedef bool (*obs_enum_audio_device_cb)(void *data, const char *name,
 
 EXPORT bool obs_audio_monitoring_available(void);
 
+EXPORT void obs_reset_audio_monitoring(void);
+
 EXPORT void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb,
 					      void *data);
 

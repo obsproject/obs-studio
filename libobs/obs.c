@@ -3018,6 +3018,21 @@ bool obs_obj_is_private(void *obj)
 	return context->private;
 }
 
+void obs_reset_audio_monitoring(void)
+{
+	if (!obs_audio_monitoring_available())
+		return;
+
+	pthread_mutex_lock(&obs->audio.monitoring_mutex);
+
+	for (size_t i = 0; i < obs->audio.monitors.num; i++) {
+		struct audio_monitor *monitor = obs->audio.monitors.array[i];
+		audio_monitor_reset(monitor);
+	}
+
+	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
+}
+
 bool obs_set_audio_monitoring_device(const char *name, const char *id)
 {
 	if (!name || !id || !*name || !*id)
@@ -3039,10 +3054,7 @@ bool obs_set_audio_monitoring_device(const char *name, const char *id)
 	obs->audio.monitoring_device_name = bstrdup(name);
 	obs->audio.monitoring_device_id = bstrdup(id);
 
-	for (size_t i = 0; i < obs->audio.monitors.num; i++) {
-		struct audio_monitor *monitor = obs->audio.monitors.array[i];
-		audio_monitor_reset(monitor);
-	}
+	obs_reset_audio_monitoring();
 
 	pthread_mutex_unlock(&obs->audio.monitoring_mutex);
 	return true;
