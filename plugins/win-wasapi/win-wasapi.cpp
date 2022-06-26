@@ -1,3 +1,4 @@
+#include "wasapi-notify.hpp"
 #include "enum-wasapi.hpp"
 
 #include <obs-module.h>
@@ -28,6 +29,7 @@ using namespace std;
 #define OPT_WINDOW "window"
 #define OPT_PRIORITY "priority"
 
+WASAPINotify *GetNotify();
 static void GetWASAPIDefaults(obs_data_t *settings);
 
 #define OBS_KSAUDIO_SPEAKER_4POINT1 \
@@ -154,7 +156,6 @@ protected:
 };
 
 class WASAPISource {
-	ComPtr<IMMNotificationClient> notify;
 	ComPtr<IMMDeviceEnumerator> enumerator;
 	ComPtr<IAudioClient> client;
 	ComPtr<IAudioCaptureClient> capture;
@@ -313,57 +314,6 @@ public:
 	HWND GetHwnd();
 };
 
-class WASAPINotify : public IMMNotificationClient {
-	long refs = 0; /* auto-incremented to 1 by ComPtr */
-	WASAPISource *source;
-
-public:
-	WASAPINotify(WASAPISource *source_) : source(source_) {}
-
-	STDMETHODIMP_(ULONG) AddRef()
-	{
-		return (ULONG)os_atomic_inc_long(&refs);
-	}
-
-	STDMETHODIMP_(ULONG) STDMETHODCALLTYPE Release()
-	{
-		long val = os_atomic_dec_long(&refs);
-		if (val == 0)
-			delete this;
-		return (ULONG)val;
-	}
-
-	STDMETHODIMP QueryInterface(REFIID riid, void **ptr)
-	{
-		if (riid == IID_IUnknown) {
-			*ptr = (IUnknown *)this;
-		} else if (riid == __uuidof(IMMNotificationClient)) {
-			*ptr = (IMMNotificationClient *)this;
-		} else {
-			*ptr = nullptr;
-			return E_NOINTERFACE;
-		}
-
-		os_atomic_inc_long(&refs);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDefaultDeviceChanged(EDataFlow flow, ERole role,
-					    LPCWSTR id)
-	{
-		source->SetDefaultDevice(flow, role, id);
-		return S_OK;
-	}
-
-	STDMETHODIMP OnDeviceAdded(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceRemoved(LPCWSTR) { return S_OK; }
-	STDMETHODIMP OnDeviceStateChanged(LPCWSTR, DWORD) { return S_OK; }
-	STDMETHODIMP OnPropertyValueChanged(LPCWSTR, const PROPERTYKEY)
-	{
-		return S_OK;
-	}
-};
-
 WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 			   SourceType type)
 	: source(source_),
@@ -414,19 +364,11 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 	if (!reconnectSignal.Valid())
 		throw "Could not create reconnect signal";
 
-	notify = new WASAPINotify(this);
-	if (!notify)
-		throw "Could not create WASAPINotify";
-
 	HRESULT hr = CoCreateInstance(__uuidof(MMDeviceEnumerator), nullptr,
 				      CLSCTX_ALL,
 				      IID_PPV_ARGS(enumerator.Assign()));
 	if (FAILED(hr))
 		throw HRError("Failed to create enumerator", hr);
-
-	hr = enumerator->RegisterEndpointNotificationCallback(notify);
-	if (FAILED(hr))
-		throw HRError("Failed to register endpoint callback", hr);
 
 	/* OBS will already load DLL on startup if it exists */
 	const HMODULE rtwq_module = GetModuleHandle(L"RTWorkQ.dll");
@@ -511,10 +453,17 @@ WASAPISource::WASAPISource(obs_data_t *settings, obs_source_t *source_,
 					     WASAPISource::CaptureThread, this,
 					     0, nullptr);
 		if (!captureThread.Valid()) {
-			enumerator->UnregisterEndpointNotificationCallback(
-				notify);
 			throw "Failed to create capture thread";
 		}
+	}
+
+	auto notify = GetNotify();
+	if (notify) {
+		notify->AddDefaultDeviceChangedCallback(
+			this,
+			std::bind(&WASAPISource::SetDefaultDevice, this,
+				  std::placeholders::_1, std::placeholders::_2,
+				  std::placeholders::_3));
 	}
 
 	Start();
@@ -561,7 +510,11 @@ void WASAPISource::Stop()
 
 WASAPISource::~WASAPISource()
 {
-	enumerator->UnregisterEndpointNotificationCallback(notify);
+	auto notify = GetNotify();
+	if (notify) {
+		notify->RemoveDefaultDeviceChangedCallback(this);
+	}
+
 	Stop();
 }
 
