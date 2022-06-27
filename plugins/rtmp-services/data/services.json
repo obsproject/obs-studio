@@ -2377,6 +2377,22 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },
+        {
+            "name": "GamePlank",
+            "more_info_link": "https://gameplank.tv/help",
+            "stream_key_link": "https://gameplank.tv",
+            "servers": [
+                {
+                    "name": "Primary",
+                    "url": "rtmp://gameplank.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 3000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
