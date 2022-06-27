@@ -665,6 +665,11 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	     spa_debug_type_find_name(spa_type_video_format,
 				      obs_pw->format.info.raw.format));
 
+	if (has_modifier) {
+		blog(LOG_INFO, "[pipewire]     Modifier: %" PRIu64,
+		     obs_pw->format.info.raw.modifier);
+	}
+
 	blog(LOG_INFO, "[pipewire]     Size: %dx%d",
 	     obs_pw->format.info.raw.size.width,
 	     obs_pw->format.info.raw.size.height);
