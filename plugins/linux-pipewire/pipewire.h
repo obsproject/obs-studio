@@ -22,9 +22,14 @@
 
 #include <obs-module.h>
 
+#include <pipewire/keys.h>
+#include <pipewire/properties.h>
+
 typedef struct _obs_pipewire_data obs_pipewire_data;
 
-obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node);
+obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
+				       const char *stream_name,
+				       struct pw_properties *stream_properties);
 void obs_pipewire_destroy(obs_pipewire_data *obs_pw);
 
 void obs_pipewire_show(obs_pipewire_data *obs_pw);
