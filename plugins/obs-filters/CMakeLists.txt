@@ -28,7 +28,8 @@ else()
   target_compile_definitions(obs-filters PRIVATE LIBSPEEXDSP_ENABLED)
 
   if(OS_WINDOWS)
-    target_link_options(obs-filters PRIVATE "LINKER:/LTCG")
+    target_link_options(obs-filters PRIVATE "LINKER:/LTCG"
+                        "LINKER:/IGNORE:4099")
   endif()
 endif()
 
