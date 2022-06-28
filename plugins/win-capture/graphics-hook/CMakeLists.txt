@@ -30,6 +30,7 @@ target_include_directories(graphics-hook PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 target_link_libraries(graphics-hook PRIVATE OBS::ipc-util Detours::Detours
                                             dxguid)
+target_link_options(graphics-hook PRIVATE "LINKER:/IGNORE:4099")
 
 if(MSVC)
   target_compile_options(graphics-hook PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")

@@ -60,6 +60,7 @@ elseif(OS_WINDOWS)
 
   target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib
                                     netapi32.lib Shlwapi.lib)
+  target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
 endif()
 
 set_target_properties(aja PROPERTIES FOLDER "plugins/aja" PREFIX "")
