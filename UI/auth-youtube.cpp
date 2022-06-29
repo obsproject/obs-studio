@@ -336,12 +336,12 @@ void YoutubeChatDock::SetWidget(QCefWidget *widget_)
 	sendButton->setVisible(false);
 
 	chatLayout = new QHBoxLayout();
-	chatLayout->setMargin(0);
+	chatLayout->setContentsMargins(0, 0, 0, 0);
 	chatLayout->addWidget(lineEdit, 1);
 	chatLayout->addWidget(sendButton);
 
 	QVBoxLayout *layout = new QVBoxLayout();
-	layout->setMargin(0);
+	layout->setContentsMargins(0, 0, 0, 0);
 	layout->addWidget(widget_, 1);
 	layout->addLayout(chatLayout);
 
