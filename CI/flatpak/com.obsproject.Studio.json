@@ -201,6 +201,9 @@
       "name": "svt-av1",
       "buildsystem": "cmake-ninja",
       "builddir": true,
+      "only-arches": [
+        "x86_64"
+      ],
       "config-opts": [
         "-DCMAKE_BUILD_TYPE=Release",
         "-DBUILD_SHARED_LIBS=ON",
@@ -264,6 +267,15 @@
           "type": "shell",
           "commands": [
             "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-6.0-OBS.patch"
+          ]
+        },
+        {
+          "type": "shell",
+          "skip-arches": [
+            "x86_64"
+          ],
+          "commands": [
+            "sed -i 's/enabled libsvtav1         &&/disable libsvtav1 #/g' configure # Disable SVT-AV1 on non-x86_64"
           ]
         }
       ]
@@ -486,8 +498,28 @@
       "sources": [
         {
           "type": "archive",
-          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux64.tar.bz2",
-          "sha256": "ac4e2a8ebf20700e4e36353e314f876623633dd5b474778a2548bb66bdbea11d"
+          "only-arches": [
+            "x86_64"
+          ],
+          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux_x86_64.tar.xz",
+          "sha256": "bf4aa9388bab7e94fa945cc3bba16b6da63b6a30f9c0342d42235468b39d84bf"
+        },
+        {
+          "type": "archive",
+          "only-arches": [
+            "aarch64"
+          ],
+          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux_aarch64.tar.xz",
+          "sha256": "68d915c9ba2639cba762a54cd3430fce2527aa6355d831d3cfcb6157664206b0"
+        },
+        {
+          "type": "shell",
+          "only-arches": [
+            "aarch64"
+          ],
+          "commands": [
+            "sed -i 's/set(PROJECT_ARCH \"x86_64\")/set(PROJECT_ARCH \"aarch64\")/g' cmake/cef_variables.cmake # Fix PROJECT_ARCH on aarch64"
+          ]
         }
       ]
     },
