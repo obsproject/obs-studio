@@ -5157,6 +5157,9 @@
                      </property>
                      <item>
                       <widget class="QSpinBox" name="sdrWhiteLevel">
+                       <property name="suffix">
+                        <string notr="true"> nits</string>
+                       </property>
                        <property name="minimum">
                         <number>80</number>
                        </property>
@@ -5183,6 +5186,9 @@
                      </item>
                      <item>
                       <widget class="QSpinBox" name="hdrNominalPeakLevel">
+                       <property name="suffix">
+                        <string notr="true"> nits</string>
+                       </property>
                        <property name="minimum">
                         <number>400</number>
                        </property>
