@@ -176,8 +176,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 	if (showConfig) {
 		config = new QPushButton(this);
-		config->setProperty("themeID", "configIconSmall");
-		config->setFlat(true);
+		config->setProperty("themeID", "menuIconSmall");
 		config->setSizePolicy(QSizePolicy::Maximum,
 				      QSizePolicy::Maximum);
 		config->setMaximumSize(22, 22);
