@@ -4832,10 +4832,10 @@
               <string>Clear</string>
              </property>
              <property name="flat">
-              <bool>true</bool>
+              <bool>false</bool>
              </property>
              <property name="themeID" stdset="0">
-              <string>trashIcon</string>
+              <string>revertIcon</string>
              </property>
              <property name="fixedSize" stdset="0">
               <size>

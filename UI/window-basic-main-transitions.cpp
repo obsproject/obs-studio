@@ -756,23 +756,24 @@ void OBSBasic::CreateProgramOptions()
 	layout->setSpacing(4);
 
 	QPushButton *configTransitions = new QPushButton();
-	configTransitions->setMaximumSize(22, 22);
-	configTransitions->setProperty("themeID", "configIconSmall");
-	configTransitions->setFlat(true);
+	configTransitions->setProperty("themeID", "menuIconSmall");
 
 	QHBoxLayout *mainButtonLayout = new QHBoxLayout();
 	mainButtonLayout->setSpacing(2);
 
 	transitionButton = new QPushButton(QTStr("Transition"));
+	transitionButton->setSizePolicy(QSizePolicy::Expanding,
+					QSizePolicy::Preferred);
+
 	QHBoxLayout *quickTransitions = new QHBoxLayout();
 	quickTransitions->setSpacing(2);
 
 	QPushButton *addQuickTransition = new QPushButton();
-	addQuickTransition->setMaximumSize(22, 22);
 	addQuickTransition->setProperty("themeID", "addIconSmall");
-	addQuickTransition->setFlat(true);
 
 	QLabel *quickTransitionsLabel = new QLabel(QTStr("QuickTransitions"));
+	quickTransitionsLabel->setSizePolicy(QSizePolicy::Expanding,
+					     QSizePolicy::Preferred);
 
 	quickTransitions->addWidget(quickTransitionsLabel);
 	quickTransitions->addWidget(addQuickTransition);
