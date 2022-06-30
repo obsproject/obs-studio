@@ -252,7 +252,7 @@ gl_egl_create_texture_from_pixmap(EGLDisplay egl_display, uint32_t width,
 					EGL_NATIVE_PIXMAP_KHR, pixmap,
 					pixmap_attrs);
 	if (image == EGL_NO_IMAGE) {
-		blog(LOG_ERROR, "Cannot create EGLImage: %s",
+		blog(LOG_DEBUG, "Cannot create EGLImage: %s",
 		     gl_egl_error_to_string(eglGetError()));
 		return NULL;
 	}
