@@ -792,15 +792,9 @@ static const struct pw_core_events core_events = {
 
 /* obs_source_info methods */
 
-obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
-				       const char *stream_name,
-				       struct pw_properties *stream_properties)
+obs_pipewire_data *obs_pipewire_create(int pipewire_fd)
 {
-	struct spa_pod_builder pod_builder;
-	const struct spa_pod **params = NULL;
 	obs_pipewire_data *obs_pw;
-	uint32_t n_params;
-	uint8_t params_buffer[2048];
 
 	obs_pw = bzalloc(sizeof(obs_pipewire_data));
 	obs_pw->pipewire_fd = pipewire_fd;
@@ -833,16 +827,31 @@ obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
 	pw_core_add_listener(obs_pw->core, &obs_pw->core_listener, &core_events,
 			     obs_pw);
 
+	// Dispatch to receive the info core event
+	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
+						   obs_pw->server_version_sync);
+	pw_thread_loop_wait(obs_pw->thread_loop);
+	pw_thread_loop_unlock(obs_pw->thread_loop);
+
+	return obs_pw;
+}
+
+void obs_pipewire_connect_stream(obs_pipewire_data *obs_pw, int pipewire_node,
+				 const char *stream_name,
+				 struct pw_properties *stream_properties)
+{
+	struct spa_pod_builder pod_builder;
+	const struct spa_pod **params = NULL;
+	uint32_t n_params;
+	uint8_t params_buffer[2048];
+
+	pw_thread_loop_lock(obs_pw->thread_loop);
+
 	/* Signal to renegotiate */
 	obs_pw->reneg =
 		pw_loop_add_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
 				  renegotiate_format, obs_pw);
 	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw->reneg);
-
-	// Dispatch to receive the info core event
-	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
-						   obs_pw->server_version_sync);
-	pw_thread_loop_wait(obs_pw->thread_loop);
 
 	/* Stream */
 	obs_pw->stream =
@@ -859,22 +868,18 @@ obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
 
 	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
 		pw_thread_loop_unlock(obs_pw->thread_loop);
-		teardown_pipewire(obs_pw);
-		bfree(obs_pw);
-		return NULL;
+		return;
 	}
 
-	pw_stream_connect(
-		obs_pw->stream, PW_DIRECTION_INPUT, pipewire_node,
-		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
-		n_params);
+	pw_stream_connect(obs_pw->stream, PW_DIRECTION_INPUT, pipewire_node,
+			  PW_STREAM_FLAG_AUTOCONNECT |
+				  PW_STREAM_FLAG_MAP_BUFFERS,
+			  params, n_params);
 
 	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
-
-	return obs_pw;
 }
 
 void obs_pipewire_destroy(obs_pipewire_data *obs_pw)
