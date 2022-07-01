@@ -32,8 +32,8 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
 obs_pipewire_stream *
-obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
-			    const char *stream_name,
+obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
+			    int pipewire_node, const char *stream_name,
 			    struct pw_properties *stream_properties);
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw);
