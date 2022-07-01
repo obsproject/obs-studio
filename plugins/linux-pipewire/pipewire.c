@@ -836,6 +836,19 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd)
 	return obs_pw;
 }
 
+void obs_pipewire_destroy(obs_pipewire *obs_pw)
+{
+	if (!obs_pw)
+		return;
+
+	teardown_pipewire(obs_pw);
+	destroy_session(obs_pw);
+
+	clear_format_info(obs_pw);
+
+	bfree(obs_pw);
+}
+
 void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 				 const char *stream_name,
 				 struct pw_properties *stream_properties)
@@ -880,19 +893,6 @@ void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
-}
-
-void obs_pipewire_destroy(obs_pipewire *obs_pw)
-{
-	if (!obs_pw)
-		return;
-
-	teardown_pipewire(obs_pw);
-	destroy_session(obs_pw);
-
-	clear_format_info(obs_pw);
-
-	bfree(obs_pw);
 }
 
 void obs_pipewire_show(obs_pipewire *obs_pw)
