@@ -49,7 +49,7 @@ struct screencast_portal_capture {
 	uint32_t pipewire_node;
 	bool cursor_visible;
 
-	obs_pipewire_data *obs_pw;
+	obs_pipewire *obs_pw;
 };
 
 /* ------------------------------------------------- */
