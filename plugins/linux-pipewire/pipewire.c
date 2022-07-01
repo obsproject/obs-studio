@@ -868,7 +868,7 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw)
 
 /* obs_source_info methods */
 
-void *obs_pipewire_create(int pipewire_fd, int pipewire_node)
+obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node)
 {
 	obs_pipewire_data *obs_pw = bzalloc(sizeof(obs_pipewire_data));
 
