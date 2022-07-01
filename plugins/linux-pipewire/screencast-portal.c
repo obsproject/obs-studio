@@ -880,3 +880,8 @@ void screencast_portal_load(void)
 	if (window_capture_available)
 		obs_register_source(&screencast_portal_window_capture_info);
 }
+
+void screencast_portal_unload(void)
+{
+	g_clear_object(&screencast_proxy);
+}

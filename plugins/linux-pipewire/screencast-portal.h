@@ -21,3 +21,4 @@
 #pragma once
 
 void screencast_portal_load(void);
+void screencast_portal_unload(void);
