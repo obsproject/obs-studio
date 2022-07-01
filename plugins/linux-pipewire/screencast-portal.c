@@ -252,7 +252,8 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 		return;
 
 	capture->obs_pw_stream = obs_pipewire_connect_stream(
-		capture->obs_pw, capture->pipewire_node, "OBS Studio",
+		capture->obs_pw, capture->source, capture->pipewire_node,
+		"OBS Studio",
 		pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
 				  PW_KEY_MEDIA_CATEGORY, "Capture",
 				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
