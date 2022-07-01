@@ -65,7 +65,6 @@ struct _obs_pipewire {
 	struct obs_pw_version server_version;
 
 	GPtrArray *streams;
-	DARRAY(struct format_info) format_info;
 };
 
 struct _obs_pipewire_stream {
@@ -97,6 +96,8 @@ struct _obs_pipewire_stream {
 
 	struct obs_video_info video_info;
 	bool negotiated;
+
+	DARRAY(struct format_info) format_info;
 };
 
 /* auxiliary methods */
@@ -293,8 +294,8 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream,
 	uint32_t params_count = 0;
 
 	const struct spa_pod **params;
-	params =
-		bzalloc(2 * obs_pw->format_info.num * sizeof(struct spa_pod *));
+	params = bzalloc(2 * obs_pw_stream->format_info.num *
+			 sizeof(struct spa_pod *));
 
 	if (!params) {
 		blog(LOG_ERROR,
@@ -305,22 +306,23 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream,
 	if (!check_pw_version(&obs_pw->server_version, 0, 3, 33))
 		goto build_shm;
 
-	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
-		if (obs_pw->format_info.array[i].modifiers.num == 0) {
+	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
+		if (obs_pw_stream->format_info.array[i].modifiers.num == 0) {
 			continue;
 		}
 		params[params_count++] = build_format(
 			pod_builder, &obs_pw_stream->video_info,
-			obs_pw->format_info.array[i].spa_format,
-			obs_pw->format_info.array[i].modifiers.array,
-			obs_pw->format_info.array[i].modifiers.num);
+			obs_pw_stream->format_info.array[i].spa_format,
+			obs_pw_stream->format_info.array[i].modifiers.array,
+			obs_pw_stream->format_info.array[i].modifiers.num);
 	}
 
 build_shm:
-	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
+	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
 		params[params_count++] = build_format(
 			pod_builder, &obs_pw_stream->video_info,
-			obs_pw->format_info.array[i].spa_format, NULL, 0);
+			obs_pw_stream->format_info.array[i].spa_format, NULL,
+			0);
 	}
 	*param_list = params;
 	*n_params = params_count;
@@ -338,9 +340,9 @@ static bool drm_format_available(uint32_t drm_format, uint32_t *drm_formats,
 	return false;
 }
 
-static void init_format_info(obs_pipewire *obs_pw)
+static void init_format_info(obs_pipewire_stream *obs_pw_stream)
 {
-	da_init(obs_pw->format_info);
+	da_init(obs_pw_stream->format_info);
 
 	obs_enter_graphics();
 
@@ -358,7 +360,7 @@ static void init_format_info(obs_pipewire *obs_pw)
 					  drm_formats, n_drm_formats))
 			continue;
 
-		info = da_push_back_new(obs_pw->format_info);
+		info = da_push_back_new(obs_pw_stream->format_info);
 		da_init(info->modifiers);
 		info->spa_format = supported_formats[i].spa_format;
 		info->drm_format = supported_formats[i].drm_format;
@@ -387,34 +389,42 @@ static void init_format_info(obs_pipewire *obs_pw)
 	bfree(drm_formats);
 }
 
-static void clear_format_info(obs_pipewire *obs_pw)
+static void clear_format_info(obs_pipewire_stream *obs_pw_stream)
 {
-	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
-		da_free(obs_pw->format_info.array[i].modifiers);
+	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
+		da_free(obs_pw_stream->format_info.array[i].modifiers);
 	}
-	da_free(obs_pw->format_info);
+	da_free(obs_pw_stream->format_info);
 }
 
-static void remove_modifier_from_format(obs_pipewire *obs_pw,
+static void remove_modifier_from_format(obs_pipewire_stream *obs_pw_stream,
 					uint32_t spa_format, uint64_t modifier)
 {
-	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
-		if (obs_pw->format_info.array[i].spa_format != spa_format)
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
+
+	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
+		if (obs_pw_stream->format_info.array[i].spa_format !=
+		    spa_format)
 			continue;
 
 		if (!check_pw_version(&obs_pw->server_version, 0, 3, 40)) {
 			da_erase_range(
-				obs_pw->format_info.array[i].modifiers, 0,
-				obs_pw->format_info.array[i].modifiers.num - 1);
+				obs_pw_stream->format_info.array[i].modifiers,
+				0,
+				obs_pw_stream->format_info.array[i]
+						.modifiers.num -
+					1);
 			continue;
 		}
 
-		int idx = da_find(obs_pw->format_info.array[i].modifiers,
+		int idx = da_find(obs_pw_stream->format_info.array[i].modifiers,
 				  &modifier, 0);
 		while (idx != -1) {
-			da_erase(obs_pw->format_info.array[i].modifiers, idx);
-			idx = da_find(obs_pw->format_info.array[i].modifiers,
-				      &modifier, 0);
+			da_erase(obs_pw_stream->format_info.array[i].modifiers,
+				 idx);
+			idx = da_find(
+				obs_pw_stream->format_info.array[i].modifiers,
+				&modifier, 0);
 		}
 	}
 }
@@ -529,7 +539,8 @@ static void on_process_cb(void *user_data)
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(
-				obs_pw, obs_pw_stream->format.info.raw.format,
+				obs_pw_stream,
+				obs_pw_stream->format.info.raw.format,
 				obs_pw_stream->format.info.raw.modifier);
 			pw_loop_signal_event(
 				pw_thread_loop_get_loop(obs_pw->thread_loop),
@@ -769,9 +780,6 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd)
 
 	obs_pw = bzalloc(sizeof(obs_pipewire));
 	obs_pw->pipewire_fd = pipewire_fd;
-
-	init_format_info(obs_pw);
-
 	obs_pw->thread_loop = pw_thread_loop_new("PipeWire thread loop", NULL);
 	obs_pw->context = pw_context_new(
 		pw_thread_loop_get_loop(obs_pw->thread_loop), NULL, 0);
@@ -820,10 +828,7 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 		obs_pipewire_stream_destroy(obs_pw_stream);
 	}
 	g_clear_pointer(&obs_pw->streams, g_ptr_array_unref);
-
 	teardown_pipewire(obs_pw);
-	clear_format_info(obs_pw);
-
 	bfree(obs_pw);
 }
 
@@ -841,6 +846,8 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 	obs_pw_stream = bzalloc(sizeof(obs_pipewire_stream));
 	obs_pw_stream->obs_pw = obs_pw;
 	obs_pw_stream->source = source;
+
+	init_format_info(obs_pw_stream);
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
@@ -982,5 +989,6 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 		pw_stream_disconnect(obs_pw_stream->stream);
 	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
 
+	clear_format_info(obs_pw_stream);
 	bfree(obs_pw_stream);
 }
