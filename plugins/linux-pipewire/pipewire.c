@@ -92,6 +92,7 @@ struct _obs_pipewire {
 
 struct _obs_pipewire_stream {
 	obs_pipewire *obs_pw;
+	obs_source_t *source;
 
 	gs_texture_t *texture;
 
@@ -1023,8 +1024,8 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 }
 
 obs_pipewire_stream *
-obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
-			    const char *stream_name,
+obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
+			    int pipewire_node, const char *stream_name,
 			    struct pw_properties *stream_properties)
 {
 	struct spa_pod_builder pod_builder;
@@ -1035,6 +1036,7 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 
 	obs_pw_stream = bzalloc(sizeof(obs_pipewire_stream));
 	obs_pw_stream->obs_pw = obs_pw;
+	obs_pw_stream->source = source;
 
 	init_format_info(obs_pw_stream);
 
