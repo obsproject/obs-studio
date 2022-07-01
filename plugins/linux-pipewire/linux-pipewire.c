@@ -43,6 +43,8 @@ bool obs_module_load(void)
 
 void obs_module_unload(void)
 {
+	screencast_portal_unload();
+
 #if PW_CHECK_VERSION(0, 3, 49)
 	pw_deinit();
 #endif
