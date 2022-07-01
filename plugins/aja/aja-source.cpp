@@ -293,11 +293,28 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 				audioOverrun = true;
 			}
 
-			if (!audioOverrun) {
+			if (!audioOverrun)
 				card->DMAReadAudio(audioSystem,
 						   ajaSource->mAudioBuffer,
 						   offsets.lastAddress,
 						   offsets.bytesRead);
+
+			if (!audioOverrun &&
+			    offsets.currentAddress - offsets.readOffset >
+				    ajaSource->mAudioBuffer.GetByteCount() -
+					    offsets.bytesRead) {
+				blog(LOG_DEBUG,
+				     "AJASource::CaptureThread: Audio overrun (2)! Buffer Size: %d, Bytes Captured: %d",
+				     ajaSource->mAudioBuffer.GetByteCount() -
+					     offsets.bytesRead,
+				     offsets.currentAddress -
+					     offsets.readOffset);
+				ResetAudioBufferOffsets(card, audioSystem,
+							offsets);
+				audioOverrun = true;
+			}
+
+			if (!audioOverrun) {
 				card->DMAReadAudio(
 					audioSystem,
 					reinterpret_cast<ULWord *>(
@@ -311,16 +328,6 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 						     offsets.readOffset;
 			}
 
-			if (offsets.bytesRead >
-			    ajaSource->mAudioBuffer.GetByteCount()) {
-				blog(LOG_DEBUG,
-				     "AJASource::CaptureThread: Audio overrun (2)! Buffer Size: %d, Bytes Captured: %d",
-				     ajaSource->mAudioBuffer.GetByteCount(),
-				     offsets.bytesRead);
-				ResetAudioBufferOffsets(card, audioSystem,
-							offsets);
-				audioOverrun = true;
-			}
 		} else {
 			offsets.bytesRead =
 				offsets.currentAddress - offsets.lastAddress;
