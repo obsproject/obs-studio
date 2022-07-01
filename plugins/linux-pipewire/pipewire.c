@@ -53,7 +53,6 @@ struct format_info {
 };
 
 struct _obs_pipewire_data {
-	uint32_t pipewire_node;
 	int pipewire_fd;
 
 	gs_texture_t *texture;
@@ -805,7 +804,6 @@ obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
 
 	obs_pw = bzalloc(sizeof(obs_pipewire_data));
 	obs_pw->pipewire_fd = pipewire_fd;
-	obs_pw->pipewire_node = pipewire_node;
 
 	init_format_info(obs_pw);
 
@@ -867,7 +865,7 @@ obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
 	}
 
 	pw_stream_connect(
-		obs_pw->stream, PW_DIRECTION_INPUT, obs_pw->pipewire_node,
+		obs_pw->stream, PW_DIRECTION_INPUT, pipewire_node,
 		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
 		n_params);
 
