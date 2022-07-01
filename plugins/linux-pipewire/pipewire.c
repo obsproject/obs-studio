@@ -78,8 +78,6 @@ struct format_info {
 struct _obs_pipewire {
 	int pipewire_fd;
 
-	gs_texture_t *texture;
-
 	struct pw_thread_loop *thread_loop;
 	struct pw_context *context;
 
@@ -88,6 +86,14 @@ struct _obs_pipewire {
 	int server_version_sync;
 
 	struct obs_pw_version server_version;
+
+	DARRAY(struct format_info) format_info;
+};
+
+struct _obs_pipewire_stream {
+	obs_pipewire *obs_pw;
+
+	gs_texture_t *texture;
 
 	struct pw_stream *stream;
 	struct spa_hook stream_listener;
@@ -114,8 +120,6 @@ struct _obs_pipewire {
 
 	struct obs_video_info video_info;
 	bool negotiated;
-
-	DARRAY(struct format_info) format_info;
 };
 
 /* auxiliary methods */
@@ -156,9 +160,6 @@ static void teardown_pipewire(obs_pipewire *obs_pw)
 		pw_thread_loop_stop(obs_pw->thread_loop);
 	}
 
-	if (obs_pw->stream)
-		pw_stream_disconnect(obs_pw->stream);
-	g_clear_pointer(&obs_pw->stream, pw_stream_destroy);
 	g_clear_pointer(&obs_pw->context, pw_context_destroy);
 	g_clear_pointer(&obs_pw->thread_loop, pw_thread_loop_destroy);
 
@@ -166,31 +167,23 @@ static void teardown_pipewire(obs_pipewire *obs_pw)
 		close(obs_pw->pipewire_fd);
 		obs_pw->pipewire_fd = 0;
 	}
-
-	obs_pw->negotiated = false;
 }
 
-static void destroy_session(obs_pipewire *obs_pw)
+static inline bool has_effective_crop(obs_pipewire_stream *obs_pw_stream)
 {
-	obs_enter_graphics();
-	g_clear_pointer(&obs_pw->cursor.texture, gs_texture_destroy);
-	g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
-	obs_leave_graphics();
+	return obs_pw_stream->crop.valid &&
+	       (obs_pw_stream->crop.x != 0 || obs_pw_stream->crop.y != 0 ||
+		obs_pw_stream->crop.width <
+			obs_pw_stream->format.info.raw.size.width ||
+		obs_pw_stream->crop.height <
+			obs_pw_stream->format.info.raw.size.height);
 }
 
-static inline bool has_effective_crop(obs_pipewire *obs_pw)
-{
-	return obs_pw->crop.valid &&
-	       (obs_pw->crop.x != 0 || obs_pw->crop.y != 0 ||
-		obs_pw->crop.width < obs_pw->format.info.raw.size.width ||
-		obs_pw->crop.height < obs_pw->format.info.raw.size.height);
-}
-
-static int get_buffer_flip(obs_pipewire *obs_pw)
+static int get_buffer_flip(obs_pipewire_stream *obs_pw_stream)
 {
 	int flip = 0;
 
-	switch (obs_pw->transform) {
+	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_Flipped180:
 		flip = GS_FLIP_U;
@@ -209,16 +202,16 @@ static int get_buffer_flip(obs_pipewire *obs_pw)
 	return flip;
 }
 
-static bool push_rotation(obs_pipewire *obs_pw)
+static bool push_rotation(obs_pipewire_stream *obs_pw_stream)
 {
 	double offset_x = 0;
 	double offset_y = 0;
 	double rotation = 0;
 	bool has_crop;
 
-	has_crop = has_effective_crop(obs_pw);
+	has_crop = has_effective_crop(obs_pw_stream);
 
-	switch (obs_pw->transform) {
+	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 		rotation = 0;
@@ -227,22 +220,24 @@ static bool push_rotation(obs_pipewire *obs_pw)
 	case SPA_META_TRANSFORMATION_90:
 		rotation = 90;
 		offset_x = 0;
-		offset_y = has_crop ? obs_pw->crop.height
-				    : obs_pw->format.info.raw.size.height;
+		offset_y = has_crop
+				   ? obs_pw_stream->crop.height
+				   : obs_pw_stream->format.info.raw.size.height;
 		break;
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
 		rotation = 180;
-		offset_x = has_crop ? obs_pw->crop.width
-				    : obs_pw->format.info.raw.size.width;
-		offset_y = has_crop ? obs_pw->crop.height
-				    : obs_pw->format.info.raw.size.height;
+		offset_x = has_crop ? obs_pw_stream->crop.width
+				    : obs_pw_stream->format.info.raw.size.width;
+		offset_y = has_crop
+				   ? obs_pw_stream->crop.height
+				   : obs_pw_stream->format.info.raw.size.height;
 		break;
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
 		rotation = 270;
-		offset_x = has_crop ? obs_pw->crop.width
-				    : obs_pw->format.info.raw.size.width;
+		offset_x = has_crop ? obs_pw_stream->crop.width
+				    : obs_pw_stream->format.info.raw.size.width;
 		offset_y = 0;
 		break;
 	}
@@ -402,11 +397,12 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 	return spa_pod_builder_pop(b, &format_frame);
 }
 
-static bool build_format_params(obs_pipewire *obs_pw,
+static bool build_format_params(obs_pipewire_stream *obs_pw_stream,
 				struct spa_pod_builder *pod_builder,
 				const struct spa_pod ***param_list,
 				uint32_t *n_params)
 {
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	uint32_t params_count = 0;
 
 	const struct spa_pod **params;
@@ -427,7 +423,7 @@ static bool build_format_params(obs_pipewire *obs_pw,
 			continue;
 		}
 		params[params_count++] = build_format(
-			pod_builder, &obs_pw->video_info,
+			pod_builder, &obs_pw_stream->video_info,
 			obs_pw->format_info.array[i].spa_format,
 			obs_pw->format_info.array[i].modifiers.array,
 			obs_pw->format_info.array[i].modifiers.num);
@@ -436,7 +432,7 @@ static bool build_format_params(obs_pipewire *obs_pw,
 build_shm:
 	for (size_t i = 0; i < obs_pw->format_info.num; i++) {
 		params[params_count++] = build_format(
-			pod_builder, &obs_pw->video_info,
+			pod_builder, &obs_pw_stream->video_info,
 			obs_pw->format_info.array[i].spa_format, NULL, 0);
 	}
 	*param_list = params;
@@ -537,7 +533,8 @@ static void remove_modifier_from_format(obs_pipewire *obs_pw,
 static void renegotiate_format(void *data, uint64_t expirations)
 {
 	UNUSED_PARAMETER(expirations);
-	obs_pipewire *obs_pw = (obs_pipewire *)data;
+	obs_pipewire_stream *obs_pw_stream = (obs_pipewire_stream *)data;
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	const struct spa_pod **params = NULL;
 
 	blog(LOG_INFO, "[pipewire] Renegotiating stream");
@@ -548,13 +545,14 @@ static void renegotiate_format(void *data, uint64_t expirations)
 	struct spa_pod_builder pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
 	uint32_t n_params;
-	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
+	if (!build_format_params(obs_pw_stream, &pod_builder, &params,
+				 &n_params)) {
 		teardown_pipewire(obs_pw);
 		pw_thread_loop_unlock(obs_pw->thread_loop);
 		return;
 	}
 
-	pw_stream_update_params(obs_pw->stream, params, n_params);
+	pw_stream_update_params(obs_pw_stream->stream, params, n_params);
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
 }
@@ -563,7 +561,8 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 static void on_process_cb(void *user_data)
 {
-	obs_pipewire *obs_pw = user_data;
+	obs_pipewire_stream *obs_pw_stream = user_data;
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_meta_cursor *cursor;
 	uint32_t drm_format;
 	struct spa_meta_header *header;
@@ -578,11 +577,11 @@ static void on_process_cb(void *user_data)
 	b = NULL;
 	while (true) {
 		struct pw_buffer *aux =
-			pw_stream_dequeue_buffer(obs_pw->stream);
+			pw_stream_dequeue_buffer(obs_pw_stream->stream);
 		if (!aux)
 			break;
 		if (b)
-			pw_stream_queue_buffer(obs_pw->stream, b);
+			pw_stream_queue_buffer(obs_pw_stream->stream, b);
 		b = aux;
 	}
 
@@ -596,7 +595,7 @@ static void on_process_cb(void *user_data)
 					   sizeof(*header));
 	if (header && (header->flags & SPA_META_HEADER_FLAG_CORRUPTED) > 0) {
 		blog(LOG_ERROR, "[pipewire] buffer is corrupt");
-		pw_stream_queue_buffer(obs_pw->stream, b);
+		pw_stream_queue_buffer(obs_pw_stream->stream, b);
 		return;
 	}
 
@@ -623,16 +622,16 @@ static void on_process_cb(void *user_data)
 		     "[pipewire] DMA-BUF info: fd:%ld, stride:%d, offset:%u, size:%dx%d",
 		     buffer->datas[0].fd, buffer->datas[0].chunk->stride,
 		     buffer->datas[0].chunk->offset,
-		     obs_pw->format.info.raw.size.width,
-		     obs_pw->format.info.raw.size.height);
+		     obs_pw_stream->format.info.raw.size.width,
+		     obs_pw_stream->format.info.raw.size.height);
 #endif
 
 		if (!lookup_format_info_from_spa_format(
-			    obs_pw->format.info.raw.format, &drm_format, NULL,
-			    NULL)) {
+			    obs_pw_stream->format.info.raw.format, &drm_format,
+			    NULL, NULL)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
-			     obs_pw->format.info.raw.format);
+			     obs_pw_stream->format.info.raw.format);
 			goto read_metadata;
 		}
 
@@ -640,7 +639,8 @@ static void on_process_cb(void *user_data)
 			fds[plane] = buffer->datas[plane].fd;
 			offsets[plane] = buffer->datas[plane].chunk->offset;
 			strides[plane] = buffer->datas[plane].chunk->stride;
-			modifiers[plane] = obs_pw->format.info.raw.modifier;
+			modifiers[plane] =
+				obs_pw_stream->format.info.raw.modifier;
 			corrupt |= (buffer->datas[plane].chunk->flags &
 				    SPA_CHUNK_FLAG_CORRUPTED) > 0;
 		}
@@ -651,23 +651,23 @@ static void on_process_cb(void *user_data)
 			goto read_metadata;
 		}
 
-		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
+		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 
-		use_modifiers = obs_pw->format.info.raw.modifier !=
+		use_modifiers = obs_pw_stream->format.info.raw.modifier !=
 				DRM_FORMAT_MOD_INVALID;
-		obs_pw->texture = gs_texture_create_from_dmabuf(
-			obs_pw->format.info.raw.size.width,
-			obs_pw->format.info.raw.size.height, drm_format,
+		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
+			obs_pw_stream->format.info.raw.size.width,
+			obs_pw_stream->format.info.raw.size.height, drm_format,
 			GS_BGRX, planes, fds, strides, offsets,
 			use_modifiers ? modifiers : NULL);
 
-		if (obs_pw->texture == NULL) {
+		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(
-				obs_pw, obs_pw->format.info.raw.format,
-				obs_pw->format.info.raw.modifier);
+				obs_pw, obs_pw_stream->format.info.raw.format,
+				obs_pw_stream->format.info.raw.modifier);
 			pw_loop_signal_event(
 				pw_thread_loop_get_loop(obs_pw->thread_loop),
-				obs_pw->reneg);
+				obs_pw_stream->reneg);
 			goto read_metadata;
 		}
 	} else {
@@ -675,11 +675,11 @@ static void on_process_cb(void *user_data)
 		enum gs_color_format gs_format;
 
 		if (!lookup_format_info_from_spa_format(
-			    obs_pw->format.info.raw.format, NULL, &gs_format,
-			    &swap_red_blue)) {
+			    obs_pw_stream->format.info.raw.format, NULL,
+			    &gs_format, &swap_red_blue)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported buffer format: %d",
-			     obs_pw->format.info.raw.format);
+			     obs_pw_stream->format.info.raw.format);
 			goto read_metadata;
 		}
 
@@ -696,15 +696,16 @@ static void on_process_cb(void *user_data)
 			goto read_metadata;
 		}
 
-		g_clear_pointer(&obs_pw->texture, gs_texture_destroy);
-		obs_pw->texture = gs_texture_create(
-			obs_pw->format.info.raw.size.width,
-			obs_pw->format.info.raw.size.height, gs_format, 1,
-			(const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
+		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
+		obs_pw_stream->texture = gs_texture_create(
+			obs_pw_stream->format.info.raw.size.width,
+			obs_pw_stream->format.info.raw.size.height, gs_format,
+			1, (const uint8_t **)&buffer->datas[0].data,
+			GS_DYNAMIC);
 	}
 
 	if (swap_red_blue)
-		swap_texture_red_blue(obs_pw->texture);
+		swap_texture_red_blue(obs_pw_stream->texture);
 
 	/* Video Crop */
 	region = spa_buffer_find_meta_data(buffer, SPA_META_VideoCrop,
@@ -717,30 +718,31 @@ static void on_process_cb(void *user_data)
 		     region->region.size.width, region->region.size.height);
 #endif
 
-		obs_pw->crop.x = region->region.position.x;
-		obs_pw->crop.y = region->region.position.y;
-		obs_pw->crop.width = region->region.size.width;
-		obs_pw->crop.height = region->region.size.height;
-		obs_pw->crop.valid = true;
+		obs_pw_stream->crop.x = region->region.position.x;
+		obs_pw_stream->crop.y = region->region.position.y;
+		obs_pw_stream->crop.width = region->region.size.width;
+		obs_pw_stream->crop.height = region->region.size.height;
+		obs_pw_stream->crop.valid = true;
 	} else {
-		obs_pw->crop.valid = false;
+		obs_pw_stream->crop.valid = false;
 	}
 
 	/* Video Transform */
 	video_transform = spa_buffer_find_meta_data(
 		buffer, SPA_META_VideoTransform, sizeof(*video_transform));
 	if (video_transform)
-		obs_pw->transform = video_transform->transform;
+		obs_pw_stream->transform = video_transform->transform;
 	else
-		obs_pw->transform = SPA_META_TRANSFORMATION_None;
+		obs_pw_stream->transform = SPA_META_TRANSFORMATION_None;
 
 read_metadata:
 
 	/* Cursor */
 	cursor = spa_buffer_find_meta_data(buffer, SPA_META_Cursor,
 					   sizeof(*cursor));
-	obs_pw->cursor.valid = cursor && spa_meta_cursor_is_valid(cursor);
-	if (obs_pw->cursor.visible && obs_pw->cursor.valid) {
+	obs_pw_stream->cursor.valid = cursor &&
+				      spa_meta_cursor_is_valid(cursor);
+	if (obs_pw_stream->cursor.visible && obs_pw_stream->cursor.valid) {
 		struct spa_meta_bitmap *bitmap = NULL;
 		enum gs_color_format gs_format;
 
@@ -749,7 +751,7 @@ read_metadata:
 					    struct spa_meta_bitmap);
 
 		if (bitmap)
-			g_clear_pointer(&obs_pw->cursor.texture,
+			g_clear_pointer(&obs_pw_stream->cursor.texture,
 					gs_texture_destroy);
 
 		if (bitmap && bitmap->size.width > 0 &&
@@ -760,25 +762,27 @@ read_metadata:
 
 			bitmap_data =
 				SPA_MEMBER(bitmap, bitmap->offset, uint8_t);
-			obs_pw->cursor.hotspot_x = cursor->hotspot.x;
-			obs_pw->cursor.hotspot_y = cursor->hotspot.y;
-			obs_pw->cursor.width = bitmap->size.width;
-			obs_pw->cursor.height = bitmap->size.height;
+			obs_pw_stream->cursor.hotspot_x = cursor->hotspot.x;
+			obs_pw_stream->cursor.hotspot_y = cursor->hotspot.y;
+			obs_pw_stream->cursor.width = bitmap->size.width;
+			obs_pw_stream->cursor.height = bitmap->size.height;
 
-			assert(obs_pw->cursor.texture == NULL);
-			obs_pw->cursor.texture = gs_texture_create(
-				obs_pw->cursor.width, obs_pw->cursor.height,
-				gs_format, 1, &bitmap_data, GS_DYNAMIC);
+			assert(obs_pw_stream->cursor.texture == NULL);
+			obs_pw_stream->cursor.texture = gs_texture_create(
+				obs_pw_stream->cursor.width,
+				obs_pw_stream->cursor.height, gs_format, 1,
+				&bitmap_data, GS_DYNAMIC);
 
 			if (swap_red_blue)
-				swap_texture_red_blue(obs_pw->cursor.texture);
+				swap_texture_red_blue(
+					obs_pw_stream->cursor.texture);
 		}
 
-		obs_pw->cursor.x = cursor->position.x;
-		obs_pw->cursor.y = cursor->position.y;
+		obs_pw_stream->cursor.x = cursor->position.x;
+		obs_pw_stream->cursor.y = cursor->position.y;
 	}
 
-	pw_stream_queue_buffer(obs_pw->stream, b);
+	pw_stream_queue_buffer(obs_pw_stream->stream, b);
 
 	obs_leave_graphics();
 }
@@ -786,7 +790,8 @@ read_metadata:
 static void on_param_changed_cb(void *user_data, uint32_t id,
 				const struct spa_pod *param)
 {
-	obs_pipewire *obs_pw = user_data;
+	obs_pipewire_stream *obs_pw_stream = user_data;
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod *params[5];
 	uint32_t n_params = 0;
@@ -797,16 +802,16 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	if (!param || id != SPA_PARAM_Format)
 		return;
 
-	result = spa_format_parse(param, &obs_pw->format.media_type,
-				  &obs_pw->format.media_subtype);
+	result = spa_format_parse(param, &obs_pw_stream->format.media_type,
+				  &obs_pw_stream->format.media_subtype);
 	if (result < 0)
 		return;
 
-	if (obs_pw->format.media_type != SPA_MEDIA_TYPE_video ||
-	    obs_pw->format.media_subtype != SPA_MEDIA_SUBTYPE_raw)
+	if (obs_pw_stream->format.media_type != SPA_MEDIA_TYPE_video ||
+	    obs_pw_stream->format.media_subtype != SPA_MEDIA_SUBTYPE_raw)
 		return;
 
-	spa_format_video_raw_parse(param, &obs_pw->format.info.raw);
+	spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
 
 	buffer_types = 1 << SPA_DATA_MemPtr;
 	bool has_modifier =
@@ -818,22 +823,22 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	blog(LOG_INFO, "[pipewire] Negotiated format:");
 
 	blog(LOG_INFO, "[pipewire]     Format: %d (%s)",
-	     obs_pw->format.info.raw.format,
+	     obs_pw_stream->format.info.raw.format,
 	     spa_debug_type_find_name(spa_type_video_format,
-				      obs_pw->format.info.raw.format));
+				      obs_pw_stream->format.info.raw.format));
 
 	if (has_modifier) {
 		blog(LOG_INFO, "[pipewire]     Modifier: 0x%" PRIx64,
-		     obs_pw->format.info.raw.modifier);
+		     obs_pw_stream->format.info.raw.modifier);
 	}
 
 	blog(LOG_INFO, "[pipewire]     Size: %dx%d",
-	     obs_pw->format.info.raw.size.width,
-	     obs_pw->format.info.raw.size.height);
+	     obs_pw_stream->format.info.raw.size.width,
+	     obs_pw_stream->format.info.raw.size.height);
 
 	blog(LOG_INFO, "[pipewire]     Framerate: %d/%d",
-	     obs_pw->format.info.raw.framerate.num,
-	     obs_pw->format.info.raw.framerate.denom);
+	     obs_pw_stream->format.info.raw.framerate.num,
+	     obs_pw_stream->format.info.raw.framerate.denom);
 
 	/* Video crop */
 	pod_builder =
@@ -876,9 +881,8 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 			SPA_POD_Int(sizeof(struct spa_meta_videotransform)));
 	}
 #endif
-	pw_stream_update_params(obs_pw->stream, params, n_params);
-
-	obs_pw->negotiated = true;
+	pw_stream_update_params(obs_pw_stream->stream, params, n_params);
+	obs_pw_stream->negotiated = true;
 }
 
 static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
@@ -886,10 +890,10 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 {
 	UNUSED_PARAMETER(old);
 
-	obs_pipewire *obs_pw = user_data;
+	obs_pipewire_stream *obs_pw_stream = user_data;
 
 	blog(LOG_INFO, "[pipewire] Stream %p state: \"%s\" (error: %s)",
-	     obs_pw->stream, pw_stream_state_as_string(state),
+	     obs_pw_stream->stream, pw_stream_state_as_string(state),
 	     error ? error : "none");
 }
 
@@ -985,137 +989,146 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 		return;
 
 	teardown_pipewire(obs_pw);
-	destroy_session(obs_pw);
-
 	clear_format_info(obs_pw);
 
 	bfree(obs_pw);
 }
 
-void obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
-				 const char *stream_name,
-				 struct pw_properties *stream_properties)
+obs_pipewire_stream *
+obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
+			    const char *stream_name,
+			    struct pw_properties *stream_properties)
 {
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
+	obs_pipewire_stream *obs_pw_stream;
 	uint32_t n_params;
 	uint8_t params_buffer[4096];
+
+	obs_pw_stream = bzalloc(sizeof(obs_pipewire_stream));
+	obs_pw_stream->obs_pw = obs_pw;
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
 	/* Signal to renegotiate */
-	obs_pw->reneg =
+	obs_pw_stream->reneg =
 		pw_loop_add_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
 				  renegotiate_format, obs_pw);
-	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw->reneg);
+	blog(LOG_DEBUG, "[pipewire] registered event %p", obs_pw_stream->reneg);
 
 	/* Stream */
-	obs_pw->stream =
+	obs_pw_stream->stream =
 		pw_stream_new(obs_pw->core, stream_name, stream_properties);
-	pw_stream_add_listener(obs_pw->stream, &obs_pw->stream_listener,
-			       &stream_events, obs_pw);
-	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw->stream);
+	pw_stream_add_listener(obs_pw_stream->stream,
+			       &obs_pw_stream->stream_listener, &stream_events,
+			       obs_pw_stream);
+	blog(LOG_INFO, "[pipewire] Created stream %p", obs_pw_stream->stream);
 
 	/* Stream parameters */
 	pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
 
-	obs_get_video_info(&obs_pw->video_info);
+	obs_get_video_info(&obs_pw_stream->video_info);
 
-	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
+	if (!build_format_params(obs_pw_stream, &pod_builder, &params,
+				 &n_params)) {
 		pw_thread_loop_unlock(obs_pw->thread_loop);
-		return;
+		bfree(obs_pw_stream);
+		return NULL;
 	}
 
-	pw_stream_connect(obs_pw->stream, PW_DIRECTION_INPUT, pipewire_node,
-			  PW_STREAM_FLAG_AUTOCONNECT |
-				  PW_STREAM_FLAG_MAP_BUFFERS,
-			  params, n_params);
+	pw_stream_connect(
+		obs_pw_stream->stream, PW_DIRECTION_INPUT, pipewire_node,
+		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
+		n_params);
 
-	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw->stream);
+	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw_stream->stream);
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
+
+	return obs_pw_stream;
 }
 
-void obs_pipewire_show(obs_pipewire *obs_pw)
+void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw_stream)
 {
-	if (obs_pw->stream)
-		pw_stream_set_active(obs_pw->stream, true);
+	if (obs_pw_stream->stream)
+		pw_stream_set_active(obs_pw_stream->stream, true);
 }
 
-void obs_pipewire_hide(obs_pipewire *obs_pw)
+void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw_stream)
 {
-	if (obs_pw->stream)
-		pw_stream_set_active(obs_pw->stream, false);
+	if (obs_pw_stream->stream)
+		pw_stream_set_active(obs_pw_stream->stream, false);
 }
 
-uint32_t obs_pipewire_get_width(obs_pipewire *obs_pw)
+uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw_stream)
 {
 	bool has_crop;
 
-	if (!obs_pw->negotiated)
+	if (!obs_pw_stream->negotiated)
 		return 0;
 
-	has_crop = has_effective_crop(obs_pw);
+	has_crop = has_effective_crop(obs_pw_stream);
 
-	switch (obs_pw->transform) {
+	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return has_crop ? obs_pw->crop.width
-				: obs_pw->format.info.raw.size.width;
+		return has_crop ? obs_pw_stream->crop.width
+				: obs_pw_stream->format.info.raw.size.width;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return has_crop ? obs_pw->crop.height
-				: obs_pw->format.info.raw.size.height;
+		return has_crop ? obs_pw_stream->crop.height
+				: obs_pw_stream->format.info.raw.size.height;
 	}
 }
 
-uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
+uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw_stream)
 {
 	bool has_crop;
 
-	if (!obs_pw->negotiated)
+	if (!obs_pw_stream->negotiated)
 		return 0;
 
-	has_crop = has_effective_crop(obs_pw);
+	has_crop = has_effective_crop(obs_pw_stream);
 
-	switch (obs_pw->transform) {
+	switch (obs_pw_stream->transform) {
 	case SPA_META_TRANSFORMATION_Flipped:
 	case SPA_META_TRANSFORMATION_None:
 	case SPA_META_TRANSFORMATION_Flipped180:
 	case SPA_META_TRANSFORMATION_180:
-		return has_crop ? obs_pw->crop.height
-				: obs_pw->format.info.raw.size.height;
+		return has_crop ? obs_pw_stream->crop.height
+				: obs_pw_stream->format.info.raw.size.height;
 	case SPA_META_TRANSFORMATION_Flipped90:
 	case SPA_META_TRANSFORMATION_90:
 	case SPA_META_TRANSFORMATION_Flipped270:
 	case SPA_META_TRANSFORMATION_270:
-		return has_crop ? obs_pw->crop.width
-				: obs_pw->format.info.raw.size.width;
+		return has_crop ? obs_pw_stream->crop.width
+				: obs_pw_stream->format.info.raw.size.width;
 	}
 }
 
-void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
+void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream,
+				      gs_effect_t *effect)
 {
 	bool rotated;
 	int flip = 0;
 
 	gs_eparam_t *image;
 
-	if (!obs_pw->texture)
+	if (!obs_pw_stream->texture)
 		return;
 
 	image = gs_effect_get_param_by_name(effect, "image");
-	gs_effect_set_texture(image, obs_pw->texture);
+	gs_effect_set_texture(image, obs_pw_stream->texture);
 
-	rotated = push_rotation(obs_pw);
+	rotated = push_rotation(obs_pw_stream);
 
-	flip = get_buffer_flip(obs_pw);
+	flip = get_buffer_flip(obs_pw_stream);
 
 	/* There is a SPA_VIDEO_FLAG_PREMULTIPLIED_ALPHA flag, but it does not
 	 * seem to be fully implemented nor ever set. Just assume premultiplied
@@ -1128,28 +1141,33 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	if (has_effective_crop(obs_pw)) {
-		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
-					 obs_pw->crop.y, obs_pw->crop.width,
-					 obs_pw->crop.height);
+	if (has_effective_crop(obs_pw_stream)) {
+		gs_draw_sprite_subregion(obs_pw_stream->texture, flip,
+					 obs_pw_stream->crop.x,
+					 obs_pw_stream->crop.y,
+					 obs_pw_stream->crop.width,
+					 obs_pw_stream->crop.height);
 	} else {
-		gs_draw_sprite(obs_pw->texture, flip, 0, 0);
+		gs_draw_sprite(obs_pw_stream->texture, flip, 0, 0);
 	}
 
 	if (rotated)
 		gs_matrix_pop();
 
-	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
-	    obs_pw->cursor.texture) {
-		float cursor_x = obs_pw->cursor.x - obs_pw->cursor.hotspot_x;
-		float cursor_y = obs_pw->cursor.y - obs_pw->cursor.hotspot_y;
+	if (obs_pw_stream->cursor.visible && obs_pw_stream->cursor.valid &&
+	    obs_pw_stream->cursor.texture) {
+		float cursor_x = obs_pw_stream->cursor.x -
+				 obs_pw_stream->cursor.hotspot_x;
+		float cursor_y = obs_pw_stream->cursor.y -
+				 obs_pw_stream->cursor.hotspot_y;
 
 		gs_matrix_push();
 		gs_matrix_translate3f(cursor_x, cursor_y, 0.0f);
 
-		gs_effect_set_texture(image, obs_pw->cursor.texture);
-		gs_draw_sprite(obs_pw->texture, 0, obs_pw->cursor.width,
-			       obs_pw->cursor.height);
+		gs_effect_set_texture(image, obs_pw_stream->cursor.texture);
+		gs_draw_sprite(obs_pw_stream->texture, 0,
+			       obs_pw_stream->cursor.width,
+			       obs_pw_stream->cursor.height);
 
 		gs_matrix_pop();
 	}
@@ -1157,7 +1175,25 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	gs_blend_state_pop();
 }
 
-void obs_pipewire_set_cursor_visible(obs_pipewire *obs_pw, bool cursor_visible)
+void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,
+					    bool cursor_visible)
 {
-	obs_pw->cursor.visible = cursor_visible;
+	obs_pw_stream->cursor.visible = cursor_visible;
+}
+
+void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
+{
+	if (!obs_pw_stream)
+		return;
+
+	obs_enter_graphics();
+	g_clear_pointer(&obs_pw_stream->cursor.texture, gs_texture_destroy);
+	g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
+	obs_leave_graphics();
+
+	if (obs_pw_stream->stream)
+		pw_stream_disconnect(obs_pw_stream->stream);
+	g_clear_pointer(&obs_pw_stream->stream, pw_stream_destroy);
+
+	bfree(obs_pw_stream);
 }

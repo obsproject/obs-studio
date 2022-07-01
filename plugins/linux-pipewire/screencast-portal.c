@@ -50,6 +50,7 @@ struct screencast_portal_capture {
 	bool cursor_visible;
 
 	obs_pipewire *obs_pw;
+	obs_pipewire_stream *obs_pw_stream;
 };
 
 /* ------------------------------------------------- */
@@ -250,13 +251,13 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 	if (!capture->obs_pw)
 		return;
 
-	obs_pipewire_connect_stream(
+	capture->obs_pw_stream = obs_pipewire_connect_stream(
 		capture->obs_pw, capture->pipewire_node, "OBS Studio",
 		pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
 				  PW_KEY_MEDIA_CATEGORY, "Capture",
 				  PW_KEY_MEDIA_ROLE, "Screen", NULL));
-	obs_pipewire_set_cursor_visible(capture->obs_pw,
-					capture->cursor_visible);
+	obs_pipewire_stream_set_cursor_visible(capture->obs_pw_stream,
+					       capture->cursor_visible);
 }
 
 static void open_pipewire_remote(struct screencast_portal_capture *capture)
@@ -633,6 +634,7 @@ static bool reload_session_cb(obs_properties_t *properties,
 	struct screencast_portal_capture *capture = data;
 
 	g_clear_pointer(&capture->restore_token, bfree);
+	g_clear_pointer(&capture->obs_pw_stream, obs_pipewire_stream_destroy);
 	g_clear_pointer(&capture->obs_pw, obs_pipewire_destroy);
 
 	if (capture->session_handle) {
@@ -722,6 +724,7 @@ static void screencast_portal_capture_destroy(void *data)
 
 	g_clear_pointer(&capture->restore_token, bfree);
 
+	g_clear_pointer(&capture->obs_pw_stream, obs_pipewire_stream_destroy);
 	obs_pipewire_destroy(capture->obs_pw);
 	g_cancellable_cancel(capture->cancellable);
 	g_clear_object(&capture->cancellable);
@@ -775,33 +778,33 @@ static void screencast_portal_capture_update(void *data, obs_data_t *settings)
 
 	capture->cursor_visible = obs_data_get_bool(settings, "ShowCursor");
 
-	if (capture->obs_pw)
-		obs_pipewire_set_cursor_visible(capture->obs_pw,
-						capture->cursor_visible);
+	if (capture->obs_pw_stream)
+		obs_pipewire_stream_set_cursor_visible(capture->obs_pw_stream,
+						       capture->cursor_visible);
 }
 
 static void screencast_portal_capture_show(void *data)
 {
 	struct screencast_portal_capture *capture = data;
 
-	if (capture->obs_pw)
-		obs_pipewire_show(capture->obs_pw);
+	if (capture->obs_pw_stream)
+		obs_pipewire_stream_show(capture->obs_pw_stream);
 }
 
 static void screencast_portal_capture_hide(void *data)
 {
 	struct screencast_portal_capture *capture = data;
 
-	if (capture->obs_pw)
-		obs_pipewire_hide(capture->obs_pw);
+	if (capture->obs_pw_stream)
+		obs_pipewire_stream_hide(capture->obs_pw_stream);
 }
 
 static uint32_t screencast_portal_capture_get_width(void *data)
 {
 	struct screencast_portal_capture *capture = data;
 
-	if (capture->obs_pw)
-		return obs_pipewire_get_width(capture->obs_pw);
+	if (capture->obs_pw_stream)
+		return obs_pipewire_stream_get_width(capture->obs_pw_stream);
 	else
 		return 0;
 }
@@ -810,8 +813,8 @@ static uint32_t screencast_portal_capture_get_height(void *data)
 {
 	struct screencast_portal_capture *capture = data;
 
-	if (capture->obs_pw)
-		return obs_pipewire_get_height(capture->obs_pw);
+	if (capture->obs_pw_stream)
+		return obs_pipewire_stream_get_height(capture->obs_pw_stream);
 	else
 		return 0;
 }
@@ -821,8 +824,9 @@ static void screencast_portal_capture_video_render(void *data,
 {
 	struct screencast_portal_capture *capture = data;
 
-	if (capture->obs_pw)
-		obs_pipewire_video_render(capture->obs_pw, effect);
+	if (capture->obs_pw_stream)
+		obs_pipewire_stream_video_render(capture->obs_pw_stream,
+						 effect);
 }
 
 void screencast_portal_load(void)
