@@ -471,9 +471,127 @@ static void renegotiate_format(void *data, uint64_t expirations)
 
 /* ------------------------------------------------- */
 
-static void on_process_cb(void *user_data)
+static inline struct pw_buffer *find_latest_buffer(struct pw_stream *stream)
 {
-	obs_pipewire_stream *obs_pw_stream = user_data;
+	struct pw_buffer *b;
+
+	/* Find the most recent buffer */
+	b = NULL;
+	while (true) {
+		struct pw_buffer *aux = pw_stream_dequeue_buffer(stream);
+		if (!aux)
+			break;
+		if (b)
+			pw_stream_queue_buffer(stream, b);
+		b = aux;
+	}
+
+	return b;
+}
+
+static enum video_colorspace
+video_colorspace_from_spa_color_matrix(enum spa_video_color_matrix matrix)
+{
+	switch (matrix) {
+	case SPA_VIDEO_COLOR_MATRIX_RGB:
+		return VIDEO_CS_DEFAULT;
+	case SPA_VIDEO_COLOR_MATRIX_BT601:
+		return VIDEO_CS_601;
+	case SPA_VIDEO_COLOR_MATRIX_BT709:
+		return VIDEO_CS_709;
+	default:
+		return VIDEO_CS_DEFAULT;
+	}
+}
+
+static enum video_range_type
+video_color_range_from_spa_color_range(enum spa_video_color_range colorrange)
+{
+	switch (colorrange) {
+	case SPA_VIDEO_COLOR_RANGE_0_255:
+		return VIDEO_RANGE_FULL;
+	case SPA_VIDEO_COLOR_RANGE_16_235:
+		return VIDEO_RANGE_PARTIAL;
+	default:
+		return VIDEO_RANGE_DEFAULT;
+	}
+}
+
+static bool prepare_obs_frame(obs_pipewire_stream *obs_pw_stream,
+			      struct obs_source_frame *frame)
+{
+	struct format_data format_data;
+
+	frame->width = obs_pw_stream->format.info.raw.size.width;
+	frame->height = obs_pw_stream->format.info.raw.size.height;
+
+	video_format_get_parameters(
+		video_colorspace_from_spa_color_matrix(
+			obs_pw_stream->format.info.raw.color_matrix),
+		video_color_range_from_spa_color_range(
+			obs_pw_stream->format.info.raw.color_range),
+		frame->color_matrix, frame->color_range_min,
+		frame->color_range_max);
+
+	if (!lookup_format_info_from_spa_format(
+		    obs_pw_stream->format.info.raw.format, &format_data) ||
+	    format_data.video_format == VIDEO_FORMAT_NONE)
+		return false;
+
+	frame->format = format_data.video_format;
+	frame->linesize[0] = SPA_ROUND_UP_N(frame->width * format_data.bpp, 4);
+	return true;
+}
+
+static void process_video_async(obs_pipewire_stream *obs_pw_stream)
+{
+	struct spa_buffer *buffer;
+	struct pw_buffer *b;
+	bool has_buffer;
+
+	b = find_latest_buffer(obs_pw_stream->stream);
+	if (!b) {
+		blog(LOG_DEBUG, "[pipewire] Out of buffers!");
+		return;
+	}
+
+	buffer = b->buffer;
+	has_buffer = buffer->datas[0].chunk->size != 0;
+
+	if (!has_buffer)
+		goto done;
+
+	blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
+
+	struct obs_source_frame out = {0};
+	if (!prepare_obs_frame(obs_pw_stream, &out)) {
+		blog(LOG_ERROR, "[pipewire] Couldn't prepare frame");
+		goto done;
+	}
+
+	for (uint32_t i = 0; i < buffer->n_datas && i < MAX_AV_PLANES; i++) {
+		out.data[i] = buffer->datas[i].data;
+		if (out.data[i] == NULL) {
+			blog(LOG_ERROR, "[pipewire] Failed to access data");
+			goto done;
+		}
+	}
+
+	blog(LOG_DEBUG, "[pipewire] Camera frame info: Format: %s, Planes: %u",
+	     get_video_format_name(out.format), buffer->n_datas);
+	for (uint32_t i = 0; i < buffer->n_datas && i < MAX_AV_PLANES; i++) {
+		blog(LOG_DEBUG, "[pipewire] Plane %u: Dataptr:%p, Linesize:%d",
+		     i, out.data[i], out.linesize[i]);
+	}
+
+	obs_source_output_video(obs_pw_stream->source, &out);
+
+done:
+	pw_stream_queue_buffer(obs_pw_stream->stream, b);
+}
+
+static void process_video_sync(obs_pipewire_stream *obs_pw_stream)
+{
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_meta_cursor *cursor;
 	struct spa_meta_region *region;
@@ -483,18 +601,7 @@ static void on_process_cb(void *user_data)
 	bool swap_red_blue = false;
 	bool has_buffer;
 
-	/* Find the most recent buffer */
-	b = NULL;
-	while (true) {
-		struct pw_buffer *aux =
-			pw_stream_dequeue_buffer(obs_pw_stream->stream);
-		if (!aux)
-			break;
-		if (b)
-			pw_stream_queue_buffer(obs_pw_stream->stream, b);
-		b = aux;
-	}
-
+	b = find_latest_buffer(obs_pw_stream->stream);
 	if (!b) {
 		blog(LOG_DEBUG, "[pipewire] Out of buffers!");
 		return;
@@ -649,6 +756,21 @@ read_metadata:
 	obs_leave_graphics();
 }
 
+static void on_process_cb(void *user_data)
+{
+	obs_pipewire_stream *obs_pw_stream = user_data;
+	uint32_t output_flags;
+
+	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+
+	if (output_flags & OBS_SOURCE_VIDEO) {
+		if (output_flags & OBS_SOURCE_ASYNC)
+			process_video_async(obs_pw_stream);
+		else
+			process_video_sync(obs_pw_stream);
+	}
+}
+
 static void on_param_changed_cb(void *user_data, uint32_t id,
 				const struct spa_pod *param)
 {
@@ -656,6 +778,7 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod *params[3];
+	uint32_t output_flags;
 	uint32_t buffer_types;
 	uint8_t params_buffer[1024];
 	int result;
@@ -674,11 +797,15 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 
 	spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
 
+	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+
 	buffer_types = 1 << SPA_DATA_MemPtr;
 	bool has_modifier =
 		spa_pod_find_prop(param, NULL, SPA_FORMAT_VIDEO_modifier) !=
 		NULL;
-	if (has_modifier || check_pw_version(&obs_pw->server_version, 0, 3, 24))
+	if ((has_modifier ||
+	     check_pw_version(&obs_pw->server_version, 0, 3, 24)) &&
+	    (output_flags & OBS_SOURCE_ASYNC_VIDEO) != OBS_SOURCE_ASYNC_VIDEO)
 		buffer_types |= 1 << SPA_DATA_DmaBuf;
 
 	blog(LOG_INFO, "[pipewire] Negotiated format:");
@@ -987,8 +1114,14 @@ void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,
 
 void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 {
+	uint32_t output_flags;
+
 	if (!obs_pw_stream)
 		return;
+
+	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+	if (output_flags & OBS_SOURCE_ASYNC_VIDEO)
+		obs_source_output_video(obs_pw_stream->source, NULL);
 
 	g_ptr_array_remove(obs_pw_stream->obs_pw->streams, obs_pw_stream);
 
