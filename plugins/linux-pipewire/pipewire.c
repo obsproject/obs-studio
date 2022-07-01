@@ -791,14 +791,23 @@ static const struct pw_core_events core_events = {
 	.error = on_core_error_cb,
 };
 
-static void play_pipewire_stream(obs_pipewire_data *obs_pw,
-				 const char *stream_name,
-				 struct pw_properties *stream_properties)
+/* obs_source_info methods */
+
+obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
+				       const char *stream_name,
+				       struct pw_properties *stream_properties)
 {
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
+	obs_pipewire_data *obs_pw;
 	uint32_t n_params;
 	uint8_t params_buffer[2048];
+
+	obs_pw = bzalloc(sizeof(obs_pipewire_data));
+	obs_pw->pipewire_fd = pipewire_fd;
+	obs_pw->pipewire_node = pipewire_node;
+
+	init_format_info(obs_pw);
 
 	obs_pw->thread_loop = pw_thread_loop_new("PipeWire thread loop", NULL);
 	obs_pw->context = pw_context_new(
@@ -806,7 +815,8 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw,
 
 	if (pw_thread_loop_start(obs_pw->thread_loop) < 0) {
 		blog(LOG_WARNING, "Error starting threaded mainloop");
-		return;
+		bfree(obs_pw);
+		return NULL;
 	}
 
 	pw_thread_loop_lock(obs_pw->thread_loop);
@@ -818,7 +828,8 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw,
 	if (!obs_pw->core) {
 		blog(LOG_WARNING, "Error creating PipeWire core: %m");
 		pw_thread_loop_unlock(obs_pw->thread_loop);
-		return;
+		bfree(obs_pw);
+		return NULL;
 	}
 
 	pw_core_add_listener(obs_pw->core, &obs_pw->core_listener, &core_events,
@@ -851,7 +862,8 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw,
 	if (!build_format_params(obs_pw, &pod_builder, &params, &n_params)) {
 		pw_thread_loop_unlock(obs_pw->thread_loop);
 		teardown_pipewire(obs_pw);
-		return;
+		bfree(obs_pw);
+		return NULL;
 	}
 
 	pw_stream_connect(
@@ -863,21 +875,6 @@ static void play_pipewire_stream(obs_pipewire_data *obs_pw,
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
-}
-
-/* obs_source_info methods */
-
-obs_pipewire_data *obs_pipewire_create(int pipewire_fd, int pipewire_node,
-				       const char *stream_name,
-				       struct pw_properties *stream_properties)
-{
-	obs_pipewire_data *obs_pw = bzalloc(sizeof(obs_pipewire_data));
-
-	obs_pw->pipewire_fd = pipewire_fd;
-	obs_pw->pipewire_node = pipewire_node;
-
-	init_format_info(obs_pw);
-	play_pipewire_stream(obs_pw, stream_name, stream_properties);
 
 	return obs_pw;
 }
