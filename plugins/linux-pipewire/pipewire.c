@@ -161,13 +161,15 @@ static inline bool has_effective_crop(obs_pipewire_stream *obs_pw_stream)
 			obs_pw_stream->format.info.raw.size.height);
 }
 
-static const struct {
+struct format_data {
 	uint32_t spa_format;
 	uint32_t drm_format;
 	enum gs_color_format gs_format;
 	bool swap_red_blue;
 	const char *pretty_name;
-} supported_formats[] = {
+};
+
+static const struct format_data supported_formats[] = {
 	{
 		SPA_VIDEO_FORMAT_BGRA,
 		DRM_FORMAT_ARGB8888,
@@ -201,20 +203,17 @@ static const struct {
 #define N_SUPPORTED_FORMATS \
 	(sizeof(supported_formats) / sizeof(supported_formats[0]))
 
-static bool lookup_format_info_from_spa_format(
-	uint32_t spa_format, uint32_t *out_drm_format,
-	enum gs_color_format *out_gs_format, bool *out_swap_red_blue)
+static bool
+lookup_format_info_from_spa_format(uint32_t spa_format,
+				   struct format_data *out_format_data)
 {
 	for (size_t i = 0; i < N_SUPPORTED_FORMATS; i++) {
 		if (supported_formats[i].spa_format != spa_format)
 			continue;
 
-		if (out_drm_format)
-			*out_drm_format = supported_formats[i].drm_format;
-		if (out_gs_format)
-			*out_gs_format = supported_formats[i].gs_format;
-		if (out_swap_red_blue)
-			*out_swap_red_blue = supported_formats[i].swap_red_blue;
+		if (out_format_data)
+			*out_format_data = supported_formats[i];
+
 		return true;
 	}
 	return false;
@@ -467,8 +466,8 @@ static void on_process_cb(void *user_data)
 	obs_pipewire_stream *obs_pw_stream = user_data;
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_meta_cursor *cursor;
-	uint32_t drm_format;
 	struct spa_meta_region *region;
+	struct format_data format_data;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool swap_red_blue = false;
@@ -515,8 +514,8 @@ static void on_process_cb(void *user_data)
 		     obs_pw_stream->format.info.raw.size.height);
 
 		if (!lookup_format_info_from_spa_format(
-			    obs_pw_stream->format.info.raw.format, &drm_format,
-			    NULL, NULL)) {
+			    obs_pw_stream->format.info.raw.format,
+			    &format_data)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -537,9 +536,9 @@ static void on_process_cb(void *user_data)
 				DRM_FORMAT_MOD_INVALID;
 		obs_pw_stream->texture = gs_texture_create_from_dmabuf(
 			obs_pw_stream->format.info.raw.size.width,
-			obs_pw_stream->format.info.raw.size.height, drm_format,
-			GS_BGRX, planes, fds, strides, offsets,
-			use_modifiers ? modifiers : NULL);
+			obs_pw_stream->format.info.raw.size.height,
+			format_data.drm_format, GS_BGRX, planes, fds, strides,
+			offsets, use_modifiers ? modifiers : NULL);
 
 		if (obs_pw_stream->texture == NULL) {
 			remove_modifier_from_format(
@@ -552,11 +551,10 @@ static void on_process_cb(void *user_data)
 		}
 	} else {
 		blog(LOG_DEBUG, "[pipewire] Buffer has memory texture");
-		enum gs_color_format gs_format;
 
 		if (!lookup_format_info_from_spa_format(
-			    obs_pw_stream->format.info.raw.format, NULL,
-			    &gs_format, &swap_red_blue)) {
+			    obs_pw_stream->format.info.raw.format,
+			    &format_data)) {
 			blog(LOG_ERROR,
 			     "[pipewire] unsupported DMA buffer format: %d",
 			     obs_pw_stream->format.info.raw.format);
@@ -566,9 +564,9 @@ static void on_process_cb(void *user_data)
 		g_clear_pointer(&obs_pw_stream->texture, gs_texture_destroy);
 		obs_pw_stream->texture = gs_texture_create(
 			obs_pw_stream->format.info.raw.size.width,
-			obs_pw_stream->format.info.raw.size.height, gs_format,
-			1, (const uint8_t **)&buffer->datas[0].data,
-			GS_DYNAMIC);
+			obs_pw_stream->format.info.raw.size.height,
+			format_data.gs_format, 1,
+			(const uint8_t **)&buffer->datas[0].data, GS_DYNAMIC);
 	}
 
 	if (swap_red_blue)
@@ -601,7 +599,6 @@ read_metadata:
 				      spa_meta_cursor_is_valid(cursor);
 	if (obs_pw_stream->cursor.visible && obs_pw_stream->cursor.valid) {
 		struct spa_meta_bitmap *bitmap = NULL;
-		enum gs_color_format gs_format;
 
 		if (cursor->bitmap_offset)
 			bitmap = SPA_MEMBER(cursor, cursor->bitmap_offset,
@@ -609,8 +606,8 @@ read_metadata:
 
 		if (bitmap && bitmap->size.width > 0 &&
 		    bitmap->size.height > 0 &&
-		    lookup_format_info_from_spa_format(
-			    bitmap->format, NULL, &gs_format, &swap_red_blue)) {
+		    lookup_format_info_from_spa_format(bitmap->format,
+						       &format_data)) {
 			const uint8_t *bitmap_data;
 
 			bitmap_data =
@@ -622,10 +619,11 @@ read_metadata:
 
 			g_clear_pointer(&obs_pw_stream->cursor.texture,
 					gs_texture_destroy);
-			obs_pw_stream->cursor.texture = gs_texture_create(
-				obs_pw_stream->cursor.width,
-				obs_pw_stream->cursor.height, gs_format, 1,
-				&bitmap_data, GS_DYNAMIC);
+			obs_pw_stream->cursor.texture =
+				gs_texture_create(obs_pw_stream->cursor.width,
+						  obs_pw_stream->cursor.height,
+						  format_data.gs_format, 1,
+						  &bitmap_data, GS_DYNAMIC);
 
 			if (swap_red_blue)
 				swap_texture_red_blue(
