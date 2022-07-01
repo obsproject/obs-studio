@@ -87,6 +87,7 @@ struct _obs_pipewire {
 
 	struct obs_pw_version server_version;
 
+	GPtrArray *streams;
 	DARRAY(struct format_info) format_info;
 };
 
@@ -980,6 +981,8 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd)
 	pw_thread_loop_wait(obs_pw->thread_loop);
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 
+	obs_pw->streams = g_ptr_array_new();
+
 	return obs_pw;
 }
 
@@ -987,6 +990,13 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 {
 	if (!obs_pw)
 		return;
+
+	while (obs_pw->streams->len > 0) {
+		obs_pipewire_stream *obs_pw_stream =
+			g_ptr_array_index(obs_pw->streams, 0);
+		obs_pipewire_stream_destroy(obs_pw_stream);
+	}
+	g_clear_pointer(&obs_pw->streams, g_ptr_array_unref);
 
 	teardown_pipewire(obs_pw);
 	clear_format_info(obs_pw);
@@ -1046,6 +1056,8 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, int pipewire_node,
 
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 	bfree(params);
+
+	g_ptr_array_add(obs_pw->streams, obs_pw_stream);
 
 	return obs_pw_stream;
 }
@@ -1185,6 +1197,8 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 {
 	if (!obs_pw_stream)
 		return;
+
+	g_ptr_array_remove(obs_pw_stream->obs_pw->streams, obs_pw_stream);
 
 	obs_enter_graphics();
 	g_clear_pointer(&obs_pw_stream->cursor.texture, gs_texture_destroy);
