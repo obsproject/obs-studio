@@ -139,13 +139,6 @@ static uint32_t get_screencast_version(void)
 
 /* ------------------------------------------------- */
 
-struct dbus_call_data {
-	struct screencast_portal_capture *capture;
-	char *request_path;
-	guint signal_id;
-	gulong cancelled_id;
-};
-
 static const char *capture_type_to_string(enum portal_capture_type capture_type)
 {
 	switch (capture_type) {
@@ -158,58 +151,6 @@ static const char *capture_type_to_string(enum portal_capture_type capture_type)
 		return "unknown";
 	}
 	return "unknown";
-}
-
-static void on_cancelled_cb(GCancellable *cancellable, void *data)
-{
-	UNUSED_PARAMETER(cancellable);
-
-	struct dbus_call_data *call = data;
-
-	blog(LOG_INFO, "[pipewire] Screencast session cancelled");
-
-	g_dbus_connection_call(
-		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
-		call->request_path, "org.freedesktop.portal.Request", "Close",
-		NULL, NULL, G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL, NULL);
-}
-
-static struct dbus_call_data *
-subscribe_to_signal(struct screencast_portal_capture *capture, const char *path,
-		    GDBusSignalCallback callback)
-{
-	struct dbus_call_data *call;
-
-	call = bzalloc(sizeof(struct dbus_call_data));
-	call->capture = capture;
-	call->request_path = bstrdup(path);
-	call->cancelled_id = g_signal_connect(capture->cancellable, "cancelled",
-					      G_CALLBACK(on_cancelled_cb),
-					      call);
-	call->signal_id = g_dbus_connection_signal_subscribe(
-		portal_get_dbus_connection(), "org.freedesktop.portal.Desktop",
-		"org.freedesktop.portal.Request", "Response",
-		call->request_path, NULL, G_DBUS_SIGNAL_FLAGS_NO_MATCH_RULE,
-		callback, call, NULL);
-
-	return call;
-}
-
-static void dbus_call_data_free(struct dbus_call_data *call)
-{
-	if (!call)
-		return;
-
-	if (call->signal_id)
-		g_dbus_connection_signal_unsubscribe(
-			portal_get_dbus_connection(), call->signal_id);
-
-	if (call->cancelled_id > 0)
-		g_signal_handler_disconnect(call->capture->cancellable,
-					    call->cancelled_id);
-
-	g_clear_pointer(&call->request_path, bfree);
-	bfree(call);
 }
 
 /* ------------------------------------------------- */
@@ -276,30 +217,15 @@ static void open_pipewire_remote(struct screencast_portal_capture *capture)
 
 /* ------------------------------------------------- */
 
-static void on_start_response_received_cb(GDBusConnection *connection,
-					  const char *sender_name,
-					  const char *object_path,
-					  const char *interface_name,
-					  const char *signal_name,
-					  GVariant *parameters, void *user_data)
+static void on_start_response_received_cb(GVariant *parameters, void *user_data)
 {
-	UNUSED_PARAMETER(connection);
-	UNUSED_PARAMETER(sender_name);
-	UNUSED_PARAMETER(object_path);
-	UNUSED_PARAMETER(interface_name);
-	UNUSED_PARAMETER(signal_name);
-
-	struct screencast_portal_capture *capture;
+	struct screencast_portal_capture *capture = user_data;
 	g_autoptr(GVariant) stream_properties = NULL;
 	g_autoptr(GVariant) streams = NULL;
 	g_autoptr(GVariant) result = NULL;
-	struct dbus_call_data *call = user_data;
 	GVariantIter iter;
 	uint32_t response;
 	size_t n_streams;
-
-	capture = call->capture;
-	g_clear_pointer(&call, dbus_call_data_free);
 
 	g_variant_get(parameters, "(u@a{sv})", &response, &result);
 
@@ -378,7 +304,6 @@ static void on_started_cb(GObject *source, GAsyncResult *res, void *user_data)
 static void start(struct screencast_portal_capture *capture)
 {
 	GVariantBuilder builder;
-	struct dbus_call_data *call;
 	char *request_token;
 	char *request_path;
 
@@ -387,8 +312,8 @@ static void start(struct screencast_portal_capture *capture)
 	blog(LOG_INFO, "[pipewire] Asking for %s",
 	     capture_type_to_string(capture->capture_type));
 
-	call = subscribe_to_signal(capture, request_path,
-				   on_start_response_received_cb);
+	portal_signal_subscribe(request_path, capture->cancellable,
+				on_start_response_received_cb, capture);
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
@@ -398,7 +323,7 @@ static void start(struct screencast_portal_capture *capture)
 			  g_variant_new("(osa{sv})", capture->session_handle,
 					"", &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
-			  on_started_cb, call);
+			  on_started_cb, NULL);
 
 	bfree(request_token);
 	bfree(request_path);
@@ -406,27 +331,14 @@ static void start(struct screencast_portal_capture *capture)
 
 /* ------------------------------------------------- */
 
-static void on_select_source_response_received_cb(
-	GDBusConnection *connection, const char *sender_name,
-	const char *object_path, const char *interface_name,
-	const char *signal_name, GVariant *parameters, void *user_data)
+static void on_select_source_response_received_cb(GVariant *parameters,
+						  void *user_data)
 {
-	UNUSED_PARAMETER(connection);
-	UNUSED_PARAMETER(sender_name);
-	UNUSED_PARAMETER(object_path);
-	UNUSED_PARAMETER(interface_name);
-	UNUSED_PARAMETER(signal_name);
-
-	struct screencast_portal_capture *capture;
+	struct screencast_portal_capture *capture = user_data;
 	g_autoptr(GVariant) ret = NULL;
-	struct dbus_call_data *call = user_data;
 	uint32_t response;
 
-	capture = call->capture;
-
 	blog(LOG_DEBUG, "[pipewire] Response to select source received");
-
-	g_clear_pointer(&call, dbus_call_data_free);
 
 	g_variant_get(parameters, "(u@a{sv})", &response, &ret);
 
@@ -459,7 +371,6 @@ static void on_source_selected_cb(GObject *source, GAsyncResult *res,
 
 static void select_source(struct screencast_portal_capture *capture)
 {
-	struct dbus_call_data *call;
 	GVariantBuilder builder;
 	uint32_t available_cursor_modes;
 	char *request_token;
@@ -467,8 +378,8 @@ static void select_source(struct screencast_portal_capture *capture)
 
 	portal_create_request_path(&request_path, &request_token);
 
-	call = subscribe_to_signal(capture, request_path,
-				   on_select_source_response_received_cb);
+	portal_signal_subscribe(request_path, capture->cancellable,
+				on_select_source_response_received_cb, capture);
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add(&builder, "{sv}", "types",
@@ -508,7 +419,7 @@ static void select_source(struct screencast_portal_capture *capture)
 			  g_variant_new("(oa{sv})", capture->session_handle,
 					&builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
-			  on_source_selected_cb, call);
+			  on_source_selected_cb, NULL);
 
 	bfree(request_token);
 	bfree(request_path);
@@ -516,26 +427,13 @@ static void select_source(struct screencast_portal_capture *capture)
 
 /* ------------------------------------------------- */
 
-static void on_create_session_response_received_cb(
-	GDBusConnection *connection, const char *sender_name,
-	const char *object_path, const char *interface_name,
-	const char *signal_name, GVariant *parameters, void *user_data)
+static void on_create_session_response_received_cb(GVariant *parameters,
+						   void *user_data)
 {
-	UNUSED_PARAMETER(connection);
-	UNUSED_PARAMETER(sender_name);
-	UNUSED_PARAMETER(object_path);
-	UNUSED_PARAMETER(interface_name);
-	UNUSED_PARAMETER(signal_name);
-
-	struct screencast_portal_capture *capture;
+	struct screencast_portal_capture *capture = user_data;
 	g_autoptr(GVariant) session_handle_variant = NULL;
 	g_autoptr(GVariant) result = NULL;
-	struct dbus_call_data *call = user_data;
 	uint32_t response;
-
-	capture = call->capture;
-
-	g_clear_pointer(&call, dbus_call_data_free);
 
 	g_variant_get(parameters, "(u@a{sv})", &response, &result);
 
@@ -575,7 +473,6 @@ static void on_session_created_cb(GObject *source, GAsyncResult *res,
 
 static void create_session(struct screencast_portal_capture *capture)
 {
-	struct dbus_call_data *call;
 	GVariantBuilder builder;
 	char *session_token;
 	char *request_token;
@@ -584,8 +481,9 @@ static void create_session(struct screencast_portal_capture *capture)
 	portal_create_request_path(&request_path, &request_token);
 	portal_create_session_path(NULL, &session_token);
 
-	call = subscribe_to_signal(capture, request_path,
-				   on_create_session_response_received_cb);
+	portal_signal_subscribe(request_path, capture->cancellable,
+				on_create_session_response_received_cb,
+				capture);
 
 	g_variant_builder_init(&builder, G_VARIANT_TYPE_VARDICT);
 	g_variant_builder_add(&builder, "{sv}", "handle_token",
@@ -596,7 +494,7 @@ static void create_session(struct screencast_portal_capture *capture)
 	g_dbus_proxy_call(get_screencast_portal_proxy(), "CreateSession",
 			  g_variant_new("(a{sv})", &builder),
 			  G_DBUS_CALL_FLAGS_NONE, -1, capture->cancellable,
-			  on_session_created_cb, call);
+			  on_session_created_cb, NULL);
 
 	bfree(session_token);
 	bfree(request_token);
