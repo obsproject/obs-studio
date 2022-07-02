@@ -187,7 +187,7 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 		return;
 	}
 
-	capture->obs_pw = obs_pipewire_create(pipewire_fd);
+	capture->obs_pw = obs_pipewire_create(pipewire_fd, NULL, NULL);
 
 	if (!capture->obs_pw)
 		return;
