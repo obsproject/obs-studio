@@ -21,6 +21,9 @@
     "--system-talk-name=org.freedesktop.Avahi",
     "--env=VST_PATH=/app/extensions/Plugins/lxvst"
   ],
+  "inherit-extensions": [
+    "org.freedesktop.Platform.VAAPI.Intel"
+  ],
   "add-extensions": {
     "com.obsproject.Studio.Plugin": {
       "directory": "plugins",
