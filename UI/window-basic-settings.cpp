@@ -933,6 +933,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
 		SLOT(UseStreamKeyAdvClicked()));
+
+	UpdateAdvNetworkGroup();
 }
 
 OBSBasicSettings::~OBSBasicSettings()
