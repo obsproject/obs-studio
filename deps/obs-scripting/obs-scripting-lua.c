@@ -1107,8 +1107,11 @@ bool obs_lua_script_load(obs_script_t *s)
 	struct obs_lua_script *data = (struct obs_lua_script *)s;
 	if (!data->base.loaded) {
 		data->base.loaded = load_lua_script(data);
-		if (data->base.loaded)
+		if (data->base.loaded) {
+			blog(LOG_INFO, "[obs-scripting]: Loaded lua script: %s",
+			     data->base.file.array);
 			obs_lua_script_update(s, NULL);
+		}
 	}
 
 	return data->base.loaded;
@@ -1225,6 +1228,9 @@ void obs_lua_script_unload(obs_script_t *s)
 
 	lua_close(script);
 	s->loaded = false;
+
+	blog(LOG_INFO, "[obs-scripting]: Unloaded lua script: %s",
+	     data->base.file.array);
 }
 
 void obs_lua_script_destroy(obs_script_t *s)
