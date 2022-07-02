@@ -60,7 +60,7 @@ struct _obs_pipewire {
 
 	struct pw_core *core;
 	struct spa_hook core_listener;
-	int server_version_sync;
+	int sync_id;
 
 	struct obs_pw_version server_version;
 
@@ -963,7 +963,7 @@ static void on_core_done_cb(void *user_data, uint32_t id, int seq)
 {
 	obs_pipewire *obs_pw = user_data;
 
-	if (id == PW_ID_CORE && obs_pw->server_version_sync == seq)
+	if (id == PW_ID_CORE && obs_pw->sync_id == seq)
 		pw_thread_loop_signal(obs_pw->thread_loop, FALSE);
 }
 
@@ -1012,8 +1012,8 @@ obs_pipewire_create(int pipewire_fd,
 			     obs_pw);
 
 	// Dispatch to receive the info core event
-	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
-						   obs_pw->server_version_sync);
+	obs_pw->sync_id =
+		pw_core_sync(obs_pw->core, PW_ID_CORE, obs_pw->sync_id);
 	pw_thread_loop_wait(obs_pw->thread_loop);
 
 	/* Registry */
@@ -1037,6 +1037,17 @@ obs_pipewire_create(int pipewire_fd,
 struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw)
 {
 	return obs_pw->registry;
+}
+
+void obs_pipewire_roundtrip(obs_pipewire *obs_pw)
+{
+	pw_thread_loop_lock(obs_pw->thread_loop);
+
+	obs_pw->sync_id =
+		pw_core_sync(obs_pw->core, PW_ID_CORE, obs_pw->sync_id);
+	pw_thread_loop_wait(obs_pw->thread_loop);
+
+	pw_thread_loop_unlock(obs_pw->thread_loop);
 }
 
 void obs_pipewire_destroy(obs_pipewire *obs_pw)
