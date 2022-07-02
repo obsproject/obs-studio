@@ -1273,8 +1273,12 @@ bool obs_python_script_load(obs_script_t *s)
 		data->base.loaded = load_python_script(data);
 		unlock_python();
 
-		if (data->base.loaded)
+		if (data->base.loaded) {
+			blog(LOG_INFO,
+			     "[obs-scripting]: Loaded python script: %s",
+			     data->base.file.array);
 			obs_python_script_update(s, NULL);
+		}
 	}
 
 	return data->base.loaded;
@@ -1317,6 +1321,8 @@ obs_script_t *obs_python_script_create(const char *path, obs_data_t *settings)
 	add_to_python_path(data->dir.array);
 	data->base.loaded = load_python_script(data);
 	if (data->base.loaded) {
+		blog(LOG_INFO, "[obs-scripting]: Loaded python script: %s",
+		     data->base.file.array);
 		cur_python_script = data;
 		obs_python_script_update(&data->base, NULL);
 		cur_python_script = NULL;
@@ -1396,6 +1402,9 @@ void obs_python_script_unload(obs_script_t *s)
 	unlock_python();
 
 	s->loaded = false;
+
+	blog(LOG_INFO, "[obs-scripting]: Unloaded python script: %s",
+	     data->base.file.array);
 }
 
 void obs_python_script_destroy(obs_script_t *s)
