@@ -46,6 +46,15 @@ if(NOT DEFINED CMAKE_PREFIX_PATH)
   )
 endif()
 
+# SWIG hard codes the directory to its library directory at compile time. As
+# obs-deps need to be relocatable, we need to force SWIG to look for its files
+# in a directory relative to the PREFIX_PATH. The best way to ensure this is to
+# set the SWIG_LIB environment variable.
+
+if(NOT DEFINED ENV{SWIG_LIB} AND EXISTS "${CMAKE_PREFIX_PATH}/bin/swig")
+  set(ENV{SWIG_LIB} "${CMAKE_PREFIX_PATH}/share/swig/CURRENT")
+endif()
+
 macro(setup_obs_project)
   # Set code signing options
   set(OBS_BUNDLE_CODESIGN_IDENTITY
