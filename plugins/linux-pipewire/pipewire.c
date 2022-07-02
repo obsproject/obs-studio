@@ -64,6 +64,9 @@ struct _obs_pipewire {
 
 	struct obs_pw_version server_version;
 
+	struct pw_registry *registry;
+	struct spa_hook registry_listener;
+
 	GPtrArray *streams;
 };
 
@@ -973,7 +976,10 @@ static const struct pw_core_events core_events = {
 
 /* obs_source_info methods */
 
-obs_pipewire *obs_pipewire_create(int pipewire_fd)
+obs_pipewire *
+obs_pipewire_create(int pipewire_fd,
+		    const struct pw_registry_events *registry_events,
+		    void *user_data)
 {
 	obs_pipewire *obs_pw;
 
@@ -1009,11 +1015,28 @@ obs_pipewire *obs_pipewire_create(int pipewire_fd)
 	obs_pw->server_version_sync = pw_core_sync(obs_pw->core, PW_ID_CORE,
 						   obs_pw->server_version_sync);
 	pw_thread_loop_wait(obs_pw->thread_loop);
+
+	/* Registry */
+	if (registry_events) {
+		obs_pw->registry = pw_core_get_registry(obs_pw->core,
+							PW_VERSION_REGISTRY, 0);
+		pw_registry_add_listener(obs_pw->registry,
+					 &obs_pw->registry_listener,
+					 registry_events, user_data);
+		blog(LOG_INFO, "[pipewire] Created registry %p",
+		     obs_pw->registry);
+	}
+
 	pw_thread_loop_unlock(obs_pw->thread_loop);
 
 	obs_pw->streams = g_ptr_array_new();
 
 	return obs_pw;
+}
+
+struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw)
+{
+	return obs_pw->registry;
 }
 
 void obs_pipewire_destroy(obs_pipewire *obs_pw)
