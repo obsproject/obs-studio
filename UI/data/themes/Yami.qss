@@ -77,7 +77,6 @@ QWidget {
     selection-background-color: rgb(40,76,184);
     selection-color: palette(text);
     font-size: 10pt;
-    font-family: 'Open Sans', Helvetica, Arial, sans-serif;
 }
 
 QWidget:disabled {
@@ -204,6 +203,7 @@ SourceTree QLineEdit {
     padding-bottom: 0px;
     padding-right: 0;
     padding-left: 2px;
+    margin: -3px;
     border: none;
     border-radius: none;
 }
@@ -252,7 +252,7 @@ OBSDock QPushButton {
 }
 
 QDockWidget {
-    font-size: 14px;
+    font-size: 10.5pt;
     font-weight: bold;
 
     titlebar-close-icon: url('./Dark/Close.svg');
@@ -963,12 +963,12 @@ QLabel#errorLabel {
 /* About dialog */
 
 * [themeID="aboutName"] {
-    font-size: 36px;
+    font-size: 26pt;
     font-weight: bold;
 }
 
 * [themeID="aboutVersion"] {
-    font-size: 16px;
+    font-size: 12pt;
     margin-bottom: 20px;
 }
 
