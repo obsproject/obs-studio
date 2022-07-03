@@ -72,7 +72,7 @@ struct _obs_pipewire {
 
 struct _obs_pipewire_stream {
 	obs_pipewire *obs_pw;
-	obs_source_t *source;
+	obs_pipewire_stream_data obs_data;
 
 	gs_texture_t *texture;
 
@@ -644,7 +644,7 @@ static void process_video_async(obs_pipewire_stream *obs_pw_stream)
 		     i, out.data[i], out.linesize[i]);
 	}
 
-	obs_source_output_video(obs_pw_stream->source, &out);
+	obs_source_output_video(obs_pw_stream->obs_data.source, &out);
 
 done:
 	pw_stream_queue_buffer(obs_pw_stream->stream, b);
@@ -824,7 +824,8 @@ static void on_process_cb(void *user_data)
 	obs_pipewire_stream *obs_pw_stream = user_data;
 	uint32_t output_flags;
 
-	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+	output_flags =
+		obs_source_get_output_flags(obs_pw_stream->obs_data.source);
 
 	if (output_flags & OBS_SOURCE_VIDEO) {
 		if (output_flags & OBS_SOURCE_ASYNC)
@@ -834,10 +835,9 @@ static void on_process_cb(void *user_data)
 	}
 }
 
-static void on_param_changed_cb(void *user_data, uint32_t id,
-				const struct spa_pod *param)
+static void param_changed_source(obs_pipewire_stream *obs_pw_stream,
+				 uint32_t id, const struct spa_pod *param)
 {
-	obs_pipewire_stream *obs_pw_stream = user_data;
 	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod *params[3];
@@ -860,7 +860,8 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 
 	spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
 
-	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
+	output_flags =
+		obs_source_get_output_flags(obs_pw_stream->obs_data.source);
 
 	buffer_types = 1 << SPA_DATA_MemPtr;
 	bool has_modifier =
@@ -917,6 +918,17 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	pw_stream_update_params(obs_pw_stream->stream, params, 3);
 
 	obs_pw_stream->negotiated = true;
+}
+
+static void on_param_changed_cb(void *user_data, uint32_t id,
+				const struct spa_pod *param)
+{
+	obs_pipewire_stream *obs_pw_stream = user_data;
+	switch (obs_pw_stream->obs_data.type) {
+	case OBS_PIPEWIRE_STREAM_TYPE_SOURCE:
+		param_changed_source(obs_pw_stream, id, param);
+		break;
+	}
 }
 
 static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
@@ -1065,20 +1077,25 @@ void obs_pipewire_destroy(obs_pipewire *obs_pw)
 	bfree(obs_pw);
 }
 
-obs_pipewire_stream *
-obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
-			    int pipewire_node, const char *stream_name,
-			    struct pw_properties *stream_properties)
+obs_pipewire_stream *obs_pipewire_connect_stream(
+	obs_pipewire *obs_pw, obs_pipewire_stream_data *data, int pipewire_node,
+	const char *stream_name, struct pw_properties *stream_properties)
 {
 	struct spa_pod_builder pod_builder;
 	const struct spa_pod **params = NULL;
 	obs_pipewire_stream *obs_pw_stream;
 	uint32_t n_params;
 	uint8_t params_buffer[2048];
+	uint32_t pw_stream_flags;
 
 	obs_pw_stream = bzalloc(sizeof(obs_pipewire_stream));
 	obs_pw_stream->obs_pw = obs_pw;
-	obs_pw_stream->source = source;
+	switch (data->type) {
+	case OBS_PIPEWIRE_STREAM_TYPE_SOURCE:
+		obs_pw_stream->obs_data.type = OBS_PIPEWIRE_STREAM_TYPE_SOURCE;
+		obs_pw_stream->obs_data.source = data->source;
+		break;
+	}
 
 	init_format_info(obs_pw_stream);
 
@@ -1111,10 +1128,11 @@ obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
 		return NULL;
 	}
 
-	pw_stream_connect(
-		obs_pw_stream->stream, PW_DIRECTION_INPUT, pipewire_node,
-		PW_STREAM_FLAG_AUTOCONNECT | PW_STREAM_FLAG_MAP_BUFFERS, params,
-		n_params);
+	pw_stream_flags = PW_STREAM_FLAG_AUTOCONNECT |
+			  PW_STREAM_FLAG_MAP_BUFFERS;
+
+	pw_stream_connect(obs_pw_stream->stream, PW_DIRECTION_INPUT,
+			  pipewire_node, pw_stream_flags, params, n_params);
 
 	blog(LOG_INFO, "[pipewire] Playing stream %p", obs_pw_stream->stream);
 
@@ -1213,9 +1231,13 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 	if (!obs_pw_stream)
 		return;
 
-	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
-	if (output_flags & OBS_SOURCE_ASYNC_VIDEO)
-		obs_source_output_video(obs_pw_stream->source, NULL);
+	if (obs_pw_stream->obs_data.type == OBS_PIPEWIRE_STREAM_TYPE_SOURCE) {
+		output_flags = obs_source_get_output_flags(
+			obs_pw_stream->obs_data.source);
+		if (output_flags & OBS_SOURCE_ASYNC_VIDEO)
+			obs_source_output_video(obs_pw_stream->obs_data.source,
+						NULL);
+	}
 
 	g_ptr_array_remove(obs_pw_stream->obs_pw->streams, obs_pw_stream);
 
