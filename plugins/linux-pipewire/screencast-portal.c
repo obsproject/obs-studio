@@ -164,6 +164,7 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 	g_autoptr(GError) error = NULL;
 	int pipewire_fd;
 	int fd_index;
+	obs_pipewire_stream_data stream_data;
 
 	capture = user_data;
 	result = g_dbus_proxy_call_with_unix_fd_list_finish(
@@ -192,8 +193,11 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 	if (!capture->obs_pw)
 		return;
 
+	stream_data.type = OBS_PIPEWIRE_STREAM_TYPE_SOURCE;
+	stream_data.source = capture->source;
+
 	capture->obs_pw_stream = obs_pipewire_connect_stream(
-		capture->obs_pw, capture->source, capture->pipewire_node,
+		capture->obs_pw, &stream_data, capture->pipewire_node,
 		"OBS Studio",
 		pw_properties_new(PW_KEY_MEDIA_TYPE, "Video",
 				  PW_KEY_MEDIA_CATEGORY, "Capture",

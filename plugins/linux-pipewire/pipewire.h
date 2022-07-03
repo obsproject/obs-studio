@@ -24,8 +24,21 @@
 
 #include <pipewire/pipewire.h>
 
+enum obs_pipewire_stream_type {
+	OBS_PIPEWIRE_STREAM_TYPE_SOURCE,
+};
+
+struct _obs_pipewire_stream_data {
+	enum obs_pipewire_stream_type type;
+	union {
+		obs_source_t *source;
+		obs_output_t *output;
+	};
+};
+
 typedef struct _obs_pipewire obs_pipewire;
 typedef struct _obs_pipewire_stream obs_pipewire_stream;
+typedef struct _obs_pipewire_stream_data obs_pipewire_stream_data;
 
 obs_pipewire *
 obs_pipewire_create(int pipewire_fd,
@@ -35,10 +48,9 @@ struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
 void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
 void obs_pipewire_destroy(obs_pipewire *obs_pw);
 
-obs_pipewire_stream *
-obs_pipewire_connect_stream(obs_pipewire *obs_pw, obs_source_t *source,
-			    int pipewire_node, const char *stream_name,
-			    struct pw_properties *stream_properties);
+obs_pipewire_stream *obs_pipewire_connect_stream(
+	obs_pipewire *obs_pw, obs_pipewire_stream_data *data, int pipewire_node,
+	const char *stream_name, struct pw_properties *stream_properties);
 
 void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw);
 void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw);
