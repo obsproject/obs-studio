@@ -74,6 +74,7 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 	std::string theme;
+	QString defaultStyleSheet;
 	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
