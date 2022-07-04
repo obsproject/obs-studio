@@ -21,6 +21,7 @@
 #include "pipewire.h"
 
 #include <util/darray.h>
+#include <media-io/video-frame.h>
 
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
@@ -83,6 +84,7 @@ struct _obs_pipewire_stream {
 	struct pw_stream *stream;
 	struct spa_hook stream_listener;
 	struct spa_source *reneg;
+	uint32_t seq;
 
 	struct spa_video_info format;
 
@@ -242,6 +244,14 @@ static const uint32_t supported_formats_sync[] = {
 
 #define N_SUPPORTED_FORMATS_SYNC \
 	(sizeof(supported_formats_sync) / sizeof(supported_formats_sync[0]))
+
+static const uint32_t supported_formats_output[] = {
+	SPA_VIDEO_FORMAT_BGRA, SPA_VIDEO_FORMAT_RGBA, SPA_VIDEO_FORMAT_BGRx,
+	SPA_VIDEO_FORMAT_RGBx, SPA_VIDEO_FORMAT_YUY2,
+};
+
+#define N_SUPPORTED_FORMATS_OUTPUT \
+	(sizeof(supported_formats_output) / sizeof(supported_formats_output[0]))
 
 static bool
 lookup_format_info_from_spa_format(uint32_t spa_format,
@@ -452,8 +462,30 @@ static void init_format_info_sync(obs_pipewire_stream *obs_pw_stream)
 	bfree(drm_formats);
 }
 
+static void init_format_info_output(obs_pipewire_stream *obs_pw_stream)
+{
+	da_init(obs_pw_stream->format_info);
+
+	for (size_t i = 0; i < N_SUPPORTED_FORMATS_OUTPUT; i++) {
+		struct format_info *info, tmp;
+		if (!lookup_format_info_from_spa_format(
+			    supported_formats_output[i], &tmp))
+			continue;
+
+		info = da_push_back_new(obs_pw_stream->format_info);
+		da_init(info->modifiers);
+		info->spa_format = tmp.spa_format;
+		info->drm_format = tmp.drm_format;
+	}
+}
+
 static void init_format_info(obs_pipewire_stream *obs_pw_stream)
 {
+	if (obs_pw_stream->obs_data.type == OBS_PIPEWIRE_STREAM_TYPE_OUTPUT) {
+		init_format_info_output(obs_pw_stream);
+		return;
+	}
+
 	uint32_t output_flags;
 
 	output_flags = obs_source_get_output_flags(obs_pw_stream->source);
@@ -924,6 +956,106 @@ static void param_changed_source(obs_pipewire_stream *obs_pw_stream,
 	obs_pw_stream->negotiated = true;
 }
 
+static void param_changed_output(obs_pipewire_stream *obs_pw_stream,
+				 uint32_t id, const struct spa_pod *param)
+{
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
+	struct spa_pod_builder pod_builder;
+	const struct spa_pod *params[3];
+	uint32_t output_flags;
+	uint32_t buffer_types;
+	uint32_t size;
+	uint32_t stride;
+	uint8_t params_buffer[1024];
+	int result;
+
+	if (!param || id != SPA_PARAM_Format)
+		return;
+
+	result = spa_format_parse(param, &obs_pw_stream->format.media_type,
+				  &obs_pw_stream->format.media_subtype);
+	if (result < 0)
+		return;
+
+	if (obs_pw_stream->format.media_type != SPA_MEDIA_TYPE_video ||
+	    obs_pw_stream->format.media_subtype != SPA_MEDIA_SUBTYPE_raw)
+		return;
+
+	spa_format_video_raw_parse(param, &obs_pw_stream->format.info.raw);
+
+	buffer_types = 1 << SPA_DATA_MemPtr;
+	bool has_modifier =
+		spa_pod_find_prop(param, NULL, SPA_FORMAT_VIDEO_modifier) !=
+		NULL;
+
+	struct format_data format_data;
+	if (!lookup_format_info_from_spa_format(
+		    obs_pw_stream->format.info.raw.format, &format_data)) {
+		blog(LOG_ERROR, "[pipewire] Unsupported format: %u",
+		     obs_pw_stream->format.info.raw.format);
+		return;
+	}
+
+	struct video_scale_info vsi = {0};
+	vsi.format = format_data.video_format;
+	vsi.width = obs_pw_stream->format.info.raw.size.width;
+	vsi.height = obs_pw_stream->format.info.raw.size.height;
+	obs_output_set_video_conversion(obs_pw_stream->obs_data.output, &vsi);
+
+	stride = SPA_ROUND_UP_N(
+		format_data.bpp * obs_pw_stream->format.info.raw.size.width, 4);
+	size = SPA_ROUND_UP_N(
+		stride * obs_pw_stream->format.info.raw.size.width, 4);
+
+	blog(LOG_INFO, "[pipewire] Negotiated format:");
+
+	blog(LOG_INFO, "[pipewire]     Format: %d (%s)",
+	     obs_pw_stream->format.info.raw.format,
+	     spa_debug_type_find_name(spa_type_video_format,
+				      obs_pw_stream->format.info.raw.format));
+
+	blog(LOG_INFO, "[pipewire]     Size: %dx%d",
+	     obs_pw_stream->format.info.raw.size.width,
+	     obs_pw_stream->format.info.raw.size.height);
+
+	blog(LOG_INFO, "[pipewire]     Framerate: %d/%d",
+	     obs_pw_stream->format.info.raw.framerate.num,
+	     obs_pw_stream->format.info.raw.framerate.denom);
+
+	pod_builder =
+		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
+
+	/* Video crop */
+	params[0] = spa_pod_builder_add_object(
+		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_VideoCrop),
+		SPA_PARAM_META_size,
+		SPA_POD_Int(sizeof(struct spa_meta_region)));
+
+	/* Cursor */
+	params[1] = spa_pod_builder_add_object(
+		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Cursor),
+		SPA_PARAM_META_size,
+		SPA_POD_CHOICE_RANGE_Int(CURSOR_META_SIZE(64, 64),
+					 CURSOR_META_SIZE(1, 1),
+					 CURSOR_META_SIZE(1024, 1024)));
+
+	/* Buffer options */
+	params[2] = spa_pod_builder_add_object(
+		&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
+		SPA_PARAM_BUFFERS_buffers, SPA_POD_CHOICE_RANGE_Int(4, 1, 32),
+		SPA_PARAM_BUFFERS_blocks, SPA_POD_Int(1),
+		SPA_PARAM_BUFFERS_size, SPA_POD_Int(size),
+		SPA_PARAM_BUFFERS_stride, SPA_POD_Int(stride),
+		SPA_PARAM_BUFFERS_align, SPA_POD_Int(16),
+		SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(1 << SPA_DATA_MemPtr));
+
+	pw_stream_update_params(obs_pw_stream->stream, params, 3);
+
+	obs_pw_stream->negotiated = true;
+}
+
 static void on_param_changed_cb(void *user_data, uint32_t id,
 				const struct spa_pod *param)
 {
@@ -931,6 +1063,9 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	switch (obs_pw_stream->obs_data.type) {
 	case OBS_PIPEWIRE_STREAM_TYPE_SOURCE:
 		param_changed_source(obs_pw_stream, id, param);
+		break;
+	case OBS_PIPEWIRE_STREAM_TYPE_OUTPUT:
+		param_changed_output(obs_pw_stream, id, param);
 		break;
 	}
 }
@@ -1014,9 +1149,14 @@ obs_pipewire_create(int pipewire_fd,
 	pw_thread_loop_lock(obs_pw->thread_loop);
 
 	/* Core */
-	obs_pw->core = pw_context_connect_fd(
-		obs_pw->context, fcntl(obs_pw->pipewire_fd, F_DUPFD_CLOEXEC, 5),
-		NULL, 0);
+	if (obs_pw->pipewire_fd == -1) {
+		obs_pw->core = pw_context_connect(obs_pw->context, NULL, 0);
+	} else {
+		obs_pw->core = pw_context_connect_fd(obs_pw->context,
+						     fcntl(obs_pw->pipewire_fd,
+							   F_DUPFD_CLOEXEC, 5),
+						     NULL, 0);
+	}
 	if (!obs_pw->core) {
 		blog(LOG_WARNING, "Error creating PipeWire core: %m");
 		pw_thread_loop_unlock(obs_pw->thread_loop);
@@ -1099,6 +1239,10 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 		obs_pw_stream->obs_data.type = OBS_PIPEWIRE_STREAM_TYPE_SOURCE;
 		obs_pw_stream->obs_data.source = data->source;
 		break;
+	case OBS_PIPEWIRE_STREAM_TYPE_OUTPUT:
+		obs_pw_stream->obs_data.type = OBS_PIPEWIRE_STREAM_TYPE_OUTPUT;
+		obs_pw_stream->obs_data.output = data->output;
+		break;
 	}
 
 	init_format_info(obs_pw_stream);
@@ -1134,6 +1278,9 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 
 	pw_stream_flags = PW_STREAM_FLAG_AUTOCONNECT |
 			  PW_STREAM_FLAG_MAP_BUFFERS;
+	if (obs_pw_stream->obs_data.type == OBS_PIPEWIRE_STREAM_TYPE_OUTPUT) {
+		pw_stream_flags |= PW_STREAM_FLAG_DRIVER;
+	}
 
 	pw_stream_connect(obs_pw_stream->stream, PW_DIRECTION_INPUT,
 			  pipewire_node, pw_stream_flags, params, n_params);
@@ -1220,6 +1367,82 @@ void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw_stream,
 
 		gs_matrix_pop();
 	}
+}
+
+void obs_pipewire_stream_export_frame(obs_pipewire_stream *obs_pw_stream,
+				      struct video_data *frame)
+{
+	struct pw_buffer *buffer;
+	struct video_frame frame_out = {0};
+	struct format_data format_data;
+	// check if we have a running pipewire stream
+	if (pw_stream_get_state(obs_pw_stream->stream, NULL) !=
+	    PW_STREAM_STATE_STREAMING) {
+		blog(LOG_INFO, "No node connected");
+		return;
+	}
+
+	blog(LOG_DEBUG, "exporting frame to pipewire");
+
+	if ((buffer = pw_stream_dequeue_buffer(obs_pw_stream->stream)) ==
+	    NULL) {
+		blog(LOG_WARNING, "pipewire: out of buffers");
+		return;
+	}
+
+	if (!lookup_format_info_from_spa_format(
+		    obs_pw_stream->format.info.raw.format, &format_data)) {
+		blog(LOG_WARNING, "pipewire: unsupported format");
+		return;
+	}
+
+	struct spa_buffer *spa_buf = buffer->buffer;
+	struct spa_data *d = spa_buf->datas;
+
+	for (unsigned int i = 0; i < spa_buf->n_datas; i++) {
+		if (d[i].data == NULL) {
+			blog(LOG_WARNING, "pipewire: buffer not mapped");
+			continue;
+		}
+		uint32_t stride = SPA_ROUND_UP_N(
+			obs_pw_stream->format.info.raw.size.width *
+				format_data.bpp,
+			4);
+		frame_out.data[i] = d[i].data;
+		d[i].mapoffset = 0;
+		d[i].maxsize =
+			obs_pw_stream->format.info.raw.size.height * stride;
+		d[i].flags = SPA_DATA_FLAG_READABLE;
+		d[i].type = SPA_DATA_MemPtr;
+		d[i].chunk->offset = 0;
+		d[i].chunk->stride = stride;
+		d[i].chunk->size =
+			obs_pw_stream->format.info.raw.size.height * stride;
+	}
+	video_frame_copy(&frame_out, (struct video_frame *)frame,
+			 format_data.video_format, 1);
+
+	struct spa_meta_header *h;
+	if ((h = spa_buffer_find_meta_data(spa_buf, SPA_META_Header,
+					   sizeof(*h)))) {
+		h->pts = frame->timestamp;
+		h->flags = 0;
+		h->seq = obs_pw_stream->seq++;
+		h->dts_offset = 0;
+	}
+
+	blog(LOG_DEBUG, "********************");
+	blog(LOG_DEBUG, "pipewire: fd %lu", d[0].fd);
+	blog(LOG_DEBUG, "pipewire: dataptr %p", d[0].data);
+	blog(LOG_DEBUG, "pipewire: size %d", d[0].maxsize);
+	blog(LOG_DEBUG, "pipewire: stride %d", d[0].chunk->stride);
+	blog(LOG_DEBUG, "pipewire: width %d",
+	     obs_pw_stream->format.info.raw.size.width);
+	blog(LOG_DEBUG, "pipewire: height %d",
+	     obs_pw_stream->format.info.raw.size.height);
+	blog(LOG_DEBUG, "********************");
+
+	pw_stream_queue_buffer(obs_pw_stream->stream, buffer);
 }
 
 void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw_stream,

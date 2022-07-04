@@ -26,6 +26,7 @@
 
 enum obs_pipewire_stream_type {
 	OBS_PIPEWIRE_STREAM_TYPE_SOURCE,
+	OBS_PIPEWIRE_STREAM_TYPE_OUTPUT,
 };
 
 struct _obs_pipewire_stream_data {
@@ -58,6 +59,8 @@ uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw);
 uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw);
 void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw,
 				      gs_effect_t *effect);
+void obs_pipewire_stream_export_frame(obs_pipewire_stream *obs_pw,
+				      struct video_data *frame);
 
 void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw,
 					    bool cursor_visible);
