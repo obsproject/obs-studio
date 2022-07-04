@@ -3094,12 +3094,9 @@ void OBSBasicSettings::SaveGeneralSettings()
 	if (themeData == defaultTheme)
 		themeData = DEFAULT_THEME;
 
-	if (WidgetChanged(ui->theme)) {
+	if (WidgetChanged(ui->theme))
 		config_set_string(GetGlobalConfig(), "General", "CurrentTheme2",
 				  QT_TO_UTF8(themeData));
-
-		App()->SetTheme(themeData.toUtf8().constData());
-	}
 
 #if defined(_WIN32) || defined(__APPLE__)
 	if (WidgetChanged(ui->enableAutoUpdates))
