@@ -28,6 +28,10 @@
 /* rgb(11,10,11); /* veryVeryDark */
 /* rgb(42,130,218); /* blue */
 
+OBSThemeMeta {
+    dark: 'true';
+    author: 'Warchamp7';
+}
 
 /* Custom theme information.  This will set the application's QPalette, as
  * well as pass to QML via the OBSTheme object.

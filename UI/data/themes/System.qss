@@ -8,6 +8,9 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
+OBSThemeMeta {
+    dark: 'false';
+}
 
 /* We need to set back the icons, or the preview wont stick. */
 

@@ -19,6 +19,11 @@
 
 /* Colors */
 
+OBSThemeMeta {
+    dark: 'true';
+    author: 'Warchamp7';
+}
+
 /* Custom theme information.  This will set the application's QPalette, as
  * well as pass to QML via the OBSTheme object.
  * Can also use OBSTheme::disabled, OBSTheme::active, and OBSTheme::inactive.

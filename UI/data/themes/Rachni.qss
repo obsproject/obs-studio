@@ -44,6 +44,11 @@
 /* ---- Main Theme ---- */
 /************************/
 
+OBSThemeMeta {
+	dark: 'true';
+	author: 'Fenrir';
+}
+
 OBSTheme {
 	window: rgb(49, 54, 59); /* Blue-gray */
 	windowText: rgb(239, 240, 241); /* White */
