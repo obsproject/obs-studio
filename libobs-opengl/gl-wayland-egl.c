@@ -65,6 +65,8 @@ static const EGLint ctx_attribs[] = {
 	3,
 	EGL_CONTEXT_MINOR_VERSION,
 	3,
+	EGL_CONTEXT_PRIORITY_LEVEL_IMG,
+	EGL_CONTEXT_PRIORITY_HIGH_IMG,
 	EGL_NONE};
 
 static const EGLint khr_ctx_attribs[] = {
@@ -78,6 +80,8 @@ static const EGLint khr_ctx_attribs[] = {
 	3,
 	EGL_CONTEXT_MINOR_VERSION_KHR,
 	3,
+	EGL_CONTEXT_PRIORITY_LEVEL_IMG,
+	EGL_CONTEXT_PRIORITY_HIGH_IMG,
 	EGL_NONE};
 
 struct gl_windowinfo {
@@ -225,6 +229,14 @@ static struct gl_platform *gl_wayland_egl_platform_create(gs_device_t *device,
 
 	if (!egl_context_create(plat, attribs)) {
 		goto fail_context_create;
+	}
+
+	EGLint priority = EGL_CONTEXT_PRIORITY_MEDIUM_IMG;
+	eglQueryContext(plat->display, plat->context,
+			EGL_CONTEXT_PRIORITY_LEVEL_IMG, &priority);
+
+	if (priority != EGL_CONTEXT_PRIORITY_HIGH_IMG) {
+		blog(LOG_WARNING, "Failed to set context priority");
 	}
 
 	if (!gladLoadGL()) {

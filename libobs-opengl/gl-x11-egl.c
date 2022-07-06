@@ -48,6 +48,8 @@ static const int ctx_attribs[] = {
 	3,
 	EGL_CONTEXT_MINOR_VERSION,
 	3,
+	EGL_CONTEXT_PRIORITY_LEVEL_IMG,
+	EGL_CONTEXT_PRIORITY_HIGH_IMG,
 	EGL_NONE,
 };
 
@@ -222,6 +224,14 @@ static bool gl_context_create(struct gl_platform *plat)
 		blog(LOG_ERROR, "Unable to create EGL context: %s",
 		     get_egl_error_string());
 		goto error;
+	}
+
+	EGLint priority = EGL_CONTEXT_PRIORITY_MEDIUM_IMG;
+	eglQueryContext(edisplay, context, EGL_CONTEXT_PRIORITY_LEVEL_IMG,
+			&priority);
+
+	if (priority != EGL_CONTEXT_PRIORITY_HIGH_IMG) {
+		blog(LOG_WARNING, "Failed to set context priority");
 	}
 
 	plat->pbuffer =
