@@ -184,7 +184,8 @@ void YoutubeAuth::SetChatId(const QString &chat_id,
 		chat->SetApiChatId(api_chat_id);
 	}
 #else
-	UNUSED_PARAMETER(chat_id, api_chat_id);
+	UNUSED_PARAMETER(chat_id);
+	UNUSED_PARAMETER(api_chat_id);
 #endif
 }
 
