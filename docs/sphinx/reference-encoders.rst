@@ -77,7 +77,7 @@ Encoder Definition Structure (obs_encoder_info)
             number would be 1024
 
 .. member:: void (*obs_encoder_info.get_defaults)(obs_data_t *settings)
-            void (*obs_encoder_info.get_defaults2)(void *type_data, obs_data_t *settings)
+            void (*obs_encoder_info.get_defaults2)(obs_data_t *settings, void *type_data)
 
    Sets the default settings for this encoder.
 
