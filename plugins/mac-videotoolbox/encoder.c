@@ -19,12 +19,11 @@
 #define VT_BLOG(level, format, ...) \
 	VT_LOG_ENCODER(enc->encoder, level, format, ##__VA_ARGS__)
 
-static DARRAY(struct vt_encoder_list_item {
-	const char *name;
+struct vt_encoder_type_data {
 	const char *disp_name;
 	const char *id;
-	const char *codec_name;
-}) vt_encoder_list;
+	bool hardware_accelerated;
+};
 
 struct vt_encoder {
 	obs_encoder_t *encoder;
@@ -813,16 +812,14 @@ static bool vt_extra_data(void *data, uint8_t **extra_data, size_t *size)
 
 static const char *vt_getname(void *data)
 {
-	uintptr_t encoder_id = (uintptr_t)data;
-	const char *disp_name =
-		vt_encoder_list.array[(int)encoder_id].disp_name;
+	struct vt_encoder_type_data *type_data = data;
 
-	if (strcmp("Apple H.264 (HW)", disp_name) == 0) {
+	if (strcmp("Apple H.264 (HW)", type_data->disp_name) == 0) {
 		return obs_module_text("VTH264EncHW");
-	} else if (strcmp("Apple H.264 (SW)", disp_name) == 0) {
+	} else if (strcmp("Apple H.264 (SW)", type_data->disp_name) == 0) {
 		return obs_module_text("VTH264EncSW");
 	}
-	return disp_name;
+	return type_data->disp_name;
 }
 
 #define TEXT_VT_ENCODER obs_module_text("VTEncoder")
@@ -895,11 +892,36 @@ static void vt_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "bframes", true);
 }
 
+static void vt_free_type_data(void *data)
+{
+	struct vt_encoder_type_data *type_data = data;
+
+	bfree((char *)type_data->disp_name);
+	bfree((char *)type_data->id);
+	bfree(type_data);
+}
+
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("mac-videotoolbox", "en-US")
 
-void encoder_list_create()
+bool obs_module_load(void)
 {
+	struct obs_encoder_info info = {
+		.type = OBS_ENCODER_VIDEO,
+		.codec = "h264",
+		.get_name = vt_getname,
+		.create = vt_create,
+		.destroy = vt_destroy,
+		.encode = vt_encode,
+		.update = vt_update,
+		.get_properties = vt_properties,
+		.get_defaults = vt_defaults,
+		.get_video_info = vt_video_info,
+		.get_extra_data = vt_extra_data,
+		.free_type_data = vt_free_type_data,
+		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
+	};
+
 	CFArrayRef encoder_list;
 	VTCopyVideoEncoderList(NULL, &encoder_list);
 	CFIndex size = CFArrayGetCount(encoder_list);
@@ -919,68 +941,32 @@ void encoder_list_create()
 			bfree(codec_name);
 			continue;
 		}
-		VT_DICTSTR(kVTVideoEncoderList_EncoderName, name);
+		bfree(codec_name);
 		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
 		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
-		struct vt_encoder_list_item enc = {
-			.name = name,
-			.id = id,
-			.disp_name = disp_name,
-			.codec_name = codec_name,
-		};
-		da_push_back(vt_encoder_list, &enc);
+
+		CFBooleanRef hardware_ref = CFDictionaryGetValue(
+			encoder_dict,
+			kVTVideoEncoderList_IsHardwareAccelerated);
+		bool hardware_accelerated = false;
+		if (hardware_ref)
+			hardware_accelerated = CFBooleanGetValue(hardware_ref);
+
+		info.id = id;
+		struct vt_encoder_type_data *type_data =
+			bzalloc(sizeof(struct vt_encoder_type_data));
+		type_data->disp_name = disp_name;
+		type_data->id = id;
+		type_data->hardware_accelerated = hardware_accelerated;
+		info.type_data = type_data;
+
+		obs_register_encoder(&info);
 #undef VT_DICTSTR
 	}
 
 	CFRelease(encoder_list);
-}
-
-void encoder_list_destroy()
-{
-	for (size_t i = 0; i < vt_encoder_list.num; i++) {
-		bfree((char *)vt_encoder_list.array[i].name);
-		bfree((char *)vt_encoder_list.array[i].id);
-		bfree((char *)vt_encoder_list.array[i].codec_name);
-		bfree((char *)vt_encoder_list.array[i].disp_name);
-	}
-	da_free(vt_encoder_list);
-}
-
-void register_encoders()
-{
-	struct obs_encoder_info info = {
-		.type = OBS_ENCODER_VIDEO,
-		.codec = "h264",
-		.get_name = vt_getname,
-		.create = vt_create,
-		.destroy = vt_destroy,
-		.encode = vt_encode,
-		.update = vt_update,
-		.get_properties = vt_properties,
-		.get_defaults = vt_defaults,
-		.get_video_info = vt_video_info,
-		.get_extra_data = vt_extra_data,
-		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
-	};
-
-	for (size_t i = 0; i < vt_encoder_list.num; i++) {
-		info.id = vt_encoder_list.array[i].id;
-		info.type_data = (void *)i;
-		obs_register_encoder(&info);
-	}
-}
-
-bool obs_module_load(void)
-{
-	encoder_list_create();
-	register_encoders();
 
 	VT_LOG(LOG_INFO, "Adding VideoToolbox encoders");
 
 	return true;
-}
-
-void obs_module_unload(void)
-{
-	encoder_list_destroy();
 }
