@@ -88,6 +88,11 @@
 #include <obs-nix-platform.h>
 #endif
 
+#ifdef __linux__
+#include <sys/capability.h>
+#include <sys/prctl.h>
+#endif
+
 using namespace json11;
 using namespace std;
 
@@ -1770,6 +1775,24 @@ void OBSBasic::OBSInit()
 		if (ret != OBS_VIDEO_SUCCESS)
 			throw UNKNOWN_ERROR;
 	}
+
+#ifdef __linux__
+	cap_t caps = cap_get_proc();
+
+	if (caps) {
+		cap_value_t capToRemove = CAP_SYS_NICE;
+
+		/* Drop CAP_SYS_NICE after EGL context has been created */
+		cap_set_flag(caps, CAP_EFFECTIVE, 1, &capToRemove, CAP_CLEAR);
+		cap_set_flag(caps, CAP_PERMITTED, 1, &capToRemove, CAP_CLEAR);
+
+		cap_set_proc(caps);
+		cap_free(caps);
+
+		/* Reset permissions of proc filesystem (for PipeWire) */
+		prctl(PR_SET_DUMPABLE, 1);
+	}
+#endif
 
 	/* load audio monitoring */
 	if (obs_audio_monitoring_available()) {

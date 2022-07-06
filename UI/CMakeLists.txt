@@ -452,6 +452,10 @@ elseif(OS_POSIX)
   if(OS_FREEBSD)
     target_link_libraries(obs PRIVATE procstat)
   endif()
+
+  if(OS_LINUX)
+    target_link_libraries(obs PRIVATE cap)
+  endif()
 endif()
 
 get_target_property(_SOURCES obs SOURCES)
