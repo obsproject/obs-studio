@@ -18,10 +18,35 @@ env:
   YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
 
 jobs:
+  check_tag:
+    name: Check release tag
+    runs-on: [ubuntu-latest]
+    outputs:
+      valid_tag: ${{ steps.check_tag.outputs.valid_tag }}
+      matrix: ${{ steps.check_tag.outputs.matrix }}
+    steps:
+      - name: Check the tag
+        id: check_tag
+        run: |
+          shopt -s extglob
+
+          case ${GITHUB_REF##*/} in
+            +([0-9]).+([0-9]).+([0-9]) )
+              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
+              echo '::set-output name=matrix::["beta", "stable"]'
+              ;;
+            +([0-9]).+([0-9]).+([0-9])-@(beta|rc) )
+              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
+              echo '::set-output name=matrix::["beta"]'
+              ;;
+            * ) echo '::set-output name=valid_tag::${{ toJSON(false) }}' ;;
+          esac
+
   publish:
     name: Publish to Flathub
     runs-on: [ubuntu-latest]
-    if: "${{ github.event_name == 'release' && ( matrix.branch != 'stable' || (!contains(github.ref, '-beta') && !contains(github.ref, '-rc')) ) }}"
+    needs: check_tag
+    if: fromJSON(needs.check_tag.outputs.valid_tag)
     env:
       FLATPAK_BUILD_PATH: flatpak_app/files/share
     container:
@@ -29,7 +54,7 @@ jobs:
       options: --privileged
     strategy:
       matrix:
-        branch: [stable, beta]
+        branch: ${{ fromJSON(needs.check_tag.outputs.matrix) }}
     steps:
       - name: Checkout
         uses: actions/checkout@v3
