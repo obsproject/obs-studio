@@ -95,7 +95,8 @@ if(TARGET Luajit::Luajit)
     OUTPUT swig/swigluarun.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     PRE_BUILD
-    COMMAND ${SWIG_EXECUTABLE} -lua -external-runtime swig/swigluarun.h
+    COMMAND ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE}
+            -lua -external-runtime swig/swigluarun.h
     COMMENT "obs-scripting - generating Luajit SWIG interface headers")
 
   set_source_files_properties(swig/swigluarun.h PROPERTIES GENERATED ON)
@@ -124,7 +125,8 @@ if(TARGET Python::Python)
     OUTPUT swig/swigpyrun.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     PRE_BUILD
-    COMMAND ${SWIG_EXECUTABLE} -python -external-runtime swig/swigpyrun.h
+    COMMAND ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE}
+            -python -external-runtime swig/swigpyrun.h
     COMMENT "obs-scripting - generating Python 3 SWIG interface headers")
 
   set_source_files_properties(swig/swigpyrun.h PROPERTIES GENERATED ON)
