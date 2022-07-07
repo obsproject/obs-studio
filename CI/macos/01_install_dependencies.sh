@@ -26,10 +26,19 @@ install_qt-deps() {
     status "Set up precompiled dependency Qt v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     step "Download..."
-    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt-${1}-${ARCH:-x86_64}.tar.xz" "${2}"
+
+    if [[ -n ${CI} ]]; then
+        _ARCH='universal'
+        _HASH=${CI_QT_HASH_UNIVERSAL}
+    else
+        _ARCH="${ARCH:-x86_64}"
+        _HASH="${2}"
+    fi
+
+    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt-${1}-${_ARCH}.tar.xz" "${_HASH}"
     mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-qt-${1}-${ARCH:-x86_64}.tar.xz" -C ./obs-deps
+    /usr/bin/tar -xf "./macos-deps-qt-${1}-${_ARCH}.tar.xz" -C ./obs-deps
     /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 

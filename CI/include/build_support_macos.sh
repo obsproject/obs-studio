@@ -20,6 +20,7 @@ CI_SPARKLE_HASH=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+SPARKLE_H
 CI_QT_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_VERSION_MAC: '([0-9\.]+)'/\1/p" | /usr/bin/head -1)
 CI_QT_HASH_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_X86_64: '([0-9a-f]+)'/\1/p")
 CI_QT_HASH_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_ARM64: '([0-9a-f]+)'/\1/p")
+CI_QT_HASH_UNIVERSAL=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+QT_HASH_MAC_UNIVERSAL: '([0-9a-f]+)'/\1/p")
 CI_MACOSX_DEPLOYMENT_TARGET_X86_64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_X86_64: '([0-9\.]+)'/\1/p")
 CI_MACOSX_DEPLOYMENT_TARGET_ARM64=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+MACOSX_DEPLOYMENT_TARGET_ARM64: '([0-9\.]+)'/\1/p")
 CI_MACOS_CEF_VERSION=$(echo "${WORKFLOW_CONTENT}" | /usr/bin/sed -En "s/[ ]+CEF_BUILD_VERSION_MAC: '([0-9]+)'/\1/p")
