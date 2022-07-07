@@ -20,7 +20,7 @@ find_path(
 
 find_library(
   PYTHON_LIB
-  NAMES ${_PYTHON_LIBRARIES} python36
+  NAMES ${_PYTHON_LIBRARIES} python3
   HINTS ${_PYTHON_LIBRARY_DIRS}
   PATH_SUFFIXES
     lib${_lib_suffix}
