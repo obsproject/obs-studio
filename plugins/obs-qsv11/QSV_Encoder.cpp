@@ -65,6 +65,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <intrin.h>
 #include <d3d11.h>
 #include <dxgi1_2.h>
+#include <wrl/client.h>
 
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
@@ -73,12 +74,12 @@ mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
 mfxVersion ver = {{0, 1}}; // for backward compatibility
 std::atomic<bool> is_active{false};
 
-bool prefer_igpu_enc(int *iGPUIndex)
+bool prefer_current_or_igpu_enc(int *iGPUIndex)
 {
 	IDXGIAdapter *pAdapter;
-	int adapterIndex = 0;
 	bool hasIGPU = false;
 	bool hasDGPU = false;
+	bool hasCurrent = false;
 
 	HMODULE hDXGI = LoadLibrary(L"dxgi.dll");
 	if (hDXGI == NULL) {
@@ -108,30 +109,62 @@ bool prefer_igpu_enc(int *iGPUIndex)
 		return false;
 	}
 
-	// Check for i+I cases (Intel discrete + Intel integrated graphics on the same system). Default will be integrated.
-	while (SUCCEEDED(pFactory->EnumAdapters(adapterIndex, &pAdapter))) {
-		DXGI_ADAPTER_DESC AdapterDesc = {};
-		if (SUCCEEDED(pAdapter->GetDesc(&AdapterDesc))) {
-			if (AdapterDesc.VendorId == 0x8086) {
-				if (AdapterDesc.DedicatedVideoMemory <=
-				    512 * 1024 * 1024) {
-					hasIGPU = true;
-					if (iGPUIndex != NULL) {
-						*iGPUIndex = adapterIndex;
-					}
-				} else {
-					hasDGPU = true;
+	LUID luid;
+	bool hasLuid = false;
+	obs_enter_graphics();
+	{
+		ID3D11Device *pDevice = (ID3D11Device *)gs_get_device_obj();
+		Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
+		if (SUCCEEDED(pDevice->QueryInterface<IDXGIDevice>(
+			    dxgiDevice.GetAddressOf()))) {
+			Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
+			if (SUCCEEDED(dxgiDevice->GetAdapter(
+				    dxgiAdapter.GetAddressOf()))) {
+				DXGI_ADAPTER_DESC desc;
+				hasLuid =
+					SUCCEEDED(dxgiAdapter->GetDesc(&desc));
+				if (hasLuid) {
+					luid = desc.AdapterLuid;
 				}
 			}
 		}
-		adapterIndex++;
+	}
+	obs_leave_graphics();
+
+	// Check for i+I cases (Intel discrete + Intel integrated graphics on the same system). Default will be integrated.
+	for (int adapterIndex = 0;
+	     SUCCEEDED(pFactory->EnumAdapters(adapterIndex, &pAdapter));
+	     ++adapterIndex) {
+		DXGI_ADAPTER_DESC AdapterDesc = {};
+		const HRESULT hr = pAdapter->GetDesc(&AdapterDesc);
 		pAdapter->Release();
+
+		if (SUCCEEDED(hr) && (AdapterDesc.VendorId == 0x8086)) {
+			if (hasLuid &&
+			    (AdapterDesc.AdapterLuid.LowPart == luid.LowPart) &&
+			    (AdapterDesc.AdapterLuid.HighPart ==
+			     luid.HighPart)) {
+				hasCurrent = true;
+				*iGPUIndex = adapterIndex;
+				break;
+			}
+
+			if (AdapterDesc.DedicatedVideoMemory <=
+			    512 * 1024 * 1024) {
+				hasIGPU = true;
+				if (iGPUIndex != NULL) {
+					*iGPUIndex = adapterIndex;
+				}
+			} else {
+				hasDGPU = true;
+			}
+		}
 	}
 
 	pFactory->Release();
 	FreeLibrary(hDXGI);
 
-	return hasIGPU && hasDGPU;
+	return hasCurrent || (hasIGPU && hasDGPU);
 }
 
 void qsv_encoder_version(unsigned short *major, unsigned short *minor)
@@ -145,7 +178,8 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
 				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
 	int igpu_index = -1;
-	if (prefer_igpu_enc(&igpu_index)) {
+	if (prefer_current_or_igpu_enc(&igpu_index) &&
+	    (igpu_index < _countof(impl_list))) {
 		impl = impl_list[igpu_index];
 	}
 
