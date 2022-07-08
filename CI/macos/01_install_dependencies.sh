@@ -35,10 +35,10 @@ install_qt-deps() {
         _HASH="${2}"
     fi
 
-    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt-${1}-${_ARCH}.tar.xz" "${_HASH}"
+    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt5-${1}-${_ARCH}.tar.xz" "${_HASH}"
     mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-qt-${1}-${_ARCH}.tar.xz" -C ./obs-deps
+    /usr/bin/tar -xf "./macos-deps-qt5-${1}-${_ARCH}.tar.xz" -C ./obs-deps
     /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 

@@ -32,7 +32,7 @@ Function Install-obs-deps {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { "SilentlyContinue" } else { "Continue" })
-        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/win-${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-${Version}-${ArchSuffix}.zip"
+        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
@@ -58,12 +58,12 @@ function Install-qt-deps {
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
-        Invoke-WebRequest -Uri "https://cdn-fastly.obsproject.com/downloads/windows-deps-qt-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt-${Version}-${ArchSuffix}.zip"
+        Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-qt5-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt5-${Version}-${ArchSuffix}.zip"
         $ProgressPreference = "Continue"
-        
+
         Write-Step "Unpack..."
 
-        Expand-Archive -Path "windows-deps-qt-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}" -Force
+        Expand-Archive -Path "windows-deps-qt5-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}" -Force
     } else {
         Write-Step "Found existing pre-built Qt..."
     }
