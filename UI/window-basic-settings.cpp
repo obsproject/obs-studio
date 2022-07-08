@@ -437,7 +437,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecTrack5,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecTrack6,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
-	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleReplayBuf,      GROUP_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
@@ -774,7 +774,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		&OBSBasicSettings::SimpleRecordingEncoderChanged);
 	connect(ui->ignoreRecommended, &QCheckBox::toggled, this,
 		&OBSBasicSettings::SimpleRecordingEncoderChanged);
-	connect(ui->simpleReplayBuf, &QCheckBox::toggled, this,
+	connect(ui->simpleReplayBuf, &QGroupBox::toggled, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleOutputVBitrate, &QSpinBox::valueChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
@@ -1022,6 +1022,14 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 {
 	if (WidgetChanged(widget))
 		config_set_int(main->Config(), section, value, widget->value());
+}
+
+void OBSBasicSettings::SaveGroupBox(QGroupBox *widget, const char *section,
+				    const char *value)
+{
+	if (WidgetChanged(widget))
+		config_set_bool(main->Config(), section, value,
+				widget->isChecked());
 }
 
 #define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
@@ -2448,7 +2456,7 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->simpleOutStrAEncoderLabel->setEnabled(false);
 		ui->simpleOutStrAEncoder->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
-		ui->replayBufferGroupBox->setEnabled(false);
+		ui->simpleReplayBuf->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
 		ui->advOutRecTopContainer->setEnabled(false);
 		ui->advOutRecTypeContainer->setEnabled(false);
@@ -3798,7 +3806,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveComboData(ui->simpleOutRecAEncoder, "SimpleOutput",
 		      "RecAudioEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
-	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
+	SaveGroupBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
 	config_set_int(main->Config(), "SimpleOutput", "RecTracks",
@@ -5460,18 +5468,23 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 {
 	bool state = false;
 	switch (ui->outputMode->currentIndex()) {
-	case 0:
+	case 0: {
+		const bool lossless =
+			ui->simpleOutRecQuality->currentData().toString() ==
+			"Lossless";
 		state = ui->simpleReplayBuf->isChecked();
 		ui->simpleReplayBuf->setEnabled(
-			!obs_frontend_replay_buffer_active());
+			!obs_frontend_replay_buffer_active() && !lossless);
 		break;
-	case 1:
+	}
+	case 1: {
 		state = ui->advReplayBuf->isChecked();
 		bool customFFmpeg = ui->advOutRecType->currentIndex() == 1;
 		ui->advReplayBuf->setEnabled(
 			!obs_frontend_replay_buffer_active() && !customFFmpeg);
 		ui->advReplayBufCustomFFmpeg->setVisible(customFFmpeg);
 		break;
+	}
 	}
 	ui->replayWhileStreaming->setEnabled(state);
 	ui->keepReplayStreamStops->setEnabled(
@@ -5481,8 +5494,6 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 void OBSBasicSettings::SimpleReplayBufferChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
-	bool replayBufferEnabled = ui->simpleReplayBuf->isChecked();
-	bool lossless = qual == "Lossless";
 	bool streamQuality = qual == "Stream";
 	int abitrate = 0;
 
@@ -5539,8 +5550,6 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	}
 
 	ui->simpleRBEstimate->style()->polish(ui->simpleRBEstimate);
-	ui->replayBufferGroupBox->setVisible(!lossless && replayBufferEnabled);
-	ui->simpleReplayBuf->setVisible(!lossless);
 
 	UpdateAutomaticReplayBufferCheckboxes();
 }

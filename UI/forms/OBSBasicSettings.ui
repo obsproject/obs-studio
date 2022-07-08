@@ -2162,21 +2162,17 @@
                        <item row="7" column="1">
                         <widget class="QLineEdit" name="simpleOutMuxCustom"/>
                        </item>
-                       <item row="8" column="1">
-                        <widget class="QCheckBox" name="simpleReplayBuf">
-                         <property name="text">
-                          <string>Basic.Settings.Output.UseReplayBuffer</string>
-                         </property>
-                         <property name="checked">
-                          <bool>true</bool>
-                         </property>
-                        </widget>
-                       </item>
                       </layout>
                      </widget>
                     </item>
                     <item>
-                     <widget class="QGroupBox" name="replayBufferGroupBox">
+                     <widget class="QGroupBox" name="simpleReplayBuf">
+                      <property name="checkable">
+                       <bool>true</bool>
+                      </property>
+                      <property name="checked">
+                       <bool>true</bool>
+                      </property>
                       <property name="title">
                        <string>ReplayBuffer</string>
                       </property>

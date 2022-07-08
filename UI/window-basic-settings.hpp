@@ -168,6 +168,8 @@ private:
 			   const char *value);
 	void SaveCheckBox(QAbstractButton *widget, const char *section,
 			  const char *value, bool invert = false);
+	void SaveGroupBox(QGroupBox *widget, const char *section,
+			  const char *value);
 	void SaveEdit(QLineEdit *widget, const char *section,
 		      const char *value);
 	void SaveSpinBox(QSpinBox *widget, const char *section,
