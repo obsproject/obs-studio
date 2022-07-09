@@ -93,8 +93,8 @@ macro(setup_obs_project)
     set(OBS_DATA_PATH "../../${OBS_DATA_DESTINATION}")
 
     set(OBS_SCRIPT_PLUGIN_PATH "../../${OBS_SCRIPT_PLUGIN_DESTINATION}")
-    set(CMAKE_INSTALL_RPATH
-        "$ORIGIN/" "${CMAKE_INSTALL_PREFIX}/${OBS_LIBRARY_DESTINATION}")
+    set(CMAKE_INSTALL_RPATH "$ORIGIN/"
+                            "${ORIGIN}/../../${OBS_LIBRARY_DESTINATION}")
   endif()
 
   if(BUILD_FOR_PPA)
