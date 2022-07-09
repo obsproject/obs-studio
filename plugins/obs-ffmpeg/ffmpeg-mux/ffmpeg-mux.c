@@ -871,6 +871,21 @@ static int ffmpeg_mux_write_av_buffer(void *opaque, uint8_t *buf, int buf_size)
 	return buf_size;
 }
 
+#define SRT_PROTO "srt"
+#define UDP_PROTO "udp"
+#define TCP_PROTO "tcp"
+#define HTTP_PROTO "http"
+#define RIST_PROTO "rist"
+
+static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
+{
+	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
+	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
+}
+
 static inline int open_output_file(struct ffmpeg_mux *ffm)
 {
 #if LIBAVFORMAT_VERSION_INT < AV_VERSION_INT(59, 0, 100)
@@ -881,42 +896,55 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 	int ret;
 
 	if ((format->flags & AVFMT_NOFILE) == 0) {
-		// If not outputting to a network, write to a circlebuf
-		// instead of relying on ffmpeg disk output. This hopefully
-		// works around too small buffers somewhere causing output
-		// stalls when recording.
+		if (!ffmpeg_mux_is_network(ffm)) {
+			// If not outputting to a network, write to a circlebuf
+			// instead of relying on ffmpeg disk output. This hopefully
+			// works around too small buffers somewhere causing output
+			// stalls when recording.
 
-		// We're in charge of managing the actual file now
-		ffm->io.output_file = os_fopen(ffm->params.file, "wb");
-		if (!ffm->io.output_file) {
-			fprintf(stderr, "Couldn't open '%s', %s\n",
-				ffm->params.printable_file.array,
-				strerror(errno));
-			return FFM_ERROR;
+			// We're in charge of managing the actual file now
+			ffm->io.output_file = os_fopen(ffm->params.file, "wb");
+			if (!ffm->io.output_file) {
+				fprintf(stderr, "Couldn't open '%s', %s\n",
+					ffm->params.printable_file.array,
+					strerror(errno));
+				return FFM_ERROR;
+			}
+
+			// Start at 1MB, this can grow up to 256 MB depending
+			// how fast data is going in and out (limited in
+			// ffmpeg_mux_write_av_buffer)
+			circlebuf_reserve(&ffm->io.data, 1048576);
+
+			pthread_mutex_init(&ffm->io.data_mutex, NULL);
+
+			os_event_init(&ffm->io.buffer_space_available_event,
+				      OS_EVENT_TYPE_AUTO);
+			os_event_init(&ffm->io.new_data_available_event,
+				      OS_EVENT_TYPE_AUTO);
+
+			pthread_create(&ffm->io.io_thread, NULL,
+				       ffmpeg_mux_io_thread, ffm);
+
+			unsigned char *avio_ctx_buffer =
+				av_malloc(AVIO_BUFFER_SIZE);
+
+			ffm->output->pb = avio_alloc_context(
+				avio_ctx_buffer, AVIO_BUFFER_SIZE, 1, ffm, NULL,
+				ffmpeg_mux_write_av_buffer,
+				ffmpeg_mux_seek_av_buffer);
+
+			ffm->io.active = true;
+		} else {
+			ret = avio_open(&ffm->output->pb, ffm->params.file,
+					AVIO_FLAG_WRITE);
+			if (ret < 0) {
+				fprintf(stderr, "Couldn't open '%s', %s\n",
+					ffm->params.printable_file.array,
+					av_err2str(ret));
+				return FFM_ERROR;
+			}
 		}
-
-		// Start at 1MB, this can grow up to 256 MB depending
-		// how fast data is going in and out (limited in
-		// ffmpeg_mux_write_av_buffer)
-		circlebuf_reserve(&ffm->io.data, 1048576);
-
-		pthread_mutex_init(&ffm->io.data_mutex, NULL);
-
-		os_event_init(&ffm->io.buffer_space_available_event,
-			      OS_EVENT_TYPE_AUTO);
-		os_event_init(&ffm->io.new_data_available_event,
-			      OS_EVENT_TYPE_AUTO);
-
-		pthread_create(&ffm->io.io_thread, NULL, ffmpeg_mux_io_thread,
-			       ffm);
-
-		unsigned char *avio_ctx_buffer = av_malloc(AVIO_BUFFER_SIZE);
-
-		ffm->output->pb = avio_alloc_context(
-			avio_ctx_buffer, AVIO_BUFFER_SIZE, 1, ffm, NULL,
-			ffmpeg_mux_write_av_buffer, ffmpeg_mux_seek_av_buffer);
-
-		ffm->io.active = true;
 	}
 
 	AVDictionary *dict = NULL;
@@ -952,21 +980,6 @@ static inline int open_output_file(struct ffmpeg_mux *ffm)
 	av_dict_free(&dict);
 
 	return FFM_SUCCESS;
-}
-
-#define SRT_PROTO "srt"
-#define UDP_PROTO "udp"
-#define TCP_PROTO "tcp"
-#define HTTP_PROTO "http"
-#define RIST_PROTO "rist"
-
-static bool ffmpeg_mux_is_network(struct ffmpeg_mux *ffm)
-{
-	return !strncmp(ffm->params.file, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, UDP_PROTO, sizeof(UDP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, TCP_PROTO, sizeof(TCP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, HTTP_PROTO, sizeof(HTTP_PROTO) - 1) ||
-	       !strncmp(ffm->params.file, RIST_PROTO, sizeof(RIST_PROTO) - 1);
 }
 
 static int ffmpeg_mux_init_context(struct ffmpeg_mux *ffm)
