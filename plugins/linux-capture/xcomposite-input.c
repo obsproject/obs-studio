@@ -1,6 +1,7 @@
 #include <obs-module.h>
 #include <obs-nix-platform.h>
 #include <glad/glad.h>
+#include <X11/Xlib.h>
 #include <X11/Xutil.h>
 #include <X11/Xlib-xcb.h>
 #include <xcb/xcb.h>
@@ -381,6 +382,11 @@ static enum gs_color_format gs_format_from_tex()
 	}
 }
 
+static int silence_x11_errors(Display *display, XErrorEvent *err)
+{
+	return 0;
+}
+
 void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
 			 int log_level)
 {
@@ -422,9 +428,11 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
 		return;
 	}
 
+	XErrorHandler prev = XSetErrorHandler(silence_x11_errors);
 	s->gltex = gs_texture_create_from_pixmap(s->width, s->height,
 						 GS_BGRA_UNORM, GL_TEXTURE_2D,
 						 (void *)s->pixmap);
+	XSetErrorHandler(prev);
 }
 
 struct reg_item {
