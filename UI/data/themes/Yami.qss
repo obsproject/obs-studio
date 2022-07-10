@@ -199,13 +199,17 @@ QListWidget::item:hover {
 QListWidget QLineEdit,
 SceneTree QLineEdit,
 SourceTree QLineEdit {
-    padding-top: 0px;
-    padding-bottom: 0px;
-    padding-right: 0;
-    padding-left: 2px;
-    margin: -3px;
-    border: none;
-    border-radius: none;
+    padding:  0px;
+    padding-bottom: 2px;
+    margin: 0px;
+    border: 1px solid #FFF;
+    border-radius: 2px;
+}
+
+QListWidget QLineEdit:focus,
+SceneTree QLineEdit:focus,
+SourceTree QLineEdit:focus {
+    border: 1px solid #FFF;
 }
 
 /* Settings QList */
@@ -603,6 +607,7 @@ QLineEdit, QTextEdit, QPlainTextEdit {
     border: none;
     border-radius: 3px;
     padding: 5px 2px 5px 7px;
+    border: 2px solid transparent;
 }
 
 QLineEdit:hover,
