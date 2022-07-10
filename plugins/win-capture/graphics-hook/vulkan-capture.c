@@ -115,6 +115,8 @@ struct vk_data {
 	ID3D11DeviceContext *d3d11_context;
 };
 
+__declspec(thread) int vk_presenting = 0;
+
 /* ------------------------------------------------------------------------- */
 
 static void *vk_alloc(const VkAllocationCallbacks *ac, size_t size,
@@ -1216,7 +1218,14 @@ static VkResult VKAPI_CALL OBS_QueuePresentKHR(VkQueue queue,
 		vk_capture(data, queue, info);
 	}
 
-	return funcs->QueuePresentKHR(queue, info);
+	if (vk_presenting != 0) {
+		flog("non-zero vk_presenting: %d", vk_presenting);
+	}
+
+	vk_presenting++;
+	VkResult res = funcs->QueuePresentKHR(queue, info);
+	vk_presenting--;
+	return res;
 }
 
 /* ======================================================================== */
