@@ -47,6 +47,8 @@ static inline GLenum convert_gs_format(enum gs_color_format format)
 		return GL_BGRA;
 	case GS_R10G10B10A2:
 		return GL_RGBA;
+	case GS_R10G10B10X2:
+		return GL_RGBA;
 	case GS_RGBA16:
 		return GL_RGBA;
 	case GS_R16:
@@ -101,6 +103,8 @@ static inline GLenum convert_gs_internal_format(enum gs_color_format format)
 		return GL_SRGB8_ALPHA8;
 	case GS_R10G10B10A2:
 		return GL_RGB10_A2;
+	case GS_R10G10B10X2:
+		return GL_RGB10;
 	case GS_RGBA16:
 		return GL_RGBA16;
 	case GS_R16:
@@ -154,6 +158,8 @@ static inline GLenum get_gl_format_type(enum gs_color_format format)
 	case GS_BGRA:
 		return GL_UNSIGNED_BYTE;
 	case GS_R10G10B10A2:
+		return GL_UNSIGNED_INT_2_10_10_10_REV;
+	case GS_R10G10B10X2:
 		return GL_UNSIGNED_INT_2_10_10_10_REV;
 	case GS_RGBA16:
 		return GL_UNSIGNED_SHORT;

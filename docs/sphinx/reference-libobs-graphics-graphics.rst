@@ -46,6 +46,7 @@ Graphics Enumerations
    - GS_BGRX_UNORM  - BGRX, 8 bits per channel, no SRGB aliasing
    - GS_BGRA_UNORM  - BGRA, 8 bits per channel, no SRGB aliasing
    - GS_RG16        - RG, 16 bits per channel
+   - GS_R10G10B10X2 - RGBX, 10 bits per channel, no alpha
 
 .. type:: enum gs_color_space
 
