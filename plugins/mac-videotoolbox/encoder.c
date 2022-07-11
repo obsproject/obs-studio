@@ -154,35 +154,70 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 	OSStatus code;
 
 	bool can_limit_bitrate;
+	CFStringRef compressionPropertyKey;
+
 	if (strcmp(rate_control, "CBR") == 0) {
+		compressionPropertyKey =
+			kVTCompressionPropertyKey_AverageBitRate;
+		can_limit_bitrate = true;
+
 		if (__builtin_available(macOS 13.0, *)) {
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-			SESSION_CHECK(session_set_prop_int(
-				session,
-				kVTCompressionPropertyKey_ConstantBitRate,
-				new_bitrate * 1000));
-			can_limit_bitrate = false;
+#ifdef __aarch64__
+			if (true) {
 #else
-			VT_LOG(LOG_ERROR,
-			       "OBS was compiled without CBR support.");
+			if (os_get_emulation_status() == true) {
+#endif
+				compressionPropertyKey =
+					kVTCompressionPropertyKey_ConstantBitRate;
+				can_limit_bitrate = false;
+			} else {
+				VT_LOG(LOG_WARNING,
+				       "CBR support for VideoToolbox encoder requires Apple Silicon. "
+				       "Will use ABR instead.");
+			}
+#else
+			VT_LOG(LOG_WARNING,
+			       "CBR support for VideoToolbox not available in this build of OBS. "
+			       "Will use ABR instead.");
 #endif
 		} else {
-			VT_LOG(LOG_ERROR,
-			       "CBR is only available on macOS 13 or newer.");
+			VT_LOG(LOG_WARNING,
+			       "CBR support for VideoToolbox encoder requires macOS 13 or newer. "
+			       "Will use ABR instead.");
 		}
 	} else if (strcmp(rate_control, "ABR") == 0) {
-		SESSION_CHECK(session_set_prop_int(
-			session, kVTCompressionPropertyKey_AverageBitRate,
-			new_bitrate * 1000));
+		compressionPropertyKey =
+			kVTCompressionPropertyKey_AverageBitRate;
 		can_limit_bitrate = true;
 	} else if (strcmp(rate_control, "CRF") == 0) {
-		SESSION_CHECK(session_set_prop_float(
-			session, kVTCompressionPropertyKey_Quality, quality));
+#ifdef __aarch64__
+		if (true) {
+#else
+		if (os_get_emulation_status() == true) {
+#endif
+			compressionPropertyKey =
+				kVTCompressionPropertyKey_Quality;
+			SESSION_CHECK(session_set_prop_float(
+				session, compressionPropertyKey, quality));
+		} else {
+			VT_LOG(LOG_WARNING,
+			       "CRF support for VideoToolbox encoder requires Apple Silicon. "
+			       "Will use ABR instead.");
+			compressionPropertyKey =
+				kVTCompressionPropertyKey_AverageBitRate;
+		}
 		can_limit_bitrate = true;
 	} else {
 		VT_LOG(LOG_ERROR,
 		       "Selected rate control method is not supported: %s",
 		       rate_control);
+		return kVTParameterErr;
+	}
+
+	if (compressionPropertyKey != kVTCompressionPropertyKey_Quality) {
+		SESSION_CHECK(session_set_prop_int(
+			session, compressionPropertyKey, new_bitrate * 1000));
 	}
 
 	if (limit_bitrate && can_limit_bitrate) {
@@ -909,9 +944,10 @@ static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 	return true;
 }
 
-static obs_properties_t *vt_properties(void *unused)
+static obs_properties_t *vt_properties(void *unused, void *data)
 {
 	UNUSED_PARAMETER(unused);
+	struct vt_encoder_type_data *type_data = data;
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -921,14 +957,18 @@ static obs_properties_t *vt_properties(void *unused)
 				    OBS_COMBO_FORMAT_STRING);
 
 	if (__builtin_available(macOS 13.0, *))
+		if (type_data->hardware_accelerated
 #ifndef __aarch64__
-		if (os_get_emulation_status() == true)
+		    && (os_get_emulation_status() == true)
 #endif
+		)
 			obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "ABR", "ABR");
+	if (type_data->hardware_accelerated
 #ifndef __aarch64__
-	if (os_get_emulation_status() == true)
+	    && (os_get_emulation_status() == true)
 #endif
+	)
 		obs_property_list_add_string(p, "CRF", "CRF");
 	obs_property_set_modified_callback(p,
 					   rate_control_limit_bitrate_modified);
@@ -966,13 +1006,17 @@ static obs_properties_t *vt_properties(void *unused)
 	return props;
 }
 
-static void vt_defaults(obs_data_t *settings)
+static void vt_defaults(obs_data_t *settings, void *data)
 {
+	struct vt_encoder_type_data *type_data = data;
+
 	obs_data_set_default_string(settings, "rate_control", "ABR");
 	if (__builtin_available(macOS 13.0, *))
+		if (type_data->hardware_accelerated
 #ifndef __aarch64__
-		if (os_get_emulation_status() == true)
+		    && (os_get_emulation_status() == true)
 #endif
+		)
 			obs_data_set_default_string(settings, "rate_control",
 						    "CBR");
 	obs_data_set_default_int(settings, "bitrate", 2500);
@@ -1007,8 +1051,8 @@ bool obs_module_load(void)
 		.destroy = vt_destroy,
 		.encode = vt_encode,
 		.update = vt_update,
-		.get_properties = vt_properties,
-		.get_defaults = vt_defaults,
+		.get_properties2 = vt_properties,
+		.get_defaults2 = vt_defaults,
 		.get_video_info = vt_video_info,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
