@@ -153,7 +153,6 @@ cp /usr/local/opt/berkeley-db/lib/libdb-18.1.dylib $PACKED_BUILD/bin/libdb-18.1.
 cp /usr/local/opt/freetype/lib/libfreetype.6.dylib $PACKED_BUILD/bin/libfreetype.6.dylib
 cp /usr/local/opt/jack/lib/libjack.0.dylib $PACKED_BUILD/bin/libjack.0.dylib
 cp /usr/local/opt/libpng/lib/libpng16.16.dylib $PACKED_BUILD/bin/libpng16.16.dylib
-cp /usr/local/Cellar/speexdsp/1.2.0/lib/libspeexdsp.1.dylib $PACKED_BUILD/bin/libspeexdsp.1.dylib
 cp /usr/local/opt/openssl@1.1/lib/libssl.1.1.dylib $PACKED_BUILD/bin/libssl.1.1.dylib
 cp /usr/local/opt/xz/lib/liblzma.5.dylib $PACKED_BUILD/bin/liblzma.5.dylib
 
