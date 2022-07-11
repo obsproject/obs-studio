@@ -1,7 +1,6 @@
-/* linux-pipewire.c
+/* pipewire-virtualcam.h
  *
  * Copyright 2021 columbarius <co1umbarius@protonmail.com>
- * Copyright 2021 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,37 +18,6 @@
  * SPDX-License-Identifier: GPL-2.0-or-later
  */
 
-#include <obs-module.h>
-#include <obs-nix-platform.h>
+#pragma once
 
-#include <pipewire/pipewire.h>
-#include "screencast-portal.h"
-#include "pipewire-virtualcam.h"
-
-OBS_DECLARE_MODULE()
-OBS_MODULE_USE_DEFAULT_LOCALE("linux-pipewire", "en-US")
-MODULE_EXPORT const char *obs_module_description(void)
-{
-	return "PipeWire based sources/outputs";
-}
-
-bool obs_module_load(void)
-{
-	pw_init(NULL, NULL);
-
-	screencast_portal_load();
-
-	// OBS PipeWire Virtual Camera
-	virtual_cam_register_output();
-
-	return true;
-}
-
-void obs_module_unload(void)
-{
-	screencast_portal_unload();
-
-#if PW_CHECK_VERSION(0, 3, 49)
-	pw_deinit();
-#endif
-}
+void virtual_cam_register_output(void);
