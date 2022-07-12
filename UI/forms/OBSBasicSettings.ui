@@ -5050,38 +5050,7 @@
                     </widget>
                    </item>
                    <item row="2" column="1">
-                    <widget class="QComboBox" name="colorFormat">
-                     <item>
-                      <property name="text">
-                       <string notr="true">NV12</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">I420</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">I444</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">P010</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">I010</string>
-                      </property>
-                     </item>
-                     <item>
-                      <property name="text">
-                       <string notr="true">RGB</string>
-                      </property>
-                     </item>
-                    </widget>
+                    <widget class="QComboBox" name="colorFormat"/>
                    </item>
                    <item row="3" column="0">
                     <widget class="QLabel" name="label_33">
