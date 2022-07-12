@@ -10,8 +10,6 @@ target_include_directories(inject-helper PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 if(MSVC)
   target_compile_options(inject-helper PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-  add_target_resource(win-capture "$<TARGET_PDB_FILE:inject-helper>"
-                      "obs-plugins/win-capture/" OPTIONAL)
 endif()
 
 set_target_properties(
@@ -20,7 +18,7 @@ set_target_properties(
              OUTPUT_NAME
              "inject-helper$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>")
 
-add_target_resource(win-capture "$<TARGET_FILE:inject-helper>"
-                    "obs-plugins/win-capture/")
+set(OBS_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture/")
+setup_plugin_target(inject-helper)
 
 add_dependencies(win-capture inject-helper)
