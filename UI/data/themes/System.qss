@@ -43,6 +43,10 @@
     qproperty-icon: url(:/res/images/media-pause.svg);
 }
 
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(:res/images/dots-vert.svg);
+}
+
 MuteCheckBox {
     outline: none;
 }

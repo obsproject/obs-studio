@@ -287,6 +287,9 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(./Dark/dots-vert.svg);
+}
 
 /* Tab Widget */
 
