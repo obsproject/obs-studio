@@ -707,6 +707,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	LoadEncoderTypes();
 	LoadColorRanges();
 	LoadColorSpaces();
+	LoadColorFormats();
 	LoadFormats();
 
 	auto ReloadAudioSources = [](void *data, calldata_t *param) {
@@ -1058,6 +1059,23 @@ void OBSBasicSettings::LoadColorSpaces()
 	ui->colorSpace->addItem(CS_601_STR, "601");
 	ui->colorSpace->addItem(CS_2100PQ_STR, "2100PQ");
 	ui->colorSpace->addItem(CS_2100HLG_STR, "2100HLG");
+}
+
+#define CF_NV12_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.NV12")
+#define CF_I420_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I420")
+#define CF_I444_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I444")
+#define CF_P010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P010")
+#define CF_I010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I010")
+#define CF_RGB_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.RGB")
+
+void OBSBasicSettings::LoadColorFormats()
+{
+	ui->colorFormat->addItem(CF_NV12_STR, "NV12");
+	ui->colorFormat->addItem(CF_I420_STR, "I420");
+	ui->colorFormat->addItem(CF_I444_STR, "I444");
+	ui->colorFormat->addItem(CF_P010_STR, "P010");
+	ui->colorFormat->addItem(CF_I010_STR, "I010");
+	ui->colorFormat->addItem(CF_RGB_STR, "RGB");
 }
 
 #define AV_FORMAT_DEFAULT_STR \
@@ -2674,7 +2692,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 
 	UpdateColorFormatSpaceWarning();
 
-	SetComboByName(ui->colorFormat, videoColorFormat);
+	SetComboByValue(ui->colorFormat, videoColorFormat);
 	SetComboByValue(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
 	ui->sdrWhiteLevel->setValue(sdrWhiteLevel);
@@ -3363,7 +3381,7 @@ void OBSBasicSettings::SaveAdvancedSettings()
 				ui->resetOSXVSync->isChecked());
 #endif
 
-	SaveCombo(ui->colorFormat, "Video", "ColorFormat");
+	SaveComboData(ui->colorFormat, "Video", "ColorFormat");
 	SaveComboData(ui->colorSpace, "Video", "ColorSpace");
 	SaveComboData(ui->colorRange, "Video", "ColorRange");
 	SaveSpinBox(ui->sdrWhiteLevel, "Video", "SdrWhiteLevel");

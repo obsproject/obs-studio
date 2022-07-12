@@ -228,6 +228,7 @@ private:
 	void LoadEncoderTypes();
 	void LoadColorRanges();
 	void LoadColorSpaces();
+	void LoadColorFormats();
 	void LoadFormats();
 	void ReloadCodecs(const ff_format_desc *formatDesc);
 
