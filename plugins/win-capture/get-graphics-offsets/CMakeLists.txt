@@ -20,8 +20,6 @@ target_link_libraries(get-graphics-offsets d3d9.lib dxgi.lib d3d11.lib)
 if(MSVC)
   target_compile_options(get-graphics-offsets
                          PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
-  add_target_resource(win-capture "$<TARGET_PDB_FILE:get-graphics-offsets>"
-                      "obs-plugins/win-capture/" OPTIONAL)
 endif()
 
 set_target_properties(get-graphics-offsets PROPERTIES FOLDER
@@ -32,7 +30,7 @@ set_target_properties(
              "get-graphics-offsets$<IF:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>,64,32>"
 )
 
-add_target_resource(win-capture "$<TARGET_FILE:get-graphics-offsets>"
-                    "obs-plugins/win-capture/")
+set(OBS_PLUGIN_DESTINATION "${OBS_DATA_DESTINATION}/obs-plugins/win-capture/")
+setup_plugin_target(get-graphics-offsets)
 
 add_dependencies(win-capture get-graphics-offsets)
