@@ -31,7 +31,7 @@ struct base_allocator {
 	void (*free)(void *);
 };
 
-EXPORT void base_set_allocator(struct base_allocator *defs);
+OBS_DEPRECATED EXPORT void base_set_allocator(struct base_allocator *defs);
 
 EXPORT void *bmalloc(size_t size);
 EXPORT void *brealloc(void *ptr, size_t size);
