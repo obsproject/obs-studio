@@ -124,7 +124,7 @@ struct audio_info {
 
 struct io_header {
 	uint64_t seek_offset;
-	uint64_t data_length;
+	size_t data_length;
 };
 
 struct io_buffer {
