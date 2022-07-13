@@ -2583,13 +2583,13 @@ void OBSBasicSettings::LoadAudioSettings()
 
 void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 {
-	const QString text = ui->colorFormat->currentText();
+	const QString format = ui->colorFormat->currentData().toString();
 	switch (ui->colorSpace->currentIndex()) {
 	case 3: /* Rec.2100 (PQ) */
 	case 4: /* Rec.2100 (HLG) */
-		if (text == "P010") {
+		if (format == "P010") {
 			ui->advancedMsg2->clear();
-		} else if (text == "I010") {
+		} else if (format == "I010") {
 			ui->advancedMsg2->setText(
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
 		} else {
@@ -2598,9 +2598,9 @@ void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 		}
 		break;
 	default:
-		if (text == "NV12") {
+		if (format == "NV12") {
 			ui->advancedMsg2->clear();
-		} else if ((text == "I010") || (text == "P010")) {
+		} else if ((format == "I010") || (format == "P010")) {
 			ui->advancedMsg2->setText(QTStr(
 				"Basic.Settings.Advanced.FormatWarning10BitSdr"));
 		} else {
