@@ -42,7 +42,8 @@ if(OS_WINDOWS)
 
   if(MSVC)
     target_link_libraries(obs-outputs PRIVATE OBS::w32-pthreads)
-    target_link_options(obs-outputs PRIVATE "LINKER:/IGNORE:4099")
+    target_link_options(obs-outputs PRIVATE "LINKER:/IGNORE:4098"
+                        "LINKER:/IGNORE:4099")
   endif()
 
   target_link_libraries(obs-outputs PRIVATE ws2_32 winmm Iphlpapi)
