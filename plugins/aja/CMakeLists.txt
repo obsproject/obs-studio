@@ -58,6 +58,7 @@ elseif(OS_WINDOWS)
 
   target_sources(aja PRIVATE win-aja.rc)
 
+  target_compile_options(aja PRIVATE /wd4996)
   target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib
                                     netapi32.lib Shlwapi.lib)
   target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
