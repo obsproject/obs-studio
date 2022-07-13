@@ -72,6 +72,7 @@ elseif(OS_WINDOWS)
                  aja-output-ui.rc)
   target_sources(aja-output-ui PRIVATE aja-output-ui.rc)
 
+  target_compile_options(aja-output-ui PRIVATE /wd4996)
   target_link_libraries(aja-output-ui PRIVATE ws2_32.lib setupapi.lib Winmm.lib
                                               netapi32.lib Shlwapi.lib)
   target_link_options(aja-output-ui PRIVATE "LINKER:/IGNORE:4099")
