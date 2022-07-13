@@ -1084,6 +1084,13 @@ static obs_properties_t *screen_capture_properties(void *data)
 
 	content_changed(sc, props);
 
+	if (@available(macOS 13.0, *))
+		;
+	else
+		obs_properties_add_text(props, "audio_info",
+					obs_module_text("SCKAudioUnavailable"),
+					OBS_TEXT_INFO);
+
 	return props;
 }
 
