@@ -23,7 +23,6 @@
 #include "obs-app.hpp"
 
 #include <unistd.h>
-#include <sys/sysctl.h>
 
 #import <AppKit/AppKit.h>
 
