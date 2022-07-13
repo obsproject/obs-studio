@@ -141,7 +141,7 @@ static bool using_10_15_or_above = true;
 static void log_os(void)
 {
 	NSProcessInfo *pi = [NSProcessInfo processInfo];
-	blog(LOG_INFO, "OS Name: Mac OS X");
+	blog(LOG_INFO, "OS Name: macOS");
 	blog(LOG_INFO, "OS Version: %s",
 	     [[pi operatingSystemVersionString] UTF8String]);
 
