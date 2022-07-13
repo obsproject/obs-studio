@@ -12,6 +12,9 @@
 #include <obs-hevc.h>
 #endif
 
+/* TODO: Use new preset scheme */
+#pragma warning(disable : 4996)
+
 /* ========================================================================= */
 
 #define EXTRA_BUFFERS 5
