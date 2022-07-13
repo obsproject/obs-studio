@@ -27,7 +27,8 @@ if(OS_WINDOWS)
 
   target_sources(text-freetype2 PRIVATE find-font.c find-font-windows.c
                                         text-freetype2.rc)
-  target_link_options(text-freetype2 PRIVATE "LINKER:/IGNORE:4099")
+  target_link_options(text-freetype2 PRIVATE "LINKER:/IGNORE:4098"
+                      "LINKER:/IGNORE:4099")
 
 elseif(OS_MACOS)
   find_package(Iconv REQUIRED)
