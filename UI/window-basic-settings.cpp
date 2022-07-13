@@ -1240,15 +1240,10 @@ void OBSBasicSettings::LoadThemeList()
 		while (it.hasNext()) {
 			it.next();
 			QString name = it.fileInfo().completeBaseName();
-			ui->theme->addItem(name);
+			ui->theme->addItem(name, name);
 			uniqueSet.insert(name);
 		}
 	}
-
-	QString defaultTheme;
-	defaultTheme += DEFAULT_THEME;
-	defaultTheme += " ";
-	defaultTheme += QTStr("Default");
 
 	/* Check shipped themes. */
 	QDirIterator uIt(QString(themeDir.c_str()), QStringList() << "*.qss",
@@ -1256,20 +1251,16 @@ void OBSBasicSettings::LoadThemeList()
 	while (uIt.hasNext()) {
 		uIt.next();
 		QString name = uIt.fileInfo().completeBaseName();
+		QString value = name;
 
 		if (name == DEFAULT_THEME)
-			name = defaultTheme;
+			name += " " + QTStr("Default");
 
-		if (!uniqueSet.contains(name) && name != "Default")
-			ui->theme->addItem(name);
+		if (!uniqueSet.contains(value) && name != "Default")
+			ui->theme->addItem(name, value);
 	}
 
-	std::string themeName = App()->GetTheme();
-
-	if (themeName == DEFAULT_THEME)
-		themeName = QT_TO_UTF8(defaultTheme);
-
-	int idx = ui->theme->findText(themeName.c_str());
+	int idx = ui->theme->findData(QT_UTF8(App()->GetTheme()));
 	if (idx != -1)
 		ui->theme->setCurrentIndex(idx);
 }
@@ -3096,14 +3087,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  language.c_str());
 
 	int themeIndex = ui->theme->currentIndex();
-	QString themeData = ui->theme->itemText(themeIndex);
-	QString defaultTheme;
-	defaultTheme += DEFAULT_THEME;
-	defaultTheme += " ";
-	defaultTheme += QTStr("Default");
-
-	if (themeData == defaultTheme)
-		themeData = DEFAULT_THEME;
+	QString themeData = ui->theme->itemData(themeIndex).toString();
 
 	if (WidgetChanged(ui->theme))
 		config_set_string(GetGlobalConfig(), "General", "CurrentTheme2",
@@ -3955,15 +3939,7 @@ void OBSBasicSettings::reject()
 
 void OBSBasicSettings::on_theme_activated(int idx)
 {
-	QString currT = ui->theme->itemText(idx);
-
-	QString defaultTheme;
-	defaultTheme += DEFAULT_THEME;
-	defaultTheme += " ";
-	defaultTheme += QTStr("Default");
-
-	if (currT == defaultTheme)
-		currT = DEFAULT_THEME;
+	QString currT = ui->theme->itemData(idx).toString();
 
 	App()->SetTheme(currT.toUtf8().constData());
 }
