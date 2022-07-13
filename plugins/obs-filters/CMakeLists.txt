@@ -29,7 +29,7 @@ else()
 
   if(OS_WINDOWS)
     target_link_options(obs-filters PRIVATE "LINKER:/LTCG"
-                        "LINKER:/IGNORE:4099")
+                        "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
   endif()
 endif()
 
