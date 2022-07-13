@@ -27,22 +27,26 @@
 #endif
 
 #ifdef _WIN32
-#define SO_EXT ".dll"
+#include <windows.h>
+#include <io.h>
+#define F_OK 0
+#define access _access
+#define VERSION_PATTERN "%d%d"
+#define FILE_PATTERN "python%s.dll"
+#define PATH_MAX MAX_PATH
 #elif __APPLE__
-#define SO_EXT ".dylib"
+#define VERSION_PATTERN "%d.%d"
+#define FILE_PATTERN "Python.framework/Versions/Current/lib/libpython%s.dylib"
 #endif
 
-#ifdef __APPLE__
-#define PYTHON_LIB_SUBDIR "lib/"
-#else
-#define PYTHON_LIB_SUBDIR ""
-#endif
+#define PY_MAJOR_VERSION_MAX 3
+#define PY_MINOR_VERSION_MAX 10
 
 bool import_python(const char *python_path)
 {
 	struct dstr lib_path;
 	bool success = false;
-	void *lib;
+	void *lib = NULL;
 
 	if (!python_path)
 		python_path = "";
@@ -50,11 +54,42 @@ bool import_python(const char *python_path)
 	dstr_init_copy(&lib_path, python_path);
 	dstr_replace(&lib_path, "\\", "/");
 	if (!dstr_is_empty(&lib_path)) {
-		dstr_cat(&lib_path, "/" PYTHON_LIB_SUBDIR);
+		dstr_cat(&lib_path, "/");
 	}
-	dstr_cat(&lib_path, PYTHON_LIB SO_EXT);
 
-	lib = os_dlopen(lib_path.array);
+	struct dstr lib_candidate_path;
+	dstr_init_copy(&lib_candidate_path, lib_path.array);
+
+	char cur_version[5];
+	char next_version[5];
+
+	char temp[PATH_MAX];
+
+	sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+		PY_MINOR_VERSION_MAX);
+	sprintf(temp, FILE_PATTERN, cur_version);
+
+	dstr_cat(&lib_candidate_path, temp);
+
+	int minor_version = PY_MINOR_VERSION_MAX;
+	do {
+		if (access(lib_candidate_path.array, F_OK) == 0) {
+			lib = os_dlopen(lib_candidate_path.array);
+		}
+
+		if (lib) {
+			break;
+		}
+
+		sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+			minor_version);
+		sprintf(next_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+			--minor_version);
+		dstr_replace(&lib_candidate_path, cur_version, next_version);
+	} while (minor_version > 5);
+
+	dstr_free(&lib_candidate_path);
+
 	if (!lib) {
 		blog(LOG_WARNING, "[Python] Could not load library: %s",
 		     lib_path.array);
@@ -155,7 +190,6 @@ bool import_python(const char *python_path)
 #endif
 
 #undef IMPORT_FUNC
-
 	success = true;
 
 fail:

@@ -44,7 +44,6 @@
 #endif
 
 #if RUNTIME_LINK
-
 #ifdef NO_REDEFS
 #define PY_EXTERN
 #else
@@ -262,7 +261,7 @@ static inline void Import__Py_XDECREF(PyObject *op)
 
 #undef Py_XDECREF
 #define Py_XDECREF(op) Import__Py_XDECREF(_PyObject_CAST(op))
-#endif
+#endif // PY_VERSION_HEX >= 0x030800f0
 
 #if PY_VERSION_HEX >= 0x030900b0
 static inline int Import_PyType_HasFeature(PyTypeObject *type,
@@ -271,8 +270,7 @@ static inline int Import_PyType_HasFeature(PyTypeObject *type,
 	return ((PyType_GetFlags(type) & feature) != 0);
 }
 #define PyType_HasFeature(t, f) Import_PyType_HasFeature(t, f)
-#endif
+#endif // PY_VERSION_HEX >= 0x030900b0
 
-#endif
-
-#endif
+#endif // NO_REDEFS
+#endif // RUNTIME_LINK

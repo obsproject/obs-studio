@@ -1624,8 +1624,17 @@ bool obs_scripting_load_python(const char *python_path)
 		return false;
 
 	if (python_path && *python_path) {
+#ifdef __APPLE__
+		char temp[PATH_MAX];
+		sprintf(temp, "%s/Python.framework/Versions/Current",
+			python_path);
+		os_utf8_to_wcs(temp, 0, home_path, PATH_MAX);
+		Py_SetPythonHome(home_path);
+#else
+
 		os_utf8_to_wcs(python_path, 0, home_path, 1024);
 		Py_SetPythonHome(home_path);
+#endif
 #if 0
 		dstr_copy(&old_path, getenv("PATH"));
 		_putenv("PYTHONPATH=");
