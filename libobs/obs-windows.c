@@ -108,6 +108,13 @@ static void log_processor_cores(void)
 	     os_get_physical_cores(), os_get_logical_cores());
 }
 
+static void log_emulation_status(void)
+{
+	if (os_get_emulation_status()) {
+		blog(LOG_WARNING, "Windows ARM64: Running with x64 emulation");
+	}
+}
+
 static void log_available_memory(void)
 {
 	MEMORYSTATUSEX ms;
@@ -138,10 +145,13 @@ static void log_windows_version(void)
 	bool b64 = is_64_bit_windows();
 	const char *windows_bitness = b64 ? "64" : "32";
 
+	bool arm64 = is_arm64_windows();
+	const char *arm64_windows = arm64 ? "ARM " : "";
+
 	blog(LOG_INFO,
-	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s-bit)",
+	     "Windows Version: %d.%d Build %d (release: %s; revision: %d; %s%s-bit)",
 	     ver.major, ver.minor, ver.build, release_id, ver.revis,
-	     windows_bitness);
+	     arm64_windows, windows_bitness);
 }
 
 static void log_admin_status(void)
@@ -377,6 +387,7 @@ void log_system_info(void)
 	log_processor_cores();
 	log_available_memory();
 	log_windows_version();
+	log_emulation_status();
 	log_admin_status();
 	log_gaming_features();
 	log_security_products();
