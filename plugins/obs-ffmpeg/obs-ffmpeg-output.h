@@ -22,6 +22,7 @@ struct ffmpeg_cfg {
 	int video_encoder_id;
 	const char *audio_encoder;
 	int audio_encoder_id;
+	int audio_bitrates[MAX_AUDIO_MIXES]; // multi-track
 	const char *video_settings;
 	const char *audio_settings;
 	int audio_mix_count;
