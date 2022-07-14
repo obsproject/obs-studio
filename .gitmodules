@@ -29,3 +29,6 @@
 [submodule "plugins/motion-effect"]
 	path = plugins/motion-effect
 	url = https://github.com/stream-labs/motion-effect.git
+[submodule "plugins/mediasoup-connector"]
+	path = plugins/mediasoup-connector
+	url = https://github.com/stream-labs/mediasoup-connector.git

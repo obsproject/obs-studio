@@ -8,6 +8,16 @@ set GPUPriority=1
 set OBS_VIRTUALCAM=obs-virtualsource_32bit
 set OBS_VIRTUALCAM_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%OBS_VIRTUALCAM%.zip
 
+set OPENSSL_DIST_NAME=openssl-1.1.1c-x64
+set "DEPS_LOCAL_PATH=%cd%\slobs-deps"
+set DEPS_DIST_URI=https://s3-us-west-2.amazonaws.com/streamlabs-obs-updater-deps
+set OPENSSL_ROOT=%DEPS_LOCAL_PATH%\%OPENSSL_DIST_NAME%
+set FORWARD_USERPROFILE=%USERPROFILE%
+set "FORWARD_USERPROFILE=%FORWARD_USERPROFILE:\=/%"
+
+curl -kLO "%DEPS_DIST_URI%/%OPENSSL_DIST_NAME%.7z" -f --retry 5
+7z x "%OPENSSL_DIST_NAME%.7z" -o"%DEPS_LOCAL_PATH%\%OPENSSL_DIST_NAME%" -y
+	
 mkdir build
 cd build
 
@@ -51,12 +61,16 @@ cmake -H. ^
          -DBROWSER_USE_STATIC_CRT=false ^
          -DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true ^
          -DCHECK_FOR_SERVICE_UPDATES=true ^
-         -DCMAKE_PREFIX_PATH=%USERPROFILE%\grpc\dist_%BuildConfig%
+         -DCMAKE_PREFIX_PATH=%USERPROFILE%\grpc\dist_%BuildConfig% ^
+         -DWEBRTC_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/src ^
+         -DWEBRTC_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/webrtc.lib ^
+         -DMEDIASOUP_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/include ^
+         -DMEDIASOUP_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/mediasoupclient.lib ^
+         -DMEDIASOUP_SDP_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/sdptransform.lib ^
+         -DMEDIASOUP_SDP_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/deps/libsdptransform/include ^
+         -DOPENSSL_ROOT=%OPENSSL_ROOT%
 
 cmake --build %CD%\build --target install --config %BuildConfig% -v
-
-cmake --build %CD%\build --target check_dependencies --config %BuildConfig% -v
-if %errorlevel% neq 0 exit /b %errorlevel%
 
 mkdir %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput
 move %CD%\build\%OBS_VIRTUALCAM% %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput\%OBS_VIRTUALCAM%

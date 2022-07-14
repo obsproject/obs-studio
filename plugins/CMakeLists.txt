@@ -84,6 +84,10 @@ if(BUILD_VST)
 	endif()
 endif()
 
+if(WIN32)
+	add_subdirectory(mediasoup-connector)
+endif()
+
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
