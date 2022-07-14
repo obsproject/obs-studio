@@ -558,12 +558,15 @@ static bool mp_media_reset(mp_media_t *m)
 
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
+	int64_t start_time = m->fmt->start_time;
+	if (start_time == AV_NOPTS_VALUE)
+		start_time = 0;
 
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
 
-	seek_to(m, m->fmt->start_time);
+	seek_to(m, start_time);
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
