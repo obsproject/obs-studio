@@ -80,10 +80,29 @@ bool IsRunningOnWine();
 #endif
 
 #ifdef __APPLE__
+typedef enum {
+	kAudioDeviceAccess = 0,
+	kVideoDeviceAccess = 1,
+	kScreenCapture = 2,
+	kAccessibility = 3
+} MacPermissionType;
+
+typedef enum {
+	kPermissionNotDetermined = 0,
+	kPermissionRestricted = 1,
+	kPermissionDenied = 2,
+	kPermissionAuthorized = 3,
+} MacPermissionStatus;
+
 void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
 bool isInBundle();
 void InstallNSApplicationSubclass();
 void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
+
+MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
+					      bool prompt_for_permission);
+#define CheckPermission(x) CheckPermissionWithPrompt(x, false)
+#define RequestPermission(x) CheckPermissionWithPrompt(x, true)
 #endif

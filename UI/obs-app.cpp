@@ -2185,6 +2185,15 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 
 #ifdef __APPLE__
+		MacPermissionStatus audio_permission =
+			CheckPermission(kAudioDeviceAccess);
+		MacPermissionStatus video_permission =
+			CheckPermission(kVideoDeviceAccess);
+		MacPermissionStatus accessibility_permission =
+			CheckPermission(kAccessibility);
+		MacPermissionStatus screen_permission =
+			CheckPermission(kScreenCapture);
+
 		bool rosettaTranslated = os_get_emulation_status();
 		blog(LOG_INFO, "Rosetta translation used: %s",
 		     rosettaTranslated ? "true" : "false");

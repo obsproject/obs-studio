@@ -417,9 +417,12 @@ elseif(OS_MACOS)
   endif()
 
   find_library(APPKIT Appkit)
-  mark_as_advanced(APPKIT)
+  find_library(AVFOUNDATION AVFoundation)
+  find_library(APPLICATIONSERVICES ApplicationServices)
+  mark_as_advanced(APPKIT AVFOUNDATION APPLICATIONSERVICES)
 
-  target_link_libraries(obs PRIVATE ${APPKIT})
+  target_link_libraries(obs PRIVATE ${APPKIT} ${AVFOUNDATION}
+                                    ${APPLICATIONSERVICES})
 
   if(ENABLE_SPARKLE_UPDATER)
     find_library(SPARKLE Sparkle)
