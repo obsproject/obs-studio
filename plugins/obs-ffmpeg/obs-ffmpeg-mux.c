@@ -917,7 +917,6 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
-	UNUSED_PARAMETER(pressed);
 
 	if (!pressed)
 		return;

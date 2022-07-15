@@ -868,8 +868,6 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 			     obs_data_t *settings)
 {
-	UNUSED_PARAMETER(props);
-
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);

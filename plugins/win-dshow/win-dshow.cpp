@@ -1953,7 +1953,6 @@ static bool DeviceIntervalChanged(obs_properties_t *props, obs_property_t *p,
 	UpdateVideoFormats(device, format, cx, cy, val, props);
 	UpdateFPS(device, format, val, cx, cy, props);
 
-	UNUSED_PARAMETER(p);
 	return true;
 }
 

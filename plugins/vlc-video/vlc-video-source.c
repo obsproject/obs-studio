@@ -446,8 +446,6 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
-	unsigned new_width = 0;
-	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);

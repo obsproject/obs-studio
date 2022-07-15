@@ -600,7 +600,6 @@ init_screencast_capture(struct screencast_portal_capture *capture)
 {
 	GDBusConnection *connection;
 	GDBusProxy *proxy;
-	char *aux;
 
 	capture->cancellable = g_cancellable_new();
 	connection = portal_get_dbus_connection();

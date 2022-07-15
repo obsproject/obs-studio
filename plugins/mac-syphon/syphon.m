@@ -451,8 +451,6 @@ static inline void syphon_destroy_internal(syphon_t s);
 
 static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-
 	syphon_t s = bzalloc(sizeof(struct syphon));
 	if (!s)
 		return s;
@@ -1039,8 +1037,6 @@ static inline void tick_inject_state(syphon_t s, float seconds)
 
 static void syphon_video_tick(void *data, float seconds)
 {
-	UNUSED_PARAMETER(seconds);
-
 	syphon_t s = data;
 
 	if (s->inject_active && !s->inject_server_found)

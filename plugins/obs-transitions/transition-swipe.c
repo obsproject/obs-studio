@@ -48,7 +48,6 @@ static void *swipe_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_source_update(source, settings);
 
-	UNUSED_PARAMETER(settings);
 	return swipe;
 }
 

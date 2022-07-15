@@ -150,7 +150,6 @@ static inline void display_stream_update(struct display_capture *dc,
 					 CGDisplayStreamUpdateRef update_ref)
 {
 	UNUSED_PARAMETER(display_time);
-	UNUSED_PARAMETER(update_ref);
 
 	if (status == kCGDisplayStreamFrameStatusStopped) {
 		os_event_signal(dc->disp_finished);
@@ -251,9 +250,6 @@ void load_crop(struct display_capture *dc, obs_data_t *settings);
 
 static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-	UNUSED_PARAMETER(settings);
-
 	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
 
 	dc->source = source;
