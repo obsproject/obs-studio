@@ -1650,7 +1650,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 	config_set_default_uint(basicConfig, "AdvOut", "RecTracks", (1 << 0));
 	config_set_default_string(basicConfig, "AdvOut", "RecEncoder", "none");
 	config_set_default_uint(basicConfig, "AdvOut", "FLVTrack", 1);
-
+	config_set_default_uint(basicConfig, "AdvOut",
+				"StreamMultiTrackAudioMixes", 1);
 	config_set_default_bool(basicConfig, "AdvOut", "FFOutputToFile", true);
 	config_set_default_string(basicConfig, "AdvOut", "FFFilePath",
 				  GetDefaultVideoSavePath().c_str());
