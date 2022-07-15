@@ -413,7 +413,6 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	dstr_free(&filter_str);
 	dstr_free(&path);
 
-	UNUSED_PARAMETER(data);
 	return props;
 }
 

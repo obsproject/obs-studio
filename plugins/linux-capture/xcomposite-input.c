@@ -382,7 +382,8 @@ static enum gs_color_format gs_format_from_tex()
 	}
 }
 
-static int silence_x11_errors(Display *display, XErrorEvent *err)
+static int silence_x11_errors(Display *display OBS_UNUSED,
+			      XErrorEvent *err OBS_UNUSED)
 {
 	return 0;
 }

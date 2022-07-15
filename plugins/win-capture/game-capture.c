@@ -2420,7 +2420,6 @@ static obs_properties_t *game_capture_properties(void *data)
 	obs_property_list_add_string(p, TEXT_RGBA10A2_SPACE_2100PQ,
 				     RGBA10A2_SPACE_2100PQ);
 
-	UNUSED_PARAMETER(data);
 	return ppts;
 }
 

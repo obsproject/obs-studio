@@ -241,8 +241,6 @@ void populate_sdi_4k_transport_list(obs_property_t *list)
 bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 			      obs_data_t *settings)
 {
-	UNUSED_PARAMETER(list);
-
 	auto vid_fmt = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 	size_t itemCount = obs_property_list_item_count(list);

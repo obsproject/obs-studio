@@ -128,7 +128,6 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
 	struct dstr path = {0};
-	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
 
@@ -611,8 +610,6 @@ static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
 
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(settings);
-
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 

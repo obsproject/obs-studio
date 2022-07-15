@@ -775,10 +775,6 @@ static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 	if (!obsqsv->context)
 		return false;
 
-	/* (Jim) Unused */
-	UNUSED_PARAMETER(sei);
-	UNUSED_PARAMETER(size);
-
 	*sei = obsqsv->sei;
 	*size = obsqsv->sei_size;
 	return true;
