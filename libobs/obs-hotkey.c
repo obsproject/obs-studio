@@ -593,7 +593,6 @@ static inline bool find_pair_id(obs_hotkey_pair_id id, size_t *idx)
 static inline bool pair_pointer_fixup_func(size_t idx, obs_hotkey_pair_t *pair,
 					   void *data)
 {
-	UNUSED_PARAMETER(idx);
 	UNUSED_PARAMETER(data);
 
 	if (find_id(pair->id[0], &idx))

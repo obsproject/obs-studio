@@ -266,7 +266,6 @@ gl_x11_egl_windowinfo_create(const struct gs_init_data *info)
 
 static void gl_x11_egl_windowinfo_destroy(struct gl_windowinfo *info)
 {
-	UNUSED_PARAMETER(info);
 	bfree(info);
 }
 
