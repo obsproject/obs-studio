@@ -375,6 +375,7 @@ private:
 	int CurrentFLVTrack();
 	int SimpleOutGetSelectedAudioTracks();
 	int AdvOutGetSelectedAudioTracks();
+	int AdvOutGetStreamingSelectedAudioTracks();
 
 	OBSService GetStream1Service();
 

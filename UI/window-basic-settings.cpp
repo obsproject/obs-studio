@@ -450,6 +450,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutTrack4,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack5,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack6,         CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack1,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack2,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack3,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack4,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack5,    CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutMultiTrack6,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecType,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecPath,        EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -2022,13 +2028,24 @@ static inline QString makeFormatToolTip()
 	return html;
 }
 
+#define RTMP_PROTOCOL "rtmp"
+#define SRT_PROTOCOL "srt"
+#define RIST_PROTOCOL "rist"
+
+inline bool allowsMultiTrack(const char *protocol)
+{
+	return astrcmpi_n(protocol, SRT_PROTOCOL, strlen(SRT_PROTOCOL)) == 0 ||
+	       astrcmpi_n(protocol, RIST_PROTOCOL, strlen(RIST_PROTOCOL)) == 0;
+}
+
 void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 {
 	bool rescale = config_get_bool(main->Config(), "AdvOut", "Rescale");
 	const char *rescaleRes =
 		config_get_string(main->Config(), "AdvOut", "RescaleRes");
 	int trackIndex = config_get_int(main->Config(), "AdvOut", "TrackIndex");
-
+	int audioMixes = config_get_int(main->Config(), "AdvOut",
+					"StreamMultiTrackAudioMixes");
 	ui->advOutUseRescale->setChecked(rescale);
 	ui->advOutRescale->setEnabled(rescale);
 	ui->advOutRescale->setCurrentText(rescaleRes);
@@ -2060,6 +2077,28 @@ void OBSBasicSettings::LoadAdvOutputStreamingSettings()
 	case 6:
 		ui->advOutTrack6->setChecked(true);
 		break;
+	}
+	ui->advOutMultiTrack1->setChecked(audioMixes & (1 << 0));
+	ui->advOutMultiTrack2->setChecked(audioMixes & (1 << 1));
+	ui->advOutMultiTrack3->setChecked(audioMixes & (1 << 2));
+	ui->advOutMultiTrack4->setChecked(audioMixes & (1 << 3));
+	ui->advOutMultiTrack5->setChecked(audioMixes & (1 << 4));
+	ui->advOutMultiTrack6->setChecked(audioMixes & (1 << 5));
+
+	bool is_multitrack_output = false;
+	obs_service_t *service_obj = main->GetService();
+	const char *protocol = nullptr;
+	protocol = obs_service_get_protocol(service_obj);
+	if (protocol) {
+		is_multitrack_output = allowsMultiTrack(protocol);
+	}
+
+	if (is_multitrack_output) {
+		ui->advStreamTrackWidget->setCurrentWidget(
+			ui->streamMultiTracks);
+	} else {
+		ui->advStreamTrackWidget->setCurrentWidget(
+			ui->streamSingleTracks);
 	}
 }
 
@@ -3821,7 +3860,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex", ui->advOutTrack1,
 		       ui->advOutTrack2, ui->advOutTrack3, ui->advOutTrack4,
 		       ui->advOutTrack5, ui->advOutTrack6);
-
+	config_set_int(main->Config(), "AdvOut", "StreamMultiTrackAudioMixes",
+		       AdvOutGetStreamingSelectedAudioTracks());
 	config_set_string(main->Config(), "AdvOut", "RecType",
 			  RecTypeFromIdx(ui->advOutRecType->currentIndex()));
 
@@ -4190,6 +4230,8 @@ bool OBSBasicSettings::QueryAllowedToClose()
 
 		QString format = ui->advOutRecFormat->currentData().toString();
 		if (AdvOutGetSelectedAudioTracks() == 0 && format != "flv")
+			invalidTracks = true;
+		if (AdvOutGetStreamingSelectedAudioTracks() == 0)
 			invalidTracks = true;
 	}
 
@@ -6132,6 +6174,17 @@ int OBSBasicSettings::AdvOutGetSelectedAudioTracks()
 		     (ui->advOutRecTrack4->isChecked() ? (1 << 3) : 0) |
 		     (ui->advOutRecTrack5->isChecked() ? (1 << 4) : 0) |
 		     (ui->advOutRecTrack6->isChecked() ? (1 << 5) : 0);
+	return tracks;
+}
+
+int OBSBasicSettings::AdvOutGetStreamingSelectedAudioTracks()
+{
+	int tracks = (ui->advOutMultiTrack1->isChecked() ? (1 << 0) : 0) |
+		     (ui->advOutMultiTrack2->isChecked() ? (1 << 1) : 0) |
+		     (ui->advOutMultiTrack3->isChecked() ? (1 << 2) : 0) |
+		     (ui->advOutMultiTrack4->isChecked() ? (1 << 3) : 0) |
+		     (ui->advOutMultiTrack5->isChecked() ? (1 << 4) : 0) |
+		     (ui->advOutMultiTrack6->isChecked() ? (1 << 5) : 0);
 	return tracks;
 }
 
