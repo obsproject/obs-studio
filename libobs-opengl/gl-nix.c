@@ -120,7 +120,8 @@ extern void device_present(gs_device_t *device)
 	gl_vtable->device_present(device);
 }
 
-extern bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+extern bool device_is_monitor_hdr(gs_device_t *device OBS_UNUSED,
+				  void *monitor OBS_UNUSED)
 {
 	return false;
 }

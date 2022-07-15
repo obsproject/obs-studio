@@ -2353,7 +2353,6 @@ bool save_transform_states(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_data_array_release(nids);
 	}
 
-	UNUSED_PARAMETER(scene);
 	return true;
 }
 

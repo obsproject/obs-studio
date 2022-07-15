@@ -1202,9 +1202,9 @@ void device_flush(gs_device_t *device)
 		glFlush();
 #else
 	glFlush();
-#endif
 
 	UNUSED_PARAMETER(device);
+#endif
 }
 
 void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode)
