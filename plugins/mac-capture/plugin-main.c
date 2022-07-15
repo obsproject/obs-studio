@@ -18,13 +18,15 @@ bool obs_module_load(void)
 {
 	obs_register_source(&coreaudio_input_capture_info);
 	obs_register_source(&coreaudio_output_capture_info);
-	obs_register_source(&display_capture_info);
-	obs_register_source(&window_capture_info);
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120500 // __MAC_12_6
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120500 // __MAC_12_5
 	if (is_screen_capture_available()) {
 		extern struct obs_source_info screen_capture_info;
 		obs_register_source(&screen_capture_info);
+		display_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
+		window_capture_info.output_flags |= OBS_SOURCE_DEPRECATED;
 	}
 #endif
+	obs_register_source(&display_capture_info);
+	obs_register_source(&window_capture_info);
 	return true;
 }
