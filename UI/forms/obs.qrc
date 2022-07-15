@@ -56,6 +56,8 @@
     <file>images/media/media_restart.svg</file>
     <file>images/media/media_stop.svg</file>
     <file>images/interact.svg</file>
+    <file>images/dots.svg</file>
+    <file>images/dots-vert.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
