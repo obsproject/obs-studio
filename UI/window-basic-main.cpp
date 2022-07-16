@@ -7286,6 +7286,12 @@ void OBSBasic::StartReplayBuffer()
 		return;
 	}
 
+	if (!OutputPathValid()) {
+		OutputPathInvalidMessage();
+		replayBufferButton->setChecked(false);
+		return;
+	}
+
 	if (LowDiskSpace()) {
 		DiskSpaceMessage();
 		replayBufferButton->setChecked(false);
