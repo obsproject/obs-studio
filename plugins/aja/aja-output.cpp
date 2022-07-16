@@ -1289,7 +1289,7 @@ static void aja_output_defaults(obs_data_t *settings)
 		static_cast<long long>(kDefaultAJASDITransport4K));
 }
 
-struct obs_output_info create_aja_output_info()
+void register_aja_output_info()
 {
 	struct obs_output_info aja_output_info = {};
 
@@ -1305,5 +1305,5 @@ struct obs_output_info create_aja_output_info()
 	aja_output_info.update = aja_output_update;
 	aja_output_info.get_defaults = aja_output_defaults;
 	aja_output_info.get_properties = aja_output_get_properties;
-	return aja_output_info;
+	obs_register_output(&aja_output_info);
 }
