@@ -25,21 +25,30 @@ function(export_target_pkgconf target)
   get_target_property(_TARGET_DEPENDENCIES ${target} INTERFACE_LINK_LIBRARIES)
   get_target_property(_TARGET_DEFINITIONS ${target}
                       INTERFACE_COMPILE_DEFINITIONS)
-  get_target_property(_TARGET_OPTIONS ${target} INTERFACE_LINK_OPTIONS)
+  get_target_property(_TARGET_OPTIONS ${target} INTERFACE_COMPILE_OPTIONS)
 
   foreach(_LIBRARY IN LISTS _TARGET_DEPENDENCIES)
     get_target_property(_LINK_LIBRARY ${_LIBRARY} INTERFACE_LINK_LIBRARIES)
     get_target_property(_LINK_DEFINITIONS ${_LIBRARY}
                         INTERFACE_COMPILE_DEFINITIONS)
-    list(APPEND _LINKED_LIBRARIES "${_LINK_LIBRARY}")
+    get_target_property(_LINK_OPTIONS ${_LIBRARY} INTERFACE_COMPILE_OPTIONS)
+
+    if(NOT "${_LINK_LIBRARY}" STREQUAL "_LINK_LIBRARY-NOTFOUND")
+      list(APPEND _LINKED_LIBRARIES "${_LINK_LIBRARY}")
+    endif()
 
     if(NOT "${_LINK_DEFINITIONS}" STREQUAL "_LINK_DEFINITIONS-NOTFOUND")
       list(APPEND _LINKED_DEFINITIONS "${_LINK_DEFINITIONS}")
+    endif()
+
+    if(NOT "${_LINK_OPTIONS}" STREQUAL "_LINK_OPTIONS-NOTFOUND")
+      list(APPEND _LINKED_OPTIONS "${_LINK_OPTIONS}")
     endif()
   endforeach()
 
   string(REPLACE ";" " " _LINKED_LIBRARIES "${_LINKED_LIBRARIES}")
   string(REPLACE ";" " " _LINKED_DEFINITIONS "${_LINKED_DEFINITIONS}")
+  string(REPLACE ";" " " _LINKED_OPTIONS "${_LINKED_OPTIONS}")
 
   if(NOT "${_TARGET_DEFINITIONS}" STREQUAL "_TARGET_DEFINITIONS-NOTFOUND")
     list(JOIN _TARGET_DEFINITIONS "-D" _TARGET_DEFINITIONS)
@@ -49,8 +58,7 @@ function(export_target_pkgconf target)
   endif()
 
   if(NOT "${_TARGET_OPTIONS}" STREQUAL "_TARGET_OPTIONS-NOTFOUND")
-    list(JOIN _TARGET_OPTIONS "-" _TARGET_OPTIONS)
-    set(_TARGET_OPTIONS "-${_TARGET_OPTIONS}")
+    list(JOIN _TARGET_OPTIONS " " _TARGET_OPTIONS)
   else()
     set(_TARGET_OPTIONS "")
   endif()
