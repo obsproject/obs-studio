@@ -31,6 +31,12 @@
 #define FF_BLOG(level, format, ...) \
 	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
 
+typedef enum {
+	ff_source_visibility_stop_restart = 0,
+	ff_source_visibility_pause = 1,
+	ff_source_visibility_continuous_play = 2,
+} ff_source_visibility_behaviour;
+
 struct ffmpeg_source {
 	mp_media_t media;
 	bool media_valid;
@@ -57,6 +63,7 @@ struct ffmpeg_source {
 	bool is_hw_decoding;
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
+	bool pause_on_deactivate;
 	bool close_when_inactive;
 	bool seekable;
 
@@ -87,6 +94,10 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *input_format =
 		obs_properties_get(props, "input_format");
 	obs_property_t *local_file = obs_properties_get(props, "local_file");
+	obs_property_t *visibility_behaviour =
+		obs_properties_get(props, "visibility_behaviour");
+	obs_property_t *restart =
+		obs_properties_get(props, "restart_on_activate");
 	obs_property_t *looping = obs_properties_get(props, "looping");
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
@@ -97,10 +108,70 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(input_format, !enabled);
 	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(local_file, enabled);
+	obs_property_set_visible(restart, !enabled);
+	obs_property_set_visible(visibility_behaviour, enabled);
 	obs_property_set_visible(looping, enabled);
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
+
+	return true;
+}
+
+static bool is_visibility_behaviour_modified(obs_properties_t *props,
+					     obs_property_t *prop,
+					     obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(props);
+
+	ff_source_visibility_behaviour visibility_behaviour =
+		obs_data_get_int(settings, "visibility_behaviour");
+	bool restart = true;
+	bool pause = false;
+
+	if (visibility_behaviour == ff_source_visibility_pause) {
+		restart = false;
+		pause = true;
+	} else if (visibility_behaviour ==
+		   ff_source_visibility_continuous_play) {
+		restart = false;
+		pause = false;
+	}
+
+	obs_data_set_bool(settings, "restart_on_activate", restart);
+	obs_data_set_bool(settings, "pause_on_deactivate", pause);
+
+	return true;
+}
+
+static void update_visibility_behaviour_property_list(obs_data_t *settings)
+{
+
+	bool restart_on_activate =
+		obs_data_get_bool(settings, "restart_on_activate");
+	bool pause_on_deactivate =
+		obs_data_get_bool(settings, "pause_on_deactivate");
+	int visibility_behaviour = ff_source_visibility_continuous_play;
+
+	if (restart_on_activate == true) {
+		visibility_behaviour = ff_source_visibility_stop_restart;
+	} else if (pause_on_deactivate == true) {
+		visibility_behaviour = ff_source_visibility_pause;
+	}
+
+	obs_data_set_int(settings, "visibility_behaviour",
+			 visibility_behaviour);
+}
+
+static bool is_restart_on_activate_modified(obs_properties_t *props,
+					    obs_property_t *prop,
+					    obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	UNUSED_PARAMETER(props);
+
+	update_visibility_behaviour_property_list(settings);
 
 	return true;
 }
@@ -111,6 +182,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "looping", false);
 	obs_data_set_default_bool(settings, "clear_on_media_end", true);
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
+	obs_data_set_default_bool(settings, "pause_on_deactivate", false);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
@@ -166,10 +238,32 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_free(&filter);
 	dstr_free(&path);
 
+	prop = obs_properties_add_list(props, "visibility_behaviour",
+				       obs_module_text("PlaybackBehavior"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(
+		prop, obs_module_text("PlaybackBehavior.StopRestart"),
+		ff_source_visibility_stop_restart);
+	obs_property_list_add_int(
+		prop, obs_module_text("PlaybackBehavior.PauseUnpause"),
+		ff_source_visibility_pause);
+	obs_property_list_add_int(
+		prop, obs_module_text("PlaybackBehavior.AlwaysPlay"),
+		ff_source_visibility_continuous_play);
+	obs_property_set_modified_callback(prop,
+					   is_visibility_behaviour_modified);
+
 	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
 
-	obs_properties_add_bool(props, "restart_on_activate",
-				obs_module_text("RestartWhenActivated"));
+	prop = obs_properties_add_bool(props, "restart_on_activate",
+				       obs_module_text("RestartWhenActivated"));
+	obs_property_set_modified_callback(prop,
+					   is_restart_on_activate_modified);
+
+	prop = obs_properties_add_bool(props, "pause_on_deactivate",
+				       "pause_on_deactivate");
+	obs_property_set_visible(prop, false);
 
 	prop = obs_properties_add_int_slider(props, "buffering_mb",
 					     obs_module_text("BufferingMB"), 0,
@@ -244,6 +338,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tis_hw_decoding:          %s\n"
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
+		"\tpause_on_deactivate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
@@ -252,6 +347,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
+		s->pause_on_deactivate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no", s->ffmpeg_options);
 }
 
@@ -410,6 +506,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
 
+	update_visibility_behaviour_property_list(settings);
+
 	const char *input;
 	const char *input_format;
 	const char *ffmpeg_options;
@@ -457,6 +555,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 		!astrcmpi_n(input, RIST_PROTO, sizeof(RIST_PROTO) - 1)
 			? false
 			: obs_data_get_bool(settings, "restart_on_activate");
+	s->pause_on_deactivate =
+		obs_data_get_bool(settings, "pause_on_deactivate");
 	s->range = (enum video_range_type)obs_data_get_int(settings,
 							   "color_range");
 	s->is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
@@ -670,6 +770,8 @@ static void ffmpeg_source_activate(void *data)
 
 	if (s->restart_on_activate)
 		obs_source_media_restart(s->source);
+	else if (s->pause_on_deactivate && s->state == OBS_MEDIA_STATE_PAUSED)
+		obs_source_media_play_pause(s->source, false);
 }
 
 static void ffmpeg_source_deactivate(void *data)
@@ -683,6 +785,9 @@ static void ffmpeg_source_deactivate(void *data)
 			if (s->is_clear_on_media_end)
 				obs_source_output_video(s->source, NULL);
 		}
+	} else if (s->pause_on_deactivate &&
+		   s->state == OBS_MEDIA_STATE_PLAYING) {
+		obs_source_media_play_pause(s->source, true);
 	}
 }
 
