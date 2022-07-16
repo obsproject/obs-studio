@@ -1127,7 +1127,12 @@ void aja_source_get_defaults(obs_data_t *settings)
 		static_cast<long long>(SDITransport4K::TwoSampleInterleave));
 	obs_data_set_default_bool(settings, kUIPropDeactivateWhenNotShowing.id,
 				  false);
-	obs_data_set_default_bool(settings, kUIPropBuffering.id, false);
+}
+
+static void aja_source_get_defaults_v1(obs_data_t *settings)
+{
+	aja_source_get_defaults(settings);
+	obs_data_set_default_bool(settings, kUIPropBuffering.id, true);
 }
 
 void aja_source_save(void *data, obs_data_t *settings)
@@ -1161,14 +1166,14 @@ void aja_source_save(void *data, obs_data_t *settings)
 	}
 }
 
-struct obs_source_info create_aja_source_info()
+void register_aja_source_info()
 {
 	struct obs_source_info aja_source_info = {};
 	aja_source_info.id = kUIPropCaptureModule.id;
 	aja_source_info.type = OBS_SOURCE_TYPE_INPUT;
-	aja_source_info.output_flags = OBS_SOURCE_ASYNC_VIDEO |
-				       OBS_SOURCE_AUDIO |
-				       OBS_SOURCE_DO_NOT_DUPLICATE;
+	aja_source_info.output_flags =
+		OBS_SOURCE_ASYNC_VIDEO | OBS_SOURCE_AUDIO |
+		OBS_SOURCE_DO_NOT_DUPLICATE | OBS_SOURCE_CAP_OBSOLETE;
 	aja_source_info.get_name = aja_source_get_name;
 	aja_source_info.create = aja_source_create;
 	aja_source_info.destroy = aja_source_destroy;
@@ -1178,8 +1183,13 @@ struct obs_source_info create_aja_source_info()
 	aja_source_info.activate = aja_source_activate;
 	aja_source_info.deactivate = aja_source_deactivate;
 	aja_source_info.get_properties = aja_source_get_properties;
-	aja_source_info.get_defaults = aja_source_get_defaults;
+	aja_source_info.get_defaults = aja_source_get_defaults_v1;
 	aja_source_info.save = aja_source_save;
 	aja_source_info.icon_type = OBS_ICON_TYPE_CAMERA;
-	return aja_source_info;
+	obs_register_source(&aja_source_info);
+
+	aja_source_info.version = 2;
+	aja_source_info.output_flags &= ~OBS_SOURCE_CAP_OBSOLETE;
+	aja_source_info.get_defaults = aja_source_get_defaults;
+	obs_register_source(&aja_source_info);
 }
