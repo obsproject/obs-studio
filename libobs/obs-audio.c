@@ -302,7 +302,6 @@ static void set_fixed_audio_buffering(struct obs_core_audio *audio,
 {
 	struct ts_info new_ts;
 	size_t total_ms;
-	size_t ms;
 	int ticks;
 
 	if (audio_buffering_maxed(audio))
@@ -314,7 +313,6 @@ static void set_fixed_audio_buffering(struct obs_core_audio *audio,
 	ticks = audio->max_buffering_ticks - audio->total_buffering_ticks;
 	audio->total_buffering_ticks += ticks;
 
-	ms = ticks * AUDIO_OUTPUT_FRAMES * 1000 / sample_rate;
 	total_ms = audio->total_buffering_ticks * AUDIO_OUTPUT_FRAMES * 1000 /
 		   sample_rate;
 
