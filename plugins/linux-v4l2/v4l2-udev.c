@@ -15,6 +15,9 @@ You should have received a copy of the GNU General Public License
 along with this program.  If not, see <http://www.gnu.org/licenses/>.
 */
 
+#include <sys/eventfd.h>
+#include <poll.h>
+#include <unistd.h>
 #include <libudev.h>
 
 #include <util/threading.h>
@@ -40,6 +43,7 @@ static pthread_mutex_t udev_mutex = PTHREAD_MUTEX_INITIALIZER;
 
 static pthread_t udev_thread;
 static os_event_t *udev_event;
+static int udev_event_fd;
 
 static signal_handler_t *udev_signalhandler = NULL;
 
@@ -108,8 +112,6 @@ static void *udev_event_thread(void *vptr)
 	UNUSED_PARAMETER(vptr);
 
 	int fd;
-	fd_set fds;
-	struct timeval tv;
 	struct udev *udev;
 	struct udev_monitor *mon;
 	struct udev_device *dev;
@@ -127,12 +129,14 @@ static void *udev_event_thread(void *vptr)
 	fd = udev_monitor_get_fd(mon);
 
 	while (os_event_try(udev_event) == EAGAIN) {
-		FD_ZERO(&fds);
-		FD_SET(fd, &fds);
-		tv.tv_sec = 1;
-		tv.tv_usec = 0;
+		struct pollfd fds[2];
 
-		if (select(fd + 1, &fds, NULL, NULL, &tv) <= 0)
+		fds[0].fd = fd;
+		fds[0].events = POLLIN;
+		fds[1].fd = udev_event_fd;
+		fds[1].events = POLLIN;
+
+		if (poll(fds, 2, 1000) <= 0)
 			continue;
 
 		dev = udev_monitor_receive_device(mon);
@@ -158,13 +162,19 @@ void v4l2_init_udev(void)
 	if (udev_refs == 0) {
 		if (os_event_init(&udev_event, OS_EVENT_TYPE_MANUAL) != 0)
 			goto fail;
-		if (pthread_create(&udev_thread, NULL, udev_event_thread,
-				   NULL) != 0)
+		if ((udev_event_fd = eventfd(0, EFD_CLOEXEC)) < 0)
 			goto fail;
+		if (pthread_create(&udev_thread, NULL, udev_event_thread,
+				   NULL) != 0) {
+			close(udev_event_fd);
+			goto fail;
+		}
 
 		udev_signalhandler = signal_handler_create();
-		if (!udev_signalhandler)
+		if (!udev_signalhandler) {
+			close(udev_event_fd);
 			goto fail;
+		}
 		signal_handler_add_array(udev_signalhandler, udev_signals);
 	}
 	udev_refs++;
@@ -180,8 +190,10 @@ void v4l2_unref_udev(void)
 	/* unref udev monitor */
 	if (udev_refs && --udev_refs == 0) {
 		os_event_signal(udev_event);
+		eventfd_write(udev_event_fd, 1);
 		pthread_join(udev_thread, NULL);
 		os_event_destroy(udev_event);
+		close(udev_event_fd);
 
 		if (udev_signalhandler)
 			signal_handler_destroy(udev_signalhandler);
