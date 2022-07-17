@@ -28,6 +28,12 @@ BMDDisplayMode DeckLinkDeviceMode::GetDisplayMode(void) const
 	return bmdModeUnknown;
 }
 
+void DeckLinkDeviceMode::GetFrameRate(/* out */ BMDTimeValue *frameDuration,
+				      /* out */ BMDTimeScale *timeScale)
+{
+	mode->GetFrameRate(frameDuration, timeScale);
+}
+
 int DeckLinkDeviceMode::GetWidth()
 {
 	if (mode != nullptr)
@@ -60,20 +66,6 @@ long long DeckLinkDeviceMode::GetId(void) const
 const std::string &DeckLinkDeviceMode::GetName(void) const
 {
 	return name;
-}
-
-bool DeckLinkDeviceMode::IsEqualFrameRate(int64_t num, int64_t den)
-{
-	bool equal = false;
-
-	if (mode) {
-		BMDTimeValue frameDuration;
-		BMDTimeScale timeScale;
-		if (SUCCEEDED(mode->GetFrameRate(&frameDuration, &timeScale)))
-			equal = timeScale * den == frameDuration * num;
-	}
-
-	return equal;
 }
 
 void DeckLinkDeviceMode::SetMode(IDeckLinkDisplayMode *mode_)

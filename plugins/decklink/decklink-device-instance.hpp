@@ -3,15 +3,25 @@
 #define LOG(level, message, ...) \
 	blog(level, "%s: " message, "decklink", ##__VA_ARGS__)
 
+#include <atomic>
+
 #include <obs-module.h>
 #include <media-io/video-scaler.h>
 #include "decklink-device.hpp"
 #include "OBSVideoFrame.h"
 
+#include "util.hpp"
+
+#define DECKLINK_EXTRA_PREROLL_FRAMES 0
+
+#define DRIFT_AVERAGE_SAMPLES 280
+#define CLOCK_ADJUST_DIVISOR 8192
+#define CLOCK_ADJUST_HYSTERESIS 1
+
 class AudioRepacker;
 class DecklinkBase;
 
-class DeckLinkDeviceInstance : public IDeckLinkInputCallback {
+class DeckLinkDeviceInstance : public IDeckLinkVideoOutputCallback, public IDeckLinkInputCallback {
 protected:
 	struct obs_source_frame2 currentFrame;
 	struct obs_source_audio currentPacket;
@@ -37,6 +47,19 @@ protected:
 	bool swap;
 	bool allow10Bit;
 
+	// Output
+	bool playbackStarted = false;
+	uint32_t frameDuplication = 1;
+	uint64_t frameLength = 0;
+	uint64_t hardwareStartTime = 0;
+	uint64_t systemStartTime = 0;
+	uint64_t nextVideoTime = 0;
+
+	RollingAverage driftAverage;
+	int64_t clockAdjustment = 0;
+
+	size_t framesSinceDriftCalc = 0; // debug only
+
 	OBSVideoFrame *convertFrame = nullptr;
 	ComPtr<IDeckLinkMutableVideoFrame> decklinkOutputFrame;
 
@@ -51,6 +74,9 @@ protected:
 public:
 	DeckLinkDeviceInstance(DecklinkBase *decklink, DeckLinkDevice *device);
 	virtual ~DeckLinkDeviceInstance();
+
+	virtual HRESULT STDMETHODCALLTYPE	ScheduledFrameCompleted (IDeckLinkVideoFrame* completedFrame, BMDOutputFrameCompletionResult result);
+	virtual HRESULT STDMETHODCALLTYPE	ScheduledPlaybackHasStopped ();
 
 	inline DeckLinkDevice *GetDevice() const { return device; }
 	inline long long GetActiveModeId() const
@@ -105,6 +131,13 @@ public:
 	ULONG STDMETHODCALLTYPE AddRef(void);
 	HRESULT STDMETHODCALLTYPE QueryInterface(REFIID iid, LPVOID *ppv);
 	ULONG STDMETHODCALLTYPE Release(void);
+
+	int64_t GetClockTimingAdjustment(void);
+	void SetClockTimingAdjustment(int64_t adj);
+
+	void TickDriftTracker(void);
+
+	void CorrectDrift(void);
 
 	void DisplayVideoFrame(video_data *frame);
 	void WriteAudio(audio_data *frames);
