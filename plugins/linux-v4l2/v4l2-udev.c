@@ -115,6 +115,7 @@ static void *udev_event_thread(void *vptr)
 	struct udev_device *dev;
 
 	/* set up udev monitoring */
+	os_set_thread_name("v4l2: udev");
 	udev = udev_new();
 	mon = udev_monitor_new_from_netlink(udev, "udev");
 	udev_monitor_filter_add_match_subsystem_devtype(mon, "video4linux",
