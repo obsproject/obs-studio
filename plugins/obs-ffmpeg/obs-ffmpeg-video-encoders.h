@@ -21,7 +21,7 @@ struct ffmpeg_video_encoder {
 	obs_encoder_t *encoder;
 	const char *enc_name;
 
-	AVCodec *avcodec;
+	const AVCodec *avcodec;
 	AVCodecContext *context;
 	int64_t start_ts;
 	bool first_packet;

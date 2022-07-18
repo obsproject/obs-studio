@@ -34,7 +34,7 @@ enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_NONE,
 };
 
-static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type)
+static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type)
 {
 	for (int i = 0;; i++) {
 		const AVCodecHWConfig *config = avcodec_get_hw_config(c, i);

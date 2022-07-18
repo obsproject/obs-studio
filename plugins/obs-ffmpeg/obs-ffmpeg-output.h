@@ -43,8 +43,8 @@ struct ffmpeg_data {
 	AVStream *video;
 	AVCodecContext *video_ctx;
 	struct ffmpeg_audio_info *audio_infos;
-	AVCodec *acodec;
-	AVCodec *vcodec;
+	const AVCodec *acodec;
+	const AVCodec *vcodec;
 	AVFormatContext *output;
 	struct SwsContext *swscale;
 
