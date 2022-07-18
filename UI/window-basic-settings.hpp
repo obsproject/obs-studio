@@ -120,6 +120,7 @@ private:
 	std::string savedTheme;
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
+	bool llBufferingEnabled = false;
 
 	int lastSimpleRecQualityIdx = 0;
 	int lastServiceIdx = -1;
@@ -379,6 +380,8 @@ private slots:
 	void ReloadAudioSources();
 	void SurroundWarning(int idx);
 	void SpeakerLayoutChanged(int idx);
+	void LowLatencyBufferingChanged(bool checked);
+	void UpdateAudioWarnings();
 	void OutputsChanged();
 	void Stream1Changed();
 	void VideoChanged();
