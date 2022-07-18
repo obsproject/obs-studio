@@ -55,6 +55,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore blog;
 %ignore blogva;
 %ignore bcrash;
+%ignore base_set_crash_handler;
 %ignore obs_source_info;
 %ignore obs_register_source_s(const struct obs_source_info *info, size_t size);
 %ignore obs_output_set_video(obs_output_t *output, video_t *video);
