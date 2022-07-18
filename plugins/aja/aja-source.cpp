@@ -13,7 +13,9 @@
 #include <ajantv2/includes/ntv2card.h>
 #include <ajantv2/includes/ntv2utils.h>
 
+#ifndef NSEC_PER_SEC
 #define NSEC_PER_SEC 1000000000LL
+#endif
 #define NTV2_AUDIOSIZE_MAX (401 * 1024)
 
 AJASource::AJASource(obs_source_t *source)
