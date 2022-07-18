@@ -1852,7 +1852,6 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	GS_DEBUG_MARKER_END();
 
 	UNUSED_PARAMETER(scene);
-	UNUSED_PARAMETER(param);
 	return true;
 }
 

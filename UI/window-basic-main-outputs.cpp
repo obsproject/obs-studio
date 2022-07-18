@@ -97,8 +97,6 @@ static void OBSStopRecording(void *data, calldata_t *params)
 	QMetaObject::invokeMethod(output->main, "RecordingStop",
 				  Q_ARG(int, code),
 				  Q_ARG(QString, arg_last_error));
-
-	UNUSED_PARAMETER(params);
 }
 
 static void OBSRecordStopping(void *data, calldata_t *params)
@@ -143,8 +141,6 @@ static void OBSStopReplayBuffer(void *data, calldata_t *params)
 	os_atomic_set_bool(&replaybuf_active, false);
 	QMetaObject::invokeMethod(output->main, "ReplayBufferStop",
 				  Q_ARG(int, code));
-
-	UNUSED_PARAMETER(params);
 }
 
 static void OBSReplayBufferStopping(void *data, calldata_t *params)
@@ -182,8 +178,6 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 	os_atomic_set_bool(&virtualcam_active, false);
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop",
 				  Q_ARG(int, code));
-
-	UNUSED_PARAMETER(params);
 }
 
 /* ------------------------------------------------------------------------ */
