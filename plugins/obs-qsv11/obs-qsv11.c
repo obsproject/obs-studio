@@ -335,36 +335,37 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-	obs_property_t *list;
+	obs_property_t *prop;
 
-	list = obs_properties_add_list(props, "target_usage", TEXT_SPEED,
+	prop = obs_properties_add_list(props, "target_usage", TEXT_SPEED,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_usage_names);
+	add_strings(prop, qsv_usage_names);
 
-	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
+	prop = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_profile_names);
+	add_strings(prop, qsv_profile_names);
 
-	obs_property_set_modified_callback(list, profile_modified);
+	obs_property_set_modified_callback(prop, profile_modified);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
+	prop = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1,
+				      20, 1);
+	obs_property_int_set_suffix(prop, " s");
 
-	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+	prop = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_rate_controls(list, qsv_ratecontrols);
-	obs_property_set_modified_callback(list, rate_control_modified);
+	add_rate_controls(prop, qsv_ratecontrols);
+	obs_property_set_modified_callback(prop, rate_control_modified);
 
-	obs_property_t *p;
-	p = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
-				   10000000, 50);
-	obs_property_int_set_suffix(p, " Kbps");
+	prop = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
+				      10000000, 50);
+	obs_property_int_set_suffix(prop, " Kbps");
 
-	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
-				   10000000, 50);
-	obs_property_int_set_suffix(p, " Kbps");
+	prop = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE,
+				      50, 10000000, 50);
+	obs_property_int_set_suffix(prop, " Kbps");
 
 	obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0, 10000, 1);
 	obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE, 0, 10,
@@ -374,11 +375,11 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
 	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51,
 			       1);
-	list = obs_properties_add_list(props, "latency", TEXT_LATENCY,
+	prop = obs_properties_add_list(props, "latency", TEXT_LATENCY,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_latency_names);
-	obs_property_set_long_description(list,
+	add_strings(prop, qsv_latency_names);
+	obs_property_set_long_description(prop,
 					  obs_module_text("Latency.ToolTip"));
 
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
