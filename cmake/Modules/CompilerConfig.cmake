@@ -91,16 +91,23 @@ else()
   endif()
 
   add_compile_options(
+    -Werror
     -Wextra
     -Wvla
+    -Wswitch
+    -Wno-error=switch
+    -Wformat
+    -Wformat-security
+    -Wunused-parameter
     -Wno-unused-function
     -Wno-missing-field-initializers
     -fno-strict-aliasing
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
     "$<$<BOOL:${USE_LIBCXX}>:-stdlib=libc++>"
     "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>"
-    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>")
+    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
+    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
+    "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>")
 
   if(OBS_CODESIGN_LINKER)
     add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")
