@@ -34,6 +34,10 @@
 #define CODEC_FLAG_GLOBAL_H CODEC_FLAG_GLOBAL_HEADER
 #endif
 
+#ifndef FF_API_BUFFER_SIZE_T
+#define FF_API_BUFFER_SIZE_T (LIBAVUTIL_VERSION_MAJOR < 57)
+#endif
+
 struct media_remux_job {
 	int64_t in_size;
 	AVFormatContext *ifmt_ctx, *ofmt_ctx;
