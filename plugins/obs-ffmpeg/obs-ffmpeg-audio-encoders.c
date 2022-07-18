@@ -41,7 +41,7 @@ struct enc_encoder {
 
 	const char *type;
 
-	AVCodec *codec;
+	const AVCodec *codec;
 	AVCodecContext *context;
 
 	uint8_t *samples[MAX_AV_PLANES];

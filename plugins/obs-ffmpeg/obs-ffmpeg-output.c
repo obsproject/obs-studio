@@ -79,7 +79,8 @@ void ffmpeg_log_error(int log_level, struct ffmpeg_data *data,
 }
 
 static bool new_stream(struct ffmpeg_data *data, AVStream **stream,
-		       AVCodec **codec, enum AVCodecID id, const char *name)
+		       const AVCodec **codec, enum AVCodecID id,
+		       const char *name)
 {
 	*codec = (!!name && *name) ? avcodec_find_encoder_by_name(name)
 				   : avcodec_find_encoder(id);
@@ -418,7 +419,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 
 static inline bool init_streams(struct ffmpeg_data *data)
 {
-	AVOutputFormat *format = data->output->oformat;
+	const AVOutputFormat *format = data->output->oformat;
 
 	if (format->video_codec != AV_CODEC_ID_NONE)
 		if (!create_video_stream(data))
@@ -439,7 +440,7 @@ static inline bool init_streams(struct ffmpeg_data *data)
 
 static inline bool open_output_file(struct ffmpeg_data *data)
 {
-	AVOutputFormat *format = data->output->oformat;
+	const AVOutputFormat *format = data->output->oformat;
 	int ret;
 
 	AVDictionary *dict = NULL;
@@ -566,7 +567,7 @@ static inline const char *safe_str(const char *s)
 
 static enum AVCodecID get_codec_id(const char *name, int id)
 {
-	AVCodec *codec;
+	const AVCodec *codec;
 
 	if (id != 0)
 		return (enum AVCodecID)id;

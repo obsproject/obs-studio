@@ -54,7 +54,7 @@ struct vaapi_encoder {
 	AVBufferRef *vadevice_ref;
 	AVBufferRef *vaframes_ref;
 
-	AVCodec *vaapi;
+	const AVCodec *vaapi;
 	AVCodecContext *context;
 
 	AVPacket *packet;

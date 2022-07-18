@@ -39,7 +39,7 @@ extern "C" {
 struct ffmpeg_decode {
 	AVBufferRef *hw_device_ctx;
 	AVCodecContext *decoder;
-	AVCodec *codec;
+	const AVCodec *codec;
 
 	AVFrame *hw_frame;
 	AVFrame *frame;

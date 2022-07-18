@@ -29,7 +29,7 @@ extern "C" {
  * Data structure for decoder
  */
 struct v4l2_decoder {
-	AVCodec *codec;
+	const AVCodec *codec;
 	AVCodecContext *context;
 	AVPacket *packet;
 	AVFrame *frame;

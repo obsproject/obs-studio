@@ -39,7 +39,8 @@ static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 	AVStream *const stream = fmt_ctx->streams[ret];
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	AVCodecParameters *const codecpar = stream->codecpar;
-	AVCodec *const decoder = avcodec_find_decoder(codecpar->codec_id);
+	const AVCodec *const decoder = avcodec_find_decoder(
+		codecpar->codec_id); // fix discarded-qualifiers
 #else
 	AVCodecContext *const decoder_ctx = stream->codec;
 	AVCodec *const decoder = avcodec_find_decoder(decoder_ctx->codec_id);
