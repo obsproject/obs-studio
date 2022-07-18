@@ -1082,12 +1082,15 @@ bool obs_module_load(void)
 		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
 		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
 
-		CFBooleanRef hardware_ref = CFDictionaryGetValue(
-			encoder_dict,
-			kVTVideoEncoderList_IsHardwareAccelerated);
 		bool hardware_accelerated = false;
-		if (hardware_ref)
-			hardware_accelerated = CFBooleanGetValue(hardware_ref);
+		if (__builtin_available(macOS 10.14, *)) {
+			CFBooleanRef hardware_ref = CFDictionaryGetValue(
+				encoder_dict,
+				kVTVideoEncoderList_IsHardwareAccelerated);
+			if (hardware_ref)
+				hardware_accelerated =
+					CFBooleanGetValue(hardware_ref);
+		}
 
 		info.id = id;
 		struct vt_encoder_type_data *type_data =
