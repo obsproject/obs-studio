@@ -16,7 +16,11 @@ bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
 			       const char *device_path);
 
 bool vaapi_display_h264_supported(VADisplay dpy, const char *device_path);
-
 bool vaapi_device_h264_supported(const char *device_path);
-
 const char *vaapi_get_h264_default_device(void);
+
+#ifdef ENABLE_HEVC
+bool vaapi_display_hevc_supported(VADisplay dpy, const char *device_path);
+bool vaapi_device_hevc_supported(const char *device_path);
+const char *vaapi_get_hevc_default_device(void);
+#endif
