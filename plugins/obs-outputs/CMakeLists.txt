@@ -179,6 +179,24 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
       obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/posix)
   endif()
 
+  if(NOT MSVC)
+    target_compile_options(
+      obs-outputs
+      PRIVATE
+        -Wno-error=extra
+        -Wno-error=sign-compare
+        -Wno-error=incompatible-pointer-types
+        -Wno-error=int-conversion
+        -Wno-error=unused-parameter
+        -Wno-error=deprecated-declarations
+        "$<$<COMPILE_LANG_AND_ID:C,GNU>:-Wno-error=maybe-uninitialized>"
+        "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-error=pointer-sign>")
+    if((NOT CMAKE_C_COMPILER_ID STREQUAL "GNU") OR CMAKE_C_COMPILER_VERSION
+                                                   VERSION_GREATER_EQUAL "10")
+      target_compile_options(obs-outputs PRIVATE -Wno-error=enum-conversion)
+    endif()
+  endif()
+
   target_compile_definitions(obs-outputs PRIVATE FTL_FOUND)
 endif()
 
