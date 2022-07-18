@@ -604,7 +604,7 @@ static inline bool update_audio(obs_source_audio *audio,
 {
 	size_t requiredSize;
 	OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-		sample_buffer, &requiredSize, nullptr, NULL, nullptr, nullptr,
+		sample_buffer, &requiredSize, nullptr, 0, nullptr, nullptr,
 		kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
 		nullptr);
 
