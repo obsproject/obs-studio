@@ -1787,6 +1787,8 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
 				QVariant::fromValue(OBSSource(source)));
 			ui->transitions->setCurrentIndex(
 				ui->transitions->count() - 1);
+			if (cb)
+				cb(private_data, source);
 		}
 	}
 }
