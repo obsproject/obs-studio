@@ -751,9 +751,16 @@ static void rtmp_common_get_supported_resolutions(
 	void *data, struct obs_service_resolution **resolutions, size_t *count)
 {
 	struct rtmp_common *service = data;
-	*count = service->supported_resolutions_count;
-	*resolutions = bmemdup(service->supported_resolutions,
-			       *count * sizeof(struct obs_service_resolution));
+
+	if (service->supported_resolutions_count) {
+		*count = service->supported_resolutions_count;
+		*resolutions =
+			bmemdup(service->supported_resolutions,
+				*count * sizeof(struct obs_service_resolution));
+	} else {
+		*count = 0;
+		*resolutions = NULL;
+	}
 }
 
 static void rtmp_common_get_max_fps(void *data, int *fps)
