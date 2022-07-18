@@ -352,7 +352,7 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 
 	for (int_fast32_t i = 0; i < count; ++i) {
 		char *name;
-		char name_tmp[12];
+		char name_tmp[20];
 		int_fast32_t x, y, w, h;
 		x = y = w = h = 0;
 
