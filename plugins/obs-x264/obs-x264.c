@@ -200,7 +200,9 @@ static obs_properties_t *obs_x264_props(void *unused)
 
 	obs_properties_add_int(props, "crf", TEXT_CRF, 0, 51, 1);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20,
+				   1);
+	obs_property_int_set_suffix(p, " s");
 
 	list = obs_properties_add_list(props, "preset", TEXT_PRESET,
 				       OBS_COMBO_TYPE_LIST,

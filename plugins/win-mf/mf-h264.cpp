@@ -206,7 +206,8 @@ static obs_properties_t *MFH264_GetProperties(void *)
 	obs_property_list_add_int(list, "main",     H264ProfileMain);
 	obs_property_list_add_int(list, "high",     H264ProfileHigh);
 
-	obs_properties_add_int(props, MFP_KEY_INT, TEXT_KEYINT_SEC, 0, 20, 1);
+	p = obs_properties_add_int(props, MFP_KEY_INT, TEXT_KEYINT_SEC, 0, 20, 1);
+	obs_property_int_set_suffix(p, " s");
 
 	list = obs_properties_add_list(props, MFP_RATE_CONTROL,
 		TEXT_RATE_CONTROL, OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

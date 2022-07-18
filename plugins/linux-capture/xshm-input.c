@@ -407,6 +407,7 @@ static obs_properties_t *xshm_properties(void *vptr)
 	XSHM_DATA(vptr);
 
 	obs_properties_t *props = obs_properties_create();
+	obs_property_t *prop;
 
 	obs_properties_add_list(props, "screen", obs_module_text("Screen"),
 				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
@@ -415,14 +416,21 @@ static obs_properties_t *xshm_properties(void *vptr)
 	obs_property_t *advanced = obs_properties_add_bool(
 		props, "advanced", obs_module_text("AdvancedSettings"));
 
-	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"),
-			       -4096, 4096, 1);
-	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
-			       -4096, 4096, 1);
-	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
-			       0, 4096, 1);
-	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
-			       0, 4096, 1);
+	prop = obs_properties_add_int(
+		props, "cut_top", obs_module_text("CropTop"), -4096, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(
+		props, "cut_left", obs_module_text("CropLeft"), -4096, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(props, "cut_right",
+				      obs_module_text("CropRight"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(
+		props, "cut_bot", obs_module_text("CropBottom"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
 
 	obs_property_t *server = obs_properties_add_text(
 		props, "server", obs_module_text("XServer"), OBS_TEXT_DEFAULT);

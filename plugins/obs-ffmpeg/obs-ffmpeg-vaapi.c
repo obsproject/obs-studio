@@ -686,9 +686,10 @@ static obs_properties_t *vaapi_properties(void *unused)
 
 	obs_properties_add_int(props, "qp", "QP", 0, 51, 1);
 
-	obs_properties_add_int(props, "keyint_sec",
-			       obs_module_text("KeyframeIntervalSec"), 0, 20,
-			       1);
+	p = obs_properties_add_int(props, "keyint_sec",
+				   obs_module_text("KeyframeIntervalSec"), 0,
+				   20, 1);
+	obs_property_int_set_suffix(p, " s");
 
 	return props;
 }

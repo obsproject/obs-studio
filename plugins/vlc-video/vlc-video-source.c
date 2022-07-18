@@ -1127,8 +1127,10 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&filter);
 	dstr_free(&exts);
 
-	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING, 100,
-			       60000, 10);
+	p = obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
+				   100, 60000, 10);
+	obs_property_int_set_suffix(p, " ms");
+
 	obs_properties_add_int(ppts, S_TRACK, T_TRACK, 1, 10, 1);
 	obs_properties_add_bool(ppts, S_SUBTITLE_ENABLE, T_SUBTITLE_ENABLE);
 	obs_properties_add_int(ppts, S_SUBTITLE_TRACK, T_SUBTITLE_TRACK, 1, 10,

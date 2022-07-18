@@ -717,10 +717,12 @@ static obs_properties_t *xcompcap_props(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
+	obs_property_t *prop;
 
-	obs_property_t *wins = obs_properties_add_list(
-		props, "capture_window", obs_module_text("Window"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+	prop = obs_properties_add_list(props, "capture_window",
+				       obs_module_text("Window"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_STRING);
 
 	DARRAY(struct WindowInfo) window_strings = {0};
 	struct darray windows = xcomp_top_level_windows(conn);
@@ -752,7 +754,7 @@ static obs_properties_t *xcompcap_props(void *unused)
 		struct WindowInfo *s = (struct WindowInfo *)darray_item(
 			sizeof(struct WindowInfo), &window_strings.da, i);
 
-		obs_property_list_add_string(wins, s->name.array,
+		obs_property_list_add_string(prop, s->name.array,
 					     s->desc.array);
 
 		dstr_free(&s->name_lower);
@@ -761,14 +763,21 @@ static obs_properties_t *xcompcap_props(void *unused)
 	}
 	da_free(window_strings);
 
-	obs_properties_add_int(props, "cut_top", obs_module_text("CropTop"), 0,
-			       4096, 1);
-	obs_properties_add_int(props, "cut_left", obs_module_text("CropLeft"),
-			       0, 4096, 1);
-	obs_properties_add_int(props, "cut_right", obs_module_text("CropRight"),
-			       0, 4096, 1);
-	obs_properties_add_int(props, "cut_bot", obs_module_text("CropBottom"),
-			       0, 4096, 1);
+	prop = obs_properties_add_int(props, "cut_top",
+				      obs_module_text("CropTop"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(props, "cut_left",
+				      obs_module_text("CropLeft"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(props, "cut_right",
+				      obs_module_text("CropRight"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
+
+	prop = obs_properties_add_int(
+		props, "cut_bot", obs_module_text("CropBottom"), 0, 4096, 1);
+	obs_property_int_set_suffix(prop, " px");
 
 	obs_properties_add_bool(props, "swap_redblue",
 				obs_module_text("SwapRedBlue"));
