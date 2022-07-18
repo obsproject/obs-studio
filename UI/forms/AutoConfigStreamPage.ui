@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>726</width>
+    <width>692</width>
     <height>407</height>
    </rect>
   </property>
@@ -89,14 +89,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QComboBox" name="service">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
+          <widget class="QComboBox" name="service"/>
          </item>
          <item>
           <widget class="UrlPushButton" name="moreInfoButton">
