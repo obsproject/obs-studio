@@ -760,6 +760,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(SurroundWarning(int)));
 	connect(ui->channelSetup, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(SpeakerLayoutChanged(int)));
+	connect(ui->lowLatencyBuffering, SIGNAL(clicked(bool)), this,
+		SLOT(LowLatencyBufferingChanged(bool)));
 	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(SimpleRecordingQualityChanged()));
 	connect(ui->simpleOutRecQuality, SIGNAL(currentIndexChanged(int)), this,
@@ -926,6 +928,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	channelIndex = ui->channelSetup->currentIndex();
 	sampleRateIndex = ui->sampleRate->currentIndex();
+	llBufferingEnabled = ui->lowLatencyBuffering->isChecked();
 
 	QRegularExpression rx("\\d{1,5}x\\d{1,5}");
 	QValidator *validator = new QRegularExpressionValidator(rx, this);
@@ -934,6 +937,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
 		SLOT(UseStreamKeyAdvClicked()));
+
+	UpdateAudioWarnings();
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -2536,6 +2541,8 @@ void OBSBasicSettings::LoadAudioSettings()
 		config_get_double(main->Config(), "Audio", "MeterDecayRate");
 	uint32_t peakMeterTypeIdx =
 		config_get_uint(main->Config(), "Audio", "PeakMeterType");
+	bool enableLLAudioBuffering = config_get_bool(
+		GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
 
 	loading = true;
 
@@ -2572,6 +2579,7 @@ void OBSBasicSettings::LoadAudioSettings()
 		ui->meterDecayRate->setCurrentIndex(0);
 
 	ui->peakMeterType->setCurrentIndex(peakMeterTypeIdx);
+	ui->lowLatencyBuffering->setChecked(enableLLAudioBuffering);
 
 	LoadAudioDevices();
 	LoadAudioSources();
@@ -3754,6 +3762,14 @@ void OBSBasicSettings::SaveAudioSettings()
 		main->UpdateVolumeControlsPeakMeterType();
 	}
 
+	if (WidgetChanged(ui->lowLatencyBuffering)) {
+		bool enableLLAudioBuffering =
+			ui->lowLatencyBuffering->isChecked();
+		config_set_bool(GetGlobalConfig(), "Audio",
+				"LowLatencyAudioBuffering",
+				enableLLAudioBuffering);
+	}
+
 	for (auto &audioSource : audioSources) {
 		auto source = OBSGetStrongRef(get<0>(audioSource));
 		if (!source)
@@ -4287,9 +4303,12 @@ void OBSBasicSettings::AudioChangedRestart()
 	if (!loading) {
 		int currentChannelIndex = ui->channelSetup->currentIndex();
 		int currentSampleRateIndex = ui->sampleRate->currentIndex();
+		bool currentLLAudioBufVal =
+			ui->lowLatencyBuffering->isChecked();
 
 		if (currentChannelIndex != channelIndex ||
-		    currentSampleRateIndex != sampleRateIndex) {
+		    currentSampleRateIndex != sampleRateIndex ||
+		    currentLLAudioBufVal != llBufferingEnabled) {
 			audioChanged = true;
 			ui->audioMsg->setText(
 				QTStr("Basic.Settings.ProgramRestart"));
@@ -4318,13 +4337,9 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 	bool surround = IsSurround(speakerLayout.c_str());
 
 	if (surround) {
-		QString warning = QTStr(MULTI_CHANNEL_WARNING ".Enabled") +
-				  QStringLiteral("\n\n") +
-				  QTStr(MULTI_CHANNEL_WARNING);
 		/*
 		 * Display all bitrates
 		 */
-		ui->audioMsg_2->setText(warning);
 		PopulateAACBitrates(
 			{ui->simpleOutputABitrate, ui->advOutTrack1Bitrate,
 			 ui->advOutTrack2Bitrate, ui->advOutTrack3Bitrate,
@@ -4335,7 +4350,6 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 		 * Reset audio bitrate for simple and adv mode, update list of
 		 * bitrates and save setting.
 		 */
-		ui->audioMsg_2->setText(QString());
 		RestrictResetBitrates(
 			{ui->simpleOutputABitrate, ui->advOutTrack1Bitrate,
 			 ui->advOutTrack2Bitrate, ui->advOutTrack3Bitrate,
@@ -4351,6 +4365,8 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 		SaveCombo(ui->advOutTrack5Bitrate, "AdvOut", "Track5Bitrate");
 		SaveCombo(ui->advOutTrack6Bitrate, "AdvOut", "Track6Bitrate");
 	}
+
+	UpdateAudioWarnings();
 }
 
 void OBSBasicSettings::HideOBSWindowWarning(int state)
@@ -5255,6 +5271,56 @@ void OBSBasicSettings::SurroundWarning(int idx)
 	}
 
 	lastChannelSetupIdx = idx;
+}
+
+#define LL_BUFFERING_WARNING "Basic.Settings.Audio.LowLatencyBufferingWarning"
+
+void OBSBasicSettings::UpdateAudioWarnings()
+{
+	QString speakerLayoutQstr = ui->channelSetup->currentText();
+	bool surround = IsSurround(QT_TO_UTF8(speakerLayoutQstr));
+	bool lowBufferingActive = ui->lowLatencyBuffering->isChecked();
+
+	QString text;
+
+	if (surround) {
+		text = QTStr(MULTI_CHANNEL_WARNING ".Enabled") +
+		       QStringLiteral("\n\n") + QTStr(MULTI_CHANNEL_WARNING);
+	}
+
+	if (lowBufferingActive) {
+		if (!text.isEmpty())
+			text += QStringLiteral("\n\n");
+
+		text += QTStr(LL_BUFFERING_WARNING ".Enabled") +
+			QStringLiteral("\n\n") + QTStr(LL_BUFFERING_WARNING);
+	}
+
+	ui->audioMsg_2->setText(text);
+}
+
+void OBSBasicSettings::LowLatencyBufferingChanged(bool checked)
+{
+	if (checked) {
+		QString warningStr = QTStr(LL_BUFFERING_WARNING) +
+				     QStringLiteral("\n\n") +
+				     QTStr(LL_BUFFERING_WARNING ".Confirm");
+
+		auto button = OBSMessageBox::question(
+			this, QTStr(LL_BUFFERING_WARNING ".Title"), warningStr);
+
+		if (button == QMessageBox::No) {
+			QMetaObject::invokeMethod(ui->lowLatencyBuffering,
+						  "setChecked",
+						  Qt::QueuedConnection,
+						  Q_ARG(bool, false));
+			return;
+		}
+	}
+
+	QMetaObject::invokeMethod(this, "UpdateAudioWarnings",
+				  Qt::QueuedConnection);
+	QMetaObject::invokeMethod(this, "AudioChangedRestart");
 }
 
 void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)

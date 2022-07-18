@@ -4409,7 +4409,7 @@ bool OBSBasic::ResetAudio()
 {
 	ProfileScope("OBSBasic::ResetAudio");
 
-	struct obs_audio_info ai;
+	struct obs_audio_info2 ai = {};
 	ai.samples_per_sec =
 		config_get_uint(basicConfig, "Audio", "SampleRate");
 
@@ -4431,7 +4431,14 @@ bool OBSBasic::ResetAudio()
 	else
 		ai.speakers = SPEAKERS_STEREO;
 
-	return obs_reset_audio(&ai);
+	bool lowLatencyAudioBuffering = config_get_bool(
+		GetGlobalConfig(), "Audio", "LowLatencyAudioBuffering");
+	if (lowLatencyAudioBuffering) {
+		ai.max_buffering_ms = 20;
+		ai.fixed_buffering = true;
+	}
+
+	return obs_reset_audio2(&ai);
 }
 
 extern char *get_new_source_name(const char *name, const char *format);

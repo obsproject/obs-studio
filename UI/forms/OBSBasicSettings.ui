@@ -151,8 +151,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>806</width>
-              <height>1181</height>
+              <width>803</width>
+              <height>1226</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1379,7 +1379,7 @@
               <x>0</x>
               <y>0</y>
               <width>820</width>
-              <height>679</height>
+              <height>676</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_21">
@@ -3972,7 +3972,7 @@
               <x>0</x>
               <y>0</y>
               <width>820</width>
-              <height>641</height>
+              <height>632</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4369,6 +4369,13 @@
                     <widget class="QCheckBox" name="disableAudioDucking">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Audio.DisableAudioDucking</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="2" column="1">
+                    <widget class="QCheckBox" name="lowLatencyBuffering">
+                     <property name="text">
+                      <string>Basic.Settings.Audio.LowLatencyBufferingMode</string>
                      </property>
                     </widget>
                    </item>
@@ -4904,8 +4911,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>609</width>
-              <height>870</height>
+              <width>713</width>
+              <height>923</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -5925,7 +5932,7 @@
   <tabstop>peakMeterType</tabstop>
   <tabstop>monitoringDevice</tabstop>
   <tabstop>disableAudioDucking</tabstop>
-  <tabstop>baseResolution</tabstop>
+  <tabstop>lowLatencyBuffering</tabstop>
   <tabstop>outputResolution</tabstop>
   <tabstop>downscaleFilter</tabstop>
   <tabstop>fpsType</tabstop>
@@ -5960,6 +5967,18 @@
   <tabstop>enableLowLatencyMode</tabstop>
   <tabstop>browserHWAccel</tabstop>
   <tabstop>hotkeyFocusType</tabstop>
+  <tabstop>hideOBSFromCapture</tabstop>
+  <tabstop>closeProjectors</tabstop>
+  <tabstop>moreInfoButton</tabstop>
+  <tabstop>ignoreRecommended</tabstop>
+  <tabstop>useStreamKeyAdv</tabstop>
+  <tabstop>baseResolution</tabstop>
+  <tabstop>hotkeyFilterSearch</tabstop>
+  <tabstop>hotkeyFilterInput</tabstop>
+  <tabstop>hotkeyFilterReset</tabstop>
+  <tabstop>hotkeyScrollArea</tabstop>
+  <tabstop>sdrWhiteLevel</tabstop>
+  <tabstop>hdrNominalPeakLevel</tabstop>
  </tabstops>
  <resources>
   <include location="obs.qrc"/>
