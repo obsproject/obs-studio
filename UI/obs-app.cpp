@@ -88,7 +88,9 @@ bool opt_start_virtualcam = false;
 bool opt_minimize_tray = false;
 bool opt_allow_opengl = false;
 bool opt_always_on_top = false;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 bool opt_disable_high_dpi_scaling = false;
+#endif
 bool opt_disable_updater = false;
 bool opt_disable_missing_files_check = false;
 string opt_starting_collection;
@@ -2053,7 +2055,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 	ScopeProfiler prof{run_program_init};
 
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0))
+#if (QT_VERSION >= QT_VERSION_CHECK(5, 11, 0)) && \
+	(QT_VERSION < QT_VERSION_CHECK(6, 0, 0))
 	QGuiApplication::setAttribute(opt_disable_high_dpi_scaling
 					      ? Qt::AA_DisableHighDpiScaling
 					      : Qt::AA_EnableHighDpiScaling);
@@ -2847,10 +2850,11 @@ int main(int argc, char *argv[])
 				  nullptr)) {
 			opt_disable_missing_files_check = true;
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
 				  nullptr)) {
 			opt_disable_high_dpi_scaling = true;
-
+#endif
 		} else if (arg_is(argv[i], "--help", "-h")) {
 			std::string help =
 				"--help, -h: Get list of available commands.\n\n"
@@ -2871,7 +2875,10 @@ int main(int argc, char *argv[])
 				"--unfiltered_log: Make log unfiltered.\n\n"
 				"--disable-updater: Disable built-in updater (Windows/Mac only)\n\n"
 				"--disable-missing-files-check: Disable the missing files dialog which can appear on startup.\n\n"
-				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n";
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+				"--disable-high-dpi-scaling: Disable automatic high-DPI scaling\n\n"
+#endif
+				;
 
 #ifdef _WIN32
 			MessageBoxA(NULL, help.c_str(), "Help",
