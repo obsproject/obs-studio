@@ -5572,8 +5572,15 @@
                    <property name="topMargin">
                     <number>2</number>
                    </property>
-                   <item row="0" column="0">
-                    <widget class="QLabel" name="label_27">
+                   <item row="0" column="1">
+                    <widget class="QLabel" name="advNetworkDisabled">
+                     <property name="text">
+                      <string>Basic.Settings.Advanced.Network.Disabled</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="0">
+                    <widget class="QLabel" name="bindToIPLabel">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Network.BindToIP</string>
                      </property>
@@ -5582,17 +5589,17 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="0" column="1">
+                   <item row="1" column="1">
                     <widget class="QComboBox" name="bindToIP"/>
                    </item>
-                   <item row="2" column="1">
+                   <item row="3" column="1">
                     <widget class="QCheckBox" name="enableNewSocketLoop">
                      <property name="text">
                       <string>Basic.Settings.Advanced.Network.EnableNewSocketLoop</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
+                   <item row="4" column="1">
                     <widget class="QCheckBox" name="enableLowLatencyMode">
                      <property name="enabled">
                       <bool>false</bool>
@@ -5602,7 +5609,7 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="0">
+                   <item row="3" column="0">
                     <spacer name="horizontalSpacer_7">
                      <property name="orientation">
                       <enum>Qt::Horizontal</enum>
@@ -5615,7 +5622,7 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="1" column="1">
+                   <item row="2" column="1">
                     <widget class="QCheckBox" name="dynBitrate">
                      <property name="toolTip">
                       <string>Basic.Settings.Output.DynamicBitrate.TT</string>

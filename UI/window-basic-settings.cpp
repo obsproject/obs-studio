@@ -939,6 +939,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(UseStreamKeyAdvClicked()));
 
 	UpdateAudioWarnings();
+	UpdateAdvNetworkGroup();
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -5471,4 +5472,19 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 
 	ui->outputResolution->lineEdit()->setValidator(
 		ui->baseResolution->lineEdit()->validator());
+}
+
+void OBSBasicSettings::UpdateAdvNetworkGroup()
+{
+	bool enabled = IsServiceOutputHasNetworkFeatures();
+
+	ui->advNetworkDisabled->setVisible(!enabled);
+
+	ui->bindToIPLabel->setVisible(enabled);
+	ui->bindToIP->setVisible(enabled);
+	ui->dynBitrate->setVisible(enabled);
+#ifdef _WIN32
+	ui->enableNewSocketLoop->setVisible(enabled);
+	ui->enableLowLatencyMode->setVisible(enabled);
+#endif
 }
