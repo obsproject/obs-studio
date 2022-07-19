@@ -22,16 +22,46 @@
 
 #include <obs-module.h>
 
-typedef struct _obs_pipewire_data obs_pipewire_data;
+#include <pipewire/pipewire.h>
 
-void *obs_pipewire_create(int pipewire_fd, int pipewire_node);
-void obs_pipewire_destroy(obs_pipewire_data *obs_pw);
+enum obs_pipewire_stream_type {
+	OBS_PIPEWIRE_STREAM_TYPE_SOURCE,
+	OBS_PIPEWIRE_STREAM_TYPE_OUTPUT,
+};
 
-void obs_pipewire_show(obs_pipewire_data *obs_pw);
-void obs_pipewire_hide(obs_pipewire_data *obs_pw);
-uint32_t obs_pipewire_get_width(obs_pipewire_data *obs_pw);
-uint32_t obs_pipewire_get_height(obs_pipewire_data *obs_pw);
-void obs_pipewire_video_render(obs_pipewire_data *obs_pw, gs_effect_t *effect);
+struct _obs_pipewire_stream_data {
+	enum obs_pipewire_stream_type type;
+	union {
+		obs_source_t *source;
+		obs_output_t *output;
+	};
+};
 
-void obs_pipewire_set_cursor_visible(obs_pipewire_data *obs_pw,
-				     bool cursor_visible);
+typedef struct _obs_pipewire obs_pipewire;
+typedef struct _obs_pipewire_stream obs_pipewire_stream;
+typedef struct _obs_pipewire_stream_data obs_pipewire_stream_data;
+
+obs_pipewire *
+obs_pipewire_create(int pipewire_fd,
+		    const struct pw_registry_events *registry_events,
+		    void *user_data);
+struct pw_registry *obs_pipewire_get_registry(obs_pipewire *obs_pw);
+void obs_pipewire_roundtrip(obs_pipewire *obs_pw);
+void obs_pipewire_destroy(obs_pipewire *obs_pw);
+
+obs_pipewire_stream *obs_pipewire_connect_stream(
+	obs_pipewire *obs_pw, obs_pipewire_stream_data *data, int pipewire_node,
+	const char *stream_name, struct pw_properties *stream_properties);
+
+void obs_pipewire_stream_show(obs_pipewire_stream *obs_pw);
+void obs_pipewire_stream_hide(obs_pipewire_stream *obs_pw);
+uint32_t obs_pipewire_stream_get_width(obs_pipewire_stream *obs_pw);
+uint32_t obs_pipewire_stream_get_height(obs_pipewire_stream *obs_pw);
+void obs_pipewire_stream_video_render(obs_pipewire_stream *obs_pw,
+				      gs_effect_t *effect);
+void obs_pipewire_stream_export_frame(obs_pipewire_stream *obs_pw,
+				      struct video_data *frame);
+
+void obs_pipewire_stream_set_cursor_visible(obs_pipewire_stream *obs_pw,
+					    bool cursor_visible);
+void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream);

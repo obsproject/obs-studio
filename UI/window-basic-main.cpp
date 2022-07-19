@@ -1785,8 +1785,23 @@ void OBSBasic::OBSInit()
 	cef = obs_browser_init_panel();
 #endif
 
-	OBSDataAutoRelease obsData = obs_get_private_data();
-	vcamEnabled = obs_data_get_bool(obsData, "vcamEnabled");
+#if defined(_WIN32) || defined(__APPLE__)
+	vcamEnabled = (obs_get_output_flags("virtualcam_output") &
+		       OBS_OUTPUT_VIRTUALCAM) != 0;
+#else
+	bool v4l2Output = (obs_get_output_flags("v4l2_output") &
+			   OBS_OUTPUT_VIRTUALCAM) != 0;
+	bool pwCamOutput = (obs_get_output_flags("pw_vcam_output") &
+			    OBS_OUTPUT_VIRTUALCAM) != 0;
+
+	vcamEnabled = v4l2Output || pwCamOutput;
+
+	if (v4l2Output && pwCamOutput) {
+		OBSDataAutoRelease obsData = obs_get_private_data();
+		obs_data_set_bool(obsData, "dualVirtualCams", true);
+	}
+#endif
+
 	if (vcamEnabled) {
 		AddVCamButton();
 	}
@@ -7439,6 +7454,8 @@ void OBSBasic::StartVirtualCam()
 
 	if (!outputHandler->StartVirtualCam()) {
 		vcamButton->setChecked(false);
+	} else if (!obs_output_active(outputHandler->virtualCam)) {
+		vcamButton->setEnabled(false);
 	}
 }
 
@@ -7464,6 +7481,7 @@ void OBSBasic::OnVirtualCamStart()
 	if (sysTrayVirtualCam)
 		sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
 	vcamButton->setChecked(true);
+	vcamButton->setEnabled(true);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED);

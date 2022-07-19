@@ -38,7 +38,9 @@ target_sources(
           portal.c
           portal.h
           screencast-portal.c
-          screencast-portal.h)
+          screencast-portal.h
+          pipewire-virtualcam.c
+          pipewire-virtualcam.h)
 
 target_link_libraries(
   linux-pipewire PRIVATE OBS::libobs OBS::obsglad PipeWire::PipeWire GIO::GIO

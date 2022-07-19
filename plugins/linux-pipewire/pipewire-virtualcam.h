@@ -1,6 +1,6 @@
-/* screencast-portal.h
+/* pipewire-virtualcam.h
  *
- * Copyright 2022 Georges Basile Stavracas Neto <georges.stavracas@gmail.com>
+ * Copyright 2021 columbarius <co1umbarius@protonmail.com>
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -20,5 +20,4 @@
 
 #pragma once
 
-void screencast_portal_load(void);
-void screencast_portal_unload(void);
+void virtual_cam_register_output(void);

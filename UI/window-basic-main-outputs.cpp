@@ -217,9 +217,44 @@ static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
 inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 {
 	if (main->vcamEnabled) {
-		virtualCam = obs_output_create("virtualcam_output",
-					       "virtualcam_output", nullptr,
-					       nullptr);
+		const char *vcamOutput = config_get_string(
+			main->basicConfig, "VirtualCam", "Type");
+
+		if (vcamOutput &&
+		    (obs_get_output_flags(vcamOutput) & OBS_OUTPUT_VIRTUALCAM))
+			virtualCam = obs_output_create(vcamOutput,
+						       "virtualcam_output",
+						       nullptr, nullptr);
+
+#if defined(_WIN32) || defined(__APPLE__)
+		if (!virtualCam)
+			virtualCam = obs_output_create("virtualcam_output",
+						       "virtualcam_output",
+						       nullptr, nullptr);
+#else
+		if (!virtualCam || (strcmp(vcamOutput, "UseBoth") == 0)) {
+			if (obs_get_output_flags("v4l2_output") &
+			    OBS_OUTPUT_VIRTUALCAM)
+				virtualCam = obs_output_create(
+					"v4l2_output", "virtualcam_output",
+					nullptr, nullptr);
+
+			if (obs_get_output_flags("pw_vcam_output") &
+			    OBS_OUTPUT_VIRTUALCAM) {
+				if (!virtualCam) {
+					virtualCam = obs_output_create(
+						"pw_vcam_output",
+						"virtualcam_output", nullptr,
+						nullptr);
+				} else {
+					virtualCam2 = obs_output_create(
+						"pw_vcam_output",
+						"virtualcam_output_2", nullptr,
+						nullptr);
+				}
+			}
+		}
+#endif
 
 		signal_handler_t *signal =
 			obs_output_get_signal_handler(virtualCam);
@@ -234,10 +269,21 @@ bool BasicOutputHandler::StartVirtualCam()
 	if (main->vcamEnabled) {
 		obs_output_set_media(virtualCam, obs_get_video(),
 				     obs_get_audio());
+		if (virtualCam2)
+			obs_output_set_media(virtualCam2, obs_get_video(),
+					     obs_get_audio());
+
 		if (!Active())
 			SetupOutputs();
 
-		return obs_output_start(virtualCam);
+		if (virtualCam2 && !obs_output_start(virtualCam2))
+			return false;
+
+		bool started = obs_output_start(virtualCam);
+		if (virtualCam2 && !started)
+			obs_output_force_stop(virtualCam2);
+
+		return started;
 	}
 	return false;
 }
@@ -245,6 +291,11 @@ bool BasicOutputHandler::StartVirtualCam()
 void BasicOutputHandler::StopVirtualCam()
 {
 	if (main->vcamEnabled) {
+		if (virtualCam2 && obs_output_active(virtualCam2))
+			obs_output_stop(virtualCam2);
+		else if (virtualCam2)
+			obs_output_force_stop(virtualCam2);
+
 		obs_output_stop(virtualCam);
 	}
 }
@@ -252,6 +303,10 @@ void BasicOutputHandler::StopVirtualCam()
 bool BasicOutputHandler::VirtualCamActive() const
 {
 	if (main->vcamEnabled) {
+		if (virtualCam2)
+			return obs_output_active(virtualCam) ||
+			       obs_output_active(virtualCam2);
+
 		return obs_output_active(virtualCam);
 	}
 	return false;
