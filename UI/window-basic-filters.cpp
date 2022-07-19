@@ -956,7 +956,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 		QAction *copyAction = new QAction(QTStr("Copy"));
 		connect(copyAction, SIGNAL(triggered()), this,
 			SLOT(CopyFilter()));
-		copyAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_C));
+		copyAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_C));
 		ui->effectWidget->addAction(copyAction);
 		ui->asyncWidget->addAction(copyAction);
 		popup.addAction(copyAction);
@@ -965,7 +965,7 @@ void OBSBasicFilters::CustomContextMenu(const QPoint &pos, bool async)
 	QAction *pasteAction = new QAction(QTStr("Paste"));
 	pasteAction->setEnabled(main->copyFilter);
 	connect(pasteAction, SIGNAL(triggered()), this, SLOT(PasteFilter()));
-	pasteAction->setShortcut(QKeySequence(Qt::CTRL + Qt::Key_V));
+	pasteAction->setShortcut(QKeySequence(Qt::CTRL | Qt::Key_V));
 	ui->effectWidget->addAction(pasteAction);
 	ui->asyncWidget->addAction(pasteAction);
 	popup.addAction(pasteAction);
