@@ -376,7 +376,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 #endif
 
 #ifdef __linux__
-	ui->actionE_xit->setShortcut(Qt::CTRL + Qt::Key_Q);
+	ui->actionE_xit->setShortcut(Qt::CTRL | Qt::Key_Q);
 #endif
 
 	auto addNudge = [this](const QKeySequence &seq, const char *s) {
@@ -391,10 +391,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::Key_Down, SLOT(NudgeDown()));
 	addNudge(Qt::Key_Left, SLOT(NudgeLeft()));
 	addNudge(Qt::Key_Right, SLOT(NudgeRight()));
-	addNudge(Qt::SHIFT + Qt::Key_Up, SLOT(NudgeUpFar()));
-	addNudge(Qt::SHIFT + Qt::Key_Down, SLOT(NudgeDownFar()));
-	addNudge(Qt::SHIFT + Qt::Key_Left, SLOT(NudgeLeftFar()));
-	addNudge(Qt::SHIFT + Qt::Key_Right, SLOT(NudgeRightFar()));
+	addNudge(Qt::SHIFT | Qt::Key_Up, SLOT(NudgeUpFar()));
+	addNudge(Qt::SHIFT | Qt::Key_Down, SLOT(NudgeDownFar()));
+	addNudge(Qt::SHIFT | Qt::Key_Left, SLOT(NudgeLeftFar()));
+	addNudge(Qt::SHIFT | Qt::Key_Right, SLOT(NudgeRightFar()));
 
 	assignDockToggle(ui->scenesDock, ui->toggleScenes);
 	assignDockToggle(ui->sourcesDock, ui->toggleSources);
@@ -404,10 +404,10 @@ OBSBasic::OBSBasic(QWidget *parent)
 	assignDockToggle(statsDock, ui->toggleStats);
 
 	// Register shortcuts for Undo/Redo
-	ui->actionMainUndo->setShortcut(Qt::CTRL + Qt::Key_Z);
+	ui->actionMainUndo->setShortcut(Qt::CTRL | Qt::Key_Z);
 	QList<QKeySequence> shrt;
-	shrt << QKeySequence((Qt::CTRL | Qt::SHIFT) + Qt::Key_Z)
-	     << QKeySequence(Qt::CTRL + Qt::Key_Y);
+	shrt << QKeySequence((Qt::CTRL | Qt::SHIFT) | Qt::Key_Z)
+	     << QKeySequence(Qt::CTRL | Qt::Key_Y);
 	ui->actionMainRedo->setShortcuts(shrt);
 
 	ui->actionMainUndo->setShortcutContext(Qt::ApplicationShortcut);
