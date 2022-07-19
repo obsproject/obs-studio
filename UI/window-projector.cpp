@@ -232,8 +232,9 @@ void OBSProjector::mouseDoubleClickEvent(QMouseEvent *event)
 		return;
 
 	if (event->button() == Qt::LeftButton) {
+		QPoint pos = event->pos();
 		OBSSource src =
-			multiview->GetSourceByPosition(event->x(), event->y());
+			multiview->GetSourceByPosition(pos.x(), pos.y());
 		if (!src)
 			return;
 
@@ -283,8 +284,9 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 		return;
 
 	if (event->button() == Qt::LeftButton) {
+		QPoint pos = event->pos();
 		OBSSource src =
-			multiview->GetSourceByPosition(event->x(), event->y());
+			multiview->GetSourceByPosition(pos.x(), pos.y());
 		if (!src)
 			return;
 
