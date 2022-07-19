@@ -1,11 +1,11 @@
 {
     "$schema": "schema/package-schema.json",
     "url": "https://obsproject.com/obs2_update/rtmp-services",
-    "version": 201,
+    "version": 202,
     "files": [
         {
             "name": "services.json",
-            "version": 201
+            "version": 202
         }
     ]
 }
