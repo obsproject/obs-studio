@@ -92,7 +92,10 @@ struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 
 	[context makeCurrentContext];
 	GLint interval = 0;
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	[context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
+	PRAGMA_WARN_POP
 	const bool success = gladLoadGL() != 0;
 
 	if (!success) {
@@ -138,10 +141,13 @@ bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 		CGLLockContext(context_obj);
 
 		[context makeCurrentContext];
+		PRAGMA_WARN_PUSH
+		PRAGMA_WARN_DEPRECATION
 		[context setView:swap->wi->view];
 		GLint interval = 0;
 		[context setValues:&interval
 			forParameter:NSOpenGLCPSwapInterval];
+		PRAGMA_WARN_POP
 		gl_gen_framebuffers(1, &swap->wi->fbo);
 		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
 		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
@@ -199,7 +205,10 @@ struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 
 	wi->view = info->window.view;
 	wi->view.window.colorSpace = NSColorSpace.sRGBColorSpace;
+	PRAGMA_WARN_PUSH
+	PRAGMA_WARN_DEPRECATION
 	wi->view.wantsBestResolutionOpenGLSurface = YES;
+	PRAGMA_WARN_POP
 
 	return wi;
 }
