@@ -83,6 +83,11 @@ else()
   target_link_libraries(aja-output-ui PRIVATE X11::X11 Qt::GuiPrivate)
 endif()
 
+if(NOT MSVC)
+  target_compile_options(aja-output-ui
+                         PRIVATE -Wno-error=deprecated-declarations)
+endif()
+
 set_target_properties(aja-output-ui PROPERTIES FOLDER "frontend" PREFIX "")
 
 get_target_property(_SOURCES aja-output-ui SOURCES)
