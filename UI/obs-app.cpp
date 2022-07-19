@@ -2122,16 +2122,15 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				QMessageBox::Yes | QMessageBox::Cancel);
 			QMessageBox mb(QMessageBox::Question,
 				       QTStr("AlreadyRunning.Title"),
-				       QTStr("AlreadyRunning.Text"), buttons,
-				       nullptr);
-			mb.setButtonText(QMessageBox::Yes,
-					 QTStr("AlreadyRunning.LaunchAnyway"));
-			mb.setButtonText(QMessageBox::Cancel, QTStr("Cancel"));
-			mb.setDefaultButton(QMessageBox::Cancel);
+				       QTStr("AlreadyRunning.Text"));
+			mb.addButton(QTStr("AlreadyRunning.LaunchAnyway"),
+				     QMessageBox::YesRole);
+			QPushButton *cancelButton = mb.addButton(
+				QTStr("Cancel"), QMessageBox::NoRole);
+			mb.setDefaultButton(cancelButton);
 
-			QMessageBox::StandardButton button;
-			button = (QMessageBox::StandardButton)mb.exec();
-			cancel_launch = button == QMessageBox::Cancel;
+			mb.exec();
+			cancel_launch = mb.clickedButton() == cancelButton;
 		}
 
 		if (cancel_launch)
