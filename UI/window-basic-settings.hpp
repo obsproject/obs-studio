@@ -346,6 +346,8 @@ private:
 
 	OBSService GetStream1Service();
 
+	bool IsServiceOutputHasNetworkFeatures();
+
 private slots:
 	void on_theme_activated(int idx);
 
@@ -394,6 +396,8 @@ private slots:
 	void AdvancedChangedRestart();
 
 	void UpdateStreamDelayEstimate();
+
+	void UpdateAdvNetworkGroup();
 
 	void UpdateAutomaticReplayBufferCheckboxes();
 

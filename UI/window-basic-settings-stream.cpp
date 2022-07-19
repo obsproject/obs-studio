@@ -96,6 +96,11 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateResFPSLimits()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
+
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateAdvNetworkGroup()));
+	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
+		SLOT(UpdateAdvNetworkGroup()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -1154,4 +1159,21 @@ void OBSBasicSettings::UpdateResFPSLimits()
 
 	lastIgnoreRecommended = (int)ignoreRecommended;
 	lastServiceIdx = idx;
+}
+
+bool OBSBasicSettings::IsServiceOutputHasNetworkFeatures()
+{
+	if (IsCustomService())
+		return ui->customServer->text().startsWith("rtmp");
+
+	OBSServiceAutoRelease service = SpawnTempService();
+	const char *output = obs_service_get_output_type(service);
+
+	if (!output)
+		return true;
+
+	if (strcmp(output, "rtmp_output") == 0)
+		return true;
+
+	return false;
 }
