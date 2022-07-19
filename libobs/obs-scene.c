@@ -1499,10 +1499,14 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	return true;
 }
 
-enum gs_color_space scene_video_get_color_space(
-	void *data OBS_UNUSED, size_t count OBS_UNUSED,
-	const enum gs_color_space *preferred_spaces OBS_UNUSED)
+enum gs_color_space
+scene_video_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
