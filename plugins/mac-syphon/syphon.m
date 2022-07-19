@@ -678,7 +678,11 @@ static inline void launch_syphon_inject_internal()
 	NSString *path = get_inject_application_path();
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 	if (path)
+	/* This is only ever relevant on macOS 10.13 */
+#pragma clang diagnostic push
+#pragma clang diagnostic ignored "-Wdeprecated-declarations"
 		[ws launchApplication:path];
+#pragma clang diagnostic pop
 }
 
 static bool launch_syphon_inject(obs_properties_t *props, obs_property_t *prop,
