@@ -39,10 +39,10 @@ vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatioF();
 	float scale = pixelRatio / main->previewScale;
+	QPoint qtPos = event->pos();
 	vec2 pos;
-	vec2_set(&pos,
-		 (float(event->x()) - main->previewX / pixelRatio) * scale,
-		 (float(event->y()) - main->previewY / pixelRatio) * scale);
+	vec2_set(&pos, (qtPos.x() - main->previewX / pixelRatio) * scale,
+		 (qtPos.y() - main->previewY / pixelRatio) * scale);
 
 	return pos;
 }
@@ -499,11 +499,17 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 
 void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	QPointF pos = event->position();
+#else
+	QPointF pos = event->localPos();
+#endif
+
 	if (scrollMode && IsFixedScaling() &&
 	    event->button() == Qt::LeftButton) {
 		setCursor(Qt::ClosedHandCursor);
-		scrollingFrom.x = event->x();
-		scrollingFrom.y = event->y();
+		scrollingFrom.x = pos.x();
+		scrollingFrom.y = pos.x();
 		return;
 	}
 
@@ -519,8 +525,8 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 	float pixelRatio = main->devicePixelRatioF();
-	float x = float(event->x()) - main->previewX / pixelRatio;
-	float y = float(event->y()) - main->previewY / pixelRatio;
+	float x = pos.x() - main->previewX / pixelRatio;
+	float y = pos.y() - main->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
 	bool altDown = (modifiers & Qt::AltModifier);
 	bool shiftDown = (modifiers & Qt::ShiftModifier);
@@ -1459,11 +1465,17 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 {
 	changed = true;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+	QPointF qtPos = event->position();
+#else
+	QPointF qtPos = event->localPos();
+#endif
+
 	if (scrollMode && event->buttons() == Qt::LeftButton) {
-		scrollingOffset.x += event->x() - scrollingFrom.x;
-		scrollingOffset.y += event->y() - scrollingFrom.y;
-		scrollingFrom.x = event->x();
-		scrollingFrom.y = event->y();
+		scrollingOffset.x += qtPos.x() - scrollingFrom.x;
+		scrollingOffset.y += qtPos.y() - scrollingFrom.y;
+		scrollingFrom.x = qtPos.x();
+		scrollingFrom.y = qtPos.y();
 		emit DisplayResized();
 		return;
 	}
@@ -1537,8 +1549,8 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
 			float scale = main->devicePixelRatioF();
-			float x = float(event->x()) - main->previewX / scale;
-			float y = float(event->y()) - main->previewY / scale;
+			float x = qtPos.x() - main->previewX / scale;
+			float y = qtPos.y() - main->previewY / scale;
 			vec2_set(&startPos, x, y);
 			updateCursor = true;
 		}

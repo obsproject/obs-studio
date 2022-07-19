@@ -319,8 +319,9 @@ bool OBSBasicInteraction::HandleMouseClickEvent(QMouseEvent *event)
 	//if (event->flags().testFlag(Qt::MouseEventCreatedDoubleClick))
 	//	clickCount = 2;
 
-	bool insideSource = GetSourceRelativeXY(event->x(), event->y(),
-						mouseEvent.x, mouseEvent.y);
+	QPoint pos = event->pos();
+	bool insideSource = GetSourceRelativeXY(pos.x(), pos.y(), mouseEvent.x,
+						mouseEvent.y);
 
 	if (mouseUp || insideSource)
 		obs_source_send_mouse_click(source, &mouseEvent, button,
@@ -337,7 +338,8 @@ bool OBSBasicInteraction::HandleMouseMoveEvent(QMouseEvent *event)
 
 	if (!mouseLeave) {
 		mouseEvent.modifiers = TranslateQtMouseEventModifiers(event);
-		mouseLeave = !GetSourceRelativeXY(event->x(), event->y(),
+		QPoint pos = event->pos();
+		mouseLeave = !GetSourceRelativeXY(pos.x(), pos.y(),
 						  mouseEvent.x, mouseEvent.y);
 	}
 

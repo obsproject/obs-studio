@@ -22,7 +22,8 @@ MediaSlider::MediaSlider(QWidget *parent) : SliderIgnoreScroll(parent)
 
 void MediaSlider::mouseMoveEvent(QMouseEvent *event)
 {
-	int val = minimum() + ((maximum() - minimum()) * event->x()) / width();
+	int val = minimum() +
+		  ((maximum() - minimum()) * event->pos().x()) / width();
 
 	if (val > maximum())
 		val = maximum();

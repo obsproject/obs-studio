@@ -124,7 +124,11 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 		float wid = contentsRect().width() - scrollWid - 1;
 
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		QPoint point = event->position().toPoint();
+#else
 		QPoint point = event->pos();
+#endif
 
 		int x = (float)point.x() / wid * ceil(wid / maxWidth);
 		int y = point.y() / itemHeight;
@@ -157,7 +161,11 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 	float wid = contentsRect().width() - scrollWid - 1;
 
 	if (event) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+		QPoint point = event->position().toPoint();
+#else
 		QPoint point = event->pos();
+#endif
 
 		int x = (float)point.x() / wid * ceil(wid / maxWidth);
 		int y = point.y() / itemHeight;
