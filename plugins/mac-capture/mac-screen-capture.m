@@ -714,7 +714,7 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect)
 static const char *screen_capture_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "macOS ScreenCapture";
+	return obs_module_text("SCKCapture");
 }
 
 static uint32_t screen_capture_getwidth(void *data)
@@ -820,51 +820,50 @@ static bool build_display_list(struct screen_capture *sc,
 
 	obs_property_t *display_list = obs_properties_get(props, "display");
 	obs_property_list_clear(display_list);
-	[sc->shareable_content.displays
-		enumerateObjectsUsingBlock:^(SCDisplay *_Nonnull display,
-					     NSUInteger idx,
-					     BOOL *_Nonnull stop) {
-			UNUSED_PARAMETER(idx);
-			UNUSED_PARAMETER(stop);
 
-			NSUInteger screen_index = [NSScreen.screens
-				indexOfObjectPassingTest:^BOOL(
-					NSScreen *_Nonnull screen,
-					NSUInteger index, BOOL *_Nonnull stop) {
-					UNUSED_PARAMETER(index);
-					NSNumber *screen_num =
-						screen.deviceDescription
-							[@"NSScreenNumber"];
-					CGDirectDisplayID screen_display_id =
-						(CGDirectDisplayID)
-							screen_num.pointerValue;
-					stop = (BOOL)(screen_display_id ==
-						      display.displayID);
-					return stop;
-				}];
-			NSScreen *screen =
-				[NSScreen.screens objectAtIndex:screen_index];
+	[sc->shareable_content.displays enumerateObjectsUsingBlock:^(
+						SCDisplay *_Nonnull display,
+						NSUInteger idx,
+						BOOL *_Nonnull stop) {
+		UNUSED_PARAMETER(idx);
+		UNUSED_PARAMETER(stop);
 
-			char dimension_buffer[4][12] = {};
-			char name_buffer[256] = {};
-			sprintf(dimension_buffer[0], "%u",
-				(uint32_t)screen.frame.size.width);
-			sprintf(dimension_buffer[1], "%u",
-				(uint32_t)screen.frame.size.height);
-			sprintf(dimension_buffer[2], "%d",
-				(int32_t)screen.frame.origin.x);
-			sprintf(dimension_buffer[3], "%d",
-				(int32_t)screen.frame.origin.y);
+		NSUInteger screen_index = [NSScreen.screens
+			indexOfObjectPassingTest:^BOOL(
+				NSScreen *_Nonnull screen, NSUInteger index,
+				BOOL *_Nonnull stop) {
+				UNUSED_PARAMETER(index);
+				NSNumber *screen_num =
+					screen.deviceDescription
+						[@"NSScreenNumber"];
+				CGDirectDisplayID screen_display_id =
+					(CGDirectDisplayID)screen_num.intValue;
+				stop = (screen_display_id == display.displayID);
 
-			sprintf(name_buffer,
-				"%.200s: %.12sx%.12s @ %.12s,%.12s",
-				screen.localizedName.UTF8String,
-				dimension_buffer[0], dimension_buffer[1],
-				dimension_buffer[2], dimension_buffer[3]);
+				return stop;
+			}];
+		NSScreen *screen =
+			[NSScreen.screens objectAtIndex:screen_index];
 
-			obs_property_list_add_int(display_list, name_buffer,
-						  display.displayID);
-		}];
+		char dimension_buffer[4][12] = {};
+		char name_buffer[256] = {};
+		sprintf(dimension_buffer[0], "%u",
+			(uint32_t)screen.frame.size.width);
+		sprintf(dimension_buffer[1], "%u",
+			(uint32_t)screen.frame.size.height);
+		sprintf(dimension_buffer[2], "%d",
+			(int32_t)screen.frame.origin.x);
+		sprintf(dimension_buffer[3], "%d",
+			(int32_t)screen.frame.origin.y);
+
+		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			screen.localizedName.UTF8String, dimension_buffer[0],
+			dimension_buffer[1], dimension_buffer[2],
+			dimension_buffer[3]);
+
+		obs_property_list_add_int(display_list, name_buffer,
+					  display.displayID);
+	}];
 
 	os_sem_post(sc->shareable_content_available);
 	return true;
@@ -877,6 +876,7 @@ static bool build_window_list(struct screen_capture *sc,
 
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_list_clear(window_list);
+
 	[sc->shareable_content.windows enumerateObjectsUsingBlock:^(
 					       SCWindow *_Nonnull window,
 					       NSUInteger idx,
@@ -914,6 +914,7 @@ static bool build_application_list(struct screen_capture *sc,
 	obs_property_t *application_list =
 		obs_properties_get(props, "application");
 	obs_property_list_clear(application_list);
+
 	[sc->shareable_content.applications
 		enumerateObjectsUsingBlock:^(
 			SCRunningApplication *_Nonnull application,
@@ -958,6 +959,51 @@ static bool content_settings_changed(void *priv, obs_properties_t *props,
 	return content_changed(sc, props);
 }
 
+static bool capture_type_changed(void *data, obs_properties_t *props,
+				 obs_property_t *list OBS_UNUSED,
+				 obs_data_t *settings)
+{
+	struct screen_capture *sc = data;
+	unsigned int capture_type_id = obs_data_get_int(settings, "type");
+	obs_property_t *display_list = obs_properties_get(props, "display");
+	obs_property_t *window_list = obs_properties_get(props, "window");
+	obs_property_t *app_list = obs_properties_get(props, "application");
+	obs_property_t *empty = obs_properties_get(props, "show_empty_names");
+	obs_property_t *hidden =
+		obs_properties_get(props, "show_hidden_windows");
+
+	if (sc->capture_type != capture_type_id) {
+		switch (capture_type_id) {
+		case 0: {
+			obs_property_set_visible(display_list, true);
+			obs_property_set_visible(window_list, false);
+			obs_property_set_visible(app_list, false);
+			obs_property_set_visible(empty, false);
+			obs_property_set_visible(hidden, false);
+			break;
+		}
+		case 1: {
+			obs_property_set_visible(display_list, false);
+			obs_property_set_visible(window_list, true);
+			obs_property_set_visible(app_list, false);
+			obs_property_set_visible(empty, true);
+			obs_property_set_visible(hidden, true);
+			break;
+		}
+		case 2: {
+			obs_property_set_visible(display_list, true);
+			obs_property_set_visible(app_list, true);
+			obs_property_set_visible(window_list, false);
+			obs_property_set_visible(empty, false);
+			obs_property_set_visible(hidden, false);
+			break;
+		}
+		}
+	}
+
+	return content_changed(sc, props);
+}
+
 static obs_properties_t *screen_capture_properties(void *data)
 {
 	struct screen_capture *sc = data;
@@ -965,7 +1011,6 @@ static obs_properties_t *screen_capture_properties(void *data)
 	screen_capture_build_content_list(sc);
 
 	obs_properties_t *props = obs_properties_create();
-
 	obs_property_t *capture_type = obs_properties_add_list(
 		props, "type", obs_module_text("Method"), OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_INT);
@@ -973,11 +1018,19 @@ static obs_properties_t *screen_capture_properties(void *data)
 				  obs_module_text("DisplayCapture"), 0);
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("WindowCapture"), 1);
-	obs_property_list_add_int(capture_type, "Application Capture", 2);
+	obs_property_list_add_int(capture_type,
+				  obs_module_text("ApplicationCapture"), 2);
+
+	obs_property_set_modified_callback2(capture_type, capture_type_changed,
+					    data);
 
 	obs_property_t *display_list = obs_properties_add_list(
 		props, "display", obs_module_text("DisplayCapture.Display"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	obs_property_t *app_list = obs_properties_add_list(
+		props, "application", obs_module_text("Application"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	obs_property_t *window_list = obs_properties_add_list(
 		props, "window", obs_module_text("WindowUtils.Window"),
@@ -986,23 +1039,48 @@ static obs_properties_t *screen_capture_properties(void *data)
 	obs_property_t *empty = obs_properties_add_bool(
 		props, "show_empty_names",
 		obs_module_text("WindowUtils.ShowEmptyNames"));
-	obs_property_set_modified_callback2(empty, content_settings_changed,
-					    sc);
 
 	obs_property_t *hidden = obs_properties_add_bool(
 		props, "show_hidden_windows",
 		obs_module_text("WindowUtils.ShowHidden"));
+
 	obs_property_set_modified_callback2(hidden, content_settings_changed,
 					    sc);
 
-	obs_property_t *application_list = obs_properties_add_list(
-		props, "application", obs_module_text("Application"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-
-	content_changed(sc, props);
-
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("DisplayCapture.ShowCursor"));
+
+	switch (sc->capture_type) {
+	case 0: {
+		obs_property_set_visible(display_list, true);
+		obs_property_set_visible(window_list, false);
+		obs_property_set_visible(app_list, false);
+		obs_property_set_visible(empty, false);
+		obs_property_set_visible(hidden, false);
+		break;
+	}
+	case 1: {
+		obs_property_set_visible(display_list, false);
+		obs_property_set_visible(window_list, true);
+		obs_property_set_visible(app_list, false);
+		obs_property_set_visible(empty, true);
+		obs_property_set_visible(hidden, true);
+		break;
+	}
+	case 2: {
+		obs_property_set_visible(display_list, true);
+		obs_property_set_visible(app_list, true);
+		obs_property_set_visible(window_list, false);
+		obs_property_set_visible(empty, false);
+		obs_property_set_visible(hidden, true);
+		break;
+	}
+	}
+
+	obs_property_set_modified_callback2(empty, content_settings_changed,
+					    sc);
+
+	content_changed(sc, props);
 
 	return props;
 }
@@ -1027,7 +1105,7 @@ struct obs_source_info screen_capture_info = {
 	.get_defaults = screen_capture_defaults,
 	.get_properties = screen_capture_properties,
 	.update = screen_capture_update,
-	.icon_type = OBS_ICON_TYPE_GAME_CAPTURE,
+	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 };
 
 @implementation ScreenCaptureDelegate
