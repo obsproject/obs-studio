@@ -175,9 +175,8 @@ static void *av1_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 	if (strcmp(enc_lib, "libsvtav1") == 0)
 		enc->svtav1 = true;
 
-	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings, encoder,
-				       enc_lib, NULL, enc_name, NULL,
-				       on_first_packet))
+	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder, enc_lib, NULL,
+				       enc_name, NULL, on_first_packet))
 		goto fail;
 	if (!av1_update(enc, settings))
 		goto fail;
