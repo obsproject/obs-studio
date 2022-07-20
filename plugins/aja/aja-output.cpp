@@ -67,7 +67,7 @@ static void update_sdi_transport_and_sdi_transport_4k(obs_properties_t *props,
 	obs_property_t *sdi_trx_list =
 		obs_properties_get(props, kUIPropSDITransport.id);
 	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io, device_id);
+	populate_sdi_transport_list(sdi_trx_list, device_id);
 	obs_property_t *sdi_4k_trx_list =
 		obs_properties_get(props, kUIPropSDITransport4K.id);
 	obs_property_list_clear(sdi_4k_trx_list);
