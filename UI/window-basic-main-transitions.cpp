@@ -1765,7 +1765,8 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 	return transitions;
 }
 
-void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
+void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
+			       obs_load_source_cb cb, void *private_data)
 {
 	size_t count = obs_data_array_count(transitions);
 
