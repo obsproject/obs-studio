@@ -178,10 +178,12 @@ create_dmabuf_egl_image(EGLDisplay egl_display, unsigned int width,
 }
 
 struct gs_texture *gl_egl_create_texture_from_eglimage(
-	EGLDisplay egl_display OBS_UNUSED, uint32_t width, uint32_t height,
+	EGLDisplay egl_display, uint32_t width, uint32_t height,
 	enum gs_color_format color_format, EGLint target, EGLImage image)
 {
+	UNUSED_PARAMETER(egl_display);
 	UNUSED_PARAMETER(target);
+
 	struct gs_texture *texture = NULL;
 	texture = gs_texture_create(width, height, color_format, 1, NULL,
 				    GS_DYNAMIC);

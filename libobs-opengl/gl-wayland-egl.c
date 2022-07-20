@@ -384,11 +384,16 @@ static bool gl_wayland_egl_device_query_dmabuf_modifiers_for_format(
 }
 
 static struct gs_texture *gl_wayland_egl_device_texture_create_from_pixmap(
-	gs_device_t *device OBS_UNUSED, uint32_t width OBS_UNUSED,
-	uint32_t height OBS_UNUSED,
-	enum gs_color_format color_format OBS_UNUSED,
-	uint32_t target OBS_UNUSED, void *pixmap OBS_UNUSED)
+	gs_device_t *device, uint32_t width, uint32_t height,
+	enum gs_color_format color_format, uint32_t target, void *pixmap)
 {
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(width);
+	UNUSED_PARAMETER(height);
+	UNUSED_PARAMETER(color_format);
+	UNUSED_PARAMETER(target);
+	UNUSED_PARAMETER(pixmap);
+
 	return NULL;
 }
 

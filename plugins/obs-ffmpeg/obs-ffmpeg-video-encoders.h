@@ -39,8 +39,7 @@ struct ffmpeg_video_encoder {
 };
 
 extern bool ffmpeg_video_encoder_init(struct ffmpeg_video_encoder *enc,
-				      void *parent, obs_data_t *settings,
-				      obs_encoder_t *encoder,
+				      void *parent, obs_encoder_t *encoder,
 				      const char *enc_lib, const char *enc_lib2,
 				      const char *enc_name,
 				      init_error_cb on_init_error,

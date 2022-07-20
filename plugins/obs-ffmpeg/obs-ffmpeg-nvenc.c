@@ -284,20 +284,20 @@ static void *nvenc_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 #ifdef ENABLE_HEVC
 	enc->hevc = hevc;
 	if (hevc) {
-		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings,
-					       encoder, "hevc_nvenc",
-					       "nvenc_hevc", ENCODER_NAME_HEVC,
-					       on_init_error, on_first_packet))
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder,
+					       "hevc_nvenc", "nvenc_hevc",
+					       ENCODER_NAME_HEVC, on_init_error,
+					       on_first_packet))
 			goto fail;
 	} else
 #else
 	UNUSED_PARAMETER(hevc);
 #endif
 	{
-		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings,
-					       encoder, "h264_nvenc",
-					       "nvenc_h264", ENCODER_NAME_H264,
-					       on_init_error, on_first_packet))
+		if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder,
+					       "h264_nvenc", "nvenc_h264",
+					       ENCODER_NAME_H264, on_init_error,
+					       on_first_packet))
 			goto fail;
 	}
 

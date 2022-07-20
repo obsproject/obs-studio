@@ -233,9 +233,12 @@ extern bool import_python(const char *python_path);
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
 #define PyTuple_New Import_PyTuple_New
 #if PY_VERSION_HEX >= 0x030800f0
-static inline void Import__Py_DECREF(const char *filename OBS_UNUSED,
-				     int lineno OBS_UNUSED, PyObject *op)
+static inline void Import__Py_DECREF(const char *filename, int lineno,
+				     PyObject *op)
 {
+	UNUSED_PARAMETER(filename);
+	UNUSED_PARAMETER(lineno);
+
 	if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
 		if (op->ob_refcnt < 0) {

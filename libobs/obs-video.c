@@ -599,8 +599,7 @@ static const uint8_t *set_gpu_converted_plane(uint32_t width, uint32_t height,
 	return in;
 }
 
-static void set_gpu_converted_data(struct obs_core_video *video OBS_UNUSED,
-				   struct video_frame *output,
+static void set_gpu_converted_data(struct video_frame *output,
 				   const struct video_data *input,
 				   const struct video_output_info *info)
 {
@@ -777,8 +776,8 @@ static inline void output_video_data(struct obs_core_video *video,
 					 input_frame->timestamp);
 	if (locked) {
 		if (video->gpu_conversion) {
-			set_gpu_converted_data(video, &output_frame,
-					       input_frame, info);
+			set_gpu_converted_data(&output_frame, input_frame,
+					       info);
 		} else {
 			copy_rgbx_frame(&output_frame, input_frame, info);
 		}

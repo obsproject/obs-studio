@@ -220,8 +220,7 @@ void populate_multi_view_audio_sources(obs_property_t *list, NTV2DeviceID id)
 }
 
 bool on_misc_device_selected(void *data, obs_properties_t *props,
-			     obs_property_t *list OBS_UNUSED,
-			     obs_data_t *settings)
+			     obs_property_t *, obs_data_t *settings)
 {
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);
 	if (!cardID || !cardID[0])
@@ -451,7 +450,7 @@ static void OBSEvent(enum obs_frontend_event event, void *)
 	}
 }
 
-static void aja_loaded(void *data OBS_UNUSED, calldata_t *calldata)
+static void aja_loaded(void * /* data */, calldata_t *calldata)
 {
 	// Receive CardManager pointer from the main AJA plugin
 	calldata_get_ptr(calldata, "card_manager", &cardManager);

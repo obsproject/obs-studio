@@ -1499,10 +1499,14 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 	return true;
 }
 
-enum gs_color_space scene_video_get_color_space(
-	void *data OBS_UNUSED, size_t count OBS_UNUSED,
-	const enum gs_color_space *preferred_spaces OBS_UNUSED)
+enum gs_color_space
+scene_video_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(data);
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	enum gs_color_space space = GS_CS_SRGB;
 	struct obs_video_info ovi;
 	if (obs_get_video_info(&ovi)) {
@@ -2059,8 +2063,7 @@ static inline bool source_has_audio(obs_source_t *source)
 
 static obs_sceneitem_t *obs_scene_add_internal(obs_scene_t *scene,
 					       obs_source_t *source,
-					       obs_sceneitem_t *insert_after,
-					       bool create_texture OBS_UNUSED)
+					       obs_sceneitem_t *insert_after)
 {
 	struct obs_scene_item *last;
 	struct obs_scene_item *item;
@@ -2158,8 +2161,7 @@ release_source_and_fail:
 
 obs_sceneitem_t *obs_scene_add(obs_scene_t *scene, obs_source_t *source)
 {
-	obs_sceneitem_t *item =
-		obs_scene_add_internal(scene, source, NULL, true);
+	obs_sceneitem_t *item = obs_scene_add_internal(scene, source, NULL);
 	struct calldata params;
 	uint8_t stack[128];
 
@@ -3286,8 +3288,8 @@ obs_sceneitem_t *obs_scene_insert_group(obs_scene_t *scene, const char *name,
 	obs_scene_t *sub_scene = create_id("group", name);
 	obs_sceneitem_t *last_item = items ? items[count - 1] : NULL;
 
-	obs_sceneitem_t *item = obs_scene_add_internal(scene, sub_scene->source,
-						       last_item, true);
+	obs_sceneitem_t *item =
+		obs_scene_add_internal(scene, sub_scene->source, last_item);
 
 	obs_scene_release(sub_scene);
 
@@ -3409,8 +3411,7 @@ void obs_sceneitem_group_ungroup(obs_sceneitem_t *item)
 		obs_sceneitem_t *dst;
 
 		remove_group_transform(item, last);
-		dst = obs_scene_add_internal(scene, last->source, insert_after,
-					     false);
+		dst = obs_scene_add_internal(scene, last->source, insert_after);
 		duplicate_item_data(dst, last, true, true, true);
 		apply_group_transform(last, item);
 

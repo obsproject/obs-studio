@@ -162,6 +162,7 @@ void *bmemdup(const void *ptr, size_t size)
 	return out;
 }
 
-OBS_DEPRECATED void base_set_allocator(struct base_allocator *defs OBS_UNUSED)
+OBS_DEPRECATED void base_set_allocator(struct base_allocator *defs)
 {
+	UNUSED_PARAMETER(defs);
 }
