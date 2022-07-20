@@ -531,7 +531,7 @@ bool init_vertbuf_screen_capture(struct screen_capture *sc)
 	return sc->vertbuf != NULL;
 }
 
-static void *screen_capture_build_content_list(struct screen_capture *sc)
+static void screen_capture_build_content_list(struct screen_capture *sc)
 {
 	typedef void (^shareable_content_callback)(SCShareableContent *,
 						   NSError *);
@@ -637,10 +637,9 @@ static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
 		     origin_x, end_x, origin_y, end_y);
 }
 
-static void screen_capture_video_tick(void *data, float seconds)
+static void screen_capture_video_tick(void *data,
+				      float seconds __attribute__((unused)))
 {
-	UNUSED_PARAMETER(seconds);
-
 	struct screen_capture *sc = data;
 
 	if (!sc->current)
@@ -677,9 +676,9 @@ static void screen_capture_video_tick(void *data, float seconds)
 	}
 }
 
-static void screen_capture_video_render(void *data, gs_effect_t *effect)
+static void screen_capture_video_render(void *data, gs_effect_t *effect
+					__attribute__((unused)))
 {
-	UNUSED_PARAMETER(effect);
 	struct screen_capture *sc = data;
 
 	if (!sc->tex)
@@ -711,9 +710,8 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect)
 	gs_enable_framebuffer_srgb(previous);
 }
 
-static const char *screen_capture_getname(void *unused)
+static const char *screen_capture_getname(void *unused __attribute__((unused)))
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("SCKCapture");
 }
 
@@ -741,7 +739,7 @@ static void screen_capture_defaults(obs_data_t *settings)
 				mainScreen.deviceDescription[@"NSScreenNumber"];
 			if (screen_num) {
 				initial_display =
-					(CGDirectDisplayID)
+					(CGDirectDisplayID)(uintptr_t)
 						screen_num.pointerValue;
 			}
 		}
@@ -823,24 +821,24 @@ static bool build_display_list(struct screen_capture *sc,
 
 	[sc->shareable_content.displays enumerateObjectsUsingBlock:^(
 						SCDisplay *_Nonnull display,
-						NSUInteger idx,
-						BOOL *_Nonnull stop) {
-		UNUSED_PARAMETER(idx);
-		UNUSED_PARAMETER(stop);
-
+						NSUInteger idx
+						__attribute__((unused)),
+						BOOL *_Nonnull stop
+						__attribute__((unused))) {
 		NSUInteger screen_index = [NSScreen.screens
 			indexOfObjectPassingTest:^BOOL(
-				NSScreen *_Nonnull screen, NSUInteger index,
+				NSScreen *_Nonnull screen,
+				NSUInteger index __attribute__((unused)),
 				BOOL *_Nonnull stop) {
-				UNUSED_PARAMETER(index);
 				NSNumber *screen_num =
 					screen.deviceDescription
 						[@"NSScreenNumber"];
 				CGDirectDisplayID screen_display_id =
 					(CGDirectDisplayID)screen_num.intValue;
-				stop = (screen_display_id == display.displayID);
+				*stop = (screen_display_id ==
+					 display.displayID);
 
-				return stop;
+				return *stop;
 			}];
 		NSScreen *screen =
 			[NSScreen.screens objectAtIndex:screen_index];
@@ -879,10 +877,10 @@ static bool build_window_list(struct screen_capture *sc,
 
 	[sc->shareable_content.windows enumerateObjectsUsingBlock:^(
 					       SCWindow *_Nonnull window,
-					       NSUInteger idx,
-					       BOOL *_Nonnull stop) {
-		UNUSED_PARAMETER(idx);
-		UNUSED_PARAMETER(stop);
+					       NSUInteger idx
+					       __attribute__((unused)),
+					       BOOL *_Nonnull stop
+					       __attribute__((unused))) {
 		NSString *app_name = window.owningApplication.applicationName;
 		NSString *title = window.title;
 
@@ -918,9 +916,8 @@ static bool build_application_list(struct screen_capture *sc,
 	[sc->shareable_content.applications
 		enumerateObjectsUsingBlock:^(
 			SCRunningApplication *_Nonnull application,
-			NSUInteger idx, BOOL *_Nonnull stop) {
-			UNUSED_PARAMETER(idx);
-			UNUSED_PARAMETER(stop);
+			NSUInteger idx __attribute__((unused)),
+			BOOL *_Nonnull stop __attribute__((unused))) {
 			const char *name =
 				[application.applicationName UTF8String];
 			const char *bundle_id =
@@ -945,11 +942,10 @@ static bool content_changed(struct screen_capture *sc, obs_properties_t *props)
 }
 
 static bool content_settings_changed(void *priv, obs_properties_t *props,
-				     obs_property_t *property,
+				     obs_property_t *property
+				     __attribute__((unused)),
 				     obs_data_t *settings)
 {
-	UNUSED_PARAMETER(property);
-
 	struct screen_capture *sc = (struct screen_capture *)priv;
 
 	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
@@ -960,7 +956,7 @@ static bool content_settings_changed(void *priv, obs_properties_t *props,
 }
 
 static bool capture_type_changed(void *data, obs_properties_t *props,
-				 obs_property_t *list OBS_UNUSED,
+				 obs_property_t *list __attribute__((unused)),
 				 obs_data_t *settings)
 {
 	struct screen_capture *sc = data;
