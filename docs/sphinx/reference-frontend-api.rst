@@ -553,6 +553,17 @@ Functions
 
 ---------------------------------------
 
+.. function:: bool obs_frontend_recording_split_file(void)
+
+   Asks OBS to split the current recording file.
+
+   :return: *true* if splitting was successfully requested (this
+            does not mean that splitting has finished or guarantee that it
+            split successfully), *false* if recording is inactive or paused
+            or if file splitting is disabled.
+
+---------------------------------------
+
 .. function:: void obs_frontend_replay_buffer_start(void)
 
    Starts the replay buffer.
