@@ -301,6 +301,7 @@ private:
 	QPointer<QPushButton> replayBufferButton;
 	QPointer<QHBoxLayout> replayLayout;
 	QScopedPointer<QPushButton> pause;
+	QScopedPointer<QPushButton> splitFile;
 	QScopedPointer<QPushButton> replay;
 
 	QPointer<QPushButton> vcamButton;
@@ -1112,6 +1113,7 @@ private slots:
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
 
+	void RecordingSplitFile();
 	void PauseToggled();
 
 	void logUploadFinished(const QString &text, const QString &error);
