@@ -9,7 +9,7 @@ find_package(LibAJANTV2 REQUIRED)
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
-find_qt(COMPONENTS Widgets)
+find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
 
 set_target_properties(
   aja-output-ui
