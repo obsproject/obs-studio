@@ -1663,7 +1663,7 @@ try {
 		hevc_supported |= info.supports_hevc;
 	}
 
-	if (!avc_supported || !hevc_supported)
+	if (!avc_supported && !hevc_supported)
 		throw "Neither AVC nor HEVC are supported by any devices";
 
 	/* ----------------------------------- */
