@@ -237,12 +237,12 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 		int val = atoi(opt->value);
 		set_hevc_property(enc, MAX_QP_I, val);
 
-	} else if (hevc && strcmp(opt->name, "min_qp_i") == 0) {
+	} else if (hevc && strcmp(opt->name, "min_qp_p") == 0) {
 
 		int val = atoi(opt->value);
 		set_hevc_property(enc, MIN_QP_P, val);
 
-	} else if (hevc && strcmp(opt->name, "max_qp_i") == 0) {
+	} else if (hevc && strcmp(opt->name, "max_qp_p") == 0) {
 
 		int val = atoi(opt->value);
 		set_hevc_property(enc, MAX_QP_P, val);
