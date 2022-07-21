@@ -96,6 +96,11 @@ void OBSBasicSettings::InitStreamPage()
 		SLOT(UpdateResFPSLimits()));
 	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateMoreInfoLink()));
+
+	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateStreamEncoders()));
+	connect(ui->customServer, SIGNAL(editingFinished()), this,
+		SLOT(UpdateStreamEncoders()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -1155,3 +1160,17 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	lastIgnoreRecommended = (int)ignoreRecommended;
 	lastServiceIdx = idx;
 }
+
+#ifdef ENABLE_HEVC
+bool OBSBasicSettings::IsServiceSupportHEVC()
+{
+	if (ui->service->currentText() == "YouTube - HLS")
+		return true;
+
+	if (IsCustomService())
+		return ui->customServer->text().startsWith("srt://") ||
+		       ui->customServer->text().startsWith("rist://");
+
+	return false;
+}
+#endif

@@ -221,7 +221,8 @@ private:
 
 	bool QueryChanges();
 
-	void LoadEncoderTypes();
+	void LoadRecEncoderTypes();
+	void LoadStrEncoderTypes();
 	void LoadColorRanges();
 	void LoadColorSpaces();
 	void LoadColorFormats();
@@ -346,6 +347,10 @@ private:
 
 	OBSService GetStream1Service();
 
+#ifdef ENABLE_HEVC
+	bool IsServiceSupportHEVC();
+#endif
+
 private slots:
 	void on_theme_activated(int idx);
 
@@ -394,6 +399,8 @@ private slots:
 	void AdvancedChangedRestart();
 
 	void UpdateStreamDelayEstimate();
+
+	void UpdateStreamEncoders();
 
 	void UpdateAutomaticReplayBufferCheckboxes();
 

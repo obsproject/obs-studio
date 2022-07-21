@@ -704,7 +704,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	installEventFilter(new SettingsEventFilter());
 
-	LoadEncoderTypes();
+	LoadRecEncoderTypes();
 	LoadColorRanges();
 	LoadColorSpaces();
 	LoadColorFormats();
@@ -752,7 +752,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 				   this);
 
 	FillSimpleRecordingValues();
-	FillSimpleStreamingValues();
 	if (obs_audio_monitoring_available())
 		FillAudioMonitoringDevices();
 
@@ -1000,7 +999,7 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 #define TEXT_USE_STREAM_ENC \
 	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
 
-void OBSBasicSettings::LoadEncoderTypes()
+void OBSBasicSettings::LoadRecEncoderTypes()
 {
 	const char *type;
 	size_t idx = 0;
@@ -1015,29 +1014,61 @@ void OBSBasicSettings::LoadEncoderTypes()
 		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
 			continue;
 
-		const char *streaming_codecs[] = {
-			"h264",
-#ifdef ENABLE_HEVC
-			"hevc",
-#endif
-		};
-		bool is_streaming_codec = false;
-		for (const char *test_codec : streaming_codecs) {
-			if (strcmp(codec, test_codec) == 0) {
-				is_streaming_codec = true;
-				break;
-			}
-		}
 		if ((caps & ENCODER_HIDE_FLAGS) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
 		QString qType = QT_UTF8(type);
 
-		if (is_streaming_codec)
-			ui->advOutEncoder->addItem(qName, qType);
 		ui->advOutRecEncoder->addItem(qName, qType);
 	}
+}
+
+void OBSBasicSettings::LoadStrEncoderTypes()
+{
+	const char *type;
+	size_t idx = 0;
+	QString actual_encoder = ui->advOutEncoder->currentData().toString();
+
+	ui->advOutEncoder->blockSignals(true);
+	ui->advOutEncoder->clear();
+
+#ifdef ENABLE_HEVC
+	bool hevc = IsServiceSupportHEVC();
+#endif
+
+	while (obs_enum_encoder_types(idx++, &type)) {
+		const char *name = obs_encoder_get_display_name(type);
+		const char *codec = obs_get_encoder_codec(type);
+		uint32_t caps = obs_get_encoder_caps(type);
+
+		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
+			continue;
+
+		bool is_streaming_codec = false;
+
+		if (strcmp(codec, "h264") == 0)
+			is_streaming_codec = true;
+
+#ifdef ENABLE_HEVC
+		if (hevc && (strcmp(codec, "hevc") == 0))
+			is_streaming_codec = true;
+#endif
+
+		if (!is_streaming_codec || ((caps & ENCODER_HIDE_FLAGS) != 0))
+			continue;
+
+		QString qName = QT_UTF8(name);
+		QString qType = QT_UTF8(type);
+
+		ui->advOutEncoder->addItem(qName, qType);
+	}
+
+	ui->advOutEncoder->blockSignals(false);
+
+	int index = ui->advOutEncoder->findData(actual_encoder);
+	if (index != -1)
+		ui->advOutEncoder->setCurrentIndex(index);
 }
 
 #define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
@@ -2253,6 +2284,9 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 void OBSBasicSettings::LoadOutputSettings()
 {
 	loading = true;
+
+	FillSimpleStreamingValues();
+	LoadStrEncoderTypes();
 
 	const char *mode = config_get_string(main->Config(), "Output", "Mode");
 
@@ -4824,6 +4858,16 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 
 void OBSBasicSettings::FillSimpleStreamingValues()
 {
+	QString actual_encoder =
+		ui->simpleOutStrEncoder->currentData().toString();
+
+	ui->simpleOutStrEncoder->blockSignals(true);
+	ui->simpleOutStrEncoder->clear();
+
+#ifdef ENABLE_HEVC
+	bool hevc = IsServiceSupportHEVC();
+#endif
+
 	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
 					 QString(SIMPLE_ENCODER_X264));
 	if (EncoderAvailable("obs_qsv11"))
@@ -4835,11 +4879,11 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
 #ifdef ENABLE_HEVC
-	if (EncoderAvailable("h265_texture_amf"))
+	if (EncoderAvailable("h265_texture_amf") && hevc)
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.AMD.HEVC"),
 			QString(SIMPLE_ENCODER_AMD_HEVC));
-	if (EncoderAvailable("ffmpeg_hevc_nvenc"))
+	if (EncoderAvailable("ffmpeg_hevc_nvenc") && hevc)
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.HEVC"),
 			QString(SIMPLE_ENCODER_NVENC_HEVC));
@@ -4860,6 +4904,14 @@ void OBSBasicSettings::FillSimpleStreamingValues()
 				ENCODER_STR("Hardware.Apple.H264"),
 				QString(SIMPLE_ENCODER_APPLE_H264));
 #endif
+
+	ui->simpleOutStrEncoder->blockSignals(false);
+
+	int idx = ui->simpleOutStrEncoder->findData(actual_encoder);
+
+	if (idx != -1)
+		ui->simpleOutStrEncoder->setCurrentIndex(idx);
+
 #undef ENCODER_STR
 }
 
@@ -5471,4 +5523,83 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 
 	ui->outputResolution->lineEdit()->setValidator(
 		ui->baseResolution->lineEdit()->validator());
+}
+
+void OBSBasicSettings::UpdateStreamEncoders()
+{
+	bool is_not_compatible = false;
+	bool advanced_mode = ui->outputMode->currentIndex() == 1;
+
+	QString actual_encoder;
+	QString config_encoder;
+	if (advanced_mode)
+		actual_encoder = ui->advOutEncoder->currentData().toString();
+	else
+		actual_encoder =
+			ui->simpleOutStrEncoder->currentData().toString();
+
+#ifdef ENABLE_HEVC
+	bool hevc = IsServiceSupportHEVC();
+
+	if (!advanced_mode && (actual_encoder == SIMPLE_ENCODER_NVENC_HEVC))
+		is_not_compatible = !hevc;
+
+	if (advanced_mode) {
+		const char *codec =
+			obs_get_encoder_codec(QT_TO_UTF8(actual_encoder));
+
+		if (strcmp(codec, "hevc") == 0)
+			is_not_compatible = !hevc;
+	}
+#endif
+
+	FillSimpleStreamingValues();
+	LoadStrEncoderTypes();
+
+	if (is_not_compatible) {
+		QString message;
+
+#ifdef ENABLE_HEVC
+		if (actual_encoder == SIMPLE_ENCODER_NVENC_HEVC) {
+			SetComboByValue(ui->simpleOutStrEncoder,
+					QString(SIMPLE_ENCODER_NVENC));
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder.Simple");
+		}
+
+		if (actual_encoder == SIMPLE_ENCODER_AMD_HEVC) {
+			SetComboByValue(ui->simpleOutStrEncoder,
+					QString(SIMPLE_ENCODER_AMD));
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder.Simple");
+		}
+
+		if (actual_encoder == "jim_hevc_nvenc") {
+			SetComboByName(ui->advOutEncoder, "jim_nvenc");
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder.ReplaceWithH264");
+		}
+
+		if (actual_encoder == "ffmpeg_hevc_nvenc") {
+			SetComboByName(ui->advOutEncoder, "ffmpeg_nvenc");
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder.ReplaceWithH264");
+		}
+
+		if (actual_encoder == "h265_texture_amf") {
+			SetComboByName(ui->advOutEncoder, "h264_texture_amf");
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder.ReplaceWithH264");
+		}
+#endif
+
+		if (message.isEmpty())
+			message = QTStr(
+				"Basic.Settings.Stream.ChangeIncompatibleEncoder");
+
+		QMessageBox::warning(
+			this,
+			QTStr("Basic.Settings.Stream.ChangeIncompatibleEncoder.Title"),
+			message);
+	}
 }
