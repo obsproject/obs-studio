@@ -79,6 +79,17 @@ static void ffmpeg_mux_destroy(void *data)
 	bfree(stream);
 }
 
+static void split_file_proc(void *data, calldata_t *cd)
+{
+	struct ffmpeg_muxer *stream = data;
+
+	calldata_set_bool(cd, "split_file_enabled", stream->split_file);
+	if (!stream->split_file)
+		return;
+
+	os_atomic_set_bool(&stream->manual_split, true);
+}
+
 static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
@@ -89,6 +100,10 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
 	signal_handler_add(sh, "void file_changed(string next_file)");
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void split_file(out bool split_file_enabled)",
+			 split_file_proc, stream);
 
 	UNUSED_PARAMETER(settings);
 	return stream;
@@ -687,6 +702,9 @@ static inline bool should_split(struct ffmpeg_muxer *stream,
 	if (!packet->keyframe)
 		return false;
 
+	if (os_atomic_load_bool(&stream->manual_split))
+		return true;
+
 	/* reached maximum file size */
 	if (stream->max_size > 0 &&
 	    stream->cur_size + (int64_t)packet->size >= stream->max_size)
@@ -834,6 +852,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		}
 		da_free(stream->mux_packets);
 		stream->split_file_ready = false;
+		os_atomic_set_bool(&stream->manual_split, false);
 	}
 
 	if (stream->split_file && stream->reset_timestamps)
