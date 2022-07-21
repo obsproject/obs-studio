@@ -400,8 +400,7 @@ static bool ffmpeg_mux_start(void *data)
 			obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 		stream->max_size = obs_data_get_int(settings, "max_size_mb") *
 				   (1024 * 1024);
-		stream->split_file = stream->max_time > 0 ||
-				     stream->max_size > 0;
+		stream->split_file = obs_data_get_bool(settings, "split_file");
 		stream->reset_timestamps =
 			obs_data_get_bool(settings, "reset_timestamps");
 		stream->allow_overwrite =

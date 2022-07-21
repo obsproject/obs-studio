@@ -1937,6 +1937,7 @@ bool AdvancedOutput::StartRecording()
 			obs_data_set_bool(settings, "allow_spaces", !noSpace);
 			obs_data_set_bool(settings, "allow_overwrite",
 					  overwriteIfExists);
+			obs_data_set_bool(settings, "split_file", true);
 			obs_data_set_int(settings, "max_time_sec",
 					 splitFileTime * 60);
 			obs_data_set_int(settings, "max_size_mb",
