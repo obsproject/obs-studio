@@ -46,6 +46,10 @@ OBSThemeMeta {
     qproperty-icon: url(:/res/images/media-pause.svg);
 }
 
+* [themeID="cutIconSmall"] {
+	qproperty-icon: url(./Dark/cut.svg);
+}
+
 * [themeID="menuIconSmall"] {
     qproperty-icon: url(:res/images/dots-vert.svg);
 }

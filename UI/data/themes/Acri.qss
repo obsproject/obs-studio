@@ -384,6 +384,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="cutIconSmall"] {
+	qproperty-icon: url(./Dark/cut.svg);
+}
+
 * [themeID="menuIconSmall"] {
 	qproperty-icon: url(./Dark/dots-vert.svg);
 }
