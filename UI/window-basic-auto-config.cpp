@@ -994,7 +994,7 @@ void AutoConfig::TestHardwareEncoding()
 			hardwareEncodingAvailable = nvencAvailable = true;
 		else if (strcmp(id, "obs_qsv11") == 0)
 			hardwareEncodingAvailable = qsvAvailable = true;
-		else if (strcmp(id, "amd_amf_h264") == 0)
+		else if (strcmp(id, "h264_texture_amf") == 0)
 			hardwareEncodingAvailable = vceAvailable = true;
 	}
 }

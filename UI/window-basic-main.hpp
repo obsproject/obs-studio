@@ -66,10 +66,9 @@ class OBSBasicStats;
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
 #define SIMPLE_ENCODER_QSV "qsv"
 #define SIMPLE_ENCODER_NVENC "nvenc"
-#ifdef ENABLE_HEVC
 #define SIMPLE_ENCODER_NVENC_HEVC "nvenc_hevc"
-#endif
 #define SIMPLE_ENCODER_AMD "amd"
+#define SIMPLE_ENCODER_AMD_HEVC "amd_hevc"
 #define SIMPLE_ENCODER_APPLE_H264 "apple_h264"
 
 #define PREVIEW_EDGE_SIZE 10
