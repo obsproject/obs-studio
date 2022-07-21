@@ -1602,10 +1602,15 @@ static void register_hevc()
 extern "C" void amf_load(void)
 try {
 	AMF_RESULT res;
+	HMODULE amf_module_test;
 
-	amf_module = LoadLibraryW(AMF_DLL_NAME);
-	if (!amf_module)
+	/* Check if the DLL is present before running the more expensive */
+	/* obs-amf-test.exe, but load it as data so it can't crash us    */
+	amf_module_test =
+		LoadLibraryExW(AMF_DLL_NAME, nullptr, LOAD_LIBRARY_AS_DATAFILE);
+	if (!amf_module_test)
 		throw "No AMF library";
+	FreeLibrary(amf_module_test);
 
 	/* ----------------------------------- */
 	/* Check for AVC/HEVC support          */
@@ -1666,6 +1671,10 @@ try {
 
 	/* ----------------------------------- */
 	/* Init AMF                            */
+
+	amf_module = LoadLibraryW(AMF_DLL_NAME);
+	if (!amf_module)
+		throw "AMF library failed to load";
 
 	AMFInit_Fn init =
 		(AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
