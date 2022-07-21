@@ -6,13 +6,6 @@ if(NOT ENABLE_UI)
   return()
 endif()
 
-if(NOT QT_VERSION)
-  set(QT_VERSION
-      "5"
-      CACHE STRING "OBS Qt version [5, 6]" FORCE)
-  set_property(CACHE QT_VERSION PROPERTY STRINGS 5 6)
-endif()
-
 project(obs)
 
 # Legacy support
@@ -78,16 +71,7 @@ find_package(CURL REQUIRED)
 add_subdirectory(frontend-plugins)
 add_executable(obs)
 
-set(UI_COMPONENTS_WIN "")
-if(QT_VERSION EQUAL 5)
-  set(UI_COMPONENTS_WIN "WinExtras")
-endif()
-
-find_qt(
-  VERSION ${QT_VERSION}
-  COMPONENTS Widgets Network Svg Xml
-  COMPONENTS_WIN ${UI_COMPONENTS_WIN}
-  COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets Network Svg Xml COMPONENTS_LINUX Gui)
 
 target_link_libraries(obs PRIVATE Qt::Widgets Qt::Svg Qt::Xml Qt::Network)
 
@@ -352,11 +336,12 @@ if(OS_WINDOWS)
             win-update/win-update-helpers.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
-  if(QT_VERSION EQUAL 5)
-    target_link_libraries(obs PRIVATE crypt32 OBS::blake2 Qt::WinExtras)
-  else()
-    target_link_libraries(obs PRIVATE crypt32 OBS::blake2)
+  if(_QT_VERSION EQUAL 5)
+    find_qt(COMPONENTS WinExtras)
+    target_link_libraries(obs PRIVATE Qt::WinExtras)
   endif()
+
+  target_link_libraries(obs PRIVATE crypt32 OBS::blake2)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 
@@ -441,7 +426,7 @@ elseif(OS_MACOS)
 
 elseif(OS_POSIX)
   target_sources(obs PRIVATE platform-x11.cpp)
-  target_link_libraries(obs PRIVATE Qt${QT_VERSION}::GuiPrivate)
+  target_link_libraries(obs PRIVATE Qt::GuiPrivate)
 
   if(TARGET obspython)
     find_package(Python REQUIRED COMPONENTS Interpreter Development)
