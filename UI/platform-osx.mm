@@ -278,6 +278,15 @@ void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 }
 @end
 
+void InstallNSThreadLocks()
+{
+	[[NSThread new] start];
+
+	if ([NSThread isMultiThreaded] != 1) {
+		abort();
+	}
+}
+
 void InstallNSApplicationSubclass()
 {
 	[OBSApplication sharedApplication];

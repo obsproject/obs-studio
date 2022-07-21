@@ -2070,6 +2070,7 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 
 #if __APPLE__
 	InstallNSApplicationSubclass();
+	InstallNSThreadLocks();
 
 	if (!isInBundle()) {
 		blog(LOG_ERROR,

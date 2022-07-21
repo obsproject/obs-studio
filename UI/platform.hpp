@@ -84,5 +84,6 @@ void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
 bool isInBundle();
 void InstallNSApplicationSubclass();
+void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
 #endif
