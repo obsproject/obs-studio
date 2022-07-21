@@ -145,6 +145,8 @@ D3DFORMAT ConvertMfxFourccToD3dFormat(mfxU32 fourcc)
 		return D3DFMT_R8G8B8;
 	case MFX_FOURCC_RGB4:
 		return D3DFMT_A8R8G8B8;
+	case MFX_FOURCC_BGR4:
+		return D3DFMT_A8B8G8R8;
 	case MFX_FOURCC_P8:
 		return D3DFMT_P8;
 	case MFX_FOURCC_P010:
@@ -177,7 +179,8 @@ mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 	if (desc.Format != D3DFMT_NV12 && desc.Format != D3DFMT_YV12 &&
 	    desc.Format != D3DFMT_YUY2 && desc.Format != D3DFMT_R8G8B8 &&
 	    desc.Format != D3DFMT_A8R8G8B8 && desc.Format != D3DFMT_P8 &&
-	    desc.Format != D3DFMT_P010 && desc.Format != D3DFMT_A2R10G10B10)
+	    desc.Format != D3DFMT_P010 && desc.Format != D3DFMT_A2R10G10B10 &&
+	    desc.Format != D3DFMT_A8B8G8R8)
 		return MFX_ERR_LOCK_MEMORY;
 
 	D3DLOCKED_RECT locked;
@@ -218,6 +221,13 @@ mfxStatus dx9_simple_lock(mfxHDL pthis, mfxMemId mid, mfxFrameData *ptr)
 		ptr->G = ptr->B + 1;
 		ptr->R = ptr->B + 2;
 		ptr->A = ptr->B + 3;
+		break;
+	case D3DFMT_A8B8G8R8:
+		ptr->Pitch = (mfxU16)locked.Pitch;
+		ptr->R = (mfxU8 *)locked.pBits;
+		ptr->G = ptr->R + 1;
+		ptr->B = ptr->R + 2;
+		ptr->A = ptr->R + 3;
 		break;
 	case D3DFMT_P8:
 		ptr->Pitch = (mfxU16)locked.Pitch;

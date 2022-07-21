@@ -163,7 +163,8 @@ static bool try_connect(void *data, const char *device)
 	obs_output_set_video_conversion(vcam->output, &vsi);
 
 	blog(LOG_INFO, "Virtual camera started");
-	obs_output_begin_data_capture(vcam->output, 0);
+	if (!obs_output_begin_data_capture(vcam->output, 0))
+		return false;
 
 	return true;
 }

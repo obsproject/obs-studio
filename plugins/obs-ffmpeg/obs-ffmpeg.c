@@ -224,9 +224,7 @@ static bool nvenc_device_available(void)
 }
 #endif
 
-#ifdef _WIN32
 extern bool load_nvenc_lib(void);
-#endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
@@ -254,21 +252,10 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 
 	bool success = h264 || hevc;
 	if (success) {
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__linux__)
 		success = nvenc_device_available() && load_nvenc_lib();
-#elif defined(__linux__)
-		success = nvenc_device_available();
-		if (success) {
-			void *const lib = os_dlopen("libnvidia-encode.so.1");
-			success = lib != NULL;
-			if (success)
-				os_dlclose(lib);
-		}
 #else
-		void *const lib = os_dlopen("libnvidia-encode.so.1");
-		success = lib != NULL;
-		if (success)
-			os_dlclose(lib);
+		success = load_nvenc_lib();
 #endif
 
 		if (success) {
@@ -291,10 +278,8 @@ static bool vaapi_supported(void)
 }
 #endif
 
-#ifdef _WIN32
 extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
-#endif
 
 #if ENABLE_FFMPEG_LOGGING
 extern void obs_ffmpeg_load_logging(void);
@@ -345,6 +330,8 @@ bool obs_module_load(void)
 			}
 #endif
 		}
+#else
+		jim_nvenc_load(h264, hevc);
 #endif
 		if (h264)
 			obs_register_encoder(&h264_nvenc_encoder_info);
@@ -373,7 +360,7 @@ void obs_module_unload(void)
 	obs_ffmpeg_unload_logging();
 #endif
 
-#ifdef _WIN32
+#ifndef __APPLE__
 	jim_nvenc_unload();
 #endif
 }

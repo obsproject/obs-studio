@@ -164,7 +164,8 @@ bool ffmpeg_hls_mux_start(void *data)
 	stream->dropped_frames = 0;
 	stream->min_priority = 0;
 
-	obs_output_begin_data_capture(stream->output, 0);
+	if (!obs_output_begin_data_capture(stream->output, 0))
+		return false;
 
 	dstr_copy(&stream->printable_path, path_str);
 	info("Writing to path '%s'...", stream->printable_path.array);

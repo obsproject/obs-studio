@@ -144,6 +144,17 @@ Encoder Definition Structure (obs_encoder_info)
 
    :param  info: Video format information
 
+.. member:: bool (*obs_encoder_info.encode_texture_available)(void *data, const struct video_scale_info *info)
+
+   Returns whether texture encoding is available for this video format.
+   Has no effect if caps does not contain OBS_ENCODER_CAP_PASS_TEXTURE.
+   If this function is not defined, it is assumed that only textures in
+   NV12 format are supported.
+
+   :param  info: Video format information
+   :return:      Whether the encoder supports texture encoding with
+                 this video format
+
 .. member:: void *obs_encoder_info.type_data
             void (*obs_encoder_info.free_type_data)(void *type_data)
 

@@ -71,7 +71,7 @@ static void *gpu_encode_thread(void *unused)
 		for (size_t i = 0; i < encoders.num; i++) {
 			struct encoder_packet pkt = {0};
 			bool received = false;
-			bool success;
+			bool success = false;
 
 			obs_encoder_t *encoder = encoders.array[i];
 			struct obs_encoder *pair = encoder->paired_encoder;
@@ -104,10 +104,33 @@ static void *gpu_encode_thread(void *unused)
 			else
 				next_key++;
 
-			success = encoder->info.encode_texture(
-				encoder->context.data, tf.handle,
-				encoder->cur_pts, lock_key, &next_key, &pkt,
-				&received);
+			if (encoder->info.encode_texture2) {
+				union {
+					struct encoder_texture tex;
+					/* MSVC complains about
+					   offsetof(..., tex[3]) */
+					char dummy[offsetof(struct encoder_texture,
+							    tex) +
+						   sizeof(struct gs_texture *) *
+							   3];
+				} u = {0};
+
+				obs_encoder_get_video_info(encoder,
+							   &u.tex.info);
+				u.tex.handle = tf.handle;
+				u.tex.tex[0] = tf.tex;
+				u.tex.tex[1] = tf.tex_uv;
+				u.tex.tex[2] = NULL;
+				success = encoder->info.encode_texture2(
+					encoder->context.data, &u.tex,
+					encoder->cur_pts, lock_key, &next_key,
+					&pkt, &received);
+			} else {
+				success = encoder->info.encode_texture(
+					encoder->context.data, tf.handle,
+					encoder->cur_pts, lock_key, &next_key,
+					&pkt, &received);
+			}
 			send_off_encoder_packet(encoder, success, received,
 						&pkt);
 
@@ -151,7 +174,7 @@ static void *gpu_encode_thread(void *unused)
 
 bool init_gpu_encoding(struct obs_core_video *video)
 {
-#ifdef _WIN32
+#ifndef __APPLE__
 	struct obs_video_info *ovi = &video->ovi;
 
 	video->gpu_encode_stop = false;
@@ -159,24 +182,47 @@ bool init_gpu_encoding(struct obs_core_video *video)
 	circlebuf_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
 	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
 		gs_texture_t *tex;
-		gs_texture_t *tex_uv;
+		gs_texture_t *tex_uv = NULL;
 
+#ifdef _WIN32
 		if (ovi->output_format == VIDEO_FORMAT_P010) {
 			gs_texture_create_p010(&tex, &tex_uv, ovi->output_width,
 					       ovi->output_height,
 					       GS_RENDER_TARGET |
 						       GS_SHARED_KM_TEX);
-		} else {
+		} else if (ovi->output_format == VIDEO_FORMAT_NV12) {
 			gs_texture_create_nv12(&tex, &tex_uv, ovi->output_width,
 					       ovi->output_height,
 					       GS_RENDER_TARGET |
 						       GS_SHARED_KM_TEX);
+		} else {
+#else
+		if (true) {
+#endif
+			/* Keep in sync with obs.c:obs_init_textures */
+			enum gs_color_format format = GS_RGBA;
+			switch (ovi->output_format) {
+			case VIDEO_FORMAT_I010:
+			case VIDEO_FORMAT_P010:
+			case VIDEO_FORMAT_I210:
+			case VIDEO_FORMAT_I412:
+			case VIDEO_FORMAT_YA2L:
+				format = GS_RGBA16F;
+			}
+
+			tex = gs_texture_create(
+				ovi->output_width, ovi->output_height, format,
+				1, NULL, GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		}
 		if (!tex) {
 			return false;
 		}
 
+#ifdef _WIN32
 		uint32_t handle = gs_texture_get_shared_handle(tex);
+#else
+		uint32_t handle = (uint32_t)-1;
+#endif
 
 		struct obs_tex_frame frame = {
 			.tex = tex, .tex_uv = tex_uv, .handle = handle};
@@ -231,7 +277,9 @@ void free_gpu_encoding(struct obs_core_video *video)
 			struct obs_tex_frame frame;                     \
 			circlebuf_pop_front(&x, &frame, sizeof(frame)); \
 			gs_texture_destroy(frame.tex);                  \
-			gs_texture_destroy(frame.tex_uv);               \
+			if (frame.tex_uv) {                             \
+				gs_texture_destroy(frame.tex_uv);       \
+			}                                               \
 		}                                                       \
 		circlebuf_free(&x);                                     \
 	} while (false)
