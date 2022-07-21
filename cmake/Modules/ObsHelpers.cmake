@@ -50,7 +50,7 @@ function(setup_binary_target target)
             EXCLUDE_FROM_ALL
     PUBLIC_HEADER
       DESTINATION ${OBS_INCLUDE_DESTINATION}
-      COMPONENT obs_${target}
+      COMPONENT IGNORED
       EXCLUDE_FROM_ALL)
 
   add_custom_command(
