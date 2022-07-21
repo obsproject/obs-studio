@@ -2923,6 +2923,11 @@
                                    <string>Basic.Settings.Output.SplitFile.TypeSize</string>
                                   </property>
                                  </item>
+                                 <item>
+                                  <property name="text">
+                                   <string>Basic.Settings.Output.SplitFile.TypeManual</string>
+                                  </property>
+                                 </item>
                                 </widget>
                                </item>
                                <item row="8" column="0">
