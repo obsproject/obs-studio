@@ -633,6 +633,8 @@ static buf_t alloc_buf(amf_fallback *enc)
 		size = enc->linesize * enc->cy * 4;
 	} else if (enc->amf_format == AMF_SURFACE_P010) {
 		size = enc->linesize * enc->cy * 2 * 2;
+	} else {
+		throw "Invalid amf_format";
 	}
 
 	buf.resize(size);
@@ -713,6 +715,11 @@ try {
 	amf_fallback *enc = (amf_fallback *)data;
 	error("%s: %s: %ls", __FUNCTION__, err.str,
 	      amf_trace->GetResultText(err.res));
+	*received_packet = false;
+	return false;
+} catch (const char *err) {
+	amf_fallback *enc = (amf_fallback *)data;
+	error("%s: %s", __FUNCTION__, err);
 	*received_packet = false;
 	return false;
 }
