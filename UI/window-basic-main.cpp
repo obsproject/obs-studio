@@ -1534,6 +1534,8 @@ bool OBSBasic::InitBasicConfigDefaults()
 				  "StreamAudioEncoder", "aac");
 	config_set_default_string(basicConfig, "SimpleOutput",
 				  "RecAudioEncoder", "aac");
+	config_set_default_uint(basicConfig, "SimpleOutput", "RecTracks",
+				(1 << 0));
 
 	config_set_default_bool(basicConfig, "AdvOut", "ApplyServiceSettings",
 				true);

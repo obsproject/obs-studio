@@ -493,6 +493,12 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecAEncoder, COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack1,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack2,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack3,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack4,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack5,   CHECK_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecTrack6,   CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
@@ -1946,6 +1952,15 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 		config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
 	int rbSize =
 		config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
+	int tracks =
+		config_get_int(main->Config(), "SimpleOutput", "RecTracks");
+
+	ui->simpleOutRecTrack1->setChecked(tracks & (1 << 0));
+	ui->simpleOutRecTrack2->setChecked(tracks & (1 << 1));
+	ui->simpleOutRecTrack3->setChecked(tracks & (1 << 2));
+	ui->simpleOutRecTrack4->setChecked(tracks & (1 << 3));
+	ui->simpleOutRecTrack5->setChecked(tracks & (1 << 4));
+	ui->simpleOutRecTrack6->setChecked(tracks & (1 << 5));
 
 	curPreset = preset;
 	curQSVPreset = qsvPreset;
@@ -3837,6 +3852,14 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
+	config_set_int(
+		main->Config(), "SimpleOutput", "RecTracks",
+		(ui->simpleOutRecTrack1->isChecked() ? (1 << 0) : 0) |
+			(ui->simpleOutRecTrack2->isChecked() ? (1 << 1) : 0) |
+			(ui->simpleOutRecTrack3->isChecked() ? (1 << 2) : 0) |
+			(ui->simpleOutRecTrack4->isChecked() ? (1 << 3) : 0) |
+			(ui->simpleOutRecTrack5->isChecked() ? (1 << 4) : 0) |
+			(ui->simpleOutRecTrack6->isChecked() ? (1 << 5) : 0));
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
@@ -5433,12 +5456,31 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	bool replayBufferEnabled = ui->simpleReplayBuf->isChecked();
 	bool lossless = qual == "Lossless";
 	bool streamQuality = qual == "Stream";
+	int abitrate = 0;
 
 	ui->simpleRBMegsMax->setVisible(!streamQuality);
 	ui->simpleRBMegsMaxLabel->setVisible(!streamQuality);
 
+	if (ui->simpleOutRecFormat->currentText().compare("flv") == 0 ||
+	    streamQuality) {
+		abitrate = ui->simpleOutputABitrate->currentText().toInt();
+	} else {
+		int delta = ui->simpleOutputABitrate->currentText().toInt();
+		if (ui->simpleOutRecTrack1->isChecked())
+			abitrate += delta;
+		if (ui->simpleOutRecTrack2->isChecked())
+			abitrate += delta;
+		if (ui->simpleOutRecTrack3->isChecked())
+			abitrate += delta;
+		if (ui->simpleOutRecTrack4->isChecked())
+			abitrate += delta;
+		if (ui->simpleOutRecTrack5->isChecked())
+			abitrate += delta;
+		if (ui->simpleOutRecTrack6->isChecked())
+			abitrate += delta;
+	}
+
 	int vbitrate = ui->simpleOutputVBitrate->value();
-	int abitrate = ui->simpleOutputABitrate->currentText().toInt();
 	int seconds = ui->simpleRBSecMax->value();
 
 	// Set maximum to 75% of installed memory
@@ -5788,6 +5830,22 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 	} else {
 		ui->autoRemux->setText(
 			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
+	}
+
+	if (qual == "Stream") {
+		ui->simpleRecTrackWidget->setCurrentWidget(ui->simpleFlvTracks);
+		ui->simpleFlvTracks->setEnabled(false);
+	} else if (qual == "Lossless") {
+		ui->simpleRecTrackWidget->setCurrentWidget(ui->simpleRecTracks);
+	} else {
+		if (format == "flv") {
+			ui->simpleRecTrackWidget->setCurrentWidget(
+				ui->simpleFlvTracks);
+			ui->simpleFlvTracks->setEnabled(false);
+		} else {
+			ui->simpleRecTrackWidget->setCurrentWidget(
+				ui->simpleRecTracks);
+		}
 	}
 
 	if (warning.isEmpty())
