@@ -1743,7 +1743,11 @@ bool WidgetInfo::PathChanged(const char *setting)
 	const char *desc = obs_property_description(property);
 	obs_path_type type = obs_property_path_type(property);
 	const char *filter = obs_property_path_filter(property);
-	const char *default_path = obs_property_path_default_path(property);
+	const char *last_path = obs_data_get_string(view->settings, setting);
+	const char *default_path =
+		(last_path && *last_path)
+			? NULL
+			: obs_property_path_default_path(property);
 	QString path;
 
 	if (type == OBS_PATH_DIRECTORY)
