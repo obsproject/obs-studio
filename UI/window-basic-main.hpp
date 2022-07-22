@@ -372,7 +372,7 @@ private:
 	OBSSceneItem GetSceneItem(QListWidgetItem *item);
 	OBSSceneItem GetCurrentSceneItem();
 
-	bool QueryRemoveSource(obs_source_t *source);
+	std::tuple<bool, bool> QueryRemoveSource(obs_source_t *source);
 
 	void TimedCheckForUpdates();
 	void CheckForUpdates(bool manualUpdate);

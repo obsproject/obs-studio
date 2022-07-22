@@ -3592,8 +3592,10 @@ void OBSBasic::DeactivateAudioSource(OBSSource source)
 	}
 }
 
-bool OBSBasic::QueryRemoveSource(obs_source_t *source)
+std::tuple<bool, bool> OBSBasic::QueryRemoveSource(obs_source_t *source)
 {
+	bool isScene = false;
+
 	if (obs_source_get_type(source) == OBS_SOURCE_TYPE_SCENE &&
 	    !obs_source_is_group(source)) {
 		int count = ui->scenes->count();
@@ -3602,8 +3604,10 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 			OBSMessageBox::information(this,
 						   QTStr("FinalScene.Title"),
 						   QTStr("FinalScene.Text"));
-			return false;
+			return std::make_tuple(false, false);
 		}
+
+		isScene = true;
 	}
 
 	const char *name = obs_source_get_name(source);
@@ -3618,9 +3622,19 @@ bool OBSBasic::QueryRemoveSource(obs_source_t *source)
 	remove_source.addButton(QTStr("No"), QMessageBox::NoRole);
 	remove_source.setIcon(QMessageBox::Question);
 	remove_source.setWindowTitle(QTStr("ConfirmRemove.Title"));
+
+	QCheckBox cb(QTStr("RemoveAllRefs"));
+
+	if (!isScene)
+		remove_source.setCheckBox(&cb);
+
 	remove_source.exec();
 
-	return Yes == remove_source.clickedButton();
+	bool remove = Yes == remove_source.clickedButton();
+	bool removeAll = cb.isChecked();
+
+	return std::make_tuple(remove, removeAll);
+	;
 }
 
 #define UPDATE_CHECK_INTERVAL (60 * 60 * 24 * 4) /* 4 days */
@@ -3803,7 +3817,7 @@ void OBSBasic::RemoveSelectedScene()
 	OBSScene scene = GetCurrentScene();
 	obs_source_t *source = obs_scene_get_source(scene);
 
-	if (!source || !QueryRemoveSource(source)) {
+	if (!source || !std::get<0>(QueryRemoveSource(source))) {
 		return;
 	}
 
@@ -5911,6 +5925,7 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	/* confirm action with user              */
 
 	bool confirmed = false;
+	bool removeAll = false;
 
 	if (items.size() > 1) {
 		QString text = QTStr("ConfirmRemove.TextMultiple")
@@ -5924,14 +5939,21 @@ void OBSBasic::on_actionRemoveSource_triggered()
 		remove_items.addButton(QTStr("No"), QMessageBox::NoRole);
 		remove_items.setIcon(QMessageBox::Question);
 		remove_items.setWindowTitle(QTStr("ConfirmRemove.Title"));
+
+		QCheckBox cb(QTStr("RemoveAllRefs"));
+		remove_items.setCheckBox(&cb);
 		remove_items.exec();
 
 		confirmed = Yes == remove_items.clickedButton();
+		removeAll = cb.isChecked();
 	} else {
 		OBSSceneItem &item = items[0];
 		obs_source_t *source = obs_sceneitem_get_source(item);
-		if (source && QueryRemoveSource(source))
-			confirmed = true;
+		if (source) {
+			std::tuple<bool, bool> tup = QueryRemoveSource(source);
+			confirmed = std::get<0>(tup);
+			removeAll = std::get<1>(tup);
+		}
 	}
 	if (!confirmed)
 		return;
@@ -5944,8 +5966,12 @@ void OBSBasic::on_actionRemoveSource_triggered()
 	/* ----------------------------------------------- */
 	/* remove items                                    */
 
-	for (auto &item : items)
-		obs_sceneitem_remove(item);
+	for (auto &item : items) {
+		if (removeAll)
+			obs_source_remove(obs_sceneitem_get_source(item));
+		else
+			obs_sceneitem_remove(item);
+	}
 
 	/* ----------------------------------------------- */
 	/* save redo data                                  */
