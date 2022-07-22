@@ -682,12 +682,7 @@ try {
 	if (!enc->linesize)
 		enc->linesize = frame->linesize[0];
 
-	if (enc->available_buffers.size()) {
-		buf = std::move(enc->available_buffers.back());
-		enc->available_buffers.pop_back();
-	} else {
-		buf = alloc_buf(enc);
-	}
+	buf = get_buf(enc);
 
 	copy_frame_data(enc, buf, frame);
 
