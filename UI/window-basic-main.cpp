@@ -2452,6 +2452,15 @@ void OBSBasic::CreateHotkeys()
 	LoadHotkeyPair(pauseHotkeys, "OBSBasic.PauseRecording",
 		       "OBSBasic.UnpauseRecording");
 
+	splitFileHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.SplitFile", Str("Basic.Main.SplitFile"),
+		[](void *, obs_hotkey_id, obs_hotkey_t *, bool pressed) {
+			if (pressed)
+				obs_frontend_recording_split_file();
+		},
+		this);
+	LoadHotkey(splitFileHotkey, "OBSBasic.SplitFile");
+
 	replayBufHotkeys = obs_hotkey_pair_register_frontend(
 		"OBSBasic.StartReplayBuffer",
 		Str("Basic.Main.StartReplayBuffer"),

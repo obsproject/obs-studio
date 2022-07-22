@@ -439,7 +439,7 @@ private:
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys,
 		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys,
 		contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
