@@ -1289,8 +1289,14 @@ static inline bool inject_hotkey(void *data, size_t idx,
 			    event->strict_modifiers)) {
 		bool pressed = binding->key.key == event->hotkey.key &&
 			       event->pressed;
-		handle_binding(binding, event->hotkey.modifiers, false,
-			       event->strict_modifiers, &pressed);
+		if (binding->key.key == OBS_KEY_NONE)
+			pressed = true;
+
+		if (pressed) {
+			binding->modifiers_match = true;
+			if (!binding->pressed)
+				press_released_binding(binding);
+		}
 	}
 
 	return true;
