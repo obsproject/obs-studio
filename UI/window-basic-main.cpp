@@ -4899,42 +4899,6 @@ void OBSBasic::on_actionShowMissingFiles_triggered()
 	}
 }
 
-void save_audio_source(int channel, obs_data_t *save)
-{
-	OBSSourceAutoRelease source = obs_get_output_source(channel);
-	if (!source)
-		return;
-
-	OBSDataAutoRelease obj = obs_data_create();
-
-	obs_data_set_double(obj, "vol", obs_source_get_volume(source));
-	obs_data_set_double(obj, "balance",
-			    obs_source_get_balance_value(source));
-	obs_data_set_double(obj, "mixers", obs_source_get_audio_mixers(source));
-	obs_data_set_double(obj, "sync", obs_source_get_sync_offset(source));
-	obs_data_set_double(obj, "flags", obs_source_get_flags(source));
-
-	obs_data_set_obj(save, std::to_string(channel).c_str(), obj);
-}
-
-void load_audio_source(int channel, obs_data_t *data)
-{
-	OBSSourceAutoRelease source = obs_get_output_source(channel);
-	if (!source)
-		return;
-
-	OBSDataAutoRelease save =
-		obs_data_get_obj(data, std::to_string(channel).c_str());
-
-	obs_source_set_volume(source, obs_data_get_double(save, "vol"));
-	obs_source_set_balance_value(source,
-				     obs_data_get_double(save, "balance"));
-	obs_source_set_audio_mixers(source,
-				    obs_data_get_double(save, "mixers"));
-	obs_source_set_sync_offset(source, obs_data_get_double(save, "sync"));
-	obs_source_set_flags(source, obs_data_get_double(save, "flags"));
-}
-
 void OBSBasic::on_actionAdvAudioProperties_triggered()
 {
 	if (advAudioWindow != nullptr) {
