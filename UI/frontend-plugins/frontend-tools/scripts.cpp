@@ -653,15 +653,18 @@ extern "C" void InitScripts()
 		config_get_string(config, "Python", "Path" ARCH_NAME);
 
 #ifdef __APPLE__
-	std::string _python_path(python_path);
-	std::size_t pos = _python_path.find("/Python.framework/Versions");
+	if (python_path && *python_path) {
+		std::string _python_path(python_path);
+		std::size_t pos =
+			_python_path.find("/Python.framework/Versions");
 
-	if (pos != std::string::npos) {
-		std::string _temp = _python_path.substr(0, pos);
-		config_set_string(config, "Python", "Path" ARCH_NAME,
-				  _temp.c_str());
-		config_save(config);
-		python_path = _temp.c_str();
+		if (pos != std::string::npos) {
+			std::string _temp = _python_path.substr(0, pos);
+			config_set_string(config, "Python", "Path" ARCH_NAME,
+					  _temp.c_str());
+			config_save(config);
+			python_path = _temp.c_str();
+		}
 	}
 #endif
 
