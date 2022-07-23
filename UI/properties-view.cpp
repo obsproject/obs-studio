@@ -541,30 +541,30 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 template<long long get_int(obs_data_t *, const char *),
 	 double get_double(obs_data_t *, const char *),
 	 const char *get_string(obs_data_t *, const char *)>
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static QVariant from_obs_data(obs_data_t *data, const char *name,
+			      obs_combo_format format)
 {
 	switch (format) {
 	case OBS_COMBO_FORMAT_INT:
-		return to_string(get_int(data, name));
+		return QVariant::fromValue(get_int(data, name));
 	case OBS_COMBO_FORMAT_FLOAT:
-		return to_string(get_double(data, name));
+		return QVariant::fromValue(get_double(data, name));
 	case OBS_COMBO_FORMAT_STRING:
-		return get_string(data, name);
+		return QByteArray(get_string(data, name));
 	default:
-		return "";
+		return QVariant();
 	}
 }
 
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static QVariant from_obs_data(obs_data_t *data, const char *name,
+			      obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
 			     obs_data_get_string>(data, name, format);
 }
 
-static string from_obs_data_autoselect(obs_data_t *data, const char *name,
-				       obs_combo_format format)
+static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
+					 obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_autoselect_int,
 			     obs_data_get_autoselect_double,
@@ -590,13 +590,13 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	combo->setMaxVisibleItems(40);
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	string value = from_obs_data(settings, name, format);
+	QVariant value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
 	    type == OBS_COMBO_TYPE_EDITABLE) {
-		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
+		combo->lineEdit()->setText(value.toString());
 	} else {
-		idx = combo->findData(QByteArray(value.c_str()));
+		idx = combo->findData(value);
 	}
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
@@ -607,9 +607,9 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		combo->setCurrentIndex(idx);
 
 	if (obs_data_has_autoselect_value(settings, name)) {
-		string autoselect =
+		QVariant autoselect =
 			from_obs_data_autoselect(settings, name, format);
-		int id = combo->findData(QT_UTF8(autoselect.c_str()));
+		int id = combo->findData(autoselect);
 
 		if (id != -1 && id != idx) {
 			QString actual = combo->itemText(id);
