@@ -885,9 +885,11 @@ static void show_syphon_license_internal(void)
 	if (@available(macOS 11.0, *)) {
 		NSURL *url = [NSURL
 			URLWithString:
-				[NSString
-					stringWithCString:path
-						 encoding:NSUTF8StringEncoding]];
+				[@"file://"
+					stringByAppendingString:
+						[NSString
+							stringWithCString:path
+								 encoding:NSUTF8StringEncoding]]];
 		[ws openURL:url];
 	} else {
 #pragma clang diagnostic push
