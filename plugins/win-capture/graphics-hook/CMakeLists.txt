@@ -19,8 +19,8 @@ target_sources(
           d3d10-capture.cpp
           d3d11-capture.cpp
           d3d12-capture.cpp
-          ../obfuscate.c
-          ../obfuscate.h
+          ../../../libobs/util/windows/obfuscate.c
+          ../../../libobs/util/windows/obfuscate.h
           ../graphics-hook-ver.h
           ../graphics-hook-info.h
           ../hook-helpers.h

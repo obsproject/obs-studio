@@ -24,13 +24,9 @@ target_sources(
           monitor-capture.c
           nt-stuff.c
           nt-stuff.h
-          obfuscate.c
-          obfuscate.h
-          window-capture.c
-          window-helpers.c
-          window-helpers.h)
+          window-capture.c)
 
-target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util Dwmapi)
+target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util)
 
 set_target_properties(win-capture PROPERTIES FOLDER "plugins/win-capture")
 

@@ -273,6 +273,26 @@ void WindowCaptureToolbar::Init()
 	ComboSelectToolbar::Init();
 }
 
+ApplicationAudioCaptureToolbar::ApplicationAudioCaptureToolbar(QWidget *parent,
+							       OBSSource source)
+	: ComboSelectToolbar(parent, source)
+{
+}
+
+void ApplicationAudioCaptureToolbar::Init()
+{
+	delete ui->activateButton;
+	ui->activateButton = nullptr;
+
+	obs_module_t *mod = obs_get_module("win-wasapi");
+	const char *device_str = obs_module_get_locale_text(mod, "Window");
+	ui->deviceLabel->setText(device_str);
+
+	prop_name = "window";
+
+	ComboSelectToolbar::Init();
+}
+
 DisplayCaptureToolbar::DisplayCaptureToolbar(QWidget *parent, OBSSource source)
 	: ComboSelectToolbar(parent, source)
 {

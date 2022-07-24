@@ -82,6 +82,14 @@ public:
 	void Init() override;
 };
 
+class ApplicationAudioCaptureToolbar : public ComboSelectToolbar {
+	Q_OBJECT
+
+public:
+	ApplicationAudioCaptureToolbar(QWidget *parent, OBSSource source);
+	void Init() override;
+};
+
 class DisplayCaptureToolbar : public ComboSelectToolbar {
 	Q_OBJECT
 

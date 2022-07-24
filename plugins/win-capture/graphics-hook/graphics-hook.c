@@ -3,7 +3,7 @@
 #include <inttypes.h>
 #include "graphics-hook.h"
 #include "../graphics-hook-ver.h"
-#include "../obfuscate.h"
+#include "../../libobs/util/windows/obfuscate.h"
 
 #define DEBUG_OUTPUT
 
@@ -931,7 +931,7 @@ __declspec(dllexport) LRESULT CALLBACK
 		HMODULE user32 = GetModuleHandleW(L"USER32");
 		BOOL(WINAPI * unhook_windows_hook_ex)(HHOOK) = NULL;
 
-		unhook_windows_hook_ex = get_obfuscated_func(
+		unhook_windows_hook_ex = ms_get_obfuscated_func(
 			user32, "VojeleY`bdgxvM`hhDz", 0x7F55F80C9EE3A213ULL);
 
 		if (unhook_windows_hook_ex)
