@@ -349,6 +349,36 @@ void SimpleOutput::LoadStreamingPreset_Lossy(const char *encoderId)
 	obs_encoder_release(videoStreaming);
 }
 
+/* mistakes have been made to lead us to this. */
+const char *get_simple_output_encoder(const char *encoder)
+{
+	if (strcmp(encoder, SIMPLE_ENCODER_X264) == 0) {
+		return "obs_x264";
+	} else if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0) {
+		return "obs_x264";
+	} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
+		return "obs_qsv11";
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
+		return "h264_texture_amf";
+#ifdef ENABLE_HEVC
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_HEVC) == 0) {
+		return "h265_texture_amf";
+#endif
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
+		return EncoderAvailable("jim_nvenc") ? "jim_nvenc"
+						     : "ffmpeg_nvenc";
+#ifdef ENABLE_HEVC
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+		return EncoderAvailable("jim_hevc_nvenc") ? "jim_hevc_nvenc"
+							  : "ffmpeg_hevc_nvenc";
+#endif
+	} else if (strcmp(encoder, SIMPLE_ENCODER_APPLE_H264) == 0) {
+		return "com.apple.videotoolbox.videoencoder.ave.avc";
+	}
+
+	return "obs_x264";
+}
+
 void SimpleOutput::LoadRecordingPreset()
 {
 	const char *quality =
@@ -375,35 +405,9 @@ void SimpleOutput::LoadRecordingPreset()
 	} else {
 		lowCPUx264 = false;
 
-		if (strcmp(encoder, SIMPLE_ENCODER_X264) == 0) {
-			LoadRecordingPreset_Lossy("obs_x264");
-		} else if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0) {
-			LoadRecordingPreset_Lossy("obs_x264");
+		if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0)
 			lowCPUx264 = true;
-		} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
-			LoadRecordingPreset_Lossy("obs_qsv11");
-		} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
-			LoadRecordingPreset_Lossy("h264_texture_amf");
-#ifdef ENABLE_HEVC
-		} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_HEVC) == 0) {
-			LoadRecordingPreset_Lossy("h265_texture_amf");
-#endif
-		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
-			const char *id = EncoderAvailable("jim_nvenc")
-						 ? "jim_nvenc"
-						 : "ffmpeg_nvenc";
-			LoadRecordingPreset_Lossy(id);
-#ifdef ENABLE_HEVC
-		} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
-			const char *id = EncoderAvailable("jim_hevc_nvenc")
-						 ? "jim_hevc_nvenc"
-						 : "ffmpeg_hevc_nvenc";
-			LoadRecordingPreset_Lossy(id);
-#endif
-		} else if (strcmp(encoder, SIMPLE_ENCODER_APPLE_H264) == 0) {
-			LoadRecordingPreset_Lossy(
-				"com.apple.videotoolbox.videoencoder.ave.avc");
-		}
+		LoadRecordingPreset_Lossy(get_simple_output_encoder(encoder));
 		usingRecordingPreset = true;
 
 		if (!CreateAACEncoder(aacRecording, aacRecEncID, 192,
@@ -420,36 +424,7 @@ SimpleOutput::SimpleOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 	const char *encoder = config_get_string(main->Config(), "SimpleOutput",
 						"StreamEncoder");
 
-	if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
-		LoadStreamingPreset_Lossy("obs_qsv11");
-
-	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
-		LoadStreamingPreset_Lossy("h264_texture_amf");
-#ifdef ENABLE_HEVC
-	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_HEVC) == 0) {
-		LoadStreamingPreset_Lossy("h265_texture_amf");
-#endif
-
-	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
-		const char *id = EncoderAvailable("jim_nvenc") ? "jim_nvenc"
-							       : "ffmpeg_nvenc";
-		LoadStreamingPreset_Lossy(id);
-
-#ifdef ENABLE_HEVC
-	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
-		const char *id = EncoderAvailable("jim_hevc_nvenc")
-					 ? "jim_hevc_nvenc"
-					 : "ffmpeg_hevc_nvenc";
-		LoadStreamingPreset_Lossy(id);
-#endif
-
-	} else if (strcmp(encoder, SIMPLE_ENCODER_APPLE_H264) == 0) {
-		LoadStreamingPreset_Lossy(
-			"com.apple.videotoolbox.videoencoder.ave.avc");
-
-	} else {
-		LoadStreamingPreset_Lossy("obs_x264");
-	}
+	LoadStreamingPreset_Lossy(get_simple_output_encoder(encoder));
 
 	if (!CreateAACEncoder(aacStreaming, aacStreamEncID, GetAudioBitrate(),
 			      "simple_aac", 0))
