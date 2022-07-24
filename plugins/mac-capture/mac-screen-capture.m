@@ -1015,7 +1015,7 @@ static obs_properties_t *screen_capture_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *capture_type = obs_properties_add_list(
-		props, "type", obs_module_text("Method"), OBS_COMBO_TYPE_LIST,
+		props, "type", obs_module_text("SCKMethod"), OBS_COMBO_TYPE_LIST,
 		OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("DisplayCapture"), 0);
