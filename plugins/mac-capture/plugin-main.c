@@ -18,7 +18,7 @@ bool obs_module_load(void)
 {
 	obs_register_source(&coreaudio_input_capture_info);
 	obs_register_source(&coreaudio_output_capture_info);
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120500 // __MAC_12_5
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // __MAC_12_3
 	if (is_screen_capture_available()) {
 		extern struct obs_source_info screen_capture_info;
 		obs_register_source(&screen_capture_info);

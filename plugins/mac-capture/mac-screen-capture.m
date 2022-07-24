@@ -3,10 +3,14 @@
 
 bool is_screen_capture_available(void)
 {
-	return (NSClassFromString(@"SCStream") != NULL);
+	if (@available(macOS 12.5, *)) {
+		return true;
+	} else {
+		return false;
+	}
 }
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120500 // __MAC_12_5
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // __MAC_12_3
 #pragma clang diagnostic push
 #pragma clang diagnostic ignored "-Wunguarded-availability-new"
 
