@@ -50,9 +50,6 @@
 #include <util/dstr.hpp>
 #include "ui-config.h"
 
-#define ENCODER_HIDE_FLAGS \
-	(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL)
-
 using namespace std;
 
 class SettingsEventFilter : public QObject {
@@ -704,7 +701,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	installEventFilter(new SettingsEventFilter());
 
-	LoadEncoderTypes();
 	LoadColorRanges();
 	LoadColorSpaces();
 	LoadColorFormats();
@@ -752,7 +748,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 				   this);
 
 	FillSimpleRecordingValues();
-	FillSimpleStreamingValues();
 	if (obs_audio_monitoring_available())
 		FillAudioMonitoringDevices();
 
@@ -996,49 +991,6 @@ void OBSBasicSettings::SaveSpinBox(QSpinBox *widget, const char *section,
 {
 	if (WidgetChanged(widget))
 		config_set_int(main->Config(), section, value, widget->value());
-}
-
-#define TEXT_USE_STREAM_ENC \
-	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
-
-void OBSBasicSettings::LoadEncoderTypes()
-{
-	const char *type;
-	size_t idx = 0;
-
-	ui->advOutRecEncoder->addItem(TEXT_USE_STREAM_ENC, "none");
-
-	while (obs_enum_encoder_types(idx++, &type)) {
-		const char *name = obs_encoder_get_display_name(type);
-		const char *codec = obs_get_encoder_codec(type);
-		uint32_t caps = obs_get_encoder_caps(type);
-
-		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
-			continue;
-
-		const char *streaming_codecs[] = {
-			"h264",
-#ifdef ENABLE_HEVC
-			"hevc",
-#endif
-		};
-		bool is_streaming_codec = false;
-		for (const char *test_codec : streaming_codecs) {
-			if (strcmp(codec, test_codec) == 0) {
-				is_streaming_codec = true;
-				break;
-			}
-		}
-		if ((caps & ENCODER_HIDE_FLAGS) != 0)
-			continue;
-
-		QString qName = QT_UTF8(name);
-		QString qType = QT_UTF8(type);
-
-		if (is_streaming_codec)
-			ui->advOutEncoder->addItem(qName, qType);
-		ui->advOutRecEncoder->addItem(qName, qType);
-	}
 }
 
 #define CS_PARTIAL_STR QTStr("Basic.Settings.Advanced.Video.ColorRange.Partial")
@@ -2245,6 +2197,8 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 void OBSBasicSettings::LoadOutputSettings()
 {
 	loading = true;
+
+	ResetEncoders();
 
 	const char *mode = config_get_string(main->Config(), "Output", "Mode");
 
@@ -4797,46 +4751,6 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 			ENCODER_STR("Hardware.Apple.H264"),
 			QString(SIMPLE_ENCODER_APPLE_H264));
 #undef ADD_QUALITY
-}
-
-void OBSBasicSettings::FillSimpleStreamingValues()
-{
-	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
-					 QString(SIMPLE_ENCODER_X264));
-	if (EncoderAvailable("obs_qsv11"))
-		ui->simpleOutStrEncoder->addItem(
-			ENCODER_STR("Hardware.QSV.H264"),
-			QString(SIMPLE_ENCODER_QSV));
-	if (EncoderAvailable("ffmpeg_nvenc"))
-		ui->simpleOutStrEncoder->addItem(
-			ENCODER_STR("Hardware.NVENC.H264"),
-			QString(SIMPLE_ENCODER_NVENC));
-#ifdef ENABLE_HEVC
-	if (EncoderAvailable("h265_texture_amf"))
-		ui->simpleOutStrEncoder->addItem(
-			ENCODER_STR("Hardware.AMD.HEVC"),
-			QString(SIMPLE_ENCODER_AMD_HEVC));
-	if (EncoderAvailable("ffmpeg_hevc_nvenc"))
-		ui->simpleOutStrEncoder->addItem(
-			ENCODER_STR("Hardware.NVENC.HEVC"),
-			QString(SIMPLE_ENCODER_NVENC_HEVC));
-#endif
-	if (EncoderAvailable("h264_texture_amf"))
-		ui->simpleOutStrEncoder->addItem(
-			ENCODER_STR("Hardware.AMD.H264"),
-			QString(SIMPLE_ENCODER_AMD));
-/* Preprocessor guard required for the macOS version check */
-#ifdef __APPLE__
-	if (EncoderAvailable("com.apple.videotoolbox.videoencoder.ave.avc")
-#ifndef __aarch64__
-	    && os_get_emulation_status() == true
-#endif
-	)
-		if (__builtin_available(macOS 13.0, *))
-			ui->simpleOutStrEncoder->addItem(
-				ENCODER_STR("Hardware.Apple.H264"),
-				QString(SIMPLE_ENCODER_APPLE_H264));
-#endif
 #undef ENCODER_STR
 }
 
@@ -5025,6 +4939,9 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 
 	UpdateAutomaticReplayBufferCheckboxes();
 }
+
+#define TEXT_USE_STREAM_ENC \
+	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
 
 void OBSBasicSettings::AdvReplayBufferChanged()
 {
