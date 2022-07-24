@@ -6,10 +6,12 @@
 
 /* clang-format off */
 
+#define SETTING_SDR_ONLY_INFO          "sdr_only_info"
 #define SETTING_IMAGE_PATH             "image_path"
 #define SETTING_CLUT_AMOUNT            "clut_amount"
 #define SETTING_PASSTHROUGH_ALPHA      "passthrough_alpha"
 
+#define TEXT_SDR_ONLY_INFO             obs_module_text("SdrOnlyInfo")
 #define TEXT_IMAGE_PATH                obs_module_text("Path")
 #define TEXT_AMOUNT                    obs_module_text("Amount")
 #define TEXT_PASSTHROUGH_ALPHA         obs_module_text("PassthroughAlpha")
@@ -403,6 +405,8 @@ static obs_properties_t *color_grade_filter_properties(void *data)
 	if (slash)
 		dstr_resize(&path, slash - path.array + 1);
 
+	obs_properties_add_text(props, SETTING_SDR_ONLY_INFO,
+				TEXT_SDR_ONLY_INFO, OBS_TEXT_INFO);
 	obs_properties_add_path(props, SETTING_IMAGE_PATH, TEXT_IMAGE_PATH,
 				OBS_PATH_FILE, filter_str.array, path.array);
 	obs_properties_add_float_slider(props, SETTING_CLUT_AMOUNT, TEXT_AMOUNT,
@@ -444,48 +448,85 @@ static void color_grade_filter_destroy(void *data)
 
 static void color_grade_filter_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	struct lut_filter_data *filter = data;
 	obs_source_t *target = obs_filter_get_target(filter->context);
-	gs_eparam_t *param;
 
 	if (!target || !filter->target || !filter->effect) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING)) {
-		return;
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	if (source_space == GS_CS_709_EXTENDED) {
+		obs_source_skip_video_filter(filter->context);
+	} else {
+		const enum gs_color_format format =
+			gs_get_format_from_space(source_space);
+		if (obs_source_process_filter_begin_with_color_space(
+			    filter->context, format, source_space,
+			    OBS_ALLOW_DIRECT_RENDERING)) {
+			gs_eparam_t *param = gs_effect_get_param_by_name(
+				filter->effect, filter->clut_texture_name);
+			gs_effect_set_texture_srgb(param, filter->target);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "clut_amount");
+			gs_effect_set_float(param, filter->clut_amount);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "clut_scale");
+			gs_effect_set_vec3(param, &filter->clut_scale);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "clut_offset");
+			gs_effect_set_vec3(param, &filter->clut_offset);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "domain_min");
+			gs_effect_set_vec3(param, &filter->domain_min);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "domain_max");
+			gs_effect_set_vec3(param, &filter->domain_max);
+
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+			obs_source_process_filter_tech_end(filter->context,
+							   filter->effect, 0, 0,
+							   filter->tech_name);
+
+			gs_blend_state_pop();
+		}
 	}
+}
 
-	param = gs_effect_get_param_by_name(filter->effect,
-					    filter->clut_texture_name);
-	gs_effect_set_texture_srgb(param, filter->target);
+static enum gs_color_space
+color_grade_filter_get_color_space(void *data, size_t count,
+				   const enum gs_color_space *preferred_spaces)
+{
+	const enum gs_color_space potential_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
 
-	param = gs_effect_get_param_by_name(filter->effect, "clut_amount");
-	gs_effect_set_float(param, filter->clut_amount);
+	struct lut_filter_data *const filter = data;
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(potential_spaces), potential_spaces);
 
-	param = gs_effect_get_param_by_name(filter->effect, "clut_scale");
-	gs_effect_set_vec3(param, &filter->clut_scale);
-
-	param = gs_effect_get_param_by_name(filter->effect, "clut_offset");
-	gs_effect_set_vec3(param, &filter->clut_offset);
-
-	param = gs_effect_get_param_by_name(filter->effect, "domain_min");
-	gs_effect_set_vec3(param, &filter->domain_min);
-
-	param = gs_effect_get_param_by_name(filter->effect, "domain_max");
-	gs_effect_set_vec3(param, &filter->domain_max);
-
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-
-	obs_source_process_filter_tech_end(filter->context, filter->effect, 0,
-					   0, filter->tech_name);
-
-	gs_blend_state_pop();
-
-	UNUSED_PARAMETER(effect);
+	return source_space;
 }
 
 struct obs_source_info color_grade_filter = {
@@ -499,4 +540,5 @@ struct obs_source_info color_grade_filter = {
 	.get_defaults = color_grade_filter_defaults,
 	.get_properties = color_grade_filter_properties,
 	.video_render = color_grade_filter_render,
+	.video_get_color_space = color_grade_filter_get_color_space,
 };
