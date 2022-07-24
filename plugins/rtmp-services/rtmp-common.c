@@ -21,6 +21,8 @@ struct rtmp_common {
 	size_t supported_resolutions_count;
 	int max_fps;
 
+	char **video_codecs;
+
 	bool supports_additional_audio_track;
 };
 
@@ -113,17 +115,19 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 {
 	struct rtmp_common *service = data;
 
+	bfree(service->supported_resolutions);
+	bfree(service->video_codecs);
 	bfree(service->service);
 	bfree(service->server);
 	bfree(service->output);
 	bfree(service->key);
-	bfree(service->supported_resolutions);
 
 	service->service = bstrdup(obs_data_get_string(settings, "service"));
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
 	service->supports_additional_audio_track = false;
 	service->output = NULL;
+	service->video_codecs = NULL;
 	service->supported_resolutions = NULL;
 	service->supported_resolutions_count = 0;
 	service->max_fps = 0;
@@ -160,6 +164,7 @@ static void rtmp_common_destroy(void *data)
 	struct rtmp_common *service = data;
 
 	bfree(service->supported_resolutions);
+	bfree(service->video_codecs);
 	bfree(service->service);
 	bfree(service->server);
 	bfree(service->output);
@@ -850,6 +855,49 @@ fail:
 	json_decref(root);
 }
 
+static const char **rtmp_common_get_supported_video_codecs(void *data)
+{
+	struct rtmp_common *service = data;
+
+	if (service->video_codecs)
+		return service->video_codecs;
+
+	struct dstr codecs = {0};
+	json_t *root = open_services_file();
+	if (!root)
+		return NULL;
+
+	json_t *json_service = find_service(root, service->service, NULL);
+	if (!json_service) {
+		goto fail;
+	}
+
+	json_t *json_video_codecs =
+		json_object_get(json_service, "supported video codecs");
+	if (!json_is_array(json_video_codecs)) {
+		goto fail;
+	}
+
+	size_t index;
+	json_t *item;
+
+	json_array_foreach (json_video_codecs, index, item) {
+		char codec[16];
+
+		snprintf(codec, sizeof(codec), "%s", json_string_value(item));
+		if (codecs.len)
+			dstr_cat(&codecs, ";");
+		dstr_cat(&codecs, codec);
+	}
+
+	service->video_codecs = strlist_split(codecs.array, ';', false);
+	dstr_free(&codecs);
+
+fail:
+	json_decref(root);
+	return service->video_codecs;
+}
+
 static const char *rtmp_common_username(void *data)
 {
 	struct rtmp_common *service = data;
@@ -892,4 +940,5 @@ struct obs_service_info rtmp_common_service = {
 	.get_supported_resolutions = rtmp_common_get_supported_resolutions,
 	.get_max_fps = rtmp_common_get_max_fps,
 	.get_max_bitrate = rtmp_common_get_max_bitrate,
+	.get_supported_video_codecs = rtmp_common_get_supported_video_codecs,
 };

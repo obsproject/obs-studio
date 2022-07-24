@@ -467,3 +467,12 @@ void obs_service_get_max_bitrate(const obs_service_t *service,
 		service->info.get_max_bitrate(service->context.data,
 					      video_bitrate, audio_bitrate);
 }
+
+const char **
+obs_service_get_supported_video_codecs(const obs_service_t *service)
+{
+	if (service->info.get_supported_video_codecs)
+		return service->info.get_supported_video_codecs(
+			service->context.data);
+	return NULL;
+}
