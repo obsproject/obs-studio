@@ -127,6 +127,9 @@ private:
 	int lastIgnoreRecommended = -1;
 	int lastChannelSetupIdx = 0;
 
+	static constexpr uint32_t ENCODER_HIDE_FLAGS =
+		(OBS_ENCODER_CAP_DEPRECATED | OBS_ENCODER_CAP_INTERNAL);
+
 	OBSFFFormatDesc formats;
 
 	OBSPropertiesView *streamProperties = nullptr;
@@ -221,7 +224,7 @@ private:
 
 	bool QueryChanges();
 
-	void LoadEncoderTypes();
+	void ResetEncoders(bool streamOnly = false);
 	void LoadColorRanges();
 	void LoadColorSpaces();
 	void LoadColorFormats();
@@ -319,7 +322,6 @@ private:
 	void UpdateAdvOutStreamDelayEstimate();
 
 	void FillSimpleRecordingValues();
-	void FillSimpleStreamingValues();
 	void FillAudioMonitoringDevices();
 
 	void RecalcOutputResPixels(const char *resText);
@@ -347,6 +349,9 @@ private:
 	OBSService GetStream1Service();
 
 	bool IsServiceOutputHasNetworkFeatures();
+
+	bool ServiceAndCodecCompatible();
+	bool ServiceSupportsCodecCheck();
 
 private slots:
 	void on_theme_activated(int idx);

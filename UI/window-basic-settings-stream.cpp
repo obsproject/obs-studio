@@ -122,6 +122,7 @@ void OBSBasicSettings::LoadStream1Settings()
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
 		ui->customServer->setText(server);
+		lastServiceIdx = 0;
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
 		const char *username =
@@ -139,6 +140,7 @@ void OBSBasicSettings::LoadStream1Settings()
 			idx = 1;
 		}
 		ui->service->setCurrentIndex(idx);
+		lastServiceIdx = idx;
 
 		bool bw_test = obs_data_get_bool(settings, "bwtest");
 		ui->bandwidthTestEnable->setChecked(bw_test);
@@ -964,6 +966,9 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	if (loading)
 		return;
 
+	if (!ServiceSupportsCodecCheck())
+		return;
+
 	int idx = ui->service->currentIndex();
 	if (idx == -1)
 		return;
@@ -1176,4 +1181,267 @@ bool OBSBasicSettings::IsServiceOutputHasNetworkFeatures()
 		return true;
 
 	return false;
+}
+
+static bool service_supports_codec(const char **codecs, const char *codec)
+{
+	if (!codecs)
+		return true;
+
+	while (*codecs) {
+		if (strcmp(*codecs, codec) == 0)
+			return true;
+		codecs++;
+	}
+
+	return false;
+}
+
+extern bool EncoderAvailable(const char *encoder);
+extern const char *get_simple_output_encoder(const char *name);
+
+static inline bool service_supports_encoder(const char **codecs,
+					    const char *encoder)
+{
+	if (!EncoderAvailable(encoder))
+		return false;
+
+	const char *codec = obs_get_encoder_codec(encoder);
+	return service_supports_codec(codecs, codec);
+}
+
+bool OBSBasicSettings::ServiceAndCodecCompatible()
+{
+	if (IsCustomService())
+		return true;
+	if (ui->service->currentData().toInt() == (int)ListOpt::ShowAll)
+		return true;
+
+	bool simple = (ui->outputMode->currentIndex() == 0);
+
+	OBSService service = SpawnTempService();
+	const char **codecs = obs_service_get_supported_video_codecs(service);
+	const char *codec;
+
+	if (simple) {
+		QString encoder =
+			ui->simpleOutStrEncoder->currentData().toString();
+		const char *id = get_simple_output_encoder(QT_TO_UTF8(encoder));
+		codec = obs_get_encoder_codec(id);
+	} else {
+		QString encoder = ui->advOutEncoder->currentData().toString();
+		codec = obs_get_encoder_codec(QT_TO_UTF8(encoder));
+	}
+
+	return service_supports_codec(codecs, codec);
+}
+
+/* we really need a way to find fallbacks in a less hardcoded way. maybe. */
+static QString get_adv_fallback(const QString &enc)
+{
+	if (enc == "jim_hevc_nvenc")
+		return "jim_nvenc";
+	if (enc == "h265_texture_amf")
+		return "h264_texture_amf";
+	return "obs_x264";
+}
+
+static QString get_simple_fallback(const QString &enc)
+{
+	if (enc == SIMPLE_ENCODER_NVENC_HEVC)
+		return SIMPLE_ENCODER_NVENC;
+	if (enc == SIMPLE_ENCODER_AMD_HEVC)
+		return SIMPLE_ENCODER_AMD;
+	return SIMPLE_ENCODER_X264;
+}
+
+bool OBSBasicSettings::ServiceSupportsCodecCheck()
+{
+	if (ServiceAndCodecCompatible()) {
+		if (lastServiceIdx != ui->service->currentIndex())
+			ResetEncoders(true);
+		return true;
+	}
+
+	QString service = ui->service->currentText();
+	QString cur_name;
+	QString fb_name;
+	bool simple = (ui->outputMode->currentIndex() == 0);
+
+	/* ------------------------------------------------- */
+	/* get current codec                                 */
+
+	if (simple) {
+		QString cur_enc =
+			ui->simpleOutStrEncoder->currentData().toString();
+		QString fb_enc = get_simple_fallback(cur_enc);
+
+		int cur_idx = ui->simpleOutStrEncoder->findData(cur_enc);
+		int fb_idx = ui->simpleOutStrEncoder->findData(fb_enc);
+
+		cur_name = ui->simpleOutStrEncoder->itemText(cur_idx);
+		fb_name = ui->simpleOutStrEncoder->itemText(fb_idx);
+	} else {
+		QString cur_enc = ui->advOutEncoder->currentData().toString();
+		QString fb_enc = get_adv_fallback(cur_enc);
+
+		cur_name = obs_encoder_get_display_name(QT_TO_UTF8(cur_enc));
+		fb_name = obs_encoder_get_display_name(QT_TO_UTF8(fb_enc));
+	}
+
+#define WARNING_VAL(x) \
+	QTStr("Basic.Settings.Output.Warn.ServiceCodecCompatibility." x)
+
+	QString msg = WARNING_VAL("Msg").arg(service, cur_name, fb_name);
+	auto button = OBSMessageBox::question(this, WARNING_VAL("Title"), msg);
+#undef WARNING_VAL
+
+	if (button == QMessageBox::No) {
+		QMetaObject::invokeMethod(ui->service, "setCurrentIndex",
+					  Qt::QueuedConnection,
+					  Q_ARG(int, lastServiceIdx));
+		return false;
+	}
+
+	ResetEncoders(true);
+	return true;
+}
+
+#define TEXT_USE_STREAM_ENC \
+	QTStr("Basic.Settings.Output.Adv.Recording.UseStreamEncoder")
+
+void OBSBasicSettings::ResetEncoders(bool streamOnly)
+{
+	QString lastAdvEnc = ui->advOutRecEncoder->currentData().toString();
+	QString lastEnc = ui->simpleOutStrEncoder->currentData().toString();
+	OBSService service = SpawnTempService();
+	const char **codecs = obs_service_get_supported_video_codecs(service);
+	const char *type;
+	size_t idx = 0;
+
+	QSignalBlocker s1(ui->simpleOutStrEncoder);
+	QSignalBlocker s2(ui->advOutEncoder);
+
+	/* ------------------------------------------------- */
+	/* clear encoder lists                               */
+
+	ui->simpleOutStrEncoder->clear();
+	ui->advOutEncoder->clear();
+
+	if (!streamOnly) {
+		ui->advOutRecEncoder->clear();
+		ui->advOutRecEncoder->addItem(TEXT_USE_STREAM_ENC, "none");
+	}
+
+	/* ------------------------------------------------- */
+	/* load advanced stream/recording encoders           */
+
+	while (obs_enum_encoder_types(idx++, &type)) {
+		const char *name = obs_encoder_get_display_name(type);
+		const char *codec = obs_get_encoder_codec(type);
+		uint32_t caps = obs_get_encoder_caps(type);
+
+		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
+			continue;
+
+		const char *streaming_codecs[] = {
+			"h264",
+#ifdef ENABLE_HEVC
+			"hevc",
+#endif
+		};
+
+		bool is_streaming_codec = false;
+		for (const char *test_codec : streaming_codecs) {
+			if (strcmp(codec, test_codec) == 0) {
+				is_streaming_codec = true;
+				break;
+			}
+		}
+		if ((caps & ENCODER_HIDE_FLAGS) != 0)
+			continue;
+
+		QString qName = QT_UTF8(name);
+		QString qType = QT_UTF8(type);
+
+		if (is_streaming_codec && service_supports_codec(codecs, codec))
+			ui->advOutEncoder->addItem(qName, qType);
+		if (!streamOnly)
+			ui->advOutRecEncoder->addItem(qName, qType);
+	}
+
+	/* ------------------------------------------------- */
+	/* load simple stream encoders                       */
+
+#define ENCODER_STR(str) QTStr("Basic.Settings.Output.Simple.Encoder." str)
+
+	ui->simpleOutStrEncoder->addItem(ENCODER_STR("Software"),
+					 QString(SIMPLE_ENCODER_X264));
+	if (service_supports_encoder(codecs, "obs_qsv11"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.H264"),
+			QString(SIMPLE_ENCODER_QSV));
+	if (service_supports_encoder(codecs, "ffmpeg_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.H264"),
+			QString(SIMPLE_ENCODER_NVENC));
+#ifdef ENABLE_HEVC
+	if (service_supports_encoder(codecs, "h265_texture_amf"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.HEVC"),
+			QString(SIMPLE_ENCODER_AMD_HEVC));
+	if (service_supports_encoder(codecs, "ffmpeg_hevc_nvenc"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.HEVC"),
+			QString(SIMPLE_ENCODER_NVENC_HEVC));
+#endif
+	if (service_supports_encoder(codecs, "h264_texture_amf"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.H264"),
+			QString(SIMPLE_ENCODER_AMD));
+/* Preprocessor guard required for the macOS version check */
+#ifdef __APPLE__
+	if (service_supports_encoder(
+		    codecs, "com.apple.videotoolbox.videoencoder.ave.avc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	) {
+		if (__builtin_available(macOS 13.0, *)) {
+			ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.Apple.H264"),
+				QString(SIMPLE_ENCODER_APPLE_H264));
+		}
+	}
+#endif
+#undef ENCODER_STR
+
+	/* ------------------------------------------------- */
+	/* Find fallback encoders                            */
+
+	if (!lastAdvEnc.isEmpty()) {
+		int idx = ui->advOutEncoder->findData(lastAdvEnc);
+		if (idx == -1) {
+			lastAdvEnc = get_adv_fallback(lastAdvEnc);
+			ui->advOutEncoder->setProperty("changed",
+						       QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->advOutEncoder->findData(lastAdvEnc);
+		ui->advOutEncoder->setCurrentIndex(idx);
+	}
+
+	if (!lastEnc.isEmpty()) {
+		int idx = ui->simpleOutStrEncoder->findData(lastEnc);
+		if (idx == -1) {
+			lastEnc = get_simple_fallback(lastEnc);
+			ui->simpleOutStrEncoder->setProperty("changed",
+							     QVariant(true));
+			OutputsChanged();
+		}
+
+		idx = ui->simpleOutStrEncoder->findData(lastEnc);
+		ui->simpleOutStrEncoder->setCurrentIndex(idx);
+	}
 }
