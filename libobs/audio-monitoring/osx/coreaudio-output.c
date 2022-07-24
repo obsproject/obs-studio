@@ -65,6 +65,10 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		return;
 	}
 
+	if (os_atomic_load_long(&source->activate_refs) == 0) {
+		return;
+	}
+
 	uint8_t *resample_data[MAX_AV_PLANES];
 	uint32_t resample_frames;
 	uint64_t ts_offset;
