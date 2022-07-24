@@ -718,7 +718,7 @@ void SimpleOutput::UpdateRecordingSettings_amd_cqp(int cqp)
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_string(settings, "profile", "high");
-	obs_data_set_string(settings, "preset", "hq");
+	obs_data_set_string(settings, "preset", "quality");
 	obs_data_set_int(settings, "cqp", cqp);
 	obs_encoder_update(videoRecording, settings);
 }
