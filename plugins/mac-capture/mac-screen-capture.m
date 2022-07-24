@@ -341,10 +341,12 @@ static bool init_screen_stream(struct screen_capture *sc)
 	SCContentFilter *content_filter;
 
 	sc->frame = CGRectZero;
+	sc->stream_properties = [[SCStreamConfiguration alloc] init];
 	os_sem_wait(sc->shareable_content_available);
 
-	__block SCDisplay *target_display = nil;
+	SCDisplay * (^get_target_display)() = ^SCDisplay *()
 	{
+		__block SCDisplay *target_display = nil;
 		[sc->shareable_content.displays
 			indexOfObjectPassingTest:^BOOL(
 				SCDisplay *_Nonnull display, NSUInteger idx,
@@ -356,63 +358,92 @@ static bool init_screen_stream(struct screen_capture *sc)
 				}
 				return *stop;
 			}];
-	}
+		return target_display;
+	};
 
-	__block SCWindow *target_window = nil;
-	if (sc->window.window_id != 0) {
-		[sc->shareable_content.windows indexOfObjectPassingTest:^BOOL(
-						       SCWindow *_Nonnull window,
-						       NSUInteger idx,
-						       BOOL *_Nonnull stop) {
-			if (window.windowID == sc->window.window_id) {
-				target_window =
-					sc->shareable_content.windows[idx];
-				*stop = TRUE;
-			}
-			return *stop;
-		}];
-	}
-
-	__block SCRunningApplication *target_application = nil;
-	{
-		[sc->shareable_content.applications
-			indexOfObjectPassingTest:^BOOL(
-				SCRunningApplication *_Nonnull application,
-				NSUInteger idx, BOOL *_Nonnull stop) {
-				if ([application.bundleIdentifier
-					    isEqualToString:sc->
-							    application_id]) {
-					target_application =
-						sc->shareable_content
-							.applications[idx];
-					*stop = TRUE;
-				}
-				return *stop;
-			}];
-	}
-	NSArray *target_application_array =
-		[[NSArray alloc] initWithObjects:target_application, nil];
+	void (^set_display_mode)(struct screen_capture *, SCDisplay *) = ^void(
+		struct screen_capture *sc, SCDisplay *target_display) {
+		CGDisplayModeRef display_mode =
+			CGDisplayCopyDisplayMode(target_display.displayID);
+		[sc->stream_properties
+			setWidth:CGDisplayModeGetPixelWidth(display_mode)];
+		[sc->stream_properties
+			setHeight:CGDisplayModeGetPixelHeight(display_mode)];
+		CGDisplayModeRelease(display_mode);
+	};
 
 	switch (sc->capture_type) {
 	case ScreenCaptureDisplayStream: {
+		SCDisplay *target_display = get_target_display();
+
 		content_filter = [[SCContentFilter alloc]
 			 initWithDisplay:target_display
 			excludingWindows:[[NSArray alloc] init]];
+
+		set_display_mode(sc, target_display);
 	} break;
 	case ScreenCaptureWindowStream: {
+		__block SCWindow *target_window = nil;
+		if (sc->window.window_id != 0) {
+			[sc->shareable_content.windows
+				indexOfObjectPassingTest:^BOOL(
+					SCWindow *_Nonnull window,
+					NSUInteger idx, BOOL *_Nonnull stop) {
+					if (window.windowID ==
+					    sc->window.window_id) {
+						target_window =
+							sc->shareable_content
+								.windows[idx];
+						*stop = TRUE;
+					}
+					return *stop;
+				}];
+		}
 		content_filter = [[SCContentFilter alloc]
 			initWithDesktopIndependentWindow:target_window];
+
+		if (target_window) {
+			[sc->stream_properties
+				setWidth:target_window.frame.size.width];
+			[sc->stream_properties
+				setHeight:target_window.frame.size.height];
+		}
+
 	} break;
 	case ScreenCaptureApplicationStream: {
+		SCDisplay *target_display = get_target_display();
+		__block SCRunningApplication *target_application = nil;
+		{
+			[sc->shareable_content.applications
+				indexOfObjectPassingTest:^BOOL(
+					SCRunningApplication
+						*_Nonnull application,
+					NSUInteger idx, BOOL *_Nonnull stop) {
+					if ([application.bundleIdentifier
+						    isEqualToString:
+							    sc->
+							    application_id]) {
+						target_application =
+							sc->shareable_content
+								.applications
+									[idx];
+						*stop = TRUE;
+					}
+					return *stop;
+				}];
+		}
+		NSArray *target_application_array = [[NSArray alloc]
+			initWithObjects:target_application, nil];
+
 		content_filter = [[SCContentFilter alloc]
 			      initWithDisplay:target_display
 			includingApplications:target_application_array
 			     exceptingWindows:[[NSArray alloc] init]];
+
+		set_display_mode(sc, target_display);
 	} break;
 	}
 	os_sem_post(sc->shareable_content_available);
-
-	sc->stream_properties = [[SCStreamConfiguration alloc] init];
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
 	[sc->stream_properties setPixelFormat:'BGRA'];
@@ -423,35 +454,6 @@ static bool init_screen_stream(struct screen_capture *sc)
 		[sc->stream_properties setChannelCount:2];
 	}
 #endif
-	sc->disp = [[SCStream alloc] initWithFilter:content_filter
-				      configuration:sc->stream_properties
-					   delegate:nil];
-
-	switch (sc->capture_type) {
-	case ScreenCaptureDisplayStream:
-	case ScreenCaptureApplicationStream:
-		if (target_display) {
-			CGDisplayModeRef display_mode =
-				CGDisplayCopyDisplayMode(
-					target_display.displayID);
-			[sc->stream_properties
-				setWidth:CGDisplayModeGetPixelWidth(
-						 display_mode)];
-			[sc->stream_properties
-				setHeight:CGDisplayModeGetPixelHeight(
-						  display_mode)];
-			CGDisplayModeRelease(display_mode);
-		}
-		break;
-	case ScreenCaptureWindowStream:
-		if (target_window) {
-			[sc->stream_properties
-				setWidth:target_window.frame.size.width];
-			[sc->stream_properties
-				setHeight:target_window.frame.size.height];
-		}
-		break;
-	}
 
 	sc->disp = [[SCStream alloc] initWithFilter:content_filter
 				      configuration:sc->stream_properties
@@ -762,8 +764,6 @@ static void screen_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "show_empty_names", false);
 	obs_data_set_default_bool(settings, "show_hidden_windows", false);
-
-	window_defaults(settings);
 }
 
 static void screen_capture_update(void *data, obs_data_t *settings)
@@ -952,25 +952,13 @@ static bool content_changed(struct screen_capture *sc, obs_properties_t *props)
 	return true;
 }
 
-static bool content_settings_changed(void *priv, obs_properties_t *props,
-				     obs_property_t *property
+static bool content_settings_changed(void *data, obs_properties_t *props,
+				     obs_property_t *list
 				     __attribute__((unused)),
 				     obs_data_t *settings)
 {
-	struct screen_capture *sc = (struct screen_capture *)priv;
-
-	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
-	sc->show_hidden_windows =
-		obs_data_get_bool(settings, "show_hidden_windows");
-
-	return content_changed(sc, props);
-}
-
-static bool capture_type_changed(void *data, obs_properties_t *props,
-				 obs_property_t *list __attribute__((unused)),
-				 obs_data_t *settings)
-{
 	struct screen_capture *sc = data;
+
 	unsigned int capture_type_id = obs_data_get_int(settings, "type");
 	obs_property_t *display_list = obs_properties_get(props, "display");
 	obs_property_t *window_list = obs_properties_get(props, "window");
@@ -1008,14 +996,16 @@ static bool capture_type_changed(void *data, obs_properties_t *props,
 		}
 	}
 
+	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
+	sc->show_hidden_windows =
+		obs_data_get_bool(settings, "show_hidden_windows");
+
 	return content_changed(sc, props);
 }
 
 static obs_properties_t *screen_capture_properties(void *data)
 {
 	struct screen_capture *sc = data;
-
-	screen_capture_build_content_list(sc);
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *capture_type = obs_properties_add_list(
@@ -1028,8 +1018,8 @@ static obs_properties_t *screen_capture_properties(void *data)
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("ApplicationCapture"), 2);
 
-	obs_property_set_modified_callback2(capture_type, capture_type_changed,
-					    data);
+	obs_property_set_modified_callback2(capture_type,
+					    content_settings_changed, data);
 
 	obs_property_t *display_list = obs_properties_add_list(
 		props, "display", obs_module_text("DisplayCapture.Display"),
@@ -1086,8 +1076,6 @@ static obs_properties_t *screen_capture_properties(void *data)
 
 	obs_property_set_modified_callback2(empty, content_settings_changed,
 					    sc);
-
-	content_changed(sc, props);
 
 	if (@available(macOS 13.0, *))
 		;
