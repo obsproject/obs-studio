@@ -422,7 +422,7 @@ static inline void check_preset_compatibility(amf_base *enc,
 	if (astrcmpi(preset, "balanced") == 0) {
 		amf_int64 req_throughput =
 			enc->throughput * throughput_balanced_mul / 10;
-		if (enc->max_throughput < req_throughput)
+		if (enc->max_throughput && enc->max_throughput < req_throughput)
 			preset = "speed";
 	}
 }
