@@ -373,6 +373,17 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 	return permissionResponse;
 }
 
+void OpenMacOSPrivacyPreferences(const char *tab)
+{
+	NSURL *url = [NSURL
+		URLWithString:
+			[NSString
+				stringWithFormat:
+					@"x-apple.systempreferences:com.apple.preference.security?Privacy_%s",
+					tab]];
+	[[NSWorkspace sharedWorkspace] openURL:url];
+}
+
 void TaskbarOverlayInit() {}
 void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
 {
