@@ -383,6 +383,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/dots-vert.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */
@@ -586,7 +590,7 @@ QPushButton:checked:pressed {
 	border-color: rgb(132,22,45);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
 	border: 1px solid rgb(35,36,38);
 	background-color: rgb(26,26,27);
 }

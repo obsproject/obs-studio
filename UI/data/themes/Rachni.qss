@@ -520,6 +520,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/dots-vert.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 /***********************/
 /* --- Combo boxes --- */
 /***********************/
@@ -881,7 +885,7 @@ QPushButton:checked:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
 	background-color: palette(base);
 	border: 1px solid palette(base);
 	color: palette(light);

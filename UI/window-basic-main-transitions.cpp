@@ -421,8 +421,13 @@ void OBSBasic::SetTransition(OBSSource transition)
 	ui->transitionDuration->setVisible(!fixed);
 
 	bool configurable = obs_source_configurable(transition);
-	ui->transitionRemove->setEnabled(configurable);
-	ui->transitionProps->setEnabled(configurable);
+	ui->actionRemoveTransition->setEnabled(configurable);
+	ui->actionTransitionMenu->setEnabled(configurable);
+
+	ResetToolBarActionStyle(ui->transitionToolbar,
+				ui->actionRemoveTransition);
+	ResetToolBarActionStyle(ui->transitionToolbar,
+				ui->actionTransitionMenu);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
@@ -497,7 +502,7 @@ void OBSBasic::AddTransition()
 	}
 }
 
-void OBSBasic::on_transitionAdd_clicked()
+void OBSBasic::on_actionAddTransition_triggered()
 {
 	bool foundConfigurableTransitions = false;
 	QMenu menu(this);
@@ -522,7 +527,7 @@ void OBSBasic::on_transitionAdd_clicked()
 		menu.exec(QCursor::pos());
 }
 
-void OBSBasic::on_transitionRemove_clicked()
+void OBSBasic::on_actionRemoveTransition_triggered()
 {
 	OBSSource tr = GetCurrentTransition();
 
@@ -600,7 +605,7 @@ void OBSBasic::RenameTransition()
 	}
 }
 
-void OBSBasic::on_transitionProps_clicked()
+void OBSBasic::on_actionTransitionMenu_triggered()
 {
 	OBSSource source = GetCurrentTransition();
 
@@ -1545,12 +1550,15 @@ void OBSBasic::EnableTransitionWidgets(bool enable)
 	ui->transitions->setEnabled(enable);
 
 	if (!enable) {
-		ui->transitionProps->setEnabled(false);
+		ui->actionTransitionMenu->setEnabled(false);
 	} else {
 		bool configurable =
 			obs_source_configurable(GetCurrentTransition());
-		ui->transitionProps->setEnabled(configurable);
+		ui->actionTransitionMenu->setEnabled(configurable);
 	}
+
+	ResetToolBarActionStyle(ui->transitionToolbar,
+				ui->actionTransitionMenu);
 
 	if (!IsPreviewProgramMode())
 		return;

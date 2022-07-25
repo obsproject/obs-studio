@@ -451,6 +451,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/refresh.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 #sourceInteractButton {
     qproperty-icon: url(./Dark/interact.svg);
 }
@@ -751,7 +755,7 @@ QPushButton:pressed {
     background-color: rgb(25,27,38);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(25,27,38);
 }
 

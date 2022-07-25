@@ -992,6 +992,8 @@ private slots:
 	void on_action_Settings_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
+	void on_actionMixerToolbarAdvAudio_triggered();
+	void on_actionMixerToolbarMenu_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
@@ -1089,9 +1091,9 @@ private slots:
 	void on_toggleSourceIcons_toggled(bool visible);
 
 	void on_transitions_currentIndexChanged(int index);
-	void on_transitionAdd_clicked();
-	void on_transitionRemove_clicked();
-	void on_transitionProps_clicked();
+	void on_actionAddTransition_triggered();
+	void on_actionRemoveTransition_triggered();
+	void on_actionTransitionMenu_triggered();
 	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
 
