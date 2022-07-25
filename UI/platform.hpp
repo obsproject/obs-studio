@@ -105,4 +105,5 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 					      bool prompt_for_permission);
 #define CheckPermission(x) CheckPermissionWithPrompt(x, false)
 #define RequestPermission(x) CheckPermissionWithPrompt(x, true)
+void OpenMacOSPrivacyPreferences(const char *tab);
 #endif
