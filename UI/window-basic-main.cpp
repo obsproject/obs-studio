@@ -581,6 +581,14 @@ void OBSBasic::copyActionsDynamicProperties()
 			temp->setProperty(y, x->property(y));
 		}
 	}
+
+	for (QAction *x : ui->mixerToolbar->actions()) {
+		QWidget *temp = ui->mixerToolbar->widgetForAction(x);
+
+		for (QByteArray &y : x->dynamicPropertyNames()) {
+			temp->setProperty(y, x->property(y));
+		}
+	}
 }
 
 void OBSBasic::UpdateVolumeControlsDecayRate()
@@ -4958,6 +4966,31 @@ void OBSBasic::on_actionAdvAudioProperties_triggered()
 	advAudioWindow->show();
 	advAudioWindow->setAttribute(Qt::WA_DeleteOnClose, true);
 	advAudioWindow->SetIconsVisible(iconsVisible);
+}
+
+void OBSBasic::on_actionMixerToolbarAdvAudio_triggered()
+{
+	on_actionAdvAudioProperties_triggered();
+}
+
+void OBSBasic::on_actionMixerToolbarMenu_triggered()
+{
+	QAction unhideAllAction(QTStr("UnhideAll"), this);
+	connect(&unhideAllAction, &QAction::triggered, this,
+		&OBSBasic::UnhideAllAudioControls, Qt::DirectConnection);
+
+	QAction toggleControlLayoutAction(QTStr("VerticalLayout"), this);
+	toggleControlLayoutAction.setCheckable(true);
+	toggleControlLayoutAction.setChecked(config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "VerticalVolControl"));
+	connect(&toggleControlLayoutAction, &QAction::changed, this,
+		&OBSBasic::ToggleVolControlLayout, Qt::DirectConnection);
+
+	QMenu popup;
+	popup.addAction(&unhideAllAction);
+	popup.addSeparator();
+	popup.addAction(&toggleControlLayoutAction);
+	popup.exec(QCursor::pos());
 }
 
 void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,

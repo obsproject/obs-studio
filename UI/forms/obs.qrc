@@ -61,6 +61,7 @@
     <file>images/interact.svg</file>
     <file>images/dots.svg</file>
     <file>images/dots-vert.svg</file>
+    <file>images/cogs.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
