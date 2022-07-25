@@ -1113,6 +1113,9 @@ static const char *obs_signals[] = {
 	"void hotkey_unregister(ptr hotkey)",
 	"void hotkey_bindings_changed(ptr hotkey)",
 
+	"void show_notification(int id, int type, string message, bool persist, ptr data)",
+	"void close_notification(int id)",
+
 	NULL,
 };
 
@@ -3504,4 +3507,34 @@ bool obs_enum_output_protocols(size_t idx, char **protocol)
 
 	*protocol = obs->data.protocols.array[idx];
 	return true;
+}
+
+uint32_t obs_show_notification(enum obs_notify_type type, const char *message,
+			       bool persist, void *data)
+{
+	os_atomic_inc_long(&obs->notification_id);
+	uint32_t id = (uint32_t)os_atomic_load_long(&obs->notification_id);
+
+	struct calldata params = {0};
+
+	calldata_set_int(&params, "id", id);
+	calldata_set_int(&params, "type", type);
+	calldata_set_string(&params, "message", message);
+	calldata_set_bool(&params, "persist", persist);
+	calldata_set_ptr(&params, "data", data);
+	signal_handler_signal(obs->signals, "show_notification", &params);
+
+	calldata_free(&params);
+
+	return id;
+}
+
+void obs_close_notification(uint32_t id)
+{
+	struct calldata params = {0};
+
+	calldata_set_int(&params, "id", id);
+	signal_handler_signal(obs->signals, "close_notification", &params);
+
+	calldata_free(&params);
 }
