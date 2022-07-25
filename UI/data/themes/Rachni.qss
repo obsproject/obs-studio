@@ -540,6 +540,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/dots-vert.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 /***********************/
 /* --- Combo boxes --- */
 /***********************/

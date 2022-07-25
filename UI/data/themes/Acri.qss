@@ -403,6 +403,10 @@ QToolButton:pressed {
 	qproperty-icon: url(./Dark/dots-vert.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */

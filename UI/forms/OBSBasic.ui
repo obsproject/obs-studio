@@ -1020,113 +1020,156 @@
       <number>0</number>
      </property>
      <item>
-      <widget class="QStackedWidget" name="stackedMixerArea">
-       <widget class="VScrollArea" name="hMixerScrollArea">
-        <property name="contextMenuPolicy">
-         <enum>Qt::CustomContextMenu</enum>
+      <widget class="QFrame" name="mixerFrame">
+       <property name="frameShape">
+        <enum>QFrame::StyledPanel</enum>
+       </property>
+       <property name="frameShadow">
+        <enum>QFrame::Sunken</enum>
+       </property>
+       <layout class="QVBoxLayout" name="verticalLayout_2">
+        <property name="spacing">
+         <number>0</number>
         </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
+        <property name="leftMargin">
+         <number>0</number>
         </property>
-        <property name="frameShadow">
-         <enum>QFrame::Sunken</enum>
+        <property name="topMargin">
+         <number>0</number>
         </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
+        <property name="rightMargin">
+         <number>0</number>
         </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
+        <property name="bottomMargin">
+         <number>0</number>
         </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="hVolumeWidgets">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>67</width>
-           <height>16</height>
-          </rect>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <layout class="QVBoxLayout" name="hVolControlLayout">
-          <property name="spacing">
-           <number>0</number>
+        <item>
+         <widget class="QStackedWidget" name="stackedMixerArea">
+          <widget class="VScrollArea" name="hMixerScrollArea">
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Sunken</enum>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="hVolumeWidgets">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>74</width>
+              <height>16</height>
+             </rect>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QVBoxLayout" name="hVolControlLayout">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+          </widget>
+          <widget class="HScrollArea" name="vMixerScrollArea">
+           <property name="contextMenuPolicy">
+            <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="frameShape">
+            <enum>QFrame::StyledPanel</enum>
+           </property>
+           <property name="frameShadow">
+            <enum>QFrame::Sunken</enum>
+           </property>
+           <property name="verticalScrollBarPolicy">
+            <enum>Qt::ScrollBarAlwaysOff</enum>
+           </property>
+           <property name="horizontalScrollBarPolicy">
+            <enum>Qt::ScrollBarAsNeeded</enum>
+           </property>
+           <property name="widgetResizable">
+            <bool>true</bool>
+           </property>
+           <widget class="QWidget" name="vVolumeWidgets">
+            <property name="geometry">
+             <rect>
+              <x>0</x>
+              <y>0</y>
+              <width>16</width>
+              <height>28</height>
+             </rect>
+            </property>
+            <property name="sizePolicy">
+             <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
+              <horstretch>0</horstretch>
+              <verstretch>0</verstretch>
+             </sizepolicy>
+            </property>
+            <layout class="QHBoxLayout" name="vVolControlLayout">
+             <property name="spacing">
+              <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>0</number>
+             </property>
+             <property name="topMargin">
+              <number>0</number>
+             </property>
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+            </layout>
+           </widget>
+          </widget>
+         </widget>
+        </item>
+        <item>
+         <widget class="QToolBar" name="mixerToolbar">
+          <property name="iconSize">
+           <size>
+            <width>16</width>
+            <height>16</height>
+           </size>
           </property>
-          <property name="leftMargin">
-           <number>0</number>
+          <property name="floatable">
+           <bool>false</bool>
           </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
-       </widget>
-       <widget class="HScrollArea" name="vMixerScrollArea">
-        <property name="contextMenuPolicy">
-         <enum>Qt::CustomContextMenu</enum>
-        </property>
-        <property name="frameShape">
-         <enum>QFrame::StyledPanel</enum>
-        </property>
-        <property name="frameShadow">
-         <enum>QFrame::Sunken</enum>
-        </property>
-        <property name="verticalScrollBarPolicy">
-         <enum>Qt::ScrollBarAlwaysOff</enum>
-        </property>
-        <property name="horizontalScrollBarPolicy">
-         <enum>Qt::ScrollBarAsNeeded</enum>
-        </property>
-        <property name="widgetResizable">
-         <bool>true</bool>
-        </property>
-        <widget class="QWidget" name="vVolumeWidgets">
-         <property name="geometry">
-          <rect>
-           <x>0</x>
-           <y>0</y>
-           <width>16</width>
-           <height>28</height>
-          </rect>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Maximum" vsizetype="Preferred">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <layout class="QHBoxLayout" name="vVolControlLayout">
-          <property name="spacing">
-           <number>0</number>
-          </property>
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <property name="topMargin">
-           <number>0</number>
-          </property>
-          <property name="rightMargin">
-           <number>0</number>
-          </property>
-          <property name="bottomMargin">
-           <number>0</number>
-          </property>
-         </layout>
-        </widget>
-       </widget>
+          <addaction name="actionMixerToolbarAdvAudio"/>
+          <addaction name="separator"/>
+          <addaction name="actionMixerToolbarMenu"/>
+         </widget>
+        </item>
+       </layout>
       </widget>
      </item>
     </layout>
@@ -2251,6 +2294,33 @@
    </property>
    <property name="text">
     <string>Undo.Redo</string>
+   </property>
+  </action>
+  <action name="actionMixerToolbarAdvAudio">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/settings/images/settings/advanced.svg</normaloff>:/settings/images/settings/advanced.svg</iconset>
+   </property>
+   <property name="text">
+    <string>AdvAudioProps</string>
+   </property>
+   <property name="toolTip">
+    <string>Basic.AdvAudio</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>cogsIcon</string>
+   </property>
+  </action>
+  <action name="actionMixerToolbarMenu">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/dots-vert.svg</normaloff>:/res/images/dots-vert.svg</iconset>
+   </property>
+   <property name="text">
+    <string>MixerToolbarMenu</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>menuIconSmall</string>
    </property>
   </action>
  </widget>

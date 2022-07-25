@@ -458,6 +458,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/refresh.svg);
 }
 
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
+
 #sourceInteractButton {
     qproperty-icon: url(./Dark/interact.svg);
 }
