@@ -11,7 +11,7 @@ static const REGFILTERPINS AMSPinVideo = {L"Output", false, true,
 					  nullptr,   1,     &AMSMediaTypesV};
 
 HINSTANCE dll_inst = nullptr;
-static volatile long locks = 0;
+volatile long locks = 0;
 
 /* ========================================================================= */
 

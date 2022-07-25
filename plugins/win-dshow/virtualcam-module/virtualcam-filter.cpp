@@ -10,6 +10,7 @@ using namespace DShow;
 extern bool initialize_placeholder();
 extern const uint8_t *get_placeholder_ptr();
 extern const bool get_placeholder_size(int *out_cx, int *out_cy);
+extern volatile long locks;
 
 /* ========================================================================= */
 
@@ -107,6 +108,7 @@ VCamFilter::VCamFilter()
 	th = std::thread([this] { Thread(); });
 
 	AddRef();
+	InterlockedIncrement(&locks);
 }
 
 VCamFilter::~VCamFilter()
@@ -118,6 +120,8 @@ VCamFilter::~VCamFilter()
 
 	if (placeholder.scaled_data)
 		free(placeholder.scaled_data);
+
+	InterlockedDecrement(&locks);
 }
 
 const wchar_t *VCamFilter::FilterName() const
