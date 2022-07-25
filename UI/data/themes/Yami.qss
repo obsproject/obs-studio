@@ -413,13 +413,15 @@ QToolBar {
     margin: 4px 0px;
 }
 
+QPushButton[toolButton="true"],
 QToolButton {
-    background-color: rgb(60,64,75);
+    background-color: rgb(160,64,75);
     padding: 4px 6px;
     margin: 0px 2px;
     border-radius: 2px;
 }
 
+QPushButton[toolButton="true"]:last-child,
 QToolButton:last-child {
     margin-right: 0px;
 }

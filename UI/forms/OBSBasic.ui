@@ -1289,6 +1289,9 @@
             <property name="themeID" stdset="0">
              <string notr="true">addIconSmall</string>
             </property>
+            <property name="toolButton" stdset="0">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
@@ -1318,6 +1321,9 @@
             <property name="themeID" stdset="0">
              <string notr="true">removeIconSmall</string>
             </property>
+            <property name="toolButton" stdset="0">
+             <bool>true</bool>
+            </property>
            </widget>
           </item>
           <item>
@@ -1346,6 +1352,9 @@
             </property>
             <property name="themeID" stdset="0">
              <string notr="true">menuIconSmall</string>
+            </property>
+            <property name="toolButton" stdset="0">
+             <string notr="true">true</string>
             </property>
            </widget>
           </item>
