@@ -535,6 +535,7 @@
     <addaction name="actionRepair"/>
     <addaction name="actionCheckForUpdates"/>
     <addaction name="actionShowAbout"/>
+    <addaction name="actionShowMacPermissions"/>
     <addaction name="separator"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Edit">
@@ -1964,6 +1965,11 @@
   <action name="actionCheckForUpdates">
    <property name="text">
     <string>Basic.MainMenu.Help.CheckForUpdates</string>
+   </property>
+  </action>
+  <action name="actionShowMacPermissions">
+   <property name="text">
+    <string>MacPermissions.Title</string>
    </property>
   </action>
   <action name="actionRepair">

@@ -421,6 +421,8 @@ elseif(OS_MACOS)
   endif()
 
   target_sources(obs PRIVATE platform-osx.mm)
+  target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp
+                             window-permissions.hpp)
 
   set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS
                                                          -fobjc-arc)

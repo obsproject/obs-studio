@@ -53,6 +53,9 @@
 #include "window-basic-stats.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-log-reply.hpp"
+#ifdef __APPLE__
+#include "window-permissions.hpp"
+#endif
 #include "window-projector.hpp"
 #include "window-remux.hpp"
 #if YOUTUBE_ENABLED
@@ -369,6 +372,8 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->actionCheckForUpdates->setMenuRole(QAction::AboutQtRole);
 	ui->action_Settings->setMenuRole(QAction::PreferencesRole);
+	ui->actionShowMacPermissions->setMenuRole(
+		QAction::ApplicationSpecificRole);
 	ui->actionE_xit->setMenuRole(QAction::QuitRole);
 #else
 	renameScene->setShortcut({Qt::Key_F2});
@@ -2069,6 +2074,10 @@ void OBSBasic::OBSInit()
 	/* Remove OBS' Fullscreen Interface menu in favor of the one macOS adds by default */
 	delete ui->actionFullscreenInterface;
 	ui->actionFullscreenInterface = nullptr;
+#else
+	/* Don't show menu to raise macOS-only permissions dialog */
+	delete ui->actionShowMacPermissions;
+	ui->actionShowMacPermissions = nullptr;
 #endif
 
 #if defined(_WIN32) || defined(__APPLE__)
@@ -4913,6 +4922,18 @@ void OBSBasic::on_action_Settings_triggered()
 		else
 			restart = false;
 	}
+}
+
+void OBSBasic::on_actionShowMacPermissions_triggered()
+{
+#ifdef __APPLE__
+	OBSPermissions *check =
+		new OBSPermissions(this, CheckPermission(kScreenCapture),
+				   CheckPermission(kVideoDeviceAccess),
+				   CheckPermission(kAudioDeviceAccess),
+				   CheckPermission(kAccessibility));
+	check->exec();
+#endif
 }
 
 void OBSBasic::ShowMissingFilesDialog(obs_missing_files_t *files)
