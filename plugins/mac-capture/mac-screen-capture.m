@@ -376,9 +376,15 @@ static bool init_screen_stream(struct screen_capture *sc)
 	case ScreenCaptureDisplayStream: {
 		SCDisplay *target_display = get_target_display();
 
-		content_filter = [[SCContentFilter alloc]
-			 initWithDisplay:target_display
-			excludingWindows:[[NSArray alloc] init]];
+		if (@available(macOS 13.0, *)) {
+			content_filter = [[SCContentFilter alloc]
+				 initWithDisplay:target_display
+				excludingWindows:[[NSArray alloc] init]];
+		} else {
+			content_filter = [[SCContentFilter alloc]
+				 initWithDisplay:target_display
+				includingWindows:sc->shareable_content.windows];
+		}
 
 		set_display_mode(sc, target_display);
 	} break;
