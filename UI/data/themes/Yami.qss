@@ -752,7 +752,7 @@ QPushButton:pressed {
 }
 
 QPushButton:disabled {
-    background-color: rgba(25,27,38);
+    background-color: rgb(25,27,38);
 }
 
 QPushButton::menu-indicator {
