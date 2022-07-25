@@ -237,10 +237,6 @@ OBSDock QFrame {
     border-bottom-right-radius: 4px;
 }
 
-QStackedWidget {
-    padding: 4px;
-}
-
 #transitionsContainer QPushButton {
     margin: 0px 0px;
     padding: 4px 6px;
