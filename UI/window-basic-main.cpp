@@ -2084,13 +2084,13 @@ void OBSBasic::OnFirstLoad()
 
 #if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
 #define CUR_VER OBS_RELEASE_CANDIDATE_VER
-#define LAST_INFO_VERSION_STRING "LastRCVersion"
+#define LAST_INFO_VERSION_STRING "InfoLastRCVersion"
 #elif OBS_BETA > 0
 #define CUR_VER OBS_BETA_VER
-#define LAST_INFO_VERSION_STRING "LastBetaVersion"
+#define LAST_INFO_VERSION_STRING "InfoLastBetaVersion"
 #else
 #define CUR_VER LIBOBS_API_VER
-#define LAST_INFO_VERSION_STRING "LastVersion"
+#define LAST_INFO_VERSION_STRING "InfoLastVersion"
 #endif
 
 /* shows a "what's new" page on startup of new versions using CEF */
@@ -2150,6 +2150,8 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	if (lastVersion < CUR_VER) {
 		config_set_int(App()->GlobalConfig(), "General",
 			       "InfoIncrement", -1);
+		config_set_int(App()->GlobalConfig(), "General",
+			       LAST_INFO_VERSION_STRING, CUR_VER);
 	} else {
 		current_version_increment = config_get_int(
 			App()->GlobalConfig(), "General", "InfoIncrement");
@@ -2161,6 +2163,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 
 	config_set_int(App()->GlobalConfig(), "General", "InfoIncrement",
 		       info_increment);
+	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 	/* Don't show What's New dialog for new users */
 #if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0 || \
