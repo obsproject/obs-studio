@@ -252,7 +252,7 @@ STDAPI DllInstall(BOOL install, LPCWSTR)
 
 STDAPI DllCanUnloadNow()
 {
-	return os_atomic_load_long(&locks) ? S_OK : S_FALSE;
+	return os_atomic_load_long(&locks) ? S_FALSE : S_OK;
 }
 
 STDAPI DllGetClassObject(REFCLSID cls, REFIID riid, void **p_ptr)
