@@ -73,4 +73,9 @@
     <file>images/settings/hotkeys.svg</file>
     <file>images/settings/accessibility.svg</file>
   </qresource>
+  <qresource prefix="">
+    <file>fonts/OpenSans-Regular.ttf</file>
+    <file>fonts/OpenSans-Bold.ttf</file>
+    <file>fonts/OpenSans-Italic.ttf</file>
+  </qresource>
 </RCC>

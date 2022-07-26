@@ -2191,6 +2191,11 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 	OBSApp program(argc, argv, profilerNameStore.get());
 	try {
 		QAccessible::installFactory(accessibleFactory);
+		QFontDatabase::addApplicationFont(
+			":/fonts/OpenSans-Regular.ttf");
+		QFontDatabase::addApplicationFont(":/fonts/OpenSans-Bold.ttf");
+		QFontDatabase::addApplicationFont(
+			":/fonts/OpenSans-Italic.ttf");
 
 		bool created_log = false;
 
