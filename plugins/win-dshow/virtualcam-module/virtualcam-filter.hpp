@@ -8,6 +8,7 @@
 #include "../libdshowcapture/source/output-filter.hpp"
 #include "../libdshowcapture/source/dshow-formats.hpp"
 #include "../../../libobs/util/windows/WinHandle.hpp"
+#include "../../../libobs/util/threading-windows.h"
 
 #define DEFAULT_CX 1920
 #define DEFAULT_CY 1080

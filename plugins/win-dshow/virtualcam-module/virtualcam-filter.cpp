@@ -108,7 +108,7 @@ VCamFilter::VCamFilter()
 	th = std::thread([this] { Thread(); });
 
 	AddRef();
-	InterlockedIncrement(&locks);
+	os_atomic_inc_long(&locks);
 }
 
 VCamFilter::~VCamFilter()
@@ -121,7 +121,7 @@ VCamFilter::~VCamFilter()
 	if (placeholder.scaled_data)
 		free(placeholder.scaled_data);
 
-	InterlockedDecrement(&locks);
+	os_atomic_dec_long(&locks);
 }
 
 const wchar_t *VCamFilter::FilterName() const

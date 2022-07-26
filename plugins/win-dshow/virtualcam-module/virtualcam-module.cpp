@@ -51,12 +51,12 @@ STDMETHODIMP VCamFactory::QueryInterface(REFIID riid, void **p_ptr)
 
 STDMETHODIMP_(ULONG) VCamFactory::AddRef()
 {
-	return InterlockedIncrement(&refs);
+	return os_atomic_inc_long(&refs);
 }
 
 STDMETHODIMP_(ULONG) VCamFactory::Release()
 {
-	long new_refs = InterlockedDecrement(&refs);
+	long new_refs = os_atomic_dec_long(&refs);
 	if (new_refs == 0) {
 		delete this;
 		return 0;
@@ -89,9 +89,9 @@ STDMETHODIMP VCamFactory::CreateInstance(LPUNKNOWN parent, REFIID, void **p_ptr)
 STDMETHODIMP VCamFactory::LockServer(BOOL lock)
 {
 	if (lock) {
-		InterlockedIncrement(&locks);
+		os_atomic_inc_long(&locks);
 	} else {
-		InterlockedDecrement(&locks);
+		os_atomic_dec_long(&locks);
 	}
 
 	return S_OK;
@@ -252,7 +252,7 @@ STDAPI DllInstall(BOOL install, LPCWSTR)
 
 STDAPI DllCanUnloadNow()
 {
-	return InterlockedOr(&locks, 0) == 0 ? S_OK : S_FALSE;
+	return os_atomic_load_long(&locks) ? S_OK : S_FALSE;
 }
 
 STDAPI DllGetClassObject(REFCLSID cls, REFIID riid, void **p_ptr)
