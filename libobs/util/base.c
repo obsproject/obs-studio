@@ -103,6 +103,7 @@ OBS_NORETURN void bcrash(const char *format, ...)
 	va_start(args, format);
 	crash_handler(format, args, crash_param);
 	va_end(args);
+	exit(0);
 }
 
 void blogva(int log_level, const char *format, va_list args)
