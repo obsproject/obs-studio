@@ -3,10 +3,7 @@ project(frontend-tools)
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
-find_qt(
-  VERSION ${QT_VERSION}
-  COMPONENTS Widgets
-  COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
 
 set_target_properties(
   frontend-tools
@@ -49,7 +46,7 @@ target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs
                                              Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
-  target_link_libraries(frontend-tools PRIVATE Qt${QT_VERSION}::GuiPrivate)
+  target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)
 endif()
 
 if(ENABLE_SCRIPTING AND TARGET OBS::scripting)

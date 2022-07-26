@@ -7,7 +7,7 @@ endif()
 add_library(decklink-captions MODULE)
 add_library(OBS::decklink-captions ALIAS decklink-captions)
 
-find_qt(VERSION ${QT_VERSION} COMPONENTS Widgets)
+find_qt(COMPONENTS Widgets)
 
 target_link_libraries(decklink-captions PRIVATE Qt::Widgets)
 
