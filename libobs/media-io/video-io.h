@@ -44,7 +44,7 @@ enum video_format {
 
 	/* packed uncompressed formats */
 	VIDEO_FORMAT_RGBA,
-	VIDEO_FORMAT_BGRA,
+	VIDEO_FORMAT_BGRA, /* ARGB from win-dshow*/
 	VIDEO_FORMAT_BGRX,
 	VIDEO_FORMAT_Y800, /* grayscale */
 
