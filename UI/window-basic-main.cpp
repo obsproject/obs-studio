@@ -2082,6 +2082,17 @@ void OBSBasic::OnFirstLoad()
 		on_actionViewCurrentLog_triggered();
 }
 
+#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
+#define CUR_VER OBS_RELEASE_CANDIDATE_VER
+#define LAST_INFO_VERSION_STRING "LastRCVersion"
+#elif OBS_BETA > 0
+#define CUR_VER OBS_BETA_VER
+#define LAST_INFO_VERSION_STRING "LastBetaVersion"
+#else
+#define CUR_VER LIBOBS_API_VER
+#define LAST_INFO_VERSION_STRING "LastVersion"
+#endif
+
 /* shows a "what's new" page on startup of new versions using CEF */
 void OBSBasic::ReceivedIntroJson(const QString &text)
 {
@@ -2132,26 +2143,11 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
 	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
-					      "LastRCVersion");
-#elif OBS_BETA > 0
-	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
-					      "LastBetaVersion");
-#else
-	uint32_t lastVersion =
-		config_get_int(App()->GlobalConfig(), "General", "LastVersion");
-#endif
-
+					      LAST_INFO_VERSION_STRING);
 	int current_version_increment = -1;
 
-#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-	if (lastVersion < OBS_RELEASE_CANDIDATE_VER) {
-#elif OBS_BETA > 0
-	if (lastVersion < OBS_BETA_VER) {
-#else
-	if ((lastVersion & ~0xFFFF) < (LIBOBS_API_VER & ~0xFFFF)) {
-#endif
+	if (lastVersion < CUR_VER) {
 		config_set_int(App()->GlobalConfig(), "General",
 			       "InfoIncrement", -1);
 	} else {
@@ -2192,6 +2188,9 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 	UNUSED_PARAMETER(text);
 #endif
 }
+
+#undef CUR_VER
+#undef LAST_INFO_VERSION_STRING
 
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
