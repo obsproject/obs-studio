@@ -2147,7 +2147,7 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 					      LAST_INFO_VERSION_STRING);
 	int current_version_increment = -1;
 
-	if (lastVersion < CUR_VER) {
+	if ((lastVersion & ~0xFFFF) < (CUR_VER & ~0xFFFF)) {
 		config_set_int(App()->GlobalConfig(), "General",
 			       "InfoIncrement", -1);
 		config_set_int(App()->GlobalConfig(), "General",
