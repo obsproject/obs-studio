@@ -89,6 +89,7 @@ PRINTFATTR(1, 2)
 OBS_NORETURN
 #endif
 EXPORT void bcrash(const char *format, ...);
+EXPORT void handle_aborts(int signal_number);
 
 #undef PRINTFATTR
 

@@ -18,6 +18,7 @@
 #pragma once
 
 #include "obs.h"
+#include <signal.h>
 
 #ifdef __cplusplus
 #define MODULE_EXPORT extern "C" EXPORT
@@ -77,7 +78,8 @@ bool obs_module_load(void)
 	static obs_module_t *obs_module_pointer;                              \
 	MODULE_EXPORT void obs_module_set_pointer(obs_module_t *module);      \
 	void obs_module_set_pointer(obs_module_t *module)                     \
-	{                                                                     \
+	{								      \
+		signal(SIGABRT, &handle_aborts);			      \
 		obs_module_pointer = module;                                  \
 	}                                                                     \
 	obs_module_t *obs_current_module(void) { return obs_module_pointer; } \

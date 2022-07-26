@@ -16,6 +16,7 @@
 ******************************************************************************/
 
 #include <inttypes.h>
+#include <signal.h>
 
 #include "graphics/matrix4.h"
 #include "callback/calldata.h"
@@ -980,6 +981,7 @@ bool obs_startup(const char *locale, const char *module_config_path,
 {
 	bool success;
 
+	signal(SIGABRT, &handle_aborts); 
 	profile_start(obs_startup_name);
 
 	if (obs) {
