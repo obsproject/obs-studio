@@ -24,8 +24,6 @@ bool is_screen_capture_available(void)
 #include <CoreMedia/CMSampleBuffer.h>
 #include <CoreVideo/CVPixelBuffer.h>
 
-#include "window-utils.h"
-
 #define MACCAP_LOG(level, msg, ...) \
 	blog(level, "[ mac-screencapture ]: " msg, ##__VA_ARGS__)
 #define MACCAP_ERR(msg, ...) MACCAP_LOG(LOG_ERROR, msg, ##__VA_ARGS__)
@@ -69,7 +67,7 @@ struct screen_capture {
 
 	unsigned capture_type;
 	CGDirectDisplayID display;
-	struct cocoa_window window;
+	CGWindowID window;
 	NSString *application_id;
 };
 
@@ -149,8 +147,6 @@ static void screen_capture_destroy(void *data)
 	if (sc->capture_delegate) {
 		[sc->capture_delegate release];
 	}
-
-	destroy_window(&sc->window);
 
 	pthread_mutex_destroy(&sc->mutex);
 	bfree(sc);
@@ -390,13 +386,12 @@ static bool init_screen_stream(struct screen_capture *sc)
 	} break;
 	case ScreenCaptureWindowStream: {
 		__block SCWindow *target_window = nil;
-		if (sc->window.window_id != 0) {
+		if (sc->window != 0) {
 			[sc->shareable_content.windows
 				indexOfObjectPassingTest:^BOOL(
 					SCWindow *_Nonnull window,
 					NSUInteger idx, BOOL *_Nonnull stop) {
-					if (window.windowID ==
-					    sc->window.window_id) {
+					if (window.windowID == sc->window) {
 						target_window =
 							sc->shareable_content
 								.windows[idx];
@@ -404,6 +399,10 @@ static bool init_screen_stream(struct screen_capture *sc)
 					}
 					return *stop;
 				}];
+		} else {
+			target_window =
+				[sc->shareable_content.windows objectAtIndex:0];
+			sc->window = target_window.windowID;
 		}
 		content_filter = [[SCContentFilter alloc]
 			initWithDesktopIndependentWindow:target_window];
@@ -584,9 +583,7 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
-
-	init_window(&sc->window, settings);
-	update_window(&sc->window, settings);
+	sc->window = obs_data_get_int(settings, "window");
 
 	os_sem_init(&sc->shareable_content_available, 1);
 	screen_capture_build_content_list(sc);
@@ -776,8 +773,11 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 {
 	struct screen_capture *sc = data;
 
-	CGWindowID old_window_id = sc->window.window_id;
-	update_window(&sc->window, settings);
+	CGWindowID old_window_id = sc->window;
+	CGWindowID new_window_id = obs_data_get_int(settings, "window");
+
+	if (new_window_id > 0 && new_window_id != old_window_id)
+		sc->window = new_window_id;
 
 	ScreenCaptureStreamType capture_type =
 		(ScreenCaptureStreamType)obs_data_get_int(settings, "type");
@@ -799,7 +799,7 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 				return;
 		} break;
 		case ScreenCaptureWindowStream: {
-			if (old_window_id == sc->window.window_id &&
+			if (old_window_id == sc->window &&
 			    sc->hide_cursor != show_cursor)
 				return;
 		} break;
