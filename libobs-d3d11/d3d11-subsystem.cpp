@@ -1342,6 +1342,9 @@ int device_create(gs_device_t **p_device, uint32_t adapter)
 		blog(LOG_ERROR, "device_create (D3D11): %s (%08lX)", error.str,
 		     error.hr);
 		errorcode = GS_ERROR_FAIL;
+	} catch (const char *error) {
+		blog(LOG_ERROR, "device_create (D3D11): %s", error);
+		errorcode = GS_ERROR_FAIL;
 	}
 
 	*p_device = device;
