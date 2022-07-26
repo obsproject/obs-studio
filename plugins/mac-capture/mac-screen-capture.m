@@ -718,7 +718,7 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect
 
 static const char *screen_capture_getname(void *unused __attribute__((unused)))
 {
-	return obs_module_text("SCKCapture");
+	return obs_module_text("SCK.Name");
 }
 
 static uint32_t screen_capture_getwidth(void *data)
@@ -1015,8 +1015,8 @@ static obs_properties_t *screen_capture_properties(void *data)
 
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *capture_type = obs_properties_add_list(
-		props, "type", obs_module_text("Method"), OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_INT);
+		props, "type", obs_module_text("SCK.Method"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("DisplayCapture"), 0);
 	obs_property_list_add_int(capture_type,
@@ -1089,7 +1089,7 @@ static obs_properties_t *screen_capture_properties(void *data)
 		;
 	else
 		obs_properties_add_text(props, "audio_info",
-					obs_module_text("SCKAudioUnavailable"),
+					obs_module_text("SCK.AudioUnavailable"),
 					OBS_TEXT_INFO);
 
 	return props;
