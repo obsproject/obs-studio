@@ -138,8 +138,21 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
+	os_atomic_set_bool(&active, true);
 	SetEvent(thread_start);
 	return S_OK;
+}
+
+STDMETHODIMP VCamFilter::Run(REFERENCE_TIME tStart)
+{
+	os_atomic_set_bool(&active, true);
+	return OutputFilter::Run(tStart);
+}
+
+STDMETHODIMP VCamFilter::Stop()
+{
+	os_atomic_set_bool(&active, false);
+	return OutputFilter::Stop();
 }
 
 inline uint64_t VCamFilter::GetTime()
@@ -189,7 +202,8 @@ void VCamFilter::Thread()
 	UpdatePlaceholder();
 
 	while (!stopped()) {
-		Frame(filter_time);
+		if (os_atomic_load_bool(&active))
+			Frame(filter_time);
 		sleepto_100ns(cur_time += interval);
 		filter_time += interval;
 	}
