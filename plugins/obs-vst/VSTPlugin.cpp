@@ -135,7 +135,7 @@ void VSTPlugin::cleanupChannelBuffers()
 	numChannels = 0;
 }
 
-void VSTPlugin::loadEffectFromPath(std::string path)
+void VSTPlugin::loadEffectFromPath(const std::string &path)
 {
 	if (this->pluginPath.compare(path) != 0) {
 		unloadEffect();
@@ -309,7 +309,7 @@ void VSTPlugin::unloadEffect()
 
 	unloadLibrary();
 
-	pluginPath = "";
+	pluginPath.clear();
 }
 
 bool VSTPlugin::isEditorOpen()
@@ -403,7 +403,7 @@ std::string VSTPlugin::getChunk()
 	}
 }
 
-void VSTPlugin::setChunk(std::string data)
+void VSTPlugin::setChunk(const std::string &data)
 {
 	if (!effect) {
 		return;

@@ -111,7 +111,7 @@ static void vst_update(void *data, obs_data_t *settings)
 
 	const char *path = obs_data_get_string(settings, "plugin_path");
 
-	if (strcmp(path, "") == 0) {
+	if (!*path) {
 		vstPlugin->unloadEffect();
 		return;
 	}
@@ -121,10 +121,10 @@ static void vst_update(void *data, obs_data_t *settings)
 	const char *chunkHash = obs_data_get_string(settings, "chunk_hash");
 	const char *chunkData = obs_data_get_string(settings, "chunk_data");
 
-	bool chunkHashesMatch = chunkHash && strlen(chunkHash) > 0 &&
+	bool chunkHashesMatch = chunkHash && *chunkHash &&
 				hash.compare(chunkHash) == 0;
-	if (chunkData && strlen(chunkData) > 0 &&
-	    (chunkHashesMatch || !chunkHash || strlen(chunkHash) == 0)) {
+	if (chunkData && *chunkData &&
+	    (chunkHashesMatch || !chunkHash || !*chunkHash)) {
 		vstPlugin->setChunk(std::string(chunkData));
 	}
 }
