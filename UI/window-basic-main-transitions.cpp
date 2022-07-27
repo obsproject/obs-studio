@@ -1013,7 +1013,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		obs_data_set_int(data, "transition_duration", duration);
 	};
 
-	connect(duration, (void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
+	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged,
 		setDuration);
 
 	for (int i = -1; i < ui->transitions->count(); i++) {
@@ -1214,7 +1214,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		OBSSceneItem item = main->GetCurrentSceneItem();
 		obs_sceneitem_set_transition_duration(item, visible, duration);
 	};
-	connect(duration, (void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
+	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged,
 		setDuration);
 
 	action = menu->addAction(QT_UTF8(Str("None")));
@@ -1312,8 +1312,8 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 
 	if (qt) {
 		connect(duration,
-			(void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
-			this, &OBSBasic::QuickTransitionChangeDuration);
+			(void(QSpinBox::*)(int)) & QSpinBox::valueChanged, this,
+			&OBSBasic::QuickTransitionChangeDuration);
 	}
 
 	tr = fadeTransition;

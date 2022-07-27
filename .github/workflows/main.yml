@@ -42,7 +42,7 @@ env:
 jobs:
   clang_check:
     name: '01 - Code Format Check'
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-22.04]
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
@@ -50,7 +50,7 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Install clang-format'
-        run: sudo apt-get install -y clang-format-12
+        run: sudo apt-get install -y clang-format-13
 
       - name: 'Run clang-format'
         run: |
@@ -280,14 +280,14 @@ jobs:
 
   windows_build:
     name: '02 - Windows'
-    runs-on: [windows-2019]
+    runs-on: [windows-2022]
     needs: [clang_check]
     if: always()
     strategy:
       matrix:
         arch: [x64, x86]
     env:
-      CMAKE_GENERATOR: 'Visual Studio 16 2019'
+      CMAKE_GENERATOR: 'Visual Studio 17 2022'
       CMAKE_SYSTEM_VERSION: '10.0.18363.657'
       VIRTUALCAM-GUID: 'A3FCE0F5-3493-419F-958A-ABA1250EC20B'
       BUILD_FOR_DISTRIBUTION: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
