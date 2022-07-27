@@ -5555,18 +5555,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 		}
 
-		QAction *resizeOutput =
-			popup.addAction(QTStr("ResizeOutputSizeOfSource"), this,
-					SLOT(ResizeOutputSizeOfSource()));
-
-		int width = obs_source_get_width(source);
-		int height = obs_source_get_height(source);
-
-		resizeOutput->setEnabled(!obs_video_active());
-
-		if (width < 8 || height < 8)
-			resizeOutput->setEnabled(false);
-
 		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
 		popup.addMenu(
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
