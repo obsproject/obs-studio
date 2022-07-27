@@ -1748,16 +1748,18 @@ typedef void *(*get_data_t)(obs_data_item_t *);
 static inline const char *data_item_get_string(obs_data_item_t *item,
 					       get_data_t get_data)
 {
-	return item_valid(item, OBS_DATA_STRING) && get_data(item)
-		       ? get_data(item)
-		       : "";
+	const char *str;
+
+	return item_valid(item, OBS_DATA_STRING) && (str = get_data(item)) ? str
+									   : "";
 }
 
 static inline long long item_int(struct obs_data_item *item,
 				 get_data_t get_data)
 {
-	if (item && get_data(item)) {
-		struct obs_data_number *num = get_data(item);
+	struct obs_data_number *num;
+
+	if (item && (num = get_data(item))) {
 		return (num->type == OBS_DATA_NUM_INT)
 			       ? num->int_val
 			       : (long long)num->double_val;
@@ -1776,8 +1778,9 @@ static inline long long data_item_get_int(obs_data_item_t *item,
 static inline double item_double(struct obs_data_item *item,
 				 get_data_t get_data)
 {
-	if (item && get_data(item)) {
-		struct obs_data_number *num = get_data(item);
+	struct obs_data_number *num;
+
+	if (item && (num = get_data(item))) {
 		return (num->type == OBS_DATA_NUM_INT) ? (double)num->int_val
 						       : num->double_val;
 	}
@@ -1795,8 +1798,10 @@ static inline double data_item_get_double(obs_data_item_t *item,
 static inline bool data_item_get_bool(obs_data_item_t *item,
 				      get_data_t get_data)
 {
-	return item_valid(item, OBS_DATA_BOOLEAN) && get_data(item)
-		       ? *(bool *)get_data(item)
+	bool *data;
+
+	return item_valid(item, OBS_DATA_BOOLEAN) && (data = get_data(item))
+		       ? *data
 		       : false;
 }
 
