@@ -2540,6 +2540,19 @@ void OBSBasic::CreateHotkeys()
 		"OBSBasic.SelectedSourceScreenshot",
 		Str("Screenshot.SourceHotkey"), screenshotSource, this);
 	LoadHotkey(sourceScreenshotHotkey, "OBSBasic.SelectedSourceScreenshot");
+
+	auto resizeOutput = [](void *data, obs_hotkey_id, obs_hotkey_t *,
+			       bool pressed) {
+		if (pressed)
+			QMetaObject::invokeMethod(static_cast<OBSBasic *>(data),
+						  "ResizeOutputSizeOfSource",
+						  Qt::QueuedConnection);
+	};
+
+	resizeOutputHotkey = obs_hotkey_register_frontend(
+		"OBSBasic.ResizeOutputSizeOfSource",
+		Str("ResizeOutputSizeOfSource"), resizeOutput, this);
+	LoadHotkey(resizeOutputHotkey, "OBSBasic.ResizeOutputSizeOfSource");
 }
 
 void OBSBasic::ClearHotkeys()
@@ -2557,6 +2570,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_unregister(statsHotkey);
 	obs_hotkey_unregister(screenshotHotkey);
 	obs_hotkey_unregister(sourceScreenshotHotkey);
+	obs_hotkey_unregister(resizeOutputHotkey);
 }
 
 OBSBasic::~OBSBasic()
@@ -9630,6 +9644,14 @@ void OBSBasic::ResizeOutputSizeOfSource()
 	if (obs_video_active())
 		return;
 
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+
+	int width = obs_source_get_width(source);
+	int height = obs_source_get_height(source);
+
+	if (!width || !height)
+		return;
+
 	QMessageBox resize_output(this);
 	resize_output.setText(QTStr("ResizeOutputSizeOfSource.Text") + "\n\n" +
 			      QTStr("ResizeOutputSizeOfSource.Continue"));
@@ -9642,11 +9664,6 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 	if (resize_output.clickedButton() != Yes)
 		return;
-
-	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
-
-	int width = obs_source_get_width(source);
-	int height = obs_source_get_height(source);
 
 	config_set_uint(basicConfig, "Video", "BaseCX", width);
 	config_set_uint(basicConfig, "Video", "BaseCY", height);

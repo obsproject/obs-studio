@@ -500,6 +500,7 @@ private:
 	obs_hotkey_id statsHotkey = 0;
 	obs_hotkey_id screenshotHotkey = 0;
 	obs_hotkey_id sourceScreenshotHotkey = 0;
+	obs_hotkey_id resizeOutputHotkey = 0;
 	int quickTransitionIdCounter = 1;
 	bool overridingTransition = false;
 
