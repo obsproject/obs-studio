@@ -96,14 +96,14 @@ void VSTPlugin::createChannelBuffers(size_t count)
 	numChannels = (std::max)((size_t)0, count);
 
 	if (numChannels > 0) {
-		inputs = (float **)malloc(sizeof(float *) * numChannels);
-		outputs = (float **)malloc(sizeof(float *) * numChannels);
-		channelrefs = (float **)malloc(sizeof(float *) * numChannels);
+		inputs = (float **)bmalloc(sizeof(float *) * numChannels);
+		outputs = (float **)bmalloc(sizeof(float *) * numChannels);
+		channelrefs = (float **)bmalloc(sizeof(float *) * numChannels);
 		for (size_t channel = 0; channel < numChannels; channel++) {
 			inputs[channel] =
-				(float *)malloc(sizeof(float) * blocksize);
+				(float *)bmalloc(sizeof(float) * blocksize);
 			outputs[channel] =
-				(float *)malloc(sizeof(float) * blocksize);
+				(float *)bmalloc(sizeof(float) * blocksize);
 		}
 	}
 }
@@ -112,24 +112,24 @@ void VSTPlugin::cleanupChannelBuffers()
 {
 	for (size_t channel = 0; channel < numChannels; channel++) {
 		if (inputs && inputs[channel]) {
-			free(inputs[channel]);
+			bfree(inputs[channel]);
 			inputs[channel] = NULL;
 		}
 		if (outputs && outputs[channel]) {
-			free(outputs[channel]);
+			bfree(outputs[channel]);
 			outputs[channel] = NULL;
 		}
 	}
 	if (inputs) {
-		free(inputs);
+		bfree(inputs);
 		inputs = NULL;
 	}
 	if (outputs) {
-		free(outputs);
+		bfree(outputs);
 		outputs = NULL;
 	}
 	if (channelrefs) {
-		free(channelrefs);
+		bfree(channelrefs);
 		channelrefs = NULL;
 	}
 	numChannels = 0;
