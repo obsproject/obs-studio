@@ -323,7 +323,7 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 		break;
 	}
 	case kScreenCapture: {
-		if (@available(macOS 10.15, *)) {
+		if (@available(macOS 11.0, *)) {
 			permissionResponse = (CGPreflightScreenCaptureAccess()
 						      ? kPermissionAuthorized
 						      : kPermissionDenied);
