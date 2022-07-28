@@ -2071,6 +2071,7 @@ void OBSBasic::OBSInit()
 	}
 #endif
 
+	UpdatePreviewProgramIndicators();
 	OnFirstLoad();
 
 	activateWindow();
