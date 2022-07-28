@@ -31,14 +31,6 @@ struct syphon {
 	NSString *app_name;
 	NSString *name;
 	NSString *uuid;
-
-	obs_data_t *inject_info;
-	NSString *inject_app;
-	NSString *inject_uuid;
-	bool inject_active;
-	id launch_listener;
-	bool inject_server_found;
-	float inject_wait_time;
 };
 typedef struct syphon *syphon_t;
 
@@ -47,8 +39,6 @@ static inline void update_properties(syphon_t s)
 	obs_source_update_properties(s->source);
 }
 
-static inline void find_and_inject_target(syphon_t s, NSArray *arr, bool retry);
-
 @interface OBSSyphonKVObserver : NSObject
 - (void)observeValueForKeyPath:(NSString *)keyPath
 		      ofObject:(id)object
@@ -56,38 +46,25 @@ static inline void find_and_inject_target(syphon_t s, NSArray *arr, bool retry);
 		       context:(void *)context;
 @end
 
-static inline void handle_application_launch(syphon_t s, NSArray *new)
-{
-	if (!s->inject_active)
-		return;
-
-	if (!new)
-		return;
-
-	find_and_inject_target(s, new, false);
-}
-
 @implementation OBSSyphonKVObserver
 - (void)observeValueForKeyPath:(NSString *)keyPath
 		      ofObject:(id)object
 			change:(NSDictionary *)change
 		       context:(void *)context
 {
-	UNUSED_PARAMETER(keyPath);
-	UNUSED_PARAMETER(object);
-
 	syphon_t s = context;
 	if (!s)
 		return;
 
-	handle_application_launch(s, change[NSKeyValueChangeNewKey]);
+	if (!change[NSKeyValueChangeNewKey])
+		return;
+
 	update_properties(s);
 }
 @end
 
-static const char *syphon_get_name(void *unused)
+static const char *syphon_get_name(void *unused __attribute((unused)))
 {
-	UNUSED_PARAMETER(unused);
 	return obs_module_text("Syphon");
 }
 
@@ -281,45 +258,12 @@ static inline void update_from_announce(syphon_t s, NSDictionary *info)
 	create_client(s);
 }
 
-static inline void update_inject_state(syphon_t s, NSDictionary *info,
-				       bool announce)
-{
-	if (!info)
-		return;
-
-	NSString *app_name = info[SyphonServerDescriptionAppNameKey];
-	NSString *name = info[SyphonServerDescriptionNameKey];
-	NSString *uuid = info[SyphonServerDescriptionUUIDKey];
-
-	if (![uuid isEqual:s->inject_uuid] &&
-	    (![app_name isEqual:s->inject_app] ||
-	     ![name isEqual:@"InjectedSyphon"]))
-		return;
-
-	if (!(s->inject_server_found = announce)) {
-		s->inject_wait_time = 0.f;
-		LOG(LOG_INFO,
-		    "Injected server retired: "
-		    "[%s] InjectedSyphon (%s)",
-		    s->inject_app.UTF8String, uuid.UTF8String);
-		return;
-	}
-
-	if (s->inject_uuid) //TODO: track multiple injected instances?
-		return;
-
-	s->inject_uuid = uuid;
-	LOG(LOG_INFO, "Injected server found: [%s] %s (%s)",
-	    app_name.UTF8String, name.UTF8String, uuid.UTF8String);
-}
-
 static inline void handle_announce(syphon_t s, NSNotification *note)
 {
 	if (!note)
 		return;
 
 	update_from_announce(s, note.object);
-	update_inject_state(s, note.object, true);
 	update_properties(s);
 }
 
@@ -344,7 +288,6 @@ static inline void handle_retire(syphon_t s, NSNotification *note)
 		return;
 
 	update_from_retire(s, note.object);
-	update_inject_state(s, note.object, false);
 	update_properties(s);
 }
 
@@ -421,20 +364,6 @@ static inline bool create_syphon_listeners(syphon_t s)
 	return s->new_server_listener != nil && s->retire_listener != nil;
 }
 
-static inline bool create_applications_observer(syphon_t s, NSWorkspace *ws)
-{
-	s->launch_listener = [[OBSSyphonKVObserver alloc] init];
-	if (!s->launch_listener)
-		return false;
-
-	[ws addObserver:s->launch_listener
-		forKeyPath:NSStringFromSelector(@selector(runningApplications))
-		   options:NSKeyValueObservingOptionNew
-		   context:s];
-
-	return true;
-}
-
 static inline void load_crop(syphon_t s, obs_data_t *settings)
 {
 	s->crop = obs_data_get_bool(settings, "crop");
@@ -467,29 +396,10 @@ static void *syphon_create_internal(obs_data_t *settings, obs_source_t *source)
 		return NULL;
 	}
 
-	if (@available(macOS 10.15, *)) {
-		s->inject_active = false;
-	} else {
-		const char *inject_info =
-			obs_data_get_string(settings, "application");
-		s->inject_info = obs_data_create_from_json(inject_info);
-		s->inject_active = obs_data_get_bool(settings, "inject");
-		s->inject_app = @(obs_data_get_string(s->inject_info, "name"));
-	}
-
 	if (!create_syphon_listeners(s)) {
 		syphon_destroy_internal(s);
 		return NULL;
 	}
-
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	if (!create_applications_observer(s, ws)) {
-		syphon_destroy_internal(s);
-		return NULL;
-	}
-
-	if (s->inject_active)
-		find_and_inject_target(s, ws.runningApplications, false);
 
 	create_client(s);
 
@@ -523,11 +433,6 @@ static inline void syphon_destroy_internal(syphon_t s)
 	stop_listener(s->retire_listener);
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	[ws removeObserver:s->launch_listener
-		forKeyPath:NSStringFromSelector(@selector
-						(runningApplications))];
-
-	obs_data_release(s->inject_info);
 
 	obs_enter_graphics();
 	stop_client(s);
@@ -621,246 +526,6 @@ static bool servers_changed(obs_properties_t *props, obs_property_t *list,
 	}
 }
 
-static inline NSString *get_inject_application_path()
-{
-	static NSString *ident = @"zakk.lol.SyphonInject";
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
-	if (@available(macOS 11.0, *)) {
-		NSURL *url = [ws URLForApplicationWithBundleIdentifier:ident];
-		return [url absoluteString];
-	} else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		return [ws absolutePathForAppBundleWithIdentifier:ident];
-#pragma clang diagnostic pop
-	}
-#else
-	return [ws absolutePathForAppBundleWithIdentifier:ident];
-#endif
-}
-
-static inline bool is_inject_available_in_lib_dir(NSFileManager *fm, NSURL *url)
-{
-	if (!url.isFileURL)
-		return false;
-
-	for (NSString *path in [fm contentsOfDirectoryAtPath:url.path
-						       error:nil]) {
-		NSURL *bundle_url = [url URLByAppendingPathComponent:path];
-		NSBundle *bundle = [NSBundle bundleWithURL:bundle_url];
-		if (!bundle)
-			continue;
-
-		if ([bundle.bundleIdentifier
-			    isEqual:@"zakk.lol.SASyphonInjector"])
-			return true;
-	}
-
-	return false;
-}
-
-static inline bool is_inject_available()
-{
-	if (get_inject_application_path())
-		return true;
-
-	NSFileManager *fm = [NSFileManager defaultManager];
-	for (NSURL *url in [fm URLsForDirectory:NSLibraryDirectory
-				      inDomains:NSAllDomainsMask]) {
-		NSURL *scripting = [url
-			URLByAppendingPathComponent:@"ScriptingAdditions"
-					isDirectory:true];
-		if (is_inject_available_in_lib_dir(fm, scripting))
-			return true;
-	}
-
-	return false;
-}
-
-static inline void launch_syphon_inject_internal()
-{
-	NSString *path = get_inject_application_path();
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	if (path)
-	/* This is only ever relevant on macOS 10.13 */
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		[ws launchApplication:path];
-#pragma clang diagnostic pop
-}
-
-static bool launch_syphon_inject(obs_properties_t *props, obs_property_t *prop,
-				 void *data)
-{
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(prop);
-	UNUSED_PARAMETER(data);
-
-	@autoreleasepool {
-		launch_syphon_inject_internal();
-		return false;
-	}
-}
-
-static int describes_app(obs_data_t *info, NSRunningApplication *app)
-{
-	int score = 0;
-	if ([app.localizedName isEqual:get_string(info, "name")])
-		score += 2;
-
-	if ([app.bundleIdentifier isEqual:get_string(info, "bundle")])
-		score += 2;
-
-	if ([app.executableURL isEqual:get_string(info, "executable")])
-		score += 2;
-
-	if (score && app.processIdentifier == obs_data_get_int(info, "pid"))
-		score += 1;
-
-	return score;
-}
-
-static inline void app_to_data(NSRunningApplication *app, obs_data_t *app_data)
-{
-	obs_data_set_string(app_data, "name", app.localizedName.UTF8String);
-	obs_data_set_string(app_data, "bundle",
-			    app.bundleIdentifier.UTF8String);
-	// Until we drop 10.8, use path.fileSystemRepsentation
-	obs_data_set_string(app_data, "executable",
-			    app.executableURL.path.fileSystemRepresentation);
-	obs_data_set_int(app_data, "pid", app.processIdentifier);
-}
-
-static inline NSDictionary *get_duplicate_names(NSArray *apps)
-{
-	NSMutableDictionary *result =
-		[NSMutableDictionary dictionaryWithCapacity:apps.count];
-	for (NSRunningApplication *app in apps) {
-		if (result[app.localizedName])
-			result[app.localizedName] = @(true);
-		else
-			result[app.localizedName] = @(false);
-	}
-	return result;
-}
-
-static inline size_t add_app(obs_property_t *prop, NSDictionary *duplicates,
-			     NSString *name, const char *bundle,
-			     const char *json_data, bool is_duplicate,
-			     pid_t pid)
-{
-	if (!is_duplicate) {
-		NSNumber *val = duplicates[name];
-		is_duplicate = val && val.boolValue;
-	}
-
-	if (is_duplicate)
-		name = [NSString
-			stringWithFormat:@"%@ (%s: %d)", name, bundle, pid];
-
-	return obs_property_list_add_string(prop, name.UTF8String, json_data);
-}
-
-static void update_inject_list_internal(obs_properties_t *props,
-					obs_property_t *prop,
-					obs_data_t *settings)
-{
-	UNUSED_PARAMETER(props);
-
-	const char *current_str = obs_data_get_string(settings, "application");
-	obs_data_t *current = obs_data_create_from_json(current_str);
-	NSString *current_name = @(obs_data_get_string(current, "name"));
-
-	bool current_found = !obs_data_has_user_value(current, "name");
-
-	obs_property_list_clear(prop);
-	obs_property_list_add_string(prop, "", "");
-
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	NSArray *apps = ws.runningApplications;
-
-	NSDictionary *duplicates = get_duplicate_names(apps);
-	NSMapTable *candidates = [NSMapTable weakToStrongObjectsMapTable];
-
-	obs_data_t *app_data = obs_data_create();
-	for (NSRunningApplication *app in apps) {
-		app_to_data(app, app_data);
-		int score = describes_app(current, app);
-
-		NSString *name = app.localizedName;
-		add_app(prop, duplicates, name, app.bundleIdentifier.UTF8String,
-			obs_data_get_json(app_data),
-			[name isEqual:current_name] && score < 4,
-			app.processIdentifier);
-
-		if (score >= 4) {
-			[candidates setObject:@(score) forKey:app];
-			current_found = true;
-		}
-	}
-	obs_data_release(app_data);
-
-	if (!current_found) {
-		size_t idx = add_app(prop, duplicates, current_name,
-				     obs_data_get_string(current, "bundle"),
-				     current_str,
-				     duplicates[current_name] != nil,
-				     obs_data_get_int(current, "pid"));
-		obs_property_list_item_disable(prop, idx, true);
-
-	} else if (candidates.count > 0) {
-		NSRunningApplication *best_match = nil;
-		NSNumber *best_match_score = @(0);
-
-		for (NSRunningApplication *app in candidates.keyEnumerator) {
-			NSNumber *score = [candidates objectForKey:app];
-			if ([score compare:best_match_score] ==
-			    NSOrderedDescending) {
-				best_match = app;
-				best_match_score = score;
-			}
-		}
-
-		// Update settings in case of PID/executable updates
-		if (best_match_score.intValue >= 4) {
-			app_to_data(best_match, current);
-			obs_data_set_string(settings, "application",
-					    obs_data_get_json(current));
-		}
-	}
-
-	obs_data_release(current);
-}
-
-static void toggle_inject_internal(obs_properties_t *props,
-				   obs_property_t *prop, obs_data_t *settings)
-{
-	bool enabled = obs_data_get_bool(settings, "inject");
-	obs_property_t *inject_list = obs_properties_get(props, "application");
-
-	bool inject_enabled = obs_property_enabled(prop);
-	obs_property_set_enabled(inject_list, enabled && inject_enabled);
-}
-
-static bool toggle_inject(obs_properties_t *props, obs_property_t *prop,
-			  obs_data_t *settings)
-{
-	@autoreleasepool {
-		toggle_inject_internal(props, prop, settings);
-		return true;
-	}
-}
-
-static bool update_inject_list(obs_properties_t *props, obs_property_t *prop,
-			       obs_data_t *settings)
-{
-	@autoreleasepool {
-		update_inject_list_internal(props, prop, settings);
-		return true;
-	}
-}
-
 static bool update_crop(obs_properties_t *props, obs_property_t *prop,
 			obs_data_t *settings)
 {
@@ -886,7 +551,7 @@ static void show_syphon_license_internal(void)
 
 	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
 
-#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_VERSION_11_0)
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
 	if (@available(macOS 11.0, *)) {
 		NSURL *url = [NSURL
 			URLWithString:
@@ -945,34 +610,6 @@ static inline obs_properties_t *syphon_properties_internal(syphon_t s)
 
 	obs_properties_add_bool(props, "allow_transparency",
 				obs_module_text("AllowTransparency"));
-
-	if (@available(macOS 10.15, *)) {
-		;
-	} else {
-		obs_property_t *launch = obs_properties_add_button(
-			props, "launch inject",
-			obs_module_text("LaunchSyphonInject"),
-			launch_syphon_inject);
-
-		obs_property_t *inject = obs_properties_add_bool(
-			props, "inject", obs_module_text("Inject"));
-		obs_property_set_modified_callback(inject, toggle_inject);
-
-		obs_property_t *inject_list = obs_properties_add_list(
-			props, "application", obs_module_text("Application"),
-			OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
-
-		obs_property_set_modified_callback(inject_list,
-						   update_inject_list);
-
-		if (!get_inject_application_path())
-			obs_property_set_enabled(launch, false);
-
-		if (!is_inject_available()) {
-			obs_property_set_enabled(inject, false);
-			obs_property_set_enabled(inject_list, false);
-		}
-	}
 
 	obs_property_t *crop =
 		obs_properties_add_bool(props, "crop", obs_module_text("Crop"));
@@ -1041,24 +678,9 @@ static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
 		     origin_x, end_x, origin_y, end_y);
 }
 
-static inline void tick_inject_state(syphon_t s, float seconds)
-{
-	s->inject_wait_time -= seconds;
-
-	if (s->inject_wait_time > 0.f)
-		return;
-
-	s->inject_wait_time = 1.f;
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	find_and_inject_target(s, ws.runningApplications, true);
-}
-
 static void syphon_video_tick(void *data, float seconds)
 {
 	syphon_t s = data;
-
-	if (s->inject_active && !s->inject_server_found)
-		tick_inject_state(s, seconds);
 
 	if (!s->tex)
 		return;
@@ -1121,106 +743,6 @@ static uint32_t syphon_get_height(void *data)
 	return MAX(0, height);
 }
 
-static inline void inject_app(syphon_t s, NSRunningApplication *app, bool retry)
-{
-	SBApplication *sbapp = nil;
-	if (app.processIdentifier != -1)
-		sbapp = [SBApplication
-			applicationWithProcessIdentifier:app.processIdentifier];
-	else if (app.bundleIdentifier)
-		sbapp = [SBApplication
-			applicationWithBundleIdentifier:app.bundleIdentifier];
-
-	if (!sbapp)
-		return LOG(LOG_ERROR, "Could not inject %s",
-			   app.localizedName.UTF8String);
-
-	sbapp.timeout = 10 * 60;
-	sbapp.sendMode = kAEWaitReply;
-	[sbapp sendEvent:'ascr' id:'gdut' parameters:0];
-	sbapp.sendMode = kAENoReply;
-	[sbapp sendEvent:'SASI' id:'injc' parameters:0];
-
-	if (retry)
-		return;
-
-	LOG(LOG_INFO, "Injected '%s' (%d, '%s')", app.localizedName.UTF8String,
-	    app.processIdentifier, app.bundleIdentifier.UTF8String);
-}
-
-static inline void find_and_inject_target(syphon_t s, NSArray *arr, bool retry)
-{
-	NSMutableArray *best_matches = [NSMutableArray arrayWithCapacity:1];
-	int best_score = 0;
-	for (NSRunningApplication *app in arr) {
-		int score = describes_app(s->inject_info, app);
-		if (!score)
-			continue;
-
-		if (score > best_score) {
-			best_score = score;
-			[best_matches removeAllObjects];
-		}
-
-		if (score >= best_score)
-			[best_matches addObject:app];
-	}
-
-	for (NSRunningApplication *app in best_matches)
-		inject_app(s, app, retry);
-}
-
-static inline bool inject_info_equal(obs_data_t *prev, obs_data_t *new)
-{
-	if (![get_string(prev, "name") isEqual:get_string(new, "name")])
-		return false;
-
-	if (![get_string(prev, "bundle") isEqual:get_string(new, "bundle")])
-		return false;
-
-	if (![get_string(prev, "executable")
-		    isEqual:get_string(new, "executable")])
-		return false;
-
-	if (![get_string(prev, "pid") isEqual:get_string(new, "pid")])
-		return false;
-
-	return true;
-}
-
-static inline void update_inject(syphon_t s, obs_data_t *settings)
-{
-	bool try_injecting = s->inject_active;
-	s->inject_active = obs_data_get_bool(settings, "inject");
-	const char *inject_str = obs_data_get_string(settings, "application");
-
-	try_injecting = !try_injecting && s->inject_active;
-
-	obs_data_t *prev = s->inject_info;
-	s->inject_info = obs_data_create_from_json(inject_str);
-
-	s->inject_app = @(obs_data_get_string(s->inject_info, "name"));
-
-	SyphonServerDirectory *ssd = [SyphonServerDirectory sharedDirectory];
-	NSArray *servers = [ssd serversMatchingName:@"InjectedSyphon"
-					    appName:s->inject_app];
-	s->inject_server_found = false;
-	for (NSDictionary *server in servers)
-		update_inject_state(s, server, true);
-
-	if (!try_injecting)
-		try_injecting = s->inject_active &&
-				!inject_info_equal(prev, s->inject_info);
-
-	obs_data_release(prev);
-
-	if (!try_injecting)
-		return;
-
-	NSWorkspace *ws = [NSWorkspace sharedWorkspace];
-	find_and_inject_target(s, ws.runningApplications, false);
-}
-
 static inline bool update_syphon(syphon_t s, obs_data_t *settings)
 {
 	NSArray *arr = [[SyphonServerDirectory sharedDirectory] servers];
@@ -1251,11 +773,7 @@ static void syphon_update_internal(syphon_t s, obs_data_t *settings)
 		obs_data_get_bool(settings, "allow_transparency");
 
 	load_crop(s, settings);
-	if (@available(macOS 10.15, *)) {
-		;
-	} else {
-		update_inject(s, settings);
-	}
+
 	if (update_syphon(s, settings))
 		create_client(s);
 }
