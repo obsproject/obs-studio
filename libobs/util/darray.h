@@ -207,7 +207,11 @@ static inline void *darray_push_back_new(const size_t element_size,
 	darray_ensure_capacity(element_size, dst, ++dst->num);
 
 	last = darray_end(element_size, dst);
+	PRAGMA_WARN_PUSH
+	// NOTE: Those warning could be false positive from GCC 12 with -O2
+	PRAGMA_WARN_STRINGOP_OVERFLOW
 	memset(last, 0, element_size);
+	PRAGMA_WARN_POP
 	return last;
 }
 
