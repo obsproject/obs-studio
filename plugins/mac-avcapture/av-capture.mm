@@ -2360,7 +2360,6 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 bool obs_module_load(void)
 {
-#ifdef __MAC_10_10
 	// Enable iOS device to show up as AVCapture devices
 	// From WWDC video 2014 #508 at 5:34
 	// https://developer.apple.com/videos/wwdc/2014/#508
@@ -2371,7 +2370,6 @@ bool obs_module_load(void)
 	UInt32 allow = 1;
 	CMIOObjectSetPropertyData(kCMIOObjectSystemObject, &prop, 0, NULL,
 				  sizeof(allow), &allow);
-#endif
 
 	obs_source_info av_capture_info = {
 		.id = "av_capture_input",
