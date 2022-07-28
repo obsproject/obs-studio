@@ -2210,38 +2210,25 @@ static obs_properties_t *av_capture_properties(void *data)
 	obs_property_list_add_string(dev_list, "", "");
 
 	NSArray *devices = nil;
-#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15)
-	if (@available(macOS 10.15, *)) {
-		AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession =
-			[AVCaptureDeviceDiscoverySession
-				discoverySessionWithDeviceTypes:@[
-					AVCaptureDeviceTypeBuiltInWideAngleCamera,
-					AVCaptureDeviceTypeExternalUnknown
-				]
-						      mediaType:AVMediaTypeVideo
-						       position:AVCaptureDevicePositionUnspecified];
-		NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
 
-		AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession =
-			[AVCaptureDeviceDiscoverySession
-				discoverySessionWithDeviceTypes:@[
-					AVCaptureDeviceTypeExternalUnknown
-				]
-						      mediaType:AVMediaTypeMuxed
-						       position:AVCaptureDevicePositionUnspecified];
-		NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
+	AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:@[
+			AVCaptureDeviceTypeBuiltInWideAngleCamera,
+			AVCaptureDeviceTypeExternalUnknown
+		]
+				      mediaType:AVMediaTypeVideo
+				       position:AVCaptureDevicePositionUnspecified];
+	NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
 
-		devices = [mediaDevices
-			arrayByAddingObjectsFromArray:muxedDevices];
-	} else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		devices = [AVCaptureDevice devices];
-#pragma clang diagnostic pop
-	}
-#else
-	devices = [AVCaptureDevice devices];
-#endif
+	AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:@[
+			AVCaptureDeviceTypeExternalUnknown
+		]
+				      mediaType:AVMediaTypeMuxed
+				       position:AVCaptureDevicePositionUnspecified];
+	NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
+
+	devices = [mediaDevices arrayByAddingObjectsFromArray:muxedDevices];
 
 	for (AVCaptureDevice *dev in devices) {
 		if ([dev hasMediaType:AVMediaTypeVideo] ||
