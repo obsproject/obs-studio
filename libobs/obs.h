@@ -506,6 +506,7 @@ EXPORT const char *obs_get_module_binary_path(obs_module_t *module);
 /** Returns the module data path */
 EXPORT const char *obs_get_module_data_path(obs_module_t *module);
 
+#ifndef SWIG
 /**
  * Adds a module search path to be used with obs_find_modules.  If the search
  * path strings contain %module%, that text will be replaced with the module
@@ -523,7 +524,6 @@ EXPORT void obs_load_all_modules(void);
  * be called after all modules have been loaded. */
 EXPORT void obs_post_load_modules(void);
 
-#ifndef SWIG
 struct obs_module_info {
 	const char *bin_path;
 	const char *data_path;
