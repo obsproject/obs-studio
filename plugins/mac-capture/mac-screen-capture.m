@@ -800,19 +800,20 @@ static bool build_display_list(struct screen_capture *sc,
 
 		char dimension_buffer[4][12] = {};
 		char name_buffer[256] = {};
-		sprintf(dimension_buffer[0], "%u",
-			(uint32_t)screen.frame.size.width);
-		sprintf(dimension_buffer[1], "%u",
-			(uint32_t)screen.frame.size.height);
-		sprintf(dimension_buffer[2], "%d",
-			(int32_t)screen.frame.origin.x);
-		sprintf(dimension_buffer[3], "%d",
-			(int32_t)screen.frame.origin.y);
+		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.width);
+		snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.height);
+		snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.x);
+		snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.y);
 
-		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
-			screen.localizedName.UTF8String, dimension_buffer[0],
-			dimension_buffer[1], dimension_buffer[2],
-			dimension_buffer[3]);
+		snprintf(name_buffer, sizeof(name_buffer),
+			 "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			 screen.localizedName.UTF8String, dimension_buffer[0],
+			 dimension_buffer[1], dimension_buffer[2],
+			 dimension_buffer[3]);
 
 		obs_property_list_add_int(display_list, name_buffer,
 					  display.displayID);
