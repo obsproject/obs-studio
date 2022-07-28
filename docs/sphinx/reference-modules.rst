@@ -246,6 +246,36 @@ plugin modules.
 
 ---------------------
 
+.. function:: void obs_load_all_modules2(struct obs_module_failure_info *mfi)
+
+   Automatically loads all modules from module paths (convenience function).
+   Additionally gives you information about modules that fail to load.
+
+   :param mfi: Provides module failure information. The *failed_modules*
+               member is a string list via a pointer to pointers of
+               strings of modules that failed to load. Can be freed
+               either with :c:func:`obs_module_failure_info_free()` or
+               by simply calling :c:func:`bfree()` on the
+               *failed_modules* member variable.
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   struct obs_module_failure_info {
+           char **failed_modules;
+           size_t count;
+   };
+
+---------------------
+
+.. function:: void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
+
+   Frees data allocated data used in the *mfi* parameter (calls
+   :c:func:`bfree()` on the *failed_modules* member variable).
+
+---------------------
+
 .. function:: void obs_post_load_modules(void)
 
    Notifies modules that all modules have been loaded.
@@ -268,6 +298,26 @@ plugin modules.
 
    typedef void (*obs_find_module_callback_t)(void *param,
                    const struct obs_module_info *info);
+
+---------------------
+
+.. function:: void obs_find_modules2(obs_find_module_callback_t callback, void *param)
+
+   Finds all modules within the search paths added by
+   :c:func:`obs_add_module_path()`.
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   struct obs_module_info2 {
+           const char *bin_path;
+           const char *data_path;
+           const char *name;
+   };
+
+   typedef void (*obs_find_module_callback2_t)(void *param,
+                   const struct obs_module_info2 *info);
 
 ---------------------
 
