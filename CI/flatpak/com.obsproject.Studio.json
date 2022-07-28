@@ -58,7 +58,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/videolan/x264.git",
-          "commit": "66a5bc1bd1563d8227d5d18440b525a09bcf17ca"
+          "commit": "baee400fa9ced6f5481a728138fed6e867b0ff7f"
         }
       ]
     },
@@ -117,8 +117,8 @@
         {
           "type": "git",
           "url": "https://github.com/Haivision/srt.git",
-          "tag": "v1.4.4",
-          "commit": "8b32f3734ff6af7cc7b0fef272591cb80a2d1aae"
+          "tag": "v1.5.0",
+          "commit": "060c0d1a2af8082c053018fa6a6fe2dba67d71a8"
         }
       ]
     },
@@ -141,8 +141,8 @@
         {
           "type": "git",
           "url": "https://github.com/ARMmbed/mbedtls.git",
-          "commit": "f71e2878084126737cc39083e1e15afc459bd93d",
-          "tag": "v2.27.0"
+          "commit": "869298bffeea13b205343361b7a7daf2b210e33d",
+          "tag": "v3.2.1"
         }
       ]
     },
@@ -163,7 +163,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/rist/librist.git",
-          "commit": "419f09ea9aa9bf15f9c43b7752ca878521543679"
+          "commit": "809390b3b75a259a704079d0fb4d8f1b5f7fa956"
         }
       ]
     },
@@ -187,7 +187,8 @@
         {
           "type": "git",
           "url": "https://aomedia.googlesource.com/aom.git",
-          "commit": "402e264b94fd74bdf66837da216b6251805b4ae4"
+          "commit": "fc430c57c7b0307b4c5ffb686cd90b3c010d08d2",
+          "tag": "v3.4.0"
         }
       ]
     },
@@ -210,8 +211,8 @@
         {
           "type": "git",
           "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
-          "tag": "v0.9.0",
-          "commit": "fdf4f36867bba068e221965d12c5975c509845da"
+          "tag": "v1.1.0",
+          "commit": "6e87a1de98281840abebc030781780edd822bae5"
         }
       ]
     },
@@ -243,28 +244,22 @@
         {
           "type": "git",
           "url": "https://git.ffmpeg.org/ffmpeg.git",
-          "commit": "cc33e73618a981de7fd96385ecb34719de031f16",
+          "commit": "9687cae2b468e09e35df4cea92cc2e6a0e6c93b3",
           "disable-shallow-clone": true
         },
         {
           "type": "git",
           "dest": "obs-deps",
           "url": "https://github.com/obsproject/obs-deps.git",
-          "tag": "2022-01-01",
-          "commit": "15072cd42722d87c6b3ed1636b22e98c08575f20"
+          "tag": "2022-07-28",
+          "commit": "d0b513a4eef5123d11278d35279f179c22812da4"
         },
         {
           "type": "shell",
           "commands": [
-            "git cherry-pick -n d1b47f3bfcc625ca1cae210fc198dcbd54381a88 # avcodec/vaapi_encode: Fix segfault upon closing uninitialized encoder",
-            "git cherry-pick -n c5f314309067dc85c165b975f53975c38e196258 # avcodec/libsvtav1: properly enforce CQP mode when set in wrapper",
-            "git cherry-pick -n 0463f5d6d56db6cc01bc88a0d77488f4ef23dfdc # avcodec/libsvtav1: Fix value range for rc mode",
-            "git cherry-pick -n 64e2fb3f9d89e5ad552f48e2d5beb9be7a91572a # avcodec/libsvtav1: make coded GOP type configurable",
-            "git cherry-pick -n 04b89e8ae33ba74e5cb5b3b770613fa599f9cb36 # avcodec/libsvtav1: Fix duplicate definition of caps_internal",
-            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-OBS.patch",
-            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-librist.patch",
-            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-4.4.1-libaomenc.patch",
-            "patch -Np1 -i obs-deps/CI/patches/FFmpeg-9010.patch"
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-9010.patch",
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0002-FFmpeg-5.0.1-OBS.patch",
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0003-FFmpeg-5.0.1-librist-7f3f3539e8.patch"
           ]
         }
       ]
@@ -281,7 +276,7 @@
         {
           "type": "git",
           "url": "https://luajit.org/git/luajit-2.0.git",
-          "commit": "a91d0d9d3bba1a936669cfac3244509a0f2ac0e3",
+          "commit": "3065c910ad6027031aabe2dfd3c26a3d0f014b4f",
           "disable-shallow-clone": true
         },
         {
