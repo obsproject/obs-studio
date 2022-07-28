@@ -368,6 +368,7 @@ macro(find_qt)
           6
           CACHE INTERNAL "")
     endif()
+    obs_status(STATUS "Qt version: ${_QT_VERSION}")
   elseif(NOT _QT_VERSION)
     if(TARGET Qt${QT_VERSION}::Core)
       set(_QT_VERSION
@@ -390,6 +391,7 @@ macro(find_qt)
             CACHE INTERNAL "")
       endif()
     endif()
+    obs_status(STATUS "Qt version: ${_QT_VERSION}")
   endif()
 
   set(QT_NO_CREATE_VERSIONLESS_TARGETS OFF)
