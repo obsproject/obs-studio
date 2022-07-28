@@ -5567,7 +5567,7 @@
           <number>0</number>
          </property>
          <item>
-          <widget class="QScrollArea" name="scrollArea_6">
+          <widget class="QScrollArea" name="scrollArea_7">
            <property name="frameShape">
             <enum>QFrame::NoFrame</enum>
            </property>
@@ -5600,7 +5600,7 @@
               <number>9</number>
              </property>
              <item>
-              <layout class="QVBoxLayout" name="verticalLayout_6" stretch="0,0">
+              <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0">
                <item>
                 <widget class="QGroupBox" name="colorsGroupBox">
                  <property name="sizePolicy">
@@ -5618,7 +5618,7 @@
                  <property name="checked">
                   <bool>false</bool>
                  </property>
-                 <layout class="QFormLayout" name="formLayout_7">
+                 <layout class="QFormLayout" name="formLayout_8">
                   <property name="labelAlignment">
                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                   </property>
@@ -6684,7 +6684,7 @@
                 </widget>
                </item>
                <item>
-                <spacer name="verticalSpacer_4">
+                <spacer name="verticalSpacer_7">
                  <property name="orientation">
                   <enum>Qt::Vertical</enum>
                  </property>
