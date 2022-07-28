@@ -249,34 +249,27 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 
 	switch (type) {
 	case kAudioDeviceAccess: {
-		if (@available(macOS 10.14, *)) {
-			AVAuthorizationStatus audioStatus = [AVCaptureDevice
+		AVAuthorizationStatus audioStatus = [AVCaptureDevice
+			authorizationStatusForMediaType:AVMediaTypeAudio];
+
+		if (audioStatus == AVAuthorizationStatusNotDetermined &&
+		    prompt_for_permission) {
+			os_event_t *block_finished;
+			os_event_init(&block_finished, OS_EVENT_TYPE_MANUAL);
+			[AVCaptureDevice
+				requestAccessForMediaType:AVMediaTypeAudio
+					completionHandler:^(
+						BOOL granted
+						__attribute((unused))) {
+						os_event_signal(block_finished);
+					}];
+			os_event_wait(block_finished);
+			os_event_destroy(block_finished);
+			audioStatus = [AVCaptureDevice
 				authorizationStatusForMediaType:AVMediaTypeAudio];
-
-			if (audioStatus == AVAuthorizationStatusNotDetermined &&
-			    prompt_for_permission) {
-				os_event_t *block_finished;
-				os_event_init(&block_finished,
-					      OS_EVENT_TYPE_MANUAL);
-				[AVCaptureDevice
-					requestAccessForMediaType:AVMediaTypeAudio
-						completionHandler:^(
-							BOOL granted
-							__attribute((unused))) {
-							os_event_signal(
-								block_finished);
-						}];
-				os_event_wait(block_finished);
-				os_event_destroy(block_finished);
-				audioStatus = [AVCaptureDevice
-					authorizationStatusForMediaType:
-						AVMediaTypeAudio];
-			}
-
-			permissionResponse = (MacPermissionStatus)audioStatus;
-		} else {
-			permissionResponse = kPermissionAuthorized;
 		}
+
+		permissionResponse = (MacPermissionStatus)audioStatus;
 
 		blog(LOG_INFO, "[macOS] Permission for audio device access %s.",
 		     permissionResponse == kPermissionAuthorized ? "granted"
@@ -285,35 +278,28 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 		break;
 	}
 	case kVideoDeviceAccess: {
-		if (@available(macOS 10.14, *)) {
-			AVAuthorizationStatus videoStatus = [AVCaptureDevice
+		AVAuthorizationStatus videoStatus = [AVCaptureDevice
+			authorizationStatusForMediaType:AVMediaTypeVideo];
+
+		if (videoStatus == AVAuthorizationStatusNotDetermined &&
+		    prompt_for_permission) {
+			os_event_t *block_finished;
+			os_event_init(&block_finished, OS_EVENT_TYPE_MANUAL);
+			[AVCaptureDevice
+				requestAccessForMediaType:AVMediaTypeVideo
+					completionHandler:^(
+						BOOL granted
+						__attribute((unused))) {
+						os_event_signal(block_finished);
+					}];
+
+			os_event_wait(block_finished);
+			os_event_destroy(block_finished);
+			videoStatus = [AVCaptureDevice
 				authorizationStatusForMediaType:AVMediaTypeVideo];
-
-			if (videoStatus == AVAuthorizationStatusNotDetermined &&
-			    prompt_for_permission) {
-				os_event_t *block_finished;
-				os_event_init(&block_finished,
-					      OS_EVENT_TYPE_MANUAL);
-				[AVCaptureDevice
-					requestAccessForMediaType:AVMediaTypeVideo
-						completionHandler:^(
-							BOOL granted
-							__attribute((unused))) {
-							os_event_signal(
-								block_finished);
-						}];
-
-				os_event_wait(block_finished);
-				os_event_destroy(block_finished);
-				videoStatus = [AVCaptureDevice
-					authorizationStatusForMediaType:
-						AVMediaTypeVideo];
-			}
-
-			permissionResponse = (MacPermissionStatus)videoStatus;
-		} else {
-			permissionResponse = kPermissionAuthorized;
 		}
+
+		permissionResponse = (MacPermissionStatus)videoStatus;
 
 		blog(LOG_INFO, "[macOS] Permission for video device access %s.",
 		     permissionResponse == kPermissionAuthorized ? "granted"
@@ -322,6 +308,7 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 		break;
 	}
 	case kScreenCapture: {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
 		if (@available(macOS 11.0, *)) {
 			permissionResponse = (CGPreflightScreenCaptureAccess()
 						      ? kPermissionAuthorized
@@ -336,7 +323,22 @@ MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
 			}
 
 		} else {
-			permissionResponse = kPermissionAuthorized;
+#else
+		{
+#endif
+			CGDisplayStreamRef stream = CGDisplayStreamCreate(
+				CGMainDisplayID(), 1, 1,
+				kCVPixelFormatType_32BGRA, nil, nil);
+
+			if (stream) {
+				permissionResponse = kPermissionAuthorized;
+				CFRelease(stream);
+
+				if (prompt_for_permission) {
+				}
+			} else {
+				permissionResponse = kPermissionDenied;
+			}
 		}
 
 		blog(LOG_INFO, "[macOS] Permission for screen capture %s.",
