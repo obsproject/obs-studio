@@ -237,8 +237,7 @@
         "--enable-libsvtav1"
       ],
       "cleanup": [
-        "/share/ffmpeg",
-        "/include"
+        "/share/ffmpeg"
       ],
       "sources": [
         {
@@ -348,7 +347,6 @@
         "-Dpw-cat=disabled"
       ],
       "cleanup": [
-        "/include",
         "/bin"
       ],
       "sources": [
