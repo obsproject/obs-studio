@@ -1778,14 +1778,17 @@ void OBSBasic::OBSInit()
 	LoadLibraryW(L"Qt6Network");
 #endif
 #endif
+	struct obs_module_failure_info mfi;
 
 	AddExtraModulePaths();
 	blog(LOG_INFO, "---------------------------------");
-	obs_load_all_modules();
+	obs_load_all_modules2(&mfi);
 	blog(LOG_INFO, "---------------------------------");
 	obs_log_loaded_modules();
 	blog(LOG_INFO, "---------------------------------");
 	obs_post_load_modules();
+
+	BPtr<char *> failed_modules = mfi.failed_modules;
 
 #ifdef BROWSER_AVAILABLE
 	cef = obs_browser_init_panel();
@@ -2071,6 +2074,25 @@ void OBSBasic::OBSInit()
 	OnFirstLoad();
 
 	activateWindow();
+
+	/* ------------------------------------------- */
+	/* display warning message for failed modules  */
+
+	if (mfi.count) {
+		QString failed_plugins;
+
+		char **plugin = mfi.failed_modules;
+		while (*plugin) {
+			failed_plugins += *plugin;
+			failed_plugins += "\n";
+			plugin++;
+		}
+
+		QString failed_msg =
+			QTStr("PluginsFailedToLoad.Text").arg(failed_plugins);
+		OBSMessageBox::warning(this, QTStr("PluginsFailedToLoad.Title"),
+				       failed_msg);
+	}
 }
 
 void OBSBasic::OnFirstLoad()
