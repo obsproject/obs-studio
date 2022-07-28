@@ -41,27 +41,19 @@ float4 Fade(FragData f_in)
 	float4 a_val = tex_a.Sample(textureSampler, f_in.uv);
 	float4 b_val = tex_b.Sample(textureSampler, f_in.uv);
 	float4 rgba = lerp(a_val, b_val, fade_val);
-	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
 	return rgba;
 }
 
 float4 PSFade(FragData f_in) : TARGET
 {
 	float4 rgba = Fade(f_in);
-	return rgba;
-}
-
-float4 FadeLinear(FragData f_in)
-{
-	float4 a_val = tex_a.Sample(textureSampler, f_in.uv);
-	float4 b_val = tex_b.Sample(textureSampler, f_in.uv);
-	float4 rgba = lerp(a_val, b_val, fade_val);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
 	return rgba;
 }
 
 float4 PSFadeLinear(FragData f_in) : TARGET
 {
-	float4 rgba = FadeLinear(f_in);
+	float4 rgba = Fade(f_in);
 	return rgba;
 }
 
