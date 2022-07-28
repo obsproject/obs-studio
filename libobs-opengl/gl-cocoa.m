@@ -334,7 +334,9 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
-	if (pf != 'BGRA')
+	if (pf == 0)
+		blog(LOG_ERROR, "Invalid IOSurface Buffer");
+	else if (pf != 'BGRA')
 		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
 		     pf >> 24, pf >> 16, pf >> 8, pf);
 
@@ -415,9 +417,14 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
-	if (pf != 'BGRA')
-		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
-		     pf >> 24, pf >> 16, pf >> 8, pf);
+	if (pf == 0) {
+		blog(LOG_ERROR, "Invalid IOSurface buffer");
+	} else {
+		if (pf != 'BGRA')
+			blog(LOG_ERROR,
+			     "Unexpected pixel format: %d (%c%c%c%c)", pf,
+			     pf >> 24, pf >> 16, pf >> 8, pf);
+	}
 
 	tex->width = IOSurfaceGetWidth(ref);
 	tex->height = IOSurfaceGetHeight(ref);
