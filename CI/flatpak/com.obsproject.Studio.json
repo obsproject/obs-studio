@@ -1,7 +1,7 @@
 {
   "app-id": "com.obsproject.Studio",
   "runtime": "org.kde.Platform",
-  "runtime-version": "5.15-21.08",
+  "runtime-version": "6.3",
   "sdk": "org.kde.Sdk",
   "command": "obs",
   "finish-args": [
