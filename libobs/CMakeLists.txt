@@ -11,6 +11,12 @@ find_package(
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
 
+if(ENABLE_UI)
+  find_qt(COMPONENTS Core)
+else()
+  set(_QT_VERSION 0)
+endif()
+
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
