@@ -33,17 +33,21 @@ protected:
 		case QEvent::PlatformSurface:
 			surfaceEvent =
 				static_cast<QPlatformSurfaceEvent *>(event);
-			if (surfaceEvent->surfaceEventType() !=
-			    QPlatformSurfaceEvent::SurfaceCreated)
-				return result;
 
-			if (display->windowHandle()->isExposed())
-				createOBSDisplay();
-			else
-				mTimerId = startTimer(67); // Arbitrary
-			break;
-		case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
-			display->DestroyDisplay();
+			switch (surfaceEvent->surfaceEventType()) {
+			case QPlatformSurfaceEvent::SurfaceCreated:
+				if (display->windowHandle()->isExposed())
+					createOBSDisplay();
+				else
+					mTimerId = startTimer(67); // Arbitrary
+				break;
+			case QPlatformSurfaceEvent::SurfaceAboutToBeDestroyed:
+				display->DestroyDisplay();
+				break;
+			default:
+				break;
+			}
+
 			break;
 		case QEvent::Expose:
 			createOBSDisplay();
@@ -55,7 +59,7 @@ protected:
 		return result;
 	}
 
-	void timerEvent(QTimerEvent *)
+	void timerEvent(QTimerEvent *) override
 	{
 		createOBSDisplay(display->isVisible());
 	}
