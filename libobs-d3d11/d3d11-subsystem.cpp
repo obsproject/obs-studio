@@ -330,7 +330,8 @@ void gs_device::InitCompiler()
 	int ver = 49;
 
 	while (ver > 30) {
-		sprintf(d3dcompiler, "D3DCompiler_%02d.dll", ver);
+		snprintf(d3dcompiler, sizeof(d3dcompiler),
+			 "D3DCompiler_%02d.dll", ver);
 
 		HMODULE module = LoadLibraryA(d3dcompiler);
 		if (module) {
