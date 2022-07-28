@@ -614,25 +614,10 @@ static obs_properties_t *display_capture_properties(void *unused)
 		sprintf(dimension_buffer[3], "%d",
 			(int32_t)[screen frame].origin.y);
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 101500 // __MAC_10_15
-		if (__builtin_available(macOS 10.15, *)) {
-			sprintf(name_buffer,
-				"%.200s: %.12sx%.12s @ %.12s,%.12s",
-				[[screen localizedName] UTF8String],
-				dimension_buffer[0], dimension_buffer[1],
-				dimension_buffer[2], dimension_buffer[3]);
-		} else
-#endif
-		{
-			char disp_num_buffer[11];
-			sprintf(disp_num_buffer, "%lu", (unsigned long)index);
-			sprintf(name_buffer,
-				"%.189s %.10s: %.12sx%.12s @ %.12s,%.12s",
-				obs_module_text("DisplayCapture.Display"),
-				disp_num_buffer, dimension_buffer[0],
-				dimension_buffer[1], dimension_buffer[2],
-				dimension_buffer[3]);
-		}
+		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			[[screen localizedName] UTF8String],
+			dimension_buffer[0], dimension_buffer[1],
+			dimension_buffer[2], dimension_buffer[3]);
 
 		obs_property_list_add_int(list, name_buffer, index);
 	}];
