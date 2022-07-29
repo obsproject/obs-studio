@@ -947,17 +947,6 @@ static bool build_application_list(struct screen_capture *sc,
 	return true;
 }
 
-static bool content_changed(struct screen_capture *sc, obs_properties_t *props)
-{
-	screen_capture_build_content_list(sc);
-
-	build_display_list(sc, props);
-	build_window_list(sc, props);
-	build_application_list(sc, props);
-
-	return true;
-}
-
 static bool content_settings_changed(void *data, obs_properties_t *props,
 				     obs_property_t *list
 				     __attribute__((unused)),
@@ -1006,7 +995,12 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
 
-	return content_changed(sc, props);
+	screen_capture_build_content_list(sc);
+	build_display_list(sc, props);
+	build_window_list(sc, props);
+	build_application_list(sc, props);
+
+	return true;
 }
 
 static obs_properties_t *screen_capture_properties(void *data)
