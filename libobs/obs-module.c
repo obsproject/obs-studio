@@ -299,8 +299,10 @@ static void load_all_callback(void *param, const struct obs_module_info2 *info)
 	}
 
 	if (!can_load_obs_plugin) {
-		blog(LOG_WARNING, "Skipping module '%s' due to possible "
-				  "import conflicts");
+		blog(LOG_WARNING,
+		     "Skipping module '%s' due to possible "
+		     "import conflicts",
+		     info->bin_path);
 		goto load_failure;
 	}
 
