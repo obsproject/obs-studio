@@ -111,9 +111,14 @@ public:
 	uint64_t mLastVideoTS;
 	uint64_t mLastAudioTS;
 
+	int64_t mOutputDelay;
+	int64_t mVideoMax;
 	int64_t mVideoDelay;
+	int64_t mVideoSync;
+	int64_t mVideoAdjust;
+	int64_t mAudioMax;
 	int64_t mAudioDelay;
-	int64_t mAudioVideoSync;
+	int64_t mAudioSync;
 	int64_t mAudioAdjust;
 	int64_t mLastStatTime;
 #ifdef AJA_WRITE_DEBUG_WAV
