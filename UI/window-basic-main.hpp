@@ -636,6 +636,8 @@ private:
 	void UpdatePreviewSpacingHelpers();
 	bool drawSpacingHelpers = true;
 
+	float GetDevicePixelRatio();
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -843,6 +845,8 @@ private:
 	void DiskSpaceMessage();
 
 	OBSSource prevFTBSource = nullptr;
+
+	float dpi = 1.0;
 
 public:
 	OBSSource GetProgramSource();
