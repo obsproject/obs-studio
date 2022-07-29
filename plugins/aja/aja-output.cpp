@@ -19,6 +19,8 @@
 // Log AJA Output video/audio delay and av-sync
 // #define AJA_OUTPUT_STATS
 
+#define MATCH_OBS_FRAMERATE true
+
 static constexpr uint32_t kNumCardFrames = 3;
 static const int64_t kDefaultStatPeriod = 3000000000;
 static const int64_t kAudioSyncAdjust = 20000;
@@ -849,7 +851,7 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 
 	obs_property_list_clear(vid_fmt_list);
 	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1,
-				   false);
+				   false, MATCH_OBS_FRAMERATE);
 
 	obs_property_list_clear(pix_fmt_list);
 	populate_pixel_format_list(deviceID, pix_fmt_list);
