@@ -274,27 +274,55 @@ void obs_add_module_path(const char *bin, const char *data)
 	da_push_back(obs->module_paths, &omp);
 }
 
-static void load_all_callback(void *param, const struct obs_module_info *info)
+extern void get_plugin_info(const char *path, bool *is_obs_plugin,
+			    bool *can_load);
+
+struct fail_info {
+	struct dstr fail_modules;
+	size_t fail_count;
+};
+
+static void load_all_callback(void *param, const struct obs_module_info2 *info)
 {
+	struct fail_info *fail_info = param;
 	obs_module_t *module;
 
-	if (!os_is_obs_plugin(info->bin_path)) {
+	bool is_obs_plugin;
+	bool can_load_obs_plugin;
+
+	get_plugin_info(info->bin_path, &is_obs_plugin, &can_load_obs_plugin);
+
+	if (!is_obs_plugin) {
 		blog(LOG_WARNING, "Skipping module '%s', not an OBS plugin",
 		     info->bin_path);
 		return;
+	}
+
+	if (!can_load_obs_plugin) {
+		blog(LOG_WARNING, "Skipping module '%s' due to possible "
+				  "import conflicts");
+		goto load_failure;
 	}
 
 	int code = obs_open_module(&module, info->bin_path, info->data_path);
 	if (code != MODULE_SUCCESS) {
 		blog(LOG_DEBUG, "Failed to load module file '%s': %d",
 		     info->bin_path, code);
-		return;
+		goto load_failure;
 	}
 
 	if (!obs_init_module(module))
 		free_module(module);
 
 	UNUSED_PARAMETER(param);
+	return;
+
+load_failure:
+	if (fail_info) {
+		dstr_cat(&fail_info->fail_modules, info->name);
+		dstr_cat(&fail_info->fail_modules, ";");
+		fail_info->fail_count++;
+	}
 }
 
 static const char *obs_load_all_modules_name = "obs_load_all_modules";
@@ -305,13 +333,43 @@ static const char *reset_win32_symbol_paths_name = "reset_win32_symbol_paths";
 void obs_load_all_modules(void)
 {
 	profile_start(obs_load_all_modules_name);
-	obs_find_modules(load_all_callback, NULL);
+	obs_find_modules2(load_all_callback, NULL);
 #ifdef _WIN32
 	profile_start(reset_win32_symbol_paths_name);
 	reset_win32_symbol_paths();
 	profile_end(reset_win32_symbol_paths_name);
 #endif
 	profile_end(obs_load_all_modules_name);
+}
+
+static const char *obs_load_all_modules2_name = "obs_load_all_modules2";
+
+void obs_load_all_modules2(struct obs_module_failure_info *mfi)
+{
+	struct fail_info fail_info = {0};
+	memset(mfi, 0, sizeof(*mfi));
+
+	profile_start(obs_load_all_modules2_name);
+	obs_find_modules2(load_all_callback, &fail_info);
+#ifdef _WIN32
+	profile_start(reset_win32_symbol_paths_name);
+	reset_win32_symbol_paths();
+	profile_end(reset_win32_symbol_paths_name);
+#endif
+	profile_end(obs_load_all_modules2_name);
+
+	mfi->count = fail_info.fail_count;
+	mfi->failed_modules =
+		strlist_split(fail_info.fail_modules.array, ';', false);
+	dstr_free(&fail_info.fail_modules);
+}
+
+void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
+{
+	if (mfi->failed_modules) {
+		bfree(mfi->failed_modules);
+		mfi->failed_modules = NULL;
+	}
 }
 
 void obs_post_load_modules(void)
@@ -388,10 +446,10 @@ static bool parse_binary_from_directory(struct dstr *parsed_bin_path,
 
 static void process_found_module(struct obs_module_path *omp, const char *path,
 				 bool directory,
-				 obs_find_module_callback_t callback,
+				 obs_find_module_callback2_t callback,
 				 void *param)
 {
-	struct obs_module_info info;
+	struct obs_module_info2 info;
 	struct dstr name = {0};
 	struct dstr parsed_bin_path = {0};
 	const char *file;
@@ -421,6 +479,7 @@ static void process_found_module(struct obs_module_path *omp, const char *path,
 	if (parsed_data_dir && bin_found) {
 		info.bin_path = parsed_bin_path.array;
 		info.data_path = parsed_data_dir;
+		info.name = name.array;
 		callback(param, &info);
 	}
 
@@ -430,7 +489,7 @@ static void process_found_module(struct obs_module_path *omp, const char *path,
 }
 
 static void find_modules_in_path(struct obs_module_path *omp,
-				 obs_find_module_callback_t callback,
+				 obs_find_module_callback2_t callback,
 				 void *param)
 {
 	struct dstr search_path = {0};
@@ -467,7 +526,7 @@ static void find_modules_in_path(struct obs_module_path *omp,
 	dstr_free(&search_path);
 }
 
-void obs_find_modules(obs_find_module_callback_t callback, void *param)
+void obs_find_modules2(obs_find_module_callback2_t callback, void *param)
 {
 	if (!obs)
 		return;
@@ -476,6 +535,12 @@ void obs_find_modules(obs_find_module_callback_t callback, void *param)
 		struct obs_module_path *omp = obs->module_paths.array + i;
 		find_modules_in_path(omp, callback, param);
 	}
+}
+
+void obs_find_modules(obs_find_module_callback_t callback, void *param)
+{
+	/* the structure is ABI compatible so we can just cast the callback */
+	obs_find_modules2((obs_find_module_callback2_t)callback, param);
 }
 
 void obs_enum_modules(obs_enum_module_callback_t callback, void *param)
