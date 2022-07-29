@@ -316,7 +316,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 			ResizePreview(ovi.base_width, ovi.base_height);
 
 		UpdateContextBarVisibility();
+		dpi = devicePixelRatioF();
 	};
+	dpi = devicePixelRatioF();
 
 	connect(windowHandle(), &QWindow::screenChanged, displayResize);
 	connect(ui->preview, &OBSQTDisplay::DisplayResized, displayResize);
@@ -10219,4 +10221,9 @@ void OBSBasic::UpdatePreviewSpacingHelpers()
 {
 	drawSpacingHelpers = config_get_bool(
 		App()->GlobalConfig(), "BasicWindow", "SpacingHelpersEnabled");
+}
+
+float OBSBasic::GetDevicePixelRatio()
+{
+	return dpi;
 }

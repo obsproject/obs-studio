@@ -40,7 +40,7 @@ OBSBasicPreview::~OBSBasicPreview()
 vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	float pixelRatio = main->devicePixelRatioF();
+	float pixelRatio = main->GetDevicePixelRatio();
 	float scale = pixelRatio / main->previewScale;
 	QPoint qtPos = event->pos();
 	vec2 pos;
@@ -459,7 +459,7 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 	if (!scene)
 		return;
 
-	float scale = main->previewScale / main->devicePixelRatioF();
+	float scale = main->previewScale / main->GetDevicePixelRatio();
 	vec2 scaled_pos = pos;
 	vec2_divf(&scaled_pos, &scaled_pos, scale);
 	HandleFindData data(scaled_pos, scale);
@@ -592,7 +592,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	}
 
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
-	float pixelRatio = main->devicePixelRatioF();
+	float pixelRatio = main->GetDevicePixelRatio();
 	float x = pos.x() - main->previewX / pixelRatio;
 	float y = pos.y() - main->previewY / pixelRatio;
 	Qt::KeyboardModifiers modifiers = QGuiApplication::keyboardModifiers();
@@ -1591,7 +1591,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 	QPointF qtPos = event->localPos();
 #endif
 
-	float pixelRatio = main->devicePixelRatioF();
+	float pixelRatio = main->GetDevicePixelRatio();
 
 	if (scrollMode && event->buttons() == Qt::LeftButton) {
 		scrollingOffset.x += pixelRatio * (qtPos.x() - scrollingFrom.x);
@@ -1671,7 +1671,7 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 			mousePos = pos;
 			OBSBasic *main = reinterpret_cast<OBSBasic *>(
 				App()->GetMainWindow());
-			float scale = main->devicePixelRatioF();
+			float scale = main->GetDevicePixelRatio();
 			float x = qtPos.x() - main->previewX / scale;
 			float y = qtPos.y() - main->previewY / scale;
 			vec2_set(&startPos, x, y);
@@ -1716,11 +1716,9 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 	gs_vertexbuffer_destroy(line);
 }
 
-static void DrawSquareAtPos(float x, float y)
+static void DrawSquareAtPos(float x, float y, float pixelRatio)
 {
 	OBSBasic *main = OBSBasic::Get();
-
-	float pixelRatio = main->devicePixelRatioF();
 
 	struct vec3 pos;
 	vec3_set(&pos, x, y, 0.0f);
@@ -1742,11 +1740,10 @@ static void DrawSquareAtPos(float x, float y)
 	gs_matrix_pop();
 }
 
-static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot)
+static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot,
+			       float pixelRatio)
 {
 	OBSBasic *main = OBSBasic::Get();
-
-	float pixelRatio = main->devicePixelRatioF();
 
 	struct vec3 pos;
 	vec3_set(&pos, 0.5f, 0.0f, 0.0f);
@@ -1985,7 +1982,7 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 
 	OBSBasic *main = OBSBasic::Get();
 
-	float pixelRatio = main->devicePixelRatioF();
+	float pixelRatio = main->GetDevicePixelRatio();
 
 	bool hovered = false;
 	{
@@ -2100,14 +2097,14 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 	gs_effect_set_vec4(colParam, &red);
 
 	if (selected) {
-		DrawSquareAtPos(0.0f, 0.0f);
-		DrawSquareAtPos(0.0f, 1.0f);
-		DrawSquareAtPos(1.0f, 0.0f);
-		DrawSquareAtPos(1.0f, 1.0f);
-		DrawSquareAtPos(0.5f, 0.0f);
-		DrawSquareAtPos(0.0f, 0.5f);
-		DrawSquareAtPos(0.5f, 1.0f);
-		DrawSquareAtPos(1.0f, 0.5f);
+		DrawSquareAtPos(0.0f, 0.0f, pixelRatio);
+		DrawSquareAtPos(0.0f, 1.0f, pixelRatio);
+		DrawSquareAtPos(1.0f, 0.0f, pixelRatio);
+		DrawSquareAtPos(1.0f, 1.0f, pixelRatio);
+		DrawSquareAtPos(0.5f, 0.0f, pixelRatio);
+		DrawSquareAtPos(0.0f, 0.5f, pixelRatio);
+		DrawSquareAtPos(0.5f, 1.0f, pixelRatio);
+		DrawSquareAtPos(1.0f, 0.5f, pixelRatio);
 
 		if (!prev->circleFill) {
 			gs_render_start(true);
@@ -2125,7 +2122,8 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 			prev->circleFill = gs_render_save();
 		}
 
-		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot);
+		DrawRotationHandle(prev->circleFill, info.rot + prev->groupRot,
+				   pixelRatio);
 	}
 
 	gs_matrix_pop();
@@ -2141,7 +2139,7 @@ bool OBSBasicPreview::DrawSelectionBox(float x1, float y1, float x2, float y2,
 {
 	OBSBasic *main = OBSBasic::Get();
 
-	float pixelRatio = main->devicePixelRatioF();
+	float pixelRatio = main->GetDevicePixelRatio();
 
 	x1 = std::round(x1);
 	x2 = std::round(x2);
