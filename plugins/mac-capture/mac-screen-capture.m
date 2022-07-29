@@ -542,7 +542,8 @@ bool init_vertbuf_screen_capture(struct screen_capture *sc)
 	return sc->vertbuf != NULL;
 }
 
-static void screen_capture_build_content_list(struct screen_capture *sc)
+static void screen_capture_build_content_list(struct screen_capture *sc,
+					      bool excludingDesktopWindows)
 {
 	typedef void (^shareable_content_callback)(SCShareableContent *,
 						   NSError *);
@@ -569,7 +570,7 @@ static void screen_capture_build_content_list(struct screen_capture *sc)
 	os_sem_wait(sc->shareable_content_available);
 	[sc->shareable_content release];
 	[SCShareableContent
-		getShareableContentExcludingDesktopWindows:true
+		getShareableContentExcludingDesktopWindows:excludingDesktopWindows
 				       onScreenWindowsOnly:!sc->show_hidden_windows
 					 completionHandler:new_content_received];
 }
@@ -584,9 +585,11 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
 	sc->window = obs_data_get_int(settings, "window");
+	sc->capture_type = obs_data_get_int(settings, "type");
 
 	os_sem_init(&sc->shareable_content_available, 1);
-	screen_capture_build_content_list(sc);
+	screen_capture_build_content_list(
+		sc, sc->capture_type == ScreenCaptureWindowStream);
 
 	sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
 	sc->capture_delegate.sc = sc;
@@ -613,7 +616,6 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	obs_leave_graphics();
 
-	sc->capture_type = obs_data_get_int(settings, "type");
 	sc->display = obs_data_get_int(settings, "display");
 	sc->application_id = [[NSString alloc]
 		initWithUTF8String:obs_data_get_string(settings,
@@ -995,7 +997,8 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
 
-	screen_capture_build_content_list(sc);
+	screen_capture_build_content_list(
+		sc, capture_type_id == ScreenCaptureWindowStream);
 	build_display_list(sc, props);
 	build_window_list(sc, props);
 	build_application_list(sc, props);
