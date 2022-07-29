@@ -146,7 +146,8 @@ void populate_io_selection_output_list(const std::string &cardID,
 }
 
 void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
-				NTV2VideoFormat genlockFormat, bool want4KHFR)
+				NTV2VideoFormat genlockFormat, bool want4KHFR,
+				bool matchFPS)
 {
 	VideoFormatList videoFormats = {};
 	VideoStandardList orderedStandards = {};
@@ -178,6 +179,20 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 		// Filter formats by framerate family if specified
 		if (genlockFormat != NTV2_FORMAT_UNKNOWN)
 			addFormat = IsMultiFormatCompatible(genlockFormat, vf);
+
+		struct obs_video_info ovi;
+		if (matchFPS && obs_get_video_info(&ovi)) {
+			NTV2FrameRate frameRate =
+				GetNTV2FrameRateFromVideoFormat(vf);
+			ULWord fpsNum = 0;
+			ULWord fpsDen = 0;
+			GetFramesPerSecond(frameRate, fpsNum, fpsDen);
+			uint32_t obsFrameTime =
+				1000000 * ovi.fps_den / ovi.fps_num;
+			uint32_t ajaFrameTime = 1000000 * fpsDen / fpsNum;
+			if (obsFrameTime != ajaFrameTime)
+				addFormat = false;
+		}
 
 		if (addFormat) {
 			std::string name = NTV2VideoFormatToString(vf, true);
