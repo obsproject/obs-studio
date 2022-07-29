@@ -474,11 +474,6 @@ bool OBSApp::InitGlobalConfigDefaults()
 	config_set_default_bool(globalConfig, "BasicWindow", "StudioModeLabels",
 				true);
 
-	if (!config_get_bool(globalConfig, "General", "Pre21Defaults")) {
-		config_set_default_string(globalConfig, "General",
-					  "CurrentTheme", DEFAULT_THEME);
-	}
-
 	config_set_default_string(globalConfig, "General", "HotkeyFocusType",
 				  "NeverDisableHotkeys");
 
@@ -1138,19 +1133,9 @@ bool OBSApp::InitTheme()
 	defaultStyleSheet = styleSheet();
 
 	const char *themeName =
-		config_get_string(globalConfig, "General", "CurrentTheme2");
-
-	if (!themeName)
-		/* Use deprecated "CurrentTheme" value if available */
-		themeName = config_get_string(globalConfig, "General",
-					      "CurrentTheme");
-	if (!themeName)
-		/* Use deprecated "Theme" value if available */
-		themeName = config_get_string(globalConfig, "General", "Theme");
+		config_get_string(globalConfig, "General", "CurrentTheme3");
 	if (!themeName)
 		themeName = DEFAULT_THEME;
-	if (!themeName)
-		themeName = "Dark";
 
 	if (strcmp(themeName, "Default") == 0)
 		themeName = "System";
