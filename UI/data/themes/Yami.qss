@@ -1041,7 +1041,8 @@ QGroupBox::indicator {
 	margin-left: 2px;
 }
 
-QCheckBox::indicator:unchecked {
+QCheckBox::indicator:unchecked,
+QGroupBox::indicator:unchecked {
 	image: url(./Yami/checkbox_unchecked.svg);
 }
 
@@ -1051,7 +1052,8 @@ QGroupBox::indicator:unchecked:hover {
 	image: url(./Yami/checkbox_unchecked_focus.svg);
 }
 
-QCheckBox::indicator:checked {
+QCheckBox::indicator:checked,
+QGroupBox::indicator:checked {
 	image: url(./Yami/checkbox_checked.svg);
 }
 
