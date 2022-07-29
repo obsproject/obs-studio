@@ -445,6 +445,11 @@ static bool init_screen_stream(struct screen_capture *sc)
 			includingApplications:target_application_array
 			     exceptingWindows:[[NSArray alloc] init]];
 
+		if (@available(macOS 13.0, *))
+			[sc->stream_properties
+				setBackgroundColor:CGColorGetConstantColor(
+							   kCGColorClear)];
+
 		set_display_mode(sc, target_display);
 	} break;
 	}
