@@ -157,7 +157,7 @@ read_codesign_ident() {
 #   + Your Apple developer ID is needed for notarization
 #   + An app-specific password is necessary for notarization from CLI
 #   + This password will be stored in your macOS keychain under the identifier
-#     'OBS-Codesign-Password' with access Apple's 'altool' only.
+#     'OBS-Codesign-Password' with access Apple's 'notarytool' only.
 ##############################################################################
 
 read_codesign_pass() {
@@ -174,8 +174,8 @@ read_codesign_pass() {
 
     step "Update notarization keychain..."
 
-    echo -n "${COLOR_ORANGE}"
-    /usr/bin/xcrun altool --store-password-in-keychain-item "OBS-Codesign-Password" -u "${CODESIGN_IDENT_USER}" -p "${CODESIGN_IDENT_PASS}"
-    echo -n "${COLOR_RESET}"
     CODESIGN_IDENT_SHORT=$(echo "${CODESIGN_IDENT}" | /usr/bin/sed -En "s/.+\((.+)\)/\1/p")
+    echo -n "${COLOR_ORANGE}"
+    /usr/bin/xcrun notarytool store-credentials "OBS-Codesign-Password" --apple-id "${CODESIGN_IDENT_USER}" --team-id "${CODESIGN_IDENT_SHORT}" --password "${CODESIGN_IDENT_PASS}"
+    echo -n "${COLOR_RESET}"
 }
