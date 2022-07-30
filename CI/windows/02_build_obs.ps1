@@ -43,7 +43,7 @@ function Build-OBS {
 
     $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
 
-    Invoke-Expression "cmake --build ${BuildDirectoryActual} --config ${BuildConfiguration}"
+    Invoke-External cmake --build "${BuildDirectoryActual}" --config ${BuildConfiguration}
 }
 
 function Configure-OBS {
@@ -64,8 +64,7 @@ function Configure-OBS {
     $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
 
     $CmakeCommand = @(
-        "-S . -B `"${BuildDirectoryActual}`"",
-        "-G `"${CmakeGenerator}`"",
+        "-G", ${CmakeGenerator}
         "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
         "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
         "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
@@ -90,7 +89,7 @@ function Configure-OBS {
         "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
     )
 
-    Invoke-Expression "cmake ${CmakeCommand}"
+    Invoke-External cmake -S . -B  "${BuildDirectoryActual}" @CmakeCommand
 
     Ensure-Directory ${CheckoutDir}
 }
