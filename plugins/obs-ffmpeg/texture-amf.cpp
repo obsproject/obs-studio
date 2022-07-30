@@ -1436,16 +1436,10 @@ constexpr amf_uint16 amf_hdr_primary(uint32_t num, uint32_t den)
 }
 
 constexpr amf_uint32 lum_mul = 10000;
-constexpr float lum_mul_f = (float)lum_mul;
 
 constexpr amf_uint32 amf_make_lum(amf_uint32 val)
 {
 	return val * lum_mul;
-}
-
-static inline amf_uint32 amf_nominal_level()
-{
-	return (amf_uint32)(obs_get_video_hdr_nominal_peak_level() * lum_mul_f);
 }
 
 static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
@@ -1487,6 +1481,10 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	set_hevc_property(enc, NOMINAL_RANGE, enc->full_range);
 
 	if (is_hdr) {
+		const int hdr_nominal_peak_level =
+			pq ? (int)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+
 		AMFBufferPtr buf;
 		enc->amf_context->AllocBuffer(AMF_MEMORY_HOST,
 					      sizeof(AMFHDRMetadata), &buf);
@@ -1500,10 +1498,10 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 		md->whitePoint[0] = amf_hdr_primary(3127, 10000);
 		md->whitePoint[1] = amf_hdr_primary(329, 1000);
 		md->minMasteringLuminance = 0;
-		md->maxMasteringLuminance = pq ? amf_nominal_level()
-					       : (hlg ? amf_make_lum(1000) : 0);
-		md->maxContentLightLevel = 0;
-		md->maxFrameAverageLightLevel = 0;
+		md->maxMasteringLuminance =
+			amf_make_lum(hdr_nominal_peak_level);
+		md->maxContentLightLevel = hdr_nominal_peak_level;
+		md->maxFrameAverageLightLevel = hdr_nominal_peak_level;
 		set_hevc_property(enc, INPUT_HDR_METADATA, buf);
 	}
 
