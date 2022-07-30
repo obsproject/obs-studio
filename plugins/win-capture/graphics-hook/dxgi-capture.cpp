@@ -25,7 +25,7 @@ resize_buffers_t RealResizeBuffers = nullptr;
 present_t RealPresent = nullptr;
 present1_t RealPresent1 = nullptr;
 
-thread_local bool dxgi_presenting = false;
+thread_local int dxgi_presenting = 0;
 struct ID3D12CommandQueue *dxgi_possible_swap_queues[8]{};
 size_t dxgi_possible_swap_queue_count;
 bool dxgi_present_attempted = false;
@@ -230,9 +230,9 @@ static HRESULT STDMETHODCALLTYPE hook_present(IDXGISwapChain *swap,
 		}
 	}
 
-	dxgi_presenting = true;
+	++dxgi_presenting;
 	const HRESULT hr = RealPresent(swap, sync_interval, flags);
-	dxgi_presenting = false;
+	--dxgi_presenting;
 	dxgi_present_attempted = true;
 
 	if (capture && capture_overlay) {
@@ -297,9 +297,9 @@ hook_present1(IDXGISwapChain1 *swap, UINT sync_interval, UINT flags,
 		}
 	}
 
-	dxgi_presenting = true;
+	++dxgi_presenting;
 	const HRESULT hr = RealPresent1(swap, sync_interval, flags, params);
-	dxgi_presenting = false;
+	--dxgi_presenting;
 	dxgi_present_attempted = true;
 
 	if (capture && capture_overlay) {
