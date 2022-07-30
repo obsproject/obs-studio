@@ -44,7 +44,7 @@ package-obs-standalone() {
     GIT_HASH=$(git rev-parse --short=9 HEAD)
     GIT_TAG=$(git describe --tags --abbrev=0)
 
-    if [ "${BUILD_FOR_DISTRIBUTION}" ]; then
+    if [ "${BUILD_FOR_DISTRIBUTION}" = "true" ]; then
         VERSION_STRING="${GIT_TAG}"
     else
         VERSION_STRING="${GIT_TAG}-${GIT_HASH}"
