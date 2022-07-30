@@ -39,10 +39,11 @@ struct nv_greenscreen_data {
 	obs_source_t *context;
 	bool images_allocated;
 	bool initial_render;
-	bool processing_stop;
+	volatile bool processing_stop;
 	bool processed_frame;
 	bool target_valid;
 	volatile bool got_new_frame;
+	signal_handler_t *handler;
 
 	/* RTX SDK vars */
 	NvVFX_Handle handle;
@@ -97,7 +98,7 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		return;
 	}
 
-	filter->processing_stop = true;
+	os_atomic_set_bool(&filter->processing_stop, true);
 
 	if (filter->images_allocated) {
 		obs_enter_graphics();
@@ -129,6 +130,62 @@ static void nv_greenscreen_filter_destroy(void *data)
 {
 	obs_queue_task(OBS_TASK_GRAPHICS, nv_greenscreen_filter_actual_destroy,
 		       data, false);
+}
+
+static void nv_greenscreen_filter_reset(void *data, calldata_t *calldata)
+{
+	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
+	NvCV_Status vfxErr;
+
+	os_atomic_set_bool(&filter->processing_stop, true);
+	// first destroy
+	if (filter->stream) {
+		NvVFX_CudaStreamDestroy(filter->stream);
+	}
+	if (filter->handle) {
+		NvVFX_DestroyEffect(filter->handle);
+	}
+	// recreate
+	/* 1. Create FX */
+	vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN, &filter->handle);
+	if (NVCV_SUCCESS != vfxErr) {
+		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+		error("Error recreating AI Greenscreen FX; error %i: %s",
+		      vfxErr, errString);
+		nv_greenscreen_filter_destroy(filter);
+	}
+
+	/* 2. Set models path & initialize CudaStream */
+	char buffer[MAX_PATH];
+	char modelDir[MAX_PATH];
+	nvvfx_get_sdk_path(buffer, MAX_PATH);
+	size_t max_len = sizeof(buffer) / sizeof(char);
+	snprintf(modelDir, max_len, "%s\\models", buffer);
+	vfxErr = NvVFX_SetString(filter->handle, NVVFX_MODEL_DIRECTORY,
+				 modelDir);
+	vfxErr = NvVFX_CudaStreamCreate(&filter->stream);
+	if (NVCV_SUCCESS != vfxErr) {
+		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+		error("Error creating CUDA Stream; error %i: %s", vfxErr,
+		      errString);
+		nv_greenscreen_filter_destroy(filter);
+	}
+	vfxErr = NvVFX_SetCudaStream(filter->handle, NVVFX_CUDA_STREAM,
+				     filter->stream);
+	if (NVCV_SUCCESS != vfxErr) {
+		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
+		error("Error setting CUDA Stream %i", vfxErr);
+		nv_greenscreen_filter_destroy(filter);
+	}
+
+	/* 3. load FX */
+	vfxErr = NvVFX_SetU32(filter->handle, NVVFX_MODE, filter->mode);
+	vfxErr = NvVFX_Load(filter->handle);
+	if (NVCV_SUCCESS != vfxErr)
+		error("Error loading AI Greenscreen FX %i", vfxErr);
+
+	filter->images_allocated = false;
+	os_atomic_set_bool(&filter->processing_stop, false);
 }
 
 static void init_images_greenscreen(struct nv_greenscreen_data *filter)
@@ -224,7 +281,7 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	return;
 fail:
 	error("Error during allocation of images");
-	filter->processing_stop = true;
+	os_atomic_set_bool(&filter->processing_stop, true);
 	return;
 }
 
@@ -264,7 +321,6 @@ static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error running the FX; error %i: %s", vfxErr, errString);
-		goto fail;
 	}
 
 	/* 4. Map dst texture before transfer from dst img provided by FX */
@@ -295,7 +351,7 @@ static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 
 	return true;
 fail:
-	filter->processing_stop = true;
+	os_atomic_set_bool(&filter->processing_stop, true);
 	return false;
 }
 
@@ -317,7 +373,8 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	filter->width = 0;
 	filter->height = 0;
 	filter->initial_render = false;
-	filter->processing_stop = false;
+	os_atomic_set_bool(&filter->processing_stop, false);
+	filter->handler = NULL;
 
 	/* 1. Create FX */
 	vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN, &filter->handle);
@@ -518,7 +575,11 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
-
+	if (parent && !filter->handler) {
+		filter->handler = obs_source_get_signal_handler(parent);
+		signal_handler_connect(filter->handler, "update_properties",
+				       nv_greenscreen_filter_reset, filter);
+	}
 	/* 1. Render to retrieve texture. */
 	render = filter->render;
 	if (!render) {
@@ -573,7 +634,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 				NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error creating src img; error %i: %s", vfxErr,
 			      errString);
-			filter->processing_stop = true;
+			os_atomic_set_bool(&filter->processing_stop, true);
 			return;
 		}
 		vfxErr = NvCVImage_InitFromD3D11Texture(filter->src_img,
@@ -583,7 +644,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 				NvCV_GetErrorStringFromCode(vfxErr);
 			error("Error passing src ID3D11Texture to img; error %i: %s",
 			      vfxErr, errString);
-			filter->processing_stop = true;
+			os_atomic_set_bool(&filter->processing_stop, true);
 			return;
 		}
 		filter->initial_render = true;
