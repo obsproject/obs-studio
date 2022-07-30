@@ -2899,6 +2899,16 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },        
+        {
+            "name": "StreamVi",
+            "stream_key_link": "https://streamvi.ru/settings",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live1.streamvi.ru/live"
+                }
+            ]
         }
     ]
 }
