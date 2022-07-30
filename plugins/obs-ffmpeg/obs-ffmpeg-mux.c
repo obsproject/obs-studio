@@ -36,11 +36,13 @@ static const char *ffmpeg_mux_getname(void *type)
 	return obs_module_text("FFmpegMuxer");
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
 static const char *ffmpeg_mpegts_mux_getname(void *type)
 {
 	UNUSED_PARAMETER(type);
 	return obs_module_text("FFmpegMpegtsMuxer");
 }
+#endif
 
 static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
@@ -898,6 +900,7 @@ static int connect_time(struct ffmpeg_muxer *stream)
 	return 0;
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
 static int ffmpeg_mpegts_mux_connect_time(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -921,7 +924,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.get_properties = ffmpeg_mux_properties,
 	.get_connect_time_ms = ffmpeg_mpegts_mux_connect_time,
 };
-
+#endif
 /* ------------------------------------------------------------------------ */
 
 static const char *replay_buffer_getname(void *type)

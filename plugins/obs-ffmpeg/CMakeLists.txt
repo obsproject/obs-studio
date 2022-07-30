@@ -1,6 +1,7 @@
 project(obs-ffmpeg)
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
+option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
 find_package(
   FFmpeg REQUIRED
@@ -14,7 +15,12 @@ find_package(
 
 add_library(obs-ffmpeg MODULE)
 add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
+
 add_subdirectory(ffmpeg-mux)
+if(ENABLE_NEW_MPEGTS_OUTPUT)
+  find_package(Librist)
+  find_package(Libsrt)
+endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in
                ${CMAKE_BINARY_DIR}/config/obs-ffmpeg-config.h)
@@ -49,6 +55,17 @@ target_link_libraries(
           FFmpeg::avutil
           FFmpeg::swscale
           FFmpeg::swresample)
+
+if(ENABLE_NEW_MPEGTS_OUTPUT)
+  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-mpegts.c obs-ffmpeg-srt.h
+                                    obs-ffmpeg-rist.h obs-ffmpeg-url.h)
+
+  target_link_libraries(obs-ffmpeg PRIVATE Librist::Librist Libsrt::Libsrt)
+  if(OS_WINDOWS)
+    target_link_libraries(obs-ffmpeg PRIVATE ws2_32.lib)
+  endif()
+  target_compile_definitions(obs-ffmpeg PRIVATE NEW_MPEGTS_OUTPUT)
+endif()
 
 if(ENABLE_FFMPEG_LOGGING)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-logging.c)
