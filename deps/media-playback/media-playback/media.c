@@ -728,6 +728,9 @@ static bool init_avformat(mp_media_t *m)
 	m->has_video = mp_decode_init(m, AVMEDIA_TYPE_VIDEO, m->hw);
 	m->has_audio = mp_decode_init(m, AVMEDIA_TYPE_AUDIO, m->hw);
 
+	if (m->set_a_cb)
+		m->set_a_cb(m->opaque, m->has_audio);
+
 	if (!m->has_video && !m->has_audio) {
 		blog(LOG_WARNING,
 		     "MP: Could not initialize audio or video: "
@@ -880,6 +883,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
+	media->set_a_cb = info->set_a_cb;
 	media->ffmpeg_options = info->ffmpeg_options;
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;

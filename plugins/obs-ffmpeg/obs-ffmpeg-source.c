@@ -302,6 +302,12 @@ static void media_stopped(void *opaque)
 	obs_source_media_ended(s->source);
 }
 
+static void set_audio(void *opaque, bool have_audio)
+{
+	struct ffmpeg_source *s = opaque;
+	obs_source_set_audio_active(s->source, have_audio);
+}
+
 static void ffmpeg_source_open(struct ffmpeg_source *s)
 {
 	if (s->input && *s->input) {
@@ -311,6 +317,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.v_preload_cb = preload_frame,
 			.v_seek_cb = seek_frame,
 			.a_cb = get_audio,
+			.set_a_cb = set_audio,
 			.stop_cb = media_stopped,
 			.path = s->input,
 			.format = s->input_format,
