@@ -70,7 +70,7 @@ install_sparkle() {
 
     if [ "${CI}" -a "${RESTORED_SPARKLE}" ]; then
         _SKIP=TRUE
-    elif [ -d "${DEPS_BUILD_DIR}/obs-deps/Frameworks/Sparkle.framework" -a -f "${DEPS_BUILD_DIR}/obs-deps/Frameworks/Sparkle.framework/Sparkle" ]; then
+    elif [ -d "${DEPS_BUILD_DIR}/obs-deps/lib/Sparkle.framework" -a -f "${DEPS_BUILD_DIR}/obs-deps/lib/Sparkle.framework/Sparkle" ]; then
         _SKIP=TRUE
     fi
 
