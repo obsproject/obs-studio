@@ -287,7 +287,8 @@ bool ffmpeg_decode_audio(struct ffmpeg_decode *decode, uint8_t *data,
 }
 
 static enum video_colorspace
-convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
+		    enum AVColorPrimaries color_primaries)
 {
 	switch (s) {
 	case AVCOL_SPC_BT709:
@@ -302,7 +303,11 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
 						       : VIDEO_CS_2100_PQ;
 	default:
-		return VIDEO_CS_DEFAULT;
+		return (color_primaries == AVCOL_PRI_BT2020)
+			       ? ((trc == AVCOL_TRC_ARIB_STD_B67)
+					  ? VIDEO_CS_2100_HLG
+					  : VIDEO_CS_2100_PQ)
+			       : VIDEO_CS_DEFAULT;
 	}
 }
 
@@ -392,7 +397,8 @@ bool ffmpeg_decode_video(struct ffmpeg_decode *decode, uint8_t *data,
 	}
 
 	const enum video_colorspace cs = convert_color_space(
-		decode->frame->colorspace, decode->frame->color_trc);
+		decode->frame->colorspace, decode->frame->color_trc,
+		decode->frame->color_primaries);
 
 	const bool success = video_format_get_parameters_for_format(
 		cs, range, format, frame->color_matrix, frame->color_range_min,
