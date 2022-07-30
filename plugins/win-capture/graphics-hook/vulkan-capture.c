@@ -753,24 +753,6 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	VkPhysicalDeviceMemoryProperties pdmp;
 	ifuncs->GetPhysicalDeviceMemoryProperties(data->phy_device, &pdmp);
 
-	uint32_t mem_type_idx = 0;
-
-	for (; mem_type_idx < pdmp.memoryTypeCount; mem_type_idx++) {
-		if ((mr.memoryTypeBits & (1 << mem_type_idx)) &&
-		    (pdmp.memoryTypes[mem_type_idx].propertyFlags &
-		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
-			    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
-			break;
-		}
-	}
-
-	if (mem_type_idx == pdmp.memoryTypeCount) {
-		flog("failed to get memory type index");
-		funcs->DestroyImage(device, swap->export_image, data->ac);
-		swap->export_image = VK_NULL_HANDLE;
-		return false;
-	}
-
 	/* -------------------------------------------------------- */
 	/* allocate memory                                          */
 
@@ -786,7 +768,6 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 	mai.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
 	mai.pNext = &imw32hi;
 	mai.allocationSize = mr.size;
-	mai.memoryTypeIndex = mem_type_idx;
 
 	VkMemoryDedicatedAllocateInfo mdai;
 	mdai.sType = VK_STRUCTURE_TYPE_MEMORY_DEDICATED_ALLOCATE_INFO;
@@ -799,9 +780,46 @@ static inline bool vk_shtex_init_vulkan_tex(struct vk_data *data,
 		imw32hi.pNext = &mdai;
 	}
 
-	res = funcs->AllocateMemory(device, &mai, NULL, &swap->export_mem);
-	if (VK_SUCCESS != res) {
-		flog("failed to AllocateMemory: %s", result_to_str(res));
+	bool allocated = false;
+	for (uint32_t i = 0; i < pdmp.memoryTypeCount; ++i) {
+		if ((mr.memoryTypeBits & (1 << i)) &&
+		    (pdmp.memoryTypes[i].propertyFlags &
+		     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) ==
+			    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+			mai.memoryTypeIndex = i;
+			res = funcs->AllocateMemory(device, &mai, NULL,
+						    &swap->export_mem);
+			allocated = res == VK_SUCCESS;
+			if (allocated)
+				break;
+
+			flog("failed to AllocateMemory (DEVICE_LOCAL): %s (%d)",
+			     result_to_str(res), (int)res);
+		}
+	}
+
+	if (!allocated) {
+		/* Try again without DEVICE_LOCAL */
+		for (uint32_t i = 0; i < pdmp.memoryTypeCount; ++i) {
+			if ((mr.memoryTypeBits & (1 << i)) &&
+			    (pdmp.memoryTypes[i].propertyFlags &
+			     VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) !=
+				    VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT) {
+				mai.memoryTypeIndex = i;
+				res = funcs->AllocateMemory(device, &mai, NULL,
+							    &swap->export_mem);
+				allocated = res == VK_SUCCESS;
+				if (allocated)
+					break;
+
+				flog("failed to AllocateMemory (not DEVICE_LOCAL): %s (%d)",
+				     result_to_str(res), (int)res);
+			}
+		}
+	}
+
+	if (!allocated) {
+		flog("failed to allocate memory of any type");
 		funcs->DestroyImage(device, swap->export_image, data->ac);
 		swap->export_image = VK_NULL_HANDLE;
 		return false;
