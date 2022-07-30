@@ -407,8 +407,8 @@
       "sources": [
         {
           "type": "archive",
-          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_4638_linux64.tar.bz2",
-          "sha256": "54aba14a7228bb8f2573e081d795b4161bf3568796f8729ad42a9f8ef9c6d1ec"
+          "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux64.tar.bz2",
+          "sha256": "1fe9c09bb43e8d2be2c07b792e69fb51250782e68f2c8d1d30da2559cfb9ae0e"
         }
       ]
     },
