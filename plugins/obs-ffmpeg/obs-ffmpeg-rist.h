@@ -132,9 +132,9 @@ static int cb_stats(void *arg, const struct rist_stats *stats_container)
 		blog(LOG_DEBUG,
 		     "[obs-ffmpeg mpegts muxer / librist]: Session Summary\n"
 		     "\tbandwidth [%.3f Mbps]\n"
-		     "\tpackets sent [%lu]\n"
-		     "\tpkts received [%lu]\n"
-		     "\tpkts retransmitted [%lu]\n"
+		     "\tpackets sent [%" PRIu64 "]\n"
+		     "\tpkts received [%" PRIu64 "]\n"
+		     "\tpkts retransmitted [%" PRIu64 "]\n"
 		     "\tquality (pkt sent over sent+retransmitted+skipped) [%.2f]\n"
 		     "\trtt [%" PRIu32 " ms]\n",
 		     (double)(stats_container->stats.sender_peer.bandwidth) /
