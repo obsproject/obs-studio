@@ -18,8 +18,8 @@ add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
 
 add_subdirectory(ffmpeg-mux)
 if(ENABLE_NEW_MPEGTS_OUTPUT)
-  find_package(Librist)
-  find_package(Libsrt)
+  find_package(Librist REQUIRED)
+  find_package(Libsrt REQUIRED)
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in
