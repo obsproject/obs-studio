@@ -126,8 +126,11 @@ int obs_open_module(obs_module_t **module, const char *path,
 	}
 
 	errorcode = load_module_exports(&mod, path);
-	if (errorcode != MODULE_SUCCESS)
+	if (errorcode != MODULE_SUCCESS) {
+		blog(LOG_WARNING, "Module '%s' missing exports", path);
+		os_dlclose(mod.module);
 		return errorcode;
+	}
 
 	mod.bin_path = bstrdup(path);
 	mod.file = strrchr(mod.bin_path, '/');
