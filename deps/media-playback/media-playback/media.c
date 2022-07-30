@@ -126,7 +126,8 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 }
 
 static inline enum video_colorspace
-convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
+		    enum AVColorPrimaries color_primaries)
 {
 	switch (s) {
 	case AVCOL_SPC_BT709:
@@ -141,7 +142,11 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
 						       : VIDEO_CS_2100_PQ;
 	default:
-		return VIDEO_CS_DEFAULT;
+		return (color_primaries == AVCOL_PRI_BT2020)
+			       ? ((trc == AVCOL_TRC_ARIB_STD_B67)
+					  ? VIDEO_CS_2100_HLG
+					  : VIDEO_CS_2100_PQ)
+			       : VIDEO_CS_DEFAULT;
 	}
 }
 
@@ -421,7 +426,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 		frame->data[0] -= frame->linesize[0] * ((size_t)f->height - 1);
 
 	new_format = convert_pixel_format(m->scale_format);
-	new_space = convert_color_space(f->colorspace, f->color_trc);
+	new_space = convert_color_space(f->colorspace, f->color_trc,
+					f->color_primaries);
 	new_range = m->force_range == VIDEO_RANGE_DEFAULT
 			    ? convert_color_range(f->color_range)
 			    : m->force_range;
