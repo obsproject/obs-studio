@@ -321,6 +321,8 @@ static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error running the FX; error %i: %s", vfxErr, errString);
+		if (vfxErr == NVCV_ERR_CUDA)
+			nv_greenscreen_filter_reset(filter, NULL);
 	}
 
 	/* 4. Map dst texture before transfer from dst img provided by FX */
