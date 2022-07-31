@@ -35,10 +35,10 @@ install_qt-deps() {
         _HASH="${2}"
     fi
 
-    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt5-${1}-${_ARCH}.tar.xz" "${_HASH}"
+    check_and_fetch "https://github.com/obsproject/obs-deps/releases/download/${1}/macos-deps-qt6-${1}-${_ARCH}.tar.xz" "${_HASH}"
     mkdir -p obs-deps
     step "Unpack..."
-    /usr/bin/tar -xf "./macos-deps-qt5-${1}-${_ARCH}.tar.xz" -C ./obs-deps
+    /usr/bin/tar -xf "./macos-deps-qt6-${1}-${_ARCH}.tar.xz" -C ./obs-deps
     /usr/bin/xattr -r -d com.apple.quarantine ./obs-deps
 }
 
@@ -90,7 +90,7 @@ install_cef() {
     status "Set up dependency CEF v${1}"
     ensure_dir "${DEPS_BUILD_DIR}"
     unset _SKIP
-    
+
     if [ "${CI}" -a "${RESTORED_CEF}" ]; then
         _SKIP=TRUE
     elif [ -d "${DEPS_BUILD_DIR}/cef_binary_${1}_macos_${ARCH:-x86_64}" -a -f "${DEPS_BUILD_DIR}/cef_binary_${1}_macos_${ARCH:-x86_64}/build/libcef_dll_wrapper/libcef_dll_wrapper.a" ]; then
