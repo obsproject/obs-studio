@@ -750,9 +750,15 @@ static int libsrt_open(URLContext *h, const char *uri)
 	if (ret < 0)
 		goto err;
 
+#ifdef _WIN32
 	struct timeb timebuffer;
 	ftime(&timebuffer);
 	s->time = (double)timebuffer.time + 0.001 * (double)timebuffer.millitm;
+#else
+	struct timespec timesp;
+	clock_gettime(CLOCK_REALTIME, &timesp);
+	s->time = (double)timesp.tv_sec + 0.000000001 * (double)timesp.tv_nsec;
+#endif
 
 	return 0;
 
@@ -782,10 +788,17 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 		 * rtt: round-trip time
 		 * link bandwidth: bandwidth from ingest to egress
 		*/
+#ifdef _WIN32
 		struct timeb timebuffer;
 		ftime(&timebuffer);
 		double time = (double)timebuffer.time +
 			      0.001 * (double)timebuffer.millitm;
+#else
+		struct timespec timesp;
+		clock_gettime(CLOCK_REALTIME, &timesp);
+		double time = (double)timesp.tv_sec +
+			      0.000000001 * (double)timesp.tv_nsec;
+#endif
 		if (time > (s->time + 60.0)) {
 			srt_bistats(s->fd, &perf, 0, 1);
 			blog(LOG_INFO,
