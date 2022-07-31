@@ -269,11 +269,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 		edit->setTabStopDistance(40);
-#else
-		edit->setTabStopWidth(40);
-#endif
 		if (monospace) {
 			QFont f("Courier");
 			f.setStyleHint(QFont::Monospace);
