@@ -311,6 +311,18 @@ if(TARGET OBS::browser-panels)
   if(RESTREAM_ENABLED)
     target_sources(obs PRIVATE auth-restream.cpp auth-restream.hpp)
   endif()
+
+  if(OS_WINDOWS OR OS_MACOS)
+    set(ENABLE_WHATSNEW
+        ON
+        CACHE INTERNAL "Enable WhatsNew dialog")
+  elseif(OS_LINUX)
+    option(ENABLE_WHATSNEW "Enable WhatsNew dialog" ON)
+  endif()
+
+  if(ENABLE_WHATSNEW)
+    target_compile_definitions(obs PRIVATE WHATSNEW_ENABLED)
+  endif()
 endif()
 
 if(YOUTUBE_ENABLED)
@@ -427,6 +439,21 @@ elseif(OS_MACOS)
   target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp
                              window-permissions.hpp)
 
+  if(ENABLE_WHATSNEW)
+    find_library(SECURITY Security)
+    mark_as_advanced(SECURITY)
+    target_link_libraries(obs PRIVATE ${SECURITY} OBS::blake2)
+
+    target_sources(
+      obs
+      PRIVATE nix-update/crypto-helpers.hpp
+              nix-update/crypto-helpers-mac.mm
+              nix-update/nix-update.cpp
+              nix-update/nix-update.hpp
+              nix-update/nix-update-helpers.cpp
+              nix-update/nix-update-helpers.hpp)
+  endif()
+
   set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS
                                                          -fobjc-arc)
 
@@ -446,6 +473,25 @@ elseif(OS_POSIX)
 
   if(OS_FREEBSD)
     target_link_libraries(obs PRIVATE procstat)
+  endif()
+
+  if(OS_LINUX AND ENABLE_WHATSNEW)
+    find_package(MbedTLS)
+    if(NOT MBEDTLS_FOUND)
+      obs_status(
+        FATAL_ERROR
+        "mbedTLS not found, but required for WhatsNew support on Linux")
+    endif()
+
+    target_sources(
+      obs
+      PRIVATE nix-update/crypto-helpers.hpp
+              nix-update/crypto-helpers-mbedtls.cpp
+              nix-update/nix-update.cpp
+              nix-update/nix-update.hpp
+              nix-update/nix-update-helpers.cpp
+              nix-update/nix-update-helpers.hpp)
+    target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
   endif()
 endif()
 
