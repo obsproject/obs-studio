@@ -222,12 +222,12 @@ SourceTree QLineEdit:focus {
 
 OBSBasicSettings QListWidget {
     border-radius: 4px;
+    padding: 3px;
 }
 
 OBSBasicSettings QListWidget::item {
-    padding-left: 4px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    border-radius: 4px;
+    padding: 6px;
 }
 
 /* Dock Widget */

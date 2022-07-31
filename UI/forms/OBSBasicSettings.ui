@@ -51,6 +51,9 @@
        <property name="currentRow">
         <number>0</number>
        </property>
+       <property name="spacing">
+        <number>1</number>
+       </property>
        <item>
         <property name="text">
          <string>Basic.Settings.General</string>
