@@ -171,12 +171,16 @@ QListWidget::item {
     color: palette(text);
 }
 
+SceneTree,
+SourceTree {
+    padding: 3px;
+}
+
 SceneTree::item,
 SourceTree::item {
-	padding: 3px;
+    border-radius: 4px;
+    padding: 6px;
     color: palette(text);
-	margin-bottom: 1px;
-	margin-top: 1px;
 	border: 0px solid transparent;
 }
 
@@ -1093,6 +1097,11 @@ LockedCheckBox {
     margin-left: -2px;
 }
 
+LockedCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
 LockedCheckBox::indicator:checked,
 LockedCheckBox::indicator:checked:hover {
     image: url(./Dark/locked.svg);
@@ -1109,6 +1118,11 @@ VisibilityCheckBox {
     outline: none;
     background: transparent;
     margin-left: -1px;
+}
+
+VisibilityCheckBox::indicator {
+    width: 16px;
+    height: 16px;
 }
 
 VisibilityCheckBox::indicator:checked,
