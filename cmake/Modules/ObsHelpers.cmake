@@ -102,8 +102,6 @@ endfunction()
 
 # Helper function to set up OBS scripting plugin targets
 function(setup_script_plugin_target target)
-  set_target_properties(${target} PROPERTIES PREFIX "")
-
   install(
     TARGETS ${target}
     LIBRARY DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
