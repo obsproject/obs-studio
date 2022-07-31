@@ -592,8 +592,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	// Remove the Advanced Audio section if monitoring is not supported, as the monitoring device selection is the only item in the group box.
 	if (!obs_audio_monitoring_available()) {
-		delete ui->audioAdvGroupBox;
-		ui->audioAdvGroupBox = nullptr;
+		delete ui->monitoringDeviceLabel;
+		ui->monitoringDeviceLabel = nullptr;
+		delete ui->monitoringDevice;
+		ui->monitoringDevice = nullptr;
 	}
 
 #ifdef _WIN32
@@ -648,9 +650,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	delete ui->browserHWAccel;
 	delete ui->sourcesGroup;
 #endif
-#if defined(__APPLE__) || defined(PULSEAUDIO_FOUND)
 	delete ui->disableAudioDucking;
-#endif
+
 	ui->rendererLabel = nullptr;
 	ui->renderer = nullptr;
 	ui->adapterLabel = nullptr;
@@ -664,9 +665,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->browserHWAccel = nullptr;
 	ui->sourcesGroup = nullptr;
 #endif
-#if defined(__APPLE__) || defined(PULSEAUDIO_FOUND)
 	ui->disableAudioDucking = nullptr;
-#endif
 #endif
 
 #ifndef __APPLE__
