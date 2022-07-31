@@ -45,8 +45,11 @@ bool ffmpeg_video_encoder_init_codec(struct ffmpeg_video_encoder *enc)
 	enc->vframe->format = enc->context->pix_fmt;
 	enc->vframe->width = enc->context->width;
 	enc->vframe->height = enc->context->height;
-	enc->vframe->colorspace = enc->context->colorspace;
 	enc->vframe->color_range = enc->context->color_range;
+	enc->vframe->color_primaries = enc->context->color_primaries;
+	enc->vframe->color_trc = enc->context->color_trc;
+	enc->vframe->colorspace = enc->context->colorspace;
+	enc->vframe->chroma_location = enc->context->chroma_sample_location;
 
 	ret = av_frame_get_buffer(enc->vframe, base_get_alignment());
 	if (ret < 0) {
@@ -96,11 +99,13 @@ void ffmpeg_video_encoder_update(struct ffmpeg_video_encoder *enc, int bitrate,
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_SMPTE2084;
 		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
+		enc->context->chroma_sample_location = AVCHROMA_LOC_TOPLEFT;
 		break;
 	case VIDEO_CS_2100_HLG:
 		enc->context->color_primaries = AVCOL_PRI_BT2020;
 		enc->context->color_trc = AVCOL_TRC_ARIB_STD_B67;
 		enc->context->colorspace = AVCOL_SPC_BT2020_NCL;
+		enc->context->chroma_sample_location = AVCHROMA_LOC_TOPLEFT;
 	}
 
 	if (keyint_sec)

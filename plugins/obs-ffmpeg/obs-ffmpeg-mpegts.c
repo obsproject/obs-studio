@@ -193,6 +193,10 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	context->color_primaries = data->config.color_primaries;
 	context->color_trc = data->config.color_trc;
 	context->colorspace = data->config.colorspace;
+	context->chroma_sample_location =
+		(data->config.colorspace == AVCOL_SPC_BT2020_NCL)
+			? AVCHROMA_LOC_TOPLEFT
+			: AVCHROMA_LOC_LEFT;
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
