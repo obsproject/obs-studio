@@ -1721,7 +1721,9 @@ QString OBSTranslator::translate(const char *context, const char *sourceText,
 				 const char *disambiguation, int n) const
 {
 	const char *out = nullptr;
-	if (!App()->TranslateString(sourceText, &out))
+	QString str(sourceText);
+	str.replace(" ", "");
+	if (!App()->TranslateString(QT_TO_UTF8(str), &out))
 		return QString(sourceText);
 
 	UNUSED_PARAMETER(context);
