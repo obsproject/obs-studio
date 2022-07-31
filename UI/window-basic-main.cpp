@@ -81,6 +81,10 @@
 #include "windows.h"
 #endif
 
+#if !defined(_WIN32) && defined(WHATSNEW_ENABLED)
+#include "nix-update/nix-update.hpp"
+#endif
+
 #include "ui_OBSBasic.h"
 #include "ui_ColorSelect.h"
 
@@ -2106,7 +2110,7 @@ void OBSBasic::OnFirstLoad()
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
-#if defined(BROWSER_AVAILABLE) && defined(_WIN32)
+#ifdef WHATSNEW_ENABLED
 	/* Attempt to load init screen if available */
 	if (cef) {
 		WhatsNewInfoThread *wnit = new WhatsNewInfoThread();
@@ -2141,8 +2145,7 @@ void OBSBasic::OnFirstLoad()
 /* shows a "what's new" page on startup of new versions using CEF */
 void OBSBasic::ReceivedIntroJson(const QString &text)
 {
-#ifdef BROWSER_AVAILABLE
-#ifdef _WIN32
+#ifdef WHATSNEW_ENABLED
 	if (closing)
 		return;
 
@@ -2232,9 +2235,6 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 #else
 	UNUSED_PARAMETER(text);
 #endif
-#else
-	UNUSED_PARAMETER(text);
-#endif
 }
 
 #undef CUR_VER
@@ -2243,7 +2243,6 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 void OBSBasic::ShowWhatsNew(const QString &url)
 {
 #ifdef BROWSER_AVAILABLE
-#ifdef _WIN32
 	if (closing)
 		return;
 
@@ -2279,9 +2278,6 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 	topLayout->addLayout(bottomLayout);
 
 	dlg->show();
-#else
-	UNUSED_PARAMETER(url);
-#endif
 #else
 	UNUSED_PARAMETER(url);
 #endif
