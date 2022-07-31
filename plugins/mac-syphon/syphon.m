@@ -680,6 +680,8 @@ static inline void build_sprite_rect(struct gs_vb_data *data, float origin_x,
 
 static void syphon_video_tick(void *data, float seconds)
 {
+	UNUSED_PARAMETER(seconds);
+
 	syphon_t s = data;
 
 	if (!s->tex)
