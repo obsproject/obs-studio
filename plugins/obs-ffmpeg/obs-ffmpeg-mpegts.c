@@ -1168,7 +1168,7 @@ static bool write_header(struct ffmpeg_output *stream, struct ffmpeg_data *data)
 	return true;
 }
 
-static bool ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
+static void ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
 {
 	struct ffmpeg_output *stream = data;
 	struct ffmpeg_data *ff_data = &stream->ff_data;
@@ -1191,28 +1191,27 @@ static bool ffmpeg_mpegts_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (!stream->active)
-		return 0;
+		return;
 
 	/* encoder failure */
 	if (!packet) {
 		obs_output_signal_stop(stream->output, OBS_OUTPUT_ENCODE_ERROR);
 		ffmpeg_mpegts_deactivate(stream);
-		return 0;
+		return;
 	}
 
 	if (stopping(stream)) {
 		if (packet->sys_dts_usec >= (int64_t)stream->stop_ts) {
 			ffmpeg_mpegts_deactivate(stream);
-			return 0;
+			return;
 		}
 	}
 
 	mpegts_write_packet(stream, packet);
-	return 1;
+	return;
 fail:
 	obs_output_signal_stop(stream->output, code);
 	ffmpeg_mpegts_full_stop(stream);
-	return false;
 }
 
 static obs_properties_t *ffmpeg_mpegts_properties(void *unused)
