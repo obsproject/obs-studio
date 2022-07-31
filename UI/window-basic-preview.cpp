@@ -577,7 +577,7 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	    event->button() == Qt::LeftButton) {
 		setCursor(Qt::ClosedHandCursor);
 		scrollingFrom.x = pos.x();
-		scrollingFrom.y = pos.x();
+		scrollingFrom.y = pos.y();
 		return;
 	}
 
