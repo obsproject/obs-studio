@@ -82,10 +82,8 @@ int OBSIgnoreWheelProxyStyle::styleHint(StyleHint hint,
 					const QWidget *widget,
 					QStyleHintReturn *returnData) const
 {
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 	if (hint == SH_ComboBox_AllowWheelScrolling)
 		return 0;
-#endif
 
 	return QProxyStyle::styleHint(hint, option, widget, returnData);
 }
