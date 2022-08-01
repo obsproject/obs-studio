@@ -164,6 +164,7 @@ macro(setup_obs_project)
   get_filename_component(CPACK_DMG_BACKGROUND_FILENAME
                          ${CPACK_DMG_BACKGROUND_IMAGE} NAME)
   set(CPACK_DMG_FORMAT "UDZO")
+  set(CPACK_DMG_FILESYSTEM "APFS")
   set(CPACK_DMG_DS_STORE_SETUP_SCRIPT "${CMAKE_BINARY_DIR}/package.applescript")
 
   set(_DMG_WINDOW_X "100")

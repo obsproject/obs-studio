@@ -710,7 +710,6 @@ static void on_state_changed_cb(void *user_data, enum pw_stream_state old,
 				enum pw_stream_state state, const char *error)
 {
 	UNUSED_PARAMETER(old);
-	UNUSED_PARAMETER(error);
 
 	obs_pipewire_data *obs_pw = user_data;
 
@@ -736,8 +735,6 @@ static void on_core_info_cb(void *user_data, const struct pw_core_info *info)
 static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 			     const char *message)
 {
-	UNUSED_PARAMETER(seq);
-
 	obs_pipewire_data *obs_pw = user_data;
 
 	blog(LOG_ERROR, "[pipewire] Error id:%u seq:%d res:%d (%s): %s", id,

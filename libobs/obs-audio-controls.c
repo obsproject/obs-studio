@@ -551,8 +551,6 @@ static void volmeter_source_data_received(void *vptr, obs_source_t *source,
 	pthread_mutex_unlock(&volmeter->mutex);
 
 	signal_levels_updated(volmeter, magnitude, peak, input_peak);
-
-	UNUSED_PARAMETER(source);
 }
 
 obs_fader_t *obs_fader_create(enum obs_fader_type type)

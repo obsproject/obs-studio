@@ -36,11 +36,13 @@ static const char *ffmpeg_mux_getname(void *type)
 	return obs_module_text("FFmpegMuxer");
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
 static const char *ffmpeg_mpegts_mux_getname(void *type)
 {
 	UNUSED_PARAMETER(type);
 	return obs_module_text("FFmpegMpegtsMuxer");
 }
+#endif
 
 static inline void replay_buffer_clear(struct ffmpeg_muxer *stream)
 {
@@ -79,6 +81,17 @@ static void ffmpeg_mux_destroy(void *data)
 	bfree(stream);
 }
 
+static void split_file_proc(void *data, calldata_t *cd)
+{
+	struct ffmpeg_muxer *stream = data;
+
+	calldata_set_bool(cd, "split_file_enabled", stream->split_file);
+	if (!stream->split_file)
+		return;
+
+	os_atomic_set_bool(&stream->manual_split, true);
+}
+
 static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 {
 	struct ffmpeg_muxer *stream = bzalloc(sizeof(*stream));
@@ -89,6 +102,10 @@ static void *ffmpeg_mux_create(obs_data_t *settings, obs_output_t *output)
 
 	signal_handler_t *sh = obs_output_get_signal_handler(output);
 	signal_handler_add(sh, "void file_changed(string next_file)");
+
+	proc_handler_t *ph = obs_output_get_proc_handler(output);
+	proc_handler_add(ph, "void split_file(out bool split_file_enabled)",
+			 split_file_proc, stream);
 
 	UNUSED_PARAMETER(settings);
 	return stream;
@@ -385,8 +402,7 @@ static bool ffmpeg_mux_start(void *data)
 			obs_data_get_int(settings, "max_time_sec") * 1000000LL;
 		stream->max_size = obs_data_get_int(settings, "max_size_mb") *
 				   (1024 * 1024);
-		stream->split_file = stream->max_time > 0 ||
-				     stream->max_size > 0;
+		stream->split_file = obs_data_get_bool(settings, "split_file");
 		stream->reset_timestamps =
 			obs_data_get_bool(settings, "reset_timestamps");
 		stream->allow_overwrite =
@@ -687,6 +703,9 @@ static inline bool should_split(struct ffmpeg_muxer *stream,
 	if (!packet->keyframe)
 		return false;
 
+	if (os_atomic_load_bool(&stream->manual_split))
+		return true;
+
 	/* reached maximum file size */
 	if (stream->max_size > 0 &&
 	    stream->cur_size + (int64_t)packet->size >= stream->max_size)
@@ -834,6 +853,7 @@ static void ffmpeg_mux_data(void *data, struct encoder_packet *packet)
 		}
 		da_free(stream->mux_packets);
 		stream->split_file_ready = false;
+		os_atomic_set_bool(&stream->manual_split, false);
 	}
 
 	if (stream->split_file && stream->reset_timestamps)
@@ -880,6 +900,7 @@ static int connect_time(struct ffmpeg_muxer *stream)
 	return 0;
 }
 
+#ifndef NEW_MPEGTS_OUTPUT
 static int ffmpeg_mpegts_mux_connect_time(void *data)
 {
 	struct ffmpeg_muxer *stream = data;
@@ -903,7 +924,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.get_properties = ffmpeg_mux_properties,
 	.get_connect_time_ms = ffmpeg_mpegts_mux_connect_time,
 };
-
+#endif
 /* ------------------------------------------------------------------------ */
 
 static const char *replay_buffer_getname(void *type)
@@ -917,7 +938,6 @@ static void replay_buffer_hotkey(void *data, obs_hotkey_id id,
 {
 	UNUSED_PARAMETER(id);
 	UNUSED_PARAMETER(hotkey);
-	UNUSED_PARAMETER(pressed);
 
 	if (!pressed)
 		return;

@@ -11,7 +11,7 @@ The OBS Studio frontend API is the API specific to OBS Studio itself.
 Structures/Enumerations
 -----------------------
 
-.. type:: enum obs_frontend_event
+.. enum:: obs_frontend_event
 
    Specifies a front-end event.  Can be one of the following values:
 
@@ -179,7 +179,7 @@ Structures/Enumerations
      Triggered when the virtual camera is stopped.
 
 
-.. type:: struct obs_frontend_source_list
+.. struct:: obs_frontend_source_list
 
    - DARRAY(obs_source_t*) **sources**
 
@@ -199,19 +199,19 @@ Structures/Enumerations
 
    obs_frontend_source_list_free(&scenes);
 
-.. type:: typedef void (*obs_frontend_cb)(void *private_data)
+.. type:: void (*obs_frontend_cb)(void *private_data)
 
    Frontend tool menu callback
 
-.. type:: typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data)
+.. type:: void (*obs_frontend_event_cb)(enum obs_frontend_event event, void *private_data)
 
    Frontend event callback
 
-.. type:: typedef void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data)
+.. type:: void (*obs_frontend_save_cb)(obs_data_t *save_data, bool saving, void *private_data)
 
    Frontend save/load callback
 
-.. type:: typedef bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out)
+.. type:: bool (*obs_frontend_translate_ui_cb)(const char *text, const char **out)
 
    Translation callback
 
@@ -550,6 +550,17 @@ Functions
 .. function:: bool obs_frontend_recording_paused(void)
 
    :return: *true* if recording paused, *false* otherwise
+
+---------------------------------------
+
+.. function:: bool obs_frontend_recording_split_file(void)
+
+   Asks OBS to split the current recording file.
+
+   :return: *true* if splitting was successfully requested (this
+            does not mean that splitting has finished or guarantee that it
+            split successfully), *false* if recording is inactive or paused
+            or if file splitting is disabled.
 
 ---------------------------------------
 

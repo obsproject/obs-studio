@@ -6,6 +6,12 @@
             "name": "Twitch",
             "common": true,
             "stream_key_link": "https://dashboard.twitch.tv/settings/stream",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Asia: Hong Kong",
@@ -204,6 +210,13 @@
             "common": false,
             "more_info_link": "https://developers.google.com/youtube/v3/live/guides/ingestion-protocol-comparison",
             "stream_key_link": "https://www.youtube.com/live_dashboard",
+            "supported video codecs": [
+                "h264",
+                "hevc"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary YouTube ingest server",
@@ -229,6 +242,12 @@
                 "YouTube / YouTube Gaming",
                 "YouTube - RTMP",
                 "YouTube - RTMPS (Beta)"
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
             ],
             "servers": [
                 {
@@ -257,6 +276,12 @@
         {
             "name": "Loola.tv",
             "common": false,
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "US East: Virginia",
@@ -290,6 +315,12 @@
         },
         {
             "name": "Lovecast",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -311,6 +342,12 @@
         {
             "name": "Luzento.com - RTMP",
             "stream_key_link": "https://cms.luzento.com/dashboard/stream-key?from=OBS",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -331,6 +368,12 @@
         },
         {
             "name": "VIMM",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Europe: Frankfurt",
@@ -350,6 +393,12 @@
         },
         {
             "name": "Mobcrush",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -365,6 +414,12 @@
         },
         {
             "name": "Web.TV",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -380,6 +435,12 @@
         },
         {
             "name": "GoodGame.ru",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Моscow",
@@ -390,6 +451,12 @@
         {
             "name": "YouStreamer",
             "stream_key_link": "https://www.app.youstreamer.com/stream/",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Moscow",
@@ -399,6 +466,12 @@
         },
         {
             "name": "Vaughn Live / iNSTAGIB",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "US: Chicago, IL",
@@ -441,6 +514,12 @@
         },
         {
             "name": "Breakers.TV",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "US: Chicago, IL",
@@ -485,6 +564,12 @@
             "name": "Facebook Live",
             "common": true,
             "stream_key_link": "https://www.facebook.com/live/producer?ref=OBS",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -555,6 +640,12 @@
             ],
             "common": true,
             "stream_key_link": "https://restream.io/settings/streaming-setup?from=OBS",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Autodetect",
@@ -667,6 +758,12 @@
         },
         {
             "name": "Castr.io",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "US-East (Chicago, IL)",
@@ -759,6 +856,12 @@
         },
         {
             "name": "Boomstream",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -768,6 +871,12 @@
         },
         {
             "name": "Meridix Live Sports Platform",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -783,6 +892,12 @@
             "alt_names": [
                 "아프리카TV",
                 "Afreeca.TV"
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
             ],
             "servers": [
                 {
@@ -819,6 +934,12 @@
         },
         {
             "name": "CAM4",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "CAM4",
@@ -834,6 +955,12 @@
         },
         {
             "name": "ePlay",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "ePlay Primary",
@@ -849,6 +976,12 @@
         },
         {
             "name": "Picarto",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Autoselect closest server",
@@ -883,6 +1016,12 @@
         },
         {
             "name": "Livestream",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -892,6 +1031,12 @@
         },
         {
             "name": "Uscreen",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -906,6 +1051,12 @@
         },
         {
             "name": "Stripchat",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Auto",
@@ -923,6 +1074,12 @@
         },
         {
             "name": "CamSoda",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "North America",
@@ -960,6 +1117,12 @@
         },
         {
             "name": "Chaturbate",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Global Main Fastest - Recommended",
@@ -1033,11 +1196,52 @@
             }
         },
         {
+            "name": "WpStream",
+            "more_info_link": "https://wpstream.net/obs-more-info",
+            "stream_key_link": "https://wpstream.net/obs-get-stream-key",
+            "servers": [
+                {
+                    "name": "Closest server - Automatic",
+                    "url": "rtmp://ingest.wpstream.net/golive"
+                },
+                {
+                    "name": "North America",
+                    "url": "rtmp://ingest-na.wpstream.net/golive"
+                },
+                {
+                    "name": "Europe",
+                    "url": "rtmp://ingest-eu.wpstream.net/golive"
+                },
+                {
+                    "name": "Asia",
+                    "url": "rtmp://ingest-as.wpstream.net/golive"
+                },
+                {
+                    "name": "South America",
+                    "url": "rtmp://ingest-sa.wpstream.net/golive"
+                },
+                {
+                    "name": "Australia & Oceania",
+                    "url": "rtmp://ingest-au.wpstream.net/golive"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max audio bitrate": 160
+            }
+        },
+        {
             "name": "Twitter",
             "common": true,
             "stream_key_link": "https://studio.twitter.com/producer/sources",
             "alt_names": [
                 "Twitter / Periscope"
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
             ],
             "servers": [
                 {
@@ -1100,6 +1304,12 @@
             "name": "Switchboard Live",
             "alt_names": [
                 "Switchboard Live (Joicaster)"
+            ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
             ],
             "servers": [
                 {
@@ -1168,6 +1378,12 @@
         {
             "name": "Looch",
             "common": false,
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary Looch ingest server",
@@ -1183,6 +1399,12 @@
         },
         {
             "name": "Eventials",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1198,6 +1420,12 @@
         },
         {
             "name": "EventLive.pro",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1217,6 +1445,12 @@
         },
         {
             "name": "Lahzenegar - StreamG | لحظه‌نگار - استریمجی",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -1236,6 +1470,12 @@
         },
         {
             "name": "MyLive",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1271,6 +1511,12 @@
                 "Madcat"
             ],
             "stream_key_link": "https://studio.trovo.live/mychannel/stream",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1286,6 +1532,12 @@
         },
         {
             "name": "Mixcloud",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1310,6 +1562,12 @@
             "alt_names": [
                 "SermonAudio.com"
             ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -1323,6 +1581,12 @@
         },
         {
             "name": "Vimeo",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1332,6 +1596,12 @@
         },
         {
             "name": "Aparat",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1347,6 +1617,12 @@
         },
         {
             "name": "KakaoTV",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1360,6 +1636,12 @@
         },
         {
             "name": "Piczel.tv",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1375,6 +1657,12 @@
         },
         {
             "name": "STAGE TEN",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "STAGE TEN",
@@ -1390,6 +1678,12 @@
         },
         {
             "name": "DLive",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1404,6 +1698,12 @@
         },
         {
             "name": "Lightcast.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "North America / East",
@@ -1442,6 +1742,12 @@
         },
         {
             "name": "Bongacams",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Automatic / Default",
@@ -1470,6 +1776,12 @@
         },
         {
             "name": "Chathostess",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Chathostess - Backup",
@@ -1484,6 +1796,12 @@
         },
         {
             "name": "OnlyFans.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "USA",
@@ -1506,6 +1824,12 @@
         {
             "name": "YouNow",
             "common": false,
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "opus"
+            ],
             "servers": [
                 {
                     "name": "younow.com",
@@ -1524,6 +1848,12 @@
         {
             "name": "Steam",
             "common": false,
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1539,6 +1869,12 @@
         },
         {
             "name": "Konduit.live",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1552,6 +1888,12 @@
         },
         {
             "name": "LOCO",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1564,6 +1906,12 @@
         },
         {
             "name": "niconico, premium member (ニコニコ生放送 プレミアム会員)",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1580,6 +1928,12 @@
         },
         {
             "name": "niconico, free member (ニコニコ生放送 一般会員)",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1596,6 +1950,12 @@
         },
         {
             "name": "WASD.TV",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Automatic",
@@ -1622,6 +1982,12 @@
         },
         {
             "name": "Nimo TV",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Global:1",
@@ -1644,6 +2010,12 @@
         },
         {
             "name": "XLoveCam.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Europe(main)",
@@ -1684,6 +2056,12 @@
         },
         {
             "name": "AngelThump",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Auto",
@@ -1731,6 +2109,12 @@
         },
         {
             "name": "api.video",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1745,6 +2129,12 @@
         },
         {
             "name": "SHOWROOM",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1761,6 +2151,12 @@
         },
         {
             "name": "Mux",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Global (RTMPS)",
@@ -1779,6 +2175,12 @@
         },
         {
             "name": "Viloud",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1793,6 +2195,12 @@
         },
         {
             "name": "MyFreeCams",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Automatic",
@@ -1838,6 +2246,12 @@
         },
         {
             "name": "PolyStreamer.com",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Auto-select closest server",
@@ -1879,6 +2293,12 @@
         {
             "name": "Glimesh",
             "stream_key_link": "https://glimesh.tv/users/settings/stream",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "opus"
+            ],
             "servers": [
                 {
                     "name": "North America - Chicago, United States",
@@ -1929,6 +2349,12 @@
         {
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
             "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -1945,6 +2371,12 @@
             "name": "nanoStream Cloud / bintu",
             "more_info_link": "https://www.nanocosmos.de/obs",
             "stream_key_link": "https://bintu-cloud-frontend.nanocosmos.de/organisation",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "bintu-stream global ingest (rtmp)",
@@ -2014,6 +2446,12 @@
         },
         {
             "name": "Dacast",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2030,6 +2468,12 @@
         {
             "name": "Brime Live",
             "stream_key_link": "https://brime.tv/studio",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "North America - Ashburn, VA",
@@ -2057,6 +2501,12 @@
             "alt_names": [
                 "Bilibili Live"
             ],
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default | 默认",
@@ -2067,6 +2517,12 @@
         {
             "name": "Volume.com",
             "stream_key_link": "https://volume.com/b?show_key=1&webrtc=0",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default - Recommended",
@@ -2090,6 +2546,12 @@
         {
             "name": "BoxCast",
             "stream_key_link": "https://dashboard.boxcast.com/#/sources",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "BoxCast",
@@ -2099,6 +2561,12 @@
         },
         {
             "name": "Disciple Media",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2108,6 +2576,12 @@
         },
         {
             "name": "Jio Games",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Primary",
@@ -2127,6 +2601,12 @@
         {
             "name": "Kuaishou Live",
             "stream_key_link": "https://studio.kuaishou.com/live/list",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2140,6 +2620,12 @@
         },
         {
             "name": "Utreon",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2154,6 +2640,12 @@
         },
         {
             "name": "Autistici.org Live",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2169,6 +2661,12 @@
         {
             "name": "PhoneLiveStreaming",
             "stream_key_link": "https://app.phonelivestreaming.com/media/rtmp",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "PhoneLiveStreaming",
@@ -2183,6 +2681,12 @@
         },
         {
             "name": "ManyVids",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2215,6 +2719,12 @@
             "name": "Fantasy.Club",
             "stream_key_link": "https://fantasy.club/app/create-content/stream-now",
             "more_info_link": "https://help.fantasy.club/",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "US: East",
@@ -2278,6 +2788,12 @@
         {
             "name": "Shareplay",
             "more_info_link": "https://shareplay.tv",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Default",
@@ -2342,6 +2858,12 @@
         },
         {
             "name": "Sympla",
+            "supported video codecs": [
+                "h264"
+            ],
+            "supported audio codecs": [
+                "aac"
+            ],
             "servers": [
                 {
                     "name": "Sympla RTMP",
@@ -2393,6 +2915,16 @@
                 "max video bitrate": 6000,
                 "max audio bitrate": 160
             }
+        },        
+        {
+            "name": "StreamVi",
+            "stream_key_link": "https://streamvi.ru/settings",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live1.streamvi.ru/live"
+                }
+            ]
         }
     ]
 }

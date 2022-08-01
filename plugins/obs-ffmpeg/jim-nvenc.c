@@ -781,11 +781,17 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 		vui_params->colourPrimaries = 9;
 		vui_params->transferCharacteristics = 16;
 		vui_params->colourMatrix = 9;
+		vui_params->chromaSampleLocationFlag = 1;
+		vui_params->chromaSampleLocationTop = 2;
+		vui_params->chromaSampleLocationBot = 2;
 		break;
 	case VIDEO_CS_2100_HLG:
 		vui_params->colourPrimaries = 9;
 		vui_params->transferCharacteristics = 18;
 		vui_params->colourMatrix = 9;
+		vui_params->chromaSampleLocationFlag = 1;
+		vui_params->chromaSampleLocationTop = 2;
+		vui_params->chromaSampleLocationBot = 2;
 	}
 
 	enc->bframes = bf;

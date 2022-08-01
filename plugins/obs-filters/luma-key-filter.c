@@ -2,11 +2,13 @@
 
 /* clang-format off */
 
+#define SETTING_SDR_ONLY_INFO      "sdr_only_info"
 #define SETTING_LUMA_MAX           "luma_max"
 #define SETTING_LUMA_MIN           "luma_min"
 #define SETTING_LUMA_MAX_SMOOTH    "luma_max_smooth"
 #define SETTING_LUMA_MIN_SMOOTH    "luma_min_smooth"
 
+#define TEXT_SDR_ONLY_INFO      obs_module_text("SdrOnlyInfo")
 #define TEXT_LUMA_MAX           obs_module_text("Luma.LumaMax")
 #define TEXT_LUMA_MIN           obs_module_text("Luma.LumaMin")
 #define TEXT_LUMA_MAX_SMOOTH    obs_module_text("Luma.LumaMaxSmooth")
@@ -119,26 +121,45 @@ static void luma_key_render_internal(void *data, bool premultiplied)
 {
 	struct luma_key_filter_data *filter = data;
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING))
-		return;
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
 
-	gs_effect_set_float(filter->luma_max_param, filter->luma_max);
-	gs_effect_set_float(filter->luma_min_param, filter->luma_min);
-	gs_effect_set_float(filter->luma_max_smooth_param,
-			    filter->luma_max_smooth);
-	gs_effect_set_float(filter->luma_min_smooth_param,
-			    filter->luma_min_smooth);
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	if (source_space == GS_CS_709_EXTENDED) {
+		obs_source_skip_video_filter(filter->context);
+	} else {
+		const enum gs_color_format format =
+			gs_get_format_from_space(source_space);
+		if (obs_source_process_filter_begin_with_color_space(
+			    filter->context, format, source_space,
+			    OBS_ALLOW_DIRECT_RENDERING)) {
+			gs_effect_set_float(filter->luma_max_param,
+					    filter->luma_max);
+			gs_effect_set_float(filter->luma_min_param,
+					    filter->luma_min);
+			gs_effect_set_float(filter->luma_max_smooth_param,
+					    filter->luma_max_smooth);
+			gs_effect_set_float(filter->luma_min_smooth_param,
+					    filter->luma_min_smooth);
 
-	if (premultiplied) {
-		gs_blend_state_push();
-		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-	}
+			if (premultiplied) {
+				gs_blend_state_push();
+				gs_blend_function(GS_BLEND_ONE,
+						  GS_BLEND_INVSRCALPHA);
+			}
 
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
+			obs_source_process_filter_end(filter->context,
+						      filter->effect, 0, 0);
 
-	if (premultiplied) {
-		gs_blend_state_pop();
+			if (premultiplied) {
+				gs_blend_state_pop();
+			}
+		}
 	}
 }
 
@@ -160,6 +181,8 @@ static obs_properties_t *luma_key_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
+	obs_properties_add_text(props, SETTING_SDR_ONLY_INFO,
+				TEXT_SDR_ONLY_INFO, OBS_TEXT_INFO);
 	obs_properties_add_float_slider(props, SETTING_LUMA_MAX, TEXT_LUMA_MAX,
 					0, 1, 0.0001);
 	obs_properties_add_float_slider(props, SETTING_LUMA_MAX_SMOOTH,
@@ -179,6 +202,24 @@ static void luma_key_defaults(obs_data_t *settings)
 	obs_data_set_default_double(settings, SETTING_LUMA_MIN, 0.0);
 	obs_data_set_default_double(settings, SETTING_LUMA_MAX_SMOOTH, 0.0);
 	obs_data_set_default_double(settings, SETTING_LUMA_MIN_SMOOTH, 0.0);
+}
+
+static enum gs_color_space
+luma_key_get_color_space(void *data, size_t count,
+			 const enum gs_color_space *preferred_spaces)
+{
+	const enum gs_color_space potential_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	struct luma_key_filter_data *const filter = data;
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(potential_spaces), potential_spaces);
+
+	return source_space;
 }
 
 struct obs_source_info luma_key_filter = {
@@ -206,4 +247,5 @@ struct obs_source_info luma_key_filter_v2 = {
 	.update = luma_key_update,
 	.get_properties = luma_key_properties,
 	.get_defaults = luma_key_defaults,
+	.video_get_color_space = luma_key_get_color_space,
 };

@@ -128,7 +128,6 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
 	struct dstr path = {0};
-	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
 
@@ -338,7 +337,8 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		return;
 
 	mp_media_play(&s->media, s->is_looping, s->reconnecting);
-	if (s->is_local_file && (s->is_clear_on_media_end || s->is_looping))
+	if (s->is_local_file && s->media.has_video &&
+	    (s->is_clear_on_media_end || s->is_looping))
 		obs_source_show_preloaded_video(s->source);
 	else
 		obs_source_output_video(s->source, NULL);
@@ -611,8 +611,6 @@ static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
 
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(settings);
-
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 

@@ -10,6 +10,7 @@ using namespace DShow;
 extern bool initialize_placeholder();
 extern const uint8_t *get_placeholder_ptr();
 extern const bool get_placeholder_size(int *out_cx, int *out_cy);
+extern volatile long locks;
 
 /* ========================================================================= */
 
@@ -107,6 +108,7 @@ VCamFilter::VCamFilter()
 	th = std::thread([this] { Thread(); });
 
 	AddRef();
+	os_atomic_inc_long(&locks);
 }
 
 VCamFilter::~VCamFilter()
@@ -118,6 +120,8 @@ VCamFilter::~VCamFilter()
 
 	if (placeholder.scaled_data)
 		free(placeholder.scaled_data);
+
+	os_atomic_dec_long(&locks);
 }
 
 const wchar_t *VCamFilter::FilterName() const
@@ -134,8 +138,21 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
+	os_atomic_set_bool(&active, true);
 	SetEvent(thread_start);
 	return S_OK;
+}
+
+STDMETHODIMP VCamFilter::Run(REFERENCE_TIME tStart)
+{
+	os_atomic_set_bool(&active, true);
+	return OutputFilter::Run(tStart);
+}
+
+STDMETHODIMP VCamFilter::Stop()
+{
+	os_atomic_set_bool(&active, false);
+	return OutputFilter::Stop();
 }
 
 inline uint64_t VCamFilter::GetTime()
@@ -185,7 +202,8 @@ void VCamFilter::Thread()
 	UpdatePlaceholder();
 
 	while (!stopped()) {
-		Frame(filter_time);
+		if (os_atomic_load_bool(&active))
+			Frame(filter_time);
 		sleepto_100ns(cur_time += interval);
 		filter_time += interval;
 	}

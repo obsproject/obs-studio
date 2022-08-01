@@ -12,21 +12,21 @@ on:
     branches: [master]
 
 env:
-  CACHE_REVISION: '004'
-  CEF_BUILD_VERSION_MAC: '4638'
-  CEF_HASH_MAC_X86_64: '2fe4cc39b1373b85086e4030dedd2a250d5dbbed8c2f8780002d6cd6214b6bc2'
-  CEF_HASH_MAC_ARM64: '27809aac427b9c97b0dadcab04371c5f8211f36c6f3e1caa00822de89c5ed249'
-  CEF_BUILD_VERSION_LINUX: '4638'
-  CEF_BUILD_VERSION_WIN: '4638'
-  QT_VERSION_MAC: '5.15.2'
-  QT_HASH_MAC_X86_64: '4af7d84ed34b78f385609d04d56ce9dacac0f70dfe5a82fe81cd3fad487988b8'
-  QT_HASH_MAC_ARM64: '85590c0d1aaff432f499656320b248ebfbc130d0935a3b194af581b71ffe603a'
-  QT_HASH_MAC_UNIVERSAL: 'a466a73bb6fe6c0e6af9e64ad4f0044b5294cc55661501034b771608ad0e2ead'
-  QT_VERSION_WIN: '5.15.2'
-  DEPS_VERSION_MAC: '2022-07-08'
-  DEPS_HASH_MAC_X86_64: 'f5024a9f20913eeabd978eff46f1c8c6cca552ad010673ac15e7266ae4158c62'
-  DEPS_HASH_MAC_ARM64: '20414f5823f774d12ff10b502508720e069e4fc088bd60aa5ccea1d3092ce5c5'
-  DEPS_VERSION_WIN: '2022-07-08'
+  CACHE_REVISION: '005'
+  CEF_BUILD_VERSION_MAC: '5060'
+  CEF_HASH_MAC_X86_64: '88b950aa0bfc001061c35e7f1f3fefba856a6afb35e38b2b7b42ddd8dd239182'
+  CEF_HASH_MAC_ARM64: '98679b92eea6ea9959ac5aa54f46ca60681d8a86c768c35f496dbdd409bf0642'
+  CEF_BUILD_VERSION_LINUX: '5060'
+  CEF_BUILD_VERSION_WIN: '5060'
+  QT_VERSION_MAC: '6.3.1'
+  QT_HASH_MAC_X86_64: '018552ee442ef8a7653f86460d5249e3e03c787629767af9faa85a3369fd8576'
+  QT_HASH_MAC_ARM64: '4f24e220037e1f777148ea6efbd494007cbf56848d861181e025699f66dd15bd'
+  QT_HASH_MAC_UNIVERSAL: 'c1dd451d86f5bb6ba86f4c97f2b0b11a9fa49d14fb91f2ec0934adf2b420477d'
+  QT_VERSION_WIN: '6.3.1'
+  DEPS_VERSION_MAC: '2022-07-29'
+  DEPS_HASH_MAC_X86_64: '7c83e4700455b39796fb84cadf2790bac2d05c0ee47da15edf5c120702d9df9b'
+  DEPS_HASH_MAC_ARM64: '4bd295bd854c8a20011a82ab2181f7e1ad48d05d0a259a4618fc72ef3ecd281f'
+  DEPS_VERSION_WIN: '2022-07-29'
   VLC_VERSION_MAC: '3.0.8'
   VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
   VLC_VERSION_WIN: '3.0.0-git'
@@ -42,7 +42,7 @@ env:
 jobs:
   clang_check:
     name: '01 - Code Format Check'
-    runs-on: [ubuntu-latest]
+    runs-on: [ubuntu-22.04]
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
@@ -50,7 +50,7 @@ jobs:
           submodules: 'recursive'
 
       - name: 'Install clang-format'
-        run: sudo apt-get install -y clang-format-12
+        run: sudo apt-get install -y clang-format-13
 
       - name: 'Run clang-format'
         run: |
@@ -73,7 +73,7 @@ jobs:
     if: always()
     needs: [clang_check]
     env:
-      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.13'
+      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       SPARKLE_VERSION: '1.26.0'
       SPARKLE_HASH: '8312cbf7528297a49f1b97692c33cb8d33254c396dc51be394e9484e4b6833a0'
@@ -193,7 +193,7 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   linux_build:
@@ -275,19 +275,19 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-linux-${{ matrix.ubuntu }}-deb-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
 
   windows_build:
     name: '02 - Windows'
-    runs-on: [windows-2019]
+    runs-on: [windows-2022]
     needs: [clang_check]
     if: always()
     strategy:
       matrix:
         arch: [x64, x86]
     env:
-      CMAKE_GENERATOR: 'Visual Studio 16 2019'
+      CMAKE_GENERATOR: 'Visual Studio 17 2022'
       CMAKE_SYSTEM_VERSION: '10.0.18363.657'
       VIRTUALCAM-GUID: 'A3FCE0F5-3493-419F-958A-ABA1250EC20B'
       BUILD_FOR_DISTRIBUTION: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
@@ -348,14 +348,14 @@ jobs:
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         run: |
           CI/windows/03_package_obs.ps1 -BuildArch ${{ matrix.arch }} -Package
-          $ArtifactName = Get-ChildItem -filter "OBS-Studio-*-Win-${{ matrix.arch }}.zip" -File
+          $ArtifactName = Get-ChildItem -filter "obs-studio-*-windows-${{ matrix.arch }}.zip" -File
           Write-Output "FILE_NAME=${ArtifactName}" | Out-File -FilePath $Env:GITHUB_ENV -Encoding utf8 -Append
 
       - name: 'Upload build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-win-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ env.FILE_NAME }}'
 
   linux_package:
@@ -426,12 +426,12 @@ jobs:
       - name: 'Download 64-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win-x64-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Download 32-bit artifact'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-win-x86-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-windows-x86-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Unpack Windows build artifacts'
         id: unpack
@@ -440,18 +440,18 @@ jobs:
             $null = New-Item -ItemType Directory -Force -Path install_temp
           }
 
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x86.zip" -File)" -DestinationPath install_temp
-          Expand-Archive -Path "$(Get-ChildItem -filter "OBS-Studio-*-Win-x64.zip" -File)" -Force -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x86.zip" -File)" -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x64.zip" -File)" -Force -DestinationPath install_temp
 
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
-          $ArtifactName = (Get-ChildItem -filter "OBS-Studio-*-Win-x86+x64.zip" -File).Name
+          $ArtifactName = (Get-ChildItem -filter "obs-studio-*-windows-x86+x64.zip" -File).Name
           Write-Output "::set-output name=filename::${ArtifactName}"
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-windows'
+          name: 'obs-studio-windows-installer'
           path: '${{ steps.unpack.outputs.filename }}'
 
   macos_release:
@@ -482,7 +482,7 @@ jobs:
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/download-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
+          name: 'obs-studio-macos-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
 
       - name: 'Install Apple Developer Certificate'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
@@ -507,5 +507,5 @@ jobs:
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
         uses: actions/upload-artifact@v3
         with:
-          name: 'obs-macos-${{ matrix.arch }}-notarized'
+          name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
           path: '${{ github.workspace }}/${{ env.FILE_NAME }}'

@@ -25,6 +25,32 @@
                         "$ref": "#/definitions/saneUrl",
                         "description": "Link where a logged-in user can find the 'stream key', presented as a button alongside the stream key field."
                     },
+                    "supported video codecs": {
+                        "type": "array",
+                        "description": "Video codecs that are supported by the service.",
+                        "items": {
+                            "type": "string",
+                            "description": "Short-form codec names.",
+                            "minLength": 1,
+                            "enum": [
+                                "h264",
+                                "hevc"
+                            ]
+                        }
+                    },
+                    "supported audio codecs": {
+                        "type": "array",
+                        "description": "Audio codecs that are supported by the service.",
+                        "items": {
+                            "type": "string",
+                            "description": "Short-form codec names.",
+                            "minLength": 1,
+                            "enum": [
+                                "aac",
+                                "opus"
+                            ]
+                        }
+                    },
                     "servers": {
                         "type": "array",
                         "description": "List of servers.",

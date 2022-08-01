@@ -506,6 +506,7 @@ EXPORT const char *obs_get_module_binary_path(obs_module_t *module);
 /** Returns the module data path */
 EXPORT const char *obs_get_module_data_path(obs_module_t *module);
 
+#ifndef SWIG
 /**
  * Adds a module search path to be used with obs_find_modules.  If the search
  * path strings contain %module%, that text will be replaced with the module
@@ -519,11 +520,18 @@ EXPORT void obs_add_module_path(const char *bin, const char *data);
 /** Automatically loads all modules from module paths (convenience function) */
 EXPORT void obs_load_all_modules(void);
 
+struct obs_module_failure_info {
+	char **failed_modules;
+	size_t count;
+};
+
+EXPORT void obs_module_failure_info_free(struct obs_module_failure_info *mfi);
+EXPORT void obs_load_all_modules2(struct obs_module_failure_info *mfi);
+
 /** Notifies modules that all modules have been loaded.  This function should
  * be called after all modules have been loaded. */
 EXPORT void obs_post_load_modules(void);
 
-#ifndef SWIG
 struct obs_module_info {
 	const char *bin_path;
 	const char *data_path;
@@ -534,6 +542,19 @@ typedef void (*obs_find_module_callback_t)(void *param,
 
 /** Finds all modules within the search paths added by obs_add_module_path. */
 EXPORT void obs_find_modules(obs_find_module_callback_t callback, void *param);
+
+struct obs_module_info2 {
+	const char *bin_path;
+	const char *data_path;
+	const char *name;
+};
+
+typedef void (*obs_find_module_callback2_t)(
+	void *param, const struct obs_module_info2 *info);
+
+/** Finds all modules within the search paths added by obs_add_module_path. */
+EXPORT void obs_find_modules2(obs_find_module_callback2_t callback,
+			      void *param);
 #endif
 
 typedef void (*obs_enum_module_callback_t)(void *param, obs_module_t *module);
@@ -2473,6 +2494,9 @@ EXPORT void obs_service_get_max_fps(const obs_service_t *service, int *fps);
 
 EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 					int *video_bitrate, int *audio_bitrate);
+
+EXPORT const char **
+obs_service_get_supported_video_codecs(const obs_service_t *service);
 
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */

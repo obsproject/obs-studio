@@ -142,7 +142,7 @@ Signals are used for all event-based callbacks.
 
 ---------------------
 
-.. type:: typedef void (*signal_callback_t)(void *data, calldata_t *cd)
+.. type:: void (*signal_callback_t)(void *data, calldata_t *cd)
 
    Signal callback.
 
@@ -243,7 +243,7 @@ direct access to declarations or callback pointers.
 
 ---------------------
 
-.. type:: typedef void (*proc_handler_proc_t)(void *data, calldata_t *cd)
+.. type:: void (*proc_handler_proc_t)(void *data, calldata_t *cd)
 
    Procedure handler callback.
 

@@ -460,8 +460,6 @@ static void duplicator_capture_tick(void *data, float seconds)
 
 	if (!capture->showing)
 		capture->showing = true;
-
-	UNUSED_PARAMETER(seconds);
 }
 
 static uint32_t duplicator_capture_width(void *data)

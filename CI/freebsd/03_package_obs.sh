@@ -46,7 +46,7 @@ package-obs-standalone() {
     GIT_HASH=$(git rev-parse --short=9 HEAD)
     GIT_TAG=$(git describe --tags --abbrev=0)
 
-    FILE_NAME="obs-studio-${GIT_TAG}-${GIT_HASH}-FreeBSD"
+    FILE_NAME="obs-studio-${GIT_TAG}-${GIT_HASH}-freebsd"
     package_obs
 }
 

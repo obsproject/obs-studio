@@ -175,9 +175,8 @@ static void *av1_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 	if (strcmp(enc_lib, "libsvtav1") == 0)
 		enc->svtav1 = true;
 
-	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, settings, encoder,
-				       enc_lib, NULL, enc_name, NULL,
-				       on_first_packet))
+	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder, enc_lib, NULL,
+				       enc_name, NULL, on_first_packet))
 		goto fail;
 	if (!av1_update(enc, settings))
 		goto fail;
@@ -254,9 +253,10 @@ obs_properties_t *av1_properties(bool svtav1)
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
 			       1, 63, 1);
 
-	obs_properties_add_int(props, "keyint_sec",
-			       obs_module_text("KeyframeIntervalSec"), 0, 10,
-			       1);
+	p = obs_properties_add_int(props, "keyint_sec",
+				   obs_module_text("KeyframeIntervalSec"), 0,
+				   10, 1);
+	obs_property_int_set_suffix(p, " s");
 
 	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

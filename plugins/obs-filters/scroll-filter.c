@@ -8,6 +8,7 @@ struct scroll_filter_data {
 	gs_eparam_t *param_add;
 	gs_eparam_t *param_mul;
 	gs_eparam_t *param_image;
+	gs_eparam_t *param_multiplier;
 
 	struct vec2 scroll_speed;
 	gs_samplerstate_t *sampler;
@@ -52,6 +53,8 @@ static void *scroll_filter_create(obs_data_t *settings, obs_source_t *context)
 		gs_effect_get_param_by_name(filter->effect, "mul_val");
 	filter->param_image =
 		gs_effect_get_param_by_name(filter->effect, "image");
+	filter->param_multiplier =
+		gs_effect_get_param_by_name(filter->effect, "multiplier");
 
 	obs_source_update(context, settings);
 	return filter;
@@ -181,8 +184,54 @@ static void scroll_filter_tick(void *data, float seconds)
 	}
 }
 
+static const char *
+get_tech_name_and_multiplier(enum gs_color_space current_space,
+			     enum gs_color_space source_space,
+			     float *multiplier)
+{
+	const char *tech_name = "Draw";
+	*multiplier = 1.f;
+
+	switch (source_space) {
+	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
+		switch (current_space) {
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_EXTENDED:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawTonemap";
+			break;
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawMultiplyTonemap";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_EXTENDED:
+			tech_name = "DrawMultiply";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+		}
+	}
+
+	return tech_name;
+}
+
 static void scroll_filter_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	struct scroll_filter_data *filter = data;
 	struct vec2 mul_val;
 	uint32_t base_cx;
@@ -209,23 +258,38 @@ static void scroll_filter_render(void *data, gs_effect_t *effect)
 	vec2_set(&mul_val, (float)cx / (float)base_cx,
 		 (float)cy / (float)base_cy);
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-					     OBS_NO_DIRECT_RENDERING))
-		return;
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
 
-	gs_effect_set_vec2(filter->param_add, &filter->offset);
-	gs_effect_set_vec2(filter->param_mul, &mul_val);
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	float multiplier;
+	const char *technique = get_tech_name_and_multiplier(
+		gs_get_color_space(), source_space, &multiplier);
+	const enum gs_color_format format =
+		gs_get_format_from_space(source_space);
+	if (obs_source_process_filter_begin_with_color_space(
+		    filter->context, format, source_space,
+		    OBS_NO_DIRECT_RENDERING)) {
+		gs_effect_set_vec2(filter->param_add, &filter->offset);
+		gs_effect_set_vec2(filter->param_mul, &mul_val);
+		gs_effect_set_float(filter->param_multiplier, multiplier);
 
-	gs_effect_set_next_sampler(filter->param_image, filter->sampler);
+		gs_effect_set_next_sampler(filter->param_image,
+					   filter->sampler);
 
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	obs_source_process_filter_end(filter->context, filter->effect, cx, cy);
+		obs_source_process_filter_tech_end(
+			filter->context, filter->effect, cx, cy, technique);
 
-	gs_blend_state_pop();
-
-	UNUSED_PARAMETER(effect);
+		gs_blend_state_pop();
+	}
 }
 
 static uint32_t scroll_filter_width(void *data)
@@ -253,6 +317,31 @@ static void scroll_filter_show(void *data)
 	filter->offset.y = 0.0f;
 }
 
+static enum gs_color_space
+scroll_filter_get_color_space(void *data, size_t count,
+			      const enum gs_color_space *preferred_spaces)
+{
+	const enum gs_color_space potential_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	struct scroll_filter_data *const filter = data;
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(potential_spaces), potential_spaces);
+
+	enum gs_color_space space = source_space;
+	for (size_t i = 0; i < count; ++i) {
+		space = preferred_spaces[i];
+		if (space == source_space)
+			break;
+	}
+
+	return space;
+}
+
 struct obs_source_info scroll_filter = {
 	.id = "scroll_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
@@ -268,4 +357,5 @@ struct obs_source_info scroll_filter = {
 	.get_width = scroll_filter_width,
 	.get_height = scroll_filter_height,
 	.show = scroll_filter_show,
+	.video_get_color_space = scroll_filter_get_color_space,
 };

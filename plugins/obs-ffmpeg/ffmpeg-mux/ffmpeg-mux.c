@@ -454,6 +454,10 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context->color_trc = ffm->params.color_trc;
 	context->colorspace = ffm->params.colorspace;
 	context->color_range = ffm->params.color_range;
+	context->chroma_sample_location =
+		(ffm->params.colorspace == AVCOL_SPC_BT2020_NCL)
+			? AVCHROMA_LOC_TOPLEFT
+			: AVCHROMA_LOC_LEFT;
 	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =

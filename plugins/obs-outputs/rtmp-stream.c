@@ -1571,9 +1571,10 @@ static obs_properties_t *rtmp_stream_properties(void *unused)
 	struct netif_saddr_data addrs = {0};
 	obs_property_t *p;
 
-	obs_properties_add_int(props, OPT_DROP_THRESHOLD,
-			       obs_module_text("RTMPStream.DropThreshold"), 200,
-			       10000, 100);
+	p = obs_properties_add_int(props, OPT_DROP_THRESHOLD,
+				   obs_module_text("RTMPStream.DropThreshold"),
+				   200, 10000, 100);
+	obs_property_int_set_suffix(p, " ms");
 
 	p = obs_properties_add_list(props, OPT_BIND_IP,
 				    obs_module_text("RTMPStream.BindIP"),

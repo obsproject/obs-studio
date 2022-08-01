@@ -19,14 +19,14 @@ Module Macros
 
 These macros are used within custom plugin modules.
 
-.. function:: OBS_DECLARE_MODULE()
+.. macro:: OBS_DECLARE_MODULE()
 
    Declares a libobs module.  Exports important core module functions
    related to the module itself, OBS version, etc.
 
 ---------------------
 
-.. function:: OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale)
+.. macro:: OBS_MODULE_USE_DEFAULT_LOCALE(module_name, default_locale)
 
    Helper macro that uses the standard ini file format for localization.
    Automatically initializes and destroys localization data, and
@@ -47,7 +47,7 @@ to communicate with libobs and front-ends.
    Required: Called when the module is loaded.  Implement this function
    to load all the sources/encoders/outputs/services for your module, or
    anything else that may need loading.
-  
+
    :return:          Return true to continue loading the module, otherwise
                      false to indicate failure and unload the module
 
@@ -81,7 +81,7 @@ to communicate with libobs and front-ends.
 .. function:: const char *obs_module_name(void)
 
    (Optional)
-   
+
    :return: The full name of the module
 
 ---------------------
@@ -109,7 +109,7 @@ These functions are externs that are usable throughout the module.
 .. function:: bool obs_module_get_string(const char *lookup_string, const char **translated_string)
 
    Helper function for looking up locale.
-   
+
    :return: *true* if text found, otherwise *false*
 
 ---------------------
@@ -124,7 +124,7 @@ These functions are externs that are usable throughout the module.
 
    Returns the location to a module data file associated with the
    current module.  Free with :c:func:`bfree()` when complete.
-   
+
    Equivalent to:
 
 .. code:: cpp
@@ -138,7 +138,7 @@ These functions are externs that are usable throughout the module.
    Returns the location to a module config file associated with the
    current module.  Free with :c:func:`bfree()` when complete.  Will
    return NULL if configuration directory is not set.
-   
+
    Equivalent to:
 
 .. code:: cpp
@@ -157,14 +157,14 @@ plugin modules.
 .. function:: int obs_open_module(obs_module_t **module, const char *path, const char *data_path)
 
    Opens a plugin module directly from a specific path.
-  
+
    If the module already exists then the function will return successful, and
    the module parameter will be given the pointer to the existing
    module.
-  
+
    This does not initialize the module, it only loads the module image.  To
    initialize the module, call :c:func:`obs_init_module()`.
-  
+
    :param  module:    The pointer to the created module
    :param  path:      Specifies the path to the module library file.  If the
                       extension is not specified, it will use the extension
@@ -176,13 +176,15 @@ plugin modules.
                       | MODULE_FILE_NOT_FOUND   - The module was not found
                       | MODULE_MISSING_EXPORTS  - Required exports are missing
                       | MODULE_INCOMPATIBLE_VER - Incompatible version
+                      | MODULE_HARDCODED_SKIP   - Skipped by harcoded rules
+                                                  (e.g. obsolete obs-browser macOS plugin)
 
 ---------------------
 
 .. function:: bool obs_init_module(obs_module_t *module)
 
    Initializes the module, which calls its obs_module_load export.
-   
+
    :return: *true* if the module was loaded successfully
 
 ---------------------
@@ -234,7 +236,7 @@ plugin modules.
    Adds a module search path to be used with obs_find_modules.  If the search
    path strings contain %module%, that text will be replaced with the module
    name when used.
-  
+
    :param  bin:  Specifies the module's binary directory search path
    :param  data: Specifies the module's data directory search path
 
@@ -243,6 +245,36 @@ plugin modules.
 .. function:: void obs_load_all_modules(void)
 
    Automatically loads all modules from module paths (convenience function).
+
+---------------------
+
+.. function:: void obs_load_all_modules2(struct obs_module_failure_info *mfi)
+
+   Automatically loads all modules from module paths (convenience function).
+   Additionally gives you information about modules that fail to load.
+
+   :param mfi: Provides module failure information. The *failed_modules*
+               member is a string list via a pointer to pointers of
+               strings of modules that failed to load. Can be freed
+               either with :c:func:`obs_module_failure_info_free()` or
+               by simply calling :c:func:`bfree()` on the
+               *failed_modules* member variable.
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   struct obs_module_failure_info {
+           char **failed_modules;
+           size_t count;
+   };
+
+---------------------
+
+.. function:: void obs_module_failure_info_free(struct obs_module_failure_info *mfi)
+
+   Frees data allocated data used in the *mfi* parameter (calls
+   :c:func:`bfree()` on the *failed_modules* member variable).
 
 ---------------------
 
@@ -271,6 +303,26 @@ plugin modules.
 
 ---------------------
 
+.. function:: void obs_find_modules2(obs_find_module_callback_t callback, void *param)
+
+   Finds all modules within the search paths added by
+   :c:func:`obs_add_module_path()`.
+
+   Relevant data types used with this function:
+
+.. code:: cpp
+
+   struct obs_module_info2 {
+           const char *bin_path;
+           const char *data_path;
+           const char *name;
+   };
+
+   typedef void (*obs_find_module_callback2_t)(void *param,
+                   const struct obs_module_info2 *info);
+
+---------------------
+
 .. function:: void obs_enum_modules(obs_enum_module_callback_t callback, void *param)
 
    Enumerates all loaded modules.
@@ -286,11 +338,11 @@ plugin modules.
 .. function:: char *obs_find_module_file(obs_module_t *module, const char *file)
 
    Returns the location of a plugin module data file.
-  
+
    Note:   Modules should use obs_module_file function defined in obs-module.h
            as a more elegant means of getting their files without having to
            specify the module parameter.
-  
+
    :param  module: The module associated with the file to locate
    :param  file:   The file to locate
    :return:        Path string, or NULL if not found.  Use bfree to free string
@@ -300,11 +352,11 @@ plugin modules.
 .. function:: char *obs_module_get_config_path(obs_module_t *module, const char *file)
 
    Returns the path of a plugin module config file (whether it exists or not).
-  
+
    Note:   Modules should use obs_module_config_path function defined in
            obs-module.h as a more elegant means of getting their files without
            having to specify the module parameter.
-  
+
    :param  module: The module associated with the path
    :param  file:   The file to get a path to
    :return:        Path string, or NULL if not found.  Use bfree to free string

@@ -39,7 +39,8 @@ static bool ffmpeg_image_open_decoder_context(struct ffmpeg_image *info)
 	AVStream *const stream = fmt_ctx->streams[ret];
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
 	AVCodecParameters *const codecpar = stream->codecpar;
-	AVCodec *const decoder = avcodec_find_decoder(codecpar->codec_id);
+	const AVCodec *const decoder = avcodec_find_decoder(
+		codecpar->codec_id); // fix discarded-qualifiers
 #else
 	AVCodecContext *const decoder_ctx = stream->codec;
 	AVCodec *const decoder = avcodec_find_decoder(decoder_ctx->codec_id);
@@ -152,9 +153,9 @@ static void *ffmpeg_image_copy_data_straight(struct ffmpeg_image *info,
 	return data;
 }
 
-static inline size_t get_dst_position(size_t src OBS_UNUSED, const size_t w,
-				      const size_t h, const size_t x,
-				      const size_t y, int orient)
+static inline size_t get_dst_position(const size_t w, const size_t h,
+				      const size_t x, const size_t y,
+				      int orient)
 {
 	size_t res_x = 0;
 	size_t res_y = 0;
@@ -343,8 +344,7 @@ static void *ffmpeg_image_orient(struct ffmpeg_image *info, void *in_data,
 				for (size_t x = x0; x < lim_x; x++) {
 					off_src = (x + y * sx) * 4;
 
-					off_dst = get_dst_position(off_src,
-								   info->cx,
+					off_dst = get_dst_position(info->cx,
 								   info->cy, x,
 								   y, orient);
 

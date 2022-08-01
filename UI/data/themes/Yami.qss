@@ -19,6 +19,11 @@
 
 /* Colors */
 
+OBSThemeMeta {
+    dark: 'true';
+    author: 'Warchamp7';
+}
+
 /* Custom theme information.  This will set the application's QPalette, as
  * well as pass to QML via the OBSTheme object.
  * Can also use OBSTheme::disabled, OBSTheme::active, and OBSTheme::inactive.
@@ -77,6 +82,7 @@ QWidget {
     selection-background-color: rgb(40,76,184);
     selection-color: palette(text);
     font-size: 10pt;
+    font-family: 'Open Sans', Helvetica, Arial, 'MS Shell Dlg', sans-serif
 }
 
 QWidget:disabled {
@@ -235,10 +241,6 @@ OBSDock QFrame {
     background: palette(dark);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
-}
-
-QStackedWidget {
-    padding: 4px;
 }
 
 #transitionsContainer QPushButton {
@@ -412,6 +414,7 @@ QToolBar {
     margin: 4px 0px;
 }
 
+QPushButton[toolButton="true"],
 QToolButton {
     background-color: rgb(60,64,75);
     padding: 4px 6px;
@@ -419,6 +422,7 @@ QToolButton {
     border-radius: 2px;
 }
 
+QPushButton[toolButton="true"]:last-child,
 QToolButton:last-child {
     margin-right: 0px;
 }
@@ -453,6 +457,10 @@ QToolButton:pressed {
 
 * [themeID="refreshIconSmall"] {
     qproperty-icon: url(./Dark/refresh.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
 }
 
 #sourceInteractButton {
@@ -756,7 +764,7 @@ QPushButton:pressed {
 }
 
 QPushButton:disabled {
-    background-color: rgba(25,27,38);
+    background-color: rgb(25,27,38);
 }
 
 QPushButton::menu-indicator {
@@ -1026,6 +1034,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(./Dark/settings/audio.svg);
     qproperty-videoIcon: url(./Dark/settings/video.svg);
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(./Dark/settings/accessibility.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
@@ -1044,7 +1053,8 @@ QGroupBox::indicator {
 	margin-left: 2px;
 }
 
-QCheckBox::indicator:unchecked {
+QCheckBox::indicator:unchecked,
+QGroupBox::indicator:unchecked {
 	image: url(./Yami/checkbox_unchecked.svg);
 }
 
@@ -1054,7 +1064,8 @@ QGroupBox::indicator:unchecked:hover {
 	image: url(./Yami/checkbox_unchecked_focus.svg);
 }
 
-QCheckBox::indicator:checked {
+QCheckBox::indicator:checked,
+QGroupBox::indicator:checked {
 	image: url(./Yami/checkbox_checked.svg);
 }
 
@@ -1234,6 +1245,7 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
 }
 
 /* Scene Tree Grid Mode */
@@ -1289,6 +1301,32 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 	width: 12px;
 	height: 24px;
 	margin: -24px 0px;
+}
+
+/* Media icons */
+
+* [themeID="playIcon"] {
+    qproperty-icon: url(./Dark/media/media_play.svg);
+}
+
+* [themeID="pauseIcon"] {
+    qproperty-icon: url(./Dark/media/media_pause.svg);
+}
+
+* [themeID="restartIcon"] {
+    qproperty-icon: url(./Dark/media/media_restart.svg);
+}
+
+* [themeID="stopIcon"] {
+    qproperty-icon: url(./Dark/media/media_stop.svg);
+}
+
+* [themeID="nextIcon"] {
+    qproperty-icon: url(./Dark/media/media_next.svg);
+}
+
+* [themeID="previousIcon"] {
+    qproperty-icon: url(./Dark/media/media_previous.svg);
 }
 
 /* YouTube Integration */

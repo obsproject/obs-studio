@@ -96,6 +96,13 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
+void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
+{
+	*is_obs_plugin = true;
+	*can_load = true;
+	UNUSED_PARAMETER(path);
+}
+
 bool os_is_obs_plugin(const char *path)
 {
 	UNUSED_PARAMETER(path);

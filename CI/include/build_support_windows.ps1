@@ -101,6 +101,43 @@ function Ensure-Directory {
     Set-Location -Path $Directory
 }
 
+function Invoke-External {
+    <#
+        .SYNOPSIS
+            Invokes a non-PowerShell command.
+        .DESCRIPTION
+            Runs a non-PowerShell command, and captures its return code.
+            Throws an exception if the command returns non-zero.
+        .EXAMPLE
+            Invoke-External 7z x $MyArchive
+    #>
+
+    if ( $args.Count -eq 0 ) {
+        throw 'Invoke-External called without arguments.'
+    }
+
+    $Command = $args[0]
+    $CommandArgs = @()
+
+    if ( $args.Count -gt 1) {
+        $CommandArgs = $args[1..($args.Count - 1)]
+    }
+
+    $_EAP = $ErrorActionPreference
+    $ErrorActionPreference = "Continue"
+
+    Write-Debug "Invoke-External: ${Command} ${CommandArgs}"
+
+    & $command $commandArgs
+    $Result = $LASTEXITCODE
+
+    $ErrorActionPreference = $_EAP
+
+    if ( $Result -ne 0 ) {
+        throw "${Command} ${CommandArgs} exited with non-zero code ${Result}."
+    }
+}
+
 $BuildDirectory = "$(if (Test-Path Env:BuildDirectory) { $env:BuildDirectory } else { $BuildDirectory })"
 $BuildConfiguration = "$(if (Test-Path Env:BuildConfiguration) { $env:BuildConfiguration } else { $BuildConfiguration })"
 $BuildArch = "$(if (Test-Path Env:BuildArch) { $env:BuildArch } else { $BuildArch })"

@@ -146,7 +146,8 @@ void populate_io_selection_output_list(const std::string &cardID,
 }
 
 void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
-				NTV2VideoFormat genlockFormat, bool want4KHFR)
+				NTV2VideoFormat genlockFormat, bool want4KHFR,
+				bool matchFPS)
 {
 	VideoFormatList videoFormats = {};
 	VideoStandardList orderedStandards = {};
@@ -179,6 +180,20 @@ void populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 		if (genlockFormat != NTV2_FORMAT_UNKNOWN)
 			addFormat = IsMultiFormatCompatible(genlockFormat, vf);
 
+		struct obs_video_info ovi;
+		if (matchFPS && obs_get_video_info(&ovi)) {
+			NTV2FrameRate frameRate =
+				GetNTV2FrameRateFromVideoFormat(vf);
+			ULWord fpsNum = 0;
+			ULWord fpsDen = 0;
+			GetFramesPerSecond(frameRate, fpsNum, fpsDen);
+			uint32_t obsFrameTime =
+				1000000 * ovi.fps_den / ovi.fps_num;
+			uint32_t ajaFrameTime = 1000000 * fpsDen / fpsNum;
+			if (obsFrameTime != ajaFrameTime)
+				addFormat = false;
+		}
+
 		if (addFormat) {
 			std::string name = NTV2VideoFormatToString(vf, true);
 			obs_property_list_add_int(list, name.c_str(), (int)vf);
@@ -201,9 +216,8 @@ void populate_pixel_format_list(NTV2DeviceID deviceID, obs_property_t *list)
 	}
 }
 
-void populate_sdi_transport_list(obs_property_t *list,
-				 IOSelection io OBS_UNUSED,
-				 NTV2DeviceID deviceID, bool capture)
+void populate_sdi_transport_list(obs_property_t *list, NTV2DeviceID deviceID,
+				 bool capture)
 {
 	if (capture) {
 		obs_property_list_add_int(list, obs_module_text("Auto"),
@@ -241,8 +255,6 @@ void populate_sdi_4k_transport_list(obs_property_t *list)
 bool aja_video_format_changed(obs_properties_t *props, obs_property_t *list,
 			      obs_data_t *settings)
 {
-	UNUSED_PARAMETER(list);
-
 	auto vid_fmt = static_cast<NTV2VideoFormat>(
 		obs_data_get_int(settings, kUIPropVideoFormatSelect.id));
 	size_t itemCount = obs_property_list_item_count(list);
@@ -1021,9 +1033,9 @@ inline bool IsStandard1080p(NTV2Standard standard)
 	return false;
 }
 
-VPIDStandard DetermineVPIDStandard(NTV2DeviceID id OBS_UNUSED, IOSelection io,
-				   NTV2VideoFormat vf, NTV2PixelFormat pf,
-				   SDITransport trx, SDITransport4K t4k)
+VPIDStandard DetermineVPIDStandard(IOSelection io, NTV2VideoFormat vf,
+				   NTV2PixelFormat pf, SDITransport trx,
+				   SDITransport4K t4k)
 {
 	VPIDStandard vpid = VPIDStandard_Unknown;
 	auto rd = aja::DetermineRasterDefinition(vf);

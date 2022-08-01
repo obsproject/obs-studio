@@ -29,6 +29,7 @@
 #include <QFileDialog>
 #include <QStandardItemModel>
 #include <QLabel>
+#include <QPushButton>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
@@ -60,55 +61,61 @@ OBSMessageBox::question(QWidget *parent, const QString &title,
 			QMessageBox::StandardButtons buttons,
 			QMessageBox::StandardButton defaultButton)
 {
-	QMessageBox mb(QMessageBox::Question, title, text, buttons, parent);
+	QMessageBox mb(QMessageBox::Question, title, text,
+		       QMessageBox::NoButton, parent);
 	mb.setDefaultButton(defaultButton);
-	if (buttons & QMessageBox::Ok)
-		mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
-#define translate_button(x)           \
-	if (buttons & QMessageBox::x) \
-		mb.setButtonText(QMessageBox::x, QTStr(#x));
-	translate_button(Open);
-	translate_button(Save);
-	translate_button(Cancel);
-	translate_button(Close);
-	translate_button(Discard);
-	translate_button(Apply);
-	translate_button(Reset);
-	translate_button(Yes);
-	translate_button(No);
-	translate_button(Abort);
-	translate_button(Retry);
-	translate_button(Ignore);
-#undef translate_button
+
+	if (buttons & QMessageBox::Ok) {
+		QPushButton *button = mb.addButton(QMessageBox::Ok);
+		button->setText(QTStr("OK"));
+	}
+#define add_button(x)                                               \
+	if (buttons & QMessageBox::x) {                             \
+		QPushButton *button = mb.addButton(QMessageBox::x); \
+		button->setText(QTStr(#x));                         \
+	}
+	add_button(Open);
+	add_button(Save);
+	add_button(Cancel);
+	add_button(Close);
+	add_button(Discard);
+	add_button(Apply);
+	add_button(Reset);
+	add_button(Yes);
+	add_button(No);
+	add_button(Abort);
+	add_button(Retry);
+	add_button(Ignore);
+#undef add_button
 	return (QMessageBox::StandardButton)mb.exec();
 }
 
 void OBSMessageBox::information(QWidget *parent, const QString &title,
 				const QString &text)
 {
-	QMessageBox mb(QMessageBox::Information, title, text, QMessageBox::Ok,
-		       parent);
-	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	QMessageBox mb(QMessageBox::Information, title, text,
+		       QMessageBox::NoButton, parent);
+	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
 	mb.exec();
 }
 
 void OBSMessageBox::warning(QWidget *parent, const QString &title,
 			    const QString &text, bool enableRichText)
 {
-	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::Ok,
+	QMessageBox mb(QMessageBox::Warning, title, text, QMessageBox::NoButton,
 		       parent);
 	if (enableRichText)
 		mb.setTextFormat(Qt::RichText);
-	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
 	mb.exec();
 }
 
 void OBSMessageBox::critical(QWidget *parent, const QString &title,
 			     const QString &text)
 {
-	QMessageBox mb(QMessageBox::Critical, title, text, QMessageBox::Ok,
-		       parent);
-	mb.setButtonText(QMessageBox::Ok, QTStr("OK"));
+	QMessageBox mb(QMessageBox::Critical, title, text,
+		       QMessageBox::NoButton, parent);
+	mb.addButton(QTStr("OK"), QMessageBox::AcceptRole);
 	mb.exec();
 }
 

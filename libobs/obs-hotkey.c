@@ -593,7 +593,6 @@ static inline bool find_pair_id(obs_hotkey_pair_id id, size_t *idx)
 static inline bool pair_pointer_fixup_func(size_t idx, obs_hotkey_pair_t *pair,
 					   void *data)
 {
-	UNUSED_PARAMETER(idx);
 	UNUSED_PARAMETER(data);
 
 	if (find_id(pair->id[0], &idx))
@@ -1290,8 +1289,14 @@ static inline bool inject_hotkey(void *data, size_t idx,
 			    event->strict_modifiers)) {
 		bool pressed = binding->key.key == event->hotkey.key &&
 			       event->pressed;
-		handle_binding(binding, event->hotkey.modifiers, false,
-			       event->strict_modifiers, &pressed);
+		if (binding->key.key == OBS_KEY_NONE)
+			pressed = true;
+
+		if (pressed) {
+			binding->modifiers_match = true;
+			if (!binding->pressed)
+				press_released_binding(binding);
+		}
 	}
 
 	return true;

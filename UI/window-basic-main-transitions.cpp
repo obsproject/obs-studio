@@ -265,6 +265,7 @@ void OBSBasic::TransitionStopped()
 	}
 
 	EnableTransitionWidgets(true);
+	UpdatePreviewProgramIndicators();
 
 	if (api) {
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_STOPPED);
@@ -699,6 +700,7 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 	}
 
 	UpdateContextBar(true);
+	UpdatePreviewProgramIndicators();
 
 	if (scene) {
 		bool userSwitched = (!force && !disableSaving);
@@ -1011,7 +1013,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 		obs_data_set_int(data, "transition_duration", duration);
 	};
 
-	connect(duration, (void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
+	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged,
 		setDuration);
 
 	for (int i = -1; i < ui->transitions->count(); i++) {
@@ -1212,7 +1214,7 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 		OBSSceneItem item = main->GetCurrentSceneItem();
 		obs_sceneitem_set_transition_duration(item, visible, duration);
 	};
-	connect(duration, (void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
+	connect(duration, (void(QSpinBox::*)(int)) & QSpinBox::valueChanged,
 		setDuration);
 
 	action = menu->addAction(QT_UTF8(Str("None")));
@@ -1310,8 +1312,8 @@ QMenu *OBSBasic::CreateTransitionMenu(QWidget *parent, QuickTransition *qt)
 
 	if (qt) {
 		connect(duration,
-			(void (QSpinBox::*)(int)) & QSpinBox::valueChanged,
-			this, &OBSBasic::QuickTransitionChangeDuration);
+			(void(QSpinBox::*)(int)) & QSpinBox::valueChanged, this,
+			&OBSBasic::QuickTransitionChangeDuration);
 	}
 
 	tr = fadeTransition;
@@ -1578,8 +1580,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 	if (IsPreviewProgramMode() == enabled)
 		return;
 
-	ui->previewLabel->setHidden(!enabled);
-
 	ui->modeSwitch->setChecked(enabled);
 	os_atomic_set_bool(&previewProgramMode, enabled);
 
@@ -1618,10 +1618,10 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		RefreshQuickTransitions();
 
-		programLabel = new QLabel(QTStr("StudioMode.Program"), this);
-		programLabel->setSizePolicy(QSizePolicy::Preferred,
+		programLabel =
+			new QLabel(QTStr("StudioMode.ProgramSceneLabel"), this);
+		programLabel->setSizePolicy(QSizePolicy::Ignored,
 					    QSizePolicy::Preferred);
-		programLabel->setAlignment(Qt::AlignHCenter | Qt::AlignBottom);
 		programLabel->setProperty("themeID", "previewProgramLabels");
 
 		programWidget = new QWidget();
@@ -1632,11 +1632,6 @@ void OBSBasic::SetPreviewProgramMode(bool enabled)
 
 		programLayout->addWidget(programLabel);
 		programLayout->addWidget(program);
-
-		bool labels = config_get_bool(GetGlobalConfig(), "BasicWindow",
-					      "StudioModeLabels");
-
-		programLabel->setHidden(!labels);
 
 		programWidget->setLayout(programLayout);
 
@@ -1770,7 +1765,8 @@ obs_data_array_t *OBSBasic::SaveTransitions()
 	return transitions;
 }
 
-void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
+void OBSBasic::LoadTransitions(obs_data_array_t *transitions,
+			       obs_load_source_cb cb, void *private_data)
 {
 	size_t count = obs_data_array_count(transitions);
 
@@ -1791,6 +1787,8 @@ void OBSBasic::LoadTransitions(obs_data_array_t *transitions)
 				QVariant::fromValue(OBSSource(source)));
 			ui->transitions->setCurrentIndex(
 				ui->transitions->count() - 1);
+			if (cb)
+				cb(private_data, source);
 		}
 	}
 }
@@ -1821,4 +1819,34 @@ int OBSBasic::GetOverrideTransitionDuration(OBSSource source)
 	obs_data_set_default_int(data, "transition_duration", 300);
 
 	return (int)obs_data_get_int(data, "transition_duration");
+}
+
+void OBSBasic::UpdatePreviewProgramIndicators()
+{
+	bool labels = previewProgramMode ? config_get_bool(GetGlobalConfig(),
+							   "BasicWindow",
+							   "StudioModeLabels")
+					 : false;
+
+	ui->previewLabel->setVisible(labels);
+
+	if (programLabel)
+		programLabel->setVisible(labels);
+
+	if (!labels)
+		return;
+
+	QString preview = QTStr("StudioMode.PreviewSceneName")
+				  .arg(QT_UTF8(obs_source_get_name(
+					  GetCurrentSceneSource())));
+
+	QString program =
+		QTStr("StudioMode.ProgramSceneName")
+			.arg(QT_UTF8(obs_source_get_name(GetProgramSource())));
+
+	if (ui->previewLabel->text() != preview)
+		ui->previewLabel->setText(preview);
+
+	if (programLabel && programLabel->text() != program)
+		programLabel->setText(program);
 }

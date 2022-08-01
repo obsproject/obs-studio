@@ -68,6 +68,12 @@ public:
 
 typedef std::function<void()> VoidFunc;
 
+struct OBSThemeMeta {
+	bool dark;
+	std::string parent;
+	std::string author;
+};
+
 class OBSApp : public QApplication {
 	Q_OBJECT
 
@@ -75,6 +81,7 @@ private:
 	std::string locale;
 	std::string theme;
 	QString defaultStyleSheet;
+	OBSThemeMeta *themeMeta = nullptr;
 	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
@@ -103,6 +110,7 @@ private:
 	QPalette defaultPalette;
 
 	void ParseExtraThemeData(const char *path);
+	static OBSThemeMeta *ParseThemeMeta(const char *path);
 	void AddExtraThemeColor(QPalette &pal, int group, const char *name,
 				uint32_t color);
 
@@ -130,6 +138,8 @@ public:
 	inline const char *GetLocale() const { return locale.c_str(); }
 
 	inline const char *GetTheme() const { return theme.c_str(); }
+	std::string GetTheme(std::string name, std::string path);
+	std::string SetParentTheme(std::string name);
 	bool SetTheme(std::string name, std::string path = "");
 	inline bool IsThemeDark() const { return themeDarkMode; };
 
@@ -240,6 +250,8 @@ extern bool opt_minimize_tray;
 extern bool opt_studio_mode;
 extern bool opt_allow_opengl;
 extern bool opt_always_on_top;
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 extern bool opt_disable_high_dpi_scaling;
+#endif
 extern std::string opt_starting_scene;
 extern bool restart;

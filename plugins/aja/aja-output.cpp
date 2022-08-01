@@ -19,6 +19,8 @@
 // Log AJA Output video/audio delay and av-sync
 // #define AJA_OUTPUT_STATS
 
+#define MATCH_OBS_FRAMERATE true
+
 static constexpr uint32_t kNumCardFrames = 3;
 static const int64_t kDefaultStatPeriod = 3000000000;
 static const int64_t kAudioSyncAdjust = 20000;
@@ -67,7 +69,7 @@ static void update_sdi_transport_and_sdi_transport_4k(obs_properties_t *props,
 	obs_property_t *sdi_trx_list =
 		obs_properties_get(props, kUIPropSDITransport.id);
 	obs_property_list_clear(sdi_trx_list);
-	populate_sdi_transport_list(sdi_trx_list, io, device_id);
+	populate_sdi_transport_list(sdi_trx_list, device_id);
 	obs_property_t *sdi_4k_trx_list =
 		obs_properties_get(props, kUIPropSDITransport4K.id);
 	obs_property_list_clear(sdi_4k_trx_list);
@@ -311,25 +313,6 @@ void AJAOutput::ClearAudioQueue()
 		free_audio_data(&af.frames);
 		mAudioQueue->pop_front();
 	}
-}
-
-bool AJAOutput::HaveEnoughAudio(size_t needAudioSize)
-{
-	bool ok = false;
-
-	if (mAudioQueue->size() > 0) {
-		size_t available = 0;
-		for (size_t i = 0; i < mAudioQueue->size(); i++) {
-			AudioFrames af = mAudioQueue->at(i);
-			available += af.size - af.offset;
-			if (available >= needAudioSize) {
-				ok = true;
-				break;
-			}
-		}
-	}
-
-	return ok;
 }
 
 size_t AJAOutput::VideoQueueSize()
@@ -849,7 +832,7 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 
 	obs_property_list_clear(vid_fmt_list);
 	populate_video_format_list(deviceID, vid_fmt_list, videoFormatChannel1,
-				   false);
+				   false, MATCH_OBS_FRAMERATE);
 
 	obs_property_list_clear(pix_fmt_list);
 	populate_pixel_format_list(deviceID, pix_fmt_list);
@@ -868,8 +851,6 @@ bool aja_output_device_changed(void *data, obs_properties_t *props,
 bool aja_output_dest_changed(obs_properties_t *props, obs_property_t *list,
 			     obs_data_t *settings)
 {
-	UNUSED_PARAMETER(props);
-
 	blog(LOG_DEBUG, "AJA Output Dest Changed");
 
 	const char *cardID = obs_data_get_string(settings, kUIPropDevice.id);

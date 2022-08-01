@@ -11,6 +11,12 @@ find_package(
   OPTIONAL_COMPONENTS avcodec)
 find_package(ZLIB REQUIRED)
 
+if(ENABLE_UI)
+  find_qt(COMPONENTS Core)
+else()
+  set(_QT_VERSION 0)
+endif()
+
 add_library(libobs SHARED)
 add_library(OBS::libobs ALIAS libobs)
 
@@ -284,8 +290,12 @@ if(OS_WINDOWS)
             util/threading-windows.h
             util/pipe-windows.c
             util/platform-windows.c
+            util/windows/obfuscate.c
+            util/windows/obfuscate.h
             util/windows/win-registry.h
             util/windows/win-version.h
+            util/windows/window-helpers.c
+            util/windows/window-helpers.h
             util/windows/ComPtr.hpp
             util/windows/CoTaskMemPtr.hpp
             util/windows/HRError.hpp
@@ -300,7 +310,7 @@ if(OS_WINDOWS)
     libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
                    _CRT_NONSTDC_NO_WARNINGS)
 
-  target_link_libraries(libobs PRIVATE Avrt winmm)
+  target_link_libraries(libobs PRIVATE Avrt Dwmapi winmm)
 
   if(MSVC)
     target_link_libraries(libobs PRIVATE OBS::w32-pthreads)

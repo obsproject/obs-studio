@@ -988,10 +988,14 @@ static obs_properties_t *vt_properties(void *unused, void *data)
 				   10000000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
-	obs_properties_add_float(props, "max_bitrate_window",
-				 TEXT_MAX_BITRATE_WINDOW, 0.10f, 10.0f, 0.25f);
+	p = obs_properties_add_float(props, "max_bitrate_window",
+				     TEXT_MAX_BITRATE_WINDOW, 0.10f, 10.0f,
+				     0.25f);
+	obs_property_float_set_suffix(p, " s");
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20, 1);
+	p = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 0, 20,
+				   1);
+	obs_property_int_set_suffix(p, " s");
 
 	p = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				    OBS_COMBO_TYPE_LIST,
@@ -1085,9 +1089,10 @@ bool obs_module_load(void)
 		CFBooleanRef hardware_ref = CFDictionaryGetValue(
 			encoder_dict,
 			kVTVideoEncoderList_IsHardwareAccelerated);
-		bool hardware_accelerated = false;
-		if (hardware_ref)
-			hardware_accelerated = CFBooleanGetValue(hardware_ref);
+
+		bool hardware_accelerated =
+			(hardware_ref) ? CFBooleanGetValue(hardware_ref)
+				       : false;
 
 		info.id = id;
 		struct vt_encoder_type_data *type_data =

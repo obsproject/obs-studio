@@ -8,6 +8,9 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
+OBSThemeMeta {
+    dark: 'false';
+}
 
 /* We need to set back the icons, or the preview wont stick. */
 
@@ -45,6 +48,10 @@
 
 * [themeID="menuIconSmall"] {
     qproperty-icon: url(:res/images/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(:/res/images/cogs.svg);
 }
 
 MuteCheckBox {
@@ -242,6 +249,7 @@ OBSBasic {
     qproperty-groupIcon: url(:res/images/sources/group.svg);
     qproperty-sceneIcon: url(:res/images/sources/scene.svg);
     qproperty-defaultIcon: url(:res/images/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(:res/images/sources/windowaudio.svg);
 }
 
 /* Scene Tree */

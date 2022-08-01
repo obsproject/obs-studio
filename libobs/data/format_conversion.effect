@@ -299,13 +299,11 @@ float2 PS_P010_HLG_UV_709_2020_WideWide(FragTexWideWide frag_in) : TARGET
 	return uv;
 }
 
-float2 PS_P010_SRGB_UV_WideWide(FragTexWideWide frag_in) : TARGET
+float2 PS_P010_SRGB_UV_Wide(FragTexWide frag_in) : TARGET
 {
-	float3 rgb_topleft = image.Sample(def_sampler, frag_in.uuvv.xz).rgb;
-	float3 rgb_topright = image.Sample(def_sampler, frag_in.uuvv.yz).rgb;
-	float3 rgb_bottomleft = image.Sample(def_sampler, frag_in.uuvv.xw).rgb;
-	float3 rgb_bottomright = image.Sample(def_sampler, frag_in.uuvv.yw).rgb;
-	float3 rgb = (rgb_topleft + rgb_topright + rgb_bottomleft + rgb_bottomright) * 0.25;
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
 	rgb = srgb_linear_to_nonlinear(rgb);
 	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
 	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
@@ -372,13 +370,11 @@ float PS_I010_HLG_U_709_2020_WideWide(FragTexWideWide frag_in) : TARGET
 	return u * (1023. / 65535.);
 }
 
-float PS_I010_SRGB_U_WideWide(FragTexWideWide frag_in) : TARGET
+float PS_I010_SRGB_U_Wide(FragTexWide frag_in) : TARGET
 {
-	float3 rgb_topleft = image.Sample(def_sampler, frag_in.uuvv.xz).rgb;
-	float3 rgb_topright = image.Sample(def_sampler, frag_in.uuvv.yz).rgb;
-	float3 rgb_bottomleft = image.Sample(def_sampler, frag_in.uuvv.xw).rgb;
-	float3 rgb_bottomright = image.Sample(def_sampler, frag_in.uuvv.yw).rgb;
-	float3 rgb = (rgb_topleft + rgb_topright + rgb_bottomleft + rgb_bottomright) * 0.25;
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
 	rgb = srgb_linear_to_nonlinear(rgb);
 	float u = dot(color_vec1.xyz, rgb) + color_vec1.w;
 	return u * (1023. / 65535.);
@@ -410,13 +406,11 @@ float PS_I010_HLG_V_709_2020_WideWide(FragTexWideWide frag_in) : TARGET
 	return v * (1023. / 65535.);
 }
 
-float PS_I010_SRGB_V_WideWide(FragTexWideWide frag_in) : TARGET
+float PS_I010_SRGB_V_Wide(FragTexWide frag_in) : TARGET
 {
-	float3 rgb_topleft = image.Sample(def_sampler, frag_in.uuvv.xz).rgb;
-	float3 rgb_topright = image.Sample(def_sampler, frag_in.uuvv.yz).rgb;
-	float3 rgb_bottomleft = image.Sample(def_sampler, frag_in.uuvv.xw).rgb;
-	float3 rgb_bottomright = image.Sample(def_sampler, frag_in.uuvv.yw).rgb;
-	float3 rgb = (rgb_topleft + rgb_topright + rgb_bottomleft + rgb_bottomright) * 0.25;
+	float3 rgb_left = image.Sample(def_sampler, frag_in.uuv.xz).rgb;
+	float3 rgb_right = image.Sample(def_sampler, frag_in.uuv.yz).rgb;
+	float3 rgb = (rgb_left + rgb_right) * 0.5;
 	rgb = srgb_linear_to_nonlinear(rgb);
 	float v = dot(color_vec2.xyz, rgb) + color_vec2.w;
 	return v * (1023. / 65535.);
@@ -841,8 +835,8 @@ technique I010_SRGB_U
 {
 	pass
 	{
-		vertex_shader = VSTexPos_TopLeft(id);
-		pixel_shader  = PS_I010_SRGB_U_WideWide(frag_in);
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_I010_SRGB_U_Wide(frag_in);
 	}
 }
 
@@ -868,8 +862,8 @@ technique I010_SRGB_V
 {
 	pass
 	{
-		vertex_shader = VSTexPos_TopLeft(id);
-		pixel_shader  = PS_I010_SRGB_V_WideWide(frag_in);
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_I010_SRGB_V_Wide(frag_in);
 	}
 }
 
@@ -922,8 +916,8 @@ technique P010_SRGB_UV
 {
 	pass
 	{
-		vertex_shader = VSTexPos_TopLeft(id);
-		pixel_shader  = PS_P010_SRGB_UV_WideWide(frag_in);
+		vertex_shader = VSTexPos_Left(id);
+		pixel_shader  = PS_P010_SRGB_UV_Wide(frag_in);
 	}
 }
 

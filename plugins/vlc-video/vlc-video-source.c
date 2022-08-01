@@ -446,8 +446,6 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
-	unsigned new_width = 0;
-	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
@@ -1129,8 +1127,10 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&filter);
 	dstr_free(&exts);
 
-	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING, 100,
-			       60000, 10);
+	p = obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
+				   100, 60000, 10);
+	obs_property_int_set_suffix(p, " ms");
+
 	obs_properties_add_int(ppts, S_TRACK, T_TRACK, 1, 10, 1);
 	obs_properties_add_bool(ppts, S_SUBTITLE_ENABLE, T_SUBTITLE_ENABLE);
 	obs_properties_add_int(ppts, S_SUBTITLE_TRACK, T_SUBTITLE_TRACK, 1, 10,

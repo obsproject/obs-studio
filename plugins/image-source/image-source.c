@@ -331,10 +331,13 @@ static obs_missing_files_t *image_source_missingfiles(void *data)
 	return files;
 }
 
-static enum gs_color_space image_source_get_color_space(
-	void *data, size_t count OBS_UNUSED,
-	const enum gs_color_space *preferred_spaces OBS_UNUSED)
+static enum gs_color_space
+image_source_get_color_space(void *data, size_t count,
+			     const enum gs_color_space *preferred_spaces)
 {
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
 	struct image_source *const s = data;
 	gs_image_file4_t *const if4 = &s->if4;
 	return if4->image3.image2.image.texture ? if4->space : GS_CS_SRGB;

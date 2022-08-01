@@ -230,7 +230,7 @@ extern bool load_nvenc_lib(void);
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
-	AVCodec *nvenc = avcodec_find_encoder_by_name(name);
+	const AVCodec *nvenc = avcodec_find_encoder_by_name(name);
 	if (!nvenc)
 		nvenc = avcodec_find_encoder_by_name(fallback);
 
@@ -286,7 +286,7 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 static bool vaapi_supported(void)
 {
-	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
 	return !!vaenc;
 }
 #endif
@@ -294,6 +294,8 @@ static bool vaapi_supported(void)
 #ifdef _WIN32
 extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
+extern void amf_load(void);
+extern void amf_unload(void);
 #endif
 
 #if ENABLE_FFMPEG_LOGGING
@@ -304,7 +306,7 @@ extern void obs_ffmpeg_unload_logging(void);
 static void register_encoder_if_available(struct obs_encoder_info *info,
 					  const char *id)
 {
-	AVCodec *c = avcodec_find_encoder_by_name(id);
+	const AVCodec *c = avcodec_find_encoder_by_name(id);
 	if (c) {
 		obs_register_encoder(info);
 	}
@@ -353,6 +355,11 @@ bool obs_module_load(void)
 			obs_register_encoder(&hevc_nvenc_encoder_info);
 #endif
 	}
+
+#ifdef _WIN32
+	amf_load();
+#endif
+
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
 	if (vaapi_supported()) {
 		blog(LOG_INFO, "FFMPEG VAAPI supported");
@@ -374,6 +381,7 @@ void obs_module_unload(void)
 #endif
 
 #ifdef _WIN32
+	amf_unload();
 	jim_nvenc_unload();
 #endif
 }

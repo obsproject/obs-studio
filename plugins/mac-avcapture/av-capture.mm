@@ -604,7 +604,7 @@ static inline bool update_audio(obs_source_audio *audio,
 {
 	size_t requiredSize;
 	OSStatus status = CMSampleBufferGetAudioBufferListWithRetainedBlockBuffer(
-		sample_buffer, &requiredSize, nullptr, NULL, nullptr, nullptr,
+		sample_buffer, &requiredSize, nullptr, 0, nullptr, nullptr,
 		kCMSampleBufferFlag_AudioBufferList_Assure16ByteAlignment,
 		nullptr);
 
@@ -1347,69 +1347,36 @@ static void *av_capture_create(obs_data_t *settings, obs_source_t *source)
 
 static NSArray *presets(void)
 {
-	if (@available(macOS 10.15, *)) {
-		return @[
-			//AVCaptureSessionPresetiFrame1280x720,
-			//AVCaptureSessionPresetiFrame960x540,
-			AVCaptureSessionPreset3840x2160,
-			AVCaptureSessionPreset1920x1080,
-			AVCaptureSessionPreset1280x720,
-			AVCaptureSessionPreset960x540,
-			AVCaptureSessionPreset640x480,
-			AVCaptureSessionPreset352x288,
-			AVCaptureSessionPreset320x240,
-			AVCaptureSessionPresetHigh,
-			//AVCaptureSessionPresetMedium,
-			//AVCaptureSessionPresetLow,
-			//AVCaptureSessionPresetPhoto,
-		];
-	} else {
-		return @[
-			//AVCaptureSessionPresetiFrame1280x720,
-			//AVCaptureSessionPresetiFrame960x540,
-			AVCaptureSessionPreset1280x720,
-			AVCaptureSessionPreset960x540,
-			AVCaptureSessionPreset640x480,
-			AVCaptureSessionPreset352x288,
-			AVCaptureSessionPreset320x240,
-			AVCaptureSessionPresetHigh,
-			//AVCaptureSessionPresetMedium,
-			//AVCaptureSessionPresetLow,
-			//AVCaptureSessionPresetPhoto,
-		];
-	}
+	return @[
+		//AVCaptureSessionPresetiFrame1280x720,
+		//AVCaptureSessionPresetiFrame960x540,
+		AVCaptureSessionPreset3840x2160,
+		AVCaptureSessionPreset1920x1080, AVCaptureSessionPreset1280x720,
+		AVCaptureSessionPreset960x540, AVCaptureSessionPreset640x480,
+		AVCaptureSessionPreset352x288, AVCaptureSessionPreset320x240,
+		AVCaptureSessionPresetHigh,
+		//AVCaptureSessionPresetMedium,
+		//AVCaptureSessionPresetLow,
+		//AVCaptureSessionPresetPhoto,
+	];
 }
 
 static NSString *preset_names(NSString *preset)
 {
 	NSDictionary *preset_names = nil;
-	if (@available(macOS 10.15, *)) {
-		preset_names = @{
-			AVCaptureSessionPresetLow: @"Low",
-			AVCaptureSessionPresetMedium: @"Medium",
-			AVCaptureSessionPresetHigh: @"High",
-			AVCaptureSessionPreset320x240: @"320x240",
-			AVCaptureSessionPreset352x288: @"352x288",
-			AVCaptureSessionPreset640x480: @"640x480",
-			AVCaptureSessionPreset960x540: @"960x540",
-			AVCaptureSessionPreset1280x720: @"1280x720",
-			AVCaptureSessionPreset1920x1080: @"1920x1080",
-			AVCaptureSessionPreset3840x2160: @"3840x2160",
-			AVCaptureSessionPresetHigh: @"High",
-		};
-	} else {
-		preset_names = @{
-			AVCaptureSessionPresetLow: @"Low",
-			AVCaptureSessionPresetMedium: @"Medium",
-			AVCaptureSessionPresetHigh: @"High",
-			AVCaptureSessionPreset320x240: @"320x240",
-			AVCaptureSessionPreset352x288: @"352x288",
-			AVCaptureSessionPreset640x480: @"640x480",
-			AVCaptureSessionPreset960x540: @"960x540",
-			AVCaptureSessionPreset1280x720: @"1280x720",
-			AVCaptureSessionPresetHigh: @"High",
-		};
-	}
+	preset_names = @{
+		AVCaptureSessionPresetLow: @"Low",
+		AVCaptureSessionPresetMedium: @"Medium",
+		AVCaptureSessionPresetHigh: @"High",
+		AVCaptureSessionPreset320x240: @"320x240",
+		AVCaptureSessionPreset352x288: @"352x288",
+		AVCaptureSessionPreset640x480: @"640x480",
+		AVCaptureSessionPreset960x540: @"960x540",
+		AVCaptureSessionPreset1280x720: @"1280x720",
+		AVCaptureSessionPreset1920x1080: @"1920x1080",
+		AVCaptureSessionPreset3840x2160: @"3840x2160",
+		AVCaptureSessionPresetHigh: @"High",
+	};
 	NSString *name = preset_names[preset];
 	if (name)
 		return name;
@@ -2243,38 +2210,25 @@ static obs_properties_t *av_capture_properties(void *data)
 	obs_property_list_add_string(dev_list, "", "");
 
 	NSArray *devices = nil;
-#if (__MAC_OS_X_VERSION_MAX_ALLOWED >= MAC_OS_X_VERSION_10_15)
-	if (@available(macOS 10.15, *)) {
-		AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession =
-			[AVCaptureDeviceDiscoverySession
-				discoverySessionWithDeviceTypes:@[
-					AVCaptureDeviceTypeBuiltInWideAngleCamera,
-					AVCaptureDeviceTypeExternalUnknown
-				]
-						      mediaType:AVMediaTypeVideo
-						       position:AVCaptureDevicePositionUnspecified];
-		NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
 
-		AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession =
-			[AVCaptureDeviceDiscoverySession
-				discoverySessionWithDeviceTypes:@[
-					AVCaptureDeviceTypeExternalUnknown
-				]
-						      mediaType:AVMediaTypeMuxed
-						       position:AVCaptureDevicePositionUnspecified];
-		NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
+	AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:@[
+			AVCaptureDeviceTypeBuiltInWideAngleCamera,
+			AVCaptureDeviceTypeExternalUnknown
+		]
+				      mediaType:AVMediaTypeVideo
+				       position:AVCaptureDevicePositionUnspecified];
+	NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
 
-		devices = [mediaDevices
-			arrayByAddingObjectsFromArray:muxedDevices];
-	} else {
-#pragma clang diagnostic push
-#pragma clang diagnostic ignored "-Wdeprecated-declarations"
-		devices = [AVCaptureDevice devices];
-#pragma clang diagnostic pop
-	}
-#else
-	devices = [AVCaptureDevice devices];
-#endif
+	AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:@[
+			AVCaptureDeviceTypeExternalUnknown
+		]
+				      mediaType:AVMediaTypeMuxed
+				       position:AVCaptureDevicePositionUnspecified];
+	NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
+
+	devices = [mediaDevices arrayByAddingObjectsFromArray:muxedDevices];
 
 	for (AVCaptureDevice *dev in devices) {
 		if ([dev hasMediaType:AVMediaTypeVideo] ||
@@ -2406,7 +2360,6 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 bool obs_module_load(void)
 {
-#ifdef __MAC_10_10
 	// Enable iOS device to show up as AVCapture devices
 	// From WWDC video 2014 #508 at 5:34
 	// https://developer.apple.com/videos/wwdc/2014/#508
@@ -2417,7 +2370,6 @@ bool obs_module_load(void)
 	UInt32 allow = 1;
 	CMIOObjectSetPropertyData(kCMIOObjectSystemObject, &prop, 0, NULL,
 				  sizeof(allow), &allow);
-#endif
 
 	obs_source_info av_capture_info = {
 		.id = "av_capture_input",

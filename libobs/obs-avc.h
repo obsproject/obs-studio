@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "util/c99defs.h"
+#include "obs-nal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -39,13 +39,6 @@ enum {
 	OBS_NAL_FILLER = 12,
 };
 
-enum {
-	OBS_NAL_PRIORITY_DISPOSABLE = 0,
-	OBS_NAL_PRIORITY_LOW = 1,
-	OBS_NAL_PRIORITY_HIGH = 2,
-	OBS_NAL_PRIORITY_HIGHEST = 3,
-};
-
 /* Helpers for parsing AVC NAL units.  */
 
 EXPORT bool obs_avc_keyframe(const uint8_t *data, size_t size);
@@ -53,6 +46,7 @@ EXPORT const uint8_t *obs_avc_find_startcode(const uint8_t *p,
 					     const uint8_t *end);
 EXPORT void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 				 const struct encoder_packet *src);
+EXPORT int obs_parse_avc_packet_priority(const struct encoder_packet *packet);
 EXPORT size_t obs_parse_avc_header(uint8_t **header, const uint8_t *data,
 				   size_t size);
 EXPORT void obs_extract_avc_headers(const uint8_t *packet, size_t size,

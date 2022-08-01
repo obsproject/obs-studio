@@ -398,9 +398,14 @@ get_tech_name_and_multiplier(const struct scale_filter_data *filter,
 
 static void scale_filter_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	struct scale_filter_data *filter = data;
 
-	const enum gs_color_space current_space = gs_get_color_space();
+	if (!filter->valid || !filter->target_valid) {
+		obs_source_skip_video_filter(filter->context);
+		return;
+	}
 
 	const enum gs_color_space preferred_spaces[] = {
 		GS_CS_SRGB,
@@ -413,48 +418,42 @@ static void scale_filter_render(void *data, gs_effect_t *effect)
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	float multiplier;
 	const char *technique = get_tech_name_and_multiplier(
-		filter, current_space, source_space, &multiplier);
-
-	if (!filter->valid || !filter->target_valid) {
-		obs_source_skip_video_filter(filter->context);
-		return;
-	}
-
+		filter, gs_get_color_space(), source_space, &multiplier);
 	const enum gs_color_format format =
 		gs_get_format_from_space(source_space);
-	if (!obs_source_process_filter_begin_with_color_space(
+	if (obs_source_process_filter_begin_with_color_space(
 		    filter->context, format, source_space,
-		    OBS_NO_DIRECT_RENDERING))
-		return;
+		    OBS_NO_DIRECT_RENDERING)) {
+		if (filter->dimension_param)
+			gs_effect_set_vec2(filter->dimension_param,
+					   &filter->dimension);
 
-	if (filter->dimension_param)
-		gs_effect_set_vec2(filter->dimension_param, &filter->dimension);
+		if (filter->dimension_i_param)
+			gs_effect_set_vec2(filter->dimension_i_param,
+					   &filter->dimension_i);
 
-	if (filter->dimension_i_param)
-		gs_effect_set_vec2(filter->dimension_i_param,
-				   &filter->dimension_i);
+		if (filter->undistort_factor_param)
+			gs_effect_set_float(filter->undistort_factor_param,
+					    (float)filter->undistort_factor);
 
-	if (filter->undistort_factor_param)
-		gs_effect_set_float(filter->undistort_factor_param,
-				    (float)filter->undistort_factor);
+		if (filter->multiplier_param)
+			gs_effect_set_float(filter->multiplier_param,
+					    multiplier);
 
-	if (filter->multiplier_param)
-		gs_effect_set_float(filter->multiplier_param, multiplier);
+		if (filter->sampling == OBS_SCALE_POINT)
+			gs_effect_set_next_sampler(filter->image_param,
+						   filter->point_sampler);
 
-	if (filter->sampling == OBS_SCALE_POINT)
-		gs_effect_set_next_sampler(filter->image_param,
-					   filter->point_sampler);
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+		obs_source_process_filter_tech_end(filter->context,
+						   filter->effect,
+						   filter->cx_out,
+						   filter->cy_out, technique);
 
-	obs_source_process_filter_tech_end(filter->context, filter->effect,
-					   filter->cx_out, filter->cy_out,
-					   technique);
-
-	gs_blend_state_pop();
-
-	UNUSED_PARAMETER(effect);
+		gs_blend_state_pop();
+	}
 }
 
 static const double downscale_vals[] = {1.0,         1.25, (1.0 / 0.75), 1.5,

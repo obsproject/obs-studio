@@ -51,19 +51,29 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 	return obs_nal_find_startcode(p, end);
 }
 
-static inline int get_drop_priority(int priority)
+static int compute_avc_keyframe_priority(const uint8_t *nal_start,
+					 bool *is_keyframe, int priority)
 {
+	const int type = nal_start[0] & 0x1F;
+
+	switch (type) {
+	case OBS_NAL_SLICE:
+		if (priority < OBS_NAL_PRIORITY_HIGH)
+			priority = OBS_NAL_PRIORITY_HIGH;
+		break;
+	case OBS_NAL_SLICE_IDR:
+		*is_keyframe = true;
+		priority = OBS_NAL_PRIORITY_HIGHEST;
+	}
+
 	return priority;
 }
 
 static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 			       size_t size, bool *is_keyframe, int *priority)
 {
-	const uint8_t *nal_start, *nal_end;
-	const uint8_t *end = data + size;
-	int type;
-
-	nal_start = obs_avc_find_startcode(data, end);
+	const uint8_t *const end = data + size;
+	const uint8_t *nal_start = obs_nal_find_startcode(data, end);
 	while (true) {
 		while (nal_start < end && !*(nal_start++))
 			;
@@ -71,18 +81,14 @@ static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 		if (nal_start == end)
 			break;
 
-		type = nal_start[0] & 0x1F;
+		*priority = compute_avc_keyframe_priority(
+			nal_start, is_keyframe, *priority);
 
-		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
-			if (is_keyframe)
-				*is_keyframe = (type == OBS_NAL_SLICE_IDR);
-			if (priority)
-				*priority = nal_start[0] >> 5;
-		}
-
-		nal_end = obs_avc_find_startcode(nal_start, end);
-		s_wb32(s, (uint32_t)(nal_end - nal_start));
-		s_write(s, nal_start, nal_end - nal_start);
+		const uint8_t *const nal_end =
+			obs_nal_find_startcode(nal_start, end);
+		const size_t nal_size = nal_end - nal_start;
+		s_wb32(s, (uint32_t)nal_size);
+		s_write(s, nal_start, nal_size);
 		nal_start = nal_end;
 	}
 }
@@ -103,7 +109,31 @@ void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 
 	avc_packet->data = output.bytes.array + sizeof(ref);
 	avc_packet->size = output.bytes.num - sizeof(ref);
-	avc_packet->drop_priority = get_drop_priority(avc_packet->priority);
+	avc_packet->drop_priority = avc_packet->priority;
+}
+
+int obs_parse_avc_packet_priority(const struct encoder_packet *packet)
+{
+	int priority = packet->priority;
+
+	const uint8_t *const data = packet->data;
+	const uint8_t *const end = data + packet->size;
+	const uint8_t *nal_start = obs_nal_find_startcode(data, end);
+	while (true) {
+		while (nal_start < end && !*(nal_start++))
+			;
+
+		if (nal_start == end)
+			break;
+
+		bool unused;
+		priority = compute_avc_keyframe_priority(nal_start, &unused,
+							 priority);
+
+		nal_start = obs_nal_find_startcode(nal_start, end);
+	}
+
+	return priority;
 }
 
 static inline bool has_start_code(const uint8_t *data)
@@ -121,7 +151,7 @@ static void get_sps_pps(const uint8_t *data, size_t size, const uint8_t **sps,
 	const uint8_t *end = data + size;
 	int type;
 
-	nal_start = obs_avc_find_startcode(data, end);
+	nal_start = obs_nal_find_startcode(data, end);
 	while (true) {
 		while (nal_start < end && !*(nal_start++))
 			;
@@ -129,7 +159,7 @@ static void get_sps_pps(const uint8_t *data, size_t size, const uint8_t **sps,
 		if (nal_start == end)
 			break;
 
-		nal_end = obs_avc_find_startcode(nal_start, end);
+		nal_end = obs_nal_find_startcode(nal_start, end);
 
 		type = nal_start[0] & 0x1F;
 		if (type == OBS_NAL_SPS) {
@@ -195,7 +225,7 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 	da_init(header);
 	da_init(sei);
 
-	nal_start = obs_avc_find_startcode(packet, end);
+	nal_start = obs_nal_find_startcode(packet, end);
 	nal_end = NULL;
 	while (nal_end != end) {
 		nal_codestart = nal_start;
@@ -208,7 +238,7 @@ void obs_extract_avc_headers(const uint8_t *packet, size_t size,
 
 		const uint8_t type = nal_start[0] & 0x1F;
 
-		nal_end = obs_avc_find_startcode(nal_start, end);
+		nal_end = obs_nal_find_startcode(nal_start, end);
 		if (!nal_end)
 			nal_end = end;
 

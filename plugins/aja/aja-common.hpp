@@ -42,10 +42,10 @@ extern void populate_io_selection_output_list(const std::string &cardID,
 extern void
 populate_video_format_list(NTV2DeviceID deviceID, obs_property_t *list,
 			   NTV2VideoFormat genlockFormat = NTV2_FORMAT_UNKNOWN,
-			   bool want4KHFR = false);
+			   bool want4KHFR = false, bool matchFPS = false);
 extern void populate_pixel_format_list(NTV2DeviceID deviceID,
 				       obs_property_t *list);
-extern void populate_sdi_transport_list(obs_property_t *list, IOSelection io,
+extern void populate_sdi_transport_list(obs_property_t *list,
 					NTV2DeviceID deviceID,
 					bool capture = false);
 extern void populate_sdi_4k_transport_list(obs_property_t *list);
@@ -105,8 +105,7 @@ extern bool IsIOSelectionHDMI(IOSelection io);
 extern std::string MakeCardID(CNTV2Card &card);
 
 extern RasterDefinition DetermineRasterDefinition(NTV2VideoFormat vf);
-extern VPIDStandard DetermineVPIDStandard(NTV2DeviceID id, IOSelection io,
-					  NTV2VideoFormat vf,
+extern VPIDStandard DetermineVPIDStandard(IOSelection io, NTV2VideoFormat vf,
 					  NTV2PixelFormat pf, SDITransport trx,
 					  SDITransport4K t4k);
 extern std::vector<NTV2DeviceID> MultiViewCards();

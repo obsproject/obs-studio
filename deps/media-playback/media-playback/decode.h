@@ -53,7 +53,7 @@ struct mp_decode {
 
 	AVCodecContext *decoder;
 	AVBufferRef *hw_ctx;
-	AVCodec *codec;
+	const AVCodec *codec;
 
 	int64_t last_duration;
 	int64_t frame_pts;

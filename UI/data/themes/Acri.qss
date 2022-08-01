@@ -1,3 +1,8 @@
+OBSThemeMeta {
+    dark: 'true';
+    author: 'Warchamp7';
+}
+
 /* OBSTheme, main QApplication palette and QML values */
 OBSTheme {
     window: rgb(24,24,25);
@@ -336,12 +341,27 @@ QToolBar {
 	margin-top: 4px;
 }
 
+QPushButton[toolButton="true"],
+QToolButton {
+	background: transparent;
+	border: none;
+    padding: 4px 6px;
+    margin: 0px 2px;
+}
+
+QPushButton[toolButton="true"]:last-child,
+QToolButton:last-child {
+    margin-right: 0px;
+}
+
+QPushButton[toolButton="true"]:hover,
 QToolButton:hover {
 	background-color: rgb(42,58,117);
 	border: 1px solid rgb(35,49,102);
 	border-radius: none;
 }
 
+QPushButton[toolButton="true"]:pressed,
 QToolButton:pressed {
 	background-color: rgb(22,31,65);
 	border-radius: none;
@@ -381,6 +401,10 @@ QToolButton:pressed {
 
 * [themeID="menuIconSmall"] {
 	qproperty-icon: url(./Dark/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
 }
 
 /* Tab Widget */
@@ -1103,6 +1127,7 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
 }
 
 /* Scene Tree */

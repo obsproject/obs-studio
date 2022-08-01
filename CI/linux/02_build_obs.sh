@@ -58,6 +58,7 @@ _configure_obs() {
         -DCMAKE_BUILD_TYPE=${BUILD_CONFIG} \
         -DLINUX_PORTABLE=${PORTABLE_BUILD:-OFF} \
         -DENABLE_AJA=OFF \
+        -DENABLE_NEW_MPEGTS_OUTPUT=OFF \
         ${PIPEWIRE_OPTION} \
         ${YOUTUBE_OPTIONS} \
         ${TWITCH_OPTIONS} \

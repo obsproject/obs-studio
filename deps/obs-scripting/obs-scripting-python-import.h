@@ -44,7 +44,6 @@
 #endif
 
 #if RUNTIME_LINK
-
 #ifdef NO_REDEFS
 #define PY_EXTERN
 #else
@@ -233,9 +232,12 @@ extern bool import_python(const char *python_path);
 #define _Py_NoneStruct (*Import__Py_NoneStruct)
 #define PyTuple_New Import_PyTuple_New
 #if PY_VERSION_HEX >= 0x030800f0
-static inline void Import__Py_DECREF(const char *filename OBS_UNUSED,
-				     int lineno OBS_UNUSED, PyObject *op)
+static inline void Import__Py_DECREF(const char *filename, int lineno,
+				     PyObject *op)
 {
+	UNUSED_PARAMETER(filename);
+	UNUSED_PARAMETER(lineno);
+
 	if (--op->ob_refcnt != 0) {
 #ifdef Py_REF_DEBUG
 		if (op->ob_refcnt < 0) {
@@ -259,7 +261,7 @@ static inline void Import__Py_XDECREF(PyObject *op)
 
 #undef Py_XDECREF
 #define Py_XDECREF(op) Import__Py_XDECREF(_PyObject_CAST(op))
-#endif
+#endif // PY_VERSION_HEX >= 0x030800f0
 
 #if PY_VERSION_HEX >= 0x030900b0
 static inline int Import_PyType_HasFeature(PyTypeObject *type,
@@ -268,8 +270,7 @@ static inline int Import_PyType_HasFeature(PyTypeObject *type,
 	return ((PyType_GetFlags(type) & feature) != 0);
 }
 #define PyType_HasFeature(t, f) Import_PyType_HasFeature(t, f)
-#endif
+#endif // PY_VERSION_HEX >= 0x030900b0
 
-#endif
-
-#endif
+#endif // NO_REDEFS
+#endif // RUNTIME_LINK

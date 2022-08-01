@@ -66,10 +66,9 @@ class OBSBasicStats;
 #define SIMPLE_ENCODER_X264_LOWCPU "x264_lowcpu"
 #define SIMPLE_ENCODER_QSV "qsv"
 #define SIMPLE_ENCODER_NVENC "nvenc"
-#ifdef ENABLE_HEVC
 #define SIMPLE_ENCODER_NVENC_HEVC "nvenc_hevc"
-#endif
 #define SIMPLE_ENCODER_AMD "amd"
+#define SIMPLE_ENCODER_AMD_HEVC "amd_hevc"
 #define SIMPLE_ENCODER_APPLE_H264 "apple_h264"
 
 #define PREVIEW_EDGE_SIZE 10
@@ -166,6 +165,8 @@ class OBSBasic : public OBSMainWindow {
 			   DESIGNABLE true)
 	Q_PROPERTY(QIcon defaultIcon READ GetDefaultIcon WRITE SetDefaultIcon
 			   DESIGNABLE true)
+	Q_PROPERTY(QIcon audioProcessOutputIcon READ GetAudioProcessOutputIcon
+			   WRITE SetAudioProcessOutputIcon DESIGNABLE true)
 
 	friend class OBSAbout;
 	friend class OBSBasicPreview;
@@ -184,6 +185,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class DeviceToolbarPropertiesThread;
 	friend class OBSBasicSourceSelect;
 	friend class OBSYoutubeActions;
+	friend class OBSPermissions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
 
@@ -202,6 +204,12 @@ class OBSBasic : public OBSMainWindow {
 		ContextBarSize_Minimized,
 		ContextBarSize_Reduced,
 		ContextBarSize_Normal
+	};
+
+	enum class CenterType {
+		Scene,
+		Vertical,
+		Horizontal,
 	};
 
 private:
@@ -432,14 +440,15 @@ private:
 	obs_hotkey_pair_id streamingHotkeys, recordingHotkeys, pauseHotkeys,
 		replayBufHotkeys, vcamHotkeys, togglePreviewHotkeys,
 		contextBarHotkeys;
-	obs_hotkey_id forceStreamingStopHotkey;
+	obs_hotkey_id forceStreamingStopHotkey, splitFileHotkey;
 
 	void InitDefaultTransitions();
 	void InitTransition(obs_source_t *transition);
 	obs_source_t *FindTransition(const char *name);
 	OBSSource GetCurrentTransition();
 	obs_data_array_t *SaveTransitions();
-	void LoadTransitions(obs_data_array_t *transitions);
+	void LoadTransitions(obs_data_array_t *transitions,
+			     obs_load_source_cb cb, void *private_data);
 
 	obs_source_t *fadeTransition;
 	obs_source_t *cutTransition;
@@ -533,6 +542,8 @@ private:
 	void ReceivedIntroJson(const QString &text);
 	void ShowWhatsNew(const QString &url);
 
+	void UpdatePreviewProgramIndicators();
+
 #ifdef BROWSER_AVAILABLE
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
 	QList<QSharedPointer<QAction>> extraBrowserDockActions;
@@ -561,6 +572,7 @@ private:
 	QIcon groupIcon;
 	QIcon sceneIcon;
 	QIcon defaultIcon;
+	QIcon audioProcessOutputIcon;
 
 	QIcon GetImageIcon() const;
 	QIcon GetColorIcon() const;
@@ -575,6 +587,7 @@ private:
 	QIcon GetMediaIcon() const;
 	QIcon GetBrowserIcon() const;
 	QIcon GetDefaultIcon() const;
+	QIcon GetAudioProcessOutputIcon() const;
 
 	QSlider *tBar;
 	bool tBarActive = false;
@@ -608,6 +621,22 @@ private:
 
 	void UpdatePreviewSafeAreas();
 	bool drawSafeAreas = false;
+
+	void CenterSelectedSceneItems(const CenterType &centerType);
+	void ShowMissingFilesDialog(obs_missing_files_t *files);
+
+	QColor selectionColor;
+	QColor cropColor;
+	QColor hoverColor;
+
+	QColor GetSelectionColor() const;
+	QColor GetCropColor() const;
+	QColor GetHoverColor() const;
+
+	void UpdatePreviewSpacingHelpers();
+	bool drawSpacingHelpers = true;
+
+	float GetDevicePixelRatio();
 
 public slots:
 	void DeferSaveBegin();
@@ -774,6 +803,7 @@ private slots:
 	void SetGroupIcon(const QIcon &icon);
 	void SetSceneIcon(const QIcon &icon);
 	void SetDefaultIcon(const QIcon &icon);
+	void SetAudioProcessOutputIcon(const QIcon &icon);
 
 	void TBarChanged(int value);
 	void TBarReleased();
@@ -816,8 +846,9 @@ private:
 
 	OBSSource prevFTBSource = nullptr;
 
+	float dpi = 1.0;
+
 public:
-	undo_stack undo_s;
 	OBSSource GetProgramSource();
 	OBSScene GetCurrentScene();
 
@@ -850,6 +881,8 @@ public:
 
 	void AddVCamButton();
 	void ResetOutputs();
+
+	void RefreshVolumeColors();
 
 	void ResetAudioDevice(const char *sourceId, const char *deviceId,
 			      const char *deviceDesc, int channel);
@@ -965,13 +998,17 @@ private slots:
 	void on_actionShow_Recordings_triggered();
 	void on_actionRemux_triggered();
 	void on_action_Settings_triggered();
+	void on_actionShowMacPermissions_triggered();
 	void on_actionShowMissingFiles_triggered();
 	void on_actionAdvAudioProperties_triggered();
+	void on_actionMixerToolbarAdvAudio_triggered();
+	void on_actionMixerToolbarMenu_triggered();
 	void on_actionShowLogs_triggered();
 	void on_actionUploadCurrentLog_triggered();
 	void on_actionUploadLastLog_triggered();
 	void on_actionViewCurrentLog_triggered();
 	void on_actionCheckForUpdates_triggered();
+	void on_actionRepair_triggered();
 
 	void on_actionShowCrashLogs_triggered();
 	void on_actionUploadLastCrashLog_triggered();
@@ -1149,7 +1186,14 @@ public slots:
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
 
+private:
+	std::unique_ptr<Ui::OBSBasic> ui;
+
 public:
+	/* `undo_s` needs to be declared after `ui` to prevent an uninitialized
+	 * warning for `ui` while initializing `undo_s`. */
+	undo_stack undo_s;
+
 	explicit OBSBasic(QWidget *parent = 0);
 	virtual ~OBSBasic();
 
@@ -1161,9 +1205,6 @@ public:
 				   const char *file) const override;
 
 	static void InitBrowserPanelSafeBlock();
-
-private:
-	std::unique_ptr<Ui::OBSBasic> ui;
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {

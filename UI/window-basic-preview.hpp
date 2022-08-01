@@ -16,8 +16,11 @@ class QMouseEvent;
 #define ITEM_RIGHT (1 << 1)
 #define ITEM_TOP (1 << 2)
 #define ITEM_BOTTOM (1 << 3)
+#define ITEM_ROT (1 << 4)
 
 #define ZOOM_SENSITIVITY 1.125f
+
+#define SPACER_LABEL_MARGIN 6.0f
 
 enum class ItemHandle : uint32_t {
 	None = 0,
@@ -29,6 +32,7 @@ enum class ItemHandle : uint32_t {
 	BottomLeft = ITEM_BOTTOM | ITEM_LEFT,
 	BottomCenter = ITEM_BOTTOM,
 	BottomRight = ITEM_BOTTOM | ITEM_RIGHT,
+	Rot = ITEM_ROT
 };
 
 class OBSBasicPreview : public OBSQTDisplay {
@@ -44,6 +48,9 @@ private:
 	OBSSceneItem stretchGroup;
 	OBSSceneItem stretchItem;
 	ItemHandle stretchHandle = ItemHandle::None;
+	float rotateAngle;
+	vec2 rotatePoint;
+	vec2 offsetPoint;
 	vec2 stretchItemSize;
 	matrix4 screenToItem;
 	matrix4 itemToScreen;
@@ -51,6 +58,7 @@ private:
 
 	gs_texture_t *overflow = nullptr;
 	gs_vertbuffer_t *rectFill = nullptr;
+	gs_vertbuffer_t *circleFill = nullptr;
 
 	vec2 startPos;
 	vec2 mousePos;
@@ -67,6 +75,7 @@ private:
 	bool selectionBox = false;
 	int32_t scalingLevel = 0;
 	float scalingAmount = 1.0f;
+	float groupRot = 0.0f;
 
 	std::vector<obs_sceneitem_t *> hoveredPreviewItems;
 	std::vector<obs_sceneitem_t *> selectedItems;
@@ -99,6 +108,7 @@ private:
 	vec3 CalculateStretchPos(const vec3 &tl, const vec3 &br);
 	void CropItem(const vec2 &pos);
 	void StretchItem(const vec2 &pos);
+	void RotateItem(const vec2 &pos);
 
 	static void SnapItemMovement(vec2 &offset);
 	void MoveItems(const vec2 &pos);
@@ -158,4 +168,9 @@ public:
 	 * byte boundary. */
 	static inline void *operator new(size_t size) { return bmalloc(size); }
 	static inline void operator delete(void *ptr) { bfree(ptr); }
+
+	OBSSourceAutoRelease spacerLabel[4];
+	int spacerPx[4] = {0};
+
+	void DrawSpacingHelpers();
 };

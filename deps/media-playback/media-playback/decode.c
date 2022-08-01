@@ -31,7 +31,7 @@ enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_NONE,
 };
 
-static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type,
+static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type,
 			enum AVPixelFormat *hw_format)
 {
 	for (int i = 0;; i++) {
@@ -251,11 +251,11 @@ void mp_decode_clear_packets(struct mp_decode *d)
 
 void mp_decode_free(struct mp_decode *d)
 {
-	av_packet_free(&d->pkt);
-	av_packet_free(&d->orig_pkt);
-
 	mp_decode_clear_packets(d);
 	circlebuf_free(&d->packets);
+
+	av_packet_free(&d->pkt);
+	av_packet_free(&d->orig_pkt);
 
 	if (d->hw_frame) {
 		av_frame_unref(d->hw_frame);

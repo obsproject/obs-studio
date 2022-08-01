@@ -64,8 +64,6 @@ static void luma_wipe_update(void *data, obs_data_t *settings)
 
 	bfree(file);
 	dstr_free(&path);
-
-	UNUSED_PARAMETER(settings);
 }
 
 static void luma_wipe_get_list(void *data)
