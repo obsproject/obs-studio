@@ -156,8 +156,13 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	}
 	if (!new_stream(data, &data->video, name))
 		return false;
-	if ((data->config.color_trc == AVCOL_TRC_SMPTE2084) ||
-	    (data->config.color_trc == AVCOL_TRC_ARIB_STD_B67)) {
+	const bool pq = data->config.color_trc == AVCOL_TRC_SMPTE2084;
+	const bool hlg = data->config.color_trc == AVCOL_TRC_ARIB_STD_B67;
+	if (pq || hlg) {
+		const int hdr_nominal_peak_level =
+			pq ? (int)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
 		mastering->display_primaries[0][0] = av_make_q(17, 25);
@@ -169,8 +174,7 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 		mastering->white_point[0] = av_make_q(3127, 10000);
 		mastering->white_point[1] = av_make_q(329, 1000);
 		mastering->min_luminance = av_make_q(0, 1);
-		mastering->max_luminance = av_make_q(
-			(int)obs_get_video_hdr_nominal_peak_level(), 1);
+		mastering->max_luminance = av_make_q(hdr_nominal_peak_level, 1);
 		mastering->has_primaries = 1;
 		mastering->has_luminance = 1;
 		av_stream_add_side_data(data->video,
@@ -1226,7 +1230,11 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 	.id = "ffmpeg_mpegts_muxer",
 	.flags = OBS_OUTPUT_AV | OBS_OUTPUT_ENCODED | OBS_OUTPUT_MULTI_TRACK |
 		 OBS_OUTPUT_SERVICE,
+#ifdef ENABLE_HEVC
 	.encoded_video_codecs = "h264;hevc;av1",
+#else
+	.encoded_video_codecs = "h264;av1",
+#endif
 	.encoded_audio_codecs = "aac",
 	.get_name = ffmpeg_mpegts_getname,
 	.create = ffmpeg_mpegts_create,
