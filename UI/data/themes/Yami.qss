@@ -1094,7 +1094,6 @@ QGroupBox::indicator:unchecked:disabled {
 LockedCheckBox {
     outline: none;
     background: transparent;
-    margin-left: -2px;
 }
 
 LockedCheckBox::indicator {
@@ -1117,7 +1116,6 @@ LockedCheckBox::indicator:unchecked:hover {
 VisibilityCheckBox {
     outline: none;
     background: transparent;
-    margin-left: -1px;
 }
 
 VisibilityCheckBox::indicator {

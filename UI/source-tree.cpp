@@ -76,14 +76,12 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 		iconLabel = new QLabel();
 		iconLabel->setPixmap(pixmap);
-		iconLabel->setFixedSize(16, 16);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
 	}
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	vis->setFixedSize(16, 16);
 	vis->setChecked(sourceVisible);
 	vis->setStyleSheet("background: none");
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
@@ -92,7 +90,6 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 	lock = new LockedCheckBox();
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	lock->setFixedSize(16, 16);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setStyleSheet("background: none");
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
