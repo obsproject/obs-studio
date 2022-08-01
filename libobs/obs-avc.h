@@ -46,6 +46,7 @@ EXPORT const uint8_t *obs_avc_find_startcode(const uint8_t *p,
 					     const uint8_t *end);
 EXPORT void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 				 const struct encoder_packet *src);
+EXPORT int obs_parse_avc_packet_priority(const struct encoder_packet *packet);
 EXPORT size_t obs_parse_avc_header(uint8_t **header, const uint8_t *data,
 				   size_t size);
 EXPORT void obs_extract_avc_headers(const uint8_t *packet, size_t size,

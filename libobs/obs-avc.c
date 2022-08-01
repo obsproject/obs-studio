@@ -51,6 +51,24 @@ const uint8_t *obs_avc_find_startcode(const uint8_t *p, const uint8_t *end)
 	return obs_nal_find_startcode(p, end);
 }
 
+static int compute_avc_keyframe_priority(const uint8_t *nal_start,
+					 bool *is_keyframe, int priority)
+{
+	const int type = nal_start[0] & 0x1F;
+
+	switch (type) {
+	case OBS_NAL_SLICE:
+		if (priority < OBS_NAL_PRIORITY_HIGH)
+			priority = OBS_NAL_PRIORITY_HIGH;
+		break;
+	case OBS_NAL_SLICE_IDR:
+		*is_keyframe = true;
+		priority = OBS_NAL_PRIORITY_HIGHEST;
+	}
+
+	return priority;
+}
+
 static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 			       size_t size, bool *is_keyframe, int *priority)
 {
@@ -63,23 +81,14 @@ static void serialize_avc_data(struct serializer *s, const uint8_t *data,
 		if (nal_start == end)
 			break;
 
-		const int type = nal_start[0] & 0x1F;
-
-		switch (type) {
-		case OBS_NAL_SLICE:
-			if (*priority < OBS_NAL_PRIORITY_HIGH)
-				*priority = OBS_NAL_PRIORITY_HIGH;
-			break;
-		case OBS_NAL_SLICE_IDR:
-			*is_keyframe = true;
-			*priority = OBS_NAL_PRIORITY_HIGHEST;
-		}
+		*priority = compute_avc_keyframe_priority(
+			nal_start, is_keyframe, *priority);
 
 		const uint8_t *const nal_end =
 			obs_nal_find_startcode(nal_start, end);
-		const size_t size = nal_end - nal_start;
-		s_wb32(s, (uint32_t)size);
-		s_write(s, nal_start, size);
+		const size_t nal_size = nal_end - nal_start;
+		s_wb32(s, (uint32_t)nal_size);
+		s_write(s, nal_start, nal_size);
 		nal_start = nal_end;
 	}
 }
@@ -101,6 +110,30 @@ void obs_parse_avc_packet(struct encoder_packet *avc_packet,
 	avc_packet->data = output.bytes.array + sizeof(ref);
 	avc_packet->size = output.bytes.num - sizeof(ref);
 	avc_packet->drop_priority = avc_packet->priority;
+}
+
+int obs_parse_avc_packet_priority(const struct encoder_packet *packet)
+{
+	int priority = packet->priority;
+
+	const uint8_t *const data = packet->data;
+	const uint8_t *const end = data + packet->size;
+	const uint8_t *nal_start = obs_nal_find_startcode(data, end);
+	while (true) {
+		while (nal_start < end && !*(nal_start++))
+			;
+
+		if (nal_start == end)
+			break;
+
+		bool unused;
+		priority = compute_avc_keyframe_priority(nal_start, &unused,
+							 priority);
+
+		nal_start = obs_nal_find_startcode(nal_start, end);
+	}
+
+	return priority;
 }
 
 static inline bool has_start_code(const uint8_t *data)
