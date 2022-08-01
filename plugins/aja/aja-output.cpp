@@ -315,25 +315,6 @@ void AJAOutput::ClearAudioQueue()
 	}
 }
 
-bool AJAOutput::HaveEnoughAudio(size_t needAudioSize)
-{
-	bool ok = false;
-
-	if (mAudioQueue->size() > 0) {
-		size_t available = 0;
-		for (size_t i = 0; i < mAudioQueue->size(); i++) {
-			AudioFrames af = mAudioQueue->at(i);
-			available += af.size - af.offset;
-			if (available >= needAudioSize) {
-				ok = true;
-				break;
-			}
-		}
-	}
-
-	return ok;
-}
-
 size_t AJAOutput::VideoQueueSize()
 {
 	return mVideoQueue->size();
