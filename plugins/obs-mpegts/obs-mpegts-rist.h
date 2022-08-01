@@ -16,8 +16,7 @@
  */
 
 #pragma once
-#include <obs-module.h>
-#include "obs-ffmpeg-url.h"
+#include "obs-mpegts-common.h"
 #include <librist/librist.h>
 #include <librist/version.h>
 

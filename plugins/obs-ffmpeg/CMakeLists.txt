@@ -3,7 +3,6 @@ cmake_minimum_required(VERSION 3.22...3.25)
 legacy_check()
 
 option(ENABLE_FFMPEG_LOGGING "Enables obs-ffmpeg logging" OFF)
-option(ENABLE_NEW_MPEGTS_OUTPUT "Use native SRT/RIST mpegts output" ON)
 
 include(cmake/dependencies.cmake)
 
@@ -16,10 +15,6 @@ target_sources(
   obs-ffmpeg
   PRIVATE # cmake-format: sortable
           $<$<BOOL:${ENABLE_FFMPEG_LOGGING}>:obs-ffmpeg-logging.c>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-mpegts.c>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-rist.h>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-srt.h>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:obs-ffmpeg-url.h>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:obs-ffmpeg-vaapi.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.c>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:vaapi-utils.h>
@@ -65,9 +60,7 @@ target_link_libraries(
           $<$<PLATFORM_ID:Windows>:ws2_32>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::va>
           $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libva::drm>
-          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libpci::pci>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:Librist::Librist>
-          $<$<BOOL:${ENABLE_NEW_MPEGTS_OUTPUT}>:Libsrt::Libsrt>)
+          $<$<PLATFORM_ID:Linux,FreeBSD,OpenBSD>:Libpci::pci>)
 
 if(OS_WINDOWS)
   configure_file(cmake/windows/obs-module.rc.in obs-ffmpeg.rc)

@@ -27,7 +27,9 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern struct obs_source_info ffmpeg_source;
 extern struct obs_output_info ffmpeg_output;
 extern struct obs_output_info ffmpeg_muxer;
+#ifndef NEW_MPEGTS_OUTPUT
 extern struct obs_output_info ffmpeg_mpegts_muxer;
+#endif
 extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
@@ -362,7 +364,9 @@ bool obs_module_load(void)
 	obs_register_source(&ffmpeg_source);
 	obs_register_output(&ffmpeg_output);
 	obs_register_output(&ffmpeg_muxer);
+#ifndef NEW_MPEGTS_OUTPUT
 	obs_register_output(&ffmpeg_mpegts_muxer);
+#endif
 	obs_register_output(&ffmpeg_hls_muxer);
 	obs_register_output(&replay_buffer);
 	obs_register_encoder(&aac_encoder_info);
