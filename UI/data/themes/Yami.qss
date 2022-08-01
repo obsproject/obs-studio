@@ -1169,6 +1169,11 @@ MuteCheckBox {
 	outline: none;
 }
 
+MuteCheckBox::indicator {
+    width: 16px;
+    height: 16px;
+}
+
 MuteCheckBox::indicator:checked {
 	image: url(./Dark/mute.svg);
 }
