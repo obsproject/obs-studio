@@ -23,6 +23,13 @@
 extern "C" {
 #endif
 
+enum {
+	OBS_NAL_PRIORITY_DISPOSABLE = 0,
+	OBS_NAL_PRIORITY_LOW = 1,
+	OBS_NAL_PRIORITY_HIGH = 2,
+	OBS_NAL_PRIORITY_HIGHEST = 3,
+};
+
 EXPORT const uint8_t *obs_nal_find_startcode(const uint8_t *p,
 					     const uint8_t *end);
 

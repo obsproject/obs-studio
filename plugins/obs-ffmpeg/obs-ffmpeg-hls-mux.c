@@ -1,4 +1,8 @@
 #include "obs-ffmpeg-mux.h"
+#include <obs-avc.h>
+#ifdef ENABLE_HEVC
+#include <obs-hevc.h>
+#endif
 
 #define do_log(level, format, ...)                      \
 	blog(level, "[ffmpeg hls muxer: '%s'] " format, \
@@ -292,9 +296,20 @@ void ffmpeg_hls_mux_data(void *data, struct encoder_packet *packet)
 	}
 
 	if (packet->type == OBS_ENCODER_VIDEO) {
-		obs_parse_avc_packet(&tmp_packet, packet);
-		packet->drop_priority = tmp_packet.priority;
-		obs_encoder_packet_release(&tmp_packet);
+		const char *const codec =
+			obs_encoder_get_codec(packet->encoder);
+		if (strcmp(codec, "h264") == 0) {
+			obs_parse_avc_packet(&tmp_packet, packet);
+			packet->drop_priority = tmp_packet.priority;
+			obs_encoder_packet_release(&tmp_packet);
+		}
+#ifdef ENABLE_HEVC
+		else if (strcmp(codec, "hevc") == 0) {
+			obs_parse_hevc_packet(&tmp_packet, packet);
+			packet->drop_priority = tmp_packet.priority;
+			obs_encoder_packet_release(&tmp_packet);
+		}
+#endif
 	}
 	obs_encoder_packet_ref(&new_packet, packet);
 
