@@ -1,6 +1,5 @@
 #pragma once
 
-#include <obs-avc.h>
 #include <obs-module.h>
 #include <obs-hotkey.h>
 #include <util/circlebuf.h>
