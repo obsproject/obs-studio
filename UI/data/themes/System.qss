@@ -77,7 +77,7 @@ SourceTreeSubItemCheckBox::indicator {
 }
 
 SourceTreeSubItemCheckBox::indicator:checked {
-    image: url(:/res/images/expand.svg);
+    image: url(:/res/images/right.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
@@ -367,6 +367,6 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
