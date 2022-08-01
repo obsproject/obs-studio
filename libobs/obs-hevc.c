@@ -17,8 +17,9 @@
 
 #include "obs-hevc.h"
 
+#include "obs.h"
 #include "obs-nal.h"
-#include "util/darray.h"
+#include "util/array-serializer.h"
 
 enum {
 	OBS_HEVC_NAL_TRAIL_N = 0,
@@ -87,6 +88,63 @@ bool obs_hevc_keyframe(const uint8_t *data, size_t size)
 	}
 
 	return false;
+}
+
+static void serialize_hevc_data(struct serializer *s, const uint8_t *data,
+				size_t size, bool *is_keyframe, int *priority)
+{
+	const uint8_t *const end = data + size;
+	const uint8_t *nal_start = obs_nal_find_startcode(data, end);
+	while (true) {
+		while (nal_start < end && !*(nal_start++))
+			;
+
+		if (nal_start == end)
+			break;
+
+		// HEVC contains NAL unit specifier at [6..1] bits of
+		// the byte next to the startcode 0x000001
+		const int type = (nal_start[0] & 0x7F) >> 1;
+
+		// Mark IDR slices as key-frames and set them to highest
+		// priority if needed. Assume other slices are non-key
+		// frames and set their priority as high
+		if (type >= OBS_HEVC_NAL_BLA_W_LP &&
+		    type <= OBS_HEVC_NAL_RSV_IRAP_VCL23) {
+			*is_keyframe = 1;
+			*priority = OBS_NAL_PRIORITY_HIGHEST;
+		} else if (type >= OBS_HEVC_NAL_TRAIL_N &&
+			   type <= OBS_HEVC_NAL_RASL_R) {
+			if (*priority < OBS_NAL_PRIORITY_HIGH)
+				*priority = OBS_NAL_PRIORITY_HIGH;
+		}
+
+		const uint8_t *const nal_end =
+			obs_nal_find_startcode(nal_start, end);
+		const size_t size = nal_end - nal_start;
+		s_wb32(s, (uint32_t)size);
+		s_write(s, nal_start, size);
+		nal_start = nal_end;
+	}
+}
+
+void obs_parse_hevc_packet(struct encoder_packet *hevc_packet,
+			   const struct encoder_packet *src)
+{
+	struct array_output_data output;
+	struct serializer s;
+	long ref = 1;
+
+	array_output_serializer_init(&s, &output);
+	*hevc_packet = *src;
+
+	serialize(&s, &ref, sizeof(ref));
+	serialize_hevc_data(&s, src->data, src->size, &hevc_packet->keyframe,
+			    &hevc_packet->priority);
+
+	hevc_packet->data = output.bytes.array + sizeof(ref);
+	hevc_packet->size = output.bytes.num - sizeof(ref);
+	hevc_packet->drop_priority = hevc_packet->priority;
 }
 
 void obs_extract_hevc_headers(const uint8_t *packet, size_t size,
