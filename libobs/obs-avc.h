@@ -17,7 +17,7 @@
 
 #pragma once
 
-#include "util/c99defs.h"
+#include "obs-nal.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -37,13 +37,6 @@ enum {
 	OBS_NAL_PPS = 8,
 	OBS_NAL_AUD = 9,
 	OBS_NAL_FILLER = 12,
-};
-
-enum {
-	OBS_NAL_PRIORITY_DISPOSABLE = 0,
-	OBS_NAL_PRIORITY_LOW = 1,
-	OBS_NAL_PRIORITY_HIGH = 2,
-	OBS_NAL_PRIORITY_HIGHEST = 3,
 };
 
 /* Helpers for parsing AVC NAL units.  */
