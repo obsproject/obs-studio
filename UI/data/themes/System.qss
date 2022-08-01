@@ -77,11 +77,11 @@ SourceTreeSubItemCheckBox::indicator {
 }
 
 SourceTreeSubItemCheckBox::indicator:checked {
-    image: url(:/res/images/right.svg);
+    image: url(:/res/images/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(:/res/images/down.svg);
+    image: url(:/res/images/collapse.svg);
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {

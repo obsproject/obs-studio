@@ -682,11 +682,11 @@ SourceTreeSubItemCheckBox::indicator {
 }
 
 SourceTreeSubItemCheckBox::indicator:checked {
-    image: url(./Dark/right.svg);
+    image: url(./Dark/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(./Dark/down.svg);
+    image: url(./Dark/collapse.svg);
 }
 
 

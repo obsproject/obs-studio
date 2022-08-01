@@ -1231,12 +1231,12 @@ SourceTreeSubItemCheckBox::indicator {
 
 SourceTreeSubItemCheckBox::indicator:checked,
 SourceTreeSubItemCheckBox::indicator:checked:hover {
-    image: url(./Dark/right.svg);
+    image: url(./Dark/expand.svg);
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-    image: url(./Dark/down.svg);
+    image: url(./Dark/collapse.svg);
 }
 
 /* Source Icons */
