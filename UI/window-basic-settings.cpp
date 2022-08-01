@@ -2656,8 +2656,6 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->autoRemux->setChecked(autoRemux);
 	ui->dynBitrate->setChecked(dynBitrate);
 
-	UpdateColorFormatSpaceWarning();
-
 	SetComboByValue(ui->colorFormat, videoColorFormat);
 	SetComboByValue(ui->colorSpace, videoColorSpace);
 	SetComboByValue(ui->colorRange, videoColorRange);
@@ -4117,12 +4115,12 @@ void OBSBasicSettings::on_advOutFFType_currentIndexChanged(int idx)
 	ui->advOutFFNoSpace->setHidden(idx != 0);
 }
 
-void OBSBasicSettings::on_colorFormat_currentIndexChanged(const QString &)
+void OBSBasicSettings::on_colorFormat_currentIndexChanged(int)
 {
 	UpdateColorFormatSpaceWarning();
 }
 
-void OBSBasicSettings::on_colorSpace_currentIndexChanged(const QString &)
+void OBSBasicSettings::on_colorSpace_currentIndexChanged(int)
 {
 	UpdateColorFormatSpaceWarning();
 }
