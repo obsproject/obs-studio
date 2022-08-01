@@ -1721,22 +1721,24 @@ void SourceTree::paintEvent(QPaintEvent *event)
 		}
 
 		QRectF iconRect = iconNoSources.viewBoxF();
+		iconRect.setSize(QSizeF(32.0, 32.0));
 
 		QSizeF iconSize = iconRect.size();
 		QSizeF textSize = textNoSources.size();
 		QSizeF thisSize = size();
+		const qreal spacing = 16.0;
 
-		qreal totalHeight = textSize.height() + iconSize.height();
+		qreal totalHeight =
+			iconSize.height() + spacing + textSize.height();
 
-		qreal x = thisSize.width() / 2.0 - textSize.width() / 2.0;
+		qreal x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
 		qreal y = thisSize.height() / 2.0 - totalHeight / 2.0;
-		p.drawStaticText(x, y, textNoSources);
-
-		x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
-		y += textSize.height();
-		iconRect.moveTo(x, y);
-
+		iconRect.moveTo(std::round(x), std::round(y));
 		iconNoSources.render(&p, iconRect);
+
+		x = thisSize.width() / 2.0 - textSize.width() / 2.0;
+		y += spacing + iconSize.height();
+		p.drawStaticText(x, y, textNoSources);
 	} else {
 		QListView::paintEvent(event);
 	}
