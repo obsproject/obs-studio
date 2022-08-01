@@ -1006,6 +1006,16 @@ OBSQTDisplay {
 
 /* Filters Window */
 
+OBSBasicFilters QListWidget {
+    border-radius: 4px;
+    padding: 3px;
+}
+
+OBSBasicFilters QListWidget::item {
+    border-radius: 4px;
+    padding: 6px;
+}
+
 OBSBasicFilters #widget,
 OBSBasicFilters #widget_2 {
     margin: 0px;

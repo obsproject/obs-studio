@@ -21,10 +21,6 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	/* Fix for non-apple systems where the spacing would be too big */
-#ifndef __APPLE__
-	vis->setMaximumSize(16, 16);
-#endif
 	vis->setChecked(enabled);
 
 	label = new QLabel(QT_UTF8(name));
@@ -33,7 +29,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	QHBoxLayout *itemLayout = new QHBoxLayout();
 	itemLayout->addWidget(vis);
 	itemLayout->addWidget(label);
-	itemLayout->setContentsMargins(5, 2, 5, 2);
+	itemLayout->setContentsMargins(0, 0, 0, 0);
 
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
@@ -168,6 +164,5 @@ void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
 {
 	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source);
 
-	item->setSizeHint(baseWidget->sizeHint());
 	list->setItemWidget(item, baseWidget);
 }
