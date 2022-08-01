@@ -1175,11 +1175,15 @@ DWORD WINAPI WASAPISource::CaptureThread(LPVOID param)
 							_countof(active_sigs);
 						sigs = active_sigs;
 					} else {
-						blog(LOG_INFO,
-						     "WASAPI: Device '%s' failed to start (source: %s)",
-						     source->device_id.c_str(),
-						     obs_source_get_name(
-							     source->source));
+						if (source->reconnectDuration ==
+						    0) {
+							blog(LOG_INFO,
+							     "WASAPI: Device '%s' failed to start (source: %s)",
+							     source->device_id
+								     .c_str(),
+							     obs_source_get_name(
+								     source->source));
+						}
 						stop = true;
 						reconnect = true;
 						source->reconnectDuration =
@@ -1280,9 +1284,12 @@ void WASAPISource::OnStartCapture()
 		assert(ret == WAIT_TIMEOUT);
 
 		if (!TryInitialize()) {
-			blog(LOG_INFO,
-			     "WASAPI: Device '%s' failed to start (source: %s)",
-			     device_id.c_str(), obs_source_get_name(source));
+			if (reconnectDuration == 0) {
+				blog(LOG_INFO,
+				     "WASAPI: Device '%s' failed to start (source: %s)",
+				     device_id.c_str(),
+				     obs_source_get_name(source));
+			}
 			reconnectDuration = RECONNECT_INTERVAL;
 			SetEvent(reconnectSignal);
 		}
