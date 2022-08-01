@@ -395,8 +395,8 @@ private slots:
 	void on_advOutFFVEncoder_currentIndexChanged(int idx);
 	void on_advOutFFType_currentIndexChanged(int idx);
 
-	void on_colorFormat_currentIndexChanged(const QString &text);
-	void on_colorSpace_currentIndexChanged(const QString &text);
+	void on_colorFormat_currentIndexChanged(int idx);
+	void on_colorSpace_currentIndexChanged(int idx);
 
 	void on_filenameFormatting_textEdited(const QString &text);
 	void on_outputResolution_editTextChanged(const QString &text);
