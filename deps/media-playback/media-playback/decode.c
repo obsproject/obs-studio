@@ -251,11 +251,11 @@ void mp_decode_clear_packets(struct mp_decode *d)
 
 void mp_decode_free(struct mp_decode *d)
 {
-	av_packet_free(&d->pkt);
-	av_packet_free(&d->orig_pkt);
-
 	mp_decode_clear_packets(d);
 	circlebuf_free(&d->packets);
+
+	av_packet_free(&d->pkt);
+	av_packet_free(&d->orig_pkt);
 
 	if (d->hw_frame) {
 		av_frame_unref(d->hw_frame);
