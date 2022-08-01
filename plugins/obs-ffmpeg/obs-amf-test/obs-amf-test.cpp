@@ -85,11 +85,34 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	return true;
 }
 
+DWORD WINAPI TimeoutThread(LPVOID param)
+{
+	HANDLE hMainThread = (HANDLE)param;
+
+	DWORD ret = WaitForSingleObject(hMainThread, 2500);
+	if (ret == WAIT_TIMEOUT)
+		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
+
+	CloseHandle(hMainThread);
+
+	return 0;
+}
+
 int main(void)
 try {
 	ComPtr<IDXGIFactory> factory;
 	AMF_RESULT res;
 	HRESULT hr;
+
+	HANDLE hMainThread;
+	DuplicateHandle(GetCurrentProcess(), GetCurrentThread(),
+			GetCurrentProcess(), &hMainThread, 0, FALSE,
+			DUPLICATE_SAME_ACCESS);
+	DWORD threadId;
+	HANDLE hThread;
+	hThread =
+		CreateThread(NULL, 0, TimeoutThread, hMainThread, 0, &threadId);
+	CloseHandle(hThread);
 
 	/* --------------------------------------------------------- */
 	/* try initializing amf, I guess                             */
