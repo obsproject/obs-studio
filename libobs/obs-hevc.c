@@ -90,6 +90,29 @@ bool obs_hevc_keyframe(const uint8_t *data, size_t size)
 	return false;
 }
 
+static int compute_hevc_keyframe_priority(const uint8_t *nal_start,
+					  bool *is_keyframe, int priority)
+{
+	// HEVC contains NAL unit specifier at [6..1] bits of
+	// the byte next to the startcode 0x000001
+	const int type = (nal_start[0] & 0x7F) >> 1;
+
+	// Mark IDR slices as key-frames and set them to highest
+	// priority if needed. Assume other slices are non-key
+	// frames and set their priority as high
+	if (type >= OBS_HEVC_NAL_BLA_W_LP &&
+	    type <= OBS_HEVC_NAL_RSV_IRAP_VCL23) {
+		*is_keyframe = 1;
+		priority = OBS_NAL_PRIORITY_HIGHEST;
+	} else if (type >= OBS_HEVC_NAL_TRAIL_N &&
+		   type <= OBS_HEVC_NAL_RASL_R) {
+		if (priority < OBS_NAL_PRIORITY_HIGH)
+			priority = OBS_NAL_PRIORITY_HIGH;
+	}
+
+	return priority;
+}
+
 static void serialize_hevc_data(struct serializer *s, const uint8_t *data,
 				size_t size, bool *is_keyframe, int *priority)
 {
@@ -102,28 +125,14 @@ static void serialize_hevc_data(struct serializer *s, const uint8_t *data,
 		if (nal_start == end)
 			break;
 
-		// HEVC contains NAL unit specifier at [6..1] bits of
-		// the byte next to the startcode 0x000001
-		const int type = (nal_start[0] & 0x7F) >> 1;
-
-		// Mark IDR slices as key-frames and set them to highest
-		// priority if needed. Assume other slices are non-key
-		// frames and set their priority as high
-		if (type >= OBS_HEVC_NAL_BLA_W_LP &&
-		    type <= OBS_HEVC_NAL_RSV_IRAP_VCL23) {
-			*is_keyframe = 1;
-			*priority = OBS_NAL_PRIORITY_HIGHEST;
-		} else if (type >= OBS_HEVC_NAL_TRAIL_N &&
-			   type <= OBS_HEVC_NAL_RASL_R) {
-			if (*priority < OBS_NAL_PRIORITY_HIGH)
-				*priority = OBS_NAL_PRIORITY_HIGH;
-		}
+		*priority = compute_hevc_keyframe_priority(
+			nal_start, is_keyframe, *priority);
 
 		const uint8_t *const nal_end =
 			obs_nal_find_startcode(nal_start, end);
-		const size_t size = nal_end - nal_start;
-		s_wb32(s, (uint32_t)size);
-		s_write(s, nal_start, size);
+		const size_t nal_size = nal_end - nal_start;
+		s_wb32(s, (uint32_t)nal_size);
+		s_write(s, nal_start, nal_size);
 		nal_start = nal_end;
 	}
 }
@@ -145,6 +154,30 @@ void obs_parse_hevc_packet(struct encoder_packet *hevc_packet,
 	hevc_packet->data = output.bytes.array + sizeof(ref);
 	hevc_packet->size = output.bytes.num - sizeof(ref);
 	hevc_packet->drop_priority = hevc_packet->priority;
+}
+
+int obs_parse_hevc_packet_priority(const struct encoder_packet *packet)
+{
+	int priority = packet->priority;
+
+	const uint8_t *const data = packet->data;
+	const uint8_t *const end = data + packet->size;
+	const uint8_t *nal_start = obs_nal_find_startcode(data, end);
+	while (true) {
+		while (nal_start < end && !*(nal_start++))
+			;
+
+		if (nal_start == end)
+			break;
+
+		bool unused;
+		priority = compute_hevc_keyframe_priority(nal_start, &unused,
+							  priority);
+
+		nal_start = obs_nal_find_startcode(nal_start, end);
+	}
+
+	return priority;
 }
 
 void obs_extract_hevc_headers(const uint8_t *packet, size_t size,

@@ -270,7 +270,6 @@ void ffmpeg_hls_mux_data(void *data, struct encoder_packet *packet)
 {
 	struct ffmpeg_muxer *stream = data;
 	struct encoder_packet new_packet;
-	struct encoder_packet tmp_packet;
 	bool added_packet = false;
 
 	if (!active(stream))
@@ -299,15 +298,13 @@ void ffmpeg_hls_mux_data(void *data, struct encoder_packet *packet)
 		const char *const codec =
 			obs_encoder_get_codec(packet->encoder);
 		if (strcmp(codec, "h264") == 0) {
-			obs_parse_avc_packet(&tmp_packet, packet);
-			packet->drop_priority = tmp_packet.priority;
-			obs_encoder_packet_release(&tmp_packet);
+			packet->drop_priority =
+				obs_parse_avc_packet_priority(packet);
 		}
 #ifdef ENABLE_HEVC
 		else if (strcmp(codec, "hevc") == 0) {
-			obs_parse_hevc_packet(&tmp_packet, packet);
-			packet->drop_priority = tmp_packet.priority;
-			obs_encoder_packet_release(&tmp_packet);
+			packet->drop_priority =
+				obs_parse_hevc_packet_priority(packet);
 		}
 #endif
 	}
