@@ -71,7 +71,6 @@ public:
 	size_t VideoQueueSize();
 	size_t AudioQueueSize();
 
-	bool HaveEnoughAudio(size_t needAudioSize);
 	void DMAAudioFromQueue(NTV2AudioSystem audioSys);
 	void DMAVideoFromQueue();
 
