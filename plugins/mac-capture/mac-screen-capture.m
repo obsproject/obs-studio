@@ -377,9 +377,27 @@ static bool init_screen_stream(struct screen_capture *sc)
 				 initWithDisplay:target_display
 				excludingWindows:[[NSArray alloc] init]];
 		} else {
+			NSArray *excluded = [sc->shareable_content.applications
+				filteredArrayUsingPredicate:
+					[NSPredicate predicateWithBlock:^BOOL(
+							     SCRunningApplication
+								     *application,
+							     NSDictionary<
+								     NSString *,
+								     id>
+								     *_Nullable bindings
+							     __attribute__((
+								     unused))) {
+						return [application
+								.bundleIdentifier
+							isEqualToString:
+								@"com.apple.controlcenter"];
+					}]];
+
 			content_filter = [[SCContentFilter alloc]
-				 initWithDisplay:target_display
-				includingWindows:sc->shareable_content.windows];
+				      initWithDisplay:target_display
+				excludingApplications:excluded
+				     exceptingWindows:[[NSArray alloc] init]];
 		}
 
 		set_display_mode(sc, target_display);
@@ -548,7 +566,7 @@ bool init_vertbuf_screen_capture(struct screen_capture *sc)
 }
 
 static void screen_capture_build_content_list(struct screen_capture *sc,
-					      bool excludingDesktopWindows)
+					      bool display_capture)
 {
 	typedef void (^shareable_content_callback)(SCShareableContent *,
 						   NSError *);
@@ -575,9 +593,12 @@ static void screen_capture_build_content_list(struct screen_capture *sc,
 	os_sem_wait(sc->shareable_content_available);
 	[sc->shareable_content release];
 	[SCShareableContent
-		getShareableContentExcludingDesktopWindows:excludingDesktopWindows
-				       onScreenWindowsOnly:!sc->show_hidden_windows
-					 completionHandler:new_content_received];
+		getShareableContentExcludingDesktopWindows:TRUE
+				       onScreenWindowsOnly:
+					       (display_capture
+							? FALSE
+							: !sc->show_hidden_windows)
+				       completionHandler:new_content_received];
 }
 
 static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
@@ -594,7 +615,7 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 
 	os_sem_init(&sc->shareable_content_available, 1);
 	screen_capture_build_content_list(
-		sc, sc->capture_type == ScreenCaptureWindowStream);
+		sc, sc->capture_type == ScreenCaptureDisplayStream);
 
 	sc->capture_delegate = [[ScreenCaptureDelegate alloc] init];
 	sc->capture_delegate.sc = sc;
@@ -1003,7 +1024,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 		obs_data_get_bool(settings, "show_hidden_windows");
 
 	screen_capture_build_content_list(
-		sc, capture_type_id == ScreenCaptureWindowStream);
+		sc, capture_type_id == ScreenCaptureDisplayStream);
 	build_display_list(sc, props);
 	build_window_list(sc, props);
 	build_application_list(sc, props);
