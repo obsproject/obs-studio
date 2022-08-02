@@ -155,6 +155,10 @@ jobs:
 
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
+      - name: 'Install Xcode 14 Beta'
+        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' && secrets.XCODE_DOWNLOAD_URL != '' }}
+        run: xcversion install "14 beta 4" --url=${{ secrets.XCODE_DOWNLOAD_URL }}
+
       - name: 'Install dependencies'
         env:
           RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
