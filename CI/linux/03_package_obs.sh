@@ -37,8 +37,10 @@ package-obs-standalone() {
     source "${CHECKOUT_DIR}/CI/include/build_support.sh"
     source "${CHECKOUT_DIR}/CI/include/build_support_linux.sh"
 
-    step "Fetch OBS tags..."
-    git fetch origin --tags
+    if [ -z "${CI}" ]; then
+        step "Fetch OBS tags..."
+        git fetch --tags origin
+    fi
 
     GIT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
     GIT_HASH=$(git rev-parse --short=9 HEAD)

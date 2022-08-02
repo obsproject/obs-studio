@@ -107,8 +107,10 @@ function Package-OBS-Standalone {
 
     . ${CheckoutDir}/CI/include/build_support_windows.ps1
 
-    Write-Step "Fetch OBS tags..."
-    $null = git fetch origin --tags
+    if (!(Test-Path Env:CI)) {
+        Write-Step "Fetch OBS tags..."
+        $null = git fetch --tags origin
+    }
 
     Ensure-Directory ${CheckoutDir}
     $GitBranch = git rev-parse --abbrev-ref HEAD

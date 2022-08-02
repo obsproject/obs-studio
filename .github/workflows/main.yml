@@ -440,8 +440,8 @@ jobs:
             $null = New-Item -ItemType Directory -Force -Path install_temp
           }
 
-          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x86.zip" -File)" -DestinationPath install_temp
-          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-windows-*-x64.zip" -File)" -Force -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-*-windows-x86.zip" -File)" -DestinationPath install_temp
+          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-*-windows-x64.zip" -File)" -Force -DestinationPath install_temp
 
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
