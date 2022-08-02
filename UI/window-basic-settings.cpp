@@ -1983,7 +1983,12 @@ void OBSBasicSettings::LoadAdvOutputRecordingSettings()
 	ui->advOutRecTrack5->setChecked(tracks & (1 << 4));
 	ui->advOutRecTrack6->setChecked(tracks & (1 << 5));
 
-	idx = (astrcmpi(splitFileType, "Size") == 0) ? 1 : 0;
+	if (astrcmpi(splitFileType, "Size") == 0)
+		idx = 1;
+	else if (astrcmpi(splitFileType, "Manual") == 0)
+		idx = 2;
+	else
+		idx = 0;
 	ui->advOutSplitFile->setChecked(splitFile);
 	ui->advOutSplitFileType->setCurrentIndex(idx);
 	ui->advOutSplitFileTime->setValue(splitFileTime);
@@ -3423,6 +3428,8 @@ static inline const char *SplitFileTypeFromIdx(int idx)
 {
 	if (idx == 1)
 		return "Size";
+	else if (idx == 2)
+		return "Manual";
 	else
 		return "Time";
 }
