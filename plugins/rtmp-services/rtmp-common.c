@@ -874,20 +874,21 @@ static const char **rtmp_common_get_supported_video_codecs(void *data)
 
 	json_t *json_video_codecs =
 		json_object_get(json_service, "supported video codecs");
-	if (!json_is_array(json_video_codecs)) {
-		goto fail;
-	}
+	if (json_is_array(json_video_codecs)) {
+		size_t index;
+		json_t *item;
 
-	size_t index;
-	json_t *item;
+		json_array_foreach (json_video_codecs, index, item) {
+			char codec[16];
 
-	json_array_foreach (json_video_codecs, index, item) {
-		char codec[16];
-
-		snprintf(codec, sizeof(codec), "%s", json_string_value(item));
-		if (codecs.len)
-			dstr_cat(&codecs, ";");
-		dstr_cat(&codecs, codec);
+			snprintf(codec, sizeof(codec), "%s",
+				 json_string_value(item));
+			if (codecs.len)
+				dstr_cat(&codecs, ";");
+			dstr_cat(&codecs, codec);
+		}
+	} else {
+		dstr_cat(&codecs, "h264;");
 	}
 
 	service->video_codecs = strlist_split(codecs.array, ';', false);
