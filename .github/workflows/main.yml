@@ -80,6 +80,7 @@ jobs:
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
+      HAVE_XCODE_URL: ${{ secrets.XCODE_DOWNLOAD_URL != '' }}
     defaults:
       run:
         shell: bash
@@ -156,7 +157,7 @@ jobs:
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
       - name: 'Install Xcode 14 Beta'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' && secrets.XCODE_DOWNLOAD_URL != '' }}
+        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' && env.HAVE_XCODE_URL == 'true' }}
         run: xcversion install "14 beta 4" --url=${{ secrets.XCODE_DOWNLOAD_URL }}
 
       - name: 'Install dependencies'
