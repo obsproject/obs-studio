@@ -42,7 +42,7 @@
 #define PY_MAJOR_VERSION_MAX 3
 #define PY_MINOR_VERSION_MAX 10
 
-bool import_python(const char *python_path)
+bool import_python(const char *python_path, python_version_t *python_version)
 {
 	struct dstr lib_path;
 	bool success = false;
@@ -50,6 +50,12 @@ bool import_python(const char *python_path)
 
 	if (!python_path)
 		python_path = "";
+
+	if (!python_version) {
+		blog(LOG_DEBUG,
+		     "[Python] Invalid python_version pointer provided.");
+		goto fail;
+	}
 
 	dstr_init_copy(&lib_path, python_path);
 	dstr_replace(&lib_path, "\\", "/");
@@ -96,6 +102,9 @@ bool import_python(const char *python_path)
 		goto fail;
 	}
 
+	python_version->major = PY_MAJOR_VERSION_MAX;
+	python_version->minor = minor_version;
+
 #define IMPORT_FUNC(x)                                                     \
 	do {                                                               \
 		Import_##x = os_dlsym(lib, #x);                            \
@@ -133,8 +142,12 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(Py_Initialize);
 	IMPORT_FUNC(Py_Finalize);
 	IMPORT_FUNC(Py_IsInitialized);
-	IMPORT_FUNC(PyEval_InitThreads);
-	IMPORT_FUNC(PyEval_ThreadsInitialized);
+
+	if (python_version->major == 3 && python_version->minor < 7) {
+		IMPORT_FUNC(PyEval_InitThreads);
+		IMPORT_FUNC(PyEval_ThreadsInitialized);
+	}
+
 	IMPORT_FUNC(PyEval_ReleaseThread);
 	IMPORT_FUNC(PySys_SetArgv);
 	IMPORT_FUNC(PyImport_ImportModule);
@@ -148,9 +161,10 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyDict_GetItemString);
 	IMPORT_FUNC(PyDict_SetItemString);
 	IMPORT_FUNC(PyCFunction_NewEx);
-#if PY_VERSION_HEX > 0x030900b0
-	IMPORT_FUNC(PyCMethod_New);
-#endif
+
+	if (python_version->major == 3 && python_version->minor >= 9)
+		IMPORT_FUNC(PyCMethod_New);
+
 	IMPORT_FUNC(PyModule_GetDict);
 	IMPORT_FUNC(PyModule_GetNameObject);
 	IMPORT_FUNC(PyModule_AddObject);
@@ -181,14 +195,12 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyArg_VaParse);
 	IMPORT_FUNC(_Py_NoneStruct);
 	IMPORT_FUNC(PyTuple_New);
-
+	if (python_version->major == 3 && python_version->minor >= 9) {
+		IMPORT_FUNC(PyType_GetFlags);
+	}
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 	IMPORT_FUNC(_Py_Dealloc);
 #endif
-#if PY_VERSION_HEX >= 0x030900b0
-	IMPORT_FUNC(PyType_GetFlags);
-#endif
-
 #undef IMPORT_FUNC
 	success = true;
 
