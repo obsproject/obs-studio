@@ -37,7 +37,10 @@ install_qt5-deps() {
     status "Install Qt5 dependencies"
     trap "caught_error 'install_qt5-deps'" ERR
 
-    sudo apt-get install -y $@
+    _QT6_AVAILABLE="$(sudo apt-cache madison ${1})"
+    if [ ! "${_QT6_AVAILABLE}" ]; then
+        sudo apt-get install -y $@
+    fi
 }
 
 install_qt6-deps() {
