@@ -1538,7 +1538,7 @@ static void python_tick(void *param, float seconds)
 	 * the cur_python_script state variable. Use the busy_script variable
 	 * to save and restore the value if not null.
 	 */
-	struct obs_python_script *busy_script;
+	struct obs_python_script *busy_script = NULL;
 	bool valid;
 	uint64_t ts = obs_get_video_frame_time();
 
@@ -1686,15 +1686,15 @@ bool obs_scripting_load_python(const char *python_path)
 
 #if RUNTIME_LINK
 	if (python_version.major == 3 && python_version.minor < 7) {
-#elif PY_VERSION_HEX < 0x030700b0
-	if (true) {
-#else
-	if (false) {
-#endif
 		PyEval_InitThreads();
 		if (!PyEval_ThreadsInitialized())
 			return false;
 	}
+#elif PY_VERSION_HEX < 0x03070000
+	PyEval_InitThreads();
+	if (!PyEval_ThreadsInitialized())
+		return false;
+#endif
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
