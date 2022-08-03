@@ -158,11 +158,6 @@ function(setup_obs_app target)
 
   install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT obs_app)
 
-  # detect outdated obs-browser submodule
-  if(TARGET obs-browser-page OR TARGET obs-browser-page_gpu)
-    add_library(OBS::browser ALIAS obs-browser)
-  endif()
-
   if(TARGET OBS::browser)
     setup_target_browser(${target})
   endif()
