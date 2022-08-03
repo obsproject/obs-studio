@@ -189,17 +189,6 @@ function(setup_obs_app target)
     add_dependencies(${target} ${OBS_SCRIPTING_MODULE_LIST})
   endif()
 
-  # detect outdated obs-browser submodule
-  if(NOT TARGET OBS::browser AND TARGET obs-browser)
-    target_compile_features(obs-browser-page PRIVATE cxx_std_17)
-
-    add_library(OBS::browser ALIAS obs-browser)
-
-    if(NOT TARGET OBS::browser-panels AND BROWSER_PANEL_SUPPORT_ENABLED)
-      add_library(OBS::browser-panels ALIAS obs-browser)
-    endif()
-  endif()
-
   if(TARGET OBS::browser)
     setup_target_browser(${target})
   endif()
