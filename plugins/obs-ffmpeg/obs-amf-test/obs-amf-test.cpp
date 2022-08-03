@@ -1,8 +1,8 @@
-#include "../external/AMF/include/core/Factory.h"
-#include "../external/AMF/include/core/Trace.h"
-#include "../external/AMF/include/components/VideoEncoderVCE.h"
-#include "../external/AMF/include/components/VideoEncoderHEVC.h"
-#include "../external/AMF/include/components/VideoEncoderAV1.h"
+#include <AMF/core/Factory.h>
+#include <AMF/core/Trace.h>
+#include <AMF/components/VideoEncoderVCE.h>
+#include <AMF/components/VideoEncoderHEVC.h>
+#include <AMF/components/VideoEncoderAV1.h>
 
 #include <util/windows/ComPtr.hpp>
 
