@@ -110,16 +110,17 @@ Function PreReqCheck
 		IfSilent +1 +3
 			SetErrorLevel 3
 			Quit
-		MessageBox MB_OK|MB_ICONSTOP "This version of ${APPNAME} is not compatible with your system. Please use the 32bit (x86) installer."
+		MessageBox MB_OK|MB_ICONSTOP "${APPNAME} is not compatible with your operating system's architecture."
 	${EndIf}
-	; Abort on XP or lower
+	; Abort on 8.1 or lower
 !endif
 
-	${If} ${AtMostWinVista}
+	${If} ${AtLeastWin10}
+	${Else}
 		IfSilent +1 +3
 			SetErrorLevel 3
 			Quit
-		MessageBox MB_OK|MB_ICONSTOP "Due to extensive use of DirectX 10 features, ${APPNAME} requires Windows 7 or higher and cannot be installed on this version of Windows."
+		MessageBox MB_OK|MB_ICONSTOP "${APPNAME} requires Windows 10 or higher and cannot be installed on this version of Windows."
 		Quit
 	${EndIf}
 
