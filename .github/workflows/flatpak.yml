@@ -35,7 +35,7 @@ jobs:
               echo '::set-output name=valid_tag::${{ toJSON(true) }}'
               echo '::set-output name=matrix::["beta", "stable"]'
               ;;
-            +([0-9]).+([0-9]).+([0-9])-@(beta|rc) )
+            +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
               echo '::set-output name=valid_tag::${{ toJSON(true) }}'
               echo '::set-output name=matrix::["beta"]'
               ;;
