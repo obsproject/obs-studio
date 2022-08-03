@@ -2953,7 +2953,7 @@
                                   <number>1</number>
                                  </property>
                                  <property name="maximum">
-                                  <number>360</number>
+                                  <number>525600</number>
                                  </property>
                                  <property name="value">
                                   <number>15</number>
@@ -2976,7 +2976,7 @@
                                   <number>20</number>
                                  </property>
                                  <property name="maximum">
-                                  <number>8192</number>
+                                  <number>1073741824</number>
                                  </property>
                                  <property name="value">
                                   <number>2048</number>
