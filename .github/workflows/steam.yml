@@ -194,7 +194,6 @@ jobs:
 
         echo "::group::Extract macOS (x86)"
         mkdir -p steam-macos/x86
-        mkdir steam-macos
         # CI builds are zipped
         if [[ -f ../mac_x86.dmg.zip ]]; then
             unzip ../mac_x86.dmg.zip
@@ -206,7 +205,11 @@ jobs:
             7zz x ../mac_x86.dmg -otmp_x86 || true
         fi
 
-        mv tmp_x86/*/OBS.app steam-macos/x86
+        if [ -d tmp_x86/OBS.app ]; then
+            mv tmp_x86/OBS.app steam-macos/x86
+        else
+            mv tmp_x86/*/OBS.app steam-macos/x86
+        fi
         echo "::endgroup::"
 
         echo "::group::Extract and prepare macOS (arm64)"
@@ -219,7 +222,11 @@ jobs:
             7zz x ../mac_arm64.dmg -otmp_arm64 || true
         fi
 
-        mv tmp_arm64/*/OBS.app steam-macos/arm64
+        if [ -d tmp_arm64/OBS.app ]; then
+            mv tmp_arm64/OBS.app steam-macos/arm64
+        else
+            mv tmp_arm64/*/OBS.app steam-macos/arm64
+        fi
 
         cp ../source/CI/steam/scripts_macos/launch.sh steam-macos/launch.sh
         echo "::endgroup::"
