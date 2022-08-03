@@ -14,34 +14,36 @@ if(POLICY CMP0025)
 endif()
 
 # Build options
-if(NOT DEFINED CMAKE_OSX_ARCHITECTURES OR CMAKE_OSX_ARCHITECTURES STREQUAL "")
+if(NOT CMAKE_OSX_ARCHITECTURES)
   set(CMAKE_OSX_ARCHITECTURES
       "${CMAKE_HOST_SYSTEM_PROCESSOR}"
       CACHE STRING
             "OBS build architecture for macOS - x86_64 required at least" FORCE)
 endif()
-set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS x86_64 arm64
+set_property(CACHE CMAKE_OSX_ARCHITECTURES PROPERTY STRINGS arm64 x86_64
                                                     "x86_64;arm64")
 
-if(NOT DEFINED CMAKE_OSX_DEPLOYMENT_TARGET OR CMAKE_OSX_DEPLOYMENT_TARGET
-                                              STREQUAL "")
-  if("${CMAKE_OSX_ARCHITECTURES}" MATCHES ".*arm64.*")
+if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+  set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET[arch=arm64] "11.0")
+  set(CMAKE_XCODE_ATTRIBUTE_MACOSX_DEPLOYMENT_TARGET[arch=x86_64] "10.15")
+
+  if("${CMAKE_OSX_ARCHITECTURES}" STREQUAL "arm64")
     set(_MACOS_DEPLOYMENT_TARGET "11.0")
   else()
-    set(_MACOS_DEPLOYMENT_TARGET "10.13")
+    set(_MACOS_DEPLOYMENT_TARGET "10.15")
   endif()
 
   set(CMAKE_OSX_DEPLOYMENT_TARGET
       "${_MACOS_DEPLOYMENT_TARGET}"
-      CACHE STRING "OBS deployment target for macOS - 10.13+ required" FORCE)
+      CACHE STRING "OBS deployment target for macOS - 10.15+ required" FORCE)
   unset(_MACOS_DEPLOYMENT_TARGET)
 endif()
-set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 10.13 10.14
-                                                        10.15 11.0 12.0)
+set_property(CACHE CMAKE_OSX_DEPLOYMENT_TARGET PROPERTY STRINGS 10.15 11.0 12.0
+                                                        13.0)
 
 if(CMAKE_INSTALL_PREFIX_INITIALIZED_TO_DEFAULT)
   set(CMAKE_INSTALL_PREFIX
-      "${CMAKE_BINARY_DIR}/rundir"
+      "${CMAKE_BINARY_DIR}/install"
       CACHE STRING "Directory to install OBS after building" FORCE)
 endif()
 
@@ -69,13 +71,25 @@ if(NOT DEFINED ENV{SWIG_LIB} AND EXISTS "${CMAKE_PREFIX_PATH}/bin/swig")
 endif()
 
 macro(setup_obs_project)
+  set(CMAKE_XCODE_GENERATE_SCHEME ON)
+
   # Set code signing options
-  if(NOT DEFINED OBS_BUNDLE_CODESIGN_IDENTITY OR OBS_BUNDLE_CODESIGN_IDENTITY
-                                                 STREQUAL "")
-    set(OBS_BUNDLE_CODESIGN_IDENTITY
-        "-"
-        CACHE STRING "OBS code signing identity for macOS")
+  if(NOT OBS_BUNDLE_CODESIGN_TEAM)
+    set(OBS_BUNDLE_CODESIGN_TEAM
+        ""
+        CACHE STRING "OBS code signing team for macOS" FORCE)
+    if(NOT OBS_BUNDLE_CODESIGN_IDENTITY)
+      set(OBS_BUNDLE_CODESIGN_IDENTITY
+          "-"
+          CACHE STRING "OBS code signing identity for macOS" FORCE)
+    endif()
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
+        "${OBS_BUNDLE_CODESIGN_IDENTITY}")
+  else()
+    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+    set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${OBS_BUNDLE_CODESIGN_TEAM}")
   endif()
+
   set(OBS_CODESIGN_ENTITLEMENTS
       "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
       CACHE INTERNAL "Path to codesign entitlements plist")
@@ -83,17 +97,13 @@ macro(setup_obs_project)
       ON
       CACHE BOOL "Enable linker code-signing on macOS (macOS 11+ required)")
 
-  # Xcode configuration
-  if(XCODE)
-    # Tell Xcode to pretend the linker signed binaries so that editing with
-    # install_name_tool preserves ad-hoc signatures. This option is supported by
-    # codesign on macOS 11 or higher. See CMake Issue 21854:
-    # https://gitlab.kitware.com/cmake/cmake/-/issues/21854
+  # Tell Xcode to pretend the linker signed binaries so that editing with
+  # install_name_tool preserves ad-hoc signatures. This option is supported by
+  # codesign on macOS 11 or higher. See CMake Issue 21854:
+  # https://gitlab.kitware.com/cmake/cmake/-/issues/21854
 
-    set(CMAKE_XCODE_GENERATE_SCHEME ON)
-    if(OBS_CODESIGN_LINKER)
-      set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "-o linker-signed")
-    endif()
+  if(OBS_CODESIGN_LINKER)
+    set(CMAKE_XCODE_ATTRIBUTE_OTHER_CODE_SIGN_FLAGS "-o linker-signed")
   endif()
 
   # Set default options for bundling on macOS
