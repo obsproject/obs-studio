@@ -2606,6 +2606,7 @@ void OBSBasic::ClearHotkeys()
 	obs_hotkey_pair_unregister(streamingHotkeys);
 	obs_hotkey_pair_unregister(recordingHotkeys);
 	obs_hotkey_pair_unregister(pauseHotkeys);
+	obs_hotkey_unregister(splitFileHotkey);
 	obs_hotkey_pair_unregister(replayBufHotkeys);
 	obs_hotkey_pair_unregister(vcamHotkeys);
 	obs_hotkey_pair_unregister(togglePreviewHotkeys);
