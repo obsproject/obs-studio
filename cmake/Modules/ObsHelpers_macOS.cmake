@@ -50,12 +50,13 @@ function(setup_framework_target target)
   install(
     TARGETS ${target}
     EXPORT "${target}Targets"
-    FRAMEWORK DESTINATION "Frameworks" COMPONENT obs_libraries
-    INCLUDES
-    DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
+    FRAMEWORK DESTINATION "Frameworks"
+              COMPONENT obs_libraries
+              EXCLUDE_FROM_ALL
     PUBLIC_HEADER
       DESTINATION
         Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
+      COMPONENT obs_libraries
       EXCLUDE_FROM_ALL)
 endfunction()
 
@@ -252,8 +253,10 @@ function(setup_obs_frameworks target)
     FRAMEWORK
       DESTINATION "$<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks/"
       COMPONENT obs_frameworks
-    PUBLIC_HEADER DESTINATION "${OBS_INCLUDE_DESTINATION}"
-                  COMPONENT obs_libraries)
+    PUBLIC_HEADER
+      DESTINATION "${OBS_INCLUDE_DESTINATION}"
+      COMPONENT obs_libraries
+      EXCLUDE_FROM_ALL)
 endfunction()
 
 # Helper function to set-up OBS plugins and helper binaries for macOS bundling
