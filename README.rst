@@ -1,4 +1,4 @@
-OBS Studio <https://obsproject.com>
+OBS Studio https://obsproject.com
 ===================================
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
