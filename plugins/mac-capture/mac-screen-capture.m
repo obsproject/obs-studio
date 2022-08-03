@@ -992,7 +992,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(app_list, true);
 			obs_property_set_visible(window_list, false);
 			obs_property_set_visible(empty, false);
-			obs_property_set_visible(hidden, false);
+			obs_property_set_visible(hidden, true);
 			break;
 		}
 		}
