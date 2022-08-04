@@ -115,6 +115,12 @@ extern void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	gl_vtable->device_load_swapchain(device, swap);
 }
 
+extern bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
 extern void device_present(gs_device_t *device)
 {
 	gl_vtable->device_present(device);

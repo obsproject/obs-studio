@@ -133,6 +133,7 @@ struct gs_exports {
 	void (*device_clear)(gs_device_t *device, uint32_t clear_flags,
 			     const struct vec4 *color, float depth,
 			     uint8_t stencil);
+	bool (*device_is_present_ready)(gs_device_t *device);
 	void (*device_present)(gs_device_t *device);
 	void (*device_flush)(gs_device_t *device);
 	void (*device_set_cull_mode)(gs_device_t *device,

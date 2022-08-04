@@ -821,7 +821,6 @@ struct gs_swap_chain : gs_obj {
 	gs_init_data initData;
 	DXGI_SWAP_CHAIN_DESC swapDesc = {};
 	gs_color_space space;
-	UINT presentFlags = 0;
 
 	gs_texture_2d target;
 	gs_zstencil_buffer zs;
