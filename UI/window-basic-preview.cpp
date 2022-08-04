@@ -2353,6 +2353,8 @@ static void DrawLabel(OBSSource source, vec3 &pos, vec3 &viewport)
 static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport,
 			    float pixelRatio)
 {
+	OBSBasic *main = OBSBasic::Get();
+
 	matrix4 transform;
 	matrix4_identity(&transform);
 	transform.x.x = viewport.x;
@@ -2361,8 +2363,11 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport,
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
 
+	QColor selColor = main->GetSelectionColor();
 	vec4 color;
-	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&color, selColor.redF(), selColor.greenF(), selColor.blueF(),
+		 1.0f);
+
 	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
 
 	gs_technique_begin(tech);
