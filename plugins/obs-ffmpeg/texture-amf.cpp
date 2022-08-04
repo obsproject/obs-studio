@@ -953,9 +953,10 @@ static obs_properties_t *amf_properties_internal(bool hevc)
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
 			       1, 30, 1);
 
-	obs_properties_add_int(props, "keyint_sec",
-			       obs_module_text("KeyframeIntervalSec"), 0, 10,
-			       1);
+	p = obs_properties_add_int(props, "keyint_sec",
+				   obs_module_text("KeyframeIntervalSec"), 0,
+				   10, 1);
+	obs_property_int_set_suffix(p, " s");
 
 	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
 				    OBS_COMBO_TYPE_LIST,
