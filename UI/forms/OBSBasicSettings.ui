@@ -160,8 +160,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>803</width>
-              <height>1226</height>
+              <width>806</width>
+              <height>1344</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1488,8 +1488,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>794</width>
-                     <height>621</height>
+                     <width>780</width>
+                     <height>642</height>
                     </rect>
                    </property>
                    <property name="sizePolicy">
@@ -2073,8 +2073,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>790</width>
-                         <height>586</height>
+                         <width>493</width>
+                         <height>165</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -2420,8 +2420,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>790</width>
-                             <height>556</height>
+                             <width>620</width>
+                             <height>391</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -3081,8 +3081,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>593</width>
-                             <height>471</height>
+                             <width>713</width>
+                             <height>493</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -3591,8 +3591,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>790</width>
-                            <height>576</height>
+                            <width>272</width>
+                            <height>552</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4654,8 +4654,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>561</width>
-              <height>526</height>
+              <width>820</width>
+              <height>640</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -5500,26 +5500,42 @@
            </item>
            <item row="0" column="4">
             <widget class="QPushButton" name="hotkeyFilterReset">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Maximum" vsizetype="Maximum">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="minimumSize">
               <size>
-               <width>24</width>
-               <height>24</height>
+               <width>0</width>
+               <height>0</height>
               </size>
              </property>
              <property name="maximumSize">
               <size>
-               <width>24</width>
-               <height>24</height>
+               <width>16777215</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="baseSize">
               <size>
-               <width>24</width>
-               <height>24</height>
+               <width>0</width>
+               <height>0</height>
               </size>
              </property>
              <property name="toolTip">
               <string>Clear</string>
+             </property>
+             <property name="icon">
+              <iconset resource="obs.qrc">
+               <normaloff>:/res/images/revert.svg</normaloff>:/res/images/revert.svg</iconset>
+             </property>
+             <property name="iconSize">
+              <size>
+               <width>20</width>
+               <height>20</height>
+              </size>
              </property>
              <property name="flat">
               <bool>false</bool>
@@ -5527,11 +5543,8 @@
              <property name="themeID" stdset="0">
               <string>revertIcon</string>
              </property>
-             <property name="fixedSize" stdset="0">
-              <size>
-               <width>24</width>
-               <height>24</height>
-              </size>
+             <property name="toolButton" stdset="0">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -5547,8 +5560,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>98</width>
-              <height>28</height>
+              <width>800</width>
+              <height>626</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="hotkeyFormLayout">
@@ -5595,7 +5608,7 @@
               <x>0</x>
               <y>0</y>
               <width>820</width>
-              <height>677</height>
+              <height>680</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_42">
@@ -5638,14 +5651,14 @@
                    <number>2</number>
                   </property>
                   <item row="0" column="0">
-                    <widget class="QLabel" name="colorPresetLabel">
-                     <property name="text">
-                      <string>Basic.Settings.Accessibility.ColorOverrides.Preset</string>
-                     </property>
-                     <property name="buddy">
-                      <cstring>colorPreset</cstring>
-                     </property>
-                    </widget>
+                   <widget class="QLabel" name="colorPresetLabel">
+                    <property name="text">
+                     <string>Basic.Settings.Accessibility.ColorOverrides.Preset</string>
+                    </property>
+                    <property name="buddy">
+                     <cstring>colorPreset</cstring>
+                    </property>
+                   </widget>
                   </item>
                   <item row="0" column="1">
                    <widget class="QComboBox" name="colorPreset">
@@ -5672,113 +5685,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.SelectRed</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect1</cstring>
+                     <cstring>choose1</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="1" column="1">
-                   <widget class="QWidget" name="colorSelect1">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_1">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_1">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color1">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose1">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_1">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color1">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose1">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_1">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="2" column="0">
                    <widget class="QLabel" name="colorSelectLabel_2">
@@ -5786,113 +5771,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.SelectGreen</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect2</cstring>
+                     <cstring>choose2</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="2" column="1">
-                   <widget class="QWidget" name="colorSelect2">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_2">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_2">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color2">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose2">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_2">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color2">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose2">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_2">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="3" column="0">
                    <widget class="QLabel" name="colorSelectLabel_3">
@@ -5900,113 +5857,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.SelectBlue</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect3</cstring>
+                     <cstring>choose3</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="3" column="1">
-                   <widget class="QWidget" name="colorSelect3">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_3">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_3">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color3">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose3">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_3">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color3">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose3">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_3">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="4" column="0">
                    <widget class="QLabel" name="colorSelectLabel_4">
@@ -6014,113 +5943,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerGreen</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect4</cstring>
+                     <cstring>choose4</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="4" column="1">
-                   <widget class="QWidget" name="colorSelect4">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_4">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_4">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color4">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose4">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_4">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color4">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose4">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_4">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="5" column="0">
                    <widget class="QLabel" name="colorSelectLabel_5">
@@ -6128,113 +6029,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerYellow</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect5</cstring>
+                     <cstring>choose5</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="5" column="1">
-                   <widget class="QWidget" name="colorSelect5">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_5">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_5">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color5">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose5">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_5">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color5">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose5">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_5">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="6" column="0">
                    <widget class="QLabel" name="colorSelectLabel_6">
@@ -6242,113 +6115,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerRed</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect6</cstring>
+                     <cstring>choose6</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="6" column="1">
-                   <widget class="QWidget" name="colorSelect6">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_6">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_6">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color6">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose6">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_6">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color6">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose6">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_6">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="7" column="0">
                    <widget class="QLabel" name="colorSelectLabel_7">
@@ -6356,113 +6201,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerGreenActive</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect7</cstring>
+                     <cstring>choose7</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="7" column="1">
-                   <widget class="QWidget" name="colorSelect7">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_7">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_7">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color7">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose7">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_7">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color7">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose7">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_7">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="8" column="0">
                    <widget class="QLabel" name="colorSelectLabel_8">
@@ -6470,113 +6287,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerYellowActive</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect8</cstring>
+                     <cstring>choose8</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="8" column="1">
-                   <widget class="QWidget" name="colorSelect8">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_8">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_8">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color8">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose8">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_8">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color8">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose8">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_8">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                   <item row="9" column="0">
                    <widget class="QLabel" name="colorSelectLabel_9">
@@ -6584,113 +6373,85 @@
                      <string>Basic.Settings.Accessibility.ColorOverrides.MixerRedActive</string>
                     </property>
                     <property name="buddy">
-                     <cstring>colorSelect9</cstring>
+                     <cstring>choose9</cstring>
                     </property>
                    </widget>
                   </item>
                   <item row="9" column="1">
-                   <widget class="QWidget" name="colorSelect9">
-                    <property name="geometry">
-                     <rect>
-                      <x>0</x>
-                      <y>0</y>
-                      <width>565</width>
-                      <height>22</height>
-                     </rect>
+                   <layout class="QHBoxLayout" name="colorSelectLayout_9">
+                    <property name="leftMargin">
+                     <number>0</number>
                     </property>
-                    <property name="sizePolicy">
-                     <sizepolicy hsizetype="Preferred" vsizetype="Fixed">
-                      <horstretch>0</horstretch>
-                      <verstretch>0</verstretch>
-                     </sizepolicy>
+                    <property name="topMargin">
+                     <number>0</number>
                     </property>
-                    <property name="minimumSize">
-                     <size>
-                      <width>0</width>
-                      <height>22</height>
-                     </size>
+                    <property name="rightMargin">
+                     <number>0</number>
                     </property>
-                    <property name="maximumSize">
-                     <size>
-                      <width>16777215</width>
-                      <height>16777215</height>
-                     </size>
+                    <property name="bottomMargin">
+                     <number>0</number>
                     </property>
-                    <layout class="QHBoxLayout" name="colorSelectLayout_9">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QLabel" name="color9">
-                       <property name="sizePolicy">
-                        <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
-                         <horstretch>0</horstretch>
-                         <verstretch>0</verstretch>
-                        </sizepolicy>
-                       </property>
-                       <property name="minimumSize">
-                        <size>
-                         <width>80</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string notr="true">color here</string>
-                       </property>
-                       <property name="alignment">
-                        <set>Qt::AlignCenter</set>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QPushButton" name="choose9">
-                       <property name="minimumSize">
-                        <size>
-                         <width>0</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="maximumSize">
-                        <size>
-                         <width>16777215</width>
-                         <height>22</height>
-                        </size>
-                       </property>
-                       <property name="text">
-                        <string>Basic.PropertiesWindow.SelectColor</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <spacer name="colorSpacer_9">
-                       <property name="orientation">
-                        <enum>Qt::Horizontal</enum>
-                       </property>
-                       <property name="sizeHint" stdset="0">
-                        <size>
-                         <width>40</width>
-                         <height>20</height>
-                        </size>
-                       </property>
-                      </spacer>
-                     </item>
-                    </layout>
-                   </widget>
+                    <item>
+                     <widget class="QLabel" name="color9">
+                      <property name="sizePolicy">
+                       <sizepolicy hsizetype="Preferred" vsizetype="Preferred">
+                        <horstretch>0</horstretch>
+                        <verstretch>0</verstretch>
+                       </sizepolicy>
+                      </property>
+                      <property name="minimumSize">
+                       <size>
+                        <width>80</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string notr="true">color here</string>
+                      </property>
+                      <property name="alignment">
+                       <set>Qt::AlignCenter</set>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <widget class="QPushButton" name="choose9">
+                      <property name="minimumSize">
+                       <size>
+                        <width>0</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                      <property name="maximumSize">
+                       <size>
+                        <width>16777215</width>
+                        <height>16777215</height>
+                       </size>
+                      </property>
+                      <property name="text">
+                       <string>Basic.PropertiesWindow.SelectColor</string>
+                      </property>
+                     </widget>
+                    </item>
+                    <item>
+                     <spacer name="colorSpacer_9">
+                      <property name="orientation">
+                       <enum>Qt::Horizontal</enum>
+                      </property>
+                      <property name="sizeHint" stdset="0">
+                       <size>
+                        <width>40</width>
+                        <height>0</height>
+                       </size>
+                      </property>
+                     </spacer>
+                    </item>
+                   </layout>
                   </item>
                  </layout>
                 </widget>
@@ -6749,8 +6510,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>713</width>
-              <height>923</height>
+              <width>826</width>
+              <height>1018</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
