@@ -18,8 +18,25 @@ add_library(OBS::ffmpeg ALIAS obs-ffmpeg)
 
 add_subdirectory(ffmpeg-mux)
 if(ENABLE_NEW_MPEGTS_OUTPUT)
-  find_package(Librist REQUIRED)
-  find_package(Libsrt REQUIRED)
+  find_package(Librist QUIET)
+  find_package(Libsrt QUIET)
+
+  if(NOT TARGET Librist::Librist AND NOT TARGET Libsrt::Libsrt)
+    obs_status(
+      FATAL_ERROR
+      "SRT and RIST libraries not found! Please install SRT and RIST libraries or set ENABLE_NEW_MPEGTS_OUTPUT=OFF."
+    )
+  elseif(NOT TARGET Libsrt::Libsrt)
+    obs_status(
+      FATAL_ERROR
+      "SRT library not found! Please install SRT library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF."
+    )
+  elseif(NOT TARGET Librist::Librist)
+    obs_status(
+      FATAL_ERROR
+      "RIST library not found! Please install RIST library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF."
+    )
+  endif()
 endif()
 
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-ffmpeg-config.h.in
