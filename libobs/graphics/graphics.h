@@ -742,6 +742,7 @@ EXPORT void gs_end_scene(void);
 EXPORT void gs_load_swapchain(gs_swapchain_t *swapchain);
 EXPORT void gs_clear(uint32_t clear_flags, const struct vec4 *color,
 		     float depth, uint8_t stencil);
+EXPORT bool gs_is_present_ready(void);
 EXPORT void gs_present(void);
 EXPORT void gs_flush(void);
 
