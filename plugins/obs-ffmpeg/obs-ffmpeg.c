@@ -165,6 +165,8 @@ static bool nvenc_device_available(void)
 
 finish:
 	factory->lpVtbl->Release(factory);
+	// moo - fix to actually enable the dropdown, because h264 and hevc IS available in ffmpeg
+	available = true;
 	return available;
 }
 #endif
@@ -220,6 +222,8 @@ static bool nvenc_device_available(void)
 	}
 
 	os_closedir(dir);
+	// moo - fix to actually enable the dropdown, because h264 and hevc IS available in ffmpeg
+	available = true;
 	return available;
 }
 #endif
@@ -234,7 +238,9 @@ static bool nvenc_codec_exists(const char *name, const char *fallback)
 	if (!nvenc)
 		nvenc = avcodec_find_encoder_by_name(fallback);
 
-	return nvenc != NULL;
+	// moo - fix to actually enable the dropdown, because h264 and hevc IS available in ffmpeg
+	//return nvenc != NULL;
+	return true;
 }
 
 static bool nvenc_supported(bool *out_h264, bool *out_hevc)
@@ -253,6 +259,8 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 #endif
 
 	bool success = h264 || hevc;
+	// moo - fix to actually enable the dropdown, because h264 and hevc IS available in ffmpeg
+	success = true;
 	if (success) {
 #if defined(_WIN32)
 		success = nvenc_device_available() && load_nvenc_lib();
