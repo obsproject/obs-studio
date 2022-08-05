@@ -22,8 +22,11 @@ include(UseSWIG)
 
 set_source_files_properties(
   obspython.i
-  PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE
-             SWIG_FLAGS "$<IF:$<BOOL:${OS_LINUX}>,-py3,-py3-stable-abi>")
+  PROPERTIES
+    USE_TARGET_INCLUDE_DIRECTORIES TRUE
+    SWIG_FLAGS
+    "$<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-py3-stable-abi>"
+)
 
 swig_add_library(
   obspython
