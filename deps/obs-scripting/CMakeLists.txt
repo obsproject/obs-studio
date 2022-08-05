@@ -127,8 +127,8 @@ if(TARGET Python::Python)
     PRE_BUILD
     COMMAND
       ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE} -python
-      $<IF:$<BOOL:${OS_LINUX}>,-py3,-py3-stable-abi> -external-runtime
-      swig/swigpyrun.h
+      $<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-py3-stable-abi>
+      -external-runtime swig/swigpyrun.h
     COMMENT "obs-scripting - generating Python 3 SWIG interface headers")
 
   set_source_files_properties(swig/swigpyrun.h PROPERTIES GENERATED ON)
