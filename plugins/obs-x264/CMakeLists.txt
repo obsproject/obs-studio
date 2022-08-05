@@ -16,12 +16,6 @@ target_link_libraries(obs-x264 PRIVATE LIBX264::LIBX264 OBS::opts-parser)
 
 set_target_properties(obs-x264 PROPERTIES FOLDER "plugins" PREFIX "")
 
-target_compile_options(
-  obs-x264
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
-
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS x264 encoder")
   configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
