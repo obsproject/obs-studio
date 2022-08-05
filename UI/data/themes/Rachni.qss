@@ -84,7 +84,7 @@ QWidget {
     selection-background-color: rgb(0,188,212);
     selection-color: palette(text);
     font-size: 10pt;
-    font-family: 'Open Sans', Helvetica, Arial, 'MS Shell Dlg', sans-serif
+    font-family: 'Open Sans', '.AppleSystemUIFont', Helvetica, Arial, 'MS Shell Dlg', sans-serif;
 }
 
 QWidget:disabled {

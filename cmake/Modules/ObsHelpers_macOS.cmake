@@ -355,7 +355,6 @@ function(setup_obs_bundle target)
     COMPONENT obs_resources)
 
   if(ENABLE_SPARKLE_UPDATER)
-
     add_custom_command(
       TARGET ${target}
       POST_BUILD
@@ -387,6 +386,17 @@ function(setup_obs_bundle target)
       DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks
       COMPONENT obs_frameworks)
   endif()
+
+  add_custom_command(
+    TARGET ${target}
+    POST_BUILD
+    COMMAND
+      /usr/bin/sed -i '' 's/font-size: 10pt\;/font-size: 12pt\;/'
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Acri.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Grey.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Light.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Rachni.qss"
+      "$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Resources/themes/Yami.qss")
 
   install(SCRIPT "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/bundleutils.cmake"
           COMPONENT obs_resources)
