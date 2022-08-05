@@ -184,12 +184,6 @@ target_include_directories(
 
 target_link_libraries(obs-filters PRIVATE OBS::libobs)
 
-target_compile_options(
-  obs-filters
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
-
 set_target_properties(obs-filters PROPERTIES FOLDER "plugins" PREFIX "")
 
 if(OS_WINDOWS)

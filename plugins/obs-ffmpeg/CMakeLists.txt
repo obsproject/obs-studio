@@ -90,11 +90,6 @@ endif()
 
 set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
                                                                         "")
-target_compile_options(
-  obs-ffmpeg
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
 
 if(OS_WINDOWS)
   add_subdirectory(obs-amf-test)

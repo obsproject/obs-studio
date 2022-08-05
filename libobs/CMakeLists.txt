@@ -264,12 +264,7 @@ target_compile_definitions(
 
 target_compile_features(libobs PRIVATE cxx_alias_templates)
 
-target_compile_options(
-  libobs
-  PUBLIC ${ARCH_SIMD_FLAGS}
-  PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
+target_compile_options(libobs PUBLIC ${ARCH_SIMD_FLAGS})
 
 target_include_directories(
   libobs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
