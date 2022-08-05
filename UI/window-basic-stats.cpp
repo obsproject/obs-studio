@@ -22,12 +22,14 @@ void OBSBasicStats::OBSFrontendEvent(enum obs_frontend_event event, void *ptr)
 {
 	OBSBasicStats *stats = reinterpret_cast<OBSBasicStats *>(ptr);
 
-	switch ((int)event) {
+	switch (event) {
 	case OBS_FRONTEND_EVENT_RECORDING_STARTED:
 		stats->StartRecTimeLeft();
 		break;
 	case OBS_FRONTEND_EVENT_RECORDING_STOPPED:
 		stats->ResetRecTimeLeft();
+		break;
+	default:
 		break;
 	}
 }
