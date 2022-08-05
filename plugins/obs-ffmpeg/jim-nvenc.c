@@ -998,7 +998,7 @@ static bool init_encoder(struct nvenc_data *enc, bool hevc,
 		blog(LOG_WARNING, "[jim-nvenc] init_specific_encoder failed, "
 				  "trying again without Psycho Visual Tuning");
 		if (!init_specific_encoder(enc, hevc, settings, encoder, bf,
-					   psycho_aq)) {
+					   false)) {
 			return false;
 		}
 	}
