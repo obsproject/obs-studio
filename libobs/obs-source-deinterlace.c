@@ -386,8 +386,7 @@ void deinterlace_render(obs_source_t *s)
 	switch (source_space) {
 	case GS_CS_SRGB:
 	case GS_CS_SRGB_16F:
-		switch (current_space) {
-		case GS_CS_709_SCRGB:
+		if (current_space == GS_CS_709_SCRGB) {
 			tech_name = "DrawMultiply";
 			multiplier = obs_get_video_sdr_white_level() / 80.0f;
 		}

@@ -608,8 +608,7 @@ static void render_item_texture(struct obs_scene_item *item,
 
 	float multiplier = 1.f;
 
-	switch (current_space) {
-	case GS_CS_709_SCRGB:
+	if (current_space == GS_CS_709_SCRGB) {
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
@@ -618,8 +617,7 @@ static void render_item_texture(struct obs_scene_item *item,
 		}
 	}
 
-	switch (source_space) {
-	case GS_CS_709_SCRGB:
+	if (source_space == GS_CS_709_SCRGB) {
 		switch (current_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
@@ -634,10 +632,8 @@ static void render_item_texture(struct obs_scene_item *item,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawUpscaleMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
@@ -663,10 +659,8 @@ static void render_item_texture(struct obs_scene_item *item,
 		switch (source_space) {
 		case GS_CS_SRGB:
 		case GS_CS_SRGB_16F:
-			switch (current_space) {
-			case GS_CS_709_SCRGB:
+			if (current_space == GS_CS_709_SCRGB)
 				tech_name = "DrawMultiply";
-			}
 			break;
 		case GS_CS_709_EXTENDED:
 			switch (current_space) {
