@@ -949,11 +949,8 @@ static bool init_textures(struct nvenc_data *enc)
 static void nvenc_destroy(void *data);
 
 static bool init_specific_encoder(struct nvenc_data *enc, bool hevc,
-				  obs_data_t *settings, obs_encoder_t *encoder,
-				  int bf, bool psycho_aq)
+				  obs_data_t *settings, int bf, bool psycho_aq)
 {
-	bool init = false;
-
 #ifdef ENABLE_HEVC
 	if (hevc)
 		return init_encoder_hevc(enc, settings, bf, psycho_aq);
@@ -963,7 +960,7 @@ static bool init_specific_encoder(struct nvenc_data *enc, bool hevc,
 }
 
 static bool init_encoder(struct nvenc_data *enc, bool hevc,
-			 obs_data_t *settings, obs_encoder_t *encoder)
+			 obs_data_t *settings)
 {
 	const int bf = (int)obs_data_get_int(settings, "bf");
 	const bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
@@ -990,8 +987,7 @@ static bool init_encoder(struct nvenc_data *enc, bool hevc,
 		return false;
 	}
 
-	if (!init_specific_encoder(enc, hevc, settings, encoder, bf,
-				   psycho_aq)) {
+	if (!init_specific_encoder(enc, hevc, settings, bf, psycho_aq)) {
 		if (!psycho_aq)
 			return false;
 
@@ -1000,8 +996,7 @@ static bool init_encoder(struct nvenc_data *enc, bool hevc,
 		nv.nvEncDestroyEncoder(enc->session);
 		enc->session = NULL;
 		if (!init_session(enc) ||
-		    !init_specific_encoder(enc, hevc, settings, encoder, bf,
-					   false)) {
+		    !init_specific_encoder(enc, hevc, settings, bf, false)) {
 			return false;
 		}
 	}
@@ -1029,7 +1024,7 @@ static void *nvenc_create_internal(bool hevc, obs_data_t *settings,
 	if (!init_session(enc)) {
 		goto fail;
 	}
-	if (!init_encoder(enc, hevc, settings, encoder)) {
+	if (!init_encoder(enc, hevc, settings)) {
 		goto fail;
 	}
 	if (!init_bitstreams(enc)) {
