@@ -825,7 +825,7 @@ QSlider::sub-page:horizontal {
 }
 
 QSlider::sub-page:horizontal:disabled {
-    background-color: palette(dark);
+    background-color: palette(window);
     border-radius: 2px;
 }
 
@@ -855,7 +855,7 @@ QSlider::add-page:vertical {
 }
 
 QSlider::add-page:vertical:disabled {
-    background-color: rgb(50,49,50);
+    background-color: palette(window);
     border-radius: 2px;
 }
 
