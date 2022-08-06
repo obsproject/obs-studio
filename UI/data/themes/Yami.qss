@@ -619,13 +619,13 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 }
 
 QLineEdit:hover,
-QTestEdit:hover,
+QTextEdit:hover,
 QPlainTextEdit:hover {
     border: 2px solid rgb(99,102,111);
 }
 
 QLineEdit:focus,
-QTestEdit:focus,
+QTextEdit:focus,
 QPlainTextEdit:focus {
     background-color: palette(mid);
     border: 2px solid rgb(40,76,184);
