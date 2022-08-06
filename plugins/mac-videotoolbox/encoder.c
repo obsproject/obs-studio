@@ -44,10 +44,8 @@ struct vt_encoder {
 	const char *profile;
 	bool bframes;
 
-	enum video_format obs_pix_fmt;
 	int vt_pix_fmt;
 	enum video_colorspace colorspace;
-	bool fullrange;
 
 	VTCompressionSessionRef session;
 	CMSimpleQueueRef queue;
@@ -459,46 +457,41 @@ static void dump_encoder_info(struct vt_encoder *enc)
 								 : "default");
 }
 
-static void vt_video_info(void *data, struct video_scale_info *info)
+static bool set_video_format(struct vt_encoder *enc, enum video_format format,
+			     enum video_range_type range)
 {
-	struct vt_encoder *enc = data;
-
-	if (info->format == VIDEO_FORMAT_I420) {
-		enc->obs_pix_fmt = info->format;
+	bool full_range = range == VIDEO_RANGE_FULL;
+	switch (format) {
+	case VIDEO_FORMAT_I420:
 		enc->vt_pix_fmt =
-			enc->fullrange
+			full_range
 				? kCVPixelFormatType_420YpCbCr8PlanarFullRange
 				: kCVPixelFormatType_420YpCbCr8Planar;
-		return;
+		return true;
+	case VIDEO_FORMAT_NV12:
+		enc->vt_pix_fmt =
+			full_range
+				? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+				: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
+		return true;
+	default:
+		return false;
 	}
-
-	if (info->format == VIDEO_FORMAT_I444)
-		VT_BLOG(LOG_WARNING, "I444 color format not supported");
-
-	// Anything else, return default
-	enc->obs_pix_fmt = VIDEO_FORMAT_NV12;
-	enc->vt_pix_fmt =
-		enc->fullrange
-			? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
-			: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
-
-	info->format = enc->obs_pix_fmt;
 }
 
-static void update_params(struct vt_encoder *enc, obs_data_t *settings)
+static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 {
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 
-	struct video_scale_info info = {.format = voi->format};
-
-	enc->fullrange = voi->range == VIDEO_RANGE_FULL;
-
-	// also sets the enc->vt_pix_fmt
-	vt_video_info(enc, &info);
-
+	if (!set_video_format(enc, voi->format, voi->range)) {
+		obs_encoder_set_last_error(
+			enc->encoder,
+			obs_module_text("ColorFormatUnsupportedH264"));
+		VT_BLOG(LOG_WARNING, "Unsupported color format selected");
+		return false;
+	}
 	enc->colorspace = voi->colorspace;
-
 	enc->width = obs_encoder_get_width(enc->encoder);
 	enc->height = obs_encoder_get_height(enc->encoder);
 	enc->fps_num = voi->fps_num;
@@ -513,6 +506,7 @@ static void update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->rc_max_bitrate_window =
 		obs_data_get_double(settings, "max_bitrate_window");
 	enc->bframes = obs_data_get_bool(settings, "bframes");
+	return true;
 }
 
 static bool vt_update(void *data, obs_data_t *settings)
@@ -549,7 +543,8 @@ static void *vt_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc->encoder = encoder;
 	enc->vt_encoder_id = obs_encoder_get_id(encoder);
 
-	update_params(enc, settings);
+	if (!update_params(enc, settings))
+		goto fail;
 
 	STATUS_CHECK(CMSimpleQueueCreate(NULL, 100, &enc->queue));
 
@@ -1057,7 +1052,6 @@ bool obs_module_load(void)
 		.update = vt_update,
 		.get_properties2 = vt_properties,
 		.get_defaults2 = vt_defaults,
-		.get_video_info = vt_video_info,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
 		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
