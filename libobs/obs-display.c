@@ -250,10 +250,10 @@ void render_display(struct obs_display *display)
 
 		render_display_end();
 
-		GS_DEBUG_MARKER_END();
-
 		gs_present();
 	}
+
+	GS_DEBUG_MARKER_END();
 }
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)
