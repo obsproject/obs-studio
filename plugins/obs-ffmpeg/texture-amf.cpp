@@ -1176,7 +1176,7 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 	}
 
 	set_avc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
-	set_avc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+	set_avc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
 	set_avc_property(enc, QUALITY_PRESET, get_avc_preset(enc, settings));
 	set_avc_property(enc, PROFILE, get_avc_profile(settings));
 	set_avc_property(enc, LOWLATENCY_MODE, false);
@@ -1468,7 +1468,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	const bool is_hdr = pq || hlg;
 
 	set_hevc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
-	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCONDING);
+	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
 	set_hevc_property(enc, QUALITY_PRESET, get_hevc_preset(enc, settings));
 	set_hevc_property(enc, COLOR_BIT_DEPTH,
 			  is10bit ? AMF_COLOR_BIT_DEPTH_10
