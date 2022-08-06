@@ -14,7 +14,6 @@
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
-#include <QPlainTextEdit>
 #include <QDialogButtonBox>
 #include <QMenu>
 #include <QMessageBox>
@@ -29,6 +28,7 @@
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
+#include "plain-text-edit.hpp"
 #include "obs-app.hpp"
 
 #include <cstdlib>
@@ -265,17 +265,13 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 {
 	const char *name = obs_property_name(prop);
 	const char *val = obs_data_get_string(settings, name);
-	const bool monospace = obs_property_text_monospace(prop);
+	bool monospace = obs_property_text_monospace(prop);
 	obs_text_type type = obs_property_text_type(prop);
 
 	if (type == OBS_TEXT_MULTILINE) {
-		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
+		OBSPlainTextEdit *edit = new OBSPlainTextEdit(this, monospace);
+		edit->setPlainText(QT_UTF8(val));
 		edit->setTabStopDistance(40);
-		if (monospace) {
-			QFont f("Courier");
-			f.setStyleHint(QFont::Monospace);
-			edit->setFont(f);
-		}
 		return NewWidget(prop, edit, SIGNAL(textChanged()));
 
 	} else if (type == OBS_TEXT_PASSWORD) {
@@ -1725,7 +1721,8 @@ void WidgetInfo::TextChanged(const char *setting)
 	obs_text_type type = obs_property_text_type(property);
 
 	if (type == OBS_TEXT_MULTILINE) {
-		QPlainTextEdit *edit = static_cast<QPlainTextEdit *>(widget);
+		OBSPlainTextEdit *edit =
+			static_cast<OBSPlainTextEdit *>(widget);
 		obs_data_set_string(view->settings, setting,
 				    QT_TO_UTF8(edit->toPlainText()));
 		return;

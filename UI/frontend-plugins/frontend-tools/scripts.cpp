@@ -2,9 +2,9 @@
 #include "scripts.hpp"
 #include "../../properties-view.hpp"
 #include "../../qt-wrappers.hpp"
+#include "../../plain-text-edit.hpp"
 
 #include <QFileDialog>
-#include <QPlainTextEdit>
 #include <QHBoxLayout>
 #include <QVBoxLayout>
 #include <QScrollBar>
@@ -81,18 +81,14 @@ struct ScriptData {
 static ScriptData *scriptData = nullptr;
 static ScriptsTool *scriptsWindow = nullptr;
 static ScriptLogWindow *scriptLogWindow = nullptr;
-static QPlainTextEdit *scriptLogWidget = nullptr;
+static OBSPlainTextEdit *scriptLogWidget = nullptr;
 
 /* ----------------------------------------------------------------- */
 
 ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
 {
-	const QFont fixedFont =
-		QFontDatabase::systemFont(QFontDatabase::FixedFont);
-
-	QPlainTextEdit *edit = new QPlainTextEdit();
+	OBSPlainTextEdit *edit = new OBSPlainTextEdit();
 	edit->setReadOnly(true);
-	edit->setFont(fixedFont);
 	edit->setWordWrapMode(QTextOption::NoWrap);
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout();

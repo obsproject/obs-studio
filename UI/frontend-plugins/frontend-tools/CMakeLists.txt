@@ -38,7 +38,9 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.cpp
           ${CMAKE_SOURCE_DIR}/UI/slider-ignorewheel.hpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
-          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
+          ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
+          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
+          ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp)
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
