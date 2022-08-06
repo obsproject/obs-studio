@@ -2,12 +2,12 @@
 
 #include <QDialog>
 
-class QPlainTextEdit;
+class OBSPlainTextEdit;
 
 class OBSCrashReport : public QDialog {
 	Q_OBJECT
 
-	QPlainTextEdit *textBox;
+	OBSPlainTextEdit *textBox;
 
 public:
 	OBSCrashReport(QWidget *parent, const char *text);

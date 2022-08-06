@@ -186,6 +186,8 @@ target_sources(
           menu-button.cpp
           menu-button.hpp
           mute-checkbox.hpp
+          plain-text-edit.cpp
+          plain-text-edit.hpp
           properties-view.cpp
           properties-view.hpp
           properties-view.moc.hpp
