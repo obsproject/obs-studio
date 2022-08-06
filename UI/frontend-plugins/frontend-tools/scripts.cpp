@@ -470,8 +470,24 @@ void ScriptsTool::on_pythonPathBrowse_clicked()
 
 	ui->pythonPath->setText(newPath);
 
-	if (obs_scripting_python_loaded())
+	bool loaded = obs_scripting_python_loaded();
+
+	if (loaded && !newPath.isEmpty() && curPath.compare(newPath) != 0) {
+		char version[8];
+		obs_scripting_python_version(version, sizeof(version));
+		QString message =
+			QString(obs_module_text(
+					"PythonSettings.AlreadyLoaded.Message"))
+				.arg(version);
+		OBSMessageBox::information(
+			this,
+			obs_module_text("PythonSettings.AlreadyLoaded.Title"),
+			message);
 		return;
+	} else if (loaded) {
+		return;
+	}
+
 	if (!obs_scripting_load_python(path))
 		return;
 
