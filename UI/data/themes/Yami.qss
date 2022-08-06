@@ -201,7 +201,11 @@ SourceTree::item:selected:hover {
 }
 
 QListWidget::item:disabled,
-QListWidget::item:hover {
+QListWidget::item:disabled:hover,
+SourceTree::item:disabled,
+SourceTree::item:disabled:hover,
+SceneTree::item:disabled,
+SceneTree::item:disabled:hover {
     background: transparent;
     color: rgb(153,153,153);
 }
