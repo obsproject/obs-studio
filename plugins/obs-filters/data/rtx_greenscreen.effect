@@ -11,24 +11,27 @@ sampler_state texSampler {
 };
 
 struct VertData {
+	float2 uv  : TEXCOORD0;
 	float4 pos : POSITION;
+};
+
+struct FragData {
 	float2 uv  : TEXCOORD0;
 };
 
 VertData VSDefault(VertData v_in)
 {
 	VertData v_out;
-	v_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
 	v_out.uv = v_in.uv;
+	v_out.pos = mul(float4(v_in.pos.xyz, 1.), ViewProj);
 	return v_out;
 }
 
-float4 PSMask(VertData v2_in) : TARGET
+float4 PSMask(FragData f_in) : TARGET
 {
-	float4 pix;
-	pix.rgb = image.Sample(texSampler, v2_in.uv).rgb;
-	pix.a = smoothstep(threshold - 0.1,threshold,mask.Sample(texSampler, v2_in.uv).a);
-	return pix;
+	float4 rgba = image.Sample(texSampler, f_in.uv);
+	rgba *= smoothstep(threshold - 0.1,threshold,mask.Sample(texSampler, f_in.uv).a);
+	return rgba;
 }
 
 technique Draw
@@ -36,6 +39,6 @@ technique Draw
 	pass
 	{
 		vertex_shader = VSDefault(v_in);
-		pixel_shader  = PSMask(v2_in);
+		pixel_shader  = PSMask(f_in);
 	}
 }
