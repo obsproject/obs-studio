@@ -1,3 +1,13 @@
+float srgb_linear_to_nonlinear_channel(float u)
+{
+	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1. / 2.4)) - 0.055);
+}
+
+float3 srgb_linear_to_nonlinear(float3 v)
+{
+	return float3(srgb_linear_to_nonlinear_channel(v.r), srgb_linear_to_nonlinear_channel(v.g), srgb_linear_to_nonlinear_channel(v.b));
+}
+
 float3 rec709_to_rec2020(float3 v)
 {
 	float r = dot(v, float3(0.62740389593469914, 0.32928303837788397, 0.043313065687417190));
