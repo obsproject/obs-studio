@@ -42,7 +42,7 @@ struct nv_greenscreen_data {
 	volatile bool processing_stop;
 	bool processed_frame;
 	bool target_valid;
-	volatile bool got_new_frame;
+	bool got_new_frame;
 	signal_handler_t *handler;
 
 	/* RTX SDK vars */
@@ -58,14 +58,14 @@ struct nv_greenscreen_data {
 	/* alpha mask effect */
 	gs_effect_t *effect;
 	gs_texrender_t *render;
+	gs_texture_t *render_unorm;
 	gs_texture_t *alpha_texture;
 	uint32_t width;  // width of texture
 	uint32_t height; // height of texture
 	gs_eparam_t *mask_param;
-	gs_texture_t *src_texture;
 	gs_eparam_t *src_param;
 	gs_eparam_t *threshold_param;
-	double threshold;
+	float threshold;
 };
 
 static const char *nv_greenscreen_filter_name(void *unused)
@@ -86,8 +86,7 @@ static void nv_greenscreen_filter_update(void *data, obs_data_t *settings)
 		if (NVCV_SUCCESS != vfxErr)
 			error("Error loading AI Greenscreen FX %i", vfxErr);
 	}
-	filter->threshold =
-		(double)obs_data_get_double(settings, S_THRESHOLDFX);
+	filter->threshold = (float)obs_data_get_double(settings, S_THRESHOLDFX);
 }
 
 static void nv_greenscreen_filter_actual_destroy(void *data)
@@ -104,6 +103,7 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		obs_enter_graphics();
 		gs_texture_destroy(filter->alpha_texture);
 		gs_texrender_destroy(filter->render);
+		gs_texture_destroy(filter->render_unorm);
 		obs_leave_graphics();
 		NvCVImage_Destroy(filter->src_img);
 		NvCVImage_Destroy(filter->BGR_src_img);
@@ -195,7 +195,6 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	uint32_t height = filter->height;
 
 	/* 1. create alpha texture */
-	obs_enter_graphics();
 	if (filter->alpha_texture) {
 		gs_texture_destroy(filter->alpha_texture);
 	}
@@ -208,11 +207,11 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	struct ID3D11Texture2D *d11texture =
 		(struct ID3D11Texture2D *)gs_texture_get_obj(
 			filter->alpha_texture);
-	obs_leave_graphics();
 
 	/* 2. Create NvCVImage which will hold final alpha texture. */
-	if (NvCVImage_Create(width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY,
-			     NVCV_GPU, 1, &filter->dst_img) != NVCV_SUCCESS) {
+	if (!filter->dst_img &&
+	    (NvCVImage_Create(width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY,
+			      NVCV_GPU, 1, &filter->dst_img) != NVCV_SUCCESS)) {
 		goto fail;
 	}
 
@@ -225,46 +224,80 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 	}
 
 	/* 3. create texrender */
-	obs_enter_graphics();
 	if (filter->render)
 		gs_texrender_destroy(filter->render);
-	filter->render = gs_texrender_create(GS_BGRA_UNORM, GS_ZS_NONE);
-	obs_leave_graphics();
+	filter->render = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 	if (!filter->render) {
-		error("Failed to create a texture renderer", vfxErr);
+		error("Failed to create render texrenderer", vfxErr);
+		goto fail;
+	}
+	if (filter->render_unorm)
+		gs_texture_destroy(filter->render_unorm);
+	filter->render_unorm =
+		gs_texture_create(width, height, GS_BGRA_UNORM, 1, NULL, 0);
+	if (!filter->render_unorm) {
+		error("Failed to create render_unorm texture", vfxErr);
 		goto fail;
 	}
 
 	/* 4. Create and allocate BGR NvCVImage (fx src). */
-	if (NvCVImage_Create(width, height, NVCV_BGR, NVCV_U8, NVCV_CHUNKY,
-			     NVCV_GPU, 1,
-			     &filter->BGR_src_img) != NVCV_SUCCESS) {
-		goto fail;
-	}
-	if (NvCVImage_Alloc(filter->BGR_src_img, width, height, NVCV_BGR,
-			    NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
-			    1) != NVCV_SUCCESS) {
-		goto fail;
+	if (filter->BGR_src_img) {
+		if (NvCVImage_Realloc(filter->BGR_src_img, width, height,
+				      NVCV_BGR, NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
+				      1) != NVCV_SUCCESS) {
+			goto fail;
+		}
+	} else {
+		if (NvCVImage_Create(width, height, NVCV_BGR, NVCV_U8,
+				     NVCV_CHUNKY, NVCV_GPU, 1,
+				     &filter->BGR_src_img) != NVCV_SUCCESS) {
+			goto fail;
+		}
+		if (NvCVImage_Alloc(filter->BGR_src_img, width, height,
+				    NVCV_BGR, NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
+				    1) != NVCV_SUCCESS) {
+			goto fail;
+		}
 	}
 
 	/* 5. Create and allocate Alpha NvCVimage (fx dst). */
-	if (NvCVImage_Create(width, height, NVCV_A, NVCV_U8, NVCV_CHUNKY,
-			     NVCV_GPU, 1, &filter->A_dst_img) != NVCV_SUCCESS) {
-		goto fail;
-	}
-	if (NvCVImage_Alloc(filter->A_dst_img, width, height, NVCV_A, NVCV_U8,
-			    NVCV_CHUNKY, NVCV_GPU, 1) != NVCV_SUCCESS) {
-		goto fail;
+	if (filter->A_dst_img) {
+		if (NvCVImage_Realloc(filter->A_dst_img, width, height, NVCV_A,
+				      NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
+				      1) != NVCV_SUCCESS) {
+			goto fail;
+		}
+	} else {
+		if (NvCVImage_Create(width, height, NVCV_A, NVCV_U8,
+				     NVCV_CHUNKY, NVCV_GPU, 1,
+				     &filter->A_dst_img) != NVCV_SUCCESS) {
+			goto fail;
+		}
+		if (NvCVImage_Alloc(filter->A_dst_img, width, height, NVCV_A,
+				    NVCV_U8, NVCV_CHUNKY, NVCV_GPU,
+				    1) != NVCV_SUCCESS) {
+			goto fail;
+		}
 	}
 
 	/* 6. Create stage NvCVImage which will be used as buffer for transfer */
-	if (NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8, NVCV_PLANAR,
-			     NVCV_GPU, 1, &filter->stage) != NVCV_SUCCESS) {
-		goto fail;
-	}
-	if (NvCVImage_Alloc(filter->stage, width, height, NVCV_RGBA, NVCV_U8,
-			    NVCV_PLANAR, NVCV_GPU, 1) != NVCV_SUCCESS) {
-		goto fail;
+	if (filter->stage) {
+		if (NvCVImage_Realloc(filter->stage, width, height, NVCV_RGBA,
+				      NVCV_U8, NVCV_PLANAR, NVCV_GPU,
+				      1) != NVCV_SUCCESS) {
+			goto fail;
+		}
+	} else {
+		if (NvCVImage_Create(width, height, NVCV_RGBA, NVCV_U8,
+				     NVCV_PLANAR, NVCV_GPU, 1,
+				     &filter->stage) != NVCV_SUCCESS) {
+			goto fail;
+		}
+		if (NvCVImage_Alloc(filter->stage, width, height, NVCV_RGBA,
+				    NVCV_U8, NVCV_PLANAR, NVCV_GPU,
+				    1) != NVCV_SUCCESS) {
+			goto fail;
+		}
 	}
 
 	/* 7. Set input & output images for nv FX. */
@@ -287,11 +320,9 @@ fail:
 
 static bool process_texture_greenscreen(struct nv_greenscreen_data *filter)
 {
-	gs_texrender_t *render = filter->render;
-	NvCV_Status vfxErr;
-
 	/* 1. Map src img holding texture. */
-	vfxErr = NvCVImage_MapResource(filter->src_img, filter->stream);
+	NvCV_Status vfxErr =
+		NvCVImage_MapResource(filter->src_img, filter->stream);
 	if (vfxErr != NVCV_SUCCESS) {
 		const char *errString = NvCV_GetErrorStringFromCode(vfxErr);
 		error("Error mapping resource for source texture; error %i : %s",
@@ -474,7 +505,7 @@ static struct obs_source_frame *
 nv_greenscreen_filter_video(void *data, struct obs_source_frame *frame)
 {
 	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
-	os_atomic_set_bool(&filter->got_new_frame, true);
+	filter->got_new_frame = true;
 	return frame;
 }
 
@@ -491,13 +522,11 @@ static void nv_greenscreen_filter_tick(void *data, float t)
 		return;
 	}
 	obs_source_t *target = obs_filter_get_target(filter->context);
-	uint32_t cx;
-	uint32_t cy;
 
 	filter->target_valid = true;
 
-	cx = obs_source_get_base_width(target);
-	cy = obs_source_get_base_height(target);
+	const uint32_t cx = obs_source_get_base_width(target);
+	const uint32_t cy = obs_source_get_base_height(target);
 
 	// initially the sizes are 0
 	if (!cx && !cy) {
@@ -517,8 +546,10 @@ static void nv_greenscreen_filter_tick(void *data, float t)
 		filter->height = cy;
 	}
 	if (!filter->images_allocated) {
+		obs_enter_graphics();
 		init_images_greenscreen(filter);
-		filter->initial_render = 0;
+		obs_leave_graphics();
+		filter->initial_render = false;
 	}
 
 	filter->processed_frame = false;
@@ -527,63 +558,56 @@ static void nv_greenscreen_filter_tick(void *data, float t)
 static void draw_greenscreen(struct nv_greenscreen_data *filter)
 {
 	/* Render alpha mask */
-	if (!obs_source_process_filter_begin(filter->context, GS_BGRA_UNORM,
-					     OBS_ALLOW_DIRECT_RENDERING)) {
-		return;
-	}
-	gs_effect_set_texture(filter->mask_param, filter->alpha_texture);
-	gs_effect_set_texture(filter->src_param, filter->src_texture);
-	gs_effect_set_float(filter->threshold_param, (float)filter->threshold);
-	while (gs_effect_loop(filter->effect, "Draw")) {
-		gs_draw_sprite(NULL, 0, filter->width, filter->height);
-	}
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-}
+	if (obs_source_process_filter_begin(filter->context, GS_RGBA,
+					    OBS_ALLOW_DIRECT_RENDERING)) {
+		gs_effect_set_texture(filter->mask_param,
+				      filter->alpha_texture);
+		gs_effect_set_texture_srgb(
+			filter->src_param,
+			gs_texrender_get_texture(filter->render));
+		gs_effect_set_float(filter->threshold_param, filter->threshold);
 
-static void draw_greenscreen_srgb(struct nv_greenscreen_data *filter)
-{
-	/* Render alpha mask */
-	if (!obs_source_process_filter_begin(filter->context, GS_BGRA_UNORM,
-					     OBS_ALLOW_DIRECT_RENDERING)) {
-		return;
+		gs_blend_state_push();
+		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+		obs_source_process_filter_end(filter->context, filter->effect,
+					      0, 0);
+
+		gs_blend_state_pop();
 	}
-	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(true);
-	gs_effect_set_texture_srgb(filter->mask_param, filter->alpha_texture);
-	gs_effect_set_texture_srgb(filter->src_param, filter->src_texture);
-	gs_effect_set_float(filter->threshold_param, (float)filter->threshold);
-	while (gs_effect_loop(filter->effect, "Draw")) {
-		gs_draw_sprite(NULL, 0, filter->width, filter->height);
-	}
-	gs_enable_framebuffer_srgb(previous);
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
 }
 
 static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 {
 	NvCV_Status vfxErr;
-	bool ret;
 	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
 
-	if (filter->processing_stop)
-		return;
-	obs_source_t *target = obs_filter_get_target(filter->context);
-	obs_source_t *parent = obs_filter_get_parent(filter->context);
-	gs_texrender_t *render;
-
-	/* Skip if processing of a frame hasn't yet started */
-	if (!filter->target_valid || !target || !parent ||
-	    filter->processed_frame) {
+	if (filter->processing_stop) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
+	obs_source_t *target = obs_filter_get_target(filter->context);
+	obs_source_t *parent = obs_filter_get_parent(filter->context);
+
+	/* Skip if processing of a frame hasn't yet started */
+	if (!filter->target_valid || !target || !parent) {
+		obs_source_skip_video_filter(filter->context);
+		return;
+	}
+
+	/* Render processed image from earlier in the frame */
+	if (filter->processed_frame) {
+		draw_greenscreen(filter);
+		return;
+	}
+
 	if (parent && !filter->handler) {
 		filter->handler = obs_source_get_signal_handler(parent);
 		signal_handler_connect(filter->handler, "update_properties",
 				       nv_greenscreen_filter_reset, filter);
 	}
 	/* 1. Render to retrieve texture. */
-	render = filter->render;
+	gs_texrender_t *const render = filter->render;
 	if (!render) {
 		obs_source_skip_video_filter(filter->context);
 		return;
@@ -593,7 +617,6 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 	bool custom_draw = (target_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	bool async = (target_flags & OBS_SOURCE_ASYNC) != 0;
-	bool srgb_draw = (parent_flags & OBS_SOURCE_SRGB) != 0;
 
 	gs_texrender_reset(render);
 	gs_blend_state_push();
@@ -612,33 +635,38 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 			obs_source_video_render(target);
 
 		gs_texrender_end(render);
+
+		gs_copy_texture(filter->render_unorm,
+				gs_texrender_get_texture(filter->render));
 	}
 	gs_blend_state_pop();
 
 	/* 2. Initialize src_texture (only at startup or reset) */
 	if (!filter->initial_render) {
-		obs_enter_graphics();
-		filter->src_texture = gs_texrender_get_texture(filter->render);
 		struct ID3D11Texture2D *d11texture2 =
 			(struct ID3D11Texture2D *)gs_texture_get_obj(
-				filter->src_texture);
-		obs_leave_graphics();
-
+				filter->render_unorm);
 		if (!d11texture2) {
 			error("Couldn't retrieve d3d11texture2d.");
 			return;
 		}
-		vfxErr = NvCVImage_Create(filter->width, filter->height,
-					  NVCV_BGRA, NVCV_U8, NVCV_CHUNKY,
-					  NVCV_GPU, 1, &filter->src_img);
-		if (vfxErr != NVCV_SUCCESS) {
-			const char *errString =
-				NvCV_GetErrorStringFromCode(vfxErr);
-			error("Error creating src img; error %i: %s", vfxErr,
-			      errString);
-			os_atomic_set_bool(&filter->processing_stop, true);
-			return;
+
+		if (!filter->src_img) {
+			vfxErr = NvCVImage_Create(filter->width, filter->height,
+						  NVCV_BGRA, NVCV_U8,
+						  NVCV_CHUNKY, NVCV_GPU, 1,
+						  &filter->src_img);
+			if (vfxErr != NVCV_SUCCESS) {
+				const char *errString =
+					NvCV_GetErrorStringFromCode(vfxErr);
+				error("Error creating src img; error %i: %s",
+				      vfxErr, errString);
+				os_atomic_set_bool(&filter->processing_stop,
+						   true);
+				return;
+			}
 		}
+
 		vfxErr = NvCVImage_InitFromD3D11Texture(filter->src_img,
 							d11texture2);
 		if (vfxErr != NVCV_SUCCESS) {
@@ -649,27 +677,24 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 			os_atomic_set_bool(&filter->processing_stop, true);
 			return;
 		}
+
 		filter->initial_render = true;
 	}
 
 	/* 3. Process FX (outputs a mask) & draw. */
 	if (filter->initial_render && filter->images_allocated) {
-		ret = true;
-		if (filter->got_new_frame) {
-			ret = process_texture_greenscreen(filter);
-			os_atomic_set_bool(&filter->got_new_frame, false);
+		bool draw = true;
+		if (!async || filter->got_new_frame) {
+			draw = process_texture_greenscreen(filter);
+			filter->got_new_frame = false;
 		}
 
-		if (ret) {
-			if (!srgb_draw)
-				draw_greenscreen(filter);
-			else
-				draw_greenscreen_srgb(filter);
+		if (draw) {
+			draw_greenscreen(filter);
 			filter->processed_frame = true;
 		}
 	} else {
 		obs_source_skip_video_filter(filter->context);
-		return;
 	}
 	UNUSED_PARAMETER(effect);
 }
@@ -789,7 +814,7 @@ void unload_nvvfx(void)
 struct obs_source_info nvidia_greenscreen_filter_info = {
 	.id = "nv_greenscreen_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
-	.output_flags = OBS_SOURCE_VIDEO,
+	.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_SRGB,
 	.get_name = nv_greenscreen_filter_name,
 	.create = nv_greenscreen_filter_create,
 	.destroy = nv_greenscreen_filter_destroy,
