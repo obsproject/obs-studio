@@ -116,6 +116,7 @@ void OBSPropertiesView::RefreshProperties()
 		widget->deleteLater();
 
 	widget = new QWidget();
+	widget->setObjectName("PropertiesContainer");
 
 	QFormLayout *layout = new QFormLayout;
 	layout->setFieldGrowthPolicy(QFormLayout::AllNonFixedFieldsGrow);
