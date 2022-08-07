@@ -38,18 +38,21 @@
        </property>
        <property name="maximumSize">
         <size>
-         <width>135</width>
+         <width>180</width>
          <height>16777215</height>
         </size>
        </property>
        <property name="iconSize">
         <size>
-         <width>32</width>
-         <height>32</height>
+         <width>16</width>
+         <height>16</height>
         </size>
        </property>
        <property name="currentRow">
         <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>1</number>
        </property>
        <item>
         <property name="text">
