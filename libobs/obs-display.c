@@ -220,8 +220,6 @@ void render_display(struct obs_display *display)
 	if (!display || !display->enabled)
 		return;
 
-	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DISPLAY, "obs_display");
-
 	/* -------------------------------------------- */
 
 	pthread_mutex_lock(&display->draw_info_mutex);
@@ -237,6 +235,8 @@ void render_display(struct obs_display *display)
 	/* -------------------------------------------- */
 
 	if (render_display_begin(display, cx, cy, update_color_space)) {
+		GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_DISPLAY, "obs_display");
+
 		pthread_mutex_lock(&display->draw_callbacks_mutex);
 
 		for (size_t i = 0; i < display->draw_callbacks.num; i++) {
@@ -250,10 +250,10 @@ void render_display(struct obs_display *display)
 
 		render_display_end();
 
+		GS_DEBUG_MARKER_END();
+
 		gs_present();
 	}
-
-	GS_DEBUG_MARKER_END();
 }
 
 void obs_display_set_enabled(obs_display_t *display, bool enable)
