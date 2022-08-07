@@ -58,13 +58,16 @@ struct nv_greenscreen_data {
 	/* alpha mask effect */
 	gs_effect_t *effect;
 	gs_texrender_t *render;
-	gs_texture_t *render_unorm;
+	gs_texrender_t *render_unorm;
 	gs_texture_t *alpha_texture;
 	uint32_t width;  // width of texture
 	uint32_t height; // height of texture
+	enum gs_color_space space;
 	gs_eparam_t *mask_param;
 	gs_eparam_t *src_param;
 	gs_eparam_t *threshold_param;
+	gs_eparam_t *image_param;
+	gs_eparam_t *multiplier_param;
 	float threshold;
 };
 
@@ -103,7 +106,7 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		obs_enter_graphics();
 		gs_texture_destroy(filter->alpha_texture);
 		gs_texrender_destroy(filter->render);
-		gs_texture_destroy(filter->render_unorm);
+		gs_texrender_destroy(filter->render_unorm);
 		obs_leave_graphics();
 		NvCVImage_Destroy(filter->src_img);
 		NvCVImage_Destroy(filter->BGR_src_img);
@@ -223,20 +226,20 @@ static void init_images_greenscreen(struct nv_greenscreen_data *filter)
 		goto fail;
 	}
 
-	/* 3. create texrender */
+	/* 3. create texrenders */
 	if (filter->render)
 		gs_texrender_destroy(filter->render);
-	filter->render = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
+	filter->render = gs_texrender_create(
+		gs_get_format_from_space(filter->space), GS_ZS_NONE);
 	if (!filter->render) {
 		error("Failed to create render texrenderer", vfxErr);
 		goto fail;
 	}
 	if (filter->render_unorm)
-		gs_texture_destroy(filter->render_unorm);
-	filter->render_unorm =
-		gs_texture_create(width, height, GS_BGRA_UNORM, 1, NULL, 0);
+		gs_texrender_destroy(filter->render_unorm);
+	filter->render_unorm = gs_texrender_create(GS_BGRA_UNORM, GS_ZS_NONE);
 	if (!filter->render_unorm) {
-		error("Failed to create render_unorm texture", vfxErr);
+		error("Failed to create render_unorm texrenderer", vfxErr);
 		goto fail;
 	}
 
@@ -465,6 +468,10 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 			gs_effect_get_param_by_name(filter->effect, "image");
 		filter->threshold_param = gs_effect_get_param_by_name(
 			filter->effect, "threshold");
+		filter->image_param =
+			gs_effect_get_param_by_name(filter->effect, "image");
+		filter->multiplier_param = gs_effect_get_param_by_name(
+			filter->effect, "multiplier");
 	}
 	obs_leave_graphics();
 
@@ -555,23 +562,75 @@ static void nv_greenscreen_filter_tick(void *data, float t)
 	filter->processed_frame = false;
 }
 
+static const char *
+get_tech_name_and_multiplier(enum gs_color_space current_space,
+			     enum gs_color_space source_space,
+			     float *multiplier)
+{
+	const char *tech_name = "Draw";
+	*multiplier = 1.f;
+
+	switch (source_space) {
+	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
+		switch (current_space) {
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_EXTENDED:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawTonemap";
+			break;
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			*multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawMultiplyTonemap";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_EXTENDED:
+			tech_name = "DrawMultiply";
+			*multiplier = 80.0f / obs_get_video_sdr_white_level();
+		}
+	}
+
+	return tech_name;
+}
+
 static void draw_greenscreen(struct nv_greenscreen_data *filter)
 {
 	/* Render alpha mask */
-	if (obs_source_process_filter_begin(filter->context, GS_RGBA,
-					    OBS_ALLOW_DIRECT_RENDERING)) {
+	const enum gs_color_space source_space = filter->space;
+	float multiplier;
+	const char *technique = get_tech_name_and_multiplier(
+		gs_get_color_space(), source_space, &multiplier);
+	const enum gs_color_format format =
+		gs_get_format_from_space(source_space);
+	if (obs_source_process_filter_begin_with_color_space(
+		    filter->context, format, source_space,
+		    OBS_ALLOW_DIRECT_RENDERING)) {
 		gs_effect_set_texture(filter->mask_param,
 				      filter->alpha_texture);
 		gs_effect_set_texture_srgb(
 			filter->src_param,
 			gs_texrender_get_texture(filter->render));
 		gs_effect_set_float(filter->threshold_param, filter->threshold);
+		gs_effect_set_float(filter->multiplier_param, multiplier);
 
 		gs_blend_state_push();
 		gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
 
-		obs_source_process_filter_end(filter->context, filter->effect,
-					      0, 0);
+		obs_source_process_filter_tech_end(
+			filter->context, filter->effect, 0, 0, technique);
 
 		gs_blend_state_pop();
 	}
@@ -586,8 +645,9 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
-	obs_source_t *target = obs_filter_get_target(filter->context);
-	obs_source_t *parent = obs_filter_get_parent(filter->context);
+
+	obs_source_t *const target = obs_filter_get_target(filter->context);
+	obs_source_t *const parent = obs_filter_get_parent(filter->context);
 
 	/* Skip if processing of a frame hasn't yet started */
 	if (!filter->target_valid || !target || !parent) {
@@ -606,26 +666,46 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 		signal_handler_connect(filter->handler, "update_properties",
 				       nv_greenscreen_filter_reset, filter);
 	}
+
 	/* 1. Render to retrieve texture. */
-	gs_texrender_t *const render = filter->render;
-	if (!render) {
+	if (!filter->render) {
 		obs_source_skip_video_filter(filter->context);
 		return;
 	}
-	uint32_t target_flags = obs_source_get_output_flags(target);
-	uint32_t parent_flags = obs_source_get_output_flags(parent);
+
+	const uint32_t target_flags = obs_source_get_output_flags(target);
+	const uint32_t parent_flags = obs_source_get_output_flags(parent);
 
 	bool custom_draw = (target_flags & OBS_SOURCE_CUSTOM_DRAW) != 0;
 	bool async = (target_flags & OBS_SOURCE_ASYNC) != 0;
 
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+
+	if (filter->space != source_space) {
+		filter->space = source_space;
+		init_images_greenscreen(filter);
+		filter->initial_render = false;
+	}
+
+	gs_texrender_t *const render = filter->render;
 	gs_texrender_reset(render);
 	gs_blend_state_push();
 	gs_blend_function(GS_BLEND_ONE, GS_BLEND_ZERO);
-	if (gs_texrender_begin(render, filter->width, filter->height)) {
-		struct vec4 clear_color;
 
+	if (gs_texrender_begin_with_color_space(render, filter->width,
+						filter->height, source_space)) {
+		struct vec4 clear_color;
 		vec4_zero(&clear_color);
 		gs_clear(GS_CLEAR_COLOR, &clear_color, 0.0f, 0);
+
 		gs_ortho(0.0f, (float)filter->width, 0.0f,
 			 (float)filter->height, -100.0f, 100.0f);
 
@@ -636,16 +716,54 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 		gs_texrender_end(render);
 
-		gs_copy_texture(filter->render_unorm,
-				gs_texrender_get_texture(filter->render));
+		gs_texrender_t *const render_unorm = filter->render_unorm;
+		gs_texrender_reset(render_unorm);
+		if (gs_texrender_begin_with_color_space(
+			    render_unorm, filter->width, filter->height,
+			    GS_CS_SRGB)) {
+			const bool previous = gs_framebuffer_srgb_enabled();
+			gs_enable_framebuffer_srgb(true);
+			gs_enable_blending(false);
+
+			gs_ortho(0.0f, (float)filter->width, 0.0f,
+				 (float)filter->height, -100.0f, 100.0f);
+
+			const char *tech_name = "ConvertUnorm";
+			float multiplier = 1.f;
+			switch (source_space) {
+			case GS_CS_709_EXTENDED:
+				tech_name = "ConvertUnormTonemap";
+				break;
+			case GS_CS_709_SCRGB:
+				tech_name = "ConvertUnormMultiplyTonemap";
+				multiplier =
+					80.0f / obs_get_video_sdr_white_level();
+			}
+
+			gs_effect_set_texture_srgb(
+				filter->image_param,
+				gs_texrender_get_texture(render));
+			gs_effect_set_float(filter->multiplier_param,
+					    multiplier);
+
+			while (gs_effect_loop(filter->effect, tech_name)) {
+				gs_draw(GS_TRIS, 0, 3);
+			}
+
+			gs_texrender_end(render_unorm);
+
+			gs_enable_blending(true);
+			gs_enable_framebuffer_srgb(previous);
+		}
 	}
+
 	gs_blend_state_pop();
 
 	/* 2. Initialize src_texture (only at startup or reset) */
 	if (!filter->initial_render) {
 		struct ID3D11Texture2D *d11texture2 =
 			(struct ID3D11Texture2D *)gs_texture_get_obj(
-				filter->render_unorm);
+				gs_texrender_get_texture(filter->render_unorm));
 		if (!d11texture2) {
 			error("Couldn't retrieve d3d11texture2d.");
 			return;
@@ -811,6 +929,30 @@ void unload_nvvfx(void)
 }
 #endif
 
+static enum gs_color_space nv_greenscreen_filter_get_color_space(
+	void *data, size_t count, const enum gs_color_space *preferred_spaces)
+{
+	const enum gs_color_space potential_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	struct nv_greenscreen_data *const filter = data;
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(potential_spaces), potential_spaces);
+
+	enum gs_color_space space = source_space;
+	for (size_t i = 0; i < count; ++i) {
+		space = preferred_spaces[i];
+		if (space == source_space)
+			break;
+	}
+
+	return space;
+}
+
 struct obs_source_info nvidia_greenscreen_filter_info = {
 	.id = "nv_greenscreen_filter",
 	.type = OBS_SOURCE_TYPE_FILTER,
@@ -824,4 +966,5 @@ struct obs_source_info nvidia_greenscreen_filter_info = {
 	.filter_video = nv_greenscreen_filter_video,
 	.video_render = nv_greenscreen_filter_render,
 	.video_tick = nv_greenscreen_filter_tick,
+	.video_get_color_space = nv_greenscreen_filter_get_color_space,
 };
