@@ -24,7 +24,9 @@ target_sources(
           monitor-capture.c
           nt-stuff.c
           nt-stuff.h
-          window-capture.c)
+          window-capture.c
+          ../../../libobs/util/windows/obfuscate.c
+          ../../../libobs/util/windows/obfuscate.h)
 
 target_link_libraries(win-capture PRIVATE OBS::libobs OBS::ipc-util)
 
