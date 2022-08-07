@@ -573,6 +573,12 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	}
 }
 
+bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
 void device_present(gs_device_t *device)
 {
 	if (!SwapBuffers(device->cur_swap->wi->hdc)) {

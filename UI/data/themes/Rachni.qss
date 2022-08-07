@@ -828,7 +828,7 @@ SourceTreeSubItemCheckBox::indicator:checked:hover {
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-	image: url(./Dark/down.svg);
+	image: url(./Dark/collapse.svg);
 }
 
 /*************************/
@@ -1310,6 +1310,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(./Dark/settings/audio.svg);
     qproperty-videoIcon: url(./Dark/settings/video.svg);
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(./Dark/settings/accessibility.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
@@ -1478,6 +1479,10 @@ QPushButton#sourceFiltersButton {
     qproperty-icon: url(./Dark/filter.svg);
 }
 
+QPushButton#sourceInteractButton {
+    qproperty-icon: url(./Dark/interact.svg);
+}
+
 /* Media icons */
 
 * [themeID="playIcon"] {
@@ -1611,7 +1616,7 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
 

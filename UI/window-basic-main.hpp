@@ -629,7 +629,6 @@ private:
 	QColor cropColor;
 	QColor hoverColor;
 
-	QColor GetSelectionColor() const;
 	QColor GetCropColor() const;
 	QColor GetHoverColor() const;
 
@@ -980,6 +979,8 @@ public:
 	void UpdateEditMenu();
 
 	void SetDisplayAffinity(QWindow *window);
+
+	QColor GetSelectionColor() const;
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

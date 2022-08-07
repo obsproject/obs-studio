@@ -49,6 +49,7 @@ sys.stderr = stderr_logger()\n";
 
 #if RUNTIME_LINK
 static wchar_t home_path[1024] = {0};
+static python_version_t python_version = {0};
 #endif
 
 DARRAY(char *) python_paths;
@@ -1615,12 +1616,7 @@ bool obs_scripting_load_python(const char *python_path)
 
 		/* Use external python on windows and mac */
 #if RUNTIME_LINK
-#if 0
-	struct dstr old_path  = {0};
-	struct dstr new_path  = {0};
-#endif
-
-	if (!import_python(python_path))
+	if (!import_python(python_path, &python_version))
 		return false;
 
 	if (python_path && *python_path) {
@@ -1635,11 +1631,6 @@ bool obs_scripting_load_python(const char *python_path)
 		os_utf8_to_wcs(python_path, 0, home_path, 1024);
 		Py_SetPythonHome(home_path);
 #endif
-#if 0
-		dstr_copy(&old_path, getenv("PATH"));
-		_putenv("PYTHONPATH=");
-		_putenv("PATH=");
-#endif
 	}
 #else
 	UNUSED_PARAMETER(python_path);
@@ -1649,24 +1640,17 @@ bool obs_scripting_load_python(const char *python_path)
 	if (!Py_IsInitialized())
 		return false;
 
-#if 0
-#ifdef _DEBUG
-	if (pythondir && *pythondir) {
-		dstr_printf(&new_path, "PATH=%s", old_path.array);
-		_putenv(new_path.array);
+#if RUNTIME_LINK
+	if (python_version.major == 3 && python_version.minor < 7) {
+#elif PY_VERSION_HEX < 0x030700b0
+	if (true) {
+#else
+	if (false) {
+#endif
+		PyEval_InitThreads();
+		if (!PyEval_ThreadsInitialized())
+			return false;
 	}
-#endif
-
-	bfree(pythondir);
-	dstr_free(&new_path);
-	dstr_free(&old_path);
-#endif
-
-#if PY_VERSION_HEX < 0x03070000
-	PyEval_InitThreads();
-	if (!PyEval_ThreadsInitialized())
-		return false;
-#endif
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */

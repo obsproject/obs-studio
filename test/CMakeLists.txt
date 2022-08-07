@@ -5,7 +5,7 @@ if(BUILD_TESTS)
     add_subdirectory(win)
   endif()
 
-  if(OS_POSIX)
+  if(OS_MACOS)
     add_subdirectory(osx)
   endif()
 endif()

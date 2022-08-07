@@ -133,6 +133,7 @@ EXPORT void device_load_swapchain(gs_device_t *device,
 EXPORT void device_clear(gs_device_t *device, uint32_t clear_flags,
 			 const struct vec4 *color, float depth,
 			 uint8_t stencil);
+EXPORT bool device_is_present_ready(gs_device_t *device);
 EXPORT void device_present(gs_device_t *device);
 EXPORT void device_flush(gs_device_t *device);
 EXPORT void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode);

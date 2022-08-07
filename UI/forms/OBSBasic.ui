@@ -793,6 +793,9 @@
             <verstretch>0</verstretch>
            </sizepolicy>
           </property>
+          <property name="spacing">
+           <number>1</number>
+          </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
           </property>
@@ -927,6 +930,9 @@
             <horstretch>0</horstretch>
             <verstretch>0</verstretch>
            </sizepolicy>
+          </property>
+          <property name="spacing">
+           <number>1</number>
           </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>

@@ -74,7 +74,8 @@ void LineEditAutoResize::keyPressEvent(QKeyEvent *event)
 
 void LineEditAutoResize::resizeVertically(const QSizeF &newSize)
 {
-	setMaximumHeight(newSize.height() + 7);
+	QMargins margins = contentsMargins();
+	setMaximumHeight(newSize.height() + margins.top() + margins.bottom());
 }
 
 QString LineEditAutoResize::text()

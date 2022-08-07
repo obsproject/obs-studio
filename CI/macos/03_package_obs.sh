@@ -99,8 +99,10 @@ package-obs-standalone() {
     check_archs
     check_macos_version
 
-    step "Fetch OBS tags..."
-    /usr/bin/git fetch origin --tags
+    if [ -z "${CI}" ]; then
+        step "Fetch OBS tags..."
+        /usr/bin/git fetch --tags origin
+    fi
 
     GIT_BRANCH=$(/usr/bin/git rev-parse --abbrev-ref HEAD)
     GIT_HASH=$(/usr/bin/git rev-parse --short=9 HEAD)

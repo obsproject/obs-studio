@@ -1943,6 +1943,16 @@ void gs_clear(uint32_t clear_flags, const struct vec4 *color, float depth,
 				       depth, stencil);
 }
 
+bool gs_is_present_ready(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_is_present_ready"))
+		return false;
+
+	return graphics->exports.device_is_present_ready(graphics->device);
+}
+
 void gs_present(void)
 {
 	graphics_t *graphics = thread_graphics;

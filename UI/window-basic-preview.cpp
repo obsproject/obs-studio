@@ -2286,7 +2286,7 @@ OBSBasicPreview *OBSBasicPreview::Get()
 	return OBSBasic::Get()->ui->preview;
 }
 
-static obs_source_t *CreateLabel()
+static obs_source_t *CreateLabel(float pixelRatio)
 {
 	OBSDataAutoRelease settings = obs_data_create();
 	OBSDataAutoRelease font = obs_data_create();
@@ -2299,7 +2299,7 @@ static obs_source_t *CreateLabel()
 	obs_data_set_string(font, "face", "Monospace");
 #endif
 	obs_data_set_int(font, "flags", 1); // Bold text
-	obs_data_set_int(font, "size", 16);
+	obs_data_set_int(font, "size", 16 * pixelRatio);
 
 	obs_data_set_obj(settings, "font", font);
 	obs_data_set_bool(settings, "outline", true);
@@ -2350,8 +2350,11 @@ static void DrawLabel(OBSSource source, vec3 &pos, vec3 &viewport)
 	gs_matrix_pop();
 }
 
-static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport)
+static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport,
+			    float pixelRatio)
 {
+	OBSBasic *main = OBSBasic::Get();
+
 	matrix4 transform;
 	matrix4_identity(&transform);
 	transform.x.x = viewport.x;
@@ -2360,8 +2363,11 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport)
 	gs_effect_t *solid = obs_get_base_effect(OBS_EFFECT_SOLID);
 	gs_technique_t *tech = gs_effect_get_technique(solid, "Solid");
 
+	QColor selColor = main->GetSelectionColor();
 	vec4 color;
-	vec4_set(&color, 1.0f, 0.0f, 0.0f, 1.0f);
+	vec4_set(&color, selColor.redF(), selColor.greenF(), selColor.blueF(),
+		 1.0f);
+
 	gs_effect_set_vec4(gs_effect_get_param_by_name(solid, "color"), &color);
 
 	gs_technique_begin(tech);
@@ -2373,7 +2379,8 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport)
 	vec2 scale;
 	vec2_set(&scale, viewport.x, viewport.y);
 
-	DrawLine(start.x, start.y, end.x, end.y, HANDLE_RADIUS / 2, scale);
+	DrawLine(start.x, start.y, end.x, end.y,
+		 pixelRatio * (HANDLE_RADIUS / 2), scale);
 
 	gs_matrix_pop();
 
@@ -2384,7 +2391,7 @@ static void DrawSpacingLine(vec3 &start, vec3 &end, vec3 &viewport)
 }
 
 static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end,
-				vec3 &viewport)
+				vec3 &viewport, float pixelRatio)
 {
 	bool horizontal = (sourceIndex == 2 || sourceIndex == 3);
 
@@ -2418,7 +2425,8 @@ static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end,
 	vec3_div(&labelSize, &labelSize, &viewport);
 
 	vec3 labelMargin;
-	vec3_set(&labelMargin, SPACER_LABEL_MARGIN, SPACER_LABEL_MARGIN, 1.0f);
+	vec3_set(&labelMargin, SPACER_LABEL_MARGIN * pixelRatio,
+		 SPACER_LABEL_MARGIN * pixelRatio, 1.0f);
 	vec3_div(&labelMargin, &labelMargin, &viewport);
 
 	vec3_set(&labelPos, end.x, end.y, end.z);
@@ -2433,7 +2441,7 @@ static void RenderSpacingHelper(int sourceIndex, vec3 &start, vec3 &end,
 		labelPos.x += labelMargin.x;
 	}
 
-	DrawSpacingLine(start, end, viewport);
+	DrawSpacingLine(start, end, viewport, pixelRatio);
 	SetLabelText(sourceIndex, (int)px);
 	DrawLabel(source, labelPos, viewport);
 }
@@ -2559,24 +2567,25 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	// Draw spacer lines and labels
 	vec3 start, end;
 
+	float pixelRatio = main->GetDevicePixelRatio();
 	for (int i = 0; i < 4; i++) {
 		if (!spacerLabel[i])
-			spacerLabel[i] = CreateLabel();
+			spacerLabel[i] = CreateLabel(pixelRatio);
 	}
 
 	vec3_set(&start, top.x, 0.0f, 1.0f);
 	vec3_set(&end, top.x, top.y, 1.0f);
-	RenderSpacingHelper(0, start, end, viewport);
+	RenderSpacingHelper(0, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, bottom.x, 1.0f - bottom.y, 1.0f);
 	vec3_set(&end, bottom.x, 1.0f, 1.0f);
-	RenderSpacingHelper(1, start, end, viewport);
+	RenderSpacingHelper(1, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, 0.0f, left.y, 1.0f);
 	vec3_set(&end, left.x, left.y, 1.0f);
-	RenderSpacingHelper(2, start, end, viewport);
+	RenderSpacingHelper(2, start, end, viewport, pixelRatio);
 
 	vec3_set(&start, 1.0f - right.x, right.y, 1.0f);
 	vec3_set(&end, 1.0f, right.y, 1.0f);
-	RenderSpacingHelper(3, start, end, viewport);
+	RenderSpacingHelper(3, start, end, viewport, pixelRatio);
 }

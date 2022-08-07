@@ -171,12 +171,16 @@ QListWidget::item {
     color: palette(text);
 }
 
+SceneTree,
+SourceTree {
+    padding: 3px;
+}
+
 SceneTree::item,
 SourceTree::item {
-	padding: 3px;
+    border-radius: 4px;
+    padding: 6px;
     color: palette(text);
-	margin-bottom: 1px;
-	margin-top: 1px;
 	border: 0px solid transparent;
 }
 
@@ -222,12 +226,12 @@ SourceTree QLineEdit:focus {
 
 OBSBasicSettings QListWidget {
     border-radius: 4px;
+    padding: 3px;
 }
 
 OBSBasicSettings QListWidget::item {
-    padding-left: 4px;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    border-radius: 4px;
+    padding: 6px;
 }
 
 /* Dock Widget */
@@ -619,13 +623,13 @@ QLineEdit, QTextEdit, QPlainTextEdit {
 }
 
 QLineEdit:hover,
-QTestEdit:hover,
+QTextEdit:hover,
 QPlainTextEdit:hover {
     border: 2px solid rgb(99,102,111);
 }
 
 QLineEdit:focus,
-QTestEdit:focus,
+QTextEdit:focus,
 QPlainTextEdit:focus {
     background-color: palette(mid);
     border: 2px solid rgb(40,76,184);
@@ -1002,6 +1006,16 @@ OBSQTDisplay {
 
 /* Filters Window */
 
+OBSBasicFilters QListWidget {
+    border-radius: 4px;
+    padding: 3px;
+}
+
+OBSBasicFilters QListWidget::item {
+    border-radius: 4px;
+    padding: 6px;
+}
+
 OBSBasicFilters #widget,
 OBSBasicFilters #widget_2 {
     margin: 0px;
@@ -1090,7 +1104,11 @@ QGroupBox::indicator:unchecked:disabled {
 LockedCheckBox {
     outline: none;
     background: transparent;
-    margin-left: -2px;
+}
+
+LockedCheckBox::indicator {
+    width: 16px;
+    height: 16px;
 }
 
 LockedCheckBox::indicator:checked,
@@ -1108,7 +1126,11 @@ LockedCheckBox::indicator:unchecked:hover {
 VisibilityCheckBox {
     outline: none;
     background: transparent;
-    margin-left: -1px;
+}
+
+VisibilityCheckBox::indicator {
+    width: 16px;
+    height: 16px;
 }
 
 VisibilityCheckBox::indicator:checked,
@@ -1145,6 +1167,11 @@ QPushButton#extraPanelDelete:pressed {
 
 MuteCheckBox {
 	outline: none;
+}
+
+MuteCheckBox::indicator {
+    width: 16px;
+    height: 16px;
 }
 
 MuteCheckBox::indicator:checked {
@@ -1224,7 +1251,7 @@ SourceTreeSubItemCheckBox::indicator:checked:hover {
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-    image: url(./Dark/down.svg);
+    image: url(./Dark/collapse.svg);
 }
 
 /* Source Icons */
@@ -1398,7 +1425,7 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
 

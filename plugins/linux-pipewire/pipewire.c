@@ -36,10 +36,6 @@
 #include <spa/param/video/type-info.h>
 #include <spa/utils/result.h>
 
-#ifndef SPA_POD_PROP_FLAG_DONT_FIXATE
-#define SPA_POD_PROP_FLAG_DONT_FIXATE (1 << 4)
-#endif
-
 #define CURSOR_META_SIZE(width, height)                                    \
 	(sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) + \
 	 width * height * 4)

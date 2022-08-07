@@ -671,15 +671,15 @@ static bool transition_point_type_modified(obs_properties_t *ppts,
 		obs_property_set_description(
 			prop_transition_point,
 			obs_module_text("TransitionPoint"));
+		obs_property_int_set_suffix(prop_transition_point, " ms");
 	} else {
 		obs_property_set_description(
 			prop_transition_point,
 			obs_module_text("TransitionPointFrame"));
+		obs_property_int_set_suffix(prop_transition_point, "");
 	}
 
-	bool uses_ms_prefix = (type == TIMING_TIME);
-	obs_property_int_set_suffix(p, (uses_ms_prefix ? " ms" : ""));
-
+	UNUSED_PARAMETER(p);
 	return true;
 }
 

@@ -242,7 +242,7 @@
       "sources": [
         {
           "type": "git",
-          "url": "https://git.ffmpeg.org/ffmpeg.git",
+          "url": "https://github.com/FFmpeg/FFmpeg.git",
           "commit": "9687cae2b468e09e35df4cea92cc2e6a0e6c93b3",
           "disable-shallow-clone": true
         },

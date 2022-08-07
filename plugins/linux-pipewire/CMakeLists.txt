@@ -6,7 +6,7 @@ if(NOT ENABLE_PIPEWIRE)
   return()
 endif()
 
-find_package(PipeWire 0.3.32 REQUIRED)
+find_package(PipeWire 0.3.33 REQUIRED)
 find_package(Gio QUIET)
 find_package(Libdrm QUIET) # we require libdrm/drm_fourcc.h to build
 
