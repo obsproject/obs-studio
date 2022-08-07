@@ -40,8 +40,7 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
 
-target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api
-                                                 Qt::Widgets)
+target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api Qt::Widgets)
 
 target_compile_features(decklink-output-ui PRIVATE cxx_std_17)
 
@@ -49,8 +48,7 @@ set_target_properties(decklink-output-ui PROPERTIES FOLDER "frontend" PREFIX "")
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Decklink Output UI")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 decklink-output-ui.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in decklink-output-ui.rc)
 
   target_sources(decklink-output-ui PRIVATE decklink-output-ui.rc)
 

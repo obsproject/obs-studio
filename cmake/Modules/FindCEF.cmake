@@ -25,10 +25,8 @@ if(OS_MACOS)
     CEFWRAPPER_LIBRARY
     NAMES cef_dll_wrapper libcef_dll_wrapper
     NO_DEFAULT_PATH
-    PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
+    PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
+          ${CEF_ROOT_DIR}/build/libcef_dll ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
 
 elseif(OS_POSIX)
   find_library(
@@ -41,8 +39,7 @@ elseif(OS_POSIX)
     CEFWRAPPER_LIBRARY
     NAMES libcef_dll_wrapper.a
     NO_DEFAULT_PATH
-    PATHS ${CEF_ROOT_DIR}/build/libcef_dll_wrapper
-          ${CEF_ROOT_DIR}/libcef_dll_wrapper)
+    PATHS ${CEF_ROOT_DIR}/build/libcef_dll_wrapper ${CEF_ROOT_DIR}/libcef_dll_wrapper)
 
 else()
   find_library(
@@ -53,27 +50,21 @@ else()
   find_library(
     CEFWRAPPER_LIBRARY
     NAMES cef_dll_wrapper libcef_dll_wrapper
-    PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
+    PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
+          ${CEF_ROOT_DIR}/build/libcef_dll ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
 
   if(OS_WINDOWS)
     find_library(
       CEFWRAPPER_LIBRARY_DEBUG
       NAMES cef_dll_wrapper libcef_dll_wrapper
-      PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Debug
-            ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Debug)
+      PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Debug ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Debug)
   endif()
 endif()
 
 mark_as_advanced(CEFWRAPPER_LIBRARY CEFWRAPPER_LIBRARY_DEBUG)
 
 if(NOT CEF_LIBRARY)
-  message(
-    WARNING
-      "Could NOT find Chromium Embedded Framework library (missing: CEF_LIBRARY)"
-  )
+  message(WARNING "Could NOT find Chromium Embedded Framework library (missing: CEF_LIBRARY)")
   set(CEF_FOUND FALSE)
   return()
 endif()
@@ -81,15 +72,12 @@ endif()
 if(NOT CEFWRAPPER_LIBRARY)
   message(
     WARNING
-      "Could NOT find Chromium Embedded Framework wrapper library (missing: CEFWRAPPER_LIBRARY)"
-  )
+      "Could NOT find Chromium Embedded Framework wrapper library (missing: CEFWRAPPER_LIBRARY)")
   set(CEF_FOUND FALSE)
   return()
 endif()
 
-message(
-  STATUS
-    "Found Chromium Embedded Framework: ${CEF_LIBRARY};${CEF_WRAPPER_LIBRARY}")
+message(STATUS "Found Chromium Embedded Framework: ${CEF_LIBRARY};${CEF_WRAPPER_LIBRARY}")
 
 if(OS_WINDOWS)
   set(CEF_LIBRARIES ${CEF_LIBRARY} ${CEFWRAPPER_LIBRARY})
@@ -108,8 +96,7 @@ else()
   endif()
 endif()
 
-find_package_handle_standard_args(CEF DEFAULT_MSG CEF_LIBRARY
-                                  CEFWRAPPER_LIBRARY CEF_INCLUDE_DIR)
+find_package_handle_standard_args(CEF DEFAULT_MSG CEF_LIBRARY CEFWRAPPER_LIBRARY CEF_INCLUDE_DIR)
 
 mark_as_advanced(CEF_LIBRARY CEF_WRAPPER_LIBRARY CEF_LIBRARIES CEF_INCLUDE_DIR)
 
@@ -118,11 +105,9 @@ if(NOT TARGET CEF::Wrapper)
     add_library(CEF::Wrapper UNKNOWN IMPORTED)
     add_library(CEF::Library UNKNOWN IMPORTED)
 
-    set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LOCATION
-                                                  ${CEFWRAPPER_LIBRARY})
+    set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LOCATION ${CEFWRAPPER_LIBRARY})
 
-    set_target_properties(CEF::Library PROPERTIES IMPORTED_LOCATION
-                                                  ${CEF_LIBRARY})
+    set_target_properties(CEF::Library PROPERTIES IMPORTED_LOCATION ${CEF_LIBRARY})
 
     if(DEFINED CEFWRAPPER_LIBRARY_DEBUG)
       set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LOCATION_DEBUG
@@ -132,11 +117,9 @@ if(NOT TARGET CEF::Wrapper)
     add_library(CEF::Wrapper INTERFACE IMPORTED)
     add_library(CEF::Library INTERFACE IMPORTED)
 
-    set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LIBNAME
-                                                  ${CEFWRAPPER_LIBRARY})
+    set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LIBNAME ${CEFWRAPPER_LIBRARY})
 
-    set_target_properties(CEF::Library PROPERTIES IMPORTED_LIBNAME
-                                                  ${CEF_LIBRARY})
+    set_target_properties(CEF::Library PROPERTIES IMPORTED_LIBNAME ${CEF_LIBRARY})
 
     if(DEFINED CEFWRAPPER_LIBRARY_DEBUG)
       set_target_properties(CEF::Wrapper PROPERTIES IMPORTED_LIBNAME_DEBUG
@@ -144,9 +127,7 @@ if(NOT TARGET CEF::Wrapper)
     endif()
   endif()
 
-  set_target_properties(CEF::Wrapper PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                "${CEF_INCLUDE_DIR}")
+  set_target_properties(CEF::Wrapper PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CEF_INCLUDE_DIR}")
 
-  set_target_properties(CEF::Library PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                                "${CEF_INCLUDE_DIR}")
+  set_target_properties(CEF::Library PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${CEF_INCLUDE_DIR}")
 endif()

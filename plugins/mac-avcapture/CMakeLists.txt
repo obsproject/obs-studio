@@ -7,14 +7,12 @@ find_library(COREMEDIA CoreMedia)
 find_library(COREVIDEO CoreVideo)
 find_library(COREMEDIAIO CoreMediaIO)
 
-mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREMEDIA COREMEDIAIO
-                 COREVIDEO)
+mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREMEDIA COREMEDIAIO COREVIDEO)
 
 add_library(mac-avcapture MODULE)
 add_library(OBS::avcapture ALIAS mac-avcapture)
 
-target_sources(mac-avcapture PRIVATE av-capture.mm left-right.hpp
-                                     scope-guard.hpp)
+target_sources(mac-avcapture PRIVATE av-capture.mm left-right.hpp scope-guard.hpp)
 
 target_compile_features(mac-avcapture PRIVATE cxx_std_11)
 

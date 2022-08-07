@@ -15,8 +15,8 @@ if(TARGET obs-browser
   add_library(obs-browser-panels INTERFACE)
   add_library(OBS::browser-panels ALIAS obs-browser-panels)
 
-  target_include_directories(
-    obs-browser-panels INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
+  target_include_directories(obs-browser-panels
+                             INTERFACE ${CMAKE_SOURCE_DIR}/plugins/obs-browser/panel)
 endif()
 
 set(OAUTH_BASE_URL
@@ -62,8 +62,7 @@ else()
   set(YOUTUBE_ENABLED ON)
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in
-               ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/ui-config.h.in ${CMAKE_CURRENT_BINARY_DIR}/ui-config.h)
 
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avutil avformat)
 find_package(CURL REQUIRED)
@@ -82,8 +81,7 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms;forms/source-toolbar")
 
-target_include_directories(obs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}
-                                       ${CMAKE_CURRENT_BINARY_DIR})
+target_include_directories(obs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR} ${CMAKE_CURRENT_BINARY_DIR})
 
 target_sources(obs PRIVATE forms/obs.qrc)
 target_sources(
@@ -279,32 +277,27 @@ target_sources(
           window-remux.cpp
           window-remux.hpp)
 
-target_sources(
-  obs
-  PRIVATE importers/importers.cpp importers/importers.hpp importers/classic.cpp
-          importers/sl.cpp importers/studio.cpp importers/xsplit.cpp)
+target_sources(obs PRIVATE importers/importers.cpp importers/importers.hpp importers/classic.cpp
+                           importers/sl.cpp importers/studio.cpp importers/xsplit.cpp)
 
 target_compile_features(obs PRIVATE cxx_std_17)
 
 target_include_directories(obs PRIVATE ${CMAKE_SOURCE_DIR}/deps/json11
                                        ${CMAKE_SOURCE_DIR}/deps/libff)
 
-target_link_libraries(
-  obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat
-              OBS::libobs OBS::frontend-api)
+target_link_libraries(obs PRIVATE CURL::libcurl FFmpeg::avcodec FFmpeg::avutil FFmpeg::avformat
+                                  OBS::libobs OBS::frontend-api)
 
 set_target_properties(obs PROPERTIES FOLDER "frontend")
 
 if(TARGET OBS::browser-panels)
-  get_target_property(_PANEL_INCLUDE_DIRECTORY OBS::browser-panels
-                      INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(_PANEL_INCLUDE_DIRECTORY OBS::browser-panels INTERFACE_INCLUDE_DIRECTORIES)
   target_include_directories(obs PRIVATE ${_PANEL_INCLUDE_DIRECTORY})
 
   target_compile_definitions(obs PRIVATE BROWSER_AVAILABLE)
 
-  target_sources(
-    obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp
-                window-extra-browsers.cpp window-extra-browsers.hpp)
+  target_sources(obs PRIVATE window-dock-browser.cpp window-dock-browser.hpp
+                             window-extra-browsers.cpp window-extra-browsers.hpp)
 
   if(TWITCH_ENABLED)
     target_sources(obs PRIVATE auth-twitch.cpp auth-twitch.hpp)
@@ -329,18 +322,14 @@ endif()
 
 if(YOUTUBE_ENABLED)
   target_sources(
-    obs
-    PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp
-            youtube-api-wrappers.hpp window-youtube-actions.cpp
-            window-youtube-actions.hpp)
+    obs PRIVATE auth-youtube.cpp auth-youtube.hpp youtube-api-wrappers.cpp youtube-api-wrappers.hpp
+                window-youtube-actions.cpp window-youtube-actions.hpp)
 endif()
 
 if(OS_WINDOWS)
-  set_target_properties(obs PROPERTIES WIN32_EXECUTABLE ON OUTPUT_NAME
-                                                           "obs${_ARCH_SUFFIX}")
+  set_target_properties(obs PROPERTIES WIN32_EXECUTABLE ON OUTPUT_NAME "obs${_ARCH_SUFFIX}")
 
-  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs.rc.in
-                 ${CMAKE_BINARY_DIR}/obs.rc)
+  configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs.rc.in ${CMAKE_BINARY_DIR}/obs.rc)
 
   target_sources(
     obs
@@ -363,17 +352,15 @@ if(OS_WINDOWS)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 
-  target_compile_definitions(
-    obs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                _CRT_NONSTDC_NO_WARNINGS)
+  target_compile_definitions(obs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                                         _CRT_NONSTDC_NO_WARNINGS)
 
   if(MSVC)
     target_link_options(obs PRIVATE "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
     target_link_libraries(obs PRIVATE OBS::w32-pthreads)
 
-    set_source_files_properties(
-      ${CMAKE_CURRENT_SOURCE_DIR}../deps/libff/libff/ff-util.c
-      PROPERTIES COMPILE_FLAGS -Dinline=__inline)
+    set_source_files_properties(${CMAKE_CURRENT_SOURCE_DIR}../deps/libff/libff/ff-util.c
+                                PROPERTIES COMPILE_FLAGS -Dinline=__inline)
   endif()
 
   if(CMAKE_SIZEOF_VOID_P EQUAL 4)
@@ -387,36 +374,30 @@ elseif(OS_MACOS)
     obs
     PROPERTIES OUTPUT_NAME ${OBS_BUNDLE_NAME}
                MACOSX_BUNDLE ON
-               MACOSX_BUNDLE_INFO_PLIST
-               ${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Info.plist.in)
+               MACOSX_BUNDLE_INFO_PLIST ${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Info.plist.in)
 
   if(XCODE)
     set_target_properties(
       obs
-      PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-                 "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
+      PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER "${MACOSX_BUNDLE_GUI_IDENTIFIER}"
                  XCODE_ATTRIBUTE_ASSETCATALOG_COMPILER_APPICON_NAME AppIcon
                  XCODE_ATTRIBUTE_PRODUCT_NAME "OBS")
 
     set(APP_ICON_TARGET ${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Assets.xcassets)
 
     target_sources(obs PRIVATE ${APP_ICON_TARGET})
-    set_source_files_properties(${APP_ICON_TARGET}
-                                PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_source_files_properties(${APP_ICON_TARGET} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
   else()
     set(APP_ICON_TARGET ${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/AppIcon.iconset)
     set(APP_ICON_OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/AppIcon.icns)
 
-    add_custom_command(
-      OUTPUT ${APP_ICON_OUTPUT} COMMAND iconutil -c icns "${APP_ICON_TARGET}"
-                                        -o "${APP_ICON_OUTPUT}")
+    add_custom_command(OUTPUT ${APP_ICON_OUTPUT} COMMAND iconutil -c icns "${APP_ICON_TARGET}" -o
+                                                         "${APP_ICON_OUTPUT}")
 
     set(MACOSX_BUNDLE_ICON_FILE AppIcon.icns)
-    target_sources(obs PRIVATE ${APP_ICON_OUTPUT}
-                               ${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS)
+    target_sources(obs PRIVATE ${APP_ICON_OUTPUT} ${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS)
 
-    set_source_files_properties(${APP_ICON_OUTPUT}
-                                PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
+    set_source_files_properties(${APP_ICON_OUTPUT} PROPERTIES MACOSX_PACKAGE_LOCATION Resources)
   endif()
 
   find_library(APPKIT Appkit)
@@ -424,8 +405,7 @@ elseif(OS_MACOS)
   find_library(APPLICATIONSERVICES ApplicationServices)
   mark_as_advanced(APPKIT AVFOUNDATION APPLICATIONSERVICES)
 
-  target_link_libraries(obs PRIVATE ${APPKIT} ${AVFOUNDATION}
-                                    ${APPLICATIONSERVICES})
+  target_link_libraries(obs PRIVATE ${APPKIT} ${AVFOUNDATION} ${APPLICATIONSERVICES})
 
   if(ENABLE_SPARKLE_UPDATER)
     find_library(SPARKLE Sparkle)
@@ -438,8 +418,7 @@ elseif(OS_MACOS)
   endif()
 
   target_sources(obs PRIVATE platform-osx.mm)
-  target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp
-                             window-permissions.hpp)
+  target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp window-permissions.hpp)
 
   if(ENABLE_WHATSNEW)
     find_library(SECURITY Security)
@@ -448,16 +427,12 @@ elseif(OS_MACOS)
 
     target_sources(
       obs
-      PRIVATE nix-update/crypto-helpers.hpp
-              nix-update/crypto-helpers-mac.mm
-              nix-update/nix-update.cpp
-              nix-update/nix-update.hpp
-              nix-update/nix-update-helpers.cpp
+      PRIVATE nix-update/crypto-helpers.hpp nix-update/crypto-helpers-mac.mm
+              nix-update/nix-update.cpp nix-update/nix-update.hpp nix-update/nix-update-helpers.cpp
               nix-update/nix-update-helpers.hpp)
   endif()
 
-  set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS
-                                                         -fobjc-arc)
+  set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
 elseif(OS_POSIX)
   target_sources(obs PRIVATE platform-x11.cpp)
@@ -480,18 +455,13 @@ elseif(OS_POSIX)
   if(OS_LINUX AND ENABLE_WHATSNEW)
     find_package(MbedTLS)
     if(NOT MBEDTLS_FOUND)
-      obs_status(
-        FATAL_ERROR
-        "mbedTLS not found, but required for WhatsNew support on Linux")
+      obs_status(FATAL_ERROR "mbedTLS not found, but required for WhatsNew support on Linux")
     endif()
 
     target_sources(
       obs
-      PRIVATE nix-update/crypto-helpers.hpp
-              nix-update/crypto-helpers-mbedtls.cpp
-              nix-update/nix-update.cpp
-              nix-update/nix-update.hpp
-              nix-update/nix-update-helpers.cpp
+      PRIVATE nix-update/crypto-helpers.hpp nix-update/crypto-helpers-mbedtls.cpp
+              nix-update/nix-update.cpp nix-update/nix-update.hpp nix-update/nix-update-helpers.cpp
               nix-update/nix-update-helpers.hpp)
     target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
   endif()
@@ -511,5 +481,4 @@ unset(_UI)
 define_graphic_modules(obs)
 setup_obs_app(obs)
 setup_target_resources(obs obs-studio)
-add_target_resource(obs ${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS
-                    obs-studio/authors)
+add_target_resource(obs ${CMAKE_CURRENT_SOURCE_DIR}/../AUTHORS obs-studio/authors)

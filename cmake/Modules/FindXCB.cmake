@@ -2,37 +2,88 @@
 #
 # This will define:
 #
-# XCB_FOUND        - True if xcb is available XCB_LIBRARIES    - Link these to
-# use xcb XCB_INCLUDE_DIRS - Include directory for xcb XCB_DEFINITIONS  -
-# Compiler flags for using xcb
+# * XCB_FOUND        - True if xcb is available
+# * XCB_LIBRARIES    - Link these to use xcb
+# * XCB_INCLUDE_DIRS - Include directory for xcb
+# * XCB_DEFINITIONS  - Compiler flags for using xcb
 #
 # In addition the following more fine grained variables will be defined:
 #
-# XCB_XCB_FOUND        XCB_XCB_INCLUDE_DIR        XCB_XCB_LIBRARY XCB_UTIL_FOUND
-# XCB_UTIL_INCLUDE_DIR       XCB_UTIL_LIBRARY XCB_COMPOSITE_FOUND
-# XCB_COMPOSITE_INCLUDE_DIR  XCB_COMPOSITE_LIBRARY XCB_DAMAGE_FOUND
-# XCB_DAMAGE_INCLUDE_DIR     XCB_DAMAGE_LIBRARY XCB_XFIXES_FOUND
-# XCB_XFIXES_INCLUDE_DIR     XCB_XFIXES_LIBRARY XCB_RENDER_FOUND
-# XCB_RENDER_INCLUDE_DIR     XCB_RENDER_LIBRARY XCB_RANDR_FOUND
-# XCB_RANDR_INCLUDE_DIR      XCB_RANDR_LIBRARY XCB_SHAPE_FOUND
-# XCB_SHAPE_INCLUDE_DIR      XCB_SHAPE_LIBRARY XCB_DRI2_FOUND
-# XCB_DRI2_INCLUDE_DIR       XCB_DRI2_LIBRARY XCB_GLX_FOUND XCB_GLX_INCLUDE_DIR
-# XCB_GLX_LIBRARY XCB_SHM_FOUND XCB_SHM_INCLUDE_DIR        XCB_SHM_LIBRARY
-# XCB_XV_FOUND XCB_XV_INCLUDE_DIR         XCB_XV_LIBRARY XCB_XINPUT_FOUND
-# XCB_XINPUT_INCLUDE_DIR     XCB_XINPUT_LIBRARY XCB_SYNC_FOUND
-# XCB_SYNC_INCLUDE_DIR       XCB_SYNC_LIBRARY XCB_XTEST_FOUND
-# XCB_XTEST_INCLUDE_DIR      XCB_XTEST_LIBRARY XCB_ICCCM_FOUND
-# XCB_ICCCM_INCLUDE_DIR      XCB_ICCCM_LIBRARY XCB_EWMH_FOUND
-# XCB_EWMH_INCLUDE_DIR       XCB_EWMH_LIBRARY XCB_IMAGE_FOUND
-# XCB_IMAGE_INCLUDE_DIR      XCB_IMAGE_LIBRARY XCB_RENDERUTIL_FOUND
-# XCB_RENDERUTIL_INCLUDE_DIR XCB_RENDERUTIL_LIBRARY XCB_KEYSYMS_FOUND
-# XCB_KEYSYMS_INCLUDE_DIR    XCB_KEYSYMS_LIBRARY
+# * XCB_XCB_FOUND
+# * XCB_XCB_INCLUDE_DIR
+# * XCB_XCB_LIBRARY XCB_UTIL_FOUND
 #
-# Copyright (c) 2011 Fredrik Höglund <fredrik@kde.org> Copyright (c) 2013 Martin
-# Gräßlin <mgraesslin@kde.org>
+# * XCB_UTIL_INCLUDE_DIR
+# * XCB_UTIL_LIBRARY
 #
-# Redistribution and use is allowed according to the terms of the BSD license.
-# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+# * XCB_COMPOSITE_FOUND
+# * XCB_COMPOSITE_INCLUDE_DIR
+# * XCB_COMPOSITE_LIBRARY
+#
+# * XCB_DAMAGE_FOUND
+# * XCB_DAMAGE_INCLUDE_DIR
+# * XCB_DAMAGE_LIBRARY
+#
+# * XCB_XFIXES_FOUND
+# * XCB_XFIXES_INCLUDE_DIR
+# * XCB_XFIXES_LIBRARY
+#
+# * XCB_RENDER_FOUND
+# * XCB_RENDER_INCLUDE_DIR
+# * XCB_RENDER_LIBRARY
+#
+# * XCB_RANDR_FOUND
+# * XCB_RANDR_INCLUDE_DIR
+#
+# * XCB_SHAPE_FOUND
+# * XCB_SHAPE_INCLUDE_DIR
+# * XCB_SHAPE_LIBRARY
+#
+# * XCB_DRI2_FOUND
+# * XCB_DRI2_LIBRARY
+#
+# * XCB_GLX_FOUND
+# * XCB_GLX_INCLUDE_DIR
+# * XCB_GLX_LIBRARY
+#
+# * XCB_SHM_INCLUDE_DIR
+# * XCB_SHM_LIBRARY
+#
+# * XCB_XV_FOUND
+# * XCB_XV_INCLUDE_DIR
+#
+# * XCB_XINPUT_FOUND
+# * XCB_XINPUT_INCLUDE_DIR
+# * XCB_XINPUT_LIBRARY
+#
+# * XCB_SYNC_FOUND
+# * XCB_SYNC_LIBRARY
+#
+# * XCB_XTEST_FOUND
+# * XCB_XTEST_INCLUDE_DIR
+#
+# * XCB_ICCCM_FOUND
+# * XCB_ICCCM_INCLUDE_DIR
+# * XCB_ICCCM_LIBRARY
+#
+# * XCB_EWMH_FOUND
+# * XCB_EWMH_LIBRARY
+#
+# * XCB_IMAGE_FOUND
+# * XCB_IMAGE_INCLUDE_DIR
+#
+# * XCB_RENDERUTIL_FOUND
+# * XCB_RENDERUTIL_INCLUDE_DIR
+# * XCB_RENDERUTIL_LIBRARY
+#
+# * XCB_KEYSYMS_INCLUDE_DIR
+# * XCB_KEYSYMS_LIBRARY
+#
+# Copyright (c) 2011 Fredrik Höglund <fredrik@kde.org> Copyright (c) 2013 Martin Gräßlin
+# <mgraesslin@kde.org>
+#
+# Redistribution and use is allowed according to the terms of the BSD license. For details see the
+# accompanying COPYING-CMAKE-SCRIPTS file.
 
 set(knownComponents
     XCB
@@ -68,8 +119,7 @@ else()
   set(comps ${knownComponents})
 endif()
 
-# iterate through the list of requested components, and check that we know them
-# all. If not, fail.
+# iterate through the list of requested components, and check that we know them all. If not, fail.
 foreach(comp ${comps})
   list(FIND knownComponents ${comp} index)
   if("${index}" STREQUAL "-1")
@@ -221,8 +271,8 @@ macro(_XCB_HANDLE_COMPONENT _comp)
 endmacro()
 
 if(NOT ${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
-  # Use pkg-config to get the directories and then use these values in the
-  # FIND_PATH() and FIND_LIBRARY() calls
+  # Use pkg-config to get the directories and then use these values in the FIND_PATH() and
+  # FIND_LIBRARY() calls
   find_package(PkgConfig)
   pkg_check_modules(PKG_XCB QUIET ${pkgConfigModules})
 
@@ -253,19 +303,16 @@ if(XCB_FOUND AND NOT TARGET XCB::XCB)
       if(XCB_${component_u}_FOUND)
         if(IS_ABSOLUTE "${XCB_${component_u}_LIBRARY}")
           add_library(XCB::${component} UNKNOWN IMPORTED)
-          set_target_properties(
-            XCB::${component} PROPERTIES IMPORTED_LOCATION
-                                         "${XCB_${component_u}_LIBRARY}")
+          set_target_properties(XCB::${component} PROPERTIES IMPORTED_LOCATION
+                                                             "${XCB_${component_u}_LIBRARY}")
         else()
           add_library(XCB::${component} INTERFACE IMPORTED)
-          set_target_properties(
-            XCB::${component} PROPERTIES IMPORTED_LIBNAME
-                                         "${XCB_${component_u}_LIBRARY}")
+          set_target_properties(XCB::${component} PROPERTIES IMPORTED_LIBNAME
+                                                             "${XCB_${component_u}_LIBRARY}")
         endif()
 
-        set_target_properties(
-          XCB::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                       "${XCB_${component_u}_INCLUDE_DIR}")
+        set_target_properties(XCB::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                           "${XCB_${component_u}_INCLUDE_DIR}")
       endif()
     endif()
   endforeach()

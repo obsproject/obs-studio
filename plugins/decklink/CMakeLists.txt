@@ -8,8 +8,7 @@ endif()
 
 if(OS_WINDOWS)
   include(IDLFileHelper)
-  add_idl_files(win-decklink-sdk_GENERATED_FILES
-                win/decklink-sdk/DeckLinkAPI.idl)
+  add_idl_files(win-decklink-sdk_GENERATED_FILES win/decklink-sdk/DeckLinkAPI.idl)
 endif()
 
 add_library(decklink MODULE)
@@ -57,8 +56,7 @@ set_target_properties(decklink PROPERTIES FOLDER "plugins/decklink")
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS DeckLink Windows module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 win-decklink.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-decklink.rc)
 
   target_sources(decklink PRIVATE win/platform.cpp win-decklink.rc)
 

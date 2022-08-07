@@ -1,20 +1,20 @@
 #
 # This module defines the following variables:
 #
-# FFMPEG_FOUND - All required components and the core library were found
-# FFMPEG_INCLUDE_DIRS - Combined list of all components include dirs
-# FFMPEG_LIBRARIES - Combined list of all components libraries
-# FFMPEG_VERSION_STRING - Version of the first component requested
+# * FFMPEG_FOUND - All required components and the core library were found
+# * FFMPEG_INCLUDE_DIRS - Combined list of all components include dirs
+# * FFMPEG_LIBRARIES - Combined list of all components libraries
+# * FFMPEG_VERSION_STRING - Version of the first component requested
 #
 # For each requested component the following variables are defined:
 #
-# FFMPEG_<component>_FOUND - The component was found
-# FFMPEG_<component>_INCLUDE_DIRS - The components include dirs
-# FFMPEG_<component>_LIBRARIES - The components libraries
-# FFMPEG_<component>_VERSION_STRING - The components version string
-# FFMPEG_<component>_VERSION_MAJOR - The components major version
-# FFMPEG_<component>_VERSION_MINOR - The components minor version
-# FFMPEG_<component>_VERSION_MICRO - The components micro version
+# * FFMPEG_<component>_FOUND - The component was found
+# * FFMPEG_<component>_INCLUDE_DIRS - The components include dirs
+# * FFMPEG_<component>_LIBRARIES - The components libraries
+# * FFMPEG_<component>_VERSION_STRING - The components version string
+# * FFMPEG_<component>_VERSION_MAJOR - The components major version
+# * FFMPEG_<component>_VERSION_MINOR - The components minor version
+# * FFMPEG_<component>_VERSION_MICRO - The components micro version
 #
 # <component> is the uppercase name of the component
 
@@ -104,12 +104,9 @@ function(find_ffmpeg_library component header)
     if(EXISTS "${_vfile}")
       file(STRINGS "${_vfile}" _version_parse
            REGEX "^.*VERSION_(MAJOR|MINOR|MICRO)[ \t]+[0-9]+[ \t]*$")
-      string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _major
-                           "${_version_parse}")
-      string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _minor
-                           "${_version_parse}")
-      string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _micro
-                           "${_version_parse}")
+      string(REGEX REPLACE ".*VERSION_MAJOR[ \t]+([0-9]+).*" "\\1" _major "${_version_parse}")
+      string(REGEX REPLACE ".*VERSION_MINOR[ \t]+([0-9]+).*" "\\1" _minor "${_version_parse}")
+      string(REGEX REPLACE ".*VERSION_MICRO[ \t]+([0-9]+).*" "\\1" _micro "${_version_parse}")
 
       set(FFMPEG_${component_u}_VERSION_MAJOR
           "${_major}"
@@ -168,8 +165,7 @@ include(FindPackageHandleStandardArgs)
 find_package_handle_standard_args(
   FFmpeg
   FOUND_VAR FFMPEG_FOUND
-  REQUIRED_VARS FFMPEG_${_first_comp}_LIBRARIES
-                FFMPEG_${_first_comp}_INCLUDE_DIRS
+  REQUIRED_VARS FFMPEG_${_first_comp}_LIBRARIES FFMPEG_${_first_comp}_INCLUDE_DIRS
   VERSION_VAR FFMPEG_${_first_comp}_VERSION_STRING
   HANDLE_COMPONENTS)
 
@@ -180,20 +176,17 @@ if(FFMPEG_FOUND)
       if(FFMPEG_${component_u}_FOUND)
         if(IS_ABSOLUTE "${FFMPEG_${component_u}_LIBRARIES}")
           add_library(FFmpeg::${component} UNKNOWN IMPORTED)
-          set_target_properties(
-            FFmpeg::${component}
-            PROPERTIES IMPORTED_LOCATION "${FFMPEG_${component_u}_LIBRARIES}")
+          set_target_properties(FFmpeg::${component}
+                                PROPERTIES IMPORTED_LOCATION "${FFMPEG_${component_u}_LIBRARIES}")
         else()
           add_library(FFmpeg::${component} INTERFACE IMPORTED)
-          set_target_properties(
-            FFmpeg::${component}
-            PROPERTIES IMPORTED_LIBNAME "${FFMPEG_${component_u}_LIBRARIES}")
+          set_target_properties(FFmpeg::${component}
+                                PROPERTIES IMPORTED_LIBNAME "${FFMPEG_${component_u}_LIBRARIES}")
         endif()
 
         set_target_properties(
-          FFmpeg::${component}
-          PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                     "${FFMPEG_${component_u}_INCLUDE_DIRS}")
+          FFmpeg::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                          "${FFMPEG_${component_u}_INCLUDE_DIRS}")
       endif()
     endif()
   endforeach()

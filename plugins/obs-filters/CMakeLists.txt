@@ -1,18 +1,15 @@
 project(obs-filters)
 
-option(ENABLE_SPEEXDSP
-       "Enable building with SpeexDSP-based noise suppression filter" ON)
+option(ENABLE_SPEEXDSP "Enable building with SpeexDSP-based noise suppression filter" ON)
 option(ENABLE_RNNOISE "Enable building with RNNoise noise supression filter" ON)
 
 if(OS_WINDOWS)
-  option(
-    ENABLE_NVAFX
-    "Enable building with NVIDIA Audio Effects SDK (requires redistributable to be installed)"
-    ON)
-  option(
-    ENABLE_NVVFX
-    "Enable building with NVIDIA Video Effects SDK (requires redistributable to be installed)"
-    ON)
+  option(ENABLE_NVAFX
+         "Enable building with NVIDIA Audio Effects SDK (requires redistributable to be installed)"
+         ON)
+  option(ENABLE_NVVFX
+         "Enable building with NVIDIA Video Effects SDK (requires redistributable to be installed)"
+         ON)
 endif()
 
 add_library(obs-filters MODULE)
@@ -32,8 +29,8 @@ else()
   target_compile_definitions(obs-filters PRIVATE LIBSPEEXDSP_ENABLED)
 
   if(OS_WINDOWS)
-    target_link_options(obs-filters PRIVATE "LINKER:/LTCG"
-                        "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
+    target_link_options(obs-filters PRIVATE "LINKER:/LTCG" "LINKER:/IGNORE:4098"
+                        "LINKER:/IGNORE:4099")
   endif()
 endif()
 
@@ -69,14 +66,12 @@ else()
 
     target_sources(obs-rnnoise INTERFACE ${_RNNOISE_SOURCES})
 
-    target_include_directories(
-      obs-rnnoise INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/rnnoise/include")
+    target_include_directories(obs-rnnoise INTERFACE "${CMAKE_CURRENT_SOURCE_DIR}/rnnoise/include")
 
     target_compile_definitions(obs-rnnoise INTERFACE COMPILE_OPUS)
 
     if(OS_LINUX)
-      set_property(SOURCE ${_RNNOISE_SOURCES} PROPERTY COMPILE_FLAGS
-                                                       -fvisibility=hidden)
+      set_property(SOURCE ${_RNNOISE_SOURCES} PROPERTY COMPILE_FLAGS -fvisibility=hidden)
     endif()
 
     source_group("rnnoise" FILES ${_RNNOISE_SOURCES})
@@ -172,22 +167,17 @@ endif()
 
 if(LIBNVVFX_FOUND)
   target_sources(obs-filters PRIVATE nvidia-greenscreen-filter.c)
-  obs_status(
-    STATUS
-    "NVIDIA Video FX support enabled; requires redist to be installed by end-user"
-  )
+  obs_status(STATUS "NVIDIA Video FX support enabled; requires redist to be installed by end-user")
 endif()
 
-target_include_directories(
-  obs-filters PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
+target_include_directories(obs-filters PRIVATE $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
 
 target_link_libraries(obs-filters PRIVATE OBS::libobs)
 
 target_compile_options(
   obs-filters
   PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
+    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>)
 
 set_target_properties(obs-filters PROPERTIES FOLDER "plugins" PREFIX "")
 
@@ -197,8 +187,7 @@ if(OS_WINDOWS)
   endif()
 
   set(MODULE_DESCRIPTION "OBS A/V Filters")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-filters.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-filters.rc)
 
   target_sources(obs-filters PRIVATE obs-filters.rc)
 endif()

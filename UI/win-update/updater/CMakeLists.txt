@@ -41,7 +41,7 @@ if(MSVC)
   target_compile_options(updater PRIVATE "/utf-8")
 endif()
 
-target_link_libraries(updater PRIVATE OBS::blake2 OBS::lzma ${STATIC_ZLIB_PATH}
-                                      comctl32 shell32 winhttp)
+target_link_libraries(updater PRIVATE OBS::blake2 OBS::lzma ${STATIC_ZLIB_PATH} comctl32 shell32
+                                      winhttp)
 
 set_target_properties(updater PROPERTIES FOLDER "frontend")

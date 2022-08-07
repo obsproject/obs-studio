@@ -1,6 +1,9 @@
 # Once done these will be defined:
 #
-# JANSSON_FOUND JANSSON_INCLUDE_DIRS JANSSON_LIBRARIES JANSSON_VERSION
+# * JANSSON_FOUND
+# * JANSSON_INCLUDE_DIRS
+# * JANSSON_LIBRARIES
+# * JANSSON_VERSION
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -72,16 +75,13 @@ if(JANSSON_FOUND)
   if(NOT TARGET Jansson::Jansson)
     if(IS_ABSOLUTE "${JANSSON_LIBRARIES}")
       add_library(Jansson::Jansson UNKNOWN IMPORTED GLOBAL)
-      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LOCATION
-                                                        "${JANSSON_LIBRARIES}")
+      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LOCATION "${JANSSON_LIBRARIES}")
     else()
       add_library(Jansson::Jansson INTERFACE IMPORTED GLOBAL)
-      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LIBNAME
-                                                        "${JANSSON_LIBRARIES}")
+      set_target_properties(Jansson::Jansson PROPERTIES IMPORTED_LIBNAME "${JANSSON_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${JANSSON_INCLUDE_DIRS}")
+    set_target_properties(Jansson::Jansson PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                      "${JANSSON_INCLUDE_DIRS}")
   endif()
 endif()

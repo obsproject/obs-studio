@@ -1,6 +1,8 @@
 # Once done these will be defined:
 #
-# XKBCOMMON_FOUND XKBCOMMON_INCLUDE_DIRS XKBCOMMON_LIBRARIES
+# * XKBCOMMON_FOUND
+# * XKBCOMMON_INCLUDE_DIRS
+# * XKBCOMMON_LIBRARIES
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -20,8 +22,7 @@ find_library(
   PATHS /usr/lib /usr/local/lib /opt/local/lib)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Xkbcommon DEFAULT_MSG XKBCOMMON_LIB
-                                  XKBCOMMON_INCLUDE_DIR)
+find_package_handle_standard_args(Xkbcommon DEFAULT_MSG XKBCOMMON_LIB XKBCOMMON_INCLUDE_DIR)
 mark_as_advanced(XKBCOMMON_INCLUDE_DIR XKBCOMMON_LIB)
 
 if(XKBCOMMON_FOUND)
@@ -31,18 +32,15 @@ if(XKBCOMMON_FOUND)
   if(NOT TARGET Xkbcommon::Xkbcommon)
     if(IS_ABSOLUTE "${XKBCOMMON_LIBRARIES}")
       add_library(Xkbcommon::Xkbcommon UNKNOWN IMPORTED)
-      set_target_properties(
-        Xkbcommon::Xkbcommon PROPERTIES IMPORTED_LOCATION
-                                        "${XKBCOMMON_LIBRARIES}")
+      set_target_properties(Xkbcommon::Xkbcommon PROPERTIES IMPORTED_LOCATION
+                                                            "${XKBCOMMON_LIBRARIES}")
     else()
       add_library(Xkbcommon::Xkbcommon INTERFACE IMPORTED)
-      set_target_properties(
-        Xkbcommon::Xkbcommon PROPERTIES IMPORTED_LIBNAME
-                                        "${XKBCOMMON_LIBRARIES}")
+      set_target_properties(Xkbcommon::Xkbcommon PROPERTIES IMPORTED_LIBNAME
+                                                            "${XKBCOMMON_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Xkbcommon::Xkbcommon PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                      "${XKBCOMMON_INCLUDE_DIRS}")
+    set_target_properties(Xkbcommon::Xkbcommon PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                          "${XKBCOMMON_INCLUDE_DIRS}")
   endif()
 endif()

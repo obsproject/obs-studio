@@ -22,11 +22,9 @@ include(UseSWIG)
 
 set_source_files_properties(
   obspython.i
-  PROPERTIES
-    USE_TARGET_INCLUDE_DIRECTORIES TRUE
-    SWIG_FLAGS
-    "$<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-py3-stable-abi>"
-)
+  PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE
+             SWIG_FLAGS
+             "$<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-py3-stable-abi>")
 
 swig_add_library(
   obspython
@@ -41,9 +39,8 @@ list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obspython" "Py_ENABLE_SHARED=1"
 
 target_compile_features(obspython PRIVATE cxx_auto_type c_std_11)
 
-target_compile_definitions(
-  obspython PRIVATE SWIG_TYPE_TABLE=obspython Py_ENABLE_SHARED=1
-                    SWIG_PYTHON_INTERPRETER_NO_DEBUG)
+target_compile_definitions(obspython PRIVATE SWIG_TYPE_TABLE=obspython Py_ENABLE_SHARED=1
+                                             SWIG_PYTHON_INTERPRETER_NO_DEBUG)
 
 if(ENABLE_UI)
   list(APPEND _SWIG_DEFINITIONS "ENABLE_UI")
@@ -52,13 +49,11 @@ if(ENABLE_UI)
   target_compile_definitions(obspython PRIVATE ENABLE_UI)
 endif()
 
-set_target_properties(obspython PROPERTIES SWIG_COMPILE_DEFINITIONS
-                                           "${_SWIG_DEFINITIONS}")
+set_target_properties(obspython PROPERTIES SWIG_COMPILE_DEFINITIONS "${_SWIG_DEFINITIONS}")
 
 if(OS_WINDOWS)
-  set_target_properties(
-    obspython PROPERTIES SWIG_COMPILE_DEFINITIONS
-                         "${_SWIG_DEFINITIONS};MS_NO_COREDLL")
+  set_target_properties(obspython PROPERTIES SWIG_COMPILE_DEFINITIONS
+                                             "${_SWIG_DEFINITIONS};MS_NO_COREDLL")
 
   target_link_libraries(obspython PRIVATE Python::Python)
 
@@ -68,15 +63,13 @@ if(OS_WINDOWS)
     add_custom_command(
       TARGET obspython
       POST_BUILD
-      COMMAND
-        "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/obspython.py"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
+              "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/obspython.py"
       VERBATIM)
   endif()
 
 elseif(OS_MACOS)
-  get_target_property(_PYTHON_INCLUDE_DIRECTORY Python::Python
-                      INTERFACE_INCLUDE_DIRECTORIES)
+  get_target_property(_PYTHON_INCLUDE_DIRECTORY Python::Python INTERFACE_INCLUDE_DIRECTORIES)
 
   target_include_directories(obspython PRIVATE ${_PYTHON_INCLUDE_DIRECTORY})
 
@@ -88,14 +81,12 @@ elseif(OS_MACOS)
     add_custom_command(
       TARGET obspython
       POST_BUILD
-      COMMAND
-        "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
-        "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/obspython.py"
+      COMMAND "${CMAKE_COMMAND}" -E copy "${CMAKE_CURRENT_BINARY_DIR}/obspython.py"
+              "${CMAKE_CURRENT_BINARY_DIR}/$<CONFIG>/obspython.py"
       VERBATIM)
   endif()
 
-  set_target_properties(obspython PROPERTIES MACHO_CURRENT_VERSION 0
-                                             MACHO_COMPATIBILITY_VERSION 0)
+  set_target_properties(obspython PROPERTIES MACHO_CURRENT_VERSION 0 MACHO_COMPATIBILITY_VERSION 0)
 elseif(OS_POSIX)
   target_link_libraries(obspython PRIVATE Python::Python)
 

@@ -23,8 +23,7 @@ set_target_properties(
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "Glad OpenGL Loading Library")
 
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obsglad.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obsglad.rc)
 
   target_sources(glad PRIVATE src/glad_wgl.c include/glad/glad_wgl.h obsglad.rc)
 
@@ -32,8 +31,7 @@ elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(OpenGL REQUIRED)
 
   if(TARGET OpenGL::EGL)
-    target_sources(glad PRIVATE src/glad_egl.c include/EGL/eglplatform.h
-                                include/glad/glad_egl.h)
+    target_sources(glad PRIVATE src/glad_egl.c include/EGL/eglplatform.h include/glad/glad_egl.h)
 
     target_link_libraries(glad PRIVATE OpenGL::EGL)
   endif()

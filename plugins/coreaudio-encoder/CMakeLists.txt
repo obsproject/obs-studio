@@ -1,8 +1,7 @@
 project(coreaudio-encoder)
 
 if(OS_WINDOWS)
-  option(ENABLE_COREAUDIO_ENCODER
-         "Enable building with CoreAudio encoder (Windows)" ON)
+  option(ENABLE_COREAUDIO_ENCODER "Enable building with CoreAudio encoder (Windows)" ON)
   if(NOT ENABLE_COREAUDIO_ENCODER)
     obs_status(DISABLED "coreaudio-encoder")
     return()
@@ -31,23 +30,19 @@ if(OS_MACOS)
 
   mark_as_advanced(AUDIOTOOLBOX COREAUDIO COREFOUNDATION)
 
-  target_link_libraries(coreaudio-encoder PRIVATE ${COREFOUNDATION}
-                                                  ${COREAUDIO} ${AUDIOTOOLBOX})
+  target_link_libraries(coreaudio-encoder PRIVATE ${COREFOUNDATION} ${COREAUDIO} ${AUDIOTOOLBOX})
 
 elseif(OS_WINDOWS)
   if(MINGW)
-    set_source_files_properties(encoder.cpp PROPERTIES COMPILE_FLAGS
-                                                       -Wno-multichar)
+    set_source_files_properties(encoder.cpp PROPERTIES COMPILE_FLAGS -Wno-multichar)
   endif()
 
   target_compile_definitions(coreaudio-encoder PRIVATE UNICODE _UNICODE)
 
   set(MODULE_DESCRIPTION "OBS CoreAudio encoder")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 coreaudio-encoder.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in coreaudio-encoder.rc)
 
-  target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc
-                                           windows-imports.h)
+  target_sources(coreaudio-encoder PRIVATE coreaudio-encoder.rc windows-imports.h)
 endif()
 
 setup_plugin_target(coreaudio-encoder)

@@ -9,8 +9,8 @@ add_executable(OBS::ffmpeg-mux ALIAS obs-ffmpeg-mux)
 
 target_sources(obs-ffmpeg-mux PRIVATE ffmpeg-mux.c ffmpeg-mux.h)
 
-target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::libobs FFmpeg::avcodec
-                                             FFmpeg::avutil FFmpeg::avformat)
+target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::libobs FFmpeg::avcodec FFmpeg::avutil
+                                             FFmpeg::avformat)
 if(OS_WINDOWS)
   target_link_libraries(obs-ffmpeg-mux PRIVATE OBS::w32-pthreads)
 endif()

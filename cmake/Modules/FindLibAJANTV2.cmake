@@ -1,6 +1,8 @@
 # Once done these will be defined:
 #
-# LIBAJANTV2_FOUND LIBAJANTV2_INCLUDE_DIRS LIBAJANTV2_LIBRARIES
+# * LIBAJANTV2_FOUND
+# * LIBAJANTV2_INCLUDE_DIRS
+# * LIBAJANTV2_LIBRARIES
 #
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -95,8 +97,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(LibAJANTV2 DEFAULT_MSG
-                                  AJA_LIBRARIES_INCLUDE_DIR AJA_NTV2_LIB)
+find_package_handle_standard_args(LibAJANTV2 DEFAULT_MSG AJA_LIBRARIES_INCLUDE_DIR AJA_NTV2_LIB)
 mark_as_advanced(AJA_LIBRARIES_INCLUDE_DIR AJA_NTV2_LIB)
 
 if(LIBAJANTV2_FOUND)
@@ -117,35 +118,29 @@ if(LIBAJANTV2_FOUND)
   if(NOT TARGET AJA::LibAJANTV2)
     if(IS_ABSOLUTE "${LIBAJANTV2_LIBRARIES}")
       add_library(AJA::LibAJANTV2 UNKNOWN IMPORTED)
-      set_target_properties(
-        AJA::LibAJANTV2 PROPERTIES IMPORTED_LOCATION "${LIBAJANTV2_LIBRARIES}")
+      set_target_properties(AJA::LibAJANTV2 PROPERTIES IMPORTED_LOCATION "${LIBAJANTV2_LIBRARIES}")
 
       if(DEFINED LIBAJANTV2_DEBUG_LIBRARIES)
-        set_target_properties(
-          AJA::LibAJANTV2 PROPERTIES IMPORTED_LOCATION_DEBUG
-                                     "${LIBAJANTV2_DEBUG_LIBRARIES}")
+        set_target_properties(AJA::LibAJANTV2 PROPERTIES IMPORTED_LOCATION_DEBUG
+                                                         "${LIBAJANTV2_DEBUG_LIBRARIES}")
       endif()
     else()
       add_library(AJA::LibAJANTV2 INTERFACE IMPORTED)
-      set_target_properties(
-        AJA::LibAJANTV2 PROPERTIES IMPORTED_LIBNAME "${LIBAJANTV2_LIBRARIES}")
+      set_target_properties(AJA::LibAJANTV2 PROPERTIES IMPORTED_LIBNAME "${LIBAJANTV2_LIBRARIES}")
 
       if(DEFINED LIBAJANTV2_DEBUG_LIBRARIES)
-        set_target_properties(
-          AJA::LibAJANTV2 PROPERTIES IMPORTED_LIBNAME_DEBUG
-                                     "${LIBAJANTV2_DEBUG_LIBRARIES}")
+        set_target_properties(AJA::LibAJANTV2 PROPERTIES IMPORTED_LIBNAME_DEBUG
+                                                         "${LIBAJANTV2_DEBUG_LIBRARIES}")
       endif()
     endif()
 
-    set_target_properties(
-      AJA::LibAJANTV2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                 "${LIBAJANTV2_INCLUDE_DIRS}")
+    set_target_properties(AJA::LibAJANTV2 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                     "${LIBAJANTV2_INCLUDE_DIRS}")
 
     target_compile_definitions(
       AJA::LibAJANTV2
       INTERFACE "$<$<BOOL:${OS_WINDOWS}>:AJA_WINDOWS;_WINDOWS;WIN32;MSWindows>"
                 "$<$<AND:$<BOOL:${OS_WINDOWS}>,$<CONFIG:DEBUG>>:_DEBUG;_NDEBUG>"
-                "$<$<BOOL:${OS_MACOS}>:AJAMac;AJA_MAC>"
-                "$<$<BOOL:${OS_LINUX}>:AJA_LINUX;AJALinux>")
+                "$<$<BOOL:${OS_MACOS}>:AJAMac;AJA_MAC>" "$<$<BOOL:${OS_LINUX}>:AJA_LINUX;AJALinux>")
   endif()
 endif()

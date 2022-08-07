@@ -6,10 +6,8 @@ add_library(OBS::lzma ALIAS lzma)
 target_sources(lzma PRIVATE config.h)
 
 target_sources(
-  lzma
-  PRIVATE liblzma/check/check.c liblzma/check/crc32_table.c
-          liblzma/check/crc32_fast.c liblzma/check/crc64_table.c
-          liblzma/check/crc64_fast.c liblzma/check/sha256.c)
+  lzma PRIVATE liblzma/check/check.c liblzma/check/crc32_table.c liblzma/check/crc32_fast.c
+               liblzma/check/crc64_table.c liblzma/check/crc64_fast.c liblzma/check/sha256.c)
 
 target_sources(
   lzma
@@ -52,9 +50,8 @@ target_sources(
           liblzma/common/stream_flags_decoder.c
           liblzma/common/vli_decoder.c)
 
-target_sources(
-  lzma PRIVATE liblzma/delta/delta_common.c liblzma/delta/delta_encoder.c
-               liblzma/delta/delta_decoder.c)
+target_sources(lzma PRIVATE liblzma/delta/delta_common.c liblzma/delta/delta_encoder.c
+                            liblzma/delta/delta_decoder.c)
 
 target_sources(
   lzma
@@ -84,8 +81,7 @@ target_sources(
           liblzma/simple/sparc.c
           liblzma/simple/x86.c)
 
-target_compile_definitions(lzma PRIVATE HAVE_CONFIG_H
-                                        TUKLIB_SYMBOL_PREFIX=lzma_)
+target_compile_definitions(lzma PRIVATE HAVE_CONFIG_H TUKLIB_SYMBOL_PREFIX=lzma_)
 
 target_include_directories(
   lzma
@@ -102,8 +98,7 @@ target_include_directories(
 
 if(OS_WINDOWS)
   if(MSVC)
-    target_compile_options(lzma PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>" /Zl
-                                        /wd4244 /wd4267)
+    target_compile_options(lzma PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>" /Zl /wd4244 /wd4267)
   endif()
 
   target_compile_definitions(lzma PRIVATE inline=_inline restrict=__restrict)

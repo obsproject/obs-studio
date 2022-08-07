@@ -26,12 +26,10 @@ target_sources(
 
 add_idl_files_with_tlb(seg_service_GENERATED_FILES seg_service.idl)
 
-get_target_property(_RSSSDK_INCLUDE_DIRECTORY RSS::SDK
-                    INTERFACE_INCLUDE_DIRECTORIES)
+get_target_property(_RSSSDK_INCLUDE_DIRECTORY RSS::SDK INTERFACE_INCLUDE_DIRECTORIES)
 
 target_include_directories(seg_service PRIVATE ${_RSSSDK_INCLUDE_DIRECTORY})
 
 if(MSVC)
-  target_compile_definitions(seg_service
-                             PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
+  target_compile_definitions(seg_service PRIVATE "$<IF:$<CONFIG:Debug>,/MTd,/MT>")
 endif()

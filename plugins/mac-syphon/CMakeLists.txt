@@ -58,29 +58,22 @@ target_sources(
           syphon-framework/SyphonServerDirectory.m
           syphon-framework/SyphonServerDirectory.h)
 
-target_link_libraries(mac-syphon PRIVATE OBS::libobs Syphon::Framework
-                                         ${SCRIPTINGBRIDGE})
+target_link_libraries(mac-syphon PRIVATE OBS::libobs Syphon::Framework ${SCRIPTINGBRIDGE})
 
 target_link_libraries(syphon-framework PUBLIC OpenGL::GL ${COCOA} ${IOSURF})
 
 target_compile_options(
-  mac-syphon
-  PRIVATE -include
-          ${CMAKE_CURRENT_SOURCE_DIR}/syphon-framework/Syphon_Prefix.pch
-          -fobjc-arc)
+  mac-syphon PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/syphon-framework/Syphon_Prefix.pch
+                     -fobjc-arc)
 
 target_compile_options(
-  syphon-framework
-  PRIVATE -include
-          ${CMAKE_CURRENT_SOURCE_DIR}/syphon-framework/Syphon_Prefix.pch
-          -Wno-deprecated-declarations)
+  syphon-framework PRIVATE -include ${CMAKE_CURRENT_SOURCE_DIR}/syphon-framework/Syphon_Prefix.pch
+                           -Wno-deprecated-declarations)
 
-target_compile_definitions(syphon-framework
-                           PUBLIC "SYPHON_UNIQUE_CLASS_NAME_PREFIX=OBS_")
+target_compile_definitions(syphon-framework PUBLIC "SYPHON_UNIQUE_CLASS_NAME_PREFIX=OBS_")
 
 set_target_properties(mac-syphon PROPERTIES FOLDER "plugins" PREFIX "")
 
-set_target_properties(syphon-framework PROPERTIES FOLDER "plugins/mac-syphon"
-                                                  PREFIX "")
+set_target_properties(syphon-framework PROPERTIES FOLDER "plugins/mac-syphon" PREFIX "")
 
 setup_plugin_target(mac-syphon)

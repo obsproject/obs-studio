@@ -176,10 +176,8 @@ endfunction()
 
 function(__deprecated_feature VAR ACCESS)
   if(ACCESS STREQUAL "UNKNOWN_READ_ACCESS")
-    obs_status(
-      DEPRECATION
-      "The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS."
-    )
+    obs_status(DEPRECATION
+               "The feature enabled by '${VAR}' is deprecated and will soon be removed from OBS.")
   endif()
 endfunction()
 

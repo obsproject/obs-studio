@@ -12,9 +12,8 @@ set_target_properties(
              AUTORCC ON
              AUTOUIC_SEARCH_PATHS "forms")
 
-target_sources(
-  frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui
-                         forms/output-timer.ui forms/scripts.ui)
+target_sources(frontend-tools PRIVATE forms/auto-scene-switcher.ui forms/captions.ui
+                                      forms/output-timer.ui forms/scripts.ui)
 
 target_sources(
   frontend-tools
@@ -44,8 +43,7 @@ target_sources(
 
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
-target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs
-                                             Qt::Widgets)
+target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs Qt::Widgets)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)
@@ -71,8 +69,7 @@ set_target_properties(frontend-tools PROPERTIES FOLDER "frontend" PREFIX "")
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Frontend Tools")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 frontend-tools.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in frontend-tools.rc)
 
   target_sources(
     frontend-tools
@@ -93,8 +90,7 @@ elseif(OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE ${COCOA})
 
   target_sources(frontend-tools PRIVATE auto-scene-switcher-osx.mm)
-  set_source_files_properties(auto-scene-switcher-osx.mm
-                              PROPERTIES COMPILE_FLAGS -fobjc-arc)
+  set_source_files_properties(auto-scene-switcher-osx.mm PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
 elseif(OS_POSIX)
   find_package(X11 REQUIRED)

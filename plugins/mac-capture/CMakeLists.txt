@@ -24,15 +24,13 @@ target_sources(
           window-utils.m
           window-utils.h)
 
-target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT}
-                                          ${COREFOUNDATION} ${IOSURF} ${COCOA})
+target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREAUDIO} ${AUDIOUNIT} ${COREFOUNDATION}
+                                          ${IOSURF} ${COCOA})
 
 if(SCREENCAPTUREKIT)
-  target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREVIDEO}
-                                            ${COREMEDIA})
+  target_link_libraries(mac-capture PRIVATE OBS::libobs ${COREVIDEO} ${COREMEDIA})
 
-  target_link_options(mac-capture PRIVATE SHELL:-weak_framework
-                      ScreenCaptureKit)
+  target_link_options(mac-capture PRIVATE SHELL:-weak_framework ScreenCaptureKit)
   target_link_options(libobs PRIVATE SHELL:-weak_framework ScreenCaptureKit)
 endif()
 

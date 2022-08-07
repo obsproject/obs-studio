@@ -7,8 +7,7 @@ add_library(win-mf MODULE)
 add_library(OBS::win-mf ALIAS win-mf)
 
 set(MODULE_DESCRIPTION "OBS Windows Media Foundations H.264/AAC encoder")
-configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-               win-mf.rc)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-mf.rc)
 
 target_sources(win-mf PRIVATE win-mf.rc)
 

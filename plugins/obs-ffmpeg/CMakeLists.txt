@@ -29,13 +29,11 @@ if(ENABLE_NEW_MPEGTS_OUTPUT)
   elseif(NOT TARGET Libsrt::Libsrt)
     obs_status(
       FATAL_ERROR
-      "SRT library not found! Please install SRT library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF."
-    )
+      "SRT library not found! Please install SRT library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF.")
   elseif(NOT TARGET Librist::Librist)
     obs_status(
       FATAL_ERROR
-      "RIST library not found! Please install RIST library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF."
-    )
+      "RIST library not found! Please install RIST library or set ENABLE_NEW_MPEGTS_OUTPUT=OFF.")
   endif()
 endif()
 
@@ -74,8 +72,8 @@ target_link_libraries(
           FFmpeg::swresample)
 
 if(ENABLE_NEW_MPEGTS_OUTPUT)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-mpegts.c obs-ffmpeg-srt.h
-                                    obs-ffmpeg-rist.h obs-ffmpeg-url.h)
+  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-mpegts.c obs-ffmpeg-srt.h obs-ffmpeg-rist.h
+                                    obs-ffmpeg-url.h)
 
   target_link_libraries(obs-ffmpeg PRIVATE Librist::Librist Libsrt::Libsrt)
   if(OS_WINDOWS)
@@ -88,13 +86,11 @@ if(ENABLE_FFMPEG_LOGGING)
   target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-logging.c)
 endif()
 
-set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX
-                                                                        "")
+set_target_properties(obs-ffmpeg PROPERTIES FOLDER "plugins/obs-ffmpeg" PREFIX "")
 target_compile_options(
   obs-ffmpeg
   PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
+    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>)
 
 if(OS_WINDOWS)
   add_subdirectory(obs-amf-test)
@@ -104,12 +100,10 @@ if(OS_WINDOWS)
   endif()
 
   set(MODULE_DESCRIPTION "OBS FFmpeg module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-ffmpeg.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-ffmpeg.rc)
 
-  target_sources(
-    obs-ffmpeg PRIVATE texture-amf.cpp texture-amf-opts.hpp jim-nvenc.c
-                       jim-nvenc.h jim-nvenc-helpers.c obs-ffmpeg.rc)
+  target_sources(obs-ffmpeg PRIVATE texture-amf.cpp texture-amf-opts.hpp jim-nvenc.c jim-nvenc.h
+                                    jim-nvenc-helpers.c obs-ffmpeg.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
   find_package(Libpci REQUIRED)

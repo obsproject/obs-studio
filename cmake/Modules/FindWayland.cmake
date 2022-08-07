@@ -2,28 +2,36 @@
 #
 # This will define:
 #
-# WAYLAND_FOUND        - True if Wayland is found WAYLAND_LIBRARIES    - Link
-# these to use Wayland WAYLAND_INCLUDE_DIRS - Include directory for Wayland
-# WAYLAND_COMPILE_FLAGS  - Compiler flags for using Wayland
+# * WAYLAND_FOUND        - True if Wayland is found
+# * WAYLAND_LIBRARIES    - Link these to use Wayland
+# * WAYLAND_INCLUDE_DIRS - Include directory for Wayland
+# * WAYLAND_COMPILE_FLAGS  - Compiler flags for using Wayland
 #
 # In addition the following more fine grained variables will be defined:
 #
-# Wayland_Client_FOUND  WAYLAND_CLIENT_INCLUDE_DIRS  WAYLAND_CLIENT_LIBRARIES
-# Wayland_Server_FOUND  WAYLAND_SERVER_INCLUDE_DIRS  WAYLAND_SERVER_LIBRARIES
-# Wayland_EGL_FOUND     WAYLAND_EGL_INCLUDE_DIRS     WAYLAND_EGL_LIBRARIES
-# Wayland_Cursor_FOUND  WAYLAND_CURSOR_INCLUDE_DIRS  WAYLAND_CURSOR_LIBRARIES
+# * Wayland_Client_FOUND
+# * WAYLAND_CLIENT_INCLUDE_DIRS
+# * WAYLAND_CLIENT_LIBRARIES
+# * Wayland_Server_FOUND
+# * WAYLAND_SERVER_INCLUDE_DIRS
+# * WAYLAND_SERVER_LIBRARIES
+# * Wayland_EGL_FOUND
+# * WAYLAND_EGL_INCLUDE_DIRS
+# * WAYLAND_EGL_LIBRARIES
+# * Wayland_Cursor_FOUND
+# * WAYLAND_CURSOR_INCLUDE_DIRS
+# * WAYLAND_CURSOR_LIBRARIES
 #
-# Copyright (c) 2013 Martin Gräßlin <mgraesslin@kde.org> 2020 Georges Basile
-# Stavracas Neto <georges.stavracas@gmail.com>
+# Copyright (c) 2013 Martin Gräßlin <mgraesslin@kde.org> 2020 Georges Basile Stavracas Neto
+# <georges.stavracas@gmail.com>
 #
-# Redistribution and use is allowed according to the terms of the BSD license.
-# For details see the accompanying COPYING-CMAKE-SCRIPTS file.
+# Redistribution and use is allowed according to the terms of the BSD license. For details see the
+# accompanying COPYING-CMAKE-SCRIPTS file.
 
-# Use pkg-config to get the directories and then use these values in the
-# find_path() and find_library() calls
+# Use pkg-config to get the directories and then use these values in the find_path() and
+# find_library() calls
 find_package(PkgConfig)
-pkg_check_modules(PKG_WAYLAND QUIET wayland-client wayland-server wayland-egl
-                  wayland-cursor)
+pkg_check_modules(PKG_WAYLAND QUIET wayland-client wayland-server wayland-egl wayland-cursor)
 
 set(WAYLAND_COMPILE_FLAGS ${PKG_WAYLAND_CFLAGS})
 
@@ -87,9 +95,8 @@ else()
 endif()
 mark_as_advanced(WAYLAND_SERVER_INCLUDE_DIRS WAYLAND_SERVER_LIBRARIES)
 
-set(WAYLAND_INCLUDE_DIRS
-    ${WAYLAND_CLIENT_INCLUDE_DIRS} ${WAYLAND_SERVER_INCLUDE_DIRS}
-    ${WAYLAND_EGL_INCLUDE_DIRS} ${WAYLAND_CURSOR_INCLUDE_DIRS})
+set(WAYLAND_INCLUDE_DIRS ${WAYLAND_CLIENT_INCLUDE_DIRS} ${WAYLAND_SERVER_INCLUDE_DIRS}
+                         ${WAYLAND_EGL_INCLUDE_DIRS} ${WAYLAND_CURSOR_INCLUDE_DIRS})
 set(WAYLAND_LIBRARIES ${WAYLAND_CLIENT_LIBRARIES} ${WAYLAND_SERVER_LIBRARIES}
                       ${WAYLAND_EGL_LIBRARIES} ${WAYLAND_CURSOR_LIBRARIES})
 mark_as_advanced(WAYLAND_INCLUDE_DIRS WAYLAND_LIBRARIES)
@@ -109,24 +116,20 @@ foreach(component "Client" "Server" "EGL" "Cursor")
     if(Wayland_${component}_FOUND)
       if(IS_ABSOLUTE "${WAYLAND_${component_u}_LIBRARIES}")
         add_library(Wayland::${component} UNKNOWN IMPORTED)
-        set_target_properties(
-          Wayland::${component}
-          PROPERTIES IMPORTED_LOCATION "${WAYLAND_${component_u}_LIBRARIES}")
+        set_target_properties(Wayland::${component}
+                              PROPERTIES IMPORTED_LOCATION "${WAYLAND_${component_u}_LIBRARIES}")
       else()
         add_library(Wayland::${component} INTERFACE IMPORTED)
-        set_target_properties(
-          Wayland::${component}
-          PROPERTIES IMPORTED_LIBNAME "${WAYLAND_${component_u}_LIBRARIES}")
+        set_target_properties(Wayland::${component}
+                              PROPERTIES IMPORTED_LIBNAME "${WAYLAND_${component_u}_LIBRARIES}")
       endif()
 
       set_target_properties(
-        Wayland::${component}
-        PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                   "${WAYLAND_${component_u}_INCLUDE_DIRS}")
+        Wayland::${component} PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                         "${WAYLAND_${component_u}_INCLUDE_DIRS}")
 
-      set_target_properties(
-        Wayland::${component} PROPERTIES INTERFACE_COMPILE_OPTIONS
-                                         "${WAYLAND_COMPILE_FLAGS}")
+      set_target_properties(Wayland::${component} PROPERTIES INTERFACE_COMPILE_OPTIONS
+                                                             "${WAYLAND_COMPILE_FLAGS}")
     endif()
   endif()
 endforeach()

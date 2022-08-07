@@ -34,13 +34,11 @@ target_sources(
 
 target_include_directories(rtmp-services PRIVATE ${CMAKE_BINARY_DIR}/config)
 
-target_link_libraries(rtmp-services PRIVATE OBS::libobs OBS::file-updater
-                                            Jansson::Jansson)
+target_link_libraries(rtmp-services PRIVATE OBS::libobs OBS::file-updater Jansson::Jansson)
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS RTMP Services")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 rtmp-services.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in rtmp-services.rc)
 
   target_sources(rtmp-services PRIVATE rtmp-services.rc)
 endif()

@@ -37,8 +37,7 @@ target_sources(
 
 set(MODULE_DESCRIPTION "OBS Intel(R) RealSense(TM) module")
 
-configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-               win-ivcam.rc)
+configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-ivcam.rc)
 
 target_sources(win-ivcam PRIVATE realsense.cpp win-ivcam.rc)
 

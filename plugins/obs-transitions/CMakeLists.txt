@@ -35,8 +35,7 @@ target_link_libraries(obs-transitions PRIVATE OBS::libobs)
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Transitions module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-transitions.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-transitions.rc)
 
   target_sources(obs-transitions PRIVATE obs-transitions.rc)
 

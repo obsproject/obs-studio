@@ -5,10 +5,9 @@ function(setup_binary_target target)
   if(DEFINED ENV{OBS_InstallerTempDir})
     install(
       TARGETS ${target}
-      RUNTIME
-        DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}
-        COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL
+      RUNTIME DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}
+              COMPONENT obs_${target}
+              EXCLUDE_FROM_ALL
       LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_LIBRARY_DESTINATION}
               COMPONENT obs_${target}
               EXCLUDE_FROM_ALL
@@ -108,14 +107,12 @@ function(setup_script_plugin_target target)
   if(DEFINED ENV{OBS_InstallerTempDir})
     install(
       TARGETS ${target}
-      RUNTIME
-        DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL
-      LIBRARY
-        DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
-        COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL)
+      RUNTIME DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
+              COMPONENT obs_${target}
+              EXCLUDE_FROM_ALL
+      LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
+              COMPONENT obs_${target}
+              EXCLUDE_FROM_ALL)
 
     if(MSVC)
       install(
@@ -128,8 +125,7 @@ function(setup_script_plugin_target target)
 
     if(${target} STREQUAL "obspython" AND ${_ARCH_SUFFIX} EQUAL 64)
       install(
-        FILES
-          "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.py"
+        FILES "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.py"
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
         COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
@@ -146,8 +142,7 @@ function(setup_target_resources target destination)
 
       install(
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data/
-        DESTINATION
-          $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
+        DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
         USE_SOURCE_PERMISSIONS
         COMPONENT obs_${target}
         EXCLUDE_FROM_ALL)
@@ -181,8 +176,7 @@ function(add_target_resource)
   if(DEFINED ENV{OBS_InstallerTempDir})
     install(
       FILES ${resource}
-      DESTINATION
-        $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
+      DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}
       COMPONENT obs_${target}
       ${optional} EXCLUDE_FROM_ALL)
   endif()
@@ -195,14 +189,12 @@ function(setup_obs_app target)
     if(MSVC)
       target_compile_options(obs-browser PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
 
-      target_compile_options(obs-browser-page
-                             PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
+      target_compile_options(obs-browser-page PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
     endif()
 
     target_link_options(obs-browser PRIVATE "LINKER:/IGNORE:4099")
 
-    target_link_options(obs-browser-page PRIVATE "LINKER:/IGNORE:4099"
-                        "LINKER:/SUBSYSTEM:WINDOWS")
+    target_link_options(obs-browser-page PRIVATE "LINKER:/IGNORE:4099" "LINKER:/SUBSYSTEM:WINDOWS")
   endif()
 
   _setup_obs_app(${ARGV})
@@ -212,8 +204,8 @@ function(setup_obs_app target)
   endif()
 endfunction()
 
-# Helper function to export target to build and install tree. Allows usage of
-# `find_package(libobs)` by other build trees
+# Helper function to export target to build and install tree. Allows usage of `find_package(libobs)`
+# by other build trees
 function(export_target target)
   set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
 
@@ -249,8 +241,7 @@ function(export_target target)
   generate_export_header(${target} EXPORT_FILE_NAME
                          "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
 
-  target_sources(${target}
-                 PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
+  target_sources(${target} PRIVATE "${CMAKE_CURRENT_BINARY_DIR}/${target}_EXPORT.h")
 
   set(TARGETS_EXPORT_NAME "${target}Targets")
   include(CMakePackageConfigHelpers)
@@ -321,8 +312,7 @@ function(setup_target_browser target)
   foreach(_ADDITIONAL_BROWSER_FILE IN LISTS _ADDITIONAL_BROWSER_FILES)
     list(REMOVE_ITEM _ADDITIONAL_BROWSER_FILES "${_ADDITIONAL_BROWSER_FILE}")
     if(EXISTS "${CEF_ROOT_DIR}/Release/${_ADDITIONAL_BROWSER_FILE}")
-      list(APPEND _ADDITIONAL_BROWSER_FILES
-           "${CEF_ROOT_DIR}/Release/${_ADDITIONAL_BROWSER_FILE}")
+      list(APPEND _ADDITIONAL_BROWSER_FILES "${CEF_ROOT_DIR}/Release/${_ADDITIONAL_BROWSER_FILE}")
     endif()
   endforeach()
 
@@ -411,8 +401,7 @@ endfunction()
 
 # Helper function to compile artifacts for multi-architecture installer
 function(generate_multiarch_installer)
-  if(NOT DEFINED ENV{OBS_InstallerTempDir} AND NOT DEFINED
-                                               ENV{obsInstallerTempDir})
+  if(NOT DEFINED ENV{OBS_InstallerTempDir} AND NOT DEFINED ENV{obsInstallerTempDir})
     obs_status(
       FATAL_ERROR
       "Function generate_multiarch_installer requires environment variable 'OBS_InstallerTempDir' to be set"

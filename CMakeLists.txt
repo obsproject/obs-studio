@@ -25,10 +25,8 @@ include(CompilerConfig)
 if(NOT CMAKE_BUILD_TYPE)
   set(CMAKE_BUILD_TYPE
       "RelWithDebInfo"
-      CACHE STRING
-            "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]" FORCE)
-  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release RelWithDebInfo
-                                               Debug MinSizeRel)
+      CACHE STRING "OBS build type [Release, RelWithDebInfo, Debug, MinSizeRel]" FORCE)
+  set_property(CACHE CMAKE_BUILD_TYPE PROPERTY STRINGS Release RelWithDebInfo Debug MinSizeRel)
 endif()
 
 # Global project options
@@ -36,15 +34,12 @@ option(ENABLE_HEVC "Enable HEVC encoders" ON)
 if(ENABLE_HEVC)
   add_compile_definitions(ENABLE_HEVC)
 endif()
-option(BUILD_FOR_DISTRIBUTION "Build for distribution (enables optimisations)"
-       OFF)
+option(BUILD_FOR_DISTRIBUTION "Build for distribution (enables optimisations)" OFF)
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(USE_LIBCXX "Use libc++ instead of libstdc++" ${APPLE})
-option(
-  BUILD_TESTS
-  "Build test directory (includes test sources and possibly a platform test executable)"
-  OFF)
+option(BUILD_TESTS
+       "Build test directory (includes test sources and possibly a platform test executable)" OFF)
 
 if(OS_WINDOWS)
   option(
@@ -53,8 +48,7 @@ if(OS_WINDOWS)
     OFF)
 
 elseif(OS_MACOS)
-  option(ENABLE_SPARKLE_UPDATER "Enable Sparkle framework for updates (macOS)"
-         OFF)
+  option(ENABLE_SPARKLE_UPDATER "Enable Sparkle framework for updates (macOS)" OFF)
 
 elseif(OS_POSIX)
   option(LINUX_PORTABLE "Build portable version (Linux)" OFF)

@@ -30,8 +30,7 @@ set_target_properties(
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Library OpenGL wrapper")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 libobs-opengl.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in libobs-opengl.rc)
 
   target_sources(libobs-opengl PRIVATE gl-windows.c libobs-opengl.rc)
 

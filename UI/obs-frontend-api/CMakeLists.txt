@@ -12,12 +12,10 @@ target_sources(obs-frontend-api PRIVATE obs-frontend-api.h obs-frontend-api.cpp
 
 target_link_libraries(obs-frontend-api PRIVATE OBS::libobs)
 
-target_compile_features(obs-frontend-api PUBLIC cxx_auto_type cxx_std_17
-                                                c_std_11)
+target_compile_features(obs-frontend-api PUBLIC cxx_auto_type cxx_std_17 c_std_11)
 
-target_include_directories(
-  obs-frontend-api PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                          $<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>)
+target_include_directories(obs-frontend-api PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                                   $<INSTALL_INTERFACE:${OBS_INCLUDE_DESTINATION}>)
 
 set_target_properties(
   obs-frontend-api
@@ -28,8 +26,7 @@ set_target_properties(
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Frontend API")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-frontend-api.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-frontend-api.rc)
 
   target_sources(obs-frontend-api PRIVATE obs-frontend-api.rc)
 elseif(OS_MACOS)

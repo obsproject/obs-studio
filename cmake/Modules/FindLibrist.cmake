@@ -1,10 +1,12 @@
 # Once done these will be defined:
 #
-# LIBRIST_FOUND LIBRIST_INCLUDE_DIRS LIBRIST_LIBRARIES
+# * LIBRIST_FOUND
+# * LIBRIST_INCLUDE_DIRS
+# * LIBRIST_LIBRARIES
 #
 # For use in OBS:
 #
-# LIBRIST_INCLUDE_DIR
+# * LIBRIST_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -46,8 +48,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Librist DEFAULT_MSG LIBRIST_LIB
-                                  LIBRIST_INCLUDE_DIR)
+find_package_handle_standard_args(Librist DEFAULT_MSG LIBRIST_LIB LIBRIST_INCLUDE_DIR)
 mark_as_advanced(LIBRIST_INCLUDE_DIR LIBRIST_LIB)
 
 if(LIBRIST_FOUND)
@@ -57,17 +58,14 @@ if(LIBRIST_FOUND)
   if(NOT TARGET Librist::Librist)
     if(IS_ABSOLUTE "${LIBRIST_LIBRARIES}")
       add_library(Librist::Librist UNKNOWN IMPORTED)
-      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LOCATION
-                                                        "${LIBRIST_LIBRARIES}")
+      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LOCATION "${LIBRIST_LIBRARIES}")
     else()
       add_library(Librist::Librist INTERFACE IMPORTED)
-      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LIBNAME
-                                                        "${LIBRIST_LIBRARIES}")
+      set_target_properties(Librist::Librist PROPERTIES IMPORTED_LIBNAME "${LIBRIST_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Librist::Librist PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${LIBRIST_INCLUDE_DIRS}")
+    set_target_properties(Librist::Librist PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                      "${LIBRIST_INCLUDE_DIRS}")
   endif()
 else()
   message(STATUS "librist library not found")

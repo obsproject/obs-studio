@@ -268,19 +268,16 @@ target_compile_options(
   libobs
   PUBLIC ${ARCH_SIMD_FLAGS}
   PRIVATE
-    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>
-)
+    $<$<OR:$<C_COMPILER_ID:Clang>,$<C_COMPILER_ID:AppleClang>,$<C_COMPILER_ID:GNU>>:-Wno-switch>)
 
-target_include_directories(
-  libobs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
-                $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
+target_include_directories(libobs PUBLIC $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>
+                                         $<BUILD_INTERFACE:${CMAKE_BINARY_DIR}/config>)
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Library")
   set(UI_VERSION "${OBS_VERSION_CANONICAL}")
 
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 libobs.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in libobs.rc)
 
   target_sources(
     libobs
@@ -306,9 +303,8 @@ if(OS_WINDOWS)
             audio-monitoring/win32/wasapi-output.h
             audio-monitoring/win32/wasapi-monitoring-available.c)
 
-  target_compile_definitions(
-    libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                   _CRT_NONSTDC_NO_WARNINGS)
+  target_compile_definitions(libobs PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                                            _CRT_NONSTDC_NO_WARNINGS)
 
   target_link_libraries(libobs PRIVATE Avrt Dwmapi winmm)
 
@@ -364,12 +360,10 @@ elseif(OS_MACOS)
             audio-monitoring/osx/coreaudio-monitoring-available.c
             audio-monitoring/osx/mac-helpers.h)
 
-  set_source_files_properties(util/platform-cocoa.m obs-cocoa.m
-                              PROPERTIES COMPILE_FLAGS -fobjc-arc)
+  set_source_files_properties(util/platform-cocoa.m obs-cocoa.m PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
-  set_target_properties(
-    libobs PROPERTIES SOVERSION "1" BUILD_RPATH
-                                    "$<TARGET_FILE_DIR:OBS::libobs-opengl>")
+  set_target_properties(libobs PROPERTIES SOVERSION "1" BUILD_RPATH
+                                                        "$<TARGET_FILE_DIR:OBS::libobs-opengl>")
 
 elseif(OS_POSIX)
   if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
@@ -422,8 +416,7 @@ elseif(OS_POSIX)
   if(TARGET GIO::GIO)
     target_link_libraries(libobs PRIVATE GIO::GIO)
 
-    target_sources(libobs PRIVATE util/platform-nix-dbus.c
-                                  util/platform-nix-portal.c)
+    target_sources(libobs PRIVATE util/platform-nix-dbus.c util/platform-nix-portal.c)
   endif()
 
   if(TARGET XCB::XINPUT)
@@ -451,12 +444,10 @@ elseif(OS_POSIX)
     target_link_libraries(libobs PRIVATE Sysinfo::Sysinfo)
   endif()
 
-  set_target_properties(
-    libobs PROPERTIES BUILD_RPATH "$<TARGET_FILE_DIR:OBS::libobs-opengl>")
+  set_target_properties(libobs PROPERTIES BUILD_RPATH "$<TARGET_FILE_DIR:OBS::libobs-opengl>")
 endif()
 
-configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in
-               ${CMAKE_BINARY_DIR}/config/obsconfig.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obsconfig.h.in ${CMAKE_BINARY_DIR}/config/obsconfig.h)
 
 target_compile_definitions(libobs PUBLIC HAVE_OBSCONFIG_H)
 

@@ -36,9 +36,8 @@ if(MSVC)
   target_link_libraries(win-capture PRIVATE OBS::w32-pthreads)
 endif()
 
-target_compile_definitions(
-  win-capture PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
-                      _CRT_NONSTDC_NO_WARNINGS)
+target_compile_definitions(win-capture PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                                               _CRT_NONSTDC_NO_WARNINGS)
 
 set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "win-capture")
 

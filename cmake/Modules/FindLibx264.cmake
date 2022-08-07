@@ -1,10 +1,12 @@
 # Once done these will be defined:
 #
-# LIBX264_FOUND LIBX264_INCLUDE_DIRS LIBX264_LIBRARIES
+# * LIBX264_FOUND
+# * LIBX264_INCLUDE_DIRS
+# * LIBX264_LIBRARIES
 #
 # For use in OBS:
 #
-# X264_INCLUDE_DIR
+# * X264_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -20,16 +22,14 @@ endif()
 find_path(
   X264_INCLUDE_DIR
   NAMES x264.h
-  HINTS ENV X264_PATH ${X264_PATH} ${CMAKE_SOURCE_DIR}/${X264_PATH}
-        ${_X264_INCLUDE_DIRS}
+  HINTS ENV X264_PATH ${X264_PATH} ${CMAKE_SOURCE_DIR}/${X264_PATH} ${_X264_INCLUDE_DIRS}
   PATHS /usr/include /usr/local/include /opt/local/include /sw/include
   PATH_SUFFIXES include)
 
 find_library(
   X264_LIB
   NAMES ${_X264_LIBRARIES} x264 libx264
-  HINTS ENV X264_PATH ${X264_PATH} ${CMAKE_SOURCE_DIR}/${X264_PATH}
-        ${_X264_LIBRARY_DIRS}
+  HINTS ENV X264_PATH ${X264_PATH} ${CMAKE_SOURCE_DIR}/${X264_PATH} ${_X264_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib
   PATH_SUFFIXES
     lib${_lib_suffix}
@@ -56,16 +56,13 @@ if(LIBX264_FOUND)
   if(NOT TARGET LIBX264::LIBX264)
     if(IS_ABSOLUTE "${LIBX264_LIBRARIES}")
       add_library(LIBX264::LIBX264 UNKNOWN IMPORTED)
-      set_target_properties(LIBX264::LIBX264 PROPERTIES IMPORTED_LOCATION
-                                                        "${LIBX264_LIBRARIES}")
+      set_target_properties(LIBX264::LIBX264 PROPERTIES IMPORTED_LOCATION "${LIBX264_LIBRARIES}")
     else()
       add_library(LIBX264::LIBX264 INTERFACE IMPORTED)
-      set_target_properties(LIBX264::LIBX264 PROPERTIES IMPORTED_LIBNAME
-                                                        "${LIBX264_LIBRARIES}")
+      set_target_properties(LIBX264::LIBX264 PROPERTIES IMPORTED_LIBNAME "${LIBX264_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      LIBX264::LIBX264 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${LIBX264_INCLUDE_DIRS}")
+    set_target_properties(LIBX264::LIBX264 PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                      "${LIBX264_INCLUDE_DIRS}")
   endif()
 endif()

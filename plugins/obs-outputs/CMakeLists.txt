@@ -7,8 +7,7 @@ if(NOT DEFINED ENABLE_RTMPS)
   set_property(CACHE ENABLE_RTMPS PROPERTY STRINGS AUTO ON OFF)
 endif()
 
-option(ENABLE_STATIC_MBEDTLS "Enable statically linking mbedTLS into binary"
-       OFF)
+option(ENABLE_STATIC_MBEDTLS "Enable statically linking mbedTLS into binary" OFF)
 mark_as_advanced(ENABLE_STATIC_MBEDTLS)
 
 add_library(obs-outputs MODULE)
@@ -35,15 +34,13 @@ set_target_properties(obs-outputs PROPERTIES FOLDER "plugins" PREFIX "")
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS output module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-outputs.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-outputs.rc)
 
   target_sources(obs-outputs PRIVATE obs-outputs.rc)
 
   if(MSVC)
     target_link_libraries(obs-outputs PRIVATE OBS::w32-pthreads)
-    target_link_options(obs-outputs PRIVATE "LINKER:/IGNORE:4098"
-                        "LINKER:/IGNORE:4099")
+    target_link_options(obs-outputs PRIVATE "LINKER:/IGNORE:4098" "LINKER:/IGNORE:4099")
   endif()
 
   target_link_libraries(obs-outputs PRIVATE ws2_32 winmm Iphlpapi)
@@ -54,13 +51,10 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
   find_package(ZLIB)
   if(NOT MBEDTLS_FOUND OR NOT ZLIB_FOUND)
     if(ENABLE_RTMPS STREQUAL "ON")
-      obs_status(FATAL_ERROR
-                 "mbedTLS or zlib not found, but required for RTMPS support.")
+      obs_status(FATAL_ERROR "mbedTLS or zlib not found, but required for RTMPS support.")
       return()
     else()
-      obs_status(
-        WARNING
-        "mbedTLS or zlib was not found, RTMPS will be automatically disabled.")
+      obs_status(WARNING "mbedTLS or zlib was not found, RTMPS will be automatically disabled.")
       target_compile_definitions(obs-outputs PRIVATE NO_CRYPTO)
     endif()
   else()
@@ -95,8 +89,7 @@ if(ENABLE_RTMPS STREQUAL "AUTO" OR ENABLE_RTMPS STREQUAL "ON")
       find_library(SECURITY_FRAMEWORK Security)
       mark_as_advanced(FOUNDATION_FRAMEWORK SECURITY_FRAMEWORK)
 
-      target_link_libraries(obs-outputs PRIVATE ${FOUNDATION_FRAMEWORK}
-                                                ${SECURITY_FRAMEWORK})
+      target_link_libraries(obs-outputs PRIVATE ${FOUNDATION_FRAMEWORK} ${SECURITY_FRAMEWORK})
       set_target_properties(obs-outputs PROPERTIES CXX_VISIBILITY_PRESET hidden)
       set_target_properties(obs-outputs PROPERTIES C_VISIBILITY_PRESET hidden)
 
@@ -155,28 +148,21 @@ elseif(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/CMakeLists.txt")
             ftl-sdk/libftl/gettimeofday/gettimeofday.c
             ftl-sdk/libftl/logging.c)
 
-  target_include_directories(obs-outputs
-                             PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl)
+  target_include_directories(obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl)
 
   if(OS_WINDOWS)
     target_sources(
       obs-outputs
-      PRIVATE ftl-sdk/libftl/gettimeofday/gettimeofday.c
-              ftl-sdk/libftl/gettimeofday/gettimeofday.h
-              ftl-sdk/libftl/win32/socket.c
-              ftl-sdk/libftl/win32/threads.c
+      PRIVATE ftl-sdk/libftl/gettimeofday/gettimeofday.c ftl-sdk/libftl/gettimeofday/gettimeofday.h
+              ftl-sdk/libftl/win32/socket.c ftl-sdk/libftl/win32/threads.c
               ftl-sdk/libftl/win32/threads.h)
 
-    target_include_directories(
-      obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/win32)
+    target_include_directories(obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/win32)
   elseif(OS_POSIX)
-    target_sources(
-      obs-outputs
-      PRIVATE ftl-sdk/libftl/posix/socket.c ftl-sdk/libftl/posix/threads.c
-              ftl-sdk/libftl/posix/threads.h)
+    target_sources(obs-outputs PRIVATE ftl-sdk/libftl/posix/socket.c ftl-sdk/libftl/posix/threads.c
+                                       ftl-sdk/libftl/posix/threads.h)
 
-    target_include_directories(
-      obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/posix)
+    target_include_directories(obs-outputs PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/ftl-sdk/libftl/posix)
   endif()
 
   target_compile_definitions(obs-outputs PRIVATE FTL_FOUND)

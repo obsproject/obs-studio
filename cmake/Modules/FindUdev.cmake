@@ -1,6 +1,8 @@
 # Once done these will be defined:
 #
-# UDEV_FOUND UDEV_INCLUDE_DIRS UDEV_LIBRARIES
+# * UDEV_FOUND
+# * UDEV_INCLUDE_DIRS
+# * UDEV_LIBRARIES
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -30,12 +32,10 @@ if(UDEV_FOUND)
   if(NOT TARGET Udev::Udev)
     if(IS_ABSOLUTE "${UDEV_LIBRARIES}")
       add_library(Udev::Udev UNKNOWN IMPORTED)
-      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LOCATION
-                                                  "${UDEV_LIBRARIES}")
+      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LOCATION "${UDEV_LIBRARIES}")
     else()
       add_library(Udev::Udev INTERFACE IMPORTED)
-      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LIBNAME
-                                                  "${UDEV_LIBRARIES}")
+      set_target_properties(Udev::Udev PROPERTIES IMPORTED_LIBNAME "${UDEV_LIBRARIES}")
     endif()
 
     set_target_properties(Udev::Udev PROPERTIES INTERFACE_INCLUDE_DIRECTORIES

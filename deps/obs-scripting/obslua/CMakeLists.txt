@@ -19,8 +19,7 @@ elseif(OS_WINDOWS)
 endif()
 include(UseSWIG)
 
-set_source_files_properties(obslua.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES
-                                                TRUE)
+set_source_files_properties(obslua.i PROPERTIES USE_TARGET_INCLUDE_DIRECTORIES TRUE)
 
 swig_add_library(
   obslua
@@ -30,8 +29,7 @@ swig_add_library(
 
 target_link_libraries(obslua PRIVATE OBS::scripting OBS::libobs Luajit::Luajit)
 
-list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obslua"
-     "SWIG_LUA_INTERPRETER_NO_DEBUG")
+list(APPEND _SWIG_DEFINITIONS "SWIG_TYPE_TABLE=obslua" "SWIG_LUA_INTERPRETER_NO_DEBUG")
 
 set_target_properties(
   obslua
@@ -39,8 +37,7 @@ set_target_properties(
              VERSION "${OBS_VERSION_MAJOR}"
              SOVERSION "${OBS_VERSION_CANONICAL}")
 
-target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua
-                                          SWIG_LUA_INTERPRETER_NO_DEBUG)
+target_compile_definitions(obslua PRIVATE SWIG_TYPE_TABLE=obslua SWIG_LUA_INTERPRETER_NO_DEBUG)
 
 if(ENABLE_UI)
   list(APPEND _SWIG_DEFINITIONS "ENABLE_UI")
@@ -49,16 +46,14 @@ if(ENABLE_UI)
   target_compile_definitions(obslua PRIVATE ENABLE_UI)
 endif()
 
-set_target_properties(obslua PROPERTIES SWIG_COMPILE_DEFINITIONS
-                                        "${_SWIG_DEFINITIONS}")
+set_target_properties(obslua PROPERTIES SWIG_COMPILE_DEFINITIONS "${_SWIG_DEFINITIONS}")
 
 if(OS_WINDOWS)
   if(MSVC)
     target_compile_options(obslua PRIVATE /wd4054 /wd4197 /wd4244 /wd4267)
   endif()
 elseif(OS_MACOS)
-  set_target_properties(obslua PROPERTIES MACHO_CURRENT_VERSION 0
-                                          MACHO_COMPATIBILITY_VERSION 0)
+  set_target_properties(obslua PROPERTIES MACHO_CURRENT_VERSION 0 MACHO_COMPATIBILITY_VERSION 0)
 endif()
 
 setup_script_plugin_target(obslua)

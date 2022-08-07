@@ -22,8 +22,7 @@ target_compile_features(decklink-captions PRIVATE cxx_std_17)
 
 target_sources(decklink-captions PRIVATE forms/captions.ui)
 
-target_sources(decklink-captions PRIVATE decklink-captions.cpp
-                                         decklink-captions.h)
+target_sources(decklink-captions PRIVATE decklink-captions.cpp decklink-captions.h)
 
 target_link_libraries(decklink-captions PRIVATE OBS::frontend-api OBS::libobs)
 
@@ -38,14 +37,12 @@ elseif(OS_POSIX)
   target_link_libraries(decklink-captions PRIVATE X11::X11)
 elseif(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS DeckLink Captions module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 decklink-captions.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in decklink-captions.rc)
 
   target_sources(decklink-captions PRIVATE decklink-captions.rc)
 endif()
 
-set_target_properties(decklink-captions PROPERTIES FOLDER "plugins/decklink"
-                                                   PREFIX "")
+set_target_properties(decklink-captions PROPERTIES FOLDER "plugins/decklink" PREFIX "")
 
 get_target_property(_SOURCES decklink-captions SOURCES)
 set(_UI ${_SOURCES})

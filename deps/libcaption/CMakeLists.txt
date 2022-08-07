@@ -23,9 +23,8 @@ target_sources(
           caption/eia608_charmap.h
   PUBLIC caption/caption.h)
 
-target_compile_definitions(
-  caption PRIVATE __STDC_CONSTANT_MACROS
-                  $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
+target_compile_definitions(caption PRIVATE __STDC_CONSTANT_MACROS
+                                           $<$<CXX_COMPILER_ID:MSVC>:_CRT_SECURE_NO_WARNINGS>)
 
 target_compile_options(
   caption

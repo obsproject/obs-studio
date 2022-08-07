@@ -53,14 +53,12 @@ if(OS_MACOS)
   target_link_libraries(aja PRIVATE ${IOKIT} ${COREFOUNDATION} ${APPKIT})
 elseif(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS AJA Windows module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 win-aja.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in win-aja.rc)
 
   target_sources(aja PRIVATE win-aja.rc)
 
   target_compile_options(aja PRIVATE /wd4996)
-  target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib
-                                    netapi32.lib Shlwapi.lib)
+  target_link_libraries(aja PRIVATE ws2_32.lib setupapi.lib Winmm.lib netapi32.lib Shlwapi.lib)
   target_link_options(aja PRIVATE "LINKER:/IGNORE:4099")
 endif()
 

@@ -1,10 +1,12 @@
 # Once done these will be defined:
 #
-# LIBRNNOISE_FOUND LIBRNNOISE_INCLUDE_DIRS LIBRNNOISE_LIBRARIES
+# * LIBRNNOISE_FOUND
+# * LIBRNNOISE_INCLUDE_DIRS
+# * LIBRNNOISE_LIBRARIES
 #
 # For use in OBS:
 #
-# RNNOISE_INCLUDE_DIR
+# * RNNOISE_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -46,8 +48,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Librnnoise DEFAULT_MSG RNNOISE_LIB
-                                  RNNOISE_INCLUDE_DIR)
+find_package_handle_standard_args(Librnnoise DEFAULT_MSG RNNOISE_LIB RNNOISE_INCLUDE_DIR)
 mark_as_advanced(RNNOISE_INCLUDE_DIR RNNOISE_LIB)
 
 if(LIBRNNOISE_FOUND)
@@ -57,18 +58,15 @@ if(LIBRNNOISE_FOUND)
   if(NOT TARGET Librnnoise::Librnnoise)
     if(IS_ABSOLUTE "${LIBRNNOISE_LIBRARIES}")
       add_library(Librnnoise::Librnnoise UNKNOWN IMPORTED)
-      set_target_properties(
-        Librnnoise::Librnnoise PROPERTIES IMPORTED_LOCATION
-                                          "${LIBRNNOISE_LIBRARIES}")
+      set_target_properties(Librnnoise::Librnnoise PROPERTIES IMPORTED_LOCATION
+                                                              "${LIBRNNOISE_LIBRARIES}")
     else()
       add_library(Librnnoise::Librnnoise INTERFACE IMPORTED)
-      set_target_properties(
-        Librnnoise::Librnnoise PROPERTIES IMPORTED_LIBNAME
-                                          "${LIBRNNOISE_LIBRARIES}")
+      set_target_properties(Librnnoise::Librnnoise PROPERTIES IMPORTED_LIBNAME
+                                                              "${LIBRNNOISE_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Librnnoise::Librnnoise PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                        "${LIBRNNOISE_INCLUDE_DIRS}")
+    set_target_properties(Librnnoise::Librnnoise PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                            "${LIBRNNOISE_INCLUDE_DIRS}")
   endif()
 endif()

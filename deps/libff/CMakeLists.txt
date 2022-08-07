@@ -49,8 +49,7 @@ else(WIN32)
 endif(WIN32)
 
 add_library(libff STATIC ${libff_HEADERS} ${libff_SOURCES})
-set_target_properties(libff PROPERTIES FOLDER "deps" POSITION_INDEPENDENT_CODE
-                                                     ON)
+set_target_properties(libff PROPERTIES FOLDER "deps" POSITION_INDEPENDENT_CODE ON)
 
 target_include_directories(libff PUBLIC .)
 

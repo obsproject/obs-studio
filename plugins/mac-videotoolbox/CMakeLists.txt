@@ -7,8 +7,7 @@ find_library(COREVIDEO CoreVideo)
 find_library(VIDEOTOOLBOX VideoToolbox)
 find_library(COREMEDIA CoreMedia)
 
-mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREVIDEO VIDEOTOOLBOX
-                 COREMEDIA)
+mark_as_advanced(AVFOUNDATION COCOA COREFOUNDATION COREVIDEO VIDEOTOOLBOX COREMEDIA)
 
 add_library(mac-videotoolbox MODULE)
 add_library(OBS::mac-videotoolbox ALIAS mac-videotoolbox)

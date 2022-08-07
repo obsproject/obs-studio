@@ -6,7 +6,7 @@
 #
 # For use in OBS:
 #
-# DETOURS_INCLUDE_DIR
+# * DETOURS_INCLUDE_DIR
 
 find_package(PkgConfig QUIET)
 if(PKG_CONFIG_FOUND)
@@ -48,8 +48,7 @@ find_library(
     ../bin)
 
 include(FindPackageHandleStandardArgs)
-find_package_handle_standard_args(Detours DEFAULT_MSG DETOURS_LIB
-                                  DETOURS_INCLUDE_DIR)
+find_package_handle_standard_args(Detours DEFAULT_MSG DETOURS_LIB DETOURS_INCLUDE_DIR)
 mark_as_advanced(DETOURS_INCLUDE_DIR DETOURS_LIB)
 
 if(DETOURS_FOUND)
@@ -59,17 +58,14 @@ if(DETOURS_FOUND)
   if(NOT TARGET Detours::Detours)
     if(IS_ABSOLUTE "${DETOURS_LIBRARIES}")
       add_library(Detours::Detours UNKNOWN IMPORTED)
-      set_target_properties(Detours::Detours PROPERTIES IMPORTED_LOCATION
-                                                        "${DETOURS_LIBRARIES}")
+      set_target_properties(Detours::Detours PROPERTIES IMPORTED_LOCATION "${DETOURS_LIBRARIES}")
     else()
       add_library(Detours::Detours INTERFACE IMPORTED)
-      set_target_properties(Detours::Detours PROPERTIES IMPORTED_LIBNAME
-                                                        "${DETOURS_LIBRARIES}")
+      set_target_properties(Detours::Detours PROPERTIES IMPORTED_LIBNAME "${DETOURS_LIBRARIES}")
     endif()
 
-    set_target_properties(
-      Detours::Detours PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                  "${DETOURS_INCLUDE_DIRS}")
+    set_target_properties(Detours::Detours PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
+                                                      "${DETOURS_INCLUDE_DIRS}")
   endif()
 
 endif()

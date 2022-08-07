@@ -71,8 +71,7 @@ target_include_directories(obs-scripting PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}
 
 if(OS_WINDOWS)
   set(MODULE_DESCRIPTION "OBS Studio scripting module")
-  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in
-                 obs-scripting.rc)
+  configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/windows/obs-module.rc.in obs-scripting.rc)
 
   target_sources(obs-scripting PRIVATE obs-scripting.rc)
 
@@ -95,8 +94,8 @@ if(TARGET Luajit::Luajit)
     OUTPUT swig/swigluarun.h
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
     PRE_BUILD
-    COMMAND ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE}
-            -lua -external-runtime swig/swigluarun.h
+    COMMAND ${CMAKE_COMMAND} -E env "SWIG_LIB=${SWIG_DIR}" ${SWIG_EXECUTABLE} -lua -external-runtime
+            swig/swigluarun.h
     COMMENT "obs-scripting - generating Luajit SWIG interface headers")
 
   set_source_files_properties(swig/swigluarun.h PROPERTIES GENERATED ON)
@@ -104,9 +103,8 @@ if(TARGET Luajit::Luajit)
   target_link_libraries(obs-scripting PRIVATE Luajit::Luajit)
 
   target_sources(
-    obs-scripting
-    PRIVATE obs-scripting-lua.c obs-scripting-lua.h obs-scripting-lua-source.c
-            ${CMAKE_CURRENT_BINARY_DIR}/swig/swigluarun.h)
+    obs-scripting PRIVATE obs-scripting-lua.c obs-scripting-lua.h obs-scripting-lua-source.c
+                          ${CMAKE_CURRENT_BINARY_DIR}/swig/swigluarun.h)
 
   target_include_directories(obs-scripting PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
 
@@ -135,8 +133,7 @@ if(TARGET Python::Python)
 
   target_sources(
     obs-scripting
-    PRIVATE obs-scripting-python.c obs-scripting-python.h
-            obs-scripting-python-import.h
+    PRIVATE obs-scripting-python.c obs-scripting-python.h obs-scripting-python-import.h
             ${CMAKE_CURRENT_BINARY_DIR}/swig/swigpyrun.h)
 
   target_include_directories(obs-scripting PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
@@ -177,7 +174,6 @@ endif()
 configure_file(${CMAKE_CURRENT_SOURCE_DIR}/obs-scripting-config.h.in
                ${CMAKE_BINARY_DIR}/config/obs-scripting-config.h)
 
-target_sources(obs-scripting
-               PUBLIC ${CMAKE_BINARY_DIR}/config/obs-scripting-config.h)
+target_sources(obs-scripting PUBLIC ${CMAKE_BINARY_DIR}/config/obs-scripting-config.h)
 
 setup_binary_target(obs-scripting)

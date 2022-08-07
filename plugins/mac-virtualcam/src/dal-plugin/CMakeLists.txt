@@ -32,20 +32,17 @@ target_sources(
           Logging.h
           ${CMAKE_CURRENT_SOURCE_DIR}/../common/MachProtocol.h)
 
-target_include_directories(
-  mac-dal-plugin
-  PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../common")
+target_include_directories(mac-dal-plugin
+                           PRIVATE "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>/../common")
 
 target_compile_options(mac-dal-plugin PRIVATE -fobjc-arc -fobjc-weak)
 
-target_link_libraries(
-  mac-dal-plugin PRIVATE ${COCOA} ${COREMEDIA} ${COREMEDIAIO} ${COREVIDEO}
-                         ${IOSURFACE})
+target_link_libraries(mac-dal-plugin PRIVATE ${COCOA} ${COREMEDIA} ${COREMEDIAIO} ${COREVIDEO}
+                                             ${IOSURFACE})
 
 set(MACOSX_PLUGIN_BUNDLE_TYPE "BNDL")
 target_sources(mac-dal-plugin PRIVATE placeholder.png)
-set_source_files_properties(placeholder.png PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                       "Resources")
+set_source_files_properties(placeholder.png PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
 source_group("Resources" FILES placeholder.png)
 
 set_target_properties(

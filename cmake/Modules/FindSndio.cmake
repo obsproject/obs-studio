@@ -1,5 +1,5 @@
-# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying
-# file Copyright.txt or https://cmake.org/licensing for details.
+# Distributed under the OSI-approved BSD 3-Clause License.  See accompanying file Copyright.txt or
+# https://cmake.org/licensing for details.
 
 #[=======================================================================[.rst:
 FindSndio
@@ -58,9 +58,8 @@ endif()
 if(Sndio_FOUND AND NOT TARGET Sndio::Sndio)
   add_library(Sndio::Sndio UNKNOWN IMPORTED)
   set_target_properties(
-    Sndio::Sndio
-    PROPERTIES IMPORTED_LOCATION "${Sndio_LIBRARY}"
-               INTERFACE_INCLUDE_DIRECTORIES "${Sndio_INCLUDE_DIR}")
+    Sndio::Sndio PROPERTIES IMPORTED_LOCATION "${Sndio_LIBRARY}" INTERFACE_INCLUDE_DIRECTORIES
+                                                                 "${Sndio_INCLUDE_DIR}")
 endif()
 
 mark_as_advanced(Sndio_INCLUDE_DIR Sndio_LIBRARY)

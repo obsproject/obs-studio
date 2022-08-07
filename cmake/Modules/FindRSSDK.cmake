@@ -1,10 +1,12 @@
 # Once done these will be defined:
 #
-# RSSDK_FOUND RSSDK_INCLUDE_DIRS RSSDK_LIBRARIES
+# * RSSDK_FOUND
+# * RSSDK_INCLUDE_DIRS
+# * RSSDK_LIBRARIES
 #
 # For use in OBS:
 #
-# RSSDK_INCLUDE_DIR
+# * RSSDK_INCLUDE_DIR
 
 if(CMAKE_SIZEOF_VOID_P EQUAL 8)
   set(_RSSDK_lib_dir "x64")
@@ -35,15 +37,12 @@ if(RSSDK_FOUND)
   if(NOT TARGET RSS::SDK)
     if(IS_ABSOLUTE "${RSSDK_LIBRARIES}")
       add_library(RSS:SDK UNKNOWN IMPORTED)
-      set_target_properties(RSS:SDK PROPERTIES IMPORTED_LOCATION
-                                               "${RSSDK_LIBRARIES}")
+      set_target_properties(RSS:SDK PROPERTIES IMPORTED_LOCATION "${RSSDK_LIBRARIES}")
     else()
       add_library(RSS:SDK INTERFACE IMPORTED)
-      set_target_properties(RSS:SDK PROPERTIES IMPORTED_LIBNAME
-                                               "${RSSDK_LIBRARIES}")
+      set_target_properties(RSS:SDK PROPERTIES IMPORTED_LIBNAME "${RSSDK_LIBRARIES}")
     endif()
 
-    set_target_properties(RSS:SDK PROPERTIES INTERFACE_INCLUDE_DIRECTORIES
-                                             "${RSSDK_INCLUDE_DIRS}")
+    set_target_properties(RSS:SDK PROPERTIES INTERFACE_INCLUDE_DIRECTORIES "${RSSDK_INCLUDE_DIRS}")
   endif()
 endif()
