@@ -15,6 +15,12 @@ if(OS_WINDOWS AND MSVC)
     )
   endif()
 
+  # CMake 3.24 introduces a bug mistakenly interpreting MSVC as supporting
+  # `-pthread`
+  if(${CMAKE_VERSION} VERSION_EQUAL "3.24.0")
+    set(THREADS_HAVE_PTHREAD_ARG OFF)
+  endif()
+
   # Check for Win SDK version 10.0.20348 or above
   obs_status(
     STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
