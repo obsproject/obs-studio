@@ -433,7 +433,7 @@ obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
 	obs_property_int_set_suffix(p, " Kbps");
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			       1, 30, 1);
+			       1, 51, 1);
 
 	p = obs_properties_add_int(props, "keyint_sec",
 				   obs_module_text("KeyframeIntervalSec"), 0,
