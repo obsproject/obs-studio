@@ -339,10 +339,6 @@ void sample_encoded_callback(void *data, void *source, OSStatus status,
 	CFRelease(pixbuf);
 }
 #define ENCODER_ID kVTVideoEncoderSpecification_EncoderID
-#define ENABLE_HW_ACCEL \
-	kVTVideoEncoderSpecification_EnableHardwareAcceleratedVideoEncoder
-#define REQUIRE_HW_ACCEL \
-	kVTVideoEncoderSpecification_RequireHardwareAcceleratedVideoEncoder
 static inline CFMutableDictionaryRef
 create_encoder_spec(const char *vt_encoder_id)
 {
@@ -354,9 +350,6 @@ create_encoder_spec(const char *vt_encoder_id)
 		CFStringCreateWithFileSystemRepresentation(NULL, vt_encoder_id);
 	CFDictionaryAddValue(encoder_spec, ENCODER_ID, id);
 	CFRelease(id);
-
-	CFDictionaryAddValue(encoder_spec, ENABLE_HW_ACCEL, kCFBooleanTrue);
-	CFDictionaryAddValue(encoder_spec, REQUIRE_HW_ACCEL, kCFBooleanFalse);
 
 	return encoder_spec;
 }
@@ -392,8 +385,6 @@ create_prores_encoder_spec(CMVideoCodecType target_codec_type,
 	return encoder_spec;
 }
 #undef ENCODER_ID
-#undef REQUIRE_HW_ACCEL
-#undef ENABLE_HW_ACCEL
 
 static inline CFMutableDictionaryRef create_pixbuf_spec(struct vt_encoder *enc)
 {
