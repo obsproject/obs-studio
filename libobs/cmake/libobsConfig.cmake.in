@@ -1,13 +1,14 @@
 @PACKAGE_INIT@
 
-include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
-check_required_components("@PROJECT_NAME@")
+include(CMakeFindDependencyMacro)
 
 if(MSVC)
-  find_package(w32-pthreads REQUIRED)
+  find_dependency(w32-pthreads REQUIRED)
 endif()
+find_dependency(Threads REQUIRED)
 
-find_package(Threads REQUIRED)
+include("${CMAKE_CURRENT_LIST_DIR}/@TARGETS_EXPORT_NAME@.cmake")
+check_required_components("@PROJECT_NAME@")
 
 set(LIBOBS_PLUGIN_DESTINATION "@PACKAGE_OBS_PLUGIN_DESTINATION@")
 set(LIBOBS_PLUGIN_DATA_DESTINATION "@PACKAGE_OBS_DATA_DESTINATION@/obs-plugins")
