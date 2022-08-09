@@ -1213,7 +1213,6 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	string lpath = path;
 	if (parentPath.empty()) {
-		setStyleSheet(defaultStyleSheet);
 		setPalette(defaultPalette);
 	} else {
 		lpath = parentPath;
