@@ -102,6 +102,7 @@ struct main_params {
 	int max_luminance;
 	char *acodec;
 	char *muxer_settings;
+	int codec_tag;
 };
 
 struct audio_params {
@@ -375,6 +376,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 			return false;
 		if (!get_opt_int(argc, argv, &params->fps_den, "video fps den"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->codec_tag,
+				 "video codec tag"))
+			params->codec_tag = 0;
 	}
 
 	if (params->tracks) {
@@ -445,6 +449,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context = avcodec_alloc_context3(NULL);
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
+	context->codec_tag = ffm->params.codec_tag;
 	context->bit_rate = (int64_t)ffm->params.vbitrate * 1000;
 	context->width = ffm->params.width;
 	context->height = ffm->params.height;
