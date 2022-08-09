@@ -14,15 +14,18 @@
 
 #define VT_LOG(level, format, ...) \
 	blog(level, "[VideoToolbox encoder]: " format, ##__VA_ARGS__)
-#define VT_LOG_ENCODER(encoder, level, format, ...)       \
-	blog(level, "[VideoToolbox %s: 'h264']: " format, \
-	     obs_encoder_get_name(encoder), ##__VA_ARGS__)
-#define VT_BLOG(level, format, ...) \
-	VT_LOG_ENCODER(enc->encoder, level, format, ##__VA_ARGS__)
+#define VT_LOG_ENCODER(encoder, codec_type, level, format, ...) \
+	blog(level, "[VideoToolbox %s: '%s']: " format,         \
+	     obs_encoder_get_name(encoder),                     \
+	     codec_type_to_print_fmt(codec_type), ##__VA_ARGS__)
+#define VT_BLOG(level, format, ...)                                  \
+	VT_LOG_ENCODER(enc->encoder, enc->codec_type, level, format, \
+		       ##__VA_ARGS__)
 
 struct vt_encoder_type_data {
 	const char *disp_name;
 	const char *id;
+	CMVideoCodecType codec_type;
 	bool hardware_accelerated;
 };
 
@@ -42,6 +45,7 @@ struct vt_encoder {
 	uint32_t rc_max_bitrate;
 	float rc_max_bitrate_window;
 	const char *profile;
+	CMVideoCodecType codec_type;
 	bool bframes;
 
 	int vt_pix_fmt;
@@ -53,6 +57,18 @@ struct vt_encoder {
 	DARRAY(uint8_t) packet_data;
 	DARRAY(uint8_t) extra_data;
 };
+
+static const char *codec_type_to_print_fmt(CMVideoCodecType codec_type)
+{
+	switch (codec_type) {
+	case kCMVideoCodecType_H264:
+		return "h264";
+	case kCMVideoCodecType_HEVC:
+		return "hevc";
+	default:
+		return "";
+	}
+}
 
 static void log_osstatus(int log_level, struct vt_encoder *enc,
 			 const char *context, OSStatus code)
@@ -75,16 +91,35 @@ static void log_osstatus(int log_level, struct vt_encoder *enc,
 	CFRelease(err);
 }
 
-static CFStringRef obs_to_vt_profile(const char *profile)
+static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
+				     const char *profile)
 {
-	if (strcmp(profile, "baseline") == 0)
+	if (codec_type == kCMVideoCodecType_H264) {
+		if (strcmp(profile, "baseline") == 0)
+			return kVTProfileLevel_H264_Baseline_AutoLevel;
+		else if (strcmp(profile, "main") == 0)
+			return kVTProfileLevel_H264_Main_AutoLevel;
+		else if (strcmp(profile, "high") == 0)
+			return kVTProfileLevel_H264_High_AutoLevel;
+		else
+			return kVTProfileLevel_H264_Main_AutoLevel;
+#ifdef ENABLE_HEVC
+	} else if (codec_type == kCMVideoCodecType_HEVC) {
+		if (strcmp(profile, "main") == 0)
+			return kVTProfileLevel_HEVC_Main_AutoLevel;
+		if (strcmp(profile, "main10") == 0)
+			return kVTProfileLevel_HEVC_Main10_AutoLevel;
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // macOS 12.3
+		if (__builtin_available(macOS 12.3, *)) {
+			if (strcmp(profile, "main42210") == 0)
+				return kVTProfileLevel_HEVC_Main42210_AutoLevel;
+		}
+#endif // macOS 12.3
+		return kVTProfileLevel_HEVC_Main_AutoLevel;
+#endif // ENABLE_HEVC
+	} else {
 		return kVTProfileLevel_H264_Baseline_AutoLevel;
-	else if (strcmp(profile, "main") == 0)
-		return kVTProfileLevel_H264_Main_AutoLevel;
-	else if (strcmp(profile, "high") == 0)
-		return kVTProfileLevel_H264_High_AutoLevel;
-	else
-		return kVTProfileLevel_H264_Main_AutoLevel;
+	}
 }
 
 static CFStringRef obs_to_vt_colorspace(enum video_colorspace cs)
@@ -346,9 +381,9 @@ static bool create_encoder(struct vt_encoder *enc)
 	CFDictionaryRef pixbuf_spec = create_pixbuf_spec(enc);
 
 	STATUS_CHECK(VTCompressionSessionCreate(
-		kCFAllocatorDefault, enc->width, enc->height,
-		kCMVideoCodecType_H264, encoder_spec, pixbuf_spec, NULL,
-		&sample_encoded_callback, enc->queue, &s));
+		kCFAllocatorDefault, enc->width, enc->height, enc->codec_type,
+		encoder_spec, pixbuf_spec, NULL, &sample_encoded_callback,
+		enc->queue, &s));
 
 	CFRelease(encoder_spec);
 	CFRelease(pixbuf_spec);
@@ -367,9 +402,17 @@ static bool create_encoder(struct vt_encoder *enc)
 	if (b != NULL)
 		CFRelease(b);
 
-	STATUS_CHECK(session_set_prop_int(
+	// This can fail when using GPU HEVC hardware encoding
+	code = session_set_prop_int(
 		s, kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration,
-		enc->keyint));
+		enc->keyint);
+	if (code != noErr)
+		log_osstatus(
+			LOG_WARNING, enc,
+			"setting kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration failed, "
+			"keyframe interval might be incorrect",
+			code);
+
 	STATUS_CHECK(session_set_prop_int(
 		s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
 		enc->keyint * ((float)enc->fps_num / enc->fps_den)));
@@ -391,7 +434,8 @@ static bool create_encoder(struct vt_encoder *enc)
 			code);
 
 	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
-				      obs_to_vt_profile(enc->profile)));
+				      obs_to_vt_profile(enc->codec_type,
+							enc->profile)));
 
 	STATUS_CHECK(session_set_bitrate(s, enc->rate_control, enc->bitrate,
 					 enc->quality, enc->limit_bitrate,
@@ -447,14 +491,16 @@ static void dump_encoder_info(struct vt_encoder *enc)
 		"\trc_max_bitrate:        %d (kbps)\n"
 		"\trc_max_bitrate_window: %f (s)\n"
 		"\thw_enc:                %s\n"
-		"\tprofile:               %s\n",
+		"\tprofile:               %s\n"
+		"\tcodec_type:            %.4s\n",
 		enc->vt_encoder_id, enc->rate_control, enc->bitrate,
 		enc->quality, enc->fps_num, enc->fps_den, enc->width,
 		enc->height, enc->keyint, enc->limit_bitrate ? "on" : "off",
 		enc->rc_max_bitrate, enc->rc_max_bitrate_window,
 		enc->hw_enc ? "on" : "off",
 		(enc->profile != NULL && !!strlen(enc->profile)) ? enc->profile
-								 : "default");
+								 : "default",
+		codec_type_to_print_fmt(enc->codec_type));
 }
 
 static bool set_video_format(struct vt_encoder *enc, enum video_format format,
@@ -506,6 +552,16 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->rc_max_bitrate_window =
 		obs_data_get_double(settings, "max_bitrate_window");
 	enc->bframes = obs_data_get_bool(settings, "bframes");
+
+	const char *codec = obs_encoder_get_codec(enc->encoder);
+	if (strcmp(codec, "h264") == 0) {
+		enc->codec_type = kCMVideoCodecType_H264;
+#ifdef ENABLE_HEVC
+	} else if (strcmp(codec, "hevc") == 0) {
+		enc->codec_type = kCMVideoCodecType_HEVC;
+#endif
+	}
+
 	return true;
 }
 
@@ -626,8 +682,17 @@ static bool handle_keyframe(struct vt_encoder *enc,
 	size_t param_size;
 
 	for (size_t i = 0; i < param_count; i++) {
-		code = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-			format_desc, i, &param, &param_size, NULL, NULL);
+		if (enc->codec_type == kCMVideoCodecType_H264) {
+			code = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+				format_desc, i, &param, &param_size, NULL,
+				NULL);
+#ifdef ENABLE_HEVC
+		} else if (enc->codec_type == kCMVideoCodecType_HEVC) {
+			code = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+				format_desc, i, &param, &param_size, NULL,
+				NULL);
+#endif
+		}
 		if (code != noErr) {
 			log_osstatus(LOG_ERROR, enc,
 				     "getting NAL parameter "
@@ -659,8 +724,17 @@ static bool convert_sample_to_annexb(struct vt_encoder *enc,
 
 	size_t param_count;
 	int nal_length_bytes;
-	code = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
-		format_desc, 0, NULL, NULL, &param_count, &nal_length_bytes);
+	if (enc->codec_type == kCMVideoCodecType_H264) {
+		code = CMVideoFormatDescriptionGetH264ParameterSetAtIndex(
+			format_desc, 0, NULL, NULL, &param_count,
+			&nal_length_bytes);
+#ifdef ENABLE_HEVC
+	} else if (enc->codec_type == kCMVideoCodecType_HEVC) {
+		code = CMVideoFormatDescriptionGetHEVCParameterSetAtIndex(
+			format_desc, 0, NULL, NULL, &param_count,
+			&nal_length_bytes);
+#endif
+	}
 	// it is not clear what errors this function can return
 	// so we check the two most reasonable
 	if (code == kCMFormatDescriptionBridgeError_InvalidParameter ||
@@ -887,6 +961,14 @@ static const char *vt_getname(void *data)
 		return obs_module_text("VTH264EncHW");
 	} else if (strcmp("Apple H.264 (SW)", type_data->disp_name) == 0) {
 		return obs_module_text("VTH264EncSW");
+#ifdef ENABLE_HEVC
+	} else if (strcmp("Apple HEVC (HW)", type_data->disp_name) == 0) {
+		return obs_module_text("VTHEVCEncHW");
+	} else if (strcmp("Apple HEVC (AVE)", type_data->disp_name) == 0) {
+		return obs_module_text("VTHEVCEncT2");
+	} else if (strcmp("Apple HEVC (SW)", type_data->disp_name) == 0) {
+		return obs_module_text("VTHEVCEncSW");
+#endif
 	}
 	return type_data->disp_name;
 }
@@ -936,7 +1018,7 @@ static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 	return true;
 }
 
-static obs_properties_t *vt_properties(void *unused, void *data)
+static obs_properties_t *vt_properties_h26x(void *unused, void *data)
 {
 	UNUSED_PARAMETER(unused);
 	struct vt_encoder_type_data *type_data = data;
@@ -992,9 +1074,21 @@ static obs_properties_t *vt_properties(void *unused, void *data)
 	p = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, "baseline", "baseline");
-	obs_property_list_add_string(p, "main", "main");
-	obs_property_list_add_string(p, "high", "high");
+
+	if (type_data->codec_type == kCMVideoCodecType_H264) {
+		obs_property_list_add_string(p, "baseline", "baseline");
+		obs_property_list_add_string(p, "main", "main");
+		obs_property_list_add_string(p, "high", "high");
+#ifdef ENABLE_HEVC
+	} else if (type_data->codec_type == kCMVideoCodecType_HEVC) {
+		obs_property_list_add_string(p, "main", "main");
+		obs_property_list_add_string(p, "main10", "main10");
+		if (__builtin_available(macOS 12.3, *)) {
+			obs_property_list_add_string(p, "main 4:2:2 10",
+						     "main42210");
+		}
+#endif
+	}
 
 	obs_properties_add_bool(props, "bframes", TEXT_BFRAMES);
 
@@ -1040,13 +1134,11 @@ bool obs_module_load(void)
 {
 	struct obs_encoder_info info = {
 		.type = OBS_ENCODER_VIDEO,
-		.codec = "h264",
 		.get_name = vt_getname,
 		.create = vt_create,
 		.destroy = vt_destroy,
 		.encode = vt_encode,
 		.update = vt_update,
-		.get_properties2 = vt_properties,
 		.get_defaults2 = vt_defaults,
 		.get_extra_data = vt_extra_data,
 		.free_type_data = vt_free_type_data,
@@ -1067,12 +1159,26 @@ bool obs_module_load(void)
 	char *name = bzalloc(name##_len + 1);                             \
 	CFStringGetFileSystemRepresentation(name##_ref, name, name##_len);
 
-		VT_DICTSTR(kVTVideoEncoderList_CodecName, codec_name);
-		if (strcmp("H.264", codec_name) != 0) {
-			bfree(codec_name);
+		CMVideoCodecType codec_type = 0;
+		{
+			CFNumberRef codec_type_num = CFDictionaryGetValue(
+				encoder_dict, kVTVideoEncoderList_CodecType);
+			CFNumberGetValue(codec_type_num, kCFNumberSInt32Type,
+					 &codec_type);
+		}
+
+		switch (codec_type) {
+		case kCMVideoCodecType_H264:
+			info.codec = "h264";
+			break;
+#ifdef ENABLE_HEVC
+		case kCMVideoCodecType_HEVC:
+			info.codec = "hevc";
+			break;
+#endif
+		default:
 			continue;
 		}
-		bfree(codec_name);
 		VT_DICTSTR(kVTVideoEncoderList_EncoderID, id);
 		VT_DICTSTR(kVTVideoEncoderList_DisplayName, disp_name);
 
@@ -1089,8 +1195,10 @@ bool obs_module_load(void)
 			bzalloc(sizeof(struct vt_encoder_type_data));
 		type_data->disp_name = disp_name;
 		type_data->id = id;
+		type_data->codec_type = codec_type;
 		type_data->hardware_accelerated = hardware_accelerated;
 		info.type_data = type_data;
+		info.get_properties2 = vt_properties_h26x;
 
 		obs_register_encoder(&info);
 #undef VT_DICTSTR
