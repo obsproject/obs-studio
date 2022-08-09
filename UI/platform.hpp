@@ -94,7 +94,6 @@ typedef enum {
 	kPermissionAuthorized = 3,
 } MacPermissionStatus;
 
-void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
 bool isInBundle();
 void InstallNSApplicationSubclass();

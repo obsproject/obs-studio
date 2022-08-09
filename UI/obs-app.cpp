@@ -506,9 +506,6 @@ bool OBSApp::InitGlobalConfigDefaults()
 #ifdef __APPLE__
 	config_set_default_bool(globalConfig, "General", "BrowserHWAccel",
 				true);
-	config_set_default_bool(globalConfig, "Video", "DisableOSXVSync", true);
-	config_set_default_bool(globalConfig, "Video", "ResetOSXVSyncOnExit",
-				true);
 #endif
 
 	config_set_default_bool(globalConfig, "BasicWindow",
@@ -1278,15 +1275,6 @@ OBSApp::~OBSApp()
 		DisableAudioDucking(false);
 #endif
 
-#ifdef __APPLE__
-	bool vsyncDisabled =
-		config_get_bool(globalConfig, "Video", "DisableOSXVSync");
-	bool resetVSync =
-		config_get_bool(globalConfig, "Video", "ResetOSXVSyncOnExit");
-	if (vsyncDisabled && resetVSync)
-		EnableOSXVSync(true);
-#endif
-
 	os_inhibit_sleep_set_active(sleepInhibitor, false);
 	os_inhibit_sleep_destroy(sleepInhibitor);
 
@@ -1418,11 +1406,6 @@ void OBSApp::AppInit()
 		config_get_bool(globalConfig, "Audio", "DisableAudioDucking");
 	if (disableAudioDucking)
 		DisableAudioDucking(true);
-#endif
-
-#ifdef __APPLE__
-	if (config_get_bool(globalConfig, "Video", "DisableOSXVSync"))
-		EnableOSXVSync(false);
 #endif
 
 	UpdateHotkeyFocusSetting(false);

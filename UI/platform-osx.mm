@@ -165,37 +165,6 @@ bool SetDisplayAffinitySupported(void)
 	return false;
 }
 
-typedef void (*set_int_t)(int);
-
-void EnableOSXVSync(bool enable)
-{
-	static bool initialized = false;
-	static bool valid = false;
-	static set_int_t set_debug_options = nullptr;
-	static set_int_t deferred_updates = nullptr;
-
-	if (!initialized) {
-		void *quartzCore = dlopen("/System/Library/Frameworks/"
-					  "QuartzCore.framework/QuartzCore",
-					  RTLD_LAZY);
-		if (quartzCore) {
-			set_debug_options = (set_int_t)dlsym(
-				quartzCore, "CGSSetDebugOptions");
-			deferred_updates = (set_int_t)dlsym(
-				quartzCore, "CGSDeferredUpdates");
-
-			valid = set_debug_options && deferred_updates;
-		}
-
-		initialized = true;
-	}
-
-	if (valid) {
-		set_debug_options(enable ? 0 : 0x08000000);
-		deferred_updates(enable ? 1 : 0);
-	}
-}
-
 void EnableOSXDockIcon(bool enable)
 {
 	if (enable)

@@ -6643,7 +6643,7 @@
                     <widget class="QLabel" name="label_30">
                      <property name="minimumSize">
                       <size>
-                       <width>0</width>
+                       <width>170</width>
                        <height>0</height>
                       </size>
                      </property>
@@ -6776,49 +6776,6 @@
                       </widget>
                      </item>
                     </layout>
-                   </item>
-                   <item row="5" column="1">
-                    <layout class="QHBoxLayout" name="horizontalLayout_18">
-                     <property name="leftMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="topMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="rightMargin">
-                      <number>0</number>
-                     </property>
-                     <property name="bottomMargin">
-                      <number>0</number>
-                     </property>
-                     <item>
-                      <widget class="QCheckBox" name="disableOSXVSync">
-                       <property name="text">
-                        <string>DisableOSXVSync</string>
-                       </property>
-                      </widget>
-                     </item>
-                     <item>
-                      <widget class="QCheckBox" name="resetOSXVSync">
-                       <property name="text">
-                        <string>ResetOSXVSyncOnExit</string>
-                       </property>
-                      </widget>
-                     </item>
-                    </layout>
-                   </item>
-                   <item row="6" column="0">
-                    <spacer name="horizontalSpacer_12">
-                     <property name="orientation">
-                      <enum>Qt::Horizontal</enum>
-                     </property>
-                     <property name="sizeHint" stdset="0">
-                      <size>
-                       <width>170</width>
-                       <height>20</height>
-                      </size>
-                     </property>
-                    </spacer>
                    </item>
                   </layout>
                  </widget>
@@ -7522,8 +7479,6 @@
   <tabstop>colorFormat</tabstop>
   <tabstop>colorSpace</tabstop>
   <tabstop>colorRange</tabstop>
-  <tabstop>disableOSXVSync</tabstop>
-  <tabstop>resetOSXVSync</tabstop>
   <tabstop>filenameFormatting</tabstop>
   <tabstop>overwriteIfExists</tabstop>
   <tabstop>autoRemux</tabstop>

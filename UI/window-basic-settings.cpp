@@ -539,8 +539,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->colorRange,           COMBO_CHANGED,  ADV_CHANGED);
 	HookWidget(ui->sdrWhiteLevel,        SCROLL_CHANGED, ADV_CHANGED);
 	HookWidget(ui->hdrNominalPeakLevel,  SCROLL_CHANGED, ADV_CHANGED);
-	HookWidget(ui->disableOSXVSync,      CHECK_CHANGED,  ADV_CHANGED);
-	HookWidget(ui->resetOSXVSync,        CHECK_CHANGED,  ADV_CHANGED);
 	if (obs_audio_monitoring_available())
 		HookWidget(ui->monitoringDevice,     COMBO_CHANGED,  ADV_CHANGED);
 #ifdef _WIN32
@@ -666,13 +664,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->sourcesGroup = nullptr;
 #endif
 	ui->disableAudioDucking = nullptr;
-#endif
-
-#ifndef __APPLE__
-	delete ui->disableOSXVSync;
-	delete ui->resetOSXVSync;
-	ui->disableOSXVSync = nullptr;
-	ui->resetOSXVSync = nullptr;
 #endif
 
 	connect(ui->streamDelaySec, SIGNAL(valueChanged(int)), this,
@@ -2673,15 +2664,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 		ui->advancedVideoContainer->setEnabled(false);
 	}
 
-#ifdef __APPLE__
-	bool disableOSXVSync = config_get_bool(App()->GlobalConfig(), "Video",
-					       "DisableOSXVSync");
-	bool resetOSXVSync = config_get_bool(App()->GlobalConfig(), "Video",
-					     "ResetOSXVSyncOnExit");
-	ui->disableOSXVSync->setChecked(disableOSXVSync);
-	ui->resetOSXVSync->setChecked(resetOSXVSync);
-	ui->resetOSXVSync->setEnabled(disableOSXVSync);
-#elif _WIN32
+#ifdef _WIN32
 	bool disableAudioDucking = config_get_bool(
 		App()->GlobalConfig(), "Audio", "DisableAudioDucking");
 	ui->disableAudioDucking->setChecked(disableAudioDucking);
@@ -3338,19 +3321,6 @@ void OBSBasicSettings::SaveAdvancedSettings()
 		config_set_string(App()->GlobalConfig(), "General",
 				  "HotkeyFocusType", QT_TO_UTF8(str));
 	}
-
-#ifdef __APPLE__
-	if (WidgetChanged(ui->disableOSXVSync)) {
-		bool disable = ui->disableOSXVSync->isChecked();
-		config_set_bool(App()->GlobalConfig(), "Video",
-				"DisableOSXVSync", disable);
-		EnableOSXVSync(!disable);
-	}
-	if (WidgetChanged(ui->resetOSXVSync))
-		config_set_bool(App()->GlobalConfig(), "Video",
-				"ResetOSXVSyncOnExit",
-				ui->resetOSXVSync->isChecked());
-#endif
 
 	SaveComboData(ui->colorFormat, "Video", "ColorFormat");
 	SaveComboData(ui->colorSpace, "Video", "ColorSpace");
@@ -5283,16 +5253,6 @@ void OBSBasicSettings::SimpleRecordingQualityLosslessWarning(int idx)
 	}
 
 	lastSimpleRecQualityIdx = idx;
-}
-
-void OBSBasicSettings::on_disableOSXVSync_clicked()
-{
-#ifdef __APPLE__
-	if (!loading) {
-		bool disable = ui->disableOSXVSync->isChecked();
-		ui->resetOSXVSync->setEnabled(disable);
-	}
-#endif
 }
 
 QIcon OBSBasicSettings::GetGeneralIcon() const
