@@ -938,6 +938,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
+
+	connect(App(), &OBSApp::StyleChanged, this,
+		&OBSBasicSettings::UpdatePropertiesViewSizing);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -1899,6 +1902,8 @@ OBSBasicSettings::CreateEncoderPropertyView(const char *encoder,
 	view->setFrameShape(QFrame::NoFrame);
 	view->setSizePolicy(QSizePolicy::Preferred, QSizePolicy::Minimum);
 	view->setProperty("changed", QVariant(changed));
+	view->setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
+	view->setWidgetResizable(true);
 	QObject::connect(view, SIGNAL(Changed()), this, SLOT(OutputsChanged()));
 
 	return view;
@@ -5437,4 +5442,12 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
 #endif
+}
+
+void OBSBasicSettings::UpdatePropertiesViewSizing()
+{
+	QList<OBSPropertiesView *> list = findChildren<OBSPropertiesView *>();
+
+	foreach(OBSPropertiesView * view, list)
+		view->setFixedHeight(view->size().height());
 }

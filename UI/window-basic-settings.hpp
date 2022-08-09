@@ -466,6 +466,7 @@ private slots:
 	void SetAdvancedIcon(const QIcon &icon);
 
 	void UseStreamKeyAdvClicked();
+	void UpdatePropertiesViewSizing();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
