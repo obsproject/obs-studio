@@ -80,7 +80,7 @@ void dc_capture_init(struct dc_capture *capture, int x, int y, uint32_t width,
 				capture->old_bmp = SelectObject(capture->hdc,
 								capture->bmp);
 			} else {
-				DeleteDC(capture->hdc);
+				DeleteDC(hdc);
 			}
 		}
 	}
