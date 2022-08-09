@@ -142,6 +142,14 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 	video_t *video = obs_get_video();
 	const struct video_output_info *info = video_output_get_info(video);
 
+	int codec_tag = (int)obs_data_get_int(settings, "codec_type");
+#if __BYTE_ORDER == __LITTLE_ENDIAN
+	codec_tag = ((codec_tag >> 24) & 0x000000FF) |
+		    ((codec_tag << 8) & 0x00FF0000) |
+		    ((codec_tag >> 8) & 0x0000FF00) |
+		    ((codec_tag << 24) & 0xFF000000);
+#endif
+
 	obs_data_release(settings);
 
 	enum AVColorPrimaries pri = AVCOL_PRI_UNSPECIFIED;
@@ -184,12 +192,12 @@ static void add_video_encoder_params(struct ffmpeg_muxer *stream,
 			? (int)obs_get_video_hdr_nominal_peak_level()
 			: ((trc == AVCOL_TRC_ARIB_STD_B67) ? 1000 : 0);
 
-	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d ",
+	dstr_catf(cmd, "%s %d %d %d %d %d %d %d %d %d %d %d ",
 		  obs_encoder_get_codec(vencoder), bitrate,
 		  obs_output_get_width(stream->output),
 		  obs_output_get_height(stream->output), (int)pri, (int)trc,
 		  (int)spc, (int)range, max_luminance, (int)info->fps_num,
-		  (int)info->fps_den);
+		  (int)info->fps_den, (int)codec_tag);
 }
 
 static void add_audio_encoder_params(struct dstr *cmd, obs_encoder_t *aencoder)
