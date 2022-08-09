@@ -29,6 +29,13 @@ struct vt_encoder_type_data {
 	bool hardware_accelerated;
 };
 
+struct vt_prores_encoder_data {
+	FourCharCode codec_type;
+	CFStringRef encoder_id;
+};
+static DARRAY(struct vt_prores_encoder_data) vt_prores_hardware_encoder_list;
+static DARRAY(struct vt_prores_encoder_data) vt_prores_software_encoder_list;
+
 struct vt_encoder {
 	obs_encoder_t *encoder;
 
@@ -65,6 +72,14 @@ static const char *codec_type_to_print_fmt(CMVideoCodecType codec_type)
 		return "h264";
 	case kCMVideoCodecType_HEVC:
 		return "hevc";
+	case kCMVideoCodecType_AppleProRes422Proxy:
+		return "apco";
+	case kCMVideoCodecType_AppleProRes422LT:
+		return "apcs";
+	case kCMVideoCodecType_AppleProRes422:
+		return "apcn";
+	case kCMVideoCodecType_AppleProRes422HQ:
+		return "apch";
 	default:
 		return "";
 	}
@@ -345,6 +360,37 @@ create_encoder_spec(const char *vt_encoder_id)
 
 	return encoder_spec;
 }
+
+static inline CFMutableDictionaryRef
+create_prores_encoder_spec(CMVideoCodecType target_codec_type,
+			   bool hardware_accelerated)
+{
+	CFStringRef encoder_id = NULL;
+
+	size_t size = 0;
+	struct vt_prores_encoder_data *encoder_list = NULL;
+	if (hardware_accelerated) {
+		size = vt_prores_hardware_encoder_list.num;
+		encoder_list = vt_prores_hardware_encoder_list.array;
+	} else {
+		size = vt_prores_software_encoder_list.num;
+		encoder_list = vt_prores_software_encoder_list.array;
+	}
+
+	for (size_t i = 0; i < size; ++i) {
+		if (target_codec_type == encoder_list[i].codec_type) {
+			encoder_id = encoder_list[i].encoder_id;
+		}
+	}
+
+	CFMutableDictionaryRef encoder_spec = CFDictionaryCreateMutable(
+		kCFAllocatorDefault, 1, &kCFTypeDictionaryKeyCallBacks,
+		&kCFTypeDictionaryValueCallBacks);
+
+	CFDictionaryAddValue(encoder_spec, ENCODER_ID, encoder_id);
+
+	return encoder_spec;
+}
 #undef ENCODER_ID
 #undef REQUIRE_HW_ACCEL
 #undef ENABLE_HW_ACCEL
@@ -377,7 +423,19 @@ static bool create_encoder(struct vt_encoder *enc)
 
 	VTCompressionSessionRef s;
 
-	CFDictionaryRef encoder_spec = create_encoder_spec(enc->vt_encoder_id);
+	const char *codec_name = obs_encoder_get_codec(enc->encoder);
+
+	CFDictionaryRef encoder_spec;
+	if (strcmp(codec_name, "prores") == 0) {
+		struct vt_encoder_type_data *type_data =
+			(struct vt_encoder_type_data *)
+				obs_encoder_get_type_data(enc->encoder);
+		encoder_spec = create_prores_encoder_spec(
+			enc->codec_type, type_data->hardware_accelerated);
+	} else {
+		encoder_spec = create_encoder_spec(enc->vt_encoder_id);
+	}
+
 	CFDictionaryRef pixbuf_spec = create_pixbuf_spec(enc);
 
 	STATUS_CHECK(VTCompressionSessionCreate(
@@ -402,26 +460,38 @@ static bool create_encoder(struct vt_encoder *enc)
 	if (b != NULL)
 		CFRelease(b);
 
-	// This can fail when using GPU HEVC hardware encoding
-	code = session_set_prop_int(
-		s, kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration,
-		enc->keyint);
-	if (code != noErr)
-		log_osstatus(
-			LOG_WARNING, enc,
-			"setting kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration failed, "
-			"keyframe interval might be incorrect",
-			code);
+	if (enc->codec_type == kCMVideoCodecType_H264 ||
+	    enc->codec_type == kCMVideoCodecType_HEVC) {
 
-	STATUS_CHECK(session_set_prop_int(
-		s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
-		enc->keyint * ((float)enc->fps_num / enc->fps_den)));
-	STATUS_CHECK(session_set_prop_float(
-		s, kVTCompressionPropertyKey_ExpectedFrameRate,
-		(float)enc->fps_num / enc->fps_den));
-	STATUS_CHECK(session_set_prop(
-		s, kVTCompressionPropertyKey_AllowFrameReordering,
-		enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
+		// This can fail when using GPU hardware encoding
+		code = session_set_prop_int(
+			s,
+			kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration,
+			enc->keyint);
+		if (code != noErr)
+			log_osstatus(
+				LOG_WARNING, enc,
+				"setting kVTCompressionPropertyKey_MaxKeyFrameIntervalDuration failed, "
+				"keyframe interval might be incorrect",
+				code);
+
+		STATUS_CHECK(session_set_prop_int(
+			s, kVTCompressionPropertyKey_MaxKeyFrameInterval,
+			enc->keyint * ((float)enc->fps_num / enc->fps_den)));
+		STATUS_CHECK(session_set_prop_float(
+			s, kVTCompressionPropertyKey_ExpectedFrameRate,
+			(float)enc->fps_num / enc->fps_den));
+		STATUS_CHECK(session_set_prop(
+			s, kVTCompressionPropertyKey_AllowFrameReordering,
+			enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
+		STATUS_CHECK(session_set_prop(
+			s, kVTCompressionPropertyKey_ProfileLevel,
+			obs_to_vt_profile(enc->codec_type, enc->profile)));
+		STATUS_CHECK(session_set_bitrate(
+			s, enc->rate_control, enc->bitrate, enc->quality,
+			enc->limit_bitrate, enc->rc_max_bitrate,
+			enc->rc_max_bitrate_window));
+	}
 
 	// This can fail depending on hardware configuration
 	code = session_set_prop(s, kVTCompressionPropertyKey_RealTime,
@@ -432,15 +502,6 @@ static bool create_encoder(struct vt_encoder *enc)
 			"setting kVTCompressionPropertyKey_RealTime failed, "
 			"frame delay might be increased",
 			code);
-
-	STATUS_CHECK(session_set_prop(s, kVTCompressionPropertyKey_ProfileLevel,
-				      obs_to_vt_profile(enc->codec_type,
-							enc->profile)));
-
-	STATUS_CHECK(session_set_bitrate(s, enc->rate_control, enc->bitrate,
-					 enc->quality, enc->limit_bitrate,
-					 enc->rc_max_bitrate,
-					 enc->rc_max_bitrate_window));
 
 	STATUS_CHECK(session_set_colorspace(s, enc->colorspace));
 
@@ -556,10 +617,15 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	const char *codec = obs_encoder_get_codec(enc->encoder);
 	if (strcmp(codec, "h264") == 0) {
 		enc->codec_type = kCMVideoCodecType_H264;
+		obs_data_set_int(settings, "codec_type", enc->codec_type);
 #ifdef ENABLE_HEVC
 	} else if (strcmp(codec, "hevc") == 0) {
 		enc->codec_type = kCMVideoCodecType_HEVC;
+		obs_data_set_int(settings, "codec_type", enc->codec_type);
 #endif
+	} else {
+		enc->codec_type = (CMVideoCodecType)obs_data_get_int(
+			settings, "codec_type");
 	}
 
 	return true;
@@ -628,6 +694,32 @@ static void packet_put_startcode(struct darray *packet, int size)
 	assert(size == 3 || size == 4);
 
 	packet_put(packet, &annexb_startcode[4 - size], size);
+}
+
+static bool handle_prores_packet(struct vt_encoder *enc,
+				 CMSampleBufferRef buffer)
+{
+	OSStatus err = 0;
+	size_t block_size = 0;
+	uint8_t *block_buf = NULL;
+
+	CMBlockBufferRef block = CMSampleBufferGetDataBuffer(buffer);
+	if (block == NULL) {
+		VT_BLOG(LOG_ERROR,
+			"Failed to get block buffer for ProRes frame.");
+		return false;
+	}
+	err = CMBlockBufferGetDataPointer(block, 0, NULL, &block_size,
+					  (char **)&block_buf);
+	if (err != 0) {
+		VT_BLOG(LOG_ERROR,
+			"Failed to get data buffer pointer for ProRes frame.");
+		return false;
+	}
+
+	packet_put(&enc->packet_data.da, block_buf, block_size);
+
+	return true;
 }
 
 static void convert_block_nals_to_annexb(struct vt_encoder *enc,
@@ -781,6 +873,12 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 			 struct encoder_packet *packet, CMTime off)
 {
 	int type;
+	bool should_edit_nal = false;
+
+	if (enc->codec_type == kCMVideoCodecType_H264 ||
+	    enc->codec_type == kCMVideoCodecType_HEVC) {
+		should_edit_nal = true;
+	}
 
 	CMTime pts = CMSampleBufferGetPresentationTimeStamp(buffer);
 	CMTime dts = CMSampleBufferGetDecodeTimeStamp(buffer);
@@ -794,7 +892,11 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	pts = CMTimeMultiply(pts, enc->fps_num);
 	dts = CMTimeMultiply(dts, enc->fps_num);
 
-	bool keyframe = is_sample_keyframe(buffer);
+	// All ProRes frames are "keyframes"
+	bool keyframe = true;
+	if (should_edit_nal) {
+		keyframe = is_sample_keyframe(buffer);
+	}
 
 	da_resize(enc->packet_data, 0);
 
@@ -803,9 +905,14 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	if (enc->extra_data.num == 0)
 		extra_data = &enc->extra_data.da;
 
-	if (!convert_sample_to_annexb(enc, &enc->packet_data.da, extra_data,
-				      buffer, keyframe))
-		goto fail;
+	if (should_edit_nal) {
+		if (!convert_sample_to_annexb(enc, &enc->packet_data.da,
+					      extra_data, buffer, keyframe))
+			goto fail;
+	} else {
+		if (!handle_prores_packet(enc, buffer))
+			goto fail;
+	}
 
 	packet->type = OBS_ENCODER_VIDEO;
 	packet->pts = (int64_t)(CMTimeGetSeconds(pts));
@@ -814,35 +921,40 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	packet->size = enc->packet_data.num;
 	packet->keyframe = keyframe;
 
-	// VideoToolbox produces packets with priority lower than the RTMP code
-	// expects, which causes it to be unable to recover from frame drops.
-	// Fix this by manually adjusting the priority.
-	uint8_t *start = enc->packet_data.array;
-	uint8_t *end = start + enc->packet_data.num;
-
-	start = (uint8_t *)obs_avc_find_startcode(start, end);
-	while (true) {
-		while (start < end && !*(start++))
-			;
-
-		if (start == end)
-			break;
-
-		type = start[0] & 0x1F;
-		if (type == OBS_NAL_SLICE_IDR || type == OBS_NAL_SLICE) {
-			uint8_t prev_type = (start[0] >> 5) & 0x3;
-			start[0] &= ~(3 << 5);
-
-			if (type == OBS_NAL_SLICE_IDR)
-				start[0] |= OBS_NAL_PRIORITY_HIGHEST << 5;
-			else if (type == OBS_NAL_SLICE &&
-				 prev_type != OBS_NAL_PRIORITY_DISPOSABLE)
-				start[0] |= OBS_NAL_PRIORITY_HIGH << 5;
-			else
-				start[0] |= prev_type << 5;
-		}
+	if (should_edit_nal) {
+		// VideoToolbox produces packets with priority lower than the RTMP code
+		// expects, which causes it to be unable to recover from frame drops.
+		// Fix this by manually adjusting the priority.
+		uint8_t *start = enc->packet_data.array;
+		uint8_t *end = start + enc->packet_data.num;
 
 		start = (uint8_t *)obs_avc_find_startcode(start, end);
+		while (true) {
+			while (start < end && !*(start++))
+				;
+
+			if (start == end)
+				break;
+
+			type = start[0] & 0x1F;
+			if (type == OBS_NAL_SLICE_IDR ||
+			    type == OBS_NAL_SLICE) {
+				uint8_t prev_type = (start[0] >> 5) & 0x3;
+				start[0] &= ~(3 << 5);
+
+				if (type == OBS_NAL_SLICE_IDR)
+					start[0] |= OBS_NAL_PRIORITY_HIGHEST
+						    << 5;
+				else if (type == OBS_NAL_SLICE &&
+					 prev_type !=
+						 OBS_NAL_PRIORITY_DISPOSABLE)
+					start[0] |= OBS_NAL_PRIORITY_HIGH << 5;
+				else
+					start[0] |= prev_type << 5;
+			}
+
+			start = (uint8_t *)obs_avc_find_startcode(start, end);
+		}
 	}
 
 	CFRelease(buffer);
@@ -969,6 +1081,10 @@ static const char *vt_getname(void *data)
 	} else if (strcmp("Apple HEVC (SW)", type_data->disp_name) == 0) {
 		return obs_module_text("VTHEVCEncSW");
 #endif
+	} else if (strncmp("AppleProResHW", type_data->disp_name, 13) == 0) {
+		return obs_module_text("VTProResEncHW");
+	} else if (strncmp("Apple ProRes", type_data->disp_name, 12) == 0) {
+		return obs_module_text("VTProResEncSW");
 	}
 	return type_data->disp_name;
 }
@@ -982,6 +1098,7 @@ static const char *vt_getname(void *data)
 #define TEXT_PROFILE obs_module_text("Profile")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
+#define TEXT_PRORES_CODEC obs_module_text("ProResCodec")
 
 static bool rate_control_limit_bitrate_modified(obs_properties_t *ppts,
 						obs_property_t *p,
@@ -1095,6 +1212,64 @@ static obs_properties_t *vt_properties_h26x(void *unused, void *data)
 	return props;
 }
 
+static obs_properties_t *vt_properties_prores(void *unused, void *data)
+{
+	UNUSED_PARAMETER(unused);
+	struct vt_encoder_type_data *type_data = data;
+
+	obs_properties_t *props = obs_properties_create();
+	obs_property_t *p;
+
+	p = obs_properties_add_list(props, "codec_type", TEXT_PRORES_CODEC,
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	uint32_t codec_availability_flags = 0;
+
+	size_t size = 0;
+	struct vt_prores_encoder_data *encoder_list = NULL;
+	if (type_data->hardware_accelerated) {
+		size = vt_prores_hardware_encoder_list.num;
+		encoder_list = vt_prores_hardware_encoder_list.array;
+	} else {
+		size = vt_prores_software_encoder_list.num;
+		encoder_list = vt_prores_software_encoder_list.array;
+	}
+
+	for (size_t i = 0; i < size; ++i) {
+
+		switch (encoder_list[i].codec_type) {
+		case kCMVideoCodecType_AppleProRes422Proxy:
+			codec_availability_flags |= (1 << 0);
+			break;
+		case kCMVideoCodecType_AppleProRes422LT:
+			codec_availability_flags |= (1 << 1);
+			break;
+		case kCMVideoCodecType_AppleProRes422:
+			codec_availability_flags |= (1 << 2);
+			break;
+		case kCMVideoCodecType_AppleProRes422HQ:
+			codec_availability_flags |= (1 << 3);
+			break;
+		}
+	}
+
+	if (codec_availability_flags & (1 << 0))
+		obs_property_list_add_int(
+			p, obs_module_text("ProRes422Proxy"),
+			kCMVideoCodecType_AppleProRes422Proxy);
+	if (codec_availability_flags & (1 << 1))
+		obs_property_list_add_int(p, obs_module_text("ProRes422LT"),
+					  kCMVideoCodecType_AppleProRes422LT);
+	if (codec_availability_flags & (1 << 2))
+		obs_property_list_add_int(p, obs_module_text("ProRes422"),
+					  kCMVideoCodecType_AppleProRes422);
+	if (codec_availability_flags & (1 << 3))
+		obs_property_list_add_int(p, obs_module_text("ProRes422HQ"),
+					  kCMVideoCodecType_AppleProRes422HQ);
+
+	return props;
+}
+
 static void vt_defaults(obs_data_t *settings, void *data)
 {
 	struct vt_encoder_type_data *type_data = data;
@@ -1115,6 +1290,8 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	obs_data_set_default_double(settings, "max_bitrate_window", 1.5f);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_string(settings, "profile", "main");
+	obs_data_set_default_int(settings, "codec_type",
+				 kCMVideoCodecType_AppleProRes422);
 	obs_data_set_default_bool(settings, "bframes", true);
 }
 
@@ -1125,6 +1302,58 @@ static void vt_free_type_data(void *data)
 	bfree((char *)type_data->disp_name);
 	bfree((char *)type_data->id);
 	bfree(type_data);
+}
+
+static inline void
+vt_add_prores_encoder_data_to_list(CFDictionaryRef encoder_dict,
+				   FourCharCode codec_type)
+{
+	struct vt_prores_encoder_data *encoder_data = NULL;
+
+	CFBooleanRef hardware_accelerated = CFDictionaryGetValue(
+		encoder_dict, kVTVideoEncoderList_IsHardwareAccelerated);
+	if (hardware_accelerated == kCFBooleanTrue)
+		encoder_data =
+			da_push_back_new(vt_prores_hardware_encoder_list);
+	else
+		encoder_data =
+			da_push_back_new(vt_prores_software_encoder_list);
+
+	encoder_data->encoder_id = CFDictionaryGetValue(
+		encoder_dict, kVTVideoEncoderList_EncoderID);
+
+	encoder_data->codec_type = codec_type;
+}
+
+static CFComparisonResult
+compare_encoder_list(const void *left_val, const void *right_val, void *unused)
+{
+	UNUSED_PARAMETER(unused);
+
+	CFDictionaryRef left = (CFDictionaryRef)left_val;
+	CFDictionaryRef right = (CFDictionaryRef)right_val;
+
+	CFNumberRef left_codec_num =
+		CFDictionaryGetValue(left, kVTVideoEncoderList_CodecType);
+	CFNumberRef right_codec_num =
+		CFDictionaryGetValue(right, kVTVideoEncoderList_CodecType);
+	CFComparisonResult result =
+		CFNumberCompare(left_codec_num, right_codec_num, NULL);
+
+	if (result != kCFCompareEqualTo)
+		return result;
+
+	CFBooleanRef left_hardware_accel = CFDictionaryGetValue(
+		left, kVTVideoEncoderList_IsHardwareAccelerated);
+	CFBooleanRef right_hardware_accel = CFDictionaryGetValue(
+		right, kVTVideoEncoderList_IsHardwareAccelerated);
+
+	if (left_hardware_accel == right_hardware_accel)
+		return kCFCompareEqualTo;
+	else if (left_hardware_accel == kCFBooleanTrue)
+		return kCFCompareGreaterThan;
+	else
+		return kCFCompareLessThan;
 }
 
 OBS_DECLARE_MODULE()
@@ -1145,9 +1374,19 @@ bool obs_module_load(void)
 		.caps = OBS_ENCODER_CAP_DYN_BITRATE,
 	};
 
-	CFArrayRef encoder_list;
-	VTCopyVideoEncoderList(NULL, &encoder_list);
-	CFIndex size = CFArrayGetCount(encoder_list);
+	da_init(vt_prores_hardware_encoder_list);
+	da_init(vt_prores_software_encoder_list);
+
+	CFArrayRef encoder_list_const;
+	VTCopyVideoEncoderList(NULL, &encoder_list_const);
+	CFIndex size = CFArrayGetCount(encoder_list_const);
+
+	CFMutableArrayRef encoder_list = CFArrayCreateMutableCopy(
+		kCFAllocatorDefault, size, encoder_list_const);
+	CFRelease(encoder_list_const);
+
+	CFArraySortValues(encoder_list, CFRangeMake(0, size),
+			  &compare_encoder_list, NULL);
 
 	for (CFIndex i = 0; i < size; i++) {
 		CFDictionaryRef encoder_dict =
@@ -1169,13 +1408,31 @@ bool obs_module_load(void)
 
 		switch (codec_type) {
 		case kCMVideoCodecType_H264:
+			info.get_properties2 = vt_properties_h26x;
 			info.codec = "h264";
 			break;
 #ifdef ENABLE_HEVC
 		case kCMVideoCodecType_HEVC:
+			info.get_properties2 = vt_properties_h26x;
 			info.codec = "hevc";
 			break;
 #endif
+			// 422 is used as a marker for all ProRes types,
+			// since the type is stored as a profile
+		case kCMVideoCodecType_AppleProRes422:
+			info.get_properties2 = vt_properties_prores;
+			info.codec = "prores";
+			vt_add_prores_encoder_data_to_list(encoder_dict,
+							   codec_type);
+			break;
+
+		case kCMVideoCodecType_AppleProRes422Proxy:
+		case kCMVideoCodecType_AppleProRes422LT:
+		case kCMVideoCodecType_AppleProRes422HQ:
+			vt_add_prores_encoder_data_to_list(encoder_dict,
+							   codec_type);
+			continue;
+
 		default:
 			continue;
 		}
@@ -1198,7 +1455,6 @@ bool obs_module_load(void)
 		type_data->codec_type = codec_type;
 		type_data->hardware_accelerated = hardware_accelerated;
 		info.type_data = type_data;
-		info.get_properties2 = vt_properties_h26x;
 
 		obs_register_encoder(&info);
 #undef VT_DICTSTR
@@ -1209,4 +1465,10 @@ bool obs_module_load(void)
 	VT_LOG(LOG_INFO, "Adding VideoToolbox encoders");
 
 	return true;
+}
+
+void obs_module_unload(void)
+{
+	da_free(vt_prores_hardware_encoder_list);
+	da_free(vt_prores_software_encoder_list);
 }
