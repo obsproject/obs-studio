@@ -45,8 +45,8 @@ static inline void capture_frame(struct window_capture *wc)
 	uint64_t ts = os_gettime_ns();
 	CGImageRef img = get_image(wc);
 	if (!img)
-		img = CGImageCreate(NULL, NULL, NULL, NULL, NULL, NULL, NULL,
-				    NULL, NULL, NULL, NULL);
+		obs_source_output_video(wc->source, NULL);
+		return;
 
 	size_t width = CGImageGetWidth(img);
 	size_t height = CGImageGetHeight(img);
