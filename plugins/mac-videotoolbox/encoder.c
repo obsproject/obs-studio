@@ -789,22 +789,6 @@ bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 
 	CVPixelBufferRef pixbuf;
 	STATUS_CHECK(CVPixelBufferPoolCreatePixelBuffer(NULL, pool, &pixbuf));
-
-	// Why aren't these already set on the pixel buffer?
-	// I would have expected pixel buffers from the session's
-	// pool to have the correct color space stuff set
-
-	CFStringRef matrix = obs_to_vt_colorspace(enc->colorspace);
-
-	CVBufferSetAttachment(pixbuf, kCVImageBufferYCbCrMatrixKey, matrix,
-			      kCVAttachmentMode_ShouldPropagate);
-	CVBufferSetAttachment(pixbuf, kCVImageBufferColorPrimariesKey,
-			      kCVImageBufferColorPrimaries_ITU_R_709_2,
-			      kCVAttachmentMode_ShouldPropagate);
-	CVBufferSetAttachment(pixbuf, kCVImageBufferTransferFunctionKey,
-			      kCVImageBufferTransferFunction_ITU_R_709_2,
-			      kCVAttachmentMode_ShouldPropagate);
-
 	*buf = pixbuf;
 	return true;
 
