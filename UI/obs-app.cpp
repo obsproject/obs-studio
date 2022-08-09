@@ -1189,7 +1189,6 @@ std::string OBSApp::SetParentTheme(std::string name)
 	if (path.empty())
 		return path;
 
-	setStyleSheet(defaultStyleSheet);
 	setPalette(defaultPalette);
 
 	QString mpath = QString("file:///") + path.c_str();
@@ -1238,7 +1237,6 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
-	defaultStyleSheet = styleSheet();
 
 	const char *themeName =
 		config_get_string(globalConfig, "General", "CurrentTheme3");
