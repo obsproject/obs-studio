@@ -311,7 +311,7 @@ gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 
 	swap->device = device;
 	swap->info = *info;
-	swap->wi = gl_windowinfo_create(info);
+	swap->wi = gl_windowinfo_create(device, info);
 	if (!swap->wi) {
 		blog(LOG_ERROR, "device_swapchain_create (GL) failed");
 		gs_swapchain_destroy(swap);
@@ -790,7 +790,7 @@ static bool attach_rendertarget(struct fbo_info *fbo, gs_texture_t *tex,
 
 	if (tex->type == GS_TEXTURE_2D) {
 		glFramebufferTexture2D(GL_DRAW_FRAMEBUFFER,
-				       GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D,
+				       GL_COLOR_ATTACHMENT0, tex->gl_target,
 				       tex->texture, 0);
 
 	} else if (tex->type == GS_TEXTURE_CUBE) {

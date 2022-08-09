@@ -38,10 +38,13 @@ if(OS_WINDOWS)
 elseif(OS_MACOS)
   find_library(COCOA Cocoa)
   find_library(IOSURF IOSurface)
+  find_library(METAL Metal)
+  find_library(QUARTZCORE QuartzCore)
 
   target_sources(libobs-opengl PRIVATE gl-cocoa.m)
 
-  target_link_libraries(libobs-opengl PRIVATE ${COCOA} ${IOSURF})
+  target_link_libraries(libobs-opengl PRIVATE ${COCOA} ${IOSURF} ${METAL}
+                                              ${QUARTZCORE})
 
   set_target_properties(libobs-opengl PROPERTIES PREFIX "")
 

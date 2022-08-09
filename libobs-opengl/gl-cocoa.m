@@ -18,55 +18,199 @@
 #include "gl-subsystem.h"
 #include <OpenGL/OpenGL.h>
 
-#import <Cocoa/Cocoa.h>
 #import <AppKit/AppKit.h>
+#import <Cocoa/Cocoa.h>
+#import <Metal/Metal.h>
+#import <QuartzCore/QuartzCore.h>
 
-//#include "util/darray.h"
-
-struct gl_windowinfo {
-	NSView *view;
-	NSOpenGLContext *context;
-	gs_texture_t *texture;
-	GLuint fbo;
-};
+#define OBS_USE_HDR 0
 
 struct gl_platform {
 	NSOpenGLContext *context;
+	id<MTLDevice> metalDevice;
+	id<MTLCommandQueue> commandQueue;
+};
+
+@interface OpenGLMetalInteropTexture : NSObject
+
+- (nonnull instancetype)initWithDevice:(gs_device_t *)device
+			 openGLContext:(nonnull NSOpenGLContext *)glContext
+				format:(enum gs_color_format)format
+				  size:(CGSize)size;
+
+@property (readonly, nonnull, nonatomic) id<MTLDevice> metalDevice;
+@property (readonly, nonnull, nonatomic) id<MTLTexture> metalTexture;
+
+@property (readonly, nonnull, nonatomic) NSOpenGLContext *openGLContext;
+@property (readonly, nonatomic) gs_texture_t *openGLTexture;
+
+@property (readonly, nonatomic) CGSize size;
+
+@end
+
+typedef struct {
+	int cvPixelFormat;
+	MTLPixelFormat mtlFormat;
+	GLuint glInternalFormat;
+	GLuint glFormat;
+	GLuint glType;
+} TextureFormatInfo;
+
+const TextureFormatInfo *const
+textureFormatInfoFromMetalPixelFormat(MTLPixelFormat pixelFormat)
+{
+	static const TextureFormatInfo InteropFormatTable[] = {
+		{kCVPixelFormatType_32BGRA, MTLPixelFormatBGRA8Unorm_sRGB,
+		 GL_SRGB8_ALPHA8, GL_BGRA, GL_UNSIGNED_INT_8_8_8_8_REV},
+		{kCVPixelFormatType_64RGBAHalf, MTLPixelFormatRGBA16Float,
+		 GL_RGBA, GL_RGBA, GL_HALF_FLOAT},
+	};
+
+	static const size_t NumInteropFormats =
+		sizeof(InteropFormatTable) / sizeof(TextureFormatInfo);
+
+	for (int i = 0; i < NumInteropFormats; i++) {
+		if (pixelFormat == InteropFormatTable[i].mtlFormat) {
+			return &InteropFormatTable[i];
+		}
+	}
+
+	return NULL;
+}
+
+@implementation OpenGLMetalInteropTexture {
+	const TextureFormatInfo *_formatInfo;
+	CVPixelBufferRef _CVPixelBuffer;
+	CVMetalTextureRef _CVMTLTexture;
+
+	CVOpenGLTextureCacheRef _CVGLTextureCache;
+	CVOpenGLTextureRef _CVGLTexture;
+	CGLPixelFormatObj _CGLPixelFormat;
+
+	CVMetalTextureCacheRef _CVMTLTextureCache;
+
+	CGSize _size;
+}
+
+- (nonnull instancetype)initWithDevice:(gs_device_t *)device
+			 openGLContext:(nonnull NSOpenGLContext *)glContext
+				format:(enum gs_color_format)format
+				  size:(CGSize)size
+{
+	self = [super init];
+	if (self) {
+		const MTLPixelFormat mtlPixelFormat =
+			(format == GS_RGBA16F) ? MTLPixelFormatRGBA16Float
+					       : MTLPixelFormatBGRA8Unorm_sRGB;
+		_formatInfo =
+			textureFormatInfoFromMetalPixelFormat(mtlPixelFormat);
+
+		NSAssert(_formatInfo, @"Metal Format supplied not supported");
+
+		_size = size;
+		_metalDevice = device->plat->metalDevice;
+		_openGLContext = glContext;
+		_CGLPixelFormat = _openGLContext.pixelFormat.CGLPixelFormatObj;
+
+		NSDictionary *cvBufferProperties = @{
+			(__bridge NSString *)
+			kCVPixelBufferOpenGLCompatibilityKey: @YES,
+			(__bridge NSString *)
+			kCVPixelBufferMetalCompatibilityKey: @YES,
+		};
+		CVReturn cvret = CVPixelBufferCreate(
+			kCFAllocatorDefault, size.width, size.height,
+			_formatInfo->cvPixelFormat,
+			(__bridge CFDictionaryRef)cvBufferProperties,
+			&_CVPixelBuffer);
+
+		NSAssert(cvret == kCVReturnSuccess,
+			 @"Failed to create CVPixelBuffer");
+
+		[self createGLTexture:device format:format];
+		[self createMetalTexture];
+	}
+	return self;
+}
+
+extern gs_texture_t *device_drawable_wrap(gs_device_t *device, GLuint tex,
+					  uint32_t width, uint32_t height,
+					  enum gs_color_format color_format);
+
+- (void)createGLTexture:(gs_device_t *)device
+		 format:(enum gs_color_format)format
+{
+	CVReturn cvret = CVOpenGLTextureCacheCreate(
+		kCFAllocatorDefault, nil, _openGLContext.CGLContextObj,
+		_CGLPixelFormat, nil, &_CVGLTextureCache);
+
+	NSAssert(cvret == kCVReturnSuccess,
+		 @"Failed to create OpenGL Texture Cache");
+
+	cvret = CVOpenGLTextureCacheCreateTextureFromImage(kCFAllocatorDefault,
+							   _CVGLTextureCache,
+							   _CVPixelBuffer, nil,
+							   &_CVGLTexture);
+
+	NSAssert(cvret == kCVReturnSuccess,
+		 @"Failed to create OpenGL Texture From Image");
+
+	_openGLTexture = device_drawable_wrap(
+		device, CVOpenGLTextureGetName(_CVGLTexture), _size.width,
+		_size.height, format);
+}
+
+- (void)createMetalTexture
+{
+	CVReturn cvret = CVMetalTextureCacheCreate(kCFAllocatorDefault, nil,
+						   _metalDevice, nil,
+						   &_CVMTLTextureCache);
+
+	NSAssert(cvret == kCVReturnSuccess,
+		 @"Failed to create Metal texture cache");
+
+	cvret = CVMetalTextureCacheCreateTextureFromImage(
+		kCFAllocatorDefault, _CVMTLTextureCache, _CVPixelBuffer, nil,
+		_formatInfo->mtlFormat, _size.width, _size.height, 0,
+		&_CVMTLTexture);
+
+	NSAssert(cvret == kCVReturnSuccess,
+		 @"Failed to create CoreVideo Metal texture from image");
+
+	_metalTexture = CVMetalTextureGetTexture(_CVMTLTexture);
+
+	NSAssert(_metalTexture,
+		 @"Failed to create Metal texture CoreVideo Metal Texture");
+}
+
+@end
+
+struct gl_windowinfo {
+	dispatch_semaphore_t inFlightSemaphore;
+	NSView *view;
+	CAMetalLayer *metalLayer;
+	NSOpenGLContext *context;
+	OpenGLMetalInteropTexture *interopTexture;
 };
 
 static NSOpenGLContext *gl_context_create(NSOpenGLContext *share)
 {
-	unsigned attrib_count = 0;
+	static const NSOpenGLPixelFormatAttribute attributes[] = {
+		NSOpenGLPFADoubleBuffer,
+		NSOpenGLPFAOpenGLProfile,
+		NSOpenGLProfileVersion3_2Core,
+		0,
+	};
 
-#define ADD_ATTR(x)                                                           \
-	{                                                                     \
-		attributes[attrib_count++] = (NSOpenGLPixelFormatAttribute)x; \
-	}
-#define ADD_ATTR2(x, y)      \
-	{                    \
-		ADD_ATTR(x); \
-		ADD_ATTR(y); \
-	}
-
-	NSOpenGLPixelFormatAttribute attributes[40];
-
-	ADD_ATTR(NSOpenGLPFADoubleBuffer);
-	ADD_ATTR2(NSOpenGLPFAOpenGLProfile, NSOpenGLProfileVersion3_2Core);
-	ADD_ATTR(0);
-
-#undef ADD_ATTR2
-#undef ADD_ATTR
-
-	NSOpenGLPixelFormat *pf;
-	pf = [[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
+	NSOpenGLPixelFormat *const pf =
+		[[NSOpenGLPixelFormat alloc] initWithAttributes:attributes];
 	if (!pf) {
 		blog(LOG_ERROR, "Failed to create pixel format");
 		return NULL;
 	}
 
-	NSOpenGLContext *context;
-	context = [[NSOpenGLContext alloc] initWithFormat:pf
-					     shareContext:share];
+	NSOpenGLContext *const context =
+		[[NSOpenGLContext alloc] initWithFormat:pf shareContext:share];
 	[pf release];
 	if (!context) {
 		blog(LOG_ERROR, "Failed to create context");
@@ -90,8 +234,6 @@ struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 	}
 
 	[context makeCurrentContext];
-	GLint interval = 0;
-	[context setValues:&interval forParameter:NSOpenGLCPSwapInterval];
 	const bool success = gladLoadGL() != 0;
 
 	if (!success) {
@@ -102,6 +244,8 @@ struct gl_platform *gl_platform_create(gs_device_t *device, uint32_t adapter)
 
 	struct gl_platform *plat = bzalloc(sizeof(struct gl_platform));
 	plat->context = context;
+	plat->metalDevice = MTLCreateSystemDefaultDevice();
+	plat->commandQueue = [plat->metalDevice newCommandQueue];
 	return plat;
 }
 
@@ -110,6 +254,10 @@ void gl_platform_destroy(struct gl_platform *platform)
 	if (!platform)
 		return;
 
+	[platform->commandQueue release];
+	platform->commandQueue = nil;
+	[platform->metalDevice release];
+	platform->metalDevice = nil;
 	[platform->context release];
 	platform->context = nil;
 
@@ -119,34 +267,35 @@ void gl_platform_destroy(struct gl_platform *platform)
 bool gl_platform_init_swapchain(struct gs_swap_chain *swap)
 {
 	NSOpenGLContext *parent = swap->device->plat->context;
+#if OBS_USE_HDR
+	const bool hdr =
+		[swap->wi->view window]
+			.screen
+			.maximumPotentialExtendedDynamicRangeColorComponentValue >
+		1.f;
+#else
+	const bool hdr = false;
+#endif
 	NSOpenGLContext *context = gl_context_create(parent);
 	bool success = context != nil;
 	if (success) {
+		swap->wi->inFlightSemaphore = dispatch_semaphore_create(1);
+
 		CGLContextObj parent_obj = [parent CGLContextObj];
 		CGLLockContext(parent_obj);
-
-		[parent makeCurrentContext];
-		struct gs_init_data *init_data = &swap->info;
-		swap->wi->texture = device_texture_create(
-			swap->device, init_data->cx, init_data->cy,
-			init_data->format, 1, NULL, GS_RENDER_TARGET);
-		glFlush();
-		[NSOpenGLContext clearCurrentContext];
 
 		CGLContextObj context_obj = [context CGLContextObj];
 		CGLLockContext(context_obj);
 
 		[context makeCurrentContext];
-		[context setView:swap->wi->view];
-		GLint interval = 0;
-		[context setValues:&interval
-			forParameter:NSOpenGLCPSwapInterval];
-		gl_gen_framebuffers(1, &swap->wi->fbo);
-		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				       GL_TEXTURE_2D,
-				       swap->wi->texture->texture, 0);
-		gl_success("glFrameBufferTexture2D");
+		struct gs_init_data *init_data = &swap->info;
+		const enum gs_color_format format = hdr ? GS_RGBA16F : GS_BGRA;
+		swap->wi->interopTexture = [[OpenGLMetalInteropTexture alloc]
+			initWithDevice:swap->device
+			 openGLContext:context
+				format:format
+				  size:CGSizeMake(init_data->cx,
+						  init_data->cy)];
 		glFlush();
 		[NSOpenGLContext clearCurrentContext];
 
@@ -171,22 +320,20 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	CGLLockContext(context_obj);
 
 	[context makeCurrentContext];
-	gl_delete_framebuffers(1, &swap->wi->fbo);
+	[swap->wi->interopTexture release];
+	swap->wi->interopTexture = nil;
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
 
 	CGLUnlockContext(context_obj);
 
-	[parent makeCurrentContext];
-	gs_texture_destroy(swap->wi->texture);
-	glFlush();
-	[NSOpenGLContext clearCurrentContext];
 	swap->wi->context = nil;
 
 	CGLUnlockContext(parent_obj);
 }
 
-struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
+struct gl_windowinfo *gl_windowinfo_create(gs_device_t *device,
+					   const struct gs_init_data *info)
 {
 	if (!info)
 		return NULL;
@@ -195,9 +342,53 @@ struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
 		return NULL;
 
 	struct gl_windowinfo *wi = bzalloc(sizeof(struct gl_windowinfo));
-
 	wi->view = info->window.view;
+
+#if OBS_USE_HDR
+	const bool hdr =
+		[info->window.view window]
+			.screen
+			.maximumPotentialExtendedDynamicRangeColorComponentValue >
+		1.f;
+#else
+	const bool hdr = false;
+#endif
+
+	CAMetalLayer *metalLayer = [CAMetalLayer layer];
+	if (hdr) {
+		metalLayer.wantsExtendedDynamicRangeContent = YES;
+		metalLayer.colorspace = CGColorSpaceCreateWithName(
+			kCGColorSpaceExtendedLinearSRGB);
+		metalLayer.pixelFormat = MTLPixelFormatRGBA16Float;
+	} else {
+		metalLayer.wantsExtendedDynamicRangeContent = NO;
+		metalLayer.colorspace =
+			CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+		metalLayer.pixelFormat = MTLPixelFormatBGRA8Unorm_sRGB;
+	}
+	metalLayer.device = device->plat->metalDevice;
+	metalLayer.drawableSize = CGSizeMake(info->cx, info->cy);
+	metalLayer.framebufferOnly = NO;
+	[wi->view setWantsLayer:YES];
+	[wi->view setLayer:metalLayer];
+	wi->metalLayer = metalLayer;
+
 	[info->window.view setWantsBestResolutionOpenGLSurface:YES];
+	if (hdr) {
+		CGColorSpaceRef colorSpaceCG = CGColorSpaceCreateWithName(
+			kCGColorSpaceExtendedLinearSRGB);
+		NSColorSpace *const colorSpace = [[NSColorSpace alloc]
+			initWithCGColorSpace:colorSpaceCG];
+		[info->window.view window].colorSpace = colorSpace;
+		CGColorSpaceRelease(colorSpaceCG);
+	} else {
+		CGColorSpaceRef colorSpaceCG =
+			CGColorSpaceCreateWithName(kCGColorSpaceSRGB);
+		NSColorSpace *const colorSpace = [[NSColorSpace alloc]
+			initWithCGColorSpace:colorSpaceCG];
+		[info->window.view window].colorSpace = colorSpace;
+		CGColorSpaceRelease(colorSpaceCG);
+	}
 
 	return wi;
 }
@@ -226,23 +417,32 @@ void gl_update(gs_device_t *device)
 		[context makeCurrentContext];
 		[context update];
 		struct gs_init_data *info = &swap->info;
-		gs_texture_t *previous = swap->wi->texture;
-		swap->wi->texture = device_texture_create(device, info->cx,
-							  info->cy,
-							  info->format, 1, NULL,
-							  GS_RENDER_TARGET);
-		gl_bind_framebuffer(GL_FRAMEBUFFER, swap->wi->fbo);
-		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-				       GL_TEXTURE_2D,
-				       swap->wi->texture->texture, 0);
-		gl_success("glFrameBufferTexture2D");
-		gs_texture_destroy(previous);
+		OpenGLMetalInteropTexture *previous = swap->wi->interopTexture;
+#if OBS_USE_HDR
+		const bool hdr =
+			[swap->wi->view window]
+				.screen
+				.maximumPotentialExtendedDynamicRangeColorComponentValue >
+			1.f;
+#else
+		const bool hdr = false;
+#endif
+		const enum gs_color_format format = hdr ? GS_RGBA16F : GS_BGRA;
+		swap->wi->interopTexture = [[OpenGLMetalInteropTexture alloc]
+			initWithDevice:swap->device
+			 openGLContext:context
+				format:format
+				  size:CGSizeMake(info->cx, info->cy)];
+		[previous release];
 		glFlush();
 		[NSOpenGLContext clearCurrentContext];
 
 		CGLUnlockContext(context_obj);
 
 		CGLUnlockContext(parent_obj);
+
+		swap->wi->metalLayer.drawableSize =
+			CGSizeMake(info->cx, info->cy);
 	});
 }
 
@@ -283,14 +483,21 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 
 	device->cur_swap = swap;
 	if (swap) {
-		device_set_render_target(device, swap->wi->texture, NULL);
+		const enum gs_color_space space =
+			(swap->wi->interopTexture.metalTexture.pixelFormat ==
+			 MTLPixelFormatRGBA16Float)
+				? GS_CS_709_EXTENDED
+				: GS_CS_SRGB;
+		device_set_render_target_with_color_space(
+			device, swap->wi->interopTexture.openGLTexture, NULL,
+			space);
 	}
 }
 
 bool device_is_present_ready(gs_device_t *device)
 {
-	UNUSED_PARAMETER(device);
-	return true;
+	return !dispatch_semaphore_wait(device->cur_swap->wi->inFlightSemaphore,
+					DISPATCH_TIME_NOW);
 }
 
 void device_present(gs_device_t *device)
@@ -298,20 +505,32 @@ void device_present(gs_device_t *device)
 	glFlush();
 	[NSOpenGLContext clearCurrentContext];
 
-	CGLLockContext([device->cur_swap->wi->context CGLContextObj]);
+	id<MTLCommandBuffer> commandBuffer =
+		[device->plat->commandQueue commandBuffer];
+	commandBuffer.label = @"Drawable Command Buffer";
 
-	[device->cur_swap->wi->context makeCurrentContext];
-	gl_bind_framebuffer(GL_READ_FRAMEBUFFER, device->cur_swap->wi->fbo);
-	gl_bind_framebuffer(GL_DRAW_FRAMEBUFFER, 0);
-	const uint32_t width = device->cur_swap->info.cx;
-	const uint32_t height = device->cur_swap->info.cy;
-	glBlitFramebuffer(0, 0, width, height, 0, height, width, 0,
-			  GL_COLOR_BUFFER_BIT, GL_NEAREST);
-	[device->cur_swap->wi->context flushBuffer];
-	glFlush();
-	[NSOpenGLContext clearCurrentContext];
+	__block dispatch_semaphore_t dsema =
+		device->cur_swap->wi->inFlightSemaphore;
+	[commandBuffer addCompletedHandler:^(id<MTLCommandBuffer> buffer) {
+		UNUSED_PARAMETER(buffer);
+		dispatch_semaphore_signal(dsema);
+	}];
 
-	CGLUnlockContext([device->cur_swap->wi->context CGLContextObj]);
+	id<CAMetalDrawable> drawable =
+		device->cur_swap->wi->metalLayer.nextDrawable;
+
+	MTLBlitPassDescriptor *blitDescriptor = [MTLBlitPassDescriptor new];
+	id<MTLBlitCommandEncoder> blitEncoder =
+		[commandBuffer blitCommandEncoderWithDescriptor:blitDescriptor];
+	blitEncoder.label = @"Drawable Copy Encoder";
+	[blitEncoder
+		copyFromTexture:device->cur_swap->wi->interopTexture.metalTexture
+		      toTexture:drawable.texture];
+	[blitEncoder endEncoding];
+
+	[commandBuffer presentDrawable:drawable];
+
+	[commandBuffer commit];
 
 	[device->plat->context makeCurrentContext];
 }
@@ -319,9 +538,10 @@ void device_present(gs_device_t *device)
 bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
 	UNUSED_PARAMETER(device);
-	UNUSED_PARAMETER(monitor);
 
-	return false;
+	NSScreen *const screen = monitor;
+	return screen.maximumPotentialExtendedDynamicRangeColorComponentValue >
+	       1.f;
 }
 
 void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,

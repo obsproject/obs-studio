@@ -44,8 +44,9 @@ static void init_winsys(void)
 }
 
 extern struct gl_windowinfo *
-gl_windowinfo_create(const struct gs_init_data *info)
+gl_windowinfo_create(gs_device_t *device, const struct gs_init_data *info)
 {
+	UNUSED_PARAMETER(device);
 	return gl_vtable->windowinfo_create(info);
 }
 

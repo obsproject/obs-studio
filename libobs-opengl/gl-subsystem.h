@@ -683,7 +683,7 @@ extern bool gl_platform_init_swapchain(struct gs_swap_chain *swap);
 extern void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap);
 
 extern struct gl_windowinfo *
-gl_windowinfo_create(const struct gs_init_data *info);
+gl_windowinfo_create(gs_device_t *device, const struct gs_init_data *info);
 extern void gl_windowinfo_destroy(struct gl_windowinfo *wi);
 
 extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,

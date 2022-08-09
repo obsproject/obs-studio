@@ -135,6 +135,31 @@ fail:
 	return NULL;
 }
 
+gs_texture_t *device_drawable_wrap(gs_device_t *device, GLuint name,
+				   uint32_t width, uint32_t height,
+				   enum gs_color_format color_format)
+{
+	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
+	tex->base.device = device;
+	tex->base.type = GS_TEXTURE_2D;
+	tex->base.format = color_format;
+	tex->base.levels = 1;
+	tex->base.gl_format = convert_gs_format(color_format);
+	tex->base.gl_internal_format = convert_gs_internal_format(color_format);
+	tex->base.gl_type = get_gl_format_type(color_format);
+	tex->base.gl_target = GL_TEXTURE_RECTANGLE_ARB;
+	tex->base.is_dynamic = false;
+	tex->base.is_render_target = true;
+	tex->base.is_dummy = false;
+	tex->base.gen_mipmaps = false;
+	tex->width = width;
+	tex->height = height;
+
+	tex->base.texture = name;
+
+	return (gs_texture_t *)tex;
+}
+
 static inline bool is_texture_2d(const gs_texture_t *tex, const char *func)
 {
 	bool is_tex2d = tex->type == GS_TEXTURE_2D;

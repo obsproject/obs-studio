@@ -504,8 +504,11 @@ void gl_platform_cleanup_swapchain(struct gs_swap_chain *swap)
 	UNUSED_PARAMETER(swap);
 }
 
-struct gl_windowinfo *gl_windowinfo_create(const struct gs_init_data *info)
+struct gl_windowinfo *gl_windowinfo_create(gs_device_t *device,
+					   const struct gs_init_data *info)
 {
+	UNUSED_PARAMETER(device);
+
 	struct gl_windowinfo *wi = gl_windowinfo_bare(info);
 	PIXELFORMATDESCRIPTOR pfd;
 	int pixel_format;
