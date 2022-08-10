@@ -1329,3 +1329,8 @@ QCalendarWidget QAbstractItemView:enabled {
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
 }
+
+/* Disable icons on QDialogButtonBox */
+QDialogButtonBox {
+    dialogbuttonbox-buttons-have-icons: 0;
+}

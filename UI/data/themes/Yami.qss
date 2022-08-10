@@ -1474,3 +1474,8 @@ QCalendarWidget QAbstractItemView:disabled {
     margin-top: 0;
     margin-bottom: 0;
 }
+
+/* Disable icons on QDialogButtonBox */
+QDialogButtonBox {
+    dialogbuttonbox-buttons-have-icons: 0;
+}
