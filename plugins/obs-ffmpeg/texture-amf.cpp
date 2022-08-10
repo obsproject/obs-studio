@@ -980,6 +980,9 @@ static obs_properties_t *amf_properties_internal(bool hevc)
 		add_profile("main");
 		add_profile("baseline");
 #undef add_profile
+
+		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
+				       0, 5, 1);
 	}
 
 	p = obs_properties_add_text(props, "ffmpeg_opts",
@@ -1108,8 +1111,19 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
+	int64_t bf = obs_data_get_int(settings, "bf");
 
 	check_preset_compatibility(enc, preset);
+
+	if (enc->bframes_supported) {
+		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
+		set_avc_property(enc, B_PIC_PATTERN, bf);
+
+	} else if (bf != 0) {
+		warn("B-Frames set to %lld but b-frames are not "
+		     "supported by this device",
+		     bf);
+	}
 
 	int rc = get_avc_rate_control(rc_str);
 
