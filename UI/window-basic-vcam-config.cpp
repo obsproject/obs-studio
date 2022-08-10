@@ -1,13 +1,9 @@
 #include "window-basic-vcam-config.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
-#include "remote-text.hpp"
+
 #include <util/util.hpp>
 #include <util/platform.h>
-#include <platform.hpp>
-#include <mutex>
-
-using namespace std;
 
 enum class VCamOutputType {
 	Internal,
@@ -23,8 +19,8 @@ enum class VCamInternalType {
 struct VCamConfig {
 	VCamOutputType type = VCamOutputType::Internal;
 	VCamInternalType internal = VCamInternalType::Default;
-	string scene;
-	string source;
+	std::string scene;
+	std::string source;
 };
 
 static VCamConfig *vCamConfig = nullptr;
@@ -80,7 +76,7 @@ void OBSBasicVCamConfig::OutputTypeChanged(int type)
 
 	case VCamOutputType::Source: {
 		// Sources in alphabetical order
-		vector<string> sources;
+		std::vector<std::string> sources;
 		auto AddSource = [&](obs_source_t *source) {
 			auto name = obs_source_get_name(source);
 			auto flags = obs_source_get_output_flags(source);
