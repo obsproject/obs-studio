@@ -290,7 +290,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64]
     env:
       CMAKE_GENERATOR: 'Visual Studio 17 2022'
       CMAKE_SYSTEM_VERSION: '10.0.18363.657'
@@ -433,11 +433,6 @@ jobs:
         with:
           name: 'obs-studio-windows-x64-${{ steps.setup.outputs.commitHash }}'
 
-      - name: 'Download 32-bit artifact'
-        uses: actions/download-artifact@v3
-        with:
-          name: 'obs-studio-windows-x86-${{ steps.setup.outputs.commitHash }}'
-
       - name: 'Unpack Windows build artifacts'
         id: unpack
         run: |
@@ -445,12 +440,11 @@ jobs:
             $null = New-Item -ItemType Directory -Force -Path install_temp
           }
 
-          Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-*-windows-x86.zip" -File)" -DestinationPath install_temp
           Expand-Archive -Path "$(Get-ChildItem -filter "obs-studio-*-windows-x64.zip" -File)" -Force -DestinationPath install_temp
 
-          CI/windows/03_package_obs.ps1 -CombinedArchs -Package
+          CI/windows/03_package_obs.ps1 -Package
 
-          $ArtifactName = (Get-ChildItem -filter "obs-studio-*-windows-x86+x64.zip" -File).Name
+          $ArtifactName = (Get-ChildItem -filter "obs-studio-*-windows-x64.zip" -File).Name
           Write-Output "::set-output name=filename::${ArtifactName}"
 
       - name: 'Upload build artifact'
