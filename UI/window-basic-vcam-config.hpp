@@ -20,7 +20,7 @@ public:
 
 private slots:
 	void OutputTypeChanged(int type);
-	void SaveAndStart();
+	void Save();
 
 private:
 	std::unique_ptr<Ui::OBSBasicVCamConfig> ui;

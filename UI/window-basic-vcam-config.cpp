@@ -40,13 +40,8 @@ OBSBasicVCamConfig::OBSBasicVCamConfig(QWidget *parent)
 			&QComboBox::currentIndexChanged),
 		this, &OBSBasicVCamConfig::OutputTypeChanged);
 
-	auto start = ui->buttonBox->button(QDialogButtonBox::Ok);
-	if (!obs_frontend_virtualcam_active())
-		start->setText(QTStr("Basic.VCam.Start"));
-	else
-		start->setText(QTStr("Basic.VCam.Update"));
-	connect(start, &QPushButton::clicked, this,
-		&OBSBasicVCamConfig::SaveAndStart);
+	connect(ui->buttonBox, &QDialogButtonBox::accepted, this,
+		&OBSBasicVCamConfig::Save);
 }
 
 void OBSBasicVCamConfig::OutputTypeChanged(int type)
@@ -112,7 +107,7 @@ void OBSBasicVCamConfig::OutputTypeChanged(int type)
 	}
 }
 
-void OBSBasicVCamConfig::SaveAndStart()
+void OBSBasicVCamConfig::Save()
 {
 	auto type = (VCamOutputType)ui->outputType->currentIndex();
 	auto out = ui->outputSelection;
@@ -133,10 +128,8 @@ void OBSBasicVCamConfig::SaveAndStart()
 
 	vCamConfig->type = type;
 
-	// Start the vcam if needed, if already running just update the source
-	if (!obs_frontend_virtualcam_active())
-		obs_frontend_start_virtualcam();
-	else
+	// If already running just update the source
+	if (obs_frontend_virtualcam_active())
 		UpdateOutputSource();
 }
 
