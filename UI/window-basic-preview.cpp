@@ -2497,6 +2497,23 @@ void OBSBasicPreview::DrawSpacingHelpers()
 	// Seems hacky, probably a better way to do it
 	float rot = oti.rot;
 
+	if (parentGroup) {
+		obs_transform_info groupOti;
+		obs_sceneitem_get_info(parentGroup, &groupOti);
+
+		//Correct the scene item rotation angle
+		rot = oti.rot + groupOti.rot;
+
+		// Correct the scene item box transform
+		// Based on scale, rotation angle, position of parent's group
+		matrix4_scale3f(&boxTransform, &boxTransform, groupOti.scale.x,
+				groupOti.scale.y, 1.0f);
+		matrix4_rotate_aa4f(&boxTransform, &boxTransform, 0.0f, 0.0f,
+				    1.0f, RAD(groupOti.rot));
+		matrix4_translate3f(&boxTransform, &boxTransform,
+				    groupOti.pos.x, groupOti.pos.y, 0.0f);
+	}
+
 	if (rot >= HELPER_ROT_BREAKPONT) {
 		for (float i = HELPER_ROT_BREAKPONT; i <= 360.0f; i += 90.0f) {
 			if (rot < i)
