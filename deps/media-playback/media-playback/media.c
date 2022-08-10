@@ -626,6 +626,25 @@ static inline bool mp_media_sleep(mp_media_t *m)
 	return timeout;
 }
 
+static inline bool mp_media_sleep_start_delay(mp_media_t *m)
+{
+	uint64_t current_time = os_gettime_ns();
+	if (current_time >= m->end_time_start_delay_ns) {
+		m->start_delay = false;
+		return false;
+	} else {
+		uint64_t delta = m->end_time_start_delay_ns - current_time;
+		if (delta < 1000000) { // Last wait
+			os_sleepto_ns(m->end_time_start_delay_ns);
+			m->start_delay = false;
+			return false;
+		} else {
+			os_sleep_ms(1);
+			return true;
+		}
+	}
+}
+
 static inline bool mp_media_eof(mp_media_t *m)
 {
 	bool v_ended = !m->has_video || !m->v.frame_ready;
@@ -765,14 +784,24 @@ static inline bool mp_media_thread(mp_media_t *m)
 	}
 
 	for (;;) {
-		bool reset, kill, is_active, seek, pause, reset_time;
+		bool reset, kill, is_active, seek, pause, reset_time,
+			delay_start;
 		int64_t seek_pos;
 		bool timeout = false;
 
 		pthread_mutex_lock(&m->mutex);
 		is_active = m->active;
 		pause = m->pause;
+		delay_start = m->start_delay;
+		kill = m->kill;
 		pthread_mutex_unlock(&m->mutex);
+
+		if (delay_start) {
+			if (!kill) {
+				if (mp_media_sleep_start_delay(m) == true)
+					continue;
+			}
+		}
 
 		if (!is_active || pause) {
 			if (os_sem_wait(m->sem) < 0)
@@ -894,6 +923,8 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->buffering = info->buffering;
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
+	media->start_delay = false;
+	media->end_time_start_delay_ns = 0;
 	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
@@ -956,8 +987,11 @@ void mp_media_free(mp_media_t *media)
 	pthread_mutex_init_value(&media->mutex);
 }
 
-void mp_media_play(mp_media_t *m, bool loop, bool reconnecting)
+void mp_media_play(mp_media_t *m, bool loop, bool reconnecting,
+		   uint64_t delay_start_ms)
 {
+	uint64_t current_time_ns = os_gettime_ns();
+
 	pthread_mutex_lock(&m->mutex);
 
 	if (m->active)
@@ -966,6 +1000,15 @@ void mp_media_play(mp_media_t *m, bool loop, bool reconnecting)
 	m->looping = loop;
 	m->active = true;
 	m->reconnecting = reconnecting;
+
+	if (delay_start_ms > 0) {
+		m->start_delay = true;
+		m->end_time_start_delay_ns =
+			current_time_ns + delay_start_ms * 1000000;
+	} else {
+		m->start_delay = false;
+		m->end_time_start_delay_ns = 0;
+	}
 
 	pthread_mutex_unlock(&m->mutex);
 

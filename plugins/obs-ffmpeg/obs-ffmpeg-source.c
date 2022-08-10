@@ -66,6 +66,8 @@ struct ffmpeg_source {
 	volatile bool reconnecting;
 	int reconnect_delay_sec;
 
+	uint64_t start_delay_ms;
+
 	enum obs_media_state state;
 	obs_hotkey_pair_id play_pause_hotkey;
 	obs_hotkey_id stop_hotkey;
@@ -113,6 +115,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "restart_on_activate", true);
 	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
+	obs_data_set_default_int(settings, "start_delay", 0);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
 }
@@ -205,6 +208,11 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 					     1, 200, 1);
 	obs_property_int_set_suffix(prop, "%");
 
+	prop = obs_properties_add_int(props, "start_delay",
+				      obs_module_text("StartDelay"), 0, 9999999,
+				      1);
+	obs_property_int_set_suffix(prop, " ms");
+
 	prop = obs_properties_add_list(props, "color_range",
 				       obs_module_text("ColorRange"),
 				       OBS_COMBO_TYPE_LIST,
@@ -244,6 +252,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tis_clear_on_media_end:   %s\n"
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
+		"\tstart_delay:             %llu\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -251,7 +260,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_hw_decoding ? "yes" : "no",
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
-		s->close_when_inactive ? "yes" : "no", s->ffmpeg_options);
+		s->close_when_inactive ? "yes" : "no", s->start_delay_ms,
+		s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -328,17 +338,23 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 	}
 }
 
-static void ffmpeg_source_start(struct ffmpeg_source *s)
+static void ffmpeg_source_start(struct ffmpeg_source *s, bool use_start_delay)
 {
+	uint64_t delay_start_ms = s->start_delay_ms;
+	if (use_start_delay == false) {
+		delay_start_ms = 0;
+	}
 	if (!s->media_valid)
 		ffmpeg_source_open(s);
 
 	if (!s->media_valid)
 		return;
 
-	mp_media_play(&s->media, s->is_looping, s->reconnecting);
+	mp_media_play(&s->media, s->is_looping, s->reconnecting,
+		      delay_start_ms);
 	if (s->is_local_file && s->media.has_video &&
-	    (s->is_clear_on_media_end || s->is_looping))
+	    (s->is_clear_on_media_end || s->is_looping) &&
+	    (delay_start_ms == 0))
 		obs_source_show_preloaded_video(s->source);
 	else
 		obs_source_output_video(s->source, NULL);
@@ -359,7 +375,7 @@ static void *ffmpeg_source_reconnect(void *data)
 		ffmpeg_source_open(s);
 
 	if (!s->restart_on_activate || active)
-		ffmpeg_source_start(s);
+		ffmpeg_source_start(s, false);
 
 finish:
 	s->reconnect_thread_valid = false;
@@ -462,6 +478,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_linear_alpha = obs_data_get_bool(settings, "linear_alpha");
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
+	s->start_delay_ms = (uint64_t)obs_data_get_int(settings, "start_delay");
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
@@ -480,7 +497,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	dump_source_info(s, input, input_format);
 	if (!s->restart_on_activate || active)
-		ffmpeg_source_start(s);
+		ffmpeg_source_start(s, false);
 }
 
 static const char *ffmpeg_source_getname(void *unused)
@@ -722,7 +739,7 @@ static void ffmpeg_source_restart(void *data)
 	struct ffmpeg_source *s = data;
 
 	if (obs_source_showing(s->source))
-		ffmpeg_source_start(s);
+		ffmpeg_source_start(s, true);
 
 	set_media_state(s, OBS_MEDIA_STATE_PLAYING);
 }
