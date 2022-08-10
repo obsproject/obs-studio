@@ -110,6 +110,7 @@ struct mp_media {
 
 	uint64_t in_point_ms;
 	uint64_t in_loop_point_ms;
+	int64_t out_point_ms;
 };
 
 typedef struct mp_media mp_media_t;
@@ -136,6 +137,7 @@ struct mp_media_info {
 
 	uint64_t in_point_ms;
 	uint64_t in_loop_point_ms;
+	int64_t out_point_ms;
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);

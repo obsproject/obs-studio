@@ -650,27 +650,49 @@ static inline bool mp_media_sleep_start_delay(mp_media_t *m)
 	}
 }
 
+static inline void mp_end_of_play_action(mp_media_t *m)
+{
+	bool looping;
+
+	pthread_mutex_lock(&m->mutex);
+	looping = m->looping;
+	if (!looping) {
+		m->active = false;
+		m->stopping = true;
+	}
+	pthread_mutex_unlock(&m->mutex);
+
+	mp_media_reset(m, true);
+}
+
 static inline bool mp_media_eof(mp_media_t *m)
 {
 	bool v_ended = !m->has_video || !m->v.frame_ready;
 	bool a_ended = !m->has_audio || !m->a.frame_ready;
 	bool eof = v_ended && a_ended;
 
-	if (eof) {
-		bool looping;
-
-		pthread_mutex_lock(&m->mutex);
-		looping = m->looping;
-		if (!looping) {
-			m->active = false;
-			m->stopping = true;
-		}
-		pthread_mutex_unlock(&m->mutex);
-
-		mp_media_reset(m, true);
-	}
+	if (eof)
+		mp_end_of_play_action(m);
 
 	return eof;
+}
+
+static inline bool mp_media_end_of_play(mp_media_t *m)
+{
+	if (m->out_point_ms < 0)
+		return false;
+
+	int64_t next_pts;
+	pthread_mutex_lock(&m->mutex);
+	next_pts = m->next_pts_ns;
+	pthread_mutex_unlock(&m->mutex);
+
+	if (next_pts >= m->out_point_ms * 1000000) {
+		mp_end_of_play_action(m);
+		return true;
+	}
+
+	return false;
 }
 
 static int interrupt_callback(void *data)
@@ -868,6 +890,9 @@ static inline bool mp_media_thread(mp_media_t *m)
 				continue;
 
 			mp_media_calc_next_ns(m);
+
+			if (mp_media_end_of_play(m))
+				continue;
 		}
 	}
 
@@ -932,6 +957,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->end_time_start_delay_ns = 0;
 	media->in_point_ms = info->in_point_ms;
 	media->in_loop_point_ms = info->in_loop_point_ms;
+	media->out_point_ms = info->out_point_ms;
 	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)

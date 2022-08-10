@@ -31,6 +31,11 @@
 #define FF_BLOG(level, format, ...) \
 	FF_LOG_S(s->source, level, format, ##__VA_ARGS__)
 
+typedef enum {
+	ff_source_out_point_eof = 0,
+	ff_source_out_point_custom = 1,
+} ff_source_out_point_mode;
+
 struct ffmpeg_source {
 	mp_media_t media;
 	bool media_valid;
@@ -69,6 +74,7 @@ struct ffmpeg_source {
 	uint64_t start_delay_ms;
 	uint64_t in_point_ms;
 	uint64_t in_loop_point_ms;
+	int64_t out_point_ms;
 
 	enum obs_media_state state;
 	obs_hotkey_pair_id play_pause_hotkey;
@@ -98,6 +104,9 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *in_point = obs_properties_get(props, "in_point");
 	obs_property_t *in_loop_point =
 		obs_properties_get(props, "in_loop_point");
+	obs_property_t *out_point_mode =
+		obs_properties_get(props, "out_point_mode");
+	obs_property_t *out_point = obs_properties_get(props, "out_point");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
 	obs_property_set_visible(input, !enabled);
@@ -107,6 +116,8 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(looping, enabled);
 	obs_property_set_visible(in_point, enabled);
 	obs_property_set_visible(in_loop_point, enabled);
+	obs_property_set_visible(out_point_mode, enabled);
+	obs_property_set_visible(out_point, enabled);
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
@@ -127,6 +138,24 @@ static bool is_loop_modified(obs_properties_t *props, obs_property_t *prop,
 	return true;
 }
 
+static bool is_out_point_mode_modified(obs_properties_t *props,
+				       obs_property_t *prop,
+				       obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	ff_source_out_point_mode mode =
+		obs_data_get_int(settings, "out_point_mode");
+	obs_property_t *out_point = obs_properties_get(props, "out_point");
+	bool enable_custom = false;
+
+	if (mode == ff_source_out_point_custom)
+		enable_custom = true;
+
+	obs_property_set_enabled(out_point, enable_custom);
+
+	return true;
+}
+
 static void ffmpeg_source_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_bool(settings, "is_local_file", true);
@@ -138,6 +167,9 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "start_delay", 0);
 	obs_data_set_default_int(settings, "in_point", 0);
 	obs_data_set_default_int(settings, "in_loop_point", 0);
+	obs_data_set_default_int(settings, "out_point_mode",
+				 ff_source_out_point_eof);
+	obs_data_set_default_int(settings, "out_point", 0);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
 }
@@ -246,6 +278,25 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 				      9999999, 1);
 	obs_property_int_set_suffix(prop, " ms");
 
+	prop = obs_properties_add_list(props, "out_point_mode",
+				       obs_module_text("OutPoint"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+	obs_property_list_add_int(prop, obs_module_text("OutPoint.EndOfFile"),
+				  ff_source_out_point_eof);
+	obs_property_list_add_int(prop, obs_module_text("OutPoint.Custom"),
+				  ff_source_out_point_custom);
+	obs_property_set_modified_callback(prop, is_out_point_mode_modified);
+
+	prop = obs_properties_add_int(
+		props, "out_point", obs_module_text("OutPoint"), 0, 9999999, 1);
+	obs_property_int_set_suffix(prop, " ms");
+
+	prop = obs_properties_add_list(props, "color_range",
+				       obs_module_text("ColorRange"),
+				       OBS_COMBO_TYPE_LIST,
+				       OBS_COMBO_FORMAT_INT);
+
 	prop = obs_properties_add_list(props, "color_range",
 				       obs_module_text("ColorRange"),
 				       OBS_COMBO_TYPE_LIST,
@@ -288,6 +339,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\tstart_delay:             %llu\n"
 		"\tin_point:                %llu\n"
 		"\tloop_point:              %llu\n"
+		"\tout_point:               %lld\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -296,7 +348,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no", s->start_delay_ms,
-		s->in_point_ms, s->in_loop_point_ms, s->ffmpeg_options);
+		s->in_point_ms, s->in_loop_point_ms, s->out_point_ms,
+		s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -369,6 +422,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.reconnecting = s->reconnecting,
 			.in_point_ms = s->in_point_ms,
 			.in_loop_point_ms = s->in_loop_point_ms,
+			.out_point_ms = s->out_point_ms,
 		};
 
 		s->media_valid = mp_media_init(&s->media, &info);
@@ -471,10 +525,16 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	bfree(s->input_format);
 	bfree(s->ffmpeg_options);
 
+	s->out_point_ms = -1; //Disable
 	if (is_local_file) {
 		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
+		ff_source_out_point_mode out_mode =
+			obs_data_get_int(settings, "out_point_mode");
+		if (out_mode == ff_source_out_point_custom)
+			s->out_point_ms =
+				obs_data_get_int(settings, "out_point");
 	} else {
 		input = obs_data_get_string(settings, "input");
 		input_format = obs_data_get_string(settings, "input_format");
@@ -519,6 +579,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->in_point_ms = (uint64_t)obs_data_get_int(settings, "in_point");
 	s->in_loop_point_ms =
 		(uint64_t)obs_data_get_int(settings, "in_loop_point");
+
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
