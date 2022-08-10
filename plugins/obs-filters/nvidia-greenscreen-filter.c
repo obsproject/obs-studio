@@ -64,9 +64,8 @@ struct nv_greenscreen_data {
 	uint32_t height; // height of texture
 	enum gs_color_space space;
 	gs_eparam_t *mask_param;
-	gs_eparam_t *src_param;
-	gs_eparam_t *threshold_param;
 	gs_eparam_t *image_param;
+	gs_eparam_t *threshold_param;
 	gs_eparam_t *multiplier_param;
 	float threshold;
 };
@@ -464,12 +463,10 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	if (filter->effect) {
 		filter->mask_param =
 			gs_effect_get_param_by_name(filter->effect, "mask");
-		filter->src_param =
+		filter->image_param =
 			gs_effect_get_param_by_name(filter->effect, "image");
 		filter->threshold_param = gs_effect_get_param_by_name(
 			filter->effect, "threshold");
-		filter->image_param =
-			gs_effect_get_param_by_name(filter->effect, "image");
 		filter->multiplier_param = gs_effect_get_param_by_name(
 			filter->effect, "multiplier");
 	}
@@ -621,7 +618,7 @@ static void draw_greenscreen(struct nv_greenscreen_data *filter)
 		gs_effect_set_texture(filter->mask_param,
 				      filter->alpha_texture);
 		gs_effect_set_texture_srgb(
-			filter->src_param,
+			filter->image_param,
 			gs_texrender_get_texture(filter->render));
 		gs_effect_set_float(filter->threshold_param, filter->threshold);
 		gs_effect_set_float(filter->multiplier_param, multiplier);
