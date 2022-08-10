@@ -67,6 +67,8 @@ struct ffmpeg_source {
 	int reconnect_delay_sec;
 
 	uint64_t start_delay_ms;
+	uint64_t in_point_ms;
+	uint64_t in_loop_point_ms;
 
 	enum obs_media_state state;
 	obs_hotkey_pair_id play_pause_hotkey;
@@ -93,6 +95,9 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_t *buffering = obs_properties_get(props, "buffering_mb");
 	obs_property_t *seekable = obs_properties_get(props, "seekable");
 	obs_property_t *speed = obs_properties_get(props, "speed_percent");
+	obs_property_t *in_point = obs_properties_get(props, "in_point");
+	obs_property_t *in_loop_point =
+		obs_properties_get(props, "in_loop_point");
 	obs_property_t *reconnect_delay_sec =
 		obs_properties_get(props, "reconnect_delay_sec");
 	obs_property_set_visible(input, !enabled);
@@ -100,9 +105,24 @@ static bool is_local_file_modified(obs_properties_t *props,
 	obs_property_set_visible(buffering, !enabled);
 	obs_property_set_visible(local_file, enabled);
 	obs_property_set_visible(looping, enabled);
+	obs_property_set_visible(in_point, enabled);
+	obs_property_set_visible(in_loop_point, enabled);
 	obs_property_set_visible(speed, enabled);
 	obs_property_set_visible(seekable, !enabled);
 	obs_property_set_visible(reconnect_delay_sec, !enabled);
+
+	return true;
+}
+
+static bool is_loop_modified(obs_properties_t *props, obs_property_t *prop,
+			     obs_data_t *settings)
+{
+	UNUSED_PARAMETER(prop);
+	bool loop = obs_data_get_bool(settings, "looping");
+	obs_property_t *in_loop_point =
+		obs_properties_get(props, "in_loop_point");
+
+	obs_property_set_enabled(in_loop_point, loop);
 
 	return true;
 }
@@ -116,6 +136,8 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "linear_alpha", false);
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "start_delay", 0);
+	obs_data_set_default_int(settings, "in_point", 0);
+	obs_data_set_default_int(settings, "in_loop_point", 0);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
 }
@@ -168,7 +190,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	dstr_free(&filter);
 	dstr_free(&path);
 
-	obs_properties_add_bool(props, "looping", obs_module_text("Looping"));
+	prop = obs_properties_add_bool(props, "looping",
+				       obs_module_text("Looping"));
+	obs_property_set_modified_callback(prop, is_loop_modified);
 
 	obs_properties_add_bool(props, "restart_on_activate",
 				obs_module_text("RestartWhenActivated"));
@@ -213,6 +237,15 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 				      1);
 	obs_property_int_set_suffix(prop, " ms");
 
+	prop = obs_properties_add_int(
+		props, "in_point", obs_module_text("InPoint"), 0, 9999999, 1);
+	obs_property_int_set_suffix(prop, " ms");
+
+	prop = obs_properties_add_int(props, "in_loop_point",
+				      obs_module_text("InLoopPoint"), 0,
+				      9999999, 1);
+	obs_property_int_set_suffix(prop, " ms");
+
 	prop = obs_properties_add_list(props, "color_range",
 				       obs_module_text("ColorRange"),
 				       OBS_COMBO_TYPE_LIST,
@@ -253,6 +286,8 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		"\trestart_on_activate:     %s\n"
 		"\tclose_when_inactive:     %s\n"
 		"\tstart_delay:             %llu\n"
+		"\tin_point:                %llu\n"
+		"\tloop_point:              %llu\n"
 		"\tffmpeg_options:          %s",
 		input ? input : "(null)",
 		input_format ? input_format : "(null)", s->speed_percent,
@@ -261,7 +296,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no", s->start_delay_ms,
-		s->ffmpeg_options);
+		s->in_point_ms, s->in_loop_point_ms, s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -332,6 +367,8 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.ffmpeg_options = s->ffmpeg_options,
 			.is_local_file = s->is_local_file || s->seekable,
 			.reconnecting = s->reconnecting,
+			.in_point_ms = s->in_point_ms,
+			.in_loop_point_ms = s->in_loop_point_ms,
 		};
 
 		s->media_valid = mp_media_init(&s->media, &info);
@@ -479,6 +516,9 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->buffering_mb = (int)obs_data_get_int(settings, "buffering_mb");
 	s->speed_percent = (int)obs_data_get_int(settings, "speed_percent");
 	s->start_delay_ms = (uint64_t)obs_data_get_int(settings, "start_delay");
+	s->in_point_ms = (uint64_t)obs_data_get_int(settings, "in_point");
+	s->in_loop_point_ms =
+		(uint64_t)obs_data_get_int(settings, "in_loop_point");
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;

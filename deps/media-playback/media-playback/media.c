@@ -557,7 +557,7 @@ static void seek_to(mp_media_t *m, int64_t pos)
 		mp_decode_flush(&m->a);
 }
 
-static bool mp_media_reset(mp_media_t *m)
+static bool mp_media_reset(mp_media_t *m, bool loop_reset)
 {
 	bool stopping;
 	bool active;
@@ -571,6 +571,11 @@ static bool mp_media_reset(mp_media_t *m)
 	m->eof = false;
 	m->base_ts += next_ts;
 	m->seek_next_ts = false;
+
+	if (loop_reset == false)
+		start_time += (m->in_point_ms * AV_TIME_BASE) / 1000;
+	else
+		start_time += (m->in_loop_point_ms * AV_TIME_BASE) / 1000;
 
 	seek_to(m, start_time);
 
@@ -662,7 +667,7 @@ static inline bool mp_media_eof(mp_media_t *m)
 		}
 		pthread_mutex_unlock(&m->mutex);
 
-		mp_media_reset(m);
+		mp_media_reset(m, true);
 	}
 
 	return eof;
@@ -779,7 +784,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 	if (!init_avformat(m)) {
 		return false;
 	}
-	if (!mp_media_reset(m)) {
+	if (!mp_media_reset(m, false)) {
 		return false;
 	}
 
@@ -832,7 +837,7 @@ static inline bool mp_media_thread(mp_media_t *m)
 			break;
 		}
 		if (reset) {
-			mp_media_reset(m);
+			mp_media_reset(m, false);
 			continue;
 		}
 
@@ -925,6 +930,8 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->is_local_file = info->is_local_file;
 	media->start_delay = false;
 	media->end_time_start_delay_ns = 0;
+	media->in_point_ms = info->in_point_ms;
+	media->in_loop_point_ms = info->in_loop_point_ms;
 	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)

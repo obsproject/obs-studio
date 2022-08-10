@@ -107,6 +107,9 @@ struct mp_media {
 
 	bool start_delay;
 	uint64_t end_time_start_delay_ns;
+
+	uint64_t in_point_ms;
+	uint64_t in_loop_point_ms;
 };
 
 typedef struct mp_media mp_media_t;
@@ -130,6 +133,9 @@ struct mp_media_info {
 	bool hardware_decoding;
 	bool is_local_file;
 	bool reconnecting;
+
+	uint64_t in_point_ms;
+	uint64_t in_loop_point_ms;
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
