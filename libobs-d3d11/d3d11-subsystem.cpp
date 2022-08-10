@@ -107,14 +107,17 @@ static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 	return false;
 }
 
-static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd)
+static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
+					  DXGI_SWAP_EFFECT effect)
 {
 	enum gs_color_space next_space = GS_CS_SRGB;
-	const HMONITOR hMonitor =
-		MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
-	if (hMonitor) {
-		if (screen_supports_hdr(device, hMonitor))
-			next_space = GS_CS_709_SCRGB;
+	if (effect == DXGI_SWAP_EFFECT_FLIP_DISCARD) {
+		const HMONITOR hMonitor =
+			MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
+		if (hMonitor) {
+			if (screen_supports_hdr(device, hMonitor))
+				next_space = GS_CS_709_SCRGB;
+		}
 	}
 
 	return next_space;
@@ -131,7 +134,7 @@ make_swap_desc(gs_device *device, DXGI_SWAP_CHAIN_DESC &desc,
 	       const gs_init_data *data, DXGI_SWAP_EFFECT effect, UINT flags)
 {
 	const HWND hwnd = (HWND)data->window.hwnd;
-	const enum gs_color_space space = get_next_space(device, hwnd);
+	const enum gs_color_space space = get_next_space(device, hwnd, effect);
 	const gs_color_format format =
 		get_swap_format_from_space(space, data->format);
 
@@ -243,7 +246,8 @@ void gs_swap_chain::Resize(uint32_t cx, uint32_t cy, gs_color_format format)
 void gs_swap_chain::Init()
 {
 	const gs_color_format format = get_swap_format_from_space(
-		get_next_space(device, hwnd), initData.format);
+		get_next_space(device, hwnd, swapDesc.SwapEffect),
+		initData.format);
 
 	target.device = device;
 	target.isRenderTarget = true;
@@ -1437,7 +1441,8 @@ void device_resize(gs_device_t *device, uint32_t cx, uint32_t cy)
 	}
 
 	const enum gs_color_space next_space =
-		get_next_space(device, device->curSwapChain->hwnd);
+		get_next_space(device, device->curSwapChain->hwnd,
+			       device->curSwapChain->swapDesc.SwapEffect);
 	device_resize_internal(device, cx, cy, next_space);
 }
 
@@ -1449,8 +1454,9 @@ enum gs_color_space device_get_color_space(gs_device_t *device)
 void device_update_color_space(gs_device_t *device)
 {
 	if (device->curSwapChain) {
-		const enum gs_color_space next_space =
-			get_next_space(device, device->curSwapChain->hwnd);
+		const enum gs_color_space next_space = get_next_space(
+			device, device->curSwapChain->hwnd,
+			device->curSwapChain->swapDesc.SwapEffect);
 		if (device->curSwapChain->space != next_space)
 			device_resize_internal(device, 0, 0, next_space);
 	} else {
