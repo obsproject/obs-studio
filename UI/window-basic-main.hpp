@@ -178,7 +178,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class AutoConfig;
 	friend class AutoConfigStreamPage;
 	friend class RecordButton;
-	friend class ReplayBufferButton;
+	friend class ControlsSplitButton;
 	friend class ExtraBrowsersModel;
 	friend class ExtraBrowsersDelegate;
 	friend class DeviceCaptureToolbar;
@@ -299,12 +299,10 @@ private:
 	QPointer<QMenu> startStreamMenu;
 
 	QPointer<QPushButton> transitionButton;
-	QPointer<QPushButton> replayBufferButton;
-	QPointer<QHBoxLayout> replayLayout;
+	QPointer<ControlsSplitButton> replayBufferButton;
 	QScopedPointer<QPushButton> pause;
-	QScopedPointer<QPushButton> replay;
 
-	QPointer<QPushButton> vcamButton;
+	QPointer<ControlsSplitButton> vcamButton;
 	bool vcamEnabled = false;
 
 	QScopedPointer<QSystemTrayIcon> trayIcon;
@@ -1062,6 +1060,7 @@ private slots:
 	void on_streamButton_clicked();
 	void on_recordButton_clicked();
 	void VCamButtonClicked();
+	void VCamConfigButtonClicked();
 	void on_settingsButton_clicked();
 	void Screenshot(OBSSource source_ = nullptr);
 	void ScreenshotSelectedSource();

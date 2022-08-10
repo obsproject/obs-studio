@@ -103,6 +103,7 @@ target_sources(
           forms/OBSBasicSettings.ui
           forms/OBSBasicSourceSelect.ui
           forms/OBSBasicTransform.ui
+          forms/OBSBasicVCamConfig.ui
           forms/OBSExtraBrowsers.ui
           forms/OBSImporter.ui
           forms/OBSLogReply.ui
@@ -258,6 +259,8 @@ target_sources(
           window-basic-transform.cpp
           window-basic-transform.hpp
           window-basic-preview.hpp
+          window-basic-vcam-config.cpp
+          window-basic-vcam-config.hpp
           window-dock.cpp
           window-dock.hpp
           window-importer.cpp

@@ -52,6 +52,7 @@
 #include "window-basic-main.hpp"
 #include "window-basic-stats.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-basic-vcam-config.hpp"
 #include "window-log-reply.hpp"
 #ifdef __APPLE__
 #include "window-permissions.hpp"
@@ -1655,16 +1656,15 @@ void OBSBasic::ReplayBufferClicked()
 
 void OBSBasic::AddVCamButton()
 {
-	vcamButton = new ReplayBufferButton(QTStr("Basic.Main.StartVirtualCam"),
-					    this);
-	vcamButton->setCheckable(true);
-	connect(vcamButton.data(), &QPushButton::clicked, this,
-		&OBSBasic::VCamButtonClicked);
+	OBSBasicVCamConfig::Init();
 
-	vcamButton->setProperty("themeID", "vcamButton");
-	ui->buttonsVLayout->insertWidget(2, vcamButton);
-	setTabOrder(ui->recordButton, vcamButton);
-	setTabOrder(vcamButton, ui->modeSwitch);
+	vcamButton = new ControlsSplitButton(
+		QTStr("Basic.Main.StartVirtualCam"), "vcamButton",
+		&OBSBasic::VCamButtonClicked);
+	vcamButton->addIcon(QTStr("Basic.Main.VirtualCamConfig"),
+			    QStringLiteral("configIconSmall"),
+			    &OBSBasic::VCamConfigButtonClicked);
+	vcamButton->insert(2);
 }
 
 void OBSBasic::ResetOutputs()
@@ -1680,28 +1680,13 @@ void OBSBasic::ResetOutputs()
 					   : CreateSimpleOutputHandler(this));
 
 		delete replayBufferButton;
-		delete replayLayout;
 
 		if (outputHandler->replayBuffer) {
-			replayBufferButton = new ReplayBufferButton(
-				QTStr("Basic.Main.StartReplayBuffer"), this);
-			replayBufferButton->setCheckable(true);
-			connect(replayBufferButton.data(),
-				&QPushButton::clicked, this,
+			replayBufferButton = new ControlsSplitButton(
+				QTStr("Basic.Main.StartReplayBuffer"),
+				"replayBufferButton",
 				&OBSBasic::ReplayBufferClicked);
-
-			replayBufferButton->setSizePolicy(QSizePolicy::Ignored,
-							  QSizePolicy::Fixed);
-
-			replayLayout = new QHBoxLayout(this);
-			replayLayout->addWidget(replayBufferButton);
-
-			replayBufferButton->setProperty("themeID",
-							"replayBufferButton");
-			ui->buttonsVLayout->insertLayout(2, replayLayout);
-			setTabOrder(ui->recordButton, replayBufferButton);
-			setTabOrder(replayBufferButton,
-				    ui->buttonsVLayout->itemAt(3)->widget());
+			replayBufferButton->insert(2);
 		}
 
 		if (sysTrayReplayBuffer)
@@ -7354,19 +7339,19 @@ void OBSBasic::StartReplayBuffer()
 		return;
 
 	if (!UIValidation::NoSourcesConfirmation(this)) {
-		replayBufferButton->setChecked(false);
+		replayBufferButton->first()->setChecked(false);
 		return;
 	}
 
 	if (!OutputPathValid()) {
 		OutputPathInvalidMessage();
-		replayBufferButton->setChecked(false);
+		replayBufferButton->first()->setChecked(false);
 		return;
 	}
 
 	if (LowDiskSpace()) {
 		DiskSpaceMessage();
-		replayBufferButton->setChecked(false);
+		replayBufferButton->first()->setChecked(false);
 		return;
 	}
 
@@ -7376,7 +7361,7 @@ void OBSBasic::StartReplayBuffer()
 	SaveProject();
 
 	if (!outputHandler->StartReplayBuffer()) {
-		replayBufferButton->setChecked(false);
+		replayBufferButton->first()->setChecked(false);
 	} else if (os_atomic_load_bool(&recording_paused)) {
 		ShowReplayBufferPauseWarning();
 	}
@@ -7387,10 +7372,12 @@ void OBSBasic::ReplayBufferStopping()
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StoppingReplayBuffer"));
+	replayBufferButton->first()->setText(
+		QTStr("Basic.Main.StoppingReplayBuffer"));
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(
+			replayBufferButton->first()->text());
 
 	replayBufferStopping = true;
 	if (api)
@@ -7415,11 +7402,13 @@ void OBSBasic::ReplayBufferStart()
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StopReplayBuffer"));
-	replayBufferButton->setChecked(true);
+	replayBufferButton->first()->setText(
+		QTStr("Basic.Main.StopReplayBuffer"));
+	replayBufferButton->first()->setChecked(true);
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(
+			replayBufferButton->first()->text());
 
 	replayBufferStopping = false;
 	if (api)
@@ -7472,11 +7461,13 @@ void OBSBasic::ReplayBufferStop(int code)
 	if (!outputHandler || !outputHandler->replayBuffer)
 		return;
 
-	replayBufferButton->setText(QTStr("Basic.Main.StartReplayBuffer"));
-	replayBufferButton->setChecked(false);
+	replayBufferButton->first()->setText(
+		QTStr("Basic.Main.StartReplayBuffer"));
+	replayBufferButton->first()->setChecked(false);
 
 	if (sysTrayReplayBuffer)
-		sysTrayReplayBuffer->setText(replayBufferButton->text());
+		sysTrayReplayBuffer->setText(
+			replayBufferButton->first()->text());
 
 	blog(LOG_INFO, REPLAY_BUFFER_STOP);
 
@@ -7525,7 +7516,7 @@ void OBSBasic::StartVirtualCam()
 	SaveProject();
 
 	if (!outputHandler->StartVirtualCam()) {
-		vcamButton->setChecked(false);
+		vcamButton->first()->setChecked(false);
 	}
 }
 
@@ -7547,10 +7538,10 @@ void OBSBasic::OnVirtualCamStart()
 	if (!outputHandler || !outputHandler->virtualCam)
 		return;
 
-	vcamButton->setText(QTStr("Basic.Main.StopVirtualCam"));
+	vcamButton->first()->setText(QTStr("Basic.Main.StopVirtualCam"));
 	if (sysTrayVirtualCam)
 		sysTrayVirtualCam->setText(QTStr("Basic.Main.StopVirtualCam"));
-	vcamButton->setChecked(true);
+	vcamButton->first()->setChecked(true);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STARTED);
@@ -7565,10 +7556,10 @@ void OBSBasic::OnVirtualCamStop(int)
 	if (!outputHandler || !outputHandler->virtualCam)
 		return;
 
-	vcamButton->setText(QTStr("Basic.Main.StartVirtualCam"));
+	vcamButton->first()->setText(QTStr("Basic.Main.StartVirtualCam"));
 	if (sysTrayVirtualCam)
 		sysTrayVirtualCam->setText(QTStr("Basic.Main.StartVirtualCam"));
-	vcamButton->setChecked(false);
+	vcamButton->first()->setChecked(false);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_VIRTUALCAM_STOPPED);
@@ -7720,12 +7711,18 @@ void OBSBasic::VCamButtonClicked()
 		StopVirtualCam();
 	} else {
 		if (!UIValidation::NoSourcesConfirmation(this)) {
-			vcamButton->setChecked(false);
+			vcamButton->first()->setChecked(false);
 			return;
 		}
 
 		StartVirtualCam();
 	}
+}
+
+void OBSBasic::VCamConfigButtonClicked()
+{
+	OBSBasicVCamConfig config(this);
+	config.exec();
 }
 
 void OBSBasic::on_settingsButton_clicked()
@@ -9854,6 +9851,7 @@ void OBSBasic::PauseRecording()
 
 		os_atomic_set_bool(&recording_paused, true);
 
+		auto replay = replayBufferButton->second();
 		if (replay)
 			replay->setEnabled(false);
 
@@ -9898,6 +9896,7 @@ void OBSBasic::UnpauseRecording()
 
 		os_atomic_set_bool(&recording_paused, false);
 
+		auto replay = replayBufferButton->second();
 		if (replay)
 			replay->setEnabled(true);
 
@@ -9974,28 +9973,13 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 {
 	if (!activate || !outputHandler ||
 	    !outputHandler->ReplayBufferActive()) {
-		replay.reset();
+		replayBufferButton->removeIcon();
 		return;
 	}
 
-	replay.reset(new QPushButton());
-	replay->setAccessibleName(QTStr("Basic.Main.SaveReplay"));
-	replay->setToolTip(QTStr("Basic.Main.SaveReplay"));
-	replay->setChecked(false);
-	replay->setProperty("themeID",
-			    QVariant(QStringLiteral("replayIconSmall")));
-
-	QSizePolicy sp;
-	sp.setHeightForWidth(true);
-	replay->setSizePolicy(sp);
-
-	connect(replay.data(), &QAbstractButton::clicked, this,
-		&OBSBasic::ReplayBufferSave);
-	replayLayout->addWidget(replay.data());
-	setTabOrder(replayLayout->itemAt(0)->widget(),
-		    replayLayout->itemAt(1)->widget());
-	setTabOrder(replayLayout->itemAt(1)->widget(),
-		    ui->buttonsVLayout->itemAt(3)->widget());
+	replayBufferButton->addIcon(QTStr("Basic.Main.SaveReplay"),
+				    QStringLiteral("replayIconSmall"),
+				    &OBSBasic::ReplayBufferSave);
 }
 
 #define MBYTE (1024ULL * 1024ULL)

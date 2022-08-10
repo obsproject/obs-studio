@@ -5,6 +5,7 @@
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-basic-vcam-config.hpp"
 
 using namespace std;
 
@@ -178,6 +179,9 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 	os_atomic_set_bool(&virtualcam_active, false);
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop",
 				  Q_ARG(int, code));
+
+	obs_output_set_media(output->virtualCam, nullptr, nullptr);
+	OBSBasicVCamConfig::StopVideo();
 }
 
 /* ------------------------------------------------------------------------ */
@@ -226,8 +230,11 @@ inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 bool BasicOutputHandler::StartVirtualCam()
 {
 	if (main->vcamEnabled) {
-		obs_output_set_media(virtualCam, obs_get_video(),
-				     obs_get_audio());
+		video_t *video = OBSBasicVCamConfig::StartVideo();
+		if (!video)
+			return false;
+
+		obs_output_set_media(virtualCam, video, obs_get_audio());
 		if (!Active())
 			SetupOutputs();
 
