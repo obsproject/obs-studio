@@ -382,7 +382,7 @@ static void chroma_key_render_v2(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	if (source_space == GS_CS_709_EXTENDED) {
 		obs_source_skip_video_filter(filter->context);
@@ -549,7 +549,7 @@ chroma_key_get_color_space(void *data, size_t count,
 
 	struct chroma_key_filter_data_v2 *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	return source_space;
