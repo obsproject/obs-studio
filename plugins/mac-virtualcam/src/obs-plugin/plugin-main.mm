@@ -116,6 +116,8 @@ FourCharCode convert_video_format_to_mac(enum video_format format)
 		return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
 	case VIDEO_FORMAT_UYVY:
 		return kCVPixelFormatType_422YpCbCr8;
+	case VIDEO_FORMAT_P010:
+		return kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
 	default:
 		// Zero indicates that the format is not supported on macOS
 		// Note that some formats do have an associated constant, but
