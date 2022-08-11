@@ -9851,7 +9851,8 @@ void OBSBasic::PauseRecording()
 
 		os_atomic_set_bool(&recording_paused, true);
 
-		auto replay = replayBufferButton->second();
+		auto replay = replayBufferButton ? replayBufferButton->second()
+						 : nullptr;
 		if (replay)
 			replay->setEnabled(false);
 
@@ -9896,7 +9897,8 @@ void OBSBasic::UnpauseRecording()
 
 		os_atomic_set_bool(&recording_paused, false);
 
-		auto replay = replayBufferButton->second();
+		auto replay = replayBufferButton ? replayBufferButton->second()
+						 : nullptr;
 		if (replay)
 			replay->setEnabled(true);
 
