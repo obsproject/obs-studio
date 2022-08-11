@@ -238,7 +238,12 @@ bool BasicOutputHandler::StartVirtualCam()
 		if (!Active())
 			SetupOutputs();
 
-		return obs_output_start(virtualCam);
+		bool success = obs_output_start(virtualCam);
+
+		if (!success)
+			OBSBasicVCamConfig::StopVideo();
+
+		return success;
 	}
 	return false;
 }
