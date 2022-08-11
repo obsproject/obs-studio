@@ -242,7 +242,7 @@ static void crop_filter_render(void *data, gs_effect_t *effect)
 	};
 
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
 	float multiplier;
 	const char *technique = get_tech_name_and_multiplier(
@@ -292,7 +292,7 @@ crop_filter_get_color_space(void *data, size_t count,
 
 	struct crop_filter_data *const filter = data;
 	const enum gs_color_space source_space = obs_source_get_color_space(
-		obs_filter_get_parent(filter->context),
+		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	enum gs_color_space space = source_space;
