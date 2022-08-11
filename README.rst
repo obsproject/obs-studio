@@ -56,8 +56,8 @@ Contributing
   https://obsproject.com/docs
 
 - If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this thread:
-  https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
+  Instead, please use Crowdin.  For more information read this page:
+  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics
