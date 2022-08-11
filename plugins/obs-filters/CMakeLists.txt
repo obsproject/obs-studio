@@ -121,6 +121,7 @@ target_sources(
           color-correction-filter.c
           async-delay-filter.c
           gpu-delay.c
+          hdr-tonemap-filter.c
           crop-filter.c
           scale-filter.c
           scroll-filter.c
@@ -145,11 +146,13 @@ if(NOT OS_MACOS)
             data/blend_sub_filter.effect
             data/chroma_key_filter.effect
             data/chroma_key_filter_v2.effect
+            data/color.effect
             data/color_correction_filter.effect
             data/color_grade_filter.effect
             data/color_key_filter.effect
             data/color_key_filter_v2.effect
             data/crop_filter.effect
+            data/hdr_tonemap_filter.effect
             data/luma_key_filter.effect
             data/luma_key_filter_v2.effect
             data/mask_alpha_filter.effect
