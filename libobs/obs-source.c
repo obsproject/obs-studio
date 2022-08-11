@@ -2895,9 +2895,9 @@ obs_source_get_color_space(obs_source_t *source, size_t count,
 	}
 
 	if (!source->context.data || !source->enabled) {
-		if (source->filter_parent)
+		if (source->filter_target)
 			return obs_source_get_color_space(
-				source->filter_parent, count, preferred_spaces);
+				source->filter_target, count, preferred_spaces);
 	}
 
 	if (source->info.output_flags & OBS_SOURCE_ASYNC) {
