@@ -1123,6 +1123,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		warn("B-Frames set to %lld but b-frames are not "
 		     "supported by this device",
 		     bf);
+		bf = 0;
 	}
 
 	int rc = get_avc_rate_control(rc_str);
@@ -1161,11 +1162,12 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy,
-	     ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx,
+	     enc->cy, ffmpeg_opts);
 
 	return true;
 }
