@@ -5,7 +5,7 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Build Status - GitHub Actions
    :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
 
-.. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
+.. image:: https://badges.crowdin.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
 
