@@ -3294,7 +3294,14 @@ void OBSBasic::HideAudioControl()
 
 	if (!SourceMixerHidden(source)) {
 		SetSourceMixerHidden(source, true);
-		DeactivateAudioSource(source);
+
+		/* Due to a bug with QT 6.2.4, the version that's in the Ubuntu
+		* 22.04 ppa, hiding the audio mixer causes a crash, so defer to
+		* the next event loop to hide it. Doesn't seem to be a problem
+		* with newer versions of QT. */
+		QMetaObject::invokeMethod(this, "DeactivateAudioSource",
+					  Qt::QueuedConnection,
+					  Q_ARG(OBSSource, OBSSource(source)));
 	}
 }
 
