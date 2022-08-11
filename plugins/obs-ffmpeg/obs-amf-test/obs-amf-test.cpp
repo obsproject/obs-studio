@@ -139,7 +139,7 @@ try {
 		;
 
 	for (auto &[idx, caps] : adapter_info) {
-		printf("[%d]\n", idx);
+		printf("[%u]\n", idx);
 		printf("is_amd=%s\n", caps.is_amd ? "true" : "false");
 		printf("supports_avc=%s\n",
 		       caps.supports_avc ? "true" : "false");
