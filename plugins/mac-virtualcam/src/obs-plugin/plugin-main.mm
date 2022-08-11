@@ -178,6 +178,8 @@ static bool virtualcam_output_start(void *data)
 		conversion.format = VIDEO_FORMAT_NV12;
 		conversion.width = vcam->videoInfo.output_width;
 		conversion.height = vcam->videoInfo.output_height;
+		conversion.colorspace = vcam->videoInfo.colorspace;
+		conversion.range = vcam->videoInfo.range;
 		obs_output_set_video_conversion(vcam->output, &conversion);
 
 		video_format = convert_video_format_to_mac(conversion.format);
