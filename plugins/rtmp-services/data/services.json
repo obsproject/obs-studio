@@ -1955,6 +1955,24 @@
                 "x264opts": "scenecut=0"
             }
         },
+	{
+            "name": "Sorry Video",
+            "stream_key_link": "https://sorry.video/users/settings/stream",
+            "servers": [
+                {
+                    "name": "US-CENTRAL",
+                    "url": "stream.sorry.video"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "output": "ftl_output",
+                "max audio bitrate": 160,
+                "max video bitrate": 6000,
+                "bframes": 0,
+                "x264opts": "scenecut=0"
+            }
+        },
         {
             "name": "OPENREC.tv - Premium member (プレミアム会員)",
             "stream_key_link": "https://www.openrec.tv/login?keep_login=true&url=https://www.openrec.tv/dashboard/live?from=obs",
