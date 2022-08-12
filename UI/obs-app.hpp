@@ -80,7 +80,7 @@ class OBSApp : public QApplication {
 private:
 	std::string locale;
 	std::string theme;
-	OBSThemeMeta *themeMeta = nullptr;
+
 	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
