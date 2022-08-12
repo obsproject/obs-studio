@@ -578,8 +578,8 @@ static inline void set_video_matrix(struct obs_core_video_mix *video,
 	memcpy(video->color_matrix, &mat, sizeof(float) * 16);
 }
 
-int obs_init_video_mix(struct obs_video_info *ovi,
-		       struct obs_core_video_mix *video)
+static int obs_init_video_mix(struct obs_video_info *ovi,
+			      struct obs_core_video_mix *video)
 {
 	struct video_output_info vi;
 
@@ -618,6 +618,17 @@ int obs_init_video_mix(struct obs_video_info *ovi,
 	gs_leave_context();
 
 	return OBS_VIDEO_SUCCESS;
+}
+
+struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
+{
+	struct obs_core_video_mix *video =
+		bzalloc(sizeof(struct obs_core_video_mix));
+	if (obs_init_video_mix(ovi, video) != OBS_VIDEO_SUCCESS) {
+		bfree(video);
+		video = NULL;
+	}
+	return video;
 }
 
 static int obs_init_video(struct obs_video_info *ovi)
@@ -659,7 +670,7 @@ static void stop_video(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++)
-		video_output_stop(obs->video.mixes.array[i].video);
+		video_output_stop(obs->video.mixes.array[i]->video);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	struct obs_core_video *video = &obs->video;
@@ -748,6 +759,7 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 		video->gpu_encoder_active = 0;
 		video->cur_texture = 0;
 	}
+	bfree(video);
 }
 
 static void obs_free_video(void)
@@ -756,8 +768,10 @@ static void obs_free_video(void)
 	size_t num = obs->video.mixes.num;
 	if (num)
 		blog(LOG_WARNING, "%d views remain at shutdown", num);
-	for (size_t i = 0; i < num; i++)
-		obs_free_video_mix(obs->video.mixes.array + i);
+	for (size_t i = 0; i < num; i++) {
+		obs_free_video_mix(obs->video.mixes.array[i]);
+		obs->video.mixes.array[i] = NULL;
+	}
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
@@ -2715,7 +2729,7 @@ struct obs_core_video_mix *get_mix_for_video(video_t *v)
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
-		struct obs_core_video_mix *mix = obs->video.mixes.array + i;
+		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
 
 		if (v == mix->video) {
 			result = mix;
@@ -2866,7 +2880,7 @@ bool obs_video_active(void)
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
-		struct obs_core_video_mix *video = obs->video.mixes.array + i;
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
 
 		if (os_atomic_load_long(&video->raw_active) > 0 ||
 		    os_atomic_load_long(&video->gpu_encoder_active) > 0) {
