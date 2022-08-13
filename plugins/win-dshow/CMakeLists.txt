@@ -126,10 +126,10 @@ if(ENABLE_VIRTUALCAM)
       endif()
     endif()
   endif()
-endif()
 
-if(INVALID_GUID)
-  obs_status(WARNING "Windows Virtual Camera - invalid GUID supplied")
+  if(INVALID_GUID)
+    obs_status(WARNING "Windows Virtual Camera - invalid GUID supplied")
+  endif()
 endif()
 
 target_link_libraries(
