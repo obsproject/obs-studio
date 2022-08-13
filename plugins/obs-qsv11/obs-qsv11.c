@@ -189,7 +189,8 @@ static inline void add_strings(obs_property_t *list, const char *const *strings)
 static inline bool is_skl_or_greater_platform()
 {
 	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
-	return (plat >= QSV_CPU_PLATFORM_SKL);
+	return (plat >= QSV_CPU_PLATFORM_SKL ||
+		plat == QSV_CPU_PLATFORM_UNKNOWN);
 }
 
 static bool update_latency(obs_data_t *settings)
@@ -314,7 +315,8 @@ static bool profile_modified(obs_properties_t *ppts, obs_property_t *p,
 	const char *profile = obs_data_get_string(settings, "profile");
 	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
 	bool bVisible = ((astrcmpi(profile, "high") == 0) &&
-			 (plat >= QSV_CPU_PLATFORM_ICL));
+			 (plat >= QSV_CPU_PLATFORM_ICL ||
+			  plat == QSV_CPU_PLATFORM_UNKNOWN));
 	p = obs_properties_get(ppts, "CQM");
 	obs_property_set_visible(p, bVisible);
 	return true;
@@ -325,7 +327,9 @@ static inline void add_rate_controls(obs_property_t *list,
 {
 	enum qsv_cpu_platform plat = qsv_get_cpu_platform();
 	while (rc->name) {
-		if (!rc->haswell_or_greater || plat >= QSV_CPU_PLATFORM_HSW)
+		if (!rc->haswell_or_greater ||
+		    (plat >= QSV_CPU_PLATFORM_HSW ||
+		     plat == QSV_CPU_PLATFORM_UNKNOWN))
 			obs_property_list_add_string(list, rc->name, rc->name);
 		rc++;
 	}
@@ -818,7 +822,8 @@ static inline void cap_resolution(obs_encoder_t *encoder,
 	info->height = height;
 	info->width = width;
 
-	if (qsv_platform <= QSV_CPU_PLATFORM_IVB) {
+	if (qsv_platform <= QSV_CPU_PLATFORM_IVB &&
+	    qsv_platform != QSV_CPU_PLATFORM_UNKNOWN) {
 		if (width > 1920) {
 			info->width = 1920;
 		}
