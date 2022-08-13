@@ -104,6 +104,7 @@ struct amf_base {
 
 	amf_int64 max_throughput = 0;
 	amf_int64 throughput = 0;
+	int64_t dts_offset = 0;
 	uint32_t cx;
 	uint32_t cy;
 	uint32_t linesize = 0;
@@ -113,6 +114,7 @@ struct amf_base {
 	bool bframes_supported = false;
 	bool using_bframes = false;
 	bool first_update = true;
+	bool calculated_dts_offset = false;
 
 	inline amf_base(bool fallback) : fallback(fallback) {}
 	virtual ~amf_base() = default;
@@ -477,8 +479,25 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 	packet->dts = convert_to_obs_ts(enc, data->GetPts());
 	packet->keyframe = type == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 
-	if (enc->using_bframes)
-		packet->dts -= 2;
+	if (enc->using_bframes) {
+		int64_t duration = data->GetDuration() / 500000;
+
+		if (!enc->calculated_dts_offset) {
+			if (packet->pts == packet->dts) {
+				enc->dts_offset = duration;
+			} else if (packet->pts > packet->dts) {
+				enc->dts_offset =
+					duration - packet->pts + packet->dts;
+			}
+
+			enc->calculated_dts_offset = true;
+		}
+
+		packet->dts = packet->dts - enc->dts_offset;
+
+		if (packet->pts < packet->dts)
+			packet->pts = packet->dts;
+	}
 }
 
 static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
