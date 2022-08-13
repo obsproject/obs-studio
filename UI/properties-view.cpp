@@ -899,7 +899,7 @@ static bool matches_ranges(media_frames_per_second &best_match,
 	for (auto &pair : fps_ranges) {
 		auto max_ = convert_fn(pair.first);
 		auto min_ = convert_fn(pair.second);
-		/*blog(LOG_INFO, "%lg ≤ %lg ≤ %lg? %s %s %s",
+		/*blog(LOG_INFO, "%lg <= %lg <= %lg? %s %s %s",
 				min_, val, max_,
 				fabsl(min_ - val) < epsilon ? "true" : "false",
 				min_ <= val && val <= max_  ? "true" : "false",
