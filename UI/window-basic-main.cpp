@@ -2132,13 +2132,14 @@ void OBSBasic::OnFirstLoad()
 }
 
 #if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
-#define CUR_VER OBS_RELEASE_CANDIDATE_VER
+#define CUR_VER \
+	((uint64_t)OBS_RELEASE_CANDIDATE_VER << 16ULL | OBS_RELEASE_CANDIDATE)
 #define LAST_INFO_VERSION_STRING "InfoLastRCVersion"
 #elif OBS_BETA > 0
-#define CUR_VER OBS_BETA_VER
+#define CUR_VER ((uint64_t)OBS_BETA_VER << 16ULL | OBS_BETA)
 #define LAST_INFO_VERSION_STRING "InfoLastBetaVersion"
 #else
-#define CUR_VER LIBOBS_API_VER
+#define CUR_VER ((uint64_t)LIBOBS_API_VER << 16ULL)
 #define LAST_INFO_VERSION_STRING "InfoLastVersion"
 #endif
 
@@ -2191,15 +2192,15 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		return;
 	}
 
-	uint32_t lastVersion = config_get_int(App()->GlobalConfig(), "General",
-					      LAST_INFO_VERSION_STRING);
+	uint64_t lastVersion = config_get_uint(App()->GlobalConfig(), "General",
+					       LAST_INFO_VERSION_STRING);
 	int current_version_increment = -1;
 
-	if ((lastVersion & ~0xFFFF) < (CUR_VER & ~0xFFFF)) {
+	if ((lastVersion & ~0xFFFF0000ULL) < (CUR_VER & ~0xFFFF0000ULL)) {
 		config_set_int(App()->GlobalConfig(), "General",
 			       "InfoIncrement", -1);
-		config_set_int(App()->GlobalConfig(), "General",
-			       LAST_INFO_VERSION_STRING, CUR_VER);
+		config_set_uint(App()->GlobalConfig(), "General",
+				LAST_INFO_VERSION_STRING, CUR_VER);
 	} else {
 		current_version_increment = config_get_int(
 			App()->GlobalConfig(), "General", "InfoIncrement");
