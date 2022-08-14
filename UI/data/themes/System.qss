@@ -138,6 +138,13 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* About dialog */
 
 * [themeID="aboutName"] {
