@@ -2213,14 +2213,6 @@ void OBSBasic::ReceivedIntroJson(const QString &text)
 		       info_increment);
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
-	/* Don't show What's New dialog for new users */
-#if !defined(OBS_RELEASE_CANDIDATE) || OBS_RELEASE_CANDIDATE == 0 || \
-	!defined(OBS_BETA) || OBS_BETA == 0
-
-	if (!lastVersion) {
-		return;
-	}
-#endif
 	cef->init_browser();
 
 	WhatsNewBrowserInitThread *wnbit =
