@@ -121,6 +121,13 @@ SourceTree QLineEdit {
     border-radius: none;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* Dock Widget */
 
 QDockWidget {
