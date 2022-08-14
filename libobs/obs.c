@@ -767,7 +767,7 @@ static void obs_free_video(void)
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	size_t num = obs->video.mixes.num;
 	if (num)
-		blog(LOG_WARNING, "%d views remain at shutdown", num);
+		blog(LOG_WARNING, "%zu views remain at shutdown", num);
 	for (size_t i = 0; i < num; i++) {
 		obs_free_video_mix(obs->video.mixes.array[i]);
 		obs->video.mixes.array[i] = NULL;
