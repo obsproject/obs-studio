@@ -74,6 +74,11 @@ else()
 
     target_compile_definitions(obs-rnnoise INTERFACE COMPILE_OPUS)
 
+    target_compile_options(
+      obs-rnnoise
+      INTERFACE
+        "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wno-null-dereference>")
+
     if(OS_LINUX)
       set_property(SOURCE ${_RNNOISE_SOURCES} PROPERTY COMPILE_FLAGS
                                                        -fvisibility=hidden)
