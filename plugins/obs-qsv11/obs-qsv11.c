@@ -74,6 +74,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 	blog(level, "[qsv encoder: '%s'] " format, \
 	     obs_encoder_get_name(obsqsv->encoder), ##__VA_ARGS__)
 
+#define error(format, ...) do_log(LOG_ERROR, format, ##__VA_ARGS__)
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
@@ -619,6 +620,29 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
+
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		const char *const text = obs_module_text("10bitUnsupportedAvc");
+		obs_encoder_set_last_error(encoder, text);
+		error("%s", text);
+		bfree(obsqsv);
+		return NULL;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
+			const char *const text =
+				obs_module_text("8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			error("%s", text);
+			bfree(obsqsv);
+			return NULL;
+		}
+	}
 
 	if (update_settings(obsqsv, settings)) {
 		EnterCriticalSection(&g_QsvCs);
