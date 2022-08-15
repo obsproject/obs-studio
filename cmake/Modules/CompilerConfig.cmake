@@ -109,6 +109,12 @@ else()
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-fcolor-diagnostics;-Wno-error=shorten-64-to-32>"
     "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>")
 
+  # GCC on aarch64 emits type-limits warnings that do not appear on x86_64
+  if(CMAKE_CXX_COMPILER_ID STREQUAL "GNU" AND CMAKE_SYSTEM_PROCESSOR STREQUAL
+                                              "aarch64")
+    add_compile_options(-Wno-error=type-limits)
+  endif()
+
   if(OBS_CODESIGN_LINKER)
     add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")
   endif()
