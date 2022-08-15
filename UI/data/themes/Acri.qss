@@ -234,6 +234,11 @@ OBSBasicSettings QListWidget::item {
     padding: 6px;
 }
 
+/* Settings properties view */
+OBSBasicSettings #PropertiesContainer {
+    background-color: palette(dark);
+}
+
 /* Dock Widget */
 OBSDock > QWidget {
     background: palette(dark);
