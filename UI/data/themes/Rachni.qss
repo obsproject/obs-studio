@@ -1282,14 +1282,15 @@ OBSBasic {
 /* Scene Tree Grid Mode */
 
 SceneTree {
-    qproperty-gridItemWidth: 150;
-    qproperty-gridItemHeight: 27;
+    qproperty-gridItemWidth: 154;
+    qproperty-gridItemHeight: 31;
 }
 
 *[gridMode="true"] SceneTree::item {
     color: palette(text);
     background-color: palette(button);
     border-radius: 4px;
+    margin: 2px;
 }
 
 *[gridMode="true"] SceneTree::item:selected {
