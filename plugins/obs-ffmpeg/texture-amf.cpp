@@ -902,6 +902,20 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, bool hevc)
 		throw "NV12 textures aren't active";
 	}
 
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
+			throw "OBS does not support 8-bit output of Rec. 2100";
+		}
+	}
+
 	if ((hevc && !caps[ovi.adapter].supports_hevc) ||
 	    (!hevc && !caps[ovi.adapter].supports_avc))
 		throw "Wrong adapter";
@@ -1258,16 +1272,38 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "fallback-amf-h264";
 
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010: {
+		const char *const text =
+			obs_module_text("AMF.10bitUnsupportedAvc");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("AMF.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			throw text;
+		}
+		}
+	}
+
 	amf_avc_create_internal(enc.get(), settings);
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %ls", __FUNCTION__,
+	     err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s", __FUNCTION__, err);
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s", __FUNCTION__, err);
 	return nullptr;
 }
 
@@ -1568,16 +1604,34 @@ try {
 	enc->encoder = encoder;
 	enc->encoder_str = "fallback-amf-h265";
 
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("AMF.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			throw text;
+		}
+		}
+	}
+
 	amf_hevc_create_internal(enc.get(), settings);
 	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %ls", __FUNCTION__,
+	     err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s", __FUNCTION__, err);
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s", __FUNCTION__, err);
 	return nullptr;
 }
 
