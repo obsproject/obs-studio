@@ -102,7 +102,7 @@ static void compute_dense(const DenseLayer *layer, float *output, const float *i
       for (i=0;i<N;i++)
          output[i] = relu(output[i]);
    } else {
-     *(int*)0=0;
+     __builtin_trap();
    }
 }
 
@@ -148,7 +148,7 @@ static void compute_gru(const GRULayer *gru, float *state, const float *input)
       if (gru->activation == ACTIVATION_SIGMOID) sum = sigmoid_approx(WEIGHTS_SCALE*sum);
       else if (gru->activation == ACTIVATION_TANH) sum = tansig_approx(WEIGHTS_SCALE*sum);
       else if (gru->activation == ACTIVATION_RELU) sum = relu(WEIGHTS_SCALE*sum);
-      else *(int*)0=0;
+      else __builtin_trap();
       h[i] = z[i]*state[i] + (1-z[i])*sum;
    }
    for (i=0;i<N;i++)
