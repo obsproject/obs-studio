@@ -20,7 +20,6 @@ task:
   - mkdir build
   - cd build
   - cmake
-      -DUNIX_STRUCTURE=1
       -DENABLE_AJA=OFF
       -DENABLE_ALSA=OFF
       -GNinja ..
