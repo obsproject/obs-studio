@@ -99,7 +99,7 @@ struct obs_qsv {
 
 /* ------------------------------------------------------------------------- */
 
-static CRITICAL_SECTION g_QsvCs;
+static SRWLOCK g_QsvLock = SRWLOCK_INIT;
 static unsigned short g_verMajor;
 static unsigned short g_verMinor;
 static int64_t g_pts2dtsShift;
@@ -117,10 +117,10 @@ static void obs_qsv_stop(void *data);
 static void clear_data(struct obs_qsv *obsqsv)
 {
 	if (obsqsv->context) {
-		EnterCriticalSection(&g_QsvCs);
+		AcquireSRWLockExclusive(&g_QsvLock);
 		qsv_encoder_close(obsqsv->context);
 		obsqsv->context = NULL;
-		LeaveCriticalSection(&g_QsvCs);
+		ReleaseSRWLockExclusive(&g_QsvLock);
 
 		// bfree(obsqsv->sei);
 		bfree(obsqsv->extra_data);
@@ -599,13 +599,13 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 	int ret;
 
 	if (success) {
-		EnterCriticalSection(&g_QsvCs);
+		AcquireSRWLockExclusive(&g_QsvLock);
 
 		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
 		if (ret != 0)
 			warn("Failed to reconfigure: %d", ret);
 
-		LeaveCriticalSection(&g_QsvCs);
+		ReleaseSRWLockExclusive(&g_QsvLock);
 
 		return ret == 0;
 	}
@@ -615,15 +615,13 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 
 static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
-	InitializeCriticalSection(&g_QsvCs);
-
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
 
 	if (update_settings(obsqsv, settings)) {
-		EnterCriticalSection(&g_QsvCs);
+		AcquireSRWLockExclusive(&g_QsvLock);
 		obsqsv->context = qsv_encoder_open(&obsqsv->params);
-		LeaveCriticalSection(&g_QsvCs);
+		ReleaseSRWLockExclusive(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
 			warn("qsv failed to load");
@@ -943,7 +941,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 	if (!frame || !packet || !received_packet)
 		return false;
 
-	EnterCriticalSection(&g_QsvCs);
+	AcquireSRWLockExclusive(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -967,13 +965,13 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 
 	if (ret < 0) {
 		warn("encode failed");
-		LeaveCriticalSection(&g_QsvCs);
+		ReleaseSRWLockExclusive(&g_QsvLock);
 		return false;
 	}
 
 	parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
-	LeaveCriticalSection(&g_QsvCs);
+	ReleaseSRWLockExclusive(&g_QsvLock);
 
 	return true;
 }
@@ -994,7 +992,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 	if (!packet || !received_packet)
 		return false;
 
-	EnterCriticalSection(&g_QsvCs);
+	AcquireSRWLockExclusive(&g_QsvLock);
 
 	video_t *video = obs_encoder_video(obsqsv->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -1010,13 +1008,13 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	if (ret < 0) {
 		warn("encode failed");
-		LeaveCriticalSection(&g_QsvCs);
+		ReleaseSRWLockExclusive(&g_QsvLock);
 		return false;
 	}
 
 	parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
-	LeaveCriticalSection(&g_QsvCs);
+	ReleaseSRWLockExclusive(&g_QsvLock);
 
 	return true;
 }
