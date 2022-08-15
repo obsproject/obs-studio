@@ -10,8 +10,8 @@
 
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)              \
-	blog(level, "[expander: '%s'] " format, \
+#define do_log(level, format, ...)                                     \
+	blog(level, "[expander/gate/upward compressor: '%s'] " format, \
 	     obs_source_get_name(cd->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -51,6 +51,8 @@
 
 #define MIN_RATIO                       1.0f
 #define MAX_RATIO                       20.0f
+#define MIN_RATIO_UPW                   0.0f
+#define MAX_RATIO_UPW                   1.0f
 #define MIN_THRESHOLD_DB                -60.0f
 #define MAX_THRESHOLD_DB                0.0f
 #define MIN_OUTPUT_GAIN_DB              -32.0f
@@ -92,6 +94,7 @@ struct expander_data {
 	float gain_db_buf[MAX_AUDIO_CHANNELS];
 	float *env_in;
 	size_t env_in_len;
+	bool is_upwcomp;
 };
 
 enum {
@@ -144,6 +147,12 @@ static const char *expander_name(void *unused)
 	return obs_module_text("Expander");
 }
 
+static const char *upward_compressor_name(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_module_text("Upward.Compressor");
+}
+
 static void expander_defaults(obs_data_t *s)
 {
 	const char *presets = obs_data_get_string(s, S_PRESETS);
@@ -162,21 +171,33 @@ static void expander_defaults(obs_data_t *s)
 	obs_data_set_default_string(s, S_DETECTOR, "RMS");
 }
 
+static void upward_compressor_defaults(obs_data_t *s)
+{
+	obs_data_set_default_double(s, S_RATIO, 0.5);
+	obs_data_set_default_double(s, S_THRESHOLD, -20.0f);
+	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
+	obs_data_set_default_int(s, S_RELEASE_TIME, 50);
+	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
+	obs_data_set_default_string(s, S_DETECTOR, "peak");
+}
+
 static void expander_update(void *data, obs_data_t *s)
 {
 	struct expander_data *cd = data;
-	const char *presets = obs_data_get_string(s, S_PRESETS);
-	if (strcmp(presets, "expander") == 0 && cd->is_gate) {
-		obs_data_clear(s);
-		obs_data_set_string(s, S_PRESETS, "expander");
-		expander_defaults(s);
-		cd->is_gate = false;
-	}
-	if (strcmp(presets, "gate") == 0 && !cd->is_gate) {
-		obs_data_clear(s);
-		obs_data_set_string(s, S_PRESETS, "gate");
-		expander_defaults(s);
-		cd->is_gate = true;
+	if (!cd->is_upwcomp) {
+		const char *presets = obs_data_get_string(s, S_PRESETS);
+		if (strcmp(presets, "expander") == 0 && cd->is_gate) {
+			obs_data_clear(s);
+			obs_data_set_string(s, S_PRESETS, "expander");
+			expander_defaults(s);
+			cd->is_gate = false;
+		}
+		if (strcmp(presets, "gate") == 0 && !cd->is_gate) {
+			obs_data_clear(s);
+			obs_data_set_string(s, S_PRESETS, "gate");
+			expander_defaults(s);
+			cd->is_gate = true;
+		}
 	}
 
 	const uint32_t sample_rate =
@@ -217,7 +238,9 @@ static void expander_update(void *data, obs_data_t *s)
 		resize_gain_db_buffer(cd, sample_len);
 }
 
-static void *expander_create(obs_data_t *settings, obs_source_t *filter)
+static void *compressor_expander_create(obs_data_t *settings,
+					obs_source_t *filter,
+					bool is_compressor)
 {
 	struct expander_data *cd = bzalloc(sizeof(struct expander_data));
 	cd->context = filter;
@@ -230,9 +253,20 @@ static void *expander_create(obs_data_t *settings, obs_source_t *filter)
 	const char *presets = obs_data_get_string(settings, S_PRESETS);
 	if (strcmp(presets, "gate") == 0)
 		cd->is_gate = true;
-
+	cd->is_upwcomp = is_compressor;
 	expander_update(cd, settings);
 	return cd;
+}
+
+static void *expander_create(obs_data_t *settings, obs_source_t *filter)
+{
+	return compressor_expander_create(settings, filter, false);
+}
+
+static void *upward_compressor_create(obs_data_t *settings,
+				      obs_source_t *filter)
+{
+	return compressor_expander_create(settings, filter, true);
 }
 
 static void expander_destroy(void *data)
@@ -305,17 +339,21 @@ static void analyze_envelope(struct expander_data *cd, float **samples,
 }
 
 static inline void process_sample(size_t idx, float *samples, float *env_buf,
-				  float *gain_db, float channel_gain,
-				  float threshold, float slope,
-				  float attack_gain, float inv_attack_gain,
-				  float release_gain, float inv_release_gain,
-				  float output_gain)
+				  float *gain_db, bool is_upwcomp,
+				  float channel_gain, float threshold,
+				  float slope, float attack_gain,
+				  float inv_attack_gain, float release_gain,
+				  float inv_release_gain, float output_gain)
 {
 	/* --------------------------------- */
 	/* gain stage of expansion           */
 
 	float env_db = mul_to_db(env_buf[idx]);
 	float diff = threshold - env_db;
+
+	if (is_upwcomp && env_db <= -60.0f)
+		diff = 0.0f;
+
 	float gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
 	float prev_gain = gain_db[idx - 1];
 
@@ -341,7 +379,11 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	/* --------------------------------- */
 	/* output                            */
 
-	gain = db_to_mul(fminf(0.0f, gain_db[idx]));
+	float min_val =
+		is_upwcomp ? fminf(diff, threshold - mul_to_db(samples[idx]))
+			   : 0.0f;
+
+	gain = db_to_mul(fminf(min_val, gain_db[idx]));
 	samples[idx] *= gain * output_gain;
 }
 
@@ -356,6 +398,7 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 	const float threshold = cd->threshold;
 	const float slope = cd->slope;
 	const float output_gain = cd->output_gain;
+	const bool is_upwcomp = cd->is_upwcomp;
 
 	if (cd->gain_db_len < num_samples)
 		resize_gain_db_buffer(cd, num_samples);
@@ -372,8 +415,8 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 
 		for (size_t i = 0; i < num_samples; ++i) {
 			process_sample(i, channel_samples, env_buf, gain_db,
-				       channel_gain, threshold, slope,
-				       attack_gain, inv_attack_gain,
+				       is_upwcomp, channel_gain, threshold,
+				       slope, attack_gain, inv_attack_gain,
 				       release_gain, inv_release_gain,
 				       output_gain);
 		}
@@ -397,28 +440,25 @@ expander_filter_audio(void *data, struct obs_audio_data *audio)
 	return audio;
 }
 
-static bool presets_changed(obs_properties_t *props, obs_property_t *prop,
-			    obs_data_t *settings)
-{
-	UNUSED_PARAMETER(props);
-	UNUSED_PARAMETER(prop);
-	UNUSED_PARAMETER(settings);
-	return true;
-}
-
 static obs_properties_t *expander_properties(void *data)
 {
+	struct expander_data *cd = data;
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
+	if (!cd->is_upwcomp) {
+		obs_property_t *presets = obs_properties_add_list(
+			props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+		obs_property_list_add_string(presets, TEXT_PRESETS_EXP,
+					     "expander");
+		obs_property_list_add_string(presets, TEXT_PRESETS_GATE,
+					     "gate");
+	}
 
-	obs_property_t *presets = obs_properties_add_list(
-		props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(presets, TEXT_PRESETS_EXP, "expander");
-	obs_property_list_add_string(presets, TEXT_PRESETS_GATE, "gate");
-	obs_property_set_modified_callback(presets, presets_changed);
-	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO,
-					    MIN_RATIO, MAX_RATIO, 0.1);
+	p = obs_properties_add_float_slider(
+		props, S_RATIO, TEXT_RATIO,
+		!cd->is_upwcomp ? MIN_RATIO : MIN_RATIO_UPW,
+		!cd->is_upwcomp ? MAX_RATIO : MAX_RATIO_UPW, 0.1);
 	obs_property_float_set_suffix(p, ":1");
 	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
 					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
@@ -437,13 +477,13 @@ static obs_properties_t *expander_properties(void *data)
 					    MIN_OUTPUT_GAIN_DB,
 					    MAX_OUTPUT_GAIN_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	obs_property_t *detect = obs_properties_add_list(
-		props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(detect, TEXT_RMS, "RMS");
-	obs_property_list_add_string(detect, TEXT_PEAK, "peak");
-
-	UNUSED_PARAMETER(data);
+	if (!cd->is_upwcomp) {
+		obs_property_t *detect = obs_properties_add_list(
+			props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
+			OBS_COMBO_FORMAT_STRING);
+		obs_property_list_add_string(detect, TEXT_RMS, "RMS");
+		obs_property_list_add_string(detect, TEXT_PEAK, "peak");
+	}
 	return props;
 }
 
@@ -457,5 +497,18 @@ struct obs_source_info expander_filter = {
 	.update = expander_update,
 	.filter_audio = expander_filter_audio,
 	.get_defaults = expander_defaults,
+	.get_properties = expander_properties,
+};
+
+struct obs_source_info upward_compressor_filter = {
+	.id = "upward_compressor_filter",
+	.type = OBS_SOURCE_TYPE_FILTER,
+	.output_flags = OBS_SOURCE_AUDIO,
+	.get_name = upward_compressor_name,
+	.create = upward_compressor_create,
+	.destroy = expander_destroy,
+	.update = expander_update,
+	.filter_audio = expander_filter_audio,
+	.get_defaults = upward_compressor_defaults,
 	.get_properties = expander_properties,
 };
