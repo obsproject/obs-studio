@@ -117,11 +117,11 @@ static obs_properties_t *hdr_tonemap_filter_properties(void *data)
 	obs_property_int_set_suffix(p, " nits");
 	p = obs_properties_add_int(
 		props, "hdr_input_maximum_nits",
-		obs_module_text("HdrTonemap.HdrInputMaximum"), 0, 10000, 1);
+		obs_module_text("HdrTonemap.HdrInputMaximum"), 5, 10000, 1);
 	obs_property_int_set_suffix(p, " nits");
 	p = obs_properties_add_int(
 		props, "hdr_output_maximum_nits",
-		obs_module_text("HdrTonemap.HdrOutputMaximum"), 0, 10000, 1);
+		obs_module_text("HdrTonemap.HdrOutputMaximum"), 5, 10000, 1);
 	obs_property_int_set_suffix(p, " nits");
 
 	UNUSED_PARAMETER(data);
