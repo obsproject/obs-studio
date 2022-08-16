@@ -439,7 +439,6 @@
         "-DYOUTUBE_SECRET_HASH=$YOUTUBE_SECRET_HASH"
       ],
       "post-install": [
-        "cmake --install . --component obs_libraries",
         "install -d /app/plugins",
         "install -d /app/extensions/Plugins"
       ],
