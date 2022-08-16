@@ -185,6 +185,7 @@ static void AddExtraModulePaths()
 		"obs-studio/plugins/%module%.plugin/Contents/Resources");
 	obs_add_module_path(config_bin, config_data);
 
+#ifndef __aarch64__
 	/* Legacy System Library Search Path */
 	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
 
@@ -194,6 +195,7 @@ static void AddExtraModulePaths()
 	BPtr<char> config_data_legacy =
 		os_get_config_path_ptr("obs-studio/plugins/%module%/data");
 	obs_add_module_path(config_bin_legacy, config_data_legacy);
+#endif
 #else
 #if ARCH_BITS == 64
 	obs_add_module_path((path + "/bin/64bit").c_str(),
