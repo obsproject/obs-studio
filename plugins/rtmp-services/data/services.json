@@ -1184,10 +1184,10 @@
             ],
             "recommended": {
                 "keyint": 2,
-                "profile": "main",
+                "profile": "high",
                 "max audio bitrate": 160,
                 "max video bitrate": 6000
-                }
+            }
         },
         {
             "name": "Looch",
