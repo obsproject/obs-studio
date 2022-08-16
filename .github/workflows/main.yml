@@ -370,7 +370,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-5.15-21.08
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.3
       options: --privileged
     steps:
       - name: 'Check for Github Labels'
