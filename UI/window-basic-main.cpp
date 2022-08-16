@@ -165,9 +165,12 @@ static void AddExtraModulePaths()
 	}
 
 	char base_module_dir[512];
-#if defined(_WIN32) || defined(__APPLE__)
+#if defined(_WIN32)
 	int ret = GetProgramDataPath(base_module_dir, sizeof(base_module_dir),
 				     "obs-studio/plugins/%module%");
+#elif defined(__APPLE__)
+	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
+				"obs-studio/plugins/%module%.plugin");
 #else
 	int ret = GetConfigPath(base_module_dir, sizeof(base_module_dir),
 				"obs-studio/plugins/%module%");
@@ -179,22 +182,26 @@ static void AddExtraModulePaths()
 	string path = base_module_dir;
 #if defined(__APPLE__)
 	/* User Application Support Search Path */
-	BPtr<char> config_bin = os_get_config_path_ptr(
-		"obs-studio/plugins/%module%.plugin/Contents/MacOS");
-	BPtr<char> config_data = os_get_config_path_ptr(
-		"obs-studio/plugins/%module%.plugin/Contents/Resources");
-	obs_add_module_path(config_bin, config_data);
+	obs_add_module_path((path + "/Contents/MacOS").c_str(),
+			    (path + "/Contents/Resources").c_str());
 
 #ifndef __aarch64__
 	/* Legacy System Library Search Path */
-	obs_add_module_path((path + "/bin").c_str(), (path + "/data").c_str());
+	char system_legacy_module_dir[PATH_MAX];
+	GetProgramDataPath(system_legacy_module_dir,
+			   sizeof(system_legacy_module_dir),
+			   "obs-studio/plugins/%module%");
+	std::string path_system_legacy = system_legacy_module_dir;
+	obs_add_module_path((path_system_legacy + "/bin").c_str(),
+			    (path_system_legacy + "/data").c_str());
 
 	/* Legacy User Application Support Search Path */
-	BPtr<char> config_bin_legacy =
-		os_get_config_path_ptr("obs-studio/plugins/%module%/bin");
-	BPtr<char> config_data_legacy =
-		os_get_config_path_ptr("obs-studio/plugins/%module%/data");
-	obs_add_module_path(config_bin_legacy, config_data_legacy);
+	char user_legacy_module_dir[PATH_MAX];
+	GetConfigPath(user_legacy_module_dir, sizeof(user_legacy_module_dir),
+		      "obs-studio/plugins/%module%");
+	std::string path_user_legacy = user_legacy_module_dir;
+	obs_add_module_path((path_user_legacy + "/bin").c_str(),
+			    (path_user_legacy + "/data").c_str());
 #endif
 #else
 #if ARCH_BITS == 64
