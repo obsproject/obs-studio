@@ -178,10 +178,6 @@ static void AddExtraModulePaths()
 
 	string path = base_module_dir;
 #if defined(__APPLE__)
-	/* System Library Search Path */
-	obs_add_module_path((path + ".plugin/Contents/MacOS").c_str(),
-			    (path + ".plugin/Contents/Resources").c_str());
-
 	/* User Application Support Search Path */
 	BPtr<char> config_bin = os_get_config_path_ptr(
 		"obs-studio/plugins/%module%.plugin/Contents/MacOS");
