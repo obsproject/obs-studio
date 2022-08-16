@@ -40,7 +40,6 @@
     }
   },
   "cleanup": [
-    "/lib/pkgconfig",
     "/share/man",
     "*.la"
   ],
@@ -52,7 +51,8 @@
         "--enable-shared"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -73,7 +73,8 @@
         "--with-udevdir=/app/lib/udev/"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -111,6 +112,7 @@
       ],
       "cleanup": [
         "/include",
+        "/lib/pkgconfig",
         "/bin"
       ],
       "sources": [
@@ -157,7 +159,8 @@
         "-Dbuiltin_cjson=true"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -181,7 +184,8 @@
         "-DENABLE_TOOLS=OFF "
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -205,7 +209,8 @@
         "-DBUILD_TESTING=OFF"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -269,6 +274,7 @@
       "cleanup": [
         "/bin",
         "/include",
+        "/lib/pkgconfig",
         "*.a"
       ],
       "sources": [
