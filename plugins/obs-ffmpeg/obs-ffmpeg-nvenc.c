@@ -313,6 +313,30 @@ fail:
 
 static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010: {
+		const char *const text =
+			obs_module_text("NVENC.10bitUnsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("NVENC.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			blog(LOG_ERROR, "[NVENC encoder] %s", text);
+			return NULL;
+		}
+		}
+	}
+
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, false);
 	if ((enc == NULL) && psycho_aq) {
@@ -328,6 +352,31 @@ static void *h264_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 #ifdef ENABLE_HEVC
 static void *hevc_nvenc_create(obs_data_t *settings, obs_encoder_t *encoder)
 {
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010: {
+		const char *const text =
+			obs_module_text("NVENC.I010Unsupported");
+		obs_encoder_set_last_error(encoder, text);
+		blog(LOG_ERROR, "[NVENC encoder] %s", text);
+		return NULL;
+	}
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("NVENC.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			blog(LOG_ERROR, "[NVENC encoder] %s", text);
+			return NULL;
+		}
+		}
+	}
+
 	bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	void *enc = nvenc_create_internal(settings, encoder, psycho_aq, true);
 	if ((enc == NULL) && psycho_aq) {

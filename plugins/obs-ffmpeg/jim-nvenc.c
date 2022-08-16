@@ -982,6 +982,21 @@ static bool init_encoder(struct nvenc_data *enc, bool hevc,
 		return false;
 	}
 
+	video_t *video = obs_encoder_video(enc->encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
+			NV_FAIL(obs_module_text("NVENC.8bitUnsupportedHdr"));
+			return false;
+		}
+	}
+
 	if (bf > bf_max) {
 		NV_FAIL(obs_module_text("NVENC.TooManyBFrames"), bf, bf_max);
 		return false;
