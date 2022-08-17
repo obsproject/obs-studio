@@ -1,7 +1,7 @@
 export PATH=/usr/local/opt/ccache/libexec:$PATH
 set -e
 set -v
-
+git fetch --tags
 DEPS_DIR=$PWD/build/deps
 mkdir packed_build
 PACKED_BUILD=$PWD/packed_build
