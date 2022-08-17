@@ -149,6 +149,17 @@ QToolTip {
 }
 
 /* Context Menu */
+
+QMenu::icon {
+    left: 4px;
+}
+
+QMenu::separator {
+    background: palette(button);
+    height: 1px;
+    margin: 3px 6px;
+}
+
 QMenu::item:disabled {
     color: rgb(153,153,153);
     background: transparent;
@@ -168,11 +179,13 @@ QListWidget::item {
     color: palette(text);
 }
 
+QMenu,
 SceneTree,
 SourceTree {
     padding: 3px;
 }
 
+QMenu::item,
 SceneTree::item,
 SourceTree::item {
     border-radius: 4px;
@@ -181,15 +194,18 @@ SourceTree::item {
 	border: 0px solid transparent;
 }
 
+QMenu::item:selected,
 QListWidget::item:selected,
 SceneTree::item:selected,
 SourceTree::item:selected {
     background-color: rgb(40,76,184);
 }
 
+QMenu::item:hover,
 QListWidget::item:hover,
 SceneTree::item:hover,
 SourceTree::item:hover,
+QMenu::item:selected:hover,
 QListWidget::item:selected:hover,
 SceneTree::item:selected:hover,
 SourceTree::item:selected:hover {
