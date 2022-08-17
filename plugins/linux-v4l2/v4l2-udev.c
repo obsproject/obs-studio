@@ -140,7 +140,7 @@ static void *udev_event_thread(void *vptr)
 		if (poll(fds, 2, 1000) <= 0)
 			continue;
 
-		if (!fds[0].revents & POLLIN)
+		if (!(fds[0].revents & POLLIN))
 			continue;
 
 		dev = udev_monitor_receive_device(mon);
