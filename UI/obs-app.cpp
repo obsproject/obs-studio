@@ -1205,6 +1205,8 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	path = GetTheme(name, path);
 	if (path.empty())
 		return false;
+
+	setStyleSheet("");
 	unique_ptr<OBSThemeMeta> themeMeta;
 	themeMeta.reset(ParseThemeMeta(path.c_str()));
 	string parentPath;
