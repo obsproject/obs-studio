@@ -476,8 +476,6 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 
 	static const char *const smpte170m = "smpte170m";
 	static const char *const bt709 = "bt709";
-	static const char *const bt2020 = "bt2020";
-	static const char *const bt2020nc = "bt2020nc";
 	const char *colorprim = bt709;
 	const char *transfer = bt709;
 	const char *colmatrix = bt709;
@@ -497,16 +495,6 @@ static void update_params(struct obs_x264 *obsx264, obs_data_t *settings,
 		colorprim = bt709;
 		transfer = "iec61966-2-1";
 		colmatrix = bt709;
-		break;
-	case VIDEO_CS_2100_PQ:
-		colorprim = bt2020;
-		transfer = "smpte2084";
-		colmatrix = bt2020nc;
-		break;
-	case VIDEO_CS_2100_HLG:
-		colorprim = bt2020;
-		transfer = "arib-std-b67";
-		colmatrix = bt2020nc;
 	}
 
 	obsx264->params.vui.i_sar_height = 1;
