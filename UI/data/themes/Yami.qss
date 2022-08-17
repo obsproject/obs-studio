@@ -217,7 +217,7 @@ SourceTree QLineEdit {
     padding-bottom: 2px;
     margin: 0px;
     border: 1px solid #FFF;
-    border-radius: 2px;
+    border-radius: 4px;
 }
 
 QListWidget QLineEdit:focus,
@@ -432,7 +432,7 @@ QToolButton {
     background-color: rgb(60,64,75);
     padding: 4px 6px;
     margin: 0px 2px;
-    border-radius: 2px;
+    border-radius: 4px;
 }
 
 QPushButton[toolButton="true"]:last-child,
@@ -576,7 +576,7 @@ QDateTimeEdit {
     background-color: rgb(60,64,75);
     border-style: solid;
     border: 1px;
-    border-radius: 3px;
+    border-radius: 4px;
     border-color: rgb(60,64,75);
     padding: 4px;
     padding-left: 10px;
@@ -614,8 +614,8 @@ QComboBox:editable:hover {
 
 QComboBox::drop-down:editable,
 QDateTimeEdit::drop-down:editable {
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 QComboBox::down-arrow:editable,
@@ -630,7 +630,7 @@ QDateTimeEdit::down-arrow:editable {
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: palette(button);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 5px 2px 5px 7px;
     border: 2px solid transparent;
 }
@@ -1377,7 +1377,7 @@ OBSYoutubeActions {
     color: palette(text);
     background-color: palette(button);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 4px 20px;
 }
 
@@ -1416,7 +1416,7 @@ QCalendarWidget QWidget#qt_calendar_navigationbar {
 QCalendarWidget QToolButton {
     background-color: palette(button);
     padding: 2px 16px;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 2px;
 }
 
@@ -1443,7 +1443,7 @@ QCalendarWidget #qt_calendar_nextmonth {
 
 QCalendarWidget QToolButton:hover {
     background-color: rgb(79,83,94);
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 QCalendarWidget QToolButton:pressed {
@@ -1458,7 +1458,7 @@ QCalendarWidget QMenu {
 QCalendarWidget QSpinBox {
     background-color: rgb(25,27,38);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 0px 3px 0px 0px;
     padding: 4px 16px;
 }
