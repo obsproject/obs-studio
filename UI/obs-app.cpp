@@ -1222,7 +1222,6 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	QString mpath = QString("file:///") + lpath.c_str();
 	ParseExtraThemeData(path.c_str());
-	setStyle(new OBSIgnoreWheelProxyStyle);
 	setStyleSheet(mpath);
 	if (themeMeta) {
 		themeDarkMode = themeMeta->dark;
@@ -1238,6 +1237,7 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 bool OBSApp::InitTheme()
 {
 	defaultPalette = palette();
+	setStyle(new OBSIgnoreWheelProxyStyle());
 
 	const char *themeName =
 		config_get_string(globalConfig, "General", "CurrentTheme3");
