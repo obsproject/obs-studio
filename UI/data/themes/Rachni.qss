@@ -336,8 +336,8 @@ QGroupBox {
 QGroupBox::title {
 	color: rgb(240,98,146);
     subcontrol-origin: margin;
-    left: 4px;
-    top: 4px;
+    left: 8px;
+    top: 8px;
 }
 
 
