@@ -151,9 +151,6 @@ QToolTip {
 /* Context Menu */
 QMenu::item:disabled {
     color: rgb(153,153,153);
-}
-
-QMenu::item:disabled {
     background: transparent;
 }
 
