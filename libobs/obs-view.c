@@ -162,6 +162,9 @@ static inline void set_main_mix()
 
 video_t *obs_view_add(obs_view_t *view)
 {
+	if (!view)
+		return NULL;
+
 	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi);
 	if (!mix) {
 		return NULL;
@@ -178,6 +181,9 @@ video_t *obs_view_add(obs_view_t *view)
 
 void obs_view_remove(obs_view_t *view)
 {
+	if (!view)
+		return;
+
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	size_t idx = find_mix_for_view(view);
 	if (idx != DARRAY_INVALID)

@@ -180,12 +180,14 @@ static void EventCallback(enum obs_frontend_event event, void *)
 	OBSBasicVCamConfig::UpdateOutputSource();
 }
 
+static auto staticConfig = VCamConfig{};
+
 void OBSBasicVCamConfig::Init()
 {
 	if (vCamConfig)
 		return;
 
-	vCamConfig = new VCamConfig;
+	vCamConfig = &staticConfig;
 
 	obs_frontend_add_save_callback(SaveCallback, nullptr);
 	obs_frontend_add_event_callback(EventCallback, nullptr);
@@ -196,23 +198,28 @@ static video_t *video = nullptr;
 
 video_t *OBSBasicVCamConfig::StartVideo()
 {
-	if (!video) {
+	if (!view)
 		view = obs_view_create();
-		video = obs_view_add(view);
-	}
+
 	UpdateOutputSource();
+
+	if (!video)
+		video = obs_view_add(view);
 	return video;
 }
 
 void OBSBasicVCamConfig::StopVideo()
 {
-	if (view) {
-		obs_view_remove(view);
-		obs_view_set_source(view, 0, nullptr);
-		obs_view_destroy(view);
-		view = nullptr;
-	}
+	obs_view_remove(view);
+	obs_view_set_source(view, 0, nullptr);
 	video = nullptr;
+}
+
+void OBSBasicVCamConfig::DestroyView()
+{
+	StopVideo();
+	obs_view_destroy(view);
+	view = nullptr;
 }
 
 void OBSBasicVCamConfig::UpdateOutputSource()

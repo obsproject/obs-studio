@@ -14,6 +14,8 @@ public:
 
 	static video_t *StartVideo();
 	static void StopVideo();
+	static void DestroyView();
+
 	static void UpdateOutputSource();
 
 	explicit OBSBasicVCamConfig(QWidget *parent = 0);
