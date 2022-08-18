@@ -44,7 +44,8 @@ typedef struct RISTContext {
 	int fifo_shift;
 	bool overrun_nonfatal;
 	char *secret;
-
+	char *username;
+	char *password;
 	struct rist_logging_settings logging_settings;
 	struct rist_peer_config peer_config;
 
@@ -100,7 +101,12 @@ static int librist_close(URLContext *h)
 {
 	RISTContext *s = h->priv_data;
 	int ret = 0;
-
+	if (s->secret)
+		bfree(s->secret);
+	if (s->username)
+		bfree(s->username);
+	if (s->password)
+		bfree(s->password);
 	s->peer = NULL;
 
 	if (s->ctx)
@@ -150,7 +156,6 @@ static int librist_open(URLContext *h, const char *uri)
 	s->packet_size = 1316;
 	s->log_level = RIST_LOG_INFO;
 	s->encryption = 0;
-	s->secret = NULL;
 	s->overrun_nonfatal = 0;
 	s->fifo_shift = FF_LIBRIST_FIFO_DEFAULT_SHIFT;
 	s->logging_settings =
@@ -219,6 +224,12 @@ static int librist_open(URLContext *h, const char *uri)
 		peer_config->recovery_length_min = s->buffer_size;
 		peer_config->recovery_length_max = s->buffer_size;
 	}
+	if (s->username && peer_config->srp_username[0] == 0)
+		av_strlcpy(peer_config->srp_username, s->username,
+			   RIST_MAX_STRING_LONG);
+	if (s->password && peer_config->srp_password[0] == 0)
+		av_strlcpy(peer_config->srp_password, s->password,
+			   RIST_MAX_STRING_LONG);
 
 	ret = rist_peer_create(s->ctx, &s->peer, &s->peer_config);
 	if (ret < 0) {
