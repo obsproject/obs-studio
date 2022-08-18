@@ -646,6 +646,11 @@ static int obs_init_video(struct obs_video_info *ovi)
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 
+	video->ovi = *ovi;
+
+	if (!obs_view_add(&obs->data.main_view))
+		return OBS_VIDEO_FAIL;
+
 	int errorcode;
 #ifdef __APPLE__
 	errorcode = pthread_create(&video->video_thread, NULL,
@@ -658,10 +663,6 @@ static int obs_init_video(struct obs_video_info *ovi)
 		return OBS_VIDEO_FAIL;
 
 	video->thread_initialized = true;
-	video->ovi = *ovi;
-
-	if (!obs_view_add(&obs->data.main_view))
-		return OBS_VIDEO_FAIL;
 
 	return OBS_VIDEO_SUCCESS;
 }
