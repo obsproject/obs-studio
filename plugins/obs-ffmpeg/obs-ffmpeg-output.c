@@ -1040,13 +1040,13 @@ static int process_packet(struct ffmpeg_output *output)
 	output->total_bytes += packet->size;
 
 	ret = av_interleaved_write_frame(output->ff_data.output, packet);
-	if (ret < 0) {
-		av_packet_free(&packet);
+	if (ret < 0) {		
 		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
 				 "process_packet: Error writing packet: %s",
 				 av_err2str(ret));
 		return ret;
 	}
+	av_packet_free(&packet);
 
 	return 0;
 }
