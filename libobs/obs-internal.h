@@ -744,6 +744,7 @@ struct obs_source {
 	bool async_flip;
 	bool async_linear_alpha;
 	bool async_active;
+	bool async_update_texture;
 	bool async_unbuffered;
 	bool async_decoupled;
 	struct obs_source_frame *async_preload_frame;
