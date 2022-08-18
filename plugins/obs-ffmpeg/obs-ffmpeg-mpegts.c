@@ -347,11 +347,50 @@ static inline int connect_mpegts_url(struct ffmpeg_output *stream, bool is_rist)
 					"Can not allocate memory.");
 		goto fail;
 	}
+	/* For SRT, pass streamid & passphrase; for RIST, pass passphrase, username
+	 * & password.
+	 */
+	if (!is_rist) {
+		SRTContext *context = (SRTContext *)uc->priv_data;
+		context->streamid = NULL;
+		if (stream->ff_data.config.key != NULL) {
+			if (strlen(stream->ff_data.config.key))
+				context->streamid =
+					av_strdup(stream->ff_data.config.key);
+		}
+		context->passphrase = NULL;
+		if (stream->ff_data.config.password != NULL) {
+			if (strlen(stream->ff_data.config.password))
+				context->passphrase = av_strdup(
+					stream->ff_data.config.password);
+		}
+	} else {
+		RISTContext *context = (RISTContext *)uc->priv_data;
+		context->secret = NULL;
+		if (stream->ff_data.config.key != NULL) {
+			if (strlen(stream->ff_data.config.key))
+				context->secret =
+					bstrdup(stream->ff_data.config.key);
+		}
+		context->username = NULL;
+		if (stream->ff_data.config.username != NULL) {
+			if (strlen(stream->ff_data.config.username))
+				context->username = bstrdup(
+					stream->ff_data.config.username);
+		}
+		context->password = NULL;
+		if (stream->ff_data.config.password != NULL) {
+			if (strlen(stream->ff_data.config.password))
+				context->password = bstrdup(
+					stream->ff_data.config.password);
+		}
+	}
 	stream->h = uc;
 	if (is_rist)
 		err = librist_open(uc, uc->url);
 	else
 		err = libsrt_open(uc, uc->url);
+
 	if (err < 0)
 		goto fail;
 	return 0;
@@ -839,13 +878,15 @@ static bool set_config(struct ffmpeg_output *stream)
 	int ret;
 	int code;
 
-	/* 1. Get URL from service & set format + mime-type. */
+	/* 1. Get URL/username/password from service & set format + mime-type. */
 	obs_service_t *service;
 	service = obs_output_get_service(stream->output);
 	if (!service)
 		return false;
 	config.url = obs_service_get_url(service);
-
+	config.username = obs_service_get_username(service);
+	config.password = obs_service_get_password(service);
+	config.key = obs_service_get_key(service);
 	config.format_name = "mpegts";
 	config.format_mime_type = "video/M2PT";
 

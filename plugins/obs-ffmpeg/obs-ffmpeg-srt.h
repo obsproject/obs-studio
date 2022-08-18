@@ -80,12 +80,24 @@ typedef struct SRTContext {
 
 static int libsrt_neterrno(URLContext *h)
 {
+	SRTContext *s = (SRTContext *)h->priv_data;
 	int os_errno;
 	int err = srt_getlasterror(&os_errno);
 	blog(LOG_ERROR, "[obs-ffmpeg mpegts muxer / libsrt] : %s\n",
 	     srt_getlasterror_str());
 	if (err == SRT_EASYNCRCV || err == SRT_EASYNCSND)
 		return AVERROR(EAGAIN);
+	if (err = SRT_ECONNREJ) {
+		int errj = srt_getrejectreason(s->fd);
+		if (errj == SRT_REJ_BADSECRET)
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt] : Wrong password");
+		else
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt] : Connection rejected, %s",
+			     srt_rejectreason_str(errj));
+	}
+
 	return os_errno ? AVERROR(os_errno) : AVERROR_UNKNOWN;
 }
 
@@ -138,6 +150,20 @@ static int libsrt_network_wait_fd(URLContext *h, int eid, int write)
 	} else {
 		ret = srt_epoll_wait(eid, ready, &len, error, &errlen,
 				     POLLING_TIME, 0, 0, 0, 0);
+	}
+	if (len == 1 && errlen == 1) {
+		/* Socket reported in wsock AND rsock signifies an error. */
+		int reason = srt_getrejectreason(*ready);
+
+		if (reason == SRT_REJ_BADSECRET || reason == SRT_REJ_UNSECURE) {
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt] : Connection rejected, wrong password");
+			return OBS_OUTPUT_INVALID_STREAM;
+		} else {
+			blog(LOG_ERROR,
+			     "[obs-ffmpeg mpegts muxer / libsrt] : Connection rejected, %s",
+			     srt_rejectreason_str(reason));
+		}
 	}
 	if (ret < 0) {
 		if (srt_getlasterror(NULL) == SRT_ETIMEOUT)
@@ -574,7 +600,6 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->payload_size = SRT_LIVE_DEFAULT_PAYLOAD_SIZE;
 	s->maxbw = -1;
 	s->pbkeylen = -1;
-	s->passphrase = NULL;
 	s->mss = -1;
 	s->ffs = -1;
 	s->ipttl = -1;
@@ -592,7 +617,6 @@ static void libsrt_set_defaults(SRTContext *s)
 	s->rcvbuf = -1;
 	s->lossmaxttl = -1;
 	s->minversion = -1;
-	s->streamid = NULL;
 	s->smoother = NULL;
 	s->messageapi = -1;
 	s->transtype = SRTT_LIVE;
@@ -814,7 +838,10 @@ static int libsrt_write(URLContext *h, const uint8_t *buf, int size)
 static int libsrt_close(URLContext *h)
 {
 	SRTContext *s = (SRTContext *)h->priv_data;
-
+	if (s->streamid)
+		av_freep(&s->streamid);
+	if (s->passphrase)
+		av_freep(&s->passphrase);
 	/* Log stream stats. */
 	SRT_TRACEBSTATS perf;
 	srt_bstats(s->fd, &perf, 1);
