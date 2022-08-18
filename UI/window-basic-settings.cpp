@@ -3927,8 +3927,7 @@ void OBSBasicSettings::on_theme_activated(int idx)
 {
 	QString currT = ui->theme->itemData(idx).toString();
 
-	if (currT != App()->GetTheme())
-		App()->SetTheme(currT.toUtf8().constData());
+	App()->SetTheme(currT.toUtf8().constData());
 }
 
 void OBSBasicSettings::on_listWidget_itemSelectionChanged()
