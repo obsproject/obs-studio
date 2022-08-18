@@ -2362,6 +2362,9 @@ void device_present(gs_device_t *device)
 {
 	gs_swap_chain *const curSwapChain = device->curSwapChain;
 	if (curSwapChain) {
+		device->context->OMSetRenderTargets(0, nullptr, nullptr);
+		device->curFramebufferInvalidate = true;
+
 		const UINT interval = curSwapChain->hWaitable ? 1 : 0;
 		const HRESULT hr = curSwapChain->swap->Present(interval, 0);
 		if (hr == DXGI_ERROR_DEVICE_REMOVED ||
