@@ -1,0 +1,153 @@
+name: 'CI Multiplatform Build'
+
+on:
+  push:
+    paths-ignore:
+      - '**.md'
+    branches: [ "streamlabs" ]
+    tags:
+      - '*'
+  pull_request:
+    paths-ignore:
+      - '**.md'
+    branches: [ "streamlabs" ]
+
+env:
+  InstallPath: "packed_build"
+  BUILD_DIRECTORY: "build"
+  RELEASE_BUCKET: "obsstudios3.streamlabs.com"
+  PACKAGE_NAME: "libobs"
+
+jobs:
+  macos64:
+    name: 'macOS 64-bit'
+    runs-on: [macos-latest]
+    strategy:
+      matrix:
+        ReleaseName: [release, debug]
+        include:
+        - ReleaseName: release
+          BuildConfig: RelWithDebInfo
+          CefBuildConfig: Release
+        - ReleaseName: debug
+          BuildConfig: Debug
+          CefBuildConfig: Debug
+    env:
+      OS_TAG: "osx"
+      CEF_MAC_BUILD_VERSION: 4638
+      MACOS_DEPS_VERSION: 2022-02-13
+      VLC_VERSION: 3.0.8
+      MIN_MACOS_VERSION: 10.13
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
+      - name: Install dependencies
+        run: ./slobs_CI/install-script-osx.sh
+        env:
+          ReleaseName: ${{matrix.ReleaseName}}
+          BuildConfig: ${{matrix.BuildConfig}}
+          CefBuildConfig: ${{matrix.CefBuildConfig}}
+      - name: Configure / Build 
+        run: ./slobs_CI/build-script-osx.sh
+        env:
+          ReleaseName: ${{matrix.ReleaseName}}
+          BuildConfig: ${{matrix.BuildConfig}}
+          CefBuildConfig: ${{matrix.CefBuildConfig}}
+      - name: Tar artifact for deployment
+        if: startsWith(github.ref, 'refs/tags/')
+        run: cd ${{env.InstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
+        env:
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
+      - name: Configure AWS credentials
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
+          aws-region: us-west-2
+      - name: Deploy
+        if: startsWith(github.ref, 'refs/tags/')
+        run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
+        env:
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
+      - name: 'Upload debug files to Sentry'
+        if: startsWith(github.ref, 'refs/tags/')
+        run: 'python ./slobs_CI/sentry-osx.py'
+        env:
+           SENTRY_AUTH_TOKEN: ${{secrets.SENTRY_AUTH_TOKEN}}
+           BUILDCONFIG: ${{matrix.BuildConfig}}
+
+  win64:
+    name: 'Windows 64-bit'
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        ReleaseName: [release, debug]
+        include:
+        - ReleaseName: release
+          BuildConfig: RelWithDebInfo
+          CefBuildConfig: Release
+        - ReleaseName: debug
+          BuildConfig: Debug
+          CefBuildConfig: Debug
+    env:
+      OS_TAG: "windows64"
+      CEF_VERSION: 4638
+      DEPS_VERSION: windows-deps-2022-01-31
+      GRPC_VERSION: v1.47.0
+      CMakeGenerator: Visual Studio 17 2022
+    steps:
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+      - name: Get the version
+        id: get_version
+        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        shell: bash
+      - name: Configure / Build 
+        run: ./slobs_CI/win-build.cmd
+        shell: cmd
+        env:
+          ReleaseName: ${{matrix.ReleaseName}}
+          BuildConfig: ${{matrix.BuildConfig}}
+          CefBuildConfig: ${{matrix.CefBuildConfig}}
+      - name: Fetch symsrv-scripts
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 2
+          repository: stream-labs/symsrv-scripts
+          path: symsrv-scripts
+      - name: Run symbol server scripts
+        if: startsWith(github.ref, 'refs/tags/')
+        run: ./symsrv-scripts/main.bat "${{ github.workspace }}/symsrv-scripts" ".\main.ps1 -localSourceDir '${{ github.workspace }}' -repo_userId 'stream-labs' -repo_name 'obs-studio' -repo_branch '${{ github.sha }}' -subModules 'plugins/mediasoup-connector,stream-labs,mediasoup-connector,streamlabs;plugins/enc-amf,stream-labs,obs-amd-encoder,streamlabs;plugins/motion-effect,stream-labs,motion-effect,master;plugins/obs-browser,stream-labs,obs-browser,streamlabs;plugins/obs-ndi,stream-labs,obs-ndi,streamlabs;plugins/obs-ndi,stream-labs,obs-amd-encoder,streamlabs;plugins/obs-openvr,stream-labs,OBS-OpenVR-Input-Plugin,master;plugins/obs-vst,stream-labs,obs-vst,streamlabs;plugins/slobs-virtual-cam,stream-labs,slobs-virtual-cam,streamlabs;plugins/win-dshow/libdshowcapture,stream-labs,libdshowcapture,streamlabs'"
+        env:
+          AWS_SYMB_ACCESS_KEY_ID: ${{secrets.AWS_SYMB_ACCESS_KEY_ID}}
+          AWS_SYMB_SECRET_ACCESS_KEY: ${{secrets.AWS_SYMB_SECRET_ACCESS_KEY}}
+        shell: powershell
+      - name: Tar artifact for deployment
+        if: startsWith(github.ref, 'refs/tags/')
+        run: 7z a -r ${{env.TARGET_ARTIFACT}}.7z ${{env.InstallPath}}
+        env:
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
+      - name: Configure AWS credentials
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
+          aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
+          aws-region: us-west-2
+      - name: Deploy
+        if: startsWith(github.ref, 'refs/tags/')
+        run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
+        env:
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
