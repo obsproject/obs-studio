@@ -133,7 +133,7 @@ void OBSBasicVCamConfig::Save()
 		UpdateOutputSource();
 }
 
-static void SaveCallback(obs_data_t *data, bool saving, void *)
+void OBSBasicVCamConfig::SaveData(obs_data_t *data, bool saving)
 {
 	if (saving) {
 		OBSDataAutoRelease obj = obs_data_create();
@@ -189,7 +189,6 @@ void OBSBasicVCamConfig::Init()
 
 	vCamConfig = &staticConfig;
 
-	obs_frontend_add_save_callback(SaveCallback, nullptr);
 	obs_frontend_add_event_callback(EventCallback, nullptr);
 }
 

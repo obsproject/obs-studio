@@ -729,6 +729,8 @@ void OBSBasic::Save(const char *file)
 	obs_data_set_double(saveData, "scaling_off_y",
 			    ui->preview->GetScrollY());
 
+	OBSBasicVCamConfig::SaveData(saveData, true);
+
 	if (api) {
 		OBSDataAutoRelease moduleObj = obs_data_create();
 		api->on_save(moduleObj);
@@ -1140,6 +1142,8 @@ retryScene:
 	}
 	ui->preview->SetFixedScaling(fixedScaling);
 	emit ui->preview->DisplayResized();
+
+	OBSBasicVCamConfig::SaveData(data, false);
 
 	/* ---------------------- */
 

@@ -17,6 +17,7 @@ public:
 	static void DestroyView();
 
 	static void UpdateOutputSource();
+	static void SaveData(obs_data_t *data, bool saving);
 
 	explicit OBSBasicVCamConfig(QWidget *parent = 0);
 
