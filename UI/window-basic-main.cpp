@@ -474,6 +474,9 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
 
+	connect(App(), &OBSApp::StyleChanged, this,
+		&OBSBasic::ResetProxyStyleSliders);
+
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
 }
@@ -10232,4 +10235,20 @@ void OBSBasic::UpdatePreviewSpacingHelpers()
 float OBSBasic::GetDevicePixelRatio()
 {
 	return dpi;
+}
+
+void OBSBasic::ResetProxyStyleSliders()
+{
+	/* Since volume/media sliders are using QProxyStyle, they are not
+	* updated when themes are changed, so re-initialize them. */
+	vector<OBSSource> sources;
+	for (size_t i = 0; i != volumes.size(); i++)
+		sources.emplace_back(volumes[i]->GetSource());
+
+	ClearVolumeControls();
+
+	for (const auto &source : sources)
+		ActivateAudioSource(source);
+
+	UpdateContextBar(true);
 }
