@@ -19,7 +19,7 @@
     "--talk-name=org.a11y.Bus",
     "--own-name=org.kde.StatusNotifierItem-2-2",
     "--system-talk-name=org.freedesktop.Avahi",
-    "--env=VST_PATH=/app/extensions/Plugins/lxvst"
+    "--env=VST_PATH=/app/extensions/Plugins/vst"
   ],
   "add-extensions": {
     "com.obsproject.Studio.Plugin": {
@@ -34,7 +34,7 @@
       "directory": "extensions/Plugins",
       "version": "21.08",
       "add-ld-path": "lib",
-      "merge-dirs": "lxvst",
+      "merge-dirs": "vst",
       "subdirectories": true,
       "no-autodownload": true
     }
