@@ -1,21 +1,27 @@
 name: Clang Format Check
 
-on: [push, pull_request]
+on:
+  push:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
+  pull_request:
+    paths-ignore: ['**.md']
+    branches-ignore: [master]
 
 jobs:
   clang-format-check:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-22.04
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: 'recursive'
 
       - name: Install clang format
         run: |
-          sudo apt-get install -y clang-format-12
+          sudo apt-get install -y clang-format-13
 
-      - name: Check the Formatting
+      - name: 'Run clang-format'
         run: |
-          ./formatcode.sh
           ./CI/check-format.sh
+          ./CI/check-changes.sh

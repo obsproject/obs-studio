@@ -107,7 +107,6 @@ static inline void display_stream_update(struct display_capture *dc,
 					 CGDisplayStreamUpdateRef update_ref)
 {
 	UNUSED_PARAMETER(display_time);
-	UNUSED_PARAMETER(update_ref);
 
 	if (status == kCGDisplayStreamFrameStatusStopped) {
 		os_event_signal(dc->disp_finished);
@@ -146,7 +145,8 @@ static bool init_display_stream(struct display_capture *dc)
 	dc->screen = [[NSScreen screens][dc->display] retain];
 	dc->frame = [dc->screen convertRectToBacking:dc->screen.frame];
 	NSNumber *screen_num = dc->screen.deviceDescription[@"NSScreenNumber"];
-	CGDirectDisplayID disp_id = (CGDirectDisplayID)screen_num.pointerValue;
+	CGDirectDisplayID disp_id = screen_num.unsignedIntValue;
+
 	NSDictionary *rect_dict =
 		CFBridgingRelease(CGRectCreateDictionaryRepresentation(
 			CGRectMake(0, 0, dc->screen.frame.size.width,
@@ -204,9 +204,6 @@ void load_crop(struct display_capture *dc, obs_data_t *settings);
 
 static void *display_capture_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(source);
-	UNUSED_PARAMETER(settings);
-
 	struct display_capture *dc = bzalloc(sizeof(struct display_capture));
 
 	dc->source = source;
@@ -571,25 +568,10 @@ static obs_properties_t *display_capture_properties(void *unused)
 		sprintf(dimension_buffer[3], "%d",
 			(int32_t)[screen frame].origin.y);
 
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= __MAC_10_15
-		if (__builtin_available(macOS 10.15, *)) {
-			sprintf(name_buffer,
-				"%.200s: %.12sx%.12s @ %.12s,%.12s",
-				[[screen localizedName] UTF8String],
-				dimension_buffer[0], dimension_buffer[1],
-				dimension_buffer[2], dimension_buffer[3]);
-		} else
-#endif
-		{
-			char disp_num_buffer[11];
-			sprintf(disp_num_buffer, "%lu", (unsigned long)index);
-			sprintf(name_buffer,
-				"%.189s %.10s: %.12sx%.12s @ %.12s,%.12s",
-				obs_module_text("DisplayCapture.Display"),
-				disp_num_buffer, dimension_buffer[0],
-				dimension_buffer[1], dimension_buffer[2],
-				dimension_buffer[3]);
-		}
+		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			[[screen localizedName] UTF8String],
+			dimension_buffer[0], dimension_buffer[1],
+			dimension_buffer[2], dimension_buffer[3]);
 
 		obs_property_list_add_int(list, name_buffer, index);
 	}];

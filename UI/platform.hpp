@@ -27,9 +27,6 @@ class QWidget;
 /* Gets the path of obs-studio specific data files (such as locale) */
 bool GetDataFilePath(const char *data, std::string &path);
 
-/* Updates the working directory for OSX application bundles */
-bool InitApplicationBundle();
-
 std::string GetDefaultVideoSavePath();
 
 std::vector<std::string> GetPreferredLocales();
@@ -38,6 +35,14 @@ bool IsAlwaysOnTop(QWidget *window);
 void SetAlwaysOnTop(QWidget *window, bool enable);
 
 bool SetDisplayAffinitySupported(void);
+
+enum TaskbarOverlayStatus {
+	TaskbarOverlayStatusInactive,
+	TaskbarOverlayStatusActive,
+	TaskbarOverlayStatusPaused,
+};
+void TaskbarOverlayInit();
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status);
 
 #ifdef _WIN32
 class RunOnceMutex;
@@ -75,9 +80,30 @@ bool IsRunningOnWine();
 #endif
 
 #ifdef __APPLE__
+typedef enum {
+	kAudioDeviceAccess = 0,
+	kVideoDeviceAccess = 1,
+	kScreenCapture = 2,
+	kAccessibility = 3
+} MacPermissionType;
+
+typedef enum {
+	kPermissionNotDetermined = 0,
+	kPermissionRestricted = 1,
+	kPermissionDenied = 2,
+	kPermissionAuthorized = 3,
+} MacPermissionStatus;
+
 void EnableOSXVSync(bool enable);
 void EnableOSXDockIcon(bool enable);
+bool isInBundle();
 void InstallNSApplicationSubclass();
+void InstallNSThreadLocks();
 void disableColorSpaceConversion(QWidget *window);
-bool ProcessIsRosettaTranslated();
+
+MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
+					      bool prompt_for_permission);
+#define CheckPermission(x) CheckPermissionWithPrompt(x, false)
+#define RequestPermission(x) CheckPermissionWithPrompt(x, true)
+void OpenMacOSPrivacyPreferences(const char *tab);
 #endif

@@ -53,6 +53,8 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_device_obj);
 	GRAPHICS_IMPORT(device_swapchain_create);
 	GRAPHICS_IMPORT(device_resize);
+	GRAPHICS_IMPORT(device_get_color_space);
+	GRAPHICS_IMPORT(device_update_color_space);
 	GRAPHICS_IMPORT(device_get_size);
 	GRAPHICS_IMPORT(device_get_width);
 	GRAPHICS_IMPORT(device_get_height);
@@ -81,6 +83,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_get_render_target);
 	GRAPHICS_IMPORT(device_get_zstencil_target);
 	GRAPHICS_IMPORT(device_set_render_target);
+	GRAPHICS_IMPORT(device_set_render_target_with_color_space);
 	GRAPHICS_IMPORT(device_set_cube_render_target);
 	GRAPHICS_IMPORT(device_enable_framebuffer_srgb);
 	GRAPHICS_IMPORT(device_framebuffer_srgb_enabled);
@@ -93,6 +96,7 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(device_load_swapchain);
 	GRAPHICS_IMPORT(device_end_scene);
 	GRAPHICS_IMPORT(device_clear);
+	GRAPHICS_IMPORT(device_is_present_ready);
 	GRAPHICS_IMPORT(device_present);
 	GRAPHICS_IMPORT(device_flush);
 	GRAPHICS_IMPORT(device_set_cull_mode);
@@ -190,6 +194,9 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT(gs_shader_set_next_sampler);
 
 	GRAPHICS_IMPORT_OPTIONAL(device_nv12_available);
+	GRAPHICS_IMPORT_OPTIONAL(device_p010_available);
+
+	GRAPHICS_IMPORT(device_is_monitor_hdr);
 
 	GRAPHICS_IMPORT(device_debug_marker_begin);
 	GRAPHICS_IMPORT(device_debug_marker_end);
@@ -223,13 +230,16 @@ bool load_graphics_imports(struct gs_exports *exports, void *module,
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_acquire_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_release_sync);
 	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_nv12);
+	GRAPHICS_IMPORT_OPTIONAL(device_texture_create_p010);
 	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_nv12);
+	GRAPHICS_IMPORT_OPTIONAL(device_stagesurface_create_p010);
 	GRAPHICS_IMPORT_OPTIONAL(device_register_loss_callbacks);
 	GRAPHICS_IMPORT_OPTIONAL(device_unregister_loss_callbacks);
 #elif __linux__
 	GRAPHICS_IMPORT(device_texture_create_from_dmabuf);
 	GRAPHICS_IMPORT(device_query_dmabuf_capabilities);
 	GRAPHICS_IMPORT(device_query_dmabuf_modifiers_for_format);
+	GRAPHICS_IMPORT(device_texture_create_from_pixmap);
 #endif
 
 	/* SLOBS custom functions */

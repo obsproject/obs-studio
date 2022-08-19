@@ -26,7 +26,6 @@
 #include "double-slider.hpp"
 #include "slider-ignorewheel.hpp"
 #include "spinbox-ignorewheel.hpp"
-#include "combobox-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
 #include "properties-view.hpp"
 #include "properties-view.moc.hpp"
@@ -270,11 +269,7 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 
 	if (type == OBS_TEXT_MULTILINE) {
 		QPlainTextEdit *edit = new QPlainTextEdit(QT_UTF8(val));
-#if QT_VERSION >= QT_VERSION_CHECK(5, 10, 0)
 		edit->setTabStopDistance(40);
-#else
-		edit->setTabStopWidth(40);
-#endif
 		if (monospace) {
 			QFont f("Courier");
 			f.setStyleHint(QFont::Monospace);
@@ -310,6 +305,50 @@ QWidget *OBSPropertiesView::AddText(obs_property_t *prop, QFormLayout *layout,
 
 		connect(edit, SIGNAL(textEdited(const QString &)), info,
 			SLOT(ControlChanged()));
+		return nullptr;
+	} else if (type == OBS_TEXT_INFO) {
+		QString desc = QT_UTF8(obs_property_description(prop));
+		const char *long_desc = obs_property_long_description(prop);
+		obs_text_info_type info_type =
+			obs_property_text_info_type(prop);
+
+		QLabel *info_label = new QLabel(QT_UTF8(val));
+
+		if (info_label->text().isEmpty() && long_desc == NULL) {
+			label = nullptr;
+			info_label->setText(desc);
+		} else
+			label = new QLabel(desc);
+
+		if (long_desc != NULL && !info_label->text().isEmpty()) {
+			QString file = !App()->IsThemeDark()
+					       ? ":/res/images/help.svg"
+					       : ":/res/images/help_light.svg";
+			QString lStr = "<html>%1 <img src='%2' style=' \
+				vertical-align: bottom; ' /></html>";
+
+			info_label->setText(lStr.arg(info_label->text(), file));
+			info_label->setToolTip(QT_UTF8(long_desc));
+		} else if (long_desc != NULL) {
+			info_label->setText(QT_UTF8(long_desc));
+		}
+
+		info_label->setOpenExternalLinks(true);
+		info_label->setWordWrap(obs_property_text_info_word_wrap(prop));
+
+		if (info_type == OBS_TEXT_INFO_WARNING)
+			info_label->setObjectName("warningLabel");
+		else if (info_type == OBS_TEXT_INFO_ERROR)
+			info_label->setObjectName("errorLabel");
+
+		if (label)
+			label->setObjectName(info_label->objectName());
+
+		WidgetInfo *info = new WidgetInfo(this, prop, info_label);
+		children.emplace_back(info);
+
+		layout->addRow(label, info_label);
+
 		return nullptr;
 	}
 
@@ -498,30 +537,30 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 template<long long get_int(obs_data_t *, const char *),
 	 double get_double(obs_data_t *, const char *),
 	 const char *get_string(obs_data_t *, const char *)>
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static QVariant from_obs_data(obs_data_t *data, const char *name,
+			      obs_combo_format format)
 {
 	switch (format) {
 	case OBS_COMBO_FORMAT_INT:
-		return to_string(get_int(data, name));
+		return QVariant::fromValue(get_int(data, name));
 	case OBS_COMBO_FORMAT_FLOAT:
-		return to_string(get_double(data, name));
+		return QVariant::fromValue(get_double(data, name));
 	case OBS_COMBO_FORMAT_STRING:
-		return get_string(data, name);
+		return QByteArray(get_string(data, name));
 	default:
-		return "";
+		return QVariant();
 	}
 }
 
-static string from_obs_data(obs_data_t *data, const char *name,
-			    obs_combo_format format)
+static QVariant from_obs_data(obs_data_t *data, const char *name,
+			      obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
 			     obs_data_get_string>(data, name, format);
 }
 
-static string from_obs_data_autoselect(obs_data_t *data, const char *name,
-				       obs_combo_format format)
+static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
+					 obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_autoselect_int,
 			     obs_data_get_autoselect_double,
@@ -532,7 +571,7 @@ static string from_obs_data_autoselect(obs_data_t *data, const char *name,
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 {
 	const char *name = obs_property_name(prop);
-	QComboBox *combo = new ComboBoxIgnoreScroll();
+	QComboBox *combo = new QComboBox();
 	obs_combo_type type = obs_property_list_type(prop);
 	obs_combo_format format = obs_property_list_format(prop);
 	size_t count = obs_property_list_item_count(prop);
@@ -547,13 +586,13 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	combo->setMaxVisibleItems(40);
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
 
-	string value = from_obs_data(settings, name, format);
+	QVariant value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
 	    type == OBS_COMBO_TYPE_EDITABLE) {
-		combo->lineEdit()->setText(QT_UTF8(value.c_str()));
+		combo->lineEdit()->setText(value.toString());
 	} else {
-		idx = combo->findData(QByteArray(value.c_str()));
+		idx = combo->findData(value);
 	}
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
@@ -564,9 +603,9 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 		combo->setCurrentIndex(idx);
 
 	if (obs_data_has_autoselect_value(settings, name)) {
-		string autoselect =
+		QVariant autoselect =
 			from_obs_data_autoselect(settings, name, format);
-		int id = combo->findData(QT_UTF8(autoselect.c_str()));
+		int id = combo->findData(autoselect);
 
 		if (id != -1 && id != idx) {
 			QString actual = combo->itemText(id);
@@ -972,7 +1011,7 @@ CreateSimpleFPSValues(OBSFrameRatePropertyWidget *fpsProps, bool &selected,
 	auto items = vector<common_frame_rate>{};
 	items.reserve(sizeof(common_fps) / sizeof(common_frame_rate));
 
-	auto combo = fpsProps->simpleFPS = new ComboBoxIgnoreScroll{};
+	auto combo = fpsProps->simpleFPS = new QComboBox();
 
 	combo->addItem("", QVariant::fromValue(make_fps(0, 0)));
 	for (const auto &fps : common_fps) {
@@ -1054,7 +1093,7 @@ static QWidget *CreateRationalFPS(OBSFrameRatePropertyWidget *fpsProps,
 	auto str = QTStr("Basic.PropertiesView.FPS.ValidFPSRanges");
 	auto rlabel = new QLabel{str};
 
-	auto combo = fpsProps->fpsRange = new ComboBoxIgnoreScroll{};
+	auto combo = fpsProps->fpsRange = new QComboBox();
 	auto convert_fps = media_frames_per_second_to_fps;
 	//auto convert_fi  = media_frames_per_second_to_frame_interval;
 
@@ -1105,7 +1144,7 @@ CreateFrameRateWidget(obs_property_t *prop, bool &warning, const char *option,
 
 	swap(widget->fps_ranges, fps_ranges);
 
-	auto combo = widget->modeSelect = new ComboBoxIgnoreScroll{};
+	auto combo = widget->modeSelect = new QComboBox();
 	combo->addItem(QTStr("Basic.PropertiesView.FPS.Simple"),
 		       QVariant::fromValue(frame_rate_tag::simple()));
 	combo->addItem(QTStr("Basic.PropertiesView.FPS.Rational"),
@@ -1502,9 +1541,9 @@ void OBSPropertiesView::AddProperty(obs_property_t *property,
 		widget->setEnabled(false);
 
 	if (obs_property_long_description(property)) {
-		bool lightTheme = palette().text().color().redF() < 0.5;
-		QString file = lightTheme ? ":/res/images/help.svg"
-					  : ":/res/images/help_light.svg";
+		QString file = !App()->IsThemeDark()
+				       ? ":/res/images/help.svg"
+				       : ":/res/images/help_light.svg";
 		if (label) {
 			QString lStr = "<html>%1 <img src='%2' style=' \
 				vertical-align: bottom;  \

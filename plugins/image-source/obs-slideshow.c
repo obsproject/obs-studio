@@ -662,7 +662,7 @@ static void *ss_create(obs_data_t *settings, obs_source_t *source)
 		source, "SlideShow.Stop", obs_module_text("SlideShow.Stop"),
 		stop_hotkey, ss);
 
-	ss->prev_hotkey = obs_hotkey_register_source(
+	ss->next_hotkey = obs_hotkey_register_source(
 		source, "SlideShow.NextSlide",
 		obs_module_text("SlideShow.NextSlide"), next_slide_hotkey, ss);
 
@@ -901,9 +901,14 @@ static obs_properties_t *ss_properties(void *data)
 	obs_property_list_add_string(p, T_TR_SWIPE, TR_SWIPE);
 	obs_property_list_add_string(p, T_TR_SLIDE, TR_SLIDE);
 
-	obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME, 50, 3600000,
-			       50);
-	obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED, 0, 3600000, 50);
+	p = obs_properties_add_int(ppts, S_SLIDE_TIME, T_SLIDE_TIME, 50,
+				   3600000, 50);
+	obs_property_int_set_suffix(p, " ms");
+
+	p = obs_properties_add_int(ppts, S_TR_SPEED, T_TR_SPEED, 0, 3600000,
+				   50);
+	obs_property_int_set_suffix(p, " ms");
+
 	obs_properties_add_bool(ppts, S_LOOP, T_LOOP);
 	obs_properties_add_bool(ppts, S_HIDE, T_HIDE);
 	obs_properties_add_bool(ppts, S_RANDOMIZE, T_RANDOMIZE);

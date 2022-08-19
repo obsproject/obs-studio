@@ -54,16 +54,15 @@ const char *get_module_extension(void)
 #define FLATPAK_PLUGIN_PATH "/app/plugins"
 
 static const char *module_bin[] = {
-	"../../obs-plugins/" BIT_STRING,
 	OBS_INSTALL_PREFIX "/" OBS_PLUGIN_DESTINATION,
+	"../../obs-plugins/" BIT_STRING,
 	FLATPAK_PLUGIN_PATH "/" OBS_PLUGIN_DESTINATION,
 };
 
 static const char *module_data[] = {
-	OBS_DATA_PATH "/obs-plugins/%module%",
 	OBS_INSTALL_DATA_PATH "/obs-plugins/%module%",
-	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%",
-};
+	OBS_DATA_PATH "/obs-plugins/%module%",
+	FLATPAK_PLUGIN_PATH "/share/obs/obs-plugins/%module%"};
 
 static const int module_patterns_size =
 	sizeof(module_bin) / sizeof(module_bin[0]);
@@ -328,7 +327,6 @@ void log_system_info(void)
 	log_desktop_session_info();
 #endif
 	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_GLX:
 	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_nix_x11_log_info();
 		break;
@@ -342,7 +340,6 @@ void log_system_info(void)
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
 	switch (obs_get_nix_platform()) {
-	case OBS_NIX_PLATFORM_X11_GLX:
 	case OBS_NIX_PLATFORM_X11_EGL:
 		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
 		break;

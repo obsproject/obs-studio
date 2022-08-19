@@ -4,6 +4,8 @@ Text Lookup Interface
 Used for storing and looking up localized strings.  Uses an ini-file
 like file format for localization lookup.
 
+.. struct:: text_lookup
+
 .. type:: struct text_lookup lookup_t
 
 .. code:: cpp

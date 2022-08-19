@@ -27,39 +27,83 @@
 #endif
 
 #ifdef _WIN32
-#define SO_EXT ".dll"
+#include <windows.h>
+#include <io.h>
+#define F_OK 0
+#define access _access
+#define VERSION_PATTERN "%d%d"
+#define FILE_PATTERN "python%s.dll"
+#define PATH_MAX MAX_PATH
 #elif __APPLE__
-#define SO_EXT ".dylib"
+#define VERSION_PATTERN "%d.%d"
+#define FILE_PATTERN "Python.framework/Versions/Current/lib/libpython%s.dylib"
 #endif
 
-#ifdef __APPLE__
-#define PYTHON_LIB_SUBDIR "lib/"
-#else
-#define PYTHON_LIB_SUBDIR ""
-#endif
+#define PY_MAJOR_VERSION_MAX 3
+#define PY_MINOR_VERSION_MAX 10
 
-bool import_python(const char *python_path)
+bool import_python(const char *python_path, python_version_t *python_version)
 {
 	struct dstr lib_path;
 	bool success = false;
-	void *lib;
+	void *lib = NULL;
 
 	if (!python_path)
 		python_path = "";
 
+	if (!python_version) {
+		blog(LOG_DEBUG,
+		     "[Python] Invalid python_version pointer provided.");
+		goto fail;
+	}
+
 	dstr_init_copy(&lib_path, python_path);
 	dstr_replace(&lib_path, "\\", "/");
 	if (!dstr_is_empty(&lib_path)) {
-		dstr_cat(&lib_path, "/" PYTHON_LIB_SUBDIR);
+		dstr_cat(&lib_path, "/");
 	}
-	dstr_cat(&lib_path, PYTHON_LIB SO_EXT);
 
-	lib = os_dlopen(lib_path.array);
+	struct dstr lib_candidate_path;
+	dstr_init_copy(&lib_candidate_path, lib_path.array);
+
+	char cur_version[5];
+	char next_version[5];
+
+	char temp[PATH_MAX];
+
+	sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+		PY_MINOR_VERSION_MAX);
+	sprintf(temp, FILE_PATTERN, cur_version);
+
+	dstr_cat(&lib_candidate_path, temp);
+
+	int minor_version = PY_MINOR_VERSION_MAX;
+	do {
+		if (access(lib_candidate_path.array, F_OK) == 0) {
+			lib = os_dlopen(lib_candidate_path.array);
+		}
+
+		if (lib) {
+			break;
+		}
+
+		sprintf(cur_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+			minor_version);
+		sprintf(next_version, VERSION_PATTERN, PY_MAJOR_VERSION_MAX,
+			--minor_version);
+		dstr_replace(&lib_candidate_path, cur_version, next_version);
+	} while (minor_version > 5);
+
+	dstr_free(&lib_candidate_path);
+
 	if (!lib) {
 		blog(LOG_WARNING, "[Python] Could not load library: %s",
 		     lib_path.array);
 		goto fail;
 	}
+
+	python_version->major = PY_MAJOR_VERSION_MAX;
+	python_version->minor = minor_version;
 
 #define IMPORT_FUNC(x)                                                     \
 	do {                                                               \
@@ -98,8 +142,12 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(Py_Initialize);
 	IMPORT_FUNC(Py_Finalize);
 	IMPORT_FUNC(Py_IsInitialized);
-	IMPORT_FUNC(PyEval_InitThreads);
-	IMPORT_FUNC(PyEval_ThreadsInitialized);
+
+	if (python_version->major == 3 && python_version->minor < 7) {
+		IMPORT_FUNC(PyEval_InitThreads);
+		IMPORT_FUNC(PyEval_ThreadsInitialized);
+	}
+
 	IMPORT_FUNC(PyEval_ReleaseThread);
 	IMPORT_FUNC(PySys_SetArgv);
 	IMPORT_FUNC(PyImport_ImportModule);
@@ -113,6 +161,10 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyDict_GetItemString);
 	IMPORT_FUNC(PyDict_SetItemString);
 	IMPORT_FUNC(PyCFunction_NewEx);
+
+	if (python_version->major == 3 && python_version->minor >= 9)
+		IMPORT_FUNC(PyCMethod_New);
+
 	IMPORT_FUNC(PyModule_GetDict);
 	IMPORT_FUNC(PyModule_GetNameObject);
 	IMPORT_FUNC(PyModule_AddObject);
@@ -143,16 +195,13 @@ bool import_python(const char *python_path)
 	IMPORT_FUNC(PyArg_VaParse);
 	IMPORT_FUNC(_Py_NoneStruct);
 	IMPORT_FUNC(PyTuple_New);
-
+	if (python_version->major == 3 && python_version->minor >= 9) {
+		IMPORT_FUNC(PyType_GetFlags);
+	}
 #if defined(Py_DEBUG) || PY_VERSION_HEX >= 0x030900b0
 	IMPORT_FUNC(_Py_Dealloc);
 #endif
-#if PY_VERSION_HEX >= 0x030900b0
-	IMPORT_FUNC(PyType_GetFlags);
-#endif
-
 #undef IMPORT_FUNC
-
 	success = true;
 
 fail:

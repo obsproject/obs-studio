@@ -16,8 +16,8 @@ struct obs_output_info decklink_output_info;
 
 bool log_sdk_version()
 {
-	IDeckLinkIterator *deckLinkIterator;
-	IDeckLinkAPIInformation *deckLinkAPIInformation;
+	ComPtr<IDeckLinkIterator> deckLinkIterator;
+	ComPtr<IDeckLinkAPIInformation> deckLinkAPIInformation;
 	HRESULT result;
 
 	deckLinkIterator = CreateDeckLinkIteratorInstance();
@@ -42,8 +42,6 @@ bool log_sdk_version()
 
 		blog(LOG_INFO, "Decklink API Installed version %s",
 		     versionString.c_str());
-
-		deckLinkAPIInformation->Release();
 	}
 
 	return true;

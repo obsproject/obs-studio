@@ -64,7 +64,9 @@ void *os_dlopen(const char *path)
 
 	dstr_init_copy(&dylib_name, path);
 #ifdef __APPLE__
-	if (!dstr_find(&dylib_name, ".so") && !dstr_find(&dylib_name, ".dylib"))
+	if (!dstr_find(&dylib_name, ".framework") &&
+	    !dstr_find(&dylib_name, ".plugin") &&
+	    !dstr_find(&dylib_name, ".dylib") && !dstr_find(&dylib_name, ".so"))
 #else
 	if (!dstr_find(&dylib_name, ".so"))
 #endif
@@ -92,6 +94,13 @@ void os_dlclose(void *module)
 {
 	if (module)
 		dlclose(module);
+}
+
+void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
+{
+	*is_obs_plugin = true;
+	*can_load = true;
+	UNUSED_PARAMETER(path);
 }
 
 bool os_is_obs_plugin(const char *path)
@@ -174,6 +183,23 @@ bool os_sleepto_ns(uint64_t time_target)
 		req = remain;
 		memset(&remain, 0, sizeof(remain));
 	}
+
+	return true;
+}
+
+bool os_sleepto_ns_fast(uint64_t time_target)
+{
+	uint64_t current = os_gettime_ns();
+	if (time_target < current)
+		return false;
+
+	do {
+		uint64_t remain_us = (time_target - current + 999) / 1000;
+		useconds_t us = remain_us >= 1000000 ? 999999 : remain_us;
+		usleep(us);
+
+		current = os_gettime_ns();
+	} while (time_target > current);
 
 	return true;
 }
@@ -380,6 +406,11 @@ char *os_get_executable_path_ptr(const char *name)
 	}
 
 	return path.array;
+}
+
+bool os_get_emulation_status(void)
+{
+	return false;
 }
 
 #endif
@@ -629,7 +660,7 @@ int os_chdir(const char *path)
 
 #if !defined(__APPLE__)
 
-#if HAVE_DBUS
+#if defined(GIO_FOUND)
 struct dbus_sleep_info;
 struct portal_inhibit_info;
 
@@ -645,7 +676,7 @@ extern void portal_inhibit_info_destroy(struct portal_inhibit_info *portal);
 #endif
 
 struct os_inhibit_info {
-#if HAVE_DBUS
+#if defined(GIO_FOUND)
 	struct dbus_sleep_info *dbus;
 	struct portal_inhibit_info *portal;
 #endif
@@ -661,7 +692,7 @@ os_inhibit_t *os_inhibit_sleep_create(const char *reason)
 	struct os_inhibit_info *info = bzalloc(sizeof(*info));
 	sigset_t set;
 
-#if HAVE_DBUS
+#if defined(GIO_FOUND)
 	info->portal = portal_inhibit_info_create();
 	if (!info->portal)
 		info->dbus = dbus_sleep_info_create();
@@ -718,7 +749,7 @@ bool os_inhibit_sleep_set_active(os_inhibit_t *info, bool active)
 	if (info->active == active)
 		return false;
 
-#if HAVE_DBUS
+#if defined(GIO_FOUND)
 	if (info->portal)
 		portal_inhibit(info->portal, info->reason, active);
 	if (info->dbus)
@@ -749,7 +780,7 @@ void os_inhibit_sleep_destroy(os_inhibit_t *info)
 {
 	if (info) {
 		os_inhibit_sleep_set_active(info, false);
-#if HAVE_DBUS
+#if defined(GIO_FOUND)
 		portal_inhibit_info_destroy(info->portal);
 		dbus_sleep_info_destroy(info->dbus);
 #endif

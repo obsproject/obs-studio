@@ -18,6 +18,7 @@
 #include "image-file.h"
 #include "../util/base.h"
 #include "../util/platform.h"
+#include "../util/dstr.h"
 #include "vec4.h"
 
 #define blog(level, format, ...) \
@@ -192,6 +193,7 @@ not_animated:
 
 static void gs_image_file_init_internal(gs_image_file_t *image,
 					const char *file, uint64_t *mem_usage,
+					enum gs_color_space *space,
 					enum gs_image_alpha_mode alpha_mode)
 {
 	size_t len;
@@ -206,14 +208,15 @@ static void gs_image_file_init_internal(gs_image_file_t *image,
 
 	len = strlen(file);
 
-	if (len > 4 && strcmp(file + len - 4, ".gif") == 0) {
+	if (len > 4 && astrcmpi(file + len - 4, ".gif") == 0) {
 		if (init_animated_gif(image, file, mem_usage, alpha_mode)) {
 			return;
 		}
 	}
 
-	image->texture_data = gs_create_texture_file_data2(
-		file, alpha_mode, &image->format, &image->cx, &image->cy);
+	image->texture_data =
+		gs_create_texture_file_data3(file, alpha_mode, &image->format,
+					     &image->cx, &image->cy, space);
 
 	if (mem_usage) {
 		*mem_usage += image->cx * image->cy *
@@ -229,7 +232,9 @@ static void gs_image_file_init_internal(gs_image_file_t *image,
 
 void gs_image_file_init(gs_image_file_t *image, const char *file)
 {
-	gs_image_file_init_internal(image, file, NULL, GS_IMAGE_ALPHA_STRAIGHT);
+	enum gs_color_space unused;
+	gs_image_file_init_internal(image, file, NULL, &unused,
+				    GS_IMAGE_ALPHA_STRAIGHT);
 }
 
 void gs_image_file_free(gs_image_file_t *image)
@@ -254,16 +259,28 @@ void gs_image_file_free(gs_image_file_t *image)
 
 void gs_image_file2_init(gs_image_file2_t *if2, const char *file)
 {
-	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage,
+	enum gs_color_space unused;
+	gs_image_file_init_internal(&if2->image, file, &if2->mem_usage, &unused,
 				    GS_IMAGE_ALPHA_STRAIGHT);
 }
 
 void gs_image_file3_init(gs_image_file3_t *if3, const char *file,
 			 enum gs_image_alpha_mode alpha_mode)
 {
+	enum gs_color_space unused;
 	gs_image_file_init_internal(&if3->image2.image, file,
-				    &if3->image2.mem_usage, alpha_mode);
+				    &if3->image2.mem_usage, &unused,
+				    alpha_mode);
 	if3->alpha_mode = alpha_mode;
+}
+
+void gs_image_file4_init(gs_image_file4_t *if4, const char *file,
+			 enum gs_image_alpha_mode alpha_mode)
+{
+	gs_image_file_init_internal(&if4->image3.image2.image, file,
+				    &if4->image3.image2.mem_usage, &if4->space,
+				    alpha_mode);
+	if4->image3.alpha_mode = alpha_mode;
 }
 
 void gs_image_file_init_texture(gs_image_file_t *image)
@@ -403,6 +420,13 @@ bool gs_image_file3_tick(gs_image_file3_t *if3, uint64_t elapsed_time_ns)
 					   if3->alpha_mode);
 }
 
+bool gs_image_file4_tick(gs_image_file4_t *if4, uint64_t elapsed_time_ns)
+{
+	return gs_image_file_tick_internal(&if4->image3.image2.image,
+					   elapsed_time_ns,
+					   if4->image3.alpha_mode);
+}
+
 static void
 gs_image_file_update_texture_internal(gs_image_file_t *image,
 				      enum gs_image_alpha_mode alpha_mode)
@@ -432,4 +456,10 @@ void gs_image_file3_update_texture(gs_image_file3_t *if3)
 {
 	gs_image_file_update_texture_internal(&if3->image2.image,
 					      if3->alpha_mode);
+}
+
+void gs_image_file4_update_texture(gs_image_file4_t *if4)
+{
+	gs_image_file_update_texture_internal(&if4->image3.image2.image,
+					      if4->image3.alpha_mode);
 }

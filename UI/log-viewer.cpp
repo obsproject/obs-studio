@@ -12,58 +12,27 @@
 #include "log-viewer.hpp"
 #include "qt-wrappers.hpp"
 
-OBSLogViewer::OBSLogViewer(QWidget *parent) : QDialog(parent)
+OBSLogViewer::OBSLogViewer(QWidget *parent)
+	: QDialog(parent), ui(new Ui::OBSLogViewer)
 {
 	setWindowFlags(windowFlags() & Qt::WindowMaximizeButtonHint &
 		       ~Qt::WindowContextHelpButtonHint);
 	setAttribute(Qt::WA_DeleteOnClose);
 
-	QVBoxLayout *layout = new QVBoxLayout();
-	layout->setContentsMargins(0, 0, 0, 0);
+	ui->setupUi(this);
 
 	const QFont fixedFont =
 		QFontDatabase::systemFont(QFontDatabase::FixedFont);
 
-	textArea = new QPlainTextEdit();
-	textArea->setReadOnly(true);
-	textArea->setFont(fixedFont);
+	ui->textArea->setFont(fixedFont);
 	// Fix display of tabs & multiple spaces
-	textArea->document()->setDefaultStyleSheet(
+	ui->textArea->document()->setDefaultStyleSheet(
 		"font { white-space: pre; }");
-
-	QHBoxLayout *buttonLayout = new QHBoxLayout();
-	QPushButton *clearButton = new QPushButton(QTStr("Clear"));
-	connect(clearButton, &QPushButton::clicked, this,
-		&OBSLogViewer::ClearText);
-	QPushButton *openButton = new QPushButton(QTStr("OpenFile"));
-	connect(openButton, &QPushButton::clicked, this,
-		&OBSLogViewer::OpenFile);
-	QPushButton *closeButton = new QPushButton(QTStr("Close"));
-	connect(closeButton, &QPushButton::clicked, this, &QDialog::close);
 
 	bool showLogViewerOnStartup = config_get_bool(
 		App()->GlobalConfig(), "LogViewer", "ShowLogStartup");
 
-	QCheckBox *showStartup = new QCheckBox(QTStr("ShowOnStartup"));
-	showStartup->setChecked(showLogViewerOnStartup);
-	connect(showStartup, SIGNAL(toggled(bool)), this,
-		SLOT(ToggleShowStartup(bool)));
-
-	buttonLayout->addSpacing(10);
-	buttonLayout->addWidget(showStartup);
-	buttonLayout->addStretch();
-	buttonLayout->addWidget(openButton);
-	buttonLayout->addWidget(clearButton);
-	buttonLayout->addWidget(closeButton);
-	buttonLayout->addSpacing(10);
-	buttonLayout->setContentsMargins(0, 0, 0, 4);
-
-	layout->addWidget(textArea);
-	layout->addLayout(buttonLayout);
-	setLayout(layout);
-
-	setWindowTitle(QTStr("LogViewer"));
-	resize(800, 300);
+	ui->showStartup->setChecked(showLogViewerOnStartup);
 
 	const char *geom = config_get_string(App()->GlobalConfig(), "LogViewer",
 					     "geometry");
@@ -82,7 +51,7 @@ OBSLogViewer::~OBSLogViewer()
 			  saveGeometry().toBase64().constData());
 }
 
-void OBSLogViewer::ToggleShowStartup(bool checked)
+void OBSLogViewer::on_showStartup_clicked(bool checked)
 {
 	config_set_bool(App()->GlobalConfig(), "LogViewer", "ShowLogStartup",
 			checked);
@@ -109,7 +78,7 @@ void OBSLogViewer::InitLog()
 		in.setCodec("UTF-8");
 #endif
 
-		QTextDocument *doc = textArea->document();
+		QTextDocument *doc = ui->textArea->document();
 		QTextCursor cursor(doc);
 		cursor.movePosition(QTextCursor::End);
 		cursor.beginEditBlock();
@@ -122,7 +91,7 @@ void OBSLogViewer::InitLog()
 
 		file.close();
 	}
-	QScrollBar *scroll = textArea->verticalScrollBar();
+	QScrollBar *scroll = ui->textArea->verticalScrollBar();
 	scroll->setValue(scroll->maximum());
 
 	obsLogViewer = this;
@@ -144,13 +113,13 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 		break;
 	}
 
-	QScrollBar *scroll = textArea->verticalScrollBar();
+	QScrollBar *scroll = ui->textArea->verticalScrollBar();
 	bool bottomScrolled = scroll->value() >= scroll->maximum() - 10;
 
 	if (bottomScrolled)
 		scroll->setValue(scroll->maximum());
 
-	QTextDocument *doc = textArea->document();
+	QTextDocument *doc = ui->textArea->document();
 	QTextCursor cursor(doc);
 	cursor.movePosition(QTextCursor::End);
 	cursor.beginEditBlock();
@@ -162,12 +131,7 @@ void OBSLogViewer::AddLine(int type, const QString &str)
 		scroll->setValue(scroll->maximum());
 }
 
-void OBSLogViewer::ClearText()
-{
-	textArea->clear();
-}
-
-void OBSLogViewer::OpenFile()
+void OBSLogViewer::on_openButton_clicked()
 {
 	char logDir[512];
 	if (GetConfigPath(logDir, sizeof(logDir), "obs-studio/logs") <= 0)

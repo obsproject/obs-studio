@@ -35,26 +35,42 @@ static inline enum video_format convert_pixel_format(int f)
 		return VIDEO_FORMAT_NONE;
 	case AV_PIX_FMT_YUV420P:
 		return VIDEO_FORMAT_I420;
-	case AV_PIX_FMT_NV12:
-		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_YUYV422:
 		return VIDEO_FORMAT_YUY2;
+	case AV_PIX_FMT_YUV422P:
+		return VIDEO_FORMAT_I422;
+	case AV_PIX_FMT_YUV422P10LE:
+		return VIDEO_FORMAT_I210;
 	case AV_PIX_FMT_YUV444P:
 		return VIDEO_FORMAT_I444;
+	case AV_PIX_FMT_YUV444P12LE:
+		return VIDEO_FORMAT_I412;
 	case AV_PIX_FMT_UYVY422:
 		return VIDEO_FORMAT_UYVY;
+	case AV_PIX_FMT_YVYU422:
+		return VIDEO_FORMAT_YVYU;
+	case AV_PIX_FMT_NV12:
+		return VIDEO_FORMAT_NV12;
 	case AV_PIX_FMT_RGBA:
 		return VIDEO_FORMAT_RGBA;
 	case AV_PIX_FMT_BGRA:
 		return VIDEO_FORMAT_BGRA;
-	case AV_PIX_FMT_BGR0:
-		return VIDEO_FORMAT_BGRX;
 	case AV_PIX_FMT_YUVA420P:
 		return VIDEO_FORMAT_I40A;
+	case AV_PIX_FMT_YUV420P10LE:
+		return VIDEO_FORMAT_I010;
 	case AV_PIX_FMT_YUVA422P:
 		return VIDEO_FORMAT_I42A;
 	case AV_PIX_FMT_YUVA444P:
 		return VIDEO_FORMAT_YUVA;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+	case AV_PIX_FMT_YUVA444P12LE:
+		return VIDEO_FORMAT_YA2L;
+#endif
+	case AV_PIX_FMT_BGR0:
+		return VIDEO_FORMAT_BGRX;
+	case AV_PIX_FMT_P010LE:
+		return VIDEO_FORMAT_P010;
 	default:;
 	}
 
@@ -111,7 +127,8 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 }
 
 static inline enum video_colorspace
-convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
+convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc,
+		    enum AVColorPrimaries color_primaries)
 {
 	switch (s) {
 	case AVCOL_SPC_BT709:
@@ -122,8 +139,15 @@ convert_color_space(enum AVColorSpace s, enum AVColorTransferCharacteristic trc)
 	case AVCOL_SPC_SMPTE170M:
 	case AVCOL_SPC_SMPTE240M:
 		return VIDEO_CS_601;
+	case AVCOL_SPC_BT2020_NCL:
+		return (trc == AVCOL_TRC_ARIB_STD_B67) ? VIDEO_CS_2100_HLG
+						       : VIDEO_CS_2100_PQ;
 	default:
-		return VIDEO_CS_DEFAULT;
+		return (color_primaries == AVCOL_PRI_BT2020)
+			       ? ((trc == AVCOL_TRC_ARIB_STD_B67)
+					  ? VIDEO_CS_2100_HLG
+					  : VIDEO_CS_2100_PQ)
+			       : VIDEO_CS_DEFAULT;
 	}
 }
 
@@ -133,7 +157,7 @@ static inline enum video_range_type convert_color_range(enum AVColorRange r)
 }
 
 static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
-						   AVPacket *pkt)
+						   const AVPacket *pkt)
 {
 	if (media->has_audio && pkt->stream_index == media->a.stream->index)
 		return &media->a;
@@ -143,14 +167,24 @@ static inline struct mp_decode *get_packet_decoder(mp_media_t *media,
 	return NULL;
 }
 
+void mp_media_free_packet(struct mp_media *media, AVPacket *pkt)
+{
+	av_packet_unref(pkt);
+	da_push_back(media->packet_pool, &pkt);
+}
+
 static int mp_media_next_packet(mp_media_t *media)
 {
-	AVPacket new_pkt;
-	AVPacket pkt;
-	av_init_packet(&pkt);
-	new_pkt = pkt;
+	AVPacket *pkt;
+	AVPacket **const cached = da_end(media->packet_pool);
+	if (cached) {
+		pkt = *cached;
+		da_pop_back(media->packet_pool);
+	} else {
+		pkt = av_packet_alloc();
+	}
 
-	int ret = av_read_frame(media->fmt, &pkt);
+	int ret = av_read_frame(media->fmt, pkt);
 	if (ret < 0) {
 		if (ret != AVERROR_EOF && ret != AVERROR_EXIT)
 			blog(LOG_WARNING, "MP: av_read_frame failed: %s (%d)",
@@ -158,13 +192,13 @@ static int mp_media_next_packet(mp_media_t *media)
 		return ret;
 	}
 
-	struct mp_decode *d = get_packet_decoder(media, &pkt);
-	if (d && pkt.size) {
-		av_packet_ref(&new_pkt, &pkt);
-		mp_decode_push_packet(d, &new_pkt);
+	struct mp_decode *d = get_packet_decoder(media, pkt);
+	if (d && pkt->size) {
+		mp_decode_push_packet(d, pkt);
+	} else {
+		mp_media_free_packet(media, pkt);
 	}
 
-	av_packet_unref(&pkt);
 	return ret;
 }
 
@@ -189,15 +223,19 @@ static inline int get_sws_colorspace(enum AVColorSpace cs)
 		return SWS_CS_ITU709;
 	case AVCOL_SPC_FCC:
 		return SWS_CS_FCC;
+	case AVCOL_SPC_BT470BG:
+		return SWS_CS_ITU624;
 	case AVCOL_SPC_SMPTE170M:
 		return SWS_CS_SMPTE170M;
 	case AVCOL_SPC_SMPTE240M:
 		return SWS_CS_SMPTE240M;
+	case AVCOL_SPC_BT2020_NCL:
+		return SWS_CS_BT2020;
 	default:
 		break;
 	}
 
-	return SWS_CS_ITU601;
+	return SWS_CS_ITU709;
 }
 
 static inline int get_sws_range(enum AVColorRange r)
@@ -504,7 +542,8 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 			current_frame->data[0] -= current_frame->linesize[0] * (f->height - 1);
 
 		new_format = convert_pixel_format(m->scale_format);
-		new_space = convert_color_space(f->colorspace, f->color_trc);
+		new_space = convert_color_space(f->colorspace, f->color_trc,
+						f->color_primaries);
 		new_range = m->force_range == VIDEO_RANGE_DEFAULT
 			? convert_color_range(f->color_range)
 			: m->force_range;
@@ -539,8 +578,27 @@ static void mp_media_next_video(mp_media_t *m, bool preload)
 
 		current_frame->width = f->width;
 		current_frame->height = f->height;
+		current_frame->max_luminance = d->max_luminance;
 		current_frame->flip = flip;
 		current_frame->flags |= m->is_linear_alpha ? OBS_SOURCE_FRAME_LINEAR_ALPHA : 0;
+		switch (f->color_trc) {
+		case AVCOL_TRC_BT709:
+		case AVCOL_TRC_GAMMA22:
+		case AVCOL_TRC_GAMMA28:
+		case AVCOL_TRC_SMPTE170M:
+		case AVCOL_TRC_SMPTE240M:
+		case AVCOL_TRC_IEC61966_2_1:
+			current_frame->trc = VIDEO_TRC_SRGB;
+			break;
+		case AVCOL_TRC_SMPTE2084:
+			current_frame->trc = VIDEO_TRC_PQ;
+			break;
+		case AVCOL_TRC_ARIB_STD_B67:
+			current_frame->trc = VIDEO_TRC_HLG;
+			break;
+		default:
+			current_frame->trc = VIDEO_TRC_DEFAULT;
+		}
 
 		if (!m->is_local_file && !d->got_first_keyframe) {
 			if (!f->key_frame)
@@ -670,6 +728,9 @@ static bool mp_media_reset(mp_media_t *m)
 
 	int64_t next_ts = mp_media_get_base_pts(m);
 	int64_t offset = next_ts - m->next_pts_ns;
+	int64_t start_time = m->fmt->start_time;
+	if (start_time == AV_NOPTS_VALUE)
+		start_time = 0;
 
 	m->eof = false;
 	m->base_ts += next_ts;
@@ -677,7 +738,7 @@ static bool mp_media_reset(mp_media_t *m)
 	m->audio.index = 0;
 	m->video.index = 0;
 
-	seek_to(m, m->fmt->start_time);
+	seek_to(m, start_time);
 
 	pthread_mutex_lock(&m->mutex);
 	stopping = m->stopping;
@@ -809,6 +870,19 @@ static bool init_avformat(mp_media_t *m)
 	bool is_rist = strncmp(m->path, RIST_PROTO, strlen(RIST_PROTO)) == 0;
 	if (m->buffering && !m->is_local_file && !is_rist)
 		av_dict_set_int(&opts, "buffer_size", m->buffering, 0);
+
+	if (m->ffmpeg_options) {
+		int ret = av_dict_parse_string(&opts, m->ffmpeg_options, "=",
+					       " ", 0);
+		if (ret) {
+			blog(LOG_WARNING,
+			     "Failed to parse FFmpeg options: %s\n%s",
+			     av_err2str(ret), m->ffmpeg_options);
+		} else {
+			blog(LOG_INFO, "Set FFmpeg options: %s",
+			     m->ffmpeg_options);
+		}
+	}
 
 	m->fmt = avformat_alloc_context();
 	if (m->buffering == 0) {
@@ -1065,7 +1139,7 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->v_cb = info->v_cb;
 	media->a_cb = info->a_cb;
 	media->stop_cb = info->stop_cb;
-	media->ready_cb = info->ready_cb;
+	media->ffmpeg_options = info->ffmpeg_options;
 	media->v_seek_cb = info->v_seek_cb;
 	media->v_preload_cb = info->v_preload_cb;
 	media->force_range = info->force_range;
@@ -1074,8 +1148,8 @@ bool mp_media_init(mp_media_t *media, const struct mp_media_info *info)
 	media->speed = info->speed;
 	media->is_local_file = info->is_local_file;
 	media->enable_caching = info->enable_caching;
-	media->playing = false;
 	media->volume = info->volume;
+	da_init(media->packet_pool);
 
 	if (!info->is_local_file || media->speed < 1 || media->speed > 200)
 		media->speed = 100;
@@ -1123,6 +1197,9 @@ void mp_media_free(mp_media_t *media)
 	mp_kill_thread(media);
 	mp_decode_free(&media->v);
 	mp_decode_free(&media->a);
+	for (size_t i = 0; i < media->packet_pool.num; i++)
+		av_packet_free(&media->packet_pool.array[i]);
+	da_free(media->packet_pool);
 	avformat_close_input(&media->fmt);
 	pthread_mutex_destroy(&media->mutex);
 	os_sem_destroy(media->sem);

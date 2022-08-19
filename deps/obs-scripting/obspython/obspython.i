@@ -26,14 +26,24 @@
 #include "obs-scripting-config.h"
 #include <util/platform.h>
 
-#if UI_ENABLED
+#if defined(ENABLE_UI)
 #include "obs-frontend-api.h"
+#endif
+
+/* Redefine SWIG_PYTHON_INITIALIZE_THREADS if:
+ * - Python version is 3.7 or later because PyEval_InitThreads() became deprecated and unnecessary
+ * - SWIG version is not 4.1 or later because SWIG_PYTHON_INITIALIZE_THREADS will be define correctly
+ *   with Python 3.7 and later */
+#if PY_VERSION_HEX >= 0x03070000 && SWIGVERSION < 0x040100
+#undef SWIG_PYTHON_INITIALIZE_THREADS
+#define SWIG_PYTHON_INITIALIZE_THREADS
 #endif
 
 %}
 
 #define DEPRECATED_START
 #define DEPRECATED_END
+#define OBS_DEPRECATED
 #define OBS_EXTERNAL_DEPRECATED
 #define EXPORT
 
@@ -54,6 +64,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore blog;
 %ignore blogva;
 %ignore bcrash;
+%ignore base_set_crash_handler;
 %ignore obs_source_info;
 %ignore obs_register_source_s(const struct obs_source_info *info, size_t size);
 %ignore obs_output_set_video(obs_output_t *output, video_t *video);
@@ -81,6 +92,17 @@ static inline void wrap_blog(int log_level, const char *message)
 %ignore obs_hotkey_pair_register_service;
 %ignore obs_hotkey_pair_register_source;
 
+/* The function gs_debug_marker_begin_format has a va_args.
+ * By default, SWIG just drop it and replace it with a single NULL pointer.
+ * Source: http://swig.org/Doc4.0/Varargs.html#Varargs_nn4
+ *
+ * But the generated wrapper will make the compiler emit a warning
+ * because varargs is an unused parameter.
+ * So in the check step, varargs will be treated like any unused parameter. */
+%typemap(check) (const float color[4], const char *format, ...) {
+	(void)varargs;
+}
+
 %include "graphics/graphics.h"
 %include "graphics/vec4.h"
 %include "graphics/vec3.h"
@@ -102,7 +124,7 @@ static inline void wrap_blog(int log_level, const char *message)
 %include "util/base.h"
 %include "util/platform.h"
 
-#if UI_ENABLED
+#if defined(ENABLE_UI)
 %include "obs-frontend-api.h"
 #endif
 

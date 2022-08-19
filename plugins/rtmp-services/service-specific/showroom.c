@@ -125,10 +125,6 @@ struct showroom_ingest *showroom_get_ingest(const char *server,
 	curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, (void *)&json);
 	curl_obs_set_revoke_setting(curl_handle);
 
-#if LIBCURL_VERSION_NUM >= 0x072400
-	curl_easy_setopt(curl_handle, CURLOPT_SSL_ENABLE_ALPN, 0);
-#endif
-
 	res = curl_easy_perform(curl_handle);
 	dstr_free(&uri);
 	if (res != CURLE_OK) {

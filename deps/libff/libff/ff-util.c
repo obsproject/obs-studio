@@ -66,7 +66,7 @@ void ff_init()
 
 const char *ff_codec_name_from_id(int codec_id)
 {
-	AVCodec *codec = avcodec_find_encoder(codec_id);
+	const AVCodec *codec = avcodec_find_encoder(codec_id);
 	if (codec != NULL)
 		return codec->name;
 	else
@@ -159,7 +159,7 @@ static void add_codec_to_list(const struct ff_format_desc *format_desc,
 	d->name = codec->name;
 	d->long_name = codec->long_name;
 	d->id = codec->id;
-	AVCodec *base_codec = avcodec_find_encoder(codec->id);
+	const AVCodec *base_codec = avcodec_find_encoder(codec->id);
 	if (strcmp(base_codec->name, codec->name) != 0) {
 		d->alias = true;
 		d->base_name = base_codec->name;
@@ -415,7 +415,7 @@ ff_format_desc_next(const struct ff_format_desc *format_desc)
 static const char *get_encoder_name(const struct ff_format_desc *format_desc,
                                     enum AVCodecID codec_id)
 {
-	AVCodec *codec = avcodec_find_encoder(codec_id);
+	const AVCodec *codec = avcodec_find_encoder(codec_id);
 	if (codec == NULL && codec_id == AV_CODEC_ID_NONE)
 		return NULL;
 	else if (codec == NULL)

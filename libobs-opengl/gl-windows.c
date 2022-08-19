@@ -573,6 +573,12 @@ void device_load_swapchain(gs_device_t *device, gs_swapchain_t *swap)
 	}
 }
 
+bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
 void device_present(gs_device_t *device)
 {
 	if (!SwapBuffers(device->cur_swap->wi->hdc)) {
@@ -596,6 +602,11 @@ extern void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 		*width = 0;
 		*height = 0;
 	}
+}
+
+EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	return false;
 }
 
 EXPORT bool device_gdi_texture_available(void)

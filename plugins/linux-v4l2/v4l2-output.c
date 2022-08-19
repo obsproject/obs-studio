@@ -197,9 +197,14 @@ static bool virtualcam_start(void *data)
 		return false;
 
 	for (int i = 0; i < n; i++) {
-		char device[32];
+		char device[32] = {0};
 
-		snprintf(device, 32, "/dev/%s", list[i]->d_name);
+		// Use the return value of snprintf to prevent truncation warning.
+		int written = snprintf(device, 32, "/dev/%s", list[i]->d_name);
+		if (written >= 32)
+			blog(LOG_DEBUG,
+			     "v4l2-output: A format truncation may have occurred."
+			     " This can be ignored since it is quite improbable.");
 
 		if (try_connect(vcam, device)) {
 			success = true;

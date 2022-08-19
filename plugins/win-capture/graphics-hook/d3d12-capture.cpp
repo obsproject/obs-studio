@@ -45,7 +45,7 @@ struct d3d12_data {
 
 static struct d3d12_data data = {};
 
-extern thread_local bool dxgi_presenting;
+extern thread_local int dxgi_presenting;
 extern ID3D12CommandQueue *dxgi_possible_swap_queues[8];
 extern size_t dxgi_possible_swap_queue_count;
 extern bool dxgi_present_attempted;
@@ -375,7 +375,7 @@ hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 
 	if (dxgi_possible_swap_queue_count <
 	    _countof(dxgi_possible_swap_queues)) {
-		if (dxgi_presenting &&
+		if ((dxgi_presenting > 0) &&
 		    (queue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT)) {
 			if (try_append_queue_if_unique(queue)) {
 				hlog("Remembering D3D12 queue from present: queue=0x%" PRIX64,

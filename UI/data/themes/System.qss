@@ -8,6 +8,9 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
+OBSThemeMeta {
+    dark: 'false';
+}
 
 /* We need to set back the icons, or the preview wont stick. */
 
@@ -43,6 +46,14 @@
     qproperty-icon: url(:/res/images/media-pause.svg);
 }
 
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(:res/images/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(:/res/images/cogs.svg);
+}
+
 MuteCheckBox {
     outline: none;
 }
@@ -70,7 +81,7 @@ SourceTreeSubItemCheckBox::indicator:checked {
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(:/res/images/down.svg);
+    image: url(:/res/images/collapse.svg);
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
@@ -238,6 +249,7 @@ OBSBasic {
     qproperty-groupIcon: url(:res/images/sources/group.svg);
     qproperty-sceneIcon: url(:res/images/sources/scene.svg);
     qproperty-defaultIcon: url(:res/images/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(:res/images/sources/windowaudio.svg);
 }
 
 /* Scene Tree */
@@ -355,6 +367,6 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }

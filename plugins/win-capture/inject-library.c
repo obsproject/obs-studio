@@ -1,6 +1,6 @@
 #include <windows.h>
 #include <stdbool.h>
-#include "obfuscate.h"
+#include "../../libobs/util/windows/obfuscate.h"
 #include "inject-library.h"
 
 typedef HANDLE(WINAPI *create_remote_thread_t)(HANDLE, LPSECURITY_ATTRIBUTES,
@@ -37,16 +37,16 @@ int inject_library_obf(HANDLE process, const wchar_t *dll,
 	virtual_free_ex_t virtual_free_ex;
 	FARPROC load_library_w;
 
-	create_remote_thread = (create_remote_thread_t)get_obfuscated_func(
+	create_remote_thread = (create_remote_thread_t)ms_get_obfuscated_func(
 		kernel32, create_remote_thread_obf, obf1);
-	write_process_memory = (write_process_memory_t)get_obfuscated_func(
+	write_process_memory = (write_process_memory_t)ms_get_obfuscated_func(
 		kernel32, write_process_memory_obf, obf2);
-	virtual_alloc_ex = (virtual_alloc_ex_t)get_obfuscated_func(
+	virtual_alloc_ex = (virtual_alloc_ex_t)ms_get_obfuscated_func(
 		kernel32, virtual_alloc_ex_obf, obf3);
-	virtual_free_ex = (virtual_free_ex_t)get_obfuscated_func(
+	virtual_free_ex = (virtual_free_ex_t)ms_get_obfuscated_func(
 		kernel32, virtual_free_ex_obf, obf4);
-	load_library_w = (FARPROC)get_obfuscated_func(kernel32,
-						      load_library_w_obf, obf5);
+	load_library_w = (FARPROC)ms_get_obfuscated_func(
+		kernel32, load_library_w_obf, obf5);
 
 	/* -------------------------------- */
 
@@ -126,7 +126,7 @@ int inject_library_safe_obf(DWORD thread_id, const wchar_t *dll,
 		return INJECT_ERROR_UNLIKELY_FAIL;
 	}
 
-	set_windows_hook_ex = (set_windows_hook_ex_t)get_obfuscated_func(
+	set_windows_hook_ex = (set_windows_hook_ex_t)ms_get_obfuscated_func(
 		user32, set_windows_hook_ex_obf, obf1);
 
 	hook = set_windows_hook_ex(WH_GETMESSAGE, proc, lib, thread_id);

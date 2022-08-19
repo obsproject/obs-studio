@@ -44,6 +44,11 @@
 /* ---- Main Theme ---- */
 /************************/
 
+OBSThemeMeta {
+	dark: 'true';
+	author: 'Fenrir';
+}
+
 OBSTheme {
 	window: rgb(49, 54, 59); /* Blue-gray */
 	windowText: rgb(239, 240, 241); /* White */
@@ -474,11 +479,26 @@ QToolBar {
 	border: none;
 }
 
+QPushButton[toolButton="true"],
+QToolButton {
+	background: transparent;
+	border: none;
+    padding: 1px;
+    margin: 1px;
+}
+
+QPushButton[toolButton="true"]:last-child,
+QToolButton:last-child {
+    margin-right: 0px;
+}
+
+QPushButton[toolButton="true"]:hover,
 QToolButton:hover {
 	background-color: rgba(240, 98, 146, 0.5); /* Pink (Secondary) */
 	border-radius: 2px;
 }
 
+QPushButton[toolButton="true"]:pressed,
 QToolButton:pressed {
 	background-color: rgb(240, 98, 146); /* Pink (Secondary) */
 	border-radius: 2px;
@@ -514,6 +534,14 @@ QToolButton:pressed {
 
 * [themeID="pauseIconSmall"] {
 	qproperty-icon: url(./Dark/media-pause.svg);
+}
+
+* [themeID="menuIconSmall"] {
+	qproperty-icon: url(./Dark/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
 }
 
 /***********************/
@@ -800,7 +828,7 @@ SourceTreeSubItemCheckBox::indicator:checked:hover {
 
 SourceTreeSubItemCheckBox::indicator:unchecked,
 SourceTreeSubItemCheckBox::indicator:unchecked:hover {
-	image: url(./Dark/down.svg);
+	image: url(./Dark/collapse.svg);
 }
 
 /*************************/
@@ -1282,6 +1310,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(./Dark/settings/audio.svg);
     qproperty-videoIcon: url(./Dark/settings/video.svg);
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(./Dark/settings/accessibility.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
@@ -1388,6 +1417,7 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
 }
 
 /* Scene Tree */
@@ -1447,6 +1477,10 @@ QPushButton#sourcePropertiesButton {
 
 QPushButton#sourceFiltersButton {
     qproperty-icon: url(./Dark/filter.svg);
+}
+
+QPushButton#sourceInteractButton {
+    qproperty-icon: url(./Dark/interact.svg);
 }
 
 /* Media icons */
@@ -1582,7 +1616,7 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
 

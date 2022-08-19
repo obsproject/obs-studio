@@ -1,0 +1,20 @@
+"InstallScript"
+{
+    "Run Process"
+    {
+        "install"
+        {
+            "process 1" "scripts\\install.bat"
+            "command 1" "\"%INSTALLDIR%\""
+        }
+    }
+
+    "Run Process On Uninstall"
+    {
+        "uninstall"
+        {
+            "process 1" "scripts\\uninstall.bat"
+            "command 1" "\"%INSTALLDIR%\""
+        }
+    }
+}

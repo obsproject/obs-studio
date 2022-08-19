@@ -2,7 +2,7 @@
 #include <util/dstr.h>
 #include <util/threading.h>
 #include "dc-capture.h"
-#include "window-helpers.h"
+#include "../../libobs/util/windows/window-helpers.h"
 #include "../../libobs/util/platform.h"
 
 #define S_CAPTURE_SOURCE_LIST "capture_source_list"
@@ -116,11 +116,11 @@ static void scs_update_window_mode_line(struct screen_capture *contex,
 		char *title = NULL;
 		char *executable = NULL;
 
-		build_window_strings(window_line, &class, &title, &executable);
+		ms_build_window_strings(window_line, &class, &title, &executable);
 		if (executable != NULL && strlen(executable) > 0) {
 			blog(LOG_DEBUG, "[SCREEN_CAPTURE]: prev exe name %s",
 			     executable);
-			HWND hwnd = find_window_top_level(INCLUDE_MINIMIZED,
+			HWND hwnd = ms_find_window_top_level(INCLUDE_MINIMIZED,
 							  WINDOW_PRIORITY_CLASS,
 							  class, title,
 							  executable);

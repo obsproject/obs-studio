@@ -9,7 +9,7 @@
 class DeckLinkDeviceMode {
 protected:
 	long long id;
-	IDeckLinkDisplayMode *mode;
+	ComPtr<IDeckLinkDisplayMode> mode;
 	std::string name;
 
 public:

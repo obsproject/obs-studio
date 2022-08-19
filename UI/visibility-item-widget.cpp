@@ -7,6 +7,7 @@
 #include <QHBoxLayout>
 #include <QMessageBox>
 #include <QLabel>
+#include <QKeyEvent>
 
 VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	: source(source_),
@@ -20,10 +21,6 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	/* Fix for non-apple systems where the spacing would be too big */
-#ifndef __APPLE__
-	vis->setMaximumSize(16, 16);
-#endif
 	vis->setChecked(enabled);
 
 	label = new QLabel(QT_UTF8(name));
@@ -32,7 +29,7 @@ VisibilityItemWidget::VisibilityItemWidget(obs_source_t *source_)
 	QHBoxLayout *itemLayout = new QHBoxLayout();
 	itemLayout->addWidget(vis);
 	itemLayout->addWidget(label);
-	itemLayout->setContentsMargins(5, 2, 5, 2);
+	itemLayout->setContentsMargins(0, 0, 0, 0);
 
 	setLayout(itemLayout);
 	setStyleSheet("background-color: rgba(255, 255, 255, 0);");
@@ -144,11 +141,28 @@ void VisibilityItemDelegate::paint(QPainter *painter,
 	widget->SetColor(palette.color(group, role), active, selected);
 }
 
+bool VisibilityItemDelegate::eventFilter(QObject *object, QEvent *event)
+{
+	QWidget *editor = qobject_cast<QWidget *>(object);
+	if (!editor)
+		return false;
+
+	if (event->type() == QEvent::KeyPress) {
+		QKeyEvent *keyEvent = static_cast<QKeyEvent *>(event);
+
+		if (keyEvent->key() == Qt::Key_Tab ||
+		    keyEvent->key() == Qt::Key_Backtab) {
+			return false;
+		}
+	}
+
+	return QStyledItemDelegate::eventFilter(object, event);
+}
+
 void SetupVisibilityItem(QListWidget *list, QListWidgetItem *item,
 			 obs_source_t *source)
 {
 	VisibilityItemWidget *baseWidget = new VisibilityItemWidget(source);
 
-	item->setSizeHint(baseWidget->sizeHint());
 	list->setItemWidget(item, baseWidget);
 }

@@ -10,6 +10,26 @@ NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
 #define error(format, ...) blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
 
+bool nv_fail(obs_encoder_t *encoder, const char *format, ...)
+{
+	struct dstr message = {0};
+	struct dstr error_message = {0};
+
+	va_list args;
+	va_start(args, format);
+	dstr_vprintf(&message, format, args);
+	va_end(args);
+
+	dstr_printf(&error_message, "NVENC Error: %s", message.array);
+	obs_encoder_set_last_error(encoder, error_message.array);
+	error("%s", error_message.array);
+
+	dstr_free(&error_message);
+	dstr_free(&message);
+
+	return true;
+}
+
 bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 	       const char *call)
 {
@@ -52,13 +72,10 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 
 bool load_nvenc_lib(void)
 {
-	if (sizeof(void *) == 8) {
-		nvenc_lib = os_dlopen("nvEncodeAPI64.dll");
-	} else {
-		nvenc_lib = os_dlopen("nvEncodeAPI.dll");
-	}
-
-	return !!nvenc_lib;
+	const char *const file = (sizeof(void *) == 8) ? "nvEncodeAPI64.dll"
+						       : "nvEncodeAPI.dll";
+	nvenc_lib = os_dlopen(file);
+	return nvenc_lib != NULL;
 }
 
 void *load_nv_func(const char *func)
@@ -180,12 +197,20 @@ bool init_nvenc(obs_encoder_t *encoder)
 	return success;
 }
 
-extern struct obs_encoder_info nvenc_info;
+extern struct obs_encoder_info h264_nvenc_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_nvenc_info;
+#endif
 
-void jim_nvenc_load(void)
+void jim_nvenc_load(bool h264, bool hevc)
 {
 	pthread_mutex_init(&init_mutex, NULL);
-	obs_register_encoder(&nvenc_info);
+	if (h264)
+		obs_register_encoder(&h264_nvenc_info);
+#ifdef ENABLE_HEVC
+	if (hevc)
+		obs_register_encoder(&hevc_nvenc_info);
+#endif
 }
 
 void jim_nvenc_unload(void)

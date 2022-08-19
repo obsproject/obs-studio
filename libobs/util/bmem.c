@@ -87,14 +87,8 @@ static void a_free(void *ptr)
 #endif
 }
 
-static struct base_allocator alloc = {a_malloc, a_realloc, a_free};
 static long num_allocs = 0;
 static bool alloc_has_failed = false;
-
-void base_set_allocator(struct base_allocator *defs)
-{
-	memcpy(&alloc, defs, sizeof(struct base_allocator));
-}
 
 bool is_allocator_failed(void)
 {
@@ -103,9 +97,16 @@ bool is_allocator_failed(void)
 
 void *bmalloc(size_t size)
 {
-	void *ptr = alloc.malloc(size);
-	if (!ptr && !size)
-		ptr = alloc.malloc(1);
+	if (!size) {
+		blog(LOG_ERROR,
+		     "bmalloc: Allocating 0 bytes is broken behavior, please "
+		     "fix your code! This will crash in future versions of "
+		     "OBS.");
+		size = 1;
+	}
+
+	void *ptr = a_malloc(size);
+
 	if (!ptr) {
 #ifdef ALIGNED_MALLOC
 		blog(LOG_ERROR, "Failed while trying to allocate %lu bytes, errno %u", (unsigned long)size, errno);
@@ -127,9 +128,16 @@ void *brealloc(void *ptr, size_t size)
 	if (!ptr)
 		os_atomic_inc_long(&num_allocs);
 
-	ptr = alloc.realloc(ptr, size);
-	if (!ptr && !size)
-		ptr = alloc.realloc(ptr, 1);
+	if (!size) {
+		blog(LOG_ERROR,
+		     "brealloc: Allocating 0 bytes is broken behavior, please "
+		     "fix your code! This will crash in future versions of "
+		     "OBS.");
+		size = 1;
+	}
+
+	ptr = a_realloc(ptr, size);
+
 	if (!ptr) {
 #ifdef ALIGNED_MALLOC
 		blog(LOG_ERROR, "Failed while trying to reallocate %lu bytes, errno %u", (unsigned long)size, errno);
@@ -149,7 +157,7 @@ void bfree(void *ptr)
 {
 	if (ptr) {
 		os_atomic_dec_long(&num_allocs);
-		alloc.free(ptr);
+		a_free(ptr);
 	}
 }
 
@@ -170,4 +178,9 @@ void *bmemdup(const void *ptr, size_t size)
 		memcpy(out, ptr, size);
 
 	return out;
+}
+
+OBS_DEPRECATED void base_set_allocator(struct base_allocator *defs)
+{
+	UNUSED_PARAMETER(defs);
 }

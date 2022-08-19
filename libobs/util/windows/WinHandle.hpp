@@ -49,3 +49,34 @@ public:
 		return handle && handle != INVALID_HANDLE_VALUE;
 	}
 };
+
+class WinModule {
+	HMODULE handle = NULL;
+
+	inline void Clear()
+	{
+		if (handle)
+			FreeLibrary(handle);
+	}
+
+public:
+	inline WinModule() {}
+	inline WinModule(HMODULE handle_) : handle(handle_) {}
+	inline ~WinModule() { Clear(); }
+
+	inline operator HMODULE() const { return handle; }
+
+	inline WinModule &operator=(HMODULE handle_)
+	{
+		if (handle_ != handle) {
+			Clear();
+			handle = handle_;
+		}
+
+		return *this;
+	}
+
+	inline HMODULE *operator&() { return &handle; }
+
+	inline bool Valid() const { return handle != NULL; }
+};

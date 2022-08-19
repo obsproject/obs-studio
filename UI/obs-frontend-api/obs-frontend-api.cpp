@@ -279,6 +279,12 @@ bool obs_frontend_recording_paused(void)
 	return !!callbacks_valid() ? c->obs_frontend_recording_paused() : false;
 }
 
+bool obs_frontend_recording_split_file(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_recording_split_file()
+				   : false;
+}
+
 void obs_frontend_replay_buffer_start(void)
 {
 	if (callbacks_valid())
@@ -558,4 +564,10 @@ char *obs_frontend_get_current_record_output_path(void)
 	return !!callbacks_valid()
 		       ? c->obs_frontend_get_current_record_output_path()
 		       : nullptr;
+}
+
+const char *obs_frontend_get_locale_string(const char *string)
+{
+	return !!callbacks_valid() ? c->obs_frontend_get_locale_string(string)
+				   : nullptr;
 }

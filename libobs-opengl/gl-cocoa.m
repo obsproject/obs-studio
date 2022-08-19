@@ -324,6 +324,12 @@ void write_iosurface(gs_device_t *device)
 	IOSurfaceUnlock(surface, 0, NULL);
 }
 
+bool device_is_present_ready(gs_device_t *device)
+{
+	UNUSED_PARAMETER(device);
+	return true;
+}
+
 void device_present(gs_device_t *device)
 {
 	glFlush();
@@ -342,6 +348,14 @@ void device_present(gs_device_t *device)
 	[device->plat->context makeCurrentContext];
 }
 
+bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
+{
+	UNUSED_PARAMETER(device);
+	UNUSED_PARAMETER(monitor);
+
+	return false;
+}
+
 void gl_getclientsize(const struct gs_swap_chain *swap, uint32_t *width,
 		      uint32_t *height)
 {
@@ -358,7 +372,9 @@ gs_texture_t *device_texture_create_from_iosurface(gs_device_t *device,
 	struct gs_texture_2d *tex = bzalloc(sizeof(struct gs_texture_2d));
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
-	if (pf != 'BGRA')
+	if (pf == 0)
+		blog(LOG_ERROR, "Invalid IOSurface Buffer");
+	else if (pf != 'BGRA')
 		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
 		     pf >> 24, pf >> 16, pf >> 8, pf);
 
@@ -439,13 +455,17 @@ bool gs_texture_rebind_iosurface(gs_texture_t *texture, void *iosurf)
 	IOSurfaceRef ref = (IOSurfaceRef)iosurf;
 
 	OSType pf = IOSurfaceGetPixelFormat(ref);
-	if (pf != 'BGRA')
-		blog(LOG_ERROR, "Unexpected pixel format: %d (%c%c%c%c)", pf,
-		     pf >> 24, pf >> 16, pf >> 8, pf);
+	if (pf == 0) {
+		blog(LOG_ERROR, "Invalid IOSurface buffer");
+	} else {
+		if (pf != 'BGRA')
+			blog(LOG_ERROR,
+			     "Unexpected pixel format: %d (%c%c%c%c)", pf,
+			     pf >> 24, pf >> 16, pf >> 8, pf);
+	}
 
-	if (tex->width != IOSurfaceGetWidth(ref) ||
-	    tex->height != IOSurfaceGetHeight(ref))
-		return false;
+	tex->width = IOSurfaceGetWidth(ref);
+	tex->height = IOSurfaceGetHeight(ref);
 
 	if (!gl_bind_texture(tex->base.gl_target, tex->base.texture))
 		return false;

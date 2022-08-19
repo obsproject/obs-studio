@@ -41,6 +41,8 @@ get_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUYV422;
 	case VIDEO_FORMAT_UYVY:
 		return AV_PIX_FMT_UYVY422;
+	case VIDEO_FORMAT_YVYU:
+		return AV_PIX_FMT_YVYU422;
 	case VIDEO_FORMAT_RGBA:
 		return AV_PIX_FMT_RGBA;
 	case VIDEO_FORMAT_BGRA:
@@ -51,18 +53,31 @@ get_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_GRAY8;
 	case VIDEO_FORMAT_I444:
 		return AV_PIX_FMT_YUV444P;
+	case VIDEO_FORMAT_I412:
+		return AV_PIX_FMT_YUV444P12LE;
 	case VIDEO_FORMAT_BGR3:
 		return AV_PIX_FMT_BGR24;
 	case VIDEO_FORMAT_I422:
 		return AV_PIX_FMT_YUV422P;
+	case VIDEO_FORMAT_I210:
+		return AV_PIX_FMT_YUV422P10LE;
 	case VIDEO_FORMAT_I40A:
 		return AV_PIX_FMT_YUVA420P;
 	case VIDEO_FORMAT_I42A:
 		return AV_PIX_FMT_YUVA422P;
 	case VIDEO_FORMAT_YUVA:
 		return AV_PIX_FMT_YUVA444P;
+	case VIDEO_FORMAT_YA2L:
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(56, 31, 100)
+		return AV_PIX_FMT_YUVA444P12LE;
+#else
+		return AV_PIX_FMT_NONE;
+#endif
+	case VIDEO_FORMAT_I010:
+		return AV_PIX_FMT_YUV420P10LE;
+	case VIDEO_FORMAT_P010:
+		return AV_PIX_FMT_P010LE;
 	case VIDEO_FORMAT_NONE:
-	case VIDEO_FORMAT_YVYU:
 	case VIDEO_FORMAT_AYUV:
 		/* not supported by FFmpeg */
 		return AV_PIX_FMT_NONE;
@@ -91,8 +106,23 @@ static inline int get_ffmpeg_scale_type(enum video_scale_type type)
 
 static inline const int *get_ffmpeg_coeffs(enum video_colorspace cs)
 {
-	const int colorspace = (cs == VIDEO_CS_601) ? SWS_CS_ITU601
-						    : SWS_CS_ITU709;
+	int colorspace = SWS_CS_ITU709;
+
+	switch (cs) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_709:
+	case VIDEO_CS_SRGB:
+	default:
+		colorspace = SWS_CS_ITU709;
+		break;
+	case VIDEO_CS_601:
+		colorspace = SWS_CS_ITU601;
+		break;
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
+		colorspace = SWS_CS_BT2020;
+	}
+
 	return sws_getCoefficients(colorspace);
 }
 

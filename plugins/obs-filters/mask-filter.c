@@ -8,12 +8,14 @@
 
 /* clang-format off */
 
+#define SETTING_SDR_ONLY_INFO          "sdr_only_info"
 #define SETTING_TYPE                   "type"
 #define SETTING_IMAGE_PATH             "image_path"
 #define SETTING_COLOR                  "color"
 #define SETTING_OPACITY                "opacity"
 #define SETTING_STRETCH                "stretch"
 
+#define TEXT_SDR_ONLY_INFO             obs_module_text("SdrOnlyInfo")
 #define TEXT_TYPE                      obs_module_text("Type")
 #define TEXT_IMAGE_PATH                obs_module_text("Path")
 #define TEXT_COLOR                     obs_module_text("Color")
@@ -156,6 +158,9 @@ static obs_properties_t *mask_filter_properties_internal(bool use_float_opacity)
 	dstr_cat(&filter_str, TEXT_PATH_ALL_FILES);
 	dstr_cat(&filter_str, " (*.*)");
 
+	obs_properties_add_text(props, SETTING_SDR_ONLY_INFO,
+				TEXT_SDR_ONLY_INFO, OBS_TEXT_INFO);
+
 	p = obs_properties_add_list(props, SETTING_TYPE, TEXT_TYPE,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
@@ -264,6 +269,8 @@ static void mask_filter_tick(void *data, float seconds)
 
 static void mask_filter_render(void *data, gs_effect_t *effect)
 {
+	UNUSED_PARAMETER(effect);
+
 	struct mask_filter_data *filter = data;
 	obs_source_t *target = obs_filter_get_target(filter->context);
 	gs_eparam_t *param;
@@ -275,60 +282,100 @@ static void mask_filter_render(void *data, gs_effect_t *effect)
 		return;
 	}
 
-	if (filter->lock_aspect) {
-		struct vec2 source_size;
-		struct vec2 mask_size;
-		struct vec2 mask_temp;
-		float source_aspect;
-		float mask_aspect;
-		bool size_to_x;
-		float fix;
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
 
-		source_size.x = (float)obs_source_get_base_width(target);
-		source_size.y = (float)obs_source_get_base_height(target);
-		mask_size.x = (float)gs_texture_get_width(filter->target);
-		mask_size.y = (float)gs_texture_get_height(filter->target);
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(preferred_spaces), preferred_spaces);
+	if (source_space == GS_CS_709_EXTENDED) {
+		obs_source_skip_video_filter(filter->context);
+	} else {
+		if (filter->lock_aspect) {
+			struct vec2 source_size;
+			struct vec2 mask_size;
+			struct vec2 mask_temp;
+			float source_aspect;
+			float mask_aspect;
+			bool size_to_x;
+			float fix;
 
-		source_aspect = source_size.x / source_size.y;
-		mask_aspect = mask_size.x / mask_size.y;
-		size_to_x = (source_aspect < mask_aspect);
+			source_size.x =
+				(float)obs_source_get_base_width(target);
+			source_size.y =
+				(float)obs_source_get_base_height(target);
+			mask_size.x =
+				(float)gs_texture_get_width(filter->target);
+			mask_size.y =
+				(float)gs_texture_get_height(filter->target);
 
-		fix = size_to_x ? (source_size.x / mask_size.x)
-				: (source_size.y / mask_size.y);
+			source_aspect = source_size.x / source_size.y;
+			mask_aspect = mask_size.x / mask_size.y;
+			size_to_x = (source_aspect < mask_aspect);
 
-		vec2_mulf(&mask_size, &mask_size, fix);
-		vec2_div(&mul_val, &source_size, &mask_size);
-		vec2_mulf(&source_size, &source_size, 0.5f);
-		vec2_mulf(&mask_temp, &mask_size, 0.5f);
-		vec2_sub(&add_val, &source_size, &mask_temp);
-		vec2_neg(&add_val, &add_val);
-		vec2_div(&add_val, &add_val, &mask_size);
+			fix = size_to_x ? (source_size.x / mask_size.x)
+					: (source_size.y / mask_size.y);
+
+			vec2_mulf(&mask_size, &mask_size, fix);
+			vec2_div(&mul_val, &source_size, &mask_size);
+			vec2_mulf(&source_size, &source_size, 0.5f);
+			vec2_mulf(&mask_temp, &mask_size, 0.5f);
+			vec2_sub(&add_val, &source_size, &mask_temp);
+			vec2_neg(&add_val, &add_val);
+			vec2_div(&add_val, &add_val, &mask_size);
+		}
+
+		const enum gs_color_format format =
+			gs_get_format_from_space(source_space);
+		if (obs_source_process_filter_begin_with_color_space(
+			    filter->context, format, source_space,
+			    OBS_ALLOW_DIRECT_RENDERING)) {
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "target");
+			gs_effect_set_texture_srgb(param, filter->target);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "color");
+			gs_effect_set_vec4(param, &filter->color);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "mul_val");
+			gs_effect_set_vec2(param, &mul_val);
+
+			param = gs_effect_get_param_by_name(filter->effect,
+							    "add_val");
+			gs_effect_set_vec2(param, &add_val);
+
+			gs_blend_state_push();
+			gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
+
+			obs_source_process_filter_end(filter->context,
+						      filter->effect, 0, 0);
+
+			gs_blend_state_pop();
+		}
 	}
+}
 
-	if (!obs_source_process_filter_begin(filter->context, GS_RGBA,
-					     OBS_ALLOW_DIRECT_RENDERING))
-		return;
+static enum gs_color_space
+mask_filter_get_color_space(void *data, size_t count,
+			    const enum gs_color_space *preferred_spaces)
+{
+	const enum gs_color_space potential_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
 
-	param = gs_effect_get_param_by_name(filter->effect, "target");
-	gs_effect_set_texture_srgb(param, filter->target);
+	struct mask_filter_data *const filter = data;
+	const enum gs_color_space source_space = obs_source_get_color_space(
+		obs_filter_get_parent(filter->context),
+		OBS_COUNTOF(potential_spaces), potential_spaces);
 
-	param = gs_effect_get_param_by_name(filter->effect, "color");
-	gs_effect_set_vec4(param, &filter->color);
-
-	param = gs_effect_get_param_by_name(filter->effect, "mul_val");
-	gs_effect_set_vec2(param, &mul_val);
-
-	param = gs_effect_get_param_by_name(filter->effect, "add_val");
-	gs_effect_set_vec2(param, &add_val);
-
-	gs_blend_state_push();
-	gs_blend_function(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA);
-
-	obs_source_process_filter_end(filter->context, filter->effect, 0, 0);
-
-	gs_blend_state_pop();
-
-	UNUSED_PARAMETER(effect);
+	return source_space;
 }
 
 struct obs_source_info mask_filter = {
@@ -358,4 +405,5 @@ struct obs_source_info mask_filter_v2 = {
 	.get_properties = mask_filter_properties_v2,
 	.video_tick = mask_filter_tick,
 	.video_render = mask_filter_render,
+	.video_get_color_space = mask_filter_get_color_space,
 };

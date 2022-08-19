@@ -194,6 +194,13 @@ Sleep/Time Functions
 
 ---------------------
 
+.. function:: bool os_sleepto_ns_fast(uint64_t time_target)
+
+   Sleeps to a specific time without high precision, in nanoseconds.
+   The function won't return until reaching the specific time.
+
+---------------------
+
 .. function:: void os_sleep_ms(uint32_t duration)
 
    Sleeps for a specific number of milliseconds.
@@ -242,11 +249,11 @@ Other Path/File Functions
 
 ---------------------
 
-.. type:: typedef struct os_dir os_dir_t
+.. type:: struct os_dir os_dir_t
 
    A directory object.
 
-.. type:: struct os_dirent
+.. struct:: os_dirent
 
    A directory entry record.
 
@@ -278,10 +285,10 @@ Other Path/File Functions
 
 ---------------------
 
-.. type:: struct os_globent
+.. struct:: os_globent
 
    A glob entry.
-   
+
 .. member:: char *os_globent.path
 
    The full path to the glob entry.
@@ -290,7 +297,7 @@ Other Path/File Functions
 
    *true* if the glob entry is a directory, *false* otherwise.
 
-.. type:: struct os_glob_info
+.. struct:: os_glob_info
 
    A glob object.
 
@@ -302,7 +309,7 @@ Other Path/File Functions
 
    Array of glob entries.
 
-.. type:: typedef struct os_glob_info os_glob_t
+.. type:: struct os_glob_info os_glob_t
 
 ---------------------
 
@@ -387,8 +394,8 @@ Sleep-Inhibition Functions
 These functions/types are used to inhibit the computer from going to
 sleep.
 
-.. type:: struct os_inhibit_info
-.. type:: typedef struct os_inhibit_info os_inhibit_t
+.. struct:: os_inhibit_info
+.. type:: struct os_inhibit_info os_inhibit_t
 
 ---------------------
 
@@ -440,7 +447,7 @@ Other Functions
 
 ---------------------
 
-.. type:: struct os_proc_memory_usage
+.. struct:: os_proc_memory_usage
 
    Memory usage structure.
 
@@ -452,7 +459,7 @@ Other Functions
 
    Virtual size.
 
-.. type:: typedef struct os_proc_memory_usage os_proc_memory_usage_t
+.. type:: struct os_proc_memory_usage os_proc_memory_usage_t
 
 ---------------------
 
@@ -471,3 +478,12 @@ Other Functions
 .. function:: uint64_t os_get_proc_virtual_size(void)
 
    Returns the virtual memory size of the current process.
+
+---------------------
+
+.. function:: bool os_get_emulation_status(void)
+
+   Returns true if the current process is a x64 binary and is being emulated or translated
+   by the host operating system. On macOS, it returns true when a x64 binary is 
+   being translated by Rosetta and running on Apple Silicon Macs. This function is not yet
+   implemented on Windows and Linux and will always return false on those platforms.

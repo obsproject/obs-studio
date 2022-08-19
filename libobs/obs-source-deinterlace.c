@@ -148,7 +148,6 @@ static inline uint64_t uint64_diff(uint64_t ts1, uint64_t ts2)
 static inline void deinterlace_get_closest_frames(obs_source_t *s,
 						  uint64_t sys_time)
 {
-	const struct video_output_info *info;
 	uint64_t half_interval;
 
 	if (s->async_unbuffered && s->deinterlace_offset) {
@@ -169,9 +168,7 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 	if (!s->async_frames.num)
 		return;
 
-	info = video_output_get_info(obs->video.video);
-	half_interval = (uint64_t)info->fps_den * 500000000ULL /
-			(uint64_t)info->fps_num;
+	half_interval = obs->video.video_half_frame_interval_ns;
 
 	if (first_frame(s) || ready_deinterlace_frames(s, sys_time)) {
 		uint64_t offset;
@@ -181,7 +178,8 @@ static inline void deinterlace_get_closest_frames(obs_source_t *s,
 
 		da_erase(s->async_frames, 0);
 
-		if (s->cur_async_frame->prev_frame) {
+		if ((s->async_frames.num > 0) &&
+		    s->cur_async_frame->prev_frame) {
 			s->prev_async_frame = s->cur_async_frame;
 			s->cur_async_frame = s->async_frames.array[0];
 
@@ -232,9 +230,12 @@ void deinterlace_process_last_frame(obs_source_t *s, uint64_t sys_time)
 
 void set_deinterlace_texture_size(obs_source_t *source)
 {
+	const enum gs_color_format format =
+		convert_video_format(source->async_format, source->async_trc);
+
 	if (source->async_gpu_conversion) {
 		source->async_prev_texrender =
-			gs_texrender_create(GS_BGRX, GS_ZS_NONE);
+			gs_texrender_create(format, GS_ZS_NONE);
 
 		for (int c = 0; c < source->async_channel_count; c++)
 			source->async_prev_textures[c] = gs_texture_create(
@@ -242,11 +243,7 @@ void set_deinterlace_texture_size(obs_source_t *source)
 				source->async_convert_height[c],
 				source->async_texture_formats[c], 1, NULL,
 				GS_DYNAMIC);
-
 	} else {
-		enum gs_color_format format =
-			convert_video_format(source->async_format);
-
 		source->async_prev_textures[0] = gs_texture_create(
 			source->async_width, source->async_height, format, 1,
 			NULL, GS_DYNAMIC);
@@ -369,10 +366,11 @@ void deinterlace_render(obs_source_t *s)
 {
 	gs_effect_t *effect = s->deinterlace_effect;
 
-	uint64_t frame2_ts;
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *prev =
 		gs_effect_get_param_by_name(effect, "previous_image");
+	gs_eparam_t *multiplier_param =
+		gs_effect_get_param_by_name(effect, "multiplier");
 	gs_eparam_t *field = gs_effect_get_param_by_name(effect, "field_order");
 	gs_eparam_t *frame2 = gs_effect_get_param_by_name(effect, "frame2");
 	gs_eparam_t *dimensions =
@@ -391,9 +389,48 @@ void deinterlace_render(obs_source_t *s)
 	if (!cur_tex || !prev_tex || !s->async_width || !s->async_height)
 		return;
 
+	const enum gs_color_space source_space =
+		convert_video_space(s->async_format, s->async_trc);
+
 	const bool linear_srgb =
-		gs_get_linear_srgb() ||
+		(source_space != GS_CS_SRGB) || gs_get_linear_srgb() ||
 		deinterlace_linear_required(s->deinterlace_mode);
+
+	const enum gs_color_space current_space = gs_get_color_space();
+	const char *tech_name = "Draw";
+	float multiplier = 1.0;
+	switch (source_space) {
+	case GS_CS_SRGB:
+	case GS_CS_SRGB_16F:
+		switch (current_space) {
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_EXTENDED:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawTonemap";
+			break;
+		case GS_CS_709_SCRGB:
+			tech_name = "DrawMultiply";
+			multiplier = obs_get_video_sdr_white_level() / 80.0f;
+		}
+		break;
+	case GS_CS_709_SCRGB:
+		switch (current_space) {
+		case GS_CS_SRGB:
+		case GS_CS_SRGB_16F:
+			tech_name = "DrawMultiplyTonemap";
+			multiplier = 80.0f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_EXTENDED:
+			tech_name = "DrawMultiply";
+			multiplier = 80.0f / obs_get_video_sdr_white_level();
+		}
+	}
 
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(linear_srgb);
@@ -406,15 +443,16 @@ void deinterlace_render(obs_source_t *s)
 		gs_effect_set_texture(prev, prev_tex);
 	}
 
+	gs_effect_set_float(multiplier_param, multiplier);
 	gs_effect_set_int(field, s->deinterlace_top_first);
 	gs_effect_set_vec2(dimensions, &size);
 
-	frame2_ts = s->deinterlace_frame_ts + s->deinterlace_offset +
-		    s->deinterlace_half_duration - TWOX_TOLERANCE;
-
+	const uint64_t frame2_ts =
+		s->deinterlace_frame_ts + s->deinterlace_offset +
+		s->deinterlace_half_duration - TWOX_TOLERANCE;
 	gs_effect_set_bool(frame2, obs->video.video_time >= frame2_ts);
 
-	while (gs_effect_loop(effect, "Draw"))
+	while (gs_effect_loop(effect, tech_name))
 		gs_draw_sprite(NULL, s->async_flip ? GS_FLIP_V : 0,
 			       s->async_width, s->async_height);
 

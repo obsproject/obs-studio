@@ -280,15 +280,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto revert = new QPushButton;
 	revert->setProperty("themeID", "revertIcon");
 	revert->setToolTip(QTStr("Revert"));
-	revert->setFixedSize(24, 24);
-	revert->setFlat(true);
 	revert->setEnabled(false);
 
 	auto clear = new QPushButton;
 	clear->setProperty("themeID", "trashIcon");
 	clear->setToolTip(QTStr("Clear"));
-	clear->setFixedSize(24, 24);
-	clear->setFlat(true);
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
 	QObject::connect(
@@ -302,15 +298,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto add = new QPushButton;
 	add->setProperty("themeID", "addIconSmall");
 	add->setToolTip(QTStr("Add"));
-	add->setFixedSize(24, 24);
-	add->setFlat(true);
 
 	auto remove = new QPushButton;
 	remove->setProperty("themeID", "removeIconSmall");
 	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
-	remove->setFixedSize(24, 24);
-	remove->setFlat(true);
 
 	auto CurrentIndex = [&, remove] {
 		auto res = std::find(begin(removeButtons), end(removeButtons),

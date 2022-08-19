@@ -18,8 +18,10 @@
     <file>images/tray_active.png</file>
     <file>images/tray_active_macos.svg</file>
     <file>images/paused.png</file>
+    <file>images/paused_mac.png</file>
     <file>images/active.png</file>
-    <file>images/expand.svg</file>
+    <file>images/active_mac.png</file>
+    <file>images/right.svg</file>
     <file>images/unlocked.svg</file>
     <file>images/locked.svg</file>
     <file>images/invisible.svg</file>
@@ -43,6 +45,7 @@
     <file>images/sources/text.svg</file>
     <file>images/sources/window.svg</file>
     <file>images/sources/default.svg</file>
+    <file>images/sources/windowaudio.svg</file>
     <file>images/recording-active.svg</file>
     <file>images/recording-inactive.svg</file>
     <file>images/recording-pause.svg</file>
@@ -56,6 +59,11 @@
     <file>images/media/media_restart.svg</file>
     <file>images/media/media_stop.svg</file>
     <file>images/interact.svg</file>
+    <file>images/dots.svg</file>
+    <file>images/dots-vert.svg</file>
+    <file>images/cogs.svg</file>
+    <file>images/expand.svg</file>
+    <file>images/collapse.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
@@ -65,5 +73,11 @@
     <file>images/settings/audio.svg</file>
     <file>images/settings/general.svg</file>
     <file>images/settings/hotkeys.svg</file>
+    <file>images/settings/accessibility.svg</file>
+  </qresource>
+  <qresource prefix="">
+    <file>fonts/OpenSans-Regular.ttf</file>
+    <file>fonts/OpenSans-Bold.ttf</file>
+    <file>fonts/OpenSans-Italic.ttf</file>
   </qresource>
 </RCC>

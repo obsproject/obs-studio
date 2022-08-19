@@ -335,36 +335,37 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	UNUSED_PARAMETER(unused);
 
 	obs_properties_t *props = obs_properties_create();
-	obs_property_t *list;
+	obs_property_t *prop;
 
-	list = obs_properties_add_list(props, "target_usage", TEXT_SPEED,
+	prop = obs_properties_add_list(props, "target_usage", TEXT_SPEED,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_usage_names);
+	add_strings(prop, qsv_usage_names);
 
-	list = obs_properties_add_list(props, "profile", TEXT_PROFILE,
+	prop = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_profile_names);
+	add_strings(prop, qsv_profile_names);
 
-	obs_property_set_modified_callback(list, profile_modified);
+	obs_property_set_modified_callback(prop, profile_modified);
 
-	obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1, 20, 1);
+	prop = obs_properties_add_int(props, "keyint_sec", TEXT_KEYINT_SEC, 1,
+				      20, 1);
+	obs_property_int_set_suffix(prop, " s");
 
-	list = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
+	prop = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_rate_controls(list, qsv_ratecontrols);
-	obs_property_set_modified_callback(list, rate_control_modified);
+	add_rate_controls(prop, qsv_ratecontrols);
+	obs_property_set_modified_callback(prop, rate_control_modified);
 
-	obs_property_t *p;
-	p = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
-				   10000000, 50);
-	obs_property_int_set_suffix(p, " Kbps");
+	prop = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
+				      10000000, 50);
+	obs_property_int_set_suffix(prop, " Kbps");
 
-	p = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE, 50,
-				   10000000, 50);
-	obs_property_int_set_suffix(p, " Kbps");
+	prop = obs_properties_add_int(props, "max_bitrate", TEXT_MAX_BITRATE,
+				      50, 10000000, 50);
+	obs_property_int_set_suffix(prop, " Kbps");
 
 	obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0, 10000, 1);
 	obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE, 0, 10,
@@ -374,11 +375,11 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
 	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51,
 			       1);
-	list = obs_properties_add_list(props, "latency", TEXT_LATENCY,
+	prop = obs_properties_add_list(props, "latency", TEXT_LATENCY,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(list, qsv_latency_names);
-	obs_property_set_long_description(list,
+	add_strings(prop, qsv_latency_names);
+	obs_property_set_long_description(prop,
 					  obs_module_text("Latency.ToolTip"));
 
 	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
@@ -780,10 +781,6 @@ static bool obs_qsv_sei(void *data, uint8_t **sei, size_t *size)
 	if (!obsqsv->context)
 		return false;
 
-	/* (Jim) Unused */
-	UNUSED_PARAMETER(sei);
-	UNUSED_PARAMETER(size);
-
 	*sei = obsqsv->sei;
 	*size = obsqsv->sei_size;
 	return true;
@@ -831,8 +828,23 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 	cap_resolution(obsqsv->encoder, info);
 }
 
+static mfxU64 ts_obs_to_mfx(int64_t ts, const struct video_output_info *voi)
+{
+	return ts * 90000 / voi->fps_num;
+}
+
+static int64_t ts_mfx_to_obs(mfxI64 ts, const struct video_output_info *voi)
+{
+	int64_t div = 90000 * (int64_t)voi->fps_den;
+	/* Round to the nearest integer multiple of `voi->fps_den`. */
+	if (ts < 0)
+		return (ts * voi->fps_num - div / 2) / div * voi->fps_den;
+	else
+		return (ts * voi->fps_num + div / 2) / div * voi->fps_den;
+}
+
 static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
-			 mfxBitstream *pBS, uint32_t fps_num,
+			 mfxBitstream *pBS, const struct video_output_info *voi,
 			 bool *received_packet)
 {
 	uint8_t *start, *end;
@@ -850,7 +862,7 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
 	packet->data = obsqsv->packet_data.array;
 	packet->size = obsqsv->packet_data.num;
 	packet->type = OBS_ENCODER_VIDEO;
-	packet->pts = pBS->TimeStamp * fps_num / 90000;
+	packet->pts = ts_mfx_to_obs((mfxI64)pBS->TimeStamp, voi);
 	packet->keyframe = (pBS->FrameType & MFX_FRAMETYPE_IDR);
 
 	uint16_t frameType = pBS->FrameType;
@@ -911,7 +923,7 @@ static void parse_packet(struct obs_qsv *obsqsv, struct encoder_packet *packet,
 			g_prevDts = packet->dts;
 		}
 	} else {
-		packet->dts = pBS->DecodeTimeStamp * fps_num / 90000;
+		packet->dts = ts_mfx_to_obs(pBS->DecodeTimeStamp, voi);
 	}
 
 #if 0
@@ -945,7 +957,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 
 	int ret;
 
-	mfxU64 qsvPTS = frame->pts * 90000 / voi->fps_num;
+	mfxU64 qsvPTS = ts_obs_to_mfx(frame->pts, voi);
 
 	// FIXME: remove null check from the top of this function
 	// if we actually do expect null frames to complete output.
@@ -964,7 +976,7 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 		return false;
 	}
 
-	parse_packet(obsqsv, packet, pBS, voi->fps_num, received_packet);
+	parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
 	LeaveCriticalSection(&g_QsvCs);
 
@@ -1003,7 +1015,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 
 	int ret;
 
-	mfxU64 qsvPTS = pts * 90000 / voi->fps_num;
+	mfxU64 qsvPTS = ts_obs_to_mfx(pts, voi);
 
 	ret = qsv_encoder_encode_tex(obsqsv->context, qsvPTS, handle, lock_key,
 				     next_key, &pBS);
@@ -1014,7 +1026,7 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 		return false;
 	}
 
-	parse_packet(obsqsv, packet, pBS, voi->fps_num, received_packet);
+	parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
 	LeaveCriticalSection(&g_QsvCs);
 

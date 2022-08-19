@@ -37,6 +37,8 @@ EXPORT void *device_get_device_obj(gs_device_t *device);
 EXPORT gs_swapchain_t *device_swapchain_create(gs_device_t *device,
 					       const struct gs_init_data *data);
 EXPORT void device_resize(gs_device_t *device, uint32_t x, uint32_t y);
+EXPORT enum gs_color_space device_get_color_space(gs_device_t *device);
+EXPORT void device_update_color_space(gs_device_t *device);
 EXPORT void device_get_size(const gs_device_t *device, uint32_t *x,
 			    uint32_t *y);
 EXPORT uint32_t device_get_width(const gs_device_t *device);
@@ -104,6 +106,9 @@ EXPORT gs_texture_t *device_get_render_target(const gs_device_t *device);
 EXPORT gs_zstencil_t *device_get_zstencil_target(const gs_device_t *device);
 EXPORT void device_set_render_target(gs_device_t *device, gs_texture_t *tex,
 				     gs_zstencil_t *zstencil);
+EXPORT void device_set_render_target_with_color_space(
+	gs_device_t *device, gs_texture_t *tex, gs_zstencil_t *zstencil,
+	enum gs_color_space space);
 EXPORT void device_set_cube_render_target(gs_device_t *device,
 					  gs_texture_t *cubetex, int side,
 					  gs_zstencil_t *zstencil);
@@ -128,6 +133,7 @@ EXPORT void device_load_swapchain(gs_device_t *device,
 EXPORT void device_clear(gs_device_t *device, uint32_t clear_flags,
 			 const struct vec4 *color, float depth,
 			 uint8_t stencil);
+EXPORT bool device_is_present_ready(gs_device_t *device);
 EXPORT void device_present(gs_device_t *device);
 EXPORT void device_flush(gs_device_t *device);
 EXPORT void device_set_cull_mode(gs_device_t *device, enum gs_cull_mode mode);

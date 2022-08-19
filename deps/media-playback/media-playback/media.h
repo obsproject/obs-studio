@@ -65,6 +65,7 @@ struct mp_media {
 
 	char *path;
 	char *format_name;
+	char *ffmpeg_options;
 	int buffering;
 	int speed;
 
@@ -73,6 +74,7 @@ struct mp_media {
 	int scale_linesizes[4];
 	uint8_t *scale_pic[4];
 
+	DARRAY(AVPacket *) packet_pool;
 	struct mp_decode v;
 	struct mp_decode a;
 	bool is_local_file;
@@ -120,7 +122,7 @@ struct mp_media {
 	bool seek;
 	bool seek_next_ts;
 	int64_t seek_pos;
-	int volume;
+	int64_t volume;
 };
 
 typedef struct mp_media mp_media_t;
@@ -137,6 +139,7 @@ struct mp_media_info {
 
 	const char *path;
 	const char *format;
+	char *ffmpeg_options;
 	int buffering;
 	int speed;
 	enum video_range_type force_range;
@@ -145,7 +148,7 @@ struct mp_media_info {
 	bool is_local_file;
 	bool enable_caching;
 	bool reconnecting;
-	int volume;
+	int64_t volume;
 };
 
 extern bool mp_media_init(mp_media_t *media, const struct mp_media_info *info);
@@ -158,10 +161,6 @@ extern int64_t mp_get_current_time(mp_media_t *m);
 extern void mp_media_seek_to(mp_media_t *m, int64_t pos);
 
 /* #define DETAILED_DEBUG_INFO */
-
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
-#define USE_NEW_FFMPEG_DECODE_API
-#endif
 
 #ifdef __cplusplus
 }
