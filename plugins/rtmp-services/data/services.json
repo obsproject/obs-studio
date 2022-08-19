@@ -353,21 +353,6 @@
             }
         },
         {
-            "name": "Mobcrush",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live.mobcrush.net/mob"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 6000,
-                "max audio bitrate": 160
-            }
-        },
-        {
             "name": "Web.TV",
             "servers": [
                 {
