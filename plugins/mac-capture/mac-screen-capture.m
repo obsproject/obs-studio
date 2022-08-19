@@ -366,6 +366,13 @@ static bool init_screen_stream(struct screen_capture *sc)
 		[sc->stream_properties
 			setHeight:CGDisplayModeGetPixelHeight(display_mode)];
 		CGDisplayModeRelease(display_mode);
+		CGColorSpaceRef colorspace =
+			CGDisplayCopyColorSpace(target_display.displayID);
+		bool wide = CGColorSpaceIsWideGamutRGB(colorspace);
+		[sc->stream_properties
+			setColorSpaceName:wide ? kCGColorSpaceExtendedSRGB
+					       : kCGColorSpaceSRGB];
+		CGColorSpaceRelease(colorspace);
 	};
 
 	switch (sc->capture_type) {
