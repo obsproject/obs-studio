@@ -2066,14 +2066,12 @@ static void obs_render_texture_internal(enum gs_blend_type src_c,
 						 enum gs_blend_type dest_c,
 						 enum gs_blend_type src_a,
 						 enum gs_blend_type dest_a,
-						 enum obs_video_rendering_mode mode)
+						 struct obs_core_video_mix *video)
 {
-	struct obs_core_video_mix *video;
 	gs_texture_t *tex;
 	gs_effect_t *effect;
 	gs_eparam_t *param;
 
-	video = obs->video.main_mix;
 	if (!video->texture_rendered)
 		return;
 
@@ -2117,28 +2115,28 @@ void obs_render_main_texture(void)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
 				 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				 OBS_MAIN_VIDEO_RENDERING);
+				 obs->video.main_mix);
 }
 
 void obs_render_streaming_texture(void)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
 				 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				 OBS_STREAMING_VIDEO_RENDERING);
+				 obs->video.stream_mix);
 }
 
 void obs_render_recording_texture(void)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
 				 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				 OBS_RECORDING_VIDEO_RENDERING);
+				 obs->video.record_mix);
 }
 
 void obs_render_main_texture_src_color_only(void)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_ZERO, GS_BLEND_ONE,
 				 GS_BLEND_INVSRCALPHA,
-				 OBS_MAIN_VIDEO_RENDERING);
+				 obs->video.main_mix);
 }
 
 gs_texture_t *obs_get_main_texture(void)
@@ -2953,7 +2951,7 @@ extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = obs->video.main_mix;
+	struct obs_core_video_mix *video = encoder->video;
 	bool success = true;
 
 	obs_enter_graphics();
@@ -2979,7 +2977,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = obs->video.main_mix;
+	struct obs_core_video_mix *video = encoder->video;
 	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);

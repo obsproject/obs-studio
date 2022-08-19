@@ -2366,6 +2366,9 @@ EXPORT bool obs_weak_encoder_references_encoder(obs_weak_encoder_t *weak,
 EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
+EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
+						enum obs_video_rendering_mode mode);
+
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
 

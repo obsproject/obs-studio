@@ -353,6 +353,8 @@ struct obs_core_video {
 	pthread_mutex_t mixes_mutex;
 	DARRAY(struct obs_core_video_mix) mixes;
 	struct obs_core_video_mix *main_mix;
+	struct obs_core_video_mix *stream_mix;
+	struct obs_core_video_mix *record_mix;
 };
 
 struct audio_monitor;
@@ -1223,6 +1225,7 @@ struct obs_encoder {
 
 	/* reconfigure encoder at next possible opportunity */
 	bool reconfigure_requested;
+	struct obs_core_video_mix *video;
 };
 
 extern struct obs_encoder_info *find_encoder(const char *id);

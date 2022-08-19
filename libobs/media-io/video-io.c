@@ -516,13 +516,10 @@ void video_output_stop(video_t *video)
 		video->stop = true;
 		os_sem_post(video->update_semaphore);
 		
-		if (video == obs->video.main_mix->video)
-		{
-			// The graphics thread must end before mutexes are destroyed
-			if (obs->video.thread_initialized) {
-				pthread_join(video->thread, &thread_ret);
-				obs->video.thread_initialized = false;
-			}
+		// The graphics thread must end before mutexes are destroyed
+		if (obs->video.thread_initialized) {
+			pthread_join(video->thread, &thread_ret);
+			obs->video.thread_initialized = false;
 		}
 
 		os_sem_destroy(video->update_semaphore);
