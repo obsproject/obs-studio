@@ -204,7 +204,7 @@ static bool obs_source_init(struct obs_source *source)
 		return false;
 	if (pthread_mutex_init(&source->audio_mutex, NULL) != 0)
 		return false;
-	if (pthread_mutex_init(&source->async_mutex, NULL) != 0)
+	if (pthread_mutex_init_recursive(&source->async_mutex) != 0)
 		return false;
 	if (pthread_mutex_init(&source->caption_cb_mutex, NULL) != 0)
 		return false;
@@ -1187,8 +1187,20 @@ void obs_source_deactivate(obs_source_t *source, enum view_type type)
 
 static inline struct obs_source_frame *get_closest_frame(obs_source_t *source,
 							 uint64_t sys_time);
-bool set_async_texture_size(struct obs_source *source,
-			    const struct obs_source_frame *frame);
+
+static void filter_frame(obs_source_t *source,
+			 struct obs_source_frame **ref_frame)
+{
+	struct obs_source_frame *frame = *ref_frame;
+	if (frame) {
+		os_atomic_inc_long(&frame->refs);
+		frame = filter_async_video(source, frame);
+		if (frame)
+			os_atomic_dec_long(&frame->refs);
+	}
+
+	*ref_frame = frame;
+}
 
 static void async_tick(obs_source_t *source)
 {
@@ -1208,6 +1220,11 @@ static void async_tick(obs_source_t *source)
 	}
 
 	source->last_sys_timestamp = sys_time;
+
+	if (deinterlacing_enabled(source))
+		filter_frame(source, &source->prev_async_frame);
+	filter_frame(source, &source->cur_async_frame);
+
 	pthread_mutex_unlock(&source->async_mutex);
 
 	if (source->cur_async_frame)
@@ -2399,12 +2416,9 @@ static inline void check_to_swap_bgrx_bgra(obs_source_t *source,
 static void obs_source_update_async_video(obs_source_t *source)
 {
 	if (!source->async_rendered) {
-		struct obs_source_frame *frame = obs_source_get_frame(source);
-
-		if (frame)
-			frame = filter_async_video(source, frame);
-
 		source->async_rendered = true;
+
+		struct obs_source_frame *frame = obs_source_get_frame(source);
 		if (frame) {
 			check_to_swap_bgrx_bgra(source, frame);
 
