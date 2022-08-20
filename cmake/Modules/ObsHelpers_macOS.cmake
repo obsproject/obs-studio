@@ -51,6 +51,8 @@ function(setup_framework_target target)
     FRAMEWORK DESTINATION "Frameworks"
               COMPONENT obs_libraries
               EXCLUDE_FROM_ALL
+    INCLUDES
+    DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
     PUBLIC_HEADER
       DESTINATION
         Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
