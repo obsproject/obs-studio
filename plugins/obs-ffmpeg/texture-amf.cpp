@@ -1117,13 +1117,13 @@ try {
 		return true;
 	}
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_avc_rate_control(rc_str);
 	AMF_RESULT res;
 
-	amf_avc_update_data(enc, rc, bitrate, qp);
+	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
@@ -1142,7 +1142,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
@@ -1167,7 +1167,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	set_avc_property(enc, RATE_CONTROL_METHOD, rc);
 	set_avc_property(enc, ENABLE_VBAQ, true);
 
-	amf_avc_update_data(enc, rc, bitrate, qp);
+	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
 	set_avc_property(enc, ENFORCE_HRD, true);
 	set_avc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
@@ -1421,13 +1421,13 @@ try {
 		return true;
 	}
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
 	AMF_RESULT res;
 
-	amf_hevc_update_data(enc, rc, bitrate, qp);
+	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
@@ -1446,7 +1446,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
@@ -1456,7 +1456,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
 	set_hevc_property(enc, ENABLE_VBAQ, true);
 
-	amf_hevc_update_data(enc, rc, bitrate, qp);
+	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
 	set_hevc_property(enc, ENFORCE_HRD, true);
 	set_hevc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
