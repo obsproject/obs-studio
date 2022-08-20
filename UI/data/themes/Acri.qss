@@ -165,6 +165,10 @@ QMenu::item:disabled {
     background: transparent;
 }
 
+QMenu::right-arrow {
+    image: url(./Dark/expand.svg);
+}
+
 /* Top Menu Bar Items */
 QMenuBar::item {
 	background-color: transparent;
