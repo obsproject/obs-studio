@@ -452,6 +452,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Light/trash.svg);
 }
 
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(./Light/entry-clear.svg);
+}
+
 * [themeID="propertiesIconSmall"] {
     qproperty-icon: url(./Light/settings/general.svg);
 }

@@ -22,6 +22,10 @@ OBSThemeMeta {
     qproperty-icon: url(:/res/images/minus.svg);
 }
 
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(:/res/images/entry-clear.svg);
+}
+
 * [themeID="propertiesIconSmall"] {
     qproperty-icon: url(:/settings/images/settings/general.svg);
 }

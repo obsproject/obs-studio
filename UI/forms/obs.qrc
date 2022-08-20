@@ -64,6 +64,7 @@
     <file>images/cogs.svg</file>
     <file>images/expand.svg</file>
     <file>images/collapse.svg</file>
+    <file>images/entry-clear.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>
