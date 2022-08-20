@@ -106,11 +106,10 @@ OBSProjector::~OBSProjector()
 	if (source)
 		obs_source_dec_showing(source);
 
-	if (isMultiview)
+	if (isMultiview) {
 		delete multiview;
-
-	if (type == ProjectorType::Multiview)
 		multiviewProjectors.removeAll(this);
+	}
 
 	App()->DecrementSleepInhibition();
 
