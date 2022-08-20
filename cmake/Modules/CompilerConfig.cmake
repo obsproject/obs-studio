@@ -122,8 +122,8 @@ else()
       $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>)
   endif()
 
-  if(OBS_CODESIGN_LINKER)
-    add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")
+  if(OS_MACOS AND OBS_CODESIGN_LINKER)
+    add_link_options(LINKER:-adhoc_codesign)
   endif()
 
   if(MINGW)
