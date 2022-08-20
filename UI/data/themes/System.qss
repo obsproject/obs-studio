@@ -231,10 +231,6 @@ VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 
-* [themeID="trashIcon"] {
-    qproperty-icon: url(:res/images/trash.svg);
-}
-
 * [themeID="revertIcon"] {
     qproperty-icon: url(:res/images/revert.svg);
 }
