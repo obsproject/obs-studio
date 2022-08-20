@@ -474,6 +474,7 @@ static bool init_screen_stream(struct screen_capture *sc)
 	os_sem_post(sc->shareable_content_available);
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
+	[sc->stream_properties setColorSpaceName:kCGColorSpaceSRGB];
 	[sc->stream_properties setPixelFormat:'BGRA'];
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 	if (@available(macOS 13.0, *)) {
