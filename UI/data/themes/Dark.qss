@@ -289,6 +289,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/minus.svg);
 }
 
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(./Dark/entry-clear.svg);
+}
+
 * [themeID="propertiesIconSmall"] {
     qproperty-icon: url(./Dark/settings/general.svg);
 }
