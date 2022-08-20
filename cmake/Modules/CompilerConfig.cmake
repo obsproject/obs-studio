@@ -112,8 +112,15 @@ else()
     -Wno-missing-field-initializers
     -fno-strict-aliasing
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>"
-    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>")
+  )
+
+  if(CMAKE_VERSION GREATER_EQUAL 3.24.0)
+    set(CMAKE_COLOR_DIAGNOSTICS ON)
+  else()
+    add_compile_options(
+      $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>
+      $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>)
+  endif()
 
   if(OBS_CODESIGN_LINKER)
     add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")
