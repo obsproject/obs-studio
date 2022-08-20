@@ -62,12 +62,10 @@ if(OS_WINDOWS AND MSVC)
     /wd4458
     /wd4459
     /wd4595
-    "$<$<CONFIG:DEBUG>:/DDEBUG=1;/D_DEBUG=1>"
-    "$<$<CONFIG:RELWITHDEBINFO>:/Ob2>"
-    /DUNICODE
-    /D_UNICODE
-    /D_CRT_SECURE_NO_WARNINGS
-    /D_CRT_NONSTDC_NO_WARNINGS)
+    $<$<CONFIG:RELWITHDEBINFO>:/Ob2>)
+
+  add_compile_definitions(UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                          _CRT_NONSTDC_NO_WARNINGS)
 
   add_link_options(
     "LINKER:/OPT:REF"
@@ -96,7 +94,6 @@ else()
     -Wno-missing-field-initializers
     -fno-strict-aliasing
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
-    "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
     "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>"
     "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>")
 
@@ -111,6 +108,9 @@ else()
     add_compile_definitions("_WIN32_WINNT=0x0600;WINVER=0x0600")
   endif()
 endif()
+
+add_compile_definitions("$<$<CONFIG:DEBUG>:DEBUG=1>"
+                        "$<$<CONFIG:DEBUG>:_DEBUG=1>")
 
 if(MSVC_CXX_ARCHITECTURE_ID)
   string(TOLOWER ${MSVC_CXX_ARCHITECTURE_ID} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
