@@ -1,7 +1,5 @@
 project(media-playback)
 
-option(ENABLE_SIMDE "Enable non-native SSE2 SIMD support" ON)
-
 find_package(FFmpeg REQUIRED COMPONENTS avcodec avdevice avutil avformat)
 
 add_library(media-playback INTERFACE)
