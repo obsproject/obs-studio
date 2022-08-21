@@ -79,7 +79,7 @@ macro(find_qt)
   # clobbered by later opportunistic find_package runs
   set(QT_NO_CREATE_VERSIONLESS_TARGETS ON)
 
-  # Loop until _QT_VERSION is set (or FATAL_ERROR aborts script execution early)
+  # Loop until _QT_VERSION is set or FATAL_ERROR aborts script execution early
   while(NOT _QT_VERSION)
     if(QT_VERSION STREQUAL AUTO AND NOT _QT_TEST_VERSION)
       set(_QT_TEST_VERSION 6)
@@ -199,10 +199,18 @@ if(OS_POSIX)
       -Wno-missing-field-initializers
       -fno-strict-aliasing
       "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
-      "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32;-fcolor-diagnostics>"
-      "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32;-fcolor-diagnostics>"
-      "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>"
-      "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>")
+      "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32>"
+      "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-Wnull-conversion;-Wno-error=shorten-64-to-32>"
+      "$<$<COMPILE_LANG_AND_ID:CXX,GNU>:-Wconversion-null>")
+
+  if(CMAKE_VERSION GREATER_EQUAL 3.24.0)
+    set(CMAKE_COLOR_DIAGNOSTICS ON)
+  else()
+    target_compile_options(
+      ${CMAKE_PROJECT_NAME}
+      PRIVATE $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>
+              $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>)
+  endif()
 
   # GCC 12.1.0 has a regression bug which trigger maybe-uninitialized warnings
   # where there is not. (https://gcc.gnu.org/bugzilla/show_bug.cgi?id=105562)
@@ -212,33 +220,36 @@ if(OS_POSIX)
                            PRIVATE -Wno-error=maybe-uninitialized)
   endif()
 
-  if(NOT CCACHE_SET)
+  if(NOT DEFINED CCACHE_SUPPORT)
     # Try to find and enable ccache
     find_program(CCACHE_PROGRAM "ccache")
     set(CCACHE_SUPPORT
         ON
         CACHE BOOL "Enable ccache support")
     mark_as_advanced(CCACHE_PROGRAM)
-    if(CCACHE_PROGRAM AND CCACHE_SUPPORT)
-      set(CMAKE_CXX_COMPILER_LAUNCHER
-          ${CCACHE_PROGRAM}
-          CACHE INTERNAL "")
-      set(CMAKE_C_COMPILER_LAUNCHER
-          ${CCACHE_PROGRAM}
-          CACHE INTERNAL "")
-      set(CMAKE_OBJC_COMPILER_LAUNCHER
-          ${CCACHE_PROGRAM}
-          CACHE INTERNAL "")
-      set(CMAKE_OBJCXX_COMPILER_LAUNCHER
-          ${CCACHE_PROGRAM}
-          CACHE INTERNAL "")
-      set(CMAKE_CUDA_COMPILER_LAUNCHER
-          ${CCACHE_PROGRAM}
-          CACHE INTERNAL "") # CMake 3.9+
-      set(CCACHE_SET
-          ON
-          CACHE INTERNAL "")
-    endif()
+  endif()
+  if(CCACHE_PROGRAM AND CCACHE_SUPPORT)
+    set(CMAKE_CXX_COMPILER_LAUNCHER
+        ${CCACHE_PROGRAM}
+        CACHE INTERNAL "")
+    set(CMAKE_C_COMPILER_LAUNCHER
+        ${CCACHE_PROGRAM}
+        CACHE INTERNAL "")
+    set(CMAKE_OBJC_COMPILER_LAUNCHER
+        ${CCACHE_PROGRAM}
+        CACHE INTERNAL "")
+    set(CMAKE_OBJCXX_COMPILER_LAUNCHER
+        ${CCACHE_PROGRAM}
+        CACHE INTERNAL "")
+    set(CMAKE_CUDA_COMPILER_LAUNCHER
+        ${CCACHE_PROGRAM}
+        CACHE INTERNAL "") # CMake 3.9+
+  else()
+    unset(CMAKE_CXX_COMPILER_LAUNCHER CACHE)
+    unset(CMAKE_C_COMPILER_LAUNCHER CACHE)
+    unset(CMAKE_OBJC_COMPILER_LAUNCHER CACHE)
+    unset(CMAKE_OBJCXX_COMPILER_LAUNCHER CACHE)
+    unset(CMAKE_CUDA_COMPILER_LAUNCHER CACHE)
   endif()
 endif()
 
@@ -254,39 +265,43 @@ else()
   string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} _HOST_ARCH)
 endif()
 
-if(_HOST_ARCH MATCHES "i[3-6]86|x86|x64|x86_64|amd64"
-   AND NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+if(OS_MACOS)
+  list(FIND CMAKE_OSX_ARCHITECTURES arm64 _HAS_APPLE_TARGET)
+  if(_HAS_APPLE_TARGET GREATER_EQUAL 0 OR _HOST_ARCH STREQUAL arm64)
+    target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -fopenmp-simd)
+    target_compile_definitions(${CMAKE_PROJECT_NAME}
+                               PRIVATE SIMDE_ENABLE_OPENMP)
+  endif()
+  unset(_HAS_APPLE_TARGET)
+elseif(_HOST_ARCH MATCHES "i[3-6]86|x86|x64|x86_64|amd64")
   # Enable MMX, SSE and SSE2 on compatible host systems (assuming no
   # cross-compile)
-  set(ARCH_SIMD_FLAGS -mmmx -msse -msse2)
+  target_compile_options(${CMAKE_PROJECT_NAME} PRIVATE -mmmx -msse -msse2)
 elseif(_HOST_ARCH MATCHES "arm64|arm64e|aarch64")
   # Enable available built-in SIMD support in Clang and GCC
-  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU"
-     OR CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang|GNU")
-    include(CheckCCompilerFlag)
-    include(CheckCXXCompilerFlag)
+  target_compile_definitions(${CMAKE_PROJECT_NAME} PRIVATE SIMDE_ENABLE_OPENMP)
 
-    check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
-    check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
-    target_compile_options(
-      ${CMAKE_PROJECT_NAME}
-      PRIVATE
-        -DSIMDE_ENABLE_OPENMP
-        "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-    )
-  endif()
+  include(CheckCCompilerFlag)
+  include(CheckCXXCompilerFlag)
+  check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
+  check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
+
+  foreach(_LANG C CXX)
+    if(CMAKE_${_LANG}_COMPILER_ID MATCHES "^(Apple)?Clang|GNU"
+       AND ${_LANG}_COMPILER_SUPPORTS_OPENMP_SIMD)
+      target_compile_options(
+        ${CMAKE_PROJECT_NAME}
+        PRIVATE $<$<COMPILE_LANGUAGE:${_LANG}>:-fopenmp-simd>)
+    endif()
+  endforeach()
 endif()
+
+target_compile_definitions(
+  ${CMAKE_PROJECT_NAME} PRIVATE "$<$<CONFIG:DEBUG>:DEBUG=1>"
+                                "$<$<CONFIG:DEBUG>:_DEBUG=1>")
 
 # macOS specific settings
 if(OS_MACOS)
-  # Set macOS-specific C++ standard library
-  target_compile_options(
-    ${CMAKE_PROJECT_NAME}
-    PRIVATE
-      "$<$<COMPILE_LANG_AND_ID:OBJC,AppleClang,Clang>:-fcolor-diagnostics>"
-      -stdlib=libc++)
-
   # Set build architecture to host architecture by default
   if(NOT CMAKE_OSX_ARCHITECTURES)
     set(CMAKE_OSX_ARCHITECTURES
@@ -586,17 +601,11 @@ else()
       # * DISABLE warnings about nonstandard nameless structs/unions,
       #   https://docs.microsoft.com/en-us/cpp/error-messages/compiler-warnings/compiler-warning-level-4-c4201?view=msvc-170
       target_compile_options(
-        ${CMAKE_PROJECT_NAME}
-        PRIVATE /MP
-                /W3
-                /WX
-                /wd4201
-                "$<$<CONFIG:RELWITHDEBINFO>:/Ob2>"
-                "$<$<CONFIG:DEBUG>:/DDEBUG=1;/D_DEBUG=1>"
-                /DUNICODE
-                /D_UNICODE
-                /D_CRT_SECURE_NO_WARNINGS
-                /D_CRT_NONSTDC_NO_WARNINGS)
+        ${CMAKE_PROJECT_NAME} PRIVATE /MP /W3 /WX /wd4201
+                                      $<$<CONFIG:RELWITHDEBINFO>:/Ob2>)
+      target_compile_definitions(
+        ${CMAKE_PROJECT_NAME} PRIVATE UNICODE _UNICODE _CRT_SECURE_NO_WARNINGS
+                                      _CRT_NONSTDC_NO_WARNINGS)
 
       # Set default Visual Studio linker options.
       #
@@ -614,8 +623,8 @@ else()
       target_link_options(
         ${CMAKE_PROJECT_NAME}
         PRIVATE
-        "LINKER:/OPT:REF"
-        "LINKER:/WX"
+        LINKER:/OPT:REF
+        LINKER:/WX
         "$<$<NOT:$<EQUAL:${CMAKE_SIZEOF_VOID_P},8>>:LINKER\:/SAFESEH\:NO>"
         "$<$<CONFIG:DEBUG>:LINKER\:/INCREMENTAL\:NO>"
         "$<$<CONFIG:RELWITHDEBINFO>:LINKER\:/INCREMENTAL\:NO;/OPT\:ICF>")
