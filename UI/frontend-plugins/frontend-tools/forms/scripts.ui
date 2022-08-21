@@ -53,10 +53,16 @@
           <layout class="QHBoxLayout" name="horizontalLayout_2">
            <item>
             <widget class="QPushButton" name="addScripts">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="maximumSize">
               <size>
-               <width>22</width>
-               <height>22</height>
+               <width>16777215</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="toolTip">
@@ -74,14 +80,23 @@
              <property name="themeID" stdset="0">
               <string notr="true">addIconSmall</string>
              </property>
+             <property name="toolButton" stdset="0">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="removeScripts">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="maximumSize">
               <size>
-               <width>22</width>
-               <height>22</height>
+               <width>16777215</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="toolTip">
@@ -99,14 +114,23 @@
              <property name="themeID" stdset="0">
               <string notr="true">removeIconSmall</string>
              </property>
+             <property name="toolButton" stdset="0">
+              <bool>true</bool>
+             </property>
             </widget>
            </item>
            <item>
             <widget class="QPushButton" name="reloadScripts">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
              <property name="maximumSize">
               <size>
-               <width>22</width>
-               <height>22</height>
+               <width>16777215</width>
+               <height>16777215</height>
               </size>
              </property>
              <property name="toolTip">
@@ -123,6 +147,9 @@
              </property>
              <property name="themeID" stdset="0">
               <string notr="true">refreshIconSmall</string>
+             </property>
+             <property name="toolButton" stdset="0">
+              <bool>true</bool>
              </property>
             </widget>
            </item>
@@ -184,14 +211,14 @@
            <property name="text">
             <string notr="true"/>
            </property>
-           <property name="openExternalLinks">
-            <bool>false</bool>
-           </property>
            <property name="wordWrap">
             <bool>true</bool>
            </property>
            <property name="margin">
             <number>12</number>
+           </property>
+           <property name="openExternalLinks">
+            <bool>false</bool>
            </property>
           </widget>
          </item>
