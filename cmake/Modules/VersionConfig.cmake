@@ -12,6 +12,30 @@ set(_OBS_BETA "0" "0" "0" "0")
 
 # Set full and canonical OBS version from current git tag or manual override
 if(NOT DEFINED OBS_VERSION_OVERRIDE)
+  if(NOT DEFINED RELEASE_CANDIDATE
+     AND NOT DEFINED BETA
+     AND EXISTS "${CMAKE_SOURCE_DIR}/.git")
+    execute_process(
+      COMMAND git describe --always --tags --dirty=-modified
+      OUTPUT_VARIABLE _OBS_VERSION
+      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
+      RESULT_VARIABLE _OBS_VERSION_RESULT
+      OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+    if(_OBS_VERSION_RESULT EQUAL 0)
+      if(${_OBS_VERSION} MATCHES "rc[0-9]+$")
+        set(RELEASE_CANDIDATE ${_OBS_VERSION})
+      elseif(${_OBS_VERSION} MATCHES "beta[0-9]+$")
+        set(BETA ${_OBS_VERSION})
+      else()
+        string(REPLACE "-" "." _CANONICAL_SPLIT ${_OBS_VERSION})
+        string(REPLACE "." ";" _CANONICAL_SPLIT ${_CANONICAL_SPLIT})
+        list(GET _CANONICAL_SPLIT 0 1 2 _OBS_VERSION_CANONICAL)
+        string(REPLACE "." ";" _OBS_VERSION ${_OBS_VERSION})
+      endif()
+    endif()
+  endif()
+
   # Set release candidate version information Must be a string in the format of
   # "x.x.x-rcx"
   if(DEFINED RELEASE_CANDIDATE)
@@ -26,24 +50,7 @@ if(NOT DEFINED OBS_VERSION_OVERRIDE)
     string(REPLACE "." ";" _OBS_VERSION ${BETA})
     string(REPLACE "." ";" _OBS_BETA ${_OBS_BETA})
     list(GET _OBS_BETA 0 1 2 _OBS_VERSION_CANONICAL)
-  elseif(EXISTS "${CMAKE_SOURCE_DIR}/.git")
-    execute_process(
-      COMMAND git describe --always --tags --dirty=-modified
-      OUTPUT_VARIABLE _OBS_VERSION
-      WORKING_DIRECTORY "${CMAKE_SOURCE_DIR}"
-      RESULT_VARIABLE _OBS_VERSION_RESULT
-      OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-    if(_OBS_VERSION_RESULT EQUAL 0)
-      string(REPLACE "-" "." _CANONICAL_SPLIT ${_OBS_VERSION})
-      string(REPLACE "." ";" _CANONICAL_SPLIT ${_CANONICAL_SPLIT})
-      list(GET _CANONICAL_SPLIT 0 1 2 _OBS_VERSION_CANONICAL)
-      string(REPLACE "." ";" _OBS_VERSION ${_OBS_VERSION})
-    else()
-      set(_OBS_VERSION "${_OBS_DEFAULT_VERSION}")
-      set(_OBS_VERSION_CANONICAL ${_OBS_DEFAULT_VERSION})
-    endif()
-  else()
+  elseif(NOT DEFINED _OBS_VERSION)
     set(_OBS_VERSION ${_OBS_DEFAULT_VERSION})
     set(_OBS_VERSION_CANONICAL ${_OBS_DEFAULT_VERSION})
   endif()
