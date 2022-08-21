@@ -1169,6 +1169,8 @@ VisibilityCheckBox::indicator:unchecked:hover {
 
 QPushButton#extraPanelDelete {
     background-color: palette(mid);
+    margin: 0;
+    padding: 0;
 }
 
 QPushButton#extraPanelDelete:hover {
