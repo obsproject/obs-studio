@@ -131,33 +131,39 @@ add_compile_definitions("$<$<CONFIG:DEBUG>:DEBUG=1>"
                         "$<$<CONFIG:DEBUG>:_DEBUG=1>")
 
 if(MSVC_CXX_ARCHITECTURE_ID)
-  string(TOLOWER ${MSVC_CXX_ARCHITECTURE_ID} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
+  string(TOLOWER ${MSVC_CXX_ARCHITECTURE_ID} _HOST_ARCH)
 else()
-  string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} LOWERCASE_CMAKE_SYSTEM_PROCESSOR)
+  string(TOLOWER ${CMAKE_SYSTEM_PROCESSOR} _HOST_ARCH)
 endif()
 
-if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES
-   "(i[3-6]86|x86|x64|x86_64|amd64|e2k)")
-  if(NOT MSVC AND NOT CMAKE_OSX_ARCHITECTURES STREQUAL "arm64")
+if(OS_MACOS)
+  list(FIND CMAKE_OSX_ARCHITECTURES arm64 _HAS_APPLE_TARGET)
+  if(_HAS_APPLE_TARGET GREATER_EQUAL 0 OR _HOST_ARCH STREQUAL arm64)
+    set(ARCH_SIMD_FLAGS -fopenmp-simd)
+    set(ARCH_SIMD_DEFINES SIMDE_ENABLE_OPENMP)
+  endif()
+  unset(_HAS_APPLE_TARGET)
+elseif(_HOST_ARCH MATCHES "(i[3-6]86|x86|x64|x86_64|amd64|e2k)")
+  if(NOT MSVC)
     set(ARCH_SIMD_FLAGS -mmmx -msse -msse2)
   endif()
-elseif(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "^(powerpc|ppc)64(le)?")
-  set(ARCH_SIMD_DEFINES -DNO_WARN_X86_INTRINSICS)
+elseif(_HOST_ARCH MATCHES "^(powerpc|ppc)64(le)?")
+  set(ARCH_SIMD_DEFINES NO_WARN_X86_INTRINSICS)
   set(ARCH_SIMD_FLAGS -mvsx)
 else()
-  if(CMAKE_C_COMPILER_ID MATCHES "^(Apple)?Clang|GNU"
-     OR CMAKE_CXX_COMPILER_ID MATCHES "^(Apple)?Clang|GNU")
-    check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
-    check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
-    set(ARCH_SIMD_FLAGS
-        -DSIMDE_ENABLE_OPENMP
-        "$<$<AND:$<COMPILE_LANGUAGE:C>,$<BOOL:C_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-        "$<$<AND:$<COMPILE_LANGUAGE:CXX>,$<BOOL:CXX_COMPILER_SUPPORTS_OPENMP_SIMD>>:-fopenmp-simd>"
-    )
-  endif()
+  set(ARCH_SIMD_DEFINES SIMDE_ENABLE_OPENMP)
+  check_c_compiler_flag("-fopenmp-simd" C_COMPILER_SUPPORTS_OPENMP_SIMD)
+  check_cxx_compiler_flag("-fopenmp-simd" CXX_COMPILER_SUPPORTS_OPENMP_SIMD)
+
+  foreach(_LANG C CXX)
+    if(CMAKE_${_LANG}_COMPILER_ID MATCHES "^(Apple)?Clang|GNU"
+       AND ${_LANG}_COMPILER_SUPPORTS_OPENMP_SIMD)
+      list(APPEND ARCH_SIMD_FLAGS $<$<COMPILE_LANGUAGE:${_LANG}>:-fopenmp-simd>)
+    endif()
+  endforeach()
 endif()
 
-if(LOWERCASE_CMAKE_SYSTEM_PROCESSOR MATCHES "e2k")
+if(_HOST_ARCH MATCHES "e2k")
   foreach(
     TEST_C_FLAG
     "-Wno-unused-parameter"
