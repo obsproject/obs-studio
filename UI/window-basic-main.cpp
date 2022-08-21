@@ -3509,8 +3509,11 @@ void OBSBasic::VolControlContextMenu()
 	popup.addAction(&filtersAction);
 	popup.addAction(&propertiesAction);
 	popup.addAction(&advPropAction);
-	popup.exec(QCursor::pos());
-	vol->SetContextMenu(nullptr);
+
+	// toggleControlLayoutAction deletes and re-creates the volume controls
+	// meaning that "vol" would be pointing to freed memory.
+	if (popup.exec(QCursor::pos()) != &toggleControlLayoutAction)
+		vol->SetContextMenu(nullptr);
 }
 
 void OBSBasic::on_hMixerScrollArea_customContextMenuRequested()
