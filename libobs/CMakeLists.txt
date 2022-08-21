@@ -313,7 +313,7 @@ if(OS_WINDOWS)
   target_link_libraries(libobs PRIVATE Avrt Dwmapi winmm)
 
   if(MSVC)
-    target_link_libraries(libobs PRIVATE OBS::w32-pthreads)
+    target_link_libraries(libobs PUBLIC OBS::w32-pthreads)
 
     target_compile_options(libobs PRIVATE "$<$<COMPILE_LANGUAGE:C>:/EHc->"
                                           "$<$<COMPILE_LANGUAGE:CXX>:/EHc->")
