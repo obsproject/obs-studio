@@ -1159,14 +1159,14 @@ static inline bool ffmpeg_mux_packet(struct ffmpeg_mux *ffm, uint8_t *buf,
 
 	int ret = av_interleaved_write_frame(ffm->output, ffm->packet);
 
-	if (ret < 0) {
-		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
-			ret, av_err2str(ret));
-	}
-
 	/* Treat "Invalid data found when processing input" and "Invalid argument" as non-fatal */
 	if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
 		return true;
+	}
+
+	if (ret < 0) {
+		fprintf(stderr, "av_interleaved_write_frame failed: %d: %s\n",
+			ret, av_err2str(ret));
 	}
 
 	return ret >= 0;
