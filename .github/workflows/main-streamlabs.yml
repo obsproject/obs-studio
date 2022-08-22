@@ -98,10 +98,11 @@ jobs:
           CefBuildConfig: Debug
     env:
       OS_TAG: "windows64"
-      CEF_VERSION: 4638
-      DEPS_VERSION: windows-deps-2022-01-31
+      CEF_VERSION: 5060
+      DEPS_VERSION: windows-deps-2022-08-02-x64
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
+      VLC_VERSION: vlc-3.0.0-git
     steps:
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1

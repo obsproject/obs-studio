@@ -6,12 +6,12 @@ set SUBDIR=build\deps
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS_VERSION%.zip
 set DEPS_DIR=%CD%\%SUBDIR%\deps_bin
 
-set VLCURL=https://obsproject.com/downloads/vlc.zip
+set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%VLC_VERSION%.zip
 set VLC_DIR=%CD%\%SUBDIR%\vlc
 
 set CEFURL=https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com
 set CefFileName=cef_binary_%CEF_VERSION%_windows_x64
-set CEFPATH=%CD%\%SUBDIR%\CEF\%CefFileName%
+set CEFPATH=%CD%\%SUBDIR%\%CefFileName%
 
 set OBS_VIRTUALCAM=obs-virtualsource_32bit
 set OBS_VIRTUALCAM_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%OBS_VIRTUALCAM%.zip
@@ -88,7 +88,10 @@ if exist CEF\ (
     echo "CEF already installed"
 ) else (
     if exist %CefFileName%.zip (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -z %CefFileName%.zip) else (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -C -)
-    7z x %CefFileName%.zip -aoa -oCEF
+    7z x %CefFileName%.zip -aoa -o%CefFileName%
+
+    rmdir %CEFPATH%\build /s /q
+    mkdir %CEFPATH%\build
 
     if "%CefBuildConfig%" == "Debug" (
         cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD" -DUSE_SANDBOX=false
