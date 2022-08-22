@@ -47,6 +47,13 @@
 
 #define AVIO_BUFFER_SIZE 65536
 
+#if defined(_WIN32) && !defined(ENABLE_FFMPEG_MUX_DEBUG)
+#define fprintf(...)
+#define printf(...)
+#define fflush(x)
+#define puts(x)
+#endif
+
 /* ------------------------------------------------------------------------- */
 
 static char *global_stream_key = "";
