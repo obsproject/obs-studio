@@ -3,7 +3,7 @@
 set WORK_DIR=%CD%
 set SUBDIR=build\deps
 
-set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS_VERSION%.zip
+set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%WIN_DEPS_VERSION%.zip
 set DEPS_DIR=%CD%\%SUBDIR%\deps_bin
 
 set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%VLC_VERSION%.zip

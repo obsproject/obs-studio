@@ -13,6 +13,7 @@ variables:
   MACOS_DEPS_VERSION: 2022-02-13
   VLC_VERSION: 3.0.8
   MIN_MACOS_VERSION: 10.13
+  WIN_DEPS_VERSION: windows-deps-2022-08-02-x64
 
 jobs:
 - job: 'Windows64'
