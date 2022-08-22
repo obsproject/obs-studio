@@ -23,7 +23,6 @@ cmake -H. ^
          -G"%CmakeGenerator%" -A x64 ^
          -DCMAKE_SYSTEM_VERSION=10.0 ^
          -DCMAKE_INSTALL_PREFIX="%CD%\%InstallPath%" ^
-         -DDepsPath="%DEPS_DIR%\win64" ^
          -DVLCPath="%VLC_DIR%" ^
          -DCEF_ROOT_DIR="%CEFPATH%" ^
          -DUSE_UI_LOOP=false ^
@@ -49,7 +48,8 @@ cmake -H. ^
          -DMEDIASOUP_SDP_INCLUDE_PATH=%MEDIASOUPCLIENT_DIR%/include/sdptransform ^
          -DProtobuf_DIR="%GRPC_DIST%\cmake" ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
-         -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc"
+         -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
+         -DCMAKE_PREFIX_PATH=%DEPS_DIR%
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
