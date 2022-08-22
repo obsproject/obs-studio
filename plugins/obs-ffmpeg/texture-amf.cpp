@@ -95,7 +95,6 @@ struct amf_base {
 	AMFBufferPtr header;
 
 	std::deque<AMFDataPtr> queued_packets;
-	int last_query_timeout_ms = 0;
 
 	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM amf_color_profile;
 	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM amf_characteristic;
@@ -500,6 +499,10 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 	}
 }
 
+#ifndef SEC_TO_NSEC
+#define SEC_TO_NSEC 1000000000ULL
+#endif
+
 static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 			    encoder_packet *packet, bool *received_packet)
 {
@@ -515,21 +518,21 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 		/* submit frame                        */
 
 		res = enc->amf_encoder->SubmitInput(amf_surf);
-		int timeout = 0;
 
 		if (res == AMF_OK || res == AMF_NEED_MORE_INPUT) {
 			waiting = false;
 
 		} else if (res == AMF_INPUT_FULL) {
-			timeout = 1;
+			os_sleep_ms(1);
 
+			uint64_t duration = os_gettime_ns() - ts_start;
+			constexpr uint64_t timeout = 5 * SEC_TO_NSEC;
+
+			if (duration >= timeout) {
+				throw amf_error("SubmitInput timed out", res);
+			}
 		} else {
 			throw amf_error("SubmitInput failed", res);
-		}
-
-		if (enc->last_query_timeout_ms != timeout) {
-			set_opt(QUERY_TIMEOUT, timeout);
-			enc->last_query_timeout_ms = timeout;
 		}
 
 		/* ----------------------------------- */
