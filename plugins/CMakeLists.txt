@@ -88,13 +88,10 @@ else()
 # obs_status(FATAL_ERROR "obs-websocket submodule not available.")
 endif()
 
-<<<<<<< HEAD
 if(WIN32)
 	# add_subdirectory(mediasoup-connector)
 endif()
 
-=======
->>>>>>> 03442ce67f35566963bc73a1ad00be2ccb9e50e5
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
 add_subdirectory(obs-libfdk)
