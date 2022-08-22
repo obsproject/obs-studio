@@ -8929,16 +8929,17 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 
 	int cx22_5 = cx * 225 / 1000;
 	int cx5 = cx * 5 / 100;
+	int cx21 = cx * 21 / 100;
 
 	cy = cy * 225 / 1000;
 
-	int mixerSize = cx - (cx22_5 * 2 + cx5 * 2);
+	int mixerSize = cx - (cx22_5 * 2 + cx5 + cx21);
 
 	QList<QDockWidget *> docks{ui->scenesDock, ui->sourcesDock,
 				   ui->mixerDock, ui->transitionsDock,
 				   ui->controlsDock};
 
-	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx5};
+	QList<int> sizes{cx22_5, cx22_5, mixerSize, cx5, cx21};
 
 	ui->scenesDock->setVisible(true);
 	ui->sourcesDock->setVisible(true);
