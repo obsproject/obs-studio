@@ -1,4 +1,4 @@
-set DEPS=windows-deps-2022-01-31
+set DEPS=windows-deps-2022-08-02-x64
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS%.zip
 set VLCURL=https://obsproject.com/downloads/vlc.zip
 set CEFURL=https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com
@@ -44,7 +44,6 @@ cmake -H. ^
          -A x64 ^
          -DCMAKE_SYSTEM_VERSION=10.0 ^
          -DCMAKE_INSTALL_PREFIX=%CD%\%InstallPath% ^
-         -DDepsPath=%CD%\build\%DEPS%\win64 ^
          -DVLCPath=%CD%\build\vlc ^
          -DCEF_ROOT_DIR=%CEFPATH% ^
          -DUSE_UI_LOOP=false ^
@@ -61,14 +60,15 @@ cmake -H. ^
          -DBROWSER_USE_STATIC_CRT=false ^
          -DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true ^
          -DCHECK_FOR_SERVICE_UPDATES=true ^
-         -DCMAKE_PREFIX_PATH=%USERPROFILE%\grpc\dist_%BuildConfig% ^
+         -DCMAKE_PREFIX_PATH=%USERPROFILE%\grpc\dist_%BuildConfig%;%CD%\build\%DEPS% ^
          -DWEBRTC_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/src ^
          -DWEBRTC_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/webrtc.lib ^
          -DMEDIASOUP_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/include ^
          -DMEDIASOUP_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/mediasoupclient.lib ^
          -DMEDIASOUP_SDP_LIB_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/sdptransform.lib ^
          -DMEDIASOUP_SDP_INCLUDE_PATH=%FORWARD_USERPROFILE%/webrtc/libmediasoupclient/deps/libsdptransform/include ^
-         -DOPENSSL_ROOT=%OPENSSL_ROOT%
+         -DOPENSSL_ROOT=%OPENSSL_ROOT% ^
+         -DBUILD_FOR_DISTRIBUTION=true
 
 cmake --build %CD%\build --target install --config %BuildConfig% -v
 
