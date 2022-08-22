@@ -1,9 +1,9 @@
 set DEPS=windows-deps-2022-08-02-x64
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%DEPS%.zip
-set VLCURL=https://obsproject.com/downloads/vlc.zip
+set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/vlc_3.0.0-git.zip
 set CEFURL=https://streamlabs-cef-dist.s3.us-west-2.amazonaws.com
 set CMakeGenerator=Visual Studio 16 2019
-set CefFileName=cef_binary_%CEF_VERSION%_windows_x64
+set CefFileName=cef_binary_5060_windows_x64
 set GPUPriority=1
 set OBS_VIRTUALCAM=obs-virtualsource_32bit
 set OBS_VIRTUALCAM_URL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%OBS_VIRTUALCAM%.zip
@@ -28,10 +28,10 @@ if exist %OBS_VIRTUALCAM%.zip (curl -kLO %OBS_VIRTUALCAM_URL% -f --retry 5 -z %O
 
 7z x %DEPS%.zip -aoa -o%DEPS%
 7z x vlc.zip -aoa -ovlc
-7z x %CefFileName%.zip -aoa -oCEF
+7z x %CefFileName%.zip -aoa -o%CefFileName%
 7z x %OBS_VIRTUALCAM%.zip -aoa -o%OBS_VIRTUALCAM%
 
-set CEFPATH=%CD%\CEF\%CefFileName%
+set CEFPATH=%CD%\%CefFileName%
 
 if "%CefBuildConfig%" == "Debug" (cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD" -DUSE_SANDBOX=false) else (cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD")
 cmake --build %CEFPATH%\build --config %CefBuildConfig% --target libcef_dll_wrapper -v
