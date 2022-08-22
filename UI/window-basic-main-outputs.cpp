@@ -181,7 +181,7 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 				  Q_ARG(int, code));
 
 	obs_output_set_media(output->virtualCam, nullptr, nullptr);
-	OBSBasicVCamConfig::StopVideo();
+	output->DestroyVirtualCamView();
 }
 
 /* ------------------------------------------------------------------------ */
@@ -229,23 +229,30 @@ inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 
 bool BasicOutputHandler::StartVirtualCam()
 {
-	if (main->vcamEnabled) {
-		video_t *video = OBSBasicVCamConfig::StartVideo();
-		if (!video)
+	if (!main->vcamEnabled)
+		return false;
+
+	if (!virtualCamView)
+		virtualCamView = obs_view_create();
+
+	UpdateVirtualCamOutputSource();
+
+	if (!virtualCamVideo) {
+		virtualCamVideo = obs_view_add(virtualCamView);
+
+		if (!virtualCamVideo)
 			return false;
-
-		obs_output_set_media(virtualCam, video, obs_get_audio());
-		if (!Active())
-			SetupOutputs();
-
-		bool success = obs_output_start(virtualCam);
-
-		if (!success)
-			OBSBasicVCamConfig::StopVideo();
-
-		return success;
 	}
-	return false;
+
+	obs_output_set_media(virtualCam, virtualCamVideo, obs_get_audio());
+	if (!Active())
+		SetupOutputs();
+
+	bool success = obs_output_start(virtualCam);
+	if (!success)
+		DestroyVirtualCamView();
+
+	return success;
 }
 
 void BasicOutputHandler::StopVirtualCam()
@@ -261,6 +268,85 @@ bool BasicOutputHandler::VirtualCamActive() const
 		return obs_output_active(virtualCam);
 	}
 	return false;
+}
+
+void BasicOutputHandler::UpdateVirtualCamOutputSource()
+{
+	if (!main->vcamEnabled || !virtualCamView)
+		return;
+
+	OBSSourceAutoRelease source;
+
+	switch (main->vcamConfig.type) {
+	case VCamOutputType::InternalOutput:
+		switch (main->vcamConfig.internal) {
+		case VCamInternalType::Default:
+			source = obs_get_output_source(0);
+			break;
+		case VCamInternalType::Preview:
+			OBSSource s = main->GetCurrentSceneSource();
+			obs_source_get_ref(s);
+			source = s.Get();
+			break;
+		}
+		break;
+	case VCamOutputType::SceneOutput:
+		source = obs_get_source_by_name(main->vcamConfig.scene.c_str());
+		break;
+	case VCamOutputType::SourceOutput:
+		OBSSource s =
+			obs_get_source_by_name(main->vcamConfig.source.c_str());
+
+		if (!vCamSourceScene)
+			vCamSourceScene =
+				obs_scene_create_private("vcam_source");
+		source = obs_source_get_ref(
+			obs_scene_get_source(vCamSourceScene));
+
+		if (vCamSourceSceneItem &&
+		    (obs_sceneitem_get_source(vCamSourceSceneItem) != s)) {
+			obs_sceneitem_remove(vCamSourceSceneItem);
+			vCamSourceSceneItem = nullptr;
+		}
+
+		if (!vCamSourceSceneItem) {
+			vCamSourceSceneItem = obs_scene_add(vCamSourceScene, s);
+			obs_source_release(s);
+
+			obs_sceneitem_set_bounds_type(vCamSourceSceneItem,
+						      OBS_BOUNDS_SCALE_INNER);
+			obs_sceneitem_set_bounds_alignment(vCamSourceSceneItem,
+							   OBS_ALIGN_CENTER);
+
+			const struct vec2 size = {
+				(float)obs_source_get_width(source),
+				(float)obs_source_get_height(source),
+			};
+			obs_sceneitem_set_bounds(vCamSourceSceneItem, &size);
+		}
+		break;
+	}
+
+	OBSSourceAutoRelease current = obs_view_get_source(virtualCamView, 0);
+	if (source != current)
+		obs_view_set_source(virtualCamView, 0, source);
+}
+
+void BasicOutputHandler::DestroyVirtualCamView()
+{
+	obs_view_remove(virtualCamView);
+	obs_view_set_source(virtualCamView, 0, nullptr);
+	virtualCamVideo = nullptr;
+
+	obs_view_destroy(virtualCamView);
+	virtualCamView = nullptr;
+
+	if (!vCamSourceScene)
+		return;
+
+	obs_scene_release(vCamSourceScene);
+	vCamSourceScene = nullptr;
+	vCamSourceSceneItem = nullptr;
 }
 
 /* ------------------------------------------------------------------------ */
