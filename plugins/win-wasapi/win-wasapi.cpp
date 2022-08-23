@@ -21,6 +21,7 @@
 using namespace std;
 
 #define OPT_DEVICE_ID "device_id"
+#define OPT_DEVICE_NAME "device_name"
 #define OPT_USE_DEVICE_TIMING "use_device_timing"
 
 static void GetWASAPIDefaults(obs_data_t *settings);
@@ -99,7 +100,6 @@ class WASAPISource {
 	obs_source_t *source;
 	wstring default_id;
 	string device_id;
-	string device_name;
 	PFN_RtwqUnlockWorkQueue rtwq_unlock_work_queue = NULL;
 	PFN_RtwqLockSharedWorkQueue rtwq_lock_shared_work_queue = NULL;
 	PFN_RtwqCreateAsyncResult rtwq_create_async_result = NULL;
@@ -214,6 +214,8 @@ class WASAPISource {
 public:
 	WASAPISource(obs_data_t *settings, obs_source_t *source_, bool input);
 	~WASAPISource();
+
+	string device_name;
 
 	void Update(obs_data_t *settings);
 
@@ -1251,7 +1253,7 @@ static void UpdateWASAPISource(void *obj, obs_data_t *settings)
 	static_cast<WASAPISource *>(obj)->Update(settings);
 }
 
-static obs_properties_t *GetWASAPIProperties(bool input)
+static obs_properties_t *GetWASAPIProperties(bool input, WASAPISource *source)
 {
 	obs_properties_t *props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
@@ -1275,17 +1277,23 @@ static obs_properties_t *GetWASAPIProperties(bool input)
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 				obs_module_text("UseDeviceTiming"));
 
+	if (source) {
+		auto p = obs_properties_add_text(props, OPT_DEVICE_NAME,
+					source->device_name.c_str(), OBS_TEXT_DEFAULT);
+		obs_property_set_visible(p, false);
+	}
+
 	return props;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void *)
+static obs_properties_t *GetWASAPIPropertiesInput(void *obj)
 {
-	return GetWASAPIProperties(true);
+	return GetWASAPIProperties(true, static_cast<WASAPISource *>(obj));
 }
 
-static obs_properties_t *GetWASAPIPropertiesOutput(void *)
+static obs_properties_t *GetWASAPIPropertiesOutput(void *obj)
 {
-	return GetWASAPIProperties(false);
+	return GetWASAPIProperties(false, static_cast<WASAPISource *>(obj));
 }
 
 void RegisterWASAPIInput()
