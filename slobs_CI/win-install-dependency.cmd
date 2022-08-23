@@ -1,5 +1,4 @@
 
-
 set WORK_DIR=%CD%
 set SUBDIR=build\deps
 
@@ -89,17 +88,6 @@ if exist CEF\ (
 ) else (
     if exist %CefFileName%.zip (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -z %CefFileName%.zip) else (curl -kLO %CEFURL%/%CefFileName%.zip -f --retry 5 -C -)
     7z x %CefFileName%.zip -aoa -o%CefFileName%
-
-    rmdir %CEFPATH%\build /s /q
-    mkdir %CEFPATH%\build
-
-    if "%CefBuildConfig%" == "Debug" (
-        cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD" -DUSE_SANDBOX=false
-    ) else (
-        cmake -G"%CMakeGenerator%" -A x64 -H%CEFPATH% -B%CEFPATH%\build -DCEF_RUNTIME_LIBRARY_FLAG="/MD"
-    )
-
-    cmake --build %CEFPATH%\build --config %CefBuildConfig% --target libcef_dll_wrapper -v
 )
 
 cd "%WORK_DIR%"

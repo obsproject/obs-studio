@@ -50,24 +50,26 @@ else()
     NAMES cef libcef cef.lib libcef.o "Chromium Embedded Framework"
     PATHS ${CEF_ROOT_DIR} ${CEF_ROOT_DIR}/Release)
 
-  find_library(
-    CEFWRAPPER_LIBRARY
-    NAMES cef_dll_wrapper libcef_dll_wrapper
-    PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
-          ${CEF_ROOT_DIR}/build/libcef_dll
-          ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
-
-  if(OS_WINDOWS)
-    find_library(
-      CEFWRAPPER_LIBRARY_DEBUG
-      NAMES cef_dll_wrapper libcef_dll_wrapper
-      PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Debug
-            ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Debug)
-  endif()
+if(DEFINED CMAKE_BUILD_TYPE)
+    if(CMAKE_BUILD_TYPE STREQUAL "Debug")
+      find_library(
+        CEFWRAPPER_LIBRARY
+        NAMES cef_dll_wrapper libcef_dll_wrapper
+        PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Debug
+              ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Debug
+              ${CEF_ROOT_DIR}/build/libcef_dll
+              ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
+    else()
+      find_library(
+        CEFWRAPPER_LIBRARY
+        NAMES cef_dll_wrapper libcef_dll_wrapper
+        PATHS ${CEF_ROOT_DIR}/build/libcef_dll/Release
+              ${CEF_ROOT_DIR}/build/libcef_dll_wrapper/Release
+              ${CEF_ROOT_DIR}/build/libcef_dll
+              ${CEF_ROOT_DIR}/build/libcef_dll_wrapper)
+    endif()
 endif()
-
-mark_as_advanced(CEFWRAPPER_LIBRARY CEFWRAPPER_LIBRARY_DEBUG)
+endif()
 
 if(NOT CEF_LIBRARY)
   message(

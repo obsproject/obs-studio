@@ -36,7 +36,7 @@ cmake -H. ^
          -DBUILD_BROWSER=true ^
          -DBROWSER_FRONTEND_API_SUPPORT=false ^
          -DBROWSER_PANEL_SUPPORT=false ^
-         -DBROWSER_USE_STATIC_CRT=false ^
+         -DBROWSER_USE_STATIC_CRT=true ^
          -DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true ^
          -DCHECK_FOR_SERVICE_UPDATES=true ^
          -DOPENSSL_ROOT_DIR=%OPENSSL_LOCAL_PATH% ^
@@ -49,7 +49,8 @@ cmake -H. ^
          -DProtobuf_DIR="%GRPC_DIST%\cmake" ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
          -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
-         -DCMAKE_PREFIX_PATH=%DEPS_DIR%
+         -DCMAKE_PREFIX_PATH=%DEPS_DIR% ^
+         -DCMAKE_BUILD_TYPE=%BuildConfig%
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
