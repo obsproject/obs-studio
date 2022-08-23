@@ -4,7 +4,7 @@ set WORK_DIR=%CD%
 set SUBDIR=build\deps
 
 set DepsURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%WIN_DEPS_VERSION%.zip
-set DEPS_DIR=%CD%\%SUBDIR%\deps_bin
+set DEPS_DIR=%CD%\%SUBDIR%\%WIN_DEPS_VERSION%
 
 set VLCURL=https://obs-studio-deployment.s3-us-west-2.amazonaws.com/%VLC_VERSION%.zip
 set VLC_DIR=%CD%\%SUBDIR%\vlc
@@ -52,8 +52,8 @@ if exist webrtc_dist\ (
 if exist deps_bin\ (
     echo "OBS binary dependencies already installed"
 ) else (
-    if exist %DEPS_VERSION%.zip (curl -kLO %DepsURL% -f --retry 5 -z %DEPS_VERSION%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
-    7z x %DEPS_VERSION%.zip -aoa -odeps_bin
+    if exist %WIN_DEPS_VERSION%.zip (curl -kLO %DepsURL% -f --retry 5 -z %WIN_DEPS_VERSION%.zip) else (curl -kLO %DepsURL% -f --retry 5 -C -)
+    7z x %WIN_DEPS_VERSION%.zip -aoa -o%WIN_DEPS_VERSION%
 )
 
 if exist grpc_dist\ (
