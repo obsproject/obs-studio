@@ -27,6 +27,7 @@
 #include <iwscapi.h>
 
 static uint32_t win_ver = 0;
+static uint32_t win_build = 0;
 
 const char *get_module_extension(void)
 {
@@ -223,16 +224,16 @@ static void log_gaming_features(void)
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_BAR_REG_KEY,
 		      L"HistoricalCaptureEnabled", &game_dvr_bg_recording);
 	get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-		      L"AllowAutoGameMode", &game_mode_enabled);
+		      L"AutoGameModeEnabled", &game_mode_enabled);
 	get_reg_dword(HKEY_LOCAL_MACHINE, WIN10_HAGS_REG_KEY, L"HwSchMode",
 		      &hags_enabled);
 
 	if (game_mode_enabled.status != ERROR_SUCCESS) {
 		get_reg_dword(HKEY_CURRENT_USER, WIN10_GAME_MODE_REG_KEY,
-			      L"AutoGameModeEnabled", &game_mode_enabled);
+			      L"AllowAutoGameMode", &game_mode_enabled);
 	}
 
-	blog(LOG_INFO, "Windows 10 Gaming Features:");
+	blog(LOG_INFO, "Windows 10/11 Gaming Features:");
 	if (game_bar_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Bar: %s",
 		     (bool)game_bar_enabled.return_value ? "On" : "Off");
@@ -256,11 +257,18 @@ static void log_gaming_features(void)
 	if (game_mode_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tGame Mode: %s",
 		     (bool)game_mode_enabled.return_value ? "On" : "Off");
+	} else if (win_build >= 19042) {
+		// On by default in newer Windows 10 builds (no registry key set)
+		blog(LOG_INFO, "\tGame Mode: Probably On (no reg key set)");
 	}
 
 	if (hags_enabled.status == ERROR_SUCCESS) {
 		blog(LOG_INFO, "\tHardware GPU Scheduler: %s",
 		     (hags_enabled.return_value == 2) ? "On" : "Off");
+	} else if (win_build >= 22000) {
+		// On by default in Windows 11 (no registry key set)
+		blog(LOG_INFO,
+		     "\tHardware GPU Scheduler: Probably On (no reg key set)");
 	}
 }
 
@@ -393,6 +401,7 @@ void log_system_info(void)
 	get_win_ver(&ver);
 
 	win_ver = (ver.major << 8) | ver.minor;
+	win_build = ver.build;
 
 	log_processor_info();
 	log_processor_cores();
