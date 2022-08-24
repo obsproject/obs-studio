@@ -1,6 +1,10 @@
 project(rtmp-services)
 
 option(ENABLE_SERVICE_UPDATES "Checks for service updates" OFF)
+if(NOT ENABLE_SERVICE_UPDATES)
+  obs_status(DISABLED "Checks for service updates")
+  return()
+endif()
 
 set(RTMP_SERVICES_URL
     "https://obsproject.com/obs2_update/rtmp-services"

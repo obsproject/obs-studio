@@ -6,6 +6,10 @@ if(NOT DEFINED ENABLE_RTMPS)
       CACHE STRING "Enable RTMPS support with mbedTLS" FORCE)
   set_property(CACHE ENABLE_RTMPS PROPERTY STRINGS AUTO ON OFF)
 endif()
+if(NOT ENABLE_RTMPS)
+  obs_status(DISABLED "RTMPS support with mbedTLS")
+  return()
+endif()
 
 option(ENABLE_STATIC_MBEDTLS "Enable statically linking mbedTLS into binary"
        OFF)
