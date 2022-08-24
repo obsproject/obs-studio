@@ -149,12 +149,24 @@ QToolTip {
 }
 
 /* Context Menu */
-QMenu::item:disabled {
-    color: rgb(153,153,153);
+
+QMenu::icon {
+    left: 4px;
+}
+
+QMenu::separator {
+    background: palette(button);
+    height: 1px;
+    margin: 3px 6px;
 }
 
 QMenu::item:disabled {
+    color: rgb(153,153,153);
     background: transparent;
+}
+
+QMenu::right-arrow {
+    image: url(./Dark/expand.svg);
 }
 
 /* Top Menu Bar Items */
@@ -171,11 +183,13 @@ QListWidget::item {
     color: palette(text);
 }
 
+QMenu,
 SceneTree,
 SourceTree {
     padding: 3px;
 }
 
+QMenu::item,
 SceneTree::item,
 SourceTree::item {
     border-radius: 4px;
@@ -184,15 +198,18 @@ SourceTree::item {
 	border: 0px solid transparent;
 }
 
+QMenu::item:selected,
 QListWidget::item:selected,
 SceneTree::item:selected,
 SourceTree::item:selected {
     background-color: rgb(40,76,184);
 }
 
+QMenu::item:hover,
 QListWidget::item:hover,
 SceneTree::item:hover,
 SourceTree::item:hover,
+QMenu::item:selected:hover,
 QListWidget::item:selected:hover,
 SceneTree::item:selected:hover,
 SourceTree::item:selected:hover {
@@ -213,7 +230,7 @@ SourceTree QLineEdit {
     padding-bottom: 2px;
     margin: 0px;
     border: 1px solid #FFF;
-    border-radius: 2px;
+    border-radius: 4px;
 }
 
 QListWidget QLineEdit:focus,
@@ -320,8 +337,8 @@ QGroupBox {
 
 QGroupBox::title {
     subcontrol-origin: margin;
-    left: 4px;
-    top: 4px;
+    left: 8px;
+    top: 8px;
 }
 
 
@@ -428,7 +445,7 @@ QToolButton {
     background-color: rgb(67,67,67);
     padding: 4px 6px;
     margin: 0px 2px;
-    border-radius: 2px;
+    border-radius: 4px;
 }
 
 QPushButton[toolButton="true"]:last-child,
@@ -572,7 +589,7 @@ QDateTimeEdit {
     background-color: rgb(67,67,67);
     border-style: solid;
     border: 1px;
-    border-radius: 3px;
+    border-radius: 4px;
     border-color: rgb(67,67,67);
     padding: 4px;
     padding-left: 10px;
@@ -610,8 +627,8 @@ QComboBox:editable:hover {
 
 QComboBox::drop-down:editable,
 QDateTimeEdit::drop-down:editable {
-    border-top-right-radius: 3px;
-    border-bottom-right-radius: 3px;
+    border-top-right-radius: 4px;
+    border-bottom-right-radius: 4px;
 }
 
 QComboBox::down-arrow:editable,
@@ -626,7 +643,7 @@ QDateTimeEdit::down-arrow:editable {
 QLineEdit, QTextEdit, QPlainTextEdit {
     background-color: palette(button);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 5px 2px 5px 7px;
     border: 2px solid transparent;
 }
@@ -1373,7 +1390,7 @@ OBSYoutubeActions {
     color: palette(text);
     background-color: palette(button);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     padding: 4px 20px;
 }
 
@@ -1412,7 +1429,7 @@ QCalendarWidget QWidget#qt_calendar_navigationbar {
 QCalendarWidget QToolButton {
     background-color: palette(button);
     padding: 2px 16px;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 2px;
 }
 
@@ -1439,7 +1456,7 @@ QCalendarWidget #qt_calendar_nextmonth {
 
 QCalendarWidget QToolButton:hover {
     background-color: rgb(89,89,89);
-    border-radius: 3px;
+    border-radius: 4px;
 }
 
 QCalendarWidget QToolButton:pressed {
@@ -1454,7 +1471,7 @@ QCalendarWidget QMenu {
 QCalendarWidget QSpinBox {
     background-color: rgb(28,28,28);
     border: none;
-    border-radius: 3px;
+    border-radius: 4px;
     margin: 0px 3px 0px 0px;
     padding: 4px 16px;
 }
