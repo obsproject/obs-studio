@@ -19,11 +19,31 @@
 #include "obs.h"
 #include "obs-internal.h"
 
+#if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN 1
+#endif
+#include <Windows.h>
+#endif
+
 bool obs_display_init(struct obs_display *display,
 		      const struct gs_init_data *graphics_data)
 {
 	pthread_mutex_init_value(&display->draw_callbacks_mutex);
 	pthread_mutex_init_value(&display->draw_info_mutex);
+
+#if defined(_WIN32)
+	/* Conservative test for NVIDIA flickering on Intel display */
+	SYSTEM_POWER_STATUS status;
+	display->use_clear_workaround =
+		!GetSystemPowerStatus(&status) ||
+		(status.BatteryFlag != 128 && gs_get_adapter_count() != 1);
+#elif defined(__APPLE__)
+	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
+	display->use_clear_workaround = true;
+#else
+	display->use_clear_workaround = false;
+#endif
 
 	if (graphics_data) {
 		display->swap = gs_swapchain_create(graphics_data);
@@ -166,9 +186,6 @@ void obs_display_remove_draw_callback(obs_display_t *display,
 	pthread_mutex_unlock(&display->draw_callbacks_mutex);
 }
 
-/* NVIDIA clear can sometimes cause flickering */
-#define NVIDIA_BROKEN_CLEAR 1
-
 static inline bool render_display_begin(struct obs_display *display,
 					uint32_t cx, uint32_t cy,
 					bool update_color_space)
@@ -196,10 +213,12 @@ static inline bool render_display_begin(struct obs_display *display,
 					    display->background_color);
 		clear_color.w = 1.0f;
 
-#if !NVIDIA_BROKEN_CLEAR
-		gs_clear(GS_CLEAR_COLOR | GS_CLEAR_DEPTH | GS_CLEAR_STENCIL,
-			 &clear_color, 1.0f, 0);
-#endif
+		const bool use_clear_workaround = display->use_clear_workaround;
+
+		uint32_t clear_flags = GS_CLEAR_DEPTH | GS_CLEAR_STENCIL;
+		if (!use_clear_workaround)
+			clear_flags |= GS_CLEAR_COLOR;
+		gs_clear(clear_flags, &clear_color, 1.0f, 0);
 
 		gs_enable_depth_test(false);
 		/* gs_enable_blending(false); */
@@ -208,14 +227,15 @@ static inline bool render_display_begin(struct obs_display *display,
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
 		gs_set_viewport(0, 0, cx, cy);
 
-#if NVIDIA_BROKEN_CLEAR
-		gs_effect_t *const solid_effect = obs->video.solid_effect;
-		gs_effect_set_vec4(gs_effect_get_param_by_name(solid_effect,
-							       "color"),
-				   &clear_color);
-		while (gs_effect_loop(solid_effect, "Solid"))
-			gs_draw_sprite(NULL, 0, cx, cy);
-#endif
+		if (use_clear_workaround) {
+			gs_effect_t *const solid_effect =
+				obs->video.solid_effect;
+			gs_effect_set_vec4(gs_effect_get_param_by_name(
+						   solid_effect, "color"),
+					   &clear_color);
+			while (gs_effect_loop(solid_effect, "Solid"))
+				gs_draw_sprite(NULL, 0, cx, cy);
+		}
 	}
 
 	return success;
