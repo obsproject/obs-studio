@@ -189,11 +189,17 @@ SourceTree {
     padding: 3px;
 }
 
+SourceTreeItem,
+QMenu::item,
+SceneTree::item {
+    padding: 6px;
+}
+
+SourceTreeItem,
 QMenu::item,
 SceneTree::item,
 SourceTree::item {
     border-radius: 4px;
-    padding: 6px;
     color: palette(text);
 	border: 0px solid transparent;
 }
