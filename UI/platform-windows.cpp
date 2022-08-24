@@ -176,33 +176,6 @@ uint32_t GetWindowsBuild()
 	return build;
 }
 
-void SetAeroEnabled(bool enable)
-{
-	static HRESULT(WINAPI * func)(UINT) = nullptr;
-	static bool failed = false;
-
-	if (!func) {
-		if (failed) {
-			return;
-		}
-
-		HMODULE dwm = LoadLibraryW(L"dwmapi");
-		if (!dwm) {
-			failed = true;
-			return;
-		}
-
-		func = reinterpret_cast<decltype(func)>(
-			GetProcAddress(dwm, "DwmEnableComposition"));
-		if (!func) {
-			failed = true;
-			return;
-		}
-	}
-
-	func(enable ? DWM_EC_ENABLECOMPOSITION : DWM_EC_DISABLECOMPOSITION);
-}
-
 bool IsAlwaysOnTop(QWidget *window)
 {
 	DWORD exStyle = GetWindowLong((HWND)window->winId(), GWL_EXSTYLE);
