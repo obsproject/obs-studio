@@ -1893,15 +1893,6 @@ void OBSBasic::OBSInit()
 					  Qt::QueuedConnection,
 					  Q_ARG(bool, previewEnabled));
 
-#ifdef _WIN32
-	uint32_t winVer = GetWindowsVersion();
-	if (winVer > 0 && winVer < 0x602) {
-		bool disableAero =
-			config_get_bool(basicConfig, "Video", "DisableAero");
-		SetAeroEnabled(!disableAero);
-	}
-#endif
-
 	RefreshSceneCollections();
 	RefreshProfiles();
 	disableSaving--;
@@ -2716,17 +2707,6 @@ OBSBasic::~OBSBasic()
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
 			ui->lockDocks->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
-
-#ifdef _WIN32
-	uint32_t winVer = GetWindowsVersion();
-	if (winVer > 0 && winVer < 0x602) {
-		bool disableAero =
-			config_get_bool(basicConfig, "Video", "DisableAero");
-		if (disableAero) {
-			SetAeroEnabled(true);
-		}
-	}
-#endif
 
 #ifdef BROWSER_AVAILABLE
 	DestroyPanelCookieManager();
