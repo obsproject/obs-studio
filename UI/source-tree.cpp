@@ -1088,6 +1088,8 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 	connect(App(), &OBSApp::StyleChanged, this,
 		&SourceTree::UpdateNoSourcesMessage);
 	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateIcons);
+
+	setItemDelegate(new SourceTreeDelegate(this));
 }
 
 void SourceTree::UpdateIcons()
@@ -1742,4 +1744,18 @@ void SourceTree::paintEvent(QPaintEvent *event)
 	} else {
 		QListView::paintEvent(event);
 	}
+}
+
+SourceTreeDelegate::SourceTreeDelegate(QObject *parent)
+	: QStyledItemDelegate(parent)
+{
+}
+
+QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &,
+				   const QModelIndex &index) const
+{
+	SourceTree *tree = qobject_cast<SourceTree *>(parent());
+	QWidget *item = tree->indexWidget(index);
+
+	return (QSize(item->width(), item->height()));
 }
