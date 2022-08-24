@@ -50,7 +50,8 @@ cmake -H. ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
          -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
          -DCMAKE_PREFIX_PATH=%DEPS_DIR% ^
-         -DCMAKE_BUILD_TYPE=%BuildConfig%
+         -DCMAKE_BUILD_TYPE=%BuildConfig% ^
+         -DBUILD_FOR_DISTRIBUTION=true
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 

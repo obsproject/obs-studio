@@ -1096,6 +1096,9 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 			purge(stream);
 	}
 
+	if (!stream->packets.size || stream->keyframes <= 2)
+		return;
+
 	while ((pkt->dts_usec - stream->cur_time) > stream->max_time
 		&& stream->cur_size)
 		purge(stream);

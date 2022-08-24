@@ -212,15 +212,12 @@ static inline void init_cache(struct video_output *video)
 	if (video->info.cache_size > MAX_CACHE_SIZE)
 		video->info.cache_size = MAX_CACHE_SIZE;
 
-       for (enum obs_audio_rendering_mode mode = OBS_MAIN_VIDEO_RENDERING;
-	     mode <= OBS_RECORDING_VIDEO_RENDERING; mode++) {
-		for (size_t i = 0; i < video->info.cache_size; i++) {
-			struct video_frame *frame;
-			frame = (struct video_frame *)&video->cache[i];
+	for (size_t i = 0; i < video->info.cache_size; i++) {
+		struct video_frame *frame;
+		frame = (struct video_frame *)&video->cache[i];
 
-			video_frame_init(frame, video->info.format,
-					 video->info.width, video->info.height);
-		}
+		video_frame_init(frame, video->info.format, video->info.width,
+				 video->info.height);
 	}
 
 	video->available_frames = video->info.cache_size;
@@ -279,12 +276,8 @@ void video_output_close(video_t *video)
 		video_input_free(&video->inputs.array[i]);
 	da_free(video->inputs);
 
-	for (enum obs_audio_rendering_mode mode = OBS_MAIN_AUDIO_RENDERING;
-	     mode <= OBS_RECORDING_AUDIO_RENDERING; mode++) {
-		for (size_t i = 0; i < video->info.cache_size; i++)
-			video_frame_free(
-				(struct video_frame *)&video->cache[i]);
-	}
+	for (size_t i = 0; i < video->info.cache_size; i++)
+		video_frame_free((struct video_frame *)&video->cache[i]);
 
 	bfree(video);
 }

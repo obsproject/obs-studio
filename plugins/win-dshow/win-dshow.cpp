@@ -1343,7 +1343,7 @@ inline void DShowInput::Deactivate()
 	device.ResetGraph();
 	device.ReleaseAccess();
 
-	obs_source_output_video(source, nullptr);
+	obs_source_output_video2(source, nullptr);
 }
 
 /* ------------------------------------------------------------------------- */
