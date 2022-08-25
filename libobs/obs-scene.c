@@ -1504,37 +1504,6 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			if (source_ts && (!timestamp || source_ts < timestamp))
 				timestamp = source_ts;
 		}
-		
-		if (obs_get_multiple_rendering()) {
-			switch (obs_get_audio_rendering_mode()) {
-			case OBS_MAIN_AUDIO_RENDERING: {
-				if (!obs_source_audio_pending(source) &&
-				    item->visible) {
-					render_item_audio(item, &timestamp);
-				}
-				break;
-			}
-			case OBS_STREAMING_AUDIO_RENDERING: {
-				if (!obs_source_audio_pending(source) &&
-				    item->visible && item->stream_visible) {
-					render_item_audio(item, &timestamp);
-				}
-				break;
-			}
-			case OBS_RECORDING_AUDIO_RENDERING: {
-				if (!obs_source_audio_pending(source) &&
-				    item->visible && item->recording_visible) {
-					render_item_audio(item, &timestamp);
-				}
-				break;
-			}
-			}
-		} else {
-			if (!obs_source_audio_pending(source) &&
-			    item->visible) {
-				render_item_audio(item, &timestamp);
-			}
-		}
 
 		item = item->next;
 	}

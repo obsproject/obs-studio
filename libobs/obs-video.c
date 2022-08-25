@@ -220,8 +220,8 @@ static inline gs_texture_t *
 render_output_texture(struct obs_core_video_mix *mix)
 {
 	struct obs_core_video *video = &obs->video;
-	gs_texture_t *texture = video->main_mix->render_texture;
-	gs_texture_t *target = video->main_mix->output_texture;
+	gs_texture_t *texture = mix->render_texture;
+	gs_texture_t *target = mix->output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
 

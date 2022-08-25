@@ -78,7 +78,7 @@ void gs_texture_2d::BackupTexture(const uint8_t *const *data)
 	}
 }
 
-void gs_texture_2d::GetSharedHandle(IDXGIResource * dxgi_res)
+void gs_texture_2d::GetSharedHandle(IDXGIResource *dxgi_res)
 {
 	HANDLE handle;
 	HRESULT hr;

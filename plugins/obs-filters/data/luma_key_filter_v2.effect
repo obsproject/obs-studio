@@ -39,7 +39,7 @@ float4 PSALumaKeyRGBA(VertData v_in) : TARGET
 
 	float amask = clo * chi;
 	rgba.a *= amask;
-	rgba.rbg *= rgba.a;
+	rgba.rbg *= rgb.a;
 
 	return rgba;
 }
