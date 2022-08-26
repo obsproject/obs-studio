@@ -151,8 +151,12 @@ static void hdr_tonemap_filter_render(void *data, gs_effect_t *effect)
 	enum gs_color_space source_space = obs_source_get_color_space(
 		obs_filter_get_target(filter->context),
 		OBS_COUNTOF(preferred_spaces), preferred_spaces);
-	if (source_space == GS_CS_709_EXTENDED) {
-		float multiplier = obs_get_video_sdr_white_level();
+	switch (source_space) {
+	case GS_CS_709_EXTENDED:
+	case GS_CS_709_SCRGB: {
+		float multiplier = (source_space == GS_CS_709_EXTENDED)
+					   ? obs_get_video_sdr_white_level()
+					   : 80.f;
 		multiplier *= (filter->transform == TRANSFORM_SDR_REINHARD)
 				      ? filter->sdr_white_level_nits_i
 				      : 0.0001f;
@@ -184,7 +188,9 @@ static void hdr_tonemap_filter_render(void *data, gs_effect_t *effect)
 
 			gs_blend_state_pop();
 		}
-	} else {
+		break;
+	}
+	default:
 		obs_source_skip_video_filter(filter->context);
 	}
 }
@@ -205,13 +211,16 @@ hdr_tonemap_filter_get_color_space(void *data, size_t count,
 		OBS_COUNTOF(potential_spaces), potential_spaces);
 
 	enum gs_color_space space = source_space;
-	if ((source_space == GS_CS_709_EXTENDED) &&
-	    (filter->transform == TRANSFORM_SDR_REINHARD)) {
-		space = GS_CS_SRGB;
-		for (size_t i = 0; i < count; ++i) {
-			if (preferred_spaces[i] != GS_CS_SRGB) {
-				space = GS_CS_SRGB_16F;
-				break;
+	switch (source_space) {
+	case GS_CS_709_EXTENDED:
+	case GS_CS_709_SCRGB:
+		if (filter->transform == TRANSFORM_SDR_REINHARD) {
+			space = GS_CS_SRGB;
+			for (size_t i = 0; i < count; ++i) {
+				if (preferred_spaces[i] != GS_CS_SRGB) {
+					space = GS_CS_SRGB_16F;
+					break;
+				}
 			}
 		}
 	}
