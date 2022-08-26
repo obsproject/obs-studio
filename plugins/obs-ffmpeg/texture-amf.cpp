@@ -95,7 +95,6 @@ struct amf_base {
 	AMFBufferPtr header;
 
 	std::deque<AMFDataPtr> queued_packets;
-	int last_query_timeout_ms = 0;
 
 	AMF_VIDEO_CONVERTER_COLOR_PROFILE_ENUM amf_color_profile;
 	AMF_COLOR_TRANSFER_CHARACTERISTIC_ENUM amf_characteristic;
@@ -104,6 +103,7 @@ struct amf_base {
 
 	amf_int64 max_throughput = 0;
 	amf_int64 throughput = 0;
+	int64_t dts_offset = 0;
 	uint32_t cx;
 	uint32_t cy;
 	uint32_t linesize = 0;
@@ -113,6 +113,7 @@ struct amf_base {
 	bool bframes_supported = false;
 	bool using_bframes = false;
 	bool first_update = true;
+	bool calculated_dts_offset = false;
 
 	inline amf_base(bool fallback) : fallback(fallback) {}
 	virtual ~amf_base() = default;
@@ -477,9 +478,30 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 	packet->dts = convert_to_obs_ts(enc, data->GetPts());
 	packet->keyframe = type == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 
-	if (enc->using_bframes)
-		packet->dts -= 2;
+	if (enc->using_bframes) {
+		int64_t duration = data->GetDuration() / 500000;
+
+		if (!enc->calculated_dts_offset) {
+			if (packet->pts == packet->dts) {
+				enc->dts_offset = duration;
+			} else if (packet->pts > packet->dts) {
+				enc->dts_offset =
+					duration - packet->pts + packet->dts;
+			}
+
+			enc->calculated_dts_offset = true;
+		}
+
+		packet->dts = packet->dts - enc->dts_offset;
+
+		if (packet->pts < packet->dts)
+			packet->pts = packet->dts;
+	}
 }
+
+#ifndef SEC_TO_NSEC
+#define SEC_TO_NSEC 1000000000ULL
+#endif
 
 static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 			    encoder_packet *packet, bool *received_packet)
@@ -496,21 +518,21 @@ static void amf_encode_base(amf_base *enc, AMFSurface *amf_surf,
 		/* submit frame                        */
 
 		res = enc->amf_encoder->SubmitInput(amf_surf);
-		int timeout = 0;
 
 		if (res == AMF_OK || res == AMF_NEED_MORE_INPUT) {
 			waiting = false;
 
 		} else if (res == AMF_INPUT_FULL) {
-			timeout = 1;
+			os_sleep_ms(1);
 
+			uint64_t duration = os_gettime_ns() - ts_start;
+			constexpr uint64_t timeout = 5 * SEC_TO_NSEC;
+
+			if (duration >= timeout) {
+				throw amf_error("SubmitInput timed out", res);
+			}
 		} else {
 			throw amf_error("SubmitInput failed", res);
-		}
-
-		if (enc->last_query_timeout_ms != timeout) {
-			set_opt(QUERY_TIMEOUT, timeout);
-			enc->last_query_timeout_ms = timeout;
 		}
 
 		/* ----------------------------------- */
@@ -902,6 +924,20 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, bool hevc)
 		throw "NV12 textures aren't active";
 	}
 
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG:
+			throw "OBS does not support 8-bit output of Rec. 2100";
+		}
+	}
+
 	if ((hevc && !caps[ovi.adapter].supports_hevc) ||
 	    (!hevc && !caps[ovi.adapter].supports_avc))
 		throw "Wrong adapter";
@@ -1081,13 +1117,13 @@ try {
 		return true;
 	}
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_avc_rate_control(rc_str);
 	AMF_RESULT res;
 
-	amf_avc_update_data(enc, rc, bitrate, qp);
+	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
@@ -1106,7 +1142,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
@@ -1123,6 +1159,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		warn("B-Frames set to %lld but b-frames are not "
 		     "supported by this device",
 		     bf);
+		bf = 0;
 	}
 
 	int rc = get_avc_rate_control(rc_str);
@@ -1130,7 +1167,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	set_avc_property(enc, RATE_CONTROL_METHOD, rc);
 	set_avc_property(enc, ENABLE_VBAQ, true);
 
-	amf_avc_update_data(enc, rc, bitrate, qp);
+	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
 	set_avc_property(enc, ENFORCE_HRD, true);
 	set_avc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
@@ -1161,11 +1198,12 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
 	     "\tprofile:      %s\n"
+	     "\tb-frames:     %d\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
 	     "\tparams:       %s",
-	     rc_str, bitrate, qp, gop_size, preset, profile, enc->cx, enc->cy,
-	     ffmpeg_opts);
+	     rc_str, bitrate, qp, gop_size, preset, profile, bf, enc->cx,
+	     enc->cy, ffmpeg_opts);
 
 	return true;
 }
@@ -1231,15 +1269,15 @@ static void *amf_avc_create_texencode(obs_data_t *settings,
 try {
 	check_texture_encode_capability(encoder, false);
 
-	amf_texencode *enc = new amf_texencode;
+	std::unique_ptr<amf_texencode> enc = std::make_unique<amf_texencode>();
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h264";
 
-	if (!amf_init_d3d11(enc))
+	if (!amf_init_d3d11(enc.get()))
 		throw "Failed to create D3D11";
 
-	amf_avc_create_internal(enc, settings);
-	return enc;
+	amf_avc_create_internal(enc.get(), settings);
+	return enc.release();
 
 } catch (const amf_error &err) {
 	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str,
@@ -1254,20 +1292,42 @@ try {
 static void *amf_avc_create_fallback(obs_data_t *settings,
 				     obs_encoder_t *encoder)
 try {
-	amf_fallback *enc = new amf_fallback;
+	std::unique_ptr<amf_fallback> enc = std::make_unique<amf_fallback>();
 	enc->encoder = encoder;
 	enc->encoder_str = "fallback-amf-h264";
 
-	amf_avc_create_internal(enc, settings);
-	return enc;
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010: {
+		const char *const text =
+			obs_module_text("AMF.10bitUnsupportedAvc");
+		obs_encoder_set_last_error(encoder, text);
+		throw text;
+	}
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("AMF.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			throw text;
+		}
+		}
+	}
+
+	amf_avc_create_internal(enc.get(), settings);
+	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s: %ls", __FUNCTION__,
+	     err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
-	blog(LOG_ERROR, "[texture-amf-h264] %s: %s", __FUNCTION__, err);
+	blog(LOG_ERROR, "[fallback-amf-h264] %s: %s", __FUNCTION__, err);
 	return nullptr;
 }
 
@@ -1361,13 +1421,13 @@ try {
 		return true;
 	}
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int rc = get_hevc_rate_control(rc_str);
 	AMF_RESULT res;
 
-	amf_hevc_update_data(enc, rc, bitrate, qp);
+	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
 	res = enc->amf_encoder->ReInit(enc->cx, enc->cy);
 	if (res != AMF_OK)
@@ -1386,7 +1446,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 {
 	amf_base *enc = (amf_base *)data;
 
-	int64_t bitrate = obs_data_get_int(settings, "bitrate") * 1000;
+	int64_t bitrate = obs_data_get_int(settings, "bitrate");
 	int64_t qp = obs_data_get_int(settings, "cqp");
 	const char *preset = obs_data_get_string(settings, "preset");
 	const char *profile = obs_data_get_string(settings, "profile");
@@ -1396,7 +1456,7 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
 	set_hevc_property(enc, ENABLE_VBAQ, true);
 
-	amf_hevc_update_data(enc, rc, bitrate, qp);
+	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
 	set_hevc_property(enc, ENFORCE_HRD, true);
 	set_hevc_property(enc, HIGH_MOTION_QUALITY_BOOST_ENABLE, false);
@@ -1541,15 +1601,15 @@ static void *amf_hevc_create_texencode(obs_data_t *settings,
 try {
 	check_texture_encode_capability(encoder, true);
 
-	amf_texencode *enc = new amf_texencode;
+	std::unique_ptr<amf_texencode> enc = std::make_unique<amf_texencode>();
 	enc->encoder = encoder;
 	enc->encoder_str = "texture-amf-h265";
 
-	if (!amf_init_d3d11(enc))
+	if (!amf_init_d3d11(enc.get()))
 		throw "Failed to create D3D11";
 
-	amf_hevc_create_internal(enc, settings);
-	return enc;
+	amf_hevc_create_internal(enc.get(), settings);
+	return enc.release();
 
 } catch (const amf_error &err) {
 	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str,
@@ -1564,20 +1624,38 @@ try {
 static void *amf_hevc_create_fallback(obs_data_t *settings,
 				      obs_encoder_t *encoder)
 try {
-	amf_fallback *enc = new amf_fallback;
+	std::unique_ptr<amf_fallback> enc = std::make_unique<amf_fallback>();
 	enc->encoder = encoder;
 	enc->encoder_str = "fallback-amf-h265";
 
-	amf_hevc_create_internal(enc, settings);
-	return enc;
+	video_t *video = obs_encoder_video(encoder);
+	const struct video_output_info *voi = video_output_get_info(video);
+	switch (voi->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+		break;
+	default:
+		switch (voi->colorspace) {
+		case VIDEO_CS_2100_PQ:
+		case VIDEO_CS_2100_HLG: {
+			const char *const text =
+				obs_module_text("AMF.8bitUnsupportedHdr");
+			obs_encoder_set_last_error(encoder, text);
+			throw text;
+		}
+		}
+	}
+
+	amf_hevc_create_internal(enc.get(), settings);
+	return enc.release();
 
 } catch (const amf_error &err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s: %ls", __FUNCTION__, err.str,
-	     amf_trace->GetResultText(err.res));
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s: %ls", __FUNCTION__,
+	     err.str, amf_trace->GetResultText(err.res));
 	return nullptr;
 
 } catch (const char *err) {
-	blog(LOG_ERROR, "[texture-amf-h265] %s: %s", __FUNCTION__, err);
+	blog(LOG_ERROR, "[fallback-amf-h265] %s: %s", __FUNCTION__, err);
 	return nullptr;
 }
 

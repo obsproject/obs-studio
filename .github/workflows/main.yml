@@ -12,7 +12,7 @@ on:
     branches: [master]
 
 env:
-  CACHE_REVISION: '005'
+  CACHE_REVISION: '006'
   CEF_BUILD_VERSION_MAC: '5060'
   CEF_HASH_MAC_X86_64: '88b950aa0bfc001061c35e7f1f3fefba856a6afb35e38b2b7b42ddd8dd239182'
   CEF_HASH_MAC_ARM64: '98679b92eea6ea9959ac5aa54f46ca60681d8a86c768c35f496dbdd409bf0642'
@@ -80,7 +80,6 @@ jobs:
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
-      HAVE_XCODE_URL: ${{ secrets.XCODE_DOWNLOAD_URL != '' }}
     defaults:
       run:
         shell: bash
@@ -156,9 +155,8 @@ jobs:
 
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
-      - name: 'Install Xcode 14 Beta'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' && env.HAVE_XCODE_URL == 'true' }}
-        run: xcversion install "14 beta 4" --url=${{ secrets.XCODE_DOWNLOAD_URL }}
+      - name: 'Switch to Xcode 14 Beta'
+        run: sudo xcode-select -switch /Applications/Xcode_14.0.app
 
       - name: 'Install dependencies'
         env:
@@ -372,7 +370,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-5.15-21.08
+      image: bilelmoussaoui/flatpak-github-actions:kde-6.3
       options: --privileged
     steps:
       - name: 'Check for Github Labels'

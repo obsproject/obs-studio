@@ -1,12 +1,12 @@
 #include "crash-report.hpp"
 #include <QApplication>
 #include <QFontDatabase>
-#include <QPlainTextEdit>
 #include <QPushButton>
 #include <QVBoxLayout>
 #include <QHBoxLayout>
 #include <QClipboard>
 #include "qt-wrappers.hpp"
+#include "plain-text-edit.hpp"
 
 OBSCrashReport::OBSCrashReport(QWidget *parent, const char *text)
 	: QDialog(parent)
@@ -17,10 +17,9 @@ OBSCrashReport::OBSCrashReport(QWidget *parent, const char *text)
 	QPushButton *exitButton = new QPushButton;
 	exitButton->setText("Exit");
 
-	textBox = new QPlainTextEdit;
+	textBox = new OBSPlainTextEdit;
 	textBox->setPlainText(QT_UTF8(text));
 	textBox->setLineWrapMode(QPlainTextEdit::NoWrap);
-	textBox->setFont(QFontDatabase::systemFont(QFontDatabase::FixedFont));
 
 	QHBoxLayout *buttonLayout = new QHBoxLayout;
 	buttonLayout->addWidget(copyButton);

@@ -27,7 +27,7 @@
     <number>4</number>
    </property>
    <item>
-    <widget class="QPlainTextEdit" name="textArea">
+    <widget class="OBSPlainTextEdit" name="textArea">
      <property name="readOnly">
       <bool>true</bool>
      </property>
@@ -92,6 +92,13 @@
    </item>
   </layout>
  </widget>
+ <customwidgets>
+  <customwidget>
+   <class>OBSPlainTextEdit</class>
+   <extends>QPlainTextEdit</extends>
+   <header>plain-text-edit.hpp</header>
+  </customwidget>
+ </customwidgets>
  <resources>
   <include location="obs.qrc"/>
  </resources>

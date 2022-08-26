@@ -22,6 +22,10 @@ OBSThemeMeta {
     qproperty-icon: url(:/res/images/minus.svg);
 }
 
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(:/res/images/entry-clear.svg);
+}
+
 * [themeID="propertiesIconSmall"] {
     qproperty-icon: url(:/settings/images/settings/general.svg);
 }
@@ -138,6 +142,13 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* About dialog */
 
 * [themeID="aboutName"] {
@@ -181,6 +192,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(:settings/images/settings/audio.svg);
     qproperty-videoIcon: url(:settings/images/settings/video.svg);
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(:settings/images/settings/accessibility.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
 }
 
@@ -217,10 +229,6 @@ VisibilityCheckBox::indicator:checked {
 
 VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
-}
-
-* [themeID="trashIcon"] {
-    qproperty-icon: url(:res/images/trash.svg);
 }
 
 * [themeID="revertIcon"] {
@@ -292,6 +300,18 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 /* Source Context */
 #contextContainer QPushButton[themeID2=contextBarButton] {
     padding: 0px;
+}
+
+#contextContainer QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(:/settings/images/settings/general.svg);
+}
+
+#contextContainer QPushButton#sourceFiltersButton {
+    qproperty-icon: url(:/res/images/filter.svg);
+}
+
+#contextContainer QPushButton#sourceInteractButton {
+    qproperty-icon: url(:/res/images/interact.svg);
 }
 
 /* Media icons */

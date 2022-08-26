@@ -45,6 +45,7 @@ GeneratedFiles/
 
 /packed_build/
 /CI/include/*.lock.json
+install_temp/
 
 /other/
 

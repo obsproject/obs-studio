@@ -121,6 +121,13 @@ SourceTree QLineEdit {
     border-radius: none;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* Dock Widget */
 
 QDockWidget {
@@ -280,6 +287,10 @@ QToolButton:pressed {
 
 * [themeID="removeIconSmall"] {
     qproperty-icon: url(./Dark/minus.svg);
+}
+
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(./Dark/entry-clear.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
@@ -799,10 +810,6 @@ VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 
-* [themeID="trashIcon"] {
-    qproperty-icon: url(./Dark/trash.svg);
-}
-
 * [themeID="revertIcon"] {
     qproperty-icon: url(./Dark/revert.svg);
 }
@@ -1041,4 +1048,9 @@ QCalendarWidget QAbstractItemView:enabled {
 
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
+}
+
+/* Disable icons on QDialogButtonBox */
+QDialogButtonBox {
+    dialogbuttonbox-buttons-have-icons: 0;
 }

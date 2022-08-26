@@ -20,6 +20,9 @@ using namespace std;
 // Size of the audio indicator in pixels
 #define INDICATOR_THICKNESS 3
 
+// Padding on top and bottom of vertical meters
+#define METER_PADDING 1
+
 QWeakPointer<VolumeMeterTimer> VolumeMeter::updateTimer;
 
 void VolControl::OBSVolumeChanged(void *data, float db)
@@ -1035,7 +1038,7 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 
 	// Draw major tick lines and numeric indicators.
 	for (int i = 0; i >= minimumLevel; i -= 5) {
-		int position = y + int(i * scale);
+		int position = y + int(i * scale) + METER_PADDING;
 		QString str = QString::number(i);
 
 		// Center the number on the tick, but don't overflow
@@ -1054,7 +1057,7 @@ void VolumeMeter::paintVTicks(QPainter &painter, int x, int y, int height)
 	// Draw minor tick lines.
 	painter.setPen(minorTickColor);
 	for (int i = 0; i >= minimumLevel; i--) {
-		int position = y + int(i * scale);
+		int position = y + int(i * scale) + METER_PADDING;
 		if (i % 5 != 0)
 			painter.drawLine(x, position, x + 1, position);
 	}
@@ -1304,6 +1307,9 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	QPainter painter(this);
 
+	if (vertical)
+		height -= METER_PADDING * 2;
+
 	// timerEvent requests update of the bar(s) only, so we can avoid the
 	// overhead of repainting the scale and labels.
 	if (event->region().boundingRect() != getBarRect()) {
@@ -1332,7 +1338,7 @@ void VolumeMeter::paintEvent(QPaintEvent *event)
 
 	if (vertical) {
 		// Invert the Y axis to ease the math
-		painter.translate(0, height);
+		painter.translate(0, height + METER_PADDING);
 		painter.scale(1, -1);
 	}
 

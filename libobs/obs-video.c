@@ -826,7 +826,7 @@ static inline void video_sleep(struct obs_core_video *video, uint64_t *p_time,
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
-		struct obs_core_video_mix *video = obs->video.mixes.array + i;
+		struct obs_core_video_mix *video = obs->video.mixes.array[i];
 		bool raw_active = video->raw_was_active;
 		bool gpu_active = video->gpu_was_active;
 
@@ -900,10 +900,11 @@ static inline void output_frames(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
-		struct obs_core_video_mix *mix = obs->video.mixes.array + i;
+		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
 		if (mix->view) {
 			output_frame(mix);
 		} else {
+			obs->video.mixes.array[i] = NULL;
 			obs_free_video_mix(mix);
 			da_erase(obs->video.mixes, i);
 			i--;
@@ -1073,7 +1074,7 @@ static inline void update_active_states(void)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++)
-		update_active_state(obs->video.mixes.array + i);
+		update_active_state(obs->video.mixes.array[i]);
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 }
 
@@ -1083,7 +1084,7 @@ static inline bool stop_requested(void)
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++)
-		if (!video_output_stopped(obs->video.mixes.array[i].video))
+		if (!video_output_stopped(obs->video.mixes.array[i]->video))
 			success = false;
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 

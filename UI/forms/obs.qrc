@@ -28,7 +28,6 @@
     <file>images/visible.svg</file>
     <file>images/help.svg</file>
     <file>images/help_light.svg</file>
-    <file>images/trash.svg</file>
     <file>images/revert.svg</file>
     <file>images/alert.svg</file>
     <file>images/warning.svg</file>
@@ -64,6 +63,7 @@
     <file>images/cogs.svg</file>
     <file>images/expand.svg</file>
     <file>images/collapse.svg</file>
+    <file>images/entry-clear.svg</file>
   </qresource>
   <qresource prefix="/settings">
     <file>images/settings/output.svg</file>

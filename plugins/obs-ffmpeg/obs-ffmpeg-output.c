@@ -1011,19 +1011,17 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 
 static int process_packet(struct ffmpeg_output *output)
 {
-	AVPacket *packet;
-	bool new_packet = false;
-	int ret;
+	AVPacket *packet = NULL;
+	int ret = 0;
 
 	pthread_mutex_lock(&output->write_mutex);
 	if (output->packets.num) {
 		packet = output->packets.array[0];
 		da_erase(output->packets, 0);
-		new_packet = true;
 	}
 	pthread_mutex_unlock(&output->write_mutex);
 
-	if (!new_packet)
+	if (!packet)
 		return 0;
 
 	/*blog(LOG_DEBUG, "size = %d, flags = %lX, stream = %d, "
@@ -1033,22 +1031,24 @@ static int process_packet(struct ffmpeg_output *output)
 
 	if (stopping(output)) {
 		uint64_t sys_ts = get_packet_sys_dts(output, packet);
-		if (sys_ts >= output->stop_ts)
-			return 0;
+		if (sys_ts >= output->stop_ts) {
+			ret = 0;
+			goto end;
+		}
 	}
 
 	output->total_bytes += packet->size;
 
 	ret = av_interleaved_write_frame(output->ff_data.output, packet);
 	if (ret < 0) {
-		av_packet_free(&packet);
 		ffmpeg_log_error(LOG_WARNING, &output->ff_data,
 				 "process_packet: Error writing packet: %s",
 				 av_err2str(ret));
-		return ret;
 	}
 
-	return 0;
+end:
+	av_packet_free(&packet);
+	return ret;
 }
 
 static void *write_thread(void *data)

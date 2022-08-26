@@ -40,7 +40,6 @@
     }
   },
   "cleanup": [
-    "/lib/pkgconfig",
     "/share/man",
     "*.la"
   ],
@@ -52,7 +51,8 @@
         "--enable-shared"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -73,7 +73,8 @@
         "--with-udevdir=/app/lib/udev/"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -111,6 +112,7 @@
       ],
       "cleanup": [
         "/include",
+        "/lib/pkgconfig",
         "/bin"
       ],
       "sources": [
@@ -157,7 +159,8 @@
         "-Dbuiltin_cjson=true"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -181,7 +184,8 @@
         "-DENABLE_TOOLS=OFF "
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -205,7 +209,8 @@
         "-DBUILD_TESTING=OFF"
       ],
       "cleanup": [
-        "/include"
+        "/include",
+        "/lib/pkgconfig"
       ],
       "sources": [
         {
@@ -269,6 +274,7 @@
       "cleanup": [
         "/bin",
         "/include",
+        "/lib/pkgconfig",
         "*.a"
       ],
       "sources": [
@@ -401,7 +407,7 @@
         {
           "type": "archive",
           "url": "https://cdn-fastly.obsproject.com/downloads/cef_binary_5060_linux64.tar.bz2",
-          "sha256": "1fe9c09bb43e8d2be2c07b792e69fb51250782e68f2c8d1d30da2559cfb9ae0e"
+          "sha256": "ac4e2a8ebf20700e4e36353e314f876623633dd5b474778a2548bb66bdbea11d"
         }
       ]
     },
@@ -433,7 +439,6 @@
         "-DYOUTUBE_SECRET_HASH=$YOUTUBE_SECRET_HASH"
       ],
       "post-install": [
-        "cmake --install . --component obs_libraries",
         "install -d /app/plugins",
         "install -d /app/extensions/Plugins"
       ],
