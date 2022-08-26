@@ -1093,6 +1093,9 @@ static inline bool stop_requested(void)
 
 bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
+	/* defer loop break to clean up sources */
+	const bool stop_requested = video_output_stopped(obs->video.main_mix->video);
+
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
 
@@ -1152,7 +1155,7 @@ bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 		context->fps_total_frames = 0;
 	}
 
-	return !stop_requested();
+	return !stop_requested;
 }
 
 void *obs_graphics_thread(void *param)
