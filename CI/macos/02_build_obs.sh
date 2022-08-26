@@ -69,6 +69,12 @@ _configure_obs() {
         UNITTEST_OPTIONS="-DENABLE_UNIT_TESTS=ON"
     fi
 
+    if [ "${CI}" -a "${ARCH}" = "x86_64" ]; then
+      Rust_CARGO_TARGET="x86_64-apple-darwin"
+    else
+      Rust_CARGO_TARGET="aarch64-apple-darwin"
+    fi
+
     cmake -S . -B ${BUILD_DIR} -G ${GENERATOR} \
         -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${MACOS_CEF_BUILD_VERSION:-${CI_MACOS_CEF_VERSION}}_macos_${ARCH:-x86_64}" \
         -DENABLE_BROWSER=ON \
@@ -82,6 +88,7 @@ _configure_obs() {
         -DCMAKE_INSTALL_PREFIX=${BUILD_DIR}/install \
         -DCMAKE_BUILD_TYPE=${BUILD_CONFIG} \
         -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}" \
+        -DRust_CARGO_TARGET="${Rust_CARGO_TARGET}" \
         ${YOUTUBE_OPTIONS} \
         ${TWITCH_OPTIONS} \
         ${RESTREAM_OPTIONS} \

@@ -29,6 +29,7 @@ extern QCefCookieManager *panel_cookies;
 enum class ListOpt : int {
 	ShowAll = 1,
 	Custom,
+	WHIP,
 };
 
 enum class Section : int {
@@ -38,7 +39,8 @@ enum class Section : int {
 
 inline bool OBSBasicSettings::IsCustomService() const
 {
-	return ui->service->currentData().toInt() == (int)ListOpt::Custom;
+	return ui->service->currentData().toInt() == (int)ListOpt::Custom ||
+	       ui->service->currentData().toInt() == (int)ListOpt::WHIP;
 }
 
 void OBSBasicSettings::InitStreamPage()
@@ -235,7 +237,7 @@ void OBSBasicSettings::SaveStream1Settings()
 	obs_data_set_string(settings, "key", QT_TO_UTF8(ui->key->text()));
 
 	OBSServiceAutoRelease newService = obs_service_create(
-		service_id, "default_service", settings, hotkeyData);
+		"whip", "default_service", settings, hotkeyData);
 
 	if (!newService)
 		return;
@@ -348,6 +350,8 @@ void OBSBasicSettings::LoadServices(bool showAll)
 
 	for (QString &name : names)
 		ui->service->addItem(name);
+
+	ui->service->insertItem(0, QTStr("WHIP"), QVariant((int)ListOpt::WHIP));
 
 	if (!showAll) {
 		ui->service->addItem(

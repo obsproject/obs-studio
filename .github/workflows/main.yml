@@ -158,6 +158,9 @@ jobs:
       - name: 'Switch to Xcode 14 Beta'
         run: sudo xcode-select -switch /Applications/Xcode_14.0.app
 
+      - name: 'aarch64-apple-darwin'
+        run: rustup target add aarch64-apple-darwin
+
       - name: 'Install dependencies'
         env:
           RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
