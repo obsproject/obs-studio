@@ -298,8 +298,12 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 /* Source Context */
+#contextContainer QPushButton {
+    padding: 3px 10px;
+}
+
 #contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 0px;
+    padding: 3px 6px;
 }
 
 #contextContainer QPushButton#sourcePropertiesButton {
