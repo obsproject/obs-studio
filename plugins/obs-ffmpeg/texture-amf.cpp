@@ -111,9 +111,7 @@ struct amf_base {
 	int fps_den;
 	bool full_range;
 	bool bframes_supported = false;
-	bool using_bframes = false;
 	bool first_update = true;
-	bool calculated_dts_offset = false;
 
 	inline amf_base(bool fallback) : fallback(fallback) {}
 	virtual ~amf_base() = default;
@@ -478,25 +476,8 @@ static void convert_to_encoder_packet(amf_base *enc, AMFDataPtr &data,
 	packet->dts = convert_to_obs_ts(enc, data->GetPts());
 	packet->keyframe = type == AMF_VIDEO_ENCODER_OUTPUT_DATA_TYPE_IDR;
 
-	if (enc->using_bframes) {
-		int64_t duration = data->GetDuration() / 500000;
-
-		if (!enc->calculated_dts_offset) {
-			if (packet->pts == packet->dts) {
-				enc->dts_offset = duration;
-			} else if (packet->pts > packet->dts) {
-				enc->dts_offset =
-					duration - packet->pts + packet->dts;
-			}
-
-			enc->calculated_dts_offset = true;
-		}
-
-		packet->dts = packet->dts - enc->dts_offset;
-
-		if (packet->pts < packet->dts)
-			packet->pts = packet->dts;
-	}
+	if (enc->dts_offset)
+		packet->dts -= enc->dts_offset;
 }
 
 #ifndef SEC_TO_NSEC
@@ -1258,9 +1239,9 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 
 		if (get_avc_property(enc, B_PIC_PATTERN, &b_frames) &&
 		    get_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, &b_max))
-			enc->using_bframes = b_frames && b_max;
+			enc->dts_offset = b_frames + 1;
 		else
-			enc->using_bframes = false;
+			enc->dts_offset = 0;
 	}
 }
 
