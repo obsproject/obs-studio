@@ -102,9 +102,13 @@ static obs_properties_t *hdr_tonemap_filter_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
 
-	obs_property_t *p = obs_properties_add_list(
-		props, "transform", obs_module_text("HdrTonemap.ToneTransform"),
-		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+	obs_property_t *p = obs_properties_add_text(
+		props, "override_info",
+		obs_module_text("HdrTonemap.Description"), OBS_TEXT_INFO);
+
+	p = obs_properties_add_list(props, "transform",
+				    obs_module_text("HdrTonemap.ToneTransform"),
+				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 	obs_property_list_add_int(p, obs_module_text("HdrTonemap.SdrReinhard"),
 				  TRANSFORM_SDR_REINHARD);
 	obs_property_list_add_int(p, obs_module_text("HdrTonemap.HdrMaxrgb"),
