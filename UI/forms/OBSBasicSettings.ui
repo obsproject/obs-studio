@@ -28,6 +28,9 @@
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
+     <property name="spacing">
+      <number>0</number>
+     </property>
      <item>
       <widget class="QListWidget" name="listWidget">
        <property name="sizePolicy">
@@ -48,11 +51,11 @@
          <height>16</height>
         </size>
        </property>
-       <property name="currentRow">
-        <number>0</number>
-       </property>
        <property name="spacing">
         <number>1</number>
+       </property>
+       <property name="currentRow">
+        <number>0</number>
        </property>
        <item>
         <property name="text">
@@ -163,8 +166,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>806</width>
-              <height>1344</height>
+              <width>767</width>
+              <height>1326</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -183,6 +186,15 @@
              <item>
               <widget class="QFrame" name="widget_2">
                <layout class="QVBoxLayout" name="verticalLayout_20">
+                <property name="leftMargin">
+                 <number>9</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item>
                  <widget class="QGroupBox" name="groupBox_15">
                   <property name="title">
@@ -830,7 +842,7 @@
        <widget class="QWidget" name="streamPage">
         <layout class="QVBoxLayout" name="verticalLayout_5">
          <property name="leftMargin">
-          <number>0</number>
+          <number>9</number>
          </property>
          <property name="topMargin">
           <number>0</number>
@@ -856,17 +868,35 @@
             <property name="labelAlignment">
              <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
             </property>
-            <item row="3" column="0">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
+            <item row="2" column="0">
              <widget class="QLabel" name="serviceLabel">
+              <property name="minimumSize">
+               <size>
+                <width>170</width>
+                <height>0</height>
+               </size>
+              </property>
               <property name="text">
                <string>Basic.AutoConfig.StreamPage.Service</string>
+              </property>
+              <property name="alignment">
+               <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
               </property>
               <property name="buddy">
                <cstring>service</cstring>
               </property>
              </widget>
             </item>
-            <item row="3" column="1">
+            <item row="2" column="1">
              <widget class="QFrame" name="serviceWidget">
               <layout class="QHBoxLayout" name="serviceWidgetLayout" stretch="0,0">
                <property name="leftMargin">
@@ -904,19 +934,6 @@
               </layout>
              </widget>
             </item>
-            <item row="1" column="0">
-             <spacer name="horizontalSpacer_17">
-              <property name="orientation">
-               <enum>Qt::Horizontal</enum>
-              </property>
-              <property name="sizeHint" stdset="0">
-               <size>
-                <width>170</width>
-                <height>0</height>
-               </size>
-              </property>
-             </spacer>
-            </item>
            </layout>
           </widget>
          </item>
@@ -929,7 +946,7 @@
             </sizepolicy>
            </property>
            <property name="currentIndex">
-            <number>1</number>
+            <number>0</number>
            </property>
            <widget class="QWidget" name="loginPage">
             <layout class="QFormLayout" name="loginPageLayout">
@@ -1370,7 +1387,7 @@
        <widget class="QWidget" name="outputPage">
         <layout class="QVBoxLayout" name="verticalLayout_2">
          <property name="leftMargin">
-          <number>0</number>
+          <number>9</number>
          </property>
          <property name="topMargin">
           <number>0</number>
@@ -1384,6 +1401,18 @@
          <item>
           <widget class="QFrame" name="frame">
            <layout class="QVBoxLayout" name="verticalLayout_6">
+            <property name="leftMargin">
+             <number>0</number>
+            </property>
+            <property name="topMargin">
+             <number>0</number>
+            </property>
+            <property name="rightMargin">
+             <number>0</number>
+            </property>
+            <property name="bottomMargin">
+             <number>0</number>
+            </property>
             <item>
              <widget class="QFrame" name="widget">
               <property name="sizePolicy">
@@ -1397,16 +1426,16 @@
                 <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                </property>
                <property name="leftMargin">
-                <number>8</number>
+                <number>0</number>
                </property>
                <property name="topMargin">
-                <number>8</number>
+                <number>0</number>
                </property>
                <property name="rightMargin">
-                <number>16</number>
+                <number>9</number>
                </property>
                <property name="bottomMargin">
-                <number>8</number>
+                <number>0</number>
                </property>
                <item row="0" column="0">
                 <widget class="QLabel" name="outputModeLabel">
@@ -1470,7 +1499,7 @@
                  <number>0</number>
                 </property>
                 <property name="rightMargin">
-                 <number>8</number>
+                 <number>0</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
@@ -1491,8 +1520,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>780</width>
-                     <height>642</height>
+                     <width>772</width>
+                     <height>651</height>
                     </rect>
                    </property>
                    <property name="sizePolicy">
@@ -1503,16 +1532,16 @@
                    </property>
                    <layout class="QVBoxLayout" name="verticalLayout_52">
                     <property name="leftMargin">
-                     <number>8</number>
+                     <number>0</number>
                     </property>
                     <property name="topMargin">
-                     <number>8</number>
+                     <number>0</number>
                     </property>
                     <property name="rightMargin">
-                     <number>8</number>
+                     <number>9</number>
                     </property>
                     <property name="bottomMargin">
-                     <number>8</number>
+                     <number>0</number>
                     </property>
                     <item>
                      <widget class="QGroupBox" name="simpleStreamingGroupBox">
@@ -1533,16 +1562,16 @@
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
                        <property name="leftMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="topMargin">
-                        <number>8</number>
+                        <number>2</number>
                        </property>
                        <property name="rightMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="bottomMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_19">
@@ -1722,16 +1751,16 @@
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
                        <property name="leftMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="topMargin">
-                        <number>8</number>
+                        <number>2</number>
                        </property>
                        <property name="rightMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="bottomMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_18">
@@ -1892,16 +1921,16 @@
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
                        <property name="leftMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="topMargin">
-                        <number>8</number>
+                        <number>2</number>
                        </property>
                        <property name="rightMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="bottomMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_35">
@@ -2030,7 +2059,7 @@
                  <number>0</number>
                 </property>
                 <property name="rightMargin">
-                 <number>0</number>
+                 <number>9</number>
                 </property>
                 <property name="bottomMargin">
                  <number>0</number>
@@ -2052,10 +2081,10 @@
                      <number>0</number>
                     </property>
                     <property name="topMargin">
-                     <number>8</number>
+                     <number>6</number>
                     </property>
                     <property name="rightMargin">
-                     <number>8</number>
+                     <number>0</number>
                     </property>
                     <property name="bottomMargin">
                      <number>0</number>
@@ -2076,8 +2105,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>493</width>
-                         <height>165</height>
+                         <width>759</width>
+                         <height>616</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -2088,7 +2117,7 @@
                          <number>0</number>
                         </property>
                         <property name="rightMargin">
-                         <number>6</number>
+                         <number>9</number>
                         </property>
                         <property name="bottomMargin">
                          <number>0</number>
@@ -2323,16 +2352,16 @@
                         <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                        </property>
                        <property name="leftMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="topMargin">
-                        <number>8</number>
+                        <number>6</number>
                        </property>
                        <property name="rightMargin">
-                        <number>16</number>
+                        <number>0</number>
                        </property>
                        <property name="bottomMargin">
-                        <number>8</number>
+                        <number>6</number>
                        </property>
                        <item row="0" column="0">
                         <widget class="QLabel" name="label_31">
@@ -2390,7 +2419,7 @@
                          <number>0</number>
                         </property>
                         <property name="rightMargin">
-                         <number>8</number>
+                         <number>0</number>
                         </property>
                         <property name="bottomMargin">
                          <number>0</number>
@@ -2423,8 +2452,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>620</width>
-                             <height>391</height>
+                             <width>759</width>
+                             <height>587</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -2441,7 +2470,7 @@
                              <number>0</number>
                             </property>
                             <property name="rightMargin">
-                             <number>6</number>
+                             <number>9</number>
                             </property>
                             <property name="bottomMargin">
                              <number>0</number>
@@ -2468,16 +2497,16 @@
                                 <set>Qt::AlignLeading|Qt::AlignLeft|Qt::AlignTop</set>
                                </property>
                                <property name="leftMargin">
-                                <number>8</number>
+                                <number>9</number>
                                </property>
                                <property name="topMargin">
                                 <number>2</number>
                                </property>
                                <property name="rightMargin">
-                                <number>10</number>
+                                <number>9</number>
                                </property>
                                <property name="bottomMargin">
-                                <number>8</number>
+                                <number>9</number>
                                </property>
                                <item row="0" column="0">
                                 <widget class="QLabel" name="label_32">
@@ -3012,13 +3041,13 @@
                               </property>
                               <layout class="QVBoxLayout" name="verticalLayout_15">
                                <property name="leftMargin">
-                                <number>8</number>
+                                <number>9</number>
                                </property>
                                <property name="topMargin">
                                 <number>2</number>
                                </property>
                                <property name="rightMargin">
-                                <number>10</number>
+                                <number>9</number>
                                </property>
                                <property name="bottomMargin">
                                 <number>8</number>
@@ -3060,7 +3089,7 @@
                          <number>0</number>
                         </property>
                         <property name="rightMargin">
-                         <number>8</number>
+                         <number>0</number>
                         </property>
                         <property name="bottomMargin">
                          <number>0</number>
@@ -3084,8 +3113,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>713</width>
-                             <height>493</height>
+                             <width>759</width>
+                             <height>587</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -3096,7 +3125,7 @@
                              <number>0</number>
                             </property>
                             <property name="rightMargin">
-                             <number>6</number>
+                             <number>9</number>
                             </property>
                             <property name="bottomMargin">
                              <number>0</number>
@@ -3114,16 +3143,16 @@
                                 <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                                </property>
                                <property name="leftMargin">
-                                <number>8</number>
+                                <number>9</number>
                                </property>
                                <property name="topMargin">
-                                <number>8</number>
+                                <number>2</number>
                                </property>
                                <property name="rightMargin">
-                                <number>10</number>
+                                <number>9</number>
                                </property>
                                <property name="bottomMargin">
-                                <number>8</number>
+                                <number>9</number>
                                </property>
                                <item row="0" column="0">
                                 <widget class="QLabel" name="label_48">
@@ -3575,8 +3604,14 @@
                        <property name="leftMargin">
                         <number>0</number>
                        </property>
+                       <property name="topMargin">
+                        <number>6</number>
+                       </property>
                        <property name="rightMargin">
-                        <number>8</number>
+                        <number>0</number>
+                       </property>
+                       <property name="bottomMargin">
+                        <number>0</number>
                        </property>
                        <item>
                         <widget class="QScrollArea" name="scrollArea_6">
@@ -3597,8 +3632,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>272</width>
-                            <height>552</height>
+                            <width>759</width>
+                            <height>616</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -3612,7 +3647,7 @@
                             <number>0</number>
                            </property>
                            <property name="rightMargin">
-                            <number>6</number>
+                            <number>9</number>
                            </property>
                            <property name="bottomMargin">
                             <number>0</number>
@@ -3636,16 +3671,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="1">
                                <widget class="QComboBox" name="advOutTrack1Bitrate">
@@ -3776,16 +3811,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_49">
@@ -3916,16 +3951,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_51">
@@ -4056,16 +4091,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_53">
@@ -4196,16 +4231,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_59">
@@ -4336,16 +4371,16 @@
                                <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
                               </property>
                               <property name="leftMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="topMargin">
                                <number>2</number>
                               </property>
                               <property name="rightMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <property name="bottomMargin">
-                               <number>8</number>
+                               <number>9</number>
                               </property>
                               <item row="0" column="0">
                                <widget class="QLabel" name="label_61">
@@ -4506,16 +4541,16 @@
                       </property>
                       <layout class="QVBoxLayout" name="verticalLayout_29">
                        <property name="leftMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <property name="topMargin">
-                        <number>8</number>
+                        <number>6</number>
                        </property>
                        <property name="rightMargin">
-                        <number>14</number>
+                        <number>0</number>
                        </property>
                        <property name="bottomMargin">
-                        <number>8</number>
+                        <number>9</number>
                        </property>
                        <item>
                         <widget class="QCheckBox" name="advReplayBuf">
@@ -4660,7 +4695,7 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
+              <width>781</width>
               <height>640</height>
              </rect>
             </property>
@@ -4680,6 +4715,15 @@
              <item>
               <widget class="QFrame" name="widget_50">
                <layout class="QVBoxLayout" name="verticalLayout_51">
+                <property name="leftMargin">
+                 <number>9</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item>
                  <widget class="QGroupBox" name="audioGeneralGroupBox">
                   <property name="title">
@@ -5145,6 +5189,15 @@
          <property name="labelAlignment">
           <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
          </property>
+         <property name="leftMargin">
+          <number>9</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item row="0" column="0">
           <widget class="QLabel" name="label_8">
            <property name="minimumSize">
@@ -5482,6 +5535,15 @@
        </widget>
        <widget class="QWidget" name="hotkeyPage">
         <layout class="QVBoxLayout" name="verticalLayout_25">
+         <property name="leftMargin">
+          <number>9</number>
+         </property>
+         <property name="topMargin">
+          <number>0</number>
+         </property>
+         <property name="bottomMargin">
+          <number>0</number>
+         </property>
          <item>
           <layout class="QGridLayout" name="hotkeySearchLayout">
            <item row="0" column="0">
@@ -5566,8 +5628,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>800</width>
-              <height>626</height>
+              <width>761</width>
+              <height>644</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="hotkeyFormLayout">
@@ -5576,6 +5638,18 @@
              </property>
              <property name="verticalSpacing">
               <number>0</number>
+             </property>
+             <property name="leftMargin">
+              <number>9</number>
+             </property>
+             <property name="topMargin">
+              <number>2</number>
+             </property>
+             <property name="rightMargin">
+              <number>9</number>
+             </property>
+             <property name="bottomMargin">
+              <number>9</number>
              </property>
             </layout>
            </widget>
@@ -5613,8 +5687,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>820</width>
-              <height>680</height>
+              <width>799</width>
+              <height>666</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_42">
@@ -5628,10 +5702,16 @@
               <number>0</number>
              </property>
              <property name="bottomMargin">
-              <number>9</number>
+              <number>0</number>
              </property>
              <item>
               <layout class="QVBoxLayout" name="verticalLayout_7" stretch="0,0">
+               <property name="leftMargin">
+                <number>9</number>
+               </property>
+               <property name="rightMargin">
+                <number>0</number>
+               </property>
                <item>
                 <widget class="QGroupBox" name="colorsGroupBox">
                  <property name="sizePolicy">
@@ -6517,7 +6597,7 @@
               <x>0</x>
               <y>0</y>
               <width>826</width>
-              <height>1018</height>
+              <height>1000</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -6536,6 +6616,15 @@
              <item>
               <widget class="QFrame" name="widget_11">
                <layout class="QVBoxLayout" name="verticalLayout_24">
+                <property name="leftMargin">
+                 <number>9</number>
+                </property>
+                <property name="topMargin">
+                 <number>0</number>
+                </property>
+                <property name="bottomMargin">
+                 <number>0</number>
+                </property>
                 <item>
                  <widget class="QGroupBox" name="advancedGeneralGroupBox">
                   <property name="title">
