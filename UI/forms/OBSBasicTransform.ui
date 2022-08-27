@@ -72,7 +72,7 @@
          <widget class="QDoubleSpinBox" name="positionX">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
@@ -103,7 +103,7 @@
          <widget class="QDoubleSpinBox" name="positionY">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
@@ -153,7 +153,7 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>100</width>
+         <width>120</width>
          <height>0</height>
         </size>
        </property>
@@ -215,7 +215,7 @@
          <widget class="QDoubleSpinBox" name="sizeX">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
@@ -249,7 +249,7 @@
          <widget class="QDoubleSpinBox" name="sizeY">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
@@ -518,7 +518,7 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
@@ -552,7 +552,7 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
            </size>
           </property>
