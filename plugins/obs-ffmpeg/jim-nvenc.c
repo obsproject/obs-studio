@@ -106,7 +106,7 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 		return false;
 	}
 
-	event = CreateEvent(NULL, true, true, NULL);
+	event = CreateEvent(NULL, FALSE, FALSE, NULL);
 	if (!event) {
 		error("%s: %s", __FUNCTION__, "Failed to create event");
 		goto fail;
@@ -1220,11 +1220,13 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		struct nv_bitstream *bs = &enc->bitstreams.array[cur_bs_idx];
 		struct nv_texture *nvtex = &enc->textures.array[cur_bs_idx];
 
+		WaitForSingleObject(bs->event, INFINITE);
+
 		/* ---------------- */
 
 		NV_ENC_LOCK_BITSTREAM lock = {NV_ENC_LOCK_BITSTREAM_VER};
 		lock.outputBitstream = bs->ptr;
-		lock.doNotWait = false;
+		lock.doNotWait = true;
 
 		if (NV_FAILED(nv.nvEncLockBitstream(s, &lock))) {
 			return false;
@@ -1322,11 +1324,6 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	}
 
 	circlebuf_push_back(&enc->dts_list, &pts, sizeof(pts));
-
-	/* ------------------------------------ */
-	/* wait for output bitstream/tex        */
-
-	WaitForSingleObject(bs->event, INFINITE);
 
 	/* ------------------------------------ */
 	/* copy to output tex                   */
