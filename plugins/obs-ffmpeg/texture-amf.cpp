@@ -1152,7 +1152,7 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	check_preset_compatibility(enc, preset);
 
 	if (enc->bframes_supported) {
-		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, bf);
+		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, 3);
 		set_avc_property(enc, B_PIC_PATTERN, bf);
 
 	} else if (bf != 0) {
