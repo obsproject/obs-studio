@@ -143,6 +143,11 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 	QListWidget::dropEvent(event);
 
+	// We must call resizeEvent to correctly place all grid items.
+	// We also do this in rowsInserted.
+	QResizeEvent resEvent(size(), size());
+	SceneTree::resizeEvent(&resEvent);
+
 	QTimer::singleShot(100, [this]() { emit scenesReordered(); });
 }
 
