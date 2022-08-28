@@ -70,7 +70,8 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 {
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
-		int h = visualItemRect(item(count() - 1)).bottom();
+		const QRect lastItem = visualItemRect(item(count() - 1));
+		const int h = lastItem.y() + lastItem.height();
 
 		if (h < height()) {
 			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -113,7 +114,8 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
-		int h = visualItemRect(item(count() - 1)).bottom();
+		const QRect lastItem = visualItemRect(item(count() - 1));
+		const int h = lastItem.y() + lastItem.height();
 
 		if (h < height()) {
 			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -154,7 +156,8 @@ void SceneTree::dropEvent(QDropEvent *event)
 void SceneTree::RepositionGrid(QDragMoveEvent *event)
 {
 	int scrollWid = verticalScrollBar()->sizeHint().width();
-	int h = visualItemRect(item(count() - 1)).bottom();
+	const QRect lastItem = visualItemRect(item(count() - 1));
+	const int h = lastItem.y() + lastItem.height();
 
 	if (h < height()) {
 		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
