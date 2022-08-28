@@ -1757,5 +1757,8 @@ QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &,
 	SourceTree *tree = qobject_cast<SourceTree *>(parent());
 	QWidget *item = tree->indexWidget(index);
 
+	if (!item)
+		return (QSize(0, 0));
+
 	return (QSize(item->width(), item->height()));
 }
