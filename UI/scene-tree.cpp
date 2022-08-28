@@ -114,8 +114,10 @@ void SceneTree::dropEvent(QDropEvent *event)
 
 	if (gridMode) {
 		int scrollWid = verticalScrollBar()->sizeHint().width();
+		const QRect firstItem = visualItemRect(item(0));
 		const QRect lastItem = visualItemRect(item(count() - 1));
 		const int h = lastItem.y() + lastItem.height();
+		const int firstItemY = abs(firstItem.y());
 
 		if (h < height()) {
 			setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -133,7 +135,7 @@ void SceneTree::dropEvent(QDropEvent *event)
 #endif
 
 		int x = (float)point.x() / wid * ceil(wid / maxWidth);
-		int y = point.y() / itemHeight;
+		int y = (point.y() + firstItemY) / itemHeight;
 
 		int r = x + y * ceil(wid / maxWidth);
 
@@ -156,8 +158,10 @@ void SceneTree::dropEvent(QDropEvent *event)
 void SceneTree::RepositionGrid(QDragMoveEvent *event)
 {
 	int scrollWid = verticalScrollBar()->sizeHint().width();
+	const QRect firstItem = visualItemRect(item(0));
 	const QRect lastItem = visualItemRect(item(count() - 1));
 	const int h = lastItem.y() + lastItem.height();
+	const int firstItemY = abs(firstItem.y());
 
 	if (h < height()) {
 		setVerticalScrollBarPolicy(Qt::ScrollBarAlwaysOff);
@@ -176,7 +180,7 @@ void SceneTree::RepositionGrid(QDragMoveEvent *event)
 #endif
 
 		int x = (float)point.x() / wid * ceil(wid / maxWidth);
-		int y = point.y() / itemHeight;
+		int y = (point.y() + firstItemY) / itemHeight;
 
 		int r = x + y * ceil(wid / maxWidth);
 		int orig = selectedIndexes()[0].row();
