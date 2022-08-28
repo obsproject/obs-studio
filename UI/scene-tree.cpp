@@ -236,3 +236,11 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 
 	QListWidget::rowsInserted(parent, start, end);
 }
+
+// Workaround for QTBUG-105870. Remove once that is solved upstream.
+void SceneTree::selectionChanged(const QItemSelection &selected,
+				 const QItemSelection &deselected)
+{
+	if (selected.count() == 0)
+		setCurrentRow(deselected.indexes().front().row());
+}
