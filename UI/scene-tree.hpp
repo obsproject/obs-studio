@@ -38,6 +38,9 @@ protected:
 	virtual void dragLeaveEvent(QDragLeaveEvent *event) override;
 	virtual void rowsInserted(const QModelIndex &parent, int start,
 				  int end) override;
+	virtual void
+	selectionChanged(const QItemSelection &selected,
+			 const QItemSelection &deselected) override;
 
 signals:
 	void scenesReordered();
