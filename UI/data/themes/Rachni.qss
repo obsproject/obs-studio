@@ -336,7 +336,7 @@ OBSBasicStatusBar {
 
 QGroupBox {
     background: rgb(59,65,71);
-    border-radius: 8px;
+    border-radius: 4px;
     padding-top: 32px;
     padding-bottom: 8px;
     font-weight: bold;
