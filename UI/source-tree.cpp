@@ -1751,7 +1751,7 @@ SourceTreeDelegate::SourceTreeDelegate(QObject *parent)
 {
 }
 
-QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &,
+QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
 				   const QModelIndex &index) const
 {
 	SourceTree *tree = qobject_cast<SourceTree *>(parent());
@@ -1760,5 +1760,5 @@ QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &,
 	if (!item)
 		return (QSize(0, 0));
 
-	return (QSize(item->width(), item->height()));
+	return (QSize(option.widget->minimumWidth(), item->height()));
 }
