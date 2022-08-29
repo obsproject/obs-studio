@@ -19,13 +19,6 @@
 #include "obs.h"
 #include "obs-internal.h"
 
-#if defined(_WIN32)
-#ifndef WIN32_LEAN_AND_MEAN
-#define WIN32_LEAN_AND_MEAN 1
-#endif
-#include <Windows.h>
-#endif
-
 bool obs_display_init(struct obs_display *display,
 		      const struct gs_init_data *graphics_data)
 {
@@ -33,11 +26,8 @@ bool obs_display_init(struct obs_display *display,
 	pthread_mutex_init_value(&display->draw_info_mutex);
 
 #if defined(_WIN32)
-	/* Conservative test for NVIDIA flickering on Intel display */
-	SYSTEM_POWER_STATUS status;
-	display->use_clear_workaround =
-		!GetSystemPowerStatus(&status) ||
-		(status.BatteryFlag != 128 && gs_get_adapter_count() != 1);
+	/* Conservative test for NVIDIA flickering in multi-GPU setups */
+	display->use_clear_workaround = gs_get_adapter_count() > 1;
 #elif defined(__APPLE__)
 	/* Apple Silicon GL driver doesn't seem to track SRGB clears correctly */
 	display->use_clear_workaround = true;
