@@ -163,6 +163,15 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 			pq ? (int)obs_get_video_hdr_nominal_peak_level()
 			   : (hlg ? 1000 : 0);
 
+		size_t content_size;
+		AVContentLightMetadata *const content =
+			av_content_light_metadata_alloc(&content_size);
+		content->MaxCLL = hdr_nominal_peak_level;
+		content->MaxFALL = hdr_nominal_peak_level;
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+					(uint8_t *)content, content_size);
+
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
 		mastering->display_primaries[0][0] = av_make_q(17, 25);
