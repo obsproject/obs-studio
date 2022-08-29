@@ -652,6 +652,10 @@ static int obs_init_video(struct obs_video_info *ovi)
 
 	if (!obs_view_add(&obs->data.main_view))
 		return OBS_VIDEO_FAIL;
+	if (!obs_stream_view_add(&obs->data.stream_view))
+		return OBS_VIDEO_FAIL;
+	if (!obs_record_view_add(&obs->data.record_view))
+		return OBS_VIDEO_FAIL;
 
 	int errorcode;
 #ifdef __APPLE__
@@ -674,6 +678,12 @@ static void stop_video(void)
 	struct obs_core_video *video = &obs->video;
 	if (video->main_mix && video->main_mix->video) {
 		video_output_stop(video->main_mix->video);
+	}
+	if (video->stream_mix && video->stream_mix->video) {
+		video_output_stop(video->stream_mix->video);
+	}
+	if (video->record_mix && video->record_mix->video) {
+		video_output_stop(video->record_mix->video);
 	}
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
@@ -902,6 +912,10 @@ static bool obs_init_data(void)
 
 	if (!obs_view_init(&data->main_view))
 		goto fail;
+	if (!obs_view_init(&data->stream_view))
+		goto fail;
+	if (!obs_view_init(&data->record_view))
+		goto fail;
 
 	data->private_data = obs_data_create();
 	data->valid = true;
@@ -942,6 +956,10 @@ static void obs_free_data(void)
 
 	obs_view_remove(&data->main_view);
 	obs_main_view_free(&data->main_view);
+	obs_view_remove(&data->stream_view);
+	obs_main_view_free(&data->stream_view);
+	obs_view_remove(&data->record_view);
+	obs_main_view_free(&data->record_view);
 
 	blog(LOG_INFO, "Freeing OBS context data");
 
@@ -1678,6 +1696,16 @@ video_t *obs_get_video(void)
 	return obs->video.main_mix->video;
 }
 
+video_t *obs_get_stream_video(void)
+{
+	return obs->video.stream_mix->video;
+}
+
+video_t *obs_get_record_video(void)
+{
+	return obs->video.record_mix->video;
+}
+
 /* TODO: optimize this later so it's not just O(N) string lookups */
 static inline struct obs_modal_ui *
 get_modal_ui_callback(const char *id, const char *task, const char *target)
@@ -1768,6 +1796,8 @@ void obs_set_output_source(uint32_t channel, obs_source_t *source)
 	calldata_free(&params);
 
 	view->channels[channel] = source;
+	obs->data.stream_view.channels[channel] = source;
+	obs->data.record_view.channels[channel] = source;
 
 	pthread_mutex_unlock(&view->channels_mutex);
 

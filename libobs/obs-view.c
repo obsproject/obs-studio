@@ -160,6 +160,26 @@ static inline void set_main_mix()
 	obs->video.main_mix = mix;
 }
 
+static inline void set_stream_mix()
+{
+	size_t idx = find_mix_for_view(&obs->data.stream_view);
+
+	struct obs_core_video_mix *mix = NULL;
+	if (idx != DARRAY_INVALID)
+		mix = obs->video.mixes.array[idx];
+	obs->video.stream_mix = mix;
+}
+
+static inline void set_record_mix()
+{
+	size_t idx = find_mix_for_view(&obs->data.record_view);
+
+	struct obs_core_video_mix *mix = NULL;
+	if (idx != DARRAY_INVALID)
+		mix = obs->video.mixes.array[idx];
+	obs->video.record_mix = mix;
+}
+
 video_t *obs_view_add(obs_view_t *view)
 {
 	if (!view)
@@ -174,6 +194,44 @@ video_t *obs_view_add(obs_view_t *view)
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	da_push_back(obs->video.mixes, &mix);
 	set_main_mix();
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return mix->video;
+}
+
+video_t *obs_stream_view_add(obs_view_t *view)
+{
+	if (!view)
+		return NULL;
+
+	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi);
+	if (!mix) {
+		return NULL;
+	}
+	mix->view = view;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	da_push_back(obs->video.mixes, &mix);
+	set_stream_mix();
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
+	return mix->video;
+}
+
+video_t *obs_record_view_add(obs_view_t *view)
+{
+	if (!view)
+		return NULL;
+
+	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi);
+	if (!mix) {
+		return NULL;
+	}
+	mix->view = view;
+
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	da_push_back(obs->video.mixes, &mix);
+	set_record_mix();
 	pthread_mutex_unlock(&obs->video.mixes_mutex);
 
 	return mix->video;

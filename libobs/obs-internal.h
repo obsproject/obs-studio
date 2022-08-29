@@ -398,6 +398,8 @@ struct obs_core_data {
 	DARRAY(struct tick_callback) tick_callbacks;
 
 	struct obs_view main_view;
+	struct obs_view stream_view;
+	struct obs_view record_view;
 
 	long long unnamed_index;
 

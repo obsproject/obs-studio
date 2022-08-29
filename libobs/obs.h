@@ -665,6 +665,12 @@ EXPORT audio_t *obs_get_audio(void);
 /** Gets the main video output handler for this OBS context */
 EXPORT video_t *obs_get_video(void);
 
+/** Gets the main video output handler for this OBS context */
+EXPORT video_t *obs_get_stream_video(void);
+
+/** Gets the main video output handler for this OBS context */
+EXPORT video_t *obs_get_record_video(void);
+
 /** Returns true if video is active, false otherwise */
 EXPORT bool obs_video_active(void);
 
@@ -967,6 +973,12 @@ EXPORT void obs_view_render(obs_view_t *view);
 
 /** Adds a view to the main render loop */
 EXPORT video_t *obs_view_add(obs_view_t *view);
+
+/** Adds a view to the main render loop */
+EXPORT video_t *obs_stream_view_add(obs_view_t *view);
+
+/** Adds a view to the main render loop */
+EXPORT video_t *obs_record_view_add(obs_view_t *view);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
@@ -2528,6 +2540,9 @@ EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
 						obs_service_t *service);
 
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
+
+EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
+						enum obs_video_rendering_mode mode);
 
 /** Gets the default settings for a service */
 EXPORT obs_data_t *obs_service_defaults(const char *id);
