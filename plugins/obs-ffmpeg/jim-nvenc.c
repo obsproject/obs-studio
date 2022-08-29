@@ -89,7 +89,6 @@ struct nvenc_data {
 
 struct nv_bitstream {
 	void *ptr;
-	HANDLE event;
 };
 
 #define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
@@ -99,48 +98,19 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {
 		NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
-	NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
-	HANDLE event = NULL;
 
 	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
 		return false;
 	}
 
-	event = CreateEvent(NULL, FALSE, FALSE, NULL);
-	if (!event) {
-		error("%s: %s", __FUNCTION__, "Failed to create event");
-		goto fail;
-	}
-
-	params.completionEvent = event;
-	if (NV_FAILED(nv.nvEncRegisterAsyncEvent(enc->session, &params))) {
-		goto fail;
-	}
-
 	bs->ptr = buf.bitstreamBuffer;
-	bs->event = event;
 	return true;
-
-fail:
-	if (event) {
-		CloseHandle(event);
-	}
-	if (buf.bitstreamBuffer) {
-		nv.nvEncDestroyBitstreamBuffer(enc->session,
-					       buf.bitstreamBuffer);
-	}
-	return false;
 }
 
 static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	if (bs->ptr) {
 		nv.nvEncDestroyBitstreamBuffer(enc->session, bs->ptr);
-
-		NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
-		params.completionEvent = bs->event;
-		nv.nvEncUnregisterAsyncEvent(enc->session, &params);
-		CloseHandle(bs->event);
 	}
 }
 
@@ -463,7 +433,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	params->darHeight = darHeight;
 	params->frameRateNum = voi->fps_num;
 	params->frameRateDen = voi->fps_den;
-	params->enableEncodeAsync = 1;
+	params->enableEncodeAsync = 0;
 	params->enablePTD = 1;
 	params->encodeConfig = &enc->config;
 	config->gopLength = gop_size;
@@ -1118,11 +1088,9 @@ static void nvenc_destroy(void *data)
 
 	if (enc->encode_started) {
 		size_t next_bitstream = enc->next_bitstream;
-		HANDLE next_event = enc->bitstreams.array[next_bitstream].event;
 
 		NV_ENC_PIC_PARAMS params = {NV_ENC_PIC_PARAMS_VER};
 		params.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
-		params.completionEvent = next_event;
 		nv.nvEncEncodePicture(enc->session, &params);
 		get_encoded_packet(enc, true);
 	}
@@ -1220,13 +1188,11 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		struct nv_bitstream *bs = &enc->bitstreams.array[cur_bs_idx];
 		struct nv_texture *nvtex = &enc->textures.array[cur_bs_idx];
 
-		WaitForSingleObject(bs->event, INFINITE);
-
 		/* ---------------- */
 
 		NV_ENC_LOCK_BITSTREAM lock = {NV_ENC_LOCK_BITSTREAM_VER};
 		lock.outputBitstream = bs->ptr;
-		lock.doNotWait = true;
+		lock.doNotWait = false;
 
 		if (NV_FAILED(nv.nvEncLockBitstream(s, &lock))) {
 			return false;
@@ -1361,7 +1327,6 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
 	params.outputBitstream = bs->ptr;
-	params.completionEvent = bs->event;
 
 	err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
