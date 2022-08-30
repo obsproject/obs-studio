@@ -1036,12 +1036,20 @@ bool WASAPISource::TryInitialize()
 		Initialize();
 		success = true;
 	} catch (HRError &error) {
-		if (true) { // !previouslyFailed 
+		if (!previouslyFailed) {
 			blog(LOG_WARNING,
 			     "[WASAPISource::TryInitialize]:[%s] %s: %lX",
 			     device_name.empty() ? device_id.c_str()
 						 : device_name.c_str(),
 			     error.str, error.hr);
+		}
+	} catch (const char *error) {
+		if (!previouslyFailed) {
+			blog(LOG_WARNING,
+			     "[WASAPISource::TryInitialize]:[%s] %s",
+			     device_name.empty() ? device_id.c_str()
+						 : device_name.c_str(),
+			     error);
 		}
 	}
 
