@@ -326,6 +326,29 @@ static bool init_session(struct nvenc_data *enc)
 	return true;
 }
 
+static void initialize_params(NV_ENC_INITIALIZE_PARAMS *params,
+			      const GUID *nv_encode, const GUID *nv_preset,
+			      uint32_t width, uint32_t height, uint32_t fps_num,
+			      uint32_t fps_den, NV_ENC_CONFIG *config)
+{
+	int darWidth, darHeight;
+	av_reduce(&darWidth, &darHeight, width, height, 1024 * 1024);
+
+	memset(params, 0, sizeof(*params));
+	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
+	params->encodeGUID = *nv_encode;
+	params->presetGUID = *nv_preset;
+	params->encodeWidth = width;
+	params->encodeHeight = height;
+	params->darWidth = darWidth;
+	params->darHeight = darHeight;
+	params->frameRateNum = fps_num;
+	params->frameRateDen = fps_den;
+	params->enableEncodeAsync = 0;
+	params->enablePTD = 1;
+	params->encodeConfig = config;
+}
+
 static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 			      int bf, bool psycho_aq)
 {
@@ -414,28 +437,14 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	uint32_t gop_size =
 		(keyint_sec) ? keyint_sec * voi->fps_num / voi->fps_den : 250;
 
-	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_H264 *h264_config = &config->encodeCodecConfig.h264Config;
 	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
 		&h264_config->h264VUIParameters;
 
-	int darWidth, darHeight;
-	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
-
-	memset(params, 0, sizeof(*params));
-	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
-	params->encodeGUID = NV_ENC_CODEC_H264_GUID;
-	params->presetGUID = nv_preset;
-	params->encodeWidth = voi->width;
-	params->encodeHeight = voi->height;
-	params->darWidth = darWidth;
-	params->darHeight = darHeight;
-	params->frameRateNum = voi->fps_num;
-	params->frameRateDen = voi->fps_den;
-	params->enableEncodeAsync = 0;
-	params->enablePTD = 1;
-	params->encodeConfig = &enc->config;
+	initialize_params(&enc->params, &NV_ENC_CODEC_H264_GUID, &nv_preset,
+			  voi->width, voi->height, voi->fps_num, voi->fps_den,
+			  &enc->config);
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
@@ -573,7 +582,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* initialize                 */
 
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
+	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
 
@@ -686,28 +695,14 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	uint32_t gop_size =
 		(keyint_sec) ? keyint_sec * voi->fps_num / voi->fps_den : 250;
 
-	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_HEVC *hevc_config = &config->encodeCodecConfig.hevcConfig;
 	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
 		&hevc_config->hevcVUIParameters;
 
-	int darWidth, darHeight;
-	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
-
-	memset(params, 0, sizeof(*params));
-	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
-	params->encodeGUID = NV_ENC_CODEC_HEVC_GUID;
-	params->presetGUID = nv_preset;
-	params->encodeWidth = voi->width;
-	params->encodeHeight = voi->height;
-	params->darWidth = darWidth;
-	params->darHeight = darHeight;
-	params->frameRateNum = voi->fps_num;
-	params->frameRateDen = voi->fps_den;
-	params->enableEncodeAsync = 1;
-	params->enablePTD = 1;
-	params->encodeConfig = &enc->config;
+	initialize_params(&enc->params, &NV_ENC_CODEC_HEVC_GUID, &nv_preset,
+			  voi->width, voi->height, voi->fps_num, voi->fps_den,
+			  &enc->config);
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	hevc_config->idrPeriod = gop_size;
@@ -861,7 +856,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* initialize                 */
 
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
+	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
 
