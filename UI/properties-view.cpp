@@ -636,8 +636,7 @@ static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon,
 	QPushButton *button = new QPushButton();
 	button->setProperty("themeID", themeIcon);
 	button->setFlat(true);
-	button->setMaximumSize(22, 22);
-	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	button->setProperty("toolButton", true);
 
 	QObject::connect(button, &QPushButton::clicked, info, method);
 
