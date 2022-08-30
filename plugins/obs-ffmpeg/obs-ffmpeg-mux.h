@@ -61,7 +61,6 @@ struct ffmpeg_muxer {
 
 	bool is_network;
 	bool split_file;
-	bool reset_timestamps;
 	bool allow_overwrite;
 };
 
