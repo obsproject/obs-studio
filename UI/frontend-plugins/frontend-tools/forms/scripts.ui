@@ -47,6 +47,9 @@
            <property name="contextMenuPolicy">
             <enum>Qt::CustomContextMenu</enum>
            </property>
+           <property name="spacing">
+            <number>1</number>
+           </property>
            <property name="sortingEnabled">
             <bool>true</bool>
            </property>
