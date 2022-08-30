@@ -119,9 +119,11 @@ if(OS_WINDOWS)
             obs-ffmpeg.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
+  find_package(Libva REQUIRED)
   find_package(Libpci REQUIRED)
-  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c)
-  target_link_libraries(obs-ffmpeg PRIVATE LIBPCI::LIBPCI)
+  target_sources(obs-ffmpeg PRIVATE obs-ffmpeg-vaapi.c vaapi-utils.c
+                                    vaapi-utils.h)
+  target_link_libraries(obs-ffmpeg PRIVATE Libva::va LIBPCI::LIBPCI)
 endif()
 
 setup_plugin_target(obs-ffmpeg)
