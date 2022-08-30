@@ -13,6 +13,9 @@
   <property name="windowTitle">
    <string>Basic.Filters</string>
   </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
+  </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout" stretch="1,10">
