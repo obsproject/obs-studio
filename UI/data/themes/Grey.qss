@@ -763,6 +763,7 @@ QPushButton[themeID="replayBufferButton"],
 #streamButton:!hover:!pressed:checked,
 #recordButton:!hover:!pressed:checked,
 QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
+QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
 #modeSwitch:!hover:!pressed:checked,
 #broadcastButton:!hover:!pressed:checked {
     background: rgb(40,76,184);
@@ -772,6 +773,7 @@ QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
 #streamButton:hover:!pressed:checked,
 #recordButton:hover:!pressed:checked,
 QPushButton[themeID="replayBufferButton"]:!pressed:checked,
+QPushButton[themeID="vcamButton"]:!pressed:checked,
 #modeSwitch:hover:!pressed:checked,
 #broadcastButton:hover:!pressed:checked {
     background: rgb(54,92,192);
