@@ -66,8 +66,8 @@
       <widget class="QPushButton" name="add">
        <property name="maximumSize">
         <size>
-         <width>22</width>
-         <height>22</height>
+         <width>16777215</width>
+         <height>16777215</height>
         </size>
        </property>
        <property name="flat">
@@ -76,14 +76,17 @@
        <property name="themeID" stdset="0">
         <string notr="true">addIconSmall</string>
        </property>
+       <property name="toolButton" stdset="0">
+        <bool>true</bool>
+       </property>
       </widget>
      </item>
      <item>
       <widget class="QPushButton" name="remove">
        <property name="maximumSize">
         <size>
-         <width>22</width>
-         <height>22</height>
+         <width>16777215</width>
+         <height>16777215</height>
         </size>
        </property>
        <property name="flat">
@@ -91,6 +94,9 @@
        </property>
        <property name="themeID" stdset="0">
         <string notr="true">removeIconSmall</string>
+       </property>
+       <property name="toolButton" stdset="0">
+        <bool>true</bool>
        </property>
       </widget>
      </item>
