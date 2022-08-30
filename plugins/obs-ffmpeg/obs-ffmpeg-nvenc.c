@@ -170,6 +170,7 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 				    ffmpeg_opts);
 
 	info("settings:\n"
+	     "\tencoder:      %s\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
@@ -182,8 +183,8 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	     "\tb-frames:     %d\n"
 	     "\tpsycho-aq:    %d\n"
 	     "\tGPU:          %d\n",
-	     rc, bitrate, cqp, enc->ffve.context->gop_size, preset, profile,
-	     enc->ffve.context->width, enc->ffve.height,
+	     enc->ffve.enc_name, rc, bitrate, cqp, enc->ffve.context->gop_size,
+	     preset, profile, enc->ffve.context->width, enc->ffve.height,
 	     twopass ? "true" : "false", enc->ffve.context->max_b_frames,
 	     psycho_aq, gpu);
 

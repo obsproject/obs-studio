@@ -587,6 +587,7 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	}
 
 	info("settings:\n"
+	     "\tcodec:        H264\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
@@ -861,6 +862,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	}
 
 	info("settings:\n"
+	     "\tcodec:        HEVC\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
