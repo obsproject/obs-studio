@@ -1950,7 +1950,6 @@ bool AdvancedOutput::StartRecording()
 					 splitFileTime * 60);
 			obs_data_set_int(settings, "max_size_mb",
 					 splitFileSize);
-			obs_data_set_bool(settings, "reset_timestamps", true);
 		}
 
 		obs_output_update(fileOutput, settings);
