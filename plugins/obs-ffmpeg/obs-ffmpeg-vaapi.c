@@ -38,10 +38,11 @@
 
 #include <pci/pci.h>
 
+#include "vaapi-utils.h"
 #include "obs-ffmpeg-formats.h"
 
 #define do_log(level, format, ...)                          \
-	blog(level, "[FFMPEG VAAPI encoder: '%s'] " format, \
+	blog(level, "[FFmpeg VAAPI encoder: '%s'] " format, \
 	     obs_encoder_get_name(enc->encoder), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -77,7 +78,7 @@ struct vaapi_encoder {
 static const char *vaapi_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "FFMPEG VAAPI H.264";
+	return "FFmpeg VAAPI H.264";
 }
 
 static inline bool valid_format(enum video_format format)
@@ -511,8 +512,9 @@ static void set_visible(obs_properties_t *ppts, const char *name, bool visible)
 
 static void vaapi_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_string(settings, "vaapi_device",
-				    "/dev/dri/renderD128");
+	const char *device = vaapi_get_h264_default_device();
+
+	obs_data_set_default_string(settings, "vaapi_device", device);
 	obs_data_set_default_int(settings, "profile",
 				 FF_PROFILE_H264_CONSTRAINED_BASELINE);
 	obs_data_set_default_int(settings, "level", 40);
@@ -520,9 +522,67 @@ static void vaapi_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
 	obs_data_set_default_int(settings, "rendermode", 0);
-	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_int(settings, "qp", 20);
 	obs_data_set_default_int(settings, "maxrate", 0);
+
+	int drm_fd = -1;
+	VADisplay va_dpy = vaapi_open_device(&drm_fd, device, "vaapi_defaults");
+	if (!va_dpy)
+		return;
+
+	if (vaapi_device_rc_supported(VAProfileH264ConstrainedBaseline, va_dpy,
+				      VA_RC_CBR, device))
+		obs_data_set_default_string(settings, "rate_control", "CBR");
+	else if (vaapi_device_rc_supported(VAProfileH264ConstrainedBaseline,
+					   va_dpy, VA_RC_VBR, device))
+		obs_data_set_default_string(settings, "rate_control", "VBR");
+	else
+		obs_data_set_default_string(settings, "rate_control", "CQP");
+
+	vaapi_close_device(&drm_fd, va_dpy);
+}
+
+static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
+				  obs_data_t *settings)
+{
+	UNUSED_PARAMETER(p);
+
+	const char *device = obs_data_get_string(settings, "vaapi_device");
+	int drm_fd = -1;
+	VADisplay va_dpy =
+		vaapi_open_device(&drm_fd, device, "vaapi_device_modified");
+	int profile = obs_data_get_int(settings, "profile");
+	obs_property_t *rc_p = obs_properties_get(ppts, "rate_control");
+
+	obs_property_list_clear(rc_p);
+
+	if (!va_dpy || !vaapi_display_h264_supported(va_dpy, device))
+		goto fail;
+
+	switch (profile) {
+	case FF_PROFILE_H264_CONSTRAINED_BASELINE:
+		profile = VAProfileH264ConstrainedBaseline;
+		break;
+	case FF_PROFILE_H264_MAIN:
+		profile = VAProfileH264Main;
+		break;
+	case FF_PROFILE_H264_HIGH:
+		profile = VAProfileH264High;
+		break;
+	}
+
+	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CBR, device))
+		obs_property_list_add_string(rc_p, "CBR (default)", "CBR");
+
+	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_VBR, device))
+		obs_property_list_add_string(rc_p, "VBR", "VBR");
+
+	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CQP, device))
+		obs_property_list_add_string(rc_p, "CQP", "CQP");
+
+fail:
+	vaapi_close_device(&drm_fd, va_dpy);
+	return true;
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -617,6 +677,10 @@ static obs_properties_t *vaapi_properties(void *unused)
 				bool name_found = get_device_name_from_pci(
 					pacc, pci_slot, namebuf,
 					sizeof(namebuf));
+
+				if (!vaapi_device_h264_supported(path))
+					continue;
+
 				if (!name_found)
 					obs_property_list_add_string(list, path,
 								     path);
@@ -640,12 +704,18 @@ static obs_properties_t *vaapi_properties(void *unused)
 					blog(LOG_DEBUG,
 					     "obs-ffmpeg-vaapi: A format truncation may have occurred."
 					     " This can be ignored since it is quite improbable.");
+
+				if (!vaapi_device_h264_supported(path))
+					continue;
+
 				obs_property_list_add_string(list, card, path);
 			} else {
 				break;
 			}
 		}
 	}
+
+	obs_property_set_modified_callback(list, vaapi_device_modified);
 
 	list = obs_properties_add_list(props, "profile",
 				       obs_module_text("Profile"),
@@ -655,6 +725,8 @@ static obs_properties_t *vaapi_properties(void *unused)
 				  FF_PROFILE_H264_CONSTRAINED_BASELINE);
 	obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
 	obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
+
+	obs_property_set_modified_callback(list, vaapi_device_modified);
 
 	list = obs_properties_add_list(props, "level", obs_module_text("Level"),
 				       OBS_COMBO_TYPE_LIST,
@@ -674,9 +746,6 @@ static obs_properties_t *vaapi_properties(void *unused)
 				       obs_module_text("RateControl"),
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(list, "CBR (default)", "CBR");
-	obs_property_list_add_string(list, "CQP", "CQP");
-	obs_property_list_add_string(list, "VBR", "VBR");
 
 	obs_property_set_modified_callback(list, rate_control_modified);
 
