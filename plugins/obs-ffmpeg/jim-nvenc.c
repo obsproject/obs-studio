@@ -697,7 +697,7 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_HEVC *hevc_config = &config->encodeCodecConfig.hevcConfig;
-	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
+	NV_ENC_CONFIG_HEVC_VUI_PARAMETERS *vui_params =
 		&hevc_config->hevcVUIParameters;
 
 	initialize_params(&enc->params, &NV_ENC_CODEC_HEVC_GUID, &nv_preset,
