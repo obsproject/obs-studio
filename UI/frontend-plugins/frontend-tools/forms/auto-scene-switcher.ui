@@ -52,6 +52,9 @@
        <verstretch>0</verstretch>
       </sizepolicy>
      </property>
+     <property name="spacing">
+      <number>1</number>
+     </property>
      <property name="sortingEnabled">
       <bool>true</bool>
      </property>

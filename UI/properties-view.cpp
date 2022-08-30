@@ -658,6 +658,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	list->setSortingEnabled(false);
 	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	list->setSpacing(1);
 
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease item = obs_data_array_item(array, i);
