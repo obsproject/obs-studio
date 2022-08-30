@@ -85,7 +85,7 @@ static OBSPlainTextEdit *scriptLogWidget = nullptr;
 
 /* ----------------------------------------------------------------- */
 
-ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
+ScriptLogWindow::ScriptLogWindow() : QDialog(nullptr)
 {
 	OBSPlainTextEdit *edit = new OBSPlainTextEdit();
 	edit->setReadOnly(true);
@@ -108,6 +108,8 @@ ScriptLogWindow::ScriptLogWindow() : QWidget(nullptr)
 
 	setLayout(layout);
 	scriptLogWidget = edit;
+
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
 
 	resize(600, 400);
 
@@ -179,8 +181,10 @@ void ScriptLogWindow::Clear()
 
 /* ----------------------------------------------------------------- */
 
-ScriptsTool::ScriptsTool() : QWidget(nullptr), ui(new Ui_ScriptsTool)
+ScriptsTool::ScriptsTool() : QDialog(nullptr), ui(new Ui_ScriptsTool)
 {
+	setWindowFlags(windowFlags() & ~Qt::WindowContextHelpButtonHint);
+
 	ui->setupUi(this);
 	RefreshLists();
 
