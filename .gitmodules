@@ -29,3 +29,6 @@
 [submodule "plugins/mediasoup-connector"]
 	path = plugins/mediasoup-connector
 	url = https://github.com/stream-labs/mediasoup-connector.git
+[submodule "plugins/obs-vst"]
+	path = plugins/obs-vst
+	url = https://github.com/stream-labs/obs-vst.git
