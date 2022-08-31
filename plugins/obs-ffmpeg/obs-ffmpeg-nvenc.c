@@ -22,8 +22,8 @@
 
 #include "obs-ffmpeg-video-encoders.h"
 
-#define do_log(level, format, ...)                   \
-	blog(level, "[NVENC encoder: '%s'] " format, \
+#define do_log(level, format, ...)                          \
+	blog(level, "[FFmpeg NVENC encoder: '%s'] " format, \
 	     obs_encoder_get_name(enc->ffve.encoder), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -39,7 +39,7 @@ struct nvenc_encoder {
 	DARRAY(uint8_t) sei;
 };
 
-#define ENCODER_NAME_H264 "NVIDIA NVENC H.264"
+#define ENCODER_NAME_H264 "NVIDIA NVENC H.264 (FFmpeg)"
 static const char *h264_nvenc_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
@@ -47,7 +47,7 @@ static const char *h264_nvenc_getname(void *unused)
 }
 
 #ifdef ENABLE_HEVC
-#define ENCODER_NAME_HEVC "NVIDIA NVENC HEVC"
+#define ENCODER_NAME_HEVC "NVIDIA NVENC HEVC (FFmpeg)"
 static const char *hevc_nvenc_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);

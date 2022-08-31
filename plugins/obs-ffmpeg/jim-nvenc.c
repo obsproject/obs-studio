@@ -183,14 +183,14 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 static const char *h264_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC H.264 (new)";
+	return "NVIDIA NVENC H.264";
 }
 
 #ifdef ENABLE_HEVC
 static const char *hevc_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC HEVC (new)";
+	return "NVIDIA NVENC HEVC";
 }
 #endif
 
