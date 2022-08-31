@@ -53,6 +53,7 @@ cmake -H. ^
          -DCMAKE_BUILD_TYPE=%BuildConfig% ^
          -DBUILD_FOR_DISTRIBUTION=true
 
+del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v
