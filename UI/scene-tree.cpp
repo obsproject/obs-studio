@@ -253,6 +253,6 @@ void SceneTree::rowsInserted(const QModelIndex &parent, int start, int end)
 void SceneTree::selectionChanged(const QItemSelection &selected,
 				 const QItemSelection &deselected)
 {
-	if (selected.count() == 0)
+	if (selected.count() == 0 && deselected.count() > 0)
 		setCurrentRow(deselected.indexes().front().row());
 }
