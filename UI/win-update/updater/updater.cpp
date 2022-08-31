@@ -46,6 +46,8 @@ int totalFileSize = 0;
 int completedFileSize = 0;
 static int completedUpdates = 0;
 
+static wchar_t tempPath[MAX_PATH];
+
 struct LastError {
 	DWORD code;
 	inline LastError() { code = GetLastError(); }
@@ -879,6 +881,13 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		update.sourceURL = sourceURL;
 		update.fileSize = size;
 		update.patchable = true;
+
+		/* Since the patch depends on the previous version, we can
+		 * no longer rely on the temp name being unique to the
+		 * new file's hash */
+		update.tempPath = tempPath;
+		update.tempPath += L"\\";
+		update.tempPath += patchHashStr;
 		break;
 	}
 }
@@ -1064,8 +1073,6 @@ static bool UpdateFile(update_t &file)
 
 	return true;
 }
-
-static wchar_t tempPath[MAX_PATH] = {};
 
 #define PATCH_MANIFEST_URL \
 	L"https://obsproject.com/update_studio/getpatchmanifest"
