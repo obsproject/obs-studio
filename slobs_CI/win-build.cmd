@@ -21,7 +21,7 @@ cd "%MAIN_DIR%"
 cmake -H. ^
          -B"%CD%\%BUILD_DIRECTORY%" ^
          -G"%CmakeGenerator%" -A x64 ^
-         -DCMAKE_SYSTEM_VERSION=10.0 ^
+         -DCMAKE_SYSTEM_VERSION="10.0.18363.657" ^
          -DCMAKE_INSTALL_PREFIX="%CD%\%InstallPath%" ^
          -DVLCPath="%VLC_DIR%" ^
          -DCEF_ROOT_DIR="%CEFPATH%" ^
@@ -54,6 +54,8 @@ cmake -H. ^
          -DBUILD_FOR_DISTRIBUTION=true
 
 del /q /s %CD%\%InstallPath%
+cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
+cmake -S . -B %CD%\%BUILD_DIRECTORY% -DCOPIED_DEPENDENCIES=OFF -DCOPY_DEPENDENCIES=ON
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v

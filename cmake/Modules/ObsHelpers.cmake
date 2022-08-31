@@ -34,24 +34,14 @@ function(setup_binary_target target)
             NAMELINK_COMPONENT ${target}_Development
     ARCHIVE DESTINATION ${OBS_LIBRARY_DESTINATION}
             COMPONENT ${target}_Development
-    PUBLIC_HEADER
-      DESTINATION ${OBS_INCLUDE_DESTINATION}
-      COMPONENT ${target}_Development
-      EXCLUDE_FROM_ALL)
+    PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION})
 
   # Set up installation paths for development rundir
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL
-    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL
-    PUBLIC_HEADER
-      DESTINATION ${OBS_INCLUDE_DESTINATION}
-      COMPONENT IGNORED
-      EXCLUDE_FROM_ALL)
+    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_${target}
+    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_${target}
+    PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION} EXCLUDE_FROM_ALL)
 
   add_custom_command(
     TARGET ${target}
@@ -78,9 +68,7 @@ function(setup_plugin_target target)
 
   install(
     TARGETS ${target}
-    RUNTIME DESTINATION ${OBS_PLUGIN_DESTINATION}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL
+    RUNTIME DESTINATION ${OBS_PLUGIN_DESTINATION} COMPONENT obs_${target}
     LIBRARY DESTINATION ${OBS_PLUGIN_DESTINATION}
             COMPONENT obs_${target}
             EXCLUDE_FROM_ALL)
@@ -246,15 +234,9 @@ function(export_target target)
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
-    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION}
-            COMPONENT obs_libraries
-            ${_EXCLUDE}
-    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION}
-            COMPONENT obs_libraries
-            ${_EXCLUDE}
-    ARCHIVE DESTINATION ${OBS_LIBRARY_DESTINATION}
-            COMPONENT obs_libraries
-            ${_EXCLUDE}
+    RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_libraries
+    LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_libraries
+    ARCHIVE DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_libraries
     INCLUDES
     DESTINATION ${OBS_INCLUDE_DESTINATION}
     PUBLIC_HEADER
@@ -509,7 +491,6 @@ function(_install_obs_datatarget target destination)
     TARGETS ${target}
     LIBRARY DESTINATION ${OBS_DATA_DESTINATION}/${destination}
             COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL
     RUNTIME DESTINATION ${OBS_DATA_DESTINATION}/${destination}
             COMPONENT obs_${target}
             EXCLUDE_FROM_ALL)
@@ -526,8 +507,6 @@ function(_install_obs_datatarget target destination)
         RUNTIME
           DESTINATION
             $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}/$<TARGET_FILE_NAME:${target}>
-          COMPONENT obs_${target}
-          EXCLUDE_FROM_ALL
         LIBRARY
           DESTINATION
             $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}/$<TARGET_FILE_NAME:${target}>

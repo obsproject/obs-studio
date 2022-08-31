@@ -39,6 +39,11 @@ endif()
 option(BUILD_FOR_DISTRIBUTION "Build for distribution (enables optimisations)"
        OFF)
 option(ENABLE_UI "Enable building with UI (requires Qt)" ON)
+if (NOT ENABLE_UI)
+  if(MSVC)
+    include(CopyMSVCBins)
+  endif()
+endif()
 option(ENABLE_SCRIPTING "Enable scripting support" ON)
 option(USE_LIBCXX "Use libc++ instead of libstdc++" ${APPLE})
 option(

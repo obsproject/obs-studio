@@ -8,10 +8,8 @@ function(setup_binary_target target)
       RUNTIME
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_EXECUTABLE_DESTINATION}
         COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL
       LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_LIBRARY_DESTINATION}
               COMPONENT obs_${target}
-              EXCLUDE_FROM_ALL
       PUBLIC_HEADER
         DESTINATION ${OBS_INCLUDE_DESTINATION}
         COMPONENT obs_${target}
@@ -76,7 +74,6 @@ function(setup_plugin_target target)
       TARGETS ${target}
       RUNTIME DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_PLUGIN_DESTINATION}
               COMPONENT obs_${target}
-              EXCLUDE_FROM_ALL
       LIBRARY DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_PLUGIN_DESTINATION}
               COMPONENT obs_${target}
               EXCLUDE_FROM_ALL)
@@ -111,7 +108,6 @@ function(setup_script_plugin_target target)
       RUNTIME
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
         COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL
       LIBRARY
         DESTINATION $ENV{OBS_InstallerTempDir}/${OBS_SCRIPT_PLUGIN_DESTINATION}
         COMPONENT obs_${target}
@@ -222,19 +218,14 @@ function(export_target target)
     EXPORT ${target}Targets
     RUNTIME DESTINATION "${OBS_EXECUTABLE_EXPORT_DESTINATION}"
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
     LIBRARY DESTINATION "${OBS_LIBRARY_EXPORT_DESTINATION}"
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
     ARCHIVE DESTINATION "${OBS_LIBRARY_EXPORT_DESTINATION}"
             COMPONENT obs_libraries
-            EXCLUDE_FROM_ALL
     INCLUDES
     DESTINATION "${OBS_INCLUDE_DESTINATION}"
-    PUBLIC_HEADER
-      DESTINATION "${OBS_INCLUDE_DESTINATION}"
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+    PUBLIC_HEADER DESTINATION "${OBS_INCLUDE_DESTINATION}"
+                  COMPONENT obs_libraries)
 
   if(MSVC)
     install(
@@ -242,7 +233,7 @@ function(export_target target)
       CONFIGURATIONS "RelWithDebInfo" "Debug"
       DESTINATION "${OBS_EXECUTABLE_EXPORT_DESTINATION}"
       COMPONENT obs_libraries
-      OPTIONAL EXCLUDE_FROM_ALL)
+      OPTIONAL)
   endif()
 
   include(GenerateExportHeader)
@@ -277,15 +268,13 @@ function(export_target target)
     FILE ${TARGETS_EXPORT_NAME}.cmake
     NAMESPACE OBS::
     DESTINATION ${OBS_CMAKE_DESTINATION}
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_libraries)
 
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
     DESTINATION ${OBS_CMAKE_DESTINATION}
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_libraries)
 endfunction()
 
 # Helper function to do additional setup for browser source plugin
