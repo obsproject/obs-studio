@@ -1868,9 +1868,9 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (hMutex) {
 			MessageBox(
-				nullptr, L"Updater Error",
+				nullptr,
 				L"OBS Studio Updater must be run as an administrator.",
-				MB_ICONWARNING);
+				L"Updater Error", MB_ICONWARNING);
 			return 2;
 		}
 
