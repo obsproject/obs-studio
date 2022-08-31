@@ -41,7 +41,7 @@ function(setup_binary_target target)
     TARGETS ${target}
     RUNTIME DESTINATION ${OBS_EXECUTABLE_DESTINATION} COMPONENT obs_${target}
     LIBRARY DESTINATION ${OBS_LIBRARY_DESTINATION} COMPONENT obs_${target}
-    PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION} EXCLUDE_FROM_ALL)
+    PUBLIC_HEADER DESTINATION ${OBS_INCLUDE_DESTINATION})
 
   add_custom_command(
     TARGET ${target}
@@ -70,8 +70,7 @@ function(setup_plugin_target target)
     TARGETS ${target}
     RUNTIME DESTINATION ${OBS_PLUGIN_DESTINATION} COMPONENT obs_${target}
     LIBRARY DESTINATION ${OBS_PLUGIN_DESTINATION}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL)
+            COMPONENT obs_${target})
 
   setup_target_resources("${target}" "obs-plugins/${target}")
   set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "${target}")
@@ -99,8 +98,7 @@ function(setup_script_plugin_target target)
   install(
     TARGETS ${target}
     LIBRARY DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL)
+            COMPONENT obs_${target})
 
   if(${target} STREQUAL "obspython")
     install(
@@ -111,8 +109,7 @@ function(setup_script_plugin_target target)
     install(
       FILES "$<TARGET_FILE_DIR:${target}>/$<TARGET_FILE_BASE_NAME:${target}>.py"
       DESTINATION ${OBS_SCRIPT_PLUGIN_DESTINATION}
-      COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_${target})
   endif()
   set_property(GLOBAL APPEND PROPERTY OBS_SCRIPTING_MODULE_LIST "${target}")
   add_custom_command(
@@ -141,8 +138,7 @@ function(setup_target_resources target destination)
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/data/
       DESTINATION ${OBS_DATA_DESTINATION}/${destination}
       USE_SOURCE_PERMISSIONS
-      COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_${target})
   endif()
 endfunction()
 
@@ -156,8 +152,7 @@ function(add_target_resource target resource destination)
   install(
     FILES ${resource}
     DESTINATION ${OBS_DATA_DESTINATION}/${destination}
-    COMPONENT obs_${target}
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_${target})
 endfunction()
 
 # Helper function to set up OBS app target
@@ -226,11 +221,8 @@ endfunction()
 function(export_target target)
   set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
 
-  if(OS_LINUX)
-    set(_EXCLUDE "")
-  else()
-    set(_EXCLUDE "EXCLUDE_FROM_ALL")
-  endif()
+  set(_EXCLUDE "EXCLUDE_FROM_ALL")
+
   install(
     TARGETS ${target}
     EXPORT ${target}Targets
@@ -241,8 +233,7 @@ function(export_target target)
     DESTINATION ${OBS_INCLUDE_DESTINATION}
     PUBLIC_HEADER
       DESTINATION ${OBS_INCLUDE_DESTINATION}
-      COMPONENT obs_libraries
-      ${_EXCLUDE})
+      COMPONENT obs_libraries)
 
   include(GenerateExportHeader)
   generate_export_header(${target} EXPORT_FILE_NAME
@@ -458,16 +449,14 @@ function(_install_obs_plugin_with_data target source)
       DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${source}/
       DESTINATION
         ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_DATA_DESTINATION}/obs-plugins/${target}
-      COMPONENT obs_${target}
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_${target})
 
     if(OS_WINDOWS AND DEFINED ENV{obsInstallerTempDir})
       install(
         DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR}/${source}/
         DESTINATION
           $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/obs-plugins/${target}
-        COMPONENT obs_${target}
-        EXCLUDE_FROM_ALL)
+        COMPONENT obs_${target})
     endif()
   endif()
 endfunction()
@@ -492,8 +481,7 @@ function(_install_obs_datatarget target destination)
     LIBRARY DESTINATION ${OBS_DATA_DESTINATION}/${destination}
             COMPONENT obs_${target}
     RUNTIME DESTINATION ${OBS_DATA_DESTINATION}/${destination}
-            COMPONENT obs_${target}
-            EXCLUDE_FROM_ALL)
+            COMPONENT obs_${target})
 
   if(OS_WINDOWS)
     if(MSVC)
@@ -510,8 +498,7 @@ function(_install_obs_datatarget target destination)
         LIBRARY
           DESTINATION
             $ENV{obsInstallerTempDir}/${OBS_DATA_DESTINATION}/${destination}/$<TARGET_FILE_NAME:${target}>
-          COMPONENT obs_${target}
-          EXCLUDE_FROM_ALL)
+          COMPONENT obs_${target})
     endif()
   endif()
 
