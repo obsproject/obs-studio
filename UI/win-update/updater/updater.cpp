@@ -798,9 +798,12 @@ static void AddPackageRemovedFiles(const Json &package)
 		/* Technically GetFileAttributes can fail for other reasons,
 		 * so double-check by also checking the last error */
 		if (GetFileAttributesW(removedFileName) ==
-			    INVALID_FILE_ATTRIBUTES &&
-		    GetLastError() == ERROR_FILE_NOT_FOUND)
-			continue;
+		    INVALID_FILE_ATTRIBUTES) {
+			int err = GetLastError();
+			if (err == ERROR_FILE_NOT_FOUND ||
+			    err == ERROR_PATH_NOT_FOUND)
+				continue;
+		}
 
 		deletion_t deletion;
 		deletion.originalFilename = removedFileName;
@@ -1577,9 +1580,13 @@ static bool Update(wchar_t *cmdLine)
 		}
 	}
 
-	for (deletion_t &deletion : deletions)
-		if (!RenameRemovedFile(deletion))
+	for (deletion_t &deletion : deletions) {
+		if (!RenameRemovedFile(deletion)) {
+			Status(L"Update failed: Couldn't remove "
+			       L"obsolete files");
 			return false;
+		}
+	}
 
 	/* ------------------------------------- *
 	 * Install virtual camera                */
