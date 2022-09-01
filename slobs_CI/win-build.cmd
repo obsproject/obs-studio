@@ -51,7 +51,8 @@ cmake -H. ^
          -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
          -DCMAKE_PREFIX_PATH=%DEPS_DIR% ^
          -DCMAKE_BUILD_TYPE=%BuildConfig% ^
-         -DBUILD_FOR_DISTRIBUTION=true
+         -DBUILD_FOR_DISTRIBUTION=true ^
+         -DCURL_INCLUDE_DIR=%DEPS_DIR%/
 
 del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
