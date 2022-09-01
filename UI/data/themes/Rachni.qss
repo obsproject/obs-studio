@@ -966,10 +966,6 @@ QHeaderView::section {
 
 /* Mute CheckBox */
 
-MuteCheckBox {
-    margin: 4px 0px 0px;
-}
-
 MuteCheckBox::indicator:checked {
     image: url(./Dark/mute.svg);
 }
