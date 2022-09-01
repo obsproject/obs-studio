@@ -248,7 +248,6 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 		setMaximumWidth(110);
 	} else {
-		QHBoxLayout *volLayout = new QHBoxLayout;
 		QHBoxLayout *textLayout = new QHBoxLayout;
 		QHBoxLayout *botLayout = new QHBoxLayout;
 
@@ -261,16 +260,17 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 		textLayout->setAlignment(nameLabel, Qt::AlignLeft);
 		textLayout->setAlignment(volLabel, Qt::AlignRight);
 
-		volLayout->addWidget(slider);
-		volLayout->addWidget(mute);
-		volLayout->setSpacing(5);
-
 		botLayout->setContentsMargins(0, 0, 0, 0);
-		botLayout->setSpacing(0);
-		botLayout->addLayout(volLayout);
+		botLayout->setSpacing(5);
+		botLayout->addWidget(slider);
+		botLayout->addWidget(mute);
+		botLayout->setAlignment(slider, Qt::AlignVCenter);
+		botLayout->setAlignment(mute, Qt::AlignVCenter);
 
-		if (showConfig)
+		if (showConfig) {
 			botLayout->addWidget(config);
+			botLayout->setAlignment(config, Qt::AlignVCenter);
+		}
 
 		mainLayout->addItem(textLayout);
 		mainLayout->addWidget(volMeter);
