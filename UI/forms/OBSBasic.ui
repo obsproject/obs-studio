@@ -720,6 +720,7 @@
      <string>Basic.MainMenu.Docks</string>
     </property>
     <addaction name="lockDocks"/>
+    <addaction name="sideDocks"/>
     <addaction name="resetDocks"/>
     <addaction name="separator"/>
    </widget>
@@ -2194,6 +2195,17 @@
    </property>
    <property name="text">
     <string>Basic.MainMenu.Docks.LockDocks</string>
+   </property>
+  </action>
+  <action name="sideDocks">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>false</bool>
+   </property>
+   <property name="text">
+    <string>Basic.MainMenu.Docks.SideDocks</string>
    </property>
   </action>
   <action name="actionHelpPortal">
