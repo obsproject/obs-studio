@@ -2171,6 +2171,13 @@ void OBSBasic::OBSInit()
 	ui->lockDocks->setChecked(docksLocked);
 	ui->lockDocks->blockSignals(false);
 
+	bool sideDocks = config_get_bool(App()->GlobalConfig(), "BasicWindow",
+					 "SideDocks");
+	on_sideDocks_toggled(sideDocks);
+	ui->sideDocks->blockSignals(true);
+	ui->sideDocks->setChecked(sideDocks);
+	ui->sideDocks->blockSignals(false);
+
 	SystemTray(true);
 
 	TaskbarOverlayInit();
@@ -2896,6 +2903,8 @@ OBSBasic::~OBSBasic()
 			"PreviewProgramMode", IsPreviewProgramMode());
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "DocksLocked",
 			ui->lockDocks->isChecked());
+	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SideDocks",
+			ui->sideDocks->isChecked());
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 
 #ifdef BROWSER_AVAILABLE
@@ -9363,6 +9372,21 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 		} else {
 			oldExtraDocks[i]->setFeatures(features);
 		}
+	}
+}
+
+void OBSBasic::on_sideDocks_toggled(bool side)
+{
+	if (side) {
+		setCorner(Qt::TopLeftCorner, Qt::LeftDockWidgetArea);
+		setCorner(Qt::TopRightCorner, Qt::RightDockWidgetArea);
+		setCorner(Qt::BottomLeftCorner, Qt::LeftDockWidgetArea);
+		setCorner(Qt::BottomRightCorner, Qt::RightDockWidgetArea);
+	} else {
+		setCorner(Qt::TopLeftCorner, Qt::TopDockWidgetArea);
+		setCorner(Qt::TopRightCorner, Qt::TopDockWidgetArea);
+		setCorner(Qt::BottomLeftCorner, Qt::BottomDockWidgetArea);
+		setCorner(Qt::BottomRightCorner, Qt::BottomDockWidgetArea);
 	}
 }
 
