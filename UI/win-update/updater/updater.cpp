@@ -885,12 +885,16 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		update.fileSize = size;
 		update.patchable = true;
 
+		/* ensure the filename is unique */
+		static long increment = 0;
+
 		/* Since the patch depends on the previous version, we can
 		 * no longer rely on the temp name being unique to the
 		 * new file's hash */
 		update.tempPath = tempPath;
 		update.tempPath += L"\\";
 		update.tempPath += patchHashStr;
+		update.tempPath += std::to_wstring(increment++);
 		break;
 	}
 }
