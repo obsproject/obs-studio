@@ -756,6 +756,7 @@ QSpinBox::down-arrow, QDoubleSpinBox::down-arrow {
     margin: 1px;
 }
 
+QPushButton[themeID="vcamButton"],
 #streamButton,
 #recordButton,
 QPushButton[themeID="replayBufferButton"],
