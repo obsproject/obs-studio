@@ -58,6 +58,10 @@ OBSThemeMeta {
     qproperty-icon: url(:/res/images/cogs.svg);
 }
 
+* [themeID="arrowBox"] {
+    qproperty-icon: url(:/res/images/arrow-box.svg);
+}
+
 MuteCheckBox {
     outline: none;
 }

@@ -530,6 +530,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="arrowBox"] {
+    qproperty-icon: url(./Dark/arrow-box.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;

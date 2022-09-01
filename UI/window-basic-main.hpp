@@ -808,6 +808,8 @@ private slots:
 	void LockVolumeControl(bool lock);
 	void ResetProxyStyleSliders();
 
+	void on_goToSceneButton_clicked();
+
 private:
 	/* OBS Callbacks */
 	static void SceneReordered(void *data, calldata_t *params);

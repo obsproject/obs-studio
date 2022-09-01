@@ -328,6 +328,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/cogs.svg);
 }
 
+* [themeID="arrowBox"] {
+    qproperty-icon: url(./Dark/arrow-box.svg);
+}
+
 /* Tab Widget */
 
 QTabWidget::pane { /* The tab widget frame */

@@ -3123,6 +3123,9 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceInteractButton->setVisible(flags &
 						     OBS_SOURCE_INTERACTION);
 
+		OBSScene scene = obs_scene_from_source(source);
+		ui->goToSceneButton->setVisible(scene != nullptr);
+
 		if (contextBarSize >= ContextBarSize_Reduced &&
 		    (updateNeeded || force)) {
 			ClearContextBar();
@@ -3242,16 +3245,19 @@ void OBSBasic::UpdateContextBar(bool force)
 		ui->sourceFiltersButton->setEnabled(false);
 		ui->sourcePropertiesButton->setEnabled(false);
 		ui->sourceInteractButton->setVisible(false);
+		ui->goToSceneButton->setVisible(false);
 	}
 
 	if (contextBarSize == ContextBarSize_Normal) {
 		ui->sourcePropertiesButton->setText(QTStr("Properties"));
 		ui->sourceFiltersButton->setText(QTStr("Filters"));
 		ui->sourceInteractButton->setText(QTStr("Interact"));
+		ui->goToSceneButton->setText(QTStr("GoToScene"));
 	} else {
 		ui->sourcePropertiesButton->setText("");
 		ui->sourceFiltersButton->setText("");
 		ui->sourceInteractButton->setText("");
+		ui->goToSceneButton->setText("");
 	}
 }
 
@@ -5612,6 +5618,8 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 
 		OBSSceneItem sceneItem = ui->sources->Get(idx);
 		obs_source_t *source = obs_sceneitem_get_source(sceneItem);
+		obs_scene_t *scene = obs_scene_from_source(source);
+
 		uint32_t flags = obs_source_get_output_flags(source);
 		bool isAsyncVideo = (flags & OBS_SOURCE_ASYNC_VIDEO) ==
 				    OBS_SOURCE_ASYNC_VIDEO;
@@ -10299,4 +10307,18 @@ void OBSBasic::ResetProxyStyleSliders()
 		ActivateAudioSource(source);
 
 	UpdateContextBar(true);
+}
+
+void OBSBasic::on_goToSceneButton_clicked()
+{
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (!item)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(item);
+	OBSScene scene = obs_scene_from_source(source);
+
+	if (scene)
+		SetCurrentScene(scene);
 }
