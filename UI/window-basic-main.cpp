@@ -5642,6 +5642,18 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			popup.addSeparator();
 		}
 
+		QAction *resizeOutput =
+			popup.addAction(QTStr("ResizeOutputSizeOfSource"), this,
+					SLOT(ResizeOutputSizeOfSource()));
+
+		int width = obs_source_get_width(source);
+		int height = obs_source_get_height(source);
+
+		resizeOutput->setEnabled(!obs_video_active());
+
+		if (width < 8 || height < 8)
+			resizeOutput->setEnabled(false);
+
 		scaleFilteringMenu = new QMenu(QTStr("ScaleFiltering"));
 		popup.addMenu(
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
@@ -9723,6 +9735,40 @@ void OBSBasic::on_actionShowAbout_triggered()
 	about->show();
 
 	about->setAttribute(Qt::WA_DeleteOnClose, true);
+}
+
+void OBSBasic::ResizeOutputSizeOfSource()
+{
+	if (obs_video_active())
+		return;
+
+	QMessageBox resize_output(this);
+	resize_output.setText(QTStr("ResizeOutputSizeOfSource.Text") + "\n\n" +
+			      QTStr("ResizeOutputSizeOfSource.Continue"));
+	QAbstractButton *Yes =
+		resize_output.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	resize_output.addButton(QTStr("No"), QMessageBox::NoRole);
+	resize_output.setIcon(QMessageBox::Warning);
+	resize_output.setWindowTitle(QTStr("ResizeOutputSizeOfSource"));
+	resize_output.exec();
+
+	if (resize_output.clickedButton() != Yes)
+		return;
+
+	OBSSource source = obs_sceneitem_get_source(GetCurrentSceneItem());
+
+	int width = obs_source_get_width(source);
+	int height = obs_source_get_height(source);
+
+	config_set_uint(basicConfig, "Video", "BaseCX", width);
+	config_set_uint(basicConfig, "Video", "BaseCY", height);
+	config_set_uint(basicConfig, "Video", "OutputCX", width);
+	config_set_uint(basicConfig, "Video", "OutputCY", height);
+
+	ResetVideo();
+	ResetOutputs();
+	config_save_safe(basicConfig, "tmp", nullptr);
+	on_actionFitToScreen_triggered();
 }
 
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
