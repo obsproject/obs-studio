@@ -1873,6 +1873,18 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 
 	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
 
+	if (!IsWindows10OrGreater()) {
+		MessageBox(
+			nullptr,
+			L"OBS Studio 28 and newer no longer support Windows 7,"
+			L" Windows 8, or Windows 8.1. You can disable the"
+			L" following setting to opt out of future updates:"
+			L" Settings → General → General → Automatically check"
+			L" for updates on startup",
+			L"Unsupported Operating System", MB_ICONWARNING);
+		return 0;
+	}
+
 	if (!HasElevation()) {
 
 		WinHandle hMutex = OpenMutex(
