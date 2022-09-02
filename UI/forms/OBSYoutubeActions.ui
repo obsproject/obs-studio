@@ -6,8 +6,8 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>616</width>
-    <height>645</height>
+    <width>821</width>
+    <height>738</height>
    </rect>
   </property>
   <property name="sizePolicy">
@@ -23,6 +23,12 @@
    <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
+   <property name="spacing">
+    <number>6</number>
+   </property>
+   <property name="sizeConstraint">
+    <enum>QLayout::SetMinimumSize</enum>
+   </property>
    <item>
     <widget class="QTabWidget" name="tabWidget">
      <property name="sizePolicy">
@@ -38,527 +44,450 @@
       <attribute name="title">
        <string>YouTube.Actions.CreateNewEvent</string>
       </attribute>
-      <layout class="QFormLayout" name="formLayout">
-       <property name="fieldGrowthPolicy">
-        <enum>QFormLayout::ExpandingFieldsGrow</enum>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="leftMargin">
+        <number>0</number>
        </property>
-       <property name="labelAlignment">
-        <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
+       <property name="spacing">
+        <number>0</number>
        </property>
        <item row="0" column="0">
-        <widget class="QLabel" name="label">
-         <property name="text">
-          <string>YouTube.Actions.Title</string>
-         </property>
-         <property name="buddy">
-          <cstring>title</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="0" column="1">
-        <widget class="QLineEdit" name="title">
-         <property name="text">
-          <string>YouTube.Actions.MyBroadcast</string>
-         </property>
-         <property name="maxLength">
-          <number>100</number>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="0">
-        <widget class="QLabel" name="label_2">
-         <property name="text">
-          <string>YouTube.Actions.Description</string>
-         </property>
-         <property name="buddy">
-          <cstring>description</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="1" column="1">
-        <widget class="QPlainTextEdit" name="description">
-         <property name="tabChangesFocus">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="0">
-        <widget class="QLabel" name="label_4">
-         <property name="text">
-          <string>YouTube.Actions.Privacy</string>
-         </property>
-         <property name="buddy">
-          <cstring>privacyBox</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="2" column="1">
-        <widget class="QComboBox" name="privacyBox">
+        <widget class="QScrollArea" name="scrollArea_2">
          <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-         <property name="sizeAdjustPolicy">
-          <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="0">
-        <widget class="QLabel" name="label_5">
-         <property name="text">
-          <string>YouTube.Actions.Category</string>
-         </property>
-         <property name="buddy">
-          <cstring>categoryBox</cstring>
-         </property>
-        </widget>
-       </item>
-       <item row="3" column="1">
-        <widget class="QComboBox" name="categoryBox">
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-           <horstretch>0</horstretch>
-           <verstretch>0</verstretch>
-          </sizepolicy>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="0">
-        <widget class="QLabel" name="label_8">
-         <property name="text">
-          <string>YouTube.Actions.MadeForKids</string>
-         </property>
-        </widget>
-       </item>
-       <item row="4" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_5">
-         <item>
-          <widget class="QRadioButton" name="notMakeForKids">
-           <property name="text">
-            <string>YouTube.Actions.MadeForKids.No</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="helpMadeForKids">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.MadeForKids.Help</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::RichText</enum>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="5" column="0">
-        <spacer name="horizontalSpacer_5">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="5" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_8">
-         <item>
-          <widget class="QRadioButton" name="yesMakeForKids">
-           <property name="text">
-            <string>YouTube.Actions.MadeForKids.Yes</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="6" column="0">
-        <widget class="QLabel" name="label_6">
-         <property name="text">
-          <string>YouTube.Actions.Thumbnail</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="0">
-        <widget class="QLabel" name="label_7">
-         <property name="text">
-          <string>YouTube.Actions.AdditionalSettings</string>
-         </property>
-        </widget>
-       </item>
-       <item row="9" column="1">
-        <spacer name="horizontalSpacer_2">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="10" column="0">
-        <spacer name="horizontalSpacer_7">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="10" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout">
-         <item>
-          <widget class="QLabel" name="label_3">
-           <property name="text">
-            <string>YouTube.Actions.Latency</string>
-           </property>
-           <property name="buddy">
-            <cstring>latencyBox</cstring>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QComboBox" name="latencyBox">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="11" column="0">
-        <spacer name="horizontalSpacer_14">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="11" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_3">
-         <item>
-          <widget class="QCheckBox" name="checkDVR">
-           <property name="text">
-            <string>YouTube.Actions.EnableDVR</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="12" column="0">
-        <spacer name="horizontalSpacer_8">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="12" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_7">
-         <item>
-          <widget class="QCheckBox" name="check360Video">
-           <property name="text">
-            <string>YouTube.Actions.360Video</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="help360Video">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.360Video.Help</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::RichText</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_10">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item row="13" column="0">
-        <spacer name="horizontalSpacer_12">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="13" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_9">
-         <item>
-          <widget class="QCheckBox" name="checkScheduledLater">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.ScheduleForLater</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="14" column="0">
-        <spacer name="horizontalSpacer_6">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="14" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_6">
-         <item>
-          <widget class="QCheckBox" name="checkAutoStart">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.EnableAutoStart</string>
-           </property>
-           <property name="checkable">
-            <bool>true</bool>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="helpAutoStartStop">
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="text">
-            <string notr="true">&lt;a href=&quot;.&quot;&gt;(?)&lt;/a&gt;</string>
-           </property>
-           <property name="textFormat">
-            <enum>Qt::RichText</enum>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <spacer name="horizontalSpacer_9">
-           <property name="orientation">
-            <enum>Qt::Horizontal</enum>
-           </property>
-           <property name="sizeHint" stdset="0">
-            <size>
-             <width>40</width>
-             <height>20</height>
-            </size>
-           </property>
-          </spacer>
-         </item>
-        </layout>
-       </item>
-       <item row="15" column="0">
-        <spacer name="horizontalSpacer_3">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="15" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_4">
-         <item>
-          <widget class="QCheckBox" name="checkAutoStop">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="text">
-            <string>YouTube.Actions.EnableAutoStop</string>
-           </property>
-           <property name="checked">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="16" column="0">
-        <spacer name="horizontalSpacer_13">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="16" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_10">
-         <item>
-          <widget class="QDateTimeEdit" name="scheduledTime">
-           <property name="enabled">
-            <bool>true</bool>
-           </property>
-           <property name="sizePolicy">
-            <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
-             <horstretch>0</horstretch>
-             <verstretch>0</verstretch>
-            </sizepolicy>
-           </property>
-           <property name="calendarPopup">
-            <bool>true</bool>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="17" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_12">
-         <item>
-          <widget class="QCheckBox" name="checkRememberSettings">
-           <property name="text">
-            <string>YouTube.Actions.RememberSettings</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="17" column="0">
-        <spacer name="horizontalSpacer">
-         <property name="orientation">
-          <enum>Qt::Horizontal</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>40</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item row="8" column="1">
-        <layout class="QHBoxLayout" name="horizontalLayout_13">
-         <property name="rightMargin">
-          <number>0</number>
-         </property>
-         <property name="bottomMargin">
-          <number>0</number>
-         </property>
-         <item>
-          <widget class="QPushButton" name="selectFileButton">
-           <property name="text">
-            <string>YouTube.Actions.Thumbnail.SelectFile</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="selectedFileName">
-           <property name="text">
-            <string>YouTube.Actions.Thumbnail.NoFileSelected</string>
-           </property>
-          </widget>
-         </item>
-        </layout>
-       </item>
-       <item row="6" column="1">
-        <widget class="ClickableLabel" name="thumbnailPreview">
-         <property name="enabled">
-          <bool>true</bool>
-         </property>
-         <property name="sizePolicy">
-          <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+          <sizepolicy hsizetype="Expanding" vsizetype="Expanding">
            <horstretch>0</horstretch>
            <verstretch>0</verstretch>
           </sizepolicy>
          </property>
          <property name="minimumSize">
           <size>
-           <width>162</width>
-           <height>92</height>
+           <width>0</width>
+           <height>0</height>
           </size>
          </property>
-         <property name="maximumSize">
-          <size>
-           <width>162</width>
-           <height>92</height>
-          </size>
+         <property name="widgetResizable">
+          <bool>true</bool>
          </property>
-         <property name="frameShape">
-          <enum>QFrame::Box</enum>
-         </property>
-         <property name="text">
-          <string/>
-         </property>
-         <property name="alignment">
-          <set>Qt::AlignCenter</set>
-         </property>
+         <widget class="QWidget" name="scrollAreaWidgetContents_3">
+          <property name="geometry">
+           <rect>
+            <x>0</x>
+            <y>0</y>
+            <width>783</width>
+            <height>666</height>
+           </rect>
+          </property>
+          <layout class="QFormLayout" name="formLayout_2">
+           <property name="fieldGrowthPolicy">
+            <enum>QFormLayout::ExpandingFieldsGrow</enum>
+           </property>
+           <property name="labelAlignment">
+            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+           </property>
+           <property name="topMargin">
+            <number>9</number>
+           </property>
+           <item row="2" column="0">
+            <widget class="QLabel" name="label">
+             <property name="text">
+              <string>YouTube.Actions.Title</string>
+             </property>
+             <property name="buddy">
+              <cstring>title</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="2" column="1">
+            <widget class="QLineEdit" name="title">
+             <property name="text">
+              <string>YouTube.Actions.MyBroadcast</string>
+             </property>
+             <property name="maxLength">
+              <number>100</number>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="0">
+            <widget class="QLabel" name="label_2">
+             <property name="text">
+              <string>YouTube.Actions.Description</string>
+             </property>
+             <property name="buddy">
+              <cstring>description</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="3" column="1">
+            <widget class="QPlainTextEdit" name="description">
+             <property name="tabChangesFocus">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="0">
+            <widget class="QLabel" name="label_4">
+             <property name="text">
+              <string>YouTube.Actions.Privacy</string>
+             </property>
+             <property name="buddy">
+              <cstring>privacyBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="4" column="1">
+            <widget class="QComboBox" name="privacyBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="sizeAdjustPolicy">
+              <enum>QComboBox::AdjustToContentsOnFirstShow</enum>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="0">
+            <widget class="QLabel" name="label_5">
+             <property name="text">
+              <string>YouTube.Actions.Category</string>
+             </property>
+             <property name="buddy">
+              <cstring>categoryBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="5" column="1">
+            <widget class="QComboBox" name="categoryBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="0">
+            <widget class="QLabel" name="label_8">
+             <property name="text">
+              <string>YouTube.Actions.MadeForKids</string>
+             </property>
+            </widget>
+           </item>
+           <item row="6" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_5">
+             <item>
+              <widget class="QRadioButton" name="notMakeForKids">
+               <property name="text">
+                <string>YouTube.Actions.MadeForKids.No</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="helpMadeForKids">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>YouTube.Actions.MadeForKids.Help</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="7" column="1">
+            <widget class="QRadioButton" name="yesMakeForKids">
+             <property name="text">
+              <string>YouTube.Actions.MadeForKids.Yes</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="0">
+            <widget class="QLabel" name="label_6">
+             <property name="text">
+              <string>YouTube.Actions.Thumbnail</string>
+             </property>
+            </widget>
+           </item>
+           <item row="8" column="1">
+            <widget class="ClickableLabel" name="thumbnailPreview">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Fixed" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="minimumSize">
+              <size>
+               <width>162</width>
+               <height>92</height>
+              </size>
+             </property>
+             <property name="maximumSize">
+              <size>
+               <width>162</width>
+               <height>92</height>
+              </size>
+             </property>
+             <property name="frameShape">
+              <enum>QFrame::Box</enum>
+             </property>
+             <property name="text">
+              <string/>
+             </property>
+             <property name="alignment">
+              <set>Qt::AlignCenter</set>
+             </property>
+            </widget>
+           </item>
+           <item row="9" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_13">
+             <property name="rightMargin">
+              <number>0</number>
+             </property>
+             <property name="bottomMargin">
+              <number>0</number>
+             </property>
+             <item>
+              <widget class="QPushButton" name="selectFileButton">
+               <property name="text">
+                <string>YouTube.Actions.Thumbnail.SelectFile</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="selectedFileName">
+               <property name="text">
+                <string>YouTube.Actions.Thumbnail.NoFileSelected</string>
+               </property>
+              </widget>
+             </item>
+            </layout>
+           </item>
+           <item row="26" column="1">
+            <spacer name="verticalSpacer_2">
+             <property name="orientation">
+              <enum>Qt::Vertical</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>20</width>
+               <height>40</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="10" column="0">
+            <widget class="QLabel" name="label_7">
+             <property name="font">
+              <font>
+               <weight>75</weight>
+               <bold>true</bold>
+              </font>
+             </property>
+             <property name="text">
+              <string>YouTube.Actions.AdditionalSettings</string>
+             </property>
+            </widget>
+           </item>
+           <item row="14" column="1">
+            <widget class="QCheckBox" name="checkScheduledLater">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>YouTube.Actions.ScheduleForLater</string>
+             </property>
+            </widget>
+           </item>
+           <item row="13" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_7">
+             <item>
+              <widget class="QCheckBox" name="check360Video">
+               <property name="text">
+                <string>YouTube.Actions.360Video</string>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="help360Video">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string>YouTube.Actions.360Video.Help</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_10">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="15" column="1">
+            <layout class="QHBoxLayout" name="horizontalLayout_6">
+             <item>
+              <widget class="QCheckBox" name="checkAutoStart">
+               <property name="enabled">
+                <bool>true</bool>
+               </property>
+               <property name="text">
+                <string>YouTube.Actions.EnableAutoStart</string>
+               </property>
+               <property name="checkable">
+                <bool>true</bool>
+               </property>
+               <property name="checked">
+                <bool>true</bool>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <widget class="QLabel" name="helpAutoStartStop">
+               <property name="sizePolicy">
+                <sizepolicy hsizetype="Minimum" vsizetype="Fixed">
+                 <horstretch>0</horstretch>
+                 <verstretch>0</verstretch>
+                </sizepolicy>
+               </property>
+               <property name="text">
+                <string notr="true">&lt;a href=&quot;.&quot;&gt;(?)&lt;/a&gt;</string>
+               </property>
+               <property name="textFormat">
+                <enum>Qt::RichText</enum>
+               </property>
+              </widget>
+             </item>
+             <item>
+              <spacer name="horizontalSpacer_9">
+               <property name="orientation">
+                <enum>Qt::Horizontal</enum>
+               </property>
+               <property name="sizeHint" stdset="0">
+                <size>
+                 <width>40</width>
+                 <height>0</height>
+                </size>
+               </property>
+              </spacer>
+             </item>
+            </layout>
+           </item>
+           <item row="16" column="1">
+            <widget class="QCheckBox" name="checkAutoStop">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="text">
+              <string>YouTube.Actions.EnableAutoStop</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="17" column="1">
+            <widget class="QDateTimeEdit" name="scheduledTime">
+             <property name="enabled">
+              <bool>true</bool>
+             </property>
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+             <property name="calendarPopup">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="10" column="1">
+            <spacer name="horizontalSpacer">
+             <property name="orientation">
+              <enum>Qt::Horizontal</enum>
+             </property>
+             <property name="sizeHint" stdset="0">
+              <size>
+               <width>40</width>
+               <height>0</height>
+              </size>
+             </property>
+            </spacer>
+           </item>
+           <item row="12" column="1">
+            <widget class="QCheckBox" name="checkDVR">
+             <property name="text">
+              <string>YouTube.Actions.EnableDVR</string>
+             </property>
+             <property name="checked">
+              <bool>true</bool>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="0">
+            <widget class="QLabel" name="label_3">
+             <property name="text">
+              <string>YouTube.Actions.Latency</string>
+             </property>
+             <property name="buddy">
+              <cstring>latencyBox</cstring>
+             </property>
+            </widget>
+           </item>
+           <item row="11" column="1">
+            <widget class="QComboBox" name="latencyBox">
+             <property name="sizePolicy">
+              <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+               <horstretch>0</horstretch>
+               <verstretch>0</verstretch>
+              </sizepolicy>
+             </property>
+            </widget>
+           </item>
+           <item row="1" column="1">
+            <widget class="QCheckBox" name="checkRememberSettings">
+             <property name="text">
+              <string>YouTube.Actions.RememberSettings</string>
+             </property>
+            </widget>
+           </item>
+          </layout>
+         </widget>
         </widget>
        </item>
       </layout>
@@ -568,10 +497,22 @@
        <string>YouTube.Actions.ChooseEvent</string>
       </attribute>
       <layout class="QVBoxLayout" name="verticalLayout_3">
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
+        <number>0</number>
+       </property>
        <item>
         <widget class="QScrollArea" name="scrollArea">
          <property name="verticalScrollBarPolicy">
-          <enum>Qt::ScrollBarAlwaysOn</enum>
+          <enum>Qt::ScrollBarAsNeeded</enum>
          </property>
          <property name="widgetResizable">
           <bool>true</bool>
@@ -581,8 +522,8 @@
            <rect>
             <x>0</x>
             <y>0</y>
-            <width>555</width>
-            <height>192</height>
+            <width>218</width>
+            <height>200</height>
            </rect>
           </property>
           <property name="sizePolicy">
@@ -677,36 +618,66 @@
     </widget>
    </item>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,0,6">
-     <item>
-      <widget class="QPushButton" name="cancelButton">
-       <property name="text">
-        <string>Cancel</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="pushButton">
-       <property name="text">
-        <string>YouTube.Actions.Dashboard</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="saveButton">
-       <property name="text">
-        <string>YouTube.Actions.Create_Ready</string>
-       </property>
-      </widget>
-     </item>
-     <item>
-      <widget class="QPushButton" name="okButton">
-       <property name="text">
-        <string>YouTube.Actions.Create_GoLive</string>
-       </property>
-      </widget>
-     </item>
-    </layout>
+    <widget class="QWidget" name="widget" native="true">
+     <property name="sizePolicy">
+      <sizepolicy hsizetype="Preferred" vsizetype="Maximum">
+       <horstretch>0</horstretch>
+       <verstretch>0</verstretch>
+      </sizepolicy>
+     </property>
+     <layout class="QGridLayout" name="gridLayout_2">
+      <property name="leftMargin">
+       <number>0</number>
+      </property>
+      <property name="topMargin">
+       <number>0</number>
+      </property>
+      <property name="rightMargin">
+       <number>0</number>
+      </property>
+      <property name="bottomMargin">
+       <number>0</number>
+      </property>
+      <property name="spacing">
+       <number>0</number>
+      </property>
+      <item row="0" column="0">
+       <layout class="QHBoxLayout" name="horizontalLayout_2" stretch="1,2,0,6">
+        <property name="sizeConstraint">
+         <enum>QLayout::SetNoConstraint</enum>
+        </property>
+        <item>
+         <widget class="QPushButton" name="cancelButton">
+          <property name="text">
+           <string>Cancel</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="pushButton">
+          <property name="text">
+           <string>YouTube.Actions.Dashboard</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="saveButton">
+          <property name="text">
+           <string>YouTube.Actions.Create_Ready</string>
+          </property>
+         </widget>
+        </item>
+        <item>
+         <widget class="QPushButton" name="okButton">
+          <property name="text">
+           <string>YouTube.Actions.Create_GoLive</string>
+          </property>
+         </widget>
+        </item>
+       </layout>
+      </item>
+     </layout>
+    </widget>
    </item>
   </layout>
  </widget>
