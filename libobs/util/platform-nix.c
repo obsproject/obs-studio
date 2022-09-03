@@ -14,6 +14,14 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+#include "obsconfig.h"
+
+#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+#define _GNU_SOURCE
+#include <link.h>
+#include <stdlib.h>
+#endif
+
 #include <stdio.h>
 #include <errno.h>
 #include <sys/types.h>
@@ -27,8 +35,6 @@
 #include <glob.h>
 #include <time.h>
 #include <signal.h>
-
-#include "obsconfig.h"
 
 #if !defined(__APPLE__)
 #include <sys/times.h>
@@ -96,10 +102,50 @@ void os_dlclose(void *module)
 		dlclose(module);
 }
 
+#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+int module_has_qt5_check(const char *path)
+{
+	void *mod = os_dlopen(path);
+	if (mod == NULL) {
+		return 1;
+	}
+
+	struct link_map *list = NULL;
+	if (dlinfo(mod, RTLD_DI_LINKMAP, &list) == 0) {
+		for (struct link_map *ptr = list; ptr; ptr = ptr->l_next) {
+			if (strstr(ptr->l_name, "libQt5") != NULL) {
+				return 0;
+			}
+		}
+	}
+
+	return 1;
+}
+
+bool has_qt5_dependency(const char *path)
+{
+	pid_t pid = fork();
+	if (pid == 0) {
+		_exit(module_has_qt5_check(path));
+	}
+	if (pid < 0) {
+		return false;
+	}
+	int status;
+	if (waitpid(pid, &status, 0) < 0) {
+		return false;
+	}
+	return WIFEXITED(status) && WEXITSTATUS(status) == 0;
+}
+#endif
+
 void get_plugin_info(const char *path, bool *is_obs_plugin, bool *can_load)
 {
 	*is_obs_plugin = true;
 	*can_load = true;
+#if !defined(__APPLE__) && OBS_QT_VERSION == 6
+	*can_load = !has_qt5_dependency(path);
+#endif
 	UNUSED_PARAMETER(path);
 }
 
