@@ -480,6 +480,7 @@ private slots:
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
+	virtual void showEvent(QShowEvent *event) override;
 	void reject() override;
 
 public:
