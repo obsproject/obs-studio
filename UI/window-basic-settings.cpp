@@ -921,6 +921,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
+
+	/* Reduce the height of the window if too tall compared to the screen
+	 * size (e.g. 720p) with potential desktop decoration (e.g. taskbar) */
+	int max_height = round(
+		QGuiApplication::primaryScreen()->size().height() * 95 / 100);
+	if (size().height() >= max_height)
+		resize(size().width(), max_height);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
