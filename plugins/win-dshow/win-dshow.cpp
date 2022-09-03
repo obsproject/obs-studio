@@ -177,7 +177,6 @@ enum class Action {
 	ConfigAudio,
 	ConfigCrossbar1,
 	ConfigCrossbar2,
-	SaveSettings,
 };
 
 static DWORD CALLBACK DShowThread(LPVOID ptr);
@@ -205,7 +204,6 @@ struct DShowInput {
 
 	WinHandle semaphore;
 	WinHandle activated_event;
-	WinHandle saved_event;
 	WinHandle thread;
 	CriticalSection mutex;
 	vector<Action> actions;
@@ -244,10 +242,6 @@ struct DShowInput {
 		activated_event = CreateEvent(nullptr, false, false, nullptr);
 		if (!activated_event)
 			throw "Failed to create activated_event";
-
-		saved_event = CreateEvent(nullptr, false, false, nullptr);
-		if (!saved_event)
-			throw "Failed to create saved_event";
 
 		thread =
 			CreateThread(nullptr, 0, DShowThread, this, 0, nullptr);
@@ -293,8 +287,6 @@ struct DShowInput {
 
 	bool UpdateVideoConfig(obs_data_t *settings);
 	bool UpdateAudioConfig(obs_data_t *settings);
-	bool UpdateVideoProperties(obs_data_t *settings);
-	void SaveVideoProperties();
 	void SetActive(bool active);
 	inline enum video_colorspace GetColorSpace(obs_data_t *settings) const;
 	inline enum video_range_type GetColorRange(obs_data_t *settings) const;
@@ -389,9 +381,6 @@ void DShowInput::DShowLoop()
 			device.OpenDialog(nullptr, DialogType::ConfigCrossbar2);
 			break;
 
-		case Action::SaveSettings:
-			SaveVideoProperties();
-			break;
 		case Action::None:;
 		}
 	}
@@ -1029,102 +1018,6 @@ bool DShowInput::UpdateVideoConfig(obs_data_t *settings)
 	return true;
 }
 
-bool DShowInput::UpdateVideoProperties(obs_data_t *settings)
-{
-	OBSDataArrayAutoRelease cca =
-		obs_data_get_array(settings, "CameraControl");
-
-	if (cca) {
-		std::vector<VideoDeviceProperty> properties;
-		const auto count = obs_data_array_count(cca);
-
-		for (size_t i = 0; i < count; i++) {
-			OBSDataAutoRelease item = obs_data_array_item(cca, i);
-			if (!item)
-				continue;
-
-			VideoDeviceProperty prop{};
-			prop.property =
-				(long)obs_data_get_int(item, "property");
-			prop.flags = (long)obs_data_get_int(item, "flags");
-			prop.val = (long)obs_data_get_int(item, "val");
-			properties.push_back(prop);
-		}
-
-		if (!properties.empty()) {
-			device.SetCameraControlProperties(&properties);
-		}
-	}
-
-	OBSDataArrayAutoRelease vpaa =
-		obs_data_get_array(settings, "VideoProcAmp");
-
-	if (vpaa) {
-		std::vector<VideoDeviceProperty> properties;
-		const auto count = obs_data_array_count(vpaa);
-
-		for (size_t i = 0; i < count; i++) {
-			OBSDataAutoRelease item = obs_data_array_item(vpaa, i);
-			if (!item)
-				continue;
-
-			VideoDeviceProperty prop{};
-			prop.property =
-				(long)obs_data_get_int(item, "property");
-			prop.flags = (long)obs_data_get_int(item, "flags");
-			prop.val = (long)obs_data_get_int(item, "val");
-			properties.push_back(prop);
-		}
-
-		if (!properties.empty()) {
-			device.SetVideoProcAmpProperties(&properties);
-		}
-	}
-
-	return true;
-}
-
-void DShowInput::SaveVideoProperties()
-{
-	OBSDataAutoRelease settings = obs_source_get_settings(source);
-	if (!settings) {
-		SetEvent(saved_event);
-		return;
-	}
-
-	std::vector<VideoDeviceProperty> properties;
-	OBSDataArrayAutoRelease ccp = obs_data_array_create();
-
-	if (device.GetCameraControlProperties(properties)) {
-		for (const auto property : properties) {
-			OBSDataAutoRelease obj = obs_data_create();
-			obs_data_set_int(obj, "property", property.property);
-			obs_data_set_int(obj, "flags", property.flags);
-			obs_data_set_int(obj, "val", property.val);
-			obs_data_array_push_back(ccp, obj);
-		}
-	}
-
-	obs_data_set_array(settings, "CameraControl", ccp);
-	properties.clear();
-
-	OBSDataArrayAutoRelease vpap = obs_data_array_create();
-
-	if (device.GetVideoProcAmpProperties(properties)) {
-		for (const auto property : properties) {
-			OBSDataAutoRelease obj = obs_data_create();
-			obs_data_set_int(obj, "property", property.property);
-			obs_data_set_int(obj, "flags", property.flags);
-			obs_data_set_int(obj, "val", property.val);
-			obs_data_array_push_back(vpap, obj);
-		}
-	}
-
-	obs_data_set_array(settings, "VideoProcAmp", vpap);
-
-	SetEvent(saved_event);
-}
-
 bool DShowInput::UpdateAudioConfig(obs_data_t *settings)
 {
 	string audio_device_id = obs_data_get_string(settings, AUDIO_DEVICE_ID);
@@ -1262,11 +1155,6 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	if (device.Start() != Result::Success)
 		return false;
 
-	if (!UpdateVideoProperties(settings)) {
-		blog(LOG_WARNING, "%s: Setting video device properties failed",
-		     obs_source_get_name(source));
-	}
-
 	const enum video_colorspace cs = GetColorSpace(settings);
 	const enum video_range_type range = GetColorRange(settings);
 
@@ -1349,16 +1237,6 @@ static void UpdateDShowInput(void *data, obs_data_t *settings)
 	DShowInput *input = reinterpret_cast<DShowInput *>(data);
 	if (input->active)
 		input->QueueActivate(settings);
-}
-
-static void SaveDShowInput(void *data, obs_data_t *settings)
-{
-	DShowInput *input = reinterpret_cast<DShowInput *>(data);
-	if (!input->active)
-		return;
-
-	input->QueueAction(Action::SaveSettings);
-	WaitForSingleObject(input->saved_event, INFINITE);
 }
 
 static void GetDShowDefaults(obs_data_t *settings)
@@ -2223,7 +2101,6 @@ void RegisterDShowSource()
 	info.update = UpdateDShowInput;
 	info.get_defaults = GetDShowDefaults;
 	info.get_properties = GetDShowProperties;
-	info.save = SaveDShowInput;
 	info.icon_type = OBS_ICON_TYPE_CAMERA;
 	obs_register_source(&info);
 }
