@@ -16,5 +16,6 @@ public:
 private slots:
 	void ShowAbout();
 	void ShowAuthors();
+	void ShowPatrons();
 	void ShowLicense();
 };

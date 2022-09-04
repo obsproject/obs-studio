@@ -32,7 +32,37 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 	ui->version->setText(ver + bitness);
 
-	ui->contribute->setText(QTStr("About.Contribute"));
+	ui->tabWidget->setTabText(0, QTStr("About"));
+	ui->tabWidget->setTabText(1, QTStr("About.Authors"));
+	ui->tabWidget->setTabText(2, QTStr("About.Patrons"));
+	ui->tabWidget->setTabText(3, QTStr("About.License"));
+
+	QPointer<OBSAbout> about(this);
+
+	OBSBasic *main = OBSBasic::Get();
+	if (main->patronJson.empty() && !main->patronJsonThread) {
+		RemoteTextThread *thread = new RemoteTextThread(
+			"https://obsproject.com/patreon/about-box.json",
+			"application/json");
+		QObject::connect(thread, &RemoteTextThread::Result, main,
+				 &OBSBasic::UpdatePatronJson);
+		QObject::connect(thread, &RemoteTextThread::Result, this,
+				 &OBSAbout::ShowPatrons);
+		main->patronJsonThread.reset(thread);
+		thread->start();
+	}
+
+	ShowAbout();
+	ShowAuthors();
+	ShowPatrons();
+	ShowLicense();
+
+	ui->name->setProperty("themeID", "aboutName");
+	ui->version->setProperty("themeID", "aboutVersion");
+}
+
+void OBSAbout::ShowAbout()
+{
 	ui->donate->setText(
 		"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
 		QTStr("About.Donate") + "</a>");
@@ -44,43 +74,9 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 		QTStr("About.GetInvolved") + "</a>");
 	ui->getInvolved->setTextInteractionFlags(Qt::TextBrowserInteraction);
 	ui->getInvolved->setOpenExternalLinks(true);
-
-	ui->about->setText("<a href='#'>" + QTStr("About") + "</a>");
-	ui->authors->setText("<a href='#'>" + QTStr("About.Authors") + "</a>");
-	ui->license->setText("<a href='#'>" + QTStr("About.License") + "</a>");
-
-	ui->name->setProperty("themeID", "aboutName");
-	ui->version->setProperty("themeID", "aboutVersion");
-	ui->about->setProperty("themeID", "aboutHLayout");
-	ui->authors->setProperty("themeID", "aboutHLayout");
-	ui->license->setProperty("themeID", "aboutHLayout");
-	ui->info->setProperty("themeID", "aboutInfo");
-
-	connect(ui->about, SIGNAL(clicked()), this, SLOT(ShowAbout()));
-	connect(ui->authors, SIGNAL(clicked()), this, SLOT(ShowAuthors()));
-	connect(ui->license, SIGNAL(clicked()), this, SLOT(ShowLicense()));
-
-	QPointer<OBSAbout> about(this);
-
-	OBSBasic *main = OBSBasic::Get();
-	if (main->patronJson.empty() && !main->patronJsonThread) {
-		RemoteTextThread *thread = new RemoteTextThread(
-			"https://obsproject.com/patreon/about-box.json",
-			"application/json");
-		QObject::connect(thread, &RemoteTextThread::Result, main,
-				 &OBSBasic::UpdatePatronJson);
-		QObject::connect(
-			thread,
-			SIGNAL(Result(const QString &, const QString &)), this,
-			SLOT(ShowAbout()));
-		main->patronJsonThread.reset(thread);
-		thread->start();
-	} else {
-		ShowAbout();
-	}
 }
 
-void OBSAbout::ShowAbout()
+void OBSAbout::ShowPatrons()
 {
 	OBSBasic *main = OBSBasic::Get();
 
@@ -122,7 +118,7 @@ void OBSAbout::ShowAbout()
 			first = false;
 	}
 
-	ui->textBrowser->setHtml(text);
+	ui->patronsText->setHtml(text);
 }
 
 void OBSAbout::ShowAuthors()
@@ -136,20 +132,20 @@ void OBSAbout::ShowAuthors()
 #else
 	if (!GetDataFilePath("authors/AUTHORS", path)) {
 #endif
-		ui->textBrowser->setPlainText(error);
+		ui->authorsText->setPlainText(error);
 		return;
 	}
 
-	ui->textBrowser->setPlainText(QString::fromStdString(path));
+	ui->authorsText->setPlainText(QString::fromStdString(path));
 
 	BPtr<char> text = os_quick_read_utf8_file(path.c_str());
 
 	if (!text || !*text) {
-		ui->textBrowser->setPlainText(error);
+		ui->authorsText->setPlainText(error);
 		return;
 	}
 
-	ui->textBrowser->setPlainText(QT_UTF8(text));
+	ui->authorsText->setPlainText(QT_UTF8(text));
 }
 
 void OBSAbout::ShowLicense()
@@ -159,16 +155,16 @@ void OBSAbout::ShowLicense()
 		Go to: https://github.com/obsproject/obs-studio/blob/master/COPYING";
 
 	if (!GetDataFilePath("license/gplv2.txt", path)) {
-		ui->textBrowser->setPlainText(error);
+		ui->licenseText->setPlainText(error);
 		return;
 	}
 
 	BPtr<char> text = os_quick_read_utf8_file(path.c_str());
 
 	if (!text || !*text) {
-		ui->textBrowser->setPlainText(error);
+		ui->licenseText->setPlainText(error);
 		return;
 	}
 
-	ui->textBrowser->setPlainText(QT_UTF8(text));
+	ui->licenseText->setPlainText(QT_UTF8(text));
 }

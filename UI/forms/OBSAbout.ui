@@ -6,36 +6,39 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>840</width>
-    <height>519</height>
+    <width>650</width>
+    <height>400</height>
    </rect>
   </property>
   <property name="windowTitle">
    <string>About</string>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout_2">
+   <property name="spacing">
+    <number>6</number>
+   </property>
    <property name="leftMargin">
-    <number>0</number>
+    <number>9</number>
    </property>
    <property name="topMargin">
-    <number>0</number>
+    <number>9</number>
    </property>
    <property name="rightMargin">
-    <number>0</number>
+    <number>9</number>
    </property>
    <property name="bottomMargin">
-    <number>0</number>
+    <number>9</number>
    </property>
    <item>
-    <layout class="QHBoxLayout" name="horizontalLayout_2">
+    <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
-      <number>30</number>
+      <number>20</number>
      </property>
      <property name="leftMargin">
-      <number>30</number>
+      <number>6</number>
      </property>
      <property name="topMargin">
-      <number>10</number>
+      <number>6</number>
      </property>
      <property name="rightMargin">
       <number>6</number>
@@ -47,21 +50,21 @@
       <widget class="QLabel" name="icon">
        <property name="minimumSize">
         <size>
-         <width>256</width>
-         <height>256</height>
+         <width>64</width>
+         <height>64</height>
         </size>
        </property>
        <property name="maximumSize">
         <size>
-         <width>256</width>
-         <height>256</height>
+         <width>64</width>
+         <height>64</height>
         </size>
        </property>
        <property name="text">
         <string/>
        </property>
        <property name="pixmap">
-        <pixmap>:res/images/obs.png</pixmap>
+        <pixmap resource="obs.qrc">:/res/images/obs.png</pixmap>
        </property>
        <property name="scaledContents">
         <bool>true</bool>
@@ -69,78 +72,33 @@
       </widget>
      </item>
      <item>
-      <layout class="QVBoxLayout" name="verticalLayout">
+      <layout class="QVBoxLayout" name="verticalLayout_3">
        <property name="spacing">
+        <number>0</number>
+       </property>
+       <property name="leftMargin">
+        <number>0</number>
+       </property>
+       <property name="topMargin">
+        <number>0</number>
+       </property>
+       <property name="rightMargin">
+        <number>0</number>
+       </property>
+       <property name="bottomMargin">
         <number>0</number>
        </property>
        <item>
         <widget class="QLabel" name="name">
          <property name="text">
-          <string notr="true">OBS Studio</string>
+          <string>OBS Studio</string>
          </property>
         </widget>
        </item>
        <item>
         <widget class="QLabel" name="version">
          <property name="text">
-          <string notr="true">Version</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="info">
-         <property name="text">
-          <string>About.Info</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="contribute">
-         <property name="text">
-          <string notr="true">Contribute</string>
-         </property>
-         <property name="wordWrap">
-          <bool>true</bool>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="donate">
-         <property name="text">
-          <string notr="true">Donate</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <widget class="QLabel" name="getInvolved">
-         <property name="text">
-          <string notr="true">Get Involved</string>
-         </property>
-        </widget>
-       </item>
-       <item>
-        <spacer name="verticalSpacer">
-         <property name="orientation">
-          <enum>Qt::Vertical</enum>
-         </property>
-         <property name="sizeType">
-          <enum>QSizePolicy::Fixed</enum>
-         </property>
-         <property name="sizeHint" stdset="0">
-          <size>
-           <width>20</width>
-           <height>20</height>
-          </size>
-         </property>
-        </spacer>
-       </item>
-       <item>
-        <widget class="QTextBrowser" name="textBrowser">
-         <property name="openExternalLinks">
-          <bool>true</bool>
+          <string>Version</string>
          </property>
         </widget>
        </item>
@@ -149,71 +107,155 @@
     </layout>
    </item>
    <item>
-    <widget class="QFrame" name="widget">
-     <property name="minimumSize">
-      <size>
-       <width>0</width>
-       <height>60</height>
-      </size>
+    <widget class="QTabWidget" name="tabWidget">
+     <property name="currentIndex">
+      <number>0</number>
      </property>
-     <layout class="QHBoxLayout" name="horizontalLayout">
-      <property name="spacing">
-       <number>0</number>
-      </property>
-      <property name="leftMargin">
-       <number>0</number>
-      </property>
-      <property name="topMargin">
-       <number>0</number>
-      </property>
-      <property name="rightMargin">
-       <number>0</number>
-      </property>
-      <property name="bottomMargin">
-       <number>0</number>
-      </property>
-      <item>
-       <widget class="ClickableLabel" name="about">
-        <property name="text">
-         <string>About</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="ClickableLabel" name="authors">
-        <property name="text">
-         <string>Authors</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-      <item>
-       <widget class="ClickableLabel" name="license">
-        <property name="text">
-         <string>License</string>
-        </property>
-        <property name="alignment">
-         <set>Qt::AlignCenter</set>
-        </property>
-       </widget>
-      </item>
-     </layout>
+     <widget class="QWidget" name="aboutTab">
+      <attribute name="title">
+       <string>About</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout">
+       <property name="verticalSpacing">
+        <number>10</number>
+       </property>
+       <item row="3" column="0">
+        <spacer name="verticalSpacer_2">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="0" column="0">
+        <spacer name="verticalSpacer">
+         <property name="orientation">
+          <enum>Qt::Vertical</enum>
+         </property>
+         <property name="sizeHint" stdset="0">
+          <size>
+           <width>20</width>
+           <height>40</height>
+          </size>
+         </property>
+        </spacer>
+       </item>
+       <item row="1" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_4">
+         <property name="spacing">
+          <number>10</number>
+         </property>
+         <property name="leftMargin">
+          <number>6</number>
+         </property>
+         <property name="topMargin">
+          <number>6</number>
+         </property>
+         <property name="rightMargin">
+          <number>6</number>
+         </property>
+         <property name="bottomMargin">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="info">
+           <property name="text">
+            <string>About.Info</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="copyright">
+           <property name="text">
+            <string>About.Copyright</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+       <item row="2" column="0">
+        <layout class="QVBoxLayout" name="verticalLayout_5">
+         <property name="spacing">
+          <number>4</number>
+         </property>
+         <property name="leftMargin">
+          <number>6</number>
+         </property>
+         <property name="topMargin">
+          <number>6</number>
+         </property>
+         <property name="rightMargin">
+          <number>6</number>
+         </property>
+         <property name="bottomMargin">
+          <number>6</number>
+         </property>
+         <item>
+          <widget class="QLabel" name="label">
+           <property name="text">
+            <string>About.Contribute</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="donate">
+           <property name="text">
+            <string>About.Donate</string>
+           </property>
+          </widget>
+         </item>
+         <item>
+          <widget class="QLabel" name="getInvolved">
+           <property name="text">
+            <string>About.GetInvolved</string>
+           </property>
+          </widget>
+         </item>
+        </layout>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="authorsTab">
+      <attribute name="title">
+       <string>Authors</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_2">
+       <item row="0" column="0">
+        <widget class="QTextBrowser" name="authorsText"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="patronsTab">
+      <attribute name="title">
+       <string>Patrons</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_3">
+       <item row="0" column="0">
+        <widget class="QTextBrowser" name="patronsText"/>
+       </item>
+      </layout>
+     </widget>
+     <widget class="QWidget" name="licenseTab">
+      <attribute name="title">
+       <string>License</string>
+      </attribute>
+      <layout class="QGridLayout" name="gridLayout_4">
+       <item row="0" column="0">
+        <widget class="QTextBrowser" name="licenseText"/>
+       </item>
+      </layout>
+     </widget>
     </widget>
    </item>
   </layout>
  </widget>
- <customwidgets>
-  <customwidget>
-   <class>ClickableLabel</class>
-   <extends>QLabel</extends>
-   <header>clickable-label.hpp</header>
-  </customwidget>
- </customwidgets>
- <resources/>
+ <resources>
+  <include location="obs.qrc"/>
+ </resources>
  <connections/>
 </ui>
