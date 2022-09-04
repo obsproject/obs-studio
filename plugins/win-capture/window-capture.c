@@ -21,6 +21,7 @@
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 #define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
+#define TEXT_FORCE_SDR      obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -30,8 +31,10 @@
 
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
-typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(
-	BOOL cursor, HWND window, BOOL client_area);
+typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(BOOL cursor,
+							       HWND window,
+							       BOOL client_area,
+							       BOOL force_sdr);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
@@ -82,6 +85,7 @@ struct window_capture {
 	bool cursor;
 	bool compatibility;
 	bool client_area;
+	bool force_sdr;
 	bool use_wildcards; /* TODO */
 
 	struct dc_capture capture;
@@ -204,6 +208,7 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->method = choose_method(method, wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
+	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
 	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
@@ -370,6 +375,7 @@ static void wc_defaults(obs_data_t *defaults)
 {
 	obs_data_set_default_int(defaults, "method", METHOD_AUTO);
 	obs_data_set_default_bool(defaults, "cursor", true);
+	obs_data_set_default_bool(defaults, "force_sdr", false);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 	obs_data_set_default_bool(defaults, "client_area", true);
 }
@@ -395,6 +401,9 @@ static void update_settings_visibility(obs_properties_t *props,
 
 	p = obs_properties_get(props, "client_area");
 	obs_property_set_visible(p, wgc_options);
+
+	p = obs_properties_get(props, "force_sdr");
+	obs_property_set_visible(p, wgc_cursor_toggle);
 
 	pthread_mutex_unlock(&wc->update_mutex);
 }
@@ -464,6 +473,8 @@ static obs_properties_t *wc_properties(void *data)
 	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
 
 	obs_properties_add_bool(ppts, "client_area", TEXT_CLIENT_AREA);
+
+	obs_properties_add_bool(ppts, "force_sdr", TEXT_FORCE_SDR);
 
 	return ppts;
 }
@@ -608,7 +619,7 @@ static void wc_tick(void *data, float seconds)
 				wc->capture_winrt =
 					wc->exports.winrt_capture_init_window(
 						wc->cursor, wc->window,
-						wc->client_area);
+						wc->client_area, wc->force_sdr);
 
 				if (!wc->capture_winrt) {
 					wc->previously_failed = true;
