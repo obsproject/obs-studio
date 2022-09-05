@@ -1,3 +1,5 @@
+#include <QDate>
+
 #include "window-basic-about.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
@@ -63,6 +65,10 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 void OBSAbout::ShowAbout()
 {
+	ui->copyright->setText("© 2012 - " +
+			       QString::number(QDate::currentDate().year()) +
+			       " OBS Project");
+
 	ui->donate->setText(
 		"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
 		QTStr("About.Donate") + "</a>");
