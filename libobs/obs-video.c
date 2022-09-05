@@ -233,8 +233,7 @@ render_output_texture(struct obs_core_video_mix *mix)
 	if (video_output_get_format(mix->video) == VIDEO_FORMAT_RGBA) {
 		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
-		if ((effect == video->default_effect) &&
-		    (width == video->base_width) &&
+		if ((width == video->base_width) &&
 		    (height == video->base_height))
 			return texture;
 
