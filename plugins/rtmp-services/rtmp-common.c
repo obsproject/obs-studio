@@ -13,6 +13,7 @@
 
 struct rtmp_common {
 	char *service;
+	char *protocol;
 	char *server;
 	char *key;
 
@@ -118,11 +119,13 @@ static void rtmp_common_update(void *data, obs_data_t *settings)
 	bfree(service->supported_resolutions);
 	bfree(service->video_codecs);
 	bfree(service->service);
+	bfree(service->protocol);
 	bfree(service->server);
 	bfree(service->output);
 	bfree(service->key);
 
 	service->service = bstrdup(obs_data_get_string(settings, "service"));
+	service->protocol = bstrdup(obs_data_get_string(settings, "protocol"));
 	service->server = bstrdup(obs_data_get_string(settings, "server"));
 	service->key = bstrdup(obs_data_get_string(settings, "key"));
 	service->supports_additional_audio_track = false;
@@ -166,6 +169,7 @@ static void rtmp_common_destroy(void *data)
 	bfree(service->supported_resolutions);
 	bfree(service->video_codecs);
 	bfree(service->service);
+	bfree(service->protocol);
 	bfree(service->server);
 	bfree(service->output);
 	bfree(service->key);
@@ -478,6 +482,29 @@ static void fill_stream_key_link(json_t *service, obs_data_t *settings)
 				    stream_key_link);
 }
 
+static void update_protocol(json_t *service, obs_data_t *settings)
+{
+	const char *protocol = get_string_val(service, "protocol");
+	if (protocol) {
+		obs_data_set_string(settings, "protocol", protocol);
+		return;
+	}
+
+	json_t *servers = json_object_get(service, "servers");
+	if (!json_is_array(servers))
+		return;
+
+	json_t *server = json_array_get(servers, 0);
+	const char *url = get_string_val(server, "url");
+
+	if (strncmp(url, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0) {
+		obs_data_set_string(settings, "protocol", "RTMPS");
+		return;
+	}
+
+	obs_data_set_string(settings, "protocol", "RTMP");
+}
+
 static inline json_t *find_service(json_t *root, const char *name,
 				   const char **p_new_name)
 {
@@ -546,6 +573,7 @@ static bool service_selected(obs_properties_t *props, obs_property_t *p,
 	fill_servers(obs_properties_get(props, "server"), service, name);
 	fill_more_info_link(service, settings);
 	fill_stream_key_link(service, settings);
+	update_protocol(service, settings);
 	return true;
 }
 
@@ -968,6 +996,13 @@ static const char *rtmp_common_password(void *data)
 	return NULL;
 }
 
+static const char *rtmp_common_get_protocol(void *data)
+{
+	struct rtmp_common *service = data;
+
+	return service->protocol ? service->protocol : "RTMP";
+}
+
 struct obs_service_info rtmp_common_service = {
 	.id = "rtmp_common",
 	.get_name = rtmp_common_getname,
@@ -975,6 +1010,7 @@ struct obs_service_info rtmp_common_service = {
 	.destroy = rtmp_common_destroy,
 	.update = rtmp_common_update,
 	.get_properties = rtmp_common_properties,
+	.get_protocol = rtmp_common_get_protocol,
 	.get_url = rtmp_common_url,
 	.get_key = rtmp_common_key,
 	.get_username = rtmp_common_username,

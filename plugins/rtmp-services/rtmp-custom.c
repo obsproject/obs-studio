@@ -110,6 +110,30 @@ static const char *rtmp_custom_password(void *data)
 	return service->password;
 }
 
+#define RTMPS_PREFIX "rtmps://"
+#define FTL_PREFIX "ftl://"
+#define SRT_PREFIX "srt://"
+#define RIST_PREFIX "rist://"
+
+static const char *rtmp_custom_get_protocol(void *data)
+{
+	struct rtmp_custom *service = data;
+
+	if (strncmp(service->server, RTMPS_PREFIX, strlen(RTMPS_PREFIX)) == 0)
+		return "RTMPS";
+
+	if (strncmp(service->server, FTL_PREFIX, strlen(FTL_PREFIX)) == 0)
+		return "FTL";
+
+	if (strncmp(service->server, SRT_PREFIX, strlen(SRT_PREFIX)) == 0)
+		return "SRT";
+
+	if (strncmp(service->server, RIST_PREFIX, strlen(RIST_PREFIX)) == 0)
+		return "RIST";
+
+	return "RTMP";
+}
+
 #define RTMP_PROTOCOL "rtmp"
 
 static void rtmp_custom_apply_settings(void *data, obs_data_t *video_settings,
@@ -131,6 +155,7 @@ struct obs_service_info rtmp_custom_service = {
 	.destroy = rtmp_custom_destroy,
 	.update = rtmp_custom_update,
 	.get_properties = rtmp_custom_properties,
+	.get_protocol = rtmp_custom_get_protocol,
 	.get_url = rtmp_custom_url,
 	.get_key = rtmp_custom_key,
 	.get_username = rtmp_custom_username,
