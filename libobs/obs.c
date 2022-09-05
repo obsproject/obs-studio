@@ -3466,3 +3466,12 @@ bool obs_is_output_protocol_registered(const char *protocol)
 
 	return false;
 }
+
+bool obs_enum_output_protocols(size_t idx, char **protocol)
+{
+	if (idx >= obs->data.protocols.num)
+		return false;
+
+	*protocol = obs->data.protocols.array[idx];
+	return true;
+}

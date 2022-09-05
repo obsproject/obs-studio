@@ -709,6 +709,24 @@ General Output Functions
 
 ---------------------
 
+.. function:: bool obs_enum_output_protocols(size_t idx, char **protocol)
+
+   Enumerates all registered protocol.
+
+---------------------
+
+.. function:: void obs_enum_output_types_with_protocol(const char *protocol, void *data, bool (*enum_cb)(void *data, const char *id))
+
+   Enumerates through a callback all available output types for the given protocol.
+
+   :param protocol: Protocol of the outputs to enumerate
+   :param data:     Data passed to the callback
+   :param enum_cb:  Callback used when a matching output is found, the id
+                    of the output is passed to the callback
+   :return:         When all outputs are enumerated or if the callback return *false*
+
+---------------------
+
 Functions used by outputs
 -------------------------
 
