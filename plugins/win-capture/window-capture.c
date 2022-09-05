@@ -86,7 +86,6 @@ struct window_capture {
 	bool compatibility;
 	bool client_area;
 	bool force_sdr;
-	bool use_wildcards; /* TODO */
 
 	struct dc_capture capture;
 
@@ -209,7 +208,6 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
 	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
-	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
 
