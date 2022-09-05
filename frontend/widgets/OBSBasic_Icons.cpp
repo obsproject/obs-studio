@@ -49,8 +49,7 @@ QIcon OBSBasic::GetSourceIcon(const char *id) const
 	case OBS_ICON_TYPE_BROWSER:
 		return GetBrowserIcon();
 	case OBS_ICON_TYPE_CUSTOM:
-		//TODO: Add ability for sources to define custom icons
-		return GetDefaultIcon();
+		return GetCustomIcon(id);
 	case OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT:
 		return GetAudioProcessOutputIcon();
 	default:
@@ -216,4 +215,13 @@ QIcon OBSBasic::GetDefaultIcon() const
 QIcon OBSBasic::GetAudioProcessOutputIcon() const
 {
 	return audioProcessOutputIcon;
+}
+
+QIcon OBSBasic::GetCustomIcon(const char *id) const
+{
+	const char *path = App()->IsThemeDark() ? obs_source_get_dark_icon(id) : obs_source_get_light_icon(id);
+	QIcon icon = (path && *path) ? QIcon(path) : GetDefaultIcon();
+	bfree((void *)path);
+
+	return icon;
 }
