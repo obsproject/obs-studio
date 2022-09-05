@@ -2539,6 +2539,9 @@ obs_service_get_supported_video_codecs(const obs_service_t *service);
  * date. */
 EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
 
+/** Returns the protocol for this service context */
+EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
+
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */
 EXPORT void obs_source_frame_init(struct obs_source_frame *frame,

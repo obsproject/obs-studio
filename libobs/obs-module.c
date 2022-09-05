@@ -928,6 +928,7 @@ void obs_register_service_s(const struct obs_service_info *info, size_t size)
 	CHECK_REQUIRED_VAL_(info, get_name, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, create, obs_register_service);
 	CHECK_REQUIRED_VAL_(info, destroy, obs_register_service);
+	CHECK_REQUIRED_VAL_(info, get_protocol, obs_register_service);
 #undef CHECK_REQUIRED_VAL_
 
 	REGISTER_OBS_DEF(size, obs_service_info, obs->service_types, info);

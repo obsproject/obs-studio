@@ -88,6 +88,8 @@ struct obs_service_info {
 				int *audio_bitrate);
 
 	const char **(*get_supported_video_codecs)(void *data);
+
+	const char *(*get_protocol)(void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

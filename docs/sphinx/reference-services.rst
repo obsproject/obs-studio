@@ -148,6 +148,10 @@ Service Definition Structure
             the data manually (typically best to use strlist_split to
             generate this)
 
+.. member:: const char *(*obs_service_info.get_protocol)(void *data)
+
+   :return: The protocol used by the service
+
 
 General Service Functions
 -------------------------
@@ -304,6 +308,12 @@ General Service Functions
    :return: An array of string pointers containing the supported codecs
             for the service, terminated with a *NULL* pointer. Does not
             need to be freed
+
+---------------------
+
+.. function:: const char *obs_service_get_protocol(const obs_service_t *service)
+
+   :return: Protocol currently used for this service
 
 .. ---------------------------------------------------------------------------
 
