@@ -84,11 +84,14 @@ static bool decklink_output_start(void *data)
 
 	if (decklink->keyerMode != 0) {
 		to.format = VIDEO_FORMAT_BGRA;
+		to.range = VIDEO_RANGE_FULL;
 	} else {
 		to.format = VIDEO_FORMAT_UYVY;
+		to.range = VIDEO_RANGE_PARTIAL;
 	}
 	to.width = mode->GetWidth();
 	to.height = mode->GetHeight();
+	to.colorspace = VIDEO_CS_709;
 
 	obs_output_set_video_conversion(decklink->GetOutput(), &to);
 
