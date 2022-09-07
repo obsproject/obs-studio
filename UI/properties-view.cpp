@@ -694,7 +694,7 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	children.emplace_back(info);
 
 	/* trigger a settings update if the index was not found */
-	if (idx == -1)
+	if (count && idx == -1)
 		info->ControlChanged();
 
 	return combo;
