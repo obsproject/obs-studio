@@ -29,6 +29,7 @@ struct preview_output {
 	obs_output_t *output;
 
 	video_t *video_queue;
+	gs_texrender_t *texrender_premultiplied;
 	gs_texrender_t *texrender;
 	gs_stagesurf_t *stagesurfaces[STAGE_BUFFER_COUNT];
 	bool surf_written[STAGE_BUFFER_COUNT];
@@ -120,6 +121,8 @@ static void preview_tick(void *param, float sec)
 
 	auto ctx = (struct preview_output *)param;
 
+	if (ctx->texrender_premultiplied)
+		gs_texrender_reset(ctx->texrender_premultiplied);
 	if (ctx->texrender)
 		gs_texrender_reset(ctx->texrender);
 }
@@ -135,9 +138,14 @@ void preview_output_stop()
 	obs_source_release(context.current_source);
 
 	obs_enter_graphics();
-	for (gs_stagesurf_t *surf : context.stagesurfaces)
+	for (gs_stagesurf_t *&surf : context.stagesurfaces) {
 		gs_stagesurface_destroy(surf);
+		surf = nullptr;
+	}
 	gs_texrender_destroy(context.texrender);
+	context.texrender = nullptr;
+	gs_texrender_destroy(context.texrender_premultiplied);
+	context.texrender_premultiplied = nullptr;
 	obs_leave_graphics();
 
 	video_output_close(context.video_queue);
@@ -161,10 +169,14 @@ void preview_output_start()
 
 		obs_get_video_info(&context.ovi);
 
-		uint32_t width = context.ovi.base_width;
-		uint32_t height = context.ovi.base_height;
+		const struct video_scale_info *const conversion =
+			obs_output_get_video_conversion(context.output);
+		const uint32_t width = conversion->width;
+		const uint32_t height = conversion->height;
 
 		obs_enter_graphics();
+		context.texrender_premultiplied =
+			gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 		context.texrender = gs_texrender_create(GS_BGRA, GS_ZS_NONE);
 		for (gs_stagesurf_t *&surf : context.stagesurfaces)
 			surf = gs_stagesurface_create(width, height, GS_BGRA);
@@ -257,10 +269,17 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 	if (!ctx->current_source)
 		return;
 
-	uint32_t width = obs_source_get_base_width(ctx->current_source);
-	uint32_t height = obs_source_get_base_height(ctx->current_source);
+	const uint32_t width = obs_source_get_base_width(ctx->current_source);
+	const uint32_t height = obs_source_get_base_height(ctx->current_source);
 
-	if (gs_texrender_begin(ctx->texrender, width, height)) {
+	const struct video_scale_info *const conversion =
+		obs_output_get_video_conversion(context.output);
+	const uint32_t scaled_width = conversion->width;
+	const uint32_t scaled_height = conversion->height;
+
+	gs_texrender_t *const texrender_premultiplied =
+		ctx->texrender_premultiplied;
+	if (gs_texrender_begin(texrender_premultiplied, width, height)) {
 		struct vec4 background;
 		vec4_zero(&background);
 
@@ -274,7 +293,30 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 		obs_source_video_render(ctx->current_source);
 
 		gs_blend_state_pop();
-		gs_texrender_end(ctx->texrender);
+		gs_texrender_end(texrender_premultiplied);
+
+		if (gs_texrender_begin(ctx->texrender, scaled_width,
+				       scaled_height)) {
+			const bool previous = gs_framebuffer_srgb_enabled();
+			gs_enable_framebuffer_srgb(true);
+			gs_enable_blending(false);
+
+			gs_texture_t *const tex = gs_texrender_get_texture(
+				texrender_premultiplied);
+			gs_effect_t *const effect =
+				obs_get_base_effect(OBS_EFFECT_DEFAULT);
+			gs_effect_set_texture_srgb(
+				gs_effect_get_param_by_name(effect, "image"),
+				tex);
+			while (gs_effect_loop(effect, "DrawAlphaDivide")) {
+				gs_draw_sprite(tex, 0, 0, 0);
+			}
+
+			gs_enable_blending(true);
+			gs_enable_framebuffer_srgb(previous);
+
+			gs_texrender_end(ctx->texrender);
+		}
 
 		const size_t write_stage_index = ctx->stage_index;
 		gs_stage_texture(ctx->stagesurfaces[write_stage_index],
@@ -295,8 +337,8 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 							&ctx->video_linesize)) {
 					uint32_t linesize =
 						output_frame.linesize[0];
-					for (uint32_t i = 0;
-					     i < ctx->ovi.base_height; i++) {
+					for (uint32_t i = 0; i < scaled_height;
+					     i++) {
 						uint32_t dst_offset =
 							linesize * i;
 						uint32_t src_offset =
