@@ -230,25 +230,18 @@ static const char *render_output_texture_name = "render_output_texture";
 static inline gs_texture_t *
 render_output_texture(struct obs_core_video_mix *mix)
 {
+	struct obs_video_info *const ovi = &mix->ovi;
 	gs_texture_t *texture = mix->render_texture;
 	gs_texture_t *target = mix->output_texture;
-	uint32_t width = gs_texture_get_width(target);
-	uint32_t height = gs_texture_get_height(target);
-
-	gs_effect_t *effect = get_scale_effect(mix, width, height);
-	gs_technique_t *tech;
-
-	if (video_output_get_format(mix->video) == VIDEO_FORMAT_BGRA) {
-		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
-	} else {
-		if ((width == mix->ovi.base_width) &&
-		    (height == mix->ovi.base_height))
-			return texture;
-
-		tech = gs_effect_get_technique(effect, "Draw");
-	}
+	const uint32_t width = gs_texture_get_width(target);
+	const uint32_t height = gs_texture_get_height(target);
+	if ((width == ovi->base_width) && (height == ovi->base_height))
+		return texture;
 
 	profile_start(render_output_texture_name);
+
+	gs_effect_t *effect = get_scale_effect(mix, width, height);
+	gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
 
 	gs_eparam_t *image = gs_effect_get_param_by_name(effect, "image");
 	gs_eparam_t *bres =
@@ -399,6 +392,7 @@ static const char *stage_output_texture_name = "stage_output_texture";
 static inline void
 stage_output_texture(struct obs_core_video_mix *video, int cur_texture,
 		     gs_texture_t *const *const convert_textures,
+		     gs_texture_t *output_texture,
 		     gs_stagesurf_t *const *const copy_surfaces,
 		     size_t channel_count)
 {
@@ -409,7 +403,7 @@ stage_output_texture(struct obs_core_video_mix *video, int cur_texture,
 	if (!video->gpu_conversion) {
 		gs_stagesurf_t *copy = copy_surfaces[0];
 		if (copy)
-			gs_stage_texture(copy, video->output_texture);
+			gs_stage_texture(copy, output_texture);
 		video->active_copy_surfaces[cur_texture][0] = copy;
 
 		for (size_t i = 1; i < NUM_CHANNELS; ++i)
@@ -544,7 +538,7 @@ static inline void render_video(struct obs_core_video_mix *video,
 		gs_stagesurf_t *const *copy_surfaces =
 			video->copy_surfaces[cur_texture];
 		size_t channel_count = NUM_CHANNELS;
-		gs_texture_t *texture = render_output_texture(video);
+		gs_texture_t *output_texture = render_output_texture(video);
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -555,9 +549,10 @@ static inline void render_video(struct obs_core_video_mix *video,
 		}
 #endif
 
-		if (video->gpu_conversion)
+		if (video->gpu_conversion) {
 			render_convert_texture(video, convert_textures,
-					       texture);
+					       output_texture);
+		}
 
 #ifdef _WIN32
 		if (gpu_active) {
@@ -566,10 +561,11 @@ static inline void render_video(struct obs_core_video_mix *video,
 		}
 #endif
 
-		if (raw_active)
+		if (raw_active) {
 			stage_output_texture(video, cur_texture,
-					     convert_textures, copy_surfaces,
-					     channel_count);
+					     convert_textures, output_texture,
+					     copy_surfaces, channel_count);
+		}
 	}
 
 	gs_set_render_target(NULL, NULL);
