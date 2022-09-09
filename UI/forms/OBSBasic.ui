@@ -842,6 +842,8 @@
           <addaction name="actionAddScene"/>
           <addaction name="actionRemoveScene"/>
           <addaction name="separator"/>
+          <addaction name="actionSceneFilters"/>
+          <addaction name="separator"/>
           <addaction name="actionSceneUp"/>
           <addaction name="actionSceneDown"/>
          </widget>
@@ -2347,6 +2349,21 @@
    </property>
    <property name="themeID" stdset="0">
     <string>menuIconSmall</string>
+   </property>
+  </action>
+  <action name="actionSceneFilters">
+   <property name="icon">
+    <iconset resource="obs.qrc">
+     <normaloff>:/res/images/filter.svg</normaloff>:/res/images/filter.svg</iconset>
+   </property>
+   <property name="text">
+    <string>SceneFilters</string>
+   </property>
+   <property name="toolTip">
+    <string>SceneFilters</string>
+   </property>
+   <property name="themeID" stdset="0">
+    <string>filtersIcon</string>
    </property>
   </action>
  </widget>

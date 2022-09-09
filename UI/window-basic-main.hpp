@@ -1032,6 +1032,7 @@ private slots:
 	void on_actionCenterToScreen_triggered();
 	void on_actionVerticalCenter_triggered();
 	void on_actionHorizontalCenter_triggered();
+	void on_actionSceneFilters_triggered();
 
 	void on_OBSBasic_customContextMenuRequested(const QPoint &pos);
 
