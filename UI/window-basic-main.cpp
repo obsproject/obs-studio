@@ -10197,6 +10197,14 @@ void OBSBasic::on_sourceFiltersButton_clicked()
 	OpenFilters();
 }
 
+void OBSBasic::on_actionSceneFilters_triggered()
+{
+	OBSSource sceneSource = GetCurrentSceneSource();
+
+	if (sceneSource)
+		OpenFilters(sceneSource);
+}
+
 void OBSBasic::on_sourceInteractButton_clicked()
 {
 	on_actionInteract_triggered();

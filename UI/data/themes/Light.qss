@@ -522,6 +522,10 @@ QToolButton:pressed {
     qproperty-icon: url(./Light/media-pause.svg);
 }
 
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(./Light/filter.svg);
+}
+
 QToolBarExtension {
     background: palette(button);
     min-width: 12px;

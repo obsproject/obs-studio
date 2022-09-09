@@ -58,6 +58,10 @@ OBSThemeMeta {
     qproperty-icon: url(:/res/images/cogs.svg);
 }
 
+* [themeID="filtersIcon"] {
+    qproperty-icon: url(:/res/images/filter.svg);
+}
+
 MuteCheckBox {
     outline: none;
 }
