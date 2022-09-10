@@ -955,8 +955,10 @@ static void ss_activate(void *data)
 	if (ss->behavior == BEHAVIOR_STOP_RESTART) {
 		ss->restart_on_activate = true;
 		ss->use_cut = true;
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 	} else if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		ss->pause_on_deactivate = false;
+		set_media_state(ss, OBS_MEDIA_STATE_PLAYING);
 	}
 }
 
@@ -964,8 +966,10 @@ static void ss_deactivate(void *data)
 {
 	struct slideshow *ss = data;
 
-	if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE)
+	if (ss->behavior == BEHAVIOR_PAUSE_UNPAUSE) {
 		ss->pause_on_deactivate = true;
+		set_media_state(ss, OBS_MEDIA_STATE_PAUSED);
+	}
 }
 
 static void missing_file_callback(void *src, const char *new_path, void *data)
