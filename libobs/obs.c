@@ -337,6 +337,16 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 
 	bool success = true;
 
+	enum gs_color_format format = GS_BGRA;
+	switch (info->format) {
+	case VIDEO_FORMAT_I010:
+	case VIDEO_FORMAT_P010:
+	case VIDEO_FORMAT_I210:
+	case VIDEO_FORMAT_I412:
+	case VIDEO_FORMAT_YA2L:
+		format = GS_RGBA16F;
+	}
+
 	for (size_t i = 0; i < NUM_TEXTURES; i++) {
 #ifdef _WIN32
 		if (video->using_nv12_tex) {
@@ -365,22 +375,12 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 			}
 		} else {
 			video->copy_surfaces[i][0] = gs_stagesurface_create(
-				info->width, info->height, GS_RGBA);
+				info->width, info->height, format);
 			if (!video->copy_surfaces[i][0]) {
 				success = false;
 				break;
 			}
 		}
-	}
-
-	enum gs_color_format format = GS_RGBA;
-	switch (info->format) {
-	case VIDEO_FORMAT_I010:
-	case VIDEO_FORMAT_P010:
-	case VIDEO_FORMAT_I210:
-	case VIDEO_FORMAT_I412:
-	case VIDEO_FORMAT_YA2L:
-		format = GS_RGBA16F;
 	}
 
 	enum gs_color_space space = GS_CS_SRGB;
