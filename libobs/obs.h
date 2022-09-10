@@ -841,6 +841,11 @@ EXPORT void obs_add_main_render_callback(void (*draw)(void *param, uint32_t cx,
 EXPORT void obs_remove_main_render_callback(
 	void (*draw)(void *param, uint32_t cx, uint32_t cy), void *param);
 
+EXPORT void obs_add_main_rendered_callback(void (*rendered)(void *param),
+					   void *param);
+EXPORT void obs_remove_main_rendered_callback(void (*rendered)(void *param),
+					      void *param);
+
 EXPORT void obs_add_raw_video_callback(
 	const struct video_scale_info *conversion,
 	void (*callback)(void *param, struct video_data *frame), void *param);
