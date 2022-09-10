@@ -794,7 +794,7 @@
            </sizepolicy>
           </property>
           <property name="spacing">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>
@@ -932,7 +932,7 @@
            </sizepolicy>
           </property>
           <property name="spacing">
-           <number>1</number>
+           <number>0</number>
           </property>
           <property name="contextMenuPolicy">
            <enum>Qt::CustomContextMenu</enum>

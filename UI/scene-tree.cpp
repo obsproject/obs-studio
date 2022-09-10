@@ -91,7 +91,6 @@ void SceneTree::resizeEvent(QResizeEvent *event)
 		}
 	} else {
 		setGridSize(QSize());
-		setSpacing(1);
 		for (int i = 0; i < count(); i++) {
 			item(i)->setData(Qt::SizeHintRole, QVariant());
 		}
