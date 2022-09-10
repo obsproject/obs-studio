@@ -238,7 +238,7 @@ endfunction()
 function(export_target target)
   set(CMAKE_EXPORT_PACKAGE_REGISTRY OFF)
 
-  if(OS_LINUX)
+  if(OS_LINUX OR OS_FREEBSD)
     set(_EXCLUDE "")
   else()
     set(_EXCLUDE "EXCLUDE_FROM_ALL")
