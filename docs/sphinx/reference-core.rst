@@ -574,6 +574,14 @@ Video, Audio, and Graphics
 
 ---------------------
 
+.. function:: void obs_add_main_rendered_callback(void (*rendered)(void *param), void *param)
+              void obs_remove_main_rendered_callback(void (*rendered)(void *param), void *param)
+
+   Adds/removes a main rendered callback.  Allows using the result of
+   the main stream/recording output.
+
+---------------------
+
 .. function:: void obs_add_raw_video_callback(const struct video_scale_info *conversion, void (*callback)(void *param, struct video_data *frame), void *param)
               void obs_remove_raw_video_callback(void (*callback)(void *param, struct video_data *frame), void *param)
 

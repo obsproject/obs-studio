@@ -144,9 +144,8 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
 
 	for (size_t i = obs->data.draw_callbacks.num; i > 0; i--) {
-		struct draw_callback *callback;
-		callback = obs->data.draw_callbacks.array + (i - 1);
-
+		struct draw_callback *const callback =
+			obs->data.draw_callbacks.array + (i - 1);
 		callback->draw(callback->param, base_width, base_height);
 	}
 
@@ -155,6 +154,16 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 	obs_view_render(video->view);
 
 	video->texture_rendered = true;
+
+	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
+
+	for (size_t i = 0; i < obs->data.rendered_callbacks.num; ++i) {
+		struct rendered_callback *const callback =
+			&obs->data.rendered_callbacks.array[i];
+		callback->rendered(callback->param);
+	}
+
+	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
 
 	GS_DEBUG_MARKER_END();
 	profile_end(render_main_texture_name);
