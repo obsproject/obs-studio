@@ -36,6 +36,7 @@ along with this program.  If not, see <http://www.gnu.org/licenses/>.
 #include <obs-module.h>
 
 #include "v4l2-controls.h"
+#include "v4l2-uvc-xu-controls.h"
 #include "v4l2-helpers.h"
 #include "v4l2-decoder.h"
 
@@ -743,7 +744,8 @@ static void v4l2_framerate_list(int dev, uint_fast32_t pixelformat, uint_fast32_
  */
 static bool device_selected(obs_properties_t *props, obs_property_t *p, obs_data_t *settings)
 {
-	int dev = v4l2_open(obs_data_get_string(settings, "device_id"), O_RDWR | O_NONBLOCK);
+	const char *device_id = obs_data_get_string(settings, "device_id");
+	int dev = v4l2_open(device_id, O_RDWR | O_NONBLOCK);
 
 	v4l2_props_set_enabled(props, p, (dev == -1) ? false : true);
 
@@ -755,13 +757,18 @@ static bool device_selected(obs_properties_t *props, obs_property_t *p, obs_data
 
 	obs_properties_remove_by_name(props, "controls");
 
+	char *real_path = brealpath(device_id);
+
 	v4l2_input_list(dev, prop);
 	v4l2_update_controls(dev, ctrl_props_new, settings);
+	v4l2_update_uvc_xu_controls(real_path, ctrl_props_new);
 	v4l2_close(dev);
 
 	obs_properties_add_group(props, "controls", obs_module_text("CameraCtrls"), OBS_GROUP_NORMAL, ctrl_props_new);
 
 	obs_property_modified(prop, settings);
+
+	bfree(real_path);
 
 	return true;
 }
