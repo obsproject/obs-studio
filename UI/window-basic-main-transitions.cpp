@@ -793,9 +793,7 @@ void OBSBasic::CreateProgramOptions()
 
 	tBar->setProperty("themeID", "tBarSlider");
 
-	connect(tBar, SIGNAL(sliderMoved(int)), this, SLOT(TBarChanged(int)));
-	connect(tBar, SIGNAL(valueChanged(int)), this,
-		SLOT(on_tbar_position_valueChanged(int)));
+	connect(tBar, &QSlider::valueChanged, this, &OBSBasic::TBarChanged);
 	connect(tBar, SIGNAL(sliderReleased()), this, SLOT(TBarReleased()));
 
 	layout->addStretch(0);
@@ -918,8 +916,6 @@ void OBSBasic::TBarChanged(int value)
 {
 	OBSSourceAutoRelease transition = obs_get_output_source(0);
 
-	tBar->setValue(value);
-
 	if (!tBarActive) {
 		OBSSource sceneSource = GetCurrentSceneSource();
 		OBSSource tBarTr = GetOverrideTransition(sceneSource);
@@ -945,6 +941,9 @@ void OBSBasic::TBarChanged(int value)
 
 	obs_transition_set_manual_time(transition,
 				       (float)value / T_BAR_PRECISION_F);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
 }
 
 int OBSBasic::GetTbarPosition()
@@ -952,14 +951,6 @@ int OBSBasic::GetTbarPosition()
 	return tBar->value();
 }
 
-void OBSBasic::on_tbar_position_valueChanged(int value)
-{
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED);
-	}
-
-	UNUSED_PARAMETER(value);
-}
 void OBSBasic::on_modeSwitch_clicked()
 {
 	SetPreviewProgramMode(!IsPreviewProgramMode());

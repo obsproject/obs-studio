@@ -1117,7 +1117,6 @@ private slots:
 	void on_transitionRemove_clicked();
 	void on_transitionProps_clicked();
 	void on_transitionDuration_valueChanged(int value);
-	void on_tbar_position_valueChanged(int value);
 
 	void ShowTransitionProperties();
 	void HideTransitionProperties();
