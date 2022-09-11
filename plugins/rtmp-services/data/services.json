@@ -1,6 +1,6 @@
 {
-    "$schema": "schema/service-schema-v3.json",
-    "format_version": 3,
+    "$schema": "schema/service-schema-v4.json",
+    "format_version": 4,
     "services": [
         {
             "name": "Twitch",
