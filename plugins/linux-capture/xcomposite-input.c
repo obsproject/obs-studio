@@ -423,7 +423,8 @@ void xcomp_create_pixmap(xcb_connection_t *conn, struct xcompcap *s,
 
 	s->pixmap = xcb_generate_id(conn);
 	xcb_void_cookie_t name_cookie =
-		xcb_composite_name_window_pixmap(conn, s->win, s->pixmap);
+		xcb_composite_name_window_pixmap_checked(conn, s->win,
+							 s->pixmap);
 	err = NULL;
 	if ((err = xcb_request_check(conn, name_cookie)) != NULL) {
 		blog(log_level, "xcb_composite_name_window_pixmap failed");
