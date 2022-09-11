@@ -2399,6 +2399,14 @@
             "servers": [
                 {
                     "name": "Default",
+                    "url": "rtmp://live-default.streamvi.ru/live"
+                },
+                {
+                    "name": "Russia (Moscow)",
+                    "url": "rtmp://live-msk.streamvi.ru/live"
+                },
+                {
+                    "name": "EU Central: Germany",
                     "url": "rtmp://live1.streamvi.ru/live"
                 }
             ]

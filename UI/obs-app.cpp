@@ -1536,6 +1536,10 @@ bool OBSApp::OBSInit()
 		native->nativeResourceForIntegration("display"));
 #endif
 
+#ifdef __APPLE__
+	setAttribute(Qt::AA_DontCreateNativeWidgetSiblings);
+#endif
+
 	if (!StartupOBS(locale.c_str(), GetProfilerNameStore()))
 		return false;
 

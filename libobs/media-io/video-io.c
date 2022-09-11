@@ -295,12 +295,39 @@ static size_t video_get_input_idx(const video_t *video,
 	return DARRAY_INVALID;
 }
 
+static bool match_range(enum video_range_type a, enum video_range_type b)
+{
+	return (a == VIDEO_RANGE_FULL) == (b == VIDEO_RANGE_FULL);
+}
+
+static enum video_colorspace collapse_space(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_DEFAULT:
+	case VIDEO_CS_SRGB:
+		cs = VIDEO_CS_709;
+		break;
+	case VIDEO_CS_2100_HLG:
+		cs = VIDEO_CS_2100_PQ;
+	}
+
+	return cs;
+}
+
+static bool match_space(enum video_colorspace a, enum video_colorspace b)
+{
+	return collapse_space(a) == collapse_space(b);
+}
+
 static inline bool video_input_init(struct video_input *input,
 				    struct video_output *video)
 {
 	if (input->conversion.width != video->info.width ||
 	    input->conversion.height != video->info.height ||
-	    input->conversion.format != video->info.format) {
+	    input->conversion.format != video->info.format ||
+	    !match_range(input->conversion.range, video->info.range) ||
+	    !match_space(input->conversion.colorspace,
+			 video->info.colorspace)) {
 		struct video_scale_info from = {.format = video->info.format,
 						.width = video->info.width,
 						.height = video->info.height,

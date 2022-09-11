@@ -384,6 +384,7 @@ function(setup_obs_bundle target)
     install(
       DIRECTORY ${SPARKLE}
       DESTINATION $<TARGET_FILE_BASE_NAME:${target}>.app/Contents/Frameworks
+      USE_SOURCE_PERMISSIONS
       COMPONENT obs_frameworks)
   endif()
 

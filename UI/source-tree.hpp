@@ -8,6 +8,7 @@
 #include <QStaticText>
 #include <QSvgRenderer>
 #include <QAbstractListModel>
+#include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
 
@@ -25,7 +26,7 @@ class SourceTreeSubItemCheckBox : public QCheckBox {
 	Q_OBJECT
 };
 
-class SourceTreeItem : public QWidget {
+class SourceTreeItem : public QFrame {
 	Q_OBJECT
 
 	friend class SourceTree;
@@ -210,11 +211,18 @@ public slots:
 protected:
 	virtual void mouseDoubleClickEvent(QMouseEvent *event) override;
 	virtual void dropEvent(QDropEvent *event) override;
-	virtual void mouseMoveEvent(QMouseEvent *event) override;
-	virtual void leaveEvent(QEvent *event) override;
 	virtual void paintEvent(QPaintEvent *event) override;
 
 	virtual void
 	selectionChanged(const QItemSelection &selected,
 			 const QItemSelection &deselected) override;
+};
+
+class SourceTreeDelegate : public QStyledItemDelegate {
+	Q_OBJECT
+
+public:
+	SourceTreeDelegate(QObject *parent);
+	virtual QSize sizeHint(const QStyleOptionViewItem &option,
+			       const QModelIndex &index) const override;
 };

@@ -172,6 +172,8 @@ static inline bool d3d10_init_format(IDXGISwapChain *swap, HWND &window)
 		return false;
 	}
 
+	print_swap_desc(&desc);
+
 	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;

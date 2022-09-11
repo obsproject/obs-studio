@@ -585,6 +585,11 @@ try {
 		extraHeaders.push_back(move(header));
 	}
 
+	/* allow server to know if this was a manual update check in case
+	 * we want to allow people to bypass a configured rollout rate */
+	if (manualUpdate)
+		extraHeaders.emplace_back("X-OBS2-ManualUpdate: 1");
+
 	/* ----------------------------------- *
 	 * get manifest from server            */
 

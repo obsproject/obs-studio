@@ -456,11 +456,6 @@ static bool init_screen_stream(struct screen_capture *sc)
 			includingApplications:target_application_array
 			     exceptingWindows:[[NSArray alloc] init]];
 
-		if (@available(macOS 13.0, *))
-			[sc->stream_properties
-				setBackgroundColor:CGColorGetConstantColor(
-							   kCGColorClear)];
-
 		set_display_mode(sc, target_display);
 	} break;
 	}
@@ -666,7 +661,7 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect
 		gs_effect_set_texture(param, sc->tex);
 
 	while (gs_effect_loop(sc->effect, "Draw"))
-		gs_draw_sprite(sc->tex, false, 0, 0);
+		gs_draw_sprite(sc->tex, 0, 0, 0);
 
 	gs_enable_framebuffer_srgb(previous);
 }

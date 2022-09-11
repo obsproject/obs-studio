@@ -780,7 +780,12 @@ static void *ffmpeg_mux_io_thread(void *data)
 			if (want_seek) {
 				os_fseeki64(ffm->io.output_file,
 					    next_seek_position, SEEK_SET);
-				current_seek_position = next_seek_position;
+
+				// Update the next virtual position, making sure to take
+				// into account the size of the chunk we're about to write.
+				current_seek_position =
+					next_seek_position + chunk_used;
+
 				want_seek = false;
 			}
 

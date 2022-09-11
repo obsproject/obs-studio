@@ -176,7 +176,7 @@ void preview_output_start()
 		vi.fps_num = context.ovi.fps_num;
 		vi.cache_size = 16;
 		vi.colorspace = mainVOI->colorspace;
-		vi.range = mainVOI->range;
+		vi.range = VIDEO_RANGE_FULL;
 		vi.name = "decklink_preview_output";
 
 		video_output_open(&context.video_queue, &vi);

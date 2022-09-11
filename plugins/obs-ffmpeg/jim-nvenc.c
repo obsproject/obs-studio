@@ -89,7 +89,6 @@ struct nvenc_data {
 
 struct nv_bitstream {
 	void *ptr;
-	HANDLE event;
 };
 
 #define NV_FAIL(format, ...) nv_fail(enc->encoder, format, __VA_ARGS__)
@@ -99,48 +98,19 @@ static bool nv_bitstream_init(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	NV_ENC_CREATE_BITSTREAM_BUFFER buf = {
 		NV_ENC_CREATE_BITSTREAM_BUFFER_VER};
-	NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
-	HANDLE event = NULL;
 
 	if (NV_FAILED(nv.nvEncCreateBitstreamBuffer(enc->session, &buf))) {
 		return false;
 	}
 
-	event = CreateEvent(NULL, true, true, NULL);
-	if (!event) {
-		error("%s: %s", __FUNCTION__, "Failed to create event");
-		goto fail;
-	}
-
-	params.completionEvent = event;
-	if (NV_FAILED(nv.nvEncRegisterAsyncEvent(enc->session, &params))) {
-		goto fail;
-	}
-
 	bs->ptr = buf.bitstreamBuffer;
-	bs->event = event;
 	return true;
-
-fail:
-	if (event) {
-		CloseHandle(event);
-	}
-	if (buf.bitstreamBuffer) {
-		nv.nvEncDestroyBitstreamBuffer(enc->session,
-					       buf.bitstreamBuffer);
-	}
-	return false;
 }
 
 static void nv_bitstream_free(struct nvenc_data *enc, struct nv_bitstream *bs)
 {
 	if (bs->ptr) {
 		nv.nvEncDestroyBitstreamBuffer(enc->session, bs->ptr);
-
-		NV_ENC_EVENT_PARAMS params = {NV_ENC_EVENT_PARAMS_VER};
-		params.completionEvent = bs->event;
-		nv.nvEncUnregisterAsyncEvent(enc->session, &params);
-		CloseHandle(bs->event);
 	}
 }
 
@@ -213,14 +183,14 @@ static void nv_texture_free(struct nvenc_data *enc, struct nv_texture *nvtex)
 static const char *h264_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC H.264 (new)";
+	return "NVIDIA NVENC H.264";
 }
 
 #ifdef ENABLE_HEVC
 static const char *hevc_nvenc_get_name(void *type_data)
 {
 	UNUSED_PARAMETER(type_data);
-	return "NVIDIA NVENC HEVC (new)";
+	return "NVIDIA NVENC HEVC";
 }
 #endif
 
@@ -356,6 +326,29 @@ static bool init_session(struct nvenc_data *enc)
 	return true;
 }
 
+static void initialize_params(NV_ENC_INITIALIZE_PARAMS *params,
+			      const GUID *nv_encode, const GUID *nv_preset,
+			      uint32_t width, uint32_t height, uint32_t fps_num,
+			      uint32_t fps_den, NV_ENC_CONFIG *config)
+{
+	int darWidth, darHeight;
+	av_reduce(&darWidth, &darHeight, width, height, 1024 * 1024);
+
+	memset(params, 0, sizeof(*params));
+	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
+	params->encodeGUID = *nv_encode;
+	params->presetGUID = *nv_preset;
+	params->encodeWidth = width;
+	params->encodeHeight = height;
+	params->darWidth = darWidth;
+	params->darHeight = darHeight;
+	params->frameRateNum = fps_num;
+	params->frameRateDen = fps_den;
+	params->enableEncodeAsync = 0;
+	params->enablePTD = 1;
+	params->encodeConfig = config;
+}
+
 static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 			      int bf, bool psycho_aq)
 {
@@ -444,28 +437,14 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	uint32_t gop_size =
 		(keyint_sec) ? keyint_sec * voi->fps_num / voi->fps_den : 250;
 
-	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_H264 *h264_config = &config->encodeCodecConfig.h264Config;
 	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
 		&h264_config->h264VUIParameters;
 
-	int darWidth, darHeight;
-	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
-
-	memset(params, 0, sizeof(*params));
-	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
-	params->encodeGUID = NV_ENC_CODEC_H264_GUID;
-	params->presetGUID = nv_preset;
-	params->encodeWidth = voi->width;
-	params->encodeHeight = voi->height;
-	params->darWidth = darWidth;
-	params->darHeight = darHeight;
-	params->frameRateNum = voi->fps_num;
-	params->frameRateDen = voi->fps_den;
-	params->enableEncodeAsync = 1;
-	params->enablePTD = 1;
-	params->encodeConfig = &enc->config;
+	initialize_params(&enc->params, &NV_ENC_CODEC_H264_GUID, &nv_preset,
+			  voi->width, voi->height, voi->fps_num, voi->fps_den,
+			  &enc->config);
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	h264_config->idrPeriod = gop_size;
@@ -603,11 +582,12 @@ static bool init_encoder_h264(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* initialize                 */
 
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
+	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
 
 	info("settings:\n"
+	     "\tcodec:        H264\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
@@ -716,28 +696,14 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	uint32_t gop_size =
 		(keyint_sec) ? keyint_sec * voi->fps_num / voi->fps_den : 250;
 
-	NV_ENC_INITIALIZE_PARAMS *params = &enc->params;
 	NV_ENC_CONFIG *config = &enc->config;
 	NV_ENC_CONFIG_HEVC *hevc_config = &config->encodeCodecConfig.hevcConfig;
-	NV_ENC_CONFIG_H264_VUI_PARAMETERS *vui_params =
+	NV_ENC_CONFIG_HEVC_VUI_PARAMETERS *vui_params =
 		&hevc_config->hevcVUIParameters;
 
-	int darWidth, darHeight;
-	av_reduce(&darWidth, &darHeight, voi->width, voi->height, 1024 * 1024);
-
-	memset(params, 0, sizeof(*params));
-	params->version = NV_ENC_INITIALIZE_PARAMS_VER;
-	params->encodeGUID = NV_ENC_CODEC_HEVC_GUID;
-	params->presetGUID = nv_preset;
-	params->encodeWidth = voi->width;
-	params->encodeHeight = voi->height;
-	params->darWidth = darWidth;
-	params->darHeight = darHeight;
-	params->frameRateNum = voi->fps_num;
-	params->frameRateDen = voi->fps_den;
-	params->enableEncodeAsync = 1;
-	params->enablePTD = 1;
-	params->encodeConfig = &enc->config;
+	initialize_params(&enc->params, &NV_ENC_CODEC_HEVC_GUID, &nv_preset,
+			  voi->width, voi->height, voi->fps_num, voi->fps_den,
+			  &enc->config);
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 	hevc_config->idrPeriod = gop_size;
@@ -891,11 +857,12 @@ static bool init_encoder_hevc(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* initialize                 */
 
-	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, params))) {
+	if (NV_FAILED(nv.nvEncInitializeEncoder(enc->session, &enc->params))) {
 		return false;
 	}
 
 	info("settings:\n"
+	     "\tcodec:        HEVC\n"
 	     "\trate_control: %s\n"
 	     "\tbitrate:      %d\n"
 	     "\tcqp:          %d\n"
@@ -1118,11 +1085,9 @@ static void nvenc_destroy(void *data)
 
 	if (enc->encode_started) {
 		size_t next_bitstream = enc->next_bitstream;
-		HANDLE next_event = enc->bitstreams.array[next_bitstream].event;
 
 		NV_ENC_PIC_PARAMS params = {NV_ENC_PIC_PARAMS_VER};
 		params.encodePicFlags = NV_ENC_PIC_FLAG_EOS;
-		params.completionEvent = next_event;
 		nv.nvEncEncodePicture(enc->session, &params);
 		get_encoded_packet(enc, true);
 	}
@@ -1324,11 +1289,6 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	circlebuf_push_back(&enc->dts_list, &pts, sizeof(pts));
 
 	/* ------------------------------------ */
-	/* wait for output bitstream/tex        */
-
-	WaitForSingleObject(bs->event, INFINITE);
-
-	/* ------------------------------------ */
 	/* copy to output tex                   */
 
 	km->lpVtbl->AcquireSync(km, lock_key, INFINITE);
@@ -1364,7 +1324,6 @@ static bool nvenc_encode_tex(void *data, uint32_t handle, int64_t pts,
 	params.inputHeight = enc->cy;
 	params.inputPitch = enc->cx;
 	params.outputBitstream = bs->ptr;
-	params.completionEvent = bs->event;
 
 	err = nv.nvEncEncodePicture(enc->session, &params);
 	if (err != NV_ENC_SUCCESS && err != NV_ENC_ERR_NEED_MORE_INPUT) {
