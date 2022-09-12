@@ -128,12 +128,12 @@ static bool try_connect(void *data, const char *device)
 		return false;
 
 	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) < 0)
-		return false;
+		goto fail_close_device;
 
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
 	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) < 0)
-		return false;
+		goto fail_close_device;
 
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
@@ -146,7 +146,7 @@ static bool try_connect(void *data, const char *device)
 	parm.parm.output.timeperframe.denominator = ovi.fps_num;
 
 	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) < 0)
-		return false;
+		goto fail_close_device;
 
 	format.fmt.pix.width = width;
 	format.fmt.pix.height = height;
@@ -154,7 +154,7 @@ static bool try_connect(void *data, const char *device)
 	format.fmt.pix.sizeimage = vcam->frame_size;
 
 	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) < 0)
-		return false;
+		goto fail_close_device;
 
 	struct video_scale_info vsi = {0};
 	vsi.format = VIDEO_FORMAT_YUY2;
@@ -166,6 +166,10 @@ static bool try_connect(void *data, const char *device)
 	obs_output_begin_data_capture(vcam->output, 0);
 
 	return true;
+
+fail_close_device:
+	close(vcam->device);
+	return false;
 }
 
 static int scanfilter(const struct dirent *entry)
