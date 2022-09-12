@@ -1555,8 +1555,12 @@ bool SourceTree::Edit(int row)
 	QModelIndex index = stm->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = reinterpret_cast<SourceTreeItem *>(widget);
-	if (itemWidget->IsEditing())
+	if (itemWidget->IsEditing()) {
+#ifdef __APPLE__
+		itemWidget->ExitEditMode(true);
+#endif
 		return false;
+	}
 
 	itemWidget->EnterEditMode();
 	edit(index);
