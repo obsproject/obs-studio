@@ -274,12 +274,14 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 
 		popup.addAction(QTStr("Close"), this, SLOT(EscapeTriggered()));
 		popup.exec(QCursor::pos());
-	}
+	} else if (event->button() == Qt::LeftButton) {
+		// Only MultiView projectors handle left click
+		if (this->type != ProjectorType::Multiview)
+			return;
 
-	if (!mouseSwitching)
-		return;
+		if (!mouseSwitching)
+			return;
 
-	if (event->button() == Qt::LeftButton) {
 		QPoint pos = event->pos();
 		OBSSource src =
 			multiview->GetSourceByPosition(pos.x(), pos.y());
