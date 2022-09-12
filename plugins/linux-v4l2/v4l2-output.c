@@ -75,8 +75,7 @@ static bool loopback_module_loaded()
 		}
 	}
 
-	if (fp)
-		fclose(fp);
+	fclose(fp);
 
 	return loaded;
 }
