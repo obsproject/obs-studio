@@ -676,20 +676,13 @@ static inline bool FileExists(const wchar_t *path)
 
 static bool NonCorePackageInstalled(const char *name)
 {
-	if (is32bit) {
-		if (strcmp(name, "obs-browser") == 0) {
+	if (strcmp(name, "obs-browser") == 0) {
+		if (is32bit)
 			return FileExists(
 				L"obs-plugins\\32bit\\obs-browser.dll");
-		} else if (strcmp(name, "realsense") == 0) {
-			return FileExists(L"obs-plugins\\32bit\\win-ivcam.dll");
-		}
-	} else {
-		if (strcmp(name, "obs-browser") == 0) {
+		else
 			return FileExists(
 				L"obs-plugins\\64bit\\obs-browser.dll");
-		} else if (strcmp(name, "realsense") == 0) {
-			return FileExists(L"obs-plugins\\64bit\\win-ivcam.dll");
-		}
 	}
 
 	return false;
