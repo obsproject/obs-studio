@@ -33,6 +33,11 @@
        <string>Basic.Scene</string>
       </property>
      </item>
+     <item>
+      <property name="text">
+       <string>Basic.Main.Source</string>
+      </property>
+     </item>
     </widget>
    </item>
    <item>
