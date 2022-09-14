@@ -33,6 +33,15 @@ cmake \
     -DUSE_UI_LOOP=true \
     -DCHECK_FOR_SERVICE_UPDATES=true \
     -DOBS_CODESIGN_LINKER=false \
+    -DWEBRTC_INCLUDE_PATH=$DEPS_DIR/webrtc_dist \
+    -DWEBRTC_LIB_PATH=$DEPS_DIR/webrtc_dist/libwebrtc.a \
+    -DMEDIASOUP_INCLUDE_PATH=$DEPS_DIR/libmediasoupclient_dist/include/mediasoupclient/ \
+    -DMEDIASOUP_LIB_PATH=$DEPS_DIR/libmediasoupclient_dist/lib/libmediasoupclient.a \
+    -DMEDIASOUP_SDP_LIB_PATH=$DEPS_DIR/libmediasoupclient_dist/lib/libsdptransform.a \
+    -DMEDIASOUP_SDP_INCLUDE_PATH=$DEPS_DIR/libmediasoupclient_dist/include/sdptransform \
+    -DOPENSSL_CRYPTO_LIBRARY=/usr/local/opt/openssl@3/lib/libcrypto.a \
+    -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include \
+    -DOPENSSL_SSL_LIBRARY=/usr/local/opt/openssl@3/lib/libssl.a \
     ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
 
 cmake --build ${BUILD_DIR} --target install --config ${BUILD_CONFIG:-${CI_BUILD_CONFIG}} -v

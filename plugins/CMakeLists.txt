@@ -25,6 +25,7 @@ if(OS_WINDOWS)
   add_subdirectory(obs-text)
   add_subdirectory(vlc-video)
   add_subdirectory(obs-vst)
+  add_subdirectory(mediasoup-connector)
 
   if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/enc-amf/CMakeLists.txt")
     add_subdirectory(enc-amf)
@@ -48,6 +49,7 @@ elseif(OS_MACOS)
   add_subdirectory(vlc-video)
   add_subdirectory(linux-jack)
   # add_subdirectory(obs-vst) // not supported at the moment
+  add_subdirectory(mediasoup-connector)
 
   check_obs_browser()
 elseif(OS_LINUX)
@@ -87,10 +89,6 @@ if(EXISTS ${CMAKE_CURRENT_SOURCE_DIR}/obs-websocket/CMakeLists.txt)
   add_subdirectory(obs-websocket)
 else()
 # obs_status(FATAL_ERROR "obs-websocket submodule not available.")
-endif()
-
-if(WIN32)
-	add_subdirectory(mediasoup-connector)
 endif()
 
 add_subdirectory(image-source)
