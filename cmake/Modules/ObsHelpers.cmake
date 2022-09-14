@@ -84,6 +84,10 @@ function(setup_plugin_target target)
     COMMENT "Installing ${target} to OBS rundir"
     VERBATIM)
 
+    if(TARGET OBS::browser)
+      setup_target_browser(${target})
+    endif()
+
   obs_status(ENABLED "${target}")
 endfunction()
 
@@ -206,14 +210,12 @@ function(setup_target_browser target)
   install(
     DIRECTORY ${CEF_ROOT_DIR}/Resources/
     DESTINATION ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}
-    COMPONENT obs_rundir
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_rundir)
 
   install(
     DIRECTORY ${CEF_ROOT_DIR}/Release/
     DESTINATION ${OBS_OUTPUT_DIR}/$<CONFIG>/${OBS_PLUGIN_DESTINATION}
-    COMPONENT obs_rundir
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_rundir)
 endfunction()
 
 # Helper function to export target to build and install tree. Allows usage of
@@ -267,15 +269,13 @@ function(export_target target)
     FILE ${TARGETS_EXPORT_NAME}.cmake
     NAMESPACE OBS::
     DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
-    COMPONENT obs_libraries
-    ${_EXCLUDE})
+    COMPONENT obs_libraries)
 
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
     DESTINATION ${OBS_CMAKE_DESTINATION}/${target}
-    COMPONENT obs_libraries
-    ${_EXCLUDE})
+    COMPONENT obs_libraries)
 endfunction()
 
 # Helper function to define available graphics modules for targets

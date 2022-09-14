@@ -1182,9 +1182,11 @@ char *obs_find_data_file(const char *file)
 {
 	struct dstr path = {0};
 
+#ifdef _WIN32
 	char *result = find_libobs_data_file(file);
 	if (result)
 		return result;
+#endif
 
 	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		if (check_path(file, core_module_paths.array[i].array, &path))

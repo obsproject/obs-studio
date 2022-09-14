@@ -1,0 +1,19 @@
+
+  
+  >   Image has the following dependencies:
+    
+        obs.dll
+        w32-pthreads.dll
+        KERNEL32.dll
+        SHELL32.dll
+        MSVCP140.dll
+        VCRUNTIME140.dll
+        VCRUNTIME140_1.dll
+        api-ms-win-crt-runtime-l1-1-0.dll
+        api-ms-win-crt-convert-l1-1-0.dll
+        api-ms-win-crt-math-l1-1-0.dll
+        api-ms-win-crt-heap-l1-1-0.dll
+    
+>     Summary
+
+

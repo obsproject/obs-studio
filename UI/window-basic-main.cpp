@@ -3863,7 +3863,7 @@ static inline void RemoveSceneAndReleaseNested(obs_source_t *source)
 			obs_scene_prune_sources(obs_scene_from_source(source));
 		return true;
 	};
-	obs_enum_scenes(cb, NULL);
+	// obs_enum_scenes(cb, NULL);
 }
 
 void OBSBasic::RemoveSelectedScene()
@@ -3919,7 +3919,7 @@ void OBSBasic::RemoveSelectedScene()
 		}
 		return true;
 	};
-	obs_enum_scenes(other_scenes_cb, &other_scenes_cb_data);
+	// obs_enum_scenes(other_scenes_cb, &other_scenes_cb_data);
 
 	/* --------------------------- */
 	/* undo/redo                   */
@@ -4659,7 +4659,7 @@ void OBSBasic::ClearSceneData()
 		return true;
 	};
 
-	obs_enum_scenes(cb, nullptr);
+	// obs_enum_scenes(cb, nullptr);
 	obs_enum_sources(cb, nullptr);
 
 	if (api)

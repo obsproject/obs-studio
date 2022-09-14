@@ -65,8 +65,8 @@ if exist grpc_dist\ (
 if exist vlc\ (
     echo "VLC already installed"
 ) else (
-    if exist vlc.zip (curl -kLO %VLCURL% -f --retry 5 -z vlc.zip) else (curl -kLO %VLCURL% -f --retry 5 -C -)
-    7z x vlc.zip -aoa -ovlc
+    if exist %VLC_VERSION%.zip (curl -kLO %VLCURL% -f --retry 5 -z %VLC_VERSION%.zip) else (curl -kLO %VLCURL% -f --retry 5 -C -)
+    7z x %VLC_VERSION%.zip -aoa -ovlc
 )
 
 if exist openssl_dist\ (

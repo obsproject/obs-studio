@@ -50,14 +50,12 @@ function(setup_framework_target target)
     EXPORT "${target}Targets"
     FRAMEWORK DESTINATION "Frameworks"
               COMPONENT obs_libraries
-              EXCLUDE_FROM_ALL
     INCLUDES
     DESTINATION Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
     PUBLIC_HEADER
       DESTINATION
         Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_libraries)
 endfunction()
 
 # Helper function to set up OBS plugin targets
@@ -170,8 +168,7 @@ function(setup_target_browser target)
     DIRECTORY "${CEF_LIBRARY}"
     DESTINATION "Frameworks"
     USE_SOURCE_PERMISSIONS
-    COMPONENT obs_browser_dev
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_browser_dev)
 
   foreach(_CEF_LIBRARY IN ITEMS "libEGL" "libswiftshader_libEGL" "libGLESv2"
                                 "libswiftshader_libGLESv2" "libvk_swiftshader")
@@ -446,16 +443,14 @@ function(export_framework_target)
     FILE ${TARGETS_EXPORT_NAME}.cmake
     NAMESPACE OBS::
     DESTINATION Frameworks/${target}.framework/Resources/cmake
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_libraries)
 
   install(
     FILES ${CMAKE_CURRENT_BINARY_DIR}/${target}Config.cmake
           ${CMAKE_CURRENT_BINARY_DIR}/${target}ConfigVersion.cmake
     DESTINATION
       Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Resources/cmake
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_libraries)
 endfunction()
 
 # Helper function to install header files
@@ -465,7 +460,7 @@ function(install_headers target)
     DESTINATION
       $<IF:$<BOOL:$<TARGET_PROPERTY:${target},FRAMEWORK>>,Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers,${OBS_INCLUDE_DESTINATION}>
     COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL FILES_MATCHING
+    FILES_MATCHING
     PATTERN "*.h"
     PATTERN "*.hpp"
     PATTERN "obs-hevc.h" EXCLUDE
@@ -485,14 +480,12 @@ function(install_headers target)
       FILES "${CMAKE_CURRENT_SOURCE_DIR}/obs-hevc.h"
       DESTINATION
         $<IF:$<BOOL:$<TARGET_PROPERTY:${target},FRAMEWORK>>,Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers,${OBS_INCLUDE_DESTINATION}>
-      COMPONENT obs_libraries
-      EXCLUDE_FROM_ALL)
+      COMPONENT obs_libraries)
   endif()
 
   install(
     FILES "${CMAKE_BINARY_DIR}/config/obsconfig.h"
     DESTINATION
       $<IF:$<BOOL:$<TARGET_PROPERTY:${target},FRAMEWORK>>,Frameworks/$<TARGET_FILE_BASE_NAME:${target}>.framework/Headers,${OBS_INCLUDE_DESTINATION}>
-    COMPONENT obs_libraries
-    EXCLUDE_FROM_ALL)
+    COMPONENT obs_libraries)
 endfunction()
