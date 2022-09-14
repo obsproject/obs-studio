@@ -166,7 +166,6 @@ class WASAPISource {
 	obs_source_t *source;
 	wstring default_id;
 	string device_id;
-	string device_name;
 	WinModule mmdevapi_module;
 	PFN_ActivateAudioInterfaceAsync activate_audio_interface_async = NULL;
 	PFN_RtwqUnlockWorkQueue rtwq_unlock_work_queue = NULL;
@@ -1612,7 +1611,7 @@ static bool UpdateWASAPIMethod(obs_properties_t *props, obs_property_t *,
 	return true;
 }
 
-static obs_properties_t *GetWASAPIPropertiesInput(void *)
+static obs_properties_t *GetWASAPIPropertiesInput(void *obj)
 {
 	obs_properties_t *props = obs_properties_create();
 	vector<AudioDeviceInfo> devices;
@@ -1636,6 +1635,7 @@ static obs_properties_t *GetWASAPIPropertiesInput(void *)
 	obs_properties_add_bool(props, OPT_USE_DEVICE_TIMING,
 				obs_module_text("UseDeviceTiming"));
 
+	WASAPISource *source = static_cast<WASAPISource *>(obj);
 	if (source) {
 		auto p = obs_properties_add_text(props, OPT_DEVICE_NAME,
 					source->device_name.c_str(), OBS_TEXT_DEFAULT);
