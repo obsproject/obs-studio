@@ -50,7 +50,7 @@ jobs:
     env:
       FLATPAK_BUILD_PATH: flatpak_app/files/share
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.3
+      image: flatpak/flatpak-github-actions:kde-6.3
       options: --privileged
     strategy:
       matrix:
@@ -68,7 +68,7 @@ jobs:
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
       - name: Build Flatpak Manifest
-        uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@master
+        uses: flatpak/flatpak-github-actions/flatpak-builder@master
         with:
           bundle: obs-studio-${{ steps.setup.outputs.commitHash }}.flatpak
           manifest-path: CI/flatpak/com.obsproject.Studio.json
@@ -94,7 +94,7 @@ jobs:
           ostree commit --repo=repo --canonical-permissions --branch=screenshots/x86_64 flatpak_app/screenshots
 
       - name: Publish to Flathub Beta
-        uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
+        uses: flatpak/flatpak-github-actions/flat-manager@master
         if: matrix.branch == 'beta'
         with:
           flat-manager-url: https://hub.flathub.org/
@@ -102,7 +102,7 @@ jobs:
           token: ${{ secrets.FLATHUB_BETA_TOKEN }}
 
       - name: Publish to Flathub
-        uses: bilelmoussaoui/flatpak-github-actions/flat-manager@v4
+        uses: flatpak/flatpak-github-actions/flat-manager@master
         if: matrix.branch == 'stable'
         with:
           flat-manager-url: https://hub.flathub.org/

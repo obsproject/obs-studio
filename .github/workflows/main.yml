@@ -370,7 +370,7 @@ jobs:
       run:
         shell: bash
     container:
-      image: bilelmoussaoui/flatpak-github-actions:kde-6.3
+      image: flatpak/flatpak-github-actions:kde-6.3
       options: --privileged
     steps:
       - name: 'Check for Github Labels'
@@ -399,7 +399,7 @@ jobs:
           echo "OBS_GIT_TAG=$(git describe --tags --abbrev=0)" >> $GITHUB_ENV
 
       - name: Build Flatpak Manifest
-        uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@v4
+        uses: flatpak/flatpak-github-actions/flatpak-builder@master
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
         with:
           bundle: obs-studio-flatpak-${{ env.OBS_GIT_HASH }}.flatpak
