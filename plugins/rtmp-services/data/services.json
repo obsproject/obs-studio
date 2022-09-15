@@ -2410,6 +2410,80 @@
                     "url": "rtmp://live1.streamvi.ru/live"
                 }
             ]
+        },
+        {
+            "name": "Livepush",
+            "more_info_link": "https://docs.livepush.io/en/articles/5065323-how-to-stream-live-from-obs-to-livepush",
+            "servers": [
+                {
+                    "name": "Livepush Global (Default)",
+                    "url": "rtmp://dc-global.livepush.io/live"
+                },
+                {
+                    "name": "Chicago, US",
+                    "url": "rtmp://us-central-ch.livepush.io/live"
+                },
+                {
+                    "name": "New York, US",
+                    "url": "rtmp://us-east-ny.livepush.io/live"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "url": "rtmp://us-west-la.livepush.io/live"
+                },
+                {
+                    "name": "Miami, US",
+                    "url": "rtmp://us-south-mia.livepush.io/live"
+                },
+                {
+                    "name": "Dallas, US",
+                    "url": "rtmp://us-central-dal.livepush.io/live"
+                },
+                {
+                    "name": "Portland, US",
+                    "url": "rtmp://us-west-og.livepush.io/live"
+                },
+                {
+                    "name": "Montreal, CA",
+                    "url": "rtmp://ca-central-mon.livepush.io/live"
+                },
+                {
+                    "name": "Toronto, CA",
+                    "url": "rtmp://ca-south-tor.livepush.io/live"
+                },
+                {
+                    "name": "Sydney, AU",
+                    "url": "rtmp://au-east-syd.livepush.io/live"
+                },
+                {
+                    "name": "London, UK",
+                    "url": "rtmp://uk-central-ldn.livepush.io/live"
+                },
+                {
+                    "name": "Milan, Italy",
+                    "url": "rtmp://it-north-mln.livepush.io/live"
+                },
+                {
+                    "name": "Paris, FR",
+                    "url": "rtmp://fr-central-par.livepush.io/live"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://as-southeast-sg.livepush.io/live"
+                },
+                {
+                    "name": "Bangalore, IN",
+                    "url": "rtmp://in-south-blr.livepush.io/live"
+                },
+                {
+                    "name": "Turkiye",
+                    "url": "rtmp://tr-north-ist.livepush.io/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 16000
+            }
         }
     ]
 }
