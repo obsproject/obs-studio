@@ -634,6 +634,7 @@ private:
 	bool drawSpacingHelpers = true;
 
 	float GetDevicePixelRatio();
+	void SourceToolBarActionsSetEnabled(bool enable);
 
 public slots:
 	void DeferSaveBegin();

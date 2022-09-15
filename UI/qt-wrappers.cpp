@@ -30,6 +30,7 @@
 #include <QStandardItemModel>
 #include <QLabel>
 #include <QPushButton>
+#include <QToolBar>
 
 #if !defined(_WIN32) && !defined(__APPLE__)
 #include <obs-nix-platform.h>
@@ -405,4 +406,13 @@ void TruncateLabel(QLabel *label, QString newText, int length)
 	newText += "...";
 
 	SetLabelText(label, newText);
+}
+
+void RefreshToolBarStyling(QToolBar *toolBar)
+{
+	for (QAction *action : toolBar->actions()) {
+		QWidget *widget = toolBar->widgetForAction(action);
+		widget->style()->unpolish(widget);
+		widget->style()->polish(widget);
+	}
 }
