@@ -816,7 +816,7 @@ QPushButton:pressed {
     background-color: rgb(240,98,146);
 }
 
-QPushButton:disabled {
+QPushButton:disabled, QToolButton:disabled {
     background-color: rgb(0,139,163);
 }
 
