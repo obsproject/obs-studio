@@ -1,10 +1,19 @@
 #pragma once
 
+#include <QPushButton>
+#include <QPointer>
 #include <QDialog>
 #include <QScopedPointer>
 #include <QAbstractTableModel>
 #include <QStyledItemDelegate>
 #include <memory>
+
+class DelButton : public QPushButton {
+public:
+	inline DelButton(QModelIndex index_) : QPushButton(), index(index_) {}
+
+	QPersistentModelIndex index;
+};
 
 class Ui_OBSExtraBrowsers;
 class ExtraBrowsersModel;
@@ -66,6 +75,11 @@ public:
 
 	QString newTitle;
 	QString newURL;
+
+	QPointer<DelButton> del;
+
+private slots:
+	void ResetIcons();
 
 public slots:
 	void Init();

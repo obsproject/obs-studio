@@ -160,6 +160,9 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void obs_frontend_set_icon(void *obj, const char *path,
+					   const char *theme_id) = 0;
 };
 
 EXPORT void

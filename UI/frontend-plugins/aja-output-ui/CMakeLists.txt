@@ -9,7 +9,7 @@ find_package(LibAJANTV2 REQUIRED)
 add_library(aja-output-ui MODULE)
 add_library(OBS::aja-output-ui ALIAS aja-output-ui)
 
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets Svg Xml COMPONENTS_LINUX Gui)
 
 set_target_properties(
   aja-output-ui
@@ -44,6 +44,8 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/plugins/aja/aja-widget-io.hpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.cpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.hpp
           ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
           ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
@@ -58,8 +60,9 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.hpp)
 
-target_link_libraries(aja-output-ui PRIVATE OBS::libobs OBS::frontend-api
-                                            Qt::Widgets AJA::LibAJANTV2)
+target_link_libraries(
+  aja-output-ui PRIVATE OBS::libobs OBS::frontend-api Qt::Widgets Qt::Svg
+                        Qt::Xml AJA::LibAJANTV2)
 
 if(OS_MACOS)
   find_library(IOKIT_FRAMEWORK Iokit)

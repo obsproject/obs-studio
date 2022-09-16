@@ -6,6 +6,7 @@
 #include "locked-checkbox.hpp"
 #include "expand-checkbox.hpp"
 #include "platform.hpp"
+#include "icons.hpp"
 
 #include <obs-frontend-api.h>
 #include <obs.h>
@@ -23,6 +24,13 @@
 
 #include <QStylePainter>
 #include <QStyleOptionFocusRect>
+
+SourceTreeSubItemCheckBox::SourceTreeSubItemCheckBox(QWidget *parent)
+	: OBSCheckBox(parent)
+{
+	SetCheckedIcon(GetIcon(":/res/images/expand.svg"));
+	SetUncheckedIcon(GetIcon(":/res/images/collapse.svg"));
+}
 
 static inline OBSScene GetCurrentScene()
 {
@@ -63,15 +71,7 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	bool sourceVisible = obs_sceneitem_visible(sceneitem);
 
 	if (tree->iconsVisible) {
-		QIcon icon;
-
-		if (strcmp(id, "scene") == 0)
-			icon = main->GetSceneIcon();
-		else if (strcmp(id, "group") == 0)
-			icon = main->GetGroupIcon();
-		else
-			icon = main->GetSourceIcon(id);
-
+		QIcon icon = main->GetSourceIcon(id);
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 
 		iconLabel = new QLabel();
@@ -1087,7 +1087,6 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 	UpdateNoSourcesMessage();
 	connect(App(), &OBSApp::StyleChanged, this,
 		&SourceTree::UpdateNoSourcesMessage);
-	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateIcons);
 
 	setItemDelegate(new SourceTreeDelegate(this));
 }

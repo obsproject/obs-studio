@@ -1,11 +1,10 @@
 #pragma once
 
-#include <QCheckBox>
+#include "checkbox.hpp"
 
-class LockedCheckBox : public QCheckBox {
+class LockedCheckBox : public OBSCheckBox {
 	Q_OBJECT
 
 public:
-	LockedCheckBox();
-	explicit LockedCheckBox(QWidget *parent);
+	LockedCheckBox(QWidget *parent = nullptr);
 };

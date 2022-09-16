@@ -234,6 +234,16 @@ void ScriptsTool::updatePythonVersionLabel()
 	ui->pythonVersionLabel->setText(label);
 }
 
+void ScriptsTool::ResetIcons()
+{
+	obs_frontend_set_icon(ui->addScripts, ":/res/images/plus.svg",
+			      "addIconSmall");
+	obs_frontend_set_icon(ui->removeScripts, ":/res/images/minus.svg",
+			      "removeIconSmall");
+	obs_frontend_set_icon(ui->reloadScripts, ":/res/images/refresh.svg",
+			      "refreshIconSmall");
+}
+
 void ScriptsTool::RemoveScript(const char *path)
 {
 	for (size_t i = 0; i < scriptData->scripts.size(); i++) {
@@ -607,6 +617,9 @@ static void obs_event(enum obs_frontend_event event, void *)
 
 		delete scriptData;
 		scriptData = new ScriptData;
+	} else if (event == OBS_FRONTEND_EVENT_THEME_CHANGED) {
+		if (scriptsWindow)
+			scriptsWindow->ResetIcons();
 	}
 }
 
@@ -712,6 +725,7 @@ extern "C" void InitScripts()
 
 		if (!scriptsWindow) {
 			scriptsWindow = new ScriptsTool();
+			scriptsWindow->ResetIcons();
 			scriptsWindow->show();
 		} else {
 			scriptsWindow->show();

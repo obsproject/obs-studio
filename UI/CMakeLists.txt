@@ -135,6 +135,8 @@ target_sources(
           auth-base.cpp
           auth-base.hpp
           display-helpers.hpp
+          icons.cpp
+          icons.hpp
           platform.hpp
           qt-display.cpp
           qt-display.hpp
@@ -157,6 +159,8 @@ target_sources(
           audio-encoders.cpp
           audio-encoders.hpp
           balance-slider.hpp
+          checkbox.cpp
+          checkbox.hpp
           clickable-label.hpp
           double-slider.cpp
           double-slider.hpp
@@ -183,6 +187,7 @@ target_sources(
           media-slider.hpp
           menu-button.cpp
           menu-button.hpp
+          mute-checkbox.cpp
           mute-checkbox.hpp
           plain-text-edit.cpp
           plain-text-edit.hpp

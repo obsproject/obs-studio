@@ -1303,6 +1303,8 @@ OBSBasic {
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
     qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
+    qproperty-iconColor: #fefefe;
+    qproperty-iconColorDisabled: #9a9996;
 }
 
 /* Scene Tree Grid Mode */

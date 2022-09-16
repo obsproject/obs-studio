@@ -121,6 +121,9 @@ private slots:
 	void CopyFilter();
 	void PasteFilter();
 
+public slots:
+	void ResetIcons();
+
 public:
 	OBSBasicFilters(QWidget *parent, OBSSource source_);
 	~OBSBasicFilters();

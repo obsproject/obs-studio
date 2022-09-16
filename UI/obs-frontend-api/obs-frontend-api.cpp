@@ -611,3 +611,9 @@ void obs_frontend_add_undo_redo_action(const char *name,
 		c->obs_frontend_add_undo_redo_action(
 			name, undo, redo, undo_data, redo_data, repeatable);
 }
+
+void obs_frontend_set_icon(void *obj, const char *path, const char *theme_id)
+{
+	if (callbacks_valid())
+		c->obs_frontend_set_icon(obj, path, theme_id);
+}

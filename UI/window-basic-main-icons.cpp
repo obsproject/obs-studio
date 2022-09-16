@@ -1,41 +1,66 @@
-#include <window-basic-main.hpp>
+#include "window-basic-main.hpp"
+#include "icons.hpp"
 
-QIcon OBSBasic::GetSourceIcon(const char *id) const
+QIcon OBSBasic::GetSourceIcon(const char *id)
 {
+	bool colored = IconColorStyled();
+
+	if (strcmp(id, "scene") == 0)
+		return colored ? GetIcon(":/res/images/sources/scene.svg")
+			       : GetSceneIcon();
+	else if (strcmp(id, "group") == 0)
+		return colored ? GetIcon(":/res/images/sources/group.svg")
+			       : GetGroupIcon();
+
 	obs_icon_type type = obs_source_get_icon_type(id);
 
 	switch (type) {
 	case OBS_ICON_TYPE_IMAGE:
-		return GetImageIcon();
+		return colored ? GetIcon(":/res/images/sources/image.svg")
+			       : GetImageIcon();
 	case OBS_ICON_TYPE_COLOR:
-		return GetColorIcon();
+		return colored ? GetIcon(":/res/images/sources/brush.svg")
+			       : GetColorIcon();
 	case OBS_ICON_TYPE_SLIDESHOW:
-		return GetSlideshowIcon();
+		return colored ? GetIcon(":/res/images/sources/slideshow.svg")
+			       : GetSlideshowIcon();
 	case OBS_ICON_TYPE_AUDIO_INPUT:
-		return GetAudioInputIcon();
+		return colored ? GetIcon(":/res/images/sources/microphone.svg")
+			       : GetAudioInputIcon();
 	case OBS_ICON_TYPE_AUDIO_OUTPUT:
-		return GetAudioOutputIcon();
+		return colored ? GetIcon(":/settings/images/settings/audio.svg")
+			       : GetAudioOutputIcon();
 	case OBS_ICON_TYPE_DESKTOP_CAPTURE:
-		return GetDesktopCapIcon();
+		return colored ? GetIcon(":/settings/images/settings/video.svg")
+			       : GetDesktopCapIcon();
 	case OBS_ICON_TYPE_WINDOW_CAPTURE:
-		return GetWindowCapIcon();
+		return colored ? GetIcon(":/res/images/sources/window.svg")
+			       : GetWindowCapIcon();
 	case OBS_ICON_TYPE_GAME_CAPTURE:
-		return GetGameCapIcon();
+		return colored ? GetIcon(":/res/images/sources/gamepad.svg")
+			       : GetGameCapIcon();
 	case OBS_ICON_TYPE_CAMERA:
-		return GetCameraIcon();
+		return colored ? GetIcon(":/res/images/sources/camera.svg")
+			       : GetCameraIcon();
 	case OBS_ICON_TYPE_TEXT:
-		return GetTextIcon();
+		return colored ? GetIcon(":/res/images/sources/text.svg")
+			       : GetTextIcon();
 	case OBS_ICON_TYPE_MEDIA:
-		return GetMediaIcon();
+		return colored ? GetIcon(":/res/images/sources/media.svg")
+			       : GetMediaIcon();
 	case OBS_ICON_TYPE_BROWSER:
-		return GetBrowserIcon();
+		return colored ? GetIcon(":/res/images/sources/globe.svg")
+			       : GetBrowserIcon();
 	case OBS_ICON_TYPE_CUSTOM:
 		//TODO: Add ability for sources to define custom icons
-		return GetDefaultIcon();
+		return colored ? GetIcon(":/res/images/sources/default.svg")
+			       : GetDefaultIcon();
 	case OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT:
-		return GetAudioProcessOutputIcon();
+		return colored ? GetIcon(":/res/images/sources/windowaudio.svg")
+			       : GetAudioProcessOutputIcon();
 	default:
-		return GetDefaultIcon();
+		return colored ? GetIcon(":/res/images/sources/default.svg")
+			       : GetDefaultIcon();
 	}
 }
 
@@ -119,6 +144,20 @@ void OBSBasic::SetAudioProcessOutputIcon(const QIcon &icon)
 	audioProcessOutputIcon = icon;
 }
 
+void OBSBasic::SetIconColor(const QColor &color)
+{
+	iconColor = color;
+	SetIconColorStyled(true);
+	SetIconColorInternal(color.name());
+}
+
+void OBSBasic::SetIconDisabledColor(const QColor &color)
+{
+	iconColorDisabled = color;
+	SetIconDisabledColorStyled(true);
+	SetIconDisabledColorInternal(color.name());
+}
+
 QIcon OBSBasic::GetImageIcon() const
 {
 	return imageIcon;
@@ -197,4 +236,59 @@ QIcon OBSBasic::GetDefaultIcon() const
 QIcon OBSBasic::GetAudioProcessOutputIcon() const
 {
 	return audioProcessOutputIcon;
+}
+
+QColor OBSBasic::GetIconColor() const
+{
+	return iconColor;
+}
+
+QColor OBSBasic::GetIconDisabledColor() const
+{
+	return iconColorDisabled;
+}
+
+void OBSBasic::ResetIcons()
+{
+	LoadIcons();
+
+	SetIcon(ui->sourceFiltersButton, ":/res/images/filter.svg");
+	SetIcon(ui->sourcePropertiesButton,
+		":/settings/images/settings/general.svg");
+	SetIcon(ui->sourceInteractButton, ":/res/images/interact.svg");
+
+	SetIcon(ui->actionAddScene, ":/res/images/plus.svg");
+	SetIcon(ui->actionRemoveScene, ":/res/images/minus.svg");
+	SetIcon(ui->actionSceneUp, ":/res/images/up.svg");
+	SetIcon(ui->actionSceneDown, ":/res/images/down.svg");
+	SetIcon(ui->actionSceneFilters, ":/res/images/filter.svg");
+
+	SetIcon(ui->actionAddSource, ":/res/images/plus.svg");
+	SetIcon(ui->actionRemoveSource, ":/res/images/minus.svg");
+	SetIcon(ui->actionSourceProperties,
+		":/settings/images/settings/general.svg");
+	SetIcon(ui->actionSourceUp, ":/res/images/up.svg");
+	SetIcon(ui->actionSourceDown, ":/res/images/down.svg");
+
+	SetIcon(ui->actionMixerToolbarAdvAudio, ":/res/images/cogs.svg");
+	SetIcon(ui->actionMixerToolbarMenu, ":/res/images/dots-vert.svg");
+
+	SetIcon(ui->transitionAdd, ":/res/images/plus.svg");
+	SetIcon(ui->transitionRemove, ":/res/images/minus.svg");
+	SetIcon(ui->transitionProps, ":/settings/images/settings/general.svg");
+
+	if (pause)
+		SetIcon(pause.data(), ":/res/images/media/media_pause.svg",
+			"pauseIconSmall");
+
+	if (vcamButton)
+		SetIcon(vcamButton.data()->second(),
+			":/settings/images/settings/general.svg",
+			"configIconSmall");
+
+	if (replayBufferButton)
+		SetIcon(replayBufferButton.data()->second(),
+			":/res/images/save.svg", "replayIconSmall");
+
+	ui->sources->UpdateIcons();
 }

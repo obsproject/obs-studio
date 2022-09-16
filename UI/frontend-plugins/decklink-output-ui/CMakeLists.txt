@@ -7,7 +7,7 @@ endif()
 add_library(decklink-output-ui MODULE)
 add_library(OBS::decklink-output-ui ALIAS decklink-output-ui)
 
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets Svg Xml COMPONENTS_LINUX Gui)
 
 set_target_properties(
   decklink-output-ui
@@ -26,6 +26,8 @@ target_sources(
           decklink-ui-main.h
           ${CMAKE_SOURCE_DIR}/UI/double-slider.cpp
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.cpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.hpp
           ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.hpp
           ${CMAKE_SOURCE_DIR}/UI/plain-text-edit.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
@@ -41,7 +43,7 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/vertical-scroll-area.cpp)
 
 target_link_libraries(decklink-output-ui PRIVATE OBS::libobs OBS::frontend-api
-                                                 Qt::Widgets)
+                                                 Qt::Widgets Qt::Svg Qt::Xml)
 
 target_compile_features(decklink-output-ui PRIVATE cxx_std_17)
 

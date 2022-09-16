@@ -333,6 +333,14 @@ void SceneSwitcher::on_toggleStartButton_clicked()
 	}
 }
 
+void SceneSwitcher::showEvent(QShowEvent *event)
+{
+	QDialog::showEvent(event);
+	obs_frontend_set_icon(ui->add, ":/res/images/plus.svg", "addIconSmall");
+	obs_frontend_set_icon(ui->remove, ":/res/images/minus.svg",
+			      "removeIconSmall");
+}
+
 static void SaveSceneSwitcher(obs_data_t *save_data, bool saving, void *)
 {
 	if (saving) {

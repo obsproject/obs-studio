@@ -28,6 +28,7 @@
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
 #include "qt-wrappers.hpp"
+#include "icons.hpp"
 
 #include "obs-hotkey.h"
 
@@ -774,7 +775,8 @@ void OBSBasic::CreateProgramOptions()
 	layout->setSpacing(4);
 
 	QPushButton *configTransitions = new QPushButton();
-	configTransitions->setProperty("themeID", "menuIconSmall");
+	SetIcon(configTransitions, ":/res/images/dots-vert.svg",
+		"menuIconSmall");
 
 	QHBoxLayout *mainButtonLayout = new QHBoxLayout();
 	mainButtonLayout->setSpacing(2);
@@ -787,7 +789,7 @@ void OBSBasic::CreateProgramOptions()
 	quickTransitions->setSpacing(2);
 
 	QPushButton *addQuickTransition = new QPushButton();
-	addQuickTransition->setProperty("themeID", "addIconSmall");
+	SetIcon(addQuickTransition, ":/res/images/plus.svg", "addIconSmall");
 
 	QLabel *quickTransitionsLabel = new QLabel(QTStr("QuickTransitions"));
 	quickTransitionsLabel->setSizePolicy(QSizePolicy::Expanding,

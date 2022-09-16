@@ -25,6 +25,7 @@
 
 #include "obs-app.hpp"
 #include "qt-wrappers.hpp"
+#include "icons.hpp"
 
 void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 {
@@ -292,13 +293,11 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 	auto edit = new OBSHotkeyEdit(parentWidget(), combo, settings);
 	edit->setToolTip(toolTip);
 
-	auto revert = new QPushButton;
-	revert->setProperty("themeID", "revertIcon");
+	revert = new QPushButton(this);
 	revert->setToolTip(QTStr("Revert"));
 	revert->setEnabled(false);
 
-	auto clear = new QPushButton;
-	clear->setProperty("themeID", "clearIconSmall");
+	clear = new QPushButton(this);
 	clear->setToolTip(QTStr("Clear"));
 	clear->setEnabled(!obs_key_combination_is_empty(combo));
 
@@ -310,16 +309,14 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 			revert->setEnabled(edit->original != new_combo);
 		});
 
-	auto add = new QPushButton;
-	add->setProperty("themeID", "addIconSmall");
+	add = new QPushButton(this);
 	add->setToolTip(QTStr("Add"));
 
-	auto remove = new QPushButton;
-	remove->setProperty("themeID", "removeIconSmall");
+	remove = new QPushButton(this);
 	remove->setToolTip(QTStr("Remove"));
 	remove->setEnabled(removeButtons.size() > 0);
 
-	auto CurrentIndex = [&, remove] {
+	auto CurrentIndex = [this] {
 		auto res = std::find(begin(removeButtons), end(removeButtons),
 				     remove);
 		return std::distance(begin(removeButtons), res);
@@ -366,6 +363,19 @@ void OBSHotkeyWidget::AddEdit(obs_key_combination combo, int idx)
 			 [=](obs_key_combination combo) {
 				 emit SearchKey(combo);
 			 });
+
+	connect(App(), &OBSApp::StyleChanged, this,
+		&OBSHotkeyWidget::ResetIcons);
+
+	ResetIcons();
+}
+
+void OBSHotkeyWidget::ResetIcons()
+{
+	SetIcon(revert, ":/res/images/revert.svg", "revertIcon");
+	SetIcon(clear, ":/res/images/entry-clear.svg", "clearIconSmall");
+	SetIcon(add, ":/res/images/plus.svg", "addIconSmall");
+	SetIcon(remove, ":/res/images/minus.svg", "removeIconSmall");
 }
 
 void OBSHotkeyWidget::RemoveEdit(size_t idx, bool signal)

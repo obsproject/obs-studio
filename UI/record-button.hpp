@@ -19,11 +19,11 @@ class ControlsSplitButton : public QHBoxLayout {
 	Q_OBJECT
 
 public:
-	ControlsSplitButton(const QString &text, const QVariant &themeID,
+	ControlsSplitButton(const QString &text, const QString &themeID,
 			    void (OBSBasic::*clicked)());
 
-	void addIcon(const QString &name, const QVariant &themeID,
-		     void (OBSBasic::*clicked)());
+	void addIcon(const QString &name, const QString &path,
+		     const QString &themeID, void (OBSBasic::*clicked)());
 	void removeIcon();
 	void insert(int index);
 

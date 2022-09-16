@@ -3,7 +3,7 @@ project(frontend-tools)
 add_library(frontend-tools MODULE)
 add_library(OBS::frontend-tools ALIAS frontend-tools)
 
-find_qt(COMPONENTS Widgets COMPONENTS_LINUX Gui)
+find_qt(COMPONENTS Widgets Svg Xml COMPONENTS_LINUX Gui)
 
 set_target_properties(
   frontend-tools
@@ -28,6 +28,8 @@ target_sources(
           ${CMAKE_SOURCE_DIR}/UI/double-slider.hpp
           ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.cpp
           ${CMAKE_SOURCE_DIR}/UI/horizontal-scroll-area.hpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.cpp
+          ${CMAKE_SOURCE_DIR}/UI/icons.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.cpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.hpp
           ${CMAKE_SOURCE_DIR}/UI/properties-view.moc.hpp
@@ -45,7 +47,7 @@ target_sources(
 target_compile_features(frontend-tools PRIVATE cxx_std_17)
 
 target_link_libraries(frontend-tools PRIVATE OBS::frontend-api OBS::libobs
-                                             Qt::Widgets)
+                                             Qt::Widgets Qt::Svg Qt::Xml)
 
 if(OS_POSIX AND NOT OS_MACOS)
   target_link_libraries(frontend-tools PRIVATE Qt::GuiPrivate)

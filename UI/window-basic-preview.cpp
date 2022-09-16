@@ -2002,8 +2002,6 @@ bool OBSBasicPreview::DrawSelectedItem(obs_scene_t *scene,
 		{{{1.f, 1.f, 0.f}}},
 	};
 
-	main->GetCameraIcon();
-
 	QColor selColor = main->GetSelectionColor();
 	QColor cropColor = main->GetCropColor();
 	QColor hoverColor = main->GetHoverColor();

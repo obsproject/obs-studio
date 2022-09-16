@@ -1,6 +1,7 @@
 #include "window-basic-main.hpp"
 #include "media-controls.hpp"
 #include "obs-app.hpp"
+#include "icons.hpp"
 #include <QToolTip>
 #include <QStyle>
 #include <QMenu>
@@ -47,10 +48,15 @@ MediaControls::MediaControls(QWidget *parent)
 	: QWidget(parent), ui(new Ui::MediaControls)
 {
 	ui->setupUi(this);
-	ui->playPauseButton->setProperty("themeID", "playIcon");
-	ui->previousButton->setProperty("themeID", "previousIcon");
-	ui->nextButton->setProperty("themeID", "nextIcon");
-	ui->stopButton->setProperty("themeID", "stopIcon");
+	SetIcon(ui->playPauseButton, ":/res/images/media/media_play.svg",
+		"playIcon");
+	SetIcon(ui->previousButton, ":/res/images/media/media_previous.svg",
+		"previousIcon");
+	SetIcon(ui->nextButton, ":/res/images/media/media_next.svg",
+		"nextIcon");
+	SetIcon(ui->stopButton, ":/res/images/media/media_stop.svg",
+		"stopIcon");
+
 	setFocusPolicy(Qt::StrongFocus);
 
 	connect(&mediaTimer, SIGNAL(timeout()), this,
@@ -200,9 +206,8 @@ void MediaControls::StopMediaTimer()
 void MediaControls::SetPlayingState()
 {
 	ui->slider->setEnabled(true);
-	ui->playPauseButton->setProperty("themeID", "pauseIcon");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+	SetIcon(ui->playPauseButton, ":/res/images/media/media_pause.svg",
+		"pauseIcon");
 	ui->playPauseButton->setToolTip(
 		QTStr("ContextBar.MediaControls.PauseMedia"));
 
@@ -214,9 +219,8 @@ void MediaControls::SetPlayingState()
 
 void MediaControls::SetPausedState()
 {
-	ui->playPauseButton->setProperty("themeID", "playIcon");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+	SetIcon(ui->playPauseButton, ":/res/images/media/media_play.svg",
+		"playIcon");
 	ui->playPauseButton->setToolTip(
 		QTStr("ContextBar.MediaControls.PlayMedia"));
 
@@ -225,9 +229,8 @@ void MediaControls::SetPausedState()
 
 void MediaControls::SetRestartState()
 {
-	ui->playPauseButton->setProperty("themeID", "restartIcon");
-	ui->playPauseButton->style()->unpolish(ui->playPauseButton);
-	ui->playPauseButton->style()->polish(ui->playPauseButton);
+	SetIcon(ui->playPauseButton, ":/res/images/media/media_restart.svg",
+		"restartIcon");
 	ui->playPauseButton->setToolTip(
 		QTStr("ContextBar.MediaControls.RestartMedia"));
 

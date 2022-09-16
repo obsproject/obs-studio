@@ -1,11 +1,10 @@
 #pragma once
 
-#include <QCheckBox>
+#include "checkbox.hpp"
 
-class VisibilityCheckBox : public QCheckBox {
+class VisibilityCheckBox : public OBSCheckBox {
 	Q_OBJECT
 
 public:
-	VisibilityCheckBox();
-	explicit VisibilityCheckBox(QWidget *parent);
+	VisibilityCheckBox(QWidget *parent = nullptr);
 };

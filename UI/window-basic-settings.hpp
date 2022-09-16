@@ -283,6 +283,8 @@ private slots:
 	void on_hotkeyFilterSearch_textChanged(const QString text);
 	void on_hotkeyFilterInput_KeyChanged(obs_key_combination_t combo);
 
+	void ResetIcons();
+
 private:
 	/* output */
 	void LoadSimpleOutputSettings();
@@ -465,6 +467,7 @@ private slots:
 	void UseStreamKeyAdvClicked();
 
 protected:
+	virtual void showEvent(QShowEvent *event) override;
 	virtual void closeEvent(QCloseEvent *event) override;
 	void reject() override;
 

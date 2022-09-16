@@ -73,6 +73,7 @@
 #include "ui-validation.hpp"
 #include "media-controls.hpp"
 #include "undo-stack-obs.hpp"
+#include "icons.hpp"
 #include <fstream>
 #include <sstream>
 
@@ -495,8 +496,7 @@ OBSBasic::OBSBasic(QWidget *parent)
 	connect(ui->broadcastButton, &QPushButton::clicked, this,
 		&OBSBasic::BroadcastButtonClicked);
 
-	connect(App(), &OBSApp::StyleChanged, this,
-		&OBSBasic::ResetProxyStyleSliders);
+	connect(App(), &OBSApp::StyleChanged, this, &OBSBasic::ThemeChanged);
 
 	UpdatePreviewSafeAreas();
 	UpdatePreviewSpacingHelpers();
@@ -1729,9 +1729,11 @@ void OBSBasic::AddVCamButton()
 	vcamButton = new ControlsSplitButton(
 		QTStr("Basic.Main.StartVirtualCam"), "vcamButton",
 		&OBSBasic::VCamButtonClicked);
-	vcamButton->addIcon(QTStr("Basic.Main.VirtualCamConfig"),
-			    QStringLiteral("configIconSmall"),
-			    &OBSBasic::VCamConfigButtonClicked);
+	vcamButton->addIcon(
+		QTStr("Basic.Main.VirtualCamConfig"),
+		QStringLiteral(":/settings/images/settings/general.svg"),
+		QStringLiteral("configIconSmall"),
+		&OBSBasic::VCamConfigButtonClicked);
 	vcamButton->insert(2);
 }
 
@@ -2171,6 +2173,8 @@ void OBSBasic::OBSInit()
 
 void OBSBasic::OnFirstLoad()
 {
+	ResetIcons();
+
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_FINISHED_LOADING);
 
@@ -2913,6 +2917,7 @@ void OBSBasic::CreateFiltersWindow(obs_source_t *source)
 
 	filters = new OBSBasicFilters(this, source);
 	filters->Init();
+	filters->ResetIcons();
 	filters->setAttribute(Qt::WA_DeleteOnClose, true);
 }
 
@@ -3171,8 +3176,6 @@ void OBSBasic::SourceToolBarActionsSetEnabled()
 	ui->actionRemoveSource->setEnabled(enable);
 	ui->actionSourceUp->setEnabled(enable);
 	ui->actionSourceDown->setEnabled(enable);
-
-	RefreshToolBarStyling(ui->sourcesToolbar);
 }
 
 void OBSBasic::UpdateContextBar(bool force)
@@ -3298,14 +3301,7 @@ void OBSBasic::UpdateContextBar(bool force)
 			ClearContextBar();
 		}
 
-		QIcon icon;
-
-		if (strcmp(id, "scene") == 0)
-			icon = GetSceneIcon();
-		else if (strcmp(id, "group") == 0)
-			icon = GetGroupIcon();
-		else
-			icon = GetSourceIcon(id);
+		QIcon icon = GetSourceIcon(id);
 
 		QPixmap pixmap = icon.pixmap(QSize(16, 16));
 		ui->contextSourceIcon->setPixmap(pixmap);
@@ -4892,6 +4888,7 @@ void OBSBasic::closeEvent(QCloseEvent *event)
 	/* Clear all scene data (dialogs, widgets, widget sub-items, scenes,
 	 * sources, etc) so that all references are released before shutdown */
 	ClearSceneData();
+	ClearIcons();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_EXIT);
@@ -5902,13 +5899,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 		connect(popupItem, SIGNAL(triggered(bool)), this,
 			SLOT(AddSourceFromAction()));
 
-		QIcon icon;
-
-		if (strcmp(type, "scene") == 0)
-			icon = GetSceneIcon();
-		else
-			icon = GetSourceIcon(type);
-
+		QIcon icon = GetSourceIcon(type);
 		popupItem->setIcon(icon);
 
 		QAction *after = getActionAfter(popup, qname);
@@ -5936,7 +5927,7 @@ QMenu *OBSBasic::CreateAddSourcePopupMenu()
 	popup->addSeparator();
 	QAction *addGroup = new QAction(QTStr("Group"), this);
 	addGroup->setData(QT_UTF8("group"));
-	addGroup->setIcon(GetGroupIcon());
+	addGroup->setIcon(GetSourceIcon("group"));
 	connect(addGroup, SIGNAL(triggered(bool)), this,
 		SLOT(AddSourceFromAction()));
 	popup->addAction(addGroup);
@@ -10147,8 +10138,8 @@ void OBSBasic::UpdatePause(bool activate)
 		pause->setToolTip(QTStr("Basic.Main.PauseRecording"));
 		pause->setCheckable(true);
 		pause->setChecked(false);
-		pause->setProperty("themeID",
-				   QVariant(QStringLiteral("pauseIconSmall")));
+		SetIcon(pause.data(), ":/res/images/media/media_pause.svg",
+			"pauseIconSmall");
 
 		QSizePolicy sp;
 		sp.setHeightForWidth(true);
@@ -10171,6 +10162,7 @@ void OBSBasic::UpdateReplayBuffer(bool activate)
 	}
 
 	replayBufferButton->addIcon(QTStr("Basic.Main.SaveReplay"),
+				    QStringLiteral(":/res/images/save.svg"),
 				    QStringLiteral("replayIconSmall"),
 				    &OBSBasic::ReplayBufferSave);
 }
@@ -10449,8 +10441,10 @@ float OBSBasic::GetDevicePixelRatio()
 	return dpi;
 }
 
-void OBSBasic::ResetProxyStyleSliders()
+void OBSBasic::ThemeChanged()
 {
+	ResetIcons();
+
 	/* Since volume/media sliders are using QProxyStyle, they are not
 	* updated when themes are changed, so re-initialize them. */
 	vector<OBSSource> sources;
@@ -10466,4 +10460,18 @@ void OBSBasic::ResetProxyStyleSliders()
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
+}
+
+void OBSBasic::UpdateIcon(void *obj, const char *path, const char *themeID)
+{
+	QAbstractButton *button = static_cast<QAbstractButton *>(obj);
+	QAction *action = static_cast<QAction *>(obj);
+
+	if (button) {
+		SetIcon(button, QT_UTF8(path), QT_UTF8(themeID));
+		return;
+	}
+
+	if (action)
+		SetIcon(action, QT_UTF8(path));
 }

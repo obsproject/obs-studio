@@ -5,6 +5,7 @@
 #include "mute-checkbox.hpp"
 #include "slider-ignorewheel.hpp"
 #include "slider-absoluteset-style.hpp"
+#include "icons.hpp"
 #include <QFontDatabase>
 #include <QHBoxLayout>
 #include <QPushButton>
@@ -179,7 +180,8 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 	if (showConfig) {
 		config = new QPushButton(this);
-		config->setProperty("themeID", "menuIconSmall");
+		SetIcon(config, ":/res/images/dots-vert.svg", "menuIconSmall");
+
 		config->setSizePolicy(QSizePolicy::Maximum,
 				      QSizePolicy::Maximum);
 		config->setMaximumSize(22, 22);

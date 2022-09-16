@@ -1,5 +1,6 @@
 #include "record-button.hpp"
 #include "window-basic-main.hpp"
+#include "icons.hpp"
 
 void RecordButton::resizeEvent(QResizeEvent *event)
 {
@@ -65,7 +66,7 @@ static QWidget *getNextWidget(QBoxLayout *container, QLayoutItem *item)
 }
 
 ControlsSplitButton::ControlsSplitButton(const QString &text,
-					 const QVariant &themeID,
+					 const QString &themeID,
 					 void (OBSBasic::*clicked)())
 	: QHBoxLayout(OBSBasic::Get())
 {
@@ -82,14 +83,15 @@ ControlsSplitButton::ControlsSplitButton(const QString &text,
 	addWidget(button.data());
 }
 
-void ControlsSplitButton::addIcon(const QString &name, const QVariant &themeID,
+void ControlsSplitButton::addIcon(const QString &name, const QString &path,
+				  const QString &themeID,
 				  void (OBSBasic::*clicked)())
 {
 	icon.reset(new QPushButton());
 	icon->setAccessibleName(name);
 	icon->setToolTip(name);
 	icon->setChecked(false);
-	icon->setProperty("themeID", themeID);
+	SetIcon(icon.data(), path, themeID);
 
 	QSizePolicy sp;
 	sp.setHeightForWidth(true);

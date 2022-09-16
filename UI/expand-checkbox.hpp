@@ -1,7 +1,7 @@
 #pragma once
 
-#include <QCheckBox>
+#include "checkbox.hpp"
 
-class ExpandCheckBox : public QCheckBox {
+class ExpandCheckBox : public OBSCheckBox {
 	Q_OBJECT
 };

@@ -30,6 +30,7 @@
 #include "properties-view.moc.hpp"
 #include "plain-text-edit.hpp"
 #include "obs-app.hpp"
+#include "icons.hpp"
 
 #include <cstdlib>
 #include <initializer_list>
@@ -631,11 +632,12 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	return combo;
 }
 
-static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon,
+static void NewButton(QLayout *layout, WidgetInfo *info,
+		      const QString &iconPath, const QString &themeIcon,
 		      void (WidgetInfo::*method)())
 {
 	QPushButton *button = new QPushButton();
-	button->setProperty("themeID", themeIcon);
+	SetIcon(button, iconPath, themeIcon);
 	button->setFlat(true);
 	button->setProperty("toolButton", true);
 
@@ -678,15 +680,16 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 				       const QModelIndex &, int)));
 
 	QVBoxLayout *sideLayout = new QVBoxLayout();
-	NewButton(sideLayout, info, "addIconSmall", &WidgetInfo::EditListAdd);
-	NewButton(sideLayout, info, "removeIconSmall",
+	NewButton(sideLayout, info, ":/res/images/plus.svg", "addIconSmall",
+		  &WidgetInfo::EditListAdd);
+	NewButton(sideLayout, info, ":/res/images/minus.svg", "removeIconSmall",
 		  &WidgetInfo::EditListRemove);
-	NewButton(sideLayout, info, "configIconSmall",
-		  &WidgetInfo::EditListEdit);
-	NewButton(sideLayout, info, "upArrowIconSmall",
+	NewButton(sideLayout, info, ":/settings/images/settings/general.svg",
+		  "configIconSmall", &WidgetInfo::EditListEdit);
+	NewButton(sideLayout, info, ":/res/images/up.svg", "upArrowIconSmall",
 		  &WidgetInfo::EditListUp);
-	NewButton(sideLayout, info, "downArrowIconSmall",
-		  &WidgetInfo::EditListDown);
+	NewButton(sideLayout, info, ":/res/images/down.svg",
+		  "downArrowIconSmall", &WidgetInfo::EditListDown);
 	sideLayout->addStretch(0);
 
 	QHBoxLayout *subLayout = new QHBoxLayout();

@@ -684,6 +684,15 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			undo_data, redo_data, repeatable);
 	}
 
+	void obs_frontend_set_icon(void *obj, const char *path,
+				   const char *theme_id) override
+	{
+		QMetaObject::invokeMethod(main, "UpdateIcon",
+					  Q_ARG(void *, obj),
+					  Q_ARG(const char *, path),
+					  Q_ARG(const char *, theme_id));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

@@ -11,6 +11,7 @@
 #include <QStyledItemDelegate>
 #include <obs.hpp>
 #include <obs-frontend-api.h>
+#include <checkbox.hpp>
 
 class QLabel;
 class QCheckBox;
@@ -22,8 +23,11 @@ class LockedCheckBox;
 class VisibilityCheckBox;
 class VisibilityItemWidget;
 
-class SourceTreeSubItemCheckBox : public QCheckBox {
+class SourceTreeSubItemCheckBox : public OBSCheckBox {
 	Q_OBJECT
+
+public:
+	SourceTreeSubItemCheckBox(QWidget *parent = nullptr);
 };
 
 class SourceTreeItem : public QFrame {
@@ -62,7 +66,7 @@ public:
 
 private:
 	QSpacerItem *spacer = nullptr;
-	QCheckBox *expand = nullptr;
+	SourceTreeSubItemCheckBox *expand = nullptr;
 	QLabel *iconLabel = nullptr;
 	VisibilityCheckBox *vis = nullptr;
 	LockedCheckBox *lock = nullptr;

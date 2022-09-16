@@ -25,6 +25,7 @@
 #include "item-widget-helpers.hpp"
 #include "obs-app.hpp"
 #include "undo-stack-obs.hpp"
+#include "icons.hpp"
 
 #include <QMessageBox>
 #include <QCloseEvent>
@@ -180,7 +181,8 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	renameEffect->setShortcut({Qt::Key_F2});
 #endif
 
-	UpdateFilters();
+	connect(App(), &OBSApp::StyleChanged, this,
+		&OBSBasicFilters::ResetIcons);
 }
 
 OBSBasicFilters::~OBSBasicFilters()
@@ -188,6 +190,21 @@ OBSBasicFilters::~OBSBasicFilters()
 	obs_source_dec_showing(source);
 	ClearListItems(ui->asyncFilters);
 	ClearListItems(ui->effectFilters);
+}
+
+void OBSBasicFilters::ResetIcons()
+{
+	SetIcon(ui->addAsyncFilter, ":/res/images/plus.svg");
+	SetIcon(ui->removeAsyncFilter, ":/res/images/minus.svg");
+	SetIcon(ui->moveAsyncFilterUp, ":/res/images/up.svg");
+	SetIcon(ui->moveAsyncFilterDown, ":/res/images/down.svg");
+
+	SetIcon(ui->addEffectFilter, ":/res/images/plus.svg");
+	SetIcon(ui->removeEffectFilter, ":/res/images/minus.svg");
+	SetIcon(ui->moveEffectFilterUp, ":/res/images/up.svg");
+	SetIcon(ui->moveEffectFilterDown, ":/res/images/down.svg");
+
+	UpdateFilters();
 }
 
 void OBSBasicFilters::Init()

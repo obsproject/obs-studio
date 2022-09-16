@@ -123,5 +123,3 @@ QStringList OpenFiles(QWidget *parent, QString title, QString path,
 
 void TruncateLabel(QLabel *label, QString newText,
 		   int length = MAX_LABEL_LENGTH);
-
-void RefreshToolBarStyling(QToolBar *toolBar);

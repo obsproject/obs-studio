@@ -2,6 +2,7 @@
 #include "window-dock-browser.hpp"
 #include "window-basic-main.hpp"
 #include "qt-wrappers.hpp"
+#include "icons.hpp"
 
 #include <QLineEdit>
 #include <QHBoxLayout>
@@ -113,13 +114,6 @@ Qt::ItemFlags ExtraBrowsersModel::flags(const QModelIndex &index) const
 	return flags;
 }
 
-class DelButton : public QPushButton {
-public:
-	inline DelButton(QModelIndex index_) : QPushButton(), index(index_) {}
-
-	QPersistentModelIndex index;
-};
-
 class EditWidget : public QLineEdit {
 public:
 	inline EditWidget(QWidget *parent, QModelIndex index_)
@@ -130,14 +124,19 @@ public:
 	QPersistentModelIndex index;
 };
 
+void ExtraBrowsersModel::ResetIcons()
+{
+	if (del)
+		SetIcon(del, ":/res/images/minus.svg", "removeIconSmall");
+}
+
 void ExtraBrowsersModel::AddDeleteButton(int idx)
 {
 	QTableView *widget = reinterpret_cast<QTableView *>(parent());
 
 	QModelIndex index = createIndex(idx, (int)Column::Delete, nullptr);
 
-	QPushButton *del = new DelButton(index);
-	del->setProperty("themeID", "removeIconSmall");
+	del = new DelButton(index);
 	del->setObjectName("extraPanelDelete");
 	del->setMinimumSize(QSize(20, 20));
 	connect(del, &QPushButton::clicked, this,
@@ -146,6 +145,7 @@ void ExtraBrowsersModel::AddDeleteButton(int idx)
 	widget->setIndexWidget(index, del);
 	widget->setRowHeight(idx, 20);
 	widget->setColumnWidth(idx, 20);
+	ResetIcons();
 }
 
 void ExtraBrowsersModel::CheckToAdd()
@@ -191,14 +191,14 @@ void ExtraBrowsersModel::DeleteItem()
 {
 	QTableView *widget = reinterpret_cast<QTableView *>(parent());
 
-	DelButton *del = reinterpret_cast<DelButton *>(sender());
-	int row = del->index.row();
+	DelButton *delButton = reinterpret_cast<DelButton *>(sender());
+	int row = delButton->index.row();
 
 	/* there's some sort of internal bug in Qt and deleting certain index
 	 * widgets or "editors" that can cause a crash inside Qt if the widget
 	 * is not manually removed, at least on 5.7 */
-	widget->setIndexWidget(del->index, nullptr);
-	del->deleteLater();
+	widget->setIndexWidget(delButton->index, nullptr);
+	delButton->deleteLater();
 
 	/* --------- */
 
@@ -286,6 +286,9 @@ void ExtraBrowsersModel::Init()
 {
 	for (int i = 0; i < items.count(); i++)
 		AddDeleteButton(i);
+
+	connect(App(), &OBSApp::StyleChanged, this,
+		&ExtraBrowsersModel::ResetIcons);
 }
 
 /* ------------------------------------------------------------------------- */

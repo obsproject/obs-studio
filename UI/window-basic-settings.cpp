@@ -46,6 +46,7 @@
 #include "window-basic-settings.hpp"
 #include "window-basic-main-outputs.hpp"
 #include "window-projector.hpp"
+#include "icons.hpp"
 
 #include <util/platform.h>
 #include <util/dstr.hpp>
@@ -920,6 +921,9 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
+
+	connect(App(), &OBSApp::StyleChanged, this,
+		&OBSBasicSettings::ResetIcons);
 }
 
 OBSBasicSettings::~OBSBasicSettings()
@@ -3977,6 +3981,12 @@ bool OBSBasicSettings::QueryChanges()
 	return true;
 }
 
+void OBSBasicSettings::showEvent(QShowEvent *event)
+{
+	QDialog::showEvent(event);
+	ResetIcons();
+}
+
 void OBSBasicSettings::closeEvent(QCloseEvent *event)
 {
 	if (!AskIfCanCloseSettings())
@@ -5517,42 +5527,74 @@ QIcon OBSBasicSettings::GetAdvancedIcon() const
 
 void OBSBasicSettings::SetGeneralIcon(const QIcon &icon)
 {
-	ui->listWidget->item(0)->setIcon(icon);
+	generalIcon = icon;
 }
 
 void OBSBasicSettings::SetStreamIcon(const QIcon &icon)
 {
-	ui->listWidget->item(1)->setIcon(icon);
+	streamIcon = icon;
 }
 
 void OBSBasicSettings::SetOutputIcon(const QIcon &icon)
 {
-	ui->listWidget->item(2)->setIcon(icon);
+	outputIcon = icon;
 }
 
 void OBSBasicSettings::SetAudioIcon(const QIcon &icon)
 {
-	ui->listWidget->item(3)->setIcon(icon);
+	audioIcon = icon;
 }
 
 void OBSBasicSettings::SetVideoIcon(const QIcon &icon)
 {
-	ui->listWidget->item(4)->setIcon(icon);
+	videoIcon = icon;
 }
 
 void OBSBasicSettings::SetHotkeysIcon(const QIcon &icon)
 {
-	ui->listWidget->item(5)->setIcon(icon);
+	hotkeysIcon = icon;
 }
 
 void OBSBasicSettings::SetAccessibilityIcon(const QIcon &icon)
 {
-	ui->listWidget->item(6)->setIcon(icon);
+	accessibilityIcon = icon;
 }
 
 void OBSBasicSettings::SetAdvancedIcon(const QIcon &icon)
 {
-	ui->listWidget->item(7)->setIcon(icon);
+	advancedIcon = icon;
+}
+
+void OBSBasicSettings::ResetIcons()
+{
+	bool colored = IconColorStyled();
+
+	ui->listWidget->item(0)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/general.svg")
+			: generalIcon);
+	ui->listWidget->item(1)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/stream.svg")
+			: streamIcon);
+	ui->listWidget->item(2)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/output.svg")
+			: outputIcon);
+	ui->listWidget->item(3)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/audio.svg")
+			: audioIcon);
+	ui->listWidget->item(4)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/video.svg")
+			: videoIcon);
+	ui->listWidget->item(5)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/hotkeys.svg")
+			: hotkeysIcon);
+	ui->listWidget->item(6)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/accessibility.svg")
+			: accessibilityIcon);
+	ui->listWidget->item(7)->setIcon(
+		colored ? GetIcon(":/settings/images/settings/advanced.svg")
+			: advancedIcon);
+
+	SetIcon(ui->hotkeyFilterReset, ":/res/images/revert.svg");
 }
 
 int OBSBasicSettings::CurrentFLVTrack()

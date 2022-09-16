@@ -173,6 +173,10 @@ class OBSBasic : public OBSMainWindow {
 			   DESIGNABLE true)
 	Q_PROPERTY(QIcon audioProcessOutputIcon READ GetAudioProcessOutputIcon
 			   WRITE SetAudioProcessOutputIcon DESIGNABLE true)
+	Q_PROPERTY(QColor iconColor READ GetIconColor WRITE SetIconColor
+			   DESIGNABLE true)
+	Q_PROPERTY(QColor iconColorDisabled READ GetIconDisabledColor WRITE
+			   SetIconDisabledColor DESIGNABLE true)
 
 	friend class OBSAbout;
 	friend class OBSBasicPreview;
@@ -579,6 +583,8 @@ private:
 	QIcon sceneIcon;
 	QIcon defaultIcon;
 	QIcon audioProcessOutputIcon;
+	QColor iconColor;
+	QColor iconColorDisabled;
 
 	QIcon GetImageIcon() const;
 	QIcon GetColorIcon() const;
@@ -614,6 +620,7 @@ private:
 	bool autoStopBroadcast = true;
 	bool broadcastActive = false;
 	bool broadcastReady = false;
+
 	QPointer<QThread> youtubeStreamCheckThread;
 #if YOUTUBE_ENABLED
 	void YoutubeStreamCheck(const std::string &key);
@@ -815,12 +822,14 @@ private slots:
 	void SetSceneIcon(const QIcon &icon);
 	void SetDefaultIcon(const QIcon &icon);
 	void SetAudioProcessOutputIcon(const QIcon &icon);
+	void SetIconColor(const QColor &color);
+	void SetIconDisabledColor(const QColor &color);
 
 	void TBarChanged(int value);
 	void TBarReleased();
 
 	void LockVolumeControl(bool lock);
-	void ResetProxyStyleSliders();
+	void ThemeChanged();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
 
@@ -857,6 +866,7 @@ private:
 
 	bool LowDiskSpace();
 	void DiskSpaceMessage();
+	void ResetIcons();
 
 	OBSSource prevFTBSource = nullptr;
 
@@ -965,9 +975,11 @@ public:
 	void AddProjectorMenuMonitors(QMenu *parent, QObject *target,
 				      const char *slot);
 
-	QIcon GetSourceIcon(const char *id) const;
+	QIcon GetSourceIcon(const char *id);
 	QIcon GetGroupIcon() const;
 	QIcon GetSceneIcon() const;
+	QColor GetIconColor() const;
+	QColor GetIconDisabledColor() const;
 
 	OBSWeakSource copyFilter;
 
@@ -1197,6 +1209,8 @@ public slots:
 	void UpdateContextBar(bool force = false);
 	void UpdateContextBarDeferred(bool force = false);
 	void UpdateContextBarVisibility();
+
+	void UpdateIcon(void *obj, const char *path, const char *themeID);
 
 private:
 	std::unique_ptr<Ui::OBSBasic> ui;

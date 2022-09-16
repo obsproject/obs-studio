@@ -48,6 +48,7 @@
 #endif
 #include "window-basic-settings.hpp"
 #include "platform.hpp"
+#include "icons.hpp"
 
 #include <fstream>
 
@@ -1217,6 +1218,9 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 	path = GetTheme(name, path);
 	if (path.empty())
 		return false;
+
+	SetIconColorStyled(false);
+	SetIconDisabledColorStyled(false);
 
 	setStyleSheet("");
 	unique_ptr<OBSThemeMeta> themeMeta;

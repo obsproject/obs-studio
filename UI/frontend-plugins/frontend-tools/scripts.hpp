@@ -41,6 +41,7 @@ public:
 	void ReloadScript(const char *path);
 	void RefreshLists();
 	void SetScriptDefaults(const char *path);
+	void ResetIcons();
 
 public slots:
 	void on_close_clicked();

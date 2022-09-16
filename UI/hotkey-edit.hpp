@@ -179,6 +179,11 @@ public:
 #endif
 	void leaveEvent(QEvent *event) override;
 
+	QPointer<QPushButton> revert;
+	QPointer<QPushButton> clear;
+	QPointer<QPushButton> add;
+	QPointer<QPushButton> remove;
+
 private:
 	void AddEdit(obs_key_combination combo, int idx = -1);
 	void RemoveEdit(size_t idx, bool signal = true);
@@ -198,6 +203,7 @@ private:
 
 private slots:
 	void HandleChangedBindings(obs_hotkey_id id_);
+	void ResetIcons();
 
 signals:
 	void KeyChanged();
