@@ -2084,8 +2084,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "YVYU_Reverse";
 
 	case VIDEO_FORMAT_I420:
-		return (trc == VIDEO_TRC_PQ) ? "I420_PQ_Reverse"
-					     : "I420_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "I420_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "I420_HLG_Reverse";
+		default:
+			return "I420_Reverse";
+		}
 
 	case VIDEO_FORMAT_NV12:
 		return "NV12_Reverse";
