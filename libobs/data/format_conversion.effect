@@ -485,6 +485,19 @@ float4 PSPlanar420_PQ_Reverse(VertTexPos frag_in) : TARGET
 	return float4(rgb, 1.);
 }
 
+float4 PSPlanar420_HLG_Reverse(VertTexPos frag_in) : TARGET
+{
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	int3 xy0_chroma = int3(frag_in.uv, 0);
+	float cb = image1.Load(xy0_chroma).x;
+	float cr = image2.Load(xy0_chroma).x;
+	float3 yuv = float3(y, cb, cr);
+	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
 float4 PSPlanar420A_Reverse(VertTexPos frag_in) : TARGET
 {
 	int3 xy0_luma = int3(frag_in.pos.xy, 0);
@@ -963,6 +976,15 @@ technique I420_PQ_Reverse
 	{
 		vertex_shader = VSTexPosHalfHalf_Reverse(id);
 		pixel_shader  = PSPlanar420_PQ_Reverse(frag_in);
+	}
+}
+
+technique I420_HLG_Reverse
+{
+	pass
+	{
+		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		pixel_shader  = PSPlanar420_HLG_Reverse(frag_in);
 	}
 }
 
