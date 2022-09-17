@@ -590,6 +590,10 @@ Core OBS Signals
    Called when a source has been removed (:c:func:`obs_source_remove()`
    has been called on the source).
 
+**source_update** (ptr source)
+
+   Called when a source's settings have been updated.
+
 **source_save** (ptr source)
 
    Called when a source is being saved.

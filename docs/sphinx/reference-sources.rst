@@ -531,6 +531,10 @@ Source Signals
    Called when the :c:func:`obs_source_remove()` function is called on
    the source.
 
+**update** (ptr source)
+
+   Called when the source's settings have been updated.
+
 **save** (ptr source)
 
    Called when the source is being saved.

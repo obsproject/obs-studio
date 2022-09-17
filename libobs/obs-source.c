@@ -77,6 +77,7 @@ struct obs_source_info *get_source_info2(const char *unversioned_id,
 static const char *source_signals[] = {
 	"void destroy(ptr source)",
 	"void remove(ptr source)",
+	"void update(ptr source)",
 	"void save(ptr source)",
 	"void load(ptr source)",
 	"void activate(ptr source)",
@@ -968,6 +969,7 @@ static void obs_source_deferred_update(obs_source_t *source)
 				    source->context.settings);
 		os_atomic_compare_swap_long(&source->defer_update_count, count,
 					    0);
+		obs_source_dosignal(source, "source_update", "update");
 	}
 }
 
@@ -985,6 +987,7 @@ void obs_source_update(obs_source_t *source, obs_data_t *settings)
 	} else if (source->context.data && source->info.update) {
 		source->info.update(source->context.data,
 				    source->context.settings);
+		obs_source_dosignal(source, "source_update", "update");
 	}
 }
 
