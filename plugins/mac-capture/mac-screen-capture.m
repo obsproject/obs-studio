@@ -668,7 +668,10 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect
 
 static const char *screen_capture_getname(void *unused __attribute__((unused)))
 {
-	return obs_module_text("SCK.Name");
+	if (@available(macOS 13.0, *))
+		return obs_module_text("SCK.Name");
+	else
+		return obs_module_text("SCK.Name.Beta");
 }
 
 static uint32_t screen_capture_getwidth(void *data)
