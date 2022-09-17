@@ -58,7 +58,10 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ github.workspace }}/other
-          key: service-check
+          # Workaround to create a new cache every time, since a cache key is immutable:
+          # https://github.com/actions/cache/blob/main/workarounds.md#update-a-cache
+          key: service-check-${{ github.run_id }}
+          restore-keys: service-check
 
       - name: Install & Configure Python
         run: |
