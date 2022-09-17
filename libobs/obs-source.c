@@ -2078,7 +2078,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "UYVY_Reverse";
 
 	case VIDEO_FORMAT_YUY2:
-		return "YUY2_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "YUY2_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "YUY2_HLG_Reverse";
+		default:
+			return "YUY2_Reverse";
+		}
 
 	case VIDEO_FORMAT_YVYU:
 		return "YVYU_Reverse";
@@ -2094,7 +2101,14 @@ static const char *select_conversion_technique(enum video_format format,
 		}
 
 	case VIDEO_FORMAT_NV12:
-		return "NV12_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "NV12_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "NV12_HLG_Reverse";
+		default:
+			return "NV12_Reverse";
+		}
 
 	case VIDEO_FORMAT_I444:
 		return "I444_Reverse";

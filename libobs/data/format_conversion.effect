@@ -449,6 +449,34 @@ float3 PSYUY2_Reverse(FragTex frag_in) : TARGET
 	return rgb;
 }
 
+float4 PSYUY2_PQ_Reverse(FragTex frag_in) : TARGET
+{
+	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
+	float2 y01 = y2uv.zx;
+	float2 cbcr = y2uv.yw;
+	float leftover = frac(frag_in.uv.x);
+	float y = (leftover < 0.5) ? y01.x : y01.y;
+	float3 yuv = float3(y, cbcr);	
+	float3 pq = YUV_to_RGB(yuv);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSYUY2_HLG_Reverse(FragTex frag_in) : TARGET
+{
+	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
+	float2 y01 = y2uv.zx;
+	float2 cbcr = y2uv.yw;
+	float leftover = frac(frag_in.uv.x);
+	float y = (leftover < 0.5) ? y01.x : y01.y;
+	float3 yuv = float3(y, cbcr);
+	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
 float3 PSYVYU_Reverse(FragTex frag_in) : TARGET
 {
 	float4 y2uv = image.Load(int3(frag_in.uv.xy, 0));
@@ -612,6 +640,28 @@ float3 PSNV12_Reverse(VertTexPos frag_in) : TARGET
 	float3 yuv = float3(y, cbcr);
 	float3 rgb = YUV_to_RGB(yuv);
 	return rgb;
+}
+
+float4 PSNV12_PQ_Reverse(VertTexPos frag_in) : TARGET
+{
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float3 yuv = float3(y, cbcr);
+	float3 pq = YUV_to_RGB(yuv);
+	float3 hdr2020 = st2084_to_linear_eetf(pq, hdr_lw, hdr_lmax) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
+}
+
+float4 PSNV12_HLG_Reverse(VertTexPos frag_in) : TARGET
+{
+	float y = image.Load(int3(frag_in.pos.xy, 0)).x;
+	float2 cbcr = image1.Load(int3(frag_in.uv, 0)).xy;
+	float3 yuv = float3(y, cbcr);
+	float3 hlg = YUV_to_RGB(yuv);
+	float3 hdr2020 = hlg_to_linear(hlg, hlg_exponent) * maximum_over_sdr_white_nits;
+	float3 rgb = rec2020_to_rec709(hdr2020);
+	return float4(rgb, 1.);
 }
 
 float4 PSI010_SRGB_Reverse(VertTexPos frag_in) : TARGET
@@ -952,6 +1002,24 @@ technique YUY2_Reverse
 	}
 }
 
+technique YUY2_PQ_Reverse
+{
+	pass
+	{
+		vertex_shader = VSTexPosHalf_Reverse(id);
+		pixel_shader  = PSYUY2_PQ_Reverse(frag_in);
+	}
+}
+
+technique YUY2_HLG_Reverse
+{
+	pass
+	{
+		vertex_shader = VSTexPosHalf_Reverse(id);
+		pixel_shader  = PSYUY2_HLG_Reverse(frag_in);
+	}
+}
+
 technique YVYU_Reverse
 {
 	pass
@@ -1075,6 +1143,24 @@ technique NV12_Reverse
 	{
 		vertex_shader = VSTexPosHalfHalf_Reverse(id);
 		pixel_shader  = PSNV12_Reverse(frag_in);
+	}
+}
+
+technique NV12_PQ_Reverse
+{
+	pass
+	{
+		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		pixel_shader  = PSNV12_PQ_Reverse(frag_in);
+	}
+}
+
+technique NV12_HLG_Reverse
+{
+	pass
+	{
+		vertex_shader = VSTexPosHalfHalf_Reverse(id);
+		pixel_shader  = PSNV12_HLG_Reverse(frag_in);
 	}
 }
 
