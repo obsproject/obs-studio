@@ -2805,6 +2805,64 @@ static void convert_14_2_encoder_setting(const char *encoder, const char *file)
 	obs_data_item_release(&cbr_item);
 }
 
+static void convert_28_1_encoder_setting(const char *encoder, const char *file)
+{
+	OBSDataAutoRelease data =
+		obs_data_create_from_json_file_safe(file, "bak");
+	bool modified = false;
+
+	if (astrcmpi(encoder, "jim_nvenc") == 0 ||
+	    astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
+	    astrcmpi(encoder, "ffmpeg_nvenc") == 0 ||
+	    astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
+
+		if (obs_data_has_user_value(data, "preset") &&
+		    !obs_data_has_user_value(data, "preset2")) {
+			const char *preset =
+				obs_data_get_string(data, "preset");
+
+			if (astrcmpi(preset, "hq") == 0) {
+				obs_data_set_string(data, "preset2", "p6");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass", "qres");
+
+			} else if (astrcmpi(preset, "mq") == 0) {
+				obs_data_set_string(data, "preset2", "p4");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass", "qres");
+
+			} else if (astrcmpi(preset, "hp") == 0) {
+				obs_data_set_string(data, "preset2", "p1");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "ll") == 0) {
+				obs_data_set_string(data, "preset2", "p3");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "llhq") == 0) {
+				obs_data_set_string(data, "preset2", "p4");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass", "qres");
+
+			} else if (astrcmpi(preset, "llhp") == 0) {
+				obs_data_set_string(data, "preset2", "p2");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+			}
+
+			modified = true;
+		}
+	}
+
+	if (modified)
+		obs_data_save_json_safe(data, file, "tmp", "bak");
+}
+
 static void upgrade_settings(void)
 {
 	char path[512];
@@ -2852,13 +2910,13 @@ static void upgrade_settings(void)
 				strcat(path, "/");
 				strcat(path, ent->d_name);
 				strcat(path, "/recordEncoder.json");
-				convert_14_2_encoder_setting(rEnc, path);
+				convert_28_1_encoder_setting(rEnc, path);
 
 				path[pathlen] = 0;
 				strcat(path, "/");
 				strcat(path, ent->d_name);
 				strcat(path, "/streamEncoder.json");
-				convert_14_2_encoder_setting(sEnc, path);
+				convert_28_1_encoder_setting(sEnc, path);
 			}
 
 			path[pathlen] = 0;

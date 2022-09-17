@@ -10,9 +10,6 @@
 #include <d3d11_1.h>
 #include <obs-hevc.h>
 
-/* TODO: Use new preset scheme */
-#pragma warning(disable : 4996)
-
 /* ========================================================================= */
 
 #define EXTRA_BUFFERS 5
@@ -329,7 +326,8 @@ static bool init_session(struct nvenc_data *enc)
 
 static void initialize_params(NV_ENC_INITIALIZE_PARAMS *params,
 			      const GUID *nv_encode, const GUID *nv_preset,
-			      uint32_t width, uint32_t height, uint32_t fps_num,
+			      NV_ENC_TUNING_INFO nv_tuning, uint32_t width,
+			      uint32_t height, uint32_t fps_num,
 			      uint32_t fps_den, NV_ENC_CONFIG *config)
 {
 	int darWidth, darHeight;
@@ -348,6 +346,48 @@ static void initialize_params(NV_ENC_INITIALIZE_PARAMS *params,
 	params->enableEncodeAsync = 0;
 	params->enablePTD = 1;
 	params->encodeConfig = config;
+	params->tuningInfo = nv_tuning;
+}
+
+static inline GUID get_nv_preset2(const char *preset2)
+{
+	if (astrcmpi(preset2, "p1") == 0) {
+		return NV_ENC_PRESET_P1_GUID;
+	} else if (astrcmpi(preset2, "p2") == 0) {
+		return NV_ENC_PRESET_P2_GUID;
+	} else if (astrcmpi(preset2, "p3") == 0) {
+		return NV_ENC_PRESET_P3_GUID;
+	} else if (astrcmpi(preset2, "p4") == 0) {
+		return NV_ENC_PRESET_P4_GUID;
+	} else if (astrcmpi(preset2, "p6") == 0) {
+		return NV_ENC_PRESET_P6_GUID;
+	} else if (astrcmpi(preset2, "p7") == 0) {
+		return NV_ENC_PRESET_P7_GUID;
+	} else {
+		return NV_ENC_PRESET_P5_GUID;
+	}
+}
+
+static inline NV_ENC_TUNING_INFO get_nv_tuning(const char *tuning)
+{
+	if (astrcmpi(tuning, "ll") == 0) {
+		return NV_ENC_TUNING_INFO_LOW_LATENCY;
+	} else if (astrcmpi(tuning, "ull") == 0) {
+		return NV_ENC_TUNING_INFO_ULTRA_LOW_LATENCY;
+	} else {
+		return NV_ENC_TUNING_INFO_HIGH_QUALITY;
+	}
+}
+
+static inline NV_ENC_MULTI_PASS get_nv_multipass(const char *multipass)
+{
+	if (astrcmpi(multipass, "qres") == 0) {
+		return NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
+	} else if (astrcmpi(multipass, "fullres") == 0) {
+		return NV_ENC_TWO_PASS_FULL_RESOLUTION;
+	} else {
+		return NV_ENC_MULTI_PASS_DISABLED;
+	}
 }
 
 static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
@@ -359,6 +399,9 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	int cqp = (int)obs_data_get_int(settings, "cqp");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	const char *preset = obs_data_get_string(settings, "preset");
+	const char *preset2 = obs_data_get_string(settings, "preset2");
+	const char *tuning = obs_data_get_string(settings, "tune");
+	const char *multipass = obs_data_get_string(settings, "multipass");
 	const char *profile = obs_data_get_string(settings, "profile");
 	bool lookahead = obs_data_get_bool(settings, "lookahead");
 	bool vbr = astrcmpi(rc, "VBR") == 0;
@@ -373,34 +416,42 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	/* -------------------------- */
 	/* get preset                 */
 
-	GUID nv_preset = NV_ENC_PRESET_DEFAULT_GUID;
-	bool twopass = false;
-	bool hp = false;
-	bool ll = false;
+	GUID nv_preset = get_nv_preset2(preset2);
+	NV_ENC_TUNING_INFO nv_tuning = get_nv_tuning(tuning);
+	NV_ENC_MULTI_PASS nv_multipass = get_nv_multipass(multipass);
 
-	if (astrcmpi(preset, "hq") == 0) {
-		nv_preset = NV_ENC_PRESET_HQ_GUID;
+	if (obs_data_has_user_value(settings, "preset") &&
+	    !obs_data_has_user_value(settings, "preset2")) {
+		if (astrcmpi(preset, "hq") == 0) {
+			nv_preset = NV_ENC_PRESET_P5_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
+			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
-	} else if (astrcmpi(preset, "mq") == 0) {
-		nv_preset = NV_ENC_PRESET_HQ_GUID;
-		twopass = true;
+		} else if (astrcmpi(preset, "mq") == 0) {
+			nv_preset = NV_ENC_PRESET_P4_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
+			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
-	} else if (astrcmpi(preset, "hp") == 0) {
-		nv_preset = NV_ENC_PRESET_HP_GUID;
-		hp = true;
+		} else if (astrcmpi(preset, "hp") == 0) {
+			nv_preset = NV_ENC_PRESET_P1_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
+			nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
 
-	} else if (astrcmpi(preset, "ll") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_DEFAULT_GUID;
-		ll = true;
+		} else if (astrcmpi(preset, "ll") == 0) {
+			nv_preset = NV_ENC_PRESET_P3_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_LOW_LATENCY;
+			nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
 
-	} else if (astrcmpi(preset, "llhq") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HQ_GUID;
-		ll = true;
+		} else if (astrcmpi(preset, "llhq") == 0) {
+			nv_preset = NV_ENC_PRESET_P4_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_LOW_LATENCY;
+			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
-	} else if (astrcmpi(preset, "llhp") == 0) {
-		nv_preset = NV_ENC_PRESET_LOW_LATENCY_HP_GUID;
-		hp = true;
-		ll = true;
+		} else if (astrcmpi(preset, "llhp") == 0) {
+			nv_preset = NV_ENC_PRESET_P2_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_LOW_LATENCY;
+			nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
+		}
 	}
 
 	const bool rc_lossless = astrcmpi(rc, "lossless") == 0;
@@ -409,10 +460,13 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 		*lossless =
 			nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_LOSSLESS_ENCODE);
 		if (*lossless) {
-			nv_preset = hp ? NV_ENC_PRESET_LOSSLESS_HP_GUID
-				       : NV_ENC_PRESET_LOSSLESS_DEFAULT_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_LOSSLESS;
+			nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
 		} else {
 			warn("lossless encode is not supported, ignoring");
+			nv_preset = NV_ENC_PRESET_P5_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
+			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 		}
 	}
 
@@ -422,8 +476,9 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	NV_ENC_PRESET_CONFIG preset_config = {NV_ENC_PRESET_CONFIG_VER,
 					      {NV_ENC_CONFIG_VER}};
 
-	err = nv.nvEncGetEncodePresetConfig(enc->session, enc->codec_guid,
-					    nv_preset, &preset_config);
+	err = nv.nvEncGetEncodePresetConfigEx(enc->session, enc->codec_guid,
+					      nv_preset, nv_tuning,
+					      &preset_config);
 	if (nv_failed(enc->encoder, err, __FUNCTION__,
 		      "nvEncGetEncodePresetConfig")) {
 		return false;
@@ -439,7 +494,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 
 	NV_ENC_CONFIG *config = &enc->config;
 
-	initialize_params(&enc->params, &enc->codec_guid, &nv_preset,
+	initialize_params(&enc->params, &enc->codec_guid, &nv_preset, nv_tuning,
 			  voi->width, voi->height, voi->fps_num, voi->fps_den,
 			  &enc->config);
 
@@ -500,8 +555,7 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_DYN_BITRATE_CHANGE) &&
 		!lookahead;
 
-	config->rcParams.rateControlMode = twopass ? NV_ENC_PARAMS_RC_VBR_HQ
-						   : NV_ENC_PARAMS_RC_VBR;
+	config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_VBR;
 
 	if (astrcmpi(rc, "cqp") == 0 || rc_lossless) {
 		if (*lossless)
@@ -517,14 +571,13 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 		max_bitrate = 0;
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
-		config->rcParams.rateControlMode =
-			twopass ? NV_ENC_PARAMS_RC_2_PASS_QUALITY
-				: NV_ENC_PARAMS_RC_CBR;
+		config->rcParams.rateControlMode = NV_ENC_PARAMS_RC_CBR;
 	}
 
 	config->rcParams.averageBitRate = bitrate * 1000;
 	config->rcParams.maxBitRate = vbr ? max_bitrate * 1000 : bitrate * 1000;
 	config->rcParams.vbvBufferSize = bitrate * 1000;
+	config->rcParams.multiPass = nv_multipass;
 
 	/* -------------------------- */
 	/* initialize                 */
@@ -536,15 +589,16 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	     "\tcqp:          %d\n"
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
+	     "\ttuning:       %s\n"
+	     "\tmultipass:    %s\n"
 	     "\tprofile:      %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
-	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tlookahead:    %s\n"
 	     "\tpsycho_aq:    %s\n",
-	     get_codec_name(enc->codec), rc, bitrate, cqp, gop_size, preset,
-	     profile, enc->cx, enc->cy, twopass ? "true" : "false", bf,
+	     get_codec_name(enc->codec), rc, bitrate, cqp, gop_size, preset2,
+	     tuning, multipass, profile, enc->cx, enc->cy, bf,
 	     lookahead ? "true" : "false", psycho_aq ? "true" : "false");
 
 	return true;

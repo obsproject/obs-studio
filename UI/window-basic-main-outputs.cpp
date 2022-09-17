@@ -671,7 +671,6 @@ void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_string(settings, "profile", "high");
-	obs_data_set_string(settings, "preset", "hq");
 	obs_data_set_int(settings, "cqp", cqp);
 
 	obs_encoder_update(videoRecording, settings);
@@ -683,7 +682,6 @@ void SimpleOutput::UpdateRecordingSettings_nvenc_hevc(int cqp)
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "rate_control", "CQP");
 	obs_data_set_string(settings, "profile", "main");
-	obs_data_set_string(settings, "preset", "hq");
 	obs_data_set_int(settings, "cqp", cqp);
 
 	obs_encoder_update(videoRecording, settings);

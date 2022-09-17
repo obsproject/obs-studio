@@ -100,6 +100,9 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	int cqp = (int)obs_data_get_int(settings, "cqp");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	const char *preset = obs_data_get_string(settings, "preset");
+	const char *preset2 = obs_data_get_string(settings, "preset2");
+	const char *tuning = obs_data_get_string(settings, "tune");
+	const char *multipass = obs_data_get_string(settings, "multipass");
 	const char *profile = obs_data_get_string(settings, "profile");
 	int gpu = (int)obs_data_get_int(settings, "gpu");
 	bool cbr_override = obs_data_get_bool(settings, "cbr");
@@ -123,17 +126,24 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	info.colorspace = voi->colorspace;
 	info.range = voi->range;
 
-	bool twopass = false;
-
-	if (astrcmpi(preset, "mq") == 0) {
-		twopass = true;
-		preset = "hq";
-	}
-
 	nvenc_video_info(enc, &info);
+
 	av_opt_set_int(enc->ffve.context->priv_data, "cbr", false, 0);
 	av_opt_set(enc->ffve.context->priv_data, "profile", profile, 0);
-	av_opt_set(enc->ffve.context->priv_data, "preset", preset, 0);
+
+	if (obs_data_has_user_value(settings, "preset") &&
+	    !obs_data_has_user_value(settings, "preset2")) {
+
+		if (astrcmpi(preset, "mq") == 0) {
+			preset = "hq";
+		}
+		av_opt_set(enc->ffve.context->priv_data, "preset", preset, 0);
+	} else {
+		av_opt_set(enc->ffve.context->priv_data, "preset", preset2, 0);
+		av_opt_set(enc->ffve.context->priv_data, "tune", tuning, 0);
+		av_opt_set(enc->ffve.context->priv_data, "multipass", multipass,
+			   0);
+	}
 
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
@@ -143,11 +153,9 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 		bitrate = 0;
 		cqp = 0;
 
-		bool hp = (astrcmpi(preset, "hp") == 0 ||
-			   astrcmpi(preset, "llhp") == 0);
-
-		av_opt_set(enc->ffve.context->priv_data, "preset",
-			   hp ? "losslesshp" : "lossless", 0);
+		av_opt_set(enc->ffve.context->priv_data, "tune", "lossless", 0);
+		av_opt_set(enc->ffve.context->priv_data, "multipass",
+			   "disabled", 0);
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		av_opt_set_int(enc->ffve.context->priv_data, "cbr", true, 0);
@@ -158,7 +166,6 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	}
 
 	av_opt_set(enc->ffve.context->priv_data, "level", "auto", 0);
-	av_opt_set_int(enc->ffve.context->priv_data, "2pass", twopass, 0);
 	av_opt_set_int(enc->ffve.context->priv_data, "gpu", gpu, 0);
 
 	set_psycho_aq(enc, psycho_aq);
@@ -176,17 +183,17 @@ static bool nvenc_update(struct nvenc_encoder *enc, obs_data_t *settings,
 	     "\tcqp:          %d\n"
 	     "\tkeyint:       %d\n"
 	     "\tpreset:       %s\n"
+	     "\ttuning:       %s\n"
+	     "\tmultipass:    %s\n"
 	     "\tprofile:      %s\n"
 	     "\twidth:        %d\n"
 	     "\theight:       %d\n"
-	     "\t2-pass:       %s\n"
 	     "\tb-frames:     %d\n"
 	     "\tpsycho-aq:    %d\n"
 	     "\tGPU:          %d\n",
 	     enc->ffve.enc_name, rc, bitrate, cqp, enc->ffve.context->gop_size,
-	     preset, profile, enc->ffve.context->width, enc->ffve.height,
-	     twopass ? "true" : "false", enc->ffve.context->max_b_frames,
-	     psycho_aq, gpu);
+	     preset2, tuning, multipass, profile, enc->ffve.context->width,
+	     enc->ffve.height, enc->ffve.context->max_b_frames, psycho_aq, gpu);
 
 	return ffmpeg_video_encoder_init_codec(&enc->ffve);
 }
@@ -405,7 +412,9 @@ void h264_nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "hq");
+	obs_data_set_default_string(settings, "preset2", "p6");
+	obs_data_set_default_string(settings, "multipass", "qres");
+	obs_data_set_default_string(settings, "tune", "hq");
 	obs_data_set_default_string(settings, "profile", "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
@@ -421,7 +430,8 @@ void hevc_nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset", "hq");
+	obs_data_set_default_string(settings, "preset2", "p6");
+	obs_data_set_default_string(settings, "tune", "hq");
 	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
@@ -437,7 +447,6 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	bool cqp = astrcmpi(rc, "CQP") == 0;
 	bool vbr = astrcmpi(rc, "VBR") == 0;
 	bool lossless = astrcmpi(rc, "lossless") == 0;
-	size_t count;
 
 	p = obs_properties_get(ppts, "bitrate");
 	obs_property_set_visible(p, !cqp && !lossless);
@@ -445,14 +454,10 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	obs_property_set_visible(p, vbr);
 	p = obs_properties_get(ppts, "cqp");
 	obs_property_set_visible(p, cqp);
-
-	p = obs_properties_get(ppts, "preset");
-	count = obs_property_list_item_count(p);
-
-	for (size_t i = 0; i < count; i++) {
-		bool compatible = (i == 0 || i == 3);
-		obs_property_list_item_disable(p, i, lossless && !compatible);
-	}
+	p = obs_properties_get(ppts, "preset2");
+	obs_property_set_visible(p, !lossless);
+	p = obs_properties_get(ppts, "tune");
+	obs_property_set_visible(p, !lossless);
 
 	return true;
 }
@@ -490,21 +495,46 @@ obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
 				   10, 1);
 	obs_property_int_set_suffix(p, " s");
 
-	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
+	p = obs_properties_add_list(props, "preset2", obs_module_text("Preset"),
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-#define add_preset(val)                                                       \
-	obs_property_list_add_string(p, obs_module_text("NVENC.Preset." val), \
+#define add_preset(val)                                                        \
+	obs_property_list_add_string(p, obs_module_text("NVENC.Preset2." val), \
 				     val)
-	add_preset("mq");
-	add_preset("hq");
-	add_preset("default");
-	add_preset("hp");
-	add_preset("ll");
-	add_preset("llhq");
-	add_preset("llhp");
+	add_preset("p1");
+	add_preset("p2");
+	add_preset("p3");
+	add_preset("p4");
+	add_preset("p5");
+	add_preset("p6");
+	add_preset("p7");
 #undef add_preset
+
+	p = obs_properties_add_list(props, "tune", obs_module_text("Tuning"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+#define add_tune(val)                                                         \
+	obs_property_list_add_string(p, obs_module_text("NVENC.Tuning." val), \
+				     val)
+	add_tune("hq");
+	add_tune("ll");
+	add_tune("ull");
+#undef add_tune
+
+	p = obs_properties_add_list(props, "multipass",
+				    obs_module_text("NVENC.Multipass"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+#define add_multipass(val)            \
+	obs_property_list_add_string( \
+		p, obs_module_text("NVENC.Multipass." val), val)
+	add_multipass("disabled");
+	add_multipass("qres");
+	add_multipass("fullres");
+#undef add_multipass
 
 	p = obs_properties_add_list(props, "profile",
 				    obs_module_text("Profile"),
