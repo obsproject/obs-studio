@@ -405,7 +405,12 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 	return ffmpeg_video_encode(&enc->ffve, frame, packet, received_packet);
 }
 
-void h264_nvenc_defaults(obs_data_t *settings)
+enum codec_type {
+	CODEC_H264,
+	CODEC_HEVC,
+};
+
+static void nvenc_defaults_base(enum codec_type codec, obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 5000);
@@ -415,30 +420,23 @@ void h264_nvenc_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "preset2", "p6");
 	obs_data_set_default_string(settings, "multipass", "qres");
 	obs_data_set_default_string(settings, "tune", "hq");
-	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_string(settings, "profile",
+				    codec == CODEC_HEVC ? "main" : "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
 	obs_data_set_default_bool(settings, "repeat_headers", false);
 }
 
-#ifdef ENABLE_HEVC
+void h264_nvenc_defaults(obs_data_t *settings)
+{
+	nvenc_defaults_base(CODEC_H264, settings);
+}
+
 void hevc_nvenc_defaults(obs_data_t *settings)
 {
-	obs_data_set_default_int(settings, "bitrate", 2500);
-	obs_data_set_default_int(settings, "max_bitrate", 5000);
-	obs_data_set_default_int(settings, "keyint_sec", 0);
-	obs_data_set_default_int(settings, "cqp", 20);
-	obs_data_set_default_string(settings, "rate_control", "CBR");
-	obs_data_set_default_string(settings, "preset2", "p6");
-	obs_data_set_default_string(settings, "tune", "hq");
-	obs_data_set_default_string(settings, "profile", "main");
-	obs_data_set_default_bool(settings, "psycho_aq", true);
-	obs_data_set_default_int(settings, "gpu", 0);
-	obs_data_set_default_int(settings, "bf", 0);
-	obs_data_set_default_bool(settings, "repeat_headers", false);
+	nvenc_defaults_base(CODEC_HEVC, settings);
 }
-#endif
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 				  obs_data_t *settings)
@@ -462,7 +460,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
+obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -542,7 +540,7 @@ obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
 				    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
-	if (hevc) {
+	if (codec == CODEC_HEVC) {
 		add_profile("main10");
 		add_profile("main");
 	} else {
@@ -578,28 +576,28 @@ obs_properties_t *nvenc_properties_internal(bool hevc, bool ffmpeg)
 obs_properties_t *h264_nvenc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(false, false);
+	return nvenc_properties_internal(CODEC_H264, false);
 }
 
 #ifdef ENABLE_HEVC
 obs_properties_t *hevc_nvenc_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(true, false);
+	return nvenc_properties_internal(CODEC_HEVC, false);
 }
 #endif
 
 obs_properties_t *h264_nvenc_properties_ffmpeg(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(false, true);
+	return nvenc_properties_internal(CODEC_H264, true);
 }
 
 #ifdef ENABLE_HEVC
 obs_properties_t *hevc_nvenc_properties_ffmpeg(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return nvenc_properties_internal(true, true);
+	return nvenc_properties_internal(CODEC_HEVC, true);
 }
 #endif
 
