@@ -879,6 +879,9 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 		nv.nvEncDestroyEncoder(enc->session);
 		enc->session = NULL;
 
+		if (!init_session(enc)) {
+			return false;
+		}
 		if (!init_specific_encoder(enc, settings, bf, false)) {
 			return false;
 		}
