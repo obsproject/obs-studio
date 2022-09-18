@@ -1111,32 +1111,23 @@ static bool get_encoded_packet(struct nvenc_data *enc, bool finalize)
 		}
 
 		if (enc->first_packet) {
-			uint8_t *new_packet;
-			size_t size;
+			NV_ENC_SEQUENCE_PARAM_PAYLOAD payload = {0};
+			uint8_t buf[256];
+			uint32_t size = 0;
 
+			payload.version = NV_ENC_SEQUENCE_PARAM_PAYLOAD_VER;
+			payload.spsppsBuffer = buf;
+			payload.inBufferSize = sizeof(buf);
+			payload.outSPSPPSPayloadSize = &size;
+
+			nv.nvEncGetSequenceParams(s, &payload);
+			enc->header = bmemdup(buf, size);
+			enc->header_size = size;
 			enc->first_packet = false;
-
-			if (enc->codec == CODEC_HEVC) {
-				obs_extract_hevc_headers(
-					lock.bitstreamBufferPtr,
-					lock.bitstreamSizeInBytes, &new_packet,
-					&size, &enc->header, &enc->header_size,
-					&enc->sei, &enc->sei_size);
-
-			} else if (enc->codec == CODEC_H264) {
-				obs_extract_avc_headers(
-					lock.bitstreamBufferPtr,
-					lock.bitstreamSizeInBytes, &new_packet,
-					&size, &enc->header, &enc->header_size,
-					&enc->sei, &enc->sei_size);
-			}
-
-			da_copy_array(enc->packet_data, new_packet, size);
-			bfree(new_packet);
-		} else {
-			da_copy_array(enc->packet_data, lock.bitstreamBufferPtr,
-				      lock.bitstreamSizeInBytes);
 		}
+
+		da_copy_array(enc->packet_data, lock.bitstreamBufferPtr,
+			      lock.bitstreamSizeInBytes);
 
 		enc->packet_pts = (int64_t)lock.outputTimeStamp;
 		enc->packet_keyframe = lock.pictureType == NV_ENC_PIC_TYPE_IDR;
