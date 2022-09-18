@@ -10,7 +10,7 @@ NV_CREATE_INSTANCE_FUNC nv_create_instance = NULL;
 
 #define error(format, ...) blog(LOG_ERROR, "[jim-nvenc] " format, ##__VA_ARGS__)
 
-bool nv_fail(obs_encoder_t *encoder, const char *format, ...)
+bool nv_fail2(obs_encoder_t *encoder, void *session, const char *format, ...)
 {
 	struct dstr message = {0};
 	struct dstr error_message = {0};
@@ -30,8 +30,8 @@ bool nv_fail(obs_encoder_t *encoder, const char *format, ...)
 	return true;
 }
 
-bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
-	       const char *call)
+bool nv_failed2(obs_encoder_t *encoder, void *session, NVENCSTATUS err,
+		const char *func, const char *call)
 {
 	struct dstr error_message = {0};
 
@@ -63,12 +63,17 @@ bool nv_failed(obs_encoder_t *encoder, NVENCSTATUS err, const char *func,
 		break;
 	}
 
-	error("%s: %s failed: %d (%s)", func, call, (int)err,
-	      nv_error_name(err));
+	if (session) {
+		error("%s: %s failed: %d (%s): %s", func, call, (int)err,
+		      nv_error_name(err), nv.nvEncGetLastErrorString(session));
+	} else {
+		error("%s: %s failed: %d (%s)", func, call, (int)err,
+		      nv_error_name(err));
+	}
 	return true;
 }
 
-#define NV_FAILED(e, x) nv_failed(e, x, __FUNCTION__, #x)
+#define NV_FAILED(e, x) nv_failed2(e, NULL, x, __FUNCTION__, #x)
 
 bool load_nvenc_lib(void)
 {
