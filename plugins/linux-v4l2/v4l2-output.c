@@ -26,7 +26,11 @@ static const char *virtualcam_name(void *unused)
 static void virtualcam_destroy(void *data)
 {
 	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-	close(vcam->device);
+	if (!close(vcam->device)) {
+		blog(LOG_WARNING,
+		     "Failed to close virtual camera file descriptor %d (%d)",
+		     vcam->device, errno);
+	}
 	bfree(data);
 }
 
@@ -55,6 +59,10 @@ static int run_command(const char *command)
 
 	dstr_cat(&str, command);
 	result = system(str.array);
+	if (result == -1) {
+		blog(LOG_ERROR, "Failed to run command '%s' (%d)", str.array,
+		     errno);
+	}
 	dstr_free(&str);
 	return result;
 }
@@ -67,8 +75,10 @@ static bool loopback_module_loaded()
 
 	FILE *fp = fopen("/proc/modules", "r");
 
-	if (!fp)
+	if (!fp) {
+		blog(LOG_WARNING, "Failed to open /proc/modules (%d)", errno);
 		return false;
+	}
 
 	while (fgets(temp, sizeof(temp), fp)) {
 		if (strstr(temp, "v4l2loopback")) {
@@ -77,8 +87,11 @@ static bool loopback_module_loaded()
 		}
 	}
 
-	fclose(fp);
-
+	if (!fclose(fp)) {
+		blog(LOG_WARNING,
+		     "Failed to close loopback module check file descriptor (%d)",
+		     errno);
+	}
 	return loaded;
 }
 
@@ -125,19 +138,57 @@ static bool try_connect(void *data, const char *device)
 
 	vcam->device = open(device, O_RDWR);
 
-	if (vcam->device == -1)
+	if (vcam->device == -1) {
+		blog(LOG_ERROR, "Failed to open device '%s' (%d)", device,
+		     errno);
 		return false;
+	}
 
-	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) == -1)
+	if (ioctl(vcam->device, VIDIOC_QUERYCAP, &capability) == -1) {
+		blog(LOG_WARNING,
+		     "Failed to query device capabilities on '%s' (%d)", device,
+		     errno);
 		goto fail_close_device;
+	}
 
+	blog(LOG_DEBUG,
+	     "Virtual video device: driver='%s', card='%s', capabilities=0x%x, device_caps=0x%x",
+	     capability.driver, capability.card, capability.capabilities,
+	     capability.device_caps);
+
+	/* The v42loopback driver always supports reporting device node capabilities.
+		Here we just make sure to properly follow the API contract which requires
+		that before accessing the content of capability.device_caps, we first
+		check if the driver does in fact support reporting device capabilities */
+	if (!(capability.capabilities & V4L2_CAP_DEVICE_CAPS)) {
+		blog(LOG_ERROR,
+		     "Driver on device '%s' is unable to report on device node capabilities",
+		     device);
+		goto fail_close_device;
+	}
+
+	if (!(capability.device_caps & V4L2_CAP_VIDEO_OUTPUT)) {
+		blog(LOG_ERROR, "Device '%s' does not support video output",
+		     device);
+		goto fail_close_device;
+	}
+
+	memset(&format, 0, sizeof(format));
 	format.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) == -1)
+	if (ioctl(vcam->device, VIDIOC_G_FMT, &format) == -1) {
+		blog(LOG_ERROR,
+		     "Failed to get video output format from device '%s' (%d)",
+		     device, errno);
 		goto fail_close_device;
+	}
 
 	struct obs_video_info ovi;
-	obs_get_video_info(&ovi);
+	if (!obs_get_video_info(&ovi)) {
+		blog(LOG_WARNING, "Failed to get video info for device '%s'",
+		     device);
+		// .. but do continue anyway
+	}
 
 	memset(&parm, 0, sizeof(parm));
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
@@ -146,16 +197,24 @@ static bool try_connect(void *data, const char *device)
 	parm.parm.output.timeperframe.numerator = ovi.fps_den;
 	parm.parm.output.timeperframe.denominator = ovi.fps_num;
 
-	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) == -1)
+	if (ioctl(vcam->device, VIDIOC_S_PARM, &parm) == -1) {
+		blog(LOG_WARNING,
+		     "Failed to set video output format parameter for time per frame on device '%s' (%d)",
+		     device, errno);
 		goto fail_close_device;
+	}
 
 	format.fmt.pix.width = width;
 	format.fmt.pix.height = height;
 	format.fmt.pix.pixelformat = V4L2_PIX_FMT_YUYV;
 	format.fmt.pix.sizeimage = vcam->frame_size;
 
-	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) == -1)
+	if (ioctl(vcam->device, VIDIOC_S_FMT, &format) == -1) {
+		blog(LOG_ERROR,
+		     "Failed to set video output format to YUYV on device '%s' (%d)",
+		     device, errno);
 		goto fail_close_device;
+	}
 
 	struct video_scale_info vsi = {0};
 	vsi.format = VIDEO_FORMAT_YUY2;
@@ -173,7 +232,13 @@ static bool try_connect(void *data, const char *device)
 	}
 
 	blog(LOG_INFO, "Virtual camera started");
-	obs_output_begin_data_capture(vcam->output, 0);
+	if (!obs_output_begin_data_capture(vcam->output, 0)) {
+		blog(LOG_WARNING,
+		     "Unable to begin OBS data capture on device '%s'", device);
+	}
+
+	blog(LOG_DEBUG, "Using file descriptor %d for video device '%s'",
+	     vcam->device, device);
 
 	return true;
 
@@ -194,9 +259,14 @@ static bool virtualcam_start(void *data)
 	bool success = false;
 	int n;
 
-	if (!loopback_module_loaded()) {
-		if (loopback_module_load() != 0)
+	if (loopback_module_loaded()) {
+		blog(LOG_DEBUG, "loopback module is already loaded");
+	} else {
+		if (loopback_module_load() != 0) {
+			blog(LOG_WARNING,
+			     "Failed to explicitly load loopback module");
 			return false;
+		}
 	}
 
 	n = scandir("/dev", &list, scanfilter,
@@ -220,7 +290,12 @@ static bool virtualcam_start(void *data)
 			     "v4l2-output: A format truncation may have occurred."
 			     " This can be ignored since it is quite improbable.");
 
+		blog(LOG_DEBUG, "Trying to connect to video device '%s'",
+		     device);
 		if (try_connect(vcam, device)) {
+			blog(LOG_DEBUG,
+			     "Successfully connected to video device '%s'",
+			     device);
 			success = true;
 			break;
 		}
@@ -250,7 +325,10 @@ static void virtualcam_stop(void *data, uint64_t ts)
 		     vcam->device, strerror(errno));
 	}
 
-	close(vcam->device);
+	if (close(vcam->device) == -1) {
+		blog(LOG_WARNING, "Failed to close file descriptor %d (%d)",
+		     vcam->device, errno);
+	}
 	blog(LOG_INFO, "Virtual camera stopped");
 
 	UNUSED_PARAMETER(ts);
@@ -263,8 +341,12 @@ static void virtual_video(void *param, struct video_data *frame)
 	while (frame_size > 0) {
 		ssize_t written =
 			write(vcam->device, frame->data[0], vcam->frame_size);
-		if (written == -1)
+		if (written == -1) {
+			blog(LOG_WARNING,
+			     "Failed to write video data on file descriptor %d; skipping (remainder of) frame (%d)",
+			     vcam->device, errno);
 			break;
+		}
 		frame_size -= written;
 	}
 }
