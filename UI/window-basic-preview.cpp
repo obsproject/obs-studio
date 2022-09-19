@@ -49,6 +49,18 @@ vec2 OBSBasicPreview::GetMouseEventPos(QMouseEvent *event)
 
 	return pos;
 }
+vec2 OBSBasicPreview::GetWheelEventPos(QWheelEvent *event)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+	float pixelRatio = main->GetDevicePixelRatio();
+	float scale = pixelRatio / main->previewScale;
+	QPointF qtPos = event->position();
+	vec2 pos;
+	vec2_set(&pos, (qtPos.x() - main->previewX / pixelRatio) * scale,
+		 (qtPos.y() - main->previewY / pixelRatio) * scale);
+
+	return pos;
+}
 
 static void RotatePos(vec2 *pos, float rot)
 {
@@ -150,6 +162,17 @@ static bool FindItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
+static bool FindSelectedItemAtPos(obs_scene_t *scene, obs_sceneitem_t *item,
+				  void *param)
+{
+	// First check if this item is found at that position
+	if (!FindItemAtPos(scene, item, param))
+		return false;
+
+	// If it is, check if it is selected
+	return !obs_sceneitem_selected(item);
+}
+
 static vec3 GetTransformedPos(float x, float y, const matrix4 &mat)
 {
 	vec3 result;
@@ -222,6 +245,19 @@ vec3 OBSBasicPreview::GetSnapOffset(const vec3 &tl, const vec3 &br)
 		clampOffset.y = screenSize.y / 2.0f - centerY;
 
 	return clampOffset;
+}
+OBSSceneItem OBSBasicPreview::GetSelectedItemAtPos(const vec2 &pos,
+						   bool selectBelow)
+{
+	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
+
+	OBSScene scene = main->GetCurrentScene();
+	if (!scene)
+		return OBSSceneItem();
+
+	SceneFindData data(pos, selectBelow);
+	obs_scene_enum_items(scene, FindSelectedItemAtPos, &data);
+	return data.item;
 }
 
 OBSSceneItem OBSBasicPreview::GetItemAtPos(const vec2 &pos, bool selectBelow)
@@ -451,13 +487,13 @@ static vec2 GetItemSize(obs_sceneitem_t *item)
 	return size;
 }
 
-void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
+bool OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 {
 	OBSBasic *main = reinterpret_cast<OBSBasic *>(App()->GetMainWindow());
 
 	OBSScene scene = main->GetCurrentScene();
 	if (!scene)
-		return;
+		return false;
 
 	float scale = main->previewScale / main->GetDevicePixelRatio();
 	vec2 scaled_pos = pos;
@@ -512,7 +548,9 @@ void OBSBasicPreview::GetStretchHandleData(const vec2 &pos, bool ignoreGroup)
 			matrix4_inv(&invGroupTransform, &invGroupTransform);
 			obs_sceneitem_defer_group_resize_begin(stretchGroup);
 		}
+		return true;
 	}
+	return false;
 }
 
 void OBSBasicPreview::keyPressEvent(QKeyEvent *event)
@@ -559,6 +597,28 @@ void OBSBasicPreview::wheelEvent(QWheelEvent *event)
 			else
 				SetScalingLevel(scalingLevel - 1);
 			emit DisplayResized();
+		}
+	} else {
+		Qt::KeyboardModifiers modifiers =
+			QGuiApplication::keyboardModifiers();
+		bool altDown = (modifiers & Qt::AltModifier);
+
+		if (altDown) {
+			// Control the zoom level with the mouse wheel
+			const int delta = event->angleDelta().y();
+
+			const float wheelSensitivityScale = 10.0f;
+			float scaleDelta =
+				std::max(2.0f,
+					 std::abs(delta /
+						  wheelSensitivityScale)) *
+				(delta > 0 ? 1 : -1);
+
+			if (scaleDelta) {
+				vec2 pos = GetWheelEventPos(event);
+
+				CropAdjustZoom(pos, std::round(scaleDelta));
+			}
 		}
 	}
 
@@ -614,8 +674,9 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 		selectedItems.clear();
 	}
 
-	if (altDown)
+	if (altDown) {
 		cropping = true;
+	}
 
 	if (altDown || shiftDown || ctrlDown) {
 		vec2 s;
@@ -629,7 +690,16 @@ void OBSBasicPreview::mousePressEvent(QMouseEvent *event)
 	}
 
 	vec2_set(&startPos, x, y);
-	GetStretchHandleData(startPos, false);
+	const bool isHandle = GetStretchHandleData(startPos, false);
+	if (cropping && !isHandle) {
+		// If we're cropping and we didn't click on a handle, then we're
+		// panning and we need to get the startCrop for the top-most selected
+		// item.
+		const vec2 mousePos = GetMouseEventPos(event);
+		OBSSceneItem item = GetSelectedItemAtPos(mousePos, false);
+		obs_sceneitem_get_crop(item, &startCrop);
+		panItem = item;
+	}
 
 	vec2_divf(&startPos, &startPos, main->previewScale / pixelRatio);
 	startPos.x = std::round(startPos.x);
@@ -1345,8 +1415,78 @@ static float minfunc(float x, float y)
 	return x < y ? x : y;
 }
 
+void OBSBasicPreview::CropAdjustZoom(const vec2 &pos, const int &amount)
+{
+	OBSSceneItem item = GetItemAtPos(pos, false);
+	obs_source_t *source = obs_sceneitem_get_source(item);
+	obs_sceneitem_crop crop;
+	obs_sceneitem_get_crop(item, &crop);
+
+	vec2 bounds;
+	obs_sceneitem_get_bounds(item, &bounds);
+
+	const float boundsAspect = bounds.x / bounds.y;
+
+	const float sourceWidth = obs_source_get_width(source);
+	const float sourceHeight = obs_source_get_height(source);
+
+	const float clipWidth = sourceWidth - crop.left - crop.right;
+	const float clipHeight = sourceHeight - crop.top - crop.bottom;
+
+	if (lastZoomAspectRatio == 0) {
+		lastZoomAspectRatio = clipWidth / clipHeight;
+	}
+	float aspect = lastZoomAspectRatio;
+
+	const float newWidth = clipWidth + amount;
+	const float newHeight = newWidth / aspect;
+
+	int xIncrease = newWidth - clipWidth;
+	int yIncrease = newHeight - clipHeight;
+
+	crop.top = crop.top - (yIncrease / 2);
+	crop.left = crop.left - (xIncrease / 2);
+	crop.bottom = sourceHeight - crop.top - newHeight;
+	crop.right = sourceWidth - crop.left - newWidth;
+
+	obs_sceneitem_defer_update_begin(item);
+	obs_sceneitem_set_crop(item, &crop);
+	obs_sceneitem_defer_update_end(item);
+}
+
+void OBSBasicPreview::PanItem(const vec2 &pos)
+{
+	obs_source_t *source = obs_sceneitem_get_source(panItem);
+	int sourceWidth = obs_source_get_width(source);
+	int sourceHeight = obs_source_get_height(source);
+
+	obs_sceneitem_crop crop = startCrop;
+
+	const int cropWidth = sourceWidth - crop.right - crop.left;
+	const int cropHeight = sourceHeight - crop.bottom - crop.top;
+
+	const int xDiff = std::round(startPos.x - pos.x);
+	const int yDiff = std::round(startPos.y - pos.y);
+
+	// Left must be between 0 and (sourceWidth - cropWidth)
+	crop.left = std::min(sourceWidth - cropWidth,
+			     std::max(0, startCrop.left + xDiff));
+	// Top must be between 0 and (sourceHeight - cropHeight)
+	crop.top = std::min(sourceHeight - cropHeight,
+			    std::max(0, startCrop.top + yDiff));
+
+	crop.right = sourceWidth - (crop.left + cropWidth);
+	crop.bottom = sourceHeight - (crop.top + cropHeight);
+
+	obs_sceneitem_defer_update_begin(panItem);
+	obs_sceneitem_set_crop(panItem, &crop);
+	obs_sceneitem_defer_update_end(panItem);
+}
+
 void OBSBasicPreview::CropItem(const vec2 &pos)
 {
+	lastZoomAspectRatio =
+		0.0f; // reset saved aspect ratio from scroll to zoom
 	obs_bounds_type boundsType = obs_sceneitem_get_bounds_type(stretchItem);
 	uint32_t stretchFlags = (uint32_t)stretchHandle;
 	uint32_t align = obs_sceneitem_get_alignment(stretchItem);
@@ -1644,12 +1784,17 @@ void OBSBasicPreview::mouseMoveEvent(QMouseEvent *event)
 				CropItem(pos);
 			else
 				StretchItem(pos);
-
 		} else if (mouseOverItems) {
-			if (cursor().shape() != Qt::SizeAllCursor)
-				setCursor(Qt::SizeAllCursor);
-			selectionBox = false;
-			MoveItems(pos);
+			if (cropping) {
+				// If Alt is held down while dragging then we move the center
+				// of the crop window instead of moving the item itself
+				PanItem(pos);
+			} else {
+				if (cursor().shape() != Qt::SizeAllCursor)
+					setCursor(Qt::SizeAllCursor);
+				selectionBox = false;
+				MoveItems(pos);
+			}
 		} else {
 			selectionBox = true;
 			if (!mouseMoved)

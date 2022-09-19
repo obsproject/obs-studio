@@ -48,6 +48,7 @@ private:
 	OBSSceneItem stretchGroup;
 	OBSSceneItem stretchItem;
 	ItemHandle stretchHandle = ItemHandle::None;
+	OBSSceneItem panItem;
 	float rotateAngle;
 	vec2 rotatePoint;
 	vec2 offsetPoint;
@@ -65,6 +66,7 @@ private:
 	vec2 lastMoveOffset;
 	vec2 scrollingFrom;
 	vec2 scrollingOffset;
+	float lastZoomAspectRatio = 0.0f;
 	bool mouseDown = false;
 	bool mouseMoved = false;
 	bool mouseOverItems = false;
@@ -82,6 +84,7 @@ private:
 	std::mutex selectMutex;
 
 	static vec2 GetMouseEventPos(QMouseEvent *event);
+	static vec2 GetWheelEventPos(QWheelEvent *event);
 	static bool FindSelected(obs_scene_t *scene, obs_sceneitem_t *item,
 				 void *param);
 	static bool DrawSelectedOverflow(obs_scene_t *scene,
@@ -92,6 +95,8 @@ private:
 				     gs_vertbuffer_t *box);
 
 	static OBSSceneItem GetItemAtPos(const vec2 &pos, bool selectBelow);
+	static OBSSceneItem GetSelectedItemAtPos(const vec2 &pos,
+						 bool selectBelow);
 	static bool SelectedAtPos(const vec2 &pos);
 
 	static void DoSelect(const vec2 &pos);
@@ -99,7 +104,7 @@ private:
 
 	static vec3 GetSnapOffset(const vec3 &tl, const vec3 &br);
 
-	void GetStretchHandleData(const vec2 &pos, bool ignoreGroup);
+	bool GetStretchHandleData(const vec2 &pos, bool ignoreGroup);
 
 	void UpdateCursor(uint32_t &flags);
 
@@ -107,6 +112,8 @@ private:
 	void ClampAspect(vec3 &tl, vec3 &br, vec2 &size, const vec2 &baseSize);
 	vec3 CalculateStretchPos(const vec3 &tl, const vec3 &br);
 	void CropItem(const vec2 &pos);
+	void PanItem(const vec2 &pos);
+	void CropAdjustZoom(const vec2 &pos, const int &amount);
 	void StretchItem(const vec2 &pos);
 	void RotateItem(const vec2 &pos);
 
