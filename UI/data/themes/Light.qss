@@ -1346,6 +1346,12 @@ SceneTree {
     qproperty-icon: url(./Light/save.svg);
 }
 
+/* Studio Mode Labels */
+
+* [themeID="previewProgramLabels"] {
+    color: palette(text);
+}
+
 /* Studio Mode T-Bar */
 
 QSlider[themeID="tBarSlider"] {
@@ -1364,7 +1370,7 @@ QSlider::sub-page:horizontal[themeID="tBarSlider"] {
 }
 
 QSlider::handle:horizontal[themeID="tBarSlider"] {
-	background-color: #d2d2d2;
+	background-color: palette(text);
 	width: 12px;
 	height: 24px;
 	margin: -24px 0px;
