@@ -3519,6 +3519,8 @@ void OBSBasicSettings::SaveOutputSettings()
 		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
 		presetType = "NVENCPreset";
+	else if (encoder == SIMPLE_ENCODER_NVENC_AV1)
+		presetType = "NVENCPreset";
 #ifdef ENABLE_HEVC
 	else if (encoder == SIMPLE_ENCODER_AMD_HEVC)
 		presetType = "AMDPreset";
@@ -4765,6 +4767,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
 			QString(SIMPLE_ENCODER_NVENC));
+	if (EncoderAvailable("jim_av1_nvenc"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.NVENC.AV1"),
+			QString(SIMPLE_ENCODER_NVENC_AV1));
 #ifdef ENABLE_HEVC
 	if (EncoderAvailable("h265_texture_amf"))
 		ui->simpleOutRecEncoder->addItem(
@@ -4824,6 +4830,8 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	SimpleReplayBufferChanged();
 }
 
+extern const char *get_simple_output_encoder(const char *encoder);
+
 void OBSBasicSettings::SimpleStreamingEncoderChanged()
 {
 	QString encoder = ui->simpleOutStrEncoder->currentData().toString();
@@ -4844,25 +4852,18 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		preset = curQSVPreset;
 
 	} else if (encoder == SIMPLE_ENCODER_NVENC ||
-		   encoder == SIMPLE_ENCODER_NVENC_HEVC) {
-		const char *name = encoder == SIMPLE_ENCODER_NVENC
-					   ? "ffmpeg_nvenc"
-					   : "ffmpeg_hevc_nvenc";
+		   encoder == SIMPLE_ENCODER_NVENC_HEVC ||
+		   encoder == SIMPLE_ENCODER_NVENC_AV1) {
+
+		const char *name =
+			get_simple_output_encoder(QT_TO_UTF8(encoder));
 		obs_properties_t *props = obs_get_encoder_properties(name);
 
-		obs_property_t *p = obs_properties_get(props, "preset");
+		obs_property_t *p = obs_properties_get(props, "preset2");
 		size_t num = obs_property_list_item_count(p);
 		for (size_t i = 0; i < num; i++) {
 			const char *name = obs_property_list_item_name(p, i);
 			const char *val = obs_property_list_item_string(p, i);
-
-			/* bluray is for ideal bluray disc recording settings,
-			 * not streaming */
-			if (strcmp(val, "bd") == 0)
-				continue;
-			/* lossless should of course not be used to stream */
-			if (astrcmp_n(val, "lossless", 8) == 0)
-				continue;
 
 			ui->simpleOutPreset->addItem(QT_UTF8(name), val);
 		}

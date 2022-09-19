@@ -290,9 +290,7 @@ struct SimpleOutput : BasicOutputHandler {
 	void UpdateRecordingSettings_x264_crf(int crf);
 	void UpdateRecordingSettings_qsv11(int crf);
 	void UpdateRecordingSettings_nvenc(int cqp);
-#ifdef ENABLE_HEVC
-	void UpdateRecordingSettings_nvenc_hevc(int cqp);
-#endif
+	void UpdateRecordingSettings_nvenc_hevc_av1(int cqp);
 	void UpdateRecordingSettings_amd_cqp(int cqp);
 	void UpdateRecordingSettings_apple(int quality);
 	void UpdateRecordingSettings();
@@ -384,6 +382,8 @@ const char *get_simple_output_encoder(const char *encoder)
 		return EncoderAvailable("jim_hevc_nvenc") ? "jim_hevc_nvenc"
 							  : "ffmpeg_hevc_nvenc";
 #endif
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_AV1) == 0) {
+		return "jim_av1_nvenc";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_APPLE_H264) == 0) {
 		return "com.apple.videotoolbox.videoencoder.ave.avc";
 	}
@@ -542,6 +542,9 @@ void SimpleOutput::Update()
 		presetType = "NVENCPreset";
 #endif
 
+	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_AV1) == 0) {
+		presetType = "NVENCPreset";
+
 	} else {
 		presetType = "Preset";
 	}
@@ -676,8 +679,7 @@ void SimpleOutput::UpdateRecordingSettings_nvenc(int cqp)
 	obs_encoder_update(videoRecording, settings);
 }
 
-#ifdef ENABLE_HEVC
-void SimpleOutput::UpdateRecordingSettings_nvenc_hevc(int cqp)
+void SimpleOutput::UpdateRecordingSettings_nvenc_hevc_av1(int cqp)
 {
 	OBSDataAutoRelease settings = obs_data_create();
 	obs_data_set_string(settings, "rate_control", "CQP");
@@ -686,7 +688,6 @@ void SimpleOutput::UpdateRecordingSettings_nvenc_hevc(int cqp)
 
 	obs_encoder_update(videoRecording, settings);
 }
-#endif
 
 void SimpleOutput::UpdateRecordingSettings_apple(int quality)
 {
@@ -732,8 +733,11 @@ void SimpleOutput::UpdateRecordingSettings()
 
 #ifdef ENABLE_HEVC
 	} else if (videoEncoder == SIMPLE_ENCODER_NVENC_HEVC) {
-		UpdateRecordingSettings_nvenc_hevc(crf);
+		UpdateRecordingSettings_nvenc_hevc_av1(crf);
 #endif
+	} else if (videoEncoder == SIMPLE_ENCODER_NVENC_AV1) {
+		UpdateRecordingSettings_nvenc_hevc_av1(crf);
+
 	} else if (videoEncoder == SIMPLE_ENCODER_APPLE_H264) {
 		/* These are magic numbers. 0 - 100, more is better. */
 		UpdateRecordingSettings_apple(ultra_hq ? 70 : 50);
