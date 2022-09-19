@@ -68,7 +68,7 @@ set_target_properties(obs-virtualcam-module PROPERTIES FOLDER
 
 set_target_properties(
   obs-virtualcam-module PROPERTIES OUTPUT_NAME
-                                   "obs-virtualcam-module${_output_suffix}")
+                                   "obs-virtualsource")
 
 add_target_resource(win-dshow "$<TARGET_FILE:obs-virtualcam-module>"
                     "obs-plugins/win-dshow/")
