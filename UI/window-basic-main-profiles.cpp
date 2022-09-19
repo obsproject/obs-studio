@@ -862,6 +862,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 				name = SIMPLE_ENCODER_X264;
 				return false;
 			}
+		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_AV1) == 0) {
+			if (!nve_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
 #ifdef ENABLE_HEVC
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD_HEVC) == 0) {
 			if (!amd_hevc_supported) {
