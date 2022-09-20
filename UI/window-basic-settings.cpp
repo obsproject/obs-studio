@@ -1206,7 +1206,8 @@ void OBSBasicSettings::LoadThemeList()
 		if (name == DEFAULT_THEME)
 			name += " " + QTStr("Default");
 
-		if (!uniqueSet.contains(value) && name != "Default")
+		if (!uniqueSet.contains(value) && name != "Default" &&
+		    name != "System-Dark")
 			ui->theme->addItem(name, value);
 	}
 

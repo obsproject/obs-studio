@@ -1224,13 +1224,18 @@ bool OBSApp::SetTheme(std::string name, std::string path)
 
 	QString mpath = QString("file:///") + lpath.c_str();
 	ParseExtraThemeData(path.c_str());
-	setStyleSheet(mpath);
+
 	if (themeMeta) {
 		themeDarkMode = themeMeta->dark;
 	} else {
 		QColor color = palette().text().color();
 		themeDarkMode = !(color.redF() < 0.5);
 	}
+
+	if (themeDarkMode && name == "System")
+		mpath.replace("System.qss", "System-Dark.qss");
+
+	setStyleSheet(mpath);
 
 	emit StyleChanged();
 	return true;
