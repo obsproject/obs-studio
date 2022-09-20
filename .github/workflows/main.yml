@@ -155,9 +155,8 @@ jobs:
 
           echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
 
-      - name: 'Switch to Xcode Beta'
-        shell: zsh {0}
-        run: sudo xcode-select -switch /Applications/Xcode_*_beta.app(On[1])
+      - name: 'Switch to Xcode 14.1'
+        run: sudo xcode-select -switch /Applications/Xcode_14.1.app
 
       - name: 'Install dependencies'
         env:
