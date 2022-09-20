@@ -40,12 +40,15 @@ static bool open_editor_button_clicked(obs_properties_t *props,
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
-	QMetaObject::invokeMethod(vstPlugin, "openEditor");
+	if (vstPlugin && vstPlugin->vstLoaded()) {
 
-	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
-				 false);
-	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
-				 true);
+		QMetaObject::invokeMethod(vstPlugin, "openEditor");
+
+		obs_property_set_visible(
+			obs_properties_get(props, OPEN_VST_SETTINGS), false);
+		obs_property_set_visible(
+			obs_properties_get(props, CLOSE_VST_SETTINGS), true);
+	}
 
 	UNUSED_PARAMETER(props);
 	UNUSED_PARAMETER(property);
@@ -59,12 +62,15 @@ static bool close_editor_button_clicked(obs_properties_t *props,
 {
 	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 
-	QMetaObject::invokeMethod(vstPlugin, "closeEditor");
+	if (vstPlugin && vstPlugin->vstLoaded() && vstPlugin->isEditorOpen()) {
 
-	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
-				 true);
-	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
-				 false);
+		QMetaObject::invokeMethod(vstPlugin, "closeEditor");
+
+		obs_property_set_visible(
+			obs_properties_get(props, OPEN_VST_SETTINGS), true);
+		obs_property_set_visible(
+			obs_properties_get(props, CLOSE_VST_SETTINGS), false);
+	}
 
 	UNUSED_PARAMETER(property);
 
@@ -302,9 +308,14 @@ static obs_properties_t *vst_properties(void *data)
 	bool close_settings_vis = false;
 	if (data) {
 		VSTPlugin *vstPlugin = (VSTPlugin *)data;
-		if (vstPlugin->isEditorOpen()) {
-			close_settings_vis = true;
+		if (!vstPlugin->vstLoaded()) {
+			close_settings_vis = false;
 			open_settings_vis = false;
+		} else {
+			if (vstPlugin->isEditorOpen()) {
+				close_settings_vis = true;
+				open_settings_vis = false;
+			}
 		}
 	}
 
