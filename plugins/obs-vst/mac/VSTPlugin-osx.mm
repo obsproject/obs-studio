@@ -58,16 +58,16 @@ AEffect *VSTPlugin::loadEffect()
 
 	if (mainEntryPoint == NULL) {
 		blog(LOG_WARNING, "Couldn't get a pointer to plug-in's main()");
-		CFBundleUnloadExecutable(bundle);
 		CFRelease(bundle);
+		bundle = NULL;
 		return NULL;
 	}
 
 	newEffect = mainEntryPoint(hostCallback_static);
 	if (newEffect == NULL) {
 		blog(LOG_WARNING, "VST Plug-in's main() returns null.");
-		CFBundleUnloadExecutable(bundle);
 		CFRelease(bundle);
+		bundle = NULL;
 		return NULL;
 	}
 
@@ -83,7 +83,7 @@ AEffect *VSTPlugin::loadEffect()
 void VSTPlugin::unloadLibrary()
 {
 	if (bundle) {
-		CFBundleUnloadExecutable(bundle);
 		CFRelease(bundle);
+		bundle = NULL;
 	}
 }
