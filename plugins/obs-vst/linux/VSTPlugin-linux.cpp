@@ -63,3 +63,8 @@ void VSTPlugin::unloadLibrary()
 		soHandle = nullptr;
 	}
 }
+
+bool VSTPlugin::vstLoaded()
+{
+	return (soHandle != nullptr);
+}
