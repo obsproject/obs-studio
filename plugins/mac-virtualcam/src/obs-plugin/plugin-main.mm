@@ -552,10 +552,5 @@ bool obs_module_load(void)
 {
     obs_register_output(&virtualcam_output_info);
 
-    obs_data_t *obs_settings = obs_data_create();
-    obs_data_set_bool(obs_settings, "vcamEnabled", true);
-    obs_apply_private_data(obs_settings);
-    obs_data_release(obs_settings);
-
     return true;
 }
