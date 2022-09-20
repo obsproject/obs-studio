@@ -1596,25 +1596,6 @@
       </widget>
      </item>
      <item>
-      <widget class="QPushButton" name="exitButton">
-       <property name="sizePolicy">
-        <sizepolicy hsizetype="Ignored" vsizetype="Fixed">
-         <horstretch>0</horstretch>
-         <verstretch>0</verstretch>
-        </sizepolicy>
-       </property>
-       <property name="minimumSize">
-        <size>
-         <width>150</width>
-         <height>0</height>
-        </size>
-       </property>
-       <property name="text">
-        <string>Exit</string>
-       </property>
-      </widget>
-     </item>
-     <item>
       <spacer name="expVSpacer">
        <property name="orientation">
         <enum>Qt::Vertical</enum>
@@ -2399,22 +2380,6 @@
     <hint type="destinationlabel">
      <x>463</x>
      <y>351</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>exitButton</sender>
-   <signal>clicked()</signal>
-   <receiver>OBSBasic</receiver>
-   <slot>close()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>976</x>
-     <y>601</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>862</x>
-     <y>-11</y>
     </hint>
    </hints>
   </connection>
