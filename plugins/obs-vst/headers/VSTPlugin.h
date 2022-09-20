@@ -98,6 +98,7 @@ public:
 	void getSourceNames();
 	obs_audio_data *process(struct obs_audio_data *audio);
 	bool openInterfaceWhenActive = false;
+	bool vstLoaded();
 
 	bool isEditorOpen();
 	void onEditorClosed();

@@ -87,3 +87,8 @@ void VSTPlugin::unloadLibrary()
 		bundle = NULL;
 	}
 }
+
+bool VSTPlugin::vstLoaded()
+{
+	return (bundle != NULL);
+}
