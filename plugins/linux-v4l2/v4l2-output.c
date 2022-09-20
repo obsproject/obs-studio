@@ -20,7 +20,7 @@ struct virtualcam_data {
 static const char *virtualcam_name(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "Virtual Camera Output";
+	return "V4L2 Virtual Camera Output";
 }
 
 static void virtualcam_destroy(void *data)
@@ -98,7 +98,7 @@ bool loopback_module_available()
 static int loopback_module_load()
 {
 	return run_command(
-		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera' && sleep 0.5");
+		"pkexec modprobe v4l2loopback exclusive_caps=1 card_label='OBS Virtual Camera (V4L2)' && sleep 0.5");
 }
 
 static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
@@ -172,7 +172,7 @@ static bool try_connect(void *data, const char *device)
 		goto fail_close_device;
 	}
 
-	blog(LOG_INFO, "Virtual camera started");
+	blog(LOG_INFO, "V4L2 Virtual camera started");
 	obs_output_begin_data_capture2(vcam->output);
 
 	return true;
@@ -231,7 +231,7 @@ static bool virtualcam_start(void *data)
 	free(list);
 
 	if (!success)
-		blog(LOG_WARNING, "Failed to start virtual camera");
+		blog(LOG_WARNING, "Failed to start V4L2 virtual camera");
 
 	return success;
 }
@@ -251,7 +251,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 	}
 
 	close(vcam->device);
-	blog(LOG_INFO, "Virtual camera stopped");
+	blog(LOG_INFO, "V4L2 Virtual camera stopped");
 
 	UNUSED_PARAMETER(ts);
 }
