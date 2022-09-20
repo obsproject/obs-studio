@@ -270,7 +270,7 @@ static void virtual_video(void *param, struct video_data *frame)
 }
 
 struct obs_output_info virtualcam_info = {
-	.id = "virtualcam_output",
+	.id = "v4l2_output",
 	.flags = OBS_OUTPUT_VIDEO,
 	.get_name = virtualcam_name,
 	.create = virtualcam_create,
