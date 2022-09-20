@@ -168,9 +168,38 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 	QMetaObject::invokeMethod(output->main, "OnVirtualCamStop",
 				  Q_ARG(int, code));
 
-	obs_output_set_media(output->virtualCam, nullptr, nullptr);
+	for (size_t i = 0; i < output->virtualCams.size(); i++)
+		obs_output_set_media(output->virtualCams[i], nullptr, nullptr);
+
 	output->DestroyVirtualCamView();
 }
+
+#ifdef DEPRECATED_VCAM_ID
+static void OBSStartDeprecatedVCam(void *data, calldata_t *params)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+
+	if (obs_output_start(output->virtualCams.back()))
+		return;
+
+	blog(LOG_ERROR, "The main virtual camera failed to start"
+			", only the deprecated one is working.");
+
+	signal_handler_t *signal =
+		obs_output_get_signal_handler(output->virtualCams.front());
+	output->stopVirtualCams.front().Connect(signal, "stop",
+						OBSStopVirtualCam, output);
+
+	OBSStartVirtualCam(data, params);
+}
+
+static void OBSStopDeprecatedVCam(void *data, calldata_t *)
+{
+	BasicOutputHandler *output = static_cast<BasicOutputHandler *>(data);
+
+	obs_output_stop(output->virtualCams.back());
+}
+#endif
 
 /* ------------------------------------------------------------------------ */
 
@@ -286,12 +315,36 @@ inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 	if (!main->vcamEnabled)
 		return;
 
-	virtualCam = obs_output_create(VIRTUAL_CAM_ID, "virtualcam_output",
-				       nullptr, nullptr);
+#ifdef DEPRECATED_VCAM_ID
+	if (obs_get_output_flags(DEPRECATED_VCAM_ID) != 0)
+		virtualCams.push_back(obs_output_create(
+			DEPRECATED_VCAM_ID, "deprecated_vcam_output", nullptr,
+			nullptr));
+#endif
 
-	signal_handler_t *signal = obs_output_get_signal_handler(virtualCam);
-	startVirtualCam.Connect(signal, "start", OBSStartVirtualCam, this);
-	stopVirtualCam.Connect(signal, "stop", OBSStopVirtualCam, this);
+	if (obs_get_output_flags(VIRTUAL_CAM_ID) != 0)
+		virtualCams.push_back(obs_output_create(
+			VIRTUAL_CAM_ID, "virtualcam_output", nullptr, nullptr));
+
+#ifdef DEPRECATED_VCAM_ID
+	if (virtualCams.size() == 2) {
+		signal_handler_t *signal =
+			obs_output_get_signal_handler(virtualCams.front());
+		/* add signal to start the main camera once the deprecated is started */
+		startVirtualCams.push_back(OBSSignal(
+			signal, "start", OBSStartDeprecatedVCam, this));
+		/* add signals to stop the main camera once the deprecated is stopped */
+		stopVirtualCams.push_back(
+			OBSSignal(signal, "stop", OBSStopDeprecatedVCam, this));
+	}
+#endif
+
+	signal_handler_t *signal =
+		obs_output_get_signal_handler(virtualCams.back());
+	startVirtualCams.push_back(
+		OBSSignal(signal, "start", OBSStartVirtualCam, this));
+	stopVirtualCams.push_back(
+		OBSSignal(signal, "stop", OBSStopVirtualCam, this));
 }
 
 bool BasicOutputHandler::StartVirtualCam()
@@ -315,15 +368,19 @@ bool BasicOutputHandler::StartVirtualCam()
 			return false;
 	}
 
-	obs_output_set_media(virtualCam, virtualCamVideo, obs_get_audio());
+	for (size_t i = 0; i < virtualCams.size(); i++)
+		obs_output_set_media(virtualCams[i], virtualCamVideo,
+				     obs_get_audio());
+
 	if (!Active())
 		SetupOutputs();
 
-	bool success = obs_output_start(virtualCam);
+	bool success = obs_output_start(virtualCams.front());
 	if (!success) {
 		QString errorReason;
 
-		const char *error = obs_output_get_last_error(virtualCam);
+		const char *error =
+			obs_output_get_last_error(virtualCams.front());
 		if (error) {
 			errorReason = QT_UTF8(error);
 		} else {
@@ -342,17 +399,22 @@ bool BasicOutputHandler::StartVirtualCam()
 
 void BasicOutputHandler::StopVirtualCam()
 {
-	if (main->vcamEnabled) {
-		obs_output_stop(virtualCam);
-	}
+	if (!main->vcamEnabled)
+		return;
+
+	obs_output_stop(virtualCams.front());
 }
 
 bool BasicOutputHandler::VirtualCamActive() const
 {
-	if (main->vcamEnabled) {
-		return obs_output_active(virtualCam);
-	}
-	return false;
+	if (!main->vcamEnabled)
+		return false;
+
+	bool active = false;
+	for (size_t i = 0; i < virtualCams.size(); i++)
+		active |= obs_output_active(virtualCams[i]);
+
+	return active;
 }
 
 void BasicOutputHandler::UpdateVirtualCamOutputSource()

@@ -591,7 +591,8 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	obs_output_t *obs_frontend_get_virtualcam_output(void) override
 	{
-		OBSOutput output = main->outputHandler->virtualCam.Get();
+		OBSOutput output =
+			main->outputHandler->virtualCams.back().Get();
 		return obs_output_get_ref(output);
 	}
 

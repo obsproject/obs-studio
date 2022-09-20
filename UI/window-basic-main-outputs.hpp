@@ -1,6 +1,8 @@
 #pragma once
 
 #include <string>
+#include <vector>
+#include <memory>
 
 class OBSBasic;
 
@@ -8,7 +10,7 @@ struct BasicOutputHandler {
 	OBSOutputAutoRelease fileOutput;
 	OBSOutputAutoRelease streamOutput;
 	OBSOutputAutoRelease replayBuffer;
-	OBSOutputAutoRelease virtualCam;
+	std::vector<OBSOutputAutoRelease> virtualCams;
 	bool streamingActive = false;
 	bool recordingActive = false;
 	bool delayActive = false;
@@ -32,8 +34,8 @@ struct BasicOutputHandler {
 	OBSSignal stopReplayBuffer;
 	OBSSignal startStreaming;
 	OBSSignal stopStreaming;
-	OBSSignal startVirtualCam;
-	OBSSignal stopVirtualCam;
+	std::vector<OBSSignal> startVirtualCams;
+	std::vector<OBSSignal> stopVirtualCams;
 	OBSSignal streamDelayStarting;
 	OBSSignal streamStopping;
 	OBSSignal recordStopping;
