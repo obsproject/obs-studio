@@ -285,7 +285,6 @@ static void fill_out_plugins(obs_property_t *list)
 
 static obs_properties_t *vst_properties(void *data)
 {
-	VSTPlugin *vstPlugin = (VSTPlugin *)data;
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *list = obs_properties_add_list(props, "plugin_path",
 						       PLUG_IN_NAME,
@@ -299,13 +298,20 @@ static obs_properties_t *vst_properties(void *data)
 	obs_properties_add_button(props, CLOSE_VST_SETTINGS, CLOSE_VST_TEXT,
 				  close_editor_button_clicked);
 
-	if (vstPlugin->isEditorOpen()) {
-		obs_property_set_visible(
-			obs_properties_get(props, OPEN_VST_SETTINGS), false);
-	} else {
-		obs_property_set_visible(
-			obs_properties_get(props, CLOSE_VST_SETTINGS), false);
+	bool open_settings_vis = true;
+	bool close_settings_vis = false;
+	if (data) {
+		VSTPlugin *vstPlugin = (VSTPlugin *)data;
+		if (vstPlugin->isEditorOpen()) {
+			close_settings_vis = true;
+			open_settings_vis = false;
+		}
 	}
+
+	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
+				 open_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
+				 close_settings_vis);
 
 	obs_properties_add_bool(props, OPEN_WHEN_ACTIVE_VST_SETTINGS,
 				OPEN_WHEN_ACTIVE_VST_TEXT);
