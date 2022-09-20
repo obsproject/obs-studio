@@ -5,7 +5,7 @@
 #include "audio-encoders.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
-#include "window-basic-vcam-config.hpp"
+#include "window-basic-vcam.hpp"
 
 using namespace std;
 
@@ -289,9 +289,8 @@ static const char *GetStreamOutputType(const obs_service_t *service)
 inline BasicOutputHandler::BasicOutputHandler(OBSBasic *main_) : main(main_)
 {
 	if (main->vcamEnabled) {
-		virtualCam = obs_output_create("virtualcam_output",
-					       "virtualcam_output", nullptr,
-					       nullptr);
+		virtualCam = obs_output_create(
+			VIRTUAL_CAM_ID, "virtualcam_output", nullptr, nullptr);
 
 		signal_handler_t *signal =
 			obs_output_get_signal_handler(virtualCam);
