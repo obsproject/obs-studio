@@ -78,29 +78,10 @@ void OBSBasicSettings::InitStreamPage()
 	ui->twitchAddonDropdown->addItem(
 		QTStr("Basic.Settings.Stream.TTVAddon.Both"));
 
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServerList()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateKeyLink()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateVodTrackSetting()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateServiceRecommendations()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateResFPSLimits()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateKeyLink()));
 	connect(ui->ignoreRecommended, SIGNAL(clicked(bool)), this,
 		SLOT(DisplayEnforceWarning(bool)));
 	connect(ui->ignoreRecommended, SIGNAL(toggled(bool)), this,
 		SLOT(UpdateResFPSLimits()));
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateMoreInfoLink()));
-
-	connect(ui->service, SIGNAL(currentIndexChanged(int)), this,
-		SLOT(UpdateAdvNetworkGroup()));
-	connect(ui->customServer, SIGNAL(textChanged(const QString &)), this,
-		SLOT(UpdateAdvNetworkGroup()));
 }
 
 void OBSBasicSettings::LoadStream1Settings()
@@ -458,13 +439,37 @@ void OBSBasicSettings::UseStreamKeyAdvClicked()
 	ui->streamKeyWidget->setVisible(true);
 }
 
-void OBSBasicSettings::on_service_currentIndexChanged(int)
+void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 {
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
-	if (showMore)
+	if (ui->service->currentData().toInt() == (int)ListOpt::ShowAll) {
+		LoadServices(true);
+		ui->service->showPopup();
 		return;
+	}
 
+	ServiceChanged();
+
+	UpdateMoreInfoLink();
+	UpdateServerList();
+	UpdateKeyLink();
+	UpdateServiceRecommendations();
+
+	UpdateVodTrackSetting();
+	UpdateAdvNetworkGroup();
+
+	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits())
+		lastServiceIdx = idx;
+}
+
+void OBSBasicSettings::on_customServer_textChanged(const QString &)
+{
+	UpdateKeyLink();
+
+	UpdateAdvNetworkGroup();
+}
+
+void OBSBasicSettings::ServiceChanged()
+{
 	std::string service = QT_TO_UTF8(ui->service->currentText());
 	bool custom = IsCustomService();
 
@@ -518,16 +523,8 @@ void OBSBasicSettings::on_service_currentIndexChanged(int)
 void OBSBasicSettings::UpdateServerList()
 {
 	QString serviceName = ui->service->currentText();
-	bool showMore = ui->service->currentData().toInt() ==
-			(int)ListOpt::ShowAll;
 
-	if (showMore) {
-		LoadServices(true);
-		ui->service->showPopup();
-		return;
-	} else {
-		lastService = serviceName;
-	}
+	lastService = serviceName;
 
 	obs_properties_t *props = obs_get_service_properties("rtmp_common");
 	obs_property_t *services = obs_properties_get(props, "service");
@@ -985,17 +982,14 @@ extern void set_closest_res(int &cx, int &cy,
  * which as of this writing, and hopefully for the foreseeable future, there is
  * only one.
  */
-void OBSBasicSettings::UpdateResFPSLimits()
+bool OBSBasicSettings::UpdateResFPSLimits()
 {
 	if (loading)
-		return;
-
-	if (!ServiceSupportsCodecCheck())
-		return;
+		return false;
 
 	int idx = ui->service->currentIndex();
 	if (idx == -1)
-		return;
+		return false;
 
 	bool ignoreRecommended = ui->ignoreRecommended->isChecked();
 	BPtr<obs_service_resolution> res_list;
@@ -1073,8 +1067,7 @@ void OBSBasicSettings::UpdateResFPSLimits()
 			ui->ignoreRecommended->setProperty("changed", true);
 			stream1Changed = true;
 			EnableApplyButton(true);
-			UpdateResFPSLimits();
-			return;
+			return UpdateResFPSLimits();
 		}
 
 		QMessageBox::StandardButton button;
@@ -1106,7 +1099,7 @@ void OBSBasicSettings::UpdateResFPSLimits()
 							  "setChecked",
 							  Qt::QueuedConnection,
 							  Q_ARG(bool, true));
-			return;
+			return false;
 		}
 	}
 
@@ -1187,7 +1180,8 @@ void OBSBasicSettings::UpdateResFPSLimits()
 	/* ------------------------------------ */
 
 	lastIgnoreRecommended = (int)ignoreRecommended;
-	lastServiceIdx = idx;
+
+	return true;
 }
 
 bool OBSBasicSettings::IsServiceOutputHasNetworkFeatures()
@@ -1287,6 +1281,9 @@ static QString get_simple_fallback(const QString &enc)
 
 bool OBSBasicSettings::ServiceSupportsCodecCheck()
 {
+	if (loading)
+		return false;
+
 	if (ServiceAndCodecCompatible()) {
 		if (lastServiceIdx != ui->service->currentIndex())
 			ResetEncoders(true);

@@ -263,14 +263,18 @@ private:
 	QString lastService;
 	int prevLangIndex;
 	bool prevBrowserAccel;
-private slots:
+
+	void ServiceChanged();
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();
 	void UpdateServiceRecommendations();
-	void RecreateOutputResolutionWidget();
-	void UpdateResFPSLimits();
 	void UpdateMoreInfoLink();
+	void UpdateAdvNetworkGroup();
+
+private slots:
+	void RecreateOutputResolutionWidget();
+	bool UpdateResFPSLimits();
 	void DisplayEnforceWarning(bool checked);
 	void on_show_clicked();
 	void on_authPwShow_clicked();
@@ -382,6 +386,7 @@ private slots:
 	void on_buttonBox_clicked(QAbstractButton *button);
 
 	void on_service_currentIndexChanged(int idx);
+	void on_customServer_textChanged(const QString &text);
 	void on_simpleOutputBrowse_clicked();
 	void on_advOutRecPathBrowse_clicked();
 	void on_advOutFFPathBrowse_clicked();
@@ -434,8 +439,6 @@ private slots:
 	void AdvancedChangedRestart();
 
 	void UpdateStreamDelayEstimate();
-
-	void UpdateAdvNetworkGroup();
 
 	void UpdateAutomaticReplayBufferCheckboxes();
 
