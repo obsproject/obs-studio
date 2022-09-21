@@ -272,13 +272,13 @@ OBSBasicSettings #PropertiesContainer {
 }
 
 /* Dock Widget */
-OBSDock > QWidget {
+QDockWidget > QWidget {
     background: palette(dark);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
 }
 
-OBSDock QFrame {
+QDockWidget QFrame {
     background: palette(dark);
     border-bottom-left-radius: 4px;
     border-bottom-right-radius: 4px;
@@ -289,12 +289,12 @@ OBSDock QFrame {
     padding: 4px 6px;
 }
 
-OBSDock QLabel {
+QDockWidget QLabel {
     background: transparent;
 }
 
-OBSDock QComboBox,
-OBSDock QPushButton {
+QDockWidget QComboBox,
+QDockWidget QPushButton {
     margin: 1px 2px;
 }
 
