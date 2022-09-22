@@ -196,14 +196,14 @@ static uint32_t scs_getwidth(void *data)
 {
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
-	return ovi.base_width;
+	return ovi.canvases[0].base_width;
 }
 
 static uint32_t scs_getheight(void *data)
 {
 	struct obs_video_info ovi;
 	obs_get_video_info(&ovi);
-	return ovi.base_height;
+	return ovi.canvases[0].base_height;
 }
 
 static void scs_show(void *data) {}
@@ -238,13 +238,13 @@ static void scs_render_source(struct obs_source * source)
 	float source_height = (float)obs_source_get_height(source);
 	float source_width = (float)obs_source_get_width(source);
 
-	float scale_y = (float)ovi.base_height/source_height;
-	float scale_x = (float)ovi.base_width/source_width;
+	float scale_y = (float)ovi.canvases[0].base_height/source_height;
+	float scale_x = (float)ovi.canvases[0].base_width/source_width;
 	scale_x = min(scale_x, scale_y);
 	scale_y = min(scale_x, scale_y);
 
-	float translate_x = ((float)ovi.base_width - source_width*scale_x)/2.0f;
-	float translate_y = ((float)ovi.base_height - source_height*scale_y)/2.0f;
+	float translate_x = ((float)ovi.canvases[0].base_width - source_width*scale_x)/2.0f;
+	float translate_y = ((float)ovi.canvases[0].base_height - source_height*scale_y)/2.0f;
 
 	gs_matrix_push();
 	gs_matrix_translate3f(translate_x, translate_y, 0.0f);

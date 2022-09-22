@@ -79,8 +79,8 @@ static void scale_filter_update(void *data, obs_data_t *settings)
 		obs_get_video_info(&ovi);
 		filter->aspect_ratio_only = false;
 		filter->base_canvas_resolution = true;
-		filter->cx_in = ovi.base_width;
-		filter->cy_in = ovi.base_height;
+		filter->cx_in = ovi.canvases[0].base_width;
+		filter->cy_in = ovi.canvases[0].base_height;
 	} else {
 		ret = sscanf(res_str, "%dx%d", &filter->cx_in, &filter->cy_in);
 		if (ret == 2) {
@@ -156,8 +156,8 @@ static void scale_filter_tick(void *data, float seconds)
 	if (filter->base_canvas_resolution) {
 		struct obs_video_info ovi;
 		obs_get_video_info(&ovi);
-		filter->cx_in = ovi.base_width;
-		filter->cy_in = ovi.base_height;
+		filter->cx_in = ovi.canvases[0].base_width;
+		filter->cy_in = ovi.canvases[0].base_height;
 	}
 
 	target = obs_filter_get_target(filter->context);
@@ -507,8 +507,8 @@ static obs_properties_t *scale_filter_properties(void *data)
 	/* ----------------- */
 
 	obs_get_video_info(&ovi);
-	cx = ovi.base_width;
-	cy = ovi.base_height;
+	cx = ovi.canvases[0].base_width;
+	cy = ovi.canvases[0].base_height;
 
 	for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
 		downscales[i].cx = (int)((double)cx / downscale_vals[i]);

@@ -51,6 +51,7 @@ struct obs_service;
 struct obs_module;
 struct obs_fader;
 struct obs_volmeter;
+struct obs_core_video_mix;
 
 typedef struct obs_context_data obs_object_t;
 typedef struct obs_display obs_display_t;
@@ -64,6 +65,7 @@ typedef struct obs_service obs_service_t;
 typedef struct obs_module obs_module_t;
 typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
+typedef struct obs_core_video_mix obs_core_video_mix_t;
 
 typedef struct obs_weak_object obs_weak_object_t;
 typedef struct obs_weak_source obs_weak_source_t;
@@ -185,6 +187,14 @@ struct obs_transform_info {
 /**
  * Video initialization structure
  */
+struct canvas_info {
+	uint32_t base_width;  /**< Base compositing width */
+	uint32_t base_height; /**< Base compositing height */
+
+	uint32_t output_width;  /**< Output width */
+	uint32_t output_height; /**< Output height */
+};
+#define NUM_CANVASES 3
 struct obs_video_info {
 #ifndef SWIG
 	/**
@@ -196,11 +206,8 @@ struct obs_video_info {
 	uint32_t fps_num; /**< Output FPS numerator */
 	uint32_t fps_den; /**< Output FPS denominator */
 
-	uint32_t base_width;  /**< Base compositing width */
-	uint32_t base_height; /**< Base compositing height */
+	struct canvas_info canvases[NUM_CANVASES];
 
-	uint32_t output_width;           /**< Output width */
-	uint32_t output_height;          /**< Output height */
 	enum video_format output_format; /**< Output format */
 
 	/** Video adapter index to use (NOTE: avoid for optimus laptops) */
@@ -435,7 +442,7 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               OBS_VIDEO_FAIL for generic failure
  */
 EXPORT int obs_reset_video(struct obs_video_info *ovi);
-
+  
 /**
  * Sets base audio output format/channels/samples/etc
  *
@@ -446,6 +453,7 @@ EXPORT bool obs_reset_audio2(const struct obs_audio_info2 *oai);
 
 /** Gets the current video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
+EXPORT bool obs_get_canvas_info(int canvas_id, struct canvas_info *canvas);
 
 /** Gets the SDR white level, returns 300.f if no video */
 EXPORT float obs_get_video_sdr_white_level(void);
@@ -776,14 +784,12 @@ EXPORT void obs_render_main_view(void);
 /** Renders the last main output texture */
 EXPORT void obs_render_main_texture(void);
 
-/** Renders the last main output texture ignoring background color */
+/** Renders the output texture for a specific output*/
+EXPORT void obs_render_texture(int canvas_id,
+			       enum obs_video_rendering_mode mode);
+
+	/** Renders the last main output texture ignoring background color */
 EXPORT void obs_render_main_texture_src_color_only(void);
-
-/** Renders the last streaming output texture */
-EXPORT void obs_render_streaming_texture(void);
-
-/** Renders the last recording output texture */
-EXPORT void obs_render_recording_texture(void);
 
 /** Returns the last main output texture.  This can return NULL if the texture
  * is unavailable. */
@@ -972,13 +978,13 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel);
 EXPORT void obs_view_render(obs_view_t *view);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_view_add(obs_view_t *view);
+EXPORT video_t *obs_view_add(obs_view_t *view, int canvas_id);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_stream_view_add(obs_view_t *view);
+EXPORT video_t *obs_stream_view_add(obs_view_t *view, int canvas_id);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_record_view_add(obs_view_t *view);
+EXPORT video_t *obs_record_view_add(obs_view_t *view, int canvas_id);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
@@ -2165,7 +2171,8 @@ EXPORT proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output);
  * Sets the current audio/video media contexts associated with this output,
  * required for non-encoded outputs.  Can be null.
  */
-EXPORT void obs_output_set_media(obs_output_t *output, video_t *video,
+EXPORT void obs_output_set_media(obs_output_t *output,
+				 obs_core_video_mix_t *mix,
 				 audio_t *audio);
 
 /** Returns the video media context associated with this output */
@@ -2379,7 +2386,10 @@ EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode);
+				      struct obs_core_video_mix *video);
+
+EXPORT obs_core_video_mix_t* obs_video_mix_get(int canvas_id,
+					       enum obs_video_rendering_mode mode);
 
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
@@ -2540,9 +2550,6 @@ EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
 						obs_service_t *service);
 
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
-
-EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode);
 
 /** Gets the default settings for a service */
 EXPORT obs_data_t *obs_service_defaults(const char *id);

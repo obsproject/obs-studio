@@ -801,8 +801,8 @@ static int get_bitrate_matrix_max(json_t *array)
 		if (c != 2)
 			continue;
 
-		if ((int)ovi.output_width == cx &&
-		    (int)ovi.output_height == cy && cur_fps <= fps)
+		if ((int)ovi.canvases[0].output_width == cx &&
+		    (int)ovi.canvases[0].output_height == cy && cur_fps <= fps)
 			return bitrate;
 	}
 

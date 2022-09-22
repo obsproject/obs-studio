@@ -255,7 +255,7 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
-	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
+	context->time_base =(AVRational){data->config.fps_den, data->config.fps_num};
 	context->gop_size = data->config.gop_size;
 	context->pix_fmt = closest_format;
 	context->color_range = data->config.color_range;
@@ -1181,6 +1181,9 @@ static bool try_connect(struct ffmpeg_output *output)
 		config.scale_width = config.width;
 	if (!config.scale_height)
 		config.scale_height = config.height;
+
+	config.fps_den = voi->fps_den;
+	config.fps_num = voi->fps_num;
 
 	success = ffmpeg_data_init(&output->ff_data, &config);
 	obs_data_release(settings);

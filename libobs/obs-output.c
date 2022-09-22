@@ -754,12 +754,22 @@ proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output)
 		       : NULL;
 }
 
-void obs_output_set_media(obs_output_t *output, video_t *video, audio_t *audio)
+void obs_output_set_media(obs_output_t *output, obs_core_video_mix_t *mix, audio_t *audio)
 {
 	if (!obs_output_valid(output, "obs_output_set_media"))
 		return;
 
-	output->video = video;
+	output->video = mix->video;
+	output->audio = audio;
+}
+
+void obs_output_set_video_mix(obs_output_t *output, obs_core_video_mix_t *mix,
+			      audio_t *audio)
+{
+	if (!obs_output_valid(output, "obs_output_set_media"))
+		return;
+
+	output->video = mix->video;
 	output->audio = audio;
 }
 

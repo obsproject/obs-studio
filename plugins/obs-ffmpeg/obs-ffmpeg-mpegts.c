@@ -190,7 +190,7 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	context->height = data->config.scale_height;
 	context->coded_width = data->config.scale_width;
 	context->coded_height = data->config.scale_height;
-	context->time_base = (AVRational){ovi.fps_den, ovi.fps_num};
+	context->time_base = (AVRational){data->config.fps_den, data->config.fps_num};
 	context->gop_size = data->config.gop_size;
 	context->pix_fmt = data->config.format;
 	context->color_range = data->config.color_range;
@@ -892,6 +892,8 @@ static bool set_config(struct ffmpeg_output *stream)
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	config.gop_size = keyint_sec ? keyint_sec * voi->fps_num / voi->fps_den
 				     : 250;
+	config.fps_den = voi->fps_den;
+	config.fps_num = voi->fps_num;
 	obs_data_release(settings);
 
 	/* 3. Audio settings */

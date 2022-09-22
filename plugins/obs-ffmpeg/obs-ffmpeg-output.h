@@ -36,6 +36,8 @@ struct ffmpeg_cfg {
 	int scale_height;
 	int width;
 	int height;
+	uint32_t fps_num;
+	uint32_t fps_den;
 	int frame_size; // audio frame size
 };
 

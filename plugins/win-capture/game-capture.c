@@ -634,8 +634,9 @@ static void load_placeholder_image(struct game_capture *gc)
 	struct obs_video_info ovi;	
 	obs_get_video_info(&ovi);
 
-	gc->placeholder_text_height = ovi.base_height/fraction_of_image_for_text;
-	gc->placeholder_text_width = ovi.base_width;
+	gc->placeholder_text_height =
+		ovi.canvases[0].base_height / fraction_of_image_for_text;
+	gc->placeholder_text_width = ovi.canvases[0].base_width;
 
 	BITMAPINFOHEADER bmphdr = { 0 };
 	bmphdr.biSize = sizeof(BITMAPINFOHEADER);
@@ -2261,7 +2262,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 				for (size_t i = 0; i < passes; i++) {
 					gs_technique_begin_pass(tech, i);
 					gs_draw_sprite(gc->placeholder_image.image.texture, 
-							0, ovi.base_width, ovi.base_height);
+						0, ovi.canvases[0].base_width, ovi.canvases[0].base_height);
 					gs_technique_end_pass(tech);
 				}
 				gs_technique_end(tech);
@@ -2269,13 +2270,19 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 				if (gc->placeholder_text_texture) {
 					effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
 					tech = gs_effect_get_technique(effect, "Draw");
-					float scale = gc->placeholder_text_width / (float)ovi.base_width;
+					float scale =
+						gc->placeholder_text_width /
+						(float)ovi.canvases[0].base_width;
 
 					gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), 
 								gc->placeholder_text_texture);
 
 					gs_matrix_push();
-					gs_matrix_translate3f(0.0f, (ovi.base_height - gc->placeholder_text_height/scale)/2.05f, 0.0f);
+					gs_matrix_translate3f(
+						0.0f,
+						(ovi.canvases[0].base_height -
+						 gc->placeholder_text_height / scale) / 2.05f,
+						0.0f);
 
 					size_t passes = gs_technique_begin(tech);
 					for (size_t i = 0; i < passes; i++) {
@@ -2303,8 +2310,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
 		struct obs_video_info ovi;	
 		obs_get_video_info(&ovi);
-		float cx_scale = ovi.base_width/(float)gc->cx;
-		float cy_scale = ovi.base_height/(float)gc->cy;
+		float cx_scale = ovi.canvases[0].base_width / (float)gc->cx;
+		float cy_scale = ovi.canvases[0].base_height / (float)gc->cy;
 		gs_matrix_push();
 		gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
 	}
@@ -2552,7 +2559,7 @@ static uint32_t game_capture_width(void *data)
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
 		obs_get_video_info(&ovi);
-		return ovi.base_width;
+		return ovi.canvases[0].base_width;
 	} else 
 		return gc->active ? gc->cx : 0;
 }
@@ -2563,7 +2570,7 @@ static uint32_t game_capture_height(void *data)
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
 		obs_get_video_info(&ovi);
-		return ovi.base_height;
+		return ovi.canvases[0].base_height;
 	} else 
 		return gc->active ? gc->cy : 0;
 }

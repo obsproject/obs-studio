@@ -466,7 +466,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 		encoder->context.data = encoder->orig_info.create(
 			encoder->context.settings, encoder);
 		can_reroute = false;
-		encoder->video = obs->video.main_mix;
+		if(!encoder->video)
+			encoder->video = obs->video.main_mix;
 	}
 	if (!encoder->context.data)
 		return false;
@@ -1547,27 +1548,11 @@ void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
 }
 
 void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode)
+			       struct obs_core_video_mix *video)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_video_mix"))
 		return;
 
-	switch(mode) {
-		case OBS_MAIN_VIDEO_RENDERING: {
-			encoder->video = obs->video.main_mix;
-			break;
-		}
-		case OBS_STREAMING_VIDEO_RENDERING: {
-			encoder->video = obs->video.stream_mix;
-			break;
-		}
-		case OBS_RECORDING_VIDEO_RENDERING: {
-			encoder->video = obs->video.record_mix;
-			break;
-		}
-		default: {
-			encoder->video = obs->video.main_mix;
-			break;
-		}
-	}
+	encoder->video = video;
+	obs_encoder_set_video(encoder, video->video);
 }

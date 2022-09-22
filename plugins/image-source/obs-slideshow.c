@@ -872,9 +872,9 @@ static obs_properties_t *ss_properties(void *data)
 
 	/* ----------------- */
 
-	obs_get_video_info(&ovi);
-	cx = (int)ovi.base_width;
-	cy = (int)ovi.base_height;
+	//obs_get_video_info(&ovi);
+	cx = 1920; //(int)ovi.base_width;
+	cy = 1080; //(int)ovi.base_height;
 
 	/* ----------------- */
 
@@ -922,7 +922,7 @@ static obs_properties_t *ss_properties(void *data)
 	for (size_t i = 0; i < NUM_ASPECTS; i++)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
-	char str[32];
+    char str[32];
 	snprintf(str, 32, "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 

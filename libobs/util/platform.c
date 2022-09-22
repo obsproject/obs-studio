@@ -770,13 +770,14 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				replace_text(&sf, pos, 4, convert);
 
 			} else if (astrcmp_n(cmp, "%CRES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.base_width,
-					ovi.base_height);
+				sprintf(convert, "%ux%u", ovi.canvases[0].base_width,
+					ovi.canvases[0].base_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
-				sprintf(convert, "%ux%u", ovi.output_width,
-					ovi.output_height);
+				sprintf(convert, "%ux%u",
+					ovi.canvases[0].output_width,
+					ovi.canvases[0].output_height);
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%VF", 3) == 0) {
