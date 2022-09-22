@@ -1158,6 +1158,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 				    : 250;
 
 	set_avc_property(enc, IDR_PERIOD, gop_size);
+
+	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
+	if (repeat_headers)
+		set_avc_property(enc, HEADER_INSERTION_SPACING, gop_size);
+
 	set_avc_property(enc, DE_BLOCKING_FILTER, true);
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
