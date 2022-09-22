@@ -302,8 +302,8 @@ QDockWidget {
     font-size: 10.5pt;
     font-weight: bold;
 
-    titlebar-close-icon: url('./Dark/Close.svg');
-    titlebar-normal-icon: url('./Dark/Popout.svg');
+    titlebar-close-icon: url('./Dark/close.svg');
+    titlebar-normal-icon: url('./Dark/popout.svg');
 }
 
 QDockWidget::title {
