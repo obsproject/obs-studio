@@ -119,6 +119,7 @@ struct noise_suppress_data {
 	char *model;
 	bool nvafx_initialized;
 	const char *fx;
+	char *sdk_path;
 
 	/* Resampler */
 	audio_resampler_t *nvafx_resampler;
@@ -217,6 +218,7 @@ static void noise_suppress_destroy(void *data)
 		audio_resampler_destroy(ng->nvafx_resampler_back);
 	}
 	bfree(ng->model);
+	bfree(ng->sdk_path);
 	bfree((void *)ng->fx);
 	if (ng->nvafx_enabled) {
 		if (ng->use_nvafx)
@@ -425,7 +427,25 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 		return SPEAKERS_UNKNOWN;
 	}
 }
+#ifdef LIBNVAFX_ENABLED
+static void set_model(void *data, const char *method)
+{
+	struct noise_suppress_data *ng = data;
+	const char *file;
+	if (strcmp(NVAFX_EFFECT_DEREVERB, method) == 0)
+		file = NVAFX_EFFECT_DEREVERB_MODEL;
+	else if (strcmp(NVAFX_EFFECT_DEREVERB_DENOISER, method) == 0)
+		file = NVAFX_EFFECT_DEREVERB_DENOISER_MODEL;
+	else
+		file = NVAFX_EFFECT_DENOISER_MODEL;
+	size_t size = strlen(ng->sdk_path) + strlen(file) + 1;
+	char *buffer = (char *)bmalloc(size);
 
+	strcpy(buffer, ng->sdk_path);
+	strcat(buffer, file);
+	ng->model = buffer;
+}
+#endif
 static void noise_suppress_update(void *data, obs_data_t *s)
 {
 	struct noise_suppress_data *ng = data;
@@ -444,6 +464,8 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 		strcmp(method, S_METHOD_NVAFX_DEREVERB) == 0 ||
 		strcmp(method, S_METHOD_NVAFX_DEREVERB_DENOISER) == 0;
 #ifdef LIBNVAFX_ENABLED
+	if (nvafx_requested)
+		set_model(ng, method);
 	float intensity = (float)obs_data_get_double(s, S_NVAFX_INTENSITY);
 	if (ng->use_nvafx && ng->nvafx_initialized) {
 		if (intensity != ng->intensity_ratio &&
@@ -469,6 +491,7 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 			bfree((void *)ng->fx);
 			ng->fx = bstrdup(method);
 			ng->intensity_ratio = intensity;
+			set_model(ng, method);
 			os_atomic_set_bool(&ng->reinit_done, false);
 			pthread_mutex_lock(&ng->nvafx_mutex);
 			for (int i = 0; i < (int)ng->channels; i++) {
@@ -736,13 +759,9 @@ static void *noise_suppress_create(obs_data_t *settings, obs_source_t *filter)
 		ng->nvafx_enabled = false;
 		do_log(LOG_ERROR, "NVAFX redist is not installed.");
 	} else {
-		const char *file = "\\models\\denoiser_48k.trtpkg";
-		size_t size = strlen(sdk_path) + strlen(file) + 1;
-		char *buffer = (char *)bmalloc(size);
-
-		strcpy(buffer, sdk_path);
-		strcat(buffer, file);
-		ng->model = buffer;
+		size_t size = sizeof(sdk_path) + 1;
+		ng->sdk_path = bmalloc(size);
+		strcpy(ng->sdk_path, sdk_path);
 		ng->nvafx_enabled = true;
 		ng->nvafx_initialized = false;
 		ng->nvafx_loading = false;
