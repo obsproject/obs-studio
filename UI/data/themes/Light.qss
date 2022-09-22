@@ -300,8 +300,8 @@ QDockWidget {
     font-size: 10.5pt;
     font-weight: bold;
 
-    titlebar-close-icon: url('./Light/Close.svg');
-    titlebar-normal-icon: url('./Light/Popout.svg');
+    titlebar-close-icon: url('./Light/close.svg');
+    titlebar-normal-icon: url('./Light/popout.svg');
 }
 
 QDockWidget::title {
