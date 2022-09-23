@@ -353,21 +353,6 @@
             }
         },
         {
-            "name": "Web.TV",
-            "servers": [
-                {
-                    "name": "Primary",
-                    "url": "rtmp://live3.origins.web.tv/liveext"
-                }
-            ],
-            "recommended": {
-                "keyint": 2,
-                "profile": "main",
-                "max video bitrate": 3500,
-                "max audio bitrate": 160
-            }
-        },
-        {
             "name": "GoodGame.ru",
             "servers": [
                 {
