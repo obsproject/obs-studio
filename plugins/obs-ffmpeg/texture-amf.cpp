@@ -964,7 +964,7 @@ static obs_properties_t *amf_properties_internal(bool hevc)
 	obs_property_set_modified_callback(p, rate_control_modified);
 
 	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
-				   50, 300000, 50);
+				   50, 100000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
