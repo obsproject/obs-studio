@@ -85,6 +85,23 @@ void media_playback_stop(media_playback_t *mp)
 		mp_media_stop(&mp->media);
 }
 
+void media_playback_set_looping(media_playback_t *mp, bool looping)
+{
+	if (mp->is_cached)
+		mp->cache.looping = looping;
+	else
+		mp->media.looping = looping;
+}
+
+void media_playback_set_is_linear_alpha(media_playback_t *mp,
+					bool is_linear_alpha)
+{
+	if (mp->is_cached)
+		mp->cache.m.is_linear_alpha = is_linear_alpha;
+	else
+		mp->media.is_linear_alpha = is_linear_alpha;
+}
+
 void media_playback_preload_frame(media_playback_t *mp)
 {
 	if (!mp)
