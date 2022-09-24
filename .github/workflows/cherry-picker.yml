@@ -1,0 +1,36 @@
+name: Cherry Picker
+
+on:
+  pull_request_target:
+    types: [closed]
+
+jobs:
+  cherry_picker:
+    name: Cherry Picker
+    runs-on: ubuntu-22.04
+    if: ${{ github.event.pull_request.merged == true }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install & Configure Python
+        run: |
+          sudo apt install python3.10
+          python3.10 -m pip install requests
+
+      - name: Setup git config
+        run: |
+          git config user.name "Service Checker"
+          git config user.email "commits@obsproject.com"
+
+      - name: Run picker
+        id: picker
+        run: python3.10 -u CI/cherry-picker.py
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          WORKFLOW_RUN_ID: ${{ github.run_id }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          REPOSITORY: ${{ github.repository }}
