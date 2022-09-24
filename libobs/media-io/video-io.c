@@ -297,7 +297,11 @@ static size_t video_get_input_idx(const video_t *video,
 
 static bool match_range(enum video_range_type a, enum video_range_type b)
 {
-	return (a == VIDEO_RANGE_FULL) == (b == VIDEO_RANGE_FULL);
+	//return (a == VIDEO_RANGE_FULL) == (b == VIDEO_RANGE_FULL);
+	/* TODO: Restore test when full NV12 to limited NV12 works */
+	UNUSED_PARAMETER(a);
+	UNUSED_PARAMETER(b);
+	return true;
 }
 
 static enum video_colorspace collapse_space(enum video_colorspace cs)
