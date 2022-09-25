@@ -98,7 +98,7 @@ endif()
 
 option(ENABLE_PVS "Enable PVS Analysis" OFF)
 if(ENABLE_PVS AND (OS_LINUX OR OS_WINDOWS))
-  include(PVS-Studio)
+  include("cmake/external/PVS-Studio.cmake")
   # On Windows just setting the C++ standard via CMake isn't enough for PVS, so
   # we'll have to manually specify the compiler options as well.
   if(OS_WINDOWS AND MSVC)
