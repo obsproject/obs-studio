@@ -129,9 +129,8 @@ jobs:
 
       - name: 'Setup PVS Studio'
         run: |
-          New-Item -Path ..\PVSTestResults -ItemType Directory
           Invoke-WebRequest -Uri https://files.pvs-studio.com/PVS-Studio_setup.exe -OutFile ..\PVS-Studio_setup.exe
-          Start-Process -FilePath ..\PVS-Studio_setup.exe -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /COMPONENTS=Core,Standalone" -Wait
+          Start-Process -FilePath ..\PVS-Studio_setup.exe -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /COMPONENTS=Core" -Wait
           &"C:\Program Files (x86)\PVS-Studio\PVS-Studio_Cmd.exe" credentials -u ${{ secrets.PVS_NAME }} -n ${{ secrets.PVS_KEY }}
 
       - name: 'Install dependencies'
