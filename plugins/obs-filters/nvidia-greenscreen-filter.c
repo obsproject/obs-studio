@@ -57,6 +57,7 @@ struct nv_greenscreen_data {
 	NvCVImage *dst_img;     // mask texture
 	NvCVImage *stage;       // planar stage img used for transfer to texture
 	unsigned int version;
+	NvVFX_StateObjectHandle stateObjectHandle;
 
 	/* alpha mask effect */
 	gs_effect_t *effect;
@@ -120,8 +121,13 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
 	if (filter->handle) {
+		if (filter->stateObjectHandle) {
+			NvVFX_DeallocateState(filter->handle,
+					      filter->stateObjectHandle);
+		}
 		NvVFX_DestroyEffect(filter->handle);
 	}
+
 	if (filter->effect) {
 		obs_enter_graphics();
 		gs_effect_destroy(filter->effect);
@@ -148,6 +154,10 @@ static void nv_greenscreen_filter_reset(void *data, calldata_t *calldata)
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
 	if (filter->handle) {
+		if (filter->stateObjectHandle) {
+			NvVFX_DeallocateState(filter->handle,
+					      filter->stateObjectHandle);
+		}
 		NvVFX_DestroyEffect(filter->handle);
 	}
 	// recreate
@@ -476,6 +486,29 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 			filter->effect, "multiplier");
 	}
 	obs_leave_graphics();
+
+	/* 4. Allocate state for the effect */
+	if (nvvfx_new_sdk) {
+		vfxErr = NvVFX_AllocateState(filter->handle,
+					     &filter->stateObjectHandle);
+		if (NVCV_SUCCESS != vfxErr) {
+			const char *errString =
+				NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error allocating FX state %i", vfxErr);
+			nv_greenscreen_filter_destroy(filter);
+			return NULL;
+		}
+		vfxErr = NvVFX_SetStateObjectHandleArray(
+			filter->handle, NVVFX_STATE,
+			&filter->stateObjectHandle);
+		if (NVCV_SUCCESS != vfxErr) {
+			const char *errString =
+				NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error setting FX state %i", vfxErr);
+			nv_greenscreen_filter_destroy(filter);
+			return NULL;
+		}
+	}
 
 	if (!filter->effect) {
 		nv_greenscreen_filter_destroy(filter);
@@ -856,6 +889,17 @@ bool load_nvvfx(void)
 		goto unload_everything;                                      \
 	}
 
+#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                    \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                   \
+		DWORD err = GetLastError();                                  \
+		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll \
+		       ": %lu (0x%lx)",                                      \
+		       err, err);                                            \
+		nvvfx_new_sdk = false;                                       \
+	} else {                                                             \
+		nvvfx_new_sdk = true;                                        \
+	}
+
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_videofx, "NVVideoEffects.dll")
 	LOAD_SYM(NvVFX_GetVersion);
 	LOAD_SYM(NvVFX_CreateEffect);
@@ -884,6 +928,7 @@ bool load_nvvfx(void)
 	LOAD_SYM(NvVFX_CudaStreamDestroy);
 	old_sdk_loaded = true;
 #undef LOAD_SYM
+
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cvimage, "NVCVImage.dll")
 	LOAD_SYM(NvCV_GetErrorStringFromCode);
 	LOAD_SYM(NvCVImage_Init);
@@ -911,6 +956,7 @@ bool load_nvvfx(void)
 	LOAD_SYM(NvCVImage_ToD3DColorSpace);
 	LOAD_SYM(NvCVImage_FromD3DColorSpace);
 #undef LOAD_SYM
+
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cudart, "cudart64_110.dll")
 	LOAD_SYM(cudaMalloc);
 	LOAD_SYM(cudaStreamSynchronize);
@@ -918,6 +964,18 @@ bool load_nvvfx(void)
 	LOAD_SYM(cudaMemcpy);
 	LOAD_SYM(cudaMemsetAsync);
 #undef LOAD_SYM
+
+#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
+	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
+	LOAD_SYM(NvVFX_AllocateState);
+	LOAD_SYM(NvVFX_DeallocateState);
+	LOAD_SYM(NvVFX_ResetState);
+	if (!nvvfx_new_sdk) {
+		blog(LOG_INFO,
+		     "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
+	}
+#undef LOAD_SYM
+
 	int err;
 	NvVFX_Handle h = NULL;
 
