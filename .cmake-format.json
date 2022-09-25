@@ -1,13 +1,46 @@
 {
     "additional_commands": {
-      "find_qt": {
-        "flags": [],
-        "kwargs": {
-          "COMPONENTS": "+",
-          "COMPONENTS_WIN": "+",
-          "COMPONENTS_MACOS": "+",
-          "COMPONENTS_LINUX": "+"
+        "find_qt": {
+            "flags": [],
+            "kwargs": {
+                "COMPONENTS": "+",
+                "COMPONENTS_LINUX": "+",
+                "COMPONENTS_MACOS": "+",
+                "COMPONENTS_WIN": "+"
+            }
+        },
+        "pvs_studio_add_target": {
+            "flags": [
+                "ALL",
+                "COMPILE_COMMANDS",
+                "HIDE_HELP",
+                "KEEP_COMBINED_PLOG",
+                "KEEP_INTERMEDIATE_FILES",
+                "OUTPUT",
+                "RECURSIVE"
+            ],
+            "kwargs": {
+                "ANALYZE": "*",
+                "ARGS": "*",
+                "BIN": "1",
+                "CFG_TEXT": "1",
+                "CONFIG": "1",
+                "CONVERTER": "1",
+                "CONVERTER_ARGS": "*",
+                "CONVERTER_ARGSSOURCES": "*",
+                "CXX_FLAGS": "*",
+                "C_FLAGS": "*",
+                "DEPENDS": "*",
+                "FORMAT": "1",
+                "LICENSE": "1",
+                "LOG": "1",
+                "MODE": "*",
+                "PLATFORM": "1",
+                "PREPROCESSOR": "1",
+                "SOURCES": "*",
+                "SUPPRESS_BASE": "1",
+                "TARGET": "1"
+            }
         }
-      }
     }
 }

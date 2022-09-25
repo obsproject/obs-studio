@@ -136,22 +136,13 @@ if(ENABLE_PVS AND (OS_LINUX OR OS_WINDOWS))
   # The formatting on this is terrible and cmake-format should feel bad about
   # it.
   pvs_studio_add_target(
-    TARGET
-    obs.analyze
+    TARGET obs.analyze
     ALL
-    FORMAT
-    sarif
-    ANALYZE
-    ${PVS_TARGETS}
-    MODE
-    GA:1,2
-    LOG
-    pvs-results.sarif
-    CONFIG
-    ${CMAKE_SOURCE_DIR}/CI/analysis/pvs_config.cfg
-    CONVERTER_ARGS
-    -d
-    V1042
-    CXX_FLAGS
-    ${CXX_COMPILE_OPTS})
+    FORMAT sarif
+    ANALYZE ${PVS_TARGETS}
+    MODE GA:1,2
+    LOG pvs-results.sarif
+    CONFIG ${CMAKE_SOURCE_DIR}/CI/analysis/pvs_config.cfg
+    CONVERTER_ARGS -d V1042
+    CXX_FLAGS ${CXX_COMPILE_OPTS})
 endif()
