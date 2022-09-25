@@ -95,3 +95,63 @@ endif()
 if(BUILD_TESTS OR ENABLE_UNIT_TESTS)
   add_subdirectory(test)
 endif()
+
+option(ENABLE_PVS "Enable PVS Analysis" OFF)
+if(ENABLE_PVS AND (OS_LINUX OR OS_WINDOWS))
+  include(PVS-Studio)
+  # On Windows just setting the C++ standard via CMake isn't enough for PVS, so
+  # we'll have to manually specify the compiler options as well.
+  if(OS_WINDOWS AND MSVC)
+    set(CXX_COMPILE_OPTS "/Zc:__cplusplus;/std:c++17")
+  else()
+    set(CXX_COMPILE_OPTS "")
+  endif()
+
+  # Add all current targets to PVS
+  get_all_targets(PVS_TARGETS)
+  # remove targets that do not need to be analysed (deps, submodules, etc.)
+  list(
+    REMOVE_ITEM
+    PVS_TARGETS
+    "blake2"
+    "decklink-sdk"
+    "enc-amf"
+    "enc-amf-test"
+    "glad"
+    "jansson"
+    "libdshowcapture"
+    "libdshowcapture-external"
+    "libmfx"
+    "lzma"
+    "nlohmann_json"
+    "obs-browser"
+    "obs-browser-page"
+    "obs-websocket"
+    "obs-x264-test"
+    "test_bitstream"
+    "test_darray"
+    "test_serializer"
+    "w32-pthreads")
+
+  # The formatting on this is terrible and cmake-format should feel bad about
+  # it.
+  pvs_studio_add_target(
+    TARGET
+    obs.analyze
+    ALL
+    FORMAT
+    sarif
+    ANALYZE
+    ${PVS_TARGETS}
+    MODE
+    GA:1,2
+    LOG
+    pvs-results.sarif
+    CONFIG
+    ${CMAKE_SOURCE_DIR}/CI/analysis/pvs_config.cfg
+    CONVERTER_ARGS
+    -d
+    V1042
+    CXX_FLAGS
+    ${CXX_COMPILE_OPTS})
+endif()
