@@ -37,6 +37,7 @@ fi
 
 find . -type d \( \
     -path ./\*build -o \
+    -path ./cmake/external -o \
     -path ./deps/jansson -o \
     -path ./plugins/decklink/\*/decklink-sdk -o \
     -path ./plugins/enc-amf -o \
