@@ -257,12 +257,19 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
 	context->channels = get_audio_channels(aoi.speakers);
 	context->sample_rate = aoi.samples_per_sec;
+
+#if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	context->channel_layout =
 		av_get_default_channel_layout(context->channels);
 
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
+#else
+	av_channel_layout_default(&context->ch_layout, context->channels);
+	if (aoi.speakers == SPEAKERS_4POINT1)
+		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+#endif
 
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
 	context->frame_size = data->config.frame_size;
