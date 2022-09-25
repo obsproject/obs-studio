@@ -1,0 +1,157 @@
+name: 'Static Analysis'
+
+on:
+  workflow_dispatch:
+  schedule:
+  - cron: 0 0 1 * *
+
+env:
+  CACHE_REVISION: '006'
+  CEF_BUILD_VERSION_MAC: '5060'
+  CEF_HASH_MAC_X86_64: '88b950aa0bfc001061c35e7f1f3fefba856a6afb35e38b2b7b42ddd8dd239182'
+  CEF_HASH_MAC_ARM64: '98679b92eea6ea9959ac5aa54f46ca60681d8a86c768c35f496dbdd409bf0642'
+  CEF_BUILD_VERSION_LINUX: '5060'
+  CEF_BUILD_VERSION_WIN: '5060'
+  QT_VERSION_MAC: '6.3.1'
+  QT_HASH_MAC_X86_64: 'a83f72a11023b03b6cb2dc365f0a66ad9df31163bbb4fe2df32d601856a9fad3'
+  QT_HASH_MAC_ARM64: '2f30af90c049670a5660656adbb440668aa1b0567f75a5f29e1def9108928403'
+  QT_HASH_MAC_UNIVERSAL: '252e6684f43ab9c6f262c73af739e2296ce391b998da2c4ee04c254aaa07db18'
+  QT_VERSION_WIN: '6.3.1'
+  DEPS_VERSION_MAC: '2022-08-02'
+  DEPS_HASH_MAC_X86_64: '7637e52305e6fc53014b5aabd583f1a4490b1d97450420e977cae9a336a29525'
+  DEPS_HASH_MAC_ARM64: '755e0fa69b17a3ae444e1befa9d91d77e3cafe628fbd1c6333686091826595cd'
+  DEPS_VERSION_WIN: '2022-08-02'
+  VLC_VERSION_MAC: '3.0.8'
+  VLC_HASH_MAC: 'e0149ef4a20a19b9ecd87309c2d27787ee3f47dfd47c6639644bc1f6fd95bdf6'
+  VLC_VERSION_WIN: '3.0.0-git'
+  TWITCH_CLIENTID: ${{ secrets.TWITCH_CLIENT_ID }}
+  TWITCH_HASH: ${{ secrets.TWITCH_HASH }}
+  RESTREAM_CLIENTID: ${{ secrets.RESTREAM_CLIENTID }}
+  RESTREAM_HASH: ${{ secrets.RESTREAM_HASH }}
+  YOUTUBE_CLIENTID: ${{ secrets.YOUTUBE_CLIENTID }}
+  YOUTUBE_CLIENTID_HASH: ${{ secrets.YOUTUBE_CLIENTID_HASH }}
+  YOUTUBE_SECRET: ${{ secrets.YOUTUBE_SECRET }}
+  YOUTUBE_SECRET_HASH: ${{ secrets.YOUTUBE_SECRET_HASH }}
+  ENABLE_PVS: '1'
+
+jobs:
+  pvs_linux:
+    name: 'PVS Studio (Linux)'
+    runs-on: 'ubuntu-22.04'
+    defaults:
+      run:
+        shell: bash
+        working-directory: 'obs-studio'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          path: 'obs-studio'
+          fetch-depth: 0
+
+      - name: 'Restore Chromium Embedded Framework from cache'
+        id: cef-cache
+        uses: actions/cache@v3
+        env:
+          CACHE_NAME: 'cef-cache'
+        with:
+          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_LINUX }}_linux64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_LINUX }}-${{ env.CACHE_REVISION }}
+
+      - name: 'Setup PVS Studio'
+        run: |
+          wget -q -O - https://files.pvs-studio.com/etc/pubkey.txt | sudo apt-key add -
+          sudo wget -O /etc/apt/sources.list.d/viva64.list https://files.pvs-studio.com/etc/viva64.list
+          sudo apt update
+          sudo apt install pvs-studio
+          pvs-studio-analyzer credentials ${{ secrets.PVS_NAME }} ${{ secrets.PVS_KEY }}
+
+      - name: 'Install dependencies'
+        env:
+          RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
+        run: CI/linux/01_install_dependencies.sh --disable-pipewire
+
+      - name: 'Build OBS'
+        run: CI/linux/02_build_obs.sh --disable-pipewire
+
+      - name: 'Upload PVS Logs'
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'pvs-logs-linux'
+          path: 'obs-studio/build/pvs-results.sarif'
+
+      - name: 'Upload PVS report'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'obs-studio/build/pvs-results.sarif'
+          checkout_path: 'obs-studio'
+          category: 'PVS-Studio (Linux)'
+
+  pvs_windows:
+    name: 'PVS Studio (Windows)'
+    runs-on: 'windows-2022'
+    env:
+      CMAKE_GENERATOR: 'Visual Studio 17 2022'
+      CMAKE_SYSTEM_VERSION: '10.0.18363.657'
+      VIRTUALCAM-GUID: 'A3FCE0F5-3493-419F-958A-ABA1250EC20B'
+    defaults:
+      run:
+        working-directory: 'obs-studio'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          path: 'obs-studio'
+          fetch-depth: 0
+
+      - name: 'Add msbuild to PATH'
+        uses: microsoft/setup-msbuild@v1.1
+
+      - name: 'Restore VLC dependency from cache'
+        id: vlc-cache
+        uses: actions/cache@v3
+        env:
+          CACHE_NAME: 'vlc-cache'
+        with:
+          path: ${{ github.workspace }}/obs-build-dependencies/vlc-${{ env.VLC_VERSION_WIN }}
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.VLC_VERSION_WIN }}-${{ env.CACHE_REVISION }}
+
+      - name: 'Restore Chromium Embedded Framework from cache'
+        id: cef-cache
+        uses: actions/cache@v3
+        env:
+          CACHE_NAME: 'cef-cache'
+        with:
+          path: ${{ github.workspace }}/obs-build-dependencies/cef_binary_${{ env.CEF_BUILD_VERSION_WIN }}_windows_x64
+          key: ${{ runner.os }}-pr-${{ env.CACHE_NAME }}-${{ env.CEF_BUILD_VERSION_WIN }}-x64-${{ env.CACHE_REVISION }}
+
+      - name: 'Setup PVS Studio'
+        run: |
+          New-Item -Path ..\PVSTestResults -ItemType Directory
+          Invoke-WebRequest -Uri https://files.pvs-studio.com/PVS-Studio_setup.exe -OutFile ..\PVS-Studio_setup.exe
+          Start-Process -FilePath ..\PVS-Studio_setup.exe -ArgumentList "/VERYSILENT /SUPPRESSMSGBOXES /NORESTART /COMPONENTS=Core,Standalone" -Wait
+          &"C:\Program Files (x86)\PVS-Studio\PVS-Studio_Cmd.exe" credentials -u ${{ secrets.PVS_NAME }} -n ${{ secrets.PVS_KEY }}
+
+      - name: 'Install dependencies'
+        env:
+          RESTORED_VLC: ${{ steps.vlc-cache.outputs.cache-hit }}
+          RESTORED_CEF: ${{ steps.cef-cache.outputs.cache-hit }}
+        run: CI/windows/01_install_dependencies.ps1 -BuildArch x64
+
+      - name: 'Build OBS'
+        run: CI/windows/02_build_obs.ps1 -BuildArch x64
+
+      - name: 'Upload PVS Logs'
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'pvs-windows'
+          path: 'obs-studio/build64/pvs-results.sarif'
+
+      - name: 'Upload PVS report'
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'obs-studio/build64/pvs-results.sarif'
+          checkout_path: 'obs-studio'
+          category: 'PVS-Studio (Windows)'

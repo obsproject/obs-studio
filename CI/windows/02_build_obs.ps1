@@ -86,6 +86,7 @@ function Configure-OBS {
         "-DCOPY_DEPENDENCIES=ON",
         "-DBUILD_FOR_DISTRIBUTION=`"$(if (Test-Path Env:BUILD_FOR_DISTRIBUTION) { "ON" } else { "OFF" })`"",
         "$(if (Test-Path Env:CI) { "-DOBS_BUILD_NUMBER=${Env:GITHUB_RUN_ID}" })",
+        "$(if (Test-Path Env:ENABLE_PVS) { "-DENABLE_PVS=ON" })",
         "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
     )
 

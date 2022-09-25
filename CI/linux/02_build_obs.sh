@@ -53,6 +53,10 @@ _configure_obs() {
         PIPEWIRE_OPTION="-DENABLE_PIPEWIRE=OFF"
     fi
 
+    if [ "${ENABLE_PVS}" ]; then
+        PVS_OPTION="-DENABLE_PVS=ON"
+    fi
+
     cmake -S . -B ${BUILD_DIR} -G Ninja \
         -DCEF_ROOT_DIR="${DEPS_BUILD_DIR}/cef_binary_${LINUX_CEF_BUILD_VERSION:-${CI_LINUX_CEF_VERSION}}_linux64" \
         -DCMAKE_BUILD_TYPE=${BUILD_CONFIG} \
@@ -63,6 +67,7 @@ _configure_obs() {
         ${YOUTUBE_OPTIONS} \
         ${TWITCH_OPTIONS} \
         ${RESTREAM_OPTIONS} \
+        ${PVS_OPTION} \
         ${CI:+-DENABLE_UNIT_TESTS=ON -DBUILD_FOR_DISTRIBUTION=${BUILD_FOR_DISTRIBUTION} -DOBS_BUILD_NUMBER=${GITHUB_RUN_ID}} \
         ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
 }
