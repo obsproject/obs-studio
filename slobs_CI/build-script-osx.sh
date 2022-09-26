@@ -10,8 +10,19 @@ GENERATOR="Xcode"
 
 CHECKOUT_DIR="$(/usr/bin/git rev-parse --show-toplevel)"
 source "${CHECKOUT_DIR}/slobs_CI/01_install_dependencies.sh"
+cd "${CHECKOUT_DIR}"
 DEPS_BUILD_DIR="${CHECKOUT_DIR}/../obs-build-dependencies"
 BUILD_DIR="${CHECKOUT_DIR}/build"
+
+# Fetch and unzip prebuilt WEBRTC deps
+wget --quiet --retry-connrefused --waitretry=1 https://obs-studio-deployment.s3.us-west-2.amazonaws.com/webrtc_dist_m94_mac.zip
+unzip -q webrtc_dist_m94_mac.zip
+rm ./webrtc_dist_m94_mac.zip
+
+# Fetch and unzip prebuilt LIBMEDIASOUP deps
+wget --quiet --retry-connrefused --waitretry=1 https://obs-studio-deployment.s3.us-west-2.amazonaws.com/libmediasoupclient_dist_8b36a915_mac.zip
+unzip -q libmediasoupclient_dist_8b36a915_mac.zip
+rm ./libmediasoupclient_dist_8b36a915_mac.zip
 
 cmake \
     -DCMAKE_OSX_DEPLOYMENT_TARGET=${MACOSX_DEPLOYMENT_TARGET:-${CI_MACOSX_DEPLOYMENT_TARGET}} \
@@ -28,17 +39,18 @@ cmake \
     -DCOPIED_DEPENDENCIES=false \
     -DCOPY_DEPENDENCIES=true \
     -DENABLE_SCRIPTING=false \
+    -DENABLE_BROWSER=true \
     -DBROWSER_FRONTEND_API_SUPPORT=false \
-    -DBROWSER_PANEL_SUPPORT=false \
+    -DENABLE_BROWSER_PANELS=false \
     -DUSE_UI_LOOP=true \
     -DCHECK_FOR_SERVICE_UPDATES=true \
-    -DOBS_CODESIGN_LINKER=false \
-    -DWEBRTC_INCLUDE_PATH=$DEPS_DIR/webrtc_dist \
-    -DWEBRTC_LIB_PATH=$DEPS_DIR/webrtc_dist/libwebrtc.a \
-    -DMEDIASOUP_INCLUDE_PATH=$DEPS_DIR/libmediasoupclient_dist/include/mediasoupclient/ \
-    -DMEDIASOUP_LIB_PATH=$DEPS_DIR/libmediasoupclient_dist/lib/libmediasoupclient.a \
-    -DMEDIASOUP_SDP_LIB_PATH=$DEPS_DIR/libmediasoupclient_dist/lib/libsdptransform.a \
-    -DMEDIASOUP_SDP_INCLUDE_PATH=$DEPS_DIR/libmediasoupclient_dist/include/sdptransform \
+    -DOBS_CODESIGN_LINKER=true \
+    -DWEBRTC_INCLUDE_PATH=$PWD/webrtc_dist \
+    -DWEBRTC_LIB_PATH=$PWD/webrtc_dist/libwebrtc.a \
+    -DMEDIASOUP_INCLUDE_PATH=$PWD/libmediasoupclient_dist/include/mediasoupclient/ \
+    -DMEDIASOUP_LIB_PATH=$PWD/libmediasoupclient_dist/lib/libmediasoupclient.a \
+    -DMEDIASOUP_SDP_LIB_PATH=$PWD/libmediasoupclient_dist/lib/libsdptransform.a \
+    -DMEDIASOUP_SDP_INCLUDE_PATH=$PWD/libmediasoupclient_dist/include/sdptransform \
     -DOPENSSL_CRYPTO_LIBRARY=/usr/local/opt/openssl@3/lib/libcrypto.a \
     -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include \
     -DOPENSSL_SSL_LIBRARY=/usr/local/opt/openssl@3/lib/libssl.a \
