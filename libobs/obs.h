@@ -188,13 +188,16 @@ struct obs_transform_info {
  * Video initialization structure
  */
 struct canvas_info {
+	bool used;
+	bool ready;
+
 	uint32_t base_width;  /**< Base compositing width */
 	uint32_t base_height; /**< Base compositing height */
 
 	uint32_t output_width;  /**< Output width */
 	uint32_t output_height; /**< Output height */
 };
-#define NUM_CANVASES 3
+#define NUM_CANVASES 4
 struct obs_video_info {
 #ifndef SWIG
 	/**
@@ -442,6 +445,7 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               OBS_VIDEO_FAIL for generic failure
  */
 EXPORT int obs_reset_video(struct obs_video_info *ovi);
+EXPORT int obs_video_info_allocate_canvas();
   
 /**
  * Sets base audio output format/channels/samples/etc
@@ -1929,6 +1933,7 @@ EXPORT void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
 
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
+EXPORT bool obs_sceneitem_set_canvas_id(obs_sceneitem_t *item, int item_canvas_id);
 
 struct obs_sceneitem_crop {
 	int left;
@@ -2171,8 +2176,7 @@ EXPORT proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output);
  * Sets the current audio/video media contexts associated with this output,
  * required for non-encoded outputs.  Can be null.
  */
-EXPORT void obs_output_set_media(obs_output_t *output,
-				 obs_core_video_mix_t *mix,
+EXPORT void obs_output_set_media(obs_output_t *output, obs_core_video_mix_t *mix,
 				 audio_t *audio);
 
 /** Returns the video media context associated with this output */

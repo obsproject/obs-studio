@@ -872,7 +872,7 @@ static obs_properties_t *ss_properties(void *data)
 
 	/* ----------------- */
 
-	//obs_get_video_info(&ovi);
+	obs_get_video_info(&ovi);
 	cx = 1920; //(int)ovi.base_width;
 	cy = 1080; //(int)ovi.base_height;
 

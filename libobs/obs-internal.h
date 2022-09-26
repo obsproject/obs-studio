@@ -473,6 +473,7 @@ struct obs_core {
 	enum obs_replay_buffer_rendering_mode replay_buffer_rendering_mode;
 	enum obs_video_rendering_mode video_rendering_mode;
 	enum obs_audio_rendering_mode audio_rendering_mode;
+	int video_rendering_canvas_id;
 
 	os_task_queue_t *destruction_task_thread;
 

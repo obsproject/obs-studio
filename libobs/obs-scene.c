@@ -927,6 +927,10 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	item = scene->first_item;
 	while (item) {
+		if (obs_get_video_rendering_canvas_id() != item->canvas_id) {
+			item = item->next;
+			continue;
+		}
 		if (obs_get_multiple_rendering()) {
 			switch (obs_get_video_rendering_mode()) {
 			case OBS_MAIN_VIDEO_RENDERING: {
@@ -2932,6 +2936,11 @@ static bool group_item_transition(obs_scene_t *scene, obs_sceneitem_t *item,
 		obs_sceneitem_do_transition(item, visible);
 	UNUSED_PARAMETER(scene);
 	return true;
+}
+
+bool obs_sceneitem_set_canvas_id(obs_sceneitem_t *item, int item_canvas_id)
+{
+	item->canvas_id = item_canvas_id;
 }
 
 bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)

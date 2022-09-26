@@ -652,7 +652,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 	video->ovi = *ovi;
 	for(int i = 0; i < NUM_CANVASES; i++)
 	{
-		if (ovi->canvases[i].base_width == 0 || ovi->canvases[i].base_height == 0)
+		if (!ovi->canvases[i].ready)
 			continue;
 		
 		if (!obs_view_add(&obs->data.main_view, i))
@@ -1404,6 +1404,19 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 {
 	return (width >= OBS_SIZE_MIN && height >= OBS_SIZE_MIN &&
 		width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
+}
+
+int obs_video_info_allocate_canvas()
+{
+	struct obs_core_video *video = &obs->video;
+	for(int i = 0; i < NUM_CANVASES; i++)
+	{
+		if (video->ovi.canvases[i].used)
+			continue;
+		video->ovi.canvases[i].used = true;
+		return i;
+	}
+	return -1;
 }
 
 int obs_reset_video(struct obs_video_info *ovi)
@@ -2238,6 +2251,22 @@ enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void)
 		return OBS_MAIN_AUDIO_RENDERING;
 	else
 		return obs->audio_rendering_mode;
+}
+
+void obs_set_video_rendering_canvas_id(int canvas_id)
+{
+	if (!obs)
+		return;
+
+	obs->video_rendering_canvas_id = canvas_id;
+}
+
+int obs_get_video_rendering_canvas_id(void)
+{
+	if (!obs)
+		return 0;
+	else
+		return obs->video_rendering_canvas_id;
 }
 
 void obs_set_replay_buffer_rendering_mode(
