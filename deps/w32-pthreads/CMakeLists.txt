@@ -19,7 +19,8 @@ target_compile_definitions(w32-pthreads PRIVATE __CLEANUP_C PTW32_BUILD)
 target_include_directories(
   w32-pthreads PUBLIC "$<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}>")
 
-set_target_properties(w32-pthreads PROPERTIES FOLDER "deps")
+set_target_properties(w32-pthreads PROPERTIES FOLDER "deps" PUBLIC_HEADER
+                                                            "pthread.h;sched.h")
 
 setup_binary_target(w32-pthreads)
 export_target(w32-pthreads)

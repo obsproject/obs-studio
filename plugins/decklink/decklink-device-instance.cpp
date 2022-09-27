@@ -371,7 +371,6 @@ bool DeckLinkDeviceInstance::StartCapture(DeckLinkDeviceMode *mode_,
 	if (!device->GetInput(&input))
 		return false;
 
-	ComPtr<IDeckLinkConfiguration> deckLinkConfiguration;
 	HRESULT result = input->QueryInterface(IID_IDeckLinkConfiguration,
 					       (void **)&deckLinkConfiguration);
 	if (result != S_OK) {

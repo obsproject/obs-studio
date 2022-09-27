@@ -101,8 +101,6 @@ elseif(OS_POSIX)
 
   target_compile_options(obspython PRIVATE -Wno-unused-parameter)
 
-  set_target_properties(obspython PROPERTIES PREFIX "")
-
 endif()
 
 set_target_properties(

@@ -636,8 +636,7 @@ static void NewButton(QLayout *layout, WidgetInfo *info, const char *themeIcon,
 	QPushButton *button = new QPushButton();
 	button->setProperty("themeID", themeIcon);
 	button->setFlat(true);
-	button->setMaximumSize(22, 22);
-	button->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
+	button->setProperty("toolButton", true);
 
 	QObject::connect(button, &QPushButton::clicked, info, method);
 
@@ -658,6 +657,7 @@ void OBSPropertiesView::AddEditableList(obs_property_t *prop,
 	list->setSortingEnabled(false);
 	list->setSelectionMode(QAbstractItemView::ExtendedSelection);
 	list->setToolTip(QT_UTF8(obs_property_long_description(prop)));
+	list->setSpacing(1);
 
 	for (size_t i = 0; i < count; i++) {
 		OBSDataAutoRelease item = obs_data_array_item(array, i);

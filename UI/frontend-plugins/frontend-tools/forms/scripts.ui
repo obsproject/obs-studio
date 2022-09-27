@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <ui version="4.0">
  <class>ScriptsTool</class>
- <widget class="QWidget" name="ScriptsTool">
+ <widget class="QDialog" name="ScriptsTool">
   <property name="geometry">
    <rect>
     <x>0</x>
@@ -12,6 +12,9 @@
   </property>
   <property name="windowTitle">
    <string>Scripts</string>
+  </property>
+  <property name="sizeGripEnabled">
+   <bool>true</bool>
   </property>
   <layout class="QVBoxLayout" name="verticalLayout">
    <item>
@@ -43,6 +46,9 @@
           <widget class="QListWidget" name="scripts">
            <property name="contextMenuPolicy">
             <enum>Qt::CustomContextMenu</enum>
+           </property>
+           <property name="spacing">
+            <number>1</number>
            </property>
            <property name="sortingEnabled">
             <bool>true</bool>

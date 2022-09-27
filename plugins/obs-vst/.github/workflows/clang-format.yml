@@ -1,0 +1,42 @@
+name: Clang Format Check
+
+on: [push, pull_request]
+jobs:
+  ubuntu64:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Install clang format
+        run: |
+          # gets us newer clang
+          sudo bash -c "cat >> /etc/apt/sources.list" << LLVMAPT
+          # 3.8
+          deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+          deb-src http://apt.llvm.org/xenial/ llvm-toolchain-xenial-8 main
+          LLVMAPT
+          wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key|sudo apt-key add -    
+          sudo apt-get -qq update
+          sudo apt-get install -y clang-format-8
+      - name: Check the Formatting
+        run: |
+          ./formatcode.sh
+          ./CI/check-format.sh
+  macos64:
+    runs-on: macos-latest        
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v2
+        with:
+          submodules: 'recursive'
+
+      - name: Install clang-format
+        run: |
+          brew install clang-format
+      - name: Check the Formatting
+        run: |
+          ./formatcode.sh
+          ./CI/check-format.sh

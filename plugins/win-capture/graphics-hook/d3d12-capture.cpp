@@ -236,6 +236,8 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		return false;
 	}
 
+	print_swap_desc(&desc);
+
 	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
@@ -248,9 +250,6 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		hlog("We're DXGI1.4 boys!");
 		swap3->Release();
 	}
-
-	hlog("Buffer count: %d, swap effect: %d", (int)desc.BufferCount,
-	     (int)desc.SwapEffect);
 
 	bb.count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
 			   ? 1

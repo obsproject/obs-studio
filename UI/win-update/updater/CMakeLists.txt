@@ -38,6 +38,7 @@ target_compile_definitions(updater PRIVATE NOMINMAX "PSAPI_VERSION=2")
 
 if(MSVC)
   target_compile_options(updater PRIVATE $<IF:$<CONFIG:DEBUG>,/MTd,/MT>)
+  target_compile_options(updater PRIVATE "/utf-8")
 endif()
 
 target_link_libraries(updater PRIVATE OBS::blake2 OBS::lzma ${STATIC_ZLIB_PATH}

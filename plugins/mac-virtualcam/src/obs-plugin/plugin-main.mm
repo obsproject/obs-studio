@@ -107,17 +107,26 @@ static bool check_dal_plugin()
 	return true;
 }
 
-FourCharCode convert_video_format_to_mac(enum video_format format)
+FourCharCode convert_video_format_to_mac(enum video_format format,
+					 enum video_range_type range)
 {
 	switch (format) {
 	case VIDEO_FORMAT_I420:
-		return kCVPixelFormatType_420YpCbCr8Planar;
+		return (range == VIDEO_RANGE_FULL)
+			       ? kCVPixelFormatType_420YpCbCr8PlanarFullRange
+			       : kCVPixelFormatType_420YpCbCr8Planar;
 	case VIDEO_FORMAT_NV12:
-		return kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
+		return (range == VIDEO_RANGE_FULL)
+			       ? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
+			       : kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
 	case VIDEO_FORMAT_UYVY:
-		return kCVPixelFormatType_422YpCbCr8;
+		return (range == VIDEO_RANGE_FULL)
+			       ? kCVPixelFormatType_422YpCbCr8FullRange
+			       : kCVPixelFormatType_422YpCbCr8;
 	case VIDEO_FORMAT_P010:
-		return kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
+		return (range == VIDEO_RANGE_FULL)
+			       ? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
+			       : kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
 	default:
 		// Zero indicates that the format is not supported on macOS
 		// Note that some formats do have an associated constant, but
@@ -165,8 +174,14 @@ static bool virtualcam_output_start(void *data)
 
 	obs_get_video_info(&vcam->videoInfo);
 
-	FourCharCode video_format =
-		convert_video_format_to_mac(vcam->videoInfo.output_format);
+	FourCharCode video_format = convert_video_format_to_mac(
+		vcam->videoInfo.output_format, vcam->videoInfo.range);
+
+	struct video_scale_info conversion = {};
+	conversion.width = vcam->videoInfo.output_width;
+	conversion.height = vcam->videoInfo.output_height;
+	conversion.colorspace = vcam->videoInfo.colorspace;
+	conversion.range = vcam->videoInfo.range;
 
 	if (!video_format) {
 		// Selected output format is not supported natively by CoreVideo, CPU conversion necessary
@@ -174,16 +189,13 @@ static bool virtualcam_output_start(void *data)
 		     "Selected output format (%s) not supported by CoreVideo, enabling CPU transcoding...",
 		     get_video_format_name(vcam->videoInfo.output_format));
 
-		struct video_scale_info conversion = {};
 		conversion.format = VIDEO_FORMAT_NV12;
-		conversion.width = vcam->videoInfo.output_width;
-		conversion.height = vcam->videoInfo.output_height;
-		conversion.colorspace = vcam->videoInfo.colorspace;
-		conversion.range = vcam->videoInfo.range;
-		obs_output_set_video_conversion(vcam->output, &conversion);
-
-		video_format = convert_video_format_to_mac(conversion.format);
+		video_format = convert_video_format_to_mac(conversion.format,
+							   conversion.range);
+	} else {
+		conversion.format = vcam->videoInfo.output_format;
 	}
+	obs_output_set_video_conversion(vcam->output, &conversion);
 
 	NSDictionary *pAttr = @{};
 	NSDictionary *pbAttr = @{
