@@ -1053,7 +1053,7 @@ QMenu *OBSBasic::CreatePerSceneTransitionMenu()
 	return menu;
 }
 
-void OBSBasic::on_actionShowTransitionProperties_triggered()
+void OBSBasic::ShowTransitionProperties()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_transition(item, true);
@@ -1062,7 +1062,7 @@ void OBSBasic::on_actionShowTransitionProperties_triggered()
 		CreatePropertiesWindow(source);
 }
 
-void OBSBasic::on_actionHideTransitionProperties_triggered()
+void OBSBasic::HideTransitionProperties()
 {
 	OBSSceneItem item = GetCurrentSceneItem();
 	OBSSource source = obs_sceneitem_get_transition(item, false);
@@ -1247,10 +1247,9 @@ QMenu *OBSBasic::CreateVisibilityTransitionMenu(bool visible)
 	menu->addAction(durationAction);
 	if (curId && obs_is_source_configurable(curId)) {
 		menu->addSeparator();
-		menu->addAction(
-			QTStr("Properties"), this,
-			visible ? SLOT(on_actionShowTransitionProperties_triggered())
-				: SLOT(on_actionHideTransitionProperties_triggered()));
+		menu->addAction(QTStr("Properties"), this,
+				visible ? SLOT(ShowTransitionProperties())
+					: SLOT(HideTransitionProperties()));
 	}
 
 	auto copyTransition = [this](QAction *, bool visible) {
