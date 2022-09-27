@@ -37,8 +37,6 @@
 
 #include "obs.h"
 
-//#include <caption/caption.h>
-
 #define NUM_TEXTURES 2
 #define NUM_CHANNELS 3
 #define MICROSECOND_DEN 1000000
