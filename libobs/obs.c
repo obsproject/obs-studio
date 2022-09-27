@@ -31,16 +31,17 @@ const bool key_processing_enabled = false;
 
 extern void add_default_module_paths(void);
 extern char *find_libobs_data_file(const char *file);
+static void obs_free_graphics(void);
 
 static inline void make_video_info(struct video_output_info *vi,
-				   struct obs_video_info *ovi, int canvas_id)
+				   struct obs_video_info *ovi)
 {
 	vi->name = "video";
 	vi->format = ovi->output_format;
 	vi->fps_num = ovi->fps_num;
 	vi->fps_den = ovi->fps_den;
-	vi->width = ovi->canvases[canvas_id].output_width;
-	vi->height = ovi->canvases[canvas_id].output_height;
+	vi->width = ovi->output_width;
+	vi->height = ovi->output_height;
 	vi->range = ovi->range;
 	vi->colorspace = ovi->colorspace;
 	vi->cache_size = 6;
@@ -399,10 +400,8 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 		}
 	}
 
-	struct canvas_info canvas;
-	obs_get_canvas_info(video->canvas_id, &canvas);
-	video->render_texture =
-		gs_texture_create(canvas.base_width, canvas.base_height,
+	struct obs_video_info *ovi = video->ovi;
+	video->render_texture = gs_texture_create(ovi->base_width, ovi->base_height,
 				  format, 1, NULL, GS_RENDER_TARGET);
 	if (!video->render_texture)
 		success = false;
@@ -589,7 +588,7 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 
 	pthread_mutex_init_value(&video->gpu_encoder_mutex);
 
-	make_video_info(&vi, ovi, video->canvas_id);
+	make_video_info(&vi, ovi);
 	video->gpu_conversion = ovi->gpu_conversion;
 	video->scale_type = ovi->scale_type;
 	video->gpu_was_active = false;
@@ -624,11 +623,11 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 	return OBS_VIDEO_SUCCESS;
 }
 
-struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi, int mix_canvas_id)
+struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
 {
 	struct obs_core_video_mix *video =
 		bzalloc(sizeof(struct obs_core_video_mix));
-	video->canvas_id = mix_canvas_id;
+	video->ovi = ovi;
 	if (obs_init_video_mix(ovi, video) != OBS_VIDEO_SUCCESS) {
 		bfree(video);
 		video = NULL;
@@ -636,32 +635,39 @@ struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi, int 
 	return video;
 }
 
-static int obs_init_video(struct obs_video_info *ovi)
+static int obs_init_video()
 {
+	if (!obs->video.graphics) {
+		int errorcode = obs_init_graphics(obs->video.canvases.array[0]);
+		if (errorcode != OBS_VIDEO_SUCCESS) {
+			obs_free_graphics();
+			return errorcode;
+		}
+	}
+
 	struct obs_core_video *video = &obs->video;
-	video->video_frame_interval_ns =
-		util_mul_div64(1000000000ULL, ovi->fps_den, ovi->fps_num);
-	video->video_half_frame_interval_ns =
-		util_mul_div64(500000000ULL, ovi->fps_den, ovi->fps_num);
+	video->video_frame_interval_ns = util_mul_div64( 1000000000ULL, obs->video.canvases.array[0]->fps_den, obs->video.canvases.array[0]->fps_num);
+	video->video_half_frame_interval_ns = util_mul_div64( 500000000ULL, obs->video.canvases.array[0]->fps_den, obs->video.canvases.array[0]->fps_num);
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
+	if (pthread_mutex_init(&video->canvases_mutex, NULL) < 0)
+		return OBS_VIDEO_FAIL;
 
-	video->ovi = *ovi;
-	for(int i = 0; i < NUM_CANVASES; i++)
+	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++)
 	{
-		if (!ovi->canvases[i].ready)
+		if (!obs->video.canvases.array[i]->initialized)
 			continue;
-		
-		if (!obs_view_add(&obs->data.main_view, i))
+
+		if (!obs_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_stream_view_add(&obs->data.main_view, i))
+		if (!obs_stream_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_record_view_add(&obs->data.main_view, i))
+		if (!obs_record_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 	}
 
@@ -790,6 +796,16 @@ static void obs_free_video(void)
 	pthread_mutex_destroy(&obs->video.mixes_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
 	da_free(obs->video.mixes);
+
+	num = obs->video.canvases.num;
+	for (size_t i = 0; i < num; i++) {
+		bfree(obs->video.canvases.array[i]);
+		obs->video.canvases.array[i] = NULL;
+	}
+	pthread_mutex_unlock(&obs->video.canvases_mutex);
+	pthread_mutex_destroy(&obs->video.canvases_mutex);
+	pthread_mutex_init_value(&obs->video.canvases_mutex);
+	da_free(obs->video.canvases);
 
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
@@ -1406,20 +1422,7 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 		width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
 }
 
-int obs_video_info_allocate_canvas()
-{
-	struct obs_core_video *video = &obs->video;
-	for(int i = 0; i < NUM_CANVASES; i++)
-	{
-		if (video->ovi.canvases[i].used)
-			continue;
-		video->ovi.canvases[i].used = true;
-		return i;
-	}
-	return -1;
-}
-
-int obs_reset_video(struct obs_video_info *ovi)
+int obs_reset_video()
 {
 	if (!obs)
 		return OBS_VIDEO_FAIL;
@@ -1428,27 +1431,30 @@ int obs_reset_video(struct obs_video_info *ovi)
 	if (obs_video_active())
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
 
-	//if (!size_valid(ovi->output_width, ovi->output_height) || !size_valid(ovi->base_width, ovi->base_height)) return OBS_VIDEO_INVALID_PARAM;
-
 	blog(LOG_INFO, "About to stop and reset video");
 	stop_video();
 	obs_free_video();
 	blog(LOG_INFO, "Video stopped and ready too init");
 
-	/* align to multiple-of-two and SSE alignment sizes */
-	//ovi->output_width &= 0xFFFFFFFC;
-	//ovi->output_height &= 0xFFFFFFFE;
+	return OBS_VIDEO_SUCCESS;
+}
 
-	if (!obs->video.graphics) {
-		int errorcode = obs_init_graphics(ovi);
-		if (errorcode != OBS_VIDEO_SUCCESS) {
-			obs_free_graphics();
-			return errorcode;
-		}
-	}
+int obs_set_video_info(struct obs_video_info *canvas, struct obs_video_info *updated)
+{
+	int ret = obs_reset_video();
+	if (ret != OBS_VIDEO_SUCCESS)
+		return ret;
+
+	if (!size_valid(updated->output_width, updated->output_height) ||
+	    !size_valid(updated->base_width, updated->base_height))
+		return OBS_VIDEO_INVALID_PARAM;
+
+	/* align to multiple-of-two and SSE alignment sizes */
+	updated->output_width &= 0xFFFFFFFC;
+	updated->output_height &= 0xFFFFFFFE;
 
 	const char *scale_type_name = "";
-	switch (ovi->scale_type) {
+	switch (updated->scale_type) {
 	case OBS_SCALE_DISABLE:
 		scale_type_name = "Disabled";
 		break;
@@ -1469,10 +1475,10 @@ int obs_reset_video(struct obs_video_info *ovi)
 		break;
 	}
 
-	bool yuv = format_is_yuv(ovi->output_format);
-	const char *yuv_format = get_video_colorspace_name(ovi->colorspace);
+	bool yuv = format_is_yuv(updated->output_format);
+	const char *yuv_format = get_video_colorspace_name(updated->colorspace);
 	const char *yuv_range =
-		get_video_range_name(ovi->output_format, ovi->range);
+		get_video_range_name(updated->output_format, updated->range);
 	/*
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
@@ -1488,7 +1494,11 @@ int obs_reset_video(struct obs_video_info *ovi)
 		 get_video_format_name(ovi->output_format),
 		 yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
 	*/
-	return obs_init_video(ovi);
+
+    *canvas = *updated;
+	canvas->initialized = true;
+
+	return obs_init_video();
 }
 
 #ifndef SEC_TO_MSEC
@@ -1556,19 +1566,36 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	if (!obs->video.graphics)
 		return false;
 
-	*ovi = obs->video.ovi;
+	*ovi = *(obs->video_rendering_canvas);
 	return true;
 }
 
-bool obs_get_canvas_info(int canvas_id, struct canvas_info *canvas)
+void obs_remove_video_info(struct obs_video_info *ovi)
 {
-	if (!obs->video.graphics)
-		return false;
+	int ret = obs_reset_video();
+	if (ret != OBS_VIDEO_SUCCESS)
+		return ret;
 
-	*canvas = obs->video.ovi.canvases[canvas_id];
-	return true;
+	size_t num = obs->video.canvases.num;
+	for (size_t i = 0; i < num; i++) {
+		if (obs->video.canvases.array[i] == ovi) {
+			bfree(obs->video.canvases.array[i]);
+		}
+	}
+	da_erase_item(obs->video.canvases, ovi);
+
+	return obs_init_video();
 }
- 
+
+struct obs_video_info *obs_create_video_info()
+{
+	struct obs_video_info *ovi = bzalloc(sizeof(struct obs_video_info));
+	pthread_mutex_lock(&obs->video.canvases_mutex);
+	da_push_back(obs->video.canvases, &ovi);
+	pthread_mutex_unlock(&obs->video.canvases_mutex);
+	return ovi;
+}
+
 float obs_get_video_sdr_white_level(void)
 {
 	struct obs_core_video *video = &obs->video;
@@ -2226,12 +2253,12 @@ enum obs_video_rendering_mode obs_get_video_rendering_mode(void)
 		return obs->video_rendering_mode;
 }
 
-obs_core_video_mix_t *obs_video_mix_get(int canvas_id,
+obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi,
 					enum obs_video_rendering_mode mode)
 {
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
-		if (mix->canvas_id == canvas_id && mix->rendering_mode == mode)
+		if (mix->ovi == ovi && mix->rendering_mode == mode)
 			return mix;
 	}
 	return NULL;
@@ -2253,20 +2280,20 @@ enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void)
 		return obs->audio_rendering_mode;
 }
 
-void obs_set_video_rendering_canvas_id(int canvas_id)
+void obs_set_video_rendering_canvas(struct obs_video_info *ovi)
 {
 	if (!obs)
 		return;
 
-	obs->video_rendering_canvas_id = canvas_id;
+	obs->video_rendering_canvas = ovi;
 }
 
-int obs_get_video_rendering_canvas_id(void)
+struct obs_video_info *obs_get_video_rendering_canvas(void)
 {
 	if (!obs)
-		return 0;
+		return NULL;
 	else
-		return obs->video_rendering_canvas_id;
+		return obs->video_rendering_canvas;
 }
 
 void obs_set_replay_buffer_rendering_mode(

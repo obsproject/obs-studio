@@ -284,7 +284,7 @@ struct obs_core_video_mix {
 	volatile bool gpu_encode_stop;
 
 	video_t *video;
-	int canvas_id;
+	struct obs_video_info *ovi;
 	enum obs_video_rendering_mode rendering_mode;
 
 	bool gpu_conversion;
@@ -297,8 +297,7 @@ struct obs_core_video_mix {
 	enum obs_scale_type scale_type;
 };
 
-extern struct obs_core_video_mix *
-obs_create_video_mix(struct obs_video_info *ovi, int canvas_id);
+extern struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi);
 extern void obs_free_video_mix(struct obs_core_video_mix *video);
 
 struct obs_core_video {
@@ -337,7 +336,9 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_effect;
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
-	struct obs_video_info ovi;
+	pthread_mutex_t canvases_mutex;
+	DARRAY(struct obs_video_info *) canvases;
+
 	float sdr_white_level;
 	float hdr_nominal_peak_level;
 
@@ -473,7 +474,7 @@ struct obs_core {
 	enum obs_replay_buffer_rendering_mode replay_buffer_rendering_mode;
 	enum obs_video_rendering_mode video_rendering_mode;
 	enum obs_audio_rendering_mode audio_rendering_mode;
-	int video_rendering_canvas_id;
+	struct obs_video_info *video_rendering_canvas;
 
 	os_task_queue_t *destruction_task_thread;
 

@@ -123,9 +123,6 @@ static inline void unmap_last_surface(struct obs_core_video_mix *video)
 static const char *render_main_texture_name = "render_main_texture";
 static inline void render_main_texture(struct obs_core_video_mix *video)
 {
-	struct canvas_info canvas;
-	obs_get_canvas_info(video->canvas_id, &canvas);
-
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
 			      render_main_texture_name);
@@ -137,7 +134,7 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 					      video->render_space);
 	gs_clear(GS_CLEAR_COLOR, &clear_color, 1.0f, 0);
 
-	set_render_size(canvas.base_width, canvas.base_height);
+	set_render_size(video->ovi->base_width, video->ovi->base_height);
 
 	pthread_mutex_lock(&obs->data.draw_callbacks_mutex);
 
@@ -145,7 +142,7 @@ static inline void render_main_texture(struct obs_core_video_mix *video)
 		struct draw_callback *callback;
 		callback = obs->data.draw_callbacks.array + (i - 1);
 
-		callback->draw(callback->param, canvas.base_width, canvas.base_height);
+		callback->draw(callback->param, video->ovi->base_width, video->ovi->base_height);
 	}
 
 	pthread_mutex_unlock(&obs->data.draw_callbacks_mutex);
@@ -168,10 +165,8 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
 	 * image, so use the bilinear low resolution effect instead */
-	struct canvas_info canvas;
-	obs_get_canvas_info(mix->canvas_id, &canvas);
-	if (info->width < (canvas.base_width / 2) &&
-	    info->height < (canvas.base_height / 2)) {
+	if (info->width < (mix->ovi->base_width / 2) &&
+	    info->height < (mix->ovi->base_height / 2)) {
 		return video->bilinear_lowres_effect;
 	}
 
@@ -192,10 +187,8 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 static inline bool resolution_close(struct obs_core_video_mix *video,
 				    uint32_t width, uint32_t height)
 {
-	struct canvas_info canvas;
-	obs_get_canvas_info(video->canvas_id, &canvas);
-	long width_cmp = (long)canvas.base_width - (long)width;
-	long height_cmp = (long)canvas.base_height - (long)height;
+	long width_cmp = (long)video->ovi->base_width - (long)width;
+	long height_cmp = (long)video->ovi->base_height - (long)height;
 
 	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
 }
@@ -228,8 +221,6 @@ render_output_texture(struct obs_core_video_mix *mix)
 	gs_texture_t *target = mix->output_texture;
 	uint32_t width = gs_texture_get_width(target);
 	uint32_t height = gs_texture_get_height(target);
-	struct canvas_info canvas;
-	obs_get_canvas_info(mix->canvas_id, &canvas);
 	gs_effect_t *effect = get_scale_effect(mix, width, height);
 	gs_technique_t *tech;
 
@@ -237,8 +228,8 @@ render_output_texture(struct obs_core_video_mix *mix)
 		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
 		if ((effect == video->default_effect) &&
-		    (width == canvas.base_width) &&
-		    (height == canvas.base_height))
+		    (width == mix->ovi->base_width) &&
+		    (height == mix->ovi->base_height))
 			return texture;
 
 		tech = gs_effect_get_technique(effect, "Draw");
@@ -258,15 +249,15 @@ render_output_texture(struct obs_core_video_mix *mix)
 
 	if (bres) {
 		struct vec2 base;
-		vec2_set(&base, (float)canvas.base_width,
-			 (float)canvas.base_height);
+		vec2_set(&base, (float)mix->ovi->base_width,
+			 (float)mix->ovi->base_height);
 		gs_effect_set_vec2(bres, &base);
 	}
 
 	if (bres_i) {
 		struct vec2 base_i;
-		vec2_set(&base_i, 1.0f / (float)canvas.base_width,
-			 1.0f / (float)canvas.base_height);
+		vec2_set(&base_i, 1.0f / (float)mix->ovi->base_width,
+			 1.0f / (float)mix->ovi->base_height);
 		gs_effect_set_vec2(bres_i, &base_i);
 	}
 
@@ -863,7 +854,7 @@ static inline void output_frame(struct obs_core_video_mix *video)
 	else
 		return;
 
-	obs_set_video_rendering_canvas_id(video->canvas_id);
+	obs_set_video_rendering_canvas(video->ovi);
 
 	const bool raw_active = video->raw_was_active;
 	const bool gpu_active = video->gpu_was_active;

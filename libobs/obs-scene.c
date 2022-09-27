@@ -927,7 +927,7 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	item = scene->first_item;
 	while (item) {
-		if (obs_get_video_rendering_canvas_id() != item->canvas_id) {
+		if (obs_get_video_rendering_canvas() != item->canvas) {
 			item = item->next;
 			continue;
 		}
@@ -2938,9 +2938,9 @@ static bool group_item_transition(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
-bool obs_sceneitem_set_canvas_id(obs_sceneitem_t *item, int item_canvas_id)
+bool obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas)
 {
-	item->canvas_id = item_canvas_id;
+	item->canvas = canvas;
 }
 
 bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible)

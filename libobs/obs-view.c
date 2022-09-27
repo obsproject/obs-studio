@@ -160,12 +160,12 @@ static inline void set_main_mix()
 	obs->video.main_mix = mix;
 }
 
-video_t *obs_view_add(obs_view_t *view, int canvas_id)
+video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi)
 {
 	if (!view)
 		return NULL;
 
-	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi, canvas_id);
+	struct obs_core_video_mix *mix = obs_create_video_mix(ovi);
 	if (!mix) {
 		return NULL;
 	}
@@ -179,12 +179,12 @@ video_t *obs_view_add(obs_view_t *view, int canvas_id)
 	return mix->video;
 }
 
-video_t *obs_stream_view_add(obs_view_t *view, int canvas_id)
+video_t *obs_stream_view_add(obs_view_t *view, struct obs_video_info *ovi)
 {
 	if (!view)
 		return NULL;
 
-	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi, canvas_id);
+	struct obs_core_video_mix *mix = obs_create_video_mix(ovi);
 	if (!mix) {
 		return NULL;
 	}
@@ -199,12 +199,12 @@ video_t *obs_stream_view_add(obs_view_t *view, int canvas_id)
 	return mix->video;
 }
 
-video_t *obs_record_view_add(obs_view_t *view, int canvas_id)
+video_t *obs_record_view_add(obs_view_t *view, struct obs_video_info *ovi)
 {
 	if (!view)
 		return NULL;
 
-	struct obs_core_video_mix *mix = obs_create_video_mix(&obs->video.ovi, canvas_id);
+	struct obs_core_video_mix *mix = obs_create_video_mix(ovi);
 	if (!mix) {
 		return NULL;
 	}

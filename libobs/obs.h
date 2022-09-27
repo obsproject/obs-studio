@@ -67,6 +67,7 @@ typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
 typedef struct obs_core_video_mix obs_core_video_mix_t;
 
+
 typedef struct obs_weak_object obs_weak_object_t;
 typedef struct obs_weak_source obs_weak_source_t;
 typedef struct obs_weak_output obs_weak_output_t;
@@ -187,18 +188,9 @@ struct obs_transform_info {
 /**
  * Video initialization structure
  */
-struct canvas_info {
-	bool used;
-	bool ready;
 
-	uint32_t base_width;  /**< Base compositing width */
-	uint32_t base_height; /**< Base compositing height */
-
-	uint32_t output_width;  /**< Output width */
-	uint32_t output_height; /**< Output height */
-};
-#define NUM_CANVASES 4
 struct obs_video_info {
+	bool initialized;
 #ifndef SWIG
 	/**
 	 * Graphics module to use (usually "libobs-opengl" or "libobs-d3d11")
@@ -209,7 +201,11 @@ struct obs_video_info {
 	uint32_t fps_num; /**< Output FPS numerator */
 	uint32_t fps_den; /**< Output FPS denominator */
 
-	struct canvas_info canvases[NUM_CANVASES];
+	uint32_t base_width;  /**< Base compositing width */
+	uint32_t base_height; /**< Base compositing height */
+
+	uint32_t output_width;  /**< Output width */
+	uint32_t output_height; /**< Output height */
 
 	enum video_format output_format; /**< Output format */
 
@@ -439,14 +435,22 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               specification of the graphics subsystem,
  * @return       OBS_VIDEO_SUCCESS if successful
  *               OBS_VIDEO_NOT_SUPPORTED if the adapter lacks capabilities
- *               OBS_VIDEO_INVALID_PARAM if a parameter is invalid
+ *               OBS_VIDEO_INV`ALID_PARAM if a parameter is invalid
  *               OBS_VIDEO_CURRENTLY_ACTIVE if video is currently active
  *               OBS_VIDEO_MODULE_NOT_FOUND if the graphics module is not found
  *               OBS_VIDEO_FAIL for generic failure
  */
-EXPORT int obs_reset_video(struct obs_video_info *ovi);
-EXPORT int obs_video_info_allocate_canvas();
-  
+EXPORT int obs_reset_video();
+
+EXPORT int obs_set_video_info(struct obs_video_info *canvas,
+			      struct obs_video_info *updated);
+/** Gets the currently in rendering video settings, returns false if no video */
+EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
+/** Marks a video info to be released on a next reset */
+EXPORT void obs_remove_video_info(struct obs_video_info *ovi);
+/** Adds new video info to array of video info objects, need to be initialized */
+EXPORT struct obs_video_info *obs_create_video_info();
+
 /**
  * Sets base audio output format/channels/samples/etc
  *
@@ -455,9 +459,7 @@ EXPORT int obs_video_info_allocate_canvas();
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 EXPORT bool obs_reset_audio2(const struct obs_audio_info2 *oai);
 
-/** Gets the current video settings, returns false if no video */
-EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
-EXPORT bool obs_get_canvas_info(int canvas_id, struct canvas_info *canvas);
+
 
 /** Gets the SDR white level, returns 300.f if no video */
 EXPORT float obs_get_video_sdr_white_level(void);
@@ -982,13 +984,13 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel);
 EXPORT void obs_view_render(obs_view_t *view);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_view_add(obs_view_t *view, int canvas_id);
+EXPORT video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_stream_view_add(obs_view_t *view, int canvas_id);
+EXPORT video_t *obs_stream_view_add(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_record_view_add(obs_view_t *view, int canvas_id);
+EXPORT video_t *obs_record_view_add(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
@@ -1933,7 +1935,7 @@ EXPORT void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
 
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
-EXPORT bool obs_sceneitem_set_canvas_id(obs_sceneitem_t *item, int item_canvas_id);
+EXPORT bool obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas);
 
 struct obs_sceneitem_crop {
 	int left;
@@ -2392,8 +2394,7 @@ EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
 				      struct obs_core_video_mix *video);
 
-EXPORT obs_core_video_mix_t* obs_video_mix_get(int canvas_id,
-					       enum obs_video_rendering_mode mode);
+EXPORT obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi, enum obs_video_rendering_mode mode);
 
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
