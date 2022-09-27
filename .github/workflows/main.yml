@@ -369,6 +369,54 @@ jobs:
           name: 'obs-studio-windows-${{ matrix.arch }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ env.FILE_NAME }}'
 
+  source_build:
+    name: '02 - Source'
+    runs-on: [ubuntu-22.04]
+    if: always()
+    needs: [clang_check]
+    defaults:
+      run:
+        shell: bash
+        working-directory: 'obs-studio'
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          submodules: 'recursive'
+          path: 'obs-studio'
+          fetch-depth: 0
+
+      - name: 'Setup environment'
+        id: setup
+        run: |
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: 'Create source artifact'
+        id: tarball
+        if: ${{ success() && github.event_name != 'pull_request' }}
+        run: |
+          prefix=obs-studio-${{ steps.setup.outputs.commitHash }}
+          commit_date=$(git show -s --format=%cI ${{ steps.setup.outputs.commitHash }})
+          outfile=${prefix}.tar.gz
+          ARTIFACT_NAME=${outfile}
+          outfile=${{ github.workspace }}/${outfile}
+          echo "outfile: $outfile"
+          echo "artifact: $ARTIFACT_NAME"
+          # create a tarball with *all* the sources
+          # - prefix paths with 'obs-studio/' (since we are creating the tarball from within the source dir)
+          # - exclude all repository files
+          # - make the tarball reproducible
+          tar -cvzf ${outfile}  --transform='s|^\.|obs-studio|'  --exclude-vcs --exclude-vcs-ignores --exclude '.git*'  --sort=name  --owner=0 --group=0 --numeric-owner --pax-option="exthdr.name=%d/PaxHeaders/%f,delete=atime,delete=ctime" --mtime="${commit_date}"  .
+          # announce artifact for upload
+          echo "fileName=${ARTIFACT_NAME}" >> $GITHUB_OUTPUT
+
+      - name: 'Upload source artifact'
+        if: ${{ success() && (github.event_name != 'pull_request') }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'obs-studio-source-${{ steps.setup.outputs.commitHash }}'
+          path: '${{ github.workspace }}/${{ steps.tarball.outputs.fileName }}'
+
   linux_package:
     name: '02 - Flatpak'
     runs-on: [ubuntu-latest]
