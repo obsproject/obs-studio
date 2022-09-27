@@ -847,24 +847,20 @@ static const char *output_frame_gs_flush_name = "gs_flush";
 static const char *output_frame_output_video_data_name = "output_video_data";
 static inline void output_frame(struct obs_core_video_mix *video)
 {
-	if (video == obs->video.main_mix) {
-		if (obs_get_multiple_rendering())
+	if (obs_get_multiple_rendering()) {
+		if (video == obs->video.main_mix)
 			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
-	}
-
-	if (video == obs->video.stream_mix) {
-		if (!obs_get_multiple_rendering())
-			return;
-		else
+		else if (video == obs->video.stream_mix)
 			obs_set_video_rendering_mode(OBS_STREAMING_VIDEO_RENDERING);
+		else if (video == obs->video.record_mix)
+			obs_set_video_rendering_mode(OBS_RECORDING_VIDEO_RENDERING);
+		else
+			return;
+	} else {
+		if (video == obs->video.stream_mix || video == obs->video.record_mix)
+			return;
 	}
 
-	if (video == obs->video.record_mix) {
-		if (!obs_get_multiple_rendering())
-			return;
-		else
-			obs_set_video_rendering_mode(OBS_RECORDING_VIDEO_RENDERING);
-	}
 	const bool raw_active = video->raw_was_active;
 	const bool gpu_active = video->gpu_was_active;
 
