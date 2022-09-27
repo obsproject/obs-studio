@@ -447,9 +447,13 @@ EXPORT int obs_set_video_info(struct obs_video_info *canvas,
 /** Gets the currently in rendering video settings, returns false if no video */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
 /** Marks a video info to be released on a next reset */
-EXPORT void obs_remove_video_info(struct obs_video_info *ovi);
+EXPORT int obs_remove_video_info(struct obs_video_info *ovi);
 /** Adds new video info to array of video info objects, need to be initialized */
 EXPORT struct obs_video_info *obs_create_video_info();
+
+EXPORT size_t obs_get_video_info_count();
+
+EXPORT bool obs_get_video_info_by_index(size_t index, struct obs_video_info *ovi);
 
 /**
  * Sets base audio output format/channels/samples/etc

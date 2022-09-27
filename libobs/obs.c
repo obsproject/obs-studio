@@ -1570,7 +1570,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	return true;
 }
 
-void obs_remove_video_info(struct obs_video_info *ovi)
+int obs_remove_video_info(struct obs_video_info *ovi)
 {
 	int ret = obs_reset_video();
 	if (ret != OBS_VIDEO_SUCCESS)
@@ -1594,6 +1594,19 @@ struct obs_video_info *obs_create_video_info()
 	da_push_back(obs->video.canvases, &ovi);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
 	return ovi;
+}
+
+size_t obs_get_video_info_count()
+{
+	return obs->video.canvases.num;
+}
+
+bool obs_get_video_info_by_index(size_t index, struct obs_video_info *ovi)
+{
+	if (index >= obs->video.canvases.num)
+		return false;
+	*ovi = *obs->video.canvases.array[index];
+	return true;
 }
 
 float obs_get_video_sdr_white_level(void)
