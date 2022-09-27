@@ -73,18 +73,25 @@ void *os_dlopen(const char *path)
 		return NULL;
 
 	dstr_init_copy(&dylib_name, path);
-#ifdef __APPLE__
-	if (!dstr_find(&dylib_name, ".framework") &&
-	    !dstr_find(&dylib_name, ".plugin") &&
-	    !dstr_find(&dylib_name, ".dylib") && !dstr_find(&dylib_name, ".so"))
-#else
-	if (!dstr_find(&dylib_name, ".so"))
-#endif
-		dstr_cat(&dylib_name, ".so");
 
 #ifdef __APPLE__
+#ifndef __aarch64__
+	if (dstr_find(&dylib_name, ".so")) {
+		bool check = dlopen_preflight(dylib_name.array);
+
+		if (!check) {
+			blog(LOG_ERROR, "Library failed preflight checks: %s",
+			     dylib_name.array);
+			dstr_free(&dylib_name);
+			return NULL;
+		}
+	}
+#endif
 	void *res = dlopen(dylib_name.array, RTLD_LAZY | RTLD_FIRST);
 #else
+	if (!dstr_find(&dylib_name, ".so"))
+		dstr_cat(&dylib_name, ".so");
+
 	void *res = dlopen(dylib_name.array, RTLD_LAZY);
 #endif
 	if (!res)
