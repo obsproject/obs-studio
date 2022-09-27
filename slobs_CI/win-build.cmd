@@ -66,6 +66,3 @@ cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v
 if %errorlevel% neq 0 exit /b %errorlevel%
-
-move %CD%\%InstallPath%\data\obs-plugins\win-dshow\obs-virtualsource.dll %CD%\%InstallPath%\bin\64bit\
-move %CD%\%InstallPath%\data\obs-plugins\win-dshow\obs-virtualsource.pdb %CD%\%InstallPath%\bin\64bit\
