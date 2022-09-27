@@ -60,7 +60,7 @@ cmake -H. ^
          -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C"
 
 del /q /s %CD%\%InstallPath%
-cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
+cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v
 cmake -S . -B %CD%\%BUILD_DIRECTORY% -DCOPIED_DEPENDENCIES=OFF -DCOPY_DEPENDENCIES=ON
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
