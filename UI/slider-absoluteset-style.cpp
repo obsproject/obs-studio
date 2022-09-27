@@ -18,3 +18,15 @@ int SliderAbsoluteSetStyle::styleHint(QStyle::StyleHint hint,
 		return (Qt::LeftButton | Qt::MiddleButton);
 	return QProxyStyle::styleHint(hint, option, widget, returnData);
 }
+
+int TbarSliderSetStyle::styleHint(QStyle::StyleHint hint,
+				  const QStyleOption *option = 0,
+				  const QWidget *widget = 0,
+				  QStyleHintReturn *returnData = 0) const
+{
+	if (hint == QStyle::SH_Slider_AbsoluteSetButtons)
+		return Qt::NoButton;
+	if (hint == QStyle::SH_Slider_PageSetButtons)
+		return Qt::LeftButton;
+	return QProxyStyle::styleHint(hint, option, widget, returnData);
+}

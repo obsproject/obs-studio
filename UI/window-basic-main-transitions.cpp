@@ -26,6 +26,7 @@
 #include "window-namedialog.hpp"
 #include "menu-button.hpp"
 #include "slider-ignorewheel.hpp"
+#include "slider-absoluteset-style.hpp"
 #include "qt-wrappers.hpp"
 
 #include "obs-hotkey.h"
@@ -792,6 +793,10 @@ void OBSBasic::CreateProgramOptions()
 	tBar->setMaximum(T_BAR_PRECISION - 1);
 
 	tBar->setProperty("themeID", "tBarSlider");
+
+	TbarSliderSetStyle *style = new TbarSliderSetStyle();
+	style->setParent(tBar);
+	tBar->setStyle(style);
 
 	connect(tBar, SIGNAL(sliderMoved(int)), this, SLOT(TBarChanged(int)));
 	connect(tBar, SIGNAL(valueChanged(int)), this,

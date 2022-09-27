@@ -10,3 +10,10 @@ public:
 		      const QWidget *widget,
 		      QStyleHintReturn *returnData) const;
 };
+
+class TbarSliderSetStyle : public QProxyStyle {
+public:
+	int styleHint(QStyle::StyleHint hint, const QStyleOption *option,
+		      const QWidget *widget,
+		      QStyleHintReturn *returnData) const;
+};
