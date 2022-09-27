@@ -314,42 +314,37 @@ RTMP_TLS_LoadCerts(RTMP *r) {
     CertFreeCertificateContext(pCertContext);
     CertCloseStore(hCertStore, 0);
 #elif defined(__APPLE__)
-    SecKeychainRef keychain_ref;
-    CFMutableDictionaryRef search_settings_ref;
-    CFArrayRef result_ref;
+    CFTypeRef keys[4] = {kSecClass, kSecMatchLimit, kSecReturnAttributes,
+                 kSecReturnData};
 
-    if (SecKeychainOpen("/System/Library/Keychains/SystemRootCertificates.keychain",
-                        &keychain_ref)
-        != errSecSuccess) {
-      goto error;
+    CFTypeRef values[4] = {kSecClassCertificate, kSecMatchLimitAll,
+                   kCFBooleanFalse, kCFBooleanTrue};
+    CFDictionaryRef query =
+        CFDictionaryCreate(kCFAllocatorDefault, keys, values, 4,
+                   &kCFTypeDictionaryKeyCallBacks,
+                   &kCFTypeDictionaryValueCallBacks);
+
+    CFTypeRef result;
+
+    OSStatus code = SecItemCopyMatching(query, &result);
+
+    if (code != noErr) {
+        goto error;
     }
 
-    search_settings_ref = CFDictionaryCreateMutable(NULL, 0, NULL, NULL);
-    CFDictionarySetValue(search_settings_ref, kSecClass, kSecClassCertificate);
-    CFDictionarySetValue(search_settings_ref, kSecMatchLimit, kSecMatchLimitAll);
-    CFDictionarySetValue(search_settings_ref, kSecReturnRef, kCFBooleanTrue);
-    CFDictionarySetValue(search_settings_ref, kSecMatchSearchList,
-                         CFArrayCreate(NULL, (const void **)&keychain_ref, 1, NULL));
+    for (CFIndex i = 0; i < CFArrayGetCount(result); i++) {
+        CFDataRef data_ref = CFArrayGetValueAtIndex(result, i);
 
-    if (SecItemCopyMatching(search_settings_ref, (CFTypeRef *)&result_ref)
-        != errSecSuccess) {
-      goto error;
+        const UInt8 *data = CFDataGetBytePtr(data_ref);
+        size_t length = CFDataGetLength(data_ref);
+
+        if (data && length > 0) {
+            mbedtls_x509_crt_parse_der(chain, data, length);
+        }
     }
 
-    for (CFIndex i = 0; i < CFArrayGetCount(result_ref); i++) {
-      SecCertificateRef item_ref = (SecCertificateRef)
-                                   CFArrayGetValueAtIndex(result_ref, i);
-      CFDataRef data_ref;
-
-      if ((data_ref = SecCertificateCopyData(item_ref))) {
-        mbedtls_x509_crt_parse_der(chain,
-                                   (unsigned char *)CFDataGetBytePtr(data_ref),
-                                   CFDataGetLength(data_ref));
-        CFRelease(data_ref);
-      }
-    }
-
-    CFRelease(keychain_ref);
+    CFRelease(result);
+    
 #elif defined(__linux__)
     if (mbedtls_x509_crt_parse_path(chain, "/etc/ssl/certs/") < 0) {
         RTMP_Log(RTMP_LOGERROR, "mbedtls_x509_crt_parse_path: Couldn't parse "
