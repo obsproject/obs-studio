@@ -1112,8 +1112,8 @@ private slots:
 	void on_transitionDuration_valueChanged(int value);
 	void on_tbar_position_valueChanged(int value);
 
-	void on_actionShowTransitionProperties_triggered();
-	void on_actionHideTransitionProperties_triggered();
+	void ShowTransitionProperties();
+	void HideTransitionProperties();
 
 	void on_modeSwitch_clicked();
 
