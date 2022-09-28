@@ -261,10 +261,13 @@ private:
 	void OnOAuthStreamKeyConnected();
 	void OnAuthConnected();
 	QString lastService;
+	QString protocol;
+	QString lastCustomServer;
 	int prevLangIndex;
 	bool prevBrowserAccel;
 
 	void ServiceChanged();
+	QString FindProtocol();
 	void UpdateServerList();
 	void UpdateKeyLink();
 	void UpdateVodTrackSetting();

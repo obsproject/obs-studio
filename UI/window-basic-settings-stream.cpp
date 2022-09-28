@@ -99,11 +99,13 @@ void OBSBasicSettings::LoadStream1Settings()
 	const char *service = obs_data_get_string(settings, "service");
 	const char *server = obs_data_get_string(settings, "server");
 	const char *key = obs_data_get_string(settings, "key");
+	protocol = QT_UTF8(obs_service_get_protocol(service_obj));
 
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
 		ui->customServer->setText(server);
 		lastServiceIdx = 0;
+		lastCustomServer = ui->customServer->text();
 
 		bool use_auth = obs_data_get_bool(settings, "use_auth");
 		const char *username =
@@ -455,17 +457,26 @@ void OBSBasicSettings::on_service_currentIndexChanged(int idx)
 	UpdateServiceRecommendations();
 
 	UpdateVodTrackSetting();
+
+	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
 
-	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits())
+	if (ServiceSupportsCodecCheck() && UpdateResFPSLimits()) {
 		lastServiceIdx = idx;
+		if (idx == 0)
+			lastCustomServer = ui->customServer->text();
+	}
 }
 
 void OBSBasicSettings::on_customServer_textChanged(const QString &)
 {
 	UpdateKeyLink();
 
+	protocol = FindProtocol();
 	UpdateAdvNetworkGroup();
+
+	if (ServiceSupportsCodecCheck())
+		lastCustomServer = ui->customServer->text();
 }
 
 void OBSBasicSettings::ServiceChanged()
@@ -518,6 +529,43 @@ void OBSBasicSettings::ServiceChanged()
 		auth = main->auth;
 		OnAuthConnected();
 	}
+}
+
+QString OBSBasicSettings::FindProtocol()
+{
+	if (IsCustomService() && !ui->customServer->text().isEmpty()) {
+
+		QString server = ui->customServer->text();
+
+		if (server.startsWith("rtmps://"))
+			return QString("RTMPS");
+
+		if (server.startsWith("ftl://"))
+			return QString("FTL");
+
+		if (server.startsWith("srt://"))
+			return QString("SRT");
+
+		if (server.startsWith("rist://"))
+			return QString("RIST");
+
+	} else {
+		obs_properties_t *props =
+			obs_get_service_properties("rtmp_common");
+		obs_property_t *services = obs_properties_get(props, "service");
+
+		OBSDataAutoRelease settings = obs_data_create();
+
+		obs_data_set_string(settings, "service",
+				    QT_TO_UTF8(ui->service->currentText()));
+		obs_property_modified(services, settings);
+
+		obs_properties_destroy(props);
+
+		return QT_UTF8(obs_data_get_string(settings, "protocol"));
+	}
+
+	return QString("RTMP");
 }
 
 void OBSBasicSettings::UpdateServerList()
@@ -1228,17 +1276,19 @@ static inline bool service_supports_encoder(const char **codecs,
 	return service_supports_codec(codecs, codec);
 }
 
+static bool return_first_id(void *data, const char *id)
+{
+	const char **output = (const char **)data;
+
+	*output = id;
+	return false;
+}
+
 bool OBSBasicSettings::ServiceAndCodecCompatible()
 {
-	if (IsCustomService())
-		return true;
-	if (ui->service->currentData().toInt() == (int)ListOpt::ShowAll)
-		return true;
-
 	bool simple = (ui->outputMode->currentIndex() == 0);
+	bool ret;
 
-	OBSService service = SpawnTempService();
-	const char **codecs = obs_service_get_supported_video_codecs(service);
 	const char *codec;
 
 	if (simple) {
@@ -1251,7 +1301,29 @@ bool OBSBasicSettings::ServiceAndCodecCompatible()
 		codec = obs_get_encoder_codec(QT_TO_UTF8(encoder));
 	}
 
-	return service_supports_codec(codecs, codec);
+	OBSService service = SpawnTempService();
+	const char **codecs = obs_service_get_supported_video_codecs(service);
+
+	if (!codecs || IsCustomService()) {
+		const char *output;
+		char **output_codecs;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+
+		output_codecs = strlist_split(
+			obs_get_output_supported_video_codecs(output), ';',
+			false);
+
+		ret = service_supports_codec((const char **)output_codecs,
+					     codec);
+
+		strlist_free(output_codecs);
+	} else {
+		ret = service_supports_codec(codecs, codec);
+	}
+
+	return ret;
 }
 
 /* we really need a way to find fallbacks in a less hardcoded way. maybe. */
@@ -1285,7 +1357,8 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 		return false;
 
 	if (ServiceAndCodecCompatible()) {
-		if (lastServiceIdx != ui->service->currentIndex())
+		if (lastServiceIdx != ui->service->currentIndex() ||
+		    IsCustomService())
 			ResetEncoders(true);
 		return true;
 	}
@@ -1324,9 +1397,17 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 #undef WARNING_VAL
 
 	if (button == QMessageBox::No) {
-		QMetaObject::invokeMethod(ui->service, "setCurrentIndex",
-					  Qt::QueuedConnection,
-					  Q_ARG(int, lastServiceIdx));
+		if (lastServiceIdx == 0 &&
+		    lastServiceIdx == ui->service->currentIndex())
+			QMetaObject::invokeMethod(ui->customServer, "setText",
+						  Qt::QueuedConnection,
+						  Q_ARG(QString,
+							lastCustomServer));
+		else
+			QMetaObject::invokeMethod(ui->service,
+						  "setCurrentIndex",
+						  Qt::QueuedConnection,
+						  Q_ARG(int, lastServiceIdx));
 		return false;
 	}
 
@@ -1344,7 +1425,19 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 	OBSService service = SpawnTempService();
 	const char **codecs = obs_service_get_supported_video_codecs(service);
 	const char *type;
+	BPtr<char *> output_codecs;
 	size_t idx = 0;
+
+	if (!codecs || IsCustomService()) {
+		const char *output;
+
+		obs_enum_output_types_with_protocol(QT_TO_UTF8(protocol),
+						    &output, return_first_id);
+		output_codecs = strlist_split(
+			obs_get_output_supported_video_codecs(output), ';',
+			false);
+		codecs = (const char **)output_codecs.Get();
+	}
 
 	QSignalBlocker s1(ui->simpleOutStrEncoder);
 	QSignalBlocker s2(ui->advOutEncoder);
