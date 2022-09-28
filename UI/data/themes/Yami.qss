@@ -82,7 +82,7 @@ QWidget {
     selection-background-color: rgb(40,76,184);
     selection-color: palette(text);
     font-size: 10pt;
-    font-family: 'Open Sans', Helvetica, Arial, 'MS Shell Dlg', sans-serif
+    font-family: 'Open Sans', '.AppleSystemUIFont', Helvetica, Arial, 'MS Shell Dlg', sans-serif;
 }
 
 QWidget:disabled {
@@ -179,21 +179,34 @@ QMenuBar::item:selected {
 }
 
 /* Item Lists */
+QListWidget {
+    border-radius: 4px;
+}
+
 QListWidget::item {
     color: palette(text);
 }
 
+QListWidget,
 QMenu,
 SceneTree,
 SourceTree {
     padding: 3px;
 }
 
+QListWidget::item,
+SourceTreeItem,
+QMenu::item,
+SceneTree::item {
+    padding: 6px;
+}
+
+QListWidget::item,
+SourceTreeItem,
 QMenu::item,
 SceneTree::item,
 SourceTree::item {
     border-radius: 4px;
-    padding: 6px;
     color: palette(text);
 	border: 0px solid transparent;
 }
@@ -332,7 +345,7 @@ OBSBasicStatusBar {
 
 QGroupBox {
     background: palette(dark);
-    border-radius: 8px;
+    border-radius: 4px;
     padding-top: 32px;
     padding-bottom: 8px;
     font-weight: bold;
@@ -754,6 +767,7 @@ QPushButton[themeID="replayBufferButton"],
 #streamButton:!hover:!pressed:checked,
 #recordButton:!hover:!pressed:checked,
 QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
+QPushButton[themeID="vcamButton"]:!hover:!pressed:checked,
 #modeSwitch:!hover:!pressed:checked,
 #broadcastButton:!hover:!pressed:checked {
     background: rgb(40,76,184);
@@ -763,6 +777,7 @@ QPushButton[themeID="replayBufferButton"]:!hover:!pressed:checked,
 #streamButton:hover:!pressed:checked,
 #recordButton:hover:!pressed:checked,
 QPushButton[themeID="replayBufferButton"]:!pressed:checked,
+QPushButton[themeID="vcamButton"]:!pressed:checked,
 #modeSwitch:hover:!pressed:checked,
 #broadcastButton:hover:!pressed:checked {
     background: rgb(54,92,192);

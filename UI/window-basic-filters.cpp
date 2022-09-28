@@ -275,9 +275,25 @@ void OBSBasicFilters::UpdatePropertiesView(int row, bool async)
 	if (view) {
 		updatePropertiesSignal.Disconnect();
 		ui->propertiesFrame->setVisible(false);
-		view->hide();
-		view->deleteLater();
-		view = nullptr;
+		/* Deleting a filter will trigger a visibility change, which will also
+		 * trigger a focus change if the focus has not been on the list itself
+		 * (e.g. after interacting with the property view).
+		 *
+		 * When an async filter list is available in the view, it will be the first
+		 * candidate to receive focus. If this list is empty, we hide the property
+		 * view by default and set the view to a `nullptr`.
+		 *
+		 * When the call for the visibility change returns, we need to check for
+		 * this possibility, as another event might have hidden (and deleted) the
+		 * view already.
+		 *
+		 * macOS might be especially affected as it doesn't switch keyboard focus
+		 * to buttons like Windows does. */
+		if (view) {
+			view->hide();
+			view->deleteLater();
+			view = nullptr;
+		}
 	}
 
 	if (!filter)

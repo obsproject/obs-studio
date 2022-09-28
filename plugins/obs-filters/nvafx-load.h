@@ -18,6 +18,12 @@ static HMODULE nv_cuda = NULL;
 #define NVAFX_EFFECT_AEC "aec"
 #define NVAFX_EFFECT_SUPERRES "superres"
 
+/** Model paths */
+#define NVAFX_EFFECT_DENOISER_MODEL "\\models\\denoiser_48k.trtpkg"
+#define NVAFX_EFFECT_DEREVERB_MODEL "\\models\\dereverb_48k.trtpkg"
+#define NVAFX_EFFECT_DEREVERB_DENOISER_MODEL \
+	"\\models\\dereverb_denoiser_48k.trtpkg"
+
 #define NVAFX_CHAINED_EFFECT_DENOISER_16k_SUPERRES_16k_TO_48k \
 	"denoiser16k_superres16kto48k"
 #define NVAFX_CHAINED_EFFECT_DEREVERB_16k_SUPERRES_16k_TO_48k \

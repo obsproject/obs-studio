@@ -109,19 +109,26 @@ static bool get_client_box(HWND window, uint32_t width, uint32_t height,
 	return client_box_available;
 }
 
-static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor)
+static DXGI_FORMAT get_pixel_format(HWND window, HMONITOR monitor,
+				    BOOL force_sdr)
 {
+	static constexpr DXGI_FORMAT sdr_format = DXGI_FORMAT_B8G8R8A8_UNORM;
+
+	if (force_sdr)
+		return sdr_format;
+
 	if (window)
 		monitor = MonitorFromWindow(window, MONITOR_DEFAULTTONEAREST);
 
 	return (monitor && gs_is_monitor_hdr(monitor))
 		       ? DXGI_FORMAT_R16G16B16A16_FLOAT
-		       : DXGI_FORMAT_B8G8R8A8_UNORM;
+		       : sdr_format;
 }
 
 struct winrt_capture {
 	HWND window;
-	bool client_area;
+	BOOL client_area;
+	BOOL force_sdr;
 	HMONITOR monitor;
 	DXGI_FORMAT format;
 
@@ -177,7 +184,8 @@ struct winrt_capture {
 
 		obs_enter_graphics();
 
-		if (desc.Format == get_pixel_format(window, monitor)) {
+		if (desc.Format ==
+		    get_pixel_format(window, monitor, force_sdr)) {
 			if (!client_area ||
 			    get_client_box(window, desc.Width, desc.Height,
 					   &client_box)) {
@@ -425,10 +433,9 @@ static void winrt_capture_device_loss_rebuild(void *device_void, void *data)
 	}
 }
 
-static struct winrt_capture *winrt_capture_init_internal(BOOL cursor,
-							 HWND window,
-							 BOOL client_area,
-							 HMONITOR monitor)
+static struct winrt_capture *
+winrt_capture_init_internal(BOOL cursor, HWND window, BOOL client_area,
+			    BOOL force_sdr, HMONITOR monitor)
 try {
 	ID3D11Device *const d3d_device = (ID3D11Device *)gs_get_device_obj();
 	ComPtr<IDXGIDevice> dxgi_device;
@@ -461,7 +468,7 @@ try {
 		device = inspectable.as<winrt::Windows::Graphics::DirectX::
 						Direct3D11::IDirect3DDevice>();
 	const winrt::Windows::Graphics::SizeInt32 size = item.Size();
-	const DXGI_FORMAT format = get_pixel_format(window, monitor);
+	const DXGI_FORMAT format = get_pixel_format(window, monitor, force_sdr);
 	const winrt::Windows::Graphics::Capture::Direct3D11CaptureFramePool
 		frame_pool = winrt::Windows::Graphics::Capture::
 			Direct3D11CaptureFramePool::Create(
@@ -490,6 +497,7 @@ try {
 	struct winrt_capture *capture = new winrt_capture{};
 	capture->window = window;
 	capture->client_area = client_area;
+	capture->force_sdr = force_sdr;
 	capture->monitor = monitor;
 	capture->format = format;
 	capture->capture_cursor = cursor && cursor_toggle_supported;
@@ -530,15 +538,17 @@ try {
 }
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init_window(BOOL cursor, HWND window, BOOL client_area)
+winrt_capture_init_window(BOOL cursor, HWND window, BOOL client_area,
+			  BOOL force_sdr)
 {
-	return winrt_capture_init_internal(cursor, window, client_area, NULL);
+	return winrt_capture_init_internal(cursor, window, client_area,
+					   force_sdr, NULL);
 }
 
 extern "C" EXPORT struct winrt_capture *
 winrt_capture_init_monitor(BOOL cursor, HMONITOR monitor)
 {
-	return winrt_capture_init_internal(cursor, NULL, false, monitor);
+	return winrt_capture_init_internal(cursor, NULL, false, false, monitor);
 }
 
 extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)

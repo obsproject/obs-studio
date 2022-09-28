@@ -2198,11 +2198,7 @@ static void add_manual_properties(obs_properties_t *props)
 
 static obs_properties_t *av_capture_properties(void *data)
 {
-	struct av_capture *capture = static_cast<av_capture *>(data);
-
 	obs_properties_t *props = obs_properties_create();
-
-	add_properties_param(props, capture);
 
 	obs_property_t *dev_list = obs_properties_add_list(
 		props, "device", TEXT_DEVICE, OBS_COMBO_TYPE_LIST,
@@ -2253,25 +2249,33 @@ static obs_properties_t *av_capture_properties(void *data)
 	obs_properties_add_bool(props, "buffering",
 				obs_module_text("Buffering"));
 
-	OBSDataAutoRelease current_settings =
-		obs_source_get_settings(capture->source);
-	if (!obs_data_get_bool(current_settings, "enable_audio")) {
-		auto cb = [](obs_properties_t *, obs_property_t *prop,
-			     void *data) {
-			struct av_capture *capture =
-				static_cast<av_capture *>(data);
-			OBSDataAutoRelease settings = obs_data_create();
-			obs_data_set_bool(settings, "enable_audio", true);
-			obs_source_update(capture->source, settings);
+	if (data) {
+		struct av_capture *capture = static_cast<av_capture *>(data);
 
-			// Enable all audio tracks
-			obs_source_set_audio_mixers(capture->source, 0x3F);
-			obs_property_set_visible(prop, false);
-			return true;
-		};
-		obs_properties_add_button2(props, "enable_audio_button",
-					   obs_module_text("EnableAudio"), cb,
-					   capture);
+		add_properties_param(props, capture);
+
+		OBSDataAutoRelease current_settings =
+			obs_source_get_settings(capture->source);
+		if (!obs_data_get_bool(current_settings, "enable_audio")) {
+			auto cb = [](obs_properties_t *, obs_property_t *prop,
+				     void *data) {
+				struct av_capture *capture =
+					static_cast<av_capture *>(data);
+				OBSDataAutoRelease settings = obs_data_create();
+				obs_data_set_bool(settings, "enable_audio",
+						  true);
+				obs_source_update(capture->source, settings);
+
+				// Enable all audio tracks
+				obs_source_set_audio_mixers(capture->source,
+							    0x3F);
+				obs_property_set_visible(prop, false);
+				return true;
+			};
+			obs_properties_add_button2(
+				props, "enable_audio_button",
+				obs_module_text("EnableAudio"), cb, capture);
+		}
 	}
 
 	return props;

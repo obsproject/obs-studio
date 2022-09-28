@@ -1082,12 +1082,12 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
 		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
-	setMouseTracking(true);
-
 	UpdateNoSourcesMessage();
 	connect(App(), &OBSApp::StyleChanged, this,
 		&SourceTree::UpdateNoSourcesMessage);
 	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateIcons);
+
+	setItemDelegate(new SourceTreeDelegate(this));
 }
 
 void SourceTree::UpdateIcons()
@@ -1489,31 +1489,6 @@ void SourceTree::dropEvent(QDropEvent *event)
 	QListView::dropEvent(event);
 }
 
-void SourceTree::mouseMoveEvent(QMouseEvent *event)
-{
-	QPoint pos = event->pos();
-	SourceTreeItem *item = qobject_cast<SourceTreeItem *>(childAt(pos));
-
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-
-	QListView::mouseMoveEvent(event);
-
-	std::lock_guard<std::mutex> lock(preview->selectMutex);
-	preview->hoveredPreviewItems.clear();
-	if (item)
-		preview->hoveredPreviewItems.push_back(item->sceneitem);
-}
-
-void SourceTree::leaveEvent(QEvent *event)
-{
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-
-	QListView::leaveEvent(event);
-
-	std::lock_guard<std::mutex> lock(preview->selectMutex);
-	preview->hoveredPreviewItems.clear();
-}
-
 void SourceTree::selectionChanged(const QItemSelection &selected,
 				  const QItemSelection &deselected)
 {
@@ -1580,8 +1555,12 @@ bool SourceTree::Edit(int row)
 	QModelIndex index = stm->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = reinterpret_cast<SourceTreeItem *>(widget);
-	if (itemWidget->IsEditing())
+	if (itemWidget->IsEditing()) {
+#ifdef __APPLE__
+		itemWidget->ExitEditMode(true);
+#endif
 		return false;
+	}
 
 	itemWidget->EnterEditMode();
 	edit(index);
@@ -1742,4 +1721,21 @@ void SourceTree::paintEvent(QPaintEvent *event)
 	} else {
 		QListView::paintEvent(event);
 	}
+}
+
+SourceTreeDelegate::SourceTreeDelegate(QObject *parent)
+	: QStyledItemDelegate(parent)
+{
+}
+
+QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
+				   const QModelIndex &index) const
+{
+	SourceTree *tree = qobject_cast<SourceTree *>(parent());
+	QWidget *item = tree->indexWidget(index);
+
+	if (!item)
+		return (QSize(0, 0));
+
+	return (QSize(option.widget->minimumWidth(), item->height()));
 }

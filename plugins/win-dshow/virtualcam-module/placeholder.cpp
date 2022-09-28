@@ -97,7 +97,7 @@ static bool load_placeholder_internal()
 
 	slash[1] = 0;
 
-	StringCbCat(file, sizeof(file), L"placeholder.png");
+	StringCbCat(file, sizeof(file), L"sl-placeholder.png");
 
 	Bitmap bmp(file);
 	if (bmp.GetLastStatus() != Status::Ok) {

@@ -59,6 +59,15 @@ void OBSHotkeyEdit::keyPressEvent(QKeyEvent *event)
 	HandleNewKey(new_key);
 }
 
+QVariant OBSHotkeyEdit::inputMethodQuery(Qt::InputMethodQuery query) const
+{
+	if (query == Qt::ImEnabled) {
+		return false;
+	} else {
+		return QLineEdit::inputMethodQuery(query);
+	}
+}
+
 #ifdef __APPLE__
 void OBSHotkeyEdit::keyReleaseEvent(QKeyEvent *event)
 {

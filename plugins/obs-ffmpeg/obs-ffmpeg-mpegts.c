@@ -163,6 +163,15 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 			pq ? (int)obs_get_video_hdr_nominal_peak_level()
 			   : (hlg ? 1000 : 0);
 
+		size_t content_size;
+		AVContentLightMetadata *const content =
+			av_content_light_metadata_alloc(&content_size);
+		content->MaxCLL = hdr_nominal_peak_level;
+		content->MaxFALL = hdr_nominal_peak_level;
+		av_stream_add_side_data(data->video,
+					AV_PKT_DATA_CONTENT_LIGHT_LEVEL,
+					(uint8_t *)content, content_size);
+
 		AVMasteringDisplayMetadata *const mastering =
 			av_mastering_display_metadata_alloc();
 		mastering->display_primaries[0][0] = av_make_q(17, 25);
@@ -720,18 +729,16 @@ static uint64_t get_packet_sys_dts(struct ffmpeg_output *output,
 static int mpegts_process_packet(struct ffmpeg_output *output)
 {
 	AVPacket *packet = NULL;
-	bool new_packet = false;
-	int ret;
+	int ret = 0;
 
 	pthread_mutex_lock(&output->write_mutex);
 	if (output->packets.num) {
 		packet = output->packets.array[0];
 		da_erase(output->packets, 0);
-		new_packet = true;
 	}
 	pthread_mutex_unlock(&output->write_mutex);
 
-	if (!new_packet)
+	if (!packet)
 		return 0;
 
 	//blog(LOG_DEBUG,
@@ -742,13 +749,17 @@ static int mpegts_process_packet(struct ffmpeg_output *output)
 
 	if (stopping(output)) {
 		uint64_t sys_ts = get_packet_sys_dts(output, packet);
-		if (sys_ts >= output->stop_ts)
-			return 0;
+		if (sys_ts >= output->stop_ts) {
+			ret = 0;
+			goto end;
+		}
 	}
 	output->total_bytes += packet->size;
+	uint8_t *buf = packet->data;
 	ret = av_interleaved_write_frame(output->ff_data.output, packet);
+	av_freep(&buf);
+
 	if (ret < 0) {
-		av_packet_free(&packet);
 		ffmpeg_mpegts_log_error(
 			LOG_WARNING, &output->ff_data,
 			"process_packet: Error writing packet: %s",
@@ -757,12 +768,12 @@ static int mpegts_process_packet(struct ffmpeg_output *output)
 		/* Treat "Invalid data found when processing input" and
 		 * "Invalid argument" as non-fatal */
 		if (ret == AVERROR_INVALIDDATA || ret == -EINVAL) {
-			return 0;
+			ret = 0;
 		}
-		return ret;
 	}
-
-	return 0;
+end:
+	av_packet_free(&packet);
+	return ret;
 }
 
 static void *write_thread(void *data)

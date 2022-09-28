@@ -1201,9 +1201,11 @@ char *obs_find_data_file(const char *file)
 {
 	struct dstr path = {0};
 
+#ifdef _WIN32
 	char *result = find_libobs_data_file(file);
 	if (result)
 		return result;
+#endif
 
 	for (size_t i = 0; i < core_module_paths.num; ++i) {
 		if (check_path(file, core_module_paths.array[i].array, &path))
@@ -1892,7 +1894,7 @@ void obs_enum_sources(bool (*enum_proc)(void *, obs_source_t *), void *param)
 	pthread_mutex_unlock(&obs->data.sources_mutex);
 }
 
-void obs_enum_scenes(bool (*enum_proc)(void *, obs_scene_t *), void *param)
+void obs_enum_scenes(bool (*enum_proc)(void *, obs_source_t *), void *param)
 {
 	obs_source_t *source;
 
@@ -1903,7 +1905,7 @@ void obs_enum_scenes(bool (*enum_proc)(void *, obs_scene_t *), void *param)
 		obs_source_t *s = obs_source_get_ref(source);
 		if (s) {
 			if (source->info.type == OBS_SOURCE_TYPE_SCENE &&
-				!source->context.private && !enum_proc(param, (obs_scene_t*)s)) {
+				!source->context.private && !enum_proc(param, s)) {
 				obs_source_release(s);
 				break;
 			}
@@ -1926,9 +1928,9 @@ bool source_ref_enum_callback(void *data, obs_source_t *source)
 	return true;
 }
 
-bool scene_ref_enum_callback(void *data, obs_scene_t *source)
+bool scene_ref_enum_callback(void *data, obs_source_t *source)
 {
-	obs_scene_t ** checked_ref = (obs_scene_t **)data;
+	obs_source_t **checked_ref = (obs_source_t **)data;
 	
 	if (source == *checked_ref)
 		*checked_ref = NULL;
