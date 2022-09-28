@@ -858,6 +858,8 @@ static inline void output_frame(struct obs_core_video_mix *video)
 	} else {
 		if (video == obs->video.stream_mix || video == obs->video.record_mix)
 			return;
+		else
+			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
 	}
 
 	const bool raw_active = video->raw_was_active;
