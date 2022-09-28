@@ -990,19 +990,6 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
     color: rgb(53,82,222);
 }
 
-/* Pause */
-PauseCheckBox {
-    outline: none;
-}
-
-PauseCheckBox::indicator:checked {
-    image: url(:/res/images/media-pause.svg);
-}
-
-PauseCheckBox::indicator:unchecked {
-    image: url(:/res/images/media-play.svg);
-}
-
 /* Label warning/error */
 
 QLabel#warningLabel {
