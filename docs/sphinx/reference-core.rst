@@ -278,6 +278,8 @@ Libobs Objects
    :c:func:`obs_source_get_weak_source()` if you want to retain a
    reference after obs_enum_sources finishes.
 
+   For scripting, use :py:func:`obs_enum_sources`.
+
 ---------------------
 
 .. function:: void obs_enum_scenes(bool (*enum_proc)(void*, obs_source_t*), void *param)
@@ -521,6 +523,9 @@ Video, Audio, and Graphics
 
    Adds/removes a main rendering callback.  Allows custom rendering to
    the main stream/recording output.
+
+   For scripting (**Lua only**), use :py:func:`obs_add_main_render_callback`
+   and :py:func:`obs_remove_main_render_callback`.
 
 ---------------------
 

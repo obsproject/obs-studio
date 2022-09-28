@@ -253,6 +253,8 @@ Property Object Functions
       - :c:func:`obs_property_button_set_type`
       - :c:func:`obs_property_button_set_url`
 
+   For scripting, use :py:func:`obs_properties_add_button`.
+
    Relevant data types used with this function:
 
 .. code:: cpp

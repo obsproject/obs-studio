@@ -266,6 +266,8 @@ General Scene Functions
 
    Enumerates scene items within a scene.
 
+   For scripting, use :py:func:`obs_scene_enum_items`.
+
 ---------------------
 
 .. function:: bool obs_scene_reorder_items(obs_scene_t *scene, obs_sceneitem_t * const *item_order, size_t item_order_size)
