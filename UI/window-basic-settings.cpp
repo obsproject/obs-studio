@@ -5621,7 +5621,7 @@ void OBSBasicSettings::RecreateOutputResolutionWidget()
 
 void OBSBasicSettings::UpdateAdvNetworkGroup()
 {
-	bool enabled = IsServiceOutputHasNetworkFeatures();
+	bool enabled = protocol.contains("RTMP");
 
 	ui->advNetworkDisabled->setVisible(!enabled);
 

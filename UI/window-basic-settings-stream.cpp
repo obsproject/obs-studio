@@ -1232,23 +1232,6 @@ bool OBSBasicSettings::UpdateResFPSLimits()
 	return true;
 }
 
-bool OBSBasicSettings::IsServiceOutputHasNetworkFeatures()
-{
-	if (IsCustomService())
-		return ui->customServer->text().startsWith("rtmp");
-
-	OBSServiceAutoRelease service = SpawnTempService();
-	const char *output = obs_service_get_output_type(service);
-
-	if (!output)
-		return true;
-
-	if (strcmp(output, "rtmp_output") == 0)
-		return true;
-
-	return false;
-}
-
 static bool service_supports_codec(const char **codecs, const char *codec)
 {
 	if (!codecs)

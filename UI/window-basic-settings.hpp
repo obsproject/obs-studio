@@ -377,8 +377,6 @@ private:
 
 	OBSService GetStream1Service();
 
-	bool IsServiceOutputHasNetworkFeatures();
-
 	bool ServiceAndCodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
