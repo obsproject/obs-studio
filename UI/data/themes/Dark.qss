@@ -670,19 +670,6 @@ OBSHotkeyLabel[hotkeyPairHover=true] {
     color: red;
 }
 
-/* Pause */
-PauseCheckBox {
-    outline: none;
-}
-
-PauseCheckBox::indicator:checked {
-    image: url(:/res/images/media-pause.svg);
-}
-
-PauseCheckBox::indicator:unchecked {
-    image: url(:/res/images/media-play.svg);
-}
-
 /* Group Collapse Checkbox */
 
 SourceTreeSubItemCheckBox {
