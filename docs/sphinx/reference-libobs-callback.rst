@@ -194,6 +194,8 @@ Signals are used for all event-based callbacks.
    :param callback: Signal callback
    :param data:     Private data passed the callback
 
+   For scripting, use :py:func:`signal_handler_connect`.
+
 ---------------------
 
 .. function:: void signal_handler_connect_ref(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
@@ -215,6 +217,8 @@ Signals are used for all event-based callbacks.
    :param handler:  Signal handler object
    :param callback: Signal callback
    :param data:     Private data passed the callback
+
+   For scripting, use :py:func:`signal_handler_disconnect`.
 
 ---------------------
 
