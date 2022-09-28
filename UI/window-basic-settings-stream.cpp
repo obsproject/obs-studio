@@ -1447,27 +1447,13 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		if (obs_get_encoder_type(type) != OBS_ENCODER_VIDEO)
 			continue;
 
-		const char *streaming_codecs[] = {
-			"h264",
-#ifdef ENABLE_HEVC
-			"hevc",
-#endif
-		};
-
-		bool is_streaming_codec = false;
-		for (const char *test_codec : streaming_codecs) {
-			if (strcmp(codec, test_codec) == 0) {
-				is_streaming_codec = true;
-				break;
-			}
-		}
 		if ((caps & ENCODER_HIDE_FLAGS) != 0)
 			continue;
 
 		QString qName = QT_UTF8(name);
 		QString qType = QT_UTF8(type);
 
-		if (is_streaming_codec && service_supports_codec(codecs, codec))
+		if (service_supports_codec(codecs, codec))
 			ui->advOutEncoder->addItem(qName, qType);
 		if (!streamOnly)
 			ui->advOutRecEncoder->addItem(qName, qType);
