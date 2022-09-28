@@ -2221,6 +2221,10 @@ EXPORT void obs_enum_output_types_with_protocol(
 	const char *protocol, void *data,
 	bool (*enum_cb)(void *data, const char *id));
 
+EXPORT const char *obs_get_output_supported_video_codecs(const char *id);
+
+EXPORT const char *obs_get_output_supported_audio_codecs(const char *id);
+
 /* ------------------------------------------------------------------------- */
 /* Functions used by outputs */
 

@@ -2751,3 +2751,15 @@ void obs_enum_output_types_with_protocol(const char *protocol, void *data,
 		}
 	}
 }
+
+const char *obs_get_output_supported_video_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_video_codecs : NULL;
+}
+
+const char *obs_get_output_supported_audio_codecs(const char *id)
+{
+	const struct obs_output_info *info = find_output(id);
+	return info ? info->encoded_audio_codecs : NULL;
+}
