@@ -41,6 +41,8 @@
 
 %}
 
+%feature("python:annotations", "c");
+
 #define DEPRECATED_START
 #define DEPRECATED_END
 #define OBS_DEPRECATED
