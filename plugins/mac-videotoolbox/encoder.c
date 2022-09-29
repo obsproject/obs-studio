@@ -891,7 +891,6 @@ static const char *vt_getname(void *data)
 	return type_data->disp_name;
 }
 
-#define TEXT_VT_ENCODER obs_module_text("VTEncoder")
 #define TEXT_BITRATE obs_module_text("Bitrate")
 #define TEXT_QUALITY obs_module_text("Quality")
 #define TEXT_USE_MAX_BITRATE obs_module_text("UseMaxBitrate")
@@ -900,7 +899,6 @@ static const char *vt_getname(void *data)
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_PROFILE obs_module_text("Profile")
 #define TEXT_NONE obs_module_text("None")
-#define TEXT_DEFAULT obs_module_text("DefaultEncoder")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
 
