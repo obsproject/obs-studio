@@ -2413,6 +2413,8 @@ EXPORT const char *obs_encoder_get_last_error(obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 				       const char *message);
 
+EXPORT uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder);
+
 /* ------------------------------------------------------------------------- */
 /* Stream Services */
 
