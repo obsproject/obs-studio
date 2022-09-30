@@ -463,6 +463,14 @@ struct obs_source_info {
 			  bool key_up);
 
 	/**
+	 * Called when the filter is added to a source
+	 *
+	 * @param  data    Filter data
+	 * @param  source  Source that the filter being added to
+	 */
+	void (*filter_add)(void *data, obs_source_t *source);
+
+	/**
 	 * Called when the filter is removed from a source
 	 *
 	 * @param  data    Filter data

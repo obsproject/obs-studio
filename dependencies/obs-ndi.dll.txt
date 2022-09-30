@@ -11,7 +11,6 @@
         VCRUNTIME140_1.dll
         api-ms-win-crt-runtime-l1-1-0.dll
         api-ms-win-crt-convert-l1-1-0.dll
-        api-ms-win-crt-math-l1-1-0.dll
         api-ms-win-crt-heap-l1-1-0.dll
     
 >     Summary
