@@ -18,14 +18,17 @@
 #include <sstream>
 #include <dlfcn.h>
 #include <util/base.h>
+#include <util/threading.h>
 #include <obs-config.h>
 #include "platform.hpp"
 #include "obs-app.hpp"
 
 #include <unistd.h>
-#include <sys/sysctl.h>
 
 #import <AppKit/AppKit.h>
+#import <CoreFoundation/CoreFoundation.h>
+#import <AVFoundation/AVFoundation.h>
+#import <ApplicationServices/ApplicationServices.h>
 
 using namespace std;
 
@@ -37,55 +40,15 @@ bool isInBundle()
 
 bool GetDataFilePath(const char *data, string &output)
 {
-	if (isInBundle()) {
-		NSRunningApplication *app =
-			[NSRunningApplication currentApplication];
-		NSURL *bundleURL = [app bundleURL];
-		NSString *path = [NSString
-			stringWithFormat:@"Contents/Resources/data/obs-studio/%@",
-					 [NSString stringWithUTF8String:data]];
-		NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
-		output = [[dataURL path] UTF8String];
-	} else {
-		stringstream str;
-		str << OBS_DATA_PATH "/obs-studio/" << data;
-		output = str.str();
-	}
+	NSRunningApplication *app = [NSRunningApplication currentApplication];
+	NSURL *bundleURL = [app bundleURL];
+	NSString *path = [NSString
+		stringWithFormat:@"Contents/Resources/%@",
+				 [NSString stringWithUTF8String:data]];
+	NSURL *dataURL = [bundleURL URLByAppendingPathComponent:path];
+	output = [[dataURL path] UTF8String];
 
 	return !access(output.c_str(), R_OK);
-}
-
-bool InitApplicationBundle()
-{
-#ifdef OBS_OSX_BUNDLE
-	static bool initialized = false;
-	if (initialized)
-		return true;
-
-	try {
-		NSBundle *bundle = [NSBundle mainBundle];
-		if (!bundle)
-			throw "Could not find main bundle";
-
-		NSString *exe_path = [bundle executablePath];
-		if (!exe_path)
-			throw "Could not find executable path";
-
-		NSString *path = [exe_path stringByDeletingLastPathComponent];
-
-		if (chdir([path fileSystemRepresentation]))
-			throw "Could not change working directory to "
-			      "bundle path";
-
-	} catch (const char *error) {
-		blog(LOG_ERROR, "InitBundle: %s", error);
-		return false;
-	}
-
-	return initialized = true;
-#else
-	return true;
-#endif
 }
 
 void CheckIfAlreadyRunning(bool &already_running)
@@ -242,17 +205,199 @@ void EnableOSXDockIcon(bool enable)
 				NSApplicationActivationPolicyProhibited];
 }
 
-bool ProcessIsRosettaTranslated()
+@interface DockView : NSView {
+@private
+	QIcon icon;
+}
+@end
+
+@implementation DockView
+- (id)initWithIcon:(QIcon)icon
 {
-#ifdef __aarch64__
-	return false;
+	self = [super init];
+	self->icon = icon;
+	return self;
+}
+- (void)drawRect:(NSRect)dirtyRect
+{
+	CGSize size = dirtyRect.size;
+
+	/* Draw regular app icon */
+	NSImage *appIcon = [[NSWorkspace sharedWorkspace]
+		iconForFile:[[NSBundle mainBundle] bundlePath]];
+	[appIcon drawInRect:CGRectMake(0, 0, size.width, size.height)];
+
+	/* Draw small icon on top */
+	float iconSize = 0.45;
+	CGImageRef image =
+		icon.pixmap(size.width, size.height).toImage().toCGImage();
+	CGContextRef context = [[NSGraphicsContext currentContext] CGContext];
+	CGContextDrawImage(context,
+			   CGRectMake(size.width * (1 - iconSize), 0,
+				      size.width * iconSize,
+				      size.height * iconSize),
+			   image);
+	CGImageRelease(image);
+}
+@end
+
+MacPermissionStatus CheckPermissionWithPrompt(MacPermissionType type,
+					      bool prompt_for_permission)
+{
+	__block MacPermissionStatus permissionResponse =
+		kPermissionNotDetermined;
+
+	switch (type) {
+	case kAudioDeviceAccess: {
+		AVAuthorizationStatus audioStatus = [AVCaptureDevice
+			authorizationStatusForMediaType:AVMediaTypeAudio];
+
+		if (audioStatus == AVAuthorizationStatusNotDetermined &&
+		    prompt_for_permission) {
+			os_event_t *block_finished;
+			os_event_init(&block_finished, OS_EVENT_TYPE_MANUAL);
+			[AVCaptureDevice
+				requestAccessForMediaType:AVMediaTypeAudio
+					completionHandler:^(
+						BOOL granted
+						__attribute((unused))) {
+						os_event_signal(block_finished);
+					}];
+			os_event_wait(block_finished);
+			os_event_destroy(block_finished);
+			audioStatus = [AVCaptureDevice
+				authorizationStatusForMediaType:AVMediaTypeAudio];
+		}
+
+		permissionResponse = (MacPermissionStatus)audioStatus;
+
+		blog(LOG_INFO, "[macOS] Permission for audio device access %s.",
+		     permissionResponse == kPermissionAuthorized ? "granted"
+								 : "denied");
+
+		break;
+	}
+	case kVideoDeviceAccess: {
+		AVAuthorizationStatus videoStatus = [AVCaptureDevice
+			authorizationStatusForMediaType:AVMediaTypeVideo];
+
+		if (videoStatus == AVAuthorizationStatusNotDetermined &&
+		    prompt_for_permission) {
+			os_event_t *block_finished;
+			os_event_init(&block_finished, OS_EVENT_TYPE_MANUAL);
+			[AVCaptureDevice
+				requestAccessForMediaType:AVMediaTypeVideo
+					completionHandler:^(
+						BOOL granted
+						__attribute((unused))) {
+						os_event_signal(block_finished);
+					}];
+
+			os_event_wait(block_finished);
+			os_event_destroy(block_finished);
+			videoStatus = [AVCaptureDevice
+				authorizationStatusForMediaType:AVMediaTypeVideo];
+		}
+
+		permissionResponse = (MacPermissionStatus)videoStatus;
+
+		blog(LOG_INFO, "[macOS] Permission for video device access %s.",
+		     permissionResponse == kPermissionAuthorized ? "granted"
+								 : "denied");
+
+		break;
+	}
+	case kScreenCapture: {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 110000
+		if (@available(macOS 11.0, *)) {
+			permissionResponse = (CGPreflightScreenCaptureAccess()
+						      ? kPermissionAuthorized
+						      : kPermissionDenied);
+
+			if (permissionResponse != kPermissionAuthorized &&
+			    prompt_for_permission) {
+				permissionResponse =
+					(CGRequestScreenCaptureAccess()
+						 ? kPermissionAuthorized
+						 : kPermissionDenied);
+			}
+
+		} else {
 #else
-	int ret = 0;
-	size_t size = sizeof(ret);
-	if (sysctlbyname("sysctl.proc_translated", &ret, &size, NULL, 0) == -1)
-		return false;
-	return ret == 1;
+		{
 #endif
+			CGDisplayStreamRef stream = CGDisplayStreamCreate(
+				CGMainDisplayID(), 1, 1,
+				kCVPixelFormatType_32BGRA, nil, nil);
+
+			if (stream) {
+				permissionResponse = kPermissionAuthorized;
+				CFRelease(stream);
+
+				if (prompt_for_permission) {
+				}
+			} else {
+				permissionResponse = kPermissionDenied;
+			}
+		}
+
+		blog(LOG_INFO, "[macOS] Permission for screen capture %s.",
+		     permissionResponse == kPermissionAuthorized ? "granted"
+								 : "denied");
+
+		break;
+	}
+	case kAccessibility: {
+		permissionResponse = (AXIsProcessTrusted()
+					      ? kPermissionAuthorized
+					      : kPermissionDenied);
+
+		if (permissionResponse != kPermissionAuthorized &&
+		    prompt_for_permission) {
+			NSDictionary *options = @{
+				(__bridge id)kAXTrustedCheckOptionPrompt: @YES
+			};
+			permissionResponse = (AXIsProcessTrustedWithOptions(
+						      (CFDictionaryRef)options)
+						      ? kPermissionAuthorized
+						      : kPermissionDenied);
+		}
+
+		blog(LOG_INFO, "[macOS] Permission for accessibility %s.",
+		     permissionResponse == kPermissionAuthorized ? "granted"
+								 : "denied");
+		break;
+	}
+	}
+
+	return permissionResponse;
+}
+
+void OpenMacOSPrivacyPreferences(const char *tab)
+{
+	NSURL *url = [NSURL
+		URLWithString:
+			[NSString
+				stringWithFormat:
+					@"x-apple.systempreferences:com.apple.preference.security?Privacy_%s",
+					tab]];
+	[[NSWorkspace sharedWorkspace] openURL:url];
+}
+
+void TaskbarOverlayInit() {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus status)
+{
+	QIcon icon;
+	if (status == TaskbarOverlayStatusActive)
+		icon = QIcon::fromTheme("obs-active",
+					QIcon(":/res/images/active_mac.png"));
+	else if (status == TaskbarOverlayStatusPaused)
+		icon = QIcon::fromTheme("obs-paused",
+					QIcon(":/res/images/paused_mac.png"));
+
+	NSDockTile *tile = [NSApp dockTile];
+	[tile setContentView:[[DockView alloc] initWithIcon:icon]];
+	[tile display];
 }
 
 /*
@@ -278,6 +423,15 @@ bool ProcessIsRosettaTranslated()
 	_handlingSendEvent = NO;
 }
 @end
+
+void InstallNSThreadLocks()
+{
+	[[NSThread new] start];
+
+	if ([NSThread isMultiThreaded] != 1) {
+		abort();
+	}
+}
 
 void InstallNSApplicationSubclass()
 {

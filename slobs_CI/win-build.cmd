@@ -21,9 +21,8 @@ cd "%MAIN_DIR%"
 cmake -H. ^
          -B"%CD%\%BUILD_DIRECTORY%" ^
          -G"%CmakeGenerator%" -A x64 ^
-         -DCMAKE_SYSTEM_VERSION=10.0 ^
+         -DCMAKE_SYSTEM_VERSION="10.0.18363.657" ^
          -DCMAKE_INSTALL_PREFIX="%CD%\%InstallPath%" ^
-         -DDepsPath="%DEPS_DIR%\win64" ^
          -DVLCPath="%VLC_DIR%" ^
          -DCEF_ROOT_DIR="%CEFPATH%" ^
          -DUSE_UI_LOOP=false ^
@@ -35,9 +34,12 @@ cmake -H. ^
          -DBUILD_CAPTIONS=false ^
          -DCOMPILE_D3D12_HOOK=true ^
          -DBUILD_BROWSER=true ^
+         -DENABLE_BROWSER=true ^
+         -DENABLE_BROWSER_PANELS=false ^
+         -DENABLE_BROWSER_QT_LOOP=false ^
          -DBROWSER_FRONTEND_API_SUPPORT=false ^
          -DBROWSER_PANEL_SUPPORT=false ^
-         -DBROWSER_USE_STATIC_CRT=false ^
+         -DBROWSER_USE_STATIC_CRT=true ^
          -DEXPERIMENTAL_SHARED_TEXTURE_SUPPORT=true ^
          -DCHECK_FOR_SERVICE_UPDATES=true ^
          -DOPENSSL_ROOT_DIR=%OPENSSL_LOCAL_PATH% ^
@@ -49,12 +51,18 @@ cmake -H. ^
          -DMEDIASOUP_SDP_INCLUDE_PATH=%MEDIASOUPCLIENT_DIR%/include/sdptransform ^
          -DProtobuf_DIR="%GRPC_DIST%\cmake" ^
          -Dabsl_DIR="%GRPC_DIST%\lib\cmake\absl" ^
-         -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc"
+         -DgRPC_DIR="%GRPC_DIST%\lib\cmake\grpc" ^
+         -DCMAKE_PREFIX_PATH=%DEPS_DIR% ^
+         -DCMAKE_BUILD_TYPE=%BuildConfig% ^
+         -DBUILD_FOR_DISTRIBUTION=true ^
+         -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
+         -DENABLE_VLC=true ^
+         -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C"
 
+del /q /s %CD%\%InstallPath%
+cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v
+cmake -S . -B %CD%\%BUILD_DIRECTORY% -DCOPIED_DEPENDENCIES=OFF -DCOPY_DEPENDENCIES=ON
 cmake --build %CD%\%BUILD_DIRECTORY% --target install --config %BuildConfig% -v
 
 cmake --build %CD%\%BUILD_DIRECTORY% --target check_dependencies --config %BuildConfig% -v
 if %errorlevel% neq 0 exit /b %errorlevel%
-
-mkdir %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput
-move %CD%\%BUILD_DIRECTORY%\deps\%OBS_VIRTUALCAM% %CD%\%InstallPath%\data\obs-plugins\obs-virtualoutput\%OBS_VIRTUALCAM%

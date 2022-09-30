@@ -1,0 +1,76 @@
+#include "color.effect"
+
+uniform float4x4 ViewProj;
+uniform texture2d image;
+
+uniform float multiplier;
+uniform float hdr_input_maximum_nits;
+uniform float hdr_output_maximum_nits;
+
+sampler_state textureSampler {
+	Filter    = Linear;
+	AddressU  = Clamp;
+	AddressV  = Clamp;
+};
+
+struct VertData {
+	float4 pos : POSITION;
+	float2 uv  : TEXCOORD0;
+};
+
+struct VertOut {
+	float2 uv  : TEXCOORD0;
+	float4 pos : POSITION;
+};
+
+struct FragData {
+	float2 uv  : TEXCOORD0;
+};
+
+VertOut VSHdrTonemap(VertData v_in)
+{
+	VertOut vert_out;
+	vert_out.pos = mul(float4(v_in.pos.xyz, 1.0), ViewProj);
+	vert_out.uv  = v_in.uv;
+	return vert_out;
+}
+
+float4 PSReinhard(FragData f_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, f_in.uv);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSMaxrgb(FragData f_in) : TARGET
+{
+	float4 rgba = image.Sample(textureSampler, f_in.uv);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = maxRGB_eetf_linear_to_linear(rgba.rgb, hdr_input_maximum_nits, hdr_output_maximum_nits);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	float multiplier_i = 1. / multiplier;
+	rgba.rgb *= multiplier_i;
+	return rgba;
+}
+
+technique Reinhard
+{
+	pass
+	{
+		vertex_shader = VSHdrTonemap(v_in);
+		pixel_shader  = PSReinhard(f_in);
+	}
+}
+
+technique MaxRGB
+{
+	pass
+	{
+		vertex_shader = VSHdrTonemap(v_in);
+		pixel_shader  = PSMaxrgb(f_in);
+	}
+}

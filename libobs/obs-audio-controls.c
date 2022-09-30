@@ -314,7 +314,7 @@ static int get_nr_channels_from_audio_data(const struct audio_data *data)
 	} while (false)
 
 /* Calculate the true peak over a set of samples.
- * The algorithm implements 5x oversampling by using Whittaker–Shannon
+ * The algorithm implements 5x oversampling by using Whittaker-Shannon
  * interpolation over four samples.
  *
  * The four samples have location t=-1.5, -0.5, +0.5, +1.5
@@ -551,8 +551,6 @@ static void volmeter_source_data_received(void *vptr, obs_source_t *source,
 	pthread_mutex_unlock(&volmeter->mutex);
 
 	signal_levels_updated(volmeter, magnitude, peak, input_peak);
-
-	UNUSED_PARAMETER(source);
 }
 
 obs_fader_t *obs_fader_create(enum obs_fader_type type)
@@ -897,7 +895,7 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 		source_nr_audio_channels = get_audio_channels(
 			volmeter->source->sample_info.speakers);
 	} else {
-		source_nr_audio_channels = 1;
+		source_nr_audio_channels = 0;
 	}
 
 	struct obs_audio_info audio_info;
@@ -907,7 +905,7 @@ int obs_volmeter_get_nr_channels(obs_volmeter_t *volmeter)
 		obs_nr_audio_channels = 2;
 	}
 
-	return CLAMP(source_nr_audio_channels, 1, obs_nr_audio_channels);
+	return CLAMP(source_nr_audio_channels, 0, obs_nr_audio_channels);
 }
 
 void obs_volmeter_add_callback(obs_volmeter_t *volmeter,

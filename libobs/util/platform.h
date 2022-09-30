@@ -103,6 +103,7 @@ EXPORT void os_end_high_performance(os_performance_token_t *);
  * Returns false if already at or past target time.
  */
 EXPORT bool os_sleepto_ns(uint64_t time_target);
+EXPORT bool os_sleepto_ns_fast(uint64_t time_target);
 EXPORT void os_sleep_ms(uint32_t duration);
 
 EXPORT uint64_t os_gettime_ns(void);
@@ -121,6 +122,8 @@ EXPORT size_t os_get_abs_path(const char *path, char *abspath, size_t size);
 EXPORT char *os_get_abs_path_ptr(const char *path);
 
 EXPORT const char *os_get_path_extension(const char *path);
+
+EXPORT bool os_get_emulation_status(void);
 
 struct os_dir;
 typedef struct os_dir os_dir_t;

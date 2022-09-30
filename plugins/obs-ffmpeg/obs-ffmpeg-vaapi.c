@@ -54,8 +54,10 @@ struct vaapi_encoder {
 	AVBufferRef *vadevice_ref;
 	AVBufferRef *vaframes_ref;
 
-	AVCodec *vaapi;
+	const AVCodec *vaapi;
 	AVCodecContext *context;
+
+	AVPacket *packet;
 
 	AVFrame *vframe;
 
@@ -75,7 +77,7 @@ struct vaapi_encoder {
 static const char *vaapi_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return "FFMPEG VAAPI";
+	return "FFMPEG VAAPI H.264";
 }
 
 static inline bool valid_format(enum video_format format)
@@ -158,6 +160,8 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 		warn("Failed to open VAAPI codec: %s", av_err2str(ret));
 		return false;
 	}
+
+	enc->packet = av_packet_alloc();
 
 	enc->initialized = true;
 	return true;
@@ -298,30 +302,34 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	return vaapi_init_codec(enc, device);
 }
 
+static inline void flush_remaining_packets(struct vaapi_encoder *enc)
+{
+	int r_pkt = 1;
+
+	while (r_pkt) {
+#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
+		if (avcodec_receive_packet(enc->context, enc->packet) < 0)
+			break;
+#else
+		if (avcodec_encode_video2(enc->context, enc->packet, NULL,
+					  &r_pkt) < 0)
+			break;
+#endif
+
+		if (r_pkt)
+			av_packet_unref(enc->packet);
+	}
+}
+
 static void vaapi_destroy(void *data)
 {
 	struct vaapi_encoder *enc = data;
 
-	if (enc->initialized) {
-		AVPacket pkt = {0};
-		int r_pkt = 1;
+	if (enc->initialized)
+		flush_remaining_packets(enc);
 
-		while (r_pkt) {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-			if (avcodec_receive_packet(enc->context, &pkt) < 0)
-				break;
-#else
-			if (avcodec_encode_video2(enc->context, &pkt, NULL,
-						  &r_pkt) < 0)
-				break;
-#endif
-
-			if (r_pkt)
-				av_packet_unref(&pkt);
-		}
-	}
-
-	avcodec_close(enc->context);
+	av_packet_free(&enc->packet);
+	avcodec_free_context(&enc->context);
 	av_frame_unref(enc->vframe);
 	av_frame_free(&enc->vframe);
 	av_buffer_unref(&enc->vaframes_ref);
@@ -343,11 +351,7 @@ static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
 
-	int vaapi_codec = (int)obs_data_get_int(settings, "vaapi_codec");
-
-	if (vaapi_codec == AV_CODEC_ID_H264) {
-		enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
-	}
+	enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
 
 	enc->first_packet = true;
 
@@ -405,7 +409,6 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 {
 	struct vaapi_encoder *enc = data;
 	AVFrame *hwframe = NULL;
-	AVPacket av_pkt;
 	int got_packet;
 	int ret;
 
@@ -443,19 +446,17 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 		goto fail;
 	}
 
-	av_init_packet(&av_pkt);
-
 #if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	ret = avcodec_send_frame(enc->context, hwframe);
 	if (ret == 0)
-		ret = avcodec_receive_packet(enc->context, &av_pkt);
+		ret = avcodec_receive_packet(enc->context, enc->packet);
 
 	got_packet = (ret == 0);
 
 	if (ret == AVERROR_EOF || ret == AVERROR(EAGAIN))
 		ret = 0;
 #else
-	ret = avcodec_encode_video2(enc->context, &av_pkt, hwframe,
+	ret = avcodec_encode_video2(enc->context, enc->packet, hwframe,
 				    &got_packet);
 #endif
 	if (ret < 0) {
@@ -463,25 +464,27 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 		goto fail;
 	}
 
-	if (got_packet && av_pkt.size) {
+	if (got_packet && enc->packet->size) {
 		if (enc->first_packet) {
 			uint8_t *new_packet;
 			size_t size;
 
 			enc->first_packet = false;
-			obs_extract_avc_headers(av_pkt.data, av_pkt.size,
-						&new_packet, &size,
-						&enc->header, &enc->header_size,
-						&enc->sei, &enc->sei_size);
+			obs_extract_avc_headers(enc->packet->data,
+						enc->packet->size, &new_packet,
+						&size, &enc->header,
+						&enc->header_size, &enc->sei,
+						&enc->sei_size);
 
 			da_copy_array(enc->buffer, new_packet, size);
 			bfree(new_packet);
 		} else {
-			da_copy_array(enc->buffer, av_pkt.data, av_pkt.size);
+			da_copy_array(enc->buffer, enc->packet->data,
+				      enc->packet->size);
 		}
 
-		packet->pts = av_pkt.pts;
-		packet->dts = av_pkt.dts;
+		packet->pts = enc->packet->pts;
+		packet->dts = enc->packet->dts;
 		packet->data = enc->buffer.array;
 		packet->size = enc->buffer.num;
 		packet->type = OBS_ENCODER_VIDEO;
@@ -491,7 +494,7 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 		*received_packet = false;
 	}
 
-	av_packet_unref(&av_pkt);
+	av_packet_unref(enc->packet);
 	av_frame_free(&hwframe);
 	return true;
 
@@ -510,7 +513,6 @@ static void vaapi_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "vaapi_device",
 				    "/dev/dri/renderD128");
-	obs_data_set_default_int(settings, "vaapi_codec", AV_CODEC_ID_H264);
 	obs_data_set_default_int(settings, "profile",
 				 FF_PROFILE_H264_CONSTRAINED_BASELINE);
 	obs_data_set_default_int(settings, "level", 40);
@@ -593,8 +595,16 @@ static obs_properties_t *vaapi_properties(void *unused)
 			    strcmp(file_name, "..") == 0)
 				continue;
 
-			char path[64] = "\0";
-			sprintf(path, "/dev/dri/by-path/%s", file_name);
+			char path[64] = {0};
+
+			// Use the return value of snprintf to prevent truncation warning.
+			int written = snprintf(path, 64, "/dev/dri/by-path/%s",
+					       file_name);
+			if (written >= 64)
+				blog(LOG_DEBUG,
+				     "obs-ffmpeg-vaapi: A format truncation may have occurred."
+				     " This can be ignored since it is quite improbable.");
+
 			type = strrchr(file_name, '-');
 			if (type == NULL)
 				continue;
@@ -631,13 +641,6 @@ static obs_properties_t *vaapi_properties(void *unused)
 			}
 		}
 	}
-
-	list = obs_properties_add_list(props, "vaapi_codec",
-				       obs_module_text("VAAPI.Codec"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_INT);
-
-	obs_property_list_add_int(list, "H.264 (default)", AV_CODEC_ID_H264);
 
 	list = obs_properties_add_list(props, "profile",
 				       obs_module_text("Profile"),
@@ -683,9 +686,10 @@ static obs_properties_t *vaapi_properties(void *unused)
 
 	obs_properties_add_int(props, "qp", "QP", 0, 51, 1);
 
-	obs_properties_add_int(props, "keyint_sec",
-			       obs_module_text("KeyframeIntervalSec"), 0, 20,
-			       1);
+	p = obs_properties_add_int(props, "keyint_sec",
+				   obs_module_text("KeyframeIntervalSec"), 0,
+				   20, 1);
+	obs_property_int_set_suffix(p, " s");
 
 	return props;
 }

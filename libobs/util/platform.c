@@ -19,6 +19,7 @@
 #include <time.h>
 #include <errno.h>
 #include <stdlib.h>
+#include <inttypes.h>
 #include <locale.h>
 #include "c99defs.h"
 #include "platform.h"
@@ -782,6 +783,10 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				strcpy(convert, get_video_format_name(
 							ovi.output_format));
 				replace_text(&sf, pos, 3, convert);
+
+			} else if (astrcmp_n(cmp, "%s", 2) == 0) {
+				sprintf(convert, "%" PRId64, (int64_t)now);
+				replace_text(&sf, pos, 2, convert);
 			}
 		}
 

@@ -20,24 +20,27 @@ env:
 
 jobs:
   macos64:
-    name: 'macOS 64-bit'
-    runs-on: [macos-latest]
+    name: 'macOS'
+    runs-on: [macos-12]
     strategy:
       matrix:
+        arch: ['x86_64', 'arm64']
         ReleaseName: [release, debug]
         include:
         - ReleaseName: release
-          BuildConfig: RelWithDebInfo
-          CefBuildConfig: Release
+          BUILD_CONFIG: RelWithDebInfo
         - ReleaseName: debug
-          BuildConfig: Debug
-          CefBuildConfig: Debug
+          BUILD_CONFIG: Debug
     env:
       OS_TAG: "osx"
-      CEF_MAC_BUILD_VERSION: 4638
-      MACOS_DEPS_VERSION: 2022-02-13
-      VLC_VERSION: 3.0.8
-      MIN_MACOS_VERSION: 10.13
+      MACOSX_DEPLOYMENT_TARGET_X86_64: '10.15'
+      MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
+      CEF_BUILD_VERSION_MAC: '5060'
+      DEPS_VERSION_MAC: '2022-08-02'
+      VLC_VERSION_MAC: '3.0.8'
+      QT_VERSION_MAC: '6.3.1'
+      SPARKLE_VERSION: '1.26.0'
+
     steps:
       - name: 'Checkout'
         uses: actions/checkout@v3
@@ -47,12 +50,23 @@ jobs:
         id: get_version
         run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
         shell: bash
-      - name: Install dependencies
-        run: ./slobs_CI/install-script-osx.sh
-        env:
-          ReleaseName: ${{matrix.ReleaseName}}
-          BuildConfig: ${{matrix.BuildConfig}}
-          CefBuildConfig: ${{matrix.CefBuildConfig}}
+      - name: 'Setup build environment'
+        id: setup
+        run: |
+          REMOVE_FORMULAS=""
+          for FORMULA in ${{ env.BLOCKED_FORMULAS }}; do
+            if [ -d "/usr/local/opt/${FORMULA}" ]; then
+              REMOVE_FORMULAS="${REMOVE_FORMULAS}${FORMULA} "
+            fi
+          done
+
+          if [ -n "${REMOVE_FORMULAS}" ]; then
+            brew uninstall ${REMOVE_FORMULAS}
+          fi
+
+          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+      - name: 'Switch to Xcode 14.1'
+        run: sudo xcode-select -switch /Applications/Xcode_14.1.app
       - name: Configure / Build 
         run: ./slobs_CI/build-script-osx.sh
         env:
@@ -63,7 +77,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: cd ${{env.InstallPath}} && 7z a -r ../${{env.TARGET_ARTIFACT}}.7z *
         env:
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
       - name: Configure AWS credentials
         if: startsWith(github.ref, 'refs/tags/')
         uses: aws-actions/configure-aws-credentials@v1
@@ -75,7 +89,7 @@ jobs:
         if: startsWith(github.ref, 'refs/tags/')
         run: aws s3 cp ${{env.TARGET_ARTIFACT}}.7z s3://${{env.RELEASE_BUCKET}} --acl public-read
         env:
-          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
+          TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
       - name: 'Upload debug files to Sentry'
         if: startsWith(github.ref, 'refs/tags/')
         run: 'python ./slobs_CI/sentry-osx.py'
@@ -98,10 +112,11 @@ jobs:
           CefBuildConfig: Debug
     env:
       OS_TAG: "windows64"
-      CEF_VERSION: 4638
-      DEPS_VERSION: windows-deps-2022-01-31
+      CEF_VERSION: 5060
+      WIN_DEPS_VERSION: windows-deps-2022-08-02-x64
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
+      VLC_VERSION: vlc_3.0.0-git
     steps:
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1

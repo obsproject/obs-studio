@@ -72,12 +72,21 @@
          <widget class="QDoubleSpinBox" name="positionX">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.PositionX</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -94,12 +103,21 @@
          <widget class="QDoubleSpinBox" name="positionY">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.PositionY</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -135,12 +153,21 @@
        </property>
        <property name="minimumSize">
         <size>
-         <width>100</width>
+         <width>120</width>
          <height>0</height>
+        </size>
+       </property>
+       <property name="maximumSize">
+        <size>
+         <width>100</width>
+         <height>16777215</height>
         </size>
        </property>
        <property name="accessibleName">
         <string>Basic.TransformWindow.Rotation</string>
+       </property>
+       <property name="suffix">
+        <string>°</string>
        </property>
        <property name="minimum">
         <double>-360.000000000000000</double>
@@ -188,12 +215,21 @@
          <widget class="QDoubleSpinBox" name="sizeX">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.Width</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -213,12 +249,21 @@
          <widget class="QDoubleSpinBox" name="sizeY">
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.Height</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -473,12 +518,21 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.BoundsWidth</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -498,12 +552,21 @@
           </property>
           <property name="minimumSize">
            <size>
-            <width>100</width>
+            <width>120</width>
             <height>0</height>
+           </size>
+          </property>
+          <property name="maximumSize">
+           <size>
+            <width>100</width>
+            <height>16777215</height>
            </size>
           </property>
           <property name="accessibleName">
            <string>Basic.TransformWindow.BoundsHeight</string>
+          </property>
+          <property name="suffix">
+           <string> px</string>
           </property>
           <property name="decimals">
            <number>4</number>
@@ -554,12 +617,21 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropLeft</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>
@@ -576,12 +648,21 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropRight</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>
@@ -624,12 +705,21 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropTop</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>
@@ -646,12 +736,21 @@
          </property>
          <property name="minimumSize">
           <size>
-           <width>70</width>
+           <width>100</width>
            <height>0</height>
+          </size>
+         </property>
+         <property name="maximumSize">
+          <size>
+           <width>100</width>
+           <height>16777215</height>
           </size>
          </property>
          <property name="accessibleName">
           <string>Basic.TransformWindow.CropBottom</string>
+         </property>
+         <property name="suffix">
+          <string> px</string>
          </property>
          <property name="maximum">
           <number>100000</number>

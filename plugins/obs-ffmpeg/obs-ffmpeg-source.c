@@ -49,6 +49,7 @@ struct ffmpeg_source {
 
 	char *input;
 	char *input_format;
+	char *ffmpeg_options;
 	int buffering_mb;
 	int speed_percent;
 	bool is_looping;
@@ -59,7 +60,7 @@ struct ffmpeg_source {
 	bool close_when_inactive;
 	bool seekable;
 	bool enable_caching;
-	int volume;
+	int64_t volume;
 	
 
 	pthread_t reconnect_thread;
@@ -132,9 +133,9 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 }
 
 static const char *media_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
+	" (*.mp4 *.m4v *.ts *.mov *.mxf *.flv *.mkv *.avi *.mp3 *.ogg *.aac *.wav *.gif *.webm);;";
 static const char *video_filter =
-	" (*.mp4 *.ts *.mov *.flv *.mkv *.avi *.gif *.webm);;";
+	" (*.mp4 *.m4v *.ts *.mov *.mxf *.flv *.mkv *.avi *.gif *.webm);;";
 static const char *audio_filter = " (*.mp3 *.aac *.ogg *.wav);;";
 
 static obs_properties_t *ffmpeg_source_getproperties(void *data)
@@ -142,7 +143,6 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	struct ffmpeg_source *s = data;
 	struct dstr filter = {0};
 	struct dstr path = {0};
-	UNUSED_PARAMETER(data);
 
 	obs_properties_t *props = obs_properties_create();
 
@@ -239,6 +239,12 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 	const char* text = obs_module_text("EnableCaching");
 	obs_properties_add_bool(props, "caching", obs_module_text("EnableCaching"));
 
+	prop = obs_properties_add_text(props, "ffmpeg_options",
+						obs_module_text("FFmpegOpts"),
+						OBS_TEXT_DEFAULT);
+	obs_property_set_long_description(
+		prop, obs_module_text("FFmpegOpts.ToolTip.Source"));
+
 	return props;
 }
 
@@ -246,27 +252,26 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 			     const char *input_format)
 {
 	FF_BLOG(LOG_INFO,
-			"settings:\n"
-			"\tinput:                   %s\n"
-			"\tinput_format:            %s\n"
-			"\tspeed:                   %d\n"
-			"\tis_looping:              %s\n"
-			"\tis_hw_decoding:          %s\n"
-			"\tis_clear_on_media_end:   %s\n"
-			"\trestart_on_activate:     %s\n"
-			"\tclose_when_inactive:     %s\n"
-			"\tenable_caching:          %s\n"
-			"\tvolume:                  %d",
-			input ? input : "(null)",
-			input_format ? input_format : "(null)",
-			s->speed_percent,
-			s->is_looping ? "yes" : "no",
-			s->is_hw_decoding ? "yes" : "no",
-			s->is_clear_on_media_end ? "yes" : "no",
-			s->restart_on_activate ? "yes" : "no",
-			s->close_when_inactive ? "yes" : "no",
-			s->enable_caching ? "yes" : "no",
-			s->volume);
+		"settings:\n"
+		"\tinput:                   %s\n"
+		"\tinput_format:            %s\n"
+		"\tspeed:                   %d\n"
+		"\tis_looping:              %s\n"
+		"\tis_linear_alpha:         %s\n"
+		"\tis_hw_decoding:          %s\n"
+		"\tis_clear_on_media_end:   %s\n"
+		"\trestart_on_activate:     %s\n"
+		"\tclose_when_inactive:     %s\n"
+		"\tenable_caching:          %s\n"
+		"\tffmpeg_options:          %s",
+		input ? input : "(null)",
+		input_format ? input_format : "(null)", s->speed_percent,
+		s->is_looping ? "yes" : "no", s->is_linear_alpha ? "yes" : "no",
+		s->is_hw_decoding ? "yes" : "no",
+		s->is_clear_on_media_end ? "yes" : "no",
+		s->restart_on_activate ? "yes" : "no",
+		s->close_when_inactive ? "yes" : "no",
+		s->enable_caching ? "yes" : "no",s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -345,6 +350,7 @@ static void ffmpeg_source_open(struct ffmpeg_source *s)
 			.force_range = s->range,
 			.is_linear_alpha = s->is_linear_alpha,
 			.hardware_decoding = s->is_hw_decoding,
+			.ffmpeg_options = s->ffmpeg_options,
 			.is_local_file = s->is_local_file || s->seekable,
 			.enable_caching = s->enable_caching,
 			.reconnecting = s->reconnecting,
@@ -364,7 +370,8 @@ static void ffmpeg_source_start(struct ffmpeg_source *s)
 		return;
 
 	mp_media_play(&s->media, s->is_looping, s->reconnecting);
-	if (s->is_local_file && (s->is_clear_on_media_end || s->is_looping))
+	if (s->is_local_file && s->media.has_video &&
+	    (s->is_clear_on_media_end || s->is_looping))
 		obs_source_show_preloaded_video(s->source);
 	else
 		obs_source_output_video(s->source, NULL);
@@ -424,7 +431,7 @@ static void ffmpeg_source_tick(void *data, float seconds)
 #define SRT_PROTO "srt"
 #define RIST_PROTO "rist"
 
-static bool requires_mpegts(char *path)
+static bool requires_mpegts(const char *path)
 {
 	return !astrcmpi_n(path, SRT_PROTO, sizeof(SRT_PROTO) - 1) ||
 	       !astrcmpi_n(path, RIST_PROTO, sizeof(RIST_PROTO) - 1);
@@ -436,23 +443,24 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 
 	bool is_local_file = obs_data_get_bool(settings, "is_local_file");
 
-	char *input;
-	char *input_format;
+	const char *input;
+	const char *input_format;
+	const char *ffmpeg_options;
 
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->ffmpeg_options);
 
 	if (is_local_file) {
-		input = (char *)obs_data_get_string(settings, "local_file");
+		input = obs_data_get_string(settings, "local_file");
 		input_format = NULL;
 		s->is_looping = obs_data_get_bool(settings, "looping");
 		s->close_when_inactive =
 			obs_data_get_bool(settings, "close_when_inactive");
 		s->enable_caching = obs_data_get_bool(settings, "caching");
 	} else {
-		input = (char *)obs_data_get_string(settings, "input");
-		input_format =
-			(char *)obs_data_get_string(settings, "input_format");
+		input = obs_data_get_string(settings, "input");
+		input_format = obs_data_get_string(settings, "input_format");
 		if (requires_mpegts(input)) {
 			input_format = "mpegts";
 			obs_data_set_string(settings, "input_format", "mpegts");
@@ -472,6 +480,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 			s->stop_reconnect = false;
 		}
 	}
+
+	ffmpeg_options = obs_data_get_string(settings, "ffmpeg_options");
 
 	s->close_when_inactive =
 		obs_data_get_bool(settings, "close_when_inactive");
@@ -493,6 +503,7 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->is_local_file = is_local_file;
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->volume = obs_data_get_int(settings, "volume");
+	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
 
 	if (s->speed_percent < 1 || s->speed_percent > 200)
 		s->speed_percent = 100;
@@ -584,12 +595,16 @@ static struct file_info file_info(struct ffmpeg_source *s)
 			(double)avg_frame_rate.den);
 	}
 
-	if (stream->codec && stream->codec->width > 0 && stream->codec->height > 0) {
-		fi.width = stream->codec->width;
-		fi.height = stream->codec->height;
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
+	AVCodecParameters *const codec = stream->codecpar;
+#else
+	AVCodecContext *const codec = stream->codec;
+#endif
+	if (codec && codec->width > 0 && codec->height > 0) {
+		fi.width = codec->width;
+		fi.height = codec->height;
 		fi.pix_format = s->media.pix_format;
 	}
-
 end:
 	return fi;
 }
@@ -719,8 +734,6 @@ static void ffmpeg_source_stop_hotkey(void *data, obs_hotkey_id id,
 
 static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 {
-	UNUSED_PARAMETER(settings);
-
 	struct ffmpeg_source *s = bzalloc(sizeof(struct ffmpeg_source));
 	s->source = source;
 
@@ -772,6 +785,7 @@ static void ffmpeg_source_destroy(void *data)
 	bfree(s->sws_data);
 	bfree(s->input);
 	bfree(s->input_format);
+	bfree(s->ffmpeg_options);
 	bfree(s);
 }
 

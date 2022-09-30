@@ -667,7 +667,7 @@ void obs_transition_enum_sources(obs_source_t *transition,
 }
 
 static inline void render_child(obs_source_t *transition, obs_source_t *child,
-				size_t idx)
+				size_t idx, enum gs_color_space space)
 {
 	uint32_t cx = get_cx(transition);
 	uint32_t cy = get_cy(transition);
@@ -675,7 +675,16 @@ static inline void render_child(obs_source_t *transition, obs_source_t *child,
 	if (!child)
 		return;
 
-	if (gs_texrender_begin(transition->transition_texrender[idx], cx, cy)) {
+	enum gs_color_format format = gs_get_format_from_space(space);
+	if (gs_texrender_get_format(transition->transition_texrender[idx]) !=
+	    format) {
+		gs_texrender_destroy(transition->transition_texrender[idx]);
+		transition->transition_texrender[idx] =
+			gs_texrender_create(format, GS_ZS_NONE);
+	}
+
+	if (gs_texrender_begin_with_color_space(
+		    transition->transition_texrender[idx], cx, cy, space)) {
 		vec4_zero(&blank);
 		gs_clear(GS_CLEAR_COLOR, &blank, 0.0f, 0);
 		gs_ortho(0.0f, (float)cx, 0.0f, (float)cy, -100.0f, 100.0f);
@@ -719,6 +728,15 @@ void obs_transition_force_stop(obs_source_t *transition)
 void obs_transition_video_render(obs_source_t *transition,
 				 obs_transition_video_render_callback_t callback)
 {
+	obs_transition_video_render2(transition, callback,
+				     obs->video.transparent_texture);
+}
+
+void obs_transition_video_render2(
+	obs_source_t *transition,
+	obs_transition_video_render_callback_t callback,
+	gs_texture_t *placeholder_texture)
+{
 	struct transition_state state;
 	struct matrix4 matrices[2];
 	bool locked = false;
@@ -756,14 +774,19 @@ void obs_transition_video_render(obs_source_t *transition,
 		uint32_t cx;
 		uint32_t cy;
 
+		const enum gs_color_space current_space = gs_get_color_space();
+		const enum gs_color_space source_space =
+			obs_source_get_color_space(transition, 1,
+						   &current_space);
 		for (size_t i = 0; i < 2; i++) {
 			if (state.s[i]) {
-				render_child(transition, state.s[i], i);
+				render_child(transition, state.s[i], i,
+					     source_space);
 				tex[i] = get_texture(transition, i);
 				if (!tex[i])
-					tex[i] = obs->video.transparent_texture;
+					tex[i] = placeholder_texture;
 			} else {
-				tex[i] = obs->video.transparent_texture;
+				tex[i] = placeholder_texture;
 			}
 		}
 
@@ -806,6 +829,48 @@ void obs_transition_video_render(obs_source_t *transition,
 				    "transition_video_stop");
 	if (stopped)
 		handle_stop(transition);
+}
+
+static enum gs_color_space mix_spaces(enum gs_color_space a,
+				      enum gs_color_space b)
+{
+	if ((a == GS_CS_709_EXTENDED) || (a == GS_CS_709_SCRGB) ||
+	    (b == GS_CS_709_EXTENDED) || (b == GS_CS_709_SCRGB))
+		return GS_CS_709_EXTENDED;
+	if ((a == GS_CS_SRGB_16F) || (b == GS_CS_SRGB_16F))
+		return GS_CS_SRGB_16F;
+	return GS_CS_SRGB;
+}
+
+enum gs_color_space
+obs_transition_video_get_color_space(obs_source_t *transition)
+{
+	obs_source_t *source0 = transition->transition_sources[0];
+	obs_source_t *source1 = transition->transition_sources[1];
+
+	const enum gs_color_space preferred_spaces[] = {
+		GS_CS_SRGB,
+		GS_CS_SRGB_16F,
+		GS_CS_709_EXTENDED,
+	};
+
+	enum gs_color_space space = GS_CS_SRGB;
+
+	if (source0) {
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source0,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
+	}
+
+	if (source1) {
+		space = mix_spaces(space, obs_source_get_color_space(
+						  source1,
+						  OBS_COUNTOF(preferred_spaces),
+						  preferred_spaces));
+	}
+
+	return space;
 }
 
 bool obs_transition_video_render_direct(obs_source_t *transition,
@@ -1001,10 +1066,8 @@ bool obs_transition_audio_render(obs_source_t *transition, uint64_t *ts_out,
 					      min_ts, mixers, channels,
 					      sample_rate, mix_b);
 		} else if (state.s[0]) {
-			enum obs_audio_rendering_mode mode =
-				obs_get_audio_rendering_mode();
 			memcpy(audio->output[0].data[0],
-			       state.s[0]->audio_output_buf[mode][0][0],
+			       state.s[0]->audio_output_buf[0][0],
 			       TOTAL_AUDIO_SIZE);
 		}
 

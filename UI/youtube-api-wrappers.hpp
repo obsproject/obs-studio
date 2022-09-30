@@ -57,7 +57,8 @@ public:
 	bool GetChannelDescription(ChannelDescription &channel_description);
 	bool InsertBroadcast(BroadcastDescription &broadcast);
 	bool InsertStream(StreamDescription &stream);
-	bool BindStream(const QString broadcast_id, const QString stream_id);
+	bool BindStream(const QString broadcast_id, const QString stream_id,
+			json11::Json &json_out);
 	bool GetBroadcastsList(json11::Json &json_out, const QString &page,
 			       const QString &status);
 	bool
@@ -74,6 +75,8 @@ public:
 			    json11::Json &json_out);
 	bool StartLatestBroadcast();
 	bool StopLatestBroadcast();
+	bool SendChatMessage(const std::string &chat_id,
+			     const QString &message);
 
 	void SetBroadcastId(QString &broadcast_id);
 	QString GetBroadcastId();

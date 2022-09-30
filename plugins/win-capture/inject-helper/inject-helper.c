@@ -4,7 +4,7 @@
 #include <windows.h>
 #include <shellapi.h>
 #include <stdbool.h>
-#include "../obfuscate.h"
+#include "../../../libobs/util/windows/obfuscate.h"
 #include "../inject-library.h"
 
 #if defined(_MSC_VER) && !defined(inline)
@@ -38,9 +38,9 @@ static inline HANDLE open_process(DWORD desired_access, bool inherit_handle,
 				  DWORD process_id)
 {
 	HANDLE(WINAPI * open_process_proc)(DWORD, BOOL, DWORD);
-	open_process_proc = get_obfuscated_func(GetModuleHandleW(L"KERNEL32"),
-						"HxjcQrmkb|~",
-						0xc82efdf78201df87);
+	open_process_proc =
+		ms_get_obfuscated_func(GetModuleHandleW(L"KERNEL32"),
+				       "HxjcQrmkb|~", 0xc82efdf78201df87);
 
 	return open_process_proc(desired_access, inherit_handle, process_id);
 }

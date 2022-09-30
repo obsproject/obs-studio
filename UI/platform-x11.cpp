@@ -201,11 +201,6 @@ bool GetDataFilePath(const char *data, string &output)
 	return false;
 }
 
-bool InitApplicationBundle()
-{
-	return true;
-}
-
 string GetDefaultVideoSavePath()
 {
 	return string(getenv("HOME"));
@@ -256,3 +251,7 @@ bool SetDisplayAffinitySupported(void)
 	// Not implemented yet
 	return false;
 }
+
+// Not implemented yet
+void TaskbarOverlayInit() {}
+void TaskbarOverlaySetStatus(TaskbarOverlayStatus) {}

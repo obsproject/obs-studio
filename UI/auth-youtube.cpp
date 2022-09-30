@@ -7,9 +7,7 @@
 #include <QDesktopServices>
 #include <QHBoxLayout>
 #include <QUrl>
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
 #include <QRandomGenerator>
-#endif
 
 #ifdef WIN32
 #include <windows.h>
@@ -141,7 +139,7 @@ void YoutubeAuth::LoadUI()
 	QSize size = main->frameSize();
 	QPoint pos = main->pos();
 
-	chat.reset(new BrowserDock());
+	chat.reset(new YoutubeChatDock());
 	chat->setObjectName("ytChat");
 	chat->resize(300, 600);
 	chat->setMinimumSize(200, 300);
@@ -173,14 +171,19 @@ void YoutubeAuth::LoadUI()
 	uiLoaded = true;
 }
 
-void YoutubeAuth::SetChatId(QString &chat_id)
+void YoutubeAuth::SetChatId(const QString &chat_id,
+			    const std::string &api_chat_id)
 {
 #ifdef BROWSER_AVAILABLE
 	QString chat_url = QString(YOUTUBE_CHAT_POPOUT_URL).arg(chat_id);
 
 	if (chat && chat->cefWidget) {
 		chat->cefWidget->setURL(chat_url.toStdString());
+		chat->SetApiChatId(api_chat_id);
 	}
+#else
+	UNUSED_PARAMETER(chat_id);
+	UNUSED_PARAMETER(api_chat_id);
 #endif
 }
 
@@ -195,7 +198,6 @@ void YoutubeAuth::ResetChat()
 
 QString YoutubeAuth::GenerateState()
 {
-#if (QT_VERSION >= QT_VERSION_CHECK(5, 10, 0))
 	char state[YOUTUBE_API_STATE_LENGTH + 1];
 	QRandomGenerator *rng = QRandomGenerator::system();
 	int i;
@@ -205,17 +207,6 @@ QString YoutubeAuth::GenerateState()
 	state[i] = 0;
 
 	return state;
-#else
-	std::uniform_int_distribution<> distr(0, allowedCount);
-	std::string result;
-	result.reserve(YOUTUBE_API_STATE_LENGTH);
-	std::generate_n(std::back_inserter(result), YOUTUBE_API_STATE_LENGTH,
-			[&] {
-				return static_cast<char>(
-					allowedChars[distr(randomSeed)]);
-			});
-	return result.c_str();
-#endif
 }
 
 // Static.
@@ -320,3 +311,83 @@ std::shared_ptr<Auth> YoutubeAuth::Login(QWidget *owner,
 	config_save_safe(config, "tmp", nullptr);
 	return auth;
 }
+
+#ifdef BROWSER_AVAILABLE
+void YoutubeChatDock::SetWidget(QCefWidget *widget_)
+{
+	lineEdit = new LineEditAutoResize();
+	lineEdit->setVisible(false);
+	lineEdit->setMaxLength(200);
+	lineEdit->setPlaceholderText(QTStr("YouTube.Chat.Input.Placeholder"));
+	sendButton = new QPushButton(QTStr("YouTube.Chat.Input.Send"));
+	sendButton->setVisible(false);
+
+	chatLayout = new QHBoxLayout();
+	chatLayout->setContentsMargins(0, 0, 0, 0);
+	chatLayout->addWidget(lineEdit, 1);
+	chatLayout->addWidget(sendButton);
+
+	QVBoxLayout *layout = new QVBoxLayout();
+	layout->setContentsMargins(0, 0, 0, 0);
+	layout->addWidget(widget_, 1);
+	layout->addLayout(chatLayout);
+
+	QWidget *widget = new QWidget();
+	widget->setLayout(layout);
+	setWidget(widget);
+
+	QWidget::connect(lineEdit, SIGNAL(returnPressed()), this,
+			 SLOT(SendChatMessage()));
+	QWidget::connect(sendButton, SIGNAL(pressed()), this,
+			 SLOT(SendChatMessage()));
+
+	cefWidget.reset(widget_);
+}
+
+void YoutubeChatDock::SetApiChatId(const std::string &id)
+{
+	this->apiChatId = id;
+	QMetaObject::invokeMethod(this, "EnableChatInput",
+				  Qt::QueuedConnection);
+}
+
+void YoutubeChatDock::SendChatMessage()
+{
+	const QString message = lineEdit->text();
+	if (message == "")
+		return;
+
+	OBSBasic *main = OBSBasic::Get();
+	YoutubeApiWrappers *apiYouTube(
+		dynamic_cast<YoutubeApiWrappers *>(main->GetAuth()));
+
+	ExecuteFuncSafeBlock([&]() {
+		lineEdit->setText("");
+		lineEdit->setPlaceholderText(
+			QTStr("YouTube.Chat.Input.Sending"));
+		if (apiYouTube->SendChatMessage(apiChatId, message)) {
+			os_sleep_ms(3000);
+		} else {
+			QString error = apiYouTube->GetLastError();
+			apiYouTube->GetTranslatedError(error);
+			QMetaObject::invokeMethod(
+				this, "ShowErrorMessage", Qt::QueuedConnection,
+				Q_ARG(const QString &, error));
+		}
+		lineEdit->setPlaceholderText(
+			QTStr("YouTube.Chat.Input.Placeholder"));
+	});
+}
+
+void YoutubeChatDock::ShowErrorMessage(const QString &error)
+{
+	QMessageBox::warning(this, QTStr("YouTube.Chat.Error.Title"),
+			     QTStr("YouTube.Chat.Error.Text").arg(error));
+}
+
+void YoutubeChatDock::EnableChatInput()
+{
+	lineEdit->setVisible(true);
+	sendButton->setVisible(true);
+}
+#endif

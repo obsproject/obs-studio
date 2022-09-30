@@ -58,9 +58,9 @@ static const EGLint ctx_config_attribs[] = {EGL_STENCIL_SIZE,
 					    EGL_DEPTH_SIZE,
 					    0,
 					    EGL_BUFFER_SIZE,
-					    32,
+					    24,
 					    EGL_ALPHA_SIZE,
-					    8,
+					    0,
 					    EGL_RENDERABLE_TYPE,
 					    EGL_OPENGL_BIT,
 					    EGL_SURFACE_TYPE,
@@ -68,17 +68,12 @@ static const EGLint ctx_config_attribs[] = {EGL_STENCIL_SIZE,
 					    EGL_NONE};
 
 struct gl_windowinfo {
-	EGLConfig config;
-
 	/* Windows in X11 are defined with integers (XID).
 	 * xcb_window_t is a define for this... they are
 	 * compatible with Xlib as well.
 	 */
 	xcb_window_t window;
 	EGLSurface surface;
-
-	/* We can't fetch screen without a request so we cache it. */
-	int screen;
 };
 
 struct gl_platform {
@@ -89,58 +84,7 @@ struct gl_platform {
 	EGLSurface pbuffer;
 };
 
-/* The following utility functions are copied verbatim from GLX code. */
-
-/*
- * Since we cannot take advantage of the asynchronous nature of xcb,
- * all of the helper functions are synchronous but thread-safe.
- *
- * They check for errors and will return 0 on problems
- * with the exception of when 0 is a valid return value... in which case
- * read the specific function comments.
- */
-
-/* Returns -1 on invalid screen. */
-static int get_screen_num_from_xcb_screen(xcb_connection_t *xcb_conn,
-					  xcb_screen_t *screen)
-{
-	xcb_screen_iterator_t iter =
-		xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
-	int screen_num = 0;
-
-	for (; iter.rem; xcb_screen_next(&iter), ++screen_num)
-		if (iter.data == screen)
-			return screen_num;
-
-	return -1;
-}
-
-static xcb_screen_t *get_screen_from_root(xcb_connection_t *xcb_conn,
-					  xcb_window_t root)
-{
-	xcb_screen_iterator_t iter =
-		xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
-
-	while (iter.rem) {
-		if (iter.data->root == root)
-			return iter.data;
-
-		xcb_screen_next(&iter);
-	}
-
-	return 0;
-}
-
-static inline int get_screen_num_from_root(xcb_connection_t *xcb_conn,
-					   xcb_window_t root)
-{
-	xcb_screen_t *screen = get_screen_from_root(xcb_conn, root);
-
-	if (!screen)
-		return -1;
-
-	return get_screen_num_from_xcb_screen(xcb_conn, screen);
-}
+/* The following utility function is copied verbatim from GLX code. */
 
 static xcb_get_geometry_reply_t *get_window_geometry(xcb_connection_t *xcb_conn,
 						     xcb_drawable_t drawable)
@@ -188,6 +132,7 @@ static const char *get_egl_error_string2(const EGLint error)
 		return "Unknown";
 	}
 }
+
 static const char *get_egl_error_string()
 {
 	return get_egl_error_string2(eglGetError());
@@ -321,7 +266,6 @@ gl_x11_egl_windowinfo_create(const struct gs_init_data *info)
 
 static void gl_x11_egl_windowinfo_destroy(struct gl_windowinfo *info)
 {
-	UNUSED_PARAMETER(info);
 	bfree(info);
 }
 
@@ -329,9 +273,6 @@ static Display *open_windowless_display(Display *platform_display)
 {
 	Display *display;
 	xcb_connection_t *xcb_conn;
-	xcb_screen_iterator_t screen_iterator;
-	xcb_screen_t *screen;
-	int screen_num;
 
 	if (platform_display)
 		display = platform_display;
@@ -346,19 +287,6 @@ static Display *open_windowless_display(Display *platform_display)
 	xcb_conn = XGetXCBConnection(display);
 	if (!xcb_conn) {
 		blog(LOG_ERROR, "Unable to get XCB connection to main display");
-		goto error;
-	}
-
-	screen_iterator = xcb_setup_roots_iterator(xcb_get_setup(xcb_conn));
-	screen = screen_iterator.data;
-	if (!screen) {
-		blog(LOG_ERROR, "Unable to get screen root");
-		goto error;
-	}
-
-	screen_num = get_screen_num_from_root(xcb_conn, screen->root);
-	if (screen_num == -1) {
-		blog(LOG_ERROR, "Unable to get screen number from root");
 		goto error;
 	}
 
@@ -465,16 +393,10 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 		get_window_geometry(xcb_conn, parent);
 	bool status = false;
 
-	int screen_num;
 	int visual;
 
 	if (!geometry)
 		goto fail_geometry_request;
-
-	screen_num = get_screen_num_from_root(xcb_conn, geometry->root);
-	if (screen_num == -1) {
-		goto fail_screen;
-	}
 
 	{
 		if (!eglGetConfigAttrib(plat->edisplay, plat->config,
@@ -494,9 +416,20 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 	xcb_create_colormap(xcb_conn, XCB_COLORMAP_ALLOC_NONE, colormap, parent,
 			    visual);
 
-	xcb_create_window(xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
-			  geometry->width, geometry->height, 0, 0, visual, mask,
-			  mask_values);
+	xcb_void_cookie_t window_cookie = xcb_create_window_checked(
+		xcb_conn, 24 /* Hardcoded? */, wid, parent, 0, 0,
+		geometry->width, geometry->height, 0, 0, visual, mask,
+		mask_values);
+	xcb_generic_error_t *err = xcb_request_check(xcb_conn, window_cookie);
+	if (err != NULL) {
+		char text[512];
+		XGetErrorText(display, err->error_code, text, sizeof(text));
+		blog(LOG_ERROR,
+		     "Swapchain window creation failed: %s"
+		     ", Major opcode: %d, Minor opcode: %d",
+		     text, err->major_code, err->minor_code);
+		goto fail_window_surface;
+	}
 
 	const EGLSurface surface =
 		eglCreateWindowSurface(plat->edisplay, plat->config, wid, 0);
@@ -506,10 +439,8 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 		goto fail_window_surface;
 	}
 
-	swap->wi->config = plat->config;
 	swap->wi->window = wid;
 	swap->wi->surface = surface;
-	swap->wi->screen = screen_num;
 
 	xcb_map_window(xcb_conn, wid);
 
@@ -518,7 +449,6 @@ static bool gl_x11_egl_platform_init_swapchain(struct gs_swap_chain *swap)
 
 fail_window_surface:
 fail_visual_id:
-fail_screen:
 fail_geometry_request:
 success:
 	free(geometry);
@@ -611,13 +541,6 @@ static void gl_x11_egl_device_load_swapchain(gs_device_t *device,
 	device_enter_context(device);
 }
 
-enum swap_type {
-	SWAP_TYPE_NORMAL,
-	SWAP_TYPE_EXT,
-	SWAP_TYPE_MESA,
-	SWAP_TYPE_SGI,
-};
-
 static void gl_x11_egl_device_present(gs_device_t *device)
 {
 	Display *display = device->plat->xdisplay;
@@ -628,6 +551,9 @@ static void gl_x11_egl_device_present(gs_device_t *device)
 		free(xcb_event);
 	}
 
+	if (eglSwapInterval(device->plat->edisplay, 0) == EGL_FALSE) {
+		blog(LOG_ERROR, "eglSwapInterval failed");
+	}
 	if (!eglSwapBuffers(device->plat->edisplay,
 			    device->cur_swap->wi->surface))
 		blog(LOG_ERROR, "Cannot swap EGL buffers: %s",
@@ -645,6 +571,17 @@ static struct gs_texture *gl_x11_egl_device_texture_create_from_dmabuf(
 	return gl_egl_create_dmabuf_image(plat->edisplay, width, height,
 					  drm_format, color_format, n_planes,
 					  fds, strides, offsets, modifiers);
+}
+
+static struct gs_texture *gl_x11_egl_device_texture_create_from_pixmap(
+	gs_device_t *device, uint32_t width, uint32_t height,
+	enum gs_color_format color_format, uint32_t target, void *pixmap)
+{
+	struct gl_platform *plat = device->plat;
+
+	return gl_egl_create_texture_from_pixmap(plat->edisplay, width, height,
+						 color_format, target,
+						 (EGLClientBuffer)pixmap);
 }
 
 static bool gl_x11_egl_device_query_dmabuf_capabilities(
@@ -688,6 +625,8 @@ static const struct gl_winsys_vtable egl_x11_winsys_vtable = {
 		gl_x11_egl_device_query_dmabuf_capabilities,
 	.device_query_dmabuf_modifiers_for_format =
 		gl_x11_egl_device_query_dmabuf_modifiers_for_format,
+	.device_texture_create_from_pixmap =
+		gl_x11_egl_device_texture_create_from_pixmap,
 };
 
 const struct gl_winsys_vtable *gl_x11_egl_get_winsys_vtable(void)

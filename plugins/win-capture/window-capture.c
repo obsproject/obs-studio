@@ -1,8 +1,8 @@
 #include <stdlib.h>
 #include <util/dstr.h>
 #include <util/threading.h>
+#include <util/windows/window-helpers.h>
 #include "dc-capture.h"
-#include "window-helpers.h"
 #include "../../libobs/util/platform.h"
 #include "../../libobs-winrt/winrt-capture.h"
 
@@ -21,6 +21,7 @@
 #define TEXT_CAPTURE_CURSOR obs_module_text("CaptureCursor")
 #define TEXT_COMPATIBILITY  obs_module_text("Compatibility")
 #define TEXT_CLIENT_AREA    obs_module_text("ClientArea")
+#define TEXT_FORCE_SDR      obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -30,13 +31,17 @@
 
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
-typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(
-	BOOL cursor, HWND window, BOOL client_area);
+typedef struct winrt_capture *(*PFN_winrt_capture_init_window)(BOOL cursor,
+							       HWND window,
+							       BOOL client_area,
+							       BOOL force_sdr);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
 typedef BOOL (*PFN_winrt_capture_show_cursor)(struct winrt_capture *capture,
 					      BOOL visible);
+typedef enum gs_color_space (*PFN_winrt_capture_get_color_space)(
+	const struct winrt_capture *capture);
 typedef void (*PFN_winrt_capture_render)(struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_width)(const struct winrt_capture *capture);
 typedef uint32_t (*PFN_winrt_capture_height)(
@@ -51,6 +56,7 @@ struct winrt_exports {
 	PFN_winrt_capture_free winrt_capture_free;
 	PFN_winrt_capture_active winrt_capture_active;
 	PFN_winrt_capture_show_cursor winrt_capture_show_cursor;
+	PFN_winrt_capture_get_color_space winrt_capture_get_color_space;
 	PFN_winrt_capture_render winrt_capture_render;
 	PFN_winrt_capture_width winrt_capture_width;
 	PFN_winrt_capture_height winrt_capture_height;
@@ -81,7 +87,7 @@ struct window_capture {
 	bool cursor;
 	bool compatibility;
 	bool client_area;
-	bool use_wildcards; /* TODO */
+	bool force_sdr;
 
 	struct dc_capture capture;
 
@@ -197,12 +203,13 @@ static void update_settings(struct window_capture *wc, obs_data_t *s)
 	bfree(wc->class);
 	bfree(wc->executable);
 
-	build_window_strings(window, &wc->class, &wc->title, &wc->executable);
+	ms_build_window_strings(window, &wc->class, &wc->title,
+				&wc->executable);
 
 	wc->method = choose_method(method, wgc_supported, wc->class);
 	wc->priority = (enum window_priority)priority;
 	wc->cursor = obs_data_get_bool(s, "cursor");
-	wc->use_wildcards = obs_data_get_bool(s, "use_wildcards");
+	wc->force_sdr = obs_data_get_bool(s, "force_sdr");
 	wc->compatibility = obs_data_get_bool(s, "compatibility");
 	wc->client_area = obs_data_get_bool(s, "client_area");
 
@@ -240,6 +247,7 @@ static bool load_winrt_imports(struct winrt_exports *exports, void *module,
 	WINRT_IMPORT(winrt_capture_free);
 	WINRT_IMPORT(winrt_capture_active);
 	WINRT_IMPORT(winrt_capture_show_cursor);
+	WINRT_IMPORT(winrt_capture_get_color_space);
 	WINRT_IMPORT(winrt_capture_render);
 	WINRT_IMPORT(winrt_capture_width);
 	WINRT_IMPORT(winrt_capture_height);
@@ -368,6 +376,7 @@ static void wc_defaults(obs_data_t *defaults)
 	obs_data_set_default_string(defaults, "window", "");
 	obs_data_set_default_int(defaults, "method", METHOD_AUTO);
 	obs_data_set_default_bool(defaults, "cursor", true);
+	obs_data_set_default_bool(defaults, "force_sdr", false);
 	obs_data_set_default_bool(defaults, "compatibility", false);
 	obs_data_set_default_bool(defaults, "client_area", true);
 }
@@ -394,6 +403,9 @@ static void update_settings_visibility(obs_properties_t *props,
 	p = obs_properties_get(props, "client_area");
 	obs_property_set_visible(p, wgc_options);
 
+	p = obs_properties_get(props, "force_sdr");
+	obs_property_set_visible(p, wgc_cursor_toggle);
+
 	pthread_mutex_unlock(&wc->update_mutex);
 }
 
@@ -413,11 +425,6 @@ static bool wc_capture_method_changed(obs_properties_t *props,
 	return true;
 }
 
-extern bool check_window_property_setting(obs_properties_t *ppts,
-					  obs_property_t *p,
-					  obs_data_t *settings, const char *val,
-					  size_t idx);
-
 static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 			      obs_data_t *settings)
 {
@@ -436,7 +443,7 @@ static bool wc_window_changed(obs_properties_t *props, obs_property_t *p,
 
 	update_settings_visibility(props, wc);
 
-	check_window_property_setting(props, p, settings, "window", 0);
+	ms_check_window_property_setting(props, p, settings, "window", 0);
 	return true;
 }
 
@@ -453,7 +460,7 @@ static obs_properties_t *wc_properties(void *data)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(p, "", "");
-	fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
+	ms_fill_window_list(p, EXCLUDE_MINIMIZED, NULL);
 	obs_property_set_modified_callback(p, wc_window_changed);
 
 	p = obs_properties_add_list(ppts, "method", TEXT_METHOD,
@@ -475,6 +482,8 @@ static obs_properties_t *wc_properties(void *data)
 	obs_properties_add_bool(ppts, "compatibility", TEXT_COMPATIBILITY);
 
 	obs_properties_add_bool(ppts, "client_area", TEXT_CLIENT_AREA);
+
+	obs_properties_add_bool(ppts, "force_sdr", TEXT_FORCE_SDR);
 
 	return ppts;
 }
@@ -522,15 +531,15 @@ static void wc_tick(void *data, float seconds)
 
 		wc->check_window_timer = 0.0f;
 
-		wc->window = (wc->method == METHOD_WGC)
-				     ? find_window_top_level(INCLUDE_MINIMIZED,
-							     wc->priority,
-							     wc->class,
-							     wc->title,
-							     wc->executable)
-				     : find_window(INCLUDE_MINIMIZED,
-						   wc->priority, wc->class,
-						   wc->title, wc->executable);
+		wc->window =
+			(wc->method == METHOD_WGC)
+				? ms_find_window_top_level(INCLUDE_MINIMIZED,
+							   wc->priority,
+							   wc->class, wc->title,
+							   wc->executable)
+				: ms_find_window(INCLUDE_MINIMIZED,
+						 wc->priority, wc->class,
+						 wc->title, wc->executable);
 		if (!wc->window) {
 			if (wc->capture.valid)
 				dc_capture_free(&wc->capture);
@@ -619,7 +628,7 @@ static void wc_tick(void *data, float seconds)
 				wc->capture_winrt =
 					wc->exports.winrt_capture_init_window(
 						wc->cursor, wc->window,
-						wc->client_area);
+						wc->client_area, wc->force_sdr);
 
 				if (!wc->capture_winrt) {
 					wc->previously_failed = true;
@@ -655,6 +664,30 @@ static void wc_render(void *data, gs_effect_t *effect)
 	UNUSED_PARAMETER(effect);
 }
 
+enum gs_color_space
+wc_get_color_space(void *data, size_t count,
+		   const enum gs_color_space *preferred_spaces)
+{
+	struct window_capture *wc = data;
+
+	enum gs_color_space capture_space = GS_CS_SRGB;
+
+	if ((wc->method == METHOD_WGC) && wc->capture_winrt) {
+		capture_space = wc->exports.winrt_capture_get_color_space(
+			wc->capture_winrt);
+	}
+
+	enum gs_color_space space = capture_space;
+	for (size_t i = 0; i < count; ++i) {
+		const enum gs_color_space preferred_space = preferred_spaces[i];
+		space = preferred_space;
+		if (preferred_space == capture_space)
+			break;
+	}
+
+	return space;
+}
+
 struct obs_source_info window_capture_info = {
 	.id = "window_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -673,4 +706,5 @@ struct obs_source_info window_capture_info = {
 	.get_defaults = wc_defaults,
 	.get_properties = wc_properties,
 	.icon_type = OBS_ICON_TYPE_WINDOW_CAPTURE,
+	.video_get_color_space = wc_get_color_space,
 };

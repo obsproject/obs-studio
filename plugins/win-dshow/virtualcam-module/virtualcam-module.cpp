@@ -11,7 +11,7 @@ static const REGFILTERPINS AMSPinVideo = {L"Output", false, true,
 					  nullptr,   1,     &AMSMediaTypesV};
 
 HINSTANCE dll_inst = nullptr;
-static volatile long locks = 0;
+volatile long locks = 0;
 
 /* ========================================================================= */
 
@@ -51,12 +51,12 @@ STDMETHODIMP VCamFactory::QueryInterface(REFIID riid, void **p_ptr)
 
 STDMETHODIMP_(ULONG) VCamFactory::AddRef()
 {
-	return InterlockedIncrement(&refs);
+	return os_atomic_inc_long(&refs);
 }
 
 STDMETHODIMP_(ULONG) VCamFactory::Release()
 {
-	long new_refs = InterlockedDecrement(&refs);
+	long new_refs = os_atomic_dec_long(&refs);
 	if (new_refs == 0) {
 		delete this;
 		return 0;
@@ -89,9 +89,9 @@ STDMETHODIMP VCamFactory::CreateInstance(LPUNKNOWN parent, REFIID, void **p_ptr)
 STDMETHODIMP VCamFactory::LockServer(BOOL lock)
 {
 	if (lock) {
-		InterlockedIncrement(&locks);
+		os_atomic_inc_long(&locks);
 	} else {
-		InterlockedDecrement(&locks);
+		os_atomic_dec_long(&locks);
 	}
 
 	return S_OK;
@@ -165,7 +165,7 @@ static bool RegServers(bool reg)
 	}
 
 	if (reg) {
-		return RegServer(CLSID_OBS_VirtualVideo, L"OBS Virtual Camera",
+		return RegServer(CLSID_OBS_VirtualVideo, L"Streamlabs Desktop Virtual Webcam",
 				 file);
 	} else {
 		return UnregServer(CLSID_OBS_VirtualVideo);
@@ -193,7 +193,7 @@ static bool RegFilters(bool reg)
 		rf2.rgPins = &AMSPinVideo;
 
 		hr = fm->RegisterFilter(CLSID_OBS_VirtualVideo,
-					L"OBS Virtual Camera", &moniker,
+					L"Streamlabs Desktop Virtual Webcam", &moniker,
 					&CLSID_VideoInputDeviceCategory,
 					nullptr, &rf2);
 		if (FAILED(hr)) {
@@ -252,7 +252,7 @@ STDAPI DllInstall(BOOL install, LPCWSTR)
 
 STDAPI DllCanUnloadNow()
 {
-	return InterlockedOr(&locks, 0) == 0 ? S_OK : S_FALSE;
+	return os_atomic_load_long(&locks) ? S_FALSE : S_OK;
 }
 
 STDAPI DllGetClassObject(REFCLSID cls, REFIID riid, void **p_ptr)

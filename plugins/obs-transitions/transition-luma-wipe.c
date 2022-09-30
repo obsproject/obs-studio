@@ -64,8 +64,6 @@ static void luma_wipe_update(void *data, obs_data_t *settings)
 
 	bfree(file);
 	dstr_free(&path);
-
-	UNUSED_PARAMETER(settings);
 }
 
 static void luma_wipe_get_list(void *data)
@@ -130,7 +128,6 @@ static void luma_wipe_destroy(void *data)
 static obs_properties_t *luma_wipe_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
-	struct luma_wipe_info *lwipe = data;
 
 	obs_property_t *p;
 
@@ -138,12 +135,17 @@ static obs_properties_t *luma_wipe_properties(void *data)
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
 
-	obs_data_item_t *item = obs_data_first(lwipe->wipes_list);
+	if (data) {
+		struct luma_wipe_info *lwipe = data;
 
-	for (; item != NULL; obs_data_item_next(&item)) {
-		const char *name = obs_data_item_get_name(item);
-		const char *path = obs_data_item_get_string(item);
-		obs_property_list_add_string(p, obs_module_text(name), path);
+		obs_data_item_t *item = obs_data_first(lwipe->wipes_list);
+
+		for (; item != NULL; obs_data_item_next(&item)) {
+			const char *name = obs_data_item_get_name(item);
+			const char *path = obs_data_item_get_string(item);
+			obs_property_list_add_string(p, obs_module_text(name),
+						     path);
+		}
 	}
 
 	obs_properties_add_float(props, S_LUMA_SOFT, T_LUMA_SOFT, 0.0, 1.0,
@@ -168,8 +170,8 @@ static void luma_wipe_callback(void *data, gs_texture_t *a, gs_texture_t *b,
 	const bool previous = gs_framebuffer_srgb_enabled();
 	gs_enable_framebuffer_srgb(true);
 
-	gs_effect_set_texture(lwipe->ep_a_tex, a);
-	gs_effect_set_texture(lwipe->ep_b_tex, b);
+	gs_effect_set_texture_srgb(lwipe->ep_a_tex, a);
+	gs_effect_set_texture_srgb(lwipe->ep_b_tex, b);
 	gs_effect_set_texture(lwipe->ep_l_tex, lwipe->luma_image.texture);
 	gs_effect_set_float(lwipe->ep_progress, t);
 
@@ -210,6 +212,17 @@ bool luma_wipe_audio_render(void *data, uint64_t *ts_out,
 					   channels, sample_rate, mix_a, mix_b);
 }
 
+static enum gs_color_space
+luma_wipe_video_get_color_space(void *data, size_t count,
+				const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(count);
+	UNUSED_PARAMETER(preferred_spaces);
+
+	struct luma_wipe_info *const lwipe = data;
+	return obs_transition_video_get_color_space(lwipe->source);
+}
+
 struct obs_source_info luma_wipe_transition = {
 	.id = "wipe_transition",
 	.type = OBS_SOURCE_TYPE_TRANSITION,
@@ -221,4 +234,5 @@ struct obs_source_info luma_wipe_transition = {
 	.audio_render = luma_wipe_audio_render,
 	.get_properties = luma_wipe_properties,
 	.get_defaults = luma_wipe_defaults,
+	.video_get_color_space = luma_wipe_video_get_color_space,
 };

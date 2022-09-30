@@ -19,9 +19,8 @@ using namespace json11;
 
 /* ------------------------------------------------------------------------- */
 
-#define RESTREAM_AUTH_URL \
-	"https://obsproject.com/app-auth/restream?action=redirect"
-#define RESTREAM_TOKEN_URL "https://obsproject.com/app-auth/restream-token"
+#define RESTREAM_AUTH_URL OAUTH_BASE_URL "v1/restream/redirect"
+#define RESTREAM_TOKEN_URL OAUTH_BASE_URL "v1/restream/token"
 #define RESTREAM_STREAMKEY_URL "https://api.restream.io/v2/user/streamKey"
 #define RESTREAM_SCOPE_VERSION 1
 

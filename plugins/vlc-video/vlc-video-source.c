@@ -382,6 +382,62 @@ static void vlcs_video_display(void *data, void *picture)
 	UNUSED_PARAMETER(picture);
 }
 
+static void calculate_display_size(struct vlc_source *c, unsigned *width,
+				   unsigned *height)
+{
+	libvlc_media_t *media = libvlc_media_player_get_media_(c->media_player);
+
+	if (!media)
+		return;
+
+	libvlc_media_track_t **tracks;
+
+	unsigned count = libvlc_media_tracks_get_(media, &tracks);
+
+	if (count > 0) {
+		for (unsigned i = 0; i < count; i++) {
+			libvlc_media_track_t *track = tracks[i];
+
+			if (track->i_type != libvlc_track_video)
+				continue;
+
+			int display_width = track->video->i_width;
+			int display_height = track->video->i_height;
+
+			if (display_width == 0 || display_height == 0)
+				continue;
+
+			/* Adjust for Sample Aspect Ratio (SAR) */
+			if (track->video->i_sar_num > 0 &&
+			    track->video->i_sar_den > 0) {
+				display_width = display_width *
+						track->video->i_sar_num /
+						track->video->i_sar_den;
+			}
+
+			switch (track->video->i_orientation) {
+			case libvlc_video_orient_left_top:
+			case libvlc_video_orient_left_bottom:
+			case libvlc_video_orient_right_top:
+			case libvlc_video_orient_right_bottom:
+				/* orientation swaps height and width */
+				*width = display_height;
+				*height = display_width;
+				break;
+			default:
+				/* height and width not swapped */
+				*width = display_width;
+				*height = display_height;
+				break;
+			}
+		}
+
+		libvlc_media_tracks_release_(tracks, count);
+	}
+
+	libvlc_media_release_(media);
+}
+
 static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 				  unsigned *height, unsigned *pitches,
 				  unsigned *lines)
@@ -390,25 +446,16 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 	enum video_format new_format;
 	enum video_range_type range;
 	bool new_range;
-	unsigned new_width = 0;
-	unsigned new_height = 0;
 	size_t i = 0;
 
 	new_format = convert_vlc_video_format(chroma, &new_range);
 
-	/* This is used because VLC will by default try to use a different
-	 * scaling than what the file uses (probably for optimization reasons).
-	 * For example, if the file is 1920x1080, it will try to render it by
-	 * 1920x1088, which isn't what we want.  Calling libvlc_video_get_size
-	 * gets the actual video file's size, and thus fixes the problem.
-	 * However this doesn't work with URLs, so if it returns a 0 value, it
-	 * shouldn't be used. */
-	libvlc_video_get_size_(c->media_player, 0, &new_width, &new_height);
-
-	if (new_width && new_height) {
-		*width = new_width;
-		*height = new_height;
-	}
+	/* The width and height passed from VLC are the buffer size rather than
+	 * the correct video display size, and may be the next multiple of 32
+	 * up from the original dimension, e.g. 1080 would become 1088. VLC 4.0
+	 * will pass the correct display size in *(width+1) and *(height+1) but
+	 * for now we need to calculate it ourselves. */
+	calculate_display_size(c, width, height);
 
 	/* don't allocate a new frame if format/width/height hasn't changed */
 	if (c->frame.format != new_format || c->frame.width != *width ||
@@ -420,10 +467,10 @@ static unsigned vlcs_video_format(void **p_data, char *chroma, unsigned *width,
 		c->frame.full_range = new_range;
 		range = c->frame.full_range ? VIDEO_RANGE_FULL
 					    : VIDEO_RANGE_PARTIAL;
-		video_format_get_parameters(VIDEO_CS_DEFAULT, range,
-					    c->frame.color_matrix,
-					    c->frame.color_range_min,
-					    c->frame.color_range_max);
+		video_format_get_parameters_for_format(
+			VIDEO_CS_DEFAULT, range, new_format,
+			c->frame.color_matrix, c->frame.color_range_min,
+			c->frame.color_range_max);
 	}
 
 	while (c->frame.data[i]) {
@@ -458,10 +505,13 @@ static int vlcs_audio_setup(void **p_data, char *format, unsigned *rate,
 {
 	struct vlc_source *c = *p_data;
 	enum audio_format new_audio_format;
+	struct obs_audio_info aoi;
+	obs_get_audio_info(&aoi);
+	uint32_t out_channels = get_audio_channels(aoi.speakers);
 
 	new_audio_format = convert_vlc_audio_format(format);
-	if (*channels > 8)
-		*channels = 8;
+	if (*channels > out_channels)
+		*channels = out_channels;
 
 	/* don't free audio data if the data is the same format */
 	if (c->audio.format == new_audio_format &&
@@ -547,7 +597,7 @@ static bool valid_extension(const char *ext)
 	if (!ext || !*ext)
 		return false;
 
-	b = EXTENSIONS_MEDIA + 1;
+	b = &EXTENSIONS_MEDIA[1];
 	e = strchr(b, ';');
 
 	for (;;) {
@@ -1077,8 +1127,10 @@ static obs_properties_t *vlcs_properties(void *data)
 	dstr_free(&filter);
 	dstr_free(&exts);
 
-	obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING, 100,
-			       60000, 10);
+	p = obs_properties_add_int(ppts, S_NETWORK_CACHING, T_NETWORK_CACHING,
+				   100, 60000, 10);
+	obs_property_int_set_suffix(p, " ms");
+
 	obs_properties_add_int(ppts, S_TRACK, T_TRACK, 1, 10, 1);
 	obs_properties_add_bool(ppts, S_SUBTITLE_ENABLE, T_SUBTITLE_ENABLE);
 	obs_properties_add_int(ppts, S_SUBTITLE_TRACK, T_SUBTITLE_TRACK, 1, 10,

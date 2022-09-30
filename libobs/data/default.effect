@@ -1,5 +1,8 @@
+#include "color.effect"
+
 uniform float4x4 ViewProj;
 uniform texture2d image;
+uniform float multiplier;
 
 sampler_state def_sampler {
 	Filter   = Linear;
@@ -28,29 +31,8 @@ float4 PSDrawBare(VertInOut vert_in) : TARGET
 float4 PSDrawAlphaDivide(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
-	float alpha = rgba.a;
-	float multiplier = (alpha > 0.0) ? (1.0 / alpha) : 0.0;
-	return float4(rgba.rgb * multiplier, alpha);
-}
-
-float srgb_linear_to_nonlinear_channel(float u)
-{
-	return (u <= 0.0031308) ? (12.92 * u) : ((1.055 * pow(u, 1.0 / 2.4)) - 0.055);
-}
-
-float3 srgb_linear_to_nonlinear(float3 v)
-{
-	return float3(srgb_linear_to_nonlinear_channel(v.r), srgb_linear_to_nonlinear_channel(v.g), srgb_linear_to_nonlinear_channel(v.b));
-}
-
-float srgb_nonlinear_to_linear_channel(float u)
-{
-	return (u <= 0.04045) ? (u / 12.92) : pow((u + 0.055) / 1.055, 2.4);
-}
-
-float3 srgb_nonlinear_to_linear(float3 v)
-{
-	return float3(srgb_nonlinear_to_linear_channel(v.r), srgb_nonlinear_to_linear_channel(v.g), srgb_nonlinear_to_linear_channel(v.b));
+	rgba.rgb *= max(1. / rgba.a, 0.);
+	return rgba;
 }
 
 float4 PSDrawNonlinearAlpha(VertInOut vert_in) : TARGET
@@ -62,10 +44,71 @@ float4 PSDrawNonlinearAlpha(VertInOut vert_in) : TARGET
 	return rgba;
 }
 
+float4 PSDrawNonlinearAlphaMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_linear_to_nonlinear(rgba.rgb);
+	rgba.rgb *= rgba.a;
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
 float4 PSDrawSrgbDecompress(VertInOut vert_in) : TARGET
 {
 	float4 rgba = image.Sample(def_sampler, vert_in.uv);
 	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawSrgbDecompressMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = srgb_nonlinear_to_linear(rgba.rgb);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawMultiply(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb *= multiplier;
+	return rgba;
+}
+
+float4 PSDrawTonemap(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawMultiplyTonemap(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb *= multiplier;
+	rgba.rgb = rec709_to_rec2020(rgba.rgb);
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawPQ(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = st2084_to_linear(rgba.rgb) * multiplier;
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
+	return rgba;
+}
+
+float4 PSDrawTonemapPQ(VertInOut vert_in) : TARGET
+{
+	float4 rgba = image.Sample(def_sampler, vert_in.uv);
+	rgba.rgb = st2084_to_linear(rgba.rgb) * multiplier;
+	rgba.rgb = reinhard(rgba.rgb);
+	rgba.rgb = rec2020_to_rec709(rgba.rgb);
 	return rgba;
 }
 
@@ -96,11 +139,74 @@ technique DrawNonlinearAlpha
 	}
 }
 
+technique DrawNonlinearAlphaMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawNonlinearAlphaMultiply(vert_in);
+	}
+}
+
 technique DrawSrgbDecompress
 {
 	pass
 	{
 		vertex_shader = VSDefault(vert_in);
 		pixel_shader  = PSDrawSrgbDecompress(vert_in);
+	}
+}
+
+technique DrawSrgbDecompressMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawSrgbDecompressMultiply(vert_in);
+	}
+}
+
+technique DrawMultiply
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMultiply(vert_in);
+	}
+}
+
+technique DrawTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawTonemap(vert_in);
+	}
+}
+
+technique DrawMultiplyTonemap
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawMultiplyTonemap(vert_in);
+	}
+}
+
+technique DrawPQ
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawPQ(vert_in);
+	}
+}
+
+technique DrawTonemapPQ
+{
+	pass
+	{
+		vertex_shader = VSDefault(vert_in);
+		pixel_shader  = PSDrawTonemapPQ(vert_in);
 	}
 }

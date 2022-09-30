@@ -53,14 +53,13 @@ void xcb_xcursor_destroy(xcb_xcursor_t *data);
 
 /**
  * Update the cursor data
+ * @param xcb xcb connection
  * @param data xcursor object
- * @param xc xcb cursor image reply
  *
  * @note This needs to be executed within a valid render context
  *
  */
-void xcb_xcursor_update(xcb_xcursor_t *data,
-			xcb_xfixes_get_cursor_image_reply_t *xc);
+void xcb_xcursor_update(xcb_connection_t *xcb, xcb_xcursor_t *data);
 
 /**
  * Draw the cursor
@@ -70,9 +69,15 @@ void xcb_xcursor_update(xcb_xcursor_t *data,
 void xcb_xcursor_render(xcb_xcursor_t *data);
 
 /**
- * Specify offset for the cursor
+ * Specify a manual offset for the cursor.
  */
 void xcb_xcursor_offset(xcb_xcursor_t *data, const int x_org, const int y_org);
+
+/**
+ * Update the offset to match the window's origin.
+ */
+void xcb_xcursor_offset_win(xcb_connection_t *xcb, xcb_xcursor_t *data,
+			    xcb_window_t win);
 
 #ifdef __cplusplus
 }

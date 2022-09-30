@@ -8,6 +8,7 @@
 #include "../libdshowcapture/source/output-filter.hpp"
 #include "../libdshowcapture/source/dshow-formats.hpp"
 #include "../../../libobs/util/windows/WinHandle.hpp"
+#include "../../../libobs/util/threading-windows.h"
 
 #define DEFAULT_CX 1920
 #define DEFAULT_CY 1080
@@ -35,6 +36,7 @@ class VCamFilter : public DShow::OutputFilter {
 	uint64_t interval = DEFAULT_INTERVAL;
 	WinHandle thread_start;
 	WinHandle thread_stop;
+	volatile bool active = false;
 
 	nv12_scale_t scaler = {};
 
@@ -60,4 +62,6 @@ public:
 	~VCamFilter() override;
 
 	STDMETHODIMP Pause() override;
+	STDMETHODIMP Run(REFERENCE_TIME tStart) override;
+	STDMETHODIMP Stop() override;
 };

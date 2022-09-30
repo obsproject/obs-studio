@@ -136,11 +136,8 @@ obs_encoder_t *obs_audio_encoder_create(const char *id, const char *name,
 			      hotkey_data);
 }
 
-static void receive_video(void *param, struct video_data *streaming_frame,
-			  struct video_data *recording_frame);
-static void receive_audio(void *param, size_t mix_idx,
-			  struct audio_data *streaming_data,
-			  struct audio_data *recording_data);
+static void receive_video(void *param, struct video_data *frame);
+static void receive_audio(void *param, size_t mix_idx, struct audio_data *data);
 
 static inline void get_audio_info(const struct obs_encoder *encoder,
 				  struct audio_convert_info *info)
@@ -191,7 +188,8 @@ static inline bool has_scaling(const struct obs_encoder *encoder)
 static inline bool gpu_encode_available(const struct obs_encoder *encoder)
 {
 	return (encoder->info.caps & OBS_ENCODER_CAP_PASS_TEXTURE) != 0 &&
-	       obs->video.using_nv12_tex;
+	       (encoder->video->using_p010_tex ||
+		encoder->video->using_nv12_tex);
 }
 
 static void add_connection(struct obs_encoder *encoder)
@@ -468,6 +466,8 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 		encoder->context.data = encoder->orig_info.create(
 			encoder->context.settings, encoder);
 		can_reroute = false;
+		if (!encoder->video)
+			encoder->video = obs->video.main_mix;
 	}
 	if (!encoder->context.data)
 		return false;
@@ -1043,45 +1043,19 @@ bool video_pause_check(struct pause_data *pause, uint64_t timestamp)
 }
 
 static const char *receive_video_name = "receive_video";
-static void receive_video(void *param, struct video_data *streaming_frame,
-			  struct video_data *recording_frame)
+static void receive_video(void *param, struct video_data *frame)
 {
 	profile_start(receive_video_name);
 
 	struct obs_encoder *encoder = param;
 	struct obs_encoder *pair = encoder->paired_encoder;
 	struct encoder_frame enc_frame;
-	struct video_data *frame;
-
-	struct encoder_callback *cb;
-	cb = encoder->callbacks.array;
-	struct obs_output *output = cb->param;
-
-	if (!obs_get_multiple_rendering()) {
-		frame = streaming_frame;
-	} else {
-		if (strcmp(output->info.id, "rtmp_output") == 0 ||
-			strcmp(output->info.id, "ftl_output") == 0)
-			frame = streaming_frame;
-		else if (strcmp(output->info.id, "ffmpeg_muxer") == 0)
-			frame = recording_frame;
-		else if (strcmp(output->info.id, "replay_buffer") == 0) {
-			if (obs_get_replay_buffer_rendering_mode() ==
-			    OBS_STREAMING_REPLAY_BUFFER_RENDERING)
-				frame = streaming_frame;
-			else if (obs_get_replay_buffer_rendering_mode() ==
-				 OBS_RECORDING_REPLAY_BUFFER_RENDERING)
-				frame = recording_frame;
-			else
-				frame = streaming_frame;
-		} else
-			goto wait_for_audio;
-	}
 
 	if (!encoder->first_received && pair) {
 		if (!pair->first_received ||
-		    pair->first_raw_ts > frame->timestamp)
+		    pair->first_raw_ts > frame->timestamp) {
 			goto wait_for_audio;
+		}
 	}
 
 	if (video_pause_check(&encoder->pause, frame->timestamp))
@@ -1309,50 +1283,23 @@ bool audio_pause_check(struct pause_data *pause, struct audio_data *data,
 }
 
 static const char *receive_audio_name = "receive_audio";
-static void receive_audio(void *param, size_t mix_idx,
-			  struct audio_data *streaming_data,
-			  struct audio_data *recording_data)
+static void receive_audio(void *param, size_t mix_idx, struct audio_data *in)
 {
 	profile_start(receive_audio_name);
 
 	struct obs_encoder *encoder = param;
-	struct audio_data *data;
-
-	struct encoder_callback *cb;
-	cb = encoder->callbacks.array;
-	struct obs_output *output = cb->param;
-
-	if (!obs_get_multiple_rendering()) {
-		data = streaming_data;
-	} else {
-		if (strcmp(output->info.id, "rtmp_output") == 0 ||
-			strcmp(output->info.id, "ftl_output") == 0)
-			data = streaming_data;
-		else if (strcmp(output->info.id, "ffmpeg_muxer") == 0)
-			data = recording_data;
-		else if (strcmp(output->info.id, "replay_buffer") == 0) {
-			if (obs_get_replay_buffer_rendering_mode() ==
-			    OBS_STREAMING_REPLAY_BUFFER_RENDERING)
-				data = streaming_data;
-			else if (obs_get_replay_buffer_rendering_mode() ==
-				 OBS_RECORDING_REPLAY_BUFFER_RENDERING)
-				data = recording_data;
-			else
-				data = streaming_data;
-		} else
-			goto end;
-	}
+	struct audio_data audio = *in;
 
 	if (!encoder->first_received) {
-		encoder->first_raw_ts = data->timestamp;
+		encoder->first_raw_ts = audio.timestamp;
 		encoder->first_received = true;
 		clear_audio(encoder);
 	}
 
-	if (audio_pause_check(&encoder->pause, data, encoder->samplerate))
+	if (audio_pause_check(&encoder->pause, &audio, encoder->samplerate))
 		goto end;
 
-	if (!buffer_audio(encoder, data))
+	if (!buffer_audio(encoder, &audio))
 		goto end;
 
 	while (encoder->audio_input_buffer[0].size >=
@@ -1598,4 +1545,30 @@ void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
 		encoder->last_error_message = bstrdup(message);
 	else
 		encoder->last_error_message = NULL;
+}
+
+void obs_encoder_set_video_mix(obs_encoder_t *encoder,
+						enum obs_video_rendering_mode mode)
+{
+	if (!obs_encoder_valid(encoder, "obs_encoder_set_video_mix"))
+		return;
+
+	switch(mode) {
+		case OBS_MAIN_VIDEO_RENDERING: {
+			encoder->video = obs->video.main_mix;
+			break;
+		}
+		case OBS_STREAMING_VIDEO_RENDERING: {
+			encoder->video = obs->video.stream_mix;
+			break;
+		}
+		case OBS_RECORDING_VIDEO_RENDERING: {
+			encoder->video = obs->video.record_mix;
+			break;
+		}
+		default: {
+			encoder->video = obs->video.main_mix;
+			break;
+		}
+	}
 }

@@ -48,7 +48,6 @@ void gs_duplicator::Start()
 	if (SUCCEEDED(hr)) {
 		constexpr DXGI_FORMAT supportedFormats[]{
 			DXGI_FORMAT_R16G16B16A16_FLOAT,
-			DXGI_FORMAT_R10G10B10A2_UNORM,
 			DXGI_FORMAT_B8G8R8A8_UNORM,
 		};
 		hr = output5->DuplicateOutput1(device->device, 0,

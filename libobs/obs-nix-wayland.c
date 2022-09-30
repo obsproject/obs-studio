@@ -216,7 +216,6 @@ static void platform_registry_handler(void *data, struct wl_registry *registry,
 				      uint32_t id, const char *interface,
 				      uint32_t version)
 {
-	UNUSED_PARAMETER(version);
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
 	if (strcmp(interface, wl_seat_interface.name) == 0) {

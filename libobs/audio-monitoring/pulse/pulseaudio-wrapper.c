@@ -50,7 +50,7 @@ void get_default_id(char **id)
 		(pa_server_info_cb_t)pulseaudio_default_devices, (void *)pdo);
 
 	if (!pdo->default_sink_name || !*pdo->default_sink_name) {
-		*id = NULL;
+		*id = bzalloc(1);
 	} else {
 		*id = bzalloc(strlen(pdo->default_sink_name) + 9);
 		strcat(*id, pdo->default_sink_name);

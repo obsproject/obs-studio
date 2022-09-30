@@ -124,7 +124,6 @@ void preview_output_stop()
 {
 	obs_output_stop(context.output);
 	obs_output_release(context.output);
-	video_output_stop(context.video_queue);
 
 	obs_remove_main_render_callback(render_preview_source, &context);
 	obs_frontend_remove_event_callback(on_preview_scene_changed, &context);
@@ -177,7 +176,7 @@ void preview_output_start()
 		vi.fps_num = context.ovi.fps_num;
 		vi.cache_size = 16;
 		vi.colorspace = mainVOI->colorspace;
-		vi.range = mainVOI->range;
+		vi.range = VIDEO_RANGE_FULL;
 		vi.name = "decklink_preview_output";
 
 		video_output_open(&context.video_queue, &vi);
@@ -267,18 +266,9 @@ void render_preview_source(void *param, uint32_t cx, uint32_t cy)
 		gs_blend_state_pop();
 		gs_texrender_end(ctx->texrender);
 
-		struct video_frame *output_frames[3];
 		struct video_frame output_frame;
-		output_frames[0] = &output_frame;
-		output_frames[1] = &output_frame;
-		output_frames[2] = &output_frame;
-		uint64_t timestamps[3];
-		timestamps[0] = os_gettime_ns();
-		timestamps[1] = os_gettime_ns();
-		timestamps[2] = os_gettime_ns();
-
-		if (video_output_lock_frame(ctx->video_queue, output_frames, 1,
-					    timestamps)) {
+		if (video_output_lock_frame(ctx->video_queue, &output_frame, 1,
+					    os_gettime_ns())) {
 			gs_stage_texture(
 				ctx->stagesurface,
 				gs_texrender_get_texture(ctx->texrender));

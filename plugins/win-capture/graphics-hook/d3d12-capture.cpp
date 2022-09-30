@@ -45,7 +45,7 @@ struct d3d12_data {
 
 static struct d3d12_data data = {};
 
-extern thread_local bool dxgi_presenting;
+extern thread_local int dxgi_presenting;
 extern ID3D12CommandQueue *dxgi_possible_swap_queues[8];
 extern size_t dxgi_possible_swap_queue_count;
 extern bool dxgi_present_attempted;
@@ -236,6 +236,8 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		return false;
 	}
 
+	print_swap_desc(&desc);
+
 	data.format = strip_dxgi_format_srgb(desc.BufferDesc.Format);
 	data.multisampled = desc.SampleDesc.Count > 1;
 	window = desc.OutputWindow;
@@ -248,9 +250,6 @@ static inline bool d3d12_init_format(IDXGISwapChain *swap, HWND &window,
 		hlog("We're DXGI1.4 boys!");
 		swap3->Release();
 	}
-
-	hlog("Buffer count: %d, swap effect: %d", (int)desc.BufferCount,
-	     (int)desc.SwapEffect);
 
 	bb.count = desc.SwapEffect == DXGI_SWAP_EFFECT_DISCARD
 			   ? 1
@@ -375,7 +374,7 @@ hook_execute_command_lists(ID3D12CommandQueue *queue, UINT NumCommandLists,
 
 	if (dxgi_possible_swap_queue_count <
 	    _countof(dxgi_possible_swap_queues)) {
-		if (dxgi_presenting &&
+		if ((dxgi_presenting > 0) &&
 		    (queue->GetDesc().Type == D3D12_COMMAND_LIST_TYPE_DIRECT)) {
 			if (try_append_queue_if_unique(queue)) {
 				hlog("Remembering D3D12 queue from present: queue=0x%" PRIX64,

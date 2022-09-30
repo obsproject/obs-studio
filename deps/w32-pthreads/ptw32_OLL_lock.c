@@ -282,7 +282,7 @@ ptw32_oll_Depart(ptw32_oll_ticket_t ticket)
 /*
  * Increments the C-SNZI surplus and returns true if the
  * C-SNZI is open or has a surplus. Calls TreeArrive
- * recursively on the node’s parent if needed.
+ * recursively on the node's parent if needed.
  * Otherwise, returns false without making any changes.
  */
 BOOL
@@ -336,7 +336,7 @@ ptw32_oll_TreeArrive(ptw32_oll_snziNodeOrRoot_t snziNodeOrRoot)
 
 /*
  * Decrements the C-SNZI surplus, calling TreeDepart
- * recursively on the node’s parent if needed. Returns
+ * recursively on the node's parent if needed. Returns
  * false iff the resulting state of the C-SNZI is CLOSED
  * and the surplus is zero. Otherwise, returns true.
  */

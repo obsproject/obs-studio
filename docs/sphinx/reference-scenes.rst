@@ -20,7 +20,7 @@ specific transforms and/or filtering
 Scene Item Transform Structure (obs_transform_info)
 ---------------------------------------------------
 
-.. type:: struct obs_transform_info
+.. struct:: obs_transform_info
 
    Scene item transform structure.
 
@@ -80,7 +80,7 @@ Scene Item Transform Structure (obs_transform_info)
 Scene Item Crop Structure (obs_sceneitem_crop)
 ----------------------------------------------
 
-.. type:: struct obs_sceneitem_crop
+.. struct:: obs_sceneitem_crop
 
    Scene item crop structure.
 
@@ -104,7 +104,7 @@ Scene Item Crop Structure (obs_sceneitem_crop)
 Scene Item Order Info Structure (\*obs_sceneitem_order_info)
 ------------------------------------------------------------
 
-.. type:: struct obs_sceneitem_order_info
+.. struct:: obs_sceneitem_order_info
 
    Scene item order info structure.
 
@@ -343,7 +343,7 @@ Scene Item Functions
 ---------------------
 
 .. function:: obs_data_t *obs_scene_save_transform_states(obs_scene_t *scene, bool all_items)
-.. function:: void obs_scene_load_transform_states(oconst char *states)
+.. function:: void obs_scene_load_transform_states(const char *states)
 
    Saves all the transformation states for the sceneitms in scene. When all_items is false, it
    will only save selected items
@@ -504,6 +504,17 @@ Scene Item Functions
                   | OBS_SCALE_BICUBIC
                   | OBS_SCALE_BILINEAR
                   | OBS_SCALE_LANCZOS
+
+---------------------
+
+.. function:: void obs_sceneitem_set_blending_method(obs_sceneitem_t *item, enum obs_blending_method method)
+              enum obs_blending_method obs_sceneitem_get_blending_method(obs_sceneitem_t *item)
+
+   Sets/gets the blending method used for the scene item.
+
+   :param method: | Can be one of the following values:
+                  | OBS_BLEND_METHOD_DEFAULT
+                  | OBS_BLEND_METHOD_SRGB_OFF
 
 ---------------------
 

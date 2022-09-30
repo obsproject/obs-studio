@@ -76,14 +76,12 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 		iconLabel = new QLabel();
 		iconLabel->setPixmap(pixmap);
-		iconLabel->setFixedSize(16, 16);
 		iconLabel->setEnabled(sourceVisible);
 		iconLabel->setStyleSheet("background: none");
 	}
 
 	vis = new VisibilityCheckBox();
 	vis->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	vis->setFixedSize(16, 16);
 	vis->setChecked(sourceVisible);
 	vis->setStyleSheet("background: none");
 	vis->setAccessibleName(QTStr("Basic.Main.Sources.Visibility"));
@@ -92,7 +90,6 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 
 	lock = new LockedCheckBox();
 	lock->setSizePolicy(QSizePolicy::Maximum, QSizePolicy::Maximum);
-	lock->setFixedSize(16, 16);
 	lock->setChecked(obs_sceneitem_locked(sceneitem));
 	lock->setStyleSheet("background: none");
 	lock->setAccessibleName(QTStr("Basic.Main.Sources.Lock"));
@@ -119,7 +116,6 @@ SourceTreeItem::SourceTreeItem(SourceTree *tree_, OBSSceneItem sceneitem_)
 	}
 	boxLayout->addWidget(label);
 	boxLayout->addWidget(vis);
-	boxLayout->addSpacing(1);
 	boxLayout->addWidget(lock);
 #ifdef __APPLE__
 	/* Hack: Fixes a bug where scrollbars would be above the lock icon */
@@ -967,28 +963,17 @@ void SourceTreeModel::GroupSelectedItems(QModelIndexList &indices)
 	for (obs_sceneitem_t *item : item_order)
 		obs_sceneitem_select(item, false);
 
-	int newIdx = indices[0].row();
-
-	beginInsertRows(QModelIndex(), newIdx, newIdx);
-	items.insert(newIdx, item);
-	endInsertRows();
-
-	for (int i = 0; i < indices.size(); i++) {
-		int fromIdx = indices[i].row() + 1;
-		int toIdx = newIdx + i + 1;
-		if (fromIdx != toIdx) {
-			beginMoveRows(QModelIndex(), fromIdx, fromIdx,
-				      QModelIndex(), toIdx);
-			MoveItem(items, fromIdx, toIdx);
-			endMoveRows();
-		}
-	}
-
 	hasGroups = true;
 	st->UpdateWidgets(true);
 
 	obs_sceneitem_select(item, true);
 
+	/* ----------------------------------------------------------------- */
+	/* obs_scene_insert_group triggers a full refresh of scene items via */
+	/* the item_add signal. No need to insert a row, just edit the one   */
+	/* that's created automatically.                                     */
+
+	int newIdx = indices[0].row();
 	QMetaObject::invokeMethod(st, "NewGroupEdit", Qt::QueuedConnection,
 				  Q_ARG(int, newIdx));
 }
@@ -1097,12 +1082,12 @@ SourceTree::SourceTree(QWidget *parent_) : QListView(parent_)
 		"*[bgColor=\"7\"]{background-color:rgba(68,68,68,33%);}"
 		"*[bgColor=\"8\"]{background-color:rgba(255,255,255,33%);}"));
 
-	setMouseTracking(true);
-
 	UpdateNoSourcesMessage();
 	connect(App(), &OBSApp::StyleChanged, this,
 		&SourceTree::UpdateNoSourcesMessage);
 	connect(App(), &OBSApp::StyleChanged, this, &SourceTree::UpdateIcons);
+
+	setItemDelegate(new SourceTreeDelegate(this));
 }
 
 void SourceTree::UpdateIcons()
@@ -1197,7 +1182,14 @@ void SourceTree::dropEvent(QDropEvent *event)
 	QModelIndexList indices = selectedIndexes();
 
 	DropIndicatorPosition indicator = dropIndicatorPosition();
-	int row = indexAt(event->pos()).row();
+	int row = indexAt(
+#if QT_VERSION >= QT_VERSION_CHECK(6, 0, 0)
+			  event->position().toPoint()
+#else
+			  event->pos()
+#endif
+				  )
+			  .row();
 	bool emptyDrop = row == -1;
 
 	if (emptyDrop) {
@@ -1497,31 +1489,6 @@ void SourceTree::dropEvent(QDropEvent *event)
 	QListView::dropEvent(event);
 }
 
-void SourceTree::mouseMoveEvent(QMouseEvent *event)
-{
-	QPoint pos = event->pos();
-	SourceTreeItem *item = qobject_cast<SourceTreeItem *>(childAt(pos));
-
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-
-	QListView::mouseMoveEvent(event);
-
-	std::lock_guard<std::mutex> lock(preview->selectMutex);
-	preview->hoveredPreviewItems.clear();
-	if (item)
-		preview->hoveredPreviewItems.push_back(item->sceneitem);
-}
-
-void SourceTree::leaveEvent(QEvent *event)
-{
-	OBSBasicPreview *preview = OBSBasicPreview::Get();
-
-	QListView::leaveEvent(event);
-
-	std::lock_guard<std::mutex> lock(preview->selectMutex);
-	preview->hoveredPreviewItems.clear();
-}
-
 void SourceTree::selectionChanged(const QItemSelection &selected,
 				  const QItemSelection &deselected)
 {
@@ -1588,8 +1555,12 @@ bool SourceTree::Edit(int row)
 	QModelIndex index = stm->createIndex(row, 0);
 	QWidget *widget = indexWidget(index);
 	SourceTreeItem *itemWidget = reinterpret_cast<SourceTreeItem *>(widget);
-	if (itemWidget->IsEditing())
+	if (itemWidget->IsEditing()) {
+#ifdef __APPLE__
+		itemWidget->ExitEditMode(true);
+#endif
 		return false;
+	}
 
 	itemWidget->EnterEditMode();
 	edit(index);
@@ -1705,10 +1676,8 @@ void SourceTree::UpdateNoSourcesMessage()
 	std::string darkPath;
 	GetDataFilePath("themes/Dark/no_sources.svg", darkPath);
 
-	QColor color = palette().text().color();
-	bool lightTheme = (color.redF() < 0.5);
-	QString file = lightTheme ? ":res/images/no_sources.svg"
-				  : darkPath.c_str();
+	QString file = !App()->IsThemeDark() ? ":res/images/no_sources.svg"
+					     : darkPath.c_str();
 	iconNoSources.load(file);
 
 	QTextOption opt(Qt::AlignHCenter);
@@ -1731,23 +1700,42 @@ void SourceTree::paintEvent(QPaintEvent *event)
 		}
 
 		QRectF iconRect = iconNoSources.viewBoxF();
+		iconRect.setSize(QSizeF(32.0, 32.0));
 
 		QSizeF iconSize = iconRect.size();
 		QSizeF textSize = textNoSources.size();
 		QSizeF thisSize = size();
+		const qreal spacing = 16.0;
 
-		qreal totalHeight = textSize.height() + iconSize.height();
+		qreal totalHeight =
+			iconSize.height() + spacing + textSize.height();
 
-		qreal x = thisSize.width() / 2.0 - textSize.width() / 2.0;
+		qreal x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
 		qreal y = thisSize.height() / 2.0 - totalHeight / 2.0;
-		p.drawStaticText(x, y, textNoSources);
-
-		x = thisSize.width() / 2.0 - iconSize.width() / 2.0;
-		y += textSize.height();
-		iconRect.moveTo(x, y);
-
+		iconRect.moveTo(std::round(x), std::round(y));
 		iconNoSources.render(&p, iconRect);
+
+		x = thisSize.width() / 2.0 - textSize.width() / 2.0;
+		y += spacing + iconSize.height();
+		p.drawStaticText(x, y, textNoSources);
 	} else {
 		QListView::paintEvent(event);
 	}
+}
+
+SourceTreeDelegate::SourceTreeDelegate(QObject *parent)
+	: QStyledItemDelegate(parent)
+{
+}
+
+QSize SourceTreeDelegate::sizeHint(const QStyleOptionViewItem &option,
+				   const QModelIndex &index) const
+{
+	SourceTree *tree = qobject_cast<SourceTree *>(parent());
+	QWidget *item = tree->indexWidget(index);
+
+	if (!item)
+		return (QSize(0, 0));
+
+	return (QSize(option.widget->minimumWidth(), item->height()));
 }

@@ -511,6 +511,25 @@ int AutoUpdateThread::queryUpdate(bool localManualUpdate, const char *text_utf8)
 	return ret;
 }
 
+bool AutoUpdateThread::queryRepairSlot()
+{
+	QMessageBox::StandardButton res = OBSMessageBox::question(
+		App()->GetMainWindow(), QTStr("Updater.RepairConfirm.Title"),
+		QTStr("Updater.RepairConfirm.Text"),
+		QMessageBox::Yes | QMessageBox::Cancel);
+
+	return res == QMessageBox::Yes;
+}
+
+bool AutoUpdateThread::queryRepair()
+{
+	bool ret = false;
+	QMetaObject::invokeMethod(this, "queryRepairSlot",
+				  Qt::BlockingQueuedConnection,
+				  Q_RETURN_ARG(bool, ret));
+	return ret;
+}
+
 void AutoUpdateThread::run()
 try {
 	long responseCode;
@@ -566,6 +585,11 @@ try {
 		extraHeaders.push_back(move(header));
 	}
 
+	/* allow server to know if this was a manual update check in case
+	 * we want to allow people to bypass a configured rollout rate */
+	if (manualUpdate)
+		extraHeaders.emplace_back("X-OBS2-ManualUpdate: 1");
+
 	/* ----------------------------------- *
 	 * get manifest from server            */
 
@@ -615,10 +639,14 @@ try {
 	if (!success)
 		throw string("Failed to parse manifest");
 
-	if (!updatesAvailable) {
+	if (!updatesAvailable && !repairMode) {
 		if (manualUpdate)
 			info(QTStr("Updater.NoUpdatesAvailable.Title"),
 			     QTStr("Updater.NoUpdatesAvailable.Text"));
+		return;
+	} else if (updatesAvailable && repairMode) {
+		info(QTStr("Updater.RepairButUpdatesAvailable.Title"),
+		     QTStr("Updater.RepairButUpdatesAvailable.Text"));
 		return;
 	}
 
@@ -627,7 +655,7 @@ try {
 
 	int skipUpdateVer = config_get_int(GetGlobalConfig(), "General",
 					   "SkipUpdateVersion");
-	if (!manualUpdate && updateVer == skipUpdateVer)
+	if (!manualUpdate && updateVer == skipUpdateVer && !repairMode)
 		return;
 
 	/* ----------------------------------- *
@@ -639,20 +667,25 @@ try {
 	/* ----------------------------------- *
 	 * query user for update               */
 
-	int queryResult = queryUpdate(manualUpdate, notes.c_str());
+	if (repairMode) {
+		if (!queryRepair())
+			return;
+	} else {
+		int queryResult = queryUpdate(manualUpdate, notes.c_str());
 
-	if (queryResult == OBSUpdate::No) {
-		if (!manualUpdate) {
-			long long t = (long long)time(nullptr);
+		if (queryResult == OBSUpdate::No) {
+			if (!manualUpdate) {
+				long long t = (long long)time(nullptr);
+				config_set_int(GetGlobalConfig(), "General",
+					       "LastUpdateCheck", t);
+			}
+			return;
+
+		} else if (queryResult == OBSUpdate::Skip) {
 			config_set_int(GetGlobalConfig(), "General",
-				       "LastUpdateCheck", t);
+				       "SkipUpdateVersion", updateVer);
+			return;
 		}
-		return;
-
-	} else if (queryResult == OBSUpdate::Skip) {
-		config_set_int(GetGlobalConfig(), "General",
-			       "SkipUpdateVersion", updateVer);
-		return;
 	}
 
 	/* ----------------------------------- *

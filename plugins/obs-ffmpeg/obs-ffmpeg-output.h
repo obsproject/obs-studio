@@ -5,12 +5,16 @@
 #include <libavcodec/avcodec.h>
 #include <libavformat/avformat.h>
 #include <libswscale/swscale.h>
+#ifdef NEW_MPEGTS_OUTPUT
+#include "obs-ffmpeg-url.h"
+#endif
 
 struct ffmpeg_cfg {
 	const char *url;
 	const char *format_name;
 	const char *format_mime_type;
 	const char *muxer_settings;
+	const char *protocol_settings; // not used yet for SRT nor RIST
 	int gop_size;
 	int video_bitrate;
 	int audio_bitrate;
@@ -27,10 +31,12 @@ struct ffmpeg_cfg {
 	enum AVColorPrimaries color_primaries;
 	enum AVColorTransferCharacteristic color_trc;
 	enum AVColorSpace colorspace;
+	int max_luminance;
 	int scale_width;
 	int scale_height;
 	int width;
 	int height;
+	int frame_size; // audio frame size
 };
 
 struct ffmpeg_audio_info {
@@ -42,8 +48,8 @@ struct ffmpeg_data {
 	AVStream *video;
 	AVCodecContext *video_ctx;
 	struct ffmpeg_audio_info *audio_infos;
-	AVCodec *acodec;
-	AVCodec *vcodec;
+	const AVCodec *acodec;
+	const AVCodec *vcodec;
 	AVFormatContext *output;
 	struct SwsContext *swscale;
 
@@ -73,5 +79,34 @@ struct ffmpeg_data {
 	char *last_error;
 };
 
+struct ffmpeg_output {
+	obs_output_t *output;
+	volatile bool active;
+	struct ffmpeg_data ff_data;
+
+	bool connecting;
+	pthread_t start_thread;
+
+	uint64_t total_bytes;
+
+	uint64_t audio_start_ts;
+	uint64_t video_start_ts;
+	uint64_t stop_ts;
+	volatile bool stopping;
+
+	bool write_thread_active;
+	pthread_mutex_t write_mutex;
+	pthread_t write_thread;
+	os_sem_t *write_sem;
+	os_event_t *stop_event;
+
+	DARRAY(AVPacket *) packets;
+#ifdef NEW_MPEGTS_OUTPUT
+	/* used for SRT & RIST */
+	URLContext *h;
+	AVIOContext *s;
+	bool got_headers;
+#endif
+};
 bool ffmpeg_data_init(struct ffmpeg_data *data, struct ffmpeg_cfg *config);
 void ffmpeg_data_free(struct ffmpeg_data *data);

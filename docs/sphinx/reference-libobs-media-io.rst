@@ -15,7 +15,7 @@ Video Handler
 
 ---------------------
 
-.. type:: enum video_format
+.. enum:: video_format
 
    Video format.  Can be one of the following values:
 
@@ -33,20 +33,48 @@ Video Handler
 
    - VIDEO_FORMAT_I444
 
+   - VIDEO_FORMAT_BGR3
+
+   - VIDEO_FORMAT_I422
+
+   - VIDEO_FORMAT_I40A
+
+   - VIDEO_FORMAT_I42A
+
+   - VIDEO_FORMAT_YUVA
+
+   - VIDEO_FORMAT_AYUV
+
+   - VIDEO_FORMAT_I010
+   - VIDEO_FORMAT_P010
+
 ---------------------
 
-.. type:: enum video_colorspace
+.. enum:: video_trc
+
+   Transfer characteristics.  Can be one of the following values:
+
+   - VIDEO_TRC_DEFAULT - sRGB TRC for SDR, PQ TRC for HDR
+   - VIDEO_TRC_SRGB    - sRGB TRC
+   - VIDEO_TRC_PQ      - PQ
+   - VIDEO_TRC_HLG     - HLG
+
+---------------------
+
+.. enum:: video_colorspace
 
    YUV color space.  Can be one of the following values:
 
-   - VIDEO_CS_DEFAULT - Equivalent to VIDEO_CS_709
-   - VIDEO_CS_601     - 601 color space
-   - VIDEO_CS_709     - 709 color space
-   - VIDEO_CS_SRGB    - sRGB color space
+   - VIDEO_CS_DEFAULT  - Equivalent to VIDEO_CS_709
+   - VIDEO_CS_601      - Rec. 601 color space
+   - VIDEO_CS_709      - Rec. 709 color space
+   - VIDEO_CS_SRGB     - sRGB color space
+   - VIDEO_CS_2100_PQ  - Rec. 2100 color space, PQ transfer
+   - VIDEO_CS_2100_HLG - Rec. 2100 color space, HLG transfer
 
 ---------------------
 
-.. type:: enum video_range_type
+.. enum:: video_range_type
 
    YUV color range.
 
@@ -56,7 +84,7 @@ Video Handler
 
 ---------------------
 
-.. type:: struct video_data
+.. struct:: video_data
 
    Video frame structure.
 
@@ -66,7 +94,7 @@ Video Handler
 
 ---------------------
 
-.. type:: struct video_output_info
+.. struct:: video_output_info
 
    Video output handler information
 
@@ -97,6 +125,19 @@ Video Handler
 
    :param color_space: Color space to convert
    :param range:       Color range to convert
+   :param matrix:      Pointer to the matrix
+   :param min_range:   Pointer to get the minimum range value
+   :param max_range:   Pointer to get the maximum range value
+
+---------------------
+
+.. function:: bool video_format_get_parameters_for_format(enum video_colorspace color_space, enum video_range_type range, enum video_format format, float matrix[16], float min_range[3], float max_range[3])
+
+   Converts a color space/range to matrix/min/max values for a given video format.
+
+   :param color_space: Color space to convert
+   :param range:       Color range to convert
+   :param format:      Video format
    :param matrix:      Pointer to the matrix
    :param min_range:   Pointer to get the minimum range value
    :param max_range:   Pointer to get the maximum range value
@@ -196,7 +237,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: enum audio_format
+.. enum:: audio_format
 
    Audio format.  Can be one of the following values:
 
@@ -212,7 +253,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: enum speaker_layout
+.. enum:: speaker_layout
 
    Speaker layout.  Can be one of the following values:
 
@@ -223,14 +264,11 @@ Audio Handler
    - SPEAKERS_4POINT0
    - SPEAKERS_4POINT1
    - SPEAKERS_5POINT1
-   - SPEAKERS_5POINT1_SURROUND
    - SPEAKERS_7POINT1
-   - SPEAKERS_7POINT1_SURROUND
-   - SPEAKERS_SURROUND
 
 ---------------------
 
-.. type:: struct audio_data
+.. struct:: audio_data
 
    Audio data structure.
 
@@ -240,12 +278,12 @@ Audio Handler
 
 ---------------------
 
-.. type:: struct audio_output_data
+.. struct:: audio_output_data
 .. member:: float               *audio_output_data.data[MAX_AUDIO_CHANNELS]
 
 ---------------------
 
-.. type:: struct audio_output_info
+.. struct:: audio_output_info
 .. member:: const char             *audio_output_info.name
 .. member:: uint32_t               audio_output_info.samples_per_sec
 .. member:: enum audio_format      audio_output_info.format
@@ -255,14 +293,14 @@ Audio Handler
 
 ---------------------
 
-.. type:: struct audio_convert_info
+.. struct:: audio_convert_info
 .. member:: uint32_t            audio_convert_info.samples_per_sec
 .. member:: enum audio_format   audio_convert_info.format
 .. member:: enum speaker_layout audio_convert_info.speakers
 
 ---------------------
 
-.. type:: typedef bool (*audio_input_callback_t)(void *param, uint64_t start_ts, uint64_t end_ts, uint64_t *new_ts, uint32_t active_mixers, struct audio_output_data *mixes)
+.. type:: bool (*audio_input_callback_t)(void *param, uint64_t start_ts, uint64_t end_ts, uint64_t *new_ts, uint32_t active_mixers, struct audio_output_data *mixes)
 
    Audio input callback (typically used internally).
 
@@ -340,7 +378,7 @@ Audio Handler
 
 ---------------------
 
-.. type:: typedef void (*audio_output_callback_t)(void *param, size_t mix_idx, struct audio_data *data)
+.. type:: void (*audio_output_callback_t)(void *param, size_t mix_idx, struct audio_data *data)
 
    Audio output callback.  Typically used internally.
 
@@ -422,11 +460,11 @@ Resampler
 
 FFmpeg wrapper to resample audio.
 
-.. type:: typedef struct audio_resampler audio_resampler_t
+.. type:: struct audio_resampler audio_resampler_t
 
 ---------------------
 
-.. type:: struct resample_info
+.. struct:: resample_info
 .. member:: uint32_t            resample_info.samples_per_sec
 .. member:: enum audio_format   resample_info.format
 .. member:: enum speaker_layout resample_info.speakers
@@ -460,5 +498,5 @@ FFmpeg wrapper to resample audio.
    :param out_frames:  Pointer to receive converted audio frame count
    :param ts_offset:   Pointer to receive timestamp offset (in
                        nanoseconds)
-   :param const input: Input frames to convert
+   :param input: Input frames to convert
    :param in_frames:   Input frame count

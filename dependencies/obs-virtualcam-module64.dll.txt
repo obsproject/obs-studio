@@ -1,0 +1,13 @@
+
+  
+  >   Image has the following dependencies:
+    
+        gdiplus.dll
+        KERNEL32.dll
+        SHELL32.dll
+        ole32.dll
+        ADVAPI32.dll
+    
+>     Summary
+
+

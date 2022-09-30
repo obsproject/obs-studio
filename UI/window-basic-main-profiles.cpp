@@ -338,6 +338,7 @@ bool OBSBasic::CreateProfile(const std::string &newName, bool create_new,
 
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
 
@@ -517,9 +518,6 @@ void OBSBasic::on_actionDupProfile_triggered()
 
 void OBSBasic::on_actionRenameProfile_triggered()
 {
-	if (api)
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGING);
-
 	std::string curDir =
 		config_get_string(App()->GlobalConfig(), "Basic", "ProfileDir");
 	std::string curName =
@@ -534,10 +532,8 @@ void OBSBasic::on_actionRenameProfile_triggered()
 		RefreshProfiles();
 	}
 
-	if (api) {
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_LIST_CHANGED);
-		api->on_event(OBS_FRONTEND_EVENT_PROFILE_CHANGED);
-	}
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_PROFILE_RENAMED);
 }
 
 void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
@@ -568,8 +564,8 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 		return;
 
 	if (!skipConfirmation) {
-		QString text = QTStr("ConfirmRemove.Text");
-		text.replace("$1", QT_UTF8(oldName.c_str()));
+		QString text = QTStr("ConfirmRemove.Text")
+				       .arg(QT_UTF8(oldName.c_str()));
 
 		QMessageBox::StandardButton button = OBSMessageBox::question(
 			this, QTStr("ConfirmRemove.Title"), text);
@@ -619,6 +615,7 @@ void OBSBasic::on_actionRemoveProfile_triggered(bool skipConfirmation)
 	blog(LOG_INFO, "------------------------------------------------");
 
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
 
@@ -790,6 +787,7 @@ void OBSBasic::ChangeProfile()
 	RefreshProfiles();
 	config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	UpdateTitleBar();
+	UpdateVolumeControlsDecayRate();
 
 	Auth::Load();
 
@@ -823,6 +821,11 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	bool qsv_supported = false;
 	bool amd_supported = false;
 	bool nve_supported = false;
+#ifdef ENABLE_HEVC
+	bool amd_hevc_supported = false;
+	bool nve_hevc_supported = false;
+#endif
+	bool apple_supported = false;
 	bool changed = false;
 	size_t idx = 0;
 	const char *id;
@@ -834,6 +837,16 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 			qsv_supported = true;
 		else if (strcmp(id, "ffmpeg_nvenc") == 0)
 			nve_supported = true;
+#ifdef ENABLE_HEVC
+		else if (strcmp(id, "h265_texture_amf") == 0)
+			amd_hevc_supported = true;
+		else if (strcmp(id, "ffmpeg_hevc_nvenc") == 0)
+			nve_hevc_supported = true;
+#endif
+		else if (strcmp(id,
+				"com.apple.videotoolbox.videoencoder.ave.avc") ==
+			 0)
+			apple_supported = true;
 	}
 
 	auto CheckEncoder = [&](const char *&name) {
@@ -849,8 +862,28 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 				name = SIMPLE_ENCODER_X264;
 				return false;
 			}
+#ifdef ENABLE_HEVC
+		} else if (strcmp(name, SIMPLE_ENCODER_AMD_HEVC) == 0) {
+			if (!amd_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
+			if (!nve_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#endif
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD) == 0) {
 			if (!amd_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_H264) == 0) {
+			if (!apple_supported) {
 				changed = true;
 				name = SIMPLE_ENCODER_X264;
 				return false;

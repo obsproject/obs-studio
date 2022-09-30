@@ -522,7 +522,7 @@ OBSImporterFiles SLImporter::FindFiles()
 
 		size_t pos = name.find_last_of(".json");
 		size_t end_pos = name.size() - 1;
-		if (pos != -1 && pos == end_pos) {
+		if (pos != string::npos && pos == end_pos) {
 			string str = dst + name;
 			res.push_back(str);
 		}

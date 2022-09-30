@@ -53,7 +53,7 @@ struct mp_decode {
 
 	AVCodecContext *decoder;
 	AVBufferRef *hw_ctx;
-	AVCodec *codec;
+	const AVCodec *codec;
 
 	int64_t last_duration;
 	int64_t frame_pts;
@@ -67,9 +67,10 @@ struct mp_decode {
 	bool frame_ready;
 	bool eof;
 	bool hw;
+	uint16_t max_luminance;
 
-	AVPacket orig_pkt;
-	AVPacket pkt;
+	AVPacket *orig_pkt;
+	AVPacket *pkt;
 	bool packet_pending;
 	struct circlebuf packets;
 };

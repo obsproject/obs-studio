@@ -49,6 +49,7 @@ sys.stderr = stderr_logger()\n";
 
 #if RUNTIME_LINK
 static wchar_t home_path[1024] = {0};
+static python_version_t python_version = {0};
 #endif
 
 DARRAY(char *) python_paths;
@@ -1273,8 +1274,12 @@ bool obs_python_script_load(obs_script_t *s)
 		data->base.loaded = load_python_script(data);
 		unlock_python();
 
-		if (data->base.loaded)
+		if (data->base.loaded) {
+			blog(LOG_INFO,
+			     "[obs-scripting]: Loaded python script: %s",
+			     data->base.file.array);
 			obs_python_script_update(s, NULL);
+		}
 	}
 
 	return data->base.loaded;
@@ -1317,6 +1322,8 @@ obs_script_t *obs_python_script_create(const char *path, obs_data_t *settings)
 	add_to_python_path(data->dir.array);
 	data->base.loaded = load_python_script(data);
 	if (data->base.loaded) {
+		blog(LOG_INFO, "[obs-scripting]: Loaded python script: %s",
+		     data->base.file.array);
 		cur_python_script = data;
 		obs_python_script_update(&data->base, NULL);
 		cur_python_script = NULL;
@@ -1396,6 +1403,9 @@ void obs_python_script_unload(obs_script_t *s)
 	unlock_python();
 
 	s->loaded = false;
+
+	blog(LOG_INFO, "[obs-scripting]: Unloaded python script: %s",
+	     data->base.file.array);
 }
 
 void obs_python_script_destroy(obs_script_t *s)
@@ -1606,21 +1616,20 @@ bool obs_scripting_load_python(const char *python_path)
 
 		/* Use external python on windows and mac */
 #if RUNTIME_LINK
-#if 0
-	struct dstr old_path  = {0};
-	struct dstr new_path  = {0};
-#endif
-
-	if (!import_python(python_path))
+	if (!import_python(python_path, &python_version))
 		return false;
 
 	if (python_path && *python_path) {
+#ifdef __APPLE__
+		char temp[PATH_MAX];
+		sprintf(temp, "%s/Python.framework/Versions/Current",
+			python_path);
+		os_utf8_to_wcs(temp, 0, home_path, PATH_MAX);
+		Py_SetPythonHome(home_path);
+#else
+
 		os_utf8_to_wcs(python_path, 0, home_path, 1024);
 		Py_SetPythonHome(home_path);
-#if 0
-		dstr_copy(&old_path, getenv("PATH"));
-		_putenv("PYTHONPATH=");
-		_putenv("PATH=");
 #endif
 	}
 #else
@@ -1631,22 +1640,17 @@ bool obs_scripting_load_python(const char *python_path)
 	if (!Py_IsInitialized())
 		return false;
 
-#if 0
-#ifdef _DEBUG
-	if (pythondir && *pythondir) {
-		dstr_printf(&new_path, "PATH=%s", old_path.array);
-		_putenv(new_path.array);
+#if RUNTIME_LINK
+	if (python_version.major == 3 && python_version.minor < 7) {
+#elif PY_VERSION_HEX < 0x030700b0
+	if (true) {
+#else
+	if (false) {
+#endif
+		PyEval_InitThreads();
+		if (!PyEval_ThreadsInitialized())
+			return false;
 	}
-#endif
-
-	bfree(pythondir);
-	dstr_free(&new_path);
-	dstr_free(&old_path);
-#endif
-
-	PyEval_InitThreads();
-	if (!PyEval_ThreadsInitialized())
-		return false;
 
 	/* ---------------------------------------------- */
 	/* Must set arguments for guis to work            */
@@ -1671,29 +1675,33 @@ bool obs_scripting_load_python(const char *python_path)
 	/* ---------------------------------------------- */
 	/* Load main interface module                     */
 
+#ifdef __APPLE__
+	struct dstr plugin_path;
+	struct dstr resource_path;
+
+	dstr_init_move_array(&plugin_path, os_get_executable_path_ptr(""));
+	dstr_init_copy(&resource_path, plugin_path.array);
+	dstr_cat(&plugin_path, "../PlugIns");
+	dstr_cat(&resource_path, "../Resources");
+
+	char *absolute_plugin_path = os_get_abs_path_ptr(plugin_path.array);
+	char *absolute_resource_path = os_get_abs_path_ptr(resource_path.array);
+
+	if (absolute_plugin_path != NULL) {
+		add_to_python_path(absolute_plugin_path);
+		bfree(absolute_plugin_path);
+	}
+	dstr_free(&plugin_path);
+
+	if (absolute_resource_path != NULL) {
+		add_to_python_path(absolute_resource_path);
+		bfree(absolute_resource_path);
+	}
+	dstr_free(&resource_path);
+#else
 	char *absolute_script_path = os_get_abs_path_ptr(SCRIPT_DIR);
 	add_to_python_path(absolute_script_path);
 	bfree(absolute_script_path);
-
-#if __APPLE__
-	char *absolute_exec_path = os_get_executable_path_ptr("");
-
-	if (absolute_exec_path != NULL) {
-		add_to_python_path(absolute_exec_path);
-
-		struct dstr resources_path;
-		dstr_init_move_array(&resources_path, absolute_exec_path);
-		dstr_cat(&resources_path, "../Resources");
-
-		char *absolute_resources_path = os_get_abs_path_ptr(resources_path.array);
-		if (absolute_resources_path != NULL) {
-			add_to_python_path(absolute_resources_path);
-			bfree(absolute_resources_path);
-		}
-
-		dstr_free(&resources_path);
-		bfree(absolute_exec_path);
-	}
 #endif
 
 	py_obspython = PyImport_ImportModule("obspython");

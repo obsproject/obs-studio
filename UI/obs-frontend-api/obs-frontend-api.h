@@ -58,6 +58,8 @@ enum obs_frontend_event {
 	OBS_FRONTEND_EVENT_SCENE_COLLECTION_CHANGING,
 	OBS_FRONTEND_EVENT_PROFILE_CHANGING,
 	OBS_FRONTEND_EVENT_SCRIPTING_SHUTDOWN,
+	OBS_FRONTEND_EVENT_PROFILE_RENAMED,
+	OBS_FRONTEND_EVENT_SCENE_COLLECTION_RENAMED,
 };
 
 /* ------------------------------------------------------------------------- */
@@ -175,6 +177,7 @@ EXPORT void obs_frontend_recording_stop(void);
 EXPORT bool obs_frontend_recording_active(void);
 EXPORT void obs_frontend_recording_pause(bool pause);
 EXPORT bool obs_frontend_recording_paused(void);
+EXPORT bool obs_frontend_recording_split_file(void);
 
 EXPORT void obs_frontend_replay_buffer_start(void);
 EXPORT void obs_frontend_replay_buffer_save(void);
@@ -223,6 +226,7 @@ EXPORT void obs_frontend_open_source_filters(obs_source_t *source);
 EXPORT void obs_frontend_open_source_interaction(obs_source_t *source);
 
 EXPORT char *obs_frontend_get_current_record_output_path(void);
+EXPORT const char *obs_frontend_get_locale_string(const char *string);
 
 /* ------------------------------------------------------------------------- */
 

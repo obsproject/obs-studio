@@ -1308,6 +1308,16 @@ void gs_resize(uint32_t x, uint32_t y)
 	graphics->exports.device_resize(graphics->device, x, y);
 }
 
+void gs_update_color_space(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_update_color_space"))
+		return;
+
+	graphics->exports.device_update_color_space(graphics->device);
+}
+
 void gs_get_size(uint32_t *x, uint32_t *y)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1409,6 +1419,16 @@ bool gs_query_dmabuf_modifiers_for_format(uint32_t drm_format,
 
 	return graphics->exports.device_query_dmabuf_modifiers_for_format(
 		graphics->device, drm_format, modifiers, n_modifiers);
+}
+
+gs_texture_t *gs_texture_create_from_pixmap(uint32_t width, uint32_t height,
+					    enum gs_color_format color_format,
+					    uint32_t target, void *pixmap)
+{
+	graphics_t *graphics = thread_graphics;
+
+	return graphics->exports.device_texture_create_from_pixmap(
+		graphics->device, width, height, color_format, target, pixmap);
 }
 
 #endif
@@ -1715,6 +1735,16 @@ gs_shader_t *gs_get_pixel_shader(void)
 	return graphics->exports.device_get_pixel_shader(graphics->device);
 }
 
+enum gs_color_space gs_get_color_space(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_get_color_space"))
+		return GS_CS_SRGB;
+
+	return graphics->exports.device_get_color_space(graphics->device);
+}
+
 gs_texture_t *gs_get_render_target(void)
 {
 	graphics_t *graphics = thread_graphics;
@@ -1744,6 +1774,19 @@ void gs_set_render_target(gs_texture_t *tex, gs_zstencil_t *zstencil)
 
 	graphics->exports.device_set_render_target(graphics->device, tex,
 						   zstencil);
+}
+
+void gs_set_render_target_with_color_space(gs_texture_t *tex,
+					   gs_zstencil_t *zstencil,
+					   enum gs_color_space space)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_set_render_target_with_color_space"))
+		return;
+
+	graphics->exports.device_set_render_target_with_color_space(
+		graphics->device, tex, zstencil, space);
 }
 
 void gs_set_cube_render_target(gs_texture_t *cubetex, int side,
@@ -1898,6 +1941,16 @@ void gs_clear(uint32_t clear_flags, const struct vec4 *color, float depth,
 
 	graphics->exports.device_clear(graphics->device, clear_flags, color,
 				       depth, stencil);
+}
+
+bool gs_is_present_ready(void)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_is_present_ready"))
+		return false;
+
+	return graphics->exports.device_is_present_ready(graphics->device);
 }
 
 void gs_present(void)
@@ -2795,6 +2848,27 @@ bool gs_nv12_available(void)
 		thread_graphics->device);
 }
 
+bool gs_p010_available(void)
+{
+	if (!gs_valid("gs_p010_available"))
+		return false;
+
+	if (!thread_graphics->exports.device_p010_available)
+		return false;
+
+	return thread_graphics->exports.device_p010_available(
+		thread_graphics->device);
+}
+
+bool gs_is_monitor_hdr(void *monitor)
+{
+	if (!gs_valid("gs_is_monitor_hdr"))
+		return false;
+
+	return thread_graphics->exports.device_is_monitor_hdr(
+		thread_graphics->device, monitor);
+}
+
 void gs_debug_marker_begin(const float color[4], const char *markername)
 {
 	if (!gs_valid("gs_debug_marker_begin"))
@@ -3130,6 +3204,45 @@ bool gs_texture_create_nv12(gs_texture_t **tex_y, gs_texture_t **tex_uv,
 	return true;
 }
 
+bool gs_texture_create_p010(gs_texture_t **tex_y, gs_texture_t **tex_uv,
+			    uint32_t width, uint32_t height, uint32_t flags)
+{
+	graphics_t *graphics = thread_graphics;
+	bool success = false;
+
+	if (!gs_valid("gs_texture_create_p010"))
+		return false;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "P010 textures must have dimensions "
+				"divisible by 2.");
+		return false;
+	}
+
+	if (graphics->exports.device_texture_create_p010) {
+		success = graphics->exports.device_texture_create_p010(
+			graphics->device, tex_y, tex_uv, width, height, flags);
+		if (success)
+			return true;
+	}
+
+	*tex_y = gs_texture_create(width, height, GS_R16, 1, NULL, flags);
+	*tex_uv = gs_texture_create(width / 2, height / 2, GS_RG16, 1, NULL,
+				    flags);
+
+	if (!*tex_y || !*tex_uv) {
+		if (*tex_y)
+			gs_texture_destroy(*tex_y);
+		if (*tex_uv)
+			gs_texture_destroy(*tex_uv);
+		*tex_y = NULL;
+		*tex_uv = NULL;
+		return false;
+	}
+
+	return true;
+}
+
 gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
 {
 	graphics_t *graphics = thread_graphics;
@@ -3145,6 +3258,26 @@ gs_stagesurf_t *gs_stagesurface_create_nv12(uint32_t width, uint32_t height)
 
 	if (graphics->exports.device_stagesurface_create_nv12)
 		return graphics->exports.device_stagesurface_create_nv12(
+			graphics->device, width, height);
+
+	return NULL;
+}
+
+gs_stagesurf_t *gs_stagesurface_create_p010(uint32_t width, uint32_t height)
+{
+	graphics_t *graphics = thread_graphics;
+
+	if (!gs_valid("gs_stagesurface_create_p010"))
+		return NULL;
+
+	if ((width & 1) == 1 || (height & 1) == 1) {
+		blog(LOG_ERROR, "P010 textures must have dimensions "
+				"divisible by 2.");
+		return NULL;
+	}
+
+	if (graphics->exports.device_stagesurface_create_p010)
+		return graphics->exports.device_stagesurface_create_p010(
 			graphics->device, width, height);
 
 	return NULL;

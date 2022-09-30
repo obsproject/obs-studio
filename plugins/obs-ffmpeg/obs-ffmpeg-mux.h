@@ -1,6 +1,5 @@
 #pragma once
 
-#include <obs-avc.h>
 #include <obs-module.h>
 #include <obs-hotkey.h>
 #include <util/circlebuf.h>
@@ -24,16 +23,26 @@ struct ffmpeg_muxer {
 	struct dstr muxer_settings;
 	struct dstr stream_key;
 
-	/* replay buffer */
+	/* replay buffer and split file */
 	int64_t cur_size;
 	int64_t cur_time;
 	int64_t max_size;
 	int64_t max_time;
+
+	/* replay buffer */
 	int64_t save_ts;
 	int keyframes;
 	obs_hotkey_id hotkey;
 	volatile bool muxing;
 	DARRAY(struct encoder_packet) mux_packets;
+
+	/* split file */
+	bool found_video;
+	bool found_audio[MAX_AUDIO_MIXES];
+	int64_t video_pts_offset;
+	int64_t audio_dts_offsets[MAX_AUDIO_MIXES];
+	bool split_file_ready;
+	volatile bool manual_split;
 
 	/* these are accessed both by replay buffer and by HLS */
 	pthread_t mux_thread;
@@ -51,6 +60,8 @@ struct ffmpeg_muxer {
 	int64_t last_dts_usec;
 
 	bool is_network;
+	bool split_file;
+	bool allow_overwrite;
 };
 
 bool stopping(struct ffmpeg_muxer *stream);

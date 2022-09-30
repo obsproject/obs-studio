@@ -335,6 +335,8 @@ NTV2Channel OutputProps::Framestore() const
 	}
 	// HDMI Monitor output uses framestore 4
 	if (ioSelect == IOSelection::HDMIMonitorOut) {
+		if (deviceID == DEVICE_ID_KONA5_8K)
+			return NTV2_CHANNEL4;
 		if (NTV2_IS_4K_VIDEO_FORMAT(videoFormat))
 			return NTV2_CHANNEL3;
 		else

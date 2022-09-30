@@ -9,15 +9,15 @@ HLSL format.
 
    #include <graphics/graphics.h>
 
-.. type:: typedef struct gs_effect           gs_effect_t
+.. type:: struct gs_effect           gs_effect_t
 
    Effect object.
 
-.. type:: typedef struct gs_effect_technique gs_technique_t
+.. type:: struct gs_effect_technique gs_technique_t
 
    Technique object.
 
-.. type:: typedef struct gs_effect_param     gs_eparam_t
+.. type:: struct gs_effect_param     gs_eparam_t
 
    Effect parameter object.
 

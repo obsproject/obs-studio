@@ -5,7 +5,7 @@
 
    #include <graphics/vec4.h>
 
-.. type:: struct vec4
+.. struct:: vec4
 
    Two component vector structure.
 
@@ -126,7 +126,7 @@
    :param dst: Destination
    :param v:   Vector being subtracted from
    :param f:   Floating point being subtracted
-   
+
 ---------------------
 
 .. function:: void vec4_mulf(struct vec4 *dst, const struct vec4 *v, float f)

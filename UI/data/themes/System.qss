@@ -8,6 +8,9 @@
 /* Dark Theme is a good place to start if you need */
 /* a template. */
 
+OBSThemeMeta {
+    dark: 'false';
+}
 
 /* We need to set back the icons, or the preview wont stick. */
 
@@ -17,6 +20,10 @@
 
 * [themeID="removeIconSmall"] {
     qproperty-icon: url(:/res/images/minus.svg);
+}
+
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(:/res/images/entry-clear.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
@@ -41,6 +48,14 @@
 
 * [themeID="pauseIconSmall"] {
     qproperty-icon: url(:/res/images/media-pause.svg);
+}
+
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(:res/images/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(:/res/images/cogs.svg);
 }
 
 MuteCheckBox {
@@ -70,7 +85,7 @@ SourceTreeSubItemCheckBox::indicator:checked {
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(:/res/images/down.svg);
+    image: url(:/res/images/collapse.svg);
 }
 
 OBSHotkeyLabel[hotkeyPairHover=true] {
@@ -127,6 +142,13 @@ QLabel#errorLabel {
     font-weight: bold;
 }
 
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
+}
+
 /* About dialog */
 
 * [themeID="aboutName"] {
@@ -170,6 +192,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(:settings/images/settings/audio.svg);
     qproperty-videoIcon: url(:settings/images/settings/video.svg);
     qproperty-hotkeysIcon: url(:settings/images/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(:settings/images/settings/accessibility.svg);
     qproperty-advancedIcon: url(:settings/images/settings/advanced.svg);
 }
 
@@ -208,10 +231,6 @@ VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
 }
 
-* [themeID="trashIcon"] {
-    qproperty-icon: url(:res/images/trash.svg);
-}
-
 * [themeID="revertIcon"] {
     qproperty-icon: url(:res/images/revert.svg);
 }
@@ -238,6 +257,7 @@ OBSBasic {
     qproperty-groupIcon: url(:res/images/sources/group.svg);
     qproperty-sceneIcon: url(:res/images/sources/scene.svg);
     qproperty-defaultIcon: url(:res/images/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(:res/images/sources/windowaudio.svg);
 }
 
 /* Scene Tree */
@@ -278,8 +298,24 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 /* Source Context */
+#contextContainer QPushButton {
+    padding: 3px 10px;
+}
+
 #contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 0px;
+    padding: 3px 6px;
+}
+
+#contextContainer QPushButton#sourcePropertiesButton {
+    qproperty-icon: url(:/settings/images/settings/general.svg);
+}
+
+#contextContainer QPushButton#sourceFiltersButton {
+    qproperty-icon: url(:/res/images/filter.svg);
+}
+
+#contextContainer QPushButton#sourceInteractButton {
+    qproperty-icon: url(:/res/images/interact.svg);
 }
 
 /* Media icons */
@@ -305,7 +341,7 @@ QSlider::handle:horizontal[themeID="tBarSlider"] {
 }
 
 * [themeID="previousIcon"] {
-    qproperty-icon: url(./Dark/media/media_previous.svg);
+    qproperty-icon: url(:/res/images/media/media_previous.svg);
 }
 
 /* YouTube Integration */
@@ -355,6 +391,6 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }

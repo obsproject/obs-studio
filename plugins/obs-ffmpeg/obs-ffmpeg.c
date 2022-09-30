@@ -28,7 +28,10 @@ extern struct obs_output_info replay_buffer;
 extern struct obs_output_info ffmpeg_hls_muxer;
 extern struct obs_encoder_info aac_encoder_info;
 extern struct obs_encoder_info opus_encoder_info;
-extern struct obs_encoder_info nvenc_encoder_info;
+extern struct obs_encoder_info h264_nvenc_encoder_info;
+#ifdef ENABLE_HEVC
+extern struct obs_encoder_info hevc_nvenc_encoder_info;
+#endif
 extern struct obs_encoder_info svt_av1_encoder_info;
 extern struct obs_encoder_info aom_av1_encoder_info;
 
@@ -44,7 +47,7 @@ extern struct obs_encoder_info vaapi_encoder_info;
 
 static const char *nvenc_check_name = "nvenc_check";
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(__linux__)
 static const int blacklisted_adapters[] = {
 	0x1298, // GK208M [GeForce GT 720M]
 	0x1140, // GF117M [GeForce 610M/710M/810M/820M / GT 620M/625M/630M/720M]
@@ -106,7 +109,9 @@ static bool is_blacklisted(const int device_id)
 
 	return false;
 }
+#endif
 
+#if defined(_WIN32)
 typedef HRESULT(WINAPI *create_dxgi_proc)(const IID *, IDXGIFactory1 **);
 
 static bool nvenc_device_available(void)
@@ -174,50 +179,114 @@ finish:
 }
 #endif
 
+#if defined(__linux__)
+static int get_id_from_sys(char *d_name, char *type)
+{
+	char file_name[1024];
+	char *c;
+	int id;
+
+	snprintf(file_name, sizeof(file_name), "/sys/bus/pci/devices/%s/%s",
+		 d_name, type);
+	if ((c = os_quick_read_utf8_file(file_name)) == NULL) {
+		return -1;
+	}
+	id = strtol(c, NULL, 16);
+	bfree(c);
+
+	return id;
+}
+
+static bool nvenc_device_available(void)
+{
+	os_dir_t *dir;
+	struct os_dirent *dirent;
+	bool available = false;
+
+	if ((dir = os_opendir("/sys/bus/pci/devices")) == NULL) {
+		return true;
+	}
+
+	while ((dirent = os_readdir(dir)) != NULL) {
+		int id;
+
+		if (get_id_from_sys(dirent->d_name, "class") != 0x030000 &&
+		    get_id_from_sys(dirent->d_name, "class") !=
+			    0x030200) { // 0x030000 = VGA compatible controller
+					// 0x030200 = 3D controller
+			continue;
+		}
+
+		if (get_id_from_sys(dirent->d_name, "vendor") !=
+		    0x10de) { // 0x10de = NVIDIA Corporation
+			continue;
+		}
+
+		if ((id = get_id_from_sys(dirent->d_name, "device")) > 0 &&
+		    !is_blacklisted(id)) {
+			available = true;
+			break;
+		}
+	}
+
+	os_closedir(dir);
+	return available;
+}
+#endif
+
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
 #endif
 
-static bool nvenc_supported(void)
+static bool nvenc_codec_exists(const char *name, const char *fallback)
 {
+	const AVCodec *nvenc = avcodec_find_encoder_by_name(name);
+	if (!nvenc)
+		nvenc = avcodec_find_encoder_by_name(fallback);
+
+	return nvenc != NULL;
+}
+
+static bool nvenc_supported(bool *out_h264, bool *out_hevc)
+{
+	profile_start(nvenc_check_name);
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
 	av_register_all();
 #endif
 
-	profile_start(nvenc_check_name);
-
-	AVCodec *nvenc = avcodec_find_encoder_by_name("nvenc_h264");
-	void *lib = NULL;
-	bool success = false;
-
-	if (!nvenc) {
-		nvenc = avcodec_find_encoder_by_name("h264_nvenc");
-		if (!nvenc)
-			goto cleanup;
-	}
-
-#if defined(_WIN32)
-	if (!nvenc_device_available()) {
-		goto cleanup;
-	}
-	if (load_nvenc_lib()) {
-		success = true;
-		goto finish;
-	}
+	const bool h264 = nvenc_codec_exists("h264_nvenc", "nvenc_h264");
+#ifdef ENABLE_HEVC
+	const bool hevc = nvenc_codec_exists("hevc_nvenc", "nvenc_hevc");
 #else
-	lib = os_dlopen("libnvidia-encode.so.1");
+	const bool hevc = false;
 #endif
 
-	/* ------------------------------------------- */
-
-	success = !!lib;
-
-cleanup:
-	if (lib)
-		os_dlclose(lib);
+	bool success = h264 || hevc;
+	if (success) {
 #if defined(_WIN32)
-finish:
+		success = nvenc_device_available() && load_nvenc_lib();
+#elif defined(__linux__)
+		success = nvenc_device_available();
+		if (success) {
+			void *const lib = os_dlopen("libnvidia-encode.so.1");
+			success = lib != NULL;
+			if (success)
+				os_dlclose(lib);
+		}
+#else
+		void *const lib = os_dlopen("libnvidia-encode.so.1");
+		success = lib != NULL;
+		if (success)
+			os_dlclose(lib);
 #endif
+
+		if (success) {
+			*out_h264 = h264;
+			*out_hevc = hevc;
+		}
+	}
+
 	profile_end(nvenc_check_name);
 	return success;
 }
@@ -227,14 +296,16 @@ finish:
 #ifdef LIBAVUTIL_VAAPI_AVAILABLE
 static bool vaapi_supported(void)
 {
-	AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
+	const AVCodec *vaenc = avcodec_find_encoder_by_name("h264_vaapi");
 	return !!vaenc;
 }
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(void);
+extern void jim_nvenc_load(bool h264, bool hevc);
 extern void jim_nvenc_unload(void);
+extern void amf_load(void);
+extern void amf_unload(void);
 #endif
 
 #if ENABLE_FFMPEG_LOGGING
@@ -245,7 +316,7 @@ extern void obs_ffmpeg_unload_logging(void);
 static void register_encoder_if_available(struct obs_encoder_info *info,
 					  const char *id)
 {
-	AVCodec *c = avcodec_find_encoder_by_name(id);
+	const AVCodec *c = avcodec_find_encoder_by_name(id);
 	if (c) {
 		obs_register_encoder(info);
 	}
@@ -264,20 +335,41 @@ bool obs_module_load(void)
 	register_encoder_if_available(&aom_av1_encoder_info, "libaom-av1");
 	obs_register_encoder(&opus_encoder_info);
 #ifndef __APPLE__
-	if (nvenc_supported()) {
+	bool h264 = false;
+	bool hevc = false;
+	if (nvenc_supported(&h264, &hevc)) {
 		blog(LOG_INFO, "NVENC supported");
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load();
+			jim_nvenc_load(h264, hevc);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
 			// the old encoder directly
-			nvenc_encoder_info.caps &= ~OBS_ENCODER_CAP_INTERNAL;
+			if (h264) {
+				h264_nvenc_encoder_info.caps &=
+					~OBS_ENCODER_CAP_INTERNAL;
+			}
+#ifdef ENABLE_HEVC
+			if (hevc) {
+				hevc_nvenc_encoder_info.caps &=
+					~OBS_ENCODER_CAP_INTERNAL;
+			}
+#endif
 		}
 #endif
-		obs_register_encoder(&nvenc_encoder_info);
+		if (h264)
+			obs_register_encoder(&h264_nvenc_encoder_info);
+#ifdef ENABLE_HEVC
+		if (hevc)
+			obs_register_encoder(&hevc_nvenc_encoder_info);
+#endif
 	}
+
+#ifdef _WIN32
+	amf_load();
+#endif
+
 #if !defined(_WIN32) && defined(LIBAVUTIL_VAAPI_AVAILABLE)
 	if (vaapi_supported()) {
 		blog(LOG_INFO, "FFMPEG VAAPI supported");
@@ -299,6 +391,7 @@ void obs_module_unload(void)
 #endif
 
 #ifdef _WIN32
+	amf_unload();
 	jim_nvenc_unload();
 #endif
 }

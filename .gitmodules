@@ -10,9 +10,6 @@
 [submodule "plugins/obs-browser"]
 	path = plugins/obs-browser
 	url = https://github.com/stream-labs/obs-browser.git
-[submodule "plugins/obs-vst"]
-	path = plugins/obs-vst
-	url = https://github.com/stream-labs/obs-vst.git
 [submodule "plugins/obs-outputs/ftl-sdk"]
 	path = plugins/obs-outputs/ftl-sdk
 	url = https://github.com/Mixer/ftl-sdk.git
@@ -32,3 +29,6 @@
 [submodule "plugins/mediasoup-connector"]
 	path = plugins/mediasoup-connector
 	url = https://github.com/stream-labs/mediasoup-connector.git
+[submodule "plugins/obs-vst"]
+	path = plugins/obs-vst
+	url = https://github.com/stream-labs/obs-vst.git

@@ -5,7 +5,7 @@ OBS Studio <https://obsproject.com>
    :alt: OBS Studio Build Status - GitHub Actions
    :target: https://github.com/obsproject/obs-studio/actions/workflows/main.yml?query=event%3Apush+branch%3Amaster
 
-.. image:: https://d322cqt584bo4o.cloudfront.net/obs-studio/localized.svg
+.. image:: https://badges.crowdin.net/obs-studio/localized.svg
    :alt: OBS Studio Translation Project Progress
    :target: https://crowdin.com/project/obs-studio
 
@@ -56,8 +56,8 @@ Contributing
   https://obsproject.com/docs
 
 - If you wish to contribute translations, do not submit pull requests.
-  Instead, please use Crowdin.  For more information read this thread:
-  https://obsproject.com/forum/threads/how-to-contribute-translations-for-obs.16327/
+  Instead, please use Crowdin.  For more information read this page:
+  https://obsproject.com/wiki/How-To-Contribute-Translations-For-OBS
 
 - Other ways to contribute are by helping people out with support on
   our forums or in our community chat.  Please limit support to topics

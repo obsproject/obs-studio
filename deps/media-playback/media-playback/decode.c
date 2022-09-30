@@ -15,7 +15,9 @@
  */
 
 #include "decode.h"
+
 #include "media.h"
+#include <libavutil/mastering_display_metadata.h>
 
 #if LIBAVCODEC_VERSION_INT > AV_VERSION_INT(58, 4, 100)
 #define USE_NEW_HARDWARE_CODEC_METHOD
@@ -29,7 +31,7 @@ enum AVHWDeviceType hw_priority[] = {
 	AV_HWDEVICE_TYPE_NONE,
 };
 
-static bool has_hw_type(AVCodec *c, enum AVHWDeviceType type,
+static bool has_hw_type(const AVCodec *c, enum AVHWDeviceType type,
 			enum AVPixelFormat *hw_format)
 {
 	for (int i = 0;; i++) {
@@ -97,6 +99,8 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (hw)
 		init_hw_decoder(d, c);
+#else
+	UNUSED_PARAMETER(hw);
 #endif
 
 	if (c->thread_count == 1 && c->codec_id != AV_CODEC_ID_PNG &&
@@ -113,12 +117,38 @@ static int mp_open_codec(struct mp_decode *d, bool hw)
 	return ret;
 
 fail:
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
 	avcodec_free_context(&c);
-#else
-	avcodec_close(c);
-#endif
+	avcodec_free_context(&d->decoder);
+
 	return ret;
+}
+
+static uint16_t get_max_luminance(const AVStream *stream)
+{
+	uint32_t max_luminance = 0;
+
+	for (int i = 0; i < stream->nb_side_data; i++) {
+		const AVPacketSideData *const sd = &stream->side_data[i];
+		switch (sd->type) {
+		case AV_PKT_DATA_MASTERING_DISPLAY_METADATA: {
+			const AVMasteringDisplayMetadata *mastering =
+				(AVMasteringDisplayMetadata *)sd->data;
+			if (mastering->has_luminance) {
+				max_luminance =
+					(uint32_t)(av_q2d(mastering
+								  ->max_luminance) +
+						   0.5);
+			}
+
+			break;
+		}
+		case AV_PKT_DATA_CONTENT_LIGHT_LEVEL:
+			return (uint16_t)((AVContentLightMetadata *)sd->data)
+				->MaxCLL;
+		}
+	}
+
+	return max_luminance;
 }
 
 bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
@@ -142,6 +172,9 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 #else
 	id = stream->codec->codec_id;
 #endif
+
+	if (type == AVMEDIA_TYPE_VIDEO)
+		d->max_luminance = get_max_luminance(stream);
 
 	if (id == AV_CODEC_ID_VP8 || id == AV_CODEC_ID_VP9) {
 		AVDictionaryEntry *tag = NULL;
@@ -193,20 +226,26 @@ bool mp_decode_init(mp_media_t *m, enum AVMediaType type, bool hw)
 
 	if (d->codec->capabilities & CODEC_CAP_TRUNC)
 		d->decoder->flags |= CODEC_FLAG_TRUNC;
+
+	d->orig_pkt = av_packet_alloc();
+	d->pkt = av_packet_alloc();
+
 	return true;
 }
+
+extern void mp_media_free_packet(mp_media_t *m, AVPacket *pkt);
 
 void mp_decode_clear_packets(struct mp_decode *d)
 {
 	if (d->packet_pending) {
-		av_packet_unref(&d->orig_pkt);
+		av_packet_unref(d->orig_pkt);
 		d->packet_pending = false;
 	}
 
 	while (d->packets.size) {
-		AVPacket pkt;
+		AVPacket *pkt;
 		circlebuf_pop_front(&d->packets, &pkt, sizeof(pkt));
-		av_packet_unref(&pkt);
+		mp_media_free_packet(d->m, pkt);
 	}
 }
 
@@ -215,20 +254,17 @@ void mp_decode_free(struct mp_decode *d)
 	mp_decode_clear_packets(d);
 	circlebuf_free(&d->packets);
 
-	if (d->decoder &&
-		((d->hw && d->hw_frame->data[0]) || !d->hw)) {
-#if LIBAVFORMAT_VERSION_INT >= AV_VERSION_INT(57, 40, 101)
-		avcodec_free_context(&d->decoder);
-#else
-		avcodec_close(d->decoder);
-#endif
-	} else {
-		blog(LOG_INFO, "Skip releasing memory");
-	}
+	av_packet_free(&d->pkt);
+	av_packet_free(&d->orig_pkt);
+
 	if (d->hw_frame) {
 		av_frame_unref(d->hw_frame);
 		av_free(d->hw_frame);
 	}
+
+	if (d->decoder)
+		avcodec_free_context(&d->decoder);
+
 	if (d->sw_frame) {
 		av_frame_unref(d->sw_frame);
 		av_free(d->sw_frame);
@@ -245,7 +281,7 @@ void mp_decode_free(struct mp_decode *d)
 
 void mp_decode_push_packet(struct mp_decode *decode, AVPacket *packet)
 {
-	circlebuf_push_back(&decode->packets, packet, sizeof(*packet));
+	circlebuf_push_back(&decode->packets, &packet, sizeof(packet));
 }
 
 static inline int64_t get_estimated_duration(struct mp_decode *d,
@@ -273,7 +309,6 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	int ret;
 	*got_frame = 0;
 
-#ifdef USE_NEW_FFMPEG_DECODE_API
 	ret = avcodec_receive_frame(d->decoder, d->in_frame);
 	if (ret != 0 && ret != AVERROR(EAGAIN)) {
 		if (ret == AVERROR_EOF)
@@ -282,7 +317,7 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 	}
 
 	if (ret != 0) {
-		ret = avcodec_send_packet(d->decoder, &d->pkt);
+		ret = avcodec_send_packet(d->decoder, d->pkt);
 		if (ret != 0 && ret != AVERROR(EAGAIN)) {
 			if (ret == AVERROR_EOF)
 				ret = 0;
@@ -297,21 +332,11 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		}
 
 		*got_frame = (ret == 0);
-		ret = d->pkt.size;
+		ret = d->pkt->size;
 	} else {
 		ret = 0;
 		*got_frame = 1;
 	}
-
-#else
-	if (d->audio) {
-		ret = avcodec_decode_audio4(d->decoder, d->in_frame, got_frame,
-					    &d->pkt);
-	} else {
-		ret = avcodec_decode_video2(d->decoder, d->in_frame, got_frame,
-					    &d->pkt);
-	}
-#endif
 
 #ifdef USE_NEW_HARDWARE_CODEC_METHOD
 	if (*got_frame && d->hw) {
@@ -321,9 +346,15 @@ static int decode_packet(struct mp_decode *d, int *got_frame)
 		}
 
 		int err = av_hwframe_transfer_data(d->sw_frame, d->hw_frame, 0);
-		if (err != 0) {
+		if (err) {
 			ret = 0;
 			*got_frame = false;
+		} else {
+			d->sw_frame->color_range = d->hw_frame->color_range;
+			d->sw_frame->color_primaries =
+				d->hw_frame->color_primaries;
+			d->sw_frame->color_trc = d->hw_frame->color_trc;
+			d->sw_frame->colorspace = d->hw_frame->colorspace;
 		}
 	}
 #endif
@@ -347,15 +378,16 @@ bool mp_decode_next(struct mp_decode *d)
 		if (!d->packet_pending) {
 			if (!d->packets.size) {
 				if (eof) {
-					d->pkt.data = NULL;
-					d->pkt.size = 0;
+					d->pkt->data = NULL;
+					d->pkt->size = 0;
 				} else {
 					return true;
 				}
 			} else {
+				mp_media_free_packet(d->m, d->orig_pkt);
 				circlebuf_pop_front(&d->packets, &d->orig_pkt,
 						    sizeof(d->orig_pkt));
-				d->pkt = d->orig_pkt;
+				av_packet_ref(d->pkt, d->orig_pkt);
 				d->packet_pending = true;
 			}
 		}
@@ -373,9 +405,8 @@ bool mp_decode_next(struct mp_decode *d)
 #endif
 
 			if (d->packet_pending) {
-				av_packet_unref(&d->orig_pkt);
-				av_init_packet(&d->orig_pkt);
-				av_init_packet(&d->pkt);
+				av_packet_unref(d->orig_pkt);
+				av_packet_unref(d->pkt);
 				d->packet_pending = false;
 			}
 			return true;
@@ -384,15 +415,14 @@ bool mp_decode_next(struct mp_decode *d)
 		d->frame_ready = !!got_frame;
 
 		if (d->packet_pending) {
-			if (d->pkt.size) {
-				d->pkt.data += ret;
-				d->pkt.size -= ret;
+			if (d->pkt->size) {
+				d->pkt->data += ret;
+				d->pkt->size -= ret;
 			}
 
-			if (d->pkt.size <= 0) {
-				av_packet_unref(&d->orig_pkt);
-				av_init_packet(&d->orig_pkt);
-				av_init_packet(&d->pkt);
+			if (d->pkt->size <= 0) {
+				av_packet_unref(d->orig_pkt);
+				av_packet_unref(d->pkt);
 				d->packet_pending = false;
 			}
 		}

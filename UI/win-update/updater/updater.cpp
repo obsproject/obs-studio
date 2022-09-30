@@ -46,6 +46,8 @@ int totalFileSize = 0;
 int completedFileSize = 0;
 static int completedUpdates = 0;
 
+static wchar_t tempPath[MAX_PATH];
+
 struct LastError {
 	DWORD code;
 	inline LastError() { code = GetLastError(); }
@@ -169,6 +171,20 @@ try {
 } catch (LastError error) {
 	SetLastError(error.code);
 	return false;
+}
+
+static void MyDeleteFile(const wstring &filename)
+{
+	/* Try straightforward delete first */
+	if (DeleteFile(filename.c_str()))
+		return;
+
+	DWORD err = GetLastError();
+	if (err == ERROR_FILE_NOT_FOUND)
+		return;
+
+	/* If all else fails, schedule the file to be deleted on reboot */
+	MoveFileEx(filename.c_str(), NULL, MOVEFILE_DELAY_UNTIL_REBOOT);
 }
 
 static bool IsSafeFilename(const wchar_t *path)
@@ -326,13 +342,29 @@ struct update_t {
 	}
 };
 
+struct deletion_t {
+	wstring originalFilename;
+	wstring deleteMeFilename;
+
+	void UndoRename()
+	{
+		if (!deleteMeFilename.empty())
+			MoveFile(deleteMeFilename.c_str(),
+				 originalFilename.c_str());
+	}
+};
+
 static vector<update_t> updates;
+static vector<deletion_t> deletions;
 static mutex updateMutex;
 
 static inline void CleanupPartialUpdates()
 {
 	for (update_t &update : updates)
 		update.CleanPartialUpdate();
+
+	for (deletion_t &deletion : deletions)
+		deletion.UndoRename();
 }
 
 /* ----------------------------------------------------------------------- */
@@ -745,6 +777,70 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 	return true;
 }
 
+static void AddPackageRemovedFiles(const Json &package)
+{
+	const Json &removed_files = package["removed_files"];
+	if (!removed_files.is_array())
+		return;
+
+	for (auto &item : removed_files.array_items()) {
+		if (!item.is_string())
+			continue;
+
+		wchar_t removedFileName[MAX_PATH];
+		if (!UTF8ToWideBuf(removedFileName,
+				   item.string_value().c_str()))
+			continue;
+
+		/* Ensure paths are safe, also check if file exists */
+		if (!IsSafeFilename(removedFileName))
+			continue;
+		/* Technically GetFileAttributes can fail for other reasons,
+		 * so double-check by also checking the last error */
+		if (GetFileAttributesW(removedFileName) ==
+		    INVALID_FILE_ATTRIBUTES) {
+			int err = GetLastError();
+			if (err == ERROR_FILE_NOT_FOUND ||
+			    err == ERROR_PATH_NOT_FOUND)
+				continue;
+		}
+
+		deletion_t deletion;
+		deletion.originalFilename = removedFileName;
+
+		deletions.push_back(deletion);
+	}
+}
+
+static bool RenameRemovedFile(deletion_t &deletion)
+{
+	_TCHAR deleteMeName[MAX_PATH];
+	_TCHAR randomStr[MAX_PATH];
+
+	BYTE junk[40];
+	BYTE hash[BLAKE2_HASH_LENGTH];
+
+	CryptGenRandom(hProvider, sizeof(junk), junk);
+	blake2b(hash, sizeof(hash), junk, sizeof(junk), NULL, 0);
+	HashToString(hash, randomStr);
+	randomStr[8] = 0;
+
+	StringCbCopy(deleteMeName, sizeof(deleteMeName),
+		     deletion.originalFilename.c_str());
+
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".");
+	StringCbCat(deleteMeName, sizeof(deleteMeName), randomStr);
+	StringCbCat(deleteMeName, sizeof(deleteMeName), L".deleteme");
+
+	if (MoveFile(deletion.originalFilename.c_str(), deleteMeName)) {
+		/* Only set this if the file was successfully renamed */
+		deletion.deleteMeFilename = deleteMeName;
+		return true;
+	}
+
+	return false;
+}
+
 static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 				       const char *source, int size)
 {
@@ -788,6 +884,17 @@ static void UpdateWithPatchIfAvailable(const char *name, const char *hash,
 		update.sourceURL = sourceURL;
 		update.fileSize = size;
 		update.patchable = true;
+
+		/* ensure the filename is unique */
+		static long increment = 0;
+
+		/* Since the patch depends on the previous version, we can
+		 * no longer rely on the temp name being unique to the
+		 * new file's hash */
+		update.tempPath = tempPath;
+		update.tempPath += L"\\";
+		update.tempPath += patchHashStr;
+		update.tempPath += std::to_wstring(increment++);
 		break;
 	}
 }
@@ -973,8 +1080,6 @@ static bool UpdateFile(update_t &file)
 
 	return true;
 }
-
-static wchar_t tempPath[MAX_PATH] = {};
 
 #define PATCH_MANIFEST_URL \
 	L"https://obsproject.com/update_studio/getpatchmanifest"
@@ -1295,6 +1400,9 @@ static bool Update(wchar_t *cmdLine)
 			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
+
+		/* Add removed files to deletion queue (if any) */
+		AddPackageRemovedFiles(packages[i]);
 	}
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETMARQUEE, 0, 0);
@@ -1476,6 +1584,14 @@ static bool Update(wchar_t *cmdLine)
 		}
 	}
 
+	for (deletion_t &deletion : deletions) {
+		if (!RenameRemovedFile(deletion)) {
+			Status(L"Update failed: Couldn't remove "
+			       L"obsolete files");
+			return false;
+		}
+	}
+
 	/* ------------------------------------- *
 	 * Install virtual camera                */
 
@@ -1545,6 +1661,10 @@ static bool Update(wchar_t *cmdLine)
 		if (!update.tempPath.empty())
 			DeleteFile(update.tempPath.c_str());
 	}
+
+	/* Delete all removed files mentioned in the manifest */
+	for (deletion_t &deletion : deletions)
+		MyDeleteFile(deletion.deleteMeFilename);
 
 	SendDlgItemMessage(hwndMain, IDC_PROGRESS, PBM_SETPOS, 100, 0);
 
@@ -1753,15 +1873,27 @@ int WINAPI wWinMain(HINSTANCE hInstance, HINSTANCE, LPWSTR lpCmdLine, int)
 
 	is32bit = wcsstr(cwd, L"bin\\32bit") != nullptr;
 
+	if (!IsWindows10OrGreater()) {
+		MessageBox(
+			nullptr,
+			L"OBS Studio 28 and newer no longer support Windows 7,"
+			L" Windows 8, or Windows 8.1. You can disable the"
+			L" following setting to opt out of future updates:"
+			L" Settings → General → General → Automatically check"
+			L" for updates on startup",
+			L"Unsupported Operating System", MB_ICONWARNING);
+		return 0;
+	}
+
 	if (!HasElevation()) {
 
 		WinHandle hMutex = OpenMutex(
 			SYNCHRONIZE, false, L"OBSUpdaterRunningAsNonAdminUser");
 		if (hMutex) {
 			MessageBox(
-				nullptr, L"Updater Error",
+				nullptr,
 				L"OBS Studio Updater must be run as an administrator.",
-				MB_ICONWARNING);
+				L"Updater Error", MB_ICONWARNING);
 			return 2;
 		}
 

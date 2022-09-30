@@ -17,21 +17,18 @@
 
 #include "obs-internal.h"
 
-static void *gpu_encode_thread(void *unused)
+static void *gpu_encode_thread(struct obs_core_video_mix *video)
 {
-	struct obs_core_video *video = &obs->video;
-	uint64_t interval = video_output_get_frame_time(obs->video.video);
+	uint64_t interval = video_output_get_frame_time(video->video);
 	DARRAY(obs_encoder_t *) encoders;
 	int wait_frames = NUM_ENCODE_TEXTURE_FRAMES_TO_WAIT;
 
-	UNUSED_PARAMETER(unused);
 	da_init(encoders);
 
 	os_set_thread_name("obs gpu encode thread");
 
 	while (os_sem_wait(video->gpu_encode_semaphore) == 0) {
 		struct obs_tex_frame tf;
-		bool have_frame = false;
 		uint64_t timestamp;
 		uint64_t lock_key;
 		uint64_t next_key;
@@ -51,13 +48,10 @@ static void *gpu_encode_thread(void *unused)
 
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-		if (!obs_get_multiple_rendering()) {
-			circlebuf_pop_front(
-				&video->gpu_queues[OBS_MAIN_VIDEO_RENDERING]
-					 .gpu_encoder_queue,
-				&tf, sizeof(tf));
-				have_frame = true;
-		}
+		circlebuf_pop_front(&video->gpu_encoder_queue, &tf, sizeof(tf));
+		timestamp = tf.timestamp;
+		lock_key = tf.lock_key;
+		next_key = tf.lock_key;
 
 		video_output_inc_texture_frames(video->video);
 
@@ -72,197 +66,70 @@ static void *gpu_encode_thread(void *unused)
 
 		/* -------------- */
 
-		bool stream_encoded = false;
-		bool record_encoded = false;
-
-
 		for (size_t i = 0; i < encoders.num; i++) {
 			struct encoder_packet pkt = {0};
 			bool received = false;
 			bool success;
-			enum obs_video_rendering_mode mode =
-				OBS_MAIN_VIDEO_RENDERING;
 
 			obs_encoder_t *encoder = encoders.array[i];
 			struct obs_encoder *pair = encoder->paired_encoder;
 
-			pthread_mutex_lock(&video->gpu_encoder_mutex);
+			pkt.timebase_num = encoder->timebase_num;
+			pkt.timebase_den = encoder->timebase_den;
+			pkt.encoder = encoder;
 
-			struct encoder_callback *cb;
-			cb = encoder->callbacks.array;
-			struct obs_output *output = cb->param;
-
-			if (obs_get_multiple_rendering()) {
-				if (strcmp(output->info.id, "rtmp_output") == 0 ||
-					strcmp(output->info.id, "ftl_output") == 0) {
-					mode = OBS_STREAMING_VIDEO_RENDERING;
-					stream_encoded = true;
-				} else if (strcmp(output->info.id,
-						  "ffmpeg_muxer") == 0) {
-					mode = OBS_RECORDING_VIDEO_RENDERING;
-					record_encoded = true;
-				} else if (strcmp(output->info.id,
-						  "replay_buffer") == 0) {
-					if (obs_get_replay_buffer_rendering_mode() ==
-					    OBS_RECORDING_REPLAY_BUFFER_RENDERING) {
-						mode = OBS_RECORDING_VIDEO_RENDERING;
-						record_encoded = true;
-					} else {
-						mode = OBS_STREAMING_VIDEO_RENDERING;
-						stream_encoded = true;
-					}
-				}
-				if (video->gpu_queues[mode].gpu_encoder_queue.size != 0) {
-					circlebuf_pop_front(&video->gpu_queues[mode]
-									.gpu_encoder_queue,
-								&tf, sizeof(tf));
-					have_frame = true;
-				} else {
-					have_frame = false;
-				}
-			}
-			
-			if (have_frame) {
-				bool skip_processing = false;
-				timestamp = tf.timestamp;
-				lock_key = tf.lock_key;
-				next_key = tf.lock_key;
-
-				pthread_mutex_unlock(&video->gpu_encoder_mutex);
-
-				pkt.timebase_num = encoder->timebase_num;
-				pkt.timebase_den = encoder->timebase_den;
-				pkt.encoder = encoder;
-
-				if (!encoder->first_received && pair) {
-					if (!pair->first_received ||
+			if (!encoder->first_received && pair) {
+				if (!pair->first_received ||
 					pair->first_raw_ts > timestamp) {
-						skip_processing = true;
-					}
-				}
-				if (!skip_processing) {
-					if (video_pause_check(&encoder->pause, timestamp)) {
-						skip_processing = true;
-					}
-				}
-
-				if (encoder->reconfigure_requested) {
-					encoder->reconfigure_requested = false;
-					encoder->info.update(encoder->context.data,
-						     encoder->context.settings);
-				}
-
-				if (!skip_processing) {
-					if (!encoder->start_ts)
-						encoder->start_ts = timestamp;
-
-					if (++lock_count == encoders.num)
-						next_key = 0;
-					else
-						next_key++;
-
-					success = encoder->info.encode_texture(
-						encoder->context.data, tf.handle,
-						encoder->cur_pts, lock_key, &next_key, &pkt,
-						&received);
-					send_off_encoder_packet(encoder, success, received,
-								&pkt);
-
-					lock_key = next_key;
-
-					encoder->cur_pts += encoder->timebase_num;
-				}
-				/* -------------- */
-
-				pthread_mutex_lock(&video->gpu_encoder_mutex);
-
-				tf.lock_key = next_key;
-
-				if (obs_get_multiple_rendering()) {
-					if (--tf.count) {
-						tf.timestamp += interval;
-						circlebuf_push_front(
-							&video->gpu_queues[mode]
-								.gpu_encoder_queue,
-							&tf, sizeof(tf));
-						video_output_inc_texture_skipped_frames(
-							video->video);
-					} else {
-						circlebuf_push_back(
-							&video->gpu_queues[mode]
-								.gpu_encoder_avail_queue,
-							&tf, sizeof(tf));
-					}
+					continue;
 				}
 			}
 
-			pthread_mutex_unlock(&video->gpu_encoder_mutex);
+			if (video_pause_check(&encoder->pause, timestamp))
+				continue;
 
-			/* -------------- */
+			if (encoder->reconfigure_requested) {
+				encoder->reconfigure_requested = false;
+				encoder->info.update(encoder->context.data,
+							encoder->context.settings);
+			}
+
+			if (!encoder->start_ts)
+				encoder->start_ts = timestamp;
+
+			if (++lock_count == encoders.num)
+				next_key = 0;
+			else
+				next_key++;
+
+			success = encoder->info.encode_texture(
+				encoder->context.data, tf.handle,
+				encoder->cur_pts, lock_key, &next_key, &pkt,
+				&received);
+			send_off_encoder_packet(encoder, success, received,
+						&pkt);
+
+			lock_key = next_key;
+
+			encoder->cur_pts += encoder->timebase_num;
 		}
+
+		/* -------------- */
 
 		pthread_mutex_lock(&video->gpu_encoder_mutex);
 
-		if (obs_get_multiple_rendering()) {
-			if (!stream_encoded) {
-				struct obs_tex_frame new_frame;
-				circlebuf_pop_front(
-					&video->gpu_queues
-						 [OBS_STREAMING_VIDEO_RENDERING]
-							 .gpu_encoder_queue,
-					&new_frame, sizeof(new_frame));
+		tf.lock_key = next_key;
 
-				if (--new_frame.count)
-					circlebuf_push_back(
-						&video->gpu_queues
-							 [OBS_STREAMING_VIDEO_RENDERING]
-								 .gpu_encoder_queue,
-						&new_frame, sizeof(new_frame));
-				else
-					circlebuf_push_back(
-						&video->gpu_queues[OBS_STREAMING_VIDEO_RENDERING]
-							 .gpu_encoder_avail_queue,
-						&new_frame, sizeof(new_frame));
-			}
+		if (--tf.count) {
+			tf.timestamp += interval;
+			circlebuf_push_front(&video->gpu_encoder_queue, &tf,
+					     sizeof(tf));
 
-			if (!record_encoded) {
-				struct obs_tex_frame new_frame;
-				circlebuf_pop_front(
-					&video->gpu_queues
-						 [OBS_RECORDING_VIDEO_RENDERING]
-							 .gpu_encoder_queue,
-					&new_frame, sizeof(new_frame));
-
-				if (--new_frame.count)
-					circlebuf_push_back(
-						&video->gpu_queues
-							 [OBS_RECORDING_VIDEO_RENDERING]
-								 .gpu_encoder_queue,
-						&new_frame, sizeof(new_frame));
-				else
-					circlebuf_push_back(
-						&video->gpu_queues[OBS_RECORDING_VIDEO_RENDERING]
-							 .gpu_encoder_avail_queue,
-						&new_frame, sizeof(new_frame));
-			}
-		} else if (have_frame) {
-			if (--tf.count) {
-				tf.timestamp += interval;
-				circlebuf_push_front(
-					&video->gpu_queues
-						 [OBS_MAIN_VIDEO_RENDERING]
-							 .gpu_encoder_queue,
-					&tf, sizeof(tf));
-
-				video_output_inc_texture_skipped_frames(
-					video->video);
+			video_output_inc_texture_skipped_frames(video->video);
 			} else {
-				circlebuf_push_back(
-					&video->gpu_queues[OBS_MAIN_VIDEO_RENDERING]
-						 .gpu_encoder_avail_queue,
-					&tf, sizeof(tf));
+				circlebuf_push_back(&video->gpu_encoder_avail_queue,
+					    &tf, sizeof(tf));
 			}
-		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
 
@@ -281,36 +148,39 @@ static void *gpu_encode_thread(void *unused)
 	return NULL;
 }
 
-bool init_gpu_encoding(struct obs_core_video *video)
+bool init_gpu_encoding(struct obs_core_video_mix *video)
 {
 #ifdef _WIN32
-	struct obs_video_info *ovi = &video->ovi;
+	const struct video_output_info *info =
+		video_output_get_info(video->video);
 
 	video->gpu_encode_stop = false;
 
-	for (size_t i = 0; i < NUM_RENDERING_MODES; i++) {
-		circlebuf_reserve(&video->gpu_queues[i].gpu_encoder_avail_queue,
-				  NUM_ENCODE_TEXTURES);
-		for (size_t j = 0; j < NUM_ENCODE_TEXTURES; j++) {
-			gs_texture_t *tex;
-			gs_texture_t *tex_uv;
+	circlebuf_reserve(&video->gpu_encoder_avail_queue, NUM_ENCODE_TEXTURES);
+	for (size_t i = 0; i < NUM_ENCODE_TEXTURES; i++) {
+		gs_texture_t *tex;
+		gs_texture_t *tex_uv;
 
-			gs_texture_create_nv12(&tex, &tex_uv, ovi->output_width,
-					       ovi->output_height,
-					       GS_RENDER_TARGET | GS_SHARED_KM_TEX);
-			if (!tex) {
-				return false;
-			}
-
-			uint32_t handle = gs_texture_get_shared_handle(tex);
-
-			struct obs_tex_frame frame = {
-				.tex = tex, .tex_uv = tex_uv, .handle = handle};
-
-			circlebuf_push_back(
-				&video->gpu_queues[i].gpu_encoder_avail_queue,
-				&frame, sizeof(frame));
+		if (info->format == VIDEO_FORMAT_P010) {
+			gs_texture_create_p010(
+				&tex, &tex_uv, info->width, info->height,
+				GS_RENDER_TARGET | GS_SHARED_KM_TEX);
+		} else {
+			gs_texture_create_nv12(
+				&tex, &tex_uv, info->width, info->height,
+				GS_RENDER_TARGET | GS_SHARED_KM_TEX);
 		}
+		if (!tex) {
+			return false;
+		}
+
+		uint32_t handle = gs_texture_get_shared_handle(tex);
+
+		struct obs_tex_frame frame = {
+			.tex = tex, .tex_uv = tex_uv, .handle = handle};
+
+		circlebuf_push_back(&video->gpu_encoder_avail_queue, &frame,
+				    sizeof(frame));
 	}
 
 	if (os_sem_init(&video->gpu_encode_semaphore, 0) != 0)
@@ -319,7 +189,7 @@ bool init_gpu_encoding(struct obs_core_video *video)
 	    0)
 		return false;
 	if (pthread_create(&video->gpu_encode_thread, NULL, gpu_encode_thread,
-			   NULL) != 0)
+			   video) != 0)
 		return false;
 
 	os_event_signal(video->gpu_encode_inactive);
@@ -332,7 +202,7 @@ bool init_gpu_encoding(struct obs_core_video *video)
 #endif
 }
 
-void stop_gpu_encoding_thread(struct obs_core_video *video)
+void stop_gpu_encoding_thread(struct obs_core_video_mix *video)
 {
 	if (video->gpu_encode_thread_initialized) {
 		os_atomic_set_bool(&video->gpu_encode_stop, true);
@@ -342,7 +212,7 @@ void stop_gpu_encoding_thread(struct obs_core_video *video)
 	}
 }
 
-void free_gpu_encoding(struct obs_core_video *video)
+void free_gpu_encoding(struct obs_core_video_mix *video)
 {
 	if (video->gpu_encode_semaphore) {
 		os_sem_destroy(video->gpu_encode_semaphore);
@@ -364,9 +234,7 @@ void free_gpu_encoding(struct obs_core_video *video)
 		circlebuf_free(&x);                                     \
 	} while (false)
 
-	for (size_t i = 0; i < NUM_RENDERING_MODES; i++) {
-		free_circlebuf(video->gpu_queues[i].gpu_encoder_queue);
-		free_circlebuf(video->gpu_queues[i].gpu_encoder_avail_queue);
-	}
+	free_circlebuf(video->gpu_encoder_queue);
+	free_circlebuf(video->gpu_encoder_avail_queue);
 #undef free_circlebuf
 }

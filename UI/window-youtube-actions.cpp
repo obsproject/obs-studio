@@ -497,15 +497,19 @@ bool OBSYoutubeActions::CreateEventAction(YoutubeApiWrappers *api,
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		if (!apiYouTube->BindStream(broadcast.id, stream.id)) {
+		json11::Json json;
+		if (!apiYouTube->BindStream(broadcast.id, stream.id, json)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
 
-		if (broadcast.privacy != "private")
-			apiYouTube->SetChatId(broadcast.id);
-		else
+		if (broadcast.privacy != "private") {
+			const std::string apiLiveChatId =
+				json["snippet"]["liveChatId"].string_value();
+			apiYouTube->SetChatId(broadcast.id, apiLiveChatId);
+		} else {
 			apiYouTube->ResetChat();
+		}
 	}
 
 	return true;
@@ -530,6 +534,10 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 		json["items"]
 			.array_items()[0]["status"]["privacyStatus"]
 			.string_value();
+	std::string apiLiveChatId =
+		json["items"]
+			.array_items()[0]["snippet"]["liveChatId"]
+			.string_value();
 
 	stream.id = boundStreamId.c_str();
 	if (!stream.id.isEmpty() && apiYouTube->FindStream(stream.id, json)) {
@@ -547,14 +555,15 @@ bool OBSYoutubeActions::ChooseAnEventAction(YoutubeApiWrappers *api,
 			blog(LOG_DEBUG, "No stream created.");
 			return false;
 		}
-		if (!apiYouTube->BindStream(selectedBroadcast, stream.id)) {
+		if (!apiYouTube->BindStream(selectedBroadcast, stream.id,
+					    json)) {
 			blog(LOG_DEBUG, "No stream binded.");
 			return false;
 		}
 	}
 
 	if (broadcastPrivacy != "private")
-		apiYouTube->SetChatId(selectedBroadcast);
+		apiYouTube->SetChatId(selectedBroadcast, apiLiveChatId);
 	else
 		apiYouTube->ResetChat();
 

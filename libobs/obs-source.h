@@ -58,6 +58,7 @@ enum obs_icon_type {
 	OBS_ICON_TYPE_MEDIA,
 	OBS_ICON_TYPE_BROWSER,
 	OBS_ICON_TYPE_CUSTOM,
+	OBS_ICON_TYPE_PROCESS_AUDIO_OUTPUT,
 };
 
 enum obs_media_state {
@@ -462,6 +463,14 @@ struct obs_source_info {
 			  bool key_up);
 
 	/**
+	 * Called when the filter is added to a source
+	 *
+	 * @param  data    Filter data
+	 * @param  source  Source that the filter being added to
+	 */
+	void (*filter_add)(void *data, obs_source_t *source);
+
+	/**
 	 * Called when the filter is removed from a source
 	 *
 	 * @param  data    Filter data
@@ -546,6 +555,11 @@ struct obs_source_info {
 
 	/** Missing files **/
 	obs_missing_files_t *(*missing_files)(void *data);
+
+	/** Get color space **/
+	enum gs_color_space (*video_get_color_space)(
+		void *data, size_t count,
+		const enum gs_color_space *preferred_spaces);
 };
 
 EXPORT void obs_register_source_s(const struct obs_source_info *info,

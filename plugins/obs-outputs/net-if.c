@@ -118,8 +118,13 @@ bool netif_str_to_addr(struct sockaddr_storage *out, int *addr_len,
 #else
 	*addr_len = ipv6 ? sizeof(struct sockaddr_in6)
 			 : sizeof(struct sockaddr_in);
-	void *dst = ipv6 ? &((struct sockaddr_in6 *)out)->sin6_addr
-			 : &((struct sockaddr_in *)out)->sin_addr;
+
+	void *dst = NULL;
+	if (ipv6)
+		dst = &((struct sockaddr_in6 *)out)->sin6_addr;
+	else
+		dst = &((struct sockaddr_in *)out)->sin_addr;
+
 	if (inet_pton(out->ss_family, addr, dst))
 		return true;
 

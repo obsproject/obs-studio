@@ -28,6 +28,10 @@
 /* rgb(11,10,11); /* veryVeryDark */
 /* rgb(42,130,218); /* blue */
 
+OBSThemeMeta {
+    dark: 'true';
+    author: 'Warchamp7';
+}
 
 /* Custom theme information.  This will set the application's QPalette, as
  * well as pass to QML via the OBSTheme object.
@@ -115,6 +119,13 @@ SourceTree QLineEdit {
     padding-left: 2px;
     border: none;
     border-radius: none;
+}
+
+/* macOS Separator Fix */
+QMainWindow::separator {
+    background: transparent;
+    width: 4px;
+    height: 4px;
 }
 
 /* Dock Widget */
@@ -221,9 +232,12 @@ QScrollBar::left-arrow:horizontal, QScrollBar::right-arrow:horizontal, QScrollBa
 }
 
 /* Source Context */
+#contextContainer QPushButton {
+    padding: 4px 10px;
+}
+
 #contextContainer QPushButton[themeID2=contextBarButton] {
-    padding: 3px;
-    margin: 0px;
+    padding: 4px 6px;
 }
 
 #contextContainer QPushButton#sourcePropertiesButton {
@@ -245,11 +259,26 @@ QToolBar {
     border: none;
 }
 
+QPushButton[toolButton="true"],
+QToolButton {
+	background: transparent;
+	border: none;
+    padding: 1px;
+    margin: 1px;
+}
+
+QPushButton[toolButton="true"]:last-child,
+QToolButton:last-child {
+    margin-right: 0px;
+}
+
+QPushButton[toolButton="true"]:hover,
 QToolButton:hover {
     background-color: rgb(122,121,122); /* light */
     border-radius: none;
 }
 
+QPushButton[toolButton="true"]:pressed,
 QToolButton:pressed {
     background-color: palette(base);
     border-radius: none;
@@ -261,6 +290,10 @@ QToolButton:pressed {
 
 * [themeID="removeIconSmall"] {
     qproperty-icon: url(./Dark/minus.svg);
+}
+
+* [themeID="clearIconSmall"] {
+    qproperty-icon: url(./Dark/entry-clear.svg);
 }
 
 * [themeID="propertiesIconSmall"] {
@@ -287,6 +320,13 @@ QToolButton:pressed {
     qproperty-icon: url(./Dark/media-pause.svg);
 }
 
+* [themeID="menuIconSmall"] {
+    qproperty-icon: url(./Dark/dots-vert.svg);
+}
+
+* [themeID="cogsIcon"] {
+    qproperty-icon: url(./Dark/cogs.svg);
+}
 
 /* Tab Widget */
 
@@ -660,7 +700,7 @@ SourceTreeSubItemCheckBox::indicator:checked {
 }
 
 SourceTreeSubItemCheckBox::indicator:unchecked {
-    image: url(./Dark/down.svg);
+    image: url(./Dark/collapse.svg);
 }
 
 
@@ -734,6 +774,7 @@ OBSBasicSettings {
     qproperty-audioIcon: url(./Dark/settings/audio.svg);
     qproperty-videoIcon: url(./Dark/settings/video.svg);
     qproperty-hotkeysIcon: url(./Dark/settings/hotkeys.svg);
+    qproperty-accessibilityIcon: url(./Dark/settings/accessibility.svg);
     qproperty-advancedIcon: url(./Dark/settings/advanced.svg);
 }
 
@@ -770,10 +811,6 @@ VisibilityCheckBox::indicator:checked {
 
 VisibilityCheckBox::indicator:unchecked {
     image: url(:res/images/invisible.svg);
-}
-
-* [themeID="trashIcon"] {
-    qproperty-icon: url(./Dark/trash.svg);
 }
 
 * [themeID="revertIcon"] {
@@ -814,6 +851,7 @@ OBSBasic {
     qproperty-groupIcon: url(./Dark/sources/group.svg);
     qproperty-sceneIcon: url(./Dark/sources/scene.svg);
     qproperty-defaultIcon: url(./Dark/sources/default.svg);
+    qproperty-audioProcessOutputIcon: url(./Dark/sources/windowaudio.svg);
 }
 
 /* Scene Tree */
@@ -970,7 +1008,7 @@ QCalendarWidget #qt_calendar_prevmonth {
 
 QCalendarWidget #qt_calendar_nextmonth {
     padding: 2px;
-    qproperty-icon: url(./Dark/expand.svg);
+    qproperty-icon: url(./Dark/right.svg);
     icon-size: 16px, 16px;
 }
 
@@ -1013,4 +1051,9 @@ QCalendarWidget QAbstractItemView:enabled {
 
 QCalendarWidget QAbstractItemView:disabled {
     color: rgb(122,121,122);
+}
+
+/* Disable icons on QDialogButtonBox */
+QDialogButtonBox {
+    dialogbuttonbox-buttons-have-icons: 0;
 }

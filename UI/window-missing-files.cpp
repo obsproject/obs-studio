@@ -493,9 +493,10 @@ OBSMissingFiles::OBSMissingFiles(obs_missing_files_t *files, QWidget *parent)
 		addMissingFile(oldPath, name);
 	}
 
-	QString found = QTStr("MissingFiles.NumFound");
-	found.replace("$1", "0");
-	found.replace("$2", QString::number(obs_missing_files_count(files)));
+	QString found =
+		QTStr("MissingFiles.NumFound")
+			.arg("0",
+			     QString::number(obs_missing_files_count(files)));
 
 	ui->found->setText(found);
 
@@ -573,10 +574,10 @@ void OBSMissingFiles::browseFolders()
 
 void OBSMissingFiles::dataChanged()
 {
-	QString found = QTStr("MissingFiles.NumFound");
-	found.replace("$1", QString::number(filesModel->found()));
-	found.replace("$2",
-		      QString::number(obs_missing_files_count(fileStore)));
+	QString found = QTStr("MissingFiles.NumFound")
+				.arg(QString::number(filesModel->found()),
+				     QString::number(obs_missing_files_count(
+					     fileStore)));
 
 	ui->found->setText(found);
 

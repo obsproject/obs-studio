@@ -19,7 +19,6 @@
 
 #include "obs.h"
 #include "graphics/matrix4.h"
-#include "util/threading.h"
 
 /* how obs scene! */
 
@@ -66,6 +65,7 @@ struct obs_scene_item {
 	struct vec2 output_scale;
 	enum obs_scale_type scale_filter;
 
+	enum obs_blending_method blend_method;
 	enum obs_blending_type blend_type;
 
 	struct matrix4 box_transform;
