@@ -1534,3 +1534,8 @@ void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
 	else
 		encoder->last_error_message = NULL;
 }
+
+uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder)
+{
+	return encoder ? encoder->pause.ts_offset : 0;
+}
