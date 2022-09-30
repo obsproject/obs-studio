@@ -221,6 +221,8 @@ bool ffmpeg_video_encode(struct ffmpeg_video_encoder *enc,
 	AVPacket av_pkt = {0};
 	bool timeout = false;
 	const int64_t cur_ts = (int64_t)os_gettime_ns();
+	const int64_t pause_offset =
+		(int64_t)obs_encoder_get_pause_offset(enc->encoder);
 	int got_packet;
 	int ret;
 
@@ -270,7 +272,7 @@ bool ffmpeg_video_encode(struct ffmpeg_video_encoder *enc,
 		debug("cur: %lld, packet: %lld, diff: %lld", cur_ts,
 		      recv_ts_nsec, cur_ts - recv_ts_nsec);
 #endif
-		if ((cur_ts - recv_ts_nsec) > TIMEOUT_MAX_NSEC) {
+		if ((cur_ts - recv_ts_nsec - pause_offset) > TIMEOUT_MAX_NSEC) {
 			char timeout_str[16];
 			snprintf(timeout_str, sizeof(timeout_str), "%d",
 				 TIMEOUT_MAX_SEC);
