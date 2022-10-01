@@ -652,7 +652,8 @@ static inline bool is_64bit_file(const char *file)
 #define UPDATE_URL L"https://cdn-fastly.obsproject.com/update_studio"
 
 static bool AddPackageUpdateFiles(const Json &root, size_t idx,
-				  const wchar_t *tempPath)
+				  const wchar_t *tempPath,
+				  const wchar_t *branch)
 {
 	const Json &package = root[idx];
 	const Json &name = package["name"];
@@ -726,8 +727,9 @@ static bool AddPackageUpdateFiles(const Json &root, size_t idx,
 			return false;
 		}
 
-		StringCbPrintf(sourceURL, sizeof(sourceURL), L"%s/%s/%s",
-			       UPDATE_URL, wPackageName, updateFileName);
+		StringCbPrintf(sourceURL, sizeof(sourceURL), L"%s/%s/%s/%s",
+			       UPDATE_URL, branch, wPackageName,
+			       updateFileName);
 		StringCbPrintf(tempFilePath, sizeof(tempFilePath), L"%s\\%s",
 			       tempPath, updateHashStr);
 
@@ -1284,6 +1286,7 @@ static bool Update(wchar_t *cmdLine)
 	 * Check if updating portable build      */
 
 	bool bIsPortable = false;
+	wstring branch = L"stable";
 
 	if (cmdLine[0]) {
 		int argc;
@@ -1292,10 +1295,17 @@ static bool Update(wchar_t *cmdLine)
 		if (argv) {
 			for (int i = 0; i < argc; i++) {
 				if (wcscmp(argv[i], L"Portable") == 0) {
+					// Legacy OBS
+					bIsPortable = true;
+					break;
+				} else if (wcsncmp(argv[i], L"--branch=", 9) ==
+					   0) {
+					branch = argv[i] + 9;
+				} else if (wcscmp(argv[i], L"--portable") ==
+					   0) {
 					bIsPortable = true;
 				}
 			}
-
 			LocalFree((HLOCAL)argv);
 		}
 	}
@@ -1396,7 +1406,8 @@ static bool Update(wchar_t *cmdLine)
 
 	const Json::array &packages = root["packages"].array_items();
 	for (size_t i = 0; i < packages.size(); i++) {
-		if (!AddPackageUpdateFiles(packages, i, tempPath)) {
+		if (!AddPackageUpdateFiles(packages, i, tempPath,
+					   branch.c_str())) {
 			Status(L"Update failed: Failed to process update packages");
 			return false;
 		}
@@ -1481,7 +1492,11 @@ static bool Update(wchar_t *cmdLine)
 			  Z_BEST_COMPRESSION);
 		compressedJson.resize(compressSize);
 
-		bool success = !!HTTPPostData(PATCH_MANIFEST_URL,
+		wstring manifestUrl(PATCH_MANIFEST_URL);
+		if (branch != L"stable")
+			manifestUrl += L"?branch=" + branch;
+
+		bool success = !!HTTPPostData(manifestUrl.c_str(),
 					      (BYTE *)&compressedJson[0],
 					      (int)compressedJson.size(),
 					      L"Accept-Encoding: gzip",
