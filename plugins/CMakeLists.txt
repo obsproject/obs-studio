@@ -90,6 +90,7 @@ endif()
 
 add_subdirectory(image-source)
 add_subdirectory(obs-x264)
+add_subdirectory(obs-x265)
 add_subdirectory(obs-libfdk)
 add_subdirectory(obs-ffmpeg)
 add_subdirectory(obs-outputs)
