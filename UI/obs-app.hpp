@@ -74,6 +74,14 @@ struct OBSThemeMeta {
 	std::string author;
 };
 
+struct UpdateBranch {
+	QString name;
+	QString display_name;
+	QString description;
+	bool is_enabled;
+	bool is_visible;
+};
+
 class OBSApp : public QApplication {
 	Q_OBJECT
 
@@ -86,6 +94,8 @@ private:
 	TextLookup textLookup;
 	QPointer<OBSMainWindow> mainWindow;
 	profiler_name_store_t *profilerNameStore = nullptr;
+	std::vector<UpdateBranch> updateBranches;
+	bool branches_loaded = false;
 
 	bool libobs_initialized = false;
 
@@ -141,6 +151,9 @@ public:
 	std::string SetParentTheme(std::string name);
 	bool SetTheme(std::string name, std::string path = "");
 	inline bool IsThemeDark() const { return themeDarkMode; };
+
+	void SetBranchData(const std::string &data);
+	std::vector<UpdateBranch> GetBranches();
 
 	inline lookup_t *GetTextLookup() const { return textLookup; }
 

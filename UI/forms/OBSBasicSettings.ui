@@ -256,6 +256,55 @@
                     </spacer>
                    </item>
                    <item row="2" column="1">
+                    <widget class="QCheckBox" name="openStatsOnStartup">
+                     <property name="text">
+                      <string>Basic.Settings.General.OpenStatsOnStartup</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="3" column="1">
+                    <widget class="QCheckBox" name="hideOBSFromCapture">
+                     <property name="toolTip">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture.Tooltip</string>
+                     </property>
+                     <property name="text">
+                      <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
+                     </property>
+                    </widget>
+                   </item>
+                  </layout>
+                 </widget>
+                </item>
+                <item>
+                 <widget class="QGroupBox" name="updateSettingsGroupBox">
+                  <property name="title">
+                   <string>Basic.Settings.General.Updater</string>
+                  </property>
+                  <layout class="QFormLayout" name="formLayout_20">
+                   <property name="labelAlignment">
+                    <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+                   </property>
+                   <property name="fieldGrowthPolicy">
+                    <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
+                   </property>
+                   <item row="0" column="0">
+                    <widget class="QLabel" name="label_10">
+                     <property name="text">
+                      <string>Basic.Settings.General.UpdateChannel</string>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="0" column="1">
+                    <widget class="QComboBox" name="updateChannelBox">
+                     <property name="editable">
+                      <bool>false</bool>
+                     </property>
+                     <property name="currentText">
+                      <string/>
+                     </property>
+                    </widget>
+                   </item>
+                   <item row="1" column="1">
                     <widget class="QCheckBox" name="enableAutoUpdates">
                      <property name="text">
                       <string>Basic.Settings.General.EnableAutoUpdates</string>
@@ -265,22 +314,21 @@
                      </property>
                     </widget>
                    </item>
-                   <item row="3" column="1">
-                    <widget class="QCheckBox" name="openStatsOnStartup">
-                     <property name="text">
-                      <string>Basic.Settings.General.OpenStatsOnStartup</string>
+                   <item row="1" column="0">
+                    <spacer name="horizontalSpacer_29">
+                     <property name="orientation">
+                      <enum>Qt::Horizontal</enum>
                      </property>
-                    </widget>
-                   </item>
-                   <item row="4" column="1">
-                    <widget class="QCheckBox" name="hideOBSFromCapture">
-                     <property name="toolTip">
-                      <string>Basic.Settings.General.HideOBSWindowsFromCapture.Tooltip</string>
+                     <property name="sizeType">
+                      <enum>QSizePolicy::Fixed</enum>
                      </property>
-                     <property name="text">
-                      <string>Basic.Settings.General.HideOBSWindowsFromCapture</string>
+                     <property name="sizeHint" stdset="0">
+                      <size>
+                       <width>170</width>
+                       <height>20</height>
+                      </size>
                      </property>
-                    </widget>
+                    </spacer>
                    </item>
                   </layout>
                  </widget>
@@ -7473,6 +7521,7 @@
   <tabstop>scrollArea_2</tabstop>
   <tabstop>language</tabstop>
   <tabstop>theme</tabstop>
+  <tabstop>updateChannelBox</tabstop>
   <tabstop>enableAutoUpdates</tabstop>
   <tabstop>openStatsOnStartup</tabstop>
   <tabstop>warnBeforeStreamStart</tabstop>
