@@ -373,6 +373,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	/* clang-format off */
 	HookWidget(ui->language,             COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->theme, 		     COMBO_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->updateChannelBox,     COMBO_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->enableAutoUpdates,    CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->openStatsOnStartup,   CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->hideOBSFromCapture,   CHECK_CHANGED,  GENERAL_CHANGED);
@@ -580,6 +581,17 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #if !defined(_WIN32) && !defined(__APPLE__)
 	delete ui->enableAutoUpdates;
 	ui->enableAutoUpdates = nullptr;
+	delete ui->updateChannelBox;
+	ui->updateChannelBox = nullptr;
+	delete ui->updateSettingsGroupBox;
+	ui->updateSettingsGroupBox = nullptr;
+#elif defined(__APPLE__)
+	delete ui->updateChannelBox;
+	ui->updateChannelBox = nullptr;
+#else
+	// Hide update section if disabled
+	if (App()->IsUpdaterDisabled())
+		ui->updateSettingsGroupBox->hide();
 #endif
 
 	// Remove the Advanced Audio section if monitoring is not supported, as the monitoring device selection is the only item in the group box.
@@ -1192,6 +1204,73 @@ void OBSBasicSettings::LoadThemeList()
 		ui->theme->setCurrentIndex(idx);
 }
 
+#ifdef _WIN32
+void TranslateBranchInfo(const QString &name, QString &displayName,
+			 QString &description)
+{
+	QString translatedName =
+		QTStr("Basic.Settings.General.ChannelName." + name.toUtf8());
+	QString translatedDesc = QTStr(
+		"Basic.Settings.General.ChannelDescription." + name.toUtf8());
+
+	if (!translatedName.startsWith("Basic.Settings."))
+		displayName = translatedName;
+	if (!translatedDesc.startsWith("Basic.Settings."))
+		description = translatedDesc;
+}
+#endif
+
+void OBSBasicSettings::LoadBranchesList()
+{
+#ifdef _WIN32
+	bool configBranchRemoved = true;
+	QString configBranch =
+		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+
+	for (const UpdateBranch &branch : App()->GetBranches()) {
+		if (branch.name == configBranch)
+			configBranchRemoved = false;
+		if (!branch.is_visible && branch.name != configBranch)
+			continue;
+
+		QString displayName = branch.display_name;
+		QString description = branch.description;
+
+		TranslateBranchInfo(branch.name, displayName, description);
+		QString itemDesc = displayName + " - " + description;
+
+		if (!branch.is_enabled) {
+			itemDesc.prepend(" ");
+			itemDesc.prepend(QTStr(
+				"Basic.Settings.General.UpdateChannelDisabled"));
+		} else if (branch.name == "stable") {
+			itemDesc.append(" ");
+			itemDesc.append(QTStr(
+				"Basic.Settings.General.UpdateChannelDefault"));
+		}
+
+		ui->updateChannelBox->addItem(itemDesc, branch.name);
+
+		// Disable item if branch is disabled
+		if (!branch.is_enabled) {
+			QStandardItemModel *model =
+				dynamic_cast<QStandardItemModel *>(
+					ui->updateChannelBox->model());
+			QStandardItem *item =
+				model->item(ui->updateChannelBox->count() - 1);
+			item->setFlags(Qt::NoItemFlags);
+		}
+	}
+
+	// Fall back to default if not yet set or user-selected branch has been removed
+	if (configBranch.isEmpty() || configBranchRemoved)
+		configBranch = "stable";
+
+	int idx = ui->updateChannelBox->findData(configBranch);
+	ui->updateChannelBox->setCurrentIndex(idx);
+#endif
+}
+
 void OBSBasicSettings::LoadGeneralSettings()
 {
 	loading = true;
@@ -1203,6 +1282,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool enableAutoUpdates = config_get_bool(GetGlobalConfig(), "General",
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
+
+#ifdef _WIN32
+	LoadBranchesList();
+#endif
 #endif
 	bool openStatsOnStartup = config_get_bool(main->Config(), "General",
 						  "OpenStatsOnStartup");
@@ -3036,6 +3119,16 @@ void OBSBasicSettings::SaveGeneralSettings()
 				ui->enableAutoUpdates->isChecked());
 #endif
 #ifdef _WIN32
+	int branchIdx = ui->updateChannelBox->currentIndex();
+	QString branchName =
+		ui->updateChannelBox->itemData(branchIdx).toString();
+
+	if (WidgetChanged(ui->updateChannelBox)) {
+		config_set_string(GetGlobalConfig(), "General", "UpdateBranch",
+				  QT_TO_UTF8(branchName));
+		forceUpdateCheck = true;
+	}
+
 	if (ui->hideOBSFromCapture && WidgetChanged(ui->hideOBSFromCapture)) {
 		bool hide_window = ui->hideOBSFromCapture->isChecked();
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
@@ -4140,6 +4233,11 @@ bool OBSBasicSettings::AskIfCanCloseSettings()
 		main->auth->Save();
 		main->auth->Load();
 		forceAuthReload = false;
+	}
+
+	if (forceUpdateCheck) {
+		main->CheckForUpdates(false);
+		forceUpdateCheck = false;
 	}
 
 	return canCloseSettings;

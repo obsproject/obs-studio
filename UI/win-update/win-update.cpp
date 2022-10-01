@@ -36,6 +36,18 @@ extern QCef *cef;
 #define WIN_MANIFEST_URL "https://obsproject.com/update_studio/manifest.json"
 #endif
 
+#ifndef WIN_MANIFEST_BASE_URL
+#define WIN_MANIFEST_BASE_URL "https://obsproject.com/update_studio/"
+#endif
+
+#ifndef WIN_BRANCHES_URL
+#define WIN_BRANCHES_URL "https://obsproject.com/update_studio/branches.json"
+#endif
+
+#ifndef WIN_DEFAULT_BRANCH
+#define WIN_DEFAULT_BRANCH "stable"
+#endif
+
 #ifndef WIN_WHATSNEW_URL
 #define WIN_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
 #endif
@@ -399,8 +411,30 @@ try {
 
 /* ------------------------------------------------------------------------ */
 
+#if defined(OBS_RELEASE_CANDIDATE) && OBS_RELEASE_CANDIDATE > 0
+#define CUR_VER                                                               \
+	((uint64_t)OBS_RELEASE_CANDIDATE_VER << 16ULL | OBS_RELEASE_CANDIDATE \
+								<< 8ULL)
+#define PRE_RELEASE true
+#elif OBS_BETA > 0
+#define CUR_VER ((uint64_t)OBS_BETA_VER << 16ULL | OBS_BETA)
+#define PRE_RELEASE true
+#elif defined(OBS_COMMIT)
+#define CUR_VER 1 << 16ULL
+#define CUR_COMMIT OBS_COMMIT
+#define PRE_RELEASE true
+#else
+#define CUR_VER ((uint64_t)LIBOBS_API_VER << 16ULL)
+#define PRE_RELEASE false
+#endif
+
+#ifndef CUR_COMMIT
+#define CUR_COMMIT "00000000"
+#endif
+
 static bool ParseUpdateManifest(const char *manifest, bool *updatesAvailable,
-				string &notes_str, int &updateVer)
+				string &notes_str, uint64_t &updateVer,
+				string &branch)
 try {
 
 	string error;
@@ -415,8 +449,11 @@ try {
 	int major = root["version_major"].int_value();
 	int minor = root["version_minor"].int_value();
 	int patch = root["version_patch"].int_value();
+	int rc = root["rc"].int_value();
+	int beta = root["beta"].int_value();
+	string commit_hash = root["commit"].string_value();
 
-	if (major == 0)
+	if (major == 0 && commit_hash.empty())
 		throw strprintf("Invalid version number: %d.%d.%d", major,
 				minor, patch);
 
@@ -430,11 +467,35 @@ try {
 	if (!packages.is_array())
 		throw string("'packages' value invalid");
 
-	int cur_ver = LIBOBS_API_VER;
-	int new_ver = MAKE_SEMANTIC_VERSION(major, minor, patch);
+	uint64_t cur_ver;
+	uint64_t new_ver;
+
+	if (commit_hash.empty()) {
+		cur_ver = CUR_VER;
+		new_ver = MAKE_SEMANTIC_VERSION(
+			(uint64_t)major, (uint64_t)minor, (uint64_t)patch);
+		new_ver <<= 16;
+		/* RC builds are shifted so that rc1 and beta1 versions do not result
+		 * in the same new_ver. */
+		if (rc > 0)
+			new_ver |= (uint64_t)rc << 8;
+		else if (beta > 0)
+			new_ver |= (uint64_t)beta;
+	} else {
+		/* Test or nightly builds may not have a (valid) version number,
+		 * so compare commit hashes instead. */
+		cur_ver = stoul(CUR_COMMIT, nullptr, 16);
+		new_ver = stoul(commit_hash.substr(0, 8), nullptr, 16);
+	}
 
 	updateVer = new_ver;
-	*updatesAvailable = new_ver > cur_ver;
+
+	/* When using a pre-release build or non-default branch we only check if
+	 * the manifest version is different, so that it can be rolled-back. */
+	if (branch != WIN_DEFAULT_BRANCH || PRE_RELEASE)
+		*updatesAvailable = new_ver != cur_ver;
+	else
+		*updatesAvailable = new_ver > cur_ver;
 
 	return true;
 
@@ -442,6 +503,10 @@ try {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 	return false;
 }
+
+#undef CUR_COMMIT
+#undef CUR_VER
+#undef PRE_RELEASE
 
 /* ------------------------------------------------------------------------ */
 
@@ -480,6 +545,127 @@ string GetProgramGUID()
 
 	return guid;
 }
+
+/* ------------------------------------------------------------------------ */
+
+bool GetBranchAndUrl(string &selectedBranch, string &manifestUrl)
+{
+	const char *config_branch =
+		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
+	if (!config_branch)
+		return true;
+
+	bool found = false;
+	for (const UpdateBranch &branch : App()->GetBranches()) {
+		if (branch.name != config_branch)
+			continue;
+		/* A branch that is found but disabled will just silently fall back to
+		 * the default. But if the branch was removed entirely, the user should
+		 * be warned, so leave this false *only* if the branch was removed. */
+		found = true;
+
+		if (branch.is_enabled) {
+			selectedBranch = branch.name.toStdString();
+			if (branch.name != WIN_DEFAULT_BRANCH) {
+				manifestUrl = WIN_MANIFEST_BASE_URL;
+				manifestUrl += "manifest_" +
+					       branch.name.toStdString() +
+					       ".json";
+			}
+		}
+		break;
+	}
+
+	return found;
+}
+
+/* ------------------------------------------------------------------------ */
+
+static bool
+FetchAndVerifyFile(const char *name, const char *file, const char *url,
+		   string &text,
+		   const vector<string> &extraHeaders = vector<string>())
+{
+	long responseCode;
+	vector<string> headers;
+	string error;
+	string signature;
+	BYTE fileHash[BLAKE2_HASH_LENGTH];
+	bool success;
+
+	BPtr<char> filePath = GetConfigPathPtr(file);
+
+	if (!extraHeaders.empty()) {
+		headers.insert(headers.end(), extraHeaders.begin(),
+			       extraHeaders.end());
+	}
+
+	/* ----------------------------------- *
+	 * avoid downloading json again        */
+
+	if (CalculateFileHash(filePath, fileHash)) {
+		char hashString[BLAKE2_HASH_STR_LENGTH];
+		HashToString(fileHash, hashString);
+
+		string header = "If-None-Match: ";
+		header += hashString;
+		headers.push_back(move(header));
+	}
+
+	/* ----------------------------------- *
+	 * get current install GUID            */
+
+	string guid = GetProgramGUID();
+
+	if (!guid.empty()) {
+		string header = "X-OBS2-GUID: ";
+		header += guid;
+		headers.push_back(move(header));
+	}
+
+	/* ----------------------------------- *
+	 * get json from server                */
+
+	success = GetRemoteFile(url, text, error, &responseCode, nullptr, "",
+				nullptr, headers, &signature);
+
+	if (!success || (responseCode != 200 && responseCode != 304)) {
+		if (responseCode == 404)
+			return false;
+
+		throw strprintf("Failed to fetch %s file: %s", name,
+				error.c_str());
+	}
+
+	/* ----------------------------------- *
+	 * verify file signature               */
+
+	if (responseCode == 200) {
+		success = CheckDataSignature(text, name, signature.data(),
+					     signature.size());
+		if (!success)
+			throw strprintf("Invalid %s signature", name);
+	}
+
+	/* ----------------------------------- *
+	 * write or load json                  */
+
+	if (responseCode == 200) {
+		if (!QuickWriteFile(filePath, text.data(), text.size()))
+			throw strprintf("Could not write file '%s'",
+					filePath.Get());
+	} else {
+		if (!QuickReadFile(filePath, text))
+			throw strprintf("Could not read file '%s'",
+					filePath.Get());
+	}
+
+	/* ----------------------------------- *
+	 * success                             */
+	return true;
+}
+
+/* ------------------------------------------------------------------------ */
 
 void AutoUpdateThread::infoMsg(const QString &title, const QString &text)
 {
@@ -532,15 +718,12 @@ bool AutoUpdateThread::queryRepair()
 
 void AutoUpdateThread::run()
 try {
-	long responseCode;
-	vector<string> extraHeaders;
 	string text;
-	string error;
-	string signature;
-	CryptProvider localProvider;
-	BYTE manifestHash[BLAKE2_HASH_LENGTH];
+	string branch = WIN_DEFAULT_BRANCH;
+	string manifestUrl = WIN_MANIFEST_URL;
+	vector<string> extraHeaders;
 	bool updatesAvailable = false;
-	bool success;
+	CryptProvider localProvider;
 
 	struct FinishedTrigger {
 		inline ~FinishedTrigger()
@@ -549,9 +732,6 @@ try {
 						  "updateCheckFinished");
 		}
 	} finishedTrigger;
-
-	BPtr<char> manifestPath =
-		GetConfigPathPtr("obs-studio\\updates\\manifest.json");
 
 	/* ----------------------------------- *
 	 * create signature provider           */
@@ -564,25 +744,20 @@ try {
 	provider = localProvider;
 
 	/* ----------------------------------- *
-	 * avoid downloading manifest again    */
+	 * get branches from server            */
 
-	if (CalculateFileHash(manifestPath, manifestHash)) {
-		char hashString[BLAKE2_HASH_STR_LENGTH];
-		HashToString(manifestHash, hashString);
-
-		string header = "If-None-Match: ";
-		header += hashString;
-		extraHeaders.push_back(move(header));
-	}
+	if (FetchAndVerifyFile("branches", "obs-studio\\updates\\branches.json",
+			       WIN_BRANCHES_URL, text))
+		App()->SetBranchData(text);
 
 	/* ----------------------------------- *
-	 * get current install GUID            */
+	 * get branches from server            */
 
-	string guid = GetProgramGUID();
-	if (!guid.empty()) {
-		string header = "X-OBS2-GUID: ";
-		header += guid;
-		extraHeaders.push_back(move(header));
+	if (!GetBranchAndUrl(branch, manifestUrl)) {
+		config_set_string(GetGlobalConfig(), "General", "UpdateBranch",
+				  WIN_DEFAULT_BRANCH);
+		info(QTStr("Updater.BranchNotFound.Title"),
+		     QTStr("Updater.BranchNotFound.Text"));
 	}
 
 	/* allow server to know if this was a manual update check in case
@@ -593,50 +768,20 @@ try {
 	/* ----------------------------------- *
 	 * get manifest from server            */
 
-	success = GetRemoteFile(WIN_MANIFEST_URL, text, error, &responseCode,
-				nullptr, "", nullptr, extraHeaders, &signature);
-
-	if (!success || (responseCode != 200 && responseCode != 304)) {
-		if (responseCode == 404)
-			return;
-
-		throw strprintf("Failed to fetch manifest file: %s",
-				error.c_str());
-	}
-
-	/* ----------------------------------- *
-	 * verify file signature               */
-
-	/* a new file must be digitally signed */
-	if (responseCode == 200) {
-		success = CheckDataSignature(text, "manifest", signature.data(),
-					     signature.size());
-		if (!success)
-			throw string("Invalid manifest signature");
-	}
-
-	/* ----------------------------------- *
-	 * write or load manifest              */
-
-	if (responseCode == 200) {
-		if (!QuickWriteFile(manifestPath, text.data(), text.size()))
-			throw strprintf("Could not write file '%s'",
-					manifestPath.Get());
-	} else {
-		if (!QuickReadFile(manifestPath, text))
-			throw strprintf("Could not read file '%s'",
-					manifestPath.Get());
-	}
+	text.clear();
+	if (!FetchAndVerifyFile("manifest",
+				"obs-studio\\updates\\manifest.json",
+				manifestUrl.c_str(), text, extraHeaders))
+		return;
 
 	/* ----------------------------------- *
 	 * check manifest for update           */
 
 	string notes;
-	int updateVer = 0;
+	uint64_t updateVer = 0;
 
-	success = ParseUpdateManifest(text.c_str(), &updatesAvailable, notes,
-				      updateVer);
-	if (!success)
+	if (!ParseUpdateManifest(text.c_str(), &updatesAvailable, notes,
+				 updateVer, branch))
 		throw string("Failed to parse manifest");
 
 	if (!updatesAvailable && !repairMode) {
@@ -653,8 +798,8 @@ try {
 	/* ----------------------------------- *
 	 * skip this version if set to skip    */
 
-	int skipUpdateVer = config_get_int(GetGlobalConfig(), "General",
-					   "SkipUpdateVersion");
+	uint64_t skipUpdateVer = config_get_uint(GetGlobalConfig(), "General",
+						 "SkipUpdateVersion");
 	if (!manualUpdate && updateVer == skipUpdateVer && !repairMode)
 		return;
 
@@ -682,8 +827,8 @@ try {
 			return;
 
 		} else if (queryResult == OBSUpdate::Skip) {
-			config_set_int(GetGlobalConfig(), "General",
-				       "SkipUpdateVersion", updateVer);
+			config_set_uint(GetGlobalConfig(), "General",
+					"SkipUpdateVersion", updateVer);
 			return;
 		}
 	}
@@ -713,16 +858,19 @@ try {
 
 	execInfo.cbSize = sizeof(execInfo);
 	execInfo.lpFile = wUpdateFilePath;
-#ifndef UPDATE_CHANNEL
-#define UPDATE_ARG_SUFFIX L""
-#else
-#define UPDATE_ARG_SUFFIX UPDATE_CHANNEL
-#endif
-	if (App()->IsPortableMode())
-		execInfo.lpParameters = UPDATE_ARG_SUFFIX L" Portable";
-	else
-		execInfo.lpParameters = UPDATE_ARG_SUFFIX;
 
+	string parameters = "";
+	if (App()->IsPortableMode())
+		parameters += "--portable";
+	if (branch != WIN_DEFAULT_BRANCH)
+		parameters += "--branch=" + branch;
+
+	BPtr<wchar_t> lpParameters;
+	size = os_utf8_to_wcs_ptr(parameters.c_str(), 0, &lpParameters);
+	if (!size && !parameters.empty())
+		throw string("Could not convert parameters to wide");
+
+	execInfo.lpParameters = lpParameters;
 	execInfo.lpDirectory = cwd;
 	execInfo.nShow = SW_SHOWNORMAL;
 
@@ -737,8 +885,6 @@ try {
 	 * in case of issues with the new version */
 	config_set_int(GetGlobalConfig(), "General", "LastUpdateCheck", 0);
 	config_set_int(GetGlobalConfig(), "General", "SkipUpdateVersion", 0);
-	config_set_string(GetGlobalConfig(), "General", "InstallGUID",
-			  guid.c_str());
 
 	QMetaObject::invokeMethod(App()->GetMainWindow(), "close");
 
@@ -750,18 +896,8 @@ try {
 
 void WhatsNewInfoThread::run()
 try {
-	long responseCode;
-	vector<string> extraHeaders;
 	string text;
-	string error;
-	string signature;
 	CryptProvider localProvider;
-	BYTE whatsnewHash[BLAKE2_HASH_LENGTH];
-	bool success;
-
-	BPtr<char> whatsnewPath =
-		GetConfigPathPtr("obs-studio\\updates\\whatsnew.json");
-
 	/* ----------------------------------- *
 	 * create signature provider           */
 
@@ -772,70 +908,10 @@ try {
 
 	provider = localProvider;
 
-	/* ----------------------------------- *
-	 * avoid downloading json again        */
-
-	if (CalculateFileHash(whatsnewPath, whatsnewHash)) {
-		char hashString[BLAKE2_HASH_STR_LENGTH];
-		HashToString(whatsnewHash, hashString);
-
-		string header = "If-None-Match: ";
-		header += hashString;
-		extraHeaders.push_back(move(header));
+	if (FetchAndVerifyFile("whatsnew", "obs-studio\\updates\\whatsnew.json",
+			       WIN_WHATSNEW_URL, text)) {
+		emit Result(QString::fromStdString(text));
 	}
-
-	/* ----------------------------------- *
-	 * get current install GUID            */
-
-	string guid = GetProgramGUID();
-
-	if (!guid.empty()) {
-		string header = "X-OBS2-GUID: ";
-		header += guid;
-		extraHeaders.push_back(move(header));
-	}
-
-	/* ----------------------------------- *
-	 * get json from server                */
-
-	success = GetRemoteFile(WIN_WHATSNEW_URL, text, error, &responseCode,
-				nullptr, "", nullptr, extraHeaders, &signature);
-
-	if (!success || (responseCode != 200 && responseCode != 304)) {
-		if (responseCode == 404)
-			return;
-
-		throw strprintf("Failed to fetch whatsnew file: %s",
-				error.c_str());
-	}
-
-	/* ----------------------------------- *
-	 * verify file signature               */
-
-	if (responseCode == 200) {
-		success = CheckDataSignature(text, "whatsnew", signature.data(),
-					     signature.size());
-		if (!success)
-			throw string("Invalid whatsnew signature");
-	}
-
-	/* ----------------------------------- *
-	 * write or load json                  */
-
-	if (responseCode == 200) {
-		if (!QuickWriteFile(whatsnewPath, text.data(), text.size()))
-			throw strprintf("Could not write file '%s'",
-					whatsnewPath.Get());
-	} else {
-		if (!QuickReadFile(whatsnewPath, text))
-			throw strprintf("Could not read file '%s'",
-					whatsnewPath.Get());
-	}
-
-	/* ----------------------------------- *
-	 * success                             */
-
-	emit Result(QString::fromUtf8(text.c_str()));
 
 } catch (string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());

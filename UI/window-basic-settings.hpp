@@ -120,6 +120,7 @@ private:
 	int pageIndex = 0;
 	bool loading = true;
 	bool forceAuthReload = false;
+	bool forceUpdateCheck = false;
 	std::string savedTheme;
 	int sampleRateIndex = 0;
 	int channelIndex = 0;
@@ -250,6 +251,7 @@ private:
 	/* general */
 	void LoadLanguageList();
 	void LoadThemeList();
+	void LoadBranchesList();
 
 	/* stream */
 	void InitStreamPage();

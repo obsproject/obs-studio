@@ -55,6 +55,7 @@
 #include <curl/curl.h>
 
 #ifdef _WIN32
+#include <json11.hpp>
 #include <windows.h>
 #include <filesystem>
 #else
@@ -1262,6 +1263,112 @@ bool OBSApp::InitTheme()
 		return true;
 
 	return SetTheme("System");
+}
+
+#ifdef _WIN32
+void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
+		       std::string &error)
+{
+	json11::Json root;
+	root = json11::Json::parse(jsonString, error);
+	if (!error.empty() || !root.is_array())
+		return;
+
+	for (const json11::Json &item : root.array_items()) {
+#ifdef _WIN32
+		if (!item["windows"].bool_value())
+			continue;
+#endif
+
+		UpdateBranch branch = {
+			QString::fromStdString(item["name"].string_value()),
+			QString::fromStdString(
+				item["display_name"].string_value()),
+			QString::fromStdString(
+				item["description"].string_value()),
+			item["enabled"].bool_value(),
+			item["visible"].bool_value(),
+		};
+		out.push_back(branch);
+	}
+}
+
+bool LoadBranchesFile(vector<UpdateBranch> &out)
+{
+	string error;
+	string branchesText;
+
+	BPtr<char> branchesFilePath =
+		GetConfigPathPtr("obs-studio/updates/branches.json");
+
+	QFile branchesFile(branchesFilePath.Get());
+	if (!branchesFile.open(QIODevice::ReadOnly)) {
+		error = "Opening file failed.";
+		goto fail;
+	}
+
+	branchesText = branchesFile.readAll();
+	if (branchesText.empty()) {
+		error = "File empty.";
+		goto fail;
+	}
+
+	ParseBranchesJson(branchesText, out, error);
+	if (error.empty())
+		return !out.empty();
+
+fail:
+	blog(LOG_WARNING, "Loading branches from file failed: %s",
+	     error.c_str());
+	return false;
+}
+#endif
+
+void OBSApp::SetBranchData(const string &data)
+{
+#ifdef _WIN32
+	string error;
+	vector<UpdateBranch> result;
+
+	ParseBranchesJson(data, result, error);
+
+	if (!error.empty()) {
+		blog(LOG_WARNING, "Reading branches JSON response failed: %s",
+		     error.c_str());
+		return;
+	}
+
+	if (!result.empty())
+		updateBranches = result;
+
+	branches_loaded = true;
+#else
+	UNUSED_PARAMETER(data);
+#endif
+}
+
+std::vector<UpdateBranch> OBSApp::GetBranches()
+{
+	vector<UpdateBranch> out;
+	/* Always ensure the default branch exists */
+	out.push_back(UpdateBranch{"stable", "", "", true, true});
+
+#ifdef _WIN32
+	if (!branches_loaded) {
+		vector<UpdateBranch> result;
+		if (LoadBranchesFile(result))
+			updateBranches = result;
+
+		branches_loaded = true;
+	}
+#endif
+
+	/* Copy additional branches to result (if any) */
+	if (!updateBranches.empty())
+		out.insert(out.end(), updateBranches.begin(),
+			   updateBranches.end());
+
+	return out;
 }
 
 OBSApp::OBSApp(int &argc, char **argv, profiler_name_store_t *store)
