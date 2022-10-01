@@ -528,9 +528,6 @@ void WASAPISource::Start()
 
 void WASAPISource::Stop()
 {
-	if (!reconnectThread.Valid())
-		WaitForSingleObject(reconnectSignal, INFINITE);
-
 	SetEvent(stopSignal);
 
 	blog(LOG_INFO, "WASAPI: Device '%s' Terminated", device_name.c_str());
@@ -538,8 +535,12 @@ void WASAPISource::Stop()
 	if (rtwq_supported)
 		SetEvent(receiveSignal);
 
-	if (reconnectThread.Valid())
+	if (reconnectThread.Valid()) {
 		WaitForSingleObject(idleSignal, INFINITE);
+	} else {
+		const HANDLE sigs[] = {reconnectSignal, idleSignal};
+		WaitForMultipleObjects(_countof(sigs), sigs, false, INFINITE);
+	}
 
 	SetEvent(exitSignal);
 
