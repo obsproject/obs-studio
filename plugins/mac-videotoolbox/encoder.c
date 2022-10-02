@@ -898,7 +898,6 @@ static const char *vt_getname(void *data)
 #define TEXT_MAX_BITRATE_WINDOW obs_module_text("MaxBitrateWindow")
 #define TEXT_KEYINT_SEC obs_module_text("KeyframeIntervalSec")
 #define TEXT_PROFILE obs_module_text("Profile")
-#define TEXT_NONE obs_module_text("None")
 #define TEXT_BFRAMES obs_module_text("UseBFrames")
 #define TEXT_RATE_CONTROL obs_module_text("RateControl")
 
@@ -993,7 +992,6 @@ static obs_properties_t *vt_properties(void *unused, void *data)
 	p = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
-	obs_property_list_add_string(p, TEXT_NONE, "");
 	obs_property_list_add_string(p, "baseline", "baseline");
 	obs_property_list_add_string(p, "main", "main");
 	obs_property_list_add_string(p, "high", "high");
@@ -1022,7 +1020,7 @@ static void vt_defaults(obs_data_t *settings, void *data)
 	obs_data_set_default_int(settings, "max_bitrate", 2500);
 	obs_data_set_default_double(settings, "max_bitrate_window", 1.5f);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
-	obs_data_set_default_string(settings, "profile", "");
+	obs_data_set_default_string(settings, "profile", "main");
 	obs_data_set_default_bool(settings, "bframes", true);
 }
 
