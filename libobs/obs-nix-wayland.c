@@ -219,6 +219,11 @@ static void platform_registry_handler(void *data, struct wl_registry *registry,
 	obs_hotkeys_platform_t *plat = (obs_hotkeys_platform_t *)data;
 
 	if (strcmp(interface, wl_seat_interface.name) == 0) {
+		if (plat->seat != NULL) {
+			blog(LOG_WARNING,
+			     "[wayland] multiple seats detected, only using the first one");
+			return;
+		}
 		if (version < 4) {
 			blog(LOG_WARNING,
 			     "[wayland] hotkeys disabled, compositor is too old");
