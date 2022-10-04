@@ -316,7 +316,6 @@ private:
 	QPointer<QMenu> trayMenu;
 	QPointer<QMenu> previewProjector;
 	QPointer<QMenu> studioProgramProjector;
-	QPointer<QMenu> multiviewProjectorMenu;
 	QPointer<QMenu> previewProjectorSource;
 	QPointer<QMenu> previewProjectorMain;
 	QPointer<QMenu> sceneProjectorMenu;
@@ -1124,6 +1123,7 @@ private slots:
 	void on_resetUI_triggered();
 	void on_resetDocks_triggered(bool force = false);
 	void on_lockDocks_toggled(bool lock);
+	void on_multiviewProjectorWindowed_triggered();
 
 	void PauseToggled();
 
@@ -1170,7 +1170,6 @@ private slots:
 	void OpenStudioProgramWindow();
 	void OpenPreviewWindow();
 	void OpenSourceWindow();
-	void OpenMultiviewWindow();
 	void OpenSceneWindow();
 
 	void StackedMixerAreaContextMenuRequested();
