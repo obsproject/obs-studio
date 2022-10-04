@@ -2484,6 +2484,33 @@
                 "keyint": 2,
                 "max video bitrate": 16000
             }
+        },
+        {
+            "name": "TribuCast Remote Attendance System",
+            "more_info_link": "https://tribucast.com",
+            "stream_key_link": "https://client.tribucast.com/users/sign_in",
+            "servers": [
+                {
+                    "name": "TribuCast Remote Attendance System", 
+                    "url":  "rtmp://bintu-stream.nanocosmos.de:80/rec"
+                }
+            ],
+            "recommended": 
+                {
+                    "keyint": 2,
+                    "bitrate matrix": [
+                        {
+                            "res": "852x480",
+                            "fps": 30,
+                            "max bitrate": 1000
+                        }
+                    ],
+                    "max video bitrate": 1000,
+                    "supported resolutions": [
+                        "852x480"
+                    ],
+                    "max fps": 30
+                }
         }
     ]
 }
