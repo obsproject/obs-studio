@@ -653,8 +653,6 @@ static int obs_init_video()
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
-	if (pthread_mutex_init(&video->canvases_mutex, NULL) < 0)
-		return OBS_VIDEO_FAIL;
 
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++)
 	{
@@ -781,7 +779,7 @@ void obs_free_video_mix(struct obs_core_video_mix *video)
 	bfree(video);
 }
 
-static void obs_free_video(void)
+static void obs_free_video(bool full_clean)
 {
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	size_t num = obs->video.mixes.num;
@@ -797,16 +795,17 @@ static void obs_free_video(void)
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
 	da_free(obs->video.mixes);
 
-	num = obs->video.canvases.num;
-	for (size_t i = 0; i < num; i++) {
-		bfree(obs->video.canvases.array[i]);
-		obs->video.canvases.array[i] = NULL;
+	if (full_clean) {
+		num = obs->video.canvases.num;
+		for (size_t i = 0; i < num; i++) {
+			bfree(obs->video.canvases.array[i]);
+			obs->video.canvases.array[i] = NULL;
+		}
+		pthread_mutex_unlock(&obs->video.canvases_mutex);
+		pthread_mutex_destroy(&obs->video.canvases_mutex);
+		pthread_mutex_init_value(&obs->video.canvases_mutex);
+		da_free(obs->video.canvases);
 	}
-	pthread_mutex_unlock(&obs->video.canvases_mutex);
-	pthread_mutex_destroy(&obs->video.canvases_mutex);
-	pthread_mutex_init_value(&obs->video.canvases_mutex);
-	da_free(obs->video.canvases);
-
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	circlebuf_free(&obs->video.tasks);
@@ -1150,6 +1149,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	pthread_mutex_init_value(&obs->audio.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.mixes_mutex);
+	pthread_mutex_init_value(&obs->video.canvases_mutex);
 
 	obs->name_store_owned = !store;
 	obs->name_store = store ? store : profiler_name_store_create();
@@ -1183,6 +1183,9 @@ static bool obs_init(const char *locale, const char *module_config_path,
 		OBS_RECORDING_REPLAY_BUFFER_RENDERING;
 	obs->video_rendering_mode = OBS_MAIN_VIDEO_RENDERING;
 	obs->audio_rendering_mode = OBS_MAIN_AUDIO_RENDERING;
+
+	darray_init(&obs->video.canvases);
+
 	return true;
 }
 
@@ -1350,7 +1353,7 @@ void obs_shutdown(void)
 
 	obs_free_data();
 	obs_free_audio();
-	obs_free_video();
+	obs_free_video(true);
 	os_task_queue_destroy(obs->destruction_task_thread);
 	obs_free_hotkeys();
 	obs_free_graphics();
@@ -1435,7 +1438,7 @@ int obs_reset_video()
 
 	blog(LOG_INFO, "About to stop and reset video");
 	stop_video();
-	obs_free_video();
+	obs_free_video(false);
 	blog(LOG_INFO, "Video stopped and ready too init");
 
 	return OBS_VIDEO_SUCCESS;
@@ -2273,7 +2276,7 @@ obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi,
 {
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
-		if (mix->ovi == ovi && mix->rendering_mode == mode)
+		if ((mix->ovi == ovi || ovi == 0) && mix->rendering_mode == mode)
 			return mix;
 	}
 	return NULL;
