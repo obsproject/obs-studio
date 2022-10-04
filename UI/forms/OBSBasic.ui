@@ -501,8 +501,6 @@
     <addaction name="actionShowSettingsFolder"/>
     <addaction name="actionShowProfileFolder"/>
     <addaction name="separator"/>
-    <addaction name="actionAlwaysOnTop"/>
-    <addaction name="separator"/>
     <addaction name="actionE_xit"/>
    </widget>
    <widget class="QMenu" name="menuBasic_MainMenu_Help">
@@ -693,6 +691,8 @@
     <addaction name="separator"/>
     <addaction name="multiviewProjectorMenu"/>
     <addaction name="multiviewProjectorWindowed"/>
+    <addaction name="separator"/>
+    <addaction name="actionAlwaysOnTop"/>
    </widget>
    <widget class="QMenu" name="multiviewProjectorMenu">
     <property name="title">
@@ -2086,7 +2086,7 @@
     <bool>true</bool>
    </property>
    <property name="text">
-    <string>Basic.MainMenu.AlwaysOnTop</string>
+    <string>Basic.MainMenu.View.AlwaysOnTop</string>
    </property>
   </action>
   <action name="toggleListboxToolbars">
