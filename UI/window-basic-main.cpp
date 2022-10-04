@@ -2036,14 +2036,10 @@ void OBSBasic::OBSInit()
 
 	ui->viewMenu->addSeparator();
 
-	multiviewProjectorMenu = new QMenu(QTStr("MultiviewProjector"));
-	ui->viewMenu->addMenu(multiviewProjectorMenu);
-	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
 				 SLOT(OpenMultiviewProjector()));
 	connect(ui->viewMenu->menuAction(), &QAction::hovered, this,
 		&OBSBasic::UpdateMultiviewProjectorMenu);
-	ui->viewMenu->addAction(QTStr("MultiviewWindowed"), this,
-				SLOT(OpenMultiviewWindow()));
 
 	ui->sources->UpdateIcons();
 
@@ -2279,8 +2275,8 @@ void OBSBasic::ShowWhatsNew(const QString &url)
 
 void OBSBasic::UpdateMultiviewProjectorMenu()
 {
-	multiviewProjectorMenu->clear();
-	AddProjectorMenuMonitors(multiviewProjectorMenu, this,
+	ui->multiviewProjectorMenu->clear();
+	AddProjectorMenuMonitors(ui->multiviewProjectorMenu, this,
 				 SLOT(OpenMultiviewProjector()));
 }
 
@@ -2604,7 +2600,6 @@ OBSBasic::~OBSBasic()
 		updateCheckThread->wait();
 
 	delete screenshotData;
-	delete multiviewProjectorMenu;
 	delete previewProjector;
 	delete studioProgramProjector;
 	delete previewProjectorSource;
@@ -8800,11 +8795,6 @@ void OBSBasic::OpenSourceWindow()
 		      ProjectorType::Source);
 }
 
-void OBSBasic::OpenMultiviewWindow()
-{
-	OpenProjector(nullptr, -1, ProjectorType::Multiview);
-}
-
 void OBSBasic::OpenSceneWindow()
 {
 	OBSScene scene = GetCurrentScene();
@@ -9019,6 +9009,11 @@ void OBSBasic::on_resetUI_triggered()
 	ui->toggleContextBar->setChecked(true);
 	ui->toggleSourceIcons->setChecked(true);
 	ui->toggleStatusBar->setChecked(true);
+}
+
+void OBSBasic::on_multiviewProjectorWindowed_triggered()
+{
+	OpenProjector(nullptr, -1, ProjectorType::Multiview);
 }
 
 void OBSBasic::on_toggleListboxToolbars_toggled(bool visible)

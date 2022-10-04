@@ -690,6 +690,14 @@
     <addaction name="toggleStatusBar"/>
     <addaction name="separator"/>
     <addaction name="stats"/>
+    <addaction name="separator"/>
+    <addaction name="multiviewProjectorMenu"/>
+    <addaction name="multiviewProjectorWindowed"/>
+   </widget>
+   <widget class="QMenu" name="multiviewProjectorMenu">
+    <property name="title">
+     <string>MultiviewProjector</string>
+    </property>
    </widget>
    <widget class="QMenu" name="menuTools">
     <property name="title">
@@ -2153,6 +2161,11 @@
   <action name="stats">
    <property name="text">
     <string>Basic.Stats</string>
+   </property>
+  </action>
+  <action name="multiviewProjectorWindowed">
+   <property name="text">
+    <string>MultiviewWindowed</string>
    </property>
   </action>
   <action name="resetDocks">
