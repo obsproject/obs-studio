@@ -54,6 +54,8 @@ cmake \
     -DOPENSSL_CRYPTO_LIBRARY=/usr/local/opt/openssl@3/lib/libcrypto.a \
     -DOPENSSL_INCLUDE_DIR=/usr/local/opt/openssl@3/include \
     -DOPENSSL_SSL_LIBRARY=/usr/local/opt/openssl@3/lib/libssl.a \
+    -DOBS_VERSION="28.0.3" \
+    -DOBS_VERSION_OVERRIDE="28.0.3" \
     ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
 
 cmake --build ${BUILD_DIR} --target install --config ${BUILD_CONFIG:-${CI_BUILD_CONFIG}} -v
