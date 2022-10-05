@@ -57,7 +57,9 @@ cmake -H. ^
          -DBUILD_FOR_DISTRIBUTION=true ^
          -DCURL_INCLUDE_DIR=%DEPS_DIR%/ ^
          -DENABLE_VLC=true ^
-         -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C"
+         -DVIRTUALCAM_GUID="27B05C2D-93DC-474A-A5DA-9BBA34CB2A9C" ^
+         -DOBS_VERSION="28.0.3" ^
+         -DOBS_VERSION_OVERRIDE="28.0.3"
 
 del /q /s %CD%\%InstallPath%
 cmake --build %CD%\%BUILD_DIRECTORY% --config %BuildConfig% -v
