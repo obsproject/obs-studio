@@ -653,7 +653,7 @@ static int obs_init_video()
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
-
+	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d", obs->video.canvases.num);
 	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++)
 	{
 		if (!obs->video.canvases.array[i]->initialized)
@@ -801,10 +801,10 @@ static void obs_free_video(bool full_clean)
 			bfree(obs->video.canvases.array[i]);
 			obs->video.canvases.array[i] = NULL;
 		}
+		da_free(obs->video.canvases);
 		pthread_mutex_unlock(&obs->video.canvases_mutex);
 		pthread_mutex_destroy(&obs->video.canvases_mutex);
 		pthread_mutex_init_value(&obs->video.canvases_mutex);
-		da_free(obs->video.canvases);
 	}
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
@@ -1484,21 +1484,21 @@ int obs_set_video_info(struct obs_video_info *canvas, struct obs_video_info *upd
 	const char *yuv_format = get_video_colorspace_name(updated->colorspace);
 	const char *yuv_range =
 		get_video_range_name(updated->output_format, updated->range);
-	/*
+
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
-		 "video settings reset:\n"
+		 "[VIDEO_CANVAS] video info set for %08X:\n"
 		 "\tbase resolution:   %dx%d\n"
 		 "\toutput resolution: %dx%d\n"
 		 "\tdownscale filter:  %s\n"
 	     "\tfps:               %d/%d\n"
 	     "\tformat:            %s\n"
 	     "\tYUV mode:          %s%s%s",
-		 ovi->base_width, ovi->base_height, ovi->output_width,
-		 ovi->output_height, scale_type_name, ovi->fps_num, ovi->fps_den,
-		 get_video_format_name(ovi->output_format),
+		 canvas,
+	     updated->base_width, updated->base_height, updated->output_width,
+	     updated->output_height, scale_type_name, updated->fps_num,
+	     updated->fps_den, get_video_format_name(updated->output_format),
 		 yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
-	*/
 
     *canvas = *updated;
 	canvas->initialized = true;
@@ -1568,6 +1568,7 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested");
 	if (!obs->video.graphics)
 		return false;
 
@@ -1577,6 +1578,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 
 int obs_remove_video_info(struct obs_video_info *ovi)
 {
+	blog(LOG_INFO, "[VIDEO_CANVAS] remove %08X", ovi);
 	int ret = obs_reset_video();
 	if (ret != OBS_VIDEO_SUCCESS)
 		return ret;
@@ -1587,7 +1589,11 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 			bfree(obs->video.canvases.array[i]);
 		}
 	}
+	blog(LOG_INFO, "[VIDEO_CANVAS] canvases before erase %d", obs->video.canvases.num);
 	da_erase_item(obs->video.canvases, ovi);
+	blog(LOG_INFO, "[VIDEO_CANVAS] canvases after erase %d", obs->video.canvases.num);
+	da_resize(obs->video.canvases, obs->video.canvases.num - 1);
+	blog(LOG_INFO, "[VIDEO_CANVAS] canvases after resize %d", obs->video.canvases.num);
 
 	return obs_init_video();
 }
@@ -1598,6 +1604,8 @@ struct obs_video_info *obs_create_video_info()
 	pthread_mutex_lock(&obs->video.canvases_mutex);
 	da_push_back(obs->video.canvases, &ovi);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
+	blog(LOG_INFO, "[VIDEO_CANVAS] created %08X", ovi);
+
 	return ovi;
 }
 
@@ -1608,6 +1616,7 @@ size_t obs_get_video_info_count()
 
 bool obs_get_video_info_by_index(size_t index, struct obs_video_info *ovi)
 {
+	blog(LOG_INFO, "[VIDEO_CANVAS] get video info by index %d", index);
 	if (index >= obs->video.canvases.num)
 		return false;
 	*ovi = *obs->video.canvases.array[index];
