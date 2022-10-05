@@ -458,4 +458,9 @@ bool obs_scripting_python_runtime_linked(void)
 {
 	return (bool)true;
 }
+
+void obs_scripting_python_version(char *version, size_t version_length)
+{
+	version[0] = 0;
+}
 #endif

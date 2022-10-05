@@ -7122,17 +7122,31 @@ void OBSBasic::StreamingStop(int code, QString last_error)
 
 void OBSBasic::AutoRemux(QString input, bool no_show)
 {
-	bool autoRemux = config_get_bool(Config(), "Video", "AutoRemux");
+	auto config = Config();
+
+	bool autoRemux = config_get_bool(config, "Video", "AutoRemux");
 
 	if (!autoRemux)
 		return;
 
-	const char *recType = config_get_string(Config(), "AdvOut", "RecType");
+	bool isSimpleMode = false;
 
-	bool ffmpegOutput = astrcmpi(recType, "FFmpeg") == 0;
+	const char *mode = config_get_string(config, "Output", "Mode");
+	if (!mode) {
+		isSimpleMode = true;
+	} else {
+		isSimpleMode = strcmp(mode, "Simple") == 0;
+	}
 
-	if (ffmpegOutput)
-		return;
+	if (!isSimpleMode) {
+		const char *recType =
+			config_get_string(config, "AdvOut", "RecType");
+
+		bool ffmpegOutput = astrcmpi(recType, "FFmpeg") == 0;
+
+		if (ffmpegOutput)
+			return;
+	}
 
 	if (input.isEmpty())
 		return;

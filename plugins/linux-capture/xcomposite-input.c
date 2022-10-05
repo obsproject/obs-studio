@@ -310,11 +310,10 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 	char *wcls = bzalloc(strEnd - thirdStr + 1);
 	memcpy(wname, secondStr, secondMark - secondStr);
 	memcpy(wcls, thirdStr, strEnd - thirdStr);
-	xcb_window_t wid = (xcb_window_t)strtol(str, NULL, 10);
+	ret = (xcb_window_t)strtol(str, NULL, 10);
 
 	// first try to find a match by the window-id
-	if (da_find(tlw, &wid, 0) != DARRAY_INVALID) {
-		ret = wid;
+	if (da_find(tlw, &ret, 0) != DARRAY_INVALID) {
 		goto cleanup2;
 	}
 
@@ -325,8 +324,8 @@ xcb_window_t xcomp_find_window(xcb_connection_t *conn, Display *disp,
 
 		struct dstr cwname = xcomp_window_name(conn, disp, cwin);
 		struct dstr cwcls = xcomp_window_class(conn, cwin);
-		bool found = (strcmp(wname, cwname.array) == 0 &&
-			      strcmp(wcls, cwcls.array));
+		bool found = strcmp(wname, cwname.array) == 0 &&
+			     strcmp(wcls, cwcls.array) == 0;
 
 		dstr_free(&cwname);
 		dstr_free(&cwcls);
@@ -345,7 +344,7 @@ cleanup2:
 	bfree(wcls);
 cleanup1:
 	da_free(tlw);
-	return wid;
+	return ret;
 }
 
 void xcomp_cleanup_pixmap(Display *disp, struct xcompcap *s)
