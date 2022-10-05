@@ -21,7 +21,7 @@ find_path(
 
 find_library(
   GIO_LIB
-  NAMES ${_GIO_LIBRARIES} gio-2.0 libgio-2.0 gio-unix-2.0
+  NAMES gio-2.0 libgio-2.0 gio-unix-2.0
   HINTS ${_GIO_LIBRARY_DIRS}
   PATHS /usr/lib /usr/local/lib /opt/local/lib /sw/lib)
 
