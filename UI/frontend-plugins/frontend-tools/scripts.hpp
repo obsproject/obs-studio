@@ -31,6 +31,8 @@ class ScriptsTool : public QDialog {
 	std::unique_ptr<Ui_ScriptsTool> ui;
 	QWidget *propertiesView = nullptr;
 
+	void updatePythonVersionLabel();
+
 public:
 	ScriptsTool();
 	~ScriptsTool();

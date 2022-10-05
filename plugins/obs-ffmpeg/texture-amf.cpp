@@ -964,7 +964,7 @@ static obs_properties_t *amf_properties_internal(bool hevc)
 	obs_property_set_modified_callback(p, rate_control_modified);
 
 	p = obs_properties_add_int(props, "bitrate", obs_module_text("Bitrate"),
-				   50, 300000, 50);
+				   50, 100000, 50);
 	obs_property_int_set_suffix(p, " Kbps");
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
@@ -1158,6 +1158,11 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 				    : 250;
 
 	set_avc_property(enc, IDR_PERIOD, gop_size);
+
+	bool repeat_headers = obs_data_get_bool(settings, "repeat_headers");
+	if (repeat_headers)
+		set_avc_property(enc, HEADER_INSERTION_SPACING, gop_size);
+
 	set_avc_property(enc, DE_BLOCKING_FILTER, true);
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");

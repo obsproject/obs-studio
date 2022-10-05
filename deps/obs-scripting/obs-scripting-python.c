@@ -1590,6 +1590,17 @@ bool obs_scripting_python_runtime_linked(void)
 	return (bool)RUNTIME_LINK;
 }
 
+void obs_scripting_python_version(char *version, size_t version_length)
+{
+#if RUNTIME_LINK
+	snprintf(version, version_length, "%d.%d", python_version.major,
+		 python_version.minor);
+#else
+	snprintf(version, version_length, "%d.%d", PY_MAJOR_VERSION,
+		 PY_MINOR_VERSION);
+#endif
+}
+
 bool obs_scripting_python_loaded(void)
 {
 	return python_loaded;

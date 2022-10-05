@@ -42,6 +42,7 @@ jobs:
           build_only: True
           target_branch: 'master'
           target_path: '../home/_build'
+          pre_build_commands: 'pip install -Iv sphinx==5.1.1'
       - uses: actions/upload-artifact@v3
         with:
           name: OBS Studio Documentation (HTML)
