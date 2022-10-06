@@ -59,6 +59,12 @@
 
 /* clang-format on */
 
+
+// ATTN: jr
+// to rescan for changes in files
+static void jrRescanFiles(struct slideshow *ssdata);
+
+
 /* ------------------------------------------------------------------------- */
 
 extern uint64_t image_source_get_memory_usage(void *data);
@@ -952,6 +958,12 @@ static void ss_activate(void *data)
 {
 	struct slideshow *ss = data;
 
+
+	// ATTN: jr
+	// reload and rescan files on activate
+	jrRescanFiles(ss);
+
+
 	if (ss->behavior == BEHAVIOR_STOP_RESTART) {
 		ss->restart_on_activate = true;
 		ss->use_cut = true;
@@ -1083,3 +1095,22 @@ struct obs_source_info slideshow_info = {
 	.media_get_state = ss_get_state,
 	.video_get_color_space = ss_video_get_color_space,
 };
+
+
+
+
+
+
+
+
+
+
+
+// ATTN: jr
+static void jrRescanFiles(struct slideshow *ssdata)
+{
+	// just force an update
+	obs_source_t *source = ssdata->source;
+	obs_data_t *settings = obs_source_get_settings(source);
+	ss_update(ssdata, settings);
+}
