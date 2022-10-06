@@ -10318,18 +10318,18 @@ void OBSBasic::ResetProxyStyleSliders()
 	UpdateContextBar(true);
 }
 
-
-//---------------------------------------------------------------------------
-// ATTN: 9/25/22 dock saving and loading
 #define DefDocksetFileExtension ".dockset"
 
-void OBSBasic::on_actionExportDockset_triggered() {
+void OBSBasic::on_actionExportDockset_triggered()
+{
 	ExportDockstateToFileUserChooses();
 }
-void OBSBasic::on_actionImportDockset_triggered() {
+void OBSBasic::on_actionImportDockset_triggered()
+{
 	ImportDockstateFromFileUserChooses();
 }
-void OBSBasic::on_actionBrowseDocksets_triggered() {
+void OBSBasic::on_actionBrowseDocksets_triggered()
+{
 	char path[512];
 	int ret = GetConfigPathDockset(path, 512);
 	if (ret <= 0) {
@@ -10337,32 +10337,37 @@ void OBSBasic::on_actionBrowseDocksets_triggered() {
 	}
 	QDesktopServices::openUrl(QUrl::fromLocalFile(path));
 }
-void OBSBasic::on_actionRefreshDocksets_triggered() {
+void OBSBasic::on_actionRefreshDocksets_triggered()
+{
 	RefreshDocksetRecentMenu();
 }
 
-int OBSBasic::GetConfigPathDockset(char* path, int maxlen) {
+int OBSBasic::GetConfigPathDockset(char *path, int maxlen)
+{
 	int success = GetConfigPath(path, maxlen, "obs-studio/basic/docksets");
 	if (success < 0) {
 		if (os_mkdirs(path) == MKDIR_ERROR) {
-			blog(LOG_WARNING, "Failed to get or make dockset config path (%s).", path);
+			blog(LOG_WARNING,
+			     "Failed to get or make dockset config path (%s).",
+			     path);
 			success = -1;
 		}
 	}
 	return success;
 }
 
-
-bool OBSBasic::ExportDockstateToFileUserChooses() {
+bool OBSBasic::ExportDockstateToFileUserChooses()
+{
 	char path[512];
 	int ret = GetConfigPathDockset(path, 512);
 	if (ret <= 0) {
 		return false;
 	}
 	QString currentFile = QT_UTF8("mydocks");
-	QString filePath =
-		SaveFile(this, QTStr("Basic.MainMenu.DockSet.Export"),
-			QString(path) + "/" + currentFile, "Dockset Files (*" + QString(DefDocksetFileExtension) + ")");
+	QString filePath = SaveFile(
+		this, QTStr("Basic.MainMenu.DockSet.Export"),
+		QString(path) + "/" + currentFile,
+		"Dockset Files (*" + QString(DefDocksetFileExtension) + ")");
 
 	if (!filePath.isEmpty() && !filePath.isNull()) {
 		if (QFile::exists(filePath))
@@ -10372,17 +10377,18 @@ bool OBSBasic::ExportDockstateToFileUserChooses() {
 	return false;
 }
 
-
-bool OBSBasic::ImportDockstateFromFileUserChooses() {
+bool OBSBasic::ImportDockstateFromFileUserChooses()
+{
 	char path[512];
 	int ret = GetConfigPathDockset(path, 512);
 	if (ret <= 0) {
 		return false;
 	}
 	QString currentFile = QT_UTF8("mydocks");
-	QString filePath =
-		OpenFile(this, QTStr("Basic.MainMenu.DockSet.Import"),
-			QString(path) + "/" + currentFile, "Dockset Files (*" + QString(DefDocksetFileExtension) + ")");
+	QString filePath = OpenFile(
+		this, QTStr("Basic.MainMenu.DockSet.Import"),
+		QString(path) + "/" + currentFile,
+		"Dockset Files (*" + QString(DefDocksetFileExtension) + ")");
 
 	if (!filePath.isEmpty() && !filePath.isNull()) {
 		if (!QFile::exists(filePath))
@@ -10392,27 +10398,30 @@ bool OBSBasic::ImportDockstateFromFileUserChooses() {
 	return false;
 }
 
-
-bool OBSBasic::ExportDockstateToFile(QString filepath) {
-	const char* dockStateCharp = saveState().toBase64().constData();
+bool OBSBasic::ExportDockstateToFile(QString filepath)
+{
+	const char *dockStateCharp = saveState().toBase64().constData();
 	if (!dockStateCharp) {
 		return false;
 	}
-	bool success =  os_quick_write_utf8_file(filepath.toUtf8(), dockStateCharp, strlen(dockStateCharp), false);
+	bool success = os_quick_write_utf8_file(filepath.toUtf8(),
+						dockStateCharp,
+						strlen(dockStateCharp), false);
 	if (success) {
 		RefreshDocksetRecentMenu();
 	}
 	return true;
 }
 
-
-bool OBSBasic::ImportDockstateFromFile(QString filepath) {
-	char* dockStateCharp = os_quick_read_utf8_file(filepath.toUtf8());
+bool OBSBasic::ImportDockstateFromFile(QString filepath)
+{
+	char *dockStateCharp = os_quick_read_utf8_file(filepath.toUtf8());
 	if (!dockStateCharp) {
 		return false;
 	}
 	bool success = ImportDockstateFromCharp(dockStateCharp);
-	blog(LOG_WARNING,"Imported dockset from file %s [%d bytes in length].", filepath.toLocal8Bit(), strlen(dockStateCharp));
+	blog(LOG_WARNING, "Imported dockset from file %s [%d bytes in length].",
+	     filepath.toLocal8Bit(), strlen(dockStateCharp));
 	bfree(dockStateCharp);
 	if (success) {
 		RefreshDocksetRecentMenu();
@@ -10420,8 +10429,8 @@ bool OBSBasic::ImportDockstateFromFile(QString filepath) {
 	return success;
 }
 
-
-bool OBSBasic::ImportDockstateFromCharp(const char* dockStateStr) {
+bool OBSBasic::ImportDockstateFromCharp(const char *dockStateStr)
+{
 	if (dockStateStr == NULL) {
 		return false;
 	}
@@ -10429,25 +10438,19 @@ bool OBSBasic::ImportDockstateFromCharp(const char* dockStateStr) {
 	return restoreState(dockState);
 }
 
-
-
-
-
 // recent dockset menu code based on https://het.as.utexas.edu/HET/Software/html/mainwindows-recentfiles-mainwindow-cpp.html and https://www.walletfox.com/course/qtopenrecentfiles.php
-//
-void OBSBasic::OnClickRecentDockset() {
+void OBSBasic::OnClickRecentDockset()
+{
 	QAction *action = qobject_cast<QAction *>(sender());
 	if (action) {
 		QVariant v = action->property("file_name");
 		ImportDockstateFromFile(v.toString());
 	}
- }
+}
 
-
-
-
- void OBSBasic::RefreshDocksetRecentMenu() {
-	 QList<QAction *> menuActions = ui->menuDocksets->actions();
+void OBSBasic::RefreshDocksetRecentMenu()
+{
+	QList<QAction *> menuActions = ui->menuDocksets->actions();
 
 	// clear existing actions
 	int count = 0;
@@ -10463,7 +10466,7 @@ void OBSBasic::OnClickRecentDockset() {
 	if (ret < 0) {
 		return;
 	}
-	const char* cur_name = "";
+	const char *cur_name = "";
 
 	// iterate through directory looking for matches
 	auto addRecentDocksetFile = [&](const char *name, const char *path) {
@@ -10478,8 +10481,9 @@ void OBSBasic::OnClickRecentDockset() {
 	EnumDocksetFiles(addRecentDocksetFile);
 }
 
-
-void OBSBasic::EnumDocksetFiles(std::function<bool(const char *, const char *)> &&cb) {
+void OBSBasic::EnumDocksetFiles(
+	std::function<bool(const char *, const char *)> &&cb)
+{
 	// based on code in EnumSceneCollections()
 	char path[512];
 	int ret = GetConfigPathDockset(path, 512);
@@ -10509,7 +10513,8 @@ void OBSBasic::EnumDocksetFiles(std::function<bool(const char *, const char *)> 
 			name.resize(dotpos);
 		}
 
-		blog(LOG_WARNING, "Searching for docksets entry is %s --> %s.", filePath, name.c_str());
+		blog(LOG_WARNING, "Searching for docksets entry is %s --> %s.",
+		     filePath, name.c_str());
 
 		// callback
 		if (!cb(name.c_str(), filePath))
@@ -10517,4 +10522,3 @@ void OBSBasic::EnumDocksetFiles(std::function<bool(const char *, const char *)> 
 	}
 	os_globfree(glob);
 }
-//---------------------------------------------------------------------------

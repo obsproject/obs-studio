@@ -1209,24 +1209,25 @@ public:
 
 	static void InitBrowserPanelSafeBlock();
 
-
-// ATTN: jr 9/25/22
 private slots:
 	void on_actionExportDockset_triggered();
 	void on_actionImportDockset_triggered();
 	void on_actionBrowseDocksets_triggered();
 	void on_actionRefreshDocksets_triggered();
 	void OnClickRecentDockset();
+
 public:
-	int GetConfigPathDockset(char* path, int maxlen);
+	int GetConfigPathDockset(char *path, int maxlen);
 	bool ExportDockstateToFileUserChooses();
 	bool ImportDockstateFromFileUserChooses();
 	bool ExportDockstateToFile(QString filepath);
 	bool ImportDockstateFromFile(QString filepath);
-	bool ImportDockstateFromCharp(const char* dockStateStr);
+	bool ImportDockstateFromCharp(const char *dockStateStr);
+
 public:
 	void RefreshDocksetRecentMenu();
-	void EnumDocksetFiles(std::function<bool(const char*, const char*)>&& cb);
+	void
+	EnumDocksetFiles(std::function<bool(const char *, const char *)> &&cb);
 };
 
 class SceneRenameDelegate : public QStyledItemDelegate {
