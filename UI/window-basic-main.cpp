@@ -4227,9 +4227,18 @@ void OBSBasic::RenderMain(void *data, uint32_t cx, uint32_t cy)
 		OBSScene scene = window->GetCurrentScene();
 		obs_source_t *source = obs_scene_get_source(scene);
 		if (source)
+
+		// give new preview render hook a chance to run
+		if (!jrHookRenderMain(false, source, display)) {
 			obs_source_video_render(source);
 	} else {
-		obs_render_main_texture_src_color_only();
+		// give new preview render hook a chance to run
+		if (!jrHookRenderMain(true, NULL, display)) {
+			obs_render_main_texture_src_color_only();
+		}
+
+
+
 	}
 	gs_load_vertexbuffer(nullptr);
 

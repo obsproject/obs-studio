@@ -3101,3 +3101,39 @@ bool obs_weak_object_references_object(obs_weak_object_t *weak,
 {
 	return weak && object && weak->object == object;
 }
+
+//---------------------------------------------------------------------------
+// adding ability to register a single callback hook to replace core main rendering of preview texture
+// this can be used to change what the user sees in their main window preview without changing what goes out on a stream
+// it could be useful for adding/overlaying information to the display
+
+#ifndef SWIG
+THookRenderMainCallbackFp renderMainHookCallbackFp = NULL;
+void *renderMainHookCallbackData = NULL;
+#endif
+//
+void obs_JrRegisterRenderMainCallback(THookRenderMainCallbackFp fp, void* data) {
+	renderMainHookCallbackFp = fp;
+	renderMainHookCallbackData = data;
+}
+
+void obs_JrUnRegisterRenderMainCallback() {
+	renderMainHookCallbackFp = NULL;
+	renderMainHookCallbackData = NULL;
+}
+
+// put these two lines in your code:
+//typedef bool (*THookRenderMainCallbackFp) (void* data, obs_source_t* source, obs_display_t* display);
+//extern void obs_JrRegisterRenderMainCallback(THookRenderMainCallbackFp fp, void* data);
+// see obs.h for exporting and declaring this function jrRegisterRenderMainCallback
+
+bool jrHookRenderMain(bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display) {
+	// new hook function to give plugin opportunity to modify the rendering of the main preview window
+	// return true if we have rendered it, or false to proceed with main rendering as in normal OBS code
+	if (renderMainHookCallbackFp) {
+		return renderMainHookCallbackFp(renderMainHookCallbackData, flagRenderCurrentScene, source, display);
+	}
+	// return false saying render as normal
+	return false;
+}
+//---------------------------------------------------------------------------
