@@ -14,6 +14,8 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 
+
+
 #include <obs-module.h>
 #include <util/platform.h>
 #include <util/dstr.h>
@@ -58,6 +60,9 @@ struct ffmpeg_source {
 	bool is_clear_on_media_end;
 	bool restart_on_activate;
 	bool close_when_inactive;
+
+	bool pause_and_resume; 	// option that says you want the sourced paused on deactivate and resumed on activate (rather than stopped and restarted from begining)
+
 	bool seekable;
 
 	pthread_t reconnect_thread;
@@ -115,6 +120,7 @@ static void ffmpeg_source_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "reconnect_delay_sec", 10);
 	obs_data_set_default_int(settings, "buffering_mb", 2);
 	obs_data_set_default_int(settings, "speed_percent", 100);
+	obs_data_set_default_bool(settings, "pause_and_resume", false);
 }
 
 static const char *media_filter =
@@ -199,6 +205,9 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_property_set_long_description(
 		prop, obs_module_text("CloseFileWhenInactive.ToolTip"));
+
+	prop = obs_properties_add_bool(props, "pause_and_resume",
+				       obs_module_text("PauseAndResumeFFmpeg"));
 
 	prop = obs_properties_add_int_slider(props, "speed_percent",
 					     obs_module_text("SpeedPercentage"),
@@ -466,6 +475,8 @@ static void ffmpeg_source_update(void *data, obs_data_t *settings)
 	s->seekable = obs_data_get_bool(settings, "seekable");
 	s->ffmpeg_options = ffmpeg_options ? bstrdup(ffmpeg_options) : NULL;
 
+	s->pause_and_resume = obs_data_get_bool(settings, "pause_and_resume");
+
 	if (s->speed_percent < 1 || s->speed_percent > 200)
 		s->speed_percent = 100;
 
@@ -666,6 +677,13 @@ static void ffmpeg_source_activate(void *data)
 {
 	struct ffmpeg_source *s = data;
 
+	// option allows for RESUMING if paused rather than restarting
+	if (s->pause_and_resume && s->state == OBS_MEDIA_STATE_PAUSED) {
+		// resume on re-activate
+		obs_source_media_play_pause(s->source, false);
+		return;
+	}
+
 	if (s->restart_on_activate)
 		obs_source_media_restart(s->source);
 }
@@ -673,6 +691,13 @@ static void ffmpeg_source_activate(void *data)
 static void ffmpeg_source_deactivate(void *data)
 {
 	struct ffmpeg_source *s = data;
+
+	// option allows for PAUSING on deactivate rather than stopping
+	if (s->pause_and_resume && s->state == OBS_MEDIA_STATE_PLAYING) {
+		// pause on deactivate, leave it loaded
+		obs_source_media_play_pause(s->source, true);
+		return;
+	}
 
 	if (s->restart_on_activate) {
 		if (s->media_valid) {
