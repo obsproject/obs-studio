@@ -142,8 +142,6 @@ static void calc_crop_dimensions(struct crop_filter_data *filter,
 	uint32_t height;
 
 	if (!target) {
-		width = 0;
-		height = 0;
 		return;
 	} else {
 		width = obs_source_get_base_width(target);

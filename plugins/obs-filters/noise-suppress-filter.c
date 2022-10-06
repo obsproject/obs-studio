@@ -1046,8 +1046,6 @@ noise_suppress_filter_audio(void *data, struct obs_audio_data *audio)
 	size_t segment_size = ng->frames * sizeof(float);
 	size_t out_size;
 	obs_source_t *parent = obs_filter_get_parent(ng->context);
-	const char *name = obs_source_get_name(parent);
-	const char *id = obs_source_get_id(parent);
 	enum speaker_layout layout = obs_source_get_speaker_layout(parent);
 	ng->has_mono_src = layout == SPEAKERS_MONO && ng->channels == 2;
 
