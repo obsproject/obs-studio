@@ -1891,6 +1891,7 @@ void OBSBasic::OBSInit()
 
 	RefreshSceneCollections();
 	RefreshProfiles();
+	RefreshDocksetRecentMenu();
 	disableSaving--;
 
 	auto addDisplay = [this](OBSQTDisplay *window) {
