@@ -2550,6 +2550,36 @@ EXPORT void obs_source_frame_copy(struct obs_source_frame *dst,
 /* Get source icon type */
 EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 
+
+
+
+
+
+
+//---------------------------------------------------------------------------
+// ATTN: jr
+// Adding functions to allow user to hook into main preview window display
+typedef bool (*THookRenderMainCallbackFp) (void* data, bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display);
+EXPORT void obs_JrRegisterRenderMainCallback(THookRenderMainCallbackFp fp, void* data);
+EXPORT void obs_JrUnRegisterRenderMainCallback();
+//
+// static data that user code will set
+#ifndef SWIG
+extern THookRenderMainCallbackFp renderMainHookCallbackFp;
+extern void *renderMainHookCallbackData;
+#endif
+//
+EXPORT bool jrHookRenderMain(bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display);
+//---------------------------------------------------------------------------
+
+
+
+
+
+
+
+
+
 #ifdef __cplusplus
 }
 #endif
