@@ -2284,10 +2284,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 #endif
 
-		if (!created_log) {
+		if (!created_log)
 			create_log_file(logFile);
-			created_log = true;
-		}
 
 #ifdef __APPLE__
 		MacPermissionStatus audio_permission =

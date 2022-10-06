@@ -1718,8 +1718,6 @@ static void DrawLine(float x1, float y1, float x2, float y2, float thickness,
 
 static void DrawSquareAtPos(float x, float y, float pixelRatio)
 {
-	OBSBasic *main = OBSBasic::Get();
-
 	struct vec3 pos;
 	vec3_set(&pos, x, y, 0.0f);
 
@@ -1743,8 +1741,6 @@ static void DrawSquareAtPos(float x, float y, float pixelRatio)
 static void DrawRotationHandle(gs_vertbuffer_t *circle, float rot,
 			       float pixelRatio)
 {
-	OBSBasic *main = OBSBasic::Get();
-
 	struct vec3 pos;
 	vec3_set(&pos, 0.5f, 0.0f, 0.0f);
 
