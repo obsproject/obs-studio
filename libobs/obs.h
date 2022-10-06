@@ -2554,16 +2554,14 @@ EXPORT enum obs_icon_type obs_source_get_icon_type(const char *id);
 //---------------------------------------------------------------------------
 // Adding functions to allow user to hook into main preview window display
 typedef bool (*THookRenderMainCallbackFp) (void* data, bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display);
-EXPORT void obs_JrRegisterRenderMainCallback(THookRenderMainCallbackFp fp, void* data);
-EXPORT void obs_JrUnRegisterRenderMainCallback();
+EXPORT void obs_register_hook_rendermain_callback(THookRenderMainCallbackFp fp, void* data);
+EXPORT void obs_unregister_hook_rendermain_callback();
+EXPORT bool obs_run_hook_rendermain(bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display);
 //
-// global data that plugins can register
 #ifndef SWIG
 extern THookRenderMainCallbackFp renderMainHookCallbackFp;
 extern void *renderMainHookCallbackData;
 #endif
-//
-EXPORT bool jrHookRenderMain(bool flagRenderCurrentScene, obs_source_t* source, obs_display_t* display);
 //---------------------------------------------------------------------------
 
 #ifdef __cplusplus
