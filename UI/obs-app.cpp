@@ -1113,16 +1113,20 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 
 	if (cf_token_is(cfp, "OBSThemeMeta") ||
 	    cf_go_to_token(cfp, "OBSThemeMeta", nullptr)) {
-		OBSThemeMeta *meta = new OBSThemeMeta();
+
 		if (!cf_next_token(cfp))
 			return nullptr;
 
 		if (!cf_token_is(cfp, "{"))
 			return nullptr;
 
+		OBSThemeMeta *meta = new OBSThemeMeta();
+
 		for (;;) {
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
+				delete meta;
 				return nullptr;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name",
 					       nullptr);
@@ -1136,8 +1140,10 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 			if (ret != PARSE_SUCCESS)
 				continue;
 
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
+				delete meta;
 				return nullptr;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value",
 					       ";");
@@ -1158,8 +1164,10 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 			}
 			bfree(str);
 
-			if (!cf_go_to_token(cfp, ";", nullptr))
+			if (!cf_go_to_token(cfp, ";", nullptr)) {
+				delete meta;
 				return nullptr;
+			}
 		}
 		return meta;
 	}
