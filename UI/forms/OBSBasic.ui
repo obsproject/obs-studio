@@ -698,12 +698,26 @@
     <addaction name="autoConfigure"/>
     <addaction name="separator"/>
    </widget>
+
+   <widget class="QMenu" name="menuDocksets">
+    <property name="title">
+     <string>Basic.DocksMenu.menuDocksets</string>
+    </property>
+     <addaction name="actionImportDockset"/>
+     <addaction name="actionExportDockset"/>
+     <addaction name="actionBrowseDocksets"/>
+     <addaction name="actionRefreshDocksets"/>
+     <addaction name="separator"/>
+   </widget>
+
    <widget class="QMenu" name="menuDocks">
     <property name="title">
      <string>Basic.MainMenu.Docks</string>
     </property>
     <addaction name="lockDocks"/>
     <addaction name="resetDocks"/>
+    <addaction name="separator"/>
+    <addaction name="menuDocksets"/>
     <addaction name="separator"/>
     <addaction name="toggleScenes"/>
     <addaction name="toggleSources"/>
@@ -2171,6 +2185,29 @@
     <string>Basic.MainMenu.Docks.LockDocks</string>
    </property>
   </action>
+
+  <action name="actionImportDockset">
+   <property name="text">
+    <string>Basic.DocksMenu.menuDocksets.importDockset</string>
+   </property>
+  </action>
+  <action name="actionExportDockset">
+   <property name="text">
+    <string>Basic.DocksMenu.menuDocksets.exportDockset</string>
+   </property>
+  </action>
+  <action name="actionBrowseDocksets">
+   <property name="text">
+    <string>Basic.DocksMenu.menuDocksets.browseDocksets</string>
+   </property>
+  </action>
+  <action name="actionRefreshDocksets">
+   <property name="text">
+    <string>Basic.DocksMenu.menuDocksets.refreshDocksets</string>
+   </property>
+  </action>
+
+
   <action name="toggleScenes">
    <property name="checkable">
     <bool>true</bool>
