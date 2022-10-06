@@ -4153,8 +4153,7 @@ void OBSBasicSettings::RecalcOutputResPixels(const char *resText)
 	uint32_t newCX;
 	uint32_t newCY;
 
-	ConvertResText(resText, newCX, newCY);
-	if (newCX && newCY) {
+	if (ConvertResText(resText, newCX, newCY) && newCX && newCY) {
 		outputCX = newCX;
 		outputCY = newCY;
 
