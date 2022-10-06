@@ -644,19 +644,29 @@ bool load_nvafx(void)
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_audiofx, "NVAudioEffects.dll")
 	LOAD_SYM(NvAFX_GetEffectList);
 	LOAD_SYM(NvAFX_CreateEffect);
-	LOAD_SYM(NvAFX_CreateChainedEffect);
+
+	// ATTN: jr 8/18/22 - not found in my 8/18/22 distribution
+	bool flagLoadTroublesomeNvafx = true;
+	//
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_CreateChainedEffect);
 	LOAD_SYM(NvAFX_DestroyEffect);
 	LOAD_SYM(NvAFX_SetU32);
-	LOAD_SYM(NvAFX_SetU32List);
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_SetU32List);
 	LOAD_SYM(NvAFX_SetString);
-	LOAD_SYM(NvAFX_SetStringList);
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_SetStringList);
 	LOAD_SYM(NvAFX_SetFloat);
-	LOAD_SYM(NvAFX_SetFloatList);
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_SetFloatList);
 	LOAD_SYM(NvAFX_GetU32);
 	LOAD_SYM(NvAFX_GetString);
-	LOAD_SYM(NvAFX_GetStringList);
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_GetStringList);
 	LOAD_SYM(NvAFX_GetFloat);
-	LOAD_SYM(NvAFX_GetFloatList);
+	if (flagLoadTroublesomeNvafx)
+		LOAD_SYM(NvAFX_GetFloatList);
 	LOAD_SYM(NvAFX_Load);
 	LOAD_SYM(NvAFX_GetSupportedDevices);
 	LOAD_SYM(NvAFX_Run);
