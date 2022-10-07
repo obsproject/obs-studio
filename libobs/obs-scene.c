@@ -927,7 +927,8 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 
 	item = scene->first_item;
 	while (item) {
-		if (obs_get_video_rendering_canvas() != item->canvas) {
+		if (obs_get_video_rendering_canvas() != item->canvas &&
+		    item->canvas != NULL) {
 			item = item->next;
 			continue;
 		}
