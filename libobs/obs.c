@@ -1429,17 +1429,21 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 
 int obs_reset_video()
 {
-	if (!obs)
+	if (!obs) {
+		blog(LOG_ERROR, "[VIDEO_CANVAS] obs object is null, video reset is not possible");
 		return OBS_VIDEO_FAIL;
+	}
 
 	/* don't allow changing of video settings if active. */
-	if (obs_video_active())
+	if (obs_video_active()) {
+		blog(LOG_ERROR, "[VIDEO_CANVAS] video is active, video reset is not possible");
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
+	}
 
-	blog(LOG_INFO, "About to stop and reset video");
+	blog(LOG_DEBUG, "[VIDEO_CANVAS] About to stop and reset video");
 	stop_video();
 	obs_free_video(false);
-	blog(LOG_INFO, "Video stopped and ready too init");
+	blog(LOG_DEBUG, "[VIDEO_CANVAS] Video stopped and ready too init");
 
 	return OBS_VIDEO_SUCCESS;
 }
@@ -1605,6 +1609,26 @@ struct obs_video_info *obs_create_video_info()
 	da_push_back(obs->video.canvases, &ovi);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
 	blog(LOG_INFO, "[VIDEO_CANVAS] created %08X", ovi);
+
+#ifdef _WIN32
+	ovi->graphics_module = "libobs-d3d11.dll";
+#else
+	ovi->graphics_module = "libobs-opengl";
+#endif
+
+	ovi->base_width = 1280;
+	ovi->base_height = 720;
+	ovi->output_width = 1280;
+	ovi->output_height = 720;
+	ovi->fps_num = 30;
+	ovi->fps_den = 1;
+
+	ovi->output_format = VIDEO_FORMAT_I420;
+	ovi->colorspace = VIDEO_CS_DEFAULT;
+	ovi->range = VIDEO_RANGE_DEFAULT;
+	ovi->scale_type = OBS_SCALE_BILINEAR;
+	ovi->adapter = 0;
+	ovi->gpu_conversion = true;
 
 	return ovi;
 }
