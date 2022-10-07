@@ -148,6 +148,15 @@ Service Definition Structure
             the data manually (typically best to use strlist_split to
             generate this)
 
+.. member:: const char **(*get_supported_audio_codecs)(void *data)
+
+   (Optional)
+
+   :return: A string pointer array of the supported audio codecs, should
+            be stored by the plugin so the caller does not need to free
+            the data manually (typically best to use strlist_split to
+            generate this)
+
 .. member:: const char *(*obs_service_info.get_protocol)(void *data)
 
    :return: The protocol used by the service
@@ -305,9 +314,17 @@ General Service Functions
 
 .. function:: const char **obs_service_get_supported_video_codecs(const obs_service_t *service)
 
-   :return: An array of string pointers containing the supported codecs
-            for the service, terminated with a *NULL* pointer. Does not
-            need to be freed
+   :return: An array of string pointers containing the supported video
+            codecs for the service, terminated with a *NULL* pointer.
+            Does not need to be freed
+
+---------------------
+
+.. function:: const char **obs_service_get_supported_audio_codecs(const obs_service_t *service)
+
+   :return: An array of string pointers containing the supported audio
+            codecs for the service, terminated with a *NULL* pointer.
+            Does not need to be freed
 
 ---------------------
 

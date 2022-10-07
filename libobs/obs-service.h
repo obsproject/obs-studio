@@ -91,6 +91,8 @@ struct obs_service_info {
 	const char **(*get_supported_video_codecs)(void *data);
 
 	const char *(*get_protocol)(void *data);
+
+	const char **(*get_supported_audio_codecs)(void *data);
 };
 
 EXPORT void obs_register_service_s(const struct obs_service_info *info,

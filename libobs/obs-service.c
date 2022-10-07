@@ -468,6 +468,15 @@ obs_service_get_supported_video_codecs(const obs_service_t *service)
 	return NULL;
 }
 
+const char **
+obs_service_get_supported_audio_codecs(const obs_service_t *service)
+{
+	if (service->info.get_supported_audio_codecs)
+		return service->info.get_supported_audio_codecs(
+			service->context.data);
+	return NULL;
+}
+
 const char *obs_service_get_protocol(const obs_service_t *service)
 {
 	if (!obs_service_valid(service, "obs_service_get_protocol"))

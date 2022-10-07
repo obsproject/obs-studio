@@ -1447,9 +1447,6 @@
             "name": "YouNow",
             "common": false,
             "protocol": "FTL",
-            "supported audio codecs": [
-                "opus"
-            ],
             "servers": [
                 {
                     "name": "younow.com",
@@ -1825,9 +1822,6 @@
             "name": "Glimesh",
             "stream_key_link": "https://glimesh.tv/users/settings/stream",
             "protocol": "FTL",
-            "supported audio codecs": [
-                "opus"
-            ],
             "servers": [
                 {
                     "name": "North America - Chicago, United States",

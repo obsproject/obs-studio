@@ -2545,6 +2545,9 @@ EXPORT void obs_service_get_max_bitrate(const obs_service_t *service,
 EXPORT const char **
 obs_service_get_supported_video_codecs(const obs_service_t *service);
 
+EXPORT const char **
+obs_service_get_supported_audio_codecs(const obs_service_t *service);
+
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
 OBS_DEPRECATED EXPORT const char *
