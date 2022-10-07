@@ -289,6 +289,35 @@ static void fill_out_plugins(obs_property_t *list)
 	}
 }
 
+static bool vst_changed(void *data, obs_properties_t *props,
+			obs_property_t *list, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(settings);
+	UNUSED_PARAMETER(list);
+
+	bool open_settings_vis = true;
+	bool close_settings_vis = false;
+	if (data) {
+		VSTPlugin *vstPlugin = (VSTPlugin *)data;
+		if (!vstPlugin->vstLoaded()) {
+			close_settings_vis = false;
+			open_settings_vis = false;
+		} else {
+			if (vstPlugin->isEditorOpen()) {
+				close_settings_vis = true;
+				open_settings_vis = false;
+			}
+		}
+	}
+
+	obs_property_set_visible(obs_properties_get(props, OPEN_VST_SETTINGS),
+				 open_settings_vis);
+	obs_property_set_visible(obs_properties_get(props, CLOSE_VST_SETTINGS),
+				 close_settings_vis);
+
+	return true;
+}
+
 static obs_properties_t *vst_properties(void *data)
 {
 	obs_properties_t *props = obs_properties_create();
@@ -326,6 +355,8 @@ static obs_properties_t *vst_properties(void *data)
 
 	obs_properties_add_bool(props, OPEN_WHEN_ACTIVE_VST_SETTINGS,
 				OPEN_WHEN_ACTIVE_VST_TEXT);
+
+	obs_property_set_modified_callback2(list, vst_changed, data);
 
 	return props;
 }
