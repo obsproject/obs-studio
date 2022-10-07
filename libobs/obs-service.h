@@ -77,6 +77,7 @@ struct obs_service_info {
 	void *type_data;
 	void (*free_type_data)(void *type_data);
 
+	/* TODO: Rename to 'get_preferred_output_type' once a API/ABI break happen */
 	const char *(*get_output_type)(void *data);
 
 	void (*get_supported_resolutions)(

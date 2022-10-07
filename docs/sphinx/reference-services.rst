@@ -137,7 +137,7 @@ Service Definition Structure
 
    (Optional)
 
-   :return: The output type that should be used with this service
+   :return: The output type that should be preferred with this service
 
 .. member:: const char **(*get_supported_video_codecs)(void *data)
 
@@ -314,6 +314,12 @@ General Service Functions
 .. function:: const char *obs_service_get_protocol(const obs_service_t *service)
 
    :return: Protocol currently used for this service
+
+---------------------
+
+.. function:: const char *obs_service_get_preferred_output_type(const obs_service_t *service)
+
+   :return: The output type that should be preferred with this service
 
 .. ---------------------------------------------------------------------------
 

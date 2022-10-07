@@ -2547,10 +2547,14 @@ obs_service_get_supported_video_codecs(const obs_service_t *service);
 
 /* NOTE: This function is temporary and should be removed/replaced at a later
  * date. */
-EXPORT const char *obs_service_get_output_type(const obs_service_t *service);
+OBS_DEPRECATED EXPORT const char *
+obs_service_get_output_type(const obs_service_t *service);
 
 /** Returns the protocol for this service context */
 EXPORT const char *obs_service_get_protocol(const obs_service_t *service);
+
+EXPORT const char *
+obs_service_get_preferred_output_type(const obs_service_t *service);
 
 /* ------------------------------------------------------------------------- */
 /* Source frame allocation functions */

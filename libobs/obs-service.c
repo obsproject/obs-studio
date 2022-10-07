@@ -411,16 +411,6 @@ const char *obs_service_get_id(const obs_service_t *service)
 		       : NULL;
 }
 
-const char *obs_service_get_output_type(const obs_service_t *service)
-{
-	if (!obs_service_valid(service, "obs_service_get_output_type"))
-		return NULL;
-
-	if (service->info.get_output_type)
-		return service->info.get_output_type(service->context.data);
-	return NULL;
-}
-
 void obs_service_get_supported_resolutions(
 	const obs_service_t *service,
 	struct obs_service_resolution **resolutions, size_t *count)
@@ -484,4 +474,21 @@ const char *obs_service_get_protocol(const obs_service_t *service)
 		return NULL;
 
 	return service->info.get_protocol(service->context.data);
+}
+
+/* OBS_DEPRECATED */
+const char *obs_service_get_output_type(const obs_service_t *service)
+{
+	return obs_service_get_preferred_output_type(service);
+}
+
+const char *obs_service_get_preferred_output_type(const obs_service_t *service)
+{
+	if (!obs_service_valid(service,
+			       "obs_service_get_preferred_output_type"))
+		return NULL;
+
+	if (service->info.get_output_type)
+		return service->info.get_output_type(service->context.data);
+	return NULL;
 }
