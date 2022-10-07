@@ -407,7 +407,7 @@ OBSBasicSourceSelect::OBSBasicSourceSelect(OBSBasic *parent, const char *id_,
 	ui->sourceName->setFocus(); //Fixes deselect of text.
 	ui->sourceName->selectAll();
 
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(App()->shortcutFilter);
 
 	if (strcmp(id_, "scene") == 0) {
 		OBSBasic *main =

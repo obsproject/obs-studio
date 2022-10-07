@@ -26,7 +26,7 @@ OBSBasicAdvAudio::OBSBasicAdvAudio(QWidget *parent)
 	if (volType == VolumeType::Percent)
 		ui->usePercent->setChecked(true);
 
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(App()->shortcutFilter);
 
 	/* enum user scene/sources */
 	obs_enum_sources(EnumSources, this);

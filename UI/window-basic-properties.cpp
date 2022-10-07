@@ -88,7 +88,7 @@ OBSBasicProperties::OBSBasicProperties(QWidget *parent, OBSSource source_)
 	}
 
 	view->show();
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(App()->shortcutFilter);
 
 	const char *name = obs_source_get_name(source);
 	setWindowTitle(QTStr("Basic.PropertiesWindow").arg(QT_UTF8(name)));

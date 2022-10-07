@@ -85,7 +85,7 @@ OBSBasicFilters::OBSBasicFilters(QWidget *parent, OBSSource source_)
 	addAction(ui->actionMoveUp);
 	addAction(ui->actionMoveDown);
 
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(App()->shortcutFilter);
 
 	connect(ui->asyncFilters->itemDelegate(),
 		SIGNAL(closeEditor(QWidget *,

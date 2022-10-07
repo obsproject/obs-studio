@@ -71,9 +71,6 @@ public:
 	void StartRecTimeLeft();
 	void ResetRecTimeLeft();
 
-private:
-	QPointer<QObject> shortcutFilter;
-
 private slots:
 	void RecordingTimeLeft();
 

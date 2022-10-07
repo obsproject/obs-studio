@@ -53,13 +53,6 @@
 using namespace std;
 
 class SettingsEventFilter : public QObject {
-	QScopedPointer<OBSEventFilter> shortcutFilter;
-
-public:
-	inline SettingsEventFilter()
-		: shortcutFilter((OBSEventFilter *)CreateShortcutFilter())
-	{
-	}
 
 protected:
 	bool eventFilter(QObject *obj, QEvent *event) override
@@ -77,7 +70,8 @@ protected:
 			break;
 		}
 
-		return shortcutFilter->filter(obj, event);
+		return (OBSEventFilter *)App()->shortcutFilter->eventFilter(
+			obj, event);
 	}
 };
 

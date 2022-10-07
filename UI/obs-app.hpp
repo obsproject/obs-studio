@@ -44,7 +44,6 @@ std::string GetFormatString(const char *format, const char *prefix,
 			    const char *suffix);
 std::string GetOutputFilename(const char *path, const char *ext, bool noSpace,
 			      bool overwrite, const char *format);
-QObject *CreateShortcutFilter();
 
 struct BaseLexer {
 	lexer lex;
@@ -134,6 +133,8 @@ public:
 
 	void UpdateHotkeyFocusSetting(bool reset = true);
 	void DisableHotkeys();
+
+	QObject *shortcutFilter;
 
 	inline bool HotkeysEnabledInFocus() const
 	{

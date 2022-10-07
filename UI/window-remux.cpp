@@ -675,7 +675,7 @@ OBSRemux::OBSRemux(const char *path, QWidget *parent, bool autoRemux_)
 	ui->tableView->setTextElideMode(Qt::ElideMiddle);
 	ui->tableView->setWordWrap(false);
 
-	installEventFilter(CreateShortcutFilter());
+	installEventFilter(App()->shortcutFilter);
 
 	ui->buttonBox->button(QDialogButtonBox::Ok)
 		->setText(QTStr("Remux.Remux"));

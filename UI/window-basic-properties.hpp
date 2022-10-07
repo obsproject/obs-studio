@@ -52,6 +52,8 @@ private:
 	OBSSourceAutoRelease sourceClone;
 	bool direction = true;
 
+	QObject *shortcutFilter;
+
 	static void SourceRemoved(void *data, calldata_t *params);
 	static void SourceRenamed(void *data, calldata_t *params);
 	static void UpdateProperties(void *data, calldata_t *params);
