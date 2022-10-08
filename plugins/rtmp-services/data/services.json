@@ -2485,10 +2485,6 @@
                     "url": "rtmp://us-central-dal.livepush.io/live"
                 },
                 {
-                    "name": "Portland, US",
-                    "url": "rtmp://us-west-og.livepush.io/live"
-                },
-                {
                     "name": "Montreal, CA",
                     "url": "rtmp://ca-central-mon.livepush.io/live"
                 },
