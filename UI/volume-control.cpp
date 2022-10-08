@@ -1070,6 +1070,19 @@ void VolumeMeter::ClipEnding()
 	clipping = false;
 }
 
+inline int VolumeMeter::convertToInt(float number)
+{
+	constexpr int min = std::numeric_limits<int>::min();
+	constexpr int max = std::numeric_limits<int>::max();
+
+	if (number > max)
+		return max;
+	else if (number < min)
+		return min;
+	else
+		return int(number);
+}
+
 void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width,
 			      int height, float magnitude, float peak,
 			      float peakHold)
@@ -1079,11 +1092,11 @@ void VolumeMeter::paintHMeter(QPainter &painter, int x, int y, int width,
 	QMutexLocker locker(&dataMutex);
 	int minimumPosition = x + 0;
 	int maximumPosition = x + width;
-	int magnitudePosition = int(x + width - (magnitude * scale));
-	int peakPosition = int(x + width - (peak * scale));
-	int peakHoldPosition = int(x + width - (peakHold * scale));
-	int warningPosition = int(x + width - (warningLevel * scale));
-	int errorPosition = int(x + width - (errorLevel * scale));
+	int magnitudePosition = x + width - convertToInt(magnitude * scale);
+	int peakPosition = x + width - convertToInt(peak * scale);
+	int peakHoldPosition = x + width - convertToInt(peakHold * scale);
+	int warningPosition = x + width - convertToInt(warningLevel * scale);
+	int errorPosition = x + width - convertToInt(errorLevel * scale);
 
 	int nominalLength = warningPosition - minimumPosition;
 	int warningLength = errorPosition - warningPosition;
@@ -1191,11 +1204,11 @@ void VolumeMeter::paintVMeter(QPainter &painter, int x, int y, int width,
 	QMutexLocker locker(&dataMutex);
 	int minimumPosition = y + 0;
 	int maximumPosition = y + height;
-	int magnitudePosition = int(y + height - (magnitude * scale));
-	int peakPosition = int(y + height - (peak * scale));
-	int peakHoldPosition = int(y + height - (peakHold * scale));
-	int warningPosition = int(y + height - (warningLevel * scale));
-	int errorPosition = int(y + height - (errorLevel * scale));
+	int magnitudePosition = y + height - convertToInt(magnitude * scale);
+	int peakPosition = y + height - convertToInt(peak * scale);
+	int peakHoldPosition = y + height - convertToInt(peakHold * scale);
+	int warningPosition = y + height - convertToInt(warningLevel * scale);
+	int errorPosition = y + height - convertToInt(errorLevel * scale);
 
 	int nominalLength = warningPosition - minimumPosition;
 	int warningLength = errorPosition - warningPosition;
