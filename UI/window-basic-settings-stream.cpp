@@ -1390,7 +1390,7 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 	if (service_supports_encoder(codecs, "jim_av1_nvenc"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.AV1"),
-			QString(SIMPLE_ENCODER_NVENC));
+			QString(SIMPLE_ENCODER_NVENC_AV1));
 #ifdef ENABLE_HEVC
 	if (service_supports_encoder(codecs, "h265_texture_amf"))
 		ui->simpleOutStrEncoder->addItem(
