@@ -558,44 +558,20 @@
                     "url": "rtmp://amsterdam.restream.io/live"
                 },
                 {
-                    "name": "EU-West (Luxembourg)",
-                    "url": "rtmp://luxembourg.restream.io/live"
-                },
-                {
                     "name": "EU-West (Paris, FR)",
                     "url": "rtmp://paris.restream.io/live"
-                },
-                {
-                    "name": "EU-West (Milan, IT)",
-                    "url": "rtmp://milan.restream.io/live"
                 },
                 {
                     "name": "EU-Central (Frankfurt, DE)",
                     "url": "rtmp://frankfurt.restream.io/live"
                 },
                 {
-                    "name": "EU-East (Falkenstein, DE)",
-                    "url": "rtmp://falkenstein.restream.io/live"
-                },
-                {
-                    "name": "EU-East (Prague, Czech)",
-                    "url": "rtmp://prague.restream.io/live"
-                },
-                {
                     "name": "EU-South (Madrid, Spain)",
                     "url": "rtmp://madrid.restream.io/live"
                 },
                 {
-                    "name": "Russia (Moscow)",
-                    "url": "rtmp://moscow.restream.io/live"
-                },
-                {
                     "name": "Turkey (Istanbul)",
                     "url": "rtmp://istanbul.restream.io/live"
-                },
-                {
-                    "name": "Israel (Tel Aviv)",
-                    "url": "rtmp://telaviv.restream.io/live"
                 },
                 {
                     "name": "US-West (Seattle, WA)",
@@ -610,16 +586,16 @@
                     "url": "rtmp://dallas.restream.io/live"
                 },
                 {
-                    "name": "US-East (Washington, DC)",
-                    "url": "rtmp://washington.restream.io/live"
-                },
-                {
-                    "name": "US-East (Miami, FL)",
-                    "url": "rtmp://miami.restream.io/live"
-                },
-                {
                     "name": "US-East (Chicago, IL)",
                     "url": "rtmp://chicago.restream.io/live"
+                },
+                {
+                    "name": "US-East (New York, NY)",
+                    "url": "rtmp://newyork.restream.io/live"
+                },
+                {
+                    "name": "US-East (Washington, DC)",
+                    "url": "rtmp://washington.restream.io/live"
                 },
                 {
                     "name": "NA-East (Toronto, Canada)",
@@ -632,6 +608,10 @@
                 {
                     "name": "India (Bangalore)",
                     "url": "rtmp://bangalore.restream.io/live"
+                },
+                {
+                    "name": "Asia (Hong Kong)",
+                    "url": "rtmp://hongkong.restream.io/live"
                 },
                 {
                     "name": "Asia (Singapore)",
