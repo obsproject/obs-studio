@@ -2249,6 +2249,7 @@ static bool update_async_texrender(struct obs_source *source,
 		set_eparam(conv, "width_d2", (float)cx * 0.5f);
 		set_eparam(conv, "height_d2", (float)cy * 0.5f);
 		set_eparam(conv, "width_x2_i", 0.5f / (float)cx);
+		set_eparam(conv, "height_x2_i", 0.5f / (float)cy);
 
 		/* BT.2408 says higher than 1000 isn't comfortable */
 		float hlg_peak_level = obs->video.hdr_nominal_peak_level;
