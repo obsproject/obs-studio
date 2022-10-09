@@ -10420,8 +10420,6 @@ bool OBSBasic::ImportDockstateFromFile(QString filepath)
 		return false;
 	}
 	bool success = ImportDockstateFromCharp(dockStateCharp);
-	blog(LOG_WARNING, "Imported dockset from file %s [%d bytes in length].",
-	     filepath.toLocal8Bit(), strlen(dockStateCharp));
 	bfree(dockStateCharp);
 	if (success) {
 		RefreshDocksetRecentMenu();
@@ -10492,7 +10490,6 @@ void OBSBasic::EnumDocksetFiles(
 	}
 	strcat(path, "/*");
 	strcat(path, DefDocksetFileExtension);
-	blog(LOG_WARNING, "Searching for docksets in %s.", path);
 
 	os_glob_t *glob;
 	if (os_glob(path, 0, &glob) != 0) {
@@ -10512,9 +10509,6 @@ void OBSBasic::EnumDocksetFiles(
 		if (dotpos != string::npos) {
 			name.resize(dotpos);
 		}
-
-		blog(LOG_WARNING, "Searching for docksets entry is %s --> %s.",
-		     filePath, name.c_str());
 
 		// callback
 		if (!cb(name.c_str(), filePath))
