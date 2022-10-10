@@ -114,6 +114,7 @@
 
 			IOSurfaceRef surface = IOSurfaceLookupFromMachPort(
 				[framePort machPort]);
+			[framePort invalidate];
 			mach_port_deallocate(mach_task_self(),
 					     [framePort machPort]);
 
