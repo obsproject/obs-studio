@@ -1514,10 +1514,11 @@ void obs_python_script_save(obs_script_t *s)
 static void python_tick(void *param, float seconds)
 {
 	struct obs_python_script *data;
-	/* When loading a new Python script, the GIL might be released while importing the module,
-     allowing the tick to run and change and reset the cur_python_script state variable. Use the
-     busy_script variable to save and restore the value if not null.
-     */
+	/* When loading a new Python script, the GIL might be released while
+	 * importing the module, allowing the tick to run and change and reset
+	 * the cur_python_script state variable. Use the busy_script variable
+	 * to save and restore the value if not null.
+	 */
 	struct obs_python_script *busy_script;
 	bool valid;
 	uint64_t ts = obs_get_video_frame_time();
