@@ -182,6 +182,9 @@ Structures/Enumerations
 
      Triggered when the theme is changed.
 
+   - **OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN**
+
+     Triggered when a screenshot is taken.
 
 .. struct:: obs_frontend_source_list
 
