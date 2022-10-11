@@ -1556,3 +1556,8 @@ void obs_encoder_set_video_mix(obs_encoder_t *encoder,
 	encoder->video = video;
 	obs_encoder_set_video(encoder, video->video);
 }
+
+uint64_t obs_encoder_get_pause_offset(const obs_encoder_t *encoder)
+{
+	return encoder ? encoder->pause.ts_offset : 0;
+}

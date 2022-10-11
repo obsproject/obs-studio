@@ -627,6 +627,20 @@ static bool reload_session_cb(obs_properties_t *properties,
 	g_clear_pointer(&capture->restore_token, bfree);
 	g_clear_pointer(&capture->obs_pw, obs_pipewire_destroy);
 
+	if (capture->session_handle) {
+		blog(LOG_DEBUG, "[pipewire] Cleaning previous session %s",
+		     capture->session_handle);
+		g_dbus_connection_call(portal_get_dbus_connection(),
+				       "org.freedesktop.portal.Desktop",
+				       capture->session_handle,
+				       "org.freedesktop.portal.Session",
+				       "Close", NULL, NULL,
+				       G_DBUS_CALL_FLAGS_NONE, -1, NULL, NULL,
+				       NULL);
+
+		g_clear_pointer(&capture->session_handle, g_free);
+	}
+
 	init_screencast_capture(capture);
 
 	return false;
