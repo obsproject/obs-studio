@@ -10310,4 +10310,7 @@ void OBSBasic::ResetProxyStyleSliders()
 		ActivateAudioSource(source);
 
 	UpdateContextBar(true);
+
+	if (api)
+		api->on_event(OBS_FRONTEND_EVENT_THEME_CHANGED);
 }
