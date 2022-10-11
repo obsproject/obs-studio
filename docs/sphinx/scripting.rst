@@ -197,6 +197,14 @@ modules/namespaces).
    :return:      List of scene items.  Release with
                  :py:func:`sceneitem_list_release()`.
 
+.. py:function:: obs_sceneitem_group_enum_items(group)
+
+   Enumerates scene items within a group.
+
+   :param group: obs_sceneitem_t object to enumerate items from.
+   :return:      List of scene items.  Release with
+                 :py:func:`sceneitem_list_release()`.
+
 .. py:function:: obs_add_main_render_callback(callback)
 
    **Lua only:** Adds a primary output render callback.  This callback
