@@ -1,2 +1,2 @@
+sphinx>=1.3
 sphinx_rtd_theme>=0.5.2
-sphinxcontrib-napoleon>=0.7
