@@ -913,3 +913,19 @@ Functions
                       This uses the undo action from the first and the redo action from the last action.
 
    .. versionadded:: 29.1
+
+---------------------------------------
+
+.. function:: void obs_frontend_audio_mixer_add_source(obs_source_t *source)
+
+   Adds a source to the audio mixer.
+
+   :param source: The source to add to the mixer
+
+---------------------------------------
+
+.. function:: void obs_frontend_audio_mixer_remove_source(obs_source_t *source)
+
+   Removes a source from the audio mixer.
+
+   :param source: The source to remove from the mixer

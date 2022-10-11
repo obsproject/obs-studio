@@ -631,3 +631,15 @@ void obs_frontend_add_undo_redo_action(const char *name,
 		c->obs_frontend_add_undo_redo_action(
 			name, undo, redo, undo_data, redo_data, repeatable);
 }
+
+void obs_frontend_audio_mixer_add_source(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_audio_mixer_add_source(source);
+}
+
+void obs_frontend_audio_mixer_remove_source(obs_source_t *source)
+{
+	if (callbacks_valid())
+		c->obs_frontend_audio_mixer_remove_source(source);
+}

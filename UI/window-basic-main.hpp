@@ -225,6 +225,7 @@ private:
 	std::shared_ptr<Auth> auth;
 
 	std::vector<VolControl *> volumes;
+	std::vector<OBSSource> extraAudioSources;
 
 	std::vector<OBSSignal> signalHandlers;
 
@@ -747,6 +748,8 @@ private slots:
 
 	void ActivateAudioSource(OBSSource source);
 	void DeactivateAudioSource(OBSSource source);
+	void AddExtraAudioSource(OBSSource source);
+	void RemoveExtraAudioSource(OBSSource source);
 
 	void DuplicateSelectedScene();
 	void RemoveSelectedScene();
@@ -881,6 +884,8 @@ private:
 	OBSSource prevFTBSource = nullptr;
 
 	float dpi = 1.0;
+
+	void PruneExtraAudioSources();
 
 public:
 	OBSSource GetProgramSource();

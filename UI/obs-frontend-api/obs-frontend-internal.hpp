@@ -167,6 +167,11 @@ struct obs_frontend_callbacks {
 						       const char *undo_data,
 						       const char *redo_data,
 						       bool repeatable) = 0;
+
+	virtual void
+	obs_frontend_audio_mixer_add_source(obs_source_t *source) = 0;
+	virtual void
+	obs_frontend_audio_mixer_remove_source(obs_source_t *source) = 0;
 };
 
 EXPORT void

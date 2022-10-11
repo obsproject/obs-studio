@@ -3636,6 +3636,11 @@ void OBSBasic::UnhideAllAudioControls()
 	};
 
 	obs_enum_sources(PreEnum, &UnhideAudioMixer);
+
+	PruneExtraAudioSources();
+
+	for (const auto &source : extraAudioSources)
+		UnhideAudioMixer(source);
 }
 
 void OBSBasic::ToggleHideMixer()
@@ -3897,6 +3902,42 @@ void OBSBasic::ToggleVolControlLayout()
 
 	for (const auto &source : sources)
 		ActivateAudioSource(source);
+}
+
+void OBSBasic::PruneExtraAudioSources()
+{
+	for (size_t i = 0; i < extraAudioSources.size(); i++) {
+		if (!extraAudioSources[i])
+			extraAudioSources.erase(extraAudioSources.begin() + i);
+	}
+}
+
+void OBSBasic::AddExtraAudioSource(OBSSource source)
+{
+	if (!source)
+		return;
+
+	PruneExtraAudioSources();
+
+	extraAudioSources.emplace_back(source);
+	ActivateAudioSource(source);
+}
+
+void OBSBasic::RemoveExtraAudioSource(OBSSource source)
+{
+	if (!source)
+		return;
+
+	PruneExtraAudioSources();
+
+	for (size_t i = 0; i < extraAudioSources.size(); i++) {
+		if (extraAudioSources[i] == source) {
+			extraAudioSources.erase(extraAudioSources.begin() + i);
+			break;
+		}
+	}
+
+	DeactivateAudioSource(source);
 }
 
 void OBSBasic::ActivateAudioSource(OBSSource source)
@@ -4956,6 +4997,7 @@ void OBSBasic::ClearSceneData()
 	CloseDialogs();
 
 	ClearVolumeControls();
+	extraAudioSources.clear();
 	ClearListItems(ui->scenes);
 	ui->sources->Clear();
 	ClearQuickTransitions();

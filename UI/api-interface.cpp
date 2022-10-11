@@ -747,6 +747,27 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 			undo_data, redo_data, repeatable);
 	}
 
+	void obs_frontend_audio_mixer_add_source(obs_source_t *source) override
+	{
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if (flags & OBS_SOURCE_AUDIO)
+			QMetaObject::invokeMethod(main, "AddExtraAudioSource",
+						  Q_ARG(OBSSource,
+							OBSSource(source)));
+	}
+
+	void
+	obs_frontend_audio_mixer_remove_source(obs_source_t *source) override
+	{
+		uint32_t flags = obs_source_get_output_flags(source);
+
+		if (flags & OBS_SOURCE_AUDIO)
+			QMetaObject::invokeMethod(
+				main, "RemoveExtraAudioSource",
+				Q_ARG(OBSSource, OBSSource(source)));
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {
