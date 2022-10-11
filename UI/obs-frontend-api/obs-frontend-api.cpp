@@ -571,3 +571,8 @@ const char *obs_frontend_get_locale_string(const char *string)
 	return !!callbacks_valid() ? c->obs_frontend_get_locale_string(string)
 				   : nullptr;
 }
+
+bool obs_frontend_is_theme_dark(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_theme_dark() : false;
+}
