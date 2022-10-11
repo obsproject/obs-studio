@@ -2453,7 +2453,12 @@ void OBSBasicPreview::DrawSpacingHelpers()
 
 	OBSBasic *main = OBSBasic::Get();
 
-	if (main->ui->sources->selectionModel()->selectedIndexes().count() > 1)
+	vec2 s;
+	SceneFindBoxData data(s, s);
+
+	obs_scene_enum_items(main->GetCurrentScene(), FindSelected, &data);
+
+	if (data.sceneItems.size() > 1)
 		return;
 
 	OBSSceneItem item = main->GetCurrentSceneItem();
