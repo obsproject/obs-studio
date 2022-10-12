@@ -546,13 +546,14 @@ private:
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
 	QList<QSharedPointer<QAction>> extraBrowserDockActions;
 	QStringList extraBrowserDockTargets;
+	QStringList extraBrowserDockCustomCss;
 
 	void ClearExtraBrowserDocks();
 	void LoadExtraBrowserDocks();
 	void SaveExtraBrowserDocks();
 	void ManageExtraBrowserDocks();
 	void AddExtraBrowserDock(const QString &title, const QString &url,
-				 const QString &uuid, bool firstCreate);
+				 const QString &uuid, const QString &customCss, bool firstCreate);
 #endif
 
 	QIcon imageIcon;

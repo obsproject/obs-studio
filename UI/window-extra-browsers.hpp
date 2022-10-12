@@ -50,6 +50,7 @@ public:
 		int prevIdx;
 		QString title;
 		QString url;
+		QString customCss;
 	};
 
 	void TabSelection(bool forward);
@@ -66,9 +67,13 @@ public:
 
 	QString newTitle;
 	QString newURL;
+	QString newCustomCss;
 
 public slots:
 	void Init();
+public:
+	static void SetCustomBrowserScriptFromUrlAndCustomCss(QCefWidget* browser,
+				 QString url, QString customCss);
 };
 
 class ExtraBrowsersDelegate : public QStyledItemDelegate {

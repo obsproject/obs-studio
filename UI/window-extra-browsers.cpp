@@ -18,6 +18,7 @@ using namespace json11;
 enum class Column : int {
 	Title,
 	Url,
+	CustomCss,
 	Delete,
 
 	Count,
@@ -39,6 +40,7 @@ void ExtraBrowsersModel::Reset()
 		item.prevIdx = i;
 		item.title = dock->windowTitle();
 		item.url = main->extraBrowserDockTargets[i];
+		item.customCss = main->extraBrowserDockCustomCss[i];
 		items.push_back(item);
 	}
 }
@@ -71,6 +73,8 @@ QVariant ExtraBrowsersModel::data(const QModelIndex &index, int role) const
 			return items[idx].title;
 		case (int)Column::Url:
 			return items[idx].url;
+		case (int)Column::CustomCss:
+			return items[idx].customCss;
 		}
 	} else if (idx == count) {
 		switch (column) {
@@ -78,6 +82,8 @@ QVariant ExtraBrowsersModel::data(const QModelIndex &index, int role) const
 			return newTitle;
 		case (int)Column::Url:
 			return newURL;
+		case (int)Column::CustomCss:
+			return newCustomCss;
 		}
 	}
 
@@ -97,6 +103,8 @@ QVariant ExtraBrowsersModel::headerData(int section,
 			return QTStr("ExtraBrowsers.DockName");
 		case (int)Column::Url:
 			return QStringLiteral("URL");
+		case (int)Column::CustomCss:
+			return QStringLiteral("CSS");
 		}
 	}
 
@@ -160,10 +168,12 @@ void ExtraBrowsersModel::CheckToAdd()
 	item.prevIdx = -1;
 	item.title = newTitle;
 	item.url = newURL;
+	item.customCss = newCustomCss;
 	items.push_back(item);
 
 	newTitle = "";
 	newURL = "";
+	newCustomCss = "";
 
 	endInsertRows();
 
@@ -184,6 +194,16 @@ void ExtraBrowsersModel::UpdateItem(Item &item)
 	if (main->extraBrowserDockTargets[idx] != item.url) {
 		dock->cefWidget->setURL(QT_TO_UTF8(item.url));
 		main->extraBrowserDockTargets[idx] = item.url;
+	}
+	if (main->extraBrowserDockCustomCss[idx] != item.customCss) {
+		if (true) {
+			// Attempt to force a change and reload of new script
+			QCefWidget* browser = dock->cefWidget.data();
+			ExtraBrowsersModel::SetCustomBrowserScriptFromUrlAndCustomCss(browser, item.url, item.customCss);
+			// doesnt have any effect on reloading new script so don't annoy user with refresh
+			//browser->reloadPage();
+		}
+		main->extraBrowserDockCustomCss[idx] = item.customCss;
 	}
 }
 
@@ -228,7 +248,7 @@ void ExtraBrowsersModel::Apply()
 			QString uuid = QUuid::createUuid().toString();
 			uuid.replace(QRegularExpression("[{}-]"), "");
 			main->AddExtraBrowserDock(item.title, item.url, uuid,
-						  true);
+				item.customCss, true);
 		}
 	}
 
@@ -236,6 +256,7 @@ void ExtraBrowsersModel::Apply()
 		int idx = deleted[i];
 		main->extraBrowserDockActions.removeAt(idx);
 		main->extraBrowserDockTargets.removeAt(idx);
+		main->extraBrowserDockCustomCss.removeAt(idx);
 		main->extraBrowserDocks.removeAt(idx);
 	}
 
@@ -267,6 +288,18 @@ void ExtraBrowsersModel::TabSelection(bool forward)
 		break;
 
 	case (int)Column::Url:
+		if (!forward) {
+			if (row == 0) {
+				return;
+			}
+
+			row -= 1;
+		}
+
+		col += 1;
+		break;
+
+	case (int)Column::CustomCss:
 		if (forward) {
 			if (row == items.size()) {
 				return;
@@ -276,6 +309,7 @@ void ExtraBrowsersModel::TabSelection(bool forward)
 		}
 
 		col -= 1;
+		break;
 	}
 
 	sel = createIndex(row, col, nullptr);
@@ -357,8 +391,10 @@ void ExtraBrowsersDelegate::RevertText(QLineEdit *edit_)
 	QString oldText;
 	if (col == (int)Column::Title) {
 		oldText = newItem ? model->newTitle : model->items[row].title;
-	} else {
+	} else if (col == (int)Column::Url) {
 		oldText = newItem ? model->newURL : model->items[row].url;
+	} else if (col == (int)Column::CustomCss) {
+		oldText = newItem ? model->newCustomCss : model->items[row].customCss;
 	}
 
 	edit->setText(oldText);
@@ -373,7 +409,7 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 
 	QString text = edit->text().trimmed();
 
-	if (!newItem && text.isEmpty()) {
+	if (!newItem && text.isEmpty() && col != (int)Column::CustomCss) {
 		return false;
 	}
 
@@ -397,6 +433,9 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 		case (int)Column::Url:
 			model->items[row].url = text;
 			break;
+		case (int)Column::CustomCss:
+			model->items[row].customCss = text;
+			break;
 		}
 	} else {
 		/* if both new values filled out, create new one */
@@ -406,6 +445,9 @@ bool ExtraBrowsersDelegate::UpdateText(QLineEdit *edit_)
 			break;
 		case (int)Column::Url:
 			model->newURL = text;
+			break;
+		case (int)Column::CustomCss:
+			model->newCustomCss = text;
 			break;
 		}
 
@@ -433,6 +475,8 @@ OBSExtraBrowsers::OBSExtraBrowsers(QWidget *parent)
 					    new ExtraBrowsersDelegate(model));
 	ui->table->setItemDelegateForColumn((int)Column::Url,
 					    new ExtraBrowsersDelegate(model));
+	ui->table->setItemDelegateForColumn((int)Column::CustomCss,
+					    new ExtraBrowsersDelegate(model));
 	ui->table->horizontalHeader()->setSectionResizeMode(
 		QHeaderView::ResizeMode::Stretch);
 	ui->table->horizontalHeader()->setSectionResizeMode(
@@ -459,6 +503,7 @@ void OBSExtraBrowsers::on_apply_clicked()
 void OBSBasic::ClearExtraBrowserDocks()
 {
 	extraBrowserDockTargets.clear();
+	extraBrowserDockCustomCss.clear();
 	extraBrowserDockActions.clear();
 	extraBrowserDocks.clear();
 }
@@ -481,9 +526,10 @@ void OBSBasic::LoadExtraBrowserDocks()
 		std::string title = item["title"].string_value();
 		std::string url = item["url"].string_value();
 		std::string uuid = item["uuid"].string_value();
+		std::string customCss = item["customCss"].string_value();
 
 		AddExtraBrowserDock(title.c_str(), url.c_str(), uuid.c_str(),
-				    false);
+				    customCss.c_str(), false);
 	}
 }
 
@@ -493,10 +539,12 @@ void OBSBasic::SaveExtraBrowserDocks()
 	for (int i = 0; i < extraBrowserDocks.size(); i++) {
 		QDockWidget *dock = extraBrowserDocks[i].data();
 		QString url = extraBrowserDockTargets[i];
+		QString customCss = extraBrowserDockCustomCss[i];
 		QString uuid = dock->property("uuid").toString();
 		Json::object obj{
 			{"title", QT_TO_UTF8(dock->windowTitle())},
 			{"url", QT_TO_UTF8(url)},
+			{"customCss", QT_TO_UTF8(customCss)},
 			{"uuid", QT_TO_UTF8(uuid)},
 		};
 		array.push_back(obj);
@@ -519,8 +567,8 @@ void OBSBasic::ManageExtraBrowserDocks()
 	extraBrowsers->show();
 }
 
-void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
-				   const QString &uuid, bool firstCreate)
+void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &inUrl,
+				   const QString &uuid, const QString &inCustomCss, bool firstCreate)
 {
 	static int panel_version = -1;
 	if (panel_version == -1) {
@@ -537,6 +585,10 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	dock->setWindowTitle(title);
 	dock->setAllowedAreas(Qt::AllDockWidgetAreas);
 
+	QString customCss = inCustomCss;
+	QString url = inUrl;
+
+
 	QCefWidget *browser =
 		cef->create_widget(dock, QT_TO_UTF8(url), nullptr);
 	if (browser && panel_version >= 1)
@@ -544,23 +596,7 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 
 	dock->SetWidget(browser);
 
-	/* Add support for Twitch Dashboard panels */
-	if (url.contains("twitch.tv/popout") &&
-	    url.contains("dashboard/live")) {
-		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
-		QRegularExpressionMatch match = re.match(url);
-		QString username = match.captured(1);
-		if (username.length() > 0) {
-			std::string script;
-			script =
-				"Object.defineProperty(document, 'referrer', { get: () => '";
-			script += "https://twitch.tv/";
-			script += QT_TO_UTF8(username);
-			script += "/dashboard/live";
-			script += "'});";
-			browser->setStartupScript(script);
-		}
-	}
+	ExtraBrowsersModel::SetCustomBrowserScriptFromUrlAndCustomCss(browser, url, customCss);
 
 	addDockWidget(Qt::RightDockWidgetArea, dock);
 
@@ -588,4 +624,74 @@ void OBSBasic::AddExtraBrowserDock(const QString &title, const QString &url,
 	extraBrowserDocks.push_back(QSharedPointer<QDockWidget>(dock));
 	extraBrowserDockActions.push_back(QSharedPointer<QAction>(action));
 	extraBrowserDockTargets.push_back(url);
+	extraBrowserDockCustomCss.push_back(customCss);
+}
+
+
+
+// static helper function for setting script of browser
+void ExtraBrowsersModel::SetCustomBrowserScriptFromUrlAndCustomCss(QCefWidget* browser, QString url, QString customCss) {
+	std::string script;
+	//
+	/* Add support for Twitch Dashboard panels */
+	if (url.contains("twitch.tv/popout") &&
+		url.contains("dashboard/live")) {
+		QRegularExpression re("twitch.tv\\/popout\\/([^/]+)\\/");
+		QRegularExpressionMatch match = re.match(url);
+		QString username = match.captured(1);
+		if (username.length() > 0) {
+			script +=
+				"Object.defineProperty(document, 'referrer', { get: () => '";
+			script += "https://twitch.tv/";
+			script += QT_TO_UTF8(username);
+			script += "/dashboard/live";
+			script += "'});";
+		}
+	}
+
+	// Custom css
+	if (customCss != "") {
+		// code taken from OnLoadEnd() in browser-client.cpp
+		// unfortunately CefURIEncode doesnt seem to be available to base OBS so we require user to uri encode it in the url
+		//		std::string uriEncodedCSS = CefURIEncode(customCss, false).ToString();
+		auto CefURIEncodePrivate = [](std::string str, bool use_plus) {
+			// from https://stackoverflow.com/questions/154536/encode-decode-urls-in-c
+			std::string new_str = "";
+			char c;
+			int ic;
+			const char* chars = str.c_str();
+			char bufHex[10];
+			size_t len = strlen(chars);
+
+			for (int i = 0; i < len; i++) {
+				c = chars[i];
+				ic = c;
+				// uncomment this if you want to encode spaces with +
+				if (use_plus && c == ' ') {
+					new_str += '+';
+				}
+				else if (isalnum(c) || c == '-' || c == '_' ||
+					c == '.' || c == '~') {
+					new_str += c;
+				}
+				else {
+					sprintf(bufHex, "%X", c);
+					if (ic < 16)
+						new_str += "%0";
+					else
+						new_str += "%";
+					new_str += bufHex;
+				}
+			}
+			return new_str;
+		};
+		std::string uriEncodedCSS = CefURIEncodePrivate(customCss.toStdString(), false);
+		script += "const obsCSS = document.createElement('style');";
+		script += "obsCSS.innerHTML = decodeURIComponent(\"" + uriEncodedCSS + "\");";
+		script += "document.querySelector('head').appendChild(obsCSS);";
+	}
+	// we run this even if blank so that we can delete any previous custom script if updating browser
+	if (true || script != "") {
+		browser->setStartupScript(script);
+	}
 }
