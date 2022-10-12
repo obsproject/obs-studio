@@ -26,6 +26,7 @@ if(OS_WINDOWS)
   add_subdirectory(vlc-video)
   add_subdirectory(obs-vst)
   add_subdirectory(mediasoup-connector)
+  add_subdirectory(motion-effect)
 
   if(EXISTS "${CMAKE_CURRENT_LIST_DIR}/enc-amf/CMakeLists.txt")
     add_subdirectory(enc-amf)
