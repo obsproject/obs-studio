@@ -4373,6 +4373,11 @@ void OBSBasic::ResetUI()
 		ui->previewLayout->setDirection(QBoxLayout::LeftToRight);
 
 	UpdatePreviewProgramIndicators();
+
+	bool hideTransitionWidget = config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "HideTransitionWidget");
+	if (programOptions)
+		programOptions->setVisible(!hideTransitionWidget);
 }
 
 int OBSBasic::ResetVideo()

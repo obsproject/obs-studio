@@ -409,6 +409,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->automaticSearch,      CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->previewSpacingHelpers,CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->doubleClickSwitch,    CHECK_CHANGED,  GENERAL_CHANGED);
+	HookWidget(ui->hideTransitionWidget, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->studioPortraitLayout, CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->prevProgLabelToggle,  CHECK_CHANGED,  GENERAL_CHANGED);
 	HookWidget(ui->multiviewMouseSwitch, CHECK_CHANGED,  GENERAL_CHANGED);
@@ -1348,6 +1349,10 @@ void OBSBasicSettings::LoadGeneralSettings()
 	bool doubleClickSwitch = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "TransitionOnDoubleClick");
 	ui->doubleClickSwitch->setChecked(doubleClickSwitch);
+
+	bool hideTransitionWidget = config_get_bool(
+		GetGlobalConfig(), "BasicWindow", "HideTransitionWidget");
+	ui->hideTransitionWidget->setChecked(hideTransitionWidget);
 
 	bool studioPortraitLayout = config_get_bool(
 		GetGlobalConfig(), "BasicWindow", "StudioPortraitLayout");
@@ -3132,6 +3137,14 @@ void OBSBasicSettings::SaveGeneralSettings()
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
 				"TransitionOnDoubleClick",
 				ui->doubleClickSwitch->isChecked());
+
+	if (WidgetChanged(ui->hideTransitionWidget)) {
+		config_set_bool(GetGlobalConfig(), "BasicWindow",
+				"HideTransitionWidget",
+				ui->hideTransitionWidget->isChecked());
+		main->ResetUI();
+	}
+
 	if (WidgetChanged(ui->automaticSearch))
 		config_set_bool(GetGlobalConfig(), "General",
 				"AutomaticCollectionSearch",

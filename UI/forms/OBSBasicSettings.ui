@@ -723,6 +723,13 @@
                      </property>
                     </widget>
                    </item>
+                   <item row="1" column="1">
+                    <widget class="QCheckBox" name="hideTransitionWidget">
+                     <property name="text">
+                      <string>Basic.Settings.General.HideTransitionWidget</string>
+                     </property>
+                    </widget>
+                   </item>
                    <item row="0" column="0">
                     <spacer name="horizontalSpacer_6">
                      <property name="orientation">
@@ -736,14 +743,14 @@
                      </property>
                     </spacer>
                    </item>
-                   <item row="1" column="1">
+                   <item row="2" column="1">
                     <widget class="QCheckBox" name="studioPortraitLayout">
                      <property name="text">
                       <string>Basic.Settings.General.StudioPortraitLayout</string>
                      </property>
                     </widget>
                    </item>
-                   <item row="2" column="1">
+                   <item row="3" column="1">
                     <widget class="QCheckBox" name="prevProgLabelToggle">
                      <property name="text">
                       <string>Basic.Settings.General.TogglePreviewProgramLabels</string>
@@ -7501,6 +7508,7 @@
   <tabstop>previewSpacingHelpers</tabstop>
   <tabstop>automaticSearch</tabstop>
   <tabstop>doubleClickSwitch</tabstop>
+  <tabstop>hideTransitionWidget</tabstop>
   <tabstop>studioPortraitLayout</tabstop>
   <tabstop>prevProgLabelToggle</tabstop>
   <tabstop>multiviewMouseSwitch</tabstop>
