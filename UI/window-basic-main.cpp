@@ -3086,6 +3086,13 @@ void OBSBasic::RenameSources(OBSSource source, QString newName,
 			projectors[i]->RenameProjector(prevName, newName);
 	}
 
+	if (vcamConfig.type == VCamOutputType::SourceOutput &&
+	    prevName == QString::fromStdString(vcamConfig.source))
+		vcamConfig.source = newName.toStdString();
+	if (vcamConfig.type == VCamOutputType::SceneOutput &&
+	    prevName == QString::fromStdString(vcamConfig.scene))
+		vcamConfig.scene = newName.toStdString();
+
 	SaveProject();
 
 	obs_scene_t *scene = obs_scene_from_source(source);
