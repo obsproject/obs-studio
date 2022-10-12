@@ -1408,7 +1408,8 @@ bool obs_module_load(void)
 	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
 #endif
 
-	struct obs_encoder_info aac_info {};
+	struct obs_encoder_info aac_info {
+	};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
 	aac_info.codec = "AAC";
