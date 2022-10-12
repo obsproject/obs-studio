@@ -444,9 +444,12 @@ EXPORT int obs_reset_video();
 
 EXPORT int obs_set_video_info(struct obs_video_info *canvas,
 			      struct obs_video_info *updated);
-/** Gets the currently in rendering video settings, returns false if no video */
+
+/** Gets video info, 0 or currently rendiring */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
-/** Marks a video info to be released on a next reset */
+EXPORT bool obs_get_current_video_info(struct obs_video_info *ovi);
+
+/** Remove a video info */
 EXPORT int obs_remove_video_info(struct obs_video_info *ovi);
 /** Adds new video info to array of video info objects, need to be initialized */
 EXPORT struct obs_video_info *obs_create_video_info();

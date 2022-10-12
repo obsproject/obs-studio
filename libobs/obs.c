@@ -1570,14 +1570,34 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	return obs_reset_audio2(&oai2);
 }
 
+bool obs_get_current_video_info(struct obs_video_info *ovi)
+{
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested");
+	if (!obs->video.graphics)
+		return false;
+	if (!obs->video_rendering_canvas)
+		return false;
+
+	*ovi = *(obs->video_rendering_canvas);
+
+	return true;
+}
+
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
 	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested");
 	if (!obs->video.graphics)
 		return false;
 
-	*ovi = *(obs->video_rendering_canvas);
-	return true;
+	bool ret = false;
+	pthread_mutex_lock(&obs->video.canvases_mutex);
+	if (obs->video.canvases.num > 0) {
+		*ovi = *(obs->video.canvases.array[0]);
+		ret = true;
+	}
+	pthread_mutex_unlock(&obs->video.canvases_mutex);
+
+	return ret;
 }
 
 int obs_remove_video_info(struct obs_video_info *ovi)
@@ -1587,17 +1607,17 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 	if (ret != OBS_VIDEO_SUCCESS)
 		return ret;
 
+	pthread_mutex_lock(&obs->video.canvases_mutex);
 	size_t num = obs->video.canvases.num;
 	for (size_t i = 0; i < num; i++) {
 		if (obs->video.canvases.array[i] == ovi) {
 			bfree(obs->video.canvases.array[i]);
 		}
 	}
-	blog(LOG_INFO, "[VIDEO_CANVAS] canvases before erase %d", obs->video.canvases.num);
 	da_erase_item(obs->video.canvases, ovi);
-	blog(LOG_INFO, "[VIDEO_CANVAS] canvases after erase %d", obs->video.canvases.num);
 	da_resize(obs->video.canvases, obs->video.canvases.num - 1);
-	blog(LOG_INFO, "[VIDEO_CANVAS] canvases after resize %d", obs->video.canvases.num);
+	blog(LOG_INFO, "[VIDEO_CANVAS] video canvases left after resize %d", obs->video.canvases.num);
+	pthread_mutex_unlock(&obs->video.canvases_mutex);
 
 	return obs_init_video();
 }

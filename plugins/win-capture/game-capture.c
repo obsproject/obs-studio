@@ -632,7 +632,8 @@ static void load_placeholder_image(struct game_capture *gc)
 	const int text_fitting_step = 5;
 	const int ALPHA_COMPONENT = 3;
 	struct obs_video_info ovi;	
-	obs_get_video_info(&ovi);
+	if (!obs_get_current_video_info(&ovi))
+		return;
 
 	gc->placeholder_text_height = ovi.base_height / fraction_of_image_for_text;
 	gc->placeholder_text_width = ovi.base_width;
@@ -1005,7 +1006,7 @@ static inline void reset_frame_interval(struct game_capture *gc)
 	struct obs_video_info ovi;
 	uint64_t interval = 0;
 
-	if (obs_get_video_info(&ovi)) {
+	if (obs_get_current_video_info(&ovi)) {
 		interval =
 			util_mul_div64(ovi.fps_den, 1000000000ULL, ovi.fps_num);
 
@@ -2255,7 +2256,8 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 							gc->placeholder_image.image.texture);
 
 				struct obs_video_info ovi;	
-				obs_get_video_info(&ovi);
+				if (!obs_get_current_video_info(&ovi))
+					return;
 
 				size_t passes = gs_technique_begin(tech);
 				for (size_t i = 0; i < passes; i++) {
@@ -2308,11 +2310,12 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
 		struct obs_video_info ovi;	
-		obs_get_video_info(&ovi);
-		float cx_scale = ovi.base_width / (float)gc->cx;
-		float cy_scale = ovi.base_height / (float)gc->cy;
-		gs_matrix_push();
-		gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
+		if (obs_get_current_video_info(&ovi)) {
+			float cx_scale = ovi.base_width / (float)gc->cx;
+			float cy_scale = ovi.base_height / (float)gc->cy;
+			gs_matrix_push();
+			gs_matrix_scale3f(cx_scale, cy_scale, 1.0f);
+		}
 	}
 
 	gs_texture_t *texture = gc->texture;
@@ -2557,7 +2560,8 @@ static uint32_t game_capture_width(void *data)
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
-		obs_get_video_info(&ovi);
+		if (!obs_get_current_video_info(&ovi))
+			return 0;
 		return ovi.base_width;
 	} else 
 		return gc->active ? gc->cx : 0;
@@ -2568,7 +2572,8 @@ static uint32_t game_capture_height(void *data)
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		struct obs_video_info ovi;	
-		obs_get_video_info(&ovi);
+		if (!obs_get_current_video_info(&ovi))
+			return 0;
 		return ovi.base_height;
 	} else 
 		return gc->active ? gc->cy : 0;
