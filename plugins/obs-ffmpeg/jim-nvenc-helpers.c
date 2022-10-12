@@ -142,8 +142,7 @@ bool check_driver_version(obs_encoder_t *encoder)
 
 	uint32_t ver = 0;
 	NVENCSTATUS status = nv_max_ver(&ver);
-	if( nv_failed(encoder, status, __FUNCTION__, "nv_max_ver"))
-	{
+	if (nv_failed(encoder, status, __FUNCTION__, "nv_max_ver")) {
 		return false;
 	}
 

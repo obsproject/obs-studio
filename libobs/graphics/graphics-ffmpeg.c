@@ -369,13 +369,16 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 	int cx_out = info->cx;
 	int cy_out = info->cy;
-	const int image_resolution_limit = 10000*10000;
+	const int image_resolution_limit = 10000 * 10000;
 	bool downsize = info->cx * info->cy > image_resolution_limit;
 	if (downsize) {
-		float devider = (float)(cx_out * cy_out) / (float)image_resolution_limit;
-		cx_out = (uint32_t)(cx_out/devider);
-		cy_out = (uint32_t)(cy_out/devider);
-		blog(LOG_WARNING, "Image resolution over 100MP limit and get downscaled from %d x %d  to %d x %d ", info->cx , info->cy, cx_out, cy_out);
+		float devider = (float)(cx_out * cy_out) /
+				(float)image_resolution_limit;
+		cx_out = (uint32_t)(cx_out / devider);
+		cy_out = (uint32_t)(cy_out / devider);
+		blog(LOG_WARNING,
+		     "Image resolution over 100MP limit and get downscaled from %d x %d  to %d x %d ",
+		     info->cx, info->cy, cx_out, cy_out);
 	}
 
 	AVDictionary *dict = frame->metadata;
@@ -393,8 +396,8 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 
 	if (!downsize && info->format == AV_PIX_FMT_BGR0) {
 		data = ffmpeg_image_copy_data_straight(info, frame);
-	} else if ( !downsize && (info->format == AV_PIX_FMT_RGBA ||
-		   info->format == AV_PIX_FMT_BGRA)) {
+	} else if (!downsize && (info->format == AV_PIX_FMT_RGBA ||
+				 info->format == AV_PIX_FMT_BGRA)) {
 		if (alpha_mode == GS_IMAGE_ALPHA_STRAIGHT) {
 			data = ffmpeg_image_copy_data_straight(info, frame);
 		} else {
@@ -504,7 +507,8 @@ static void *ffmpeg_image_reformat_frame(struct ffmpeg_image *info,
 		static const enum AVPixelFormat format = AV_PIX_FMT_BGRA;
 
 		sws_ctx = sws_getContext(info->cx, info->cy, info->format,
-					 cx_out, cy_out, format, downsize? SWS_BICUBIC : SWS_POINT,
+					 cx_out, cy_out, format,
+					 downsize ? SWS_BICUBIC : SWS_POINT,
 					 NULL, NULL, NULL);
 		if (!sws_ctx) {
 			blog(LOG_WARNING,

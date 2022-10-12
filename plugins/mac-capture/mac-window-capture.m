@@ -10,7 +10,7 @@
 
 struct window_capture {
 	obs_source_t *source;
-	struct display_capture* dc;
+	struct display_capture *dc;
 	struct cocoa_window window;
 	//CGRect              bounds;
 	//CGWindowListOption  window_option;
@@ -88,7 +88,9 @@ static void *capture_thread(void *data)
 static bool init_screen_stream(struct display_capture *dc)
 {
 	if (dc->display >= [NSScreen screens].count) {
-		blog(LOG_INFO, "[display-capture], dc->display is %d > screen count, exiting", dc->display);
+		blog(LOG_INFO,
+		     "[display-capture], dc->display is %d > screen count, exiting",
+		     dc->display);
 		return false;
 	}
 
@@ -125,7 +127,7 @@ static bool init_screen_stream(struct display_capture *dc)
 		dispatch_queue_create(NULL, NULL),
 		^(CGDisplayStreamFrameStatus status, uint64_t displayTime,
 		  IOSurfaceRef frameSurface,
-		  CGDisplayStreamUpdateRef updateRef) {
+		  CGDisplayStreamUpdateRef updateRef){
 		});
 
 	return true;
@@ -159,7 +161,6 @@ static void _window_capture_destroy(void *data)
 	os_event_destroy(cap->dc->disp_finished);
 }
 
-
 static void window_capture_destroy(void *data)
 {
 	_window_capture_destroy(data);
@@ -176,10 +177,11 @@ static inline void *window_capture_create_internal(obs_data_t *settings,
 	wc->source = source;
 	wc->color_space = CGColorSpaceCreateDeviceRGB();
 	da_init(wc->buffer);
-	blog(LOG_INFO, "[window-capture] - Init Display Capture for permissions dialog");
+	blog(LOG_INFO,
+	     "[window-capture] - Init Display Capture for permissions dialog");
 	wc->dc = bzalloc(sizeof(struct display_capture));
 	if (!wc->dc) {
-		blog(LOG_INFO, "[window-capture] - Display Capture Alloc Fail"); 
+		blog(LOG_INFO, "[window-capture] - Display Capture Alloc Fail");
 		goto fail;
 	}
 	wc->dc->display = obs_data_get_int(settings, "display");

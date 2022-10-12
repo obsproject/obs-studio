@@ -6,7 +6,7 @@
 
 using namespace std;
 
-string GetDeviceName(IMMDevice* device)
+string GetDeviceName(IMMDevice *device)
 {
 	if (!device) {
 		return "";
@@ -27,7 +27,8 @@ string GetDeviceName(IMMDevice* device)
 
 			size = os_wcs_to_utf8(nameVar.pwszVal, len, nullptr, 0);
 			device_name.resize(size);
-			os_wcs_to_utf8(nameVar.pwszVal, len, &device_name[0], size);
+			os_wcs_to_utf8(nameVar.pwszVal, len, &device_name[0],
+				       size);
 		}
 	}
 

@@ -3403,9 +3403,8 @@ device_register_loss_callbacks(gs_device_t *device,
 	device->loss_callbacks.emplace_back(*callbacks);
 }
 
-extern "C" EXPORT void
-device_unregister_loss_callbacks(gs_device_t *device,
-					void *data)
+extern "C" EXPORT void device_unregister_loss_callbacks(gs_device_t *device,
+							void *data)
 {
 	for (auto iter = device->loss_callbacks.begin();
 	     iter != device->loss_callbacks.end(); ++iter) {

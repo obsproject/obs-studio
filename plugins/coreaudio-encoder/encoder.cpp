@@ -1276,8 +1276,8 @@ static vector<UInt32> get_bitrates(DStr &log, ca_encoder *ca,
 
 		handle_bitrate(max_);
 	};
-	
-	if (channels == 0) 
+
+	if (channels == 0)
 		return bitrates;
 
 	for (UInt32 format_id : (ca ? *ca->allowed_formats : aac_formats)) {
@@ -1408,8 +1408,7 @@ bool obs_module_load(void)
 	CA_LOG(LOG_INFO, "Adding CoreAudio AAC encoder");
 #endif
 
-	struct obs_encoder_info aac_info {
-	};
+	struct obs_encoder_info aac_info {};
 	aac_info.id = "CoreAudio_AAC";
 	aac_info.type = OBS_ENCODER_AUDIO;
 	aac_info.codec = "AAC";

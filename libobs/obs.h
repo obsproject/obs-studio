@@ -253,8 +253,8 @@ struct obs_source_audio {
 	enum audio_format format;
 	uint32_t samples_per_sec;
 
-	uint64_t            timestamp;
-	int64_t             dec_frame_pts;
+	uint64_t timestamp;
+	int64_t dec_frame_pts;
 };
 
 struct obs_source_cea_708 {
@@ -716,8 +716,8 @@ EXPORT void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *),
 			      void *param);
 
 /** Check if global obs object know that reference */
-EXPORT bool obs_scene_is_present(obs_scene_t * checking_scene);
-EXPORT bool obs_source_is_present(obs_source_t * checking_source);
+EXPORT bool obs_scene_is_present(obs_scene_t *checking_scene);
+EXPORT bool obs_source_is_present(obs_source_t *checking_source);
 
 /**
  * Gets a source by its name.
@@ -1006,7 +1006,7 @@ EXPORT void obs_display_resize(obs_display_t *display, uint32_t cx,
 #ifdef __APPLE__
 /** Creates IOSurface (Apple shared memory) */
 EXPORT uint32_t obs_display_create_iosurface(obs_display_t *display,
-						uint32_t width, uint32_t height);
+					     uint32_t width, uint32_t height);
 #endif
 
 /** Updates the color space of this display */
@@ -1884,9 +1884,9 @@ EXPORT void obs_sceneitem_set_order(obs_sceneitem_t *item,
 				    enum obs_order_movement movement);
 EXPORT void obs_sceneitem_set_order_position(obs_sceneitem_t *item,
 					     int position);
-EXPORT void obs_scene_set_items_order(obs_scene_t *scene, 
-						 int64_t* new_items_order, 
-						 int items_count);
+EXPORT void obs_scene_set_items_order(obs_scene_t *scene,
+				      int64_t *new_items_order,
+				      int items_count);
 EXPORT void obs_sceneitem_set_bounds_type(obs_sceneitem_t *item,
 					  enum obs_bounds_type type);
 EXPORT void obs_sceneitem_set_bounds_alignment(obs_sceneitem_t *item,
@@ -2379,7 +2379,7 @@ EXPORT void obs_encoder_set_name(obs_encoder_t *encoder, const char *name);
 EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode);
+				      enum obs_video_rendering_mode mode);
 
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);
@@ -2504,7 +2504,8 @@ EXPORT void *obs_encoder_create_rerouted(obs_encoder_t *encoder,
 EXPORT bool obs_encoder_paused(const obs_encoder_t *output);
 
 /** Set encoder error to outputs */
-EXPORT void obs_outputs_set_last_error(obs_encoder_t *encoder, const char * error_text);
+EXPORT void obs_outputs_set_last_error(obs_encoder_t *encoder,
+				       const char *error_text);
 EXPORT const char *obs_encoder_get_last_error(obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_last_error(obs_encoder_t *encoder,
 				       const char *message);
@@ -2544,7 +2545,7 @@ EXPORT bool obs_weak_service_references_service(obs_weak_service_t *weak,
 EXPORT const char *obs_service_get_name(const obs_service_t *service);
 
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode);
+				      enum obs_video_rendering_mode mode);
 
 /** Gets the default settings for a service */
 EXPORT obs_data_t *obs_service_defaults(const char *id);

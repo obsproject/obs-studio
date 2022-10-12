@@ -31,6 +31,6 @@ bool obs_module_load(void)
 	RegisterWASAPIDeviceOutput();
 	if (process_filter_supported)
 		RegisterWASAPIProcessOutput();
-    patchMediaCrash();
+	patchMediaCrash();
 	return true;
 }
