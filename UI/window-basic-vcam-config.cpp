@@ -195,6 +195,9 @@ void OBSBasicVCamConfig::Init()
 static obs_view_t *view = nullptr;
 static video_t *video = nullptr;
 
+static obs_scene_t *sourceScene = nullptr;
+static obs_sceneitem_t *sourceSceneItem = nullptr;
+
 video_t *OBSBasicVCamConfig::StartVideo()
 {
 	if (!view)
@@ -212,6 +215,12 @@ void OBSBasicVCamConfig::StopVideo()
 	obs_view_remove(view);
 	obs_view_set_source(view, 0, nullptr);
 	video = nullptr;
+
+	if (sourceScene) {
+		obs_scene_release(sourceScene);
+		sourceScene = nullptr;
+		sourceSceneItem = nullptr;
+	}
 }
 
 void OBSBasicVCamConfig::DestroyView()
@@ -247,7 +256,38 @@ void OBSBasicVCamConfig::UpdateOutputSource()
 		break;
 
 	case VCamOutputType::Source:
-		source = obs_get_source_by_name(vCamConfig->source.c_str());
+		auto rawSource =
+			obs_get_source_by_name(vCamConfig->source.c_str());
+		if (!rawSource)
+			break;
+
+		// Use a scene transform to fit the source size to the canvas
+		if (!sourceScene)
+			sourceScene = obs_scene_create_private(nullptr);
+		source = obs_source_get_ref(obs_scene_get_source(sourceScene));
+
+		if (sourceSceneItem) {
+			if (obs_sceneitem_get_source(sourceSceneItem) !=
+			    rawSource) {
+				obs_sceneitem_remove(sourceSceneItem);
+				sourceSceneItem = nullptr;
+			}
+		}
+		if (!sourceSceneItem) {
+			sourceSceneItem = obs_scene_add(sourceScene, rawSource);
+			obs_source_release(rawSource);
+
+			obs_sceneitem_set_bounds_type(sourceSceneItem,
+						      OBS_BOUNDS_SCALE_INNER);
+			obs_sceneitem_set_bounds_alignment(sourceSceneItem,
+							   OBS_ALIGN_CENTER);
+
+			const struct vec2 size = {
+				(float)obs_source_get_width(source),
+				(float)obs_source_get_height(source),
+			};
+			obs_sceneitem_set_bounds(sourceSceneItem, &size);
+		}
 		break;
 	}
 

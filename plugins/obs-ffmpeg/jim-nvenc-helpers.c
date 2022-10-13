@@ -1,7 +1,9 @@
 #include "jim-nvenc.h"
 #include <util/platform.h>
 #include <util/threading.h>
+#include <util/config-file.h>
 #include <util/dstr.h>
+#include <util/pipe.h>
 
 static void *nvenc_lib = NULL;
 static pthread_mutex_t init_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -94,6 +96,30 @@ static void *load_nv_func(const char *func)
 
 typedef NVENCSTATUS(NVENCAPI *NV_MAX_VER_FUNC)(uint32_t *);
 
+uint32_t get_nvenc_ver()
+{
+	static NV_MAX_VER_FUNC nv_max_ver = NULL;
+	static bool failed = false;
+
+	if (!nv_max_ver) {
+		if (failed)
+			return 0;
+
+		nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func(
+			"NvEncodeAPIGetMaxSupportedVersion");
+		if (!nv_max_ver) {
+			failed = true;
+			return 0;
+		}
+	}
+
+	uint32_t ver = 0;
+	if (nv_max_ver(&ver) != NV_ENC_SUCCESS) {
+		return 0;
+	}
+	return ver;
+}
+
 const char *nv_error_name(NVENCSTATUS err)
 {
 #define RETURN_CASE(x) \
@@ -142,9 +168,8 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 		return success;
 	initialized = true;
 
-	NV_MAX_VER_FUNC nv_max_ver = (NV_MAX_VER_FUNC)load_nv_func(
-		"NvEncodeAPIGetMaxSupportedVersion");
-	if (!nv_max_ver) {
+	uint32_t ver = get_nvenc_ver();
+	if (ver == 0) {
 		obs_encoder_set_last_error(
 			encoder,
 			"Missing NvEncodeAPIGetMaxSupportedVersion, check "
@@ -152,14 +177,9 @@ static inline bool init_nvenc_internal(obs_encoder_t *encoder)
 		return false;
 	}
 
-	uint32_t ver = 0;
-	if (NV_FAILED(encoder, nv_max_ver(&ver))) {
-		return false;
-	}
-
-	uint32_t cur_ver = (NVENCAPI_MAJOR_VERSION << 4) |
-			   NVENCAPI_MINOR_VERSION;
-	if (cur_ver > ver) {
+	uint32_t supported_ver = (NVENC_COMPAT_MAJOR_VER << 4) |
+				 NVENC_COMPAT_MINOR_VER;
+	if (supported_ver > ver) {
 		obs_encoder_set_last_error(
 			encoder, obs_module_text("NVENC.OutdatedDriver"));
 
@@ -200,8 +220,71 @@ extern struct obs_encoder_info h264_nvenc_info;
 #ifdef ENABLE_HEVC
 extern struct obs_encoder_info hevc_nvenc_info;
 #endif
+extern struct obs_encoder_info av1_nvenc_info;
 
-void jim_nvenc_load(bool h264, bool hevc)
+static bool av1_supported(void)
+{
+	char *test_exe = os_get_executable_path_ptr("obs-nvenc-test.exe");
+	struct dstr caps_str = {0};
+	bool av1_supported = false;
+	config_t *config = NULL;
+
+	os_process_pipe_t *pp = os_process_pipe_create(test_exe, "r");
+	if (!pp) {
+		blog(LOG_WARNING, "[NVENC] Failed to launch the NVENC "
+				  "test process I guess");
+		goto fail;
+	}
+
+	for (;;) {
+		char data[2048];
+		size_t len =
+			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
+		if (!len)
+			break;
+
+		dstr_ncat(&caps_str, data, len);
+	}
+
+	os_process_pipe_destroy(pp);
+
+	if (dstr_is_empty(&caps_str)) {
+		blog(LOG_WARNING,
+		     "[NVENC] Seems the NVENC test subprocess crashed. "
+		     "Better there than here I guess. Let's just "
+		     "skip NVENC AV1 detection then I suppose.");
+		goto fail;
+	}
+
+	if (config_open_string(&config, caps_str.array) != 0) {
+		blog(LOG_WARNING, "[NVENC] Failed to open config string");
+		goto fail;
+	}
+
+	const char *error = config_get_string(config, "error", "string");
+	if (error) {
+		blog(LOG_WARNING, "[NVENC] AV1 test process failed: %s", error);
+		goto fail;
+	}
+
+	uint32_t adapter_count = (uint32_t)config_num_sections(config);
+	bool avc_supported = false;
+	bool hevc_supported = false;
+
+	/* for now, just check AV1 support on device 0 */
+	av1_supported = config_get_bool(config, "0", "supports_av1");
+
+fail:
+	if (config)
+		config_close(config);
+	dstr_free(&caps_str);
+	if (test_exe)
+		bfree(test_exe);
+
+	return av1_supported;
+}
+
+void jim_nvenc_load(bool h264, bool hevc, bool av1)
 {
 	pthread_mutex_init(&init_mutex, NULL);
 	if (h264)
@@ -210,6 +293,10 @@ void jim_nvenc_load(bool h264, bool hevc)
 	if (hevc)
 		obs_register_encoder(&hevc_nvenc_info);
 #endif
+	if (av1 && av1_supported())
+		obs_register_encoder(&av1_nvenc_info);
+	else
+		blog(LOG_WARNING, "[NVENC] AV1 is not supported");
 }
 
 void jim_nvenc_unload(void)

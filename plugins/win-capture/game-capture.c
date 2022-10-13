@@ -2194,13 +2194,13 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->cx : 0;
+	return (gc->active && gc->capturing) ? gc->cx : 0;
 }
 
 static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
-	return gc->active ? gc->cy : 0;
+	return (gc->active && gc->capturing) ? gc->cy : 0;
 }
 
 static const char *game_capture_name(void *unused)

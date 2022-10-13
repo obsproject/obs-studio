@@ -408,6 +408,7 @@ static bool nvenc_encode(void *data, struct encoder_frame *frame,
 enum codec_type {
 	CODEC_H264,
 	CODEC_HEVC,
+	CODEC_AV1,
 };
 
 static void nvenc_defaults_base(enum codec_type codec, obs_data_t *settings)
@@ -421,7 +422,7 @@ static void nvenc_defaults_base(enum codec_type codec, obs_data_t *settings)
 	obs_data_set_default_string(settings, "multipass", "qres");
 	obs_data_set_default_string(settings, "tune", "hq");
 	obs_data_set_default_string(settings, "profile",
-				    codec == CODEC_HEVC ? "main" : "high");
+				    codec != CODEC_H264 ? "main" : "high");
 	obs_data_set_default_bool(settings, "psycho_aq", true);
 	obs_data_set_default_int(settings, "gpu", 0);
 	obs_data_set_default_int(settings, "bf", 2);
@@ -436,6 +437,11 @@ void h264_nvenc_defaults(obs_data_t *settings)
 void hevc_nvenc_defaults(obs_data_t *settings)
 {
 	nvenc_defaults_base(CODEC_HEVC, settings);
+}
+
+void av1_nvenc_defaults(obs_data_t *settings)
+{
+	nvenc_defaults_base(CODEC_AV1, settings);
 }
 
 static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
@@ -486,7 +492,7 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 	obs_property_int_set_suffix(p, " Kbps");
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			       1, 51, 1);
+			       1, codec == CODEC_AV1 ? 63 : 51, 1);
 
 	p = obs_properties_add_int(props, "keyint_sec",
 				   obs_module_text("KeyframeIntervalSec"), 0,
@@ -543,6 +549,8 @@ obs_properties_t *nvenc_properties_internal(enum codec_type codec, bool ffmpeg)
 	if (codec == CODEC_HEVC) {
 		add_profile("main10");
 		add_profile("main");
+	} else if (codec == CODEC_AV1) {
+		add_profile("main");
 	} else {
 		add_profile("high");
 		add_profile("main");
@@ -586,6 +594,12 @@ obs_properties_t *hevc_nvenc_properties(void *unused)
 	return nvenc_properties_internal(CODEC_HEVC, false);
 }
 #endif
+
+obs_properties_t *av1_nvenc_properties(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return nvenc_properties_internal(CODEC_AV1, false);
+}
 
 obs_properties_t *h264_nvenc_properties_ffmpeg(void *unused)
 {

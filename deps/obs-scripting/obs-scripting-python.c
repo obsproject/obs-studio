@@ -1108,6 +1108,23 @@ static PyObject *scene_enum_items(PyObject *self, PyObject *args)
 	return list;
 }
 
+static PyObject *sceneitem_group_enum_items(PyObject *self, PyObject *args)
+{
+	PyObject *py_sceneitem;
+	obs_sceneitem_t *sceneitem;
+
+	UNUSED_PARAMETER(self);
+
+	if (!parse_args(args, "O", &py_sceneitem))
+		return python_none();
+	if (!py_to_libobs(obs_sceneitem_t, py_sceneitem, &sceneitem))
+		return python_none();
+
+	PyObject *list = PyList_New(0);
+	obs_sceneitem_group_enum_items(sceneitem, enum_items_proc, list);
+	return list;
+}
+
 /* -------------------------------------------- */
 
 static PyObject *source_list_release(PyObject *self, PyObject *args)
@@ -1235,6 +1252,8 @@ static void add_hook_functions(PyObject *module)
 		DEF_FUNC("sceneitem_list_release", sceneitem_list_release),
 		DEF_FUNC("obs_enum_sources", enum_sources),
 		DEF_FUNC("obs_scene_enum_items", scene_enum_items),
+		DEF_FUNC("obs_sceneitem_group_enum_items",
+			 sceneitem_group_enum_items),
 		DEF_FUNC("obs_remove_tick_callback",
 			 obs_python_remove_tick_callback),
 		DEF_FUNC("obs_add_tick_callback", obs_python_add_tick_callback),
@@ -1514,6 +1533,12 @@ void obs_python_script_save(obs_script_t *s)
 static void python_tick(void *param, float seconds)
 {
 	struct obs_python_script *data;
+	/* When loading a new Python script, the GIL might be released while
+	 * importing the module, allowing the tick to run and change and reset
+	 * the cur_python_script state variable. Use the busy_script variable
+	 * to save and restore the value if not null.
+	 */
+	struct obs_python_script *busy_script;
 	bool valid;
 	uint64_t ts = obs_get_video_frame_time();
 
@@ -1531,6 +1556,10 @@ static void python_tick(void *param, float seconds)
 
 		pthread_mutex_lock(&tick_mutex);
 		data = first_tick_script;
+
+		if (cur_python_script)
+			busy_script = cur_python_script;
+
 		while (data) {
 			cur_python_script = data;
 
@@ -1543,6 +1572,10 @@ static void python_tick(void *param, float seconds)
 		}
 
 		cur_python_script = NULL;
+		if (busy_script) {
+			cur_python_script = busy_script;
+			busy_script = NULL;
+		}
 
 		pthread_mutex_unlock(&tick_mutex);
 

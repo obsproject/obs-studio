@@ -678,15 +678,15 @@ static void convert_pq_to_cccs(const BYTE *intermediate,
 		const float red2020 = pq_to_linear(red);
 		const float green2020 = pq_to_linear(green);
 		const float blue2020 = pq_to_linear(blue);
-		const float red709 = 1.6604910f * red2020 -
-				     0.5876411f * green2020 -
-				     0.0728499f * blue2020;
-		const float green709 = -0.1245505f * red2020 +
-				       1.1328999f * green2020 -
-				       0.0083494f * blue2020;
-		const float blue709 = -0.0181508f * red2020 -
-				      0.1005789f * green2020 +
-				      1.1187297f * blue2020;
+		const float red709 = 1.6604910021084345f * red2020 -
+				     0.58764113878854951f * green2020 -
+				     0.072849863319884883f * blue2020;
+		const float green709 = -0.12455047452159074f * red2020 +
+				       1.1328998971259603f * green2020 -
+				       0.0083494226043694768f * blue2020;
+		const float blue709 = -0.018150763354905303f * red2020 -
+				      0.10057889800800739f * green2020 +
+				      1.1187296613629127f * blue2020;
 		rgba16[0] = half_from_float(red709 * 125.f);
 		rgba16[1] = half_from_float(green709 * 125.f);
 		rgba16[2] = half_from_float(blue709 * 125.f);

@@ -10,6 +10,8 @@
 #include <dxgi.h>
 #include <util/dstr.h>
 #include <util/windows/win-version.h>
+
+#include "jim-nvenc.h"
 #endif
 
 OBS_DECLARE_MODULE()
@@ -226,6 +228,7 @@ static bool nvenc_device_available(void)
 
 #ifdef _WIN32
 extern bool load_nvenc_lib(void);
+extern uint32_t get_nvenc_ver();
 #endif
 
 static bool nvenc_codec_exists(const char *name, const char *fallback)
@@ -237,7 +240,7 @@ static bool nvenc_codec_exists(const char *name, const char *fallback)
 	return nvenc != NULL;
 }
 
-static bool nvenc_supported(bool *out_h264, bool *out_hevc)
+static bool nvenc_supported(bool *out_h264, bool *out_hevc, bool *out_av1)
 {
 	profile_start(nvenc_check_name);
 
@@ -252,10 +255,14 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 	const bool hevc = false;
 #endif
 
+	bool av1 = false;
+
 	bool success = h264 || hevc;
 	if (success) {
 #if defined(_WIN32)
 		success = nvenc_device_available() && load_nvenc_lib();
+		av1 = success && (get_nvenc_ver() >= ((12 << 4) | 0));
+
 #elif defined(__linux__)
 		success = nvenc_device_available();
 		if (success) {
@@ -274,6 +281,7 @@ static bool nvenc_supported(bool *out_h264, bool *out_hevc)
 		if (success) {
 			*out_h264 = h264;
 			*out_hevc = hevc;
+			*out_av1 = av1;
 		}
 	}
 
@@ -292,7 +300,7 @@ static bool vaapi_supported(void)
 #endif
 
 #ifdef _WIN32
-extern void jim_nvenc_load(bool h264, bool hevc);
+extern void jim_nvenc_load(bool h264, bool hevc, bool av1);
 extern void jim_nvenc_unload(void);
 extern void amf_load(void);
 extern void amf_unload(void);
@@ -327,11 +335,12 @@ bool obs_module_load(void)
 #ifndef __APPLE__
 	bool h264 = false;
 	bool hevc = false;
-	if (nvenc_supported(&h264, &hevc)) {
+	bool av1 = false;
+	if (nvenc_supported(&h264, &hevc, &av1)) {
 		blog(LOG_INFO, "NVENC supported");
 #ifdef _WIN32
 		if (get_win_ver_int() > 0x0601) {
-			jim_nvenc_load(h264, hevc);
+			jim_nvenc_load(h264, hevc, av1);
 		} else {
 			// if on Win 7, new nvenc isn't available so there's
 			// no nvenc encoder for the user to select, expose
