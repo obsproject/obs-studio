@@ -296,13 +296,14 @@ static void ft2_video_tick(void *data, float seconds)
 	UNUSED_PARAMETER(seconds);
 }
 
-static bool init_font(struct ft2_source *srcdata, const char* custom_font)
+static bool init_font(struct ft2_source *srcdata, const char *custom_font)
 {
 	if (!custom_font || strcmp(custom_font, "") == 0) {
 		FT_Long index;
-		const char *path = get_font_path(srcdata->font_name, srcdata->font_size,
-						srcdata->font_style,
-						srcdata->font_flags, &index);
+		const char *path = get_font_path(srcdata->font_name,
+						 srcdata->font_size,
+						 srcdata->font_style,
+						 srcdata->font_flags, &index);
 		if (!path)
 			return false;
 
@@ -311,9 +312,11 @@ static bool init_font(struct ft2_source *srcdata, const char* custom_font)
 			srcdata->font_face = NULL;
 		}
 
-		return FT_New_Face(ft2_lib, path, index, &srcdata->font_face) == 0;
+		return FT_New_Face(ft2_lib, path, index, &srcdata->font_face) ==
+		       0;
 	} else {
-		return FT_New_Face(ft2_lib, custom_font, 0, &srcdata->font_face) == 0;
+		return FT_New_Face(ft2_lib, custom_font, 0,
+				   &srcdata->font_face) == 0;
 	}
 }
 

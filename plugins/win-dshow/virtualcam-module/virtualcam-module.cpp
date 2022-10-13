@@ -165,8 +165,8 @@ static bool RegServers(bool reg)
 	}
 
 	if (reg) {
-		return RegServer(CLSID_OBS_VirtualVideo, L"Streamlabs Desktop Virtual Webcam",
-				 file);
+		return RegServer(CLSID_OBS_VirtualVideo,
+				 L"Streamlabs Desktop Virtual Webcam", file);
 	} else {
 		return UnregServer(CLSID_OBS_VirtualVideo);
 	}
@@ -193,7 +193,8 @@ static bool RegFilters(bool reg)
 		rf2.rgPins = &AMSPinVideo;
 
 		hr = fm->RegisterFilter(CLSID_OBS_VirtualVideo,
-					L"Streamlabs Desktop Virtual Webcam", &moniker,
+					L"Streamlabs Desktop Virtual Webcam",
+					&moniker,
 					&CLSID_VideoInputDeviceCategory,
 					nullptr, &rf2);
 		if (FAILED(hr)) {

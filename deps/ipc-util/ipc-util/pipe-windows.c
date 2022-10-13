@@ -96,7 +96,7 @@ static inline bool ipc_pipe_internal_create_pipe(ipc_pipe_server_t *pipe,
 		return false;
 	}
 
-    return true;
+	return true;
 }
 
 static inline void ipc_pipe_internal_ensure_capacity(ipc_pipe_server_t *pipe,
@@ -221,7 +221,8 @@ static inline bool ipc_pipe_internal_open_pipe(ipc_pipe_client_t *pipe,
 /* ------------------------------------------------------------------------- */
 
 bool ipc_pipe_server_start(ipc_pipe_server_t *pipe, const char *name,
-			   ipc_pipe_read_t read_callback, void *param, DWORD *err)
+			   ipc_pipe_read_t read_callback, void *param,
+			   DWORD *err)
 {
 	pipe->read_callback = read_callback;
 	pipe->param = param;

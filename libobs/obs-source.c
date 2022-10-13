@@ -685,7 +685,8 @@ static void obs_source_destroy_defer(struct obs_source *source)
 
 #ifdef WIN32
 	blog(LOG_DEBUG, "%ssource '%s' destroyed (0x%I64X) (Thread %d)",
-	     source->context.private ? "private " : "", source->context.name, (uintptr_t)source, pthread_getw32threadid_np(pthread_self()));
+	     source->context.private ? "private " : "", source->context.name,
+	     (uintptr_t)source, pthread_getw32threadid_np(pthread_self()));
 #else
 	blog(LOG_DEBUG, "%ssource '%s' destroyed",
 	     source->context.private ? "private " : "", source->context.name);
@@ -698,7 +699,8 @@ static void obs_source_destroy_defer(struct obs_source *source)
 	obs_hotkey_pair_unregister(source->mute_unmute_key);
 
 	for (i = 0; i < source->async_cache.num; i++) {
-		struct obs_source_frame *frame = source->async_cache.array[i].frame;
+		struct obs_source_frame *frame =
+			source->async_cache.array[i].frame;
 		if (frame && !frame->in_use)
 			obs_source_frame_decref(frame);
 	}
@@ -3242,7 +3244,8 @@ static inline void copy_frame_data_line(struct obs_source_frame *dst,
 
 	if (dst->data[plane] + pos_dst != NULL &&
 	    src->data[plane] + pos_src != NULL)
-		memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src, bytes);
+		memcpy(dst->data[plane] + pos_dst, src->data[plane] + pos_src,
+		       bytes);
 }
 
 static inline void copy_frame_data_plane(struct obs_source_frame *dst,
@@ -3365,7 +3368,8 @@ static inline bool async_texture_changed(struct obs_source *source,
 static inline void free_async_cache(struct obs_source *source)
 {
 	for (size_t i = 0; i < source->async_cache.num; i++) {
-		struct obs_source_frame *frame = source->async_cache.array[i].frame;
+		struct obs_source_frame *frame =
+			source->async_cache.array[i].frame;
 		if (frame && !frame->in_use)
 			obs_source_frame_decref(frame);
 	}

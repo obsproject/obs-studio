@@ -112,7 +112,8 @@ create_encoder(const char *id, enum obs_encoder_type type, const char *name,
 	obs_context_data_insert(&encoder->context, &obs->data.encoders_mutex,
 				&obs->data.first_encoder);
 
-	blog(LOG_DEBUG, "encoder '%s' (%s) created (0x%I64X)", name, id, encoder);
+	blog(LOG_DEBUG, "encoder '%s' (%s) created (0x%I64X)", name, id,
+	     encoder);
 	return encoder;
 }
 
@@ -285,7 +286,7 @@ void obs_encoder_destroy(obs_encoder_t *encoder)
 {
 	if (encoder) {
 		bool destroy;
-		set_encoder_active(encoder , false);
+		set_encoder_active(encoder, false);
 		obs_context_data_remove(&encoder->context);
 
 		pthread_mutex_lock(&encoder->init_mutex);
@@ -1548,28 +1549,28 @@ void obs_encoder_set_last_error(obs_encoder_t *encoder, const char *message)
 }
 
 void obs_encoder_set_video_mix(obs_encoder_t *encoder,
-						enum obs_video_rendering_mode mode)
+			       enum obs_video_rendering_mode mode)
 {
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_video_mix"))
 		return;
 
-	switch(mode) {
-		case OBS_MAIN_VIDEO_RENDERING: {
-			encoder->video = obs->video.main_mix;
-			break;
-		}
-		case OBS_STREAMING_VIDEO_RENDERING: {
-			encoder->video = obs->video.stream_mix;
-			break;
-		}
-		case OBS_RECORDING_VIDEO_RENDERING: {
-			encoder->video = obs->video.record_mix;
-			break;
-		}
-		default: {
-			encoder->video = obs->video.main_mix;
-			break;
-		}
+	switch (mode) {
+	case OBS_MAIN_VIDEO_RENDERING: {
+		encoder->video = obs->video.main_mix;
+		break;
+	}
+	case OBS_STREAMING_VIDEO_RENDERING: {
+		encoder->video = obs->video.stream_mix;
+		break;
+	}
+	case OBS_RECORDING_VIDEO_RENDERING: {
+		encoder->video = obs->video.record_mix;
+		break;
+	}
+	default: {
+		encoder->video = obs->video.main_mix;
+		break;
+	}
 	}
 }
 

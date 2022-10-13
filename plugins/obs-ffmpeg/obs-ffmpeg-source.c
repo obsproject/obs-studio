@@ -61,7 +61,6 @@ struct ffmpeg_source {
 	bool seekable;
 	bool enable_caching;
 	int64_t volume;
-	
 
 	pthread_t reconnect_thread;
 	bool stop_reconnect;
@@ -79,7 +78,7 @@ struct file_info {
 	int64_t width;
 	int64_t height;
 	uint32_t pix_format;
-	bool     have_video;
+	bool have_video;
 };
 
 static void set_media_state(void *data, enum obs_media_state state)
@@ -236,12 +235,13 @@ static obs_properties_t *ffmpeg_source_getproperties(void *data)
 
 	obs_properties_add_bool(props, "seekable", obs_module_text("Seekable"));
 
-	const char* text = obs_module_text("EnableCaching");
-	obs_properties_add_bool(props, "caching", obs_module_text("EnableCaching"));
+	const char *text = obs_module_text("EnableCaching");
+	obs_properties_add_bool(props, "caching",
+				obs_module_text("EnableCaching"));
 
 	prop = obs_properties_add_text(props, "ffmpeg_options",
-						obs_module_text("FFmpegOpts"),
-						OBS_TEXT_DEFAULT);
+				       obs_module_text("FFmpegOpts"),
+				       OBS_TEXT_DEFAULT);
 	obs_property_set_long_description(
 		prop, obs_module_text("FFmpegOpts.ToolTip.Source"));
 
@@ -271,7 +271,7 @@ static void dump_source_info(struct ffmpeg_source *s, const char *input,
 		s->is_clear_on_media_end ? "yes" : "no",
 		s->restart_on_activate ? "yes" : "no",
 		s->close_when_inactive ? "yes" : "no",
-		s->enable_caching ? "yes" : "no",s->ffmpeg_options);
+		s->enable_caching ? "yes" : "no", s->ffmpeg_options);
 }
 
 static void get_frame(void *opaque, struct obs_source_frame *f)
@@ -326,7 +326,8 @@ static void media_stopped(void *opaque)
 static void media_ready(void *opaque)
 {
 	struct ffmpeg_source *s = opaque;
-	blog(LOG_DEBUG, "[MP4MP3]: media_ready %d %d", s->media.has_video?1:0, s->media.has_audio?1:0);
+	blog(LOG_DEBUG, "[MP4MP3]: media_ready %d %d",
+	     s->media.has_video ? 1 : 0, s->media.has_audio ? 1 : 0);
 	if (!s->media.has_video) {
 		obs_source_reset_video(s->source);
 	}
@@ -558,24 +559,20 @@ static void get_duration(void *data, calldata_t *cd)
 	calldata_set_int(cd, "duration", dur * 1000);
 }
 
-
-
 static struct file_info file_info(struct ffmpeg_source *s)
 {
-	struct file_info fi = {
-		.frames = 0,
-		.width = 0,
-		.height = 0,
-		.pix_format = 0,
-		.have_video = true
-	};
+	struct file_info fi = {.frames = 0,
+			       .width = 0,
+			       .height = 0,
+			       .pix_format = 0,
+			       .have_video = true};
 
-	int video_stream_index = av_find_best_stream(s->media.fmt,
-		AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
+	int video_stream_index = av_find_best_stream(
+		s->media.fmt, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
 
 	if (video_stream_index < 0) {
 		FF_BLOG(LOG_WARNING, "Getting number of frames failed: No "
-			"video stream in media file!");
+				     "video stream in media file!");
 		fi.have_video = false;
 		goto end;
 	}
@@ -584,15 +581,14 @@ static struct file_info file_info(struct ffmpeg_source *s)
 
 	if (stream->nb_frames > 0) {
 		fi.frames = stream->nb_frames;
-	}
-	else {
+	} else {
 		FF_BLOG(LOG_DEBUG, "nb_frames not set, estimating using frame "
-			"rate and duration");
+				   "rate and duration");
 		AVRational avg_frame_rate = stream->avg_frame_rate;
 		fi.frames = (int64_t)ceil((double)s->media.fmt->duration /
-			(double)AV_TIME_BASE *
-			(double)avg_frame_rate.num /
-			(double)avg_frame_rate.den);
+					  (double)AV_TIME_BASE *
+					  (double)avg_frame_rate.num /
+					  (double)avg_frame_rate.den);
 	}
 
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(57, 48, 101)
@@ -613,11 +609,7 @@ static void get_nb_frames(void *data, calldata_t *cd)
 {
 	struct ffmpeg_source *s = data;
 	struct file_info fi = {
-		.frames = 0,
-		.width = 0,
-		.height = 0,
-		.pix_format = 0
-	};
+		.frames = 0, .width = 0, .height = 0, .pix_format = 0};
 
 	if (!s->media.fmt) {
 		goto end;
@@ -634,13 +626,11 @@ end:
 static void get_file_info(void *data, calldata_t *cd)
 {
 	struct ffmpeg_source *s = data;
-	struct file_info fi = {
-		.frames = 0,
-		.width = 0,
-		.height = 0,
-		.pix_format = 0,
-		.have_video = false
-	};
+	struct file_info fi = {.frames = 0,
+			       .width = 0,
+			       .height = 0,
+			       .pix_format = 0,
+			       .have_video = false};
 
 	if (!s->media.fmt) {
 		goto end;
@@ -756,11 +746,11 @@ static void *ffmpeg_source_create(obs_data_t *settings, obs_source_t *source)
 	proc_handler_add(ph, "void get_duration(out int duration)",
 			 get_duration, s);
 	proc_handler_add(ph, "void get_nb_frames(out int num_frames)",
-			get_nb_frames, s);
+			 get_nb_frames, s);
 	proc_handler_add(ph, "void get_file_info(out int num_frames)",
-			get_file_info, s);
-	proc_handler_add(ph, "void get_playing(out bool active)",
-		get_playing, s);
+			 get_file_info, s);
+	proc_handler_add(ph, "void get_playing(out bool active)", get_playing,
+			 s);
 
 	ffmpeg_source_update(s, settings);
 	return s;

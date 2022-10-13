@@ -30,11 +30,13 @@ struct ts_info {
 // Cached state of multiple rendering so each run of in audio-io thread work with same state
 static bool audio_multiple_rendering = false;
 
-void cache_multiple_rendering(void) {
+void cache_multiple_rendering(void)
+{
 	audio_multiple_rendering = obs_get_multiple_rendering();
 }
 
-bool get_cached_multiple_rendering(void) {
+bool get_cached_multiple_rendering(void)
+{
 	return audio_multiple_rendering;
 }
 

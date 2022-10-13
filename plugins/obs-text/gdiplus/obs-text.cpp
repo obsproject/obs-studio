@@ -40,95 +40,95 @@ using namespace Gdiplus;
 #define MAX_AREA (4096LL * 4096LL)
 
 /* ------------------------------------------------------------------------- */
-#define S_CUSTOM_FONT                   "custom_font"
-#define S_FONT                          "font"
-#define S_USE_FILE                      "read_from_file"
-#define S_FILE                          "file"
-#define S_TEXT                          "text"
-#define S_COLOR                         "color"
-#define S_GRADIENT                      "gradient"
-#define S_GRADIENT_COLOR                "gradient_color"
-#define S_GRADIENT_DIR                  "gradient_dir"
-#define S_GRADIENT_OPACITY              "gradient_opacity"
-#define S_ALIGN                         "align"
-#define S_VALIGN                        "valign"
-#define S_OPACITY                       "opacity"
-#define S_BKCOLOR                       "bk_color"
-#define S_BKOPACITY                     "bk_opacity"
-#define S_VERTICAL                      "vertical"
-#define S_OUTLINE                       "outline"
-#define S_OUTLINE_SIZE                  "outline_size"
-#define S_OUTLINE_COLOR                 "outline_color"
-#define S_OUTLINE_OPACITY               "outline_opacity"
-#define S_CHATLOG_MODE                  "chatlog"
-#define S_CHATLOG_LINES                 "chatlog_lines"
-#define S_EXTENTS                       "extents"
-#define S_EXTENTS_WRAP                  "extents_wrap"
-#define S_EXTENTS_CX                    "extents_cx"
-#define S_EXTENTS_CY                    "extents_cy"
-#define S_TRANSFORM                     "transform"
-#define S_ANTIALIASING                  "antialiasing"
+#define S_CUSTOM_FONT "custom_font"
+#define S_FONT "font"
+#define S_USE_FILE "read_from_file"
+#define S_FILE "file"
+#define S_TEXT "text"
+#define S_COLOR "color"
+#define S_GRADIENT "gradient"
+#define S_GRADIENT_COLOR "gradient_color"
+#define S_GRADIENT_DIR "gradient_dir"
+#define S_GRADIENT_OPACITY "gradient_opacity"
+#define S_ALIGN "align"
+#define S_VALIGN "valign"
+#define S_OPACITY "opacity"
+#define S_BKCOLOR "bk_color"
+#define S_BKOPACITY "bk_opacity"
+#define S_VERTICAL "vertical"
+#define S_OUTLINE "outline"
+#define S_OUTLINE_SIZE "outline_size"
+#define S_OUTLINE_COLOR "outline_color"
+#define S_OUTLINE_OPACITY "outline_opacity"
+#define S_CHATLOG_MODE "chatlog"
+#define S_CHATLOG_LINES "chatlog_lines"
+#define S_EXTENTS "extents"
+#define S_EXTENTS_WRAP "extents_wrap"
+#define S_EXTENTS_CX "extents_cx"
+#define S_EXTENTS_CY "extents_cy"
+#define S_TRANSFORM "transform"
+#define S_ANTIALIASING "antialiasing"
 
-#define S_ALIGN_LEFT                    "left"
-#define S_ALIGN_CENTER                  "center"
-#define S_ALIGN_RIGHT                   "right"
+#define S_ALIGN_LEFT "left"
+#define S_ALIGN_CENTER "center"
+#define S_ALIGN_RIGHT "right"
 
-#define S_VALIGN_TOP                    "top"
-#define S_VALIGN_CENTER                 S_ALIGN_CENTER
-#define S_VALIGN_BOTTOM                 "bottom"
+#define S_VALIGN_TOP "top"
+#define S_VALIGN_CENTER S_ALIGN_CENTER
+#define S_VALIGN_BOTTOM "bottom"
 
-#define S_TRANSFORM_NONE                0
-#define S_TRANSFORM_UPPERCASE           1
-#define S_TRANSFORM_LOWERCASE           2
-#define S_TRANSFORM_STARTCASE           3
+#define S_TRANSFORM_NONE 0
+#define S_TRANSFORM_UPPERCASE 1
+#define S_TRANSFORM_LOWERCASE 2
+#define S_TRANSFORM_STARTCASE 3
 
-#define S_ANTIALIASING_NONE             0
-#define S_ANTIALIASING_STANDARD         1
+#define S_ANTIALIASING_NONE 0
+#define S_ANTIALIASING_STANDARD 1
 
-#define T_(v)                           obs_module_text(v)
-#define T_FONT                          T_("Font")
-#define T_USE_FILE                      T_("ReadFromFile")
-#define T_FILE                          T_("TextFile")
-#define T_TEXT                          T_("Text")
-#define T_COLOR                         T_("Color")
-#define T_GRADIENT                      T_("Gradient")
-#define T_GRADIENT_COLOR                T_("Gradient.Color")
-#define T_GRADIENT_DIR                  T_("Gradient.Direction")
-#define T_GRADIENT_OPACITY              T_("Gradient.Opacity")
-#define T_ALIGN                         T_("Alignment")
-#define T_VALIGN                        T_("VerticalAlignment")
-#define T_OPACITY                       T_("Opacity")
-#define T_BKCOLOR                       T_("BkColor")
-#define T_BKOPACITY                     T_("BkOpacity")
-#define T_VERTICAL                      T_("Vertical")
-#define T_OUTLINE                       T_("Outline")
-#define T_OUTLINE_SIZE                  T_("Outline.Size")
-#define T_OUTLINE_COLOR                 T_("Outline.Color")
-#define T_OUTLINE_OPACITY               T_("Outline.Opacity")
-#define T_CHATLOG_MODE                  T_("ChatlogMode")
-#define T_CHATLOG_LINES                 T_("ChatlogMode.Lines")
-#define T_EXTENTS                       T_("UseCustomExtents")
-#define T_EXTENTS_WRAP                  T_("UseCustomExtents.Wrap")
-#define T_EXTENTS_CX                    T_("Width")
-#define T_EXTENTS_CY                    T_("Height")
-#define T_TRANSFORM                     T_("Transform")
-#define T_ANTIALIASING                  T_("Antialiasing")
+#define T_(v) obs_module_text(v)
+#define T_FONT T_("Font")
+#define T_USE_FILE T_("ReadFromFile")
+#define T_FILE T_("TextFile")
+#define T_TEXT T_("Text")
+#define T_COLOR T_("Color")
+#define T_GRADIENT T_("Gradient")
+#define T_GRADIENT_COLOR T_("Gradient.Color")
+#define T_GRADIENT_DIR T_("Gradient.Direction")
+#define T_GRADIENT_OPACITY T_("Gradient.Opacity")
+#define T_ALIGN T_("Alignment")
+#define T_VALIGN T_("VerticalAlignment")
+#define T_OPACITY T_("Opacity")
+#define T_BKCOLOR T_("BkColor")
+#define T_BKOPACITY T_("BkOpacity")
+#define T_VERTICAL T_("Vertical")
+#define T_OUTLINE T_("Outline")
+#define T_OUTLINE_SIZE T_("Outline.Size")
+#define T_OUTLINE_COLOR T_("Outline.Color")
+#define T_OUTLINE_OPACITY T_("Outline.Opacity")
+#define T_CHATLOG_MODE T_("ChatlogMode")
+#define T_CHATLOG_LINES T_("ChatlogMode.Lines")
+#define T_EXTENTS T_("UseCustomExtents")
+#define T_EXTENTS_WRAP T_("UseCustomExtents.Wrap")
+#define T_EXTENTS_CX T_("Width")
+#define T_EXTENTS_CY T_("Height")
+#define T_TRANSFORM T_("Transform")
+#define T_ANTIALIASING T_("Antialiasing")
 
-#define T_FILTER_TEXT_FILES             T_("Filter.TextFiles")
-#define T_FILTER_ALL_FILES              T_("Filter.AllFiles")
+#define T_FILTER_TEXT_FILES T_("Filter.TextFiles")
+#define T_FILTER_ALL_FILES T_("Filter.AllFiles")
 
-#define T_ALIGN_LEFT                    T_("Alignment.Left")
-#define T_ALIGN_CENTER                  T_("Alignment.Center")
-#define T_ALIGN_RIGHT                   T_("Alignment.Right")
+#define T_ALIGN_LEFT T_("Alignment.Left")
+#define T_ALIGN_CENTER T_("Alignment.Center")
+#define T_ALIGN_RIGHT T_("Alignment.Right")
 
-#define T_VALIGN_TOP                    T_("VerticalAlignment.Top")
-#define T_VALIGN_CENTER                 T_ALIGN_CENTER
-#define T_VALIGN_BOTTOM                 T_("VerticalAlignment.Bottom")
+#define T_VALIGN_TOP T_("VerticalAlignment.Top")
+#define T_VALIGN_CENTER T_ALIGN_CENTER
+#define T_VALIGN_BOTTOM T_("VerticalAlignment.Bottom")
 
-#define T_TRANSFORM_NONE                T_("Transform.None")
-#define T_TRANSFORM_UPPERCASE           T_("Transform.Uppercase")
-#define T_TRANSFORM_LOWERCASE           T_("Transform.Lowercase")
-#define T_TRANSFORM_STARTCASE           T_("Transform.Startcase")
+#define T_TRANSFORM_NONE T_("Transform.None")
+#define T_TRANSFORM_UPPERCASE T_("Transform.Uppercase")
+#define T_TRANSFORM_LOWERCASE T_("Transform.Lowercase")
+#define T_TRANSFORM_STARTCASE T_("Transform.Startcase")
 
 /* clang-format on */
 
@@ -256,12 +256,12 @@ struct TextSource {
 	void UpdateFont();
 	void UpdateCustomFont(const wchar_t *font_path);
 	void GetStringFormat(StringFormat &format);
-	void RemoveNewlinePadding(Font *font, const StringFormat &format, RectF &box);
+	void RemoveNewlinePadding(Font *font, const StringFormat &format,
+				  RectF &box);
 	void CalculateTextSizes(Font *font, const StringFormat &format,
-			RectF &bounding_box, SIZE &text_size);
-	void RenderOutlineText(Graphics &graphics,
-			const GraphicsPath &path,
-			const Brush &brush);
+				RectF &bounding_box, SIZE &text_size);
+	void RenderOutlineText(Graphics &graphics, const GraphicsPath &path,
+			       const Brush &brush);
 	void RenderText();
 	void LoadFileText();
 	void TransformText();
@@ -282,7 +282,7 @@ static time_t get_modified_timestamp(const char *filename)
 	return stats.st_mtime;
 }
 
-void TextSource::UpdateCustomFont(const wchar_t *font_path) 
+void TextSource::UpdateCustomFont(const wchar_t *font_path)
 {
 	private_fonts.AddFontFile(font_path);
 
@@ -294,7 +294,6 @@ void TextSource::UpdateFont()
 	/* We don't spawn a font from this, we use it for metainfo */
 	family.reset(new FontFamily(face.c_str(), &installed_fonts));
 }
-
 
 void TextSource::GetStringFormat(StringFormat &format)
 {
@@ -353,19 +352,19 @@ void TextSource::GetStringFormat(StringFormat &format)
  * calculating the texture size, so we have to calculate the size of '\n' to
  * remove the padding.  Because we always add a newline to the string, we
  * also remove the extra unused newline. */
-void TextSource::RemoveNewlinePadding(Font *font, 
-		const StringFormat &format, RectF &box)
+void TextSource::RemoveNewlinePadding(Font *font, const StringFormat &format,
+				      RectF &box)
 {
 	RectF before;
 	RectF after;
 	Status stat;
 
 	stat = graphics.MeasureString(L"W", 2, font, PointF(0.0f, 0.0f),
-			&format, &before);
+				      &format, &before);
 	warn_stat("MeasureString (without newline)");
 
 	stat = graphics.MeasureString(L"W\n", 3, font, PointF(0.0f, 0.0f),
-			&format, &after);
+				      &format, &after);
 	warn_stat("MeasureString (with newline)");
 
 	float offset_cx = after.Width - before.Width;
@@ -393,8 +392,8 @@ void TextSource::RemoveNewlinePadding(Font *font,
 	box.Height -= offset_cy;
 }
 
-void TextSource::CalculateTextSizes(Font *font, 
-		const StringFormat &format,	RectF &bounding_box, SIZE &text_size)
+void TextSource::CalculateTextSizes(Font *font, const StringFormat &format,
+				    RectF &bounding_box, SIZE &text_size)
 {
 	RectF layout_box;
 	RectF temp_box;
@@ -412,17 +411,17 @@ void TextSource::CalculateTextSizes(Font *font,
 			}
 
 			stat = graphics.MeasureString(text.c_str(),
-					(int)text.size() + 1, font,
-					layout_box, &format,
-					&bounding_box);
+						      (int)text.size() + 1,
+						      font, layout_box, &format,
+						      &bounding_box);
 			warn_stat("MeasureString (wrapped)");
 
 			temp_box = bounding_box;
 		} else {
 			stat = graphics.MeasureString(text.c_str(),
-					(int)text.size() + 1, font,
-					PointF(0.0f, 0.0f), &format,
-					&bounding_box);
+						      (int)text.size() + 1,
+						      font, PointF(0.0f, 0.0f),
+						      &format, &bounding_box);
 			warn_stat("MeasureString (non-wrapped)");
 
 			temp_box = bounding_box;
@@ -515,11 +514,9 @@ void TextSource::RenderText()
 	std::unique_ptr<Font> font;
 	HFONT hfont = NULL;
 
-	INT style =
-		(underline ? FontStyleUnderline : 0) |
-		(strikeout ? FontStyleStrikeout : 0) |
-		(italic ? FontStyleItalic : 0) |
-		(bold ? FontStyleBold : 0);
+	INT style = (underline ? FontStyleUnderline : 0) |
+		    (strikeout ? FontStyleStrikeout : 0) |
+		    (italic ? FontStyleItalic : 0) | (bold ? FontStyleBold : 0);
 
 	if (text_transform == S_TRANSFORM_UPPERCASE)
 		transform(text.begin(), text.end(), text.begin(), towupper);
@@ -528,12 +525,13 @@ void TextSource::RenderText()
 
 	/* This has gotten a bit messy. FIXME */
 	if (custom_font)
-		font.reset(new Font(family.get(), REAL(face_size), style, UnitPixel));
+		font.reset(new Font(family.get(), REAL(face_size), style,
+				    UnitPixel));
 	else {
 		/* I realize that we're not passing emSize here, unlike
 		 * above. Unfortunately, since we passed cell height 
 		 * before, we still need to do so now for compatibility */
-		LOGFONT lf = { 0 };
+		LOGFONT lf = {0};
 		lf.lfHeight = face_size;
 		lf.lfWeight = bold ? FW_BOLD : FW_DONTCARE;
 		lf.lfItalic = italic;
@@ -590,7 +588,8 @@ void TextSource::RenderText()
 			GraphicsPath path;
 
 			stat = path.AddString(text.c_str(), (int)text.size(),
-					family.get(), font->GetStyle(), font->GetSize(), box, &format);
+					      family.get(), font->GetStyle(),
+					      font->GetSize(), box, &format);
 			warn_stat("path.AddString");
 
 			RenderOutlineText(graphics_bitmap, path, brush);
@@ -706,19 +705,19 @@ void TextSource::SetAntiAliasing(Graphics &graphics_bitmap)
 inline void TextSource::Update(obs_data_t *s)
 {
 	const char *custom_font_str = obs_data_get_string(s, S_CUSTOM_FONT);
-	const char *new_text   = obs_data_get_string(s, S_TEXT);
-	obs_data_t *font_obj   = obs_data_get_obj(s, S_FONT);
-	const char *align_str  = obs_data_get_string(s, S_ALIGN);
+	const char *new_text = obs_data_get_string(s, S_TEXT);
+	obs_data_t *font_obj = obs_data_get_obj(s, S_FONT);
+	const char *align_str = obs_data_get_string(s, S_ALIGN);
 	const char *valign_str = obs_data_get_string(s, S_VALIGN);
-	uint32_t new_color     = obs_data_get_uint32(s, S_COLOR);
-	uint32_t new_opacity   = obs_data_get_uint32(s, S_OPACITY);
-	bool gradient          = obs_data_get_bool(s, S_GRADIENT);
-	uint32_t new_color2    = obs_data_get_uint32(s, S_GRADIENT_COLOR);
-	uint32_t new_opacity2  = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
-	double new_grad_dir    = obs_data_get_double(s, S_GRADIENT_DIR);
-	bool new_vertical      = obs_data_get_bool(s, S_VERTICAL);
-	bool new_outline       = obs_data_get_bool(s, S_OUTLINE);
-	uint32_t new_o_color   = obs_data_get_uint32(s, S_OUTLINE_COLOR);
+	uint32_t new_color = obs_data_get_uint32(s, S_COLOR);
+	uint32_t new_opacity = obs_data_get_uint32(s, S_OPACITY);
+	bool gradient = obs_data_get_bool(s, S_GRADIENT);
+	uint32_t new_color2 = obs_data_get_uint32(s, S_GRADIENT_COLOR);
+	uint32_t new_opacity2 = obs_data_get_uint32(s, S_GRADIENT_OPACITY);
+	double new_grad_dir = obs_data_get_double(s, S_GRADIENT_DIR);
+	bool new_vertical = obs_data_get_bool(s, S_VERTICAL);
+	bool new_outline = obs_data_get_bool(s, S_OUTLINE);
+	uint32_t new_o_color = obs_data_get_uint32(s, S_OUTLINE_COLOR);
 	uint32_t new_o_opacity = obs_data_get_uint32(s, S_OUTLINE_OPACITY);
 	uint32_t new_o_size = obs_data_get_uint32(s, S_OUTLINE_SIZE);
 	bool new_use_file = obs_data_get_bool(s, S_USE_FILE);
@@ -1064,12 +1063,12 @@ static obs_properties_t *text_get_properties(void *data)
 
 void *text_create(obs_data_t *settings, obs_source_t *source)
 {
-	return reinterpret_cast<void*>(new TextSource(source, settings));
+	return reinterpret_cast<void *>(new TextSource(source, settings));
 }
 
 void text_destroy(void *data)
 {
-	delete reinterpret_cast<TextSource*>(data);
+	delete reinterpret_cast<TextSource *>(data);
 }
 
 const char *text_get_name(void *)
@@ -1079,35 +1078,35 @@ const char *text_get_name(void *)
 
 uint32_t text_get_width(void *data)
 {
-	TextSource *source = reinterpret_cast<TextSource*>(data);
+	TextSource *source = reinterpret_cast<TextSource *>(data);
 
 	return source->cx;
 }
 
 uint32_t text_get_height(void *data)
 {
-	TextSource *source = reinterpret_cast<TextSource*>(data);
+	TextSource *source = reinterpret_cast<TextSource *>(data);
 
 	return source->cy;
 }
- 
+
 void text_update(void *data, obs_data_t *settings)
 {
-	TextSource *source = reinterpret_cast<TextSource*>(data);
+	TextSource *source = reinterpret_cast<TextSource *>(data);
 
 	source->Update(settings);
 }
 
 void text_tick(void *data, float seconds)
 {
-	TextSource *source = reinterpret_cast<TextSource*>(data);
+	TextSource *source = reinterpret_cast<TextSource *>(data);
 
 	source->Tick(seconds);
 }
 
-void text_render(void *data, gs_effect_t */*effect*/)
+void text_render(void *data, gs_effect_t * /*effect*/)
 {
-	reinterpret_cast<TextSource*>(data)->Render();
+	reinterpret_cast<TextSource *>(data)->Render();
 }
 
 static void missing_file_callback(void *src, const char *new_path, void *data)
@@ -1157,7 +1156,7 @@ bool obs_module_load(void)
 	const GdiplusStartupInput gdip_input;
 	GdiplusStartup(&gdip_token, &gdip_input, nullptr);
 
-	obs_source_info si = { 0 };
+	obs_source_info si = {0};
 	si.id = "text_gdiplus";
 	si.type = OBS_SOURCE_TYPE_INPUT;
 	si.output_flags = OBS_SOURCE_VIDEO | OBS_SOURCE_CUSTOM_DRAW |

@@ -196,7 +196,6 @@ void os_set_thread_name(const char *name)
 	}
 #endif
 
-
 	wchar_t *path;
 	if (SHGetKnownFolderPath(&FOLDERID_SystemX86, 0, NULL, &path) != S_OK)
 		return;
@@ -211,7 +210,8 @@ void os_set_thread_name(const char *name)
 		SetDllDirectory(NULL);
 
 		set_thread_description_t std = NULL;
-		std = (set_thread_description_t)GetProcAddress(hModule, "SetThreadDescription");
+		std = (set_thread_description_t)GetProcAddress(
+			hModule, "SetThreadDescription");
 		if (std) {
 			wchar_t *wname;
 			os_utf8_to_wcs_ptr(name, 0, &wname);

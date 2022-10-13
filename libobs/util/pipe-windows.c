@@ -68,12 +68,15 @@ static inline bool create_process(const char *cmd_line, HANDLE stdin_handle,
 	/* Spin until we get a buffer big enough for a path up to max path size for NTFS. */
 	for (int i = 1; i < 127; ++i) {
 		nBufferSize = MAX_PATH * i;
-		szPathBuffer = brealloc(szPathBuffer, sizeof(TCHAR) * nBufferSize);
-		nPathSize = GetModuleFileName(hObsModule, szPathBuffer, nBufferSize);
+		szPathBuffer =
+			brealloc(szPathBuffer, sizeof(TCHAR) * nBufferSize);
+		nPathSize = GetModuleFileName(hObsModule, szPathBuffer,
+					      nBufferSize);
 		dwError = GetLastError();
 
 		/* Windows XP might return ERROR_SUCCESS on too short of a buffer. */
-		if (nPathSize == nBufferSize || dwError == ERROR_INSUFFICIENT_BUFFER) {
+		if (nPathSize == nBufferSize ||
+		    dwError == ERROR_INSUFFICIENT_BUFFER) {
 			continue;
 		}
 

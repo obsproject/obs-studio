@@ -243,9 +243,9 @@ obs_properties_t *obs_properties_create_param(void *param,
 	return props;
 }
 
-int obs_property_is_visible(struct obs_property* property)
+int obs_property_is_visible(struct obs_property *property)
 {
-	return  property && property->visible;
+	return property && property->visible;
 }
 
 static void obs_property_destroy(struct obs_property *property)
@@ -668,7 +668,7 @@ obs_property_t *obs_properties_add_color(obs_properties_t *props,
 }
 
 obs_property_t *obs_properties_add_capture(obs_properties_t *props,
-					 const char *name, const char *desc)
+					   const char *name, const char *desc)
 {
 	if (!props || has_prop(props, name))
 		return NULL;

@@ -2945,7 +2945,8 @@ uint32_t gs_create_iosurface(uint32_t width, uint32_t height)
 	if (!graphics->exports.create_iosurface)
 		return NULL;
 
-	return graphics->exports.create_iosurface(graphics->device, width, height);
+	return graphics->exports.create_iosurface(graphics->device, width,
+						  height);
 }
 
 bool gs_shared_texture_available(void)

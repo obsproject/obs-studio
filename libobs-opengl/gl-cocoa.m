@@ -223,15 +223,18 @@ void gl_update(gs_device_t *device)
 		[context update];
 		struct gs_init_data *info = &swap->info;
 		if (!info) {
-			blog(LOG_ERROR, "gl-cocoa: Could not update, invalid data");
+			blog(LOG_ERROR,
+			     "gl-cocoa: Could not update, invalid data");
 			return;
 		}
 		if (!swap) {
-			blog(LOG_ERROR, "gl-cocoa: Could not update, invlid swap");
+			blog(LOG_ERROR,
+			     "gl-cocoa: Could not update, invlid swap");
 			return;
 		}
 		if (!swap->wi || !swap->wi->texture) {
-			blog(LOG_ERROR, "gl-cocoa: Could not update, invalid window");
+			blog(LOG_ERROR,
+			     "gl-cocoa: Could not update, invalid window");
 			return;
 		}
 		gs_texture_t *previous = swap->wi->texture;
@@ -301,25 +304,22 @@ void write_iosurface(gs_device_t *device)
 	if (!swap->wi->surfaceID)
 		return;
 
-	IOSurfaceRef surface = IOSurfaceLookup((IOSurfaceID) swap->wi->surfaceID);
+	IOSurfaceRef surface =
+		IOSurfaceLookup((IOSurfaceID)swap->wi->surfaceID);
 	if (!surface)
 		return;
 
 	IOSurfaceLock(surface, 0, NULL);
-	void* data = IOSurfaceGetBaseAddress(surface);
+	void *data = IOSurfaceGetBaseAddress(surface);
 
 	if (!data) {
 		blog(LOG_ERROR, "gl-cocoa: failed to write in the IOSurface");
 		return;
 	}
 
-	glReadPixels(0,
-		0,
-		IOSurfaceGetBytesPerRow(surface) / 4,
-		IOSurfaceGetHeight(surface),
-		GL_BGRA,
-		GL_UNSIGNED_INT_8_8_8_8_REV,
-		data);
+	glReadPixels(0, 0, IOSurfaceGetBytesPerRow(surface) / 4,
+		     IOSurfaceGetHeight(surface), GL_BGRA,
+		     GL_UNSIGNED_INT_8_8_8_8_REV, data);
 	gl_success("glReadPixels");
 
 	IOSurfaceUnlock(surface, 0, NULL);
@@ -499,19 +499,24 @@ uint32_t create_iosurface(gs_device_t *device, uint32_t width, uint32_t height)
 		return 0;
 
 	swap->wi->surfaceID = 0;
-	NSDictionary* surfaceAttributes = [[NSDictionary alloc] initWithObjectsAndKeys:[NSNumber numberWithBool:YES], (NSString*)kIOSurfaceIsGlobal,
-									   [NSNumber numberWithUnsignedInteger:(NSUInteger)width], (NSString*)kIOSurfaceWidth,
-									   [NSNumber numberWithUnsignedInteger:(NSUInteger)height], (NSString*)kIOSurfaceHeight,
-									   [NSNumber numberWithUnsignedInteger:4U], (NSString*)kIOSurfaceBytesPerElement, nil];
+	NSDictionary *surfaceAttributes = [[NSDictionary alloc]
+		initWithObjectsAndKeys:
+			[NSNumber numberWithBool:YES],
+			(NSString *)kIOSurfaceIsGlobal,
+			[NSNumber numberWithUnsignedInteger:(NSUInteger)width],
+			(NSString *)kIOSurfaceWidth,
+			[NSNumber numberWithUnsignedInteger:(NSUInteger)height],
+			(NSString *)kIOSurfaceHeight,
+			[NSNumber numberWithUnsignedInteger:4U],
+			(NSString *)kIOSurfaceBytesPerElement, nil];
 
-
-
-	IOSurfaceRef _surfaceRef =  IOSurfaceCreate((CFDictionaryRef) surfaceAttributes);
+	IOSurfaceRef _surfaceRef =
+		IOSurfaceCreate((CFDictionaryRef)surfaceAttributes);
 
 	if (_surfaceRef)
 		swap->wi->surfaceID = IOSurfaceGetID(_surfaceRef);
 
 	[surfaceAttributes release];
 
-    return swap->wi->surfaceID;
+	return swap->wi->surfaceID;
 }

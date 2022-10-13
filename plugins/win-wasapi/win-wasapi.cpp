@@ -261,17 +261,14 @@ class WASAPISource {
 	void Start();
 	void Stop();
 
-	static ComPtr<IMMDevice> _InitDevice(IMMDeviceEnumerator *enumerator,
-					    bool isDefaultDevice,
-                        SourceType type,
-                        bool &isInputDevice,
-					    string &device_id,
-					    string &device_name);
+	static ComPtr<IMMDevice>
+	_InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice,
+		    SourceType type, bool &isInputDevice, string &device_id,
+		    string &device_name);
 	static ComPtr<IMMDevice> InitDevice(IMMDeviceEnumerator *enumerator,
 					    bool isDefaultDevice,
-					    SourceType type,
-					    string &device_id,
-                        string &device_name);
+					    SourceType type, string &device_id,
+					    string &device_name);
 	static ComPtr<IAudioClient> InitClient(
 		IMMDevice *device, SourceType type, DWORD process_id,
 		PFN_ActivateAudioInterfaceAsync activate_audio_interface_async,
@@ -546,12 +543,13 @@ void WASAPISource::Stop()
 	if (device_id.compare("does_not_exist") == 0)
 		return;
 
-	blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Stop called", this,
-		device_id.c_str());
+	blog(LOG_INFO, "[WASAPISource::Stop][%08X] Device '%s' Stop called",
+	     this, device_id.c_str());
 
 	SetEvent(stopSignal);
 
-	blog(LOG_INFO, "[WASAPISource]: Device '%s' Terminated", device_name.c_str());
+	blog(LOG_INFO, "[WASAPISource]: Device '%s' Terminated",
+	     device_name.c_str());
 
 	if (rtwq_supported)
 		SetEvent(receiveSignal);
@@ -709,12 +707,10 @@ void WASAPISource::Deactivate()
 	}
 }
 
-ComPtr<IMMDevice> WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator,
-					   bool isDefaultDevice,
-					   SourceType type,
-                       bool &isInputDevice,
-					   string &device_id,
-                       string &device_name)
+ComPtr<IMMDevice>
+WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator, bool isDefaultDevice,
+			  SourceType type, bool &isInputDevice,
+			  string &device_id, string &device_name)
 {
 	ComPtr<IMMDevice> device;
 
@@ -722,7 +718,8 @@ ComPtr<IMMDevice> WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator,
 		isInputDevice = type == SourceType::Input;
 		HRESULT res = enumerator->GetDefaultAudioEndpoint(
 			isInputDevice ? eCapture : eRender,
-			isInputDevice ? eCommunications : eConsole, device.Assign());
+			isInputDevice ? eCommunications : eConsole,
+			device.Assign());
 		if (FAILED(res))
 			throw HRError("Failed GetDefaultAudioEndpoint", res);
 	} else {
@@ -745,16 +742,14 @@ ComPtr<IMMDevice> WASAPISource::_InitDevice(IMMDeviceEnumerator *enumerator,
 
 ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 					   bool isDefaultDevice,
-                       SourceType type,
-					   string &device_id,
+					   SourceType type, string &device_id,
 					   string &device_name)
 {
 	ComPtr<IMMDevice> device;
 	std::vector<AudioDeviceInfo> devices;
-    bool input = false;
-	device = _InitDevice(
-        enumerator, isDefaultDevice, type,
-        input, device_id, device_name);
+	bool input = false;
+	device = _InitDevice(enumerator, isDefaultDevice, type, input,
+			     device_id, device_name);
 
 	if (device_name.empty())
 		device_name = GetDeviceName(device);
@@ -764,14 +759,14 @@ ComPtr<IMMDevice> WASAPISource::InitDevice(IMMDeviceEnumerator *enumerator,
 
 	if (!device_name.empty()) {
 		blog(LOG_INFO,
-			"[WASAPISource::InitDevice]: Failed to init device and device name not empty '%s'",
-		    device_name.c_str());
+		     "[WASAPISource::InitDevice]: Failed to init device and device name not empty '%s'",
+		     device_name.c_str());
 		devices.clear();
 		GetWASAPIAudioDevices(devices, input, device_name);
 		if (devices.size()) {
 			blog(LOG_INFO,
-				"[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices, name '%s'",
-			    device_name.c_str());
+			     "[WASAPISource::InitDevice]: Use divice from GetWASAPIAudioDevices, name '%s'",
+			     device_name.c_str());
 
 			device = devices[0].device;
 			device_id = devices[0].id;
@@ -1045,7 +1040,9 @@ void WASAPISource::Initialize()
 		if (FAILED(hr)) {
 			capture.Clear();
 			client.Clear();
-			throw HRError("RtwqPutWaitingWorkItem sampleReadyAsyncResult failed", hr);
+			throw HRError(
+				"RtwqPutWaitingWorkItem sampleReadyAsyncResult failed",
+				hr);
 		}
 
 		hr = rtwq_put_waiting_work_item(restartSignal, 0,
@@ -1053,11 +1050,14 @@ void WASAPISource::Initialize()
 		if (FAILED(hr)) {
 			capture.Clear();
 			client.Clear();
-			throw HRError("RtwqPutWaitingWorkItem restartAsyncResult failed", hr);
+			throw HRError(
+				"RtwqPutWaitingWorkItem restartAsyncResult failed",
+				hr);
 		}
 	}
 
-	blog(LOG_INFO, "[WASAPISource]: Device '%s' [%" PRIu32 " Hz] initialized",
+	blog(LOG_INFO,
+	     "[WASAPISource]: Device '%s' [%" PRIu32 " Hz] initialized",
 	     device_name.c_str(), sampleRate);
 }
 
@@ -1492,7 +1492,8 @@ static void *CreateWASAPISource(obs_data_t *settings, obs_source_t *source,
 	try {
 		return new WASAPISource(settings, source, type);
 	} catch (const char *error) {
-		blog(LOG_ERROR, "[WASAPISource][CreateWASAPISource] Catch %s", error);
+		blog(LOG_ERROR, "[WASAPISource][CreateWASAPISource] Catch %s",
+		     error);
 	}
 
 	return nullptr;
@@ -1511,7 +1512,8 @@ bool isMediaCrashPatchNeeded()
 	RtlGetVersion getVersion;
 	HMODULE ntdllmodule = LoadLibrary(TEXT("ntdll.dll"));
 	if (ntdllmodule) {
-		getVersion = (RtlGetVersion)GetProcAddress(ntdllmodule, "RtlGetVersion");
+		getVersion = (RtlGetVersion)GetProcAddress(ntdllmodule,
+							   "RtlGetVersion");
 		if (getVersion == 0) {
 			FreeLibrary(ntdllmodule);
 			return false;
@@ -1519,8 +1521,10 @@ bool isMediaCrashPatchNeeded()
 		osw.dwOSVersionInfoSize = sizeof(osw);
 		getVersion(&osw);
 		blog(LOG_DEBUG, "[MEDIADLLPATCH] windows version %d %d %d %d ",
-		     osw.dwBuildNumber, osw.dwMinorVersion, osw.dwMajorVersion, osw.dwPlatformId);
-		if (osw.dwBuildNumber == 22000 && osw.dwMinorVersion == 0 && osw.dwMajorVersion == 10) {
+		     osw.dwBuildNumber, osw.dwMinorVersion, osw.dwMajorVersion,
+		     osw.dwPlatformId);
+		if (osw.dwBuildNumber == 22000 && osw.dwMinorVersion == 0 &&
+		    osw.dwMajorVersion == 10) {
 			return true;
 		}
 	}
@@ -1533,52 +1537,69 @@ void patchMediaCrash()
 		return;
 	}
 
-	static const uint8_t patterndata[] = {0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00, 0x00,
-				       0x00, 0x41, 0xB8, 0x01, 0x00, 0x00, 0x00,
-				       0X00, 0X00, 0X00, 0X00, 0x83, 0X00, 0X00,
-				       0X00, 0x44, 0X00, 0X00, 0X00, 0x0F, 0X00,
-				       0X00, 0X00, 0X00, 0X00, 0xC7};
-	static const uint8_t patternsten[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				       0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				       0X01, 0X01, 0X01, 0X01, 0x00, 0X01, 0X01,
-				       0X01, 0x00, 0X01, 0X01, 0X01, 0x00, 0X01,
-				       0X01, 0X01, 0X01, 0X01, 0x00};
+	static const uint8_t patterndata[] = {
+		0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00, 0x00, 0x00, 0x41,
+		0xB8, 0x01, 0x00, 0x00, 0x00, 0X00, 0X00, 0X00, 0X00,
+		0x83, 0X00, 0X00, 0X00, 0x44, 0X00, 0X00, 0X00, 0x0F,
+		0X00, 0X00, 0X00, 0X00, 0X00, 0xC7};
+	static const uint8_t patternsten[] = {
+		0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+		0x00, 0x00, 0x00, 0x00, 0x00, 0X01, 0X01, 0X01, 0X01,
+		0x00, 0X01, 0X01, 0X01, 0x00, 0X01, 0X01, 0X01, 0x00,
+		0X01, 0X01, 0X01, 0X01, 0X01, 0x00};
 
-	static const uint8_t patchdata[] = {0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00, 0x00,
-				     0x00, 0x41, 0xB8, 0x01, 0x00, 0x00, 0x00,
-				     0X00, 0X00, 0X00, 0X00, 0x83, 0X00, 0X00,
-				     0X00, 0x44, 0X00, 0X00, 0X00, 0x90, 0x90,
-				     0x90, 0x90, 0x90, 0x90, 0xC7};
-	static const uint8_t patchsten[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-				     0X01, 0X01, 0X01, 0X01, 0x00, 0X01, 0X01,
-				     0X01, 0x00, 0X01, 0X01, 0X01, 0x00, 0x00,
-				     0x00, 0x00, 0x00, 0x00, 0x00};
+	static const uint8_t patchdata[] = {0x83, 0xF9, 0x08, 0xB8, 0x04, 0x00,
+					    0x00, 0x00, 0x41, 0xB8, 0x01, 0x00,
+					    0x00, 0x00, 0X00, 0X00, 0X00, 0X00,
+					    0x83, 0X00, 0X00, 0X00, 0x44, 0X00,
+					    0X00, 0X00, 0x90, 0x90, 0x90, 0x90,
+					    0x90, 0x90, 0xC7};
+	static const uint8_t patchsten[] = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					    0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+					    0x00, 0x00, 0X01, 0X01, 0X01, 0X01,
+					    0x00, 0X01, 0X01, 0X01, 0x00, 0X01,
+					    0X01, 0X01, 0x00, 0x00, 0x00, 0x00,
+					    0x00, 0x00, 0x00};
 
 	MODULEINFO module_info = {0};
 	HMODULE media_module = LoadLibrary(L"Windows.Media.MediaControl.dll");
 	if (media_module) {
-		BOOL ret = GetModuleInformation(GetCurrentProcess(), media_module, &module_info, sizeof(module_info));
+		BOOL ret = GetModuleInformation(GetCurrentProcess(),
+						media_module, &module_info,
+						sizeof(module_info));
 		if (!ret) {
-			blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to get module info %d", GetLastError());
+			blog(LOG_DEBUG,
+			     "[MEDIADLLPATCH] failed to get module info %d",
+			     GetLastError());
 			return;
 		}
 	} else {
-		blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to get module %d", GetLastError());
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to get module %d",
+		     GetLastError());
 		return;
 	}
-	blog(LOG_DEBUG, "[MEDIADLLPATCH] MediaControl dll module info: start %d size %d", module_info.lpBaseOfDll, module_info.SizeOfImage);
+	blog(LOG_DEBUG,
+	     "[MEDIADLLPATCH] MediaControl dll module info: start %d size %d",
+	     module_info.lpBaseOfDll, module_info.SizeOfImage);
 
 	uint8_t *found_memory = nullptr;
-	for (size_t offset = 0; offset < module_info.SizeOfImage - sizeof(patterndata); offset++) {
+	for (size_t offset = 0;
+	     offset < module_info.SizeOfImage - sizeof(patterndata); offset++) {
 
-		for (size_t pattern_offset = 0; pattern_offset < sizeof(patterndata); pattern_offset++) {
+		for (size_t pattern_offset = 0;
+		     pattern_offset < sizeof(patterndata); pattern_offset++) {
 
-			uint8_t memory_byte = *((uint8_t *)module_info.lpBaseOfDll + offset + pattern_offset);
+			uint8_t memory_byte =
+				*((uint8_t *)module_info.lpBaseOfDll + offset +
+				  pattern_offset);
 			uint8_t pattern_byte = *(patterndata + pattern_offset);
-			uint8_t pattern_stencil_byte = *(patternsten + pattern_offset);
-			if (pattern_stencil_byte || pattern_byte == memory_byte) {
-				found_memory = (uint8_t *)module_info.lpBaseOfDll + offset;
+			uint8_t pattern_stencil_byte =
+				*(patternsten + pattern_offset);
+			if (pattern_stencil_byte ||
+			    pattern_byte == memory_byte) {
+				found_memory =
+					(uint8_t *)module_info.lpBaseOfDll +
+					offset;
 				continue;
 			} else {
 				found_memory = nullptr;
@@ -1590,22 +1611,30 @@ void patchMediaCrash()
 	}
 
 	if (found_memory != nullptr) {
-		blog(LOG_DEBUG, "[MEDIADLLPATCH] memory pattern start %d", found_memory);
+		blog(LOG_DEBUG, "[MEDIADLLPATCH] memory pattern start %d",
+		     found_memory);
 		DWORD prev_flags = 0;
-		if (VirtualProtect(found_memory, sizeof(patchdata), PAGE_EXECUTE_READWRITE, &prev_flags)) {
+		if (VirtualProtect(found_memory, sizeof(patchdata),
+				   PAGE_EXECUTE_READWRITE, &prev_flags)) {
 
-			for (size_t patch_offset = 0; patch_offset < sizeof(patchdata); patch_offset++) {
-				uint8_t *memory_offset = found_memory + patch_offset;
+			for (size_t patch_offset = 0;
+			     patch_offset < sizeof(patchdata); patch_offset++) {
+				uint8_t *memory_offset =
+					found_memory + patch_offset;
 				if (patchsten[patch_offset] == 0x00) {
-					*memory_offset = patchdata[patch_offset];
+					*memory_offset =
+						patchdata[patch_offset];
 				}
 			}
-			VirtualProtect(found_memory, sizeof(patchdata), prev_flags, nullptr);
+			VirtualProtect(found_memory, sizeof(patchdata),
+				       prev_flags, nullptr);
 		} else {
-			blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to unlock memory");
+			blog(LOG_DEBUG,
+			     "[MEDIADLLPATCH] failed to unlock memory");
 		}
 	} else {
-		blog(LOG_DEBUG, "[MEDIADLLPATCH] failed to found memory pattern");
+		blog(LOG_DEBUG,
+		     "[MEDIADLLPATCH] failed to found memory pattern");
 	}
 }
 
@@ -1685,7 +1714,8 @@ static obs_properties_t *GetWASAPIPropertiesInput(void *obj)
 	WASAPISource *source = static_cast<WASAPISource *>(obj);
 	if (source) {
 		auto p = obs_properties_add_text(props, OPT_DEVICE_NAME,
-					source->device_name.c_str(), OBS_TEXT_DEFAULT);
+						 source->device_name.c_str(),
+						 OBS_TEXT_DEFAULT);
 		obs_property_set_visible(p, false);
 	}
 

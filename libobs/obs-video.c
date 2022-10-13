@@ -62,7 +62,8 @@ static uint64_t tick_sources(uint64_t cur_time, uint64_t last_time)
 	struct obs_source *source = obs_source_get_ref(data->first_source);
 
 	while (source) {
-		struct obs_source *next_source = obs_source_get_ref((struct obs_source *)source->context.next);
+		struct obs_source *next_source = obs_source_get_ref(
+			(struct obs_source *)source->context.next);
 
 		obs_source_video_tick(source, seconds);
 		obs_source_release(source);
@@ -850,13 +851,16 @@ static inline void output_frame(struct obs_core_video_mix *video)
 		if (video == obs->video.main_mix)
 			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
 		else if (video == obs->video.stream_mix)
-			obs_set_video_rendering_mode(OBS_STREAMING_VIDEO_RENDERING);
+			obs_set_video_rendering_mode(
+				OBS_STREAMING_VIDEO_RENDERING);
 		else if (video == obs->video.record_mix)
-			obs_set_video_rendering_mode(OBS_RECORDING_VIDEO_RENDERING);
+			obs_set_video_rendering_mode(
+				OBS_RECORDING_VIDEO_RENDERING);
 		else
 			return;
 	} else {
-		if (video == obs->video.stream_mix || video == obs->video.record_mix)
+		if (video == obs->video.stream_mix ||
+		    video == obs->video.record_mix)
 			return;
 		else
 			obs_set_video_rendering_mode(OBS_MAIN_VIDEO_RENDERING);
@@ -1109,7 +1113,8 @@ static inline bool stop_requested(void)
 bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
 	/* defer loop break to clean up sources */
-	const bool stop_requested = video_output_stopped(obs->video.main_mix->video);
+	const bool stop_requested =
+		video_output_stopped(obs->video.main_mix->video);
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
