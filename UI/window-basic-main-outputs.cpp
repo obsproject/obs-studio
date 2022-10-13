@@ -2043,8 +2043,7 @@ bool AdvancedOutput::StartReplayBuffer()
 			error_reason = QT_UTF8(error);
 		else
 			error_reason = QTStr("Output.StartFailedGeneric");
-		QMessageBox::critical(main,
-				      QTStr("Output.StartRecordingFailed"),
+		QMessageBox::critical(main, QTStr("Output.StartReplayFailed"),
 				      error_reason);
 		return false;
 	}
