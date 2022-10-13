@@ -224,7 +224,6 @@ struct obs_display {
 	pthread_mutex_t draw_callbacks_mutex;
 	pthread_mutex_t draw_info_mutex;
 	DARRAY(struct draw_callback) draw_callbacks;
-	bool use_clear_workaround;
 
 	struct obs_display *next;
 	struct obs_display **prev_next;
