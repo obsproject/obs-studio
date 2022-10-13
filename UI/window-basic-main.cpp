@@ -6647,12 +6647,12 @@ void OBSBasic::BroadcastButtonClicked()
 							.arg(last_error,
 							     ytAuth->GetBroadcastId());
 
+				api->on_event(OBS_FRONTEND_EVENT_BROADCAST_START_FAILED);
 				OBSMessageBox::warning(
 					this,
 					QTStr("Output.BroadcastStartFailed"),
 					last_error, true);
 				ui->broadcastButton->setChecked(false);
-				api->on_event(OBS_FRONTEND_EVENT_BROADCAST_START_FAILED);
 				return;
 			} else {
 				api->on_event(OBS_FRONTEND_EVENT_BROADCAST_STARTED);
