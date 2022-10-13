@@ -445,18 +445,29 @@ EXPORT int obs_reset_video();
 EXPORT int obs_set_video_info(struct obs_video_info *canvas,
 			      struct obs_video_info *updated);
 
-/** Gets video info, 0 or currently rendiring */
+/** Gets video info first/default */
 EXPORT bool obs_get_video_info(struct obs_video_info *ovi);
-EXPORT bool obs_get_current_video_info(struct obs_video_info *ovi);
+/** Gets video info currently being rendired*/
+EXPORT bool obs_get_video_info_current(struct obs_video_info *ovi);
+/** Gets video info by index*/
+EXPORT size_t obs_get_video_info_count();
+EXPORT bool obs_get_video_info_by_index(size_t index,
+					struct obs_video_info *ovi);
+/** Gets video info used by output*/
+EXPORT bool obs_get_video_info_for_output(obs_output_t *output,
+					  struct obs_video_info *ovi);
+/** Gets video info used by output*/
+EXPORT bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
+					  struct obs_video_info *ovi);
+
+EXPORT bool obs_get_video_info_scene_item(obs_sceneitem_t *item,
+					  struct obs_video_info *ovi);
 
 /** Remove a video info */
 EXPORT int obs_remove_video_info(struct obs_video_info *ovi);
 /** Adds new video info to array of video info objects, need to be initialized */
 EXPORT struct obs_video_info *obs_create_video_info();
 
-EXPORT size_t obs_get_video_info_count();
-
-EXPORT bool obs_get_video_info_by_index(size_t index, struct obs_video_info *ovi);
 
 /**
  * Sets base audio output format/channels/samples/etc
@@ -798,7 +809,7 @@ EXPORT void obs_render_main_view(void);
 EXPORT void obs_render_main_texture(void);
 
 /** Renders the output texture for a specific output*/
-EXPORT void obs_render_texture(int canvas_id,
+EXPORT void obs_render_texture(struct obs_video_info *ovi,
 			       enum obs_video_rendering_mode mode);
 
 	/** Renders the last main output texture ignoring background color */
@@ -826,7 +837,11 @@ EXPORT void obs_set_audio_rendering_mode(enum obs_audio_rendering_mode mode);
 /** Gets current audio rendering mode */
 EXPORT enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void);
 
-/** Set the replay buffer rendering mode*/
+/** Sets/Gets current video rendering canvas*/
+EXPORT void obs_set_video_rendering_canvas(struct obs_video_info *ovi);
+EXPORT struct obs_video_info *obs_get_video_rendering_canvas(void);
+
+	/** Set the replay buffer rendering mode*/
 EXPORT void obs_set_replay_buffer_rendering_mode(
 	enum obs_replay_buffer_rendering_mode mode);
 
@@ -1942,7 +1957,8 @@ EXPORT void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
 
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
-EXPORT bool obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas);
+EXPORT void obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas);
+EXPORT struct obs_video_info *obs_sceneitem_get_canvas(obs_sceneitem_t *item);
 
 struct obs_sceneitem_crop {
 	int left;

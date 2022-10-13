@@ -1184,7 +1184,7 @@ static bool obs_init(const char *locale, const char *module_config_path,
 	obs->video_rendering_mode = OBS_MAIN_VIDEO_RENDERING;
 	obs->audio_rendering_mode = OBS_MAIN_AUDIO_RENDERING;
 
-	darray_init(&obs->video.canvases);
+	da_init(obs->video.canvases);
 
 	return true;
 }
@@ -1570,12 +1570,10 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 	return obs_reset_audio2(&oai2);
 }
 
-bool obs_get_current_video_info(struct obs_video_info *ovi)
+bool obs_get_video_info_current(struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested");
-	if (!obs->video.graphics)
-		return false;
-	if (!obs->video_rendering_canvas)
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested curent");
+	if (!obs->video.graphics || !obs->video_rendering_canvas  || !ovi)
 		return false;
 
 	*ovi = *(obs->video_rendering_canvas);
@@ -1583,10 +1581,53 @@ bool obs_get_current_video_info(struct obs_video_info *ovi)
 	return true;
 }
 
+bool obs_get_video_info_scene_item(obs_sceneitem_t *item,
+				   struct obs_video_info *ovi)
+{
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for output");
+
+	if (!item)
+		return false;
+
+	struct obs_video_info *item_canvas = obs_sceneitem_get_canvas(item);
+
+	if (!item_canvas)
+		return false;
+
+	*ovi = *(item_canvas);
+
+	return true;
+}
+
+bool obs_get_video_info_for_output(obs_output_t *output,
+				   struct obs_video_info *ovi)
+{
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for output");
+	if (!output || !output->video_encoder)
+		return false;
+
+	return obs_get_video_info_for_encoder(output->video_encoder, ovi);
+}
+
+bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
+				   struct obs_video_info *ovi)
+{
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for encoder");
+	if (!encoder || !encoder->video || !ovi)
+		return false;
+	struct obs_core_video_mix *video = encoder->video;
+	if (!video || !video->ovi)
+		return false;
+
+	*ovi = *(video->ovi);
+
+	return true;
+}
+
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested");
-	if (!obs->video.graphics)
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested default");
+	if (!obs->video.graphics || !ovi)
 		return false;
 
 	bool ret = false;
@@ -2267,11 +2308,12 @@ void obs_render_main_texture(void)
 				 obs->video.main_mix);
 }
 
-void obs_render_texture(int canvas_id, enum obs_video_rendering_mode mode)
+void obs_render_texture(struct obs_video_info *ovi,
+			enum obs_video_rendering_mode mode)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
 				 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				obs_video_mix_get(canvas_id, mode));
+				obs_video_mix_get(ovi, mode));
 }
 
 void obs_render_main_texture_src_color_only(void)

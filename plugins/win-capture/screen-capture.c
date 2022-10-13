@@ -195,7 +195,7 @@ static void scs_defaults(obs_data_t *settings)
 static uint32_t scs_getwidth(void *data)
 {
 	struct obs_video_info ovi;
-	if (!obs_get_current_video_info(&ovi))
+	if (!obs_get_video_info_current(&ovi))
 		return 0;
 	return ovi.base_width;
 }
@@ -203,7 +203,7 @@ static uint32_t scs_getwidth(void *data)
 static uint32_t scs_getheight(void *data)
 {
 	struct obs_video_info ovi;
-	if (!obs_get_current_video_info(&ovi))
+	if (!obs_get_video_info_current(&ovi))
 		return 0;
 	return ovi.base_height;
 }
@@ -235,7 +235,7 @@ static void scs_deactivate(void *data)
 static void scs_render_source(struct obs_source * source)
 {
 	struct obs_video_info ovi;
-	if (!obs_get_current_video_info(&ovi))
+	if (!obs_get_video_info_current(&ovi))
 		return;
 
 	float source_height = (float)obs_source_get_height(source);

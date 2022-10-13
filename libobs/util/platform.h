@@ -174,7 +174,8 @@ EXPORT int os_safe_replace(const char *target_path, const char *from_path,
 			   const char *backup_path);
 
 EXPORT char *os_generate_formatted_filename(const char *extension, bool space,
-					    const char *format);
+					    const char *format,
+					    struct obs_video_info *ovi);
 
 struct os_inhibit_info;
 typedef struct os_inhibit_info os_inhibit_t;
