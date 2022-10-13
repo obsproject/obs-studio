@@ -2821,12 +2821,12 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 			const char *preset =
 				obs_data_get_string(data, "preset");
 
-			if (astrcmpi(preset, "hq") == 0) {
+			if (astrcmpi(preset, "mq") == 0) {
 				obs_data_set_string(data, "preset2", "p6");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass", "qres");
 
-			} else if (astrcmpi(preset, "mq") == 0) {
+			} else if (astrcmpi(preset, "hq") == 0) {
 				obs_data_set_string(data, "preset2", "p4");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass", "qres");
