@@ -144,6 +144,11 @@ static void *scale_filter_create(obs_data_t *settings, obs_source_t *context)
 
 static void scale_filter_tick(void *data, float seconds)
 {
+	return;
+}
+
+static void scale_filter_prepare_for_rendering(void *data)
+{
 	struct scale_filter_data *filter = data;
 	enum obs_base_effect type;
 	obs_source_t *target;
@@ -155,7 +160,7 @@ static void scale_filter_tick(void *data, float seconds)
 
 	if (filter->base_canvas_resolution) {
 		struct obs_video_info ovi;
-		obs_get_video_info(&ovi);
+		obs_get_video_info_current(&ovi);
 		filter->cx_in = ovi.base_width;
 		filter->cy_in = ovi.base_height;
 	}
@@ -267,8 +272,6 @@ static void scale_filter_tick(void *data, float seconds)
 
 	filter->multiplier_param =
 		gs_effect_get_param_by_name(filter->effect, "multiplier");
-
-	UNUSED_PARAMETER(seconds);
 }
 
 static const char *
@@ -402,6 +405,8 @@ static void scale_filter_render(void *data, gs_effect_t *effect)
 
 	struct scale_filter_data *filter = data;
 
+	scale_filter_prepare_for_rendering(data);
+
 	if (!filter->valid || !filter->target_valid) {
 		obs_source_skip_video_filter(filter->context);
 		return;
@@ -506,15 +511,6 @@ static obs_properties_t *scale_filter_properties(void *data)
 
 	/* ----------------- */
 
-	obs_get_video_info(&ovi);
-	cx = ovi.base_width;
-	cy = ovi.base_height;
-
-	for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
-		downscales[i].cx = (int)((double)cx / downscale_vals[i]);
-		downscales[i].cy = (int)((double)cy / downscale_vals[i]);
-	}
-
 	p = obs_properties_add_list(props, S_SAMPLING, T_SAMPLING,
 				    OBS_COMBO_TYPE_LIST,
 				    OBS_COMBO_FORMAT_STRING);
@@ -538,12 +534,23 @@ static obs_properties_t *scale_filter_properties(void *data)
 	for (size_t i = 0; i < NUM_ASPECTS; i++)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
-	for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
-		char str[32];
-		snprintf(str, 32, "%dx%d", downscales[i].cx, downscales[i].cy);
-		obs_property_list_add_string(p, str, str);
-	}
+	size_t contexts = obs_get_video_info_count();
+	for (int i = 0; i < contexts; i++) {
+		obs_get_video_info(&ovi);
+		cx = ovi.base_width;
+		cy = ovi.base_height;
 
+		for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
+			downscales[i].cx = (int)((double)cx / downscale_vals[i]);
+			downscales[i].cy = (int)((double)cy / downscale_vals[i]);
+		}
+
+		for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
+			char str[32];
+			snprintf(str, 32, "%dx%d", downscales[i].cx, downscales[i].cy);
+			obs_property_list_add_string(p, str, str);
+		}
+	}
 	obs_properties_add_bool(props, S_UNDISTORT, T_UNDISTORT);
 
 	/* ----------------- */
