@@ -6627,6 +6627,10 @@ void OBSBasic::BroadcastButtonClicked()
 		std::shared_ptr<YoutubeApiWrappers> ytAuth =
 			dynamic_pointer_cast<YoutubeApiWrappers>(auth);
 		if (ytAuth.get()) {
+			// Broadcast is attempting to start.  This can fail but we want to trigger it early so scripts can be notified before we actually go live.
+			// Then later on in the function we will trigger another event either confirming that the broadcast has successfully started, or that we have failed to start the broadcast.
+			api->on_event(OBS_FRONTEND_EVENT_BROADCAST_STARTING);
+
 			if (!ytAuth->StartLatestBroadcast()) {
 				auto last_error = ytAuth->GetLastError();
 				if (last_error.isEmpty())
@@ -6638,12 +6642,15 @@ void OBSBasic::BroadcastButtonClicked()
 							.arg(last_error,
 							     ytAuth->GetBroadcastId());
 
+				api->on_event(OBS_FRONTEND_EVENT_BROADCAST_START_FAILED);
 				OBSMessageBox::warning(
 					this,
 					QTStr("Output.BroadcastStartFailed"),
 					last_error, true);
 				ui->broadcastButton->setChecked(false);
 				return;
+			} else {
+				api->on_event(OBS_FRONTEND_EVENT_BROADCAST_STARTED);
 			}
 		}
 #endif

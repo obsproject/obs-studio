@@ -178,6 +178,18 @@ Structures/Enumerations
 
      Triggered when the virtual camera is stopped.
 
+   - **OBS_FRONTEND_EVENT_BROADCAST_STARTING**
+
+     Triggered when broadcast (go live) begins.
+
+   - **OBS_FRONTEND_EVENT_BROADCAST_STARTED**
+
+     Triggered when broadcast (go live) has successfully started.
+
+   - **OBS_FRONTEND_EVENT_BROADCAST_START_FAILED**
+
+     Triggered when attempt to broadcast (go live) has failed.
+
 
 .. struct:: obs_frontend_source_list
 
