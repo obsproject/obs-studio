@@ -2371,7 +2371,7 @@ obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi,
 {
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
-		if ((mix->ovi == ovi || ovi == 0) && mix->rendering_mode == mode)
+		if ((mix->ovi == ovi || ovi == NULL) && mix->rendering_mode == mode)
 			return mix;
 	}
 	return NULL;

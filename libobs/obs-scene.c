@@ -1309,13 +1309,29 @@ static void scene_save(void *data, obs_data_t *settings)
 static uint32_t scene_getwidth(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cx : 500;
+	if (scene->custom_size) {
+		return scene->cx;
+	} else {
+		struct obs_video_info ovi;
+		if (obs_get_video_info_current(&ovi)) {
+			return ovi.base_width;
+		}
+	}
+	return 0;
 }
 
 static uint32_t scene_getheight(void *data)
 {
 	obs_scene_t *scene = data;
-	return scene->custom_size ? scene->cy : 500;
+	if (scene->custom_size) {
+		return scene->cy;
+	} else {
+		struct obs_video_info ovi;
+		if (obs_get_video_info_current(&ovi)) {
+			return ovi.base_height;
+		}
+	}
+	return 0;
 }
 
 static void apply_scene_item_audio_actions(struct obs_scene_item *item,

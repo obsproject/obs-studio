@@ -536,7 +536,7 @@ static obs_properties_t *scale_filter_properties(void *data)
 
 	size_t contexts = obs_get_video_info_count();
 	for (int i = 0; i < contexts; i++) {
-		obs_get_video_info(&ovi);
+		obs_get_video_info_by_index(i, &ovi);
 		cx = ovi.base_width;
 		cy = ovi.base_height;
 
