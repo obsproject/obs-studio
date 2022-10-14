@@ -138,7 +138,7 @@ STDMETHODIMP VCamFilter::Pause()
 		return hr;
 	}
 
-	os_atomic_set_bool(&active, true);
+	os_atomic_set_bool(&active, false);
 	SetEvent(thread_start);
 	return S_OK;
 }
