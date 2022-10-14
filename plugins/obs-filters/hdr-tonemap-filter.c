@@ -104,7 +104,7 @@ static obs_properties_t *hdr_tonemap_filter_properties(void *data)
 
 	obs_property_t *p = obs_properties_add_text(
 		props, "override_info",
-		obs_module_text("HdrTonemap.Description"), OBS_TEXT_INFO);
+		obs_module_text("HdrTonemap.SLDescription"), OBS_TEXT_INFO);
 
 	p = obs_properties_add_list(props, "transform",
 				    obs_module_text("HdrTonemap.ToneTransform"),
