@@ -80,6 +80,7 @@ static string lastLogFile;
 static string lastCrashLogFile;
 
 bool portable_mode = false;
+bool steam = false;
 static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
@@ -3045,6 +3046,9 @@ int main(int argc, char *argv[])
 		} else if (arg_is(argv[i], "--disable-missing-files-check",
 				  nullptr)) {
 			opt_disable_missing_files_check = true;
+
+		} else if (arg_is(argv[i], "--steam", nullptr)) {
+			steam = true;
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
