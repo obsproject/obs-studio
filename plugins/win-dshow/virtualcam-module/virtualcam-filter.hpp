@@ -30,10 +30,10 @@ class VCamFilter : public DShow::OutputFilter {
 	bool in_obs = false;
 	enum queue_state prev_state = SHARED_QUEUE_STATE_INVALID;
 	placeholder_t placeholder;
-	uint32_t cx = DEFAULT_CX;
-	uint32_t cy = DEFAULT_CY;
+	uint32_t obs_cx = DEFAULT_CX;
+	uint32_t obs_cy = DEFAULT_CY;
+	uint64_t obs_interval = DEFAULT_INTERVAL;
 	DShow::VideoFormat format;
-	uint64_t interval = DEFAULT_INTERVAL;
 	WinHandle thread_start;
 	WinHandle thread_stop;
 	volatile bool active = false;
