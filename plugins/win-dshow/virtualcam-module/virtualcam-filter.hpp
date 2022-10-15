@@ -33,6 +33,8 @@ class VCamFilter : public DShow::OutputFilter {
 	uint32_t obs_cx = DEFAULT_CX;
 	uint32_t obs_cy = DEFAULT_CY;
 	uint64_t obs_interval = DEFAULT_INTERVAL;
+	uint32_t filter_cx = DEFAULT_CX;
+	uint32_t filter_cy = DEFAULT_CY;
 	DShow::VideoFormat format;
 	WinHandle thread_start;
 	WinHandle thread_stop;

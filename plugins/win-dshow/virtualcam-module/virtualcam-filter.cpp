@@ -189,6 +189,8 @@ void VCamFilter::Thread()
 	obs_cx = (uint32_t)GetCX();
 	obs_cy = (uint32_t)GetCY();
 	obs_interval = (uint64_t)GetInterval();
+	filter_cx = obs_cx;
+	filter_cy = obs_cy;
 
 	/* ---------------------------------------- */
 	/* load placeholder image                   */
@@ -248,11 +250,14 @@ void VCamFilter::Frame(uint64_t ts)
 		prev_state = state;
 	}
 
+	uint32_t new_filter_cx = (uint32_t)GetCX();
+	uint32_t new_filter_cy = (uint32_t)GetCY();
+
 	if (state != SHARED_QUEUE_STATE_READY) {
 		/* Virtualcam output not yet started, assume it's
 		   the same resolution as the filter output */
-		new_obs_cx = GetCX();
-		new_obs_cy = GetCY();
+		new_obs_cx = new_filter_cx;
+		new_obs_cy = new_filter_cy;
 		new_obs_interval = GetInterval();
 	}
 
@@ -268,12 +273,24 @@ void VCamFilter::Frame(uint64_t ts)
 		}
 
 		/* Re-initialize the main scaler to use the new resolution */
-		nv12_scale_init(&scaler, scaler.format, GetCX(), GetCY(),
-				new_obs_cx, new_obs_cy);
+		nv12_scale_init(&scaler, scaler.format, new_filter_cx,
+				new_filter_cy, new_obs_cx, new_obs_cy);
 
 		obs_cx = new_obs_cx;
 		obs_cy = new_obs_cy;
 		obs_interval = new_obs_interval;
+		filter_cx = new_filter_cx;
+		filter_cy = new_filter_cy;
+
+		UpdatePlaceholder();
+
+	} else if (new_filter_cx != filter_cx || new_filter_cy != filter_cy) {
+		filter_cx = new_filter_cx;
+		filter_cy = new_filter_cy;
+
+		/* Re-initialize the main scaler to use the new resolution */
+		nv12_scale_init(&scaler, scaler.format, new_filter_cx,
+				new_filter_cy, new_obs_cx, new_obs_cy);
 
 		UpdatePlaceholder();
 	}
