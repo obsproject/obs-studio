@@ -240,6 +240,7 @@ static inline int GetProfilePath(char *path, size_t size, const char *file)
 }
 
 extern bool portable_mode;
+extern bool steam;
 
 extern bool opt_start_streaming;
 extern bool opt_start_recording;
