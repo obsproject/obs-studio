@@ -2316,10 +2316,6 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 				audio_permission, accessibility_permission);
 			check->exec();
 		}
-
-		bool rosettaTranslated = os_get_emulation_status();
-		blog(LOG_INFO, "Rosetta translation used: %s",
-		     rosettaTranslated ? "true" : "false");
 #endif
 
 #ifdef _WIN32
