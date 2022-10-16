@@ -18,6 +18,7 @@ SKIPPED_SERVICES = {'YouNow', 'SHOWROOM', 'Dacast'}
 SERVICES_FILE = 'plugins/rtmp-services/data/services.json'
 PACKAGE_FILE = 'plugins/rtmp-services/data/package.json'
 CACHE_FILE = 'other/timestamps.json'
+GITHUB_OUTPUT_FILE = os.environ.get('GITHUB_OUTPUT', None)
 
 DO_NOT_PING = {'jp9000'}
 PR_MESSAGE = '''This is an automatically created pull request to remove unresponsive servers and services.
@@ -160,7 +161,7 @@ def get_last_artifact():
                 return json.loads(zip_ref.read(info.filename))
 
 
-def find_people_to_blame(raw_services: str, servers: list[tuple[str, str]]) -> dict():
+def find_people_to_blame(raw_services: str, servers: list[tuple[str, str]]) -> dict:
     if not servers:
         return dict()
 
@@ -189,6 +190,17 @@ def find_people_to_blame(raw_services: str, servers: list[tuple[str, str]]) -> d
                     service_authors[service].add(author)
 
     return service_authors
+
+
+def set_output(name, value):
+    if not GITHUB_OUTPUT_FILE:
+        return
+
+    try:
+        with open(GITHUB_OUTPUT_FILE, 'a', encoding='utf-8', newline='\n') as f:
+            f.write(f'{name}={value}\n')
+    except Exception as e:
+        print(f'Writing to github output files failed: {e!r}')
 
 
 def main():
@@ -323,7 +335,7 @@ def main():
             service_authors = dict()
 
         # set GitHub outputs
-        print(f'::set-output name=make_pr::true')
+        set_output('make_pr', 'true')
         msg = PR_MESSAGE.format(
             repository=os.environ['REPOSITORY'],
             run_id=os.environ['WORKFLOW_RUN_ID'],
@@ -336,9 +348,9 @@ def main():
                 for name, action in sorted(affected_services.items())
             ),
         )
-        print(f'::set-output name=pr_message::{json.dumps(msg)}')
+        set_output('pr_message', json.dumps(msg))
     else:
-        print(f'::set-output name=make_pr::false')
+        set_output('make_pr', 'false')
 
 
 if __name__ == '__main__':
