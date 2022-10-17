@@ -712,7 +712,8 @@ static void erase_ch(struct dstr *str, size_t pos)
 }
 
 char *os_generate_formatted_filename(const char *extension, bool space,
-				     const char *format, struct obs_video_info *ovi)
+				     const char *format,
+				     struct obs_video_info *ovi)
 {
 	time_t now = time(0);
 	struct tm *cur_time;
@@ -773,8 +774,7 @@ char *os_generate_formatted_filename(const char *extension, bool space,
 				replace_text(&sf, pos, 5, convert);
 
 			} else if (astrcmp_n(cmp, "%ORES", 5) == 0) {
-				sprintf(convert, "%ux%u",
-					ovi->output_width,
+				sprintf(convert, "%ux%u", ovi->output_width,
 					ovi->output_height);
 				replace_text(&sf, pos, 5, convert);
 

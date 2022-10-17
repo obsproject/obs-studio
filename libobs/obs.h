@@ -67,7 +67,6 @@ typedef struct obs_fader obs_fader_t;
 typedef struct obs_volmeter obs_volmeter_t;
 typedef struct obs_core_video_mix obs_core_video_mix_t;
 
-
 typedef struct obs_weak_object obs_weak_object_t;
 typedef struct obs_weak_source obs_weak_source_t;
 typedef struct obs_weak_output obs_weak_output_t;
@@ -458,7 +457,7 @@ EXPORT bool obs_get_video_info_for_output(obs_output_t *output,
 					  struct obs_video_info *ovi);
 /** Gets video info used by output*/
 EXPORT bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
-					  struct obs_video_info *ovi);
+					   struct obs_video_info *ovi);
 
 EXPORT bool obs_get_video_info_scene_item(obs_sceneitem_t *item,
 					  struct obs_video_info *ovi);
@@ -468,7 +467,6 @@ EXPORT int obs_remove_video_info(struct obs_video_info *ovi);
 /** Adds new video info to array of video info objects, need to be initialized */
 EXPORT struct obs_video_info *obs_create_video_info();
 
-
 /**
  * Sets base audio output format/channels/samples/etc
  *
@@ -476,8 +474,6 @@ EXPORT struct obs_video_info *obs_create_video_info();
  */
 EXPORT bool obs_reset_audio(const struct obs_audio_info *oai);
 EXPORT bool obs_reset_audio2(const struct obs_audio_info2 *oai);
-
-
 
 /** Gets the SDR white level, returns 300.f if no video */
 EXPORT float obs_get_video_sdr_white_level(void);
@@ -812,7 +808,7 @@ EXPORT void obs_render_main_texture(void);
 EXPORT void obs_render_texture(struct obs_video_info *ovi,
 			       enum obs_video_rendering_mode mode);
 
-	/** Renders the last main output texture ignoring background color */
+/** Renders the last main output texture ignoring background color */
 EXPORT void obs_render_main_texture_src_color_only(void);
 
 /** Returns the last main output texture.  This can return NULL if the texture
@@ -841,7 +837,7 @@ EXPORT enum obs_audio_rendering_mode obs_get_audio_rendering_mode(void);
 EXPORT void obs_set_video_rendering_canvas(struct obs_video_info *ovi);
 EXPORT struct obs_video_info *obs_get_video_rendering_canvas(void);
 
-	/** Set the replay buffer rendering mode*/
+/** Set the replay buffer rendering mode*/
 EXPORT void obs_set_replay_buffer_rendering_mode(
 	enum obs_replay_buffer_rendering_mode mode);
 
@@ -1009,10 +1005,12 @@ EXPORT void obs_view_render(obs_view_t *view);
 EXPORT video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_stream_view_add(obs_view_t *view, struct obs_video_info *ovi);
+EXPORT video_t *obs_stream_view_add(obs_view_t *view,
+				    struct obs_video_info *ovi);
 
 /** Adds a view to the main render loop */
-EXPORT video_t *obs_record_view_add(obs_view_t *view, struct obs_video_info *ovi);
+EXPORT video_t *obs_record_view_add(obs_view_t *view,
+				    struct obs_video_info *ovi);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
@@ -1957,7 +1955,8 @@ EXPORT void obs_sceneitem_get_box_scale(const obs_sceneitem_t *item,
 
 EXPORT bool obs_sceneitem_visible(const obs_sceneitem_t *item);
 EXPORT bool obs_sceneitem_set_visible(obs_sceneitem_t *item, bool visible);
-EXPORT void obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas);
+EXPORT void obs_sceneitem_set_canvas(obs_sceneitem_t *item,
+				     struct obs_video_info *canvas);
 EXPORT struct obs_video_info *obs_sceneitem_get_canvas(obs_sceneitem_t *item);
 
 struct obs_sceneitem_crop {
@@ -2201,8 +2200,8 @@ EXPORT proc_handler_t *obs_output_get_proc_handler(const obs_output_t *output);
  * Sets the current audio/video media contexts associated with this output,
  * required for non-encoded outputs.  Can be null.
  */
-EXPORT void obs_output_set_media(obs_output_t *output, obs_core_video_mix_t *mix,
-				 audio_t *audio);
+EXPORT void obs_output_set_media(obs_output_t *output,
+				 obs_core_video_mix_t *mix, audio_t *audio);
 
 /** Returns the video media context associated with this output */
 EXPORT video_t *obs_output_video(const obs_output_t *output);
@@ -2417,7 +2416,9 @@ EXPORT const char *obs_encoder_get_name(const obs_encoder_t *encoder);
 EXPORT void obs_encoder_set_video_mix(obs_encoder_t *encoder,
 				      struct obs_core_video_mix *video);
 
-EXPORT obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi, enum obs_video_rendering_mode mode);
+EXPORT obs_core_video_mix_t *
+obs_video_mix_get(struct obs_video_info *ovi,
+		  enum obs_video_rendering_mode mode);
 
 /** Returns the codec of an encoder by the id */
 EXPORT const char *obs_get_encoder_codec(const char *id);

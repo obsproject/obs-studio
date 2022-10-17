@@ -401,8 +401,9 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	}
 
 	struct obs_video_info *ovi = video->ovi;
-	video->render_texture = gs_texture_create(ovi->base_width, ovi->base_height,
-				  format, 1, NULL, GS_RENDER_TARGET);
+	video->render_texture = gs_texture_create(ovi->base_width,
+						  ovi->base_height, format, 1,
+						  NULL, GS_RENDER_TARGET);
 	if (!video->render_texture)
 		success = false;
 
@@ -646,29 +647,35 @@ static int obs_init_video()
 	}
 
 	struct obs_core_video *video = &obs->video;
-	video->video_frame_interval_ns = util_mul_div64( 1000000000ULL, obs->video.canvases.array[0]->fps_den, obs->video.canvases.array[0]->fps_num);
-	video->video_half_frame_interval_ns = util_mul_div64( 500000000ULL, obs->video.canvases.array[0]->fps_den, obs->video.canvases.array[0]->fps_num);
+	video->video_frame_interval_ns = util_mul_div64(
+		1000000000ULL, obs->video.canvases.array[0]->fps_den,
+		obs->video.canvases.array[0]->fps_num);
+	video->video_half_frame_interval_ns = util_mul_div64(
+		500000000ULL, obs->video.canvases.array[0]->fps_den,
+		obs->video.canvases.array[0]->fps_num);
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
-	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d", obs->video.canvases.num);
-	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++)
-	{
+	blog(LOG_INFO, "[VIDEO_CANVAS] init with canvases %d",
+	     obs->video.canvases.num);
+	for (size_t i = 0, num = obs->video.canvases.num; i < num; i++) {
 		if (!obs->video.canvases.array[i]->initialized)
 			continue;
 
-		if (!obs_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
+		if (!obs_view_add(&obs->data.main_view,
+				  obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_stream_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
+		if (!obs_stream_view_add(&obs->data.main_view,
+					 obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_record_view_add(&obs->data.main_view, obs->video.canvases.array[i]))
+		if (!obs_record_view_add(&obs->data.main_view,
+					 obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 	}
-
 
 	int errorcode;
 #ifdef __APPLE__
@@ -1430,13 +1437,15 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 int obs_reset_video()
 {
 	if (!obs) {
-		blog(LOG_ERROR, "[VIDEO_CANVAS] obs object is null, video reset is not possible");
+		blog(LOG_ERROR,
+		     "[VIDEO_CANVAS] obs object is null, video reset is not possible");
 		return OBS_VIDEO_FAIL;
 	}
 
 	/* don't allow changing of video settings if active. */
 	if (obs_video_active()) {
-		blog(LOG_ERROR, "[VIDEO_CANVAS] video is active, video reset is not possible");
+		blog(LOG_ERROR,
+		     "[VIDEO_CANVAS] video is active, video reset is not possible");
 		return OBS_VIDEO_CURRENTLY_ACTIVE;
 	}
 
@@ -1448,7 +1457,8 @@ int obs_reset_video()
 	return OBS_VIDEO_SUCCESS;
 }
 
-int obs_set_video_info(struct obs_video_info *canvas, struct obs_video_info *updated)
+int obs_set_video_info(struct obs_video_info *canvas,
+		       struct obs_video_info *updated)
 {
 	int ret = obs_reset_video();
 	if (ret != OBS_VIDEO_SUCCESS)
@@ -1491,20 +1501,20 @@ int obs_set_video_info(struct obs_video_info *canvas, struct obs_video_info *upd
 
 	blog(LOG_INFO, "---------------------------------");
 	blog(LOG_INFO,
-		 "[VIDEO_CANVAS] video info set for %08X:\n"
-		 "\tbase resolution:   %dx%d\n"
-		 "\toutput resolution: %dx%d\n"
-		 "\tdownscale filter:  %s\n"
+	     "[VIDEO_CANVAS] video info set for %08X:\n"
+	     "\tbase resolution:   %dx%d\n"
+	     "\toutput resolution: %dx%d\n"
+	     "\tdownscale filter:  %s\n"
 	     "\tfps:               %d/%d\n"
 	     "\tformat:            %s\n"
 	     "\tYUV mode:          %s%s%s",
-		 canvas,
-	     updated->base_width, updated->base_height, updated->output_width,
-	     updated->output_height, scale_type_name, updated->fps_num,
-	     updated->fps_den, get_video_format_name(updated->output_format),
-		 yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
+	     canvas, updated->base_width, updated->base_height,
+	     updated->output_width, updated->output_height, scale_type_name,
+	     updated->fps_num, updated->fps_den,
+	     get_video_format_name(updated->output_format),
+	     yuv ? yuv_format : "None", yuv ? "/" : "", yuv ? yuv_range : "");
 
-    *canvas = *updated;
+	*canvas = *updated;
 	canvas->initialized = true;
 
 	return obs_init_video();
@@ -1573,7 +1583,7 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 bool obs_get_video_info_current(struct obs_video_info *ovi)
 {
 	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested curent");
-	if (!obs->video.graphics || !obs->video_rendering_canvas  || !ovi)
+	if (!obs->video.graphics || !obs->video_rendering_canvas || !ovi)
 		return false;
 
 	*ovi = *(obs->video_rendering_canvas);
@@ -1610,7 +1620,7 @@ bool obs_get_video_info_for_output(obs_output_t *output,
 }
 
 bool obs_get_video_info_for_encoder(obs_encoder_t *encoder,
-				   struct obs_video_info *ovi)
+				    struct obs_video_info *ovi)
 {
 	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for encoder");
 	if (!encoder || !encoder->video || !ovi)
@@ -1657,7 +1667,8 @@ int obs_remove_video_info(struct obs_video_info *ovi)
 	}
 	da_erase_item(obs->video.canvases, ovi);
 	da_resize(obs->video.canvases, obs->video.canvases.num - 1);
-	blog(LOG_INFO, "[VIDEO_CANVAS] video canvases left after resize %d", obs->video.canvases.num);
+	blog(LOG_INFO, "[VIDEO_CANVAS] video canvases left after resize %d",
+	     obs->video.canvases.num);
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
 
 	return obs_init_video();
@@ -2313,8 +2324,8 @@ void obs_render_texture(struct obs_video_info *ovi,
 			enum obs_video_rendering_mode mode)
 {
 	obs_render_texture_internal(GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				 GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
-				obs_video_mix_get(ovi, mode));
+				    GS_BLEND_ONE, GS_BLEND_INVSRCALPHA,
+				    obs_video_mix_get(ovi, mode));
 }
 
 void obs_render_main_texture_src_color_only(void)
@@ -2371,7 +2382,8 @@ obs_core_video_mix_t *obs_video_mix_get(struct obs_video_info *ovi,
 {
 	for (size_t i = 0, num = obs->video.mixes.num; i < num; i++) {
 		struct obs_core_video_mix *mix = obs->video.mixes.array[i];
-		if ((mix->ovi == ovi || ovi == NULL) && mix->rendering_mode == mode)
+		if ((mix->ovi == ovi || ovi == NULL) &&
+		    mix->rendering_mode == mode)
 			return mix;
 	}
 	return NULL;

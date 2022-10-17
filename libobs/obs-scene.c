@@ -2959,7 +2959,8 @@ static bool group_item_transition(obs_scene_t *scene, obs_sceneitem_t *item,
 	return true;
 }
 
-void obs_sceneitem_set_canvas(obs_sceneitem_t *item, struct obs_video_info *canvas)
+void obs_sceneitem_set_canvas(obs_sceneitem_t *item,
+			      struct obs_video_info *canvas)
 {
 	item->canvas = canvas;
 }

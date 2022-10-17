@@ -296,7 +296,8 @@ struct obs_core_video_mix {
 	enum obs_scale_type scale_type;
 };
 
-extern struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi);
+extern struct obs_core_video_mix *
+obs_create_video_mix(struct obs_video_info *ovi);
 extern void obs_free_video_mix(struct obs_core_video_mix *video);
 
 struct obs_core_video {
