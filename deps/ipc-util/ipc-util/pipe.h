@@ -36,7 +36,8 @@ typedef unsigned long DWORD;
 typedef void (*ipc_pipe_read_t)(void *param, uint8_t *data, size_t size);
 
 bool ipc_pipe_server_start(ipc_pipe_server_t *pipe, const char *name,
-			   ipc_pipe_read_t read_callback, void *param, DWORD *err);
+			   ipc_pipe_read_t read_callback, void *param,
+			   DWORD *err);
 void ipc_pipe_server_free(ipc_pipe_server_t *pipe);
 
 bool ipc_pipe_client_open(ipc_pipe_client_t *pipe, const char *name);

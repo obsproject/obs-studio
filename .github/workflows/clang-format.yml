@@ -3,10 +3,10 @@ name: Clang Format Check
 on:
   push:
     paths-ignore: ['**.md']
-    branches-ignore: [master]
+    branches-ignore: [streamlabs]
   pull_request:
     paths-ignore: ['**.md']
-    branches-ignore: [master]
+    branches-ignore: [streamlabs]
 
 jobs:
   clang-format-check:

@@ -41,7 +41,7 @@ struct screen_capture {
 	int game_mode;
 	int monitor_id;
 
-	bool  is_game_capture_attempting;
+	bool is_game_capture_attempting;
 	float game_capture_attempts_time;
 	float game_capture_attempts_time_max;
 
@@ -69,7 +69,8 @@ static void apply_cursor_option(obs_source_t *source, bool capture_cursor)
 		return;
 
 	obs_data_t *settings = obs_source_get_settings(source);
-	bool current_cursor_capture = obs_data_get_bool(settings, S_CAPTURE_CURSOR);
+	bool current_cursor_capture =
+		obs_data_get_bool(settings, S_CAPTURE_CURSOR);
 
 	if (current_cursor_capture != capture_cursor) {
 		obs_data_set_bool(settings, S_CAPTURE_CURSOR, capture_cursor);
@@ -116,17 +117,18 @@ static void scs_update_window_mode_line(struct screen_capture *contex,
 		char *title = NULL;
 		char *executable = NULL;
 
-		ms_build_window_strings(window_line, &class, &title, &executable);
+		ms_build_window_strings(window_line, &class, &title,
+					&executable);
 		if (executable != NULL && strlen(executable) > 0) {
 			blog(LOG_DEBUG, "[SCREEN_CAPTURE]: prev exe name %s",
 			     executable);
-			HWND hwnd = ms_find_window_top_level(INCLUDE_MINIMIZED,
-							  WINDOW_PRIORITY_CLASS,
-							  class, title,
-							  executable);
+			HWND hwnd = ms_find_window_top_level(
+				INCLUDE_MINIMIZED, WINDOW_PRIORITY_CLASS, class,
+				title, executable);
 			if (hwnd != NULL) {
 				char mode_line[32] = {0};
-				sprintf(mode_line, "window:%lld:0", (int64_t)hwnd);
+				sprintf(mode_line, "window:%lld:0",
+					(int64_t)hwnd);
 				obs_data_set_string(settings,
 						    S_CAPTURE_SOURCE_LIST,
 						    mode_line);
@@ -232,7 +234,7 @@ static void scs_deactivate(void *data)
 	blog(LOG_DEBUG, "[SCREEN_CAPTURE]: deactivated ");
 }
 
-static void scs_render_source(struct obs_source * source)
+static void scs_render_source(struct obs_source *source)
 {
 	struct obs_video_info ovi;
 	if (!obs_get_video_info_current(&ovi))
@@ -241,13 +243,15 @@ static void scs_render_source(struct obs_source * source)
 	float source_height = (float)obs_source_get_height(source);
 	float source_width = (float)obs_source_get_width(source);
 
-	float scale_y = (float)ovi.base_height/source_height;
-	float scale_x = (float)ovi.base_width/source_width;
+	float scale_y = (float)ovi.base_height / source_height;
+	float scale_x = (float)ovi.base_width / source_width;
 	scale_x = min(scale_x, scale_y);
 	scale_y = min(scale_x, scale_y);
 
-	float translate_x = ((float)ovi.base_width - source_width*scale_x)/2.0f;
-	float translate_y = ((float)ovi.base_height - source_height*scale_y)/2.0f;
+	float translate_x =
+		((float)ovi.base_width - source_width * scale_x) / 2.0f;
+	float translate_y =
+		((float)ovi.base_height - source_height * scale_y) / 2.0f;
 
 	gs_matrix_push();
 	gs_matrix_translate3f(translate_x, translate_y, 0.0f);
@@ -264,7 +268,8 @@ static void scs_render(void *data, gs_effect_t *effect)
 		DWORD ret = WaitForSingleObject(context->subsources_mutex, 0);
 		if (ret == WAIT_OBJECT_0) {
 			if (context->current_capture_source) {
-				scs_render_source(context->current_capture_source);
+				scs_render_source(
+					context->current_capture_source);
 			}
 			ReleaseMutex(context->subsources_mutex);
 		}
@@ -278,7 +283,8 @@ static void switch_to_game_capture_mode(struct screen_capture *context)
 		return;
 	}
 	obs_data_t *settings = obs_source_get_settings(context->source);
-	obs_data_t *game_capture_settings = obs_get_source_defaults("game_capture");
+	obs_data_t *game_capture_settings =
+		obs_get_source_defaults("game_capture");
 
 	obs_data_set_bool(game_capture_settings, S_CAPTURE_CURSOR,
 			  obs_data_get_bool(settings, S_CAPTURE_CURSOR));
@@ -330,7 +336,8 @@ static void switch_to_monitor_capture_mode(struct screen_capture *context)
 		return;
 	}
 	obs_data_t *settings = obs_source_get_settings(context->source);
-	obs_data_t *monitor_settings = obs_get_source_defaults("monitor_capture");
+	obs_data_t *monitor_settings =
+		obs_get_source_defaults("monitor_capture");
 
 	obs_data_set_int(monitor_settings, "monitor", context->monitor_id);
 	obs_data_set_int(monitor_settings, "method", 0);
@@ -387,13 +394,15 @@ static void scs_check_window_capture_state(struct screen_capture *context)
 		if (obs_source_get_height(context->game_capture)) {
 			blog(LOG_DEBUG,
 			     "[SCREEN_CAPTURE]: game capture have non zero height can make it main source");
-			WaitForSingleObject(context->subsources_mutex, INFINITE);
+			WaitForSingleObject(context->subsources_mutex,
+					    INFINITE);
 			context->current_capture_source = context->game_capture;
 			if (context->window_capture) {
 				obs_source_remove_active_child(
 					context->source,
 					context->window_capture);
-				obs_source_set_hidden(context->window_capture, true);
+				obs_source_set_hidden(context->window_capture,
+						      true);
 				obs_source_dec_active(context->window_capture);
 			}
 			ReleaseMutex(context->subsources_mutex);
@@ -403,7 +412,8 @@ static void scs_check_window_capture_state(struct screen_capture *context)
 		blog(LOG_DEBUG,
 		     "[SCREEN_CAPTURE]: game try interval expired switch to window as main source");
 		if (context->game_capture) {
-			WaitForSingleObject(context->subsources_mutex, INFINITE);
+			WaitForSingleObject(context->subsources_mutex,
+					    INFINITE);
 			obs_source_remove_active_child(context->source,
 						       context->game_capture);
 			obs_source_set_hidden(context->game_capture, true);
@@ -422,7 +432,8 @@ static void scs_tick(void *data, float seconds)
 		if (context->is_game_capture_attempting)
 			context->game_capture_attempts_time += seconds;
 		if (context->current_capture_source) {
-			obs_source_video_tick(context->current_capture_source, seconds);
+			obs_source_video_tick(context->current_capture_source,
+					      seconds);
 			scs_check_window_capture_state(context);
 		}
 	}
@@ -436,19 +447,23 @@ static bool capture_source_update(struct screen_capture *context,
 
 	blog(LOG_DEBUG, "[SCREEN_CAPTURE]: settings updated string %s",
 	     capture_source_string);
-	
+
 	DWORD mutex_ret = WaitForSingleObject(context->update_mutex, 0);
 	if (mutex_ret != WAIT_OBJECT_0) {
 		return false;
 	}
 
 	if (dstr_cmp(&context->prev_line, capture_source_string) == 0) {
-		bool capture_cursor = obs_data_get_bool(settings, S_CAPTURE_CURSOR);
+		bool capture_cursor =
+			obs_data_get_bool(settings, S_CAPTURE_CURSOR);
 		DWORD ret = WaitForSingleObject(context->subsources_mutex, 0);
 		if (ret == WAIT_OBJECT_0) {
-			apply_cursor_option(context->monitor_capture, capture_cursor);
-			apply_cursor_option(context->game_capture, capture_cursor);
-			apply_cursor_option(context->window_capture, capture_cursor);
+			apply_cursor_option(context->monitor_capture,
+					    capture_cursor);
+			apply_cursor_option(context->game_capture,
+					    capture_cursor);
+			apply_cursor_option(context->window_capture,
+					    capture_cursor);
 			ReleaseMutex(context->subsources_mutex);
 		}
 		return true;
@@ -587,8 +602,7 @@ static obs_properties_t *scs_properties(void *data)
 				       S_CAPTURE_SOURCE_LIST);
 	obs_property_set_modified_callback(p, capture_source_changed);
 
-	p = obs_properties_add_bool(props, S_CAPTURE_CURSOR,
-				    S_CAPTURE_CURSOR);
+	p = obs_properties_add_bool(props, S_CAPTURE_CURSOR, S_CAPTURE_CURSOR);
 
 	p = obs_properties_add_text(props, S_CAPTURE_WINDOW, S_CAPTURE_WINDOW,
 				    OBS_TEXT_DEFAULT);

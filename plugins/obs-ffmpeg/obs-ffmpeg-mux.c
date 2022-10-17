@@ -1061,7 +1061,7 @@ static bool purge_front(struct ffmpeg_muxer *stream)
 {
 	struct encoder_packet pkt;
 	bool keyframe;
-	if(!stream->cur_size)
+	if (!stream->cur_size)
 		return false;
 
 	if (!stream->packets.size)
@@ -1121,8 +1121,8 @@ static inline void replay_buffer_purge(struct ffmpeg_muxer *stream,
 	if (!stream->packets.size || stream->keyframes <= 2)
 		return;
 
-	while ((pkt->dts_usec - stream->cur_time) > stream->max_time
-		&& stream->cur_size)
+	while ((pkt->dts_usec - stream->cur_time) > stream->max_time &&
+	       stream->cur_size)
 		purge(stream);
 }
 
@@ -1178,7 +1178,7 @@ static void *replay_buffer_mux_thread(void *data)
 
 	if (!send_headers(stream)) {
 		warn("Could not write headers for file '%s'",
-				stream->path.array);
+		     stream->path.array);
 		do_output_signal(stream->output, "writing_error");
 		hasFailed = true;
 		error = true;
@@ -1198,7 +1198,7 @@ static void *replay_buffer_mux_thread(void *data)
 	if (!hasFailed) {
 		info("Wrote replay buffer to '%s'", stream->path.array);
 	}
-	
+
 error:
 	ret = os_process_pipe_destroy(stream->pipe);
 	stream->pipe = NULL;
@@ -1211,8 +1211,7 @@ error:
 	os_atomic_set_bool(&stream->muxing, false);
 	if (ret < 0) {
 		signal_failure(stream);
-	}
-	else if (!hasFailed) {
+	} else if (!hasFailed) {
 		do_output_signal(stream->output, "wrote");
 	}
 

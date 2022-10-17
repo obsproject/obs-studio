@@ -546,14 +546,14 @@ struct obs_context_data {
 	DARRAY(obs_hotkey_pair_id) hotkey_pairs;
 	obs_data_t *hotkey_data;
 
-	pthread_mutex_t                 *mutex;
-	struct obs_context_data         *next;
-	struct obs_context_data         **prev_next;
+	pthread_mutex_t *mutex;
+	struct obs_context_data *next;
+	struct obs_context_data **prev_next;
 
-	bool                            private;
+	bool private;
 
-	DARRAY(char*)                   rename_cache;
-	pthread_mutex_t                 rename_cache_mutex;
+	DARRAY(char *) rename_cache;
+	pthread_mutex_t rename_cache_mutex;
 };
 
 extern bool obs_context_data_init(struct obs_context_data *context,

@@ -241,7 +241,7 @@ struct DShowInput {
 		if (!semaphore)
 			throw "Failed to create semaphore";
 
-		shutdown_started = CreateEvent(nullptr, true, false, nullptr); 
+		shutdown_started = CreateEvent(nullptr, true, false, nullptr);
 		if (!shutdown_started)
 			throw "Failed to create shutdown_started";
 
@@ -347,7 +347,8 @@ void DShowInput::DShowLoop()
 			}
 		}
 		if (action != Action::None)
-			blog(LOG_INFO, "DShowLoop process action %d for %08X", action, this);
+			blog(LOG_INFO, "DShowLoop process action %d for %08X",
+			     action, this);
 
 		switch (action) {
 		case Action::Activate:
@@ -715,14 +716,17 @@ struct PropertiesData {
 	{
 		DeviceId deviceId;
 		if (!DecodeDeviceId(deviceId, encoded_id)) {
-			blog(LOG_WARNING, "PropertiesData.GetDevice DecodeDeviceId for %s failed", encoded_id);
+			blog(LOG_WARNING,
+			     "PropertiesData.GetDevice DecodeDeviceId for %s failed",
+			     encoded_id);
 			return false;
 		}
 
 		if (!devices.size()) {
 			Device::EnumVideoDevices(devices, true);
 			if (!devices.size()) {
-				blog(LOG_WARNING, "PropertiesData devices size is 0");
+				blog(LOG_WARNING,
+				     "PropertiesData devices size is 0");
 				return false;
 			}
 		}
@@ -1158,15 +1162,14 @@ inline bool DShowInput::Activate(obs_data_t *settings)
 	blog(LOG_INFO, "Activate device '%s'", obs_source_get_name(source));
 	device.GetAccess();
 
-	if (!device.ResetGraph())
-	{
+	if (!device.ResetGraph()) {
 		device.ReleaseAccess();
 		return false;
 	}
 
 	if (!UpdateVideoConfig(settings)) {
 		blog(LOG_WARNING, "%s: Video configuration failed",
-				obs_source_get_name(source));
+		     obs_source_get_name(source));
 		device.ReleaseAccess();
 		return false;
 	}
@@ -1273,10 +1276,11 @@ static DWORD CALLBACK DShowDeleteThread(LPVOID data)
 
 static void DestroyDShowInput(void *data)
 {
-	DShowInput * object = reinterpret_cast<DShowInput *>(data);
+	DShowInput *object = reinterpret_cast<DShowInput *>(data);
 	HANDLE shutdown_started = object->shutdown_started;
 
-	WinHandle delete_thread = CreateThread(nullptr, 0, DShowDeleteThread, data, 0, nullptr);
+	WinHandle delete_thread =
+		CreateThread(nullptr, 0, DShowDeleteThread, data, 0, nullptr);
 	if (delete_thread) {
 		WaitForSingleObject(shutdown_started, INFINITE);
 		WaitForSingleObject(delete_thread, DShowDeviceShutdowTimeout);
@@ -1987,8 +1991,10 @@ static obs_properties_t *GetDShowProperties(void *obj)
 	obs_data_t *settings = obs_source_get_settings(input->source);
 	string video_device_id = obs_data_get_string(settings, VIDEO_DEVICE_ID);
 	string audio_device_id = obs_data_get_string(settings, AUDIO_DEVICE_ID);
-	bool placeholder_video_device = video_device_id.compare("does_not_exist") == 0;
-	bool placeholder_audio_device = audio_device_id.compare("does_not_exist") == 0;
+	bool placeholder_video_device =
+		video_device_id.compare("does_not_exist") == 0;
+	bool placeholder_audio_device =
+		audio_device_id.compare("does_not_exist") == 0;
 	obs_data_release(settings);
 
 	Device::EnumVideoDevices(data->devices, !placeholder_video_device);

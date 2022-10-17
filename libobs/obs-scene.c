@@ -321,7 +321,7 @@ static inline void detach_sceneitem(struct obs_scene_item *item)
 
 	if (item->next)
 		item->next->prev = item->prev;
-	
+
 	item->prev = NULL;
 	item->next = NULL;
 	item->parent = NULL;
@@ -942,14 +942,14 @@ static void scene_video_render(void *data, gs_effect_t *effect)
 			}
 			case OBS_STREAMING_VIDEO_RENDERING: {
 				if ((item->user_visible ||
-				     transition_active(item->hide_transition)) && 
-				     item->stream_visible)
+				     transition_active(item->hide_transition)) &&
+				    item->stream_visible)
 					render_item(item);
 				break;
 			}
 			case OBS_RECORDING_VIDEO_RENDERING: {
 				if ((item->user_visible ||
-				    transition_active(item->hide_transition) ) &&
+				     transition_active(item->hide_transition)) &&
 				    item->recording_visible)
 					render_item(item);
 				break;
@@ -1189,8 +1189,7 @@ static void scene_save_item(obs_data_array_t *array,
 	obs_data_set_bool(item_data, "visible", item->user_visible);
 	obs_data_set_bool(item_data, "locked", item->locked);
 	obs_data_set_double(item_data, "rot", rot);
-	obs_data_set_bool(item_data, "stream_visible",
-		          item->stream_visible);
+	obs_data_set_bool(item_data, "stream_visible", item->stream_visible);
 	obs_data_set_bool(item_data, "recording_visible",
 			  item->recording_visible);
 	obs_data_set_vec2(item_data, "pos", &pos);
@@ -1578,24 +1577,24 @@ static bool scene_audio_render(void *data, uint64_t *ts_out,
 			if (!apply_buf &&
 			    ((obs_get_audio_rendering_mode() ==
 				      OBS_MAIN_AUDIO_RENDERING &&
-			      !item->visible  &&
-		              !transition_active(item->hide_transition) ) ||
+			      !item->visible &&
+			      !transition_active(item->hide_transition)) ||
 			     (obs_get_audio_rendering_mode() ==
 				      OBS_STREAMING_AUDIO_RENDERING &&
 			      !item->visible &&
-			      !transition_active(item->hide_transition) && 
+			      !transition_active(item->hide_transition) &&
 			      !item->stream_visible) ||
 			     (obs_get_audio_rendering_mode() ==
 				      OBS_RECORDING_AUDIO_RENDERING &&
-			      !item->visible  &&
-			      !transition_active(item->hide_transition) && 
+			      !item->visible &&
+			      !transition_active(item->hide_transition) &&
 			      !item->recording_visible))) {
 				item = item->next;
 				continue;
 			}
 		} else {
-			if (!apply_buf && !item->visible  &&
-			    !transition_active(item->hide_transition) ) {
+			if (!apply_buf && !item->visible &&
+			    !transition_active(item->hide_transition)) {
 				item = item->next;
 				continue;
 			}
@@ -2773,7 +2772,8 @@ void obs_sceneitem_set_order_position(obs_sceneitem_t *item, int position)
 	obs_scene_release(scene);
 }
 
-void obs_scene_set_items_order(obs_scene_t *scene, int64_t* new_items_order, int items_count)
+void obs_scene_set_items_order(obs_scene_t *scene, int64_t *new_items_order,
+			       int items_count)
 {
 	if (!scene || items_count <= 1)
 		return;
@@ -2782,7 +2782,8 @@ void obs_scene_set_items_order(obs_scene_t *scene, int64_t* new_items_order, int
 	full_lock(scene);
 
 	//create array with items of this scene
-	obs_sceneitem_t **scene_items_cached = bzalloc(items_count * sizeof(obs_sceneitem_t*)); 
+	obs_sceneitem_t **scene_items_cached =
+		bzalloc(items_count * sizeof(obs_sceneitem_t *));
 
 	obs_sceneitem_t *current_item = scene->first_item;
 	scene_items_cached[0] = current_item;
@@ -2793,23 +2794,26 @@ void obs_scene_set_items_order(obs_scene_t *scene, int64_t* new_items_order, int
 		current_item = current_item->next;
 	}
 
-	if (scene_items_cached[items_count-1] == NULL || scene_items_cached[items_count-1]->next != NULL) {
-		blog(LOG_ERROR, "obs_scene_set_items_order: Wrong items count in order array");
+	if (scene_items_cached[items_count - 1] == NULL ||
+	    scene_items_cached[items_count - 1]->next != NULL) {
+		blog(LOG_ERROR,
+		     "obs_scene_set_items_order: Wrong items count in order array");
 	} else {
-		//deattach all items from scene 
+		//deattach all items from scene
 		for (int i = 0; i < items_count; i++) {
 			detach_sceneitem(scene_items_cached[i]);
 		}
 
 		scene->first_item = NULL;
-		//reattach items to the scene in order of id's 
+		//reattach items to the scene in order of id's
 		for (int i = 0; i < items_count; i++) {
 			int64_t item_id = new_items_order[i];
-			for (int j = 0; j < items_count; j++ ) {
-				obs_sceneitem_t * item = scene_items_cached[j];
+			for (int j = 0; j < items_count; j++) {
+				obs_sceneitem_t *item = scene_items_cached[j];
 				if (item != NULL) {
 					if (item->id == item_id) {
-						attach_sceneitem(scene, item, NULL);
+						attach_sceneitem(scene, item,
+								 NULL);
 						scene_items_cached[j] = NULL;
 						break;
 					}

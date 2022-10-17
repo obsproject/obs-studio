@@ -102,10 +102,10 @@ extern struct obs_core *obs = NULL;
 #define ERROR_RETRY_INTERVAL 4.0f
 
 enum capture_mode {
-	CAPTURE_MODE_ANY 	= 0,
-	CAPTURE_MODE_WINDOW     = 1,
-	CAPTURE_MODE_HOTKEY     = 2,
-	CAPTURE_MODE_AUTO 	= 3
+	CAPTURE_MODE_ANY = 0,
+	CAPTURE_MODE_WINDOW = 1,
+	CAPTURE_MODE_HOTKEY = 2,
+	CAPTURE_MODE_AUTO = 3
 };
 
 enum hook_rate {
@@ -186,7 +186,7 @@ struct game_capture {
 	int placeholder_text_height;
 	int placeholder_text_width;
 	gs_image_file2_t placeholder_image;
-	gs_texture_t *placeholder_text_texture; 
+	gs_texture_t *placeholder_text_texture;
 	struct dstr placeholder_image_path;
 	struct dstr placeholder_text;
 
@@ -352,9 +352,10 @@ static inline float hook_rate_to_float(enum hook_rate rate)
 	}
 }
 
-static void load_whitelist(struct auto_game_capture * ac, const char * whitelist_path)
+static void load_whitelist(struct auto_game_capture *ac,
+			   const char *whitelist_path)
 {
-	if (ac->matching_rules.num != 0) 
+	if (ac->matching_rules.num != 0)
 		return;
 
 	char *file_data = os_quick_read_utf8_file(whitelist_path);
@@ -366,28 +367,29 @@ static void load_whitelist(struct auto_game_capture * ac, const char * whitelist
 	bfree(file_data);
 	if (root) {
 		WaitForSingleObject(ac->mutex, INFINITE);
-	
+
 		da_free(ac->checked_windows);
 
 		size_t index;
 		json_t *json_rule;
 		json_array_foreach (root, index, json_rule) {
-			struct game_capture_matching_rule rule = convert_json_to_matching_rule(json_rule);
+			struct game_capture_matching_rule rule =
+				convert_json_to_matching_rule(json_rule);
 			da_push_back(ac->matching_rules, &rule);
 		};
 
 		ReleaseMutex(ac->mutex);
 	}
 	json_decref(root);
-
 }
 
-static void free_whitelist(struct auto_game_capture * ac)
+static void free_whitelist(struct auto_game_capture *ac)
 {
 	WaitForSingleObject(ac->mutex, INFINITE);
 	for (size_t i = 0; i < ac->matching_rules.num; i++) {
-		struct game_capture_matching_rule * rule = ac->matching_rules.array + i;
-		
+		struct game_capture_matching_rule *rule =
+			ac->matching_rules.array + i;
+
 		dstr_free(&rule->title);
 		dstr_free(&rule->classW);
 		dstr_free(&rule->executable);
@@ -451,7 +453,6 @@ static void stop_capture(struct game_capture *gc)
 
 	if (gc->retrying)
 		gc->retrying--;
-
 }
 
 static inline void free_config(struct game_capture_config *config)
@@ -478,7 +479,7 @@ static void game_capture_destroy(void *data)
 	dstr_free(&gc->class);
 	dstr_free(&gc->executable);
 	free_config(&gc->config);
-	
+
 	free_whitelist(&gc->auto_capture);
 	close_handle(&gc->auto_capture.mutex);
 	dstr_free(&gc->placeholder_image_path);
@@ -513,9 +514,9 @@ static inline void get_config(struct game_capture_config *cfg,
 		cfg->mode = CAPTURE_MODE_WINDOW;
 	else if (mode_str && strcmp(mode_str, SETTING_MODE_HOTKEY) == 0)
 		cfg->mode = CAPTURE_MODE_HOTKEY;
-	else  if (mode_str && strcmp(mode_str, SETTING_MODE_ANY) == 0)
+	else if (mode_str && strcmp(mode_str, SETTING_MODE_ANY) == 0)
 		cfg->mode = CAPTURE_MODE_ANY;
-	else 
+	else
 		cfg->mode = CAPTURE_MODE_AUTO;
 
 	cfg->priority = (enum window_priority)obs_data_get_int(
@@ -611,18 +612,20 @@ static void load_placeholder_image(struct game_capture *gc)
 	unload_placeholder_image(gc);
 
 	if (!dstr_is_empty(&gc->placeholder_image_path)) {
-		gs_image_file2_init(&gc->placeholder_image, gc->placeholder_image_path.array);
+		gs_image_file2_init(&gc->placeholder_image,
+				    gc->placeholder_image_path.array);
 
 		obs_enter_graphics();
 		gs_image_file2_init_texture(&gc->placeholder_image);
 		obs_leave_graphics();
 	}
-	
-	TCHAR* translated_string = NULL;
+
+	TCHAR *translated_string = NULL;
 	size_t len = os_utf8_to_wcs(gc->placeholder_text.array, 0, NULL, 0);
 	if (len) {
-		translated_string = malloc( (len+1)*2);
-		os_utf8_to_wcs(gc->placeholder_text.array, 0, &translated_string[0], len + 1);
+		translated_string = malloc((len + 1) * 2);
+		os_utf8_to_wcs(gc->placeholder_text.array, 0,
+			       &translated_string[0], len + 1);
 	} else {
 		return;
 	}
@@ -638,20 +641,24 @@ static void load_placeholder_image(struct game_capture *gc)
 	gc->placeholder_text_height = ovi.base_height / fraction_of_image_for_text;
 	gc->placeholder_text_width = ovi.base_width;
 
-	BITMAPINFOHEADER bmphdr = { 0 };
+	BITMAPINFOHEADER bmphdr = {0};
 	bmphdr.biSize = sizeof(BITMAPINFOHEADER);
 	bmphdr.biWidth = gc->placeholder_text_width;
 	bmphdr.biHeight = -gc->placeholder_text_height;
 	bmphdr.biPlanes = 1;
 	bmphdr.biBitCount = 32;
-	bmphdr.biSizeImage = gc->placeholder_text_height * gc->placeholder_text_width * bytes_per_pixel;
-	
+	bmphdr.biSizeImage = gc->placeholder_text_height *
+			     gc->placeholder_text_width * bytes_per_pixel;
+
 	HDC wdc = GetDC(NULL);
 	if (wdc) {
-		HDC memDC = CreateCompatibleDC ( wdc );
+		HDC memDC = CreateCompatibleDC(wdc);
 
-		uint8_t * bitmap_buffer = bmalloc(bmphdr.biSizeImage);	
-		HBITMAP text_bitmap = CreateDIBSection(NULL, (PBITMAPINFO)&bmphdr, DIB_RGB_COLORS, &bitmap_buffer, NULL, 0);
+		uint8_t *bitmap_buffer = bmalloc(bmphdr.biSizeImage);
+		HBITMAP text_bitmap = CreateDIBSection(NULL,
+						       (PBITMAPINFO)&bmphdr,
+						       DIB_RGB_COLORS,
+						       &bitmap_buffer, NULL, 0);
 		if (text_bitmap) {
 			SelectObject(memDC, text_bitmap);
 			SetTextColor(memDC, 0x00FFFFFF);
@@ -659,7 +666,7 @@ static void load_placeholder_image(struct game_capture *gc)
 
 			SIZE string_width = {0};
 
-			HFONT   font;
+			HFONT font;
 			LOGFONT LogFont = {0};
 			LogFont.lfStrikeOut = 0;
 			LogFont.lfUnderline = 0;
@@ -671,49 +678,60 @@ static void load_placeholder_image(struct game_capture *gc)
 			while (true) {
 				font = CreateFontIndirect(&LogFont);
 				SelectObject(memDC, font);
-				
-				GetTextExtentPoint32(memDC, translated_string, (int)len, &string_width);
-				if (string_width.cx < gc->placeholder_text_width) 
+
+				GetTextExtentPoint32(memDC, translated_string,
+						     (int)len, &string_width);
+				if (string_width.cx <
+				    gc->placeholder_text_width)
 					break;
-				
+
 				DeleteObject(font);
-				LogFont.lfHeight = LogFont.lfHeight - text_fitting_step;
+				LogFont.lfHeight =
+					LogFont.lfHeight - text_fitting_step;
 			}
 
-			TextOut(memDC, 
-				(gc->placeholder_text_width-string_width.cx)/2, 
-				(gc->placeholder_text_height-LogFont.lfHeight)/2, 
-				translated_string, (int)len); 
+			TextOut(memDC,
+				(gc->placeholder_text_width - string_width.cx) /
+					2,
+				(gc->placeholder_text_height -
+				 LogFont.lfHeight) /
+					2,
+				translated_string, (int)len);
 
-			for (int i = 0; i <gc->placeholder_text_height*gc->placeholder_text_width; i++)	{
-				int pixel_offset = i*bytes_per_pixel;
-				int color_components_average = (bitmap_buffer[pixel_offset+0] + 
-								bitmap_buffer[pixel_offset+1] + 
-								bitmap_buffer[pixel_offset+2])/3;
+			for (int i = 0; i < gc->placeholder_text_height *
+						    gc->placeholder_text_width;
+			     i++) {
+				int pixel_offset = i * bytes_per_pixel;
+				int color_components_average =
+					(bitmap_buffer[pixel_offset + 0] +
+					 bitmap_buffer[pixel_offset + 1] +
+					 bitmap_buffer[pixel_offset + 2]) /
+					3;
 
-				bitmap_buffer[pixel_offset+ALPHA_COMPONENT] = color_components_average;
+				bitmap_buffer[pixel_offset + ALPHA_COMPONENT] =
+					color_components_average;
 			}
 
 			obs_enter_graphics();
-			gc->placeholder_text_texture = gs_texture_create(gc->placeholder_text_width, 
-									gc->placeholder_text_height, 
-									GS_BGRA, 1, 
-									&bitmap_buffer, GS_DYNAMIC);
+			gc->placeholder_text_texture = gs_texture_create(
+				gc->placeholder_text_width,
+				gc->placeholder_text_height, GS_BGRA, 1,
+				&bitmap_buffer, GS_DYNAMIC);
 			obs_leave_graphics();
 
 			DeleteObject(font);
 			DeleteObject(text_bitmap);
 		}
-		DeleteDC(memDC);  
-		DeleteDC(wdc);  
+		DeleteDC(memDC);
+		DeleteDC(wdc);
 	}
 
-	free( translated_string );
+	free(translated_string);
 }
 
 static void unload_placeholder_image(struct game_capture *gc)
 {
-	if ( gc->placeholder_image.image.loaded ) {
+	if (gc->placeholder_image.image.loaded) {
 		obs_enter_graphics();
 		gs_image_file2_free(&gc->placeholder_image);
 		obs_leave_graphics();
@@ -738,27 +756,33 @@ static void game_capture_update(void *data, obs_data_t *settings)
 	get_config(&cfg, settings, window);
 
 	if (cfg.mode == CAPTURE_MODE_AUTO) {
-		const char *games_list_file = obs_data_get_string(settings, SETTING_AUTO_LIST_FILE);
+		const char *games_list_file =
+			obs_data_get_string(settings, SETTING_AUTO_LIST_FILE);
 		load_whitelist(&gc->auto_capture, games_list_file);
 	} else {
 		free_whitelist(&gc->auto_capture);
 	}
-	
+
 	const char *img_path = NULL;
 	const char *placeholder_text = NULL;
-	bool use_custom_placeholder = obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
+	bool use_custom_placeholder =
+		obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
 	if (use_custom_placeholder)
-		img_path = obs_data_get_string(settings, SETTING_PLACEHOLDER_USR);
+		img_path =
+			obs_data_get_string(settings, SETTING_PLACEHOLDER_USR);
 	else
-		img_path = obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
+		img_path =
+			obs_data_get_string(settings, SETTING_PLACEHOLDER_IMG);
 
-	if (gc->placeholder_image_path.len == 0 || dstr_cmp(&gc->placeholder_image_path, img_path) != 0) {
+	if (gc->placeholder_image_path.len == 0 ||
+	    dstr_cmp(&gc->placeholder_image_path, img_path) != 0) {
 		unload_placeholder_image(gc);
 	}
 	dstr_copy(&gc->placeholder_image_path, img_path);
 
 	if (!use_custom_placeholder)
-		placeholder_text = obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
+		placeholder_text =
+			obs_data_get_string(settings, SETTING_PLACEHOLDER_MSG);
 
 	dstr_copy(&gc->placeholder_text, placeholder_text);
 
@@ -775,7 +799,8 @@ static void game_capture_update(void *data, obs_data_t *settings)
 
 	free_config(&gc->config);
 	gc->config = cfg;
-	gc->retry_interval = DEFAULT_RETRY_INTERVAL * hook_rate_to_float(gc->config.hook_rate);
+	gc->retry_interval = DEFAULT_RETRY_INTERVAL *
+			     hook_rate_to_float(gc->config.hook_rate);
 	gc->wait_for_target_startup = false;
 	gc->is_10a2_2100pq = gc->config.is_10a2_2100pq;
 
@@ -1370,21 +1395,23 @@ static void save_selected_window(struct game_capture *gc, HWND window)
 	struct dstr window_line = {0};
 	obs_data_t *settings = obs_source_get_settings(gc->source);
 	get_captured_window_line(window, &window_line);
-	obs_data_set_string(settings, SETTING_CAPTURE_WINDOW, window_line.array);
+	obs_data_set_string(settings, SETTING_CAPTURE_WINDOW,
+			    window_line.array);
 
 	obs_data_release(settings);
-}		
+}
 
 static void get_game_window(struct game_capture *gc)
 {
 	HWND window;
-	struct auto_game_capture * ac = &gc->auto_capture;
+	struct auto_game_capture *ac = &gc->auto_capture;
 	WaitForSingleObject(ac->mutex, INFINITE);
-	window = find_matching_window(INCLUDE_MINIMIZED, &ac->matching_rules, &ac->checked_windows);
+	window = find_matching_window(INCLUDE_MINIMIZED, &ac->matching_rules,
+				      &ac->checked_windows);
 	ReleaseMutex(ac->mutex);
 	if (window) {
 		setup_window(gc, window);
- 		save_selected_window(gc, window);
+		save_selected_window(gc, window);
 	} else {
 		gc->wait_for_target_startup = true;
 	}
@@ -1869,12 +1896,13 @@ static void copy_shmem_tex(struct game_capture *gc)
 			// If the new pitch is higher from the old one we must
 			// perform some modifications to not cause a crash
 			// Check if the old values are valid
-			if (pitch > gc->pitch)
-			{
-				uint32_t tex_size = gc->shmem_data->tex2_offset - gc->shmem_data->tex1_offset;
+			if (pitch > gc->pitch) {
+				uint32_t tex_size =
+					gc->shmem_data->tex2_offset -
+					gc->shmem_data->tex1_offset;
 
-				if (gc->pitch > 0 && fixed_y > tex_size / gc->pitch)
-				{
+				if (gc->pitch > 0 &&
+				    fixed_y > tex_size / gc->pitch) {
 					fixed_y = tex_size / gc->pitch;
 				}
 			}
@@ -2158,7 +2186,7 @@ static void game_capture_tick(void *data, float seconds)
 		if (!gc->error_acquiring &&
 		    gc->retry_time > gc->retry_interval) {
 			if (gc->config.mode == CAPTURE_MODE_ANY ||
-				gc->config.mode == CAPTURE_MODE_AUTO ||
+			    gc->config.mode == CAPTURE_MODE_AUTO ||
 			    gc->activate_hook) {
 				try_hook(gc);
 				gc->retry_time = 0.0f;
@@ -2247,13 +2275,17 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	if (!gc->texture || !gc->active) {
 		if (gc->config.mode == CAPTURE_MODE_AUTO) {
 			if (gc->placeholder_image.image.texture) {
-				//draw placeholder image 
+				//draw placeholder image
 				gs_effect_t *effect;
-				effect = obs_get_base_effect( OBS_EFFECT_DEFAULT );
-				gs_technique_t *tech = gs_effect_get_technique(effect, "Draw");
+				effect =
+					obs_get_base_effect(OBS_EFFECT_DEFAULT);
+				gs_technique_t *tech =
+					gs_effect_get_technique(effect, "Draw");
 
-				gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), 
-							gc->placeholder_image.image.texture);
+				gs_effect_set_texture(
+					gs_effect_get_param_by_name(effect,
+								    "image"),
+					gc->placeholder_image.image.texture);
 
 				struct obs_video_info ovi;	
 				if (!obs_get_video_info_current(&ovi))
@@ -2275,8 +2307,10 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 						gc->placeholder_text_width /
 						(float)ovi.base_width;
 
-					gs_effect_set_texture(gs_effect_get_param_by_name(effect, "image"), 
-								gc->placeholder_text_texture);
+					gs_effect_set_texture(
+						gs_effect_get_param_by_name(
+							effect, "image"),
+						gc->placeholder_text_texture);
 
 					gs_matrix_push();
 					gs_matrix_translate3f(
@@ -2285,13 +2319,18 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 						 gc->placeholder_text_height / scale) / 2.05f,
 						0.0f);
 
-					size_t passes = gs_technique_begin(tech);
+					size_t passes =
+						gs_technique_begin(tech);
 					for (size_t i = 0; i < passes; i++) {
-						gs_technique_begin_pass(tech, i);
-						gs_draw_sprite( gc->placeholder_text_texture, 
-								0, 
-								(uint32_t)((float)gc->placeholder_text_width/scale), 
-								(uint32_t)((float)gc->placeholder_text_height/scale));
+						gs_technique_begin_pass(tech,
+									i);
+						gs_draw_sprite(
+							gc->placeholder_text_texture,
+							0,
+							(uint32_t)((float)gc->placeholder_text_width /
+								   scale),
+							(uint32_t)((float)gc->placeholder_text_height /
+								   scale));
 						gs_technique_end_pass(tech);
 					}
 
@@ -2550,7 +2589,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 		gs_set_linear_srgb(previous);
 	}
 
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
 		gs_matrix_pop();
 	}
 }
@@ -2563,7 +2602,7 @@ static uint32_t game_capture_width(void *data)
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_width;
-	} else 
+	} else
 		return gc->active ? gc->cx : 0;
 }
 
@@ -2575,7 +2614,7 @@ static uint32_t game_capture_height(void *data)
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_height;
-	} else 
+	} else
 		return gc->active ? gc->cy : 0;
 }
 
@@ -2603,7 +2642,8 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_IMG, "");
 	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_USR, "");
 	obs_data_set_default_bool(settings, SETTING_PLACEHOLDER_USE, false);
-	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG, "Looking for a game to capture");
+	obs_data_set_default_string(settings, SETTING_PLACEHOLDER_MSG,
+				    "Looking for a game to capture");
 	obs_data_set_default_string(settings, SETTING_RGBA10A2_SPACE,
 				    RGBA10A2_SPACE_SRGB);
 }
@@ -2631,10 +2671,10 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 	p = obs_properties_get(ppts, SETTING_WINDOW_PRIORITY);
 	obs_property_set_visible(p, capture_window);
 
-	//some settings hidden in auto game capture mode 
+	//some settings hidden in auto game capture mode
 	p = obs_properties_get(ppts, SETTING_LIMIT_FRAMERATE);
 	obs_property_set_visible(p, !capture_window_auto);
-	
+
 	p = obs_properties_get(ppts, SETTING_AUTO_LIST_FILE);
 	obs_property_set_visible(p, false);
 
@@ -2649,7 +2689,8 @@ static bool mode_callback(obs_properties_t *ppts, obs_property_t *p,
 
 	p = obs_properties_get(ppts, SETTING_PLACEHOLDER_USR);
 	if (capture_window_auto) {
-		bool  use_custom_placeholder = obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
+		bool use_custom_placeholder =
+			obs_data_get_bool(settings, SETTING_PLACEHOLDER_USE);
 
 		obs_property_set_visible(p, use_custom_placeholder);
 	} else {
@@ -2684,7 +2725,6 @@ static bool window_not_blacklisted(const char *title, const char *class,
 
 	return !is_blacklisted_exe(exe);
 }
-
 
 static obs_properties_t *game_capture_properties(void *data)
 {
@@ -2769,7 +2809,7 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_text(ppts, SETTING_AUTO_LIST_FILE,
 				SETTING_AUTO_LIST_FILE, OBS_TEXT_DEFAULT);
-	
+
 	obs_properties_add_text(ppts, SETTING_PLACEHOLDER_IMG,
 				SETTING_PLACEHOLDER_IMG, OBS_TEXT_DEFAULT);
 
@@ -2781,7 +2821,8 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_path(ppts, SETTING_PLACEHOLDER_USR,
 				TEXT_PLACEHOLDER_USER, OBS_PATH_FILE,
-				"PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp)", "");
+				"PNG (*.png);;JPEG (*.jpg *.jpeg);;BMP (*.bmp)",
+				"");
 
 	p = obs_properties_add_list(ppts, SETTING_HOOK_RATE, TEXT_HOOK_RATE,
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);

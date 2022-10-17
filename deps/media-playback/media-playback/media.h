@@ -47,7 +47,7 @@ typedef void (*mp_ready_cb)(void *opaque);
 struct cached_data {
 	int index;
 	int index_eof;
-	DARRAY(void*) data;
+	DARRAY(void *) data;
 	int64_t refresh_rate_ns;
 	uint64_t last_processed_ns;
 };

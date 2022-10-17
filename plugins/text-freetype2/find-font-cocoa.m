@@ -13,7 +13,8 @@ static inline void add_path_font(const char *path)
 	FT_Long idx = 0;
 	FT_Long max_faces = 1;
 	if (!path) {
-		blog(LOG_INFO, "[Text-FreeType] add_path_font. Empty font path");
+		blog(LOG_INFO,
+		     "[Text-FreeType] add_path_font. Empty font path");
 		return;
 	}
 
@@ -43,10 +44,14 @@ static void add_path_fonts(NSFileManager *file_manager, NSString *path)
 
 		if (folder_exists && is_dir) {
 			const char *full_path_str = [full_path UTF8String];
-			blog(LOG_DEBUG, "[Text-FreeType] add_path_fonts: Add full path font %s", full_path_str);
+			blog(LOG_DEBUG,
+			     "[Text-FreeType] add_path_fonts: Add full path font %s",
+			     full_path_str);
 			add_path_fonts(file_manager, full_path);
 		} else {
-			blog(LOG_DEBUG, "[Text-FreeType] add_path_fonts: Add full path fileSystemRepresentation %s", full_path.fileSystemRepresentation);
+			blog(LOG_DEBUG,
+			     "[Text-FreeType] add_path_fonts: Add full path fileSystemRepresentation %s",
+			     full_path.fileSystemRepresentation);
 			add_path_font(full_path.fileSystemRepresentation);
 		}
 	}
@@ -70,8 +75,11 @@ void load_os_font_list(void)
 				     isDirectory:&is_dir];
 
 			if (folder_exists && is_dir) {
-				const char *font_path_str = [font_path UTF8String];
-				blog(LOG_DEBUG, "[Text-FreeType] load_os_font_list: Add font path %s", font_path_str);
+				const char *font_path_str =
+					[font_path UTF8String];
+				blog(LOG_DEBUG,
+				     "[Text-FreeType] load_os_font_list: Add font path %s",
+				     font_path_str);
 				add_path_fonts(file_manager, font_path);
 			}
 		}

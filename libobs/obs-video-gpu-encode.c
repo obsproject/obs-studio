@@ -80,7 +80,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 
 			if (!encoder->first_received && pair) {
 				if (!pair->first_received ||
-					pair->first_raw_ts > timestamp) {
+				    pair->first_raw_ts > timestamp) {
 					continue;
 				}
 			}
@@ -91,7 +91,7 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 			if (encoder->reconfigure_requested) {
 				encoder->reconfigure_requested = false;
 				encoder->info.update(encoder->context.data,
-							encoder->context.settings);
+						     encoder->context.settings);
 			}
 
 			if (!encoder->start_ts)
@@ -126,10 +126,10 @@ static void *gpu_encode_thread(struct obs_core_video_mix *video)
 					     sizeof(tf));
 
 			video_output_inc_texture_skipped_frames(video->video);
-			} else {
-				circlebuf_push_back(&video->gpu_encoder_avail_queue,
+		} else {
+			circlebuf_push_back(&video->gpu_encoder_avail_queue,
 					    &tf, sizeof(tf));
-			}
+		}
 
 		pthread_mutex_unlock(&video->gpu_encoder_mutex);
 

@@ -76,8 +76,9 @@ bool obs_module_load(void)
 
 	__try {
 		sts = MFXInit(impl, &ver, &session);
-	} __except(EXCEPTION_EXECUTE_HANDLER) {
-		blog(LOG_DEBUG, "QSV encoder initialization failed with exception");
+	} __except (EXCEPTION_EXECUTE_HANDLER) {
+		blog(LOG_DEBUG,
+		     "QSV encoder initialization failed with exception");
 		return false;
 	}
 

@@ -100,14 +100,11 @@ extern void reset_win32_symbol_paths(void);
 int obs_open_module(obs_module_t **module, const char *path,
 		    const char *data_path)
 {
-	static char* excluded_patterns[] = {
-	"libEGL",
-	"libGLES",   
-	"obs-browser-page",
-	"chrome_elf",
-	"libcef"
-	};
-	for (size_t idx=0; idx < sizeof(excluded_patterns) / sizeof(char*); idx++) {
+	static char *excluded_patterns[] = {"libEGL", "libGLES",
+					    "obs-browser-page", "chrome_elf",
+					    "libcef"};
+	for (size_t idx = 0; idx < sizeof(excluded_patterns) / sizeof(char *);
+	     idx++) {
 		if (strstr(path, excluded_patterns[idx])) {
 			blog(LOG_INFO, "Excluding %s from openmodule ", path);
 			return MODULE_SUCCESS;
@@ -265,8 +262,8 @@ char *obs_find_module_file(obs_module_t *module, const char *file)
 char *obs_module_get_config_path(obs_module_t *module, const char *file)
 {
 	struct dstr output = {0};
-	
-	if(!obs)
+
+	if (!obs)
 		return NULL;
 
 	dstr_copy(&output, obs->module_config_path);

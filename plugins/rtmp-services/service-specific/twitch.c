@@ -93,8 +93,7 @@ static bool load_ingests(const char *json, bool write_file)
 	cache_old = obs_module_config_path("twitch_ingests.json");
 	cache_new = obs_module_config_path("twitch_ingests.new.json");
 
-	if(cache_old && cache_new)
-	{
+	if (cache_old && cache_new) {
 		os_quick_write_utf8_file(cache_new, json, strlen(json), false);
 		os_safe_replace(cache_old, cache_new, NULL);
 	} else {

@@ -648,7 +648,8 @@ static bool obs_x264_update(void *data, obs_data_t *settings)
 
 	if (success) {
 		if (obsx264->context) {
-			ret = x264_encoder_reconfig(obsx264->context, &obsx264->params);
+			ret = x264_encoder_reconfig(obsx264->context,
+						    &obsx264->params);
 			if (ret != 0)
 				warn("Failed to reconfigure: %d", ret);
 		} else {

@@ -53,7 +53,7 @@ EXPORT bool ms_is_uwp_window(HWND hwnd);
 EXPORT HWND ms_get_uwp_actual_window(HWND parent);
 
 EXPORT struct game_capture_matching_rule
-	convert_json_to_matching_rule(json_t *json_rule);
+convert_json_to_matching_rule(json_t *json_rule);
 
 EXPORT void get_captured_window_line(HWND hwnd, struct dstr *window_line);
 
@@ -78,7 +78,8 @@ EXPORT HWND ms_find_window(enum window_search_mode mode,
 			   enum window_priority priority,
 			   const char *window_class, const char *title,
 			   const char *exe);
-EXPORT HWND find_matching_window(enum window_search_mode mode,
+EXPORT HWND
+find_matching_window(enum window_search_mode mode,
 		     game_capture_matching_rule_array_t *matching_rules,
 		     window_handles_t *checked_windows);
 EXPORT HWND ms_find_window_top_level(enum window_search_mode mode,
@@ -86,11 +87,11 @@ EXPORT HWND ms_find_window_top_level(enum window_search_mode mode,
 				     const char *window_class,
 				     const char *title, const char *exe);
 
-extern int find_matching_rule_for_window(HWND window,
-			game_capture_matching_rule_array_t *matching_rules,
-			int *found_index, int already_matched_power);
+extern int find_matching_rule_for_window(
+	HWND window, game_capture_matching_rule_array_t *matching_rules,
+	int *found_index, int already_matched_power);
 
-EXPORT int get_rule_match_power(struct game_capture_matching_rule* rule);
+EXPORT int get_rule_match_power(struct game_capture_matching_rule *rule);
 
 #ifdef __cplusplus
 }
