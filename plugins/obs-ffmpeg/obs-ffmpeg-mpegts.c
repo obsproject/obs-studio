@@ -199,7 +199,8 @@ static bool create_video_stream(struct ffmpeg_output *stream,
 	context->height = data->config.scale_height;
 	context->coded_width = data->config.scale_width;
 	context->coded_height = data->config.scale_height;
-	context->time_base = (AVRational){data->config.fps_den, data->config.fps_num};
+	context->time_base =
+		(AVRational){data->config.fps_den, data->config.fps_num};
 	context->gop_size = data->config.gop_size;
 	context->pix_fmt = data->config.format;
 	context->color_range = data->config.color_range;

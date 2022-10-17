@@ -255,7 +255,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->bit_rate = (int64_t)data->config.video_bitrate * 1000;
 	context->width = data->config.scale_width;
 	context->height = data->config.scale_height;
-	context->time_base =(AVRational){data->config.fps_den, data->config.fps_num};
+	context->time_base =
+		(AVRational){data->config.fps_den, data->config.fps_num};
 	context->gop_size = data->config.gop_size;
 	context->pix_fmt = closest_format;
 	context->color_range = data->config.color_range;

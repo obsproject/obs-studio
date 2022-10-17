@@ -634,11 +634,12 @@ static void load_placeholder_image(struct game_capture *gc)
 	const int fraction_of_image_for_text = 8;
 	const int text_fitting_step = 5;
 	const int ALPHA_COMPONENT = 3;
-	struct obs_video_info ovi;	
+	struct obs_video_info ovi;
 	if (!obs_get_video_info_current(&ovi))
 		return;
 
-	gc->placeholder_text_height = ovi.base_height / fraction_of_image_for_text;
+	gc->placeholder_text_height =
+		ovi.base_height / fraction_of_image_for_text;
 	gc->placeholder_text_width = ovi.base_width;
 
 	BITMAPINFOHEADER bmphdr = {0};
@@ -2287,22 +2288,26 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 								    "image"),
 					gc->placeholder_image.image.texture);
 
-				struct obs_video_info ovi;	
+				struct obs_video_info ovi;
 				if (!obs_get_video_info_current(&ovi))
 					return;
 
 				size_t passes = gs_technique_begin(tech);
 				for (size_t i = 0; i < passes; i++) {
 					gs_technique_begin_pass(tech, i);
-					gs_draw_sprite(gc->placeholder_image.image.texture, 
-						0, ovi.base_width, ovi.base_height);
+					gs_draw_sprite(gc->placeholder_image
+							       .image.texture,
+						       0, ovi.base_width,
+						       ovi.base_height);
 					gs_technique_end_pass(tech);
 				}
 				gs_technique_end(tech);
 
 				if (gc->placeholder_text_texture) {
-					effect = obs_get_base_effect(OBS_EFFECT_DEFAULT);
-					tech = gs_effect_get_technique(effect, "Draw");
+					effect = obs_get_base_effect(
+						OBS_EFFECT_DEFAULT);
+					tech = gs_effect_get_technique(effect,
+								       "Draw");
 					float scale =
 						gc->placeholder_text_width /
 						(float)ovi.base_width;
@@ -2316,7 +2321,9 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 					gs_matrix_translate3f(
 						0.0f,
 						(ovi.base_height -
-						 gc->placeholder_text_height / scale) / 2.05f,
+						 gc->placeholder_text_height /
+							 scale) /
+							2.05f,
 						0.0f);
 
 					size_t passes =
@@ -2346,9 +2353,9 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	const bool allow_transparency = gc->config.allow_transparency;
 	gs_effect_t *const effect = obs_get_base_effect(
 		allow_transparency ? OBS_EFFECT_DEFAULT : OBS_EFFECT_OPAQUE);
-	
-	if (gc->config.mode == CAPTURE_MODE_AUTO) {	
-		struct obs_video_info ovi;	
+
+	if (gc->config.mode == CAPTURE_MODE_AUTO) {
+		struct obs_video_info ovi;
 		if (obs_get_video_info_current(&ovi)) {
 			float cx_scale = ovi.base_width / (float)gc->cx;
 			float cy_scale = ovi.base_height / (float)gc->cy;
@@ -2598,7 +2605,7 @@ static uint32_t game_capture_width(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
-		struct obs_video_info ovi;	
+		struct obs_video_info ovi;
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_width;
@@ -2610,7 +2617,7 @@ static uint32_t game_capture_height(void *data)
 {
 	struct game_capture *gc = data;
 	if (gc->config.mode == CAPTURE_MODE_AUTO) {
-		struct obs_video_info ovi;	
+		struct obs_video_info ovi;
 		if (!obs_get_video_info_current(&ovi))
 			return 0;
 		return ovi.base_height;

@@ -874,7 +874,6 @@ static obs_properties_t *ss_properties(void *data)
 	struct dstr path = {0};
 	obs_property_t *p;
 
-
 	/* ----------------- */
 
 	p = obs_properties_add_list(ppts, S_BEHAVIOR, T_BEHAVIOR,
@@ -921,14 +920,15 @@ static obs_properties_t *ss_properties(void *data)
 	for (size_t i = 0; i < NUM_ASPECTS; i++)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
-    char str[32];
+	char str[32];
 	struct obs_video_info ovi;
-    size_t contexts = obs_get_video_info_count();
+	size_t contexts = obs_get_video_info_count();
 	for (int i = 0; i < contexts; i++) {
-	    if (obs_get_video_info_by_index(i, &ovi)) {
-		    snprintf(str, 32, "%dx%d\0", ovi.base_width, ovi.base_height);
-		    obs_property_list_add_string(p, str, str);
-	    }
+		if (obs_get_video_info_by_index(i, &ovi)) {
+			snprintf(str, 32, "%dx%d\0", ovi.base_width,
+				 ovi.base_height);
+			obs_property_list_add_string(p, str, str);
+		}
 	}
 
 	if (ss) {

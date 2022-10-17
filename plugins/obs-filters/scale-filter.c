@@ -541,13 +541,16 @@ static obs_properties_t *scale_filter_properties(void *data)
 		cy = ovi.base_height;
 
 		for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
-			downscales[i].cx = (int)((double)cx / downscale_vals[i]);
-			downscales[i].cy = (int)((double)cy / downscale_vals[i]);
+			downscales[i].cx =
+				(int)((double)cx / downscale_vals[i]);
+			downscales[i].cy =
+				(int)((double)cy / downscale_vals[i]);
 		}
 
 		for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
 			char str[32];
-			snprintf(str, 32, "%dx%d", downscales[i].cx, downscales[i].cy);
+			snprintf(str, 32, "%dx%d", downscales[i].cx,
+				 downscales[i].cy);
 			obs_property_list_add_string(p, str, str);
 		}
 	}
