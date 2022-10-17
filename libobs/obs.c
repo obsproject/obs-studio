@@ -1866,6 +1866,8 @@ audio_t *obs_get_audio(void)
 
 video_t *obs_get_video(void)
 {
+	if (!obs->video.main_mix)
+		return NULL;
 	return obs->video.main_mix->video;
 }
 

@@ -1554,6 +1554,9 @@ void obs_encoder_set_video_mix(obs_encoder_t *encoder,
 	if (!obs_encoder_valid(encoder, "obs_encoder_set_video_mix"))
 		return;
 
+	if (!video)
+		return;
+
 	encoder->video = video;
 	obs_encoder_set_video(encoder, video->video);
 }
