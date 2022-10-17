@@ -48,6 +48,7 @@ struct audio_monitor {
 
 	DARRAY(float) buf;
 	SRWLOCK playback_mutex;
+	bool is_wasapi_success;
 };
 
 /* #define DEBUG_AUDIO */
@@ -273,6 +274,7 @@ fail:
 	safe_release(immde);
 	if (wfex)
 		CoTaskMemFree(wfex);
+	monitor->is_wasapi_success = success;
 	return success;
 }
 
@@ -317,7 +319,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 		goto unlock;
 	}
 
-	if (!monitor->client && !audio_monitor_init_wasapi(monitor)) {
+	if (!monitor->is_wasapi_success) {
 		goto free_for_reconnect;
 	}
 
@@ -379,6 +381,7 @@ static void on_audio_playback(void *param, obs_source_t *source,
 
 free_for_reconnect:
 	audio_monitor_free_for_reconnect(monitor);
+	audio_monitor_init_wasapi(monitor);
 unlock:
 	ReleaseSRWLockExclusive(&monitor->playback_mutex);
 }
