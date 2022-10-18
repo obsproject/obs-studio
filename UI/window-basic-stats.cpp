@@ -49,7 +49,7 @@ static QString MakeMissedFramesText(uint32_t total_lagged,
 }
 
 OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
-	: QWidget(parent),
+	: QFrame(parent),
 	  cpu_info(os_cpu_usage_info_start()),
 	  timer(this),
 	  recTimeLeft(this)
