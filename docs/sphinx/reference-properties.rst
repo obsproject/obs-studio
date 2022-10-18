@@ -565,6 +565,7 @@ Property Enumeration Functions
             - OBS_COMBO_INVALID
             - OBS_GROUP_NORMAL
             - OBS_GROUP_CHECKABLE
+            - OBS_GROUP_SUB
 
 ---------------------
 
