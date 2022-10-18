@@ -638,19 +638,18 @@ struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
 
 static int obs_init_video()
 {
+	struct obs_core_video *video = &obs->video;
+	if (video->canvases.num == 0) {
+		video->thread_initialized = false;
+		return OBS_VIDEO_SUCCESS;
+	}
+
 	if (!obs->video.graphics) {
 		int errorcode = obs_init_graphics(obs->video.canvases.array[0]);
 		if (errorcode != OBS_VIDEO_SUCCESS) {
 			obs_free_graphics();
 			return errorcode;
 		}
-	}
-
-	struct obs_core_video *video = &obs->video;
-
-	if (video->canvases.num == 0) {
-		video->thread_initialized = false;
-		return OBS_VIDEO_SUCCESS;
 	}
 
 	video->video_frame_interval_ns = util_mul_div64(
