@@ -247,13 +247,6 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
 
-	int newPointSize = ol.status->font().pointSize();
-	newPointSize *= 13;
-	newPointSize /= 10;
-	QString qss =
-		QString("font-size: %1pt").arg(QString::number(newPointSize));
-	ol.status->setStyleSheet(qss);
-
 	int col = 0;
 	int row = outputLabels.size() + 1;
 	outputLayout->addWidget(ol.name, row, col++);
