@@ -119,12 +119,12 @@ jobs:
         fi
 
         # set env variables for subsequent steps
-        echo "::set-output name=type::${TYPE}"
-        echo "::set-output name=branch::${BRANCH}"
-        echo "::set-output name=desc::${DESC}"
-        echo "::set-output name=win_url::${WIN_ASSET_URL}"
-        echo "::set-output name=mac_intel_url::${MAC_ASSET_URL}"
-        echo "::set-output name=mac_arm_url::${MAC_ARM_ASSET_URL}"
+        echo "type=${TYPE}" >> $GITHUB_OUTPUT
+        echo "branch=${BRANCH}" >> $GITHUB_OUTPUT
+        echo "desc=${DESC}" >> $GITHUB_OUTPUT
+        echo "win_url=${WIN_ASSET_URL}" >> $GITHUB_OUTPUT
+        echo "mac_intel_url=${MAC_ASSET_URL}" >> $GITHUB_OUTPUT
+        echo "mac_arm_url=${MAC_ARM_ASSET_URL}" >> $GITHUB_OUTPUT
 
     - name: Restore build cache
       id: cache
@@ -144,9 +144,9 @@ jobs:
       id: should-run
       run: |
         if [[ '${{ steps.build-info.outputs.type }}' == 'release' || '${{ steps.cache.outputs.cache-hit }}' != 'true' ]]; then
-            echo "::set-output name=result::true"
+            echo "result=true" >> $GITHUB_OUTPUT
         else
-            echo "::set-output name=result::false"
+            echo "result=false" >> $GITHUB_OUTPUT
         fi
 
     - name: Download and prepare builds
