@@ -181,6 +181,7 @@ QMenuBar::item:selected {
 /* Item Lists */
 QListWidget {
     border-radius: 4px;
+    outline: 0;
 }
 
 QListWidget::item {
