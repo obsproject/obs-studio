@@ -183,6 +183,7 @@ QMenuBar::item:selected {
 /* Item Lists */
 QListWidget {
     border-radius: 4px;
+    outline: 0px;
 }
 
 QListWidget::item {
@@ -194,6 +195,7 @@ QMenu,
 SceneTree,
 SourceTree {
     padding: 3px;
+    outline: 0px;
 }
 
 QListWidget::item,
