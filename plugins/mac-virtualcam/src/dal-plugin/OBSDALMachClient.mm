@@ -10,7 +10,6 @@
 #import "Logging.h"
 
 @interface OBSDALMachClient () <NSPortDelegate> {
-	uint32_t _seed;
 	NSPort *_receivePort;
 }
 @end
@@ -123,11 +122,20 @@
 				return;
 			}
 
-			IOSurfaceLock(surface, 0, &_seed);
+			/*
+			 * IOSurfaceLocks are only necessary on non Apple Silicon devices, as those have
+			 * unified memory. On Intel machines, the lock ensures that the IOSurface is copied back
+			 * from GPU memory to CPU memory so we can process the pixel buffer.
+			 */
+#ifndef __aarch64__
+			IOSurfaceLock(surface, kIOSurfaceLockReadOnly, NULL);
+#endif
 			CVPixelBufferRef frame;
 			CVPixelBufferCreateWithIOSurface(kCFAllocatorDefault,
 							 surface, NULL, &frame);
-			IOSurfaceUnlock(surface, 0, &_seed);
+#ifndef __aarch64__
+			IOSurfaceUnlock(surface, kIOSurfaceLockReadOnly, NULL);
+#endif
 			CFRelease(surface);
 
 			uint64_t timestamp;
