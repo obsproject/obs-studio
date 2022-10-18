@@ -1514,3 +1514,8 @@ QCalendarWidget QAbstractItemView:disabled {
 QDialogButtonBox {
     dialogbuttonbox-buttons-have-icons: 0;
 }
+
+/* Stats dialog */
+OBSBasicStats {
+    background: palette(dark);
+}
