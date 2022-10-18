@@ -311,6 +311,11 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->scenes->setItemDelegate(new SceneRenameDelegate(ui->scenes));
 
+	bool hideTransitionWidget = config_get_bool(
+		App()->GlobalConfig(), "BasicWindow", "HideTransitionWidget");
+	ui->hiddenTransitionsLabel->setVisible(previewProgramMode &&
+					       hideTransitionWidget);
+
 	auto displayResize = [this]() {
 		struct obs_video_info ovi;
 
@@ -4378,6 +4383,8 @@ void OBSBasic::ResetUI()
 		App()->GlobalConfig(), "BasicWindow", "HideTransitionWidget");
 	if (programOptions)
 		programOptions->setVisible(!hideTransitionWidget);
+	ui->hiddenTransitionsLabel->setVisible(previewProgramMode &&
+					       hideTransitionWidget);
 }
 
 int OBSBasic::ResetVideo()

@@ -440,6 +440,22 @@
             </property>
            </widget>
           </item>
+	  <item>
+	   <widget class="QLabel" name="hiddenTransitionsLabel">
+	    <property name="sizePolicy">
+	     <sizepolicy hsizetype="Expanding" vsizetype="Fixed">
+	      <horstretch>0</horstretch>
+	      <verstretch>0</verstretch>
+	     </sizepolicy>
+	    </property>
+	    <property name="text">
+	     <string>Note that "Hide Transitions widget" is enabled in Settings</string>
+	    </property>
+	    <property name="alignment">
+	     <set>Qt::AlignLeading|Qt::AlignRight</set>
+	    </property>
+	   </widget>
+	  </item>
          </layout>
         </widget>
        </item>
