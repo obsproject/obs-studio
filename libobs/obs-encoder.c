@@ -464,11 +464,11 @@ static inline bool obs_encoder_initialize_internal(obs_encoder_t *encoder)
 	if (encoder->orig_info.create) {
 		can_reroute = true;
 		encoder->info = encoder->orig_info;
+		if (!encoder->video)
+			encoder->video = obs->video.main_mix;
 		encoder->context.data = encoder->orig_info.create(
 			encoder->context.settings, encoder);
 		can_reroute = false;
-		if (!encoder->video)
-			encoder->video = obs->video.main_mix;
 	}
 	if (!encoder->context.data)
 		return false;

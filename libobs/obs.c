@@ -647,12 +647,18 @@ static int obs_init_video()
 	}
 
 	struct obs_core_video *video = &obs->video;
+
+	if (video->canvases.num == 0) {
+		video->thread_initialized = false;
+		return OBS_VIDEO_SUCCESS;
+	}
+
 	video->video_frame_interval_ns = util_mul_div64(
-		1000000000ULL, obs->video.canvases.array[0]->fps_den,
-		obs->video.canvases.array[0]->fps_num);
-	video->video_half_frame_interval_ns = util_mul_div64(
-		500000000ULL, obs->video.canvases.array[0]->fps_den,
-		obs->video.canvases.array[0]->fps_num);
+		1000000000ULL, video->canvases.array[0]->fps_den,
+		video->canvases.array[0]->fps_num);
+	video->video_half_frame_interval_ns =
+		util_mul_div64(500000000ULL, video->canvases.array[0]->fps_den,
+			       video->canvases.array[0]->fps_num);
 
 	if (pthread_mutex_init(&video->task_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
@@ -668,11 +674,11 @@ static int obs_init_video()
 				  obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_stream_view_add(&obs->data.main_view,
+		if (!obs_stream_view_add(&obs->data.stream_view,
 					 obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 
-		if (!obs_record_view_add(&obs->data.main_view,
+		if (!obs_record_view_add(&obs->data.record_view,
 					 obs->video.canvases.array[i]))
 			return OBS_VIDEO_FAIL;
 	}
