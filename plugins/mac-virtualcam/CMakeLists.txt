@@ -7,3 +7,4 @@ endif()
 
 add_subdirectory(src/obs-plugin)
 add_subdirectory(src/dal-plugin)
+add_subdirectory(src/camera-extension)
