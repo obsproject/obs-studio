@@ -652,9 +652,9 @@ static int obs_init_video()
 		}
 	}
 
-	video->video_frame_interval_ns = util_mul_div64(
-		1000000000ULL, video->canvases.array[0]->fps_den,
-		video->canvases.array[0]->fps_num);
+	video->video_frame_interval_ns =
+		util_mul_div64(1000000000ULL, video->canvases.array[0]->fps_den,
+			       video->canvases.array[0]->fps_num);
 	video->video_half_frame_interval_ns =
 		util_mul_div64(500000000ULL, video->canvases.array[0]->fps_den,
 			       video->canvases.array[0]->fps_num);
