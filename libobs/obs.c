@@ -818,9 +818,11 @@ static void obs_free_video(bool full_clean)
 		pthread_mutex_destroy(&obs->video.canvases_mutex);
 		pthread_mutex_init_value(&obs->video.canvases_mutex);
 	}
+
 	pthread_mutex_destroy(&obs->video.task_mutex);
 	pthread_mutex_init_value(&obs->video.task_mutex);
 	circlebuf_free(&obs->video.tasks);
+	obs->video.main_mix = NULL;
 }
 
 static void obs_free_graphics(void)
