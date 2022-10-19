@@ -713,7 +713,7 @@ static void erase_ch(struct dstr *str, size_t pos)
 
 char *os_generate_formatted_filename(const char *extension, bool space,
 				     const char *format,
-				     struct obs_video_info *ovi)
+				     obs_video_info_t *ovi)
 {
 	time_t now = time(0);
 	struct tm *cur_time;
