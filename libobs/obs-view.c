@@ -164,7 +164,11 @@ video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi)
 {
 	if (!view)
 		return NULL;
-
+	if (!ovi) {
+		if (obs->video.canvases.num == 0)
+			return NULL;
+		ovi = obs->video.canvases.array[0];
+	}
 	struct obs_core_video_mix *mix = obs_create_video_mix(ovi);
 	if (!mix) {
 		return NULL;

@@ -203,7 +203,7 @@ video_t *OBSBasicVCamConfig::StartVideo()
 	UpdateOutputSource();
 
 	if (!video)
-		video = obs_view_add(view);
+		video = obs_view_add(view, NULL);
 	return video;
 }
 
