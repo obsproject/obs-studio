@@ -1441,7 +1441,17 @@ static inline bool size_valid(uint32_t width, uint32_t height)
 		width <= OBS_SIZE_MAX && height <= OBS_SIZE_MAX);
 }
 
-int obs_reset_video()
+int obs_reset_video(struct obs_video_info *ovi)
+{
+	struct obs_video_info *canvas = NULL;
+	if (obs->video.canvases.num)
+		canvas = obs->video.canvases.array[0];
+	else
+		canvas = obs_create_video_info();
+	return obs_set_video_info(canvas, ovi);
+}
+
+int obs_deactivate_video_info()
 {
 	if (!obs) {
 		blog(LOG_ERROR,
@@ -1467,7 +1477,7 @@ int obs_reset_video()
 int obs_set_video_info(struct obs_video_info *canvas,
 		       struct obs_video_info *updated)
 {
-	int ret = obs_reset_video();
+	int ret = obs_deactivate_video_info();
 	if (ret != OBS_VIDEO_SUCCESS)
 		return ret;
 
@@ -1661,7 +1671,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 int obs_remove_video_info(struct obs_video_info *ovi)
 {
 	blog(LOG_INFO, "[VIDEO_CANVAS] remove %08X", ovi);
-	int ret = obs_reset_video();
+	int ret = obs_deactivate_video_info();
 	if (ret != OBS_VIDEO_SUCCESS)
 		return ret;
 
