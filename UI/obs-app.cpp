@@ -1884,8 +1884,8 @@ string GenerateTimeDateFilename(const char *extension, bool noSpace)
 string GenerateSpecifiedFilename(const char *extension, bool noSpace,
 				 const char *format)
 {
-	BPtr<char> filename =
-		os_generate_formatted_filename(extension, !noSpace, format, nullptr);
+	BPtr<char> filename = os_generate_formatted_filename(
+		extension, !noSpace, format, nullptr);
 	return string(filename);
 }
 

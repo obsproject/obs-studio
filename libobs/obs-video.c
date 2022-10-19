@@ -1104,8 +1104,10 @@ static inline bool stop_requested(void)
 bool obs_graphics_thread_loop(struct obs_graphics_context *context)
 {
 	/* defer loop break to clean up sources */
-	const bool stop_requested = !obs->video.main_mix ? true : 
-		video_output_stopped(obs->video.main_mix->video);
+	const bool stop_requested =
+		!obs->video.main_mix
+			? true
+			: video_output_stopped(obs->video.main_mix->video);
 
 	uint64_t frame_start = os_gettime_ns();
 	uint64_t frame_time_ns;
