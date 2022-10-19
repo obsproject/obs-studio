@@ -2,6 +2,17 @@
  
 arch_name="$(uname -m)"
 
+# When the script is launched from Steam, it'll be run through Rosetta.
+# Manually override arch to arm64 in that case.
+if [ "$(sysctl -in sysctl.proc_translated)" = "1" ]; then
+    arch_name="arm64"
+fi
+
+# Allow users to force Rosetta
+if [[ "$@" =~ \-\-intel ]]; then
+    arch_name="x86_64"
+fi
+
 # legacy app installation
 if [ -d OBS.app ]; then
     exec open OBS.app -W --args "$@"
