@@ -479,13 +479,19 @@ Video, Audio, and Graphics
 
 .. function:: void obs_set_master_volume(float volume)
 
-   Sets the master user volume.
+   No-op, only exists to keep ABI compatibility.
+
+   .. deprecated:: 29.0
 
 ---------------------
 
 .. function:: float obs_get_master_volume(void)
 
-   :return: The master user volume
+   No-op, only exists to keep ABI compatibility.
+
+   :return: Always returns 1
+
+   .. deprecated:: 29.0
 
 ---------------------
 
@@ -645,10 +651,6 @@ Core OBS Signals
 **channel_change** (int channel, in out ptr source, ptr prev_source)
 
    Called when :c:func:`obs_set_output_source()` has been called.
-
-**master_volume** (in out float volume)
-
-   Called when the master volume has changed.
 
 **hotkey_layout_change** ()
 
