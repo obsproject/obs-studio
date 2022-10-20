@@ -2833,7 +2833,7 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 				obs_data_set_string(data, "multipass", "qres");
 
 			} else if (astrcmpi(preset, "hq") == 0) {
-				obs_data_set_string(data, "preset2", "p4");
+				obs_data_set_string(data, "preset2", "p5");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass", "qres");
 
