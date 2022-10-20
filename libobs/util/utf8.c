@@ -14,6 +14,7 @@
  * OR IN CONNECTION WITH THE USE OR PERFORMANCE OF THIS SOFTWARE.
  */
 #include <wchar.h>
+#include <string.h>
 
 #include "utf8.h"
 
@@ -142,13 +143,10 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 
 	total = 0;
 	p = (unsigned char *)in;
-	lim = (insize != 0) ? (p + insize) : (unsigned char *)-1;
+	lim = p + (insize != 0 ? insize : strlen(in));
 	wlim = out == NULL ? NULL : out + outsize;
 
 	for (; p < lim; p += n) {
-		if (!*p)
-			break;
-
 		if (utf8_forbidden(*p) != 0 && (flags & UTF8_IGNORE_ERROR) == 0)
 			return 0;
 
@@ -270,15 +268,12 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 		return 0;
 
 	w = (wchar_t *)in;
-	wlim = (insize != 0) ? (w + insize) : (wchar_t *)-1;
+	wlim = w + (insize != 0 ? insize : wcslen(w));
 	p = (unsigned char *)out;
 	lim = out == NULL ? NULL : p + outsize;
 	total = 0;
 
 	for (; w < wlim; w++) {
-		if (!*w)
-			break;
-
 		if (wchar_forbidden(*w) != 0) {
 			if ((flags & UTF8_IGNORE_ERROR) == 0)
 				return 0;

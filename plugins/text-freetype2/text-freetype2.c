@@ -214,6 +214,7 @@ static void ft2_source_destroy(void *data)
 		bfree(srcdata->font_style);
 	if (srcdata->text != NULL)
 		bfree(srcdata->text);
+	srcdata->text_len = 0;
 	if (srcdata->texbuf != NULL)
 		bfree(srcdata->texbuf);
 	if (srcdata->colorbuf != NULL)
@@ -249,7 +250,8 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 
 	if (srcdata->tex == NULL || srcdata->vbuf == NULL)
 		return;
-	if (srcdata->text == NULL || *srcdata->text == 0)
+	if (srcdata->text == NULL || *srcdata->text == 0 ||
+	    srcdata->text_len == 0)
 		return;
 
 	gs_reset_blend_state();
@@ -259,7 +261,7 @@ static void ft2_source_render(void *data, gs_effect_t *effect)
 		draw_drop_shadow(srcdata);
 
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			(uint32_t)srcdata->text_len * 6);
 
 	UNUSED_PARAMETER(effect);
 }
@@ -282,7 +284,7 @@ static void ft2_video_tick(void *data, float seconds)
 			else
 				load_text_from_file(srcdata,
 						    srcdata->text_file);
-			cache_glyphs(srcdata, srcdata->text);
+			cache_glyphs(srcdata, srcdata->text, srcdata->text_len);
 			set_up_vertex_buffer(srcdata);
 			srcdata->update_file = false;
 		}
@@ -465,8 +467,8 @@ skip_font_load:
 			bfree(srcdata->text);
 			srcdata->text = NULL;
 
-			os_utf8_to_wcs_ptr(emptystr, strlen(emptystr),
-					   &srcdata->text);
+			srcdata->text_len = os_utf8_to_wcs_ptr(
+				emptystr, strlen(emptystr), &srcdata->text);
 			blog(LOG_WARNING,
 			     "FT2-text: Failed to open %s for "
 			     "reading",
@@ -494,13 +496,15 @@ skip_font_load:
 		if (srcdata->text != NULL) {
 			bfree(srcdata->text);
 			srcdata->text = NULL;
+			srcdata->text_len = 0;
 		}
 
-		os_utf8_to_wcs_ptr(tmp, strlen(tmp), &srcdata->text);
+		srcdata->text_len =
+			os_utf8_to_wcs_ptr(tmp, strlen(tmp), &srcdata->text);
 	}
 
 	if (srcdata->font_face) {
-		cache_glyphs(srcdata, srcdata->text);
+		cache_glyphs(srcdata, srcdata->text, srcdata->text_len);
 		set_up_vertex_buffer(srcdata);
 	}
 

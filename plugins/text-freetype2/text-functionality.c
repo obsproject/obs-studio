@@ -47,7 +47,7 @@ void draw_outlines(struct ft2_source *srcdata)
 				      0.0f);
 		draw_uv_vbuffer(srcdata->vbuf, srcdata->tex,
 				srcdata->draw_effect,
-				(uint32_t)wcslen(srcdata->text) * 6);
+				(uint32_t)srcdata->text_len * 6);
 	}
 	gs_matrix_identity();
 	gs_matrix_pop();
@@ -71,7 +71,7 @@ void draw_drop_shadow(struct ft2_source *srcdata)
 	gs_matrix_push();
 	gs_matrix_translate3f(4.0f, 4.0f, 0.0f);
 	draw_uv_vbuffer(srcdata->vbuf, srcdata->tex, srcdata->draw_effect,
-			(uint32_t)wcslen(srcdata->text) * 6);
+			(uint32_t)srcdata->text_len * 6);
 	gs_matrix_identity();
 	gs_matrix_pop();
 
@@ -106,17 +106,17 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 	}
 
 	srcdata->vbuf =
-		create_uv_vbuffer((uint32_t)wcslen(srcdata->text) * 6, true);
+		create_uv_vbuffer((uint32_t)srcdata->text_len * 6, true);
 
 	if (srcdata->custom_width <= 100)
 		goto skip_word_wrap;
 	if (!srcdata->word_wrap)
 		goto skip_word_wrap;
 
-	len = wcslen(srcdata->text);
+	len = srcdata->text_len;
 
 	for (uint32_t i = 0; i <= len; i++) {
-		if (i == wcslen(srcdata->text))
+		if (i == srcdata->text_len)
 			goto eos_check;
 
 		if (srcdata->text[i] != L' ' && srcdata->text[i] != L'\n')
@@ -128,7 +128,7 @@ void set_up_vertex_buffer(struct ft2_source *srcdata)
 				srcdata->text[space_pos] = L'\n';
 			x = 0;
 		}
-		if (i == wcslen(srcdata->text))
+		if (i == srcdata->text_len)
 			goto eos_skip;
 
 		x += word_width;
@@ -163,7 +163,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 	uint32_t dx = 0, dy = srcdata->max_h, max_y = dy;
 	uint32_t cur_glyph = 0;
 	uint32_t offset = 0;
-	size_t len = wcslen(srcdata->text);
+	size_t len = srcdata->text_len;
 
 	if (srcdata->outline_text) {
 		offset = 2;
@@ -174,8 +174,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 		bfree(srcdata->colorbuf);
 		srcdata->colorbuf = NULL;
 	}
-	srcdata->colorbuf =
-		bzalloc(sizeof(uint32_t) * wcslen(srcdata->text) * 6);
+	srcdata->colorbuf = bzalloc(sizeof(uint32_t) * srcdata->text_len * 6);
 	for (size_t i = 0; i < len * 6; i++) {
 		srcdata->colorbuf[i] = 0xFF000000;
 	}
@@ -187,7 +186,7 @@ void fill_vertex_buffer(struct ft2_source *srcdata)
 		dx = offset;
 		i++;
 		dy += srcdata->max_h + 4;
-		if (i == wcslen(srcdata->text))
+		if (i == srcdata->text_len)
 			goto skip_glyph;
 		if (srcdata->text[i] == L'\n')
 			goto add_linebreak;
@@ -241,9 +240,11 @@ void cache_standard_glyphs(struct ft2_source *srcdata)
 	srcdata->texbuf_x = 0;
 	srcdata->texbuf_y = 0;
 
-	cache_glyphs(srcdata, L"abcdefghijklmnopqrstuvwxyz"
-			      L"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
-			      L"!@#$%^&*()-_=+,<.>/?\\|[]{}`~ \'\"\0");
+	cache_glyphs(srcdata,
+		     L"abcdefghijklmnopqrstuvwxyz"
+		     L"ABCDEFGHIJKLMNOPQRSTUVWXYZ1234567890"
+		     L"!@#$%^&*()-_=+,<.>/?\\|[]{}`~ \'\"\0",
+		     0);
 }
 
 FT_Render_Mode get_render_mode(struct ft2_source *srcdata)
@@ -318,7 +319,8 @@ void rasterize(struct ft2_source *srcdata, FT_GlyphSlot slot,
 	}
 }
 
-void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
+void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs,
+		  size_t cache_glyphs_len)
 {
 	if (!srcdata->font_face || !cache_glyphs)
 		return;
@@ -329,7 +331,8 @@ void cache_glyphs(struct ft2_source *srcdata, wchar_t *cache_glyphs)
 	uint32_t dy = srcdata->texbuf_y;
 
 	int32_t cached_glyphs = 0;
-	const size_t len = wcslen(cache_glyphs);
+	const size_t len = cache_glyphs_len == 0 ? wcslen(cache_glyphs)
+						 : cache_glyphs_len;
 
 	const FT_Render_Mode render_mode = get_render_mode(srcdata);
 
@@ -407,15 +410,15 @@ time_t get_modified_timestamp(char *filename)
 	return stats.st_mtime;
 }
 
-static void remove_cr(wchar_t *source)
+static void remove_cr(wchar_t *source, size_t *source_len)
 {
-	int j = 0;
-	for (int i = 0; source[i] != '\0'; ++i) {
+	size_t j = 0;
+	for (size_t i = 0; i < *source_len; ++i) {
 		if (source[i] != L'\r') {
 			source[j++] = source[i];
 		}
 	}
-	source[j] = '\0';
+	*source_len = j;
 }
 
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
@@ -444,9 +447,11 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		if (srcdata->text != NULL) {
 			bfree(srcdata->text);
 			srcdata->text = NULL;
+			srcdata->text_len = 0;
 		}
 		srcdata->text = bzalloc(filesize);
-		bytes_read = fread(srcdata->text, filesize - 2, 1, tmp_file);
+		srcdata->text_len =
+			fread(srcdata->text, 1, filesize - 2, tmp_file);
 
 		bfree(tmp_read);
 		fclose(tmp_file);
@@ -457,18 +462,18 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 	fseek(tmp_file, 0, SEEK_SET);
 
 	tmp_read = bzalloc(filesize + 1);
-	bytes_read = fread(tmp_read, filesize, 1, tmp_file);
+	bytes_read = fread(tmp_read, 1, filesize, tmp_file);
 	fclose(tmp_file);
 
 	if (srcdata->text != NULL) {
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+	srcdata->text = bzalloc((bytes_read + 1) * sizeof(wchar_t));
+	srcdata->text_len = os_utf8_to_wcs(tmp_read, bytes_read, srcdata->text,
+					   (bytes_read + 1));
 
-	remove_cr(srcdata->text);
+	remove_cr(srcdata->text, &srcdata->text_len);
 	bfree(tmp_read);
 }
 
@@ -530,10 +535,10 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 			srcdata->text = NULL;
 		}
 		srcdata->text = bzalloc(filesize - cur_pos);
-		bytes_read =
-			fread(srcdata->text, (filesize - cur_pos), 1, tmp_file);
+		srcdata->text_len =
+			fread(srcdata->text, 1, (filesize - cur_pos), tmp_file);
 
-		remove_cr(srcdata->text);
+		remove_cr(srcdata->text, &srcdata->text_len);
 		bfree(tmp_read);
 		fclose(tmp_file);
 
@@ -549,10 +554,11 @@ void read_from_end(struct ft2_source *srcdata, const char *filename)
 		srcdata->text = NULL;
 	}
 	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+	srcdata->text_len = os_utf8_to_wcs(tmp_read, strlen(tmp_read),
+					   srcdata->text,
+					   (strlen(tmp_read) + 1));
 
-	remove_cr(srcdata->text);
+	remove_cr(srcdata->text, &srcdata->text_len);
 	bfree(tmp_read);
 }
 
@@ -564,7 +570,7 @@ uint32_t get_ft2_text_width(wchar_t *text, struct ft2_source *srcdata)
 
 	FT_GlyphSlot slot = srcdata->font_face->glyph;
 	uint32_t w = 0, max_w = 0;
-	const size_t len = wcslen(text);
+	const size_t len = srcdata->text_len;
 	for (size_t i = 0; i < len; i++) {
 		const FT_UInt glyph_index =
 			FT_Get_Char_Index(srcdata->font_face, text[i]);
