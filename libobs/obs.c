@@ -827,8 +827,6 @@ static bool obs_init_audio(struct audio_output_info *ai)
 	struct obs_task_info audio_init = {.task = set_audio_thread};
 	circlebuf_push_back(&audio->tasks, &audio_init, sizeof(audio_init));
 
-	audio->user_volume = 1.0f;
-
 	audio->monitoring_device_name = bstrdup("Default");
 	audio->monitoring_device_id = bstrdup("default");
 
@@ -984,7 +982,6 @@ static const char *obs_signals[] = {
 	"void source_transition_stop(ptr source)",
 
 	"void channel_change(int channel, in out ptr source, ptr prev_source)",
-	"void master_volume(in out float volume)",
 
 	"void hotkey_layout_change()",
 	"void hotkey_register(ptr hotkey)",
@@ -2087,19 +2084,12 @@ gs_texture_t *obs_get_main_texture(void)
 
 void obs_set_master_volume(float volume)
 {
-	struct calldata data = {0};
-
-	calldata_set_float(&data, "volume", volume);
-	signal_handler_signal(obs->signals, "master_volume", &data);
-	volume = (float)calldata_float(&data, "volume");
-	calldata_free(&data);
-
-	obs->audio.user_volume = volume;
+	UNUSED_PARAMETER(volume);
 }
 
 float obs_get_master_volume(void)
 {
-	return obs->audio.user_volume;
+	return 1.f;
 }
 
 static obs_source_t *obs_load_source_type(obs_data_t *source_data,

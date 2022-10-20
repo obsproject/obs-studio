@@ -361,8 +361,6 @@ struct obs_core_audio {
 	int max_buffering_ticks;
 	bool fixed_buffer;
 
-	float user_volume;
-
 	pthread_mutex_t monitoring_mutex;
 	DARRAY(struct audio_monitor *) monitors;
 	char *monitoring_device_name;
