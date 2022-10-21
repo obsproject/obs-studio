@@ -9076,13 +9076,19 @@ int OBSBasic::GetProfilePath(char *path, size_t size, const char *file) const
 void OBSBasic::on_resetDocks_triggered(bool force)
 {
 	/* prune deleted extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
+	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
+		if (!oldExtraDocks[i]) {
+			oldExtraDocks.removeAt(i);
 		}
 	}
 
-	if (extraDocks.size() && !force) {
+#ifdef BROWSER_AVAILABLE
+	if ((oldExtraDocks.size() || extraDocks.size() ||
+	     extraBrowserDocks.size()) &&
+	    !force) {
+#else
+	if ((oldExtraDocks.size() || extraDocks.size()) && !force) {
+#endif
 		QMessageBox::StandardButton button = QMessageBox::question(
 			this, QTStr("ResetUIWarning.Title"),
 			QTStr("ResetUIWarning.Text"));
@@ -9092,16 +9098,32 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	}
 
 	/* undock/hide/center extra docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (extraDocks[i]) {
-			extraDocks[i]->setVisible(true);
-			extraDocks[i]->setFloating(true);
-			extraDocks[i]->move(frameGeometry().topLeft() +
-					    rect().center() -
-					    extraDocks[i]->rect().center());
-			extraDocks[i]->setVisible(false);
+	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
+		if (oldExtraDocks[i]) {
+			oldExtraDocks[i]->setVisible(true);
+			oldExtraDocks[i]->setFloating(true);
+			oldExtraDocks[i]->move(
+				frameGeometry().topLeft() + rect().center() -
+				oldExtraDocks[i]->rect().center());
+			oldExtraDocks[i]->setVisible(false);
 		}
 	}
+
+#define RESET_DOCKLIST(dockList)                                 \
+	for (int i = dockList.size() - 1; i >= 0; i--) {         \
+		dockList[i]->setVisible(true);                   \
+		dockList[i]->setFloating(true);                  \
+		dockList[i]->move(frameGeometry().topLeft() +    \
+				  rect().center() -              \
+				  dockList[i]->rect().center()); \
+		dockList[i]->setVisible(false);                  \
+	}
+
+	RESET_DOCKLIST(extraDocks)
+#ifdef BROWSER_AVAILABLE
+	RESET_DOCKLIST(extraBrowserDocks)
+#endif
+#undef RESET_DOCKLIST
 
 	restoreState(startingDockLayout);
 
@@ -9154,11 +9176,19 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	ui->controlsDock->setFeatures(mainFeatures);
 	statsDock->setFeatures(features);
 
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
+	for (int i = extraDocks.size() - 1; i >= 0; i--)
+		extraDocks[i]->setFeatures(features);
+
+#ifdef BROWSER_AVAILABLE
+	for (int i = extraBrowserDocks.size() - 1; i >= 0; i--)
+		extraBrowserDocks[i]->setFeatures(features);
+#endif
+
+	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
+		if (!oldExtraDocks[i]) {
+			oldExtraDocks.removeAt(i);
 		} else {
-			extraDocks[i]->setFeatures(features);
+			oldExtraDocks[i]->setFeatures(features);
 		}
 	}
 }
@@ -9947,11 +9977,20 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
+#ifdef BROWSER_AVAILABLE
+	QAction *action = new QAction(dock->windowTitle(), ui->menuDocks);
+
+	if (!extraBrowserMenuDocksSeparator.isNull())
+		ui->menuDocks->insertAction(extraBrowserMenuDocksSeparator,
+					    action);
+	else
+		ui->menuDocks->addAction(action);
+#else
 	QAction *action = ui->menuDocks->addAction(dock->windowTitle());
-	action->setProperty("uuid", dock->property("uuid").toString());
+#endif
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
-	extraDocks.push_back(dock);
+	oldExtraDocks.push_back(dock);
 
 	bool lock = ui->lockDocks->isChecked();
 	QDockWidget::DockWidgetFeatures features =
@@ -9963,13 +10002,63 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	dock->setFeatures(features);
 
 	/* prune deleted docks */
-	for (int i = extraDocks.size() - 1; i >= 0; i--) {
-		if (!extraDocks[i]) {
-			extraDocks.removeAt(i);
+	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
+		if (!oldExtraDocks[i]) {
+			oldExtraDocks.removeAt(i);
 		}
 	}
 
 	return action;
+}
+
+void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
+			     bool extraBrowser)
+{
+	if (dock->objectName().isEmpty())
+		return;
+
+	bool lock = ui->lockDocks->isChecked();
+	QDockWidget::DockWidgetFeatures features =
+		lock ? QDockWidget::NoDockWidgetFeatures
+		     : (QDockWidget::DockWidgetClosable |
+			QDockWidget::DockWidgetMovable |
+			QDockWidget::DockWidgetFloatable);
+
+	setupDockAction(dock);
+	dock->setFeatures(features);
+	addDockWidget(area, dock);
+
+#ifdef BROWSER_AVAILABLE
+	if (extraBrowser && extraBrowserMenuDocksSeparator.isNull())
+		extraBrowserMenuDocksSeparator = ui->menuDocks->addSeparator();
+
+	if (!extraBrowser && !extraBrowserMenuDocksSeparator.isNull())
+		ui->menuDocks->insertAction(extraBrowserMenuDocksSeparator,
+					    dock->toggleViewAction());
+	else
+		ui->menuDocks->addAction(dock->toggleViewAction());
+
+	if (extraBrowser)
+		return;
+#else
+	UNUSED_PARAMETER(extraBrowser);
+
+	ui->menuDocks->addAction(dock->toggleViewAction());
+#endif
+
+	extraDockNames.push_back(dock->objectName());
+	extraDocks.push_back(QSharedPointer<QDockWidget>(dock));
+}
+
+void OBSBasic::RemoveDockWidget(const QString &name)
+{
+	if (!extraDockNames.contains(name))
+		return;
+
+	int idx = extraDockNames.indexOf(name);
+	extraDockNames.removeAt(idx);
+	extraDocks[idx].clear();
+	extraDocks.removeAt(idx);
 }
 
 OBSBasic *OBSBasic::Get()
