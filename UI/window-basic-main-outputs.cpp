@@ -234,7 +234,7 @@ bool BasicOutputHandler::StartVirtualCam()
 		if (!video)
 			return false;
 
-		obs_output_set_media(virtualCam, video, obs_get_audio());
+		obs_output_set_media(virtualCam, obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING), obs_get_audio());
 		if (!Active())
 			SetupOutputs();
 
@@ -752,7 +752,7 @@ inline void SimpleOutput::SetupOutputs()
 
 	if (usingRecordingPreset) {
 		if (ffmpegOutput) {
-			obs_output_set_media(fileOutput, obs_get_video(),
+			obs_output_set_media(fileOutput, obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING),
 					     obs_get_audio());
 		} else {
 			obs_encoder_set_video(videoRecording, obs_get_video());
@@ -1586,7 +1586,7 @@ inline void AdvancedOutput::SetupFFmpeg()
 	}
 
 	obs_output_set_mixers(fileOutput, aMixes);
-	obs_output_set_media(fileOutput, obs_get_video(), obs_get_audio());
+	obs_output_set_media(fileOutput, obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING), obs_get_audio());
 	obs_output_update(fileOutput, settings);
 }
 

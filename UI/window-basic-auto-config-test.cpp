@@ -654,7 +654,7 @@ bool AutoConfigTestPage::TestSoftwareEncoding()
 		obs_encoder_set_audio(aencoder, obs_get_audio());
 		obs_encoder_update(vencoder, vencoder_settings);
 
-		obs_output_set_media(output, obs_get_video(), obs_get_audio());
+		obs_output_set_media(output, obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING), obs_get_audio());
 
 		QString cxStr = QString::number(cx);
 		QString cyStr = QString::number(cy);
