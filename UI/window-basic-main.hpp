@@ -228,7 +228,7 @@ private:
 
 	std::vector<OBSSignal> signalHandlers;
 
-	QList<QPointer<QDockWidget>> extraDocks;
+	QList<QPointer<QDockWidget>> oldExtraDocks;
 
 	bool loaded = false;
 	long disableSaving = 1;
@@ -551,9 +551,13 @@ private:
 
 	void UpdatePreviewProgramIndicators();
 
+	QStringList extraDockNames;
+	QList<QSharedPointer<QDockWidget>> extraDocks;
+
 #ifdef BROWSER_AVAILABLE
+	QPointer<QAction> extraBrowserMenuDocksSeparator;
+
 	QList<QSharedPointer<QDockWidget>> extraBrowserDocks;
-	QList<QSharedPointer<QAction>> extraBrowserDockActions;
 	QStringList extraBrowserDockTargets;
 
 	void ClearExtraBrowserDocks();
@@ -957,6 +961,9 @@ public:
 	void CreateEditTransformWindow(obs_sceneitem_t *item);
 
 	QAction *AddDockWidget(QDockWidget *dock);
+	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
+			   bool extraBrowser = false);
+	void RemoveDockWidget(const QString &name);
 
 	static OBSBasic *Get();
 
