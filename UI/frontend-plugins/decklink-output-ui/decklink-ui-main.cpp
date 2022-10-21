@@ -192,8 +192,10 @@ void preview_output_start()
 		}
 		obs_add_main_render_callback(render_preview_source, &context);
 
-		obs_output_set_media(context.output, obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING),
-				     obs_get_audio());
+		obs_output_set_media(
+			context.output,
+			obs_video_mix_get(0, OBS_RECORDING_VIDEO_RENDERING),
+			obs_get_audio());
 		bool started = obs_output_start(context.output);
 
 		preview_output_running = started;
