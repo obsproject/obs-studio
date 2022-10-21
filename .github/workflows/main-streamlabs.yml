@@ -48,7 +48,7 @@ jobs:
           submodules: 'recursive'
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo name=VERSION::${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
         shell: bash
       - name: 'Setup build environment'
         id: setup
@@ -64,7 +64,7 @@ jobs:
             brew uninstall ${REMOVE_FORMULAS}
           fi
 
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "name=commitHash::$(git rev-parse --short=9 HEAD) >> $GITHUB_OUTPUT"
       - name: 'Switch to Xcode 14.1'
         run: sudo xcode-select -switch /Applications/Xcode_14.1.app
       - name: Configure / Build 
@@ -80,7 +80,7 @@ jobs:
           TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}-${{ matrix.arch }}
       - name: Configure AWS credentials
         if: startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
           aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
@@ -126,7 +126,7 @@ jobs:
           submodules: 'recursive'
       - name: Get the version
         id: get_version
-        run: echo ::set-output name=VERSION::${GITHUB_REF/refs\/tags\//}
+        run: echo name=VERSION::${GITHUB_REF/refs\/tags\//} >> $GITHUB_OUTPUT
         shell: bash
       - name: Configure / Build 
         run: ./slobs_CI/win-build.cmd
@@ -156,7 +156,7 @@ jobs:
           TARGET_ARTIFACT: ${{env.PACKAGE_NAME}}-${{env.OS_TAG}}-${{matrix.ReleaseName}}-${{ steps.get_version.outputs.VERSION }}
       - name: Configure AWS credentials
         if: startsWith(github.ref, 'refs/tags/')
-        uses: aws-actions/configure-aws-credentials@v1
+        uses: aws-actions/configure-aws-credentials@v1-node16
         with:
           aws-access-key-id: ${{secrets.AWS_RELEASE_ACCESS_KEY_ID}}
           aws-secret-access-key: ${{secrets.AWS_RELEASE_SECRET_ACCESS_KEY}}
