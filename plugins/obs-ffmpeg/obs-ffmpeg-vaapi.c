@@ -48,6 +48,11 @@
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+enum obs_vaapi_codec {
+	OBS_VAAPI_CODEC_H264,
+	OBS_VAAPI_CODEC_AV1,
+};
+
 struct vaapi_encoder {
 	obs_encoder_t *encoder;
 
@@ -56,6 +61,7 @@ struct vaapi_encoder {
 
 	const AVCodec *vaapi;
 	AVCodecContext *context;
+	enum obs_vaapi_codec type;
 
 	AVPacket *packet;
 
@@ -78,6 +84,12 @@ static const char *vaapi_getname(void *unused)
 {
 	UNUSED_PARAMETER(unused);
 	return "FFMPEG VAAPI H.264";
+}
+
+static const char *vaapi_av1_getname(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return "FFMPEG VAAPI AV1";
 }
 
 static inline bool valid_format(enum video_format format)
@@ -154,6 +166,7 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 	/* 3. set up codec */
 	enc->context->pix_fmt = AV_PIX_FMT_VAAPI;
 	enc->context->hw_frames_ctx = av_buffer_ref(enc->vaframes_ref);
+	enc->context->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
 
 	ret = avcodec_open2(enc->context, enc->vaapi, NULL);
 	if (ret < 0) {
@@ -209,7 +222,11 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	int bf = (int)obs_data_get_int(settings, "bf");
 	int qp = rc_mode->qp ? (int)obs_data_get_int(settings, "qp") : 0;
 
-	av_opt_set_int(enc->context->priv_data, "qp", qp, 0);
+	if (enc->type == OBS_VAAPI_CODEC_H264) {
+		av_opt_set_int(enc->context->priv_data, "qp", qp, 0);
+	} else if (enc->type == OBS_VAAPI_CODEC_AV1) {
+		enc->context->global_quality = qp;
+	}
 
 	int level = (int)obs_data_get_int(settings, "level");
 	int bitrate = rc_mode->bitrate
@@ -240,9 +257,11 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 
 	vaapi_video_info(enc, &info);
 
-	enc->context->profile = profile;
+	if (enc->type == OBS_VAAPI_CODEC_H264) {
+		enc->context->profile = profile;
+		enc->context->level = level;
+	}
 	enc->context->max_b_frames = bf;
-	enc->context->level = level;
 	enc->context->bit_rate = bitrate * 1000;
 	enc->context->rc_max_rate = maxrate * 1000;
 
@@ -341,7 +360,8 @@ static void vaapi_destroy(void *data)
 	bfree(enc);
 }
 
-static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder,
+			  enum obs_vaapi_codec type)
 {
 	struct vaapi_encoder *enc;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(58, 9, 100)
@@ -351,7 +371,12 @@ static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 	enc = bzalloc(sizeof(*enc));
 	enc->encoder = encoder;
 
-	enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
+	if (type == OBS_VAAPI_CODEC_AV1) {
+		enc->vaapi = avcodec_find_encoder_by_name("av1_vaapi");
+	} else if (type == OBS_VAAPI_CODEC_H264) {
+		enc->vaapi = avcodec_find_encoder_by_name("h264_vaapi");
+	}
+	enc->type = type;
 
 	enc->first_packet = true;
 
@@ -376,6 +401,16 @@ static void *vaapi_create(obs_data_t *settings, obs_encoder_t *encoder)
 fail:
 	vaapi_destroy(enc);
 	return NULL;
+}
+
+static void *vaapi_h264_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create(settings, encoder, OBS_VAAPI_CODEC_H264);
+}
+
+static void *vaapi_av1_create(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return vaapi_create(settings, encoder, OBS_VAAPI_CODEC_AV1);
 }
 
 static inline void copy_data(AVFrame *pic, const struct encoder_frame *frame,
@@ -466,18 +501,29 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 
 	if (got_packet && enc->packet->size) {
 		if (enc->first_packet) {
-			uint8_t *new_packet;
-			size_t size;
-
 			enc->first_packet = false;
-			obs_extract_avc_headers(enc->packet->data,
-						enc->packet->size, &new_packet,
-						&size, &enc->header,
-						&enc->header_size, &enc->sei,
-						&enc->sei_size);
+			if (enc->type == OBS_VAAPI_CODEC_H264) {
+				uint8_t *new_packet;
+				size_t size;
 
-			da_copy_array(enc->buffer, new_packet, size);
-			bfree(new_packet);
+				obs_extract_avc_headers(
+					enc->packet->data, enc->packet->size,
+					&new_packet, &size, &enc->header,
+					&enc->header_size, &enc->sei,
+					&enc->sei_size);
+
+				da_copy_array(enc->buffer, new_packet, size);
+				bfree(new_packet);
+			} else if (enc->type == OBS_VAAPI_CODEC_AV1) {
+				enc->header_size = enc->context->extradata_size;
+				enc->header = bzalloc(enc->header_size);
+				memcpy(enc->header, enc->context->extradata,
+				       enc->context->extradata_size);
+
+				warn("av1, sending first frame");
+				da_copy_array(enc->buffer, enc->packet->data,
+					      enc->packet->size);
+			}
 		} else {
 			da_copy_array(enc->buffer, enc->packet->data,
 				      enc->packet->size);
@@ -488,7 +534,13 @@ static bool vaapi_encode(void *data, struct encoder_frame *frame,
 		packet->data = enc->buffer.array;
 		packet->size = enc->buffer.num;
 		packet->type = OBS_ENCODER_VIDEO;
-		packet->keyframe = obs_avc_keyframe(packet->data, packet->size);
+		if (enc->type == OBS_VAAPI_CODEC_H264) {
+			packet->keyframe =
+				obs_avc_keyframe(packet->data, packet->size);
+		} else {
+			packet->keyframe =
+				!!(enc->packet->flags & AV_PKT_FLAG_KEY);
+		}
 		*received_packet = true;
 	} else {
 		*received_packet = false;
@@ -509,13 +561,26 @@ static void set_visible(obs_properties_t *ppts, const char *name, bool visible)
 	obs_property_set_visible(p, visible);
 }
 
-static void vaapi_defaults(obs_data_t *settings)
+static void vaapi_h264_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "vaapi_device",
 				    "/dev/dri/renderD128");
 	obs_data_set_default_int(settings, "profile",
 				 FF_PROFILE_H264_CONSTRAINED_BASELINE);
 	obs_data_set_default_int(settings, "level", 40);
+	obs_data_set_default_int(settings, "bitrate", 2500);
+	obs_data_set_default_int(settings, "keyint_sec", 0);
+	obs_data_set_default_int(settings, "bf", 0);
+	obs_data_set_default_int(settings, "rendermode", 0);
+	obs_data_set_default_string(settings, "rate_control", "CBR");
+	obs_data_set_default_int(settings, "qp", 20);
+	obs_data_set_default_int(settings, "maxrate", 0);
+}
+
+static void vaapi_av1_defaults(obs_data_t *settings)
+{
+	obs_data_set_default_string(settings, "vaapi_device",
+				    "/dev/dri/renderD128");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "keyint_sec", 0);
 	obs_data_set_default_int(settings, "bf", 0);
@@ -568,7 +633,8 @@ static bool get_device_name_from_pci(struct pci_access *pacc, char *pci_slot,
 	return false;
 }
 
-static obs_properties_t *vaapi_properties(void *unused)
+static obs_properties_t *vaapi_properties(void *unused,
+					  enum obs_vaapi_codec type)
 {
 	UNUSED_PARAMETER(unused);
 
@@ -642,28 +708,33 @@ static obs_properties_t *vaapi_properties(void *unused)
 		}
 	}
 
-	list = obs_properties_add_list(props, "profile",
-				       obs_module_text("Profile"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, "Constrained Baseline (default)",
-				  FF_PROFILE_H264_CONSTRAINED_BASELINE);
-	obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
-	obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
+	if (type == OBS_VAAPI_CODEC_H264) {
+		// Only profile0 supported for av1 so dont list anything.
+		list = obs_properties_add_list(props, "profile",
+					       obs_module_text("Profile"),
+					       OBS_COMBO_TYPE_LIST,
+					       OBS_COMBO_FORMAT_INT);
+		obs_property_list_add_int(list,
+					  "Constrained Baseline (default)",
+					  FF_PROFILE_H264_CONSTRAINED_BASELINE);
+		obs_property_list_add_int(list, "Main", FF_PROFILE_H264_MAIN);
+		obs_property_list_add_int(list, "High", FF_PROFILE_H264_HIGH);
 
-	list = obs_properties_add_list(props, "level", obs_module_text("Level"),
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_INT);
-	obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
-	obs_property_list_add_int(list, "3.0", 30);
-	obs_property_list_add_int(list, "3.1", 31);
-	obs_property_list_add_int(list, "4.0 (default) (Compatibility mode)",
-				  40);
-	obs_property_list_add_int(list, "4.1", 41);
-	obs_property_list_add_int(list, "4.2", 42);
-	obs_property_list_add_int(list, "5.0", 50);
-	obs_property_list_add_int(list, "5.1", 51);
-	obs_property_list_add_int(list, "5.2", 52);
+		list = obs_properties_add_list(props, "level",
+					       obs_module_text("Level"),
+					       OBS_COMBO_TYPE_LIST,
+					       OBS_COMBO_FORMAT_INT);
+		obs_property_list_add_int(list, "Auto", FF_LEVEL_UNKNOWN);
+		obs_property_list_add_int(list, "3.0", 30);
+		obs_property_list_add_int(list, "3.1", 31);
+		obs_property_list_add_int(
+			list, "4.0 (default) (Compatibility mode)", 40);
+		obs_property_list_add_int(list, "4.1", 41);
+		obs_property_list_add_int(list, "4.2", 42);
+		obs_property_list_add_int(list, "5.0", 50);
+		obs_property_list_add_int(list, "5.1", 51);
+		obs_property_list_add_int(list, "5.2", 52);
+	}
 
 	list = obs_properties_add_list(props, "rate_control",
 				       obs_module_text("RateControl"),
@@ -694,6 +765,15 @@ static obs_properties_t *vaapi_properties(void *unused)
 	return props;
 }
 
+static obs_properties_t *vaapi_h264_properties(void *unused)
+{
+	return vaapi_properties(unused, OBS_VAAPI_CODEC_H264);
+}
+static obs_properties_t *vaapi_av1_properties(void *unused)
+{
+	return vaapi_properties(unused, OBS_VAAPI_CODEC_AV1);
+}
+
 static bool vaapi_extra_data(void *data, uint8_t **extra_data, size_t *size)
 {
 	struct vaapi_encoder *enc = data;
@@ -717,11 +797,26 @@ struct obs_encoder_info vaapi_encoder_info = {
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
 	.get_name = vaapi_getname,
-	.create = vaapi_create,
+	.create = vaapi_h264_create,
 	.destroy = vaapi_destroy,
 	.encode = vaapi_encode,
-	.get_defaults = vaapi_defaults,
-	.get_properties = vaapi_properties,
+	.get_defaults = vaapi_h264_defaults,
+	.get_properties = vaapi_h264_properties,
+	.get_extra_data = vaapi_extra_data,
+	.get_sei_data = vaapi_sei_data,
+	.get_video_info = vaapi_video_info,
+};
+
+struct obs_encoder_info vaapi_av1_encoder_info = {
+	.id = "ffmpeg_vaapi_av1",
+	.type = OBS_ENCODER_VIDEO,
+	.codec = "av1",
+	.get_name = vaapi_av1_getname,
+	.create = vaapi_av1_create,
+	.destroy = vaapi_destroy,
+	.encode = vaapi_encode,
+	.get_defaults = vaapi_av1_defaults,
+	.get_properties = vaapi_av1_properties,
 	.get_extra_data = vaapi_extra_data,
 	.get_sei_data = vaapi_sei_data,
 	.get_video_info = vaapi_video_info,
