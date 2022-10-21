@@ -713,12 +713,6 @@
     <addaction name="lockDocks"/>
     <addaction name="resetDocks"/>
     <addaction name="separator"/>
-    <addaction name="toggleScenes"/>
-    <addaction name="toggleSources"/>
-    <addaction name="toggleMixer"/>
-    <addaction name="toggleTransitions"/>
-    <addaction name="toggleControls"/>
-    <addaction name="toggleStats"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menuBasic_MainMenu_Edit"/>
@@ -2187,61 +2181,6 @@
     <string>Basic.MainMenu.Docks.LockDocks</string>
    </property>
   </action>
-  <action name="toggleScenes">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Scenes</string>
-   </property>
-  </action>
-  <action name="toggleSources">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Sources</string>
-   </property>
-  </action>
-  <action name="toggleMixer">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Mixer</string>
-   </property>
-  </action>
-  <action name="toggleTransitions">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.SceneTransitions</string>
-   </property>
-  </action>
-  <action name="toggleControls">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Main.Controls</string>
-   </property>
-  </action>
   <action name="actionHelpPortal">
    <property name="text">
     <string>Basic.MainMenu.Help.HelpPortal</string>
@@ -2260,17 +2199,6 @@
   <action name="actionDiscord">
    <property name="text">
     <string>Basic.MainMenu.Help.Discord</string>
-   </property>
-  </action>
-  <action name="toggleStats">
-   <property name="checkable">
-    <bool>true</bool>
-   </property>
-   <property name="checked">
-    <bool>true</bool>
-   </property>
-   <property name="text">
-    <string>Basic.Stats</string>
    </property>
   </action>
   <action name="actionShowAbout">
