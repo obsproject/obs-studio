@@ -251,6 +251,32 @@ void assignDockToggle(QDockWidget *dock, QAction *action)
 	dock->connect(action, &QAction::toggled, handleMenuToggle);
 }
 
+void setupDockAction(QDockWidget *dock)
+{
+	QAction *action = dock->toggleViewAction();
+
+	auto neverDisable = [action]() {
+		QSignalBlocker block(action);
+		action->setEnabled(true);
+	};
+
+	auto newToggleView = [dock](bool check) {
+		QSignalBlocker block(dock);
+		dock->setVisible(check);
+	};
+
+	// Replace the slot connected by default
+	action->disconnect(SIGNAL(triggered(bool)));
+	dock->connect(action, &QAction::triggered, newToggleView);
+
+	// Make the action unable to be disabled
+#if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
+	action->connect(action, &QAction::changed, neverDisable);
+#else
+	action->connect(action, &QAction::enabledChanged, neverDisable);
+#endif
+}
+
 extern void RegisterTwitchAuth();
 extern void RegisterRestreamAuth();
 #if YOUTUBE_ENABLED
@@ -423,12 +449,20 @@ OBSBasic::OBSBasic(QWidget *parent)
 	addNudge(Qt::SHIFT | Qt::Key_Left, MoveDir::Left, 10);
 	addNudge(Qt::SHIFT | Qt::Key_Right, MoveDir::Right, 10);
 
-	assignDockToggle(ui->scenesDock, ui->toggleScenes);
-	assignDockToggle(ui->sourcesDock, ui->toggleSources);
-	assignDockToggle(ui->mixerDock, ui->toggleMixer);
-	assignDockToggle(ui->transitionsDock, ui->toggleTransitions);
-	assignDockToggle(ui->controlsDock, ui->toggleControls);
-	assignDockToggle(statsDock, ui->toggleStats);
+	/* Setup dock toggle action
+	 * And hide all docks before restoring parent geometry */
+#define SETUP_DOCK(dock)                                    \
+	setupDockAction(dock);                              \
+	ui->menuDocks->addAction(dock->toggleViewAction()); \
+	dock->setVisible(false);
+
+	SETUP_DOCK(ui->scenesDock);
+	SETUP_DOCK(ui->sourcesDock);
+	SETUP_DOCK(ui->mixerDock);
+	SETUP_DOCK(ui->transitionsDock);
+	SETUP_DOCK(ui->controlsDock);
+	SETUP_DOCK(statsDock);
+#undef SETUP_DOCK
 
 	// Register shortcuts for Undo/Redo
 	ui->actionMainUndo->setShortcut(Qt::CTRL | Qt::Key_Z);
@@ -439,14 +473,6 @@ OBSBasic::OBSBasic(QWidget *parent)
 
 	ui->actionMainUndo->setShortcutContext(Qt::ApplicationShortcut);
 	ui->actionMainRedo->setShortcutContext(Qt::ApplicationShortcut);
-
-	//hide all docking panes
-	ui->toggleScenes->setChecked(false);
-	ui->toggleSources->setChecked(false);
-	ui->toggleMixer->setChecked(false);
-	ui->toggleTransitions->setChecked(false);
-	ui->toggleControls->setChecked(false);
-	ui->toggleStats->setChecked(false);
 
 	QPoint curPos;
 
@@ -2015,10 +2041,12 @@ void OBSBasic::OBSInit()
 		QAction *action = new QAction(QTStr("Basic.MainMenu.Docks."
 						    "CustomBrowserDocks"),
 					      this);
-		ui->menuDocks->insertAction(ui->toggleScenes, action);
+		ui->menuDocks->insertAction(ui->scenesDock->toggleViewAction(),
+					    action);
 		connect(action, &QAction::triggered, this,
 			&OBSBasic::ManageExtraBrowserDocks);
-		ui->menuDocks->insertSeparator(ui->toggleScenes);
+		ui->menuDocks->insertSeparator(
+			ui->scenesDock->toggleViewAction());
 
 		LoadExtraBrowserDocks();
 	}
