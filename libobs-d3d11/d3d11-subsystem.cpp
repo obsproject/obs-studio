@@ -66,7 +66,8 @@ gs_obj::~gs_obj()
 		next->prev_next = prev_next;
 }
 
-static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
+static gs_monitor_color_info get_monitor_color_info(gs_device_t *device,
+						    HMONITOR hMonitor)
 {
 	IDXGIFactory1 *factory1 = device->factory;
 	if (!factory1->IsCurrent()) {
@@ -75,7 +76,8 @@ static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 		device->monitor_to_hdr.clear();
 	}
 
-	for (const std::pair<HMONITOR, bool> &pair : device->monitor_to_hdr) {
+	for (const std::pair<HMONITOR, gs_monitor_color_info> &pair :
+	     device->monitor_to_hdr) {
 		if (pair.first == hMonitor)
 			return pair.second;
 	}
@@ -96,15 +98,19 @@ static bool screen_supports_hdr(gs_device_t *device, HMONITOR hMonitor)
 					const bool hdr =
 						desc1.ColorSpace ==
 						DXGI_COLOR_SPACE_RGB_FULL_G2084_NONE_P2020;
-					device->monitor_to_hdr.emplace_back(
-						hMonitor, hdr);
-					return hdr;
+					return device->monitor_to_hdr
+						.emplace_back(
+							hMonitor,
+							gs_monitor_color_info(
+								hdr,
+								desc1.BitsPerColor))
+						.second;
 				}
 			}
 		}
 	}
 
-	return false;
+	return gs_monitor_color_info(false, 8);
 }
 
 static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
@@ -115,8 +121,12 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 		const HMONITOR hMonitor =
 			MonitorFromWindow(hwnd, MONITOR_DEFAULTTONEAREST);
 		if (hMonitor) {
-			if (screen_supports_hdr(device, hMonitor))
+			const gs_monitor_color_info info =
+				get_monitor_color_info(device, hMonitor);
+			if (info.hdr)
 				next_space = GS_CS_709_SCRGB;
+			else if (info.bits_per_color > 8)
+				next_space = GS_CS_SRGB_16F;
 		}
 	}
 
@@ -126,7 +136,14 @@ static enum gs_color_space get_next_space(gs_device_t *device, HWND hwnd,
 static enum gs_color_format
 get_swap_format_from_space(gs_color_space space, gs_color_format sdr_format)
 {
-	return (space == GS_CS_709_SCRGB) ? GS_RGBA16F : sdr_format;
+	gs_color_format format = sdr_format;
+	switch (space) {
+	case GS_CS_SRGB_16F:
+	case GS_CS_709_SCRGB:
+		format = GS_RGBA16F;
+	}
+
+	return format;
 }
 
 static inline enum gs_color_space
@@ -3068,7 +3085,7 @@ extern "C" EXPORT bool device_p010_available(gs_device_t *device)
 extern "C" EXPORT bool device_is_monitor_hdr(gs_device_t *device, void *monitor)
 {
 	const HMONITOR hMonitor = static_cast<HMONITOR>(monitor);
-	return screen_supports_hdr(device, hMonitor);
+	return get_monitor_color_info(device, hMonitor).hdr;
 }
 
 extern "C" EXPORT void device_debug_marker_begin(gs_device_t *,
