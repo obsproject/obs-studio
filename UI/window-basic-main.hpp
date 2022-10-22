@@ -557,6 +557,9 @@ private:
 	QStringList extraDockNames;
 	QList<QSharedPointer<QDockWidget>> extraDocks;
 
+	QStringList extraCustomDockNames;
+	QList<QPointer<QDockWidget>> extraCustomDocks;
+
 #ifdef BROWSER_AVAILABLE
 	QPointer<QAction> extraBrowserMenuDocksSeparator;
 
@@ -972,6 +975,7 @@ public:
 			   bool extraBrowser = false);
 	void RemoveDockWidget(const QString &name);
 	bool IsDockObjectNameUsed(const QString &name);
+	void AddCustomDockWidget(QDockWidget *dock);
 
 	static OBSBasic *Get();
 
@@ -1205,6 +1209,7 @@ private slots:
 	void ResizeOutputSizeOfSource();
 
 	void RepairOldExtraDockName();
+	void RepairCustomExtraDockName();
 
 public slots:
 	void on_actionResetTransform_triggered();

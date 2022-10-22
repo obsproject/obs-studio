@@ -344,6 +344,12 @@ void obs_frontend_remove_dock(const char *id)
 		c->obs_frontend_remove_dock(id);
 }
 
+bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+{
+	return !!callbacks_valid() ? c->obs_frontend_add_custom_qdock(id, dock)
+				   : false;
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {
