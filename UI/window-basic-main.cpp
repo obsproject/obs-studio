@@ -9305,6 +9305,7 @@ void OBSBasic::on_resetDocks_triggered(bool force)
 	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
 		if (!oldExtraDocks[i]) {
 			oldExtraDocks.removeAt(i);
+			oldExtraDockNames.removeAt(i);
 		}
 	}
 
@@ -9413,6 +9414,7 @@ void OBSBasic::on_lockDocks_toggled(bool lock)
 	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
 		if (!oldExtraDocks[i]) {
 			oldExtraDocks.removeAt(i);
+			oldExtraDockNames.removeAt(i);
 		} else {
 			oldExtraDocks[i]->setFeatures(features);
 		}
@@ -10221,6 +10223,10 @@ void OBSBasic::ResizeOutputSizeOfSource()
 
 QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 {
+	// Prevent the object name from being changed
+	connect(dock, &QObject::objectNameChanged, this,
+		&OBSBasic::RepairOldExtraDockName);
+
 #ifdef BROWSER_AVAILABLE
 	QAction *action = new QAction(dock->windowTitle(), ui->menuDocks);
 
@@ -10235,6 +10241,7 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	action->setCheckable(true);
 	assignDockToggle(dock, action);
 	oldExtraDocks.push_back(dock);
+	oldExtraDockNames.push_back(dock->objectName());
 
 	bool lock = ui->lockDocks->isChecked();
 	QDockWidget::DockWidgetFeatures features =
@@ -10249,10 +10256,28 @@ QAction *OBSBasic::AddDockWidget(QDockWidget *dock)
 	for (int i = oldExtraDocks.size() - 1; i >= 0; i--) {
 		if (!oldExtraDocks[i]) {
 			oldExtraDocks.removeAt(i);
+			oldExtraDockNames.removeAt(i);
 		}
 	}
 
 	return action;
+}
+
+void OBSBasic::RepairOldExtraDockName()
+{
+	QDockWidget *dock = reinterpret_cast<QDockWidget *>(sender());
+	int idx = oldExtraDocks.indexOf(dock);
+	QSignalBlocker block(dock);
+
+	if (idx == -1) {
+		blog(LOG_WARNING, "A dock got its object name changed");
+		return;
+	}
+
+	blog(LOG_WARNING, "The dock '%s' got its object name restored",
+	     QT_TO_UTF8(oldExtraDockNames[idx]));
+
+	dock->setObjectName(oldExtraDockNames[idx]);
 }
 
 void OBSBasic::AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
@@ -10303,6 +10328,21 @@ void OBSBasic::RemoveDockWidget(const QString &name)
 	extraDockNames.removeAt(idx);
 	extraDocks[idx].clear();
 	extraDocks.removeAt(idx);
+}
+
+bool OBSBasic::IsDockObjectNameUsed(const QString &name)
+{
+	QStringList list;
+	list << "scenesDock"
+	     << "sourcesDock"
+	     << "mixerDock"
+	     << "transitionsDock"
+	     << "controlsDock"
+	     << "statsDock";
+	list << oldExtraDockNames;
+	list << extraDockNames;
+
+	return list.contains(name);
 }
 
 OBSBasic *OBSBasic::Get()

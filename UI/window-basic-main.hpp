@@ -229,6 +229,7 @@ private:
 	std::vector<OBSSignal> signalHandlers;
 
 	QList<QPointer<QDockWidget>> oldExtraDocks;
+	QStringList oldExtraDockNames;
 
 	bool loaded = false;
 	long disableSaving = 1;
@@ -970,6 +971,7 @@ public:
 	void AddDockWidget(QDockWidget *dock, Qt::DockWidgetArea area,
 			   bool extraBrowser = false);
 	void RemoveDockWidget(const QString &name);
+	bool IsDockObjectNameUsed(const QString &name);
 
 	static OBSBasic *Get();
 
@@ -1201,6 +1203,8 @@ private slots:
 	void StackedMixerAreaContextMenuRequested();
 
 	void ResizeOutputSizeOfSource();
+
+	void RepairOldExtraDockName();
 
 public slots:
 	void on_actionResetTransform_triggered();

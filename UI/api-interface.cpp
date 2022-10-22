@@ -379,7 +379,23 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 
 	void *obs_frontend_add_dock(void *dock) override
 	{
-		return (void *)main->AddDockWidget((QDockWidget *)dock);
+		QDockWidget *d = reinterpret_cast<QDockWidget *>(dock);
+
+		QString name = d->objectName();
+		if (name.isEmpty() || main->IsDockObjectNameUsed(name)) {
+			blog(LOG_WARNING,
+			     "The object name of the added dock is empty or already used,"
+			     " a temporary one will be set to avoid conflicts");
+
+			char *uuid = os_generate_uuid();
+			name = QT_UTF8(uuid);
+			bfree(uuid);
+			name.append("_oldExtraDock");
+
+			d->setObjectName(name);
+		}
+
+		return (void *)main->AddDockWidget(d);
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
