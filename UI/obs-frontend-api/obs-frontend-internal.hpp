@@ -66,6 +66,11 @@ struct obs_frontend_callbacks {
 
 	virtual void *obs_frontend_add_dock(void *dock) = 0;
 
+	virtual bool obs_frontend_add_dock_by_id(const char *id,
+						 const char *title,
+						 void *widget) = 0;
+	virtual void obs_frontend_remove_dock(const char *id) = 0;
+
 	virtual void
 	obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					void *private_data) = 0;

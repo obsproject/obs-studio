@@ -330,6 +330,20 @@ void *obs_frontend_add_dock(void *dock)
 	return !!callbacks_valid() ? c->obs_frontend_add_dock(dock) : nullptr;
 }
 
+bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+				 void *widget)
+{
+	return !!callbacks_valid()
+		       ? c->obs_frontend_add_dock_by_id(id, title, widget)
+		       : false;
+}
+
+void obs_frontend_remove_dock(const char *id)
+{
+	if (callbacks_valid())
+		c->obs_frontend_remove_dock(id);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {
