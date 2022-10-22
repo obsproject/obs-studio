@@ -398,6 +398,35 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return (void *)main->AddDockWidget(d);
 	}
 
+	bool obs_frontend_add_dock_by_id(const char *id, const char *title,
+					 void *widget) override
+	{
+		if (main->IsDockObjectNameUsed(QT_UTF8(id))) {
+			blog(LOG_WARNING,
+			     "Dock id '%s' already used!  "
+			     "Duplicate library?",
+			     id);
+			return false;
+		}
+
+		OBSDock *dock = new OBSDock(main);
+		dock->setWidget((QWidget *)widget);
+		dock->setWindowTitle(QT_UTF8(title));
+		dock->setObjectName(QT_UTF8(id));
+
+		main->AddDockWidget(dock, Qt::RightDockWidgetArea);
+
+		dock->setFloating(true);
+		dock->setVisible(false);
+
+		return true;
+	}
+
+	void obs_frontend_remove_dock(const char *id) override
+	{
+		main->RemoveDockWidget(QT_UTF8(id));
+	}
+
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 					     void *private_data) override
 	{
