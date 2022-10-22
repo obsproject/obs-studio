@@ -92,17 +92,24 @@ static inline void gs_float3_srgb_linear_to_nonlinear(float *f)
 
 static inline void gs_premultiply_xyza(uint8_t *data)
 {
-	uint8_t u[4];
-	float f[4];
-	memcpy(&u, data, sizeof(u));
-	gs_u8x4_to_float4(f, u);
-	gs_premultiply_float4(f);
-	gs_float3_to_u8x3(u, f);
-	memcpy(data, &u, sizeof(u));
+// This can get vectorized with both NEON and AVX2. The early return prevents
+// the vectorization in both cases.
+#if !(defined(__ARM_NEON) || defined(__AVX2__))
+	if (data[3] == 0xFF)
+		return;
+#endif
+
+	uint16_t a = data[3];
+	data[0] = (data[0] * a + 127) / 255;
+	data[1] = (data[1] * a + 127) / 255;
+	data[2] = (data[2] * a + 127) / 255;
 }
 
 static inline void gs_premultiply_xyza_srgb(uint8_t *data)
 {
+	if (data[3] == 0xFF)
+		return;
+
 	uint8_t u[4];
 	float f[4];
 	memcpy(&u, data, sizeof(u));
@@ -117,28 +124,38 @@ static inline void gs_premultiply_xyza_srgb(uint8_t *data)
 static inline void gs_premultiply_xyza_restrict(uint8_t *__restrict dst,
 						const uint8_t *__restrict src)
 {
-	uint8_t u[4];
-	float f[4];
-	memcpy(&u, src, sizeof(u));
-	gs_u8x4_to_float4(f, u);
-	gs_premultiply_float4(f);
-	gs_float3_to_u8x3(u, f);
-	memcpy(dst, &u, sizeof(u));
+// This can get vectorized with both NEON and AVX2. The early return prevents
+// the vectorization in both cases.
+#if !(defined(__ARM_NEON) || defined(__AVX2__))
+	if (src[3] == 0xFF) {
+		memcpy(dst, src, sizeof(uint8_t[4]));
+		return;
+	}
+#endif
+
+	uint16_t a = src[3];
+	dst[0] = (src[0] * a + 127) / 255;
+	dst[1] = (src[1] * a + 127) / 255;
+	dst[2] = (src[2] * a + 127) / 255;
 }
 
 static inline void
 gs_premultiply_xyza_srgb_restrict(uint8_t *__restrict dst,
 				  const uint8_t *__restrict src)
 {
-	uint8_t u[4];
-	float f[4];
-	memcpy(&u, src, sizeof(u));
-	gs_u8x4_to_float4(f, u);
-	gs_float3_srgb_nonlinear_to_linear(f);
-	gs_premultiply_float4(f);
-	gs_float3_srgb_linear_to_nonlinear(f);
-	gs_float3_to_u8x3(u, f);
-	memcpy(dst, &u, sizeof(u));
+	if (src[3] == 0xFF) {
+		memcpy(dst, src, sizeof(uint8_t[4]));
+	} else {
+		uint8_t u[4];
+		float f[4];
+		memcpy(&u, src, sizeof(u));
+		gs_u8x4_to_float4(f, u);
+		gs_float3_srgb_nonlinear_to_linear(f);
+		gs_premultiply_float4(f);
+		gs_float3_srgb_linear_to_nonlinear(f);
+		gs_float3_to_u8x3(u, f);
+		memcpy(dst, &u, sizeof(u));
+	}
 }
 
 static inline void gs_premultiply_xyza_loop(uint8_t *data, size_t texel_count)
