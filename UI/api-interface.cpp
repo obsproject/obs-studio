@@ -6,6 +6,10 @@
 
 #include <functional>
 
+#ifdef ENABLE_WAYLAND
+#include <obs-nix-platform.h>
+#endif
+
 using namespace std;
 
 Q_DECLARE_METATYPE(OBSScene);
@@ -443,6 +447,59 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		main->AddCustomDockWidget(d);
 
 		return true;
+	}
+
+	bool obs_frontend_is_browser_available(void) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		return (obs_get_nix_platform() != OBS_NIX_PLATFORM_WAYLAND);
+#else
+		return true;
+#endif
+#else
+		return false;
+#endif
+	}
+
+	void *obs_frontend_get_browser_widget_s(
+		const struct obs_frontend_browser_params *params,
+		size_t size) override
+	{
+#ifdef BROWSER_AVAILABLE
+#ifdef ENABLE_WAYLAND
+		if (!obs_frontend_is_browser_available())
+			return nullptr;
+#endif
+		struct obs_frontend_browser_params data = {0};
+		if (size > sizeof(data)) {
+			blog(LOG_ERROR,
+			     "Tried to add obs_frontend_get_browser_widget with size "
+			     "%llu which is more than OBS Studio currently "
+			     "supports (%llu)",
+			     (long long unsigned)size,
+			     (long long unsigned)sizeof(data));
+			return nullptr;
+		}
+
+		memcpy(&data, params, size);
+
+		return (void *)main->GetBrowserWidget(data);
+#else
+		UNUSED_PARAMETER(params);
+		UNUSED_PARAMETER(size);
+		return nullptr;
+#endif
+	}
+
+	void obs_frontend_delete_browser_cookie(const char *url) override
+	{
+		if (!url)
+			return;
+
+		std::string urlStr = url;
+		if (!urlStr.empty())
+			main->DeleteCookie(urlStr);
 	}
 
 	void obs_frontend_add_event_callback(obs_frontend_event_cb callback,

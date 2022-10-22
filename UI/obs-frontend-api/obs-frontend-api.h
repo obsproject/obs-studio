@@ -2,6 +2,7 @@
 
 #include <obs.h>
 #include <util/darray.h>
+#include <util/dstr.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -81,6 +82,13 @@ obs_frontend_source_list_free(struct obs_frontend_source_list *source_list)
 	da_free(source_list->sources);
 }
 
+struct obs_frontend_browser_params {
+	const char *url;
+	const char *startup_script;
+	const char **force_popup_urls;
+	const char **popup_whitelist_urls;
+	bool enable_cookie;
+};
 #endif //!SWIG
 
 /* ------------------------------------------------------------------------- */
@@ -149,6 +157,17 @@ EXPORT void obs_frontend_remove_dock(const char *id);
 
 /* takes QDockWidget for dock */
 EXPORT bool obs_frontend_add_custom_qdock(const char *id, void *dock);
+
+EXPORT bool obs_frontend_is_browser_available(void);
+
+/* returns QAction */
+EXPORT void *obs_frontend_get_browser_widget_s(
+	const struct obs_frontend_browser_params *params, size_t size);
+#define obs_frontend_get_browser_widget(params) \
+	obs_frontend_get_browser_widget_s(      \
+		params, sizeof(struct obs_frontend_browser_params))
+
+EXPORT void obs_frontend_delete_browser_cookie(const char *url);
 
 typedef void (*obs_frontend_event_cb)(enum obs_frontend_event event,
 				      void *private_data);

@@ -350,6 +350,47 @@ bool obs_frontend_add_custom_qdock(const char *id, void *dock)
 				   : false;
 }
 
+bool obs_frontend_is_browser_available(void)
+{
+	return !!callbacks_valid() ? c->obs_frontend_is_browser_available()
+				   : false;
+}
+
+void *obs_frontend_get_browser_widget_s(
+	const struct obs_frontend_browser_params *params, size_t size)
+{
+	if (!callbacks_valid())
+		return nullptr;
+
+	if ((offsetof(struct obs_frontend_browser_params, url) +
+		     sizeof(params->url) >
+	     size) ||
+	    !params->url) {
+		blog(LOG_ERROR, "Required value 'url' not found."
+				" obs_frontend_get_browser_widget failed.");
+		return nullptr;
+	}
+
+	struct obs_frontend_browser_params zeroed = {0};
+	if (size > sizeof(zeroed)) {
+		blog(LOG_ERROR,
+		     "Tried to add obs_frontend_get_browser_widget with size "
+		     "%llu which is more than obs-frontend-api currently "
+		     "supports (%llu)",
+		     (long long unsigned)size,
+		     (long long unsigned)sizeof(zeroed));
+		return nullptr;
+	}
+
+	return c->obs_frontend_get_browser_widget_s(params, size);
+}
+
+void obs_frontend_delete_browser_cookie(const char *url)
+{
+	if (callbacks_valid())
+		c->obs_frontend_delete_browser_cookie(url);
+}
+
 void obs_frontend_add_event_callback(obs_frontend_event_cb callback,
 				     void *private_data)
 {

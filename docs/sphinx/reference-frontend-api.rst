@@ -233,6 +233,31 @@ Structures/Enumerations
 
    Undo redo callback
 
+.. struct:: obs_frontend_browser_params
+
+  Parameters for the browser widget
+
+  .. member:: const char *obs_frontend_browser_params.url
+
+     Url openned in the widget.
+
+  .. member:: const char *obs_frontend_browser_params.startup_script
+
+     Javascript run at startup of the widget.
+
+  .. member:: const char **obs_frontend_browser_params.force_popup_urls
+
+     NULL-terminated array of URLs to force popup.
+
+  .. member:: const char **obs_frontend_browser_params.popup_whitelist_urls
+
+     NULL-terminated array of URLs to popup whitelist.
+
+  .. member:: bool obs_frontend_browser_params.enable_cookie
+
+     Enable cookie. Note that wdiget created with this enabled must be destroyed
+     while the profile is changing since that the cookie manager is tied the profile.
+
 
 Functions
 ---------
@@ -491,6 +516,27 @@ Functions
    :param dock: QDockWidget to add
    :return: *true* if the dock was added, *false* if the id was already
             used
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_browser_available(void)
+
+   :return: If browser feature is available (built with obs-browser or
+            not runnning under Wayland)
+
+---------------------------------------
+
+.. function:: void *obs_frontend_get_browser_widget(const obs_frontend_browser_params *params)
+
+   Creates and returns a pointer of a browser widget with the given parameters.
+
+   :return: Pointer to the created QWidget or NULL
+
+---------------------------------------
+
+.. function:: void obs_frontend_delete_browser_cookie(const char *url)
+
+   Delete cookies related to the URL.
 
 ---------------------------------------
 

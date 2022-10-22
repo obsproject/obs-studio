@@ -980,6 +980,9 @@ public:
 	bool IsDockObjectNameUsed(const QString &name);
 	void AddCustomDockWidget(QDockWidget *dock);
 
+	QWidget *GetBrowserWidget(const obs_frontend_browser_params &params);
+	void DeleteCookie(const std::string &url);
+
 	static OBSBasic *Get();
 
 	const char *GetCurrentOutputPath();

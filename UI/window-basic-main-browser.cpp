@@ -162,3 +162,56 @@ void OBSBasic::InitBrowserPanelSafeBlock()
 	InitPanelCookieManager();
 #endif
 }
+
+QWidget *OBSBasic::GetBrowserWidget(const obs_frontend_browser_params &params)
+{
+#ifdef BROWSER_AVAILABLE
+	if (!cef)
+		return nullptr;
+
+	if (params.enable_cookie)
+		OBSBasic::InitBrowserPanelSafeBlock();
+
+	static int panel_version = -1;
+	if (panel_version == -1) {
+		panel_version = obs_browser_qcef_version();
+	}
+
+	QCefWidget *browser = cef->create_widget(
+		nullptr, params.url,
+		params.enable_cookie ? panel_cookies : nullptr);
+	if (browser && panel_version >= 1)
+		browser->allowAllPopups(true);
+
+	if (params.startup_script)
+		browser->setStartupScript(params.startup_script);
+
+	if (params.force_popup_urls) {
+		const char **urls = params.force_popup_urls;
+		while (*urls) {
+			cef->add_force_popup_url(*urls, browser);
+			urls++;
+		}
+	}
+
+	if (params.popup_whitelist_urls) {
+		const char **urls = params.popup_whitelist_urls;
+		while (*urls) {
+			cef->add_popup_whitelist_url(*urls, browser);
+			urls++;
+		}
+	}
+
+	return browser;
+#else
+	return nullptr;
+#endif
+}
+
+void OBSBasic::DeleteCookie(const std::string &url)
+{
+#ifdef BROWSER_AVAILABLE
+	if (panel_cookies)
+		panel_cookies->DeleteCookies(url, std::string());
+#endif
+}
