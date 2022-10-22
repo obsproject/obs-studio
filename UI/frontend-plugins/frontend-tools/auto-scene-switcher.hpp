@@ -21,8 +21,6 @@ public:
 
 	SceneSwitcher(QWidget *parent);
 
-	void closeEvent(QCloseEvent *event) override;
-
 	void SetStarted();
 	void SetStopped();
 
@@ -41,6 +39,7 @@ public slots:
 	void on_noMatchSwitchScene_currentTextChanged(const QString &text);
 	void on_checkInterval_valueChanged(int value);
 	void on_toggleStartButton_clicked();
+	void finished();
 };
 
 void GetWindowList(std::vector<std::string> &windows);
