@@ -448,7 +448,8 @@ Functions
    :return: A pointer to the added QAction
 
 .. deprecated:: 29.1
-   Prefer :c:func:`obs_frontend_add_dock_by_id()` instead.
+   Prefer :c:func:`obs_frontend_add_dock_by_id()` or
+   :c:func:`obs_frontend_add_custom_qdock()` instead.
 
 ---------------------------------------
 
@@ -473,6 +474,20 @@ Functions
    Removes the dock with this id from the UI.
 
    :param id: Unique identifier of the dock to remove.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_add_custom_qdock(const char *id, void *dock)
+
+   Adds a custom dock to the UI with no toggle.
+
+   Note: Use :c:func:`obs_frontend_remove_dock` to remove the dock
+         reference and id from the UI.
+
+   :param id: Unique identifier of the dock
+   :param dock: QDockWidget to add
+   :return: *true* if the dock was added, *false* if the id was already
+            used
 
 ---------------------------------------
 
