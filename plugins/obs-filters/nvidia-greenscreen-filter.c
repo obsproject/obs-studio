@@ -27,6 +27,7 @@
 #define S_MODE_PERF 1
 #define S_THRESHOLDFX "threshold"
 #define S_THRESHOLDFX_DEFAULT 1.0
+#define S_PROCESSING "processing_interval"
 
 #define MT_ obs_module_text
 #define TEXT_MODE MT_("Greenscreen.Mode")
@@ -34,6 +35,8 @@
 #define TEXT_MODE_PERF MT_("Greenscreen.Performance")
 #define TEXT_MODE_THRESHOLD MT_("Greenscreen.Threshold")
 #define TEXT_DEPRECATION MT_("Greenscreen.Deprecation")
+#define TEXT_PROCESSING MT_("Greenscreen.Processing")
+#define TEXT_PROCESSING_HINT MT_("Greenscreen.Processing.Hint")
 
 bool nvvfx_loaded = false;
 bool nvvfx_new_sdk = false;
@@ -72,6 +75,13 @@ struct nv_greenscreen_data {
 	gs_eparam_t *threshold_param;
 	gs_eparam_t *multiplier_param;
 	float threshold;
+
+	/* Every nth frame is processed through the FX (where n =
+	 * processing_interval) so that the same mask is used for n consecutive
+	 * frames. This is to alleviate the GPU load. Default: 1 (process every frame).
+	 */
+	int processing_interval;
+	int processing_counter;
 };
 
 static const char *nv_greenscreen_filter_name(void *unused)
@@ -93,6 +103,8 @@ static void nv_greenscreen_filter_update(void *data, obs_data_t *settings)
 			error("Error loading AI Greenscreen FX %i", vfxErr);
 	}
 	filter->threshold = (float)obs_data_get_double(settings, S_THRESHOLDFX);
+	filter->processing_interval =
+		(int)obs_data_get_int(settings, S_PROCESSING);
 }
 
 static void nv_greenscreen_filter_actual_destroy(void *data)
@@ -423,6 +435,8 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	filter->initial_render = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
 	filter->handler = NULL;
+	filter->processing_interval = 1;
+	filter->processing_counter = 0;
 
 	/* 1. Create FX */
 	vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN, &filter->handle);
@@ -533,6 +547,9 @@ static obs_properties_t *nv_greenscreen_filter_properties(void *data)
 	obs_property_list_add_int(mode, TEXT_MODE_PERF, S_MODE_PERF);
 	obs_property_t *threshold = obs_properties_add_float_slider(
 		props, S_THRESHOLDFX, TEXT_MODE_THRESHOLD, 0, 1, 0.05);
+	obs_property_t *partial = obs_properties_add_int_slider(
+		props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
+	obs_property_set_long_description(partial, TEXT_PROCESSING_HINT);
 	unsigned int version = get_lib_version();
 	if (version < (MIN_VFX_SDK_VERSION)) {
 		obs_property_t *warning = obs_properties_add_text(
@@ -549,7 +566,9 @@ static void nv_greenscreen_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, S_MODE, S_MODE_QUALITY);
 	obs_data_set_default_double(settings, S_THRESHOLDFX,
 				    S_THRESHOLDFX_DEFAULT);
+	obs_data_set_default_int(settings, S_PROCESSING, 1);
 }
+
 static struct obs_source_frame *
 nv_greenscreen_filter_video(void *data, struct obs_source_frame *frame)
 {
@@ -844,7 +863,14 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 	if (filter->initial_render && filter->images_allocated) {
 		bool draw = true;
 		if (!async || filter->got_new_frame) {
-			draw = process_texture_greenscreen(filter);
+			if (filter->processing_counter %
+				    filter->processing_interval ==
+			    0) {
+				draw = process_texture_greenscreen(filter);
+				filter->processing_counter = 1;
+			} else {
+				filter->processing_counter++;
+			}
 			filter->got_new_frame = false;
 		}
 
