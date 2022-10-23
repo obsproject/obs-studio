@@ -824,6 +824,7 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 #ifdef ENABLE_HEVC
 	bool amd_hevc_supported = false;
 	bool nve_hevc_supported = false;
+	bool apple_hevc_supported = false;
 #endif
 	bool apple_supported = false;
 	bool changed = false;
@@ -847,6 +848,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 				"com.apple.videotoolbox.videoencoder.ave.avc") ==
 			 0)
 			apple_supported = true;
+#ifdef ENABLE_HEVC
+		else if (strcmp(id,
+				"com.apple.videotoolbox.videoencoder.ave.hevc") ==
+			 0)
+			apple_hevc_supported = true;
+#endif
 	}
 
 	auto CheckEncoder = [&](const char *&name) {
@@ -894,6 +901,14 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 				name = SIMPLE_ENCODER_X264;
 				return false;
 			}
+#ifdef ENABLE_HEVC
+		} else if (strcmp(name, SIMPLE_ENCODER_APPLE_HEVC) == 0) {
+			if (!apple_hevc_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+#endif
 		}
 
 		return true;

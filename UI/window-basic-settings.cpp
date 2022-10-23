@@ -3529,7 +3529,11 @@ void OBSBasicSettings::SaveOutputSettings()
 #endif
 	else if (encoder == SIMPLE_ENCODER_AMD)
 		presetType = "AMDPreset";
-	else if (encoder == SIMPLE_ENCODER_APPLE_H264)
+	else if (encoder == SIMPLE_ENCODER_APPLE_H264
+#ifdef ENABLE_HEVC
+		 || encoder == SIMPLE_ENCODER_APPLE_HEVC
+#endif
+	)
 		/* The Apple encoders don't have presets like the other encoders
          do. This only exists to make sure that the x264 preset doesn't
          get overwritten with empty data. */
@@ -4826,6 +4830,17 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.Apple.H264"),
 			QString(SIMPLE_ENCODER_APPLE_H264));
+#ifdef ENABLE_HEVC
+	if (EncoderAvailable("com.apple.videotoolbox.videoencoder.ave.hevc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	)
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.Apple.HEVC"),
+			QString(SIMPLE_ENCODER_APPLE_HEVC));
+#endif
+
 #undef ADD_QUALITY
 #undef ENCODER_STR
 }
@@ -4914,7 +4929,11 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 
 		defaultPreset = "balanced";
 		preset = curAMDPreset;
-	} else if (encoder == SIMPLE_ENCODER_APPLE_H264) {
+	} else if (encoder == SIMPLE_ENCODER_APPLE_H264
+#ifdef ENABLE_HEVC
+		   || encoder == SIMPLE_ENCODER_APPLE_HEVC
+#endif
+	) {
 		ui->simpleOutAdvanced->setChecked(false);
 		ui->simpleOutAdvanced->setVisible(false);
 		ui->simpleOutPreset->setVisible(false);

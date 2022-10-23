@@ -1244,6 +1244,8 @@ static QString get_adv_fallback(const QString &enc)
 		return "jim_nvenc";
 	if (enc == "h265_texture_amf")
 		return "h264_texture_amf";
+	if (enc == "com.apple.videotoolbox.videoencoder.ave.hevc")
+		return "com.apple.videotoolbox.videoencoder.ave.avc";
 	return "obs_x264";
 }
 
@@ -1255,6 +1257,8 @@ static QString get_simple_fallback(const QString &enc)
 		return SIMPLE_ENCODER_NVENC;
 	if (enc == SIMPLE_ENCODER_AMD_HEVC)
 		return SIMPLE_ENCODER_AMD;
+	if (enc == SIMPLE_ENCODER_APPLE_HEVC)
+		return SIMPLE_ENCODER_APPLE_H264;
 	return SIMPLE_ENCODER_X264;
 }
 
@@ -1420,6 +1424,20 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 				QString(SIMPLE_ENCODER_APPLE_H264));
 		}
 	}
+#ifdef ENABLE_HEVC
+	if (service_supports_encoder(
+		    codecs, "com.apple.videotoolbox.videoencoder.ave.hevc")
+#ifndef __aarch64__
+	    && os_get_emulation_status() == true
+#endif
+	) {
+		if (__builtin_available(macOS 13.0, *)) {
+			ui->simpleOutStrEncoder->addItem(
+				ENCODER_STR("Hardware.Apple.HEVC"),
+				QString(SIMPLE_ENCODER_APPLE_HEVC));
+		}
+	}
+#endif
 #endif
 #undef ENCODER_STR
 
