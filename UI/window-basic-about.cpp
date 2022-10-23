@@ -34,7 +34,9 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 
 	ui->contribute->setText(QTStr("About.Contribute"));
 
-	if (!steam) {
+	if (steam) {
+		delete ui->donate;
+	} else {
 		ui->donate->setText(
 			"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
 			QTStr("About.Donate") + "</a>");
