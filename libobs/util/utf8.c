@@ -146,7 +146,7 @@ size_t utf8_to_wchar(const char *in, size_t insize, wchar_t *out,
 	wlim = out == NULL ? NULL : out + outsize;
 
 	for (; p < lim; p += n) {
-		if (!*p)
+		if (!*p && insize == 0)
 			break;
 
 		if (utf8_forbidden(*p) != 0 && (flags & UTF8_IGNORE_ERROR) == 0)
@@ -276,7 +276,7 @@ size_t wchar_to_utf8(const wchar_t *in, size_t insize, char *out,
 	total = 0;
 
 	for (; w < wlim; w++) {
-		if (!*w)
+		if (!*w && insize == 0)
 			break;
 
 		if (wchar_forbidden(*w) != 0) {
