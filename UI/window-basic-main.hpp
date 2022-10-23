@@ -321,7 +321,6 @@ private:
 	QPointer<QMenu> sceneProjectorMenu;
 	QPointer<QMenu> sourceProjector;
 	QPointer<QMenu> scaleFilteringMenu;
-	QPointer<QMenu> blendingMethodMenu;
 	QPointer<QMenu> blendingModeMenu;
 	QPointer<QMenu> colorMenu;
 	QPointer<QWidgetAction> colorWidgetAction;
@@ -739,7 +738,6 @@ private slots:
 
 	void SetScaleFilter();
 
-	void SetBlendingMethod();
 	void SetBlendingMode();
 
 	void IconActivated(QSystemTrayIcon::ActivationReason reason);
@@ -869,7 +867,10 @@ public:
 		return os_atomic_load_bool(&previewProgramMode);
 	}
 
-	inline bool VCamEnabled() const { return vcamEnabled; }
+	inline bool VCamEnabled() const
+	{
+		return vcamEnabled;
+	}
 
 	bool Active() const;
 
@@ -896,7 +897,10 @@ public:
 		cy = previewCY;
 	}
 
-	inline bool SavingDisabled() const { return disableSaving; }
+	inline bool SavingDisabled() const
+	{
+		return disableSaving;
+	}
 
 	inline double GetCPUUsage() const
 	{
@@ -906,7 +910,10 @@ public:
 	void SaveService();
 	bool LoadService();
 
-	inline Auth *GetAuth() { return auth.get(); }
+	inline Auth *GetAuth()
+	{
+		return auth.get();
+	}
 
 	inline void EnableOutputs(bool enable)
 	{
@@ -920,7 +927,6 @@ public:
 
 	QMenu *AddDeinterlacingMenu(QMenu *menu, obs_source_t *source);
 	QMenu *AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item);
-	QMenu *AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBlendingModeMenu(QMenu *menu, obs_sceneitem_t *item);
 	QMenu *AddBackgroundColorMenu(QMenu *menu, QWidgetAction *widgetAction,
 				      ColorSelect *select,

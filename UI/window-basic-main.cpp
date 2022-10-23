@@ -5413,36 +5413,6 @@ QMenu *OBSBasic::AddScaleFilteringMenu(QMenu *menu, obs_sceneitem_t *item)
 	return menu;
 }
 
-void OBSBasic::SetBlendingMethod()
-{
-	QAction *action = reinterpret_cast<QAction *>(sender());
-	obs_blending_method method =
-		(obs_blending_method)action->property("method").toInt();
-	OBSSceneItem sceneItem = GetCurrentSceneItem();
-
-	obs_sceneitem_set_blending_method(sceneItem, method);
-}
-
-QMenu *OBSBasic::AddBlendingMethodMenu(QMenu *menu, obs_sceneitem_t *item)
-{
-	obs_blending_method blendingMethod =
-		obs_sceneitem_get_blending_method(item);
-	QAction *action;
-
-#define ADD_MODE(name, method)                               \
-	action = menu->addAction(QTStr("" name), this,       \
-				 SLOT(SetBlendingMethod())); \
-	action->setProperty("method", (int)method);          \
-	action->setCheckable(true);                          \
-	action->setChecked(blendingMethod == method);
-
-	ADD_MODE("BlendingMethod.Default", OBS_BLEND_METHOD_DEFAULT);
-	ADD_MODE("BlendingMethod.SrgbOff", OBS_BLEND_METHOD_SRGB_OFF);
-#undef ADD_MODE
-
-	return menu;
-}
-
 void OBSBasic::SetBlendingMode()
 {
 	QAction *action = reinterpret_cast<QAction *>(sender());
@@ -5545,7 +5515,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 	delete previewProjectorSource;
 	delete sourceProjector;
 	delete scaleFilteringMenu;
-	delete blendingMethodMenu;
 	delete blendingModeMenu;
 	delete colorMenu;
 	delete colorWidgetAction;
@@ -5662,9 +5631,6 @@ void OBSBasic::CreateSourcePopupMenu(int idx, bool preview)
 			AddScaleFilteringMenu(scaleFilteringMenu, sceneItem));
 		blendingModeMenu = new QMenu(QTStr("BlendingMode"));
 		popup.addMenu(AddBlendingModeMenu(blendingModeMenu, sceneItem));
-		blendingMethodMenu = new QMenu(QTStr("BlendingMethod"));
-		popup.addMenu(
-			AddBlendingMethodMenu(blendingMethodMenu, sceneItem));
 		if (isAsyncVideo) {
 			deinterlaceMenu = new QMenu(QTStr("Deinterlacing"));
 			popup.addMenu(
