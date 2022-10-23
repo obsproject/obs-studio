@@ -107,7 +107,8 @@ static void log_osstatus(int log_level, struct vt_encoder *enc,
 }
 
 static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
-				     const char *profile)
+				     const char *profile,
+				     enum video_format format)
 {
 	if (codec_type == kCMVideoCodecType_H264) {
 		if (strcmp(profile, "baseline") == 0)
@@ -120,8 +121,14 @@ static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
 			return kVTProfileLevel_H264_Main_AutoLevel;
 #ifdef ENABLE_HEVC
 	} else if (codec_type == kCMVideoCodecType_HEVC) {
-		if (strcmp(profile, "main") == 0)
-			return kVTProfileLevel_HEVC_Main_AutoLevel;
+		if (strcmp(profile, "main") == 0) {
+			if (format == VIDEO_FORMAT_P010) {
+				VT_LOG(LOG_WARNING, "Forcing main10 for P010");
+				return kVTProfileLevel_HEVC_Main10_AutoLevel;
+			} else {
+				return kVTProfileLevel_HEVC_Main_AutoLevel;
+			}
+		}
 		if (strcmp(profile, "main10") == 0)
 			return kVTProfileLevel_HEVC_Main10_AutoLevel;
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 120300 // macOS 12.3
@@ -139,12 +146,42 @@ static CFStringRef obs_to_vt_profile(CMVideoCodecType codec_type,
 
 static CFStringRef obs_to_vt_colorspace(enum video_colorspace cs)
 {
-	if (cs == VIDEO_CS_709)
-		return kCVImageBufferYCbCrMatrix_ITU_R_709_2;
-	else if (cs == VIDEO_CS_601)
+	switch (cs) {
+	case VIDEO_CS_601:
 		return kCVImageBufferYCbCrMatrix_ITU_R_601_4;
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
+		return kCVImageBufferYCbCrMatrix_ITU_R_2020;
+	default:
+		return kCVImageBufferYCbCrMatrix_ITU_R_709_2;
+	}
+}
 
-	return NULL;
+static CFStringRef obs_to_vt_primaries(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_601:
+		return kCVImageBufferColorPrimaries_SMPTE_C;
+	case VIDEO_CS_2100_PQ:
+	case VIDEO_CS_2100_HLG:
+		return kCVImageBufferColorPrimaries_ITU_R_2020;
+	default:
+		return kCVImageBufferColorPrimaries_ITU_R_709_2;
+	}
+}
+
+static CFStringRef obs_to_vt_transfer(enum video_colorspace cs)
+{
+	switch (cs) {
+	case VIDEO_CS_SRGB:
+		return kCVImageBufferTransferFunction_sRGB;
+	case VIDEO_CS_2100_PQ:
+		return kCVImageBufferTransferFunction_SMPTE_ST_2084_PQ;
+	case VIDEO_CS_2100_HLG:
+		return kCVImageBufferTransferFunction_ITU_R_2100_HLG;
+	default:
+		return kCVImageBufferTransferFunction_ITU_R_709_2;
+	}
 }
 
 #define STATUS_CHECK(c)                                 \
@@ -303,20 +340,16 @@ static OSStatus session_set_bitrate(VTCompressionSessionRef session,
 static OSStatus session_set_colorspace(VTCompressionSessionRef session,
 				       enum video_colorspace cs)
 {
-	CFStringRef matrix = obs_to_vt_colorspace(cs);
 	OSStatus code;
-
-	if (matrix != NULL) {
-		SESSION_CHECK(session_set_prop(
-			session, kVTCompressionPropertyKey_ColorPrimaries,
-			kCVImageBufferColorPrimaries_ITU_R_709_2));
-		SESSION_CHECK(session_set_prop(
-			session, kVTCompressionPropertyKey_TransferFunction,
-			kCVImageBufferTransferFunction_ITU_R_709_2));
-		SESSION_CHECK(session_set_prop(
-			session, kVTCompressionPropertyKey_YCbCrMatrix,
-			matrix));
-	}
+	SESSION_CHECK(session_set_prop(session,
+				       kVTCompressionPropertyKey_ColorPrimaries,
+				       obs_to_vt_primaries(cs)));
+	SESSION_CHECK(session_set_prop(
+		session, kVTCompressionPropertyKey_TransferFunction,
+		obs_to_vt_transfer(cs)));
+	SESSION_CHECK(session_set_prop(session,
+				       kVTCompressionPropertyKey_YCbCrMatrix,
+				       obs_to_vt_colorspace(cs)));
 
 	return noErr;
 }
@@ -475,9 +508,14 @@ static bool create_encoder(struct vt_encoder *enc)
 		STATUS_CHECK(session_set_prop(
 			s, kVTCompressionPropertyKey_AllowFrameReordering,
 			enc->bframes ? kCFBooleanTrue : kCFBooleanFalse));
+
+		video_t *video = obs_encoder_video(enc->encoder);
+		const struct video_output_info *voi =
+			video_output_get_info(video);
 		STATUS_CHECK(session_set_prop(
 			s, kVTCompressionPropertyKey_ProfileLevel,
-			obs_to_vt_profile(enc->codec_type, enc->profile)));
+			obs_to_vt_profile(enc->codec_type, enc->profile,
+					  voi->format)));
 		STATUS_CHECK(session_set_bitrate(
 			s, enc->rate_control, enc->bitrate, enc->quality,
 			enc->limit_bitrate, enc->rc_max_bitrate,
@@ -572,15 +610,40 @@ static bool set_video_format(struct vt_encoder *enc, enum video_format format,
 				? kCVPixelFormatType_420YpCbCr8BiPlanarFullRange
 				: kCVPixelFormatType_420YpCbCr8BiPlanarVideoRange;
 		return true;
+	case VIDEO_FORMAT_P010:
+		if (enc->codec_type == kCMVideoCodecType_HEVC) {
+			enc->vt_pix_fmt =
+				full_range
+					? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
+					: kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
+			return true;
+		} else {
+			return false;
+		}
 	default:
 		return false;
 	}
+	return false;
 }
 
 static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 {
 	video_t *video = obs_encoder_video(enc->encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
+
+	const char *codec = obs_encoder_get_codec(enc->encoder);
+	if (strcmp(codec, "h264") == 0) {
+		enc->codec_type = kCMVideoCodecType_H264;
+		obs_data_set_int(settings, "codec_type", enc->codec_type);
+#ifdef ENABLE_HEVC
+	} else if (strcmp(codec, "hevc") == 0) {
+		enc->codec_type = kCMVideoCodecType_HEVC;
+		obs_data_set_int(settings, "codec_type", enc->codec_type);
+#endif
+	} else {
+		enc->codec_type = (CMVideoCodecType)obs_data_get_int(
+			settings, "codec_type");
+	}
 
 	if (!set_video_format(enc, voi->format, voi->range)) {
 		obs_encoder_set_last_error(
@@ -604,20 +667,6 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	enc->rc_max_bitrate_window =
 		obs_data_get_double(settings, "max_bitrate_window");
 	enc->bframes = obs_data_get_bool(settings, "bframes");
-
-	const char *codec = obs_encoder_get_codec(enc->encoder);
-	if (strcmp(codec, "h264") == 0) {
-		enc->codec_type = kCMVideoCodecType_H264;
-		obs_data_set_int(settings, "codec_type", enc->codec_type);
-#ifdef ENABLE_HEVC
-	} else if (strcmp(codec, "hevc") == 0) {
-		enc->codec_type = kCMVideoCodecType_HEVC;
-		obs_data_set_int(settings, "codec_type", enc->codec_type);
-#endif
-	} else {
-		enc->codec_type = (CMVideoCodecType)obs_data_get_int(
-			settings, "codec_type");
-	}
 
 	return true;
 }
@@ -971,15 +1020,14 @@ bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 	// I would have expected pixel buffers from the session's
 	// pool to have the correct color space stuff set
 
-	CFStringRef matrix = obs_to_vt_colorspace(enc->colorspace);
-
-	CVBufferSetAttachment(pixbuf, kCVImageBufferYCbCrMatrixKey, matrix,
+	CVBufferSetAttachment(pixbuf, kCVImageBufferYCbCrMatrixKey,
+			      obs_to_vt_colorspace(enc->colorspace),
 			      kCVAttachmentMode_ShouldPropagate);
 	CVBufferSetAttachment(pixbuf, kCVImageBufferColorPrimariesKey,
-			      kCVImageBufferColorPrimaries_ITU_R_709_2,
+			      obs_to_vt_primaries(enc->colorspace),
 			      kCVAttachmentMode_ShouldPropagate);
 	CVBufferSetAttachment(pixbuf, kCVImageBufferTransferFunctionKey,
-			      kCVImageBufferTransferFunction_ITU_R_709_2,
+			      obs_to_vt_transfer(enc->colorspace),
 			      kCVAttachmentMode_ShouldPropagate);
 
 	*buf = pixbuf;
