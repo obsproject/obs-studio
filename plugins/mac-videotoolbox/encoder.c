@@ -585,7 +585,7 @@ static bool update_params(struct vt_encoder *enc, obs_data_t *settings)
 	if (!set_video_format(enc, voi->format, voi->range)) {
 		obs_encoder_set_last_error(
 			enc->encoder,
-			obs_module_text("ColorFormatUnsupportedH264"));
+			obs_module_text("ColorFormatUnsupported"));
 		VT_BLOG(LOG_WARNING, "Unsupported color format selected");
 		return false;
 	}
