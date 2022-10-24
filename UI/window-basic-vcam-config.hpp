@@ -4,27 +4,28 @@
 #include <QDialog>
 #include <memory>
 
+#include "window-basic-vcam.hpp"
+
 #include "ui_OBSBasicVCamConfig.h"
+
+struct VCamConfig;
 
 class OBSBasicVCamConfig : public QDialog {
 	Q_OBJECT
 
+	VCamConfig config;
+
 public:
-	static void Init();
-
-	static video_t *StartVideo();
-	static void StopVideo();
-	static void DestroyView();
-
-	static void UpdateOutputSource();
-	static void SaveData(obs_data_t *data, bool saving);
-
-	explicit OBSBasicVCamConfig(QWidget *parent = 0);
+	explicit OBSBasicVCamConfig(const VCamConfig &config,
+				    QWidget *parent = 0);
 
 private slots:
 	void OutputTypeChanged(int type);
-	void Save();
+	void UpdateConfig();
 
 private:
 	std::unique_ptr<Ui::OBSBasicVCamConfig> ui;
+
+signals:
+	void Accepted(const VCamConfig &config);
 };
