@@ -1519,3 +1519,8 @@ QDialogButtonBox {
 OBSBasicStats {
     background: palette(dark);
 }
+
+/* Advanced audio dialog */
+OBSBasicAdvAudio #scrollAreaWidgetContents {
+    background: palette(dark);
+}
