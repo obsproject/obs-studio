@@ -405,6 +405,7 @@ static void reset_service_ui_fields(Ui::OBSBasicSettings *ui,
 	} else {
 		ui->connectAccount2->setVisible(false);
 		ui->useStreamKeyAdv->setVisible(false);
+		ui->streamStackWidget->setCurrentIndex((int)Section::StreamKey);
 	}
 
 	ui->connectedAccountLabel->setVisible(false);

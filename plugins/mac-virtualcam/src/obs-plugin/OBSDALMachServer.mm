@@ -15,7 +15,6 @@
 @property NSPort *port;
 @property NSMutableSet *clientPorts;
 @property NSRunLoop *runLoop;
-@property uint32_t seed;
 @end
 
 @implementation OBSDALMachServer
@@ -156,7 +155,6 @@
 			return;
 		}
 
-		IOSurfaceLock(surface, 0, &_seed);
 		mach_port_t framePort = IOSurfaceCreateMachPort(surface);
 
 		if (!framePort) {
@@ -176,7 +174,6 @@
 					 ]];
 
 		mach_port_deallocate(mach_task_self(), framePort);
-		IOSurfaceUnlock(surface, 0, &_seed);
 	}
 }
 

@@ -80,6 +80,7 @@ static string lastLogFile;
 static string lastCrashLogFile;
 
 bool portable_mode = false;
+bool steam = false;
 static bool multi = false;
 static bool log_verbose = false;
 static bool unfiltered_log = false;
@@ -1113,16 +1114,20 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 
 	if (cf_token_is(cfp, "OBSThemeMeta") ||
 	    cf_go_to_token(cfp, "OBSThemeMeta", nullptr)) {
-		OBSThemeMeta *meta = new OBSThemeMeta();
+
 		if (!cf_next_token(cfp))
 			return nullptr;
 
 		if (!cf_token_is(cfp, "{"))
 			return nullptr;
 
+		OBSThemeMeta *meta = new OBSThemeMeta();
+
 		for (;;) {
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
+				delete meta;
 				return nullptr;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_NAME, "name",
 					       nullptr);
@@ -1136,8 +1141,10 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 			if (ret != PARSE_SUCCESS)
 				continue;
 
-			if (!cf_next_token(cfp))
+			if (!cf_next_token(cfp)) {
+				delete meta;
 				return nullptr;
+			}
 
 			ret = cf_token_is_type(cfp, CFTOKEN_STRING, "value",
 					       ";");
@@ -1158,8 +1165,10 @@ OBSThemeMeta *OBSApp::ParseThemeMeta(const char *path)
 			}
 			bfree(str);
 
-			if (!cf_go_to_token(cfp, ";", nullptr))
+			if (!cf_go_to_token(cfp, ";", nullptr)) {
+				delete meta;
 				return nullptr;
+			}
 		}
 		return meta;
 	}
@@ -2284,10 +2293,8 @@ static int run_program(fstream &logFile, int argc, char *argv[])
 		}
 #endif
 
-		if (!created_log) {
+		if (!created_log)
 			create_log_file(logFile);
-			created_log = true;
-		}
 
 #ifdef __APPLE__
 		MacPermissionStatus audio_permission =
@@ -2827,7 +2834,7 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 				obs_data_set_string(data, "multipass", "qres");
 
 			} else if (astrcmpi(preset, "hq") == 0) {
-				obs_data_set_string(data, "preset2", "p4");
+				obs_data_set_string(data, "preset2", "p5");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass", "qres");
 
@@ -3040,6 +3047,9 @@ int main(int argc, char *argv[])
 				  nullptr)) {
 			opt_disable_missing_files_check = true;
 
+		} else if (arg_is(argv[i], "--steam", nullptr)) {
+			steam = true;
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 		} else if (arg_is(argv[i], "--disable-high-dpi-scaling",
 				  nullptr)) {
@@ -3058,7 +3068,9 @@ int main(int argc, char *argv[])
 				"--scene <string>: Start with specific scene.\n\n"
 				"--studio-mode: Enable studio mode.\n"
 				"--minimize-to-tray: Minimize to system tray.\n"
+#if ALLOW_PORTABLE_MODE
 				"--portable, -p: Use portable mode.\n"
+#endif
 				"--multi, -m: Don't warn when launching multiple instances.\n\n"
 				"--verbose: Make log more verbose.\n"
 				"--always-on-top: Start in 'always on top' mode.\n\n"

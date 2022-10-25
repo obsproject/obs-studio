@@ -178,6 +178,13 @@ Structures/Enumerations
 
      Triggered when the virtual camera is stopped.
 
+   - **OBS_FRONTEND_EVENT_THEME_CHANGED**
+
+     Triggered when the theme is changed.
+
+   - **OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN**
+
+     Triggered when a screenshot is taken.
 
 .. struct:: obs_frontend_source_list
 
@@ -785,3 +792,9 @@ Functions
 .. function:: const char *obs_frontend_get_locale_string(const char *string)
 
    :return: Gets the frontend translation of a given string.
+
+---------------------------------------
+
+.. function:: bool obs_frontend_is_theme_dark(void)
+
+   :return: Checks if the current theme is dark or light.

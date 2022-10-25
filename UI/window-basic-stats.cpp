@@ -49,7 +49,7 @@ static QString MakeMissedFramesText(uint32_t total_lagged,
 }
 
 OBSBasicStats::OBSBasicStats(QWidget *parent, bool closeable)
-	: QWidget(parent),
+	: QFrame(parent),
 	  cpu_info(os_cpu_usage_info_start()),
 	  timer(this),
 	  recTimeLeft(this)
@@ -246,13 +246,6 @@ void OBSBasicStats::AddOutputLabels(QString name)
 	ol.droppedFrames = new QLabel(this);
 	ol.megabytesSent = new QLabel(this);
 	ol.bitrate = new QLabel(this);
-
-	int newPointSize = ol.status->font().pointSize();
-	newPointSize *= 13;
-	newPointSize /= 10;
-	QString qss =
-		QString("font-size: %1pt").arg(QString::number(newPointSize));
-	ol.status->setStyleSheet(qss);
 
 	int col = 0;
 	int row = outputLabels.size() + 1;

@@ -153,7 +153,7 @@ jobs:
             brew uninstall ${REMOVE_FORMULAS}
           fi
 
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: 'Switch to Xcode 14.1'
         run: sudo xcode-select -switch /Applications/Xcode_14.1.app
@@ -253,7 +253,7 @@ jobs:
       - name: 'Setup build environment'
         id: setup
         run: |
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: 'Install dependencies'
         env:
@@ -336,7 +336,7 @@ jobs:
         id: setup
         run: |
           $CommitHash = git rev-parse --short=9 HEAD
-          Write-Output "::set-output name=commitHash::${CommitHash}"
+          "commitHash=${CommitHash}" >> $env:GITHUB_OUTPUT
 
       - name: 'Install dependencies'
         env:
@@ -421,7 +421,7 @@ jobs:
         id: setup
         run: |
           $CommitHash = git rev-parse --short=9 HEAD
-          Write-Output "::set-output name=commitHash::${CommitHash}"
+          "commitHash=${CommitHash}" >> $env:GITHUB_OUTPUT
 
       - name: 'Add msbuild to PATH'
         uses: microsoft/setup-msbuild@v1.1
@@ -449,7 +449,7 @@ jobs:
           CI/windows/03_package_obs.ps1 -CombinedArchs -Package
 
           $ArtifactName = (Get-ChildItem -filter "obs-studio-*-windows-x86+x64.zip" -File).Name
-          Write-Output "::set-output name=filename::${ArtifactName}"
+          "filename=${ArtifactName}" >> $env:GITHUB_OUTPUT
 
       - name: 'Upload build artifact'
         uses: actions/upload-artifact@v3
@@ -479,7 +479,7 @@ jobs:
       - name: 'Setup build environment'
         id: setup
         run: |
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: 'Download artifact'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'

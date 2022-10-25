@@ -642,6 +642,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return Str(string);
 	}
 
+	bool obs_frontend_is_theme_dark(void) override
+	{
+		return App()->IsThemeDark();
+	}
+
 	void on_load(obs_data_t *settings) override
 	{
 		for (size_t i = saveCallbacks.size(); i > 0; i--) {

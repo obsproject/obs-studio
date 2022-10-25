@@ -29,7 +29,7 @@ static QWidget *firstWidget(QLayoutItem *item)
 		return nullptr;
 
 	auto n = layout->count();
-	for (auto i = 0, n = layout->count(); i < n; i++) {
+	for (auto i = 0; i < n; i++) {
 		widget = firstWidget(layout->itemAt(i));
 		if (widget)
 			return widget;
@@ -47,7 +47,6 @@ static QWidget *lastWidget(QLayoutItem *item)
 	if (!layout)
 		return nullptr;
 
-	auto n = layout->count();
 	for (auto i = layout->count(); i > 0; i--) {
 		widget = lastWidget(layout->itemAt(i - 1));
 		if (widget)

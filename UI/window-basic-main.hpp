@@ -189,6 +189,7 @@ class OBSBasic : public OBSMainWindow {
 	friend class OBSPermissions;
 	friend struct BasicOutputHandler;
 	friend struct OBSStudioAPI;
+	friend class ScreenshotObj;
 
 	enum class MoveDir { Up, Down, Left, Right };
 

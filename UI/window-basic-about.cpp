@@ -33,11 +33,16 @@ OBSAbout::OBSAbout(QWidget *parent) : QDialog(parent), ui(new Ui::OBSAbout)
 	ui->version->setText(ver + bitness);
 
 	ui->contribute->setText(QTStr("About.Contribute"));
-	ui->donate->setText(
-		"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
-		QTStr("About.Donate") + "</a>");
-	ui->donate->setTextInteractionFlags(Qt::TextBrowserInteraction);
-	ui->donate->setOpenExternalLinks(true);
+
+	if (steam) {
+		delete ui->donate;
+	} else {
+		ui->donate->setText(
+			"&nbsp;&nbsp;<a href='https://obsproject.com/contribute'>" +
+			QTStr("About.Donate") + "</a>");
+		ui->donate->setTextInteractionFlags(Qt::TextBrowserInteraction);
+		ui->donate->setOpenExternalLinks(true);
+	}
 
 	ui->getInvolved->setText(
 		"&nbsp;&nbsp;<a href='https://github.com/obsproject/obs-studio/blob/master/CONTRIBUTING.rst'>" +

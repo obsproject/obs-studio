@@ -1044,7 +1044,9 @@ static const char *output_frame_name = "output_frame";
 static inline void update_active_state(struct obs_core_video_mix *video)
 {
 	const bool raw_was_active = video->raw_was_active;
+#ifdef _WIN32
 	const bool gpu_was_active = video->gpu_was_active;
+#endif
 	const bool was_active = video->was_active;
 
 	bool raw_active = os_atomic_load_long(&video->raw_active) > 0;

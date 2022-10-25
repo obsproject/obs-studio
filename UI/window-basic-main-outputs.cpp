@@ -550,7 +550,10 @@ void SimpleOutput::Update()
 	}
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
-	obs_data_set_string(videoSettings, "preset", preset);
+	obs_data_set_string(videoSettings,
+			    (strcmp(presetType, "NVENCPreset") == 0) ? "preset2"
+								     : "preset",
+			    preset);
 
 	obs_data_set_string(videoSettings, "rate_control", "CBR");
 	obs_data_set_int(videoSettings, "bitrate", videoBitrate);
@@ -2043,8 +2046,7 @@ bool AdvancedOutput::StartReplayBuffer()
 			error_reason = QT_UTF8(error);
 		else
 			error_reason = QTStr("Output.StartFailedGeneric");
-		QMessageBox::critical(main,
-				      QTStr("Output.StartRecordingFailed"),
+		QMessageBox::critical(main, QTStr("Output.StartReplayFailed"),
 				      error_reason);
 		return false;
 	}

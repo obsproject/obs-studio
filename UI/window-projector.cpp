@@ -262,8 +262,8 @@ void OBSProjector::mousePressEvent(QMouseEvent *event)
 					this, SLOT(ResizeToContent()));
 		}
 
-		QAction *alwaysOnTopButton =
-			new QAction(QTStr("Basic.MainMenu.AlwaysOnTop"), this);
+		QAction *alwaysOnTopButton = new QAction(
+			QTStr("Basic.MainMenu.View.AlwaysOnTop"), this);
 		alwaysOnTopButton->setCheckable(true);
 		alwaysOnTopButton->setChecked(isAlwaysOnTop);
 

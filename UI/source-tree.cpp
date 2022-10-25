@@ -1266,7 +1266,6 @@ void SourceTree::dropEvent(QDropEvent *event)
 	if (hasGroups) {
 		if (!itemBelow ||
 		    obs_sceneitem_get_group(scene, itemBelow) != dropGroup) {
-			indicator = QAbstractItemView::BelowItem;
 			dropGroup = nullptr;
 			dropOnCollapsed = false;
 		}

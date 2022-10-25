@@ -32,14 +32,14 @@ jobs:
 
           case ${GITHUB_REF##*/} in
             +([0-9]).+([0-9]).+([0-9]) )
-              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
-              echo '::set-output name=matrix::["beta", "stable"]'
+              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'matrix=["beta", "stable"]' >> $GITHUB_OUTPUT
               ;;
             +([0-9]).+([0-9]).+([0-9])-@(beta|rc)*([0-9]) )
-              echo '::set-output name=valid_tag::${{ toJSON(true) }}'
-              echo '::set-output name=matrix::["beta"]'
+              echo 'valid_tag=${{ toJSON(true) }}' >> $GITHUB_OUTPUT
+              echo 'matrix=["beta"]' >> $GITHUB_OUTPUT
               ;;
-            * ) echo '::set-output name=valid_tag::${{ toJSON(false) }}' ;;
+            * ) echo 'valid_tag=${{ toJSON(false) }}' >> $GITHUB_OUTPUT ;;
           esac
 
   publish:
@@ -65,7 +65,7 @@ jobs:
         id: setup
         run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
-          echo "::set-output name=commitHash::$(git rev-parse --short=9 HEAD)"
+          echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
 
       - name: Build Flatpak Manifest
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@master
