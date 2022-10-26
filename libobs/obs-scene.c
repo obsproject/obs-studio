@@ -614,6 +614,9 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = obs_get_video_sdr_white_level() / 80.f;
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
@@ -623,6 +626,9 @@ static void render_item_texture(struct obs_scene_item *item,
 		case GS_CS_SRGB_16F:
 		case GS_CS_709_EXTENDED:
 			multiplier = 80.f / obs_get_video_sdr_white_level();
+			break;
+		case GS_CS_709_SCRGB:
+			break;
 		}
 	}
 
