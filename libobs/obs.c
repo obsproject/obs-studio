@@ -1599,7 +1599,8 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info_current(struct obs_video_info *ovi)
 {
-		blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for current video info");
+	blog(LOG_INFO,
+	     "[VIDEO_CANVAS] video info requested for current video info");
 	if (!obs->video.graphics || !obs->video_rendering_canvas || !ovi) {
 		return false;
 	}
