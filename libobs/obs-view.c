@@ -174,7 +174,7 @@ video_t *obs_view_add(obs_view_t *view, struct obs_video_info *ovi)
 		return NULL;
 	}
 	mix->view = view;
-	mix->rendering_mode = OBS_STREAMING_VIDEO_RENDERING;
+	mix->rendering_mode = OBS_MAIN_VIDEO_RENDERING;
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	da_push_back(obs->video.mixes, &mix);
 	set_main_mix();
@@ -193,7 +193,7 @@ video_t *obs_stream_view_add(obs_view_t *view, struct obs_video_info *ovi)
 		return NULL;
 	}
 	mix->view = view;
-	mix->rendering_mode = OBS_MAIN_VIDEO_RENDERING;
+	mix->rendering_mode = OBS_STREAMING_VIDEO_RENDERING;
 
 	pthread_mutex_lock(&obs->video.mixes_mutex);
 	da_push_back(obs->video.mixes, &mix);

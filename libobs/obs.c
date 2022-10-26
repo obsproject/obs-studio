@@ -1599,9 +1599,10 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info_current(struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested curent");
-	if (!obs->video.graphics || !obs->video_rendering_canvas || !ovi)
+		blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for current video info");
+	if (!obs->video.graphics || !obs->video_rendering_canvas || !ovi) {
 		return false;
+	}
 
 	*ovi = *(obs->video_rendering_canvas);
 
@@ -1611,7 +1612,7 @@ bool obs_get_video_info_current(struct obs_video_info *ovi)
 bool obs_get_video_info_scene_item(obs_sceneitem_t *item,
 				   struct obs_video_info *ovi)
 {
-	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for output");
+	blog(LOG_INFO, "[VIDEO_CANVAS] video info requested for scene item");
 
 	if (!item)
 		return false;
@@ -1661,6 +1662,7 @@ bool obs_get_video_info(struct obs_video_info *ovi)
 	pthread_mutex_lock(&obs->video.canvases_mutex);
 	if (obs->video.canvases.num > 0) {
 		*ovi = *(obs->video.canvases.array[0]);
+
 		ret = true;
 	}
 	pthread_mutex_unlock(&obs->video.canvases_mutex);
