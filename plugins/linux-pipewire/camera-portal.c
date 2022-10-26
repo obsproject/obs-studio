@@ -280,6 +280,8 @@ static void on_registry_global_cb(void *user_data, uint32_t id,
 	registry = obs_pipewire_get_registry(connection->obs_pw);
 	device_id = spa_dict_lookup(props, SPA_KEY_NODE_NAME);
 
+	blog(LOG_INFO, "[camera-portal] Found device %s", device_id);
+
 	device = camera_device_new(id, props);
 	device->proxy = pw_registry_bind(registry, id, type, version, 0);
 	if (!device->proxy) {
@@ -292,6 +294,13 @@ static void on_registry_global_cb(void *user_data, uint32_t id,
 			      &proxy_events, device);
 
 	g_hash_table_insert(connection->devices, bstrdup(device_id), device);
+
+	for (size_t i = 0; i < connection->sources->len; i++) {
+		struct camera_portal_source *camera_source =
+			g_ptr_array_index(connection->sources, i);
+		if (strcmp(camera_source->device_id, device_id) == 0)
+			stream_camera(camera_source);
+	}
 }
 
 static void on_registry_global_remove_cb(void *user_data, uint32_t id)
@@ -355,12 +364,6 @@ static void on_pipewire_remote_opened_cb(GObject *source, GAsyncResult *res,
 		pipewire_fd, &registry_events, connection);
 
 	obs_pipewire_roundtrip(connection->obs_pw);
-
-	for (size_t i = 0; i < connection->sources->len; i++) {
-		struct camera_portal_source *camera_source =
-			g_ptr_array_index(connection->sources, i);
-		stream_camera(camera_source);
-	}
 }
 
 static void open_pipewire_remote(void)
