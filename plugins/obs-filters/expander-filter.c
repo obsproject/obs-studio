@@ -87,9 +87,9 @@ struct expander_data {
 	bool is_gate;
 	float *runaverage[MAX_AUDIO_CHANNELS];
 	size_t runaverage_len;
-	float *gaindB[MAX_AUDIO_CHANNELS];
-	size_t gaindB_len;
-	float gaindB_buf[MAX_AUDIO_CHANNELS];
+	float *gain_db[MAX_AUDIO_CHANNELS];
+	size_t gain_db_len;
+	float gain_db_buf[MAX_AUDIO_CHANNELS];
 	float *env_in;
 	size_t env_in_len;
 };
@@ -125,12 +125,12 @@ static void resize_env_in_buffer(struct expander_data *cd, size_t len)
 	cd->env_in = brealloc(cd->env_in, cd->env_in_len * sizeof(float));
 }
 
-static void resize_gaindB_buffer(struct expander_data *cd, size_t len)
+static void resize_gain_db_buffer(struct expander_data *cd, size_t len)
 {
-	cd->gaindB_len = len;
+	cd->gain_db_len = len;
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		cd->gaindB[i] =
-			brealloc(cd->gaindB[i], cd->gaindB_len * sizeof(float));
+		cd->gain_db[i] = brealloc(cd->gain_db[i],
+					  cd->gain_db_len * sizeof(float));
 }
 
 static inline float gain_coefficient(uint32_t sample_rate, float time)
@@ -213,8 +213,8 @@ static void expander_update(void *data, obs_data_t *s)
 		resize_runaverage_buffer(cd, sample_len);
 	if (cd->env_in_len == 0)
 		resize_env_in_buffer(cd, sample_len);
-	if (cd->gaindB_len == 0)
-		resize_gaindB_buffer(cd, sample_len);
+	if (cd->gain_db_len == 0)
+		resize_gain_db_buffer(cd, sample_len);
 }
 
 static void *expander_create(obs_data_t *settings, obs_source_t *filter)
@@ -224,7 +224,7 @@ static void *expander_create(obs_data_t *settings, obs_source_t *filter)
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		cd->runave[i] = 0;
 		cd->envelope[i] = 0;
-		cd->gaindB_buf[i] = 0;
+		cd->gain_db_buf[i] = 0;
 	}
 	cd->is_gate = false;
 	const char *presets = obs_data_get_string(settings, S_PRESETS);
@@ -242,7 +242,7 @@ static void expander_destroy(void *data)
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++) {
 		bfree(cd->envelope_buf[i]);
 		bfree(cd->runaverage[i]);
-		bfree(cd->gaindB[i]);
+		bfree(cd->gain_db[i]);
 	}
 	bfree(cd->env_in);
 	bfree(cd);
@@ -311,11 +311,11 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
 
-	if (cd->gaindB_len < num_samples)
-		resize_gaindB_buffer(cd, num_samples);
+	if (cd->gain_db_len < num_samples)
+		resize_gain_db_buffer(cd, num_samples);
 	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
-		memset(cd->gaindB[i], 0,
-		       num_samples * sizeof(cd->gaindB[i][0]));
+		memset(cd->gain_db[i], 0,
+		       num_samples * sizeof(cd->gain_db[i][0]));
 
 	for (size_t chan = 0; chan < cd->num_channels; chan++) {
 		for (size_t i = 0; i < num_samples; ++i) {
@@ -329,34 +329,34 @@ static inline void process_expansion(struct expander_data *cd, float **samples,
 					: 0.0f;
 			// ballistics (attack/release)
 			if (i > 0) {
-				if (gain > cd->gaindB[chan][i - 1])
-					cd->gaindB[chan][i] =
+				if (gain > cd->gain_db[chan][i - 1])
+					cd->gain_db[chan][i] =
 						attack_gain *
-							cd->gaindB[chan][i - 1] +
+							cd->gain_db[chan][i - 1] +
 						(1.0f - attack_gain) * gain;
 				else
-					cd->gaindB[chan][i] =
+					cd->gain_db[chan][i] =
 						release_gain *
-							cd->gaindB[chan][i - 1] +
+							cd->gain_db[chan][i - 1] +
 						(1.0f - release_gain) * gain;
 			} else {
-				if (gain > cd->gaindB_buf[chan])
-					cd->gaindB[chan][i] =
+				if (gain > cd->gain_db_buf[chan])
+					cd->gain_db[chan][i] =
 						attack_gain *
-							cd->gaindB_buf[chan] +
+							cd->gain_db_buf[chan] +
 						(1.0f - attack_gain) * gain;
 				else
-					cd->gaindB[chan][i] =
+					cd->gain_db[chan][i] =
 						release_gain *
-							cd->gaindB_buf[chan] +
+							cd->gain_db_buf[chan] +
 						(1.0f - release_gain) * gain;
 			}
 
-			gain = db_to_mul(fminf(0, cd->gaindB[chan][i]));
+			gain = db_to_mul(fminf(0, cd->gain_db[chan][i]));
 			if (samples[chan])
 				samples[chan][i] *= gain * cd->output_gain;
 		}
-		cd->gaindB_buf[chan] = cd->gaindB[chan][num_samples - 1];
+		cd->gain_db_buf[chan] = cd->gain_db[chan][num_samples - 1];
 	}
 }
 
