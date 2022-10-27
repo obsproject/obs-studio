@@ -1642,6 +1642,7 @@ static inline void duplicate_item_data(struct obs_scene_item *dst,
 	dst->last_height = src->last_height;
 	dst->output_scale = src->output_scale;
 	dst->scale_filter = src->scale_filter;
+	dst->blend_method = src->blend_method;
 	dst->blend_type = src->blend_type;
 	dst->box_transform = src->box_transform;
 	dst->box_scale = src->box_scale;
