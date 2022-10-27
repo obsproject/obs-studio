@@ -358,7 +358,7 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	float prev_gain = gain_db[idx - 1];
 
 	/* --------------------------------- */
-	/* ballastics (attack/release)       */
+	/* ballistics (attack/release)       */
 
 	if (idx > 0) {
 		if (gain > prev_gain)
