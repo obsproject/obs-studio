@@ -304,59 +304,80 @@ static void analyze_envelope(struct expander_data *cd, float **samples,
 	}
 }
 
+static inline void process_sample(size_t idx, float *samples, float *env_buf,
+				  float *gain_db, float channel_gain,
+				  float threshold, float slope,
+				  float attack_gain, float inv_attack_gain,
+				  float release_gain, float inv_release_gain,
+				  float output_gain)
+{
+	/* --------------------------------- */
+	/* gain stage of expansion           */
+
+	float env_db = mul_to_db(env_buf[idx]);
+	float diff = threshold - env_db;
+	float gain = diff > 0.0f ? fmaxf(slope * diff, -60.0f) : 0.0f;
+	float prev_gain = gain_db[idx - 1];
+
+	/* --------------------------------- */
+	/* ballastics (attack/release)       */
+
+	if (idx > 0) {
+		if (gain > prev_gain)
+			gain_db[idx] = attack_gain * prev_gain +
+				       inv_attack_gain * gain;
+		else
+			gain_db[idx] = release_gain * prev_gain +
+				       inv_release_gain * gain;
+	} else {
+		if (gain > channel_gain)
+			gain_db[idx] = attack_gain * channel_gain +
+				       inv_attack_gain * gain;
+		else
+			gain_db[idx] = release_gain * channel_gain +
+				       inv_release_gain * gain;
+	}
+
+	/* --------------------------------- */
+	/* output                            */
+
+	gain = db_to_mul(fminf(0.0f, gain_db[idx]));
+	samples[idx] *= gain * output_gain;
+}
+
 // gain stage and ballistics in dB domain
 static inline void process_expansion(struct expander_data *cd, float **samples,
 				     uint32_t num_samples)
 {
 	const float attack_gain = cd->attack_gain;
 	const float release_gain = cd->release_gain;
+	const float inv_attack_gain = 1.0f - attack_gain;
+	const float inv_release_gain = 1.0f - release_gain;
+	const float threshold = cd->threshold;
+	const float slope = cd->slope;
+	const float output_gain = cd->output_gain;
 
 	if (cd->gain_db_len < num_samples)
 		resize_gain_db_buffer(cd, num_samples);
-	for (int i = 0; i < MAX_AUDIO_CHANNELS; i++)
+
+	for (size_t i = 0; i < cd->num_channels; i++)
 		memset(cd->gain_db[i], 0,
 		       num_samples * sizeof(cd->gain_db[i][0]));
 
 	for (size_t chan = 0; chan < cd->num_channels; chan++) {
-		for (size_t i = 0; i < num_samples; ++i) {
-			// gain stage of expansion
-			float env_db = mul_to_db(cd->envelope_buf[chan][i]);
-			float gain =
-				cd->threshold - env_db > 0.0f
-					? fmaxf(cd->slope * (cd->threshold -
-							     env_db),
-						-60.0f)
-					: 0.0f;
-			// ballistics (attack/release)
-			if (i > 0) {
-				if (gain > cd->gain_db[chan][i - 1])
-					cd->gain_db[chan][i] =
-						attack_gain *
-							cd->gain_db[chan][i - 1] +
-						(1.0f - attack_gain) * gain;
-				else
-					cd->gain_db[chan][i] =
-						release_gain *
-							cd->gain_db[chan][i - 1] +
-						(1.0f - release_gain) * gain;
-			} else {
-				if (gain > cd->gain_db_buf[chan])
-					cd->gain_db[chan][i] =
-						attack_gain *
-							cd->gain_db_buf[chan] +
-						(1.0f - attack_gain) * gain;
-				else
-					cd->gain_db[chan][i] =
-						release_gain *
-							cd->gain_db_buf[chan] +
-						(1.0f - release_gain) * gain;
-			}
+		float *channel_samples = samples[chan];
+		float *env_buf = cd->envelope_buf[chan];
+		float *gain_db = cd->gain_db[chan];
+		float channel_gain = cd->gain_db_buf[chan];
 
-			gain = db_to_mul(fminf(0, cd->gain_db[chan][i]));
-			if (samples[chan])
-				samples[chan][i] *= gain * cd->output_gain;
+		for (size_t i = 0; i < num_samples; ++i) {
+			process_sample(i, channel_samples, env_buf, gain_db,
+				       channel_gain, threshold, slope,
+				       attack_gain, inv_attack_gain,
+				       release_gain, inv_release_gain,
+				       output_gain);
 		}
-		cd->gain_db_buf[chan] = cd->gain_db[chan][num_samples - 1];
+		cd->gain_db_buf[chan] = gain_db[num_samples - 1];
 	}
 }
 
