@@ -421,7 +421,7 @@ static void remove_cr(wchar_t *source)
 void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 {
 	FILE *tmp_file = NULL;
-	uint32_t filesize = 0;
+	uint32_t filesize = 0, textsize;
 	char *tmp_read = NULL;
 	uint16_t header = 0;
 	size_t bytes_read;
@@ -464,9 +464,10 @@ void load_text_from_file(struct ft2_source *srcdata, const char *filename)
 		bfree(srcdata->text);
 		srcdata->text = NULL;
 	}
-	srcdata->text = bzalloc((strlen(tmp_read) + 1) * sizeof(wchar_t));
-	os_utf8_to_wcs(tmp_read, strlen(tmp_read), srcdata->text,
-		       (strlen(tmp_read) + 1));
+
+	textsize = (uint32_t)os_utf8_to_wcs(tmp_read, filesize, NULL, 0) - 1;
+	srcdata->text = bzalloc((textsize + 1) * sizeof(wchar_t));
+	os_utf8_to_wcs(tmp_read, filesize, srcdata->text, (textsize + 1));
 
 	remove_cr(srcdata->text);
 	bfree(tmp_read);
