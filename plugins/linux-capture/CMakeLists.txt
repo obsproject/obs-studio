@@ -1,5 +1,10 @@
 project(linux-capture)
 
+if(NOT ENABLE_X11)
+  obs_status(DISABLED "linux-capture")
+  return()
+endif()
+
 find_package(X11 REQUIRED)
 find_package(XCB COMPONENTS XCB XFIXES RANDR SHM XINERAMA COMPOSITE)
 if(NOT TARGET XCB::COMPOSITE)

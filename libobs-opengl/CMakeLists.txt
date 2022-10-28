@@ -46,13 +46,16 @@ elseif(OS_MACOS)
   set_target_properties(libobs-opengl PROPERTIES PREFIX "")
 
 elseif(OS_POSIX)
-  find_package(X11 REQUIRED)
-  find_package(XCB COMPONENTS XCB)
-  find_package(X11_XCB REQUIRED)
+  target_sources(libobs-opengl PRIVATE gl-egl-common.c gl-nix.c)
 
-  target_sources(libobs-opengl PRIVATE gl-egl-common.c gl-nix.c gl-x11-egl.c)
+  if(ENABLE_X11)
+    find_package(X11 REQUIRED)
+    find_package(XCB COMPONENTS XCB)
+    find_package(X11_XCB REQUIRED)
 
-  target_link_libraries(libobs-opengl PRIVATE XCB::XCB X11::X11_xcb)
+    target_sources(libobs-opengl PRIVATE gl-x11-egl.c)
+    target_link_libraries(libobs-opengl PRIVATE XCB::XCB X11::X11_xcb)
+  endif()
 
   set_target_properties(libobs-opengl PROPERTIES PREFIX "")
 

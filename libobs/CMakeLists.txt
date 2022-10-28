@@ -376,26 +376,28 @@ elseif(OS_POSIX)
     target_compile_definitions(libobs PRIVATE ENABLE_DARRAY_TYPE_TEST)
   endif()
 
-  find_package(X11 REQUIRED)
-  find_package(
-    XCB
-    COMPONENTS XCB
-    OPTIONAL_COMPONENTS XINPUT
-    QUIET)
-  find_package(X11_XCB REQUIRED)
-
   target_sources(
     libobs
     PRIVATE obs-nix.c
             obs-nix-platform.c
             obs-nix-platform.h
-            obs-nix-x11.c
             util/threading-posix.c
             util/threading-posix.h
             util/pipe-posix.c
             util/platform-nix.c)
 
-  target_link_libraries(libobs PRIVATE X11::X11_xcb XCB::XCB)
+  if(ENABLE_X11)
+    find_package(X11 REQUIRED)
+    find_package(
+      XCB
+      COMPONENTS XCB
+      OPTIONAL_COMPONENTS XINPUT
+      QUIET)
+    find_package(X11_XCB REQUIRED)
+
+    target_sources(libobs PRIVATE obs-nix-x11.c)
+    target_link_libraries(libobs PRIVATE X11::X11_xcb XCB::XCB)
+  endif()
 
   if(USE_XDG)
     target_compile_definitions(libobs PRIVATE USE_XDG)

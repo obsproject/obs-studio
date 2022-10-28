@@ -1,6 +1,6 @@
 project(glad)
 
-find_package(OpenGL REQUIRED)
+find_package(OpenGL COMPONENTS OpenGL REQUIRED)
 
 add_library(glad SHARED)
 add_library(OBS::obsglad ALIAS glad)
@@ -11,7 +11,7 @@ target_include_directories(glad PUBLIC ${CMAKE_CURRENT_SOURCE_DIR}/include)
 
 target_compile_definitions(glad PRIVATE GLAD_GLAPI_EXPORT_BUILD)
 
-target_link_libraries(glad PUBLIC OpenGL::GL)
+target_link_libraries(glad PUBLIC OpenGL::OpenGL)
 
 set_target_properties(
   glad
@@ -29,7 +29,7 @@ if(OS_WINDOWS)
   target_sources(glad PRIVATE src/glad_wgl.c include/glad/glad_wgl.h obsglad.rc)
 
 elseif(OS_POSIX AND NOT OS_MACOS)
-  find_package(OpenGL REQUIRED)
+  find_package(OpenGL COMPONENTS EGL REQUIRED)
 
   if(TARGET OpenGL::EGL)
     target_sources(glad PRIVATE src/glad_egl.c include/EGL/eglplatform.h

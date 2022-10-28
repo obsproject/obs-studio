@@ -96,7 +96,7 @@ elseif(OS_MACOS)
   set_source_files_properties(auto-scene-switcher-osx.mm
                               PROPERTIES COMPILE_FLAGS -fobjc-arc)
 
-elseif(OS_POSIX)
+elseif(OS_POSIX AND ENABLE_X11)
   find_package(X11 REQUIRED)
 
   target_link_libraries(frontend-tools PRIVATE X11::X11)
