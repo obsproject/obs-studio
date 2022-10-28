@@ -66,6 +66,13 @@ int open_gl(void) {
         }
     }
 
+#ifndef __APPLE_
+    libGL = dlopen("libOpenGL.so", RTLD_NOW | RTLD_GLOBAL);
+    if(libGL != NULL) {
+        return 1;
+    }
+#endif
+
     return 0;
 }
 
