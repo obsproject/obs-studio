@@ -1705,7 +1705,7 @@ struct obs_video_info *obs_create_video_info()
 #ifdef _WIN32
 	ovi->graphics_module = "libobs-d3d11.dll";
 #else
-	ovi->graphics_module = "libobs-opengl";
+	ovi->graphics_module = "libobs-opengl.dylib";
 #endif
 
 	ovi->base_width = 1280;
