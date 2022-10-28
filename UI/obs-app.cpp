@@ -1526,10 +1526,12 @@ bool OBSApp::OBSInit()
 	qRegisterMetaType<VoidFunc>("VoidFunc");
 
 #if !defined(_WIN32) && !defined(__APPLE__)
+#ifdef ENABLE_X11
 	if (QApplication::platformName() == "xcb") {
 		obs_set_nix_platform(OBS_NIX_PLATFORM_X11_EGL);
 		blog(LOG_INFO, "Using EGL/X11");
 	}
+#endif
 
 #ifdef ENABLE_WAYLAND
 	if (QApplication::platformName().contains("wayland")) {
