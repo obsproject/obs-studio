@@ -18,14 +18,17 @@
 #pragma once
 
 #include "util/c99defs.h"
+#include "obs-config.h"
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
 enum obs_nix_platform_type {
+#ifdef ENABLE_X11
 	OBS_NIX_PLATFORM_X11_GLX OBS_DEPRECATED,
 	OBS_NIX_PLATFORM_X11_EGL,
+#endif
 #ifdef ENABLE_WAYLAND
 	OBS_NIX_PLATFORM_WAYLAND,
 #endif

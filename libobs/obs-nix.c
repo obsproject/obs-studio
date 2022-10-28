@@ -19,7 +19,10 @@
 #include "obs-internal.h"
 #include "obs-nix.h"
 #include "obs-nix-platform.h"
+
+#ifdef ENABLE_X11
 #include "obs-nix-x11.h"
+#endif
 
 #ifdef ENABLE_WAYLAND
 #include "obs-nix-wayland.h"
@@ -327,9 +330,11 @@ void log_system_info(void)
 	log_desktop_session_info();
 #endif
 	switch (obs_get_nix_platform()) {
+#ifdef ENABLE_X11
 	case OBS_NIX_PLATFORM_X11_EGL:
 		obs_nix_x11_log_info();
 		break;
+#endif
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND:
 		break;
@@ -340,9 +345,11 @@ void log_system_info(void)
 bool obs_hotkeys_platform_init(struct obs_core_hotkeys *hotkeys)
 {
 	switch (obs_get_nix_platform()) {
+#ifdef ENABLE_X11
 	case OBS_NIX_PLATFORM_X11_EGL:
 		hotkeys_vtable = obs_nix_x11_get_hotkeys_vtable();
 		break;
+#endif
 #ifdef ENABLE_WAYLAND
 	case OBS_NIX_PLATFORM_WAYLAND:
 		hotkeys_vtable = obs_nix_wayland_get_hotkeys_vtable();

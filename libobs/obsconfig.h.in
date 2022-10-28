@@ -20,6 +20,7 @@
 #cmakedefine GIO_FOUND
 #cmakedefine PULSEAUDIO_FOUND
 #cmakedefine XCB_XINPUT_FOUND
+#cmakedefine ENABLE_X11
 #cmakedefine ENABLE_WAYLAND
 
 /* NOTE: Release candidate version numbers internally are always the previous

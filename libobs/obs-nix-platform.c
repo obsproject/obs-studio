@@ -19,13 +19,19 @@
 
 #include <assert.h>
 
+#ifdef ENABLE_X11
 static enum obs_nix_platform_type obs_nix_platform = OBS_NIX_PLATFORM_X11_EGL;
+#else
+static enum obs_nix_platform_type obs_nix_platform = OBS_NIX_PLATFORM_WAYLAND;
+#endif
 
 static void *obs_nix_platform_display = NULL;
 
 void obs_set_nix_platform(enum obs_nix_platform_type platform)
 {
+#ifdef ENABLE_X11
 	assert(platform != OBS_NIX_PLATFORM_X11_GLX);
+#endif
 	obs_nix_platform = platform;
 }
 
