@@ -19,6 +19,8 @@
  */
 
 #include "pipewire.h"
+
+#include "formats.h"
 #include "portal.h"
 
 #include <util/dstr.h>
@@ -30,8 +32,11 @@
 #include <spa/debug/dict.h>
 #include <spa/node/keys.h>
 #include <spa/pod/iter.h>
+#include <spa/pod/parser.h>
+#include <spa/param/props.h>
 #include <spa/utils/defs.h>
 #include <spa/utils/keys.h>
+#include <spa/utils/result.h>
 
 struct camera_portal_source {
 	obs_source_t *source;
@@ -118,7 +123,101 @@ struct camera_device {
 	struct pw_properties *properties;
 	struct pw_proxy *proxy;
 	struct spa_hook proxy_listener;
+
+	struct pw_node *node;
+	struct spa_hook node_listener;
+
+	struct pw_node_info *info;
+
+	uint32_t changed;
+	struct spa_list pending_list;
+	struct spa_list param_list;
+	int pending_sync;
 };
+
+struct param {
+	uint32_t id;
+	int32_t seq;
+	struct spa_list link;
+	struct spa_pod *param;
+};
+
+static uint32_t clear_params(struct spa_list *param_list, uint32_t id)
+{
+	struct param *p, *t;
+	uint32_t count = 0;
+
+	spa_list_for_each_safe(p, t, param_list, link)
+	{
+		if (id == SPA_ID_INVALID || p->id == id) {
+			spa_list_remove(&p->link);
+			free(p);
+			count++;
+		}
+	}
+	return count;
+}
+
+static struct param *add_param(struct spa_list *params, int seq, uint32_t id,
+			       const struct spa_pod *param)
+{
+	struct param *p;
+
+	if (id == SPA_ID_INVALID) {
+		if (param == NULL || !spa_pod_is_object(param)) {
+			errno = EINVAL;
+			return NULL;
+		}
+		id = SPA_POD_OBJECT_ID(param);
+	}
+
+	p = malloc(sizeof(*p) + (param != NULL ? SPA_POD_SIZE(param) : 0));
+	if (p == NULL)
+		return NULL;
+
+	p->id = id;
+	p->seq = seq;
+	if (param != NULL) {
+		p->param = SPA_PTROFF(p, sizeof(*p), struct spa_pod);
+		memcpy(p->param, param, SPA_POD_SIZE(param));
+	} else {
+		clear_params(params, id);
+		p->param = NULL;
+	}
+	spa_list_append(params, &p->link);
+
+	return p;
+}
+
+static void object_update_params(struct spa_list *param_list,
+				 struct spa_list *pending_list,
+				 uint32_t n_params,
+				 struct spa_param_info *params)
+{
+	struct param *p, *t;
+	uint32_t i;
+
+	for (i = 0; i < n_params; i++) {
+		spa_list_for_each_safe(p, t, pending_list, link)
+		{
+			if (p->id == params[i].id && p->seq != params[i].seq &&
+			    p->param != NULL) {
+				spa_list_remove(&p->link);
+				free(p);
+			}
+		}
+	}
+	spa_list_consume(p, pending_list, link)
+	{
+		spa_list_remove(&p->link);
+		if (p->param == NULL) {
+			clear_params(param_list, p->id);
+			free(p);
+		} else {
+			spa_list_append(param_list, &p->link);
+		}
+	}
+}
 
 static struct camera_device *
 camera_device_new(uint32_t id, const struct spa_dict *properties)
@@ -127,6 +226,8 @@ camera_device_new(uint32_t id, const struct spa_dict *properties)
 	device->id = id;
 	device->properties = properties ? pw_properties_new_dict(properties)
 					: NULL;
+	spa_list_init(&device->pending_list);
+	spa_list_init(&device->param_list);
 	return device;
 }
 
@@ -135,6 +236,8 @@ static void camera_device_free(struct camera_device *device)
 	if (!device)
 		return;
 
+	clear_params(&device->pending_list, SPA_ID_INVALID);
+	clear_params(&device->param_list, SPA_ID_INVALID);
 	g_clear_pointer(&device->proxy, pw_proxy_destroy);
 	g_clear_pointer(&device->properties, pw_properties_free);
 	bfree(device);
@@ -183,6 +286,140 @@ static void stream_camera(struct camera_portal_source *camera_source)
 		&connect_info);
 }
 
+static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
+{
+	struct param *p;
+	enum video_format last_format = VIDEO_FORMAT_NONE;
+
+	obs_property_list_clear(prop);
+
+	spa_list_for_each(p, &dev->param_list, link)
+	{
+		struct obs_pw_video_format obs_pw_video_format;
+		uint32_t media_type, media_subtype, format;
+
+		if (p->id != SPA_PARAM_EnumFormat || p->param == NULL)
+			continue;
+
+		if (spa_format_parse(p->param, &media_type, &media_subtype) < 0)
+			continue;
+		if (media_type != SPA_MEDIA_TYPE_video)
+			continue;
+		if (media_subtype == SPA_MEDIA_SUBTYPE_raw) {
+			if (spa_pod_parse_object(p->param,
+						 SPA_TYPE_OBJECT_Format, NULL,
+						 SPA_FORMAT_VIDEO_format,
+						 SPA_POD_Id(&format)) < 0)
+				continue;
+		} else {
+			format = SPA_VIDEO_FORMAT_ENCODED;
+		}
+
+		if (!obs_pw_video_format_from_spa_format(format,
+							 &obs_pw_video_format))
+			continue;
+
+		if (obs_pw_video_format.video_format == last_format)
+			continue;
+
+		last_format = obs_pw_video_format.video_format;
+
+		obs_property_list_add_int(prop, obs_pw_video_format.pretty_name,
+					  format);
+	}
+}
+
+static inline void add_control_property(obs_properties_t *props,
+					obs_data_t *settings,
+					struct camera_device *dev,
+					struct param *p)
+{
+	UNUSED_PARAMETER(dev);
+
+	const struct spa_pod *type, *pod, *labels = NULL;
+	uint32_t n_vals, choice, container = SPA_ID_INVALID;
+	obs_property_t *prop = NULL;
+	const char *name;
+
+	if (spa_pod_parse_object(
+		    p->param, SPA_TYPE_OBJECT_PropInfo, NULL,
+		    SPA_PROP_INFO_description, SPA_POD_OPT_String(&name),
+		    SPA_PROP_INFO_type, SPA_POD_PodChoice(&type),
+		    SPA_PROP_INFO_container, SPA_POD_OPT_Id(&container),
+		    SPA_PROP_INFO_labels, SPA_POD_OPT_PodStruct(&labels)) < 0)
+		return;
+
+	pod = spa_pod_get_values(type, &n_vals, &choice);
+
+	container = container != SPA_ID_INVALID ? container : SPA_POD_TYPE(pod);
+
+	switch (SPA_POD_TYPE(pod)) {
+	case SPA_TYPE_Int: {
+		int32_t *vals = SPA_POD_BODY(pod);
+		if (n_vals < 1)
+			return;
+		if (choice == SPA_CHOICE_Enum) {
+			struct spa_pod_parser prs;
+			struct spa_pod_frame f;
+
+			if (labels == NULL)
+				return;
+
+			prop = obs_properties_add_list(props, (char *)name,
+						       (char *)name,
+						       OBS_COMBO_TYPE_LIST,
+						       OBS_COMBO_FORMAT_INT);
+
+			spa_pod_parser_pod(&prs, (struct spa_pod *)labels);
+			if (spa_pod_parser_push_struct(&prs, &f) < 0)
+				return;
+
+			while (1) {
+				int32_t id;
+				const char *desc;
+				if (spa_pod_parser_get_int(&prs, &id) < 0 ||
+				    spa_pod_parser_get_string(&prs, &desc) < 0)
+					break;
+				obs_property_list_add_int(prop, (char *)desc,
+							  id);
+			}
+		} else {
+			prop = obs_properties_add_int_slider(
+				props, (char *)name, (char *)name,
+				n_vals > 1 ? vals[1] : vals[0],
+				n_vals > 2 ? vals[2] : vals[0],
+				n_vals > 3 ? vals[3] : 1);
+		}
+		obs_data_set_default_int(settings, (char *)name, vals[0]);
+		break;
+	}
+	case SPA_TYPE_Bool: {
+		int32_t *vals = SPA_POD_BODY(pod);
+		if (n_vals < 1)
+			return;
+		prop = obs_properties_add_bool(props, (char *)name,
+					       (char *)name);
+		obs_data_set_default_bool(settings, (char *)name, vals[0]);
+		break;
+	}
+	default:
+		break;
+	}
+}
+
+static void camera_update_controls(struct camera_device *dev,
+				   obs_properties_t *props,
+				   obs_data_t *settings)
+{
+	struct param *p;
+	spa_list_for_each(p, &dev->param_list, link)
+	{
+		if (p->id != SPA_PARAM_PropInfo || p->param == NULL)
+			continue;
+		add_control_property(props, settings, dev, p);
+	}
+}
+
 static bool device_selected(void *data, obs_properties_t *props,
 			    obs_property_t *property, obs_data_t *settings)
 {
@@ -191,11 +428,69 @@ static bool device_selected(void *data, obs_properties_t *props,
 
 	struct camera_portal_source *camera_source = data;
 	const char *device_id;
+	struct camera_device *device;
+	obs_properties_t *new_control_properties;
 
 	device_id = obs_data_get_string(settings, "device_id");
+	blog(LOG_INFO, "[camera-portal] selected camera '%s'", device_id);
+
+	device = g_hash_table_lookup(connection->devices, device_id);
+	if (device == NULL)
+		return false;
 
 	if (update_device_id(camera_source, device_id))
 		stream_camera(camera_source);
+
+	blog(LOG_INFO, "[camera-portal] Updating pixel formats");
+
+	property = obs_properties_get(props, "pixelformat");
+	new_control_properties = obs_properties_create();
+	obs_properties_remove_by_name(props, "controls");
+
+	camera_format_list(device, property);
+	camera_update_controls(device, new_control_properties, settings);
+
+	obs_properties_add_group(props, "controls",
+				 obs_module_text("CameraControls"),
+				 OBS_GROUP_NORMAL, new_control_properties);
+
+	obs_property_modified(property, settings);
+
+	return true;
+}
+
+/*
+ * Format selected callback
+ */
+static bool format_selected(void *data, obs_properties_t *properties,
+			    obs_property_t *property, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(properties);
+	UNUSED_PARAMETER(property);
+	UNUSED_PARAMETER(settings);
+
+	struct camera_portal_source *camera_source = data;
+
+	blog(LOG_INFO, "[camera-portal] Selected format for '%s'",
+	     camera_source->device_id);
+
+	return true;
+}
+
+/*
+ * Resolution selected callback
+ */
+static bool resolution_selected(void *data, obs_properties_t *properties,
+				obs_property_t *property, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(properties);
+	UNUSED_PARAMETER(property);
+	UNUSED_PARAMETER(settings);
+
+	struct camera_portal_source *camera_source = data;
+
+	blog(LOG_INFO, "[camera-portal] Selected resolution for '%s'",
+	     camera_source->device_id);
 
 	return true;
 }
@@ -240,6 +535,60 @@ static void populate_cameras_list(struct camera_portal_source *camera_source,
 
 /* ------------------------------------------------- */
 
+static void node_info(void *data, const struct pw_node_info *info)
+{
+	struct camera_device *device = data;
+	uint32_t i, changed = 0;
+	int res;
+
+	info = device->info = pw_node_info_update(device->info, info);
+	if (info == NULL)
+		return;
+
+	if (info->change_mask & PW_NODE_CHANGE_MASK_PARAMS) {
+		for (i = 0; i < info->n_params; i++) {
+			uint32_t id = info->params[i].id;
+
+			if (info->params[i].user == 0)
+				continue;
+			info->params[i].user = 0;
+
+			changed++;
+			add_param(&device->pending_list, 0, id, NULL);
+			if (!(info->params[i].flags & SPA_PARAM_INFO_READ))
+				continue;
+
+			res = pw_node_enum_params(
+				(struct pw_node *)device->proxy,
+				++info->params[i].seq, id, 0, -1, NULL);
+			if (SPA_RESULT_IS_ASYNC(res))
+				info->params[i].seq = res;
+		}
+	}
+
+	if (changed) {
+		device->changed += changed;
+		device->pending_sync =
+			pw_proxy_sync(device->proxy, device->pending_sync);
+	}
+}
+
+static void node_param(void *data, int seq, uint32_t id, uint32_t index,
+		       uint32_t next, const struct spa_pod *param)
+{
+	UNUSED_PARAMETER(index);
+	UNUSED_PARAMETER(next);
+
+	struct camera_device *device = data;
+	add_param(&device->pending_list, seq, id, param);
+}
+
+static const struct pw_node_events node_events = {
+	PW_VERSION_NODE_EVENTS,
+	.info = node_info,
+	.param = node_param,
+};
+
 static void on_proxy_removed_cb(void *data)
 {
 	struct camera_device *device = data;
@@ -254,11 +603,21 @@ static void on_destroy_proxy_cb(void *data)
 
 	device->proxy = NULL;
 }
+static void on_done_proxy_cb(void *data, int seq)
+{
+	struct camera_device *device = data;
+	if (device->info != NULL && device->pending_sync == seq) {
+		object_update_params(&device->param_list, &device->pending_list,
+				     device->info->n_params,
+				     device->info->params);
+	}
+}
 
 static const struct pw_proxy_events proxy_events = {
 	PW_VERSION_PROXY_EVENTS,
 	.removed = on_proxy_removed_cb,
 	.destroy = on_destroy_proxy_cb,
+	.done = on_done_proxy_cb,
 };
 
 static void on_registry_global_cb(void *user_data, uint32_t id,
@@ -292,6 +651,9 @@ static void on_registry_global_cb(void *user_data, uint32_t id,
 	}
 	pw_proxy_add_listener(device->proxy, &device->proxy_listener,
 			      &proxy_events, device);
+	device->node = (struct pw_node *)device->proxy;
+	pw_node_add_listener(device->node, &device->node_listener, &node_events,
+			     device);
 
 	g_hash_table_insert(connection->devices, bstrdup(device_id), device);
 
@@ -511,22 +873,48 @@ static void pipewire_camera_get_defaults(obs_data_t *settings)
 static obs_properties_t *pipewire_camera_get_properties(void *data)
 {
 	struct camera_portal_source *camera_source = data;
-	obs_properties_t *properties;
+	obs_properties_t *controls_props;
+	obs_properties_t *props;
+	obs_property_t *resolution_list;
 	obs_property_t *device_list;
+	obs_property_t *format_list;
 
-	properties = obs_properties_create();
+	props = obs_properties_create();
 
 	device_list = obs_properties_add_list(
-		properties, "device_id",
-		obs_module_text("PipeWireCameraDevice"), OBS_COMBO_TYPE_LIST,
-		OBS_COMBO_FORMAT_STRING);
+		props, "device_id", obs_module_text("PipeWireCameraDevice"),
+		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
+
+	format_list = obs_properties_add_list(props, "pixelformat",
+					      obs_module_text("VideoFormat"),
+					      OBS_COMBO_TYPE_LIST,
+					      OBS_COMBO_FORMAT_INT);
+
+	resolution_list = obs_properties_add_list(props, "resolution",
+						  obs_module_text("Resolution"),
+						  OBS_COMBO_TYPE_LIST,
+						  OBS_COMBO_FORMAT_INT);
+
+	obs_properties_add_list(props, "framerate",
+				obs_module_text("FrameRate"),
+				OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
+	// a group to contain the camera control
+	controls_props = obs_properties_create();
+	obs_properties_add_group(props, "controls",
+				 obs_module_text("CameraControls"),
+				 OBS_GROUP_NORMAL, controls_props);
 
 	populate_cameras_list(camera_source, device_list);
 
 	obs_property_set_modified_callback2(device_list, device_selected,
 					    camera_source);
+	obs_property_set_modified_callback2(format_list, format_selected,
+					    camera_source);
+	obs_property_set_modified_callback2(resolution_list,
+					    resolution_selected, camera_source);
 
-	return properties;
+	return props;
 }
 
 static void pipewire_camera_update(void *data, obs_data_t *settings)
@@ -535,6 +923,8 @@ static void pipewire_camera_update(void *data, obs_data_t *settings)
 	const char *device_id;
 
 	device_id = obs_data_get_string(settings, "device_id");
+
+	blog(LOG_INFO, "[camera-portal] Updating device %s", device_id);
 
 	if (update_device_id(camera_source, device_id))
 		stream_camera(camera_source);
