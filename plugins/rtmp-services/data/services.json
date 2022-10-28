@@ -2546,6 +2546,22 @@
                 "max video bitrate": 20000,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "Whowatch (ふわっち)",
+            "more_info_link": "https://whowatch.tv/help/encoder",
+            "stream_key_link": "https://whowatch.tv/publish",
+            "servers": [
+                {
+                    "name": "default",
+                    "url": "rtmp://live.whowatch.tv/live/"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 1800,
+                "max audio bitrate": 192
+            }
         }
     ]
 }
