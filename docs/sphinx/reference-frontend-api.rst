@@ -798,3 +798,21 @@ Functions
 .. function:: bool obs_frontend_is_theme_dark(void)
 
    :return: Checks if the current theme is dark or light.
+
+---------------------------------------
+
+.. function:: const char *obs_frontend_get_last_recording(void)
+
+   :return: The file path of the last recording.
+
+---------------------------------------
+
+.. function:: const char *obs_frontend_get_last_screenshot(void)
+
+   :return: The file path of the last screenshot taken.
+
+---------------------------------------
+
+.. function:: const char *obs_frontend_get_last_replay(void)
+
+   :return: The file path of the last replay buffer saved.
