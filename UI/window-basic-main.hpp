@@ -636,6 +636,9 @@ private:
 
 	float GetDevicePixelRatio();
 
+	std::string lastScreenshot;
+	std::string lastReplay;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();

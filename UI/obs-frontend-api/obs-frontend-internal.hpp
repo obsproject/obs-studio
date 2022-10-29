@@ -147,6 +147,10 @@ struct obs_frontend_callbacks {
 	obs_frontend_get_locale_string(const char *string) = 0;
 
 	virtual bool obs_frontend_is_theme_dark(void) = 0;
+
+	virtual const char *obs_frontend_get_last_recording(void) = 0;
+	virtual const char *obs_frontend_get_last_screenshot(void) = 0;
+	virtual const char *obs_frontend_get_last_replay(void) = 0;
 };
 
 EXPORT void

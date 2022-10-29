@@ -7476,15 +7476,17 @@ void OBSBasic::ReplayBufferSaved()
 	proc_handler_t *ph =
 		obs_output_get_proc_handler(outputHandler->replayBuffer);
 	proc_handler_call(ph, "get_last_replay", &cd);
-	QString path = QT_UTF8(calldata_string(&cd, "path"));
-	QString msg = QTStr("Basic.StatusBar.ReplayBufferSavedTo").arg(path);
+	std::string path = calldata_string(&cd, "path");
+	QString msg = QTStr("Basic.StatusBar.ReplayBufferSavedTo")
+			      .arg(QT_UTF8(path.c_str()));
 	ShowStatusBarMessage(msg);
+	lastReplay = path;
 	calldata_free(&cd);
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_REPLAY_BUFFER_SAVED);
 
-	AutoRemux(path);
+	AutoRemux(QT_UTF8(path.c_str()));
 }
 
 void OBSBasic::ReplayBufferStop(int code)
