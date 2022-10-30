@@ -225,7 +225,7 @@ static bool try_connect(void *data, const char *device)
 	memset(&parm, 0, sizeof(parm));
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (ioctl(vcam->device, VIDIOC_STREAMON, &parm) < 0) {
+	if (ioctl(vcam->device, VIDIOC_STREAMON, &parm) == -1) {
 		blog(LOG_ERROR, "Failed to start streaming on '%s' (%s)",
 		     device, strerror(errno));
 		goto fail_close_device;
@@ -319,7 +319,7 @@ static void virtualcam_stop(void *data, uint64_t ts)
 	struct v4l2_streamparm parm = {0};
 	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
 
-	if (ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) < 0) {
+	if (ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) == -1) {
 		blog(LOG_WARNING,
 		     "Failed to stop streaming on video device %d (%s)",
 		     vcam->device, strerror(errno));
