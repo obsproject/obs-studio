@@ -2829,14 +2829,15 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 				obs_data_get_string(data, "preset");
 
 			if (astrcmpi(preset, "mq") == 0) {
-				obs_data_set_string(data, "preset2", "p6");
+				obs_data_set_string(data, "preset2", "p5");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass", "qres");
 
 			} else if (astrcmpi(preset, "hq") == 0) {
 				obs_data_set_string(data, "preset2", "p5");
 				obs_data_set_string(data, "tune", "hq");
-				obs_data_set_string(data, "multipass", "qres");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
 
 			} else if (astrcmpi(preset, "default") == 0) {
 				obs_data_set_string(data, "preset2", "p3");
@@ -2859,7 +2860,8 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 			} else if (astrcmpi(preset, "llhq") == 0) {
 				obs_data_set_string(data, "preset2", "p4");
 				obs_data_set_string(data, "tune", "ll");
-				obs_data_set_string(data, "multipass", "qres");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
 
 			} else if (astrcmpi(preset, "llhp") == 0) {
 				obs_data_set_string(data, "preset2", "p2");
