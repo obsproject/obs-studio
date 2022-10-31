@@ -29,7 +29,6 @@
 #include <unistd.h>
 #include <gio/gio.h>
 #include <gio/gunixfdlist.h>
-#include <spa/debug/dict.h>
 #include <spa/node/keys.h>
 #include <spa/pod/iter.h>
 #include <spa/pod/parser.h>
@@ -329,6 +328,57 @@ static void camera_format_list(struct camera_device *dev, obs_property_t *prop)
 	}
 }
 
+static bool control_changed(void *data, obs_properties_t *props,
+			    obs_property_t *prop, obs_data_t *settings)
+{
+	UNUSED_PARAMETER(props);
+
+	struct camera_device *dev;
+	const char *device_id;
+	uint32_t id;
+	char buf[1024];
+	struct spa_pod_builder b = SPA_POD_BUILDER_INIT(buf, sizeof(buf));
+	struct spa_pod_frame f[1];
+	struct spa_pod *param;
+
+	device_id = obs_data_get_string(settings, "device_id");
+
+	dev = g_hash_table_lookup(connection->devices, device_id);
+	if (dev == NULL) {
+		blog(LOG_ERROR, "unknown device %s", device_id);
+		return false;
+	}
+
+	id = SPA_PTR_TO_UINT32(data);
+
+	spa_pod_builder_push_object(&b, &f[0], SPA_TYPE_OBJECT_Props,
+				    SPA_PARAM_Props);
+
+	switch (obs_property_get_type(prop)) {
+	case OBS_PROPERTY_BOOL: {
+		bool val = obs_data_get_bool(settings, obs_property_name(prop));
+		spa_pod_builder_add(&b, id, SPA_POD_Bool(val), 0);
+		break;
+	}
+	case OBS_PROPERTY_INT:
+	case OBS_PROPERTY_LIST: {
+		int val = obs_data_get_int(settings, obs_property_name(prop));
+		spa_pod_builder_add(&b, id, SPA_POD_Int(val), 0);
+		break;
+	}
+	default:
+		blog(LOG_ERROR, "unknown property type for %s",
+		     obs_property_name(prop));
+		return false;
+	}
+	param = spa_pod_builder_pop(&b, &f[0]);
+
+	pw_node_set_param((struct pw_node *)dev->proxy, SPA_PARAM_Props, 0,
+			  param);
+
+	return true;
+}
+
 static inline void add_control_property(obs_properties_t *props,
 					obs_data_t *settings,
 					struct camera_device *dev,
@@ -337,16 +387,17 @@ static inline void add_control_property(obs_properties_t *props,
 	UNUSED_PARAMETER(dev);
 
 	const struct spa_pod *type, *pod, *labels = NULL;
-	uint32_t n_vals, choice, container = SPA_ID_INVALID;
+	uint32_t id, n_vals, choice, container = SPA_ID_INVALID;
 	obs_property_t *prop = NULL;
 	const char *name;
 
 	if (spa_pod_parse_object(
-		    p->param, SPA_TYPE_OBJECT_PropInfo, NULL,
-		    SPA_PROP_INFO_description, SPA_POD_OPT_String(&name),
-		    SPA_PROP_INFO_type, SPA_POD_PodChoice(&type),
-		    SPA_PROP_INFO_container, SPA_POD_OPT_Id(&container),
-		    SPA_PROP_INFO_labels, SPA_POD_OPT_PodStruct(&labels)) < 0)
+		    p->param, SPA_TYPE_OBJECT_PropInfo, NULL, SPA_PROP_INFO_id,
+		    SPA_POD_Id(&id), SPA_PROP_INFO_description,
+		    SPA_POD_OPT_String(&name), SPA_PROP_INFO_type,
+		    SPA_POD_PodChoice(&type), SPA_PROP_INFO_container,
+		    SPA_POD_OPT_Id(&container), SPA_PROP_INFO_labels,
+		    SPA_POD_OPT_PodStruct(&labels)) < 0)
 		return;
 
 	pod = spa_pod_get_values(type, &n_vals, &choice);
@@ -391,6 +442,8 @@ static inline void add_control_property(obs_properties_t *props,
 				n_vals > 3 ? vals[3] : 1);
 		}
 		obs_data_set_default_int(settings, (char *)name, vals[0]);
+		obs_property_set_modified_callback2(prop, control_changed,
+						    SPA_UINT32_TO_PTR(id));
 		break;
 	}
 	case SPA_TYPE_Bool: {
@@ -400,6 +453,8 @@ static inline void add_control_property(obs_properties_t *props,
 		prop = obs_properties_add_bool(props, (char *)name,
 					       (char *)name);
 		obs_data_set_default_bool(settings, (char *)name, vals[0]);
+		obs_property_set_modified_callback2(prop, control_changed,
+						    SPA_UINT32_TO_PTR(id));
 		break;
 	}
 	default:
