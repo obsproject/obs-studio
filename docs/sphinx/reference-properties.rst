@@ -649,11 +649,19 @@ Property Modification Functions
 
    Adds a string to a string list.
 
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
+   :returns: The index of the list item.
+
 ---------------------
 
 .. function:: size_t obs_property_list_add_int(obs_property_t *p, const char *name, long long val)
 
    Adds an integer to a integer list.
+
+   :param    name: Localized name shown to user
+   :param    val:  The actual int value stored and will be returned by :c:func:`obs_data_get_int`
+   :returns: The index of the list item.
 
 ---------------------
 
@@ -661,11 +669,19 @@ Property Modification Functions
 
    Adds a floating point to a floating point list.
 
+   :param    name: Localized name shown to user
+   :param    val:  The actual float value stored and will be returned by :c:func:`obs_data_get_double`
+   :returns: The index of the list item.
+
 ---------------------
 
 .. function:: void obs_property_list_insert_string(obs_property_t *p, size_t idx, const char *name, const char *val)
 
    Inserts a string in to a string list.
+
+   :param    idx:  The index of the list item
+   :param    name: Localized name shown to user
+   :param    val:  The actual string value stored and will be returned by :c:func:`obs_data_get_string`
 
 ---------------------
 
@@ -673,11 +689,19 @@ Property Modification Functions
 
    Inserts an integer in to an integer list.
 
+   :param    idx:  The index of the list item
+   :param    name: Localized name shown to user
+   :param    val:  The actual int value stored and will be returned by :c:func:`obs_data_get_int`
+
 ---------------------
 
 .. function:: void obs_property_list_insert_float(obs_property_t *p, size_t idx, const char *name, double val)
 
    Inserts a floating point in to a floating point list.
+
+   :param    idx:  The index of the list item.
+   :param    name: Localized name shown to user
+   :param    val:  The actual float value stored and will be returned by :c:func:`obs_data_get_double`
 
 ---------------------
 

@@ -332,7 +332,7 @@ General Encoder Functions
 .. function:: obs_encoder_t *obs_encoder_get_ref(obs_encoder_t *encoder)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_encoder_release()`.
 
 ---------------------
 
@@ -437,7 +437,8 @@ General Encoder Functions
 .. function:: obs_data_t *obs_encoder_defaults(const char *id)
               obs_data_t *obs_encoder_get_defaults(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's default settings
+   :return: An incremented reference to the encoder's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -461,19 +462,22 @@ General Encoder Functions
 
 .. function:: obs_data_t *obs_encoder_get_settings(const obs_encoder_t *encoder)
 
-   :return: An incremented reference to the encoder's settings
+   :return: An incremented reference to the encoder's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 
 .. function:: signal_handler_t *obs_encoder_get_signal_handler(const obs_encoder_t *encoder)
 
-   :return: The signal handler of the encoder
+   :return: The signal handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
 .. function:: proc_handler_t *obs_encoder_get_proc_handler(const obs_encoder_t *encoder)
 
-   :return: The procedure handler of the encoder
+   :return: The procedure handler of the encoder. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 

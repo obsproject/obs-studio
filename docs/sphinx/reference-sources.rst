@@ -692,7 +692,7 @@ General Source Functions
    Creates a source of the specified type with the specified settings.
 
    The "source" context is used for anything related to presenting
-   or modifying video/audio.  Use obs_source_release to release it.
+   or modifying video/audio.  Use :c:func:`obs_source_release` to release it.
 
    :param   id:             The source type string identifier
    :param   name:           The desired name of the source.  If this is
@@ -732,7 +732,8 @@ General Source Functions
 
    Duplicates a source.  If the source has the
    OBS_SOURCE_DO_NOT_DUPLICATE output flag set, this only returns a
-   new reference to the same source.
+   new reference to the same source. Either way,
+   release with :c:func:`obs_source_release`.
 
    :param source:         The source to duplicate
    :param desired_name:   The desired name of the new source.  If this is
@@ -756,7 +757,7 @@ General Source Functions
 .. function:: obs_source_t *obs_source_get_ref(obs_source_t *source)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Use :c:func:`obs_source_release` to release it.
 
 ---------------------
 
@@ -945,7 +946,8 @@ General Source Functions
 
 .. function:: signal_handler_t *obs_source_get_signal_handler(const obs_source_t *source)
 
-   :return: The source's signal handler
+   :return: The source's signal handler. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
    See the :ref:`source_signal_handler_reference` for more information
    on signals that are available for sources.
@@ -954,7 +956,8 @@ General Source Functions
 
 .. function:: proc_handler_t *obs_source_get_proc_handler(const obs_source_t *source)
 
-   :return: The procedure handler for a source
+   :return: The procedure handler for a source. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 ---------------------
 
@@ -995,7 +998,7 @@ General Source Functions
 .. function:: void obs_source_set_audio_mixers(obs_source_t *source, uint32_t mixers)
               uint32_t obs_source_get_audio_mixers(const obs_source_t *source)
 
-   Sets/gets the audio mixer channels that a source outputs to,
+   Sets/gets the audio mixer channels (i.e. audio tracks) that a source outputs to,
    depending on what bits are set.  Audio mixers allow filtering
    specific using multiple audio encoders to mix different sources
    together depending on what mixer channel they're set to.
@@ -1182,7 +1185,8 @@ General Source Functions
 .. function:: obs_data_t *obs_source_get_private_settings(obs_source_t *item)
 
    Gets private front-end settings data.  This data is saved/loaded
-   automatically.  Returns an incremented reference.
+   automatically.  Returns an incremented reference. Use :c:func:`obs_data_release()`
+   to release it.
 
 ---------------------
 
@@ -1493,7 +1497,8 @@ Transitions
    :param target: | OBS_TRANSITION_SOURCE_A - Source being transitioned from, or the current source if not transitioning
                   | OBS_TRANSITION_SOURCE_B - Source being transitioned to
    :return:       An incremented reference to the source or destination
-                  sources of the transition
+                  sources of the transition. Use :c:func:`obs_source_release`
+                  to release it.
 
 ---------------------
 
@@ -1506,7 +1511,7 @@ Transitions
 .. function:: obs_source_t *obs_transition_get_active_source(obs_source_t *transition)
 
    :return: An incremented reference to the currently active source of
-            the transition
+            the transition. Use :c:func:`obs_source_release` to release it.
 
 ---------------------
 

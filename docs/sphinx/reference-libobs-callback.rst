@@ -22,7 +22,9 @@ handlers or to procedure handlers.
 
 .. function:: void calldata_free(calldata_t *data)
 
-   Frees a calldata structure.
+   Frees a calldata structure. Should only be used if :c:func:`calldata_init()`
+   was used. If the object is received as a callback parameter, this function
+   should not be used.
 
    :param data: Calldata structure
 
@@ -110,7 +112,9 @@ handlers or to procedure handlers.
 
 .. function:: void *calldata_ptr(const calldata_t *data, const char *name)
 
-   Gets a pointer parameter.
+   Gets a pointer parameter. For example, :ref:`core_signal_handler_reference`
+   that have ``ptr source`` as a parameter requires this function to get the
+   pointer, which can be casted to :c:type:`obs_source_t`. Does not have to be freed.
 
    :param data: Calldata structure
    :param name: Parameter name

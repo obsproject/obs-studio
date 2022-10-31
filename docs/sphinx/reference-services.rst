@@ -200,7 +200,7 @@ General Service Functions
 .. function:: obs_service_t *obs_service_get_ref(obs_service_t *service)
 
    Returns an incremented reference if still valid, otherwise returns
-   *NULL*.
+   *NULL*. Release with :c:func:`obs_service_release()`.
 
 ---------------------
 
@@ -236,7 +236,8 @@ General Service Functions
 
 .. function:: obs_data_t *obs_service_defaults(const char *id)
 
-   :return: An incremented reference to the service's default settings
+   :return: An incremented reference to the service's default settings.
+            Release with :c:func:`obs_data_release()`.
 
 ---------------------
 
@@ -254,7 +255,8 @@ General Service Functions
 
 .. function:: obs_data_t *obs_service_get_settings(const obs_service_t *service)
 
-   :return: An incremented reference to the service's settings
+   :return: An incremented reference to the service's settings. Release with
+            :c:func:`obs_data_release()`.
 
 ---------------------
 

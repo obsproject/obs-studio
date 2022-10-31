@@ -363,7 +363,8 @@ Libobs Objects
 
 .. function:: obs_data_t *obs_save_source(obs_source_t *source)
 
-   :return: A new reference to a source's saved data
+   :return: A new reference to a source's saved data. Use
+            :c:func:`obs_data_release()` to release it when complete.
 
 ---------------------
 
@@ -557,7 +558,8 @@ Primary signal/procedure handlers
 
 .. function:: signal_handler_t *obs_get_signal_handler(void)
 
-   :return: The primary obs signal handler
+   :return: The primary obs signal handler. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
    See :ref:`core_signal_handler_reference` for more information on
    core signals.
@@ -566,7 +568,8 @@ Primary signal/procedure handlers
 
 .. function:: proc_handler_t *obs_get_proc_handler(void)
 
-   :return: The primary obs procedure handler
+   :return: The primary obs procedure handler. Should not be manually freed,
+            as its lifecycle is managed by libobs.
 
 
 .. _core_signal_handler_reference:
