@@ -835,12 +835,29 @@ static bool build_window_list(struct screen_capture *sc,
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_list_clear(window_list);
 
-	[sc->shareable_content.windows enumerateObjectsUsingBlock:^(
-					       SCWindow *_Nonnull window,
-					       NSUInteger idx
-					       __attribute__((unused)),
-					       BOOL *_Nonnull stop
-					       __attribute__((unused))) {
+	NSArray<SCWindow *> *sortedWindows;
+	sortedWindows = [sc->shareable_content.windows
+		sortedArrayUsingComparator:^NSComparisonResult(
+			SCWindow *window, SCWindow *other) {
+			NSComparisonResult appNameCmp =
+				[window.owningApplication.applicationName
+					compare:other.owningApplication
+							.applicationName];
+			NSComparisonResult titleCmp =
+				[window.title compare:other.title];
+			if (appNameCmp == NSOrderedAscending) {
+				return NSOrderedAscending;
+			} else if (appNameCmp == NSOrderedSame) {
+				return titleCmp;
+			} else {
+				return NSOrderedDescending;
+			}
+		}];
+
+	[sortedWindows enumerateObjectsUsingBlock:^(
+			       SCWindow *_Nonnull window,
+			       NSUInteger idx __attribute__((unused)),
+			       BOOL *_Nonnull stop __attribute__((unused))) {
 		NSString *app_name = window.owningApplication.applicationName;
 		NSString *title = window.title;
 
@@ -873,19 +890,27 @@ static bool build_application_list(struct screen_capture *sc,
 		obs_properties_get(props, "application");
 	obs_property_list_clear(application_list);
 
-	[sc->shareable_content.applications
-		enumerateObjectsUsingBlock:^(
-			SCRunningApplication *_Nonnull application,
-			NSUInteger idx __attribute__((unused)),
-			BOOL *_Nonnull stop __attribute__((unused))) {
-			const char *name =
-				[application.applicationName UTF8String];
-			const char *bundle_id =
-				[application.bundleIdentifier UTF8String];
-			if (strcmp(name, "") != 0)
-				obs_property_list_add_string(application_list,
-							     name, bundle_id);
+	NSArray<SCRunningApplication *> *sortedApplications;
+	sortedApplications = [sc->shareable_content.applications
+		sortedArrayUsingComparator:^NSComparisonResult(
+			SCRunningApplication *app,
+			SCRunningApplication *other) {
+			return [app.applicationName
+				compare:other.applicationName];
 		}];
+
+	[sortedApplications enumerateObjectsUsingBlock:^(
+				    SCRunningApplication *_Nonnull application,
+				    NSUInteger idx __attribute__((unused)),
+				    BOOL *_Nonnull stop
+				    __attribute__((unused))) {
+		const char *name = [application.applicationName UTF8String];
+		const char *bundle_id =
+			[application.bundleIdentifier UTF8String];
+		if (strcmp(name, "") != 0)
+			obs_property_list_add_string(application_list, name,
+						     bundle_id);
+	}];
 
 	os_sem_post(sc->shareable_content_available);
 	return true;
