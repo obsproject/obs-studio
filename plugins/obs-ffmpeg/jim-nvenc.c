@@ -462,13 +462,13 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 
 	if (obs_data_has_user_value(settings, "preset") &&
 	    !obs_data_has_user_value(settings, "preset2")) {
-		if (astrcmpi(preset, "hq") == 0) {
-			nv_preset = NV_ENC_PRESET_P5_GUID;
+		if (astrcmpi(preset, "mq") == 0) {
+			nv_preset = NV_ENC_PRESET_P6_GUID;
 			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
 			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
-		} else if (astrcmpi(preset, "mq") == 0) {
-			nv_preset = NV_ENC_PRESET_P6_GUID;
+		} else if (astrcmpi(preset, "hq") == 0) {
+			nv_preset = NV_ENC_PRESET_P5_GUID;
 			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
 			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
