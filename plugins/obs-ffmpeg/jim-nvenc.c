@@ -472,6 +472,11 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
 			nv_multipass = NV_ENC_TWO_PASS_QUARTER_RESOLUTION;
 
+		} else if (astrcmpi(preset, "default") == 0) {
+			nv_preset = NV_ENC_PRESET_P3_GUID;
+			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
+			nv_multipass = NV_ENC_MULTI_PASS_DISABLED;
+
 		} else if (astrcmpi(preset, "hp") == 0) {
 			nv_preset = NV_ENC_PRESET_P1_GUID;
 			nv_tuning = NV_ENC_TUNING_INFO_HIGH_QUALITY;
