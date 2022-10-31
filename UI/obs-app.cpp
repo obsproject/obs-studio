@@ -2819,9 +2819,7 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 	bool modified = false;
 
 	if (astrcmpi(encoder, "jim_nvenc") == 0 ||
-	    astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
-	    astrcmpi(encoder, "ffmpeg_nvenc") == 0 ||
-	    astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
+	    astrcmpi(encoder, "ffmpeg_nvenc") == 0) {
 
 		if (obs_data_has_user_value(data, "preset") &&
 		    !obs_data_has_user_value(data, "preset2")) {
@@ -2857,6 +2855,74 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 
 			} else if (astrcmpi(preset, "default") == 0) {
 				obs_data_set_string(data, "preset2", "p3");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "hp") == 0) {
+				obs_data_set_string(data, "preset2", "p1");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "ll") == 0) {
+				obs_data_set_string(data, "preset2", "p3");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "llhq") == 0) {
+				obs_data_set_string(data, "preset2", "p4");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "llhp") == 0) {
+				obs_data_set_string(data, "preset2", "p2");
+				obs_data_set_string(data, "tune", "ll");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+			}
+
+			modified = true;
+		}
+	} else if (astrcmpi(encoder, "jim_hevc_nvenc") == 0 ||
+		   astrcmpi(encoder, "ffmpeg_hevc_nvenc") == 0) {
+
+		if (obs_data_has_user_value(data, "preset") &&
+		    !obs_data_has_user_value(data, "preset2")) {
+			const char *preset =
+				obs_data_get_string(data, "preset");
+			const char *rc =
+				obs_data_get_string(data, "rate_control");
+
+			if (astrcmpi(rc, "lossless") == 0 &&
+			    astrcmpi(preset, "mq")) {
+				obs_data_set_string(data, "preset2", "p5");
+				obs_data_set_string(data, "tune", "lossless");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(rc, "lossless") == 0 &&
+				   astrcmpi(preset, "hp")) {
+				obs_data_set_string(data, "preset2", "p3");
+				obs_data_set_string(data, "tune", "lossless");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "mq") == 0) {
+				obs_data_set_string(data, "preset2", "p6");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass", "qres");
+
+			} else if (astrcmpi(preset, "hq") == 0) {
+				obs_data_set_string(data, "preset2", "p6");
+				obs_data_set_string(data, "tune", "hq");
+				obs_data_set_string(data, "multipass",
+						    "disabled");
+
+			} else if (astrcmpi(preset, "default") == 0) {
+				obs_data_set_string(data, "preset2", "p5");
 				obs_data_set_string(data, "tune", "hq");
 				obs_data_set_string(data, "multipass",
 						    "disabled");
