@@ -2457,7 +2457,7 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 		const char *tech_name = "Draw";
 		float multiplier = 1.0;
 		const enum gs_color_space current_space = gs_get_color_space();
-		const bool linear_srgb = gs_get_linear_srgb();
+		bool linear_srgb = gs_get_linear_srgb();
 		bool nonlinear_alpha = false;
 		switch (source_space) {
 		case GS_CS_SRGB:
@@ -2492,6 +2492,7 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 			case GS_CS_SRGB:
 			case GS_CS_SRGB_16F:
 				tech_name = "DrawTonemap";
+				linear_srgb = true;
 				break;
 			case GS_CS_709_SCRGB:
 				tech_name = "DrawMultiply";
@@ -2506,6 +2507,7 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 				tech_name = "DrawMultiplyTonemap";
 				multiplier =
 					80.0f / obs_get_video_sdr_white_level();
+				linear_srgb = true;
 				break;
 			case GS_CS_709_EXTENDED:
 				tech_name = "DrawMultiply";
