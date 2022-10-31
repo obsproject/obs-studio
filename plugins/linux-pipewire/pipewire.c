@@ -128,6 +128,16 @@ struct _obs_pipewire_stream {
 	bool negotiated;
 
 	DARRAY(struct format_info) format_info;
+
+	struct {
+		struct spa_rectangle rect;
+		bool set;
+	} resolution;
+
+	struct {
+		struct spa_fraction fraction;
+		bool set;
+	} framerate;
 };
 
 /* auxiliary methods */
@@ -288,12 +298,41 @@ static void swap_texture_red_blue(gs_texture_t *texture)
 	glBindTexture(GL_TEXTURE_2D, 0);
 }
 
-static inline struct spa_pod *build_format(struct spa_pod_builder *b,
-					   struct obs_video_info *ovi,
+static inline struct spa_pod *build_format(obs_pipewire_stream *obs_pw_stream,
+					   struct spa_pod_builder *b,
 					   uint32_t format, uint64_t *modifiers,
 					   size_t modifier_count)
 {
+	struct spa_rectangle max_resolution = SPA_RECTANGLE(8192, 4320);
+	struct spa_rectangle min_resolution = SPA_RECTANGLE(1, 1);
+	struct spa_rectangle resolution;
 	struct spa_pod_frame format_frame;
+	struct spa_fraction max_framerate;
+	struct spa_fraction min_framerate;
+	struct spa_fraction framerate;
+
+	if (obs_pw_stream->framerate.set) {
+		framerate = obs_pw_stream->framerate.fraction;
+		min_framerate = obs_pw_stream->framerate.fraction;
+		max_framerate = obs_pw_stream->framerate.fraction;
+	} else {
+		framerate = SPA_FRACTION(obs_pw_stream->video_info.fps_num,
+					 obs_pw_stream->video_info.fps_den);
+		min_framerate = SPA_FRACTION(0, 1);
+		max_framerate = SPA_FRACTION(360, 1);
+	}
+
+	if (obs_pw_stream->resolution.set) {
+		resolution = obs_pw_stream->resolution.rect;
+		min_resolution = obs_pw_stream->resolution.rect;
+		max_resolution = obs_pw_stream->resolution.rect;
+	} else {
+		resolution =
+			SPA_RECTANGLE(obs_pw_stream->video_info.output_width,
+				      obs_pw_stream->video_info.output_height);
+		min_resolution = SPA_RECTANGLE(1, 1);
+		max_resolution = SPA_RECTANGLE(8192, 4320);
+	}
 
 	/* Make an object of type SPA_TYPE_OBJECT_Format and id SPA_PARAM_EnumFormat.
 	 * The object type is important because it defines the properties that are
@@ -334,16 +373,14 @@ static inline struct spa_pod *build_format(struct spa_pod_builder *b,
 		spa_pod_builder_pop(b, &modifier_frame);
 	}
 	/* add size and framerate ranges */
-	spa_pod_builder_add(b, SPA_FORMAT_VIDEO_size,
-			    SPA_POD_CHOICE_RANGE_Rectangle(
-				    &SPA_RECTANGLE(320, 240), // Arbitrary
-				    &SPA_RECTANGLE(1, 1),
-				    &SPA_RECTANGLE(8192, 4320)),
-			    SPA_FORMAT_VIDEO_framerate,
-			    SPA_POD_CHOICE_RANGE_Fraction(
-				    &SPA_FRACTION(ovi->fps_num, ovi->fps_den),
-				    &SPA_FRACTION(0, 1), &SPA_FRACTION(360, 1)),
-			    0);
+	spa_pod_builder_add(
+		b, SPA_FORMAT_VIDEO_size,
+		SPA_POD_CHOICE_RANGE_Rectangle(&resolution, &min_resolution,
+					       &max_resolution),
+		SPA_FORMAT_VIDEO_framerate,
+		SPA_POD_CHOICE_RANGE_Fraction(&framerate, &min_framerate,
+					      &max_framerate),
+		0);
 	return spa_pod_builder_pop(b, &format_frame);
 }
 
@@ -373,7 +410,7 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream,
 			continue;
 		}
 		params[params_count++] = build_format(
-			pod_builder, &obs_pw_stream->video_info,
+			obs_pw_stream, pod_builder,
 			obs_pw_stream->format_info.array[i].spa_format,
 			obs_pw_stream->format_info.array[i].modifiers.array,
 			obs_pw_stream->format_info.array[i].modifiers.num);
@@ -382,7 +419,7 @@ static bool build_format_params(obs_pipewire_stream *obs_pw_stream,
 build_shm:
 	for (size_t i = 0; i < obs_pw_stream->format_info.num; i++) {
 		params[params_count++] = build_format(
-			pod_builder, &obs_pw_stream->video_info,
+			obs_pw_stream, pod_builder,
 			obs_pw_stream->format_info.array[i].spa_format, NULL,
 			0);
 	}
@@ -1178,6 +1215,8 @@ obs_pipewire_stream *obs_pipewire_connect_stream(
 	obs_pw_stream->obs_pw = obs_pw;
 	obs_pw_stream->source = source;
 	obs_pw_stream->cursor.visible = connect_info->screencast.cursor_visible;
+	obs_pw_stream->framerate.set = false;
+	obs_pw_stream->resolution.set = false;
 
 	init_format_info(obs_pw_stream);
 
@@ -1389,4 +1428,52 @@ void obs_pipewire_stream_destroy(obs_pipewire_stream *obs_pw_stream)
 
 	clear_format_info(obs_pw_stream);
 	bfree(obs_pw_stream);
+}
+
+void obs_pipewire_stream_set_framerate(obs_pipewire_stream *obs_pw_stream,
+				       const struct spa_fraction *framerate)
+{
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
+
+	if ((!obs_pw_stream->framerate.set && !framerate) ||
+	    (obs_pw_stream->framerate.set && framerate &&
+	     obs_pw_stream->framerate.fraction.num == framerate->num &&
+	     obs_pw_stream->framerate.fraction.denom == framerate->denom))
+		return;
+
+	if (framerate) {
+		obs_pw_stream->framerate.fraction = *framerate;
+		obs_pw_stream->framerate.set = true;
+	} else {
+		obs_pw_stream->framerate.fraction = SPA_FRACTION(0, 0);
+		obs_pw_stream->framerate.set = false;
+	}
+
+	/* Signal to renegotiate */
+	pw_loop_signal_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
+			     obs_pw_stream->reneg);
+}
+
+void obs_pipewire_stream_set_resolution(obs_pipewire_stream *obs_pw_stream,
+					const struct spa_rectangle *resolution)
+{
+	obs_pipewire *obs_pw = obs_pw_stream->obs_pw;
+
+	if ((!obs_pw_stream->resolution.set && !resolution) ||
+	    (obs_pw_stream->resolution.set && resolution &&
+	     obs_pw_stream->resolution.rect.width == resolution->width &&
+	     obs_pw_stream->resolution.rect.height == resolution->height))
+		return;
+
+	if (resolution) {
+		obs_pw_stream->resolution.rect = *resolution;
+		obs_pw_stream->resolution.set = true;
+	} else {
+		obs_pw_stream->resolution.rect = SPA_RECTANGLE(0, 0);
+		obs_pw_stream->resolution.set = false;
+	}
+
+	/* Signal to renegotiate */
+	pw_loop_signal_event(pw_thread_loop_get_loop(obs_pw->thread_loop),
+			     obs_pw_stream->reneg);
 }
