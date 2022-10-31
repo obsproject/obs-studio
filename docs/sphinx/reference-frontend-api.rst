@@ -801,18 +801,20 @@ Functions
 
 ---------------------------------------
 
-.. function:: const char *obs_frontend_get_last_recording(void)
+.. function:: char *obs_frontend_get_last_recording(void)
 
-   :return: The file path of the last recording.
-
----------------------------------------
-
-.. function:: const char *obs_frontend_get_last_screenshot(void)
-
-   :return: The file path of the last screenshot taken.
+   :return: The file path of the last recording. Free with :c:func:`bfree()`
 
 ---------------------------------------
 
-.. function:: const char *obs_frontend_get_last_replay(void)
+.. function:: char *obs_frontend_get_last_screenshot(void)
 
-   :return: The file path of the last replay buffer saved.
+   :return: The file path of the last screenshot taken. Free with
+            :c:func:`bfree()`
+
+---------------------------------------
+
+.. function:: char *obs_frontend_get_last_replay(void)
+
+   :return: The file path of the last replay buffer saved. Free with
+            :c:func:`bfree()`

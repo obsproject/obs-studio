@@ -577,19 +577,19 @@ bool obs_frontend_is_theme_dark(void)
 	return !!callbacks_valid() ? c->obs_frontend_is_theme_dark() : false;
 }
 
-const char *obs_frontend_get_last_recording(void)
+char *obs_frontend_get_last_recording(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_last_recording()
 				   : nullptr;
 }
 
-const char *obs_frontend_get_last_screenshot(void)
+char *obs_frontend_get_last_screenshot(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_last_screenshot()
 				   : nullptr;
 }
 
-const char *obs_frontend_get_last_replay(void)
+char *obs_frontend_get_last_replay(void)
 {
 	return !!callbacks_valid() ? c->obs_frontend_get_last_replay()
 				   : nullptr;

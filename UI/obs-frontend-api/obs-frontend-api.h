@@ -232,9 +232,9 @@ EXPORT const char *obs_frontend_get_locale_string(const char *string);
 
 EXPORT bool obs_frontend_is_theme_dark(void);
 
-EXPORT const char *obs_frontend_get_last_recording(void);
-EXPORT const char *obs_frontend_get_last_screenshot(void);
-EXPORT const char *obs_frontend_get_last_replay(void);
+EXPORT char *obs_frontend_get_last_recording(void);
+EXPORT char *obs_frontend_get_last_screenshot(void);
+EXPORT char *obs_frontend_get_last_replay(void);
 
 /* ------------------------------------------------------------------------- */
 

@@ -647,19 +647,19 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 		return App()->IsThemeDark();
 	}
 
-	const char *obs_frontend_get_last_recording(void) override
+	char *obs_frontend_get_last_recording(void) override
 	{
-		return main->outputHandler->lastRecordingPath.c_str();
+		return bstrdup(main->outputHandler->lastRecordingPath.c_str());
 	}
 
-	const char *obs_frontend_get_last_screenshot(void) override
+	char *obs_frontend_get_last_screenshot(void) override
 	{
-		return main->lastScreenshot.c_str();
+		return bstrdup(main->lastScreenshot.c_str());
 	}
 
-	const char *obs_frontend_get_last_replay(void) override
+	char *obs_frontend_get_last_replay(void) override
 	{
-		return main->lastReplay.c_str();
+		return bstrdup(main->lastReplay.c_str());
 	}
 
 	void on_load(obs_data_t *settings) override
