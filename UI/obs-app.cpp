@@ -2958,6 +2958,32 @@ static void convert_28_1_encoder_setting(const char *encoder, const char *file)
 		obs_data_save_json_safe(data, file, "tmp", "bak");
 }
 
+bool update_nvenc_presets(ConfigFile &config)
+{
+	if (config_has_user_value(config, "SimpleOutput", "NVENCPreset2") ||
+	    !config_has_user_value(config, "SimpleOutput", "NVENCPreset"))
+		return false;
+
+	const char *streamEncoder =
+		config_get_string(config, "SimpleOutput", "StreamEncoder");
+	const char *nvencPreset =
+		config_get_string(config, "SimpleOutput", "NVENCPreset");
+
+	OBSDataAutoRelease data = obs_data_create();
+	obs_data_set_string(data, "preset", nvencPreset);
+
+	if (astrcmpi(streamEncoder, "nvenc_hevc") == 0) {
+		convert_nvenc_hevc_presets(data);
+	} else {
+		convert_nvenc_h264_presets(data);
+	}
+
+	config_set_string(config, "SimpleOutput", "NVENCPreset2",
+			  obs_data_get_string(data, "preset2"));
+
+	return true;
+}
+
 static void upgrade_settings(void)
 {
 	char path[512];
