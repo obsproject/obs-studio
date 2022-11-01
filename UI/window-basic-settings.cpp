@@ -1759,7 +1759,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	const char *qsvPreset =
 		config_get_string(main->Config(), "SimpleOutput", "QSVPreset");
 	const char *nvPreset = config_get_string(main->Config(), "SimpleOutput",
-						 "NVENCPreset");
+						 "NVENCPreset2");
 	const char *amdPreset =
 		config_get_string(main->Config(), "SimpleOutput", "AMDPreset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
@@ -3520,14 +3520,14 @@ void OBSBasicSettings::SaveOutputSettings()
 	if (encoder == SIMPLE_ENCODER_QSV)
 		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 	else if (encoder == SIMPLE_ENCODER_NVENC_AV1)
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 #ifdef ENABLE_HEVC
 	else if (encoder == SIMPLE_ENCODER_AMD_HEVC)
 		presetType = "AMDPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC_HEVC)
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 #endif
 	else if (encoder == SIMPLE_ENCODER_AMD)
 		presetType = "AMDPreset";

@@ -535,15 +535,15 @@ void SimpleOutput::Update()
 #endif
 
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 
 #ifdef ENABLE_HEVC
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 #endif
 
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_AV1) == 0) {
-		presetType = "NVENCPreset";
+		presetType = "NVENCPreset2";
 
 	} else {
 		presetType = "Preset";
@@ -551,8 +551,9 @@ void SimpleOutput::Update()
 
 	preset = config_get_string(main->Config(), "SimpleOutput", presetType);
 	obs_data_set_string(videoSettings,
-			    (strcmp(presetType, "NVENCPreset") == 0) ? "preset2"
-								     : "preset",
+			    (strcmp(presetType, "NVENCPreset2") == 0)
+				    ? "preset2"
+				    : "preset",
 			    preset);
 
 	obs_data_set_string(videoSettings, "rate_control", "CBR");
