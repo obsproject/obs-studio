@@ -1005,7 +1005,7 @@ static bool init_specific_encoder(struct nvenc_data *enc, obs_data_t *settings,
 static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 			 obs_data_t *settings, obs_encoder_t *encoder)
 {
-	const int bf = (int)obs_data_get_int(settings, "bf");
+	int bf = (int)obs_data_get_int(settings, "bf");
 	const bool psycho_aq = obs_data_get_bool(settings, "psycho_aq");
 	const bool support_10bit =
 		nv_get_cap(enc, NV_ENC_CAPS_SUPPORT_10BIT_ENCODE);
@@ -1032,8 +1032,11 @@ static bool init_encoder(struct nvenc_data *enc, enum codec_type codec,
 	}
 
 	if (bf > bf_max) {
-		NV_FAIL(obs_module_text("NVENC.TooManyBFrames"), bf, bf_max);
-		return false;
+		blog(LOG_WARNING,
+		     "[jim-nvenc] Max B-frames setting (%d) is more than encoder supports (%d).\n"
+		     "Setting B-frames to %d",
+		     bf, bf_max, bf_max);
+		bf = bf_max;
 	}
 
 	if (!init_specific_encoder(enc, settings, bf, psycho_aq)) {
