@@ -588,7 +588,8 @@ static bool init_encoder_base(struct nvenc_data *enc, obs_data_t *settings,
 	config->gopLength = gop_size;
 	config->frameIntervalP = 1 + bf;
 
-	enc->bframes = bf;
+	int32_t max_bf = (int32_t)nv_get_cap(enc, NV_ENC_CAPS_NUM_MAX_BFRAMES);
+	enc->bframes = bf <= max_bf ? bf : max_bf;
 
 	/* lookahead */
 	const bool use_profile_lookahead = config->rcParams.enableLookahead;
