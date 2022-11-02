@@ -7168,7 +7168,16 @@ void OBSBasic::AutoRemux(QString input, bool no_show)
 
 	QString output = input;
 	output.resize(output.size() - suffix.size());
-	output += "mp4";
+
+	const obs_encoder_t *videoEncoder =
+		obs_output_get_video_encoder(outputHandler->fileOutput);
+	const char *codecName = obs_encoder_get_codec(videoEncoder);
+
+	if (strcmp(codecName, "prores") == 0) {
+		output += "mov";
+	} else {
+		output += "mp4";
+	}
 
 	OBSRemux *remux = new OBSRemux(QT_TO_UTF8(path), this, true);
 	if (!no_show)
