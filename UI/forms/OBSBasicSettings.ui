@@ -28,7 +28,7 @@
   <property name="sizeGripEnabled">
    <bool>true</bool>
   </property>
-  <layout class="QVBoxLayout" name="verticalLayout">
+  <layout class="QVBoxLayout" name="verticalLayout_1">
    <item>
     <layout class="QHBoxLayout" name="horizontalLayout">
      <property name="spacing">
@@ -135,6 +135,8 @@
       </widget>
      </item>
      <item>
+      <layout class="QVBoxLayout" name="verticalLayout">
+       <item>
       <widget class="QStackedWidget" name="settingsPages">
        <property name="currentIndex">
         <number>0</number>
@@ -169,8 +171,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>767</width>
-              <height>1326</height>
+                <width>765</width>
+                <height>1510</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_19">
@@ -1523,8 +1525,8 @@
                     <rect>
                      <x>0</x>
                      <y>0</y>
-                     <width>772</width>
-                     <height>651</height>
+                       <width>651</width>
+                       <height>687</height>
                     </rect>
                    </property>
                    <property name="sizePolicy">
@@ -2108,8 +2110,8 @@
                         <rect>
                          <x>0</x>
                          <y>0</y>
-                         <width>759</width>
-                         <height>616</height>
+                           <width>522</width>
+                           <height>188</height>
                         </rect>
                        </property>
                        <layout class="QVBoxLayout" name="verticalLayout_14">
@@ -2455,8 +2457,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>759</width>
-                             <height>587</height>
+                               <width>655</width>
+                               <height>416</height>
                             </rect>
                            </property>
                            <property name="sizePolicy">
@@ -3106,8 +3108,8 @@
                             <rect>
                              <x>0</x>
                              <y>0</y>
-                             <width>759</width>
-                             <height>587</height>
+                               <width>796</width>
+                               <height>556</height>
                             </rect>
                            </property>
                            <layout class="QVBoxLayout" name="verticalLayout_27">
@@ -3625,8 +3627,8 @@
                            <rect>
                             <x>0</x>
                             <y>0</y>
-                            <width>759</width>
-                            <height>616</height>
+                              <width>303</width>
+                              <height>630</height>
                            </rect>
                           </property>
                           <layout class="QVBoxLayout" name="verticalLayout_28">
@@ -4688,8 +4690,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>781</width>
-              <height>640</height>
+                <width>779</width>
+                <height>675</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_50">
@@ -4826,6 +4828,28 @@
                      </item>
                     </widget>
                    </item>
+                     <item row="2" column="1">
+                      <widget class="QLabel" name="surroundWarning">
+                       <property name="sizePolicy">
+                        <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
+                         <horstretch>0</horstretch>
+                         <verstretch>0</verstretch>
+                        </sizepolicy>
+                       </property>
+                       <property name="visible">
+                        <bool>false</bool>
+                       </property>
+                       <property name="text">
+                        <string>Basic.Settings.Audio.MultichannelWarning</string>
+                       </property>
+                       <property name="wordWrap">
+                        <bool>true</bool>
+                       </property>
+                       <property name="themeID" stdset="0">
+                        <string notr="true">warning</string>
+                       </property>
+                      </widget>
+                     </item>
                   </layout>
                  </widget>
                 </item>
@@ -5146,32 +5170,6 @@
            </widget>
           </widget>
          </item>
-         <item>
-          <widget class="QLabel" name="audioMsg">
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string>error</string>
-           </property>
-          </widget>
-         </item>
-         <item>
-          <widget class="QLabel" name="audioMsg_2">
-           <property name="text">
-            <string notr="true"/>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string notr="true">warning</string>
-           </property>
-          </widget>
-         </item>
         </layout>
        </widget>
        <widget class="QWidget" name="videoPage">
@@ -5195,7 +5193,7 @@
           <widget class="QLabel" name="label_8">
            <property name="minimumSize">
             <size>
-             <width>170</width>
+               <width>0</width>
              <height>0</height>
             </size>
            </property>
@@ -5476,7 +5474,7 @@
           </widget>
          </item>
          <item row="7" column="1">
-          <widget class="QLabel" name="videoMsg">
+          <widget class="QLabel" name="label_1">
            <property name="sizePolicy">
             <sizepolicy hsizetype="Preferred" vsizetype="Expanding">
              <horstretch>0</horstretch>
@@ -5485,12 +5483,6 @@
            </property>
            <property name="text">
             <string notr="true"/>
-           </property>
-           <property name="wordWrap">
-            <bool>true</bool>
-           </property>
-           <property name="themeID" stdset="0">
-            <string>error</string>
            </property>
           </widget>
          </item>
@@ -5621,8 +5613,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>761</width>
-              <height>644</height>
+                <width>66</width>
+                <height>16</height>
              </rect>
             </property>
             <layout class="QFormLayout" name="hotkeyFormLayout">
@@ -5680,8 +5672,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>799</width>
-              <height>666</height>
+                <width>897</width>
+                <height>389</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_42">
@@ -6589,8 +6581,8 @@
              <rect>
               <x>0</x>
               <y>0</y>
-              <width>826</width>
-              <height>1000</height>
+                <width>905</width>
+                <height>1128</height>
              </rect>
             </property>
             <layout class="QVBoxLayout" name="verticalLayout_23">
@@ -7399,53 +7391,13 @@
            </widget>
           </widget>
          </item>
-         <item>
-          <layout class="QVBoxLayout" name="verticalLayout_17">
-           <property name="leftMargin">
-            <number>10</number>
-           </property>
-           <property name="topMargin">
-            <number>10</number>
-           </property>
-           <property name="rightMargin">
-            <number>10</number>
-           </property>
-           <property name="bottomMargin">
-            <number>10</number>
-           </property>
-           <item>
-            <widget class="QLabel" name="advancedMsg">
-             <property name="text">
-              <string notr="true"/>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string>error</string>
-             </property>
+          </layout>
             </widget>
-           </item>
-           <item>
-            <widget class="QLabel" name="advancedMsg2">
-             <property name="text">
-              <string notr="true"/>
-             </property>
-             <property name="wordWrap">
-              <bool>true</bool>
-             </property>
-             <property name="themeID" stdset="0">
-              <string>error</string>
-             </property>
             </widget>
            </item>
           </layout>
          </item>
         </layout>
-       </widget>
-      </widget>
-     </item>
-    </layout>
    </item>
    <item>
     <widget class="QDialogButtonBox" name="buttonBox">
@@ -7615,7 +7567,6 @@
   <tabstop>colorSpace</tabstop>
   <tabstop>colorRange</tabstop>
   <tabstop>sdrWhiteLevel</tabstop>
-  <tabstop>horizontalLayout_sdrPaperWhite</tabstop>
   <tabstop>hdrNominalPeakLevel</tabstop>
   <tabstop>disableOSXVSync</tabstop>
   <tabstop>resetOSXVSync</tabstop>
@@ -7649,6 +7600,54 @@
  </resources>
  <connections>
   <connection>
+   <sender>advOutRecType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>stackedWidget</receiver>
+   <slot>setCurrentIndex(int)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>663</x>
+     <y>106</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>560</x>
+     <y>391</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>systemTrayEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>systemTrayWhenStarted</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>579</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>602</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>centerSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>435</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
    <sender>listWidget</sender>
    <signal>currentRowChanged(int)</signal>
    <receiver>settingsPages</receiver>
@@ -7665,34 +7664,210 @@
    </hints>
   </connection>
   <connection>
-   <sender>fpsType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>fpsTypes</receiver>
-   <slot>setCurrentIndex(int)</slot>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>snapDistance</receiver>
+   <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>310</x>
-     <y>29</y>
+     <x>933</x>
+     <y>340</y>
     </hint>
     <hint type="destinationlabel">
-     <x>241</x>
-     <y>30</y>
+     <x>933</x>
+     <y>366</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>outputMode</sender>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_9</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>347</x>
+     <y>366</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutFFType</sender>
    <signal>currentIndexChanged(int)</signal>
-   <receiver>outputModePages</receiver>
+   <receiver>stackedWidget_2</receiver>
    <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>241</x>
-     <y>16</y>
+     <x>685</x>
+     <y>163</y>
     </hint>
     <hint type="destinationlabel">
-     <x>401</x>
-     <y>64</y>
+     <x>685</x>
+     <y>191</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>streamDelayInfo</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>sourceSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>412</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>streamDelayEnable</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>label_56</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>250</x>
+     <y>39</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>recordWhenStreaming</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>keepRecordStreamStops</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>222</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>245</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>snappingEnabled</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>screenSnapping</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>933</x>
+     <y>340</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>933</x>
+     <y>389</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutSplitFile</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutSplitFileType</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>327</x>
+     <y>355</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>701</x>
+     <y>355</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>connectAccount2</sender>
+   <signal>clicked()</signal>
+   <receiver>connectAccount</receiver>
+   <slot>click()</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>484</x>
+     <y>142</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>454</x>
+     <y>87</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutFFUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutFFRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>334</x>
+     <y>377</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>685</x>
+     <y>377</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutRecUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutRecRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>289</x>
+     <y>317</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>662</x>
+     <y>317</y>
+    </hint>
+   </hints>
+  </connection>
+  <connection>
+   <sender>advOutUseRescale</sender>
+   <signal>toggled(bool)</signal>
+   <receiver>advOutRescale</receiver>
+   <slot>setEnabled(bool)</slot>
+   <hints>
+    <hint type="sourcelabel">
+     <x>269</x>
+     <y>192</y>
+    </hint>
+    <hint type="destinationlabel">
+     <x>656</x>
+     <y>192</y>
     </hint>
    </hints>
   </connection>
@@ -7713,34 +7888,34 @@
    </hints>
   </connection>
   <connection>
-   <sender>simpleOutAdvanced</sender>
+   <sender>streamDelayEnable</sender>
    <signal>toggled(bool)</signal>
-   <receiver>label_23</receiver>
-   <slot>setVisible(bool)</slot>
+   <receiver>streamDelaySec</receiver>
+   <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>251</x>
-     <y>64</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
     <hint type="destinationlabel">
-     <x>251</x>
-     <y>64</y>
+     <x>250</x>
+     <y>39</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>systemTrayEnabled</sender>
+   <sender>replayWhileStreaming</sender>
    <signal>toggled(bool)</signal>
-   <receiver>systemTrayWhenStarted</receiver>
+   <receiver>keepReplayStreamStops</receiver>
    <slot>setEnabled(bool)</slot>
    <hints>
     <hint type="sourcelabel">
      <x>933</x>
-     <y>579</y>
+     <y>268</y>
     </hint>
     <hint type="destinationlabel">
      <x>933</x>
-     <y>602</y>
+     <y>291</y>
     </hint>
    </hints>
   </connection>
@@ -7777,162 +7952,50 @@
    </hints>
   </connection>
   <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_9</receiver>
-   <slot>setEnabled(bool)</slot>
+   <sender>outputMode</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>outputModePages</receiver>
+   <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>241</x>
+     <y>16</y>
     </hint>
     <hint type="destinationlabel">
-     <x>347</x>
-     <y>366</y>
+     <x>401</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>snappingEnabled</sender>
+   <sender>simpleOutAdvanced</sender>
    <signal>toggled(bool)</signal>
-   <receiver>snapDistance</receiver>
-   <slot>setEnabled(bool)</slot>
+   <receiver>label_23</receiver>
+   <slot>setVisible(bool)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>366</y>
+     <x>251</x>
+     <y>64</y>
     </hint>
    </hints>
   </connection>
   <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>screenSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
+   <sender>fpsType</sender>
+   <signal>currentIndexChanged(int)</signal>
+   <receiver>fpsTypes</receiver>
+   <slot>setCurrentIndex(int)</slot>
    <hints>
     <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
+     <x>310</x>
+     <y>29</y>
     </hint>
     <hint type="destinationlabel">
-     <x>933</x>
-     <y>389</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>sourceSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>412</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>snappingEnabled</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>centerSnapping</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>340</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>435</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>recordWhenStreaming</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>keepRecordStreamStops</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>222</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>245</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>replayWhileStreaming</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>keepReplayStreamStops</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>933</x>
-     <y>268</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>933</x>
-     <y>291</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>label_56</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>streamDelaySec</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>streamDelayEnable</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>streamDelayInfo</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>250</x>
-     <y>39</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>250</x>
-     <y>39</y>
+     <x>241</x>
+     <y>30</y>
     </hint>
    </hints>
   </connection>
@@ -7949,118 +8012,6 @@
     <hint type="destinationlabel">
      <x>250</x>
      <y>39</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>connectAccount2</sender>
-   <signal>clicked()</signal>
-   <receiver>connectAccount</receiver>
-   <slot>click()</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>484</x>
-     <y>142</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>454</x>
-     <y>87</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutSplitFile</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutSplitFileType</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>327</x>
-     <y>355</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>701</x>
-     <y>355</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>269</x>
-     <y>192</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>656</x>
-     <y>192</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>663</x>
-     <y>106</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>560</x>
-     <y>391</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutRecUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutRecRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>289</x>
-     <y>317</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>662</x>
-     <y>317</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutFFUseRescale</sender>
-   <signal>toggled(bool)</signal>
-   <receiver>advOutFFRescale</receiver>
-   <slot>setEnabled(bool)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>334</x>
-     <y>377</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>377</y>
-    </hint>
-   </hints>
-  </connection>
-  <connection>
-   <sender>advOutFFType</sender>
-   <signal>currentIndexChanged(int)</signal>
-   <receiver>stackedWidget_2</receiver>
-   <slot>setCurrentIndex(int)</slot>
-   <hints>
-    <hint type="sourcelabel">
-     <x>685</x>
-     <y>163</y>
-    </hint>
-    <hint type="destinationlabel">
-     <x>685</x>
-     <y>191</y>
     </hint>
    </hints>
   </connection>

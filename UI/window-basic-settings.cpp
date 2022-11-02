@@ -368,6 +368,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	ui->setupUi(this);
 
+	warningBox = new OBSWarningBox();
+	ui->verticalLayout->addLayout(warningBox);
+	warningBox->setContentsMargins(10, 10, 10, 10);
+
 	main->EnableOutputs(false);
 
 	PopulateAACBitrates({ui->simpleOutputABitrate, ui->advOutTrack1Bitrate,
@@ -678,6 +682,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(UpdateStreamDelayEstimate()));
 	connect(ui->outputMode, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(UpdateStreamDelayEstimate()));
+	connect(ui->outputMode, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(UpdateOutputWarnings()));
 	connect(ui->simpleOutputVBitrate, SIGNAL(valueChanged(int)), this,
 		SLOT(UpdateStreamDelayEstimate()));
 	connect(ui->simpleOutputABitrate, SIGNAL(currentIndexChanged(int)),
@@ -911,7 +917,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	SimpleRecordingQualityChanged();
 	AdvOutSplitFileChanged();
-	AdvOutRecCheckWarnings();
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
@@ -929,6 +934,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
 		SLOT(UseStreamKeyAdvClicked()));
 
+	UpdateOutputWarnings();
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
 }
@@ -1697,7 +1703,8 @@ void OBSBasicSettings::LoadVideoSettings()
 
 	if (obs_video_active()) {
 		ui->videoPage->setEnabled(false);
-		ui->videoMsg->setText(
+		warningBox->AddWarning(
+			"VideoActive",
 			QTStr("Basic.Settings.Video.CurrentlyActive"));
 	}
 
@@ -2544,27 +2551,30 @@ void OBSBasicSettings::LoadAudioSettings()
 void OBSBasicSettings::UpdateColorFormatSpaceWarning()
 {
 	const QString format = ui->colorFormat->currentData().toString();
+
+	warningBox->RemoveWarning("FormatWarning");
+
 	switch (ui->colorSpace->currentIndex()) {
 	case 3: /* Rec.2100 (PQ) */
 	case 4: /* Rec.2100 (HLG) */
-		if (format == "P010") {
-			ui->advancedMsg2->clear();
-		} else if (format == "I010") {
-			ui->advancedMsg2->setText(
+		if (format == "I010") {
+			warningBox->AddWarning(
+				"FormatWarning",
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
-		} else {
-			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarning2100"));
+		} else if (!(format == "P010")) {
+			warningBox->AddWarning(
+				"FormatWarning",
+				QTStr("Basic.Settings.Advanced.FormatWarning2100"));
 		}
 		break;
 	default:
-		if (format == "NV12") {
-			ui->advancedMsg2->clear();
-		} else if ((format == "I010") || (format == "P010")) {
-			ui->advancedMsg2->setText(QTStr(
-				"Basic.Settings.Advanced.FormatWarning10BitSdr"));
-		} else {
-			ui->advancedMsg2->setText(
+		if ((format == "I010") || (format == "P010")) {
+			warningBox->AddWarning(
+				"FormatWarning",
+				QTStr("Basic.Settings.Advanced.FormatWarning10BitSdr"));
+		} else if (!(format == "NV12")) {
+			warningBox->AddWarning(
+				"FormatWarning",
 				QTStr("Basic.Settings.Advanced.FormatWarning"));
 		}
 	}
@@ -3881,15 +3891,27 @@ void OBSBasicSettings::SaveSettings()
 bool OBSBasicSettings::QueryChanges()
 {
 	QMessageBox::StandardButton button;
+	bool hasError = warningBox->HasErrors();
 
-	button = OBSMessageBox::question(
-		this, QTStr("Basic.Settings.ConfirmTitle"),
-		QTStr("Basic.Settings.Confirm"),
-		QMessageBox::Yes | QMessageBox::No | QMessageBox::Cancel);
+	if (!hasError) {
+		button = OBSMessageBox::question(
+			this, QTStr("Basic.Settings.ConfirmTitle"),
+			QTStr("Basic.Settings.Confirm"),
+			QMessageBox::Yes | QMessageBox::No |
+				QMessageBox::Cancel);
+	} else {
+		button = OBSMessageBox::question(
+			this, QTStr("Basic.Settings.UnableSaveTitle"),
+			QTStr("Basic.Settings.UnableSave") +
+				warningBox->GetHTMLErrorsList() +
+				QTStr("Basic.Settings.UnableSaveClose"),
+			QMessageBox::Yes | QMessageBox::No);
+	}
 
-	if (button == QMessageBox::Cancel) {
+	if (button == QMessageBox::Cancel ||
+	    (button == QMessageBox::No && hasError)) {
 		return false;
-	} else if (button == QMessageBox::Yes) {
+	} else if (button == QMessageBox::Yes && !hasError) {
 		SaveSettings();
 	} else {
 		if (savedTheme != App()->GetTheme())
@@ -3942,6 +3964,16 @@ void OBSBasicSettings::on_buttonBox_clicked(QAbstractButton *button)
 
 	if (val == QDialogButtonBox::ApplyRole ||
 	    val == QDialogButtonBox::AcceptRole) {
+
+		if (warningBox->HasErrors()) {
+			QMessageBox::warning(
+				this, QTStr("Basic.Settings.UnableSaveTitle"),
+				QTStr("Basic.Settings.UnableSave") +
+					warningBox->GetHTMLErrorsList() +
+					QTStr("Basic.Settings.UnableSaveResolve"));
+			return;
+		}
+
 		SaveSettings();
 		ClearChanged();
 	}
@@ -4129,13 +4161,15 @@ void OBSBasicSettings::on_colorSpace_currentIndexChanged(int)
 
 #define INVALID_RES_STR "Basic.Settings.Video.InvalidResolution"
 
-static bool ValidResolutions(Ui::OBSBasicSettings *ui)
+static bool ValidResolutions(Ui::OBSBasicSettings *ui, OBSWarningBox *warn)
 {
 	QString baseRes = ui->baseResolution->lineEdit()->text();
 	uint32_t cx, cy;
 
+	warn->RemoveWarning("InvalidRes");
+
 	if (!ConvertResText(QT_TO_UTF8(baseRes), cx, cy)) {
-		ui->videoMsg->setText(QTStr(INVALID_RES_STR));
+		warn->AddWarning("InvalidRes", QTStr(INVALID_RES_STR));
 		return false;
 	}
 
@@ -4143,12 +4177,11 @@ static bool ValidResolutions(Ui::OBSBasicSettings *ui)
 	if (!lockedOutRes) {
 		QString outRes = ui->outputResolution->lineEdit()->text();
 		if (!ConvertResText(QT_TO_UTF8(outRes), cx, cy)) {
-			ui->videoMsg->setText(QTStr(INVALID_RES_STR));
+			warn->AddWarning("InvalidRes", QTStr(INVALID_RES_STR));
 			return false;
 		}
 	}
 
-	ui->videoMsg->setText("");
 	return true;
 }
 
@@ -4212,7 +4245,7 @@ void OBSBasicSettings::on_outputResolution_editTextChanged(const QString &text)
 
 void OBSBasicSettings::on_baseResolution_editTextChanged(const QString &text)
 {
-	if (!loading && ValidResolutions(ui.get())) {
+	if (!loading && ValidResolutions(ui.get(), warningBox)) {
 		QString baseResolution = text;
 		uint32_t cx, cy;
 
@@ -4277,13 +4310,12 @@ void OBSBasicSettings::AudioChangedRestart()
 		    currentSampleRateIndex != sampleRateIndex ||
 		    currentLLAudioBufVal != llBufferingEnabled) {
 			audioChanged = true;
-			ui->audioMsg->setText(
-				QTStr("Basic.Settings.ProgramRestart"));
+			warningBox->AddRestartWarning("Audio");
 			sender()->setProperty("changed", QVariant(true));
 			EnableApplyButton(true);
 		} else {
 			audioChanged = false;
-			ui->audioMsg->setText("");
+			warningBox->RemoveRestartWarning("Audio");
 			sender()->setProperty("changed", QVariant(false));
 			EnableApplyButton(false);
 		}
@@ -4389,7 +4421,7 @@ void OBSBasicSettings::VideoChangedRestart()
 {
 	if (!loading) {
 		videoChanged = true;
-		ui->videoMsg->setText(QTStr("Basic.Settings.ProgramRestart"));
+		warningBox->AddRestartWarning("Video");
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -4399,8 +4431,7 @@ void OBSBasicSettings::AdvancedChangedRestart()
 {
 	if (!loading) {
 		advancedChanged = true;
-		ui->advancedMsg->setText(
-			QTStr("Basic.Settings.ProgramRestart"));
+		warningBox->AddRestartWarning("Advanced");
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
 	}
@@ -4408,7 +4439,7 @@ void OBSBasicSettings::AdvancedChangedRestart()
 
 void OBSBasicSettings::VideoChangedResolution()
 {
-	if (!loading && ValidResolutions(ui.get())) {
+	if (!loading && ValidResolutions(ui.get(), warningBox)) {
 		videoChanged = true;
 		sender()->setProperty("changed", QVariant(true));
 		EnableApplyButton(true);
@@ -4613,19 +4644,27 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 {
 	auto Checked = [](QCheckBox *box) { return box->isChecked() ? 1 : 0; };
 
-	QString errorMsg;
-	QString warningMsg;
 	uint32_t tracks =
 		Checked(ui->advOutRecTrack1) + Checked(ui->advOutRecTrack2) +
 		Checked(ui->advOutRecTrack3) + Checked(ui->advOutRecTrack4) +
 		Checked(ui->advOutRecTrack5) + Checked(ui->advOutRecTrack6);
 
+	// Reset simple and advanced output warnings and errors
+	warningBox->RemoveWarning("CannotPause");
+	warningBox->RemoveWarning("MP4Recording");
+
+	warningBox->RemoveWarning("VideoBitrate");
+	warningBox->RemoveWarning("AudioBitrate");
+	warningBox->RemoveWarning("Lossless");
+	warningBox->RemoveWarning("Encoder");
+
+	warningBox->RemoveError("NoTracksSelected");
+	warningBox->RemoveError("ProResRecording");
+
 	bool useStreamEncoder = ui->advOutRecEncoder->currentIndex() == 0;
-	if (useStreamEncoder) {
-		if (!warningMsg.isEmpty())
-			warningMsg += "\n\n";
-		warningMsg += QTStr("OutputWarnings.CannotPause");
-	}
+	if (useStreamEncoder)
+		warningBox->AddWarning("CannotPause",
+				       QTStr("OutputWarnings.CannotPause"));
 
 	if (ui->advOutRecFormat->currentText().compare("flv") == 0) {
 		ui->advRecTrackWidget->setCurrentWidget(ui->flvTracks);
@@ -4633,7 +4672,9 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 		ui->advRecTrackWidget->setCurrentWidget(ui->recTracks);
 
 		if (tracks == 0)
-			errorMsg = QTStr("OutputWarnings.NoTracksSelected");
+			warningBox->AddError(
+				"NoTracksSelected",
+				QTStr("OutputWarnings.NoTracksSelected"));
 	}
 
 	QString recFormat = ui->advOutRecFormat->currentText();
@@ -4645,32 +4686,26 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mov"));
 		} else if (recFormat.compare("mov") == 0) {
-			if (!warningMsg.isEmpty()) {
-				warningMsg += "\n\n";
-			}
-
-			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			warningBox->AddWarning(
+				"MP4Recording",
+				QTStr("OutputWarnings.MP4Recording"));
 			ui->autoRemux->setText(
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mov") +
 				" " +
 				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
 		} else {
-			if (!errorMsg.isEmpty()) {
-				errorMsg += "\n\n";
-			}
-
-			errorMsg += QTStr("OutputWarnings.ProResRecording")
-					    .arg(recFormat);
+			warningBox->AddError(
+				"ProResRecording",
+				QTStr("OutputWarnings.ProResRecording")
+					.arg(recFormat));
 		}
 	} else {
 		if (recFormat.compare("mp4") == 0 ||
 		    recFormat.compare("mov") == 0) {
-			if (!warningMsg.isEmpty()) {
-				warningMsg += "\n\n";
-			}
-
-			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			warningBox->AddWarning(
+				"MP4Recording",
+				QTStr("OutputWarnings.MP4Recording"));
 			ui->autoRemux->setText(
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mp4") +
@@ -4681,21 +4716,6 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 				QTStr("Basic.Settings.Advanced.AutoRemux")
 					.arg("mp4"));
 		}
-	}
-
-	delete advOutRecWarning;
-
-	if (!errorMsg.isEmpty() || !warningMsg.isEmpty()) {
-		advOutRecWarning = new QLabel(
-			errorMsg.isEmpty() ? warningMsg : errorMsg, this);
-		advOutRecWarning->setObjectName(
-			errorMsg.isEmpty() ? "warningLabel" : "errorLabel");
-		advOutRecWarning->setWordWrap(true);
-
-		QFormLayout *formLayout = reinterpret_cast<QFormLayout *>(
-			ui->advOutRecTopContainer->layout());
-
-		formLayout->addRow(nullptr, advOutRecWarning);
 	}
 }
 
@@ -5024,19 +5044,16 @@ void OBSBasicSettings::SimpleReplayBufferChanged()
 	if (memMB < 1)
 		memMB = 1;
 
-	ui->simpleRBEstimate->setObjectName("");
+	warningBox->RemoveWarning("ReplayBuffer");
 	if (streamQuality) {
-		if (memMB <= memMaxMB) {
-			ui->simpleRBEstimate->setText(
-				QTStr(ESTIMATE_STR)
-					.arg(QString::number(int(memMB))));
-		} else {
-			ui->simpleRBEstimate->setText(
+		ui->simpleRBEstimate->setText(
+			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+		if (memMB > memMaxMB && replayBufferEnabled)
+			warningBox->AddWarning(
+				"ReplayBuffer",
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)),
 					     QString::number(int(memMaxMB))));
-			ui->simpleRBEstimate->setObjectName("warningLabel");
-		}
 	} else {
 		ui->simpleRBEstimate->setText(QTStr(ESTIMATE_UNKNOWN_STR));
 	}
@@ -5122,22 +5139,20 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	if (vbitrate == 0)
 		varRateControl = false;
 
-	ui->advRBEstimate->setObjectName("");
+	warningBox->RemoveWarning("ReplayBuffer");
 	if (varRateControl) {
 		ui->advRBMegsMax->setVisible(false);
 		ui->advRBMegsMaxLabel->setVisible(false);
 
-		if (memMB <= memMaxMB) {
-			ui->advRBEstimate->setText(
-				QTStr(ESTIMATE_STR)
-					.arg(QString::number(int(memMB))));
-		} else {
-			ui->advRBEstimate->setText(
+		ui->advRBEstimate->setText(
+			QTStr(ESTIMATE_STR).arg(QString::number(int(memMB))));
+
+		if (memMB > memMaxMB && replayBufferEnabled)
+			warningBox->AddWarning(
+				"ReplayBuffer",
 				QTStr(ESTIMATE_TOO_LARGE_STR)
 					.arg(QString::number(int(memMB)),
 					     QString::number(int(memMaxMB))));
-			ui->advRBEstimate->setObjectName("warningLabel");
-		}
 	} else {
 		ui->advRBMegsMax->setVisible(true);
 		ui->advRBMegsMaxLabel->setVisible(true);
@@ -5158,11 +5173,20 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 void OBSBasicSettings::SimpleRecordingEncoderChanged()
 {
 	QString qual = ui->simpleOutRecQuality->currentData().toString();
-	QString warning;
 	bool enforceBitrate = !ui->ignoreRecommended->isChecked();
 	OBSService service = GetStream1Service();
 
-	delete simpleOutRecWarning;
+	// Reset simple and advanced output warnings and errors
+	warningBox->RemoveWarning("CannotPause");
+	warningBox->RemoveWarning("MP4Recording");
+
+	warningBox->RemoveWarning("VideoBitrate");
+	warningBox->RemoveWarning("AudioBitrate");
+	warningBox->RemoveWarning("Lossless");
+	warningBox->RemoveWarning("Encoder");
+
+	warningBox->RemoveError("NoTracksSelected");
+	warningBox->RemoveError("ProResRecording");
 
 	if (enforceBitrate && service) {
 		OBSDataAutoRelease videoSettings = obs_data_create();
@@ -5180,22 +5204,23 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		int newABitrate = obs_data_get_int(audioSettings, "bitrate");
 
 		if (newVBitrate < oldVBitrate)
-			warning = SIMPLE_OUTPUT_WARNING("VideoBitrate")
-					  .arg(newVBitrate);
-		if (newABitrate < oldABitrate) {
-			if (!warning.isEmpty())
-				warning += "\n\n";
-			warning += SIMPLE_OUTPUT_WARNING("AudioBitrate")
-					   .arg(newABitrate);
-		}
+			warningBox->AddWarning(
+				"VideoBitrate",
+				SIMPLE_OUTPUT_WARNING("VideoBitrate")
+					.arg(newVBitrate));
+
+		if (newABitrate < oldABitrate)
+			warningBox->AddWarning(
+				"AudioBitrate",
+				SIMPLE_OUTPUT_WARNING("AudioBitrate")
+					.arg(newABitrate));
 	}
 
 	if (qual == "Lossless") {
-		if (!warning.isEmpty())
-			warning += "\n\n";
-		warning += SIMPLE_OUTPUT_WARNING("Lossless");
-		warning += "\n\n";
-		warning += SIMPLE_OUTPUT_WARNING("Encoder");
+		warningBox->AddWarning("Lossless",
+				       SIMPLE_OUTPUT_WARNING("Lossless"));
+		warningBox->AddWarning("Encoder",
+				       SIMPLE_OUTPUT_WARNING("Encoder"));
 
 	} else if (qual != "Stream") {
 		QString enc = ui->simpleOutRecEncoder->currentData().toString();
@@ -5204,23 +5229,19 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		bool x264RecEnc = (enc == SIMPLE_ENCODER_X264 ||
 				   enc == SIMPLE_ENCODER_X264_LOWCPU);
 
-		if (streamEnc == SIMPLE_ENCODER_X264 && x264RecEnc) {
-			if (!warning.isEmpty())
-				warning += "\n\n";
-			warning += SIMPLE_OUTPUT_WARNING("Encoder");
-		}
-	} else {
-		if (!warning.isEmpty())
-			warning += "\n\n";
-		warning += SIMPLE_OUTPUT_WARNING("CannotPause");
-	}
+		if (streamEnc == SIMPLE_ENCODER_X264 && x264RecEnc)
+			warningBox->AddWarning(
+				"Encoder", SIMPLE_OUTPUT_WARNING("Encoder"));
+
+	} else
+		warningBox->AddWarning("CannotPause",
+				       SIMPLE_OUTPUT_WARNING("CannotPause"));
 
 	if (qual != "Lossless" &&
 	    (ui->simpleOutRecFormat->currentText().compare("mp4") == 0 ||
 	     ui->simpleOutRecFormat->currentText().compare("mov") == 0)) {
-		if (!warning.isEmpty())
-			warning += "\n\n";
-		warning += QTStr("OutputWarnings.MP4Recording");
+		warningBox->AddWarning("MP4Recording",
+				       QTStr("OutputWarnings.MP4Recording"));
 		ui->autoRemux->setText(
 			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") +
 			" " + QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
@@ -5228,14 +5249,6 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 		ui->autoRemux->setText(
 			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
-
-	if (warning.isEmpty())
-		return;
-
-	simpleOutRecWarning = new QLabel(warning, this);
-	simpleOutRecWarning->setObjectName("warningLabel");
-	simpleOutRecWarning->setWordWrap(true);
-	ui->simpleOutInfoLayout->addWidget(simpleOutRecWarning);
 }
 
 void OBSBasicSettings::SurroundWarning(int idx)
@@ -5287,22 +5300,19 @@ void OBSBasicSettings::UpdateAudioWarnings()
 	bool surround = IsSurround(QT_TO_UTF8(speakerLayoutQstr));
 	bool lowBufferingActive = ui->lowLatencyBuffering->isChecked();
 
-	QString text;
+	ui->surroundWarning->setVisible(surround);
 
-	if (surround) {
-		text = QTStr(MULTI_CHANNEL_WARNING ".Enabled") +
-		       QStringLiteral("\n\n") + QTStr(MULTI_CHANNEL_WARNING);
-	}
+	if (surround)
+		warningBox->AddWarning("MultichannelWarning",
+				       QTStr(MULTI_CHANNEL_WARNING ".Enabled"));
+	else
+		warningBox->RemoveWarning("MultichannelWarning");
 
-	if (lowBufferingActive) {
-		if (!text.isEmpty())
-			text += QStringLiteral("\n\n");
-
-		text += QTStr(LL_BUFFERING_WARNING ".Enabled") +
-			QStringLiteral("\n\n") + QTStr(LL_BUFFERING_WARNING);
-	}
-
-	ui->audioMsg_2->setText(text);
+	if (lowBufferingActive)
+		warningBox->AddWarning("LowLatencyBufferingWarning",
+				       QTStr(LL_BUFFERING_WARNING));
+	else
+		warningBox->RemoveWarning("LowLatencyBufferingWarning");
 }
 
 void OBSBasicSettings::LowLatencyBufferingChanged(bool checked)
@@ -5516,4 +5526,15 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
 #endif
+}
+
+void OBSBasicSettings::UpdateOutputWarnings()
+{
+	if (ui->outputMode->currentIndex() == 0) {
+		SimpleRecordingEncoderChanged();
+		SimpleReplayBufferChanged();
+	} else {
+		AdvOutRecCheckWarnings();
+		AdvReplayBufferChanged();
+	}
 }

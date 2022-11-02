@@ -28,6 +28,7 @@
 
 #include <obs.hpp>
 
+#include "settings-warning-box.hpp"
 #include "auth-base.hpp"
 
 class OBSBasic;
@@ -109,6 +110,8 @@ private:
 
 	std::shared_ptr<Auth> auth;
 
+	QPointer<OBSWarningBox> warningBox;
+
 	bool generalChanged = false;
 	bool stream1Changed = false;
 	bool outputsChanged = false;
@@ -138,9 +141,6 @@ private:
 	OBSPropertiesView *streamProperties = nullptr;
 	OBSPropertiesView *streamEncoderProps = nullptr;
 	OBSPropertiesView *recordEncoderProps = nullptr;
-
-	QPointer<QLabel> advOutRecWarning;
-	QPointer<QLabel> simpleOutRecWarning;
 
 	QString curPreset;
 	QString curQSVPreset;
@@ -466,6 +466,8 @@ private slots:
 	void SetAdvancedIcon(const QIcon &icon);
 
 	void UseStreamKeyAdvClicked();
+
+	void UpdateOutputWarnings();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;

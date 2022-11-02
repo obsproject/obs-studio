@@ -198,6 +198,8 @@ target_sources(
           scene-tree.cpp
           scene-tree.hpp
           screenshot-obj.hpp
+          settings-warning-box.cpp
+          settings-warning-box.hpp
           slider-absoluteset-style.cpp
           slider-absoluteset-style.hpp
           slider-ignorewheel.cpp
