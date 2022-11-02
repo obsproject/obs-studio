@@ -823,8 +823,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvReplayBufferChanged()));
 	connect(ui->advRBSecMax, SIGNAL(valueChanged(int)), this,
 		SLOT(AdvReplayBufferChanged()));
-	connect(ui->listWidget, SIGNAL(currentRowChanged(int)), this,
-		SLOT(SimpleRecordingEncoderChanged()));
 
 	// Get Bind to IP Addresses
 	obs_properties_t *ppts = obs_get_output_properties("rtmp_output");
@@ -910,10 +908,10 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 		SLOT(AdvOutRecCheckWarnings()));
 	connect(ui->advOutRecEncoder, SIGNAL(currentIndexChanged(int)), this,
 		SLOT(AdvOutRecCheckWarnings()));
-	AdvOutRecCheckWarnings();
 
 	SimpleRecordingQualityChanged();
 	AdvOutSplitFileChanged();
+	AdvOutRecCheckWarnings();
 
 	UpdateAutomaticReplayBufferCheckboxes();
 
@@ -4634,17 +4632,51 @@ void OBSBasicSettings::AdvOutRecCheckWarnings()
 			errorMsg = QTStr("OutputWarnings.NoTracksSelected");
 	}
 
-	if (ui->advOutRecFormat->currentText().compare("mp4") == 0 ||
-	    ui->advOutRecFormat->currentText().compare("mov") == 0) {
-		if (!warningMsg.isEmpty())
-			warningMsg += "\n\n";
-		warningMsg += QTStr("OutputWarnings.MP4Recording");
-		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux") + " " +
-			QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+	QString recFormat = ui->advOutRecFormat->currentText();
+	QString recEncoder = ui->advOutRecEncoder->currentText();
+
+	if (recEncoder.contains("ProRes")) {
+		if (recFormat.compare("mkv") == 0) {
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mov"));
+		} else if (recFormat.compare("mov") == 0) {
+			if (!warningMsg.isEmpty()) {
+				warningMsg += "\n\n";
+			}
+
+			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mov") +
+				" " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+		} else {
+			if (!errorMsg.isEmpty()) {
+				errorMsg += "\n\n";
+			}
+
+			errorMsg += QTStr("OutputWarnings.ProResRecording")
+					    .arg(recFormat);
+		}
 	} else {
-		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux"));
+		if (recFormat.compare("mp4") == 0 ||
+		    recFormat.compare("mov") == 0) {
+			if (!warningMsg.isEmpty()) {
+				warningMsg += "\n\n";
+			}
+
+			warningMsg += QTStr("OutputWarnings.MP4Recording");
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mp4") +
+				" " +
+				QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+		} else {
+			ui->autoRemux->setText(
+				QTStr("Basic.Settings.Advanced.AutoRemux")
+					.arg("mp4"));
+		}
 	}
 
 	delete advOutRecWarning;
@@ -5134,11 +5166,11 @@ void OBSBasicSettings::SimpleRecordingEncoderChanged()
 			warning += "\n\n";
 		warning += QTStr("OutputWarnings.MP4Recording");
 		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux") + " " +
-			QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4") +
+			" " + QTStr("Basic.Settings.Advanced.AutoRemux.MP4"));
 	} else {
 		ui->autoRemux->setText(
-			QTStr("Basic.Settings.Advanced.AutoRemux"));
+			QTStr("Basic.Settings.Advanced.AutoRemux").arg("mp4"));
 	}
 
 	if (warning.isEmpty())
