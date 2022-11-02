@@ -360,6 +360,12 @@ static bool control_changed(void *data, obs_properties_t *props,
 		spa_pod_builder_add(&b, id, SPA_POD_Bool(val), 0);
 		break;
 	}
+	case OBS_PROPERTY_FLOAT: {
+		float val =
+			obs_data_get_double(settings, obs_property_name(prop));
+		spa_pod_builder_add(&b, id, SPA_POD_Float(val), 0);
+		break;
+	}
 	case OBS_PROPERTY_INT:
 	case OBS_PROPERTY_LIST: {
 		int val = obs_data_get_int(settings, obs_property_name(prop));
@@ -407,8 +413,10 @@ static inline void add_control_property(obs_properties_t *props,
 	switch (SPA_POD_TYPE(pod)) {
 	case SPA_TYPE_Int: {
 		int32_t *vals = SPA_POD_BODY(pod);
+		int32_t min, max, def, step;
 		if (n_vals < 1)
 			return;
+		def = vals[0];
 		if (choice == SPA_CHOICE_Enum) {
 			struct spa_pod_parser prs;
 			struct spa_pod_frame f;
@@ -435,13 +443,15 @@ static inline void add_control_property(obs_properties_t *props,
 							  id);
 			}
 		} else {
-			prop = obs_properties_add_int_slider(
-				props, (char *)name, (char *)name,
-				n_vals > 1 ? vals[1] : vals[0],
-				n_vals > 2 ? vals[2] : vals[0],
-				n_vals > 3 ? vals[3] : 1);
+			min = n_vals > 1 ? vals[1] : def;
+			max = n_vals > 2 ? vals[2] : def;
+			step = n_vals > 3 ? vals[3] : (max - min) / 256.0f;
+			prop = obs_properties_add_int_slider(props,
+							     (char *)name,
+							     (char *)name, min,
+							     max, step);
 		}
-		obs_data_set_default_int(settings, (char *)name, vals[0]);
+		obs_data_set_default_int(settings, (char *)name, def);
 		obs_property_set_modified_callback2(prop, control_changed,
 						    SPA_UINT32_TO_PTR(id));
 		break;
@@ -453,6 +463,22 @@ static inline void add_control_property(obs_properties_t *props,
 		prop = obs_properties_add_bool(props, (char *)name,
 					       (char *)name);
 		obs_data_set_default_bool(settings, (char *)name, vals[0]);
+		obs_property_set_modified_callback2(prop, control_changed,
+						    SPA_UINT32_TO_PTR(id));
+		break;
+	}
+	case SPA_TYPE_Float: {
+		float *vals = SPA_POD_BODY(pod);
+		float min, max, def, step;
+		if (n_vals < 1)
+			return;
+		def = vals[0];
+		min = n_vals > 1 ? vals[1] : def;
+		max = n_vals > 2 ? vals[2] : def;
+		step = n_vals > 3 ? vals[3] : (max - min) / 256.0f;
+		prop = obs_properties_add_float_slider(
+			props, (char *)name, (char *)name, min, max, step);
+		obs_data_set_default_double(settings, (char *)name, def);
 		obs_property_set_modified_callback2(prop, control_changed,
 						    SPA_UINT32_TO_PTR(id));
 		break;
