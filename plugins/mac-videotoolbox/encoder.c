@@ -1383,10 +1383,11 @@ bool obs_module_load(void)
 		CFDictionaryRef encoder_dict =
 			CFArrayGetValueAtIndex(encoder_list, i);
 
-#define VT_DICTSTR(key, name)                                             \
-	CFStringRef name##_ref = CFDictionaryGetValue(encoder_dict, key); \
-	CFIndex name##_len = CFStringGetLength(name##_ref);               \
-	char *name = bzalloc(name##_len + 1);                             \
+#define VT_DICTSTR(key, name)                                                 \
+	CFStringRef name##_ref = CFDictionaryGetValue(encoder_dict, key);     \
+	CFIndex name##_len =                                                  \
+		CFStringGetMaximumSizeOfFileSystemRepresentation(name##_ref); \
+	char *name = bzalloc(name##_len + 1);                                 \
 	CFStringGetFileSystemRepresentation(name##_ref, name, name##_len);
 
 		CMVideoCodecType codec_type = 0;
