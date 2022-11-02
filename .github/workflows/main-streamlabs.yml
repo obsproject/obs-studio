@@ -113,7 +113,7 @@ jobs:
     env:
       OS_TAG: "windows64"
       CEF_VERSION: 5060
-      WIN_DEPS_VERSION: windows-deps-2022-08-02-x64
+      WIN_DEPS_VERSION: windows-deps-2022-08-02-x64-sl
       GRPC_VERSION: v1.47.0
       CMakeGenerator: Visual Studio 17 2022
       VLC_VERSION: vlc_3.0.0-git

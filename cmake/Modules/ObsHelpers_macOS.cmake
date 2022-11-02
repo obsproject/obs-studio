@@ -95,6 +95,34 @@ function(setup_plugin_target target)
   obs_status(ENABLED "${target}")
 
   install_bundle_resources(${target})
+
+  if(TARGET OBS::ffmpeg)
+    set(
+      PROGRAM_PERMISSIONS_DEFAULT
+      OWNER_WRITE OWNER_READ OWNER_EXECUTE
+      GROUP_READ GROUP_EXECUTE
+      WORLD_READ WORLD_EXECUTE
+    )
+    install(
+      FILES "${FFMPEG_avcodec_INCLUDE_DIR}/../lib/ffmpeg"
+      DESTINATION "OBS.app/Contents/Frameworks"
+      PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT}
+    )
+    if(EXISTS "OBS.app/Contents/Frameworks/ffmpeg")
+      execute_process(COMMAND /usr/bin/install_name_tool
+        -add_rpath "@executable_path/"
+        "OBS.app/Contents/Frameworks/ffmpeg")
+    endif()
+    install(
+      FILES "${FFMPEG_avcodec_INCLUDE_DIR}/../lib/ffprobe"
+      DESTINATION "OBS.app/Contents/Frameworks"
+      PERMISSIONS ${PROGRAM_PERMISSIONS_DEFAULT})
+    if(EXISTS "OBS.app/Contents/Frameworks/ffmpeg")
+      execute_process(COMMAND /usr/bin/install_name_tool
+        -add_rpath "@executable_path/"
+        "OBS.app/Contents/Frameworks/ffprobe")
+    endif()
+  endif()
 endfunction()
 
 # Helper function to set up OBS scripting plugin targets
