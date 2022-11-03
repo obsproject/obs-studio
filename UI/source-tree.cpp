@@ -1154,7 +1154,7 @@ void SourceTree::SelectItem(obs_sceneitem_t *sceneitem, bool select)
 		return;
 
 	QModelIndex index = stm->createIndex(i, 0);
-	if (index.isValid())
+	if (index.isValid() && select != selectionModel()->isSelected(index))
 		selectionModel()->select(
 			index, select ? QItemSelectionModel::Select
 				      : QItemSelectionModel::Deselect);
