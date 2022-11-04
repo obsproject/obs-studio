@@ -240,8 +240,23 @@ bool BasicOutputHandler::StartVirtualCam()
 
 		bool success = obs_output_start(virtualCam);
 
-		if (!success)
+		if (!success) {
 			OBSBasicVCamConfig::StopVideo();
+
+			QString errorReason;
+			const char *error =
+				obs_output_get_last_error(virtualCam);
+			if (error) {
+				errorReason = QT_UTF8(error);
+			} else {
+				errorReason =
+					QTStr("Output.StartFailedGeneric");
+			}
+
+			QMessageBox::critical(
+				main, QTStr("Output.StartVirtualCamFailed"),
+				errorReason);
+		}
 
 		return success;
 	}
