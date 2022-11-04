@@ -19,7 +19,7 @@
 
 /* Colors */
 
-/* rgb(225,224,225); /* veryLight */
+/* rgb(254,253,254); /* veryLight */
 /* rgb(200,199,200); /* lighter */
 /* rgb(122,121,122); /* light */
 /* rgb(88,87,88); /* kindaDark */
@@ -39,12 +39,12 @@ OBSThemeMeta {
  * Using it without will set all three (making 'active' a bit redundant) */
 OBSTheme {
     window: rgb(58,57,58); /* dark */
-    windowText: rgb(225,224,225); /* veryLight */
+    windowText: rgb(254,253,254); /* veryLight */
     base: rgb(31,30,31); /* veryDark */
     alternateBase: rgb(11,10,11); /* veryVeryDark */
-    text: rgb(225,224,225); /* veryLight */
+    text: rgb(254,253,254); /* veryLight */
     button: rgb(88,87,88); /* kindaDark */
-    buttonText: rgb(225,224,225); /* veryLight */
+    buttonText: rgb(254,253,254); /* veryLight */
     brightText: rgb(200,199,200); /* lighter */
 
     light: rgb(88,87,88); /* kindaDark */
@@ -60,9 +60,10 @@ OBSTheme {
 }
 
 OBSTheme::disabled {
-    text: rgb(122,121,122); /* light */
-    buttonText: rgb(122,121,122); /* light */
-    brightText: rgb(122,121,122); /* light */
+    windowText: rgb(165,164,165); /* disabledText */
+    text: rgb(165,164,165); /* disabledText */
+    buttonText: rgb(165,164,165); /* disabledText */
+    brightText: rgb(165,164,165); /* disabledText */
 }
 
 OBSTheme::inactive {
@@ -941,7 +942,7 @@ OBSYoutubeActions {
 }
 
 #ytEventList QLabel {
-    color: rgb(225,224,225); /* veryLight */
+    color: rgb(254,253,254); /* veryLight */
     background-color: rgb(76,76,76);
     border: none;
     border-radius: 3px;
@@ -1035,13 +1036,13 @@ QCalendarWidget QWidget { alternate-background-color: rgb(70,69,70); }
 
 QCalendarWidget QAbstractItemView:enabled {
     background-color: rgb(31,30,31);
-    color: rgb(225,224,225);
+    color: rgb(254,253,254);
     selection-background-color: rgb(25,51,75);
-    selection-color: rgb(225,224,225);
+    selection-color: rgb(254,253,254);
 }
 
 QCalendarWidget QAbstractItemView:disabled {
-    color: rgb(122,121,122);
+    color: rgb(165,164,165); /* disabledText */
 }
 
 /* Disable icons on QDialogButtonBox */
