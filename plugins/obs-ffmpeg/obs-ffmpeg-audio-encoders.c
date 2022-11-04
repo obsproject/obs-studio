@@ -116,6 +116,7 @@ static void enc_destroy(void *data)
 static bool initialize_codec(struct enc_encoder *enc)
 {
 	int ret;
+	int channels;
 
 	enc->aframe = av_frame_alloc();
 	if (!enc->aframe) {
@@ -134,7 +135,12 @@ static bool initialize_codec(struct enc_encoder *enc)
 		return false;
 	}
 	enc->aframe->format = enc->context->sample_fmt;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	enc->aframe->channels = enc->context->channels;
+	channels = enc->context->channels;
+#else
+	channels = enc->context->ch_layout.nb_channels;
+#endif
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	enc->aframe->channel_layout = enc->context->channel_layout;
 #else
@@ -148,8 +154,8 @@ static bool initialize_codec(struct enc_encoder *enc)
 
 	enc->frame_size_bytes = enc->frame_size * (int)enc->audio_size;
 
-	ret = av_samples_alloc(enc->samples, NULL, enc->context->channels,
-			       enc->frame_size, enc->context->sample_fmt, 0);
+	ret = av_samples_alloc(enc->samples, NULL, channels, enc->frame_size,
+			       enc->context->sample_fmt, 0);
 	if (ret < 0) {
 		warn("Failed to create audio buffer: %s", av_err2str(ret));
 		return false;
@@ -216,16 +222,21 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	enc->context->bit_rate = bitrate * 1000;
 	const struct audio_output_info *aoi;
 	aoi = audio_output_get_info(audio);
+
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	enc->context->channels = (int)audio_output_get_channels(audio);
+#endif
+
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
 	enc->context->channel_layout = convert_speaker_layout(aoi->speakers);
 #else
 	av_channel_layout_default(&enc->context->ch_layout,
-				  enc->context->channels);
+				  (int)audio_output_get_channels(audio));
 	if (aoi->speakers == SPEAKERS_4POINT1)
 		enc->context->ch_layout =
 			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
+
 	enc->context->sample_rate = audio_output_get_sample_rate(audio);
 	enc->context->sample_fmt = enc->codec->sample_fmts
 					   ? enc->codec->sample_fmts[0]
@@ -264,7 +275,7 @@ static void *enc_create(obs_data_t *settings, obs_encoder_t *encoder,
 	av_channel_layout_describe(&enc->context->ch_layout, buf, 256);
 	info("bitrate: %" PRId64 ", channels: %d, channel_layout: %s\n",
 	     (int64_t)enc->context->bit_rate / 1000,
-	     (int)enc->context->channels, buf);
+	     (int)enc->context->ch_layout.nb_channels, buf);
 #endif
 	init_sizes(enc, audio);
 
@@ -298,6 +309,7 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 	AVPacket avpacket = {0};
 	int got_packet;
 	int ret;
+	int channels;
 
 	enc->aframe->nb_samples = enc->frame_size;
 	enc->aframe->pts = av_rescale_q(
@@ -305,11 +317,14 @@ static bool do_encode(struct enc_encoder *enc, struct encoder_packet *packet,
 		enc->context->time_base);
 #if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 24, 100)
 	enc->aframe->ch_layout = enc->context->ch_layout;
+	channels = enc->context->ch_layout.nb_channels;
+#else
+	channels = enc->context->channels;
 #endif
-	ret = avcodec_fill_audio_frame(
-		enc->aframe, enc->context->channels, enc->context->sample_fmt,
-		enc->samples[0], enc->frame_size_bytes * enc->context->channels,
-		1);
+	ret = avcodec_fill_audio_frame(enc->aframe, channels,
+				       enc->context->sample_fmt,
+				       enc->samples[0],
+				       enc->frame_size_bytes * channels, 1);
 	if (ret < 0) {
 		warn("avcodec_fill_audio_frame failed: %s", av_err2str(ret));
 		return false;
@@ -391,10 +406,16 @@ static bool enc_extra_data(void *data, uint8_t **extra_data, size_t *size)
 static void enc_audio_info(void *data, struct audio_convert_info *info)
 {
 	struct enc_encoder *enc = data;
+	int channels;
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 24, 100)
+	channels = enc->context->ch_layout.nb_channels;
+#else
+	channels = enc->context->channels;
+#endif
 	info->format = convert_ffmpeg_sample_format(enc->context->sample_fmt);
 	info->samples_per_sec = (uint32_t)enc->context->sample_rate;
-	if (enc->context->channels != 7 && enc->context->channels <= 8)
-		info->speakers = (enum speaker_layout)(enc->context->channels);
+	if (channels != 7 && channels <= 8)
+		info->speakers = (enum speaker_layout)(channels);
 	else
 		info->speakers = SPEAKERS_UNKNOWN;
 }
