@@ -77,12 +77,13 @@
 #include <sstream>
 
 #ifdef _WIN32
-#include "win-update/win-update.hpp"
+#include "update/win-update.hpp"
+#include "update/shared-update.hpp"
 #include "windows.h"
 #endif
 
 #if !defined(_WIN32) && defined(WHATSNEW_ENABLED)
-#include "nix-update/nix-update.hpp"
+#include "update/shared-update.hpp"
 #endif
 
 #include "ui_OBSBasic.h"

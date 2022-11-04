@@ -40,7 +40,7 @@
 
 #include <string>
 
-#include "../win-update-helpers.hpp"
+#include "helpers.hpp"
 
 #define BLAKE2_HASH_LENGTH 20
 #define BLAKE2_HASH_STR_LENGTH ((BLAKE2_HASH_LENGTH * 2) + 1)

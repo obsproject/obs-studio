@@ -1,6 +1,6 @@
-#include "nix-update.hpp"
+#include "shared-update.hpp"
 #include "crypto-helpers.hpp"
-#include "nix-update-helpers.hpp"
+#include "update-helpers.hpp"
 #include "obs-app.hpp"
 #include "remote-text.hpp"
 #include "platform.hpp"
@@ -24,12 +24,18 @@ extern QCef *cef;
 #define MAC_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
 #endif
 
+#ifndef WIN_WHATSNEW_URL
+#define WIN_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
+#endif
+
 #ifndef LINUX_WHATSNEW_URL
 #define LINUX_WHATSNEW_URL "https://obsproject.com/update_studio/whatsnew.json"
 #endif
 
 #ifdef __APPLE__
 #define WHATSNEW_URL MAC_WHATSNEW_URL
+#elif defined(_WIN32)
+#define WHATSNEW_URL WIN_WHATSNEW_URL
 #else
 #define WHATSNEW_URL LINUX_WHATSNEW_URL
 #endif
@@ -194,28 +200,34 @@ try {
 
 /* ------------------------------------------------------------------------ */
 
-void WhatsNewInfoThread::run()
-try {
+bool FetchAndVerifyFile(const char *name, const char *file, const char *url,
+			std::string *out,
+			const std::vector<std::string> &extraHeaders)
+{
 	long responseCode;
-	std::vector<std::string> extraHeaders;
-	std::string text;
+	std::vector<std::string> headers;
 	std::string error;
 	std::string signature;
-	uint8_t whatsnewHash[BLAKE2_HASH_LENGTH];
+	std::string data;
+	uint8_t fileHash[BLAKE2_HASH_LENGTH];
 	bool success;
 
-	BPtr<char> whatsnewPath =
-		GetConfigPathPtr("obs-studio/updates/whatsnew.json");
+	BPtr<char> filePath = GetConfigPathPtr(file);
+
+	if (!extraHeaders.empty()) {
+		headers.insert(headers.end(), extraHeaders.begin(),
+			       extraHeaders.end());
+	}
 
 	/* ----------------------------------- *
-	 * avoid downloading json again        */
+	 * avoid downloading file again        */
 
-	if (CalculateFileHash(whatsnewPath, whatsnewHash)) {
-		auto hash = QByteArray::fromRawData((const char *)whatsnewHash,
+	if (CalculateFileHash(filePath, fileHash)) {
+		auto hash = QByteArray::fromRawData((const char *)fileHash,
 						    BLAKE2_HASH_LENGTH);
 
 		QString header = "If-None-Match: " + hash.toHex();
-		extraHeaders.push_back(move(header.toStdString()));
+		headers.push_back(move(header.toStdString()));
 	}
 
 	/* ----------------------------------- *
@@ -225,20 +237,20 @@ try {
 
 	if (!guid.empty()) {
 		std::string header = "X-OBS2-GUID: " + guid;
-		extraHeaders.push_back(move(header));
+		headers.push_back(move(header));
 	}
 
 	/* ----------------------------------- *
-	 * get json from server                */
+	 * get file from server                */
 
-	success = GetRemoteFile(WHATSNEW_URL, text, error, &responseCode,
-				nullptr, "", nullptr, extraHeaders, &signature);
+	success = GetRemoteFile(url, data, error, &responseCode, nullptr, "",
+				nullptr, headers, &signature);
 
 	if (!success || (responseCode != 200 && responseCode != 304)) {
 		if (responseCode == 404)
-			return;
+			return false;
 
-		throw strprintf("Failed to fetch whatsnew file: %s",
+		throw strprintf("Failed to fetch %s file: %s", name,
 				error.c_str());
 	}
 
@@ -246,29 +258,40 @@ try {
 	 * verify file signature               */
 
 	if (responseCode == 200) {
-		success = CheckDataSignature("whatsnew", text, signature);
+		success = CheckDataSignature(name, data, signature);
 		if (!success)
-			throw std::string("Invalid whatsnew signature");
+			throw strprintf("Invalid %s signature", name);
 	}
 
 	/* ----------------------------------- *
-	 * write or load json                  */
+	 * write or load file                  */
 
 	if (responseCode == 200) {
-		if (!QuickWriteFile(whatsnewPath, text))
+		if (!QuickWriteFile(filePath, data))
 			throw strprintf("Could not write file '%s'",
-					whatsnewPath.Get());
-	} else {
-		if (!QuickReadFile(whatsnewPath, text))
+					filePath.Get());
+	} else if (out) { /* Only read file if caller wants data */
+		if (!QuickReadFile(filePath, data))
 			throw strprintf("Could not read file '%s'",
-					whatsnewPath.Get());
+					filePath.Get());
 	}
+
+	if (out)
+		*out = data;
 
 	/* ----------------------------------- *
 	 * success                             */
+	return true;
+}
 
-	emit Result(QString::fromStdString(text));
+void WhatsNewInfoThread::run()
+try {
+	std::string text;
 
+	if (FetchAndVerifyFile("whatsnew", "obs-studio/updates/whatsnew.json",
+			       WHATSNEW_URL, &text)) {
+		emit Result(QString::fromStdString(text));
+	}
 } catch (std::string &text) {
 	blog(LOG_WARNING, "%s: %s", __FUNCTION__, text.c_str());
 }
@@ -277,6 +300,8 @@ try {
 
 void WhatsNewBrowserInitThread::run()
 {
+#ifdef BROWSER_AVAILABLE
 	cef->wait_for_browser_init();
+#endif
 	emit Result(url);
 }
