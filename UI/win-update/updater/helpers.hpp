@@ -37,35 +37,5 @@ public:
 };
 
 void FreeProvider(HCRYPTPROV prov);
-void FreeHash(HCRYPTHASH hash);
-void FreeKey(HCRYPTKEY key);
 
 using CryptProvider = CustomHandle<HCRYPTPROV, FreeProvider>;
-using CryptHash = CustomHandle<HCRYPTHASH, FreeHash>;
-using CryptKey = CustomHandle<HCRYPTKEY, FreeKey>;
-
-/* ------------------------------------------------------------------------ */
-
-template<typename T> class LocalPtr {
-	T *ptr = nullptr;
-
-public:
-	inline ~LocalPtr()
-	{
-		if (ptr)
-			LocalFree(ptr);
-	}
-
-	inline T **operator&() { return &ptr; }
-	inline operator T() const { return ptr; }
-	inline T *get() const { return ptr; }
-
-	inline bool operator!() const { return !ptr; }
-
-	inline T *operator->() { return ptr; }
-};
-
-/* ------------------------------------------------------------------------ */
-
-std::string vstrprintf(const char *format, va_list args);
-std::string strprintf(const char *format, ...);

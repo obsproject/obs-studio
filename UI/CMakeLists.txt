@@ -344,12 +344,16 @@ if(OS_WINDOWS)
     obs
     PRIVATE obs.manifest
             platform-windows.cpp
-            win-update/update-window.cpp
-            win-update/update-window.hpp
-            win-update/win-update.cpp
-            win-update/win-update.hpp
-            win-update/win-update-helpers.cpp
-            win-update/win-update-helpers.hpp
+            update/update-window.cpp
+            update/update-window.hpp
+            update/win-update.cpp
+            update/win-update.hpp
+            update/shared-update.cpp
+            update/shared-update.hpp
+            update/update-helpers.cpp
+            update/update-helpers.hpp
+            update/crypto-helpers-mbedtls.cpp
+            update/crypto-helpers.hpp
             ${CMAKE_BINARY_DIR}/obs.rc)
 
   if(_QT_VERSION EQUAL 5)
@@ -357,7 +361,8 @@ if(OS_WINDOWS)
     target_link_libraries(obs PRIVATE Qt::WinExtras)
   endif()
 
-  target_link_libraries(obs PRIVATE crypt32 OBS::blake2)
+  find_package(MbedTLS)
+  target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
 
   target_compile_features(obs PRIVATE cxx_std_17)
 
@@ -446,12 +451,9 @@ elseif(OS_MACOS)
 
     target_sources(
       obs
-      PRIVATE nix-update/crypto-helpers.hpp
-              nix-update/crypto-helpers-mac.mm
-              nix-update/nix-update.cpp
-              nix-update/nix-update.hpp
-              nix-update/nix-update-helpers.cpp
-              nix-update/nix-update-helpers.hpp)
+      PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mac.mm
+              update/shared-update.cpp update/shared-update.hpp
+              update/update-helpers.cpp update/update-helpers.hpp)
   endif()
 
   set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS
@@ -485,12 +487,9 @@ elseif(OS_POSIX)
 
     target_sources(
       obs
-      PRIVATE nix-update/crypto-helpers.hpp
-              nix-update/crypto-helpers-mbedtls.cpp
-              nix-update/nix-update.cpp
-              nix-update/nix-update.hpp
-              nix-update/nix-update-helpers.cpp
-              nix-update/nix-update-helpers.hpp)
+      PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mbedtls.cpp
+              update/shared-update.cpp update/shared-update.hpp
+              update/update-helpers.cpp update/update-helpers.hpp)
     target_link_libraries(obs PRIVATE Mbedtls::Mbedtls OBS::blake2)
   endif()
 endif()

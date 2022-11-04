@@ -1,4 +1,4 @@
-#include "nix-update-helpers.hpp"
+#include "update-helpers.hpp"
 
 #include <stdarg.h>
 
