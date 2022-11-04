@@ -235,6 +235,7 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	void *extradata = NULL;
 	struct obs_audio_info aoi;
 	const char *name = data->config.audio_encoder;
+	int channels;
 
 	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
 	if (!codec) {
@@ -255,7 +256,10 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
+	channels = get_audio_channels(aoi.speakers);
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	context->channels = get_audio_channels(aoi.speakers);
+#endif
 	context->sample_rate = aoi.samples_per_sec;
 
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
@@ -266,7 +270,7 @@ static bool create_audio_stream(struct ffmpeg_output *stream,
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
 #else
-	av_channel_layout_default(&context->ch_layout, context->channels);
+	av_channel_layout_default(&context->ch_layout, channels);
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif

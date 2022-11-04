@@ -294,6 +294,7 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 	AVCodecContext *const context = data->audio_infos[idx].ctx;
 	char **opts = strlist_split(data->config.audio_settings, ' ', false);
 	int ret;
+	int channels;
 
 	if (opts) {
 		parse_params(context, opts);
@@ -308,11 +309,13 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 	}
 
 	data->aframe[idx]->format = context->sample_fmt;
-	data->aframe[idx]->channels = context->channels;
 #if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
+	data->aframe[idx]->channels = context->channels;
 	data->aframe[idx]->channel_layout = context->channel_layout;
+	channels = context->channels;
 #else
 	data->aframe[idx]->ch_layout = context->ch_layout;
+	channels = context->ch_layout.nb_channels;
 #endif
 	data->aframe[idx]->sample_rate = context->sample_rate;
 	context->strict_std_compliance = -2;
@@ -327,7 +330,7 @@ static bool open_audio_codec(struct ffmpeg_data *data, int idx)
 
 	data->frame_size = context->frame_size ? context->frame_size : 1024;
 
-	ret = av_samples_alloc(data->samples[idx], NULL, context->channels,
+	ret = av_samples_alloc(data->samples[idx], NULL, channels,
 			       data->frame_size, context->sample_fmt, 0);
 	if (ret < 0) {
 		ffmpeg_log_error(LOG_WARNING, data,
@@ -349,6 +352,7 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 	AVCodecContext *context;
 	AVStream *stream;
 	struct obs_audio_info aoi;
+	int channels;
 
 	if (!obs_get_audio_info(&aoi)) {
 		ffmpeg_log_error(LOG_WARNING, data, "No active audio");
@@ -367,17 +371,20 @@ static bool create_audio_stream(struct ffmpeg_data *data, int idx)
 #endif
 	context->bit_rate = (int64_t)data->config.audio_bitrate * 1000;
 	context->time_base = (AVRational){1, aoi.samples_per_sec};
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
 	context->channels = get_audio_channels(aoi.speakers);
+#endif
+	channels = get_audio_channels(aoi.speakers);
+
 	context->sample_rate = aoi.samples_per_sec;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout =
-		av_get_default_channel_layout(context->channels);
+	context->channel_layout = av_get_default_channel_layout(channels);
 
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->channel_layout = av_get_channel_layout("4.1");
 #else
-	av_channel_layout_default(&context->ch_layout, context->channels);
+	av_channel_layout_default(&context->ch_layout, channels);
 	if (aoi.speakers == SPEAKERS_4POINT1)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
@@ -865,14 +872,20 @@ static void encode_audio(struct ffmpeg_output *output, int idx,
 
 	AVPacket *packet = NULL;
 	int ret, got_packet;
-	size_t total_size = data->frame_size * block_size * context->channels;
+	int channels;
+#if LIBAVUTIL_VERSION_INT >= AV_VERSION_INT(57, 24, 100)
+	channels = context->ch_layout.nb_channels;
+#else
+	channels = context->channels;
+#endif
+	size_t total_size = data->frame_size * block_size * channels;
 
 	data->aframe[idx]->nb_samples = data->frame_size;
 	data->aframe[idx]->pts = av_rescale_q(
 		data->total_samples[idx], (AVRational){1, context->sample_rate},
 		context->time_base);
 
-	ret = avcodec_fill_audio_frame(data->aframe[idx], context->channels,
+	ret = avcodec_fill_audio_frame(data->aframe[idx], channels,
 				       context->sample_fmt,
 				       data->samples[idx][0], (int)total_size,
 				       1);
