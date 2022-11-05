@@ -430,16 +430,6 @@ elseif(OS_MACOS)
   target_link_libraries(obs PRIVATE ${APPKIT} ${AVFOUNDATION}
                                     ${APPLICATIONSERVICES})
 
-  if(ENABLE_SPARKLE_UPDATER)
-    find_library(SPARKLE Sparkle)
-    mark_as_advanced(SPARKLE)
-
-    target_sources(obs PRIVATE sparkle-updater.mm)
-    target_compile_definitions(obs PRIVATE ENABLE_SPARKLE_UPDATER)
-
-    target_link_libraries(obs PRIVATE ${SPARKLE})
-  endif()
-
   target_sources(obs PRIVATE platform-osx.mm)
   target_sources(obs PRIVATE forms/OBSPermissions.ui window-permissions.cpp
                              window-permissions.hpp)
@@ -454,6 +444,19 @@ elseif(OS_MACOS)
       PRIVATE update/crypto-helpers.hpp update/crypto-helpers-mac.mm
               update/shared-update.cpp update/shared-update.hpp
               update/update-helpers.cpp update/update-helpers.hpp)
+
+    if(ENABLE_SPARKLE_UPDATER)
+      find_library(SPARKLE Sparkle)
+      mark_as_advanced(SPARKLE)
+
+      target_sources(obs PRIVATE update/mac-update.cpp update/mac-update.hpp
+                                 update/sparkle-updater.mm)
+      target_compile_definitions(obs PRIVATE ENABLE_SPARKLE_UPDATER)
+      target_link_libraries(obs PRIVATE ${SPARKLE})
+      # Enable Automatic Reference Counting for Sparkle wrapper
+      set_source_files_properties(update/sparkle-updater.mm
+                                  PROPERTIES COMPILE_FLAGS -fobjc-arc)
+    endif()
   endif()
 
   set_source_files_properties(platform-osx.mm PROPERTIES COMPILE_FLAGS

@@ -54,12 +54,15 @@
 #include <curl/curl.h>
 
 #ifdef _WIN32
-#include <json11.hpp>
 #include <windows.h>
 #include <filesystem>
 #else
 #include <signal.h>
 #include <pthread.h>
+#endif
+
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
+#include <json11.hpp>
 #endif
 
 #if !defined(_WIN32) && !defined(__APPLE__)
@@ -1268,7 +1271,7 @@ bool OBSApp::InitTheme()
 	return SetTheme("System");
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 		       std::string &error)
 {
@@ -1280,6 +1283,9 @@ void ParseBranchesJson(const std::string &jsonString, vector<UpdateBranch> &out,
 	for (const json11::Json &item : root.array_items()) {
 #ifdef _WIN32
 		if (!item["windows"].bool_value())
+			continue;
+#elif defined(__APPLE__)
+		if (!item["macos"].bool_value())
 			continue;
 #endif
 
@@ -1329,7 +1335,7 @@ fail:
 
 void OBSApp::SetBranchData(const string &data)
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	string error;
 	vector<UpdateBranch> result;
 
@@ -1356,7 +1362,7 @@ std::vector<UpdateBranch> OBSApp::GetBranches()
 	/* Always ensure the default branch exists */
 	out.push_back(UpdateBranch{"stable", "", "", true, true});
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	if (!branches_loaded) {
 		vector<UpdateBranch> result;
 		if (LoadBranchesFile(result))

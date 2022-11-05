@@ -583,9 +583,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	ui->updateChannelBox = nullptr;
 	delete ui->updateSettingsGroupBox;
 	ui->updateSettingsGroupBox = nullptr;
-#elif defined(__APPLE__)
-	delete ui->updateChannelBox;
-	ui->updateChannelBox = nullptr;
 	delete ui->updateChannelLabel;
 	ui->updateChannelLabel = nullptr;
 #else
@@ -1207,7 +1204,7 @@ void OBSBasicSettings::LoadThemeList()
 		ui->theme->setCurrentIndex(idx);
 }
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 void TranslateBranchInfo(const QString &name, QString &displayName,
 			 QString &description)
 {
@@ -1225,7 +1222,7 @@ void TranslateBranchInfo(const QString &name, QString &displayName,
 
 void OBSBasicSettings::LoadBranchesList()
 {
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	bool configBranchRemoved = true;
 	QString configBranch =
 		config_get_string(GetGlobalConfig(), "General", "UpdateBranch");
@@ -1286,7 +1283,7 @@ void OBSBasicSettings::LoadGeneralSettings()
 						 "EnableAutoUpdates");
 	ui->enableAutoUpdates->setChecked(enableAutoUpdates);
 
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	LoadBranchesList();
 #endif
 #endif
@@ -3126,7 +3123,7 @@ void OBSBasicSettings::SaveGeneralSettings()
 				"EnableAutoUpdates",
 				ui->enableAutoUpdates->isChecked());
 #endif
-#ifdef _WIN32
+#if defined(_WIN32) || defined(ENABLE_SPARKLE_UPDATER)
 	int branchIdx = ui->updateChannelBox->currentIndex();
 	QString branchName =
 		ui->updateChannelBox->itemData(branchIdx).toString();
@@ -3136,7 +3133,8 @@ void OBSBasicSettings::SaveGeneralSettings()
 				  QT_TO_UTF8(branchName));
 		forceUpdateCheck = true;
 	}
-
+#endif
+#ifdef _WIN32
 	if (ui->hideOBSFromCapture && WidgetChanged(ui->hideOBSFromCapture)) {
 		bool hide_window = ui->hideOBSFromCapture->isChecked();
 		config_set_bool(GetGlobalConfig(), "BasicWindow",
