@@ -2701,12 +2701,10 @@ OBSBasic::~OBSBasic()
 		       OBS_BETA_VER);
 #endif
 
-	bool alwaysOnTop = IsAlwaysOnTop(this);
-
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "PreviewEnabled",
 			previewEnabled);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "AlwaysOnTop",
-			alwaysOnTop);
+			ui->actionAlwaysOnTop->isChecked());
 	config_set_bool(App()->GlobalConfig(), "BasicWindow",
 			"SceneDuplicationMode", sceneDuplicationMode);
 	config_set_bool(App()->GlobalConfig(), "BasicWindow", "SwapScenesMode",
