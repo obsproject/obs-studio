@@ -112,21 +112,6 @@ endif()
 # Codesign all binaries inside-out
 message(STATUS "OBS: Codesign dependencies")
 if(EXISTS
-   "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Sparkle.framework"
-)
-  execute_process(
-    COMMAND
-      /usr/bin/codesign --remove-signature
-      "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app"
-      ${_VERBOSE_FLAG} ${_QUIET_FLAG})
-  execute_process(
-    COMMAND
-      /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --deep --options
-      runtime
-      "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Sparkle.framework/Versions/A/Resources/Autoupdate.app"
-      ${_VERBOSE_FLAG} ${_QUIET_FLAG})
-endif()
-if(EXISTS
    "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}/Contents/Frameworks/Chromium Embedded Framework.framework"
 )
   set(CEF_HELPER_OUTPUT_NAME "OBS Helper")

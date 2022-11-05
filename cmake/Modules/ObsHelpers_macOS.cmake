@@ -360,7 +360,7 @@ function(setup_obs_bundle target)
       POST_BUILD
       COMMAND
         /bin/sh -c
-        "plutil -replace SUFeedURL -string https://obsproject.com/osx_update/stable/updates_${CMAKE_OSX_ARCHITECTURES}.xml \"$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Info.plist\""
+        "plutil -replace SUFeedURL -string ${SPARKLE_APPCAST_URL} \"$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Info.plist\""
       VERBATIM)
 
     add_custom_command(
@@ -368,18 +368,8 @@ function(setup_obs_bundle target)
       POST_BUILD
       COMMAND
         /bin/sh -c
-        "plutil -replace SUPublicDSAKeyFile -string OBSPublicDSAKey.pem \"$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Info.plist\""
+        "plutil -replace SUPublicEDKey -string \"${SPARKLE_PUBLIC_KEY}\" \"$<TARGET_BUNDLE_CONTENT_DIR:${target}>/Info.plist\""
       VERBATIM)
-
-    target_sources(
-      ${target}
-      PRIVATE "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/OBSPublicDSAKey.pem")
-    set_source_files_properties(
-      "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/OBSPublicDSAKey.pem"
-      PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
-    source_group(
-      "Resources"
-      FILES "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/OBSPublicDSAKey.pem")
 
     install(
       DIRECTORY ${SPARKLE}
