@@ -541,6 +541,7 @@ private:
 	obs_data_array_t *SaveProjectors();
 	void LoadSavedProjectors(obs_data_array_t *savedProjectors);
 
+	void MacBranchesFetched(const QString &branch, bool manualUpdate);
 	void ReceivedIntroJson(const QString &text);
 	void ShowWhatsNew(const QString &url);
 
