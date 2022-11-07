@@ -174,9 +174,8 @@ void Multiview::Update(MultiviewLayout multiviewLayout, bool drawLabel,
 		multiviewScenes.emplace_back(OBSGetWeakRef(src));
 		obs_source_inc_showing(src);
 
-		std::string name = std::to_string(numSrcs) + " - " +
-				   obs_source_get_name(src);
-		multiviewLabels.emplace_back(CreateLabel(name.c_str(), h / 3));
+		multiviewLabels.emplace_back(
+			CreateLabel(obs_source_get_name(src), h / 3));
 	}
 
 	obs_frontend_source_list_free(&scenes);
