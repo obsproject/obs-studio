@@ -829,6 +829,7 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	bool nve_hevc_supported = false;
 	bool apple_hevc_supported = false;
 #endif
+	bool amd_av1_supported = false;
 	bool apple_supported = false;
 	bool changed = false;
 	size_t idx = 0;
@@ -847,6 +848,8 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 		else if (strcmp(id, "ffmpeg_hevc_nvenc") == 0)
 			nve_hevc_supported = true;
 #endif
+		else if (strcmp(id, "av1_texture_amf") == 0)
+			amd_av1_supported = true;
 		else if (strcmp(id,
 				"com.apple.videotoolbox.videoencoder.ave.avc") ==
 			 0)
@@ -894,6 +897,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 #endif
 		} else if (strcmp(name, SIMPLE_ENCODER_AMD) == 0) {
 			if (!amd_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_AMD_AV1) == 0) {
+			if (!amd_av1_supported) {
 				changed = true;
 				name = SIMPLE_ENCODER_X264;
 				return false;

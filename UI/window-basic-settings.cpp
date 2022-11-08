@@ -1729,6 +1729,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 						 "NVENCPreset2");
 	const char *amdPreset =
 		config_get_string(main->Config(), "SimpleOutput", "AMDPreset");
+	const char *amdAV1Preset = config_get_string(
+		main->Config(), "SimpleOutput", "AMDAV1Preset");
 	const char *custom = config_get_string(main->Config(), "SimpleOutput",
 					       "x264Settings");
 	const char *recQual =
@@ -1748,6 +1750,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curQSVPreset = qsvPreset;
 	curNVENCPreset = nvPreset;
 	curAMDPreset = amdPreset;
+	curAMDAV1Preset = amdAV1Preset;
 
 	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
 
@@ -3491,6 +3494,8 @@ void OBSBasicSettings::SaveOutputSettings()
 #endif
 	else if (encoder == SIMPLE_ENCODER_AMD)
 		presetType = "AMDPreset";
+	else if (encoder == SIMPLE_ENCODER_AMD_AV1)
+		presetType = "AMDAV1Preset";
 	else if (encoder == SIMPLE_ENCODER_APPLE_H264
 #ifdef ENABLE_HEVC
 		 || encoder == SIMPLE_ENCODER_APPLE_HEVC
@@ -4776,6 +4781,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.AMD.H264"),
 			QString(SIMPLE_ENCODER_AMD));
+	if (EncoderAvailable("av1_texture_amf"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.AMD.AV1"),
+			QString(SIMPLE_ENCODER_AMD_AV1));
 	if (EncoderAvailable("com.apple.videotoolbox.videoencoder.ave.avc")
 #ifndef __aarch64__
 	    && os_get_emulation_status() == true
@@ -4892,6 +4901,15 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 		ui->simpleOutAdvanced->setVisible(false);
 		ui->simpleOutPreset->setVisible(false);
 		ui->simpleOutPresetLabel->setVisible(false);
+
+	} else if (encoder == SIMPLE_ENCODER_AMD_AV1) {
+		ui->simpleOutPreset->addItem("Speed", "speed");
+		ui->simpleOutPreset->addItem("Balanced", "balanced");
+		ui->simpleOutPreset->addItem("Quality", "quality");
+		ui->simpleOutPreset->addItem("High Quality", "highQuality");
+
+		defaultPreset = "balanced";
+		preset = curAMDAV1Preset;
 	} else {
 
 #define PRESET_STR(val) \
