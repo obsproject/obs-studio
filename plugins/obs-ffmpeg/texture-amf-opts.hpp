@@ -29,7 +29,7 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 	} else if (strcmp(opt->name, "usage") == 0) {
 
 		if (strcmp(opt->value, "transcoding") == 0) {
-			set_enum_opt(USAGE, TRANSCONDING);
+			set_enum_opt(USAGE, TRANSCODING);
 		} else if (strcmp(opt->value, "ultralowlatency") == 0) {
 			set_enum_opt(USAGE, ULTRA_LOW_LATENCY);
 		} else if (strcmp(opt->value, "lowlatency") == 0) {
