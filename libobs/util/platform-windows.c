@@ -1187,7 +1187,9 @@ static inline void get_reg_ver(struct win_version_info *ver)
 		ver->build = wcstol(str, NULL, 10);
 	}
 
-	if (get_reg_sz(key, L"ReleaseId", str, sizeof(str))) {
+	const wchar_t *release_key = ver->build > 19041 ? L"DisplayVersion"
+							: L"ReleaseId";
+	if (get_reg_sz(key, release_key, str, sizeof(str))) {
 		os_wcs_to_utf8(str, 0, win_release_id, MAX_SZ_LEN);
 	}
 
