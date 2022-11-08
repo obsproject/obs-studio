@@ -1,4 +1,4 @@
-// 
+//
 // Notice Regarding Standards.  AMD does not provide a license or sublicense to
 // any Intellectual Property Rights relating to any standards, including but not
 // limited to any audio and/or video codec technologies such as MPEG-2, MPEG-4;
@@ -6,9 +6,9 @@
 // (collectively, the "Media Technologies"). For clarity, you will pay any
 // royalties due for such third party technologies, which may include the Media
 // Technologies that are owed as a result of AMD providing the Software to you.
-// 
-// MIT license 
-// 
+//
+// MIT license
+//
 // Copyright (c) 2019 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -48,7 +48,7 @@ enum  AMF_PA_SCENE_CHANGE_DETECTION_SENSITIVITY_ENUM
 
 
 enum  AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY_ENUM
-{	
+{
 	AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY_LOW    = 0,
 	AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY_MEDIUM = 1,
 	AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY_HIGH   = 2
@@ -69,6 +69,26 @@ enum  AMF_PA_CAQ_STRENGTH_ENUM
     AMF_PA_CAQ_STRENGTH_HIGH   = 2
 };
 
+// Perceptual adaptive quantization mode
+enum AMF_PA_PAQ_MODE_ENUM
+{
+    AMF_PA_PAQ_MODE_NONE = 0,
+    AMF_PA_PAQ_MODE_CAQ = 1
+};
+
+// Temporal adaptive quantization mode
+enum  AMF_PA_TAQ_MODE_ENUM
+{
+    AMF_PA_TAQ_MODE_NONE = 0,
+    AMF_PA_TAQ_MODE_1 = 1,
+    AMF_PA_TAQ_MODE_2 = 2
+};
+
+enum AMF_PA_HIGH_MOTION_QUALITY_BOOST_MODE_ENUM
+{
+    AMF_PA_HIGH_MOTION_QUALITY_BOOST_MODE_NONE = 0, //default
+    AMF_PA_HIGH_MOTION_QUALITY_BOOST_MODE_AUTO = 1
+};
 
 
 // PA object properties
@@ -77,17 +97,19 @@ enum  AMF_PA_CAQ_STRENGTH_ENUM
 
 #define AMF_PA_SCENE_CHANGE_DETECTION_ENABLE        L"PASceneChangeDetectionEnable"         // bool       (default : True)                                          - Enable Scene Change Detection GPU algorithm
 #define AMF_PA_SCENE_CHANGE_DETECTION_SENSITIVITY   L"PASceneChangeDetectionSensitivity"	// AMF_PA_SCENE_CHANGE_DETECTION_SENSITIVITY_ENUM (default : Medium)    - Scene Change Detection Sensitivity
-#define AMF_PA_STATIC_SCENE_DETECTION_ENABLE        L"PAStaticSceneDetectionEnable"         // bool       (default : True)                                          - Enable Skip Detection GPU algorithm
+#define AMF_PA_STATIC_SCENE_DETECTION_ENABLE        L"PAStaticSceneDetectionEnable"         // bool       (default : False)                                         - Enable Skip Detection GPU algorithm
 #define AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY   L"PAStaticSceneDetectionSensitivity"	// AMF_PA_STATIC_SCENE_DETECTION_SENSITIVITY_ENUM (default : High)      - Allowable absolute difference between pixels (sample counts)
 #define AMF_PA_FRAME_SAD_ENABLE                     L"PAFrameSadEnable"	                    // bool       (default : True)                                          - Enable Frame SAD algorithm
 #define AMF_PA_ACTIVITY_TYPE                        L"PAActivityType"                       // AMF_PA_ACTIVITY_TYPE_ENUM (default : Calculate on Y)                 - Block activity calculation mode
-#define AMF_PA_LTR_ENABLE                           L"PALongTermReferenceEnable"            // bool       (default : True)                                          - Enable Automatic Long Term Reference frame management
-
-
+#define AMF_PA_LTR_ENABLE                           L"PALongTermReferenceEnable"            // bool       (default : False)                                         - Enable Automatic Long Term Reference frame management
+#define AMF_PA_LOOKAHEAD_BUFFER_DEPTH               L"PALookAheadBufferDepth"               // amf_uint64 (default : 0)           Values: [0, MAX_LOOKAHEAD_DEPTH]  - PA lookahead buffer size
+#define AMF_PA_PAQ_MODE                             L"PAPerceptualAQMode"                   // AMF_PA_PAQ_MODE_ENUM     (default : AMF_PA_PAQ_MODE_NONE)            - Perceptual AQ mode
+#define AMF_PA_TAQ_MODE                             L"PATemporalAQMode"                     // AMF_PA_TAQ_MODE_ENUM (default: AMF_PA_TAQ_MODE_NONE)                 - Temporal AQ mode
+#define AMF_PA_HIGH_MOTION_QUALITY_BOOST_MODE       L"PAHighMotionQualityBoostMode"         // AMF_PA_HIGH_MOTION_QUALITY_BOOST_MODE_ENUM (default: None)           - High motion quality boost mode
 
 ///////////////////////////////////////////
-// the following properties are available 
-// only through the Encoder - trying to 
+// the following properties are available
+// only through the Encoder - trying to
 // access/set them when PA is standalone
 // will fail
 
@@ -106,5 +128,6 @@ enum  AMF_PA_CAQ_STRENGTH_ENUM
 #define AMF_PA_ACTIVITY_MAP                         L"PAActivityMap"                        // AMFInterface* -> AMFSurface*;       Values: int32                    - When PA is standalone, there will be a 2D Activity map generated for each frame
 #define AMF_PA_SCENE_CHANGE_DETECT                  L"PASceneChangeDetect"                  // bool                                                                 - True/False - available if AMF_PA_SCENE_CHANGE_DETECTION_ENABLE was set to True
 #define AMF_PA_STATIC_SCENE_DETECT                  L"PAStaticSceneDetect"                  // bool                                                                 - True/False - available if AMF_PA_STATIC_SCENE_DETECTION_ENABLE was set to True
+
 
 #endif //#ifndef AMFPreAnalysis_h

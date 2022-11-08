@@ -414,6 +414,7 @@ typedef enum AMF_STREAM_CODEC_ID_ENUM     // matched codecs from VideoDecoxcderU
     AMF_STREAM_CODEC_ID_VP9         = 11, // AMFVideoDecoderHW_VP9
     AMF_STREAM_CODEC_ID_VP9_10BIT   = 12, // AMFVideoDecoderHW_VP9_10BIT   
     AMF_STREAM_CODEC_ID_AV1         = 13, // AMFVideoDecoderHW_AV1 
+    AMF_STREAM_CODEC_ID_AV1_12BIT   = 14, // AMFVideoDecoderHW_AV1_12BIT
 } AMF_STREAM_CODEC_ID_ENUM;
 
 // common stream properties

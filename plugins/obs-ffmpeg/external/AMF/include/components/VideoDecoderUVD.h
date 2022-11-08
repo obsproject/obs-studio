@@ -53,6 +53,7 @@
 #define AMFVideoDecoderHW_VP9                        L"AMFVideoDecoderHW_VP9"
 #define AMFVideoDecoderHW_VP9_10BIT                  L"AMFVideoDecoderHW_VP9_10BIT"
 #define AMFVideoDecoderHW_AV1                        L"AMFVideoDecoderHW_AV1"
+#define AMFVideoDecoderHW_AV1_12BIT                  L"AMFVideoDecoderHW_AV1_12BIT"
 
 enum AMF_VIDEO_DECODER_MODE_ENUM
 {
@@ -108,6 +109,7 @@ enum AMF_TIMESTAMP_MODE_ENUM
 #define AMF_VIDEO_DECODER_OUTPUT_COLOR_PRIMARIES                L"OutputColorPrimaries"       // amf_int64(AMF_COLOR_PRIMARIES_ENUM); default = AMF_COLOR_PRIMARIES_UNDEFINED, ISO/IEC 23001-8_2013   7.1 See ColorSpace.h for enum 
 #define AMF_VIDEO_DECODER_OUTPUT_HDR_METADATA                   L"OutHDRMetadata"           // AMFBuffer containing AMFHDRMetadata; default NULL
 
+#define AMF_VIDEO_DECODER_LOW_LATENCY                           L"LowLatencyDecode"         // amf_bool; default = false; true = low latency decode, false = regular decode
 
 #if defined(__ANDROID__)
 #define AMF_VIDEO_DECODER_NATIVEWINDOW                  L"AndroidNativeWindow"  // amf_int64; default = 0; pointer to native window
@@ -117,6 +119,5 @@ enum AMF_TIMESTAMP_MODE_ENUM
 #if defined(__APPLE__)
 #define AMF_VIDEO_DECODER_NATIVEWINDOW                  L"AppleNativeWindow"  // amf_int64; default = 0; pointer to native window
 #endif //__APPLE__
-
 
 #endif //#ifndef AMF_VideoDecoderUVD_h
