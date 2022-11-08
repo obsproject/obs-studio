@@ -968,7 +968,7 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 	obs_property_int_set_suffix(p, " Kbps");
 
 	obs_properties_add_int(props, "cqp", obs_module_text("NVENC.CQLevel"),
-			       1, 30, 1);
+			       0, 51, 1);
 
 	p = obs_properties_add_int(props, "keyint_sec",
 				   obs_module_text("KeyframeIntervalSec"), 0,
