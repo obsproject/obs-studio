@@ -993,9 +993,11 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 					    OBS_COMBO_FORMAT_STRING);
 
 #define add_profile(val) obs_property_list_add_string(p, val, val)
-		add_profile("high");
+		if (amf_codec_type::AVC == codec)
+			add_profile("high");
 		add_profile("main");
-		add_profile("baseline");
+		if (amf_codec_type::AVC == codec)
+			add_profile("baseline");
 #undef add_profile
 
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
