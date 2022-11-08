@@ -2,7 +2,6 @@
 
 #include <obs-module.h>
 #include <util/dstr.h>
-#include <util/platform.h>
 #include <linux/videodev2.h>
 #include <sys/ioctl.h>
 #include <fcntl.h>
@@ -11,90 +10,28 @@
 #include <errno.h>
 #include <string.h>
 
+#include "linux-virtualcam.h"
+
 #define OBS_V4L2_CARD_LABEL "OBS Virtual Camera"
 
-struct virtualcam_data {
+struct v4l2_output_data {
 	obs_output_t *output;
 	int device;
 	uint32_t frame_size;
 };
 
-static const char *virtualcam_name(void *unused)
-{
-	UNUSED_PARAMETER(unused);
-	return "Virtual Camera Output";
-}
-
-static void virtualcam_destroy(void *data)
-{
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-	close(vcam->device);
-	bfree(data);
-}
-
-static bool is_flatpak_sandbox(void)
-{
-	static bool flatpak_info_exists = false;
-	static bool initialized = false;
-
-	if (!initialized) {
-		flatpak_info_exists = access("/.flatpak-info", F_OK) == 0;
-		initialized = true;
-	}
-
-	return flatpak_info_exists;
-}
-
-static int run_command(const char *command)
-{
-	struct dstr str;
-	int result;
-
-	dstr_init_copy(&str, "PATH=\"$PATH:/sbin\" ");
-
-	if (is_flatpak_sandbox())
-		dstr_cat(&str, "flatpak-spawn --host ");
-
-	dstr_cat(&str, command);
-	result = system(str.array);
-	dstr_free(&str);
-	return result;
-}
-
 static bool loopback_module_loaded()
 {
-	bool loaded = false;
-
-	char temp[512];
-
-	FILE *fp = fopen("/proc/modules", "r");
-
-	if (!fp)
-		return false;
-
-	while (fgets(temp, sizeof(temp), fp)) {
-		if (strstr(temp, "v4l2loopback")) {
-			loaded = true;
-			break;
-		}
-	}
-
-	fclose(fp);
-
-	return loaded;
+	return module_loaded("v4l2loopback");
 }
 
-bool loopback_module_available()
+bool video_possible()
 {
 	if (loopback_module_loaded()) {
 		return true;
 	}
 
-	if (run_command("modinfo v4l2loopback >/dev/null 2>&1") == 0) {
-		return true;
-	}
-
-	return false;
+	return access("/sys/module/v4l2loopback", F_OK) == 0;
 }
 
 static int loopback_module_load()
@@ -111,19 +48,9 @@ static int loopback_module_add_card()
 		"' && sleep 0.5");
 }
 
-static void *virtualcam_create(obs_data_t *settings, obs_output_t *output)
-{
-	struct virtualcam_data *vcam =
-		(struct virtualcam_data *)bzalloc(sizeof(*vcam));
-	vcam->output = output;
-
-	UNUSED_PARAMETER(settings);
-	return vcam;
-}
-
 static bool try_connect(void *data, const char *device, const char *name)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
+	struct v4l2_output_data *vcam = (struct v4l2_output_data *)data;
 	struct v4l2_format format = {0};
 	struct v4l2_capability capability = {0};
 	struct v4l2_streamparm parm = {0};
@@ -246,61 +173,58 @@ static bool loopback_card_open(void *data, const char *name)
 	return success;
 }
 
-static bool virtualcam_start(void *data)
+void *video_start(obs_output_t *output)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-
 	if (!loopback_module_loaded()) {
 		if (loopback_module_load() != 0) {
-			return false;
+			return NULL;
 		}
 	}
 
-	bool success = loopback_card_open(data, OBS_V4L2_CARD_LABEL);
+	struct v4l2_output_data data = {
+		.output = output,
+		.device = -1,
+		.frame_size = 0,
+	};
+
+	bool success = loopback_card_open(&data, OBS_V4L2_CARD_LABEL);
 
 	if (!success) {
 		// TODO: Parse the output of add command and connect directly
 		loopback_module_add_card();
-		success = loopback_card_open(data, OBS_V4L2_CARD_LABEL);
+		success = loopback_card_open(&data, OBS_V4L2_CARD_LABEL);
 	}
 
 	if (!success) {
-		success = loopback_card_open(data, NULL);
+		success = loopback_card_open(&data, NULL);
 	}
 
 	if (success) {
-		blog(LOG_INFO, "Virtual camera started");
-		obs_output_begin_data_capture(vcam->output, 0);
-	} else {
-		blog(LOG_WARNING, "Failed to start virtual camera");
+		struct v4l2_output_data *vcam =
+			(struct v4l2_output_data *)bzalloc(sizeof(*vcam));
+
+		memcpy(vcam, &data, sizeof(*vcam));
+		return vcam;
 	}
 
-	return success;
+	blog(LOG_WARNING, "Failed to start v4l2 output");
+	return NULL;
 }
 
-static void virtualcam_stop(void *data, uint64_t ts)
+void video_stop(void *data)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)data;
-	obs_output_end_data_capture(vcam->output);
+	if (!data)
+		return;
 
-	struct v4l2_streamparm parm = {0};
-	parm.type = V4L2_BUF_TYPE_VIDEO_OUTPUT;
-
-	if (ioctl(vcam->device, VIDIOC_STREAMOFF, &parm) < 0) {
-		blog(LOG_WARNING,
-		     "Failed to stop streaming on video device %d (%s)",
-		     vcam->device, strerror(errno));
-	}
+	struct v4l2_output_data *vcam = (struct v4l2_output_data *)data;
 
 	close(vcam->device);
-	blog(LOG_INFO, "Virtual camera stopped");
-
-	UNUSED_PARAMETER(ts);
+	bfree(data);
 }
 
-static void virtual_video(void *param, struct video_data *frame)
+void virtual_video(void *data, struct video_data *frame)
 {
-	struct virtualcam_data *vcam = (struct virtualcam_data *)param;
+	struct v4l2_output_data *vcam = (struct v4l2_output_data *)data;
 	uint32_t frame_size = vcam->frame_size;
 	while (frame_size > 0) {
 		ssize_t written =
@@ -310,14 +234,3 @@ static void virtual_video(void *param, struct video_data *frame)
 		frame_size -= written;
 	}
 }
-
-struct obs_output_info virtualcam_info = {
-	.id = "virtualcam_output",
-	.flags = OBS_OUTPUT_VIDEO,
-	.get_name = virtualcam_name,
-	.create = virtualcam_create,
-	.destroy = virtualcam_destroy,
-	.start = virtualcam_start,
-	.stop = virtualcam_stop,
-	.raw_video = virtual_video,
-};
