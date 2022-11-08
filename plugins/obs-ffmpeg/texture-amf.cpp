@@ -891,10 +891,13 @@ static void amf_destroy(void *data)
 	delete enc;
 }
 
-static void check_texture_encode_capability(obs_encoder_t *encoder, bool hevc)
+static void check_texture_encode_capability(obs_encoder_t *encoder,
+					    amf_codec_type codec)
 {
 	obs_video_info ovi;
 	obs_get_video_info(&ovi);
+	bool avc = amf_codec_type::AVC == codec;
+	bool hevc = amf_codec_type::HEVC == codec;
 
 	if (obs_encoder_scaling_enabled(encoder))
 		throw "Encoder scaling is active";
@@ -919,8 +922,8 @@ static void check_texture_encode_capability(obs_encoder_t *encoder, bool hevc)
 		}
 	}
 
-	if ((hevc && !caps[ovi.adapter].supports_hevc) ||
-	    (!hevc && !caps[ovi.adapter].supports_avc))
+	if ((avc && !caps[ovi.adapter].supports_avc) ||
+	    (hevc && !caps[ovi.adapter].supports_hevc))
 		throw "Wrong adapter";
 }
 
@@ -1257,7 +1260,7 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 static void *amf_avc_create_texencode(obs_data_t *settings,
 				      obs_encoder_t *encoder)
 try {
-	check_texture_encode_capability(encoder, false);
+	check_texture_encode_capability(encoder, amf_codec_type::AVC);
 
 	std::unique_ptr<amf_texencode> enc = std::make_unique<amf_texencode>();
 	enc->encoder = encoder;
@@ -1589,7 +1592,7 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 static void *amf_hevc_create_texencode(obs_data_t *settings,
 				       obs_encoder_t *encoder)
 try {
-	check_texture_encode_capability(encoder, true);
+	check_texture_encode_capability(encoder, amf_codec_type::HEVC);
 
 	std::unique_ptr<amf_texencode> enc = std::make_unique<amf_texencode>();
 	enc->encoder = encoder;
