@@ -69,6 +69,8 @@ struct screen_capture {
 	NSString *application_id;
 };
 
+#pragma mark -
+
 static void destroy_screen_stream(struct screen_capture *sc)
 {
 	if (sc->disp) {
@@ -365,33 +367,9 @@ static bool init_screen_stream(struct screen_capture *sc)
 	case ScreenCaptureDisplayStream: {
 		SCDisplay *target_display = get_target_display();
 
-		if (@available(macOS 13.0, *)) {
-			content_filter = [[SCContentFilter alloc]
-				 initWithDisplay:target_display
-				excludingWindows:[[NSArray alloc] init]];
-		} else {
-			NSArray *excluded = [sc->shareable_content.applications
-				filteredArrayUsingPredicate:
-					[NSPredicate predicateWithBlock:^BOOL(
-							     SCRunningApplication
-								     *application,
-							     NSDictionary<
-								     NSString *,
-								     id>
-								     *_Nullable bindings
-							     __attribute__((
-								     unused))) {
-						return [application
-								.bundleIdentifier
-							isEqualToString:
-								@"com.apple.controlcenter"];
-					}]];
-
-			content_filter = [[SCContentFilter alloc]
-				      initWithDisplay:target_display
-				excludingApplications:excluded
-				     exceptingWindows:[[NSArray alloc] init]];
-		}
+		content_filter = [[SCContentFilter alloc]
+			 initWithDisplay:target_display
+			excludingWindows:[[NSArray alloc] init]];
 
 		set_display_mode(sc, target_display);
 	} break;
@@ -464,13 +442,22 @@ static bool init_screen_stream(struct screen_capture *sc)
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
 	[sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
 	[sc->stream_properties setPixelFormat:'l10r'];
-#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+
 	if (@available(macOS 13.0, *)) {
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 		[sc->stream_properties setCapturesAudio:TRUE];
 		[sc->stream_properties setExcludesCurrentProcessAudio:TRUE];
 		[sc->stream_properties setChannelCount:2];
-	}
 #endif
+	} else {
+		if (sc->capture_type != ScreenCaptureWindowStream) {
+			sc->disp = NULL;
+			os_event_init(&sc->disp_finished, OS_EVENT_TYPE_MANUAL);
+			os_event_init(&sc->stream_start_completed,
+				      OS_EVENT_TYPE_MANUAL);
+			return true;
+		}
+	}
 
 	sc->disp = [[SCStream alloc] initWithFilter:content_filter
 				      configuration:sc->stream_properties
@@ -491,7 +478,7 @@ static bool init_screen_stream(struct screen_capture *sc)
 	}
 
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
-	if (__builtin_available(macOS 13.0, *)) {
+	if (@available(macOS 13.0, *)) {
 		did_add_output = [sc->disp
 			   addStreamOutput:sc->capture_delegate
 				      type:SCStreamOutputTypeAudio
@@ -577,8 +564,8 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
-	sc->window = obs_data_get_int(settings, "window");
-	sc->capture_type = obs_data_get_int(settings, "type");
+	sc->window = (CGWindowID)obs_data_get_int(settings, "window");
+	sc->capture_type = (unsigned int)obs_data_get_int(settings, "type");
 
 	os_sem_init(&sc->shareable_content_available, 1);
 	screen_capture_build_content_list(
@@ -591,7 +578,7 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 	if (!sc->effect)
 		goto fail;
 
-	sc->display = obs_data_get_int(settings, "display");
+	sc->display = (CGDirectDisplayID)obs_data_get_int(settings, "display");
 	sc->application_id = [[NSString alloc]
 		initWithUTF8String:obs_data_get_string(settings,
 						       "application")];
@@ -699,10 +686,11 @@ static void screen_capture_defaults(obs_data_t *settings)
 		}
 	}
 
-	obs_data_set_default_int(settings, "type", 0);
 	obs_data_set_default_int(settings, "display", initial_display);
-	obs_data_set_default_int(settings, "window", kCGNullWindowID);
+
 	obs_data_set_default_obj(settings, "application", NULL);
+	obs_data_set_default_int(settings, "type", ScreenCaptureDisplayStream);
+	obs_data_set_default_int(settings, "window", kCGNullWindowID);
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "show_empty_names", false);
 	obs_data_set_default_bool(settings, "show_hidden_windows", false);
@@ -713,7 +701,8 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	struct screen_capture *sc = data;
 
 	CGWindowID old_window_id = sc->window;
-	CGWindowID new_window_id = obs_data_get_int(settings, "window");
+	CGWindowID new_window_id =
+		(CGWindowID)obs_data_get_int(settings, "window");
 
 	if (new_window_id > 0 && new_window_id != old_window_id)
 		sc->window = new_window_id;
@@ -765,6 +754,8 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 
 	obs_leave_graphics();
 }
+
+#pragma mark - obs_properties
 
 static bool build_display_list(struct screen_capture *sc,
 			       obs_properties_t *props)
@@ -894,13 +885,17 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 {
 	struct screen_capture *sc = data;
 
-	unsigned int capture_type_id = obs_data_get_int(settings, "type");
+	unsigned int capture_type_id =
+		(unsigned int)obs_data_get_int(settings, "type");
 	obs_property_t *display_list = obs_properties_get(props, "display");
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_t *app_list = obs_properties_get(props, "application");
 	obs_property_t *empty = obs_properties_get(props, "show_empty_names");
 	obs_property_t *hidden =
 		obs_properties_get(props, "show_hidden_windows");
+
+	obs_property_t *capture_type_error =
+		obs_properties_get(props, "capture_type_info");
 
 	if (sc->capture_type != capture_type_id) {
 		switch (capture_type_id) {
@@ -910,6 +905,11 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(app_list, false);
 			obs_property_set_visible(empty, false);
 			obs_property_set_visible(hidden, false);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 true);
+			}
 			break;
 		}
 		case 1: {
@@ -918,6 +918,11 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(app_list, false);
 			obs_property_set_visible(empty, true);
 			obs_property_set_visible(hidden, true);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 false);
+			}
 			break;
 		}
 		case 2: {
@@ -926,20 +931,25 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 			obs_property_set_visible(window_list, false);
 			obs_property_set_visible(empty, false);
 			obs_property_set_visible(hidden, true);
+
+			if (capture_type_error) {
+				obs_property_set_visible(capture_type_error,
+							 true);
+			}
 			break;
 		}
 		}
 	}
-
-	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
-	sc->show_hidden_windows =
-		obs_data_get_bool(settings, "show_hidden_windows");
 
 	screen_capture_build_content_list(
 		sc, capture_type_id == ScreenCaptureDisplayStream);
 	build_display_list(sc, props);
 	build_window_list(sc, props);
 	build_application_list(sc, props);
+
+	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
+	sc->show_hidden_windows =
+		obs_data_get_bool(settings, "show_hidden_windows");
 
 	return true;
 }
@@ -949,9 +959,11 @@ static obs_properties_t *screen_capture_properties(void *data)
 	struct screen_capture *sc = data;
 
 	obs_properties_t *props = obs_properties_create();
+
 	obs_property_t *capture_type = obs_properties_add_list(
 		props, "type", obs_module_text("SCK.Method"),
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
+
 	obs_property_list_add_int(capture_type,
 				  obs_module_text("DisplayCapture"), 0);
 	obs_property_list_add_int(capture_type,
@@ -981,9 +993,6 @@ static obs_properties_t *screen_capture_properties(void *data)
 	obs_property_t *hidden = obs_properties_add_bool(
 		props, "show_hidden_windows",
 		obs_module_text("WindowUtils.ShowHidden"));
-
-	obs_properties_add_bool(props, "show_cursor",
-				obs_module_text("DisplayCapture.ShowCursor"));
 
 	if (sc) {
 		obs_property_set_modified_callback2(
@@ -1020,12 +1029,48 @@ static obs_properties_t *screen_capture_properties(void *data)
 			empty, content_settings_changed, sc);
 	}
 
+	obs_properties_add_bool(props, "show_cursor",
+				obs_module_text("DisplayCapture.ShowCursor"));
+
 	if (@available(macOS 13.0, *))
 		;
-	else
-		obs_properties_add_text(props, "audio_info",
-					obs_module_text("SCK.AudioUnavailable"),
-					OBS_TEXT_INFO);
+	else {
+		obs_property_t *audio_warning = obs_properties_add_text(
+			props, "audio_info",
+			obs_module_text("SCK.AudioUnavailable"), OBS_TEXT_INFO);
+		obs_property_text_set_info_type(audio_warning,
+						OBS_TEXT_INFO_WARNING);
+
+		obs_property_t *capture_type_error = obs_properties_add_text(
+			props, "capture_type_info",
+			obs_module_text("SCK.CaptureTypeUnavailable"),
+			OBS_TEXT_INFO);
+
+		obs_property_text_set_info_type(capture_type_error,
+						OBS_TEXT_INFO_ERROR);
+
+		if (sc) {
+			switch (sc->capture_type) {
+			case ScreenCaptureDisplayStream: {
+				obs_property_set_visible(capture_type_error,
+							 true);
+				break;
+			}
+			case ScreenCaptureWindowStream: {
+				obs_property_set_visible(capture_type_error,
+							 false);
+				break;
+			}
+			case ScreenCaptureApplicationStream: {
+				obs_property_set_visible(capture_type_error,
+							 true);
+				break;
+			}
+			}
+		} else {
+			obs_property_set_visible(capture_type_error, false);
+		}
+	}
 
 	return props;
 }
@@ -1053,6 +1098,8 @@ enum gs_color_space screen_capture_video_get_color_space(
 	return GS_CS_SRGB_16F;
 }
 
+#pragma mark - obs_source_info
+
 struct obs_source_info screen_capture_info = {
 	.id = "screen_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -1076,6 +1123,8 @@ struct obs_source_info screen_capture_info = {
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
 	.video_get_color_space = screen_capture_video_get_color_space,
 };
+
+#pragma mark - ScreenCaptureDelegate
 
 @implementation ScreenCaptureDelegate
 
