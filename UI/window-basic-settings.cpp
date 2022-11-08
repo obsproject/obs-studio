@@ -5164,6 +5164,11 @@ void OBSBasicSettings::AdvReplayBufferChanged()
 	ui->advRBEstimate->style()->polish(ui->advRBEstimate);
 	ui->advReplayBuf->setEnabled(!lossless);
 
+	if (!(useStream && streamEncoderProps) &&
+	    !(!useStream && recordEncoderProps)) {
+		obs_data_release(settings);
+	}
+
 	UpdateAutomaticReplayBufferCheckboxes();
 }
 
