@@ -999,7 +999,9 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 		if (amf_codec_type::AVC == codec)
 			add_profile("baseline");
 #undef add_profile
+	}
 
+	if (amf_codec_type::AVC == codec) {
 		obs_properties_add_int(props, "bf", obs_module_text("BFrames"),
 				       0, 5, 1);
 	}
