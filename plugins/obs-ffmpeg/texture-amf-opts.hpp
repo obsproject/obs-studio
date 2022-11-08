@@ -17,25 +17,40 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 {
 	bool avc = enc->codec == amf_codec_type::AVC;
 	bool hevc = enc->codec == amf_codec_type::HEVC;
+	bool av1 = enc->codec == amf_codec_type::AV1;
 
 	if (strcmp(opt->name, "g") == 0 || strcmp(opt->name, "keyint") == 0) {
 
 		int val = atoi(opt->value);
-		if (enc->codec == amf_codec_type::AVC)
+		if (avc)
 			set_avc_opt(IDR_PERIOD, val);
-		else
+		else if (hevc)
 			set_hevc_opt(NUM_GOPS_PER_IDR, val);
+		else if (av1)
+			set_av1_opt(GOP_SIZE, val);
 
 	} else if (strcmp(opt->name, "usage") == 0) {
 
 		if (strcmp(opt->value, "transcoding") == 0) {
 			set_enum_opt(USAGE, TRANSCODING);
 		} else if (strcmp(opt->value, "ultralowlatency") == 0) {
-			set_enum_opt(USAGE, ULTRA_LOW_LATENCY);
+			if (avc)
+				set_avc_enum(USAGE, ULTRA_LOW_LATENCY);
+			else if (hevc)
+				set_hevc_enum(USAGE, ULTRA_LOW_LATENCY);
+			else
+				warn("Invalid value for %s: %s", opt->name,
+				     opt->value);
 		} else if (strcmp(opt->value, "lowlatency") == 0) {
 			set_enum_opt(USAGE, LOW_LATENCY);
 		} else if (strcmp(opt->value, "webcam") == 0) {
-			set_enum_opt(USAGE, WEBCAM);
+			if (avc)
+				set_avc_enum(USAGE, WEBCAM);
+			else if (hevc)
+				set_hevc_enum(USAGE, WEBCAM);
+			else
+				warn("Invalid value for %s: %s", opt->name,
+				     opt->value);
 		} else {
 			warn("Invalid value for %s: %s", opt->name, opt->value);
 		}
@@ -69,7 +84,12 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 			val.erase(pos, 1);
 
 		int level = std::stoi(val);
-		set_opt(PROFILE_LEVEL, level);
+		if (avc)
+			set_avc_opt(PROFILE_LEVEL, level);
+		else if (hevc)
+			set_hevc_opt(PROFILE_LEVEL, level);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "quality") == 0) {
 
@@ -106,42 +126,82 @@ static void amf_apply_opt(amf_base *enc, obs_option *opt)
 	} else if (strcmp(opt->name, "filler_data") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		set_opt(FILLER_DATA_ENABLE, val);
+		if (avc)
+			set_avc_opt(FILLER_DATA_ENABLE, val);
+		else if (hevc)
+			set_hevc_opt(FILLER_DATA_ENABLE, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "vbaq") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		set_opt(ENABLE_VBAQ, val);
+		if (avc)
+			set_avc_opt(ENABLE_VBAQ, val);
+		else if (hevc)
+			set_hevc_opt(ENABLE_VBAQ, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "qp_i") == 0) {
 
 		int val = atoi(opt->value);
-		set_opt(QP_I, val);
+		if (avc)
+			set_avc_opt(QP_I, val);
+		else if (hevc)
+			set_hevc_opt(QP_I, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "qp_p") == 0) {
 
 		int val = atoi(opt->value);
-		set_opt(QP_P, val);
+		if (avc)
+			set_avc_opt(QP_P, val);
+		else if (hevc)
+			set_hevc_opt(QP_P, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "me_half_pel") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		set_opt(MOTION_HALF_PIXEL, val);
+		if (avc)
+			set_avc_opt(MOTION_HALF_PIXEL, val);
+		else if (hevc)
+			set_hevc_opt(MOTION_HALF_PIXEL, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "me_quarter_pel") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		set_opt(MOTION_QUARTERPIXEL, val);
+		if (avc)
+			set_avc_opt(MOTION_QUARTERPIXEL, val);
+		else if (hevc)
+			set_hevc_opt(MOTION_QUARTERPIXEL, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "aud") == 0) {
 
 		bool val = str_to_bool(opt->value);
-		set_opt(INSERT_AUD, val);
+		if (avc)
+			set_avc_opt(INSERT_AUD, val);
+		else if (hevc)
+			set_hevc_opt(INSERT_AUD, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (strcmp(opt->name, "max_au_size") == 0) {
 
 		int val = atoi(opt->value);
-		set_opt(MAX_AU_SIZE, val);
+		if (avc)
+			set_avc_opt(MAX_AU_SIZE, val);
+		else if (hevc)
+			set_hevc_opt(MAX_AU_SIZE, val);
+		else
+			warn("Invalid value for %s: %s", opt->name, opt->value);
 
 	} else if (avc && strcmp(opt->name, "preanalysis") == 0) {
 
