@@ -1032,7 +1032,7 @@ static obs_properties_t *amf_hevc_properties(void *unused)
 
 static const char *amf_avc_get_name(void *)
 {
-	return "AMD HW H.264";
+	return "AMD HW H.264 (AVC)";
 }
 
 static inline int get_avc_preset(amf_base *enc, obs_data_t *settings)
