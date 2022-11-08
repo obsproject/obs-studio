@@ -2205,34 +2205,32 @@ static obs_properties_t *av_capture_properties(void *data)
 		OBS_COMBO_FORMAT_STRING);
 	obs_property_list_add_string(dev_list, "", "");
 
-	NSArray *devices = nil;
-
-	AVCaptureDeviceDiscoverySession *mediaDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
-		discoverySessionWithDeviceTypes:@[
-			AVCaptureDeviceTypeBuiltInWideAngleCamera,
-			AVCaptureDeviceTypeExternalUnknown
-		]
+	NSMutableArray *device_types = [NSMutableArray
+		arrayWithObjects:AVCaptureDeviceTypeBuiltInWideAngleCamera,
+				 AVCaptureDeviceTypeExternalUnknown, nil];
+#if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
+	if (__builtin_available(macOS 13.0, *)) {
+		[device_types addObject:AVCaptureDeviceTypeDeskViewCamera];
+	}
+#endif
+	AVCaptureDeviceDiscoverySession *video_discovery = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:device_types
 				      mediaType:AVMediaTypeVideo
 				       position:AVCaptureDevicePositionUnspecified];
-	NSArray *mediaDevices = [mediaDeviceDiscoverySession devices];
+	for (AVCaptureDevice *dev in [video_discovery devices]) {
+		obs_property_list_add_string(dev_list,
+					     dev.localizedName.UTF8String,
+					     dev.uniqueID.UTF8String);
+	}
 
-	AVCaptureDeviceDiscoverySession *muxedDeviceDiscoverySession = [AVCaptureDeviceDiscoverySession
-		discoverySessionWithDeviceTypes:@[
-			AVCaptureDeviceTypeExternalUnknown
-		]
+	AVCaptureDeviceDiscoverySession *muxed_discovery = [AVCaptureDeviceDiscoverySession
+		discoverySessionWithDeviceTypes:device_types
 				      mediaType:AVMediaTypeMuxed
 				       position:AVCaptureDevicePositionUnspecified];
-	NSArray *muxedDevices = [muxedDeviceDiscoverySession devices];
-
-	devices = [mediaDevices arrayByAddingObjectsFromArray:muxedDevices];
-
-	for (AVCaptureDevice *dev in devices) {
-		if ([dev hasMediaType:AVMediaTypeVideo] ||
-		    [dev hasMediaType:AVMediaTypeMuxed]) {
-			obs_property_list_add_string(
-				dev_list, dev.localizedName.UTF8String,
-				dev.uniqueID.UTF8String);
-		}
+	for (AVCaptureDevice *dev in [muxed_discovery devices]) {
+		obs_property_list_add_string(dev_list,
+					     dev.localizedName.UTF8String,
+					     dev.uniqueID.UTF8String);
 	}
 
 	obs_property_set_modified_callback(dev_list, properties_device_changed);
