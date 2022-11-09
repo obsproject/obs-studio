@@ -409,48 +409,74 @@ static inline void calc_throughput(amf_base *enc)
 		mb_frame * (amf_int64)enc->fps_num / (amf_int64)enc->fps_den;
 }
 
+static inline int get_avc_preset(amf_base *enc, const char *preset);
+static inline int get_hevc_preset(amf_base *enc, const char *preset);
+static inline int get_av1_preset(amf_base *enc, const char *preset);
+
+static inline int get_preset(amf_base *enc, const char *preset)
+{
+	if (enc->codec == amf_codec_type::AVC)
+		return get_avc_preset(enc, preset);
+
+	else if (enc->codec == amf_codec_type::HEVC)
+		return get_hevc_preset(enc, preset);
+
+	else if (enc->codec == amf_codec_type::AV1)
+		return get_av1_preset(enc, preset);
+
+	return 0;
+}
+
+static inline void refresh_throughput_caps(amf_base *enc, const char *&preset)
+{
+	AMF_RESULT res = AMF_OK;
+	AMFCapsPtr caps;
+
+	set_opt(QUALITY_PRESET, get_preset(enc, preset));
+	res = enc->amf_encoder->GetCaps(&caps);
+	if (res == AMF_OK) {
+		caps->GetProperty(get_opt_name(CAP_MAX_THROUGHPUT),
+				  &enc->max_throughput);
+	}
+}
+
 static inline void check_preset_compatibility(amf_base *enc,
 					      const char *&preset)
 {
-	/* 1.9 * current base throughput == highQuality,
-	 * 1.8 * current base throughput == quality,
-	 * 1.1 * current base throughput == balanced */
-	static constexpr amf_int64 throughput_high_quality_mul = 19;
-	static constexpr amf_int64 throughput_quality_mul = 18;
-	static constexpr amf_int64 throughput_balanced_mul = 11;
+	/* The throughput depends on the current preset and the other static
+	 * encoder properties. If the throughput is lower than the max
+	 * throughput, switch to a lower preset. */
 
-	/* if the throughput * 1.9 is lower than the max throughput, switch to
-	 * a lower preset */
 	if (astrcmpi(preset, "highQuality") == 0) {
 		if (!enc->max_throughput) {
-			preset = "balanced";
+			preset = "quality";
+			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			amf_int64 req_throughput = enc->throughput *
-						   throughput_high_quality_mul /
-						   10;
-			if (enc->max_throughput < req_throughput)
+			if (enc->max_throughput < enc->throughput) {
 				preset = "quality";
+				refresh_throughput_caps(enc, preset);
+			}
 		}
 	}
 
-	/* if the throughput * 1.8 is lower than the max throughput, switch to
-	 * a lower preset */
 	if (astrcmpi(preset, "quality") == 0) {
 		if (!enc->max_throughput) {
 			preset = "balanced";
+			set_opt(QUALITY_PRESET, get_preset(enc, preset));
 		} else {
-			amf_int64 req_throughput =
-				enc->throughput * throughput_quality_mul / 10;
-			if (enc->max_throughput < req_throughput)
+			if (enc->max_throughput < enc->throughput) {
 				preset = "balanced";
+				refresh_throughput_caps(enc, preset);
+			}
 		}
 	}
 
 	if (astrcmpi(preset, "balanced") == 0) {
-		amf_int64 req_throughput =
-			enc->throughput * throughput_balanced_mul / 10;
-		if (enc->max_throughput && enc->max_throughput < req_throughput)
+		if (enc->max_throughput &&
+		    enc->max_throughput < enc->throughput) {
 			preset = "speed";
+			refresh_throughput_caps(enc, preset);
+		}
 	}
 }
 
@@ -1147,12 +1173,8 @@ static const char *amf_avc_get_name(void *)
 	return "AMD HW H.264 (AVC)";
 }
 
-static inline int get_avc_preset(amf_base *enc, obs_data_t *settings)
+static inline int get_avc_preset(amf_base *enc, const char *preset)
 {
-	const char *preset = obs_data_get_string(settings, "preset");
-
-	check_preset_compatibility(enc, preset);
-
 	if (astrcmpi(preset, "quality") == 0)
 		return AMF_VIDEO_ENCODER_QUALITY_PRESET_QUALITY;
 	else if (astrcmpi(preset, "speed") == 0)
@@ -1246,8 +1268,6 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 	int64_t bf = obs_data_get_int(settings, "bf");
 
-	check_preset_compatibility(enc, preset);
-
 	if (enc->bframes_supported) {
 		set_avc_property(enc, MAX_CONSECUTIVE_BPICTURES, 3);
 		set_avc_property(enc, B_PIC_PATTERN, bf);
@@ -1280,6 +1300,8 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 		set_avc_property(enc, HEADER_INSERTION_SPACING, gop_size);
 
 	set_avc_property(enc, DE_BLOCKING_FILTER, true);
+
+	check_preset_compatibility(enc, preset);
 
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
 	if (ffmpeg_opts && *ffmpeg_opts) {
@@ -1329,9 +1351,11 @@ static void amf_avc_create_internal(amf_base *enc, obs_data_t *settings)
 				  &enc->max_throughput);
 	}
 
+	const char *preset = obs_data_get_string(settings, "preset");
+
 	set_avc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_avc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
-	set_avc_property(enc, QUALITY_PRESET, get_avc_preset(enc, settings));
+	set_avc_property(enc, QUALITY_PRESET, get_avc_preset(enc, preset));
 	set_avc_property(enc, PROFILE, get_avc_profile(settings));
 	set_avc_property(enc, LOWLATENCY_MODE, false);
 	set_avc_property(enc, CABAC_ENABLE, AMF_VIDEO_ENCODER_UNDEFINED);
@@ -1473,12 +1497,8 @@ static const char *amf_hevc_get_name(void *)
 	return "AMD HW H.265 (HEVC)";
 }
 
-static inline int get_hevc_preset(amf_base *enc, obs_data_t *settings)
+static inline int get_hevc_preset(amf_base *enc, const char *preset)
 {
-	const char *preset = obs_data_get_string(settings, "preset");
-
-	check_preset_compatibility(enc, preset);
-
 	if (astrcmpi(preset, "balanced") == 0)
 		return AMF_VIDEO_ENCODER_HEVC_QUALITY_PRESET_BALANCED;
 	else if (astrcmpi(preset, "speed") == 0)
@@ -1569,6 +1589,8 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 
 	set_hevc_property(enc, GOP_SIZE, gop_size);
 
+	check_preset_compatibility(enc, preset);
+
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
 	if (ffmpeg_opts && *ffmpeg_opts) {
 		struct obs_options opts = obs_parse_options(ffmpeg_opts);
@@ -1642,10 +1664,11 @@ static void amf_hevc_create_internal(amf_base *enc, obs_data_t *settings)
 	const bool pq = is_pq(enc);
 	const bool hlg = is_hlg(enc);
 	const bool is_hdr = pq || hlg;
+	const char *preset = obs_data_get_string(settings, "preset");
 
 	set_hevc_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_hevc_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
-	set_hevc_property(enc, QUALITY_PRESET, get_hevc_preset(enc, settings));
+	set_hevc_property(enc, QUALITY_PRESET, get_hevc_preset(enc, preset));
 	set_hevc_property(enc, COLOR_BIT_DEPTH,
 			  is10bit ? AMF_COLOR_BIT_DEPTH_10
 				  : AMF_COLOR_BIT_DEPTH_8);
@@ -1801,12 +1824,8 @@ static const char *amf_av1_get_name(void *)
 	return "AMD HW AV1";
 }
 
-static inline int get_av1_preset(amf_base *enc, obs_data_t *settings)
+static inline int get_av1_preset(amf_base *enc, const char *preset)
 {
-	const char *preset = obs_data_get_string(settings, "preset");
-
-	check_preset_compatibility(enc, preset);
-
 	if (astrcmpi(preset, "highquality") == 0)
 		return AMF_VIDEO_ENCODER_AV1_QUALITY_PRESET_HIGH_QUALITY;
 	else if (astrcmpi(preset, "quality") == 0)
@@ -1910,8 +1929,6 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 	const char *profile = obs_data_get_string(settings, "profile");
 	const char *rc_str = obs_data_get_string(settings, "rate_control");
 
-	check_preset_compatibility(enc, preset);
-
 	int rc = get_av1_rate_control(rc_str);
 	set_av1_property(enc, RATE_CONTROL_METHOD, rc);
 
@@ -1932,6 +1949,8 @@ static bool amf_av1_init(void *data, obs_data_t *settings)
 		}
 		obs_free_options(opts);
 	}
+
+	check_preset_compatibility(enc, preset);
 
 	if (!ffmpeg_opts || !*ffmpeg_opts)
 		ffmpeg_opts = "(none)";
@@ -1967,12 +1986,13 @@ static void amf_av1_create_internal(amf_base *enc, obs_data_t *settings)
 	}
 
 	const bool is10bit = enc->amf_format == AMF_SURFACE_P010;
+	const char *preset = obs_data_get_string(settings, "preset");
 
 	set_av1_property(enc, FRAMESIZE, AMFConstructSize(enc->cx, enc->cy));
 	set_av1_property(enc, USAGE, AMF_VIDEO_ENCODER_USAGE_TRANSCODING);
 	set_av1_property(enc, ALIGNMENT_MODE,
 			 AMF_VIDEO_ENCODER_AV1_ALIGNMENT_MODE_NO_RESTRICTIONS);
-	set_av1_property(enc, QUALITY_PRESET, get_av1_preset(enc, settings));
+	set_av1_property(enc, QUALITY_PRESET, get_av1_preset(enc, preset));
 	set_av1_property(enc, COLOR_BIT_DEPTH,
 			 is10bit ? AMF_COLOR_BIT_DEPTH_10
 				 : AMF_COLOR_BIT_DEPTH_8);
