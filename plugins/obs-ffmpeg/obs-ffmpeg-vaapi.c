@@ -629,12 +629,17 @@ static obs_properties_t *vaapi_properties(void *unused)
 		os_closedir(by_path_dir);
 	}
 	if (obs_property_list_item_count(list) == 0) {
-		char path[32] = "/dev/dri/renderD1";
+		char path[32];
 		for (int i = 28;; i++) {
-			sprintf(path, "/dev/dri/renderD1%d", i);
+			snprintf(path, sizeof(path), "/dev/dri/renderD1%d", i);
 			if (access(path, F_OK) == 0) {
-				char card[128] = "Card: ";
-				sprintf(card, "Card%d: %s", i - 28, path);
+				char card[128];
+				int ret = snprintf(card, sizeof(card),
+						   "Card%d: %s", i - 28, path);
+				if (ret >= sizeof(card))
+					blog(LOG_DEBUG,
+					     "obs-ffmpeg-vaapi: A format truncation may have occurred."
+					     " This can be ignored since it is quite improbable.");
 				obs_property_list_add_string(list, card, path);
 			} else {
 				break;
