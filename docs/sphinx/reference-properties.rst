@@ -220,7 +220,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_color(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a color property without alpha.
+   Adds a color property without alpha (stored internally with an alpha value of 255).
+   The color can be retrieved from an :c:type:`obs_data_t` object by using :c:func:`obs_data_get_int()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -230,7 +231,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_color_alpha(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a color property with alpha.
+   Adds a color property with alpha. The color can be retrieved from an
+   :c:type:`obs_data_t` object by using :c:func:`obs_data_get_int()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -266,7 +268,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_font(obs_properties_t *props, const char *name, const char *description)
 
-   Adds a font property.
+   Adds a font property. The font can be retrieved from an :c:type:`obs_data_t`
+   object by using :c:func:`obs_data_get_obj()`.
 
    :param    name:        Setting identifier string
    :param    description: Localized name shown to user
@@ -276,7 +279,8 @@ Property Object Functions
 
 .. function:: obs_property_t *obs_properties_add_editable_list(obs_properties_t *props, const char *name, const char *description, enum obs_editable_list_type type, const char *filter, const char *default_path)
 
-   Adds a list in which the user can add/insert/remove items.
+   Adds a list in which the user can add/insert/remove items. The items can be
+   retrieved from an :c:type:`obs_data_t` object by using :c:func:`obs_data_get_array()`.
 
    :param    name:         Setting identifier string
    :param    description:  Localized name shown to user
