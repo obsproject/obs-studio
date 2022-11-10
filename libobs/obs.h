@@ -909,8 +909,11 @@ EXPORT obs_source_t *obs_view_get_source(obs_view_t *view, uint32_t channel);
 /** Renders the sources of this view context */
 EXPORT void obs_view_render(obs_view_t *view);
 
-/** Adds a view to the main render loop */
+/** Adds a view to the main render loop, with current obs_get_video_info state */
 EXPORT video_t *obs_view_add(obs_view_t *view);
+
+/** Adds a view to the main render loop, with custom video settings */
+EXPORT video_t *obs_view_add2(obs_view_t *view, struct obs_video_info *ovi);
 
 /** Removes a view from the main render loop */
 EXPORT void obs_view_remove(obs_view_t *view);
