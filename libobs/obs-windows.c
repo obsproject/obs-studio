@@ -316,8 +316,19 @@ static void log_security_products_by_type(IWSCProductList *prod_list, int type)
 			continue;
 		}
 
-		blog(LOG_INFO, "\t%S: %s (%s)", name,
-		     get_str_for_state(prod_state), get_str_for_type(type));
+		size_t name_length = SysStringLen(name);
+		size_t utf8_name_length =
+			os_wcs_to_utf8(name, name_length, NULL, 0);
+
+		if (utf8_name_length) {
+			char *utf8_name = bmalloc(utf8_name_length);
+			os_wcs_to_utf8(name, name_length, utf8_name,
+				       utf8_name_length);
+			blog(LOG_INFO, "\t%s: %s (%s)", utf8_name,
+			     get_str_for_state(prod_state),
+			     get_str_for_type(type));
+			bfree(utf8_name);
+		}
 
 		SysFreeString(name);
 		prod->lpVtbl->Release(prod);
