@@ -2,7 +2,7 @@
 #include "shared-memory-queue.h"
 #include "tiny-nv12-scale.h"
 
-#define VIDEO_NAME L"OBSVirtualCamVideo"
+#define VIDEO_NAME L"SLDVirtualCamVideo"
 
 enum queue_type {
 	SHARED_QUEUE_TYPE_VIDEO,
