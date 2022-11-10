@@ -398,7 +398,7 @@ static bool obs_init_textures(struct obs_core_video_mix *video)
 	}
 
 	video->render_texture =
-		gs_texture_create(obs->video.base_width, obs->video.base_height,
+		gs_texture_create(video->ovi.base_width, video->ovi.base_height,
 				  format, 1, NULL, GS_RENDER_TARGET);
 	if (!video->render_texture)
 		success = false;
@@ -586,8 +586,8 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 	pthread_mutex_init_value(&video->gpu_encoder_mutex);
 
 	make_video_info(&vi, ovi);
+	video->ovi = *ovi;
 	video->gpu_conversion = ovi->gpu_conversion;
-	video->scale_type = ovi->scale_type;
 	video->gpu_was_active = false;
 	video->raw_was_active = false;
 	video->was_active = false;
@@ -634,8 +634,6 @@ struct obs_core_video_mix *obs_create_video_mix(struct obs_video_info *ovi)
 static int obs_init_video(struct obs_video_info *ovi)
 {
 	struct obs_core_video *video = &obs->video;
-	video->base_width = ovi->base_width;
-	video->base_height = ovi->base_height;
 	video->video_frame_interval_ns =
 		util_mul_div64(1000000000ULL, ovi->fps_den, ovi->fps_num);
 	video->video_half_frame_interval_ns =
@@ -646,9 +644,7 @@ static int obs_init_video(struct obs_video_info *ovi)
 	if (pthread_mutex_init(&video->mixes_mutex, NULL) < 0)
 		return OBS_VIDEO_FAIL;
 
-	video->ovi = *ovi;
-
-	if (!obs_view_add(&obs->data.main_view))
+	if (!obs_view_add2(&obs->data.main_view, ovi))
 		return OBS_VIDEO_FAIL;
 
 	int errorcode;
@@ -1510,10 +1506,10 @@ bool obs_reset_audio(const struct obs_audio_info *oai)
 
 bool obs_get_video_info(struct obs_video_info *ovi)
 {
-	if (!obs->video.graphics)
+	if (!obs->video.graphics || !obs->video.main_mix)
 		return false;
 
-	*ovi = obs->video.ovi;
+	*ovi = obs->video.main_mix->ovi;
 	return true;
 }
 
@@ -2825,7 +2821,7 @@ extern void free_gpu_encoding(struct obs_core_video_mix *video);
 
 bool start_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = obs->video.main_mix;
+	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
 	bool success = true;
 
 	obs_enter_graphics();
@@ -2851,7 +2847,7 @@ bool start_gpu_encode(obs_encoder_t *encoder)
 
 void stop_gpu_encode(obs_encoder_t *encoder)
 {
-	struct obs_core_video_mix *video = obs->video.main_mix;
+	struct obs_core_video_mix *video = get_mix_for_video(encoder->media);
 	bool call_free = false;
 
 	os_atomic_dec_long(&video->gpu_encoder_active);

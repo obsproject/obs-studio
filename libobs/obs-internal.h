@@ -284,6 +284,7 @@ struct obs_core_video_mix {
 	volatile bool gpu_encode_stop;
 
 	video_t *video;
+	struct obs_video_info ovi;
 
 	bool gpu_conversion;
 	const char *conversion_techs[NUM_CHANNELS];
@@ -292,7 +293,6 @@ struct obs_core_video_mix {
 	float conversion_height_i;
 
 	float color_matrix[16];
-	enum obs_scale_type scale_type;
 };
 
 extern struct obs_core_video_mix *
@@ -324,9 +324,6 @@ struct obs_core_video {
 	uint32_t lagged_frames;
 	bool thread_initialized;
 
-	uint32_t base_width;
-	uint32_t base_height;
-
 	gs_texture_t *transparent_texture;
 
 	gs_effect_t *deinterlace_discard_effect;
@@ -338,7 +335,6 @@ struct obs_core_video {
 	gs_effect_t *deinterlace_yadif_effect;
 	gs_effect_t *deinterlace_yadif_2x_effect;
 
-	struct obs_video_info ovi;
 	float sdr_white_level;
 	float hdr_nominal_peak_level;
 
@@ -497,6 +493,8 @@ extern gs_effect_t *obs_load_effect(gs_effect_t **effect, const char *file);
 extern bool audio_callback(void *param, uint64_t start_ts_in,
 			   uint64_t end_ts_in, uint64_t *out_ts,
 			   uint32_t mixers, struct audio_output_data *mixes);
+
+extern struct obs_core_video_mix *get_mix_for_video(video_t *video);
 
 extern void
 start_raw_video(video_t *video, const struct video_scale_info *conversion,

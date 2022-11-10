@@ -125,8 +125,8 @@ static inline void unmap_last_surface(struct obs_core_video_mix *video)
 static const char *render_main_texture_name = "render_main_texture";
 static inline void render_main_texture(struct obs_core_video_mix *video)
 {
-	uint32_t base_width = obs->video.base_width;
-	uint32_t base_height = obs->video.base_height;
+	uint32_t base_width = video->ovi.base_width;
+	uint32_t base_height = video->ovi.base_height;
 
 	profile_start(render_main_texture_name);
 	GS_DEBUG_MARKER_BEGIN(GS_DEBUG_COLOR_MAIN_TEXTURE,
@@ -170,12 +170,12 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	/* if the dimension is under half the size of the original image,
 	 * bicubic/lanczos can't sample enough pixels to create an accurate
 	 * image, so use the bilinear low resolution effect instead */
-	if (info->width < (video->base_width / 2) &&
-	    info->height < (video->base_height / 2)) {
+	if (info->width < (mix->ovi.base_width / 2) &&
+	    info->height < (mix->ovi.base_height / 2)) {
 		return video->bilinear_lowres_effect;
 	}
 
-	switch (mix->scale_type) {
+	switch (mix->ovi.scale_type) {
 	case OBS_SCALE_BILINEAR:
 		return video->default_effect;
 	case OBS_SCALE_LANCZOS:
@@ -189,11 +189,11 @@ get_scale_effect_internal(struct obs_core_video_mix *mix)
 	return video->bicubic_effect;
 }
 
-static inline bool resolution_close(struct obs_core_video *video,
+static inline bool resolution_close(struct obs_core_video_mix *mix,
 				    uint32_t width, uint32_t height)
 {
-	long width_cmp = (long)video->base_width - (long)width;
-	long height_cmp = (long)video->base_height - (long)height;
+	long width_cmp = (long)mix->ovi.base_width - (long)width;
+	long height_cmp = (long)mix->ovi.base_height - (long)height;
 
 	return labs(width_cmp) <= 16 && labs(height_cmp) <= 16;
 }
@@ -203,7 +203,7 @@ static inline gs_effect_t *get_scale_effect(struct obs_core_video_mix *mix,
 {
 	struct obs_core_video *video = &obs->video;
 
-	if (resolution_close(video, width, height)) {
+	if (resolution_close(mix, width, height)) {
 		return video->default_effect;
 	} else {
 		/* if the scale method couldn't be loaded, use either bicubic
@@ -233,8 +233,8 @@ render_output_texture(struct obs_core_video_mix *mix)
 	if (video_output_get_format(mix->video) == VIDEO_FORMAT_BGRA) {
 		tech = gs_effect_get_technique(effect, "DrawAlphaDivide");
 	} else {
-		if ((width == video->base_width) &&
-		    (height == video->base_height))
+		if ((width == mix->ovi.base_width) &&
+		    (height == mix->ovi.base_height))
 			return texture;
 
 		tech = gs_effect_get_technique(effect, "Draw");
@@ -254,15 +254,15 @@ render_output_texture(struct obs_core_video_mix *mix)
 
 	if (bres) {
 		struct vec2 base;
-		vec2_set(&base, (float)video->base_width,
-			 (float)video->base_height);
+		vec2_set(&base, (float)mix->ovi.base_width,
+			 (float)mix->ovi.base_height);
 		gs_effect_set_vec2(bres, &base);
 	}
 
 	if (bres_i) {
 		struct vec2 base_i;
-		vec2_set(&base_i, 1.0f / (float)video->base_width,
-			 1.0f / (float)video->base_height);
+		vec2_set(&base_i, 1.0f / (float)mix->ovi.base_width,
+			 1.0f / (float)mix->ovi.base_height);
 		gs_effect_set_vec2(bres_i, &base_i);
 	}
 
