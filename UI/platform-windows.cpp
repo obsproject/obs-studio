@@ -46,7 +46,7 @@ static inline bool check_path(const char *data, const char *path,
 	str << path << data;
 	output = str.str();
 
-	printf("Attempted path: %s\n", output.c_str());
+	blog(LOG_DEBUG, "Attempted path: %s", output.c_str());
 
 	return os_file_exists(output.c_str());
 }
