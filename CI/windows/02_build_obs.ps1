@@ -64,7 +64,7 @@ function Configure-OBS {
     $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
 
     $CmakeCommand = @(
-        "-G", ${CmakeGenerator}
+        "-G", "`"${CmakeGenerator}`""
         "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
         "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
         "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
