@@ -6,9 +6,9 @@
 #include "nvvfx-load.h"
 /* -------------------------------------------------------- */
 
-#define do_log(level, format, ...)                                             \
-	blog(level,                                                            \
-	     "[NVIDIA RTX AI Greenscreen (Background removal): '%s'] " format, \
+#define do_log(level, format, ...)                                         \
+	blog(level,                                                        \
+	     "[NVIDIA AI Greenscreen (Background removal): '%s'] " format, \
 	     obs_source_get_name(filter->context), ##__VA_ARGS__)
 
 #define warn(format, ...) do_log(LOG_WARNING, format, ##__VA_ARGS__)
@@ -27,14 +27,19 @@
 #define S_MODE_PERF 1
 #define S_THRESHOLDFX "threshold"
 #define S_THRESHOLDFX_DEFAULT 1.0
+#define S_PROCESSING "processing_interval"
 
 #define MT_ obs_module_text
 #define TEXT_MODE MT_("Greenscreen.Mode")
 #define TEXT_MODE_QUALITY MT_("Greenscreen.Quality")
 #define TEXT_MODE_PERF MT_("Greenscreen.Performance")
 #define TEXT_MODE_THRESHOLD MT_("Greenscreen.Threshold")
+#define TEXT_DEPRECATION MT_("Greenscreen.Deprecation")
+#define TEXT_PROCESSING MT_("Greenscreen.Processing")
+#define TEXT_PROCESSING_HINT MT_("Greenscreen.Processing.Hint")
 
 bool nvvfx_loaded = false;
+bool nvvfx_new_sdk = false;
 struct nv_greenscreen_data {
 	obs_source_t *context;
 	bool images_allocated;
@@ -54,6 +59,8 @@ struct nv_greenscreen_data {
 	NvCVImage *A_dst_img;   // mask img on GPU
 	NvCVImage *dst_img;     // mask texture
 	NvCVImage *stage;       // planar stage img used for transfer to texture
+	unsigned int version;
+	NvVFX_StateObjectHandle stateObjectHandle;
 
 	/* alpha mask effect */
 	gs_effect_t *effect;
@@ -68,6 +75,13 @@ struct nv_greenscreen_data {
 	gs_eparam_t *threshold_param;
 	gs_eparam_t *multiplier_param;
 	float threshold;
+
+	/* Every nth frame is processed through the FX (where n =
+	 * processing_interval) so that the same mask is used for n consecutive
+	 * frames. This is to alleviate the GPU load. Default: 1 (process every frame).
+	 */
+	int processing_interval;
+	int processing_counter;
 };
 
 static const char *nv_greenscreen_filter_name(void *unused)
@@ -89,6 +103,8 @@ static void nv_greenscreen_filter_update(void *data, obs_data_t *settings)
 			error("Error loading AI Greenscreen FX %i", vfxErr);
 	}
 	filter->threshold = (float)obs_data_get_double(settings, S_THRESHOLDFX);
+	filter->processing_interval =
+		(int)obs_data_get_int(settings, S_PROCESSING);
 }
 
 static void nv_greenscreen_filter_actual_destroy(void *data)
@@ -117,8 +133,13 @@ static void nv_greenscreen_filter_actual_destroy(void *data)
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
 	if (filter->handle) {
+		if (filter->stateObjectHandle) {
+			NvVFX_DeallocateState(filter->handle,
+					      filter->stateObjectHandle);
+		}
 		NvVFX_DestroyEffect(filter->handle);
 	}
+
 	if (filter->effect) {
 		obs_enter_graphics();
 		gs_effect_destroy(filter->effect);
@@ -145,6 +166,10 @@ static void nv_greenscreen_filter_reset(void *data, calldata_t *calldata)
 		NvVFX_CudaStreamDestroy(filter->stream);
 	}
 	if (filter->handle) {
+		if (filter->stateObjectHandle) {
+			NvVFX_DeallocateState(filter->handle,
+					      filter->stateObjectHandle);
+		}
 		NvVFX_DestroyEffect(filter->handle);
 	}
 	// recreate
@@ -410,6 +435,8 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	filter->initial_render = false;
 	os_atomic_set_bool(&filter->processing_stop, false);
 	filter->handler = NULL;
+	filter->processing_interval = 1;
+	filter->processing_counter = 0;
 
 	/* 1. Create FX */
 	vfxErr = NvVFX_CreateEffect(NVVFX_FX_GREEN_SCREEN, &filter->handle);
@@ -445,13 +472,15 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 		nv_greenscreen_filter_destroy(filter);
 		return NULL;
 	}
-	/* log sdk version */
-	unsigned int version;
-	if (NvVFX_GetVersion(&version) == NVCV_SUCCESS) {
-		uint8_t major = (version >> 24) & 0xff;
-		uint8_t minor = (version >> 16) & 0x00ff;
-		uint8_t build = (version >> 8) & 0x0000ff;
-		info("RTX VIDEO FX version: %i.%i.%i", major, minor, build);
+	/* check sdk version */
+	if (NvVFX_GetVersion(&filter->version) == NVCV_SUCCESS) {
+		uint8_t major = (filter->version >> 24) & 0xff;
+		uint8_t minor = (filter->version >> 16) & 0x00ff;
+		uint8_t build = (filter->version >> 8) & 0x0000ff;
+		uint8_t revision = (filter->version >> 0) & 0x000000ff;
+		// sanity check
+		nvvfx_new_sdk = filter->version >= (MIN_VFX_SDK_VERSION) &&
+				nvvfx_new_sdk;
 	}
 
 	/* 3. Load alpha mask effect. */
@@ -472,6 +501,29 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 	}
 	obs_leave_graphics();
 
+	/* 4. Allocate state for the effect */
+	if (nvvfx_new_sdk) {
+		vfxErr = NvVFX_AllocateState(filter->handle,
+					     &filter->stateObjectHandle);
+		if (NVCV_SUCCESS != vfxErr) {
+			const char *errString =
+				NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error allocating FX state %i", vfxErr);
+			nv_greenscreen_filter_destroy(filter);
+			return NULL;
+		}
+		vfxErr = NvVFX_SetStateObjectHandleArray(
+			filter->handle, NVVFX_STATE,
+			&filter->stateObjectHandle);
+		if (NVCV_SUCCESS != vfxErr) {
+			const char *errString =
+				NvCV_GetErrorStringFromCode(vfxErr);
+			error("Error setting FX state %i", vfxErr);
+			nv_greenscreen_filter_destroy(filter);
+			return NULL;
+		}
+	}
+
 	if (!filter->effect) {
 		nv_greenscreen_filter_destroy(filter);
 		return NULL;
@@ -486,6 +538,7 @@ static void *nv_greenscreen_filter_create(obs_data_t *settings,
 
 static obs_properties_t *nv_greenscreen_filter_properties(void *data)
 {
+	struct nv_greenscreen_data *filter = (struct nv_greenscreen_data *)data;
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *mode = obs_properties_add_list(props, S_MODE, TEXT_MODE,
 						       OBS_COMBO_TYPE_LIST,
@@ -494,8 +547,17 @@ static obs_properties_t *nv_greenscreen_filter_properties(void *data)
 	obs_property_list_add_int(mode, TEXT_MODE_PERF, S_MODE_PERF);
 	obs_property_t *threshold = obs_properties_add_float_slider(
 		props, S_THRESHOLDFX, TEXT_MODE_THRESHOLD, 0, 1, 0.05);
+	obs_property_t *partial = obs_properties_add_int_slider(
+		props, S_PROCESSING, TEXT_PROCESSING, 1, 4, 1);
+	obs_property_set_long_description(partial, TEXT_PROCESSING_HINT);
+	unsigned int version = get_lib_version();
+	if (version < (MIN_VFX_SDK_VERSION)) {
+		obs_property_t *warning = obs_properties_add_text(
+			props, "deprecation", NULL, OBS_TEXT_INFO);
+		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);
+		obs_property_set_long_description(warning, TEXT_DEPRECATION);
+	}
 
-	UNUSED_PARAMETER(data);
 	return props;
 }
 
@@ -504,7 +566,9 @@ static void nv_greenscreen_filter_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, S_MODE, S_MODE_QUALITY);
 	obs_data_set_default_double(settings, S_THRESHOLDFX,
 				    S_THRESHOLDFX_DEFAULT);
+	obs_data_set_default_int(settings, S_PROCESSING, 1);
 }
+
 static struct obs_source_frame *
 nv_greenscreen_filter_video(void *data, struct obs_source_frame *frame)
 {
@@ -799,7 +863,14 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 	if (filter->initial_render && filter->images_allocated) {
 		bool draw = true;
 		if (!async || filter->got_new_frame) {
-			draw = process_texture_greenscreen(filter);
+			if (filter->processing_counter %
+				    filter->processing_interval ==
+			    0) {
+				draw = process_texture_greenscreen(filter);
+				filter->processing_counter = 1;
+			} else {
+				filter->processing_counter++;
+			}
 			filter->got_new_frame = false;
 		}
 
@@ -815,20 +886,44 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 bool load_nvvfx(void)
 {
+	bool old_sdk_loaded = false;
+	unsigned int version = get_lib_version();
+	uint8_t major = (version >> 24) & 0xff;
+	uint8_t minor = (version >> 16) & 0x00ff;
+	uint8_t build = (version >> 8) & 0x0000ff;
+	uint8_t revision = (version >> 0) & 0x000000ff;
+	blog(LOG_INFO,
+	     "[NVIDIA VIDEO FX]: NVIDIA VIDEO FX version: %i.%i.%i.%i", major,
+	     minor, build, revision);
+	if (version < (MIN_VFX_SDK_VERSION)) {
+		blog(LOG_INFO,
+		     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated; please update both audio & video SDK.");
+	}
 	if (!load_nv_vfx_libs()) {
 		blog(LOG_INFO,
-		     "[NVIDIA RTX VIDEO FX]: FX disabled, redistributable not found.");
+		     "[NVIDIA VIDEO FX]: FX disabled, redistributable not found or could not be loaded.");
 		return false;
 	}
 
-#define LOAD_SYM_FROM_LIB(sym, lib, dll)                            \
-	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {          \
-		DWORD err = GetLastError();                         \
-		printf("[NVIDIA RTX VIDEO FX]: Couldn't load " #sym \
-		       " from " dll ": %lu (0x%lx)",                \
-		       err, err);                                   \
-		release_nv_vfx();                                   \
-		goto unload_everything;                             \
+#define LOAD_SYM_FROM_LIB(sym, lib, dll)                                     \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                   \
+		DWORD err = GetLastError();                                  \
+		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll \
+		       ": %lu (0x%lx)",                                      \
+		       err, err);                                            \
+		release_nv_vfx();                                            \
+		goto unload_everything;                                      \
+	}
+
+#define LOAD_SYM_FROM_LIB2(sym, lib, dll)                                    \
+	if (!(sym = (sym##_t)GetProcAddress(lib, #sym))) {                   \
+		DWORD err = GetLastError();                                  \
+		printf("[NVIDIA VIDEO FX]: Couldn't load " #sym " from " dll \
+		       ": %lu (0x%lx)",                                      \
+		       err, err);                                            \
+		nvvfx_new_sdk = false;                                       \
+	} else {                                                             \
+		nvvfx_new_sdk = true;                                        \
 	}
 
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_videofx, "NVVideoEffects.dll")
@@ -857,7 +952,9 @@ bool load_nvvfx(void)
 	LOAD_SYM(NvVFX_Load);
 	LOAD_SYM(NvVFX_CudaStreamCreate);
 	LOAD_SYM(NvVFX_CudaStreamDestroy);
+	old_sdk_loaded = true;
 #undef LOAD_SYM
+
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cvimage, "NVCVImage.dll")
 	LOAD_SYM(NvCV_GetErrorStringFromCode);
 	LOAD_SYM(NvCVImage_Init);
@@ -885,6 +982,7 @@ bool load_nvvfx(void)
 	LOAD_SYM(NvCVImage_ToD3DColorSpace);
 	LOAD_SYM(NvCVImage_FromD3DColorSpace);
 #undef LOAD_SYM
+
 #define LOAD_SYM(sym) LOAD_SYM_FROM_LIB(sym, nv_cudart, "cudart64_110.dll")
 	LOAD_SYM(cudaMalloc);
 	LOAD_SYM(cudaStreamSynchronize);
@@ -892,6 +990,18 @@ bool load_nvvfx(void)
 	LOAD_SYM(cudaMemcpy);
 	LOAD_SYM(cudaMemsetAsync);
 #undef LOAD_SYM
+
+#define LOAD_SYM(sym) LOAD_SYM_FROM_LIB2(sym, nv_videofx, "NVVideoEffects.dll")
+	LOAD_SYM(NvVFX_SetStateObjectHandleArray);
+	LOAD_SYM(NvVFX_AllocateState);
+	LOAD_SYM(NvVFX_DeallocateState);
+	LOAD_SYM(NvVFX_ResetState);
+	if (!nvvfx_new_sdk) {
+		blog(LOG_INFO,
+		     "[NVIDIA VIDEO FX]: sdk loaded but old redistributable detected; please upgrade.");
+	}
+#undef LOAD_SYM
+
 	int err;
 	NvVFX_Handle h = NULL;
 
@@ -900,20 +1010,22 @@ bool load_nvvfx(void)
 	if (err != NVCV_SUCCESS) {
 		if (err == NVCV_ERR_UNSUPPORTEDGPU) {
 			blog(LOG_INFO,
-			     "[NVIDIA RTX VIDEO FX]: disabled, unsupported GPU");
+			     "[NVIDIA VIDEO FX]: disabled, unsupported GPU");
 		} else {
-			blog(LOG_ERROR,
-			     "[NVIDIA RTX VIDEO FX]: disabled, error %i", err);
+			blog(LOG_ERROR, "[NVIDIA VIDEO FX]: disabled, error %i",
+			     err);
 		}
 		goto unload_everything;
 	}
 	NvVFX_DestroyEffect(h);
 	nvvfx_loaded = true;
-	blog(LOG_INFO, "[NVIDIA RTX VIDEO FX]: enabled, redistributable found");
+	blog(LOG_INFO, "[NVIDIA VIDEO FX]: enabled, redistributable found");
 	return true;
 
 unload_everything:
 	nvvfx_loaded = false;
+	blog(LOG_INFO,
+	     "[NVIDIA VIDEO FX]: disabled, redistributable not found");
 	release_nv_vfx();
 	return false;
 }
