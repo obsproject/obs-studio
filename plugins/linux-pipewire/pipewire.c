@@ -30,10 +30,29 @@
 #include <libdrm/drm_fourcc.h>
 #include <pipewire/pipewire.h>
 #include <spa/param/video/format-utils.h>
+#include <spa/buffer/meta.h>
 #include <spa/debug/format.h>
 #include <spa/debug/types.h>
 #include <spa/param/video/type-info.h>
 #include <spa/utils/result.h>
+
+#if !PW_CHECK_VERSION(0, 3, 62)
+enum spa_meta_videotransform_value {
+	SPA_META_TRANSFORMATION_None = 0, /**< no transform */
+	SPA_META_TRANSFORMATION_90,       /**< 90 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_180,      /**< 180 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_270,      /**< 270 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped, /**< 180 degree flipped around the vertical axis. Equivalent
+						  * to a reflexion through the vertical line splitting the
+						  * bufffer in two equal sized parts */
+	SPA_META_TRANSFORMATION_Flipped90, /**< flip then rotate around 90 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped180, /**< flip then rotate around 180 degree counter-clockwise */
+	SPA_META_TRANSFORMATION_Flipped270, /**< flip then rotate around 270 degree counter-clockwise */
+};
+
+#define SPA_META_VideoTransform 8
+
+#endif
 
 #define CURSOR_META_SIZE(width, height)                                    \
 	(sizeof(struct spa_meta_cursor) + sizeof(struct spa_meta_bitmap) + \
@@ -70,6 +89,8 @@ struct _obs_pipewire {
 	struct spa_source *reneg;
 
 	struct spa_video_info format;
+
+	enum spa_meta_videotransform_value transform;
 
 	struct {
 		bool valid;
@@ -454,6 +475,7 @@ static void on_process_cb(void *user_data)
 	uint32_t drm_format;
 	struct spa_meta_header *header;
 	struct spa_meta_region *region;
+	struct spa_meta_videotransform *video_transform;
 	struct spa_buffer *buffer;
 	struct pw_buffer *b;
 	bool swap_red_blue = false;
@@ -605,6 +627,14 @@ static void on_process_cb(void *user_data)
 		obs_pw->crop.valid = false;
 	}
 
+	/* Video Transform */
+	video_transform = spa_buffer_find_meta_data(
+		buffer, SPA_META_VideoTransform, sizeof(*video_transform));
+	if (video_transform)
+		obs_pw->transform = video_transform->transform;
+	else
+		obs_pw->transform = SPA_META_TRANSFORMATION_None;
+
 read_metadata:
 
 	/* Cursor */
@@ -656,7 +686,8 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 {
 	obs_pipewire *obs_pw = user_data;
 	struct spa_pod_builder pod_builder;
-	const struct spa_pod *params[4];
+	const struct spa_pod *params[5];
+	uint32_t n_params = 0;
 	uint32_t buffer_types;
 	uint8_t params_buffer[1024];
 	int result;
@@ -705,14 +736,14 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 	/* Video crop */
 	pod_builder =
 		SPA_POD_BUILDER_INIT(params_buffer, sizeof(params_buffer));
-	params[0] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
 		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_VideoCrop),
 		SPA_PARAM_META_size,
 		SPA_POD_Int(sizeof(struct spa_meta_region)));
 
 	/* Cursor */
-	params[1] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
 		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Cursor),
 		SPA_PARAM_META_size,
@@ -721,18 +752,29 @@ static void on_param_changed_cb(void *user_data, uint32_t id,
 					 CURSOR_META_SIZE(1024, 1024)));
 
 	/* Buffer options */
-	params[2] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamBuffers, SPA_PARAM_Buffers,
 		SPA_PARAM_BUFFERS_dataType, SPA_POD_Int(buffer_types));
 
 	/* Meta header */
-	params[3] = spa_pod_builder_add_object(
+	params[n_params++] = spa_pod_builder_add_object(
 		&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
 		SPA_PARAM_META_type, SPA_POD_Id(SPA_META_Header),
 		SPA_PARAM_META_size,
 		SPA_POD_Int(sizeof(struct spa_meta_header)));
 
-	pw_stream_update_params(obs_pw->stream, params, 4);
+#if PW_CHECK_VERSION(0, 3, 62)
+	if (check_pw_version(&obs_pw->server_version, 0, 3, 62)) {
+		/* Video transformation */
+		params[n_params++] = spa_pod_builder_add_object(
+			&pod_builder, SPA_TYPE_OBJECT_ParamMeta, SPA_PARAM_Meta,
+			SPA_PARAM_META_type,
+			SPA_POD_Id(SPA_META_VideoTransform),
+			SPA_PARAM_META_size,
+			SPA_POD_Int(sizeof(struct spa_meta_videotransform)));
+	}
+#endif
+	pw_stream_update_params(obs_pw->stream, params, n_params);
 
 	obs_pw->negotiated = true;
 }
@@ -911,10 +953,20 @@ uint32_t obs_pipewire_get_width(obs_pipewire *obs_pw)
 	if (!obs_pw->negotiated)
 		return 0;
 
-	if (obs_pw->crop.valid)
-		return obs_pw->crop.width;
-	else
-		return obs_pw->format.info.raw.size.width;
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		return obs_pw->crop.valid ? obs_pw->crop.width
+					  : obs_pw->format.info.raw.size.width;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		return obs_pw->crop.valid ? obs_pw->crop.height
+					  : obs_pw->format.info.raw.size.height;
+	}
 }
 
 uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
@@ -922,14 +974,30 @@ uint32_t obs_pipewire_get_height(obs_pipewire *obs_pw)
 	if (!obs_pw->negotiated)
 		return 0;
 
-	if (obs_pw->crop.valid)
-		return obs_pw->crop.height;
-	else
-		return obs_pw->format.info.raw.size.height;
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+	case SPA_META_TRANSFORMATION_None:
+	case SPA_META_TRANSFORMATION_Flipped180:
+	case SPA_META_TRANSFORMATION_180:
+		return obs_pw->crop.valid ? obs_pw->crop.height
+					  : obs_pw->format.info.raw.size.height;
+	case SPA_META_TRANSFORMATION_Flipped90:
+	case SPA_META_TRANSFORMATION_90:
+	case SPA_META_TRANSFORMATION_Flipped270:
+	case SPA_META_TRANSFORMATION_270:
+		return obs_pw->crop.valid ? obs_pw->crop.width
+					  : obs_pw->format.info.raw.size.width;
+	}
 }
 
 void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 {
+	double rot = 0;
+	int flip = 0;
+	double offset_x = 0;
+	double offset_y = 0;
+	bool has_crop;
+
 	gs_eparam_t *image;
 
 	if (!obs_pw->texture)
@@ -938,13 +1006,58 @@ void obs_pipewire_video_render(obs_pipewire *obs_pw, gs_effect_t *effect)
 	image = gs_effect_get_param_by_name(effect, "image");
 	gs_effect_set_texture(image, obs_pw->texture);
 
-	if (has_effective_crop(obs_pw)) {
-		gs_draw_sprite_subregion(obs_pw->texture, 0, obs_pw->crop.x,
+	has_crop = has_effective_crop(obs_pw);
+
+	switch (obs_pw->transform) {
+	case SPA_META_TRANSFORMATION_Flipped:
+		flip = GS_FLIP_U;
+		/* fallthrough */
+	case SPA_META_TRANSFORMATION_None:
+		rot = 0;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped90:
+		flip = GS_FLIP_V;
+		/* fallthrough */
+	case SPA_META_TRANSFORMATION_90:
+		rot = 90;
+		offset_x = 0;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped180:
+		flip = GS_FLIP_U;
+		/* fallthrough */
+	case SPA_META_TRANSFORMATION_180:
+		rot = 180;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = has_crop ? obs_pw->crop.height
+				    : obs_pw->format.info.raw.size.height;
+		break;
+	case SPA_META_TRANSFORMATION_Flipped270:
+		flip = GS_FLIP_V;
+		/* fallthrough */
+	case SPA_META_TRANSFORMATION_270:
+		rot = 270;
+		offset_x = has_crop ? obs_pw->crop.width
+				    : obs_pw->format.info.raw.size.width;
+		offset_y = 0;
+		break;
+	}
+	if (rot != 0) {
+		gs_matrix_push();
+		gs_matrix_rotaa4f(0.0f, 0.0f, 1.0f, RAD(rot));
+		gs_matrix_translate3f(-offset_x, -offset_y, 0.0f);
+	}
+	if (has_crop) {
+		gs_draw_sprite_subregion(obs_pw->texture, flip, obs_pw->crop.x,
 					 obs_pw->crop.y, obs_pw->crop.width,
 					 obs_pw->crop.height);
 	} else {
-		gs_draw_sprite(obs_pw->texture, 0, 0, 0);
+		gs_draw_sprite(obs_pw->texture, flip, 0, 0);
 	}
+	if (rot != 0)
+		gs_matrix_pop();
 
 	if (obs_pw->cursor.visible && obs_pw->cursor.valid &&
 	    obs_pw->cursor.texture) {
