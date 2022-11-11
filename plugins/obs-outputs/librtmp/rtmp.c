@@ -488,7 +488,7 @@ RTMP_Reset(RTMP *r)
     r->Link.curStreamIdx = 0;
     r->Link.nStreams = 0;
     r->Link.receiveTimeout = 30;
-    r->Link.sendTimeout = 6;
+    r->Link.sendTimeout = 15;
     r->Link.swfAge = 30;
 }
 
