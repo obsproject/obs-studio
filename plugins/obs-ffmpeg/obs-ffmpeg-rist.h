@@ -113,7 +113,7 @@ static int librist_close(URLContext *h)
 		ret = rist_destroy(s->ctx);
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to close properly %s\n",
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to close properly %s",
 		     h->url);
 		return -1;
 	}
@@ -128,11 +128,15 @@ static int cb_stats(void *arg, const struct rist_stats *stats_container)
 	rist_log(&s->logging_settings, RIST_LOG_INFO, "%s\n",
 		 stats_container->stats_json);
 	if (stats_container->stats_type == RIST_STATS_SENDER_PEER) {
+		blog(LOG_INFO, "---------------------------------");
 		blog(LOG_DEBUG,
-		     "[obs-ffmpeg mpegts muxer / librist] RIST STATS\n\n"
-		     "bandwidth [%.3f Mbps]\npackets sent [%llu]\npkts received [%llu]\n"
-		     "pkts retransmitted [%llu]\nquality (pkt sent over sent+retransmitted+skipped) [%.2f] \n"
-		     "rtt [%" PRIu32 " ms]\n\n",
+		     "[obs-ffmpeg mpegts muxer / librist]: Session Summary\n"
+		     "\tbandwidth [%.3f Mbps]\n"
+		     "\tpackets sent [%lu]\n"
+		     "\tpkts received [%lu]\n"
+		     "\tpkts retransmitted [%lu]\n"
+		     "\tquality (pkt sent over sent+retransmitted+skipped) [%.2f]\n"
+		     "\trtt [%" PRIu32 " ms]\n",
 		     (double)(stats_container->stats.sender_peer.bandwidth) /
 			     1000000.0,
 		     stats_container->stats.sender_peer.sent,
@@ -166,12 +170,12 @@ static int librist_open(URLContext *h, const char *uri)
 			       NULL);
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : Failed to initialize logging settings.");
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to initialize logging settings");
 		return OBS_OUTPUT_CONNECT_FAILED;
 	}
 
 	blog(LOG_INFO,
-	     "[obs-ffmpeg mpegts muxer / librist] : \n librist version %s & API = %s .",
+	     "[obs-ffmpeg mpegts muxer / librist]: libRIST version: %s, API: %s",
 	     librist_version(), librist_api_version());
 
 	h->max_packet_size = s->packet_size;
@@ -179,14 +183,14 @@ static int librist_open(URLContext *h, const char *uri)
 
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to create a sender \n");
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to create a sender");
 		goto err;
 	}
 
 	ret = rist_peer_config_defaults_set(peer_config);
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to set peer config defaults.\n");
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to set peer config defaults");
 		goto err;
 	}
 
@@ -198,7 +202,7 @@ static int librist_open(URLContext *h, const char *uri)
 #endif
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to parse the url %s\n",
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to parse url: %s",
 		     uri);
 		librist_close(h);
 		return OBS_OUTPUT_INVALID_STREAM;
@@ -208,7 +212,7 @@ static int librist_open(URLContext *h, const char *uri)
 	    ((peer_config->key_size == 128 || peer_config->key_size == 256) &&
 	     !peer_config->secret[0])) {
 		blog(LOG_ERROR,
-		     "secret is mandatory if encryption is enabled\n");
+		     "[obs-ffmpeg mpegts muxer / librist]: Secret is mandatory if encryption is enabled");
 		librist_close(h);
 		return OBS_OUTPUT_INVALID_STREAM;
 	}
@@ -234,22 +238,20 @@ static int librist_open(URLContext *h, const char *uri)
 	ret = rist_peer_create(s->ctx, &s->peer, &s->peer_config);
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to create a peer. \n");
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to create a peer.");
 		goto err;
 	}
 
 	ret = rist_start(s->ctx);
 	if (ret < 0) {
 		blog(LOG_ERROR,
-		     "[obs-ffmpeg mpegts muxer / librist] : rist failed to start \n");
+		     "[obs-ffmpeg mpegts muxer / librist]: RIST failed to start");
 		goto err;
 	}
 	if (rist_stats_callback_set(s->ctx, s->statsinterval, cb_stats,
-				    (void *)s) == -1) {
+				    (void *)s) == -1)
 		rist_log(&s->logging_settings, RIST_LOG_ERROR,
-			 "Could not enable stats callback\n");
-		;
-	}
+			 "Could not enable stats callback");
 	return 0;
 
 err:
@@ -271,7 +273,7 @@ static int librist_write(URLContext *h, const uint8_t *buf, int size)
 	ret = rist_sender_data_write(s->ctx, &data_block);
 	if (ret < 0) {
 		blog(LOG_WARNING,
-		     "[obs-ffmpeg mpegts muxer / librist] : failed to send data of size %i bytes",
+		     "[obs-ffmpeg mpegts muxer / librist]: Failed to send %i bytes",
 		     size);
 		return risterr2ret(ret);
 	}
