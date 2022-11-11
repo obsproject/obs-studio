@@ -540,7 +540,8 @@ static obs_properties_t *scale_filter_properties(void *data)
 
 	for (size_t i = 0; i < NUM_DOWNSCALES; i++) {
 		char str[32];
-		snprintf(str, 32, "%dx%d", downscales[i].cx, downscales[i].cy);
+		snprintf(str, sizeof(str), "%dx%d", downscales[i].cx,
+			 downscales[i].cy);
 		obs_property_list_add_string(p, str, str);
 	}
 

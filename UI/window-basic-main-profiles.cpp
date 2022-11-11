@@ -373,13 +373,15 @@ void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
 	char profilePath[512];
 	char basePath[512];
 
-	int ret = GetConfigPath(basePath, 512, "obs-studio/basic/profiles");
+	int ret = GetConfigPath(basePath, sizeof(basePath),
+				"obs-studio/basic/profiles");
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get profiles config path");
 		return;
 	}
 
-	ret = snprintf(profilePath, 512, "%s/%s/*", basePath, profileDir);
+	ret = snprintf(profilePath, sizeof(profilePath), "%s/%s/*", basePath,
+		       profileDir);
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get path for profile dir '%s'",
 		     profileDir);
@@ -404,7 +406,8 @@ void OBSBasic::DeleteProfile(const char *profileName, const char *profileDir)
 
 	os_globfree(glob);
 
-	ret = snprintf(profilePath, 512, "%s/%s", basePath, profileDir);
+	ret = snprintf(profilePath, sizeof(profilePath), "%s/%s", basePath,
+		       profileDir);
 	if (ret <= 0) {
 		blog(LOG_WARNING, "Failed to get path for profile dir '%s'",
 		     profileDir);

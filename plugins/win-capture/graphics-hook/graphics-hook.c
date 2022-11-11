@@ -65,7 +65,8 @@ static inline void wait_for_dll_main_finish(HANDLE thread_handle)
 bool init_pipe(void)
 {
 	char new_name[64];
-	sprintf(new_name, "%s%lu", PIPE_NAME, GetCurrentProcessId());
+	snprintf(new_name, sizeof(new_name), "%s%lu", PIPE_NAME,
+		 GetCurrentProcessId());
 
 	const bool success = ipc_pipe_client_open(&pipe, new_name);
 	if (!success) {

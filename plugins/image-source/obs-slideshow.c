@@ -922,7 +922,7 @@ static obs_properties_t *ss_properties(void *data)
 		obs_property_list_add_string(p, aspects[i], aspects[i]);
 
 	char str[32];
-	snprintf(str, 32, "%dx%d", cx, cy);
+	snprintf(str, sizeof(str), "%dx%d", cx, cy);
 	obs_property_list_add_string(p, str, str);
 
 	if (ss) {

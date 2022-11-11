@@ -376,7 +376,7 @@ static void do_log(int log_level, const char *msg, va_list args, void *param)
 	va_copy(args2, args);
 #endif
 
-	vsnprintf(str, 4095, msg, args);
+	vsnprintf(str, sizeof(str), msg, args);
 
 #ifdef _WIN32
 	if (IsDebuggerPresent()) {
@@ -2658,16 +2658,16 @@ static void move_to_xdg(void)
 	if (!home)
 		return;
 
-	if (snprintf(old_path, 512, "%s/.obs-studio", home) <= 0)
+	if (snprintf(old_path, sizeof(old_path), "%s/.obs-studio", home) <= 0)
 		return;
 
 	/* make base xdg path if it doesn't already exist */
-	if (GetConfigPath(new_path, 512, "") <= 0)
+	if (GetConfigPath(new_path, sizeof(new_path), "") <= 0)
 		return;
 	if (os_mkdirs(new_path) == MKDIR_ERROR)
 		return;
 
-	if (GetConfigPath(new_path, 512, "obs-studio") <= 0)
+	if (GetConfigPath(new_path, sizeof(new_path), "obs-studio") <= 0)
 		return;
 
 	if (os_file_exists(old_path) && !os_file_exists(new_path)) {

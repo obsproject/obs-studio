@@ -365,7 +365,13 @@ static bool xshm_server_changed(obs_properties_t *props, obs_property_t *p,
 			x11_screen_geo(xcb, i, &w, &h);
 
 		if (name == NULL) {
-			sprintf(name_tmp, "%" PRIuFAST32, i);
+			int ret = snprintf(name_tmp, sizeof(name_tmp),
+					   "%" PRIuFAST32, i);
+			if (ret >= sizeof(name_tmp))
+				blog(LOG_DEBUG,
+				     "linux-capture: A format truncation may have occurred."
+				     " This can be ignored since it is quite improbable.");
+
 			name = name_tmp;
 		}
 

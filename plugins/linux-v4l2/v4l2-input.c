@@ -416,8 +416,14 @@ static void v4l2_device_list(obs_property_t *prop, obs_data_t *settings)
 
 		/* make sure device names are unique */
 		char unique_device_name[68];
-		sprintf(unique_device_name, "%s (%s)", video_cap.card,
-			video_cap.bus_info);
+		int ret = snprintf(unique_device_name,
+				   sizeof(unique_device_name), "%s (%s)",
+				   video_cap.card, video_cap.bus_info);
+		if (ret >= sizeof(unique_device_name))
+			blog(LOG_DEBUG,
+			     "linux-v4l2: A format truncation may have occurred."
+			     " This can be ignored since it is quite improbable.");
+
 		obs_property_list_add_string(prop, unique_device_name,
 					     device.array);
 		blog(LOG_INFO, "Found device '%s' at %s", video_cap.card,
