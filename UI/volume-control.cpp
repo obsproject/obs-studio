@@ -1077,7 +1077,8 @@ inline int VolumeMeter::convertToInt(float number)
 	constexpr int min = std::numeric_limits<int>::min();
 	constexpr int max = std::numeric_limits<int>::max();
 
-	if (number > max)
+	// NOTE: Conversion from 'const int' to 'float' changes max value from 2147483647 to 2147483648
+	if (number >= (float)max)
 		return max;
 	else if (number < min)
 		return min;
