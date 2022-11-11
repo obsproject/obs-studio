@@ -2562,6 +2562,41 @@
                 "max video bitrate": 1800,
                 "max audio bitrate": 192
             }
+        },
+        {
+            "name": "IRLToolkit",
+            "stream_key_link": "https://irl.run/settings/ingest/",
+            "servers": [
+                {
+                    "name": "Global (Recommended)",
+                    "url": "rtmp://stream.global.irl.run/ingest"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "url": "rtmp://stream.lax.irl.run/ingest"
+                },
+                {
+                    "name": "New York, US",
+                    "url": "rtmp://stream.ewr.irl.run/ingest"
+                },
+                {
+                    "name": "Rotterdam, NL",
+                    "url": "rtmp://stream.rtm.irl.run/ingest"
+                },
+                {
+                    "name": "Singapore",
+                    "url": "rtmp://stream.sin.irl.run/ingest"
+                },
+                {
+                    "name": "Tokyo, JP",
+                    "url": "rtmp://stream.tyo.irl.run/ingest"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "bframes": 2,
+                "max video bitrate": 20000
+            }
         }
     ]
 }
