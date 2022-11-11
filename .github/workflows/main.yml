@@ -273,6 +273,7 @@ jobs:
           CI/linux/03_package_obs.sh
           ARTIFACT_NAME=$(basename $(/usr/bin/find build  -maxdepth 1 -type f -name "obs-studio-*.deb" | sort -rn | head -1))
           echo "FILE_NAME=${ARTIFACT_NAME}" >> $GITHUB_ENV
+          echo "DEBUG_FILE_NAME=${ARTIFACT_NAME//.deb/-dbgsym.ddeb}" >> $GITHUB_ENV
 
       - name: 'Upload build Artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
@@ -280,6 +281,13 @@ jobs:
         with:
           name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}'
           path: '${{ github.workspace }}/obs-studio/build/${{ env.FILE_NAME }}'
+
+      - name: 'Upload debug symbol Artifact'
+        if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'obs-studio-${{ matrix.ubuntu }}-${{ steps.setup.outputs.commitHash }}-dbgsym'
+          path: '${{ github.workspace }}/obs-studio/build/${{ env.DEBUG_FILE_NAME }}'
 
   windows_build:
     name: '02 - Windows'

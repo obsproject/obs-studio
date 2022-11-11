@@ -21,9 +21,14 @@ package_obs() {
     cmake --build ${BUILD_DIR} -t package
 
     DEB_NAME=$(find ${BUILD_DIR} -maxdepth 1 -type f -name "obs*.deb" | sort -rn | head -1)
+    DEBUG_NAME="${DEB_NAME//.deb/-dbgsym.ddeb}"
 
     if [ "${DEB_NAME}" ]; then
-        mv ${DEB_NAME} ${BUILD_DIR}/${FILE_NAME}
+        mv "${DEB_NAME}" "${BUILD_DIR}/${FILE_NAME}"
+
+        if [ "${DEBUG_NAME}" ]; then
+            mv "${DEBUG_NAME}" "${BUILD_DIR}/${FILE_NAME//.deb/-dbgsym.ddeb}"
+        fi
     else
         error "ERROR No suitable OBS debian package generated"
     fi
