@@ -59,6 +59,8 @@ bool nvafx_loaded = false;
 #define TEXT_METHOD_NVAFX_DEREVERB MT_("NoiseSuppress.Method.Nvafx.Dereverb")
 #define TEXT_METHOD_NVAFX_DEREVERB_DENOISER \
 	MT_("NoiseSuppress.Method.Nvafx.DenoiserPlusDereverb")
+#define TEXT_METHOD_NVAFX_DEPRECATION \
+	MT_("NoiseSuppress.Method.Nvafx.Deprecation")
 
 #define MAX_PREPROC_CHANNELS 8
 
@@ -623,9 +625,20 @@ static void noise_suppress_update(void *data, obs_data_t *s)
 bool load_nvafx(void)
 {
 #ifdef LIBNVAFX_ENABLED
+	unsigned int version = get_lib_version();
+	uint8_t major = (version >> 24) & 0xff;
+	uint8_t minor = (version >> 16) & 0x00ff;
+	uint8_t build = (version >> 8) & 0x0000ff;
+	uint8_t revision = (version >> 0) & 0x000000ff;
+	blog(LOG_INFO, "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
+	     major, minor, build, revision);
+	if (version < (MIN_AFX_SDK_VERSION)) {
+		blog(LOG_INFO,
+		     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated; please update both audio & video SDK.");
+	}
 	if (!load_lib()) {
 		blog(LOG_INFO,
-		     "[noise suppress]: NVIDIA RTX denoiser disabled, redistributable not found");
+		     "[noise suppress]: NVIDIA denoiser disabled, redistributable not found or could not be loaded.");
 		return false;
 	}
 
@@ -699,10 +712,10 @@ bool load_nvafx(void)
 	if (err != NVAFX_STATUS_SUCCESS) {
 		if (err == NVAFX_STATUS_GPU_UNSUPPORTED) {
 			blog(LOG_INFO,
-			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled: unsupported GPU");
+			     "[noise suppress]: NVIDIA AUDIO FX disabled: unsupported GPU");
 		} else {
 			blog(LOG_ERROR,
-			     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, error %i",
+			     "[noise suppress]: NVIDIA AUDIO FX disabled, error %i",
 			     err);
 		}
 		goto unload_everything;
@@ -711,18 +724,18 @@ bool load_nvafx(void)
 	err = NvAFX_DestroyEffect(h);
 	if (err != NVAFX_STATUS_SUCCESS) {
 		blog(LOG_ERROR,
-		     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, error %i",
+		     "[noise suppress]: NVIDIA AUDIO FX disabled, error %i",
 		     err);
 		goto unload_everything;
 	}
 
 	nvafx_loaded = true;
-	blog(LOG_INFO, "[noise suppress]: NVIDIA RTX AUDIO FX enabled");
+	blog(LOG_INFO, "[noise suppress]: NVIDIA AUDIO FX enabled");
 	return true;
 
 cuda_errors:
 	blog(LOG_ERROR,
-	     "[noise suppress]: NVIDIA RTX AUDIO FX disabled, CUDA error %i",
+	     "[noise suppress]: NVIDIA AUDIO FX disabled, CUDA error %i",
 	     cudaerr);
 unload_everything:
 	release_lib();
@@ -1205,10 +1218,19 @@ static obs_properties_t *noise_suppress_properties(void *data)
 #endif
 
 #ifdef LIBNVAFX_ENABLED
-	obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
-					TEXT_NVAFX_INTENSITY, 0.0f, 1.0f,
-					0.01f);
-
+	if (ng->nvafx_enabled) {
+		obs_properties_add_float_slider(ppts, S_NVAFX_INTENSITY,
+						TEXT_NVAFX_INTENSITY, 0.0f,
+						1.0f, 0.01f);
+	}
+	unsigned int version = get_lib_version();
+	if (version < (MIN_AFX_SDK_VERSION)) {
+		obs_property_t *warning = obs_properties_add_text(
+			ppts, "deprecation", NULL, OBS_TEXT_INFO);
+		obs_property_text_set_info_type(warning, OBS_TEXT_INFO_WARNING);
+		obs_property_set_long_description(
+			warning, TEXT_METHOD_NVAFX_DEPRECATION);
+	}
 #if defined(LIBRNNOISE_ENABLED) && defined(LIBSPEEXDSP_ENABLED)
 	if (!nvafx_loaded) {
 		obs_property_list_item_disable(method, 2, true);

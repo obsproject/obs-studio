@@ -462,8 +462,8 @@ static bool init_screen_stream(struct screen_capture *sc)
 	os_sem_post(sc->shareable_content_available);
 	[sc->stream_properties setQueueDepth:8];
 	[sc->stream_properties setShowsCursor:!sc->hide_cursor];
-	[sc->stream_properties setColorSpaceName:kCGColorSpaceSRGB];
-	[sc->stream_properties setPixelFormat:'BGRA'];
+	[sc->stream_properties setColorSpaceName:kCGColorSpaceDisplayP3];
+	[sc->stream_properties setPixelFormat:'l10r'];
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
 	if (@available(macOS 13.0, *)) {
 		[sc->stream_properties setCapturesAudio:TRUE];
@@ -649,18 +649,13 @@ static void screen_capture_video_render(void *data, gs_effect_t *effect
 	if (!sc->tex)
 		return;
 
-	const bool linear_srgb = gs_get_linear_srgb();
-
 	const bool previous = gs_framebuffer_srgb_enabled();
-	gs_enable_framebuffer_srgb(linear_srgb);
+	gs_enable_framebuffer_srgb(true);
 
 	gs_eparam_t *param = gs_effect_get_param_by_name(sc->effect, "image");
-	if (linear_srgb)
-		gs_effect_set_texture_srgb(param, sc->tex);
-	else
-		gs_effect_set_texture(param, sc->tex);
+	gs_effect_set_texture(param, sc->tex);
 
-	while (gs_effect_loop(sc->effect, "Draw"))
+	while (gs_effect_loop(sc->effect, "DrawD65P3"))
 		gs_draw_sprite(sc->tex, 0, 0, 0);
 
 	gs_enable_framebuffer_srgb(previous);
@@ -805,19 +800,20 @@ static bool build_display_list(struct screen_capture *sc,
 
 		char dimension_buffer[4][12] = {};
 		char name_buffer[256] = {};
-		sprintf(dimension_buffer[0], "%u",
-			(uint32_t)screen.frame.size.width);
-		sprintf(dimension_buffer[1], "%u",
-			(uint32_t)screen.frame.size.height);
-		sprintf(dimension_buffer[2], "%d",
-			(int32_t)screen.frame.origin.x);
-		sprintf(dimension_buffer[3], "%d",
-			(int32_t)screen.frame.origin.y);
+		snprintf(dimension_buffer[0], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.width);
+		snprintf(dimension_buffer[1], sizeof(dimension_buffer[0]), "%u",
+			 (uint32_t)screen.frame.size.height);
+		snprintf(dimension_buffer[2], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.x);
+		snprintf(dimension_buffer[3], sizeof(dimension_buffer[0]), "%d",
+			 (int32_t)screen.frame.origin.y);
 
-		sprintf(name_buffer, "%.200s: %.12sx%.12s @ %.12s,%.12s",
-			screen.localizedName.UTF8String, dimension_buffer[0],
-			dimension_buffer[1], dimension_buffer[2],
-			dimension_buffer[3]);
+		snprintf(name_buffer, sizeof(name_buffer),
+			 "%.200s: %.12sx%.12s @ %.12s,%.12s",
+			 screen.localizedName.UTF8String, dimension_buffer[0],
+			 dimension_buffer[1], dimension_buffer[2],
+			 dimension_buffer[3]);
 
 		obs_property_list_add_int(display_list, name_buffer,
 					  display.displayID);
@@ -1034,6 +1030,29 @@ static obs_properties_t *screen_capture_properties(void *data)
 	return props;
 }
 
+enum gs_color_space screen_capture_video_get_color_space(
+	void *data, size_t count, const enum gs_color_space *preferred_spaces)
+{
+	UNUSED_PARAMETER(data);
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_SRGB_16F)
+			return GS_CS_SRGB_16F;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_709_EXTENDED)
+			return GS_CS_709_EXTENDED;
+	}
+
+	for (size_t i = 0; i < count; ++i) {
+		if (preferred_spaces[i] == GS_CS_SRGB)
+			return GS_CS_SRGB;
+	}
+
+	return GS_CS_SRGB_16F;
+}
+
 struct obs_source_info screen_capture_info = {
 	.id = "screen_capture",
 	.type = OBS_SOURCE_TYPE_INPUT,
@@ -1055,6 +1074,7 @@ struct obs_source_info screen_capture_info = {
 	.get_properties = screen_capture_properties,
 	.update = screen_capture_update,
 	.icon_type = OBS_ICON_TYPE_DESKTOP_CAPTURE,
+	.video_get_color_space = screen_capture_video_get_color_space,
 };
 
 @implementation ScreenCaptureDelegate

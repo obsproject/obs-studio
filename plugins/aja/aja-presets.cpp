@@ -187,6 +187,27 @@ void RoutingConfigurator::build_preset_table()
 		  {DEVICE_ID_IO4KPLUS},
 		  false,
 		  false}},
+		{"HDMI_UHD_4K_YCbCr_Capture",
+		 {"HDMI_UHD_4K_YCbCr_Capture",
+		  ConnectionKind::HDMI,
+		  NTV2_MODE_CAPTURE,
+		  RasterDefinition::UHD_4K,
+		  HDMIWireFormat::UHD_4K_YCBCR,
+		  VPIDStandard_Unknown,
+		  1,
+		  2,
+		  kEnable4KTSI,
+		  "hdmi[{ch1}][0]->tsi[{ch1}][0];"
+		  "hdmi[{ch1}][1]->tsi[{ch1}][1];"
+		  "hdmi[{ch1}][2]->tsi[{ch2}][0];"
+		  "hdmi[{ch1}][3]->tsi[{ch2}][1];"
+		  "tsi[{ch1}][0]->fb[{ch1}][0];"
+		  "tsi[{ch1}][1]->fb[{ch1}][1];"
+		  "tsi[{ch2}][0]->fb[{ch2}][0];"
+		  "tsi[{ch2}][1]->fb[{ch2}][1];",
+		  {},
+		  false,
+		  false}},
 		/*
 		 * HDMI YCbCr Display
 		 */

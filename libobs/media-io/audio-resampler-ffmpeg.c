@@ -27,16 +27,20 @@ struct audio_resampler {
 	bool opened;
 
 	uint32_t input_freq;
-	uint64_t input_layout;
 	enum AVSampleFormat input_format;
-
 	uint8_t *output_buffer[MAX_AV_PLANES];
-	uint64_t output_layout;
 	enum AVSampleFormat output_format;
 	int output_size;
 	uint32_t output_ch;
 	uint32_t output_freq;
 	uint32_t output_planes;
+#if LIBSWRESAMPLE_VERSION_INT < AV_VERSION_INT(4, 5, 100)
+	uint64_t input_layout;
+	uint64_t output_layout;
+#else
+	AVChannelLayout input_ch_layout;
+	AVChannelLayout output_ch_layout;
+#endif
 };
 
 static inline enum AVSampleFormat convert_audio_format(enum audio_format format)
@@ -66,6 +70,7 @@ static inline enum AVSampleFormat convert_audio_format(enum audio_format format)
 	return AV_SAMPLE_FMT_S16;
 }
 
+#if LIBSWRESAMPLE_VERSION_INT < AV_VERSION_INT(4, 5, 100)
 static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 {
 	switch (layout) {
@@ -90,6 +95,7 @@ static inline uint64_t convert_speaker_layout(enum speaker_layout layout)
 	/* shouldn't get here */
 	return 0;
 }
+#endif
 
 audio_resampler_t *audio_resampler_create(const struct resample_info *dst,
 					  const struct resample_info *src)
@@ -99,20 +105,38 @@ audio_resampler_t *audio_resampler_create(const struct resample_info *dst,
 
 	rs->opened = false;
 	rs->input_freq = src->samples_per_sec;
-	rs->input_layout = convert_speaker_layout(src->speakers);
 	rs->input_format = convert_audio_format(src->format);
 	rs->output_size = 0;
 	rs->output_ch = get_audio_channels(dst->speakers);
 	rs->output_freq = dst->samples_per_sec;
-	rs->output_layout = convert_speaker_layout(dst->speakers);
 	rs->output_format = convert_audio_format(dst->format);
 	rs->output_planes = is_audio_planar(dst->format) ? rs->output_ch : 1;
 
+#if (LIBSWRESAMPLE_VERSION_INT < AV_VERSION_INT(4, 5, 100))
+	rs->input_layout = convert_speaker_layout(src->speakers);
+	rs->output_layout = convert_speaker_layout(dst->speakers);
 	rs->context = swr_alloc_set_opts(NULL, rs->output_layout,
 					 rs->output_format,
 					 dst->samples_per_sec, rs->input_layout,
 					 rs->input_format, src->samples_per_sec,
 					 0, NULL);
+#else
+	int nb_ch = get_audio_channels(src->speakers);
+	av_channel_layout_default(&rs->input_ch_layout, nb_ch);
+	av_channel_layout_default(&rs->output_ch_layout, rs->output_ch);
+	if (src->speakers == SPEAKERS_4POINT1)
+		rs->input_ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+
+	if (dst->speakers == SPEAKERS_4POINT1)
+		rs->output_ch_layout =
+			(AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
+
+	swr_alloc_set_opts2(&rs->context, &rs->output_ch_layout,
+			    rs->output_format, dst->samples_per_sec,
+			    &rs->input_ch_layout, rs->input_format,
+			    src->samples_per_sec, 0, NULL);
+#endif
 
 	if (!rs->context) {
 		blog(LOG_ERROR, "swr_alloc_set_opts failed");
@@ -120,7 +144,13 @@ audio_resampler_t *audio_resampler_create(const struct resample_info *dst,
 		return NULL;
 	}
 
+#if (LIBSWRESAMPLE_VERSION_INT < AV_VERSION_INT(4, 5, 100))
 	if (rs->input_layout == AV_CH_LAYOUT_MONO && rs->output_ch > 1) {
+#else
+	AVChannelLayout test_ch = AV_CHANNEL_LAYOUT_MONO;
+	if (av_channel_layout_compare(&rs->input_ch_layout, &test_ch) == 0 &&
+	    rs->output_ch > 1) {
+#endif
 		const double matrix[MAX_AUDIO_CHANNELS][MAX_AUDIO_CHANNELS] = {
 			{1},
 			{1, 1},

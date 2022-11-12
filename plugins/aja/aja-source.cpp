@@ -269,6 +269,7 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 				    sourceProps.pixelFormat);
 	auto inputSource = sourceProps.InitialInputSource();
 	auto channel = sourceProps.Channel();
+	auto framestore = sourceProps.Framestore();
 	auto audioSystem = sourceProps.AudioSystem();
 	// Current "on-air" frame on the card. The capture thread "Ping-pongs" between
 	// two frames, starting at an index corresponding to the framestore channel.
@@ -278,12 +279,12 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 	// Channel 3 (index 2) = frames 4/5
 	// Channel 4 (index 3) = frames 6/7
 	// etc...
-	ULWord currentCardFrame = (uint32_t)channel * 2;
+	ULWord currentCardFrame = GetIndexForNTV2Channel(framestore) * 2;
 	card->WaitForInputFieldID(NTV2_FIELD0, channel);
 
 	currentCardFrame ^= 1;
 
-	card->SetInputFrame(channel, currentCardFrame);
+	card->SetInputFrame(framestore, currentCardFrame);
 
 	AudioOffsets offsets;
 	ResetAudioBufferOffsets(card, audioSystem, offsets);
@@ -388,7 +389,7 @@ void AJASource::CaptureThread(AJAThread *thread, void *data)
 
 		obs_source_output_video2(ajaSource->mSource, &obsFrame);
 
-		card->SetInputFrame(channel, currentCardFrame);
+		card->SetInputFrame(framestore, currentCardFrame);
 	}
 
 	blog(LOG_INFO, "AJASource::Capturethread: Thread loop stopped");

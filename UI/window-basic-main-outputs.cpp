@@ -1346,7 +1346,7 @@ AdvancedOutput::AdvancedOutput(OBSBasic *main_) : BasicOutputHandler(main_)
 
 	for (int i = 0; i < MAX_AUDIO_MIXES; i++) {
 		char name[9];
-		sprintf(name, "adv_aac%d", i);
+		snprintf(name, sizeof(name), "adv_aac%d", i);
 
 		if (!CreateAACEncoder(aacTrack[i], aacEncoderID[i],
 				      GetAudioBitrate(i), name, i))

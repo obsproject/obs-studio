@@ -520,6 +520,7 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	AVStream *stream;
 	void *extradata = NULL;
 	const char *name = ffm->params.acodec;
+	int channels;
 
 	const AVCodecDescriptor *codec = avcodec_descriptor_get_by_name(name);
 	if (!codec) {
@@ -543,7 +544,10 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->codec_type = codec->type;
 	context->codec_id = codec->id;
 	context->bit_rate = (int64_t)ffm->audio[idx].abitrate * 1000;
-	context->channels = ffm->audio[idx].channels;
+	channels = ffm->audio[idx].channels;
+#if LIBAVUTIL_VERSION_INT < AV_VERSION_INT(57, 24, 100)
+	context->channels = channels;
+#endif
 	context->sample_rate = ffm->audio[idx].sample_rate;
 	context->frame_size = ffm->audio[idx].frame_size;
 	context->sample_fmt = AV_SAMPLE_FMT_S16;
@@ -551,15 +555,14 @@ static void create_audio_stream(struct ffmpeg_mux *ffm, int idx)
 	context->extradata = extradata;
 	context->extradata_size = ffm->audio_header[idx].size;
 #if LIBAVCODEC_VERSION_INT < AV_VERSION_INT(59, 24, 100)
-	context->channel_layout =
-		av_get_default_channel_layout(context->channels);
+	context->channel_layout = av_get_default_channel_layout(channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->channel_layout = av_get_channel_layout("4.1");
 #else
-	av_channel_layout_default(&context->ch_layout, context->channels);
+	av_channel_layout_default(&context->ch_layout, channels);
 	//avutil default channel layout for 5 channels is 5.0 ; fix for 4.1
-	if (context->channels == 5)
+	if (channels == 5)
 		context->ch_layout = (AVChannelLayout)AV_CHANNEL_LAYOUT_4POINT1;
 #endif
 	if (ffm->output->oformat->flags & AVFMT_GLOBALHEADER)
