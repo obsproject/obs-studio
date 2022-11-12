@@ -979,6 +979,7 @@
           </property>
           <addaction name="actionAddSource"/>
           <addaction name="actionRemoveSource"/>
+          <addaction name="separator"/>
           <addaction name="actionSourceProperties"/>
           <addaction name="separator"/>
           <addaction name="actionSourceUp"/>
