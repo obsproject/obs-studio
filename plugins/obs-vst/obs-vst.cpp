@@ -111,6 +111,19 @@ static void vst_update(void *data, obs_data_t *settings)
 
 	const char *path = obs_data_get_string(settings, "plugin_path");
 
+#ifdef __linux__
+	// Migrate freedesktop.org Flatpak runtime 21.08 VST paths to 22.08.
+	if (QFile::exists("/.flatpak-info") &&
+	    QString(path).startsWith("/app/extensions/Plugins/lxvst")) {
+		QString newPath(path);
+		newPath.replace("/app/extensions/Plugins/lxvst",
+				"/app/extensions/Plugins/vst");
+		obs_data_set_string(settings, "plugin_path",
+				    newPath.toStdString().c_str());
+		path = obs_data_get_string(settings, "plugin_path");
+	}
+#endif
+
 	if (!*path) {
 		vstPlugin->unloadEffect();
 		return;

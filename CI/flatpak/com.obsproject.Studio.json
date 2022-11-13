@@ -1,7 +1,7 @@
 {
   "app-id": "com.obsproject.Studio",
   "runtime": "org.kde.Platform",
-  "runtime-version": "6.3",
+  "runtime-version": "6.4",
   "sdk": "org.kde.Sdk",
   "command": "obs",
   "finish-args": [
@@ -19,7 +19,7 @@
     "--talk-name=org.a11y.Bus",
     "--own-name=org.kde.StatusNotifierItem-2-2",
     "--system-talk-name=org.freedesktop.Avahi",
-    "--env=VST_PATH=/app/extensions/Plugins/lxvst"
+    "--env=VST_PATH=/app/extensions/Plugins/vst"
   ],
   "add-extensions": {
     "com.obsproject.Studio.Plugin": {
@@ -32,9 +32,9 @@
     },
     "org.freedesktop.LinuxAudio.Plugins": {
       "directory": "extensions/Plugins",
-      "version": "21.08",
+      "version": "22.08",
       "add-ld-path": "lib",
-      "merge-dirs": "lxvst",
+      "merge-dirs": "vst",
       "subdirectories": true,
       "no-autodownload": true
     }
@@ -329,38 +329,6 @@
           "type": "archive",
           "url": "https://github.com/jackaudio/jack2/releases/download/v1.9.14/v1.9.14.tar.gz",
           "sha256": "a20a32366780c0061fd58fbb5f09e514ea9b7ce6e53b080a44b11a558a83217c"
-        }
-      ]
-    },
-    {
-      "name": "pipewire",
-      "buildsystem": "meson",
-      "config-opts": [
-        "-Daudiotestsrc=disabled",
-        "-Droc=disabled",
-        "-Dvideotestsrc=disabled",
-        "-Dvolume=disabled",
-        "-Dvulkan=disabled",
-        "-Ddocs=disabled",
-        "-Dman=disabled",
-        "-Dbluez5-codec-ldac=disabled",
-        "-Dbluez5-codec-aptx=disabled",
-        "-Dlibcamera=disabled",
-        "-Dudevrulesdir=/app/lib/udev/rules.d/",
-        "-Dsession-managers=[]",
-        "-Dtests=disabled",
-        "-Dexamples=disabled",
-        "-Dpw-cat=disabled"
-      ],
-      "cleanup": [
-        "/bin"
-      ],
-      "sources": [
-        {
-          "type": "git",
-          "url": "https://github.com/pipewire/pipewire.git",
-          "tag": "0.3.40",
-          "commit": "7afd80052b7c49754a13c9ab49c368f95b60e0a7"
         }
       ]
     },
