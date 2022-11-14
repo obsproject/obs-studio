@@ -1051,6 +1051,7 @@ static void on_registry_global_cb(void *user_data, uint32_t id,
 	for (size_t i = 0; i < connection->sources->len; i++) {
 		struct camera_portal_source *camera_source =
 			g_ptr_array_index(connection->sources, i);
+		obs_source_update_properties(camera_source->source);
 		if (strcmp(camera_source->device_id, device_id) == 0)
 			stream_camera(camera_source);
 	}
@@ -1070,6 +1071,13 @@ static void on_registry_global_remove_cb(void *user_data, uint32_t id)
 		if (device->id != id)
 			continue;
 		g_hash_table_iter_remove(&iter);
+		blog(LOG_INFO, "[pipewire-camera] Removed device %s",
+		     device_id);
+	}
+	for (size_t i = 0; i < connection->sources->len; i++) {
+		struct camera_portal_source *camera_source =
+			g_ptr_array_index(connection->sources, i);
+		obs_source_update_properties(camera_source->source);
 	}
 }
 
