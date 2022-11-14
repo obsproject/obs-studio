@@ -1088,7 +1088,7 @@ static void on_core_error_cb(void *user_data, uint32_t id, int seq, int res,
 	obs_pipewire *obs_pw = user_data;
 
 	blog(LOG_ERROR, "[pipewire] Error id:%u seq:%d res:%d (%s): %s", id,
-	     seq, res, g_strerror(res), message);
+	     seq, res, spa_strerror(res), message);
 
 	pw_thread_loop_signal(obs_pw->thread_loop, FALSE);
 }
