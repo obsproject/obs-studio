@@ -210,6 +210,11 @@ video_t *OBSBasicVCamConfig::StartVideo()
 	return video;
 }
 
+obs_view_t *OBSBasicVCamConfig::GetView()
+{
+	return view;
+}
+
 void OBSBasicVCamConfig::StopVideo()
 {
 	obs_view_remove(view);

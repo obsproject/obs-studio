@@ -3,6 +3,7 @@
 #include "qt-wrappers.hpp"
 #include "window-basic-main.hpp"
 #include "window-basic-main-outputs.hpp"
+#include "window-basic-vcam-config.hpp"
 
 #include <functional>
 
@@ -593,6 +594,11 @@ struct OBSStudioAPI : obs_frontend_callbacks {
 	{
 		OBSOutput output = main->outputHandler->virtualCam.Get();
 		return obs_output_get_ref(output);
+	}
+
+	obs_view_t *obs_frontend_get_virtualcam_view(void) override
+	{
+		return OBSBasicVCamConfig::GetView();
 	}
 
 	void obs_frontend_start_virtualcam(void) override

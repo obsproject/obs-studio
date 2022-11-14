@@ -740,6 +740,12 @@ Functions
 
 ---------------------------------------
 
+.. function:: obs_view_t *obs_frontend_get_virtualcam_view(void)
+
+   :return: The view that is used for the virtual camera.
+
+---------------------------------------
+
 .. function:: void obs_frontend_start_virtualcam(void)
 
    Starts the virtual camera.
