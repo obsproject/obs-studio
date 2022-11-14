@@ -2,6 +2,8 @@ name: Generate Documentation
 
 on:
   push:
+    branches:
+      - master
     paths-ignore:
       - "cmake/**"
   pull_request:

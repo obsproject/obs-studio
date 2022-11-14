@@ -2,6 +2,8 @@ name: Services Validator
 
 on:
   push:
+    branches:
+      - master
     paths:
       - "plugins/rtmp-services/data/services.json"
       - "plugins/rtmp-services/data/package.json"
