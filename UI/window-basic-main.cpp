@@ -2027,6 +2027,18 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
 					  Qt::QueuedConnection);
 
+#if OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0
+	/* Automatically set branch to "beta" the first time a pre-release build is run. */
+	if (!config_get_bool(App()->GlobalConfig(), "General",
+			     "AutoBetaOptIn")) {
+		config_set_string(App()->GlobalConfig(), "General",
+				  "UpdateBranch", "beta");
+		config_set_bool(App()->GlobalConfig(), "General",
+				"AutoBetaOptIn", true);
+		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
+	}
+#endif
+
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
 
