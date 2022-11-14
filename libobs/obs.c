@@ -1966,6 +1966,29 @@ static inline void obs_enum(void *pstart, pthread_mutex_t *mutex, void *proc,
 	pthread_mutex_unlock(mutex);
 }
 
+static inline void obs_enum_public(void *pstart, pthread_mutex_t *mutex,
+				   void *proc, void *param)
+{
+	struct obs_context_data **start = pstart, *context;
+	bool (*enum_proc)(void *, void *) = proc;
+
+	assert(start);
+	assert(mutex);
+	assert(enum_proc);
+
+	pthread_mutex_lock(mutex);
+
+	context = *start;
+	while (context) {
+		if (!context->private && !enum_proc(param, context))
+			break;
+
+		context = context->next;
+	}
+
+	pthread_mutex_unlock(mutex);
+}
+
 static inline void obs_enum_uuid(void *pstart, pthread_mutex_t *mutex,
 				 void *proc, void *param)
 {
@@ -1995,20 +2018,20 @@ void obs_enum_all_sources(bool (*enum_proc)(void *, obs_source_t *),
 
 void obs_enum_outputs(bool (*enum_proc)(void *, obs_output_t *), void *param)
 {
-	obs_enum(&obs->data.first_output, &obs->data.outputs_mutex, enum_proc,
-		 param);
+	obs_enum_public(&obs->data.first_output, &obs->data.outputs_mutex,
+			enum_proc, param);
 }
 
 void obs_enum_encoders(bool (*enum_proc)(void *, obs_encoder_t *), void *param)
 {
-	obs_enum(&obs->data.first_encoder, &obs->data.encoders_mutex, enum_proc,
-		 param);
+	obs_enum_public(&obs->data.first_encoder, &obs->data.encoders_mutex,
+			enum_proc, param);
 }
 
 void obs_enum_services(bool (*enum_proc)(void *, obs_service_t *), void *param)
 {
-	obs_enum(&obs->data.first_service, &obs->data.services_mutex, enum_proc,
-		 param);
+	obs_enum_public(&obs->data.first_service, &obs->data.services_mutex,
+			enum_proc, param);
 }
 
 static inline void *get_context_by_name(void *vfirst, const char *name,
