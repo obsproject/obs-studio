@@ -1,11 +1,8 @@
 # Helper function to set up runtime or library targets
 function(setup_binary_target target)
   set_target_properties(
-    ${target}
-    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+    ${target} PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
+                         "com.obsproject.${target}")
 
   set(MACOSX_PLUGIN_BUNDLE_NAME
       "${target}"
@@ -90,8 +87,7 @@ function(setup_plugin_target target)
                "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/Plugin-Info.plist.in"
                XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
                "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+               BUILD_WITH_INSTALL_RPATH ON)
 
   set_property(GLOBAL APPEND PROPERTY OBS_MODULE_LIST "${target}")
   obs_status(ENABLED "${target}")
@@ -102,11 +98,8 @@ endfunction()
 # Helper function to set up OBS scripting plugin targets
 function(setup_script_plugin_target target)
   set_target_properties(
-    ${target}
-    PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
-               "com.obsproject.${target}"
-               XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist")
+    ${target} PROPERTIES XCODE_ATTRIBUTE_PRODUCT_BUNDLE_IDENTIFIER
+                         "com.obsproject.${target}" BUILD_WITH_INSTALL_RPATH ON)
 
   set_property(GLOBAL APPEND PROPERTY OBS_SCRIPTING_MODULE_LIST "${target}")
   obs_status(ENABLED "${target}")
@@ -148,7 +141,7 @@ function(setup_obs_app target)
     ${target}
     PROPERTIES BUILD_WITH_INSTALL_RPATH OFF
                XCODE_ATTRIBUTE_CODE_SIGN_ENTITLEMENTS
-               "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
+               "${OBS_CODESIGN_ENTITLEMENTS}"
                XCODE_SCHEME_ENVIRONMENT "PYTHONDONTWRITEBYTECODE=1")
 
   install(TARGETS ${target} BUNDLE DESTINATION "." COMPONENT obs_app)
@@ -331,6 +324,21 @@ function(setup_obs_modules target)
               EXCLUDE_FROM_ALL)
   endif()
 
+  if(TARGET mac-camera-extension)
+    if(NOT CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE STREQUAL "Automatic")
+      set_target_properties(
+        ${target} PROPERTIES XCODE_ATTRIBUTE_PROVISIONING_PROFILE_SPECIFIER
+                             "${OBS_PROVISIONING_PROFILE}")
+    endif()
+    add_dependencies(${target} mac-camera-extension)
+
+    install(
+      TARGETS mac-camera-extension
+      BUNDLE DESTINATION "Library/SystemExtensions"
+             COMPONENT obs_plugin_dev
+             EXCLUDE_FROM_ALL)
+  endif()
+
   add_custom_command(
     TARGET ${target}
     POST_BUILD
@@ -351,7 +359,8 @@ function(setup_obs_bundle target)
     set(_BUNDLENAME \"$<TARGET_FILE_BASE_NAME:${target}>.app\")
     set(_BUNDLER_COMMAND \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/dylibbundler\")
     set(_CODESIGN_IDENTITY \"${OBS_BUNDLE_CODESIGN_IDENTITY}\")
-    set(_CODESIGN_ENTITLEMENTS \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS\")"
+    set(_CODESIGN_ENTITLEMENTS \"${CMAKE_SOURCE_DIR}/cmake/bundle/macOS\")
+    set(_CODESIGN_APP_ENTITLEMENTS \"${OBS_CODESIGN_ENTITLEMENTS}\")"
     COMPONENT obs_resources)
 
   if(ENABLE_SPARKLE_UPDATER)

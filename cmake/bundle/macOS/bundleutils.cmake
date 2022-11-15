@@ -155,16 +155,27 @@ if(EXISTS
         ${_VERBOSE_FLAG} ${_QUIET_FLAG})
   endforeach()
 endif()
-foreach(_DEPENDENCY IN LISTS _OTHER_BINARIES _DYLIBS _FRAMEWORKS _OBS_PLUGINS
-                             _OBS_SCRIPTING_PLUGINS _QT_PLUGINS)
+
+foreach(_DEPENDENCY IN LISTS _DYLIBS _FRAMEWORKS)
   if(NOT IS_SYMLINK "${_DEPENDENCY}")
     execute_process(COMMAND /usr/bin/codesign --remove-signature
                             "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
     execute_process(
       COMMAND
         /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options
-        runtime --entitlements "${_CODESIGN_ENTITLEMENTS}/entitlements.plist"
+        runtime --entitlements "${_CODESIGN_ENTITLEMENTS}/entitlements-library.plist"
         "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+  endif()
+endforeach()
+
+foreach(_DEPENDENCY IN LISTS _OTHER_BINARIES _OBS_PLUGINS _OBS_SCRIPTING_PLUGINS _QT_PLUGINS)
+  if(NOT IS_SYMLINK "${_DEPENDENCY}")
+    execute_process(COMMAND /usr/bin/codesign --remove-signature
+                            "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
+    execute_process(
+      COMMAND
+        /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options
+        runtime "${_DEPENDENCY}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})
   endif()
 endforeach()
 
@@ -177,5 +188,5 @@ execute_process(
 execute_process(
   COMMAND
     /usr/bin/codesign --force --sign "${_CODESIGN_IDENTITY}" --options runtime
-    --entitlements "${_CODESIGN_ENTITLEMENTS}/entitlements.plist"
+    --entitlements "${_CODESIGN_APP_ENTITLEMENTS}"
     "${CMAKE_INSTALL_PREFIX}/${_BUNDLENAME}" ${_VERBOSE_FLAG} ${_QUIET_FLAG})

@@ -103,9 +103,17 @@ macro(setup_obs_project)
     set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${OBS_BUNDLE_CODESIGN_TEAM}")
   endif()
 
-  set(OBS_CODESIGN_ENTITLEMENTS
-      "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements-app.plist"
-      CACHE INTERNAL "Path to codesign entitlements plist")
+  # This is an ugly hack and needs to be fixed in an overhaul that will make
+  # building with Xcode the necessary default for macOS builds
+  if(VIRTUALCAM_DEVICE_UUID AND VIRTUALCAM_STREAM_UUID AND VIRTUALCAM_SINK_UUID)
+    set(OBS_CODESIGN_ENTITLEMENTS
+        "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements-app.plist"
+        CACHE INTERNAL "Path to codesign entitlements plist")
+  else()
+    set(OBS_CODESIGN_ENTITLEMENTS
+        "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements-app-no-extension.plist"
+        CACHE INTERNAL "Path to codesign entitlements plist")
+  endif()
   set(OBS_CODESIGN_LINKER
       ON
       CACHE BOOL "Enable linker code-signing on macOS (macOS 11+ required)")
