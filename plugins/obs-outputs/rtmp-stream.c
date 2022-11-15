@@ -33,7 +33,7 @@
 #endif
 
 /* dynamic bitrate coefficients */
-#define DBR_INC_TIMER (30ULL * SEC_TO_NSEC)
+#define DBR_INC_TIMER (4ULL * SEC_TO_NSEC)
 #define DBR_TRIGGER_USEC (200ULL * MSEC_TO_USEC)
 #define MIN_ESTIMATE_DURATION_MS 1000
 #define MAX_ESTIMATE_DURATION_MS 2000
