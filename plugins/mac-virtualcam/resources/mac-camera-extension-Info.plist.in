@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundleName</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_NAME}</string>
+	<key>CFBundleIdentifier</key>
+	<string>${MACOSX_PLUGIN_GUI_IDENTIFIER}</string>
+	<key>CFBundleVersion</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_VERSION}</string>
+	<key>CFBundleShortVersionString</key>
+	<string>${MACOSX_PLUGIN_SHORT_VERSION_STRING}</string>
+	<key>CFBundleExecutable</key>
+	<string>${MACOSX_PLUGIN_EXECUTABLE_NAME}</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>CFBundlePackageType</key>
+	<string>${MACOSX_PLUGIN_BUNDLE_TYPE}</string>
+	<key>CFBundleSupportedPlatforms</key>
+	<array>
+		<string>MacOSX</string>
+	</array>
+	<key>LSMinimumSystemVersion</key>
+	<string>13.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>(c) 2012-${CURRENT_YEAR} Hugh Bailey</string>
+	<key>CMIOExtension</key>
+	<dict>
+		<key>CMIOExtensionMachServiceName</key>
+		<string>$(TeamIdentifierPrefix)$(PRODUCT_BUNDLE_IDENTIFIER)</string>
+	</dict>
+	<key>NSSystemExtensionUsageDescription</key>
+	<string>This Camera Extension enables virtual camera functionality in OBS Studio.</string>
+	<key>OBSCameraDeviceUUID</key>
+	<string>${VIRTUALCAM_DEVICE_UUID}</string>
+	<key>OBSCameraStreamUUID</key>
+	<string>${VIRTUALCAM_STREAM_UUID}</string>
+	<key>OBSCameraStreamSinkUUID</key>
+	<string>${VIRTUALCAM_SINK_UUID}</string>
+</dict>
+</plist>

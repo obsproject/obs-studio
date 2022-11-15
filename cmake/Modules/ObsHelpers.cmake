@@ -329,6 +329,39 @@ function(define_graphic_modules target)
   endforeach()
 endfunction()
 
+function(check_uuid uuid_string return_value)
+  set(_VALID_UUID ON)
+  set(_UUID_TOKEN_LENGTHS 8 4 4 4 12)
+  set(_TOKEN_NUM 0)
+
+  string(REPLACE "-" ";" UUID_TOKENS ${uuid_string})
+
+  list(LENGTH UUID_TOKENS UUID_NUM_TOKENS)
+
+  if(UUID_NUM_TOKENS EQUAL 5)
+    foreach(UUID_TOKEN IN LISTS UUID_TOKENS)
+      list(GET _UUID_TOKEN_LENGTHS ${_TOKEN_NUM} UUID_TARGET_LENGTH)
+      string(LENGTH ${UUID_TOKEN} UUID_ACTUAL_LENGTH)
+      if(UUID_ACTUAL_LENGTH STREQUAL UUID_TARGET_LENGTH)
+        string(REGEX MATCH "[0-9a-fA-F]+" UUID_HEX_MATCH ${UUID_TOKEN})
+        if(NOT UUID_HEX_MATCH STREQUAL UUID_TOKEN)
+          set(_VALID_UUID OFF)
+          break()
+        endif()
+      else()
+        set(_VALID_UUID OFF)
+        break()
+      endif()
+      math(EXPR _TOKEN_NUM "${_TOKEN_NUM}+1")
+    endforeach()
+  else()
+    set(_VALID_UUID OFF)
+  endif()
+  set(${return_value}
+      ${_VALID_UUID}
+      PARENT_SCOPE)
+endfunction()
+
 if(NOT QT_VERSION)
   set(QT_VERSION
       AUTO

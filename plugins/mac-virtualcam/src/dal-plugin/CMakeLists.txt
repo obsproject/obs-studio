@@ -43,10 +43,15 @@ target_link_libraries(
                          ${IOSURFACE})
 
 set(MACOSX_PLUGIN_BUNDLE_TYPE "BNDL")
-target_sources(mac-dal-plugin PRIVATE placeholder.png)
-set_source_files_properties(placeholder.png PROPERTIES MACOSX_PACKAGE_LOCATION
-                                                       "Resources")
-source_group("Resources" FILES placeholder.png)
+target_sources(
+  mac-dal-plugin
+  PRIVATE "${CMAKE_CURRENT_SOURCE_DIR}/../../resources/placeholder.png")
+set_source_files_properties(
+  "${CMAKE_CURRENT_SOURCE_DIR}/../../resources/placeholder.png"
+  PROPERTIES MACOSX_PACKAGE_LOCATION "Resources")
+source_group(
+  "Resources"
+  FILES "${CMAKE_CURRENT_SOURCE_DIR}/../../resources/placeholder.png")
 
 set_target_properties(
   mac-dal-plugin

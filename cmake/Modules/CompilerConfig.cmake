@@ -90,16 +90,17 @@ else()
   endif()
 
   add_compile_options(
-    -Wextra
-    -Wvla
-    -Wno-unused-function
-    -Wno-missing-field-initializers
-    -fno-strict-aliasing
+    $<$<COMPILE_LANGUAGE:C,CXX>:-Wextra>
+    $<$<COMPILE_LANGUAGE:C,CXX>:-Wvla>
+    $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-unused-function>
+    $<$<COMPILE_LANGUAGE:C,CXX>:-Wno-missing-field-initializers>
+    $<$<COMPILE_LANGUAGE:C,CXX>:-fno-strict-aliasing>
     "$<$<COMPILE_LANGUAGE:C>:-Werror-implicit-function-declaration;-Wno-missing-braces>"
-    "$<$<BOOL:${USE_LIBCXX}>:-stdlib=libc++>"
-    "$<$<CONFIG:DEBUG>:-DDEBUG=1;-D_DEBUG=1>"
-    "$<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>"
-    "$<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>")
+    "$<$<AND:$<COMPILE_LANGUAGE:C,CXX>,$<CONFIG:DEBUG>>:-DDEBUG=1;-D_DEBUG=1>"
+    "$<$<AND:$<COMPILE_LANGUAGE:Swift>,$<CONFIG:DEBUG>>:-Onone>"
+    $<$<COMPILE_LANG_AND_ID:CXX,AppleClang,Clang>:-fcolor-diagnostics>
+    $<$<COMPILE_LANG_AND_ID:C,AppleClang,Clang>:-fcolor-diagnostics>
+    $<$<COMPILE_LANG_AND_ID:Swift,AppleClang,Clang>:-fcolor-diagnostics>)
 
   if(OBS_CODESIGN_LINKER)
     add_link_options("LINKER:$<$<PLATFORM_ID:Darwin>:-adhoc_codesign>")

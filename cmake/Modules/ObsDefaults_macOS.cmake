@@ -1,5 +1,9 @@
 cmake_minimum_required(VERSION 3.20)
 
+if(NOT "$ENV{NINJA}" AND NOT CMAKE_GENERATOR STREQUAL "Xcode")
+  message(FATAL_ERROR "macOS builds require Xcode generator")
+endif()
+
 # Enable modern cmake policies
 if(POLICY CMP0009)
   cmake_policy(SET CMP0009 NEW)
@@ -72,6 +76,9 @@ endif()
 
 macro(setup_obs_project)
   set(CMAKE_XCODE_GENERATE_SCHEME ON)
+  set(CMAKE_XCODE_ATTRIBUTE_SWIFT_VERSION 5.0)
+  set(CMAKE_XCODE_ATTRIBUTE_DEBUG_INFORMATION_FORMAT[variant=Debug] DWARF)
+  set(CMAKE_XCODE_ATTRIBUTE_CLANG_ENABLE_OBJC_ARC ON)
 
   # Set code signing options
   if(NOT OBS_BUNDLE_CODESIGN_TEAM)
@@ -86,16 +93,28 @@ macro(setup_obs_project)
     set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
         "${OBS_BUNDLE_CODESIGN_IDENTITY}")
   else()
-    set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+    if(OBS_BUNDLE_CODESIGN_IDENTITY)
+      set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Manual")
+      set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_IDENTITY
+          "${OBS_BUNDLE_CODESIGN_IDENTITY}")
+    else()
+      set(CMAKE_XCODE_ATTRIBUTE_CODE_SIGN_STYLE "Automatic")
+    endif()
     set(CMAKE_XCODE_ATTRIBUTE_DEVELOPMENT_TEAM "${OBS_BUNDLE_CODESIGN_TEAM}")
   endif()
 
   set(OBS_CODESIGN_ENTITLEMENTS
-      "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements.plist"
+      "${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/entitlements-app.plist"
       CACHE INTERNAL "Path to codesign entitlements plist")
   set(OBS_CODESIGN_LINKER
       ON
       CACHE BOOL "Enable linker code-signing on macOS (macOS 11+ required)")
+
+  if(NOT OBS_PROVISIONING_PROFILE)
+    set(OBS_PROVISIONING_PROFILE
+        ""
+        CACHE STRING "OBS provisioning profile for macOS" FORCE)
+  endif()
 
   # Tell Xcode to pretend the linker signed binaries so that editing with
   # install_name_tool preserves ad-hoc signatures. This option is supported by
