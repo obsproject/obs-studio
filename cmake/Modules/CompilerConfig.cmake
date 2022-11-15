@@ -87,6 +87,20 @@ else()
     set(CMAKE_OBJC_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
     set(CMAKE_OBJCXX_COMPILER_LAUNCHER "${CCACHE_PROGRAM}")
     set(CMAKE_CUDA_COMPILER_LAUNCHER "${CCACHE_PROGRAM}") # CMake 3.9+
+
+    if(XCODE)
+      configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/launcher-c.in
+                     launcher-c)
+      configure_file(${CMAKE_SOURCE_DIR}/cmake/bundle/macOS/launcher-cxx.in
+                     launcher-cxx)
+
+      execute_process(COMMAND chmod a+rx "${CMAKE_BINARY_DIR}/launcher-c"
+                              "${CMAKE_BINARY_DIR}/launcher-cxx")
+      set(CMAKE_XCODE_ATTRIBUTE_CC "${CMAKE_BINARY_DIR}/launcher-c")
+      set(CMAKE_XCODE_ATTRIBUTE_CXX "${CMAKE_BINARY_DIR}/launcher-cxx")
+      set(CMAKE_XCODE_ATTRIBUTE_LD "${CMAKE_BINARY_DIR}/launcher-c")
+      set(CMAKE_XCODE_ATTRIBUTE_LDPLUSPLUS "${CMAKE_BINARY_DIR}/launcher-cxx")
+    endif()
   endif()
 
   add_compile_options(

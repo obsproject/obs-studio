@@ -77,6 +77,9 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       SPARKLE_VERSION: '1.26.0'
       SPARKLE_HASH: '8312cbf7528297a49f1b97692c33cb8d33254c396dc51be394e9484e4b6833a0'
+      MACOS_VIRTUALCAM_DEVICE_UUID: '7626645E-4425-469E-9D8B-97E0FA59AC75'
+      MACOS_VIRTUALCAM_STREAM_UUID: 'A8D7B8AA-65AD-4D21-9C42-66480DBFA8E1'
+      MACOS_VIRTUALCAM_SINK_UUID: 'A3F16177-7044-4DD8-B900-72E2419F7A9A'
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
@@ -180,10 +183,6 @@ jobs:
 
       - name: 'Build OBS'
         run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
-
-      - name: 'Run tests'
-        if: ${{ success() && matrix.arch == 'x86_64' }}
-        run: cmake --build build -t test
 
       - name: 'Create build artifact'
         if: ${{ success() && (github.event_name != 'pull_request' || env.SEEKING_TESTERS == '1') }}

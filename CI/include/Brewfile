@@ -1,7 +1,5 @@
 brew "cmake"
 brew "ccache"
-brew "ninja"
 brew "freetype"
-brew "cmocka"
-brew "swig"
 brew "coreutils"
+brew "xcbeautify"

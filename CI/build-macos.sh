@@ -24,8 +24,8 @@
 #   -c, --codesign                 : Codesign OBS and all libraries
 #                                    (default: ad-hoc only)
 #   -n, --notarize                 : Notarize OBS (default: off)
-#   --xcode                        : Create Xcode build environment instead
-#                                    of Ninja
+#   --ninja                        : Create Ninja build environment instead
+#                                    of Xcode
 #   --build-dir                    : Specify alternative build directory
 #                                    (default: build)"
 # Environment Variables (optional):
@@ -71,7 +71,7 @@ print_usage() {
             "-p, --package                  : Create distributable disk image (default: off)\n" \
             "-c, --codesign                 : Codesign OBS and all libraries (default: ad-hoc only)\n" \
             "-n, --notarize                 : Notarize OBS (default: off)\n" \
-            "--xcode                        : Create Xcode build environment instead of Ninja\n" \
+            "--ninja                        : Create Ninja build environment instead of Xcode\n" \
             "--build-dir                    : Specify alternative build directory (default: build)\n"
 }
 
@@ -101,7 +101,7 @@ obs-build-main() {
             -c | --codesign ) CODESIGN=TRUE; shift ;;
             -n | --notarize ) NOTARIZE=TRUE; PACKAGE=TRUE CODESIGN=TRUE; shift ;;
             -b | --bundle ) BUNDLE=TRUE; shift ;;
-            --xcode ) XCODE=TRUE; shift ;;
+            --ninja ) NINJA=TRUE; shift ;;
             --build-dir ) BUILD_DIR="${2}"; shift 2 ;;
             -s ) print_deprecation ${1}; exit 1 ;;
             -- ) shift; break ;;

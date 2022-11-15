@@ -18,12 +18,27 @@ build_obs() {
     if [ -z "${CI}" ]; then
         _backup_artifacts
     fi
+
     step "Configure OBS..."
     _configure_obs
 
     ensure_dir "${CHECKOUT_DIR}/"
     step "Build OBS targets..."
-    cmake --build ${BUILD_DIR}
+
+    if [ "${NINJA}" ]; then
+        cmake --build ${BUILD_DIR} ${VERBOSE:+--verbose}
+    else
+        if [ "${CI}" ]; then
+            export NSUnbufferedIO=YES
+        fi
+        if [[ "${VERBOSE}" ]]; then
+            cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel --verbose 2>&1
+        elif [[ "${QUIET}" ]]; then
+            set -o pipefail && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel 2>&1 | xcbeautify --quiet
+        else
+            set -o pipefail && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel 2>&1 | xcbeautify
+        fi
+    fi
 }
 
 bundle_obs() {
@@ -33,7 +48,12 @@ bundle_obs() {
     ensure_dir "${CHECKOUT_DIR}"
 
     step "Install OBS application bundle..."
-    cmake --install ${BUILD_DIR}
+
+    if [ "${NINJA}" ]; then
+        cmake --install ${BUILD_DIR}
+    else
+        cmake --install ${BUILD_DIR} --config ${BUILD_CONFIG}
+    fi
 }
 
 # Function to configure OBS build
@@ -59,14 +79,14 @@ _configure_obs() {
         YOUTUBE_OPTIONS="-DYOUTUBE_CLIENTID='${YOUTUBE_CLIENTID}' -DYOUTUBE_CLIENTID_HASH='${YOUTUBE_CLIENTID_HASH}' -DYOUTUBE_SECRET='${YOUTUBE_SECRET}' -DYOUTUBE_SECRET_HASH='${YOUTUBE_SECRET_HASH}'"
     fi
 
-    if [ "${XCODE}" ]; then
-        GENERATOR="Xcode"
-    else
+    if [ "${NINJA}" ]; then
         GENERATOR="Ninja"
-    fi
+    else
+        GENERATOR="Xcode"
 
-    if [ "${CI}" -a "${ARCH}" = "x86_64" ]; then
-        UNITTEST_OPTIONS="-DENABLE_UNIT_TESTS=ON"
+        if [ "${PROVISIONING_PROFILE}" -a "${CI_VIRTUALCAM_DEVICE_UUID}" -a "${CI_VIRTUALCAM_STREAM_UUID}" -a "${CI_VIRTUALCAM_SINK_UUID}" ]; then
+            VIRTUALCAM_OPTIONS="-DOBS_PROVISIONING_PROFILE='${PROVISIONING_PROFILE}' -DVIRTUALCAM_DEVICE_UUID='${CI_VIRTUALCAM_DEVICE_UUID}' -DVIRTUALCAM_STREAM_UUID='${CI_VIRTUALCAM_STREAM_UUID}' -DVIRTUALCAM_SINK_UUID='${CI_VIRTUALCAM_STREAM_UUID}'"
+        fi
     fi
 
     cmake -S . -B ${BUILD_DIR} -G ${GENERATOR} \
@@ -82,10 +102,11 @@ _configure_obs() {
         -DCMAKE_INSTALL_PREFIX=${BUILD_DIR}/install \
         -DCMAKE_BUILD_TYPE=${BUILD_CONFIG} \
         -DOBS_BUNDLE_CODESIGN_IDENTITY="${CODESIGN_IDENT:--}" \
+        -DOBS_BUNDLE_CODESIGN_TEAM="${CODESIGN_TEAM:-}" \
+        ${VIRTUALCAM_OPTIONS} \
         ${YOUTUBE_OPTIONS} \
         ${TWITCH_OPTIONS} \
         ${RESTREAM_OPTIONS} \
-        ${UNITTEST_OPTIONS} \
         ${CI:+-DBUILD_FOR_DISTRIBUTION=${BUILD_FOR_DISTRIBUTION} -DOBS_BUILD_NUMBER=${GITHUB_RUN_ID}} \
         ${QUIET:+-Wno-deprecated -Wno-dev --log-level=ERROR}
 }
@@ -140,7 +161,7 @@ print_usage() {
             "-a, --architecture             : Specify build architecture (default: x86_64, alternative: arm64)\n" \
             "-c, --codesign                 : Codesign OBS and all libraries (default: ad-hoc only)\n" \
             "-b, --bundle                   : Create relocatable OBS application bundle in build directory (default: build/install/OBS.app)\n" \
-            "--xcode                        : Create Xcode build environment instead of Ninja\n" \
+            "--ninja                        : Create Ninja build environment instead of Xcode\n" \
             "--build-dir                    : Specify alternative build directory (default: build)\n"
 }
 
@@ -154,15 +175,21 @@ build-obs-main() {
                 -a | --architecture ) ARCH="${2}"; shift 2 ;;
                 -c | --codesign ) CODESIGN=TRUE; shift ;;
                 -b | --bundle ) BUNDLE=TRUE; shift ;;
-                --xcode ) XCODE=TRUE; shift ;;
+                --ninja ) NINJA=TRUE; shift ;;
                 --build-dir ) BUILD_DIR="${2}"; shift 2 ;;
                 -- ) shift; break ;;
                 * ) break ;;
             esac
         done
 
+        if [ "${CI}" -a "${RUNNER_DEBUG}" ]; then
+            export VERBOSE=TRUE
+        fi
+
         build-obs-standalone
     fi
+
+    unset NSUnbufferedIO
 }
 
 build-obs-main $*

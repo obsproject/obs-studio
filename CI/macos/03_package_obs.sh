@@ -24,7 +24,22 @@ package_obs() {
     ensure_dir "${CHECKOUT_DIR}"
 
     step "Package OBS..."
-    cmake --build ${BUILD_DIR} -t package
+
+    if [ "${NINJA}" ]; then
+        cmake --build ${BUILD_DIR} -t package
+    else
+        if [[ "${CI}" ]]; then
+            export NSUnbufferedIO=YES
+        fi
+
+        if [[ "${VERBOSE}" ]]; then
+            cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel --verbose -t package 2>&1
+        elif [[ "${QUIET}" ]]; then
+            set -o pipefail && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel  -t package 2>&1 | xcbeautify --quiet
+        else
+            set -o pipefail && cmake --build ${BUILD_DIR} --config ${BUILD_CONFIG} --parallel  -t package 2>&1 | xcbeautify
+        fi
+    fi
 
     DMG_NAME=$(/usr/bin/find "${BUILD_DIR}" -type f -name "OBS-*.dmg" -depth 1 | sort -rn | head -1)
 
@@ -141,6 +156,7 @@ print_usage() {
             "-n, --notarize                 : Notarize OBS (default: off)\n" \
             "--notarize-image [IMAGE]       : Specify existing OBS disk image for notarization\n" \
             "--notarize-bundle [BUNDLE]     : Specify existing OBS application bundle for notarization\n" \
+            "--ninja                        : Create Ninja build environment instead of Xcode\n" \
             "--build-dir                    : Specify alternative build directory (default: build)\n"
 }
 
@@ -154,6 +170,7 @@ package-obs-main() {
                 -a | --architecture ) ARCH="${2}"; shift 2 ;;
                 -c | --codesign ) CODESIGN=TRUE; shift ;;
                 -n | --notarize ) NOTARIZE=TRUE; CODESIGN=TRUE; shift ;;
+                --ninja ) NINJA=TRUE; shift ;;
                 --build-dir ) BUILD_DIR="${2}"; shift 2 ;;
                 --notarize-image ) NOTARIZE_IMAGE="${2}"; NOTARIZE=TRUE; CODESIGN=TRUE; shift 2 ;;
                 --notarize-bundle ) NOTARIZE_BUNDLE="${2}"; NOTARIZE=TRUE; CODESIGN=TRUE; shift 2 ;;
@@ -162,8 +179,14 @@ package-obs-main() {
             esac
         done
 
+        if [ "${CI}" -a "${RUNNER_DEBUG}" ]; then
+            export VERBOSE=TRUE
+        fi
+
         package-obs-standalone
     fi
+
+    unset NSUnbufferedIO
 }
 
 package-obs-main $*
