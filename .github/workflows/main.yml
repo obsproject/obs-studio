@@ -169,17 +169,55 @@ jobs:
         run: CI/macos/01_install_dependencies.sh --architecture "${{ matrix.arch }}"
 
       - name: 'Install Apple Developer Certificate'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
-        uses: apple-actions/import-codesign-certs@253ddeeac23f2bdad1646faac5c8c2832e800071
-        with:
-          p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
-          p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
-
-      - name: 'Set Signing Identity'
-        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' && env.HAVE_CODESIGN_IDENTITY == 'true' }}
+        if: ${{ env.HAVE_CODESIGN_IDENTITY == 'true' }}
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.MACOS_SIGNING_CERT }}
+          P12_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+          BUILD_PROVISION_PROFILE_BASE64: ${{ secrets.MACOS_SIGNING_PROVISIONING_PROFILE }}
+          KEYCHAIN_PASSWORD: ${{ secrets.MACOS_KEYCHAIN_PASSWORD }}
         run: |
+          CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
+          PROFILE_PATH="${RUNNER_TEMP}/build_profile.provisionprofile"
+          KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+
+          echo -n "${BUILD_CERTIFICATE_BASE64}" | base64 --decode --output "${CERTIFICATE_PATH}"
+
+          # Create temporary keychain
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          # Set automatic keychain lock timeout to 6 hours
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          # Unlock keychain
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+          # Import pkcs12 file
+          security import "${CERTIFICATE_PATH}" -P "${P12_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}" -T /usr/bin/codesign -T /usr/bin/security -T /usr/bin/xcrun
+
+          # Set partition list
+          security set-key-partition-list -S 'apple-tool:,apple:' -k "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}" &> /dev/null
+
+          # Update keychain list and register as login keychain
+          security list-keychain -d user -s "${KEYCHAIN_PATH}" 'login-keychain'
+
           echo "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
+
+          if [[ "${BUILD_PROVISION_PROFILE_BASE64}" ]]; then
+            echo -n "${BUILD_PROVISION_PROFILE_BASE64}" | base64 --decode --output "${PROFILE_PATH}"
+
+            mkdir -p ~/Library/MobileDevice/Provisioning\ Profiles
+            security cms -D -i "${PROFILE_PATH}" -o "${RUNNER_TEMP}/build_profile.plist"
+            UUID="$(plutil -extract UUID raw "${RUNNER_TEMP}/build_profile.plist")"
+            TEAM_ID="$(plutil -extract TeamIdentifier.0 raw -expect string "${RUNNER_TEMP}/build_profile.plist")"
+
+            cp "${PROFILE_PATH}" ~/Library/MobileDevice/Provisioning\ Profiles/${UUID}.provisionprofile
+            echo "PROVISIONING_PROFILE=${UUID}" >> $GITHUB_ENV
+            echo "CODESIGN_TEAM=${TEAM_ID}" >> $GITHUB_ENV
+          fi
+
+      - name: 'Enable Distribution Settings'
+        if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
+        run: |
           echo "BUILD_FOR_DISTRIBUTION=ON" >> $GITHUB_ENV
+          echo "BUILD_CONFIG=Release" >> $GITHUB_ENV
 
       - name: 'Build OBS'
         run: CI/macos/02_build_obs.sh --codesign --architecture "${{ matrix.arch }}"
@@ -493,8 +531,28 @@ jobs:
           p12-file-base64: ${{ secrets.MACOS_SIGNING_CERT }}
           p12-password: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
 
+      - name: 'Install Apple Developer Certificate'
+        if: ${{ env.HAVE_CODESIGN_IDENTITY == 'true' }}
+        env:
+          BUILD_CERTIFICATE_BASE64: ${{ secrets.MACOS_SIGNING_CERT }}
+          P12_PASSWORD: ${{ secrets.MACOS_SIGNING_CERT_PASSWORD }}
+        run: |
+          CERTIFICATE_PATH="${RUNNER_TEMP}/build_certificate.p12"
+          KEYCHAIN_PATH="${RUNNER_TEMP}/app-signing.keychain-db"
+
+          echo -n "${BUILD_CERTIFICATE_BASE64}" | base64 --decode --output "${CERTIFICATE_PATH}"
+
+          security create-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+          security set-keychain-settings -lut 21600 "${KEYCHAIN_PATH}"
+          security unlock-keychain -p "${KEYCHAIN_PASSWORD}" "${KEYCHAIN_PATH}"
+
+          security import "${CERTIFICATE_PATH}" -P "${P12_PASSWORD}" -A -t cert -f pkcs12 -k "${KEYCHAIN_PATH}"
+          security list-keychain -d user -s "${KEYCHAIN_PATH}"
+
+          echo "CODESIGN_IDENT=${{ secrets.MACOS_SIGNING_IDENTITY }}" >> $GITHUB_ENV
+
       - name: 'Create disk image for distribution'
-        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        if: ${{ env.HAVE_CODESIGN_IDENTITY == 'true' }}
         env:
           CODESIGN_IDENT: ${{ secrets.MACOS_SIGNING_IDENTITY }}
           CODESIGN_IDENT_USER: ${{ secrets.MACOS_NOTARIZATION_USERNAME }}
