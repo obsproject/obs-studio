@@ -21,3 +21,11 @@
 
 #define blog(level, msg, ...) \
 	blog(level, "[" PLUGIN_NAME "] " msg, ##__VA_ARGS__)
+
+// clang-format off
+#define NSStringify(x) @#x
+#define NSToString(x) NSStringify(x)
+// clang-format on
+
+extern NSString *const OBSDalDestination;
+extern NSString *const OBSVirtualCamUUID;
