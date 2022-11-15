@@ -795,11 +795,11 @@ void OBSBasic::Save(const char *file)
 	if (vcamEnabled) {
 		OBSDataAutoRelease obj = obs_data_create();
 
-		obs_data_set_int(obj, "type", (int)vcamConfig.type);
+		obs_data_set_int(obj, "type2", (int)vcamConfig.type);
 		switch (vcamConfig.type) {
-		case VCamOutputType::InternalOutput:
-			obs_data_set_int(obj, "internal",
-					 (int)vcamConfig.internal);
+		case VCamOutputType::Invalid:
+		case VCamOutputType::ProgramView:
+		case VCamOutputType::PreviewOutput:
 			break;
 		case VCamOutputType::SceneOutput:
 			obs_data_set_string(obj, "scene",
@@ -1239,9 +1239,26 @@ retryScene:
 		OBSDataAutoRelease obj =
 			obs_data_get_obj(data, "virtual-camera");
 
-		vcamConfig.type = (VCamOutputType)obs_data_get_int(obj, "type");
-		vcamConfig.internal =
-			(VCamInternalType)obs_data_get_int(obj, "internal");
+		vcamConfig.type =
+			(VCamOutputType)obs_data_get_int(obj, "type2");
+		if (vcamConfig.type == VCamOutputType::Invalid)
+			vcamConfig.type =
+				(VCamOutputType)obs_data_get_int(obj, "type");
+
+		if (vcamConfig.type == VCamOutputType::Invalid) {
+			VCamInternalType internal =
+				(VCamInternalType)obs_data_get_int(obj,
+								   "internal");
+
+			switch (internal) {
+			case VCamInternalType::Default:
+				vcamConfig.type = VCamOutputType::ProgramView;
+				break;
+			case VCamInternalType::Preview:
+				vcamConfig.type = VCamOutputType::PreviewOutput;
+				break;
+			}
+		}
 		vcamConfig.scene = obs_data_get_string(obj, "scene");
 		vcamConfig.source = obs_data_get_string(obj, "source");
 	}
@@ -4873,8 +4890,7 @@ void OBSBasic::ClearSceneData()
 	/* Reset VCam to default to clear its private scene and any references
 	 * it holds. It will be reconfigured during loading. */
 	if (vcamEnabled) {
-		vcamConfig.type = VCamOutputType::InternalOutput;
-		vcamConfig.internal = VCamInternalType::Default;
+		vcamConfig.type = VCamOutputType::ProgramView;
 		outputHandler->UpdateVirtualCamOutputSource();
 	}
 
@@ -5300,8 +5316,7 @@ void OBSBasic::on_scenes_currentItemChanged(QListWidgetItem *current,
 
 	SetCurrentScene(source);
 
-	if (vcamEnabled && vcamConfig.type == VCamOutputType::InternalOutput &&
-	    vcamConfig.internal == VCamInternalType::Preview)
+	if (vcamEnabled && vcamConfig.type == VCamOutputType::PreviewOutput)
 		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
@@ -7935,6 +7950,13 @@ void OBSBasic::OnVirtualCamStop(int)
 	blog(LOG_INFO, VIRTUAL_CAM_STOP);
 
 	OnDeactivate();
+
+	if (!restartingVCam)
+		return;
+
+	/* Restarting needs to be delayed to make sure that the virtual camera
+	 * implementation is stopped and avoid race condition. */
+	QTimer::singleShot(100, this, &OBSBasic::RestartingVirtualCam);
 }
 
 void OBSBasic::on_streamButton_clicked()
@@ -8089,10 +8111,13 @@ void OBSBasic::VCamButtonClicked()
 
 void OBSBasic::VCamConfigButtonClicked()
 {
-	OBSBasicVCamConfig dialog(vcamConfig, this);
+	OBSBasicVCamConfig dialog(vcamConfig, outputHandler->VirtualCamActive(),
+				  this);
 
 	connect(&dialog, &OBSBasicVCamConfig::Accepted, this,
 		&OBSBasic::UpdateVirtualCamConfig);
+	connect(&dialog, &OBSBasicVCamConfig::AcceptedAndRestart, this,
+		&OBSBasic::RestartVirtualCam);
 
 	dialog.exec();
 }
@@ -8102,6 +8127,25 @@ void OBSBasic::UpdateVirtualCamConfig(const VCamConfig &config)
 	vcamConfig = config;
 
 	outputHandler->UpdateVirtualCamOutputSource();
+}
+
+void OBSBasic::RestartVirtualCam(const VCamConfig &config)
+{
+	restartingVCam = true;
+
+	StopVirtualCam();
+
+	vcamConfig = config;
+}
+
+void OBSBasic::RestartingVirtualCam()
+{
+	if (!restartingVCam)
+		return;
+
+	outputHandler->UpdateVirtualCamOutputSource();
+	StartVirtualCam();
+	restartingVCam = false;
 }
 
 void OBSBasic::on_settingsButton_clicked()

@@ -283,10 +283,6 @@ void OBSBasic::OverrideTransition(OBSSource transition)
 		obs_transition_swap_begin(transition, oldTransition);
 		obs_set_output_source(0, transition);
 		obs_transition_swap_end(transition, oldTransition);
-
-		// Transition overrides don't raise an event so we need to call update directly
-		if (vcamEnabled)
-			outputHandler->UpdateVirtualCamOutputSource();
 	}
 }
 
@@ -425,10 +421,6 @@ void OBSBasic::SetTransition(OBSSource transition)
 	bool configurable = obs_source_configurable(transition);
 	ui->transitionRemove->setEnabled(configurable);
 	ui->transitionProps->setEnabled(configurable);
-
-	if (vcamEnabled && vcamConfig.type == VCamOutputType::InternalOutput &&
-	    vcamConfig.internal == VCamInternalType::Default)
-		outputHandler->UpdateVirtualCamOutputSource();
 
 	if (api)
 		api->on_event(OBS_FRONTEND_EVENT_TRANSITION_CHANGED);
@@ -697,8 +689,8 @@ void OBSBasic::SetCurrentScene(OBSSource scene, bool force)
 				ui->scenes->blockSignals(false);
 
 				if (vcamEnabled &&
-				    vcamConfig.internal ==
-					    VCamInternalType::Preview)
+				    vcamConfig.type ==
+					    VCamOutputType::PreviewOutput)
 					outputHandler
 						->UpdateVirtualCamOutputSource();
 

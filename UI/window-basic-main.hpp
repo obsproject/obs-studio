@@ -656,6 +656,8 @@ private:
 
 	void UpdatePreviewOverflowSettings();
 
+	bool restartingVCam = false;
+
 public slots:
 	void DeferSaveBegin();
 	void DeferSaveEnd();
@@ -830,6 +832,8 @@ private slots:
 	void ResetProxyStyleSliders();
 
 	void UpdateVirtualCamConfig(const VCamConfig &config);
+	void RestartVirtualCam(const VCamConfig &config);
+	void RestartingVirtualCam();
 
 private:
 	/* OBS Callbacks */

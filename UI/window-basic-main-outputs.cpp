@@ -301,13 +301,17 @@ bool BasicOutputHandler::StartVirtualCam()
 	if (!main->vcamEnabled)
 		return false;
 
-	if (!virtualCamView)
+	bool typeIsProgram = main->vcamConfig.type ==
+			     VCamOutputType::ProgramView;
+
+	if (!virtualCamView && !typeIsProgram)
 		virtualCamView = obs_view_create();
 
 	UpdateVirtualCamOutputSource();
 
 	if (!virtualCamVideo) {
-		virtualCamVideo = obs_view_add(virtualCamView);
+		virtualCamVideo = typeIsProgram ? obs_get_video()
+						: obs_view_add(virtualCamView);
 
 		if (!virtualCamVideo)
 			return false;
@@ -361,19 +365,17 @@ void BasicOutputHandler::UpdateVirtualCamOutputSource()
 	OBSSourceAutoRelease source;
 
 	switch (main->vcamConfig.type) {
-	case VCamOutputType::InternalOutput:
+	case VCamOutputType::Invalid:
+	case VCamOutputType::ProgramView:
 		DestroyVirtualCameraScene();
-		switch (main->vcamConfig.internal) {
-		case VCamInternalType::Default:
-			source = obs_get_output_source(0);
-			break;
-		case VCamInternalType::Preview:
-			OBSSource s = main->GetCurrentSceneSource();
-			obs_source_get_ref(s);
-			source = s.Get();
-			break;
-		}
+		return;
+	case VCamOutputType::PreviewOutput: {
+		DestroyVirtualCameraScene();
+		OBSSource s = main->GetCurrentSceneSource();
+		obs_source_get_ref(s);
+		source = s.Get();
 		break;
+	}
 	case VCamOutputType::SceneOutput:
 		DestroyVirtualCameraScene();
 		source = obs_get_source_by_name(main->vcamConfig.scene.c_str());
@@ -418,6 +420,11 @@ void BasicOutputHandler::UpdateVirtualCamOutputSource()
 
 void BasicOutputHandler::DestroyVirtualCamView()
 {
+	if (main->vcamConfig.type == VCamOutputType::ProgramView) {
+		virtualCamVideo = nullptr;
+		return;
+	}
+
 	obs_view_remove(virtualCamView);
 	obs_view_set_source(virtualCamView, 0, nullptr);
 	virtualCamVideo = nullptr;
