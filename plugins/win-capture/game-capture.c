@@ -364,22 +364,50 @@ static void load_whitelist(struct auto_game_capture *ac,
 
 	json_error_t error;
 	json_t *root = json_loads(file_data, JSON_REJECT_DUPLICATES, &error);
-	bfree(file_data);
-	if (root) {
-		WaitForSingleObject(ac->mutex, INFINITE);
 
-		da_free(ac->checked_windows);
-
-		size_t index;
-		json_t *json_rule;
-		json_array_foreach (root, index, json_rule) {
-			struct game_capture_matching_rule rule =
-				convert_json_to_matching_rule(json_rule);
-			da_push_back(ac->matching_rules, &rule);
-		};
-
-		ReleaseMutex(ac->mutex);
+	if (!root) {
+		blog(LOG_ERROR,
+		     "Failed to parse game capture auto capture list json");
+		bfree(file_data);
+		return;
 	}
+
+	WaitForSingleObject(ac->mutex, INFINITE);
+
+	da_free(ac->checked_windows);
+
+	size_t array_size = json_array_size(root);
+	for (size_t idx = 0; idx < array_size; idx++) {
+		json_t *next_rule_json = json_array_get(root, idx);
+		if (json_typeof(next_rule_json) != JSON_OBJECT)
+			continue;
+
+		const char *key = NULL;
+		json_t *value;
+		const char *exe, *rule_class, *title, *type = NULL;
+
+		json_object_foreach (next_rule_json, key, value) {
+			if (json_typeof(value) != JSON_STRING)
+				continue;
+
+			const char *string_value = json_string_value(value);
+			if (strcmp(key, "exe") == 0) {
+				exe = string_value;
+			} else if (strcmp(key, "class") == 0) {
+				rule_class = string_value;
+			} else if (strcmp(key, "title") == 0) {
+				title = string_value;
+			} else if (strcmp(key, "type") == 0) {
+				type = string_value;
+			}
+		};
+		struct game_capture_matching_rule rule =
+			convert_to_matching_rule(exe, rule_class, title, type);
+		da_push_back(ac->matching_rules, &rule);
+	}
+
+	ReleaseMutex(ac->mutex);
+
 	json_decref(root);
 }
 

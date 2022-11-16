@@ -98,29 +98,22 @@ bool ms_check_window_property_setting(obs_properties_t *ppts, obs_property_t *p,
 }
 
 struct game_capture_matching_rule
-convert_json_to_matching_rule(json_t *json_rule)
+convert_to_matching_rule(const char *exe, const char *rule_class,
+			 const char *title, const char *type)
 {
 	struct game_capture_matching_rule rule = {0};
 
-	const char *exe = json_string_value(json_object_get(json_rule, "exe"));
-	const char *class =
-		json_string_value(json_object_get(json_rule, "class"));
-	const char *title =
-		json_string_value(json_object_get(json_rule, "title"));
-	const char *type =
-		json_string_value(json_object_get(json_rule, "type"));
-
 	title = decode_str(title);
 	dstr_copy(&rule.title, title);
-	class = decode_str(class);
-	dstr_copy(&rule.classW, class);
+	rule_class = decode_str(rule_class);
+	dstr_copy(&rule.classW, rule_class);
 	exe = decode_str(exe);
 	dstr_copy(&rule.executable, exe);
 
 	rule.mask = 0;
 	if (exe && exe[0])
 		rule.mask |= WINDOW_MATCH_EXE;
-	if (class && class[0])
+	if (rule_class && rule_class[0])
 		rule.mask |= WINDOW_MATCH_CLASS;
 	if (title && title[0])
 		rule.mask |= WINDOW_MATCH_TITLE;
