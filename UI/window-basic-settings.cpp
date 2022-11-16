@@ -997,7 +997,7 @@ void OBSBasicSettings::LoadColorSpaces()
 #define CF_I444_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I444")
 #define CF_P010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.P010")
 #define CF_I010_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.I010")
-#define CF_RGB_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.RGB")
+#define CF_BGRA_STR QTStr("Basic.Settings.Advanced.Video.ColorFormat.BGRA")
 
 void OBSBasicSettings::LoadColorFormats()
 {
@@ -1006,7 +1006,7 @@ void OBSBasicSettings::LoadColorFormats()
 	ui->colorFormat->addItem(CF_I444_STR, "I444");
 	ui->colorFormat->addItem(CF_P010_STR, "P010");
 	ui->colorFormat->addItem(CF_I010_STR, "I010");
-	ui->colorFormat->addItem(CF_RGB_STR, "RGB");
+	ui->colorFormat->addItem(CF_BGRA_STR, "RGB"); // Avoid config break
 }
 
 #define AV_FORMAT_DEFAULT_STR \
