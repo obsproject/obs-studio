@@ -63,31 +63,61 @@ function Configure-OBS {
     $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
     $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
 
-    $CmakeCommand = @(
-        "-G", ${CmakeGenerator}
-        "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
-        "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
-        "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
-        "-DCEF_ROOT_DIR:PATH=`"${CefDirectory}`"",
-        "-DENABLE_BROWSER=ON",
-        "-DVLC_PATH:PATH=`"${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}`"",
-        "-DENABLE_VLC=ON",
-        "-DCMAKE_INSTALL_PREFIX=`"${BuildDirectoryActual}/install`"",
-        "-DVIRTUALCAM_GUID=`"${Env:VIRTUALCAM-GUID}`"",
-        "-DTWITCH_CLIENTID=`"${Env:TWITCH_CLIENTID}`"",
-        "-DTWITCH_HASH=`"${Env:TWITCH_HASH}`"",
-        "-DRESTREAM_CLIENTID=`"${Env:RESTREAM_CLIENTID}`"",
-        "-DRESTREAM_HASH=`"${Env:RESTREAM_HASH}`"",
-        "-DYOUTUBE_CLIENTID=`"${Env:YOUTUBE_CLIENTID}`"",
-        "-DYOUTUBE_CLIENTID_HASH=`"${Env:YOUTUBE_CLIENTID_HASH}`"",
-        "-DYOUTUBE_SECRET=`"${Env:YOUTUBE_SECRET}`"",
-        "-DYOUTUBE_SECRET_HASH=`"${Env:YOUTUBE_SECRET_HASH}`"",
-        "-DCOPIED_DEPENDENCIES=OFF",
-        "-DCOPY_DEPENDENCIES=ON",
-        "-DBUILD_FOR_DISTRIBUTION=`"$(if (Test-Path Env:BUILD_FOR_DISTRIBUTION) { "ON" } else { "OFF" })`"",
-        "$(if (Test-Path Env:CI) { "-DOBS_BUILD_NUMBER=${Env:GITHUB_RUN_ID}" })",
-        "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
-    )
+    if ( $PSVersionTable.PSVersion -ge '7.3.0' ) {
+        $CmakeCommand = @(
+            "-G", ${CmakeGenerator}
+            "-DCMAKE_GENERATOR_PLATFORM=${GeneratorPlatform}",
+            "-DCMAKE_SYSTEM_VERSION=${CmakeSystemVersion}",
+            "-DCMAKE_PREFIX_PATH:PATH=${CmakePrefixPath}",
+            "-DCEF_ROOT_DIR:PATH=${CefDirectory}",
+            "-DENABLE_BROWSER=ON",
+            "-DVLC_PATH:PATH=${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}",
+            "-DENABLE_VLC=ON",
+            "-DENABLE_SCRIPTING=OFF",
+            "-DCMAKE_INSTALL_PREFIX=${BuildDirectoryActual}/install",
+            "-DVIRTUALCAM_GUID=${Env:VIRTUALCAM-GUID}",
+            "-DTWITCH_CLIENTID=${Env:TWITCH_CLIENTID}",
+            "-DTWITCH_HASH=${Env:TWITCH_HASH}",
+            "-DRESTREAM_CLIENTID=${Env:RESTREAM_CLIENTID}",
+            "-DRESTREAM_HASH=${Env:RESTREAM_HASH}",
+            "-DYOUTUBE_CLIENTID=${Env:YOUTUBE_CLIENTID}",
+            "-DYOUTUBE_CLIENTID_HASH=${Env:YOUTUBE_CLIENTID_HASH}",
+            "-DYOUTUBE_SECRET=${Env:YOUTUBE_SECRET}",
+            "-DYOUTUBE_SECRET_HASH=${Env:YOUTUBE_SECRET_HASH}",
+            "-DCOPIED_DEPENDENCIES=OFF",
+            "-DCOPY_DEPENDENCIES=ON",
+            "-DBUILD_FOR_DISTRIBUTION=$(if (Test-Path Env:BUILD_FOR_DISTRIBUTION) { "ON" } else { "OFF" })",
+            "$(if (Test-Path Env:CI) { "-DOBS_BUILD_NUMBER=${Env:GITHUB_RUN_ID}" })",
+            "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
+        )
+    } else {
+        $CmakeCommand = @(
+            "-G", ${CmakeGenerator}
+            "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
+            "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
+            "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
+            "-DCEF_ROOT_DIR:PATH=`"${CefDirectory}`"",
+            "-DENABLE_BROWSER=ON",
+            "-DVLC_PATH:PATH=`"${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}`"",
+            "-DENABLE_VLC=ON",
+            "-DENABLE_SCRIPTING=OFF",
+            "-DCMAKE_INSTALL_PREFIX=`"${BuildDirectoryActual}/install`"",
+            "-DVIRTUALCAM_GUID=`"${Env:VIRTUALCAM-GUID}`"",
+            "-DTWITCH_CLIENTID=`"${Env:TWITCH_CLIENTID}`"",
+            "-DTWITCH_HASH=`"${Env:TWITCH_HASH}`"",
+            "-DRESTREAM_CLIENTID=`"${Env:RESTREAM_CLIENTID}`"",
+            "-DRESTREAM_HASH=`"${Env:RESTREAM_HASH}`"",
+            "-DYOUTUBE_CLIENTID=`"${Env:YOUTUBE_CLIENTID}`"",
+            "-DYOUTUBE_CLIENTID_HASH=`"${Env:YOUTUBE_CLIENTID_HASH}`"",
+            "-DYOUTUBE_SECRET=`"${Env:YOUTUBE_SECRET}`"",
+            "-DYOUTUBE_SECRET_HASH=`"${Env:YOUTUBE_SECRET_HASH}`"",
+            "-DCOPIED_DEPENDENCIES=OFF",
+            "-DCOPY_DEPENDENCIES=ON",
+            "-DBUILD_FOR_DISTRIBUTION=`"$(if (Test-Path Env:BUILD_FOR_DISTRIBUTION) { "ON" } else { "OFF" })`"",
+            "$(if (Test-Path Env:CI) { "-DOBS_BUILD_NUMBER=${Env:GITHUB_RUN_ID}" })",
+            "$(if (Test-Path Variable:$Quiet) { "-Wno-deprecated -Wno-dev --log-level=ERROR" })"
+        )
+    }
 
     Invoke-External cmake -S . -B  "${BuildDirectoryActual}" @CmakeCommand
 
