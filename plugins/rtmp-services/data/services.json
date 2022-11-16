@@ -2527,27 +2527,6 @@
             }
         },
         {
-            "name": "Vindral",
-            "more_info_link": "https://docs.vindral.com/docs/vindral-cdn/",
-            "servers": [
-                {
-                    "name": "eu-north",
-                    "url": "rtmps://rtmp.eu-north.cdn.vindral.com/publish"
-                },
-                {
-                    "name": "eu-west",
-                    "url": "rtmps://rtmp.eu-west.cdn.vindral.com/publish"
-                }
-            ],
-            "recommended": {
-                "keyint": 1,
-                "profile": "high",
-                "bframes": 0,
-                "max video bitrate": 20000,
-                "max audio bitrate": 192
-            }
-        },
-        {
             "name": "Whowatch (ふわっち)",
             "more_info_link": "https://whowatch.tv/help/encoder",
             "stream_key_link": "https://whowatch.tv/publish",
