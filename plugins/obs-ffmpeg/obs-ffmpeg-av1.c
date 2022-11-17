@@ -66,6 +66,7 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 	int cqp = (int)obs_data_get_int(settings, "cqp");
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
 	int preset = (int)obs_data_get_int(settings, "preset");
+	AVDictionary *svtav1_opts = NULL;
 
 	video_t *video = obs_encoder_video(enc->ffve.encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
@@ -94,31 +95,58 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		av_opt_set_int(enc->ffve.context->priv_data, "row-mt", 1, 0);
 	}
 
-	if (enc->svtav1)
+	if (enc->svtav1) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+		av_dict_set_int(&svtav1_opts, "rc", 1, 0);
+#else
 		av_opt_set(enc->ffve.context->priv_data, "rc", "vbr", 0);
+#endif
+	}
 
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
 		enc->ffve.context->global_quality = cqp;
 
-		if (enc->svtav1)
+		if (enc->svtav1) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+			av_dict_set_int(&svtav1_opts, "rc", 0, 0);
+			av_opt_set_int(enc->ffve.context->priv_data, "qp", cqp,
+				       0);
+#else
 			av_opt_set(enc->ffve.context->priv_data, "rc", "cqp",
 				   0);
+#endif
+		}
 
 	} else if (astrcmpi(rc, "vbr") != 0) { /* CBR by default */
 		const int64_t rate = bitrate * INT64_C(1000);
-		enc->ffve.context->rc_max_rate = rate;
 		enc->ffve.context->rc_min_rate = rate;
 		cqp = 0;
 
-		if (enc->svtav1)
+		if (enc->svtav1) {
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+			av_dict_set_int(&svtav1_opts, "rc", 2, 0);
+			av_dict_set_int(&svtav1_opts, "pred-struct", 1, 0);
+			av_dict_set_int(&svtav1_opts, "bias-pct", 0, 0);
+			av_dict_set_int(&svtav1_opts, "tbr", rate, 0);
+#else
+			enc->ffve.context->rc_max_rate = rate;
 			av_opt_set(enc->ffve.context->priv_data, "rc", "cvbr",
 				   0);
+#endif
+		} else {
+			enc->ffve.context->rc_max_rate = rate;
+		}
 	}
 
+	if (enc->svtav1) {
+		av_opt_set_dict_val(enc->ffve.context->priv_data, "svtav1_opts",
+				    svtav1_opts, 0);
+	}
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
 	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info,
 				    ffmpeg_opts);
+	av_dict_free(&svtav1_opts);
 
 	info("settings:\n"
 	     "\tencoder:      %s\n"
