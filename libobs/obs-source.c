@@ -2492,6 +2492,7 @@ static inline void obs_source_render_async_video(obs_source_t *source)
 					nonlinear_alpha
 						? "DrawNonlinearAlphaMultiply"
 						: "DrawMultiply";
+				linear_srgb = true;
 				multiplier =
 					obs_get_video_sdr_white_level() / 80.0f;
 			}
