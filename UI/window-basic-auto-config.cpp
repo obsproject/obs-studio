@@ -969,7 +969,7 @@ AutoConfig::AutoConfig(QWidget *parent) : QWizard(parent)
 		/* Newer generations of NVENC have a high enough quality to
 		 * bitrate ratio that if NVENC is available, it makes sense to
 		 * just always prefer hardware encoding by default */
-		bool preferHardware = nvencAvailable ||
+		bool preferHardware = nvencAvailable || appleAvailable ||
 				      os_get_physical_cores() <= 4;
 		streamPage->ui->preferHardware->setChecked(preferHardware);
 	}
@@ -1000,6 +1000,18 @@ void AutoConfig::TestHardwareEncoding()
 			hardwareEncodingAvailable = qsvAvailable = true;
 		else if (strcmp(id, "h264_texture_amf") == 0)
 			hardwareEncodingAvailable = vceAvailable = true;
+#ifdef __APPLE__
+		else if (strcmp(id,
+				"com.apple.videotoolbox.videoencoder.ave.avc") ==
+				 0
+#ifndef __aarch64__
+			 && os_get_emulation_status() == true
+#endif
+		)
+			if (__builtin_available(macOS 13.0, *))
+				hardwareEncodingAvailable = appleAvailable =
+					true;
+#endif
 	}
 }
 
@@ -1047,6 +1059,8 @@ inline const char *AutoConfig::GetEncoderId(Encoder enc)
 		return SIMPLE_ENCODER_QSV;
 	case Encoder::AMD:
 		return SIMPLE_ENCODER_AMD;
+	case Encoder::Apple:
+		return SIMPLE_ENCODER_APPLE_H264;
 	default:
 		return SIMPLE_ENCODER_X264;
 	}
