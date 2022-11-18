@@ -87,7 +87,7 @@ static int libsrt_neterrno(URLContext *h)
 	     srt_getlasterror_str());
 	if (err == SRT_EASYNCRCV || err == SRT_EASYNCSND)
 		return AVERROR(EAGAIN);
-	if (err = SRT_ECONNREJ) {
+	if (err == SRT_ECONNREJ) {
 		int errj = srt_getrejectreason(s->fd);
 		if (errj == SRT_REJ_BADSECRET)
 			blog(LOG_ERROR,
