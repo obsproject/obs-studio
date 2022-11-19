@@ -2597,6 +2597,20 @@
                 "bframes": 2,
                 "max video bitrate": 20000
             }
+        },
+        {
+            "name": "GameSee",
+            "stream_key_link":"https://www.gamesee.tv/dashboard",
+            "servers": [
+                {
+                    "name": "Default",
+                    "url": "rtmp://live.gamesee.tv/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000
+            }
         }
     ]
 }
