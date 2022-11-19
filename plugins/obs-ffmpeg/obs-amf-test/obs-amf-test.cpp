@@ -2,6 +2,7 @@
 #include "../external/AMF/include/core/Trace.h"
 #include "../external/AMF/include/components/VideoEncoderVCE.h"
 #include "../external/AMF/include/components/VideoEncoderHEVC.h"
+#include "../external/AMF/include/components/VideoEncoderAV1.h"
 
 #include <util/windows/ComPtr.hpp>
 
@@ -24,6 +25,7 @@ struct adapter_caps {
 	bool is_amd = false;
 	bool supports_avc = false;
 	bool supports_hevc = false;
+	bool supports_av1 = false;
 };
 
 static AMFFactory *amf_factory = nullptr;
@@ -81,6 +83,7 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	caps.supports_avc = has_encoder(amf_context, AMFVideoEncoderVCE_AVC);
 	caps.supports_hevc = has_encoder(amf_context, AMFVideoEncoder_HEVC);
+	caps.supports_av1 = has_encoder(amf_context, AMFVideoEncoder_AV1);
 
 	return true;
 }
@@ -145,6 +148,8 @@ try {
 		       caps.supports_avc ? "true" : "false");
 		printf("supports_hevc=%s\n",
 		       caps.supports_hevc ? "true" : "false");
+		printf("supports_av1=%s\n",
+		       caps.supports_av1 ? "true" : "false");
 	}
 
 	return 0;

@@ -1,4 +1,4 @@
-// 
+//
 // Notice Regarding Standards.  AMD does not provide a license or sublicense to
 // any Intellectual Property Rights relating to any standards, including but not
 // limited to any audio and/or video codec technologies such as MPEG-2, MPEG-4;
@@ -6,10 +6,10 @@
 // (collectively, the "Media Technologies"). For clarity, you will pay any
 // royalties due for such third party technologies, which may include the Media
 // Technologies that are owed as a result of AMD providing the Software to you.
-// 
-// MIT license 
-// 
-// Copyright (c) 2018 Advanced Micro Devices, Inc. All rights reserved.
+//
+// MIT license
+//
+// Copyright (c) 2021 Advanced Micro Devices, Inc. All rights reserved.
 //
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to deal
@@ -30,25 +30,18 @@
 // THE SOFTWARE.
 //
 
-//-------------------------------------------------------------------------------------------------
-// MuxerFFMPEG  interface declaration
-//-------------------------------------------------------------------------------------------------
-#ifndef AMF_FileMuxerFFMPEG_h
-#define AMF_FileMuxerFFMPEG_h
+#ifndef AMFVQEnhancer_h
+#define AMFVQEnhancer_h
 
 #pragma once
 
-#define FFMPEG_MUXER L"MuxerFFMPEG"
+#define VE_FCR_DEFAULT_ATTENUATION 0.1
 
+#define AMFVQEnhancer L"AMFVQEnhancer"
 
-// component properties
-#define FFMPEG_MUXER_PATH                     L"Path"                     // string - the file to open
-#define FFMPEG_MUXER_URL                      L"Url"                      // string - the stream url to open
-#define FFMPEG_MUXER_LISTEN                   L"Listen"                   // bool (default = false)
-#define FFMPEG_MUXER_ENABLE_VIDEO             L"EnableVideo"              // bool (default = true)
-#define FFMPEG_MUXER_ENABLE_AUDIO             L"EnableAudio"              // bool (default = false)
-#define FFMPEG_MUXER_CURRENT_TIME_INTERFACE   L"CurrentTimeInterface"
-#define FFMPEG_MUXER_VIDEO_ROTATION           L"VideoRotation"            // amf_int64 (0, 90, 180, 270, default = 0)
-#define FFMPEG_MUXER_USAGE_IS_TRIM            L"UsageIsTrim"              // bool (default = false)
+#define AMF_VIDEO_ENHANCER_ENGINE_TYPE       L"AMF_VIDEI_ENHANCER_ENGINE_TYPE"        // AMF_MEMORY_TYPE (DX11, DX12, OPENCL, VULKAN default : DX11)"                    - determines how the object is initialized and what kernels to use
+#define AMF_VIDEO_ENHANCER_OUTPUT_SIZE       L"AMF_VIDEO_ENHANCER_OUTPUT_SIZE"        // AMFSize
+#define AMF_VE_FCR_ATTENUATION               L"AMF_VE_FCR_ATTENUATION"                // Float in the range of [0.02, 0.4], default : 0.1
+#define AMF_VE_FCR_RADIUS                    L"AMF_VE_FCR_RADIUS"                     // int  in the range of [1, 4]
 
-#endif //#ifndef AMF_FileMuxerFFMPEG_h
+#endif //#ifndef AMFVQEnhancer_h

@@ -146,6 +146,7 @@ private:
 	QString curQSVPreset;
 	QString curNVENCPreset;
 	QString curAMDPreset;
+	QString curAMDAV1Preset;
 
 	QString curAdvStreamEncoder;
 	QString curAdvRecordEncoder;

@@ -377,6 +377,8 @@ const char *get_simple_output_encoder(const char *encoder)
 	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_HEVC) == 0) {
 		return "h265_texture_amf";
 #endif
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_AV1) == 0) {
+		return "av1_texture_amf";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC) == 0) {
 		return EncoderAvailable("jim_nvenc") ? "jim_nvenc"
 						     : "ffmpeg_nvenc";
@@ -548,6 +550,9 @@ void SimpleOutput::Update()
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_HEVC) == 0) {
 		presetType = "NVENCPreset2";
 #endif
+
+	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD_AV1) == 0) {
+		presetType = "AMDAV1Preset";
 
 	} else if (strcmp(encoder, SIMPLE_ENCODER_NVENC_AV1) == 0) {
 		presetType = "NVENCPreset2";

@@ -70,6 +70,7 @@ class OBSBasicStats;
 #define SIMPLE_ENCODER_NVENC_HEVC "nvenc_hevc"
 #define SIMPLE_ENCODER_AMD "amd"
 #define SIMPLE_ENCODER_AMD_HEVC "amd_hevc"
+#define SIMPLE_ENCODER_AMD_AV1 "amd_av1"
 #define SIMPLE_ENCODER_APPLE_H264 "apple_h264"
 #define SIMPLE_ENCODER_APPLE_HEVC "apple_hevc"
 
