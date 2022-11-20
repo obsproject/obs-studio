@@ -27,13 +27,13 @@
 
 /* clang-format off */
 
-#define S_RATIO                         "ratio"
-#define S_THRESHOLD                     "threshold"
-#define S_ATTACK_TIME                   "attack_time"
-#define S_RELEASE_TIME                  "release_time"
-#define S_OUTPUT_GAIN                   "output_gain"
-#define S_DETECTOR                      "detector"
-#define S_PRESETS                       "presets"
+#define STR_RATIO                         "ratio"
+#define STR_THRESHOLD                     "threshold"
+#define STR_ATTACK_TIME                   "attack_time"
+#define STR_RELEASE_TIME                  "release_time"
+#define STR_OUTPUT_GAIN                   "output_gain"
+#define STR_DETECTOR                      "detector"
+#define STR_PRESETS                       "presets"
 
 #define MT_ obs_module_text
 #define TEXT_RATIO                      MT_("expander.Ratio")
@@ -155,46 +155,46 @@ static const char *upward_compressor_name(void *unused)
 
 static void expander_defaults(obs_data_t *s)
 {
-	const char *presets = obs_data_get_string(s, S_PRESETS);
+	const char *presets = obs_data_get_string(s, STR_PRESETS);
 	bool is_expander_preset = true;
 	if (strcmp(presets, "gate") == 0)
 		is_expander_preset = false;
-	obs_data_set_default_string(s, S_PRESETS,
+	obs_data_set_default_string(s, STR_PRESETS,
 				    is_expander_preset ? "expander" : "gate");
-	obs_data_set_default_double(s, S_RATIO,
+	obs_data_set_default_double(s, STR_RATIO,
 				    is_expander_preset ? 2.0 : 10.0);
-	obs_data_set_default_double(s, S_THRESHOLD, -40.0f);
-	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
-	obs_data_set_default_int(s, S_RELEASE_TIME,
+	obs_data_set_default_double(s, STR_THRESHOLD, -40.0f);
+	obs_data_set_default_int(s, STR_ATTACK_TIME, 10);
+	obs_data_set_default_int(s, STR_RELEASE_TIME,
 				 is_expander_preset ? 50 : 125);
-	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
-	obs_data_set_default_string(s, S_DETECTOR, "RMS");
+	obs_data_set_default_double(s, STR_OUTPUT_GAIN, 0.0);
+	obs_data_set_default_string(s, STR_DETECTOR, "RMS");
 }
 
 static void upward_compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_RATIO, 0.5);
-	obs_data_set_default_double(s, S_THRESHOLD, -20.0f);
-	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
-	obs_data_set_default_int(s, S_RELEASE_TIME, 50);
-	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
-	obs_data_set_default_string(s, S_DETECTOR, "RMS");
+	obs_data_set_default_double(s, STR_RATIO, 0.5);
+	obs_data_set_default_double(s, STR_THRESHOLD, -20.0f);
+	obs_data_set_default_int(s, STR_ATTACK_TIME, 10);
+	obs_data_set_default_int(s, STR_RELEASE_TIME, 50);
+	obs_data_set_default_double(s, STR_OUTPUT_GAIN, 0.0);
+	obs_data_set_default_string(s, STR_DETECTOR, "RMS");
 }
 
 static void expander_update(void *data, obs_data_t *s)
 {
 	struct expander_data *cd = data;
 	if (!cd->is_upwcomp) {
-		const char *presets = obs_data_get_string(s, S_PRESETS);
+		const char *presets = obs_data_get_string(s, STR_PRESETS);
 		if (strcmp(presets, "expander") == 0 && cd->is_gate) {
 			obs_data_clear(s);
-			obs_data_set_string(s, S_PRESETS, "expander");
+			obs_data_set_string(s, STR_PRESETS, "expander");
 			expander_defaults(s);
 			cd->is_gate = false;
 		}
 		if (strcmp(presets, "gate") == 0 && !cd->is_gate) {
 			obs_data_clear(s);
-			obs_data_set_string(s, S_PRESETS, "gate");
+			obs_data_set_string(s, STR_PRESETS, "gate");
 			expander_defaults(s);
 			cd->is_gate = true;
 		}
@@ -203,15 +203,16 @@ static void expander_update(void *data, obs_data_t *s)
 	const uint32_t sample_rate =
 		audio_output_get_sample_rate(obs_get_audio());
 	const size_t num_channels = audio_output_get_channels(obs_get_audio());
-	const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
+	const float attack_time_ms =
+		(float)obs_data_get_int(s, STR_ATTACK_TIME);
 	const float release_time_ms =
-		(float)obs_data_get_int(s, S_RELEASE_TIME);
+		(float)obs_data_get_int(s, STR_RELEASE_TIME);
 	const float output_gain_db =
-		(float)obs_data_get_double(s, S_OUTPUT_GAIN);
+		(float)obs_data_get_double(s, STR_OUTPUT_GAIN);
 
-	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
+	cd->ratio = (float)obs_data_get_double(s, STR_RATIO);
 
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->threshold = (float)obs_data_get_double(s, STR_THRESHOLD);
 	cd->attack_gain =
 		gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
 	cd->release_gain =
@@ -221,7 +222,7 @@ static void expander_update(void *data, obs_data_t *s)
 	cd->sample_rate = sample_rate;
 	cd->slope = 1.0f - cd->ratio;
 
-	const char *detect_mode = obs_data_get_string(s, S_DETECTOR);
+	const char *detect_mode = obs_data_get_string(s, STR_DETECTOR);
 	if (strcmp(detect_mode, "RMS") == 0)
 		cd->detector = RMS_DETECT;
 	if (strcmp(detect_mode, "peak") == 0)
@@ -250,7 +251,7 @@ static void *compressor_expander_create(obs_data_t *settings,
 		cd->gain_db_buf[i] = 0;
 	}
 	cd->is_gate = false;
-	const char *presets = obs_data_get_string(settings, S_PRESETS);
+	const char *presets = obs_data_get_string(settings, STR_PRESETS);
 	if (strcmp(presets, "gate") == 0)
 		cd->is_gate = true;
 	cd->is_upwcomp = is_compressor;
@@ -451,7 +452,7 @@ static obs_properties_t *expander_properties(void *data)
 	obs_property_t *p;
 	if (!cd->is_upwcomp) {
 		obs_property_t *presets = obs_properties_add_list(
-			props, S_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
+			props, STR_PRESETS, TEXT_PRESETS, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 		obs_property_list_add_string(presets, TEXT_PRESETS_EXP,
 					     "expander");
@@ -460,30 +461,30 @@ static obs_properties_t *expander_properties(void *data)
 	}
 
 	p = obs_properties_add_float_slider(
-		props, S_RATIO, TEXT_RATIO,
+		props, STR_RATIO, TEXT_RATIO,
 		!cd->is_upwcomp ? MIN_RATIO : MIN_RATIO_UPW,
 		!cd->is_upwcomp ? MAX_RATIO : MAX_RATIO_UPW, 0.1);
 	obs_property_float_set_suffix(p, ":1");
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, STR_THRESHOLD,
+					    TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int_slider(props, S_ATTACK_TIME,
+	p = obs_properties_add_int_slider(props, STR_ATTACK_TIME,
 					  TEXT_ATTACK_TIME, MIN_ATK_RLS_MS,
 					  MAX_ATK_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+	p = obs_properties_add_int_slider(props, STR_RELEASE_TIME,
 					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
 					  MAX_RLS_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
+	p = obs_properties_add_float_slider(props, STR_OUTPUT_GAIN,
 					    TEXT_OUTPUT_GAIN,
 					    MIN_OUTPUT_GAIN_DB,
 					    MAX_OUTPUT_GAIN_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
 	if (!cd->is_upwcomp) {
 		obs_property_t *detect = obs_properties_add_list(
-			props, S_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
+			props, STR_DETECTOR, TEXT_DETECTOR, OBS_COMBO_TYPE_LIST,
 			OBS_COMBO_FORMAT_STRING);
 		obs_property_list_add_string(detect, TEXT_RMS, "RMS");
 		obs_property_list_add_string(detect, TEXT_PEAK, "peak");

@@ -25,8 +25,8 @@
 
 /* clang-format off */
 
-#define S_THRESHOLD                     "threshold"
-#define S_RELEASE_TIME                  "release_time"
+#define STR_THRESHOLD                     "threshold"
+#define STR_RELEASE_TIME                  "release_time"
 
 #define MT_ obs_module_text
 #define TEXT_THRESHOLD                  MT_("Limiter.Threshold")
@@ -90,10 +90,10 @@ static void limiter_update(void *data, obs_data_t *s)
 	float attack_time_ms = ATK_TIME;
 
 	const float release_time_ms =
-		(float)obs_data_get_int(s, S_RELEASE_TIME);
+		(float)obs_data_get_int(s, STR_RELEASE_TIME);
 	const float output_gain_db = 0;
 
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->threshold = (float)obs_data_get_double(s, STR_THRESHOLD);
 
 	cd->attack_gain =
 		gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
@@ -189,8 +189,8 @@ static struct obs_audio_data *limiter_filter_audio(void *data,
 
 static void limiter_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_THRESHOLD, -6.0f);
-	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
+	obs_data_set_default_double(s, STR_THRESHOLD, -6.0f);
+	obs_data_set_default_int(s, STR_RELEASE_TIME, 60);
 }
 
 static obs_properties_t *limiter_properties(void *data)
@@ -198,11 +198,11 @@ static obs_properties_t *limiter_properties(void *data)
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
 
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, STR_THRESHOLD,
+					    TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+	p = obs_properties_add_int_slider(props, STR_RELEASE_TIME,
 					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
 					  MAX_RLS_MS, 1);
 	obs_property_int_set_suffix(p, " ms");

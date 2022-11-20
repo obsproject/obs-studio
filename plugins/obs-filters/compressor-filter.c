@@ -27,12 +27,12 @@
 
 /* clang-format off */
 
-#define S_RATIO                         "ratio"
-#define S_THRESHOLD                     "threshold"
-#define S_ATTACK_TIME                   "attack_time"
-#define S_RELEASE_TIME                  "release_time"
-#define S_OUTPUT_GAIN                   "output_gain"
-#define S_SIDECHAIN_SOURCE              "sidechain_source"
+#define STR_RATIO                         "ratio"
+#define STR_THRESHOLD                     "threshold"
+#define STR_ATTACK_TIME                   "attack_time"
+#define STR_RELEASE_TIME                  "release_time"
+#define STR_OUTPUT_GAIN                   "output_gain"
+#define STR_SIDECHAIN_SOURCE              "sidechain_source"
 
 #define MT_ obs_module_text
 #define TEXT_RATIO                      MT_("Compressor.Ratio")
@@ -194,15 +194,17 @@ static void compressor_update(void *data, obs_data_t *s)
 	const uint32_t sample_rate =
 		audio_output_get_sample_rate(obs_get_audio());
 	const size_t num_channels = audio_output_get_channels(obs_get_audio());
-	const float attack_time_ms = (float)obs_data_get_int(s, S_ATTACK_TIME);
+	const float attack_time_ms =
+		(float)obs_data_get_int(s, STR_ATTACK_TIME);
 	const float release_time_ms =
-		(float)obs_data_get_int(s, S_RELEASE_TIME);
+		(float)obs_data_get_int(s, STR_RELEASE_TIME);
 	const float output_gain_db =
-		(float)obs_data_get_double(s, S_OUTPUT_GAIN);
-	const char *sidechain_name = obs_data_get_string(s, S_SIDECHAIN_SOURCE);
+		(float)obs_data_get_double(s, STR_OUTPUT_GAIN);
+	const char *sidechain_name =
+		obs_data_get_string(s, STR_SIDECHAIN_SOURCE);
 
-	cd->ratio = (float)obs_data_get_double(s, S_RATIO);
-	cd->threshold = (float)obs_data_get_double(s, S_THRESHOLD);
+	cd->ratio = (float)obs_data_get_double(s, STR_RATIO);
+	cd->threshold = (float)obs_data_get_double(s, STR_THRESHOLD);
 	cd->attack_gain =
 		gain_coefficient(sample_rate, attack_time_ms / MS_IN_S_F);
 	cd->release_gain =
@@ -465,12 +467,12 @@ compressor_filter_audio(void *data, struct obs_audio_data *audio)
 
 static void compressor_defaults(obs_data_t *s)
 {
-	obs_data_set_default_double(s, S_RATIO, 10.0f);
-	obs_data_set_default_double(s, S_THRESHOLD, -18.0f);
-	obs_data_set_default_int(s, S_ATTACK_TIME, 6);
-	obs_data_set_default_int(s, S_RELEASE_TIME, 60);
-	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0f);
-	obs_data_set_default_string(s, S_SIDECHAIN_SOURCE, "none");
+	obs_data_set_default_double(s, STR_RATIO, 10.0f);
+	obs_data_set_default_double(s, STR_THRESHOLD, -18.0f);
+	obs_data_set_default_int(s, STR_ATTACK_TIME, 6);
+	obs_data_set_default_int(s, STR_RELEASE_TIME, 60);
+	obs_data_set_default_double(s, STR_OUTPUT_GAIN, 0.0f);
+	obs_data_set_default_string(s, STR_SIDECHAIN_SOURCE, "none");
 }
 
 struct sidechain_prop_info {
@@ -503,29 +505,29 @@ static obs_properties_t *compressor_properties(void *data)
 	if (cd)
 		parent = obs_filter_get_parent(cd->context);
 
-	p = obs_properties_add_float_slider(props, S_RATIO, TEXT_RATIO,
+	p = obs_properties_add_float_slider(props, STR_RATIO, TEXT_RATIO,
 					    MIN_RATIO, MAX_RATIO, 0.5);
 	obs_property_float_set_suffix(p, ":1");
-	p = obs_properties_add_float_slider(props, S_THRESHOLD, TEXT_THRESHOLD,
-					    MIN_THRESHOLD_DB, MAX_THRESHOLD_DB,
-					    0.1);
+	p = obs_properties_add_float_slider(props, STR_THRESHOLD,
+					    TEXT_THRESHOLD, MIN_THRESHOLD_DB,
+					    MAX_THRESHOLD_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
-	p = obs_properties_add_int_slider(props, S_ATTACK_TIME,
+	p = obs_properties_add_int_slider(props, STR_ATTACK_TIME,
 					  TEXT_ATTACK_TIME, MIN_ATK_RLS_MS,
 					  MAX_ATK_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_int_slider(props, S_RELEASE_TIME,
+	p = obs_properties_add_int_slider(props, STR_RELEASE_TIME,
 					  TEXT_RELEASE_TIME, MIN_ATK_RLS_MS,
 					  MAX_RLS_MS, 1);
 	obs_property_int_set_suffix(p, " ms");
-	p = obs_properties_add_float_slider(props, S_OUTPUT_GAIN,
+	p = obs_properties_add_float_slider(props, STR_OUTPUT_GAIN,
 					    TEXT_OUTPUT_GAIN,
 					    MIN_OUTPUT_GAIN_DB,
 					    MAX_OUTPUT_GAIN_DB, 0.1);
 	obs_property_float_set_suffix(p, " dB");
 
 	obs_property_t *sources = obs_properties_add_list(
-		props, S_SIDECHAIN_SOURCE, TEXT_SIDECHAIN_SOURCE,
+		props, STR_SIDECHAIN_SOURCE, TEXT_SIDECHAIN_SOURCE,
 		OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_STRING);
 
 	obs_property_list_add_string(sources, obs_module_text("None"), "none");
