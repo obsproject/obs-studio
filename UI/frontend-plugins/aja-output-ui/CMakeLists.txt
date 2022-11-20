@@ -1,5 +1,9 @@
 project(aja-output-ui)
 
+if(OS_WINDOWS AND ARCH_ARM64)
+  set(ENABLE_AJA OFF)
+endif()
+
 if(NOT ENABLE_AJA)
   return()
 endif()

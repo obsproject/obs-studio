@@ -1,6 +1,11 @@
 project(aja)
 
 option(ENABLE_AJA "Build OBS with aja support" ON)
+
+if(OS_WINDOWS AND ARCH_ARM64)
+  set(ENABLE_AJA OFF)
+endif()
+
 if(NOT ENABLE_AJA)
   obs_status(DISABLED "aja")
   return()
