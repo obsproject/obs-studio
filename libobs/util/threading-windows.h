@@ -20,7 +20,7 @@
 #include <string.h>
 
 #if !defined(_M_IX86) && !defined(_M_X64) && !defined(_M_ARM) && \
-	!defined(_M_ARM64)
+	!defined(_M_ARM64) && !defined(_M_ARM64EC)
 #error Processor not supported
 #endif
 
