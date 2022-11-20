@@ -145,6 +145,8 @@ static bool vaapi_init_codec(struct vaapi_encoder *enc, const char *path)
 	enc->vframe->height = enc->context->height;
 	enc->vframe->colorspace = enc->context->colorspace;
 	enc->vframe->color_range = enc->context->color_range;
+	enc->vframe->chroma_location = determine_chroma_location(
+		enc->context->pix_fmt, enc->context->colorspace);
 
 	ret = av_frame_get_buffer(enc->vframe, base_get_alignment());
 	if (ret < 0) {
@@ -700,7 +702,7 @@ static obs_properties_t *vaapi_properties(void *unused)
 				char card[128];
 				int ret = snprintf(card, sizeof(card),
 						   "Card%d: %s", i - 28, path);
-				if (ret >= sizeof(card))
+				if (ret >= (int)sizeof(card))
 					blog(LOG_DEBUG,
 					     "obs-ffmpeg-vaapi: A format truncation may have occurred."
 					     " This can be ignored since it is quite improbable.");
