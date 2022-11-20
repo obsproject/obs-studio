@@ -33,6 +33,7 @@ if(OS_WINDOWS)
   endif()
   if(MSVC)
     add_subdirectory(win-ivcam)
+    add_definitions(-DNOMINMAX)
   endif()
 
   check_obs_browser()
