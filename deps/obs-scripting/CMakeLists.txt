@@ -1,6 +1,10 @@
 option(ENABLE_SCRIPTING_LUA "Enable Lua scripting support" ON)
 option(ENABLE_SCRIPTING_PYTHON "Enable Python scripting support" ON)
 
+if(OS_WINDOWS AND ARCH_ARM64)
+  set(ENABLE_SCRIPTING_LUA OFF)
+endif()
+
 if(NOT ENABLE_SCRIPTING)
   obs_status(DISABLED "obs-scripting")
   return()
