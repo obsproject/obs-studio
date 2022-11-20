@@ -71,6 +71,7 @@ enum obs_combo_type {
 	OBS_COMBO_TYPE_INVALID,
 	OBS_COMBO_TYPE_EDITABLE,
 	OBS_COMBO_TYPE_LIST,
+	OBS_COMBO_TYPE_RADIO,
 };
 
 enum obs_editable_list_type {
