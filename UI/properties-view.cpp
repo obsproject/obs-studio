@@ -11,6 +11,8 @@
 #include <QComboBox>
 #include <QListWidget>
 #include <QPushButton>
+#include <QRadioButton>
+#include <QButtonGroup>
 #include <QStandardItem>
 #include <QFileDialog>
 #include <QColorDialog>
@@ -504,26 +506,30 @@ void OBSPropertiesView::AddFloat(obs_property_t *prop, QFormLayout *layout,
 	layout->addRow(*label, subLayout);
 }
 
-static void AddComboItem(QComboBox *combo, obs_property_t *prop,
-			 obs_combo_format format, size_t idx)
+static QVariant propertyListToQVariant(obs_property_t *prop, size_t idx)
 {
-	const char *name = obs_property_list_item_name(prop, idx);
-	QVariant var;
+	obs_combo_format format = obs_property_list_format(prop);
 
+	QVariant var;
 	if (format == OBS_COMBO_FORMAT_INT) {
 		long long val = obs_property_list_item_int(prop, idx);
 		var = QVariant::fromValue<long long>(val);
-
 	} else if (format == OBS_COMBO_FORMAT_FLOAT) {
 		double val = obs_property_list_item_float(prop, idx);
 		var = QVariant::fromValue<double>(val);
-
 	} else if (format == OBS_COMBO_FORMAT_STRING) {
 		var = QByteArray(obs_property_list_item_string(prop, idx));
 	} else if (format == OBS_COMBO_FORMAT_BOOL) {
 		bool val = obs_property_list_item_bool(prop, idx);
 		var = QVariant::fromValue<bool>(val);
 	}
+	return var;
+}
+
+static void AddComboItem(QComboBox *combo, obs_property_t *prop, size_t idx)
+{
+	const char *name = obs_property_list_item_name(prop, idx);
+	QVariant var = propertyListToQVariant(prop, idx);
 
 	combo->addItem(QT_UTF8(name), var);
 
@@ -541,6 +547,19 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 
 	QStandardItem *item = model->item(index);
 	item->setFlags(Qt::NoItemFlags);
+}
+
+static void AddRadioItem(QButtonGroup *buttonGroup, QFormLayout *layout,
+			 obs_property_t *prop, QVariant value, size_t idx)
+{
+	const char *name = obs_property_list_item_name(prop, idx);
+
+	QVariant var = propertyListToQVariant(prop, idx);
+	QRadioButton *button = new QRadioButton(name);
+	button->setChecked(value == var);
+	button->setProperty("value", var);
+	buttonGroup->addButton(button);
+	layout->addRow(button);
 }
 
 template<long long get_int(obs_data_t *, const char *),
@@ -588,18 +607,39 @@ QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
 	obs_combo_type type = obs_property_list_type(prop);
 	obs_combo_format format = obs_property_list_format(prop);
 	size_t count = obs_property_list_item_count(prop);
+
+	QVariant value = from_obs_data(settings, name, format);
+
+	if (type == OBS_COMBO_TYPE_RADIO) {
+		QButtonGroup *buttonGroup = new QButtonGroup();
+		QFormLayout *subLayout = new QFormLayout();
+		subLayout->setContentsMargins(0, 0, 0, 0);
+
+		for (size_t idx = 0; idx < count; idx++)
+			AddRadioItem(buttonGroup, subLayout, prop, value, idx);
+
+		buttonGroup->setExclusive(true);
+		WidgetInfo *info =
+			new WidgetInfo(this, prop, buttonGroup->buttons()[0]);
+		children.emplace_back(info);
+		connect(buttonGroup, SIGNAL(buttonClicked(QAbstractButton *)),
+			info, SLOT(ControlChanged()));
+
+		QWidget *widget = new QWidget();
+		widget->setLayout(subLayout);
+		return widget;
+	}
+
 	int idx = -1;
 
 	for (size_t i = 0; i < count; i++)
-		AddComboItem(combo, prop, format, i);
+		AddComboItem(combo, prop, i);
 
 	if (type == OBS_COMBO_TYPE_EDITABLE)
 		combo->setEditable(true);
 
 	combo->setMaxVisibleItems(40);
 	combo->setToolTip(QT_UTF8(obs_property_long_description(prop)));
-
-	QVariant value = from_obs_data(settings, name, format);
 
 	if (format == OBS_COMBO_FORMAT_STRING &&
 	    type == OBS_COMBO_TYPE_EDITABLE) {
@@ -1778,14 +1818,19 @@ bool WidgetInfo::PathChanged(const char *setting)
 
 void WidgetInfo::ListChanged(const char *setting)
 {
-	QComboBox *combo = static_cast<QComboBox *>(widget);
 	obs_combo_format format = obs_property_list_format(property);
 	obs_combo_type type = obs_property_list_type(property);
 	QVariant data;
 
-	if (type == OBS_COMBO_TYPE_EDITABLE) {
-		data = combo->currentText().toUtf8();
+	if (type == OBS_COMBO_TYPE_RADIO) {
+		QButtonGroup *group =
+			static_cast<QAbstractButton *>(widget)->group();
+		QAbstractButton *button = group->checkedButton();
+		data = button->property("value");
+	} else if (type == OBS_COMBO_TYPE_EDITABLE) {
+		data = static_cast<QComboBox *>(widget)->currentText().toUtf8();
 	} else {
+		QComboBox *combo = static_cast<QComboBox *>(widget);
 		int index = combo->currentIndex();
 		if (index != -1)
 			data = combo->itemData(index);

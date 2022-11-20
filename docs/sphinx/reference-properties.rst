@@ -194,7 +194,8 @@ Property Object Functions
 
                           - **OBS_COMBO_TYPE_EDITABLE** - Can be edited.
                             Only used with string lists.
-                          - **OBS_COMBO_TYPE_LIST** - Not editable.
+                          - **OBS_COMBO_TYPE_LIST** - Not editable. Displayed as combo box.
+                          - **OBS_COMBO_TYPE_RADIO** - Not editable. Displayed as radio buttons.
 
    :param    format:      Can be one of the following values:
 
