@@ -1,5 +1,9 @@
 option(ENABLE_QSV11 "Build Intel QSV11 Hardware Encoder." TRUE)
 
+if(OS_WINDOWS AND ARCH_ARM64)
+  set(ENABLE_QSV11 OFF)
+endif()
+
 if(NOT ENABLE_QSV11)
   obs_status(DISABLED "obs-qsv11")
   return()

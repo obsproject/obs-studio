@@ -4,7 +4,7 @@ option(ENABLE_SPEEXDSP
        "Enable building with SpeexDSP-based noise suppression filter" ON)
 option(ENABLE_RNNOISE "Enable building with RNNoise noise supression filter" ON)
 
-if(OS_WINDOWS)
+if(OS_WINDOWS AND NOT DEFINED ARCH_ARM64)
   option(
     ENABLE_NVAFX
     "Enable building with NVIDIA Audio Effects SDK (requires redistributable to be installed)"

@@ -1,7 +1,10 @@
 project(graphics-hook)
 
 find_package(Detours REQUIRED)
-find_package(Vulkan REQUIRED)
+
+if(NOT DEFINED ARCH_ARM64)
+  find_package(Vulkan REQUIRED)
+endif()
 
 add_library(graphics-hook MODULE)
 add_library(OBS::graphics-hook ALIAS graphics-hook)
