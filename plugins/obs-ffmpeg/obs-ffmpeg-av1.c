@@ -115,6 +115,8 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 #else
 			av_opt_set(enc->ffve.context->priv_data, "rc", "cqp",
 				   0);
+			av_opt_set_int(enc->ffve.context->priv_data, "qp", cqp,
+				       0);
 #endif
 		}
 
