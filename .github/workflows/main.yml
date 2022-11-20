@@ -296,7 +296,7 @@ jobs:
     if: always()
     strategy:
       matrix:
-        arch: [x64, x86]
+        arch: [x64, x86, ARM64]
     env:
       CMAKE_GENERATOR: 'Visual Studio 17 2022'
       CMAKE_SYSTEM_VERSION: '10.0.18363.657'
@@ -324,6 +324,7 @@ jobs:
 
       - name: 'Restore VLC dependency from cache'
         id: vlc-cache
+        if: matrix.arch != 'ARM64'
         uses: actions/cache@v3
         env:
           CACHE_NAME: 'vlc-cache'
@@ -333,6 +334,7 @@ jobs:
 
       - name: 'Restore Chromium Embedded Framework from cache'
         id: cef-cache
+        if: matrix.arch != 'ARM64'
         uses: actions/cache@v3
         env:
           CACHE_NAME: 'cef-cache'

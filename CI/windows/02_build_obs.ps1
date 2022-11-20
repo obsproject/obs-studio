@@ -3,7 +3,7 @@ Param(
     [Switch]$Quiet = $(if (Test-Path variable:Quiet) { $Quiet }),
     [Switch]$Verbose = $(if (Test-Path variable:Verbose) { $Verbose }),
     [String]$BuildDirectory = $(if (Test-Path variable:BuildDirectory) { "${BuildDirectory}" } else { "build" }),
-    [ValidateSet('x86', 'x64')]
+    [ValidateSet('x86', 'x64', 'ARM64')]
     [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] }),
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
     [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" })
@@ -61,7 +61,11 @@ function Configure-OBS {
     $CmakePrefixPath = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/windows-deps-${WindowsDepsVersion}-${BuildArch}"
     $CefDirectory = Resolve-Path -Path "${CheckoutDir}/../obs-build-dependencies/cef_binary_${WindowsCefVersion}_windows_${BuildArch}"
     $BuildDirectoryActual = "${BuildDirectory}$(if (${BuildArch} -eq "x64") { "64" } else { "32" })"
-    $GeneratorPlatform = "$(if (${BuildArch} -eq "x64") { "x64" } else { "Win32" })"
+
+    $GeneratorPlatform = "$(if (${BuildArch} -eq "x86") { "Win32" } else { ${BuildArch} })"
+    if (${BuildArch} -eq "arm64") {
+        $Qt_Host_Path = Resolve-Path -Path "${CmakePrefixPath}/../qt_host"
+    }
 
     if ( $PSVersionTable.PSVersion -ge '7.3.0' ) {
         $CmakeCommand = @(
@@ -69,6 +73,8 @@ function Configure-OBS {
             "-DCMAKE_GENERATOR_PLATFORM=${GeneratorPlatform}",
             "-DCMAKE_SYSTEM_VERSION=${CmakeSystemVersion}",
             "-DCMAKE_PREFIX_PATH:PATH=${CmakePrefixPath}",
+            "-DCMAKE_TOOLCHAIN_FILE=${CmakePrefixPath}/lib/cmake/Qt6/qt.toolchain.cmake",
+            "$(if (${BuildArch} -eq "arm64") { "QT_HOST_PATH=${Qt_Host_Path}" })",
             "-DCEF_ROOT_DIR:PATH=${CefDirectory}",
             "-DENABLE_BROWSER=ON",
             "-DVLC_PATH:PATH=${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}",
@@ -95,6 +101,8 @@ function Configure-OBS {
             "-DCMAKE_GENERATOR_PLATFORM=`"${GeneratorPlatform}`"",
             "-DCMAKE_SYSTEM_VERSION=`"${CmakeSystemVersion}`"",
             "-DCMAKE_PREFIX_PATH:PATH=`"${CmakePrefixPath}`"",
+            "-DCMAKE_TOOLCHAIN_FILE=`"${CmakePrefixPath}\lib\cmake\Qt6\qt.toolchain.cmake`"",
+            "$(if (${BuildArch} -eq "arm64") { "QT_HOST_PATH=${Qt_Host_Path}" })",
             "-DCEF_ROOT_DIR:PATH=`"${CefDirectory}`"",
             "-DENABLE_BROWSER=ON",
             "-DVLC_PATH:PATH=`"${CheckoutDir}/../obs-build-dependencies/vlc-${WindowsVlcVersion}`"",

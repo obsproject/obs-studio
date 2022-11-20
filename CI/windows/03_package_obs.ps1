@@ -5,7 +5,7 @@ Param(
     [Switch]$BuildInstaller = $(if ($BuildInstaller.isPresent) { $BuildInstaller }),
     [Switch]$CombinedArchs = $(if ($CombinedArchs.isPresent) { $CombinedArchs }),
     [String]$BuildDirectory = $(if (Test-Path variable:BuildDirectory) { "${BuildDirectory}" } else { "build" }),
-    [ValidateSet('x86', 'x64')]
+    [ValidateSet('x86', 'x64', 'ARM64')]
     [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] }),
     [ValidateSet("Release", "RelWithDebInfo", "MinSizeRel", "Debug")]
     [String]$BuildConfiguration = $(if (Test-Path variable:BuildConfiguration) { "${BuildConfiguration}" } else { "RelWithDebInfo" })
@@ -74,6 +74,22 @@ function Package-OBS {
             Path = "${CheckoutDir}/build64/install/bin", "${CheckoutDir}/build64/install/data", "${CheckoutDir}/build64/install/obs-plugins"
             CompressionLevel = "Optimal"
             DestinationPath = "${FileName}-x64.zip"
+        }
+
+        Write-Step "Creating zip archive..."
+
+        $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
+        Compress-Archive -Force @CompressVars
+        $ProgressPreference = 'Continue'
+
+    } elseif ($BuildArch -eq "ARM64") {
+        Write-Step "Install 64-bit OBS..."
+        Invoke-Expression "cmake --build `"${BuildDirectory}64`" --config ${BuildConfiguration} -t install"
+
+        $CompressVars = @{
+            Path = "${CheckoutDir}/build64/install/bin", "${CheckoutDir}/build64/install/data", "${CheckoutDir}/build64/install/obs-plugins"
+            CompressionLevel = "Optimal"
+            DestinationPath = "${FileName}-Win-ARM64.zip"
         }
 
         Write-Step "Creating zip archive..."

@@ -2,7 +2,7 @@ Param(
     [Switch]$Help = $(if (Test-Path variable:Help) { $Help }),
     [Switch]$Quiet = $(if (Test-Path variable:Quiet) { $Quiet }),
     [Switch]$Verbose = $(if (Test-Path variable:Verbose) { $Verbose }),
-    [ValidateSet('x86', 'x64')]
+    [ValidateSet('x86', 'x64', 'ARM64')]
     [String]$BuildArch = $(if (Test-Path variable:BuildArch) { "${BuildArch}" } else { ('x86', 'x64')[[System.Environment]::Is64BitOperatingSystem] })
 )
 
@@ -26,7 +26,7 @@ Function Install-obs-deps {
     Write-Status "Setup for pre-built Windows OBS dependencies v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    $ArchSuffix = $BuildArch
+    $ArchSuffix = $BuildArch.ToLower()
 
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}")) {
 
@@ -52,9 +52,19 @@ function Install-qt-deps {
     Write-Status "Setup for pre-built dependency Qt v${Version}"
     Ensure-Directory $DepsBuildDir
 
-    $ArchSuffix = $BuildArch
+    $ArchSuffix = $BuildArch.ToLower()
 
     if (!(Test-Path "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}/mkspecs")) {
+
+        if (${BuildArch} -eq "arm64") {
+            Write-Step "Download x64 qt..."
+            $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
+            Invoke-WebRequest -Uri "https://github.com/obsproject/obs-deps/releases/download/${Version}/windows-deps-qt6-${Version}-${ArchSuffix}.zip" -UseBasicParsing -OutFile "windows-deps-qt6-${Version}-${ArchSuffix}.zip"
+            $ProgressPreference = "Continue"
+    
+            Write-Step "Unpack x64 qt..."
+            Expand-Archive -Path "windows-deps-qt6-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/qt_host" -Force
+        }
 
         Write-Step "Download..."
         $ProgressPreference = $(if ($Quiet.isPresent) { 'SilentlyContinue' } else { 'Continue' })
@@ -62,7 +72,6 @@ function Install-qt-deps {
         $ProgressPreference = "Continue"
 
         Write-Step "Unpack..."
-
         Expand-Archive -Path "windows-deps-qt6-${Version}-${ArchSuffix}.zip" -DestinationPath "${DepsBuildDir}/windows-deps-${Version}-${ArchSuffix}" -Force
     } else {
         Write-Step "Found existing pre-built Qt..."
@@ -74,6 +83,10 @@ function Install-vlc {
         [Parameter(Mandatory=$true)]
         [String]$Version
     )
+
+    if (${BuildArch} -eq "arm64") { 
+        Write-Status "Skip VLC for Winodws ARM64"
+    }
 
     Write-Status "Setup for dependency VLC v${Version}"
     Ensure-Directory $DepsBuildDir
@@ -98,6 +111,11 @@ function Install-cef {
         [Parameter(Mandatory=$true)]
         [String]$Version
     )
+
+    if (${BuildArch} -eq "arm64") { 
+        Write-Status "Skip VLC for Winodws ARM64"
+    }
+
     Write-Status "Setup for dependency CEF v${Version} - ${BuildArch}"
 
     Ensure-Directory $DepsBuildDir
