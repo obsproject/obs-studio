@@ -13,6 +13,10 @@ elseif(CMAKE_SYSTEM_NAME STREQUAL "Windows")
   include(ObsDefaults_Windows)
   set(OS_WINDOWS ON)
   set(OS_POSIX OFF)
+
+  if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+    set(ARCH_ARM64 ON)
+  endif()
 endif()
 
 # Create global property to hold list of activated modules

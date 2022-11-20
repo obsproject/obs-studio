@@ -15,6 +15,10 @@ elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux|FreeBSD|OpenBSD")
 elseif(${CMAKE_SYSTEM_NAME} STREQUAL "Windows")
   set(OS_WINDOWS ON)
   set(OS_POSIX OFF)
+
+  if(CMAKE_GENERATOR_PLATFORM STREQUAL "ARM64")
+    set(ARCH_ARM64 ON)
+  endif()
 endif()
 
 # Old-Style plugin detected, find "modern" libobs variant instead and set global
