@@ -105,7 +105,7 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
-		enc->ffve.context->global_quality = cqp;
+		av_opt_set_int(enc->ffve.context->priv_data, "crf", cqp, 0);
 
 		if (enc->svtav1) {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
