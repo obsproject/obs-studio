@@ -374,6 +374,8 @@ if(OS_WINDOWS)
     set_source_files_properties(
       ${CMAKE_CURRENT_SOURCE_DIR}../deps/libff/libff/ff-util.c
       PROPERTIES COMPILE_FLAGS -Dinline=__inline)
+
+    add_definitions(-DNOMINMAX)
   endif()
 
   if(CMAKE_SIZEOF_VOID_P EQUAL 4)
