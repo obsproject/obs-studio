@@ -152,10 +152,8 @@ static bool open_video_codec(struct ffmpeg_data *data)
 	data->vframe->color_primaries = data->config.color_primaries;
 	data->vframe->color_trc = data->config.color_trc;
 	data->vframe->colorspace = data->config.colorspace;
-	data->vframe->chroma_location =
-		(data->config.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	data->vframe->chroma_location = determine_chroma_location(
+		context->pix_fmt, data->config.colorspace);
 
 	ret = av_frame_get_buffer(data->vframe, base_get_alignment());
 	if (ret < 0) {
@@ -262,10 +260,8 @@ static bool create_video_stream(struct ffmpeg_data *data)
 	context->color_primaries = data->config.color_primaries;
 	context->color_trc = data->config.color_trc;
 	context->colorspace = data->config.colorspace;
-	context->chroma_sample_location =
-		(data->config.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	context->chroma_sample_location = determine_chroma_location(
+		closest_format, data->config.colorspace);
 	context->thread_count = 0;
 
 	data->video->time_base = context->time_base;
