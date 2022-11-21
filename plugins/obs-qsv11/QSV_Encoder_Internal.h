@@ -64,7 +64,7 @@ public:
 	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version);
 	~QSV_Encoder_Internal();
 
-	mfxStatus Open(qsv_param_t *pParams);
+	mfxStatus Open(qsv_param_t *pParams, enum qsv_codec codec);
 	void GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf, mfxU16 *pnSPSBuf,
 		       mfxU16 *pnPPSBuf);
 	mfxStatus Encode(uint64_t ts, uint8_t *pDataY, uint8_t *pDataUV,
@@ -74,12 +74,12 @@ public:
 			     uint64_t lock_key, uint64_t *next_key,
 			     mfxBitstream **pBS);
 	mfxStatus ClearData();
-	mfxStatus Reset(qsv_param_t *pParams);
+	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
 	bool UpdateParams(qsv_param_t *pParams);
 
 protected:
-	bool InitParams(qsv_param_t *pParams);
+	bool InitParams(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus AllocateSurfaces();
 	mfxStatus GetVideoParam();
 	mfxStatus InitBitstream();

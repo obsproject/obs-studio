@@ -145,7 +145,7 @@ static void obs_qsv_destroy(void *data)
 	}
 }
 
-static void obs_qsv_defaults(obs_data_t *settings)
+static void obs_qsv_defaults_h264(obs_data_t *settings)
 {
 	obs_data_set_default_string(settings, "target_usage", "balanced");
 	obs_data_set_default_int(settings, "bitrate", 2500);
@@ -337,7 +337,7 @@ static inline void add_rate_controls(obs_property_t *list,
 	}
 }
 
-static obs_properties_t *obs_qsv_props(void *unused)
+static obs_properties_t *obs_qsv_props(enum qsv_codec codec, void *unused)
 {
 	UNUSED_PARAMETER(unused);
 
@@ -352,7 +352,9 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	prop = obs_properties_add_list(props, "profile", TEXT_PROFILE,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_strings(prop, qsv_profile_names);
+
+	if (codec == QSV_CODEC_AVC)
+		add_strings(prop, qsv_profile_names);
 
 	obs_property_set_modified_callback(prop, profile_modified);
 
@@ -363,7 +365,9 @@ static obs_properties_t *obs_qsv_props(void *unused)
 	prop = obs_properties_add_list(props, "rate_control", TEXT_RATE_CONTROL,
 				       OBS_COMBO_TYPE_LIST,
 				       OBS_COMBO_FORMAT_STRING);
-	add_rate_controls(prop, qsv_ratecontrols);
+	if (codec == QSV_CODEC_AVC)
+		add_rate_controls(prop, qsv_ratecontrols);
+
 	obs_property_set_modified_callback(prop, rate_control_modified);
 
 	prop = obs_properties_add_int(props, "bitrate", TEXT_TARGET_BITRATE, 50,
@@ -374,28 +378,36 @@ static obs_properties_t *obs_qsv_props(void *unused)
 				      50, 10000000, 50);
 	obs_property_int_set_suffix(prop, " Kbps");
 
-	obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0, 10000, 1);
-	obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE, 0, 10,
-			       1);
-	obs_properties_add_int(props, "qpi", "QPI", 1, 51, 1);
-	obs_properties_add_int(props, "qpp", "QPP", 1, 51, 1);
-	obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
-	obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY, 1, 51,
-			       1);
-	prop = obs_properties_add_list(props, "latency", TEXT_LATENCY,
-				       OBS_COMBO_TYPE_LIST,
-				       OBS_COMBO_FORMAT_STRING);
-	add_strings(prop, qsv_latency_names);
-	obs_property_set_long_description(prop,
-					  obs_module_text("Latency.ToolTip"));
+	if (codec == QSV_CODEC_AVC) {
+		obs_properties_add_int(props, "accuracy", TEXT_ACCURACY, 0,
+				       10000, 1);
+		obs_properties_add_int(props, "convergence", TEXT_CONVERGENCE,
+				       0, 10, 1);
+		obs_properties_add_int(props, "qpi", "QPI", 1, 51, 1);
+		obs_properties_add_int(props, "qpp", "QPP", 1, 51, 1);
+		obs_properties_add_int(props, "qpb", "QPB", 1, 51, 1);
+		obs_properties_add_int(props, "icq_quality", TEXT_ICQ_QUALITY,
+				       1, 51, 1);
+		prop = obs_properties_add_list(props, "latency", TEXT_LATENCY,
+					       OBS_COMBO_TYPE_LIST,
+					       OBS_COMBO_FORMAT_STRING);
+		add_strings(prop, qsv_latency_names);
+		obs_property_set_long_description(
+			prop, obs_module_text("Latency.ToolTip"));
 
-	obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
+		obs_properties_add_int(props, "bframes", TEXT_BFRAMES, 0, 3, 1);
 
-	if (is_skl_or_greater_platform())
-		obs_properties_add_bool(props, "enhancements",
-					TEXT_PERCEPTUAL_ENHANCEMENTS);
-
+		if (is_skl_or_greater_platform())
+			obs_properties_add_bool(props, "enhancements",
+						TEXT_PERCEPTUAL_ENHANCEMENTS);
+	}
 	return props;
+}
+
+static obs_properties_t *obs_qsv_props_h264(void *unused)
+{
+	UNUSED_PARAMETER(unused);
+	return obs_qsv_props(QSV_CODEC_AVC, unused);
 }
 
 static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
@@ -613,21 +625,27 @@ static bool obs_qsv_update(void *data, obs_data_t *settings)
 	return true;
 }
 
-static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
+static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
+			    obs_encoder_t *encoder)
 {
 	struct obs_qsv *obsqsv = bzalloc(sizeof(struct obs_qsv));
 	obsqsv->encoder = encoder;
+	obsqsv->codec = codec;
 
 	video_t *video = obs_encoder_video(encoder);
 	const struct video_output_info *voi = video_output_get_info(video);
 	switch (voi->format) {
 	case VIDEO_FORMAT_I010:
 	case VIDEO_FORMAT_P010:
-		const char *const text = obs_module_text("10bitUnsupportedAvc");
-		obs_encoder_set_last_error(encoder, text);
-		error("%s", text);
-		bfree(obsqsv);
-		return NULL;
+		if (codec == QSV_CODEC_AVC) {
+			const char *const text =
+				obs_module_text("10bitUnsupportedAvc");
+			obs_encoder_set_last_error(encoder, text);
+			error("%s", text);
+			bfree(obsqsv);
+			return NULL;
+		}
+		break;
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
@@ -643,7 +661,7 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 
 	if (update_settings(obsqsv, settings)) {
 		AcquireSRWLockExclusive(&g_QsvLock);
-		obsqsv->context = qsv_encoder_open(&obsqsv->params);
+		obsqsv->context = qsv_encoder_open(&obsqsv->params, codec);
 		ReleaseSRWLockExclusive(&g_QsvLock);
 
 		if (obsqsv->context == NULL)
@@ -692,6 +710,11 @@ static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)
 	return obsqsv;
 }
 
+static void *obs_qsv_create_h264(obs_data_t *settings, obs_encoder_t *encoder)
+{
+	return obs_qsv_create(QSV_CODEC_AVC, settings, encoder);
+}
+
 static HANDLE get_lib(const char *lib)
 {
 	HMODULE mod = GetModuleHandleA(lib);
@@ -714,29 +737,44 @@ static bool is_intel_gpu_primary(void)
 	return adapters[ovi.adapter].is_intel;
 }
 
-
-static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
+static void *obs_qsv_create_tex(enum qsv_codec codec, obs_data_t *settings,
+				obs_encoder_t *encoder)
 {
+	char *encoder_id;
+	if (codec == QSV_CODEC_AVC)
+		encoder_id = "obs_qsv11_soft";
+
 	if (!is_intel_gpu_primary()) {
 		blog(LOG_INFO,
 		     ">>> app not on intel GPU, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+		return obs_encoder_create_rerouted(encoder,
+						   (const char *)encoder_id);
 	}
 
-	if (!obs_nv12_tex_active()) {
+	bool gpu_texture_active = obs_nv12_tex_active();
+
+	if (!gpu_texture_active) {
 		blog(LOG_INFO,
-		     ">>> nv12 tex not active, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+		     ">>> gpu tex not active, fall back to old qsv encoder");
+		return obs_encoder_create_rerouted(encoder,
+						   (const char *)encoder_id);
 	}
 
 	if (obs_encoder_scaling_enabled(encoder)) {
 		blog(LOG_INFO,
 		     ">>> encoder scaling active, fall back to old qsv encoder");
-		return obs_encoder_create_rerouted(encoder, "obs_qsv11_soft");
+		return obs_encoder_create_rerouted(encoder,
+						   (const char *)encoder_id);
 	}
 
 	blog(LOG_INFO, ">>> new qsv encoder");
-	return obs_qsv_create(settings, encoder);
+	return obs_qsv_create(codec, settings, encoder);
+}
+
+static void *obs_qsv_create_tex_h264(obs_data_t *settings,
+				     obs_encoder_t *encoder)
+{
+	return obs_qsv_create_tex(QSV_CODEC_AVC, settings, encoder);
 }
 
 static bool obs_qsv_extra_data(void *data, uint8_t **extra_data, size_t *size)
@@ -954,7 +992,8 @@ static bool obs_qsv_encode(void *data, struct encoder_frame *frame,
 		return false;
 	}
 
-	parse_packet(obsqsv, packet, pBS, voi, received_packet);
+	if (obsqsv->codec == QSV_CODEC_AVC)
+		parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
 	ReleaseSRWLockExclusive(&g_QsvLock);
 
@@ -997,7 +1036,8 @@ static bool obs_qsv_encode_tex(void *data, uint32_t handle, int64_t pts,
 		return false;
 	}
 
-	parse_packet(obsqsv, packet, pBS, voi, received_packet);
+	if (obsqsv->codec == QSV_CODEC_AVC)
+		parse_packet(obsqsv, packet, pBS, voi, received_packet);
 
 	ReleaseSRWLockExclusive(&g_QsvLock);
 
@@ -1009,12 +1049,12 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
 	.get_name = obs_qsv_getname,
-	.create = obs_qsv_create,
+	.create = obs_qsv_create_h264,
 	.destroy = obs_qsv_destroy,
 	.encode = obs_qsv_encode,
 	.update = obs_qsv_update,
-	.get_properties = obs_qsv_props,
-	.get_defaults = obs_qsv_defaults,
+	.get_properties = obs_qsv_props_h264,
+	.get_defaults = obs_qsv_defaults_h264,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
@@ -1026,13 +1066,13 @@ struct obs_encoder_info obs_qsv_encoder_tex = {
 	.type = OBS_ENCODER_VIDEO,
 	.codec = "h264",
 	.get_name = obs_qsv_getname,
-	.create = obs_qsv_create_tex,
+	.create = obs_qsv_create_tex_h264,
 	.destroy = obs_qsv_destroy,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_PASS_TEXTURE,
 	.encode_texture = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
-	.get_properties = obs_qsv_props,
-	.get_defaults = obs_qsv_defaults,
+	.get_properties = obs_qsv_props_h264,
+	.get_defaults = obs_qsv_defaults_h264,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,

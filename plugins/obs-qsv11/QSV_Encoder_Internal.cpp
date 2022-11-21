@@ -148,7 +148,7 @@ QSV_Encoder_Internal::~QSV_Encoder_Internal()
 		ClearData();
 }
 
-mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams)
+mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxStatus sts = MFX_ERR_NONE;
 
@@ -167,7 +167,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams)
 
 	m_pmfxENC = new MFXVideoENCODE(m_session);
 
-	InitParams(pParams);
+	InitParams(pParams, codec);
 
 	sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
 	MSDK_IGNORE_MFX_STS(sts, MFX_WRN_INCOMPATIBLE_VIDEO_PARAM);
@@ -191,11 +191,14 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams)
 	return sts;
 }
 
-bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
+bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
+				      enum qsv_codec codec)
 {
 	memset(&m_mfxEncParams, 0, sizeof(m_mfxEncParams));
 
-	m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
+	if (codec == QSV_CODEC_AVC)
+		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
+
 	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_STRICT;
 	m_mfxEncParams.mfx.NumSlice = 1;
 	m_mfxEncParams.mfx.TargetUsage = pParams->nTargetUsage;
@@ -746,12 +749,13 @@ mfxStatus QSV_Encoder_Internal::ClearData()
 	return sts;
 }
 
-mfxStatus QSV_Encoder_Internal::Reset(qsv_param_t *pParams)
+mfxStatus QSV_Encoder_Internal::Reset(qsv_param_t *pParams,
+				      enum qsv_codec codec)
 {
 	mfxStatus sts = ClearData();
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	sts = Open(pParams);
+	sts = Open(pParams, codec);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	return sts;
