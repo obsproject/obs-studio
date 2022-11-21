@@ -410,7 +410,9 @@ static inline void calc_throughput(amf_base *enc)
 }
 
 static inline int get_avc_preset(amf_base *enc, const char *preset);
+#if ENABLE_HEVC
 static inline int get_hevc_preset(amf_base *enc, const char *preset);
+#endif
 static inline int get_av1_preset(amf_base *enc, const char *preset);
 
 static inline int get_preset(amf_base *enc, const char *preset)
@@ -418,9 +420,11 @@ static inline int get_preset(amf_base *enc, const char *preset)
 	if (enc->codec == amf_codec_type::AVC)
 		return get_avc_preset(enc, preset);
 
+#if ENABLE_HEVC
 	else if (enc->codec == amf_codec_type::HEVC)
 		return get_hevc_preset(enc, preset);
 
+#endif
 	else if (enc->codec == amf_codec_type::AV1)
 		return get_av1_preset(enc, preset);
 
