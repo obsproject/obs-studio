@@ -54,7 +54,11 @@ THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
 #include <obs-module.h>
-#include "mfxsession.h"
+#include <util/config-file.h>
+#include <util/platform.h>
+#include <util/pipe.h>
+#include <util/dstr.h>
+#include "QSV_Encoder.h"
 
 OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-qsv11", "en-US")
@@ -66,27 +70,77 @@ MODULE_EXPORT const char *obs_module_description(void)
 extern struct obs_encoder_info obs_qsv_encoder;
 extern struct obs_encoder_info obs_qsv_encoder_tex;
 
+struct adapter_info adapters[MAX_ADAPTERS] = {0};
+size_t adapter_count = 0;
+
 bool obs_module_load(void)
 {
-	mfxIMPL impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D11;
-	mfxVersion ver = {{0, 1}};
-	mfxSession session;
-	mfxStatus sts;
+	char *test_exe = os_get_executable_path_ptr("obs-qsv-test.exe");
+	struct dstr caps_str = {0};
+	os_process_pipe_t *pp = NULL;
+	config_t *config = NULL;
 
-	sts = MFXInit(impl, &ver, &session);
-
-	if (sts == MFX_ERR_NONE) {
-		obs_register_encoder(&obs_qsv_encoder);
-		obs_register_encoder(&obs_qsv_encoder_tex);
-		MFXClose(session);
-	} else {
-		impl = MFX_IMPL_HARDWARE_ANY | MFX_IMPL_VIA_D3D9;
-		sts = MFXInit(impl, &ver, &session);
-		if (sts == MFX_ERR_NONE) {
-			obs_register_encoder(&obs_qsv_encoder);
-			MFXClose(session);
-		}
+	pp = os_process_pipe_create(test_exe, "r");
+	if (!pp) {
+		blog(LOG_INFO, "Failed to launch the QSV test process I guess");
+		goto fail;
 	}
+
+	for (;;) {
+		char data[2048];
+		size_t len =
+			os_process_pipe_read(pp, (uint8_t *)data, sizeof(data));
+		if (!len)
+			break;
+
+		dstr_ncat(&caps_str, data, len);
+	}
+
+	if (dstr_is_empty(&caps_str)) {
+		blog(LOG_INFO, "Seems the QSV test subprocess crashed. "
+			       "Better there than here I guess. "
+			       "Let's just skip loading QSV then I suppose.");
+		goto fail;
+	}
+
+	if (config_open_string(&config, caps_str.array) != 0) {
+		blog(LOG_INFO, "Couldn't open QSV configuration string");
+		goto fail;
+	}
+
+	const char *error = config_get_string(config, "error", "string");
+	if (error) {
+		blog(LOG_INFO, "Error querying QSV support: %s", error);
+		goto fail;
+	}
+
+	adapter_count = config_num_sections(config);
+	bool avc_supported = false;
+
+	if (adapter_count > MAX_ADAPTERS)
+		adapter_count = MAX_ADAPTERS;
+
+	for (size_t i = 0; i < adapter_count; i++) {
+		char section[16];
+		snprintf(section, sizeof(section), "%d", (int)i);
+
+		struct adapter_info *adapter = &adapters[i];
+		adapter->is_intel = config_get_bool(config, section, "is_intel");
+		adapter->is_dgpu = config_get_bool(config, section, "is_dgpu");
+
+		avc_supported |= adapter->is_intel;
+	}
+
+	if (avc_supported) {
+		obs_register_encoder(&obs_qsv_encoder_tex);
+		obs_register_encoder(&obs_qsv_encoder);
+	}
+
+fail:
+	config_close(config);
+	dstr_free(&caps_str);
+	os_process_pipe_destroy(pp);
+	bfree(test_exe);
 
 	return true;
 }

@@ -82,6 +82,15 @@ static const char *const qsv_latency_names[] = {"ultra-low", "low", "normal",
 						0};
 typedef struct qsv_t qsv_t;
 
+struct adapter_info {
+	bool is_intel;
+	bool is_dgpu;
+};
+
+#define MAX_ADAPTERS 10
+extern struct adapter_info adapters[MAX_ADAPTERS];
+extern size_t adapter_count;
+
 typedef struct {
 	mfxU16 nTargetUsage; /* 1 through 7, 1 being best quality and 7
 				being the best speed */
