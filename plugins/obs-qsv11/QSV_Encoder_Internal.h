@@ -75,6 +75,8 @@ public:
 			     mfxBitstream **pBS);
 	mfxStatus ClearData();
 	mfxStatus Reset(qsv_param_t *pParams);
+	mfxStatus ReconfigureEncoder();
+	bool UpdateParams(qsv_param_t *pParams);
 
 protected:
 	bool InitParams(qsv_param_t *pParams);

@@ -267,12 +267,12 @@ int qsv_param_apply_profile(qsv_param_t *, const char *profile)
 int qsv_encoder_reconfig(qsv_t *pContext, qsv_param_t *pParams)
 {
 	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
-	mfxStatus sts = pEncoder->Reset(pParams);
+	pEncoder->UpdateParams(pParams);
+	mfxStatus sts = pEncoder->ReconfigureEncoder();
 
-	if (sts == MFX_ERR_NONE)
-		return 0;
-	else
-		return -1;
+	if (sts != MFX_ERR_NONE)
+		return false;
+	return true;
 }
 
 enum qsv_cpu_platform qsv_get_cpu_platform()
