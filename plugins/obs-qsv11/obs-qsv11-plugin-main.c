@@ -64,7 +64,7 @@ OBS_DECLARE_MODULE()
 OBS_MODULE_USE_DEFAULT_LOCALE("obs-qsv11", "en-US")
 MODULE_EXPORT const char *obs_module_description(void)
 {
-	return "Intel Quick Sync Video H.264 encoder support for Windows";
+	return "Intel Quick Sync Video support for Windows";
 }
 
 extern struct obs_encoder_info obs_qsv_encoder;

@@ -87,6 +87,10 @@ struct adapter_info {
 	bool is_dgpu;
 };
 
+enum qsv_codec {
+	QSV_CODEC_AVC,
+};
+
 #define MAX_ADAPTERS 10
 extern struct adapter_info adapters[MAX_ADAPTERS];
 extern size_t adapter_count;
@@ -141,7 +145,7 @@ int qsv_param_default_preset(qsv_param_t *, const char *preset,
 			     const char *tune);
 int qsv_encoder_reconfig(qsv_t *, qsv_param_t *);
 void qsv_encoder_version(unsigned short *major, unsigned short *minor);
-qsv_t *qsv_encoder_open(qsv_param_t *);
+qsv_t *qsv_encoder_open(qsv_param_t *, enum qsv_codec codec);
 int qsv_encoder_encode(qsv_t *, uint64_t, uint8_t *, uint8_t *, uint32_t,
 		       uint32_t, mfxBitstream **pBS);
 int qsv_encoder_encode_tex(qsv_t *, uint64_t, uint32_t, uint64_t, uint64_t *,

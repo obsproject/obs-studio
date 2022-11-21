@@ -80,7 +80,7 @@ void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 	*minor = ver.Minor;
 }
 
-qsv_t *qsv_encoder_open(qsv_param_t *pParams)
+qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 {
 	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
 				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
@@ -102,7 +102,7 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 	impl = impl_list[adapter_idx];
 
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
-	mfxStatus sts = pEncoder->Open(pParams);
+	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
 #define WARN_ERR_IMPL(err, str, err_name)                   \
