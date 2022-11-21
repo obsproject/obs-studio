@@ -84,6 +84,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 struct obs_qsv {
 	obs_encoder_t *encoder;
 
+	enum qsv_codec codec;
+
 	qsv_param_t params;
 	qsv_t *context;
 
@@ -711,53 +713,14 @@ static HANDLE get_lib(const char *lib)
 
 typedef HRESULT(WINAPI *CREATEDXGIFACTORY1PROC)(REFIID, void **);
 
-static bool is_intel_gpu_primary()
+static bool is_intel_gpu_primary(void)
 {
-	HMODULE dxgi = get_lib("DXGI.dll");
-	CREATEDXGIFACTORY1PROC create_dxgi;
-	IDXGIFactory1 *factory;
-	IDXGIAdapter *adapter;
-	DXGI_ADAPTER_DESC desc;
-	HRESULT hr;
+	struct obs_video_info ovi;
+	obs_get_video_info(&ovi);
 
-	if (!dxgi) {
-		return false;
-	}
-	create_dxgi = (CREATEDXGIFACTORY1PROC)GetProcAddress(
-		dxgi, "CreateDXGIFactory1");
-
-	if (!create_dxgi) {
-		blog(LOG_INFO, "Failed to load D3D11/DXGI procedures");
-		return false;
-	}
-
-	hr = create_dxgi(&IID_IDXGIFactory1, &factory);
-	if (FAILED(hr)) {
-		blog(LOG_INFO, "CreateDXGIFactory1 failed");
-		return false;
-	}
-
-	hr = factory->lpVtbl->EnumAdapters(factory, 0, &adapter);
-	factory->lpVtbl->Release(factory);
-	if (FAILED(hr)) {
-		blog(LOG_INFO, "EnumAdapters failed");
-		return false;
-	}
-
-	hr = adapter->lpVtbl->GetDesc(adapter, &desc);
-	adapter->lpVtbl->Release(adapter);
-	if (FAILED(hr)) {
-		blog(LOG_INFO, "GetDesc failed");
-		return false;
-	}
-
-	/*check whether adapter 0 is Intel*/
-	if (desc.VendorId == 0x8086) {
-		return true;
-	} else {
-		return false;
-	}
+	return adapters[ovi.adapter].is_intel;
 }
+
 
 static void *obs_qsv_create_tex(obs_data_t *settings, obs_encoder_t *encoder)
 {

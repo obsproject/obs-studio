@@ -74,99 +74,6 @@ mfxIMPL impl = MFX_IMPL_HARDWARE_ANY;
 mfxVersion ver = {{0, 1}}; // for backward compatibility
 std::atomic<bool> is_active{false};
 
-bool prefer_current_or_igpu_enc(int *iGPUIndex)
-{
-	IDXGIAdapter *pAdapter;
-	bool hasIGPU = false;
-	bool hasDGPU = false;
-	bool hasCurrent = false;
-
-	HMODULE hDXGI = LoadLibrary(L"dxgi.dll");
-	if (hDXGI == NULL) {
-		return false;
-	}
-
-	typedef HRESULT(WINAPI * LPCREATEDXGIFACTORY)(REFIID riid,
-						      void **ppFactory);
-
-	LPCREATEDXGIFACTORY pCreateDXGIFactory =
-		(LPCREATEDXGIFACTORY)GetProcAddress(hDXGI,
-						    "CreateDXGIFactory1");
-	if (pCreateDXGIFactory == NULL) {
-		pCreateDXGIFactory = (LPCREATEDXGIFACTORY)GetProcAddress(
-			hDXGI, "CreateDXGIFactory");
-
-		if (pCreateDXGIFactory == NULL) {
-			FreeLibrary(hDXGI);
-			return false;
-		}
-	}
-
-	IDXGIFactory *pFactory = NULL;
-	if (FAILED((*pCreateDXGIFactory)(__uuidof(IDXGIFactory),
-					 (void **)(&pFactory)))) {
-		FreeLibrary(hDXGI);
-		return false;
-	}
-
-	LUID luid;
-	bool hasLuid = false;
-	obs_enter_graphics();
-	{
-		ID3D11Device *pDevice = (ID3D11Device *)gs_get_device_obj();
-		Microsoft::WRL::ComPtr<IDXGIDevice> dxgiDevice;
-		if (SUCCEEDED(pDevice->QueryInterface<IDXGIDevice>(
-			    dxgiDevice.GetAddressOf()))) {
-			Microsoft::WRL::ComPtr<IDXGIAdapter> dxgiAdapter;
-			if (SUCCEEDED(dxgiDevice->GetAdapter(
-				    dxgiAdapter.GetAddressOf()))) {
-				DXGI_ADAPTER_DESC desc;
-				hasLuid =
-					SUCCEEDED(dxgiAdapter->GetDesc(&desc));
-				if (hasLuid) {
-					luid = desc.AdapterLuid;
-				}
-			}
-		}
-	}
-	obs_leave_graphics();
-
-	// Check for i+I cases (Intel discrete + Intel integrated graphics on the same system). Default will be integrated.
-	for (int adapterIndex = 0;
-	     SUCCEEDED(pFactory->EnumAdapters(adapterIndex, &pAdapter));
-	     ++adapterIndex) {
-		DXGI_ADAPTER_DESC AdapterDesc = {};
-		const HRESULT hr = pAdapter->GetDesc(&AdapterDesc);
-		pAdapter->Release();
-
-		if (SUCCEEDED(hr) && (AdapterDesc.VendorId == 0x8086)) {
-			if (hasLuid &&
-			    (AdapterDesc.AdapterLuid.LowPart == luid.LowPart) &&
-			    (AdapterDesc.AdapterLuid.HighPart ==
-			     luid.HighPart)) {
-				hasCurrent = true;
-				*iGPUIndex = adapterIndex;
-				break;
-			}
-
-			if (AdapterDesc.DedicatedVideoMemory <=
-			    512 * 1024 * 1024) {
-				hasIGPU = true;
-				if (iGPUIndex != NULL) {
-					*iGPUIndex = adapterIndex;
-				}
-			} else {
-				hasDGPU = true;
-			}
-		}
-	}
-
-	pFactory->Release();
-	FreeLibrary(hDXGI);
-
-	return hasCurrent || (hasIGPU && hasDGPU);
-}
-
 void qsv_encoder_version(unsigned short *major, unsigned short *minor)
 {
 	*major = ver.Major;
@@ -177,11 +84,22 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams)
 {
 	mfxIMPL impl_list[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
 				MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
-	int igpu_index = -1;
-	if (prefer_current_or_igpu_enc(&igpu_index) &&
-	    (igpu_index < _countof(impl_list))) {
-		impl = impl_list[igpu_index];
+
+	obs_video_info ovi;
+	obs_get_video_info(&ovi);
+	size_t adapter_idx = ovi.adapter;
+
+	// Select current adapter - will be iGPU if exists due to adapter reordering
+	if (!adapters[adapter_idx].is_intel) {
+		for (size_t i = 0; i < 4; i++) {
+			if (adapters[i].is_intel) {
+				adapter_idx = i;
+				break;
+			}
+		}
 	}
+
+	impl = impl_list[adapter_idx];
 
 	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
 	mfxStatus sts = pEncoder->Open(pParams);
