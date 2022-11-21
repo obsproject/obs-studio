@@ -22,6 +22,7 @@ extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 struct adapter_caps {
 	bool is_intel = false;
 	bool is_dgpu = false;
+	bool supports_av1 = false;
 };
 
 static std::map<uint32_t, adapter_caps> adapter_info;
@@ -70,6 +71,7 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	caps.is_intel = true;
 	caps.is_dgpu = dgpu;
+	caps.supports_av1 = has_encoder(impl, MFX_CODEC_AV1);
 
 	return true;
 }
@@ -117,6 +119,8 @@ try {
 		printf("[%u]\n", idx);
 		printf("is_intel=%s\n", caps.is_intel ? "true" : "false");
 		printf("is_dgpu=%s\n", caps.is_dgpu ? "true" : "false");
+		printf("supports_av1=%s\n",
+		       caps.supports_av1 ? "true" : "false");
 	}
 
 	return 0;

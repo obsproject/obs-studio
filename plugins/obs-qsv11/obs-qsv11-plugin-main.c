@@ -69,6 +69,10 @@ MODULE_EXPORT const char *obs_module_description(void)
 
 extern struct obs_encoder_info obs_qsv_encoder;
 extern struct obs_encoder_info obs_qsv_encoder_tex;
+extern struct obs_encoder_info obs_qsv_av1_encoder_tex;
+extern struct obs_encoder_info obs_qsv_av1_encoder;
+
+extern bool av1_supported(mfxIMPL impl);
 
 struct adapter_info adapters[MAX_ADAPTERS] = {0};
 size_t adapter_count = 0;
@@ -116,6 +120,7 @@ bool obs_module_load(void)
 
 	adapter_count = config_num_sections(config);
 	bool avc_supported = false;
+	bool av1_supported = false;
 
 	if (adapter_count > MAX_ADAPTERS)
 		adapter_count = MAX_ADAPTERS;
@@ -125,15 +130,23 @@ bool obs_module_load(void)
 		snprintf(section, sizeof(section), "%d", (int)i);
 
 		struct adapter_info *adapter = &adapters[i];
-		adapter->is_intel = config_get_bool(config, section, "is_intel");
+		adapter->is_intel =
+			config_get_bool(config, section, "is_intel");
 		adapter->is_dgpu = config_get_bool(config, section, "is_dgpu");
+		adapter->supports_av1 =
+			config_get_bool(config, section, "supports_av1");
 
 		avc_supported |= adapter->is_intel;
+		av1_supported |= adapter->supports_av1;
 	}
 
 	if (avc_supported) {
 		obs_register_encoder(&obs_qsv_encoder_tex);
 		obs_register_encoder(&obs_qsv_encoder);
+	}
+	if (av1_supported) {
+		obs_register_encoder(&obs_qsv_av1_encoder_tex);
+		obs_register_encoder(&obs_qsv_av1_encoder);
 	}
 
 fail:

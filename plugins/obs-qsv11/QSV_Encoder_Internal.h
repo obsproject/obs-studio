@@ -79,11 +79,14 @@ public:
 	bool UpdateParams(qsv_param_t *pParams);
 
 protected:
-	bool InitParams(qsv_param_t *pParams, enum qsv_codec codec);
+	mfxStatus InitParams(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus AllocateSurfaces();
 	mfxStatus GetVideoParam();
 	mfxStatus InitBitstream();
 	mfxStatus LoadNV12(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
+			   uint8_t *pDataUV, uint32_t strideY,
+			   uint32_t strideUV);
+	mfxStatus LoadP010(mfxFrameSurface1 *pSurface, uint8_t *pDataY,
 			   uint8_t *pDataUV, uint32_t strideY,
 			   uint32_t strideUV);
 	mfxStatus Drain();
@@ -107,6 +110,10 @@ private:
 	mfxExtCodingOption3 m_co3;
 	mfxExtCodingOption2 m_co2;
 	mfxExtCodingOption m_co;
+	mfxExtVideoSignalInfo m_ExtVideoSignalInfo{};
+	mfxExtChromaLocInfo m_ExtChromaLocInfo{};
+	mfxExtMasteringDisplayColourVolume m_ExtMasteringDisplayColourVolume{};
+	mfxExtContentLightLevelInfo m_ExtContentLightLevelInfo{};
 	mfxU16 m_nTaskPool;
 	Task *m_pTaskPool;
 	int m_nTaskIdx;
