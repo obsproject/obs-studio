@@ -72,6 +72,10 @@ static const char *codec_type_to_print_fmt(CMVideoCodecType codec_type)
 		return "h264";
 	case kCMVideoCodecType_HEVC:
 		return "hevc";
+	case kCMVideoCodecType_AppleProRes4444XQ:
+		return "ap4x";
+	case kCMVideoCodecType_AppleProRes4444:
+		return "ap4h";
 	case kCMVideoCodecType_AppleProRes422Proxy:
 		return "apco";
 	case kCMVideoCodecType_AppleProRes422LT:
@@ -685,9 +689,22 @@ static bool set_video_format(struct vt_encoder *enc, enum video_format format,
 					? kCVPixelFormatType_420YpCbCr10BiPlanarFullRange
 					: kCVPixelFormatType_420YpCbCr10BiPlanarVideoRange;
 			return true;
-		} else {
-			return false;
 		}
+		break;
+	case VIDEO_FORMAT_P216:
+		if (!full_range) {
+			enc->vt_pix_fmt =
+				kCVPixelFormatType_422YpCbCr16BiPlanarVideoRange;
+			return true;
+		}
+		break;
+	case VIDEO_FORMAT_P416:
+		if (!full_range) {
+			enc->vt_pix_fmt =
+				kCVPixelFormatType_444YpCbCr16BiPlanarVideoRange;
+			return true;
+		}
+		break;
 	default:
 		return false;
 	}
@@ -1354,32 +1371,44 @@ static obs_properties_t *vt_properties_prores(void *unused, void *data)
 	for (size_t i = 0; i < size; ++i) {
 
 		switch (encoder_list[i].codec_type) {
-		case kCMVideoCodecType_AppleProRes422Proxy:
+		case kCMVideoCodecType_AppleProRes4444XQ:
 			codec_availability_flags |= (1 << 0);
 			break;
-		case kCMVideoCodecType_AppleProRes422LT:
+		case kCMVideoCodecType_AppleProRes4444:
 			codec_availability_flags |= (1 << 1);
 			break;
-		case kCMVideoCodecType_AppleProRes422:
+		case kCMVideoCodecType_AppleProRes422Proxy:
 			codec_availability_flags |= (1 << 2);
 			break;
-		case kCMVideoCodecType_AppleProRes422HQ:
+		case kCMVideoCodecType_AppleProRes422LT:
 			codec_availability_flags |= (1 << 3);
+			break;
+		case kCMVideoCodecType_AppleProRes422:
+			codec_availability_flags |= (1 << 4);
+			break;
+		case kCMVideoCodecType_AppleProRes422HQ:
+			codec_availability_flags |= (1 << 5);
 			break;
 		}
 	}
 
 	if (codec_availability_flags & (1 << 0))
+		obs_property_list_add_int(p, obs_module_text("ProRes4444XQ"),
+					  kCMVideoCodecType_AppleProRes4444XQ);
+	if (codec_availability_flags & (1 << 1))
+		obs_property_list_add_int(p, obs_module_text("ProRes4444"),
+					  kCMVideoCodecType_AppleProRes4444);
+	if (codec_availability_flags & (1 << 2))
 		obs_property_list_add_int(
 			p, obs_module_text("ProRes422Proxy"),
 			kCMVideoCodecType_AppleProRes422Proxy);
-	if (codec_availability_flags & (1 << 1))
+	if (codec_availability_flags & (1 << 3))
 		obs_property_list_add_int(p, obs_module_text("ProRes422LT"),
 					  kCMVideoCodecType_AppleProRes422LT);
-	if (codec_availability_flags & (1 << 2))
+	if (codec_availability_flags & (1 << 4))
 		obs_property_list_add_int(p, obs_module_text("ProRes422"),
 					  kCMVideoCodecType_AppleProRes422);
-	if (codec_availability_flags & (1 << 3))
+	if (codec_availability_flags & (1 << 5))
 		obs_property_list_add_int(p, obs_module_text("ProRes422HQ"),
 					  kCMVideoCodecType_AppleProRes422HQ);
 
@@ -1561,6 +1590,8 @@ void obs_module_post_load(void)
 							   codec_type);
 			break;
 
+		case kCMVideoCodecType_AppleProRes4444XQ:
+		case kCMVideoCodecType_AppleProRes4444:
 		case kCMVideoCodecType_AppleProRes422Proxy:
 		case kCMVideoCodecType_AppleProRes422LT:
 		case kCMVideoCodecType_AppleProRes422HQ:
