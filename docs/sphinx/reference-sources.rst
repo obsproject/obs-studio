@@ -1425,6 +1425,21 @@ Functions used by sources
            /* planar 4:2:0 format, 10 bpp */
            VIDEO_FORMAT_I010, /* three-plane */
            VIDEO_FORMAT_P010, /* two-plane, luma and packed chroma */
+
+           /* planar 4:2:2 format, 10 bpp */
+           VIDEO_FORMAT_I210,
+
+           /* planar 4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_I412,
+
+           /* planar 4:4:4:4 format, 12 bpp */
+           VIDEO_FORMAT_YA2L,
+
+           /* planar 4:2:2 format, 16 bpp */
+           VIDEO_FORMAT_P216, /* two-plane, luma and packed chroma */
+
+           /* planar 4:4:4 format, 16 bpp */
+           VIDEO_FORMAT_P416, /* two-plane, luma and packed chroma */
    };
 
    struct obs_source_frame {

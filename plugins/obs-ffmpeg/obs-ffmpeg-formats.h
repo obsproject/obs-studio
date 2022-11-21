@@ -56,6 +56,12 @@ obs_to_ffmpeg_video_format(enum video_format format)
 		return AV_PIX_FMT_YUV420P10LE;
 	case VIDEO_FORMAT_P010:
 		return AV_PIX_FMT_P010LE;
+#if LIBAVUTIL_BUILD >= AV_VERSION_INT(57, 17, 100)
+	case VIDEO_FORMAT_P216:
+		return AV_PIX_FMT_P216LE;
+	case VIDEO_FORMAT_P416:
+		return AV_PIX_FMT_P416LE;
+#endif
 	case VIDEO_FORMAT_NONE:
 	case VIDEO_FORMAT_AYUV:
 	default:
