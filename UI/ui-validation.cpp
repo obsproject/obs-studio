@@ -36,24 +36,27 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 	if (!parent->isVisible())
 		return true;
 
-	QString msg = QTStr("NoSources.Text");
-	msg += "\n\n";
-	msg += QTStr("NoSources.Text.AddSource");
+	// Ignore no video alert for Spoon Radio : Simon Ahn
+	// Spoon radio always transmits only audio.
+	return true;
+	//QString msg = QTStr("NoSources.Text");
+	//msg += "\n\n";
+	//msg += QTStr("NoSources.Text.AddSource");
 
-	QMessageBox messageBox(parent);
-	messageBox.setWindowTitle(QTStr("NoSources.Title"));
-	messageBox.setText(msg);
+	//QMessageBox messageBox(parent);
+	//messageBox.setWindowTitle(QTStr("NoSources.Title"));
+	//messageBox.setText(msg);
 
-	QAbstractButton *yesButton =
-		messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
-	messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
-	messageBox.setIcon(QMessageBox::Question);
-	messageBox.exec();
+	//QAbstractButton *yesButton =
+	//	messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	//messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+	//messageBox.setIcon(QMessageBox::Question);
+	//messageBox.exec();
 
-	if (messageBox.clickedButton() != yesButton)
-		return false;
-	else
-		return true;
+	//if (messageBox.clickedButton() != yesButton)
+	//	return false;
+	//else
+	//	return true;
 }
 
 StreamSettingsAction
@@ -64,6 +67,7 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char const *serviceType = obs_service_get_type(service);
 	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
 
+	// TODO: need to implement for stream url and key applied by spoon radio. 
 	char const *streamUrl = obs_service_get_url(service);
 	char const *streamKey = obs_service_get_key(service);
 

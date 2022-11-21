@@ -434,7 +434,10 @@ try {
 	int new_ver = MAKE_SEMANTIC_VERSION(major, minor, patch);
 
 	updateVer = new_ver;
-	*updatesAvailable = new_ver > cur_ver;
+	// Update Popup Window Disabled : Simon Ahn
+	// We have to update only manually by user. 
+	//*updatesAvailable = new_ver > cur_ver;
+	*updatesAvailable = false;
 
 	return true;
 
