@@ -90,7 +90,14 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 	size_t adapter_idx = ovi.adapter;
 
 	// Select current adapter - will be iGPU if exists due to adapter reordering
-	if (!adapters[adapter_idx].is_intel) {
+	if (codec == QSV_CODEC_AV1 && !adapters[adapter_idx].supports_av1) {
+		for (size_t i = 0; i < 4; i++) {
+			if (adapters[i].supports_av1) {
+				adapter_idx = i;
+				break;
+			}
+		}
+	} else if (!adapters[adapter_idx].is_intel) {
 		for (size_t i = 0; i < 4; i++) {
 			if (adapters[i].is_intel) {
 				adapter_idx = i;
