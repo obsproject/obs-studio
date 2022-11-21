@@ -367,6 +367,10 @@ void gs_device::InitFactory()
 #define VENDOR_ID_INTEL 0x8086
 #define IGPU_MEM (512 * 1024 * 1024)
 
+extern "C" {
+EXPORT void obs_internal_set_adapter_idx_this_is_dumb(uint32_t adapter_idx);
+}
+
 void gs_device::ReorderAdapters(uint32_t &adapterIdx)
 {
 	std::vector<uint32_t> adapterOrder;
@@ -400,6 +404,8 @@ void gs_device::ReorderAdapters(uint32_t &adapterIdx)
 		adapterOrder.erase(adapterOrder.begin() + iGPUIndex);
 		adapterOrder.insert(adapterOrder.begin(), iGPUIndex);
 		adapterIdx = adapterOrder[adapterIdx];
+
+		obs_internal_set_adapter_idx_this_is_dumb(adapterIdx);
 	}
 }
 
