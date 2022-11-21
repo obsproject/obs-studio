@@ -269,6 +269,10 @@ bool video_format_get_parameters_for_format(enum video_colorspace color_space,
 	case VIDEO_FORMAT_YA2L:
 		bpc = 12;
 		break;
+	case VIDEO_FORMAT_P216:
+	case VIDEO_FORMAT_P416:
+		bpc = 16;
+		break;
 	default:
 		bpc = 8;
 		break;
