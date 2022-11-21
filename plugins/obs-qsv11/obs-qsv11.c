@@ -602,22 +602,15 @@ static void load_headers(struct obs_qsv *obsqsv)
 static bool obs_qsv_update(void *data, obs_data_t *settings)
 {
 	struct obs_qsv *obsqsv = data;
-	bool success = update_settings(obsqsv, settings);
-	int ret;
+	obsqsv->params.nTargetBitRate =
+		(mfxU16)obs_data_get_int(settings, "bitrate");
 
-	if (success) {
-		AcquireSRWLockExclusive(&g_QsvLock);
-
-		ret = qsv_encoder_reconfig(obsqsv->context, &obsqsv->params);
-		if (ret != 0)
-			warn("Failed to reconfigure: %d", ret);
-
-		ReleaseSRWLockExclusive(&g_QsvLock);
-
-		return ret == 0;
+	if (!qsv_encoder_reconfig(obsqsv->context, &obsqsv->params)) {
+		warn("Failed to reconfigure");
+		return false;
 	}
 
-	return false;
+	return true;
 }
 
 static void *obs_qsv_create(obs_data_t *settings, obs_encoder_t *encoder)

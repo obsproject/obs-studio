@@ -333,6 +333,23 @@ bool QSV_Encoder_Internal::InitParams(qsv_param_t *pParams)
 	return true;
 }
 
+bool QSV_Encoder_Internal::UpdateParams(qsv_param_t *pParams)
+{
+	switch (pParams->nRateControl) {
+	case MFX_RATECONTROL_CBR:
+		m_mfxEncParams.mfx.TargetKbps = pParams->nTargetBitRate;
+	default:
+		break;
+	}
+
+	return true;
+}
+
+mfxStatus QSV_Encoder_Internal::ReconfigureEncoder()
+{
+	return m_pmfxENC->Reset(&m_mfxEncParams);
+}
+
 mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 {
 	// Query number of required surfaces for encoder
