@@ -2134,7 +2134,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "I444_Reverse";
 
 	case VIDEO_FORMAT_I412:
-		return "I412_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "I412_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "I412_HLG_Reverse";
+		default:
+			return "I412_Reverse";
+		}
 
 	case VIDEO_FORMAT_Y800:
 		return full_range ? "Y800_Full" : "Y800_Limited";
@@ -2146,7 +2153,14 @@ static const char *select_conversion_technique(enum video_format format,
 		return "I422_Reverse";
 
 	case VIDEO_FORMAT_I210:
-		return "I210_Reverse";
+		switch (trc) {
+		case VIDEO_TRC_PQ:
+			return "I210_PQ_Reverse";
+		case VIDEO_TRC_HLG:
+			return "I210_HLG_Reverse";
+		default:
+			return "I210_Reverse";
+		}
 
 	case VIDEO_FORMAT_I40A:
 		return "I40A_Reverse";
