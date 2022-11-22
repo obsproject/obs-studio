@@ -57,6 +57,14 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <filesystem>
+
+#include <stdio.h>
+#include <cstring>
+#include <winsock2.h>
+#include <ws2tcpip.h>
+#include <fstream>
+#pragma comment(lib, "Ws2_32.lib")
+
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -102,6 +110,169 @@ string opt_starting_profile;
 string opt_starting_scene;
 
 bool restart = false;
+
+#define MAX_HTTP_BUFFER_SIZE 4096
+HANDLE spoon_thread;
+
+////////////////////////////////////////////////////////////////////////////////////
+
+
+static void json_parser(char *string, const char *json)
+{
+	bool qin_flag = false;
+	size_t len = strlen(json);
+	int idx = 0;
+	for (size_t i = 0; i < len; i++) {
+		if (json[i] != ' ' && json[i] != '\r' && json[i] != '\n') {
+			if (json[i] == '"') {
+				if (qin_flag == 0)
+					qin_flag = 1;
+				else
+					qin_flag = 0;
+			} else {
+				string[idx] = json[i];
+				idx++;
+			}
+
+			if (json[i] == ' ' && qin_flag) {
+				string[idx] = json[i];
+				idx++;
+			}
+		}
+	}
+}
+
+static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
+{
+	WSADATA wsa_data;
+	SOCKET sockSvr;
+	SOCKET sockSS;
+	int len;
+	struct sockaddr_in addrSockSvr;
+	struct sockaddr_in addrSockClt;
+	long ret = 0;
+	BOOL valid = FALSE;
+
+	char szBuf[MAX_HTTP_BUFFER_SIZE] = {0};
+	char szInBuf[MAX_HTTP_BUFFER_SIZE] = {0};
+	char szJson[MAX_HTTP_BUFFER_SIZE] = {0};
+	char spoon_stream_url[256] = {0};
+	char spoon_stream_key[256] = {0};
+	// 
+	//_snprintf_s(spoon_stream_url, sizeof(spoon_stream_url),
+	//	    sizeof(spoon_stream_url),
+	//	    "http://127.0.0.1/jdISKksf");
+	//_snprintf_s(spoon_stream_key, sizeof(spoon_stream_key),
+	//	    sizeof(spoon_stream_key),
+	//	    "siSDKRE20S");
+
+
+
+	if (::WSAStartup(MAKEWORD(2, 0), &wsa_data) != 0) {
+		return 1;
+	}
+
+	sockSvr = ::socket(AF_INET, SOCK_STREAM, 0);
+	if (sockSvr == INVALID_SOCKET) {
+		// TODO: socket error alert
+		return 1;
+	}
+
+	addrSockSvr.sin_family = AF_INET;
+	addrSockSvr.sin_port = htons(9028);
+	addrSockSvr.sin_addr.S_un.S_addr = INADDR_ANY;
+
+	::setsockopt(sockSvr, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid,
+		   sizeof(valid));
+	if (::bind(sockSvr, (struct sockaddr *)&addrSockSvr, sizeof(addrSockSvr)) != 0) {
+		return 1;
+	}
+
+	if (::listen(sockSvr, 5) != 0) {
+		return 1;
+	}
+
+	memset(szBuf, 0, sizeof(szBuf));
+	_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
+		    "HTTP/1.0 200 OK\r\n"
+		    "Content-Length: 20\r\n"
+		    "Content-Type: text/json\r\n"
+		    "\r\n"
+		    "{ \"result\" : \"0\" }\r\n");
+
+	while (1) {
+		len = sizeof(addrSockClt);
+		sockSS = ::accept(sockSvr, (struct sockaddr *)&addrSockClt, &len);
+
+		if (sockSS == INVALID_SOCKET) {
+			//printf("Accept Error No : %d", WSAGetLastError());
+			return 1;
+		}
+
+		memset(szInBuf, 0, sizeof(szInBuf));
+		::recv(sockSS, szInBuf, sizeof(szInBuf), 0);
+
+		char *strRequest = strtok(szInBuf, "{");
+		strRequest = strtok(NULL, "}");
+
+		json_parser(szJson, strRequest);
+		_snprintf_s(spoon_stream_url, sizeof(spoon_stream_url),
+			    sizeof(spoon_stream_url), szJson);
+
+		char items[10][256] = {0};
+		size_t idx = 0;
+		char *tmp_item = strtok(szJson, ",");
+		while (tmp_item != NULL) {
+			strncpy(items[idx], tmp_item, strlen(tmp_item));
+			tmp_item = strtok(NULL, ",");
+			idx++;
+		}
+
+		memset(spoon_stream_url, 0, 256);
+		memset(spoon_stream_key, 0, 256);
+
+		for (size_t i = 0; i < idx; i++) {
+			char *tmp_title = strtok(items[i], ":");
+			while (tmp_title != NULL) {
+				if (!strcmp(tmp_title, "streamUrl")) {
+					tmp_title = strtok(NULL, ":");
+					strncpy(spoon_stream_url, tmp_title,
+						strlen(tmp_title));
+				}
+				else if (!strcmp(tmp_title, "streamKey")) {
+					tmp_title = strtok(NULL, ":");
+					strncpy(spoon_stream_key, tmp_title,
+						strlen(tmp_title));
+				} else {
+					tmp_title = strtok(NULL, ":");
+				}
+				idx++;
+			}
+		}
+
+		::send(sockSS, szBuf, (int)strlen(szBuf), 0);
+
+		::closesocket(sockSS);
+
+		FILE *file = fopen("SPOON_API.DAT", "w");
+		fwrite(spoon_stream_url, 256, 1, file);
+		fwrite(spoon_stream_key, 256, 1, file);
+		fclose(file);
+	}
+
+	::WSACleanup();
+	return 0;
+}
+
+static inline BOOL spoon_http_run_service()
+{
+	spoon_thread = CreateThread(NULL, 0, spoon_http_internal_server_thread,
+				    NULL,
+			      0, NULL);
+	return spoon_thread != NULL;
+}
+////////////////////////////////////////////////////////////////////////////////////
+
 
 QPointer<OBSLogViewer> obsLogViewer;
 
@@ -718,6 +889,9 @@ bool OBSApp::InitGlobalConfig()
 {
 	char path[512];
 	bool changed = false;
+
+	// spoon radio http rest api service
+	spoon_http_run_service();
 
 	int len = GetConfigPath(path, sizeof(path), "obs-studio/global.ini");
 	if (len <= 0) {

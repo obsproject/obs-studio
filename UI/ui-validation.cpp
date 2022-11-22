@@ -8,6 +8,8 @@
 #include <obs-app.hpp>
 #include <obs-service.h>
 
+#include <windows.h>
+
 static int CountVideoSources()
 {
 	int count = 0;
@@ -67,9 +69,28 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char const *serviceType = obs_service_get_type(service);
 	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
 
-	// TODO: need to implement for stream url and key applied by spoon radio. 
-	char const *streamUrl = obs_service_get_url(service);
-	char const *streamKey = obs_service_get_key(service);
+	// TODO: need to implement for stream url and key applied by spoon radio.
+	char const *tempStreamUrl = obs_service_get_url(service);
+	char const *tempStreamKey = obs_service_get_key(service);
+
+	char *streamUrl = NULL;
+	char *streamKey = NULL;
+
+	char spoon_stream_url[256] = {0};
+	char spoon_stream_key[256] = {0};
+
+	FILE *file = fopen("SPOON_API.DAT", "r");
+	if (file) {
+		fread(spoon_stream_url, 256, 1, file);
+		fread(spoon_stream_key, 256, 1, file);
+		fclose(file);
+
+		streamUrl = spoon_stream_url;
+		streamKey = spoon_stream_key;
+	} else {
+		streamUrl = (char *)tempStreamUrl;
+		streamKey = (char *)tempStreamKey;
+	}
 
 	bool hasStreamUrl = (streamUrl != NULL && streamUrl[0] != '\0');
 	bool hasStreamKey = ((streamKey != NULL && streamKey[0] != '\0') ||
