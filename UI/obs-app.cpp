@@ -235,7 +235,7 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 			char *tmp_title = strtok(items[i], ":");
 			while (tmp_title != NULL) {
 				if (!strcmp(tmp_title, "streamUrl")) {
-					tmp_title = strtok(NULL, ":");
+					tmp_title = strtok(NULL, "=");
 					strncpy(spoon_stream_url, tmp_title,
 						strlen(tmp_title));
 				}
