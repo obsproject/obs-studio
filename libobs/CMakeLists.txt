@@ -318,7 +318,8 @@ if(OS_WINDOWS)
     target_compile_options(libobs PRIVATE "$<$<COMPILE_LANGUAGE:C>:/EHc->"
                                           "$<$<COMPILE_LANGUAGE:CXX>:/EHc->")
 
-    target_link_options(libobs PRIVATE "LINKER:/SAFESEH:NO")
+    target_link_options(libobs PRIVATE "LINKER:/IGNORE:4098"
+                        "LINKER:/SAFESEH:NO")
   endif()
 
 elseif(OS_MACOS)
