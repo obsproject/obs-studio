@@ -178,7 +178,6 @@ int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();
 bool prefer_igpu_enc(int *iGPUIndex);
-bool qsv_query_encode_device(struct adapter_info *adapter_info);
 
 #ifdef __cplusplus
 }
