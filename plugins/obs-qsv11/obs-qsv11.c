@@ -157,12 +157,14 @@ static void obs_qsv_destroy(void *data)
 	}
 }
 
-static void obs_qsv_defaults(obs_data_t *settings, int ver)
+static void obs_qsv_defaults(obs_data_t *settings, int ver,
+			     enum qsv_codec codec)
 {
 	obs_data_set_default_string(settings, "target_usage", "balanced");
 	obs_data_set_default_int(settings, "bitrate", 2500);
 	obs_data_set_default_int(settings, "max_bitrate", 3000);
-	obs_data_set_default_string(settings, "profile", "high");
+	obs_data_set_default_string(settings, "profile",
+				    codec == QSV_CODEC_AVC ? "high" : "main");
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 
 	obs_data_set_default_int(settings, "__ver", ver);
@@ -181,14 +183,19 @@ static void obs_qsv_defaults(obs_data_t *settings, int ver)
 	obs_data_set_default_bool(settings, "enhancements", false);
 }
 
-static void obs_qsv_defaults_v1(obs_data_t *settings)
+static void obs_qsv_defaults_h264_v1(obs_data_t *settings)
 {
-	obs_qsv_defaults(settings, 1);
+	obs_qsv_defaults(settings, 1, QSV_CODEC_AVC);
 }
 
-static void obs_qsv_defaults_v2(obs_data_t *settings)
+static void obs_qsv_defaults_h264_v2(obs_data_t *settings)
 {
-	obs_qsv_defaults(settings, 2);
+	obs_qsv_defaults(settings, 2, QSV_CODEC_AVC);
+}
+
+static void obs_qsv_defaults_av1(obs_data_t *settings)
+{
+	obs_qsv_defaults(settings, 2, QSV_CODEC_AV1);
 }
 
 static inline void add_strings(obs_property_t *list, const char *const *strings)
@@ -1412,7 +1419,7 @@ struct obs_encoder_info obs_qsv_encoder_tex = {
 	.encode_texture = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264,
-	.get_defaults = obs_qsv_defaults_v1,
+	.get_defaults = obs_qsv_defaults_h264_v1,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
@@ -1428,7 +1435,7 @@ struct obs_encoder_info obs_qsv_encoder = {
 	.encode = obs_qsv_encode,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264,
-	.get_defaults = obs_qsv_defaults_v1,
+	.get_defaults = obs_qsv_defaults_h264_v1,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
@@ -1447,7 +1454,7 @@ struct obs_encoder_info obs_qsv_encoder_tex_v2 = {
 	.encode_texture = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264_v2,
-	.get_defaults = obs_qsv_defaults_v2,
+	.get_defaults = obs_qsv_defaults_h264_v2,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
@@ -1463,7 +1470,7 @@ struct obs_encoder_info obs_qsv_encoder_v2 = {
 	.encode = obs_qsv_encode,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_h264_v2,
-	.get_defaults = obs_qsv_defaults_v2,
+	.get_defaults = obs_qsv_defaults_h264_v2,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_sei_data = obs_qsv_sei,
 	.get_video_info = obs_qsv_video_info,
@@ -1481,7 +1488,7 @@ struct obs_encoder_info obs_qsv_av1_encoder_tex = {
 	.encode_texture = obs_qsv_encode_tex,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_av1,
-	.get_defaults = obs_qsv_defaults_v2,
+	.get_defaults = obs_qsv_defaults_av1,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_video_info = obs_qsv_av1_video_info,
 };
@@ -1496,7 +1503,7 @@ struct obs_encoder_info obs_qsv_av1_encoder = {
 	.encode = obs_qsv_encode,
 	.update = obs_qsv_update,
 	.get_properties = obs_qsv_props_av1,
-	.get_defaults = obs_qsv_defaults_v2,
+	.get_defaults = obs_qsv_defaults_av1,
 	.get_extra_data = obs_qsv_extra_data,
 	.get_video_info = obs_qsv_av1_video_info,
 	.caps = OBS_ENCODER_CAP_DYN_BITRATE | OBS_ENCODER_CAP_INTERNAL,
