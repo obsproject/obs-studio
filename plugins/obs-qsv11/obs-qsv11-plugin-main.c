@@ -73,6 +73,8 @@ extern struct obs_encoder_info obs_qsv_encoder_tex;
 extern struct obs_encoder_info obs_qsv_encoder_tex_v2;
 extern struct obs_encoder_info obs_qsv_av1_encoder_tex;
 extern struct obs_encoder_info obs_qsv_av1_encoder;
+extern struct obs_encoder_info obs_qsv_hevc_encoder_tex;
+extern struct obs_encoder_info obs_qsv_hevc_encoder;
 
 extern bool av1_supported(mfxIMPL impl);
 
@@ -123,6 +125,7 @@ bool obs_module_load(void)
 	adapter_count = config_num_sections(config);
 	bool avc_supported = false;
 	bool av1_supported = false;
+	bool hevc_supported = false;
 
 	if (adapter_count > MAX_ADAPTERS)
 		adapter_count = MAX_ADAPTERS;
@@ -137,9 +140,12 @@ bool obs_module_load(void)
 		adapter->is_dgpu = config_get_bool(config, section, "is_dgpu");
 		adapter->supports_av1 =
 			config_get_bool(config, section, "supports_av1");
+		adapter->supports_hevc =
+			config_get_bool(config, section, "supports_hevc");
 
 		avc_supported |= adapter->is_intel;
 		av1_supported |= adapter->supports_av1;
+		hevc_supported |= adapter->supports_hevc;
 	}
 
 	if (avc_supported) {
@@ -152,6 +158,12 @@ bool obs_module_load(void)
 		obs_register_encoder(&obs_qsv_av1_encoder_tex);
 		obs_register_encoder(&obs_qsv_av1_encoder);
 	}
+#if ENABLE_HEVC
+	if (hevc_supported) {
+		obs_register_encoder(&obs_qsv_hevc_encoder_tex);
+		obs_register_encoder(&obs_qsv_hevc_encoder);
+	}
+#endif
 
 fail:
 	config_close(config);

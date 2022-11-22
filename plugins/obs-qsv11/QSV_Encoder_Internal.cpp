@@ -180,7 +180,7 @@ mfxStatus QSV_Encoder_Internal::Open(qsv_param_t *pParams, enum qsv_codec codec)
 	sts = m_pmfxENC->Init(&m_mfxEncParams);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
-	sts = GetVideoParam();
+	sts = GetVideoParam(codec);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
 	sts = InitBitstream();
@@ -201,9 +201,16 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AVC;
 	else if (codec == QSV_CODEC_AV1)
 		m_mfxEncParams.mfx.CodecId = MFX_CODEC_AV1;
+	else if (codec == QSV_CODEC_HEVC)
+		m_mfxEncParams.mfx.CodecId = MFX_CODEC_HEVC;
 
 	m_mfxEncParams.mfx.GopOptFlag = MFX_GOP_STRICT;
-	m_mfxEncParams.mfx.NumSlice = 1;
+	if (codec == QSV_CODEC_HEVC) {
+		m_mfxEncParams.mfx.NumSlice = 0;
+		m_mfxEncParams.mfx.IdrInterval = 1;
+	} else {
+		m_mfxEncParams.mfx.NumSlice = 1;
+	}
 	m_mfxEncParams.mfx.TargetUsage = pParams->nTargetUsage;
 	m_mfxEncParams.mfx.CodecProfile = pParams->nCodecProfile;
 	m_mfxEncParams.mfx.FrameInfo.FrameRateExtN = pParams->nFpsNum;
@@ -226,6 +233,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.GopRefDist = 1;
 	else
 		m_mfxEncParams.mfx.GopRefDist = pParams->nbFrames + 1;
+
+	if (codec == QSV_CODEC_HEVC)
+		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
 	if ((qsv_platform >= QSV_CPU_PLATFORM_ICL ||
@@ -327,6 +337,19 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	if (iBuffers > 0) {
 		m_mfxEncParams.ExtParam = extendedBuffers;
 		m_mfxEncParams.NumExtParam = (mfxU16)iBuffers;
+	}
+
+	if (codec == QSV_CODEC_HEVC) {
+		if ((pParams->nWidth & 15) || (pParams->nHeight & 15)) {
+			memset(&m_ExtHEVCParam, 0, sizeof(m_ExtHEVCParam));
+			m_ExtHEVCParam.Header.BufferId = MFX_EXTBUFF_HEVC_PARAM;
+			m_ExtHEVCParam.Header.BufferSz = sizeof(m_ExtHEVCParam);
+			m_ExtHEVCParam.PicWidthInLumaSamples = pParams->nWidth;
+			m_ExtHEVCParam.PicHeightInLumaSamples =
+				pParams->nHeight;
+			extendedBuffers[iBuffers++] =
+				(mfxExtBuffer *)&m_ExtHEVCParam;
+		}
 	}
 
 	memset(&m_ExtVideoSignalInfo, 0, sizeof(m_ExtVideoSignalInfo));
@@ -502,7 +525,7 @@ mfxStatus QSV_Encoder_Internal::AllocateSurfaces()
 	return sts;
 }
 
-mfxStatus QSV_Encoder_Internal::GetVideoParam()
+mfxStatus QSV_Encoder_Internal::GetVideoParam(enum qsv_codec codec)
 {
 	memset(&m_parameter, 0, sizeof(m_parameter));
 	mfxExtCodingOptionSPSPPS opt;
@@ -511,18 +534,33 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam()
 	opt.Header.BufferSz = sizeof(mfxExtCodingOptionSPSPPS);
 
 	static mfxExtBuffer *extendedBuffers[1];
-	extendedBuffers[0] = (mfxExtBuffer *)&opt;
 	m_parameter.ExtParam = extendedBuffers;
-	m_parameter.NumExtParam = 1;
 
 	opt.SPSBuffer = m_SPSBuffer;
 	opt.PPSBuffer = m_PPSBuffer;
 	opt.SPSBufSize = 1024; //  m_nSPSBufferSize;
 	opt.PPSBufSize = 1024; //  m_nPPSBufferSize;
 
+	mfxExtCodingOptionVPS opt_vps{};
+	if (codec == QSV_CODEC_HEVC) {
+		opt_vps.Header.BufferId = MFX_EXTBUFF_CODING_OPTION_VPS;
+		opt_vps.Header.BufferSz = sizeof(mfxExtCodingOptionVPS);
+		opt_vps.VPSBuffer = m_VPSBuffer;
+		opt_vps.VPSBufSize = 1024;
+
+		extendedBuffers[0] = (mfxExtBuffer *)&opt_vps;
+		extendedBuffers[1] = (mfxExtBuffer *)&opt;
+		m_parameter.NumExtParam = 2;
+	} else {
+		extendedBuffers[0] = (mfxExtBuffer *)&opt;
+		m_parameter.NumExtParam = 1;
+	}
+
 	mfxStatus sts = m_pmfxENC->GetVideoParam(&m_parameter);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
 
+	if (codec == QSV_CODEC_HEVC)
+		m_nVPSBufferSize = opt_vps.VPSBufSize;
 	m_nSPSBufferSize = opt.SPSBufSize;
 	m_nPPSBufferSize = opt.PPSBufSize;
 
@@ -535,6 +573,20 @@ void QSV_Encoder_Internal::GetSPSPPS(mfxU8 **pSPSBuf, mfxU8 **pPPSBuf,
 	*pSPSBuf = m_SPSBuffer;
 	*pPPSBuf = m_PPSBuffer;
 	*pnSPSBuf = m_nSPSBufferSize;
+	*pnPPSBuf = m_nPPSBufferSize;
+}
+
+void QSV_Encoder_Internal::GetVpsSpsPps(mfxU8 **pVPSBuf, mfxU8 **pSPSBuf,
+					mfxU8 **pPPSBuf, mfxU16 *pnVPSBuf,
+					mfxU16 *pnSPSBuf, mfxU16 *pnPPSBuf)
+{
+	*pVPSBuf = m_VPSBuffer;
+	*pnVPSBuf = m_nVPSBufferSize;
+
+	*pSPSBuf = m_SPSBuffer;
+	*pnSPSBuf = m_nSPSBufferSize;
+
+	*pPPSBuf = m_PPSBuffer;
 	*pnPPSBuf = m_nPPSBufferSize;
 }
 

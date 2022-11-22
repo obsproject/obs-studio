@@ -80,6 +80,7 @@ static const struct qsv_rate_control_info qsv_av1_ratecontrols[] =
 
 static const char *const qsv_profile_names[] = {"high", "main", "baseline", 0};
 static const char *const qsv_profile_names_av1[] = {"main", 0};
+static const char *const qsv_profile_names_hevc[] = {"main", "main10", 0};
 static const char *const qsv_usage_names[] = {"quality",  "balanced", "speed",
 					      "veryslow", "slower",   "slow",
 					      "medium",   "fast",     "faster",
@@ -92,11 +93,13 @@ struct adapter_info {
 	bool is_intel;
 	bool is_dgpu;
 	bool supports_av1;
+	bool supports_hevc;
 };
 
 enum qsv_codec {
 	QSV_CODEC_AVC,
 	QSV_CODEC_AV1,
+	QSV_CODEC_HEVC,
 };
 
 #define MAX_ADAPTERS 10
@@ -178,6 +181,10 @@ int qsv_encoder_headers(qsv_t *, uint8_t **pSPS, uint8_t **pPPS,
 			uint16_t *pnSPS, uint16_t *pnPPS);
 enum qsv_cpu_platform qsv_get_cpu_platform();
 bool prefer_igpu_enc(int *iGPUIndex);
+
+int qsv_hevc_encoder_headers(qsv_t *pContext, uint8_t **vVPS, uint8_t **pSPS,
+			     uint8_t **pPPS, uint16_t *pnVPS, uint16_t *pnSPS,
+			     uint16_t *pnPPS);
 
 #ifdef __cplusplus
 }
