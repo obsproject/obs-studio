@@ -150,8 +150,11 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 	int len;
 	struct sockaddr_in addrSockSvr;
 	struct sockaddr_in addrSockClt;
+	char szBuffer[1024] = {0};
+	char szBufIP[1024] = {0};
 	long ret = 0;
 	BOOL valid = FALSE;
+	//unsigned char b1, b2, b3, b4;
 
 	char szBuf[MAX_HTTP_BUFFER_SIZE] = {0};
 	char szInBuf[MAX_HTTP_BUFFER_SIZE] = {0};
@@ -172,9 +175,41 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 		return 1;
 	}
 
+	if (::gethostname(szBuffer, sizeof(szBuffer)) == SOCKET_ERROR) {
+		::WSACleanup();
+		return 1;
+	}
+	int status;
+	struct addrinfo hints, *res, *p;
+	struct addrinfo *servinfo;
+	::memset(&hints, 0, sizeof(hints));
+	hints.ai_family = AF_INET;
+	hints.ai_socktype = SOCK_STREAM;
+	status = ::getaddrinfo(szBuffer, NULL, &hints, &servinfo);
+
+	char ipstr[INET_ADDRSTRLEN] = { 0 };
+
+	if ((status = getaddrinfo(szBuffer, NULL, &hints, &res)) != 0) {
+		return 1;
+	}
+
+	for (p = res; p != NULL; p = p->ai_next) {
+		void *addr;
+		struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
+		addr = &(ipv4->sin_addr);
+		inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
+		if (strcmp(ipstr, "127.0.0.1")) {
+			break;
+		}
+	}
+
+	freeaddrinfo(res);
+	config_set_string(App()->GlobalConfig(), "spoon", "localIP", ipstr);
+
 	sockSvr = ::socket(AF_INET, SOCK_STREAM, 0);
 	if (sockSvr == INVALID_SOCKET) {
 		// TODO: socket error alert
+		::WSACleanup();
 		return 1;
 	}
 
@@ -185,10 +220,12 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 	::setsockopt(sockSvr, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid,
 		   sizeof(valid));
 	if (::bind(sockSvr, (struct sockaddr *)&addrSockSvr, sizeof(addrSockSvr)) != 0) {
+		::WSACleanup();
 		return 1;
 	}
 
 	if (::listen(sockSvr, 5) != 0) {
+		::WSACleanup();
 		return 1;
 	}
 
@@ -215,38 +252,39 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 		char *strRequest = strtok(szInBuf, "{");
 		strRequest = strtok(NULL, "}");
 
-		json_parser(szJson, strRequest);
-		_snprintf_s(spoon_stream_url, sizeof(spoon_stream_url),
-			    sizeof(spoon_stream_url), szJson);
-
-		char items[10][256] = {0};
-		size_t idx = 0;
-		char *tmp_item = strtok(szJson, ",");
-		while (tmp_item != NULL) {
-			strncpy(items[idx], tmp_item, strlen(tmp_item));
-			tmp_item = strtok(NULL, ",");
-			idx++;
-		}
-
-		memset(spoon_stream_url, 0, 256);
-		memset(spoon_stream_key, 0, 256);
-
-		for (size_t i = 0; i < idx; i++) {
-			char *tmp_title = strtok(items[i], ":");
-			while (tmp_title != NULL) {
-				if (!strcmp(tmp_title, "streamUrl")) {
-					tmp_title = strtok(NULL, "=");
-					strncpy(spoon_stream_url, tmp_title,
-						strlen(tmp_title));
-				}
-				else if (!strcmp(tmp_title, "streamKey")) {
-					tmp_title = strtok(NULL, ":");
-					strncpy(spoon_stream_key, tmp_title,
-						strlen(tmp_title));
-				} else {
-					tmp_title = strtok(NULL, ":");
-				}
+		if (strRequest != NULL) {
+			json_parser(szJson, strRequest);
+			char items[10][256] = {0};
+			size_t idx = 0;
+			char *tmp_item = strtok(szJson, ",");
+			while (tmp_item != NULL) {
+				strncpy(items[idx], tmp_item, strlen(tmp_item));
+				tmp_item = strtok(NULL, ",");
 				idx++;
+			}
+
+			memset(spoon_stream_url, 0, 256);
+			memset(spoon_stream_key, 0, 256);
+
+			for (size_t i = 0; i < idx; i++) {
+				char *tmp_title = strtok(items[i], ":");
+				while (tmp_title != NULL) {
+					if (!strcmp(tmp_title, "streamUrl")) {
+						tmp_title = strtok(NULL, "");
+						strncpy(spoon_stream_url,
+							tmp_title,
+							strlen(tmp_title));
+					} else if (!strcmp(tmp_title,
+							   "streamKey")) {
+						tmp_title = strtok(NULL, "");
+						strncpy(spoon_stream_key,
+							tmp_title,
+							strlen(tmp_title));
+					} else {
+						tmp_title = strtok(NULL, "");
+					}
+					idx++;
+				}
 			}
 		}
 
@@ -258,6 +296,7 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 		fwrite(spoon_stream_url, 256, 1, file);
 		fwrite(spoon_stream_key, 256, 1, file);
 		fclose(file);
+
 	}
 
 	::WSACleanup();
