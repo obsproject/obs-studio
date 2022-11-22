@@ -21,33 +21,26 @@ if(OS_WINDOWS AND MSVC)
     set(THREADS_HAVE_PTHREAD_ARG OFF)
   endif()
 
-  # Check for Win SDK version 10.0.20348 or above
-  obs_status(
-    STATUS "Windows API version is ${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
-  string(REPLACE "." ";" WINAPI_VER
-                 "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
-
-  list(GET WINAPI_VER 0 WINAPI_VER_MAJOR)
-  list(GET WINAPI_VER 1 WINAPI_VER_MINOR)
-  list(GET WINAPI_VER 2 WINAPI_VER_BUILD)
-
-  set(WINAPI_COMPATIBLE FALSE)
-  if(WINAPI_VER_MAJOR EQUAL 10)
-    if(WINAPI_VER_MINOR EQUAL 0)
-      if(WINAPI_VER_BUILD GREATER_EQUAL 20348)
-        set(WINAPI_COMPATIBLE TRUE)
-      endif()
-    else()
-      set(WINAPI_COMPATIBLE TRUE)
-    endif()
-  elseif(WINAPI_VER_MAJOR GREATER 10)
-    set(WINAPI_COMPATIBLE TRUE)
+  unset(FOUND_SDK_VERSION)
+  if(DEFINED CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION)
+    set(FOUND_SDK_VERSION "${CMAKE_VS_WINDOWS_TARGET_PLATFORM_VERSION}")
+  elseif(DEFINED ENV{WindowsSDKLibVersion})
+    string(REGEX REPLACE "\\\\$" "" FOUND_SDK_VERSION
+                         "$ENV{WindowsSDKLibVersion}")
   endif()
 
-  if(NOT WINAPI_COMPATIBLE)
+  if(DEFINED FOUND_SDK_VERSION)
+    obs_status(STATUS "Found Windows SDK version is ${FOUND_SDK_VERSION}")
+  else()
+    obs_status(FATAL_ERROR "Windows SDK not found.")
+  endif()
+
+  set(REQUIRED_SDK_VERSION "10.0.20348")
+
+  if(FOUND_SDK_VERSION VERSION_LESS REQUIRED_SDK_VERSION)
     obs_status(
       FATAL_ERROR
-      "OBS requires Windows 10 SDK version 10.0.20348.0 and above to compile.\n"
+      "OBS requires Windows SDK version ${REQUIRED_SDK_VERSION} and above to compile.\n"
       "Please download the most recent Windows 10 SDK in order to compile.")
   endif()
 
