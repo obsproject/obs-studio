@@ -444,6 +444,9 @@ jobs:
     env:
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
       BUILD_FOR_DISTRIBUTION: 'ON'
+      HAVE_SPARKLE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY != '' }}
+    outputs:
+      run_sparkle: ${{ steps.sparkle_check.outputs.run_sparkle }}
     if: ${{ startsWith(github.ref, 'refs/tags/') && github.event_name != 'pull_request' }}
     strategy:
       matrix:
@@ -460,6 +463,12 @@ jobs:
         id: setup
         run: |
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+
+      - name: 'Determine if Sparkle should run'
+        if: env.HAVE_CODESIGN_IDENTITY == 'true'
+        id: sparkle_check
+        run: |
+          echo 'run_sparkle=${{ env.HAVE_SPARKLE_KEY }}' >> $GITHUB_OUTPUT
 
       - name: 'Download artifact'
         if: env.HAVE_CODESIGN_IDENTITY == 'true'
@@ -492,3 +501,109 @@ jobs:
         with:
           name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
           path: '${{ github.workspace }}/${{ env.FILE_NAME }}'
+
+  macos_sparkle:
+    name: '04 - macOS Sparkle Updates'
+    runs-on: [macos-12]
+    needs: [macos_release]
+    if: fromJSON(needs.macos_release.outputs.run_sparkle)
+    strategy:
+      matrix:
+        arch: ['x86_64', 'arm64']
+    env:
+      SPARKLE_VERSION: '2.3.2'
+      SPARKLE_HASH: '2b3fe6918ca20a83729aad34f8f693a678b714a17d33b5f13ca2d25edfa7eed3'
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - name: 'Checkout'
+        uses: actions/checkout@v3
+        with:
+          path: 'repo'
+          ref: ${{ github.ref }}
+
+      - name: 'Download artifact'
+        uses: actions/download-artifact@v3
+        with:
+          name: 'obs-studio-macos-${{ matrix.arch }}-notarized'
+          path: 'artifacts'
+
+      - name: 'Install Python requirements'
+        run: pip3 install requests xmltodict
+
+      - name: 'Install Brew requirements'
+        run: brew install coreutils pandoc
+
+      - name: 'Setup Sparkle'
+        run: |
+          curl -L "https://github.com/sparkle-project/Sparkle/releases/download/${{ env.SPARKLE_VERSION }}/Sparkle-${{ env.SPARKLE_VERSION }}.tar.xz" -o Sparkle.tar.xz
+
+          if [[ '${{ env.SPARKLE_HASH }}' != "$(sha256sum Sparkle.tar.xz | cut -d " " -f 1)" ]]; then
+              echo "Sparkle download hash does not match!"
+              exit 1
+          fi
+
+          mkdir sparkle && cd sparkle
+          tar -xf ../Sparkle.tar.xz
+
+      - name: 'Setup folder structure'
+        run: |
+          mkdir builds
+          mkdir -p output/appcasts/stable
+          mkdir -p output/sparkle_deltas/${{ matrix.arch }}
+
+      - name: 'Determine branch and tag'
+        id: branch
+        run: |
+          pushd repo
+          
+          GIT_TAG="$(git describe --tags --abbrev=0)"
+          if [[ ${GIT_TAG} == *'beta'* || ${GIT_TAG} == *'rc'* ]]; then
+            echo "branch=beta" >> $GITHUB_OUTPUT
+            echo "deltas=0" >> $GITHUB_OUTPUT
+          else
+            echo "branch=stable" >> $GITHUB_OUTPUT
+            echo "deltas=1" >> $GITHUB_OUTPUT
+          fi
+          # Write tag description to file
+          git tag -l --format='%(contents)' ${GIT_TAG} >> ../notes.rst
+
+      - name: 'Download existing Appcast and builds'
+        run: python3 repo/CI/macos/appcast_download.py --branch "${{ steps.branch.outputs.branch }}" --max-old-versions ${{ steps.branch.outputs.deltas }}
+
+      - name: 'Prepare release notes'
+        run: |
+          # Insert underline at line 2 to turn first line into heading
+          sed -i '' '2i\'$'\n''###################################################' notes.rst
+          pandoc -f rst -t html notes.rst -o output/appcasts/notes_${{ steps.branch.outputs.branch }}.html
+
+      - name: 'Setup Sparkle key'
+        run: echo -n "${{ secrets.SPARKLE_PRIVATE_KEY }}" >> eddsa_private.key
+
+      - name: 'Generate Appcast'
+        run: |
+          mv artifacts/*.dmg builds/
+          ./sparkle/bin/generate_appcast \
+              --verbose \
+              --ed-key-file ./eddsa_private.key \
+              --download-url-prefix "https://cdn-fastly.obsproject.com/downloads/" \
+              --full-release-notes-url "https://obsproject.com/osx_update/notes_${{ steps.branch.outputs.branch }}.html" \
+              --maximum-versions 0 \
+              --maximum-deltas ${{ steps.branch.outputs.deltas }} \
+              --channel "${{ steps.branch.outputs.branch }}" builds/
+          # Move deltas, if any
+          if compgen -G "builds/*.delta" > /dev/null; then
+            mv builds/*.delta output/sparkle_deltas/${{ matrix.arch }}
+          fi
+          # Move appcasts
+          mv builds/*.xml output/appcasts/
+
+      - name: 'Create 1.x Appcast'
+        run: python3 repo/CI/macos/appcast_convert.py
+
+      - name: 'Upload Appcast and Deltas'
+        uses: actions/upload-artifact@v3
+        with:
+          name: 'macos-sparkle-updates'
+          path: '${{ github.workspace }}/output'
