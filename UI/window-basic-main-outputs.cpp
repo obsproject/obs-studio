@@ -370,7 +370,7 @@ const char *get_simple_output_encoder(const char *encoder)
 	} else if (strcmp(encoder, SIMPLE_ENCODER_X264_LOWCPU) == 0) {
 		return "obs_x264";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_QSV) == 0) {
-		return "obs_qsv11";
+		return "obs_qsv11_v2";
 	} else if (strcmp(encoder, SIMPLE_ENCODER_AMD) == 0) {
 		return "h264_texture_amf";
 #ifdef ENABLE_HEVC
@@ -677,9 +677,7 @@ void SimpleOutput::UpdateRecordingSettings_qsv11(int crf)
 		obs_data_set_int(settings, "icq_quality", crf);
 	} else {
 		obs_data_set_string(settings, "rate_control", "CQP");
-		obs_data_set_int(settings, "qpi", crf);
-		obs_data_set_int(settings, "qpp", crf);
-		obs_data_set_int(settings, "qpb", crf);
+		obs_data_set_int(settings, "cqp", crf);
 	}
 
 	obs_encoder_update(videoRecording, settings);
