@@ -801,13 +801,14 @@ static void *obs_qsv_create(enum qsv_codec codec, obs_data_t *settings,
 	default:
 		switch (voi->colorspace) {
 		case VIDEO_CS_2100_PQ:
-		case VIDEO_CS_2100_HLG:
+		case VIDEO_CS_2100_HLG: {
 			const char *const text =
 				obs_module_text("8bitUnsupportedHdr");
 			obs_encoder_set_last_error(encoder, text);
 			error("%s", text);
 			bfree(obsqsv);
 			return NULL;
+		}
 		}
 	}
 
