@@ -1411,6 +1411,10 @@ void OBSBasicSettings::ResetEncoders(bool streamOnly)
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
 			QString(SIMPLE_ENCODER_QSV));
+	if (service_supports_encoder(codecs, "obs_qsv11_av1"))
+		ui->simpleOutStrEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.AV1"),
+			QString(SIMPLE_ENCODER_QSV_AV1));
 	if (service_supports_encoder(codecs, "ffmpeg_nvenc"))
 		ui->simpleOutStrEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),

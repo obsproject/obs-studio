@@ -3575,6 +3575,8 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	if (encoder == SIMPLE_ENCODER_QSV)
 		presetType = "QSVPreset";
+	else if (encoder == SIMPLE_ENCODER_QSV_AV1)
+		presetType = "QSVPreset";
 	else if (encoder == SIMPLE_ENCODER_NVENC)
 		presetType = "NVENCPreset2";
 	else if (encoder == SIMPLE_ENCODER_NVENC_AV1)
@@ -4857,6 +4859,10 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.QSV.H264"),
 			QString(SIMPLE_ENCODER_QSV));
+	if (EncoderAvailable("obs_qsv11_av1"))
+		ui->simpleOutRecEncoder->addItem(
+			ENCODER_STR("Hardware.QSV.AV1"),
+			QString(SIMPLE_ENCODER_QSV_AV1));
 	if (EncoderAvailable("ffmpeg_nvenc"))
 		ui->simpleOutRecEncoder->addItem(
 			ENCODER_STR("Hardware.NVENC.H264"),
@@ -4952,7 +4958,8 @@ void OBSBasicSettings::SimpleStreamingEncoderChanged()
 	ui->simpleOutPreset->setVisible(true);
 	ui->simpleOutPreset->clear();
 
-	if (encoder == SIMPLE_ENCODER_QSV) {
+	if (encoder == SIMPLE_ENCODER_QSV ||
+	    encoder == SIMPLE_ENCODER_QSV_AV1) {
 		ui->simpleOutPreset->addItem("speed", "speed");
 		ui->simpleOutPreset->addItem("balanced", "balanced");
 		ui->simpleOutPreset->addItem("quality", "quality");

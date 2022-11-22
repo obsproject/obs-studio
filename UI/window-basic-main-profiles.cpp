@@ -822,6 +822,7 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	const char *curRecEncoder =
 		config_get_string(basicConfig, "SimpleOutput", "RecEncoder");
 	bool qsv_supported = false;
+	bool qsv_av1_supported = false;
 	bool amd_supported = false;
 	bool nve_supported = false;
 #ifdef ENABLE_HEVC
@@ -840,6 +841,8 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 			amd_supported = true;
 		else if (strcmp(id, "obs_qsv11") == 0)
 			qsv_supported = true;
+		else if (strcmp(id, "obs_qsv11_av1") == 0)
+			qsv_av1_supported = true;
 		else if (strcmp(id, "ffmpeg_nvenc") == 0)
 			nve_supported = true;
 #ifdef ENABLE_HEVC
@@ -865,6 +868,12 @@ void OBSBasic::CheckForSimpleModeX264Fallback()
 	auto CheckEncoder = [&](const char *&name) {
 		if (strcmp(name, SIMPLE_ENCODER_QSV) == 0) {
 			if (!qsv_supported) {
+				changed = true;
+				name = SIMPLE_ENCODER_X264;
+				return false;
+			}
+		} else if (strcmp(name, SIMPLE_ENCODER_QSV_AV1) == 0) {
+			if (!qsv_av1_supported) {
 				changed = true;
 				name = SIMPLE_ENCODER_X264;
 				return false;
