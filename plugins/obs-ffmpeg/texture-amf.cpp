@@ -1580,7 +1580,8 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	int rc = get_hevc_rate_control(rc_str);
 
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
-	set_hevc_property(enc, ENABLE_VBAQ, true);
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP)
+		set_hevc_property(enc, ENABLE_VBAQ, true);
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
