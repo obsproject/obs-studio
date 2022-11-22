@@ -2597,6 +2597,53 @@
                 "bframes": 2,
                 "max video bitrate": 20000
             }
+        },
+        {
+            "name":"Livepeer",
+            "more_info_link": "https://livepeer.studio",
+            "servers":[
+                {
+                    "name": "Auto (Recommended)",
+                    "url": "rtmp://rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Frankfurt, DE",
+                    "url": "rtmp://fra-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Prague, CZ",
+                    "url": "rtmp://prg-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "London, UK",
+                    "url": "rtmp://lon-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "New York, US",
+                    "url": "rtmp://nyc-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Chicago, US",
+                    "url": "rtmp://mdw-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Los Angeles, US",
+                    "url": "rtmp://lax-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Singapore, SG",
+                    "url": "rtmp://sin-rtmp.livepeer.com/live"
+                },
+                {
+                    "name": "Sao Paulo, BR",
+                    "url": "rtmp://sao-rtmp.livepeer.com/live"
+                }
+            ],
+            "recommended": {
+                "keyint": 2,
+                "max video bitrate": 6000,
+                "max audio bitrate": 160
+            }
         }
     ]
 }
