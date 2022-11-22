@@ -43,6 +43,10 @@ if(OS_WINDOWS)
                  rtmp-services.rc)
 
   target_sources(rtmp-services PRIVATE rtmp-services.rc)
+
+  if(MSVC)
+    target_link_options(rtmp-services PRIVATE "LINKER:/IGNORE:4098")
+  endif()
 endif()
 
 set_target_properties(rtmp-services PROPERTIES FOLDER "plugins" PREFIX "")
