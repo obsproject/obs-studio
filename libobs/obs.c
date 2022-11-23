@@ -589,6 +589,18 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 
 	make_video_info(&vi, ovi);
 	video->ovi = *ovi;
+
+	/* main view graphics thread drives all frame output,
+	 * so share FPS settings for aux views */
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	size_t num = obs->video.mixes.num;
+	if (num && obs->video.main_mix) {
+		struct obs_video_info main_ovi = obs->video.main_mix->ovi;
+		video->ovi.fps_num = main_ovi.fps_num;
+		video->ovi.fps_den = main_ovi.fps_den;
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
 	video->gpu_conversion = ovi->gpu_conversion;
 	video->gpu_was_active = false;
 	video->raw_was_active = false;
