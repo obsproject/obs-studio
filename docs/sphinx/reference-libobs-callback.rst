@@ -192,11 +192,14 @@ Signals are used for all event-based callbacks.
 
 .. function:: void signal_handler_connect(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
 
-   Connect a callback to a signal on a signal handler.
+   Connects a callback to a signal on a signal handler. Does nothing
+   if the combination of ``signal``, ``callback``, and ``data``
+   is already connected to the handler.
 
    :param handler:  Signal handler object
+   :param signal:   Name of signal to handle
    :param callback: Signal callback
-   :param data:     Private data passed the callback
+   :param data:     Private data passed to the callback
 
    For scripting, use :py:func:`signal_handler_connect`.
 
@@ -204,23 +207,29 @@ Signals are used for all event-based callbacks.
 
 .. function:: void signal_handler_connect_ref(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
 
-   Connect a callback to a signal on a signal handler, and increments
+   Connects a callback to a signal on a signal handler, and increments
    the handler's internal reference counter, preventing it from being
-   destroyed until the signal has been disconnected.
+   destroyed until the signal has been disconnected. Even if the combination of
+   ``signal``, ``callback``, and ``data`` is already connected to the handler,
+   the reference counter is still incremented.
 
    :param handler:  Signal handler object
+   :param signal:   Name of signal to handle
    :param callback: Signal callback
-   :param data:     Private data passed the callback
+   :param data:     Private data passed to the callback
 
 ---------------------
 
 .. function:: void signal_handler_disconnect(signal_handler_t *handler, const char *signal, signal_callback_t callback, void *data)
 
-   Disconnects a callback from a signal on a signal handler.
+   Disconnects a callback from a signal on a signal handler. Does nothing
+   if the combination of ``signal``, ``callback``, and ``data``
+   is not yet connected to the handler.
 
    :param handler:  Signal handler object
+   :param signal:   Name of signal that was handled
    :param callback: Signal callback
-   :param data:     Private data passed the callback
+   :param data:     Private data passed to the callback
 
    For scripting, use :py:func:`signal_handler_disconnect`.
 
