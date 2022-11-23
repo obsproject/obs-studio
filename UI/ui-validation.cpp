@@ -85,8 +85,24 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 		fread(spoon_stream_key, 256, 1, file);
 		fclose(file);
 
+		OBSDataAutoRelease service_settings = obs_data_create();
+
 		streamUrl = spoon_stream_url;
 		streamKey = spoon_stream_key;
+
+		obs_data_set_string(service_settings, "service", "Spoon Radio");
+		obs_data_set_string(service_settings, "server", streamUrl);
+		obs_data_set_string(service_settings, "key", streamKey);
+		obs_service_update(service, service_settings);
+
+		// TEST CODE
+		char const *tempStreamUrl1 = obs_service_get_url(service);
+		char const *tempStreamKey1 = obs_service_get_key(service);
+		blog(LOG_INFO, "------------------------------------------------");
+		blog(LOG_INFO, "Saved service_setting:");
+		blog(LOG_INFO, tempStreamUrl1);
+		blog(LOG_INFO, tempStreamKey1);
+
 	} else {
 		streamUrl = (char *)tempStreamUrl;
 		streamKey = (char *)tempStreamKey;
