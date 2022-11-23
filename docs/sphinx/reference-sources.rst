@@ -616,7 +616,11 @@ Source Signals
 
 **update_properties** (ptr source)
 
-   Called when the properties of the source have been updated.
+   Called to signal to any properties view (or other users of the source's
+   obs_properties_t) that the presentable properties of the source have changed
+   and should be re-queried via obs_source_properties.
+   Does not mean that the source's *settings* (as configured by the user) have
+   changed. For that, use the `update` signal instead.
 
 **update_flags** (ptr source, int flags)
 
@@ -1506,7 +1510,9 @@ Functions used by sources
 
 .. function:: void obs_source_update_properties(obs_source_t *source)
 
-   Signal an update to any currently used properties.
+   Signals to any currently opened properties views (or other users of the
+   source's obs_properties_t) that the source's presentable properties have
+   changed and that the view should be updated.
 
 ---------------------
 
