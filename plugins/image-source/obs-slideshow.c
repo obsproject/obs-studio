@@ -350,6 +350,11 @@ static void ss_update(void *data, obs_data_t *settings)
 		const char *path = obs_data_get_string(item, "value");
 		os_dir_t *dir = os_opendir(path);
 
+		if (!path || !*path) {
+			obs_data_release(item);
+			continue;
+		}
+
 		if (dir) {
 			struct dstr dir_path = {0};
 			struct os_dirent *ent;
@@ -1001,7 +1006,10 @@ static void missing_file_callback(void *src, const char *new_path, void *data)
 		const char *path = obs_data_get_string(file, "value");
 
 		if (strcmp(path, orig_path) == 0) {
-			obs_data_set_string(file, "value", new_path);
+			if (new_path && *new_path)
+				obs_data_set_string(file, "value", new_path);
+			else
+				obs_data_array_erase(files, i);
 
 			obs_data_release(file);
 			break;
