@@ -66,6 +66,7 @@ jobs:
         run: |
           git config --global --add safe.directory $GITHUB_WORKSPACE
           echo "commitHash=$(git rev-parse --short=9 HEAD)" >> $GITHUB_OUTPUT
+          dnf install -y -q libappstream-glib
 
       - name: Build Flatpak Manifest
         uses: bilelmoussaoui/flatpak-github-actions/flatpak-builder@master
