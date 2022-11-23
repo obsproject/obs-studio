@@ -724,7 +724,7 @@ static void nv_greenscreen_filter_render(void *data, gs_effect_t *effect)
 
 	if (parent && !filter->handler) {
 		filter->handler = obs_source_get_signal_handler(parent);
-		signal_handler_connect(filter->handler, "update_properties",
+		signal_handler_connect(filter->handler, "update",
 				       nv_greenscreen_filter_reset, filter);
 	}
 
