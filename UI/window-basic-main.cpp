@@ -1882,7 +1882,6 @@ void OBSBasic::OBSInit()
 		disableSaving++;
 	}
 
-	TimedCheckForUpdates();
 	loaded = true;
 
 	previewEnabled = config_get_bool(App()->GlobalConfig(), "BasicWindow",
@@ -2038,6 +2037,7 @@ void OBSBasic::OBSInit()
 		config_save_safe(App()->GlobalConfig(), "tmp", nullptr);
 	}
 #endif
+	TimedCheckForUpdates();
 
 	ToggleMixerLayout(config_get_bool(App()->GlobalConfig(), "BasicWindow",
 					  "VerticalVolControl"));
