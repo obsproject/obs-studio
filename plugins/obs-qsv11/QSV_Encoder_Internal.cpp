@@ -61,6 +61,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <VersionHelpers.h>
 #include <obs-module.h>
 
+#include <vector>
+
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
 
@@ -298,8 +300,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		(mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
 			 (float)pParams->nFpsDen);
 
-	static mfxExtBuffer *extendedBuffers[7];
-	int iBuffers = 0;
+	std::vector<mfxExtBuffer *> extendedBuffers;
 
 	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
@@ -322,7 +323,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 				m_co2.LookAheadDepth = pParams->nLADEPTH;
 			}
 		}
-		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co2;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_co2);
 	}
 
 	if ((m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) ||
@@ -331,12 +332,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_co3.Header.BufferId = MFX_EXTBUFF_CODING_OPTION3;
 		m_co3.Header.BufferSz = sizeof(m_co3);
 		m_co3.ScenarioInfo = MFX_SCENARIO_GAME_STREAMING;
-		extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_co3;
-	}
-
-	if (iBuffers > 0) {
-		m_mfxEncParams.ExtParam = extendedBuffers;
-		m_mfxEncParams.NumExtParam = (mfxU16)iBuffers;
+		extendedBuffers.push_back((mfxExtBuffer *)&m_co3);
 	}
 
 	if (codec == QSV_CODEC_HEVC) {
@@ -347,8 +343,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 			m_ExtHEVCParam.PicWidthInLumaSamples = pParams->nWidth;
 			m_ExtHEVCParam.PicHeightInLumaSamples =
 				pParams->nHeight;
-			extendedBuffers[iBuffers++] =
-				(mfxExtBuffer *)&m_ExtHEVCParam;
+			extendedBuffers.push_back(
+				(mfxExtBuffer *)&m_ExtHEVCParam);
 		}
 	}
 
@@ -362,7 +358,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_ExtVideoSignalInfo.TransferCharacteristics =
 		pParams->TransferCharacteristics;
 	m_ExtVideoSignalInfo.MatrixCoefficients = pParams->MatrixCoefficients;
-	extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_ExtVideoSignalInfo;
+	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtVideoSignalInfo);
 
 /* TODO: Ask Intel why this is MFX_ERR_UNSUPPORTED */
 #if 0
@@ -374,7 +370,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		pParams->ChromaSampleLocTypeTopField;
 	m_ExtChromaLocInfo.ChromaSampleLocTypeBottomField =
 		pParams->ChromaSampleLocTypeBottomField;
-	extendedBuffers[iBuffers++] = (mfxExtBuffer *)&m_ExtChromaLocInfo;
+	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtChromaLocInfo);
 #endif
 
 	if (pParams->MaxContentLightLevel > 0) {
@@ -406,8 +402,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 			pParams->MaxDisplayMasteringLuminance;
 		m_ExtMasteringDisplayColourVolume.MinDisplayMasteringLuminance =
 			pParams->MinDisplayMasteringLuminance;
-		extendedBuffers[iBuffers++] =
-			(mfxExtBuffer *)&m_ExtMasteringDisplayColourVolume;
+		extendedBuffers.push_back(
+			(mfxExtBuffer *)&m_ExtMasteringDisplayColourVolume);
 
 		memset(&m_ExtContentLightLevelInfo, 0,
 		       sizeof(m_ExtContentLightLevelInfo));
@@ -421,8 +417,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 			pParams->MaxContentLightLevel;
 		m_ExtContentLightLevelInfo.MaxPicAverageLightLevel =
 			pParams->MaxPicAverageLightLevel;
-		extendedBuffers[iBuffers++] =
-			(mfxExtBuffer *)&m_ExtContentLightLevelInfo;
+		extendedBuffers.push_back(
+			(mfxExtBuffer *)&m_ExtContentLightLevelInfo);
 	}
 
 	// Width must be a multiple of 16
@@ -435,6 +431,9 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_VIDEO_MEMORY;
 	else
 		m_mfxEncParams.IOPattern = MFX_IOPATTERN_IN_SYSTEM_MEMORY;
+
+	m_mfxEncParams.ExtParam = extendedBuffers.data();
+	m_mfxEncParams.NumExtParam = (mfxU16)extendedBuffers.size();
 
 	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
 	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
@@ -533,8 +532,8 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam(enum qsv_codec codec)
 	opt.Header.BufferId = MFX_EXTBUFF_CODING_OPTION_SPSPPS;
 	opt.Header.BufferSz = sizeof(mfxExtCodingOptionSPSPPS);
 
-	static mfxExtBuffer *extendedBuffers[1];
-	m_parameter.ExtParam = extendedBuffers;
+	std::vector<mfxExtBuffer *> extendedBuffers;
+	extendedBuffers.reserve(2);
 
 	opt.SPSBuffer = m_SPSBuffer;
 	opt.PPSBuffer = m_PPSBuffer;
@@ -548,13 +547,13 @@ mfxStatus QSV_Encoder_Internal::GetVideoParam(enum qsv_codec codec)
 		opt_vps.VPSBuffer = m_VPSBuffer;
 		opt_vps.VPSBufSize = 1024;
 
-		extendedBuffers[0] = (mfxExtBuffer *)&opt_vps;
-		extendedBuffers[1] = (mfxExtBuffer *)&opt;
-		m_parameter.NumExtParam = 2;
-	} else {
-		extendedBuffers[0] = (mfxExtBuffer *)&opt;
-		m_parameter.NumExtParam = 1;
+		extendedBuffers.push_back((mfxExtBuffer *)&opt_vps);
 	}
+
+	extendedBuffers.push_back((mfxExtBuffer *)&opt);
+
+	m_parameter.ExtParam = extendedBuffers.data();
+	m_parameter.NumExtParam = (mfxU16)extendedBuffers.size();
 
 	mfxStatus sts = m_pmfxENC->GetVideoParam(&m_parameter);
 	MSDK_CHECK_RESULT(sts, MFX_ERR_NONE, sts);
