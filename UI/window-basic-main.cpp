@@ -2026,7 +2026,7 @@ void OBSBasic::OBSInit()
 		QMetaObject::invokeMethod(this, "on_autoConfigure_triggered",
 					  Qt::QueuedConnection);
 
-#if OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0
+#if defined(_WIN32) && (OBS_RELEASE_CANDIDATE > 0 || OBS_BETA > 0)
 	/* Automatically set branch to "beta" the first time a pre-release build is run. */
 	if (!config_get_bool(App()->GlobalConfig(), "General",
 			     "AutoBetaOptIn")) {
