@@ -1,5 +1,8 @@
 #pragma once
 
+#include <QSize>
+#include <QMenu>
+#include <vector>
 #include "OBSQTDisplay.hpp"
 
 class Multiview;
@@ -43,10 +46,19 @@ private:
 	QRect prevGeometry;
 	void SetMonitor(int monitor);
 
+	QSize GetTargetSize();
+	QMenu *GetWindowResizeMenu();
+	std::pair<int, int> GetScaledSize(int scale);
+	QRect GetScreenSize();
+	std::vector<int> GetResizeScalePresets();
+
 private slots:
 	void EscapeTriggered();
 	void OpenFullScreenProjector();
 	void ResizeToContent();
+	void ResizeToScale(int scale);
+	void ResizeToResolution(int width, int height);
+	void OpenCustomWindowSizeDialog();
 	void OpenWindowedProjector();
 	void AlwaysOnTopToggled(bool alwaysOnTop);
 	void ScreenRemoved(QScreen *screen);
@@ -65,4 +77,5 @@ public:
 	bool IsAlwaysOnTop() const;
 	bool IsAlwaysOnTopOverridden() const;
 	void SetIsAlwaysOnTop(bool isAlwaysOnTop, bool isOverridden);
+	std::vector<std::pair<int, int>> GetResizeResolutionPresets();
 };
