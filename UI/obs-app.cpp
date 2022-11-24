@@ -229,14 +229,6 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 		return 1;
 	}
 
-	memset(szBuf, 0, sizeof(szBuf));
-	_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
-		    "HTTP/1.0 200 OK\r\n"
-		    "Content-Length: 20\r\n"
-		    "Content-Type: text/json\r\n"
-		    "\r\n"
-		    "{ \"result\" : \"0\" }\r\n");
-
 	while (1) {
 		len = sizeof(addrSockClt);
 		sockSS = ::accept(sockSvr, (struct sockaddr *)&addrSockClt, &len);
@@ -288,14 +280,48 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 			}
 		}
 
-		::send(sockSS, szBuf, (int)strlen(szBuf), 0);
-
-		::closesocket(sockSS);
-
 		FILE *file = fopen("SPOON_API.DAT", "w");
 		fwrite(spoon_stream_url, 256, 1, file);
 		fwrite(spoon_stream_key, 256, 1, file);
 		fclose(file);
+
+		file = fopen("SPOON_API.DAT", "r");
+		if (file) {
+			char bodyStreamUrl[256] = {0};
+			char bodyStreamKey[256] = {0};
+			fread(bodyStreamUrl, 256, 1, file);
+			fread(bodyStreamKey, 256, 1, file);
+			fclose(file);
+
+			char bodyMessage[1024] = {0};
+			_snprintf_s(bodyMessage, sizeof(bodyMessage),
+				    sizeof(bodyMessage),
+			"{ \"result\" : \"0\", \"streamUrl\" : \"%s\", \"streamKey\" : \"%s\" }\r\n",
+				    bodyStreamUrl, bodyStreamKey);
+
+			int bodyMsgLen = (int)strlen(bodyMessage);
+			memset(szBuf, 0, sizeof(szBuf));
+			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
+				    "HTTP/1.0 200 OK\r\n"
+				    "Content-Length: %d\r\n"
+				    "Content-Type: text/json\r\n"
+				    "\r\n%s",
+				    bodyMsgLen, bodyMessage);
+
+		} else {
+			char bodyMessage[] = "{ \"result\" : \"1\" }\r\n";
+			int bodyMsgLen = (int)strlen(bodyMessage);
+			memset(szBuf, 0, sizeof(szBuf));
+			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
+				    "HTTP/1.0 200 OK\r\n"
+				    "Content-Length: %d\r\n"
+				    "Content-Type: text/json\r\n"
+				    "\r\n%s",
+				    bodyMsgLen, bodyMessage);
+		}
+		::send(sockSS, szBuf, (int)strlen(szBuf), 0);
+
+		::closesocket(sockSS);
 
 	}
 
@@ -305,9 +331,7 @@ static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
 
 static inline BOOL spoon_http_run_service()
 {
-	spoon_thread = CreateThread(NULL, 0, spoon_http_internal_server_thread,
-				    NULL,
-			      0, NULL);
+	spoon_thread = CreateThread(NULL, 0, spoon_http_internal_server_thread, NULL, 0, NULL);
 	return spoon_thread != NULL;
 }
 ////////////////////////////////////////////////////////////////////////////////////
