@@ -510,6 +510,11 @@ void MediaControls::UpdateSlideCounter()
 	int total = calldata_int(&cd, "total_files");
 	calldata_free(&cd);
 
-	ui->timerLabel->setText(QString::number(slide + 1));
-	ui->durationLabel->setText(QString::number(total));
+	if (total > 0) {
+		ui->timerLabel->setText(QString::number(slide + 1));
+		ui->durationLabel->setText(QString::number(total));
+	} else {
+		ui->timerLabel->setText("-");
+		ui->durationLabel->setText("-");
+	}
 }
