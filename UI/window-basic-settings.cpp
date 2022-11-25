@@ -5083,8 +5083,10 @@ void OBSBasicSettings::UpdateAutomaticReplayBufferCheckboxes()
 		break;
 	case 1:
 		state = ui->advReplayBuf->isChecked();
+		bool customFFmpeg = ui->advOutRecType->currentIndex() == 1;
 		ui->advReplayBuf->setEnabled(
-			!obs_frontend_replay_buffer_active());
+			!obs_frontend_replay_buffer_active() && !customFFmpeg);
+		ui->advReplayBufCustomFFmpeg->setVisible(customFFmpeg);
 		break;
 	}
 	ui->replayWhileStreaming->setEnabled(state);
