@@ -912,14 +912,6 @@ static bool is_sample_keyframe(CMSampleBufferRef buffer)
 static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 			 struct encoder_packet *packet, CMTime off)
 {
-	int type;
-	bool should_edit_nal = false;
-
-	if (enc->codec_type == kCMVideoCodecType_H264 ||
-	    enc->codec_type == kCMVideoCodecType_HEVC) {
-		should_edit_nal = true;
-	}
-
 	CMTime pts = CMSampleBufferGetPresentationTimeStamp(buffer);
 	CMTime dts = CMSampleBufferGetDecodeTimeStamp(buffer);
 
@@ -932,11 +924,12 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	pts = CMTimeMultiply(pts, enc->fps_num);
 	dts = CMTimeMultiply(dts, enc->fps_num);
 
+	const bool is_avc = enc->codec_type == kCMVideoCodecType_H264;
+	const bool has_annexb = is_avc ||
+				(enc->codec_type == kCMVideoCodecType_HEVC);
+
 	// All ProRes frames are "keyframes"
-	bool keyframe = true;
-	if (should_edit_nal) {
-		keyframe = is_sample_keyframe(buffer);
-	}
+	const bool keyframe = !has_annexb || is_sample_keyframe(buffer);
 
 	da_resize(enc->packet_data, 0);
 
@@ -945,7 +938,7 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	if (enc->extra_data.num == 0)
 		extra_data = &enc->extra_data.da;
 
-	if (should_edit_nal) {
+	if (has_annexb) {
 		if (!convert_sample_to_annexb(enc, &enc->packet_data.da,
 					      extra_data, buffer, keyframe))
 			goto fail;
@@ -961,7 +954,7 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 	packet->size = enc->packet_data.num;
 	packet->keyframe = keyframe;
 
-	if (should_edit_nal) {
+	if (is_avc) {
 		// VideoToolbox produces packets with priority lower than the RTMP code
 		// expects, which causes it to be unable to recover from frame drops.
 		// Fix this by manually adjusting the priority.
@@ -976,7 +969,7 @@ static bool parse_sample(struct vt_encoder *enc, CMSampleBufferRef buffer,
 			if (start == end)
 				break;
 
-			type = start[0] & 0x1F;
+			const int type = start[0] & 0x1F;
 			if (type == OBS_NAL_SLICE_IDR ||
 			    type == OBS_NAL_SLICE) {
 				uint8_t prev_type = (start[0] >> 5) & 0x3;
