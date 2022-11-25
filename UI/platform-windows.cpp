@@ -356,6 +356,7 @@ static BOOL CALLBACK GetMonitorCallback(HMONITOR monitor, HDC, LPRECT,
 	return true;
 }
 
+#if QT_VERSION < QT_VERSION_CHECK(6, 4, 0)
 #define GENERIC_MONITOR_NAME QStringLiteral("Generic PnP Monitor")
 
 QString GetMonitorName(const QString &id)
@@ -417,6 +418,7 @@ QString GetMonitorName(const QString &id)
 
 	return QString::fromWCharArray(target.monitorFriendlyDeviceName);
 }
+#endif
 
 /* Based on https://www.winehq.org/pipermail/wine-devel/2008-September/069387.html */
 typedef const char *(CDECL *WINEGETVERSION)(void);
