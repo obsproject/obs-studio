@@ -61,8 +61,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include <VersionHelpers.h>
 #include <obs-module.h>
 
-#include <vector>
-
 #define do_log(level, format, ...) \
 	blog(level, "[qsv encoder: '%s'] " format, "msdk_impl", ##__VA_ARGS__)
 
@@ -299,8 +297,6 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_mfxEncParams.mfx.GopPicSize =
 		(mfxU16)(pParams->nKeyIntSec * pParams->nFpsNum /
 			 (float)pParams->nFpsDen);
-
-	std::vector<mfxExtBuffer *> extendedBuffers;
 
 	if (m_ver.Major == 1 && m_ver.Minor >= 8) {
 		memset(&m_co2, 0, sizeof(mfxExtCodingOption2));
