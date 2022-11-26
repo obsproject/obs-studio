@@ -288,7 +288,7 @@
                     <enum>QFormLayout::AllNonFixedFieldsGrow</enum>
                    </property>
                    <item row="0" column="0">
-                    <widget class="QLabel" name="label_10">
+                    <widget class="QLabel" name="updateChannelLabel">
                      <property name="text">
                       <string>Basic.Settings.General.UpdateChannel</string>
                      </property>

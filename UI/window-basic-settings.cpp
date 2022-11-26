@@ -588,6 +588,8 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 #elif defined(__APPLE__)
 	delete ui->updateChannelBox;
 	ui->updateChannelBox = nullptr;
+	delete ui->updateChannelLabel;
+	ui->updateChannelLabel = nullptr;
 #else
 	// Hide update section if disabled
 	if (App()->IsUpdaterDisabled())
