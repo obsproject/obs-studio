@@ -370,7 +370,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	extendedBuffers.push_back((mfxExtBuffer *)&m_ExtChromaLocInfo);
 #endif
 
-	if (pParams->MaxContentLightLevel > 0) {
+	if (codec != QSV_CODEC_AV1 && pParams->MaxContentLightLevel > 0) {
 		memset(&m_ExtMasteringDisplayColourVolume, 0,
 		       sizeof(m_ExtMasteringDisplayColourVolume));
 		m_ExtMasteringDisplayColourVolume.Header.BufferId =
