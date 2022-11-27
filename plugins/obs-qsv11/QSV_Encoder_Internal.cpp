@@ -238,7 +238,8 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
-	if ((qsv_platform >= QSV_CPU_PLATFORM_ICL ||
+	if (codec != QSV_CODEC_AV1 &&
+	    (qsv_platform >= QSV_CPU_PLATFORM_ICL ||
 	     qsv_platform == QSV_CPU_PLATFORM_UNKNOWN) &&
 	    (pParams->nbFrames == 0) &&
 	    (m_ver.Major == 1 && m_ver.Minor >= 31)) {
