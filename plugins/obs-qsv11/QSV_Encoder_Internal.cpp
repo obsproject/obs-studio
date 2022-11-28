@@ -71,7 +71,8 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 mfxHDL QSV_Encoder_Internal::g_DX_Handle = NULL;
 mfxU16 QSV_Encoder_Internal::g_numEncodersOpen = 0;
 
-QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version)
+QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version,
+					   bool isDGPU)
 	: m_pmfxSurfaces(NULL),
 	  m_pmfxENC(NULL),
 	  m_nSPSBufferSize(1024),
@@ -80,7 +81,8 @@ QSV_Encoder_Internal::QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version)
 	  m_pTaskPool(NULL),
 	  m_nTaskIdx(0),
 	  m_nFirstSyncTask(0),
-	  m_outBitstream()
+	  m_outBitstream(),
+	  m_isDGPU(isDGPU)
 {
 	mfxIMPL tempImpl;
 	mfxStatus sts;
@@ -238,7 +240,7 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 		m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
 
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
-	if ((qsv_platform >= QSV_CPU_PLATFORM_ICL ||
+	if ((m_isDGPU || qsv_platform >= QSV_CPU_PLATFORM_ICL ||
 	     qsv_platform == QSV_CPU_PLATFORM_UNKNOWN) &&
 	    (pParams->nbFrames == 0) &&
 	    (m_ver.Major == 1 && m_ver.Minor >= 31)) {

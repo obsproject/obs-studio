@@ -106,9 +106,11 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 		}
 	}
 
+	bool isDGPU = adapters[adapter_idx].is_dgpu;
 	impl = impl_list[adapter_idx];
 
-	QSV_Encoder_Internal *pEncoder = new QSV_Encoder_Internal(impl, ver);
+	QSV_Encoder_Internal *pEncoder =
+		new QSV_Encoder_Internal(impl, ver, isDGPU);
 	mfxStatus sts = pEncoder->Open(pParams, codec);
 	if (sts != MFX_ERR_NONE) {
 
@@ -195,6 +197,12 @@ qsv_t *qsv_encoder_open(qsv_param_t *pParams, enum qsv_codec codec)
 	}
 
 	return (qsv_t *)pEncoder;
+}
+
+bool qsv_encoder_is_dgpu(qsv_t *pContext)
+{
+	QSV_Encoder_Internal *pEncoder = (QSV_Encoder_Internal *)pContext;
+	return pEncoder->IsDGPU();
 }
 
 int qsv_encoder_headers(qsv_t *pContext, uint8_t **pSPS, uint8_t **pPPS,

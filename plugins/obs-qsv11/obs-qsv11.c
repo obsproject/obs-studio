@@ -1057,12 +1057,15 @@ static inline bool valid_av1_format(enum video_format format)
 	return format == VIDEO_FORMAT_NV12 || format == VIDEO_FORMAT_P010;
 }
 
-static inline void cap_resolution(obs_encoder_t *encoder,
+static inline void cap_resolution(struct obs_qsv *obsqsv,
 				  struct video_scale_info *info)
 {
 	enum qsv_cpu_platform qsv_platform = qsv_get_cpu_platform();
-	uint32_t width = obs_encoder_get_width(encoder);
-	uint32_t height = obs_encoder_get_height(encoder);
+	uint32_t width = obs_encoder_get_width(obsqsv->encoder);
+	uint32_t height = obs_encoder_get_height(obsqsv->encoder);
+
+	if (qsv_encoder_is_dgpu(obsqsv->context))
+		qsv_platform = QSV_CPU_PLATFORM_UNKNOWN;
 
 	info->height = height;
 	info->width = width;
@@ -1092,7 +1095,7 @@ static void obs_qsv_video_info(void *data, struct video_scale_info *info)
 	}
 
 	info->format = pref_format;
-	cap_resolution(obsqsv->encoder, info);
+	cap_resolution(obsqsv, info);
 }
 
 static void obs_qsv_video_plus_hdr_info(void *data,
@@ -1110,7 +1113,7 @@ static void obs_qsv_video_plus_hdr_info(void *data,
 	}
 
 	info->format = pref_format;
-	cap_resolution(obsqsv->encoder, info);
+	cap_resolution(obsqsv, info);
 }
 
 static mfxU64 ts_obs_to_mfx(int64_t ts, const struct video_output_info *voi)

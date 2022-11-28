@@ -63,7 +63,7 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 class QSV_Encoder_Internal {
 public:
-	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version);
+	QSV_Encoder_Internal(mfxIMPL &impl, mfxVersion &version, bool isDGPU);
 	~QSV_Encoder_Internal();
 
 	mfxStatus Open(qsv_param_t *pParams, enum qsv_codec codec);
@@ -81,6 +81,8 @@ public:
 	mfxStatus Reset(qsv_param_t *pParams, enum qsv_codec codec);
 	mfxStatus ReconfigureEncoder();
 	bool UpdateParams(qsv_param_t *pParams);
+
+	bool IsDGPU() const { return m_isDGPU; }
 
 protected:
 	mfxStatus InitParams(qsv_param_t *pParams, enum qsv_codec codec);
@@ -130,6 +132,7 @@ private:
 	bool m_bIsWindows8OrGreater;
 	bool m_bUseD3D11;
 	bool m_bD3D9HACK;
+	bool m_isDGPU;
 	static mfxU16 g_numEncodersOpen;
 	static mfxHDL
 		g_DX_Handle; // we only want one handle for all instances to use;
