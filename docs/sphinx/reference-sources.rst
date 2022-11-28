@@ -31,6 +31,14 @@ Source Definition Structure (obs_source_info)
 
    Unique string identifier for the source (required).
 
+.. member:: uint32_t version
+
+   Source version (optional).
+
+   This is used when a source's implementation is significantly
+   modified and the previous version is deprecated, but is kept to
+   prevent old sources from breaking.
+
 .. member:: enum obs_source_type obs_source_info.type
 
    Type of source.
@@ -502,6 +510,10 @@ Source Definition Structure (obs_source_info)
    - **OBS_MEDIA_STATE_ENDED**     - Ended
    - **OBS_MEDIA_STATE_ERROR**     - Error
 
+.. member:: obs_missing_files_t *(*missing_files)(void *data)
+
+   Called to get the missing files of the source.
+
 .. member:: enum gs_color_space (*obs_source_info.video_get_color_space)(void *data, size_t count, const enum gs_color_space *preferred_spaces)
 
    Returns the color space of the source. Assume GS_CS_SRGB if not
@@ -944,9 +956,28 @@ General Source Functions
 
 ---------------------
 
+.. function:: bool obs_source_is_scene(const obs_source_t *source)
+
+   :return: *true* if the source is a scene
+
+---------------------
+
+.. function:: bool obs_source_is_group(const obs_source_t *source)
+
+   :return: *true* if the source is a group
+
+---------------------
+
 .. function:: const char *obs_source_get_id(const obs_source_t *source)
 
-   :return: The source's type identifier string
+   :return: The source's type identifier string. If the source is versioned,
+            "_vN" is appended at the end, where "N" is the source's version.
+
+ ---------------------
+
+.. function:: const char *obs_source_get_unversioned_id(const obs_source_t *source)
+
+   :return: The source's unversioned type identifier string.
 
 ---------------------
 
@@ -1125,6 +1156,14 @@ General Source Functions
 
 ---------------------
 
+.. function:: void obs_source_copy_single_filter(obs_source_t *dst, obs_source_t *filter)
+
+   Copies the filter from the source to the destination. If a filter by the
+   same name already exists in the destination source, the newer filter
+   will be given a unique name.
+
+---------------------
+
 .. function:: size_t obs_source_filter_count(const obs_source_t *source)
 
    Returns the number of filters the source has.
@@ -1228,6 +1267,77 @@ General Source Functions
 
    Used for interacting with sources:  sends a key up/down event to a
    source.
+
+---------------------
+
+.. function:: enum obs_icon_type obs_source_get_icon_type(const char *id)
+
+   Calls the :c:member:`obs_source_info.icon_type` to get the icon type.
+
+---------------------
+
+.. function:: void obs_source_media_play_pause(obs_source_t *source, bool pause)
+
+   Calls the :c:member:`obs_source_info.media_play_pause` to pause or play media.
+
+---------------------
+
+.. function:: void obs_source_media_restart(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_restart` to restart the media.
+
+---------------------
+
+.. function:: void obs_source_media_stop(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_stop` to stop the media.
+
+---------------------
+
+.. function:: void obs_source_media_next(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_next` to go to the next media.
+
+---------------------
+
+.. function:: void obs_source_media_previous(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_previous` to go to the previous media.
+
+---------------------
+
+.. function:: int64_t obs_source_media_get_duration(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_get_duration` to
+   get the media duration in milliseconds.
+
+---------------------
+
+.. function:: int64_t obs_source_media_get_time(obs_source_t *source)
+              void obs_source_media_set_time(obs_source_t *source, int64_t ms)
+
+   Calls the :c:member:`obs_source_info.media_get_time` or
+   :c:member:`obs_source_info.media_set_time` to get/set the
+   current time (in milliseconds) of the media. Will return 0
+   for non-media sources.
+
+---------------------
+
+.. function:: enum obs_media_state obs_source_media_get_state(obs_source_t *source)
+
+   Calls the :c:member:`obs_source_info.media_get_state` to get the state of the media.
+
+---------------------
+
+.. function:: void obs_source_media_started(obs_source_t *source)
+
+   Emits a **media_started** signal.
+
+---------------------
+
+.. function:: void obs_source_media_ended(obs_source_t *source)
+
+   Emits a **media_ended** signal.
 
 ---------------------
 
