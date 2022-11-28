@@ -77,6 +77,8 @@ jobs:
       MACOSX_DEPLOYMENT_TARGET_ARM64: '11.0'
       SPARKLE_VERSION: '1.26.0'
       SPARKLE_HASH: '8312cbf7528297a49f1b97692c33cb8d33254c396dc51be394e9484e4b6833a0'
+      SPARKLE_APPCAST_URL: 'https://obsproject.com/osx_update/stable/updates_${{ matrix.arch }}.xml'
+      SPARKLE_PUBLIC_KEY: 'HQ5/Ba9VHOuEWaM0jtVjZzgHKFJX9YTl+HNVpgNF0iM='
       BLOCKED_FORMULAS: 'speexdsp curl php composer'
       CODESIGN_IDENT: '-'
       HAVE_CODESIGN_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY != '' && secrets.MACOS_SIGNING_CERT != '' }}
