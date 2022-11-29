@@ -434,7 +434,7 @@ EXPORT profiler_name_store_t *obs_get_profiler_name_store(void);
  *               specification of the graphics subsystem,
  * @return       OBS_VIDEO_SUCCESS if successful
  *               OBS_VIDEO_NOT_SUPPORTED if the adapter lacks capabilities
- *               OBS_VIDEO_INV`ALID_PARAM if a parameter is invalid
+ *               OBS_VIDEO_INVALID_PARAM if a parameter is invalid
  *               OBS_VIDEO_CURRENTLY_ACTIVE if video is currently active
  *               OBS_VIDEO_MODULE_NOT_FOUND if the graphics module is not found
  *               OBS_VIDEO_FAIL for generic failure
