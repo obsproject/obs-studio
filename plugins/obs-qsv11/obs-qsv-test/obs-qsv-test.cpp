@@ -52,6 +52,8 @@ static bool has_encoder(mfxIMPL impl, mfxU32 codec_id)
 
 static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 {
+	mfxIMPL impls[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
+			    MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
 	HRESULT hr;
 
 	ComPtr<IDXGIAdapter> adapter;
@@ -68,7 +70,7 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 		return true;
 
 	bool dgpu = desc.DedicatedVideoMemory > 512 * 1024 * 1024;
-	mfxIMPL impl = dgpu ? MFX_IMPL_HARDWARE : MFX_IMPL_HARDWARE2;
+	mfxIMPL impl = impls[adapter_idx];
 
 	caps.is_intel = true;
 	caps.is_dgpu = dgpu;
@@ -116,7 +118,7 @@ try {
 		throw "CreateDXGIFactory1 failed";
 
 	uint32_t idx = 0;
-	while (get_adapter_caps(factory, idx++))
+	while (get_adapter_caps(factory, idx++) && idx < 4)
 		;
 
 	for (auto &[idx, caps] : adapter_info) {
