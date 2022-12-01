@@ -79,7 +79,7 @@ Structures/Enumerations
    - **OBS_FRONTEND_EVENT_TRANSITION_DURATION_CHANGED**
 
      Triggered when the transition duration has been changed by the
-	 user.
+     user.
 
    - **OBS_FRONTEND_EVENT_TBAR_VALUE_CHANGED**
 
@@ -182,9 +182,13 @@ Structures/Enumerations
 
      Triggered when the theme is changed.
 
+     .. versionadded:: 29.0.0
+
    - **OBS_FRONTEND_EVENT_SCREENSHOT_TAKEN**
 
      Triggered when a screenshot is taken.
+
+     .. versionadded:: 29.0.0
 
 .. struct:: obs_frontend_source_list
 
@@ -807,11 +811,15 @@ Functions
 
    :return: Checks if the current theme is dark or light.
 
+   .. versionadded:: 29.0.0
+
 ---------------------------------------
 
 .. function:: char *obs_frontend_get_last_recording(void)
 
    :return: The file path of the last recording. Free with :c:func:`bfree()`
+
+   .. versionadded:: 29.0.0
 
 ---------------------------------------
 
@@ -820,9 +828,13 @@ Functions
    :return: The file path of the last screenshot taken. Free with
             :c:func:`bfree()`
 
+   .. versionadded:: 29.0.0
+
 ---------------------------------------
 
 .. function:: char *obs_frontend_get_last_replay(void)
 
    :return: The file path of the last replay buffer saved. Free with
             :c:func:`bfree()`
+
+   .. versionadded:: 29.0.0

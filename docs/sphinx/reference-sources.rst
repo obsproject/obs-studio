@@ -535,6 +535,8 @@ Source Signals
 
    Called when the source's settings have been updated.
 
+   .. versionadded:: 29.0.0
+
 **save** (ptr source)
 
    Called when the source is being saved.

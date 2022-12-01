@@ -451,6 +451,8 @@ Other Functions
 
    Returns the amount of memory installed.
 
+   .. versionadded:: 29.0.0
+
 ---------------------
 
 .. struct:: os_proc_memory_usage
