@@ -520,6 +520,9 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 
 	} else if (format == OBS_COMBO_FORMAT_STRING) {
 		var = QByteArray(obs_property_list_item_string(prop, idx));
+	} else if (format == OBS_COMBO_FORMAT_BOOL) {
+		bool val = obs_property_list_item_bool(prop, idx);
+		var = QVariant::fromValue<bool>(val);
 	}
 
 	combo->addItem(QT_UTF8(name), var);
@@ -542,7 +545,8 @@ static void AddComboItem(QComboBox *combo, obs_property_t *prop,
 
 template<long long get_int(obs_data_t *, const char *),
 	 double get_double(obs_data_t *, const char *),
-	 const char *get_string(obs_data_t *, const char *)>
+	 const char *get_string(obs_data_t *, const char *),
+	 bool get_bool(obs_data_t *, const char *)>
 static QVariant from_obs_data(obs_data_t *data, const char *name,
 			      obs_combo_format format)
 {
@@ -553,6 +557,8 @@ static QVariant from_obs_data(obs_data_t *data, const char *name,
 		return QVariant::fromValue(get_double(data, name));
 	case OBS_COMBO_FORMAT_STRING:
 		return QByteArray(get_string(data, name));
+	case OBS_COMBO_FORMAT_BOOL:
+		return QVariant::fromValue(get_bool(data, name));
 	default:
 		return QVariant();
 	}
@@ -562,16 +568,17 @@ static QVariant from_obs_data(obs_data_t *data, const char *name,
 			      obs_combo_format format)
 {
 	return from_obs_data<obs_data_get_int, obs_data_get_double,
-			     obs_data_get_string>(data, name, format);
+			     obs_data_get_string, obs_data_get_bool>(data, name,
+								     format);
 }
 
 static QVariant from_obs_data_autoselect(obs_data_t *data, const char *name,
 					 obs_combo_format format)
 {
-	return from_obs_data<obs_data_get_autoselect_int,
-			     obs_data_get_autoselect_double,
-			     obs_data_get_autoselect_string>(data, name,
-							     format);
+	return from_obs_data<
+		obs_data_get_autoselect_int, obs_data_get_autoselect_double,
+		obs_data_get_autoselect_string, obs_data_get_autoselect_bool>(
+		data, name, format);
 }
 
 QWidget *OBSPropertiesView::AddList(obs_property_t *prop, bool &warning)
@@ -1800,6 +1807,10 @@ void WidgetInfo::ListChanged(const char *setting)
 	case OBS_COMBO_FORMAT_STRING:
 		obs_data_set_string(view->settings, setting,
 				    data.toByteArray().constData());
+		break;
+	case OBS_COMBO_FORMAT_BOOL:
+		obs_data_set_bool(view->settings, setting,
+				  data.value<double>());
 		break;
 	}
 }

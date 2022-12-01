@@ -202,6 +202,7 @@ Property Object Functions
                           - **OBS_COMBO_FORMAT_FLOAT** - Floating point
                             list
                           - **OBS_COMBO_FORMAT_STRING** - String list
+                          - **OBS_COMBO_FORMAT_BOOL** - Boolean list
 
    :return:               The property
 
