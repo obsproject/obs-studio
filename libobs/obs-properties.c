@@ -44,6 +44,7 @@ struct list_item {
 		char *str;
 		long long ll;
 		double d;
+		bool b;
 	};
 };
 
@@ -1174,6 +1175,8 @@ static size_t add_item(struct list_data *data, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1190,6 +1193,8 @@ static void insert_item(struct list_data *data, size_t idx, const char *name,
 		item.ll = *(const long long *)val;
 	else if (data->format == OBS_COMBO_FORMAT_FLOAT)
 		item.d = *(const double *)val;
+	else if (data->format == OBS_COMBO_FORMAT_BOOL)
+		item.b = *(const bool *)val;
 	else
 		item.str = bstrdup(val);
 
@@ -1223,6 +1228,14 @@ size_t obs_property_list_add_float(obs_property_t *p, const char *name,
 	return 0;
 }
 
+size_t obs_property_list_add_bool(obs_property_t *p, const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
+		return add_item(data, name, &val);
+	return 0;
+}
+
 void obs_property_list_insert_string(obs_property_t *p, size_t idx,
 				     const char *name, const char *val)
 {
@@ -1244,6 +1257,14 @@ void obs_property_list_insert_float(obs_property_t *p, size_t idx,
 {
 	struct list_data *data = get_list_data(p);
 	if (data && data->format == OBS_COMBO_FORMAT_FLOAT)
+		insert_item(data, idx, name, &val);
+}
+
+void obs_property_list_insert_bool(obs_property_t *p, size_t idx,
+				   const char *name, bool val)
+{
+	struct list_data *data = get_list_data(p);
+	if (data && data->format == OBS_COMBO_FORMAT_BOOL)
 		insert_item(data, idx, name, &val);
 }
 
@@ -1302,6 +1323,13 @@ double obs_property_list_item_float(obs_property_t *p, size_t idx)
 {
 	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_FLOAT);
 	return (data && idx < data->items.num) ? data->items.array[idx].d : 0.0;
+}
+
+bool obs_property_list_item_bool(obs_property_t *p, size_t idx)
+{
+	struct list_data *data = get_list_fmt_data(p, OBS_COMBO_FORMAT_BOOL);
+	return (data && idx < data->items.num) ? data->items.array[idx].d
+					       : false;
 }
 
 enum obs_editable_list_type obs_property_editable_list_type(obs_property_t *p)
