@@ -2597,6 +2597,20 @@
                 "bframes": 2,
                 "max video bitrate": 20000
             }
+        },
+        {
+            "name": "Bitmovin",
+            "more_info_link": "https://developer.bitmovin.com/docs/overview",
+            "stream_key_link": "https://bitmovin.com/dashboard/streams?streamsTab=LIVE",
+            "servers": [
+                {
+                    "name": "Streams Live",
+                    "url": "rtmp://live-input.bitmovin.com/streams"
+                }
+            ],
+            "recommended": {
+                "keyint": 2
+            }
         }
     ]
 }
