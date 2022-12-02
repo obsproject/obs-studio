@@ -659,8 +659,8 @@ Functions
 
 .. function:: obs_service_t *obs_frontend_get_streaming_service(void)
 
-   :return: A new reference to the current streaming service object.
-            Release with :c:func:`obs_service_release()`.
+   :return: The current streaming service object. Does not increment the
+            reference.
 
 ---------------------------------------
 
