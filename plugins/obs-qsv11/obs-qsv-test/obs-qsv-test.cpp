@@ -82,11 +82,13 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	return true;
 }
 
+#define CHECK_TIMEOUT_MS 10000
+
 DWORD WINAPI TimeoutThread(LPVOID param)
 {
 	HANDLE hMainThread = (HANDLE)param;
 
-	DWORD ret = WaitForSingleObject(hMainThread, 8000);
+	DWORD ret = WaitForSingleObject(hMainThread, CHECK_TIMEOUT_MS);
 	if (ret == WAIT_TIMEOUT)
 		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
 
