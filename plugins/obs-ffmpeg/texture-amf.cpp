@@ -1087,12 +1087,10 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQP", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
-	if (amf_codec_type::AV1 == codec) {
-		obs_property_list_add_string(p, "VBR_LAT", "VBR_LAT");
-		obs_property_list_add_string(p, "QVBR", "QVBR");
-		obs_property_list_add_string(p, "HQVBR", "HQVBR");
-		obs_property_list_add_string(p, "HQCBR", "HQCBR");
-	}
+	obs_property_list_add_string(p, "VBR_LAT", "VBR_LAT");
+	obs_property_list_add_string(p, "QVBR", "QVBR");
+	obs_property_list_add_string(p, "HQVBR", "HQVBR");
+	obs_property_list_add_string(p, "HQCBR", "HQCBR");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
