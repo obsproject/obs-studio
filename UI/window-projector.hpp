@@ -26,11 +26,15 @@ private:
 	static void OBSSourceDestroyed(void *data, calldata_t *params);
 
 	void mousePressEvent(QMouseEvent *event) override;
+	void mouseMoveEvent(QMouseEvent *event) override;
+	void mouseReleaseEvent(QMouseEvent *event) override;
 	void mouseDoubleClickEvent(QMouseEvent *event) override;
 	void closeEvent(QCloseEvent *event) override;
 
 	bool isAlwaysOnTop;
 	bool isAlwaysOnTopOverridden = false;
+	bool isDragging = false;
+	bool isDraggableEverywhere = false;
 	int savedMonitor = -1;
 	ProjectorType type = ProjectorType::Source;
 
@@ -45,6 +49,8 @@ private:
 	void SetMonitor(int monitor);
 
 	QScreen *screen = nullptr;
+
+	QPointF oldPosition;
 
 private slots:
 	void EscapeTriggered();
