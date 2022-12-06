@@ -68,7 +68,7 @@ VCamFilter::VCamFilter()
 		SHGetFolderPathW(nullptr, CSIDL_APPDATA, nullptr,
 				 SHGFP_TYPE_CURRENT, res_file);
 		StringCbCat(res_file, sizeof(res_file),
-			    L"\\obs-virtualcam.txt");
+			    L"\\sld-virtualcam.txt");
 
 		HANDLE file = CreateFileW(res_file, GENERIC_READ, 0, nullptr,
 					  OPEN_EXISTING, 0, nullptr);

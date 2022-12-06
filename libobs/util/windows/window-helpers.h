@@ -53,7 +53,8 @@ EXPORT bool ms_is_uwp_window(HWND hwnd);
 EXPORT HWND ms_get_uwp_actual_window(HWND parent);
 
 EXPORT struct game_capture_matching_rule
-convert_json_to_matching_rule(json_t *json_rule);
+convert_to_matching_rule(const char *exe, const char *rule_class,
+			 const char *title, const char *type);
 
 EXPORT void get_captured_window_line(HWND hwnd, struct dstr *window_line);
 
