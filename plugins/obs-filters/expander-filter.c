@@ -178,7 +178,7 @@ static void upward_compressor_defaults(obs_data_t *s)
 	obs_data_set_default_int(s, S_ATTACK_TIME, 10);
 	obs_data_set_default_int(s, S_RELEASE_TIME, 50);
 	obs_data_set_default_double(s, S_OUTPUT_GAIN, 0.0);
-	obs_data_set_default_string(s, S_DETECTOR, "peak");
+	obs_data_set_default_string(s, S_DETECTOR, "RMS");
 }
 
 static void expander_update(void *data, obs_data_t *s)
@@ -382,8 +382,12 @@ static inline void process_sample(size_t idx, float *samples, float *env_buf,
 	float min_val =
 		is_upwcomp ? fminf(diff, threshold - mul_to_db(samples[idx]))
 			   : 0.0f;
-
 	gain = db_to_mul(fminf(min_val, gain_db[idx]));
+
+	// above threshold, don't process expander nor upward compressor
+	if (threshold - env_db <= 0)
+		gain = 1.0f;
+
 	samples[idx] *= gain * output_gain;
 }
 
