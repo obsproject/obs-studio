@@ -1189,8 +1189,18 @@ static inline int get_avc_rate_control(const char *rc_str)
 {
 	if (astrcmpi(rc_str, "cqp") == 0)
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP;
+	else if (astrcmpi(rc_str, "cbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
 	else if (astrcmpi(rc_str, "vbr") == 0)
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "qvbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqvbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqcbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
 
 	return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
 }
@@ -1514,8 +1524,18 @@ static inline int get_hevc_rate_control(const char *rc_str)
 {
 	if (astrcmpi(rc_str, "cqp") == 0)
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP;
+	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
 	else if (astrcmpi(rc_str, "vbr") == 0)
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "cbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
+	else if (astrcmpi(rc_str, "qvbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqvbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqcbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
 
 	return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
 }
