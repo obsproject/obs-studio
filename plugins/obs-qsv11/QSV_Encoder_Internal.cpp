@@ -433,7 +433,12 @@ mfxStatus QSV_Encoder_Internal::InitParams(qsv_param_t *pParams,
 	m_mfxEncParams.ExtParam = extendedBuffers.data();
 	m_mfxEncParams.NumExtParam = (mfxU16)extendedBuffers.size();
 
-	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &m_mfxEncParams);
+	// We don't check what was valid or invalid here, just try changing LowPower.
+	// Ensure set values are not overwritten so in case it wasn't lowPower we fail
+	// during the parameter check.
+	mfxVideoParam validParams = {0};
+	memcpy(&validParams, &m_mfxEncParams, sizeof(validParams));
+	mfxStatus sts = m_pmfxENC->Query(&m_mfxEncParams, &validParams);
 	if (sts == MFX_ERR_UNSUPPORTED || sts == MFX_ERR_UNDEFINED_BEHAVIOR) {
 		if (m_mfxEncParams.mfx.LowPower == MFX_CODINGOPTION_ON) {
 			m_mfxEncParams.mfx.LowPower = MFX_CODINGOPTION_OFF;
