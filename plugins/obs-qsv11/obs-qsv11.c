@@ -624,12 +624,12 @@ static void update_params(struct obs_qsv *obsqsv, obs_data_t *settings)
 			pq ? (int)obs_get_video_hdr_nominal_peak_level()
 			   : (hlg ? 1000 : 0);
 
-		obsqsv->params.DisplayPrimariesX[0] = 34000;
-		obsqsv->params.DisplayPrimariesX[1] = 13250;
-		obsqsv->params.DisplayPrimariesX[2] = 7500;
-		obsqsv->params.DisplayPrimariesY[0] = 16000;
-		obsqsv->params.DisplayPrimariesY[1] = 34500;
-		obsqsv->params.DisplayPrimariesY[2] = 3000;
+		obsqsv->params.DisplayPrimariesX[0] = 13250;
+		obsqsv->params.DisplayPrimariesX[1] = 7500;
+		obsqsv->params.DisplayPrimariesX[2] = 34000;
+		obsqsv->params.DisplayPrimariesY[0] = 34500;
+		obsqsv->params.DisplayPrimariesY[1] = 3000;
+		obsqsv->params.DisplayPrimariesY[2] = 16000;
 		obsqsv->params.WhitePointX = 15635;
 		obsqsv->params.WhitePointY = 16450;
 		obsqsv->params.MaxDisplayMasteringLuminance =
