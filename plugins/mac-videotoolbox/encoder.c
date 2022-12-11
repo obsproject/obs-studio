@@ -184,6 +184,58 @@ static CFStringRef obs_to_vt_transfer(enum video_colorspace cs)
 	}
 }
 
+/* Adapted from Chromium GenerateMasteringDisplayColorVolume */
+static CFDataRef obs_to_vt_masteringdisplay(uint32_t hdr_nominal_peak_level)
+{
+	struct mastering_display_colour_volume {
+		uint16_t display_primaries[3][2];
+		uint16_t white_point[2];
+		uint32_t max_display_mastering_luminance;
+		uint32_t min_display_mastering_luminance;
+	};
+	static_assert(sizeof(struct mastering_display_colour_volume) == 24,
+		      "May need to adjust struct packing");
+
+	struct mastering_display_colour_volume mdcv;
+	mdcv.display_primaries[0][0] = __builtin_bswap16(13250);
+	mdcv.display_primaries[0][1] = __builtin_bswap16(34500);
+	mdcv.display_primaries[1][0] = __builtin_bswap16(7500);
+	mdcv.display_primaries[1][1] = __builtin_bswap16(3000);
+	mdcv.display_primaries[2][0] = __builtin_bswap16(34000);
+	mdcv.display_primaries[2][1] = __builtin_bswap16(16000);
+	mdcv.white_point[0] = __builtin_bswap16(15635);
+	mdcv.white_point[1] = __builtin_bswap16(16450);
+	mdcv.max_display_mastering_luminance =
+		__builtin_bswap32(hdr_nominal_peak_level * 10000);
+	mdcv.min_display_mastering_luminance = 0;
+
+	UInt8 bytes[sizeof(struct mastering_display_colour_volume)];
+	memcpy(bytes, &mdcv, sizeof(bytes));
+	return CFDataCreate(NULL, bytes, sizeof(bytes));
+}
+
+/* Adapted from Chromium GenerateContentLightLevelInfo */
+static CFDataRef
+obs_to_vt_contentlightlevelinfo(uint16_t hdr_nominal_peak_level)
+{
+	struct content_light_level_info {
+		uint16_t max_content_light_level;
+		uint16_t max_pic_average_light_level;
+	};
+	static_assert(sizeof(struct content_light_level_info) == 4,
+		      "May need to adjust struct packing");
+
+	struct content_light_level_info clli;
+	clli.max_content_light_level =
+		__builtin_bswap16(hdr_nominal_peak_level);
+	clli.max_pic_average_light_level =
+		__builtin_bswap16(hdr_nominal_peak_level);
+
+	UInt8 bytes[sizeof(struct content_light_level_info)];
+	memcpy(bytes, &clli, sizeof(bytes));
+	return CFDataCreate(NULL, bytes, sizeof(bytes));
+}
+
 #define STATUS_CHECK(c)                                 \
 	code = c;                                       \
 	if (code) {                                     \
@@ -350,6 +402,22 @@ static OSStatus session_set_colorspace(VTCompressionSessionRef session,
 	SESSION_CHECK(session_set_prop(session,
 				       kVTCompressionPropertyKey_YCbCrMatrix,
 				       obs_to_vt_colorspace(cs)));
+	const bool pq = cs == VIDEO_CS_2100_PQ;
+	const bool hlg = cs == VIDEO_CS_2100_HLG;
+	if (pq || hlg) {
+		const uint16_t hdr_nominal_peak_level =
+			pq ? (uint16_t)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+		SESSION_CHECK(session_set_prop(
+			session,
+			kVTCompressionPropertyKey_MasteringDisplayColorVolume,
+			obs_to_vt_masteringdisplay(hdr_nominal_peak_level)));
+		SESSION_CHECK(session_set_prop(
+			session,
+			kVTCompressionPropertyKey_ContentLightLevelInfo,
+			obs_to_vt_contentlightlevelinfo(
+				hdr_nominal_peak_level)));
+	}
 
 	return noErr;
 }
@@ -1013,15 +1081,31 @@ bool get_cached_pixel_buffer(struct vt_encoder *enc, CVPixelBufferRef *buf)
 	// I would have expected pixel buffers from the session's
 	// pool to have the correct color space stuff set
 
+	const enum video_colorspace cs = enc->colorspace;
 	CVBufferSetAttachment(pixbuf, kCVImageBufferYCbCrMatrixKey,
-			      obs_to_vt_colorspace(enc->colorspace),
+			      obs_to_vt_colorspace(cs),
 			      kCVAttachmentMode_ShouldPropagate);
 	CVBufferSetAttachment(pixbuf, kCVImageBufferColorPrimariesKey,
-			      obs_to_vt_primaries(enc->colorspace),
+			      obs_to_vt_primaries(cs),
 			      kCVAttachmentMode_ShouldPropagate);
 	CVBufferSetAttachment(pixbuf, kCVImageBufferTransferFunctionKey,
-			      obs_to_vt_transfer(enc->colorspace),
+			      obs_to_vt_transfer(cs),
 			      kCVAttachmentMode_ShouldPropagate);
+	const bool pq = cs == VIDEO_CS_2100_PQ;
+	const bool hlg = cs == VIDEO_CS_2100_HLG;
+	if (pq || hlg) {
+		const uint16_t hdr_nominal_peak_level =
+			pq ? (uint16_t)obs_get_video_hdr_nominal_peak_level()
+			   : (hlg ? 1000 : 0);
+		CVBufferSetAttachment(
+			pixbuf, kCVImageBufferMasteringDisplayColorVolumeKey,
+			obs_to_vt_masteringdisplay(hdr_nominal_peak_level),
+			kCVAttachmentMode_ShouldPropagate);
+		CVBufferSetAttachment(
+			pixbuf, kCVImageBufferContentLightLevelInfoKey,
+			obs_to_vt_contentlightlevelinfo(hdr_nominal_peak_level),
+			kCVAttachmentMode_ShouldPropagate);
+	}
 
 	*buf = pixbuf;
 	return true;
