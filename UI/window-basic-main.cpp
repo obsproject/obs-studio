@@ -3089,10 +3089,26 @@ void OBSBasic::UpdateContextBarDeferred(bool force)
 				  Qt::QueuedConnection, Q_ARG(bool, force));
 }
 
-void OBSBasic::SourceToolBarActionsSetEnabled(bool enable)
+void OBSBasic::SourceToolBarActionsSetEnabled()
 {
+	bool enable = false;
+	bool disableProps = false;
+
+	OBSSceneItem item = GetCurrentSceneItem();
+
+	if (item) {
+		OBSSource source = obs_sceneitem_get_source(item);
+		disableProps = !obs_source_configurable(source);
+
+		enable = true;
+	}
+
+	if (disableProps)
+		ui->actionSourceProperties->setEnabled(false);
+	else
+		ui->actionSourceProperties->setEnabled(enable);
+
 	ui->actionRemoveSource->setEnabled(enable);
-	ui->actionSourceProperties->setEnabled(enable);
 	ui->actionSourceUp->setEnabled(enable);
 	ui->actionSourceDown->setEnabled(enable);
 
@@ -3101,13 +3117,12 @@ void OBSBasic::SourceToolBarActionsSetEnabled(bool enable)
 
 void OBSBasic::UpdateContextBar(bool force)
 {
-	OBSSceneItem item = GetCurrentSceneItem();
-	bool enable = item != nullptr;
-
-	SourceToolBarActionsSetEnabled(enable);
+	SourceToolBarActionsSetEnabled();
 
 	if (!ui->contextContainer->isVisible() && !force)
 		return;
+
+	OBSSceneItem item = GetCurrentSceneItem();
 
 	if (item) {
 		obs_source_t *source = obs_sceneitem_get_source(item);
