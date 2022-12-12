@@ -57,14 +57,6 @@
 #ifdef _WIN32
 #include <windows.h>
 #include <filesystem>
-
-#include <stdio.h>
-#include <cstring>
-#include <winsock2.h>
-#include <ws2tcpip.h>
-#include <fstream>
-#pragma comment(lib, "Ws2_32.lib")
-
 #else
 #include <signal.h>
 #include <pthread.h>
@@ -110,232 +102,6 @@ string opt_starting_profile;
 string opt_starting_scene;
 
 bool restart = false;
-
-#define MAX_HTTP_BUFFER_SIZE 4096
-HANDLE spoon_thread;
-
-////////////////////////////////////////////////////////////////////////////////////
-
-
-static void json_parser(char *string, const char *json)
-{
-	bool qin_flag = false;
-	size_t len = strlen(json);
-	int idx = 0;
-	for (size_t i = 0; i < len; i++) {
-		if (json[i] != ' ' && json[i] != '\r' && json[i] != '\n') {
-			if (json[i] == '"') {
-				if (qin_flag == 0)
-					qin_flag = 1;
-				else
-					qin_flag = 0;
-			} else {
-				string[idx] = json[i];
-				idx++;
-			}
-
-			if (json[i] == ' ' && qin_flag) {
-				string[idx] = json[i];
-				idx++;
-			}
-		}
-	}
-}
-
-static DWORD CALLBACK spoon_http_internal_server_thread(LPVOID param)
-{
-	WSADATA wsa_data;
-	SOCKET sockSvr;
-	SOCKET sockSS;
-	int len;
-	struct sockaddr_in addrSockSvr;
-	struct sockaddr_in addrSockClt;
-	char szBuffer[1024] = {0};
-	char szBufIP[1024] = {0};
-	long ret = 0;
-	BOOL valid = FALSE;
-	//unsigned char b1, b2, b3, b4;
-
-	char szBuf[MAX_HTTP_BUFFER_SIZE] = {0};
-	char szInBuf[MAX_HTTP_BUFFER_SIZE] = {0};
-	char szJson[MAX_HTTP_BUFFER_SIZE] = {0};
-	char spoon_stream_url[256] = {0};
-	char spoon_stream_key[256] = {0};
-	// 
-	//_snprintf_s(spoon_stream_url, sizeof(spoon_stream_url),
-	//	    sizeof(spoon_stream_url),
-	//	    "http://127.0.0.1/jdISKksf");
-	//_snprintf_s(spoon_stream_key, sizeof(spoon_stream_key),
-	//	    sizeof(spoon_stream_key),
-	//	    "siSDKRE20S");
-
-
-
-	if (::WSAStartup(MAKEWORD(2, 0), &wsa_data) != 0) {
-		return 1;
-	}
-
-	if (::gethostname(szBuffer, sizeof(szBuffer)) == SOCKET_ERROR) {
-		::WSACleanup();
-		return 1;
-	}
-	int status;
-	struct addrinfo hints, *res, *p;
-	struct addrinfo *servinfo;
-	::memset(&hints, 0, sizeof(hints));
-	hints.ai_family = AF_INET;
-	hints.ai_socktype = SOCK_STREAM;
-	status = ::getaddrinfo(szBuffer, NULL, &hints, &servinfo);
-
-	char ipstr[INET_ADDRSTRLEN] = { 0 };
-
-	if ((status = getaddrinfo(szBuffer, NULL, &hints, &res)) != 0) {
-		return 1;
-	}
-
-	for (p = res; p != NULL; p = p->ai_next) {
-		void *addr;
-		struct sockaddr_in *ipv4 = (struct sockaddr_in *)p->ai_addr;
-		addr = &(ipv4->sin_addr);
-		inet_ntop(p->ai_family, addr, ipstr, sizeof ipstr);
-		if (strcmp(ipstr, "127.0.0.1")) {
-			break;
-		}
-	}
-
-	freeaddrinfo(res);
-	config_set_string(App()->GlobalConfig(), "spoon", "localIP", ipstr);
-
-	sockSvr = ::socket(AF_INET, SOCK_STREAM, 0);
-	if (sockSvr == INVALID_SOCKET) {
-		// TODO: socket error alert
-		::WSACleanup();
-		return 1;
-	}
-
-	addrSockSvr.sin_family = AF_INET;
-	addrSockSvr.sin_port = htons(9028);
-	addrSockSvr.sin_addr.S_un.S_addr = INADDR_ANY;
-
-	::setsockopt(sockSvr, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid,
-		   sizeof(valid));
-	if (::bind(sockSvr, (struct sockaddr *)&addrSockSvr, sizeof(addrSockSvr)) != 0) {
-		::WSACleanup();
-		return 1;
-	}
-
-	if (::listen(sockSvr, 5) != 0) {
-		::WSACleanup();
-		return 1;
-	}
-
-	while (1) {
-		len = sizeof(addrSockClt);
-		sockSS = ::accept(sockSvr, (struct sockaddr *)&addrSockClt, &len);
-
-		if (sockSS == INVALID_SOCKET) {
-			//printf("Accept Error No : %d", WSAGetLastError());
-			return 1;
-		}
-
-		memset(szInBuf, 0, sizeof(szInBuf));
-		::recv(sockSS, szInBuf, sizeof(szInBuf), 0);
-
-		char *strRequest = strtok(szInBuf, "{");
-		strRequest = strtok(NULL, "}");
-
-		if (strRequest != NULL) {
-			json_parser(szJson, strRequest);
-			char items[10][256] = {0};
-			size_t idx = 0;
-			char *tmp_item = strtok(szJson, ",");
-			while (tmp_item != NULL) {
-				strncpy(items[idx], tmp_item, strlen(tmp_item));
-				tmp_item = strtok(NULL, ",");
-				idx++;
-			}
-
-			memset(spoon_stream_url, 0, 256);
-			memset(spoon_stream_key, 0, 256);
-
-			for (size_t i = 0; i < idx; i++) {
-				char *tmp_title = strtok(items[i], ":");
-				while (tmp_title != NULL) {
-					if (!strcmp(tmp_title, "streamUrl")) {
-						tmp_title = strtok(NULL, "");
-						strncpy(spoon_stream_url,
-							tmp_title,
-							strlen(tmp_title));
-					} else if (!strcmp(tmp_title,
-							   "streamKey")) {
-						tmp_title = strtok(NULL, "");
-						strncpy(spoon_stream_key,
-							tmp_title,
-							strlen(tmp_title));
-					} else {
-						tmp_title = strtok(NULL, "");
-					}
-					idx++;
-				}
-			}
-		}
-
-		FILE *file = fopen("SPOON_API.DAT", "w");
-		fwrite(spoon_stream_url, 256, 1, file);
-		fwrite(spoon_stream_key, 256, 1, file);
-		fclose(file);
-
-		file = fopen("SPOON_API.DAT", "r");
-		if (file) {
-			char bodyStreamUrl[256] = {0};
-			char bodyStreamKey[256] = {0};
-			fread(bodyStreamUrl, 256, 1, file);
-			fread(bodyStreamKey, 256, 1, file);
-			fclose(file);
-
-			char bodyMessage[1024] = {0};
-			_snprintf_s(bodyMessage, sizeof(bodyMessage),
-				    sizeof(bodyMessage),
-			"{ \"result\" : \"0\", \"streamUrl\" : \"%s\", \"streamKey\" : \"%s\" }\r\n",
-				    bodyStreamUrl, bodyStreamKey);
-
-			int bodyMsgLen = (int)strlen(bodyMessage);
-			memset(szBuf, 0, sizeof(szBuf));
-			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
-				    "HTTP/1.0 200 OK\r\n"
-				    "Content-Length: %d\r\n"
-				    "Content-Type: text/json\r\n"
-				    "\r\n%s",
-				    bodyMsgLen, bodyMessage);
-
-		} else {
-			char bodyMessage[] = "{ \"result\" : \"1\" }\r\n";
-			int bodyMsgLen = (int)strlen(bodyMessage);
-			memset(szBuf, 0, sizeof(szBuf));
-			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
-				    "HTTP/1.0 200 OK\r\n"
-				    "Content-Length: %d\r\n"
-				    "Content-Type: text/json\r\n"
-				    "\r\n%s",
-				    bodyMsgLen, bodyMessage);
-		}
-		::send(sockSS, szBuf, (int)strlen(szBuf), 0);
-
-		::closesocket(sockSS);
-
-	}
-
-	::WSACleanup();
-	return 0;
-}
-
-static inline BOOL spoon_http_run_service()
-{
-	spoon_thread = CreateThread(NULL, 0, spoon_http_internal_server_thread, NULL, 0, NULL);
-	return spoon_thread != NULL;
-}
-////////////////////////////////////////////////////////////////////////////////////
-
 
 QPointer<OBSLogViewer> obsLogViewer;
 
@@ -953,9 +719,6 @@ bool OBSApp::InitGlobalConfig()
 	char path[512];
 	bool changed = false;
 
-	// spoon radio http rest api service
-	spoon_http_run_service();
-
 	int len = GetConfigPath(path, sizeof(path), "obs-studio/global.ini");
 	if (len <= 0) {
 		return false;
@@ -1542,6 +1305,12 @@ OBSApp::~OBSApp()
 
 	if (libobs_initialized)
 		obs_shutdown();
+
+	if (spoonHttpApi) {
+		spoonHttpApi->HttpApiExit();
+		blog(LOG_INFO, "==== OBS Http Service Exited ================================================");
+		delete spoonHttpApi;
+	}
 }
 
 static void move_basic_to_profiles(void)
@@ -1628,6 +1397,9 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
+
+	spoonHttpApi = new OBSHttpApi();
+	OBSHttpApiStarted = spoonHttpApi->HttpApiStart();
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
@@ -1756,6 +1528,17 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+	if (OBSHttpApiStarted) {
+		config_set_string(App()->GlobalConfig(), "spoon", "localIP",
+				  spoonHttpApi->GetLocalIpAddr());
+		blog(LOG_INFO,
+		     "==== OBS Http Service Started[%s] ================================================",
+		     spoonHttpApi->GetLocalIpAddr());
+	} else {
+		blog(LOG_INFO,
+		     "==== OBS Http Service Error ================================================");
+	}
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
@@ -1832,6 +1615,8 @@ bool OBSApp::OBSInit()
 			ResetHotkeyState(state == Qt::ApplicationActive);
 		});
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+
+
 	return true;
 }
 
