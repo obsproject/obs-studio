@@ -2072,29 +2072,6 @@
             }
         },
         {
-            "name": "Brime Live",
-            "stream_key_link": "https://brime.tv/studio",
-            "servers": [
-                {
-                    "name": "North America - Ashburn, VA",
-                    "url": "rtmp://ingest-us-ashburn.brime.tv/live"
-                },
-                {
-                    "name": "North America - San Jose, CA",
-                    "url": "rtmp://ingest-us-sanjose.brime.tv/live"
-                },
-                {
-                    "name": "Europe / EMEA - Germany (Frankfurt)",
-                    "url": "rtmp://ingest-eu-frankfurt.brime.tv/live"
-                }
-            ],
-            "recommended": {
-                "max video bitrate": 30000,
-                "max audio bitrate": 320,
-                "x264opts": "scenecut=0"
-            }
-        },
-        {
             "name": "Bilibili Live - RTMP | 哔哩哔哩直播 - RTMP",
             "more_info_link": "https://link.bilibili.com/p/help/index#/tools-tutorial?id=9",
             "stream_key_link": "https://link.bilibili.com/p/center/index#/my-room/start-live",
