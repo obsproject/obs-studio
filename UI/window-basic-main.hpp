@@ -638,7 +638,7 @@ private:
 	bool drawSpacingHelpers = true;
 
 	float GetDevicePixelRatio();
-	void SourceToolBarActionsSetEnabled(bool enable);
+	void SourceToolBarActionsSetEnabled();
 
 	std::string lastScreenshot;
 	std::string lastReplay;
