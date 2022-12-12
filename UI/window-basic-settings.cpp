@@ -439,6 +439,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleReplayBuf,      GROUP_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->simpleRBFlush,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutAEncoder,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
@@ -517,6 +518,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advReplayBuf,         CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advRBSecMax,          SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advRBMegsMax,         SCROLL_CHANGED, OUTPUTS_CHANGED);
+	HookWidget(ui->advRBFlush,           CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->channelSetup,         COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->sampleRate,           COMBO_CHANGED,  AUDIO_RESTART);
 	HookWidget(ui->meterDecayRate,       COMBO_CHANGED,  AUDIO_CHANGED);
@@ -758,6 +760,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->simpleOutputABitrate, &QComboBox::currentIndexChanged, this,
 		&OBSBasicSettings::SimpleReplayBufferChanged);
 	connect(ui->simpleRBSecMax, &QSpinBox::valueChanged, this, &OBSBasicSettings::SimpleReplayBufferChanged);
+	connect(ui->simpleRBFlush, &QCheckBox::toggled, this, &OBSBasicSettings::SimpleReplayBufferChanged);
 #if QT_VERSION >= QT_VERSION_CHECK(6, 7, 0)
 	connect(ui->advOutSplitFile, &QCheckBox::checkStateChanged, this, &OBSBasicSettings::AdvOutSplitFileChanged);
 #else
@@ -787,6 +790,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	connect(ui->advOutRecType, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advOutRecEncoder, &QComboBox::currentIndexChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
 	connect(ui->advRBSecMax, &QSpinBox::valueChanged, this, &OBSBasicSettings::AdvReplayBufferChanged);
+	connect(ui->advRBFlush, &QCheckBox::toggled, this, &OBSBasicSettings::AdvReplayBufferChanged);
 
 	// GPU scaling filters
 	auto addScaleFilter = [&](const char *string, int value) -> void {
@@ -1720,6 +1724,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	int rbTime = config_get_int(main->Config(), "SimpleOutput", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "SimpleOutput", "RecRBSize");
 	int tracks = config_get_int(main->Config(), "SimpleOutput", "RecTracks");
+	bool rbFlush = config_get_bool(main->Config(), "SimpleOutput", "FlushRBAfterSave");
 
 	ui->simpleOutRecTrack1->setChecked(tracks & (1 << 0));
 	ui->simpleOutRecTrack2->setChecked(tracks & (1 << 1));
@@ -1784,6 +1789,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	ui->simpleReplayBuf->setChecked(replayBuf);
 	ui->simpleRBSecMax->setValue(rbTime);
 	ui->simpleRBMegsMax->setValue(rbSize);
+	ui->simpleRBFlush->setChecked(rbFlush);
 
 	SimpleStreamingEncoderChanged();
 }
@@ -2543,6 +2549,8 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	bool replayBuf = config_get_bool(main->Config(), "AdvOut", "RecRB");
 	int rbTime = config_get_int(main->Config(), "AdvOut", "RecRBTime");
 	int rbSize = config_get_int(main->Config(), "AdvOut", "RecRBSize");
+	bool rbFlush =
+		config_get_bool(main->Config(), "AdvOut", "FlushRBAfterSave");
 	bool autoRemux = config_get_bool(main->Config(), "Video", "AutoRemux");
 	const char *hotkeyFocusType = config_get_string(App()->GetUserConfig(), "General", "HotkeyFocusType");
 	bool dynBitrate = config_get_bool(main->Config(), "Output", "DynamicBitrate");
@@ -2566,6 +2574,7 @@ void OBSBasicSettings::LoadAdvancedSettings()
 	ui->advReplayBuf->setChecked(replayBuf);
 	ui->advRBSecMax->setValue(rbTime);
 	ui->advRBMegsMax->setValue(rbSize);
+	ui->advRBFlush->setChecked(rbFlush);
 
 	ui->reconnectEnable->setChecked(reconnect);
 	ui->reconnectRetryDelay->setValue(retryDelay);
@@ -3384,6 +3393,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveGroupBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
 	SaveSpinBox(ui->simpleRBMegsMax, "SimpleOutput", "RecRBSize");
+	SaveCheckBox(ui->simpleRBFlush, "SimpleOutput", "FlushRBAfterSave");
 	config_set_int(main->Config(), "SimpleOutput", "RecTracks", SimpleOutGetSelectedAudioTracks());
 
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
@@ -3464,6 +3474,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advReplayBuf, "AdvOut", "RecRB");
 	SaveSpinBox(ui->advRBSecMax, "AdvOut", "RecRBTime");
 	SaveSpinBox(ui->advRBMegsMax, "AdvOut", "RecRBSize");
+	SaveCheckBox(ui->advRBFlush, "AdvOut", "FlushRBAfterSave");
 
 	WriteJsonData(streamEncoderProps, "streamEncoder.json");
 	WriteJsonData(recordEncoderProps, "recordEncoder.json");
