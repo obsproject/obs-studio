@@ -217,14 +217,14 @@ static void noise_suppress_destroy(void *data)
 		audio_resampler_destroy(ng->nvafx_resampler);
 		audio_resampler_destroy(ng->nvafx_resampler_back);
 	}
-	bfree(ng->model);
-	bfree(ng->sdk_path);
 	bfree((void *)ng->fx);
 	if (ng->nvafx_enabled) {
 		if (ng->use_nvafx)
 			pthread_join(ng->nvafx_thread, NULL);
 		pthread_mutex_unlock(&ng->nvafx_mutex);
 		pthread_mutex_destroy(&ng->nvafx_mutex);
+		bfree(ng->model);
+		bfree(ng->sdk_path);
 	}
 #endif
 
@@ -431,6 +431,10 @@ static inline enum speaker_layout convert_speaker_layout(uint8_t channels)
 static void set_model(void *data, const char *method)
 {
 	struct noise_suppress_data *ng = data;
+
+	if (ng->sdk_path == NULL)
+		return;
+
 	const char *file;
 	if (strcmp(NVAFX_EFFECT_DEREVERB, method) == 0)
 		file = NVAFX_EFFECT_DEREVERB_MODEL;
@@ -443,6 +447,10 @@ static void set_model(void *data, const char *method)
 
 	strcpy(buffer, ng->sdk_path);
 	strcat(buffer, file);
+
+	if (ng->model)
+		bfree(ng->model);
+
 	ng->model = buffer;
 }
 #endif
