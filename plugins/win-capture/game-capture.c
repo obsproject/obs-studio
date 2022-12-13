@@ -36,6 +36,7 @@
 #define SETTING_COMPATIBILITY        "sli_compatibility"
 #define SETTING_CURSOR               "capture_cursor"
 #define SETTING_TRANSPARENCY         "allow_transparency"
+#define SETTING_PREMULTIPLIED_ALPHA  "premultiplied_alpha"
 #define SETTING_LIMIT_FRAMERATE      "limit_framerate"
 #define SETTING_CAPTURE_OVERLAYS     "capture_overlays"
 #define SETTING_ANTI_CHEAT_HOOK      "anti_cheat_hook"
@@ -58,6 +59,7 @@
 #define TEXT_ANY_FULLSCREEN        obs_module_text("GameCapture.AnyFullscreen")
 #define TEXT_SLI_COMPATIBILITY     obs_module_text("SLIFix")
 #define TEXT_ALLOW_TRANSPARENCY    obs_module_text("AllowTransparency")
+#define TEXT_PREMULTIPLIED_ALPHA   obs_module_text("PremultipliedAlpha")
 #define TEXT_WINDOW                obs_module_text("WindowCapture.Window")
 #define TEXT_MATCH_PRIORITY        obs_module_text("WindowCapture.Priority")
 #define TEXT_MATCH_TITLE           obs_module_text("WindowCapture.Priority.Title")
@@ -113,6 +115,7 @@ struct game_capture_config {
 	bool cursor;
 	bool force_shmem;
 	bool allow_transparency;
+	bool premultiplied_alpha;
 	bool limit_framerate;
 	bool capture_overlays;
 	bool anticheat_hook;
@@ -456,6 +459,8 @@ static inline void get_config(struct game_capture_config *cfg,
 	cfg->cursor = obs_data_get_bool(settings, SETTING_CURSOR);
 	cfg->allow_transparency =
 		obs_data_get_bool(settings, SETTING_TRANSPARENCY);
+	cfg->premultiplied_alpha =
+		obs_data_get_bool(settings, SETTING_PREMULTIPLIED_ALPHA);
 	cfg->limit_framerate =
 		obs_data_get_bool(settings, SETTING_LIMIT_FRAMERATE);
 	cfg->capture_overlays =
@@ -2238,7 +2243,13 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 	while (gs_effect_loop(effect, tech_name)) {
 		const bool previous = gs_framebuffer_srgb_enabled();
 		gs_enable_framebuffer_srgb(allow_transparency || linear_sample);
+		gs_blend_state_push();
 		gs_enable_blending(allow_transparency);
+		gs_blend_function_separate(gc->config.premultiplied_alpha
+						   ? GS_BLEND_ONE
+						   : GS_BLEND_SRCALPHA,
+					   GS_BLEND_INVSRCALPHA, GS_BLEND_ONE,
+					   GS_BLEND_INVSRCALPHA);
 		if (linear_sample)
 			gs_effect_set_texture_srgb(image, texture);
 		else
@@ -2247,7 +2258,7 @@ static void game_capture_render(void *data, gs_effect_t *unused)
 								"multiplier"),
 				    multiplier);
 		gs_draw_sprite(texture, flip, 0, 0);
-		gs_enable_blending(true);
+		gs_blend_state_pop();
 		gs_enable_framebuffer_srgb(previous);
 	}
 
@@ -2302,6 +2313,7 @@ static void game_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, SETTING_COMPATIBILITY, false);
 	obs_data_set_default_bool(settings, SETTING_CURSOR, true);
 	obs_data_set_default_bool(settings, SETTING_TRANSPARENCY, false);
+	obs_data_set_default_bool(settings, SETTING_PREMULTIPLIED_ALPHA, false);
 	obs_data_set_default_bool(settings, SETTING_LIMIT_FRAMERATE, false);
 	obs_data_set_default_bool(settings, SETTING_CAPTURE_OVERLAYS, false);
 	obs_data_set_default_bool(settings, SETTING_ANTI_CHEAT_HOOK, true);
@@ -2479,6 +2491,9 @@ static obs_properties_t *game_capture_properties(void *data)
 
 	obs_properties_add_bool(ppts, SETTING_TRANSPARENCY,
 				TEXT_ALLOW_TRANSPARENCY);
+
+	obs_properties_add_bool(ppts, SETTING_PREMULTIPLIED_ALPHA,
+				TEXT_PREMULTIPLIED_ALPHA);
 
 	obs_properties_add_bool(ppts, SETTING_LIMIT_FRAMERATE,
 				TEXT_LIMIT_FRAMERATE);
