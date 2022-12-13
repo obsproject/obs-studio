@@ -10,6 +10,8 @@
 
 #include <windows.h>
 
+#include "obs-http-api.h"
+
 static int CountVideoSources()
 {
 	int count = 0;
@@ -76,19 +78,16 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char *streamUrl = NULL;
 	char *streamKey = NULL;
 
-	char spoon_stream_url[256] = {0};
-	char spoon_stream_key[256] = {0};
-
-	FILE *file = fopen("SPOON_API.DAT", "r");
+	FILE *file = fopen("OBS_HTTP_API.DAT", "r");
 	if (file) {
-		fread(spoon_stream_url, 256, 1, file);
-		fread(spoon_stream_key, 256, 1, file);
+		OBSHttpApiValue streamValues;  
+		fread(&streamValues, sizeof(OBSHttpApiValue), 1, file);
 		fclose(file);
 
 		OBSDataAutoRelease service_settings = obs_data_create();
 
-		streamUrl = spoon_stream_url;
-		streamKey = spoon_stream_key;
+		streamUrl = streamValues.streamUrl;
+		streamKey = streamValues.streamKey;
 
 		obs_data_set_string(service_settings, "service", "Spoon Radio");
 		obs_data_set_string(service_settings, "server", streamUrl);
@@ -98,10 +97,9 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 		// TEST CODE
 		char const *tempStreamUrl1 = obs_service_get_url(service);
 		char const *tempStreamKey1 = obs_service_get_key(service);
-		blog(LOG_INFO, "------------------------------------------------");
-		blog(LOG_INFO, "Saved service_setting:");
-		blog(LOG_INFO, tempStreamUrl1);
-		blog(LOG_INFO, tempStreamKey1);
+		blog(LOG_INFO, "===== Connected server & key   ========================");
+		blog(LOG_INFO, " Stream Url : %s", tempStreamUrl1);
+		blog(LOG_INFO, " Stream Key : %s", tempStreamKey1);
 
 	} else {
 		streamUrl = (char *)tempStreamUrl;

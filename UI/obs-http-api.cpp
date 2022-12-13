@@ -23,11 +23,14 @@
 
 #ifdef _WIN32
 ////////////////////////////////////////////////////////////////////////////////////
-#define MAX_HTTP_BUFFER_SIZE 1024
+#define MAX_HTTP_BUFFER_SIZE (MAX_STREAM_URL_LENGTH + MAX_STREAM_KEY_LENGTH + 1024)
 HANDLE obs_http_thread;
 volatile bool obs_http_is_exit = false;
 volatile bool obs_http_exited = false;
 char obs_local_ip_addr[INET_ADDRSTRLEN] = {0};
+char obs_http_response_buf[MAX_HTTP_BUFFER_SIZE] = {0};
+char obs_http_request_buf[MAX_HTTP_BUFFER_SIZE] = {0};
+
 
 static void json_parser(char *string, const char *json)
 {
@@ -54,6 +57,47 @@ static void json_parser(char *string, const char *json)
 	}
 }
 
+static OBSHttpApiValue* json_get_values(const char* json_object)
+{
+	char szJson[MAX_HTTP_BUFFER_SIZE] = {0};
+	size_t json_object_size = sizeof(OBSHttpApiValue);
+	OBSHttpApiValue *obsHttpApiValue =
+		(OBSHttpApiValue *)malloc(json_object_size);
+	if (obsHttpApiValue != NULL) 
+		memset(obsHttpApiValue, 0, json_object_size);
+
+	if (json_object != NULL) {
+		json_parser(szJson, json_object);
+		char items[10][256] = {0};
+		size_t idx = 0;
+		char *tmp_item = strtok(szJson, ",");
+		while (tmp_item != NULL) {
+			strncpy(items[idx], tmp_item, strlen(tmp_item));
+			tmp_item = strtok(NULL, ",");
+			idx++;
+		}
+
+		for (size_t i = 0; i < idx; i++) {
+			char *tmp_title = strtok(items[i], ":");
+			while (tmp_title != NULL) {
+				if (!strcmp(tmp_title, "streamUrl")) {
+					tmp_title = strtok(NULL, "");
+					strncpy(obsHttpApiValue->streamUrl, tmp_title,
+						strlen(tmp_title));
+				} else if (!strcmp(tmp_title, "streamKey")) {
+					tmp_title = strtok(NULL, "");
+					strncpy(obsHttpApiValue->streamKey, tmp_title,
+						strlen(tmp_title));
+				} else {
+					tmp_title = strtok(NULL, "");
+				}
+				idx++;
+			}
+		}
+	}
+	return obsHttpApiValue;
+}
+
 static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 {
 	WSADATA wsa_data;
@@ -66,21 +110,6 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 	char szBufIP[1024] = {0};
 	long ret = 0;
 	BOOL valid = FALSE;
-	//unsigned char b1, b2, b3, b4;
-
-	char szBuf[MAX_HTTP_BUFFER_SIZE] = {0};
-	char szInBuf[MAX_HTTP_BUFFER_SIZE] = {0};
-	char szJson[MAX_HTTP_BUFFER_SIZE] = {0};
-
-	char obs_stream_url[256] = {0};
-	char obs_stream_key[256] = {0};
-	//
-	//_snprintf_s(spoon_stream_url, sizeof(spoon_stream_url),
-	//	    sizeof(spoon_stream_url),
-	//	    "http://127.0.0.1/jdISKksf");
-	//_snprintf_s(spoon_stream_key, sizeof(spoon_stream_key),
-	//	    sizeof(spoon_stream_key),
-	//	    "siSDKRE20S");
 
 	if (::WSAStartup(MAKEWORD(2, 0), &wsa_data) != 0) {
 		return 1;
@@ -153,71 +182,37 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 			return 1;
 		}
 
-		memset(szInBuf, 0, sizeof(szInBuf));
-		::recv(sockSS, szInBuf, sizeof(szInBuf), 0);
+		memset(obs_http_request_buf, 0, sizeof(obs_http_request_buf));
+		::recv(sockSS, obs_http_request_buf, sizeof(obs_http_request_buf), 0);
 
-		char *strRequest = strtok(szInBuf, "{");
+		char *strRequest = strtok(obs_http_request_buf, "{");
 		strRequest = strtok(NULL, "}");
 
-		if (strRequest != NULL) {
-			json_parser(szJson, strRequest);
-			char items[10][256] = {0};
-			size_t idx = 0;
-			char *tmp_item = strtok(szJson, ",");
-			while (tmp_item != NULL) {
-				strncpy(items[idx], tmp_item, strlen(tmp_item));
-				tmp_item = strtok(NULL, ",");
-				idx++;
-			}
+		OBSHttpApiValue *streamValue = json_get_values(strRequest);
 
-			memset(obs_stream_url, 0, 256);
-			memset(obs_stream_key, 0, 256);
-
-			for (size_t i = 0; i < idx; i++) {
-				char *tmp_title = strtok(items[i], ":");
-				while (tmp_title != NULL) {
-					if (!strcmp(tmp_title, "streamUrl")) {
-						tmp_title = strtok(NULL, "");
-						strncpy(obs_stream_url,
-							tmp_title,
-							strlen(tmp_title));
-					} else if (!strcmp(tmp_title,
-							   "streamKey")) {
-						tmp_title = strtok(NULL, "");
-						strncpy(obs_stream_key,
-							tmp_title,
-							strlen(tmp_title));
-					} else {
-						tmp_title = strtok(NULL, "");
-					}
-					idx++;
-				}
-			}
-		}
-
-		FILE *file = fopen("SPOON_API.DAT", "w");
-		fwrite(obs_stream_url, 256, 1, file);
-		fwrite(obs_stream_key, 256, 1, file);
+		FILE *file = fopen("OBS_HTTP_API.DAT", "w");
+		fwrite(streamValue, sizeof(OBSHttpApiValue), 1, file);
 		fclose(file);
 
-		file = fopen("SPOON_API.DAT", "r");
+		file = fopen("OBS_HTTP_API.DAT", "r");
 		if (file) {
-			char bodyStreamUrl[256] = {0};
-			char bodyStreamKey[256] = {0};
-			fread(bodyStreamUrl, 256, 1, file);
-			fread(bodyStreamKey, 256, 1, file);
+			OBSHttpApiValue streamCheckValue; 
+			fread(&streamCheckValue, sizeof(OBSHttpApiValue), 1,
+			      file);
+
 			fclose(file);
 
-			char bodyMessage[1024] = {0};
+			char bodyMessage[MAX_HTTP_BUFFER_SIZE] = {0};
 			_snprintf_s(
-				bodyMessage, sizeof(bodyMessage),
-				sizeof(bodyMessage),
+				bodyMessage, MAX_HTTP_BUFFER_SIZE,
+				MAX_HTTP_BUFFER_SIZE,
 				"{ \"result\" : \"0\", \"streamUrl\" : \"%s\", \"streamKey\" : \"%s\" }\r\n",
-				bodyStreamUrl, bodyStreamKey);
+				streamCheckValue.streamUrl, streamCheckValue.streamKey);
 
 			int bodyMsgLen = (int)strlen(bodyMessage);
-			memset(szBuf, 0, sizeof(szBuf));
-			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
+			memset(obs_http_response_buf, 0, MAX_HTTP_BUFFER_SIZE);
+			_snprintf_s(obs_http_response_buf, MAX_HTTP_BUFFER_SIZE,
+				    MAX_HTTP_BUFFER_SIZE,
 				    "HTTP/1.0 200 OK\r\n"
 				    "Content-Length: %d\r\n"
 				    "Content-Type: text/json\r\n"
@@ -227,20 +222,22 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 		} else {
 			char bodyMessage[] = "{ \"result\" : \"1\" }\r\n";
 			int bodyMsgLen = (int)strlen(bodyMessage);
-			memset(szBuf, 0, sizeof(szBuf));
-			_snprintf_s(szBuf, sizeof(szBuf), sizeof(szBuf),
+			memset(obs_http_response_buf, 0, MAX_HTTP_BUFFER_SIZE);
+			_snprintf_s(obs_http_response_buf, MAX_HTTP_BUFFER_SIZE,
+				    MAX_HTTP_BUFFER_SIZE,
 				    "HTTP/1.0 200 OK\r\n"
 				    "Content-Length: %d\r\n"
 				    "Content-Type: text/json\r\n"
 				    "\r\n%s",
 				    bodyMsgLen, bodyMessage);
 		}
-		::send(sockSS, szBuf, (int)strlen(szBuf), 0);
+		::send(sockSS, obs_http_response_buf, (int)strlen(obs_http_response_buf), 0);
 
 		::closesocket(sockSS);
 	}
 
 	::WSACleanup();
+
 	obs_http_exited = true;
 	return 0;
 }
