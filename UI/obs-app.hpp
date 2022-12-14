@@ -33,6 +33,7 @@
 #include <deque>
 
 #include "window-main.hpp"
+#include "obs-http-api.h"
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
@@ -81,6 +82,8 @@ private:
 	std::string locale;
 	std::string theme;
 
+	OBSHttpApi *spoonHttpApi;
+
 	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
@@ -94,6 +97,8 @@ private:
 
 	bool enableHotkeysInFocus = true;
 	bool enableHotkeysOutOfFocus = true;
+
+	bool OBSHttpApiStarted;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 

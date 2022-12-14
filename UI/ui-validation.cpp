@@ -8,6 +8,10 @@
 #include <obs-app.hpp>
 #include <obs-service.h>
 
+#include <windows.h>
+
+#include "obs-http-api.h"
+
 static int CountVideoSources()
 {
 	int count = 0;
@@ -36,24 +40,27 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 	if (!parent->isVisible())
 		return true;
 
-	QString msg = QTStr("NoSources.Text");
-	msg += "\n\n";
-	msg += QTStr("NoSources.Text.AddSource");
+	// Ignore no video alert for Spoon Radio : Simon Ahn
+	// Spoon radio always transmits only audio.
+	return true;
+	//QString msg = QTStr("NoSources.Text");
+	//msg += "\n\n";
+	//msg += QTStr("NoSources.Text.AddSource");
 
-	QMessageBox messageBox(parent);
-	messageBox.setWindowTitle(QTStr("NoSources.Title"));
-	messageBox.setText(msg);
+	//QMessageBox messageBox(parent);
+	//messageBox.setWindowTitle(QTStr("NoSources.Title"));
+	//messageBox.setText(msg);
 
-	QAbstractButton *yesButton =
-		messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
-	messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
-	messageBox.setIcon(QMessageBox::Question);
-	messageBox.exec();
+	//QAbstractButton *yesButton =
+	//	messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	//messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+	//messageBox.setIcon(QMessageBox::Question);
+	//messageBox.exec();
 
-	if (messageBox.clickedButton() != yesButton)
-		return false;
-	else
-		return true;
+	//if (messageBox.clickedButton() != yesButton)
+	//	return false;
+	//else
+	//	return true;
 }
 
 StreamSettingsAction
@@ -64,8 +71,40 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char const *serviceType = obs_service_get_type(service);
 	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
 
-	char const *streamUrl = obs_service_get_url(service);
-	char const *streamKey = obs_service_get_key(service);
+	// TODO: need to implement for stream url and key applied by spoon radio.
+	char const *tempStreamUrl = obs_service_get_url(service);
+	char const *tempStreamKey = obs_service_get_key(service);
+
+	char *streamUrl = NULL;
+	char *streamKey = NULL;
+
+	FILE *file = fopen("OBS_HTTP_API.DAT", "r");
+	if (file) {
+		OBSHttpApiValue streamValues;  
+		fread(&streamValues, sizeof(OBSHttpApiValue), 1, file);
+		fclose(file);
+
+		OBSDataAutoRelease service_settings = obs_data_create();
+
+		streamUrl = streamValues.streamUrl;
+		streamKey = streamValues.streamKey;
+
+		obs_data_set_string(service_settings, "service", "Spoon Radio");
+		obs_data_set_string(service_settings, "server", streamUrl);
+		obs_data_set_string(service_settings, "key", streamKey);
+		obs_service_update(service, service_settings);
+
+		// TEST CODE
+		char const *tempStreamUrl1 = obs_service_get_url(service);
+		char const *tempStreamKey1 = obs_service_get_key(service);
+		blog(LOG_INFO, "===== Connected server & key   ========================");
+		blog(LOG_INFO, " Stream Url : %s", tempStreamUrl1);
+		blog(LOG_INFO, " Stream Key : %s", tempStreamKey1);
+
+	} else {
+		streamUrl = (char *)tempStreamUrl;
+		streamKey = (char *)tempStreamKey;
+	}
 
 	bool hasStreamUrl = (streamUrl != NULL && streamUrl[0] != '\0');
 	bool hasStreamKey = ((streamKey != NULL && streamKey[0] != '\0') ||

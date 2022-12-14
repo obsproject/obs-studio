@@ -121,6 +121,7 @@ void OBSBasicSettings::LoadStream1Settings()
 
 	if (strcmp(type, "rtmp_custom") == 0) {
 		ui->service->setCurrentIndex(0);
+		ui->customServer->setEchoMode(QLineEdit::Password);
 		ui->customServer->setText(server);
 		lastServiceIdx = 0;
 
@@ -554,7 +555,8 @@ void OBSBasicSettings::UpdateServerList()
 void OBSBasicSettings::on_show_clicked()
 {
 	if (ui->key->echoMode() == QLineEdit::Password) {
-		ui->key->setEchoMode(QLineEdit::Normal);
+		//ui->key->setEchoMode(QLineEdit::Normal);
+		ui->key->setEchoMode(QLineEdit::Password);
 		ui->show->setText(QTStr("Hide"));
 	} else {
 		ui->key->setEchoMode(QLineEdit::Password);

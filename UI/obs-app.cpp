@@ -1305,6 +1305,12 @@ OBSApp::~OBSApp()
 
 	if (libobs_initialized)
 		obs_shutdown();
+
+	if (spoonHttpApi) {
+		spoonHttpApi->HttpApiExit();
+		blog(LOG_INFO, "==== OBS Http Service Exited ================================================");
+		delete spoonHttpApi;
+	}
 }
 
 static void move_basic_to_profiles(void)
@@ -1391,6 +1397,9 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
+
+	spoonHttpApi = new OBSHttpApi();
+	OBSHttpApiStarted = spoonHttpApi->HttpApiStart();
 
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
@@ -1519,6 +1528,17 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+	if (OBSHttpApiStarted) {
+		config_set_string(App()->GlobalConfig(), "spoon", "localIP",
+				  spoonHttpApi->GetLocalIpAddr());
+		blog(LOG_INFO,
+		     "==== OBS Http Service Started[%s] ================================================",
+		     spoonHttpApi->GetLocalIpAddr());
+	} else {
+		blog(LOG_INFO,
+		     "==== OBS Http Service Error ================================================");
+	}
+
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);
 #endif
@@ -1595,6 +1615,8 @@ bool OBSApp::OBSInit()
 			ResetHotkeyState(state == Qt::ApplicationActive);
 		});
 	ResetHotkeyState(applicationState() == Qt::ApplicationActive);
+
+
 	return true;
 }
 
