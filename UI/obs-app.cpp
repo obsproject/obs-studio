@@ -109,7 +109,7 @@ QPointer<OBSLogViewer> obsLogViewer;
 #ifdef _MSC_VER
 extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
-#endif
+#endif 
 
 QObject *CreateShortcutFilter()
 {
@@ -1305,12 +1305,13 @@ OBSApp::~OBSApp()
 
 	if (libobs_initialized)
 		obs_shutdown();
-
-	if (spoonHttpApi) {
-		spoonHttpApi->HttpApiExit();
+#ifdef HTTP_REST_API_ENABLED
+	if (obsHttpApi) {
+		obsHttpApi->HttpApiExit();
 		blog(LOG_INFO, "==== OBS Http Service Exited ================================================");
-		delete spoonHttpApi;
+		delete obsHttpApi;
 	}
+#endif
 }
 
 static void move_basic_to_profiles(void)
@@ -1397,10 +1398,10 @@ static void move_basic_to_scene_collections(void)
 void OBSApp::AppInit()
 {
 	ProfileScope("OBSApp::AppInit");
-
-	spoonHttpApi = new OBSHttpApi();
-	OBSHttpApiStarted = spoonHttpApi->HttpApiStart();
-
+#ifdef HTTP_REST_API_ENABLED
+	obsHttpApi = new OBSHttpApi();
+	OBSHttpApiStarted = obsHttpApi->HttpApiStart();
+#endif
 	if (!MakeUserDirs())
 		throw "Failed to create required user directories";
 	if (!InitGlobalConfig())
@@ -1528,16 +1529,18 @@ bool OBSApp::OBSInit()
 {
 	ProfileScope("OBSApp::OBSInit");
 
+#ifdef HTTP_REST_API_ENABLED
 	if (OBSHttpApiStarted) {
 		config_set_string(App()->GlobalConfig(), "spoon", "localIP",
-				  spoonHttpApi->GetLocalIpAddr());
+				  obsHttpApi->GetLocalIpAddr());
 		blog(LOG_INFO,
 		     "==== OBS Http Service Started[%s] ================================================",
-		     spoonHttpApi->GetLocalIpAddr());
+		     obsHttpApi->GetLocalIpAddr());
 	} else {
 		blog(LOG_INFO,
 		     "==== OBS Http Service Error ================================================");
 	}
+#endif
 
 #if QT_VERSION < QT_VERSION_CHECK(6, 0, 0)
 	setAttribute(Qt::AA_UseHighDpiPixmaps);

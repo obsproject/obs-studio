@@ -434,11 +434,14 @@ try {
 	int new_ver = MAKE_SEMANTIC_VERSION(major, minor, patch);
 
 	updateVer = new_ver;
+
+#ifdef HTTP_REST_API_ENABLED
 	// Update Popup Window Disabled : Simon Ahn
 	// We have to update only manually by user. 
-	//*updatesAvailable = new_ver > cur_ver;
 	*updatesAvailable = false;
-
+#else 
+	*updatesAvailable = new_ver > cur_ver;
+#endif
 	return true;
 
 } catch (string &text) {

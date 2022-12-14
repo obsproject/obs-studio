@@ -249,8 +249,6 @@ static inline BOOL spoon_http_run_service()
 	return obs_http_thread != NULL;
 }
 ////////////////////////////////////////////////////////////////////////////////////
-#endif // _WIN32
-
 
 bool OBSHttpApi::HttpApiStart()
 {
@@ -270,3 +268,4 @@ char* OBSHttpApi::GetLocalIpAddr()
 {
 	return obs_local_ip_addr;
 }
+#endif // _WIN32

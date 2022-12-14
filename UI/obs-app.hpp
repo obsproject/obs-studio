@@ -33,7 +33,9 @@
 #include <deque>
 
 #include "window-main.hpp"
+#ifdef HTTP_REST_API_ENABLED
 #include "obs-http-api.h"
+#endif
 
 std::string CurrentTimeString();
 std::string CurrentDateTimeString();
@@ -79,11 +81,12 @@ class OBSApp : public QApplication {
 	Q_OBJECT
 
 private:
+#ifdef HTTP_REST_API_ENABLED
+	OBSHttpApi *obsHttpApi;
+	bool OBSHttpApiStarted;
+#endif
 	std::string locale;
 	std::string theme;
-
-	OBSHttpApi *spoonHttpApi;
-
 	bool themeDarkMode = true;
 	ConfigFile globalConfig;
 	TextLookup textLookup;
@@ -97,8 +100,6 @@ private:
 
 	bool enableHotkeysInFocus = true;
 	bool enableHotkeysOutOfFocus = true;
-
-	bool OBSHttpApiStarted;
 
 	std::deque<obs_frontend_translate_ui_cb> translatorHooks;
 

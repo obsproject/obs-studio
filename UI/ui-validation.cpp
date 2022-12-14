@@ -9,8 +9,11 @@
 #include <obs-service.h>
 
 #include <windows.h>
+#include "ui-config.h"
 
+#ifdef HTTP_REST_API_ENABLED
 #include "obs-http-api.h"
+#endif
 
 static int CountVideoSources()
 {
@@ -39,28 +42,30 @@ bool UIValidation::NoSourcesConfirmation(QWidget *parent)
 	// Ignore no video if no parent is visible to alert on
 	if (!parent->isVisible())
 		return true;
-
+#ifdef HTTP_REST_API_ENABLED
 	// Ignore no video alert for Spoon Radio : Simon Ahn
 	// Spoon radio always transmits only audio.
 	return true;
-	//QString msg = QTStr("NoSources.Text");
-	//msg += "\n\n";
-	//msg += QTStr("NoSources.Text.AddSource");
+#else 
+	QString msg = QTStr("NoSources.Text");
+	msg += "\n\n";
+	msg += QTStr("NoSources.Text.AddSource");
 
-	//QMessageBox messageBox(parent);
-	//messageBox.setWindowTitle(QTStr("NoSources.Title"));
-	//messageBox.setText(msg);
+	QMessageBox messageBox(parent);
+	messageBox.setWindowTitle(QTStr("NoSources.Title"));
+	messageBox.setText(msg);
 
-	//QAbstractButton *yesButton =
-	//	messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
-	//messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
-	//messageBox.setIcon(QMessageBox::Question);
-	//messageBox.exec();
+	QAbstractButton *yesButton =
+		messageBox.addButton(QTStr("Yes"), QMessageBox::YesRole);
+	messageBox.addButton(QTStr("No"), QMessageBox::NoRole);
+	messageBox.setIcon(QMessageBox::Question);
+	messageBox.exec();
 
-	//if (messageBox.clickedButton() != yesButton)
-	//	return false;
-	//else
-	//	return true;
+	if (messageBox.clickedButton() != yesButton)
+		return false;
+	else
+		return true;
+#endif
 }
 
 StreamSettingsAction
@@ -71,7 +76,7 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char const *serviceType = obs_service_get_type(service);
 	bool isCustomUrlService = (strcmp(serviceType, "rtmp_custom") == 0);
 
-	// TODO: need to implement for stream url and key applied by spoon radio.
+#ifdef HTTP_REST_API_ENABLED
 	char const *tempStreamUrl = obs_service_get_url(service);
 	char const *tempStreamKey = obs_service_get_key(service);
 
@@ -105,7 +110,10 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 		streamUrl = (char *)tempStreamUrl;
 		streamKey = (char *)tempStreamKey;
 	}
-
+#else
+	char const *streamUrl = obs_service_get_url(service);
+	char const *streamKey = obs_service_get_key(service);
+#endif
 	bool hasStreamUrl = (streamUrl != NULL && streamUrl[0] != '\0');
 	bool hasStreamKey = ((streamKey != NULL && streamKey[0] != '\0') ||
 			     isCustomUrlService);

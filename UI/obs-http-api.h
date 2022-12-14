@@ -1,5 +1,6 @@
 #pragma once
 
+#ifdef _WIN32
 #define MAX_STREAM_URL_LENGTH 1024
 #define MAX_STREAM_KEY_LENGTH 1024
 
@@ -15,3 +16,4 @@ public:
 	void HttpApiExit();
 	char* GetLocalIpAddr();
 };
+#endif
