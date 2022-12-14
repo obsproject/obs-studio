@@ -204,6 +204,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, true);
 		slider = new VolumeSlider(obs_fader, Qt::Vertical);
+		slider->setLayoutDirection(Qt::LeftToRight);
 
 		nameLayout->setAlignment(Qt::AlignCenter);
 		meterLayout->setAlignment(Qt::AlignCenter);
@@ -253,6 +254,7 @@ VolControl::VolControl(OBSSource source_, bool showConfig, bool vertical)
 
 		volMeter = new VolumeMeter(nullptr, obs_volmeter, false);
 		slider = new VolumeSlider(obs_fader, Qt::Horizontal);
+		slider->setLayoutDirection(Qt::LeftToRight);
 
 		textLayout->setContentsMargins(0, 0, 0, 0);
 		textLayout->addWidget(nameLabel);
