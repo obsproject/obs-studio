@@ -955,11 +955,14 @@ static bool set_config(struct ffmpeg_output *stream)
 	obs_data_release(settings);
 
 	/* 3. Audio settings */
-	// 3.a) set audio encoder and id to aac
+	// 3.a) set audio codec & id from audio encoder
 	obs_encoder_t *aencoder =
 		obs_output_get_audio_encoder(stream->output, 0);
-	config.audio_encoder = "aac";
-	config.audio_encoder_id = AV_CODEC_ID_AAC;
+	config.audio_encoder = obs_encoder_get_codec(aencoder);
+	if (strcmp(config.audio_encoder, "aac") == 0)
+		config.audio_encoder_id = AV_CODEC_ID_AAC;
+	else if (strcmp(config.audio_encoder, "opus") == 0)
+		config.audio_encoder_id = AV_CODEC_ID_OPUS;
 
 	// 3.b) get audio bitrate from the audio encoder.
 	settings = obs_encoder_get_settings(aencoder);
@@ -1295,7 +1298,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 #else
 	.encoded_video_codecs = "h264",
 #endif
-	.encoded_audio_codecs = "aac",
+	.encoded_audio_codecs = "aac;opus",
 	.get_name = ffmpeg_mpegts_getname,
 	.create = ffmpeg_mpegts_create,
 	.destroy = ffmpeg_mpegts_destroy,

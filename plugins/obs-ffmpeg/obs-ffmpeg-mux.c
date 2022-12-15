@@ -946,7 +946,7 @@ struct obs_output_info ffmpeg_mpegts_muxer = {
 		 OBS_OUTPUT_SERVICE,
 	.protocols = "SRT;RIST",
 	.encoded_video_codecs = "h264",
-	.encoded_audio_codecs = "aac",
+	.encoded_audio_codecs = "aac;opus",
 	.get_name = ffmpeg_mpegts_mux_getname,
 	.create = ffmpeg_mux_create,
 	.destroy = ffmpeg_mux_destroy,
