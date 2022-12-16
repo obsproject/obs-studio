@@ -266,6 +266,12 @@ General Scene Functions
 
    Enumerates scene items within a scene.
 
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_scene_enum_items finishes.
+
    For scripting, use :py:func:`obs_scene_enum_items`.
 
 ---------------------
@@ -744,6 +750,13 @@ Scene Item Group Functions
 .. function:: void obs_sceneitem_group_enum_items(obs_sceneitem_t *group, bool (*callback)(obs_scene_t*, obs_sceneitem_t*, void*), void *param)
 
    Enumerates scene items within a group.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_sceneitem_addref()` if you want to retain a
+   reference after obs_sceneitem_group_enum_items finishes.
+
 
 ---------------------
 
