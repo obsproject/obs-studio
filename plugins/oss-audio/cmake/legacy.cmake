@@ -1,11 +1,9 @@
-cmake_minimum_required(VERSION 3.22...3.25)
-
-legacy_check()
+project(oss-audio)
 
 option(ENABLE_OSS "Enable building with OSS audio support" ON)
 
 if(NOT ENABLE_OSS)
-  target_disable(oss-audio)
+  obs_status(DISABLED "oss-audio")
   return()
 endif()
 
@@ -18,7 +16,12 @@ target_sources(oss-audio PRIVATE oss-audio.c oss-input.c)
 
 target_link_libraries(oss-audio PRIVATE OBS::libobs OSS::OSS)
 
-configure_file(oss-platform.h.in oss-platform.h)
+configure_file(${CMAKE_CURRENT_SOURCE_DIR}/oss-platform.h.in oss-platform.h)
+
+target_include_directories(oss-audio PRIVATE ${CMAKE_CURRENT_BINARY_DIR})
+
 target_sources(oss-audio PRIVATE oss-platform.h)
 
-set_target_properties_obs(oss-audio PROPERTIES FOLDER plugins PREFIX "")
+set_target_properties(oss-audio PROPERTIES FOLDER "plugins")
+
+setup_plugin_target(oss-audio)
