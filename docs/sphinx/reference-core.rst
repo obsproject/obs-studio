@@ -299,11 +299,25 @@ Libobs Objects
 
    Enumerates outputs.
 
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_output_get_ref()` or
+   :c:func:`obs_output_get_weak_output()` if you want to retain a
+   reference after obs_enum_outputs finishes.
+
 ---------------------
 
 .. function:: void obs_enum_encoders(bool (*enum_proc)(void*, obs_encoder_t*), void *param)
 
    Enumerates encoders.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
+
+   Use :c:func:`obs_encoder_get_ref()` or
+   :c:func:`obs_encoder_get_weak_encoder()` if you want to retain a
+   reference after obs_enum_encoders finishes.
 
 ---------------------
 
@@ -504,6 +518,9 @@ Video, Audio, and Graphics
 .. function:: void obs_enum_audio_monitoring_devices(obs_enum_audio_device_cb cb, void *data)
 
    Enumerates audio devices which can be used for audio monitoring.
+
+   Callback function returns true to continue enumeration, or false to end
+   enumeration.
 
    Relevant data types used with this function:
 
