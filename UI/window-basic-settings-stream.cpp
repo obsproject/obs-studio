@@ -1342,7 +1342,7 @@ bool OBSBasicSettings::ServiceSupportsCodecCheck()
 
 void OBSBasicSettings::ResetEncoders(bool streamOnly)
 {
-	QString lastAdvEnc = ui->advOutRecEncoder->currentData().toString();
+	QString lastAdvEnc = ui->advOutEncoder->currentData().toString();
 	QString lastEnc = ui->simpleOutStrEncoder->currentData().toString();
 	OBSService service = SpawnTempService();
 	const char **codecs = obs_service_get_supported_video_codecs(service);
