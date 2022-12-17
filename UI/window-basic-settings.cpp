@@ -260,9 +260,40 @@ static CodecDesc GetDefaultCodecDesc(const ff_format_desc *formatDesc,
 			 id);
 }
 
-static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
+#define INVALID_BITRATE 10000
+static int FindClosestAvailableAudioBitrate(QComboBox *box, int bitrate)
 {
-	auto &bitrateMap = GetSimpleAACEncoderBitrateMap();
+	QList<int> bitrates;
+	int prev = 0;
+	int next = INVALID_BITRATE;
+
+	for (int i = 0; i < box->count(); i++)
+		bitrates << box->itemText(i).toInt();
+
+	for (int val : bitrates) {
+		if (next > val) {
+			if (val == bitrate)
+				return bitrate;
+
+			if (val < next && val > bitrate)
+				next = val;
+			if (val > prev && val < bitrate)
+				prev = val;
+		}
+	}
+
+	if (next != INVALID_BITRATE)
+		return next;
+	if (prev != 0)
+		return prev;
+	return 192;
+}
+#undef INVALID_BITRATE
+
+static void PopulateSimpleBitrates(QComboBox *box, bool opus)
+{
+	auto &bitrateMap = opus ? GetSimpleOpusEncoderBitrateMap()
+				: GetSimpleAACEncoderBitrateMap();
 	if (bitrateMap.empty())
 		return;
 
@@ -272,17 +303,52 @@ static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 			QString::number(entry.first),
 			obs_encoder_get_display_name(entry.second.c_str()));
 
+	QString currentBitrate = box->currentText();
+	box->clear();
+
+	for (auto &pair : pairs) {
+		box->addItem(pair.first);
+		box->setItemData(box->count() - 1, pair.second,
+				 Qt::ToolTipRole);
+	}
+
+	if (box->findData(currentBitrate) == -1) {
+		int bitrate = FindClosestAvailableAudioBitrate(
+			box, currentBitrate.toInt());
+		box->setCurrentText(QString::number(bitrate));
+	} else
+		box->setCurrentText(currentBitrate);
+}
+
+static void PopulateAdvancedBitrates(initializer_list<QComboBox *> boxes,
+				     const char *stream_id, const char *rec_id)
+{
+	auto &streamBitrates = GetAudioEncoderBitrates(stream_id);
+	auto &recBitrates = GetAudioEncoderBitrates(rec_id);
+	if (streamBitrates.empty() || recBitrates.empty())
+		return;
+
+	QList<int> streamBitratesList;
+	for (auto &bitrate : streamBitrates)
+		streamBitratesList << bitrate;
+
 	for (auto box : boxes) {
-		QString currentText = box->currentText();
+		QString currentBitrate = box->currentText();
 		box->clear();
 
-		for (auto &pair : pairs) {
-			box->addItem(pair.first);
-			box->setItemData(box->count() - 1, pair.second,
-					 Qt::ToolTipRole);
+		for (auto &bitrate : recBitrates) {
+			if (streamBitratesList.indexOf(bitrate) == -1)
+				continue;
+
+			box->addItem(QString::number(bitrate));
 		}
 
-		box->setCurrentText(currentText);
+		if (box->findData(currentBitrate) == -1) {
+			int bitrate = FindClosestAvailableAudioBitrate(
+				box, currentBitrate.toInt());
+			box->setCurrentText(QString::number(bitrate));
+		} else
+			box->setCurrentText(currentBitrate);
 	}
 }
 
@@ -362,11 +428,6 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	main->EnableOutputs(false);
 
-	PopulateAACBitrates({ui->simpleOutputABitrate, ui->advOutTrack1Bitrate,
-			     ui->advOutTrack2Bitrate, ui->advOutTrack3Bitrate,
-			     ui->advOutTrack4Bitrate, ui->advOutTrack5Bitrate,
-			     ui->advOutTrack6Bitrate});
-
 	ui->listWidget->setAttribute(Qt::WA_MacShowFocusRect, false);
 
 	/* clang-format off */
@@ -424,17 +485,20 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->simpleOutRecFormat,   COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputVBitrate, SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutStrEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutStrAEncoder, COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutputABitrate, COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutAdvanced,    CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutPreset,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecQuality,  COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutRecEncoder,  COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->simpleOutRecAEncoder, COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleOutMuxCustom,   EDIT_CHANGED,   OUTPUTS_CHANGED);
 	HookWidget(ui->simpleReplayBuf,      CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBSecMax,       SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->simpleRBMegsMax,      SCROLL_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutEncoder,        COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutAEncoder,       COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutUseRescale,     CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRescale,        CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutTrack1,         CHECK_CHANGED,  OUTPUTS_CHANGED);
@@ -448,6 +512,7 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 	HookWidget(ui->advOutNoSpace,        CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecFormat,      COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecEncoder,     COMBO_CHANGED,  OUTPUTS_CHANGED);
+	HookWidget(ui->advOutRecAEncoder,    COMBO_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecUseRescale,  CHECK_CHANGED,  OUTPUTS_CHANGED);
 	HookWidget(ui->advOutRecRescale,     CBEDIT_CHANGED, OUTPUTS_CHANGED);
 	HookWidget(ui->advOutMuxCustom,      EDIT_CHANGED,   OUTPUTS_CHANGED);
@@ -918,6 +983,13 @@ OBSBasicSettings::OBSBasicSettings(QWidget *parent)
 
 	connect(ui->useStreamKeyAdv, SIGNAL(clicked()), this,
 		SLOT(UseStreamKeyAdvClicked()));
+
+	connect(ui->simpleOutStrAEncoder, SIGNAL(currentIndexChanged(int)),
+		this, SLOT(SimpleStreamAudioEncoderChanged));
+	connect(ui->advOutAEncoder, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvAudioEncodersChanged()));
+	connect(ui->advOutRecAEncoder, SIGNAL(currentIndexChanged(int)), this,
+		SLOT(AdvAudioEncodersChanged()));
 
 	UpdateAudioWarnings();
 	UpdateAdvNetworkGroup();
@@ -1821,6 +1893,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 		config_get_uint(main->Config(), "SimpleOutput", "VBitrate");
 	const char *streamEnc = config_get_string(
 		main->Config(), "SimpleOutput", "StreamEncoder");
+	const char *streamAudioEnc = config_get_string(
+		main->Config(), "SimpleOutput", "StreamAudioEncoder");
 	int audioBitrate =
 		config_get_uint(main->Config(), "SimpleOutput", "ABitrate");
 	bool advanced =
@@ -1841,6 +1915,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 		config_get_string(main->Config(), "SimpleOutput", "RecQuality");
 	const char *recEnc =
 		config_get_string(main->Config(), "SimpleOutput", "RecEncoder");
+	const char *recAudioEnc = config_get_string(
+		main->Config(), "SimpleOutput", "RecAudioEncoder");
 	const char *muxCustom = config_get_string(
 		main->Config(), "SimpleOutput", "MuxerCustom");
 	bool replayBuf =
@@ -1856,7 +1932,10 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curAMDPreset = amdPreset;
 	curAMDAV1Preset = amdAV1Preset;
 
-	audioBitrate = FindClosestAvailableSimpleAACBitrate(audioBitrate);
+	bool isOpus = strcmp(streamAudioEnc, "opus") == 0;
+	audioBitrate =
+		isOpus ? FindClosestAvailableSimpleOpusBitrate(audioBitrate)
+		       : FindClosestAvailableSimpleAACBitrate(audioBitrate);
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleNoSpace->setChecked(noSpace);
@@ -1864,6 +1943,8 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 
 	int idx = ui->simpleOutRecFormat->findData(format);
 	ui->simpleOutRecFormat->setCurrentIndex(idx);
+
+	PopulateSimpleBitrates(ui->simpleOutputABitrate, isOpus);
 
 	const char *speakers =
 		config_get_string(main->Config(), "Audio", "ChannelSetup");
@@ -1888,10 +1969,20 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 		idx = 0;
 	ui->simpleOutStrEncoder->setCurrentIndex(idx);
 
+	idx = ui->simpleOutStrAEncoder->findData(QString(streamAudioEnc));
+	if (idx == -1)
+		idx = 0;
+	ui->simpleOutStrAEncoder->setCurrentIndex(idx);
+
 	idx = ui->simpleOutRecEncoder->findData(QString(recEnc));
 	if (idx == -1)
 		idx = 0;
 	ui->simpleOutRecEncoder->setCurrentIndex(idx);
+
+	idx = ui->simpleOutRecAEncoder->findData(QString(recAudioEnc));
+	if (idx == -1)
+		idx = 0;
+	ui->simpleOutRecAEncoder->setCurrentIndex(idx);
 
 	ui->simpleOutMuxCustom->setText(muxCustom);
 
@@ -2237,12 +2328,31 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	const char *name6 =
 		config_get_string(main->Config(), "AdvOut", "Track6Name");
 
-	track1Bitrate = FindClosestAvailableSimpleAACBitrate(track1Bitrate);
-	track2Bitrate = FindClosestAvailableSimpleAACBitrate(track2Bitrate);
-	track3Bitrate = FindClosestAvailableSimpleAACBitrate(track3Bitrate);
-	track4Bitrate = FindClosestAvailableSimpleAACBitrate(track4Bitrate);
-	track5Bitrate = FindClosestAvailableSimpleAACBitrate(track5Bitrate);
-	track6Bitrate = FindClosestAvailableSimpleAACBitrate(track6Bitrate);
+	const char *encoder_id =
+		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
+	const char *rec_encoder_id =
+		config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
+
+	PopulateAdvancedBitrates(
+		{ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+		 ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+		 ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
+		encoder_id,
+		strcmp(rec_encoder_id, "none") != 0 ? rec_encoder_id
+						    : encoder_id);
+
+	track1Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack1Bitrate, track1Bitrate);
+	track2Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack2Bitrate, track2Bitrate);
+	track3Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack3Bitrate, track3Bitrate);
+	track4Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack4Bitrate, track4Bitrate);
+	track5Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack5Bitrate, track5Bitrate);
+	track6Bitrate = FindClosestAvailableAudioBitrate(
+		ui->advOutTrack6Bitrate, track6Bitrate);
 
 	// restrict list of bitrates when multichannel is OFF
 	const char *speakers =
@@ -2292,8 +2402,15 @@ void OBSBasicSettings::LoadOutputSettings()
 	LoadSimpleOutputSettings();
 	LoadAdvOutputStreamingSettings();
 	LoadAdvOutputStreamingEncoderProperties();
+
+	const char *type =
+		config_get_string(main->Config(), "AdvOut", "AudioEncoder");
+	SetComboByValue(ui->advOutAEncoder, type);
+
 	LoadAdvOutputRecordingSettings();
 	LoadAdvOutputRecordingEncoderProperties();
+	type = config_get_string(main->Config(), "AdvOut", "RecAudioEncoder");
+	SetComboByValue(ui->advOutRecAEncoder, type);
 	LoadAdvOutputFFmpegSettings();
 	LoadAdvOutputAudioSettings();
 
@@ -2302,6 +2419,8 @@ void OBSBasicSettings::LoadOutputSettings()
 		ui->outputModeLabel->setEnabled(false);
 		ui->simpleOutStrEncoderLabel->setEnabled(false);
 		ui->simpleOutStrEncoder->setEnabled(false);
+		ui->simpleOutStrAEncoderLabel->setEnabled(false);
+		ui->simpleOutStrAEncoder->setEnabled(false);
 		ui->simpleRecordingGroupBox->setEnabled(false);
 		ui->replayBufferGroupBox->setEnabled(false);
 		ui->advOutTopContainer->setEnabled(false);
@@ -3634,6 +3753,8 @@ void OBSBasicSettings::SaveOutputSettings()
 
 	SaveSpinBox(ui->simpleOutputVBitrate, "SimpleOutput", "VBitrate");
 	SaveComboData(ui->simpleOutStrEncoder, "SimpleOutput", "StreamEncoder");
+	SaveComboData(ui->simpleOutStrAEncoder, "SimpleOutput",
+		      "StreamAudioEncoder");
 	SaveCombo(ui->simpleOutputABitrate, "SimpleOutput", "ABitrate");
 	SaveEdit(ui->simpleOutputPath, "SimpleOutput", "FilePath");
 	SaveCheckBox(ui->simpleNoSpace, "SimpleOutput", "FileNameWithoutSpace");
@@ -3643,6 +3764,8 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveEdit(ui->simpleOutCustom, "SimpleOutput", "x264Settings");
 	SaveComboData(ui->simpleOutRecQuality, "SimpleOutput", "RecQuality");
 	SaveComboData(ui->simpleOutRecEncoder, "SimpleOutput", "RecEncoder");
+	SaveComboData(ui->simpleOutRecAEncoder, "SimpleOutput",
+		      "RecAudioEncoder");
 	SaveEdit(ui->simpleOutMuxCustom, "SimpleOutput", "MuxerCustom");
 	SaveCheckBox(ui->simpleReplayBuf, "SimpleOutput", "RecRB");
 	SaveSpinBox(ui->simpleRBSecMax, "SimpleOutput", "RecRBTime");
@@ -3651,6 +3774,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	curAdvStreamEncoder = GetComboData(ui->advOutEncoder);
 
 	SaveComboData(ui->advOutEncoder, "AdvOut", "Encoder");
+	SaveComboData(ui->advOutAEncoder, "AdvOut", "AudioEncoder");
 	SaveCheckBox(ui->advOutUseRescale, "AdvOut", "Rescale");
 	SaveCombo(ui->advOutRescale, "AdvOut", "RescaleRes");
 	SaveTrackIndex(main->Config(), "AdvOut", "TrackIndex", ui->advOutTrack1,
@@ -3666,6 +3790,7 @@ void OBSBasicSettings::SaveOutputSettings()
 	SaveCheckBox(ui->advOutNoSpace, "AdvOut", "RecFileNameWithoutSpace");
 	SaveComboData(ui->advOutRecFormat, "AdvOut", "RecFormat");
 	SaveComboData(ui->advOutRecEncoder, "AdvOut", "RecEncoder");
+	SaveComboData(ui->advOutRecAEncoder, "AdvOut", "RecAudioEncoder");
 	SaveCheckBox(ui->advOutRecUseRescale, "AdvOut", "RecRescale");
 	SaveCombo(ui->advOutRecRescale, "AdvOut", "RecRescaleRes");
 	SaveEdit(ui->advOutMuxCustom, "AdvOut", "RecMuxerCustom");
@@ -4404,16 +4529,26 @@ void OBSBasicSettings::SpeakerLayoutChanged(int idx)
 	QString speakerLayoutQstr = ui->channelSetup->itemText(idx);
 	std::string speakerLayout = QT_TO_UTF8(speakerLayoutQstr);
 	bool surround = IsSurround(speakerLayout.c_str());
+	bool isOpus = ui->simpleOutStrAEncoder->currentData().toString() ==
+		      "opus";
 
 	if (surround) {
 		/*
 		 * Display all bitrates
 		 */
-		PopulateAACBitrates(
-			{ui->simpleOutputABitrate, ui->advOutTrack1Bitrate,
-			 ui->advOutTrack2Bitrate, ui->advOutTrack3Bitrate,
-			 ui->advOutTrack4Bitrate, ui->advOutTrack5Bitrate,
-			 ui->advOutTrack6Bitrate});
+		PopulateSimpleBitrates(ui->simpleOutputABitrate, isOpus);
+
+		const char *encoder_id = QT_TO_UTF8(
+			ui->advOutAEncoder->currentData().toString());
+		QString rec_encoder_id =
+			ui->advOutRecAEncoder->currentData().toString();
+		PopulateAdvancedBitrates(
+			{ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+			 ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+			 ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
+			encoder_id,
+			rec_encoder_id == "none" ? encoder_id
+						 : QT_TO_UTF8(rec_encoder_id));
 	} else {
 		/*
 		 * Reset audio bitrate for simple and adv mode, update list of
@@ -4466,7 +4601,7 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 	for (auto box : boxes) {
 		int idx = box->currentIndex();
 		int max_bitrate =
-			FindClosestAvailableSimpleAACBitrate(maxbitrate);
+			FindClosestAvailableAudioBitrate(box, maxbitrate);
 		int count = box->count();
 		int max_idx = box->findText(
 			QT_UTF8(std::to_string(max_bitrate).c_str()));
@@ -4475,9 +4610,8 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 			box->removeItem(i);
 
 		if (idx > max_idx) {
-			int default_bitrate =
-				FindClosestAvailableSimpleAACBitrate(
-					maxbitrate / 2);
+			int default_bitrate = FindClosestAvailableAudioBitrate(
+				box, maxbitrate / 2);
 			int default_idx = box->findText(QT_UTF8(
 				std::to_string(default_bitrate).c_str()));
 
@@ -4947,6 +5081,12 @@ void OBSBasicSettings::FillSimpleRecordingValues()
 			QString(SIMPLE_ENCODER_APPLE_HEVC));
 #endif
 
+	if (EncoderAvailable("CoreAudio_AAC") ||
+	    EncoderAvailable("libfdk_aac") || EncoderAvailable("ffmpeg_aac"))
+		ui->simpleOutRecAEncoder->addItem("AAC", "aac");
+	if (EncoderAvailable("ffmpeg_opus"))
+		ui->simpleOutRecAEncoder->addItem("Opus", "opus");
+
 #undef ADD_QUALITY
 #undef ENCODER_STR
 }
@@ -4977,6 +5117,8 @@ void OBSBasicSettings::SimpleRecordingQualityChanged()
 	bool showEncoder = !streamQuality && !losslessQuality;
 	ui->simpleOutRecEncoder->setVisible(showEncoder);
 	ui->simpleOutRecEncoderLabel->setVisible(showEncoder);
+	ui->simpleOutRecAEncoder->setVisible(showEncoder);
+	ui->simpleOutRecAEncoderLabel->setVisible(showEncoder);
 	ui->simpleOutRecFormat->setVisible(!losslessQuality);
 	ui->simpleOutRecFormatLabel->setVisible(!losslessQuality);
 
@@ -5634,4 +5776,40 @@ void OBSBasicSettings::UpdateAdvNetworkGroup()
 	ui->enableNewSocketLoop->setVisible(enabled);
 	ui->enableLowLatencyMode->setVisible(enabled);
 #endif
+}
+
+void OBSBasicSettings::SimpleStreamAudioEncoderChanged()
+{
+	PopulateSimpleBitrates(
+		ui->simpleOutputABitrate,
+		ui->simpleOutStrAEncoder->currentData().toString() == "opus");
+
+	if (IsSurround(QT_TO_UTF8(ui->channelSetup->currentText())))
+		return;
+
+	RestrictResetBitrates({ui->simpleOutputABitrate}, 320);
+}
+
+void OBSBasicSettings::AdvAudioEncodersChanged()
+{
+	QString streamEncoder = ui->advOutAEncoder->currentData().toString();
+	QString recEncoder = ui->advOutRecAEncoder->currentData().toString();
+
+	if (recEncoder == "none")
+		recEncoder = streamEncoder;
+
+	PopulateAdvancedBitrates(
+		{ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+		 ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+		 ui->advOutTrack5Bitrate, ui->advOutTrack6Bitrate},
+		QT_TO_UTF8(streamEncoder), QT_TO_UTF8(recEncoder));
+
+	if (IsSurround(QT_TO_UTF8(ui->channelSetup->currentText())))
+		return;
+
+	RestrictResetBitrates({ui->advOutTrack1Bitrate, ui->advOutTrack2Bitrate,
+			       ui->advOutTrack3Bitrate, ui->advOutTrack4Bitrate,
+			       ui->advOutTrack5Bitrate,
+			       ui->advOutTrack6Bitrate},
+			      320);
 }

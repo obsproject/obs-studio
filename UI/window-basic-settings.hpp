@@ -377,7 +377,8 @@ private:
 
 	OBSService GetStream1Service();
 
-	bool ServiceAndCodecCompatible();
+	bool ServiceAndVCodecCompatible();
+	bool ServiceAndACodecCompatible();
 	bool ServiceSupportsCodecCheck();
 
 private slots:
@@ -467,6 +468,9 @@ private slots:
 	void SetAdvancedIcon(const QIcon &icon);
 
 	void UseStreamKeyAdvClicked();
+
+	void SimpleStreamAudioEncoderChanged();
+	void AdvAudioEncodersChanged();
 
 protected:
 	virtual void closeEvent(QCloseEvent *event) override;
