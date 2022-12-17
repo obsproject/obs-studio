@@ -892,12 +892,14 @@ bool load_nvvfx(void)
 	uint8_t minor = (version >> 16) & 0x00ff;
 	uint8_t build = (version >> 8) & 0x0000ff;
 	uint8_t revision = (version >> 0) & 0x000000ff;
-	blog(LOG_INFO,
-	     "[NVIDIA VIDEO FX]: NVIDIA VIDEO FX version: %i.%i.%i.%i", major,
-	     minor, build, revision);
-	if (version < (MIN_VFX_SDK_VERSION)) {
+	if (version) {
 		blog(LOG_INFO,
-		     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated; please update both audio & video SDK.");
+		     "[NVIDIA VIDEO FX]: NVIDIA VIDEO FX version: %i.%i.%i.%i",
+		     major, minor, build, revision);
+		if (version < (MIN_VFX_SDK_VERSION)) {
+			blog(LOG_INFO,
+			     "[NVIDIA VIDEO FX]: NVIDIA VIDEO Effects SDK is outdated. Please update both audio & video SDK.");
+		}
 	}
 	if (!load_nv_vfx_libs()) {
 		blog(LOG_INFO,
