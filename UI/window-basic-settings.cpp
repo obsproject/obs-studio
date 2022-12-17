@@ -262,7 +262,7 @@ static CodecDesc GetDefaultCodecDesc(const ff_format_desc *formatDesc,
 
 static void PopulateAACBitrates(initializer_list<QComboBox *> boxes)
 {
-	auto &bitrateMap = GetAACEncoderBitrateMap();
+	auto &bitrateMap = GetSimpleAACEncoderBitrateMap();
 	if (bitrateMap.empty())
 		return;
 
@@ -1856,7 +1856,7 @@ void OBSBasicSettings::LoadSimpleOutputSettings()
 	curAMDPreset = amdPreset;
 	curAMDAV1Preset = amdAV1Preset;
 
-	audioBitrate = FindClosestAvailableAACBitrate(audioBitrate);
+	audioBitrate = FindClosestAvailableSimpleAACBitrate(audioBitrate);
 
 	ui->simpleOutputPath->setText(path);
 	ui->simpleNoSpace->setChecked(noSpace);
@@ -2237,12 +2237,12 @@ void OBSBasicSettings::LoadAdvOutputAudioSettings()
 	const char *name6 =
 		config_get_string(main->Config(), "AdvOut", "Track6Name");
 
-	track1Bitrate = FindClosestAvailableAACBitrate(track1Bitrate);
-	track2Bitrate = FindClosestAvailableAACBitrate(track2Bitrate);
-	track3Bitrate = FindClosestAvailableAACBitrate(track3Bitrate);
-	track4Bitrate = FindClosestAvailableAACBitrate(track4Bitrate);
-	track5Bitrate = FindClosestAvailableAACBitrate(track5Bitrate);
-	track6Bitrate = FindClosestAvailableAACBitrate(track6Bitrate);
+	track1Bitrate = FindClosestAvailableSimpleAACBitrate(track1Bitrate);
+	track2Bitrate = FindClosestAvailableSimpleAACBitrate(track2Bitrate);
+	track3Bitrate = FindClosestAvailableSimpleAACBitrate(track3Bitrate);
+	track4Bitrate = FindClosestAvailableSimpleAACBitrate(track4Bitrate);
+	track5Bitrate = FindClosestAvailableSimpleAACBitrate(track5Bitrate);
+	track6Bitrate = FindClosestAvailableSimpleAACBitrate(track6Bitrate);
 
 	// restrict list of bitrates when multichannel is OFF
 	const char *speakers =
@@ -4465,7 +4465,8 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 {
 	for (auto box : boxes) {
 		int idx = box->currentIndex();
-		int max_bitrate = FindClosestAvailableAACBitrate(maxbitrate);
+		int max_bitrate =
+			FindClosestAvailableSimpleAACBitrate(maxbitrate);
 		int count = box->count();
 		int max_idx = box->findText(
 			QT_UTF8(std::to_string(max_bitrate).c_str()));
@@ -4475,7 +4476,8 @@ void RestrictResetBitrates(initializer_list<QComboBox *> boxes, int maxbitrate)
 
 		if (idx > max_idx) {
 			int default_bitrate =
-				FindClosestAvailableAACBitrate(maxbitrate / 2);
+				FindClosestAvailableSimpleAACBitrate(
+					maxbitrate / 2);
 			int default_idx = box->findText(QT_UTF8(
 				std::to_string(default_bitrate).c_str()));
 

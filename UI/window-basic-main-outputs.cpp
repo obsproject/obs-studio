@@ -189,7 +189,7 @@ static void OBSStopVirtualCam(void *data, calldata_t *params)
 static bool CreateAACEncoder(OBSEncoder &res, string &id, int bitrate,
 			     const char *name, size_t idx)
 {
-	const char *id_ = GetAACEncoderForBitrate(bitrate);
+	const char *id_ = GetSimpleAACEncoderForBitrate(bitrate);
 	if (!id_) {
 		id.clear();
 		res = nullptr;
@@ -665,7 +665,7 @@ int SimpleOutput::GetAudioBitrate() const
 	int bitrate = (int)config_get_uint(main->Config(), "SimpleOutput",
 					   "ABitrate");
 
-	return FindClosestAvailableAACBitrate(bitrate);
+	return FindClosestAvailableSimpleAACBitrate(bitrate);
 }
 
 void SimpleOutput::Update()
@@ -1904,7 +1904,7 @@ int AdvancedOutput::GetAudioBitrate(size_t i) const
 		"Track4Bitrate", "Track5Bitrate", "Track6Bitrate",
 	};
 	int bitrate = (int)config_get_uint(main->Config(), "AdvOut", names[i]);
-	return FindClosestAvailableAACBitrate(bitrate);
+	return FindClosestAvailableSimpleAACBitrate(bitrate);
 }
 
 inline void AdvancedOutput::SetupVodTrack(obs_service_t *service)
