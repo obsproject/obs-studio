@@ -630,11 +630,14 @@ bool load_nvafx(void)
 	uint8_t minor = (version >> 16) & 0x00ff;
 	uint8_t build = (version >> 8) & 0x0000ff;
 	uint8_t revision = (version >> 0) & 0x000000ff;
-	blog(LOG_INFO, "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
-	     major, minor, build, revision);
-	if (version < (MIN_AFX_SDK_VERSION)) {
+	if (version) {
 		blog(LOG_INFO,
-		     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated; please update both audio & video SDK.");
+		     "[noise suppress]: NVIDIA AUDIO FX version: %i.%i.%i.%i",
+		     major, minor, build, revision);
+		if (version < (MIN_AFX_SDK_VERSION)) {
+			blog(LOG_INFO,
+			     "[noise suppress]: NVIDIA AUDIO Effects SDK is outdated. Please update both audio & video SDK.");
+		}
 	}
 	if (!load_lib()) {
 		blog(LOG_INFO,
