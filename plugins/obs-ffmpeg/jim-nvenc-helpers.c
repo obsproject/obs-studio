@@ -2,6 +2,7 @@
 #include <util/platform.h>
 #include <util/threading.h>
 #include <util/config-file.h>
+#include <util/windows/device-enum.h>
 #include <util/dstr.h>
 #include <util/pipe.h>
 
@@ -222,14 +223,26 @@ extern struct obs_encoder_info hevc_nvenc_info;
 #endif
 extern struct obs_encoder_info av1_nvenc_info;
 
+static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
+{
+	struct dstr *cmd = param;
+	dstr_catf(cmd, " %llX", luid);
+	UNUSED_PARAMETER(idx);
+	return true;
+}
+
 static bool av1_supported(void)
 {
 	char *test_exe = os_get_executable_path_ptr("obs-nvenc-test.exe");
+	struct dstr cmd = {0};
 	struct dstr caps_str = {0};
 	bool av1_supported = false;
 	config_t *config = NULL;
 
-	os_process_pipe_t *pp = os_process_pipe_create(test_exe, "r");
+	dstr_copy(&cmd, test_exe);
+	enum_graphics_device_luids(enum_luids, &cmd);
+
+	os_process_pipe_t *pp = os_process_pipe_create(cmd.array, "r");
 	if (!pp) {
 		blog(LOG_WARNING, "[NVENC] Failed to launch the NVENC "
 				  "test process I guess");
@@ -278,6 +291,7 @@ fail:
 	if (config)
 		config_close(config);
 	dstr_free(&caps_str);
+	dstr_free(&cmd);
 	if (test_exe)
 		bfree(test_exe);
 

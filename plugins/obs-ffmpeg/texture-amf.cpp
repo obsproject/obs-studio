@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <memory>
-#include <string>
+#include <sstream>
 #include <vector>
 #include <mutex>
 #include <deque>
@@ -24,6 +24,7 @@
 #include <d3d11.h>
 #include <d3d11_1.h>
 
+#include <util/windows/device-enum.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
 #include <util/platform.h>
@@ -2150,6 +2151,14 @@ static void register_av1()
 /* ========================================================================= */
 /* Global Stuff                                                              */
 
+static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
+{
+	std::stringstream &cmd = *(std::stringstream *)param;
+	cmd << " " << std::hex << luid;
+	UNUSED_PARAMETER(idx);
+	return true;
+}
+
 extern "C" void amf_load(void)
 try {
 	AMF_RESULT res;
@@ -2167,9 +2176,13 @@ try {
 	/* Check for supported codecs          */
 
 	BPtr<char> test_exe = os_get_executable_path_ptr("obs-amf-test.exe");
+	std::stringstream cmd;
 	std::string caps_str;
 
-	os_process_pipe_t *pp = os_process_pipe_create(test_exe, "r");
+	cmd << test_exe;
+	enum_graphics_device_luids(enum_luids, &cmd);
+
+	os_process_pipe_t *pp = os_process_pipe_create(cmd.str().c_str(), "r");
 	if (!pp)
 		throw "Failed to launch the AMF test process I guess";
 

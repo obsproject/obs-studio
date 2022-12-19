@@ -10,6 +10,7 @@
 #include <d3d11.h>
 #include <d3d11_1.h>
 
+#include <vector>
 #include <string>
 #include <map>
 
@@ -29,6 +30,7 @@ struct adapter_caps {
 };
 
 static AMFFactory *amf_factory = nullptr;
+static std::vector<uint64_t> luid_order;
 static std::map<uint32_t, adapter_caps> adapter_info;
 
 static bool has_encoder(AMFContextPtr &amf_context, const wchar_t *encoder_name)
@@ -37,6 +39,17 @@ static bool has_encoder(AMFContextPtr &amf_context, const wchar_t *encoder_name)
 	AMF_RESULT res = amf_factory->CreateComponent(amf_context, encoder_name,
 						      &encoder);
 	return res == AMF_OK;
+}
+
+static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
+{
+	for (size_t i = 0; i < luid_order.size(); i++) {
+		if (luid_order[i] == *(uint64_t *)&luid) {
+			return (uint32_t)i;
+		}
+	}
+
+	return adapter_idx;
 }
 
 static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
@@ -49,10 +62,11 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 	if (FAILED(hr))
 		return false;
 
-	adapter_caps &caps = adapter_info[adapter_idx];
-
 	DXGI_ADAPTER_DESC desc;
 	adapter->GetDesc(&desc);
+
+	uint32_t luid_idx = get_adapter_idx(adapter_idx, desc.AdapterLuid);
+	adapter_caps &caps = adapter_info[luid_idx];
 
 	if (desc.VendorId != AMD_VENDOR_ID)
 		return true;
@@ -96,7 +110,7 @@ DWORD WINAPI TimeoutThread(LPVOID param)
 	return 0;
 }
 
-int main(void)
+int main(int argc, char *argv[])
 try {
 	ComPtr<IDXGIFactory> factory;
 	AMF_RESULT res;
@@ -127,6 +141,16 @@ try {
 	res = init(AMF_FULL_VERSION, &amf_factory);
 	if (res != AMF_OK)
 		throw "AMFInit failed";
+
+	/* --------------------------------------------------------- */
+	/* parse expected LUID order                                 */
+
+	for (int i = 1; i < argc; i++) {
+		luid_order.push_back(strtoull(argv[i], NULL, 16));
+	}
+
+	/* --------------------------------------------------------- */
+	/* obtain adapter compatibility information                  */
 
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
 	if (FAILED(hr))
