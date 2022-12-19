@@ -41,7 +41,6 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 {
 	struct nvenc_info *caps = &adapter_info[adapter_idx];
 	IDXGIAdapter *adapter = NULL;
-	IDXGIOutput *output = NULL;
 	ID3D11Device *device = NULL;
 	ID3D11DeviceContext *context = NULL;
 	GUID *guids = NULL;
@@ -62,10 +61,6 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 		return true;
 
 	caps->is_nvidia = true;
-
-	hr = adapter->lpVtbl->EnumOutputs(adapter, 0, &output);
-	if (FAILED(hr))
-		goto finish;
 
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, NULL, 0, NULL,
 			       0, D3D11_SDK_VERSION, &device, NULL, &context);
@@ -111,8 +106,6 @@ finish:
 		context->lpVtbl->Release(context);
 	if (device)
 		device->lpVtbl->Release(device);
-	if (output)
-		output->lpVtbl->Release(output);
 	if (adapter)
 		adapter->lpVtbl->Release(adapter);
 	return true;

@@ -59,11 +59,6 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	caps.is_amd = true;
 
-	ComPtr<IDXGIOutput> output;
-	hr = adapter->EnumOutputs(0, &output);
-	if (FAILED(hr))
-		return true;
-
 	ComPtr<ID3D11Device> device;
 	ComPtr<ID3D11DeviceContext> context;
 	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0,
