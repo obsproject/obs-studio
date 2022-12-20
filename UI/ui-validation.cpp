@@ -8,7 +8,9 @@
 #include <obs-app.hpp>
 #include <obs-service.h>
 
+#ifdef _WIN32
 #include <windows.h>
+#endif
 #include "ui-config.h"
 
 #ifdef HTTP_REST_API_ENABLED
@@ -83,7 +85,13 @@ UIValidation::StreamSettingsConfirmation(QWidget *parent, OBSService service)
 	char *streamUrl = NULL;
 	char *streamKey = NULL;
 
-	FILE *file = fopen("OBS_HTTP_API.DAT", "r");
+#ifdef _WIN32
+    FILE *file = fopen("OBS_HTTP_API.DAT", "r");
+#else
+    char homeDocumentsDir[1024] = {0};
+    snprintf(homeDocumentsDir, 1024, "%s/Documents/.OBS_HTTP_API.DAT", getenv("HOME"));
+    FILE *file = fopen(homeDocumentsDir, "r");
+#endif
 	if (file) {
 		OBSHttpApiValue streamValues;  
 		fread(&streamValues, sizeof(OBSHttpApiValue), 1, file);
