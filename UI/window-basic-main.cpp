@@ -8887,7 +8887,7 @@ void OBSBasic::UpdateTitleBar()
 
 #ifdef HTTP_REST_API_ENABLED
 	name << "OBS - HTTP API ";
-	name << config_get_string(App()->GlobalConfig(), "spoon", "localIP");
+	name << config_get_string(App()->GlobalConfig(), "httpapi", "localIP");
 #else
 	name << "OBS ";
 	if (previewProgramMode)

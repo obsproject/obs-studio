@@ -1531,7 +1531,7 @@ bool OBSApp::OBSInit()
 
 #ifdef HTTP_REST_API_ENABLED
 	if (OBSHttpApiStarted) {
-		config_set_string(App()->GlobalConfig(), "spoon", "localIP",
+		config_set_string(App()->GlobalConfig(), "httpapi", "localIP",
 				  obsHttpApi->GetLocalIpAddr());
 		blog(LOG_INFO,
 		     "==== OBS Http Service Started[%s] ================================================",

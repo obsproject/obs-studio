@@ -25,7 +25,7 @@ set_source_files_properties(
   PROPERTIES
     USE_TARGET_INCLUDE_DIRECTORIES TRUE
     SWIG_FLAGS
-    "$<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-py3-stable-abi>"
+    "$<IF:$<AND:$<BOOL:${OS_POSIX}>,$<NOT:$<BOOL:${OS_MACOS}>>>,-py3,-v>"
 )
 
 swig_add_library(
