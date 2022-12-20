@@ -101,13 +101,13 @@ static OBSHttpApiValue* json_get_values(const char* json_object)
 static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 {
 	WSADATA wsa_data;
-	SOCKET sockSvr;
-	SOCKET sockSS;
+	SOCKET serv_sock;
+	SOCKET clnt_sock;
 	int len;
-	struct sockaddr_in addrSockSvr;
-	struct sockaddr_in addrSockClt;
-	char szBuffer[1024] = {0};
-	char szBufIP[1024] = {0};
+	struct sockaddr_in serv_addr;
+	struct sockaddr_in clnt_addr;
+	char sz_buffer[1024] = {0};
+	char sz_buf_ip[1024] = {0};
 	long ret = 0;
 	BOOL valid = FALSE;
 
@@ -115,7 +115,7 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 		return 1;
 	}
 
-	if (::gethostname(szBuffer, sizeof(szBuffer)) == SOCKET_ERROR) {
+	if (::gethostname(sz_buffer, sizeof(sz_buffer)) == SOCKET_ERROR) {
 		::WSACleanup();
 		return 1;
 	}
@@ -125,11 +125,11 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 	::memset(&hints, 0, sizeof(hints));
 	hints.ai_family = AF_INET;
 	hints.ai_socktype = SOCK_STREAM;
-	status = ::getaddrinfo(szBuffer, NULL, &hints, &servinfo);
+	status = ::getaddrinfo(sz_buffer, NULL, &hints, &servinfo);
 
 	//char ipstr[INET_ADDRSTRLEN] = {0};
 
-	if ((status = getaddrinfo(szBuffer, NULL, &hints, &res)) != 0) {
+	if ((status = getaddrinfo(sz_buffer, NULL, &hints, &res)) != 0) {
 		return 1;
 	}
 
@@ -147,43 +147,43 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 	freeaddrinfo(res);
 	//config_set_string(App()->GlobalConfig(), "spoon", "localIP", ipstr);
 
-	sockSvr = ::socket(AF_INET, SOCK_STREAM, 0);
-	if (sockSvr == INVALID_SOCKET) {
+	serv_sock = ::socket(AF_INET, SOCK_STREAM, 0);
+	if (serv_sock == INVALID_SOCKET) {
 		// TODO: socket error alert
 		::WSACleanup();
 		return 1;
 	}
 
-	addrSockSvr.sin_family = AF_INET;
-	addrSockSvr.sin_port = htons(9028);
-	addrSockSvr.sin_addr.S_un.S_addr = INADDR_ANY;
+	serv_addr.sin_family = AF_INET;
+	serv_addr.sin_port = htons(9028);
+	serv_addr.sin_addr.S_un.S_addr = INADDR_ANY;
 
-	::setsockopt(sockSvr, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid,
+	::setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid,
 		     sizeof(valid));
-	if (::bind(sockSvr, (struct sockaddr *)&addrSockSvr,
-		   sizeof(addrSockSvr)) != 0) {
+	if (::bind(serv_sock, (struct sockaddr *)&serv_addr,
+		   sizeof(serv_addr)) != 0) {
 		::WSACleanup();
 		return 1;
 	}
 
-	if (::listen(sockSvr, 5) != 0) {
+	if (::listen(serv_sock, 5) != 0) {
 		::WSACleanup();
 		return 1;
 	}
 
 	obs_http_is_exit = false; 
 	while (!obs_http_is_exit) {
-		len = sizeof(addrSockClt);
-		sockSS = ::accept(sockSvr, (struct sockaddr *)&addrSockClt,
+		len = sizeof(clnt_addr);
+		clnt_sock = ::accept(serv_sock, (struct sockaddr *)&clnt_addr,
 				  &len);
 
-		if (sockSS == INVALID_SOCKET) {
+		if (clnt_sock == INVALID_SOCKET) {
 			//printf("Accept Error No : %d", WSAGetLastError());
 			return 1;
 		}
 
 		memset(obs_http_request_buf, 0, sizeof(obs_http_request_buf));
-		::recv(sockSS, obs_http_request_buf, sizeof(obs_http_request_buf), 0);
+		::recv(clnt_sock, obs_http_request_buf, sizeof(obs_http_request_buf), 0);
 
 		char *strRequest = strtok(obs_http_request_buf, "{");
 		strRequest = strtok(NULL, "}");
@@ -231,9 +231,9 @@ static DWORD CALLBACK obs_http_internal_server_thread(LPVOID param)
 				    "\r\n%s",
 				    bodyMsgLen, bodyMessage);
 		}
-		::send(sockSS, obs_http_response_buf, (int)strlen(obs_http_response_buf), 0);
+		::send(clnt_sock, obs_http_response_buf, (int)strlen(obs_http_response_buf), 0);
 
-		::closesocket(sockSS);
+		::closesocket(clnt_sock);
 	}
 
 	::WSACleanup();
