@@ -185,6 +185,25 @@ bool vaapi_device_rc_supported(VAProfile profile, VADisplay dpy, uint32_t rc,
 	return false;
 }
 
+bool vaapi_quality_preset_supported(VAProfile profile, VADisplay dpy)
+{
+	const char *vendor_string = vaQueryVendorString(dpy);
+	if (strncmp("Mesa Gallium", vendor_string, 12) != 0)
+		return false;
+
+	VAStatus va_status;
+	VAConfigAttrib attrib[1];
+	attrib->type = VAConfigAttribEncQualityRange;
+
+	va_status = vaGetConfigAttributes(dpy, profile, VAEntrypointEncSlice,
+					  attrib, 1);
+
+	if (va_status != VA_STATUS_SUCCESS)
+		return false;
+
+	return attrib->value != VA_ATTRIB_NOT_SUPPORTED;
+}
+
 #define CHECK_PROFILE(ret, profile, va_dpy, device_path)                      \
 	if (vaapi_display_ep_combo_supported(profile, VAEntrypointEncSlice,   \
 					     va_dpy, device_path)) {          \

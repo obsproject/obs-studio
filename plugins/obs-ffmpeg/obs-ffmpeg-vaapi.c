@@ -49,6 +49,19 @@
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+typedef struct {
+	union {
+		unsigned int quality;
+		struct {
+			unsigned int valid_setting : 1;
+			unsigned int preset_mode : 2;
+			unsigned int pre_encode_mode : 1;
+			unsigned int vbaq_mode : 1;
+			unsigned int reservered : 27;
+		};
+	};
+} vlVaQualityBits;
+
 struct vaapi_encoder {
 	obs_encoder_t *encoder;
 
@@ -74,6 +87,19 @@ struct vaapi_encoder {
 	bool first_packet;
 	bool initialized;
 };
+
+static int vaapi_profile(int ff_profile)
+{
+	switch (ff_profile) {
+	case FF_PROFILE_H264_CONSTRAINED_BASELINE:
+		return VAProfileH264ConstrainedBaseline;
+	case FF_PROFILE_H264_MAIN:
+		return VAProfileH264Main;
+	case FF_PROFILE_H264_HIGH:
+		return VAProfileH264High;
+	}
+	return VAProfileNone;
+}
 
 static const char *vaapi_getname(void *unused)
 {
@@ -221,6 +247,7 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 			      ? (int)obs_data_get_int(settings, "maxrate")
 			      : 0;
 	int keyint_sec = (int)obs_data_get_int(settings, "keyint_sec");
+	const char *preset = obs_data_get_string(settings, "preset");
 
 	/* For Rate Control which allows maxrate, FFMPEG will give
 	 * an error if maxrate > bitrate. To prevent that set maxrate
@@ -291,6 +318,26 @@ static bool vaapi_update(void *data, obs_data_t *settings)
 	}
 
 	enc->height = enc->context->height;
+
+	int drm_fd = -1;
+	VADisplay va_dpy = vaapi_open_device(&drm_fd, device, "vaapi_update");
+	if (va_dpy &&
+	    vaapi_quality_preset_supported(vaapi_profile(profile), va_dpy)) {
+		vlVaQualityBits q = {.valid_setting = 1,
+				     .pre_encode_mode = 1,
+				     .vbaq_mode = 0};
+		if (strcmp(preset, "speed") == 0) {
+			q.preset_mode = 0;
+		} else if (strcmp(preset, "balanced") == 0) {
+			q.preset_mode = 1;
+		} else {
+			q.preset_mode = 2;
+		}
+		enc->context->compression_level = q.quality;
+	}
+
+	if (va_dpy)
+		vaapi_close_device(&drm_fd, va_dpy);
 
 	info("settings:\n"
 	     "\tdevice:       %s\n"
@@ -532,6 +579,7 @@ static void vaapi_defaults(obs_data_t *settings)
 	obs_data_set_default_int(settings, "rendermode", 0);
 	obs_data_set_default_int(settings, "qp", 20);
 	obs_data_set_default_int(settings, "maxrate", 0);
+	obs_data_set_default_string(settings, "preset", "quality");
 
 	int drm_fd = -1;
 	VADisplay va_dpy = vaapi_open_device(&drm_fd, device, "vaapi_defaults");
@@ -559,25 +607,13 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 	int drm_fd = -1;
 	VADisplay va_dpy =
 		vaapi_open_device(&drm_fd, device, "vaapi_device_modified");
-	int profile = obs_data_get_int(settings, "profile");
+	int profile = vaapi_profile(obs_data_get_int(settings, "profile"));
 	obs_property_t *rc_p = obs_properties_get(ppts, "rate_control");
 
 	obs_property_list_clear(rc_p);
 
 	if (!va_dpy || !vaapi_display_h264_supported(va_dpy, device))
 		goto fail;
-
-	switch (profile) {
-	case FF_PROFILE_H264_CONSTRAINED_BASELINE:
-		profile = VAProfileH264ConstrainedBaseline;
-		break;
-	case FF_PROFILE_H264_MAIN:
-		profile = VAProfileH264Main;
-		break;
-	case FF_PROFILE_H264_HIGH:
-		profile = VAProfileH264High;
-		break;
-	}
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CBR, device))
 		obs_property_list_add_string(rc_p, "CBR (default)", "CBR");
@@ -587,6 +623,9 @@ static bool vaapi_device_modified(obs_properties_t *ppts, obs_property_t *p,
 
 	if (vaapi_device_rc_supported(profile, va_dpy, VA_RC_CQP, device))
 		obs_property_list_add_string(rc_p, "CQP", "CQP");
+
+	set_visible(ppts, "preset",
+		    vaapi_quality_preset_supported(profile, va_dpy));
 
 fail:
 	vaapi_close_device(&drm_fd, va_dpy);
@@ -772,6 +811,17 @@ static obs_properties_t *vaapi_properties(void *unused)
 				   obs_module_text("KeyframeIntervalSec"), 0,
 				   20, 1);
 	obs_property_int_set_suffix(p, " s");
+
+	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
+				    OBS_COMBO_TYPE_LIST,
+				    OBS_COMBO_FORMAT_STRING);
+
+#define add_preset(val) \
+	obs_property_list_add_string(p, obs_module_text("AMF.Preset." val), val)
+	add_preset("quality");
+	add_preset("balanced");
+	add_preset("speed");
+#undef add_preset
 
 	return props;
 }
