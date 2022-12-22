@@ -58,7 +58,7 @@
         {
           "type": "git",
           "url": "https://code.videolan.org/videolan/x264.git",
-          "commit": "baee400fa9ced6f5481a728138fed6e867b0ff7f"
+          "commit": "b093bbe7d9bc642c8f24067cbdcc73bb43562eab"
         }
       ]
     },
@@ -119,8 +119,8 @@
         {
           "type": "git",
           "url": "https://github.com/Haivision/srt.git",
-          "tag": "v1.5.0",
-          "commit": "060c0d1a2af8082c053018fa6a6fe2dba67d71a8"
+          "tag": "v1.5.1",
+          "commit": "0bc3b03202b3159fc9b085b3ae6d66ec071c25d6"
         }
       ]
     },
@@ -191,8 +191,8 @@
         {
           "type": "git",
           "url": "https://aomedia.googlesource.com/aom.git",
-          "commit": "fc430c57c7b0307b4c5ffb686cd90b3c010d08d2",
-          "tag": "v3.4.0"
+          "commit": "bcfe6fbfed315f83ee8a95465c654ee8078dbff9",
+          "tag": "v3.5.0"
         }
       ]
     },
@@ -216,8 +216,8 @@
         {
           "type": "git",
           "url": "https://gitlab.com/AOMediaCodec/SVT-AV1.git",
-          "tag": "v1.1.0",
-          "commit": "6e87a1de98281840abebc030781780edd822bae5"
+          "tag": "v1.3.0",
+          "commit": "91b94efb2809e83d9bf041d8575b32f234dfef27"
         }
       ]
     },
@@ -248,22 +248,20 @@
         {
           "type": "git",
           "url": "https://github.com/FFmpeg/FFmpeg.git",
-          "commit": "9687cae2b468e09e35df4cea92cc2e6a0e6c93b3",
+          "commit": "eacfcbae690f914a4b1b4ad06999f138540cc3d8",
           "disable-shallow-clone": true
         },
         {
           "type": "git",
           "dest": "obs-deps",
           "url": "https://github.com/obsproject/obs-deps.git",
-          "tag": "2022-07-29",
-          "commit": "71df2dddb0eb732496448f626553b61bcda8f993"
+          "tag": "2022-11-21",
+          "commit": "ba56d64e4cbcc0aec4fa0efcef5f5a1e6a1ba91d"
         },
         {
           "type": "shell",
           "commands": [
-            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-9010.patch",
-            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0002-FFmpeg-5.0.1-OBS.patch",
-            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0003-FFmpeg-5.0.1-librist-7f3f3539e8.patch"
+            "patch -Np1 -i obs-deps/deps.ffmpeg/patches/FFmpeg/0001-FFmpeg-5.1.2-OBS.patch"
           ]
         }
       ]
@@ -281,7 +279,7 @@
         {
           "type": "git",
           "url": "https://luajit.org/git/luajit-2.0.git",
-          "commit": "3065c910ad6027031aabe2dfd3c26a3d0f014b4f",
+          "commit": "7a0cf5fd4c6c841d0455a51271af4fd4390c7884",
           "disable-shallow-clone": true
         },
         {

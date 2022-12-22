@@ -462,6 +462,8 @@ static int obs_init_graphics(struct obs_video_info *ovi)
 	bool success = true;
 	int errorcode;
 
+	video->adapter_index = ovi->adapter;
+
 	errorcode =
 		gs_create(&video->graphics, ovi->graphics_module, ovi->adapter);
 	if (errorcode != GS_SUCCESS) {
@@ -587,6 +589,18 @@ static int obs_init_video_mix(struct obs_video_info *ovi,
 
 	make_video_info(&vi, ovi);
 	video->ovi = *ovi;
+
+	/* main view graphics thread drives all frame output,
+	 * so share FPS settings for aux views */
+	pthread_mutex_lock(&obs->video.mixes_mutex);
+	size_t num = obs->video.mixes.num;
+	if (num && obs->video.main_mix) {
+		struct obs_video_info main_ovi = obs->video.main_mix->ovi;
+		video->ovi.fps_num = main_ovi.fps_num;
+		video->ovi.fps_den = main_ovi.fps_den;
+	}
+	pthread_mutex_unlock(&obs->video.mixes_mutex);
+
 	video->gpu_conversion = ovi->gpu_conversion;
 	video->gpu_was_active = false;
 	video->raw_was_active = false;
@@ -1396,6 +1410,8 @@ int obs_reset_video(struct obs_video_info *ovi)
 			return errorcode;
 		}
 	}
+
+	ovi->adapter = obs->video.adapter_index;
 
 	const char *scale_type_name = "";
 	switch (ovi->scale_type) {
@@ -3087,4 +3103,13 @@ bool obs_weak_object_references_object(obs_weak_object_t *weak,
 				       obs_object_t *object)
 {
 	return weak && object && weak->object == object;
+}
+
+/* this function is a hack for the annoying intel igpu + dgpu situation. I
+ * guess. I don't care anymore. */
+EXPORT void obs_internal_set_adapter_idx_this_is_dumb(uint32_t adapter_idx)
+{
+	if (!obs)
+		return;
+	obs->video.adapter_index = adapter_idx;
 }

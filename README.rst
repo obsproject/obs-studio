@@ -1,7 +1,5 @@
-OBS Studio Spoon 
+OBS Studio <https://obsproject.com>
 ===================================
-<https://spoonlivestudio.blogspot.com/2022/11/obs-studio-spoon-live.html>
-
 
 .. image:: https://github.com/obsproject/obs-studio/actions/workflows/main.yml/badge.svg?branch=master&event=push
    :alt: OBS Studio Build Status - GitHub Actions

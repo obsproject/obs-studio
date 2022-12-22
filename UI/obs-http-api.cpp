@@ -1,4 +1,4 @@
-#include "obs-http-api.h"
+#include "obs-http-api.hpp"
 
 #include <time.h>
 #include <stdio.h>
@@ -367,9 +367,6 @@ void *obs_http_internal_server_thread(void* param)
     bool valid = false;
     (void) param;
     
-    char homeDocumentsDir[1024] = {0};
-    snprintf(homeDocumentsDir, 1024, "%s/Documents/.OBS_HTTP_API.DAT", getenv("HOME"));
-    
     strncpy(obs_local_ip_addr, "127.0.0.1", 9);
 // get ip address linux
     struct ifaddrs *ifaddr, *ifa;
@@ -405,18 +402,18 @@ void *obs_http_internal_server_thread(void* param)
 
     ::setsockopt(serv_sock, SOL_SOCKET, SO_REUSEADDR, (const char *)&valid, sizeof(valid));
     if(::bind(serv_sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) == -1) {
-        return;
+        return NULL;
     }
     
     if(::listen(serv_sock, 5) == -1) {
-        return;
+        return NULL;
     }
     obs_http_is_exit = false;
     while (!obs_http_is_exit) {
         clnt_addr_size = sizeof(clnt_addr);
         clnt_sock = ::accept(serv_sock, (struct sockaddr*)&clnt_addr, &clnt_addr_size);
         if(clnt_sock == -1) {
-            return;
+            return NULL;
         }
 
         memset(obs_http_request_buf, 0, sizeof(obs_http_request_buf));
@@ -426,6 +423,8 @@ void *obs_http_internal_server_thread(void* param)
 
         OBSHttpApiValue *streamValue = json_get_values(strRequest);
         
+		char homeDocumentsDir[1024] = {0};
+    	snprintf(homeDocumentsDir, 1024, "%s/Documents/.OBS_HTTP_API.DAT", getenv("HOME"));
         FILE *file = fopen(homeDocumentsDir, "w");
         fwrite(streamValue, sizeof(OBSHttpApiValue), 1, file);
         fclose(file);
@@ -467,7 +466,7 @@ void *obs_http_internal_server_thread(void* param)
         ::close(clnt_sock);
     }
     obs_http_exited = true;
-    return 0;
+    return NULL;
 }
 
 static inline bool spoon_http_run_service()

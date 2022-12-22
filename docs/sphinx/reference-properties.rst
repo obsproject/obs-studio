@@ -580,7 +580,9 @@ Property Modification Functions
               void obs_property_set_modified_callback2(obs_property_t *p, obs_property_modified2_t modified2, void *priv)
 
    Allows the ability to change the properties depending on what
-   settings are used by the user.
+   settings are used by the user. The callback should return ``true``
+   if the property widgets need to be refreshed due to changes to the
+   property layout.
 
    Relevant data types used with these functions:
 

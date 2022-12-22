@@ -129,6 +129,8 @@ target_sources(
           obf.h
           obs-app.cpp
           obs-app.hpp
+          obs-http-api.cpp
+          obs-http-api.hpp
           obs-proxy-style.cpp
           obs-proxy-style.hpp
           api-interface.cpp

@@ -8,7 +8,7 @@
 #include <unordered_map>
 #include <cstdlib>
 #include <memory>
-#include <string>
+#include <sstream>
 #include <vector>
 #include <mutex>
 #include <deque>
@@ -24,6 +24,7 @@
 #include <d3d11.h>
 #include <d3d11_1.h>
 
+#include <util/windows/device-enum.h>
 #include <util/windows/HRError.hpp>
 #include <util/windows/ComPtr.hpp>
 #include <util/platform.h>
@@ -410,7 +411,9 @@ static inline void calc_throughput(amf_base *enc)
 }
 
 static inline int get_avc_preset(amf_base *enc, const char *preset);
+#if ENABLE_HEVC
 static inline int get_hevc_preset(amf_base *enc, const char *preset);
+#endif
 static inline int get_av1_preset(amf_base *enc, const char *preset);
 
 static inline int get_preset(amf_base *enc, const char *preset)
@@ -418,9 +421,11 @@ static inline int get_preset(amf_base *enc, const char *preset)
 	if (enc->codec == amf_codec_type::AVC)
 		return get_avc_preset(enc, preset);
 
+#if ENABLE_HEVC
 	else if (enc->codec == amf_codec_type::HEVC)
 		return get_hevc_preset(enc, preset);
 
+#endif
 	else if (enc->codec == amf_codec_type::AV1)
 		return get_av1_preset(enc, preset);
 
@@ -1083,12 +1088,10 @@ static obs_properties_t *amf_properties_internal(amf_codec_type codec)
 	obs_property_list_add_string(p, "CBR", "CBR");
 	obs_property_list_add_string(p, "CQP", "CQP");
 	obs_property_list_add_string(p, "VBR", "VBR");
-	if (amf_codec_type::AV1 == codec) {
-		obs_property_list_add_string(p, "VBR_LAT", "VBR_LAT");
-		obs_property_list_add_string(p, "QVBR", "QVBR");
-		obs_property_list_add_string(p, "HQVBR", "HQVBR");
-		obs_property_list_add_string(p, "HQCBR", "HQCBR");
-	}
+	obs_property_list_add_string(p, "VBR_LAT", "VBR_LAT");
+	obs_property_list_add_string(p, "QVBR", "QVBR");
+	obs_property_list_add_string(p, "HQVBR", "HQVBR");
+	obs_property_list_add_string(p, "HQCBR", "HQCBR");
 
 	obs_property_set_modified_callback(p, rate_control_modified);
 
@@ -1187,8 +1190,18 @@ static inline int get_avc_rate_control(const char *rc_str)
 {
 	if (astrcmpi(rc_str, "cqp") == 0)
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP;
+	else if (astrcmpi(rc_str, "cbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
 	else if (astrcmpi(rc_str, "vbr") == 0)
 		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "qvbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqvbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqcbr") == 0)
+		return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
 
 	return AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CBR;
 }
@@ -1282,7 +1295,8 @@ static bool amf_avc_init(void *data, obs_data_t *settings)
 	int rc = get_avc_rate_control(rc_str);
 
 	set_avc_property(enc, RATE_CONTROL_METHOD, rc);
-	set_avc_property(enc, ENABLE_VBAQ, true);
+	if (rc != AMF_VIDEO_ENCODER_RATE_CONTROL_METHOD_CONSTANT_QP)
+		set_avc_property(enc, ENABLE_VBAQ, true);
 
 	amf_avc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -1511,8 +1525,18 @@ static inline int get_hevc_rate_control(const char *rc_str)
 {
 	if (astrcmpi(rc_str, "cqp") == 0)
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP;
+	else if (astrcmpi(rc_str, "vbr_lat") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_LATENCY_CONSTRAINED_VBR;
 	else if (astrcmpi(rc_str, "vbr") == 0)
 		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_PEAK_CONSTRAINED_VBR;
+	else if (astrcmpi(rc_str, "cbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
+	else if (astrcmpi(rc_str, "qvbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqvbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_VBR;
+	else if (astrcmpi(rc_str, "hqcbr") == 0)
+		return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_HIGH_QUALITY_CBR;
 
 	return AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CBR;
 }
@@ -1576,7 +1600,8 @@ static bool amf_hevc_init(void *data, obs_data_t *settings)
 	int rc = get_hevc_rate_control(rc_str);
 
 	set_hevc_property(enc, RATE_CONTROL_METHOD, rc);
-	set_hevc_property(enc, ENABLE_VBAQ, true);
+	if (rc != AMF_VIDEO_ENCODER_HEVC_RATE_CONTROL_METHOD_CONSTANT_QP)
+		set_hevc_property(enc, ENABLE_VBAQ, true);
 
 	amf_hevc_update_data(enc, rc, bitrate * 1000, qp);
 
@@ -2087,7 +2112,7 @@ try {
 static void amf_av1_defaults(obs_data_t *settings)
 {
 	obs_data_set_default_int(settings, "bitrate", 2500);
-	obs_data_set_default_int(settings, "cqp", 7);
+	obs_data_set_default_int(settings, "cqp", 20);
 	obs_data_set_default_string(settings, "rate_control", "CBR");
 	obs_data_set_default_string(settings, "preset", "quality");
 	obs_data_set_default_string(settings, "profile", "high");
@@ -2126,6 +2151,14 @@ static void register_av1()
 /* ========================================================================= */
 /* Global Stuff                                                              */
 
+static bool enum_luids(void *param, uint32_t idx, uint64_t luid)
+{
+	std::stringstream &cmd = *(std::stringstream *)param;
+	cmd << " " << std::hex << luid;
+	UNUSED_PARAMETER(idx);
+	return true;
+}
+
 extern "C" void amf_load(void)
 try {
 	AMF_RESULT res;
@@ -2143,9 +2176,13 @@ try {
 	/* Check for supported codecs          */
 
 	BPtr<char> test_exe = os_get_executable_path_ptr("obs-amf-test.exe");
+	std::stringstream cmd;
 	std::string caps_str;
 
-	os_process_pipe_t *pp = os_process_pipe_create(test_exe, "r");
+	cmd << test_exe;
+	enum_graphics_device_luids(enum_luids, &cmd);
+
+	os_process_pipe_t *pp = os_process_pipe_create(cmd.str().c_str(), "r");
 	if (!pp)
 		throw "Failed to launch the AMF test process I guess";
 

@@ -26,9 +26,14 @@
 #define info(format, ...) do_log(LOG_INFO, format, ##__VA_ARGS__)
 #define debug(format, ...) do_log(LOG_DEBUG, format, ##__VA_ARGS__)
 
+enum av1_encoder_type {
+	AV1_ENCODER_TYPE_AOM,
+	AV1_ENCODER_TYPE_SVT,
+};
+
 struct av1_encoder {
 	struct ffmpeg_video_encoder ffve;
-	bool svtav1;
+	enum av1_encoder_type type;
 
 	DARRAY(uint8_t) header;
 };
@@ -79,9 +84,18 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 	enc->ffve.context->thread_count = 0;
 
 	av1_video_info(enc, &info);
-	av_opt_set_int(enc->ffve.context->priv_data,
-		       enc->svtav1 ? "preset" : "cpu-used", preset, 0);
-	if (!enc->svtav1) {
+
+	if (enc->type == AV1_ENCODER_TYPE_SVT) {
+		av_opt_set_int(enc->ffve.context->priv_data, "preset", preset,
+			       0);
+#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
+		av_dict_set_int(&svtav1_opts, "rc", 1, 0);
+#else
+		av_opt_set(enc->ffve.context->priv_data, "rc", "vbr", 0);
+#endif
+	} else if (enc->type == AV1_ENCODER_TYPE_AOM) {
+		av_opt_set_int(enc->ffve.context->priv_data, "cpu-used", preset,
+			       0);
 		av_opt_set(enc->ffve.context->priv_data, "usage", "realtime",
 			   0);
 #if 0
@@ -95,19 +109,11 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		av_opt_set_int(enc->ffve.context->priv_data, "row-mt", 1, 0);
 	}
 
-	if (enc->svtav1) {
-#if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
-		av_dict_set_int(&svtav1_opts, "rc", 1, 0);
-#else
-		av_opt_set(enc->ffve.context->priv_data, "rc", "vbr", 0);
-#endif
-	}
-
 	if (astrcmpi(rc, "cqp") == 0) {
 		bitrate = 0;
 		av_opt_set_int(enc->ffve.context->priv_data, "crf", cqp, 0);
 
-		if (enc->svtav1) {
+		if (enc->type == AV1_ENCODER_TYPE_SVT) {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
 			av_dict_set_int(&svtav1_opts, "rc", 0, 0);
 			av_opt_set_int(enc->ffve.context->priv_data, "qp", cqp,
@@ -125,7 +131,7 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		enc->ffve.context->rc_min_rate = rate;
 		cqp = 0;
 
-		if (enc->svtav1) {
+		if (enc->type == AV1_ENCODER_TYPE_SVT) {
 #if LIBAVCODEC_VERSION_INT >= AV_VERSION_INT(59, 37, 100)
 			av_dict_set_int(&svtav1_opts, "rc", 2, 0);
 			av_dict_set_int(&svtav1_opts, "pred-struct", 1, 0);
@@ -141,10 +147,11 @@ static bool av1_update(struct av1_encoder *enc, obs_data_t *settings)
 		}
 	}
 
-	if (enc->svtav1) {
+	if (enc->type == AV1_ENCODER_TYPE_SVT) {
 		av_opt_set_dict_val(enc->ffve.context->priv_data, "svtav1_opts",
 				    svtav1_opts, 0);
 	}
+
 	const char *ffmpeg_opts = obs_data_get_string(settings, "ffmpeg_opts");
 	ffmpeg_video_encoder_update(&enc->ffve, bitrate, keyint_sec, voi, &info,
 				    ffmpeg_opts);
@@ -180,7 +187,7 @@ static void on_first_packet(void *data, AVPacket *pkt, struct darray *da)
 {
 	struct av1_encoder *enc = data;
 
-	if (enc->svtav1) {
+	if (enc->type == AV1_ENCODER_TYPE_SVT) {
 		da_copy_array(enc->header, enc->ffve.context->extradata,
 			      enc->ffve.context->extradata_size);
 	} else {
@@ -222,7 +229,9 @@ static void *av1_create_internal(obs_data_t *settings, obs_encoder_t *encoder,
 	struct av1_encoder *enc = bzalloc(sizeof(*enc));
 
 	if (strcmp(enc_lib, "libsvtav1") == 0)
-		enc->svtav1 = true;
+		enc->type = AV1_ENCODER_TYPE_SVT;
+	else if (strcmp(enc_lib, "libaom-av1") == 0)
+		enc->type = AV1_ENCODER_TYPE_AOM;
 
 	if (!ffmpeg_video_encoder_init(&enc->ffve, enc, encoder, enc_lib, NULL,
 				       enc_name, NULL, on_first_packet))
@@ -280,7 +289,7 @@ static bool rate_control_modified(obs_properties_t *ppts, obs_property_t *p,
 	return true;
 }
 
-obs_properties_t *av1_properties(bool svtav1)
+obs_properties_t *av1_properties(enum av1_encoder_type type)
 {
 	obs_properties_t *props = obs_properties_create();
 	obs_property_t *p;
@@ -310,7 +319,7 @@ obs_properties_t *av1_properties(bool svtav1)
 	p = obs_properties_add_list(props, "preset", obs_module_text("Preset"),
 				    OBS_COMBO_TYPE_LIST, OBS_COMBO_FORMAT_INT);
 
-	if (svtav1) {
+	if (type == AV1_ENCODER_TYPE_SVT) {
 		obs_property_list_add_int(p, "Very likely too slow (6)", 6);
 		obs_property_list_add_int(p, "Probably too slow (7)", 7);
 		obs_property_list_add_int(p, "Seems okay (8)", 8);
@@ -320,7 +329,7 @@ obs_properties_t *av1_properties(bool svtav1)
 		obs_property_list_add_int(
 			p, "Whoa, although quality might be not so great (12)",
 			12);
-	} else {
+	} else if (type == AV1_ENCODER_TYPE_AOM) {
 		obs_property_list_add_int(p, "Probably too slow (7)", 7);
 		obs_property_list_add_int(p, "Okay (8)", 8);
 		obs_property_list_add_int(p, "Fast (9)", 9);
@@ -337,13 +346,13 @@ obs_properties_t *av1_properties(bool svtav1)
 obs_properties_t *aom_av1_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return av1_properties(false);
+	return av1_properties(AV1_ENCODER_TYPE_AOM);
 }
 
 obs_properties_t *svt_av1_properties(void *unused)
 {
 	UNUSED_PARAMETER(unused);
-	return av1_properties(true);
+	return av1_properties(AV1_ENCODER_TYPE_SVT);
 }
 
 static bool av1_extra_data(void *data, uint8_t **extra_data, size_t *size)

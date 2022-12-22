@@ -33,8 +33,11 @@
 #include <deque>
 
 #include "window-main.hpp"
+#ifndef HTTP_REST_API_ENABLED
+#define HTTP_REST_API_ENABLED 1
+#endif
 #ifdef HTTP_REST_API_ENABLED
-#include "obs-http-api.h"
+#include "obs-http-api.hpp"
 #endif
 
 std::string CurrentTimeString();

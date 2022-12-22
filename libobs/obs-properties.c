@@ -169,6 +169,12 @@ static inline void float_data_free(struct float_data *data)
 		bfree(data->suffix);
 }
 
+static inline void button_data_free(struct button_data *data)
+{
+	if (data->url)
+		bfree(data->url);
+}
+
 struct obs_properties;
 
 struct obs_property {
@@ -259,6 +265,8 @@ static void obs_property_destroy(struct obs_property *property)
 		int_data_free(get_property_data(property));
 	else if (property->type == OBS_PROPERTY_FLOAT)
 		float_data_free(get_property_data(property));
+	else if (property->type == OBS_PROPERTY_BUTTON)
+		button_data_free(get_property_data(property));
 
 	bfree(property->name);
 	bfree(property->desc);
@@ -1154,7 +1162,7 @@ void obs_property_button_set_url(obs_property_t *p, char *url)
 	if (!data)
 		return;
 
-	data->url = url;
+	data->url = bstrdup(url);
 }
 
 void obs_property_list_clear(obs_property_t *p)

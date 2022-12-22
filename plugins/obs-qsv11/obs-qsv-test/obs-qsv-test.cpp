@@ -1,8 +1,7 @@
-#include "../external/AMF/include/core/Factory.h"
-#include "../external/AMF/include/core/Trace.h"
-#include "../external/AMF/include/components/VideoEncoderVCE.h"
-#include "../external/AMF/include/components/VideoEncoderHEVC.h"
-#include "../external/AMF/include/components/VideoEncoderAV1.h"
+#include "mfxstructures.h"
+#include "mfxadapter.h"
+#include "mfxvideo++.h"
+#include "../common_utils.h"
 
 #include <util/windows/ComPtr.hpp>
 
@@ -14,31 +13,43 @@
 #include <string>
 #include <map>
 
-using namespace amf;
-
 #ifdef _MSC_VER
+extern "C" __declspec(dllexport) DWORD NvOptimusEnablement = 1;
 extern "C" __declspec(dllexport) int AmdPowerXpressRequestHighPerformance = 1;
 #endif
 
-#define AMD_VENDOR_ID 0x1002
+#define INTEL_VENDOR_ID 0x8086
 
 struct adapter_caps {
-	bool is_amd = false;
-	bool supports_avc = false;
-	bool supports_hevc = false;
+	bool is_intel = false;
+	bool is_dgpu = false;
 	bool supports_av1 = false;
+	bool supports_hevc = false;
 };
 
-static AMFFactory *amf_factory = nullptr;
 static std::vector<uint64_t> luid_order;
 static std::map<uint32_t, adapter_caps> adapter_info;
 
-static bool has_encoder(AMFContextPtr &amf_context, const wchar_t *encoder_name)
+static bool has_encoder(mfxIMPL impl, mfxU32 codec_id)
 {
-	AMFComponentPtr encoder;
-	AMF_RESULT res = amf_factory->CreateComponent(amf_context, encoder_name,
-						      &encoder);
-	return res == AMF_OK;
+	MFXVideoSession session;
+	mfxInitParam init_param = {};
+	init_param.Implementation = impl;
+	init_param.Version.Major = 1;
+	init_param.Version.Minor = 0;
+	mfxStatus sts = session.InitEx(init_param);
+
+	mfxVideoParam video_param;
+	memset(&video_param, 0, sizeof(video_param));
+	video_param.mfx.CodecId = codec_id;
+	video_param.mfx.FrameInfo.FourCC = MFX_FOURCC_NV12;
+	video_param.mfx.FrameInfo.ChromaFormat = MFX_CHROMAFORMAT_YUV420;
+	video_param.mfx.FrameInfo.Width = MSDK_ALIGN16(1280);
+	video_param.mfx.FrameInfo.Height = MSDK_ALIGN16(720);
+	sts = MFXVideoENCODE_Query(session, &video_param, &video_param);
+	session.Close();
+
+	return sts == MFX_ERR_NONE;
 }
 
 static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
@@ -54,7 +65,8 @@ static inline uint32_t get_adapter_idx(uint32_t adapter_idx, LUID luid)
 
 static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 {
-	AMF_RESULT res;
+	mfxIMPL impls[4] = {MFX_IMPL_HARDWARE, MFX_IMPL_HARDWARE2,
+			    MFX_IMPL_HARDWARE3, MFX_IMPL_HARDWARE4};
 	HRESULT hr;
 
 	ComPtr<IDXGIAdapter> adapter;
@@ -67,41 +79,29 @@ static bool get_adapter_caps(IDXGIFactory *factory, uint32_t adapter_idx)
 
 	uint32_t luid_idx = get_adapter_idx(adapter_idx, desc.AdapterLuid);
 	adapter_caps &caps = adapter_info[luid_idx];
-
-	if (desc.VendorId != AMD_VENDOR_ID)
+	if (desc.VendorId != INTEL_VENDOR_ID)
 		return true;
 
-	caps.is_amd = true;
+	bool dgpu = desc.DedicatedVideoMemory > 512 * 1024 * 1024;
+	mfxIMPL impl = impls[adapter_idx];
 
-	ComPtr<ID3D11Device> device;
-	ComPtr<ID3D11DeviceContext> context;
-	hr = D3D11CreateDevice(adapter, D3D_DRIVER_TYPE_UNKNOWN, nullptr, 0,
-			       nullptr, 0, D3D11_SDK_VERSION, &device, nullptr,
-			       &context);
-	if (FAILED(hr))
-		return true;
-
-	AMFContextPtr amf_context;
-	res = amf_factory->CreateContext(&amf_context);
-	if (res != AMF_OK)
-		return true;
-
-	res = amf_context->InitDX11(device);
-	if (res != AMF_OK)
-		return true;
-
-	caps.supports_avc = has_encoder(amf_context, AMFVideoEncoderVCE_AVC);
-	caps.supports_hevc = has_encoder(amf_context, AMFVideoEncoder_HEVC);
-	caps.supports_av1 = has_encoder(amf_context, AMFVideoEncoder_AV1);
+	caps.is_intel = true;
+	caps.is_dgpu = dgpu;
+	caps.supports_av1 = has_encoder(impl, MFX_CODEC_AV1);
+#if ENABLE_HEVC
+	caps.supports_hevc = has_encoder(impl, MFX_CODEC_HEVC);
+#endif
 
 	return true;
 }
+
+#define CHECK_TIMEOUT_MS 10000
 
 DWORD WINAPI TimeoutThread(LPVOID param)
 {
 	HANDLE hMainThread = (HANDLE)param;
 
-	DWORD ret = WaitForSingleObject(hMainThread, 2500);
+	DWORD ret = WaitForSingleObject(hMainThread, CHECK_TIMEOUT_MS);
 	if (ret == WAIT_TIMEOUT)
 		TerminateProcess(GetCurrentProcess(), STATUS_TIMEOUT);
 
@@ -113,7 +113,6 @@ DWORD WINAPI TimeoutThread(LPVOID param)
 int main(int argc, char *argv[])
 try {
 	ComPtr<IDXGIFactory> factory;
-	AMF_RESULT res;
 	HRESULT hr;
 
 	HANDLE hMainThread;
@@ -127,22 +126,6 @@ try {
 	CloseHandle(hThread);
 
 	/* --------------------------------------------------------- */
-	/* try initializing amf, I guess                             */
-
-	HMODULE amf_module = LoadLibraryW(AMF_DLL_NAME);
-	if (!amf_module)
-		throw "Failed to load AMF lib";
-
-	auto init =
-		(AMFInit_Fn)GetProcAddress(amf_module, AMF_INIT_FUNCTION_NAME);
-	if (!init)
-		throw "Failed to get init func";
-
-	res = init(AMF_FULL_VERSION, &amf_factory);
-	if (res != AMF_OK)
-		throw "AMFInit failed";
-
-	/* --------------------------------------------------------- */
 	/* parse expected LUID order                                 */
 
 	for (int i = 1; i < argc; i++) {
@@ -150,25 +133,24 @@ try {
 	}
 
 	/* --------------------------------------------------------- */
-	/* obtain adapter compatibility information                  */
+	/* query qsv support                                         */
 
 	hr = CreateDXGIFactory1(__uuidof(IDXGIFactory), (void **)&factory);
 	if (FAILED(hr))
 		throw "CreateDXGIFactory1 failed";
 
 	uint32_t idx = 0;
-	while (get_adapter_caps(factory, idx++))
+	while (get_adapter_caps(factory, idx++) && idx < 4)
 		;
 
 	for (auto &[idx, caps] : adapter_info) {
 		printf("[%u]\n", idx);
-		printf("is_amd=%s\n", caps.is_amd ? "true" : "false");
-		printf("supports_avc=%s\n",
-		       caps.supports_avc ? "true" : "false");
-		printf("supports_hevc=%s\n",
-		       caps.supports_hevc ? "true" : "false");
+		printf("is_intel=%s\n", caps.is_intel ? "true" : "false");
+		printf("is_dgpu=%s\n", caps.is_dgpu ? "true" : "false");
 		printf("supports_av1=%s\n",
 		       caps.supports_av1 ? "true" : "false");
+		printf("supports_hevc=%s\n",
+		       caps.supports_hevc ? "true" : "false");
 	}
 
 	return 0;

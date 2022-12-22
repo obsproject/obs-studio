@@ -155,9 +155,10 @@ static int libsrt_network_wait_fd(URLContext *h, int eid, int write)
 		/* Socket reported in wsock AND rsock signifies an error. */
 		int reason = srt_getrejectreason(*ready);
 
-		if (reason == SRT_REJ_BADSECRET || reason == SRT_REJ_UNSECURE) {
+		if (reason == SRT_REJ_BADSECRET || reason == SRT_REJ_UNSECURE ||
+		    reason == SRT_REJ_TIMEOUT) {
 			blog(LOG_ERROR,
-			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection rejected, wrong password");
+			     "[obs-ffmpeg mpegts muxer / libsrt]: Connection rejected, wrong password or invalid URL");
 			return OBS_OUTPUT_INVALID_STREAM;
 		} else {
 			blog(LOG_ERROR,

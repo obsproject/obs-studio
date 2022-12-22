@@ -14,7 +14,7 @@
 #include "ui-config.h"
 
 #ifdef HTTP_REST_API_ENABLED
-#include "obs-http-api.h"
+#include "obs-http-api.hpp"
 #endif
 
 static int CountVideoSources()

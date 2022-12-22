@@ -99,6 +99,7 @@ struct main_params {
 	int color_trc;
 	int colorspace;
 	int color_range;
+	int chroma_sample_location;
 	int max_luminance;
 	char *acodec;
 	char *muxer_settings;
@@ -369,6 +370,9 @@ static bool init_params(int *argc, char ***argv, struct main_params *params,
 		if (!get_opt_int(argc, argv, &params->color_range,
 				 "video color range"))
 			return false;
+		if (!get_opt_int(argc, argv, &params->chroma_sample_location,
+				 "video chroma sample location"))
+			return false;
 		if (!get_opt_int(argc, argv, &params->max_luminance,
 				 "video max luminance"))
 			return false;
@@ -459,10 +463,7 @@ static void create_video_stream(struct ffmpeg_mux *ffm)
 	context->color_trc = ffm->params.color_trc;
 	context->colorspace = ffm->params.colorspace;
 	context->color_range = ffm->params.color_range;
-	context->chroma_sample_location =
-		(ffm->params.colorspace == AVCOL_SPC_BT2020_NCL)
-			? AVCHROMA_LOC_TOPLEFT
-			: AVCHROMA_LOC_LEFT;
+	context->chroma_sample_location = ffm->params.chroma_sample_location;
 	context->extradata = extradata;
 	context->extradata_size = ffm->video_header.size;
 	context->time_base =
