@@ -130,6 +130,7 @@ target_sources(
           color-grade-filter.c
           sharpness-filter.c
           eq-filter.c
+          eq8-filter.c
           gain-filter.c
           noise-gate-filter.c
           mask-filter.c
