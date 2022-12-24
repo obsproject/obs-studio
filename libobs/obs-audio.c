@@ -421,8 +421,8 @@ static void add_audio_buffering(struct obs_core_audio *audio,
 	*ts = new_ts;
 }
 
-static bool audio_buffer_insuffient(struct obs_source *source,
-				    size_t sample_rate, uint64_t min_ts)
+static bool audio_buffer_insufficient(struct obs_source *source,
+				      size_t sample_rate, uint64_t min_ts)
 {
 	size_t total_floats = AUDIO_OUTPUT_FRAMES;
 	size_t size;
@@ -476,7 +476,7 @@ static inline bool mark_invalid_sources(struct obs_core_data *data,
 	struct obs_source *source = data->first_audio_source;
 	while (source) {
 		recalculate |=
-			audio_buffer_insuffient(source, sample_rate, min_ts);
+			audio_buffer_insufficient(source, sample_rate, min_ts);
 		source = (struct obs_source *)source->next_audio_source;
 	}
 
