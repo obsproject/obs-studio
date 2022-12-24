@@ -338,7 +338,13 @@ void MediaControls::SetSliderPosition()
 	float time = (float)obs_source_media_get_time(source);
 	float duration = (float)obs_source_media_get_duration(source);
 
-	float sliderPosition = (time / duration) * (float)ui->slider->maximum();
+	float sliderPosition;
+
+	if (duration)
+		sliderPosition =
+			(time / duration) * (float)ui->slider->maximum();
+	else
+		sliderPosition = 0.0f;
 
 	ui->slider->setValue((int)sliderPosition);
 
