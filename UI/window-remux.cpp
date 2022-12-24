@@ -367,6 +367,7 @@ bool RemuxQueueModel::setData(const QModelIndex &index, const QVariant &value,
 				for (QString path : pathList) {
 					RemuxQueueEntry entry;
 					entry.sourcePath = path;
+					entry.state = RemuxEntryState::Empty;
 
 					queue.insert(row, entry);
 					row++;
@@ -386,6 +387,7 @@ bool RemuxQueueModel::setData(const QModelIndex &index, const QVariant &value,
 		if (!path.isEmpty()) {
 			RemuxQueueEntry entry;
 			entry.sourcePath = path;
+			entry.state = RemuxEntryState::Empty;
 
 			beginInsertRows(QModelIndex(), queue.length() + 1,
 					queue.length() + 1);
