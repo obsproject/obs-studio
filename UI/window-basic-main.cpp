@@ -2677,6 +2677,8 @@ OBSBasic::~OBSBasic()
 	if (about)
 		delete about;
 
+	delete remux;
+
 	obs_display_remove_draw_callback(ui->preview->GetDisplay(),
 					 OBSBasic::RenderMain, this);
 
