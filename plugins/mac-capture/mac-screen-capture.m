@@ -50,6 +50,7 @@ struct screen_capture {
 	bool hide_cursor;
 	bool show_hidden_windows;
 	bool show_empty_names;
+	bool discard_video;
 
 	SCStream *disp;
 	SCStreamConfiguration *stream_properties;
@@ -464,17 +465,23 @@ static bool init_screen_stream(struct screen_capture *sc)
 					   delegate:nil];
 
 	NSError *error = nil;
-	BOOL did_add_output = [sc->disp addStreamOutput:sc->capture_delegate
-						   type:SCStreamOutputTypeScreen
-				     sampleHandlerQueue:nil
-						  error:&error];
-	if (!did_add_output) {
-		MACCAP_ERR(
-			"init_screen_stream: Failed to add stream output with error %s\n",
-			[[error localizedFailureReason]
-				cStringUsingEncoding:NSUTF8StringEncoding]);
-		[error release];
-		return !did_add_output;
+	BOOL did_add_output = false;
+
+	if (!sc->discard_video) {
+		did_add_output = [sc->disp
+			   addStreamOutput:sc->capture_delegate
+				      type:SCStreamOutputTypeScreen
+			sampleHandlerQueue:nil
+				     error:&error];
+		if (!did_add_output) {
+			MACCAP_ERR(
+				"init_screen_stream: Failed to add stream output with error %s\n",
+				[[error localizedFailureReason]
+					cStringUsingEncoding:
+						NSUTF8StringEncoding]);
+			[error release];
+			return !did_add_output;
+		}
 	}
 
 #if __MAC_OS_X_VERSION_MAX_ALLOWED >= 130000
@@ -492,6 +499,9 @@ static bool init_screen_stream(struct screen_capture *sc)
 						NSUTF8StringEncoding]);
 			[error release];
 			return !did_add_output;
+		}
+		if (sc->discard_video) {
+			sc->frame = CGRectZero;
 		}
 	}
 #endif
@@ -566,6 +576,7 @@ static void *screen_capture_create(obs_data_t *settings, obs_source_t *source)
 		obs_data_get_bool(settings, "show_hidden_windows");
 	sc->window = (CGWindowID)obs_data_get_int(settings, "window");
 	sc->capture_type = (unsigned int)obs_data_get_int(settings, "type");
+	sc->discard_video = obs_data_get_bool(settings, "discard_video");
 
 	os_sem_init(&sc->shareable_content_available, 1);
 	screen_capture_build_content_list(
@@ -694,6 +705,7 @@ static void screen_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_bool(settings, "show_cursor", true);
 	obs_data_set_default_bool(settings, "show_empty_names", false);
 	obs_data_set_default_bool(settings, "show_hidden_windows", false);
+	obs_data_set_default_bool(settings, "discard_video", false);
 }
 
 static void screen_capture_update(void *data, obs_data_t *settings)
@@ -718,8 +730,10 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	bool show_empty_names = obs_data_get_bool(settings, "show_empty_names");
 	bool show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
+	bool discard_video = obs_data_get_bool(settings, "discard_video");
 
-	if (capture_type == sc->capture_type) {
+	if (capture_type == sc->capture_type &&
+	    discard_video == sc->discard_video) {
 		switch (sc->capture_type) {
 		case ScreenCaptureDisplayStream: {
 			if (sc->display == display &&
@@ -750,6 +764,7 @@ static void screen_capture_update(void *data, obs_data_t *settings)
 	sc->hide_cursor = !show_cursor;
 	sc->show_empty_names = show_empty_names;
 	sc->show_hidden_windows = show_hidden_windows;
+	sc->discard_video = discard_video;
 	init_screen_stream(sc);
 
 	obs_leave_graphics();
@@ -891,6 +906,8 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 	obs_property_t *window_list = obs_properties_get(props, "window");
 	obs_property_t *app_list = obs_properties_get(props, "application");
 	obs_property_t *empty = obs_properties_get(props, "show_empty_names");
+	obs_property_t *discard_video =
+		obs_properties_get(props, "discard_video");
 	obs_property_t *hidden =
 		obs_properties_get(props, "show_hidden_windows");
 
@@ -950,6 +967,7 @@ static bool content_settings_changed(void *data, obs_properties_t *props,
 	sc->show_empty_names = obs_data_get_bool(settings, "show_empty_names");
 	sc->show_hidden_windows =
 		obs_data_get_bool(settings, "show_hidden_windows");
+	sc->discard_video = obs_data_get_bool(settings, "discard_video");
 
 	return true;
 }
@@ -1032,9 +1050,11 @@ static obs_properties_t *screen_capture_properties(void *data)
 	obs_properties_add_bool(props, "show_cursor",
 				obs_module_text("DisplayCapture.ShowCursor"));
 
-	if (@available(macOS 13.0, *))
-		;
-	else {
+	if (@available(macOS 13.0, *)) {
+		obs_property_t *discard_video = obs_properties_add_bool(
+			props, "discard_video",
+			obs_module_text("SCK.DiscardVideo"));
+	} else {
 		obs_property_t *audio_warning = obs_properties_add_text(
 			props, "audio_info",
 			obs_module_text("SCK.AudioUnavailable"), OBS_TEXT_INFO);
