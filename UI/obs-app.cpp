@@ -3245,15 +3245,29 @@ void OBSApp::ProcessSigInt(void)
 int main(int argc, char *argv[])
 {
 #ifndef _WIN32
-	signal(SIGPIPE, SIG_IGN);
+	stack_t ss;
+	ss.ss_sp = bmalloc(SIGSTKSZ);
+	if (ss.ss_sp == NULL) {
+		fprintf(stderr, "ss_sp alloc failed\n");
+		exit(1);
+	}
+	ss.ss_size = SIGSTKSZ;
+	ss.ss_flags = 0;
+	if (sigaltstack(&ss, NULL) < 0) {
+		perror("sigaltstack");
+		exit(1);
+	}
 
 	struct sigaction sig_handler;
 
 	sig_handler.sa_handler = OBSApp::SigIntSignalHandler;
 	sigemptyset(&sig_handler.sa_mask);
-	sig_handler.sa_flags = 0;
+	sig_handler.sa_flags = SA_ONSTACK;
 
 	sigaction(SIGINT, &sig_handler, NULL);
+
+	sig_handler.sa_handler = SIG_IGN;
+	sigaction(SIGPIPE, &sig_handler, NULL);
 
 	/* Block SIGPIPE in all threads, this can happen if a thread calls write on
 	a closed pipe. */
@@ -3443,6 +3457,16 @@ int main(int argc, char *argv[])
 	}
 
 	log_blocked_dlls();
+#endif
+
+#ifndef _WIN32
+	ss.ss_flags = SS_DISABLE;
+	if (sigaltstack(&ss, NULL) < 0) {
+		perror("sigaltstack");
+		exit(1);
+	}
+
+	bfree(ss.ss_sp);
 #endif
 
 	blog(LOG_INFO, "Number of memory leaks: %ld", bnum_allocs());
