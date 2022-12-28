@@ -546,9 +546,10 @@ winrt_capture_init_window(BOOL cursor, HWND window, BOOL client_area,
 }
 
 extern "C" EXPORT struct winrt_capture *
-winrt_capture_init_monitor(BOOL cursor, HMONITOR monitor)
+winrt_capture_init_monitor(BOOL cursor, HMONITOR monitor, BOOL force_sdr)
 {
-	return winrt_capture_init_internal(cursor, NULL, false, false, monitor);
+	return winrt_capture_init_internal(cursor, NULL, false, force_sdr,
+					   monitor);
 }
 
 extern "C" EXPORT void winrt_capture_free(struct winrt_capture *capture)
