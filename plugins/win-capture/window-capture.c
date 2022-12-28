@@ -401,7 +401,7 @@ static void update_settings_visibility(obs_properties_t *props,
 	obs_property_set_visible(p, wgc_options);
 
 	p = obs_properties_get(props, "force_sdr");
-	obs_property_set_visible(p, wgc_cursor_toggle);
+	obs_property_set_visible(p, wgc_options);
 
 	pthread_mutex_unlock(&wc->update_mutex);
 }
