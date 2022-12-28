@@ -27,6 +27,7 @@
 #define TEXT_METHOD_AUTO     obs_module_text("WindowCapture.Method.Auto")
 #define TEXT_METHOD_DXGI     obs_module_text("Method.DXGI")
 #define TEXT_METHOD_WGC      obs_module_text("Method.WindowsGraphicsCapture")
+#define TEXT_FORCE_SDR       obs_module_text("ForceSdr")
 
 /* clang-format on */
 
@@ -35,7 +36,7 @@
 typedef BOOL (*PFN_winrt_capture_supported)();
 typedef BOOL (*PFN_winrt_capture_cursor_toggle_supported)();
 typedef struct winrt_capture *(*PFN_winrt_capture_init_monitor)(
-	BOOL cursor, HMONITOR monitor);
+	BOOL cursor, HMONITOR monitor, BOOL force_sdr);
 typedef void (*PFN_winrt_capture_free)(struct winrt_capture *capture);
 
 typedef BOOL (*PFN_winrt_capture_active)(const struct winrt_capture *capture);
@@ -74,6 +75,7 @@ struct duplicator_capture {
 	bool reset_wgc;
 	HMONITOR handle;
 	bool capture_cursor;
+	bool force_sdr;
 	bool showing;
 	LONG logged_width;
 	LONG logged_height;
@@ -278,6 +280,7 @@ static inline void update_settings(struct duplicator_capture *capture,
 	capture->handle = monitor.handle;
 
 	capture->capture_cursor = obs_data_get_bool(settings, "capture_cursor");
+	capture->force_sdr = obs_data_get_bool(settings, "force_sdr");
 
 	capture->logged_width = monitor.rect.right - monitor.rect.left;
 	capture->logged_height = monitor.rect.bottom - monitor.rect.top;
@@ -351,6 +354,7 @@ static void duplicator_capture_defaults(obs_data_t *settings)
 	obs_data_set_default_string(settings, "monitor_id", "DUMMY");
 	obs_data_set_default_int(settings, "monitor_wgc", 0);
 	obs_data_set_default_bool(settings, "capture_cursor", true);
+	obs_data_set_default_bool(settings, "force_sdr", false);
 }
 
 static void duplicator_capture_update(void *data, obs_data_t *settings)
@@ -515,7 +519,8 @@ static void duplicator_capture_tick(void *data, float seconds)
 					capture->capture_winrt =
 						capture->exports.winrt_capture_init_monitor(
 							capture->capture_cursor,
-							capture->handle);
+							capture->handle,
+							capture->force_sdr);
 					if (!capture->capture_winrt) {
 						update_monitor_handle(capture);
 
@@ -523,7 +528,8 @@ static void duplicator_capture_tick(void *data, float seconds)
 							capture->capture_winrt =
 								capture->exports.winrt_capture_init_monitor(
 									capture->capture_cursor,
-									capture->handle);
+									capture->handle,
+									capture->force_sdr);
 						}
 					}
 				}
@@ -782,6 +788,9 @@ static void update_settings_visibility(obs_properties_t *props,
 	obs_property_t *p = obs_properties_get(props, "cursor");
 	obs_property_set_visible(p, dxgi_options || wgc_cursor_toggle);
 
+	p = obs_properties_get(props, "force_sdr");
+	obs_property_set_visible(p, wgc_options);
+
 	pthread_mutex_unlock(&capture->update_mutex);
 }
 
@@ -824,6 +833,7 @@ static obs_properties_t *duplicator_capture_properties(void *data)
 		OBS_COMBO_FORMAT_STRING);
 
 	obs_properties_add_bool(props, "capture_cursor", TEXT_CAPTURE_CURSOR);
+	obs_properties_add_bool(props, "force_sdr", TEXT_FORCE_SDR);
 
 	EnumDisplayMonitors(NULL, NULL, enum_monitor_props, (LPARAM)monitors);
 
