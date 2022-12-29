@@ -265,10 +265,11 @@ static void log_settings(struct duplicator_capture *capture,
 	     "\tmethod: %s\n"
 	     "\tid: %s\n"
 	     "\talt_id: %s\n"
-	     "\tsetting_id: %s",
+	     "\tsetting_id: %s\n"
+	     "\tforce SDR: %s",
 	     monitor, width, height, capture->capture_cursor ? "true" : "false",
 	     get_method_name(capture->method), capture->id, capture->alt_id,
-	     capture->monitor_id);
+	     capture->monitor_id, capture->force_sdr ? "true" : "false");
 }
 
 static enum display_capture_method
