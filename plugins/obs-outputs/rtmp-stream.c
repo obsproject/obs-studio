@@ -1007,26 +1007,46 @@ static void win32_log_interface_type(struct rtmp_stream *stream)
 		return;
 
 	if (!GetBestRoute(dest_addr, source_addr, &route)) {
-		MIB_IFROW row;
+		MIB_IF_ROW2 row;
 		memset(&row, 0, sizeof(row));
-		row.dwIndex = route.dwForwardIfIndex;
+		row.InterfaceIndex = route.dwForwardIfIndex;
 
-		if (!GetIfEntry(&row)) {
-			uint32_t speed = row.dwSpeed / 1000000;
+		if (!GetIfEntry2(&row)) {
+			uint32_t rxSpeed = row.ReceiveLinkSpeed / 1000000;
+			uint32_t txSpeed = row.TransmitLinkSpeed / 1000000;
 			char *type;
 			struct dstr other = {0};
 
-			if (row.dwType == IF_TYPE_ETHERNET_CSMACD) {
+			switch (row.PhysicalMediumType) {
+			case NdisPhysicalMedium802_3:
 				type = "ethernet";
-			} else if (row.dwType == IF_TYPE_IEEE80211) {
+				break;
+			case NdisPhysicalMediumWirelessLan:
+			case NdisPhysicalMediumNative802_11:
 				type = "802.11";
-			} else {
-				dstr_printf(&other, "type %lu", row.dwType);
+				break;
+			default:
+				dstr_printf(&other, "type %d",
+					    (int)row.PhysicalMediumType);
 				type = other.array;
+				break;
 			}
 
-			info("Interface: %s (%s, %lu mbps)", row.bDescr, type,
-			     speed);
+			char *desc;
+			os_wcs_to_utf8_ptr(row.Description, 0, &desc);
+
+			info("Interface: %s (%s, %lu↓/%lu↑ mbps)", desc, type,
+			     rxSpeed, txSpeed);
+
+			bfree(desc);
+
+			if (row.InErrors || row.OutErrors) {
+				warn("Interface has non-zero error counters (%" PRIu64
+				     "/%" PRIu64 " errors, %" PRIu64 "/%" PRIu64
+				     " discards)",
+				     row.InErrors, row.OutErrors,
+				     row.InDiscards, row.OutDiscards);
+			}
 
 			dstr_free(&other);
 		}
